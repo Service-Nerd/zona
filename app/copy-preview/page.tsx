@@ -6,7 +6,7 @@
 //
 // 🔴 WHAT IT DELIBERATELY DOES NOT COVER, AND WHY THAT IS THE REAL FINDING.
 // 19 of the 35 rewrites live in `DashboardClient.tsx`, spread across **14 functions that
-// are LOCAL and not exported** — QuitTab, OrientationScreen, SessionPopupInner, TodayScreen,
+// are LOCAL and not exported** — OrientationScreen, SessionPopupInner, TodayScreen,
 // CoachTeaser, ConnectRunsBanner, AppleHealthConnectionRow, HRZonesSection, SupportScreen,
 // MeScreen, PendingAnalysisCard, LockedCoachingPreview, ManualRunModal, IconMe. None can be
 // imported, so none can be rendered anywhere but inside a signed-in session.
@@ -24,7 +24,6 @@ import { notFound } from 'next/navigation'
 import PostRaceReshapeCard from '@/components/training/PostRaceReshapeCard'
 import RaceResultSheet from '@/components/training/RaceResultSheet'
 import GeneratePlanScreen from '@/app/dashboard/GeneratePlanScreen'
-import QuitTab from '@/components/dashboard/QuitTab'
 import SupportScreen from '@/components/dashboard/SupportScreen'
 import LockedCoachingPreview from '@/components/dashboard/LockedCoachingPreview'
 import PendingAnalysisCard from '@/components/dashboard/PendingAnalysisCard'
@@ -155,13 +154,6 @@ export default function CopyPreview() {
             nothing could import them and nothing could render them. They are here
             unchanged, and between them they carry 8 of the 19 sentences that had
             never been seen outside a signed-in session. */}
-
-        <Case
-          title="QuitTab — 4 rewrites"
-          note={'The smoking timeline: "48 hours: CO leaves bloodstream." and three siblings, each an em dash before this.'}
-        >
-          <QuitTab quitDays={12} raceDistanceKm={42.2} onBack={noop} />
-        </Case>
 
         <Case
           title="SupportScreen — 1 rewrite"

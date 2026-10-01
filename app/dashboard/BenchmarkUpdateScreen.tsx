@@ -214,7 +214,17 @@ export default function BenchmarkUpdateScreen({
       </PinnedBackHeader>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+      {/* STICKY-INERT-SCREENS-01 (Design Board, 2026-10-01) — the `overflowY: 'auto'` that
+          was here is GONE, not fixed with `minHeight: 0`. Under a `minHeight: 100%`
+          outer the box grows to fit its content, so the overflow could never happen:
+          it claimed to be a scroller and was not. The two live options were not equal.
+          `minHeight: 0` would have made it real — a pane with its own scroll inside the
+          page scroller, which is a seam, and `SCROLL-NATIVE-01` removed chaining a week
+          earlier for the same reason. `PullToRefresh` is the app's one scroller.
+          ⚠️ Nothing was captured today: every sticky element here is a SIBLING. The cost
+          was the next sticky CHILD, which would never stick, silently, with a green
+          gate. Registered in `lib/ui/stickyScroller.test.ts` until now. */}
+      <div style={{ flex: 1, padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
         {result ? (
           <UpdatedPaceResult plan={result.plan} weeksUpdated={result.weeksUpdated} stravaConnected={stravaConnected} units={units} />

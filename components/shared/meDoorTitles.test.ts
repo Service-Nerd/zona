@@ -35,7 +35,7 @@ const doors = (): { name: string; body: string }[] => {
   const src = SRC()
   const out: { name: string; body: string }[] = []
   // ⚠️ BOTH RETURN FORMS. The four pre-existing doors return a COMPONENT on one line with
-  // padded alignment (`'quit')           return <QuitTab …`); the three added here return a
+  // padded alignment (`'quit')           return <QuitTab …`, since deleted); the three added here return a
   // fragment. A regex that only matched `return (` found 3 of 7 and the population arm
   // caught it — which is the only reason this gate is not measuring half the doors.
   const re = /if \(activeSection === '([a-z-]+)'\)\s+return /g

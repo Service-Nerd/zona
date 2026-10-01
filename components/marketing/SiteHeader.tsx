@@ -92,6 +92,13 @@ export function SiteHeader({ current = null }: { current?: SiteSection }) {
         top: 0,
         zIndex: 20,
         background: 'var(--bg)',
+        // ⚖️ SITE-HEADER-EDGE-01 (Design Board, 2026-10-01) — PERMANENT, and `--line`, where
+        // the app's `.pinned-chrome` reveals `--chrome-edge` on scroll. That is a ruled
+        // divergence, not drift, and the reason is two sections up in this very file:
+        // "no motion, no scroll listener, no client JS" (SLT, Wood). A scroll-revealed edge
+        // needs both of the things that ruling forbids, and this stays a server component.
+        // `--line` because it is the token on 17 of the site's 19 edges, the footer's among
+        // them. Full table: `ui-patterns.md` § The two surfaces pin DIFFERENTLY, on purpose.
         borderBottom: '1px solid var(--line)',
       }}
     >

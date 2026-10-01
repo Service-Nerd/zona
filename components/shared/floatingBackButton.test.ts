@@ -69,11 +69,7 @@ const BARE_BACK_BUTTON: Record<string, string> = {
   'components/shared/FloatingBackButton.tsx':
     'the wrapper that owns the floating placement. It renders the bare arrow by design.',
 
-  // ── Retired surface.
-  'components/dashboard/QuitTab.tsx':
-    'the smoke tracker, REMOVED from all UI surfaces (CLAUDE.md, Phase 1). Its BackHeader ' +
-    'is an arrow-beside-title group and would be pinned if the surface ever returned; ' +
-    'pinning a screen no runner can reach is work with no reader.',
+  // ⚠️ `QuitTab.tsx` was declared here and is GONE (QUIT-TAB-DEAD-01, 2026-10-01).
 }
 
 /** Files that must carry a `.pinned-chrome` group rather than a floating arrow. */

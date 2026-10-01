@@ -44,12 +44,18 @@ const NO_CONTAIN: Record<string, string> = {
     'is not a surface a runner scrolls.',
   'components/strava/StravaPanel.tsx':
     'the admin-only Strava panel, reachable by URL and not linked from any nav entry.',
-  'app/dashboard/BenchmarkUpdateScreen.tsx':
-    'an INERT scrollport: `overflowY: auto` under `minHeight: 100%`, which can never ' +
-    'overflow, so it never overscrolls either. Tracked as STICKY-INERT-FLEX-01.',
-  'app/dashboard/GeneratePlanScreen.tsx':
-    'the wizard, whose two inner boxes are the same inert-scrollport shape under ' +
-    '`minHeight: 100%`. Same reason, same filed item.',
+  // ✅ `BenchmarkUpdateScreen` AND `GeneratePlanScreen` CAME OFF THIS LIST on 2026-10-01
+  //    (`STICKY-INERT-SCREENS-01`, Design Board). They were declared here as INERT
+  //    scrollports — `overflowY: auto` under `minHeight: 100%`, which can never overflow,
+  //    so they never overscrolled either and `contain` bought nothing. **The board removed
+  //    the declaration rather than repairing it**, so they are not scrollers at all now and
+  //    there is nothing left to declare.
+  //
+  // 🔴 THIS ARM IS HOW THAT WAS CAUGHT. Removing three `overflowY: auto` declarations in two
+  //    files was expected to touch `stickyScroller.test.ts`, which it did. **Nobody predicted
+  //    THIS register**, and its stale-entry arm went red on the full suite: a file declared
+  //    as a scroller that is no longer one. A second register tracking the same objects by a
+  //    different measure, exactly as the completion rules say to reconcile.
 }
 
 describe('SCROLL-NATIVE-01 — bounce locally, never chain', () => {

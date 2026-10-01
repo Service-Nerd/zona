@@ -97,6 +97,7 @@ All type uses **Inter** only. `var(--font-ui)` and `var(--font-brand)` both reso
 |---|---|---|---|---|
 | Hero display | `--font-ui` | 800 | 56px | Today screen hero ("10km, slowly.") |
 | Screen title | `--font-ui` | 800 | 26px | Page headings ("Your plan", "Today") |
+| Screen title, compact | `--font-ui` | 800 | 20px, `-0.3px` | A screen title that **shares its line with chrome** — a back arrow to its left, sometimes a chip to its right (session detail, post-run) |
 | Screen subtitle | `--font-ui` | 400 | 12px, `0.04em`, `--mute` | The line under a screen title ("Heart rate and pace targets") |
 | Section label | `--font-ui` | 700 | 10px uppercase 0.08em | Eyebrows, category labels |
 | Card primary | `--font-ui` | 600 | 15px | Session name, main label |
@@ -113,6 +114,20 @@ All type uses **Inter** only. `var(--font-ui)` and `var(--font-brand)` both reso
 > documented can at least be pointed at; a role that lives only in a stylesheet cannot be
 > cited in review, and two screens duly hand-rolled a 13px and a 14px subtitle beside it.
 >
+> 🔴 **THE COMPACT ROW IS DEFINED BY SHAPE, NOT BY SCREEN** (`BACK-HEADER-OWNER-01`, Design
+> Board 2026-10-01). Collins' condition on the ruling, in his words: *"three named levels is a
+> system"* — hero 56 / screen title 26 / compact 20 — *"forty-one is a habit"*, and a row written
+> as *"the session-detail and post-run headers"* would be the second thing. **A fourth header
+> level needs this board**, exactly as a fourth micro-label does.
+>
+> ⚠️ **It replaced 16/700, and 16 was the regression.** *Card primary* is 15px/600: a screen's own
+> name rendering one pixel and one weight-step above the name of a card inside it is the 1.02x step
+> `MICRO-LABEL-DRIFT-01` was taken over. The post-run header already rendered 20/800, so the row
+> adopts the value that survives the row rather than inventing a third. ⚠️ **The cost is about
+> three characters** before the ellipsis on the one screen carrying a chip (title column ~195px at
+> 375pt) — weighed against two sizes for one shape, with the eyebrow carrying day and week and the
+> chip carrying the session type. ⚠️ **Nothing measured on a device.**
+
 > ⚠️ **A LEAD PARAGRAPH IS NOT A SUBTITLE, and the distinction is load-bearing.** `Redeem`
 > and `Upgrade` carry **15px `--ink-2`** copy under their titles. That is *Body / description*
 > doing its job on a celebration screen, and pushing it to 12px `--mute` in the name of
@@ -965,6 +980,31 @@ back arrow and a title in a row — conflating them is a **retracted finding**
 Guarded by `components/ui/screenHeader.markup.test.ts`, which asserts the **ruling** (the pinned
 set is exactly Plan and Coach) rather than a count, and derives its population by walking the
 tree rather than listing files.
+
+#### ⚖️ The two surfaces pin DIFFERENTLY, on purpose *(`SITE-HEADER-EDGE-01`, Design Board 2026-10-01)*
+
+| | App — `.pinned-chrome` | Website — `SiteHeader` |
+|---|---|---|
+| Edge | **Arrives at `scrollTop > 0`**, `--chrome-edge` | **Permanent**, `--line` |
+| Mechanism | `useScrolledContainer` — a scroll listener | None. Server component |
+
+🔴 **THIS IS NOT DRIFT AND THE REASON WAS ALREADY RULED, one section away from each
+implementation and written beside neither.** § Marketing Site Chrome: *"No shadow, no gradient,
+no motion, no scroll listener, no client JS: the header is a server component and active state is
+a prop, not `usePathname`"* (SLT review, Wood: *a sticky header is structural, an animated one is
+decorative*). **A scroll-revealed edge requires exactly the two things that ruling forbids.** The
+website's header therefore cannot adopt the app's behaviour without overturning it.
+
+⚠️ **AND THE TOKENS DIVERGE FOR A SECOND, SEPARATE REASON.** `--chrome-edge` (0.14) is the app's
+answer to *"this chrome has lifted off the page"*; the website uses `--line` (0.08) on **17 of its
+19 edges, the footer's top edge among them.** Moving the header alone to `--chrome-edge` would put
+two weights on the two pieces of chrome bracketing every page in order to match a different
+surface: a worse inconsistency arrived at by tidying (Silvanto, declining a veto he was offered).
+
+**The board ruled DON'T SHIP on the convergence and SHIP on the record.** The deliverable here is
+this table and the gate under it, because the item was filed as a disagreement between two
+surfaces and was in fact one ruling with no local record, which is how the next person comes to
+"fix" it. Guarded by `components/ui/screenHeaderPinned.test.ts`.
 
 #### 🔴 `position: sticky` is not enough, and this is the trap *(`STICKY-SCROLLER-01`)*
 

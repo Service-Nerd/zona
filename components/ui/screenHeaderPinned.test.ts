@@ -125,6 +125,39 @@ describe('BACK-ARROW-TITLE-COLLIDE-01 — pushed screens pin their header', () =
       .toEqual([])
   })
 
+  it('⚖️ the two surfaces pin DIFFERENTLY, and the divergence is RULED not drifted', () => {
+    // SITE-HEADER-EDGE-01 (Design Board, 2026-10-01). The item was filed as a disagreement
+    // between two surfaces — the website's header carries its edge permanently, the app's
+    // reveals one on scroll. It is not a disagreement: `ui-patterns.md` § Marketing Site
+    // Chrome forbids the marketing header a scroll listener and client JS (SLT, Wood), and
+    // a scroll-revealed edge needs both. The board ruled DON'T SHIP on converging them.
+    //
+    // 🔴 SO THIS ARM HOLDS A DIVERGENCE OPEN, which is the opposite of what a consistency
+    // check usually does, and it is the point: without it the next person tidies the two
+    // together and silently overturns a ruling. A convergence now has to delete this test.
+    const site = readFileSync('components/marketing/SiteHeader.tsx', 'utf8')
+    expect(site, 'the site header lost its permanent edge')
+      .toMatch(/borderBottom:\s*'1px solid var\(--line\)'/)
+    expect(code(site), 'the site header must stay a server component: no client JS')
+      .not.toMatch(/'use client'|useState|useEffect|useScrolledContainer|usePathname/)
+
+    const css = readFileSync('app/globals.css', 'utf8')
+    const base = /\.pinned-chrome\s*\{([^}]*)\}/.exec(css)?.[1] ?? ''
+    expect(base, "the app's edge must start transparent, or the header jumps 1px on first scroll")
+      .toMatch(/border-bottom:\s*1px solid transparent/)
+    expect(css, "the app's edge must arrive on SCROLLED, with the chrome token")
+      .toMatch(/\.pinned-chrome--scrolled\s*\{[^}]*var\(--chrome-edge\)/)
+
+    // The record itself. A divergence nobody can cite is the thing that got "fixed".
+    const doc = readFileSync('docs/canonical/ui-patterns.md', 'utf8')
+    expect(doc, 'the ruled divergence is not in the pattern doc')
+      .toMatch(/The two surfaces pin DIFFERENTLY, on purpose/)
+    expect(site, 'SiteHeader does not say why it differs — which is how this item happened')
+      .toMatch(/SITE-HEADER-EDGE-01/)
+    expect(css, 'globals.css does not say why the website differs')
+      .toMatch(/SITE-HEADER-EDGE-01/)
+  })
+
   it('the marketing mockups are genuinely still opted out (the website must not move)', () => {
     // Consumer check, app AND website. Flipping a shared default changes the homepage, and
     // that is the one surface where pinning is actively wrong.

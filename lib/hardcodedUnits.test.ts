@@ -52,19 +52,12 @@ const UNIT_AFTER_INTERPOLATION = /\}\s*\/?\s*(km|mi|miles|mins?|hrs?|hours?|minu
  * correct code, and nothing here schedules their removal.
  */
 const BASELINE: ReadonlyArray<{ file: string; snippet: string; reason: string }> = [
-  {
-    // 🔴 FILE PATH UPDATED, SITE UNCHANGED (DASHBOARD-SCREEN-EXTRACT-01, 2026-09-29).
-    // `QuitTab` moved out of DashboardClient.tsx into its own module, verbatim. The
-    // baseline's `file` is part of its KEY, so a pure relocation reads here as "this
-    // site no longer matches" — which is the arm working, not a fix. The stale-entry
-    // arm is what forced this line to be corrected rather than silently drifting.
-    file: 'components/dashboard/QuitTab.tsx',
-    snippet: '${raceDistanceKm}km race',
-    reason:
-      'UNREACHABLE — the quit tracker. `activeSection` has a `quit` branch and nothing in the ' +
-      'codebase ever sets it (CLAUDE.md: "Smoke tracker — removed from all UI surfaces"). ' +
-      'Editing dead code to satisfy a linter is churn; deleting the screen is its own decision.',
-  },
+  // ✅ `components/dashboard/QuitTab.tsx` CAME OFF THIS BASELINE on 2026-10-01
+  //    (`QUIT-TAB-DEAD-01`): the component was deleted, so the debt was not paid down,
+  //    it was removed along with the code that owed it. Its own reason said the exit
+  //    condition — *"deleting the screen is its own decision"* — and the decision was
+  //    taken. 🔴 The entry had already been corrected once for a pure RELOCATION, by the
+  //    stale-entry arm; this is the second time that arm has forced this line to move.
   {
     file: 'components/training/PlanChart.tsx',
     snippet: '${w.long_run_hrs}hr',

@@ -1355,10 +1355,19 @@ export default function GeneratePlanScreen({
         <FloatingBackButton onClick={goBack} ariaLabel="Adjust inputs" caption="Adjust inputs" />
         <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
           <div style={{ marginTop: 'var(--space-4)' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>
+            {/* BACK-HEADER-OWNER-01 — the documented screen-title role, from its owner.
+                A BLOCK title on its own line, so the 26px role and not the compact row
+                one. It rendered 22px, which is the same divergence SUBPAGE-TYPE-SCALE-01
+                converted on five screens; this one was invisible to that gate because its
+                population was a hardcoded six-file list. */}
+            <div className="screen-header__title">
               {meta.race_name || 'Your plan'}
             </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginTop: '4px' }}>
+            {/* BACK-HEADER-OWNER-01 — the documented screen-SUBTITLE role. Metadata under
+                a title at 13px `--mute`, which is the sub role doing its job one pixel
+                out — NOT a 15px `--ink-2` lead paragraph, which is the distinction
+                SUBPAGE-TYPE-SCALE-01 drew and which still holds. */}
+            <div className="screen-header__sub" style={{ marginTop: '4px' }}>
               {/* DATE-OWNER-01 — this rendered the RAW ISO STRING (`2026-12-07`)
                   to a runner, on the screen where they commit to a plan. */}
               starts {formatDate(meta.plan_start, 'long')} · {formatDistance(meta.race_distance_km, preferredUnits, { exact: true })}
@@ -1404,7 +1413,10 @@ export default function GeneratePlanScreen({
             float. (Was position:sticky over an unbounded minHeight:100% wrapper,
             which floated the CTA over the plan on native — D7 padding was papering
             over a broken scroll model. Now matches the wizard footer.) */}
-        <div style={{ flex: 1, padding: '0 20px 24px', overflowY: 'auto' }}>
+        {/* STICKY-INERT-SCREENS-01 — `overflowY: 'auto'` removed, not repaired with
+            `minHeight: 0`: it could never overflow under a `minHeight: 100%` outer, and
+            making it real would nest a scroll pane inside the page scroller. */}
+        <div style={{ flex: 1, padding: '0 20px 24px' }}>
           {/* FIRSTRUN-MOMENTS-01a — the uncovered-runway note, surfaced at the
               reveal led by the number (it was stamped on meta and shown nowhere).
               First card so a long-runway first-timer reads the relief without
@@ -1639,7 +1651,10 @@ export default function GeneratePlanScreen({
               {stepMeta.eyebrow}
             </div>
           )}
-          <h1 style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: 'var(--space-2)', margin: '0 0 8px' }}>
+          {/* BACK-HEADER-OWNER-01 — the documented screen-title role, from its owner.
+              It HAND-COPIED these exact values: right value, wrong mechanism, which is
+              the half of this defect class that never looks like anything. */}
+          <h1 className="screen-header__title" style={{ margin: '0 0 8px' }}>
             {title}
           </h1>
           {subtitle && (
@@ -1655,7 +1670,9 @@ export default function GeneratePlanScreen({
         style={{
           flex: 1,
           padding: '0 20px 24px',
-          overflowY: 'auto',
+          // STICKY-INERT-SCREENS-01 — `overflowY: 'auto'` removed. It could never overflow
+          // under a `minHeight: 100%` outer, and the wizard is the one screen where making
+          // it real would be most visible: a pane with its own scrollbar per step.
           opacity:   visible ? 1 : 0,
           transform: visible ? 'translateX(0)' : `translateX(${slideFrom === 'right' ? '14px' : '-14px'})`,
           transition: visible ? 'opacity 0.18s ease-out, transform 0.18s ease-out' : 'none',

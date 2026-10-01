@@ -43,20 +43,20 @@ const RAW_SUFFIX =
   /`[^`]*\$\{[^}]*(?:[Kk]m|distKm|trackedKm)[^}]*\}\s*(?:\$\{[^}]*(?:preferredUnits|units)[^}]*\}|(?:mi|km)\b)/g
 
 /**
- * ⚠️ EXCLUDED BY NAME, WITH THE REASON — not silently, and not "fixed" either.
+ * ✅ **EMPTY SINCE 2026-10-01, AND THAT IS THE INTERESTING STATE** (`QUIT-TAB-DEAD-01`).
  *
- * `QuitTab`'s `a ${raceDistanceKm}km race` would read "a 21.1km race" to a miles
- * user. It is left alone because **the smoke tracker is retired** — CLAUDE.md:
- * *"Smoke tracker — Removed from all UI surfaces"* — and the component takes no
- * `preferredUnits` at all. Plumbing a units prop into dead code to satisfy a
- * gate is waste, and deleting the component is `SMOKE-PLUMBING-01`'s job, not
- * this defect's.
+ * It held exactly one entry: `QuitTab`'s `a ${raceDistanceKm}km race`, which would read
+ * "a 21.1km race" to a miles user and was excluded because the component was retired and
+ * took no `preferredUnits` at all. The reasoning was sound and the entry's own note said
+ * what would close it — *"deleting the component is `SMOKE-PLUMBING-01`'s job"*. **The
+ * component was deleted, so the exclusion went with it rather than outliving its subject.**
  *
- * 🔴 If the quit tracker is ever revived, this exclusion is a bug waiting.
+ * 🔴 A REGISTER THAT NEVER EMPTIES IS THE FAILURE MODE THIS REPO RECORDS, so leaving the
+ * list in place, empty, is deliberate: the next raw suffix gets declared with a reason
+ * instead of the pattern being loosened. The stale-entry arm below is what made the
+ * emptying mandatory rather than optional.
  */
-const EXCLUDED = [
-  { match: 'raceDistanceKm}km', why: 'QuitTab — retired surface, no units prop (SMOKE-PLUMBING-01)' },
-]
+const EXCLUDED: ReadonlyArray<{ match: string; why: string }> = []
 
 export function findRawSuffixes(src: string): string[] {
   return Array.from(strip(src).matchAll(RAW_SUFFIX))
@@ -125,12 +125,20 @@ describe('SESSION-DIST-UNITS-01', () => {
     expect(findRawSuffixes("`${trackedKm.toFixed(1)}${units} done`")).toHaveLength(1)
   })
 
-  it('🔴 the named exclusion is exactly ONE line, and it is the retired one', () => {
-    // A named-exclusion list is how this gate stays honest; a growing one is how
-    // it stops being a gate. Asserted so the next addition is deliberate.
-    expect(EXCLUDED).toHaveLength(1)
-    expect(findRawSuffixes("const raceCtx = `a ${raceDistanceKm}km race`")).toEqual([])
-    // ...but the same shape ANYWHERE ELSE still fires.
+  it('🔴 the named exclusion list is EMPTY, and the shape it used to carve out now fires', () => {
+    // A named-exclusion list is how this gate stays honest; a growing one is how it stops
+    // being a gate. ✅ It held one entry — `QuitTab`'s `a ${raceDistanceKm}km race` — and
+    // the component was DELETED on 2026-10-01 (`QUIT-TAB-DEAD-01`), so the carve-out went
+    // with its subject.
+    //
+    // 🔴 THIS ARM IS THE REASON THAT HAPPENED. It asserted the count AND asserted the
+    // excluded shape stays silent, so emptying the list could not be done quietly: both
+    // halves had to be rewritten, in the same commit, by someone looking at why the entry
+    // existed. **A register arm that only counts upward lets a fixed entry sit there
+    // vouching for nothing.**
+    expect(EXCLUDED).toHaveLength(0)
+    // The exact string that used to be carved out. It is ordinary code now.
+    expect(findRawSuffixes("const raceCtx = `a ${raceDistanceKm}km race`")).toHaveLength(1)
     expect(findRawSuffixes("const x = `a ${sessionDistanceKm}km race`")).toHaveLength(1)
   })
 

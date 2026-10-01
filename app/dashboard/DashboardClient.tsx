@@ -141,7 +141,6 @@ import LockedCoachingPreview from '@/components/dashboard/LockedCoachingPreview'
 import PendingAnalysisCard from '@/components/dashboard/PendingAnalysisCard'
 import ConnectRunsBanner from '@/components/dashboard/ConnectRunsBanner'
 import SupportScreen from '@/components/dashboard/SupportScreen'
-import QuitTab from '@/components/dashboard/QuitTab'
 import { DAY_OFFSETS, DOW_FULL, DOW_LETTER, DOW_ORDER, PUSH_OFF_KEY, ZONE_DEFS, calculateZones, computeSessionDate, displayZonesForSession, fmtDurationMins, getReflectResponse, getSessionHRDisplay, rpeColour } from '@/components/dashboard/dashboardHelpers'
 import type { PostRunData, SessionEntry } from '@/components/dashboard/dashboardHelpers'
 import IconMe from '@/components/dashboard/IconMe'
@@ -6428,9 +6427,11 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
             marginBottom: '2px' }}>
             {[dayEyebrow, weekEyebrow].filter(Boolean).join(' · ')}
           </div>
-          <div style={{
-            fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 700,
-            color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.2,
+          {/* BACK-HEADER-OWNER-01 — the documented COMPACT screen-title role, from its
+              owner. It rendered 16px/700 here, which is one pixel and one weight-step
+              above `Card primary` (15/600): not a hierarchy. The truncation stays inline
+              because it is a property of the ROW, not of the type role. */}
+          <div className="screen-header__title--compact" style={{
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {session.title}
@@ -6971,10 +6972,10 @@ function PostRunScreen({
           }}>
             Run logged · W{weekLabel}
           </div>
-          <div style={{
-            fontFamily: 'var(--font-ui)', fontSize: '20px', fontWeight: 800,
-            color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.2,
-          }}>
+          {/* BACK-HEADER-OWNER-01 — the documented COMPACT screen-title role, from its
+              owner. These were already the ruled values; they were HAND-COPIED, which is
+              the same defect in the mechanism rather than in the value. */}
+          <div className="screen-header__title--compact">
             {sessionLabel}{dayLabel ? ` · ${dayLabel}` : ''}
           </div>
           {/* POST-RUN-02: subtitle reflects analysis state so the wait isn't a

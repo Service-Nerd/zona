@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { dashboardSource } from '@/lib/testing/dashboardSources'
+import { dashboardSource, dashboardEntries } from '@/lib/testing/dashboardSources'
 import { readFileSync } from 'node:fs'
 
 // ME-PURPOSE-01 (Design Board, 2026-09-28) — Me is an INDEX. Nothing lives on it.
@@ -47,13 +47,28 @@ const INDEX_ANCHOR = 'const hasPlan = !!(plan?.meta?.race_name)'
  * So the region is the index render only: everything from the last early return onward.
  */
 const ME = () => {
-  const src = SRC()
-  const start = src.indexOf('function MeScreen({')
-  expect(start, 'MeScreen moved — re-anchor this gate').toBeGreaterThan(-1)
-  const after = src.slice(start + 20)
-  const end = after.search(/\nfunction [A-Z]/)
-  expect(end, 'could not bound MeScreen').toBeGreaterThan(-1)
-  const fn = after.slice(0, end)
+  // 🔴 BOUNDED TO MeScreen's OWN FILE, AND IT WAS NOT (found 2026-10-01, QUIT-TAB-DEAD-01).
+  //
+  // This read `dashboardSource()` — every dashboard file CONCATENATED — took the index
+  // anchor, then ended the region at the next bare `\nfunction [A-Z]`. **MeScreen's own
+  // helpers are declared ABOVE it in its file**, so there is no bare top-level function
+  // after it, and the region ran off the end of `MeScreen.tsx` and into whatever file git
+  // happened to list next.
+  //
+  // 🔴 MEASURED: the region was **179,745 characters** and ended four files later, in
+  // `TodayScreen.tsx`, at its `function AdjustmentBanner`. The boundary that used to stop
+  // it was a helper inside `QuitTab.tsx`, and deleting that dead component moved it — so
+  // the baselines below (3 raw buttons, 0 toggles) had been measured over an ACCIDENTAL
+  // span of three and a bit files, and were only stable while a dead file stayed put.
+  //
+  // ⚠️ IT STILL GOES THROUGH THE OWNER, which is the point of DASHBOARD-SCREEN-EXTRACT-03:
+  // the entry holding MeScreen is FOUND rather than hardcoded, so the next extraction phase
+  // moves it without blinding this gate. What changed is that the region now ends where the
+  // FILE ends, instead of wherever the concatenation happened to offer a full stop.
+  const entry = dashboardEntries().find(e => e.src.includes('function MeScreen({'))
+  expect(entry, 'MeScreen moved out of the dashboard population — re-anchor this gate')
+    .toBeTruthy()
+  const fn = entry!.src.slice(entry!.src.indexOf('function MeScreen({') + 20)
   const at = fn.indexOf(INDEX_ANCHOR)
   expect(at, 'the index anchor moved — re-anchor this gate').toBeGreaterThan(-1)
   return fn.slice(at)
@@ -70,9 +85,8 @@ const stripComments = (s: string) =>
 
 /** Everything BEFORE the anchor: the doors MeScreen renders. Used only to prove the split. */
 const DOORS = () => {
-  const src = SRC()
-  const start = src.indexOf('function MeScreen({')
-  const fn = src.slice(start + 20)
+  const entry = dashboardEntries().find(e => e.src.includes('function MeScreen({'))
+  const fn = entry!.src.slice(entry!.src.indexOf('function MeScreen({') + 20)
   return fn.slice(0, fn.indexOf(INDEX_ANCHOR))
 }
 
@@ -82,6 +96,16 @@ const DOORS = () => {
  *
  * ⚠️ LOWER THESE AS BLOCKS BECOME DOORS. Never raise one.
  */
+/* ✅ **BOTH NUMBERS SURVIVED THE REGION BEING FIXED, AND THAT IS WORTH STATING RATHER THAN
+ *    TREATING AS A NON-EVENT** (2026-10-01). `ME()`'s region was bounded by accident for its
+ *    whole life — see its note — and spanned three and a bit files. Re-measured over
+ *    MeScreen's own file alone: **3 raw buttons, 0 toggles.** Identical.
+ *
+ * 🔴 WHICH MEANS THEY WERE RIGHT BY LUCK. The extra files the region used to swallow
+ *    (`OrientationScreen`, `PendingAnalysisCard`, the head of `QuitTab`) happened to carry
+ *    no raw `<button>`; the ones it reached once that boundary moved (`SupportScreen`,
+ *    `TodayScreen`) carry **eight**. A register can be numerically correct and measured
+ *    over the wrong thing, and nothing about it reads differently. */
 const INLINE_BASELINE = {
   /** `<button>` written by hand rather than reached through a pattern.
    *  4 → 3 (FAQ-01, 2026-09-29): the Support contact row was hand-rolled and became

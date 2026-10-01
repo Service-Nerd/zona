@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { execSync } from 'node:child_process'
 
@@ -43,12 +43,12 @@ const codeOf = (rel: string): string =>
     .replace(/\/\/[^\n]*/g, ' ')
 
 describe('SMOKE-PLUMBING-01 — no smoke-tracker plumbing comes back', () => {
-  // `QuitTab.tsx` is the component itself and `/copy-preview` is the harness
-  // that still renders it. Both are named, with their reason, rather than the
-  // pattern being loosened to let them through.
+  // The component itself and the harness that rendered it used to be named here with
+  // their reason. ✅ BOTH ARE GONE (2026-10-01, `QUIT-TAB-DEAD-01`): `QuitTab.tsx` is
+  // deleted and the `/copy-preview` `<Case>` with it, so the only thing left to exempt
+  // is the column inventory. 🔴 The stale-exemption arm below is what forced this —
+  // it went red the moment the file stopped existing.
   const EXEMPT = new Set([
-    'components/dashboard/QuitTab.tsx',
-    'app/copy-preview/page.tsx',
     // ⚠️ NOT A QUERY — the inventory of what `user_settings` ACTUALLY HAS. The
     // column still exists in the database, and this file's job is to say so
     // truthfully; `check:db` reads it. Dropping the column is the migration half
@@ -81,6 +81,22 @@ describe('SMOKE-PLUMBING-01 — no smoke-tracker plumbing comes back', () => {
     const me = codeOf('components/dashboard/MeScreen.tsx')
     expect(me, "MeScreen declares a 'quit' section again").not.toMatch(/activeSection === 'quit'/)
     expect(me, 'MeScreen imports QuitTab again').not.toContain('QuitTab')
+  })
+
+  it('\u{1F534} the component is GONE, and no harness renders it back into life', () => {
+    // \u{1F534} THE SHAPE THIS ARM EXISTS FOR, and it is the one SMOKE-PLUMBING-01 stopped
+    // short of: `/copy-preview` renders REAL components on purpose, which is correct and is
+    // why `realComponents.test.ts` exists \u2014 and the side effect is that *"is it used?"*
+    // answers YES for something no runner can reach. **A harness that renders real
+    // components keeps dead ones alive.** `QuitTab.tsx` had no reachable call site, a
+    // `<Case>` in the harness, and a DEAD IMPORT in `DashboardClient` nobody had noticed.
+    expect(existsSync(join(ROOT, 'components/dashboard/QuitTab.tsx')),
+      'QuitTab.tsx is back. It has no runner-reachable call site \u2014 if the quit tracker ' +
+      'is returning, that is a Design Board question and a door, not a component.').toBe(false)
+    for (const f of files()) {
+      expect(codeOf(f), `${f} references QuitTab, which no longer exists`)
+        .not.toMatch(/QuitTab/)
+    }
   })
 
   it('the exemptions still exist, so neither can rot into a blanket pass', () => {

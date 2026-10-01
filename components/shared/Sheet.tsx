@@ -90,8 +90,18 @@ interface SheetProps {
   /** Panel max height as a percentage of the viewport, before the nav is
    *  subtracted. Default 88. */
   maxHeightVh?: number
-  /** Accessible label for the dialog. */
-  ariaLabel?: string
+  /** 🔴 THE DIALOG'S ACCESSIBLE NAME, AND IT IS REQUIRED (`SHEET-ARIA-LABEL-01`,
+   *  2026-10-01). `role="dialog"` with no name announces as an unnamed dialog, which
+   *  tells a screen-reader user that something has taken over the screen and nothing
+   *  about what. It was optional, and the item was filed on the premise that the four
+   *  sheets' copy was an open question.
+   *
+   *  ⚠️ MEASURED FIRST, AND THE PREMISE WAS WRONG IN THE USEFUL DIRECTION: there are
+   *  **ten runner-reachable call sites, not four, and every one already passes a label.**
+   *  So this authors no copy and changes no behaviour — it moves the guarantee from
+   *  "everyone has remembered so far" to the compiler, which is where this repo's own
+   *  record says a rule has to live. The ELEVENTH is the one it is for. */
+  ariaLabel: string
 }
 
 export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh = 88, ariaLabel }: SheetProps) {

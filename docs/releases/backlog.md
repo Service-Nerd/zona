@@ -281,7 +281,42 @@ accessible name and nothing fails; whether each of the four sheets passes one is
 
 4,117 tests / 459 files, `tsc` clean.
 
-### `BACK-HEADER-OWNER-01` — the pushed-screen header has no owner and five type treatments 🧭 DESIGN BOARD
+### ✅ `BACK-HEADER-OWNER-01` — SHIPPED 2026-10-01. A title in a chrome row is its own role 🧭 DESIGN BOARD
+
+🔴 **THE MEASUREMENT BELOW WAS STALE BY THREE DAYS AND NOBODY CAME BACK TO IT.**
+`SUBPAGE-TYPE-SCALE-01` (2026-09-29) converted eleven titles onto `.screen-header__title` and
+**closed most of this item incidentally** — the `PUSH-UNITS-01` class, and `backlog-touch.py`
+could not fire because that ship touched different files than this item names.
+
+📐 **Counted from the code 2026-10-01: four hand-rolled titles in three treatments**, not
+thirteen in five — the wizard step `<h1>` (26/800, hand-copying the role exactly), the plan
+preview (22/800), session detail (16/700) and post-run (20/800).
+
+⚖️ **So the live question was never "normalise 13 screens".** It was whether a title in a chrome
+ROW is the same role as one in a BLOCK. **The board ruled a third header level — 20px / 800,
+defined by SHAPE** (Collins' binding condition) — and `.screen-header__title--compact` is in
+`globals.css` beside the role it is a sibling of. 16/700 was the regression: *Card primary* is
+15/600.
+
+🔴 **AND THE GATE COULD NOT SEE ANY OF THE FOUR.** `appScreenTitle.test.ts` opened a hardcoded
+**six-file** list where the derived population is **11 pushed surfaces**; `DashboardClient` and
+`MeScreen` hold five between them and neither was on it. It now derives from what a file
+**renders** (a back arrow in any of three wrappers, or a `ScreenHeader` with `onBack`).
+
+🔴 **WIDENING IT EXPOSED A HOLLOW MATCHER I HAD JUST WRITTEN.** `NOT_TITLES` matched by
+`token.split('.').pop()`, so a declaration ending in a **full stop** produced the empty string
+and `body.includes('')` silenced **every** offender in the largest file in the app, sheet titles
+included. **Found because falsifying the `<Sheet>` region bound did NOT go red** — the mutation
+was sound and the arm was not.
+
+⚠️ **Residual, stated not fixed:** `PinnedBackHeader`'s four call-site paddings (`16px 20px 0`,
+`16px 16px 0`, `16px 20px 8px`, the `16px 20px 8px` default) are **reasoned** — they align the
+band's inset with each screen's own content measure, which is what its `maxWidth` prop exists
+for. Not put to the board and not normalised. ⚠️ **Nothing measured on a device.**
+
+🔻 **Two items filed out of this** → `INTERSTITIAL-TITLE-ROLE-01`, `MICRO-LABEL-HANDROLL-01`.
+
+### `BACK-HEADER-OWNER-01` — the original filing, for the record 🧭 DESIGN BOARD
 
 `SCREEN-HEADER-01` gave the TAB-ROOT header one owner. The **pushed-screen** header — back arrow
 + title in a row — still has none, and is deliberately a separate family: `BackButton.tsx` and
@@ -307,7 +342,24 @@ on 13 screens — exactly the "refactor that normalises a distribution" class th
 changed button heights past four green gates. The board picks the one treatment; the conversion
 then keeps every other box.
 
-### `SITE-HEADER-EDGE-01` — the two surfaces now disagree about a pinned header 🧭 DESIGN BOARD
+### ✅ `SITE-HEADER-EDGE-01` — CLOSED 2026-10-01. They do not disagree; the reason was unwritten 🧭 DESIGN BOARD
+
+🔴 **DON'T SHIP the convergence, and the settled-ground scan settled it before a seat spoke.**
+`ui-patterns.md` § Marketing Site Chrome already forbids that header **"no motion, no scroll
+listener, no client JS"** (SLT review, Wood: *a sticky header is structural, an animated one is
+decorative*), and a scroll-revealed edge needs exactly those two things. **The reason existed one
+section away from both implementations and was written beside neither, which is the whole reason
+it read as drift.**
+
+✋ **Silvanto declined a veto he was offered**: `--line` is the site's edge token on **17 of its
+19 edges, the footer's among them**, so moving the header alone to `--chrome-edge` would put two
+weights on the two pieces of chrome bracketing every page in order to match a different surface.
+
+✅ **What shipped is the record and a gate that holds the divergence OPEN** — the opposite of what
+a consistency check usually does. A future convergence has to delete a test rather than win an
+argument about tidiness. 3 falsifications.
+
+### `SITE-HEADER-EDGE-01` — the original filing, for the record 🧭 DESIGN BOARD
 
 `SiteHeader.tsx:91` (the website) carries `border-bottom: 1px solid var(--line)` **permanently**.
 As of `SCREEN-HEADER-01` the app's pinned header has **no edge at the top of the page** and reveals
@@ -587,7 +639,30 @@ rather than a debt register.
 `setProperty`, font and banned-value checks are all staged-only too. A sweep for one of them is a
 pattern for all four, so build the first one so the next three are copies.
 
-### `SHEET-ARIA-LABEL-01` — a sheet can ship with no accessible name 🧭 **DESIGN BOARD**
+### ✅ `SHEET-ARIA-LABEL-01` — SHIPPED 2026-10-01, and the BOARD TAG CAME OFF ⚙️ **NO BOARD**
+
+🔴 **THE FILED PREMISE WAS WRONG, IN THE USEFUL DIRECTION, AND MEASURING FIRST IS WHAT TURNED A
+BOARD QUESTION INTO A ONE-CHARACTER TYPE CHANGE.** The item says *"four sheets exist and whether
+each passes one is not asserted anywhere"*, and routes to the Design Board because a dialog's
+accessible name is runner-facing copy. **There are ELEVEN call sites, ten runner-reachable, and
+every single one already passes a label.** The copy decision it reserved had already been made,
+well, on every surface.
+
+✅ `ariaLabel` is **required** (`tsc` clean on the first run, which is the proof that all eleven
+complied), and `sheetPresentation.test.ts` derives the call-site population and **rejects an empty
+string**, which the compiler cannot see. 3 falsifications.
+
+🔴 **TWO FAULTS IN MY OWN CHECK, BOTH CAUGHT BY ITS OWN RED.** (1) `/Sheet\.tsx$/` excluded
+`HrCalibrationSheet`, `ModifyPlanSheet` and `RaceResultSheet` — **three real call sites**, because
+every one of them ends in "Sheet.tsx". **Sixth instance this session of the substring class.**
+(2) `/<Sheet\b([^>]*)>/` reads props up to the first `>` — **which is the `>` in `=>`**, so any
+site whose first prop is an arrow function had its props truncated to four characters. It failed
+in the safe direction and that was luck.
+
+⚠️ **What it does not cover:** nothing in this repo asserts an accessible name on any other
+dialog-shaped surface — the `ScreenGuide` coach-mark is a hand-rolled slide-up, not a `Sheet`.
+
+### `SHEET-ARIA-LABEL-01` — the original filing, for the record ⚙️
 
 Out of `SHEET-CONTRACT-01`, and stated in that contract rather than discovered after it.
 `Sheet`'s `ariaLabel` is **optional**, so a dialog can render with no accessible name and nothing
@@ -603,7 +678,55 @@ any dialog, so "the four sheets" is the scope only because the contract happened
 
 ## ⚖️ FILED 2026-10-01 — `QUIT-TAB-DEAD-01`
 
-### `QUIT-TAB-DEAD-01` — a dead screen component kept alive by its harness ⚙️ **NO BOARD** (+ a migration)
+### 🔄 `QUIT-TAB-DEAD-01` — HALF 1 SHIPPED 2026-10-01; the migration is READY AND NOT RUN ⚙️ **NO BOARD**
+
+✅ **The component is gone**, with its `/copy-preview` `<Case>`, **and a DEAD IMPORT in
+`DashboardClient` that nothing had noticed** — `SMOKE-PLUMBING-01` removed the plumbing and left
+`import QuitTab from …` behind, unused, with no lint rule configured to see it.
+
+📐 **Deleting 75 lines of unreachable code touched SEVEN registers**, which is the measurement of
+how alive a dead component looks: `floatingBackButton` (declared, not converted) ·
+`appScreenTitle` (NOT_PUSHED) · `smokeTrackerGone` (EXEMPT) · `format.distanceSuffix` (**its
+whole EXCLUDED list, now empty**) · `hardcodedUnits` (BASELINE) · `meDoorTitles` (a comment) ·
+and the `/copy-preview` harness. **Three of those arms went red on their own and forced the
+cleanup rather than it being remembered.**
+
+🔴 **AND IT EXPOSED A GATE THAT HAD BEEN MEASURING THE WRONG REGION FOR ITS WHOLE LIFE.**
+`meIsAnIndex.test.ts`'s `ME()` bounded "the Me index" as the concatenated dashboard source from
+`function MeScreen({` to the next bare `\nfunction [A-Z]`. **MeScreen's own helpers are declared
+ABOVE it in its file**, so there is no such function after it and the region ran off the end of
+`MeScreen.tsx`. **Measured: 179,745 characters, ending four files later in `TodayScreen.tsx`.**
+A helper inside `QuitTab.tsx` was supplying the boundary; deleting it moved the region past
+`SupportScreen` and `TodayScreen`, which carry **eight** more raw buttons.
+✅ **Now bounded to MeScreen's own file** (still FOUND through the owner, so an extraction phase
+cannot blind it). ⚠️ **Re-measured: 3 raw buttons, 0 toggles — identical to the baseline, which
+means the numbers were right BY LUCK.** The files the region used to swallow happened to carry
+none. **A register can be numerically correct and measured over the wrong thing, and nothing
+about it reads differently.**
+
+🗄️ **HALF 2 IS READY AND DELIBERATELY NOT RUN — it needs a decision, not a keystroke.** Dropping
+a column is irreversible, nothing reads these two, and the item's own line is *"not urgent"*. It
+is **not committed as a pending migration** either, because an unapplied file in
+`supabase/migrations/` makes `session-start.sh` warn every session, and that signal exists for
+real unapplied migrations.
+
+```sql
+-- QUIT-TAB-DEAD-01 half 2. Run in the Supabase SQL editor (DDL: PostgREST cannot, CLI not linked).
+ALTER TABLE public.user_settings DROP COLUMN IF EXISTS smoke_tracker_enabled;
+ALTER TABLE public.user_settings DROP COLUMN IF EXISTS quit_date;
+```
+**Then, in this order:** remove both names from `lib/contracts/tableColumns.ts` → remove
+`'lib/contracts/tableColumns.ts'` from `smokeTrackerGone.test.ts`'s `EXEMPT` (its anti-rot arm
+will not let that linger) → `npm run check:db`.
+⚠️ **`tableColumns.ts` must not be edited FIRST**: its job is to say what the table actually has,
+`check:db` reads it, and editing it ahead of the migration makes the contract lie about the schema.
+⚠️ **`quit_date` ALSO appears in the plan JSON schema** (`lib/plan/schema.ts`, `ruleEngine` writes
+`''`). That is a separate v1-legacy field and **dropping the column does not touch it.**
+⚠️ **What a verification would return if nothing happened:** `check:db` passes *before* the
+migration too, because `tableColumns.ts` still declares both columns — so the predicate that
+distinguishes the two states is the **`information_schema` read**, not `check:db`.
+
+### `QUIT-TAB-DEAD-01` — the original filing, for the record ⚙️
 
 Out of `SMOKE-PLUMBING-01`, which removed the plumbing and stopped short of the component.
 
@@ -701,7 +824,23 @@ no floor violation.
 
 ## ⚖️ FILED 2026-10-01 — `STICKY-INERT-SCREENS-01`
 
-### `STICKY-INERT-SCREENS-01` — two real screens declare a scrollport that cannot scroll 🧭 **DESIGN BOARD**
+### ✅ `STICKY-INERT-SCREENS-01` — SHIPPED 2026-10-01. The declaration is REMOVED, not repaired 🧭 **DESIGN BOARD**
+
+⚖️ **The board took a third option over the two filed below.** `minHeight: 0` would have made the
+box a real scroller — refused by Silvanto and Wroblewski both: **a pane with its own scroll inside
+the page scroller is a seam, and `SCROLL-NATIVE-01` removed chaining a week earlier for the same
+reason.** So the `overflowY: auto` goes: **zero visible delta, and the trap is gone rather than
+registered.** Three declarations, two files.
+
+✅ **`LATENT_INERT_FLEX` is down to the three harnesses**, and its exact-equality arm **demanded
+that** — the two fixed files stopped matching and the count went red on its own.
+
+🔴 **IT TOUCHED A REGISTER NOBODY PREDICTED.** `scrollNative.test.ts` declared both files as
+scrollers needing no `contain`; its stale-entry arm went red on the full suite. **Two registers
+tracking the same objects by different measures, reconciled because an arm insisted rather than
+because anyone remembered.**
+
+### `STICKY-INERT-SCREENS-01` — the original filing, for the record 🧭 **DESIGN BOARD**
 
 Out of `STICKY-INERT-FLEX-01`. `BenchmarkUpdateScreen` and `GeneratePlanScreen` each declare
 `flex: 1` + `overflowY: auto` **without `minHeight: 0`**, so the box grows to fit its content and
@@ -725,6 +864,50 @@ and keep them registered, accepting that a future sticky child is a trap.
 
 ⚠️ **Three preview pages have the same shape** (`copy-preview`, `nav-preview`, `sticky-probe`) and
 need no ruling: they are harnesses, not runner surfaces.
+
+## ⚖️ FILED 2026-10-01 — `INTERSTITIAL-TITLE-ROLE-01`, `MICRO-LABEL-HANDROLL-01`
+
+### `INTERSTITIAL-TITLE-ROLE-01` — three full-screen asks share a heading shape nothing documents 🧭 **DESIGN BOARD**
+
+Out of `BACK-HEADER-OWNER-01`, found only because that item's gate stopped using a hardcoded
+six-file list.
+
+📐 **Three centred full-screen asks** — the connect-runs ask, the notification-permission ask, and
+the retired welcome screen — carry a headline at **22–24px in `--font-brand` at weight 500–600**,
+under a `Wordmark` and a voice-anchor eyebrow. **Every documented heading in the type scale is
+weight 800.** Nothing in `ui-patterns.md` names this shape, and all three agree with each other
+and with nothing else.
+
+⚠️ **NOT A DEFECT FIX, which is why it was declared rather than normalised.** `BACK-HEADER-OWNER-01`
+authored a compact header row on the board's ruling; inventing a *fourth* type role on the way
+past, in a build about something else, is exactly what `MICRO-LABEL-DRIFT-01` capped at three.
+They are declared by name in `appScreenTitle.test.ts`'s `NOT_TITLES` with their reason, so the
+gate is honest about not governing them.
+
+⚠️ **One of the three is the RETIRED welcome screen** (CLAUDE.md: trigger commented out). The
+board may well rule that two live asks do not need a role of their own — in which case the
+answer is to point them at the screen-title role and delete the third, which is a smaller
+decision than it looks.
+
+### `MICRO-LABEL-HANDROLL-01` — 32 literal copies of a role that has an owner ⚙️ **NO BOARD**
+
+Out of `BACK-HEADER-OWNER-01`'s analysis.
+
+📐 **Measured 2026-10-01: `MICRO_LABELS` has 103 call sites and 32 places hand-roll its `eyebrow`
+values literally** — `fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
+letterSpacing: '0.08em'` — across `app/` and `components/`. **Right values, wrong mechanism**, the
+half of this defect class that never looks like anything: nothing renders differently today.
+
+🔴 **`MICRO-LABEL-DRIFT-01` shipped the owner and did not convert the consumers**, which is the
+same shape as `SUBPAGE-TYPE-SCALE-01` converting nine titles while two HAND-COPIED the right
+values. The cost is the next edit to the role: it moves 103 sites and leaves 32 behind, and the
+drift is invisible because every surface reads correctly on its own.
+
+⚠️ **Mechanical and dull on purpose.** No visible delta, no board (ADR-023: a refactor with no
+visible delta), and a gate afterwards that fails on a literal copy of any of the three roles —
+which is the part that stops it happening a third time. ⚠️ **Some of the 32 are in `-preview`
+harnesses**, which is where the population needs bounding before anyone quotes the number as 32
+runner-facing.
 
 ## ⚖️ FILED 2026-10-01 — `DOCS-RESIDUAL-01`
 

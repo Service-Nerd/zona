@@ -1270,6 +1270,40 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   letter-spacing: 0.04em;
 }
 
+/* ── The compact screen title — BACK-HEADER-OWNER-01 (Design Board, 2026-10-01)
+ *
+ * ⚠️ DEFINED BY SHAPE, NOT BY SCREEN, and that is Collins' condition on the
+ * ruling rather than a turn of phrase. This is the role for a screen title that
+ * **shares its line with chrome** — a back arrow to its left, sometimes a
+ * session-type chip to its right, already ellipsising. The 26px role above has a
+ * line to itself and sets the horizon of the page; this one is a label of where
+ * you are. Two jobs, measured, so two rows.
+ *
+ * 🔴 WHY 20 AND NOT 16, which is what the session-detail header rendered.
+ * `ui-patterns.md` § type scale puts *Card primary* at 15px/600. A screen's own
+ * name rendering one pixel and one weight-step above the name of a card INSIDE
+ * it is not a hierarchy — Silvanto: "a difference too small to read as hierarchy
+ * and too large to be nothing", the 1.02x step that `MICRO-LABEL-DRIFT-01` was
+ * taken over. The post-run header was already at 20/800; it is the value that
+ * survives the row, so the row adopts it rather than inventing a third.
+ *
+ * ⚠️ IT COSTS ABOUT THREE CHARACTERS before the ellipsis on the one screen that
+ * carries a chip (title column ~195px at 375pt). Wroblewski weighed that against
+ * two sizes for one shape: the eyebrow above carries day and week and the chip
+ * carries the session type, so the title's first words are the distinguishing
+ * ones. ⚠️ NOT VERIFIED ON A DEVICE: the column width is arithmetic, not a look.
+ *
+ * ⚠️ A THIRD HEADER LEVEL IS THE CEILING. Hero 56 / screen title 26 / compact
+ * 20. A fourth needs the Design Board, exactly as the three micro-labels do. */
+.screen-header__title--compact {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
 /* ── Pinned chrome — the ONE behaviour, shared by two header families ──────
  *
  * `.screen-header` (tab roots) and the pushed-screen headers (back arrow +
@@ -1315,6 +1349,13 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 }
 
 .pinned-chrome--scrolled { border-bottom-color: var(--chrome-edge); }
+
+/* ⚖️ SITE-HEADER-EDGE-01 (Design Board, 2026-10-01) — the WEBSITE's header does not do
+ * this, and that is ruled rather than drifted. `SiteHeader.tsx` carries a permanent
+ * `--line` edge because `ui-patterns.md` § Marketing Site Chrome forbids it a scroll
+ * listener and client JS, which is what a scroll-revealed edge needs. Converging the two
+ * would overturn an SLT ruling; the board ruled DON'T SHIP on that and SHIP on saying so
+ * in both places. See `ui-patterns.md` § The two surfaces pin DIFFERENTLY, on purpose. */
 
 /* ── Floating nav pill — NAV-FLOAT-01 (Design Board, ruled twice 2026-09-25/26)
  *

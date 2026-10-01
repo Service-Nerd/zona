@@ -25,8 +25,8 @@ interface SheetProps {
   maxWidth?: number
   /** Panel max height as a percentage of the viewport, before the nav is subtracted. Default 88. */
   maxHeightVh?: number
-  /** Accessible label for the dialog. */
-  ariaLabel?: string
+  /** The dialog's accessible name. REQUIRED (SHEET-ARIA-LABEL-01). */
+  ariaLabel: string
 }
 ```
 
@@ -38,7 +38,7 @@ interface SheetProps {
 | `children` | `ReactNode \| ((close) => ReactNode)` | ✅ | Everything below the drag pill. **Pass a FUNCTION whenever the sheet has its own dismiss affordance** (a ✕, a bottom Close, a "Got it"), so that control animates out instead of vanishing |
 | `maxWidth` | `number` | — | Default **480**, the phone column. A wider sheet is a layout decision, not a prop tweak |
 | `maxHeightVh` | `number` | — | Default **88**. ⛔ **Silvanto's binding rule: a sheet covers the nav; it does NOT become a screen.** Raising this toward 100 is the regression that rule exists to stop, and `sheetPresentation.test.ts` holds it |
-| `ariaLabel` | `string` | — | The dialog's accessible name. Absent, a screen reader announces an unnamed dialog |
+| `ariaLabel` | `string` | ✅ | The dialog's accessible name. `role="dialog"` with no name announces as an **unnamed dialog**: the user is told something has taken over the screen and nothing about what. **Required since 2026-10-01** (`SHEET-ARIA-LABEL-01`) — ⚠️ an empty string satisfies the compiler and names nothing, so `sheetPresentation.test.ts` rejects `""` too |
 
 ## What the primitive owns, so a caller must not re-implement it
 
@@ -70,6 +70,16 @@ interface SheetProps {
 - `lib/ui/rafRelease.test.ts` — the enter-transition backstop, behaviourally
 - `lib/contracts/componentContracts.test.ts` — **this file against the component**, both directions
 
-🔻 **Not covered by any check:** `ariaLabel` is optional, so a sheet can ship without an
-accessible name and nothing fails. Four sheets exist and whether each passes one is not
-asserted.
+✅ **CLOSED 2026-10-01 (`SHEET-ARIA-LABEL-01`).** `ariaLabel` is **required**, and
+`sheetPresentation.test.ts` derives the call-site population and rejects an empty name, which
+the compiler cannot see.
+
+🔴 **The residual above said "four sheets". There are ELEVEN call sites, ten runner-reachable,
+and every one already passed a label** — so the Design Board tag this carried came off: the copy
+decision it reserved had already been made on every surface, and what was missing was the
+compiler. **Measuring the population first is what turned a board question into a one-character
+type change.**
+
+🔻 **What this does not cover:** nothing in this repo asserts an accessible name on any OTHER
+dialog-shaped surface — the `ScreenGuide` coach-mark panel is a hand-rolled slide-up and is not a
+`Sheet`. "The sheets" is the scope only because this contract happened to name it.

@@ -102,19 +102,33 @@ describe('STICKY-SCROLLER-01', () => {
      * to what the runner sees**, which is a Design Board question and not a
      * tooling build's to make → `STICKY-INERT-SCREENS-01`.
      *
-     * ⚠️ NONE IS A LIVE DEFECT TODAY: the `position: sticky` elements on those
-     * screens are SIBLINGS of the inert box, not descendants, so nothing is
-     * being captured. The cost is the next sticky element placed INSIDE one of
-     * them, which would silently never stick with this gate green.
+     * ✅ **THE TWO RUNNER SCREENS CAME OFF THIS LIST on 2026-10-01**, and the board
+     * ruled the third option rather than either of the two above: the declaration
+     * is **REMOVED**, not repaired. It could never overflow, the page already
+     * scrolls via `PullToRefresh`, and `minHeight: 0` would have nested a scroll
+     * pane inside the one real scroller a week after `SCROLL-NATIVE-01` removed
+     * chaining. 🔴 **This arm demanded it**: the two fixed files stopped matching
+     * and the count assertion went red on its own, which is the whole reason the
+     * register is written as an exact equality in both directions.
+     *
+     * ⚠️ THE THREE THAT REMAIN ARE HARNESSES, not runner surfaces, and they need no
+     * ruling: `copy-preview` reproduces a converted screen's shape ON PURPOSE (it is
+     * the `FloatingBackButton` preview), `nav-preview` is a nav mock, and
+     * `sticky-probe` is a dev-only WebKit probe whose whole job is to compare two
+     * nestings. Fixing a harness's shape would make it stop demonstrating the thing.
+     *
+     * ⚠️ NONE IS A LIVE DEFECT: the `position: sticky` elements on those pages are
+     * SIBLINGS of the inert box, not descendants, so nothing is being captured. The
+     * cost is the next sticky element placed INSIDE one, which would silently never
+     * stick with this gate green.
      *
      * ⚠️ AND A REGISTER STOPS THE DEBT GROWING WITHOUT MAKING IT SHRINK, which
      * is the honest limit of the pattern (`SWEEP-BASELINE-01`; CLAUDE.md records
-     * that nothing schedules the shrinking).
+     * that nothing schedules the shrinking). **This one shrank because an item
+     * was picked up, not because the register did anything.**
      */
     const LATENT_INERT_FLEX = [
       'app/copy-preview/page.tsx',
-      'app/dashboard/BenchmarkUpdateScreen.tsx',
-      'app/dashboard/GeneratePlanScreen.tsx',
       'app/nav-preview/page.tsx',
       'app/sticky-probe/page.tsx',
     ]
