@@ -19,6 +19,8 @@ it specific, no polish. The content system adds the voice.
 
 **Hook material:** We sent 500 people to an FAQ that answered nine questions and missed the only one they were all going to ask on day one.
 
+**Amendment, same day: I wrote the answer with the audience wrong, and this page already carried the lesson.** The first cut said *"if you are setting this up in October for an April race there is no reason for a marathon block to start yet"* — the timeline and the distance of the one charity whose codes happened to go out that morning. `/charity-runners` serves whoever arrives with a code, and its own header comment records it being rewritten **twice in one day** on founder calls, 2026-09-11, for exactly this: *"it was marathon-only in its URL, title, FAQs and CTAs. Charity places are most often 10K and half marathon, so a distance-shaped page turned most of its own audience away at the headline."* **That fix was prose with no check, so it held as long as someone remembered — three weeks, and the someone who forgot was me, writing the page's newest paragraph with its oldest defect.** `lib/marketing/charityPageAudience.test.ts` now gates the answers on distance and season neutrality, falsified against my own wording rather than an invented case. The lesson is not *"read the file header"*: I had read it, that is how I knew the page had been de-marathoned. **A lesson recorded in prose is a lesson you can recite while breaking.**
+
 **Postable?:** yes — pairs with the ME-DOORS-01 post about journeys nothing checks.
 
 ---
