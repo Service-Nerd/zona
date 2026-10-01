@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — CHARITY-FAQ-RUNWAY-01 · the question the page did not answer
+**Shipped:** `/charity-runners` now answers "I have redeemed it, but my plan has not started yet", on the day 500 runners were sent to it.
+
+**Dev learning:** The app was never wrong. `RunwayRevealCard` leads the plan reveal with "you're eleven weeks early" and has done since September. The marketing page, which is where a confused runner goes *second*, said nothing about it. **Both surfaces read correctly in isolation and the journey between them was broken**, which is exactly `ME-DOORS-01`'s shape and exactly why no check caught it: we have guards for voice, punctuation, type scale, spacing and structured data on that page, and **not one of them can walk a runner from a confusing screen to the page that should explain it.**
+
+**Product/creator learning:** Wood added this question at the SLT sitting *because it was on nobody's list*, and three weeks later it was still on nobody's list. For an October send with an April race it is the first thing a first-timer hits: redeem, build a plan, see it does not start for weeks, conclude it is broken, email the charity. That last step is the entire thing `GTM-CHARITY-09` exists to prevent, so the FAQ was missing the one answer it most needed. **The most support-generating moment in the product is a deliberate design decision working perfectly.**
+
+**AI-building learning:** I found this by correcting my own record, not by looking for it. I had marked the partner FAQ as "sent with the codes"; the founder had actually written his own email and pointed the charity at the public page. Fixing that over-claim meant reading what the live page actually says, and the gap was sitting there. **An honest record is not just bookkeeping: the act of making it true is a code path you would not otherwise walk.** Three times this week a record correction has surfaced a real defect.
+
+**The honest bit:** I had the proposed copy written and sitting in the backlog, unapplied, for the hours between finding it and being told yes. That felt slow with runners redeeming. It is still right: `REDEEM-MECHANISM-TRUTH-01` was me rewriting this exact page's copy without asking, and the fix for that is not "ask faster", it is "ask".
+
+**Hook material:** We sent 500 people to an FAQ that answered nine questions and missed the only one they were all going to ask on day one.
+
+**Postable?:** yes — pairs with the ME-DOORS-01 post about journeys nothing checks.
+
+---
+
 ## 2026-10-01 — GTM-CHARITY-09 · the codes went out, and the FAQ went with them
 **Shipped:** A five-question FAQ written for Make-A-Wish to send in their own voice, out today alongside the codes.
 
