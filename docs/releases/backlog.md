@@ -590,7 +590,7 @@ does not read as live to the next person who greps for it.
 
 ## ⚖️ FILED 2026-10-01 — `TAP-TARGET-DECISIONS-01`
 
-### `TAP-TARGET-DECISIONS-01` — 17 runner-facing controls under the 44px floor, one decision each 🧭 **DESIGN BOARD**
+### 🔄 `TAP-TARGET-DECISIONS-01` — PARTLY RULED 2026-10-01: the shared primitive SHIPPED, 14 remain 🧭 **DESIGN BOARD**
 
 Out of `TAP-TARGET-FLOOR-01`, which made them **findable**. `ui-patterns.md:262` sets the floor
 at 44px (iOS HIG). **17 controls a runner can hit are under it**, measured 2026-10-01, smallest
@@ -622,6 +622,40 @@ written down once** rather than decided eleven times.
 
 ⚠️ **Sequence note:** `SegmentedControl` appears here **and** in `ZONES-TAB-PIN-01`. Pinning a
 control that is 14px under the floor would ship this defect inside that fix.
+
+---
+
+### Design Board, 2026-10-01 — ruled in two parts
+
+⚠️ **FIRST, THE COUNT IN THIS ITEM'S TITLE WAS WRONG AND IS CORRECTED: 15 runner-facing, not 17.**
+`BUTTON-GEOMETRY-CONST-01` taught the harness to resolve an **identifier-valued** `minHeight`
+later the same day, and two `TrainingZonesScreen` entries vanished — they declare
+`TAB_MIN_HEIGHT_PX = 44`. **19 under the floor in total: 4 preview harnesses, 15 runner-facing.**
+
+✅ **1. `SegmentedControl` — SHIP.** 30px → 44px via `SEGMENTED_MIN_HEIGHT_PX`.
+🔴 **The highest-reach control under the floor** (login, Preferences, ModifyPlanSheet, Chip,
+DashboardClient) and **the component extracted to be reused was the one missing the floor**, while
+`TrainingZonesScreen`'s hand-rolled version of the same pattern already carried 44 with its own
+markup test. ⚠️ **`.btn--inline-target` is not available here:** that pattern gives a small VISUAL
+a 44px HIT AREA, which suits a chip in a settings row — a segmented control **fills its row**, so
+the visual *is* the hit area. **Register 19 → 18.** Three arms, **falsified three ways**
+(constant below 44 · floor removed from the markup · a literal `44` drifting from the constant).
+
+🔄 **2. The remaining 14 — INSUFFICIENT EVIDENCE, deliberately not bulk-resized.** They are
+`.btn--inline-target` candidates (`Chip` 37px), settings rows where **the row is the target**
+(`MeScreen` ×2 at 41px), two marketing links (39/43px, mouse and thumb both), a zone **list row**
+1px under, and four `SessionPopupInner` controls including the 18px worst case. **Growing fourteen
+controls on live screens with nothing ever run on a device is the impression-not-measurement trap
+this board records.** They stay in the geometry register, which is exact-equality both ways, so
+none can grow and none can be quietly "fixed" without the register moving.
+
+⚠️ **The two at 43px remain the interesting ruling** and are still unmade: a floor missed by one
+pixel either matters or the floor is really 40, and **whichever it is should be written down once**
+rather than decided eleven times.
+
+✅ **Sequence note discharged:** the entanglement with `ZONES-TAB-PIN-01` was a false alarm. The
+zones tabs are **not** `SegmentedControl` — they are hand-rolled at 44px — so pinning them shipped
+no floor violation.
 
 ## ⚖️ FILED 2026-10-01 — `STICKY-INERT-SCREENS-01`
 

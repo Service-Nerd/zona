@@ -109,10 +109,13 @@ describe('button geometry', () => {
       'components/shared/Chip.tsx = 37px',
       'components/shared/ModifyPlanSheet.tsx = 30px',
       'components/shared/PendingAdjustmentBanner.tsx = 36px',
-      // 🔴 The shared primitive, 14px under the floor, and the one with the most
-      // reach on this list: login, Preferences, ModifyPlanSheet, Chip,
-      // DashboardClient.
-      'components/shared/SegmentedControl.tsx = 30px',
+      // ✅ `SegmentedControl` came OFF this list on 2026-10-01
+      // (`TAP-TARGET-DECISIONS-01`, Design Board SHIP). It was the highest-reach
+      // control under the floor — login, Preferences, ModifyPlanSheet, Chip and
+      // DashboardClient all inherit it — at 30px with no `minHeight` at all,
+      // while the hand-rolled version of the same pattern in
+      // `TrainingZonesScreen` already carried 44. **One primitive, five
+      // surfaces, and the register is one shorter because of it.**
       // A full-width zone LIST ROW, 1px under. A different question from a control.
       'components/shared/TrainingZonesScreen.tsx = 43px',
     ]

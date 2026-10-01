@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — TAP-TARGET-DECISIONS-01 · the component extracted to be reused was the one missing the floor
+**Shipped:** `SegmentedControl` clears the 44px tap floor; the other fourteen controls were deliberately left alone.
+
+**Dev learning:** The highest-reach control under the floor was the shared primitive. `SegmentedControl` rendered at 30px with no `minHeight` at all, and login, Preferences, ModifyPlanSheet, Chip and DashboardClient all inherit it. Meanwhile `TrainingZonesScreen`'s hand-rolled version of the same pattern — a band of buttons in a soft-background pill — already carried `minHeight: 44` and had its own markup test asserting it. **The one-off got it right and the abstraction got it wrong**, which is the opposite of what anyone would assume about extracting a component.
+
+**Product/creator learning:** I fixed one control and left fourteen, and that was the ruling rather than laziness. `.btn--inline-target` exists so a small visual can carry a 44px hit area, which is the right answer for a chip in a settings row — so "add 14px to everything" would have wrecked half of them. The segmented control is different because it **fills its row**, so the visual *is* the hit area and there is nothing to separate. **The general rule worth keeping: whether a tap target is a defect depends on whether the visual and the hit area can be separated.**
+
+**AI-building learning:** I had to correct my own count mid-item. I filed it as "17 runner-facing" in the morning; by the afternoon the geometry harness had learned to resolve an identifier-valued `minHeight`, two entries evaporated because they were never violations, and the real number is 15. **The item's title was wrong within six hours of being written, by my own later fix.** Worth noting because the count was the thing that made it feel urgent.
+
+**The honest bit:** my markup test failed on the first run with "element type is invalid" because I wrote a default import for a named export. Trivial, caught in seconds — but it is the fourth thing today that only showed up on execution, and every one was in test or tooling code I wrote while being careful about something else.
+
+**Hook material:** The component we extracted so every screen would be consistent was the one that broke the rule, and the hand-rolled copy of it was correct.
+
+**Postable?:** yes — "the one-off got it right and the abstraction got it wrong" is the post.
+
+---
+
 ## 2026-10-01 — SHEET-CONTRACT-01 · the gate was checking the wrong component
 **Shipped:** a contract for `Sheet`, the most-used primitive in the app, and a fix to the gate that checks contracts.
 
