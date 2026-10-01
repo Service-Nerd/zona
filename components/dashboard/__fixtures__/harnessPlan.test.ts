@@ -48,9 +48,18 @@ describe('DASHBOARD-HARNESS-01 — the harness plan is real engine output', () =
   // JSON instead would make the fixture a thing the engine never emitted, which is the
   // defect this whole file exists to prevent — so the fixture keeps it and the comparison
   // ignores it.
+  //
+  // ⚠️ THERE ARE TWO WALL CLOCKS, AND STRIPPING ONE BOUGHT EXACTLY ONE DAY.
+  // `meta.last_updated` is a DATE, so it only diverges once the calendar turns:
+  // regenerating on 2026-09-30 made this green that afternoon and red at
+  // midnight (HARNESS-FIXTURE-DATE-01). Measured on 2026-10-01: the fresh plan
+  // and the committed fixture differed in EXACTLY TWO FIELDS, both of these.
+  // The cost was never the red tick; it is that a suite failing every morning
+  // for a reason nobody needs to read is a suite people learn to skip.
+  const CLOCK_FIELDS = ['generated_at', 'last_updated'] as const
   const withoutClock = (p: Plan) => {
     const copy = JSON.parse(JSON.stringify(p)) as Plan & { meta?: Record<string, unknown> }
-    if (copy.meta) delete copy.meta.generated_at
+    if (copy.meta) for (const f of CLOCK_FIELDS) delete copy.meta[f]
     return copy
   }
 
