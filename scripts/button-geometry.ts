@@ -31,6 +31,9 @@ export interface Box {
   padY: number | null
   /** font-size px. */
   font: number | null
+  /** `measureAll({ all: true })` only: is this control on the shared system?
+   *  Absent in the default (filtered) measurement, so the baseline never holds it. */
+  onSystem?: boolean
   /** Style constants spread into this tag that could not be resolved (imported).
    *  Present only when non-empty, so it does not churn every baseline entry. */
   unreadable?: string[]
@@ -386,7 +389,29 @@ export function keyFor(file: string, tag: string, text: string, ordinal: number)
   return slug ? `${file}#${tag}[${slug}]${ordinal}` : `${file}#${tag}${ordinal}`
 }
 
-export function measureAll(): Record<string, Box> {
+/**
+ * TAP-TARGET-FLOOR-01 — `{ all: true }` DROPS THE `onSystem` FILTER.
+ *
+ * 🔴 WHY THE DEFAULT IS STILL FILTERED. The baseline exists to catch a
+ * CONVERSION changing a box, so it measures the converted population; widening
+ * it would churn the baseline with 106 hand-rolled controls no conversion
+ * touches.
+ *
+ * 🔴 WHY THE FLOOR ARM MUST NOT USE THAT DEFAULT. The 44px floor
+ * (`ui-patterns.md:262`, iOS HIG) governs **every** control a thumb can hit, and
+ * the hand-rolled population is the one most likely to violate it — so
+ * measuring only the converted set made the arm **structurally incapable of
+ * finding a violation**, since every converted control carries a size class
+ * that floors at 44 by construction. **Measured 2026-10-01 with the filter
+ * dropped: 262 controls against 156, and 21 under the floor, the smallest
+ * 18px.** The arm had been green over every one of them since it was written.
+ *
+ * ⚠️ THIS HAD TO WAIT FOR `BUTTON-GEOMETRY-SPREAD-01`. Ten of the newly visible
+ * tags carry a style spread, and until same-file constants were expanded their
+ * padding was invisible — so dropping the filter first would have measured ten
+ * controls from whatever was left of their style objects.
+ */
+export function measureAll(opts: { all?: boolean } = {}): Record<string, Box> {
   const css = readFileSync(join(ROOT, 'app/globals.css'), 'utf8')
   const floors = sizeFloors(css)
   const padFromClass = classPadY(css)
@@ -423,11 +448,13 @@ export function measureAll(): Record<string, Box> {
       for (const { text } of tags(src, tag)) {
         const onSystem = /className=[^\n]*\b(btn|icon-btn|switch)\b/.test(text) ||
                          tag === 'Button' || tag === 'IconButton' || tag === 'Switch'
-        if (!onSystem) continue
+        if (!onSystem && !opts.all) continue
         const { text: expanded, unresolved } = expandStyleSpreads(text, src)
         const n = (seen[tag] = (seen[tag] ?? 0) + 1)
         const box = boxOf(expanded, floors, padFromClass, tag, overlays)
         if (unresolved.length) box.unreadable = unresolved.sort()
+        // Only in `all` mode, so the committed baseline's shape is unchanged.
+        if (opts.all) box.onSystem = onSystem
         out[keyFor(f, tag, text, n)] = box
       }
     }

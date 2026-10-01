@@ -31,10 +31,82 @@ describe('button geometry', () => {
   it('🔴 no control renders below the 44px tap-target floor', () => {
     // `:262`, iOS HIG — and `:860` records it as previously ignored by half its
     // instances, which is what a rule with no mechanism looks like.
-    const under = Object.entries(measureAll())
-      .filter(([, b]) => b.height !== null && b.height < 44)
+    //
+    // 🔴 TAP-TARGET-FLOOR-01 — THIS ARM MEASURED ONLY THE CONVERTED POPULATION
+    // AND WAS THEREFORE STRUCTURALLY INCAPABLE OF FINDING A VIOLATION.
+    // `measureAll()` filters to controls already on the shared system, and
+    // those have a size class that floors at 44 by construction. **The
+    // hand-rolled population — the one most likely to violate the floor — was
+    // invisible to the only check that governs it.**
+    //
+    // 📐 MEASURED 2026-10-01 with `{ all: true }`: **262 controls against 156,
+    // and 21 under the floor, the smallest 18px.** The arm had been green over
+    // every one of them since it was written.
+    //
+    // ⚠️ NOT ALL 21 ARE DEFECTS, AND THAT IS WHY THIS IS A REGISTER RATHER THAN
+    // A BLANKET FAILURE. `.btn--inline-target` exists precisely because a small
+    // VISUAL with a 44px HIT AREA is the right answer for a chip in a settings
+    // row. The fix per control is "convert and let the floor apply" or "convert
+    // and give it an inline target", never a blanket height — and choosing
+    // between those is a Design Board question per control
+    // (→ `TAP-TARGET-DECISIONS-01`). **Finding them is not a board question,
+    // which is this arm's job and now its actual behaviour.**
+    const all = measureAll({ all: true })
+    const under = Object.entries(all)
+      .filter(([, b]) => b.height !== null && b.height! < 44)
       .map(([k, b]) => `${k} = ${b.height}px`)
-    expect(under, `below the 44px floor:\n${under.join('\n')}`).toEqual([])
+      .sort()
+
+    // Registered: every control below the floor today, with the population it
+    // belongs to. A preview page is a HARNESS, not a runner surface, and needs
+    // no ruling; everything else is runner-facing and does.
+    const REGISTERED_UNDER_FLOOR = [
+      // ── preview harnesses, no ruling needed ──
+      'app/onboarding-preview/page.tsx#button1 = 32px',
+      'app/onboarding-preview/page.tsx#button5 = 32px',
+      'app/wizard-preview/page.tsx#button1 = 29px',
+      'app/wizard-preview/page.tsx#button2 = 27px',
+      // ── runner-facing: → TAP-TARGET-DECISIONS-01 ──
+      'app/charity-runners/page.tsx#Link1 = 39px',
+      'app/dashboard/DashboardClient.tsx#button3 = 30px',
+      'app/page.tsx#Link3 = 43px',
+      'components/dashboard/MeScreen.tsx#button2 = 41px',
+      'components/dashboard/MeScreen.tsx#button4 = 41px',
+      'components/dashboard/SessionPopupInner.tsx#button2 = 30px',
+      'components/dashboard/SessionPopupInner.tsx#button3 = 38px',
+      'components/dashboard/SessionPopupInner.tsx#button5 = 18px',
+      'components/dashboard/SessionPopupInner.tsx#button7 = 37px',
+      'components/dashboard/SupportScreen.tsx#button[copy-support-email-address]1 = 24px',
+      'components/shared/Chip.tsx#button1 = 37px',
+      'components/shared/ModifyPlanSheet.tsx#button2 = 30px',
+      'components/shared/PendingAdjustmentBanner.tsx#button1 = 36px',
+      'components/shared/SegmentedControl.tsx#button1 = 30px',
+      'components/shared/TrainingZonesScreen.tsx#button1 = 35px',
+      'components/shared/TrainingZonesScreen.tsx#button3 = 43px',
+      'components/shared/TrainingZonesScreen.tsx#button4 = 43px',
+    ]
+
+    // ⚠️ EXACT EQUALITY, BOTH WAYS. A new control under the floor fails, and a
+    // control that gets FIXED also fails until it comes off the list — a
+    // register that only ratchets one way stops describing reality in the
+    // direction you want it to move.
+    expect(under,
+      `the set of controls below the 44px floor has changed. A NEW one is a defect; ` +
+      `a FIXED one comes off REGISTERED_UNDER_FLOOR.\n` +
+      `now (${under.length}):\n${under.join('\n')}`).toEqual(REGISTERED_UNDER_FLOOR.sort())
+  })
+
+  it('🔴 the floor arm measures the WHOLE population, not just the converted one', () => {
+    // The arm above is only worth anything if `{ all: true }` genuinely widens
+    // the population. If the filter ever comes back, the floor arm silently
+    // returns to measuring 156 controls that floor at 44 by construction, and
+    // its register would read as "all clear" while 106 controls go unexamined.
+    const filtered = Object.keys(measureAll()).length
+    const everything = Object.keys(measureAll({ all: true })).length
+    expect(everything, 'all-mode is not widening the population').toBeGreaterThan(filtered)
+    expect(everything - filtered,
+      'the hand-rolled population has collapsed — suspect the tag scan before believing it')
+      .toBeGreaterThan(50)
   })
 
   it('🔴 geometry matches the committed baseline', () => {

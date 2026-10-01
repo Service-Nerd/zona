@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — TAP-TARGET-FLOOR-01 · a check that could not fail
+**Shipped:** the 44px tap-target arm now measures every control a thumb can hit, and the 21 under the floor are registered.
+
+**Dev learning:** The arm asserted no control renders under 44px. It measured the population of controls already converted onto the shared system — and every one of those carries a size class that floors at 44 **by construction**. So this was not a narrow check. **There was no input on which it could ever go red.** It had been green since it was written, over 21 real violations, the smallest 18px, because it was asking a question whose answer was guaranteed. The hand-rolled population, the one most likely to break the floor, was the one it could not see.
+
+**Product/creator learning:** The item estimated 18 controls and predicted 15 would remain. The code says 262 controls, 156 on the system, and 21 under the floor. **Every number in the ticket was close and none was right**, which is the argument for counting at the moment you act rather than trusting the count someone wrote down when they filed it. The interesting find was not the 18px control, it was the two at **43px**: a floor missed by one pixel either matters or the floor is really 40, and whichever it is should be written down once rather than decided eleven times.
+
+**AI-building learning:** I fixed none of the 21, and that was the point. `.btn--inline-target` exists precisely because a small visual with a 44px hit area is the right answer for a chip in a settings row, so a blanket height would wreck half of them. **Finding is mechanical; deciding is not.** The register splits them by population — four are preview harnesses that need no ruling at all, seventeen are runner-facing and went to the board as one item with a table. One of them, `SegmentedControl` at 30px, turns out to be the same control another open item wants pinned to the header: pinning a control 14px under the floor would have shipped this defect inside that fix.
+
+**The honest bit:** I destroyed my own uncommitted work mid-build. I had been backing files up to a scratchpad before each falsification, then got lazy and used `git checkout --` to revert a mutation — on a file whose real changes were not committed yet. It took the lot. I noticed only because the "restored" run was still red, which is the one thing that made it recoverable: **the last step of a falsification is checking you are actually back where you started, and this is the second time today that step earned its place.**
+
+**Hook material:** The check for controls under 44px measured only the controls that are 44px by definition.
+
+**Postable?:** yes — "a check that cannot fail" is a strong, short post, and this is a clean example.
+
+---
+
 ## 2026-10-01 — STICKY-INERT-FLEX-01 · the guard accepted a shorthand for a height
 **Shipped:** the sticky guard now demands what the box model demands, and the five sites that exposed are registered rather than silently fixed.
 

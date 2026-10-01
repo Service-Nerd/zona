@@ -271,7 +271,7 @@ As of `SCREEN-HEADER-01` the app's pinned header has **no edge at the top of the
 `--chrome-edge` once scrolled. Same idea, two behaviours and two weights. Small, and worth one
 decision rather than two defaults.
 
-### `TAP-TARGET-FLOOR-01` — 18 hand-rolled controls are below the 44px tap floor, and the check cannot see them ⚙️ NO BOARD
+### ✅ `TAP-TARGET-FLOOR-01` — SHIPPED 2026-10-01 (the FINDING half) ⚙️ NO BOARD
 **Found 2026-09-25**, while converting nine more CTAs onto `Button`.
 
 `buttonGeometry.test.ts`'s floor arm asserts no control renders under 44px (`ui-patterns.md:262`,
@@ -287,6 +287,42 @@ two in `DashboardClient` at 38 and 40). The remaining 15 include `SegmentedContr
 44px *hit area* is the correct answer for a chip in a settings row — so the fix per control is
 either "convert and let the floor apply" or "convert and give it an inline target", never a blanket
 height. Deciding that is a Design Board question per control; **finding them is not.**
+
+✅ **SHIPPED: the floor arm measures the WHOLE population now.** `measureAll({ all: true })`
+drops the `onSystem` filter, and the floor arm uses it.
+
+📐 **COUNTED FROM THE CODE, NOT FROM THIS ITEM: 262 controls against 156, and 21 under the
+floor** — not the 18 estimated, and not the 15 it predicted would remain. **Smallest is 18px.**
+The arm had been green over every one of them since it was written, because every *converted*
+control carries a size class that floors at 44 **by construction** — so the arm was not merely
+narrow, it was **structurally incapable of ever failing.**
+
+⚠️ **IT HAD TO WAIT FOR `BUTTON-GEOMETRY-SPREAD-01`, and that dependency was real, not tidy.**
+Ten of the newly visible tags carry a style spread; until same-file constants were expanded their
+padding was invisible, so dropping this filter first would have measured ten controls from
+whatever was left of their style objects.
+
+**Registered, with the population each belongs to:**
+- **4 preview harnesses** (`wizard-preview` ×2, `onboarding-preview` ×2) — **no ruling needed**,
+  they are harnesses, not runner surfaces.
+- **17 runner-facing** → `TAP-TARGET-DECISIONS-01`. 🔴 Including **`SessionPopupInner` at 18px**,
+  `SupportScreen`'s *copy email* at 24px, `SegmentedControl` at **30px** (which is
+  `ZONES-TAB-PIN-01`'s own control), `ModifyPlanSheet` 30px, `TrainingZonesScreen` 35/43/43,
+  `Chip` 37px, `PendingAdjustmentBanner` 36px, two `MeScreen` rows at 41px, and two marketing
+  links at 39/43px.
+
+✅ **The register is EXACT EQUALITY, both ways** — a new control under the floor fails, and a
+control that gets **fixed** also fails until it comes off the list. A register that only ratchets
+one way stops describing reality in the direction you want it to move.
+
+✅ **A second arm guards the population itself:** if the `onSystem` filter ever returns, the floor
+arm silently drops to 156 controls that floor by construction and its register would read as all
+clear while 106 go unexamined.
+
+**Falsified three ways:** add a 20px control → red · give `SegmentedControl` a 44px floor → red
+(fixed-but-still-registered) · restore the `onSystem` filter → **two** arms red.
+
+4,103 tests / 458 files.
 
 **Do:** measure off-system controls too, and either convert each or record an inline-target
 exemption. The gate should fail on a NEW sub-44px control regardless of whether it is on the system.
@@ -408,6 +444,41 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
    - **Cannot reproduce at all** → it was a one-frame capture artefact and there is nothing to fix.
 2. If it persists: attach **Safari → Develop → [device] → Web Inspector**, hover the band, and read
    the element. That is the only thing that will name it, and it takes a minute.
+
+## ⚖️ FILED 2026-10-01 — `TAP-TARGET-DECISIONS-01`
+
+### `TAP-TARGET-DECISIONS-01` — 17 runner-facing controls under the 44px floor, one decision each 🧭 **DESIGN BOARD**
+
+Out of `TAP-TARGET-FLOOR-01`, which made them **findable**. `ui-patterns.md:262` sets the floor
+at 44px (iOS HIG). **17 controls a runner can hit are under it**, measured 2026-10-01, smallest
+**18px**.
+
+⚠️ **THERE IS NO BLANKET FIX, AND THAT IS THE WHOLE REASON THIS IS A BOARD ITEM.**
+`.btn--inline-target` exists precisely because a small **visual** with a 44px **hit area** is the
+right answer for a chip in a settings row. So each control is one of three things, and only a
+seat can say which: **convert and let the floor apply** · **convert and give it an inline target**
+· **leave it, with the reason recorded.** A blanket height would wreck half of them.
+
+| Control | Height | The question |
+|---|---|---|
+| `SessionPopupInner#button5` | **18px** | The worst of them. What is it, and is 18px ever defensible? |
+| `SupportScreen` *copy email* | 24px | A utility affordance. Inline target, or convert? |
+| `SegmentedControl#button1` | **30px** | 🔴 **This is `ZONES-TAB-PIN-01`'s own control.** Decide them together, or pinning a 30px tab strip ships the floor miss into the fix |
+| `ModifyPlanSheet#button2` | 30px | In a sheet, where the thumb is already committed |
+| `DashboardClient#button3` | 30px | |
+| `TrainingZonesScreen` ×3 | 35, 43, 43 | Two are 1px under. Does the floor round, or is 43 a miss? |
+| `Chip#button1` | 37px | **The canonical inline-target case** per `.btn--inline-target`'s own reason |
+| `PendingAdjustmentBanner` | 36px | |
+| `SessionPopupInner` ×2 | 37, 38 | |
+| `MeScreen` ×2 | 41, 41 | Settings rows: the row is the target, not the control |
+| `/charity-runners` Link1 · `/` Link3 | 39, 43 | Marketing, mouse and thumb both |
+
+⚠️ **The two at 43px are the interesting ruling**, not the 18px one. A floor that is missed by a
+single pixel either matters or the floor is really 40 — and **whichever it is, it should be
+written down once** rather than decided eleven times.
+
+⚠️ **Sequence note:** `SegmentedControl` appears here **and** in `ZONES-TAB-PIN-01`. Pinning a
+control that is 14px under the floor would ship this defect inside that fix.
 
 ## ⚖️ FILED 2026-10-01 — `STICKY-INERT-SCREENS-01`
 
