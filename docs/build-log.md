@@ -6,6 +6,57 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — UPNEXT-EXACT-01 · a real user found it before any of our checks did
+**Shipped:** A planned distance now rounds to whole units on every surface, including the adjustment diff nobody reported.
+
+**Dev learning:** The reported bug was one flag: `{ exact: true }` on a prescribed distance, where `exact` is the only route to a decimal in `formatDistance`. What mattered was the sweep after it. Twenty-eight other call sites use that flag and **twenty-seven are correct** — Strava distances, Apple Health distances, completion deltas, and the documented planned-vs-actual pair that needs matching precision on both sides. The twenty-eighth, `sessionDiff.labelSession`, labels prescribed sessions and is rendered by the pending-adjustment card. So the same defect was live on a second screen and nobody had reported it. **Grepping for the shape of the fix rather than the symptom is the whole value of the step**, and three of the sites I checked turned out to be deliberately right, which is the other half: the sweep has to be able to say "no" or it is just a find-and-replace.
+
+**Product/creator learning:** I was about to take two questions to the Design Board — decimals for miles, and unit consistency inside the session structure list. The settled-ground scan killed both: `UNITS-SUBUNIT-01` had already ruled decimals out (*"a card whose language is whole units behind a ~"*) and had explicitly amended away the same-unit rule. **Both would have been re-proposals of decisions taken eight days earlier.** Second time this week the scan has stopped me re-litigating something; it is the cheapest step in the whole procedure and the one most obviously worth keeping.
+
+**AI-building learning:** The user's actual complaint and the actual defect were the same thing, which is rarer than it sounds. What I nearly got wrong was Kit's *"you added the extra 0.2mi"* — it reads like broken arithmetic against a card saying 5mi, and my instinct was to call it a second bug. It is correct: 5.5 measured against 5.28 prescribed, the measured-delta path ADR-015 deliberately preserves. **The number that looks wrong was the only one being honest**, and the card's rounding is what made it look wrong.
+
+**The honest bit:** The UP NEXT call site has no test and cannot have one — `app/**` is not collected by vitest. I fixed the reported surface blind and tested only the twin, because the twin happens to live in `lib/`. That is a real gap and the reason the twin is the one with the regression test.
+
+**Hook material:** A paying customer found a bug that twenty-eight call sites, four hundred test files and a type checker all looked straight past, because every one of them was individually correct.
+
+**Postable?:** yes.
+
+---
+
+## 2026-10-01 — KIT-EXEMPLAR-LEAK-01 · the prompt was teaching the thing it forbade
+**Shipped:** The coaching prompts' few-shot examples no longer demonstrate em dashes or speak a unit the reader does not use.
+
+**Dev learning:** We told the model not to use em dashes in exactly one prompt of four, and that prompt showed it two of them in its own worked example two hundred lines above the instruction. Across all four, **36 of 42 examples demonstrated an em dash**. The runner's coach note came back near-verbatim one of them, kilometres and punctuation included, to a man who runs in miles. **A negative instruction loses to a positive demonstration every time**, and we had scaled the demonstrations and left the instruction in one file.
+
+**Product/creator learning:** The numbers were never the problem. `promptDistanceFormatters` exists precisely so Kit quotes the same figure the card shows, and it was working. What leaked was the *prose around* the number — "from the first km" — which no formatter can reach because it is not data, it is an example sentence written in 2026 by someone who thinks in km. **Parameterising the data and hardcoding the example is a half-fix that looks complete.**
+
+**AI-building learning:** The guard that should have caught this exempts "AI prompt text — model input, never rendered", and that exemption is *correct*. A prompt genuinely is not runner-facing. It just manufactures runner-facing text. **An exemption reasoned about what a thing IS can be wrong about what it CAUSES**, and I think that is a general shape worth remembering when writing guard exclusions: ask what the excluded thing produces, not only what it is.
+
+**The honest bit:** Rewriting 36 example sentences by hand took longer than everything else in the build combined, and every instinct said to regex it. This repo has the receipt for that instinct — a regex across nine call sites once broke all nine and type-checked clean. So: by hand, one at a time, then a test that counts.
+
+**Hook material:** Our AI coach told a British runner to hold his zone "from the first km". He runs in miles. We had formatted every number correctly and then shown the model an example that said km.
+
+**Postable?:** yes — this is the strongest one in a while.
+
+---
+
+## 2026-10-01 — HARNESS-FIXTURE-DATE-01 · the second wall clock
+**Shipped:** The harness fixture comparison ignores both wall-clock fields instead of one, so it stops failing at midnight.
+
+**Dev learning:** Filed yesterday, fired overnight, during an unrelated build. The comparison already stripped `generated_at`; it did not strip `last_updated`, which is a **date** — so it is green all afternoon and red the moment the calendar turns. Regenerating buys exactly one day, which is what happened yesterday.
+
+**Product/creator learning:** The item itself had already written the lesson down: the cost is not the red tick, it is what a habitually-red suite teaches. I hit it as a stranger, mid-build, and spent real time asking whether my own change had moved the engine.
+
+**AI-building learning:** The useful move was refusing to assume either way. A field-by-field walk of fresh output against the fixture returned **exactly two diffs, both clocks** — which simultaneously proved it was not my build and proved the engine had not moved. Thirty seconds of measurement instead of an argument with myself. **"It's probably the known flake" and "it's probably my change" are both guesses; the diff is not.**
+
+**The honest bit:** Nothing clever here. A filed, known, one-line problem that cost me ten minutes because it fired while I was looking at something else.
+
+**Hook material:** A test that passes all afternoon and fails at midnight, filed the day before, fired the day after.
+
+**Postable?:** maybe — pairs with the clock-dependent test sweep from last week.
+
+---
+
 ## 2026-09-30 — MKT-PLAN-SEGMENT-BASIS-01 · 40% of what?
 **Shipped:** The race-pace segment on a peak long run is now measured at its own pace instead of the session's average, and the Coaching Board settled that §25's percentage is a share of the run's **duration**.
 
