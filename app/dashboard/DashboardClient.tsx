@@ -129,7 +129,7 @@ import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { PreferencesScreen, PREFERENCES_TITLE, PREFERENCES_SUBTITLE } from '@/components/shared/PreferencesScreen'
 import { CONNECTIONS_TITLE, connectionsSubtitle, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB } from '@/components/shared/meDoors'
 import { Chevron } from '@/components/shared/Chevron'
-import { TrainingZonesScreen } from '@/components/shared/TrainingZonesScreen'
+import { TrainingZonesScreen, ZonesTabs, ZONES_TAB_HR } from '@/components/shared/TrainingZonesScreen'
 // PACE-BANDS-OWNER-01 — pure, and safe across BUNDLE-BOUNDARY-01 where `ruleEngine` is not.
 import { buildPaceFromVDOT, type PaceGuide } from '@/lib/plan/paceBands'
 import { formatDate } from '@/lib/format'
@@ -441,6 +441,11 @@ export default function DashboardClient() {
    *  backs: the `Zones` row on the Me index, and the `heart-rate` door. Same shape as
    *  `redeemReturnTo` above. Null means "back to the index", which is the index row's case. */
   const [zonesReturnSection, setZonesReturnSection] = useState<string | null>(null)
+  // ZONES-TAB-PIN-01 — the tab state lives HERE because the pinned header group
+  // lives here, and the Design Board ruled the control pins with the group. The
+  // screen stays uncontrolled when no `tab` is passed, which is what keeps
+  // `/zones-preview` rendering the real component honestly across every state.
+  const [zonesTab, setZonesTab] = useState<string>(ZONES_TAB_HR)
   /** PTR-SUBPAGE-01 — which Me door is open, so the pull gesture can be switched off on it. */
   const [meActiveSection, setMeActiveSection] = useState('main')
   /** ZONES-HR-SHEET-01 — the HR form's only mount is a sheet on the zones screen.
@@ -2912,9 +2917,25 @@ export default function DashboardClient() {
               {/* BACK-ARROW-TITLE-COLLIDE-01 am.1 — the arrow travels INSIDE the band.
                   Rendered beside it, the opaque `--bg` header covered it on scroll and the
                   screen had a title and no way back. */}
+              {/* ZONES-TAB-PIN-01 — Design Board 2026-10-01, SHIP WITH AMENDMENT.
+                  THE TABS PIN WITH THE HEADER GROUP. A runner three zones down the
+                  list could not switch between Heart rate and Pace without scrolling
+                  back to the top, which loses the position they were comparing from.
+                  🔴 Settled ground, not a new pattern: `BACK-ARROW-FLOAT-03` ruled
+                  that a header GROUP pins and carries its cue, after floating the
+                  arrow alone let the wizard's progress cue scroll away. Silvanto: the
+                  control is what the screen is FOR; "Your zones" is only its label.
+                  ⚠️ AMENDMENT: the sub-line STAYS until the band is measured on a
+                  device. It is the stated height lever if the group reads too tall —
+                  removing runner-facing copy on an unmeasured impression is the trap
+                  this board records. Nothing has run on a device. */}
               <ScreenHeader title="Your zones" sub="Heart rate and pace targets"
-                onBack={() => { setMeOpenSection(zonesReturnSection); setScreen('me') }} />
+                onBack={() => { setMeOpenSection(zonesReturnSection); setScreen('me') }}>
+                <ZonesTabs tab={zonesTab} onTabChange={setZonesTab}
+                  hasHr={!!hrZones && hrZones.length > 0} hasPace={!!pace} />
+              </ScreenHeader>
               <TrainingZonesScreen zones={hrZones} pace={pace} units={preferredUnits}
+                tab={zonesTab} onTabChange={setZonesTab}
                 sourceHr={restingHR && maxHR ? { resting: restingHR, max: maxHR } : null}
                 // ZONES-INPUTS-01 — the FORM stays on Me. This only navigates there,
                 // because the HR card is a set-once input and carries the Apple Health

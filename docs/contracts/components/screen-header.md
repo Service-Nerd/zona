@@ -21,6 +21,7 @@ interface ScreenHeaderProps {
   /** Pins the header while the screen scrolls. Default `false`. */
   onBack?: () => void
   sticky?: boolean
+  children?: React.ReactNode
 }
 ```
 
@@ -32,6 +33,7 @@ interface ScreenHeaderProps {
 | `sub` | `string` | — | Secondary line. Omitted entirely when absent — no empty element |
 | `onBack` | `() => void` | — | **Renders the back arrow INSIDE the pinned band** (BACK-ARROW-TITLE-COLLIDE-01 am.1). 🔴 Rendered beside the header instead, the opaque `--bg` band covers a separately-floating arrow on scroll, and the screen has a title and **no way back** — found on a device |
 | `sticky` | `boolean` | — | **Default `true`** (BACK-ARROW-TITLE-COLLIDE-01, 2026-09-29). Pins the header while the screen scrolls. **Opting out is by name, with a reason** — `screenHeaderPinned.test.ts` holds the register, and the only current opt-out is the marketing phone mockups |
+| `children` | `React.ReactNode` | — | **ZONES-TAB-PIN-01 (Design Board, 2026-10-01) — the slot that lets a screen's primary CONTROL pin with the header group** instead of scrolling away below it. 🔴 **Settled ground, not a new pattern:** `BACK-ARROW-FLOAT-03` ruled that a header GROUP pins and carries its cue, after floating the arrow alone let the wizard's progress cue scroll away. ⚠️ **What belongs here:** the control the screen exists to operate (the zones screen's Heart rate / Pace tabs — *"the title is a label; the segmented control is the instrument"*). **Not** content, not a secondary action, and nothing that would make the band tall enough to be a screen of its own. ⚠️ **Whatever goes here must clear the 44px floor**, because it is now permanently on screen. ⚠️ **The host owns the control's state**, since the host owns the group — see `ui-patterns.md` § 13d |
 
 There is deliberately **no `style` prop and no `className`.** Every pixel belongs to
 `.screen-header` in `globals.css`; the component's only inline style is `zIndex` from

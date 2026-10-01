@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest'
 import React from 'react'
 import { renderToStaticMarkup as html } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   TrainingZonesScreen, type ZoneRow,
-  ZONES_TAB_HR, ZONES_TAB_PACE, CEILING_LABEL_HR, CEILING_LABEL_PACE, TAB_MIN_HEIGHT_PX,
+  ZONES_TAB_HR, ZONES_TAB_PACE, CEILING_LABEL_HR, CEILING_LABEL_PACE, ZonesTabs, TAB_MIN_HEIGHT_PX,
 } from './TrainingZonesScreen'
 import { buildPaceFromVDOT, bandCeiling } from '@/lib/plan/paceBands'
 import { HR_PROVENANCE_PREFIX, PROVENANCE_MIN_HEIGHT_PX } from './TrainingZonesScreen'
@@ -64,17 +65,65 @@ describe('ZONES-SURFACE-01 — the ceiling leads, in whichever unit exists', () 
 })
 
 describe('ZONES-SURFACE-01 — the toggle', () => {
+  /**
+   * ZONES-TAB-PIN-01 — THE TABS MOVED INTO THE PINNED HEADER, so they are no
+   * longer in this screen's markup and these arms now render `ZonesTabs`.
+   *
+   * ⚠️ THE OLD ARMS FAILED, WHICH IS THE POINT. They asserted the labels appear
+   * in `TrainingZonesScreen`'s output; after the move they do not. `/build` §5b
+   * says a relocation makes correct code wrong without touching it, and these
+   * two going red is that mechanism working — against `ME-DOORS-01`, where
+   * every arm passed in the new home and five defects shipped anyway.
+   */
+  const tabs = (p: { hasHr?: boolean; hasPace?: boolean } = {}) =>
+    html(React.createElement(ZonesTabs, {
+      tab: ZONES_TAB_HR, onTabChange: () => {}, hasHr: true, hasPace: true, ...p,
+    }))
+
   it('offers both tabs only when both have data', () => {
-    const m = screen()
+    const m = tabs()
     expect(m).toContain(ZONES_TAB_HR)
     expect(m).toContain(ZONES_TAB_PACE)
   })
 
   it('renders NO toggle when only one side has data', () => {
     // A two-option control with one option is noise, and a tab full of estimates is
-    // worse than no tab (Wroblewski, blocking).
-    expect(screen({ pace: null })).not.toContain(ZONES_TAB_PACE)
-    expect(screen({ zones: null })).not.toContain(ZONES_TAB_HR)
+    // worse than no tab (Wroblewski, blocking). The rule lives in `ZonesTabs` so no
+    // caller has to know it.
+    expect(tabs({ hasPace: false })).not.toContain(ZONES_TAB_PACE)
+    expect(tabs({ hasHr: false })).not.toContain(ZONES_TAB_HR)
+  })
+
+  it('🔴 the screen no longer renders the tabs itself — the header does', () => {
+    // The move, asserted in both directions. If the tabs come back into the
+    // screen body they would scroll away again and the defect would be silent:
+    // the control renders, it just stops being reachable from three zones down.
+    const m = screen()
+    expect(m, 'the tab control is back in the scrolling body').not.toContain(ZONES_TAB_PACE)
+  })
+
+  it('🔴 the host renders the tabs INSIDE the pinned chrome', () => {
+    // ⚠️ THE ARM THAT MAKES THE MOVE REAL. `ZonesTabs` existing proves nothing
+    // about where it is placed, and placement is the whole ruling: the Design
+    // Board ruled the tabs pin WITH the header group per `BACK-ARROW-FLOAT-03`.
+    // Rendering them anywhere else is the original defect wearing a new
+    // component name.
+    // ⚠️ MY FIRST CUT OF THIS ARM WAS WRONG AND FAILED ON CORRECT SOURCE. It
+    // probed for a self-closing `/>` before `</ScreenHeader>` to prove the
+    // header had children — and found `<ZonesTabs ... />`'s own self-close,
+    // which is INSIDE the header and is exactly what we want. **The check was
+    // brittle in the one direction that matters: it called a correct layout
+    // broken.** Bounding the region and asserting the contents is both simpler
+    // and says what the ruling says.
+    const src = readFileSync(join(__dirname, '..', '..', 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    const open = src.indexOf('title="Your zones"')
+    expect(open, 'the zones ScreenHeader is gone').toBeGreaterThan(-1)
+    const close = src.indexOf('</ScreenHeader>', open)
+    expect(close, 'the zones ScreenHeader is self-closing, so nothing can pin with it')
+      .toBeGreaterThan(-1)
+    expect(src.slice(open, close),
+      'ZonesTabs is not inside the zones ScreenHeader, so the tabs scroll away again')
+      .toContain('<ZonesTabs')
   })
 
   it('says something calm when neither side has data', () => {
@@ -88,8 +137,14 @@ describe('ZONES-SURFACE-01 — the toggle', () => {
   // entirely — the blind spot that shipped 18 hand-rolled controls under the floor on
   // 2026-09-25, the smallest at 18px. 9px padding around 14px text is ~35px.
   it('the hand-rolled tabs clear the 44pt floor', () => {
+    // ⚠️ AND THIS REMAINS THE PRIMARY GUARD, for a reason worth keeping: until
+    // 2026-10-01 `buttonGeometry.test.ts` could not read an IDENTIFIER-valued
+    // `minHeight`, so it reported this control at 35px and registered a false
+    // violation against it. `resolveSizeConstants` fixed that
+    // (`BUTTON-GEOMETRY-CONST-01`) — but the constant and its floor are asserted
+    // here, where the component owns them.
     expect(TAB_MIN_HEIGHT_PX).toBeGreaterThanOrEqual(44)
-    expect(screen()).toContain(`min-height:${TAB_MIN_HEIGHT_PX}px`)
+    expect(tabs()).toContain(`min-height:${TAB_MIN_HEIGHT_PX}px`)
   })
 })
 

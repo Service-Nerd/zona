@@ -54,36 +54,67 @@ describe('button geometry', () => {
     const all = measureAll({ all: true })
     const under = Object.entries(all)
       .filter(([, b]) => b.height !== null && b.height! < 44)
-      .map(([k, b]) => `${k} = ${b.height}px`)
+      // 🔴 FILE + HEIGHT, NOT THE ORDINAL KEY — AND I LEARNED THIS ONE BUILD
+      // EARLIER THE SAME AFTERNOON. The first cut listed
+      // `TrainingZonesScreen.tsx#button4 = 43px`; `ZONES-TAB-PIN-01` then moved
+      // two tab buttons OUT of that file, the zone row became `#button3`, and
+      // this arm went red over a control that had not changed by a pixel.
+      // **That is precisely the instability `BUTTON-GEOMETRY-KEY-02` is about,
+      // and I wrote a fresh register in the ordinal key hours after fixing the
+      // old one.** The register's claim is "these controls, in these files, are
+      // under the floor" — never "these ordinals are". Duplicates are kept (two
+      // `MeScreen` rows at 41px), so a control vanishing still fails.
+      .map(([k, b]) => `${k.split('#')[0]} = ${b.height}px`)
       .sort()
 
     // Registered: every control below the floor today, with the population it
     // belongs to. A preview page is a HARNESS, not a runner surface, and needs
     // no ruling; everything else is runner-facing and does.
+    // 🔴 CORRECTED SAME DAY, 21 -> 19, BY A DESIGN BOARD SITTING THAT WAS ABOUT
+    // TO RULE ON A WRONG NUMBER. Three `TrainingZonesScreen` entries (35, 43, 43)
+    // were FALSE: its tabs declare `minHeight: TAB_MIN_HEIGHT_PX`, the constant
+    // is **44**, and the component carries its own markup test asserting `>= 44`.
+    // `num()` reads a px LITERAL, so an identifier fell through to padding and
+    // reported 35px on a 44px control. `resolveSizeConstants` fixes it
+    // (BUTTON-GEOMETRY-CONST-01) and two of the three vanished.
+    //
+    // ⚠️ THE COMPONENT HAD WRITTEN THE WARNING DOWN ITSELF — *"minHeight is
+    // load-bearing and the gate cannot see it"* — and the register still shipped
+    // the wrong number, because **widening a population inherits every blind
+    // spot the old population never exercised.**
+    //
+    // 🥇 AND THE CORRECTED DATA SAYS SOMETHING THE WRONG DATA HID: the
+    // HAND-ROLLED zones tabs carry the floor correctly at 44, while the SHARED
+    // `SegmentedControl` primitive has `padding: '8px 10px'` and **no
+    // `minHeight` at all** — 30px, reached from login, Preferences,
+    // ModifyPlanSheet, Chip and DashboardClient. **The component extracted to be
+    // reused is the one missing the floor.**
     const REGISTERED_UNDER_FLOOR = [
       // ── preview harnesses, no ruling needed ──
-      'app/onboarding-preview/page.tsx#button1 = 32px',
-      'app/onboarding-preview/page.tsx#button5 = 32px',
-      'app/wizard-preview/page.tsx#button1 = 29px',
-      'app/wizard-preview/page.tsx#button2 = 27px',
+      'app/onboarding-preview/page.tsx = 32px',
+      'app/onboarding-preview/page.tsx = 32px',
+      'app/wizard-preview/page.tsx = 27px',
+      'app/wizard-preview/page.tsx = 29px',
       // ── runner-facing: → TAP-TARGET-DECISIONS-01 ──
-      'app/charity-runners/page.tsx#Link1 = 39px',
-      'app/dashboard/DashboardClient.tsx#button3 = 30px',
-      'app/page.tsx#Link3 = 43px',
-      'components/dashboard/MeScreen.tsx#button2 = 41px',
-      'components/dashboard/MeScreen.tsx#button4 = 41px',
-      'components/dashboard/SessionPopupInner.tsx#button2 = 30px',
-      'components/dashboard/SessionPopupInner.tsx#button3 = 38px',
-      'components/dashboard/SessionPopupInner.tsx#button5 = 18px',
-      'components/dashboard/SessionPopupInner.tsx#button7 = 37px',
-      'components/dashboard/SupportScreen.tsx#button[copy-support-email-address]1 = 24px',
-      'components/shared/Chip.tsx#button1 = 37px',
-      'components/shared/ModifyPlanSheet.tsx#button2 = 30px',
-      'components/shared/PendingAdjustmentBanner.tsx#button1 = 36px',
-      'components/shared/SegmentedControl.tsx#button1 = 30px',
-      'components/shared/TrainingZonesScreen.tsx#button1 = 35px',
-      'components/shared/TrainingZonesScreen.tsx#button3 = 43px',
-      'components/shared/TrainingZonesScreen.tsx#button4 = 43px',
+      'app/charity-runners/page.tsx = 39px',
+      'app/dashboard/DashboardClient.tsx = 30px',
+      'app/page.tsx = 43px',
+      'components/dashboard/MeScreen.tsx = 41px',
+      'components/dashboard/MeScreen.tsx = 41px',
+      'components/dashboard/SessionPopupInner.tsx = 18px',
+      'components/dashboard/SessionPopupInner.tsx = 30px',
+      'components/dashboard/SessionPopupInner.tsx = 37px',
+      'components/dashboard/SessionPopupInner.tsx = 38px',
+      'components/dashboard/SupportScreen.tsx = 24px',
+      'components/shared/Chip.tsx = 37px',
+      'components/shared/ModifyPlanSheet.tsx = 30px',
+      'components/shared/PendingAdjustmentBanner.tsx = 36px',
+      // 🔴 The shared primitive, 14px under the floor, and the one with the most
+      // reach on this list: login, Preferences, ModifyPlanSheet, Chip,
+      // DashboardClient.
+      'components/shared/SegmentedControl.tsx = 30px',
+      // A full-width zone LIST ROW, 1px under. A different question from a control.
+      'components/shared/TrainingZonesScreen.tsx = 43px',
     ]
 
     // ⚠️ EXACT EQUALITY, BOTH WAYS. A new control under the floor fails, and a

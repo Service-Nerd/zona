@@ -1448,6 +1448,66 @@ beside-title screens). These screens are where that decision had never been appl
 `Redeem`, `Faq`, `BenchmarkUpdate`) are in the same class and are handled separately, because
 each needs its own layout change rather than a shared default.
 
+### 13d. A screen's primary CONTROL pins with the header group
+
+**ZONES-TAB-PIN-01 (Design Board, 2026-10-01 — SHIP WITH AMENDMENT).**
+
+🔴 **This is settled ground reached a second time, not a new pattern.**
+`BACK-ARROW-FLOAT-03` already ruled that **a header GROUP pins and carries its cue**, after
+floating the arrow alone let the wizard's progress cue scroll away. The founder's words were
+*"float the group so progress stays too"*. A screen's primary control is the same case.
+
+**The measured defect.** The zones screen pinned "Your zones" and its sub-line, and let the
+**Heart rate / Pace** control scroll away below them. So a runner three zones down the list
+could not switch unit without scrolling back to the top, **losing the position they were
+comparing from** — three actions and a lost place, against one tap.
+
+| Rule | Why |
+|---|---|
+| **The control a screen exists to OPERATE pins with the header group**, via `ScreenHeader`'s `children` slot | Silvanto: the title is a *label*; the segmented control is the *instrument*. A band that pins the lesser of the two has made the runner do the sorting |
+| **Content never goes in the slot.** Not a secondary action, not a value, not a card | The slot is for the instrument. Anything else makes the band tall enough to be a screen of its own, which is what `88vh` exists to prevent elsewhere |
+| **The host owns the state**, because the host owns the group | The screen stays *uncontrolled* when no `tab` is passed, so `/zones-preview` still renders the real component across every state rather than a variant that only exists in a harness |
+| **Whatever pins must clear the 44px floor** | It is now permanently on screen, so a thumb will find it more often, not less |
+
+⚠️ **AMENDMENT, and it is the recorded disagreement.** Silvanto would drop the sub-line —
+*"Heart rate and pace targets"* describes the tabs, so it is redundant once the tabs are
+visible beside it, and that is the height back. **The chair kept it until the band is measured
+on a device**, and named it as the height lever. Removing runner-facing copy on an unmeasured
+impression is this board's own recorded trap.
+
+⚠️ **Nothing has run on a device.** How tall the group now reads in the hand is **not
+measured**, and it is the one question that decides whether the amendment gets spent.
+
+**Checks:** `trainingZones.markup.test.ts` — the tabs are *not* in the screen body, `ZonesTabs`
+*is* inside the zones `ScreenHeader`, the floor constant is `>= 44`, and a two-option control
+with one option renders nothing. All four falsified.
+
+---
+
+### 13e. 375pt is the supported minimum width
+
+**ACTION-ROW-320-01 (Design Board, 2026-10-01 — SHIP).**
+
+Wroblewski's standing lens asks whether a pattern *"holds at the small end: 320px"*. **It is
+being retired as a bar, by ruling, because we do not support 320pt and asserting a bar we have
+chosen not to meet manufactures a finding every time someone measures.**
+
+📐 **Measured (`LINK-HIERARCHY-01`):** both action rows render **44px on one line at 375pt**,
+and **62px on two lines at 320pt** — all four buttons wrap.
+
+| Rule | Why |
+|---|---|
+| **Patterns must hold at 375pt and wider** | 375pt is the narrowest currently supported iPhone. The type scale is already written for it (§ *"written for a 375-wide screen read at arm's length under a thumb"*) |
+| **320pt is a documented NON-target** | The original SE and iPhone 5. A pattern that wraps there is recorded, not fixed |
+| **If 320pt ever comes back into support, it is an SLT question first** | It is a device-support cost, not a layout preference, and it would reopen every measurement taken at 375 |
+
+⚠️ **This does not license ignoring narrow screens.** It fixes the *number the lens asserts*.
+A pattern that breaks at **375** is still a defect, and the two-measure gutter finding
+(`:237`) is the standing reminder that 375 hides things a wider viewport exposes — the
+measurement that *missed* was taken at one width only.
+
+---
+
 ### 13b. Input sheet — a form the runner summons, not a screen they travel to
 
 **ZONES-HR-SHEET-01 (Design Board, 2026-09-29).** A short form belongs in a `Sheet` opened

@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — ZONES-TAB-PIN-01 + ACTION-ROW-320-01 · the board found both answers already written down
+**Shipped:** the zones tabs pin with the header, and 375pt is now the documented minimum width.
+
+**Dev learning:** I took a wrong premise into the sitting and the correction changed the ruling. I had written that the zones tabs were `SegmentedControl` at 30px, which would have meant pinning a control 14px under a standing floor — a reason to hesitate. They are 44px, declared through a named constant with their own markup test. The 30px control is a *separate* shared primitive with no `minHeight` at all, reached from five surfaces. **So the hand-rolled control carries the floor and the primitive extracted to be reused does not**, which is the opposite of what anyone would assume, and it only surfaced because the board's own rule is to rule on the measurement.
+
+**Product/creator learning:** Both items had already been decided and neither knew it. The tab question was settled five days earlier on a different screen: `BACK-ARROW-FLOAT-03` ruled that a header group pins and carries its cue, after floating the arrow alone let the wizard's progress cue scroll away. The 320px question dissolved when the seat that keeps asserting it said the honest thing: *if we do not support 320, my lens is manufacturing a finding.* **Two of five "design items" were a scan away from being closed, and the register is what made that visible rather than a memory.**
+
+**AI-building learning:** My own floor register, written ninety minutes earlier, broke during this build — the zone row went from `#button4` to `#button3` because two tab buttons left that file, and the arm went red over a control that had not moved a pixel. **That is precisely the ordinal instability I had fixed in the previous build.** I wrote a fresh register in the broken key the same afternoon I retired it. It is keyed on file and height now. The lesson is not "be careful"; it is that **a fix I had just reasoned about in detail did not transfer four files sideways.**
+
+**The honest bit:** my placement check failed on correct source. It probed for a self-closing tag before the closing `</ScreenHeader>` as evidence the header had children, and found `<ZonesTabs ... />`'s own self-close — which is *inside* the header and exactly what I wanted. It called a correct layout broken, which is the direction of failure that gets a gate switched off. I rewrote it to bound the region and assert the contents. **Third time today a check I wrote was wrong in a way that only showed when I ran it against reality.**
+
+**Hook material:** Two of the five design items on my list had already been decided, one of them five days earlier, and nobody knew because the decision was on a different screen.
+
+**Postable?:** yes — "the register is the recall, tenure is flavour" is the post, and this is a clean example.
+
+---
+
 ## 2026-10-01 — TAP-TARGET-FLOOR-01 · a check that could not fail
 **Shipped:** the 44px tap-target arm now measures every control a thumb can hit, and the 21 under the floor are registered.
 

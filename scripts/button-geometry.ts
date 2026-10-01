@@ -212,6 +212,43 @@ function renderedClasses(tag: string, name: string): string {
  * are marked `unreadable` and counted, so the population cannot shrink quietly.
  */
 /**
+ * BUTTON-GEOMETRY-CONST-01 — RESOLVE AN IDENTIFIER-VALUED SIZE PROP.
+ *
+ * 🔴 FOUND BY A DESIGN BOARD SITTING THAT WAS ABOUT TO RULE ON A WRONG NUMBER.
+ * `TAP-TARGET-FLOOR-01` widened this harness to the hand-rolled population and
+ * registered 21 controls under the 44px floor. **Three of them were false.**
+ * `TrainingZonesScreen`'s tabs declare `minHeight: TAB_MIN_HEIGHT_PX`, the
+ * constant is **44**, and it carries its own markup test asserting `>= 44` — but
+ * `num()` matches `minHeight:\s*'?([0-9.]+)px` and an IDENTIFIER is not a px
+ * literal. So the harness fell through to padding and reported **35px** on a
+ * control that is 44.
+ *
+ * ⚠️ AND THE COMPONENT HAD WRITTEN THE WARNING DOWN ITSELF: *"`minHeight` IS
+ * LOAD-BEARING AND THE GATE CANNOT SEE IT ... asserted in this component's own
+ * markup test instead, because the gate will never fail on it."* **The author
+ * knew, said so in the file, and the register still shipped the wrong number**
+ * — because widening a population inherits every blind spot the old population
+ * never exercised.
+ *
+ * ⚠️ DOING THE RIGHT THING MADE IT MEASURE WORSE, which is the same shape as
+ * `-SPREAD-01`: hoisting a value into a named constant is correct, and it is
+ * what hid the value from a literal reader. **A harness that punishes good code
+ * is a harness that will be worked around.**
+ *
+ * Same-file `const NAME = <number>` only. An imported one stays unresolved and
+ * is visible as such, for the reason given on `expandStyleSpreads`.
+ */
+export function resolveSizeConstants(tagText: string, src: string): string {
+  return tagText.replace(
+    /\b(minHeight|height|minWidth|width):\s*([A-Z_][A-Z0-9_]*)\b/g,
+    (whole, prop: string, name: string) => {
+      const m = src.match(new RegExp('const\\s+' + name + '\\s*(?::\\s*number\\s*)?=\\s*(\\d+(?:\\.\\d+)?)\\b'))
+      return m ? `${prop}: '${m[1]}px'` : whole
+    },
+  )
+}
+
+/**
  * The inline border WIDTH in px, 0 when absent or not a px literal.
  *
  * Reads `border:` / `borderWidth:` / `borderTop|Bottom:`. A token-valued border
@@ -449,7 +486,8 @@ export function measureAll(opts: { all?: boolean } = {}): Record<string, Box> {
         const onSystem = /className=[^\n]*\b(btn|icon-btn|switch)\b/.test(text) ||
                          tag === 'Button' || tag === 'IconButton' || tag === 'Switch'
         if (!onSystem && !opts.all) continue
-        const { text: expanded, unresolved } = expandStyleSpreads(text, src)
+        const { text: spreadsOut, unresolved } = expandStyleSpreads(text, src)
+        const expanded = resolveSizeConstants(spreadsOut, src)
         const n = (seen[tag] = (seen[tag] ?? 0) + 1)
         const box = boxOf(expanded, floors, padFromClass, tag, overlays)
         if (unresolved.length) box.unreadable = unresolved.sort()

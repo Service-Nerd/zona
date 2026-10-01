@@ -163,7 +163,7 @@ style prop and an imperative style write **cannot both own a property**.
 ⚠️ **Also unfixed:** the founder's screenshot shows **~145pt of empty white** below *Dismiss*
 before the sheet ends. Filed inside this item because it is the same panel.
 
-### `ACTION-ROW-320-01` — the action rows still wrap at 320pt ⚙️ NO BOARD (measurement) · 🧭 DESIGN BOARD (answer)
+### ✅ `ACTION-ROW-320-01` — SHIPPED 2026-10-01, Design Board SHIP (375pt is the supported minimum)
 
 `LINK-HIERARCHY-01` moved both action rows to `.btn--compact` and they now render **44px, one line
 at 375pt** — the founder's device. 🔴 **At 320pt they still wrap: 62px, two lines, all four
@@ -177,6 +177,21 @@ on a shipping device.**
 **What it needs is a decision, not a tweak:** shorter labels (copy → founder), stacking the row
 full-width below some breakpoint (layout → board), or accepting 320 as out of support and saying so
 in `ui-patterns.md` so the lens stops asserting a bar we have chosen not to meet.
+
+✅ **RULED: the third option.** `ui-patterns.md` § 13e — **375pt is the supported minimum width
+and 320pt is a documented NON-target.**
+
+🥇 **Wroblewski argued his own lens down**, which is why this is a one-line ruling rather than a
+layout project: *"if we do not support 320, my lens is manufacturing a finding and should be
+corrected rather than honoured."* The type scale was already written for 375 (§ *"written for a
+375-wide screen read at arm's length under a thumb"*), so the doctrine was inconsistent with
+itself.
+
+⚠️ **This does not license ignoring narrow screens**, and the ruling says so: a pattern that
+breaks at **375** is still a defect, and the two-measure gutter finding (`:237`) is the standing
+reminder that 375 HIDES what a wider viewport exposes — the measurement that missed was taken at
+one width only. If 320 ever returns to support it is an **SLT** cost question first, and it
+reopens every measurement taken at 375.
 
 ### `MATCH-LIST-WINDOW-01` — the candidate list has no date filter 🏃 COACHING BOARD
 
@@ -1368,7 +1383,7 @@ stop serving; it serves the last thing it managed to build.**
 ⚠️ **What remains genuinely open:** nothing from this item. The device questions belong to
 `ZONES-HR-SHEET-01`.
 
-#### 🔴 `ZONES-TAB-PIN-01` — the Heart rate / Pace tabs scroll away
+#### ✅ `ZONES-TAB-PIN-01` — SHIPPED 2026-10-01, Design Board SHIP WITH AMENDMENT
 
 🧭 **DESIGN BOARD.** Found in the founder's device screenshots, 2026-09-29. **Flagged, not
 decided, and deliberately not built.**
@@ -1385,6 +1400,48 @@ and a trade is a ruling.**
 **Options for the board:** pin the tabs with the header and accept the height · pin only the
 tabs and let the title scroll, since the control is what the screen is *for* · leave it and
 accept the scroll-back · collapse the title once scrolled so the band stays short.
+
+✅ **RULED AND SHIPPED: pin the tabs with the header group.** `ui-patterns.md` § 13d,
+`design-rulings.md` row appended.
+
+🔴 **IT WAS SETTLED GROUND, AND THE SCAN FOUND IT.** `BACK-ARROW-FLOAT-03` (2026-09-29) already
+ruled that **a header GROUP pins and carries its cue** — after floating the arrow alone let the
+wizard's progress cue scroll away, 👤 *"float the group so progress stays too"*. **The trade this
+item framed as open had been decided five days earlier on a different screen.**
+
+🔴 **AND THE PREMISE I TOOK INTO THE SITTING WAS WRONG, WHICH CHANGED THE RULING.** I asserted
+the tabs were `SegmentedControl` at 30px, which would have meant pinning a control 14px under a
+STANDING floor. **They are 44px** — `minHeight: TAB_MIN_HEIGHT_PX`, constant `= 44`, with its own
+markup test. `SegmentedControl` is a **separate shared primitive**, `padding: '8px 10px'`, **no
+`minHeight` at all**, reached from login, Preferences, ModifyPlanSheet, Chip and
+DashboardClient → folded into `TAP-TARGET-DECISIONS-01` as its highest-reach row. **The
+hand-rolled control carries the floor; the primitive extracted to be reused does not.**
+
+⚠️ **AMENDMENT — the sub-line STAYS.** Silvanto would drop it (*"Heart rate and pace targets"*
+describes the tabs, so it is redundant once they are visible, and that is the height back). The
+chair kept it **until the band is measured on a device** and named it the height lever, because
+removing runner-facing copy on an unmeasured impression is this board's own recorded trap.
+
+**Implementation:** `ScreenHeader` gains a `children` slot (contract updated in the same commit,
+which its gate demanded); `ZonesTabs` is extracted **verbatim** — same constant, padding and
+tokens, because `ME-DOORS-01` shipped five silent defects from a move whose commit truthfully
+said *"no change to data or computation"*; the tab state lifts to `DashboardClient`, and the
+screen stays **uncontrolled** when no `tab` is passed so `/zones-preview` keeps rendering the
+real component across every state.
+
+✅ **§5b move checks run, and two existing arms went red, which is the mechanism working** — they
+asserted the tab labels appear in `TrainingZonesScreen`'s markup, and after the move they do not.
+Retargeted at `ZonesTabs`, plus a **placement** arm (the tabs must be inside the zones
+`ScreenHeader`) because `ZonesTabs` existing proves nothing about where it renders, and placement
+is the entire ruling.
+
+**Falsified four ways:** render the tabs outside the header → red · drop the floor constant below
+44 → red · break the one-sided rule → red · and the placement arm's own first cut **failed on
+correct source** (it probed for a self-closing `/>` and found `ZonesTabs`' own), so it was
+rewritten to bound the region.
+
+⚠️ **Nothing has run on a device.** How tall the group now reads in the hand is unmeasured, and
+it is the one question that decides whether the amendment gets spent.
 
 ⚠️ **Measure before ruling:** the band's height at 375px and at 320px, with and without the
 tabs. **Nothing on this screen has been measured at 320px.**

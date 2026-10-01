@@ -71,6 +71,7 @@ export default function ScreenHeader({
   sub,
   onBack,
   sticky = true,
+  children,
 }: {
   title: string
   /**
@@ -112,6 +113,26 @@ export default function ScreenHeader({
    * mockup. `screenHeaderPinned.test.ts` requires every `sticky={false}` to be declared.
    */
   sticky?: boolean
+  /**
+   * ZONES-TAB-PIN-01 — THE SLOT THAT LETS A SCREEN'S PRIMARY CONTROL PIN WITH
+   * THE HEADER, rather than scrolling away below it.
+   *
+   * 🔴 THIS IS SETTLED GROUND, NOT A NEW PATTERN. `BACK-ARROW-FLOAT-03`
+   * (2026-09-29) established that **a header GROUP pins and carries its cue**,
+   * after floating the arrow alone let the wizard's progress cue scroll away.
+   * The founder's words were *"float the group so progress stays too"*. A
+   * screen's primary control is the same case: on the zones screen a runner
+   * three zones down could not switch between Heart rate and Pace without
+   * scrolling back to the top and losing their place.
+   *
+   * ⚠️ WHAT BELONGS HERE AND WHAT DOES NOT. The control the screen exists to
+   * operate, which on this screen is the instrument and the title is only its
+   * label. **Not** content, not a secondary action, and not anything that would
+   * make the band tall enough to be a screen of its own — Silvanto's standing
+   * concern, and the stated height lever is the sub-line, which becomes
+   * redundant once the tabs it describes are visible beside it.
+   */
+  children?: React.ReactNode
 }) {
   const { ref, scrolled } = useScrolledContainer(sticky)
 
@@ -132,6 +153,7 @@ export default function ScreenHeader({
       )}
       <div className="screen-header__title">{title}</div>
       {sub && <div className="screen-header__sub">{sub}</div>}
+      {children}
     </div>
   )
 }

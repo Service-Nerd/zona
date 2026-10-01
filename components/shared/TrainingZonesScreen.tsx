@@ -91,6 +91,68 @@ export const CEILING_LABEL_HR = 'Not above'
 export const CEILING_LABEL_PACE = 'Not faster than'
 
 /**
+ * ZONES-TAB-PIN-01 — THE TAB CONTROL, EXTRACTED SO IT CAN PIN WITH THE HEADER.
+ *
+ * Design Board, 2026-10-01: **SHIP WITH AMENDMENT.** A runner three zones down
+ * the list could not switch between Heart rate and Pace without scrolling back
+ * to the top, which loses the position they were comparing from.
+ *
+ * 🔴 NOT A NEW PATTERN — settled ground. `BACK-ARROW-FLOAT-03` established that
+ * **a header GROUP pins and carries its cue**, after floating the arrow alone
+ * let the wizard's progress cue scroll away (founder: *"float the group so
+ * progress stays too"*). Silvanto: the control is what the screen is FOR;
+ * "Your zones" is a label and Heart rate / Pace is the instrument.
+ *
+ * ⚠️ THE MARKUP IS MOVED VERBATIM. Same 44px `TAB_MIN_HEIGHT_PX`, same padding,
+ * same tokens — because `ME-DOORS-01` shipped five silent defects out of a move
+ * whose commit said *"no change to data or computation"*, and that was true.
+ * What changes here is only WHERE it renders.
+ *
+ * ⚠️ AND IT IS RENDERED BY THE HOST, so the host owns the tab state. The screen
+ * stays uncontrolled when no `tab` prop is passed, which is what keeps
+ * `/zones-preview` honest.
+ */
+export function ZonesTabs({ tab, onTabChange, hasHr, hasPace }: {
+  tab: string
+  onTabChange: (t: string) => void
+  hasHr: boolean
+  hasPace: boolean
+}) {
+  // ⚠️ No toggle when only one side has data — a two-option control with one
+  // option is noise, and a tab full of estimates is worse than no tab. The
+  // caller must not have to know this rule; returning null keeps it in one place.
+  if (!(hasHr && hasPace)) return null
+  const showing = tab
+  return (
+    <div style={{ display: 'flex', background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)', padding: '3px', marginTop: 'var(--space-3)' }}>
+      {[ZONES_TAB_HR, ZONES_TAB_PACE].map(t => (
+        <button
+          key={t}
+          onClick={() => onTabChange(t)}
+          style={{
+            // ⚠️ `minHeight` IS LOAD-BEARING. It is a named constant, and until
+            // 2026-10-01 `buttonGeometry.test.ts` could not read an identifier,
+            // so it reported this control as 35px when it is 44 and registered a
+            // false violation. `resolveSizeConstants` fixes that
+            // (BUTTON-GEOMETRY-CONST-01); this component's own markup test
+            // asserts the constant is >= 44 and remains the primary guard.
+            flex: 1, minHeight: TAB_MIN_HEIGHT_PX, padding: '9px',
+            borderRadius: 'var(--radius-sm)', border: 'none',
+            fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)',
+            fontWeight: showing === t ? 600 : 500,
+            background: showing === t ? 'var(--card)' : 'transparent',
+            color: showing === t ? 'var(--ink)' : 'var(--mute)',
+            cursor: 'pointer',
+          }}
+        >
+          {t}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/**
  * The pace rows, in prescribed order.
  *
  * ⚠️ DERIVED FROM THE `PaceGuide` THE ENGINE BUILT, never re-computed from VDOT fractions
@@ -109,7 +171,7 @@ function paceRows(p: PaceGuide): { name: string; desc: string; band: string }[] 
   return rows.filter((r): r is { name: string; desc: string; band: string } => !!r.band)
 }
 
-export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr }: {
+export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr, tab: tabProp, onTabChange }: {
   /** HR zones, or null when resting/max HR are not both known. */
   zones: ZoneRow[] | null
   /** The guide the ENGINE built, or null when the runner has no benchmark. */
@@ -119,6 +181,17 @@ export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr }: 
   sourceHr?: { resting: number; max: number } | null
   /** Navigates to the HR card on Me, which remains the one place they are edited. */
   onEditHr?: () => void
+  /**
+   * ZONES-TAB-PIN-01 — CONTROLLED WHEN SUPPLIED, internal otherwise.
+   *
+   * The Design Board ruled the tabs pin with the header group, and the group is
+   * owned by the host (`DashboardClient` renders `ScreenHeader`). So the host
+   * has to own the state too. Optional rather than required **because
+   * `/zones-preview` renders this screen standalone across every state** and
+   * forcing it to manage a tab would make the harness lie about the component.
+   */
+  tab?: string
+  onTabChange?: (t: string) => void
 }) {
 
   /* 🔴 ZONES-ZONE-SHEET-GONE-01 — THE PER-ZONE EXPLAINER CAME BACK.
@@ -134,7 +207,9 @@ export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr }: 
   const [openZone, setOpenZone] = useState<1 | 2 | 3 | 4 | 5 | null>(null)
   const hasHr = !!zones && zones.length > 0
   const hasPace = !!pace
-  const [tab, setTab] = useState<string>(hasHr ? ZONES_TAB_HR : ZONES_TAB_PACE)
+  const [tabOwn, setTabOwn] = useState<string>(hasHr ? ZONES_TAB_HR : ZONES_TAB_PACE)
+  const tab = tabProp ?? tabOwn
+  const setTab = onTabChange ?? setTabOwn
 
   // Neither side has data. Restraint doctrine: empty means calm, not broken.
   if (!hasHr && !hasPace) {
@@ -162,36 +237,6 @@ export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr }: 
   return (
     <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', paddingBottom: 'var(--space-7)' }}>
 
-      {/* ⚠️ No toggle when only one side has data — a two-option control with one
-          option is noise, and a tab full of estimates is worse than no tab. */}
-      {hasHr && hasPace && (
-        <div style={{ display: 'flex', background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)', padding: '3px' }}>
-          {[ZONES_TAB_HR, ZONES_TAB_PACE].map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              style={{
-                // ⚠️ `minHeight` IS LOAD-BEARING AND THE GATE CANNOT SEE IT.
-                // `buttonGeometry.test.ts` measures `Button` COMPONENTS; these are
-                // hand-rolled `<button>`s for a segmented control, so they are outside
-                // its population entirely — the exact blind spot that let 18 hand-rolled
-                // controls ship under the floor on 2026-09-25, the smallest at 18px.
-                // 9px padding around 14px text is ~35px. Asserted in this component's
-                // own markup test instead, because the gate will never fail on it.
-                flex: 1, minHeight: TAB_MIN_HEIGHT_PX, padding: '9px',
-                borderRadius: 'var(--radius-sm)', border: 'none',
-                fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)',
-                fontWeight: showing === t ? 600 : 500,
-                background: showing === t ? 'var(--card)' : 'transparent',
-                color: showing === t ? 'var(--ink)' : 'var(--mute)',
-                cursor: 'pointer',
-              }}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* 🔴 THE CEILING. One number, at display size, because it is the only one the
           runner needs to carry out of the door. */}
