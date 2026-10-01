@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — HOOK-RGBA-COMMENTS-01 · the guard against hardcoded colour found one, in a dark-mode fallback
+**Shipped:** both pre-commit colour checks ignore comments, the hook has tests, and the app's only hardcoded hex is gone.
+
+**Dev learning:** The ticket was about `rgba` firing on prose. The hex check two blocks above it had exactly the same hole, and worse: the hook's own OG-route exemption says those files carry the hex *"with the token name in a trailing comment, which is the reviewable form"* — so the hex check was blocking a practice the same hook elsewhere calls correct. One shared comment stripper for both, blanking the text and keeping the newlines so the error output still points at a real line.
+
+**Product/creator learning:** I measured before changing the rule and found **zero** comment-only colour mentions, so the hole was latent. The measurement earned its place anyway, because it turned up the one live hardcoded hex in the whole app: `var(--bg, #111)` in the dashboard layout. `--bg` is warm off-white and ADR-008 removed dark mode, so if that fallback had ever resolved, the dashboard would have painted **near-black**. It is a relic with a trigger. **The thing I went looking for was not there; the thing I found was worse.**
+
+**AI-building learning:** It survived because the pre-commit guard reads **staged files only**, and nothing had touched that file for months. That is not a bug in the guard, it is the shape of every commit-time check: **a guard scoped to the diff cannot see the tree.** Worth saying out loud because this repo leans hard on pre-commit hooks, and every one of them has that same blind spot for code already in place.
+
+**The honest bit:** my first attempt put the explanation inside the JSX as a `{/* comment */}` and produced invalid React — a comment node and a sibling at the top of a `return` with no fragment. `tsc` caught it immediately and it cost nothing, but it is the second time today I have broken something while writing the note explaining the thing I was fixing.
+
+**Hook material:** The guard that blocks hardcoded colours had never been tested, and the one hardcoded colour in the app would have painted the dashboard black.
+
+**Postable?:** yes — "a guard scoped to the diff cannot see the tree" is the useful half.
+
+---
+
 ## 2026-10-01 — SMOKE-PLUMBING-01 · the item said two dead props; it was six things
 **Shipped:** every trace of the smoke tracker is out of the running app, with a gate so it cannot come back.
 

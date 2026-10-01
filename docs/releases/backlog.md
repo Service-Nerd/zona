@@ -445,7 +445,7 @@ its subject stays in flow. **Only a global action may dock** — see `ui-pattern
    him? The two complaints may be one.
 
 
-### `HOOK-RGBA-COMMENTS-01` — the colour guard fires on prose ⚙️ NO BOARD
+### ✅ `HOOK-RGBA-COMMENTS-01` — SHIPPED 2026-10-01 ⚙️ NO BOARD
 **Found 2026-09-26** writing a comment that recorded a measured colour.
 
 `.githooks/pre-commit`'s rgba check (P-13b, GAP-08) is a plain `grep -nE` over staged files
@@ -457,6 +457,39 @@ about a measurement, not a style.
 reworded instead. But this repo has recorded four times that **a guard which fires on ordinary
 work gets switched off**, and documenting a measured colour in a comment is ordinary work here —
 it is what half the comments written this week do.
+
+✅ **SHIPPED, AND THE SCOPE WAS WIDER THAN THIS ITEM IN BOTH DIRECTIONS.**
+
+🔴 **THE ITEM NAMED `rgba`. THE HEX CHECK TWO BLOCKS ABOVE HAD THE IDENTICAL HOLE** — and the
+hook's own OG exemption says those files carry the hex *"WITH the token name in a trailing
+comment, which is the reviewable form"*, so the practice the hex check blocks is one the hook
+elsewhere calls correct. **One shared `strip_comments` for both**, blanking comment text while
+**preserving line numbers** so `grep -n` still points at the real line.
+
+📐 **Measured across `app/` and `components/`: 0 comment-only occurrences of either**, so the hole
+is **latent, not live** — consistent with this item's own record that the comment was reworded
+rather than the guard loosened.
+
+🔴 **BUT THE MEASUREMENT FOUND THE ONE LIVE HARDCODED HEX IN THE APP, AND IT WAS A DARK-MODE
+RELIC.** `app/dashboard/layout.tsx` read **`var(--bg, #111)`**. `--bg` is `#F3F0EB`, warm
+off-white, and **ADR-008 removed dark mode**: had that fallback ever fired, the dashboard would
+have rendered **near-black**. ⚠️ **It survived because the pre-commit guard reads STAGED files
+only and nothing had touched that file for months — a guard scoped to the diff cannot see the
+tree.** Now `var(--bg)` with no fallback: `globals.css` is the token authority (ADR-007) and a
+component must not carry a second copy of the ground colour.
+
+✅ **THE HOOK HAS TESTS NOW, AND IT HAD NONE.** Every `.claude/hooks/*` carries a `.test.py`;
+`.githooks/pre-commit` carried nothing, so neither colour check had ever been exercised in either
+direction. `.githooks/pre-commit.test.sh` runs the **real hook** against scratch git repos — not a
+copy of its regexes — with **11 cases**: prose passes (line, block, hex, rgb) · code still blocks
+· scrims still pass · the OG exemption holds · **and the two traps** — *code after a comment on
+the same line still blocks*, and *a hex inside a STRING is code, not prose*.
+
+✅ **Wired into `npm run verify`** as `test:githooks`, because CLAUDE.md's own rule is that a check
+depending on someone remembering is a check that does not run. **Falsified:** reverting the
+stripper turns exactly the **3** prose cases red and leaves every code case blocking.
+
+4,114 tests / 459 files, `tsc` clean.
 
 **Do:** strip comments before matching (the design and coaching guards already do this, and
 `bound the region, never grep the file` is recorded four times). ⚠️ **Strip them the way those

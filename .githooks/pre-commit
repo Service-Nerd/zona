@@ -20,13 +20,58 @@ PALETTE_EXEMPT_REGEX='^app/api/og/'
 
 STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(tsx?|jsx?)$' | grep -vE '^globals\.css$' | grep -E '^(app|components)/' | grep -vE "$PALETTE_EXEMPT_REGEX" || true)
 
+# ── Comment-stripped source, for the colour checks ───────────────────────────
+#
+# 🔴 HOOK-RGBA-COMMENTS-01. Both colour checks below grepped the WHOLE FILE, so
+# a comment RECORDING a measured colour was blocked as a hardcoded palette
+# value: *"the darkest blurred backdrop is rgb(181,192,180)"* is prose about a
+# measurement, not a style.
+#
+# ⚠️ THE GUARDS ARE RIGHT TO EXIST AND WERE NOT LOOSENED. On 2026-09-26 the
+# comment was reworded rather than the rule weakened. But this repo has recorded
+# FOUR times that a guard which fires on ordinary work gets switched off, and
+# documenting a measured colour in a comment is ordinary work here — the hook's
+# own OG exemption says those files carry the hex "WITH the token name in a
+# trailing comment, which is the reviewable form."
+#
+# ⚠️ AND THE ITEM NAMED ONLY `rgba`. The hex check two blocks below had the
+# IDENTICAL hole, which is why the stripper is shared rather than bolted onto
+# one of them. 📐 Measured 2026-10-01 across app/ and components/: **0
+# comment-only occurrences of either**, so the hole is LATENT, not live — and
+# the one live hardcoded hex it did find was `var(--bg, #111)`, a dark-mode
+# fallback that would paint the dashboard near-black under a single LIGHT theme
+# (ADR-008). Fixed in the same commit.
+#
+# Line numbers are PRESERVED: comment text is blanked, never deleted, so the
+# `grep -n` output below still points at the real line.
+strip_comments() {
+  python3 - "$1" <<'PYSTRIP'
+import re, sys
+src = open(sys.argv[1], encoding='utf-8', errors='replace').read()
+blank = lambda m: re.sub(r'[^\n]', ' ', m.group(0))
+src = re.sub(r'/\*[\s\S]*?\*/', blank, src)   # block comments, newlines kept
+src = re.sub(r'//[^\n]*', blank, src)           # line comments
+sys.stdout.write(src)
+PYSTRIP
+}
+
 # ── Hardcoded hex colours ─────────────────────────────────────────────────────
-HEX_HITS=$(echo "$STAGED" | xargs grep -lnE '#[0-9A-Fa-f]{3,8}\b' 2>/dev/null || true)
+HEX_RE='#[0-9A-Fa-f]{3,8}\b'
+HEX_HITS=""
+for f in $STAGED; do
+  [ -f "$f" ] || continue
+  if strip_comments "$f" | grep -qE "$HEX_RE"; then
+    HEX_HITS="$HEX_HITS$f
+"
+  fi
+done
 if [ -n "$HEX_HITS" ]; then
   echo ""
   echo "✗  Hardcoded hex colour detected. Use CSS custom properties from globals.css."
+  echo "   (A hex inside a COMMENT is prose about a measurement and is allowed.)"
   echo "$HEX_HITS" | while read -r f; do
-    grep -nE '#[0-9A-Fa-f]{3,8}\b' "$f" | head -3 | sed "s|^|   $f:|"
+    [ -n "$f" ] || continue
+    strip_comments "$f" | grep -nE "$HEX_RE" | head -3 | sed "s|^|   $f:|"
   done
   FAIL=1
 fi
@@ -51,7 +96,7 @@ RGBA_SCRIM='rgba?\(\s*(0\s*,\s*0\s*,\s*0|255\s*,\s*255\s*,\s*255)\s*[,)]'
 RGBA_HITS=""
 for f in $STAGED; do
   [ -f "$f" ] || continue
-  if grep -nE "$RGBA_RE" "$f" 2>/dev/null | grep -vE "$RGBA_SCRIM" | grep -q .; then
+  if strip_comments "$f" | grep -nE "$RGBA_RE" | grep -vE "$RGBA_SCRIM" | grep -q .; then
     RGBA_HITS="$RGBA_HITS$f
 "
   fi
@@ -62,7 +107,7 @@ if [ -n "$RGBA_HITS" ]; then
   echo "   (Pure white / pure black at alpha are allowed — those are scrims, not palette.)"
   echo "$RGBA_HITS" | while read -r f; do
     [ -n "$f" ] || continue
-    grep -nE "$RGBA_RE" "$f" | grep -vE "$RGBA_SCRIM" | head -3 | sed "s|^|   $f:|"
+    strip_comments "$f" | grep -nE "$RGBA_RE" | grep -vE "$RGBA_SCRIM" | head -3 | sed "s|^|   $f:|"
   done
   FAIL=1
 fi
