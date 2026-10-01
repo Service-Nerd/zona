@@ -359,6 +359,122 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
 2. If it persists: attach **Safari → Develop → [device] → Web Inspector**, hover the band, and read
    the element. That is the only thing that will name it, and it takes a minute.
 
+## ⚖️ FILED 2026-10-01 — `DOCS-RESIDUAL-01`
+
+### `DOCS-RESIDUAL-01` — a residual on a SHIPPED item has no home in "what's left" ⚙️ **NO BOARD**
+
+🔴 **MEASURED 2026-10-01: 105 `🔻` residual markers** — 73 in `backlog.md`, 32 in
+`feature-registry.md` — and **`audit-docs.sh` can see none of them.** It reported **ALL CLEAN**
+while three residuals written that same day sat inside shipped entries with no item, no status
+and no roadmap line.
+
+**Why the doc system has no slot for it.** CLAUDE.md's flow is: an open item lives in
+roadmap + backlog, a shipped item moves to `feature-registry.md`. **Shipping is what gives an
+item a home, and a residual is the part that did not ship.** So it gets written into the
+shipped entry, in detail, by an author who has just proved they understand it, and then nothing
+ever queries it again. `PUSH-UNITS-01` is the recorded precedent: fixed incidentally by the
+ADR-015 sweep, left open for weeks, and the `backlog-touch.py` hook exists because of it.
+
+⚠️ **THE OBVIOUS FIX IS WORSE THAN THE PROBLEM.** Requiring every `🔻` to name a tracking item
+means retrofitting a convention across **105 markers**, most of which are genuinely accepted
+trade-offs that need no item (*"iPhone-only users get no HR coaching"*, *"the tokens are
+measured, the dollars are not"*). A migration that large, done to satisfy a check, is how a
+register fills with `accepted` and stops meaning anything.
+
+**What would actually work, in order of cost:**
+1. **A `🔻` taxonomy of two marks, not one.** `🔻` keeps meaning *accepted trade-off, stated
+   honestly*; a new mark means *unfixed and untracked*, and only the new one needs an item.
+   New residuals adopt it from day one; the 105 stay as they are, which is correct, because
+   most of them ARE accepted.
+2. **A gate on the new mark only** — grep it in `audit-docs.sh`, require an item ID beside it.
+   Zero retrofit, no baseline, and the debt register this repo keeps reaching for is not
+   needed, because there is nothing to register.
+3. Do nothing and rely on reading. ⚠️ **This is the status quo and it failed today**, on three
+   residuals, one of which (`GTM-CHARITY-DEADLINE-01`) affects 500 live runners.
+
+⚠️ **NOT A DEBT-REGISTER CANDIDATE.** `SWEEP-BASELINE-01` and the liveness baseline make debt
+visible and stop it growing; CLAUDE.md already records that **neither makes it shrink and
+nothing schedules it.** Baselining 105 markers would add a 106th problem.
+
+🥇 **Found by being asked whether the documents were up to date when the mechanical answer was
+yes.** That is the third time this week a record question has surfaced something the audit
+could not: the audit is only ever as wide as its list, and residuals were never on it.
+
+## ⚖️ FILED 2026-10-01 — three residuals that had no home
+
+> 🔴 **WHY THESE THREE ARE BEING FILED AT ALL, WHICH IS THE POINT.** Each was written down
+> today, in detail, **inside a ✅ SHIPPED entry** — the `CHARITY-FAQ-RUNWAY-01` item and the
+> `GTM-SEO-COMPARE-01` page 4 bullet. A shipped item has no status, so nothing lists it, and
+> `audit-docs.sh` reported **ALL CLEAN** with all three sitting in it. ⚠️ **The flow in
+> CLAUDE.md has no slot for this:** an open item lives in roadmap + backlog, a shipped one
+> lives in the registry, and **a residual on a shipped item lives in prose nobody queries.**
+> That is `PUSH-UNITS-01`'s shape, which sat open for weeks after being fixed incidentally.
+> ⚠️ **Measured: 105 `🔻` residual markers** across `backlog.md` (73) and
+> `feature-registry.md` (32), and **this audit cannot see any of them** → `DOCS-RESIDUAL-01`.
+
+### `GTM-CHARITY-DEADLINE-01` — the code deadline is in the email and not on the page 👤 **FOUNDER** (copy)
+
+**500 codes went out on 2026-10-01 with a redemption deadline of 31 January 2027.** That date
+is in the founder's email to the charity. It is **nowhere on `/charity-runners`**, which is the
+page that email points runners at as the FAQ.
+
+🔴 **The failure mode is specific and likely.** A charity code gets forwarded: runner to runner,
+WhatsApp group, a club noticeboard. **The email does not travel with it; the link does.** So the
+runner who most needs the deadline is the one who never saw it, and the first they learn of it
+is a code that no longer works.
+
+⚠️ **The page already explains duration and is silent on the window, which reads as reassurance.**
+*"Twelve months from the day you redeem it"* answers "how long do I get" and invites the
+conclusion that redeeming can wait.
+
+**The fix is one sentence** in the *"How long does it last?"* answer or its own FAQ entry.
+👤 **Founder copy — proposed, not written**, same reason as `CHARITY-FAQ-RUNWAY-01`:
+`REDEEM-MECHANISM-TRUTH-01` was this page's copy being rewritten without asking.
+
+> Proposed: *"One thing to watch: the codes themselves expire on 31 January 2027. Redeem before
+> then and you still get the full twelve months from the day you redeem."*
+
+⚠️ **Raised three times in conversation on 2026-10-01 and never ruled on**, which is exactly why
+it is now an item with a status instead of a sentence in a shipped entry.
+
+### `SEO-PRICE-ATTRIBUTION-01` — the price gate cannot tell which product a figure belongs to ⚙️ **NO BOARD**
+
+`articles.test.ts` proves every £ figure in an article comes from `COMPETITOR_FACTS` or
+`PRICING`. **It cannot prove the figure belongs to the product the sentence names.**
+
+🔴 **Measured on page 4, in the copy as submitted:** *"Coopah is £9.99 a month, billed
+annually"* — £9.99 is **TrainAsONE's** declared monthly, so the gate passed it. Only the
+adjacent *"about £120 a year"* failed, and that was luck: £120 happened to be nobody's price.
+**The defect that reached the gate was the correct kind of number about the wrong company.**
+
+✅ **Half of it is now closed** (`5c91d02`): for a `free` product the question is decidable,
+because the correct number of £ figures in a sentence about it is zero. *"Garmin Coach is £9.99
+a month"* fails that arm and passes every other.
+
+**Still open: paid against paid.** £14.99 in a sentence about Runna passes everything.
+
+**Sketch, not a decision.** Sentence-scoped attribution: for each sentence, if exactly one
+competitor is named and it carries a £ figure, that figure must be that competitor's. Bail on
+sentences naming two or more. ⚠️ **The risk is a check that nags**, and this repo records twice
+that a noisy gate gets switched off, which is the same as having none — so it needs measuring
+against all four live pages before it ships, not after. **Four more comparison pages are
+planned**, which is the argument for doing it before page 5 rather than after page 8.
+
+### `CHARITY-AUDIENCE-HEADINGS-01` — the audience guard reads the answers only ⚙️ **NO BOARD**
+
+`charityPageAudience.test.ts` (shipped `169a8ec`) holds `/charity-runners`' FAQ **answers**
+distance- and season-neutral. 🔴 **The 2026-09-11 defect it exists to prevent was in the
+page's URL, title and CTAs**, not only its FAQs: *"it was marathon-only in its URL, title, FAQs
+and CTAs."* **So the guard covers the surface where the defect recurred and not the surface
+where it originally lived.**
+
+**The fix:** a second arm over headings, hero and CTA copy, with the legitimate distance names
+(the *"Half marathon"* plan card, the `marathon-16-week` link) exempted by **path**, not by
+pattern. The slug itself is already distance-neutral and must stay that way.
+
+⚠️ **Not urgent and genuinely small**, filed because the gap is only visible from inside the
+guard's own comment, which is where residuals go to be forgotten.
+
 ## ⚖️ FILED 2026-10-01 — `PROMPT-UNITS-ADJUST-01`
 
 ### `PROMPT-UNITS-ADJUST-01` — the plan-adjustment prompt is unit-blind ⚙️ **NO BOARD**
@@ -6756,7 +6872,7 @@ the `FAQPage` JSON-LD automatically. ⚠️ **No count is pinned**, so nothing m
 answer being deleted later. Not worth a gate on its own: the nine existing guards cover voice,
 punctuation and schema, and a count assertion would fail on every legitimate edit.
 
-🔻 **STILL MISSING: the 31 January 2027 redemption deadline**, which the founder's partner email
+🔻 **STILL MISSING: the 31 January 2027 redemption deadline** → now tracked as `GTM-CHARITY-DEADLINE-01`. Which the founder's partner email
 carries and this page does not. A runner who reads the page and not the email has no deadline. Left
 out deliberately: he authorised *"the question"*, singular, and this is his copy.
 
@@ -6802,7 +6918,7 @@ plus exemption-rot). Restored, 4 pass.
 offers a *"Half marathon"* card: naming the distances it **supports** is the opposite of assuming the
 reader's. ⚠️ **Headings, hero and CTAs are outside the guard** — no check reads them for the same
 assumption, and the 2026-09-11 defect was in the **title and URL** as well as the FAQs. A heading arm is
-the obvious extension and is not written.
+the obvious extension and is not written → `CHARITY-AUDIENCE-HEADINGS-01`.
 
 ---
 
@@ -9218,7 +9334,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 ### Go-to-Market — acquisition
 
 - 🔲 **GTM-SEO-COMPARE-01 Wave 2 — comparison pages 5–8** *(FREE, marketing)* — page 1 (`/runna-alternatives`) shipped 2026-09-10 with the template; **page 2 (`/coopah-vs-runna`) shipped 2026-09-21** from founder-supplied copy, adding a `table` block kind to the article model; **page 3 (`/best-running-app-for-beginners`) shipped 2026-09-24**, the first to carry `principleRefs` on a COMPARISON — its body is mostly coaching, and the SLT ruling on that field turns on the CLAIM, not the URL. **Five remaining.** ✅ The 3+ article gate on external `/comparisons` links is now clear. **Each further page is one entry in `COMPARISON_ARTICLES` + a 4-line `app/<slug>/page.tsx` shim**; the `/comparisons` hub, `sitemap.ts` and `comparisons.test.ts` all read the catalogue, so a new page self-registers everywhere. Required per entry: `metaTitle` <60, `metaDescription` <155, `hubSummary`, `publishedISO`/`lastUpdatedISO`, body blocks. House rules enforced by test: **no em dashes in copy**, brand name interpolated from `BRAND.name`, never a literal. Articles live at ROOT (the search query is "X alternatives"), not under `/comparisons/`.
-  - ✅ **Page 4 (`/cheaper-alternatives-to-runna`) SHIPPED 2026-10-01** from founder-supplied copy, the price query answered by TIER (free / middle / ours / when paying more is right). 🔴 **THE COPY ARRIVED CARRYING THE EXACT FIGURE `GTM-SEO-COMPARE-PRICE-01` CORRECTED** — *"Coopah is £9.99 a month, billed annually, which is about £120 a year"* — and **the price gate passed it**, because £9.99 is TrainAsONE's declared monthly. ⚠️ **The gate proves a figure has an OWNER, never that the owner is the PRODUCT the sentence names**; only the £120 failed, and that was luck. Limitation now written into `articles.test.ts`. ⚠️ **It changed the ARGUMENT too**: at the real prices Coopah is a pound a month under Runna and twenty pounds a year over it, so the draft's *"roughly level with its annual one"* is false. ✅ Two comparative figures are now **derived** (`twelveMonthsAtMonthly`, `annualGapToOurs`), the allow-list widened by exactly two shapes, falsified at a penny's difference. ✅ **`pricesLastChecked()`** derives the verification sentence from the OLDEST `verified` date, because the draft claimed a 1 October check that never happened. ✅ **Two pre-existing gaps found, one fixed**: `noEmDash.test.ts`'s `SURFACES` list was hand-written and **page 3 was never in it**, so comparison shims are now derived from the catalogue; and `lastUpdated` / `lastUpdatedISO` had no consistency arm despite the docstring claiming one field feeds both. ✅ **Garmin Coach now HAS a row** (`5c91d02`): `CompetitorFacts` gained `free?: true` + `freeCondition`, so the type can express a price of zero, and **`verified` was earned rather than assumed** (checked 2026-10-01 against Garmin's own pages; the founder's copy was right). ⚠️ **`free` is not "has a free tier"** — TrainAsONE has one and is a paid product; mutual exclusion asserted both ways. 🥇 **And it made part of the named hole decidable: the correct number of £ figures in a sentence about a free product is ZERO.** *"Garmin Coach is £9.99 a month"* passes the old gate (£9.99 is declared) and is caught only by the new arm, which is the exact shape of the defect that arrived in the copy. ⚠️ **Paid-against-paid misattribution is STILL unchecked**, named in the test. ✅ A third arm: **every competitor row must be named by an article**, so a declared-and-unused row fails. ✅ **"Three routes, four products" was not a counting error** — Coopah was always the aside, and £119.99 against £99.99 says why; fixed by signalling the aside, not by writing four.
+  - ✅ **Page 4 (`/cheaper-alternatives-to-runna`) SHIPPED 2026-10-01** from founder-supplied copy, the price query answered by TIER (free / middle / ours / when paying more is right). 🔴 **THE COPY ARRIVED CARRYING THE EXACT FIGURE `GTM-SEO-COMPARE-PRICE-01` CORRECTED** — *"Coopah is £9.99 a month, billed annually, which is about £120 a year"* — and **the price gate passed it**, because £9.99 is TrainAsONE's declared monthly. ⚠️ **The gate proves a figure has an OWNER, never that the owner is the PRODUCT the sentence names**; only the £120 failed, and that was luck. Limitation now written into `articles.test.ts`. ⚠️ **It changed the ARGUMENT too**: at the real prices Coopah is a pound a month under Runna and twenty pounds a year over it, so the draft's *"roughly level with its annual one"* is false. ✅ Two comparative figures are now **derived** (`twelveMonthsAtMonthly`, `annualGapToOurs`), the allow-list widened by exactly two shapes, falsified at a penny's difference. ✅ **`pricesLastChecked()`** derives the verification sentence from the OLDEST `verified` date, because the draft claimed a 1 October check that never happened. ✅ **Two pre-existing gaps found, one fixed**: `noEmDash.test.ts`'s `SURFACES` list was hand-written and **page 3 was never in it**, so comparison shims are now derived from the catalogue; and `lastUpdated` / `lastUpdatedISO` had no consistency arm despite the docstring claiming one field feeds both. ✅ **Garmin Coach now HAS a row** (`5c91d02`): `CompetitorFacts` gained `free?: true` + `freeCondition`, so the type can express a price of zero, and **`verified` was earned rather than assumed** (checked 2026-10-01 against Garmin's own pages; the founder's copy was right). ⚠️ **`free` is not "has a free tier"** — TrainAsONE has one and is a paid product; mutual exclusion asserted both ways. 🥇 **And it made part of the named hole decidable: the correct number of £ figures in a sentence about a free product is ZERO.** *"Garmin Coach is £9.99 a month"* passes the old gate (£9.99 is declared) and is caught only by the new arm, which is the exact shape of the defect that arrived in the copy. ⚠️ **Paid-against-paid misattribution is STILL unchecked**, named in the test → `SEO-PRICE-ATTRIBUTION-01`. ✅ A third arm: **every competitor row must be named by an article**, so a declared-and-unused row fails. ✅ **"Three routes, four products" was not a counting error** — Coopah was always the aside, and £119.99 against £99.99 says why; fixed by signalling the aside, not by writing four.
   - **Cadence: founder-authored, one page per week (decided 2026-09-10).** This is not a stalled item — it is on a deliberate weekly drip, not a batch build. Do not offer to bulk-write pages 2–8; the writing is the founder's, the template is done. Re-check the count rather than the status.
   - **Hold external links to `/comparisons` until 3+ articles exist** — a one-row hub reads as thin to Google and to a reader. At one page/week that gate clears around 2026-09-24.
   - *Verify still open:* `grep -c "slug: '" lib/marketing/articles.ts` → the catalogue holds comparisons AND guides, so read the count from `comparisonArticles()`, not the grep. ⚠️ **This line named `lib/marketing/comparisons.ts` until 2026-09-24 and that file has never existed** — the array is `MARKETING_ARTICLES` in `articles.ts` and the test is `articles.test.ts`, not `comparisons.test.ts`. The stale names were copied into the page-3 build brief and would have produced a file that does not compile.

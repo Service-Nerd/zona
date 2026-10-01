@@ -263,6 +263,8 @@ say "── open backlog items with no roadmap line ──"
 # a missed one (the whole point of the checks above is that a noisy check gets
 # ignored). This asks only "does the roadmap know this item exists at all".
 rfail2=0
+# The roadmap MINUS its dated state paragraphs (see the note in the loop).
+grep -vF 'State at' docs/releases/roadmap.md > /tmp/_rmplan
 # ⚠️ FOURTH TIME, and the comment above predicted it while I was writing this
 # one. The blockquote-bullet pattern below is only ONE of the two shapes the
 # backlog actually uses. Measured 2026-09-21: it matched 19 items while TWENTY
@@ -271,17 +273,44 @@ rfail2=0
 # pre-existing. Both shapes are collected now. Shipped items are filtered out
 # below by the registry list, so a heading left behind after a ship does not
 # become a false positive.
+#
+# ⚠️ FIFTH TIME, 2026-10-01, AND IT WAS THIS VERY FIX THAT LEFT THE HOLE. The
+# heading pattern added above required a non-space token between the hashes and
+# the ID, because every heading in front of the author that day happened to
+# carry an emoji (`### 🔲 `ID``). The plain shape `### `ID` — title` matched
+# nothing. Measured: 124 headings seen, 146 that exist, so TWENTY items unseen,
+# including `PROMPT-UNITS-ADJUST-01` filed that same morning and three filed
+# that afternoon. The emoji is now OPTIONAL.
+#
+# 🔴 FOUND BY FALSIFICATION, NOT BY READING. The check was green; deleting a new
+# item's roadmap row by hand left it green, which is the only reason anyone
+# looked. **A green tick on a pattern nobody made go red is not evidence.**
 {
   grep -oE '^> (🔲|🔴|🔴🔴|🔵|⏸️|⚠️) \*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`?[ —–-].*\*\(' docs/releases/backlog.md \
     | grep -oE '\*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
-  grep -oE '^#{2,4} [^ ]* `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
+  grep -oE '^#{2,4} ([^ ]+ )?`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
     | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
 } | sort -u > /tmp/_openids
 while IFS= read -r id; do
   [ -z "$id" ] && continue
   # Shipped items are not open; the registry check above owns those.
   grep -qxF "$id" /tmp/_reg && continue
-  grep -qF "$id" docs/releases/roadmap.md || { say "  NO ROADMAP LINE $id (open in backlog.md)"; rfail2=1; fail=1; }
+  # ⚠️ A STATE BLOCK IS NOT A ROADMAP LINE. The roadmap side stays loose on
+  # purpose (a horizon bullet counts, not just a table row) but the dated
+  # "State at END of ..." paragraphs are a RECORD OF WHAT HAPPENED, not a plan,
+  # and an item named only there is not on the roadmap in any sense a reader
+  # would recognise. Measured 2026-10-01: THREE items passed this check on a
+  # state-block mention alone (I predicted two), all three filed recently, which
+  # is how a just-filed item disappears -- the state block naturally names it
+  # while the horizon tables never gain a row.
+  #
+  # ⚠️ FILTERED ONCE, OUTSIDE THE LOOP, AND NOT AS A PIPELINE. The first cut was
+  # `grep -vF 'State at' roadmap.md | grep -qF "$id"` inside the loop: `grep -q`
+  # exits on its first match, SIGPIPEs the upstream grep, and under `pipefail`
+  # the pipeline then reports FAILURE for every id that matched. It flagged 62
+  # items instead of 2, which is the only reason it got looked at twice.
+  grep -qF "$id" /tmp/_rmplan \
+    || { say "  NO ROADMAP LINE $id (open in backlog.md)"; rfail2=1; fail=1; }
 done < /tmp/_openids
 [ "$rfail2" = "0" ] && say "  ok"
 

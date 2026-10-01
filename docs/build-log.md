@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — DOC-AUDIT-HEADING-SHAPE-01 · the check was green because nothing had ever made it red
+**Shipped:** `audit-docs.sh` can now see all 146 open backlog items instead of 124, and a dated state paragraph no longer counts as a roadmap line.
+
+**Dev learning:** I was asked whether the documents were up to date. The audit said ALL CLEAN, so I did the one thing that turns a green tick into evidence: I broke something it should catch. Deleted a newly filed item's roadmap row by hand. Still green. The open-item check collects two heading shapes and the one added three weeks ago required a non-space token between the `###` and the ID, because every heading in front of its author that day happened to start with an emoji. The plain `### \`ID\` — title` shape matched nothing at all. **Twenty items unseen, including one filed that same morning by me.** Making the emoji optional immediately surfaced three genuinely untracked items that had been sitting there since late September. **The check was not wrong. It was narrow, and nothing had ever asked it to prove otherwise.**
+
+**Product/creator learning:** The second fix is the more interesting one. The roadmap side of that check is deliberately loose: an ID mentioned anywhere in `roadmap.md` counts, because an item might be named in a horizon bullet rather than a table row and a noisy check gets ignored. But `roadmap.md` also carries dated "state at end of day" paragraphs, which are a record of what happened, and **a just-filed item is precisely the one those paragraphs name while the horizon tables never gain a row.** So the newest work is the most likely to be invisible, which is the opposite of what you want. Three items were passing on that alone. **Looseness is fine; looseness that is systematically biased against new work is not.**
+
+**AI-building learning:** My first cut of that second fix flagged 62 items instead of three. `grep -vF 'State at' file | grep -qF "$id"` inside the loop: `grep -q` exits on its first match, SIGPIPEs the upstream grep, and under `pipefail` the whole pipeline reports failure for every id that matched. So the items that were *fine* were the ones being flagged, and the check was inverted. **I only caught it because the number was absurd.** Had it flagged five instead of 62 I would have believed it and "fixed" five innocent items. **An implausible result is a gift; a plausible wrong one is the expensive kind.**
+
+**The honest bit:** I predicted "exactly two" items would be caught by the state-block exclusion and wrote that number into the comment before running it. It was three. I corrected the comment rather than quietly rounding the story, because this is the second time today I have put a number in a document before earning it, and the first time it was a page telling 500 runners their prices had been checked on a day nobody checked them.
+
+**Hook material:** The audit said all clear. I deleted a line it was supposed to notice, and it still said all clear.
+
+**Postable?:** yes — "break your own check before you trust it" is the whole post, and the 62-versus-3 story is the proof.
+
+---
+
 ## 2026-10-01 — GTM-SEO-COMPARE-01 page 4 · the gate said yes to a right number about the wrong product
 **Shipped:** `/cheaper-alternatives-to-runna`, the price question answered by tier: free, the middle, mine, and when paying more is the right call.
 
