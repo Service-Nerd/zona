@@ -62,6 +62,7 @@ export async function generateFreeIntro(
       outputConstraint: 'One sentence. Two at the very most. Under 30 words total. No greeting, no sign-off, no quote marks.',
       includeVoiceAnchor: false,
       firstName,
+      units,
     }),
     '',
     `CONTEXT — non-negotiable:`,

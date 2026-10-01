@@ -38,6 +38,8 @@ it specific, no polish. The content system adds the voice.
 
 **Postable?:** yes — this is the strongest one in a while.
 
+**Correction, same day:** I shipped `units` as optional with a `'km'` default, and wrote a test blessing it. An existing contract already said not to — `post-run-reframe.md` records *"required, not defaulted: a rate restated in the wrong unit is silently wrong"* — so I had rebuilt the defect inside its own fix, one layer down. Making it required took thirty seconds and **immediately surfaced a tenth call site my grep had missed**, `lib/plan/freeIntro.ts`, which already held units and never passed them: the free-tier intro, the first words a new runner hears, was km-voiced for every miles user. The compiler found what a directory-scoped grep could not. Then the new derived call-site check caught `voiceRules.ts`'s **own docstring example**, still showing the pre-required shape. **This item's entire lesson is "examples teach", and it pointed straight back at the file that taught it.**
+
 ---
 
 ## 2026-10-01 — HARNESS-FIXTURE-DATE-01 · the second wall clock

@@ -76,3 +76,39 @@ precisely so no downstream surface can miss it and render a literal `{{RUNNER}}`
 
 Guarded by `lib/coaching/nameToken.test.ts`, which reads every prompt builder and fails if any
 interpolates `${firstName}` or `${athlete_name}` into a template.
+
+---
+
+## 2026-10-01 — KIT-EXEMPLAR-LEAK-01: `buildVoiceHeader` takes a REQUIRED `units`
+
+**Request and response shapes are unchanged.** What changed is what the model is shown.
+
+A live paid runner on miles was told *"hold the zone today from the first km"*, in a sentence
+carrying an em dash. Both are banned for runner-facing copy. The numbers were already correct
+(`promptDistanceFormatters`); what leaked was the PROSE around them, because the prompt's
+few-shot **examples** hardcoded `km` and an em dash, and a model imitates a demonstration far
+more strongly than it follows a stated rule. Measured: **36 of 42 exemplars demonstrated an em
+dash; 1 of 4 prompts banned it, and that one contradicted itself 283 lines apart.**
+
+`buildVoiceHeader` now emits both rules for all **10** call sites, and takes:
+
+```ts
+units: DistanceUnits   // REQUIRED, not defaulted
+```
+
+⚠️ **Required, and the first cut of this got it wrong.** It shipped optional-with-`'km'`, which
+means a new surface silently tells a miles runner KILOMETRES: the exact defect the field exists
+to close, reintroduced through its own default. `post-run-reframe.md` already carried the rule
+from **UNITS-DURATION-01** — *"`units` is required, not defaulted: a rate restated in the wrong
+unit is silently wrong"* — and making it required immediately surfaced a tenth call site a
+directory-scoped grep had missed (`lib/plan/freeIntro.ts`, which already HELD units and simply
+never passed them).
+
+⚠️ **One site passes `'km'` explicitly and says why** (`planAdjustment.ts`): nothing on the
+plan-adjustment path has the runner's units. Filed as `PROMPT-UNITS-ADJUST-01`. **Do not close
+it by re-defaulting the parameter.**
+
+Guarded by `lib/coaching/prompts/exemplarHygiene.test.ts`: no exemplar may contain an em dash or
+a unit, every call site must supply `units`, and the call-site population is **derived by walking
+`lib/`, `app/` and `components/`** rather than hand-listed — the grep that missed `freeIntro` was
+scoped to one directory.

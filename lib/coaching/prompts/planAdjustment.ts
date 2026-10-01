@@ -72,6 +72,15 @@ export function buildAdjustmentExplanationPrompt(
   const voiceHeader = buildVoiceHeader({
     role: 'explaining a plan adjustment',
     outputConstraint: 'One paragraph, 1–3 sentences. Fewer is fine if the trigger is simple.',
+    // 🔴 DECLARED GAP, NOT A CHOICE — PROMPT-UNITS-ADJUST-01.
+    // `units` is required precisely so this site cannot default in silence.
+    // Nothing on this path HAS the runner's units: this builder takes none and its
+    // only caller (`app/api/adjust-plan/route.ts`) never reads `getUserDisplayPrefs`.
+    // So a miles runner gets a km-voiced adjustment explanation, and `labelSession`
+    // in the same prompt defaults the same way. Threading units from the route is
+    // its own item; hardcoding it HERE puts the gap in the diff instead of hiding
+    // it inside a parameter default.
+    units: 'km',
   })
 
   const previousAdjustmentBlock = previousAdjustment

@@ -108,8 +108,16 @@ export interface VoiceHeaderOptions {
    * because the prompt's few-shot examples hardcoded `km` and a model imitates
    * a demonstration far more strongly than it follows a rule. Formatting the
    * numbers correctly is not enough when the EXAMPLES speak the wrong unit.
+   *
+   * ⚠️ REQUIRED, NOT DEFAULTED, and the first cut of this got it wrong.
+   * `post-run-reframe.md` already records the rule from UNITS-DURATION-01:
+   * *"`units` is required, not defaulted: a rate restated in the wrong unit is
+   * silently wrong"*. Shipping it optional-with-`'km'` meant the TENTH call site
+   * would quietly tell a miles runner KILOMETRES — the exact defect this field
+   * exists to close, reintroduced through its own default. Required means a new
+   * surface fails to compile instead.
    */
-  units?: DistanceUnits
+  units: DistanceUnits
 }
 
 /**
@@ -120,15 +128,22 @@ export interface VoiceHeaderOptions {
  * Usage:
  *   const header = buildVoiceHeader({
  *     role: 'giving session feedback',
- *     outputConstraint: 'One paragraph only — 2–4 sentences max.',
+ *     outputConstraint: 'One paragraph only, 2–4 sentences max.',
+ *     units,                      // REQUIRED — see VoiceHeaderOptions.units
  *   })
+ *
+ * ⚠️ This example is covered by `exemplarHygiene.test.ts` along with the real
+ * call sites, and it was CAUGHT by it: the example still omitted `units` after
+ * the field became required. That is KIT-EXEMPLAR-LEAK-01's own lesson pointed
+ * back at this file — an example that shows the wrong shape teaches the wrong
+ * shape, whether the reader is a model or the next developer.
  */
 export function buildVoiceHeader({
   role,
   outputConstraint,
   includeVoiceAnchor = true,
   firstName,
-  units = 'km',
+  units,
 }: VoiceHeaderOptions): string {
   const lines: string[] = [
     `You are ${BRAND.coachName}, ${BRAND.name}'s AI coach — ${role}. Voice rules, non-negotiable:`,

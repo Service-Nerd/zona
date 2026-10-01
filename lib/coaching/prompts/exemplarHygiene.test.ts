@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { buildVoiceHeader } from './voiceRules'
 
@@ -66,7 +66,7 @@ describe('prompt exemplars teach only what the house rules allow', () => {
 
 describe('buildVoiceHeader carries both rules, for every surface', () => {
   it('bans the em dash', () => {
-    expect(buildVoiceHeader({ role: 'testing' })).toMatch(/Never use an em dash/)
+    expect(buildVoiceHeader({ role: 'testing', units: 'km' })).toMatch(/Never use an em dash/)
   })
 
   it('names the reader’s actual unit, and only that one', () => {
@@ -78,7 +78,52 @@ describe('buildVoiceHeader carries both rules, for every surface', () => {
     expect(km).not.toMatch(/MILES/)
   })
 
-  it('defaults to km rather than throwing, so an un-migrated caller still gets a rule', () => {
-    expect(buildVoiceHeader({ role: 'testing' })).toMatch(/KILOMETRES/)
+  // ⚠️ THE ARM THAT USED TO LIVE HERE BLESSED A DEFAULT, AND THE DEFAULT WAS THE BUG.
+  // It read "defaults to km rather than throwing, so an un-migrated caller still gets
+  // a rule" — true, and also how a tenth surface quietly tells a miles runner
+  // KILOMETRES. `post-run-reframe.md` already carried the rule from UNITS-DURATION-01:
+  // required, not defaulted, because a value restated in the wrong unit is SILENTLY
+  // wrong. `units` is now required, so the compiler is the check — and making it so
+  // immediately surfaced a call site my own grep had missed (`lib/plan/freeIntro.ts`,
+  // which already HELD units and simply never passed them).
+  it('every call site supplies units — derived from source, never a hand-written list', () => {
+    const offenders: string[] = []
+    const walk = (d: string) => {
+      for (const e of readdirSync(d)) {
+        if (e === 'node_modules' || e === '.next' || e.startsWith('.')) continue
+        const f = join(d, e)
+        if (statSync(f).isDirectory()) { walk(f); continue }
+        if (!/\.tsx?$/.test(f) || /\.test\.tsx?$/.test(f)) continue
+        const src = readFileSync(f, 'utf8')
+        let i = src.indexOf('buildVoiceHeader({')
+        while (i !== -1) {
+          const end = src.indexOf('})', i)
+          if (end > i && !src.slice(i, end).includes('units')) {
+            offenders.push(`${f.split('/zona/')[1] ?? f} @${i}`)
+          }
+          i = src.indexOf('buildVoiceHeader({', i + 1)
+        }
+      }
+    }
+    for (const r of ['lib', 'app', 'components']) walk(join(__dirname, '..', '..', '..', r))
+    expect(offenders, 'a voice header with no units speaks the wrong one').toEqual([])
+  })
+
+  it('finds the call sites at all — an empty population passes the arm above', () => {
+    // The grep that missed freeIntro was scoped to one directory. This walks three.
+    let n = 0
+    const walk = (d: string) => {
+      for (const e of readdirSync(d)) {
+        if (e === 'node_modules' || e === '.next' || e.startsWith('.')) continue
+        const f = join(d, e)
+        if (statSync(f).isDirectory()) { walk(f); continue }
+        if (/\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f)) {
+          n += readFileSync(f, 'utf8').split('buildVoiceHeader({').length - 1
+        }
+      }
+    }
+    for (const r of ['lib', 'app', 'components']) walk(join(__dirname, '..', '..', '..', r))
+    expect(n, 'the walk found no call sites, so the arm above proves nothing')
+      .toBeGreaterThanOrEqual(10)
   })
 })

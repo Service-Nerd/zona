@@ -359,6 +359,29 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
 2. If it persists: attach **Safari → Develop → [device] → Web Inspector**, hover the band, and read
    the element. That is the only thing that will name it, and it takes a minute.
 
+## ⚖️ FILED 2026-10-01 — `PROMPT-UNITS-ADJUST-01`
+
+### `PROMPT-UNITS-ADJUST-01` — the plan-adjustment prompt is unit-blind ⚙️ **NO BOARD**
+
+**Found by making `buildVoiceHeader`'s `units` REQUIRED** (KIT-EXEMPLAR-LEAK-01). The compiler
+then named every site that could not answer. One genuinely cannot:
+`buildAdjustmentExplanationPrompt` takes no `units`, and its only caller
+(`app/api/adjust-plan/route.ts`) never reads `getUserDisplayPrefs`.
+
+**So a miles runner gets a km-voiced explanation of why their plan changed**, and
+`labelSession` inside the same prompt defaults the same way. `planAdjustment.ts` now passes
+`units: 'km'` **explicitly, with the gap named in the comment**, so it sits in the diff rather
+than hiding inside a parameter default.
+
+**The fix:** read `getUserDisplayPrefs` in `app/api/adjust-plan/route.ts`, thread `units`
+through `buildAdjustmentExplanationPrompt` into both `buildVoiceHeader` and `labelSession`.
+Small, but it crosses a route boundary, so `docs/contracts/api/` needs checking in the same
+commit.
+
+⚠️ **Do not close it by re-defaulting the parameter.** `post-run-reframe.md` records the rule
+from UNITS-DURATION-01: *"`units` is required, not defaulted: a rate restated in the wrong
+unit is silently wrong."* Optional-with-a-default is what hid this in the first place.
+
 ## ⚖️ FILED 2026-09-30 — `MKT-PLAN-SEGMENT-ENGINE-BASIS-01`
 
 ### `MKT-PLAN-SEGMENT-ENGINE-BASIS-01` — align the engine to §25 Amendment 2's time basis 🏃 COACHING BOARD (ruled) · ⚙️ measurement-gated
