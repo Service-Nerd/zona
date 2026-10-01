@@ -17,6 +17,7 @@
 
 import { useEffect, useRef } from 'react'
 import { valueToIndex, nearestIndexForScroll, scrollTopForIndex } from './WheelPicker.logic'
+import { releaseOnNextFrame } from '@/lib/ui/rafRelease'
 
 export function WheelPicker({
   values,
@@ -52,7 +53,12 @@ export function WheelPicker({
     if (Math.abs(el.scrollTop - target) < 1) return
     suppress.current = true
     el.scrollTo({ top: target })
-    requestAnimationFrame(() => { suppress.current = false })
+    // SHEET-RAF-FALLBACK-01 — found by the consumer check on the Sheet fix, not
+    // reported. `requestAnimationFrame` does not fire while `document.hidden`,
+    // so a bare rAF here latches `suppress` TRUE: `onScroll` early-returns on
+    // every event and the wheel stops responding to the user entirely, which is
+    // a worse symptom than the one that was filed. Same owner, same backstop.
+    return releaseOnNextFrame(() => { suppress.current = false })
   }, [value, values, rowHeight])
 
   useEffect(() => () => { if (settleTimer.current) clearTimeout(settleTimer.current) }, [])

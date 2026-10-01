@@ -49,6 +49,7 @@ import { createContext, useContext, useCallback, useEffect, useRef, useState } f
 import IconButton from '@/components/ui/IconButton'
 import { createPortal } from 'react-dom'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
+import { releaseOnNextFrame } from '@/lib/ui/rafRelease'
 
 // ── Nav height ─────────────────────────────────────────────────────────────
 // The bottom nav measures itself (ResizeObserver in DashboardClient) and
@@ -70,6 +71,7 @@ export function useNavHeight(): number | null {
 
 const NAV_FALLBACK_PX = 64
 const EXIT_MS = 280
+
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
@@ -168,11 +170,40 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
     setMounted(true)
   }, [])
 
+  // SHEET-RAF-FALLBACK-01 — rAF RELEASES THE ENTER TRANSITION, AND rAF DOES NOT
+  // FIRE WHILE `document.hidden` IS TRUE.
+  //
+  // 🔴 The failure is not a missing animation, it is a dead screen. With `shown`
+  // stuck false the panel sits at `translateY(100%)` while the scrim is already
+  // up and the body is already scroll-locked, so the app looks broken AND
+  // cannot be scrolled out of.
+  //
+  // ⚠️ IT SELF-HEALS ON RETURN, which is what kept it filed rather than fixed:
+  // pending rAF callbacks fire when the document becomes visible, so the broken
+  // window is the one nobody is looking at. It is still a window a runner can
+  // land in: open a sheet, take a call or switch apps mid-tap, come back.
+  //
+  // ⚠️ AND IT IS NOT HYPOTHETICAL IN THIS REPO. `document.hidden` is
+  // permanently true in the browser pane used for verification, which is why
+  // four successive attempts on `/sheet-preview` reported a sheet that had not
+  // opened. The item recorded the preview as carrying its own timeout fallback;
+  // that is stale, because SHEET-ORIGIN-01 rewrote the preview to import this
+  // primitive, so it has no release logic of its own and never did get fixed.
+  //
+  // The fix is a race, not a replacement: whichever of rAF and the backstop
+  // fires first releases, and both are cancelled on teardown. rAF still wins
+  // every normal frame, so the transition is unchanged for every runner who is
+  // actually looking at it.
+  //
+  // ⚠️ VIA `releaseOnNextFrame` RATHER THAN TWO LINES HERE, because the consumer
+  // check on this fix found `WheelPicker` with the same bug and a worse symptom
+  // (`suppress` latches true and the wheel stops responding to scroll at all).
+  // Two components had it independently; a third written tomorrow would have it
+  // again. `rafRelease.test.ts` fails the build on a direct rAF call.
   useEffect(() => {
     if (!mounted) return
     if (reduce.current) { setShown(true); return }
-    const r = requestAnimationFrame(() => setShown(true))
-    return () => cancelAnimationFrame(r)
+    return releaseOnNextFrame(() => setShown(true))
   }, [mounted])
 
   // Escape to dismiss, body-scroll lock, focus capture + restore. One effect so

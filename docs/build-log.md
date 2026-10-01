@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — SHEET-RAF-FALLBACK-01 · the two-line fix that was not two lines
+**Shipped:** a sheet opened while the browser tab is hidden now actually opens, and so does the wheel picker nobody had reported.
+
+**Dev learning:** `requestAnimationFrame` does not fire while the document is hidden. The sheet released its enter transition on a bare rAF, so the panel stayed off-screen while the scrim was already up and the body already scroll-locked: the app looked broken and could not be scrolled out of. The item said "two lines". Then the consumer check across every rAF call site found `WheelPicker` doing the same thing to clear a scroll-suppression flag, where a missing frame latches the flag true and **the wheel stops responding to the user entirely.** The sheet looks broken; the picker is broken. **Two components had the same bug independently, which is not two bugs, it is a missing owner.** So it became a module with injected timers and a real test instead.
+
+**Product/creator learning:** This defect had been sitting filed because it self-heals. Pending rAF callbacks fire the moment the document becomes visible, so by the time anyone looks, it works. **A bug whose only symptom is invisible to the person checking for it will never be found by checking for it** — it has to be found by reasoning about the mechanism. The giveaway was in the item's own text: four verification attempts on the preview page had reported a sheet that had not opened, and we had written that off as a tooling quirk. It was the bug, reporting itself, four times.
+
+**AI-building learning:** The ownership gate's first version flagged the file I had edited thirty seconds earlier, for the comment explaining the rule it was being accused of breaking. It grepped the bare word over the whole file. **Fifth time this repo has recorded that class** — twice in the hook guards, once in the backlog parser, now twice here — and it still caught me, writing the check, with the lesson in front of me. It strips comments and matches the call shape now. The rule is four words and I keep paying for it: **bound the region, never grep the file.**
+
+**The honest bit:** I nearly shipped this with a source-grep test, because the repo has no jsdom and rendering a component is not available. A grep for "releaseOnNextFrame" would have gone green and proved nothing: it passes on a comment, which is the exact hollow-check class this codebase has a linter for. Extracting a pure function with injectable timers cost about twenty-five lines and bought four falsifications. **When the only test you can write is a grep, that is a signal to change the code's shape, not to accept the grep.**
+
+**Hook material:** The bug only appeared when nobody was looking, which is also the only state in which it reported itself, four times, and we filed those as tooling noise.
+
+**Postable?:** yes — "two components with the same bug is a missing owner, not two bugs" is the post.
+
+---
+
 ## 2026-10-01 — GTM-CHARITY-DEADLINE-01 · the deadline was in the email, and the email does not travel
 **Shipped:** `/charity-runners` now tells a runner their code has a deadline, without naming a date.
 

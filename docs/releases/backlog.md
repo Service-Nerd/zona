@@ -86,7 +86,7 @@ HealthKit workouts, and the read side now handles them. Nothing is written to fi
 Falsified both directions: removing the guard restores the defect; over-applying it breaks the
 cross-source case.
 
-### `SHEET-RAF-FALLBACK-01` — a sheet opened while the document is hidden never shows ⚙️ NO BOARD
+### ✅ `SHEET-RAF-FALLBACK-01` — SHIPPED 2026-10-01 ⚙️ NO BOARD
 
 `Sheet.tsx:174` releases the enter animation with a bare
 `requestAnimationFrame(() => setShown(true))`. **rAF does not fire while
@@ -100,6 +100,43 @@ the broken window is the one nobody is looking at. That is why it is filed rathe
 it is the reason **four successive verification attempts on `/sheet-preview` reported a sheet that
 had not opened**. The preview now releases with `rAF` **plus a 50ms timeout fallback**; `Sheet`
 does not. **Two lines, and it removes a state where the app looks broken and cannot be scrolled.**
+
+✅ **SHIPPED, AND IT WAS NOT TWO LINES, FOR A REASON FOUND IN THE CONSUMER CHECK.**
+
+🔴 **`WheelPicker` HAD THE SAME BUG WITH A WORSE SYMPTOM, AND NOBODY HAD REPORTED IT.**
+`requestAnimationFrame(() => { suppress.current = false })` on a parent-driven scroll: with no
+frame, `suppress` **latches true** and `onScroll` early-returns on every event, so the wheel
+**stops responding to the user entirely.** The Sheet looks broken; the WheelPicker *is* broken.
+**Two components had this independently, which is the definition of a missing owner (D-08).**
+
+✅ **`lib/ui/rafRelease.ts → releaseOnNextFrame(release, timers?)`** is that owner: rAF races a
+`RAF_FALLBACK_MS = 50` backstop, **at most one** release (a document becoming visible at the
+wrong moment runs the queued rAF right after the timeout, and a double release re-sets state
+React has committed), and cancel disarms **both** handles.
+
+⚠️ **`TrendCard` is EXEMPT BY NAME with its reason** — a recursive rAF tick driving a count-up
+is a different shape: a loop that has not started is a value that has not moved, and it resumes
+correctly on visibility. Forcing it through a timer would run the easing off the clock.
+
+✅ **The gate is BEHAVIOURAL, not a source grep.** `vitest.config.ts` is `environment: 'node'`
+with no jsdom and no testing-library, so a component cannot be rendered and a source assertion
+would be the only alternative — **and a source assertion passes on a comment**
+(`hollowTestShapes.test.ts`'s own class). Timers are injected instead: 6 arms, **4 falsified** —
+remove the backstop (3 red), remove the once-guard (1 red), stop clearing the timeout on cancel
+(1 red), put a bare rAF back in a component (1 red).
+
+🔴 **AND THE OWNERSHIP ARM'S FIRST CUT FLAGGED THE FILE I HAD JUST EDITED — for the COMMENT
+explaining the rule it was accused of breaking.** It grepped the bare word over the whole file.
+**Fourth time this repo has recorded the substring-bias class** (twice in the hook guards, once
+in the backlog parser) and it got a fifth thirty seconds after writing it. It strips comments and
+matches the **call shape** now: *bound the region, never grep the file.*
+
+⚠️ **Correction to this item's own text:** it recorded `/sheet-preview` as already carrying an
+rAF-plus-timeout fallback. **Stale** — `SHEET-ORIGIN-01` rewrote the preview to import the real
+`Sheet`, so it has no release logic of its own and was subject to the identical defect. That is
+why four verification attempts on it reported a sheet that had not opened.
+
+4,099 tests / 458 files, `tsc` clean, `next build` exit 0.
 
 ### 🟡 `SHEET-ORIGIN-01` — REVERTED; blocked on one decision *(P1, filed 2026-09-26)* 🧭 DESIGN BOARD · 👤 FOUNDER
 
