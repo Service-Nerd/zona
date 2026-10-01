@@ -3305,7 +3305,7 @@ has paid for parallel implementations of one rule under five names.
 ⚠️ **Measure before building:** confirm on a real save which write actually lands last, rather than
 reasoning it out. Same discipline as `ZERO-REJECTION-SERVED-01`.
 
-### ⚙️ `STEP-SUBUNIT-ZERO-01` — a short recovery step reads `~0mi`
+### ✅ `STEP-SUBUNIT-ZERO-01` — SHIPPED 2026-10-01 ⚙️ NO BOARD
 
 Found in passing while fixing `PACE-UNITS-STEPS-01` (2026-09-23), **pre-existing and unchanged by
 it** — the before-probe shows the identical `~0mi`.
@@ -3322,6 +3322,38 @@ wants measuring first: how many rows across the corpus round to zero, and on whi
 
 🔴 **Do not confuse with the `0mi` sub-unit defect closed in `convertDistanceString` today** —
 that was prose conversion. This is the step card's own estimate, a different producer.
+
+✅ **SHIPPED, AND MEASURED FIRST AS THIS ITEM ASKED.**
+
+📐 **640 rows of 188,928 read `~0mi`** — across 51,200 sessions from 6,144 `targetedGrid()`
+inputs. **Every single one** is the 30-second recovery `Jog` in a **quality** session, and every
+one already carried the honest number in its own detail (`30s · ≤ 12:04–14:29 /mi`). **The row
+led with a zero and relegated the truth.** After the fix: **0 of the same 188,928 rows**, so
+nothing was dropped.
+
+⚠️ **MILES IS WHERE IT FIRED; KM IS ONE SLOWER PACE AWAY, NOT IMMUNE.** 30s at mile pace is
+~0.04 mi → `0mi`; at km pace it is 0.0625 km → `0.1km`, which is legible. So the corpus shows
+**zero km hits** and the defect is **latent** there — `formatDistance(0.04, 'km')` is `0km` too.
+**The guard therefore tests the FORMATTED OUTPUT, not the unit**, and both cases are asserted
+with different durations (mi at 30s, km at 10s).
+
+✅ **The fallback is not new behaviour** — it is the duration-primary branch immediately below,
+which already existed for a step with no pace to estimate from. A zero-rounding estimate is the
+same situation: there is no honest distance to show.
+
+🔴 **AND THE OBVIOUS IMPLEMENTATION WOULD HAVE BEEN WORSE THAN THE BUG.** The guard asks the
+**injected formatter** what zero looks like (`est !== opts.formatDist(0)`). Falsifying it with a
+`/^0/` regex instead turns **five** arms red, **including pre-existing ones**, because `/^0/`
+also suppresses `0.1km` and `0.5mi` — **every sub-one-unit estimate in the app.** Asking the
+formatter is load-bearing, not stylistic: it is a parameter, it has a sub-unit path for km, and
+ADR-015 owns it.
+
+**Falsified three ways:** remove the guard → 3 arms red (the original defect) · implement it as
+`/^0/` → 5 red · suppress every estimate → 5 red.
+
+**Verified:** 4,110 tests / 458 files, `tsc` clean, and **`verify:parity` IDENTICAL over 6,066
+cases** — the engine's output is provably untouched, which is what a display fix should look
+like. 🔻 **Does not prove it on a device**; the proof is the corpus count, not a screenshot.
 
 ### 🧭 `SHEET-CONTROL-VOCAB-01` — the sheet has four control species
 

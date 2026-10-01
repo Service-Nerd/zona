@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — STEP-SUBUNIT-ZERO-01 · the obvious fix would have been worse than the bug
+**Shipped:** a step whose estimated distance rounds to zero now leads with its duration instead.
+
+**Dev learning:** The card told the runner a 30-second recovery jog covered `~0mi`. The item asked for a measurement before changing what the card leads with, and the measurement was worth having: **640 rows out of 188,928**, every one the same step, every one already carrying `30s` in its own detail line. So the row was leading with a zero and relegating the truth that was already on it. **The fallback was not new behaviour either** — the duration-primary branch already existed one line below for a step with no pace to estimate from, and a zero-rounding estimate is the same situation.
+
+**Product/creator learning:** Miles is where it fires and km is one slower pace away. 30s at mile pace is 0.04 mi, which formats `0mi`; at km pace it is 0.0625 km, which formats `0.1km` and is fine. So the corpus showed zero km hits, and the tempting conclusion was "this is a miles bug". It is not: `formatDistance(0.04, 'km')` is `0km` too. **The difference is not the unit, it is that km happens to have more precision at this magnitude**, so the guard tests the formatted output and the two units are asserted at different durations.
+
+**AI-building learning:** The fix I nearly wrote was a regex for a leading zero. Falsifying it that way turned **five** arms red, including pre-existing ones, because `/^0/` also suppresses `0.1km` and `0.5mi` — **every sub-one-unit estimate in the app.** The naive implementation would have been worse than the defect it replaced, and it would have shipped green if I had not broken it on purpose. Asking the injected formatter what zero looks like is a line of code that reads like fussiness and is actually load-bearing: the formatter is a parameter, it has a sub-unit path, and ADR-015 owns what it renders.
+
+**The honest bit:** I had the measurement open in front of me and then wrote a test asserting the opposite of it — that km must also lead with a duration at 30s. It must not. The arm failed, correctly, on behaviour I had measured ten minutes earlier and described accurately in a comment one file away. **The number being written down is not the same as the number being used.**
+
+**Hook material:** The fix I was about to write would have hidden every distance under one mile in the app.
+
+**Postable?:** yes — "falsify the obvious implementation, not just the final one" is the lesson, and the 5-arm result is the proof.
+
+---
+
 ## 2026-10-01 — ZONES-TAB-PIN-01 + ACTION-ROW-320-01 · the board found both answers already written down
 **Shipped:** the zones tabs pin with the header, and 375pt is now the documented minimum width.
 

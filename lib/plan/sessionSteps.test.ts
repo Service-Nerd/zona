@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { buildStepGroups, parseLength, roleLabelForStep, targetClause } from './sessionSteps'
 import type { DerivedSet } from './resolveMainSet'
+import { formatDistance } from '@/lib/format'
 
 const fmt = (km: number) => `${Number(km.toFixed(2))} km`
 
@@ -127,5 +128,90 @@ describe('buildStepGroups — duration toggle keeps time primary', () => {
     expect(groups[0].rows[0].amount).toBe('5 min')
     expect(groups[0].rows[0].amountIsEstimate).toBe(false)
     expect(groups[0].rows[0].detail).toBe('4:25–4:35 /km')
+  })
+})
+
+describe('STEP-SUBUNIT-ZERO-01 — an estimate that rounds to zero is not an estimate', () => {
+  /**
+   * 📐 MEASURED BEFORE CHANGING WHAT THE CARD LEADS WITH, because the item asked
+   * for that: **640 rows of 188,928 read `~0mi`**, across 51,200 sessions from
+   * 6,144 `targetedGrid()` inputs. Every one was the 30-second recovery `Jog` in
+   * a quality session, and every one already carried the honest number in its own
+   * detail line. **The row led with a zero and relegated the truth.** After the
+   * fix: **0 of the same 188,928 rows**, so nothing was dropped.
+   *
+   * ⚠️ MILES IS WHERE IT FIRED; KM IS ONE SLOWER PACE AWAY. 30s at mile pace is
+   * ~0.04 mi → `0mi`; at km pace it is 0.0625 km → `0.1km`. So the corpus shows
+   * zero km hits and the bug is **latent** there, not absent —
+   * `formatDistance(0.04, 'km')` is `0km` as well. Both units are asserted below
+   * for that reason.
+   */
+  const step = (secs: number) => ({
+    blocks: [{ reps: 1, steps: [
+      { role: 'work', length: '3 min', pace: '5:00-5:20 /km' },
+      { role: 'recovery', length: `${secs} s`, pace: '7:00-8:00 /km' },
+    ] }],
+  })
+
+  const rows = (secs: number, units: 'km' | 'mi', fmt?: (km: number) => string) =>
+    buildStepGroups(step(secs) as never, {
+      metric: 'distance', units,
+      formatDist: fmt ?? ((km: number) => formatDistance(km, units, { exact: true }) ?? '—'),
+    }).flatMap(g => g.rows ?? [])
+
+  // ⚠️ THE TWO UNITS NEED DIFFERENT DURATIONS, AND MY FIRST CUT OF THIS ARM GOT
+  // IT WRONG WITH THE MEASUREMENT ALREADY IN HAND. I asserted km must also lead
+  // with the duration at 30s. It must not: 30s at km pace is 0.0625 km, which
+  // formats `0.1km` — a legible estimate the guard is right to leave alone.
+  // **The km case needs a SHORTER step to reach zero**, which is exactly what
+  // "latent, not absent" means, and writing the arm from assumption instead of
+  // from the number I had just produced is how a test ends up asserting the
+  // opposite of the finding.
+  const ZERO_CASE = [
+    { units: 'mi' as const, secs: 30, why: '~0.04 mi → `0mi`, the 640 live rows' },
+    { units: 'km' as const, secs: 10, why: '~0.02 km → `0km`, the latent case' },
+  ]
+  for (const { units, secs, why } of ZERO_CASE) {
+    it(`${units}: a ${secs}-second recovery leads with its DURATION, never a zero distance (${why})`, () => {
+      const recover = rows(secs, units).find(r => /recover|jog/i.test(r.role))
+      expect(recover, 'no recovery row produced').toBeTruthy()
+      expect(recover!.amount, 'the card is telling the runner this step covers no ground')
+        .not.toMatch(/^~0(\.0+)?\s*(km|mi|m)?$/)
+      expect(recover!.amount, 'the honest number should lead').toContain(`${secs}s`)
+      expect(recover!.amountIsEstimate, 'a duration is not an estimate').toBe(false)
+    })
+  }
+
+  it('km at 30s is LEGIBLE and must keep its estimate — the guard is not a blanket', () => {
+    // The measured asymmetry, asserted so it cannot be "tidied" into symmetry.
+    const recover = rows(30, 'km').find(r => /recover|jog/i.test(r.role))
+    expect(recover!.amount).toBe('~0.1km')
+    expect(recover!.amountIsEstimate).toBe(true)
+  })
+
+  it('does NOT over-correct: an estimate that is legible still shows as an estimate', () => {
+    // The guard must suppress a zero, not the estimate feature. A 10-minute
+    // recovery covers real ground in either unit and must still read `~N`.
+    for (const units of ['mi', 'km'] as const) {
+      const recover = rows(600, units).find(r => /recover|jog/i.test(r.role))
+      expect(recover!.amountIsEstimate, `${units}: the estimate was suppressed wholesale`).toBe(true)
+      expect(recover!.amount).toMatch(/^~/)
+    }
+  })
+
+  it('🔴 asks the FORMATTER what zero looks like, rather than matching /^0/', () => {
+    // ⚠️ THE ARM THAT PROVES THE MECHANISM. `formatDist` is an injected
+    // parameter with a sub-unit path for km, and ADR-015 owns it. A regex for
+    // `/^0/` would pass this file and break the day the formatter renders zero
+    // differently. Here it renders zero as the word "nil": a correct
+    // implementation still suppresses it, a regex-based one would not.
+    // The threshold must exceed the 0.0625 km this step actually produces, or the
+    // fake never fires and the arm proves nothing — which is what my first cut
+    // did, at 0.05.
+    const nil = (km: number) => (km < 0.1 ? 'nil' : `${km.toFixed(2)}mi`)
+    const recover = rows(30, 'mi', nil).find(r => /recover|jog/i.test(r.role))
+    expect(recover!.amount, 'a formatter whose zero is not "0" was not recognised')
+      .not.toContain('nil')
+    expect(recover!.amount).toContain('30s')
   })
 })

@@ -175,8 +175,35 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
     if (opts.metric === 'distance' && paceSec) {
       // Estimate distance from pace — same convention as the section totals.
       const estKm = roundEstKm(parsed.secs / paceSec)
-      const detail = [durStr, target].filter(Boolean).join(' · ')
-      return { kind, role, amount: `~${opts.formatDist(estKm)}`, amountIsEstimate: true, detail }
+      // 🔴 STEP-SUBUNIT-ZERO-01 — AN ESTIMATE THAT ROUNDS TO ZERO IS NOT AN
+      // ESTIMATE, IT IS A CARD TELLING THE RUNNER THE STEP COVERS NO GROUND.
+      //
+      // 📐 Measured across `targetedGrid()`: **640 rows of 188,928 read `~0mi`**,
+      // from 51,200 sessions over 6,144 inputs. Every one is the 30-second
+      // recovery `Jog` in a quality session, and every one already carries the
+      // honest number in its own detail line (`30s · <= 12:04-14:29 /mi`). So the
+      // row led with a zero and relegated the truth.
+      //
+      // ⚠️ MILES IS WHERE IT FIRES; KM IS ONE SLOWER PACE AWAY FROM IT. 30s at
+      // mile pace is ~0.04 mi, which formats `0mi`; at km pace it is 0.0625 km,
+      // which formats `0.1km` — so the corpus shows zero km hits and the bug is
+      // latent there, not absent: `formatDistance(0.04, 'km')` is `0km` too.
+      // **Hence the test is on the FORMATTED OUTPUT, not on the unit.**
+      //
+      // ⚠️ AND IT ASKS THE INJECTED FORMATTER WHAT ZERO LOOKS LIKE rather than
+      // regexing for `/^0/`. The formatter is a parameter, it has a sub-unit path
+      // for km, and ADR-015 owns it: if what it renders for zero ever changes,
+      // this comparison follows it. A regex would not.
+      //
+      // The fallback is NOT new behaviour — it is the duration-primary branch
+      // immediately below, which already exists for a step with no pace to
+      // estimate from. A zero-rounding estimate is the same situation: there is
+      // no honest distance to show.
+      const est = opts.formatDist(estKm)
+      if (est !== opts.formatDist(0)) {
+        const detail = [durStr, target].filter(Boolean).join(' · ')
+        return { kind, role, amount: `~${est}`, amountIsEstimate: true, detail }
+      }
     }
     // Duration primary (toggle on time, or no pace to estimate from — e.g. a
     // hill rep at RPE, where there is no honest distance to show).
