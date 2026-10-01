@@ -559,6 +559,48 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
 2. If it persists: attach **Safari → Develop → [device] → Web Inspector**, hover the band, and read
    the element. That is the only thing that will name it, and it takes a minute.
 
+## ⚖️ FILED 2026-10-01 — two residuals from the design waves
+
+> Filed rather than left as 🔻 lines inside shipped entries, which is the shape
+> `DOCS-RESIDUAL-01` exists to name: **105 residual markers and no check sees any of them.**
+> ⚠️ Both of these are *unfixed and untracked*, not accepted trade-offs — the distinction that
+> item's proposal turns on.
+
+### `GUARD-TREE-SWEEP-01` — the colour guards see the diff, never the tree ⚙️ **NO BOARD**
+
+Out of `HOOK-RGBA-COMMENTS-01`. `.githooks/pre-commit` reads **staged files only**, which is not a
+bug — **it is the shape of every commit-time check.** A guard scoped to the diff cannot see code
+already in place.
+
+📐 **Measured, and the measurement is the argument:** the one live hardcoded hex in the whole app
+was **`var(--bg, #111)`** in `app/dashboard/layout.tsx` — a dark-mode fallback that survived
+ADR-008 and would have painted the dashboard **near-black** — alive purely because nothing had
+touched that file for months. It was found by a one-off script, not by the guard whose entire job
+it is.
+
+**The fix is a tree-wide sweep as a vitest arm**, not a hook: walk `app/` and `components/`,
+comment-stripped, assert zero hardcoded hex and zero non-greyscale `rgba()`, with the OG routes and
+`globals.css` exempt by name. **The baseline is 0 today**, so it ships as an exact-equality arm
+rather than a debt register.
+
+⚠️ **This repo leans hard on pre-commit hooks and every one of them shares the blind spot** — the
+`setProperty`, font and banned-value checks are all staged-only too. A sweep for one of them is a
+pattern for all four, so build the first one so the next three are copies.
+
+### `SHEET-ARIA-LABEL-01` — a sheet can ship with no accessible name 🧭 **DESIGN BOARD**
+
+Out of `SHEET-CONTRACT-01`, and stated in that contract rather than discovered after it.
+`Sheet`'s `ariaLabel` is **optional**, so a dialog can render with no accessible name and nothing
+fails. Four sheets exist and **whether each passes one is not asserted anywhere.**
+
+⚠️ **Why it is a board item and not a one-line type change.** Making it required is trivial; the
+question is what each of the four should SAY, and a dialog's accessible name is runner-facing copy
+that a screen reader reads aloud. That is Silvanto's legibility lens and `brand.md`'s voice, not a
+compiler decision.
+
+⚠️ **And it is the cheap half of a bigger gap:** nothing in this repo asserts accessible names on
+any dialog, so "the four sheets" is the scope only because the contract happened to name it.
+
 ## ⚖️ FILED 2026-10-01 — `QUIT-TAB-DEAD-01`
 
 ### `QUIT-TAB-DEAD-01` — a dead screen component kept alive by its harness ⚙️ **NO BOARD** (+ a migration)
