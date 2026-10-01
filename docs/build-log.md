@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — BUTTON-GEOMETRY-HARNESS-01 · the prescribed fix was the wrong fix
+**Shipped:** three filed blind spots in the button-geometry harness, in one build and one re-baseline.
+
+**Dev learning:** The key item said to key on the control's own identity instead of an ordinal. I built that, measured it, and it reached **14 of 156 controls.** Everything else is anonymous in source, and `className` is shared so it collides and the ordinal does the work anyway. The fix the item asked for was cosmetic. What actually works was sitting in the item's own evidence: *"the multiset was identical, 82 both sides, two ordinals had swapped."* **The invariant is the multiset, not the key.** Reconcile the mismatches against it and a reordering is silent by construction, which is better than any key I could design.
+
+**Product/creator learning:** One build and one re-baseline, not three, and that was the whole reason to group them. Each re-baseline is a moment where you write down "this is the new truth" — and if two unrelated changes are in flight, one of them can hide a real regression inside the other's expected churn. Grouping made the proof simple enough to state in one line: 156 controls before, 156 after, every box value identical. **A re-baseline you cannot summarise in a sentence is a re-baseline that is hiding something.**
+
+**AI-building learning:** Falsification earned its place twice in twenty minutes. First it caught that my reconciliation handled only half the reorder cases: a key appearing or disappearing, but not a key persisting while its value swaps — which is *precisely* the case the item was filed for. Simulating the real incident turned my new arm red when it should have been silent. Then my own new unit test caught a fifth modelling bug in the harness: the literal readers took the first `padding:` match, so once the expander inserted a style constant, the constant beat the call site's inline override. The harness would have reported 12px where the browser paints 4px. **Both were in code I had just written, confident, with the lesson in front of me.**
+
+**The honest bit:** my first falsification of the reorder case was wrong, and I nearly drew the wrong conclusion from it. I swapped two entries in the baseline, saw the arm go red, and wrote it down as "the fix does not work". It was the right simulation but I had to check whether red was correct before trusting either reading. The second one, on an unmeasured component, went green and I nearly recorded that as the gate passing — the component had no `className`, so it was never measured at all. **A falsification that targets the wrong thing tells you nothing, and it looks exactly like a result.**
+
+**Hook material:** The ticket told me how to fix it. I built that, measured it, and it covered 9% of the problem.
+
+**Postable?:** yes — "the invariant is the multiset, not the key" generalises well beyond this.
+
+---
+
 ## 2026-10-01 — SHEET-RAF-FALLBACK-01 · the two-line fix that was not two lines
 **Shipped:** a sheet opened while the browser tab is hidden now actually opens, and so does the wheel picker nobody had reported.
 

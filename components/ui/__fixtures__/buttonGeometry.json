@@ -71,7 +71,7 @@
     "height": 47,
     "width": "full"
   },
-  "app/charity-runners/page.tsx#a1": {
+  "app/charity-runners/page.tsx#a[btn-btn-primary-btn-compact]1": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -207,7 +207,7 @@
     "height": 47,
     "width": "auto"
   },
-  "app/dashboard/DashboardClient.tsx#Button16": {
+  "app/dashboard/DashboardClient.tsx#Button[what-counts-as-in-zone-opens-an-]16": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -359,7 +359,7 @@
     "height": 44,
     "width": "auto"
   },
-  "components/ErrorBoundary.tsx#button1": {
+  "components/ErrorBoundary.tsx#button[btn-btn-ghost-btn-regular]1": {
     "floor": 44,
     "padY": null,
     "font": 12,
@@ -383,7 +383,7 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/AppleHealthConnectionRow.tsx#Button2": {
+  "components/dashboard/AppleHealthConnectionRow.tsx#Button[btn-inline-target]2": {
     "floor": 0,
     "padY": 8,
     "font": 11,
@@ -495,7 +495,7 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/MeScreen.tsx#Button2": {
+  "components/dashboard/MeScreen.tsx#Button[btn-inline-target]2": {
     "floor": 0,
     "padY": 8,
     "font": 11,
@@ -639,7 +639,7 @@
     "height": 44,
     "width": "full"
   },
-  "components/dashboard/SessionPopupInner.tsx#Button8": {
+  "components/dashboard/SessionPopupInner.tsx#Button[btn-inline-target]8": {
     "floor": 0,
     "padY": 6,
     "font": null,
@@ -647,7 +647,7 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/SessionPopupInner.tsx#Button9": {
+  "components/dashboard/SessionPopupInner.tsx#Button[btn-inline-target]9": {
     "floor": 0,
     "padY": 6,
     "font": null,
@@ -655,7 +655,7 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/SessionPopupInner.tsx#Button10": {
+  "components/dashboard/SessionPopupInner.tsx#Button[btn-inline-target]10": {
     "floor": 0,
     "padY": 6,
     "font": null,
@@ -709,9 +709,12 @@
     "font": null,
     "radius": null,
     "height": 44,
-    "width": "auto"
+    "width": "auto",
+    "unreadable": [
+      "MICRO_LABELS"
+    ]
   },
-  "components/dashboard/SessionPopupInner.tsx#Button17": {
+  "components/dashboard/SessionPopupInner.tsx#Button[btn-inline-target]17": {
     "floor": 0,
     "padY": null,
     "font": null,
@@ -847,7 +850,7 @@
     "height": 47,
     "width": "full"
   },
-  "components/marketing/SiteHeader.tsx#a1": {
+  "components/marketing/SiteHeader.tsx#a[btn-btn-primary-btn-compact-btn-]1": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -863,7 +866,7 @@
     "height": null,
     "width": "auto"
   },
-  "components/shared/BackButton.tsx#button1": {
+  "components/shared/BackButton.tsx#button[btn]1": {
     "floor": null,
     "padY": null,
     "font": null,
@@ -885,7 +888,10 @@
     "font": null,
     "radius": null,
     "height": 44,
-    "width": "auto"
+    "width": "auto",
+    "unreadable": [
+      "style"
+    ]
   },
   "components/shared/BackButton.tsx#IconButton1": {
     "floor": 44,
@@ -903,7 +909,7 @@
     "height": 48,
     "width": "100%"
   },
-  "components/shared/HrPendingStatusRow.tsx#Button1": {
+  "components/shared/HrPendingStatusRow.tsx#Button[btn-inline-target]1": {
     "floor": 0,
     "padY": 6,
     "font": null,
@@ -1005,7 +1011,10 @@
     "font": null,
     "radius": null,
     "height": 47,
-    "width": "auto"
+    "width": "auto",
+    "unreadable": [
+      "style"
+    ]
   },
   "components/shared/RefusalView.tsx#Button1": {
     "floor": 44,
@@ -1103,7 +1112,7 @@
     "height": 44,
     "width": "full"
   },
-  "components/training/PlanCalendar.tsx#Button1": {
+  "components/training/PlanCalendar.tsx#Button[collapse-week]1": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -1135,7 +1144,7 @@
     "height": 47,
     "width": "auto"
   },
-  "components/training/PlanCalendar.tsx#Button5": {
+  "components/training/PlanCalendar.tsx#Button[move-this-session]5": {
     "floor": 44,
     "padY": null,
     "font": 16,

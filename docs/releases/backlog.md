@@ -191,7 +191,20 @@ so the window decides **what counts as having done a session** — that is presc
 picking a window (±1 day? ±3? distance-aware?) is a coaching judgement, not a layout one. Found
 while building `LINK-HIERARCHY-01`; **explicitly out of its scope and not guessed at.**
 
-### `BUTTON-GEOMETRY-BORDER-01` — the geometry harness never reads `border` ⚙️ NO BOARD
+### ✅ `BUTTON-GEOMETRY-BORDER-01` — SHIPPED 2026-10-01 ⚙️ NO BOARD ⚠️ **The baseline CANNOT prove this one**, because no control in the app is content-sized and
+bordered, so the diff is silent whether the border is parsed or not. **A structural fix needs a
+structural test:** a unit arm asserts a constructed bordered tag is **39px against 37px** without
+it, and that a FLOORED bordered control does **not** grow (border-box paints it inside, and adding
+it there would have invented a regression on every bordered button in the app).
+
+✅ **SHIPPED 2026-10-01** as part of the geometry-harness build (`BUTTON-GEOMETRY-SPREAD-01`,
+`-KEY-02`, `-BORDER-01` together: one file, one job, and **one re-baseline instead of three,
+because every re-baseline is a chance to hide a real move**).
+
+📐 **THE PROOF THAT NOTHING MOVED IS THE MULTISET: 156 controls before, 156 after, every box
+value identical** — so the new key, the border parsing and the spread expansion changed no
+geometry. That also turns `-BORDER-01`'s *"no live exposure today"* from an assertion into a
+measurement.
 
 `buttonGeometry.test.ts` models padding, className resolution, stylesheet order and width. **It
 does not parse `border` at all.**
@@ -860,7 +873,26 @@ them**, so shipping these would be exactly the blind reflow the condition forbid
 `ME-ADJUSTMENTS-EXTRACT-01` — both already filed — which would make these screens
 previewable. **Do not ship 1b to make the register fall.**
 
-#### 🟡 `BUTTON-GEOMETRY-SPREAD-01` — the geometry harness cannot see through a spread
+#### ✅ `BUTTON-GEOMETRY-SPREAD-01` — SHIPPED 2026-10-01 ✅ **Same-file `const NAME = {...}` is expanded now**; an IMPORTED constant is honestly marked
+`unreadable` rather than guessed. 📐 **Measured: TEN measured tags carry a style spread**
+(`CardSelect` ×2, `MeScreen`, `CoachByline`, `DashboardClient`, `onboarding-preview` ×3, two more)
+and **most are filtered out today by `onSystem`** — which is exactly why this had to ship BEFORE
+`TAP-TARGET-FLOOR-01` drops that filter, or the floor arm would inherit ten controls whose padding
+it cannot see. **Register of 3** (`MICRO_LABELS` imported ×1, `...style` PROP ×2 — the second kind
+is unmeasurable from source *by construction*, since the box depends on the caller). 🔴 **AND ITS
+OWN TEST FOUND A FIFTH MODELLING BUG IN THIS HARNESS:** the literal readers took the **FIRST**
+match, so once the constant's declarations were inserted the constant's padding beat the call
+site's inline override — 12px reported where the browser paints 4px. **Last-wins now**, which is
+what a CSS-in-JS object means. Multiset re-verified identical after that change.
+
+✅ **SHIPPED 2026-10-01** as part of the geometry-harness build (`BUTTON-GEOMETRY-SPREAD-01`,
+`-KEY-02`, `-BORDER-01` together: one file, one job, and **one re-baseline instead of three,
+because every re-baseline is a chance to hide a real move**).
+
+📐 **THE PROOF THAT NOTHING MOVED IS THE MULTISET: 156 controls before, 156 after, every box
+value identical** — so the new key, the border parsing and the spread expansion changed no
+geometry. That also turns `-BORDER-01`'s *"no live exposure today"* from an assertion into a
+measurement.
 
 ⚙️ **NO BOARD** — tooling.
 
@@ -1510,7 +1542,28 @@ second change wearing the first one's clothes, so it was deliberately not done.
 because it is a component under `components/`; this door has **none**, because vitest does
 not collect `app/`. Extracting it is what makes it testable.
 
-### 🟡 `BUTTON-GEOMETRY-KEY-02` — the geometry key is unstable to REORDERING
+### ✅ `BUTTON-GEOMETRY-KEY-02` — SHIPPED 2026-10-01, and the prescribed fix was the wrong one 🔴 **THE PRESCRIBED FIX DOES NOT WORK, MEASURED.** Keying on the control's own identity
+(`aria-label` / `key` / `title` / `className`) reaches **14 of 156 controls**: the rest are
+anonymous in source, and `className` is shared so it collides and the ordinal does the work anyway.
+**The identity is kept because it makes a diff readable. It is not the defence.** ✅ **The defence
+is RECONCILIATION against the multiset**, which is what the item's own evidence pointed at all
+along (*"the multiset was identical, 82 both sides, two ordinals had swapped"*). 🔴 **AND THE
+FIRST CUT OF THAT ONLY HANDLED HALF THE CASES — falsification caught it.** A reorder shows up two
+ways: a key **appears or disappears**, or a key **persists and its value swaps**. I handled only
+the first, so simulating the real `ME-DOORS-01` case turned the arm RED when it should have been
+silent. **Mismatches and leftovers are now reconciled together.** ⚠️ **The trade, stated:** two
+controls genuinely swapping boxes balances and is therefore silent. Accepted — a regression does
+not take that shape, and the alternative is the false alarm this file records as the reason a gate
+stops being read.
+
+✅ **SHIPPED 2026-10-01** as part of the geometry-harness build (`BUTTON-GEOMETRY-SPREAD-01`,
+`-KEY-02`, `-BORDER-01` together: one file, one job, and **one re-baseline instead of three,
+because every re-baseline is a chance to hide a real move**).
+
+📐 **THE PROOF THAT NOTHING MOVED IS THE MULTISET: 156 controls before, 156 after, every box
+value identical** — so the new key, the border parsing and the spread expansion changed no
+geometry. That also turns `-BORDER-01`'s *"no live exposure today"* from an assertion into a
+measurement.
 
 ⚙️ **NO BOARD** — tooling.
 

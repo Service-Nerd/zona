@@ -31,6 +31,9 @@ export interface Box {
   padY: number | null
   /** font-size px. */
   font: number | null
+  /** Style constants spread into this tag that could not be resolved (imported).
+   *  Present only when non-empty, so it does not churn every baseline entry. */
+  unreadable?: string[]
   /** border-radius px, or a token name. */
   radius: string | null
   /** Computed height: floor if it binds, else padY*2 + line-box. */
@@ -130,8 +133,21 @@ function tags(src: string, tag: string): { line: number; text: string }[] {
   return out
 }
 
+/**
+ * A px literal for `prop`, LAST occurrence wins.
+ *
+ * ⚠️ LAST, NOT FIRST, and this was a real defect found by its own test. In a
+ * CSS-in-JS object a later key beats an earlier one, which is exactly what
+ * `style={{ ...common, padding: '4px' }}` means. The first cut read the FIRST
+ * match, so once `expandStyleSpreads` inserted the constant's declarations the
+ * constant's padding beat the call site's override: the harness reported 12px
+ * where the browser paints 4px. **Fifth modelling bug found in this file before
+ * trusting it, and the pattern holds — every one was a plausible reading of the
+ * source that the browser disagrees with.**
+ */
 const num = (t: string, prop: string): number | null => {
-  const m = t.match(new RegExp(prop + ":\\s*'?([0-9.]+)px"))
+  const all = Array.from(t.matchAll(new RegExp(prop + ":\\s*'?([0-9.]+)px", 'g')))
+  const m = all[all.length - 1]
   return m ? parseFloat(m[1]!) : null
 }
 
@@ -170,6 +186,80 @@ function renderedClasses(tag: string, name: string): string {
   return `icon-btn icon-btn--${shape} icon-btn--${inline ? 'inline-mark' : 'regular'} ${explicitCls}`
 }
 
+/**
+ * BUTTON-GEOMETRY-SPREAD-01 — EXPAND `...CONST` IN A `style` OBJECT BEFORE MEASURING.
+ *
+ * 🔴 The harness reads LITERALS: `padding:`, `fontSize:`, `minHeight:`. The moment
+ * a call site does the right thing and hoists its style into a constant, those
+ * values vanish from the tag text and the box is measured from whatever is left,
+ * silently. Wave 1a produced exactly this: a control reported `font: 12 -> null`
+ * with its box provably unchanged, because the value now arrived via
+ * `...MICRO_LABELS.eyebrow`.
+ *
+ * ⚠️ MEASURED 2026-10-01: TEN measured tags carry a style spread
+ * (`CardSelect` x2, `MeScreen`, `CoachByline`, `DashboardClient`,
+ * `onboarding-preview` x3, and two more). **Most are filtered out TODAY by
+ * `onSystem`**, which is why there is no live exposure yet — and is exactly why
+ * this must be fixed BEFORE `TAP-TARGET-FLOOR-01` drops that filter. Dropping it
+ * first would hand the floor arm ten controls whose padding it cannot see.
+ *
+ * Same-file `const NAME = { ... }` is expanded. An IMPORTED constant is not
+ * followed: that needs module resolution, and a half-done resolver that returns
+ * partial values is worse than one that admits it cannot read the object. Those
+ * are marked `unreadable` and counted, so the population cannot shrink quietly.
+ */
+/**
+ * The inline border WIDTH in px, 0 when absent or not a px literal.
+ *
+ * Reads `border:` / `borderWidth:` / `borderTop|Bottom:`. A token-valued border
+ * (`border: '1px solid var(--line)'`) still yields its width, which is the part
+ * that moves a box; the colour is irrelevant here.
+ */
+export function borderWidth(tag: string): number {
+  const m = tag.match(/border(?:Width)?:\s*'([^']+)'/)
+  if (!m) return 0
+  const px = m[1]!.match(/(\d+(?:\.\d+)?)px/)
+  if (!px) return 0
+  // `border: 'none'` and `border: 0` read as 0 via the px miss above.
+  return parseFloat(px[1]!)
+}
+
+export function expandStyleSpreads(tagText: string, src: string): { text: string; unresolved: string[] } {
+  const styleM = tagText.match(/style=\{\{([\s\S]*)/)
+  if (!styleM) return { text: tagText, unresolved: [] }
+
+  const unresolved: string[] = []
+  let text = tagText
+
+  for (const m of Array.from(styleM[1]!.matchAll(/\.\.\.([A-Za-z_$][\w$]*)/g))) {
+    const name = m[1]!
+    const body = constObjectBody(src, name)
+    if (body === null) { unresolved.push(name); continue }
+    // Append the constant's own declarations so the existing literal readers see
+    // them. Appending, never prepending: an inline value after the spread must
+    // keep winning, which is what JS object spread does.
+    text = text.replace('style={{', `style={{ ${body} ,`)
+  }
+  return { text, unresolved }
+}
+
+/** The body of a same-file `const NAME = { ... }`, brace-matched. Null if absent. */
+function constObjectBody(src: string, name: string): string | null {
+  const re = new RegExp('const\\s+' + name + '\\s*(?::[^=]+)?=\\s*\\{')
+  const m = src.match(re)
+  if (!m || m.index === undefined) return null
+  let i = m.index + m[0].length
+  let depth = 1
+  const start = i
+  while (i < src.length && depth > 0) {
+    const c = src[i]!
+    if (c === '{') depth++
+    else if (c === '}') depth--
+    i++
+  }
+  return depth === 0 ? src.slice(start, i - 1) : null
+}
+
 export function boxOf(tag: string, floors: Record<string, number>, padFromClass: Record<string, number> = {}, name = 'button', overlays: Record<string, number> = {}): Box {
   const cls = renderedClasses(tag, name)
   // 🔴 RESOLVE BY CSS SOURCE ORDER, NOT CLASSNAME ORDER. Equal-specificity
@@ -190,14 +280,17 @@ export function boxOf(tag: string, floors: Record<string, number>, padFromClass:
 
   const explicit = num(tag, 'minHeight') ?? num(tag, 'height')
 
-  const padM = tag.match(/padding:\s*'([^']+)'/)
+  // Last-wins, for the same reason as `num` above.
+  const padAll = Array.from(tag.matchAll(/padding:\s*'([^']+)'/g))
+  const padM = padAll[padAll.length - 1]
   let padY: number | null = null
   if (padM) {
     const first = padM[1]!.split(/\s+/)[0]!
     if (first.endsWith('px')) padY = parseFloat(first)
   }
   const font = num(tag, 'fontSize')
-  const radM = tag.match(/borderRadius:\s*'?([^,'}]+)/)
+  const radAll = Array.from(tag.matchAll(/borderRadius:\s*'?([^,'}]+)/g))
+  const radM = radAll[radAll.length - 1]
   const radius = radM ? radM[1]!.trim() : null
 
   // 🔴 THIS APP IS `box-sizing: border-box` GLOBALLY (`globals.css` `*` rule),
@@ -221,13 +314,76 @@ export function boxOf(tag: string, floors: Record<string, number>, padFromClass:
   const painted = declared !== null ? Math.max(declared, padBox)
     : (padY !== null || classPad > 0) ? padBox : null
   // The TARGET is what `:262` governs. An overlay can exceed the painted box.
-  const height = painted === null ? (overlay || null) : Math.max(painted, overlay)
+
+  // BUTTON-GEOMETRY-BORDER-01 — THE HARNESS MODELLED PADDING, CLASSES,
+  // STYLESHEET ORDER AND WIDTH, AND NEVER PARSED `border` AT ALL.
+  //
+  // Under `box-sizing: border-box` that is CORRECT for any control with a floor
+  // or an explicit height: the border paints inside and the outer box cannot
+  // move. It is WRONG for a content-sized one, where the border adds to the
+  // outer box on both edges.
+  //
+  // 📐 Measured 2026-09-26: six classes carry `border: 1px` and are
+  // content-sized in their own block (`.btn--secondary`, `.btn--soft`,
+  // `.btn--destructive`, `.icon-btn--circle`, `.icon-btn--square`,
+  // `.nav-bar--floating`) and **every one composes with a size class that
+  // floors**, so there is no live exposure today. `ICON-EDGE-01` added a border
+  // to two of them and a browser confirmed 44x44, `geometry moved: 0`.
+  //
+  // ⚠️ SO THE HARNESS IS RIGHT TODAY AND STRUCTURALLY BLIND. The first bordered
+  // control written WITHOUT a size class moves and it prints `moved: 0`, which
+  // is the sentence this repo has recorded more than any other.
+  //
+  // Only the content-sized path adds it, so this changes no box that is floored.
+  const borderPx = borderWidth(tag)
+  const paintedWithBorder = painted === null ? null
+    : (declared !== null ? painted : painted + borderPx * 2)
+  const height = paintedWithBorder === null ? (overlay || null) : Math.max(paintedWithBorder, overlay)
 
   const explicitW = tag.match(/width:\s*'([^']+)'/)?.[1] ?? null
   const width = /\bfullWidth\b/.test(tag) || cls.split(/\s+/).includes('btn--full')
     ? 'full' : explicitW ?? 'auto'
 
   return { floor, padY, font, radius, height, width }
+}
+
+/**
+ * BUTTON-GEOMETRY-KEY-02 — A KEY STABLE TO REORDERING.
+ *
+ * 🔴 THE HISTORY MATTERS, BECAUSE BOTH PREVIOUS KEYS FAILED AND IN OPPOSITE
+ * DIRECTIONS.
+ *
+ *   `file:line:tag` — inserting ONE line re-keyed every control below it, the
+ *   comparison skipped all of them (`if (!was) continue`) and the gate printed
+ *   `moved: 0`. **A false PASS**, which is the worst outcome available.
+ *
+ *   `file#tag<ordinal>` — reordering blocks within a file re-keys without any
+ *   box changing. `ME-DOORS-01` moved blocks in `DashboardClient` and this
+ *   harness reported TWO controls moved while the geometry MULTISET was
+ *   identical, 82 controls both sides: `Button63` and `Button65` had swapped.
+ *   **A false ALARM**, and an alarm that is routinely re-baselined is an alarm
+ *   that stops being read, which this repo records as equivalent to no check.
+ *
+ * So the key is the control's own IDENTITY where it has one: `aria-label`, else
+ * its literal text, else a `key=` prop, else its `className`. The ordinal stays
+ * as the last resort AND as a disambiguator, because two identical controls in
+ * one file are genuinely indistinguishable from source and must not collide.
+ */
+export function keyFor(file: string, tag: string, text: string, ordinal: number): string {
+  const ident =
+    text.match(/aria-label=["'`]([^"'`{]{2,40})/)?.[1] ??
+    text.match(/\bkey=\{?["'`]([^"'`{]{2,40})/)?.[1] ??
+    text.match(/\btitle=["'`]([^"'`{]{2,40})/)?.[1] ??
+    text.match(/className=["'`]([^"'`{]{2,40})/)?.[1] ??
+    null
+  const slug = ident
+    ? ident.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32)
+    : null
+  // The ordinal is retained even when an identity exists: `aria-label` is not
+  // unique in this codebase (several screens have two "Back" controls) and a
+  // colliding key silently overwrites a measurement, which is a shrinking
+  // population wearing a stable key.
+  return slug ? `${file}#${tag}[${slug}]${ordinal}` : `${file}#${tag}${ordinal}`
 }
 
 export function measureAll(): Record<string, Box> {
@@ -268,8 +424,11 @@ export function measureAll(): Record<string, Box> {
         const onSystem = /className=[^\n]*\b(btn|icon-btn|switch)\b/.test(text) ||
                          tag === 'Button' || tag === 'IconButton' || tag === 'Switch'
         if (!onSystem) continue
+        const { text: expanded, unresolved } = expandStyleSpreads(text, src)
         const n = (seen[tag] = (seen[tag] ?? 0) + 1)
-        out[`${f}#${tag}${n}`] = boxOf(text, floors, padFromClass, tag, overlays)
+        const box = boxOf(expanded, floors, padFromClass, tag, overlays)
+        if (unresolved.length) box.unreadable = unresolved.sort()
+        out[keyFor(f, tag, text, n)] = box
       }
     }
   }
