@@ -133,8 +133,54 @@ describe('comparison articles — house style', () => {
     for (const [key, f] of Object.entries(COMPETITOR_FACTS)) {
       expect(f.verified, `${key}: verification date`).toMatch(/^\d{4}-\d{2}-\d{2}$/)
       expect(f.source.length, `${key}: a figure with no named source cannot be re-checked`).toBeGreaterThan(0)
-      expect(f.monthly ?? f.annual, `${key}: at least one price`).toBeTruthy()
+      // `free` and a declared price are mutually exclusive, both ways. A row
+      // with neither is a competitor nobody can price; a row with both is
+      // somebody mistaking "has a free tier" for "is free", which is exactly
+      // the confusion TrainAsONE invites.
+      if (f.free) {
+        expect(f.monthly, `${key}: free, so no monthly figure`).toBeNull()
+        expect(f.annual, `${key}: free, so no annual figure`).toBeNull()
+        expect(f.freeCondition?.length ?? 0, `${key}: say what free costs instead`).toBeGreaterThan(0)
+      } else {
+        expect(f.monthly ?? f.annual, `${key}: at least one price, or free: true`).toBeTruthy()
+      }
     }
+  })
+
+  it('every competitor row is actually named by an article', () => {
+    // A row nothing reads is decorative config, which this repo has paid for
+    // more than once (INTENSITY_DISTRIBUTION wrong for four months, inert
+    // gates, a principle with no consumer). Written while ADDING a row: if I
+    // had declared Garmin Coach and not used it, this is what would have
+    // caught me.
+    const copy = allCopy().join('\n')
+    const unread = Object.entries(COMPETITOR_FACTS)
+      .filter(([, f]) => !copy.includes(f.name))
+      .map(([k, f]) => `${k} (${f.name})`)
+    expect(unread, 'a competitor fact no article quotes is config with no consumer').toEqual([])
+  })
+
+  it('no sentence naming a FREE product carries a price', () => {
+    // ⚠️ THIS CLOSES PART OF THE HOLE PAGE 4 FOUND, AND ONLY PART. The price
+    // gate proves a figure has an owner and cannot prove the owner is the
+    // product the sentence names: page 4's draft quoted Coopah at TrainAsONE's
+    // £9.99 and passed. For a FREE product the check is decidable, because the
+    // correct number of £ figures in a sentence about it is zero.
+    //
+    // ⚠️ PAID-AGAINST-PAID MISATTRIBUTION IS STILL UNCHECKED. £14.99 in a
+    // sentence about Runna would pass every arm in this file.
+    const freeNames = Object.values(COMPETITOR_FACTS).filter(f => f.free).map(f => f.name)
+    expect(freeNames.length, 'no free product declared, so this arm proves nothing').toBeGreaterThan(0)
+
+    const offenders: string[] = []
+    for (const a of MARKETING_ARTICLES)
+      for (const text of a.body.map(copyOf))
+        for (const sentence of text.split(/(?<=[.!?])\s+/))
+          for (const name of freeNames)
+            if (sentence.includes(name) && /£\d/.test(sentence))
+              offenders.push(`${a.slug}: "${sentence.trim().slice(0, 80)}" prices ${name}, which is free`)
+
+    expect(offenders, 'a free product named in the same sentence as a price').toEqual([])
   })
 
   it('the brand name is interpolated, never typed as a literal', () => {

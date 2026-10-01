@@ -173,17 +173,41 @@ export interface MarketingArticle {
 export interface CompetitorFacts {
   name: string
   /** Display form including the symbol, e.g. '£14.99'. Null where we do not
-   *  publish a monthly figure for this product. */
+   *  publish a monthly figure for this product, and null on a `free` one. */
   monthly: string | null
   /** Display form including the symbol, e.g. '£119.99'. */
   annual: string | null
+  /**
+   * The product costs NOTHING. Both price fields are null by construction, and
+   * `articles.test.ts` asserts that mutual exclusion in both directions.
+   *
+   * ⚠️ NOT "HAS A FREE TIER", and the distinction is the whole reason this
+   * field needs a comment. TrainAsONE has a generous free tier and is a PAID
+   * product with two declared prices. `free` means there is no paid tier to
+   * declare: Garmin Coach, where the price of entry is owning the watch.
+   *
+   * ⚠️ IT EXISTS BECAUSE THE TYPE COULD NOT EXPRESS A PRICE OF ZERO. Page 4
+   * named four products and owned three: Garmin Coach's price fact was "free",
+   * which needs no £ sign, so the price gate had nothing to check and the fact
+   * had no source and no verification clock. A fact nobody can re-check is the
+   * problem `COMPETITOR_FACTS` was built to stop, and "it is free so there is
+   * no figure" is not an exemption from it: free is a price, and it can change.
+   */
+  free?: true
+  /**
+   * Free only: the CONDITION on the price, because for Garmin Coach the cost is
+   * real and is just not money. Part of the price fact, so it lives with it.
+   * Feature limits (Garmin Coach stops at the half marathon) are NOT price
+   * facts and stay in prose, or this becomes a competitor database.
+   */
+  freeCondition?: string
   /** Where the figures came from, named so a future revision can re-check it. */
   source: string
   /** ISO date the figures above were last checked against that source. */
   verified: string
 }
 
-export const COMPETITOR_FACTS: Record<'coopah' | 'runna' | 'trainasone', CompetitorFacts> = {
+export const COMPETITOR_FACTS: Record<'coopah' | 'runna' | 'trainasone' | 'garminCoach', CompetitorFacts> = {
   coopah: {
     name: 'Coopah',
     // ⚠️ The MONTHLY figure is the weaker of the two. £14.99 comes from the
@@ -203,6 +227,21 @@ export const COMPETITOR_FACTS: Record<'coopah' | 'runna' | 'trainasone', Competi
     annual: '£99.99',
     source: 'runna.com/en-gb/pricing',
     verified: '2026-09-17',
+  },
+  // ⚠️ `verified` IS THE DATE SOMEBODY ACTUALLY LOOKED, and for this row that
+  // was 2026-10-01 against Garmin's own pages: the plans are free on Garmin
+  // Connect, cover 5K / 10K / half marathon only, and are authored by Jeff
+  // Galloway, Greg McMillan and Amy Parkerson-Mitchell. Page 4's copy was
+  // right about all of it. Checked rather than assumed, because the same page
+  // shipped a sentence claiming a price check that had not happened.
+  garminCoach: {
+    name: 'Garmin Coach',
+    monthly: null,
+    annual: null,
+    free: true,
+    freeCondition: 'requires a compatible Garmin watch',
+    source: 'garmin.com/blog, Garmin Coach adaptive training plans',
+    verified: '2026-10-01',
   },
   trainasone: {
     name: 'TrainAsONE',
@@ -545,7 +584,15 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
     appStoreLinkText: `Get ${BRAND.name} on the App Store`,
     hubSummary: `Every price point from free upwards, and what each one actually buys you.`,
     body: [
-      p(`If Runna's price is the problem, there are three realistic routes. Garmin Coach is free if you already own a Garmin watch. TrainAsONE has a free tier and a ${price('trainasone').annual} a year premium plan. ${BRAND.name} is ${PRICING.annual.display} a year, with free 5K, 10K and half marathon plans. Coopah is cheaper than Runna's monthly price but not by much.`),
+      // ⚠️ "THREE ROUTES" THEN FOUR PRODUCTS, AND THE COUNT WAS NOT THE ERROR.
+      // The three cheaper routes are Garmin Coach, TrainAsONE and this app;
+      // Coopah was always written as the aside, and the real figures say why
+      // (£119.99 against Runna's £99.99, so it is only cheaper monthly). The
+      // sentence just did not signal it, which is the homepage's "four answers"
+      // against a fifteen-question wizard in miniature: prose about a list
+      // drifting from the list. Fixed by making the aside read as one, not by
+      // changing three to four.
+      p(`If Runna's price is the problem, there are three realistic routes. Garmin Coach is free if you already own a Garmin watch. TrainAsONE has a free tier and a ${price('trainasone').annual} a year premium plan. ${BRAND.name} is ${PRICING.annual.display} a year, with free 5K, 10K and half marathon plans. Coopah comes up as a fourth, but it undercuts Runna on the monthly price only, and not by much.`),
       // The verification month is derived, not typed. See `pricesLastChecked`.
       p(`I built ${BRAND.name}, so weigh that. Prices below were last checked on ${pricesLastChecked()} and they change, so check the app stores before you pay.`),
 
