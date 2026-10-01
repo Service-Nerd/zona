@@ -409,7 +409,7 @@ say "── CONTRACTS: a SHARED component with no contract at all ──"
 # This asks the inverse: a component under `components/shared/` that EXPORTS a prop
 # interface and is imported by more than one file should have a contract. Existing
 # debt is declared below so it is visible and cannot grow.
-UNCONTRACTED_BASELINE=52   # 🔴 MEASURED, NOT GUESSED. I set this to 14 first — today's
+UNCONTRACTED_BASELINE=51   # 🔴 MEASURED, NOT GUESSED. I set this to 14 first — today's
                            # extracted screens — on the assumption the rest of the tree was
                            # contracted. It is not: 52 shared components have no contract,
                            # against 20 that do. The arm fired on its FIRST RUN and the
@@ -430,6 +430,10 @@ for f in components/shared/*.tsx components/dashboard/*.tsx; do
   grep -rqs "^\*\*Component:\*\* \`$f\`" docs/contracts/components/ && continue
   missing=$((missing+1))
 done
+# 2026-10-01 — 52 → 51. `SHEET-CONTRACT-01` contracted `Sheet`, the most-used
+# primitive in the app. The ratchet asked for the lower number rather than
+# letting a paid debt sit as slack, which is the only direction this register is
+# allowed to move on its own.
 if [ "$missing" -gt "$UNCONTRACTED_BASELINE" ]; then
   say "  GREW: $missing shared components with no contract, baseline $UNCONTRACTED_BASELINE"
   fail=1

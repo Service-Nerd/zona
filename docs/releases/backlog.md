@@ -243,7 +243,7 @@ regex, and no width.
 **Found by running the `/build` consumer check AFTER shipping rather than before.** The check cost
 nothing this time and would have cost the whole item if one of those six had been unfloored.
 
-### `SHEET-CONTRACT-01` — the most-used primitive in the app has no contract ⚙️ NO BOARD
+### ✅ `SHEET-CONTRACT-01` — SHIPPED 2026-10-01 ⚙️ NO BOARD
 
 `components/shared/Sheet.tsx` owns **nine** surfaces, the portal, the z-layer, the nav clearance,
 the focus trap, drag-to-dismiss and now the pinned close — and there is **no
@@ -252,6 +252,34 @@ the focus trap, drag-to-dismiss and now the pinned close — and there is **no
 ⚠️ **The contract gate only checks contracts that EXIST**, so a primitive with none is invisible
 to it. That is the short-population class again, one level up: the check's set is *the files in the
 folder*, not *the components that need one*.
+
+✅ **SHIPPED** — `docs/contracts/components/sheet.md`, checked both directions by
+`componentContracts.test.ts`. Documents the five props, **what the primitive OWNS so a caller
+must not re-implement it** (portal · the `Z_LAYERS` z-index · nav occlusion · home-indicator
+clearance · scroll lock + Escape + focus trap · swipe-to-close · the enter transition), and all
+six states including the hidden-document one `SHEET-RAF-FALLBACK-01` fixed this morning.
+
+🔴 **AND REGISTERING IT EXPOSED A DEFECT IN THE CONTRACT GATE ITSELF.** The gate read the
+**first** export in the file with a destructured object, which in `Sheet.tsx` is
+`NavHeightProvider({ value, children })` at line 64 — not `export default function Sheet` at line
+97. So it compared the `Sheet` contract against **`NavHeightProvider`'s props** and reported
+`value` as an undocumented prop of Sheet. **A gate that reads the wrong component does not decline
+to check; it checks confidently and wrongly**, which is the worse half of that file's own *"only
+as wide as its list"* lesson. It also accepted only `interface Props`, so `SheetProps` was
+invisible.
+
+✅ **Fixed with an explicit precedence:** `interface Props` → the interface named after the
+default export (`SheetProps`) → the **default export's** own destructure → the first named
+export. **Falsified three ways:** the component gains an undocumented prop → red · the contract
+claims a fictional prop → red · revert the gate fix so it reads `NavHeightProvider` again → red.
+
+✅ **The ratchet moved: `UNCONTRACTED_BASELINE` 52 → 51.** `audit-docs.sh` asked for the lower
+number rather than letting a paid debt sit as slack.
+
+🔻 **Stated in the contract itself:** `ariaLabel` is optional, so a sheet can ship with no
+accessible name and nothing fails; whether each of the four sheets passes one is not asserted.
+
+4,117 tests / 459 files, `tsc` clean.
 
 ### `BACK-HEADER-OWNER-01` — the pushed-screen header has no owner and five type treatments 🧭 DESIGN BOARD
 

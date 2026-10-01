@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — SHEET-CONTRACT-01 · the gate was checking the wrong component
+**Shipped:** a contract for `Sheet`, the most-used primitive in the app, and a fix to the gate that checks contracts.
+
+**Dev learning:** Writing the contract was the easy half. Registering it turned the gate red over a prop called `value` that `Sheet` does not have. The gate matched the **first** export in the file with a destructured object — `NavHeightProvider({ value, children })` — rather than the default export ninety lines below it. **It had been comparing contracts against whichever component happened to be declared first.** That is worse than not checking: a gate that declines to check tells you so, and this one checked confidently and wrongly. It now has an explicit precedence, default export first.
+
+**Product/creator learning:** The contract's most useful section is not the prop table, it is *what the primitive owns so a caller must not re-implement it*. Seven hand-rolled sheets each invented their own z-index and five sat below the nav; the primitive exists so that cannot recur, and the thing a future caller needs to know is which seven behaviours they get for free. **A prop table tells you how to call it. The ownership table tells you why not to write your own.**
+
+**AI-building learning:** The file carried a comment about exactly this class — a parser that only understood `export default function` silently declined to check named exports, found in September. The fix widened it to named exports and introduced the opposite bug: now it understood both styles and had no rule for which to **prefer**. **The lesson had been learned about export style and the blind spot had moved to export count.** Same file, same shape, three weeks apart.
+
+**The honest bit:** I broke the gate's destructure splitter while refactoring it out into a shared function, left a nonsense `const m = [inner] as [string]` in place, and `tsc` caught it in two lines. Cheap, but it is the third time today the compiler has caught me mid-cleanup, and all three were in code I was writing to make something else more correct.
+
+**Hook material:** The test that checks every component contract had been comparing them against whichever component was declared first in the file.
+
+**Postable?:** yes — "the lesson was learned about export style and the blind spot moved to export count" generalises.
+
+---
+
 ## 2026-10-01 — HOOK-RGBA-COMMENTS-01 · the guard against hardcoded colour found one, in a dark-mode fallback
 **Shipped:** both pre-commit colour checks ignore comments, the hook has tests, and the app's only hardcoded hex is gone.
 

@@ -36,11 +36,32 @@ const DIR = join(process.cwd(), 'docs/contracts/components')
 function componentProps(raw: string): string[] | null {
   const src = raw.replace(/\/\*[\s\S]*?\*\//g, '')
     .split('\n').filter(l => !l.trim().startsWith('//')).join('\n')
-  // Prefer an explicit `interface Props` — it carries the types too.
-  const iface = src.match(/interface Props \{([\s\S]*?)\n\}/)
-  if (iface) {
-    return iface[1].split('\n').map(l => l.trim()).filter(Boolean)
+  // 🔴 THE DEFAULT EXPORT IS THE SUBJECT, AND THIS READ WHICHEVER CAME FIRST.
+  // Found 2026-10-01 registering `sheet.md`: `Sheet.tsx` exports
+  // `NavHeightProvider({ value, children })` at line 64 and `export default
+  // function Sheet(...)` at line 97, so the gate compared the contract for
+  // `Sheet` against **`NavHeightProvider`'s props** and reported `value` as an
+  // undocumented prop of Sheet. **A gate that reads the wrong component does
+  // not decline to check — it checks confidently and wrongly**, which is the
+  // worse half of this file's own "only as wide as its list" lesson.
+  //
+  // Order, most specific first: `interface Props`, then the props interface
+  // NAMED AFTER the default export (`SheetProps`), then the default export's
+  // own destructure, then the first named export.
+  const defaultName = src.match(/export default function (\w+)/)?.[1] ?? null
+  const ifaceRe = (name: string) => new RegExp('interface ' + name + ' \\{([\\s\\S]*?)\\n\\}')
+  const readIface = (body: string): string[] =>
+    body.split('\n').map(l => l.trim()).filter(Boolean)
       .map(l => (l.match(/^([A-Za-z_$][\w$]*)\s*\??\s*:/) || [])[1]).filter(Boolean) as string[]
+
+  const named = src.match(ifaceRe('Props'))
+    ?? (defaultName ? src.match(ifaceRe(`${defaultName}Props`)) : null)
+  if (named) return readIface(named[1])
+
+  // The DEFAULT export's destructure, before any named one.
+  if (defaultName) {
+    const d = src.match(new RegExp('export default function ' + defaultName + '\\s*\\(\\s*\\{([\\s\\S]*?)\\}\\s*:'))
+    if (d) return splitTopLevel(d[1])
   }
   // ⚠️ NAMED EXPORTS TOO, and the reason is a real miss. This matched only
   // `export default function`, and every marketing component in this codebase
@@ -52,11 +73,16 @@ function componentProps(raw: string): string[] | null {
   // Section, TabbedPhone and PhoneShell.
   const m = src.match(/export (?:default )?function \w+\s*\(\s*\{([\s\S]*?)\}\s*:/)
   if (!m) return null
+  return splitTopLevel(m[1])
+}
+
+/** Destructured names, split on TOP-LEVEL commas only. */
+function splitTopLevel(inner: string): string[] {
   // Split on TOP-LEVEL commas: a one-line destructure and a multi-line one must
   // parse the same, and `state = 'future'` / nested shapes must not split.
   const parts: string[] = []
   let depth = 0, cur = ''
-  for (const ch of m[1]) {
+  for (const ch of inner) {
     if ('([{<'.includes(ch)) depth++
     else if (')]}>'.includes(ch)) depth--
     if (ch === ',' && depth === 0) { parts.push(cur); cur = ''; continue }
