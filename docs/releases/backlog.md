@@ -6738,10 +6738,10 @@ re-run it instead of reading it, which is how a real red gets waved through.
 
 | # | Item | Size |
 |---|---|---|
-| 12 | ⏸️ **PARKED (founder, 2026-09-18)** — **`GTM-CHARITY-09`** partner FAQ (5 questions, charity's voice, **include "why hasn't my plan started"**). Writing, not a build; ships WITH the codes | S |
+| 12 | 🔄 **DRAFTED 2026-10-01, awaiting founder edit** — **`GTM-CHARITY-09`** partner FAQ at `docs/partners/make-a-wish-runner-faq.md`. Five questions in the charity's register, **including Wood's "why hasn't my plan started"**, plus a short *before you send* note for Jack carrying the iOS 16.6 floor (item 15) so a handful of 500 are not left thinking they broke something. ⚠️ **Hutchinson's condition kept and flagged in the file:** *"why is my plan so easy"* is §1/§12 and **must not be softened into an apology**. Consistency checked against the LIVE `/charity-runners` copy rather than from memory, because `REDEEM-MECHANISM-TRUTH-01` was that page describing a screen that no longer existed; pricing read from `BRAND.PRICING`. **Founder edits and reads end to end before it goes out** (SLT `CONTENT-AUTHORSHIP-01`). Ships WITH the codes. | S |
 | ~~13~~ | ✅ **`FIRSTRUN-MOMENTS-01f`** — SHIPPED 2026-09-18 → feature-registry. ⚠️ **It was never blocked** (three doors into redeem, one is the wizard) and checking the data **cut a line of approved copy** that nothing measures | M |
 | ~~14~~ | ✅ **`WIZARD-TIME-CHIPS-01`** — SHIPPED 2026-09-18 → feature-registry. Key-based chips + legacy-draft shim; labels now derived through `formatDuration` | S |
-| 15 | ⏸️ **PARKED (founder, 2026-09-18)** — **iOS 16.6** minimum excludes iPhone 7 and older; no Android, no mobile-web dashboard. Tell Jack, do not build | — |
+| ~~15~~ | ✅ **DONE 2026-10-01 — founder told Jack.** **iOS 16.6** minimum excludes iPhone 7 and older; no Android, no mobile-web dashboard, so a handful of 500 cannot install at all. Never a build: the SLT's call was that Android or a mobile-web dashboard is nowhere near justified by a handful of a one-off cohort. Communicated, closed. | — |
 
 ### ⏭️ Deliberately not in this queue
 
