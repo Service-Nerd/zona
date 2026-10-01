@@ -88,11 +88,11 @@ export interface SessionFeedbackPromptInput {
 const FEW_SHOT_EXAMPLES = `
 Example 1 — easy run, HR ran hot:
 Input: Easy run (Zone 2, ≤148), 10km, avg HR 162, 38% in zone, RPE 6, verdict: off_target
-Output: "HR ran 14 beats hot for most of it. That's not an easy run — that's a moderate run wearing easy-run clothes. Pull it back next time: if HR climbs past the ceiling, drop to a walk until it comes down. Zone 2 is slower than you think it should be. That's the point."
+Output: "HR ran 14 beats hot for most of it. That's not an easy run; that's a moderate run wearing easy-run clothes. Pull it back next time: if HR climbs past the ceiling, drop to a walk until it comes down. Zone 2 is slower than you think it should be. That's the point."
 
 Example 2 — easy run, nailed:
 Input: Easy run (Zone 2, ≤148), 8km, avg HR 141, 92% in zone, RPE 4, verdict: nailed
-Output: "There it is. Kept it under control — HR stayed where it needed to, effort was honest. This is what the easy days are for. Don't ruin it by going harder next time because this one felt easy."
+Output: "There it is. Kept it under control: HR stayed where it needed to, effort was honest. This is what the easy days are for. Don't ruin it by going harder next time because this one felt easy."
 
 Example 3 — tempo, nailed:
 Input: Tempo (Zone 3, 158–172), 8km, avg HR 165, 88% in band, RPE 7, verdict: nailed
@@ -100,19 +100,19 @@ Output: "That's what a quality session looks like. HR sat right in the band, eff
 
 Example 4 — tempo, drifted easy:
 Input: Tempo (Zone 3, 158–172), 6km, avg HR 149, 22% in band, RPE 5, verdict: off_target
-Output: "That wasn't a tempo — that was a steady-state run with extra steps. HR sat 10 beats below the band for most of it. Quality sessions only count if you actually push into the zone. Next time, lock onto the pace target from the first km, don't ease into it."
+Output: "That wasn't a tempo; that was a steady-state run with extra steps. HR sat 10 beats below the band for most of it. Quality sessions only count if you actually push into the zone. Next time, lock onto the pace target from the start, don't ease into it."
 
 Example 5 — intervals, undercooked:
 Input: Intervals (Zone 4–5, 168+), 5km, avg HR 155, 35% in band, RPE 3, verdict: concerning
-Output: "RPE 3 on intervals is either a warm-up or a missed session. Intervals are supposed to hurt — controlled discomfort, not cruise control. HR barely touched the zone. If you felt fine the whole time, the pace wasn't right."
+Output: "RPE 3 on intervals is either a warm-up or a missed session. Intervals are supposed to hurt: controlled discomfort, not cruise control. HR barely touched the zone. If you felt fine the whole time, the pace wasn't right."
 
 Example 6 — intervals, nailed:
 Input: Intervals (Zone 4–5, 168+), 6 × 800m, avg HR 174 during reps, 82% in band, RPE 9, verdict: nailed
-Output: "Hit the band on every rep. That's the work. Now eat, sleep, and let the next two days do their job — sessions like this are only worth what you recover from."
+Output: "Hit the band on every rep. That's the work. Now eat, sleep, and let the next two days do their job. Sessions like this are only worth what you recover from."
 
 Example 7 — long run, drifted hot:
 Input: Long run (Zone 2, ≤148), 18km planned / 16km actual, avg HR 156, 41% in zone, RPE 5, verdict: close
-Output: "Cut it 2km short and HR drifted above Zone 2 in the back half — probably connected. Long runs fall apart when you start too fast. Next one: start slower than you think you need to, especially the first 5km."
+Output: "Cut it short and HR drifted above Zone 2 in the back half, probably connected. Long runs fall apart when you start too fast. Next one: start slower than you think you need to, especially the first twenty minutes."
 
 Example 8 — easy run, no HR recorded (NOT SCORED):
 Input: Easy run (Zone 2), 9km, HR: not recorded, RPE 5, verdict: NOT SCORED
@@ -120,11 +120,11 @@ Output: "No heart rate, so this one goes unscored. RPE 5 on an easy run is a hai
 
 Example 9 — recovery run, nailed:
 Input: Recovery (Zone 1, ≤130), 5km, avg HR 128, 87% in zone, RPE 2, verdict: nailed
-Output: "Recovery done right — HR stayed low, effort was genuinely easy. These feel pointless, which is exactly the point. Don't make them harder."
+Output: "Recovery done right: HR stayed low, effort was genuinely easy. These feel pointless, which is exactly the point. Don't make them harder."
 
 Example 10 — first ever analysed session, easy run, solid:
 Input: Easy run (Zone 2, ≤148), 7km, avg HR 144, 88% in zone, RPE 4, verdict: nailed. FIRST SESSION.
-Output: "Good start. HR stayed where it needed to and effort was honest — that's the whole job on an easy day. The picture gets clearer each run from here."
+Output: "Good start. HR stayed where it needed to and effort was honest, and that's the whole job on an easy day. The picture gets clearer each run from here."
 `
 
 export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): string {
@@ -312,6 +312,7 @@ If today's numbers diverge meaningfully from this cohort (HR ±5 bpm, pace ±${f
     // opened the review ran to 90 words and five sentences at the moment a runner
     // has just stopped running. Voice rule: one sentence is better than two.
     outputConstraint: 'One paragraph only. TWO sentences, three at the absolute most. Never more.',
+    units,
   })
 
   const paceLine = actualPaceSecPerKm
@@ -383,7 +384,7 @@ ${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}${isRace ? '' : `\nVerdict: ${verdict ?? 'NOT SCORED — heart rate was not recorded, so do not state or imply a verdict'}`}
 ${isRace ? raceDebriefBlock : `${maintenanceBlock}${previousSimilarBlock}${isUltraEffort ? ultraEffortBlock : `${streamBlock}${paceFadeBlock}`}${cohortBlock}${tempBlock}${limiterBlock}`}
-Write TWO sentences of honest, specific feedback, three at the absolute most. No headers. No bullet points. Plain text only. Do NOT use em dashes: use a colon, comma, semicolon or full stop.`
+Write TWO sentences of honest, specific feedback, three at the absolute most. No headers. No bullet points. Plain text only.`
 }
 
 // formatPaceSec removed (FMT-01) — this was one of four copies of the pace rule,

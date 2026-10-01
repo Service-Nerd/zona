@@ -9,19 +9,19 @@ import { computeSessionDiff, summariseDiff } from '../diff/sessionDiff'
 const FEW_SHOT_EXAMPLES = `
 Example 1 — reduce_volume / acute_chronic_high:
 Trigger detail: load ratio 1.38x
-Output: "Load spiked 1.38x this week. Trimmed the easy and long sessions by about 15% to give you space to absorb it. You can still hit all your quality work — the cuts are in the junk miles, not the sessions that matter."
+Output: "Load spiked 1.38x this week. Trimmed the easy and long sessions by about 15% to give you space to absorb it. You can still hit all your quality work: the cuts are in the easy filler, not the sessions that matter."
 
 Example 2 — flag_for_review / zone_drift:
 Trigger detail: zone discipline 52/100
-Output: "Easy-run discipline came in at 52/100 — too much time above Zone 2. Added an HR ceiling reminder to each easy session — nothing structural changed, just a prompt to slow down. If you can't hold Zone 2, walk until you can."
+Output: "Easy-run discipline came in at 52/100: too much time above Zone 2. Added an HR ceiling reminder to each easy session. Nothing structural changed, just a prompt to slow down. If you can't hold Zone 2, walk until you can."
 
 Example 3 — swap_session / ef_decline:
 Trigger detail: EF trend -11%
-Output: "Aerobic efficiency is down 11% from your baseline — that's a fatigue signal, not a fitness problem. Swapped Thursday's intervals for an easy run. You'll get the intervals back next week. Don't argue with the data."
+Output: "Aerobic efficiency is down 11% from your baseline: that's a fatigue signal, not a fitness problem. Swapped Thursday's intervals for an easy run. You'll get the intervals back next week. Don't argue with the data."
 
 Example 4 — user_skip / injury signal:
 Trigger detail: { session: "intervals", reason: "calf_tightness" }
-Output: "Skipped the intervals — calf tightness isn't worth pushing through on a speed session. Moved it back; the work comes when the leg does."
+Output: "Skipped the intervals. Calf tightness isn't worth pushing through on a speed session. Moved it back; the work comes when the leg does."
 
 Example 5 — sparse trigger detail:
 Trigger detail: {}
@@ -29,11 +29,11 @@ Output: "Load and effort signals didn't line up this week. Pulled the easy sessi
 
 Example 6 — flag_for_review / fitness_signal (POSITIVE — no plan change, benchmark CTA):
 Trigger detail: { qualifyingCount: 3, paceScoreThreshold: 60, hrCeilingThreshold: 15 }
-Output: "Three quality sessions ran ahead of target — and HR stayed controlled each time. That's not noise, it's a pattern. The plan is working from an older version of you. Worth a new benchmark to see where the ceiling actually is."
+Output: "Three quality sessions ran ahead of target, and HR stayed controlled each time. That's not noise, it's a pattern. The plan is working from an older version of you. Worth a new benchmark to see where the ceiling actually is."
 
 Example 7 — reduce_volume / long_run_shortfall (alignment, NOT a telling-off):
 Trigger detail: { consecutiveCount: 2, avgCompletionPct: 71, threshold: 82 }
-Output: "Long runs have come in around 71% of the plan two weeks running. Pulled this week's back to match where you're actually finishing — no point chasing a number that isn't landing. Build it back when it feels right."
+Output: "Long runs have come in around 71% of the plan two weeks running. Pulled this week's back to match where you're actually finishing. No point chasing a number that isn't landing. Build it back when it feels right."
 `
 
 /** AI-DEPTH-10 — most recent non-pending adjustment, for continuity framing. */

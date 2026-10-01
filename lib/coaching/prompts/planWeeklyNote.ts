@@ -74,6 +74,7 @@ export function buildPlanWeeklyNotePrompt(input: PlanWeeklyNotePromptInput): str
     outputConstraint:  'One HEADLINE line and one or two ITEM lines. No other text. No markdown.',
     includeVoiceAnchor: true,
     firstName,
+    units,
   })
 
   const sessionList = sessions.length === 0

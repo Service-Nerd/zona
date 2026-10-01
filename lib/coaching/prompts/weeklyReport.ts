@@ -201,6 +201,7 @@ Continuity rule: you may reference last week's coaching at most ONCE in the Body
     // Output format is complex (three labelled fields) — specified separately below.
     outputConstraint: null,
     firstName,
+    units,
   })
 
   return `${voiceHeader}

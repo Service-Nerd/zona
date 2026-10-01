@@ -45,6 +45,7 @@ export function buildPhaseSummaryPrompt(input: PhaseSummaryPromptInput): string 
     outputConstraint:  '2–3 sentences only. No headers. No bullet points. Plain text.',
     includeVoiceAnchor: true,
     firstName,
+    units,
   })
 
   const dataBlock = [

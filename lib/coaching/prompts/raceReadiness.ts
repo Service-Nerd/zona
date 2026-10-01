@@ -42,6 +42,7 @@ export function buildRaceReadinessPrompt(input: RaceReadinessPromptInput): strin
     outputConstraint:  '2–3 sentences only. No headers. No bullet points. Plain text.',
     includeVoiceAnchor: false,
     firstName,
+    units,
   })
 
   const completionRate = totalPlannedSessions > 0

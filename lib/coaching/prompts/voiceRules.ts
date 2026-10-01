@@ -8,6 +8,7 @@
  * Authority: docs/canonical/brand.md voice table, BRAND.voiceAnchor.
  */
 
+import type { DistanceUnits } from '@/lib/format'
 import { BRAND } from '@/lib/brand'
 import { RUNNER_NAME_TOKEN, RUNNER_NAME_TOKEN_INSTRUCTION } from '../nameToken'
 
@@ -97,6 +98,18 @@ export interface VoiceHeaderOptions {
    * Pass null or omit to skip.
    */
   firstName?: string | null
+
+  /**
+   * The reader's distance units, so the model is told which word to write in
+   * PROSE. The DATA is already formatted by `promptDistanceFormatters`; this
+   * governs sentences like "hold the zone from the first km".
+   *
+   * 🔴 KIT-EXEMPLAR-LEAK-01 — a miles runner was told "from the first km",
+   * because the prompt's few-shot examples hardcoded `km` and a model imitates
+   * a demonstration far more strongly than it follows a rule. Formatting the
+   * numbers correctly is not enough when the EXAMPLES speak the wrong unit.
+   */
+  units?: DistanceUnits
 }
 
 /**
@@ -115,6 +128,7 @@ export function buildVoiceHeader({
   outputConstraint,
   includeVoiceAnchor = true,
   firstName,
+  units = 'km',
 }: VoiceHeaderOptions): string {
   const lines: string[] = [
     `You are ${BRAND.coachName}, ${BRAND.name}'s AI coach — ${role}. Voice rules, non-negotiable:`,
@@ -129,6 +143,13 @@ export function buildVoiceHeader({
     `- Specific beats abstract. Reference specific facts and numbers from the data.`,
     `- Interpret, don't recite. Reach for observational stems — "This suggests…", "The important detail here…", "The limiter looks like…", "A key distinction is…" — when the data warrants a hypothesis. A reading without a read is a dashboard, not a coach. Never invent causes; only frame what the numbers point at.`,
     `- Use "you" throughout.`,
+    // BRAND-EMDASH-APP-01 — "sentences the runner reads or hears, no em dash".
+    // ⚠️ THIS LIVED IN ONE PROMPT OF FOUR and was contradicted by that prompt's
+    // own worked example two hundred lines above it. On the shared owner it
+    // reaches all nine surfaces at once, which is the only way it stops drifting.
+    `- Never use an em dash. Use a colon, comma, semicolon or full stop.`,
+    // The DATA is pre-formatted; this is about the words around it.
+    `- The runner measures distance in ${units === 'mi' ? 'MILES' : 'KILOMETRES'}. Write "${units === 'mi' ? 'mile' : 'km'}" in prose and never the other unit.`,
     `- Never use: ${VOICE_BANNED_PHRASES.join(', ')}.`,
     `- Always use: short sentences, plain words, the athlete's actual recent reality.`,
   )

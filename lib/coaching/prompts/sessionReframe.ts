@@ -138,27 +138,27 @@ const FEW_SHOT_EXAMPLES = `
 Example 1 — Tier A — easy went hot earlier in week, today's easy ran below zone (spiral):
 Runner said: "the 2nd run of the week and it feels awful. I feel worse than i ever have, questioning if im good enough and i feel a failure. I feel i cant make the goal."
 Inputs: Easy run today, 80min, 47% below zone ceiling. Tuesday's easy was 80% above ceiling. Race in 7 weeks.
-Output: "You're not failing, even though it feels like it. Tuesday was 80% above your zone ceiling — today is your body settling that bill, not a verdict on the race. The work underneath is happening: you've stayed consistent through a tough block, and that's the fitness you'll lean on. Seven weeks to race day."
+Output: "You're not failing, even though it feels like it. Tuesday was 80% above your zone ceiling, and today is your body settling that bill, not a verdict on the race. The work underneath is happening: you've stayed consistent through a tough block, and that's the fitness you'll lean on. Seven weeks to race day."
 
 Example 2 — Tier A — long run felt awful but cohort says fitness improving:
 Runner said: "Worst long run in months. I can't do this."
 Inputs: Long run, 22km, RPE 8. Cohort: last 5 similar long runs avg HR 168, today 162. Race in 12 weeks.
-Output: "You're allowed a bad one — it isn't the verdict it feels like. Your HR on this distance came in 6 bpm lower than the average of your last 5 similar long runs, so the engine is getting stronger even when the legs aren't agreeing. The consistency over the last 6 weeks is exactly what you're building on. Twelve weeks to race day."
+Output: "You're allowed a bad one: it isn't the verdict it feels like. Your HR on this distance came in 6 bpm lower than the average of your last 5 similar long runs, so the engine is getting stronger even when the legs aren't agreeing. The consistency over the last 6 weeks is exactly what you're building on. Twelve weeks to race day."
 
 Example 3 — Tier A — tempo missed target, cohort says progression real:
 Runner said: "Missed by 5 seconds. The plan's wrong for me."
 Inputs: Tempo, target 4:30/km, actual 4:35/km. Cohort: same tempo 3 months ago, avg 4:53/km. Race in 6 weeks.
-Output: "Don't take that to heart — one tempo isn't the story. Five seconds off is execution, and three months ago this same effort would have been 18 seconds slower. The progression is real even when one session doesn't land. Six weeks to race day."
+Output: "Don't take that to heart. One tempo isn't the story. Five seconds off is execution, and three months ago this same effort would have been 18 seconds slower. The progression is real even when one session doesn't land. Six weeks to race day."
 
 Example 4 — Tier B — easy felt hard after big week, no Strava connected:
 Runner said: "Why was that so hard? Doubting if I'm running the right plan."
 Inputs: Easy 8km, RPE 7. Yesterday: intervals, RPE 8. Last 4 weeks: 22/24 sessions done, easy-day RPE trended 7-8 → 5-6. Half marathon in 7 weeks.
-Output: "Hard week catching up — that's signal, not a verdict on the plan. Yesterday's intervals at RPE 8 means today was always going to feel heavy. Your easy-day RPE has trended from 7-8 down to 5-6 over the last 4 weeks — the engine is adapting. Seven weeks to race day."
+Output: "Hard week catching up: that's signal, not a verdict on the plan. Yesterday's intervals at RPE 8 means today was always going to feel heavy. Your easy-day RPE has trended from 7-8 down to 5-6 over the last 4 weeks, so the engine is adapting. Seven weeks to race day."
 
 Example 5 — Tier C — new user, week 2, minimum data:
 Runner said: "Shouldn't this be easier? Am I running the wrong plan?"
 Inputs: Easy 5km, RPE 7. Total sessions logged: 3. Week 2 of 6, base phase. 10K race in 6 weeks.
-Output: "You're not running the wrong plan — week 2 is exactly when this hits. The body takes a few weeks to settle into a new rhythm before 'easy' actually feels easy. You've logged 3 of 4 sessions so far, and that's what compounds. Six weeks to your 10K."
+Output: "You're not running the wrong plan. Week 2 is exactly when this hits. The body takes a few weeks to settle into a new rhythm before 'easy' actually feels easy. You've logged 3 of 4 sessions so far, and that's what compounds. Six weeks to your 10K."
 `
 
 export function buildSessionReframePrompt(input: SessionReframePromptInput): string {
@@ -342,6 +342,7 @@ Plan phase: ${phasePosition.phase} — week ${phasePosition.weekInPhase} of ${ph
     role: 'writing a post-run reframe — the ONE surface where Zonna gets to give the runner the hug AND the truth',
     outputConstraint: '3-4 sentences max, fixed structure (acknowledge → cause → progress → anchor). Never 5 or more.',
     firstName,
+    units,
   })
 
   return `${voiceHeader}

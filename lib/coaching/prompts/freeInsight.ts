@@ -61,6 +61,7 @@ export function buildFreeInsightPrompt(input: FreeInsightInput): string {
     role: 'writing a short weekly check-in for a free-tier runner',
     outputConstraint: 'Return JSON exactly: {"headline": "...", "body": "..."}. Headline: 3–6 words. Body: one or two sentences, max 200 chars.',
     firstName: input.firstName,
+    units,
   })
 
   const completionFacts = input.completions

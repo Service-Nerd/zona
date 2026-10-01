@@ -72,7 +72,7 @@ export interface DailyCoachNoteInput {
 const FEW_SHOT_EXAMPLES = `
 Example 1 — yesterday's easy ran hot, today is also easy:
 Input: today=easy, last=easy 1 day ago, off_target, 38% above ceiling
-Output: "Yesterday's easy ran hot — pull this one back from the start."
+Output: "Yesterday's easy ran hot. Pull this one back from the start."
 
 Example 2 — two nailed sessions, today is the long run:
 Input: today=long, last=quality 2 days ago, nailed; consecutiveNailed=2
@@ -84,7 +84,7 @@ Output: "Body's been talking. Today's a 'do less' day, even on the easy run."
 
 Example 4 — taper week, race close:
 Input: today=easy, phase=taper, weeksToRace=2
-Output: "Taper week. The work is already in the bank — don't add to it."
+Output: "Taper week. The work is already in the bank, so don't add to it."
 
 Example 5 — rest day after a hard one:
 Input: today=rest, last=intervals 1 day ago, nailed
@@ -92,39 +92,39 @@ Output: "Hard session yesterday. Do nothing today. It helps."
 
 Example 6 — first quality of the cycle:
 Input: today=quality, phase=build, no recent quality
-Output: "First quality of the build. Hit the band — don't overcook it."
+Output: "First quality of the build. Hit the band, don't overcook it."
 
 Example 7 — long run week, no fatigue concerns, no recent issue:
 Input: today=easy, last=easy 2 days ago, nailed; long run on Saturday
-Output: "Easy day. Saturday's long run is the anchor — keep this one boring."
+Output: "Easy day. Saturday's long run is the anchor, so keep this one boring."
 
 Example 8 — concerning RPE on last session:
 Input: today=easy, last=easy 1 day ago, RPE 8
-Output: "RPE 8 yesterday on what should've been easy — check the legs before you start."
+Output: "RPE 8 yesterday on what should've been easy. Check the legs before you start."
 
 Example 9 — long gap since last run:
 Input: today=easy, last=easy 5 days ago
-Output: "Five days off. Today is a re-entry, not a comeback — keep it short and slow."
+Output: "Five days off. Today is a re-entry, not a comeback: keep it short and slow."
 
 Example 10 — solid form, nothing notable:
 Input: today=easy, last=easy 2 days ago, nailed; no flags
-Output: "Easy day. You know the drill — embarrassingly slow, the whole way."
+Output: "Easy day. You know the drill: embarrassingly slow, the whole way."
 
 Example 11 — easy session, zone discipline is the message:
 Input: today=easy (Zone 2), last=easy 1 day ago, off_target, 42% above ceiling
-Output: "Hold the zone today — yesterday's easy wasn't."
+Output: "Hold the zone today. Yesterday's easy wasn't."
 
 Example 11b — gap of 2+ days with a ceiling violation (use the day name, NOT "yesterday"):
 Input: today=easy, last=easy on Sunday (2 days ago), off_target, 23% above ceiling
-Output: "Sunday's easy ran hot — keep this one in the zone from the first km."
+Output: "Sunday's easy ran hot. Keep this one in the zone from the start."
 
 Example 12 — no recent sessions logged (new user or gap after a break):
 Input: today=easy, no recent sessions
-Output: "Nothing from the last few days to go on — start easy and find your legs before you push them."
+Output: "Nothing from the last few days to go on, so start easy and find your legs before you push them."
 
 Example 13 — quality session today, last was easy and nailed, no flags:
 Input: today=quality (Zone 3), last=easy 2 days ago, nailed; no flags
-Output: "Easy sorted two days ago. Now make the tempo count — hit the band from the first km."
+Output: "Easy sorted two days ago. Now make the tempo count: hit the band from the opening rep."
 `
 
 // Plan-complete few-shots — the plan has ended (usually just after the goal
@@ -133,15 +133,15 @@ Output: "Easy sorted two days ago. Now make the tempo count — hit the band fro
 const PLAN_COMPLETE_EXAMPLES = `
 Example A — race two days ago, plan finished:
 Input: plan complete, last=race 2 days ago
-Output: "Plan's done and the race is behind you — nothing to chase today, let the legs come back."
+Output: "Plan's done and the race is behind you. Nothing to chase today; let the legs come back."
 
 Example B — plan finished, no recent race logged:
 Input: plan complete, last=long 4 days ago
-Output: "That's the plan finished. No session today — rest is the work now until the next one's set."
+Output: "That's the plan finished. No session today: rest is the work now until the next one's set."
 
 Example C — race yesterday, plan finished:
 Input: plan complete, last=race yesterday
-Output: "You raced yesterday. Today does nothing on purpose — recovery is the whole job."`
+Output: "You raced yesterday. Today does nothing on purpose: recovery is the whole job."`
 
 // Goal-race-complete few-shots — the last session was the GOAL RACE and the plan
 // is over. Lead with the accomplishment (finishing IS the achievement; the time
@@ -150,15 +150,15 @@ Output: "You raced yesterday. Today does nothing on purpose — recovery is the 
 const RACE_COMPLETE_EXAMPLES = `
 Example R1 — long goal race finished a few days ago, plan complete:
 Input: plan complete, last=the goal race 3 days ago, 100km; achievement "100K done. In the book."
-Output: "100K, done. That's the achievement — nothing to chase now, just let the legs come back."
+Output: "100K, done. That's the achievement; nothing to chase now, just let the legs come back."
 
 Example R2 — goal race yesterday, plan complete:
 Input: plan complete, last=the goal race yesterday, marathon; achievement "You ran 3:58 — 2:00 inside your goal."
-Output: "You got the marathon done. Today does nothing on purpose — recovery is the whole job now."
+Output: "You got the marathon done. Today does nothing on purpose: recovery is the whole job now."
 
 Example R3 — goal race finished, no time recorded:
 Input: plan complete, last=the goal race on Saturday (3 days ago); achievement "Marathon done. In the book."
-Output: "The marathon's in the book. Rest is the work now — the next goal can wait."`
+Output: "The marathon's in the book. Rest is the work now; the next goal can wait."`
 
 export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
   const units: DistanceUnits = input.units ?? 'km'
@@ -191,7 +191,8 @@ export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
       role: 'writing a short note now the plan has finished',
       outputConstraint: 'One or two short sentences. No headers, no quotes around the output.',
       firstName: input.firstName,
-    })
+    units,
+  })
 
     // §71.1–71.2 — race-debrief rules replace the generic "acknowledge the plan"
     // line when the last session was the goal race.
@@ -265,6 +266,7 @@ Output: one or two short sentences in the voice described above. No quotes. No p
     role: 'writing a one-sentence daily coach note',
     outputConstraint: 'One sentence. Always. No headers, no quotes around the output.',
     firstName: input.firstName,
+    units,
   })
 
   const previousWeeklyBlock = input.previousWeeklyReport
