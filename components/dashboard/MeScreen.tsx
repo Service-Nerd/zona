@@ -19,7 +19,6 @@ import ExternalLink from '@/components/shared/ExternalLink'
 import FaqScreen from '@/components/shared/FaqScreen'
 import LedgerCard from '@/components/dashboard/LedgerCard'
 import MePlanCard from '@/components/shared/MePlanCard'
-import QuitTab from '@/components/dashboard/QuitTab'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import SupportScreen from '@/components/dashboard/SupportScreen'
 import Switch from '@/components/ui/Switch'
@@ -711,7 +710,7 @@ async function hasServerSubscription(platform: 'ios' | 'web'): Promise<boolean> 
   }
 }
 
-export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, stravaConnected, plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, onActiveSectionChange, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, stravaConnected, plan, initials, athlete, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, onActiveSectionChange, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   /** ME-DOORS-01 — open Me AT a door instead of at the index. Consumed once, then cleared
    *  by `onOpenSectionConsumed`, so a later visit to Me lands on the index as usual. */
   openSection?: string | null
@@ -726,8 +725,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
    *  anything. `undefined` = not loaded yet. */
   healthkitConnectedAt?: string | null | undefined
   stravaConnected?: boolean
-  plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
-  onSmokeTrackerChange: (enabled: boolean, date: string) => void
+  plan: Plan; initials: string; athlete: string
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
   preferredUnits: 'km' | 'mi'; onUnitsChange: (u: 'km' | 'mi') => void
   preferredMetric: 'distance' | 'duration'; onMetricChange: (m: 'distance' | 'duration') => void
@@ -787,7 +785,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   recentChanges?: any[]
 }) {
   const signOut = useSignOut()
-  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'plan-adjustments' | 'connections' | 'quit' | 'delete-account' | 'support' | 'faq' | 'plan-history'>('main')
+  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'plan-adjustments' | 'connections' | 'delete-account' | 'support' | 'faq' | 'plan-history'>('main')
 
   // ⚠️ BEFORE THE EARLY RETURNS. `MeScreen` returns early for every door, so a hook placed
   //   below one is a conditional hook — the React error 310 this repo has already shipped once.
@@ -855,9 +853,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
     return `${Math.floor(days / 7)} weeks ago`
   })()
 
-  const raceDistKm = plan?.meta?.race_distance_km ?? 0
 
-  if (activeSection === 'quit')           return <QuitTab    quitDays={quitDays} raceDistanceKm={raceDistKm} onBack={() => setActiveSection('main')} />
   if (activeSection === 'delete-account') return <DeleteAccountScreen onBack={() => setActiveSection('main')} />
   if (activeSection === 'support')        return <SupportScreen onBack={() => setActiveSection('main')} email={profileEmail} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} />
   // FAQ-01 — a door, exactly as ME-DOORS-01 defines one: the union gains a member and

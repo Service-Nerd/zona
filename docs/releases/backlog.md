@@ -352,7 +352,7 @@ than silently restyled, because both carry a **semantic** colour a conversion wo
 🧭 **DESIGN BOARD** — both are appearance changes to a semantic state, not defect fixes.
 
 
-### `SMOKE-PLUMBING-01` — dead plumbing survived the dead component ⚙️ NO BOARD
+### ✅ `SMOKE-PLUMBING-01` — SHIPPED 2026-10-01 ⚙️ NO BOARD
 **Found 2026-09-25**, deleting `SmokeToggle` under SWITCH-PRIMITIVE-01.
 
 The component had **zero call sites** and went. Its plumbing did not: `smokeTrackerEnabled`
@@ -364,6 +364,44 @@ render tree for months with nothing rendering them.
 ⚠️ **Check what `TodayScreen` does with them before deleting** — "no UI" and "no consumer" are
 different claims, and a negative grep is not proof of absence (this repo has recorded two
 confident false "it doesn't exist" results from wrong-directory searches).
+
+✅ **SHIPPED, AND THAT WARNING WAS THE REASON TO LOOK HARDER — IT WAS MORE THAN PLUMBING.**
+This item described **two props into `TodayScreen`**. Traced end to end, the live chain was:
+
+| Found | |
+|---|---|
+| **3 dead props**, not 2 | `quitDays`, `smokeTrackerEnabled` **and `quitDate`** — across **two** screens, read by nothing |
+| **A dead WRITE path** | `onSmokeTrackerChange`, declared on `MeScreen`, **never called in its body** — its only caller was the deleted toggle |
+| **An UNREACHABLE screen branch** | `activeSection === 'quit'` rendered `QuitTab`, and **no code anywhere set that section** |
+| **A live SELECT** | `smoke_tracker_enabled, quit_date` fetched from `user_settings` on **every dashboard load** |
+| **A computation** | quit-days arithmetic run on every load, for a feature with no surface |
+
+🔴 **`quitDays` HAD A CONSUMER THAT LOOKED LIVE.** `MeScreen` really did render `<QuitTab
+quitDays={quitDays}>`, so a grep for "is it used?" says yes. It is behind a branch nothing can
+reach. **A removal that trusted this item's scope would have left the SELECT, the computation and
+the writer in place** — which is precisely *"no UI and no consumer are different claims"*, written
+in this item and still nearly missed.
+
+✅ **The compiler did the consumer check.** Removing the props from the two signatures made `tsc`
+name every call site, including the write path and the harness — better than any grep.
+
+✅ **Gated:** `lib/ui/smokeTrackerGone.test.ts` — no component threads a smoke-tracker prop, nothing
+SELECTs the columns, no screen declares an unreachable `quit` section, and the exemptions must
+still exist. **Falsified three ways** (a prop returns · the branch returns · the SELECT returns).
+
+⚠️ **AN EXISTING ARM WENT RED OVER A CORRECT DELETION**, and it was right to:
+`meIsAnIndex.test.ts` used `activeSection === 'quit'` as its **sentinel** for *"the doors come
+before the index anchor"*. Removing that door broke a structural claim that never depended on
+which doors exist. **It counts the early returns now** — coupling a structural arm to one
+arbitrary door's name is the same brittleness as keying a baseline on an ordinal.
+
+🔻 **DELIBERATELY STILL HERE, so nobody thinks it was missed** → `QUIT-TAB-DEAD-01`:
+`components/dashboard/QuitTab.tsx` (now rendered only by `/copy-preview`) and the `user_settings`
+columns. **Deleting a component and dropping columns are separate decisions**, and
+`lib/contracts/tableColumns.ts` must keep naming the columns while they exist, or the contract
+lies about the schema to satisfy a test.
+
+4,114 tests / 459 files, `tsc` clean, `next build` exit 0.
 
 **Do:** trace both to their last reader, remove the props, the state, and the `select` columns
 if genuinely unread. Small, and it removes a reason for someone to wonder what the feature was.
@@ -459,6 +497,35 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
    - **Cannot reproduce at all** → it was a one-frame capture artefact and there is nothing to fix.
 2. If it persists: attach **Safari → Develop → [device] → Web Inspector**, hover the band, and read
    the element. That is the only thing that will name it, and it takes a minute.
+
+## ⚖️ FILED 2026-10-01 — `QUIT-TAB-DEAD-01`
+
+### `QUIT-TAB-DEAD-01` — a dead screen component kept alive by its harness ⚙️ **NO BOARD** (+ a migration)
+
+Out of `SMOKE-PLUMBING-01`, which removed the plumbing and stopped short of the component.
+
+`components/dashboard/QuitTab.tsx` has **no reachable call site in the app**. `MeScreen`'s
+`activeSection === 'quit'` branch is gone (it had no setter anywhere, so it was unreachable before
+removal too). **Its only remaining renderer is `/copy-preview`**, a harness.
+
+⚠️ **THE SHAPE IS THE POINT: A HARNESS THAT RENDERS REAL COMPONENTS KEEPS DEAD ONES ALIVE.**
+`/copy-preview` exists precisely so previews are the real components rather than rebuilt mockups,
+and that is correct. The side effect is that "is it used?" answers yes for something no runner can
+reach. **CLAUDE.md has recorded the smoke tracker as *"Removed from all UI surfaces"* since
+Phase 1.**
+
+**Two halves, and they are not the same decision:**
+1. ⚙️ **Delete `QuitTab.tsx` and its `/copy-preview` entry.** No visible delta — nothing reachable
+   renders it. Low risk, needs someone to agree the feature is not coming back.
+2. 🗄️ **Drop `user_settings.smoke_tracker_enabled` and `quit_date`** in a migration. ⚠️ **Do not
+   remove them from `lib/contracts/tableColumns.ts` first** — that file's job is to say what the
+   table ACTUALLY has, `check:db` reads it, and editing it ahead of the migration makes the
+   contract lie about the schema. ⚠️ `quit_date` also appears in the **plan JSON schema**
+   (`lib/plan/schema.ts`) with `ruleEngine` writing `''`; that is a separate v1-legacy field and
+   dropping a column does not touch it.
+
+⚠️ **Not urgent.** Nothing is broken and nothing is fetched any more. It is filed so the component
+does not read as live to the next person who greps for it.
 
 ## ⚖️ FILED 2026-10-01 — `TAP-TARGET-DECISIONS-01`
 

@@ -122,7 +122,15 @@ describe('ME-PURPOSE-01 — Me is an index, and the inline surface cannot grow',
   it('the anchor sits after every door', () => {
     const doors = DOORS()
     const me = ME()
-    expect(doors, 'the early returns are not before the anchor').toContain("activeSection === 'quit'")
+    // ⚠️ COUNT THE DOORS, DO NOT NAME ONE. This asserted
+    // `activeSection === 'quit'` as its sentinel, and `SMOKE-PLUMBING-01`
+    // removed that door — an UNREACHABLE one, with no setter anywhere — so a
+    // structural arm went red over a correct deletion. **The claim is "the early
+    // returns come before the index anchor", which does not depend on which
+    // doors exist**, and coupling it to one arbitrary door's name is the same
+    // brittleness as keying a baseline on an ordinal.
+    const earlyReturns = (doors.match(/activeSection === '/g) ?? []).length
+    expect(earlyReturns, 'the early returns are not before the anchor').toBeGreaterThanOrEqual(5)
     expect(me, 'a door leaked into the index region').not.toContain('activeSection ===')
   })
 

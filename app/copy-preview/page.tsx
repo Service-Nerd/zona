@@ -66,20 +66,20 @@ const firstSessionKey = Object.keys(week.sessions ?? {}).find(k => (week.session
 const firstSession = (week.sessions as never)[firstSessionKey]
 
 const todayProps = {
-  plan: harnessPlan, weekIndex: WEEK_INDEX, quitDays: null, smokeTrackerEnabled: false,
+  plan: harnessPlan, weekIndex: WEEK_INDEX,
   daysToRace: 77, raceName: 'Brighton Half', preferredMetric: 'distance' as const,
   sessionMetricOverrides: {}, stravaRuns: [], allOverrides: [], overridesReady: true,
   allCompletions: {}, preferredUnits: 'km' as const, zone2Ceiling: 148,
 }
 const meProps = {
-  plan: harnessPlan, initials: 'SC', athlete: 'Sam Carter', quitDays: null,
-  onSmokeTrackerChange: noop, theme: 'light' as const, onThemeChange: noop,
+  plan: harnessPlan, initials: 'SC', athlete: 'Sam Carter',
+  theme: 'light' as const, onThemeChange: noop,
   preferredUnits: 'km' as const, onUnitsChange: noop,
   preferredMetric: 'distance' as const, onMetricChange: noop,
   restingHR: 48, maxHR: 186, maxHrSource: 'observed' as const,
   firstName: 'Sam', lastName: 'Carter', profileEmail: 'sam@example.com',
   onSaveName: async () => true, dynamicAdjustmentsEnabled: true,
-  smokeTrackerEnabled: false, quitDate: '', onHRChange: noop,
+  onHRChange: noop,
 }
 const sessionProps = {
   session: firstSession, weekTheme: week.theme, weekN: week.n, preloadedRuns: [],

@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — SMOKE-PLUMBING-01 · the item said two dead props; it was six things
+**Shipped:** every trace of the smoke tracker is out of the running app, with a gate so it cannot come back.
+
+**Dev learning:** The ticket described two unused props threaded into one screen. Traced properly it was a SELECT of two columns on every dashboard load, a date computation run for a feature with no surface, three dead props across two screens, a dead write path, and a screen branch nothing could reach. The thing that nearly fooled me was `quitDays`: `MeScreen` genuinely renders `<QuitTab quitDays={quitDays}>`, so a grep for "is this used?" answers **yes**. It sits behind `activeSection === 'quit'`, and nothing anywhere sets that section. **A consumer you cannot reach reads exactly like a consumer.**
+
+**Product/creator learning:** The item carried its own warning — *"no UI and no consumer are different claims"* — and that warning is the only reason I kept pulling. If I had trusted the stated scope I would have removed two props and left the query, the arithmetic and the writer, and the item would have closed looking complete. **The most useful thing in a well-written ticket is the sentence telling you not to trust the rest of it.**
+
+**AI-building learning:** The compiler did the consumer check better than any search could. Removing the props from two signatures made `tsc` enumerate every call site, including the write path I had not found and the preview harness I had forgotten. **When a removal is possible via the type system, do that first and read the errors as the inventory.**
+
+**The honest bit:** an existing test went red over a correct deletion, and it was right to. `meIsAnIndex.test.ts` proved "the doors come before the index anchor" by looking for `activeSection === 'quit'` — using one arbitrary door as a sentinel for a structural claim that never depended on which doors exist. That is the same brittleness as keying a baseline on an ordinal, which I fixed in a different file three hours earlier. **The pattern keeps turning up in places I am not looking at, which is what makes it a pattern rather than a bug.**
+
+**Hook material:** I went looking for two unused props and found a database query running on every load for a feature deleted in Phase 1.
+
+**Postable?:** yes — "an unreachable consumer reads exactly like a consumer" is the line.
+
+---
+
 ## 2026-10-01 — STEP-SUBUNIT-ZERO-01 · the obvious fix would have been worse than the bug
 **Shipped:** a step whose estimated distance rounds to zero now leads with its duration instead.
 
