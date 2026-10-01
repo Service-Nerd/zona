@@ -409,6 +409,33 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
 2. If it persists: attach **Safari → Develop → [device] → Web Inspector**, hover the band, and read
    the element. That is the only thing that will name it, and it takes a minute.
 
+## ⚖️ FILED 2026-10-01 — `STICKY-INERT-SCREENS-01`
+
+### `STICKY-INERT-SCREENS-01` — two real screens declare a scrollport that cannot scroll 🧭 **DESIGN BOARD**
+
+Out of `STICKY-INERT-FLEX-01`. `BenchmarkUpdateScreen` and `GeneratePlanScreen` each declare
+`flex: 1` + `overflowY: auto` **without `minHeight: 0`**, so the box grows to fit its content and
+**the overflow never happens**. The element claims to be a scroller and is not.
+
+⚠️ **NOT A BUG REPORT, A TRADE.** The one-token fix (`minHeight: 0`) is what the box model
+requires, and applying it **changes what the runner sees**: the content stops pushing the page
+taller and starts scrolling inside a fixed region. On the wizard that is the difference between
+one long page and a pane with its own scrollbar, which is a layout decision with Wroblewski's
+one-handed lens on it and Silvanto's on whether a nested scroll region reads as craft or as a
+seam.
+
+⚠️ **Nothing is broken today**: the sticky elements on both screens are **siblings** of the inert
+box, so nothing is being captured. **The cost is the next sticky element placed inside one**, which
+would never stick, silently, with a green gate — which is exactly the shape
+`STICKY-SCROLLER-01` exists to forbid.
+
+**Options for the board:** apply `minHeight: 0` and accept a nested scroll region · remove the
+`overflowY: auto` entirely, since it does nothing today and the page already scrolls · leave both
+and keep them registered, accepting that a future sticky child is a trap.
+
+⚠️ **Three preview pages have the same shape** (`copy-preview`, `nav-preview`, `sticky-probe`) and
+need no ruling: they are harnesses, not runner surfaces.
+
 ## ⚖️ FILED 2026-10-01 — `DOCS-RESIDUAL-01`
 
 ### `DOCS-RESIDUAL-01` — a residual on a SHIPPED item has no home in "what's left" ⚙️ **NO BOARD**
@@ -1339,7 +1366,7 @@ measured at 320px.**
 utility screen and a 26px ui title on a list screen may both be correct. **That is the board's
 call, and the measurement is the input to it, not the answer.**
 
-#### 🔴 `STICKY-INERT-FLEX-01` — the sticky guard treats `flex: 1` as a height, and it is not
+#### ✅ `STICKY-INERT-FLEX-01` — SHIPPED 2026-10-01
 
 ⚙️ **NO BOARD** — a gate blind spot, filed not fixed.
 
@@ -1353,8 +1380,40 @@ clientHeight` is `false`.**
 Currently harmless (the arrows pinned in those files are siblings of the inert box, not
 descendants), so **nothing sticky is captured today**. The cost is that the next sticky
 element placed *inside* one of those bodies will silently never stick, with the guard green.
-**Fix is an arm that pairs the `flex: 1` allowance with the container's own height
-declaration.**
+✅ **SHIPPED, AND NOT BY PAIRING WITH THE CONTAINER.** The prescribed fix needs source
+ancestry, and this file's own header records what happens when a check pairs a declaration on
+one element with a declaration on another.
+
+🔴 **THE REAL DISCRIMINATOR IS `minHeight: 0` ON THE FLEX CHILD ITSELF, AND IT IS A REQUIREMENT
+OF THE BOX MODEL RATHER THAN A STYLE PREFERENCE.** A flex item's `min-height` defaults to
+**auto**, so it will not shrink below its content: `flex: 1` + `overflowY: auto` grows to fit and
+**the overflow never happens**, whatever the container declares. `minHeight: 0` is what releases
+it. So the rule is checkable **inside the same bounded style object** — no ancestry, no
+cross-element pairing, and no false negative that matters, because the child's own `minHeight: 0`
+is necessary in every case.
+
+📐 **MEASURED: 7 `flex: 1`-only scrollports**, not the 2 this item estimated. **Two are already
+correct** (`Sheet.tsx` and `/sheet-preview` both carry `minHeight: 0` — the idiom done properly).
+**Five are latent**, registered by name with their reason: `copy-preview`,
+`BenchmarkUpdateScreen`, `GeneratePlanScreen`, `nav-preview`, `sticky-probe`.
+
+⚠️ **WHY A REGISTER AND NOT FIVE FIXES, AND THIS IS THE JUDGEMENT CALL.** Adding `minHeight: 0`
+makes an inert scrollport **real**: the box stops growing to fit its content and starts scrolling
+instead. On a preview page that is nothing. On `BenchmarkUpdateScreen` and `GeneratePlanScreen`
+it is **a visible change to what the runner sees**, which is a Design Board question and not a
+tooling build's to make → filed as `STICKY-INERT-SCREENS-01`.
+
+⚠️ **None is live today** — the `position: sticky` elements on those screens are **siblings** of
+the inert box, not descendants, so nothing is captured. The cost is the next sticky element
+placed *inside* one, which would silently never stick with the gate green.
+
+✅ **The register cannot rot into a blanket pass:** an arm asserts every registered file is *still*
+an offender, so a file that gets fixed must come off the list rather than sit there vouching for
+nothing.
+
+**Falsified three ways:** strip `minHeight: 0` from `Sheet`'s own scrollport → red (the original
+defect); fix a registered file → red (stale register); restore the old lax `flex: 1`-alone rule →
+red. 4,102 tests / 458 files.
 
 #### 🔴 `CONTRACT-COVERAGE-02` — 52 shared components have no contract, and the audit could not see it
 

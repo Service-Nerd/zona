@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — STICKY-INERT-FLEX-01 · the guard accepted a shorthand for a height
+**Shipped:** the sticky guard now demands what the box model demands, and the five sites that exposed are registered rather than silently fixed.
+
+**Dev learning:** The check accepted `flex: 1` as evidence that an `overflow-y: auto` box was height-constrained. It is not, and the reason is specific: a flex item's `min-height` defaults to **auto**, so it will not shrink below its content. `flex: 1` plus `overflow: auto` therefore grows to fit and the overflow never happens, whatever the container declares. **`minHeight: 0` is what releases it.** That matters beyond this fix, because it means the rule can be checked inside a single bounded style object: no source ancestry, no pairing a declaration on one element with a declaration on another, which is the exact failure this file's own header records.
+
+**Product/creator learning:** The item estimated two affected screens. Measurement found seven `flex: 1`-only scrollports, two of them already correct — `Sheet` and the sheet preview both carry `minHeight: 0`, the idiom done properly. **Five were latent. I fixed none of them**, and that was the call worth making: adding `minHeight: 0` makes an inert scrollport real, so content stops pushing the page taller and starts scrolling inside a fixed region. On a preview page that is nothing. On the wizard it is one long page becoming a pane with its own scrollbar, which is a layout decision with a board that owns it. **A tooling build that quietly changes two screens is not a tooling build.**
+
+**AI-building learning:** I wrote the register with an arm that asserts every registered file is *still* an offender. Without it the list is a one-way ratchet: someone fixes a file, the entry stays, and it sits there vouching for nothing while reading as oversight. **A debt register needs to fail when the debt is paid, or it stops describing reality in the only direction you want it to move.**
+
+**The honest bit:** my first falsification of this did nothing. I tried to strip `minHeight: 0` from the Sheet with a string replace that did not match the real source, saw three tests pass, and almost wrote that down as "the guard holds". The guard was not being tested at all — the file was untouched. **Second time today a falsification aimed at the wrong thing came back looking exactly like a result.** The fix is cheap and I should do it every time: check the mutation actually landed before reading the outcome.
+
+**Hook material:** The guard against scrollports that cannot scroll was green over a scrollport that could not scroll, because it accepted a shorthand that only works under a condition nobody checked.
+
+**Postable?:** yes — pairs with the geometry post as "the check was green because it was asking the wrong question".
+
+---
+
 ## 2026-10-01 — BUTTON-GEOMETRY-HARNESS-01 · the prescribed fix was the wrong fix
 **Shipped:** three filed blind spots in the button-geometry harness, in one build and one re-baseline.
 
