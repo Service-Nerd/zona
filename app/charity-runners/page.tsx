@@ -120,8 +120,27 @@ const FAQS: { q: string; a: string }[] = [
     a: 'The whole app, free. Your plan built around your race, real heart-rate zones, the coaching after every run, and the reshaping when a week goes sideways. Not a trial and not a cut-down version: the same thing paying subscribers get.',
   },
   {
+    // GTM-CHARITY-DEADLINE-01 — the code's REDEMPTION deadline, which is a
+    // different date from the twelve months and was on no surface the runner
+    // sees. It is in the charity's own email, and a forwarded code carries the
+    // LINK, not the email: the runner who most needs the deadline is the one
+    // who never saw it. Worse, the answer below explains duration and says
+    // nothing about the window, which reads as permission to wait.
+    //
+    // ⚠️ THE DATE IS DELIBERATELY NOT NAMED, AND THAT IS THE WHOLE DECISION.
+    // 31 January 2027 belongs to ONE batch of Apple offer codes. It lives in
+    // App Store Connect; nothing in this repo owns it (`charity_codes.expires_at`
+    // is the GRANT's twelve-month end, set on claim and re-anchored by
+    // `lib/charity/grantWindow.ts` so an expiry never lands mid-block, which is
+    // a different fact entirely). This page serves ANY charity's runners, and
+    // its own header records being rewritten twice in one day for assuming one
+    // audience. A hardcoded batch date would be the same defect in a new place,
+    // and `charityPageAudience.test.ts` guards the season half of it already.
+    //
+    // So it tells the runner a deadline EXISTS, where to find theirs, and that
+    // waiting buys nothing. That is the behaviour the item was filed to change.
     q: 'How long does it last?',
-    a: 'Twelve months from the day you redeem it. Redeem in December and it runs to the following December, which covers a spring race and the whole block in front of it with room to spare. It does not renew and it does not start charging you at the end: it simply stops.',
+    a: 'Twelve months from the day you redeem it. Redeem in December and it runs to the following December, which covers a spring race and the whole block in front of it with room to spare. It does not renew and it does not start charging you at the end: it simply stops. One thing to watch: the code itself has a deadline, which is a separate date from the twelve months and is in the message your charity sent you. Redeeming early costs you nothing, because the twelve months start when you redeem and not when the code was issued.',
   },
   {
     // CHARITY-FAQ-RUNWAY-01 — the question a runner asks first after redeeming, and

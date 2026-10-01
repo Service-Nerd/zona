@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — GTM-CHARITY-DEADLINE-01 · the deadline was in the email, and the email does not travel
+**Shipped:** `/charity-runners` now tells a runner their code has a deadline, without naming a date.
+
+**Dev learning:** The proposed copy I had written and surfaced three times was wrong, and it was wrong on this page's own recorded lesson. It named 31 January 2027. That date belongs to one batch of Apple offer codes: it lives in App Store Connect, and nothing in the repo owns it. I checked for an owner and found `charity_codes.expires_at`, which looks like the right field and is not: that is the grant's twelve-month end, set on claim and re-anchored so an expiry never lands mid-block. **Two dates, one of them ours, and the one the runner needed is the one we do not hold.** Hardcoding it would have made the page quietly wrong for the second charity, which is the exact defect this page has now recorded three times.
+
+**Product/creator learning:** The real failure mode is not a runner missing a date. It is a forwarded code. A charity place gets passed around a club, and the link travels while the email does not, so the person who most needs the deadline is the one who never saw it. That reframes the fix: the page does not need to carry the date, it needs to tell you a date exists and where yours is. **A shared surface can carry the shape of a fact without carrying the value.**
+
+**AI-building learning:** The previous answer was actively counterproductive and nobody wrote it that way on purpose. It explained duration beautifully, "twelve months from the day you redeem", and said nothing about the window, which a reader completes as "so there is no hurry". **An answer that is correct and incomplete can produce worse behaviour than no answer**, because it closes the question. The new sentence ends by removing the reason to wait, which is the only behaviour change that was actually wanted.
+
+**The honest bit:** I raised this item three times today and each time I proposed the dated version. The reason I caught it on the fourth pass is that I had spent the afternoon writing the guard that would have caught the season half of it. **I did not reason my way to this; I had just been burned by the same thing and the burn was still warm.**
+
+**Hook material:** We sent 500 people a code with a deadline, and put the deadline in the one place that cannot be forwarded.
+
+**Postable?:** yes, pairs with the runway post: both are a page being correct and incomplete.
+
+---
+
 ## 2026-10-01 — DOC-AUDIT-HEADING-SHAPE-01 · the check was green because nothing had ever made it red
 **Shipped:** `audit-docs.sh` can now see all 146 open backlog items instead of 124, and a dated state paragraph no longer counts as a roadmap line.
 

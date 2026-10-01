@@ -412,7 +412,7 @@ could not: the audit is only ever as wide as its list, and residuals were never 
 > ⚠️ **Measured: 105 `🔻` residual markers** across `backlog.md` (73) and
 > `feature-registry.md` (32), and **this audit cannot see any of them** → `DOCS-RESIDUAL-01`.
 
-### `GTM-CHARITY-DEADLINE-01` — the code deadline is in the email and not on the page 👤 **FOUNDER** (copy)
+### ✅ `GTM-CHARITY-DEADLINE-01` — SHIPPED 2026-10-01, founder-authorised 👤 **FOUNDER** (copy)
 
 **500 codes went out on 2026-10-01 with a redemption deadline of 31 January 2027.** That date
 is in the founder's email to the charity. It is **nowhere on `/charity-runners`**, which is the
@@ -433,6 +433,37 @@ conclusion that redeeming can wait.
 
 > Proposed: *"One thing to watch: the codes themselves expire on 31 January 2027. Redeem before
 > then and you still get the full twelve months from the day you redeem."*
+
+✅ **SHIPPED, AND THE DATE IS DELIBERATELY NOT NAMED. The proposed copy above was wrong on the
+page's own lesson.** `31 January 2027` belongs to **one batch of Apple offer codes.** It lives in
+App Store Connect and **nothing in this repo owns it** — `charity_codes.expires_at` is the
+GRANT's twelve-month end, set on claim and re-anchored by `lib/charity/grantWindow.ts` so an
+expiry never lands mid-block, which is a different fact entirely.
+
+🔴 **This page serves ANY charity's runners**, and its own header records being rewritten **twice
+in one day** for assuming one audience; `CHARITY-FAQ-RUNWAY-01` Amendment 1 recorded me doing it
+again three weeks later. **A hardcoded batch date is that defect in a new place**, and the next
+charity's codes would make the page quietly wrong for everyone.
+
+**Shipped instead, appended to *"How long does it last?"*** so the deadline sits where a reader
+already goes for "when", and the FAQ count does not grow for one sentence (Collins' collapse
+test):
+
+> *"One thing to watch: the code itself has a deadline, which is a separate date from the twelve
+> months and is in the message your charity sent you. Redeeming early costs you nothing, because
+> the twelve months start when you redeem and not when the code was issued."*
+
+**It does the three things the item was filed for:** says a deadline EXISTS (the forwarded-code
+case, where the link travels and the email does not), says where to find theirs, and removes the
+reason to wait that the previous answer accidentally created by explaining duration and nothing
+else. 384 marketing tests pass.
+
+🔻 **Residual, and it is the founder's to place, not the page's** → **a per-batch deadline has no
+home on any surface.** The only place it is written is the charity's own email. If a second
+charity's batch ships, the same gap reopens for them. The durable fix is the deadline travelling
+with the BATCH (`charity_codes` has `batch_id`; the mint script could carry a redemption deadline
+and the redeem screen could state it), which is a build, not a sentence → not filed as an item
+until there is a second batch to justify it.
 
 ⚠️ **Raised three times in conversation on 2026-10-01 and never ruled on**, which is exactly why
 it is now an item with a status instead of a sentence in a shipped entry.
