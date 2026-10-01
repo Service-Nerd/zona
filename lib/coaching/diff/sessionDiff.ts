@@ -174,7 +174,11 @@ export function labelSession(s: SessionLike, units: DistanceUnits = 'km'): strin
   const type = String(s.type ?? 'session')
   if (type === 'rest') return 'rest'
   if (typeof s.distance_km === 'number' && s.distance_km > 0) {
-    return `${type} ${formatDistance(s.distance_km, units, { exact: true })}`
+    // UPNEXT-EXACT-01 — a PRESCRIBED distance, so whole units, same as the card.
+    // `exact: true` here rendered "easy 5.3mi" in the adjustment diff beside a
+    // session card reading "5mi" for the same 8.5 km run. ADR-015: planned
+    // distances round to whole units; `exact` belongs to MEASURED values.
+    return `${type} ${formatDistance(s.distance_km, units)}`
   }
   if (typeof s.duration_mins === 'number' && s.duration_mins > 0) {
     return `${type} ${formatDuration(s.duration_mins)}`

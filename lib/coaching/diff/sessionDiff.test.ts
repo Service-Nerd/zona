@@ -64,6 +64,26 @@ describe('summariseDiff', () => {
 })
 
 describe('labelSession', () => {
+  // UPNEXT-EXACT-01 — a PRESCRIBED distance rounds to whole units, same as the
+  // card. This label is rendered by `AdjustmentDiff.tsx`, so `exact: true` put
+  // "easy 5.3mi" in the adjustment diff beside a session card reading "5mi" for
+  // the same 8.5 km run. Found by sweeping for the SHAPE of the UP NEXT fix
+  // rather than its symptom; it is the second surface, not the reported one.
+  it('rounds a prescribed distance to whole units, in both unit systems', () => {
+    // 8.5 km is the real value from the reporting runner's week-2 plan.
+    expect(labelSession({ type: 'easy', distance_km: 8.5 }, 'mi')).toBe('easy 5mi')
+    expect(labelSession({ type: 'easy', distance_km: 8.5 }, 'km')).toBe('easy 9km')
+  })
+
+  it('never emits a decimal for a planned distance', () => {
+    // The whole class, not the one value: any half-unit input is the risk.
+    for (const km of [8.5, 11.5, 4.3, 6.6, 12.5]) {
+      for (const u of ['km', 'mi'] as const) {
+        expect(labelSession({ type: 'easy', distance_km: km }, u)).not.toMatch(/\d\.\d/)
+      }
+    }
+  })
+
   it('renders rest plainly', () => {
     expect(labelSession(rest())).toBe('rest')
   })

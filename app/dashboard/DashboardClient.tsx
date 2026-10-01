@@ -6512,7 +6512,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)',
               }}>
-                {nextSession.day} · {getSessionLabel(nextSession)}{nextSession.distanceKm ? ` · ${formatDistance(nextSession.distanceKm, preferredUnits, { exact: true })}` : ''}
+                {nextSession.day} · {getSessionLabel(nextSession)}{nextSession.distanceKm ? ` · ${formatDistance(nextSession.distanceKm, preferredUnits)}` : ''}
               </div>
             </div>
           </div>
