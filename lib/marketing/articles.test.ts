@@ -6,7 +6,7 @@
 // cover pages that do not exist yet.
 
 import { describe, it, expect } from 'vitest'
-import { MARKETING_ARTICLES, COMPARISON_HUB, GUIDE_HUB, COMPETITOR_FACTS, comparisonArticles, guideArticles, guidesArePublished, GUIDES_MIN_TO_PUBLISH, marketingArticleJsonLd, type ArticleBlock } from './articles'
+import { MARKETING_ARTICLES, COMPARISON_HUB, GUIDE_HUB, COMPETITOR_FACTS, comparisonArticles, guideArticles, guidesArePublished, GUIDES_MIN_TO_PUBLISH, marketingArticleJsonLd, twelveMonthsAtMonthly, annualGapToOurs, type ArticleBlock } from './articles'
 import { PRICING } from '@/lib/brand'
 import { BRAND } from '@/lib/brand'
 
@@ -62,6 +62,20 @@ describe('comparison articles — SEO limits', () => {
   it('every article carries a machine-readable last-updated date', () => {
     for (const a of MARKETING_ARTICLES) expect(a.lastUpdatedISO).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
+
+  it('the visible last-updated line and the structured-data date are the same day', () => {
+    // ⚠️ `lastUpdatedISO`'s own docstring says one field feeds the visible date
+    // and the JSON-LD. It does not: the renderer prints `lastUpdated` as the
+    // text and `lastUpdatedISO` only as the `dateTime` attribute, so two
+    // fields carry one fact and nothing stopped them disagreeing. Added while
+    // bumping both by hand on two articles at once, which is when it bites.
+    for (const a of MARKETING_ARTICLES) {
+      const shown = new Date(`${a.lastUpdated} UTC`)
+      expect(Number.isNaN(shown.getTime()), `${a.slug}: "${a.lastUpdated}" is not a readable date`).toBe(false)
+      expect(shown.toISOString().slice(0, 10), `${a.slug}: shows ${a.lastUpdated}, JSON-LD says ${a.lastUpdatedISO}`)
+        .toBe(a.lastUpdatedISO)
+    }
+  })
 })
 
 describe('comparison articles — house style', () => {
@@ -80,10 +94,26 @@ describe('comparison articles — house style', () => {
     // it must come from `COMPETITOR_FACTS` or from `PRICING`.
     //
     // Matches £12 and £12.34 but not £1.5m, which is funding, not a price.
+    //
+    // ⚠️ WIDENED FOR PAGE 4, BY EXACTLY TWO SHAPES. A price page needs figures
+    // no single declared value carries: twelve months at a monthly price, and
+    // the annual gap against ours. Both are admitted by running the CATALOGUE'S
+    // OWN derivation over the owners, so what is allowed is "a 12x multiple of
+    // a declared monthly" and "a difference of two declared annuals", not two
+    // more magic numbers. Any other figure is still rejected.
+    //
+    // ⚠️ AND THE GATE STILL HAS A HOLE THIS CANNOT CLOSE: it checks that a
+    // number is OWNED, never that it is owned by the product the sentence is
+    // about. Page 4 was drafted quoting Coopah at TrainAsONE's £9.99 and would
+    // have passed. Reading a figure against the wrong competitor is invisible
+    // here by construction.
+    const derivedKeys = Object.keys(COMPETITOR_FACTS) as (keyof typeof COMPETITOR_FACTS)[]
     const allowed = new Set<string>([
       ...Object.values(COMPETITOR_FACTS).flatMap(f => [f.monthly, f.annual]).filter((x): x is string => !!x),
       PRICING.monthly.display, PRICING.annual.display, PRICING.annual.perMonthDisplay,
       PRICING.monthly.perWeekDisplay, PRICING.annual.perWeekDisplay,
+      ...derivedKeys.filter(k => COMPETITOR_FACTS[k].monthly).map(twelveMonthsAtMonthly),
+      ...derivedKeys.filter(k => COMPETITOR_FACTS[k].annual).map(annualGapToOurs),
     ])
     const offenders: string[] = []
     for (const a of MARKETING_ARTICLES)

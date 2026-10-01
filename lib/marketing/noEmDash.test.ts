@@ -22,6 +22,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { comparisonArticles, articlePath } from './articles'
 
 const ROOT = join(__dirname, '..', '..')
 
@@ -37,8 +38,6 @@ const SURFACES = [
   'app/guides/page.tsx',
   'app/guides/[slug]/page.tsx',
   'app/guide-preview/page.tsx',
-  'app/runna-alternatives/page.tsx',
-  'app/coopah-vs-runna/page.tsx',
   'app/charity-runners/page.tsx',
   'app/support/page.tsx',
   'app/privacy/page.tsx',
@@ -62,6 +61,14 @@ const SURFACES = [
   'lib/marketing/planNotes.ts',
   'lib/marketing/plans.ts',
   'lib/marketing/pricing.ts',
+  // ⚠️ COMPARISON SHIMS ARE DERIVED, NOT LISTED, and that is a fix not a tidy.
+  // CLAUDE.md says to add every new marketing page to this list, which is a
+  // rule that holds while someone remembers: pages 1 and 2 were listed by hand
+  // and PAGE 3 (`best-running-app-for-beginners`, live since 2026-09-24) never
+  // was, found while adding page 4. Eight of these pages are planned, they are
+  // all `app/<slug>/page.tsx`, and the catalogue already knows every slug.
+  // Guides need no entry: they share one dynamic route, listed above.
+  ...comparisonArticles().map(a => `app${articlePath(a)}/page.tsx`),
 ]
 
 const EM_DASH = '—'

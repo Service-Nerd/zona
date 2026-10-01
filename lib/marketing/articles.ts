@@ -38,6 +38,7 @@
 
 import { BRAND, PRICING } from '@/lib/brand'
 import { articleJsonLd } from '@/lib/marketing/articleJsonLd'
+import { formatDate } from '@/lib/format'
 
 /** A run of article text. A bare string is plain copy; the object form is an
  *  inline text link. Links are never buttons in this content type. */
@@ -214,6 +215,67 @@ export const COMPETITOR_FACTS: Record<'coopah' | 'runna' | 'trainasone', Competi
 
 const price = (k: keyof typeof COMPETITOR_FACTS) => COMPETITOR_FACTS[k]
 
+/**
+ * FIGURES DERIVED FROM DECLARED PRICES. Computed, never typed.
+ *
+ * Page 4 argues about price, so it needs two numbers no single declared figure
+ * carries: twelve months at a MONTHLY price, and the annual GAP against ours.
+ * Both are restatements of figures `COMPETITOR_FACTS` and `PRICING` already own,
+ * and both rot the instant a price moves, which `COMPETITOR_FACTS` names as the
+ * fastest-rotting fact on these pages. Typed by hand they would be two more
+ * copies of someone else's price with no owner, which is the defect
+ * GTM-SEO-COMPARE-PRICE-01 closed.
+ *
+ * ⚠️ THIS WIDENS THE PRICE GATE, DELIBERATELY AND NARROWLY. `articles.test.ts`
+ * admits these values by running the SAME derivation over the owners, so the
+ * allow-list grows by exactly two shapes: a 12x multiple of a declared monthly,
+ * and a difference of two declared annuals. Neither is an independent fact.
+ * Every other number in every article is still a defect by construction.
+ */
+const pounds = (display: string | null): number => {
+  // Throws rather than coercing: a derived figure built on a missing price
+  // would render "£NaN", and this content type's whole claim is that its
+  // numbers are owned.
+  if (!display) throw new Error('a derived figure needs a declared price')
+  return Number(display.replace(/[^0-9.]/g, ''))
+}
+
+const gbp = (n: number): string => `£${n.toFixed(2).replace(/\.00$/, '')}`
+
+/** What twelve months at the MONTHLY price actually costs. */
+export const twelveMonthsAtMonthly = (k: keyof typeof COMPETITOR_FACTS): string =>
+  gbp(pounds(COMPETITOR_FACTS[k].monthly) * 12)
+
+/** How much MORE a competitor's annual plan costs than ours. */
+export const annualGapToOurs = (k: keyof typeof COMPETITOR_FACTS): string =>
+  gbp(pounds(COMPETITOR_FACTS[k].annual) - pounds(PRICING.annual.display))
+
+/**
+ * The month the quoted competitor prices were last checked, in display form.
+ *
+ * ⚠️ READS THE OLDEST `verified` DATE, NOT THE NEWEST. A page that says "prices
+ * checked in October" is making one claim about every figure on it, so the
+ * weakest figure has to govern the sentence. The newest date would let one
+ * re-checked price vouch for two stale ones.
+ *
+ * ⚠️ AND IT IS DERIVED BECAUSE THE SUBMITTED COPY GOT IT WRONG. Page 4 was
+ * drafted saying "prices below were checked on 1 October 2026" with no figure
+ * on the page checked later than 21 September: `verified` is what records a
+ * check, and nothing had moved. Re-check the prices, move `verified`, and this
+ * sentence follows on its own.
+ */
+export const pricesLastChecked = (): string => {
+  const oldest = Object.values(COMPETITOR_FACTS).map(f => f.verified).sort()[0]
+  // `formatDate`, not `toLocaleDateString`: ADR-015 / DATE-OWNER-01 owns every
+  // date a reader sees, and `lib/format.dates.test.ts` caught the hand-written
+  // one here. Worth recording that it caught it: the first cut of this helper
+  // formatted its own date and the gate went red on the full suite, which is
+  // what a gate is for.
+  const shown = formatDate(oldest, 'long')
+  if (!shown) throw new Error(`COMPETITOR_FACTS carries an unreadable verified date: ${oldest}`)
+  return shown
+}
+
 const p = (...spans: ArticleSpan[]): ArticleBlock => ({ kind: 'p', spans })
 const h2 = (text: string): ArticleBlock => ({ kind: 'h2', text })
 const table = (caption: string, head: string[], rows: string[][]): ArticleBlock =>
@@ -230,10 +292,14 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
     ogDescription:
       `Runna is good, and now owned by Strava. If you want a coaching app without streaks or badges, here's what else exists in 2026, including the one I built.`,
     h1: `Runna alternatives for runners who don't want streaks`,
-    // lastUpdatedISO moves to 2026-09-21: the internal link to page 2 is a
-    // revision of this page's facts. publishedISO never moves.
-    lastUpdated: '21 September 2026',
-    lastUpdatedISO: '2026-09-21',
+    // Revised twice since first publish, each time because an internal link
+    // added a fact: page 2 on 2026-09-21, page 4 on 2026-10-01. publishedISO
+    // never moves.
+    // Both dates move together, always: the visible line renders `lastUpdated`
+    // and the JSON-LD reads `lastUpdatedISO`, so they are two fields for one
+    // fact. Bumped because this page's copy changed (the page 4 back-link).
+    lastUpdated: '1 October 2026',
+    lastUpdatedISO: '2026-10-01',
     publishedISO: '2026-09-10',
     signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
     appStoreLinkText: `Get ${BRAND.name} on the App Store`,
@@ -241,7 +307,11 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
     body: [
       p(`If you want a coaching app that isn't Runna, three actually work: Coopah, TrainAsONE, and ${BRAND.name}, which I built. Runna is still the best-resourced app in this category. The plans are good, it runs on iOS and Android, and it's now backed by Strava's engineering team. The reason to look elsewhere isn't that Runna is bad. It's that Runna is now Strava's, and Strava is built on kudos, segments, leaderboards and Local Legend badges.`),
       p(`Strava announced the acquisition in 2025 and the deal has since closed. Runna says it's staying a standalone app "for the foreseeable future," and you can still buy a Runna subscription on its own without touching Strava at all. But the two are now one company, and the joint Strava-and-Runna subscription is the direction being pushed. If you'd rather your coach and your social feed lived in different apps, that's worth knowing going in.`),
-      p(`The other reason people look elsewhere is price. Runna is ${price('runna').monthly} a month, or ${price('runna').annual} a year paid upfront. That's not unreasonable for what you get, but it's more than a lot of people expect to pay for a training plan, and it's worth knowing what else is out there before deciding it's the only option.`),
+      p(
+        `The other reason people look elsewhere is price. Runna is ${price('runna').monthly} a month, or ${price('runna').annual} a year paid upfront. That's not unreasonable for what you get, but it's more than a lot of people expect to pay for a training plan, and it's worth knowing what else is out there before deciding it's the only option. For a full price comparison including free options, see `,
+        { text: 'cheaper alternatives to Runna', href: '/cheaper-alternatives-to-runna' },
+        `.`,
+      ),
 
       h2('Coopah'),
       p(`Coopah is the official training app of London Marathon Events: the TCS London Marathon, Brighton Marathon, the Big Half, the Vitality London 10,000. If you're training for one of those specifically, that partnership buys you something real: aligned taper timing, event-specific messaging, and a discount code through the race itself.`),
@@ -290,8 +360,11 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
     ogDescription:
       `Coopah, Runna and ${BRAND.name}: real prices, real platforms, and where each one genuinely beats mine.`,
     h1: `Coopah vs Runna vs ${BRAND.name}: an honest comparison`,
-    lastUpdated: '21 September 2026',
-    lastUpdatedISO: '2026-09-21',
+    // Both dates move together, always: the visible line renders `lastUpdated`
+    // and the JSON-LD reads `lastUpdatedISO`, so they are two fields for one
+    // fact. Bumped because this page's copy changed (the page 4 back-link).
+    lastUpdated: '1 October 2026',
+    lastUpdatedISO: '2026-10-01',
     publishedISO: '2026-09-21',
     signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
     appStoreLinkText: `Get ${BRAND.name} on the App Store`,
@@ -323,7 +396,9 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       p(`Runna is the biggest app in this category and it earned that position. The plans are well regarded, it runs on iOS and Android, it syncs with Apple Watch, Garmin, Fitbit and Coros, and the plan genuinely adapts as you log runs rather than staying fixed from day one.`),
       p(`Strava announced its acquisition of Runna in 2025 and the deal has closed. Runna says it's staying a standalone app "for the foreseeable future," and you can still buy a Runna subscription on its own without touching Strava at all. But the two are now one company, and if you link them, Runna's training sits next to Strava's kudos, segments, leaderboards and Local Legend badges. If you'd rather keep your coach and your social feed in separate apps, that's worth knowing before you commit.`),
       p(
-        `It costs ${price('runna').monthly} a month, or ${price('runna').annual} a year paid upfront, making it the most expensive per month of the three. For most people choosing a first coaching app, on either platform, with the most development resource behind it, Runna is still the safe recommendation. I said the same thing on `,
+        `It costs ${price('runna').monthly} a month, or ${price('runna').annual} a year paid upfront, making it the most expensive per month of the three. For a full price comparison including free options, see `,
+        { text: 'cheaper alternatives to Runna', href: '/cheaper-alternatives-to-runna' },
+        `. For most people choosing a first coaching app, on either platform, with the most development resource behind it, Runna is still the safe recommendation. I said the same thing on `,
         { text: 'the alternatives page', href: '/runna-alternatives' },
         ` I wrote before this one, and nothing here changes that.`,
       ),
@@ -425,6 +500,96 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       // two pages at once (see COMPETITOR_FACTS).
       p(`I built ${BRAND.name} after a 100km race went wrong for a reason that traces back to exactly this problem: not knowing when to hold back. It's ${PRICING.monthly.display} a month or ${PRICING.annual.display} a year, with a genuine free tier, not a trial that expires. iOS only, no Android, no Garmin workout export, built by one person.`),
       p(`If the diagnosis above sounds like you, an app that's built to slow you down is worth trying before one that just logs how hard you went. Mine or someone else's.`),
+    ],
+  },
+  {
+    // GTM-SEO-COMPARE-01 page 4 of 8. The price query, answered by price tier
+    // rather than head-to-head: "cheaper alternatives" is a budget question, so
+    // the page is organised as free / middle / ours / when paying more is right.
+    //
+    // 🔴 THREE FIGURES IN THE SUBMITTED COPY WERE WRONG, AND ONE WAS THE EXACT
+    // STRING GTM-SEO-COMPARE-PRICE-01 REMOVED FROM PAGE 1. The draft said
+    // Coopah was "£9.99 a month, billed annually, which is about £120 a year",
+    // word for word the figure the founder corrected on 2026-09-21. The price
+    // gate could not catch it: £9.99 is a legal price in this catalogue because
+    // it is TrainAsONE's monthly, so an owned number was quoted against the
+    // wrong product. Only the £120 failed the build. Every figure on this page
+    // now reads `COMPETITOR_FACTS` or `PRICING`, and the two comparative
+    // numbers are derived (see `twelveMonthsAtMonthly` / `annualGapToOurs`).
+    //
+    // ⚠️ The consequence is a changed ARGUMENT, not just a changed number. At
+    // £14.99 / £119.99 Coopah is a pound a month cheaper than Runna and twenty
+    // pounds a year dearer, so the draft's "roughly level with its annual one"
+    // is false and is not used.
+    //
+    // ⚠️ GARMIN COACH HAS NO OWNER ROW. It is the fourth product named here and
+    // its price fact is "free", which `CompetitorFacts` cannot express: the type
+    // requires at least one price string and `articles.test.ts` asserts it. So
+    // "free if you already own a Garmin watch", the watch requirement and the
+    // half-marathon ceiling are unowned facts on a page about price. Flagged,
+    // not fixed: giving the owner a free tier changes a shape four live pages
+    // read.
+    kind: 'comparison',
+    slug: 'cheaper-alternatives-to-runna',
+    metaTitle: `Cheaper alternatives to Runna in the UK`,
+    metaDescription:
+      `What you get at each price point in the UK, from free to ${price('runna').monthly} a month. Prices last checked ${pricesLastChecked()}.`,
+    ogTitle: `Cheaper alternatives to Runna in the UK`,
+    ogDescription:
+      `What you get at each price point in the UK, from free to ${price('runna').monthly} a month. Prices last checked ${pricesLastChecked()}.`,
+    h1: `Cheaper alternatives to Runna in the UK`,
+    lastUpdated: '1 October 2026',
+    lastUpdatedISO: '2026-10-01',
+    publishedISO: '2026-10-01',
+    signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
+    appStoreLinkText: `Get ${BRAND.name} on the App Store`,
+    hubSummary: `Every price point from free upwards, and what each one actually buys you.`,
+    body: [
+      p(`If Runna's price is the problem, there are three realistic routes. Garmin Coach is free if you already own a Garmin watch. TrainAsONE has a free tier and a ${price('trainasone').annual} a year premium plan. ${BRAND.name} is ${PRICING.annual.display} a year, with free 5K, 10K and half marathon plans. Coopah is cheaper than Runna's monthly price but not by much.`),
+      // The verification month is derived, not typed. See `pricesLastChecked`.
+      p(`I built ${BRAND.name}, so weigh that. Prices below were last checked on ${pricesLastChecked()} and they change, so check the app stores before you pay.`),
+
+      h2('What Runna costs'),
+      p(`Runna is ${price('runna').monthly} a month or ${price('runna').annual} a year, with a one week free trial. It runs on iOS and Android and syncs with Garmin, COROS, Fitbit, Suunto and Apple Watch. Strava owns it.`),
+      p(`The gap between monthly and annual is large. Twelve months at the monthly price is ${twelveMonthsAtMonthly('runna')}, so paying monthly costs nearly double. If you are comparing prices, compare the annual figure, and only pay monthly if you really will stop after a single block.`),
+
+      h2('What free gets you'),
+      p(`Garmin Coach is free on Garmin Connect. It gives you adaptive 5K, 10K and half marathon plans that adjust as you progress, built with coaches including Greg McMillan and Jeff Galloway. The catch is that you need a Garmin watch, and it stops at the half marathon.`),
+      p(`TrainAsONE has a free tier with a seven day detailed plan, activity import and pace-based workouts. You only see a week at a time, and heart rate workouts and longer planning are premium.`),
+      p(`Free plans in a PDF or a spreadsheet also work for plenty of people. If you have a goal, a calendar and some discipline, you may not need to pay for anything.`),
+
+      h2('What the middle of the market costs'),
+      // 🔴 The draft read "£9.99 a month, billed annually, which is about £120 a
+      // year" and concluded Coopah was "roughly level with [Runna's] annual
+      // one". Both come from the owner now, and the comparison follows the real
+      // figures: a pound a month under Runna, twenty pounds a year over it.
+      // Spelled out in words rather than symbols because a difference of two
+      // declared annuals is only a derived figure where it is computed, and
+      // here it reads better as prose than as a third helper.
+      p(`Coopah is ${price('coopah').monthly} a month, or ${price('coopah').annual} a year if you pay upfront. It has a one week trial, works on iOS and Android, and is partnered with the TCS London Marathon. That is about a pound a month less than Runna, and twenty pounds a year more on the annual plan.`),
+      p(`TrainAsONE Premium is ${price('trainasone').monthly} a month or ${price('trainasone').annual} a year, with a 21 day trial. It is the closest to Runna on price, and it adds weather and elevation adjustments and fatigue monitoring. It also runs on Android, Garmin and the web.`),
+
+      h2(`What ${BRAND.name} costs`),
+      p(`${BRAND.name} is ${PRICING.monthly.display} a month or ${PRICING.annual.display} a year, with a ${PRICING.trialDays} day free trial. That is ${annualGapToOurs('runna')} a year less than Runna's annual plan.`),
+      p(`The free tier is not a teaser. You get the full 5K, 10K and half marathon plans, every week of them, and you can rebuild a plan as often as you like. After the trial you keep the plan you built and drop to free.`),
+      p(`Paid adds the things that need ongoing work: runs read back to you, a plan that moves when you miss a week, and marathon and ultra plans.`),
+      p(`Here is what you give up. ${BRAND.name} is iPhone and Mac only, so there is no Android. There is no Garmin workout export, so sessions will not appear on your watch. I am one developer, and I cannot match Runna's funding, its variety of workouts or its pace of development.`),
+
+      h2('When paying more is worth it'),
+      p(`If you are on Android, ${BRAND.name} is out. If you want structured sessions pushed to your watch, Runna and Coopah do that and I do not yet.`),
+      p(`If you are training for a marathon and want the most polished plans available, Runna is still very good, and at ${price('runna').annual} a year it is a fair price for what it is.`),
+
+      h2('Which to use'),
+      p(`If you own a Garmin and are training for a 10K or half, start with Garmin Coach and pay nothing. If you want a paid app on Android, TrainAsONE or Coopah are the cheaper routes. If you are on an iPhone and want a plan that tells you when to slow down, try ${BRAND.name}'s free tier first. If none of that matters and you want the best-supported app, pay for Runna annually, not monthly.`),
+      p(
+        `For the fuller comparisons, see `,
+        { text: 'Runna alternatives', href: '/runna-alternatives' },
+        ` and `,
+        { text: 'Coopah vs Runna', href: '/coopah-vs-runna' },
+        `. If your problem is that every run feels hard, `,
+        { text: 'start here', href: '/best-running-app-for-beginners' },
+        `.`,
+      ),
     ],
   },
   // ── GUIDE 1 ────────────────────────────────────────────────────────────
