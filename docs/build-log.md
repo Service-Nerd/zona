@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — GTM-CHARITY-09 · the codes went out, and the FAQ went with them
+**Shipped:** A five-question FAQ written for Make-A-Wish to send in their own voice, out today alongside the codes.
+
+**Dev learning:** Nothing was built, and that was the ruling. Fried: *"do not build a help centre for a cohort that arrives once."* What I did instead was verify every fact in the code rather than write it from memory, because the last defect on this exact surface was the `/charity-runners` page confidently describing a screen we had deleted two days earlier. So the three redeem steps and the twelve-month duration came from the live page copy, the prices from `BRAND.PRICING`, the redeem-before-signup behaviour from the incident write-up. **Writing a partner document is the same discipline as writing code; the difference is that nothing fails the build when it is wrong.**
+
+**Product/creator learning:** The question that mattered most was the one nobody originally listed. Wood added *"why hasn't my plan started yet"* at the SLT sitting, and for an October send with an April race it is the single most likely message Jack receives. The plan builds backwards from race day, so a first-timer sees 28 weeks of nothing and reasonably concludes the app is broken. **The most support-generating thing in the product is a deliberate design decision working exactly as intended** — which is also, per Sutherland, the best thing about it: every other app would fill those months with training.
+
+**AI-building learning:** I took the baseline snapshot before writing the records, not after. 29 users, 3 subscriptions, 4 entitlement-at-risk rows all time. That last number is the one I actually care about, because from today the pre-signup carve-out I shipped yesterday gets its first real exercise and I need a floor to measure against. **A rate with no "before" is not a measurement**, and the window to take one closes the moment the first runner redeems.
+
+**The honest bit:** I drafted copy in someone else's voice for an audience I have never met, which is exactly the thing I am worst at and the reason the SLT rule says the founder edits and reads it end to end. The one thing I flagged inside the file rather than trusting to memory was Hutchinson's condition: *"why is my plan so easy"* must not be softened into an apology. It is the single most editable sentence in the document and the one that would do most damage if softened.
+
+**Hook material:** We are about to tell 500 anxious first-time marathoners to do almost nothing for 28 weeks, and the FAQ exists mostly to explain that this is the product rather than a fault.
+
+**Postable?:** yes — the runway answer is the whole brand in one paragraph.
+
+---
+
 ## 2026-10-01 — UPNEXT-EXACT-01 · a real user found it before any of our checks did
 **Shipped:** A planned distance now rounds to whole units on every surface, including the adjustment diff nobody reported.
 
