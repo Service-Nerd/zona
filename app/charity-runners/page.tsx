@@ -124,16 +124,22 @@ const FAQS: { q: string; a: string }[] = [
     a: 'Twelve months from the day you redeem it. Redeem in December and it runs to the following December, which covers a spring race and the whole block in front of it with room to spare. It does not renew and it does not start charging you at the end: it simply stops.',
   },
   {
-    // CHARITY-FAQ-RUNWAY-01 — Wood's question, added at the GTM-CHARITY-09 sitting
-    // because it was on nobody's list, and MISSING from this page on the day the
-    // codes went out. For an October send with an April race it is the first thing
-    // a first-timer hits: they redeem, build a plan, and see it does not start for
-    // weeks. The APP answers it well (RunwayRevealCard leads the reveal with "you're
-    // eleven weeks early"); this page is where a confused runner goes second, and it
-    // was silent. Sutherland: "we are going to tell 500 anxious first-timers do
-    // almost nothing yet, and that is the brand in the one moment it matters most."
+    // CHARITY-FAQ-RUNWAY-01 — the question a runner asks first after redeeming, and
+    // the one this page did not answer on the day a 500-runner cohort was sent here.
+    // The APP answers it well (RunwayRevealCard leads the reveal with "you're eleven
+    // weeks early"); this page is where a confused runner goes second, and it was
+    // silent. Both surfaces correct alone, the journey between them wrong.
+    //
+    // 🔴 WRITTEN ONCE WITH THE AUDIENCE WRONG, AND THIS PAGE ALREADY CARRIED THE
+    // LESSON. The first cut said "setting this up in October for an April race" and
+    // "a marathon block" — the timeline and distance of the ONE charity whose codes
+    // happened to go out that morning. See the rewrite note at the top of this file:
+    // this page was de-marathoned twice in one day on founder calls, because "a
+    // distance-shaped page turned most of its own audience away at the headline".
+    // Charity places are most often 10K and half marathon. The answer is now neutral
+    // on both distance and season, and `charityPageAudience.test.ts` holds it there.
     q: 'I have redeemed it, but my plan has not started yet.',
-    a: 'That is usually correct rather than broken. The plan is built backwards from your race day, not forwards from today, so if you are setting this up in October for an April race there is no reason for a marathon block to start yet. The app will tell you how many weeks early you are and give you something gentler to be getting on with in the meantime. Almost every other running app would fill those months with training. I would rather you arrived at the start of the real block fresh, because the months before a block are where most charity runners quietly get hurt.',
+    a: 'That is usually correct rather than broken. The plan is built backwards from your race day, not forwards from today, so if your race is still months off there is no reason for the hard training to have started. The app will tell you how many weeks early you are and give you something gentler to be getting on with in the meantime. Almost every other running app would fill that time with training. I would rather you arrived at the start of the real block fresh, because the weeks before a block are where most charity runners quietly get hurt.',
   },
   {
     q: 'I have never raced this distance. Is this for me?',
