@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-01 — GTM-SEO-COMPARE-01 page 4 · the gate said yes to a right number about the wrong product
+**Shipped:** `/cheaper-alternatives-to-runna`, the price question answered by tier: free, the middle, mine, and when paying more is the right call.
+
+**Dev learning:** The copy I was handed quoted Coopah at £9.99 a month, which is the figure the founder corrected three weeks ago, and the price gate passed it. Not because the gate is weak: because £9.99 IS a declared price in this catalogue. It is TrainAsONE's monthly. The gate proves a number has an owner and cannot prove the owner is the product the sentence is about, so an owned figure attached to the wrong competitor is invisible to it by construction. Only the "about £120 a year" in the same sentence failed the build, and that was luck: £120 happened to be nobody's price. **A single-owner check catches a number nobody owns. It does not catch a number owned by somebody else.** That limitation is now written into the test rather than into my memory.
+
+**Product/creator learning:** Two of the three bad figures did not just change a number, they changed an argument. At the real prices Coopah is a pound a month cheaper than Runna and twenty pounds a year dearer, so the draft's "roughly level with its annual one" was not a rounding error, it was a conclusion that no longer follows. I had to rewrite the sentence, not the figure. **On a page whose entire job is comparing prices, the prices are the argument, and correcting one quietly invalidates the prose around it.**
+
+**AI-building learning:** The draft said "prices checked on 1 October 2026". Nothing on the page had been checked later than 21 September, and the catalogue knows that: every competitor figure carries a `verified` date. So the page was about to make a claim its own data contradicted, in the most trust-sensitive sentence on it. It derives from the oldest verified date now, because a page that says "checked on" makes one claim about every figure, and the weakest figure has to govern it. The newest date would let one re-checked price vouch for two stale ones. **The cheapest way to stop writing a date you have not earned is to not write it.**
+
+**The honest bit:** my first version of that helper formatted its own date, and the full suite went red on a rule I had read in CLAUDE.md that morning: ADR-015 owns every date a reader sees. It cost one commit and no shipped defect, which is exactly what a gate is for, and it is the second time in two days a check caught me doing by hand something this repo already owns. The gate I added to replace a hand-written list came from the same place: the em-dash surface list is maintained by remembering, and page 3 was never added to it. Live since 24 September, unguarded, and nobody noticed because nothing was wrong yet. **The list rot was not the defect. It was the defect's waiting room.**
+
+**Hook material:** My own price check passed a number that was right about the wrong company, because the number existed somewhere in my data.
+
+**Postable?:** yes — the single-owner limitation is a genuinely useful idea and I have not seen it written down.
+
+---
+
 ## 2026-10-01 — CHARITY-FAQ-RUNWAY-01 · the question the page did not answer
 **Shipped:** `/charity-runners` now answers "I have redeemed it, but my plan has not started yet", on the day 500 runners were sent to it.
 
