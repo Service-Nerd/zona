@@ -139,7 +139,7 @@ function PlanStill({ plan, block }: { plan: DemoPlanScreen; block: DemoBlockView
               {plan.weekVoice.phaseLabel && (
                 <span style={{
                   marginLeft: 'auto', fontSize: 'var(--fs-micro)', fontWeight: 700,
-                  color: 'var(--moss)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                  color: 'var(--moss-strong)', letterSpacing: '0.08em', textTransform: 'uppercase',
                 }}>{plan.weekVoice.phaseLabel}</span>
               )}
             </div>

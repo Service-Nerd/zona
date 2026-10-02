@@ -4954,7 +4954,7 @@ which is the wrong direction for the one check that watches for the suite becomi
 
 **Never re-baseline this to make a run green.** Re-measure idle first; that is what settled it here.
 
-### 🟡 `A11Y-MOCKUP-CONTRAST-01` — the homepage scores 96, not 100, and the phone mockup is the whole reason
+### ✅ `A11Y-MOCKUP-CONTRAST-01` — SHIPPED 2026-10-02. Both premises were false; seven token swaps, nothing resized
 
 Filed 2026-09-21 out of `A11Y-CONTRAST-01`. **Not a regression and not new** — surfaced by running
 Lighthouse mobile properly for the first time.
@@ -4968,6 +4968,40 @@ inside the drawing.
 ⚠️ **`aria-hidden` does not fix it and should not be reached for.** The root already carries it, so
 a screen reader skips the mockup correctly. Contrast is a **sighted low-vision** concern and axe is
 right to keep flagging it.
+
+✅ **SHIPPED 2026-10-02 — Design Board SHIP WITH AMENDMENT. Seven text colours swapped; no token
+added, no size changed, the interaction kept, all three mockup screens kept.**
+
+🔴 **BOTH PREMISES IN THIS ITEM WERE FALSE, AND THE THREE OPTIONS BELOW WERE ALL PRICED AGAINST
+THEM.** ① *"`aria-hidden` does not fix it… the root already carries it, so a screen reader skips
+the mockup correctly"* — `PhoneShell` is `aria-hidden={interactive ? undefined : 'true'}` and the
+homepage's `TabbedPhone` **passes `onTab`**, so the primary mockup is **not** hidden; its text is
+in the tab order. ② *"at that size no colour in the palette can reach 4.5:1"* — measured on
+`--card`: `--moss-strong` **5.48**, `--warn-strong` **5.48**, `--mute` **5.45**, `--ink-2` **11.31**.
+
+⚡ **So a FOURTH option existed that none of the three named**, and it cost nothing the others cost:
+swap the three offenders for counterparts that already exist. Wroblewski's still would have cost
+the homepage **two of its three product screens** (`TabbedPhone` holds Today, Plan and Coach);
+Collins' enlargement costs the hero. **Neither was needed.**
+
+🥇 **ONE CONVERSION WAS A FIDELITY FIX.** The mockup drew its primary CTA as `--moss` while
+`.btn--primary` is `--moss-strong` — the drawing was drawing the button **wrong**, so the usual
+*"don't make the drawing wrong to satisfy a grep"* objection inverts.
+
+⚠️ **NOT CONVERTED, deliberately:** the **56px/800** hero word (large text owes **3:1**; `--moss`
+is 3.68, so darkening it would change the drawing for zero gain — and the carve-out is **bounded**,
+asserted) · every `background`/border `--moss` · the Sparkle SVG.
+
+🔴 **THE FIRST CHECK I WROTE WAS WRONG AND I THREW IT AWAY.** A computed-ratio scanner paired each
+`color:` with the nearest preceding `background:` in a 400-char window, which crosses JSX
+boundaries — it measured text against a **6px dot's** fill and a session **accent bar** and
+produced **seven confident wrong findings**. Right ratios, wrong grounds. **A rendered ground is a
+DOM property, not a proximity one**, so it is not statically decidable. Replaced with an
+allow-list forbidding the three sub-AA tokens on sub-24px text; falsified **four** ways including a
+negative case and a boundary case.
+
+🔻 **LIGHTHOUSE HAS NOT BEEN RE-RUN.** The claim is that the seven named failures are fixed, **not**
+that the homepage now scores 100. ⚠️ Nothing seen on a device.
 
 **Three real options, none free:**
 1. **Draw the mockup larger** so its type lands at real sizes. Costs hero layout.

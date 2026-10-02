@@ -140,7 +140,7 @@ function KitByline({ role }: { role: string }) {
           {BRAND.coachName}
         </span>
         <span style={{
-          fontSize: '10px', fontWeight: 600, color: 'var(--warn)',
+          fontSize: '10px', fontWeight: 600, color: 'var(--warn-strong)',
           letterSpacing: '0.06em', textTransform: 'uppercase',
         }}>{role}</span>
       </span>
@@ -205,7 +205,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
             </span>
             <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
             <span style={{
-              fontSize: '11px', fontWeight: 600, color: 'var(--moss)',
+              fontSize: '11px', fontWeight: 600, color: 'var(--moss-strong)',
               letterSpacing: '0.04em', background: 'var(--moss-soft)',
               borderRadius: '20px', padding: '3px 9px',
             }}>{COUNTDOWN}</span>
@@ -269,7 +269,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
               }}>
                 <span style={{
                   fontSize: '10px', letterSpacing: '0.04em', textTransform: 'uppercase',
-                  color: d.today ? 'var(--moss)' : 'var(--ink-2)',
+                  color: d.today ? 'var(--moss-strong)' : 'var(--ink-2)',
                 }}>{d.letter}</span>
                 <div style={{
                   width: '26px', height: '26px', borderRadius: '50%',
@@ -297,7 +297,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
         <div style={{ padding: '12px 18px 0', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--moss)', flexShrink: 0 }} />
           <span style={{
-            fontSize: '11px', fontWeight: 700, color: 'var(--moss)',
+            fontSize: '11px', fontWeight: 700, color: 'var(--moss-strong)',
             letterSpacing: '0.12em', textTransform: 'uppercase',
           }}>Hold the zone &middot; under 145 bpm today</span>
         </div>
@@ -308,7 +308,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
             <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Today&apos;s session
             </span>
-            <span style={{ fontSize: '10px', color: 'var(--mute-2)' }}>Zone 2</span>
+            <span style={{ fontSize: '10px', color: 'var(--mute)' }}>Zone 2</span>
           </div>
 
           {/* Session card — left accent (easy = --s-easy), name + detail, metric */}
@@ -344,7 +344,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
           {/* Primary CTA — the last element the crop MUST show (measured). */}
           <div style={{
             marginTop: 'var(--space-2)', width: '100%', padding: '14px', textAlign: 'center',
-            borderRadius: 'var(--radius-md)', background: 'var(--moss)',
+            borderRadius: 'var(--radius-md)', background: 'var(--moss-strong)',
             color: 'var(--card)', fontSize: '14px', fontWeight: 600, letterSpacing: '0.02em',
           }}>Log this session</div>
         </div>

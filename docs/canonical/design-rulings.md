@@ -3678,3 +3678,45 @@ ruling cannot be assumed valid after it.
 vocabulary and a register that can only fall. **Wave 1 is named and scheduled, not filed**
 (Collins' condition). **Nothing seen on a device** — which is why zero-reflow was a
 condition rather than a preference.
+
+---
+
+## ⚖️ A11Y-MOCKUP-CONTRAST-01 — the mockup owes AA on its text (2026-10-02)
+
+**SHIP WITH AMENDMENT.** Seven text colours in `PhoneFrame` / `TabbedPhone` move to their
+AA-clearing counterparts. **No token added, no size changed, the interaction kept, all three
+mockup screens kept.**
+
+🔴 **BOTH OF THE ITEM'S PREMISES WERE FALSE.** ① *"the root already carries `aria-hidden`, so a
+screen reader skips the mockup"* — `PhoneShell` is `aria-hidden={interactive ? undefined : 'true'}`
+and the homepage's `TabbedPhone` **passes `onTab`**, so it is NOT hidden and its text is in the tab
+order. ② *"no colour in the palette can reach 4.5:1 at that size"* — `--moss-strong` 5.48,
+`--warn-strong` 5.48, `--mute` 5.45, `--ink-2` 11.31 on `--card`.
+
+⚡ **Recorded disagreement, and the measurement that ended it.** **Wroblewski** wanted the mockup
+made a **still** (drop `onTab`, restoring `aria-hidden` and removing four low-contrast stops from
+the tab order). **Collins** wanted it **enlarged**, keeping the interaction. **Neither was taken:**
+a still would have cost the homepage two of its three product screens — `TabbedPhone` holds Today,
+Plan and Coach — and enlargement costs the hero. **The token swap was invisible to both positions
+until the palette was actually measured.** ✋ **Silvanto did not veto**, and named the condition
+under which he would have: normalising the interstitial ask headline to 800, a tonal regression
+with no legibility gain.
+
+🥇 **ONE CONVERSION WAS A FIDELITY FIX.** The mockup drew its primary CTA as `--moss` while
+`.btn--primary` is `--moss-strong`. The drawing was wrong about the app; this corrects it.
+
+⚠️ **DELIBERATELY NOT CONVERTED:** the 56px/800 hero word (large text owes 3:1) · every
+`background`/border `--moss` · the Sparkle SVG (a graphic).
+
+🔴 **THE CHECK IS AN ALLOW-LIST BECAUSE THE RATIO VERSION WAS WRONG** — seven confident wrong
+findings from pairing `color:` with the nearest `background:` across JSX boundaries, measuring text
+against a 6px dot and an accent bar. Right ratios, wrong grounds. **A rendered ground is a DOM
+property, not a proximity one.**
+
+**Artifacts:** pattern → `ui-patterns.md` § Mockup text owes AA · constants → `BANNED_SMALL_TEXT`,
+`LARGE_PX` · check → `lib/a11yContrast.test.ts`, falsified 4 ways incl. a negative and a boundary
+case · this row.
+
+⚠️ **What it does not settle:** **Lighthouse has not been re-run.** The claim is that the seven
+named failures are fixed, not that the homepage now scores 100. Nothing seen on a device.
+

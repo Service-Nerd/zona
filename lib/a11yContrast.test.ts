@@ -137,3 +137,103 @@ describe('WCAG AA contrast', () => {
     expect(layout).toContain("from 'next/font/google'")
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A11Y-MOCKUP-CONTRAST-01 (Design Board, 2026-10-02) — the phone mockup owes AA on its
+// TEXT, because it is not decoration.
+//
+// 🔴 BOTH OF THE ITEM'S PREMISES WERE FALSE, AND MEASURING THEM IS WHAT SETTLED IT.
+//
+// ① *"`aria-hidden` … the root already carries it, so a screen reader skips the mockup."*
+// `PhoneShell` sets `aria-hidden={interactive ? undefined : 'true'}`, and the homepage's
+// `TabbedPhone` **passes `onTab`** — so the primary mockup is NOT hidden. Correctly: a
+// tappable nav must be exposed. Its text is in the tab order, which is what makes this AA.
+//
+// ② *"at that size no colour in the palette can reach 4.5:1."* Measured on `--card`:
+// `--moss-strong` **5.48**, `--warn-strong` **5.48**, `--mute` **5.45**, `--ink-2` **11.31**.
+// Every offender had an existing counterpart that clears AA, so **no token was added** and
+// there was no palette change to veto.
+//
+// 🥇 ONE CONVERSION WAS A FIDELITY FIX, NOT A COMPROMISE. The mockup drew its primary CTA as
+// `background: var(--moss)` while `.btn--primary` is `var(--moss-strong)`. **The drawing was
+// drawing the button wrong**, so the usual objection — forcing a mockup onto a governed scale
+// "would make the drawing wrong to make a grep clean" — inverts here.
+//
+// ⚠️ DELIBERATELY NOT CONVERTED: the **56px/800** hero word (large text owes **3:1**; `--moss`
+// is 3.68, so darkening it would change the drawing for zero gain) · every `background` and
+// border `--moss` (`globals.css` states `--moss` "was left alone for fills and borders, where
+// 3:1 is the correct bar") · the Sparkle SVG (a graphic, 3:1).
+//
+// ── 🔴 WHY THIS IS AN ALLOW-LIST AND NOT A COMPUTED RATIO ────────────────────
+// I wrote the ratio version first and **threw it away after it produced seven confident wrong
+// findings.** It paired each `color:` with the nearest preceding `background:` inside a
+// 400-character window, which crosses JSX object boundaries: text at `:300` was measured
+// against a **6px dot's** fill at `:298`, and text at `:324` against a session **accent bar**.
+// Every ratio was arithmetically correct and every GROUND was wrong — this repo's
+// most-recorded check failure, which I then committed inside the check written to prevent it.
+//
+// **A rendered ground is a property of the DOM tree, not of text proximity**, so it is not
+// statically decidable and a static check must not pretend otherwise. What IS decidable is
+// WHICH TOKEN carries small text, so that is what this forbids. The authoritative measurement
+// stays what found the nine in the first place: axe / Lighthouse on the live page.
+describe('A11Y-MOCKUP-CONTRAST-01 — mockup small text uses AA-capable tokens', () => {
+  const MOCKUPS = ['components/marketing/PhoneFrame.tsx', 'components/marketing/TabbedPhone.tsx']
+  /** WCAG: >=24px (or >=18.66px bold) is LARGE text and owes 3:1, which `--moss` meets. */
+  const LARGE_PX = 24
+  /** Cannot carry text below LARGE_PX anywhere in the device: all three fail 4.5:1 on every
+   *  ground inside it, and each has a drop-in counterpart that clears it. */
+  const BANNED_SMALL_TEXT: Record<string, string> = {
+    '--moss': '--moss-strong (3.68 -> 5.48 on --card)',
+    '--warn': '--warn-strong (3.25 -> 5.48)',
+    '--mute-2': '--mute (2.16 -> 5.45)',
+  }
+
+  /** Each `color: 'var(--x)'` with the nearest preceding `fontSize` in its own object. */
+  function textColours(src: string): { token: string; size: number; line: number }[] {
+    const out: { token: string; size: number; line: number }[] = []
+    for (const m of Array.from(src.matchAll(/color:\s*(?:[^,}]*\?\s*)?'var\((--[a-z0-9-]+)\)'/g))) {
+      const win = src.slice(Math.max(0, m.index! - 400), m.index! + 80)
+      const sizes = Array.from(win.matchAll(/fontSize:\s*'(\d+)px'/g))
+      if (!sizes.length) continue
+      out.push({
+        token: m[1]!,
+        size: Number(sizes[sizes.length - 1]![1]),
+        line: src.slice(0, m.index!).split('\n').length,
+      })
+    }
+    return out
+  }
+
+  // ⚠️ AN EMPTY POPULATION PASSES THE ARM BELOW. The size pairing is a heuristic over a
+  // window, so it can silently stop matching; this proves it still reaches real declarations.
+  it('the scanner reaches real declarations', () => {
+    const n = MOCKUPS.reduce((a, f) => a + textColours(fs.readFileSync(f, 'utf8')).length, 0)
+    expect(n, 'the mockup scanner found no coloured text — re-anchor it').toBeGreaterThan(8)
+  })
+
+  it('🔴 no sub-AA token carries small text in the mockup', () => {
+    const fails: string[] = []
+    for (const f of MOCKUPS) {
+      for (const { token: t, size, line } of textColours(fs.readFileSync(f, 'utf8'))) {
+        if (size >= LARGE_PX) continue
+        const fix = BANNED_SMALL_TEXT[t]
+        if (fix) fails.push(`${f}:${line} — ${t} on ${size}px text. Use ${fix}.`)
+      }
+    }
+    expect(fails, 'the mockup is OPERABLE on the homepage (TabbedPhone passes onTab, so ' +
+      'aria-hidden is removed) and its text is exposed to assistive tech:\n' + fails.join('\n'))
+      .toEqual([])
+  })
+
+  // The large-text carve-out is real and must stay honest: if the hero word ever shrinks below
+  // the large-text threshold, `--moss` stops being acceptable on it.
+  it('the large-text carve-out is bounded, not a blanket', () => {
+    expect(LARGE_PX).toBe(24)
+    const hero = textColours(fs.readFileSync(MOCKUPS[0]!, 'utf8'))
+      .filter(c => c.token === '--moss' && c.size >= LARGE_PX)
+    for (const h of hero) {
+      expect(h.size, `--moss on ${h.size}px text relies on the 3:1 large-text bar`)
+        .toBeGreaterThanOrEqual(LARGE_PX)
+    }
+  })
+})

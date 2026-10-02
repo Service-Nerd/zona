@@ -511,6 +511,55 @@ met.
 
 Presentational, no hooks — renders inside the server-component page. **Light sections only** (the frame renders its screen ground dark inside a `--ground` section; cause undiagnosed).
 
+### Mockup text owes AA — the exemption is about SCALE, not contrast (A11Y-MOCKUP-CONTRAST-01, Design Board 2026-10-02)
+
+**The device mockups are exempt from the site's TYPE SCALE and are NOT exempt from contrast.**
+Those are two different exemptions, and conflating them is how nine AA failures sat on the
+homepage being described as decoration.
+
+🔴 **THE HOMEPAGE MOCKUP IS OPERABLE, SO IT IS NOT DECORATION.** `PhoneShell` sets
+`aria-hidden={interactive ? undefined : 'true'}` and `TabbedPhone` **passes `onTab`** — so the
+primary mockup is deliberately **not** hidden, because a tappable nav must be exposed. Its text
+is in the tab order and reachable by assistive tech. `ProductStill` and the `/charity-runners`
+frame pass no `onTab` and *are* hidden. ⚠️ **The filing asserted the opposite** — *"the root
+already carries it, so a screen reader skips the mockup correctly"*. **Check the prop, not the prose.**
+
+**The rule: inside a mockup, text below 24px may not use `--moss`, `--warn` or `--mute-2`.**
+
+| Don't, below 24px | Use instead | Ratio on `--card` |
+|---|---|---|
+| `--moss` (3.68) | **`--moss-strong`** | 5.48 |
+| `--warn` (3.25) | **`--warn-strong`** | 5.48 |
+| `--mute-2` (2.16) | **`--mute`** | 5.45 |
+
+⚠️ **The filing also claimed "no colour in the palette can reach 4.5:1 at that size." Measured:
+false.** Every offender had an existing counterpart, so **no token was added** and there was no
+palette change.
+
+✅ **AT OR ABOVE 24px, `--moss` IS CORRECT AND MUST NOT BE DARKENED.** WCAG large text owes
+**3:1** and `--moss` is 3.68, so the 56px hero word stays. Converting it would change the drawing
+for zero accessibility gain. **The carve-out is bounded:** if that word drops below 24px, `--moss`
+stops being acceptable on it, and the check asserts that boundary.
+
+✅ **Fills and borders keep `--moss`** — `globals.css` already records that it "was left alone for
+fills and borders, where 3:1 is the correct bar". Backgrounds, dots, accent bars, SVG strokes: unchanged.
+
+🥇 **ONE CONVERSION WAS A FIDELITY FIX, WHICH INVERTS THE USUAL OBJECTION.** The mockup drew its
+primary CTA as `background: var(--moss)` while `.btn--primary` is `var(--moss-strong)` — **the
+drawing was drawing the button wrong.** So *"forcing a mockup onto a governed scale would make the
+drawing wrong to make a grep clean"* does not apply here: this made it more faithful.
+
+🔴 **THE CHECK IS AN ALLOW-LIST, NOT A COMPUTED RATIO, AND THE REASON IS WORTH KEEPING.** The
+ratio version was written first and discarded after **seven confident wrong findings**: it paired
+each `color:` with the nearest preceding `background:` inside a 400-character window, which crosses
+JSX object boundaries, so text was measured against a **6px dot's** fill and a session **accent
+bar**. Every ratio was right; every ground was wrong. **A rendered ground is a property of the DOM
+tree, not of text proximity**, so it is not statically decidable and a static check must not
+pretend otherwise. The authoritative measure stays axe / Lighthouse on the live page.
+
+Guarded by `lib/a11yContrast.test.ts` § A11Y-MOCKUP-CONTRAST-01, falsified four ways including a
+**negative** case (`--moss` at 56px stays green) and a **boundary** case (shrink it to 20px → red).
+
 ## Real app components on marketing pages — `ProductStill` (GTM-SITE-02, 2026-09-11)
 
 **The rule: a marketing page renders the REAL component. It does not draw a picture of one.**
