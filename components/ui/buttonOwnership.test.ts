@@ -728,3 +728,51 @@ describe('DESTRUCTIVE-WIRING-01 — every declared button variant is reached', (
       .not.toContain('var(--session-intervals)')
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SITE-BTN-INVERT-01 (Design Board, 2026-10-02) — INSUFFICIENT EVIDENCE, settled on a count.
+//
+// The homepage's App Store CTA is light-on-dark (`--on-ground` fill on a `--ground` band) and
+// there is no `.btn--invert` variant, so after `TAP-TARGET-DECISIONS-01` moved it onto `.btn`
+// it keeps two inline TOKEN overrides. ⚖️ The board declined to mint an eighth variant for a
+// single call site and asked for the count instead.
+//
+// 📐 MEASURED 2026-10-02: **ONE** such CTA, across **3** `--ground` surfaces. **At one, the
+// override stands.** ✋ Silvanto's condition, named at the sitting: a variant minted for one
+// call site is how a system grows a step nobody needs.
+//
+// 🔴 THIS ARM IS THE "REVISIT AT TWO", MADE MECHANICAL. A second light-on-dark CTA is the
+// moment the override becomes a duplicate — which is how `SectionLabel`, `PlanSectionLabel`,
+// `StatusBadge` and the chevron each became two copies. **The register does not forbid a
+// second one; it forbids a second one arriving UNNOTICED.**
+describe('SITE-BTN-INVERT-01 — one light-on-dark CTA, or the variant question reopens', () => {
+  const INVERTED_CTA_BASELINE = 1
+
+  const inverted = (): string[] => {
+    const out: string[] = []
+    for (const f of execSync('git ls-files', { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean)) {
+      if (!/^(app|components\/marketing)\/.*\.tsx$/.test(f) || f.includes('.test.') || f.includes('-preview')) continue
+      const src = fs.readFileSync(path.join(ROOT, f), 'utf8')
+      for (const m of Array.from(src.matchAll(/background:\s*'var\(--on-ground\)'/g))) {
+        out.push(`${f}:${src.slice(0, m.index!).split('\n').length}`)
+      }
+    }
+    return out
+  }
+
+  it('🔴 a SECOND light-on-dark CTA reopens the `.btn--invert` question', () => {
+    expect(inverted().length,
+      `light-on-dark CTAs: ${inverted().length}, baseline ${INVERTED_CTA_BASELINE}. At one, an ` +
+      'inline token override is right and a variant is not. At two it is a duplicate — take ' +
+      '`SITE-BTN-INVERT-01` back to the board:\n' + inverted().join('\n'))
+      .toBeLessThanOrEqual(INVERTED_CTA_BASELINE)
+  })
+
+  // ⚠️ AND IT MUST NOT ROT DOWNWARD EITHER. If the CTA is removed or re-grounded, this
+  // baseline is describing something that no longer exists, and the next reader inherits a
+  // register pointing at nothing — the direction nobody watches.
+  it('the baseline still describes a real control', () => {
+    expect(inverted().length, 'the light-on-dark CTA is gone — lower INVERTED_CTA_BASELINE')
+      .toBe(INVERTED_CTA_BASELINE)
+  })
+})
