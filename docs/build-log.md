@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `OPS-ENRICH-REMEDIATE-01` executed · the first write was incomplete and only the database said so
+**Shipped:** Both affected runners have their AI voice back. `without_voice` 2 → 0 of 18.
+
+**The thing worth writing down:** the script reported `WRITTEN`, every guard passed — full deep diff, JSON round-trip, schema no worse, CAS — and the write was still **incomplete**. `mergePlan` restores the copy and never touches `meta.enrichment`; the *route* sets that. So the plan came back carrying Kit's words and still stamped `failed_invalid_copy`.
+
+Two consequences, both real. `sessionNotesAreAiAuthored` gates the AIMark on `ENRICHED_STATES`, so the byline would not have rendered over copy a model demonstrably wrote — the modest direction, so nothing was misrepresented, but the runner lost the credit. And `judgeEnrichHealth` would have kept counting that runner as voiceless, meaning **the health route I built this afternoon as the source of truth would have reported a problem it had just fixed.**
+
+**A remediation that doesn't update the state it is judged by is not finished.** I'd checked every property of the data and not the one field that tells the rest of the system what the data *is*.
+
+It was caught because I read the row back out of Postgres instead of trusting the script's own success line. That's the whole lesson: my guards all ran *before* the write, on the object in memory. Only the database can tell you what landed.
+
+**The tier boundary proved out in both directions**, which is the part the earlier hardcoded `'paid'` would have broken: the trial runner's `coach_intro` is still false and `confidence_score` still null after remediation; the paid runner's are `true` and `7`. Prescription untouched — 16 and 23 weeks unchanged, `generator_input` intact, week-4 Sunday still 11.5 km in Zone 2. Copy grew by about 4 KB and 8 KB respectively, which is the voice.
+
+---
+
 ## 2026-10-02 — `OPS-ENRICH-HEALTH-01` + `OPS-ENRICH-REMEDIATE-01` · the number I reported was wrong
 **Shipped:** A reader for the failure event that had none, and a dry-run remediation for the two affected runners.
 

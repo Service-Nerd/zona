@@ -33,6 +33,13 @@ import type { Plan, Session } from '../types/plan'
 
 const WRITE = process.argv.includes('--write')
 const AUTHORISED = process.argv.includes('--i-have-authorisation')
+/** `--only <id-prefix>` — remediate ONE runner. The first write of anything that
+ *  edits live plans should touch one row, be read back, and stop; a flag makes
+ *  that the easy path rather than a thing to remember. */
+const ONLY = (() => {
+  const i = process.argv.indexOf('--only')
+  return i >= 0 ? (process.argv[i + 1] ?? null) : null
+})()
 
 type Json = Record<string, unknown> | unknown[] | string | number | boolean | null
 
@@ -102,7 +109,11 @@ async function main() {
   if (WRITE && !AUTHORISED) { console.error('refusing: --write needs --i-have-authorisation'); process.exit(2) }
   if (!verdict.affected.length) { console.log('nothing to remediate.'); return }
 
-  for (const target of verdict.affected) {
+  const targets = ONLY
+    ? verdict.affected.filter(a => a.user_id.startsWith(ONLY))
+    : verdict.affected
+  if (ONLY) console.log(`--only ${ONLY} → ${targets.length} of ${verdict.affected.length} target(s)\n`)
+  for (const target of targets) {
     const row = (data ?? []).find(r => String(r.user_id) === target.user_id)
     const plan = row?.plan_json as Plan | undefined
     const input = plan?.meta?.generator_input
@@ -142,6 +153,23 @@ async function main() {
       console.log(`   STILL FAILS: ${o.reason ?? o.status} — this runner needs the underlying cause fixed first`)
       continue
     }
+    // 🔴 SET THE STATE MARKER. `mergePlan` restores the COPY and never touches
+    // `meta.enrichment` — the ROUTE sets that. So the first write of this script
+    // left a plan carrying Kit's words and still stamped `failed_invalid_copy`,
+    // and only an independent read of the database caught it. Two consequences,
+    // both real:
+    //   · `sessionNotesAreAiAuthored` gates on `ENRICHED_STATES`, so the AIMark
+    //     would not render over copy a model demonstrably wrote. That is the
+    //     MODEST direction (AI-PROVENANCE-01: failing to credit is not a false
+    //     claim) so nothing was misrepresented — but the runner lost the byline.
+    //   · `judgeEnrichHealth` would go on counting that runner as having NO
+    //     voice, so the health route I built as the source of truth would report
+    //     a problem it had just fixed. A remediation that does not update the
+    //     state it is judged by is not finished.
+    // `'applied'` is the route's own value for a clean full merge, which is what
+    // `outcome.status === 'applied'` above has already established.
+    res.plan.meta.enrichment = 'applied'
+
     // 🔴 A FULL DEEP DIFF, NOT A FINGERPRINT. The first version hashed a
     // hand-listed set of prescription fields — which is a WHITELIST, and anything
     // I failed to list could change silently. That is the same
