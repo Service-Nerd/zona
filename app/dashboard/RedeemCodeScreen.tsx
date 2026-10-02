@@ -24,6 +24,7 @@ import { formatCodeInput, CODE_PREFIX } from '@/lib/charity/code'
 import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 function formatEnds(iso: string): string {
   // DATE-OWNER-01 — the try/catch is gone because `formatDate` returns null on
@@ -149,9 +150,11 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
             <label
               htmlFor="charity-code"
               style={{
-                display: 'block', fontFamily: 'var(--font-ui)', fontSize: '10px',
-                fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em',
-                textTransform: 'uppercase', marginBottom: 'var(--space-2)',
+                display: 'block',
+                fontFamily: 'var(--font-ui)',
+                ...MICRO_LABELS.eyebrow,
+                color: 'var(--mute)',
+                marginBottom: 'var(--space-2)',
               }}
             >
               Your code

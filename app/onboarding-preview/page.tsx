@@ -22,6 +22,7 @@ import PlanScaleCard from '@/components/shared/PlanScaleCard'
 import CharityCohortCard from '@/components/shared/CharityCohortCard'
 import { ceremonyLinesFor } from '@/lib/plan/ceremonyLines'
 import type { GeneratorInput } from '@/types/plan'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 /** The link is live code — clicking it here would really end your session.
  *  A capture-phase stop keeps the rendering real and the action inert. */
@@ -47,7 +48,7 @@ const SECONDARY: React.CSSProperties = {
 function Case({ title, note, children }: { title: string; note: string; children: React.ReactNode }) {
   return (
     <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
-      <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+      <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '10px' }}>
         {title}
       </div>
       <div style={{ background: 'var(--bg)', borderRadius: '10px', overflow: 'hidden' }}>{children}</div>

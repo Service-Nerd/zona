@@ -1,3 +1,4 @@
+import { MICRO_LABELS } from './microLabels'
 // PreRunBandCard — R25 Cut #2, Today screen pre-run context band.
 //
 // Shows past-self stats for similar-distance runs before today's session —
@@ -76,11 +77,8 @@ export default function PreRunBandCard(props: PreRunBandCardProps) {
     }}>
       <div style={{
         fontFamily:    'var(--font-ui)',
-        fontSize:      '10px',
-        fontWeight:    700,
+        ...MICRO_LABELS.eyebrow,
         color:         'var(--mute)',
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase',
         marginBottom:  '4px',
       }}>
         Last {cohort.cohortSize} similar {noun}{cohort.cohortSize !== 1 ? 's' : ''}

@@ -180,7 +180,7 @@ export default function CoachPreviewPage() {
             by anything, which is how an em dash survived in both. A harness with a short
             population is the same defect as a test with one, and it is quieter. */}
         <div style={{ marginTop: '28px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>
             Locked (free tier)
           </div>
           <ZoneRings state="locked" />
@@ -193,14 +193,14 @@ export default function CoachPreviewPage() {
             the "at least a 4 bpm shift" sentence — one of the 35 the em-dash guard could
             not see, and it had never been rendered. Tap the card to open the sheet. */}
         <div>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>
             Pending (paid, not enough data) — tap for the sheet
           </div>
           <TrendCard state="pending" />
         </div>
         {TREND_CASES.map(({ title, note, props }) => (
           <div key={title}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+            <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>
               {title}
             </div>
             <TrendCard {...props} />
@@ -215,11 +215,11 @@ export default function CoachPreviewPage() {
           const copy = wasLabel ? { ...ARC_COPY, was: wasLabel } : ARC_COPY
           return (
             <div key={title} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '20px' }}>
-              <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+              <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '10px' }}>
                 {title}
               </div>
               <div style={{ background: 'var(--bg-soft)', borderRadius: '10px', borderLeft: '3px solid var(--s-race)', padding: '12px 14px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '6px' }}>
                   Your race
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--ink-2)', marginBottom: '14px' }}>London Marathon</div>
@@ -244,7 +244,7 @@ export default function CoachPreviewPage() {
           After: minute precision, the action first, the table behind a tap. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '420px', marginTop: '28px' }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '20px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '10px' }}>
             Race projections — state 4 (wizard bracket, 58% of plans)
           </div>
           <RaceTimesCard

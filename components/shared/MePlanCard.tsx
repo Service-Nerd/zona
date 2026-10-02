@@ -3,6 +3,7 @@
 import { FREE_FEATURES, PAID_FEATURES } from '@/lib/marketing/pricing'
 import { PRICING } from '@/lib/brand'
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from './microLabels'
 
 /**
  * P-12 — the plan card on Me.
@@ -54,8 +55,10 @@ export default function MePlanCard({
 
   const label = (text: string) => (
     <div style={{
-      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em',
-      textTransform: 'uppercase', color: 'var(--mute)', margin: '16px 0 8px',
+      fontFamily: 'var(--font-ui)',
+      ...MICRO_LABELS.eyebrow,
+      color: 'var(--mute)',
+      margin: '16px 0 8px',
     }}>{text}</div>
   )
 

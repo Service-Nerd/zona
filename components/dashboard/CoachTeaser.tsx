@@ -260,7 +260,7 @@ export default function CoachTeaser({ plan, firstName, onUpgrade }: {
 
         {/* Locked race projections stub — display only, not a CTA */}
         <div style={{ width: '100%', background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)', opacity: 0.5 }}>
+          <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-3)', opacity: 0.5 }}>
             Race projections
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', opacity: 0.25 }}>

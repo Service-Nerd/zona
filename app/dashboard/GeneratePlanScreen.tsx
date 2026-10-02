@@ -1513,7 +1513,7 @@ export default function GeneratePlanScreen({
           </div>
 
           <div style={{ marginTop: 'var(--space-5)' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-3)' }}>
               Plan shape
             </div>
             {PHASES.map(phase => {
@@ -1647,7 +1647,7 @@ export default function GeneratePlanScreen({
         <ProgressLine total={realSteps.length} current={Math.max(0, realDone - 1)} />
         <div style={{ marginBottom: stepMeta.interstitial ? '20px' : '28px', marginTop: stepMeta.interstitial ? '28px' : 0 }}>
           {stepMeta.eyebrow && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--moss)', marginBottom: 'var(--space-3)' }}>
               {stepMeta.eyebrow}
             </div>
           )}

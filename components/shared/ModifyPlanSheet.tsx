@@ -13,6 +13,7 @@ import {
   type ModifyGroup, type PlanEdits, type ModifiableKey,
 } from '@/lib/plan/modifyPlan'
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from './microLabels'
 
 /**
  * P-02 — the modify-plan sheet.
@@ -103,8 +104,10 @@ export default function ModifyPlanSheet({
 
   const label = (t: string) => (
     <div style={{
-      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em',
-      textTransform: 'uppercase', color: 'var(--mute)', margin: '22px 0 8px',
+      fontFamily: 'var(--font-ui)',
+      ...MICRO_LABELS.eyebrow,
+      color: 'var(--mute)',
+      margin: '22px 0 8px',
     }}>{t}</div>
   )
 

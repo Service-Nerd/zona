@@ -1,5 +1,7 @@
 'use client'
 
+import { MICRO_LABELS } from './microLabels'
+
 // NOTIF-01 — one row in the notification inbox. Read-only delivery record.
 // Pattern: NotificationRow (ui-patterns.md).
 //
@@ -69,8 +71,9 @@ export function NotificationRow({ item, relativeTime, onClick }: {
       {/* Eyebrow row: type label left, time + unread dot right */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)', marginBottom: '4px' }}>
         <span style={{
-          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-          letterSpacing: '0.08em', textTransform: 'uppercase', color: railColor,
+          fontFamily: 'var(--font-ui)',
+          ...MICRO_LABELS.eyebrow,
+          color: railColor,
         }}>{eyebrow}</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute-2)' }}>{relativeTime}</span>

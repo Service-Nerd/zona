@@ -325,8 +325,9 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
                     onClick={() => setExpandedLaterWeek(null)}
                     aria-label="Collapse week" style={{ width: '100%', padding: '0 4px', background: 'none' }}>
                     <span style={{
-                      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-                      color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                      fontFamily: 'var(--font-ui)',
+                      ...MICRO_LABELS.eyebrow,
+                      color: 'var(--mute)',
                     }}>Later, still flexible</span>
                     <span style={{
                       fontFamily: 'var(--font-ui)', fontSize: '12px',
@@ -580,9 +581,10 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
       }}>
         <div>
           <div style={{
-            fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+            fontFamily: 'var(--font-ui)',
+            ...MICRO_LABELS.eyebrow,
             color: isRace ? 'var(--s-race)' : isCurrent ? 'var(--moss)' : isMaint ? 'var(--s-recov)' : 'var(--mute)',
-            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px',
+            marginBottom: '2px',
           }}>
             {isMaint
               ? <>{phase === 'maintenance_restoration' ? 'Restoration' : 'Base'} · {formatDateRange(weekStartDate)}</>
@@ -605,7 +607,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: `${metricUnitSize}px`, fontWeight: isCurrent ? 600 : 400, color: 'var(--mute)' }}>/{intendedKm}</span>
             )}
           </div>
-          {intendedKm > 0 && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '4px' }}>{actualKm > 0 ? `${units} done` : `${units} planned`}</div>}
+          {intendedKm > 0 && <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginTop: '4px' }}>{actualKm > 0 ? `${units} done` : `${units} planned`}</div>}
         </div>
       </div>
 
@@ -1087,8 +1089,9 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
       {isRace && week.date && (
         <div style={{
           marginTop: '10px',
-          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-          color: 'var(--s-race)', letterSpacing: '0.08em', textTransform: 'uppercase',
+          fontFamily: 'var(--font-ui)',
+          ...MICRO_LABELS.eyebrow,
+          color: 'var(--s-race)',
         }}>
           {(() => {
             // Race day = last non-rest session in the week (typically Sun)

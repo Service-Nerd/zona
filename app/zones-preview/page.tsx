@@ -15,6 +15,7 @@
 
 import { TrainingZonesScreen, type ZoneRow } from '@/components/shared/TrainingZonesScreen'
 import { buildPaceFromVDOT } from '@/lib/plan/paceBands'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 const ZONES: ZoneRow[] = [
   { zone: 1, name: 'Recovery',  desc: 'Active recovery, warm-up, cool-down', colour: 'var(--session-recovery)', minHR: 100, maxHR: 124 },
@@ -53,7 +54,7 @@ export default function ZonesPreview() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '420px' }}>
         {CASES.map(c => (
           <div key={c.title} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '10px' }}>
               {c.title}
             </div>
             <div style={{ background: 'var(--bg)', padding: '12px 0', borderRadius: '10px' }}>

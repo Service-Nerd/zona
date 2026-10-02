@@ -112,11 +112,12 @@ export default function SessionCompleteCard({
       }}>
         <span style={{
           display: 'inline-block',
-          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+          fontFamily: 'var(--font-ui)',
+          ...MICRO_LABELS.eyebrow,
           color: 'var(--ink)',
           background: 'var(--bg-soft)',
-          padding: '4px 10px', borderRadius: '999px',
-          letterSpacing: '0.08em', textTransform: 'uppercase',
+          padding: '4px 10px',
+          borderRadius: '999px',
         }}>
           {chipLabel}
         </span>
@@ -134,8 +135,9 @@ export default function SessionCompleteCard({
       {showZone ? (
         <div style={{ marginBottom: 'var(--space-5)' }}>
           <div style={{
-            fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-            color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase',
+            fontFamily: 'var(--font-ui)',
+            ...MICRO_LABELS.eyebrow,
+            color: 'var(--mute)',
             marginBottom: 'var(--space-2)',
           }}>
             Time in zone
@@ -162,8 +164,9 @@ export default function SessionCompleteCard({
       ) : (
         <div style={{ marginBottom: 'var(--space-5)' }}>
           <div style={{
-            fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-            color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase',
+            fontFamily: 'var(--font-ui)',
+            ...MICRO_LABELS.eyebrow,
+            color: 'var(--mute)',
             marginBottom: 'var(--space-2)',
           }}>
             Effort

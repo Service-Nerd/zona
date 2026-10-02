@@ -63,11 +63,8 @@ export default function PendingHrCard({ state, onRetry, isRetrying = false }: Pr
       }}>
         <span style={{
           fontFamily:    'var(--font-ui)',
-          fontSize:      '10px',
-          fontWeight:    700,
+          ...MICRO_LABELS.eyebrow,
           color:         'var(--mute)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
         }}>
           Heart rate
         </span>

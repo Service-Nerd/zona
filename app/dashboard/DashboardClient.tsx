@@ -4009,7 +4009,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
           auto` can never overflow) still stands; the remedy moved on. */}
       <PinnedBackHeader onClick={onBack} padding="16px 20px 0">
         <div style={{ paddingTop: 'var(--space-4)' }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-2)' }}>
           Plan adjustment
         </div>
         {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner.
@@ -4511,15 +4511,17 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
                     />
                   ) : (
                     <span style={{
-                      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-                      color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+                      fontFamily: 'var(--font-ui)',
+                      ...MICRO_LABELS.eyebrow,
+                      color: 'var(--mute)',
                     }}>This week</span>
                   )}
                   {phaseCap && (
                     <span style={{
                       marginLeft: 'auto',
-                      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-                      color: 'var(--moss)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                      fontFamily: 'var(--font-ui)',
+                      ...MICRO_LABELS.eyebrow,
+                      color: 'var(--moss)',
                     }}>{phaseCap}</span>
                   )}
                 </div>
@@ -4597,7 +4599,7 @@ function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
     <div style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Week notes</span>
+        <span style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)' }}>Week notes</span>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', opacity: 0.6 }}>· Your training plan</span>
         {phaseCap && (
           <span style={{ ...MICRO_LABELS.eyebrow, marginLeft: 'auto', fontFamily: 'var(--font-ui)', color: 'var(--moss)' }}>
@@ -5572,7 +5574,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           ] as const).map((m) => {
             const inner = (
               <>
-                <div className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   {m.label}
                   {m.onTap && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)' }}>ⓘ</span>}
                 </div>
@@ -6440,9 +6442,11 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
 
         {/* Session type chip — right aligned */}
         <div style={{
-          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-          color, textTransform: 'uppercase', letterSpacing: '0.08em',
-          background: `${color}18`, borderRadius: '100px', padding: '4px 10px',
+          fontFamily: 'var(--font-ui)',
+          ...MICRO_LABELS.eyebrow,
+          background: `${color}18`,
+          borderRadius: '100px',
+          padding: '4px 10px',
           flexShrink: 0,
         }}>
           {typeLabel.split(' ')[0]}
@@ -6517,8 +6521,9 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
             }} />
             <div>
               <div style={{
-                fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-                color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.1em',
+                fontFamily: 'var(--font-ui)',
+                ...MICRO_LABELS.dataLabel,
+                color: 'var(--mute)',
                 marginBottom: '2px',
               }}>Up next</div>
               <div style={{
@@ -6578,9 +6583,8 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
               onClick={() => setBriefOpen(o => !o)}
               aria-expanded={briefOpen} style={{ width: '100%', background: 'transparent', padding: '14px 18px', borderBottom: briefOpen ? `1px solid var(--line)` : 'none', color: 'var(--ink-2)', minHeight: '44px' }}>
               <span style={{
-                fontSize: '10px', fontWeight: 700,
+                ...MICRO_LABELS.eyebrow,
                 color: 'var(--mute)',
-                textTransform: 'uppercase', letterSpacing: '0.08em',
               }}>
                 {briefOpen ? 'Hide session details' : 'Session details · tweak how it felt'}
               </span>
@@ -6966,8 +6970,9 @@ function PostRunScreen({
         <BackButton onClick={onBack} ariaLabel="Back to Today" />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-            color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+            fontFamily: 'var(--font-ui)',
+            ...MICRO_LABELS.eyebrow,
+            color: 'var(--mute)',
             marginBottom: '2px',
           }}>
             Run logged · W{weekLabel}
@@ -7025,8 +7030,9 @@ function PostRunScreen({
             }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-                color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+                fontFamily: 'var(--font-ui)',
+                ...MICRO_LABELS.eyebrow,
+                color: 'var(--mute)',
                 marginBottom: '2px',
               }}>
                 {isHKSource ? 'Apple Health' : 'Linked from Strava'}

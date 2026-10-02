@@ -289,6 +289,74 @@ describe('MICRO-LABEL-DRIFT-01 — the register can only fall', () => {
   //
   // ⚠️ Same shape as `BUTTON-GEOMETRY-SPREAD-01` — a harness that reads literals goes
   // blind as the codebase does the right thing.
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MICRO-LABEL-HANDROLL-01 — RIGHT VALUES, WRONG MECHANISM (2026-10-02).
+//
+// 🔴 THE HALF OF THIS DEFECT CLASS THAT NEVER LOOKS LIKE ANYTHING. The register above
+// counts a literal only when its VALUES are wrong (`if (!CANON.has(...)) n++`), so a label
+// that retypes the canonical eyebrow by hand is **invisible to it by construction** — and
+// every surface reads correctly on its own, so nothing renders differently today.
+//
+// ⚠️ MEASURED 2026-10-02: 51 eyebrow + 1 dataLabel literal copies, app only. **The item was
+// filed at 32.** Neither number was a lie: the filed signature lists the four properties in
+// ONE fixed order, and most real copies use a different order or span several lines, so an
+// order-sensitive single-line match could not see them. Same recorded class as the short
+// glob and the one-space regex above — **a checker that encodes one way of writing
+// something is blind to every other way, and people write things more than one way.** This
+// arm is order-independent because it reads the same parsed blocks the register does.
+//
+// 🔴 THE COST IS THE NEXT EDIT TO THE ROLE, not today's pixels. `MICRO-LABEL-DRIFT-01`
+// shipped the owner and did not convert the consumers, so the role moved 144 call sites and
+// would have left 52 behind — the `SUBPAGE-TYPE-SCALE-01` shape, where nine titles
+// converted and two HAND-COPIED the right values.
+//
+// ⚠️ `components/marketing/` STAYS EXEMPT, AND ONE CONVERSION WAS REVERTED TO KEEP IT SO.
+// `PhoneFrame` draws a simulated iPhone at mockup scale; its 10px label happens to equal the
+// app's eyebrow, so converting it changed nothing visible and was still wrong — it would
+// bind the DRAWING to the app's live token, so a future ruling on the eyebrow would silently
+// redraw the picture. `globals.css` states the principle for the site scale: forcing a mockup
+// onto a governed scale "would make the drawing wrong to make a grep clean."
+describe('MICRO-LABEL-HANDROLL-01 — the values come from the owner, never a literal', () => {
+  const handRolled = (): string[] => {
+    const out: string[] = []
+    for (const f of tracked()) {
+      if (EXEMPT.test(f)) continue
+      for (const l of microLabels(readFileSync(f, 'utf8'))) {
+        if (CANON.has(`${l.size}|${l.weight}|${l.ls}`)) out.push(`${f} = ${l.size}/${l.weight}/${l.ls}`)
+      }
+    }
+    return out.sort()
+  }
+
+  // 🔴 EXACTLY THE INVERSE OF THE REGISTER ARM ABOVE, and that is the point: between them
+  // the two arms partition every micro-label literal in the app. Non-canonical values are
+  // debt that may only FALL; canonical values written as a literal are forbidden outright,
+  // because there is no migration to schedule — the owner already exists and is imported in
+  // 40 files. A label is therefore either converted, or wrong, or registered. Nothing else.
+  it('🔴 no surface retypes a canonical micro-label value', () => {
+    expect(handRolled(),
+      'a micro-label carries the canonical values as a LITERAL. Spread the role instead: ' +
+      "style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)' }}. The owner is " +
+      'components/shared/microLabels.ts.')
+      .toEqual([])
+  })
+
+  // ⚠️ THE POPULATION ARM, because an empty result passes the arm above for two different
+  // reasons and only one of them is good news. If the scanner stops finding blocks, this
+  // file reports a clean migration and a dead parser identically — the failure this repo
+  // records more than any other.
+  it('the scanner still reaches the converted population', () => {
+    const app = tracked().filter(f => !EXEMPT.test(f))
+    const converted = app.reduce((a, f) =>
+      a + (readFileSync(f, 'utf8').match(/MICRO_LABELS\.(sectionLabel|eyebrow|dataLabel)/g) ?? []).length, 0)
+    expect(converted, 'the role is no longer spread anywhere — the parser or the glob broke')
+      .toBeGreaterThan(90)
+  })
+})
+
+describe('MICRO-LABEL-DRIFT-01 — population', () => {
   it('the population is real and derived, converted labels INCLUDED', () => {
     expect(tracked().length).toBeGreaterThan(50)
     const app = tracked().filter(f => !EXEMPT.test(f))

@@ -23,6 +23,7 @@ import { buildRaceProgressArc } from '@/lib/coaching/raceProgressArc'
 import { RaceProgressArcRow } from './RaceProgressArcRow'
 import { RACE_PROJECTIONS_COPY, type RaceProjectionsVariant } from './raceProjectionsCopy'
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from './microLabels'
 
 type TargetRace = {
   distanceKm:      number
@@ -152,7 +153,7 @@ export function RaceTimesCard({
 
   return (
     <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '20px' }}>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-4)' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-4)' }}>
         {copy.eyebrow}
       </div>
 
@@ -220,7 +221,7 @@ export function RaceTimesCard({
               padding: '12px 14px',
               marginBottom: 'var(--space-4)',
             }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-2)' }}>
                 {eyebrow}
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)', marginBottom: arc ? '14px' : '8px' }}>

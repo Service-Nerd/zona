@@ -40,6 +40,7 @@ import MeScreen from '@/components/dashboard/MeScreen'
 import SessionPopupInner from '@/components/dashboard/SessionPopupInner'
 import harnessPlanJson from '@/components/dashboard/__fixtures__/harnessPlan.json'
 import type { Plan } from '@/types/plan'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 const noop = () => {}
 
@@ -90,8 +91,9 @@ function Case({ title, note, children }: { title: string; note?: string; childre
   return (
     <div style={{ marginBottom: '32px' }}>
       <div style={{
-        fontSize: '10px', fontWeight: 700, color: 'var(--mute)',
-        textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px',
+        ...MICRO_LABELS.eyebrow,
+        color: 'var(--mute)',
+        marginBottom: '8px',
       }}>
         {title}
       </div>
@@ -362,8 +364,9 @@ export default function CopyPreview() {
           ⚠️ Full width, outside the 420px column, because it is a whole screen. */}
       <div style={{ borderTop: '1px solid var(--line)', marginTop: '16px', paddingTop: '16px' }}>
         <div style={{
-          fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase',
-          letterSpacing: '0.08em', padding: '0 16px 8px',
+          ...MICRO_LABELS.eyebrow,
+          color: 'var(--mute)',
+          padding: '0 16px 8px',
         }}>
           GeneratePlanScreen (wizard) · 9 rewrites across its steps
         </div>

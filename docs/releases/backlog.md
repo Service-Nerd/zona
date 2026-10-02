@@ -889,7 +889,7 @@ board may well rule that two live asks do not need a role of their own — in wh
 answer is to point them at the screen-title role and delete the third, which is a smaller
 decision than it looks.
 
-### `MICRO-LABEL-HANDROLL-01` — 32 literal copies of a role that has an owner ⚙️ **NO BOARD**
+### ✅ `MICRO-LABEL-HANDROLL-01` — SHIPPED 2026-10-02. 51 copies, not 32, and the filed count was order-sensitive ⚙️ **NO BOARD**
 
 Out of `BACK-HEADER-OWNER-01`'s analysis.
 
@@ -902,6 +902,58 @@ half of this defect class that never looks like anything: nothing renders differ
 same shape as `SUBPAGE-TYPE-SCALE-01` converting nine titles while two HAND-COPIED the right
 values. The cost is the next edit to the role: it moves 103 sites and leaves 32 behind, and the
 drift is invisible because every surface reads correctly on its own.
+
+✅ **SHIPPED 2026-10-02 — 51 conversions, and the count was RE-DERIVED FIRST.**
+
+🔴 **THE FILED FIGURE OF 32 WAS LOW, AND THE REASON IS THE REPO'S OWN MOST-RECORDED CLASS.**
+Measured 2026-10-02 with an order-independent parse of brace-balanced style blocks:
+**51 `eyebrow` + 1 `dataLabel` = 52 literal copies**, of which **38 eyebrow were
+runner-facing** and 13 sat in `-preview` harnesses. The filing quotes the signature in ONE
+fixed property order (`fontSize, fontWeight, textTransform, letterSpacing`); most real copies
+use a different order or span several lines, so an order-sensitive single-line match could not
+see them. **A checker that encodes one way of writing something is blind to every other way** —
+the short glob and the one-space regex in `microLabel.test.ts` are the same lesson twice already.
+⚠️ **This is the first premise error in this wave that ran AGAINST me** — the three recorded on
+2026-10-01 all made the work look bigger.
+
+🥇 **THE TWO REGISTERS ARE DISJOINT BY CONSTRUCTION, AND THAT IS WHY THIS WAS INVISIBLE.**
+`microLabel.test.ts`'s register tests `if (!CANON.has(size|weight|ls)) n++` — it counts a
+literal **only when its values are wrong**. A hand-roll carrying the *right* values is
+canonical, so it could never appear. **Register at 27 (wrong values, falling-only); this item
+was 52 (right values, wrong mechanism); the sets cannot overlap.** Reconciled before building.
+
+✅ **The gate is the exact INVERSE of the register arm**, reusing the same `tracked()`,
+`microLabels()` and `CANON` so there is no second parser measuring the same objects. Between
+them the two arms partition every micro-label literal in the app: **converted, or wrong, or
+registered — nothing else.** Falsified four ways: a literal canonical `eyebrow` → red; a
+literal canonical `dataLabel` → red (proves all three roles, not just the one converted); a
+literal **non-canonical** label → the register arms go red and **this arm stays green**, which
+is what proves the partition rather than asserting it; plus a population arm, because an empty
+result passes for two reasons and only one is good news.
+
+🔴 **ONE CONVERSION WAS MADE AND REVERTED, AND NO TEST WOULD HAVE CAUGHT IT.**
+`components/marketing/PhoneFrame.tsx` draws a simulated iPhone at mockup scale. Its label is
+10px/700/0.08em — **byte-identical to the app's eyebrow** — so converting it changed nothing
+visible and was still wrong: it would bind the **DRAWING** to the app's live token, so a future
+board ruling on the eyebrow would silently redraw the picture. `components/marketing/` is
+exempt in this register and in `lib/marketing/typeScale.test.ts`, and `globals.css` states the
+principle: forcing a mockup onto a governed scale *"would make the drawing wrong to make a grep
+clean."* **Found by reading the exemption, not by a failing test.**
+
+⚠️ **NO SHARED COMPONENT WAS ADDED, as architect.** `SectionLabel` spreads the token internally
+and that is the established mechanism; the 38 sites are spans and divs differing in colour,
+margin and layout, so a fourth shared component would over-fit AND trip ADR-023's hard board
+trigger for a new shared component. The token object **is** the owner.
+
+🔻 **Residual, stated rather than hidden:** `ZoneRings.tsx` carries a LOCAL `Eyebrow` function —
+the local-function trap the `SectionLabel` ruling names as its fourth instance. It now reads its
+type from the owner, so it is not drift; whether an `<Eyebrow>` shared component should exist is
+a Design Board question and is **not** answered here.
+
+⚠️ **Verification:** `tsc` 0 · full suite **460 files / 4,129 tests / 0 failed** (+2, the two
+new arms; 4,127 before). **Zero visible delta by construction** — every value is byte-identical
+and the spread sits at the position of the first canonical property it replaced, so relative
+ordering is preserved. ⚠️ **Nothing has run on a device.**
 
 ⚠️ **Mechanical and dull on purpose.** No visible delta, no board (ADR-023: a refactor with no
 visible delta), and a gate afterwards that fails on a literal copy of any of the three roles —

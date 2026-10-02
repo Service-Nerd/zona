@@ -1719,11 +1719,8 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             }}>
               <span style={{
                 fontFamily: 'var(--font-ui)',
-                fontSize: '10px',
-                fontWeight: 700,
+                ...MICRO_LABELS.eyebrow,
                 color: 'var(--mute)',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
               }}>
                 {selectedSession.today ? "Today's session" : selectedSession.day}
               </span>

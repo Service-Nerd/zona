@@ -1,6 +1,7 @@
 'use client'
 
 import { zoneWeekStatement, type RunZoneOutcome } from '@/lib/coaching/zoneWeekStatement'
+import { MICRO_LABELS } from './microLabels'
 
 /**
  * P-04 — the weekly zone-compliance block on the Plan screen.
@@ -60,8 +61,10 @@ export default function ZoneWeekBlock({
     }}>
       <span aria-hidden style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: rail }} />
       <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em',
-        textTransform: 'uppercase', color: 'var(--mute)', marginBottom: 'var(--space-2)',
+        fontFamily: 'var(--font-ui)',
+        ...MICRO_LABELS.eyebrow,
+        color: 'var(--mute)',
+        marginBottom: 'var(--space-2)',
       }}>
         This week
       </div>

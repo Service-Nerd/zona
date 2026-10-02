@@ -134,11 +134,8 @@ function Eyebrow({ label, meta }: { label: string; meta?: string }) {
       <span
         style={{
           fontFamily: 'var(--font-ui)',
-          fontSize: '10px',
-          fontWeight: 700,
+          ...MICRO_LABELS.eyebrow,
           color: 'var(--mute)',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
         }}
       >
         {label}

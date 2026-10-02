@@ -17,6 +17,7 @@ import { notFound } from 'next/navigation'
 import { IdentityCard } from '@/components/shared/IdentityCard'
 import { TIER_BADGE } from '@/lib/tierBadge'
 import type { TierReason } from '@/lib/trial'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 const CASES: {
   title: string
@@ -79,7 +80,7 @@ export default function MePreviewPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '420px' }}>
         {CASES.map(c => (
           <div key={c.title} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+            <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '10px' }}>
               {c.title}
             </div>
             <div style={{ background: 'var(--bg)', padding: '12px', borderRadius: '10px' }}>
@@ -96,7 +97,7 @@ export default function MePreviewPage() {
 
         {/* TIER-BADGE-01 — the five access reasons, and the null that renders nothing. */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '10px' }}>
             Tier badge · five reasons, one still resolving
           </div>
           {TIER_CASES.map((reason) => (
@@ -121,7 +122,7 @@ export default function MePreviewPage() {
             condition precisely because an inline field has no button to press again, so
             it is the state most likely to be inherited rather than designed. */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '10px' }}>
             Inline edit — live, and the save always FAILS
           </div>
           <div style={{ background: 'var(--bg)', padding: '12px', borderRadius: '10px' }}>

@@ -614,7 +614,7 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
       {/* BACK-ARROW-TITLE-COLLIDE-01 am.1 — arrow, eyebrow and title as ONE group. */}
       <PinnedBackHeader onClick={onBack} padding="16px 20px 0">
         <div style={{ paddingTop: 'var(--space-4)' }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-2)' }}>
           Your training
         </div>
         {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner.

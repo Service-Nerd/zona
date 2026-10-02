@@ -5,6 +5,7 @@ import type { Plan } from '@/types/plan'
 import { formatDistance, type DistanceUnits } from '@/lib/format'
 import Button from '@/components/ui/Button'
 import BackButton from '@/components/shared/BackButton'
+import { MICRO_LABELS } from './microLabels'
 
 /**
  * P-02 — the diff a runner accepts before a parameter edit lands.
@@ -26,8 +27,9 @@ import BackButton from '@/components/shared/BackButton'
 function ScaleLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-      letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--mute)',
+      fontFamily: 'var(--font-ui)',
+      ...MICRO_LABELS.eyebrow,
+      color: 'var(--mute)',
       marginBottom: 'var(--space-2)',
     }}>{children}</div>
   )
