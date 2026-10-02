@@ -193,6 +193,23 @@ export type PrimaryMetric = 'distance' | 'duration'
 export interface Session {
   /** INV-PLAN-009: deterministic ID "w{N}-{day}" e.g. "w5-wed". Present on R23+ plans; absent on legacy. */
   id?: string
+  /**
+   * ENRICH-PARTIAL-02 — THIS SESSION's copy was reverted to the rule engine's
+   * while the rest of its week stayed enriched.
+   *
+   * 🔴 IT EXISTS FOR PROVENANCE, NOT BOOKKEEPING. `sessionNotesAreAiAuthored` is
+   * the single owner of "did a model write this?", and crediting a model for
+   * engine copy is a FALSE CLAIM while failing to credit it is only modesty
+   * (AI-PROVENANCE-01, which was measured at 12,972 of 31,517 sessions wrongly
+   * carrying Kit's byline). A week-level flag cannot express "four of these five
+   * sessions are Kit's", so without this field a session-level revert would put
+   * the AIMark over the engine's words — re-creating the exact defect that rule
+   * closed, on a narrower population where it is harder to notice.
+   *
+   * ⚠️ The enricher CANNOT set it: `EnrichedWeekSchema` exposes only `label` and
+   * `coach_notes`. It is written by `revertSessionsToRuleCopy` and nowhere else.
+   */
+  enrichment_reverted?: boolean
   type: SessionType
   /** Structural classification, generator-stamped. A long run and a race-week
    *  shakeout are both `type: 'easy'`; before `role`, they were told apart by

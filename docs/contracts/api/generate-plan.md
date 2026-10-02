@@ -248,6 +248,31 @@ If the AI enricher fails (timeout, invalid JSON, schema violation), the rule-eng
 returned unchanged. **No error surfaces to the user and generation always succeeds** — ADR-006's
 silent fallback is unchanged.
 
+**Changed by ENRICH-PARTIAL-02 (2026-10-02): the revert is a LADDER, narrowest first.**
+A post-enrich violation no longer discards more copy than it has to:
+
+| Rung | When | What survives |
+|---|---|---|
+| **session** | every violation names a `week` AND a `day` the plan contains | that session's copy reverts; **its siblings and the week's own label/theme stay enriched** |
+| **week** | violations are week-attributable but not session-attributable | `ENRICH-PARTIAL-01`'s behaviour, unchanged |
+| **full** | anything plan-level, or a narrower rung that did not clear the violations | `composedRule`, as before |
+
+**Every rung is re-validated, never assumed** — the rule `ENRICH-PARTIAL-01` already set.
+
+🔴 **A reverted session is stamped `Session.enrichment_reverted`, and that field is
+load-bearing for PROVENANCE, not bookkeeping.** `sessionNotesAreAiAuthored` is the single owner
+of *"did a model write this?"*, and `AI-PROVENANCE-01` holds the error asymmetric: crediting a
+model for engine copy is a **false claim**, failing to credit it is modesty. A week-level flag
+cannot express *"four of these five sessions are Kit's"*, so without the session flag this rung
+would put the AIMark over the engine's words. ⚠️ **It is in `SessionSchema` too** — a field absent
+from the Zod schema is stripped on save, so it would read correctly in memory and be gone by the
+time a screen asked. The enricher cannot set it: `EnrichedWeekSchema` exposes only `label` and
+`coach_notes`.
+
+**`ops_events` detail gains `outcome: 'partial_revert_session'` and `reverted_sessions`**, because
+a session revert and a week revert otherwise log identically and the narrowing would be invisible
+in production.
+
 **Changed by GEN-FIX-02 (2026-08-06):** the failure is no longer silent to *us*.
 
 - `enrich()` now returns `{ plan, outcome }`. `outcome` is `{ status: 'applied' }` or

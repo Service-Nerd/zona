@@ -10,7 +10,10 @@ import { validatePlan, enforceViolations } from '@/lib/plan/invariants'
 import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
 import { errorBaseline, violationsIntroducedBy, statusForReason } from '@/lib/plan/enrichAttribution'
-import { attributableWeeks, revertWeeksToRuleCopy } from '@/lib/plan/enrichPartialRevert'
+import {
+  attributableWeeks, revertWeeksToRuleCopy,
+  attributableSessions, revertSessionsToRuleCopy,
+} from '@/lib/plan/enrichPartialRevert'
 import { shouldServerPersist } from '@/lib/plan/enrichServerSave'
 import { waitUntil } from '@vercel/functions'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
@@ -529,10 +532,34 @@ export async function POST(req: NextRequest) {
             // that cannot be attributed to a week (plan-level and meta checks),
             // and for the case where reverting the named weeks does not actually
             // clear the violations — re-validated rather than assumed.
+            // ENRICH-PARTIAL-02 (2026-10-02) — try the NARROWEST repair first.
+            //
+            // A week is still too wide. Measured on live traffic the same day: one
+            // mis-named zone in ONE coach note cost a runner week 20 entirely, and
+            // another lost weeks 10, 12-16 and 18 — five sessions each, four of
+            // which were fine. ⚠️ Neither cause is a false positive: the prompt
+            // says "NEVER NAME A ZONE OTHER THAN THE SESSION'S OWN" and "never add
+            // a stride note to a session that has NO strides field", so the model
+            // broke an instructed rule and the invariants are right. The only
+            // honest lever is how much copy one mistake destroys.
+            //
+            // Ladder: session -> week -> full, and EVERY rung is re-validated
+            // rather than assumed, which is the rule ENRICH-PARTIAL-01 already set.
+            let repaired: Plan | null = null
+            const { sessions: badSessions, allAttributable: allSessionAttributable } =
+              attributableSessions(introduced, finalPlan)
+            let repairedAtSessionLevel = false
+            if (allSessionAttributable && badSessions.size > 0) {
+              const candidate = revertSessionsToRuleCopy(finalPlan, composedRule, badSessions)
+              if (violationsIntroducedBy(baseline, validatePlan(candidate, input)).length === 0) {
+                repaired = candidate
+                repairedAtSessionLevel = true
+              }
+            }
+
             const { weeks: badWeeks, allAttributable } =
               attributableWeeks(introduced, finalPlan)
-            let repaired: Plan | null = null
-            if (allAttributable && badWeeks.size > 0) {
+            if (!repaired && allAttributable && badWeeks.size > 0) {
               // ADR-020 Option A — composedRule, not rulePlan: the latter has no
               // foundation weeks, so rule copy for a foundation week is only
               // found on the composed plan.
@@ -564,8 +591,15 @@ export async function POST(req: NextRequest) {
               'plan_enrich_failed',
               {
                 reason: 'post_enrich_invalid',
-                outcome: repaired ? 'partial_revert' : 'full_revert',
-                reverted_weeks: repaired ? Array.from(badWeeks) : 'all',
+                // ENRICH-PARTIAL-02 — the RUNG matters in the data. A session
+                // revert and a week revert both used to log as 'partial_revert',
+                // so the narrowing would have been invisible in production and
+                // the next person measuring blast radius would see no change.
+                outcome: !repaired ? 'full_revert'
+                  : badSessions.size > 0 && repairedAtSessionLevel ? 'partial_revert_session'
+                  : 'partial_revert',
+                reverted_sessions: repairedAtSessionLevel ? Array.from(badSessions) : undefined,
+                reverted_weeks: !repaired ? 'all' : repairedAtSessionLevel ? undefined : Array.from(badWeeks),
                 codes: introduced.map(v => v.code),
                 // ENRICH-PARTIAL-01 — `weeks` and `messages` added 2026-09-04.
                 // The event recorded codes and nothing else, so diagnosing the

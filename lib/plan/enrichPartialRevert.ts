@@ -72,6 +72,88 @@ export function revertWeeksToRuleCopy(
   }
 }
 
+/** A session a violation names: `"<week>:<day>"`. */
+export type SessionKey = string
+export const sessionKey = (week: number, day: string): SessionKey => `${week}:${day}`
+
+/**
+ * Sessions a set of violations can be attributed to — ENRICH-PARTIAL-02.
+ *
+ * 🔴 WHY A SECOND, NARROWER ATTRIBUTION. `ENRICH-PARTIAL-01` reverts an offending
+ * WEEK and its own reasoning is *"only containing the blast radius does"*. A week
+ * is still too wide: measured on live traffic 2026-10-02, a single mis-named zone
+ * in ONE coach note cost a runner week 20's copy entirely, and another lost weeks
+ * 10, 12–16 and 18 — five sessions each, four of which were fine.
+ *
+ * ⚠️ AND THE TWO CAUSES THAT REACH HERE ARE NOT FALSE POSITIVES. The enrich prompt
+ * says *"NEVER NAME A ZONE OTHER THAN THE SESSION'S OWN"* (ENRICH-ZONE-01) and
+ * *"never add a stride note to a session that has NO strides field"*. The model
+ * broke an instructed rule and the invariants are RIGHT to fire, so the only
+ * honest lever is how much copy one mistake destroys.
+ *
+ * A violation is session-attributable only with BOTH a week and a `day` that the
+ * plan actually contains. Anything week-level or plan-level is not, and the caller
+ * must fall back — never guess.
+ */
+export function attributableSessions(
+  violations: readonly Violation[], plan: Plan,
+): { sessions: Set<SessionKey>; allAttributable: boolean } {
+  const sessions = new Set<SessionKey>()
+  let allAttributable = true
+  for (const v of violations) {
+    const week = plan.weeks.find(w => w.n === v.week)
+    // No day → the violation is about the WEEK (its label/theme) or the plan.
+    // A day the week does not contain → not attributable; do not invent one.
+    if (typeof v.week !== 'number' || !week || !v.day || !week.sessions?.[v.day as keyof Week['sessions']]) {
+      allAttributable = false
+      continue
+    }
+    sessions.add(sessionKey(v.week, v.day))
+  }
+  return { sessions, allAttributable }
+}
+
+/**
+ * Return `enriched` with the named SESSIONS' copy restored from `rulePlan`.
+ *
+ * Copy only — `label` and `coach_notes` — exactly as `revertWeekCopy` does per
+ * session, and for the same reason: the enricher cannot write a numeric, so
+ * restoring the whole session object would work today and start discarding engine
+ * output the moment `EnrichedWeekSchema` widened.
+ *
+ * 🔴 EACH REVERTED SESSION IS STAMPED `enrichment_reverted`. The week stays
+ * enriched, so the week-level flag cannot say this, and `sessionNotesAreAiAuthored`
+ * would otherwise put Kit's byline over the engine's words — the AI-PROVENANCE-01
+ * defect (12,972 of 31,517 sessions) on a narrower and less visible population.
+ */
+export function revertSessionsToRuleCopy(
+  enriched: Plan, rulePlan: Plan, keys: ReadonlySet<SessionKey>,
+): Plan {
+  if (keys.size === 0) return enriched
+  const ruleByN = new Map(rulePlan.weeks.map(w => [w.n, w]))
+  return {
+    ...enriched,
+    weeks: enriched.weeks.map(w => {
+      const rule = ruleByN.get(w.n)
+      if (!rule) return w
+      const days = (Object.keys(w.sessions ?? {}) as (keyof Week['sessions'])[])
+        .filter(d => keys.has(sessionKey(w.n, String(d))))
+      if (!days.length) return w
+      const sessions = { ...w.sessions }
+      for (const day of days) {
+        const sn = sessions[day]
+        const r = rule.sessions?.[day]
+        if (!sn || !r) continue
+        sessions[day] = { ...sn, label: r.label, coach_notes: r.coach_notes, enrichment_reverted: true }
+      }
+      // ⚠️ The WEEK's own label/theme are NOT touched and `enrichment_reverted` is
+      // NOT set on it: the week's copy is still the model's, and marking it would
+      // under-credit four sessions to fix one.
+      return { ...w, sessions }
+    }),
+  }
+}
+
 function revertWeekCopy(week: Week, rule: Week): Week {
   const sessions = { ...week.sessions }
   for (const day of Object.keys(sessions) as (keyof Week['sessions'])[]) {

@@ -34,7 +34,7 @@ import { isTimeTrial } from './sessionRole'
 const ENRICHED_STATES = new Set(['applied', 'applied_partial'])
 
 export function sessionNotesAreAiAuthored(
-  session: Pick<Session, 'type' | 'role' | 'label' | 'coach_notes'>,
+  session: Pick<Session, 'type' | 'role' | 'label' | 'coach_notes' | 'enrichment_reverted'>,
   meta: Plan['meta'] | undefined | null,
   /** The week the session sits in, when the caller has it. A week reverted to
    *  rule copy by ENRICH-PARTIAL-01 carries the engine's words on an otherwise
@@ -46,6 +46,11 @@ export function sessionNotesAreAiAuthored(
   // ENRICH-PARTIAL-01 reverts an offending week to rule copy and keeps the rest,
   // so 'applied_partial' is not a per-session guarantee.
   if (week?.enrichment_reverted) return false
+  // ENRICH-PARTIAL-02 narrows that further: a single offending SESSION is reverted
+  // while its week stays enriched, so the week flag cannot speak for it. Checked
+  // BEFORE the time-trial arm because it is the stronger statement — this copy is
+  // demonstrably the engine's, whatever kind of session it is.
+  if (session.enrichment_reverted) return false
   // §78's time trial is deliberately skipped by `applyEnrichment` (its copy is
   // instruction, not voice), so its notes are the engine's on EVERY plan,
   // enriched or not.

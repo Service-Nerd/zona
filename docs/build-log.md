@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `ENRICH-PARTIAL-02` · one bad note should not cost a whole week
+**Shipped:** Session-level enrichment revert, with the provenance flag that makes it honest.
+
+**Dev learning — two of my three "false positives" weren't.** I had told the founder that `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` and the invented-strides check were probably false positives worth relaxing. Then I read the enrich prompt. It says, in capitals, *"NEVER NAME A ZONE OTHER THAN THE SESSION'S OWN"*, and *"never add a stride note to a session that has NO strides field"*. The model broke an instructed rule both times and the invariants were right. **The lesson is to read what the producer was TOLD before deciding the checker is wrong** — the same shape as checking doctrine before filing a finding, one layer down.
+
+So the fix isn't to relax anything; it's to stop one mistake destroying so much. A week was already the containment unit, and a week is five sessions.
+
+**The interesting constraint was provenance, not the revert.** Reverting a session is ten lines. But `AI-PROVENANCE-01` — measured at 12,972 of 31,517 sessions wrongly carrying Kit's byline — holds that crediting a model for engine copy is a false claim, while failing to credit it is only modesty. A week-level flag cannot express *"four of these five sessions are Kit's"*. So a session-level revert without a session-level flag would have re-created that exact defect, on a narrower and much less visible population. The flag had to go in three places to be real: the type, the revert function, and **the Zod schema** — a field absent from the schema is stripped on save, so it would have read correctly in memory and been gone by the time a screen asked. That's the arm I'd have been least likely to write without having been bitten by inert fields before.
+
+**And one bit of instrumentation I nearly skipped:** a session revert and a week revert both logged as `partial_revert`. Had I left that, the narrowing would have been invisible in production and the next person measuring blast radius would have seen no change at all.
+
+**Honest limit:** nothing is re-enriched for the runners already affected. Two of today's six still have no AI voice, and the `parse_error` cause remains unknown after three dead hypotheses — token budget is now ruled out too, measured at 51% of the limit worst case across 22 real plans.
+
+---
+
 ## 2026-10-02 — `ENRICH-PARSE-DIAG-01` + `ENRICH-COPY-NEGATION-01` · two fixes, and both my first hypotheses were wrong
 **Shipped:** `parse_error` now records why it failed, and the copy check can read "No quality work this week."
 

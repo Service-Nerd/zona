@@ -15,6 +15,14 @@ export const SessionTypeSchema = z.enum([
 ])
 
 export const SessionSchema = z.object({
+  // ENRICH-PARTIAL-02 — MUST be in this schema, not only in the TS type. The plan
+  // is parsed through here on the way to and from `plans.plan_json`, so a field
+  // absent from the schema is STRIPPED on save: the flag would read correctly in
+  // memory and be gone by the time a screen asked, and `sessionNotesAreAiAuthored`
+  // would then credit a model for engine copy with nothing to show it was wrong.
+  // Asserted by a round-trip test, because "I added it to the type" is exactly the
+  // shape of a field that looks wired and is not.
+  enrichment_reverted: z.boolean().optional(),
   // INV-PLAN-009: deterministic IDs on R23+ plans; absent on legacy
   id:             z.string().optional(),
   type:           SessionTypeSchema,
