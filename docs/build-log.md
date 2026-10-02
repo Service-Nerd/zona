@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-02 — Design Board, three rulings · the item was wrong three times out of three
+## 2026-10-02 — Design Board, three rulings: `A11Y-MOCKUP-CONTRAST-01` · `TAP-TARGET-DECISIONS-01` · `INTERSTITIAL-TITLE-ROLE-01` — the item was wrong three times out of three
 **Shipped:** `A11Y-MOCKUP-CONTRAST-01` (seven token swaps, nothing resized) and `TAP-TARGET-DECISIONS-01` part 2 (the 44px floor's scope written down once, and the homepage's App Store CTA fixed).
 
 **Dev learning:** Every one of the three items I took to the board stated something that measurement contradicted, and in each case the false statement was the thing the options had been priced against.
@@ -22,6 +22,8 @@ The a11y item said the mockup was `aria-hidden` so screen readers skip it. `Phon
 **The honest bit:** I also had to go back to the founder and correct my own framing of a choice he had already made. I offered "make the mockup a still" and described the cost as "it stops being tappable". The real cost was that `TabbedPhone` holds three screens — Today, Plan and Coach — so a still would have removed two product screens from the homepage. He had chosen it on my description. I under-priced an option and he agreed to it; that is on me, not him.
 
 **Hook material:** Three backlog items, three false premises, and in every case the false bit was what the options had been priced against. And: my contrast checker produced seven confident failures by measuring text against a 6px dot.
+
+**On `INTERSTITIAL-TITLE-ROLE-01` specifically:** the item said three full-screen asks shared an undocumented heading shape. Measured, the two LIVE asks agree exactly at 24px/600 and only the RETIRED welcome screen differed at 22/500 — one consistent role plus a corpse, not three-way drift, and those get opposite treatments. The corpse was 41 unreachable lines (`showWelcome` was `useState(false)` and its only setter had been commented out since the v2 brand migration). **The deletion was verified by a gate firing on its own declaration** — `appScreenTitle.test.ts` carries an arm literally named *"a stale exemption is a lie"*, and it went red naming the welcome screen the moment the branch went. That is the most satisfying kind of check: one that notices you removed the thing it was told to ignore.
 
 **Postable?:** yes — "the rule and its exceptions lived in different files, so it got decided eleven times" is a strong one, and the 6px dot is a good self-own.
 

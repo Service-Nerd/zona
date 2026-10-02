@@ -432,7 +432,8 @@ say "── CONTRACTS: a SHARED component with no contract at all ──"
 # This asks the inverse: a component under `components/shared/` that EXPORTS a prop
 # interface and is imported by more than one file should have a contract. Existing
 # debt is declared below so it is visible and cannot grow.
-UNCONTRACTED_BASELINE=50   # 51 → 50 (QUIT-TAB-DEAD-01, 2026-10-01): the debt was not PAID, the component was DELETED. An uncontracted shared component leaving the tree lowers this exactly as writing its contract would, and the audit cannot tell the two apart — worth knowing before quoting a falling number as documentation progress.
+UNCONTRACTED_BASELINE=49   # 50 → 49 (ME-ADJUSTMENTS-EXTRACT-01, 2026-10-02): debt genuinely PAID — `PlanAdjustmentsScreen` was extracted AND contracted in the same commit, so a shared component gained a contract rather than leaving the tree. 🥇 The arm demanded this move itself, on the same day the ship-record ratchet was restored from a baseline that had been lowered on an UNMEASURED premise — a register asking to be lowered because it re-counted is the only direction it may move on its own.
+                           # 51 → 50 (QUIT-TAB-DEAD-01, 2026-10-01): the debt was not PAID, the component was DELETED. An uncontracted shared component leaving the tree lowers this exactly as writing its contract would, and the audit cannot tell the two apart — worth knowing before quoting a falling number as documentation progress.
                            # 🔴 MEASURED, NOT GUESSED. I set this to 14 first — today's
                            # extracted screens — on the assumption the rest of the tree was
                            # contracted. It is not: 52 shared components have no contract,
