@@ -2652,7 +2652,7 @@ fails if debt is paid and the register is not.
 
 ## ⚖️ FILED 2026-09-28 — the zones surface, RULED BY BOTH BOARDS and re-specified
 
-### 🟡 `ZONES-SURFACE-01` — Training Zones under Me (HR / Pace)
+### ✅ `ZONES-SURFACE-01` — **SHIPPED. Training Zones under Me (HR / Pace), and the open decision resolved the PREFERRED way**
 
 🧭 **DESIGN BOARD — SHIP WITH AMENDMENT** · 🏃 **COACHING BOARD — CORRECT WITH
 AMENDMENT** (`ZONES-BEGINNER-BANDS-01`). **Both rulings are done.** Full record:
@@ -2681,6 +2681,27 @@ the engine and the client import — **preferred**, because a second producer of
 is the duplication class this repo keeps paying for — or add a FREE route; (2) whether
 opening a PAID route's VDOT chain to a FREE surface needs the SLT (probably not, no tier
 changes).
+
+✅ **CLOSED 2026-10-02 — ALL OF IT IS BUILT, AND DECISION (1) WENT THE PREFERRED WAY.**
+`components/shared/TrainingZonesScreen.tsx` ships the HR / Pace tabs (hidden unless BOTH
+exist), the ceiling leading in two units as equal-status twins rather than a fallback pair,
+and §24b's **segment gate** — a beginner's null marathon / HM bands are **not rendered and
+nothing is said about them.** `bandCeiling` and `PaceGuide` come from **`lib/plan/paceBands.ts`**,
+the pure module both the engine and the client import, and the screen **reads the `PaceGuide`
+the engine built rather than recomputing it from VDOT fractions** — so no second producer of
+pace bands exists. Guarded by `trainingZones.markup.test.ts` and `zoneSheetReach.test.ts`,
+with `/zones-preview` as the harness. Three ships landed on top of it:
+`ZONES-ZONE-SHEET-GONE-01`, `ZONES-HR-SHEET-01`, `ME-BENCHMARK-DUP-01`.
+
+🔴 **AND THE AUDIT WAS SILENCED ON THIS ID THE WHOLE TIME.** `DOC-AUDIT-REG-FORMAT-01`
+gave the shipped-but-open arm its **first declared exemption** for this item, with a true
+reason: *"the RULINGS shipped and carry a registry row; the BUILD was re-specified
+afterwards."* **The build then shipped and nobody came back to the exemption**, so the arm
+stayed quiet on an ID that was simply stale-open. ⚠️ **The register's own comment guarded
+against an entry with NO reason and said nothing about an entry whose reason had become
+FALSE** — the same failure one step later. The entry is deleted and the list now has an
+**inverse arm**: an exemption for an ID that is no longer both shipped and open fails the
+build, exactly as `configPrincipleSync` fails on a stale baseline row.
 
 ✅ **Already landed:** §24b Amendment, both register rows, the decision note.
 

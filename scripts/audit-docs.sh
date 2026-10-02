@@ -276,14 +276,31 @@ sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`? *(\([^)]*\) *)?[—/|].*/\1/p'
 # reason. Added 2026-09-29, when widening `_reg` to the registry's second row format
 # surfaced the first real instance. This is a register, not a silencer: an entry with no
 # reason beside it is the thing it exists to prevent.
-#   ZONES-SURFACE-01 — the RULINGS shipped (both boards) and carry a registry row; the BUILD
-#   was re-specified afterwards on a measurement the boards did not have (the pace bands are
-#   not reachable from a client bundle, and `/api/race-times` is PAID). Ruling recorded,
-#   build open: two different objects under one ID.
-_SHIPPED_AND_OPEN_OK='ZONES-SURFACE-01'
+# 🔴 AND AN EXEMPTION THAT OUTLIVES ITS REASON IS A SILENCER. The note above guarded
+# against an entry with NO reason; it said nothing about an entry whose reason has since
+# become FALSE, which is the same failure one step later.
+#   ZONES-SURFACE-01 was exempted 2026-09-29 because "the RULINGS shipped and carry a
+#   registry row; the BUILD was re-specified afterwards" — two objects under one ID. The
+#   build then SHIPPED (`components/shared/TrainingZonesScreen.tsx`, plus
+#   `ZONES-ZONE-SHEET-GONE-01`, `ZONES-HR-SHEET-01` and `ME-BENCHMARK-DUP-01` on top of
+#   it), including the PREFERRED half of the open decision — the band derivation lives in
+#   `lib/plan/paceBands.ts` and the screen reads the `PaceGuide` the engine built rather
+#   than recomputing it. Nobody came back to the exemption, so for days the arm was
+#   silenced on an ID that was simply stale-open. Entry removed 2026-10-02.
+# Empty, and its emptiness is checked below in BOTH directions.
+_SHIPPED_AND_OPEN_OK=''
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1
+done
+# The inverse: an exemption for an ID that is no longer both shipped AND open has done its
+# job and must go, exactly as `configPrincipleSync` fails on a stale baseline row. Without
+# this the list can only ever grow, and a register that only grows is one nobody trusts.
+for id in $_SHIPPED_AND_OPEN_OK; do
+  if ! comm -12 /tmp/_reg /tmp/_open | grep -qx "$id"; then
+    say "  STALE EXEMPTION $id is no longer both shipped and open — delete it from _SHIPPED_AND_OPEN_OK"
+    afail=1; fail=1
+  fi
 done
 [ "$afail" = "0" ] && say "  ok"
 
