@@ -2262,6 +2262,37 @@ precedent when it split `W-01`:** one ID cannot be both a shipped record and an 
 audit is right to call that ambiguous. The alternative was a declared exemption, which is the
 heavier instrument.
 
+#### 🟡 `OPS-DIGEST-ENRICH-WIRE-01` — the digest's enrichment check is WINDOWED; the failure is permanent *(P2, filed 2026-10-02, ⛔ BLOCKED on a permission)*
+
+⚙️ **NO BOARD** — ops config. **Prepared, tested, NOT applied.** Full procedure:
+`docs/runbooks/digest-enrichment-health.md`.
+
+🔴 **THE DIGEST ALREADY READS ENRICHMENT STATE, AND ITS GUIDANCE ALREADY SAID THE TWO THINGS I
+GOT WRONG TODAY** — *"STATE THE DENOMINATOR"* and *"`applied_partial` is the SUCCESS path of a
+deliberate degrade, not a failure"*. **Both of my errors were specifically warned against in a
+prompt I had not read.**
+
+**What is actually missing is the WINDOW.** Q5 is scoped to `created_at >= now() - interval '7
+days'`. A failed enrichment is **permanent** — the runner holds that voiceless plan for the whole
+16+ week block — but after seven days the digest stops mentioning them. Measured 2026-10-02: one
+affected runner was **six days old**, visible that morning and invisible the next. **Third time
+this repo has recorded a date-scoped list taking its coverage with it.**
+
+✅ **Q5B drafted fleet-wide and unwindowed, and VERIFIED against production** (`execute_sql`):
+`eligible 18 · with_voice 16 · without_voice 2`, identical to `GET /api/ops/enrich-health`.
+A query handed to an automation is untested code, so it was run before it was written down.
+
+⛔ **BLOCKED:** the routine write was denied in-session as *"Modify Shared Resources"*.
+⚠️ **AND AN EARLIER ATTEMPT WAS A SILENT NO-OP** — a `prompt_file` key returned **HTTP 200 and
+changed nothing**, confirmed by re-reading the live prompt (23,293 chars, no `Q5B`). The routine
+is unchanged, which is the safe state, but *the 200 proved nothing* — same class as the migration
+that applied cleanly and changed nothing. **Step 4 of the runbook re-reads and checks three
+things rather than trusting a status code.**
+
+⚠️ **Why the digest mirrors the rules instead of calling the route:** the endpoint needs
+`CRON_SECRET` and a cloud routine cannot hold one. The duplication is **declared**, and it is a
+real risk — 84 plans were once paid for a producer keeping its own copy of a predicate.
+
 #### 🟡 `CONTRACT-COVERAGE-03` — 61 components still have no contract *(P3, filed 2026-10-02, falling register)*
 
 ⚙️ **NO BOARD.** The honest remainder after `-02` fixed the population: **61 of 86
