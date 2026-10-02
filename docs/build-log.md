@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — MICRO-LABEL-HANDROLL-01 · the count was 32, the answer was 51, and both were honest
+**Shipped:** 51 hand-rolled copies of a canonical micro-label now spread `MICRO_LABELS` instead of retyping its values. Zero visible delta.
+
+**Dev learning:** Two registers can watch the same objects and be blind to each other **by construction**, not by accident. `microLabel.test.ts` counts a literal as debt with `if (!CANON.has(size|weight|ls)) n++` — it only fires when the VALUES are wrong. A label that retypes the *correct* values is canonical, so it can never enter that register. The debt was 52 items sitting inside a check written to find exactly this class, invisible because the check asks "is this value right?" and the defect is "is this value *sourced* right?". The fix was to write the exact inverse arm and reuse the same parser, so the two now partition the population: converted, or wrong, or registered, nothing else.
+
+The other lesson is about my own measurement. The item said 32; I measured 51. Neither was a lie — the filing quotes the signature as `fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em'`, in that order, and most real copies order it differently or spread across four lines. An order-sensitive single-line match cannot see them. This file already carried two recorded instances of the same class (a short glob; a regex that allowed exactly one space) and I generated a third while working inside it.
+
+**Product/creator learning:** Nothing rendered differently today and nothing will until someone edits the role — at which point 144 sites move and 52 stay behind. That is the whole cost, and it is entirely in the future, which is precisely why this class of debt never gets prioritised. "No visible delta" is the argument for doing it cheaply now, not the argument for skipping it.
+
+**AI-building learning:** The most valuable thing I did was revert my own change. I converted `PhoneFrame.tsx` — a drawing of a simulated iPhone at mockup scale — because its label is 10px/700/0.08em, byte-identical to the app's eyebrow. Every test passed. `tsc` passed. The build passed. It was still wrong: binding the *drawing* to the app's live token means a future board ruling on the eyebrow silently redraws the picture. **No test could have caught it, because nothing was visibly different.** I found it by reading the exemption comment in the register and asking why marketing was excluded. Mechanical verification tells you whether you broke something; it cannot tell you whether you coupled two things that were deliberately kept apart.
+
+**The honest bit:** I nearly quoted 32 as fact. The re-measure took four minutes and changed the scope by 60%. I also assumed which two tests failed during falsification case 3 and had to go back and actually check — the assumption was right, which is worse, because being right by luck is how you learn to stop checking.
+
+**Hook material:** 52 pieces of technical debt sat inside the exact check written to find them, invisible because the check asked "is this value correct?" and the bug was "is this value copied?". And: the one change I reverted passed every test, the typecheck and the production build — I caught it by reading a comment.
+
+**Postable?:** yes — the two-registers-blind-to-each-other story is strong, and "the change I reverted passed everything" is a better hook than most.
+
 ## 2026-10-01 — Design wave 3 · BACK-HEADER-OWNER-01 · SITE-HEADER-EDGE-01 · STICKY-INERT-SCREENS-01 · SHEET-ARIA-LABEL-01 · QUIT-TAB-DEAD-01
 **The item said thirteen screens and the code said four.**
 **Shipped:** `BACK-HEADER-OWNER-01` (a compact header-title role) · `SITE-HEADER-EDGE-01` (DON'T SHIP, and the record is the deliverable) · `STICKY-INERT-SCREENS-01` (three dead scroll declarations removed) · `SHEET-ARIA-LABEL-01` (a dialog cannot ship unnamed) · `QUIT-TAB-DEAD-01` half 1 (a dead component deleted).

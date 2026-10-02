@@ -15,6 +15,15 @@ Every small tracked label in this component resolves through `MICRO_LABELS` — 
 captions and week markers use `MICRO_LABELS.eyebrow` (10px / 700 / 0.08em / uppercase).
 **No hand-typed `fontSize` on a label**, which `microLabel.test.ts` enforces.
 
+🔴 **BOTH HALVES OF THAT SENTENCE WERE FALSE UNTIL 2026-10-02 (`MICRO-LABEL-HANDROLL-01`).**
+This component carried a hand-typed `10px / 700 / 0.08em / uppercase` label, and
+`microLabel.test.ts` did **not** enforce the claim: its register counts a literal only when
+its VALUES are wrong (`if (!CANON.has(...)) n++`), so a label retyping the *canonical* values
+was conformant to it by construction. **The contract described the INTENT and the check
+measured the MECHANISM's output, and nobody compared them** — the `NOEMDASH-JSX-TEXT-01`
+class. The label now spreads the role, and a new arm in that file forbids a canonical literal
+outright, so the sentence above is true **and** enforced for the first time.
+
 ✅ Verified by computed CSS on `/plan-arc-preview`: **41 labels, all canonical eyebrow.**
 
 ## Prop Interface

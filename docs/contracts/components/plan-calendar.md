@@ -101,6 +101,11 @@ and **0.12em → 0.1em**, and the trailing value moved to the eyebrow role
 (10px/700/0.08em). That is the convergence the ruling asked for, not an accident.
 **11px is not a level** — every 11px micro-label resolves to one of the three roles.
 
+⚠️ **FOUR EYEBROW LABELS IN THIS FILE STILL HAND-TYPED THE CANONICAL VALUES UNTIL
+2026-10-02** (`MICRO-LABEL-HANDROLL-01`). The values were right, so nothing rendered
+differently and the register above could not see them — it only counts a literal whose values
+are WRONG. They now spread `MICRO_LABELS.eyebrow`, and a new arm forbids a canonical literal.
+
 
 - Past weeks are collapsed behind a "Load N past weeks" button. Shown when tapped.
 - Its three moss controls ("Load N past weeks", the move-confirm and the abandon-move bar) render
