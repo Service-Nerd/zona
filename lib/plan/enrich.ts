@@ -8,6 +8,7 @@
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { isTimeTrial } from './sessionRole'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
+import { labelImplications } from './invariants'
 import { EnrichedPlanSchema } from './schema'
 import type { Tier } from './ruleEngine'
 import { isFeatureAllowed } from './canUseFeature'
@@ -401,6 +402,50 @@ const STRIDE_NOTE_RE = /strides/i
  * is whether a PARAPHRASE should ever be accepted — and with the exact string
  * preserved, it no longer has to be asked under duress.
  */
+/**
+ * ENRICH-LABEL-CLASS-01 — the enricher may rename a session. It may not rename it
+ * into a different PHYSIOLOGICAL CLASS.
+ *
+ * ── WHAT THIS STOPS, MEASURED ────────────────────────────────────────────────
+ * `INV-PLAN-LABEL-MATCHES-PACE` judges a session's prescribed pace against T-pace
+ * when its LABEL says threshold/tempo/cruise, and against vVO2max when it says
+ * vo2max (§19: *"'Threshold'/'Tempo'/'Cruise' MUST land at T-pace"*). So the label
+ * decides which band applies, and the enricher writes the label.
+ *
+ * Measured 2026-10-02 across 90 plans / 795 quality sessions carrying a pace:
+ *   · **0 of 480** already-in-scope sessions are outside their band — the engine
+ *     never mislabels, and this check has never caught an engine defect.
+ *   · **75 (9.4%)** carry a correct, legitimately-faster-than-T pace with NO
+ *     threshold vocabulary. `CV intervals` (60) and `Thirty-thirty` (15) are all
+ *     of them: critical-velocity and 30/30 work, rightly faster than threshold.
+ * A single rename of one of those into "tempo" makes the label LIE about the
+ * prescription, and the invariant is right to fire. Observed live: a goal-anchored
+ * session at 6.63/km relabelled `"threshold"` against a T-pace of 7.05.
+ *
+ * ── WHY A MERGE GUARD AND NOT A PROMPT RULE ──────────────────────────────────
+ * The prompt already carries rules of this kind and `ENRICH-PARTIAL-01` records why
+ * that is not enough, in its own words: *"A prompt fix lowers the per-week odds; it
+ * cannot make an LLM's word choice a guarantee. Only containing the blast radius
+ * does."*
+ *
+ * ⚠️ IT IS A SCALPEL ON ONE FIELD. Today a cross-class rename costs the whole
+ * session's copy (ENRICH-PARTIAL-02 reverts it). This keeps the enriched
+ * `coach_notes` and restores only the engine's LABEL, so the runner gets the voice
+ * AND an honest name. A within-class rename passes untouched — "Quality — threshold"
+ * to "Threshold intervals" is voice, which is the enricher's job.
+ *
+ * NOT A DOCTRINE CHANGE, which is why it is here and not at the board: §19 is
+ * unchanged and no prescription moves. This stops the merge breaking it.
+ */
+export function preserveLabelClass(engineLabel: string | undefined, enrichedLabel: string): string {
+  const a = labelImplications(engineLabel)
+  const b = labelImplications(enrichedLabel)
+  // Compared field by field against the SHARED owner, so the merge and the
+  // invariant cannot disagree about what a label claims.
+  if (a.vo2 === b.vo2 && a.threshold === b.threshold && a.easy === b.easy) return enrichedLabel
+  return engineLabel ?? enrichedLabel
+}
+
 const ENGINE_PRESCRIPTION_NOTES = [STRIDE_NOTE_RE] as const
 
 // Re-attach the engine's stride line when the enricher's rewrite dropped it. A
@@ -592,7 +637,9 @@ export function mergePlan(
       // tells the runner what the session is for, and a renamed measurement is
       // the same defect one field over.
       if (isTimeTrial(session)) continue
-      if (es.label) session.label = es.label
+      // ENRICH-LABEL-CLASS-01 — a rename may carry voice, not a different
+      // physiological claim. See `preserveLabelClass`.
+      if (es.label) session.label = preserveLabelClass(session.label, es.label)
       // §28 — keep the engine's stride line if the enricher's rewrite dropped it
       // (session.coach_notes still holds the engine notes at this point).
       if (es.coach_notes) {

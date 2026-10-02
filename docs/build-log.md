@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `ENRICH-LABEL-CLASS-01` · the label decides which band judges the pace
+**Shipped:** The enricher can rename a session for voice, but not into a different physiological class.
+
+**Dev learning:** `INV-PLAN-LABEL-MATCHES-PACE` checks a session's prescribed pace against T-pace *when the label says threshold, tempo or cruise*. So the label selects the test — and the enricher writes the label. That's a control-flow dependency on a string a language model chooses.
+
+Measuring it was the part that changed my mind about what to fix. Across 90 plans and 795 quality sessions carrying a pace target, **zero of the 480 already-in-scope sessions were outside their band.** The engine never mislabels. This check has never caught an engine defect in its life; its entire live population is enricher renames. Meanwhile 75 sessions — 9.4% — carry a correct pace that is legitimately faster than threshold and carry no threshold vocabulary, and they are exactly two families: `CV intervals` and `Thirty-thirty`. Critical-velocity and 30/30 work. One rename of either into "tempo" makes the label lie, and the invariant is right to fire.
+
+**So the invariant stays and the engine stays.** The only thing wrong was the merge, and the fix is the third instance of a pattern this file already had: `preserveStrideNote` keeps an engine note the model dropped, `preserveEngineNote` does the same for fuelling, and now `preserveLabelClass` keeps an engine label the model reclassified. A scalpel on one field — the enriched coach notes survive, only the lying name is refused, so the runner gets the voice *and* an honest label. That's strictly better than what shipped two hours ago, where the same mistake cost the session's whole copy.
+
+**The bit I'd defend hardest:** the classifier is *extracted*, not re-written. `labelImplications()` is now read by both the invariant and the merge, because two copies of "what does this label claim" is precisely the drift that cost 84 plans when `copyClaimsIntensity`'s producer kept its own regexes. And it returns three independent booleans rather than an enum — the band arm asks for `threshold && !vo2`, so collapsing them would change behaviour while looking like tidying. I falsified that specific temptation: making `threshold` exclusive of `vo2` turns an arm red.
+
+**And a correction worth recording:** I spent the afternoon calling this `HM-ANCHOR-VS-GOAL-01`, citing my own memory index. That item shipped on 2026-09-22 with its costs measured. The index line saying it's still live is wrong, and I propagated it into several explanations before checking.
+
+---
+
 ## 2026-10-02 — `OPS-ENRICH-REMEDIATE-01` executed · the first write was incomplete and only the database said so
 **Shipped:** Both affected runners have their AI voice back. `without_voice` 2 → 0 of 18.
 

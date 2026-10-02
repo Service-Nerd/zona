@@ -810,6 +810,38 @@ export function withoutNegatedClauses(text: string): string {
     .join(' | ')
 }
 
+/**
+ * What a session LABEL claims physiologically — the single owner (§19).
+ *
+ * 🔴 EXTRACTED, NOT RE-WRITTEN, AND THAT IS THE WHOLE POINT. These three readings
+ * decide whether `INV-PLAN-LABEL-MATCHES-PACE` judges a session's pace against
+ * T-pace, against vVO2max, or not at all. `mergePlan` now needs the SAME readings
+ * to refuse an enricher rename that crosses a class — and a second copy of them is
+ * exactly the drift that cost 84 plans when `copyClaimsIntensity`'s producer kept
+ * its own regexes (COMPLIANCE-FIX-3).
+ *
+ * ⚠️ RETURNS THREE INDEPENDENT BOOLEANS, NOT AN ENUM. They are not mutually
+ * exclusive in the rule they encode — the band arm asks for `threshold && !vo2`
+ * precisely because a label can read as both — so collapsing them to one value
+ * would change behaviour while looking like a tidy-up.
+ *
+ * Measured 2026-10-02, 90 plans / 795 quality sessions with a pace target: **0 of
+ * the 480 already-in-scope sessions are outside their band**, so this check has
+ * never caught an engine defect. Its entire live population is enricher renames —
+ * 75 sessions (9.4%) carry a correct, legitimately-faster-than-T pace with no
+ * threshold vocabulary, and `CV intervals` and `Thirty-thirty` are all of them.
+ */
+export interface LabelImplications { vo2: boolean; threshold: boolean; easy: boolean }
+
+export function labelImplications(label?: string | null): LabelImplications {
+  const l = (label ?? '').toLowerCase()
+  return {
+    vo2: l.includes('vo2max') || l.includes('vo2 max'),
+    threshold: l.includes('threshold') || l.includes('tempo') || l.includes('cruise'),
+    easy: l.includes('easy') || l.includes('steady') || l.includes('aerobic') || l.includes('recovery'),
+  }
+}
+
 /** Does this week's copy promise intensity the week must actually contain? */
 export function copyClaimsIntensity(label?: string | null, theme?: string | null): boolean {
   // ⚠️ THE SAME STRIPPING AS THE CHECKER, DELIBERATELY. This predicate is read by
@@ -1665,8 +1697,9 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       if (session.type !== 'quality') continue
       const label = (session.label ?? '').toLowerCase()
       const zone = (session.zone ?? '').toLowerCase()
-      const labelImpliesVo2 = label.includes('vo2max') || label.includes('vo2 max')
-      const labelImpliesThreshold = label.includes('threshold') || label.includes('tempo') || label.includes('cruise')
+      // SHARED OWNER (see `labelImplications`): `mergePlan` reads the same three
+      // booleans to refuse a cross-class rename, and two copies would drift.
+      const { vo2: labelImpliesVo2, threshold: labelImpliesThreshold } = labelImplications(label)
       const zoneIsVo2 = zone.includes('zone 4') || zone.includes('zone 5')
       const zoneIsThreshold = zone.includes('zone 3') && !zone.includes('zone 4')
 
@@ -1706,8 +1739,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // Label-based by necessity, not by choice: the plan session carries no
       // catalogue category to key off (the seventh gap — SC-08). When SC-08
       // lands, re-key this on the structural category per INV-CLASS.
-      const labelImpliesEasy = label.includes('easy') || label.includes('steady')
-        || label.includes('aerobic') || label.includes('recovery')
+      const { easy: labelImpliesEasy } = labelImplications(label)
       const zoneIsEasy = zone.includes('zone 1') || zone.includes('zone 2')
       if (labelImpliesEasy && !zoneIsEasy) {
         violations.push({
