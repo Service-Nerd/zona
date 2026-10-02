@@ -1984,6 +1984,20 @@ registry to one row format is the better fix than encoding both. **Same lesson t
 records four times: a checker that encodes ONE way of writing something is blind to every
 other way, and people write things more than one way.**
 
+🔴 **RE-MEASURED 2026-10-02, and the premise has MOVED — in the direction that changes the fix.**
+Filed as *"68 rows, a fifth of the register"* against the dash form as the norm. Today:
+**dash form 325, pipe form 121** — 27% and **climbing, because every ship since has used the
+pipe form.** So normalising *toward the dash form* would mean rewriting the convention that is
+actually in use. **If this is normalised, it normalises to `| ID | tier | date | … |`.**
+
+🔴 **AND A THIRD FORM EXISTED THAT NEITHER COUNT NAMED: the QUALIFIED first cell.**
+`AUDIT-SHIPPED-OPEN-ARM-01` (2026-10-02) found `| DASHBOARD-SCREEN-EXTRACT-01 (phase 1) | FREE | … |`
+— **4 rows** — which the widened parse still dropped, because widening the *separator* says
+nothing about what may sit between the ID and it. ⚠️ **That was the fifth time this class bit,
+and the first time it was a JOIN**: the open-heading side only knew `^### ` while those items are
+`####`, so **both sides of the comparison were short at once and fixing either alone changed
+nothing.** Parse widened again; the document half is still open and is now the only half.
+
 #### ✅ `SHEET-HARNESS-01` — CAUSE FOUND, AND MY FILING NAMED THE WRONG ONE
 
 ⚙️ **NO BOARD.** **Closed 2026-09-29, hours after it was filed, by the founder reporting an
