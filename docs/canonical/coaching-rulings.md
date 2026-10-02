@@ -718,3 +718,55 @@ to the uniform rate → 2 red; price the segment but skip the body rebalance →
 with **14 call sites**; `sessionComposer.ts` became its second consumer, so it was extracted
 **before** the copy existed rather than after, unlike TIER-OWNER-01, DELOAD-OWNER-01,
 SESSION-KM-01/02 and OPS-AI-OWNER-01.
+
+---
+
+## ⚖️ CD-1 — the prescription half (Coaching Board, 2026-10-02)
+
+**Routed down by the Design Board the same day.** Question: should the engine prescribe genuinely
+different intensities for `Continuous tempo` and `Cruise intervals` (CD-1 options b/c)?
+
+**Ruling: INCORRECT — a veto on (b) and (c).**
+
+🔴 **§19 ANSWERS IT AND CD-1 NEVER CITED IT.** *"If it is named 'Threshold' / 'Tempo' / 'Cruise' the
+prescription MUST land in Z3 at T-pace (83–88% vVO2max)."* **The constitution explicitly groups those
+three names into one prescription band**, so CD-1's complaint — *"the names change; the effort does
+not"* — is describing §19 **working as designed**. Options (b)/(c) would breach it.
+
+🔴 **AND THE 5-INTO-1 PREMISE IS FALSIFIED.** Measured against ADR-019 structured targets: **three
+distinct anchors plus a progression** (`T`, `T`, `HM`, `E→Z2-Z3→T`, `goal`), not one pace. §120 made
+`HM` and `goal` genuinely different from `T`. 🎪 Collins withdrew his framing on the record.
+
+**The residue was 2-into-1, and those two differ on four axes:**
+
+| | `tempo_continuous` | `tempo_cruise` |
+|---|---|---|
+| scaling | `fixed`, one sustained block | `reps`, 10′ work / 2′ jog |
+| fitness floor | **beginner** | **intermediate** |
+| phases | build, peak, **taper** (§36) | **build only** |
+| intent | *"builds the ceiling"* | *"rep three is the test, not rep one"* |
+
+🎯 **McMillan — collapsing them re-creates a measured defect.** A **beginner's** marathon build
+threshold pool is **2** rows; `Cruise intervals` is intermediate+, so **a beginner never sees both**
+and the complaint cannot reach them. `tempo_continuous` was lowered to beginner by
+`CB-BEGINNER-CATALOGUE-01` **because** a beginner marathon plan received `progressive_tempo` **ten
+times**. Merge the pair and the pool goes **2 → 1** — `CAT-DEPTH-01`'s symptom returning for the
+cohort the founder ranks first.
+
+📊 **Seiler** — the recovery is what buys the extra volume; both sit in the same
+`THRESHOLD_WORK_TARGET_MINS` 15–30 band, and **neither shape can move §1 because CD-19 counts
+sessions**. 🩹 **Willy** and ⚕️ **Sims** — no objection from either seat, said rather than manufactured.
+
+⚡ **No recorded disagreements.** All five seats reached the same answer from different directions,
+which is unusual enough here to be worth noting rather than smoothing over.
+
+**Artifacts:** principle → **§19 amendment** · numeric → **none, and that is the ruling** —
+`THRESHOLD_WORK_TARGET_MINS` already bounds both, and inventing a constant to look complete is the
+decorative-config class · invariant → **none required**; §19 is already enforced by the
+label-integrity check and **no new behaviour was authorised, so there is nothing new to check**.
+`measure:fitness` deliberately **not run**: nothing here changes what the engine prescribes.
+
+⚠️ **What this does not settle:** whether T-pace should itself differ between continuous and
+intervallic delivery. That would amend **§19**, not the catalogue, and nobody has brought evidence
+for it.
+

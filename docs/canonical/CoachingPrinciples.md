@@ -1716,6 +1716,44 @@ the objection returns, so the predicate is conditional and not switched off.
 
 **Config.** No numeric — structural rule. Implemented by `makeQualitySession()` in `lib/plan/ruleEngine.ts`, which dispatches on `catalogueRow.category` (structural, never the label — INV-CLASS) and renames a repurposed aerobic row to the engine's own threshold label. Enforced by `INV-PLAN-LABEL-MATCHES-PACE` in `lib/plan/invariants.ts`, which now checks both directions. The `PaceGuide` interface carries `intervalPaceStr` (I-pace) and `qualityPaceStr` (T-pace) as separate bands so the engine can prescribe the correct one for each catalogue category.
 
+**Amendment — THIS SECTION ANSWERS CD-1, AND CD-1 NEVER CITED IT (Coaching Board, 2026-10-02).**
+CD-1 is recorded as the highest blast-radius item in the coaching register: *"five differently-named
+quality sessions — Continuous tempo, Cruise intervals, HM-pace intervals, Progressive tempo,
+Goal-pace sharpener — all prescribed at the same pace and heart rate. The names change; the effort
+does not."* **Options (b) and (c) asked the engine to prescribe genuinely different intensities per
+session type. That is INCORRECT, and this section is why: the sentence above requires
+"Threshold" / "Tempo" / "Cruise" to land at T-pace.** Prescribing them differently would breach the
+principle, not satisfy it. 🏃 Hutchinson: *Daniels is the source — cruise intervals and tempo are the
+same intensity, and the whole point of breaking T-work into reps is to accumulate more time at that
+intensity than you could hold continuously.*
+
+🔴 **AND THE 5-INTO-1 PREMISE IS FALSIFIED.** Measured 2026-10-02 against
+`sessionCatalogueData.ts`'s ADR-019 structured targets, the five resolve to **three distinct pace
+anchors plus a progression** — `T`, `T`, **`HM`**, `E ceiling → Z2-Z3 → T`, **`goal`**. §120 (*"race
+pace means the pace of the race you are training for"*) is what made `HM` and `goal` genuinely
+different from `T`. 🎪 Collins withdrew his own framing at the Design Board sitting that routed this
+down: *"the engine does make the distinction — the taxonomy is not decoration, and I was wrong."*
+
+⚠️ **The residue was a 2-INTO-1 question, and the two differ on FOUR axes, not one.**
+`tempo_continuous` is `scaling: 'fixed'`, **beginner**, build/peak/**taper** (§36); `tempo_cruise` is
+`scaling: 'reps'` (10′ work / 2′ jog), **intermediate**, **build only**. 📊 Seiler: *the recovery is
+what buys the extra volume* — both sit inside the same `THRESHOLD_WORK_TARGET_MINS` 15–30 band, and
+**neither shape can move §1, because CD-19 counts sessions.**
+
+🔴 **COLLAPSING THEM WOULD RE-CREATE A MEASURED DEFECT.** 🎯 McMillan: a **beginner's** marathon
+build threshold pool is **2** rows (`Continuous tempo`, `Progressive tempo`) — `Cruise intervals` is
+intermediate+, so a beginner never sees both and the complaint cannot reach them. `tempo_continuous`
+was lowered to beginner by `CB-BEGINNER-CATALOGUE-01` **because** a beginner marathon plan received
+`progressive_tempo` **ten times**. Merge the pair and that pool goes **2 → 1**: the same session
+every week, `CAT-DEPTH-01`'s symptom returning for the cohort the founder ranks first. Variety is
+already bounded per **catalogue row** by §53's `max(fraction, pigeonhole)` cap.
+
+**Ruling: INCORRECT — a veto on CD-1 (b) and (c). The current state is correct: one intensity, two
+shapes, separated by fitness floor and phase.** No numeric changed and no invariant was added,
+stated rather than invented — `THRESHOLD_WORK_TARGET_MINS` already bounds both and this section is
+already enforced. **What would reopen it:** evidence that T-pace should differ between continuous and
+intervallic delivery, which would amend THIS section, not the catalogue.
+
 **Known limitation (SC-08).** The invariant's easy-direction check is *label*-based, unlike the engine's, because the plan session carries no reference to the catalogue row that produced it — the reps and the category are re-joined at display time by matching the session's name. When SC-08 puts the row's identity on the session, re-key this check on the structural category. Until then, a hand-written or AI-rewritten label that avoids the four watched words can still evade it.
 
 ---

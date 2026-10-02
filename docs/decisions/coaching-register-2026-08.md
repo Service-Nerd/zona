@@ -12,7 +12,41 @@
 
 ## The three that matter most
 
-### CD-1 — Every hard session is prescribed at the same pace, whatever it's called
+### ✅ CD-1 — CLOSED 2026-10-02. The premise was falsified by measurement, and §19 answers the rest
+
+> 🔴 **THIS ENTRY'S OPENING CLAIM IS NO LONGER TRUE, AND MAY NEVER HAVE BEEN FULLY TRUE.** Measured
+> 2026-10-02 against `sessionCatalogueData.ts`'s ADR-019 structured targets, the five sessions
+> resolve to **three distinct pace anchors plus a progression** — `T` · `T` · **`HM`** ·
+> `E ceiling → Z2-Z3 → T` · **`goal`** — not one pace. **§120** (*"race pace means the pace of the
+> race you are training for"*) is what made `HM` and `goal` genuinely different from `T`. The
+> 2026-08-19 catalogue audit had already found *"three distinct quality intensities, not one"* for a
+> time-goal 10K; this confirms it from the structured targets and extends it to all five.
+>
+> 🎪 **Collins withdrew his own framing** at the Design Board sitting that routed the prescription
+> half down: *"the engine does make the distinction — the taxonomy is not decoration, and I was
+> wrong."*
+>
+> ⚖️ **PRESCRIPTION HALF — Coaching Board 2026-10-02: INCORRECT. A veto on options (b) and (c).**
+> The residue was a **2-into-1** question: `Continuous tempo` and `Cruise intervals` are both anchor
+> `T`, both `threshold`. **§19 requires that** — *"If it is named 'Threshold' / 'Tempo' / 'Cruise'
+> the prescription MUST land in Z3 at T-pace"* — so prescribing them differently would breach the
+> constitution rather than fix it. 🏃 Hutchinson: *Daniels is the source; breaking T-work into reps
+> exists to accumulate more time at that intensity than you could hold continuously.*
+>
+> ⚠️ **They already differ on FOUR axes:** `scaling` fixed vs reps (10′/2′) · floor **beginner** vs
+> **intermediate** · phases build/peak/**taper** vs **build only** · intent *"builds the ceiling"* vs
+> *"rep three is the test"*. 🔴 **And collapsing them would re-create a measured defect** — a
+> beginner's marathon build threshold pool is **2**, and `tempo_continuous` was lowered to beginner by
+> `CB-BEGINNER-CATALOGUE-01` precisely because a beginner marathon plan had received
+> `progressive_tempo` **ten times**. Merging takes that pool **2 → 1**.
+>
+> **Presentation half (option a) — also closed:** a taxonomy the engine genuinely makes is not
+> decoration. Variety is bounded per catalogue row by **§53**'s `max(fraction, pigeonhole)` cap.
+>
+> **What would reopen it:** evidence that T-pace should differ between continuous and intervallic
+> delivery — an amendment to **§19**, not to the catalogue.
+
+#### CD-1 — the original filing, for the record
 
 **Today.** The plan contains five differently-named quality sessions — "Continuous tempo", "Cruise intervals", "HM-pace intervals", "Progressive tempo", "Goal-pace sharpener". **Every one of them is prescribed at exactly the same pace and heart rate.** The names change; the effort does not.
 

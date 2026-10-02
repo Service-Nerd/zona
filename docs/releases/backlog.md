@@ -5091,7 +5091,30 @@ on the sitting, not a reason to delay it.
 
 ---
 
-### 🔴 `DESIGN-CD1-TAXONOMY-01` — PREMISE FALSIFIED 2026-10-02. Re-scoped from 5-into-1 to 2-into-1
+### ✅ `DESIGN-CD1-TAXONOMY-01` — CLOSED 2026-10-02. Both halves ruled; CD-1 is closed
+
+⚖️ **PRESCRIPTION HALF — Coaching Board 2026-10-02: INCORRECT, a veto on CD-1 options (b) and (c).**
+🔴 **§19 answers it and CD-1 never cited it:** *"If it is named 'Threshold' / 'Tempo' / 'Cruise' the
+prescription MUST land in Z3 at T-pace."* **The constitution groups those three names into one
+prescription band**, so *"the names change; the effort does not"* describes §19 **working as
+designed**. 🏃 Hutchinson: *Daniels is the source — breaking T-work into reps exists to accumulate
+more time at that intensity than you could hold continuously.*
+⚠️ **The two differ on FOUR axes:** `fixed` vs `reps` (10′/2′) · **beginner** vs **intermediate** ·
+build/peak/**taper** vs **build only** · *"builds the ceiling"* vs *"rep three is the test"*.
+🔴 **Collapsing them would re-create a measured defect** — a beginner's marathon build threshold pool
+is **2**, and `tempo_continuous` was lowered to beginner by `CB-BEGINNER-CATALOGUE-01` **because** a
+beginner plan received `progressive_tempo` **ten times**; merging takes it **2 → 1**. A beginner
+never sees both anyway, so the complaint cannot reach that cohort at all.
+⚡ **No recorded disagreements — all five seats agreed from different directions.**
+✅ **PRESENTATION HALF also closed:** a taxonomy the engine genuinely makes is not decoration, and
+§53 already bounds repetition per catalogue row.
+📦 Artifacts: §19 amendment · **no numeric and no invariant, stated rather than invented** ·
+`coaching-rulings.md` row · CD-1's register entry closed. `measure:fitness` deliberately not run —
+nothing changes what the engine prescribes.
+🔻 **What would reopen it:** evidence that T-pace should differ between continuous and intervallic
+delivery — an amendment to **§19**, not the catalogue.
+
+#### `DESIGN-CD1-TAXONOMY-01` — the 2026-10-02 design-half record
 
 🔴 **DON'T SHIP AS FILED.** Measured against `sessionCatalogueData.ts`'s structured targets, the
 five sessions resolve to **THREE distinct pace anchors plus a progression, not one pace**:
