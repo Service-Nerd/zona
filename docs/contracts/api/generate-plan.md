@@ -273,6 +273,27 @@ time a screen asked. The enricher cannot set it: `EnrichedWeekSchema` exposes on
 a session revert and a week revert otherwise log identically and the narrowing would be invisible
 in production.
 
+**Changed by ENRICH-PARSE-RETRY-01 (2026-10-02): a parse failure gets ONE retry.**
+
+If the model's reply does not parse, the same call is made once more. ⚠️ **Only `parse_error` is
+retried** — never `api_error`, `fetch_failed` or a rate limit, because those belong to
+`callAnthropic` and doubling spend on a 429 is how a retry becomes an incident. Exactly one extra
+call; the happy path makes none.
+
+- A recovered retry records **`plan_enrich_retry_recovered`** in `ops_events`, so *"needed a
+  retry"* stays measurable instead of looking like a clean success.
+- Both attempts record their own `ai_call` row, so the spend is visible in `/api/ops/ai-spend`.
+- If both fail, `reason` is still `parse_error` and `detail` carries `retried: true`.
+- ⚠️ **A failed second attempt does NOT become `fetch_failed`.** The first call succeeded, so the
+  honest reason is the parse; reporting a transport failure would send the next reader to the
+  network.
+
+🔴 **Why a retry with the cause unknown:** four hypotheses are dead (markdown fence — stripped
+before the parse; token truncation — measured at a worst case of 51% of budget across 22 real
+stored plans; label classification; a deterministic schema problem), and **both failed bodies
+parsed on a later attempt with no change to the parser.** A retry is correct either way: transient
+means the runner is recovered, deterministic means it fails twice and the diagnostics capture it.
+
 **Changed by GEN-FIX-02 (2026-08-06):** the failure is no longer silent to *us*.
 
 - `enrich()` now returns `{ plan, outcome }`. `outcome` is `{ status: 'applied' }` or

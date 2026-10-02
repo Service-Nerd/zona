@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `ENRICH-PARSE-RETRY-01` · the fix that doesn't need the cause
+**Shipped:** One retry when the enricher's reply won't parse. Scoped to parse failures only.
+
+**Dev learning:** I spent the afternoon failing to explain `parse_error`. Four hypotheses died — a markdown fence (already stripped), token truncation (measured: worst case 51% of budget across 22 real plans), label classification, a deterministic schema problem. What I did have was evidence of *transience*: both failed bodies parsed on a later attempt with no change to the parser.
+
+A retry is the rare fix that's correct either way. If it's transient the runner gets their voice; if it's deterministic it fails twice and the diagnostics I added this morning catch it, which is exactly where we were. **It doesn't need the answer to be right.**
+
+**The scope is the whole safety argument.** It retries on `parse_error` and nothing else — not a 500, not a transport error, not a rate limit. Those belong to `callAnthropic`, and silently doubling spend on a 429 is how a retry becomes the incident. Half the test file exists to pin what is *not* retried, which felt like overkill writing it and didn't once I ran the mutations.
+
+**And falsification caught dead code I'd just written.** I wrapped the retry in a `try/catch` for a transport failure, wrote an arm for it, and mutating that catch left the suite green. `callAnthropic` never throws — it returns `{ok:false, reason:'fetch_failed'}`. So the branch was unreachable and the arm was passing by a path it didn't describe: a comment asserting behaviour the code couldn't have, and a green tick with nothing behind it. Both gone, and the arm now names the real path and goes red against it.
+
+**Smaller lesson, same shape:** my first "good" fixture was `{"weeks":[]}`, which parses fine and then fails the schema. Arm 1 read as *"the retry didn't work"* when the retry had worked perfectly. I nearly debugged the code instead of the fixture — the third time today a measurement artefact looked like a finding.
+
+---
+
 ## 2026-10-02 — `ENRICH-LABEL-CLASS-01` · the label decides which band judges the pace
 **Shipped:** The enricher can rename a session for voice, but not into a different physiological class.
 

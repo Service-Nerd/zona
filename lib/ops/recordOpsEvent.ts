@@ -70,6 +70,14 @@ export type OpsEventKind =
   // only evidence that the backstop caught a runner who closed the app, and a
   // backstop nobody can see firing is one nobody trusts.
   | 'plan_enrich_server_saved'
+  // ENRICH-PARSE-RETRY-01 (2026-10-02) — the enricher's response failed to PARSE
+  // and a single retry recovered it. Recorded so a retry is measurable rather than
+  // looking like a clean success: two live runners lost their voice to
+  // `parse_error` and four hypotheses for the cause are dead, so the only evidence
+  // that will ever explain it is how often a second attempt works.
+  // ⚠️ Retried on parse_error ONLY, never on a 4xx/5xx, transport error or rate
+  // limit — doubling spend on a 429 is how a retry becomes an incident.
+  | 'plan_enrich_retry_recovered'
   | 'plan_enrich_server_save_failed'
   // GTM-CHARITY-03 (2026-09-11) — a RevenueCat webhook event the handler has no
   // mapping for. It used to reply "received" and do nothing, which is why a

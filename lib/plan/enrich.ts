@@ -9,6 +9,7 @@ import type { Plan, GeneratorInput } from '@/types/plan'
 import { isTimeTrial } from './sessionRole'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { labelImplications } from './invariants'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { EnrichedPlanSchema } from './schema'
 import type { Tier } from './ruleEngine'
 import { isFeatureAllowed } from './canUseFeature'
@@ -265,8 +266,9 @@ export async function enrich(
   // behind. `enrichTierGate.test.ts` asserts the two agree on every tier.
   const wantPaidFields = isFeatureAllowed('confidence_score', tier)
 
-  let rawText: string
-  try {
+  // ENRICH-PARSE-RETRY-01 — hoisted so the SAME call can be made twice. See the
+  // retry below for why, and for the four hypotheses it does not depend on.
+  const askTheModel = async () => {
     const response = await callAnthropic({
       surface:   'enrich-plan',
       model:     ANTHROPIC_MODEL,
@@ -286,18 +288,31 @@ export async function enrich(
     // The owner already logged and recorded the failure. `api_error` and
     // `fetch_failed` are ITS vocabulary too, so the reason passes straight
     // through rather than being re-derived here.
+    // ⚠️ DISCRIMINATED, so an API failure still passes straight through while the
+    // closure can also be called twice. `reason` is `callAnthropic`'s vocabulary
+    // and is not re-derived here.
     if (!response.ok) {
       return {
-        plan,
-        outcome: {
-          status: 'failed',
-          reason: response.reason,
-          detail: `${response.status ?? ''} ${response.detail.slice(0, 200)}`.trim(),
+        ok: false as const,
+        result: {
+          plan,
+          outcome: {
+            status: 'failed' as const,
+            reason: response.reason,
+            detail: `${response.status ?? ''} ${response.detail.slice(0, 200)}`.trim(),
+          },
         },
       }
     }
 
-    rawText = response.text
+    return { ok: true as const, text: response.text }
+  }
+
+  let rawText: string
+  try {
+    const first = await askTheModel()
+    if (!first.ok) return first.result
+    rawText = first.text
   } catch (e) {
     console.error('[enrich] fetch failed', e)
     return {
@@ -307,50 +322,94 @@ export async function enrich(
   }
 
   // Parse — strip any accidental markdown fences
-  let parsed: unknown
-  try {
-    const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
-    // ENRICH-PII-MINIMISE-01 — put the runner's name back BEFORE the payload is
-    // validated or persisted. Resolving here rather than at each render site
-    // means no surface can miss it and show a literal token; the plan JSON is
-    // read by a long tail of consumers and one omission would be visible.
-    parsed = resolveRunnerNameDeep(JSON.parse(cleaned), input.athlete_name)
-  } catch (err) {
-    // 🔴 THIS RECORDED THE WRONG END OF THE STRING AND THREW THE REASON AWAY.
-    // It logged `rawText.slice(0, 200)` — the FIRST 200 characters — and used a
-    // bare `catch {`, so the exception was discarded. A parse failure is almost
-    // never visible at the start of the payload: the head is always a well-formed
-    // `{ "meta": { "notes": "..."`, fenced or not.
-    //
-    // ⚠️ MEASURED CONSEQUENCE, 2026-10-02: two live runners lost their AI voice to
-    // `parse_error` and the stored detail for both began ` ```json ` — which made
-    // a markdown fence look like the cause. It is not: fences are stripped two
-    // lines above, and the enum comment says so. **The symptom was an artefact of
-    // the logging window**, and the real cause was undiagnosable from what we
-    // kept. Truncation is the live suspect (`maxTokens` is 10,000 for a 20-week
-    // plan and both failures were 20-week marathons) and this is what would
-    // confirm it: a truncated body ends mid-token, so the TAIL is the evidence.
-    const message = err instanceof Error ? err.message : String(err)
-    console.error('[enrich] JSON parse failed', { message, length: rawText.length, tail: rawText.slice(-200) })
-    return {
-      plan,
-      outcome: {
-        status: 'failed',
-        reason: 'parse_error',
-        // `detail` is what reaches `ops_events`, so it carries the three things
-        // that identify the cause: why it threw, how long the body was, and how
-        // it ENDED. The head is kept short because it is the least informative
-        // part and dropping it entirely would lose the fence/no-fence signal.
-        detail: JSON.stringify({
-          message,
-          length: rawText.length,
-          head: rawText.slice(0, 60),
-          tail: rawText.slice(-240),
-        }).slice(0, 900),
-      },
+  const tryParse = (text: string): { ok: true; value: unknown } | { ok: false; err: unknown } => {
+    try {
+      const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+      return { ok: true, value: resolveRunnerNameDeep(JSON.parse(cleaned), input.athlete_name) }
+    } catch (err) {
+      return { ok: false, err }
     }
   }
 
+  // ENRICH-PARSE-RETRY-01 (2026-10-02) — ONE retry, and only on a PARSE failure.
+  //
+  // 🔴 WHY THIS IS NOT A GUESS. Two live runners lost their AI voice to
+  // `parse_error` on 2026-10-02 and FOUR hypotheses for the cause are dead: a
+  // markdown fence (stripped two lines up, and the enum comment says so), token
+  // truncation (measured across 22 real stored plans — worst case 51% of the
+  // budget, the 20-week plans at 39%), label classification, and a deterministic
+  // schema problem. What IS established is that **both bodies parsed on a later
+  // attempt with no change to this parser** — three successful parses of the same
+  // prompt shape against two prior failures. That is transience.
+  //
+  // ⚠️ AND A RETRY IS CORRECT WHETHER OR NOT THE CAUSE IS EVER FOUND. If the
+  // failure is transient the runner is recovered; if it is deterministic it fails
+  // twice and the diagnostics below capture it, which is no worse than today. It
+  // is the one fix that does not depend on knowing the answer.
+  //
+  // ⚠️ SCOPE IS THE WHOLE SAFETY ARGUMENT. Retried on `parse_error` ONLY — never
+  // on a 4xx/5xx, a transport error or a rate limit. Those are `callAnthropic`'s
+  // vocabulary and retrying them is a different decision that belongs to its
+  // owner; silently doubling spend on a 429 is how a retry becomes an incident.
+  // Exactly ONE extra call, never two.
+  //
+  // Cost is visible rather than hidden: `callAnthropic` records an `ai_call` row
+  // per attempt, so `/api/ops/ai-spend` shows both, and the retry records its own
+  // ops event so "needed a retry" stays measurable instead of looking clean.
+  let parsed: unknown
+  const firstParse = tryParse(rawText)
+
+  if (firstParse.ok) {
+    parsed = firstParse.value
+  } else {
+    console.error('[enrich] JSON parse failed, retrying once', {
+      message: firstParse.err instanceof Error ? firstParse.err.message : String(firstParse.err),
+      length: rawText.length,
+      tail: rawText.slice(-200),
+    })
+    // ⚠️ NO try/catch HERE, AND THE FIRST VERSION HAD ONE. `callAnthropic` never
+    // throws by design — it catches transport errors and returns
+    // `{ ok: false, reason: 'fetch_failed' }` — so a catch around this call is
+    // unreachable code carrying a comment that claims behaviour it cannot have.
+    // Found by falsification: mutating that catch to report `fetch_failed` left the
+    // suite GREEN, which proved the arm testing it was hollow and the branch dead.
+    //
+    // A failed SECOND attempt (for any reason) leaves `retryText` null and the
+    // honest reason stays `parse_error`: the first call succeeded, so reporting a
+    // transport failure would send the next reader to the network.
+    const second = await askTheModel()
+    const retryText: string | null = second.ok ? second.text : null
+    const secondParse = retryText != null ? tryParse(retryText) : null
+    if (secondParse?.ok) {
+      parsed = secondParse.value
+      rawText = retryText!
+      void recordOpsEvent('plan_enrich_retry_recovered', {
+        tier,
+        weeks: plan.weeks.length,
+        first_failure: firstParse.err instanceof Error ? firstParse.err.message.slice(0, 200) : null,
+      }, userId)
+    } else {
+      // Both attempts failed. Report the FIRST body, because it is the one the
+      // earlier diagnostics were written for and the second adds nothing but noise.
+      const message = firstParse.err instanceof Error ? firstParse.err.message : String(firstParse.err)
+      console.error('[enrich] JSON parse failed twice', { message, length: rawText.length, tail: rawText.slice(-200) })
+      return {
+        plan,
+        outcome: {
+          status: 'failed',
+          reason: 'parse_error',
+          detail: JSON.stringify({
+            message,
+            length: rawText.length,
+            head: rawText.slice(0, 60),
+            tail: rawText.slice(-240),
+            retried: true,
+            retry_also_failed: true,
+          }).slice(0, 900),
+        },
+      }
+    }
+  }
   // Validate shape — only allowed fields accepted
   const result = EnrichedPlanSchema.safeParse(parsed)
   if (!result.success) {
