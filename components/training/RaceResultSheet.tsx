@@ -298,7 +298,7 @@ export default function RaceResultSheet({
 
           {/* ── Error ──────────────────────────────────── */}
           {error && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--danger)', padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: '8px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--danger-strong)', padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: '8px' }}>
               {error}
             </div>
           )}

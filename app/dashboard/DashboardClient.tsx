@@ -6511,7 +6511,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
               </span>
               <Button variant="ghost" 
                 onClick={handleUnlink}
-                disabled={unlinking} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--danger)', background: 'none', padding: 0, cursor: unlinking ? 'default' : 'pointer' }}>
+                disabled={unlinking} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--danger-strong)', background: 'none', padding: 0, cursor: unlinking ? 'default' : 'pointer' }}>
                 {unlinking ? 'Unlinking…' : 'Yes, unlink'}
               </Button>
               <Button variant="ghost" size="compact" 

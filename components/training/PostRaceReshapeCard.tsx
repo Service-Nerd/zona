@@ -173,7 +173,7 @@ function Live({
       </div>
 
       {confirmError && (
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--danger)', marginBottom: '10px', padding: '6px 10px', background: 'var(--bg-soft)', borderRadius: '8px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--danger-strong)', marginBottom: '10px', padding: '6px 10px', background: 'var(--bg-soft)', borderRadius: '8px' }}>
           {confirmError}
         </div>
       )}

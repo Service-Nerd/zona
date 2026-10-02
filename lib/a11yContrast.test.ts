@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
+import cp from 'node:child_process'
 
 /**
  * A11Y-CONTRAST-01 — the text tokens clear WCAG 2.1 AA against every ground
@@ -46,7 +47,12 @@ function ratio(a: string, b: string) {
 const GROUNDS = ['--bg', '--bg-soft', '--card'] as const
 /** Tokens that carry NORMAL-SIZED TEXT and therefore owe 4.5:1. */
 const TEXT_TOKENS = ['--ink', '--ink-2', '--mute', '--moss-strong', '--warn-strong',
-                     '--s-race-strong', '--s-recov-strong'] as const
+                     '--s-race-strong', '--s-recov-strong',
+                     // DANGER-TEXT-CONTRAST-01 (2026-10-02). ⚠️ `--danger` was NEVER in this
+                     // list, so the token layer had never claimed it was safe for text — the
+                     // gap was real and simply never asserted. `--danger-strong` is, and the
+                     // arm below forbids the base token on the ground it fails.
+                     '--danger-strong'] as const
 
 describe('WCAG AA contrast', () => {
   it('reads real tokens (a check over nothing is not a check)', () => {
@@ -176,6 +182,77 @@ describe('WCAG AA contrast', () => {
 // statically decidable and a static check must not pretend otherwise. What IS decidable is
 // WHICH TOKEN carries small text, so that is what this forbids. The authoritative measurement
 // stays what found the nine in the first place: axe / Lighthouse on the live page.
+// ─────────────────────────────────────────────────────────────────────────────
+// DANGER-TEXT-CONTRAST-01 (Design Board, 2026-10-02) — `--danger` may not be TEXT on
+// `--bg-soft`.
+//
+// 🔴 THE ITEM SAID "ONE BUTTON". MEASURED: THREE SITES, AND TWO OF THEM ARE ERROR MESSAGES.
+// The finding came from `BUTTON-MIGRATION-02`'s contrast arm, which scans BUTTONS — so the
+// two `<div>` error banners in `PostRaceReshapeCard` and `RaceResultSheet` were never in its
+// population. **An audit is only ever as wide as its list**, and this one's list was "things
+// that are buttons". ✋ Silvanto and 🎓 Sierra both inverted the priority at the sitting: an
+// error message is the worst text in the product to render below AA, because it is already
+// the moment the product is failing the person.
+//
+// `--danger` #B84545 measures **4.65 on `--bg`, 5.28 on `--card`, 4.36 on `--bg-soft`** — it
+// fails ONLY on the ground it actually sits on, which is why it survived every other check.
+//
+// ⚠️ THIS SCANNER BOUNDS THE STYLE OBJECT, it does not use a proximity window. Earlier today
+// a contrast check written with a 400-character window produced SEVEN confident wrong
+// findings by pairing text with a 6px dot's fill and a session accent bar. A background
+// declared in the SAME brace-balanced `style={{ … }}` object is decidable; one declared
+// nearby is not.
+describe('DANGER-TEXT-CONTRAST-01 — the base danger token is not text on --bg-soft', () => {
+  const APP = (): string[] =>
+    cp.execSync('git ls-files', { encoding: 'utf8' }).split('\n').filter(Boolean)
+      .filter(f => /^(app|components)\/.*\.tsx$/.test(f) && !f.includes('.test.'))
+
+  /** Brace-balanced `style={{ … }}` objects — never a character window. */
+  function styleObjects(src: string): { body: string; line: number }[] {
+    const out: { body: string; line: number }[] = []
+    const re = /style=\{\{/g
+    let m: RegExpExecArray | null
+    while ((m = re.exec(src)) !== null) {
+      let i = m.index + m[0].length, depth = 2
+      while (i < src.length && depth > 0) {
+        if (src[i] === '{') depth++
+        else if (src[i] === '}') depth--
+        i++
+      }
+      out.push({ body: src.slice(m.index + m[0].length, i - 2), line: src.slice(0, m.index).split('\n').length })
+    }
+    return out
+  }
+
+  it('the scanner reaches real style objects', () => {
+    const n = APP().reduce((a, f) => a + styleObjects(fs.readFileSync(f, 'utf8')).length, 0)
+    expect(n, 'the style-object scanner found nothing — re-anchor it').toBeGreaterThan(200)
+  })
+
+  it('🔴 no style object pairs `--danger` text with a `--bg-soft` fill', () => {
+    const offenders: string[] = []
+    for (const f of APP()) {
+      for (const { body, line } of styleObjects(fs.readFileSync(f, 'utf8'))) {
+        if (/color:\s*'var\(--danger\)'/.test(body) && /background:\s*'var\(--bg-soft\)'/.test(body)) {
+          offenders.push(`${f}:${line}`)
+        }
+      }
+    }
+    expect(offenders, '`--danger` is 4.36:1 on `--bg-soft` and fails AA. Use ' +
+      '`--danger-strong` (5.27) for text on that ground:\n' + offenders.join('\n')).toEqual([])
+  })
+
+  it('--danger-strong actually clears AA on every ground, including the one that failed', () => {
+    for (const g of GROUNDS) {
+      expect(ratio(token('--danger-strong'), token(g)),
+        `--danger-strong on ${g}`).toBeGreaterThanOrEqual(4.5)
+    }
+    // ⚠️ And it must stay recognisably the SAME red, not a second one: hue and saturation are
+    // held exactly, so only lightness may differ from `--danger`.
+    expect(token('--danger-strong')).not.toBe(token('--danger'))
+  })
+})
+
 describe('A11Y-MOCKUP-CONTRAST-01 — mockup small text uses AA-capable tokens', () => {
   const MOCKUPS = ['components/marketing/PhoneFrame.tsx', 'components/marketing/TabbedPhone.tsx']
   /** WCAG: >=24px (or >=18.66px bold) is LARGE text and owes 3:1, which `--moss` meets. */

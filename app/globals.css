@@ -101,6 +101,21 @@
 
   /* ── Semantic: danger ────────────────────────────────────────────── */
   --danger:          #B84545;   /* errors, critical states only */
+  /* DANGER-TEXT-CONTRAST-01 (Design Board, 2026-10-02) — the text-safe danger.
+     `--danger` is 4.36:1 on `--bg-soft` and FAILS AA there, while passing on
+     `--bg` (4.65) and `--card` (5.28): it fails only on the ground it actually
+     sits on. This is 5.27 on `--bg-soft`, 5.61 on `--bg`, 6.38 on `--card`.
+     ⚠️ HUE AND SATURATION ARE HELD EXACTLY (h0, s45.5); only lightness moves,
+     49.6 -> 44, so it reads as the same red rather than a second one.
+     ⚠️ WHY NOT THE FAMILY'S -11 LIGHTNESS DELTA. `--moss-strong` and
+     `--warn-strong` are both -10..-12 L from their base and both land at 5.48 on
+     `--card`, so the family is defined by ACHIEVED CONTRAST, not by an HSL step.
+     Red carries 0.2126 of the luminance weight against green's 0.7152, so the
+     same L drop overshoots badly: -11 would have given 6.40 on `--bg-soft`,
+     darker than any peer. Matching the family's bare 4.52 instead was rejected
+     the other way -- the first text this governs is an ERROR MESSAGE, which is
+     the worst place in the product to carry no margin. */
+  --danger-strong:   #A33D3D;   /* danger TEXT on --bg-soft (AA); see above */
   --danger-bg:       rgba(184,69,69,0.1);
 
   /* ── Session type colours ────────────────────────────────────────── */
