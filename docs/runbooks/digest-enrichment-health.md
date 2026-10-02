@@ -1,10 +1,19 @@
 # Runbook — wire the daily digest to the fleet-wide enrichment check
 
-**Status: PREPARED AND TESTED, NOT APPLIED.** The routine write was denied in-session
-("Modify Shared Resources"), so this is the by-hand procedure. ⚠️ **The routine is
-UNCHANGED** — an earlier attempt using a `prompt_file` key returned **HTTP 200 and changed
-nothing**, which was verified by re-reading the live prompt (23,293 chars, no `Q5B`). A silent
-no-op, the same class as *the migration that applied cleanly and changed nothing*.
+✅ **Status: APPLIED 2026-10-02.** The live prompt went **23,295 → 26,331 chars** and was
+verified **byte-identical** to the prepared file, with `Q5B` present, `TEN queries` present and
+`Report on Q4, Q4B, Q5 and Q5B` present. Name, cron, `enabled`, model, permission mode and
+project all unchanged; next run **2026-10-03 07:08 BST**.
+
+⚠️ **This file stays as the canonical TRANSCRIPT, not as a to-do.** It is what
+`lib/ops/digestEnrichSqlMirror.test.ts` reads, and it is the procedure to re-apply from if the
+routine prompt is ever replaced.
+
+⚠️ **TWO EARLIER ATTEMPTS FAILED AND ONE OF THEM FAILED SILENTLY.** A `prompt_file` key
+returned **HTTP 200 and changed nothing** — caught only by re-reading the live prompt (23,293
+chars, no `Q5B`), the same class as *the migration that applied cleanly and changed nothing*.
+A second was refused outright as *"Modify Shared Resources"*. **A 200 from this API proves
+nothing; Step 4 is not optional.**
 
 | | |
 |---|---|
@@ -86,8 +95,15 @@ So Q5B counts the WHOLE fleet with no window, and it is the number to lead the e
 ## Step 4 — verify, because a 200 proved nothing last time
 
 Re-read the routine and confirm **all three**: `Q5B` present · `TEN queries` present · prompt
-length ≈ **26,329** chars (was 23,293). Then confirm name, cron, enabled, model and permission
+length **26,331** chars (was 23,295). Then confirm name, cron, enabled, model and permission
 mode are untouched.
+
+⚠️ **Do not verify by eye and do not verify by status code.** The update is a full-prompt
+replacement typed out in one call, so the failure mode is a **transcription slip in the 23 KB
+nobody is looking at**, not a missing heading. On 2026-10-02 this was verified by diffing the
+returned `derived_state.prompt` against the prepared file **byte for byte**, printing the first
+divergence on a mismatch, with the pre-change prompt kept on disk to restore from. Do that
+again rather than grepping for three strings and calling it done.
 
 ## ⚠️ Why the digest mirrors the rules instead of calling the route
 

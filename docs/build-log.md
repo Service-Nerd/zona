@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `OPS-DIGEST-ENRICH-WIRE-01` · the alert nobody had wired, and the window nobody had noticed
+**Shipped:** The daily ops digest now counts enrichment failures across the whole fleet with no date window, and the mirrored SQL has a test holding it to the library that owns the rule.
+
+**Dev learning:** This morning's item left one honest line in its own registry row: *"it is a READER, not scheduled — the digest must call it, and that wiring is not done."* So today was the wiring. And the interesting part was not the plumbing, it was discovering that the digest **already read enrichment state** — and its guidance already said, in capital letters, the two exact things I got wrong earlier in the day. *"STATE THE DENOMINATOR."* *"`applied_partial` is the SUCCESS path of a deliberate degrade, not a failure."* I had written a 23 KB prompt months ago that warned me specifically against both of my errors, and I had not read it.
+
+What was genuinely missing was the **window**. The query was scoped to seven days. A failed enrichment is permanent — the runner carries that voiceless plan for the whole sixteen-week block — so a seven-day window means the check quietly stops mentioning them after a week. One of the two affected runners was six days old: visible in this morning's digest, invisible in tomorrow's. That is the third time I have recorded a date-scoped list taking its coverage away with it.
+
+**AI-building learning:** Two attempts to apply the change failed, and the one that scared me returned **HTTP 200 and changed nothing** — I passed a key the API didn't recognise, it answered cheerfully, and the routine was untouched. Exactly the shape of the migration last week that applied cleanly and did nothing. So the applied version was checked by diffing the returned prompt against a prepared file **byte for byte**, with the pre-change prompt saved on disk to restore from. That matters more than it sounds: the update is a full-prompt replacement typed out in one go, so the realistic failure is not a missing heading I'd grep for, it's a one-character slip somewhere in the 23 KB nobody is looking at.
+
+**The honest bit:** the routine can't call the endpoint, because the endpoint needs a secret a cloud routine has no way to hold. So the SQL is a hand-copy of judgement that lives in a TypeScript module — the precise pattern that cost this codebase 84 plans the last time a producer kept its own copy of a predicate. The item that filed this called that out as a real risk and then left it as a note. A note is not a mechanism. The gate now reads the runbook transcript and pins the states, the exclusion, and the absence of a date window; I broke it four ways before believing it. But it checks the transcript, not the live routine — that prompt lives outside the repo and no test here can reach it. And the thing itself has produced nothing yet. First fire is tomorrow at 07:08.
+
+---
+
 ## 2026-10-02 — `ENRICH-PARSE-RETRY-01` · the fix that doesn't need the cause
 **Shipped:** One retry when the enricher's reply won't parse. Scoped to parse failures only.
 

@@ -2262,36 +2262,49 @@ precedent when it split `W-01`:** one ID cannot be both a shipped record and an 
 audit is right to call that ambiguous. The alternative was a declared exemption, which is the
 heavier instrument.
 
-#### 🟡 `OPS-DIGEST-ENRICH-WIRE-01` — the digest's enrichment check is WINDOWED; the failure is permanent *(P2, filed 2026-10-02, ⛔ BLOCKED on a permission)*
+#### 🔴 `COHORT-BASELINE-RED-01` — `npm run verify` is RED on main, and has been for days *(P1, filed 2026-10-02)*
 
-⚙️ **NO BOARD** — ops config. **Prepared, tested, NOT applied.** Full procedure:
-`docs/runbooks/digest-enrichment-health.md`.
+⚙️ **NO BOARD until the RCA says otherwise** — if a ship moved what the engine prescribes, it
+becomes a Coaching Board question and this item says so then. **Do NOT re-baseline to make it
+green.** The repo's own rule: *a ratchet must not move without a measurement*, and
+`cohort-review.ts` prints *"never re-baseline to turn a run green"* in its own output.
 
-🔴 **THE DIGEST ALREADY READS ENRICHMENT STATE, AND ITS GUIDANCE ALREADY SAID THE TWO THINGS I
-GOT WRONG TODAY** — *"STATE THE DENOMINATOR"* and *"`applied_partial` is the SUCCESS path of a
-deliberate degrade, not a failure"*. **Both of my errors were specifically warned against in a
-prompt I had not read.**
+🔴 **`npm run review:cohort` exits 1, so `npm run verify` exits 1, and today's ships reported
+green.** They reported `npm run test` (4,219 passing, true) and `tsc` (clean, true). **Neither is
+`verify`**, and `review:cohort` sits inside it, after `check:slow`. Measured 2026-10-02: red at
+`HEAD`, and **red at clean `HEAD` with every uncommitted change stashed** — so it is not the
+digest-wire commit and not any of today's doc work.
 
-**What is actually missing is the WINDOW.** Q5 is scoped to `created_at >= now() - interval '7
-days'`. A failed enrichment is **permanent** — the runner holds that voiceless plan for the whole
-16+ week block — but after seven days the digest stops mentioning them. Measured 2026-10-02: one
-affected runner was **six days old**, visible that morning and invisible the next. **Third time
-this repo has recorded a date-scoped list taking its coverage with it.**
+📐 **What moved — marathon only, half-marathon untouched:**
 
-✅ **Q5B drafted fleet-wide and unwindowed, and VERIFIED against production** (`execute_sql`):
-`eligible 18 · with_voice 16 · without_voice 2`, identical to `GET /api/ops/enrich-health`.
-A query handed to an automation is untested code, so it was run before it was written down.
+| band | refused | clean | LONG-RUN-SHORT | WEEK1-LEAP | BINGE-WEEK |
+|---|---|---|---|---|---|
+| 8 km/wk | 69.1 → **69.3** | 14 → 14 | 16.9 → **16.7** | — | — |
+| 15 km/wk | 35.4 → **36.7** | 15.5 → **15.9** | 44.2 → **42.4** | 27 → **25.7** | 0 → 0 |
+| 25 km/wk | 0 → 0 | 92.6 → **93.2** | 2 → **1.1** | 3.4 → 3.4 | 2 → **2.4** |
 
-⛔ **BLOCKED:** the routine write was denied in-session as *"Modify Shared Resources"*.
-⚠️ **AND AN EARLIER ATTEMPT WAS A SILENT NO-OP** — a `prompt_file` key returned **HTTP 200 and
-changed nothing**, confirmed by re-reading the live prompt (23,293 chars, no `Q5B`). The routine
-is unchanged, which is the safe state, but *the 200 proved nothing* — same class as the migration
-that applied cleanly and changed nothing. **Step 4 of the runbook re-reads and checks three
-things rather than trusting a status code.**
+⚠️ **MOSTLY AN IMPROVEMENT, WHICH IS EXACTLY WHY IT NEEDS EXPLAINING AND NOT WAVING THROUGH.**
+Fewer short long runs, fewer week-1 leaps, more clean plans. But **refusals rose at the two
+lowest bands** (+0.2, +1.3), and that is the one direction that could be a regression: a
+marathoner the engine used to build for and now declines. `SERVED` is 100% in every band, so
+nobody is turned away — they get a §118 get-running plan — but *"the door moved"* is a coaching
+fact, not a rounding artefact. `BINGE-WEEK` at 25 km/wk also rose. `cohortShape.test.ts` and
+`verify:parity` are both green, which is consistent: **this harness measures the CHECKERS
+(`auditPlanQuality` + `validatePlan`) over a weighted grid, so a change to a checker's predicate
+moves it while leaving every plan hash identical.** That is the class to suspect first.
 
-⚠️ **Why the digest mirrors the rules instead of calling the route:** the endpoint needs
-`CRON_SECRET` and a cloud routine cannot hold one. The duplication is **declared**, and it is a
-real risk — 84 plans were once paid for a producer keeping its own copy of a predicate.
+✅ **NOT clock drift, checked:** `useCaseEnvelope.ts` pins `planStart = '2026-11-02'` and derives
+`race_date` from it; `cohort-review.ts` has no `Date.now()`. The report version matches (v2) and
+the stride matches (7), so the comparison is valid rather than incomparable.
+
+**The work:** the baseline was written at `edddbcc2` (**2026-09-23**) and **~55 commits have
+touched `lib/plan` / `lib/coaching` since**. Bisect `review:cohort` across them, name the ship,
+decide whether the move was intended, then re-baseline **with the reason in the commit** — or fix
+the regression if the refusal rise is one. 🔴 **And the second half is the more important one:
+nothing noticed for nine days.** A gate that only fails inside a command nobody runs to
+completion is the *"a check that depends on remembering is a check that does not run"* class, in
+the one place this repo has the most machinery. Ask what makes `verify` RUN — CI, or a
+pre-push arm — rather than only what made it red.
 
 #### 🟡 `CONTRACT-COVERAGE-03` — 61 components still have no contract *(P3, filed 2026-10-02, falling register)*
 
