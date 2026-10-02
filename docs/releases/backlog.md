@@ -4375,7 +4375,7 @@ it was inherited."*
 the grid** — blocking 6 days is a legitimate statement ("I can run once a week"); the defect is
 that the other control then disagrees in silence.
 
-#### 🟠 `DAYS-GATE-CAPACITY-01` — the days gate measures INTENT, not CAPACITY *(P2 — **downgraded from P1 on a production measurement**, filed 2026-10-02; needs an RCA then the Coaching Board)*
+#### 🟠 `DAYS-GATE-CAPACITY-01` — **RCA DONE 2026-10-02. MOSTLY ALREADY RULED, and my headline claim was FALSE** *(P3; the one real half is a note's wrong REASON)*
 
 🏃 **COACHING BOARD**, after `/zona-debug`. **Not a design question:** it changes what the
 engine REFUSES.
@@ -4414,6 +4414,45 @@ to the sheet.)
 ⚠️ **So this was filed P1 on severity-if-triggered, BEFORE measuring — the thing the completion
 rules exist to stop.** Downgraded to P2: a real defect with a clear mechanism and **zero realised
 blast radius.** It stays open because the mechanism is live, not because anyone is hurt.
+
+🔴 **RCA 2026-10-02 — THE FOUNDER'S HYPOTHESIS WAS RIGHT: THIS WAS ALREADY RULED, TWICE, AND
+MY FILING CITED NEITHER.**
+
+| Doctrine | What it already settles |
+|---|---|
+| **§18 Blocked-day enforcement — life-first scheduling** | *"Sessions MUST never be scheduled on days listed in `days_cannot_train`, regardless of week type."* The engine honouring 2 days and overriding a declared 6 is **ruled, correct behaviour** |
+| **§18 Amendment (FREQ-SILENCE-01, 2026-09-19)** | *"the plan MUST carry `frequency_constraint_note` naming the days declared, the days used, **and the reason**."* Its rationale is verbatim my "finding": *"A runner who told the wizard 'six days' and opens a plan with three has been silently overruled"* — **ruled ten days before I filed it** |
+| **The `block` tier** | **Already an OPEN Coaching Board question** (P2, 2026-09-17): *"`block` … has NO acknowledgement path at all … a §44 doctrine change and a Coaching Board question, not a docs edit."* It ends **"Ask Russ before touching it."** |
+
+🔴 **AND MY CENTRAL CLAIM WAS FALSE, BY MY OWN MEASUREMENT ERROR.** I reported the declared
+days were **silently** ignored. I read `meta.constraint_note` — **a field that does not exist** —
+got `null`, and called it silence. The field is **`frequency_constraint_note`**, and it fires:
+*"You told us you can run 6 days a week. This plan uses 2, because your weekly volume spread any
+thinner would make every run too short to do much."* **The runner IS told.** ⚠️ **That is the
+same catalogue class as the bug I was chasing** — *checker reads a different source from the
+producer* — committed inside the measurement the item rested on.
+
+✅ **WHAT ACTUALLY SURVIVES — two small things:**
+
+**(1) The note fires for every cause and explains only one.** `ruleEngine.ts:8797` counts sessions
+in loading weeks and fires whenever `lo < declared` — cause-agnostic — then **hard-codes the
+volume reason**. A runner who blocked Mon–Fri is told their *weekly volume* is why, when their own
+blocked days are. §18 Am. requires the note to name **the reason**; it names a wrong one.
+⚙️ **Coaching Board EXEMPT — restores documented intent**, no prescription change, and the
+builder's own comment already records that exemption for itself. **This is the only buildable half.**
+
+**(2) The gate's `block` tier is evadable by answering a different question.** Two runners,
+identical capacity of one day a week:
+
+```
+declares 1, blocks 0 → REFUSED: "1 day a week won't build a half marathon. It needs 2."
+declares 6, blocks 6 → gate status=ok (reads 6, block_at 2) → 16-week plan, 1 run/week,
+                       ZERO quality, invariant logs in production
+```
+
+🛑 **DO NOT FIX (2) AS A DEFECT.** `min(declared, 7 − blocked)` **widens who is hard-refused**,
+which IS the open `block`-tier question and carries *"Ask Russ before touching it."* Patching it
+here would decide an open ruling by implementation. **Folded into that question; not a separate item.**
 
 ⚠️ **Candidate fix is NOT obviously "bind on `min(days_available, 7 − blocked)`"** — that is a
 prescription change and needs the board. Do not patch it from the sheet.
