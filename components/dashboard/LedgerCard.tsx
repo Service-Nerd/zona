@@ -18,9 +18,12 @@ import { useTrackOnce } from '@/components/shared/useTrackOnce'
 //
 // Moved 2026-05-23 from the Me/Profile screen to the Coach screen — the metric
 // belongs with the rest of the execution / discipline data, not the admin /
-// connections context where it originally landed. Counter, not a streak. No
-// flames, no urgency, no celebration of milestones. Resets silently to 0 on a
-// broken week. Voice anchor stamp at the bottom — same anatomy as Pattern 11
+// connections context where it originally landed. No flames, no urgency, no
+// celebration of milestones. Resets silently to 0 on a broken week.
+// ⚠️ This said "Counter, not a streak" until 2026-10-02. `weeksWithinLines` is a
+// CONSECUTIVE count that resets on break, which is a streak by mechanism; what is
+// deliberately absent is the packaging. Corrected in both records (SLT), no behaviour
+// changed — see `lib/coaching/disciplineLedger.ts` for the full note. Voice anchor stamp at the bottom — same anatomy as Pattern 11
 // (RestraintCard) in ui-patterns.md.
 export default function LedgerCard({ ledger: ledgerProp, surface }: { ledger?: LedgerSnapshot | null; surface: 'me' | 'coach' }) {
   // Prefer the prefetched snapshot from the parent's orchestrated load so the

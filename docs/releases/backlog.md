@@ -654,6 +654,37 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
 2. If it persists: attach **Safari → Develop → [device] → Web Inspector**, hover the band, and read
    the element. That is the only thing that will name it, and it takes a minute.
 
+## ⚖️ FILED 2026-10-02 — `LEDGER-FATIGUE-HONESTY-01`
+
+### `LEDGER-FATIGUE-HONESTY-01` — the ledger breaks when a runner tells the truth 🏃 **COACHING BOARD**
+
+Out of `LEDGER-RESET-01` at the SLT, 2026-10-02. **Routed down by Hutchinson**: this is not a
+commercial question and the SLT declined to settle it.
+
+🔴 **MEASURED in `lib/coaching/disciplineLedger.ts`.** A "week within the lines" requires, among
+other things: *"No `fatigue_tag` in ('Heavy','Wrecked') across that week's completions."*
+
+**So a runner who finishes a hard week and honestly tags it `Wrecked` loses their number — and a
+runner who logs nothing at all keeps it.** The only way to protect the count is to stop reporting.
+
+⚠️ **WHY IT IS A COACHING QUESTION AND NOT A DISPLAY ONE.** `fatigue_tag` is an input the engine
+consumes — §112's skip handling, load accumulation and the risk gate all read self-reported state. A
+display rule that gives runners a reason to under-report it **degrades the data the prescription is
+built on**. 🔬 Wood redirected her kill mandate at exactly this: *"it changes the context around
+telling us the truth, and in the wrong direction."* 🧠 Sutherland: *"we built the grey-zone app and
+then charged people for admitting they were tired."*
+
+**What the board has to rule on:** whether an honest `Heavy`/`Wrecked` tag should break the week at
+all, and if not, what should — a missed session is a different signal from a hard one.
+
+⚠️ **ONE-WAY DATA CHANGE, with no migration.** `weeksWithinLines` is computed lazily on view from
+`session_completions`, so changing the criteria **retroactively changes every existing user's
+number**. There is no stored value to migrate and no way to show the old one. That is a reason to
+rule carefully, not a reason to avoid ruling.
+
+🔻 **Not blocked on the parked question.** `LEDGER-RESET-01` is parked for want of audience data;
+this one is a correctness defect and does not need traffic to be wrong.
+
 ## ⚖️ FILED 2026-10-02 — `SITE-BTN-INVERT-01`
 
 ### ✅ `SITE-BTN-INVERT-01` — RULED 2026-10-02 on the count: at ONE, the override stands 🧭 **DESIGN BOARD**
@@ -2249,7 +2280,34 @@ Two live questions it deliberately left open:
 Data to bring: `ledger_view` now carries `surface: 'me' | 'coach'`, which is the evidence
 `OPS-ARTIFACT-PLACEMENT-01` has been parked on.
 
-### 🟡 `LEDGER-RESET-01` — the silent reset to zero
+### ⏸️ `LEDGER-RESET-01` — PARKED 2026-10-02 (SLT). Both filed positions were WITHDRAWN on measurement
+
+⏸️ **SLT: do not build, do not decide.** Measured 2026-09-28, **2 users** reached the end of the
+`ledger_view` chain, there is no site analytics, and **Traynor's commercial seat is stood down**, so
+no seat prices churn or retention. 📦 Fried: *"we are debating the reset semantics of an artifact
+that has essentially no audience."* It stays parked **with** `OPS-ARTIFACT-PLACEMENT-01`, which this
+board already froze on the same data.
+
+🔴 **BOTH SEATS WITHDREW THEIR FILED POSITIONS ONCE THE CRITERIA WERE READ, AND THE RECORDED
+DISAGREEMENT NO LONGER EXISTS.** 🧠 Sutherland concedes **resetting on a MISSED week is honest** —
+his objection was never to the reset. 🔬 Wood **withdraws the kill against a durable ledger** and
+redirects it: *"the reset isn't the defect; the criteria are."*
+
+🔴 **THE REAL DEFECT IS A CRITERION, AND IT IS A COACHING QUESTION → `LEDGER-FATIGUE-HONESTY-01`.**
+A week breaks on `fatigue_tag in ('Heavy','Wrecked')`, so a runner who honestly reports being wrecked
+**loses the number**, while a runner who logs nothing keeps it. That is an incentive to under-report
+an input the engine consumes. 🏃 Hutchinson is carrying it down.
+
+✅ **THE RECORD WAS CORRECTED IN THE SAME COMMIT, no behaviour changed.** `disciplineLedger.ts` said
+*"a counter, not a streak"* two lines above `weeksWithinLines`'s own *"**Consecutive** completed
+weeks"*. **A consecutive count that resets on break is a streak by mechanism**; what is deliberately
+absent is the packaging. CLAUDE.md states the product *"deliberately omits gamification — no
+streaks"*, so doctrine and implementation described one object two ways.
+
+⚠️ **Re-opening this needs DATA, not an argument.** Traynor's recall trigger — revenue, a
+trial-to-paid rate, a redeemed-code funnel, or meaningful installs — is the same trigger here.
+
+#### `LEDGER-RESET-01` — the original filing, for the record
 
 💼 **SLT** (raised at `LEVELS-01`, 2026-09-29, and recorded unresolved).
 
@@ -9510,6 +9568,18 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > repeated failure, and it would be especially bad here, where the existing green tick is precisely
 > what allowed the rot.
 
+> ✅ **PLAN-NOTE-PLACEMENT-01 — CLOSED 2026-10-02 (SLT). THE PREMISE EXPIRED: it is not at the top.**
+> 📐 Measured render order in `DashboardClient.tsx`: **PlanArc (4261) → "Change your plan" (4279) →
+> the WEEKS (4282) → rationale notes (4385).** 🔴 **`A2 — PLAN LEADS WITH THE PLAN` (Design Board,
+> sitting three) already moved the rationale below the weeks**, on a measurement that found *"FIVE
+> cards stood between the header and the first week, on a screen called Plan"*. This item was filed
+> while the rationale sat near the top; it no longer does, so the question as asked is moot.
+> ⚠️ **A DIFFERENT QUESTION SURVIVES AND IS DELIBERATELY NOT FILED:** *does the rationale belong on
+> the Plan screen at all, or on the session it explains?* That is a 🧭 Design Board question, and
+> re-opening `PLAN-NOTE-SURFACE-01` (this board's own 2026-09-09 ruling, with Wood's guardrail)
+> needs a better reason than "we were in the area". **Sixth expired premise in two days.**
+>
+> *(original filing below)*
 > 🔲 **PLAN-NOTE-PLACEMENT-01 — does the plan rationale belong at the TOP of the Plan screen at all?** *(P2, filed 2026-09-17 by the SLT. Deliberately NOT bundled with PLAN-NOTE-VOICE-01.)*
 >
 > **Wood's argument:** a runner asks *"why is my long run short?"* in week 3, when the long run feels short. Not on day one. Putting the answer at the top of the plan on day one hands someone who has just committed a list of things their life prevents, in our warning colour. Context beats motivation, and that context says "here is what you cannot do".

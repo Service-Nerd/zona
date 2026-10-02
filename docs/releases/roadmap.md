@@ -344,6 +344,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 ---
 
 ## 🔴 NOW — CRITICAL PATH: Make-A-Wish handover (SLT-sequenced 2026-09-11)
+- 🏃 **`LEDGER-FATIGUE-HONESTY-01`** — the discipline ledger breaks on `fatigue_tag in ('Heavy','Wrecked')`, so an honest *Wrecked* loses the number while logging nothing keeps it. **An incentive to under-report an input the engine consumes.** Routed down by the SLT 2026-10-02. ⚠️ Changing the criteria retroactively rewrites every existing user's count — no stored value, no migration. 🏃 COACHING BOARD
 - 🧭 **`SITE-BTN-INVERT-01`** — the site has no light-on-dark button variant, so the homepage's App Store CTA carries two inline token overrides after moving onto `.btn`. **Measure first:** if only one dark-band CTA exists, the honest ruling may be "leave the override and revisit at two". 🧭 DESIGN BOARD
 - 🟡 **`ZONES-SURFACE-01`** — Training Zones under Me (HR / Pace toggle, ceiling leads, our labels). **Both boards have ruled**; build re-specified after measuring `meta.vdot` on 10 of 21 plans. 🧭🏃
 

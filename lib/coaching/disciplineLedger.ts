@@ -1,8 +1,23 @@
 // LEDGER-01 — "Weeks within the lines" discipline ledger.
 //
-// Doctrine: a counter, not a streak. Eyal investment + Sutherland reframe —
-// the user builds a number that represents restraint, not volume. Resets
-// silently to zero on break. No notifications. No flames. No urgency.
+// Doctrine: the user builds a number that represents restraint, not volume
+// (Eyal investment + Sutherland reframe). Resets silently to zero on break.
+// No notifications. No flames. No urgency.
+//
+// 🔴 THIS COMMENT USED TO OPEN "a counter, not a streak", AND THE LINE DIRECTLY BELOW
+// `weeksWithinLines` SAYS "**Consecutive** completed weeks". Those describe the same
+// object two ways. **A consecutive count that resets on break IS a streak by mechanism**
+// — what is absent is the PACKAGING (no flames, no notification, no urgency, no
+// milestone celebration), and that absence is the real and deliberate design decision.
+// CLAUDE.md states the product "deliberately omits gamification — no streaks, badges,
+// leaderboards", so the doctrine and the implementation described it differently and one
+// of them was wrong. **Corrected to describe the mechanism honestly (SLT, 2026-10-02);
+// no behaviour changed.** Saying "not a streak" did not make it one less.
+//
+// ⚠️ THE OPEN QUESTION IS THE CRITERIA, NOT THE RESET. See `LEDGER-FATIGUE-HONESTY-01`:
+// a week breaks on `fatigue_tag in ('Heavy','Wrecked')`, so a runner who honestly reports
+// being wrecked loses the number while a runner who logs nothing keeps it. That is an
+// incentive to under-report an input the engine consumes, and it is a COACHING question.
 //
 // Free criteria (per ISO Mon→Sun week):
 //   - ≥ MIN_COMPLETION_PCT of planned sessions in that week have
