@@ -130,9 +130,16 @@ function RevealCard({ week, phaseLabel, phaseColour, visible, units }: {
             : `Week ${week.n}`}
           <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 400, color: 'var(--text-muted)', fontSize: '13px' }}> · W{week.n}</span>
         </div>
+        {/* 🔴 fontWeight 700 IS THE DOCUMENTED VALUE AND WAS OMITTED, so the phase
+            chip inherited 400 — `ui-patterns.md` § Plan voice card: phase chip
+            `10px 700 uppercase 0.08em`. Found by MICRO-LABEL-CHIPS-01's sitting
+            (2026-10-02), on the one screen that is meant to feel like a moment.
+            ⚠️ Silvanto declined the veto deliberately: there is no CONFORMING twin
+            to regress against — the documented chip has no implementation on the
+            card it is documented on. See the doc note beside those values. */}
         {phaseColour && phaseLabel && (
           <span style={{
-            fontFamily: 'var(--font-ui)', fontSize: '10px', letterSpacing: '0.08em',
+            fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em',
             textTransform: 'uppercase', color: phaseColour,
             border: `0.5px solid ${phaseColour}`, borderRadius: '20px',
             padding: '2px 8px', flexShrink: 0,

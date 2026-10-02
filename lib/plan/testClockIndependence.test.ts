@@ -44,7 +44,7 @@ import { join } from 'node:path'
 
 /** Every `*.test.ts` under `lib/`, discovered — never a hand-kept list, which is
  *  the flaw that produced the defect this file guards. */
-function testFiles(dir = 'lib', out: string[] = []): string[] {
+function testFiles(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name)
     if (e.isDirectory()) { if (!p.includes('node_modules')) testFiles(p, out) }
@@ -54,18 +54,86 @@ function testFiles(dir = 'lib', out: string[] = []): string[] {
 }
 
 /**
+ * 🔴 EVERY ROOT THAT CAN HOLD A PLAN-GENERATING TEST, not just `lib/`.
+ *
+ * ⚠️ FIXTURE-CLOCK-SWEEP-01 re-measure (2026-10-02). This scanned `lib/` alone,
+ * while `generateRulePlan` is called from **2 test files under `components/`**
+ * (`components/dashboard/__fixtures__/harnessPlan.test.ts`,
+ * `components/training/planRowLabel.test.ts`). Neither pins an absolute
+ * `race_date` today, so there was **no live offender** — this closes a hole in the
+ * gate's REACH, not a defect in the tree.
+ *
+ * That distinction is the reason it is worth closing at all: this repo's record is
+ * that **a check's anchor decides what it can never see**, and the next
+ * plan-generating test written beside a component would have gone green forever.
+ * The population, not the predicate, five times over.
+ */
+const ROOTS = ['lib', 'components', 'app'] as const
+function allTestFiles(): string[] {
+  return ROOTS.flatMap(r => testFiles(r))
+}
+
+/**
  * A call that passes no `planStart`: `generateRulePlan(<anything>, <tier>)` with
  * the tier immediately closing the parens. A call carrying a third argument does
  * not match, which is the whole distinction.
  */
-const TWO_ARG = /generateRulePlan\(\s*[^;]*?,\s*['"](paid|free|trial)['"]\s*\)/g
-
 /** A hardcoded calendar date in a fixture — the half that cannot move. */
 const ABSOLUTE_RACE_DATE = /race_date:\s*['"]20\d\d-\d\d-\d\d['"]/
 
-function offends(src: string): boolean {
-  return ABSOLUTE_RACE_DATE.test(src) && new RegExp(TWO_ARG).test(src)
+/**
+ * Does this call hand the engine an explicit plan start?
+ *
+ * 🔴 A REGEX CANNOT ANSWER THIS, AND I WROTE THREE THAT CLAIMED TO.
+ *
+ * The original `TWO_ARG` — `generateRulePlan(<anything>, '<tier>')` with the tier
+ * closing the parens — is correct but **narrow in two ways**: it needs the tier to
+ * be a STRING LITERAL (so a table-driven test over `tier` escapes), and it cannot
+ * see an explicit third argument of `undefined`, which is exactly as
+ * clock-dependent as omitting one and reads more deliberate.
+ *
+ * ⚠️ Widening it with regexes FAILED LOUDLY, twice, and the failure is the lesson.
+ * `/generateRulePlan\(\s*[^;()]*?,\s*(?!['"])[A-Za-z_$][\w$]*\s*\)/` looks like
+ * "two args, second is an identifier". It matched **77 files** — every
+ * `generateRulePlan(input, 'paid', PLAN_START)` in the tree — because the lazy
+ * prefix happily consumes `input, 'paid'` and then the tail matches
+ * `, PLAN_START)`. **A regex has no notion of "the second argument"**; it matches a
+ * shape that happens to look like one, and the third argument looks identical to
+ * the second from the right-hand side.
+ *
+ * So: walk the parens and split on top-level commas. The argument position is then
+ * a fact rather than a resemblance. ⚠️ I made this same mistake measuring the item
+ * before writing the fix, where it produced confident wrong numbers in SILENCE —
+ * caught only by re-deriving with a parser. Here the gate caught it in 250ms.
+ */
+function callsWithoutPlanStart(src: string): number {
+  let n = 0
+  // CLAUDE.md § TypeScript: iterating a `matchAll` iterator directly needs
+  // `--downlevelIteration` under this target. `Array.from` is the documented form.
+  for (const m of Array.from(src.matchAll(/generateRulePlan\s*\(/g))) {
+    const open = m.index! + m[0].length - 1
+    let depth = 0, cur = '', args: string[] = []
+    for (let i = open; i < src.length; i++) {
+      const c = src[i]!
+      if (c === '(' || c === '[' || c === '{') { depth++; if (depth > 1) cur += c }
+      else if (c === ')' || c === ']' || c === '}') {
+        depth--
+        if (depth === 0) { args.push(cur); break }
+        cur += c
+      } else if (c === ',' && depth === 1) { args.push(cur); cur = '' }
+      else cur += c
+    }
+    const third = (args[2] ?? '').trim()
+    // Absent, or explicitly undefined: both fall back to `formatDate(nextMonday())`.
+    if (third === '' || third === 'undefined') n++
+  }
+  return n
 }
+
+function offends(src: string): boolean {
+  return ABSOLUTE_RACE_DATE.test(src) && callsWithoutPlanStart(src) > 0
+}
+
 
 /**
  * Known offenders. **EMPTY, AND THAT IS THE CORRECT STATE.**
@@ -85,7 +153,7 @@ function offends(src: string): boolean {
 const CLOCK_DEPENDENT_BASELINE: Record<string, string> = {}
 
 describe('TEST-CLOCK-PREPTIME-01 — no NEW wall-clock-dependent engine test', () => {
-  const files = testFiles()
+  const files = allTestFiles()
 
   it('discovers the test corpus at all', () => {
     // A zero-length scan would make every assertion below vacuously true, which

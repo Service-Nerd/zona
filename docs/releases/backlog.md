@@ -1629,7 +1629,35 @@ and fewer controls as the codebase does the right thing, and a shrinking populat
 failure this repo has recorded more than any other. **Fix: resolve a spread of a known
 constant before measuring, or fail loudly when a style object cannot be fully read.**
 
-#### 🟡 `MICRO-LABEL-CHIPS-01` — 16 chips have no check at all
+#### 🔲 `COACHBYLINE-EMPTY-VARIANT-01` — `CoachByline` does not cover its own empty state, so it was hand-rolled *(P3, filed 2026-10-02 from MICRO-LABEL-CHIPS-01's sitting)*
+
+🧭 **DESIGN BOARD.** `DashboardClient` hand-rolls Kit's 22px avatar + name + role at
+`:5259–5275` as the **empty state** of `CoachByline`, because `CoachByline` always renders the
+AIMark and an empty line is hand-authored, so it must not claim provenance (Pattern 16). **That
+reasoning is correct and it is in the comment above the copy.**
+
+🎓 **Sierra:** *"the component does not cover its own empty state, so someone copied it — that is
+the system's fault, not the author's."* The fix is a dimmed / no-provenance variant on
+`CoachByline`, not a rewrite of the call site. ⚠️ **Deliberately NOT bundled into the chip
+sitting**: it is a shared-component change and wants its own ruling.
+
+#### ✅ `MICRO-LABEL-CHIPS-01` — **RULED 2026-10-02: DON'T SHIP a fourth role, DON'T SHIP a chip gate. Two measured defects shipped instead**
+
+🧭 **DESIGN BOARD.** 🔴 **THE NUMBER WAS WRONG IN BOTH DIRECTIONS.** Filed as *"16 labels governed
+by no check whatsoever"*: measured **17** excluded inside the gate's own corpus (19 before its
+marketing exemption), and **8 of them are `<Button>`**, already owned by
+`buttonInlineOverride.test.ts`. Ungoverned: **9 spans across 7 files.**
+
+🎪 **Collins, on taxonomy:** the 9 are **five different jobs** — avatar, phase, verdict, countdown,
+pointer. *"Writing one chip spec over that is the taxonomy error, committed inside the register
+meant to catch it."* ✋ **Silvanto found the real defect and declined his own veto:**
+`GeneratingCeremony`'s phase chip **omitted `fontWeight`** and inherited 400 against a documented
+700 — and **the card those values are documented on has no phase chip at all.** A pattern document
+can be wrong **by addition**. Both fixed, with `phaseChipWeight.test.ts` falsified four ways.
+
+⚠️ **The exclusion was harmless and its REASON was false**, which is the dangerous pair: nothing
+could go red, and this item was filed on the reason. Now partitioned by owning element, one shared
+counter, both halves asserted.
 
 🧭 **DESIGN BOARD.** Found by nearly breaking two of them: wave 1's first classification
 rule was "convert by size", and two `zoneVerdictColour` chips were one step from having
@@ -7955,7 +7983,30 @@ deload-week placement". **This is the filing for that ruling.**
 
 ---
 
-### 🟠 `FIXTURE-CLOCK-SWEEP-01` — 30 plan-generating tests expire on a date *(P1, mechanical)*
+### ✅ `FIXTURE-CLOCK-SWEEP-01` — **CLOSED 2026-10-02. It was shipped a week after it was filed and nobody came back**
+
+⚙️ **NO BOARD.** 🔴 **RE-MEASURED AT THE CALL SITE: ZERO offenders.** Filed 2026-09-21 at *"30
+files"*; `TEST-CLOCK-PREPTIME-01` built the gate on 2026-09-28 and `TEST-CLOCK-PINSWEEP-01` swept
+all **19** real offenders across **68 call sites**, leaving an empty register whose emptiness is
+asserted. **Seventh premise-expiry in two days.**
+
+⚠️ **My first TWO measurements of this were wrong, the same way.** A file-level `grep -l planStart`
+called `dayBudgetAchievability.test.ts` unpinned when it passes `'2026-04-27'` as the **third
+positional argument**; and my first "hole" regex claimed to match two-arg calls and matched the
+**third** argument of 77 three-arg calls. **A regex has no notion of "the second argument"** — it
+matches a shape that resembles one, and from the right-hand side the third argument is identical.
+Only a balanced-argument parser answered it.
+
+✅ **What was actually left was in the GATE, and shipped as `TEST-CLOCK-REACH-01`:** its corpus
+scanned `lib/` alone while `generateRulePlan` is called from **2 test files under `components/`**;
+and its predicate could not see a **variable tier** or an explicit third argument of
+**`undefined`**. **Zero live offenders for all three** — this closed holes in the gate's REACH, not
+defects in the tree, and it is worth doing precisely because *a check's anchor decides what it can
+never see.* The three regexes are replaced by one `callsWithoutPlanStart()` parser. Falsified four
+ways including the must-NOT-fire direction.
+
+🔻 **`composePlanWithFoundation` is closed by its SIGNATURE, not by a check** — `today` is a
+required positional, so it cannot fall back to the clock.
 
 `npm run verify` went red on 2026-09-21 with nothing committed: `terrainEffortNote.test.ts` pins
 `race_date: '2026-12-06'`, calls `generateRulePlan` with no `planStart`, and its prep window shrank by

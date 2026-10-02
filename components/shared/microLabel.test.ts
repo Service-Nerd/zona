@@ -103,6 +103,38 @@ function microLabels(src: string): { size: string; weight: string; ls: string }[
 
 const CANON = new Set(Object.values(MICRO_LABELS).map(v => `${v.fontSize}|${v.fontWeight}|${v.letterSpacing}`))
 
+/**
+ * The set the chip filter REMOVES, partitioned by the element carrying the style.
+ *
+ * 🔴 ONE COUNTER FOR BOTH ARMS, on purpose. Two arms over one population with a human
+ * in between is how a green tick hides a hole — the exact flaw recorded for
+ * `deloadCadence.test.ts` and for the tier order written three times.
+ */
+function chipCount(): { buttons: number; spans: number } {
+  let buttons = 0
+  let spans = 0
+  for (const f of tracked()) {
+    if (EXEMPT.test(f)) continue
+    const src = readFileSync(f, 'utf8')
+    const re = /fontSize:\s*'(9|10|11|12)px'/g
+    let m: RegExpExecArray | null
+    while ((m = re.exec(src)) !== null) {
+      const start = src.lastIndexOf('{{', m.index)
+      if (start === -1 || m.index - start > 600) continue
+      const end = src.indexOf('}}', m.index)
+      if (end === -1) continue
+      const blk = src.slice(start, end + 2)
+      if (!blk.includes('letterSpacing')) continue
+      if (!(blk.includes('background') || blk.includes('border'))) continue
+      const tagAt = src.lastIndexOf('<', start)
+      const tag = /^<([A-Za-z][\w.]*)/.exec(src.slice(tagAt))?.[1] ?? '?'
+      if (tag === 'Button') buttons++
+      else spans++
+    }
+  }
+  return { buttons, spans }
+}
+
 /** ⚠️ DECLARED, with its reason. Marketing mockups render iOS chrome at mockup scale and
  *  are already exempted for that reason in `lib/marketing/typeScale.test.ts`. */
 const EXEMPT = /components\/marketing\//
@@ -258,24 +290,37 @@ describe('MICRO-LABEL-DRIFT-01 — the register can only fall', () => {
   // removes are a real, non-trivial population — if it ever reads 0, the filter has
   // stopped matching and the register silently grew a blind spot.
   it('the chip exclusion removes a real, bounded population', () => {
-    let chips = 0
-    for (const f of tracked()) {
-      if (EXEMPT.test(f)) continue
-      const src = readFileSync(f, 'utf8')
-      const re = /fontSize:\s*'(9|10|11|12)px'/g
-      let m: RegExpExecArray | null
-      while ((m = re.exec(src)) !== null) {
-        const start = src.lastIndexOf('{{', m.index)
-        if (start === -1 || m.index - start > 600) continue
-        const end = src.indexOf('}}', m.index)
-        if (end === -1) continue
-        const blk = src.slice(start, end + 2)
-        if (!blk.includes('letterSpacing')) continue
-        if (blk.includes('background') || blk.includes('border')) chips++
-      }
-    }
+    const chips = chipCount().buttons + chipCount().spans
     expect(chips, 'the chip filter matches nothing — it has stopped working').toBeGreaterThan(5)
     expect(chips, 'the chip filter is swallowing the whole population').toBeLessThan(60)
+  })
+
+  // 🔴 AND THE BAND ABOVE CANNOT TELL WHAT IT EXCLUDED. `background|border` is not a
+  // chip test — it is "small text with a fill or an outline" — so of the 17 instances
+  // this filter removes, **8 are `<Button>`**, excluded on the written grounds that
+  // *"a chip is not a micro-label"*. They are not chips. They are buttons, and
+  // `components/ui/buttonInlineOverride.test.ts` already owns them: its OWNED list is
+  // exactly `background, borderRadius, fontSize, padding, minHeight, height`.
+  //
+  // ⚠️ THE EXCLUSION IS HARMLESS AND ITS REASON WAS FALSE, which is the dangerous
+  // combination — nothing could go red, and `MICRO-LABEL-CHIPS-01` was filed on the
+  // reason, claiming *"16 labels are governed by no check whatsoever."* Measured
+  // 2026-10-02: **17 excluded, 8 of them governed elsewhere, 9 genuinely ungoverned.**
+  // A number inherited from a comment, twice removed from the code.
+  //
+  // This arm partitions the excluded set by the ELEMENT that carries the style, so the
+  // two halves are counted separately and neither can drift behind the other's total.
+  it('the excluded set is partitioned: buttons are governed elsewhere, spans are not', () => {
+    const { buttons, spans } = chipCount()
+    // Governed by BUTTON-SYSTEM-01's register, not by this file. If this reaches 0 the
+    // button gate has lost them, not this one.
+    expect(buttons, 'no Button in the excluded set — check buttonInlineOverride.test.ts still owns them')
+      .toBeGreaterThan(4)
+    // The genuinely ungoverned remainder. ⚠️ NOT an upper bound on correctness: these
+    // are governed by NOTHING, and whether a chip gets a role is a Design Board
+    // question (MICRO-LABEL-CHIPS-01). This arm only stops the number moving unseen.
+    expect(spans, 'the ungoverned chip population moved — re-measure and take it to the board')
+      .toBeLessThan(14)
   })
 
   // ⚠️ AN EMPTY POPULATION PASSES EVERY OTHER ARM IN THIS FILE.

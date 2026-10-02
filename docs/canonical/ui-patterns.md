@@ -2763,6 +2763,15 @@ Inline this-week coaching surface on the Plan screen. Sibling to `PlanCoachingCa
 - 3px `--moss` left rail (coaching-surface signal) — positioned at `left: 8px`, vertical inset matches padding
 - Padding: `14px 16px 14px 19px` (extra left padding to clear the rail)
 - Eyebrow row: `10px 700 --mute uppercase 0.08em` "THIS WEEK" left, phase chip `10px 700 --moss uppercase 0.08em` right (e.g. "BUILD")
+  > 🔴 **THE PHASE CHIP ON THIS CARD IS NOT IMPLEMENTED, and the line above was asserting a
+  > component** (found by `MICRO-LABEL-CHIPS-01`'s sitting, 2026-10-02). `phaseDisplayLabel`
+  > reaches `PlanArc`, the marketing mockup and `/plan-arc-preview` — **not this eyebrow row.**
+  > ⚠️ **This is `--surface-moss-wash` inverted:** that time the token was legal and a rule in
+  > another document forbade it; here the rule describes something nobody built. **A pattern
+  > document can be wrong by addition, not only by omission**, and a structure block reads as a
+  > description of the shipped card. The values stay as the spec **if** it is built; the only
+  > live phase chip is `GeneratingCeremony`'s, which until today inherited **400** against the
+  > `700` written here.
 - Headline: `15px 600 --ink -0.01em` line-height 1.4
 - Items: `12px 400 --ink-2` line-height 1.55, gap 6px between items
 - Max 2 items on this surface (Coach screen's `PlanCoachingCard` shows 3)

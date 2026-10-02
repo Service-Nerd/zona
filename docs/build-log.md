@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `TEST-CLOCK-REACH-01` + `MICRO-LABEL-CHIPS-01` · two items, both wrong about their own numbers
+**Shipped:** A clock-gate whose reach now matches the code it guards, and a Design Board ruling that refused both options the item offered.
+
+**Dev learning — a regex has no notion of "the second argument".** The clock gate catches `generateRulePlan(input, 'paid')` with a regex requiring the tier to close the parens. I wanted to widen it to catch a *variable* tier, so I wrote `/,\s*(?!['"])[A-Za-z_$][\w$]*\s*\)/` — "two args, second is an identifier". It matched 77 files: every correctly-pinned three-arg call in the tree. The lazy prefix happily eats `input, 'paid'` and then the tail matches `, PLAN_START)`. **From the right-hand side, the third argument looks exactly like the second.** Replaced all three regexes with a parser that walks the parens and splits on top-level commas, so position is a fact rather than a resemblance.
+
+**The honest bit:** I made that identical mistake *twice* while measuring the item, before writing any fix — once with a file-level `grep -l planStart` that called a file unpinned because it passes the date as a bare string literal, and once with the regex above. Both produced confident numbers. Neither produced a failure. The gate caught the third attempt in 250ms, which is the whole argument for writing the check before trusting the measurement.
+
+**Product learning — a pattern document can be wrong by addition.** The board went looking for the conforming twin of a chip that renders at the wrong weight, and there isn't one: `ui-patterns.md` documents a phase chip at 10px/700 on a card that **has no phase chip at all**. We've had the inverse before (`--surface-moss-wash`: the token was legal, a rule in another file forbade it, and the two had never met). This is the mirror — the rule describes a component nobody built, and a structure block reads as a *description* of the shipped card. Silvanto declined his own veto over it, correctly: you can't regress against something that was never there.
+
+**And the thing I nearly recorded as a finding and didn't:** a verdict pill looked like it contradicted a standing ruling that *"'Done' is moss on text, not a filled chip"*. It grounds on `--bg-soft`; moss only appears for a *held verdict*, which is a verdict and not a reward for finishing. One grep away from a phantom conflict in the register.
+
+---
+
 ## 2026-10-02 — `MEMORY-SIZE-GATE-01` · the file warned me, in the copy that had already lost the lines
 **Shipped:** A size budget for the assistant's memory index, gated in the docs audit. Index trimmed 26,296 → 23,158B with nothing thrown away.
 
