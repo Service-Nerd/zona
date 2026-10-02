@@ -53,7 +53,7 @@ import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
 import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
 import BackButton from '@/components/shared/BackButton'
 import FloatingBackButton from '@/components/shared/FloatingBackButton'
-import { MICRO_LABELS } from '@/components/shared/microLabels'
+import { MICRO_LABELS, FIELD_HINT } from '@/components/shared/microLabels'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -342,7 +342,7 @@ function FieldLabel({ children, optional }: { children: React.ReactNode; optiona
   return (
     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
       {children}
-      {optional && <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, opacity: 0.7, fontSize: '10px' }}>optional</span>}
+      {optional && <span style={{ ...FIELD_HINT, opacity: 0.7 }}>optional</span>}
     </div>
   )
 }

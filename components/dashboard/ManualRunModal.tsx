@@ -13,7 +13,7 @@ import { DurationPicker } from '@/components/shared/DurationPicker'
 import Sheet from '@/components/shared/Sheet'
 import { TextArea } from '@/components/shared/TextArea'
 import { TextField } from '@/components/shared/TextField'
-import { MICRO_LABELS } from '@/components/shared/microLabels'
+import { MICRO_LABELS, FIELD_HINT } from '@/components/shared/microLabels'
 import Button from '@/components/ui/Button'
 import IconButton from '@/components/ui/IconButton'
 import { getCoachingFlag } from '@/lib/coaching/coachingFlag'
@@ -538,7 +538,7 @@ export default function ManualRunModal({ weekN, sessionKey, preferredUnits, onCl
 
             {/* Notes */}
             <div style={{ marginBottom: 'var(--space-5)' }}>
-              <div style={labelStyle}>Notes <span style={{ ...MICRO_LABELS.eyebrow, letterSpacing: 0, opacity: 0.6 }}>optional</span></div>
+              <div style={labelStyle}>Notes <span style={{ ...FIELD_HINT, opacity: 0.6 }}>optional</span></div>
               {/* 🔴 13px HERE WAS A LIVE iOS TRAP, and `TextField.tsx`'s own
                   header had already written it down: below 16px iOS zooms the
                   focused input and `maximum-scale=1` strands the runner zoomed

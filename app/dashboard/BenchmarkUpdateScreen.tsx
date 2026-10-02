@@ -11,6 +11,7 @@ import { Chip } from '@/components/shared/Chip'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 import Button from '@/components/ui/Button'
+import { FIELD_HINT } from '@/components/shared/microLabels'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ function FieldLabel({ children, optional }: { children: React.ReactNode; optiona
       marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
     }}>
       {children}
-      {optional && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>optional</span>}
+      {optional && <span style={{ ...FIELD_HINT, opacity: 0.7 }}>optional</span>}
     </div>
   )
 }

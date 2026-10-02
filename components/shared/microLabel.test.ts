@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
-import { MICRO_LABELS, DOCUMENTED_EYEBROW } from './microLabels'
+import { MICRO_LABELS, DOCUMENTED_EYEBROW, FIELD_HINT } from './microLabels'
 
 // MICRO-LABEL-DRIFT-01 (Design Board, 2026-09-29) — three roles, and a register that can
 // only fall.
@@ -318,6 +318,60 @@ describe('MICRO-LABEL-DRIFT-01 — the register can only fall', () => {
 // bind the DRAWING to the app's live token, so a future ruling on the eyebrow would silently
 // redraw the picture. `globals.css` states the principle for the site scale: forcing a mockup
 // onto a governed scale "would make the drawing wrong to make a grep clean."
+// ─────────────────────────────────────────────────────────────────────────────
+// MICRO-LABEL-FIELDHINT-01 (Design Board, 2026-10-02) — DON'T SHIP a fourth role.
+//
+// ⚖️ A field hint (`optional`, lowercase, beside an input) is **body text**, not a label. It
+// takes the DOCUMENTED *Muted / hint* values that already existed in `ui-patterns.md` and
+// that nothing was reaching. **The micro-label set stays closed at three.**
+//
+// 🔴 MEASURED: THREE instances, not the two the item claimed, and the same word rendered
+// THREE WAYS — lowercase 10px/400 twice, and **UPPERCASE 10px/700** once, because
+// `ManualRunModal` spread `MICRO_LABELS.eyebrow` and overrode only `letterSpacing`, leaving
+// `textTransform: 'uppercase'` and `fontWeight: 700` alive. **A role borrowed and PARTLY
+// overridden is worse than one copied**: it reads as governed, and the register cannot see it
+// because the values it checks are canonical.
+describe('MICRO-LABEL-FIELDHINT-01 — a field hint is body text, not a fourth role', () => {
+  it('🔴 the role set is still exactly three — a fourth needs the board', () => {
+    expect(Object.keys(MICRO_LABELS)).toEqual(['sectionLabel', 'eyebrow', 'dataLabel'])
+    expect(Object.keys(MICRO_LABELS)).not.toContain('fieldHint')
+  })
+
+  it('FIELD_HINT carries the documented Muted / hint values', () => {
+    expect(FIELD_HINT.fontSize).toBe('12px')
+    expect(FIELD_HINT.fontWeight).toBe(400)
+    expect(FIELD_HINT.color).toBe('var(--mute)')
+    expect(readFileSync('docs/canonical/ui-patterns.md', 'utf8'),
+      'the documented Muted / hint row changed — re-ratify before changing the constant')
+      .toContain('| Muted / hint | `--font-ui` | 400 | 12px |')
+  })
+
+  // 🔴 THE ARM THAT CATCHES THE REAL DEFECT. A hint that SPREADS a micro-label role and
+  // overrides one property away still inherits uppercase and 700, and looks governed while
+  // being neither a hint nor a label.
+  it('🔴 no `optional` hint borrows a micro-label role', () => {
+    const offenders: string[] = []
+    for (const f of tracked()) {
+      const src = readFileSync(f, 'utf8')
+      for (const m of Array.from(src.matchAll(/>\s*optional\s*</g))) {
+        const win = src.slice(Math.max(0, m.index! - 300), m.index!)
+        if (/MICRO_LABELS\.(sectionLabel|eyebrow|dataLabel)/.test(win)) {
+          offenders.push(`${f}:${src.slice(0, m.index!).split('\n').length}`)
+        }
+      }
+    }
+    expect(offenders, 'a field hint is spreading a micro-label role. Use FIELD_HINT — a hint ' +
+      'beside an input is body text, and the board declined a fourth role:\n' + offenders.join('\n'))
+      .toEqual([])
+  })
+
+  it('the hints are real and reachable (an empty population passes the arm above)', () => {
+    const n = tracked().reduce((a, f) =>
+      a + (readFileSync(f, 'utf8').match(/>\s*optional\s*</g) ?? []).length, 0)
+    expect(n, 'no `optional` hints found — re-anchor this gate').toBeGreaterThanOrEqual(3)
+  })
+})
+
 describe('MICRO-LABEL-HANDROLL-01 — the values come from the owner, never a literal', () => {
   const handRolled = (): string[] => {
     const out: string[] = []

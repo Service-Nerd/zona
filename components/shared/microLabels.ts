@@ -51,4 +51,35 @@ export const MICRO_LABELS: Record<MicroLabelRole, Required<Pick<CSSProperties,
  * Silvanto declined the veto, and he recorded the condition under which he would have
  * used it: **any proposal that widened the doc to accommodate the existing 41.**
  */
+/**
+ * MICRO-LABEL-FIELDHINT-01 (Design Board, 2026-10-02) — **A FIELD HINT IS NOT A MICRO-LABEL,
+ * AND THE BOARD DECLINED TO MAKE IT A FOURTH ROLE.**
+ *
+ * `optional`, beside an input, lowercase and untracked, is not a caption above a section. It
+ * survived only as an EXCLUSION from the register above (`letterSpacing: 0` /
+ * `textTransform: 'none'` mean "no tracking", so the scanner skips it), which is not the same
+ * as being governed.
+ *
+ * 🔴 MEASURED 2026-10-02: THREE instances, not the two the item claimed, and the same word
+ * rendered THREE WAYS — lowercase 10px/400 twice, and **UPPERCASE 10px/700** once, because
+ * `ManualRunModal` spread `MICRO_LABELS.eyebrow` and overrode only `letterSpacing`, leaving
+ * `textTransform: 'uppercase'` and `fontWeight: 700` alive. **A role borrowed and partly
+ * overridden is the drift this programme exists to remove.**
+ *
+ * ⚖️ THE RULING: it is body text. These are the DOCUMENTED *Muted / hint* values from
+ * `ui-patterns.md` § Typography Scale — `--font-ui` 400 12px `--mute` — which already existed
+ * and nothing was reaching. **The micro-label set stays closed at three** (🎪 Collins:
+ * *"Three named levels is a system. Forty-one is a habit."*).
+ *
+ * ⚠️ DELIBERATELY NOT IN `MICRO_LABELS`. Putting it there would reopen a set the board closed
+ * and make the count four, which is exactly what was declined. It lives beside them because
+ * the VALUES need one owner, not because it is one of them.
+ */
+export const FIELD_HINT = {
+  fontFamily: 'var(--font-ui)',
+  fontSize: '12px',
+  fontWeight: 400,
+  color: 'var(--mute)',
+} as const
+
 export const DOCUMENTED_EYEBROW = MICRO_LABELS.eyebrow
