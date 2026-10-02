@@ -4314,7 +4314,7 @@ ADR-015 owns it.
 cases** — the engine's output is provably untouched, which is what a display fix should look
 like. 🔻 **Does not prove it on a device**; the proof is the corpus count, not a screenshot.
 
-### 🧭 `SHEET-CONTROL-VOCAB-01` — the sheet has four control species
+### ✅ `SHEET-CONTROL-VOCAB-01` — **CLOSED 2026-10-02. Premise dissolved; the sitting found a different, sharper finding**
 
 ⚠️ **THIS IS THE REAL FINDING BEHIND *"I just don't like it"*, AND IT IS UNRESOLVED.** The two
 fixes that shipped (the 4+3 day grid, the dashed border) were tidy-ups, and the founder **was told
@@ -4335,6 +4335,67 @@ chips orphan like the days did"* (**variable-width pills**; wrapping is what chi
 would give equal columns to wildly unequal labels — **worse**).
 
 **Board:** 🧭 DESIGN BOARD.
+
+✅ **RULED 2026-10-02 — DON'T SHIP a redesign, CLOSE the item. Re-measured first and the premise
+had gone:** 6 × `SegmentedControl` → **5** · 2 chip rows → **1** (the day selector became
+`DayGridSelector`, shipped by 6w's own ruling) · 1 native date input → **0** (`PLANVERB-01`
+replaced it with `TextField`, fixing a 13px/iOS-zoom defect) · *"the only centred control"* →
+**nothing is centred**; the only `textAlign` in the file is `left`. **Two of the four species named
+are gone or changed identity, both by ships made for other reasons**, and two of the original four
+findings had already been WITHDRAWN. ⚠️ **My own `<input` count said 1 and was matching a
+COMMENT** — the "a colour inside a comment is prose" class, caught only by reading `RowControl`'s
+switch.
+
+🥇 **The sitting found the real one, and it IS a vocabulary problem — just not this one.**
+→ `SHEET-DAY-QUESTION-01`, below.
+
+#### 🟡 `SHEET-DAY-QUESTION-01` — the sheet asks as TWO controls what the wizard asks as ONE, and they can contradict *(P2, filed 2026-10-02 from the `SHEET-CONTROL-VOCAB-01` sitting)*
+
+🧭 **DESIGN BOARD — SHIP, scoped.** ⚙️ **The engine half is NOT this board's — see
+`DAYS-GATE-CAPACITY-01`.**
+
+`GeneratePlanScreen` derives **both** `days_available` and `days_cannot_train` from a single
+`WeekGrid`, so in the wizard **they cannot contradict.** `ModifyPlanSheet` offers a
+`SegmentedControl` (2–6) and a 7-cell `DayGridSelector` with **no cap**, as two independent
+questions. **Two taps state a contradiction and the sheet says nothing.**
+
+📐 **Generated, same runner, three inputs:**
+
+| declared / blocked | result |
+|---|---|
+| 2 days / 5 blocked | 2 training days/wk, 2 quality sessions — coherent |
+| **6 days / 5 blocked** | **identical to the above** — the declared 6 is silently ignored |
+| **6 days / 6 blocked** | **1 training day/wk, ZERO quality across 16 weeks** |
+
+🎪 **Collins:** *"one question rendered as two controls is the taxonomy defect — the wizard
+proves it, because there it's one grid."* 📱 **Wroblewski:** *"the error path wasn't designed,
+it was inherited."*
+
+**Scope:** ask it the way the wizard does, or show the effective count live. ⚠️ **Not a cap on
+the grid** — blocking 6 days is a legitimate statement ("I can run once a week"); the defect is
+that the other control then disagrees in silence.
+
+#### 🔴 `DAYS-GATE-CAPACITY-01` — the days gate measures INTENT, not CAPACITY *(P1, filed 2026-10-02, needs an RCA then the Coaching Board)*
+
+🏃 **COACHING BOARD**, after `/zona-debug`. **Not a design question:** it changes what the
+engine REFUSES.
+
+`validateDaysAvailable` (`lib/plan/inputs.ts:305`) reads **`input.days_available`** and **never
+mentions `days_cannot_train`** — zero occurrences in the function. Its whole purpose is to refuse
+*"N days a week won't build a half marathon"*, so it is measuring the number the runner **typed**,
+not the number they can **achieve**.
+
+🔴 **Consequence, measured:** `days_available: 6` with 6 days blocked **passes the gate** and
+produces a 16-week half-marathon plan with **one run a week and zero quality sessions**, which trips
+`INV-PLAN-QUALITY-NOT-ZERO` at **error** severity — and in production an error-severity violation
+**logs to `console.error` and ships the plan** (CLAUDE.md § Plan Invariants). **The runner receives
+it.**
+
+⚠️ **Reachable from the Adjust sheet only**, not the wizard, because the wizard derives both from
+one grid. So this and `SHEET-DAY-QUESTION-01` are **one defect with two owners** — the seam rule:
+design owns the encoding, coaching owns what the engine does with it.
+⚠️ **Candidate fix is NOT obviously "bind on `min(days_available, 7 − blocked)`"** — that is a
+prescription change and needs the board. Do not patch it from the sheet.
 
 ---
 
