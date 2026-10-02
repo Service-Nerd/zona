@@ -128,9 +128,14 @@ export default function AppleHealthConnectionRow({ onHRFound }: {
           </div>
         </div>
 
+        {/* DESTRUCTIVE-WIRING-01 (Design Board, 2026-10-02) — the disconnect below is
+            `destructive`, not `ghost`. Disconnecting a data source is destructive, and the
+            variant existed, defined and documented, with ZERO call sites. ⚠️ It does NOT become
+            a filled red rectangle: `BUTTON-SYSTEM-01` makes destructive `--card` + a `--danger`
+            border at rest and inverts it on hover — the family's one named exception. */}
         {!isLoading && (
           connected ? (
-            <Button variant="ghost" size="compact"  onClick={disconnect} disabled={busy}>
+            <Button variant="destructive" size="compact" onClick={disconnect} disabled={busy}>
               {busy ? 'Saving...' : 'Disconnect'}
             </Button>
           ) : (

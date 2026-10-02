@@ -503,13 +503,13 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/MeScreen.tsx#Button3": {
+  "components/dashboard/MeScreen.tsx#Button[btn-full]3": {
     "floor": 44,
-    "padY": 14,
+    "padY": null,
     "font": null,
     "radius": null,
-    "height": 45,
-    "width": "100%"
+    "height": 47,
+    "width": "full"
   },
   "components/dashboard/MeScreen.tsx#Button4": {
     "floor": 44,
@@ -520,6 +520,22 @@
     "width": "100%"
   },
   "components/dashboard/MeScreen.tsx#Button5": {
+    "floor": 44,
+    "padY": 14,
+    "font": null,
+    "radius": null,
+    "height": 45,
+    "width": "100%"
+  },
+  "components/dashboard/MeScreen.tsx#Button6": {
+    "floor": 44,
+    "padY": 14,
+    "font": null,
+    "radius": null,
+    "height": 45,
+    "width": "100%"
+  },
+  "components/dashboard/MeScreen.tsx#Button7": {
     "floor": 44,
     "padY": null,
     "font": null,

@@ -667,3 +667,64 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
     expect(theme, 'emailTheme must carry the AA-clearing fill').toMatch(/\bmossStrong\b/)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DESTRUCTIVE-WIRING-01 (Design Board, 2026-10-02) — a declared variant with ZERO call
+// sites is a gap in the product, not a redundant variant.
+//
+// 🎪 Collins, at the sitting that filed it: *"that is a gap in the product, not a redundant
+// variant — the variant is right and it hasn't been wired."* `.btn--destructive` was
+// defined in `globals.css`, documented in `ui-patterns.md`, governed by `BUTTON-SYSTEM-01`
+// as the family's one named hover exception — and **used nowhere**, while the two flows that
+// needed it were hand-rolled.
+//
+// 🔴 WHAT BUILDING IT FOUND, WHICH THE RULING DID NOT. The board ruled "delete-account's raw
+// button -> destructive". That control is a **door**, not the act: a row in an Action List
+// Card paired with `Sign out`, where `--card` + a `--danger` border would have put a bordered
+// box inside a bordered card. The destructive ACT is the confirm inside `DeleteAccountScreen`
+// — and it was a raw `<button>` filled with `var(--session-intervals)`, the **INTERVALS
+// SESSION COLOUR**, which merely happens to share #B84545 with `--danger`. It looked right by
+// COINCIDENCE: re-colour intervals and account deletion changes with it. It also violated
+// `BUTTON-SYSTEM-01` in writing — destructive is *"never a filled red rectangle at rest"*.
+//
+// ⚠️ THE GATE IS GENERAL, NOT ABOUT `destructive`. The class is "a variant exists and nothing
+// reaches it", and naming one variant would leave the next one unguarded — the same
+// "only as wide as its list" shape this repo keeps paying for.
+describe('DESTRUCTIVE-WIRING-01 — every declared button variant is reached', () => {
+  const css = fs.readFileSync(path.join(ROOT, 'app/globals.css'), 'utf8')
+  const appSrc = (): string =>
+    execSync('git ls-files', { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean)
+      .filter(f => /^(app|components)\/.*\.tsx$/.test(f) && !f.includes('.test.'))
+      .map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n')
+
+  const variants = (): string[] =>
+    Array.from(new Set(Array.from(css.matchAll(/\.btn--([a-z]+)\s*\{/g)).map(m => m[1]!)))
+
+  it('the scanner finds the variant family (an empty list passes everything)', () => {
+    expect(variants().length, 'no .btn--* variants parsed — re-anchor this gate')
+      .toBeGreaterThanOrEqual(8)
+  })
+
+  it('🔴 no declared variant has zero call sites', () => {
+    const src = appSrc()
+    const orphans = variants().filter(v => {
+      const byProp = new RegExp(`variant="${v}"`).test(src)
+      const byClass = new RegExp(`btn--${v}\\b`).test(src)
+      return !byProp && !byClass
+    })
+    expect(orphans, 'a button variant is defined and documented but nothing reaches it. ' +
+      'Either wire it to the flow that needs it, or delete it — a variant nobody can reach ' +
+      'is a rule with no consumer:\n' + orphans.join('\n')).toEqual([])
+  })
+
+  // ⚠️ THE ACT, SPECIFICALLY. The general arm above would stay green if `destructive` were
+  // wired anywhere at all, including somewhere harmless. Account deletion is the control this
+  // item exists for, so it is asserted by name.
+  it('the delete-account confirm is the destructive variant, not a session colour', () => {
+    const me = fs.readFileSync(path.join(ROOT, 'components/dashboard/MeScreen.tsx'), 'utf8')
+    expect(me, 'the delete confirm lost its destructive variant')
+      .toMatch(/variant="destructive"[\s\S]{0,200}Delete account/)
+    expect(strip(me), 'a SESSION colour is painting a destructive action again')
+      .not.toContain('var(--session-intervals)')
+  })
+})

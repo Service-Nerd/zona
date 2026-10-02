@@ -112,7 +112,14 @@ const INLINE_BASELINE = {
    *  `ActionRow` when the FAQ row was added beside it. Leaving it would have shipped
    *  two rows doing the same job looking different — `ACTION-ROW-01`'s own recorded
    *  failure, and the twin was in the block being edited. */
-  rawButtons: 3,
+  /** 3 → 2 (DESTRUCTIVE-WIRING-01, Design Board 2026-10-02): the `Delete account` ROW was a
+   *  raw `<button>` beside a `Sign out` that was already a `<Button variant="ghost">` — two
+   *  rows in one Action List Card, doing the same job, built two ways. It is now `ghost` to
+   *  match its sibling. ⚠️ It did NOT become `destructive`, which is what the board ruled:
+   *  building it showed the ruling pointed at the wrong control. This row is a DOOR; the
+   *  destructive variant went to the confirm button inside `DeleteAccountScreen`, which is
+   *  the act. **Debt genuinely paid — one fewer hand-rolled control, not one relabelled.** */
+  rawButtons: 2,
   /** Toggles and switches sitting directly on the index.
    *  🔴 THE SITTING WAS TOLD **5** AND THE REAL FIGURE IS **2**. My evidence used
    *  `grep -cE 'Toggle|Switch|role="switch"'` — a LINE count with a wider pattern, which

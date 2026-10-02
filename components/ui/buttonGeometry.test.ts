@@ -173,6 +173,15 @@ describe('button geometry', () => {
   // per-key diff on an ordinal-keyed register is a rename report; the multiset is the
   // measurement. Same proof ME-DOORS-01 used (82 both sides) and the one this file used
   // earlier today for the Plan adjustments extraction.
+  // ⚠️ RE-BASELINED 2026-10-02 (`DESTRUCTIVE-WIRING-01`), delta PROVEN on the multiset:
+  // **156 -> 158, TWO boxes ADDED and NOTHING REMOVED** — `{47, full}` and `{45, 100%}`.
+  // 🥇 THE REGISTER GREW BECAUSE TWO CONTROLS BECAME MEASURABLE, NOT BECAUSE ANY WERE ADDED.
+  // Both were hand-rolled raw `<button>`s — the `Delete account` row and the delete CONFIRM —
+  // and a raw button is invisible to this harness, so the most consequential control in the
+  // app was outside its own geometry register. Moving them onto `Button` is what let it see
+  // them. **A register rising because its population got honest is the only rise allowed**,
+  // the same reason `microLabel`'s went 35 -> 47. Both clear the 44 floor (47 and 45), so the
+  // floor arm is unmoved.
   it('🔴 geometry matches the committed baseline', () => {
     // A MOVE IS NOT AUTOMATICALLY WRONG — it is automatically something to
     // DECLARE. Re-baseline with `npm run button:geometry -- --write` and say in

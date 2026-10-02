@@ -525,13 +525,20 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
         )}
 
         <div style={{ marginTop: 'auto' }}>
-          <button
+          {/* 🔴 DESTRUCTIVE-WIRING-01 — THE ACTUAL DESTRUCTIVE ACT, AND IT WAS PAINTED WITH A
+              SESSION COLOUR. This was a raw `<button>` with 13 inline styles filled with
+              `var(--session-intervals)` -> `--s-inter` -> **#B84545**, which is the INTERVALS
+              session colour and merely happens to share a hex with `--danger`. It looked correct
+              BY COINCIDENCE: re-colour intervals and account deletion would have changed with it.
+              Two meanings sharing one value, pixels right and semantics wrong.
+              ⚠️ It also violated `BUTTON-SYSTEM-01` in writing — destructive is "never a filled
+              red rectangle at rest" — so this is a defect fix restoring a documented pattern,
+              not a restyle. `--bg-primary`, `--coral` and a hand-typed `12px` radius go with it. */}
+          <Button variant="destructive" size="regular" className="btn--full"
             onClick={handleDelete}
-            disabled={!checked || loading}
-            style={{ width: '100%', padding: '15px', background: checked && !loading ? 'var(--session-intervals)' : 'var(--session-intervals-soft)', border: 'none', borderRadius: '12px', color: checked && !loading ? 'var(--bg-primary)' : 'var(--coral)', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, letterSpacing: '0.02em', cursor: checked && !loading ? 'pointer' : 'default', transition: 'background 0.15s, color 0.15s' }}
-          >
+            disabled={!checked || loading}>
             {loading ? 'Deleting…' : 'Delete account'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -1436,12 +1443,19 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
             onClick={signOut} style={{ justifyContent: 'flex-start', width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', fontWeight: 500 }}>Sign out</span>
           </Button>
-          <button
+          {/* 🔴 DESTRUCTIVE-WIRING-01 — THIS ROW IS A DOOR, NOT THE DESTRUCTIVE ACT, so it does
+              NOT take `variant="destructive"`. The board ruled "delete-account's raw button ->
+              destructive"; building it showed the ruling pointed at the wrong control. This is a
+              ROW in an Action List Card, paired with `Sign out` directly above it, and
+              `btn--destructive` is `--card` + a `--danger` border — a standalone button
+              treatment. Dropping it here would put a bordered box inside a bordered card and
+              break the pair. It becomes `ghost` to match its sibling exactly; the variant is
+              wired where the ACT is, on the confirm button inside `DeleteAccountScreen`. */}
+          <Button variant="ghost"
             onClick={() => setActiveSection('delete-account')}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-          >
+            style={{ justifyContent: 'flex-start', width: '100%', padding: '14px 16px', background: 'none', textAlign: 'left' }}>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--danger)', fontWeight: 500 }}>Delete account</span>
-          </button>
+          </Button>
         </div>
 
         {/* FOUNDER-01 — quiet footer link. Moved here from "Your profile"
