@@ -369,7 +369,6 @@ export default function DashboardClient() {
       setModifyBusy(false)
     }
   }
-  const [showWelcome, setShowWelcome] = useState(false)
   const [screen, setScreen] = useState<Screen>('today')
   /** ME-DOORS-01 — a request to open Me AT a door rather than at the index. Consumed once
    *  by `MeScreen` and cleared, so returning to Me later lands on the index as usual. */
@@ -1397,10 +1396,6 @@ export default function DashboardClient() {
           }
         }
 
-        // Welcome screen retired per brand-product-alignment v2 — migration complete.
-        // if (!data?.has_onboarded && loadedPlan.weeks.length > 0) {
-        //   setShowWelcome(true)
-        // }
 
         // Trial — set trial_started_at on first load if not already set
         let trialStartedAt: string | null = data?.trial_started_at ?? null
@@ -1830,15 +1825,6 @@ export default function DashboardClient() {
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasPaidAccess, stravaConnected, runAnalysisReady, allCompletions, runAnalysisMap, plan])
-
-  async function dismissWelcome() {
-    setShowWelcome(false)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase.from('user_settings').upsert({ id: user.id, has_onboarded: true, updated_at: new Date().toISOString() })
-    } catch {}
-  }
 
   async function handlePlanSaved(savedPlan: Plan) {
     try {
@@ -2356,48 +2342,14 @@ export default function DashboardClient() {
     )
   }
 
-  // Welcome screen — shown once on first login
-  if (showWelcome) {
-    return (
-      <div style={{
-        // Own scroll context — see OrientationScreen note. Retired screen, but
-        // kept scroll-safe in case the trigger is ever re-enabled.
-        height: '100dvh', overflowY: 'auto',
-        overscrollBehavior: 'contain', // SCROLL-NATIVE-01 — bounce locally, never chain
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'safe center',
-        background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
-        padding: '32px 24px calc(32px + env(safe-area-inset-bottom, 0px))',
-      }}>
-        {/* Brand wordmark — Wordmark component sources text from BRAND.name */}
-        <div style={{ marginBottom: 'var(--space-2)' }}>
-          <Wordmark size="md" />
-        </div>
-        <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', marginBottom: 'var(--space-7)' }}>
-          {BRAND.voiceAnchor}
-        </div>
-
-        {/* Welcome message */}
-        <div style={{ width: '100%', maxWidth: '320px', textAlign: 'center' }}>
-          <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px', marginBottom: 'var(--space-4)', lineHeight: 1.3 }}>
-            Your plan is ready.
-          </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 'var(--space-3)' }}>
-            {/* TODO: brand voice review — sentences referencing the product name may benefit from rewording in a follow-up content polish pass. */}
-            {BRAND.name} keeps track of your sessions, adapts when things shift, and keeps you focused on what matters: finishing.
-          </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 'var(--space-7)' }}>
-            Train with intention. The rest follows.
-          </div>
-
-          <Button variant="primary" fullWidth
-            onClick={dismissWelcome}>
-            Let's go
-          </Button>
-        </div>
-      </div>
-    )
-  }
+  // ⚠️ THE RETIRED WELCOME SCREEN WAS DELETED HERE (`INTERSTITIAL-TITLE-ROLE-01`,
+  // 2026-10-02). 41 unreachable lines: `showWelcome` was `useState(false)` and its only
+  // `setShowWelcome(true)` had been commented out since the v2 brand migration, so the
+  // branch could not be entered. Its `dismissWelcome` handler went with it — the
+  // `has_onboarded` write it owned had already moved to the live finalise path
+  // (ONBOARDING-FIX Problem A), which is recorded there as the reason the flag never
+  // flipped for anyone. **An unreachable branch reads exactly like a live one**, which
+  // is `SMOKE-PLUMBING-01` and `QUIT-TAB-DEAD-01` for the third time.
 
   // Plan not loaded yet (shouldn't normally reach here)
   if (!plan) return null

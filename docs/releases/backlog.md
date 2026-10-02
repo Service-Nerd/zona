@@ -902,7 +902,7 @@ need no ruling: they are harnesses, not runner surfaces.
 
 ## ⚖️ FILED 2026-10-01 — `INTERSTITIAL-TITLE-ROLE-01`, `MICRO-LABEL-HANDROLL-01`
 
-### `INTERSTITIAL-TITLE-ROLE-01` — three full-screen asks share a heading shape nothing documents 🧭 **DESIGN BOARD**
+### ✅ `INTERSTITIAL-TITLE-ROLE-01` — SHIPPED 2026-10-02. It was TWO asks and a corpse, not three 🧭 **DESIGN BOARD**
 
 Out of `BACK-HEADER-OWNER-01`, found only because that item's gate stopped using a hardcoded
 six-file list.
@@ -919,7 +919,41 @@ past, in a build about something else, is exactly what `MICRO-LABEL-DRIFT-01` ca
 They are declared by name in `appScreenTitle.test.ts`'s `NOT_TITLES` with their reason, so the
 gate is honest about not governing them.
 
-⚠️ **One of the three is the RETIRED welcome screen** (CLAUDE.md: trigger commented out). The
+✅ **SHIPPED 2026-10-02 — Design Board SHIP WITH AMENDMENT.** The two live asks keep **24px/600
+centred**, documented as an **application of the Screen title role**; the retired welcome screen is
+**deleted** (41 unreachable lines, `DashboardClient` 7,230 → 7,182).
+
+🔴 **THE COUNT IN THIS ITEM WAS WRONG AND CORRECTING IT CHANGED THE ANSWER.** Measured: the two
+**live** asks agree **exactly** with each other at **24/600**; only the **retired** welcome screen
+differed, at **22/500**. **That is one consistent undocumented role plus a corpse, not three-way
+drift** — and those get opposite treatments. ⚠️ The item also rested on the asks using
+`--font-brand` where headings use `--font-ui`; **both resolve to Inter** (CLAUDE.md), so that
+difference has **no rendered effect at all**.
+
+🎪 **NO FOURTH HEADING LEVEL.** Collins' binding condition from `BACK-HEADER-OWNER-01` the day
+before — *"hero / screen title / compact is three. That is a system"* — holds. **An application of a
+role is not a new role.** ✋ **Silvanto declined the veto** and named his condition: normalising the
+ask to 800 would be a **tonal regression with no legibility gain** (600 is a decision here, unlike
+`SectionLabel`'s inherited 400 which he ruled an accident). 📱 **Wroblewski's reflow condition was
+satisfied by doing nothing** — pointing the asks at 26/800 would have moved content ~2px on two
+screens nobody has seen on a device. **No pixels moved.**
+
+🥇 **THE DELETION WAS VERIFIED BY A GATE FIRING ON ITS OWN DECLARATION.**
+`appScreenTitle.test.ts`'s *"a stale exemption is a lie"* arm went red the moment the welcome branch
+went, naming it exactly. ⚠️ **`dismissWelcome` went with it:** the `has_onboarded` write it owned had
+already moved to the live finalise path (`ONBOARDING-FIX` Problem A), whose comment records that it
+*"previously lived ONLY in dismissWelcome… so the flag never flipped for anyone (9/14 users had a
+saved plan but has_onboarded=false)"*.
+
+⚠️ **The geometry register moved and the delta was PROVEN, not accepted:** 15 per-key differences
+reported, which is `BUTTON-GEOMETRY-KEY-02`'s ordinal cascade — **measured on the multiset, 157 → 156
+controls, exactly ONE box removed (the welcome screen's own CTA) and nothing added.**
+
+🔻 **NOT mechanically checked, stated rather than hidden:** nothing asserts the two asks stay at
+24/600. Bounding *"a centred full-screen ask"* is a layout property this codebase cannot express
+statically. The gate records that they are **not titles**; it does not govern their type.
+
+⚠️ *(superseded)* ⚠️ **One of the three is the RETIRED welcome screen** (CLAUDE.md: trigger commented out). The
 board may well rule that two live asks do not need a role of their own — in which case the
 answer is to point them at the screen-title role and delete the third, which is a smaller
 decision than it looks.

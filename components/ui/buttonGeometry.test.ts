@@ -164,6 +164,15 @@ describe('button geometry', () => {
       .toBeGreaterThan(50)
   })
 
+  // ⚠️ RE-BASELINED 2026-10-02 (`INTERSTITIAL-TITLE-ROLE-01`), WITH THE DELTA PROVEN RATHER
+  // THAN ACCEPTED. Deleting the retired welcome screen removed one control from
+  // `DashboardClient`, which shifted every later ordinal in that file and reported **15
+  // per-key differences** — `BUTTON-GEOMETRY-KEY-02`'s instability, not fifteen moves.
+  // **Measured on the multiset: 157 -> 156 controls, exactly ONE box removed
+  // (`{height:47, width:"full"}`, the welcome screen's own CTA) and NOTHING added.** A
+  // per-key diff on an ordinal-keyed register is a rename report; the multiset is the
+  // measurement. Same proof ME-DOORS-01 used (82 both sides) and the one this file used
+  // earlier today for the Plan adjustments extraction.
   it('🔴 geometry matches the committed baseline', () => {
     // A MOVE IS NOT AUTOMATICALLY WRONG — it is automatically something to
     // DECLARE. Re-baseline with `npm run button:geometry -- --write` and say in

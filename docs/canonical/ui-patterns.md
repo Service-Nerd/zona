@@ -2288,6 +2288,50 @@ cannot be imported.
 > saw it as *"run notification toggles look mis shaped"*. Silvanto named it a regression
 > against this section and declined to veto, because the component is the remedy.
 
+### The interstitial ask — an APPLICATION of Screen title, not a fourth level (INTERSTITIAL-TITLE-ROLE-01, Design Board 2026-10-02)
+
+A **full-screen centred ask** — connect your runs, allow notifications — is a ceremony, not a
+pushed screen. It has a `Wordmark` above it, **no back arrow and no title row**, and the runner is
+being asked a favour rather than shown a destination.
+
+**The shape: 24px, weight 600, centred, under a Wordmark.** That is the **Screen title size band
+with a lighter weight**, and it is deliberately *not* a fourth heading level.
+
+| | |
+|---|---|
+| Hero display | 56px / 800 |
+| **Screen title** | **26px / 800** |
+| ↳ *applied as the interstitial ask* | **24px / 600**, centred, no chrome |
+| Screen title, compact | 20px / 800 |
+
+🎪 **WHY NOT A FOURTH ROLE.** Collins' binding condition from `BACK-HEADER-OWNER-01` one day
+earlier: *"hero / screen title / compact is three. That is a system."* Same cap logic as
+`MICRO-LABEL-DRIFT-01`'s three micro-labels — *"Three named levels is a system. Forty-one is a
+habit."* An application of a role is not a new role.
+
+✋ **WHY WEIGHT 600 STAYS AND WAS NOT NORMALISED TO 800.** Silvanto declined to veto and named the
+condition under which he would have: **normalising this to 800 is a tonal regression with no
+legibility gain.** 600 at 24px on a centred screen with a wordmark above it is a softer voice for a
+request; 800 would shout at someone we are asking a favour of. ⚠️ **This is a decision, not an
+accident** — unlike `SectionLabel`, which set no weight at all and inherited 400, which Silvanto
+ruled *"an accident, not a decision"*. The precedent that governs it is this file's own:
+**consistency stops where the role changes.**
+
+🔴 **THE FILING SAID THREE ASKS SHARED AN UNDOCUMENTED SHAPE. MEASURED, IT WAS TWO AND A CORPSE.**
+The two live asks agree **exactly** with each other at 24/600; only the **retired welcome screen**
+differed, at 22/500. **That is not three-way drift — it is one consistent role plus dead code**, and
+those get opposite treatments. The welcome screen was **41 unreachable lines** (`showWelcome` was
+`useState(false)` and its only `setShowWelcome(true)` had been commented out since the v2 brand
+migration) and was deleted. ⚠️ **The filing also noted the asks use `--font-brand` where headings
+use `--font-ui` — both resolve to Inter (CLAUDE.md), so that difference has no rendered effect.**
+
+⚠️ **NOT MECHANICALLY CHECKED, and the reason is stated rather than hidden.** The two asks are
+declared by name in `appScreenTitle.test.ts`'s `NOT_TITLES` with this ruling as their reason, so the
+title gate is honest about not governing them — but **nothing asserts they stay at 24/600**. A
+derived check would need to bound "a centred full-screen ask", which is a layout property this
+codebase cannot currently express statically. The stale-declaration arm does hold one thing shut: if
+either ask is deleted, its declaration fails as a lie.
+
 ### The 44px tap floor — what it is FOR (TAP-TARGET-DECISIONS-01, Design Board 2026-10-02)
 
 **44px is the floor for a CTA, or for any control that is ITSELF the target. Where the ROW is the

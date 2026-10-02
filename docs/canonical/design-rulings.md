@@ -3766,3 +3766,39 @@ is `.btn--regular { min-height: 44px }` in `globals.css`, reused rather than res
 ⚠️ **What it does not settle:** nothing has been seen on a device, and the CTA grew 43 → 47px,
 which is a visible change on the live homepage that no one has looked at in a browser.
 
+---
+
+## ⚖️ INTERSTITIAL-TITLE-ROLE-01 — the ask is an application of Screen title (2026-10-02)
+
+**SHIP WITH AMENDMENT.** The two live full-screen asks keep **24px / 600 centred**, documented as an
+**application of the Screen title role** rather than a fourth heading level. The **retired welcome
+screen is deleted** — 41 unreachable lines.
+
+🔴 **THE FILING'S COUNT WAS WRONG, AND CORRECTING IT CHANGED THE ANSWER.** It said *"three centred
+full-screen asks… at 22–24px at weight 500–600"*. Measured: the two LIVE asks agree **exactly** at
+**24/600**; only the retired welcome screen differed (**22/500**). **One consistent undocumented role
+plus a corpse, not a three-way drift** — and those get opposite treatments. ⚠️ It also rested on
+`--font-brand` differing from headings' `--font-ui`; **both resolve to Inter**, so that difference
+has no rendered effect.
+
+🎪 **NO FOURTH HEADING LEVEL.** Collins' binding condition from `BACK-HEADER-OWNER-01` the previous
+day — *"hero / screen title / compact is three. That is a system"* — holds. An application of a role
+is not a new role.
+
+✋ **SILVANTO DECLINED THE VETO AND NAMED HIS CONDITION:** normalising the ask to **800** would be a
+tonal regression with no legibility gain. 600 is a decision here, unlike `SectionLabel`'s inherited
+400 which he ruled *"an accident, not a decision"*. Governed by this file's own precedent:
+**consistency stops where the role changes.**
+
+📱 **Wroblewski's reflow condition was satisfied by doing nothing:** pointing the asks at 26/800
+would have pushed content down ~2px on two screens nobody has seen on a device. **No pixels moved.**
+
+**Artifacts:** pattern → `ui-patterns.md` § The interstitial ask · the role is the existing Screen
+title band, so no new token · check → **explicitly NOT mechanically checkable**: bounding "a centred
+full-screen ask" is a layout property this codebase cannot express statically. The asks stay declared
+in `appScreenTitle.test.ts`'s `NOT_TITLES`, whose stale-declaration arm fails if either is deleted —
+**and it fired on the welcome screen during this build, which is how the deletion was verified.**
+
+⚠️ **What it does not settle:** nothing asserts the two asks stay at 24/600. The gate records that
+they are not titles; it does not govern their type.
+

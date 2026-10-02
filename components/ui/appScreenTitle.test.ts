@@ -96,18 +96,24 @@ const NOT_TITLES: Record<string, string> = {
 
   // ── Added 2026-10-01 (BACK-HEADER-OWNER-01) when the population stopped being a
   //    hardcoded six-file list. Every one read and classified; none silenced by a
-  //    predicate. ⚠️ THREE OF THEM SHARE A SHAPE THAT IS DOCUMENTED NOWHERE —
-  //    a centred full-screen ask at 22-24px in `--font-brand` at weight 500-600, where
-  //    every documented heading is 800. Filed as `INTERSTITIAL-TITLE-ROLE-01`, not
-  //    quietly normalised here: a role nobody has ruled on is not mine to invent.
+  //    predicate.
+  //
+  // ✅ `INTERSTITIAL-TITLE-ROLE-01` IS RULED (Design Board, 2026-10-02) AND THE COUNT WAS
+  //    WRONG. This comment said THREE asks shared an undocumented shape "at 22-24px in
+  //    `--font-brand` at weight 500-600". Measured: the two LIVE asks agree EXACTLY with each
+  //    other at **24px/600**, and only the RETIRED welcome screen differed (22px/500). **That
+  //    is not three-way drift — it is one consistent role plus a corpse.** The corpse was 41
+  //    unreachable lines and is deleted; the role is now documented in `ui-patterns.md` as an
+  //    APPLICATION of Screen title (same size band, weight 600 for a ceremony voice), which
+  //    keeps Collins' three-level heading system intact rather than inventing a fourth.
+  //    ⚠️ `--font-brand` and `--font-ui` BOTH RESOLVE TO INTER (CLAUDE.md), so the
+  //    font-token difference in the old note had no rendered effect at all.
   'app/dashboard/GeneratePlanScreen.tsx:score':
     'the readiness SCORE. A number the screen exists to show, like the VDOT above.',
-  'app/dashboard/DashboardClient.tsx:Your plan is ready.':
-    'the RETIRED welcome screen (CLAUDE.md: trigger commented out). An interstitial ceremony headline, not a pushed-screen title.',
   'app/dashboard/DashboardClient.tsx:connect.ask':
-    'the connect-runs full-screen ask: a centred interstitial with a wordmark, no back arrow and no title row. INTERSTITIAL-TITLE-ROLE-01.',
+    'the connect-runs full-screen ask. A RULED role (INTERSTITIAL-TITLE-ROLE-01): a centred interstitial with a wordmark, no back arrow and no title row, so it is not a pushed-screen title. See ui-patterns.md § The interstitial ask.',
   'app/dashboard/DashboardClient.tsx:notify.ask':
-    'the notification-permission ask, the same interstitial shape as connect.ask directly above it. INTERSTITIAL-TITLE-ROLE-01.',
+    'the notification-permission ask, the same ruled interstitial shape as connect.ask directly above it.',
   'app/dashboard/DashboardClient.tsx:content.title':
     'the ScreenGuide coach-mark panel — a hand-rolled slide-up, so `sheetRegions` cannot see it, but a sheet title by shape.',
   'app/dashboard/DashboardClient.tsx:raceName':
