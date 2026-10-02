@@ -376,6 +376,51 @@ describe('button geometry', () => {
       .toEqual(['MICRO_LABELS'])
   })
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // BUTTON-SIZE-SCALE-01 (Design Board, 2026-10-02) — **THE SCALE ALREADY EXISTS AND IT IS
+  // THE TWO SIZE CLASSES.** Collins asked whether one should exist at all; the measurement
+  // answers it.
+  //
+  // 📐 MEASURED: of 155 controls, **99 override NOTHING** and land on exactly two heights —
+  // **44** (`.btn--compact`: 12+12+14 = 38, caught by its own `min-height: 44`) and **47**
+  // (`.btn--regular`: 15+15+17, above its floor so the content decides). The bimodality is
+  // not sediment and not taste: **it is one floor and two paddings.**
+  //
+  // 🔴 THE "13 DISTINCT HEIGHTS" THAT FILED THIS ITEM IS NOW **8, ALL >= 44** — and 132 of
+  // 155 sit on the two steps. Collins called 13 heights *"sediment, not a design"*;
+  // Wroblewski answered *"one of those thirteen was 29px and deliberate, and you cannot tell
+  // which from a histogram."* **Both were right, and the floor settled it without either
+  // winning**: the sub-floor cases are gone and the remainder is explained.
+  //
+  // ⚠️ NO NEW REGISTER. All **23** off-step controls carry an inline override, and
+  // `buttonInlineOverride.test.ts` already registers those by file and only lets them fall.
+  // A second register over the same objects is the two-registers-one-population failure this
+  // repo keeps paying for — this arm asserts the RELATIONSHIP and defers the debt to its
+  // existing owner.
+  //
+  // ⚠️ HONEST LIMIT: for the two controls at 52px the recorded override is `radius`, which
+  // cannot itself change a height — so the harness is under-recording their overrides rather
+  // than those two being unexplained. Stated, not glossed.
+  it('🔴 every off-step control is explained by an inline override', () => {
+    const steps = new Set([44, 47])
+    const base = JSON.parse(readFileSync(BASELINE, 'utf8')) as Record<string, Record<string, unknown>>
+    const unexplained: string[] = []
+    let offStep = 0
+    for (const [key, b] of Object.entries(base)) {
+      const h = b.height
+      if (typeof h !== 'number' || steps.has(h)) continue
+      offStep++
+      if (['padY', 'font', 'radius'].every(f => b[f] == null)) unexplained.push(`${key} = ${h}px`)
+    }
+    // ⚠️ An empty off-step population would pass the assertion below for the wrong reason.
+    expect(offStep, 'no off-step controls found — the scale arm is measuring nothing')
+      .toBeGreaterThan(0)
+    expect(unexplained, 'a control sits off the 44/47 scale with NO inline override, so the ' +
+      'size classes did not produce it and `buttonInlineOverride.test.ts` does not own it. ' +
+      'Either it is a third step (board) or an unrecorded override (harness):\n' +
+      unexplained.join('\n')).toEqual([])
+  })
+
   it('the size classes are floors the stylesheet actually declares', () => {
     const floors = sizeFloors(readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8'))
     expect(floors['btn--regular'], '.btn--regular lost its floor').toBe(44)
