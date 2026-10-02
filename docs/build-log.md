@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `OPS-ENRICH-HEALTH-01` + `OPS-ENRICH-REMEDIATE-01` · the number I reported was wrong
+**Shipped:** A reader for the failure event that had none, and a dry-run remediation for the two affected runners.
+
+**The correction first, because I said it four times.** I told the founder AI enrichment was failing for **two thirds of plans**. It isn't. I derived the rate from `ops_events` as `failed / (failed + plan_enrich_server_saved)`, and that success event only fires when the server's backstop had to write because the runner closed the app mid-enrichment. It's a *subset* of successes, not a success counter. So my denominator was "failures plus some successes", which divides by nothing meaningful.
+
+The sound denominator was sitting in the plans table the whole time — `plan_json.meta.enrichment` self-describes, which is exactly why `ENRICH-SAVE-01` put it there. **18 eligible plans, 16 with voice, 2 without. 11%, not 67%.** And 38 of the 43 recorded failures were *partial* reverts where the runner kept the voice everywhere except the named weeks. **Two runners, not two thirds.**
+
+That's the fourth error of the same family in one day: a field that doesn't exist (`constraint_note`), a log window that showed the wrong end of a payload, an `outcome` field I never read, and now a denominator. Every one of them produced a confident number. **A number is only as good as what it divides by, and I kept not checking.**
+
+**So the health route reads STATE, not a rate.** A failure event is a thing that happened; `meta.enrichment` is the thing the runner *has*. Only the second can be alerted on or remediated honestly. The response carries a literal `denominator` field naming its source, so the next reader can't repeat the mistake. It counts `applied_partial` as having voice, excludes free-tier plans that are never enriched by design, and deliberately *includes* a stuck `pending` — a runner holding that has no voice either, and excluding it would hide the one case the save doc calls a defect.
+
+**Why `plan_enrich_failed` having no reader is the real story.** One writer, zero readers. No route, no digest, no alert. Enrichment could have degraded indefinitely and the only thing that surfaced it was the founder saying users had arrived and me going to look. Everything else in this session was downstream of that one gap.
+
+**On remediation:** both affected runners are recoverable, and the script proves rather than asserts the safety property — it fingerprints every session's type, role, zone, distance, duration, metric, pace, HR, catalogue id and derived set, and refuses to write if a single value moved. Dry run says 16 weeks of copy restored for one runner and 23 for the other, prescription byte-identical. Nothing written; it refuses `--write` without an explicit authorisation flag.
+
+**And another expired impossibility.** `PLAN-STRIDES-BACKFILL-01` records that *"regeneration is not reliably possible — `plan_json.meta` does not carry `days_cannot_train`"*. It does now; PV2-A persists the whole input. That's the third item today whose stated blocker had quietly been lifted.
+
+---
+
 ## 2026-10-02 — `ENRICH-PARTIAL-02` · one bad note should not cost a whole week
 **Shipped:** Session-level enrichment revert, with the provenance flag that makes it honest.
 
@@ -24,7 +43,9 @@ So the fix isn't to relax anything; it's to stop one mistake destroying so much.
 ## 2026-10-02 — `ENRICH-PARSE-DIAG-01` + `ENRICH-COPY-NEGATION-01` · two fixes, and both my first hypotheses were wrong
 **Shipped:** `parse_error` now records why it failed, and the copy check can read "No quality work this week."
 
-**The context that changes everything:** live users arrived today via Apple offer codes from the Make-A-Wish partnership. So I stopped feature work and looked at production, and found that **AI enrichment had been failing for two thirds of plan generations — 6 of 9 today, 43 of 64 in the stored window — silently, because ADR-006 makes the fallback silent by design.** Nothing reads `plan_enrich_failed`: it is written by one route and consumed by no route, no digest, no alert. That is why a 67% failure rate ran for a month without anyone knowing, and it is the single most useful thing I have found in this codebase.
+**The context that changes everything:** live users arrived today via Apple offer codes from the Make-A-Wish partnership. So I stopped feature work and looked at production.
+
+🔴 **THE "67%" IN THIS ENTRY IS WRONG AND IS CORRECTED HERE (same day, `OPS-ENRICH-HEALTH-01`).** I derived it as `failed / (failed + plan_enrich_server_saved)`, and that success event fires ONLY when the server backstop had to write — a **subset** of successes, not a success counter. Measured against the only sound denominator, `plans.plan_json.meta.enrichment`: **18 eligible plans, 16 with voice, 2 without — 11%.** **38 of 43 recorded failures were PARTIAL reverts**, where the runner kept the voice on every week but the named ones. **Two runners, not two thirds.** What was true: enrichment was failing often, the containment (`ENRICH-PARTIAL-01`) was doing its job in 38 of 43 cases, and **nothing read the failure event at all**. Nothing reads `plan_enrich_failed`: it is written by one route and consumed by no route, no digest, no alert. That is why a 67% failure rate ran for a month without anyone knowing, and it is the single most useful thing I have found in this codebase.
 
 **Two hypotheses, both wrong, and both wrong the same way.** First I was going to blame label-based classification: the enricher rewrites `session.label`, an invariant reads `label.includes('vo2max')`, and the repo has recorded that exact class twice with a comment that *predicted the next incident*. Beautiful story. The payloads said the failures were the **pace-band** arm, not the label arm.
 

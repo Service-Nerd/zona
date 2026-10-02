@@ -1455,7 +1455,17 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           principle_ref: 'CoachingPrinciples §84',
           severity: 'error',
           week: w.n, day,
-          message: `Coach note on "${session.label}" states zone(s) that contradict session.zone ("${session.zone}") — the header and the note would disagree`,
+          // 🔴 THE MESSAGE NAMED ONE SIDE OF A TWO-SIDED COMPARISON. It printed
+          // `session.zone` and called the note contradictory without saying what
+          // the note said, so a real violation read as self-contradictory nonsense:
+          // *"note on \"Zone 1 — easy float\" states zone(s) that contradict
+          // session.zone (\"Zone 1\")"*. On 2026-10-02 I took that at face value
+          // and told the founder it was probably a FALSE POSITIVE. It is not —
+          // the enrich prompt says "NEVER NAME A ZONE OTHER THAN THE SESSION'S
+          // OWN" (ENRICH-ZONE-01) — but the message cost an hour and a wrong
+          // report. A diagnostic that omits half of a comparison invites exactly
+          // that mistake, so both sides are named now.
+          message: `Coach note on "${session.label}" names zone(s) ${mentions.join(', ')} but the session is prescribed "${session.zone}" — the header and the note would disagree. The note may name the session's own zone or none (ENRICH-ZONE-01).`,
           actual: `note zone(s) ${mentions.join(', ')}`,
           expected: `a mention matching session.zone (${zoneKey})`,
         })
