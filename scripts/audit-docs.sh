@@ -99,16 +99,39 @@ done <<< "$ids"
 # as SWEEP-BASELINE-01 and the liveness baseline, and the same caveat: a
 # declared reason is not a fixed problem, and nothing here schedules the debt.
 #
-# ✅ CLEARED AND RE-BASELINED TO 0 (2026-09-30). The debt reached 0 — every
-# all-time feat/fix/perf scope now has both a registry row and a build-log
-# heading — and the baseline had been left at 291, which this script printed as
-# "improved from 291, lower the baseline" on every run. **291 units of slack: a
-# ship could lose its records 291 times and this check would still say green.**
-# That is the debt register going stale in the one direction nobody watches —
-# the register shrank and the ratchet did not follow it. Falsified at the time
-# of the change by setting the baseline to -1 against an actual 0, which
-# correctly reported GREW and failed the audit.
-SHIP_RECORD_DEBT_BASELINE=0
+# ⚠️ RE-BASELINED TO 0 ON A FALSE PREMISE (2026-09-30, `3e949ada`), AND
+# RESTORED TO THE MEASURED FIGURE (2026-10-02). That commit read:
+#
+#   "✅ CLEARED AND RE-BASELINED TO 0. The debt reached 0 — every all-time
+#    feat/fix/perf scope now has both a registry row and a build-log heading"
+#
+# The slack it set out to close was real — 291 against a baseline of 291 printed
+# "improved, lower the baseline" on every run, so a ship could have lost its
+# records 291 times and this check would still have said green. But **the debt
+# had not been paid.** Measured at that commit's parent with the matching logic
+# unchanged: 288. The register was ratcheted to 0 while the objects were still
+# undocumented, so the next run reported "GREW: 291 — a ship lost its records"
+# about a frozen historical tail, which is the wrong story told loudly.
+#
+# 🔴 ITS FALSIFICATION COULD NOT CATCH THIS, AND LOOKED RIGOROUS. The commit
+# records setting the baseline to -1 "against an actual 0", getting GREW, and
+# calling that proof. Against -1 an actual 288 reports GREW *identically*: the
+# mutation passes the same whether the premise holds or not. **A falsification
+# that cannot distinguish the claim from its negation is not evidence** — the
+# recorded class is "the weak mutation, not the weak arm".
+#
+# ⚠️ 291 IS A COUNT, NOT A VERDICT ON 291 ITEMS. Reconciled 2026-10-02 against
+# this script's own arm: 135 lack a registry row only, 4 lack a build-log
+# heading only, 152 lack both — union 291, of 661 all-time scopes. It was also
+# 291 on 2026-09-21 when the denominator was 454, so the tail is frozen and
+# every scope since has been documented. Some entries are not features in the
+# registry's sense at all (`ADR-015/016`, `B-001`, `BRAND-08-pwa`), so paying
+# this down starts with triage, not with writing 291 rows.
+#
+# Falsified on restore: 290 reports GREW and fails; 292 reports "improved";
+# 291 reports "unchanged". The ratchet only ever moves down, in the same commit
+# that pays the debt.
+SHIP_RECORD_DEBT_BASELINE=291
 say "── ship records: ALL-TIME debt (baseline ${SHIP_RECORD_DEBT_BASELINE}) ──"
 all_ids=$(git log --pretty=format:"%s" \
       | grep -oE "^(feat|fix|perf)\([^)]+\)" | sed -E 's/^(feat|fix|perf)\(//; s/\)$//' \
@@ -462,6 +485,21 @@ done
 say ""
 say "── state blocks name the last SHIP ──"
 last=$(git log --pretty=format:'%h %s' | grep -E '^[a-f0-9]+ (feat|fix|perf)\(' | head -1 | cut -d' ' -f1)
+# ⚠️ COMPARE ON A FIXED 7-CHAR PREFIX, NOT ON `%h`. `core.abbrev` is unset, so
+# `%h` scales its length with the repo's object count and is ENVIRONMENT-
+# DEPENDENT: a state block written in a cloud container stamped `309e1c3` (7)
+# while this machine's `%h` for the same commit is `309e1c31` (8), so
+# `grep -v 309e1c31` counted a block that names the ship exactly as STALE.
+# Measured 2026-10-02: backlog.md AND roadmap.md both flagged, both correct.
+# A false STALE is the expensive direction here -- the recorded response to a
+# state-block warning is to rewrite the paragraph, so this check pointed at the
+# one artifact that did not need touching. 7 is the floor git will ever abbreviate
+# to, so the prefix matches a 7-, 8- or 40-char stamp alike; it is strictly more
+# permissive than the old compare and loses nothing, since the alternative read
+# of a shared 7-char prefix is a different commit that is also an ancestor.
+# Falsified by stamping a block with a wrong SHA of each length (7 and 8): both
+# report STALE.
+last7=${last:0:7}
 mem="$HOME/.claude/projects/$(pwd | tr '/' '-')/memory/MEMORY.md"
 sfail=0
 # ⚠️ EVERY state paragraph, not "does the file mention the SHA somewhere".
@@ -476,12 +514,12 @@ for f in docs/releases/backlog.md docs/releases/roadmap.md; do
   if [ "$blocks" = "0" ]; then
     say "  STALE $f has no state paragraph at all"; sfail=1; fail=1; continue
   fi
-  stale=$(grep '^\*\*State at \(end\|END\) of' "$f" | grep -vc "$last" || true)
+  stale=$(grep '^\*\*State at \(end\|END\) of' "$f" | grep -vc "$last7" || true)
   if [ "$stale" != "0" ]; then
     say "  STALE $f: $stale of $blocks state paragraph(s) do not name last ship $last"; sfail=1; fail=1
   fi
 done
-[ -f "$mem" ] && { grep -q "$last" "$mem" || { say "  STALE MEMORY.md does not name last ship $last"; sfail=1; fail=1; }; }
+[ -f "$mem" ] && { grep -q "$last7" "$mem" || { say "  STALE MEMORY.md does not name last ship $last"; sfail=1; fail=1; }; }
 [ "$sfail" = "0" ] && say "  ok"
 
 say ""
