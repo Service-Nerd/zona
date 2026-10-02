@@ -56,12 +56,19 @@ describe('computeLedger — free tier', () => {
     expect(r.advancedThisWeek).toBe(true)  // week 3 is adjacent to current week 4
   })
 
-  it('resets to 0 on a Heavy fatigue tag', () => {
+  // §112 Amendment (Coaching Board, 2026-10-02 — LEDGER-FATIGUE-HONESTY-01).
+  //
+  // 🔴 THIS TEST USED TO ASSERT THE DEFECT, AND ITS OWN FIXTURE SHOWS IT. `wed` is a
+  // **quality** session ("Tempo") in `buildPlan`, so the case read: *being wrecked after a
+  // tempo run destroys your discipline count*. That is the session working, not a broken week.
+  // §112 SOFTENS the plan on self-reported cost (3 consecutive); this ledger PUNISHED the same
+  // report on the first one, which made §112 measurably harder to reach.
+  it('a high-fatigue tag on a QUALITY day does NOT break the week', () => {
     const plan = buildPlan(4, new Date('2026-04-06'))
     const completions = [
       ...fullClean(1),
       ...fullClean(2),
-      // Week 3 had Heavy on Wednesday — breaks the week.
+      // Week 3 had Heavy on Wednesday — a TEMPO day. The session worked.
       ...['mon','wed','fri','sat'].map(d => ({
         week_n: 3, session_day: d, status: 'complete' as const,
         fatigue_tag: d === 'wed' ? 'Heavy' : null,
@@ -71,7 +78,48 @@ describe('computeLedger — free tier', () => {
       plan, completions, analyses: [], tier: 'free',
       asOfDate: new Date('2026-04-28'),  // mid-week of week 4
     })
-    // Walking backwards from week 3 → broken → stop at 0.
+    // Weeks 1-3 all stand: the tag landed on the day it was earned.
+    expect(r.weeksWithinLines).toBe(3)
+  })
+
+  // 🔴 THE OTHER HALF, AND IT IS THE DISCIPLINE SIGNAL THE LEDGER EXISTS FOR. Heavy after an
+  // EASY day is the grey zone — the runner ran their easy run too hard, which is the entire
+  // product thesis. The residual overlap with §112 here is INTENDED.
+  it('a high-fatigue tag on an EASY day DOES break the week', () => {
+    const plan = buildPlan(4, new Date('2026-04-06'))
+    const completions = [
+      ...fullClean(1),
+      ...fullClean(2),
+      ...['mon','wed','fri','sat'].map(d => ({
+        week_n: 3, session_day: d, status: 'complete' as const,
+        fatigue_tag: d === 'mon' ? 'Heavy' : null,   // mon is EASY
+      })),
+    ]
+    const r = computeLedger({
+      plan, completions, analyses: [], tier: 'free',
+      asOfDate: new Date('2026-04-28'),
+    })
+    expect(r.weeksWithinLines).toBe(0)
+  })
+
+  // ⚠️ READS `FATIGUE_HIGH_TAGS`, NOT A HARDCODED PAIR. This file carried
+  // `'Heavy' || 'Wrecked'` in two places while the owner is `['Heavy','Wrecked','Cooked']`
+  // with four other consumers — so `Cooked` was high fatigue to the engine and INVISIBLE
+  // here. Latent (0 production rows carry it today) and the duplicate-owner class regardless.
+  it('`Cooked` counts too — the tag list has ONE owner', () => {
+    const plan = buildPlan(4, new Date('2026-04-06'))
+    const completions = [
+      ...fullClean(1),
+      ...fullClean(2),
+      ...['mon','wed','fri','sat'].map(d => ({
+        week_n: 3, session_day: d, status: 'complete' as const,
+        fatigue_tag: d === 'fri' ? 'Cooked' : null,   // fri is EASY
+      })),
+    ]
+    const r = computeLedger({
+      plan, completions, analyses: [], tier: 'free',
+      asOfDate: new Date('2026-04-28'),
+    })
     expect(r.weeksWithinLines).toBe(0)
     expect(r.advancedThisWeek).toBe(false)
   })

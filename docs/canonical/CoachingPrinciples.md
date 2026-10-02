@@ -8458,6 +8458,55 @@ peak moves — and it gains a case pinning that a §117 runner's delivered ratio
 
 **Asymmetry the chair recorded.** A skip is a **stronger** signal of *cost* and a **weaker** one of *magnitude*: no RPE, no HR, no duration. It is counted as evidence of cost only; it does not scale the softening.
 
+**Amendment 1 — A DISPLAY RULE WAS PUNISHING THE REPORT THIS SECTION REWARDS (Coaching Board, 2026-10-02, `LEDGER-FATIGUE-HONESTY-01`; routed down by the SLT).**
+
+🔴 **This section softens the long run when a runner reports cost. The discipline ledger
+(`LEDGER-01`) reset their count for the same sentence.** This section fires at
+`FATIGUE_ACCUMULATION_THRESHOLD` (**3** consecutive sessions); the ledger broke on the **first**.
+So a runner had to report fatigue three times to receive help, and lost the ledger immediately —
+**the ledger made this section measurably harder to reach.** Two mechanisms, opposite incentives,
+one signal, and nobody had noticed they interact.
+
+⚠️ **`fatigue_tag` IS AN ENGINE INPUT, WHICH IS WHY A DISPLAY RULE REACHED THIS BOARD.** Four
+consumers read it: `fatigueAccumulation.ts` (this section), `limiter.ts` §7, `planAdjustment.ts`
+and `maintenance.ts`. 🩹 Willy: *for the no-HR runner it is the earliest warning and often the
+only one* — `limiter.ts` calls it the **"lowest-confidence fallback for manual loggers"**, and
+INSTRUMENT-01 measured HR present on **27.3%** of runs. 🎯 McMillan: *"a runner who stops logging
+is worse than one who skips — a skip I can see; silence I cannot."* ⚕️ Sims: attaching a cost to
+saying *"I was wrecked"* builds exactly the reporting bias that keeps low energy availability
+invisible, and ADR-011 means we cannot measure that — **a reason to remove the disincentive, not
+to wait for proof of harm.**
+
+**The ruling: a high-fatigue tag breaks a ledger week ONLY on a NON-QUALITY day.** 📊 Seiler: the
+old rule answered two different questions with one test. **Being wrecked after a prescribed
+threshold session is the session working; being wrecked after an easy day is the grey zone**,
+which is the entire product thesis. ⚠️ **The residual overlap on easy days is intended** — three
+consecutive Heavy tags on easy runs should both fire this section and break the week.
+
+📐 **Measured in production, read-only, 2026-10-02:** 283 completions, 73 tagged
+(Fine 43 · Heavy 19 · Fresh 8 · Wrecked 3); **15 of 63 (user, week) pairs breakable by a tag
+alone.** ⚠️ **All 22 Heavy/Wrecked rows come from ONE user**, so 23.8% is a statement about the
+mechanism and **not** a population rate.
+
+⚠️ **The ledger also hardcoded `'Heavy' || 'Wrecked'` in two places** while the owner is
+`FATIGUE_HIGH_TAGS = ['Heavy','Wrecked','Cooked']` with four other consumers — so **`Cooked` was
+high fatigue to the engine and invisible to the ledger.** Latent (0 production rows carry it) and
+the duplicate-owner class regardless; it now reads the owner.
+
+⚠️ **NOT MECHANICALLY CHECKABLE IN `validatePlan()`** — the ledger is computed lazily on view and
+never enters a `Plan`, so no `Plan => Violation[]` can reach it (the §25 Amendment 2 precedent).
+Checked by `lib/coaching/disciplineLedger.test.ts`, **falsified three ways**: revert to any-day →
+the quality-day arm reddens; invert to quality-only → the easy-day arm reddens; re-hardcode the
+pair → the `Cooked` arm reddens. **No numeric changed, and `measure:fitness` was not run because
+nothing here changes what the engine prescribes.**
+
+🔻 **One-way data change, flagged back to the SLT:** `weeksWithinLines` is computed on view with
+no stored value, so this **retroactively changes every existing user's count** — in the direction
+of more weeks surviving. 🔬 McMillan's dissent in this section's own header stands unchanged and
+un-taken; it is recorded beside this amendment because the two concerns bracket the same signal
+from opposite sides, not because this sitting resolved it.
+
+
 **Config.** `FATIGUE_ACCUMULATION_THRESHOLD` (3), `FATIGUE_SOFTENING_LONG_RUN_PCT` (0.80), `FATIGUE_COUNTING_SKIP_REASONS` (`['Too tired']`) and `FATIGUE_WINDOW_REQUIRES_LOGGED_SESSION` (true) in `lib/coaching/constants.ts`.
 
 **Enforcement: a named test, not an invariant, and the reason is structural.** `validatePlan()` validates a generated **plan object**. This mechanism runs at **coaching time** against `session_completions` and never appears in a plan, so no `Plan => Violation[]` can reach it by construction — the same `static` class the invariant-liveness baseline already records. Enforced by `lib/coaching/fatigueAccumulation.test.ts`.

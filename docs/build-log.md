@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `LEDGER-FATIGUE-HONESTY-01` · the test asserted the defect, and its own fixture proved it
+**Shipped:** A high-fatigue tag breaks a discipline week only on a non-quality day. §112 Amendment 1, no new numeric.
+
+**Dev learning:** Two mechanisms were pulling opposite ways on one signal and nothing could see it, because they live in different layers. §112 — *"Consecutive self-reported cost **softens** the long run"* — rewards a runner for reporting fatigue, firing after **3** consecutive reports. The discipline ledger broke the week on the **first**. So the product's deal was: tell us you're wrecked three times and we'll ease your long run, and we'll take your streak immediately as the price. **Neither file mentions the other.** A conflict scan that reads one principle against other principles would never find this, because one side of it isn't a principle at all — it's a display rule.
+
+The tell I'd look for again: **`fatigue_tag` has four consumers.** The moment a display rule reads a field the engine also reads, the display rule has become an incentive on an engine input.
+
+**Product/creator learning:** The existing test was called *"resets to 0 on a Heavy fatigue tag"* and it passed for months. Its own fixture tags `wed` — which `buildPlan` defines as a **Tempo** session. So the test, read back in English, asserted: *being wrecked after a tempo run destroys your discipline count.* **The defect was written down, in a passing test, in a sentence nobody re-read.** Seiler's framing is the one that fixes it: one rule was answering two completely different questions, because fatigue after a prescribed hard session and fatigue after an easy day are opposite pieces of evidence.
+
+**AI-building learning:** I queried production for this, read-only and aggregate, and it changed what I was willing to claim. 283 completions, 73 tagged, 15 of 63 weeks breakable by a tag alone — **and all 22 Heavy/Wrecked rows came from a single user.** The 23.8% is real arithmetic and would have been a dishonest headline. I reported it as a mechanism finding and said the sample was one person. **The measurement that stops you overclaiming is worth as much as the one that proves your point.**
+
+**The honest bit:** I filed this item myself, two turns earlier, and my own filing was imprecise. I wrote that the fix was about the *reset*; it isn't — the reset on a missed week is correct and both SLT seats agreed on that once they read the criteria. The defect is one clause in one criterion. I also claimed §112 "reads it" without checking; it does, but so do `limiter.ts`, `planAdjustment.ts` and `maintenance.ts`, and the limiter one is the strongest argument in the whole sitting. **I under-researched my own filing and got lucky that measuring it made the case stronger rather than dissolving it.**
+
+**Hook material:** A passing test called "resets to 0 on a Heavy fatigue tag" was asserting that being exhausted after a tempo run should destroy your discipline streak. And: the app softened your training when you said you were wrecked, then took your streak for saying it.
+
+**Postable?:** yes — "the test asserted the bug and had done for months" is the strongest version, and the incentive conflict is a genuinely good product story.
+
 ## 2026-10-02 — Design Board batch: `DANGER-TEXT-CONTRAST-01` · `DESTRUCTIVE-WIRING-01` · `BUTTON-SIZE-SCALE-01` · `MICRO-LABEL-FIELDHINT-01` · `SITE-BTN-INVERT-01` — five of eight premises had moved
 **Shipped:** `--danger-strong` and three contrast fixes; the destructive variant wired to the act; the button size scale ratified as the two size classes; field hints demoted to body text; the inverted-CTA question settled on a count of one.
 

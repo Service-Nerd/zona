@@ -41,6 +41,7 @@
 // this comment and `feature-registry.md` are the two records that go stale silently.
 
 import type { Plan, Week } from '@/types/plan'
+import { FATIGUE_HIGH_TAGS } from './constants'
 
 export interface LedgerInput {
   /** Pulled from supabase by the caller. We don't fetch here — keeps the
@@ -135,6 +136,44 @@ function median(values: number[]): number | null {
 
 // Did the in-flight week already break? Mid-week, only the immediate-break
 // criteria apply — completion ratio doesn't lock in until the week ends.
+/**
+ * §112 Amendment (Coaching Board, 2026-10-02 — `LEDGER-FATIGUE-HONESTY-01`).
+ *
+ * 🔴 **A HIGH-FATIGUE TAG BREAKS THE WEEK ONLY ON A NON-QUALITY DAY.** Being wrecked after a
+ * prescribed threshold or interval session is **the session working**; being wrecked after an
+ * easy day is the grey zone, which is the entire product thesis. One rule was answering two
+ * completely different questions.
+ *
+ * 🔴 WHY IT HAD TO CHANGE — §112 AND THIS LEDGER PULLED OPPOSITE WAYS ON ONE SIGNAL.
+ * §112 is titled *"Consecutive self-reported cost SOFTENS the long run"*: the engine REWARDS the
+ * report, firing at `FATIGUE_ACCUMULATION_THRESHOLD` (3) consecutive sessions. This ledger
+ * PUNISHED the same report on the FIRST one — so a runner had to report fatigue three times to
+ * get help and lost the ledger immediately. **It made §112 measurably harder to reach.**
+ *
+ * ⚠️ `fatigue_tag` IS AN ENGINE INPUT, not a display field: `fatigueAccumulation.ts` (§112),
+ * `limiter.ts` §7, `planAdjustment.ts` and `maintenance.ts` all read it. 🩹 Willy: for a runner
+ * with no HR it is the earliest warning and often the only one — `limiter.ts` calls it the
+ * *"lowest-confidence fallback for manual loggers"*, and HR is present on **27.3%** of runs.
+ * 🎯 McMillan: *"a runner who stops logging is worse than one who skips — a skip I can see."*
+ * ⚕️ Sims: attaching a cost to saying "I was wrecked" builds exactly the reporting bias that
+ * makes low energy availability hard to catch.
+ *
+ * ⚠️ THE RESIDUAL OVERLAP ON EASY DAYS IS INTENDED. Three consecutive Heavy tags on easy runs
+ * should both fire §112 and break the week — that runner is not within the lines.
+ *
+ * ⚠️ READS `FATIGUE_HIGH_TAGS` RATHER THAN HARDCODING. This file carried
+ * `'Heavy' || 'Wrecked'` in TWO places while the owner is `['Heavy','Wrecked','Cooked']` with
+ * four other consumers — so **`Cooked` was high fatigue to the engine and invisible here.**
+ * Latent (0 production rows carry it today), and the duplicate-owner class regardless.
+ */
+function brokenByFatigue(week: Week, weekCompletions: LedgerInput['completions']): boolean {
+  const qualityDays = qualitySessionDays(week)
+  return weekCompletions.some(c =>
+    typeof c.fatigue_tag === 'string'
+    && (FATIGUE_HIGH_TAGS as readonly string[]).includes(c.fatigue_tag)
+    && !qualityDays.includes(c.session_day))
+}
+
 // Returns true if a break signal has already landed; false if the week is
 // still on track. (Pending = "still on track" — caller decides display.)
 function currentWeekBroken(
@@ -142,7 +181,7 @@ function currentWeekBroken(
   completions: LedgerInput['completions'],
 ): boolean {
   const weekCompletions = completions.filter(c => c.week_n === week.n)
-  if (weekCompletions.some(c => c.fatigue_tag === 'Heavy' || c.fatigue_tag === 'Wrecked')) {
+  if (brokenByFatigue(week, weekCompletions)) {
     return true
   }
   const qualityDays = qualitySessionDays(week)
@@ -171,7 +210,7 @@ function pastWeekWithinLines(
   const completed = weekCompletions.filter(c => c.status === 'complete').length
   if (completed / planned < LEDGER_FREE_MIN_COMPLETION_PCT) return false
 
-  if (weekCompletions.some(c => c.fatigue_tag === 'Heavy' || c.fatigue_tag === 'Wrecked')) {
+  if (brokenByFatigue(week, weekCompletions)) {
     return false
   }
 

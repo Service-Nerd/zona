@@ -656,7 +656,26 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
 
 ## ⚖️ FILED 2026-10-02 — `LEDGER-FATIGUE-HONESTY-01`
 
-### `LEDGER-FATIGUE-HONESTY-01` — the ledger breaks when a runner tells the truth 🏃 **COACHING BOARD**
+### ✅ `LEDGER-FATIGUE-HONESTY-01` — SHIPPED 2026-10-02. Coaching Board: CORRECT WITH AMENDMENT 🏃 **COACHING BOARD**
+
+⚖️ **A high-fatigue tag breaks a ledger week ONLY on a NON-QUALITY day.** 🔴 **The conflict was with
+§112, whose title states it** — *"Consecutive self-reported cost **softens** the long run"*: the
+engine rewards the report at **3** consecutive sessions, the ledger punished it on the **first**, so
+the ledger made §112 measurably harder to reach. 📊 Seiler: one rule was answering two questions —
+**wrecked after a prescribed threshold session is the session working; wrecked after an easy day is
+the grey zone.** ⚠️ The residual overlap on easy days is **intended**.
+📐 **Production, read-only:** 283 completions, 73 tagged, **15 of 63 weeks breakable by a tag alone**
+— ⚠️ **all 22 Heavy/Wrecked rows from ONE user**, so that is a mechanism finding, not a rate.
+⚠️ **The ledger also hardcoded the tag pair twice** while `FATIGUE_HIGH_TAGS` includes **`Cooked`** —
+high fatigue to the engine, invisible to the ledger. Latent (0 rows), fixed by reading the owner.
+🥇 **The existing test asserted the defect, and its own fixture proved it:** `wed` is a *Tempo*
+session, so the case read *"being wrecked after a tempo run destroys your discipline count."*
+📦 §112 Amendment 1 · **no new numeric** · **not checkable in `validatePlan()`** (the ledger never
+enters a `Plan`) — `disciplineLedger.test.ts`, falsified **three** ways.
+🔻 **One-way data change flagged back to the SLT:** no stored value, so every existing user's count
+changes retroactively, in the direction of **more** weeks surviving.
+
+#### `LEDGER-FATIGUE-HONESTY-01` — the original filing, for the record
 
 Out of `LEDGER-RESET-01` at the SLT, 2026-10-02. **Routed down by Hutchinson**: this is not a
 commercial question and the SLT declined to settle it.

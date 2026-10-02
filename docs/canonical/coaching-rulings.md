@@ -770,3 +770,50 @@ label-integrity check and **no new behaviour was authorised, so there is nothing
 intervallic delivery. That would amend **§19**, not the catalogue, and nobody has brought evidence
 for it.
 
+---
+
+## ⚖️ LEDGER-FATIGUE-HONESTY-01 — the ledger punished the report §112 rewards (2026-10-02)
+
+**Routed down by the SLT the same day.** Question: should an honest `Heavy`/`Wrecked` tag break a
+discipline week?
+
+**Ruling: CORRECT WITH AMENDMENT — a high-fatigue tag breaks the week only on a NON-QUALITY day.**
+
+🔴 **THE CONFLICT IS WITH §112, AND ITS TITLE STATES IT:** *"Consecutive self-reported cost
+**softens** the long run."* The engine **rewards** the report at `FATIGUE_ACCUMULATION_THRESHOLD`
+(**3** consecutive sessions); the ledger **punished** it on the **first**. A runner had to report
+fatigue three times to get help and lost the ledger immediately — **the ledger made §112 measurably
+harder to reach.** Two mechanisms, opposite incentives, one signal.
+
+📊 **Seiler — one rule was answering two questions.** Being wrecked after a prescribed threshold
+session is **the session working**; being wrecked after an easy day is the grey zone, which is the
+product's entire thesis. ⚠️ **The residual overlap on easy days is intended.**
+
+🩹 **Willy:** for the no-HR runner the tag is the earliest warning and often the only one —
+`limiter.ts` §7 calls it the *"lowest-confidence fallback for manual loggers"*, and HR is present on
+**27.3%** of runs. 🎯 **McMillan:** *"a runner who stops logging is worse than one who skips — a skip
+I can see; silence I cannot."* ⚕️ **Sims:** attaching a cost to saying *"I was wrecked"* builds the
+reporting bias that keeps low energy availability invisible; ADR-011 means we cannot measure it,
+**which is a reason to remove the disincentive rather than wait for proof of harm.**
+
+📐 **Measured in production, read-only:** 283 completions, 73 tagged (Fine 43 · Heavy 19 · Fresh 8 ·
+Wrecked 3); **15 of 63 (user, week) pairs breakable by a tag alone.** ⚠️ **All 22 Heavy/Wrecked rows
+come from ONE user** — a statement about the mechanism, **not** a population rate.
+
+⚠️ **The ledger also hardcoded `'Heavy' || 'Wrecked'` twice** while `FATIGUE_HIGH_TAGS =
+['Heavy','Wrecked','Cooked']` has four other consumers, so **`Cooked` was high fatigue to the engine
+and invisible to the ledger.** Latent (0 rows) and the duplicate-owner class regardless.
+
+⚡ **No disagreements on the amendment.** McMillan's §112 dissent stands unchanged and un-taken; it
+is recorded beside this because the two concerns bracket the same signal from opposite sides.
+
+**Artifacts:** principle → **§112 Amendment 1** · constant → **no new numeric**; reuses
+`FATIGUE_HIGH_TAGS`, removing a duplicate rather than adding a value · invariant → **not checkable
+in `validatePlan()`**, because the ledger is computed lazily on view and never enters a `Plan` (the
+§25 Amendment 2 precedent). `disciplineLedger.test.ts`, **falsified three ways**. `measure:fitness`
+not run: no prescription changes.
+
+🔻 **Flagged back to the SLT:** a one-way data change. `weeksWithinLines` has no stored value, so
+this retroactively changes every existing user's count, in the direction of more weeks surviving —
+under a `LEDGER-RESET-01` decision that board deliberately parked.
+
