@@ -12,7 +12,10 @@ FAQ. Any change to props must update this document in the same commit.
 ```typescript
 export interface FaqScreenProps {
   onBack: () => void
-  /** Hands off to the contact screen. A FAQ that cannot say "this did not help" is a wall. */
+  /** Hands off to the contact screen. A FAQ that cannot say "this did not help" is a wall.
+   *  Omitting it REMOVES the control — asserted in both directions by
+   *  `batch7aConverted.markup.test.ts`, because a converted control inside a branch that
+   *  never renders reads exactly like a converted control. */
   onContact?: () => void
 }
 ```
@@ -61,3 +64,20 @@ an arm fails if a product question omits it. **When a screen is fixed, its quest
 ## Governance
 
 Design Board `FAQ-01` (2026-09-29). Gated by `lib/faq.test.ts`.
+
+## The contact control — `ghost`, and deliberately NOT full-width (2026-10-02)
+
+`BUTTON-MIGRATION-02` batch 7a converted the hand-rolled contact control to
+`<Button variant="ghost">`. **It does not take `fullWidth`, and that is a rule rather than a
+preference:** `GHOST-AFFORDANCE-01` holds that a full-width control **owes a surface**, so
+`ghost` + `fullWidth` is refused by `buttonOwnership.test.ts`.
+
+🔴 **The hand-rolled original WAS full-width and transparent** — `width: '100%'`,
+`background: 'none'` — so it had been breaking that rule for as long as it existed, invisibly,
+because the gate inspects `<Button>` usage and cannot see a hand-rolled control. **Converting
+it is what made the violation visible.**
+
+The rule's second remedy is the honest one here: this control **really does sit in a sentence**
+(*"Not answered here? Tell us."*), so it keeps `ghost`'s surface-less treatment and gives up the
+full-bleed box. The container centres it; the 44px floor belongs to the variant.
+⚠️ Geometry declared in `buttonGeometry`'s baseline: `full → auto`.

@@ -3,6 +3,7 @@
 // DashboardClient owns the trigger (nextRecalibrationDue), routing, and the POST
 // to /api/recalibrate-zones. Design 2026-08-06.
 import React, { CSSProperties, useMemo, useState } from 'react'
+import Button from '@/components/ui/Button'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import BackButton from '@/components/shared/BackButton'
 import {
@@ -31,13 +32,6 @@ export function RecalibrationReadyTile({
     border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '20px',
     display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', fontFamily: 'var(--font-ui)',
   }
-  const button: CSSProperties = {
-    boxSizing: 'border-box', width: '100%', minHeight: '48px', padding: '0 16px',
-    borderRadius: 'var(--radius-lg)', font: '600 16px/1 var(--font-ui)', cursor: 'pointer',
-    background: isPaid ? 'var(--moss)' : 'transparent',
-    color: isPaid ? 'var(--card)' : 'var(--moss)',
-    border: '1px solid var(--moss)',
-  }
 
   return (
     <section style={card} aria-label="Time trial recalibration">
@@ -54,9 +48,16 @@ export function RecalibrationReadyTile({
             : 'Rewriting the rest of your paces around it is part of Zonna Plus.'}
         </p>
       </div>
-      <button type="button" style={button} onClick={onEnter}>
+      {/* BUTTON-MIGRATION-02 batch 7a. 🔴 I FIRST KEPT `minHeight: 52px` INLINE to
+          hold the box, and the override gate refused it with the right reason:
+          "a Button's box belongs to its variant and size". `BUTTON-SIZE-SCALE-01`
+          ratified 44 (compact) / 47 (regular) the same day — preserving a bespoke
+          52 would keep exactly the thing the scale exists to end, and grow a
+          register that is meant to be frozen. All three CTAs here join the scale:
+          52 -> 47, declared in `buttonGeometry`'s baseline rather than hidden. */}
+      <Button variant="primary" fullWidth onClick={onEnter}>
         {isPaid ? 'Enter your time →' : 'See what Plus changes →'}
-      </button>
+      </Button>
     </section>
   )
 }
@@ -87,27 +88,10 @@ export function RecalibrationEntryScreen({
     fontFamily: 'var(--font-ui)', padding: '16px 20px 28px',
     display: 'flex', flexDirection: 'column', gap: 'var(--space-6)',
   }
-  const primary = (enabled: boolean): CSSProperties => ({
-    boxSizing: 'border-box', width: '100%', minHeight: '52px', padding: '0 16px',
-    borderRadius: 'var(--radius-lg)', border: '1px solid transparent',
-    font: '600 16px/1 var(--font-ui)', cursor: enabled ? 'pointer' : 'default',
-    background: enabled ? 'var(--moss)' : 'var(--bg-soft)',
-    color: enabled ? 'var(--card)' : 'var(--mute)',
-  })
   /* S2 — dismiss is never the CTA colour. `Back to today` was painted with
      `primary(true)`, so the moss never appeared in the button and the S2 gate
      was structurally blind to it (S2-GATE-NARROW-01). The helper is unchanged:
      it still paints the real confirm at line ~169. */
-  const secondary: CSSProperties = {
-    boxSizing: 'border-box', width: '100%', minHeight: '52px', padding: '0 16px',
-    borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)',
-    font: '600 16px/1 var(--font-ui)', cursor: 'pointer',
-    background: 'var(--bg-soft)', color: 'var(--ink-2)',
-  }
-  const quiet: CSSProperties = {
-    width: '100%', minHeight: '44px', background: 'transparent', border: 'none',
-    font: '500 15px/1 var(--font-ui)', color: 'var(--mute)', cursor: 'pointer',
-  }
   const eyebrow: CSSProperties = {
     font: '500 12px/1 var(--font-ui)', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--mute)',
   }
@@ -132,7 +116,7 @@ export function RecalibrationEntryScreen({
             There it is. Don&rsquo;t ruin it.
           </p>
           <div style={{ marginTop: 'auto' }}>
-            <button type="button" style={secondary} onClick={onBack}>Back to today</button>
+            <Button variant="secondary" fullWidth onClick={onBack}>Back to today</Button>
           </div>
         </>
       ) : (
@@ -176,11 +160,28 @@ export function RecalibrationEntryScreen({
           )}
 
           <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <button type="button" disabled={!canConfirm} style={primary(canConfirm)}
-              onClick={() => { if (inRange) onConfirm(seconds) }}>
-              {busy ? 'Updating' : status === 'error' ? 'Try again' : 'Update my paces'}
-            </button>
-            {!busy && (<button type="button" style={quiet} onClick={onBack}>Not now</button>)}
+            {/* `busy` is the component's own concern: it disables AND sets
+                `aria-busy`, so the screen reader is told what the dimmed label
+                says. The hand-rolled version said it to nobody. */}
+            <Button
+              variant="primary" fullWidth
+              disabled={!canConfirm}
+              busy={busy}
+              busyLabel="Updating"
+              onClick={() => { if (inRange) onConfirm(seconds) }}
+             
+            >
+              {status === 'error' ? 'Try again' : 'Update my paces'}
+            </Button>
+            {/* 🔴 `ghost` + `fullWidth` IS FORBIDDEN — `GHOST-AFFORDANCE-01`: a
+                full-width control owes a surface. And the hand-rolled version it
+                replaces was full-width AND transparent, so it had been breaking that
+                rule all along, invisibly: the gate inspects `<Button>` usage and
+                cannot see a hand-rolled control. **Converting it is what made the
+                violation visible**, which is the actual value of this migration.
+                `secondary` is the rule's first-named remedy and still satisfies S2
+                ("dismiss is never the CTA colour") — `--bg-soft`, not moss. */}
+            {!busy && (<Button variant="secondary" fullWidth onClick={onBack}>Not now</Button>)}
           </div>
         </>
       )}

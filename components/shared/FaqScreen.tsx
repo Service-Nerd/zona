@@ -14,6 +14,7 @@
 // prevent.
 
 import { APP_FAQS, FAQ_TITLE, FAQ_SUBTITLE } from '@/lib/faq'
+import Button from '@/components/ui/Button'
 import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 
 export { FAQ_TITLE, FAQ_SUBTITLE }
@@ -93,19 +94,17 @@ export default function FaqScreen({ onBack, onContact }: FaqScreenProps) {
           ))}
         </div>
 
+        {/* BUTTON-MIGRATION-02 batch 7a. `ghost` and NOT `fullWidth`:
+            `GHOST-AFFORDANCE-01` says a full-width control owes a surface, and the
+            hand-rolled original was full-width AND transparent — breaking that rule
+            where no gate could see it. Here the second remedy is the honest one: this
+            control *really does sit in a sentence* ("Not answered here? Tell us."), so
+            it stays surface-less and gives up the full-bleed box instead. The
+            container centres it; the 44px floor is the variant's. */}
         {onContact && (
-          <button
-            type="button"
-            onClick={onContact}
-            style={{
-              width: '100%', marginTop: 'var(--space-5)', minHeight: '44px',
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)',
-              textAlign: 'center',
-            }}
-          >
+          <Button variant="ghost" onClick={onContact}>
             Not answered here? Tell us.
-          </button>
+          </Button>
         )}
       </div>
     </div>

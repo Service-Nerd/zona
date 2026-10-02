@@ -81,6 +81,14 @@
   },
   "app/dashboard/BenchmarkUpdateScreen.tsx#Button1": {
     "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "app/dashboard/BenchmarkUpdateScreen.tsx#Button2": {
+    "floor": 44,
     "padY": 15,
     "font": 15,
     "radius": "var(--radius-md)",
@@ -319,6 +327,38 @@
     "height": 47,
     "width": "auto"
   },
+  "app/dashboard/RecalibrationTile.tsx#Button1": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "app/dashboard/RecalibrationTile.tsx#Button2": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "app/dashboard/RecalibrationTile.tsx#Button3": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "app/dashboard/RecalibrationTile.tsx#Button4": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
   "app/dashboard/RedeemCodeScreen.tsx#Button1": {
     "floor": 44,
     "padY": 16,
@@ -340,10 +380,18 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "auto"
   },
   "app/dashboard/UpgradeScreen.tsx#Button2": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "app/dashboard/UpgradeScreen.tsx#Button3": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -924,6 +972,14 @@
     "radius": null,
     "height": 48,
     "width": "100%"
+  },
+  "components/shared/FaqScreen.tsx#Button1": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "auto"
   },
   "components/shared/HrPendingStatusRow.tsx#Button[btn-inline-target]1": {
     "floor": 0,

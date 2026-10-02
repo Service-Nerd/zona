@@ -312,19 +312,9 @@ export default function BenchmarkUpdateScreen({
         background: 'var(--bg)',
       }}>
         {result ? (
-          <button
-            onClick={onBack}
-            style={{
-              width: '100%', padding: '15px', borderRadius: 'var(--radius-md)',
-              // S2 — dismiss is never the CTA colour.
-              background: 'var(--bg-soft)', border: '1px solid var(--line)', cursor: 'pointer',
-              fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
-              color: 'var(--ink-2)',
-              transition: 'all 0.15s',
-            }}
-          >
+          <Button variant="secondary" fullWidth onClick={onBack}>
             Back to plan
-          </button>
+          </Button>
         ) : (
           <Button
             onClick={handleRecalibrate}

@@ -21,7 +21,32 @@ python3 - <<'PY'
 import re, pathlib, collections
 files=[p for p in pathlib.Path('.').rglob('*.tsx')
        if not any(x in p.parts for x in ('node_modules','.next','ios')) and '.test.' not in p.name]
+# 🔴 STRIP COMMENTS FIRST. This script counted `<button>` in RAW SOURCE, so every
+# reference inside its own explanatory comments was counted as a control — and this
+# file is heavily commented. Measured 2026-10-02: 74 counting comments, **66 real**,
+# an 8-control inflation (MeScreen 2, BackButton 2, Chevron 2, Button 2). Every
+# standing count below this line was overstated for the life of the document.
+# ⚠️ The repo had ALREADY fixed this class in `.githooks/pre-commit`
+# (`HOOK-RGBA-COMMENTS-01`, "a colour inside a comment is prose") with a
+# `strip_comments` that blanks bodies while PRESERVING line numbers, and it was
+# never carried here — the remedy-applied-to-one-twin class.
+# Blanks comment text and keeps length, so offsets and line numbers still hold.
+def strip_comments(s):
+    out=list(s); i=0; n=len(s)
+    while i<n:
+        if s.startswith('//',i):
+            j=s.find('\n',i); j=n if j<0 else j
+            for k in range(i,j): out[k]=' '
+            i=j
+        elif s.startswith('/*',i):
+            j=s.find('*/',i+2); j=n if j<0 else j+2
+            for k in range(i,j):
+                if out[k]!='\n': out[k]=' '
+            i=j
+        else: i+=1
+    return ''.join(out)
 def tags(s,tag):
+    s=strip_comments(s)
     out=[]
     for m in re.finditer(r'<'+tag+r'(?=[\s>])',s):
         i=m.end(); d=0
@@ -51,6 +76,7 @@ PY
 | 2026-09-25 | **219** | **44** (20%) | **175** | `WEBSITE-BUTTON-UNIFY-01`. The 3 site CTAs adopted the `.btn` **classes** (not the component) and `.cta-pill` was deleted. **The site and the app now have one definition** |
 | 2026-09-25 | **217** | **90** (41%) | **127** | Batches 2 + 3. `secondary` ×14, `ghost` ×31, plus 2 CTAs the gate had been blind to. **`--accent: var(--moss)` — a legacy alias — bypassed the gate entirely; it now resolves the alias graph from the stylesheet** |
 | 2026-09-25 | **218** | **136** (62%) | **82** | Batch 4 + `BUTTON-GEOMETRY-01`. **`geometry moved: 0`** — every conversion keeps its call site's box. 39 of the 82 are selected-state toggles, ⛔ excluded by rule |
+| 2026-10-02 | **203** | **144** (71%) | **59** | **Batch 7a**, and the COUNT ITSELF was the finding. 🔴 **This script counted `<button>` in RAW SOURCE, so references inside its own comments were counted as controls: 74 → 66 real, an 8-control inflation** (MeScreen 2, BackButton 2, Chevron 2, Button 2). **Every standing count in this document above this row was overstated for its whole life**, and the repo had ALREADY fixed the class in `.githooks/pre-commit` (`HOOK-RGBA-COMMENTS-01`) and never carried it here. `strip_comments` added, line numbers preserved. **7 controls converted across 4 files**: `RecalibrationTile` ×4 (it hand-rolled `primary()`, `secondary` AND `quiet` locally — all four consts now deleted), `BenchmarkUpdateScreen` and `UpgradeScreen`'s *"Back to…"* pair (**one shape in three files, each carrying the identical `// S2 — dismiss is never the CTA colour` comment**, now carried by the VARIANT instead), and `FaqScreen`'s contact line. 🔴 **TWO DOCTRINE CATCHES, both on controls that were already wrong BEFORE the conversion.** (a) I first kept `minHeight: 52px` inline to hold the box; the override gate refused it with the right reason — *"a Button's box belongs to its variant and size"* — and `BUTTON-SIZE-SCALE-01` had ratified 44/47 the same day, so preserving a bespoke 52 would keep the thing the scale exists to end. **All three CTAs joined the scale, 52 → 47, declared not hidden.** (b) `buttonOwnership` refused `ghost` + `fullWidth` per `GHOST-AFFORDANCE-01` — and **the hand-rolled originals were full-width AND transparent, breaking that rule all along where no gate could see them. Converting a control to the component is what makes a doctrine violation visible, which is the real value of this migration.** Remedies taken from the rule's own list: `secondary` for the stacked decline, `ghost` **without** `fullWidth` for the one that genuinely sits in a sentence. Geometry re-baselined twice with the deltas named (48→47, 44→47, 52→47, full→auto). `batch7aConverted.markup.test.ts` renders what was converted and asserts BOTH directions of reachability, because this log already records a batch whose converted control sat in a branch that never rendered. ⚠️ `\bbtn\b` MATCHES `icon-btn` (a hyphen is a word boundary) — my first arm counted the screen's IconButton in both families; class lists are token sets, so membership is tested on the split. App raw 48 → 41, component 136 → 143 — **conserved exactly.** 463 files / 4,182 tests, 0 failed. |
 
 ---
 

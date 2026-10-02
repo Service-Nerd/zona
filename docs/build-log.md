@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `BUTTON-MIGRATION-02` batch 7a · the count was the finding
+**Shipped:** 7 controls onto `Button`, and a fix to the script that counts them.
+
+**Dev learning:** The migration log opens with "re-measure before each batch — never quote this table from memory, regenerate it." Good rule, and I followed it. The script it gives you counts `<button>` in raw source, and that document is heavily commented, so every `<button>` mentioned in a comment counted as a control: **74 against 66 real.** Every standing count in the log had been overstated for its whole life, and the instrument was the thing you were told to trust.
+
+The repo had already solved this exact class in the pre-commit hook — *"a colour inside a comment is prose"* — with a `strip_comments` that preserves line numbers. It was never carried across. That's the eighth or ninth time this codebase has recorded a remedy applied to one twin, and this time the twin was a measuring tool, which is worse: a wrong number doesn't look wrong.
+
+**The part that justifies the whole migration:** two of my seven conversions were refused by gates, and *both controls were already wrong before I touched them*. A full-width transparent decline breaks `GHOST-AFFORDANCE-01` ("a full-width control owes a surface") — but it had been hand-rolled, and the gate only inspects `<Button>` usage. So the violation was invisible for as long as the control was bespoke. **Converting a control to the component is what makes a doctrine violation visible.** That's a better argument for this work than "a button change has to be made in one place".
+
+I also tried to keep a bespoke 52px height inline so the box wouldn't move, and the override gate refused it with the right reason: a Button's box belongs to its variant. `BUTTON-SIZE-SCALE-01` ratified 44/47 the same morning, so preserving 52 would have kept exactly what the scale exists to end. Three CTAs joined the scale instead, declared in the baseline with the deltas named.
+
+**Smallest thing I learned:** `\bbtn\b` matches `icon-btn`, because a hyphen is a word boundary. My first render arm counted the screen's IconButton in both primitive families and the arithmetic came out as "one control is hand-rolled" when nothing was. A class list is a set of tokens; test membership on the split.
+
+**Honest limit:** 59 raw controls remain, 27 of the 34 candidates untouched, and nothing ran on a device — five control heights moved by 1–5px and nobody has looked at them.
+
+---
+
 ## 2026-10-02 — `CONTRACT-COVERAGE-02` · the register was watching a third of the tree
 **Shipped:** The uncontracted-components gate now sees all seven component directories and both import forms, plus an orphan arm, plus four contracts.
 

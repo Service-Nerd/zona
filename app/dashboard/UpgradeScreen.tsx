@@ -241,19 +241,13 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
           Welcome to {PRICING.trialDays}-day free access.<br />
           Your plan adapts. Your coaching starts now.
         </p>
-        <button
-          onClick={onBack}
-          style={{
-            marginTop: 'var(--space-6)', padding: '14px 32px',
-            // S2 — dismiss is never the CTA colour.
-            background: 'var(--bg-soft)', border: '1px solid var(--line)', borderRadius: '10px',
-            fontFamily: 'var(--font-ui)', fontWeight: 600,
-            fontSize: '1rem', color: 'var(--ink-2)',
-            cursor: 'pointer',
-          }}
-        >
+        {/* BUTTON-MIGRATION-02 batch 7a. `marginTop` is LAYOUT, not the control's
+            box, so it stays: `secondary` owns fill, border, radius, type and colour.
+            S2 ("dismiss is never the CTA colour") is now carried by the VARIANT
+            rather than by a comment above a hand-rolled fill. */}
+        <Button variant="secondary" onClick={onBack} style={{ marginTop: 'var(--space-6)' }}>
           Back to training
-        </button>
+        </Button>
       </div>
     )
   }
