@@ -2136,13 +2136,42 @@ milestones stands.
 
 ## ⚖️ FILED 2026-09-28 — `ME-SCREEN-CONTRACT-01`
 
-### 🟡 `ME-SCREEN-CONTRACT-01` — MeScreen has ~40 props and no contract
+### ✅ `ME-SCREEN-CONTRACT-01` — SHIPPED 2026-10-02. 42 props, enforced, and the blocker had already gone
 
 ⚙️ **NO BOARD** — documentation of an existing interface.
 
 `ME-DOORS-01` changed three of `MeScreen`'s props and found there is **no contract file for
 it at all**. `docs/contracts/components/me-door-navigation.md` documents the navigation
 surface only, and says so; the other ~40 props are undocumented.
+
+✅ **SHIPPED 2026-10-02 — `docs/contracts/components/me-screen.md`, 42 props, enforced prop-for-prop.**
+
+🔴 **THE STATED BLOCKER HAD BEEN LIFTED AND NOBODY CAME BACK.** This item's own reason read
+*"`MeScreen` is a function inside `DashboardClient.tsx`, so `componentContracts.test.ts` has no
+file to parse props from… **Extracting MeScreen is what would make it contractable**."*
+`DASHBOARD-SCREEN-EXTRACT-03` extracted it to `components/dashboard/MeScreen.tsx` (1,566 lines)
+and both this item and `me-door-navigation.md` kept naming a blocker that no longer existed.
+⚠️ **A NEW FORM OF THE SNAPSHOT RULE:** CLAUDE.md records items half-closed by another ship
+(`PUSH-UNITS-01`, `BACK-HEADER-OWNER-01`). This is an item whose stated **impossibility** was
+lifted by one — which reads as permanently blocked rather than as ready, so nothing re-measures it.
+
+**Measured: 42 destructured props** (filed as "~40" — accurate). Now compared both directions by
+`lib/contracts/componentContracts.test.ts`, **falsified both ways**: a fictional prop in the
+contract → red; a real prop omitted → red.
+
+✅ **`me-door-navigation.md`'s FALSE REASON CORRECTED in the same commit.** It kept
+`**Component:** none` on the grounds that MeScreen had no module. It keeps `none` — only one
+contract per component can own the prop gate — but the reason is now the true one: this file
+holds navigation **semantics** a prop list cannot express, and it is cited as authority by
+`ui-patterns.md:4705` and `design-rulings.md:3428`, so folding it in would have broken two
+doctrine references. **An enforced inventory and a behavioural authority are two documents.**
+
+🔻 **What this does NOT settle, stated in the contract itself:** 42 props is the finding, not a
+verdict that the interface is right. Four HR values, six preference pairs and seven adjustment
+fields, several arriving only so the INDEX can render a subtitle for a door that has not
+mounted. Whether that is the right boundary is a design question, deliberately unanswered.
+🔻 `recentChanges?: any[]` is the one genuinely untyped prop; its row shape is prose because
+nothing enforces it.
 
 ⚠️ **The cause is structural, not neglect:** `MeScreen` is a function inside
 `DashboardClient.tsx`, not its own module, so `componentContracts.test.ts` has no file to

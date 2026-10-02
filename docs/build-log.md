@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — ME-SCREEN-CONTRACT-01 · the blocker had been lifted a week earlier
+**Shipped:** `me-screen.md` documents MeScreen's 42 props, enforced prop-for-prop in both directions.
+
+**Dev learning:** An item that states an *impossibility* is far more dangerous than one that states a task. This one said "MeScreen is a function inside DashboardClient, so there is no file for the gate to parse props from — extracting it is what would make it contractable." All true when written. `DASHBOARD-SCREEN-EXTRACT-03` then extracted MeScreen into its own module, and because the item read as **permanently blocked** rather than as ready, nothing re-measured it. The same false sentence was sitting in `me-door-navigation.md` as the justification for `Component: none`, so a contract was declaring itself unenforceable for a reason that had stopped being true.
+
+CLAUDE.md already records the snapshot rule for items half-closed by another ship. This is a second form of it, and the tell is different: a blocked item has no reason to be re-read, so the staleness is quieter.
+
+**Product/creator learning:** Writing the contract was a code review, exactly as the house rule says. 42 props, of which several exist only so the Me *index* can render a subtitle for a door that has not mounted yet — the component needs state about screens that do not exist on screen. I documented it and explicitly did not fix it: the contract says "42 props is the finding, not the deliverable." Recording a boundary you think is wrong is what makes it arguable later; silently refactoring it during a documentation task is the second-change-wearing-the-first's-clothes trap.
+
+**AI-building learning:** The useful instinct was distrusting the item's own prose and running `ls` on the file it claimed did not exist. Four of the seven items I picked up today stated numbers or blockers, and three were wrong — two of those in the direction of making the work look bigger or impossible. The cheap habit is: before planning against a sentence in a backlog item, re-derive the one fact it rests on.
+
+**The honest bit:** I nearly wrote this contract into `me-door-navigation.md` and let it own the prop gate, which would have forced that file to document all 42 props and quietly destroyed its actual job. I caught it by grepping for inbound references and finding two doctrine docs citing it as authority. Deleting or repurposing a file is not a local decision.
+
+**Hook material:** A contract spent a week declaring itself unenforceable because of a sentence that had been false since the day someone else refactored the file. 42 props, documented in 20 minutes, blocked for a week by a stale clause.
+
+**Postable?:** maybe — the "an item that states an impossibility never gets re-read" angle is good, but it is a quieter story than the micro-label one.
+
 ## 2026-10-02 — MICRO-LABEL-HANDROLL-01 · the count was 32, the answer was 51, and both were honest
 **Shipped:** 51 hand-rolled copies of a canonical micro-label now spread `MICRO_LABELS` instead of retyping its values. Zero visible delta.
 

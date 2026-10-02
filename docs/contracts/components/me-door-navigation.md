@@ -6,11 +6,22 @@ in the same commit.
 
 **Component:** `none`
 
-⚠️ **Deliberate, and the reason matters.** `MeScreen` is not its own module: it is a function
-inside `app/dashboard/DashboardClient.tsx`, so there is no file for the gate to parse props
-from, and its ~40 other props are undocumented debt this contract does not pretend to cover.
-What is documented here is the navigation surface `ME-DOORS-01` introduced, which is the part
-that can break silently. Filed: `ME-SCREEN-CONTRACT-01`.
+⚠️ **Still deliberate, but THE ORIGINAL REASON IS NO LONGER TRUE and is corrected here
+(2026-10-02).** It read: *"`MeScreen` is not its own module: it is a function inside
+`app/dashboard/DashboardClient.tsx`, so there is no file for the gate to parse props from, and
+its ~40 other props are undocumented debt."* **`DASHBOARD-SCREEN-EXTRACT-03` extracted it** to
+`components/dashboard/MeScreen.tsx`, and nobody returned to this sentence or to the item that
+quoted it as a blocker.
+
+✅ **The 42 props are now documented and ENFORCED** in
+[`me-screen.md`](me-screen.md) (`ME-SCREEN-CONTRACT-01`), which declares the component and is
+compared prop-for-prop in both directions.
+
+**Why this file keeps `none`:** only one contract per component can own the prop gate, and what
+lives here is the navigation **semantics** — when `openSection` is consumed, where `Back`
+returns to, why connection state comes from above — which a prop list cannot express. It is
+cited as authority by `ui-patterns.md` and `design-rulings.md`. **Not a duplicate: an enforced
+inventory and a behavioural authority are two different documents.**
 
 ---
 
