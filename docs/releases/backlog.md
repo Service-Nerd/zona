@@ -4375,7 +4375,7 @@ it was inherited."*
 the grid** — blocking 6 days is a legitimate statement ("I can run once a week"); the defect is
 that the other control then disagrees in silence.
 
-#### 🔴 `DAYS-GATE-CAPACITY-01` — the days gate measures INTENT, not CAPACITY *(P1, filed 2026-10-02, needs an RCA then the Coaching Board)*
+#### 🟠 `DAYS-GATE-CAPACITY-01` — the days gate measures INTENT, not CAPACITY *(P2 — **downgraded from P1 on a production measurement**, filed 2026-10-02; needs an RCA then the Coaching Board)*
 
 🏃 **COACHING BOARD**, after `/zona-debug`. **Not a design question:** it changes what the
 engine REFUSES.
@@ -4394,6 +4394,27 @@ it.**
 ⚠️ **Reachable from the Adjust sheet only**, not the wizard, because the wizard derives both from
 one grid. So this and `SHEET-DAY-QUESTION-01` are **one defect with two owners** — the seam rule:
 design owns the encoding, coaching owns what the engine does with it.
+📐 **PRODUCTION, READ-ONLY, 2026-10-02 — NOBODY IS AFFECTED, AND THE DATA SAYS WHY.**
+**0 conflicting plans of 19 checkable** (26 rows; **7 pre-date `PV2-A` and carry no
+`meta.generator_input`, so they cannot be checked — "0" is 0 of 19, not 0 of 26**).
+
+| declared / blocked | margin | plans |
+|---|---|---|
+| 3 / 2 | +2 | 1 |
+| 4 / 2 | +1 | 1 |
+| **3 / 4 · 4 / 3 · 5 / 2 · 6 / 1** | **0** | **17** |
+
+🥇 **17 of 19 sit at margin EXACTLY ZERO, which is the wizard's signature:** `WeekGrid`
+derives `days_available` AND `days_cannot_train` from one control, so declared **is** capacity by
+construction. Most days ever blocked by a real runner: **4** — the defect needs 5–6. **The only
+path in is the Adjust sheet, and no runner has taken it.** (19 `plan_archive` rows across 12 users
+show plans HAVE been replaced, but a wizard re-run archives too, so that number does not attribute
+to the sheet.)
+
+⚠️ **So this was filed P1 on severity-if-triggered, BEFORE measuring — the thing the completion
+rules exist to stop.** Downgraded to P2: a real defect with a clear mechanism and **zero realised
+blast radius.** It stays open because the mechanism is live, not because anyone is hurt.
+
 ⚠️ **Candidate fix is NOT obviously "bind on `min(days_available, 7 − blocked)`"** — that is a
 prescription change and needs the board. Do not patch it from the sheet.
 
