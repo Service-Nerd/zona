@@ -3802,3 +3802,64 @@ in `appScreenTitle.test.ts`'s `NOT_TITLES`, whose stale-declaration arm fails if
 ⚠️ **What it does not settle:** nothing asserts the two asks stay at 24/600. The gate records that
 they are not titles; it does not govern their type.
 
+---
+
+## ⚖️ Batch sitting, 2026-10-02 — eight items, five premises had moved
+
+**Every premise was re-derived before a seat spoke.** Five of eight had changed, and one item
+was **already built**. ⚠️ **That is the finding of the sitting, not any individual ruling.**
+
+| Item | Ruling |
+|---|---|
+| `SESSION-ACTION-COLLAPSE-01` | ✅ **CLOSE — ALREADY SHIPPED** as `LOG-ONE-INTENTION-01` (2026-09-27). Collins' recorded position (*"'Match a run' and 'Log manually' are the same intention — I did this run"*) was implemented under a different id, and both surfaces carry it in comments. **A record correction, not a ruling.** |
+| `DANGER-TEXT-CONTRAST-01` | 🟢 **SHIP WITH AMENDMENT** — mint `--danger-strong`. **The item said ONE button; three sites fail, and two are ERROR MESSAGES**, which `BUTTON-MIGRATION-02`'s button-only arm could never see. Priority inverted: errors lead. |
+| `DESTRUCTIVE-WIRING-01` | 🟢 **SHIP, SPLIT IN TWO** — and **the ruling pointed at the wrong control**. The row is a door (`ghost`); the ACT is the confirm, which was **painted with the intervals SESSION colour** and only looked right because it shares #B84545 with `--danger`. |
+| `BUTTON-SIZE-SCALE-01` | 🟢 **SHIP WITH AMENDMENT** — **the scale already exists: it is the two size classes.** 99 of 155 controls override nothing and land on 44 (compact, floored) and 47 (regular, content). **No new register** — all 23 off-step controls carry an override already owned by `buttonInlineOverride.test.ts`. |
+| `MICRO-LABEL-FIELDHINT-01` | 🔴 **DON'T SHIP a fourth role.** It is body text, on the documented *Muted / hint* values. **Three instances, not two, and the same word rendered three ways** — one spread `MICRO_LABELS.eyebrow` and overrode only `letterSpacing`, keeping uppercase and 700. **The set stays closed at three.** |
+| `SITE-BTN-INVERT-01` | 🟡 **INSUFFICIENT EVIDENCE → SETTLED ON THE COUNT.** Measured: **one** light-on-dark CTA across 3 `--ground` surfaces. **At one, the override stands**; ✋ Silvanto: a variant minted for one call site is how a system grows a step nobody needs. A ratchet now reopens it at two. |
+| `UI-PATTERNS-ENFORCEMENT-01` | 🟡 **SHIP THE MEASUREMENT, NOT THE GATES.** The numbers moved: 3,230 lines / 28 § / ~10 guarded → **4,910 / 35 / 19**. ⚠️ **The ratio IMPROVED 36% → 54% while the absolute unguarded count stayed flat (18 → 16)** — the item reads as "getting worse" and both halves need saying. |
+| `UI-PATTERNS-MOMENTS-01` | 🟡 **INSUFFICIENT EVIDENCE.** 🧭 Zhuo: *"the document has no vocabulary for weight"* is a brief without a success condition, and every ruling that stuck here had a number attached. 🎪 Collins accepted the deferral **and asked it be recorded that deferring it twice becomes an answer.** |
+| `DESIGN-CD1-TAXONOMY-01` | 🔴 **DON'T SHIP AS FILED — PREMISE FALSIFIED.** |
+
+### 🔴 CD-1: the premise is falsified, and Collins withdrew his own framing
+
+CD-1 is recorded as the highest blast-radius item in the coaching register: *"five differently-named
+quality sessions… prescribed at the same pace and heart rate. The names change; the effort does not."*
+
+**Measured 2026-10-02 against `sessionCatalogueData.ts`'s structured targets:**
+
+| Session | Category | Main-set anchor |
+|---|---|---|
+| Continuous tempo | threshold | **T** |
+| Cruise intervals | threshold | **T** |
+| HM-pace intervals | race_specific | **HM** |
+| Progressive tempo | threshold | **E ceiling → Z2-Z3 → T** |
+| Goal-pace sharpener | race_specific | **goal** |
+
+**Three distinct anchors plus a progression — not one pace.** ADR-019's structured targets and
+§120 (*"race pace means the pace of the race you are training for"*) made `HM` and `goal`
+genuinely different from `T`. 🎪 **Collins withdrew the framing on the record:** *"The engine does
+make the distinction — the taxonomy is not decoration, and I was wrong."*
+
+**What survives is far narrower:** *Continuous tempo* and *Cruise intervals* are **both `T`, both
+threshold**. That is a **2-into-1 question, not 5-into-1**, and the prescription half routes to the
+🏃 **Coaching Board**.
+
+### ⚡ Recorded disagreement
+🎪 **Collins vs the chair on `UI-PATTERNS-MOMENTS-01`.** He says a document with 4,910 lines on
+appearance and one line on feeling is a structural gap. Zhuo says it has no observable success
+condition. *Collins moves if* a measurement defines the gap; *Zhuo moves if* he names three moments
+and what each should do differently.
+
+### ⛔ Veto check
+**None exercised.** ✋ Silvanto declined on `BUTTON-SIZE-SCALE-01` (ratifying what the classes
+already produce regresses no documented rule) and named his condition on `SITE-BTN-INVERT-01`.
+`--danger-strong` is a palette **addition**, not a regression.
+
+### ⚠️ What this sitting does not settle
+Nothing has run on a device. The Me "Careful Now" card and the delete-account screen are
+auth-gated and `/me-preview` does not cover them, so the destructive change was confirmed by
+**computed CSS on the variant** rather than seen in place. `UI-PATTERNS-ENFORCEMENT-01`'s second
+half — *of the 16 unguarded sections, how many are HONOURED today?* — is **not** measured; only the
+counts are.
+

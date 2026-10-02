@@ -656,7 +656,17 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
 
 ## ⚖️ FILED 2026-10-02 — `SITE-BTN-INVERT-01`
 
-### `SITE-BTN-INVERT-01` — the site has no inverted button variant, so one CTA overrides inline 🧭 **DESIGN BOARD**
+### ✅ `SITE-BTN-INVERT-01` — RULED 2026-10-02 on the count: at ONE, the override stands 🧭 **DESIGN BOARD**
+
+⚖️ **INSUFFICIENT EVIDENCE → settled by measurement the same sitting.** 📐 **One** light-on-dark
+CTA exists, across **3** `--ground` surfaces. ✋ Silvanto: *a variant minted for one call site is
+how a system grows a step nobody needs.* **No `.btn--invert`.** The two inline overrides are
+TOKENS, not literals, and stand. ✅ **"Revisit at two" is now mechanical** — a ratchet in
+`buttonOwnership.test.ts` reddens on a second one **and** on the first one disappearing, because
+a baseline describing something that no longer exists is the direction nobody watches.
+Falsified both directions.
+
+#### `SITE-BTN-INVERT-01` — the original filing, for the record
 
 Out of `TAP-TARGET-DECISIONS-01` part 2.
 
@@ -1617,7 +1627,19 @@ re-adding the path filter, so it scanned the whole repo). **"Widen the populatio
 "remove the bound" are different operations**, and the gate caught the difference in
 seconds.
 
-#### 🟡 `MICRO-LABEL-FIELDHINT-01` — where does a field hint belong?
+#### ✅ `MICRO-LABEL-FIELDHINT-01` — RULED 2026-10-02: DON'T SHIP a fourth role. It is body text
+
+⚖️ **Design Board DON'T SHIP a fourth role.** A field hint takes the documented *Muted / hint*
+values (`--font-ui` 400 12px `--mute`) via `FIELD_HINT`, which lives **beside** `MICRO_LABELS`
+and deliberately not inside it. **The set stays closed at three.**
+🔴 **MEASURED: THREE instances, not two, and the same word rendered THREE WAYS** — lowercase
+10px/400 twice and **UPPERCASE 10px/700** once, because `ManualRunModal` spread
+`MICRO_LABELS.eyebrow` and overrode only `letterSpacing`, leaving `textTransform: 'uppercase'`
+and `fontWeight: 700` alive. **A role borrowed and PARTLY overridden is worse than one copied:**
+it reads as governed, and the register cannot see it because the values it checks are canonical.
+Gate falsified both ways (a hint borrowing a role → red; a fourth role added → red).
+
+#### `MICRO-LABEL-FIELDHINT-01` — the original filing, for the record
 
 🧭 **DESIGN BOARD.** The board ruled **three** roles and closed the set. A **field hint**
 (`optional`, lowercase, untracked, beside an input rather than above a section) fits none
@@ -2508,7 +2530,27 @@ the site is unauthenticated, and `trackEvent` no-ops without a `userId`.
 
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
-### 🧭 `DESTRUCTIVE-WIRING-01` — a variant with zero uses, and two flows that need it
+### ✅ `DESTRUCTIVE-WIRING-01` — SHIPPED 2026-10-02. The variant went to the ACT; the act was painted with a session colour
+
+✅ **Design Board SHIP, split in two.** `.btn--destructive` went from **0 call sites to 4**.
+🔴 **THE RULING POINTED AT THE WRONG CONTROL AND BUILDING IT SHOWED SO.** The board ruled
+*"delete-account's raw button → destructive"*; that row is a **door**, paired with `Sign out`
+in one Action List Card, and `btn--destructive` is `--card` + a `--danger` border — a
+standalone-button treatment that would have put a bordered box inside a bordered card. The row
+became `ghost` to match its sibling. 🔴 **THE ACT — the confirm inside `DeleteAccountScreen` —
+WAS A RAW `<button>` FILLED WITH `var(--session-intervals)`**, the INTERVALS SESSION COLOUR,
+which merely happens to share **#B84545** with `--danger`. **It looked right by coincidence:
+re-colour intervals and account deletion changes with it.** It also violated `BUTTON-SYSTEM-01`
+in writing (*"never a filled red rectangle at rest"*), so correcting it is a defect fix.
+⚠️ Half the original premise had moved: **disconnect was already on `<Button variant="ghost">`**,
+so that flow was a one-word change. Gate is **general** (any variant with zero call sites),
+falsified both ways. Registers: `meIsAnIndex` rawButtons **3 → 2**; `buttonGeometry` **156 → 158
+with two boxes ADDED and none removed — the register grew because two controls became
+MEASURABLE**, a raw button being invisible to that harness.
+🔻 **Not seen in place:** both surfaces are auth-gated and `/me-preview` does not cover them;
+confirmed by computed CSS on the variant instead.
+
+#### `DESTRUCTIVE-WIRING-01` — the original filing, for the record
 **Board: 🧭 DESIGN BOARD** (it is a variant that exists and is unused, so this is wiring not design).
 
 `btn--destructive` is defined, documented and has **0 uses**, while **delete-account and disconnect
@@ -2519,7 +2561,17 @@ variant is right and it hasn't been wired."*
 red rectangle at rest. It **inverts on hover**, which is the family's one named exception
 (`BUTTON-SYSTEM-01`) and is deliberate — do not flatten it for symmetry.
 
-### 🧭 `SESSION-ACTION-COLLAPSE-01` — are "Match a run" and "Log manually" one action?
+### ✅ `SESSION-ACTION-COLLAPSE-01` — CLOSED 2026-10-02. It had already shipped as `LOG-ONE-INTENTION-01`
+
+✅ **Not a ruling — a record correction.** `LOG-ONE-INTENTION-01` (registry, **2026-09-27**)
+implemented exactly what this item asks, and both surfaces carry it in their own comments:
+`TodayScreen.tsx` *"ONE BUTTON. It was two"* and `SessionPopupInner.tsx` *"ONE button, not two.
+'Match a run' and 'Log manually' were the same intention … Collins, September."*
+🔴 **Collins' recorded position was built under a different id and nobody closed this item** —
+the `PUSH-UNITS-01` class, and `backlog-touch.py` cannot catch it because the ship touched
+different files than this item names.
+
+#### `SESSION-ACTION-COLLAPSE-01` — the original filing, for the record
 **Board: 🧭 DESIGN BOARD.** Collins leads. Filed by `SESSION-ACTIONS-01`, not settled by it.
 
 🎪 **Collins, on the record so the next sitting starts from it:** *"'Match a run' and 'Log manually'
@@ -2534,7 +2586,20 @@ ordering. The ordering fix shipped; this did not.
 screen has one primary and a fallback inside it, which is a different screen from the one that
 shipped today.
 
-### 🧭 `BUTTON-SIZE-SCALE-01` — should a button size scale exist at all?
+### ✅ `BUTTON-SIZE-SCALE-01` — RATIFIED 2026-10-02. The scale already exists: it is the two size classes
+
+✅ **Design Board SHIP WITH AMENDMENT.** 📐 **Measured: of 155 controls, 99 override NOTHING and
+land on exactly two heights — 44** (`.btn--compact`, 12+12+14 = 38, caught by its own floor)
+**and 47** (`.btn--regular`, 15+15+17, above its floor so content decides). **132 of 155 sit on
+the two steps.** The bimodality is one floor and two paddings, not sediment and not taste.
+🔴 **The "13 distinct heights" that filed this is now 8, ALL ≥ 44** — the Collins/Wroblewski
+split was settled by the floor without either seat winning. ⚠️ **NO NEW REGISTER, and that is
+the ruling's main content:** all **23** off-step controls carry an inline override, already
+registered by `buttonInlineOverride.test.ts`. A second register over the same objects is the
+failure this repo keeps paying for. 🔻 For the two at 52px the recorded override is `radius`,
+which cannot change a height — the harness under-records them; stated, not glossed.
+
+#### `BUTTON-SIZE-SCALE-01` — the original filing, for the record
 **Board: 🧭 DESIGN BOARD.** Collins leads. Filed by `BUTTON-GEOMETRY-01`, not settled by it.
 
 `.btn--regular` / `.btn--compact` now carry a **44px floor and a default**, and each call site keeps
@@ -2580,7 +2645,23 @@ on a native-input swap without one. Wroblewski: *"I'd rather ship a 22-tap contr
 **What would settle it:** the modal in a hand on iOS, with the numeric keyboard, checking the
 focus-zoom behaviour. Collins: *"get it in a hand and I'll take the swap the same afternoon."*
 
-### 🧭 `DANGER-TEXT-CONTRAST-01` — `--danger` as a label is 4.36:1 on `--bg-soft`
+### ✅ `DANGER-TEXT-CONTRAST-01` — SHIPPED 2026-10-02. It said ONE button; THREE sites fail, two are error messages
+
+✅ **Design Board SHIP WITH AMENDMENT — `--danger-strong` #A33D3D minted.**
+🔴 **THE POPULATION WAS WRONG AND IT INVERTED THE PRIORITY.** The finding came from
+`BUTTON-MIGRATION-02`'s contrast arm, which scans **buttons** — so the two `<div>` error banners
+in `PostRaceReshapeCard` and `RaceResultSheet` were **never in its population**. ✋ Silvanto and
+🎓 Sierra: an error message is the worst text in the product to render below AA, because it is
+already the moment the product is failing the person.
+**The value was derived, not picked:** `--moss-strong` and `--warn-strong` are each −10…−12
+lightness from base **and both land at 5.48 on `--card`**, so the family is defined by achieved
+contrast. Red carries 0.2126 of the luminance weight to green's 0.7152, so −11 overshoots
+(6.40). `--danger-strong` holds **hue and saturation exactly** and moves lightness 49.6 → 44:
+**5.27 / 5.61 / 6.38**. ⚠️ `--danger` was never in `TEXT_TOKENS`, so the token layer had never
+claimed it safe for text. Gate **bounds the style object**, not a proximity window; falsified
+three ways including a NEGATIVE case.
+
+#### `DANGER-TEXT-CONTRAST-01` — the original filing, for the record
 **Board: 🧭 DESIGN BOARD** — minting a token is a palette addition, which is Silvanto's veto scope.
 
 Found by `BUTTON-MIGRATION-02`'s general contrast arm. **One** button: the 11px *"Unlink this run?"*
@@ -3068,7 +3149,20 @@ Seiler's condition of approval and had only its long-run arm implemented.
 
 ---
 
-### 🧭 `UI-PATTERNS-ENFORCEMENT-01` — 3,230 lines, 28 sections, ~10 guarded
+### 🔄 `UI-PATTERNS-ENFORCEMENT-01` — the counts are RE-MEASURED 2026-10-02; the honoured-count is still open
+
+⚖️ **Design Board: SHIP THE MEASUREMENT, NOT THE GATES** — which is this item's own stated first
+move. 📐 **Re-derived 2026-10-02: 3,230 lines / 28 sections / ~10 guarded is now 4,910 lines /
+35 `##` sections / 19 naming a check.** ⚠️ **The ratio IMPROVED 36% → 54% while the absolute
+unguarded count stayed roughly flat (18 → 16)**, and the document grew **52% in a week**. The
+item reads as *getting worse*; measured, the proportion is getting better and the debt is
+holding. **Both halves need saying.**
+🔻 **STILL OPEN, and it is the half that matters:** *of the 16 unguarded sections, how many are
+HONOURED today?* That separates "unenforced and fine" from "unenforced and already drifted", and
+only the second needs a gate. ⚠️ The guarded/unguarded split above is a **regex for a test name
+in the section body** — a crude proxy, stated so nobody quotes 19 as audited.
+
+#### `UI-PATTERNS-ENFORCEMENT-01` — the original filing, for the record
 
 **Filed 2026-09-25 by the Design Board (UI-PATTERNS-REVIEW-01). Sierra's finding.**
 
@@ -3086,7 +3180,15 @@ taken: **of the unguarded sections, how many are actually being honoured today?*
 separates "unenforced and fine" from "unenforced and already drifted", and only the second
 needs a gate.
 
-### 🧭 `UI-PATTERNS-MOMENTS-01` — the document describes components and almost no moments
+### 🟡 `UI-PATTERNS-MOMENTS-01` — INSUFFICIENT EVIDENCE 2026-10-02; deferred with a condition
+
+⚖️ **Design Board INSUFFICIENT EVIDENCE.** 🧭 Zhuo: *"the document has no vocabulary for weight"*
+is a brief without a success condition, and every ruling that stuck at this board had a number
+attached. **What would settle it:** 🎪 Collins names **three** moments and what each should do
+differently. ⚠️ **He accepted the deferral and asked it be recorded that deferring it twice
+becomes an answer.**
+
+#### `UI-PATTERNS-MOMENTS-01` — the original filing, for the record
 
 **Filed 2026-09-25 by the Design Board (UI-PATTERNS-REVIEW-01). Collins' finding, and he
 named it a gap rather than a fault.**
@@ -4987,7 +5089,22 @@ on the sitting, not a reason to delay it.
 
 ---
 
-### 🧭 `DESIGN-CD1-TAXONOMY-01` — do five session names resolve to one pace?
+### 🔴 `DESIGN-CD1-TAXONOMY-01` — PREMISE FALSIFIED 2026-10-02. Re-scoped from 5-into-1 to 2-into-1
+
+🔴 **DON'T SHIP AS FILED.** Measured against `sessionCatalogueData.ts`'s structured targets, the
+five sessions resolve to **THREE distinct pace anchors plus a progression, not one pace**:
+*Continuous tempo* **T** · *Cruise intervals* **T** · *HM-pace intervals* **HM** · *Progressive
+tempo* **E ceiling → Z2-Z3 → T** · *Goal-pace sharpener* **goal**. ADR-019's structured targets
+and **§120** (*"race pace means the pace of the race you are training for"*) made `HM` and `goal`
+genuinely different from `T`.
+🎪 **Collins withdrew his own framing on the record:** *"The engine does make the distinction —
+the taxonomy is not decoration, and I was wrong."*
+✅ **What survives is narrower and still worth asking:** *Continuous tempo* and *Cruise intervals*
+are **both `T`, both threshold** — a **2-into-1** question. ↗️ **The prescription half routes to
+the 🏃 COACHING BOARD** (CD-1 options b/c); the presentation half is this board's and is now
+bounded to that pair.
+
+#### `DESIGN-CD1-TAXONOMY-01` — the original filing, for the record
 **Board: 🧭 DESIGN BOARD** (leads) → **🏃 COACHING BOARD** (for the prescription half)
 **Seat: Collins** — his first assignment, founder-set. **Surface: app**, with a website
 spillover. **Tier: FREE.**

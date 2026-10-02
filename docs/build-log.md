@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — Design Board batch: `DANGER-TEXT-CONTRAST-01` · `DESTRUCTIVE-WIRING-01` · `BUTTON-SIZE-SCALE-01` · `MICRO-LABEL-FIELDHINT-01` · `SITE-BTN-INVERT-01` — five of eight premises had moved
+**Shipped:** `--danger-strong` and three contrast fixes; the destructive variant wired to the act; the button size scale ratified as the two size classes; field hints demoted to body text; the inverted-CTA question settled on a count of one.
+
+**Dev learning:** The best finding of the day came from a button nobody was looking at. `DESTRUCTIVE-WIRING-01` said a variant existed with zero call sites and two flows needed it. Measuring it: one of the two flows was already converted, and the *other* one — the account-deletion confirm, the single most consequential control in the app — was a raw `<button>` filled with `var(--session-intervals)`. That is the **intervals session colour**, which happens to be `#B84545`, which is also `--danger`'s hex. **It looked correct by pure coincidence.** Re-colour intervals and account deletion changes with it. Two meanings sharing one value: pixels right, semantics wrong — the same shape as binding a marketing mockup to the app's live token, which I also did and reverted this morning.
+
+And the board's ruling pointed at the wrong control. It said convert the delete-account *row*; building it showed the row is a **door** paired with `Sign out` in one card, and the destructive variant is a standalone-button treatment that would have put a bordered box inside a bordered card. The variant belongs on the **act**, not the door. **A ruling made from a backlog item inherits the item's idea of which control matters.**
+
+**Product/creator learning:** `DANGER-TEXT-CONTRAST-01` said "one button". Three sites fail, and two are **error messages** — invisible to the finding because the arm that found it scans buttons. Both board seats inverted the priority the moment that landed: an error message is the worst text in the product to render below AA, because it is already the moment the product is failing the person. **The population a finding was discovered by quietly becomes the population everyone believes is affected.**
+
+**AI-building learning:** I keep being wrong in the same direction and it is now measurable. Of eight items taken to the board, **five had premises that had stopped being true**, and one — `SESSION-ACTION-COLLAPSE-01` — had already shipped three days earlier under a different id, with the implementation carrying Collins' own quoted reasoning in a comment. The useful reflex is not "read the item carefully", it is "**derive the one fact the item rests on before planning against it**". `ls` the file it says does not exist. Count the thing it says is 32. Grep for the question it says is open.
+
+Also: `BUTTON-SIZE-SCALE-01` asked "should a scale exist?" and the honest answer was **one already does** — the two size classes, producing 44 and 47, with 99 of 155 controls landing there untouched. I nearly built a register for the 23-control tail before finding `buttonInlineOverride.test.ts` already owned it. **The second register over the same population is this codebase's most expensive recurring mistake and I was two minutes from adding another one.**
+
+**The honest bit:** I derived `--danger-strong` from the family's HSL delta (−11 lightness) and got a value that would have been darker than every peer, because red carries a third of green's luminance weight. The precedents aren't an HSL rule at all — they both land at 5.48:1, so the family is defined by *achieved contrast*. I had to throw the first derivation away. Had I not checked the resulting ratios I would have shipped a token that was "consistent" with its siblings by a rule that was never the rule.
+
+**Hook material:** The delete-account button was painted with the intervals-session colour and looked right because two unrelated tokens share a hex. And: eight backlog items, five stale premises, one already shipped.
+
+**Postable?:** yes — the session-colour coincidence is the strongest single story of the week.
+
 ## 2026-10-02 — Design Board, three rulings: `A11Y-MOCKUP-CONTRAST-01` · `TAP-TARGET-DECISIONS-01` · `INTERSTITIAL-TITLE-ROLE-01` — the item was wrong three times out of three
 **Shipped:** `A11Y-MOCKUP-CONTRAST-01` (seven token swaps, nothing resized) and `TAP-TARGET-DECISIONS-01` part 2 (the 44px floor's scope written down once, and the homepage's App Store CTA fixed).
 

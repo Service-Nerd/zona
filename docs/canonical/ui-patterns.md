@@ -2332,6 +2332,110 @@ derived check would need to bound "a centred full-screen ask", which is a layout
 codebase cannot currently express statically. The stale-declaration arm does hold one thing shut: if
 either ask is deleted, its declaration fails as a lie.
 
+### The button size scale — it already exists, and it is the two size classes (BUTTON-SIZE-SCALE-01, Design Board 2026-10-02)
+
+🎪 Collins asked whether a button size scale *should exist at all*. **It does. Measured, not designed:**
+
+| | |
+|---|---|
+| `.btn--compact` | `12px` padding + `12px` text = 38 → **floored to 44** |
+| `.btn--regular` | `15px` padding + `14px` text = **47**, above its floor, so content decides |
+
+📐 **Of 155 controls, 99 override nothing and land on exactly those two heights — 44 and 47.
+132 of 155 sit on the two steps.** The bimodality is not sediment and not taste: **it is one
+floor and two paddings.**
+
+🔴 **THE "13 DISTINCT HEIGHTS" THAT FILED THIS ITEM IS NOW 8, ALL ≥ 44.** The split that
+produced it — Collins: *"thirteen distinct heights is not a design, it's sediment"*;
+Wroblewski: *"one of those thirteen was 29px and deliberate, and you cannot tell which from a
+histogram"* — **was settled by the floor without either seat winning.** The sub-floor cases
+are gone and the remainder is explained.
+
+⚠️ **NO NEW REGISTER, AND THAT IS THE RULING'S MAIN CONTENT.** All **23** off-step controls
+carry an inline override, and `buttonInlineOverride.test.ts` **already** registers those by
+file and only lets them fall. Building a second register over the same objects is the
+two-registers-one-population failure this repo keeps paying for. The arm in
+`buttonGeometry.test.ts` asserts the **relationship** — every off-step height is explained by
+an override — and defers the debt to its existing owner.
+
+⚠️ **Honest limit:** for the two controls at 52px the recorded override is `radius`, which
+cannot itself change a height, so the harness is under-recording their overrides rather than
+those two being unexplained.
+
+---
+
+### Danger as TEXT — `--danger-strong`, and why the base token is not it (DANGER-TEXT-CONTRAST-01, Design Board 2026-10-02)
+
+**`--danger` #B84545 may not be text on `--bg-soft`.** It measures **4.65 on `--bg`, 5.28 on
+`--card`, 4.36 on `--bg-soft`** — it fails AA **only on the ground it actually sits on**, which
+is why it survived every other check. Use **`--danger-strong` #A33D3D** (5.27 / 5.61 / 6.38).
+
+🔴 **THE ITEM SAID "ONE BUTTON". THERE WERE THREE SITES, AND TWO WERE ERROR MESSAGES.** The
+finding came from `BUTTON-MIGRATION-02`'s contrast arm, which scans **buttons** — so two `<div>`
+error banners were never in its population. ✋ Silvanto and 🎓 Sierra both inverted the priority:
+**an error message is the worst text in the product to render below AA**, because it is already
+the moment the product is failing the person.
+
+**The value was derived, not picked.** `--moss-strong` and `--warn-strong` are each −10…−12
+lightness from their base **and both land at 5.48 on `--card`**, so the family is defined by
+*achieved contrast*, not by an HSL step. Red carries 0.2126 of the luminance weight against
+green's 0.7152, so the same drop overshoots: −11 would have given 6.40 on `--bg-soft`, darker
+than any peer. `--danger-strong` **holds hue and saturation exactly** (h0, s45.5) and moves
+lightness 49.6 → 44, so it reads as the same red rather than a second one.
+
+⚠️ **`--danger` was never in `a11yContrast.test.ts`'s `TEXT_TOKENS`**, so the token layer had
+never claimed it was safe for text. The gap was real and simply never asserted.
+
+Guarded by `lib/a11yContrast.test.ts` — the scanner **bounds the style object** rather than
+using a proximity window, because a 400-character window produced seven confident wrong
+findings earlier the same day.
+
+---
+
+### The destructive variant goes to the ACT, never to the door (DESTRUCTIVE-WIRING-01, Design Board 2026-10-02)
+
+**A row that opens a destructive screen is a DOOR and takes `ghost`. The confirm inside it is
+the ACT and takes `destructive`.**
+
+🔴 **The board ruled the opposite and building it showed why that was wrong.** The ruling was
+*"delete-account's raw button → destructive"*; that control is a row in an Action List Card
+paired with `Sign out`, and `.btn--destructive` is `--card` + a `--danger` border — a
+**standalone-button** treatment. Dropping it into a row would have put a bordered box inside a
+bordered card and broken the pair.
+
+🔴 **AND THE ACT WAS PAINTED WITH A SESSION COLOUR.** The delete confirm was a raw `<button>`
+with 13 inline styles filled with `var(--session-intervals)` → `--s-inter` → **#B84545**, the
+**intervals session colour**, which merely happens to share a hex with `--danger`. **It looked
+correct by coincidence: re-colour intervals and account deletion changes with it.** Two meanings
+sharing one value — pixels right, semantics wrong.
+
+⚠️ It also violated § `BUTTON-SYSTEM-01` in writing — destructive is *"never a filled red
+rectangle at rest"* — so correcting it is a **defect fix restoring a documented pattern**.
+Verified by computed CSS: `rgb(255,255,255)` ground, `1px solid rgb(184,69,69)`, matching text.
+
+**The gate is general, not about `destructive`:** a declared `.btn--*` variant with **zero call
+sites** fails. Naming one variant would leave the next unguarded.
+
+---
+
+### A field hint is body text, not a fourth micro-label (MICRO-LABEL-FIELDHINT-01, Design Board 2026-10-02)
+
+**`optional`, lowercase, beside an input, is not a caption above a section.** It takes the
+documented **Muted / hint** values — `--font-ui` 400 12px `--mute` — through `FIELD_HINT`.
+**The micro-label set stays closed at three** (🎪 Collins: *"Three named levels is a system.
+Forty-one is a habit."*).
+
+🔴 **MEASURED: three instances, not the two filed, and the same word rendered THREE WAYS** —
+lowercase 10px/400 twice, and **UPPERCASE 10px/700** once, because `ManualRunModal` spread
+`MICRO_LABELS.eyebrow` and overrode only `letterSpacing`, leaving `textTransform: 'uppercase'`
+and `fontWeight: 700` alive. **A role borrowed and partly overridden is worse than one copied:**
+it reads as governed, and the register cannot see it because the values it checks are canonical.
+
+⚠️ `FIELD_HINT` lives beside `MICRO_LABELS` and **deliberately not inside it** — putting it there
+would reopen a set the board closed and make the count four, which is exactly what was declined.
+
+---
+
 ### The 44px tap floor — what it is FOR (TAP-TARGET-DECISIONS-01, Design Board 2026-10-02)
 
 **44px is the floor for a CTA, or for any control that is ITSELF the target. Where the ROW is the
