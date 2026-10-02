@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `MEMORY-SIZE-GATE-01` · the file warned me, in the copy that had already lost the lines
+**Shipped:** A size budget for the assistant's memory index, gated in the docs audit. Index trimmed 26,296 → 23,158B with nothing thrown away.
+
+**Dev learning:** My memory index had quietly gone over its load limit and two entries stopped being loaded. The interesting part isn't the limit, it's the shape of the signal: the warning is appended **inside the file's own injected copy**, so the only reader who ever sees it is a session that is already working from the truncated version. It names the first line that got cut, not the budget, so you can't act on it without going and measuring. And nothing in the repo looked at the file at all.
+
+**The bit that made it worth a gate rather than a tidy-up:** truncation runs from the END of the file, and the end of that file is the "How I should work" list. Every day-state and project thread in there has a topic file behind it. The feedback doesn't. So the half with no backup copy is precisely the half that drops first, and it drops without a sound.
+
+**Honest limit:** a byte budget is not a measure of whether an index is useful. It stops the file eating itself; it can't tell me a one-line hook still points at a topic file that actually carries the detail. I wrote the topic file *before* trimming the lines this time, deliberately — the third and fourth waves of today existed only in their index lines, and trimming first would have deleted the record rather than compressed it.
+
+---
+
 ## 2026-10-02 — `AUDIT-SHIPPED-OPEN-ARM-01` · blind on both sides at once
 **Shipped:** The docs audit's shipped-but-open arm can read a qualified registry cell and a `####` heading. Plus the three stale markers it immediately found.
 

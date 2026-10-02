@@ -541,6 +541,25 @@ for f in docs/releases/backlog.md docs/releases/roadmap.md; do
   fi
 done
 [ -f "$mem" ] && { grep -q "$last7" "$mem" || { say "  STALE MEMORY.md does not name last ship $last"; sfail=1; fail=1; }; }
+# 🔴 AND ITS SIZE, BECAUSE THE TRUNCATION IS SILENT AND COSTS INDEX LINES.
+# 2026-10-02: MEMORY.md reached 26,296 bytes against a 24,400-byte load limit and
+# **2 index entries stopped being loaded at all** -- the warning arrives inside the
+# file's own injected copy, i.e. only to a session that already has the truncated
+# version, and it names the first line cut rather than the budget. Nothing in this
+# repo could see it. The tail of that file is the "How I should work" list, so what
+# silently drops first is the feedback, which is the half with no other copy.
+# Budget deliberately below the limit: a state block is ~500 bytes and a day adds
+# one, so a check that only fires AT the limit fires after the loss.
+MEM_BUDGET=23800
+if [ -f "$mem" ]; then
+  mbytes=$(wc -c < "$mem" | tr -d ' ')
+  if [ "$mbytes" -gt "$MEM_BUDGET" ]; then
+    say "  OVER BUDGET MEMORY.md is ${mbytes}B against ${MEM_BUDGET}B (hard load limit 24400B)"
+    say "            index entries are truncated from the END, which is the feedback list."
+    say "            Move detail into a topic file and leave a one-line hook."
+    sfail=1; fail=1
+  fi
+fi
 [ "$sfail" = "0" ] && say "  ok"
 
 say ""
