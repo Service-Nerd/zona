@@ -223,8 +223,23 @@ afail=0
 # looked clean because a recent ID is usually mentioned somewhere in roadmap prose as well.
 # Same class as CONTRACT-COVERAGE-02: the arm reported ok BY NOT LOOKING. Both separators
 # now, and the ID must still be the row's FIRST CELL.
-grep -oE '^\| *`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`? *[—/|]' docs/canonical/feature-registry.md \
-  | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | sort -u > /tmp/_reg
+# 🔴 THIRD FORMAT PROBLEM WITH THIS EXTRACTOR, AND IT HID EXACTLY WHAT THE ARM BELOW EXISTS
+# TO FIND (2026-10-02). A first cell may carry a PARENTHETICAL QUALIFIER — `| TAP-TARGET-
+# DECISIONS-01 (part 1) |`, `(part 2)`, `| DASHBOARD-SCREEN-EXTRACT-01 (phase 1) |`,
+# `| MICRO-LABEL-DRIFT-01 (vocabulary) |` — and the pattern demanded the id be followed
+# IMMEDIATELY by `|`, `—` or `/`. **Measured: 4 of 399 rows, small; but all THREE distinct ids
+# read as shipped-AND-open, which is 100% of the thing this arm is for.** A multi-part ship is
+# precisely the kind that stays half-open, so the rows most likely to need the check were the
+# rows it could not see. The qualifier is now optional; the id must still be the FIRST CELL,
+# so an id inside another row's prose is still rejected — that rule was bought twice
+# (GTM-CHARITY-02, and 27 false positives on 2026-09-20) and is not relaxed here.
+# ⚠️ AND IT CAPTURES GROUP 1, NOT "every id on the matched text". The two-grep form
+# (`grep -oE <row> | grep -oE <id>`) pulls ids out of the QUALIFIER too: `| SITE-WAVE-4
+# (SITE-SPACE-01) — …` would have registered **SITE-SPACE-01** as having its own row when it
+# is only named inside another's. That is the `GTM-CHARITY-02` mistake exactly, re-created by
+# the fix for a different one — caught by diffing the accepted set before trusting it.
+sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`? *(\([^)]*\) *)?[—/|].*/\1/p' \
+  docs/canonical/feature-registry.md | sort -u > /tmp/_reg
 # Open headers carry a *(provenance)* block; in-item emphasis bullets do not.
 # Without that discriminator this fires on narrative text, which is how four
 # separate parses of this file produced four different counts.
@@ -249,7 +264,12 @@ grep -oE '^\| *`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`? *[—/|]' docs/canonical/feature-
   # (killed) as open. The inconsistency is in the document, not the check, and
   # normalising the document is the better fix — recorded so whoever does that
   # knows this clause exists.
-  grep -oE '^### (🔲|🟡|🟠|🟢|🔵|⏸️) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
+  # ⚠️ `###` AND `####`, 2026-10-02. This matched three hashes exactly, and three open
+  # headings use four — among them `DASHBOARD-SCREEN-EXTRACT-01` and `-02`, BOTH of which
+  # carry registry rows. So the shipped-but-open arm was blind on BOTH SIDES at once: the
+  # registry extractor could not see a qualified first cell, and this could not see a `####`
+  # heading. Fixing either alone changes nothing observable, which is why the gap survived.
+  grep -oE '^#{3,4} (🔲|🟡|🟠|🟢|🔵|⏸️) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
     | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
 } | sort -u > /tmp/_open
 # ⚠️ DECLARED EXEMPTIONS — an ID that is legitimately BOTH shipped and open, each with its

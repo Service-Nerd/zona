@@ -1718,7 +1718,14 @@ which write the **canonical eyebrow** on aligned blocks — were counted as viol
 this register exists to prevent.** The blockers are now named per-label rather than as a
 single "needs a render".
 
-#### 🟡 `DASHBOARD-SCREEN-EXTRACT-01` — PHASE 1 SHIPPED 2026-09-29 (5 of 14)
+#### ✅ `DASHBOARD-SCREEN-EXTRACT-01` — phase 1 of 4; **the whole extraction FINISHED at phase 04 (14 of 14)**
+
+⚠️ **Marker corrected 2026-10-02.** This stayed 🟡 after `-04` landed *"14 OF 14. THE EXTRACTION IS
+DONE. DashboardClient 14,447 → 7,155 lines"*. **The audit could not see it**: its registry extractor
+could not read a qualified first cell (`| DASHBOARD-SCREEN-EXTRACT-01 (phase 1) |`) and its
+open-heading pattern matched `###` but not `####`. **Blind on both sides at once, which is why
+fixing either alone would have changed nothing.** Both widened in the same commit, and this is one
+of the two items the repaired arm immediately found.
 
 ⚙️ **NO BOARD** — refactor, bodies moved verbatim, no behavioural or visible delta.
 
@@ -1751,7 +1758,10 @@ matches"; path corrected, entry kept.
 🔴 **AND `git ls-files` COULD NOT SEE THE NEW FILES UNTIL THEY WERE STAGED — THIRD TIME IN
 ONE SESSION.** A gate reported a site missing that was sitting in the new file at line 45.
 
-#### 🟡 `DASHBOARD-SCREEN-EXTRACT-02` — SHIPPED 2026-09-29. **11 of 14 out; 3 remain**
+#### ✅ `DASHBOARD-SCREEN-EXTRACT-02` — 11 of 14 at the time; **the remaining 3 shipped in `-03`/`-04`**
+
+⚠️ **Marker corrected 2026-10-02**, same cause as `-01` directly above: the shipped-but-open arm was
+blind on both sides. *"3 remain"* was true when written and stopped being true the same day.
 
 ⚙️ **NO BOARD** — refactor, bodies verbatim.
 
@@ -9601,7 +9611,7 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > needs a better reason than "we were in the area". **Sixth expired premise in two days.**
 >
 > *(original filing below)*
-> 🔲 **PLAN-NOTE-PLACEMENT-01 — does the plan rationale belong at the TOP of the Plan screen at all?** *(P2, filed 2026-09-17 by the SLT. Deliberately NOT bundled with PLAN-NOTE-VOICE-01.)*
+> ⚪ ~~**PLAN-NOTE-PLACEMENT-01 — does the plan rationale belong at the TOP of the Plan screen at all?**~~ *(closed above; marker corrected 2026-10-02 — I left the open glyph on the original filing when I closed it, so it kept parsing as open)* *(P2, filed 2026-09-17 by the SLT. Deliberately NOT bundled with PLAN-NOTE-VOICE-01.)*
 >
 > **Wood's argument:** a runner asks *"why is my long run short?"* in week 3, when the long run feels short. Not on day one. Putting the answer at the top of the plan on day one hands someone who has just committed a list of things their life prevents, in our warning colour. Context beats motivation, and that context says "here is what you cannot do".
 >

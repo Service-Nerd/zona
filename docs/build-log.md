@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `AUDIT-SHIPPED-OPEN-ARM-01` · blind on both sides at once
+**Shipped:** The docs audit's shipped-but-open arm can read a qualified registry cell and a `####` heading. Plus the three stale markers it immediately found.
+
+**Dev learning:** This is the fifth time "an audit is only ever as wide as its list" has bitten, and it finally taught me something new. The previous four were each **one** list being too narrow. This one was a **join**, and both sides of the join were short at the same time: the registry extractor couldn't read `| ID (phase 1) |`, and the open-item matcher only knew `###` when the items were `####`. **Fixing either half alone changes nothing**, which is exactly why it survived a previous widening of the open-header shape — that fix was real, it just happened to be the half that wasn't sufficient on its own. A one-sided repair on a two-sided join produces no visible improvement and reads as evidence the check is fine.
+
+**The honest bit:** I nearly shipped the `GTM-CHARITY-02` defect *inside the fix for it*. The natural way to pull an ID out of a matched row is to pipe it through a second `grep -oE`, and a free-floating ID pattern cheerfully accepts `SITE-SPACE-01` from inside `| SITE-WAVE-4 (SITE-SPACE-01) |` — an ID matched from another item's qualifier, which is the precise failure this check's own documentation warns about. I did not catch it by re-reading the regex. I caught it by **diffing the set of accepted IDs before and after**, which is the only thing that would have. When loosening a matcher, the thing to inspect is what it newly accepts, not what it now matches.
+
+**And the part no check reached:** of the three stale markers, two were found by the repaired arm and one was mine, from earlier the same session — I'd appended an SLT close above an item and left the open glyph on the filing below it. No arm found that. I found it by re-reading my own work.
+
+---
+
 ## 2026-10-02 — `LEDGER-FATIGUE-HONESTY-01` · the test asserted the defect, and its own fixture proved it
 **Shipped:** A high-fatigue tag breaks a discipline week only on a non-quality day. §112 Amendment 1, no new numeric.
 
