@@ -15,6 +15,7 @@
 import { useState } from 'react'
 import { notFound } from 'next/navigation'
 import { PreferencesScreen, PREFERENCES_TITLE, PREFERENCES_SUBTITLE } from '@/components/shared/PreferencesScreen'
+import PlanAdjustmentsScreen from '@/components/dashboard/PlanAdjustmentsScreen'
 import ActionRow from '@/components/shared/ActionRow'
 import { SectionLabel } from '@/components/shared/SectionLabel'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
@@ -22,6 +23,7 @@ import { PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_
   CONNECTIONS_TITLE, connectionsSubtitle, ME_SECTION_ORDER } from '@/components/shared/meDoors'
 
 export default function PreferencesPreview() {
+  const [autoAdjust, setAutoAdjust] = useState(true)
   if (process.env.NODE_ENV === 'production') notFound()
 
   const [units, setUnits] = useState<'km' | 'mi'>('km')
@@ -112,6 +114,38 @@ export default function PreferencesPreview() {
         <PreferencesScreen
           preferredUnits={units} onUnitsChange={setUnits}
           preferredMetric={metric} onMetricChange={setMetric}
+        />
+
+        {/* ── ME-ADJUSTMENTS-EXTRACT-01 — the Plan adjustments door, now a component ──
+            ⚠️ WHY IT IS HERE AT ALL: the door is behind auth AND behind the paid tier, so it
+            could not be LOOKED at before. `renderToStaticMarkup` in
+            `planAdjustmentsScreen.markup.test.ts` proves the strings; it cannot show anyone
+            the spacing at 375px. The repo's own record is that a comment once described an arc
+            nobody had built, and the founder found it on device.
+            ⚠️ ALL THREE "Last checked" STATES, because they are mutually exclusive branches
+            and only one of them is ever visible on a real account at a time. */}
+        <div style={{ padding: '24px 16px 8px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
+          Behind the Plan adjustments door: never checked
+        </div>
+        <PlanAdjustmentsScreen
+          dynamicAdjustmentsEnabled={autoAdjust} onDynamicAdjustmentsChange={setAutoAdjust}
+          lastCheckedLabel={null} preferredUnits={units}
+        />
+
+        <div style={{ padding: '24px 16px 8px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
+          Checked, nothing found
+        </div>
+        <PlanAdjustmentsScreen
+          dynamicAdjustmentsEnabled={autoAdjust} onDynamicAdjustmentsChange={setAutoAdjust}
+          lastCheckedLabel="yesterday" lastAdjustmentCheckFoundChange={false} preferredUnits={units}
+        />
+
+        <div style={{ padding: '24px 16px 8px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
+          A change is pending: the status line becomes a tappable row
+        </div>
+        <PlanAdjustmentsScreen
+          dynamicAdjustmentsEnabled={autoAdjust} onDynamicAdjustmentsChange={setAutoAdjust}
+          lastCheckedLabel="yesterday" hasPendingAdjustment preferredUnits={units}
         />
       </div>
     </div>

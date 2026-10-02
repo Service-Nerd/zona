@@ -10,7 +10,7 @@
 import AIMark from '@/components/shared/AIMark'
 import { getDeviceToken } from '@/components/dashboard/pushDevice'
 import ActionRow from '@/components/shared/ActionRow'
-import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
+import PlanAdjustmentsScreen from '@/components/dashboard/PlanAdjustmentsScreen'
 import AppleHealthConnectionRow from '@/components/dashboard/AppleHealthConnectionRow'
 import BackButton from '@/components/shared/BackButton'
 import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
@@ -805,25 +805,9 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   // Plan adjustments — "What we watch for" disclosure
   const [adjustmentsDisclosureOpen, setAdjustmentsDisclosureOpen] = useState(false)
 
-  // RESHAPE-FIX-WAVE3-PHASE2 — per-change dismissal for the "Changed this week"
-  // audit surface, persisted client-side (matches the MAINT-01 dismissable-card
-  // precedent — informational card, no migration). Keyed by adjustment id.
-  const [dismissedChanges, setDismissedChanges] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set()
-    try {
-      const raw = window.localStorage.getItem('zonna_dismissed_changes')
-      return new Set(raw ? (JSON.parse(raw) as string[]) : [])
-    } catch { return new Set() }
-  })
-  const dismissChange = (id: string) => {
-    setDismissedChanges(prev => {
-      const next = new Set(prev)
-      next.add(id)
-      try { window.localStorage.setItem('zonna_dismissed_changes', JSON.stringify(Array.from(next))) } catch {}
-      return next
-    })
-  }
-  const visibleChanges = (recentChanges ?? []).filter((c: any) => !dismissedChanges.has(c.id))
+  // ⚠️ The per-change dismissal mechanism (`dismissedChanges` / `dismissChange` /
+  // `visibleChanges`, localStorage-backed) MOVED to `PlanAdjustmentsScreen` with the door
+  // (`ME-ADJUSTMENTS-EXTRACT-01`). All three uses were inside it and none remain here.
 
   // Relative-time formatter for the "Last checked" row. (The "Recent tweaks"
   // log that also used this was relocated to the notification inbox — NOTIF-01.)
@@ -866,124 +850,34 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   // member goes with it, so a stale `openSection` value cannot route to a screen that no
   // longer exists. `activeSection` remains the door mechanism for the others.
   // ME-DOORS-01 door 3. Rendered here rather than extracted — see the row on the index.
-  if (activeSection === 'plan-adjustments') return (
+  // ME-ORDER-01 door 3 — Plan adjustments. ⚠️ A COMPONENT, NOT A CALL SITE
+  // (`ME-ADJUSTMENTS-EXTRACT-01`): every other substantial door off Me is one, and this was
+  // the last outlier at ~120 lines inline.
+  //
+  // 🔴 THE TIER GATE IS NOW ON THE BRANCH, AND THAT IS A FIX. It guarded the BODY while the
+  // branch rendered `ScreenHeader` unconditionally, so a free runner arriving via
+  // `openSection` would have seen a titled, EMPTY screen. The index's own comment states the
+  // intent — *"a free runner sees no door at all rather than a door onto a locked room"* — so
+  // an ungated section now falls through to the index. Latent rather than live (reshape, the
+  // only deep-link source, is itself paid), and fixed rather than registered.
+  if (activeSection === 'plan-adjustments' && hasPaidAccess && onDynamicAdjustmentsChange) return (
     <>
       {/* BACK-ARROW-TITLE-COLLIDE-01 am.1 — the arrow travels inside the band. */}
+      {/* ⚠️ The header stays HERE, as it does for `PreferencesScreen`. A door component that
+          cannot render a title cannot repeat one — two of ME-DOORS-01's three doors said
+          their own name twice. */}
       <ScreenHeader title={PLAN_ADJUSTMENTS_TITLE} sub="What the engine changes, and when"
         onBack={() => setActiveSection('main')} />
-      <div style={{ padding: '0 16px', paddingBottom: 'var(--space-7)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-  {/* ── Plan adjustments (paid/trial only) ───────────────────
-       One engine, two controls: Auto-adjust runs it on a schedule,
-       Check now runs it on demand. The "Last checked" line and the
-       "What we watch for" disclosure exist to make this engine
-       visible — without them users can't tell what they're paying for. */}
-  {hasPaidAccess && onDynamicAdjustmentsChange && (
-    <>
-
-      <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-
-        {/* Last checked status — top of the card so the engine's activity is visible at a glance.
-         *  Three honest states (PROFILE-ADJ-01):
-         *  - pending change waiting for user → moss accent + tappable, routes to ReshapeScreen which shows the existing row
-         *  - engine ran, applied a tweak silently (auto-applied) → factual "Plan tweaked" line, not tappable
-         *  - engine ran, found nothing → "No changes needed" */}
-        {hasPendingAdjustment ? (
-          <button
-            onClick={onOpenReshape}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '12px 16px', borderBottom: '1px solid var(--line)',
-              background: 'var(--moss-soft)', border: 'none', cursor: 'pointer', textAlign: 'left',
-            }}
-          >
-            <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '3px' }}>
-                1 change pending
-              </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.4 }}>
-                Tap to review and accept.
-              </div>
-            </div>
-            <div style={{ color: 'var(--moss)', marginLeft: 'var(--space-3)' }}><Chevron /></div>
-          </button>
-        ) : (
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', background: 'var(--bg-soft)' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '3px' }}>
-              Last checked
-            </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.4 }}>
-              {lastCheckedLabel === null
-                ? 'Not yet. Tap Check now to run.'
-                : lastAdjustmentCheckFoundChange
-                  ? `${lastCheckedLabel.charAt(0).toUpperCase() + lastCheckedLabel.slice(1)} · Plan tweaked`
-                  : `${lastCheckedLabel.charAt(0).toUpperCase() + lastCheckedLabel.slice(1)} · No changes needed`}
-            </div>
-          </div>
-        )}
-
-        {/* RESHAPE-FIX-WAVE3-PHASE2 — "Changed this week" audit surface.
-            Sub-threshold adjustments auto-apply silently (§69); this is the
-            passive, honest place to see what the engine did without asking.
-            Read-only + dismissable per row. AdjustmentDiff is rule-engine
-            output (no AIMark); the summary is a factual record line, same
-            provenance stance as the "Plan tweaked" line above. */}
-        {visibleChanges.length > 0 && (
-          <div style={{ borderBottom: '1px solid var(--line)' }}>
-            <div style={{ padding: '12px 16px 2px', fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Changed this week
-            </div>
-            {visibleChanges.map((c: any) => (
-              <div key={c.id} style={{ padding: '8px 16px 14px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.45 }}>
-                  {c.summary}
-                </div>
-                <AdjustmentDiff sessionsBefore={c.sessions_before ?? []} sessionsAfter={c.sessions_after ?? []} units={preferredUnits} />
-                <Button variant="secondary" size="compact" 
-                  onClick={() => dismissChange(c.id)} style={{ marginTop: 'var(--space-3)' }}>
-                  Got it
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Auto-adjust toggle. */}
-        <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', borderBottom: '1px solid var(--line)' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-              {dynamicAdjustmentsEnabled
-                ? `${BRAND.name} checks automatically and suggests changes when something looks off.`
-                : `Plan stays fixed. ${BRAND.name} tracks data but won't suggest changes.`}
-            </div>
-          </div>
-          <Switch
-            checked={dynamicAdjustmentsEnabled}
-            onChange={() => onDynamicAdjustmentsChange(!dynamicAdjustmentsEnabled)}
-            ariaLabel="Auto-adjust my plan"
-          />
-        </div>
-
-        {/* What we watch for — user-facing disclosure of trigger taxonomy.
-            SYNC RULE: keep in step with TriggerType in lib/coaching/planAdjustment.ts.
-            If you add or remove a trigger type, update this copy in the same commit. */}
-        <Button variant="ghost" 
-          onClick={() => setAdjustmentsDisclosureOpen(o => !o)} style={{ justifyContent: 'flex-start', width: '100%', padding: '14px 16px', background: 'none', textAlign: 'left' }}
-          aria-expanded={adjustmentsDisclosureOpen}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.4 }}>
-            What we watch for
-          </div>
-          <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)', transform: adjustmentsDisclosureOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}><Chevron /></div>
-        </Button>
-        {adjustmentsDisclosureOpen && (
-          <div style={{ padding: '0 16px 16px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.6 }}>
-            Recovery signals before hard sessions: resting HR, HRV, sleep. Easy runs drifting above Zone 2. Load spiking against your recent weeks. Aerobic efficiency slipping over time. Long runs consistently finishing short. Missed or rearranged sessions. Quality sessions running faster than target at controlled effort, a signal your fitness may have moved. When something looks off, you&apos;ll get a notification and can review it here.
-          </div>
-        )}
-      </div>
-    </>
-  )}
-      </div>
+      <PlanAdjustmentsScreen
+        dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled}
+        onDynamicAdjustmentsChange={onDynamicAdjustmentsChange}
+        hasPendingAdjustment={hasPendingAdjustment}
+        onOpenReshape={onOpenReshape}
+        lastCheckedLabel={lastCheckedLabel}
+        lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange}
+        recentChanges={recentChanges}
+        preferredUnits={preferredUnits}
+      />
     </>
   )
 

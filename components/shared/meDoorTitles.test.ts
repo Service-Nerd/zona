@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { dashboardSource } from '@/lib/testing/dashboardSources'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { HEART_RATE_TITLE, HEART_RATE_SUB, PLAN_ADJUSTMENTS_TITLE } from './meDoors'
 import { PREFERENCES_TITLE } from './PreferencesScreen'
 
@@ -38,7 +39,15 @@ const doors = (): { name: string; body: string }[] => {
   // padded alignment (`'quit')           return <QuitTab …`, since deleted); the three added here return a
   // fragment. A regex that only matched `return (` found 3 of 7 and the population arm
   // caught it — which is the only reason this gate is not measuring half the doors.
-  const re = /if \(activeSection === '([a-z-]+)'\)\s+return /g
+  // 🔴 THE CONDITION IS NOT ALWAYS JUST THE SECTION TEST, AND REQUIRING THAT MADE A DOOR
+  // VANISH FROM THIS GATE (2026-10-02, `ME-ADJUSTMENTS-EXTRACT-01`). The old pattern was
+  // `=== '([a-z-]+)'\)`, with the paren immediately after the quote. Putting the Plan
+  // adjustments tier gate ON the branch — `=== 'plan-adjustments' && hasPaidAccess && …` —
+  // took that door out of the population silently, and the only thing that noticed was the
+  // `>= 7` arm below. **Any door that gains a condition left this gate**, which is the
+  // "a checker that encodes ONE way of writing something is blind to every other way" class
+  // for the third time in this file's own history (see the `return (` note above).
+  const re = /if \(activeSection === '([a-z-]+)'[^)]*\)\s+return /g
   const starts: { name: string; at: number }[] = []
   let m: RegExpExecArray | null
   while ((m = re.exec(src)) !== null) starts.push({ name: m[1], at: m.index })
@@ -75,7 +84,19 @@ describe('ME-DOORS-01 — a door says its name once', () => {
       if (!title) continue
       // Strip the ScreenHeader line itself — that is where the title BELONGS — and comments,
       // which explain the rule and would otherwise trip it.
-      const inner = body
+      // 🔴 FOLLOW AN EXTRACTED DOOR INTO ITS OWN FILE. `ME-ADJUSTMENTS-EXTRACT-01` moved the
+      // Plan adjustments body to `PlanAdjustmentsScreen.tsx`, so from this gate's point of
+      // view the door's body became three lines of props and the say-it-once rule stopped
+      // reaching the markup it governs. **A gate that bounds a region by its parent file goes
+      // blind the moment the region moves** — ME-DOORS-01's whole lesson, arriving here. Every
+      // substantial door off Me is a `*Screen` component, so the convention is the anchor.
+      // ⚠️ `Array.from`, NOT a spread — CLAUDE.md § TypeScript records this exact gotcha for
+      // `Set` and it applies identically to `matchAll`'s iterator under this tsconfig target.
+      const followed = Array.from(body.matchAll(/<([A-Z]\w*Screen)\b/g))
+        .map(mm => `components/dashboard/${mm[1]}.tsx`)
+        .filter(f => existsSync(join(process.cwd(), f)))
+        .map(f => readFileSync(join(process.cwd(), f), 'utf8'))
+      const inner = [body, ...followed].join('\n')
         .split('\n')
         .filter(l => !l.includes('ScreenHeader'))
         .filter(l => !l.trim().startsWith('//') && !l.trim().startsWith('*') && !l.trim().startsWith('{/*'))

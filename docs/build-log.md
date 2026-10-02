@@ -6,6 +6,27 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — ME-ADJUSTMENTS-EXTRACT-01 · the compiler wrote the dependency list I thought I had
+**Shipped:** The Plan adjustments door is its own component, with a contract, a markup test and three states on a preview page.
+
+**Dev learning:** Three separate registers moved because code moved, and the difference between the three is the whole lesson.
+
+`buttonGeometry` re-keyed one control from `MeScreen.tsx` to the new file — I proved the **height multiset** was identical (18 entries both sides, exactly one string different) rather than just re-baselining, which is what ME-DOORS-01 did when this same register moved under a relocation. `microLabel`'s register appeared to *fall* 27 → 24, which looked like paying debt and was actually my new file being untracked: `tracked()` reads `git ls-files`, so an unstaged file does not exist. Staging restored it. And `meDoorTitles` went red because its regex required the closing paren immediately after the section name — adding a tier gate to the branch took the door out of the gate's population entirely, and only a `>= 7` population arm noticed.
+
+That last one is the real find: **any door that gains a condition silently left that gate.** Not my door — all future doors. The same file already carried two recorded notes about its own patterns being too narrow.
+
+**Product/creator learning:** Relocation ask 7 ("who is allowed to mount it?") found a real hole. The tier gate guarded the door's body while the header rendered unconditionally, so a free runner deep-linking in would have seen a titled, empty screen — against the index's own comment, which says a free runner should see no door at all. Unreachable today because the only deep-link source is itself paid. Fixed rather than registered, because it is three characters of condition.
+
+**AI-building learning:** The compiler enumerated the dependencies I thought I had read. The item said "seven identifiers"; I grepped, agreed, built the component, and `tsc` immediately named `visibleChanges`, `dismissChange`, `preferredUnits`, `AdjustmentDiff`, `Button`, `BRAND` and `Chevron`. Ten values and four imports. **Do not hand-derive a dependency list when a type-checker will do it exhaustively in one pass** — write the boundary, let it fail, read the errors.
+
+**The honest bit:** I asserted a falsification result without running it. I dropped the original's `if (typeof window === 'undefined')` SSR guard, restored it, and wrote a confident comment calling it load-bearing. Then I ran the mutation and the tests stayed green — the `try/catch` two lines below already absorbs the ReferenceError. The guard is defence-in-depth. I had to go back and correct the comment in the component *and* in the test, and work out what the arm genuinely catches (an unguarded browser global: 8 of 9 arms red). I wrote a near-miss story about myself before checking whether there had been a near miss.
+
+Also: my own new test fired on a comment. I left a note in `MeScreen` naming the three identifiers that had moved, and a whole-file `toContain` read the note as the code still being there — the exact class the pre-commit hook was fixed for the day before.
+
+**Hook material:** "The item said seven dependencies. The compiler found fourteen." And: I wrote a confident comment calling a line load-bearing, then deleted the line and watched nine tests pass.
+
+**Postable?:** yes — "let the type-checker write your dependency list" plus "I invented a near-miss about myself" is an honest, specific pair.
+
 ## 2026-10-02 — ME-SCREEN-CONTRACT-01 · the blocker had been lifted a week earlier
 **Shipped:** `me-screen.md` documents MeScreen's 42 props, enforced prop-for-prop in both directions.
 

@@ -2182,7 +2182,7 @@ MeScreen is what would make it contractable** — same root as `ME-ADJUSTMENTS-E
 
 ## ⚖️ FILED 2026-09-28 — two follow-ups found while building `ME-DOORS-01`
 
-### 🟡 `ME-ADJUSTMENTS-EXTRACT-01` — Plan adjustments is a call site, not a component
+### ✅ `ME-ADJUSTMENTS-EXTRACT-01` — SHIPPED 2026-10-02. Ten identifiers, not seven, and the stated reason had expired
 
 ⚙️ **NO BOARD** — refactor, no visible delta.
 
@@ -2192,6 +2192,59 @@ inline in `DashboardClient` because it reads seven identifiers from `MeScreen`'s
 `lastAdjustmentCheckFoundChange`, `adjustmentsDisclosureOpen`, `onDynamicAdjustmentsChange`,
 `onOpenReshape`). Threading seven props through a new boundary during a relocation is a
 second change wearing the first one's clothes, so it was deliberately not done.
+
+✅ **SHIPPED 2026-10-02 — `components/dashboard/PlanAdjustmentsScreen.tsx`, with a contract, a markup test and a preview harness.**
+
+🔴 **THE STATED REASON FOR THE ITEM HAD EXPIRED.** It read *"this door has **none** [no markup
+test], because vitest does not collect `app/`."* `DASHBOARD-SCREEN-EXTRACT-03` moved `MeScreen`
+to `components/dashboard/MeScreen.tsx`, **which IS collected**, so the door became testable in
+place. ⚠️ **Extracted anyway, on the PATTERN and not the test:** every other substantial door
+off Me is a component and this was the last outlier at ~120 lines inline.
+
+🔴 **IT READS TEN VALUES AND FOUR IMPORTS, NOT SEVEN — AND `tsc` SAID SO, NOT THE ITEM AND NOT A
+CAREFUL READ.** The three unnamed ones (`dismissedChanges`, `dismissChange`, `visibleChanges`)
+are one localStorage-backed mechanism used at three places inside the door and nowhere else, so
+they **moved wholesale** rather than becoming props. **A dependency list written by reading is a
+dependency list that goes short.**
+
+✅ **A LATENT DEFECT FIXED, found by relocation ask 7 (who may MOUNT it).** The tier gate guarded
+the BODY while the branch rendered `ScreenHeader` unconditionally — so a free runner arriving via
+`openSection` would have seen a **titled, empty screen**, against the index's own stated intent
+(*"a free runner sees no door at all rather than a door onto a locked room"*). The gate moved to
+the branch; an ungated section falls through to the index. Not reachable today (reshape, the only
+deep-link source, is paid), fixed rather than registered.
+
+🥇 **TWO REGISTERS MOVED AND BOTH WERE PROVEN RATHER THAN RE-BASELINED.**
+① `buttonGeometry` re-keyed one 41px control from `MeScreen` to the new file — **the HEIGHT
+MULTISET is identical both sides**, 18 entries, exactly one string differing. Same proof
+ME-DOORS-01 used (82 both sides there). ② `microLabel`'s register appeared to FALL 27 → 24,
+which was **the new file being untracked**: `tracked()` reads `git ls-files`. Staged and it
+returned to 27. **The "stage before you verify" lesson, live.**
+
+🔴 **THE DOOR-TITLE GATE WAS BLIND TO ANY DOOR WITH A CONDITION, AND MY FIX IS WHAT EXPOSED IT.**
+`meDoorTitles.test.ts` matched `=== '([a-z-]+)'\)` — the paren immediately after the quote — so
+adding the tier gate to the branch **silently removed the door from its population**; only the
+`>= 7` arm noticed. Widened, and it now also **follows an extracted door into its own file**,
+because a gate that bounds a region by its parent file goes blind the moment the region moves.
+Falsified both ways (reverting the widening reproduces `expected 6 to be >= 7`).
+
+🔴 **AND I ASSERTED A FALSIFICATION RESULT WITHOUT RUNNING IT.** I dropped the original's
+`if (typeof window === 'undefined')` SSR guard, restored it, and wrote that it was
+*load-bearing*. **It is not:** the `try/catch` inside the initialiser already absorbs the
+`ReferenceError`, so removing the guard keeps 9/9 green. What the arm **actually** catches,
+measured, is an **unprotected browser-global read** — moving the `localStorage` call outside the
+try turns 8 of 9 arms red. Both comments corrected in place. **A mutation you predict is not a
+mutation you performed.**
+
+⚠️ **My own new arm fired on PROSE first** — `MeScreen` keeps a comment naming the three moved
+identifiers, and a whole-file `toContain` read that as live code. Comments stripped (line
+structure preserved) with an anti-vacuity assertion, which is `HOOK-RGBA-COMMENTS-01`'s lesson
+from the day before. ⚠️ A dead `import AdjustmentDiff` left behind in `MeScreen` was removed —
+the `QUIT-TAB-DEAD-01` class. **MeScreen 1,566 → 1,460 lines.**
+
+⚠️ **Verification:** `tsc` 0 · build 0 · **461 files / 4,144 tests / 0 failed**. Three states
+rendered at 375px on `/preferences-preview`. 🔻 `recentChanges?: any[]` still untyped.
+⚠️ **Nothing has run on a device.**
 
 ⚠️ **The consequence is real and should be stated:** `Preferences` has a markup test
 because it is a component under `components/`; this door has **none**, because vitest does

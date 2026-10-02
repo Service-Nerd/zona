@@ -100,7 +100,14 @@ describe('button geometry', () => {
       'app/dashboard/DashboardClient.tsx = 30px',
       'app/page.tsx = 43px',
       'components/dashboard/MeScreen.tsx = 41px',
-      'components/dashboard/MeScreen.tsx = 41px',
+      // ⚠️ RE-KEYED BY A MOVE, NOT BY A REGRESSION (`ME-ADJUSTMENTS-EXTRACT-01`, 2026-10-02).
+      // The second 41px settings row left `MeScreen` with the Plan adjustments door. **Proof
+      // the geometry did not change: the HEIGHT MULTISET is identical both sides** — 18
+      // entries, {18,24,27,29,30×3,32×2,36,37×2,38,39,41×2,43×2} — and exactly one string
+      // differs, the file name. Same check ME-DOORS-01 used when this register last moved
+      // under a relocation (82 both sides there). A register keyed by FILE re-keys whenever
+      // code moves, which is `BUTTON-GEOMETRY-KEY-02`'s subject and is not solved here.
+      'components/dashboard/PlanAdjustmentsScreen.tsx = 41px',
       'components/dashboard/SessionPopupInner.tsx = 18px',
       'components/dashboard/SessionPopupInner.tsx = 30px',
       'components/dashboard/SessionPopupInner.tsx = 37px',
