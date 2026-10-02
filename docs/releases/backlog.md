@@ -611,6 +611,28 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
 2. If it persists: attach **Safari → Develop → [device] → Web Inspector**, hover the band, and read
    the element. That is the only thing that will name it, and it takes a minute.
 
+## ⚖️ FILED 2026-10-02 — `SITE-BTN-INVERT-01`
+
+### `SITE-BTN-INVERT-01` — the site has no inverted button variant, so one CTA overrides inline 🧭 **DESIGN BOARD**
+
+Out of `TAP-TARGET-DECISIONS-01` part 2.
+
+`globals.css` carries seven `.btn--*` variants — `primary`, `secondary`, `quiet`, `soft`, `ghost`,
+`destructive`, `busy` — and **none of them is light-on-dark.** The homepage's App Store CTA sits on
+a `--ground` band and needs `--on-ground` fill with `--ground` text, so after being converted to
+`className="btn btn--regular"` it still carries two inline token overrides.
+
+⚠️ **NOT a hardcoding violation** — both are tokens, and the charity page sets the same precedent
+for `lineHeight` with the reason *"the one property `.btn` cannot own"*. But a variant that exists
+in exactly one place as an override is the shape that becomes a second copy the moment a second
+dark-band CTA is written.
+
+**The question for the board:** is a light-on-dark CTA a **variant** (`.btn--invert`), or is it the
+`--ground` section's job to re-ground its own controls via a scoped rule? The second is fewer
+variants and more magic; the first is an eighth variant on a system Collins watches for taxonomy
+creep. ⚠️ **Measure first:** how many dark-band CTAs exist across the site today? If the answer is
+one, the honest ruling may be "leave the override and revisit at two".
+
 ## ⚖️ FILED 2026-10-01 — two residuals from the design waves
 
 > Filed rather than left as 🔻 lines inside shipped entries, which is the shape
@@ -755,7 +777,7 @@ does not read as live to the next person who greps for it.
 
 ## ⚖️ FILED 2026-10-01 — `TAP-TARGET-DECISIONS-01`
 
-### 🔄 `TAP-TARGET-DECISIONS-01` — PARTLY RULED 2026-10-01: the shared primitive SHIPPED, 14 remain 🧭 **DESIGN BOARD**
+### 🔄 `TAP-TARGET-DECISIONS-01` — part 1 + the FLOOR RULING shipped; 12 remain registered 🧭 **DESIGN BOARD**
 
 Out of `TAP-TARGET-FLOOR-01`, which made them **findable**. `ui-patterns.md:262` sets the floor
 at 44px (iOS HIG). **17 controls a runner can hit are under it**, measured 2026-10-01, smallest
@@ -814,7 +836,20 @@ controls on live screens with nothing ever run on a device is the impression-not
 this board records.** They stay in the geometry register, which is exact-equality both ways, so
 none can grow and none can be quietly "fixed" without the register moving.
 
-⚠️ **The two at 43px remain the interesting ruling** and are still unmade: a floor missed by one
+✅ **PART 2 SHIPPED 2026-10-02 — the floor's SCOPE is written down once, and the two 43s got
+opposite answers.** 🔴 *"Is it 44 or 40?"* **rejected on measurement: nothing in the population sits
+at 40** (heights `{18,24,27,29,30×3,32×2,36,37×2,38,39,41×2,43×2}`), so 40 clears 4 of 18 and
+invents a number. **43 is not 44-minus-1** — `ui-patterns.md` already recorded the content box
+*"only wants 43.4px"*. ✅ `app/page.tsx`'s **App Store CTA** was a genuine miss and is fixed: it
+hand-rolled **seven** properties `.btn` already owns, so it never inherited `.btn--regular`'s
+`min-height: 44px`. Now `className="btn btn--regular"`, **47px from global CSS**. ✅
+`TrainingZonesScreen`'s 43px is a display **grid row**, not a control — left, recorded.
+⚠️ **The rule's scope lived in an aside under the nav spec while its register sat in a test file**,
+which is why it read as eleven decisions; **and the aside cited `ui-patterns.md:262`, now a
+horizontal rule** — a line number is not a reference. 🔻 `SITE-BTN-INVERT-01` filed. **12 remain
+registered**, and the **18px** control is the one Wroblewski named and this sitting excluded.
+
+⚠️ *(superseded)* **The two at 43px remain the interesting ruling** and are still unmade: a floor missed by one
 pixel either matters or the floor is really 40, and **whichever it is should be written down once**
 rather than decided eleven times.
 

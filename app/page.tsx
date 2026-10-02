@@ -1066,15 +1066,22 @@ export default async function Home() {
 
           {/* CTA — light-on-dark. App Store when live; the free-plan hub until
               then (BRAND.appStore.url is empty pre-approval, like AppStoreBadge). */}
+          {/* 🔴 TAP-TARGET-DECISIONS-01 (Design Board, 2026-10-02) — THIS WAS 43px, AND IT IS
+              THE ONE MISS IN THAT REGISTER THAT IS UNARGUABLE: the floor is a CTA's floor
+              (`ui-patterns.md:906`) and this is the most important tap on the marketing site.
+              ⚠️ **It was 43 because it hand-rolled seven properties `.btn` already owns** —
+              display, alignItems, gap, fontSize, fontWeight, padding, borderRadius — and so
+              never inherited `.btn--regular`'s `min-height: 44px`. `/charity-runners` has used
+              `className="btn btn--primary btn--compact"` all along; this page used **zero** btn
+              classes. The floor now comes from global CSS rather than from a number typed here.
+              ⚠️ ONLY THE TWO INVERTED COLOURS STAY INLINE, and they are tokens, not literals:
+              this CTA is light-on-dark on a `--ground` band and no `.btn--invert` variant
+              exists. Filed as `SITE-BTN-INVERT-01` rather than invented mid-build. Same framing
+              as the charity page's `lineHeight` note: the one property `.btn` cannot own. */}
           <Link
             href={BRAND.appStore.url || '/plans'}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)',
-              fontSize: 'var(--fs-body-lg)', fontWeight: 600,
-              color: 'var(--ground)', background: 'var(--on-ground)',
-              padding: '13px 22px', borderRadius: 'var(--radius-md)',
-              textDecoration: 'none',
-            }}
+            className="btn btn--regular"
+            style={{ color: 'var(--ground)', background: 'var(--on-ground)' }}
           >
             {BRAND.appStore.url ? `Get ${BRAND.name}` : 'See the free plans'}
             <span aria-hidden style={{ opacity: 0.55 }}>&rarr;</span>

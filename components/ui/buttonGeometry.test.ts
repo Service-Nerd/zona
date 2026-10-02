@@ -98,7 +98,21 @@ describe('button geometry', () => {
       // ── runner-facing: → TAP-TARGET-DECISIONS-01 ──
       'app/charity-runners/page.tsx = 39px',
       'app/dashboard/DashboardClient.tsx = 30px',
-      'app/page.tsx = 43px',
+      // ✅ `app/page.tsx = 43px` CAME OFF 2026-10-02 (`TAP-TARGET-DECISIONS-01`, Design Board
+      // SHIP WITH AMENDMENT). It was the App Store CTA — the most important tap on the
+      // marketing site — and the one unarguable miss in this register, because
+      // `ui-patterns.md:906` scopes this floor to a CTA. ⚠️ **It was 43 because it hand-rolled
+      // seven properties `.btn` already owns**, so it never inherited `.btn--regular`'s
+      // `min-height: 44px`; `/charity-runners` had used `className="btn btn--primary
+      // btn--compact"` all along while `app/page.tsx` used ZERO btn classes. Now 47px, from
+      // global CSS rather than a number typed into the page.
+      // 🔴 THE OTHER 43px STAYS, AND THE PAIR IS THE RULING: `TrainingZonesScreen` is a
+      // display GRID ROW (`alignItems: baseline`), not a control and not a CTA, so the floor
+      // does not reach it. **Two controls at the same height, two different answers, and the
+      // number was never the question** — `ui-patterns.md` already recorded that the content
+      // box "only wants 43.4px", so 43 is what the box produces, not a floor missed by 1px.
+      // ⚠️ "The floor is really 40" was REJECTED on measurement: nothing in this population
+      // sits at 40, so 40 would clear 4 of 18 and invent a number to accommodate the 43s.
       'components/dashboard/MeScreen.tsx = 41px',
       // ⚠️ RE-KEYED BY A MOVE, NOT BY A REGRESSION (`ME-ADJUSTMENTS-EXTRACT-01`, 2026-10-02).
       // The second 41px settings row left `MeScreen` with the Plan adjustments door. **Proof

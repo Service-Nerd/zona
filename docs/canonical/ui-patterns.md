@@ -952,7 +952,8 @@ single owner**; `NAV_ITEMS` in `DashboardClient` is the single list.
 > 🔴 **WHY 64 AND NOT 60.** The tabs were `<Button variant="ghost">`, so `.btn--regular`'s
 > `min-height: 44px` set the row height. The content only wants **43.4px**. `size="compact"`
 > carries the same floor, so **neither Button size can express chrome** — which is why
-> `NavTab` is its own primitive. **44px is a CTA's tap floor (`:262`); a nav tab is not a
+> `NavTab` is its own primitive. **44px is a CTA's tap floor (§ The 44px tap floor — what it
+> is FOR); a nav tab is not a
 > call to action.** Same property, same day, as the `Switch` defect.
 >
 > ⚠️ **THE PADDING LIVES IN THE TAB, AND THAT IS THE POINT** (Silvanto). The bar used to pad
@@ -2286,6 +2287,52 @@ cannot be imported.
 > properties, so the inline style never competes. Measured 26px vs **47px**. The founder
 > saw it as *"run notification toggles look mis shaped"*. Silvanto named it a regression
 > against this section and declined to veto, because the component is the remedy.
+
+### The 44px tap floor — what it is FOR (TAP-TARGET-DECISIONS-01, Design Board 2026-10-02)
+
+**44px is the floor for a CTA, or for any control that is ITSELF the target. Where the ROW is the
+target, or the element is a display row rather than a control, the floor does not apply — and the
+reason is recorded in the register rather than decided again.**
+
+🔴 **THIS WAS ALREADY TRUE AND LIVED IN A NOTE, WHICH IS WHY IT GOT DECIDED ELEVEN TIMES.**
+`NAV-SLIM-01` wrote *"44px is a CTA's tap floor; a nav tab is not a call to action"* into a quoted
+aside under the nav spec. The register of sub-floor controls sat in a test file. **The rule's SCOPE
+and the register of its exceptions were in different documents and never met** — the
+`--surface-moss-wash` shape, at the geometry layer. ⚠️ **And that aside cited `ui-patterns.md:262`,
+which is now a horizontal rule.** A line number is not a reference; it rots silently. Cite the
+section.
+
+**The question "is the floor really 44, or is it 40?" is rejected on measurement.** Across all 18
+sub-floor controls the heights are `{18, 24, 27, 29, 30×3, 32×2, 36, 37×2, 38, 39, 41×2, 43×2}` —
+**nothing sits at 40.** A 40px floor would clear 4 of 18 and invent a number to accommodate the two
+43s. And 43 is not "44 minus one": this file already records that the content box **"only wants
+43.4px"**, so 43 is what padding plus line-height produces when no floor is applied.
+
+**The two 43s got opposite answers, and that pair IS the rule:**
+
+| Control | What it is | Ruling |
+|---|---|---|
+| `app/page.tsx` App Store CTA | the most important tap on the marketing site | 🔴 **genuine miss → fixed.** It hand-rolled seven properties `.btn` already owns, so it never inherited `.btn--regular`'s `min-height: 44px`. Now `className="btn btn--regular"` — 47px, from global CSS |
+| `TrainingZonesScreen` zone row | a display **grid row**, `alignItems: baseline` | ✅ **out of scope → left, recorded.** Not a control, so not a CTA. Nothing is aimed at it |
+
+⚠️ **`/charity-runners` had used `className="btn btn--primary btn--compact"` all along while
+`app/page.tsx` used ZERO btn classes.** The floor was never missing from the system; it was missing
+from one page that re-typed the primitive. **A hand-rolled CTA is how a floor goes absent without
+anyone removing it.**
+
+🔻 **NO `.btn--invert` VARIANT EXISTS**, so the homepage CTA keeps two inline token overrides
+(`--on-ground` on `--ground`) for its light-on-dark band. Filed as `SITE-BTN-INVERT-01` rather than
+invented mid-build — the same framing as the charity page's `lineHeight` note: the one property
+`.btn` cannot own.
+
+⚠️ **The other 12 sub-floor controls remain registered and unruled** (Design Board, 2026-10-01,
+INSUFFICIENT EVIDENCE: growing fourteen controls on live screens with nothing run on a device is
+the impression-not-measurement trap). **The 18px `SessionPopupInner` control is the one Wroblewski
+named as the one he would act on, and it was explicitly out of this sitting's scope.**
+
+Guarded by `components/ui/buttonGeometry.test.ts` — exact equality both ways, so a new sub-floor
+control fails and a fixed one fails until it comes off the list. Falsified by reverting the CTA to
+its hand-rolled styles, which reintroduces `app/page.tsx = 43px`.
 
 ### 20a. Switch
 

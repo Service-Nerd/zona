@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — Design Board, three rulings · the item was wrong three times out of three
+**Shipped:** `A11Y-MOCKUP-CONTRAST-01` (seven token swaps, nothing resized) and `TAP-TARGET-DECISIONS-01` part 2 (the 44px floor's scope written down once, and the homepage's App Store CTA fixed).
+
+**Dev learning:** Every one of the three items I took to the board stated something that measurement contradicted, and in each case the false statement was the thing the options had been priced against.
+
+The tap-target item asked "is the floor 44 or 40?" The answer was in this repo already — `NAV-SLIM-01` had written *"44px is a CTA's tap floor; a nav tab is not a call to action"* into a quoted aside, while the register of sub-floor controls lived in a test file. **The rule's scope and the register of its exceptions were in different documents and had never met.** So it read as eleven separate decisions when it was one decision nobody could see. And the aside cited `ui-patterns.md:262` — which is now a horizontal rule. A line number is not a reference; it rots and nothing notices.
+
+The a11y item said the mockup was `aria-hidden` so screen readers skip it. `PhoneShell` is `aria-hidden={interactive ? undefined : 'true'}` and the homepage passes `onTab`, so it is not hidden at all. It also said no palette colour can reach 4.5:1 at that size; four can. Once both were measured, a fourth option appeared that none of the item's three had named — swap three tokens for counterparts that already existed — and it cost nothing the other three cost.
+
+**Product/creator learning:** The homepage used **zero** `.btn` classes while `/charity-runners` had used `className="btn btn--primary btn--compact"` all along. That one fact explains the 43px tap target: the CTA hand-rolled seven properties the primitive already owns, so it never inherited the 44px floor. **A floor does not go missing because someone removed it. It goes missing because someone re-typed the thing that carries it.**
+
+**AI-building learning:** I wrote a contrast check, ran it, and got seven failures that all looked real. They were not: the scanner paired each `color:` with the nearest preceding `background:` inside a 400-character window, which crosses JSX object boundaries, so it measured text against a 6px dot's fill and against a session accent bar. Every ratio arithmetically correct, every ground wrong — the exact failure this repo records more than any other, committed inside the check written to prevent it. I threw it away and replaced it with a token allow-list, because **a rendered ground is a property of the DOM tree, not of text proximity, and a static check must not pretend otherwise.**
+
+**The honest bit:** I also had to go back to the founder and correct my own framing of a choice he had already made. I offered "make the mockup a still" and described the cost as "it stops being tappable". The real cost was that `TabbedPhone` holds three screens — Today, Plan and Coach — so a still would have removed two product screens from the homepage. He had chosen it on my description. I under-priced an option and he agreed to it; that is on me, not him.
+
+**Hook material:** Three backlog items, three false premises, and in every case the false bit was what the options had been priced against. And: my contrast checker produced seven confident failures by measuring text against a 6px dot.
+
+**Postable?:** yes — "the rule and its exceptions lived in different files, so it got decided eleven times" is a strong one, and the 6px dot is a good self-own.
+
 ## 2026-10-02 — ME-ADJUSTMENTS-EXTRACT-01 · the compiler wrote the dependency list I thought I had
 **Shipped:** The Plan adjustments door is its own component, with a contract, a markup test and three states on a preview page.
 

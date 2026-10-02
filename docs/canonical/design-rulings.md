@@ -3720,3 +3720,49 @@ case · this row.
 ⚠️ **What it does not settle:** **Lighthouse has not been re-run.** The claim is that the seven
 named failures are fixed, not that the homepage now scores 100. Nothing seen on a device.
 
+---
+
+## ⚖️ TAP-TARGET-DECISIONS-01 part 2 — what the 44px floor is FOR (2026-10-02)
+
+**SHIP WITH AMENDMENT.** The floor stays **44**. The amendment is to write down its **scope**,
+which already existed in a quoted aside and had never reached the rule: **44px is the floor for a
+CTA, or any control that is ITSELF the target. Where the ROW is the target, or the element is a
+display row, the floor does not apply and the reason is recorded.**
+
+🔴 **"IS IT 44 OR 40?" IS REJECTED ON MEASUREMENT.** Across all 18 sub-floor controls the heights
+are `{18, 24, 27, 29, 30×3, 32×2, 36, 37×2, 38, 39, 41×2, 43×2}` — **nothing sits at 40.** A 40px
+floor clears 4 of 18 and invents a number to accommodate the two 43s. **And 43 is not 44-minus-1:**
+`ui-patterns.md` already recorded that the content box *"only wants 43.4px"*, so 43 is what padding
+plus line-height produces with no floor applied.
+
+**The two 43s got OPPOSITE answers, and the pair is the rule.** `app/page.tsx`'s App Store CTA —
+the most important tap on the marketing site — is a **genuine miss and was fixed**; it hand-rolled
+seven properties `.btn` already owns and so never inherited `.btn--regular`'s `min-height: 44px`.
+`TrainingZonesScreen`'s 43px is a display **grid row** (`alignItems: baseline`), not a control and
+not a CTA, so the floor does not reach it: **left, recorded.**
+
+⚠️ **THE RULE'S SCOPE AND THE REGISTER OF ITS EXCEPTIONS LIVED IN DIFFERENT DOCUMENTS**, which is
+why it read as eleven separate decisions. `NAV-SLIM-01` wrote the scope into an aside under the nav
+spec; the register sat in a test file. **The `--surface-moss-wash` shape, at the geometry layer.**
+⚠️ **And that aside cited `ui-patterns.md:262`, which is now a horizontal rule** — a line number is
+not a reference. Corrected to a section name.
+
+⚠️ **`/charity-runners` had used `className="btn btn--primary btn--compact"` all along while
+`app/page.tsx` used ZERO btn classes.** The floor was never missing from the system, only from one
+page that re-typed the primitive.
+
+🔻 **Filed, not invented mid-build:** `SITE-BTN-INVERT-01` — no `.btn--invert` variant exists, so
+the homepage CTA keeps two inline token overrides for its light-on-dark band.
+
+⚠️ **The other 12 remain registered and unruled** per the 2026-10-01 INSUFFICIENT EVIDENCE ruling.
+**The 18px `SessionPopupInner` control is the one Wroblewski named as the one he would act on, and
+it was explicitly out of this sitting's scope.**
+
+**Artifacts:** pattern → `ui-patterns.md` § The 44px tap floor — what it is FOR · the floor itself
+is `.btn--regular { min-height: 44px }` in `globals.css`, reused rather than restated · check →
+`components/ui/buttonGeometry.test.ts`, falsified by reverting the CTA (reintroduces
+`app/page.tsx = 43px`) · this row.
+
+⚠️ **What it does not settle:** nothing has been seen on a device, and the CTA grew 43 → 47px,
+which is a visible change on the live homepage that no one has looked at in a browser.
+

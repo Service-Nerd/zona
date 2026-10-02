@@ -359,6 +359,14 @@
     "height": 44,
     "width": "auto"
   },
+  "app/page.tsx#Link[btn-btn-regular]1": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "auto"
+  },
   "components/ErrorBoundary.tsx#button[btn-btn-ghost-btn-regular]1": {
     "floor": 44,
     "padY": null,
@@ -505,11 +513,11 @@
   },
   "components/dashboard/MeScreen.tsx#Button3": {
     "floor": 44,
-    "padY": null,
+    "padY": 14,
     "font": null,
     "radius": null,
-    "height": 44,
-    "width": "auto"
+    "height": 45,
+    "width": "100%"
   },
   "components/dashboard/MeScreen.tsx#Button4": {
     "floor": 44,
@@ -520,22 +528,6 @@
     "width": "100%"
   },
   "components/dashboard/MeScreen.tsx#Button5": {
-    "floor": 44,
-    "padY": 14,
-    "font": null,
-    "radius": null,
-    "height": 45,
-    "width": "100%"
-  },
-  "components/dashboard/MeScreen.tsx#Button6": {
-    "floor": 44,
-    "padY": 14,
-    "font": null,
-    "radius": null,
-    "height": 45,
-    "width": "100%"
-  },
-  "components/dashboard/MeScreen.tsx#Button7": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -559,14 +551,6 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/MeScreen.tsx#Switch3": {
-    "floor": null,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
   "components/dashboard/OrientationScreen.tsx#Button1": {
     "floor": 44,
     "padY": null,
@@ -574,6 +558,30 @@
     "radius": null,
     "height": 47,
     "width": "full"
+  },
+  "components/dashboard/PlanAdjustmentsScreen.tsx#Button1": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/PlanAdjustmentsScreen.tsx#Button2": {
+    "floor": 44,
+    "padY": 14,
+    "font": null,
+    "radius": null,
+    "height": 45,
+    "width": "100%"
+  },
+  "components/dashboard/PlanAdjustmentsScreen.tsx#Switch1": {
+    "floor": null,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
   },
   "components/dashboard/SaveImageButton.tsx#Button1": {
     "floor": 44,
