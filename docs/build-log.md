@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `CI-CHAIN-OWNER-01` · the file that diagnosed its own bug in a comment, then did it again
+**Shipped:** CI runs one step that calls the verify chain, instead of a hand-typed copy of its steps. Plus a test that fails if the two ever drift again.
+
+**Dev learning:** A coaching check had been failing on main for weeks and nobody knew. The check was fine. CI *does* run on every push. The problem was that the workflow listed the chain's twelve steps individually, and four of them weren't on the list — two had **never** been on it, since the day they were written.
+
+The part that stopped me was the comment already in the file. Someone hit this exact thing on 15 September, fixed it, and wrote the cause down: *"this file was never updated, because it enumerates steps individually rather than calling the chain."* Correct diagnosis. And then the fix was to add three more items to the list. Three more went missing in the next two weeks.
+
+That's the lesson, and it isn't about CI. **If you can name why a list goes stale, don't fix the list.** Make something else the owner and have the list derive from it, or have a test fail when it doesn't. `package.json` holds the chain; the workflow calls it; a test asserts every step is either in the CI chain or on an exemption list with its reason written out in code. The one exemption is a timing check that measures the local machine, and now you can't drop a step without typing a sentence explaining yourself.
+
+**AI-building learning:** I falsified the new test five ways and one of them passed when it should have failed. The arm checks that an exemption carries a real reason rather than a placeholder, and my mutation replaced one of three concatenated string fragments — so the reason was still long enough and the arm was right to stay green. I'd have written up "five of five red" if I hadn't read the output. That's the second time in two days I nearly reported a falsification I hadn't actually run.
+
+**The honest bit:** I don't know that the four newly-added steps pass on a GitHub runner. They all pass here. A CI box can fail a step for reasons no local test can see — no git identity configured, a slower clock, a missing binary. The first push will say, and it's one line to revert. I also bumped the job timeout from 20 minutes to 35, because a timeout that fires looks exactly like a real failure, and teaching people to ignore a red gate is the thing I was fixing.
+
+---
+
 ## 2026-10-02 — `OPS-DIGEST-ENRICH-WIRE-01` · the alert nobody had wired, and the window nobody had noticed
 **Shipped:** The daily ops digest now counts enrichment failures across the whole fleet with no date window, and the mirrored SQL has a test holding it to the library that owns the rule.
 

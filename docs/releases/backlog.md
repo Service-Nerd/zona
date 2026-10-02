@@ -2262,49 +2262,61 @@ precedent when it split `W-01`:** one ID cannot be both a shipped record and an 
 audit is right to call that ambiguous. The alternative was a declared exemption, which is the
 heavier instrument.
 
-#### 🔴 `COHORT-BASELINE-RED-01` — `npm run verify` is RED on main, and has been for days *(P1, filed 2026-10-02)*
+#### 🔴 `COHORT-BASELINE-RED-01` — the cohort baseline was HAND-EDITED, so `verify` has been red for weeks *(P1, filed 2026-10-02, re-measured the same day)*
 
-⚙️ **NO BOARD until the RCA says otherwise** — if a ship moved what the engine prescribes, it
-becomes a Coaching Board question and this item says so then. **Do NOT re-baseline to make it
-green.** The repo's own rule: *a ratchet must not move without a measurement*, and
-`cohort-review.ts` prints *"never re-baseline to turn a run green"* in its own output.
+⚙️ **NO BOARD.** ⚠️ **FILED ON A WRONG PREMISE AND CORRECTED — read this version, not the first one.**
+I first reported this as *"a ship moved the cohort table; refusals rose at 8 and 15 km/wk; bisect
+the ~55 engine commits."* **All three were wrong.** The engine has not moved, nothing shipped
+caused it, and there is nothing to bisect.
 
-🔴 **`npm run review:cohort` exits 1, so `npm run verify` exits 1, and today's ships reported
-green.** They reported `npm run test` (4,219 passing, true) and `tsc` (clean, true). **Neither is
-`verify`**, and `review:cohort` sits inside it, after `check:slow`. Measured 2026-10-02: red at
-`HEAD`, and **red at clean `HEAD` with every uncommitted change stashed** — so it is not the
-digest-wire commit and not any of today's doc work.
+📐 **WHAT THE MEASUREMENT ACTUALLY SHOWS.** The harness was run at three commits against the same
+committed baseline — `edddbcc2^` (before the fix that last touched the baseline), `edddbcc2`
+itself, and `HEAD`:
 
-📐 **What moved — marathon only, half-marathon untouched:**
+| marathon band | `edddbcc2^` | `edddbcc2` | `HEAD` |
+|---|---|---|---|
+| 8 km/wk | refused **+0.2** · LRS 26.1 **−0.2** | refused **+0.2** · LRS 16.7 **−0.2** | refused **+0.2** · LRS 16.7 **−0.2** |
+| 15 km/wk | **+1.3 · +0.4 · −1.8 · −1.3** | **+1.3 · +0.4 · −1.8 · −1.3** | **+1.3 · +0.4 · −1.8 · −1.3** |
+| 25 km/wk | **+0.6 · +0.4 · −0.9** | **+0.6 · +0.4 · −0.9** | **+0.6 · +0.4 · −0.9** |
 
-| band | refused | clean | LONG-RUN-SHORT | WEEK1-LEAP | BINGE-WEEK |
-|---|---|---|---|---|---|
-| 8 km/wk | 69.1 → **69.3** | 14 → 14 | 16.9 → **16.7** | — | — |
-| 15 km/wk | 35.4 → **36.7** | 15.5 → **15.9** | 44.2 → **42.4** | 27 → **25.7** | 0 → 0 |
-| 25 km/wk | 0 → 0 | 92.6 → **93.2** | 2 → **1.1** | 3.4 → 3.4 | 2 → **2.4** |
+**The divergence set is identical in all three runs.** So: the engine has not moved since
+2026-09-23, and bands 15 and 25 were **already** stale before the commit that last wrote the
+baseline. "Refusals rose" is not a change — it is an old number nobody regenerated.
 
-⚠️ **MOSTLY AN IMPROVEMENT, WHICH IS EXACTLY WHY IT NEEDS EXPLAINING AND NOT WAVING THROUGH.**
-Fewer short long runs, fewer week-1 leaps, more clean plans. But **refusals rose at the two
-lowest bands** (+0.2, +1.3), and that is the one direction that could be a regression: a
-marathoner the engine used to build for and now declines. `SERVED` is 100% in every band, so
-nobody is turned away — they get a §118 get-running plan — but *"the door moved"* is a coaching
-fact, not a rounding artefact. `BINGE-WEEK` at 25 km/wk also rose. `cohortShape.test.ts` and
-`verify:parity` are both green, which is consistent: **this harness measures the CHECKERS
-(`auditPlanQuality` + `validatePlan`) over a weighted grid, so a change to a checker's predicate
-moves it while leaving every plan hash identical.** That is the class to suspect first.
+🔴 **THE BASELINE WAS WRITTEN BY HAND, AND THE ARITHMETIC PROVES IT.** `edddbcc2` moved band 8's
+`LONG-RUN-SHORT` from 26.1 to **16.7**. The committed baseline says **16.9**. The previous baseline
+said 26.3 against an engine saying 26.1 — a pre-existing 0.2 drift — and 16.9 is that same drift
+carried forward: someone took the stale number and applied the delta they expected. Its diff in
+that commit is **four lines**, touching exactly the two cells the author was thinking about.
+**`--write` would have produced 16.7 and corrected bands 15 and 25 as well.**
 
-✅ **NOT clock drift, checked:** `useCaseEnvelope.ts` pins `planStart = '2026-11-02'` and derives
-`race_date` from it; `cohort-review.ts` has no `Date.now()`. The report version matches (v2) and
-the stride matches (7), so the comparison is valid rather than incomparable.
+✅ **The comparison is lossless, not approximate.** Every field in the stored report is `n` (an
+integer) or `pc()`, which is `toFixed(1)` at source, and the rendered table prints all six fields
+— so identical tables mean identical reports.
+✅ **Not clock drift:** `useCaseEnvelope.ts` pins `planStart = '2026-11-02'` and derives `race_date`
+from it; `cohort-review.ts` has no `Date.now()`. Report version (v2) and stride (7) both match, so
+the comparison is valid rather than incomparable.
 
-**The work:** the baseline was written at `edddbcc2` (**2026-09-23**) and **~55 commits have
-touched `lib/plan` / `lib/coaching` since**. Bisect `review:cohort` across them, name the ship,
-decide whether the move was intended, then re-baseline **with the reason in the commit** — or fix
-the regression if the refusal rise is one. 🔴 **And the second half is the more important one:
-nothing noticed for nine days.** A gate that only fails inside a command nobody runs to
-completion is the *"a check that depends on remembering is a check that does not run"* class, in
-the one place this repo has the most machinery. Ask what makes `verify` RUN — CI, or a
-pre-push arm — rather than only what made it red.
+✅ **THE SECOND HALF — why nobody saw it — IS FIXED by `CI-CHAIN-OWNER-01` (see feature-registry).**
+`.github/workflows/verify.yml` enumerated the chain's steps by hand, and **`review:cohort` and
+`audit:plans` had NEVER run in CI, not once, since either script existed.** CI now calls
+`npm run verify:ci`, and `lib/ops/verifyChainInCi.test.ts` fails the build if a step in `verify` is
+neither in `verify:ci` nor on a named exemption list.
+
+🔴 **ALL THAT REMAINS IS ONE COMMAND, AND IT IS BLOCKED ON A PERMISSION:**
+`npm run review:cohort -- --write`. It is refused in-session as *"Modify Shared Resources"*.
+**This is a measured re-baseline, not turning a test green:** the engine is provably unchanged, and
+the file never came from a `--write` of any version of this code. Every other step of the chain
+passes — `typecheck`, `test` (471 files / 4,224), `test:githooks`, `verify:invariants`,
+`verify:matrix`, `verify:sweep`, `verify:rules`, `verify:coaching`, `audit:plans`, `check:slow`,
+all exit 0. `review:cohort` is the only red.
+
+⚠️ **DO NOT PUSH `CI-CHAIN-OWNER-01` BEFORE THE RE-BASELINE.** The workflow change makes CI run
+this check for the first time, so pushing it first turns main's CI red on arrival — correctly, but
+for a reason already understood. Write the baseline, then push both.
+
+🔻 **Not bounded further back than "before 2026-09-23."** How long bands 15 and 25 have been stale
+is unknown and would need more bisect runs; it does not change the fix.
 
 #### 🟡 `CONTRACT-COVERAGE-03` — 61 components still have no contract *(P3, filed 2026-10-02, falling register)*
 

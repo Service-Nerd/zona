@@ -30,7 +30,13 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Raised from 20 on 2026-10-02 with CI-CHAIN-OWNER-01, because the job now
+    # runs four steps it did not before. CI-TIMEOUT-01 measured a ~3.5x runner
+    # ratio in isolation, and `npm run test` alone is ~120s locally — so the
+    # headroom that was comfortable for 8 steps is not obviously comfortable for
+    # 12. A timeout that fires is indistinguishable from a real failure and
+    # trains people to ignore the gate, which is the thing this commit is fixing.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
 
@@ -46,46 +52,37 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Unit tests
-        run: npm run test
-
-      # Asserts every invariant code is both registered and mechanically
-      # enforced — the §34 meta-check. A code declared without enforcement (or
-      # the reverse) is the defect class that let the intensity distribution sit
-      # unchecked for four months.
-      - name: Invariant coverage
-        run: npm run verify:invariants
-
-      - name: Archetype matrix
-        run: npm run verify:matrix
-
-      # Exits 1 on any NEW violation above the baseline in
-      # scripts/property-validate-plans.ts, and on generating too few plans —
-      # the guard against this script silently becoming a no-op again.
-      - name: Property sweep
-        run: npm run verify:sweep
-
-      # ── Added 2026-09-15 ──────────────────────────────────────────────────
-      # Phase 0 wired these three into the local `npm run verify` chain and this
-      # file was never updated, because it enumerates steps individually rather
-      # than calling the chain. So they ran on a developer's machine and not on
-      # push, which is the same as not being automated: the gate you rely on is
-      # the one that runs without anyone remembering.
+      # ── 2026-10-02: ONE STEP, AND IT CALLS THE CHAIN (CI-CHAIN-OWNER-01) ──
       #
-      # `verify:hooks` is the rules-of-hooks lint that cannot be silenced inline.
-      # It was added after a React error 310 crash on the Coach screen; running
-      # it only locally is exactly how that class comes back.
-      - name: React hooks lint
-        run: npm run verify:hooks
-
-      - name: Plan rules report
-        run: npm run verify:rules
-
-      - name: Coaching deviation scan
-        run: npm run verify:coaching
+      # 🔴 THIS FILE USED TO ENUMERATE THE CHAIN'S STEPS BY HAND, AND IT
+      # DIAGNOSED ITS OWN FAILURE MODE IN A COMMENT WHILE REPEATING IT. The
+      # comment added on 2026-09-15 said, in these words: "this file was never
+      # updated, because it enumerates steps individually rather than calling the
+      # chain". The remedy chosen then was to add three more individual steps.
+      # Four had gone missing again by 2026-10-02: `test:githooks`,
+      # `check:slow`, `review:cohort` and `audit:plans` — and `review:cohort`
+      # and `audit:plans` had NEVER run in CI, not once, since either existed.
+      #
+      # What that cost: `review:cohort` is the coaching cohort ratchet, and it
+      # had been red on main for over nine days against a baseline that was
+      # HAND-EDITED rather than regenerated (one cell written as 16.9 where the
+      # engine said 16.7, carrying forward a drift that was already there). It
+      # was found by a human typing the full command, which is the one thing this
+      # workflow exists so that nobody has to do.
+      #
+      # So the step list is no longer here. `package.json → verify:ci` is the
+      # single owner of what must pass, and a step added there lands in CI with
+      # no edit to this file. `lib/ops/verifyChainInCi.test.ts` fails the build if
+      # a step in `verify` is neither in `verify:ci` nor on a named exemption
+      # list — so the only thing that can be left out is something with its
+      # reason written down.
+      #
+      # `verify` = `verify:ci && check:slow`. `check:slow` is the one exemption:
+      # it compares wall-clock test durations against a locally-recorded
+      # baseline, so it is machine-dependent by construction and a loaded runner
+      # would trip it for reasons that have nothing to do with the code.
+      - name: Verify (the whole chain — see package.json → verify:ci)
+        run: npm run verify:ci
 
       # The build PRERENDERS /dashboard, /auth/login and /auth/reset, each of
       # which constructs a Supabase client at module scope. Without the two
