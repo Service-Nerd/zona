@@ -180,7 +180,10 @@ export function RecalibrationEntryScreen({
                 cannot see a hand-rolled control. **Converting it is what made the
                 violation visible**, which is the actual value of this migration.
                 `secondary` is the rule's first-named remedy and still satisfies S2
-                ("dismiss is never the CTA colour") — `--bg-soft`, not moss. */}
+                ("dismiss is never the CTA colour") — `.btn--secondary` is
+                `--card` with a `--line` border, not moss. ⚠️ This comment first said
+                `--bg-soft`, which is what the HAND-ROLLED control used; the variant
+                uses `--card`. The visible delta is a white surface, not the grey one. */}
             {!busy && (<Button variant="secondary" fullWidth onClick={onBack}>Not now</Button>)}
           </div>
         </>
