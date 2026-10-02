@@ -8794,6 +8794,17 @@ function buildRulePlanOnce(
   // Coaching Board EXEMPT: no prescription change. It declares a behaviour
   // doctrine already documents, which is §40c's rule ("a suppressed target is
   // stated, never absorbed") applied to frequency instead of intensity.
+  // 🔴 THIS NOTE IS CAUSE-AGNOSTIC AND ITS REASON IS NOT. It fires whenever
+  // delivered days fall below declared — it only counts sessions — but the sentence
+  // hard-codes VOLUME. A runner reduced by §18 (blocked days, life-first, a HARD
+  // constraint) is therefore told their weekly volume is why, when their own
+  // `days_cannot_train` is. §18 Amendment requires "the days declared, the days used,
+  // and THE REASON"; naming a wrong reason is a documented-intent defect.
+  // Filed: `DAYS-GATE-CAPACITY-01` half (1). Pinned by arms 6-7 of
+  // `frequencyConstraintNote.test.ts`, whose first five arms all fed it a
+  // volume-capped runner — the check's population was as narrow as the sentence.
+  // ⚠️ If you fix the attribution, arm 7 must be updated deliberately; it asserts
+  // the CURRENT wording so the defect is pinned rather than hidden.
   const frequencyConstraintNote: string | null = (() => {
     const declared = input.days_available
     if (!declared) return null

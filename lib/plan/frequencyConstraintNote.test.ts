@@ -39,6 +39,36 @@ const HIGH = mk({
   days_available: 5,
 })
 
+/**
+ * 🔴 THE BLOCKED-DAYS CAUSE — the population these five arms never contained.
+ *
+ * `frequencyConstraintNote` fires whenever delivered days fall below declared. It is
+ * CAUSE-AGNOSTIC: it counts sessions in the loading weeks and compares. But its reason
+ * text is hard-coded to VOLUME, and every arm above feeds it a volume-capped runner —
+ * so the check's population is exactly as narrow as the sentence it was validating.
+ *
+ * A runner who declares 6 days and BLOCKS five of them is reduced by §18 (life-first
+ * scheduling, a hard constraint), not by volume. The note still fires — correctly, that
+ * is §18 Amendment working — and then tells them their WEEKLY VOLUME is why.
+ *
+ * §18 Amendment requires the note to name "the days declared, the days used, and THE
+ * REASON". Naming a wrong reason is a documented-intent defect, filed as
+ * `DAYS-GATE-CAPACITY-01` half (1). These two arms exist so the cause is in the
+ * population from now on, and so the wrong wording is PINNED rather than hidden:
+ * fixing it must update arm 7 deliberately.
+ */
+const BLOCKED = mk({
+  race_distance_km: 21.1, race_date: '2027-04-25', fitness_level: 'intermediate',
+  training_age: '5yr+', current_weekly_km: 30, longest_recent_run_km: 12,
+  days_available: 6,
+  // FOUR blocked, not five: capacity 3, which generates cleanly.
+  // ⚠️ At FIVE blocked this same runner trips `INV-PLAN-QUALITY-NOT-ZERO` (§110) and
+  // THROWS in test env while production logs and ships — which is the other half of
+  // `DAYS-GATE-CAPACITY-01` and is deliberately not asserted here: pinning a throw
+  // would pin an NODE_ENV-dependent behaviour, not the note.
+  days_cannot_train: ['monday', 'tuesday', 'wednesday', 'thursday'],
+})
+
 describe('FREQ-SILENCE-01', () => {
   it('1. a volume-constrained runner is told, and told the real numbers', () => {
     const m = generateRulePlan(LOW, 'paid', PINNED_PLAN_START_0921).meta as unknown as Record<string, string>
@@ -90,5 +120,25 @@ describe('FREQ-SILENCE-01', () => {
     // predicate was simply switched off rather than made conditional.
     delete (plan.meta as unknown as Record<string, unknown>).frequency_constraint_note
     expect(auditPlanQuality(plan, LOW).map(o => o.code)).toContain('DAYS-SHORT')
+  })
+
+  // ✅ The uncovered cause: the note FIRES when life, not volume, cut the days.
+  it('6. a BLOCKED-DAYS runner is told at all — the cause these arms never contained', () => {
+    const plan = generateRulePlan(BLOCKED, 'paid', PINNED_PLAN_START_0921)
+    const note = plan.meta?.frequency_constraint_note
+    expect(note, '§18 Am. applies to any cause, not only volume').toBeTruthy()
+    expect(note).toContain('6 days a week')
+    // 7 − 4 blocked = 3 possible days, and the plan must not claim more.
+    expect(note).toMatch(/This plan uses [123]\b/)
+  })
+
+  // 🔴 PINNED DEFECT, not an endorsement. `DAYS-GATE-CAPACITY-01` half (1).
+  it('7. ⚠️ and it gives the WRONG REASON — pinned so the fix is deliberate', () => {
+    const plan = generateRulePlan(BLOCKED, 'paid', PINNED_PLAN_START_0921)
+    const note = plan.meta!.frequency_constraint_note!
+    // The runner blocked Monday-Friday. Volume is not why. When half (1) ships,
+    // this expectation must flip to naming the blocked days, and this comment goes.
+    expect(note, 'if this no longer matches, the attribution was fixed — update the arm')
+      .toContain('your weekly volume spread any thinner')
   })
 })

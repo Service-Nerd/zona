@@ -1649,6 +1649,29 @@ and no plan changed a session.
 **Config.** `days_available`, `MIN_KM_PER_TRAINING_DAY` and
 `MIN_TRAINING_DAYS_VOLUME_FLOOR`.
 
+**⚠️ SCOPE, recorded 2026-10-02 — THIS AMENDMENT HAS TWO CAUSES AND NAMES ONE.** The
+principle above is written around `daysVolumeCanFill`, i.e. **volume** reducing the week.
+The other cause is **§18 itself**: `days_cannot_train` is a hard constraint, so a runner who
+declares six days and blocks five gets two — reduced by **life, not volume**.
+
+`frequencyConstraintNote` is **cause-agnostic in its trigger** (it counts delivered sessions
+against `days_available`, so it correctly fires for both) and **volume-specific in its
+reason** (*"because your weekly volume spread any thinner…"*). So a blocked-days runner is
+told the amendment's sentence with the **wrong explanation of their own input**, which breaks
+this amendment's own requirement to name *"the days declared, the days used, and **the
+reason**"*.
+
+**This is a defect against documented intent, not a doctrine change** — filed as
+`DAYS-GATE-CAPACITY-01` half (1), Coaching Board exempt. Pinned by arms 6–7 of
+`frequencyConstraintNote.test.ts`; **the first five arms all fed it a volume-capped runner**,
+so the check's population was exactly as narrow as the sentence it validated.
+
+🔴 **AND THE RELATED GATE QUESTION IS NOT THIS AMENDMENT'S TO ANSWER.**
+`validateDaysAvailable` reads `days_available` and never `days_cannot_train`, so a runner who
+declares 6 and blocks 6 passes a gate that refuses a runner who honestly declares 1. Changing
+it **widens the `block` tier's reach**, which is an **open Coaching Board question** carrying a
+standing *"Ask Russ before touching it."* Do not resolve it from here.
+
 ### §18 Amendment 1 — the floor under the cap is named, and the converse of §64 exists *(2026-09-20, S52-LOPSIDED-BOUND-01 artifact 3)*
 
 **No value changes here.** The `3` in `max(3, floor(weeklyKm / MIN_KM_PER_TRAINING_DAY))`
