@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `COHORT-BASELINE-RED-01` · the baseline was typed, not measured
+**Shipped:** Regenerated the coaching cohort baseline. `npm run verify` exits 0 for the first time in weeks.
+
+**Dev learning:** A ratchet had been red on main since at least 23 September. I filed it as a regression — *a ship moved the table, refusals rose at the low-mileage bands, bisect the fifty-five engine commits* — and every part of that was wrong.
+
+What settled it was running the same harness at three commits instead of one: before the change that last touched the baseline, at it, and at HEAD. **All three produced an identical set of divergences.** If the engine had moved, that set would have changed. It hadn't. There was nothing to bisect, and the numbers I'd reported as "refusals rose" were just old numbers nobody had regenerated.
+
+Then the arithmetic gave up the real story. That commit moved one cell from 26.1 to **16.7**. The baseline said **16.9**. The *previous* baseline had said 26.3 against an engine producing 26.1 — a 0.2 drift already sitting there — and 16.9 is that same 0.2 carried forward. Someone took the stale number, applied the delta they expected, and typed it in. The diff is four lines, touching exactly the two cells they were thinking about. A real regeneration would have written 16.7 and fixed two other bands while it was there.
+
+**The thing I'll remember:** a baseline you edit by hand records what you expected, not what the code did. And it fails in the most expensive direction — it's *nearly* right, so it looks like a rounding artefact rather than a broken gate, and the gate stays red long enough that everyone stops reading it.
+
+**AI-building learning:** I predicted the exact nine cells and their values in the backlog item before running the regeneration. Then the regeneration produced them cell for cell, including 16.9 → 16.7. That's the difference between a diagnosis and a guess that happened to be in the right area, and writing the prediction down first is what made it checkable. It's also the second time today that writing the number down before measuring caught me out in the other direction — earlier I reported a figure I hadn't derived properly and had to correct it four times over.
+
+**The honest bit:** nothing stops the next person hand-patching a baseline. What stops it *surviving* is the companion fix — CI now actually runs this check, so a hand-patched cell goes red on the next push instead of sitting for weeks. I also still don't know how long two of those bands had been stale. More bisect runs would tell me and it wouldn't change anything.
+
+---
+
 ## 2026-10-02 — `CI-CHAIN-OWNER-01` · the file that diagnosed its own bug in a comment, then did it again
 **Shipped:** CI runs one step that calls the verify chain, instead of a hand-typed copy of its steps. Plus a test that fails if the two ever drift again.
 
