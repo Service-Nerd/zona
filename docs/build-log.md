@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `CONTRACT-COVERAGE-02` · the register was watching a third of the tree
+**Shipped:** The uncontracted-components gate now sees all seven component directories and both import forms, plus an orphan arm, plus four contracts.
+
+**Dev learning:** The gate counted "shared components with no contract" by globbing two directories. There are seven. So `components/ui/Button.tsx` — 39 importers, the most-used component in the app — was not in the population, which means its *contract* was unprotected too: I deleted `button.md` against the old arm and the count stayed at 47. A register can be the wrong shape rather than the wrong number, and the wrong shape is quieter: 49 looked like a fact for days.
+
+The second hole was in the same line of code. `from '@/components/shared/X'` is one of two ways to import a sibling; a relative `from './X'` didn't count. `HrPendingStatusRow` is used by `PendingHrCard` and `SessionCard`, both relatively, so the gate saw **zero** importers and dropped it entirely. Two blind spots in one predicate, and both made the number smaller, which is the direction nobody questions.
+
+**The thing I'd never have found by reading:** a shell count said 67 and an independent python count said 65. I refused to re-baseline until they agreed, and the gap turned out to be a **tracked 1,960-line file literally named `components/...`** — an April copy of `DashboardClient`, committed by accident eight months ago, matching import greps ever since. Interactive `ugrep` skips it; system `grep` doesn't, which is the entire reason the two counts differed. If I'd trusted either number I'd have shipped a baseline built on a ghost.
+
+**And a gate that discouraged the work it exists to encourage:** `componentContracts.test.ts` read "no props" and "couldn't parse the props" as the same answer, and asserted non-null. So writing a contract for `SiteFooter` — which legitimately takes nothing — turned the suite red. A check that can't express a valid state teaches you not to document that state.
+
+**Honest limit:** 61 components still have no contract, and a contract documents an interface without saying whether the interface is right. What it does do is force a read: `CoachByline`'s contract is where the hand-rolled empty state got written down as a defect rather than a comment.
+
+---
+
 ## 2026-10-02 — `TEST-CLOCK-REACH-01` + `MICRO-LABEL-CHIPS-01` · two items, both wrong about their own numbers
 **Shipped:** A clock-gate whose reach now matches the code it guards, and a Design Board ruling that refused both options the item offered.
 

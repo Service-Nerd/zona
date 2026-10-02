@@ -452,7 +452,9 @@ say "── CONTRACTS: a SHARED component with no contract at all ──"
 # This asks the inverse: a component under `components/shared/` that EXPORTS a prop
 # interface and is imported by more than one file should have a contract. Existing
 # debt is declared below so it is visible and cannot grow.
-UNCONTRACTED_BASELINE=49   # 50 → 49 (ME-ADJUSTMENTS-EXTRACT-01, 2026-10-02): debt genuinely PAID — `PlanAdjustmentsScreen` was extracted AND contracted in the same commit, so a shared component gained a contract rather than leaving the tree. 🥇 The arm demanded this move itself, on the same day the ship-record ratchet was restored from a baseline that had been lowered on an UNMEASURED premise — a register asking to be lowered because it re-counted is the only direction it may move on its own.
+UNCONTRACTED_BASELINE=61   # 🔴 49 → 65 → 61 (CONTRACT-COVERAGE-02, 2026-10-02). TWO MOVES IN ONE COMMIT AND THEY ARE OPPOSITE, so both are stated: the population was WIDENED (49 → 65, a register growing because it RE-COUNTED, not because debt was added) and then four contracts were WRITTEN (65 → 61, debt genuinely paid). Quoting only the net −12... there is no net: the two numbers measure different sets and averaging them would describe neither. Both derived by RUNNING the arm, never typed — this is the same register whose first value I set to 14 from memory and watched fire on its first run.
+                           # ⚠️ AND A STRAY FILE WAS INFLATING IT BY 2. A tracked 1,960-line file literally named `components/...` (an April copy of DashboardClient, `a968d267`) matched the importer greps, pushing `StravaPanel` and `PlanChart` over the ≥2 threshold. It is deleted. Interactive `ugrep` skipped it and system `grep` did not, which is why the shell and a python re-count disagreed by exactly 2 — reconcile two registers before trusting either.
+                           # 50 → 49 (ME-ADJUSTMENTS-EXTRACT-01, 2026-10-02): debt genuinely PAID — `PlanAdjustmentsScreen` was extracted AND contracted in the same commit, so a shared component gained a contract rather than leaving the tree. 🥇 The arm demanded this move itself, on the same day the ship-record ratchet was restored from a baseline that had been lowered on an UNMEASURED premise — a register asking to be lowered because it re-counted is the only direction it may move on its own.
                            # 51 → 50 (QUIT-TAB-DEAD-01, 2026-10-01): the debt was not PAID, the component was DELETED. An uncontracted shared component leaving the tree lowers this exactly as writing its contract would, and the audit cannot tell the two apart — worth knowing before quoting a falling number as documentation progress.
                            # 🔴 MEASURED, NOT GUESSED. I set this to 14 first — today's
                            # extracted screens — on the assumption the rest of the tree was
@@ -464,17 +466,82 @@ UNCONTRACTED_BASELINE=49   # 50 → 49 (ME-ADJUSTMENTS-EXTRACT-01, 2026-10-02): 
                            # pre-date today; the other 38 are older debt this arm had no
                            # way of showing until now. Falling-only: contract one and the
                            # baseline must come down in the same commit.
+# 🔴 THE WHOLE COMPONENT TREE, AND BOTH IMPORT FORMS (CONTRACT-COVERAGE-02,
+# re-measured 2026-10-02). Two holes, compounding, and the register read healthy
+# through both:
+#
+#   1. SCOPE. This globbed `components/shared/*.tsx` and `components/dashboard/*.tsx`
+#      only -- **2 of 7 component directories, 80 of 219 files**. `components/`
+#      root (111 files), `ui`, `marketing`, `training` and `strava` were never in
+#      the population, so **13 further uncontracted components could not be
+#      counted** -- including `SiteHeader` (12 importers) and `SiteFooter` (11),
+#      which render the public WEBSITE.
+#   2. IMPORT FORM. `from '@/<path>'` is one of two ways to import a sibling. A
+#      RELATIVE import (`from './DayGridSelector'`) did not count, so three
+#      components fell under the `>= 2` threshold. `HrPendingStatusRow` is used by
+#      `PendingHrCard` AND `SessionCard`, both relatively, so the gate saw **0
+#      importers** and the component was absent entirely.
+#
+# ⚠️ AND TEN WRITTEN CONTRACTS SAT OUTSIDE THE POPULATION, including
+# `components/ui/Button.tsx` with **39 importers** -- the most-used component in
+# the app. Its contract existed and this arm could not see it, so deleting the
+# file would not have gone red. That is what the second loop below now asserts.
+#
+# The number RISES on this fix (49 -> 65) and that is a register growing because
+# it RE-COUNTED, not because debt was added. Same declaration discipline as
+# lowering it: both figures, in the comment, derived by running the arm.
 missing=0
-for f in components/shared/*.tsx components/dashboard/*.tsx; do
+for f in $(git ls-files 'components/*.tsx' 'components/**/*.tsx'); do
   [ -f "$f" ] || continue
-  case "$f" in *.test.*) continue;; esac
+  case "$f" in *.test.*|*.stories.*) continue;; esac
   grep -q "^export default function\|^export function" "$f" || continue
-  # more than one importer (the component itself excluded)
-  users=$(grep -rl "from '@/${f%.tsx}'" app components 2>/dev/null | grep -v '\.test\.' | wc -l | tr -d ' ')
+  base=$(basename "$f" .tsx)
+  # more than one importer, counting BOTH the alias form and a relative path
+  users=$(grep -rlE "from '@/${f%.tsx}'|from '\.{1,2}/([A-Za-z0-9_/-]*/)?${base}'" app components 2>/dev/null | grep -v '\.test\.' | grep -v "^$f$" | wc -l | tr -d ' ')
   [ "$users" -ge 2 ] || continue
   grep -rqs "^\*\*Component:\*\* \`$f\`" docs/contracts/components/ && continue
   missing=$((missing+1))
 done
+
+# 🔴 A WRITTEN CONTRACT MUST NOT SILENTLY LOSE ITS COMPONENT. The arm above counts
+# what is MISSING a contract; nothing asserted the reverse, so a contract whose
+# component was renamed or deleted would sit in `docs/contracts/components/`
+# describing nothing, and `Button.tsx`'s was unreachable by any arm at all.
+#
+# ⚠️ THREE HEADER FORMS, AND MY FIRST CUT KNEW ONE -- the same mistake this file
+# records four times over. `**Component:** \`path\`` is the common form, but
+# `me-door-navigation.md` declares `**Component:** \`none\`` deliberately (it
+# documents a behaviour ACROSS components, not one component), and
+# `marketing-device.md` uses `**Components:**` with a bulleted LIST of three.
+# The first cut flagged the declared `none` as an orphan and skipped the list
+# ENTIRELY -- so that contract's three components could all have been deleted in
+# silence, which is the failure this arm exists to catch.
+orphan_contracts=0
+checked_paths=0
+for c in docs/contracts/components/*.md; do
+  [ -e "$c" ] || continue
+  # Every backticked path on a `**Component:**`/`**Components:**` line or, for the
+  # list form, on the bullets that follow it. A declared `none` is not a path.
+  paths=$(awk '
+    /^\*\*Components?:\*\*/ { inlist=1 }
+    inlist && /`/ { print }
+    inlist && /^$/ { inlist=0 }
+  ' "$c" | grep -oE '`[^`]+`' | tr -d '`' | grep -E '^components/.*\.tsx$' || true)
+  for comp in $paths; do
+    checked_paths=$((checked_paths+1))
+    [ -f "$comp" ] && continue
+    say "  ORPHAN CONTRACT $(basename "$c") describes $comp, which does not exist"
+    orphan_contracts=$((orphan_contracts+1)); fail=1
+  done
+done
+# A zero here would make the loop above vacuous -- the shape of failure this
+# whole section exists to catch.
+if [ "$checked_paths" -lt 20 ]; then
+  say "  ORPHAN ARM VACUOUS: only $checked_paths contract paths parsed, expected 20+"
+  fail=1
+elif [ "$orphan_contracts" = "0" ]; then
+  say "  every written contract still names a live file ($checked_paths paths)"
+fi
 # 2026-10-01 — 52 → 51. `SHEET-CONTRACT-01` contracted `Sheet`, the most-used
 # primitive in the app. The ratchet asked for the lower number rather than
 # letting a paid debt sit as slack, which is the only direction this register is

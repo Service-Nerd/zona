@@ -2218,7 +2218,65 @@ nothing.
 defect); fix a registered file → red (stale register); restore the old lax `flex: 1`-alone rule →
 red. 4,102 tests / 458 files.
 
-#### 🔴 `CONTRACT-COVERAGE-02` — 52 shared components have no contract, and the audit could not see it
+#### ✅ `CONTRACT-COVERAGE-02` — **SHIPPED 2026-10-02. Population fixed, orphan arm added, four contracts written**
+
+⚙️ **NO BOARD** — documentation debt. 🔴 **RE-MEASURED: THE GATE WAS WATCHING 2 OF 7 COMPONENT
+DIRECTORIES.** Filed at *"52 against 72"*; baseline had already drifted to 49 through three other
+ships — **one of which was a DELETION, not a payment** (`QUIT-TAB-DEAD-01`), which the arm's own
+comment flags as indistinguishable from progress.
+
+**Three holes, compounding, and the register read healthy through all of them:**
+1. **SCOPE** — it globbed `components/shared/*.tsx` and `components/dashboard/*.tsx`: **80 of 219
+   files.** `components/` root (111 files), `ui`, `marketing`, `training`, `strava` were never in
+   the population → **13 further uncontracted components could not be counted**, including
+   `SiteHeader` (12 importers) and `SiteFooter` (11), **which render the public WEBSITE.**
+2. **IMPORT FORM** — `from '@/<path>'` is one of two ways to import a sibling. A **relative**
+   import did not count, so three components fell below the `>= 2` threshold.
+   **`HrPendingStatusRow` is used by `PendingHrCard` AND `SessionCard`, both relatively, so the
+   gate saw ZERO importers** and the component was absent entirely.
+3. 🔴 **TEN WRITTEN CONTRACTS SAT OUTSIDE THE POPULATION — including `components/ui/Button.tsx`,
+   39 importers, the most-used component in the app.** Its contract existed and no arm could see
+   it. **Proven: with the old arm, deleting `button.md` left the count at 47, unchanged.** A new
+   orphan arm now asserts every written contract still names a live file.
+
+⚠️ **A STRAY TRACKED FILE WAS INFLATING THE COUNT BY 2.** A 1,960-line file literally named
+`components/...` — an April copy of `DashboardClient`, committed in `a968d267` — matched the
+importer greps and pushed `StravaPanel` and `PlanChart` over the threshold. **Deleted.** It is
+also why a shell count and a python re-count disagreed by exactly 2: interactive `ugrep` skips
+it, system `grep` does not. **Reconcile two registers before trusting either.**
+
+⚠️ **WRITING A CONTRACT REQUIRED A GATE FIX, which is the part to know before the next one.**
+`componentContracts.test.ts` read *"no props"* and *"could not parse the props"* as the same
+answer (`null`) and its caller asserts non-null — so **documenting a propless component turned
+the gate RED.** `SiteFooter` is exactly that. An empty parameter list now returns `[]`; an
+unparseable one still returns `null`, kept separate deliberately.
+
+✅ **Four written** (`SiteHeader` 12 importers · `CoachByline` 11 · `SiteFooter` 11 · `ZoneBar` 8).
+**49 → 65 → 61, and the two moves are OPPOSITE:** the population GREW because it re-counted, then
+debt was PAID. There is no meaningful net; both figures are in the baseline comment.
+
+→ **The remaining debt is `CONTRACT-COVERAGE-03`, below.** ⚠️ **Split rather than left open, and the
+audit demanded it:** the arm repaired this morning (`AUDIT-SHIPPED-OPEN-ARM-01`) fired on this very
+item — a registry row plus an open heading under one ID. **`DOC-AUDIT-SECOND-SHAPE-01` set the
+precedent when it split `W-01`:** one ID cannot be both a shipped record and an open item, and the
+audit is right to call that ambiguous. The alternative was a declared exemption, which is the
+heavier instrument.
+
+#### 🟡 `CONTRACT-COVERAGE-03` — 61 components still have no contract *(P3, filed 2026-10-02, falling register)*
+
+⚙️ **NO BOARD.** The honest remainder after `-02` fixed the population: **61 of 86
+in-population components** have no contract, now counted across **all seven** component
+directories and both import forms.
+
+**Falling-only.** Contract one and lower `UNCONTRACTED_BASELINE` in the same commit; the arm fails
+in both directions, so slack cannot sit as declared debt. ⚠️ **A falling number is not
+automatically progress** — the arm cannot tell a contract being written from a component being
+deleted (`QUIT-TAB-DEAD-01` lowered it by leaving the tree). Say which happened.
+
+**Highest reach first**, measured by importer count, since a contract is a code review and the
+review is worth most where the blast radius is: `AIMark` (8) · `Wordmark` (8) · `TextField` (8)
+· `IconButton` (7) · `AppStoreBadge` (7) · `ArticlePage` (6) · `DurationPicker` (6) ·
+`CoachNoteBlock` (5).
 
 ⚙️ **NO BOARD** — documentation debt, now measured and gated.
 

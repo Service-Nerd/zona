@@ -72,8 +72,23 @@ function componentProps(raw: string): string[] | null {
   // earlier today. Found 2026-09-21 by registering contracts for HrTrace,
   // Section, TabbedPhone and PhoneShell.
   const m = src.match(/export (?:default )?function \w+\s*\(\s*\{([\s\S]*?)\}\s*:/)
-  if (!m) return null
-  return splitTopLevel(m[1])
+  if (m) return splitTopLevel(m[1])
+
+  // 🔴 "TAKES NOTHING" IS AN ANSWER, AND IT USED TO BE INDISTINGUISHABLE FROM
+  // "COULD NOT PARSE" — so a propless shared component could not be contracted
+  // at all: the caller asserts `not.toBeNull()`, so writing its contract turned
+  // this gate RED. `SiteFooter` is exactly that — a named export with an empty
+  // parameter list, 11 importers, every page of the marketing site — and its
+  // contract is a real one ("takes nothing; the link set is identical on every
+  // page, self-link included").
+  //
+  // ⚠️ The two states are genuinely decidable and must stay separate: an EMPTY
+  // parameter list is `[]`, an UNPARSEABLE one is still `null`. Collapsing them
+  // would make every parser failure read as "no props" and silently stop
+  // comparing, which is the failure this file already records twice.
+  // Found 2026-10-02 writing SiteFooter's contract (CONTRACT-COVERAGE-02).
+  if (new RegExp('export (?:default )?function \\w+\\s*\\(\\s*\\)').test(src)) return []
+  return null
 }
 
 /** Destructured names, split on TOP-LEVEL commas only. */
