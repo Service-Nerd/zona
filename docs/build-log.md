@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-02 — `ENRICH-PARSE-DIAG-01` + `ENRICH-COPY-NEGATION-01` · two fixes, and both my first hypotheses were wrong
+**Shipped:** `parse_error` now records why it failed, and the copy check can read "No quality work this week."
+
+**The context that changes everything:** live users arrived today via Apple offer codes from the Make-A-Wish partnership. So I stopped feature work and looked at production, and found that **AI enrichment had been failing for two thirds of plan generations — 6 of 9 today, 43 of 64 in the stored window — silently, because ADR-006 makes the fallback silent by design.** Nothing reads `plan_enrich_failed`: it is written by one route and consumed by no route, no digest, no alert. That is why a 67% failure rate ran for a month without anyone knowing, and it is the single most useful thing I have found in this codebase.
+
+**Two hypotheses, both wrong, and both wrong the same way.** First I was going to blame label-based classification: the enricher rewrites `session.label`, an invariant reads `label.includes('vo2max')`, and the repo has recorded that exact class twice with a comment that *predicted the next incident*. Beautiful story. The payloads said the failures were the **pace-band** arm, not the label arm.
+
+Then I was going to blame a markdown fence, because both `parse_error` details began with ` ```json `. Also wrong: fence-stripping already happens two lines before the parse, and the enum comment says *"not JSON after fence-stripping"*. The detail only looked fenced because the handler stored `rawText.slice(0, 200)` — **the first 200 characters of a payload whose head is always well-formed.** I had built an argument on an artefact of a logging window.
+
+**So the first fix is instrumentation, and it is the more valuable one.** The handler was `catch {` — the exception thrown away — storing the least informative part of the string. It now records the message, the length, a short head and a 240-character **tail**, because a truncated body ends mid-token and the tail is the only place that shows. I still cannot explain the two failures that already happened. That is the honest state: this makes the next one diagnosable, it does not fix the last one.
+
+**The second fix is a false positive that was destroying correct work.** The model wrote *"Pull back to 21 km. No quality work this week."* on a deload week with no quality, and the check concluded the copy *promised* intensity, because `COPY_CLAIMS_INTENSITY_NAMED` is a bare `/quality|threshold|tempo/`. Error severity, post-enrich, so the entire enrichment went in the bin and the runner got the rule-engine copy. The model's sentence was more honest than the check that rejected it.
+
+**The interesting part was where to fix it.** `copyClaimsIntensity` is exported and the rule engine reads it to decide whether to *rewrite* a week's label and theme. Its own comment records that a local copy of those patterns had already drifted from the checker's and cost 84 plans. So fixing only the invariant would have re-created the exact drift the shared owner exists to prevent. It is fixed at the predicate, and `verify:parity` came back **IDENTICAL over 6,066 cases** — which is what a validator-*acceptance* change should look like: more enrichment accepted, not one plan generated differently.
+
+**What I was careful about:** this check exists because a four-literal denylist let *"One quality session. Everything else stays easy."* through for fourteen weeks. A negation fix that swallows that re-opens the original defect, so those strings are asserted as must-still-fire, and `less` and `lighter` are deliberately not negators — a lighter quality session is still a quality session.
+
+---
+
 ## 2026-10-02 — `BUTTON-MIGRATION-02` batch 7a · the count was the finding
 **Shipped:** 7 controls onto `Button`, and a fix to the script that counts them.
 

@@ -314,11 +314,39 @@ export async function enrich(
     // means no surface can miss it and show a literal token; the plan JSON is
     // read by a long tail of consumers and one omission would be visible.
     parsed = resolveRunnerNameDeep(JSON.parse(cleaned), input.athlete_name)
-  } catch {
-    console.error('[enrich] JSON parse failed', rawText.slice(0, 300))
+  } catch (err) {
+    // 🔴 THIS RECORDED THE WRONG END OF THE STRING AND THREW THE REASON AWAY.
+    // It logged `rawText.slice(0, 200)` — the FIRST 200 characters — and used a
+    // bare `catch {`, so the exception was discarded. A parse failure is almost
+    // never visible at the start of the payload: the head is always a well-formed
+    // `{ "meta": { "notes": "..."`, fenced or not.
+    //
+    // ⚠️ MEASURED CONSEQUENCE, 2026-10-02: two live runners lost their AI voice to
+    // `parse_error` and the stored detail for both began ` ```json ` — which made
+    // a markdown fence look like the cause. It is not: fences are stripped two
+    // lines above, and the enum comment says so. **The symptom was an artefact of
+    // the logging window**, and the real cause was undiagnosable from what we
+    // kept. Truncation is the live suspect (`maxTokens` is 10,000 for a 20-week
+    // plan and both failures were 20-week marathons) and this is what would
+    // confirm it: a truncated body ends mid-token, so the TAIL is the evidence.
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[enrich] JSON parse failed', { message, length: rawText.length, tail: rawText.slice(-200) })
     return {
       plan,
-      outcome: { status: 'failed', reason: 'parse_error', detail: rawText.slice(0, 200) },
+      outcome: {
+        status: 'failed',
+        reason: 'parse_error',
+        // `detail` is what reaches `ops_events`, so it carries the three things
+        // that identify the cause: why it threw, how long the body was, and how
+        // it ENDED. The head is kept short because it is the least informative
+        // part and dropping it entirely would lose the fence/no-fence signal.
+        detail: JSON.stringify({
+          message,
+          length: rawText.length,
+          head: rawText.slice(0, 60),
+          tail: rawText.slice(-240),
+        }).slice(0, 900),
+      },
     }
   }
 

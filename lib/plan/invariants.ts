@@ -760,9 +760,64 @@ export const COPY_CLAIMS_INTENSITY_NAMED = /quality|threshold|tempo|interval|vo2
 export const COPY_CLAIMS_INTENSITY_IMPLIED = /sharpen|raising the ceiling|intensity stays/
 export const COPY_CLAIMS_HARD = /feels? hard/
 
+/**
+ * 🔴 A CLAIM IS NOT A MENTION, AND THIS COULD NOT TELL THEM APART.
+ *
+ * The patterns above are bare keyword tests, so *"No quality work this week."*
+ * matched `quality` and was read as a PROMISE of quality. On a deload week with no
+ * quality the check then fired, `error` severity — and because this runs
+ * post-enrich, **the whole enriched plan was discarded and the runner silently got
+ * the rule-engine copy instead** (ADR-006 makes that fallback silent by design).
+ *
+ * ⚠️ MEASURED ON LIVE TRAFFIC, 2026-10-02: 3 of the day's 9 enrichments, across 2
+ * runners from the Make-A-Wish cohort, were thrown away for this. The model's copy
+ * was CORRECT and more honest than the check that rejected it:
+ *   · "Pull back to 21 km. No quality work this week. The Sunday run drops to 8.5 km."
+ *   · "Drop to 22 km. No quality work. Both the long run and Wednesday ease back."
+ *   · "33 km week. No quality work. Just four easy days and a slightly shorter long run."
+ * 26 violations of this code in the stored window, so it is the second-largest cause
+ * of lost AI voice in the product.
+ *
+ * A negated clause is stripped before the claim test. Scoped deliberately tight:
+ *   · it splits on CLAUSE boundaries (`. ; :` and ` — `), so a negation cannot
+ *     reach across a sentence and silence a real claim in the next one;
+ *   · only a clause whose negator appears BEFORE the keyword is dropped, because
+ *     "no quality work" negates and "quality work, no excuses" does not;
+ *   · the negator list is closed and short. "Without" is in; "less" and "lighter"
+ *     are NOT — a lighter quality session is still a quality session.
+ *
+ * ⚠️ IT MUST NOT SWALLOW THE REGRESSION THIS CHECK EXISTS FOR. The four-literal
+ * denylist it replaced let *"One quality session. Everything else stays easy."* and
+ * *"Build — first quality session"* through for FOURTEEN WEEKS (analysis F4/N4).
+ * Neither contains a negator before the keyword, so both still fire. Asserted.
+ */
+const CLAUSE_SPLIT = /[.;:]|\s—\s/
+const NEGATOR = /\b(no|not|none|never|without|zero|removed?|drops? out|comes? out)\b/
+
+/** The copy with negated clauses removed, for claim-matching only. */
+export function withoutNegatedClauses(text: string): string {
+  return text
+    .split(CLAUSE_SPLIT)
+    .filter(clause => {
+      const neg = NEGATOR.exec(clause)
+      if (!neg) return true
+      // A negator only disarms the clause if it precedes the thing being claimed.
+      const after = clause.slice(neg.index + neg[0].length)
+      return !(COPY_CLAIMS_INTENSITY_NAMED.test(after)
+        || COPY_CLAIMS_INTENSITY_IMPLIED.test(after)
+        || COPY_CLAIMS_HARD.test(after))
+    })
+    .join(' | ')
+}
+
 /** Does this week's copy promise intensity the week must actually contain? */
 export function copyClaimsIntensity(label?: string | null, theme?: string | null): boolean {
-  const text = `${(label ?? '').toLowerCase()} | ${(theme ?? '').toLowerCase()}`
+  // ⚠️ THE SAME STRIPPING AS THE CHECKER, DELIBERATELY. This predicate is read by
+  // `ruleEngine`'s §90 yield to decide whether to REWRITE a week's copy, and the
+  // recorded cost of producer and checker drifting apart here was 84 plans. If only
+  // the checker learned about negation, the engine would go on rewriting a week
+  // whose copy already says "no quality work" — correct copy, replaced for nothing.
+  const text = withoutNegatedClauses(`${(label ?? '').toLowerCase()} | ${(theme ?? '').toLowerCase()}`)
   return COPY_CLAIMS_INTENSITY_NAMED.test(text)
     || COPY_CLAIMS_INTENSITY_IMPLIED.test(text)
     || COPY_CLAIMS_HARD.test(text)
@@ -1231,7 +1286,10 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // true of THIS week. Applies to the theme AND the label — the label was
       // never checked at all before.
       const labelText = (w.label ?? '').toLowerCase()
-      const copy = `${labelText} | ${themeText}`
+      // Negated clauses removed first — see `withoutNegatedClauses`. "No quality
+      // work this week" is not a promise of quality, and reading it as one threw
+      // away 3 live enrichments on 2026-10-02 alone.
+      const copy = withoutNegatedClauses(`${labelText} | ${themeText}`)
       // Derived through the shared owner so the enrich prompt (which is told
       // these same two flags) cannot disagree with the check that judges its
       // output — see lib/plan/weekIntensityFlags.ts.
