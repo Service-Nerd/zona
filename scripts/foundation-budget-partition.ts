@@ -251,6 +251,7 @@ if (was.version !== REPORT_VERSION || was.today !== TODAY || was.plan_start !== 
 // ── THE GATE. Two different failures, reported separately, because they mean
 // opposite things: a control plan moving is COLLATERAL DAMAGE; a symptomatic
 // plan not moving means the fix did not reach it.
+let comparedControl = 0
 const movedControl: string[] = []
 const vanished: string[] = []
 const appeared: string[] = []
@@ -258,6 +259,7 @@ for (const r of rows) {
   const prev = was.rows[r.key]
   if (!prev) { appeared.push(r.key); continue }
   if (!prev.symptomatic && !r.symptomatic) {
+    comparedControl++
     // The ONLY permitted difference on a bystander is the added foundation duration.
     if (prev.structHash !== r.structHash) movedControl.push(`${r.key}  (structure changed)`)
     else if (r.floorProtected > (prev.floorProtected ?? 0)) movedControl.push(`${r.key}  (gained floor_protected)`)
@@ -279,4 +281,10 @@ if (appeared.length || vanished.length) {
   console.error(`   A changed population cannot be compared. Re-baseline deliberately.`)
 }
 if (fail) process.exit(1)
-console.log(`\n✓ all ${asym.length} control plans byte-identical; grid unchanged.`)
+// ⚠️ REPORT WHAT WAS COMPARED, NOT WHAT EXISTS NOW. The first version printed
+// `asym.length` — the CURRENT asymptomatic count — which overstates the claim: a plan that
+// was symptomatic before and is asymptomatic now was never compared as a control, because
+// it was expected to change. Inflating a check's own count is the class this repo keeps
+// catching, and a gate that overstates its coverage is worse than one that reports less.
+console.log(`\n✓ ${comparedControl} control plans byte-identical (asymptomatic BEFORE and after); grid unchanged.`)
+console.log(`  (${asym.length} are asymptomatic now — ${asym.length - comparedControl} of those were symptomatic before and are expected to have changed.)`)
