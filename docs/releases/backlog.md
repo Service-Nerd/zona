@@ -2491,6 +2491,55 @@ explicit authorisation.
 The defect is that a check scoped to stored data cannot tell *"we broke this"* from *"this was
 made before we knew better"*.
 
+---
+
+### ✅ §121 half: READY TO RUN, awaiting one word *(`RACE-WEEK-VOLUME-REMEDIATE-01`)*
+
+🔴 **TWO THINGS I TOLD THE FOUNDER ABOUT THIS WERE WRONG, AND BOTH MADE IT LOOK BIGGER.**
+
+**(1) I called it "a plan REGENERATION, materially riskier". It is ONE INTEGER.** §121 Amendment 3
+is explicit — *"Display and totals only. No prescription changes. Nothing placed in race week
+moves."* Verified on `2e4467a0`: week 13 stores **56** against its own sessions' **13.5 km**, and
+**all 12 other weeks already match exactly.** No stored meta field folds the race in
+(`peak_km_target` is a target; `volume_shortfall_note` quotes the peak week, unaffected). **An
+assumption reported as a risk assessment.**
+
+**(2) I said ONE runner was affected. It is TWELVE.** The invariant only fires when the race week
+**exceeds** the peak phase, so it sees **1 of 12**. Measured: 28 live plans carry a race week,
+**12 have the race folded into `weekly_km`, and 9 are SILENT.** Selecting on the invariant would
+have fixed one twelfth — the population-excludes-the-cases-at-risk class, **fifth instance in two
+days**. `scripts/fix-race-week-volume.ts` therefore selects on the **arithmetic**
+(`stored ≈ non-race sessions + race distance`), never on the invariant.
+
+**What each runner currently reads on their Plan screen, and what it becomes:**
+
+| | race week | → |
+|---|---|---|
+| `t.andvig` | 26 km | **5** |
+| `anu.sundararajan` | 25 km | **4** |
+| `duncanbennett83` | 15 km | **5** |
+| `fnwf6vyj8z` · `emmalbaldwin` | 13 km | **8** |
+| `dbhamrah` | 10 km | **5** |
+| `russell.j.shear` (founder's own) | 18 km | **8** |
+| `zonna.demo` | 65 km | **15** |
+| `vv7vm7khsk` (`2e4467a0`, the digest's one firing) | 56 km | **14** |
+
+⚖️ **WHY BACKFILLING HERE IS CONSISTENT WITH THE LIVE-PLAN POLICY.** `project_live_plan_policy`
+says doctrine and engine fixes are NOT backfilled, and its purpose is that **we do not rewrite
+somebody's prescribed training after they have started it.** §121 changes **no prescription** — it
+corrects a displayed total. That is not what the policy forbids, and leaving it means twelve
+runners keep reading an inflated race week. **Stated rather than assumed, because the policy could
+have been read the other way.**
+
+✅ **Guards, and they are FALSIFIED not asserted** — archive before write · **CAS on
+`updated_at`** · row read back out of Postgres · and per plan: **every session, every other week
+and all meta byte-identical.** Three mutations run, all caught: tamper a race-week session → red ·
+tamper another week's `weekly_km` → red · tamper meta → red.
+
+**Dry run: 12 candidates, 12 guards pass, 0 skipped.** 🔻 **Not written. A production write across
+twelve real users' plans is the founder's call** — `npm run remediate:raceweek -- --write
+--i-have-authorisation`.
+
 #### 🔻 `LR-REDUCTION-NOT-NARRATED-01` — the note explains VOLUME, the thing that moved is their SUNDAY *(P3, filed 2026-10-03)*
 
 👤 **FOUNDER** (copy/voice) — **not** the Coaching Board, which ruled the prescription CORRECT AS IS
