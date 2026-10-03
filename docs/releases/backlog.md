@@ -2459,39 +2459,6 @@ is the board's call.
 injured by an easier plan, and §106 Am. already ruled the inverse case. It is filed because the
 measurement exists and a question nobody wrote down is a question nobody answers.
 
-#### 🔴 `TAPER-OVER-PEAK-SLOW-01` — a slow runner's TAPER is their biggest week *(P1, filed 2026-10-03)*
-
-🏃 **COACHING BOARD** — §121 is the principle and the question is whether the engine's
-taper arithmetic is correct for this cohort, not whether the check is.
-
-🔴 **8 NEW error-severity firings of `INV-PLAN-RACE-NOT-VOLUME`, and they were invisible
-until 2026-10-03.** §121's own message states the rule: *"the taper must not read as the plan's
-hardest block"*. Measured firings: **taper week 19 at 51 km against a 47 km peak maximum**, week
-13 at 16 vs 13, week 9 at 14 vs 12 and 18 vs 16.
-
-📐 **Why now:** `MWM-FLOOR-VALIDATOR-01` added a **slow benchmark** (`slowHM`, HM 2:30) to
-`property-validate-plans.ts`'s `benchmarkSets`, which until then held only fast runners (no
-benchmark, or 10 km in 48:30). §121 fires on the newly reachable cohort. The baseline moved
-**10 → 18** with that reason written in.
-
-⚠️ **ATTRIBUTION IS MEASURED, NOT ASSUMED.** All 8 appear in a sweep run carrying the slow
-benchmark and **NOT** the §82 validator fix — so they belong to the population, not to that fix,
-which is validator-only and cannot reach §121. **The engine did not move**
-(`verify:parity` IDENTICAL).
-
-🔴 **This is live, not theoretical.** The cohort the slow benchmark reaches is the
-Make-A-Wish charity intake: both plans that triggered the original investigation were HM 2:16 and
-HM 2:29. A runner whose taper is their heaviest week arrives at the start line least fresh when it
-matters most.
-
-⚠️ **The baseline entry is a debt register, not an amnesty.** The repo's own rule: *a declared
-reason is not a scheduled fix*. This number must come DOWN; it must not be re-justified next time
-the grid widens.
-
-**The work:** establish whether the taper volume curve is computed against the peak PHASE maximum
-or against something else for low-volume runners, then route §121's remedy through the board. Do
-not relax §121 — it is stating a real coaching failure.
-
 #### 🟡 `CONTRACT-COVERAGE-03` — 61 components still have no contract *(P3, filed 2026-10-02, falling register)*
 
 ⚙️ **NO BOARD.** The honest remainder after `-02` fixed the population: **61 of 86

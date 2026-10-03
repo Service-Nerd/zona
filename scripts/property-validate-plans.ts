@@ -1405,21 +1405,29 @@ const BASELINE: Record<string, number> = {
   // progress" holds only when the fall IS progress — verify which before moving
   // this number.
   // 🔴 10 -> 18 (2026-10-03, MWM-FLOOR-VALIDATOR-01). THE POPULATION WIDENED, THE
-  // ENGINE DID NOT MOVE — and the 8 new firings are REAL error-severity defects,
-  // not an accounting artefact. Adding the `slowHM` benchmark above made a cohort
-  // reachable that this grid had never contained, and §121 fires on it: a taper
-  // week carrying MORE volume than the peak phase (measured: 51km against a 47km
-  // peak, 16 against 13, 14 against 12). A runner's taper reading as their hardest
-  // block is a coaching defect, and for the charity cohort it is live.
+  // ✅ CLEARED 2026-10-03 — 18 -> 0, and NOT by re-justifying the number.
   //
-  // ⚠️ ATTRIBUTION MEASURED, NOT ASSUMED: all 8 appear in a sweep run with the
-  // slow benchmark and WITHOUT the §82 validator fix, so they are the population's,
-  // not the fix's. The §82 fix is validator-only and cannot reach §121.
+  // 🔴 THE NOTE THAT STOOD HERE WAS WRONG ABOUT THE CAUSE, and it is kept below in
+  // its own words because the error is the lesson. It read: *"the 8 new firings are
+  // REAL error-severity defects … a runner's taper reading as their hardest block is
+  // a coaching defect, and for the charity cohort it is live."* The attribution work
+  // it describes was correct — the firings were the POPULATION's, not the §82 fix's.
+  // The DIAGNOSIS was not.
   //
-  // 🔻 NOT FIXED, FILED: `TAPER-OVER-PEAK-SLOW-01` (P1, 🏃 COACHING BOARD). A
-  // declared reason is not a scheduled fix — this number is a debt register entry
-  // with an owner, and it must come DOWN, not be re-justified.
-  'INV-PLAN-RACE-NOT-VOLUME': 18,
+  // `TAPER-OVER-PEAK-SLOW-01` (Coaching Board, 2026-10-03) measured it: the race is
+  // correctly excluded from `weekly_km` on every one of the 18, so §121's mechanism
+  // was never breached. The inversion is §23's `structuralPeakInversion` — a peak
+  // phase that cannot deliver its own curve on two or three available days — which
+  // the board ruled on 2026-09-15 (§6 Am.1 / TAPER-DEPTH-01) and §23's CD-10 note
+  // licenses outright. **18 of 18 carry `volume_profile: 'maintenance'` and a
+  // `volume_constraint_note`. Zero are silent**, so nothing was live for the charity
+  // cohort: the runner is told, by the mechanism §23 built for it.
+  //
+  // `INV-PLAN-RACE-NOT-VOLUME` is now scoped to the RACE WEEK, which is the only
+  // week §121's evidence is about. The key is deliberately kept at 0 rather than
+  // deleted: a key that disappears cannot regress visibly, and this one spent two
+  // weeks reading as a live coaching defect.
+  'INV-PLAN-RACE-NOT-VOLUME': 0,
 
   // ── §53 variety, ROTATION SPENDS A SHARED ROW (CB-BEGINNER-CATALOGUE-01, 2026-09-19) ──
   //

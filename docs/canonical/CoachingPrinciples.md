@@ -9444,6 +9444,27 @@ day-counts × injury):
 entire cause** — not a rendering choice on one page, which is what it looked like when the
 same symptom was met on 2026-09-21 and fixed at the display layer (D1 / MKT-PLAN-SHAPE-01).
 
+> 🔴 **THAT SENTENCE WAS TRUE ON THIS GRID AND IS NO LONGER TRUE ON A WIDER ONE**
+> *(TAPER-OVER-PEAK-SLOW-01, Coaching Board 2026-10-03 — kept, not deleted, because the
+> measurement above was honest when it was taken).* On the property sweep's 14,265 plans,
+> **18 (0.13%) show a taper week above the peak phase with the race correctly excluded.**
+> The race is no longer the entire cause; it remains the entire cause of the 15.3% measured
+> here.
+>
+> **The residual is not this principle's.** It is §23's `structuralPeakInversion` — a peak
+> phase that cannot deliver its own curve on two or three available days (0.67 against every
+> other phase's 0.87, §6 Am.1 / TAPER-DEPTH-01) — and §23's CD-10 note licenses its cause in
+> as many words: *"the plan's highest week may sit in the base phase … We do not force peak
+> volume above base."* **Measured 2026-10-03: 18 of 18 carry `volume_profile: 'maintenance'`
+> and a `volume_constraint_note`. Zero are silent.** §23 discharges the honesty obligation,
+> so §121 must not raise an error for it.
+>
+> ⚠️ **The lesson is the shape of the claim, not the number.** A principle that states a
+> population measurement as a *causal* fact ("the race is the entire cause") hands its
+> invariant a PROXY — here "no taper week exceeds peak" — which was exactly equivalent to the
+> real claim on the day and drifts the moment the population widens. **Enforce the mechanism
+> you own, not the symptom you measured.**
+
 **Why it matters (McMillan).** The beginner opens the plan preview and reads
 **Base 25 · Build 38 · Peak 41 · Taper 47**. That teaches them the taper is the hardest
 block, which is the single most commonly misunderstood idea in amateur running. **The screen
@@ -9486,9 +9507,26 @@ and the ruling's evidence is entirely about the second.
 
 ### Enforcement
 
-`INV-PLAN-RACE-NOT-VOLUME` — no taper week's `weekly_km` exceeds the peak phase maximum
-(+1 km, a rounding width, since `sumWeeklyKm` rounds). **Falsified on the ruling's own worst
-case:** re-including the race turns a 12 km/week beginner marathoner's taper week 20 from 8 km
-to 50 km against a peak-phase maximum of 32, and the invariant fires. ⚠️ The golden corpus does
-not contain such a case, so a falsification run only against golden plans reports nothing —
-the check is not hollow, the fixture is narrow.
+**Two layers, because the plan-level one cannot see every distance** *(amended 2026-10-03)*.
+
+**1. The mechanism — `lib/plan/raceNotVolume.test.ts`.** Asserts directly that `sumWeeklyKm`
+contributes **0** for a race session, at 5K / 10K / HM / marathon / 50K, distance-anchored and
+duration-anchored. Falsified by deleting the exclusion: **6 arms go red.** `planScale`'s half
+has been gated by `planScale.test.ts` since the ruling; 🔴 **this half had no test of its own
+for eleven days** and `sumWeeklyKm` produces every `weekly_km` the runner reads — the
+one-sided-join shape, found while falsifying the gate below.
+
+**2. The plan-level invariant — `INV-PLAN-RACE-NOT-VOLUME`.** The **RACE WEEK's** `weekly_km`
+may not exceed the peak-phase maximum (+1 km, a rounding width, since `sumWeeklyKm` rounds).
+The race week is found by session **type**, never by phase or position. **Falsified on this
+ruling's own worst case:** peak 25 km against a race week of 59 km fires; the same numbers with
+the race moved to another week do not.
+
+⚠️ **ITS REACH IS STATED, NOT INHERITED.** Scoped to the race week, this invariant **cannot
+detect a re-inclusion on a 5K or 10K plan at all.** Measured across 39,632 generated plans,
+re-adding the race fails to lift the race week above the peak maximum on **20,736 of 20,736 5K
+and 10K plans**, 9,552 of 10,368 HMs and 2,764 of 8,528 marathons — race-week training volume is
+so reduced that +5 km does not clear a peak week. The table above reads *5K 0% · 10K 0.3%*,
+which looks like "the defect does not occur there" and is partly "this shape of check cannot see
+it there". **Layer 1 exists for precisely that gap**, which is why the mechanism is gated and
+not only the symptom.

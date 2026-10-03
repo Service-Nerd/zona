@@ -23,6 +23,70 @@ memory.
 
 
 
+## 2026-10-03 — TAPER-OVER-PEAK-SLOW-01 · a principle stated a measurement as a CAUSE, and its invariant inherited a proxy
+
+**Ruling: CORRECT WITH AMENDMENT.** `INV-PLAN-RACE-NOT-VOLUME` is scoped to the **race week**,
+and §121's mechanism is gated directly for every distance.
+
+**What was reported.** The morning ops digest raised §121 as a constitutional violation:
+*"Taper week 13 carries 16km against a peak-phase maximum of 13km."* **18 firings in 14,265
+sweep plans (0.13%)** — ⚠️ not the 5 first reported, which was `property-validate-plans.ts`'s
+`explained.length < 5` display cap read as a population.
+
+**Neither side was wrong.** Reproduced in full: build peaks at 18, the **peak phase delivers 12
+and 13**, the taper reads 16, and the race week reads **0** — §121's exclusion is intact. The
+taper is not too big; **the peak is under-delivered**, which is §23's `structuralPeakInversion`,
+ruled by this board on 2026-09-15 (§6 Am.1 / TAPER-DEPTH-01) and licensed by §23's CD-10 note:
+*"the plan's highest week may sit in the base phase … We do not force peak volume above base."*
+**Re-measured: 18 of 18 carry `volume_profile: 'maintenance'` and a `volume_constraint_note`.
+Zero are silent.** §23 discharges the honesty obligation; §121 was raising an `error` for it.
+
+**The class — the remedy was applied to two twins of three.** `INV-PLAN-PEAK-IN-PEAK-PHASE`
+stays `warn` for maintenance *"precisely for this reason"* (§23 CD-10);
+`INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` stays `warn` (NOISE-GATE-01); this one was `error` with no
+exemption. Three board-authored invariants guard one inversion.
+
+**The transferable lesson, and it is about how a principle is WRITTEN.** §121 states a population
+measurement as a causal fact — *"excluding the race session, no taper anywhere exceeds its peak
+phase. **The race is the entire cause**."* That was true on its own 8,510-plan grid. It handed the
+invariant a **proxy** ("no taper week exceeds peak") which was exactly equivalent to the real
+claim on the day and drifted the moment the population widened. **Enforce the mechanism you own,
+not the symptom you measured.** The premise sentence is corrected in place, not deleted
+(Hutchinson).
+
+**A second finding, from the falsification.** §121's Config names two mechanisms — the exclusion
+in `sumWeeklyKm` and in `planScale`. **`planScale` had a direct test from day one; `sumWeeklyKm`,
+which produces every `weekly_km` the runner reads, had none** and was covered only by the
+plan-level proxy. Measured: that proxy **cannot detect a re-inclusion on a 5K or 10K plan at
+all** (0 of 20,736), because race-week volume is too reduced for +5 km to clear a peak week.
+§121's own table reads *5K 0% · 10K 0.3%*, which looks like absence of the defect and is partly
+absence of vision. Now gated at the mechanism, all five distances, distance- and
+duration-anchored.
+
+**A duplication deliberately NOT removed.** `strength || rest || race` appears three times in
+`ruleEngine.ts` and they are **not** copies: they answer "may this be shrunk to the weekday
+cap?", "does this count as training volume?" (§121) and "should this carry an estimated-HR
+note?". A shared owner would couple three independent decisions. Recorded in place so a later
+DRY pass does not create the defect.
+
+**Binding amendments.** 1 · Willy — the rule must stay **wakeable** by `invariant:liveness`, not
+baselined. 2 · Sims — the firing cohort is low-volume, few-available-days runners, so the
+`volume_constraint_note` is the load-bearing disclosure and nothing may weaken it
+(`INV-PLAN-VOLUME-SHORTFALL-DECLARED` still holds). 3 · Hutchinson — the falsified premise is
+corrected with today's number beside September's, not replaced.
+
+**Prescription unchanged.** `verify:parity` IDENTICAL on 6,066 cases. ⚠️ **Stated rather than
+quoted as proof: this is a validator-only change, so parity CANNOT fail on it** — it would read
+IDENTICAL had the validator been broken outright. No live plan was ever mis-prescribed, so there
+is **no remediation.**
+
+**Do not re-raise:** that a taper week above the peak phase is a coaching defect. It is §23's,
+it is ratified, and it is disclosed. The sweep baseline's own note called it *"a coaching defect,
+and for the charity cohort it is live"* — that diagnosis was wrong and is kept in place, in its
+own words, with the correction beside it.
+
+---
+
 ## 2026-10-03 — FOUNDATION-LR-S9-01 · the conflict dissolved when someone read §9's justification instead of its number
 
 **Sitting 3 of the day. Ruling: CORRECT WITH AMENDMENT — option (c).**

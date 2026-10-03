@@ -6,6 +6,60 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-03 — `TAPER-OVER-PEAK-SLOW-01` · the principle stated a measurement as a cause
+
+**Dev.** Second fake constitutional violation in one morning's digest, same shape as the first:
+the plan was right, the check was wrong. §121 reported a taper week heavier than the peak phase.
+I reproduced it and the race week read **0 km** — the exclusion §121 is *about* was working
+perfectly. The real curve: build **18**, peak **12 and 13**, taper **16**. The taper isn't too
+big. The peak collapses.
+
+**And that collapse was already ruled.** Twice. §6 Amendment 1 named it `structuralPeakInversion`
+on 2026-09-15 in almost my words, and §23's CD-10 note licenses the cause outright. 18 of 18
+firings are declared `maintenance` with a note. Zero silent. I nearly filed ratified doctrine as a
+defect for the second time in a fortnight.
+
+**Product.** Nothing to fix for a runner. No remediation. That is the whole finding, and it only
+took three hours because the digest's message named the wrong cause with total confidence.
+
+**The honest bit — this is a lesson about writing principles, not about code.** §121 says
+*"excluding the race session, no taper anywhere exceeds its peak phase. **The race is the entire
+cause.**"* That was a true measurement of 8,510 plans. Written as a **causal claim**, it handed the
+invariant a **proxy** — "no taper week exceeds peak" — which was exactly equivalent to the real
+rule on the day it shipped and stopped being equivalent the moment the grid widened. The invariant
+then spent two weeks policing somebody else's principle at `error` severity. **Enforce the
+mechanism you own, not the symptom you measured.**
+
+**Three other things I got wrong or nearly did.**
+
+*One.* I reported "five failing cases" to the founder. It's **18**. The five was
+`explained.length < 5` — a display cap in the tool, read as a population. Third time this class
+has bitten; it is always the denominator.
+
+*Two.* My first remedy was to recompute the exclusion validator-side. I **measured it before
+writing it** and it was unusable: the validator's derived pace diverges from the producer's by up
+to **3 km on 2% of 568,224 weeks**, against a **5 km** signal for a 5K race. A check whose noise
+floor is 60% of its signal isn't a check. Measuring a candidate cost twenty minutes and saved
+shipping a producer/checker split into the thing built to prevent producer/checker splits.
+
+*Three.* Falsifying mutation 1 **didn't apply** — and printed the *unmutated* suite's 12 passes.
+Only an `assert` in my patch script caught it. Second near-miss in two days where I'd have written
+up a green falsification I never ran. The asserts stay.
+
+**And one thing the failed mutation found.** `strength || rest || race` appears three times in
+`ruleEngine.ts`, which looked like DELOAD-OWNER-01 all over again. It isn't. They're three
+different questions that happen to list the same types — *shrink to the weekday cap?*, *count as
+volume?*, *carry an HR note?*. A shared owner would couple three independent decisions, so a later
+§121 change would silently move a coach note. **Here DRY is the defect**, and I wrote that down in
+the file so the next pass doesn't tidy it into a bug.
+
+**What I'd tell someone building this.** The dangerous documentation isn't the stale kind. It's the
+kind that was *rigorously measured and true*, and phrased one degree stronger than the measurement
+supported. "The race is the entire cause" was a fact about a sample, written as a fact about the
+world — and it was load-bearing for an invariant for two weeks.
+
+---
+
 ## 2026-10-03 — `FOUNDATION-LR-S9-01` + `PRODUCER-CHECKER-AGREEMENT-01` · read the justification, not the number
 **Shipped:** The foundation long run is measurable and not capped by §9. And a test that fails when the engine and the validator disagree about the same rule — which happened twice today.
 

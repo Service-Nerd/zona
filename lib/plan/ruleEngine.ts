@@ -4030,7 +4030,33 @@ function computeLongRunHrs(sessions: Partial<Record<Day, Session>>, pace: PaceGu
  * changes and no cohort is reclassified by this. `verify:parity` reports ~16% of
  * plans changed and that is the ruling, not a regression.
  */
-function sumWeeklyKm(sessions: Partial<Record<Day, Session>>, pace: PaceGuide): number {
+/**
+ * The DELIVERED weekly volume of a set of placed sessions.
+ *
+ * §121 — "the race is the test, not the training": a race session contributes
+ * NOTHING here, beside `strength` and `rest`. That exclusion is one of the two
+ * mechanisms §121's Config line names, and `planScale` is the other.
+ *
+ * ⚠️ EXPORTED FOR ITS GATE, not for new callers (TAPER-OVER-PEAK-SLOW-01,
+ * 2026-10-03). `planScale`'s half of §121 has had a direct test since the ruling;
+ * this half was covered only by `INV-PLAN-RACE-NOT-VOLUME`, a PLAN-LEVEL proxy
+ * that cannot see a re-inclusion on a 5K or 10K plan at all — measured, 0 of
+ * 20,736 such plans would be caught. `raceNotVolume.test.ts` now asserts the
+ * exclusion here, directly, for every distance. New volume callers belong on
+ * `sessionKm`/`sessionKmOrZero` (SESSION-KM-01), not on this.
+ *
+ * ⚠️ DO NOT "DRY" THIS PREDICATE WITH ITS TWO LOOK-ALIKES. The expression
+ * `strength || rest || race` appears three times in this file and the three are NOT
+ * copies of one rule — they are three different questions that happen to list the
+ * same types: `applyWeekdayMinsCap` asks "may this be shrunk to the weekday cap?"
+ * (a race is a fixed external event), this asks "does this count as training
+ * volume?" (§121), and the HR-note pass asks "should this carry an estimated-HR
+ * note?". A shared owner would COUPLE three independent decisions, so a later change
+ * to what §121 counts would silently move the weekday cap and a coach note with it.
+ * Duplication is correct here; the single owner would be the defect. Found
+ * 2026-10-03 while falsifying this gate, as a mutation that refused to apply.
+ */
+export function sumWeeklyKm(sessions: Partial<Record<Day, Session>>, pace: PaceGuide): number {
   let total = 0
   for (const s of Object.values(sessions)) {
     if (!s || s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue

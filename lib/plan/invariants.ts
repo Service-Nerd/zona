@@ -2920,29 +2920,67 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
 
   // INV-PLAN-RACE-NOT-VOLUME — §121, "the race is the test, not the training".
   //
-  // No taper week may carry more volume than the biggest week of the peak phase.
-  // Before §121 that was violated by **15.3% of plans and 50% of marathons**,
-  // and excluding the race session no taper anywhere exceeded its peak phase —
-  // the race was the entire cause. A beginner opening the plan preview read
-  // `Base 25 · Build 38 · Peak 41 · Taper 47` and was taught that the taper is
-  // the hardest block. Worst case, a 12 km/week beginner: peak training week
-  // 25 km, race week 59 km.
+  // The RACE WEEK's `weekly_km` may not exceed the biggest week of the peak phase.
+  // Before §121 the race was folded into the sum, and a beginner opening the plan
+  // preview read `Base 25 · Build 38 · Peak 41 · Taper 47` — taught that the taper
+  // is the hardest block, the most commonly misunderstood idea in amateur running.
+  // Worst case, a 12 km/week beginner: peak training week 25 km, race week 59 km.
   //
   // ⚠️ THIS IS AN HONESTY CHECK, NOT A SAFETY ONE (Willy, binding). It does not
   // make a 12 km/week runner's marathon smaller; it stops the screen arguing for
-  // the most commonly misunderstood idea in amateur running.
+  // the mistake.
   //
-  // Skipped when there is no peak phase at all (maintenance plans, short
+  // 🔴 SCOPED TO THE RACE WEEK 2026-10-03 (TAPER-OVER-PEAK-SLOW-01, Coaching Board).
+  // It used to read EVERY taper week, on a premise written into this comment and
+  // into §121 itself: *"excluding the race session no taper anywhere exceeded its
+  // peak phase — the race was the entire cause."* That was TRUE on the ruling's own
+  // 8,510-plan grid and is FALSE on the wider property sweep, which finds 18 of
+  // 14,265 (0.13%) inverting with the race correctly excluded at
+  // `ruleEngine.ts`'s `sumWeeklyKm`.
+  //
+  // Those 18 are NOT this defect. They are §23's `structuralPeakInversion` — a
+  // peak phase that cannot deliver its own curve on two or three available days
+  // (0.67 against every other phase's 0.87), so a correctly-tapered week lands
+  // above it. The Coaching Board already ruled that shape (§6 Amendment 1 /
+  // TAPER-DEPTH-01, 2026-09-15) and §23's CD-10 note licenses its cause in as many
+  // words: *"the plan's highest week may sit in the base phase … We do not force
+  // peak volume above base."* Measured again on 2026-10-03: **18 of 18 are
+  // `volume_profile: 'maintenance'` carrying a `volume_constraint_note`. Zero are
+  // silent** — the disclosure obligation is discharged by §23, not by this rule.
+  //
+  // So THREE board-authored invariants guard the same inversion and only this one
+  // lacked §23's exemption: `INV-PLAN-PEAK-IN-PEAK-PHASE` stays `warn` for
+  // maintenance *"precisely for this reason"*, `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK`
+  // stays `warn` per NOISE-GATE-01, and this one was `error`. The remedy was
+  // applied to two twins of three.
+  //
+  // ⚠️ STATE THE REACH RATHER THAN INHERIT IT. Scoped to the race week this rule
+  // CANNOT see a re-inclusion on a 5K or 10K plan: measured across 39,632 plans,
+  // re-adding the race fails to lift the race week above the peak maximum on
+  // 10,368/10,368 5K plans, 10,368/10,368 10K, 9,552/10,368 HM and 2,764/8,528
+  // marathons, because race-week training volume is so reduced that +5 km does not
+  // clear a peak week. §121's own table (5K 0%, 10K 0.3%) reads as "the defect does
+  // not happen there" and is partly "this shape of check cannot see it there". The
+  // mechanism itself is therefore gated directly and for every distance by
+  // `raceNotVolume.test.ts`, which asserts `sumWeeklyKm` excludes a race session —
+  // the half of §121's Config line that had no test of its own, while `planScale`'s
+  // half has had one since the ruling.
+  //
+  // Skipped when there is no peak phase at all (maintenance plans with short
   // signatures) — there is nothing to compare against, and asserting against an
   // empty max is how `?? 0` defects get written.
   {
     const peakKms = plan.weeks
       .filter(w => w.phase === 'peak' && w.type !== 'deload')
       .map(w => w.weekly_km ?? 0)
-    const taperWeeks = plan.weeks.filter(w => w.phase === 'taper')
-    if (peakKms.length > 0 && taperWeeks.length > 0) {
+    // The week carrying the race, found by session TYPE, never by `phase` or by a
+    // label — §121's subject is the race SESSION, and a plan may carry a race week
+    // that is not the last week.
+    const raceWeeks = plan.weeks.filter(w =>
+      Object.values(w.sessions).some(s => s?.type === 'race'))
+    if (peakKms.length > 0 && raceWeeks.length > 0) {
       const peakMax = Math.max(...peakKms)
-      for (const w of taperWeeks) {
+      for (const w of raceWeeks) {
         const km = w.weekly_km ?? 0
         // A rounding width, not a tolerance for real inversions: `weekly_km` is
         // `Math.round`ed by `sumWeeklyKm`, so two weeks that are genuinely equal
@@ -2953,7 +2991,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             principle_ref: 'CoachingPrinciples §121',
             severity: 'error',
             week: w.n,
-            message: `Taper week ${w.n} carries ${km}km against a peak-phase maximum of ${peakMax}km — the taper must not read as the plan's hardest block`,
+            message: `Race week ${w.n} carries ${km}km of TRAINING against a peak-phase maximum of ${peakMax}km — the race is being counted as training volume`,
             actual: km,
             expected: `<= ${peakMax}`,
           })
