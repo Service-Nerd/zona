@@ -164,6 +164,15 @@ with the paid `coach_intro`; subsequent free plans (a `plans` row exists) omit i
 - `early_quality_onset?: true` — present (and `true`) only when experience-gated quality onset fired: a demonstrably-ready runner (experienced intensity + intermediate+ structure + deep training age + `recent_quality_training: 'regular'` + not returning/fresh + no injury history) received a shorter still-all-easy base, so quality starts ~2 weeks sooner. Absent for every other runner. Diagnostic/honesty flag; enforced by `INV-PLAN-EARLY-ONSET-GATED`.
 
 **ADR-020 Option A addition to `meta`:**
+- 🔴 **Foundation weekday sessions carry `duration_mins` (§122, Coaching Board 2026-10-03).** Before this they carried
+  `distance_km` only, so `applyWeekdayMinsCap` and `INV-PLAN-MAX-WEEKDAY-MINS` both skipped them on `!s.duration_mins`
+  — neither trimmed nor checked, and **47.6%** exceeded the runner's stated day budget (worst **90 min against a stated
+  30**). They are now sized against `day_budgets[day] ?? max_weekday_mins` at construction and carry a duration derived
+  from the runner's easy pace. ⚠️ **The duration is ABSENT where no easy pace can be derived** from the plan (a plan with
+  no session carrying both a distance and a duration — see SESSION-KM-01 on duration-anchored beginners), and absent on
+  the base-build ramp path for the same reason. Consumers must keep treating it as optional.
+  ⚠️ **The foundation LONG RUN still carries no duration.** Giving it one exposes a §9-vs-§81 conflict that is with the
+  Coaching Board (`FOUNDATION-LR-S9-01`); until that is ruled it keeps its current shape.
 - `foundation_gap_class: 'none' | 'auto' | 'choice'` — always present. `'none'` (<7-day gap): no foundation weeks, none needed. `'auto'` (7-28 days): the block is already in `plan.weeks` (`phase: 'foundation'`, `n ≤ 0`) — nothing further to do. `'choice'` (>28 days): the block is **not** in `plan.weeks` yet — show the Foundation Block modal and, if the runner picks "Add", call `POST /api/generate-plan/foundation` (see `docs/contracts/api/generate-plan-foundation.md`).
 
 ### 401 — Unauthenticated
@@ -497,7 +506,7 @@ had before this existed.
 | `lib/plan/freeIntro.ts` | CA-01 — one-line free first-plan `meta.plan_intro` (Haiku, silent fallback) |
 | `lib/plan/generate.ts` | Orchestrator — calls rule engine then enricher |
 | `lib/trial.ts` | Auth boundary — `getUserTier()` |
-| `lib/plan/foundationBlock.ts` | Foundation Block generator — pre-plan prep weeks. Pure; called by `foundationCompose.ts`, never directly by this route |
+| `lib/plan/foundationBlock.ts` | Foundation Block generator — pre-plan prep weeks. Pure; never called directly by this route. ⚠️ **TWO callers, not one** (corrected 2026-10-03): `foundationCompose.ts` **and** `baseBuildOnRamp.ts` (`generateBaseBuildPlan`, the §118 base-build path, `curve: 'ramp'`). This line said "called by `foundationCompose.ts`" and the second caller was missed when §122 widened the signature — found by the sweep, 26,158 violations. |
 | `lib/plan/foundationCompose.ts` | ADR-020 Option A — the single owner of `plan.weeks` mutation post-generation. `composePlanWithFoundation()` classifies the gap, calls `foundationBlock.ts` when appropriate, and re-validates unfiltered. Called by this route AND `POST /api/generate-plan/foundation` |
 
 ---

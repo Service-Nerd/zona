@@ -15,6 +15,7 @@
 import {
   generateFoundationBlock, classifyGap, gapDays, plannedFoundationWeeks, type GapClass,
 } from './foundationBlock'
+import { easyPaceFromPlan } from './easyPace'
 import { validatePlan, type Violation } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { Plan, GeneratorInput } from '@/types/plan'
@@ -47,6 +48,11 @@ export function composePlanWithFoundation(
       input, planStartDate: plan.meta.plan_start, today, forceWeeks: weekCount,
       // §92 — read the stamp, never re-derive the gate.
       earlyOnset: plan.meta.early_quality_onset === true,
+      // §122 (Coaching Board 2026-10-03) — the foundation block is sized against the
+      // runner's stated weekday budgets, which needs their easy pace. Read from the
+      // GENERATED plan, so it is the same number the engine already gave every easy
+      // session rather than a second derivation of it (EASY-PACE-OWNER-01).
+      easyPaceMinPerKm: easyPaceFromPlan(plan),
     })
     if (foundationWeeks.length) {
       foundationWeeksBuilt = foundationWeeks.length

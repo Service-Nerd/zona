@@ -5155,6 +5155,101 @@ Before this, every such reshape wrote a `reshape_invalid` ops event and soft-deg
 
 ---
 
+## 122. Foundation weeks are weeks
+
+**Coaching Board, 2026-10-03, sitting 2 (FOUNDATION-BUDGET-01). CORRECT WITH AMENDMENT.**
+
+A foundation week (`week.n <= 0`, §57) is subject to the same time-budget and load rules as
+any other week. It is pre-plan, not pre-coaching.
+
+**The defect this settles.** `foundationBlock.ts` built these sessions with `distance_km`
+and **never `duration_mins`**. `applyWeekdayMinsCap` skips on `!s.duration_mins`, and so did
+`INV-PLAN-MAX-WEEKDAY-MINS` — so a foundation weekday session was **neither trimmed nor
+checked**. Measured 2026-10-03: **47.6%** of foundation weekday sessions exceeded the
+runner's stated budget, **77.5%** of plans carried at least one, median **+39%**, worst **90
+minutes against a stated 30**. On a live plan the first three Mondays were **55, 60 and 60
+minutes against a stated 30** — and the main plan then opened at 34.
+
+🔴 **McMillan's finding, recorded because it is the whole shape of the defect: 60, 60, 60,
+then 34.** The foundation block is meant to be the gentlest part of the plan and was the
+heaviest weekday the runner would ever see.
+
+⚠️ **20,980 foundation weeks had been swept with 0 violations.** The harness reached the
+case; **no invariant could express it.** Reachability and expressibility are different gaps,
+and only the first had been filed (`HARNESS-COMPOSE-GAP-01`). A green sweep over a rule that
+cannot fail is not evidence.
+
+### The rule
+
+1. **A foundation session carries a duration**, derived from the runner's easy pace.
+   `easyPaceFromPlan` reads it back out of the generated plan — the number the engine already
+   spent on every easy session — rather than re-deriving it from VDOT (`EASY-PACE-OWNER-01`).
+   ⚠️ A null pace means **decline to resize**, never substitute a default: a block sized
+   against a guessed pace is worse than one sized against none.
+2. **The easy days are sized against the stated day budgets AT CONSTRUCTION**, using the main
+   plan's own distributor (`waterFillEasyKm`, extracted under `EASY-DISTRIBUTION-OWNER-01` —
+   not a second implementation). ⚠️ **The no-op test is PER DAY, not against the weekly pool.**
+   The first cut compared one day's ceiling to the whole week's volume, which is almost never
+   satisfied, so it redistributed **540 plans that already fitted their budgets** — caught by
+   the control gate before it shipped.
+3. **§81's exemptions apply unchanged** — the long run and structured sessions. The long run
+   still carries a duration; §81 exempts it from the CAP, never from being measurable.
+4. **§82's floor is the one licensed overrun**, stamped `floor_protected` so it stays visible
+   and declarable.
+
+### 🔴 Why there is NO new numeric, and why a percentage bound was REJECTED
+
+Sitting 1 ruled a bound of 50%, aligned to §81's existing
+`LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT`. **Sitting 2 vacated it**, and the register records
+why: the measured **median overrun was +39%**, so a 50% bound would have declared the tail and
+blessed the middle.
+
+The number that settled it: **339 of 1,132 over-budget sessions could not be fixed by capping
+at ANY bound**, because trimming to the budget drops the session under §9's easy floor and §82
+then holds it there. **A percentage is the wrong instrument for an arithmetic impossibility.**
+The remedy is structural — construction-time sizing with §52b's day-count lever, §82's floor
+as last resort, and disclosure.
+
+⚠️ **This section deliberately adds no constant.** Recorded because this board's artifact list
+normally names one; here the correct answer was that no new number is right.
+
+### Measured outcome
+
+| | before | after |
+|---|---|---|
+| foundation weekday sessions over budget | 1,132 (47.6%) | **339 (14.3%)** |
+| plans carrying at least one | 214/276 (77.5%) | **77/276 (27.9%)** |
+| median overrun | +39% | **+27%** |
+| worst | 90 min vs 30 (**+201%**) | **38 min vs 30 (+27%)** |
+| residual that capping cannot fix | 339 | **339 — all now at §82's floor** |
+
+The residual is exactly the set the board predicted, now bounded to the 4 km floor and
+stamped.
+
+**Enforcement.** `INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION` and
+`INV-PLAN-FOUNDATION-WEEKDAY-WITHIN-BUDGET`, both `error`. Control cohort pinned by
+`npm run partition:foundation`.
+
+---
+
+### §82 Amendment 1 — "a few minutes" is scoped to the magnitude it was ruled on *(Coaching Board 2026-10-03)*
+
+§82 justifies floor protection as *"the runner's stated weekday ceiling is exceeded by a few
+minutes"*, and Willy's sign-off was explicit: *"3.5 km vs 4.0 km easy is inside noise for
+tissue tolerance."* **The board ruled on a 0.5 km case and never bounded the duration
+consequence.**
+
+At slower paces the same mechanism produces far more: 4 km at 12 min/km is **48 minutes
+against a 30-minute cap**. The 2026-10-03 sitting recorded Willy declining to have his
+sign-off quoted at **+201%**.
+
+**So: §82's exemption stands, and its justification is scoped.** The overrun is bounded
+**structurally by §52b** (the day count and the stated budget are incompatible at this volume
+— re-enter the day-count remedy), **not by a percentage**. Where the floor is genuinely the
+last resort, §82's existing disclosure obligation applies.
+
+---
+
 ## 83. Sessions must be coherent with each other, not only with themselves
 
 *Added 2026-08-20 — Coaching Board CD-16 / SC-06.*

@@ -6,6 +6,27 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-03 — `FOUNDATION-BUDGET-01` step 1 · the gate caught me three times
+**Shipped:** The warm-up weeks before a plan starts now respect the time the runner said they have. Problem 1 only; the long-run half went to the board.
+
+**Dev learning:** A session with a distance and no duration is invisible to every rule that measures time. That one sentence is the whole defect. `applyWeekdayMinsCap` skips on `!s.duration_mins` and so did the invariant guarding it, so the foundation block was neither trimmed nor checked — 20,980 of those weeks had been swept clean while a real runner's first three Mondays were 55, 60 and 60 minutes against the 30 she told us she had.
+
+Fixed: over-budget sessions 47.6% → 14.3%, worst case 90 minutes → 38. The 339 that remain are exactly the ones the board predicted couldn't be fixed by capping — trim them to the budget and they fall under the 4 km floor, so §82 holds them there. A percentage bound was never going to work on those, which is why the board refused to set one.
+
+**AI-building learning:** The control cohort earned itself three times over, and every one of the three was my own mistake.
+
+First, my no-op test asked whether each day's ceiling exceeded the *whole week's* volume — almost never true — so the resizer ran on everybody and moved the distances of 540 plans that already fitted perfectly. That is pure collateral damage and I would not have found it by reading the code; the gate named the plans.
+
+Second, the resizer *inflated* sessions it should never have touched. The shared water-filling function bases every day at the easy floor, which is correct for the main plan and wrong for a beginner's on-ramp, where the rules deliberately allow sub-floor sessions. I re-created a defect the repo had already fixed once, in the same module, one input earlier. A fixture caught it.
+
+Third, I widened a function's signature and wired one of its two callers. I had done a consumer check — on the *field*, not on the *function*. The sweep found 26,158 violations.
+
+**The honest bit:** I told the founder the long-run problem was "already ratified doctrine, no board needed" and that was wrong. §9 says cap the long run; §81 says shrinking it is the thing the board explicitly vetoed, because it stops being the longest run of the week. Capping it produced 404 violations of exactly that rule. Two ratified principles pointing opposite ways is the definition of a board question, and I'd looked at one of them.
+
+Worse, when he agreed to ship problem 1 I said problem 2 would stay "no better, no worse" — without saying that the way I'd achieve that was by removing the duration again, which leaves the breach **invisible** rather than tracked. He had to ask. The option I should have offered up front — keep the duration, carry the breach as declared debt — only reached him after he pushed.
+
+---
+
 ## 2026-10-03 — `FOUNDATION-BUDGET-01` step 0 · the question I could not answer
 **Shipped:** A gate, not a fix. The population is partitioned and the half that should NOT change is pinned by hash.
 

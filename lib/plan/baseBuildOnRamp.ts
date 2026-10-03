@@ -246,6 +246,11 @@ export function generateBaseBuildPlan(
     today: planStart,
     curve: 'ramp',
     rampWeeklyKm: weeklyKm,
+    // §122 — the SECOND caller of generateFoundationBlock, and the one I missed on the
+    // first pass: the consumer check covered readers of `duration_mins` and not callers of
+    // the function whose signature widened. There is no finished plan to read a pace from
+    // at this point in generation, so the ramp's sessions carry no duration — which the
+    // §122 invariant permits, because it only requires one where a pace is derivable.
   })
 
   // Restamp: a standalone plan counts from week 1, and carries its own phase.

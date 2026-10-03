@@ -13,6 +13,7 @@ import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
 import { strideCarrierDay, isDayAfterLongRun, hasHillRestrictingInjury } from './neuromuscular'
 import { normaliseDays } from './days'
 import { sessionFloorsFor } from './sessionFloors'
+import { easyPaceFromPlan } from './easyPace'
 import { qualityCeilingFor } from './qualityCeiling'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
@@ -102,6 +103,8 @@ export const INVARIANT_CODES = [
   'INV-PLAN-QUALITY-LONG-SPACING',
   'INV-PLAN-QUALITY-EXPECTED',
   'INV-PLAN-MAX-WEEKDAY-MINS',
+  'INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION',
+  'INV-PLAN-FOUNDATION-WEEKDAY-WITHIN-BUDGET',
   'INV-PLAN-PEAK-LR-RACE-RATIO',
   'INV-PLAN-RACE-SPECIFIC-LONG-RUN',
   'INV-PLAN-LR-RACE-SEGMENT-PCT',
@@ -2154,6 +2157,79 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             message: 'Weekday session duration exceeds the cap for that day',
             actual: s.duration_mins,
             expected: `≤ ${cap}`,
+          })
+        }
+      }
+    }
+  }
+
+  // ── §122 (Coaching Board 2026-10-03, FOUNDATION-BUDGET-01) ──────────────────
+  //
+  // FOUNDATION WEEKS ARE WEEKS. Before §122, `foundationBlock.ts` set `distance_km`
+  // and never `duration_mins`, so `applyWeekdayMinsCap` AND the cap check above both
+  // skipped these sessions on `!s.duration_mins` — neither trimmed nor checked.
+  //
+  // 🔴 THAT IS WHY 20,980 SWEPT FOUNDATION WEEKS READ CLEAN WHILE A LIVE RUNNER'S FIRST
+  // THREE MONDAYS WERE 55, 60 AND 60 MINUTES AGAINST A STATED 30. The harness reached the
+  // case; no invariant could EXPRESS it. Reachability and expressibility are different
+  // gaps and only the first was filed (`HARNESS-COMPOSE-GAP-01`).
+  //
+  // Measured 2026-10-03 before the fix: 47.6% of foundation weekday sessions over the
+  // runner's stated budget, 77.5% of plans carrying at least one, median +39%, worst 90
+  // min against a stated 30.
+  {
+    const budgets = input.day_budgets
+    const weekdays: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri']
+    // ⚠️ A DURATION CAN ONLY BE REQUIRED WHERE ONE IS DERIVABLE. The duration comes from
+    // the runner's easy pace, read back out of the plan — and a plan with no session
+    // carrying BOTH a distance and a duration yields no pace (SESSION-KM-01: beginners are
+    // 95.8% duration-anchored, `distance_km` null). Demanding a duration there is demanding
+    // the impossible, which is how a check becomes noise. Measured: this gate asked for it
+    // on 26,158 sweep plans before this condition existed.
+    const paceDerivable = easyPaceFromPlan(plan) != null
+    for (const w of plan.weeks) {
+      if (w.n > 0) continue                       // foundation weeks only
+      for (const d of weekdays) {
+        const s = w.sessions[d]
+        if (!s || s.type === 'rest') continue
+
+        // (a) A foundation weekday session must be MEASURABLE. A session with a distance
+        // and no duration is invisible to every rule that guards on time — the root cause
+        // §122 exists to remove, so it is an error in its own right rather than only a
+        // precondition for (b).
+        // 🔻 The LONG RUN is out of scope: §122 deliberately leaves it untouched while
+        // §9-vs-§81 is with the board (FOUNDATION-LR-S9-01). Requiring a duration here
+        // would make that unresolved conflict fail the build.
+        if (paceDerivable && s.distance_km != null && s.duration_mins == null && !isLongRun(s)) {
+          violations.push({
+            code: 'INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION',
+            principle_ref: 'CoachingPrinciples §122',
+            severity: 'error',
+            week: w.n, day: d,
+            message: 'A foundation weekday session carries a distance but no duration, so no time-based rule can see it',
+            actual: 'duration_mins absent',
+            expected: 'a duration derived from the runner\'s easy pace',
+          })
+          continue
+        }
+
+        // (b) And it must fit the day the runner said they had. §81's exemptions apply
+        // here exactly as they do in the main plan, and §82's floor is the licensed
+        // overrun — verified, not taken on trust, the same way the cap check above does it.
+        const cap = budgets?.[d as 'mon' | 'tue' | 'wed' | 'thu' | 'fri'] ?? input.max_weekday_mins
+        if (cap == null || s.duration_mins == null) continue
+        if (isLongRun(s) || isStructuredSession(s)) continue
+        if (s.floor_protected === true
+            && s.distance_km === sessionFloorsFor(input.longest_recent_run_km).easy) continue
+        if (s.duration_mins > cap) {
+          violations.push({
+            code: 'INV-PLAN-FOUNDATION-WEEKDAY-WITHIN-BUDGET',
+            principle_ref: 'CoachingPrinciples §122',
+            severity: 'error',
+            week: w.n, day: d,
+            message: 'A foundation weekday session exceeds the budget the runner stated for that day, and is not held at §82\'s floor',
+            actual: s.duration_mins,
+            expected: `<= ${cap}`,
           })
         }
       }

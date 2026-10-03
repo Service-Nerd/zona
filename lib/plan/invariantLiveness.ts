@@ -153,6 +153,46 @@ export const MUTATIONS: Mutation[] = [
       }
     }
   } },
+  // §122 (FOUNDATION-BUDGET-01, 2026-10-03) — both arms of "foundation weeks are
+  // weeks" need a shape the corpus does not otherwise build. The baseline would have
+  // accepted `corpus` as the reason these two could not be woken, and that would have
+  // been the wrong answer: the repo's own rule is to suspect the CORPUS before the
+  // rule, and these are perfectly wakeable once a foundation week exists to mutate.
+  { name: 'foundation weekday session carrying a distance but NO duration', apply: p => {
+    const weeks = p.weeks as unknown as Array<Record<string, unknown>>
+    const first = weeks[0]
+    if (!first) return
+    const fw = JSON.parse(JSON.stringify(first)) as Record<string, unknown>
+    fw.n = 0; fw.phase = 'foundation'
+    const sessions = fw.sessions as Record<string, Record<string, unknown> | undefined>
+    for (const d of ['mon', 'tue', 'wed', 'thu', 'fri']) {
+      const sn = sessions[d]
+      if (!sn) continue
+      sn.type = 'easy'; delete sn.role
+      sn.distance_km = 6
+      delete sn.duration_mins          // the exact invisibility §122 removes
+      break
+    }
+    weeks.unshift(fw)
+  } },
+  { name: 'foundation weekday session over the runner\'s stated budget', apply: p => {
+    const weeks = p.weeks as unknown as Array<Record<string, unknown>>
+    const first = weeks[0]
+    if (!first) return
+    const fw = JSON.parse(JSON.stringify(first)) as Record<string, unknown>
+    fw.n = 0; fw.phase = 'foundation'
+    const sessions = fw.sessions as Record<string, Record<string, unknown> | undefined>
+    for (const d of ['mon', 'tue', 'wed', 'thu', 'fri']) {
+      const sn = sessions[d]
+      if (!sn) continue
+      sn.type = 'easy'; delete sn.role
+      sn.distance_km = 12
+      sn.duration_mins = 999           // far past any budget, and NOT floor-protected
+      delete sn.floor_protected
+      break
+    }
+    weeks.unshift(fw)
+  } },
   { name: 'foundation block in front of a plan below its cap', apply: p => {
     const weeks = p.weeks as unknown as Array<Record<string, unknown>>
     const first = weeks[0]

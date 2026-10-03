@@ -15,6 +15,7 @@ import {
 } from './length'
 import { qualityCeilingFor } from './qualityCeiling'
 import { waterFillEasyKm } from './easyDistribution'
+import { longRunTimeCapMins } from './longRunTimeCap'
 import { LR_SHORTFALL_UNREHEARSED_FUELLING, FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { runWalkApplies, runWalkPeakKm, applyRunWalk } from './runWalkPlan'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
@@ -2292,12 +2293,9 @@ function applyLongRunCap(distKm: number, paceMinPerKm: number, input: GeneratorI
   let result = distKm
   // Absolute cap per race distance (CoachingPrinciples §9 — protects against
   // unrealistic time-on-feet for the race).
-  const distKey = raceDistanceKey(input.race_distance_km)
-  let absCapMins: number = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
-  // CoachingPrinciples §40 — finish-goal 5K plans get a tighter cap.
-  if (distKey === '5K' && input.goal === 'finish') {
-    absCapMins = Math.min(absCapMins, GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH)
-  }
+  // §9 + §40, resolved by their single owner (LONG-RUN-TIME-CAP-OWNER-01). This was
+  // spelled out here and once more in the maintenance path; §122 needed it a third time.
+  const absCapMins: number = longRunTimeCapMins(input)
   if (paceMinPerKm > 0 && result * paceMinPerKm > absCapMins) {
     result = absCapMins / paceMinPerKm
   }
@@ -5619,11 +5617,9 @@ function applyV4LongRunRepeatCeiling(
     : raceDistanceKm * GENERATION_CONFIG.LR_RACE_DISTANCE_MULT_LONG
   const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
 
-  // Time-based absolute cap. 5K finish-goal plans use a tighter cap per §40.
-  let timeCapMins: number = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
-  if (distKey === '5K' && input.goal === 'finish') {
-    timeCapMins = Math.min(timeCapMins, GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH)
-  }
+  // Time-based absolute cap (§9 + §40's 5K finish-goal tightening), from its single
+  // owner — this was the second of three hand-written copies (LONG-RUN-TIME-CAP-OWNER-01).
+  const timeCapMins: number = longRunTimeCapMins(input)
 
   // §52 long-run-as-fraction-of-weekly cap — V4 must not push LR above this
   // ratio. Mirrors LONG_RUN_MAX_PCT_OF_WEEKLY (60%).

@@ -9,6 +9,7 @@
 import { calendarDaysBetween } from '@/lib/dates'
 import { GENERATION_CONFIG } from './generationConfig'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
+import { waterFillEasyKm } from './easyDistribution'
 import { normaliseDays, DAY_ORDER, type Day } from './days'
 import type { GeneratorInput } from '@/types/plan'
 import type { Week } from '@/types/plan'
@@ -142,6 +143,27 @@ function buildFoundationSessions(
    * ever saw was the unsafe one.
    */
   floors: SessionFloors = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM,
+  /**
+   * §122 (Coaching Board 2026-10-03, FOUNDATION-BUDGET-01) — the runner's easy pace and
+   * their stated weekday time budgets.
+   *
+   * 🔴 BEFORE THIS, FOUNDATION SESSIONS CARRIED `distance_km` AND NEVER `duration_mins`,
+   * so `applyWeekdayMinsCap` and `INV-PLAN-MAX-WEEKDAY-MINS` BOTH skipped them on
+   * `!s.duration_mins` — neither trimmed nor checked. Measured 2026-10-03: 47.6% of
+   * foundation weekday sessions exceeded the runner's stated budget, 77.5% of plans
+   * carried at least one, median +39%, worst 90 min against a stated 30. On a live plan
+   * the first three Mondays were 55, 60 and 60 minutes against a stated 30 — and the
+   * main plan then dropped to 34. The gentlest part of the block was its heaviest.
+   *
+   * ⚠️ `easyPaceMinPerKm` is NULL-ABLE and a null means DECLINE, never a default. A
+   * foundation block sized against a guessed pace is worse than one sized against none.
+   * Same module, one input earlier: `CB-SUBFLOOR-ADMIT-01` threaded per-runner FLOORS in
+   * here after a runner got a 5.0 km session in week −1 before a 2.9 km week 1 — and the
+   * time budget was not threaded. This is that thread.
+   */
+  easyPaceMinPerKm?: number | null,
+  dayBudgets?: Partial<Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri', number>>,
+  maxWeekdayMins?: number | null,
 ): Week['sessions'] {
   // Normalise before comparing. The wizard sends full day names ('monday') and
   // DEFAULT_DAYS is short form ('mon'), so a raw `new Set(blockedDays)` matched
@@ -243,6 +265,26 @@ function buildFoundationSessions(
 
   const easyDays = available.filter(d => d !== longDay).slice(0, plan.easyCount)
 
+  // 🔻 THE FOUNDATION LONG RUN IS DELIBERATELY UNTOUCHED HERE (FOUNDATION-LR-S9-01).
+  //
+  // §122 gives weekday EASY runs a duration and sizes them to the runner's stated budget.
+  // It does NOT give the long run a duration, and that omission is a decision, not an
+  // oversight.
+  //
+  // 🔴 WHY: giving it one makes it visible to §9's absolute time ceiling, and it BREACHES
+  // it — measured 123/135/135 min against §9's 120 for a 10K, with the main plan's own peak
+  // long run at 112. But capping it to §9 produced **404 new INV-PLAN-LONG-IS-LONGEST
+  // violations**: a "long run" shorter than the week's easy runs. That is precisely the
+  // trade §81 describes and the Coaching Board VETOED for the main plan — Hutchinson,
+  // McMillan and Willy arriving independently at *don't shrink to fit*.
+  //
+  // So §9 says cap it and §81 says do not, for the same session. **Two ratified principles
+  // in conflict is a board question, not an implementation choice**, and attempting it here
+  // would be picking a winner between them. Filed as FOUNDATION-LR-S9-01 alongside
+  // FOUNDATION-LR-VS-PEAK-01; until it is ruled, the long run keeps exactly the shape it
+  // has today — no better, no worse.
+  const paceOk = easyPaceMinPerKm != null && Number.isFinite(easyPaceMinPerKm) && easyPaceMinPerKm > 0
+
   if (longDay) {
     sessions[longDay] = {
       type: 'easy',
@@ -264,17 +306,80 @@ function buildFoundationSessions(
     }
   }
 
-  for (const day of easyDays) {
+  // §122 — SIZE THE EASY DAYS AGAINST THE RUNNER'S STATED BUDGETS, at construction.
+  //
+  // The Coaching Board (2026-10-03, sitting 2) ruled the remedy STRUCTURAL rather than a
+  // percentage bound, and the measurement is why: of 1,132 over-budget sessions, 339
+  // could not be fixed by capping at ANY bound, because trimming to the budget drops the
+  // session under §9's easy floor and §82 then holds it there. A post-hoc trim cannot
+  // win; the sizing has to happen before the distance is chosen.
+  //
+  // ⚠️ `waterFillEasyKm` is the MAIN PLAN's distributor, extracted to
+  // `easyDistribution.ts` rather than reimplemented (EASY-DISTRIBUTION-OWNER-01). It
+  // fills the tightest days first so a roomy day absorbs what a tight day cannot hold,
+  // preserves the weekly total, and clamps each day under its ceiling. Its floor
+  // behaviour IS §82: where the ceiling sits below `floors.easy` it returns the floor,
+  // which exceeds the budget on purpose rather than prescribe a session that trains
+  // nothing. That case is stamped so it stays visible and declarable.
+  const WEEKDAY_SET = new Set(['mon', 'tue', 'wed', 'thu', 'fri'])
+  const budgetFor = (d: string): number | null =>
+    WEEKDAY_SET.has(d) ? (dayBudgets?.[d as 'mon'] ?? maxWeekdayMins ?? null) : null
+
+  const perDayKm: number[] = (() => {
+    if (!paceOk) return easyDays.map(() => eachKm)   // no pace => decline to resize, never guess
+    const pace = easyPaceMinPerKm as number
+    const pool = eachKm * easyDays.length
+    const ceilings = easyDays.map(d => {
+      const b = budgetFor(d)
+      return b == null ? pool : b / pace
+    })
+    // 🔴 THE NO-OP TEST IS PER DAY, NOT AGAINST THE POOL — and getting this wrong is
+    // exactly what the control gate caught. The first cut asked `c >= pool`, comparing one
+    // day's ceiling against the WHOLE week's easy volume, which is almost never true, so
+    // water-filling ran and REDISTRIBUTED the week for 540 plans that already fitted their
+    // budgets perfectly. A bystander's distances moved for no reason.
+    //
+    // The question is whether each day's intended distance already fits under its own
+    // ceiling. If it does, this runner needs no resizing and the week is returned untouched.
+    if (ceilings.every(c => eachKm <= c)) return easyDays.map(() => eachKm)
+    // 🔴 THIS SIZING MAY ONLY EVER REDUCE A SESSION, NEVER GROW ONE — and the clamp is
+    // load-bearing, not defensive. `waterFillEasyKm` BASES every day at `floorKm`, which
+    // is correct for the main plan (§9's floor applies there) and WRONG here: §113
+    // Amendment 1 / `CB-SUBFLOOR-ADMIT-01` deliberately ADMITS sub-floor foundation
+    // sessions, because a low-base runner's on-ramp legitimately starts below the floor.
+    //
+    // Without the clamp this fix re-created the very defect that amendment removed —
+    // caught by `INV-PLAN-FOUNDATION-BLOCK` on the Hyde Park 5K fixture (a beginner,
+    // shin splints, longest run 5 km), whose foundation easy runs were pushed UP to the
+    // floor by a change that exists to bring sessions DOWN to a time budget.
+    //
+    // So: water-fill decides how to SHARE the week across days of differing room, and the
+    // clamp guarantees the answer is never larger than what the block already intended.
+    const filled = waterFillEasyKm(
+      ceilings, pool, Math.min(floors.easy, eachKm), GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM,
+    )
+    return filled.map(km => Math.min(km, eachKm))
+  })()
+
+  easyDays.forEach((day, i) => {
+    const km = floor1dp(perDayKm[i] ?? eachKm)
+    const mins = paceOk ? Math.round(km * (easyPaceMinPerKm as number)) : undefined
+    const budget = budgetFor(day)
     sessions[day] = {
       type: 'easy',
       label: 'Easy run',
       // FOUND-ROUND-01 — see the long run above. Built from the shipped value.
-      detail: `${floor1dp(eachKm).toFixed(1)}km easy — Zone 2. Conversational pace.`,
-      distance_km: floor1dp(eachKm),
+      detail: `${km.toFixed(1)}km easy — Zone 2. Conversational pace.`,
+      distance_km: km,
+      // §122 — a foundation session carries a DURATION. Without one it is invisible to
+      // every rule that guards on time, which is the root cause this fixes.
+      ...(mins != null ? { duration_mins: mins } : {}),
       zone: 'Zone 2',
       coach_notes: ['Zone 2 only. If you can\'t hold a conversation, slow down.'],
+      // §82 — held at the floor and therefore over the stated budget, on purpose.
+      ...(mins != null && budget != null && mins > budget ? { floor_protected: true } : {}),
     }
-  }
+  })
 
   // ── §92 — strides, for a §89-gated runner only ────────────────────────────
   //
@@ -334,6 +439,14 @@ export interface FoundationBlockOptions {
    */
   earlyOnset?: boolean
   /**
+   * §122 — this runner's easy pace (min/km), from `easyPaceFromPlan` on the GENERATED
+   * plan. Passed in rather than derived: the engine already spent this number on every
+   * easy session it placed, and a second producer of it would be the `DELOAD-OWNER-01`
+   * class. Absent/null => the block is not resized and sessions carry no duration, which
+   * is the pre-§122 behaviour and the safe direction.
+   */
+  easyPaceMinPerKm?: number | null
+  /**
    * §116 (P-16) — which volume policy sizes the weeks.
    *
    * `'flat'` is §57 and the DEFAULT: `min(baseline x 1.1^i, baseline x 1.10)`,
@@ -362,7 +475,7 @@ export interface FoundationBlockResult {
 }
 
 export function generateFoundationBlock(opts: FoundationBlockOptions): FoundationBlockResult {
-  const { input, planStartDate, today, forceWeeks, earlyOnset = false, curve = 'flat', rampWeeklyKm } = opts
+  const { input, planStartDate, today, forceWeeks, earlyOnset = false, curve = 'flat', rampWeeklyKm, easyPaceMinPerKm } = opts
 
   const gap = gapDays(today, planStartDate)
   // §116 — a ramp's length is decided by `onRampWeeksNeeded`, not by the gap.
@@ -483,6 +596,10 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
       input.preferred_long_run_day,
       earlyOnset,
       sessionFloorsFor(input.longest_recent_run_km),
+      // §122 — pace and the runner's own stated weekday budgets.
+      easyPaceMinPerKm,
+      input.day_budgets,
+      input.max_weekday_mins,
     )
 
     weeks.push({

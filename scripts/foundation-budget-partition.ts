@@ -52,7 +52,7 @@ const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri'] as const
 const TODAY = '2026-10-03'
 const PLAN_START = '2026-12-07'
 
-interface Row { key: string; symptomatic: boolean; hash: string; overs: number; worstPct: number }
+interface Row { key: string; symptomatic: boolean; hash: string; structHash: string; floorProtected: number; overs: number; worstPct: number }
 type Baseline = { version: number; today: string; plan_start: string; rows: Record<string, Omit<Row, 'key'>> }
 const REPORT_VERSION = 1
 
@@ -82,6 +82,48 @@ function stableHash(plan: unknown): string {
     delete stable[f]
   }
   return createHash('sha256').update(JSON.stringify(stable)).digest('hex').slice(0, 16)
+}
+
+/**
+ * 🔴 THE CONTROL HASH, AND WHY IT IS NOT THE FULL ONE.
+ *
+ * Step 0 stated the acceptance condition as *"every asymptomatic plan is BYTE-IDENTICAL"*.
+ * That was written before the change existed and it is **not satisfiable**, because the
+ * Coaching Board's ruling adds `duration_mins` to EVERY foundation session — symptomatic
+ * or not. All 572 control plans duly changed, and the gate was right to fail.
+ *
+ * ⚠️ The fix is to make the claim PRECISE, not to relax it. For an asymptomatic plan the
+ * only permitted difference is the ADDED DURATION. Every distance, label, detail, week
+ * structure and session count must still be identical, and no `floor_protected` may
+ * appear — because a bystander whose DISTANCES moved is exactly the collateral damage
+ * this gate exists to catch, and that is still caught.
+ *
+ * So: strip `duration_mins` from foundation sessions only (`n <= 0`) and hash the rest.
+ * Main-plan durations stay IN the hash — nothing in this change may touch them.
+ */
+function structuralHash(plan: any): string {
+  const stable = JSON.parse(JSON.stringify(plan))
+  for (const f of STRIP_META) {
+    if (stable?.meta) delete stable.meta[f]
+    delete stable[f]
+  }
+  for (const w of stable.weeks ?? []) {
+    if (w.n > 0) continue
+    for (const d of Object.keys(w.sessions ?? {})) {
+      delete w.sessions[d].duration_mins
+    }
+  }
+  return createHash('sha256').update(JSON.stringify(stable)).digest('hex').slice(0, 16)
+}
+
+/** Foundation sessions stamped `floor_protected` — must stay 0 on a bystander. */
+function floorProtectedCount(plan: any): number {
+  let n = 0
+  for (const w of plan.weeks ?? []) {
+    if (w.n > 0) continue
+    for (const s of Object.values(w.sessions ?? {}) as any[]) if (s?.floor_protected) n++
+  }
+  return n
 }
 
 /** Does this composed plan carry the symptom, and how badly? */
@@ -164,7 +206,11 @@ for (const [bl, bench] of BENCHMARKS)
             if (!composed.weeks.some((w: any) => w.n <= 0)) { noFoundation++; continue }
             const s = symptom(composed, input)
             if (!s.measurable) { unmeasurable++; continue }
-            rows.push({ key, symptomatic: s.overs > 0, hash: stableHash(composed), overs: s.overs, worstPct: s.worstPct })
+            rows.push({
+              key, symptomatic: s.overs > 0, hash: stableHash(composed),
+              structHash: structuralHash(composed), floorProtected: floorProtectedCount(composed),
+              overs: s.overs, worstPct: s.worstPct,
+            })
           }
 
 const sym = rows.filter(r => r.symptomatic)
@@ -188,7 +234,7 @@ const was: Baseline | null = existsSync(BASELINE) ? JSON.parse(readFileSync(BASE
 if (WRITE) {
   const out: Baseline = {
     version: REPORT_VERSION, today: TODAY, plan_start: PLAN_START,
-    rows: Object.fromEntries(rows.map(r => [r.key, { symptomatic: r.symptomatic, hash: r.hash, overs: r.overs, worstPct: r.worstPct }])),
+    rows: Object.fromEntries(rows.map(r => [r.key, { symptomatic: r.symptomatic, hash: r.hash, structHash: r.structHash, floorProtected: r.floorProtected, overs: r.overs, worstPct: r.worstPct }])),
   }
   writeFileSync(BASELINE, JSON.stringify(out, null, 1))
   console.log(`\n✓ baseline written: ${rows.length} plans (${asym.length} control)`)
@@ -211,7 +257,11 @@ const appeared: string[] = []
 for (const r of rows) {
   const prev = was.rows[r.key]
   if (!prev) { appeared.push(r.key); continue }
-  if (!prev.symptomatic && !r.symptomatic && prev.hash !== r.hash) movedControl.push(r.key)
+  if (!prev.symptomatic && !r.symptomatic) {
+    // The ONLY permitted difference on a bystander is the added foundation duration.
+    if (prev.structHash !== r.structHash) movedControl.push(`${r.key}  (structure changed)`)
+    else if (r.floorProtected > (prev.floorProtected ?? 0)) movedControl.push(`${r.key}  (gained floor_protected)`)
+  }
 }
 for (const k of Object.keys(was.rows)) if (!rows.find(r => r.key === k)) vanished.push(k)
 

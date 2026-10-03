@@ -2387,14 +2387,83 @@ invariant reads the rounded one. ⚠️ Same class as **§ Amendment 1 (`MARATHO
 away — those 34 are expected-to-change plans that may not change, and the gate fails only on a
 CONTROL plan moving, never on a symptomatic plan staying put.
 
-## 🔻 Step 1 — NEXT: the engine change, in one commit
+## ✅ Step 1 — SHIPPED. Problem 1 only; problem 2 went to the board
 
-Pace threaded in · `duration_mins` set · sizing against day budgets at construction (§52b's
-day-count lever) · §82's floor as last resort with disclosure · §122 + §82 Am.1 + two invariants ·
-**no new constant**. Gates: `partition:foundation` (572 control byte-identical), `verify:parity`
-(move declared and attributed to `n <= 0` weeks only), `measure:fitness` before/after on the
-injury cohort (Willy's blocking gate: 36.4% standard / 41.2% masters, 0% never-builds), plus
-`review:coaching` and `cohort:shape` diffed.
+**What shipped:** foundation weekday EASY runs carry `duration_mins` and are sized against
+`day_budgets[day] ?? max_weekday_mins` **at construction** (§52b's day-count lever via the shared
+`waterFillEasyKm`), with §82's floor as last resort and `floor_protected` stamped.
+
+| | before | after |
+|---|---|---|
+| foundation weekday sessions over budget | 1,132 (47.6%) | **339 (14.3%)** |
+| plans carrying at least one | 214/276 (77.5%) | **77/276 (27.9%)** |
+| median overrun | +39% | **+27%** |
+| worst | 90 min vs 30 (**+201%**) | **38 min vs 30 (+27%)** |
+| residual capping cannot fix | 339 | **339 — all now at §82's floor** |
+
+The residual is **exactly** the set sitting 2 predicted could not be fixed by capping at any bound.
+
+### 🔴 THREE DEFECTS THE CHECKS CAUGHT IN MY OWN WORK
+
+1. **The no-op test compared each day's ceiling to the WHOLE WEEK's volume**, which is almost never
+   satisfied, so water-filling ran and **redistributed 540 plans that already fitted their budgets.**
+   Bystanders' distances moved for no reason. Caught by the step-0 control gate — the exact thing it
+   was built for, on its first real use.
+2. **The sizing INFLATED sub-floor foundation sessions**, re-creating the defect
+   `CB-SUBFLOOR-ADMIT-01` had removed: `waterFillEasyKm` bases every day at `floors.easy`, which is
+   right for the main plan and **wrong for a low-base on-ramp**, where §113 Am.1 deliberately admits
+   sub-floor sessions. Caught by `INV-PLAN-FOUNDATION-BLOCK` on the Hyde Park 5K fixture. Now clamped
+   so the sizing can **only ever reduce**.
+3. **I missed the SECOND caller of `generateFoundationBlock`** — `baseBuildOnRamp.ts`
+   (`generateBaseBuildPlan`, the §118 ramp). 26,158 sweep violations. ⚠️ **My consumer check covered
+   readers of the FIELD `duration_mins` and not callers of the FUNCTION whose signature I widened.**
+   The contract said *"called by `foundationCompose.ts`"* and is corrected.
+
+### ✅ Both invariants are PROVEN WAKEABLE, not baselined
+
+`invariantLiveness.ts` gained two mutations (a foundation weekday session with no duration; one far
+past its budget and not floor-protected). ⚠️ The baseline would have accepted `corpus` as the reason
+they could not be woken — **the repo's own rule is to suspect the CORPUS before the rule**, and they
+are perfectly wakeable once a foundation week exists to mutate.
+
+### ⚠️ Housekeeping done honestly
+The two `foundationBlock.ts` entries in the hardcoded-units register were **RE-ANCHORED, not added**
+— §122 changed the interpolated expression so the old text no longer matched and the sites read as
+NEW. Same two sites, same debt, **`count` unchanged at 56**. That register is closed to new entries
+and stays closed.
+
+### 🔻 What §122 does NOT cover
+The foundation LONG RUN. It still carries no duration, which means problem 2 is not merely unfixed
+but **invisible to every check** — stated plainly because the founder was not told that when the
+option was put to him, and the alternative (keep the duration, carry the breach as declared debt)
+was not offered until afterwards. See `FOUNDATION-LR-S9-01`.
+
+#### 🔴 `FOUNDATION-LR-S9-01` — §9 and §81 give opposite answers for the foundation long run *(P1, filed 2026-10-03)*
+
+🏃 **COACHING BOARD — REQUIRED, and this is a CONFLICT BETWEEN TWO RATIFIED PRINCIPLES**, not a
+defect. Nobody should implement either side without a ruling.
+
+📐 **Measured:** a 10K runner, 50 km/week, longest recent run 20 km gets foundation long runs of
+**123, 135 and 135 minutes** against §9's **120-minute** absolute ceiling for a 10K — and the MAIN
+plan's peak long run is **112 minutes**. The pre-plan block prescribes a longer run than anything in
+the block it precedes.
+
+- **§9 says cap it** — `LONG_RUN_CAP_MINUTES` is an absolute time ceiling and nothing exempts
+  foundation weeks. §57 excludes them from the periodisation ARC, not from a load ceiling.
+- **§81 says do not** — capping produced **404 new `INV-PLAN-LONG-IS-LONGEST` violations**: a "long
+  run" shorter than the week's easy runs. That is the exact trade §81 describes and the board
+  **VETOED** for the main plan, with Hutchinson, McMillan and Willy arriving independently at *don't
+  shrink to fit*.
+
+⚠️ **My own recommendation here was wrong and is recorded as such:** I advised the founder that this
+was "already ratified doctrine, no board needed." That reasoning looked only at §9. Shrinking the
+long run collides with §81, and two principles in conflict is precisely what a board is for.
+
+**Options for the board:** cap and accept the §9/§81 trade for foundation weeks only · shrink the
+whole foundation week together so the long run stays longest · leave the long run uncapped and
+DECLARE the overrun · reduce the foundation block's volume so the question does not arise.
+**Related:** `FOUNDATION-LR-VS-PEAK-01` (should a foundation long run ever exceed the plan's peak?)
+— same session, same sitting.
 
 #### 🔴 `TAPER-OVER-PEAK-SLOW-01` — a slow runner's TAPER is their biggest week *(P1, filed 2026-10-03)*
 
