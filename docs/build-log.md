@@ -6,6 +6,48 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-04 — `OPS-DIGEST-STORED-PLAN-DEBT-01` · I filed a bug against a problem the code had already solved
+
+**Dev.** My own item said the daily plan audit would report pre-fix stored plans *"every day,
+forever"*. It doesn't. The route already alerts on a **transition**, not on state — and its header
+spells out why, in words I could have read before filing: *"a probe that alerts on 'is this plan
+invalid?' would fire on every row every day, forever, and train us to ignore it."*
+
+**So the problem was never noise.** It was that the one alert is **ambiguous**. A violation code set
+changes both when the engine regresses and when we ship a new invariant that judges old data, and
+those two want opposite responses. That ambiguity has a measured price: yesterday the digest flagged
+two changes as defects and I spent the whole day proving neither was one.
+
+The fix turned out to be elegant and needs no bookkeeping: **regenerate the plan from its own stored
+inputs with today's engine.** If the violation comes back, the engine is doing it now. If it doesn't,
+the rule is newer than the plan. No "when did each invariant ship" table to go stale.
+
+**The honest bit — my first version was wrong in the direction that reassures.** It called
+`generateRulePlan` and stopped, which skips the foundation-block composition (that's a separate stage
+by design). Every affected plan regenerated with **zero foundation weeks**, so the foundation
+invariant *structurally couldn't fire*, and all four came back "nothing to see". **A genuine engine
+regression in a foundation week would have been labelled safe.** It now runs the full pipeline and
+refuses to answer unless the regenerated plan is shape-comparable — and `undecidable` counts as
+actionable, because "we couldn't tell" must never read as "fine".
+
+**And the mutation I ran to prove that caught nothing at first.** Deleting the composition stage left
+the suite green, because my vacuity test reached `undecidable` either way. A mutation that reddens
+nothing isn't a safe change, it's a missing test. Added the arm, then it failed properly.
+
+Two smaller ones from the same session. `tsc` caught a test fixture using `training_age: '2-5y'` — not
+a real value; vitest doesn't typecheck, so it had been partly fiction behind eight green tests.
+And writing the route's first contract moved the documented-coverage number by **zero**, because the
+audit counts a route as contracted if any other contract merely *mentions* it.
+
+**Product.** Three real plans still need a one-line data fix and the sandbox blocked the write, so
+they're waiting on the founder. The test-account proof is done.
+
+**What I'd tell someone building this.** Before you file an item about a system, read the part of the
+system that would already handle it. My item was a plausible story about a mechanism I hadn't opened,
+and the real defect — which was better and smaller — was one comment away.
+
+---
+
 ## 2026-10-03 — `RACE-WEEK-VOLUME-REMEDIATE-01` · "why haven't we remediated the runner?"
 
 **Dev.** Because I'd filed it instead of doing it — and the two reasons I gave for the delay were
