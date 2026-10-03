@@ -39,6 +39,7 @@
     "export:plans": "tsx scripts/export-marketing-plans.ts",
     "falsify": "tsx scripts/test-liveness.ts --adhoc",
     "distinguish": "tsx scripts/distinguish.ts",
+    "partition:foundation": "NODE_ENV=production tsx scripts/foundation-budget-partition.ts",
     "button:geometry": "tsx scripts/button-geometry.ts"
   },
   "dependencies": {

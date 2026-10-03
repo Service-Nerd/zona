@@ -2262,6 +2262,100 @@ precedent when it split `W-01`:** one ID cannot be both a shipped record and an 
 audit is right to call that ambiguous. The alternative was a declared exemption, which is the
 heavier instrument.
 
+#### 🔴 `FOUNDATION-BUDGET-01` — foundation weeks ignore the runner's stated day budget *(P1, Coaching Board ruled 2026-10-03, step 0 DONE)*
+
+🏃 **COACHING BOARD — RULED.** Sitting 2, 2026-10-03, `coaching-rulings.md`: *CORRECT WITH
+AMENDMENT, the remedy is STRUCTURAL not a percentage.* RCA + remediation plan:
+`docs/incidents/2026-10-03-weekday-cap-floor-vs-validator.md`.
+
+## Analysis block (/build Phase 1)
+
+**Input:** Coaching Board sitting 2 (2026-10-03) + the RCA. Branch `main-i75gle`.
+**Change:** foundation weekday sessions carry `duration_mins` and are sized against the runner's
+stated day budgets at construction, with §82's floor as last resort and disclosure.
+
+**Settled ground:** §57 (foundation block — governs generation and week indices, **silent on time
+budgets**) · §82 (floor protection — ratified on 3.5 vs 4.0 km, **no duration bound**) · §52b
+(day-count lever, the remedy §82 itself names) · §9 (4 km floor, untouched) · §18 (the stated
+budget is *"the runner's own statement about their life"*). ⚠️ **`CB-SUBFLOOR-ADMIT-01` is direct
+precedent in this exact module** — per-runner floors were threaded into `foundationBlock.ts` after
+a runner got a 5.0 km session in week −1 before a 2.9 km week 1; **the time budget was not
+threaded.** One input later, same module, same failure. No ruling reversed.
+
+**Reuse:** easy pace read from the plan's **own** first duration-bearing weekday easy session —
+not a second pace owner (`DELOAD-OWNER-01` class). §52b's day-count lever already exists. §82's
+floor and `floor_protected` stamp already exist. **No new constant** (board ruled this explicitly).
+
+**🔴 Consumers — and this step found two I would have missed:**
+- `lib/widget/widgetState.ts:82` reads `session.duration_mins ?? null` — **the iOS home-screen
+  widget**. A foundation session gaining a duration changes what the widget shows.
+- `components/marketing/PlanPage.tsx` — **the WEBSITE renders `duration_mins`.** This is the
+  app-AND-website class the consumer check exists for.
+- App: `TodayScreen`, `SessionPopupInner`, `PlanCalendar`, `SessionSteps`, `dashboardHelpers`.
+- `lib/plan/sessionComposer.ts:100` — `let total = session.duration_mins ?? 0`; composed structure
+  changes once a duration exists.
+
+**Upstream:** `composePlanWithFoundation` (ADR-020's single owner of post-generation `plan.weeks`
+mutation) → `generateFoundationBlock` → `buildFoundationSessions`.
+**🔴 Downstream — THE RISK THAT MATTERS:** foundation sessions are currently invisible to every
+rule that guards on `duration_mins`. Giving them one makes them **visible to invariants that have
+never seen them**, e.g. `invariants.ts:3373` (`sn.duration_mins ?? 0` vs the peak long run) and
+`:2352`. **Previously-silent invariants may now fire on foundation weeks.** That is the point of
+the change AND its largest hazard, and it is measurable before any doctrine is written — see
+step 0b.
+
+**Is it a MOVE?** No — nothing relocates, renames or re-parents.
+
+**Routing:** Coaching Board — **done, ruled.** Not Design Board: the session card pattern is
+unchanged, only populated. ⚠️ **Flagged, not routed:** the widget and `PlanPage` will render a
+duration where they rendered none. If that reads as a visual change rather than data, it is
+Design Board's — raise after step 0b shows what actually renders.
+
+**New pattern:** none. The partition gate below follows the committed-baseline pattern already
+used by `cohort:shape` and `verify:parity`.
+
+**Risks → mitigation:**
+1. **Collateral damage to plans with no symptom** → ✅ **GATED, step 0 below.**
+2. **Previously-silent invariants firing on foundation weeks** → step 0b, before doctrine.
+3. **Foundation volume dropping for slow runners** (sizing to a budget removes volume) → Willy's
+   blocking gate: `measure:fitness` before/after, injury cohort **36.4% standard / 41.2% masters,
+   0% never-builds**. A drop blocks the ship.
+4. **Widget / website rendering change** → named above; verify, do not assume.
+5. `verify:parity` **will** move → declared with a number and **attributed**: only `n <= 0` weeks
+   may differ. Main-week movement is a bug, not a declaration.
+
+**Issues found:** none filed separately; risk 2 folded in as step 0b.
+
+## ✅ Step 0 — DONE. The control cohort, and the gate proven before any build
+
+`npm run partition:foundation` (`scripts/foundation-budget-partition.ts`), baseline committed.
+
+| | |
+|---|---|
+| plans in the partition | **1,280** (0 refused, 0 without a foundation block) |
+| 🔴 SYMPTOMATIC — expected to change | **708 (55.3%)**, 5,584 over-budget sessions, worst **+259%** |
+| ✅ **ASYMPTOMATIC — THE CONTROL** | **572 (44.7%)** |
+
+**The acceptance condition for the whole build:** every one of those 572 is **byte-identical**
+after the change. Not "similar", not "no new violations" — identical hashes, the claim
+`verify:parity` makes. A plan with nothing to fix that moves anyway is collateral damage, and the
+gate refuses to let it be re-baselined away.
+
+✅ **FALSIFIED BEFORE IT IS TRUSTED:** an unconditional `+0.1 km` on every foundation easy day
+moved **530 of 572** control plans; the gate named them and **exited 1**. Restored → **exit 0**.
+⚠️ The first run of that falsification reported *"exit was: 0"* because the command captured
+`grep`'s status, not the script's — re-checked cleanly. *Do not pipe away your instrumentation.*
+
+⚠️ **What the gate does NOT prove:** it hashes the plan object, so it cannot see a change in what
+the WIDGET or the WEBSITE renders from the same data. That is risk 4 and needs its own check.
+
+## 🔻 Step 0b — NEXT, before any doctrine is written
+
+Give foundation weekday sessions a duration and **nothing else**, then run `validatePlan` across
+the partition and record **which invariants start firing**. They have never been exposed to a
+foundation week. If the answer is a long list, the ruling's artifact set needs revisiting before
+code — not after.
+
 #### 🔴 `TAPER-OVER-PEAK-SLOW-01` — a slow runner's TAPER is their biggest week *(P1, filed 2026-10-03)*
 
 🏃 **COACHING BOARD** — §121 is the principle and the question is whether the engine's

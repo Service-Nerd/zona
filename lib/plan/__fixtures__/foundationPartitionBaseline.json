@@ -1,0 +1,7687 @@
+{
+ "version": 1,
+ "today": "2026-10-03",
+ "plan_start": "2026-12-07",
+ "rows": {
+  "mara/fast10k/flat/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "500d7c300f4e5c5e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "4660d714dd7a41c9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "ed0c9212d42de129",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "a0d6916edf8bc148",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "744b22f421a1779a",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "eefcddf4cc22c140",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "cbfa1c5521cd04cd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "6eb33966c62ba445",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "111da797a7225135",
+   "overs": 9,
+   "worstPct": 29
+  },
+  "hm/fast10k/flat/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "82670aa5b279e712",
+   "overs": 9,
+   "worstPct": 29
+  },
+  "mara/fast10k/flat/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "663bb5bef73e7290",
+   "overs": 9,
+   "worstPct": 29
+  },
+  "hm/fast10k/flat/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "b082f13b5cee25b7",
+   "overs": 9,
+   "worstPct": 29
+  },
+  "mara/fast10k/flat/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "c919a5cbee379859",
+   "overs": 12,
+   "worstPct": 124
+  },
+  "hm/fast10k/flat/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "94fc02fdf6bb7c9d",
+   "overs": 12,
+   "worstPct": 124
+  },
+  "mara/fast10k/flat/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "444d49eec1a3f3d5",
+   "overs": 12,
+   "worstPct": 124
+  },
+  "hm/fast10k/flat/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "189a1b59e3f6897e",
+   "overs": 12,
+   "worstPct": 124
+  },
+  "mara/fast10k/flat/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "767a10f862a3ff78",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "57393cebdf269a71",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "a47e0e37b101395c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "a6111f9e98068a45",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "1057049956f19585",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "56d5ccd54b2e0800",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "22d4c4d57cde0993",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "134dc248556a0536",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "338a33b953bda0a9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "37bf45de7f6eccc9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "e85b6a77ab735ea5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "d4b11e4a346620ff",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "5d003d9f0b8f4a44",
+   "overs": 12,
+   "worstPct": 54
+  },
+  "hm/fast10k/flat/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "47a245a91bafe503",
+   "overs": 12,
+   "worstPct": 54
+  },
+  "mara/fast10k/flat/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "590f738a83bbb273",
+   "overs": 12,
+   "worstPct": 54
+  },
+  "hm/fast10k/flat/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "070be631718a6f0a",
+   "overs": 12,
+   "worstPct": 54
+  },
+  "mara/fast10k/flat/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "db1f26af7e14c80c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "0f688198b0e4c1b4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "b52d2e2b46b3d5b6",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "4d627e5e3f543082",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "aaa32bf7b1ec7721",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "da182a8e578f9c55",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "a6c46b8523be3a46",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "3e4ccb0abbc04608",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "1bd552b6bba20447",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "0df5c79d60680efd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "17680cb72af92095",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "2172540b14eda415",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "9d6d6d3821f2d5c7",
+   "overs": 12,
+   "worstPct": 15
+  },
+  "hm/fast10k/flat/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "cce24123b6511c7e",
+   "overs": 12,
+   "worstPct": 15
+  },
+  "mara/fast10k/flat/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "3887a305c1b203c1",
+   "overs": 12,
+   "worstPct": 15
+  },
+  "hm/fast10k/flat/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "44362ec1a3e7e93b",
+   "overs": 12,
+   "worstPct": 15
+  },
+  "mara/fast10k/flat/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "cf5c08f37c569d10",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "a24ab1a279ea13c0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "85d2274757dc02ca",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "0e80bc50e8d60a0e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "8785687bfc54d828",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "22c3e4e666a990e3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "7a93649ab79dbb61",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "023c8cdd225c0f16",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "4dac044916d0a3ad",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "93e2e1eb06b75f9a",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "4a807f9055de43fd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "4f5af4321e8b97d4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap90/v45/none": {
+   "symptomatic": false,
+   "hash": "971f381991c89cb8",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap90/v45/none": {
+   "symptomatic": false,
+   "hash": "c28ef332d5e7c23e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/flat/cap90/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "1d0aeee59a120050",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/flat/cap90/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "08609e68c1451c5d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "1bd00e8103d1bf66",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "dc4e020995a102a1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "d13a08db3d1d6728",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "43ad638d823514c5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "a26c72e907c7f158",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "6d2f9bbc2c8cb317",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "0cf441bbed6fae8e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "a79ca62abe326934",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "63740a1b00018a97",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "hm/fast10k/tight/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "7df089adfc5e34a7",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "mara/fast10k/tight/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "f517ea117adf8543",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "hm/fast10k/tight/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "2e481f294b8c1670",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "mara/fast10k/tight/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "5e74b459c218acba",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "hm/fast10k/tight/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "38bacdfb55fa682d",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "mara/fast10k/tight/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "2f0ee9ca79bf56cc",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "hm/fast10k/tight/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "aaea9ba3c749d2d1",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "mara/fast10k/tight/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "0250c80a58369e6c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "000219f213a913a3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "b8fb452511af66fc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "d4f2e5034b976e34",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "562236303b69c1f9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "9ea91b56ba2269a7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "d78294034bc50fca",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "e40cc011809d129a",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "6e842dd42be6585d",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "hm/fast10k/tight/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "1b28be25b321ab24",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "mara/fast10k/tight/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "6a88e969c44ad552",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "hm/fast10k/tight/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "8c5bf4856a483f3d",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "mara/fast10k/tight/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "f11dcef1f2f245bd",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "hm/fast10k/tight/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "49d1db17a3d3291f",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "mara/fast10k/tight/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "f7785624851ed592",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "hm/fast10k/tight/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "6bd5f3649ce21a86",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "mara/fast10k/tight/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "3b27fdf3b7155b54",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "1b1699e88150b561",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "6e958cc893965dae",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "0919e462fcb1ecde",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "5b91c540667ec734",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "48bcd57e4020e4aa",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "7eace5fc8969f8d1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "288a9b3c2da6be86",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "0ff180627ac652b6",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "hm/fast10k/tight/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "1be6185aee23c50f",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "mara/fast10k/tight/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "f9778b1668dce9cb",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "hm/fast10k/tight/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "8c0ae57a65741ec4",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "mara/fast10k/tight/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "2d27a5f27d435a12",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "hm/fast10k/tight/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "ebda0e2da63f0ba4",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "mara/fast10k/tight/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "d25e925fd6ce50d9",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "hm/fast10k/tight/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "d6daa8754986f611",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "mara/fast10k/tight/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "ccb07674dee01021",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "63716fabb0f502cb",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "670463f0f58aad9a",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "80312b1b58133859",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "07496cc64f7b2522",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "a73227f9ee9ccb72",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "b54c2957d772e519",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/tight/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "d4dad4da6deb875b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/tight/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "a813d4f58dd4a728",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "hm/fast10k/tight/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "bba8bf1dbac8e512",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "mara/fast10k/tight/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "39800db6278f6269",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "hm/fast10k/tight/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "747f6be8ba9b9e8a",
+   "overs": 9,
+   "worstPct": 33
+  },
+  "mara/fast10k/tight/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "8ed74df116bdfc90",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "hm/fast10k/tight/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "183fa293a69d5d6d",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "mara/fast10k/tight/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "4569482b02d88ada",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "hm/fast10k/tight/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "47b45392ce1bdf5a",
+   "overs": 12,
+   "worstPct": 130
+  },
+  "mara/fast10k/uneven/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "5ad64b54003aa4c3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "5bd1dfe47ec63625",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "74bda13bdea4957c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "64893f3d69115a4e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "58e9751bf26b4766",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "9ddb585e561d6492",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "334297218712ba16",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "b5bd322631822c40",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "7f1208f5299e7224",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "hm/fast10k/uneven/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "3f6ed6a6c7d82db1",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "mara/fast10k/uneven/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "74ef7529fe849c45",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "hm/fast10k/uneven/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "a11dd9a3ade7e103",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "mara/fast10k/uneven/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "abe42598117b8b2b",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "hm/fast10k/uneven/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "7e3361a8a86b7714",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "mara/fast10k/uneven/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "677ab86ac5e0c2c4",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "hm/fast10k/uneven/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "9d379e06df31e276",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "mara/fast10k/uneven/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "ea86b9586634251e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "d52e80fa7a97770e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "2fc8f2386281b0ca",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "c906fd6542036f5b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "1ac30fc1eb2e5a40",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "97eef3085e8a6cfd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "99d8de1c63e25a11",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "0d320a9e311addfd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "f3b14ae3b6e471ab",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "hm/fast10k/uneven/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "0ca0c122970560db",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "mara/fast10k/uneven/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "d5a3ed3151f31dce",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "hm/fast10k/uneven/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "2c71d86e69499ba8",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "mara/fast10k/uneven/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "bba70ae9fb297197",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "hm/fast10k/uneven/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "f56719b3af845e61",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "mara/fast10k/uneven/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "c6aecfa81ce7b862",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "hm/fast10k/uneven/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "edf44555eaff0498",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "mara/fast10k/uneven/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "2966cc4050dde07c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "f5983351005d9270",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "3f33bf304716c26b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "e637d65cf3d4cf03",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "abb5af9af57a2c26",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "011e9d56e770d59f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "7a7d6415ba26e91e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "c94e02314c590405",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "cc589b4f1d3a1660",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "hm/fast10k/uneven/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "2b8801d8777f99ec",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "mara/fast10k/uneven/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "04dc8072d9655ab8",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "hm/fast10k/uneven/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "9350e11cc603354a",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "mara/fast10k/uneven/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "eb81e3f1fb9acd29",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "hm/fast10k/uneven/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "74527159b06860cb",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "mara/fast10k/uneven/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "0fc7117e411e4c72",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "hm/fast10k/uneven/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "44dd49e180021138",
+   "overs": 9,
+   "worstPct": 130
+  },
+  "mara/fast10k/uneven/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "355eb9e570da8e29",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "246492919fd41a28",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "1b124fac25319744",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "36a85672545c5479",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "88aaacb3bbb087a2",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "786de7530d200448",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "b1f9b3e99ad53e72",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/uneven/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "55fa5ac39a273105",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/uneven/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "74fea32276857697",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "hm/fast10k/uneven/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "591cb8c68bc830eb",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "mara/fast10k/uneven/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "f42ea6502c800bd7",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "hm/fast10k/uneven/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "f62241a25ed14d93",
+   "overs": 3,
+   "worstPct": 33
+  },
+  "mara/fast10k/uneven/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "b7abb090b48a9167",
+   "overs": 6,
+   "worstPct": 130
+  },
+  "hm/fast10k/uneven/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "f333db5a1807876b",
+   "overs": 6,
+   "worstPct": 130
+  },
+  "mara/fast10k/uneven/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "fce517134fb8cee0",
+   "overs": 6,
+   "worstPct": 130
+  },
+  "hm/fast10k/uneven/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "4fad599a42474d16",
+   "overs": 6,
+   "worstPct": 130
+  },
+  "mara/fast10k/roomy/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "7f99a96ad8deadfa",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "082c5c8ac19fe2fb",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "6ce82e0342b1ac19",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "ef9509cbfa6ba743",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "3db944c515d82a81",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "cf0036c14a7b9bed",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "7cea917af378e5e1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "e066abe3599b55cb",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap30/v30/none": {
+   "symptomatic": false,
+   "hash": "b6c602ff03ad2a72",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap30/v30/none": {
+   "symptomatic": false,
+   "hash": "3df355584c0e9dfd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap30/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "a51a6ec3c8d0a7cc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap30/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "79389641840acce1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap30/v45/none": {
+   "symptomatic": false,
+   "hash": "dea667f9c0b13941",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap30/v45/none": {
+   "symptomatic": false,
+   "hash": "48f75dead90cb9ef",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap30/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "824f112a0f1be721",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap30/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "6719288ca5855f0e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "bb8fbf6fdbc071fe",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "01026acb8aa491ac",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "37db614221d7de36",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "aa63b20bde843492",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "09ba2229257351f1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "f063b58eddb141b1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "db8e1a634c6312cb",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "2001532ce614d7d9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "302ea5e0c3de4242",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "5f13a3da6c423250",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "b96e1c99e2774895",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "9844657119f2b5c3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap45/v45/none": {
+   "symptomatic": false,
+   "hash": "3b4d54661a18a3b0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap45/v45/none": {
+   "symptomatic": false,
+   "hash": "231abe9e0bb6ef6e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap45/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "fd229fc121f5f2d3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap45/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "b4dbed38f3081269",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "130a2a44752b2aec",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "f2b9e9ae0b358578",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "e15c701410ec4d4e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "f027278f3cc2ca8b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "d859eec6f46e6e13",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "9656e716e1daf266",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "6110e2119d3a5bf5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "817a8dbf65713be0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "ab4b7251c76a4bb2",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "48f302f9072ad67e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "664bed3b4770d6ab",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "3b1f40e63dd64e8a",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap60/v45/none": {
+   "symptomatic": false,
+   "hash": "f8eb1b7345272147",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap60/v45/none": {
+   "symptomatic": false,
+   "hash": "f369cd77423ee02e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap60/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "3f054398c237fe17",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap60/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "e1890b0b4a70c178",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "83137b42fc120da4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "ad8f8a4b3bf9ec32",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "486cd13814e0725f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "46e6fa93cdcf1248",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "7201a3e5c8af5317",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "d4f8dc2666194b7b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "edf2338d0913cc16",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "424863a9cca13bae",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "dea3f8f3f28c962d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "bc03a9a1bbd5b4bd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "f5c232a49425e031",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "f794a953d27c0d07",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap90/v45/none": {
+   "symptomatic": false,
+   "hash": "d3eac348607f61b4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap90/v45/none": {
+   "symptomatic": false,
+   "hash": "a67611640b1e466f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/fast10k/roomy/cap90/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "8ab0fbcc3e769108",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/fast10k/roomy/cap90/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "85c285cb491e68b9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "a47dc68a91e6a5b5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "e97b3ffcad5cc758",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "21d06cf547d039a5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "77734b41637de7ee",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "ad87d00b45cf5620",
+   "overs": 6,
+   "worstPct": 4
+  },
+  "hm/mid10k/flat/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "799899b510385f14",
+   "overs": 6,
+   "worstPct": 4
+  },
+  "mara/mid10k/flat/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "48dbd9d4c5c8a5d6",
+   "overs": 6,
+   "worstPct": 4
+  },
+  "hm/mid10k/flat/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "1dd36697a76327a3",
+   "overs": 6,
+   "worstPct": 4
+  },
+  "mara/mid10k/flat/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "ea593e5da262e32c",
+   "overs": 9,
+   "worstPct": 58
+  },
+  "hm/mid10k/flat/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "d654ccf79a9a1f21",
+   "overs": 9,
+   "worstPct": 58
+  },
+  "mara/mid10k/flat/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "ac2b656d693add39",
+   "overs": 9,
+   "worstPct": 58
+  },
+  "hm/mid10k/flat/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "d9f8ce5315c1edb7",
+   "overs": 9,
+   "worstPct": 58
+  },
+  "mara/mid10k/flat/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "8f013037f4390deb",
+   "overs": 12,
+   "worstPct": 173
+  },
+  "hm/mid10k/flat/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "323a4aea53d3d5ef",
+   "overs": 12,
+   "worstPct": 173
+  },
+  "mara/mid10k/flat/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "82765b1daa79ad31",
+   "overs": 12,
+   "worstPct": 173
+  },
+  "hm/mid10k/flat/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "18c53b80bee48193",
+   "overs": 12,
+   "worstPct": 173
+  },
+  "mara/mid10k/flat/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "1c82290e9ada90fc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "c9ec4981aa04f244",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "dfc9668b2e83317d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "041907a878699c89",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "d8174f754aca1395",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "a0f36f2cb7fef5a9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "7e9538f7e06b9553",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "16d118cbb3c3f055",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "716df7114042c1df",
+   "overs": 6,
+   "worstPct": 9
+  },
+  "hm/mid10k/flat/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "38cc54039c1ba835",
+   "overs": 6,
+   "worstPct": 9
+  },
+  "mara/mid10k/flat/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "f793e6e1059ed992",
+   "overs": 6,
+   "worstPct": 9
+  },
+  "hm/mid10k/flat/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "010807e18abcd1cd",
+   "overs": 6,
+   "worstPct": 9
+  },
+  "mara/mid10k/flat/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "5addb18159baabf0",
+   "overs": 12,
+   "worstPct": 89
+  },
+  "hm/mid10k/flat/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "34527d78d4ee7ecf",
+   "overs": 12,
+   "worstPct": 89
+  },
+  "mara/mid10k/flat/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "6c7b62eff91c03fb",
+   "overs": 12,
+   "worstPct": 89
+  },
+  "hm/mid10k/flat/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "6fb16b6604ed25ab",
+   "overs": 12,
+   "worstPct": 89
+  },
+  "mara/mid10k/flat/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "23daa648c3dffd02",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "f9396f2f2651e0c7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "16fa8d3953088ef5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "9d00d92ab66813b1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "35d7c6364575cf86",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "516c4c3d6b830fda",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "0a08607efafac7ea",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "143d2034b405cc28",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "a3a24a6889fc698c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "42ee2cb828022afd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "d13cc8f481fdc284",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "550e97de7fa600c0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "3ed9c5cafb40f4ff",
+   "overs": 12,
+   "worstPct": 37
+  },
+  "hm/mid10k/flat/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "7f807a316c41842b",
+   "overs": 12,
+   "worstPct": 37
+  },
+  "mara/mid10k/flat/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "20ed0252293f0a5d",
+   "overs": 12,
+   "worstPct": 37
+  },
+  "hm/mid10k/flat/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "2073842de09d971e",
+   "overs": 12,
+   "worstPct": 37
+  },
+  "mara/mid10k/flat/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "a025608a35241122",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "43acb1dc6d1a4bdb",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "b42b2634a59cff29",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "c6111a1f664498c5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "3fb256a04774e7e0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "28f17731cda318cc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "98a6f3a072a474cd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "0fcae3c9d41ea98c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "6b12f3083efefa0a",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "562ca5080b3c4a7f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "abf73c35e5dd25e5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "4d900f5b16a217b0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap90/v45/none": {
+   "symptomatic": false,
+   "hash": "205402c73de14242",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap90/v45/none": {
+   "symptomatic": false,
+   "hash": "3fecd1e94fcb74ea",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/flat/cap90/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "6972b7b556ce4502",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/flat/cap90/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "5ea13f2d86afe844",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/tight/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "a1c84f0575e5728b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/tight/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "bafdeb609af0580d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/tight/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "47ea2cb10a9fab06",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/tight/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "2376d4c3f6d02431",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/tight/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "6c0d7c7173b52787",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "hm/mid10k/tight/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "a37120473ec72754",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "mara/mid10k/tight/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "0246356e09aeaf43",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "hm/mid10k/tight/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "97d123b574288de3",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "mara/mid10k/tight/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "c26421cd1ab1928d",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "hm/mid10k/tight/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "85377e2919449241",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "mara/mid10k/tight/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "bb52e39d726a3770",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "hm/mid10k/tight/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "eead01fb215103bf",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "mara/mid10k/tight/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "e551e7ac90e1e78e",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "hm/mid10k/tight/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "df5d6d46565e20ad",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "mara/mid10k/tight/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "094a9fbc24278686",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "hm/mid10k/tight/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "3f08aa470dfe8d48",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "mara/mid10k/tight/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "d10168982c7c96fe",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/tight/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "289ef57b5082164e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/tight/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "d7234fea6da808a7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/tight/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "144e27f2a2c8da67",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/tight/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "9d509b21d460d664",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "hm/mid10k/tight/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "88f370049024852c",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "mara/mid10k/tight/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "e30ad541debd56a1",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "hm/mid10k/tight/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "15c5717165c17b34",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "mara/mid10k/tight/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "19cbcea08c9b2409",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "hm/mid10k/tight/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "aef33ce6bd1de6df",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "mara/mid10k/tight/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "8bbd502a2ee69b76",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "hm/mid10k/tight/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "bca4b5dede04c5b9",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "mara/mid10k/tight/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "affadd9d87ce649e",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "hm/mid10k/tight/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "b4627cdebaa38b2c",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "mara/mid10k/tight/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "58da7c8a7ae3f014",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "hm/mid10k/tight/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "1b82af12818ed0b7",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "mara/mid10k/tight/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "94999c9732619b47",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/tight/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "fc659940c8bc3372",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/tight/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "93c1100cad9c44c4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/tight/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "d9f25ad0944622ba",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/tight/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "f45ad71eaa4703f6",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "hm/mid10k/tight/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "404f6446e22f73a7",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "mara/mid10k/tight/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "cfed5e96a0e6f546",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "hm/mid10k/tight/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "c409b221a8ffba6b",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "mara/mid10k/tight/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "0ec6474f873943c1",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "hm/mid10k/tight/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "e11c4b4cf7fd2a68",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "mara/mid10k/tight/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "61744935b5b4ad6a",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "hm/mid10k/tight/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "bd318c76ff1beffa",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "mara/mid10k/tight/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "0bfafe98e7fea3f9",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "hm/mid10k/tight/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "f9a8a374917d87a1",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "mara/mid10k/tight/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "175f7eb6e7d7eb94",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "hm/mid10k/tight/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "39909df832c70ed3",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "mara/mid10k/tight/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "be128b80e864990a",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/tight/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "8f27a7e6d7873e9c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/tight/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "474dd8caae25f54e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/tight/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "172ffdef4d1f5c60",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/tight/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "636f8d0b8702581b",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "hm/mid10k/tight/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "9b5ad314e0b72d1d",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "mara/mid10k/tight/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "2e0e20918475ccde",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "hm/mid10k/tight/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "16f4b2f2929651a5",
+   "overs": 6,
+   "worstPct": 6
+  },
+  "mara/mid10k/tight/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "b51f4f5defa1f60a",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "hm/mid10k/tight/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "11cad08b3df5ebfd",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "mara/mid10k/tight/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "9333be9df87b60ad",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "hm/mid10k/tight/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "ecd1a8ae2d5f5232",
+   "overs": 9,
+   "worstPct": 60
+  },
+  "mara/mid10k/tight/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "88b617452262154b",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "hm/mid10k/tight/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "39e91482ffcc4e92",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "mara/mid10k/tight/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "70e1b4a733355b86",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "hm/mid10k/tight/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "2975942e212a6d51",
+   "overs": 12,
+   "worstPct": 177
+  },
+  "mara/mid10k/uneven/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "fbf86cf322c1f37e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/uneven/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "45dc5e75a9bd19af",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/uneven/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "4302d534dd317297",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/uneven/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "4b89973326bd9106",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/uneven/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "616c6c2fcb6dfbfb",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "hm/mid10k/uneven/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "e3228b9bb06837bc",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "mara/mid10k/uneven/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "e5e34802691d701b",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "hm/mid10k/uneven/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "88a38bdfc6be322b",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "mara/mid10k/uneven/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "3129227317dd14df",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "hm/mid10k/uneven/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "f8beddbea62b5546",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "mara/mid10k/uneven/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "4e2ae46f404e3436",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "hm/mid10k/uneven/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "731346762dd9f8c0",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "mara/mid10k/uneven/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "526830b3c597b157",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "hm/mid10k/uneven/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "0ca5d6810771d60c",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "mara/mid10k/uneven/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "fd1f89acbf88edcf",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "hm/mid10k/uneven/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "d6ca62a1945d7e4e",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "mara/mid10k/uneven/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "1fa6125f63b6fc90",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/uneven/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "da6eb2798888d18d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/uneven/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "bcd6c3d0d281c038",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/uneven/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "f5888ed3b4f84fe6",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/uneven/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "a380827c43fb3b7f",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "hm/mid10k/uneven/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "fec7736a7384e14d",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "mara/mid10k/uneven/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "133d023c989927ca",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "hm/mid10k/uneven/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "0c8623829e836306",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "mara/mid10k/uneven/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "fa63eeca55d2f181",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "hm/mid10k/uneven/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "30a20e1a06af87bd",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "mara/mid10k/uneven/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "6fc1d2ad0cbdf57a",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "hm/mid10k/uneven/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "d08629fbc78500bc",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "mara/mid10k/uneven/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "5272f39e14c9600c",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "hm/mid10k/uneven/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "44c6a06fbe857542",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "mara/mid10k/uneven/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "3ae47134e89eaa65",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "hm/mid10k/uneven/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "4686d2e2a1a08cee",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "mara/mid10k/uneven/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "89b1c76947ff47c5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/uneven/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "988498364c19ce23",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/uneven/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "747c1519c2613595",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/uneven/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "a151efb4af5635d5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/uneven/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "8cef0db343301e49",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "hm/mid10k/uneven/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "388adcb30c7c78c1",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "mara/mid10k/uneven/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "96019db2b44c4ded",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "hm/mid10k/uneven/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "a69ec48d17c09a61",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "mara/mid10k/uneven/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "d9a4a3d37e64675c",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "hm/mid10k/uneven/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "81de56e7d910b1ca",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "mara/mid10k/uneven/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "def287d5c86510e9",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "hm/mid10k/uneven/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "0a1e98af6d51a36a",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "mara/mid10k/uneven/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "ca0e583b545d1756",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "hm/mid10k/uneven/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "aba0f65fa350b9cb",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "mara/mid10k/uneven/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "d71ae380c0645417",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "hm/mid10k/uneven/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "37fb0e28f8856af3",
+   "overs": 9,
+   "worstPct": 177
+  },
+  "mara/mid10k/uneven/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "1176729e1e69d005",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/uneven/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "22904cd450a6e4f6",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/uneven/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "4c65b60790268b76",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/uneven/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "9de13707306b5db7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/uneven/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "4da602487391f9e1",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "hm/mid10k/uneven/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "e1a4e08e9172a02f",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "mara/mid10k/uneven/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "5de40211c951db27",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "hm/mid10k/uneven/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "7a29e979fe93abe7",
+   "overs": 2,
+   "worstPct": 6
+  },
+  "mara/mid10k/uneven/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "13f6ae0cced93a66",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "hm/mid10k/uneven/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "a67926cb145f022a",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "mara/mid10k/uneven/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "784e3a1033520435",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "hm/mid10k/uneven/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "18350435b04ee6b2",
+   "overs": 3,
+   "worstPct": 60
+  },
+  "mara/mid10k/uneven/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "cc6e870ece118bd2",
+   "overs": 6,
+   "worstPct": 177
+  },
+  "hm/mid10k/uneven/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "f50f08952a2b7bbc",
+   "overs": 6,
+   "worstPct": 177
+  },
+  "mara/mid10k/uneven/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "b673ce8ad6028774",
+   "overs": 6,
+   "worstPct": 177
+  },
+  "hm/mid10k/uneven/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "a5a9cf2fcf71f30e",
+   "overs": 6,
+   "worstPct": 177
+  },
+  "mara/mid10k/roomy/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "4a8a4e8399039962",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "f65548df2bb51585",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "0e42d3a5829a8ebc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "3d394ac21c20e5ca",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "69e2ce87c025c734",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "f523ca6dca0faafd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "c6fa5eaade1215f9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "c619e38b2132dc32",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap30/v30/none": {
+   "symptomatic": false,
+   "hash": "857554c42f456f62",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap30/v30/none": {
+   "symptomatic": false,
+   "hash": "34692ac8ef1958ee",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap30/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "04b523c85b75bee9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap30/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "7df2fb34e7552914",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "182a0938ca8cc202",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "hm/mid10k/roomy/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "6bf41280c4030a68",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "mara/mid10k/roomy/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "8b80290c3648aaa3",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "hm/mid10k/roomy/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "df59af3f4d371e81",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "mara/mid10k/roomy/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "48773775fefd5f0c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "67d9640146a277f6",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "767961cd74e0713b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "12f66198b1531b4e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "465305383064f543",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "26c1d8152a2b7530",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "33c098b965c2c9d0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "b7a04cfdcca9d0ab",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "eda271abb599ae80",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "0ad8994b96dbc338",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "7cec8bc6fca22244",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "d2e65ec4b6e5d441",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "8e4e115d64324cd6",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "hm/mid10k/roomy/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "7f6994fd93b32d05",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "mara/mid10k/roomy/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "c32e0bc001173d86",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "hm/mid10k/roomy/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "7bfb536cfe809888",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "mara/mid10k/roomy/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "30144bbe5ea0ebf3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "f27c86a60c50041b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "e0726ba21b67fe45",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "b8c34b834f4fde3c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "d4705207c586ec7f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "5309b4a2a3ac83e0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "6aa571743a477026",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "b862dbb8f7d2df99",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "9df37389985eceff",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "29504106d6753a53",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "de2abf014ae27c6e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "ee0be2634c583bf3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "864668f688e3f51a",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "hm/mid10k/roomy/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "e1551842271167ed",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "mara/mid10k/roomy/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "87f82d3b4bb785e0",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "hm/mid10k/roomy/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "321133cd1c764bd5",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "mara/mid10k/roomy/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "5d9c80d1d3bc5f38",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "d8a50dfde8920852",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "5c38272c875257b8",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "68613b34c6e257ac",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "5867f67589513d1d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "681eff7ed2d8fa9e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "96ffd8f1c5241859",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "88fb1b8e081cb274",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "2a4774bc5fecf13d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "cb398868fd664e10",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "f7ae436cee9ec7f2",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/mid10k/roomy/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "42b2a87fd62c1ba9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/mid10k/roomy/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "e37d7a0802254fb8",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "hm/mid10k/roomy/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "fcb4e391e907af54",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "mara/mid10k/roomy/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "040cfa0f8f63f46c",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "hm/mid10k/roomy/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "55ecb409cf0503c7",
+   "overs": 9,
+   "worstPct": 12
+  },
+  "mara/hm150/flat/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "65140571818d849c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "35457f10c6682e7b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "837be3faa8e8b320",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "916736224689cb20",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "6f58efb040368d1e",
+   "overs": 6,
+   "worstPct": 4
+  },
+  "hm/hm150/flat/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "b1aedca8d1db9aab",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/flat/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "f75b8ef9a282721e",
+   "overs": 6,
+   "worstPct": 4
+  },
+  "hm/hm150/flat/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "3a63b16f0a4ed5e1",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/flat/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "35648a8a11d4f322",
+   "overs": 9,
+   "worstPct": 58
+  },
+  "hm/hm150/flat/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "d01a5fa4dd772b0e",
+   "overs": 9,
+   "worstPct": 58
+  },
+  "mara/hm150/flat/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "c232feb0779aeca9",
+   "overs": 9,
+   "worstPct": 58
+  },
+  "hm/hm150/flat/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "25373b7b390a8404",
+   "overs": 9,
+   "worstPct": 58
+  },
+  "mara/hm150/flat/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "d26ed49f6d18c2f9",
+   "overs": 12,
+   "worstPct": 173
+  },
+  "hm/hm150/flat/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "442ef837985cd4e0",
+   "overs": 12,
+   "worstPct": 173
+  },
+  "mara/hm150/flat/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "bc3f7520a5d8ae46",
+   "overs": 12,
+   "worstPct": 173
+  },
+  "hm/hm150/flat/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "87c444051e795518",
+   "overs": 12,
+   "worstPct": 173
+  },
+  "mara/hm150/flat/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "bba9a0e6c2a8259c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "0a411a6ec592c481",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "4cd3fa71c52ede62",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "4009bd277735d498",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "66274950c3111039",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "d30c32f798693bc7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "53f8565f427cf37b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "59da502832635fa2",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "934b441d80574f02",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm150/flat/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "d767db2c70e75c2a",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/flat/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "d12b828501c47e4f",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm150/flat/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "0aa4599c3b2f4e12",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/flat/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "71416618f3c6f45b",
+   "overs": 12,
+   "worstPct": 76
+  },
+  "hm/hm150/flat/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "cb8d21cfde61d43c",
+   "overs": 12,
+   "worstPct": 76
+  },
+  "mara/hm150/flat/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "f475c032a943c0df",
+   "overs": 12,
+   "worstPct": 76
+  },
+  "hm/hm150/flat/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "6e2160a16008f05c",
+   "overs": 12,
+   "worstPct": 76
+  },
+  "mara/hm150/flat/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "7fc3411dc7978612",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "7cd9b4eb60c6b3cd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "d4f4ac9cd9ecfdaa",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "d180bad2fd101eaa",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "cc0a8518620e14f5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "0963348db7d63db2",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "d1e707748de6e948",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "8a46e755bd6b69b3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "faf88df684192a8b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "5b4c0360f142b1bf",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "dabae788c7ffdc6d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "ed69ec3f9399ff3f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "0f8f6be2f1006918",
+   "overs": 12,
+   "worstPct": 37
+  },
+  "hm/hm150/flat/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "6d505707c87b09f4",
+   "overs": 12,
+   "worstPct": 37
+  },
+  "mara/hm150/flat/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "70902494f865b6a8",
+   "overs": 12,
+   "worstPct": 37
+  },
+  "hm/hm150/flat/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "bd79bf1cfdd5bf0d",
+   "overs": 12,
+   "worstPct": 37
+  },
+  "mara/hm150/flat/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "da002538c3dc9895",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "4f42712897ecb274",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "1613c78d624ece66",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "acbdf55af5a8201b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "b700b3c94ca0bb27",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "98bff43abf544e27",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "a5b753078d33472d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "5985c08e95b005b1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "5ffdb8e11e45792a",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "06b1c8090c40ab23",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "7ec5a72f2c08e31e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "2705f66eb7e9c193",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap90/v45/none": {
+   "symptomatic": false,
+   "hash": "0f199ac05fe9d2cf",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap90/v45/none": {
+   "symptomatic": false,
+   "hash": "ac122375b634c0b6",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/flat/cap90/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "dcce463aab272a65",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/flat/cap90/v45/knee+shin": {
+   "symptomatic": false,
+   "hash": "b02511165efc419e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/tight/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "d4d3f72b79ca13e0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/tight/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "d056188e15d876d0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/tight/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "08847f2decb52be3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/tight/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "ec298b8079a290d6",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/tight/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "673f353748436c51",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm150/tight/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "c10a723b4a6b2152",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/tight/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "52eabbad588f0da1",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm150/tight/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "bdb8eedf5dd2af25",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/tight/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "5d370462f9494236",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "hm/hm150/tight/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "c06758812df072ad",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "mara/hm150/tight/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "8b5733f728fb8384",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "hm/hm150/tight/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "412a5341235b732c",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "mara/hm150/tight/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "5fb38cc04a0aa9ef",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "hm/hm150/tight/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "d8085b616efdbd61",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "mara/hm150/tight/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "2b192335f369143a",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "hm/hm150/tight/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "39831dc350c1f981",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "mara/hm150/tight/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "95d69f5750875ef5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/tight/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "174b3f5880b1b134",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/tight/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "9b9dbd9c27fcf2c2",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/tight/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "23396cfb2378265f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/tight/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "2d186a812a4bf45e",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm150/tight/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "fbcee078246bf548",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/tight/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "94f0497ef23565e2",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm150/tight/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "9991299cd94c727f",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/tight/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "3e249f22345cba94",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "hm/hm150/tight/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "0a91dec21c22a53c",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "mara/hm150/tight/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "17cf711207f162cf",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "hm/hm150/tight/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "c88cd16c670b3369",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "mara/hm150/tight/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "bffc8ed34f44a68d",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "hm/hm150/tight/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "76a152e2acf58f7c",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "mara/hm150/tight/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "3d76705c937dca18",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "hm/hm150/tight/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "432adf19749c6e13",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "mara/hm150/tight/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "b61957e5215085f1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/tight/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "5a25bcaaabf20bd6",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/tight/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "19e47acb0348b1ea",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/tight/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "07a378327734d86b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/tight/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "58cc0b90cae67d11",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm150/tight/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "524fd177206abce1",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/tight/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "21585126d25b2cf1",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm150/tight/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "47b3832814e72b3e",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/tight/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "6b005b91118fcc43",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "hm/hm150/tight/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "c61a6a3d94228435",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "mara/hm150/tight/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "80b320936e0bc9e8",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "hm/hm150/tight/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "86647ebd8c806c8d",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "mara/hm150/tight/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "7f5c403d419e1045",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "hm/hm150/tight/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "ebe787a9a0a1b8b6",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "mara/hm150/tight/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "d336570d36f93118",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "hm/hm150/tight/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "99a60e289c06ee90",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "mara/hm150/tight/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "3827f8ca367d21e4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/tight/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "532d2bf1659e4273",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/tight/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "cd67b7bb9a4f7e95",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/tight/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "22dd88f32af4ec06",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/tight/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "360ce5a6f20b2426",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm150/tight/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "f8a05c825cf097d4",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/tight/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "da937bdec8874f67",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm150/tight/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "fefb4ca16b9f7e17",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm150/tight/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "57c6d034b868417b",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "hm/hm150/tight/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "4f848b33f4c55289",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "mara/hm150/tight/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "6aace84a3e23882d",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "hm/hm150/tight/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "18d1651fa99f2798",
+   "overs": 9,
+   "worstPct": 53
+  },
+  "mara/hm150/tight/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "e54dd9fe80fe24fc",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "hm/hm150/tight/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "f8f098d6157752ae",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "mara/hm150/tight/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "9f1a6c8ce1ffb415",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "hm/hm150/tight/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "4ceb215ccd1d3fc4",
+   "overs": 12,
+   "worstPct": 164
+  },
+  "mara/hm150/uneven/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "18c68cfca0cdfebb",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/uneven/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "2ddc3ccbde3210cf",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/uneven/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "a29aaa569878eac4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/uneven/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "b4aed69677a00d5d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/uneven/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "7513e45acf99cbdb",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "hm/hm150/uneven/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "8ec3d121dec18c3c",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "mara/hm150/uneven/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "f6be363fad4f409c",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "hm/hm150/uneven/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "de6af6594c7cc19a",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "mara/hm150/uneven/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "014af4c64e48ad3c",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "hm/hm150/uneven/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "6f88c27607bf4be9",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "mara/hm150/uneven/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "177a7a60acec6344",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "hm/hm150/uneven/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "95c9dcf30d464d80",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "mara/hm150/uneven/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "cb5e17f3d668b5b3",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "hm/hm150/uneven/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "51190886ab63c687",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "mara/hm150/uneven/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "53058638abb783cc",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "hm/hm150/uneven/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "649047f250afb148",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "mara/hm150/uneven/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "963e04da9be90195",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/uneven/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "043cb29321295c43",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/uneven/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "d009a4778fe46064",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/uneven/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "92d6dc3ba7735944",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/uneven/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "1a9dbc273da60d4f",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "hm/hm150/uneven/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "0cf78abf82086bd2",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "mara/hm150/uneven/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "d3590da96dee013b",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "hm/hm150/uneven/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "32c2541cbe39f7ce",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "mara/hm150/uneven/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "e2aa363e765e31f0",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "hm/hm150/uneven/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "7d9ebb26ac998f45",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "mara/hm150/uneven/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "c38819b01107ef8e",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "hm/hm150/uneven/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "2921f037155bd3d4",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "mara/hm150/uneven/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "66206cf551e0f1ab",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "hm/hm150/uneven/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "1a0bdc8f4e220465",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "mara/hm150/uneven/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "af2105649457965f",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "hm/hm150/uneven/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "c969b5bb2974a4f2",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "mara/hm150/uneven/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "b02a021cde25a293",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/uneven/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "e51bc633a15f9196",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/uneven/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "5809cfd6abdbc9e9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/uneven/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "8b09129499fb18d0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/uneven/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "79f95ea017dd2f5a",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "hm/hm150/uneven/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "8ef63db578123eff",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "mara/hm150/uneven/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "10f7b6b3d52fbc30",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "hm/hm150/uneven/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "16e36dd4c0f7a747",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "mara/hm150/uneven/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "9a169b1f83f54508",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "hm/hm150/uneven/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "860878135f6badfc",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "mara/hm150/uneven/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "058ea0a381426744",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "hm/hm150/uneven/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "8ed5ce9650d11136",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "mara/hm150/uneven/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "cb9640d3b2833359",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "hm/hm150/uneven/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "0b45e8bed2d727dd",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "mara/hm150/uneven/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "6117cfa569478cfd",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "hm/hm150/uneven/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "295b811215dcd6bc",
+   "overs": 9,
+   "worstPct": 164
+  },
+  "mara/hm150/uneven/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "6797fefd4a5187a4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/uneven/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "f6389e84d42dbc2d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/uneven/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "feb93099af3c6f2c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/uneven/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "e150002e73d59a7d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/uneven/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "950e248673895f40",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "hm/hm150/uneven/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "c82e841bd8b0e1cc",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "mara/hm150/uneven/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "32405f78b7b8c9ff",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "hm/hm150/uneven/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "d75f2b943b2aab1f",
+   "overs": 2,
+   "worstPct": 1
+  },
+  "mara/hm150/uneven/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "cf1454a7163117ae",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "hm/hm150/uneven/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "6f7e251cb325568e",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "mara/hm150/uneven/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "5353b751213f4190",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "hm/hm150/uneven/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "dd69b5c43e0022eb",
+   "overs": 3,
+   "worstPct": 53
+  },
+  "mara/hm150/uneven/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "98ac6d98bd903de6",
+   "overs": 6,
+   "worstPct": 164
+  },
+  "hm/hm150/uneven/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "4ea78401d6c2fc8c",
+   "overs": 6,
+   "worstPct": 164
+  },
+  "mara/hm150/uneven/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "e5e25d870eafa936",
+   "overs": 6,
+   "worstPct": 164
+  },
+  "hm/hm150/uneven/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "8b68d152f8fe81e1",
+   "overs": 6,
+   "worstPct": 164
+  },
+  "mara/hm150/roomy/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "e82aa834fcda9afc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "4b42391429e7670e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "90e05fabfefd6887",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "56ad82ed4cda11b1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "4fb88887507afcfd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "2e8bd00bad156f6d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "1c7f961c57307a2a",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "c1256ae55987b267",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap30/v30/none": {
+   "symptomatic": false,
+   "hash": "c1b627502dad9941",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap30/v30/none": {
+   "symptomatic": false,
+   "hash": "286a713883a59ed5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap30/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "31e83b4a11962c73",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap30/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "23ad0ed127e64ea1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "bda00f9132bec6fb",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "hm/hm150/roomy/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "6a29419485059ed7",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "mara/hm150/roomy/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "6100fdf6cc9d9b5c",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "hm/hm150/roomy/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "6373aa600da22d90",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "mara/hm150/roomy/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "ea7c35480653ed4e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "6453f8b4bb961c8b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "bca0f54f096ac3bb",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "ff4219a59761946e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "b44ed01198fd8f4e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "84e936905d361d83",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "a33a85af2fa3af84",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "3dc61cd421997eab",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "ba4f7250efa249a7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "690f1ee12fa4b346",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "f2b89c9d72e83b28",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "a8b9c51a4400da59",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "d2321c2bc9fed9aa",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "hm/hm150/roomy/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "42e00f5c7eebff55",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "mara/hm150/roomy/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "afbab17780ab1225",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "hm/hm150/roomy/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "74a70f2cafb354c2",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "mara/hm150/roomy/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "cdb6fe3e01044c41",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "c59294ba625a71c0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "3022be4cf5be3104",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "bfc07065da4c4e15",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "6035005ce218d422",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "6ff154fe32cae7c2",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "a0275363190cf521",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "ec6bbc757ebd603d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "b321920fc259893f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "33913d6187e27265",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "28129a0c84212b0f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "8d150e664d5ace32",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "2a79df1f084c0555",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "hm/hm150/roomy/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "1db11c3986584051",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "mara/hm150/roomy/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "4b67ead2393078b2",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "hm/hm150/roomy/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "f94625a136bafbd2",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "mara/hm150/roomy/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "45022e026b1e8c05",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "22dc64068ea4a3dc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "fed5f26a0a4821b8",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "a0aec61fe8f265f1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "8c80cb9ced75a11b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "785b80fc6991d5c7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "3b4b75ede1ac42db",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "7a3ab675cd54c5d5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "176ba951b2c3449e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "cd0204f9bc5f6e28",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "2ec75254abc3a4d5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm150/roomy/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "2cd1e6f92a379346",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm150/roomy/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "f2629f7dc30257e4",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "hm/hm150/roomy/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "14dccfd77eebc93f",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "mara/hm150/roomy/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "04997c83efd93f01",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "hm/hm150/roomy/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "c04f6351b25ac95c",
+   "overs": 6,
+   "worstPct": 7
+  },
+  "mara/hm216/flat/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "1fed8f5679862972",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "hm/hm216/flat/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "0f448f4b126a5e30",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "mara/hm216/flat/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "5a6c4fc9ed52f083",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "hm/hm216/flat/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "912b3ad7877eb475",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "mara/hm216/flat/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "54fa8b0db0393905",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "hm/hm216/flat/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "0e4a066877c52b50",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "mara/hm216/flat/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "11fd2f7001f48270",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "hm/hm216/flat/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "de3476a057bff30d",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "mara/hm216/flat/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "0c37db9920305bd4",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "hm/hm216/flat/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "f7d520544c881400",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "mara/hm216/flat/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "2cbdaee1f4d1a6cc",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "hm/hm216/flat/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "900a1dbbb7cbd738",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "mara/hm216/flat/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "9448f4eecba6d927",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "hm/hm216/flat/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "aafc452f356a253c",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "mara/hm216/flat/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "35813cdc550bab4b",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "hm/hm216/flat/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "db9fe41e5265fceb",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "mara/hm216/flat/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "f12fcf36d83f80dc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "cfe26e1faf194263",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "0cc63b53542cd440",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "414b553b7eb7329b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "2652c2264a9f2ef4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "65d5a424bf635711",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "5083f22d44d28a8d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "5368ba0efc82a9ce",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "68ba9ae2537f910c",
+   "overs": 9,
+   "worstPct": 29
+  },
+  "hm/hm216/flat/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "d7500f175b1431c1",
+   "overs": 9,
+   "worstPct": 29
+  },
+  "mara/hm216/flat/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "730eb30767daddf9",
+   "overs": 9,
+   "worstPct": 29
+  },
+  "hm/hm216/flat/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "44f7ec90384550e6",
+   "overs": 9,
+   "worstPct": 29
+  },
+  "mara/hm216/flat/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "ab8ca32f5460d01d",
+   "overs": 12,
+   "worstPct": 124
+  },
+  "hm/hm216/flat/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "55cea7c692f8d23b",
+   "overs": 12,
+   "worstPct": 124
+  },
+  "mara/hm216/flat/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "64c9043d8057bb79",
+   "overs": 12,
+   "worstPct": 124
+  },
+  "hm/hm216/flat/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "7c8479ff6e236b9b",
+   "overs": 12,
+   "worstPct": 124
+  },
+  "mara/hm216/flat/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "8a03c8febb4b9305",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "e29866b1c63b1055",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "97d7d4eeb8eb2c8a",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "d9d319da342edf5d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "3562dd0769f9da74",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "8850d6692bae4e65",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "4d23b079e9d41170",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "a1ac065b34d7f920",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "194f1ecffbc9903c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "4ea86077ac5d2cf1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "49b1368be39f93a5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "5a48f92aba9f0d1f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "a2ef3de048f3478c",
+   "overs": 12,
+   "worstPct": 64
+  },
+  "hm/hm216/flat/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "2cb3744ca9805520",
+   "overs": 12,
+   "worstPct": 64
+  },
+  "mara/hm216/flat/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "7f45e41271ddeb83",
+   "overs": 12,
+   "worstPct": 64
+  },
+  "hm/hm216/flat/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "47f3c505f2792a87",
+   "overs": 12,
+   "worstPct": 64
+  },
+  "mara/hm216/flat/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "44c1d8ebe4ef23f1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "b9ad58c37c0ebb82",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "5c197ad2f1e3dc74",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "68d003249197666b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "cb1ca1d18d3499dc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "a8f17a069e659b4b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "f881e9803cd269ae",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "104fa0cfd5487025",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "3aa5d126d3fc0363",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "692665255c1c6e39",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "7936c4a9beffc35d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/flat/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "7e77c1769cfe5d08",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/flat/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "3f9d6b809c29d6b4",
+   "overs": 8,
+   "worstPct": 8
+  },
+  "hm/hm216/flat/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "ca891470757eee48",
+   "overs": 8,
+   "worstPct": 8
+  },
+  "mara/hm216/flat/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "e4c9bb29dc381f2a",
+   "overs": 8,
+   "worstPct": 8
+  },
+  "hm/hm216/flat/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "fd569f6a06ce8d7b",
+   "overs": 8,
+   "worstPct": 8
+  },
+  "mara/hm216/tight/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "bcdbf9989d86d504",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "hm/hm216/tight/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "a04c70ff51b29e63",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "mara/hm216/tight/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "05cf421a5b1b1ec8",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "hm/hm216/tight/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "8796fe9711b9f201",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "mara/hm216/tight/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "21a64b6b958ba3e5",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "hm/hm216/tight/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "60bee7be3ee8815c",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "mara/hm216/tight/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "ee80501a79ae6db8",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "hm/hm216/tight/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "3e31d8f990fd98ae",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "mara/hm216/tight/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "403afcc9e887d526",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "hm/hm216/tight/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "69977c40768f01c1",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "mara/hm216/tight/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "0cedb57079b76ed8",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "hm/hm216/tight/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "95d35c167d689cbc",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "mara/hm216/tight/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "e578d2aea95fec06",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "hm/hm216/tight/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "f969854ad8a2adb8",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "mara/hm216/tight/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "1e1015118eab40f2",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "hm/hm216/tight/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "c4e80a729bdd67a4",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "mara/hm216/tight/cap45/v12/none": {
+   "symptomatic": true,
+   "hash": "279c09b6904f73c1",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "hm/hm216/tight/cap45/v12/none": {
+   "symptomatic": true,
+   "hash": "bcdfd63b4eb47b30",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "mara/hm216/tight/cap45/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "3580d2835518433f",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "hm/hm216/tight/cap45/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "7a032e08edce5c41",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "mara/hm216/tight/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "39295ccd9d4c6126",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "hm/hm216/tight/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "489ee6cd67ac8bc8",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "mara/hm216/tight/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "902a38e195d35a55",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "hm/hm216/tight/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "e1dea15427051560",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "mara/hm216/tight/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "aaee2ca9aa816434",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "hm/hm216/tight/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "e8c79d4c98142427",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "mara/hm216/tight/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "2667236d89a4651d",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "hm/hm216/tight/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "6445e87971a1192d",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "mara/hm216/tight/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "b3930b310fccf084",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "hm/hm216/tight/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "23a8f891458e0b43",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "mara/hm216/tight/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "f06aade3a693c73d",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "hm/hm216/tight/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "7a086ecea7dfa696",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "mara/hm216/tight/cap60/v12/none": {
+   "symptomatic": true,
+   "hash": "3bfa2101ea8f7f06",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "hm/hm216/tight/cap60/v12/none": {
+   "symptomatic": true,
+   "hash": "a298effc039e017d",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "mara/hm216/tight/cap60/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "8dc8558ae7138081",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "hm/hm216/tight/cap60/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "4c7a089b5cdaca26",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "mara/hm216/tight/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "5803367f828c750d",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "hm/hm216/tight/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "575901b4a4cedfc3",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "mara/hm216/tight/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "a915ad5519efa1bb",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "hm/hm216/tight/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "7312fbbe32a49088",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "mara/hm216/tight/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "157affb143f68b1e",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "hm/hm216/tight/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "40fcdc54f37d5e88",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "mara/hm216/tight/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "40e79c5f3e97348f",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "hm/hm216/tight/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "d9c2973a75c81833",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "mara/hm216/tight/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "a9a292e14ed067a0",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "hm/hm216/tight/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "0e6b25257f192682",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "mara/hm216/tight/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "79ab3f6572a1fb66",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "hm/hm216/tight/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "8ca15675683a332d",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "mara/hm216/tight/cap90/v12/none": {
+   "symptomatic": true,
+   "hash": "680459773a5c3367",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "hm/hm216/tight/cap90/v12/none": {
+   "symptomatic": true,
+   "hash": "5d095960fbd66ac4",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "mara/hm216/tight/cap90/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "3022c42353ebb33a",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "hm/hm216/tight/cap90/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "cbbb67f869f35c68",
+   "overs": 6,
+   "worstPct": 10
+  },
+  "mara/hm216/tight/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "27ad0ef5192b00b9",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "hm/hm216/tight/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "8eab68b8c9bb5d74",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "mara/hm216/tight/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "d3c65fe52715f9ea",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "hm/hm216/tight/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "8201f2ba72dbb574",
+   "overs": 9,
+   "worstPct": 18
+  },
+  "mara/hm216/tight/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "2981b8a2fa8134c4",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "hm/hm216/tight/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "f0c05ae6f5e1bb88",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "mara/hm216/tight/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "3a7da471b7bb44ee",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "hm/hm216/tight/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "04284391c5b06012",
+   "overs": 9,
+   "worstPct": 78
+  },
+  "mara/hm216/tight/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "9165f61443af3fa1",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "hm/hm216/tight/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "b58699b6d9f0e138",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "mara/hm216/tight/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "eefa82fd41f04c84",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "hm/hm216/tight/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "e563a79deaf029d1",
+   "overs": 12,
+   "worstPct": 208
+  },
+  "mara/hm216/uneven/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "26217ce3d33313ef",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "hm/hm216/uneven/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "f6e23f6fb07d07de",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "mara/hm216/uneven/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "0409fc93ffde6236",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "hm/hm216/uneven/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "ee7a022574a91211",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "mara/hm216/uneven/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "d4c6f97b8232e501",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "hm/hm216/uneven/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "7cecaf5e6875922a",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "mara/hm216/uneven/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "fd009af898fff78c",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "hm/hm216/uneven/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "344f92009c629482",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "mara/hm216/uneven/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "31f50a7a44b30816",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "hm/hm216/uneven/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "184e24e4cfb966bf",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "mara/hm216/uneven/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "842fc245f646fb25",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "hm/hm216/uneven/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "0d2927a20a009a24",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "mara/hm216/uneven/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "a2b935246fe48f5f",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "hm/hm216/uneven/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "0b809a2536a3389c",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "mara/hm216/uneven/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "6d39258f2239d736",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "hm/hm216/uneven/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "38131e7bab633e4d",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "mara/hm216/uneven/cap45/v12/none": {
+   "symptomatic": true,
+   "hash": "9b1e050bb694acdc",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "hm/hm216/uneven/cap45/v12/none": {
+   "symptomatic": true,
+   "hash": "94d91e9ca884beba",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "mara/hm216/uneven/cap45/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "95c5c15ea1bed169",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "hm/hm216/uneven/cap45/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "f181ace7ecfcc2d5",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "mara/hm216/uneven/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "4da0482de68b71db",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "hm/hm216/uneven/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "64fdc307a84fb5a4",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "mara/hm216/uneven/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "b6a2691c033c693d",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "hm/hm216/uneven/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "aa5bc1e8e95a6c87",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "mara/hm216/uneven/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "0a5e640e5239871e",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "hm/hm216/uneven/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "c387d9029e7a96c7",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "mara/hm216/uneven/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "6d12a0b15c66cfd4",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "hm/hm216/uneven/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "f2b530116671f260",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "mara/hm216/uneven/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "b8cade6e59559d13",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "hm/hm216/uneven/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "cacab1827d292e8f",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "mara/hm216/uneven/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "c34505f5f9e3fa40",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "hm/hm216/uneven/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "4359c134852981b1",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "mara/hm216/uneven/cap60/v12/none": {
+   "symptomatic": true,
+   "hash": "7343ff9c0eb91ca5",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "hm/hm216/uneven/cap60/v12/none": {
+   "symptomatic": true,
+   "hash": "194051a2d0977c6a",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "mara/hm216/uneven/cap60/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "5fdd52d4382b7b00",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "hm/hm216/uneven/cap60/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "493209666f726976",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "mara/hm216/uneven/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "7e7a0f964eec29f3",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "hm/hm216/uneven/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "7e3bd7567025d56f",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "mara/hm216/uneven/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "8f5754c66f274c79",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "hm/hm216/uneven/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "1fbf75ed15a19648",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "mara/hm216/uneven/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "4f2956931e59bc2f",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "hm/hm216/uneven/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "57902179fed96e28",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "mara/hm216/uneven/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "8bd3838e8030f82f",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "hm/hm216/uneven/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "46986114c284c5f0",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "mara/hm216/uneven/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "0e5548c1d73b18c3",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "hm/hm216/uneven/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "f748bb098d3db22e",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "mara/hm216/uneven/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "c3a93de4f7d65236",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "hm/hm216/uneven/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "ee9e50b50cc69b64",
+   "overs": 11,
+   "worstPct": 208
+  },
+  "mara/hm216/uneven/cap90/v12/none": {
+   "symptomatic": true,
+   "hash": "8224ba55fd76757e",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "hm/hm216/uneven/cap90/v12/none": {
+   "symptomatic": true,
+   "hash": "71a8bfc059fa6a8a",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "mara/hm216/uneven/cap90/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "a83d5d1ab2047880",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "hm/hm216/uneven/cap90/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "6a28742a795aeb70",
+   "overs": 2,
+   "worstPct": 10
+  },
+  "mara/hm216/uneven/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "9fc50d54162fb719",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "hm/hm216/uneven/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "b0ae87ac6df74d2b",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "mara/hm216/uneven/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "16c8492036dce557",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "hm/hm216/uneven/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "311b47a5d375a001",
+   "overs": 3,
+   "worstPct": 18
+  },
+  "mara/hm216/uneven/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "d6da8a2da7d1a409",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "hm/hm216/uneven/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "800952cfd347da58",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "mara/hm216/uneven/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "a4b69b1deca9d6eb",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "hm/hm216/uneven/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "8cb916d872ec9a83",
+   "overs": 3,
+   "worstPct": 78
+  },
+  "mara/hm216/uneven/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "e7ecb79557badad5",
+   "overs": 10,
+   "worstPct": 208
+  },
+  "hm/hm216/uneven/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "8c508e37e39d2fe2",
+   "overs": 10,
+   "worstPct": 208
+  },
+  "mara/hm216/uneven/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "9cc7a70e275cac57",
+   "overs": 10,
+   "worstPct": 208
+  },
+  "hm/hm216/uneven/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "084b385f9883416a",
+   "overs": 10,
+   "worstPct": 208
+  },
+  "mara/hm216/roomy/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "625ccd6f2689dbf0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "dcc681da73d7d41b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "29fb016560ff2f7f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "7c49ec60e4e45fcc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "375aeec514595195",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "0d5e9349a217003d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "b8ac098bf5a56eda",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "250223a96c6a9a91",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap30/v30/none": {
+   "symptomatic": false,
+   "hash": "2b8394e3f2f7d562",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap30/v30/none": {
+   "symptomatic": false,
+   "hash": "620f7f4db69bd5b1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap30/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "607ec99e92ab834c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap30/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "e637e779d7fa0ade",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "c7c04c21e15647e6",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "hm/hm216/roomy/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "738d3595194c084f",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "mara/hm216/roomy/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "0d64f93e292c3289",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "hm/hm216/roomy/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "a9a5113473b48971",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "mara/hm216/roomy/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "2174fc7791743210",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "3f4b529ed49fbffc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "0e5db221c1d45991",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "8e3b295864edd8a1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "3a4201abd48386ee",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "19c5a45f02201e07",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "a226002fbc743642",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "32ce4778defd9807",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "ebabb3df754ce78f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "211b3e0ca444f713",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "4aaf9ab0c79ba7d3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "4d3ce4f2fa5505b6",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "cf403ac14b092816",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "hm/hm216/roomy/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "3bc8c9bbb6c5a5a7",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "mara/hm216/roomy/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "0067c8153d7e159b",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "hm/hm216/roomy/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "41d937721fe240e9",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "mara/hm216/roomy/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "999c55eb2468afcf",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "99a3089ee1601bd9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "89de3d21a0b2263c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "ff3ccd6595a7b665",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "31d2a2c5e0158b79",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "16f920639ca8ff97",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "db6653e15fcd6783",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "adb200c31b0791b3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "76ed220f90cdb5e7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "c034eef540504471",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "4b1d04eae4b61d19",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "8000a90fb3fbebd1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "65a566763107243f",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "hm/hm216/roomy/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "bae9a0129e664de8",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "mara/hm216/roomy/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "64480348cfe4a120",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "hm/hm216/roomy/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "74c29afb24f80fca",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "mara/hm216/roomy/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "c69a73856ccbe3cf",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "c81fbdba52d15c1d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "13f68e028a323ad6",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "6e1e85a9dc4be909",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "9e1658430f70e400",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "11c0b833066a1be7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "049d0d0c04ea83dd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "23ebcf7c3931c986",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "ec1f872c37e164e8",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "f03c3a4aa20f94c8",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "ef572b4350263641",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm216/roomy/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "324dcb72526b8d8c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm216/roomy/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "2e05ec28f65a8aa3",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "hm/hm216/roomy/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "27d2603514eee1a1",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "mara/hm216/roomy/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "316e092acc237979",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "hm/hm216/roomy/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "ffe50f204fd8414d",
+   "overs": 11,
+   "worstPct": 29
+  },
+  "mara/hm230/flat/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "8cfce4f6801b8a1b",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "hm/hm230/flat/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "10d97c7e255b9f85",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "mara/hm230/flat/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "414b7bdb9b9d7837",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "hm/hm230/flat/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "0ba7cb0020cde824",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "mara/hm230/flat/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "694e23f546e384e1",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "hm/hm230/flat/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "2ec3fd44860a8d91",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "mara/hm230/flat/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "af479e1dfec6ad9a",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "hm/hm230/flat/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "7afd71d79b1d4af2",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "mara/hm230/flat/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "717e3167ad8c3fce",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "hm/hm230/flat/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "f8528a4b577ad492",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "mara/hm230/flat/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "983a5fb15f490346",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "hm/hm230/flat/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "16aed9718032b50b",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "mara/hm230/flat/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "f52aed17fe111028",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/flat/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "f7bed475a297f6d5",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/flat/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "4c02b82cc170a7e6",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/flat/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "a6b7db2f29a2077c",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/flat/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "d48f1c1910f0f9aa",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "3a31dcfdcda623fd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "3b03abde46674eeb",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "b57292e63dfe2ec3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "73e9ff2507423b25",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "00c34ae0a2450c51",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "0a083a85acddb8ad",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "c013b7c068b71acf",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "060f739bff47b3eb",
+   "overs": 9,
+   "worstPct": 42
+  },
+  "hm/hm230/flat/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "ded4bf0dd1d32930",
+   "overs": 9,
+   "worstPct": 42
+  },
+  "mara/hm230/flat/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "566dbd0b1e904bb7",
+   "overs": 9,
+   "worstPct": 42
+  },
+  "hm/hm230/flat/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "1ee04cd87789ea02",
+   "overs": 9,
+   "worstPct": 42
+  },
+  "mara/hm230/flat/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "b230b410ed91ddd9",
+   "overs": 12,
+   "worstPct": 146
+  },
+  "hm/hm230/flat/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "fb709c084d14128b",
+   "overs": 12,
+   "worstPct": 146
+  },
+  "mara/hm230/flat/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "8da72faba7f20c51",
+   "overs": 12,
+   "worstPct": 146
+  },
+  "hm/hm230/flat/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "ea4bcc01c935c9a6",
+   "overs": 12,
+   "worstPct": 146
+  },
+  "mara/hm230/flat/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "a63a51badc16c82b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "93a7973f181e02f8",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "3b25b703047d05fa",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "af758b5ed7e883c7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "d8240565060c6fe7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "aab3308c3732b835",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "cc8726b01d17ef11",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "e9a35b1bb3409938",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "2d5079af2610bad0",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm230/flat/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "930e332a0803f508",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm230/flat/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "630b99c64b509501",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "hm/hm230/flat/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "524d9ada3f358d38",
+   "overs": 6,
+   "worstPct": 1
+  },
+  "mara/hm230/flat/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "8018f416c22ff8c8",
+   "overs": 12,
+   "worstPct": 76
+  },
+  "hm/hm230/flat/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "f1cfd970e8dd3bbe",
+   "overs": 12,
+   "worstPct": 76
+  },
+  "mara/hm230/flat/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "7712c75594f6da7f",
+   "overs": 12,
+   "worstPct": 76
+  },
+  "hm/hm230/flat/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "3c2c1ed625a0bfea",
+   "overs": 12,
+   "worstPct": 76
+  },
+  "mara/hm230/flat/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "a73ea6051fad66f6",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "47869054a1d24f52",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "01f52cfdcb64c396",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "a27d43a1d4bf0fce",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "7c9bd53e0a68c02d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "27e98c3780a5892e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "93cbc74c699ff7d2",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "9be0375b48b61041",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "014ce8c7f7237d2a",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "deaa73344fa24925",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "619d38724e59516e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/flat/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "8c5b57981ab38b85",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/flat/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "98575c1b78fa93b2",
+   "overs": 12,
+   "worstPct": 19
+  },
+  "hm/hm230/flat/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "ba7869651f7d0027",
+   "overs": 12,
+   "worstPct": 18
+  },
+  "mara/hm230/flat/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "2e5d69f0d1b8e4ad",
+   "overs": 12,
+   "worstPct": 19
+  },
+  "hm/hm230/flat/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "03ac7f80ffc85e0e",
+   "overs": 12,
+   "worstPct": 18
+  },
+  "mara/hm230/tight/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "a254a4a31c680f0c",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "hm/hm230/tight/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "16a327ca6aed8f9c",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "mara/hm230/tight/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "4fc8b9f2d8dc2f31",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "hm/hm230/tight/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "53e8be8088c42950",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "mara/hm230/tight/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "92d9d7836c1ff5f9",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "hm/hm230/tight/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "00ca310f189afe2d",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "mara/hm230/tight/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "94c08dd96d378fa9",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "hm/hm230/tight/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "b58707dbf20e3e09",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "mara/hm230/tight/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "5efd4261148b2cbc",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "hm/hm230/tight/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "597f10d864bfa5a3",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "mara/hm230/tight/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "b386a0537cd8c305",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "hm/hm230/tight/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "5eebc6786f96b9f8",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "mara/hm230/tight/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "6c619751f726f427",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/tight/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "cdcdfa77e7f7631d",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/tight/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "61150ffafd27dabd",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/tight/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "f42607b43cfe502e",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/tight/cap45/v12/none": {
+   "symptomatic": true,
+   "hash": "8ce7375d7c4b1a09",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "hm/hm230/tight/cap45/v12/none": {
+   "symptomatic": true,
+   "hash": "89ce7033d9b86505",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "mara/hm230/tight/cap45/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "bfb37e3d7c1bea9d",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "hm/hm230/tight/cap45/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "dd57e6e94da69d34",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "mara/hm230/tight/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "72cfca24633e81d9",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "hm/hm230/tight/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "67a8cae170676550",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "mara/hm230/tight/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "3f3c2c8905851c7a",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "hm/hm230/tight/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "7bec82cb1cd0a731",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "mara/hm230/tight/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "c3e16f35390de82d",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "hm/hm230/tight/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "288a8100c1ecb51b",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "mara/hm230/tight/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "c29f5b90843a2326",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "hm/hm230/tight/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "09678eed7a145508",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "mara/hm230/tight/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "b2156a488e90c580",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/tight/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "82e4c394459032e0",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/tight/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "eca86c2d17099a99",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/tight/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "1cccf2e6700c99c9",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/tight/cap60/v12/none": {
+   "symptomatic": true,
+   "hash": "d4e8fd627f7f2f70",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "hm/hm230/tight/cap60/v12/none": {
+   "symptomatic": true,
+   "hash": "3ff9f40e488fa669",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "mara/hm230/tight/cap60/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "f7dfdbfd278d314e",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "hm/hm230/tight/cap60/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "242fc43eeafd52d9",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "mara/hm230/tight/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "40fb40e184027afb",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "hm/hm230/tight/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "c18798b50af01e50",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "mara/hm230/tight/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "37a38df844596141",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "hm/hm230/tight/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "dd4664300e884916",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "mara/hm230/tight/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "403e90a8bc3d7ddb",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "hm/hm230/tight/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "2780087d2457ac21",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "mara/hm230/tight/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "acb16a565319face",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "hm/hm230/tight/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "bc293503220d075e",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "mara/hm230/tight/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "c7dcb823658fed1a",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/tight/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "58064538f7afc570",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/tight/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "01ca4767bd8120b4",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/tight/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "dbc89b3fc769f4fb",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/tight/cap90/v12/none": {
+   "symptomatic": true,
+   "hash": "34e8461c9981e1ba",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "hm/hm230/tight/cap90/v12/none": {
+   "symptomatic": true,
+   "hash": "2b87bd7c35a87c3d",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "mara/hm230/tight/cap90/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "8751aabb19b7a66c",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "hm/hm230/tight/cap90/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "5be3706a41d77c10",
+   "overs": 9,
+   "worstPct": 28
+  },
+  "mara/hm230/tight/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "db3da6ab0363ef2a",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "hm/hm230/tight/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "f63eeaf20541eff9",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "mara/hm230/tight/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "e7607300eb74e248",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "hm/hm230/tight/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "a22df90663b3e0a3",
+   "overs": 9,
+   "worstPct": 37
+  },
+  "mara/hm230/tight/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "15d6e07c4ed765f1",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "hm/hm230/tight/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "53d3dfaf72a342f2",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "mara/hm230/tight/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "7c201067740306e6",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "hm/hm230/tight/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "d84737c34d9f5b29",
+   "overs": 9,
+   "worstPct": 107
+  },
+  "mara/hm230/tight/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "2662b0d3f1705771",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/tight/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "a02b5e0d53b12fb8",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/tight/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "c0aa42f8d09232e7",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/tight/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "9362563877b9015c",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/uneven/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "cbe34da1dbd11e3c",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "hm/hm230/uneven/cap30/v12/none": {
+   "symptomatic": true,
+   "hash": "a0efe353834827be",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "mara/hm230/uneven/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "a7eadfc47d03ca2a",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "hm/hm230/uneven/cap30/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "a67a1d5395581d7e",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "mara/hm230/uneven/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "4360378f8d8085ab",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "hm/hm230/uneven/cap30/v20/none": {
+   "symptomatic": true,
+   "hash": "2ea96d8066ba8727",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "mara/hm230/uneven/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "973fe9155465d552",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "hm/hm230/uneven/cap30/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "d2649dfbbada7554",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "mara/hm230/uneven/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "2740f2905a1afdac",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "hm/hm230/uneven/cap30/v30/none": {
+   "symptomatic": true,
+   "hash": "c1fb35348bd2663b",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "mara/hm230/uneven/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "f90faa8b97ddf690",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "hm/hm230/uneven/cap30/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "e6a5ba27787b073c",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "mara/hm230/uneven/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "1eef646ce6a9a8eb",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/uneven/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "56a1ee630329a850",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/uneven/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "3ea3455949231e83",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/uneven/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "bda6b842297307b1",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/uneven/cap45/v12/none": {
+   "symptomatic": true,
+   "hash": "82426dcd818bf042",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "hm/hm230/uneven/cap45/v12/none": {
+   "symptomatic": true,
+   "hash": "b793c3014688fc96",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "mara/hm230/uneven/cap45/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "9ef05692fa73f466",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "hm/hm230/uneven/cap45/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "43b50faf3f023638",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "mara/hm230/uneven/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "17882509efed2349",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "hm/hm230/uneven/cap45/v20/none": {
+   "symptomatic": true,
+   "hash": "4e64dcabee9de4df",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "mara/hm230/uneven/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "b2d95826d0d4cd05",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "hm/hm230/uneven/cap45/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "cad411e8ea692e05",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "mara/hm230/uneven/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "78e7e8060b4325c0",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "hm/hm230/uneven/cap45/v30/none": {
+   "symptomatic": true,
+   "hash": "cd5e4988e96c6d4f",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "mara/hm230/uneven/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "9adb69ea012bc1fb",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "hm/hm230/uneven/cap45/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "8a7c4ba889512302",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "mara/hm230/uneven/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "1465983544fec673",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/uneven/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "17adb8c4d4469d6e",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/uneven/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "3245dd11715da0e5",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/uneven/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "518fe82924b5afbc",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/uneven/cap60/v12/none": {
+   "symptomatic": true,
+   "hash": "4497e0c480f06427",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "hm/hm230/uneven/cap60/v12/none": {
+   "symptomatic": true,
+   "hash": "6d2d3ed24a6170e1",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "mara/hm230/uneven/cap60/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "67aafc0b92081536",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "hm/hm230/uneven/cap60/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "fb62b054c58d8dbc",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "mara/hm230/uneven/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "f186a06bf2a71562",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "hm/hm230/uneven/cap60/v20/none": {
+   "symptomatic": true,
+   "hash": "da3f6c9b48d1c29e",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "mara/hm230/uneven/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "8381d474859aefdf",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "hm/hm230/uneven/cap60/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "46662687f8198d0c",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "mara/hm230/uneven/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "27d899c5ec7d7f73",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "hm/hm230/uneven/cap60/v30/none": {
+   "symptomatic": true,
+   "hash": "db6ffd0537c6f0ad",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "mara/hm230/uneven/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "c316620574636bd1",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "hm/hm230/uneven/cap60/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "503d70e1f07cd74c",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "mara/hm230/uneven/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "9c09eaefc2d1a204",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/uneven/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "8a152e8671a9e051",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/uneven/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "dde83897a497f1f4",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/uneven/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "7153d7003151ba64",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/uneven/cap90/v12/none": {
+   "symptomatic": true,
+   "hash": "402eb1c413c4db2b",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "hm/hm230/uneven/cap90/v12/none": {
+   "symptomatic": true,
+   "hash": "2e25cfb9dc5d928c",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "mara/hm230/uneven/cap90/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "52e7213b9382a603",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "hm/hm230/uneven/cap90/v12/knee+shin": {
+   "symptomatic": true,
+   "hash": "16c7888ec154b61f",
+   "overs": 3,
+   "worstPct": 28
+  },
+  "mara/hm230/uneven/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "2b2637ae52a15491",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "hm/hm230/uneven/cap90/v20/none": {
+   "symptomatic": true,
+   "hash": "c2f606218b285898",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "mara/hm230/uneven/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "6c3f7682d22714be",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "hm/hm230/uneven/cap90/v20/knee+shin": {
+   "symptomatic": true,
+   "hash": "1a0e458642fcd09d",
+   "overs": 3,
+   "worstPct": 37
+  },
+  "mara/hm230/uneven/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "5e4f05f53b352df6",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "hm/hm230/uneven/cap90/v30/none": {
+   "symptomatic": true,
+   "hash": "d61783d1be841def",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "mara/hm230/uneven/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "57dcd1e02e29daa6",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "hm/hm230/uneven/cap90/v30/knee+shin": {
+   "symptomatic": true,
+   "hash": "b9013e200fcfe175",
+   "overs": 5,
+   "worstPct": 107
+  },
+  "mara/hm230/uneven/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "27c75e1abd304c85",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/uneven/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "d41e0bd8b50d5510",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/uneven/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "f176d68c63a776ed",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "hm/hm230/uneven/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "b5b4c6f56eaa7dbb",
+   "overs": 12,
+   "worstPct": 259
+  },
+  "mara/hm230/roomy/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "1122b899b87e4970",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap30/v12/none": {
+   "symptomatic": false,
+   "hash": "18c41546a0d8805c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "da0b4220aa02c5a2",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap30/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "1f8c636e635c3dc5",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "ad5fbb4e3e286c6c",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap30/v20/none": {
+   "symptomatic": false,
+   "hash": "a4a1ef8195773f24",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "51107d4c6934e22e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap30/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "cb556c8f48e78285",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap30/v30/none": {
+   "symptomatic": false,
+   "hash": "5f0ac7f36aa70eb1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap30/v30/none": {
+   "symptomatic": false,
+   "hash": "22ab6e9a0f69ece4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap30/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "d37fc87cf845e575",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap30/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "efe2fbbabb96e9f4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "433dc151f67041f5",
+   "overs": 12,
+   "worstPct": 43
+  },
+  "hm/hm230/roomy/cap30/v45/none": {
+   "symptomatic": true,
+   "hash": "505636df0b1fa2ea",
+   "overs": 12,
+   "worstPct": 41
+  },
+  "mara/hm230/roomy/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "e310d51d69005548",
+   "overs": 12,
+   "worstPct": 43
+  },
+  "hm/hm230/roomy/cap30/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "a97463874d5baa44",
+   "overs": 12,
+   "worstPct": 41
+  },
+  "mara/hm230/roomy/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "1e8a4955b9f9d24d",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap45/v12/none": {
+   "symptomatic": false,
+   "hash": "2ffa4f93a22ca1ce",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "a00ab2c59a34b220",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap45/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "3c9fbc49173c4bf6",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "35eea19328c9aaad",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap45/v20/none": {
+   "symptomatic": false,
+   "hash": "6bb8236c87c0d10e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "7dd3d1dc5a704ced",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap45/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "95972b557318ebbd",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "f2c18fd733d5e0e0",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap45/v30/none": {
+   "symptomatic": false,
+   "hash": "9bf294833dc0910e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "f23327363c6876e3",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap45/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "6270ad6762eda4cc",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "e8077f43b86a8565",
+   "overs": 12,
+   "worstPct": 43
+  },
+  "hm/hm230/roomy/cap45/v45/none": {
+   "symptomatic": true,
+   "hash": "1d8cf51549ca6814",
+   "overs": 12,
+   "worstPct": 41
+  },
+  "mara/hm230/roomy/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "fad7aa3b295a6e44",
+   "overs": 12,
+   "worstPct": 43
+  },
+  "hm/hm230/roomy/cap45/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "9ae5eba30a1a597d",
+   "overs": 12,
+   "worstPct": 41
+  },
+  "mara/hm230/roomy/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "846a72c183aec5eb",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap60/v12/none": {
+   "symptomatic": false,
+   "hash": "c60c4b5d0d221626",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "9dc3023456cab7d7",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap60/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "4c94d9905a16d4eb",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "f6deb316e0b10c3b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap60/v20/none": {
+   "symptomatic": false,
+   "hash": "706edb65d79106ef",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "4bdf807cd7509284",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap60/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "8283459a248e49c2",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "6701b8b90ab9e3f4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap60/v30/none": {
+   "symptomatic": false,
+   "hash": "e3525559c485871f",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "c02d05f979e0a413",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap60/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "dcc468eecd024851",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "c21eacfc81fa6e21",
+   "overs": 12,
+   "worstPct": 43
+  },
+  "hm/hm230/roomy/cap60/v45/none": {
+   "symptomatic": true,
+   "hash": "72115d7ed25d7424",
+   "overs": 12,
+   "worstPct": 41
+  },
+  "mara/hm230/roomy/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "2cfe34172f05bc3d",
+   "overs": 12,
+   "worstPct": 43
+  },
+  "hm/hm230/roomy/cap60/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "b401cabe7acb423c",
+   "overs": 12,
+   "worstPct": 41
+  },
+  "mara/hm230/roomy/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "722ed3cace0042ea",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap90/v12/none": {
+   "symptomatic": false,
+   "hash": "68739305bf657a43",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "0557303fa7d90fa1",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap90/v12/knee+shin": {
+   "symptomatic": false,
+   "hash": "0ff7742770bf0c7b",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "441ec3c1cda48596",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap90/v20/none": {
+   "symptomatic": false,
+   "hash": "99c9ec459f5e19f8",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "cb7135422078bef9",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap90/v20/knee+shin": {
+   "symptomatic": false,
+   "hash": "79bc338208d33d8e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "6509435a159122ff",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap90/v30/none": {
+   "symptomatic": false,
+   "hash": "4e248365bd7845a4",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "4f01c860de7baa29",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "hm/hm230/roomy/cap90/v30/knee+shin": {
+   "symptomatic": false,
+   "hash": "f47fd10021754d5e",
+   "overs": 0,
+   "worstPct": 0
+  },
+  "mara/hm230/roomy/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "034912367cb22e4c",
+   "overs": 12,
+   "worstPct": 43
+  },
+  "hm/hm230/roomy/cap90/v45/none": {
+   "symptomatic": true,
+   "hash": "b5faae52ece61a69",
+   "overs": 12,
+   "worstPct": 41
+  },
+  "mara/hm230/roomy/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "e9c27211f17b64bb",
+   "overs": 12,
+   "worstPct": 43
+  },
+  "hm/hm230/roomy/cap90/v45/knee+shin": {
+   "symptomatic": true,
+   "hash": "70ebc56ede9a2fa2",
+   "overs": 12,
+   "worstPct": 41
+  }
+ }
+}
