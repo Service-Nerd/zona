@@ -1175,7 +1175,7 @@ It is also **3 of 4 sessions hard — 50% by session count**, against §1's 25% 
 
 **Principle.** Long runs scale with weekly volume (so a 30 km/week runner does not get the same long run as a 60 km/week runner). They are also capped by an absolute time ceiling per race distance.
 
-**Why.** A long run that exceeds 35% of weekly volume is a binge — fatigue accumulates faster than aerobic gain. The absolute cap (in minutes, not km) protects against unrealistic time-on-feet for the race.
+**Why.** A long run that exceeds 35% of weekly volume is a binge — fatigue accumulates faster than aerobic gain. The absolute cap (in minutes, not km) protects against unrealistic time-on-feet for the race. ⚠️ **THAT PHRASE IS THE SCOPE, not decoration (clarified 2026-10-03, FOUNDATION-LR-S9-01):** the ceiling governs the **race-directed arc**. It does **not** reach foundation weeks (`n <= 0`), which §57 excludes from that arc and which are sized from the runner's own `current_weekly_km` — capping those prescribes less than the runner already runs. Enforced by `INV-PLAN-LONG-CAP-MINS`, scoped to `n > 0`.
 
 **Config.**
 - `GENERATION_CONFIG.LONG_RUN_PCT_OF_WEEKLY_VOLUME` — phase-aware (base 28%, build 30%, peak 32%, taper 40%)
@@ -5229,6 +5229,50 @@ stamped.
 **Enforcement.** `INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION` and
 `INV-PLAN-FOUNDATION-WEEKDAY-WITHIN-BUDGET`, both `error`. Control cohort pinned by
 `npm run partition:foundation`.
+
+---
+
+### §122 Amendment 1 — the foundation long run is MEASURABLE, and §9 does not reach it *(Coaching Board 2026-10-03, FOUNDATION-LR-S9-01)*
+
+§122 as first written gave weekday easy sessions a duration and deliberately left the long
+run without one. That omission made a real breach **invisible rather than merely unfixed**,
+and the board was asked to choose between §9 (cap it) and §81 (do not shrink it).
+
+🥇 **The conflict scan found it is neither, because §9 answers it itself:**
+
+> *"They are also capped by an absolute time ceiling **per race distance** … The absolute
+> cap (in minutes, not km) protects against unrealistic **time-on-feet for the race**."*
+
+That is a statement about the **race-directed arc**. §57 says foundation weeks are *"never
+part of the main plan's periodisation arc"*, and `effectiveBaseline()` sizes the block from
+`current_weekly_km` — **the runner's own existing volume**. So capping it would prescribe
+**less than the runner already runs**, in a block whose only job is to hold what they have,
+which is exactly what §106 Am./§2 Am.2's detraining rule forbids.
+
+**Measured case:** a 10K runner at 50 km/week with a 20 km longest recent run, handed
+foundation long runs of 123/135/135 minutes against §9's 120-minute 10K ceiling. Capping
+them also produced **404 `INV-PLAN-LONG-IS-LONGEST` violations** — §81's vetoed trade.
+
+- **Willy:** *"19 km easy, for a runner whose longest recent run is 20 km, is not a
+  tissue-tolerance event. It is maintenance."* His condition was **measurability**, not a cap.
+- **McMillan:** *"What a coach does here is nothing."*
+- **Sims:** the runner cannot currently see the time commitment of their own longest session,
+  and for the caregiving-load cohort §81 was written about, that is the number they most need.
+
+**The rule.** The foundation long run **carries a `duration_mins`** and is **not** capped by
+§9. `INV-PLAN-LONG-CAP-MINS` is scoped to main-plan weeks (`n > 0`); every week of the actual
+plan is still checked. **No new numeric** — the second sitting in a row where the right answer
+was that no new number is needed.
+
+⚠️ **Recorded against the chair:** he advised this needed no board because §9 was ratified.
+That was wrong, and the reason is worth keeping — **he read §9's number and not §9's
+justification.** The sentence that resolves the question was inside the section he cited.
+
+⚠️ **`FOUNDATION-LR-VS-PEAK-01` DECLINED as framed.** "A foundation long run must not exceed
+the plan's peak" would cap this same runner below their own training, for the same reason. But
+the measurement behind it is real and aimed at the wrong target: a 10K plan peaking at 112
+minutes for a runner who already runs 135 is a question about §106's peak ceiling versus the
+runner's existing base. Re-filed as `PLAN-PEAK-BELOW-BASE-01`.
 
 ---
 

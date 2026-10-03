@@ -6,6 +6,29 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-03 — `FOUNDATION-LR-S9-01` + `PRODUCER-CHECKER-AGREEMENT-01` · read the justification, not the number
+**Shipped:** The foundation long run is measurable and not capped by §9. And a test that fails when the engine and the validator disagree about the same rule — which happened twice today.
+
+**Dev learning:** I took a conflict to the board: §9 says cap the foundation long run, §81 says shrinking a long run is the trade this board vetoed. Both ratified, both pointing opposite ways, so not mine to resolve. The conflict scan dissolved it in one line, and the line was inside §9 — the section I had already cited:
+
+> *"capped by an absolute time ceiling **per race distance** … protects against unrealistic **time-on-feet for the race**."*
+
+§9's ceiling is about the race-directed arc. §57 says foundation weeks are explicitly not that arc, and the foundation block is sized from the runner's own current weekly volume. So capping it would hand a runner who already does 19 km a 14 km "long run" in the three weeks before their plan starts. That's not a safety ceiling, it's detraining, and there's a principle against it.
+
+I had told the founder this needed no board because §9 was ratified. I'd read §9's number and not §9's reasoning.
+
+**AI-building learning:** I then wrote the test that should have caught both of today's disagreements before either reached a digest, falsified it three ways, and all three mutations passed. The test was hollow and the mechanism is the nastiest I've hit:
+
+The population builder did `try { generateRulePlan(...) } catch { continue }`. Error-severity violations make generation *throw* under `NODE_ENV=test`. So when I broke the validator to prove the test would catch it, every affected plan threw, got swallowed by that catch, and vanished from the population. The test passed over a set that no longer contained the defect I'd just introduced. A green result produced by the mutation itself.
+
+Two more vacuities in the same file: zero plain-over-cap sessions and zero long runs over §9 in the whole population, so two of three arms had no subject at all. The §9 arm needed a runner whose base exceeds what their race demands, and I'd pinned the longest-recent-run axis at a single value.
+
+Fixed by pinning the population rather than the behaviour: refusal count, foundation-block count, and a floor under the count of *each* exemption kind. A mutation that collapses the population now fails on the way in.
+
+**The honest bit:** that's the fourth population-too-narrow finding of the day and it was in the file written to prevent that exact class. Knowing a failure class by name does not stop you committing it — only putting the population inside the assertion does. And this test still cannot catch an unmeasurable session: nothing can flag a session carrying no duration, which is the whole reason §122 exists.
+
+---
+
 ## 2026-10-03 — `FOUNDATION-REMEDIATE-01` · I told him the fix hadn't worked, and it had
 **Shipped:** The two live runners' warm-up weeks rebuilt with the fixed engine. Grace's Mondays went from an hour to 34 minutes.
 

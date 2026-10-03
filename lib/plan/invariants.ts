@@ -1949,7 +1949,19 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
 
     // INV-PLAN-LONG-CAP-MINS — long run duration ≤ LONG_RUN_CAP_MINUTES[distance]
     // (CoachingPrinciples §9 — absolute time ceiling per race distance)
-    const long = placedRunning.find(({ session }) => isLongRun(session))
+    // §9 Amendment (Coaching Board 2026-10-03, FOUNDATION-LR-S9-01) — THIS CEILING IS THE
+    // RACE-DIRECTED ARC, AND §9 SAYS SO ITSELF: "capped by an absolute time ceiling PER RACE
+    // DISTANCE … protects against unrealistic TIME-ON-FEET FOR THE RACE."
+    //
+    // §57 excludes foundation weeks (`n <= 0`) from that arc, and `effectiveBaseline()` sizes
+    // the foundation block from the runner's OWN `current_weekly_km`. Applying a race ceiling
+    // there prescribes LESS THAN THE RUNNER ALREADY RUNS — the detraining failure §106 Am./§2
+    // Am.2 forbids. Measured: a 10K runner at 50 km/week with a 20 km longest run would have
+    // had a 135-minute maintenance long run cut to ~14 km, and capping it produced 404
+    // INV-PLAN-LONG-IS-LONGEST violations (§81's vetoed trade) into the bargain.
+    //
+    // ⚠️ Scoped, not weakened: every week of the actual plan is still checked.
+    const long = w.n > 0 ? placedRunning.find(({ session }) => isLongRun(session)) : undefined
     if (long?.session.duration_mins != null && long.session.duration_mins > longCapMins) {
       violations.push({
         code: 'INV-PLAN-LONG-CAP-MINS',
@@ -2200,7 +2212,8 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         // 🔻 The LONG RUN is out of scope: §122 deliberately leaves it untouched while
         // §9-vs-§81 is with the board (FOUNDATION-LR-S9-01). Requiring a duration here
         // would make that unresolved conflict fail the build.
-        if (paceDerivable && s.distance_km != null && s.duration_mins == null && !isLongRun(s)) {
+        // §122 Am.1 — the long run is NO LONGER exempt: the board requires it measurable.
+        if (paceDerivable && s.distance_km != null && s.duration_mins == null) {
           violations.push({
             code: 'INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION',
             principle_ref: 'CoachingPrinciples §122',

@@ -265,24 +265,30 @@ function buildFoundationSessions(
 
   const easyDays = available.filter(d => d !== longDay).slice(0, plan.easyCount)
 
-  // 🔻 THE FOUNDATION LONG RUN IS DELIBERATELY UNTOUCHED HERE (FOUNDATION-LR-S9-01).
+  // §122 Amendment 1 (Coaching Board 2026-10-03, FOUNDATION-LR-S9-01) — THE FOUNDATION
+  // LONG RUN CARRIES A DURATION AND IS **NOT** CAPPED BY §9.
   //
-  // §122 gives weekday EASY runs a duration and sizes them to the runner's stated budget.
-  // It does NOT give the long run a duration, and that omission is a decision, not an
-  // oversight.
+  // The submission to the board framed this as §9 (cap it) vs §81 (don't shrink it). The
+  // conflict scan found it is neither, because §9 answers it itself:
   //
-  // 🔴 WHY: giving it one makes it visible to §9's absolute time ceiling, and it BREACHES
-  // it — measured 123/135/135 min against §9's 120 for a 10K, with the main plan's own peak
-  // long run at 112. But capping it to §9 produced **404 new INV-PLAN-LONG-IS-LONGEST
-  // violations**: a "long run" shorter than the week's easy runs. That is precisely the
-  // trade §81 describes and the Coaching Board VETOED for the main plan — Hutchinson,
-  // McMillan and Willy arriving independently at *don't shrink to fit*.
+  //   §9: "capped by an absolute time ceiling PER RACE DISTANCE … protects against
+  //        unrealistic TIME-ON-FEET FOR THE RACE."
   //
-  // So §9 says cap it and §81 says do not, for the same session. **Two ratified principles
-  // in conflict is a board question, not an implementation choice**, and attempting it here
-  // would be picking a winner between them. Filed as FOUNDATION-LR-S9-01 alongside
-  // FOUNDATION-LR-VS-PEAK-01; until it is ruled, the long run keeps exactly the shape it
-  // has today — no better, no worse.
+  // That is a statement about the race-directed arc. §57 says foundation weeks are "never
+  // part of the main plan's periodisation arc", and `effectiveBaseline()` sizes this block
+  // from `current_weekly_km` — the runner's OWN existing volume. So capping it would
+  // prescribe LESS THAN THE RUNNER ALREADY RUNS, in a block whose only job is to hold what
+  // they have, which is what §106 Am./§2 Am.2's detraining rule forbids.
+  //
+  // Measured case: a 10K runner at 50 km/week with a 20 km longest recent run, handed
+  // 135-minute foundation long runs. Willy: "19 km easy, for a runner whose longest recent
+  // run is 20 km, is not a tissue-tolerance event. It is maintenance." McMillan: "what a
+  // coach does here is nothing."
+  //
+  // ⚠️ WHAT THE BOARD DID REQUIRE (Willy's and Sims's condition): the session must be
+  // MEASURABLE. Carrying no duration meant neither a rule nor the runner could see the
+  // time commitment of their longest session — and for the caregiving-load cohort §81 was
+  // written about, that is the one number they most need.
   const paceOk = easyPaceMinPerKm != null && Number.isFinite(easyPaceMinPerKm) && easyPaceMinPerKm > 0
 
   if (longDay) {
@@ -301,6 +307,8 @@ function buildFoundationSessions(
       // Same class as §40b/§78: the runner plans against the number.
       detail: `${floor1dp(longRunFinalKm).toFixed(1)}km easy — Zone 2 throughout. No exceptions.`,
       distance_km: floor1dp(longRunFinalKm),
+      // §122 Am.1 — measurable, and deliberately uncapped. See the block comment above.
+      ...(paceOk ? { duration_mins: Math.round(floor1dp(longRunFinalKm) * (easyPaceMinPerKm as number)) } : {}),
       zone: 'Zone 2',
       coach_notes: ['This is your longest run of the week. Keep it slow.'],
     }

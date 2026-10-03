@@ -2438,32 +2438,26 @@ but **invisible to every check** — stated plainly because the founder was not 
 option was put to him, and the alternative (keep the duration, carry the breach as declared debt)
 was not offered until afterwards. See `FOUNDATION-LR-S9-01`.
 
-#### 🔴 `FOUNDATION-LR-S9-01` — §9 and §81 give opposite answers for the foundation long run *(P1, filed 2026-10-03)*
+#### 🔴 `PLAN-PEAK-BELOW-BASE-01` — a race plan can peak BELOW the runner's existing long run *(P2, filed 2026-10-03)*
 
-🏃 **COACHING BOARD — REQUIRED, and this is a CONFLICT BETWEEN TWO RATIFIED PRINCIPLES**, not a
-defect. Nobody should implement either side without a ruling.
+🏃 **COACHING BOARD.** Re-filed from `FOUNDATION-LR-VS-PEAK-01`, which the board **DECLINED as
+framed** on 2026-10-03 — but the measurement behind it was real and aimed at the wrong target.
 
-📐 **Measured:** a 10K runner, 50 km/week, longest recent run 20 km gets foundation long runs of
-**123, 135 and 135 minutes** against §9's **120-minute** absolute ceiling for a 10K — and the MAIN
-plan's peak long run is **112 minutes**. The pre-plan block prescribes a longer run than anything in
-the block it precedes.
+📐 **Measured:** a 10K runner, 50 km/week, longest recent run 20 km. Their **race plan's peak long
+run is 112 minutes**; their existing long run is **135**. The plan's hardest long session is easier
+than their current Sunday.
 
-- **§9 says cap it** — `LONG_RUN_CAP_MINUTES` is an absolute time ceiling and nothing exempts
-  foundation weeks. §57 excludes them from the periodisation ARC, not from a load ceiling.
-- **§81 says do not** — capping produced **404 new `INV-PLAN-LONG-IS-LONGEST` violations**: a "long
-  run" shorter than the week's easy runs. That is the exact trade §81 describes and the board
-  **VETOED** for the main plan, with Hutchinson, McMillan and Willy arriving independently at *don't
-  shrink to fit*.
+⚠️ **This is NOT a foundation-block question**, which is what the original filing assumed. It is
+§106's peak ceiling versus the runner's existing base: `peakKmByLevel` and §9's
+`LONG_RUN_CAP_MINUTES` are keyed to the RACE, and a runner whose base already exceeds what their
+race demands gets a plan that asks less of them than they already do. Whether that is correct
+(a 10K block legitimately does not need 135-minute long runs) or a defect (§106 Am. exists
+precisely because a volume-blind ceiling handed a 100 km/week marathoner a block peaking at 73 km)
+is the board's call.
 
-⚠️ **My own recommendation here was wrong and is recorded as such:** I advised the founder that this
-was "already ratified doctrine, no board needed." That reasoning looked only at §9. Shrinking the
-long run collides with §81, and two principles in conflict is precisely what a board is for.
-
-**Options for the board:** cap and accept the §9/§81 trade for foundation weeks only · shrink the
-whole foundation week together so the long run stays longest · leave the long run uncapped and
-DECLARE the overrun · reduce the foundation block's volume so the question does not arise.
-**Related:** `FOUNDATION-LR-VS-PEAK-01` (should a foundation long run ever exceed the plan's peak?)
-— same session, same sitting.
+🔻 **Not urgent, and say why:** nothing is breached. No invariant fires, the runner is not
+injured by an easier plan, and §106 Am. already ruled the inverse case. It is filed because the
+measurement exists and a question nobody wrote down is a question nobody answers.
 
 #### 🔴 `TAPER-OVER-PEAK-SLOW-01` — a slow runner's TAPER is their biggest week *(P1, filed 2026-10-03)*
 

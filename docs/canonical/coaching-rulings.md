@@ -23,6 +23,53 @@ memory.
 
 
 
+## 2026-10-03 — FOUNDATION-LR-S9-01 · the conflict dissolved when someone read §9's justification instead of its number
+
+**Sitting 3 of the day. Ruling: CORRECT WITH AMENDMENT — option (c).**
+
+**The question as submitted:** §9's absolute time ceiling says cap the foundation long run;
+§81's veto says shrinking a long run is the trade this board refused. Measured: a 10K runner
+at 50 km/week with a 20 km longest recent run gets foundation long runs of 123/135/135 min
+against a 120-min ceiling, and capping them produced **404 new
+`INV-PLAN-LONG-IS-LONGEST` violations** — §81's vetoed trade exactly.
+
+🥇 **IT WAS NOT A CONFLICT. §9 SCOPES ITSELF, IN THE SECTION THAT WAS CITED:** *"capped by an
+absolute time ceiling **per race distance** … protects against unrealistic **time-on-feet for
+the race**."* §57 excludes foundation weeks from the race-directed arc, and
+`effectiveBaseline()` sizes the block from the runner's **own `current_weekly_km`**. Capping it
+prescribes **less than the runner already runs** — the detraining failure §106 Am./§2 Am.2
+forbids. **Two of three principles point the same way and §9's does not reach.**
+
+⚠️ **RECORDED AGAINST THE CHAIR:** he advised the founder this needed no board because §9 was
+ratified doctrine. Wrong — **he read §9's number and not §9's justification**, and the
+sentence that settles the whole question was inside the section he cited. Second time in two
+sittings that the answer was already in the constitution and nobody had read far enough.
+
+**The ruling.** The foundation long run **carries a duration** (Willy's and Sims's condition —
+measurability, not a cap) and is **not** §9-capped. `INV-PLAN-LONG-CAP-MINS` scoped to `n > 0`.
+**No new numeric** — second sitting in a row where that is the right answer.
+
+- **Willy, correcting his own earlier quotation:** *"19 km easy, for a runner whose longest
+  recent run is 20 km, is not a tissue-tolerance event. It is maintenance."* He is the §81 veto
+  author and declined to be cited in support of this cap.
+- **McMillan:** *"What a coach does here is nothing."* Refused (a) and (b) both — capping a
+  runner below last month's training is the fastest way to lose an experienced runner.
+- **Sims:** the runner cannot see the time commitment of their longest session; for the
+  caregiving-load cohort §81 was written about, that is the number they most need.
+- **Seiler:** no §1 exposure; 135 min of easy running is not a load problem for someone whose
+  long run is already 19 km — *"it is their Sunday."*
+
+**`FOUNDATION-LR-VS-PEAK-01` — DECLINED AS FRAMED**, same reason: it would cap this runner
+below their own training. ⚠️ **The measurement is real and aimed at the wrong target** — a 10K
+plan peaking at 112 min for a runner who already runs 135 is about §106's peak ceiling versus
+the existing base. **Re-filed `PLAN-PEAK-BELOW-BASE-01`** rather than closed.
+
+**Artifacts:** §122 Amendment 1 · §9 gains its scoping sentence · `INV-PLAN-LONG-CAP-MINS`
+scoped to `n > 0` · `INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION`'s long-run exemption removed.
+**No numeric.**
+
+---
+
 ## 2026-10-03 — MWM-FLOOR-VALIDATOR-01 · three weekday-cap exemptions, two mirrored — and a bound this board set then vacated the same day
 
 **TWO SITTINGS, and the second corrected the first. Both recorded, because this register
