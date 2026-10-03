@@ -6,6 +6,42 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-03 — closing check · "will it flag again tomorrow?" — yes, 44 times
+
+**Dev.** Asked at the end of the day whether tomorrow's digest would re-report what we fixed. I
+could have said yes-it's-fixed; the sweep is clean and the engine is right. Instead I validated
+**every live plan** with the shipped validator. **44 error-severity violations across 8 of 21
+plans.**
+
+**And not one of them is the engine producing a bad plan today.** Every single firing is a stored
+plan judged by a rule that did not exist when it was generated — 30 predate §122, which I shipped
+this morning; the §121 one predates §121 by ten days.
+
+**The honest bit.** This is a structural contradiction and it has been sitting there quietly. Our
+live-plan policy is settled: **engine fixes are not backfilled to existing plans.** The digest
+**validates stored plans.** So *every rule we tighten adds permanent daily noise* — and the thing
+that kills a daily report is noise, which this repo has already recorded twice as being equivalent
+to having no check at all. Today is the proof: **two of the three things the digest reported this
+morning were not defects**, and the whole day went to proving it.
+
+**One real one, and it would have drowned.** A real runner's only plan, race in December, stores
+race week at 56 km against a 51 km peak — the race folded into training volume, which is §121's
+exact measured harm: *the screen argues for the mistake.* They are looking at it now. It needs a
+plan regeneration, not the foundation recompose I built this morning, so it is riskier and it waits
+for authorisation.
+
+**What I'd tell someone building this.** A validator and a stored-data report are different
+instruments and we were using one for both. A check that runs against yesterday's artifacts cannot
+tell *"we broke this"* from *"this was made before we knew better"* — and if you don't give it a
+way to tell, it spends its credibility telling you about the past.
+
+**Also noted:** `scripts/recompose-foundation.ts` would *not* have fixed those 30 if I'd reached
+for it, because its candidate filter selects plans that are **over budget** and these have **no
+duration at all**. Nearly assumed the tool covered it. And `test13@test.com` is inflating the count
+— our own fixture in a production measurement.
+
+---
+
 ## 2026-10-03 — `TAPER-OVER-PEAK-SLOW-01` · the principle stated a measurement as a cause
 
 **Dev.** Second fake constitutional violation in one morning's digest, same shape as the first:

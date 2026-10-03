@@ -2438,6 +2438,59 @@ but **invisible to every check** — stated plainly because the founder was not 
 option was put to him, and the alternative (keep the duration, carry the breach as declared debt)
 was not offered until afterwards. See `FOUNDATION-LR-S9-01`.
 
+#### 🔴 `OPS-DIGEST-STORED-PLAN-DEBT-01` — a tightened validator reports every PRE-FIX stored plan, every day, forever *(P1, filed 2026-10-03)*
+
+⚙️ **NO BOARD** for the mechanism (the digest's scope is ops). 🏃 **COACHING BOARD only if the
+answer is to backfill**, which reverses a settled policy.
+
+🔴 **MEASURED TONIGHT, ANSWERING "will the same issue flag again tomorrow?" — IT WILL.** Every
+live plan validated with the shipped validator: **44 error-severity violations across 8 of 21
+validatable plans.**
+
+| code | n | plans |
+|---|---|---|
+| `INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION` | **30** | 4 (3 real users + `test13@test.com`) |
+| `INV-PLAN-HEADER-PACE-MATCHES-WORK` | 13 | — |
+| `INV-PLAN-RACE-NOT-VOLUME` | **1** | 1 real user |
+| 11 others | 1–3 each | — |
+
+⚠️ **NOT ONE IS THE ENGINE PRODUCING A BAD PLAN TODAY.** Every firing is a **stored plan
+generated before the rule that now judges it**: the 30 predate §122 (shipped this morning), the
+§121 one predates §121 (plan created **2026-09-12**, §121 shipped **2026-09-22**).
+
+🔴 **THE STRUCTURAL CONFLICT, AND IT IS THE REAL ITEM.** `project_live_plan_policy` is settled:
+**doctrine and engine fixes are NOT backfilled to existing plans.** The digest **validates stored
+plans.** Those two are in direct contradiction, so **every rule we tighten adds permanent daily
+noise** — and noise is what makes a digest stop being read, which this repo has recorded twice as
+equivalent to having no check at all (NOISE-GATE-01). **Today proves the cost: two of the three
+things the digest reported this morning were not defects, and the day went to proving it.**
+
+✅ **ONE FIRING IS A GENUINE LIVE RUNNER-FACING DEFECT and must not be lost in the noise.**
+Plan `2e4467a0` (Apple private-relay user, their ONLY plan, race **2026-12-12** so still active)
+stores **race week 13 at `weekly_km: 56` against a peak-phase maximum of 51** — the race folded
+into training volume. That is precisely §121's measured harm: *"the screen argues for the
+mistake."* **The runner is seeing it today.** ⚠️ The remediation is a plan REGENERATION, not a
+foundation recompose, so it is materially riskier than this morning's and needs its own plan and
+explicit authorisation.
+
+**The work, in order:**
+1. **Decide the digest's scope** — the cheap, correct fix is almost certainly to report a stored
+   plan against the rules that existed **when it was generated**, or to partition the report into
+   *"engine is producing this now"* (urgent) and *"pre-dates the rule"* (a remediation queue). The
+   digest is a **cloud routine, not repo code** (editable via RemoteTrigger), so this cannot be
+   done from a repo commit.
+2. **Remediate `2e4467a0`** — real, live, visible. Needs a written plan + authorisation.
+3. **The 30 foundation firings**: `scripts/recompose-foundation.ts` already does this safely, but
+   ⚠️ **its candidate filter selects plans that are OVER BUDGET**, and these are plans with **no
+   duration at all** — so as written it would skip every one of them. Widen the filter before
+   assuming the tool covers it.
+4. **`test13@test.com` is in the count** — purge it (`npm run purge:users -- --ids`) so the figure
+   stops being inflated by our own fixture.
+
+⚠️ **Do not "fix" this by relaxing §122 or §121.** Both are correct and both were earned today.
+The defect is that a check scoped to stored data cannot tell *"we broke this"* from *"this was
+made before we knew better"*.
+
 #### 🔻 `LR-REDUCTION-NOT-NARRATED-01` — the note explains VOLUME, the thing that moved is their SUNDAY *(P3, filed 2026-10-03)*
 
 👤 **FOUNDER** (copy/voice) — **not** the Coaching Board, which ruled the prescription CORRECT AS IS
