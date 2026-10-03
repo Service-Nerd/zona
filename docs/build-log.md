@@ -6,6 +6,38 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-04 — the baseline, and the blind spot I assumed was just age
+
+**Dev.** Asked to make sure the digest knows all this going forward. Two things went in: a **known
+baseline** (30 violations on 7 plans, all old plans meeting newer rules) so a *rise* is visible
+rather than the absolute number, and an explicit instruction **not to list those 30 as defects** —
+because reporting them every morning is exactly what makes a section unreadable.
+
+**Then I checked something I'd been glossing: 8 of 30 plans can't be validated at all**, because they
+carry no stored generator input. I'd been calling that "probably age". It isn't. The newest is from
+**two days ago**, and it's a `base_build` on-ramp plan — a different producer that never writes the
+field. So the blind spot is **permanent for that plan type and grows every time a runner takes the
+on-ramp**, not a historical tail that shrinks.
+
+That matters more than the 30 do. `checked` in the audit summary is **not** the plan count, and
+anyone reading it as one believes the fleet is fully audited when a quarter of it isn't. The digest
+now says so out loud.
+
+**The honest bit.** I'd written "probably age" twice in reports today without testing it. The test was
+one comparison — newest plan without the field vs oldest plan with it — and it took a minute. "It's
+probably historical" is the kind of reassuring assumption that stops an investigation exactly where
+it should start.
+
+**Product.** Nothing here touches a runner. The 30 stay deliberately: clearing them means regenerating
+live plans and rewriting someone's training mid-block, and I've recommended against it in writing
+rather than leaving it as an open question someone picks up later.
+
+**What I'd tell someone building this.** A monitoring number needs its denominator stated inside the
+monitor, not in someone's head. `checked: 22` looked like "we audited everything" for as long as
+nobody asked what the total was.
+
+---
+
 ## 2026-10-04 — `OPS-DIGEST-READ-CAUSE-01` · I built the belt before I risked the braces
 
 **Dev.** The classifier shipped yesterday computed the right answer and nothing read it. The obvious

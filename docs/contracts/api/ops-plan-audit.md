@@ -125,5 +125,13 @@ than silence.
 - `MAX_PLANS = 5000`. If hit, the audit needs pagination rather than a silently truncated pass, so
   it is reported, never hidden.
 - A plan with **no `generator_input`** cannot be classified at all — `verdict_note` says so rather
-  than defaulting to a verdict.
+  than defaulting to a verdict. 🔴 **And it cannot be VALIDATED either**, so it is absent from
+  `invalid`, from `flagged`, and from `cause`. **Measured 2026-10-04: 8 of 30 stored plans.** Seven
+  pre-date the field; the eighth is a `plan_kind: base_build` on-ramp plan from 2026-10-02 whose
+  producer never writes it, so that blindness is **permanent for that plan type and grows with every
+  on-ramp runner** — `BASEBUILD-AUDIT-BLIND-01`. ⚠️ **`checked` is therefore NOT the plan count**, and
+  a reader who treats it as one will believe the fleet is fully audited when 27% of it is not.
+- The known baseline, so a RISE is visible: **30 violations across 7 plans at 2026-10-04, all
+  `rule_newer_than_plan`.** They sit in main-plan weeks and are expected to persist — the live-plan
+  policy forbids the regeneration that would clear them (`STORED-PLAN-DEBT-QUEUE-01`).
 - `cause` counts **codes**, not plans: one plan contributing three new codes contributes three.
