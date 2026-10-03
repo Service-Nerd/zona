@@ -217,3 +217,84 @@ the validator misreading a ratified exemption. The plans were correct.
 
 **Still open:** `TAPER-OVER-PEAK-SLOW-01` (P1, filed) and waves 2–3 (B/C/E/F), B/E/F
 board-gated.
+
+---
+
+## Remediation plan — live plans carrying the foundation defect
+
+**Founder standing requirement (2026-10-03):** *"if live plans are impacted by an issue a
+remediation plan must be made."* This is that plan. It covers the FOUNDATION defect only —
+the reported defect needed no remediation because the plans were correct.
+
+### 1. Where the affected runners actually are — asked first, because it decides everything
+
+| plan | runner | plan_start | first affected session | days from 2026-10-03 |
+|---|---|---|---|---|
+| `c848fd4c` | graceemilyhill@… | 2026-12-07 | week −3, **Mon 2026-11-16** | **44** |
+| `4b037d2c` | p4mwwwtw52@… | 2026-12-07 | week −3, **Tue 2026-11-16** | **44** |
+
+🔴 **CORRECTION TO THIS RCA'S EARLIER FRAMING.** Both runners were described as
+"live-affected right now". Their stored plans do carry the defect — but **nobody runs an
+affected session for 44 days.** *Stored plan contains the defect* and *runner is about to run
+it* are different facts, and conflating them turned a comfortable window into a false alarm.
+
+**Consequence: there is no emergency, and no production write is needed today.** The fix has
+a 44-day runway, which is longer than the build.
+
+### 2. Who is affected
+
+- **Confirmed live:** the two plans above.
+- **Every plan generated with a >28-day runway** until the fix ships — measured 77.5% of
+  plans carrying a foundation block have at least one session over the stated budget. The
+  Make-A-Wish intake is arriving now, so **this set grows daily**, which is the real argument
+  for shipping promptly rather than for panicking.
+- **Query to enumerate it at remediation time** (reads only): plans whose `weeks` contain
+  `n <= 0` with a weekday session whose `distance_km × easy pace` exceeds
+  `day_budgets[day] ?? max_weekday_mins`. Easy pace derived from the plan's own first
+  duration-bearing weekday easy session — the artifact, not a second pace owner.
+
+### 3. The mechanism — it already exists, and that is the point
+
+**`POST /api/generate-plan/foundation` → `composePlanWithFoundation`.** Its own header states
+it *"must NEVER re-pay for AI enrichment (28-35s, real cost)"* and *"preserves the runner's
+enriched copy on every week the re-size left"*.
+
+So remediation is **re-composing the foundation block**, not rewriting a plan:
+
+- ✅ main-plan weeks (`n > 0`) untouched — the part the runner has read and trusted
+- ✅ AI enrichment preserved, **zero AI spend**
+- ✅ no `plan_json` surgery, no bespoke script, no new write path
+- ✅ `plan_archive` already snapshots before every `savePlanForUser`
+
+### 4. Against the live-plan policy
+
+`project_live_plan_policy.md`: doctrine/engine fixes are **not** backfilled to existing plans.
+**This is argued as an exception, and the argument is narrow:** the defect is not "the engine
+got better", it is **a plan prescribing more than the runner told us they had**, in the weeks
+they run first, having never been shown a duration they could check. §18 calls the stated
+budget *"the runner's own statement about their life"*. A plan that silently exceeds it is not
+a worse plan, it is a plan that broke a promise.
+
+⚠️ **Unresolved and deliberately not decided here:** whether to recompose only the two
+confirmed plans, or every affected plan. That is a founder call, not mine, and it should be
+made with the enumerated count in front of it rather than in advance.
+
+### 5. Sequence, and the gates on each step
+
+1. **Build the fix** (§122 + §82 Am.1 + two invariants) with full regression:
+   `verify:parity`, and `review:coaching` / `measure:fitness` / `cohort:shape` diffed against
+   the BEFORE capture already taken at `f7ed36f2`. ⚠️ **Parity WILL move here** — this changes
+   generation — so the move is declared with a number, never re-baselined.
+   🩹 **Willy's blocking condition:** `measure:fitness` before/after on the injury cohort. If
+   trimming the foundation block reduces net build, that is seen, not assumed.
+2. **Enumerate** affected live plans with the read-only query. State the count.
+3. **Dry-run the recompose** per plan and diff: assert main-plan weeks byte-identical, enriched
+   copy preserved, and every foundation weekday session now inside its budget or §82-floored
+   and declared.
+4. **Founder authorisation before any write.** `OPS-ENRICH-REMEDIATE-01`'s pattern: dry-run
+   default, refuse to write without an explicit flag, compare-and-swap on `updated_at`, and
+   **read the row back out of Postgres afterwards** — a guard that runs before the write proves
+   nothing about the write.
+5. **Re-verify from the database**, not from the script's own output.
+
+**Deadline that matters: 2026-11-16.** Everything above has 44 days, and step 1 gates the rest.
