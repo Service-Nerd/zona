@@ -2349,12 +2349,52 @@ moved **530 of 572** control plans; the gate named them and **exited 1**. Restor
 ⚠️ **What the gate does NOT prove:** it hashes the plan object, so it cannot see a change in what
 the WIDGET or the WEBSITE renders from the same data. That is risk 4 and needs its own check.
 
-## 🔻 Step 0b — NEXT, before any doctrine is written
+## ✅ Step 0b — DONE. The exposure is ONE invariant, and the hazard did not materialise
 
-Give foundation weekday sessions a duration and **nothing else**, then run `validatePlan` across
-the partition and record **which invariants start firing**. They have never been exposed to a
-foundation week. If the answer is a long list, the ruling's artifact set needs revisiting before
-code — not after.
+Durations injected into the composed plan **post-hoc** — the engine was not mutated, so exactly one
+variable moved and there was nothing to revert. 1,280 plans validated both ways.
+
+| invariant | sev | before | after | plans newly hit |
+|---|---|---|---|---|
+| `INV-PLAN-MAX-WEEKDAY-MINS` | error | 0 | **5,444** | **674** |
+
+**Nothing else changed count. Not one other invariant.** ✅ **The risk-2 hazard named in the
+analysis block — that `invariants.ts:3373`'s peak-long-run comparison and `:2352` would start
+firing on foundation weeks — DOES NOT HAPPEN.** The ruling's artifact set stands; no revisiting.
+The one invariant that fires is the one the whole change exists to make reachable.
+
+🔴 **AND IT IS `error` SEVERITY, WHICH IS A HARD SEQUENCING CONSTRAINT I DID NOT HAVE BEFORE.**
+`validatePlan` throws on error severity in dev/test, so **a commit that adds durations WITHOUT the
+budget-aware sizing would redden the build on 674 of 1,280 plans.** Durations and sizing must land
+in the **same** commit. They cannot be split into "make them visible" then "make them fit".
+
+### ✅ The gate has no gap — checked, not assumed
+
+| | |
+|---|---|
+| predicate and invariant agree symptomatic | **674** |
+| predicate only (no invariant fire) | **34** — my predicate is STRICTER |
+| **invariant only (predicate missed it)** | **0** — *this is the number that matters* |
+
+**Zero.** There is no plan the invariant would flag that the partition calls asymptomatic, so the
+572-plan control cohort is **conservative, never permissive** — which is the only safe direction
+for a gate whose job is to protect bystanders.
+
+The 34-plan asymmetry is explained and benign: worst over-cap margin **0.29 min (17 seconds)**,
+median identical — pure `Math.round()`. My predicate compares an unrounded implied duration; the
+invariant reads the rounded one. ⚠️ Same class as **§ Amendment 1 (`MARATHON-MAINT-LABEL-01`):
+*"the floor comparison is not decided by the engine's own rounding."*** Named rather than tuned
+away — those 34 are expected-to-change plans that may not change, and the gate fails only on a
+CONTROL plan moving, never on a symptomatic plan staying put.
+
+## 🔻 Step 1 — NEXT: the engine change, in one commit
+
+Pace threaded in · `duration_mins` set · sizing against day budgets at construction (§52b's
+day-count lever) · §82's floor as last resort with disclosure · §122 + §82 Am.1 + two invariants ·
+**no new constant**. Gates: `partition:foundation` (572 control byte-identical), `verify:parity`
+(move declared and attributed to `n <= 0` weeks only), `measure:fitness` before/after on the
+injury cohort (Willy's blocking gate: 36.4% standard / 41.2% masters, 0% never-builds), plus
+`review:coaching` and `cohort:shape` diffed.
 
 #### 🔴 `TAPER-OVER-PEAK-SLOW-01` — a slow runner's TAPER is their biggest week *(P1, filed 2026-10-03)*
 
