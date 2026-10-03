@@ -2438,26 +2438,28 @@ but **invisible to every check** — stated plainly because the founder was not 
 option was put to him, and the alternative (keep the duration, carry the breach as declared debt)
 was not offered until afterwards. See `FOUNDATION-LR-S9-01`.
 
-#### 🔴 `PLAN-PEAK-BELOW-BASE-01` — a race plan can peak BELOW the runner's existing long run *(P2, filed 2026-10-03)*
+#### 🔻 `LR-REDUCTION-NOT-NARRATED-01` — the note explains VOLUME, the thing that moved is their SUNDAY *(P3, filed 2026-10-03)*
 
-🏃 **COACHING BOARD.** Re-filed from `FOUNDATION-LR-VS-PEAK-01`, which the board **DECLINED as
-framed** on 2026-10-03 — but the measurement behind it was real and aimed at the wrong target.
+👤 **FOUNDER** (copy/voice) — **not** the Coaching Board, which ruled the prescription CORRECT AS IS
+and said so explicitly: this is a disclosure-precision question, not a prescription one.
 
-📐 **Measured:** a 10K runner, 50 km/week, longest recent run 20 km. Their **race plan's peak long
-run is 112 minutes**; their existing long run is **135**. The plan's hardest long session is easier
-than their current Sunday.
+**The residual of `PLAN-PEAK-BELOW-BASE-01`,** closed the same day. Measured on that item's own
+case (10K, 50 km/week, longest recent run 20 km): the plan delivers a **51 km peak week against
+50 declared** — the aerobic base is floored by §106 and is NOT detrained — while the **peak long
+run is 16.0 km / 105 min against an existing 20 km**. The plan carries
+`volume_profile: 'maintenance'` and a `volume_constraint_note`, **so the runner is told
+something** — but the note explains a *volume* constraint and what visibly changed is their
+**Sunday**.
 
-⚠️ **This is NOT a foundation-block question**, which is what the original filing assumed. It is
-§106's peak ceiling versus the runner's existing base: `peakKmByLevel` and §9's
-`LONG_RUN_CAP_MINUTES` are keyed to the RACE, and a runner whose base already exceeds what their
-race demands gets a plan that asks less of them than they already do. Whether that is correct
-(a 10K block legitimately does not need 135-minute long runs) or a defect (§106 Am. exists
-precisely because a volume-blind ceiling handed a 100 km/week marathoner a block peaking at 73 km)
-is the board's call.
+⚠️ **Why it matters and why it is still only P3.** McMillan: *"they will add the extra four
+kilometres themselves, and then the plan's week is wrong."* Sims: for masters and
+peri-menopausal runners an un-narrated reduction reads as the app under-rating them, and they
+self-correct upward — the exact failure the product exists to prevent. **Nothing is breached, no
+invariant fires, and the prescription is correct**; the gap is that one sentence names the wrong
+noun.
 
-🔻 **Not urgent, and say why:** nothing is breached. No invariant fires, the runner is not
-injured by an easier plan, and §106 Am. already ruled the inverse case. It is filed because the
-measurement exists and a question nobody wrote down is a question nobody answers.
+**Not scoped as a build.** It is a single string and it belongs to whichever surface already
+owns the constraint note. Do not open it as an engine item.
 
 #### 🟡 `CONTRACT-COVERAGE-03` — 61 components still have no contract *(P3, filed 2026-10-02, falling register)*
 

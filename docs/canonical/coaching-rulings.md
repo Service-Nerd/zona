@@ -23,6 +23,48 @@ memory.
 
 
 
+## 2026-10-03 — PLAN-PEAK-BELOW-BASE-01 · CORRECT AS IS, and the alarming number was the design
+
+**Ruling: CORRECT AS IS. No engine change.** A plan's peak long run may fall below the runner's
+existing longest run.
+
+**Measured on the item's own case** (10K, 50 km/week, longest recent run 20 km): delivered peak
+week **51 km against 50 declared** — `INV-PLAN-PEAK-NOT-BELOW-START` holds and the aerobic base is
+**not** detrained. Only the long run falls: **16.0 km / 105 min against an existing 20 km.** The
+plan carries `volume_profile: 'maintenance'` and a `volume_constraint_note`.
+
+**So what changes is DISTRIBUTION, not load.** One 20 km Sunday becomes a 16 km Sunday plus more
+weekday volume, which for a 10K is better specificity, not a loss (Hutchinson).
+
+**Willy, decisive:** the long run is the week's highest injury-load session and §9's ceiling is
+why. Prescribing 20 km to satisfy *"they already do it"* adds tonnage with zero race benefit. The
+current behaviour is the protective one.
+
+⚠️ **THE ASYMMETRY THAT MADE THIS WORTH A SITTING, AND ITS ANSWER.** §106 floors weekly volume at
+the runner's current and refuses the maintenance excuse in as many words — *"a detraining block is
+a worse plan than no plan"* — while nothing floors the long run. **That asymmetry is correct:**
+§106 protects the aerobic base, which is race-agnostic; §9 governs time-on-feet **for the race**,
+re-affirmed the same morning in `FOUNDATION-LR-S9-01`. Two ceilings, two justifications, not one
+remedy applied to one twin.
+
+⚠️ **THE RATE IS NOT A DEFECT RATE, AND QUOTING IT WOULD HAVE BEEN THE ERROR.** Peak long run below
+the runner's existing longest: **5K 76.6% · 10K 60.6% · HM 45.8% · marathon 17.5%** of 39,632
+plans. A 5K block *should not* prescribe a 28 km long run. The gradient by race distance **is the
+design showing through** — the figure only looks like a finding until you ask what it measures.
+
+**Recorded residual, deliberately NOT this board's:** McMillan — *"they will add the extra four
+kilometres themselves, and then the plan's week is wrong"*; Sims — for masters and peri-menopausal
+runners an un-narrated reduction reads as the app under-rating them and they self-correct upward,
+the exact failure the product exists to prevent. The present note explains **volume** and what
+visibly moved is their **Sunday**. That is copy, so it is the founder's: filed as
+`LR-REDUCTION-NOT-NARRATED-01` (P3).
+
+**Do not re-raise** that a plan peaking below the runner's existing long run is a defect. It is
+§9, it is deliberate, and the base is floored separately. `FOUNDATION-LR-VS-PEAK-01` was this
+question's first framing and was declined; this is its second and final one.
+
+---
+
 ## 2026-10-03 — TAPER-OVER-PEAK-SLOW-01 · a principle stated a measurement as a CAUSE, and its invariant inherited a proxy
 
 **Ruling: CORRECT WITH AMENDMENT.** `INV-PLAN-RACE-NOT-VOLUME` is scoped to the **race week**,
