@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-03 — `FOUNDATION-BUDGET-01` step 0 · the question I could not answer
+**Shipped:** A gate, not a fix. The population is partitioned and the half that should NOT change is pinned by hash.
+
+**Dev learning:** I had a build plan with six steps and the founder read it and asked one question: *where is the confidence this will not impact plans that do not carry the symptom?* I did not have an answer. I had harness runs — parity, coach review, the fitness measure — and I had presented those as if "all green" were the same thing as "I did not break the bystanders". They are not. Every one of those harnesses reports an aggregate, and an aggregate can stay still while individual plans move in both directions.
+
+So step 0 became: split every plan with a foundation block into the ones carrying the symptom and the ones not, and pin the second group by hash. 708 and 572 out of 1,280. The acceptance condition for the whole build is now that all 572 come out byte-identical — and the gate reports a control plan moving *separately* from a declarable move, so there is no path where I shrug and re-baseline it.
+
+Then I broke it on purpose before trusting it. Adding 0.1 km to every foundation easy day moved 530 of the 572 and the gate named them and exited 1. Worth doing: my first attempt at that falsification printed "exit was: 0" because the shell captured `grep`'s status instead of the script's, and for about a minute I believed a passing gate was a failing one.
+
+**AI-building learning:** The best thing I did was measure the hazard before writing the doctrine. The ruling says give foundation sessions a duration — and foundation sessions are currently invisible to every rule that guards on duration, so the obvious worry is that a dozen invariants wake up at once and the artifact set is wrong. I injected durations post-hoc, validated 1,280 plans both ways, and the answer was **exactly one invariant**, the one the change exists to make reachable. Nothing else moved.
+
+That measurement also handed me a constraint I could not have reasoned to: it is `error` severity, which throws in test, so durations and sizing have to land in the same commit. The tidy two-commit sequence I would naturally have written — "make them visible", then "make them fit" — would have put the build red on 674 of 1,280 plans in between.
+
+**The honest bit:** nothing is fixed. No engine code, no doctrine, no live plan touched. The gate hashes the plan object, so it is blind to what the iOS widget and the marketing site render from that same data — and the consumer check found both of those reading `duration_mins`, which I would have missed entirely. Two confirmed live runners still have 55- and 60-minute Mondays against a stated 30. They have 44 days.
+
+---
+
 ## 2026-10-03 — `MWM-FLOOR-VALIDATOR-01` · the engine had three exemptions and the checker had two
 **Shipped:** The weekday-cap invariant now shares §82's floor-protection exemption, and the property sweep has a slow runner in it for the first time.
 
