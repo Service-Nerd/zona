@@ -6,6 +6,46 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-03 — `RACE-WEEK-VOLUME-REMEDIATE-01` · "why haven't we remediated the runner?"
+
+**Dev.** Because I'd filed it instead of doing it — and the two reasons I gave for the delay were
+both wrong, both in the direction of making it look bigger.
+
+I said it needed **a plan regeneration, materially riskier**. It needed **one integer**. §121's own
+Amendment 3 says *"Display and totals only. No prescription changes. Nothing placed in race week
+moves."* The plan stored 56 for a week whose sessions total 13.5 km; all twelve other weeks already
+matched exactly. I reported an assumption as a risk assessment, and that assumption is what stopped
+the work.
+
+I also said **one runner**. It was **twelve**. The invariant only fires when the race week *exceeds*
+the peak phase, so it could see 1 of 12 — nine were completely silent. Had I selected plans by "what
+the validator flags" I'd have fixed one twelfth and called it done. The script selects on the
+arithmetic instead. **Fifth time in two days the firing set wasn't the population.**
+
+**Product.** Twelve people were looking at a plan whose *final* week appeared to be its biggest. One
+has a marathon on 12 December. A taper is supposed to be the easiest week of the block; their screen
+said the opposite. Nothing about their training was wrong — just the number on top of it.
+
+**The honest bit — the test account couldn't test the fix.** Asked to try it on a test account first,
+which was the right instinct. Two of them had no plans at all. The third had one created *after* the
+§121 fix, so its race week was already correct: the script would have printed `candidates 0` and I'd
+have reported it as tested. **A test account that doesn't have the defect cannot test the fix.** So I
+injected the defect — set its race week to the broken value — ran the script for real, and watched it
+restore the exact original. Then verified from the database rather than trusting the script's own
+"WRITTEN" message, because this morning a different script printed WRITTEN while the database
+disagreed.
+
+That step earned its keep: before it, the archive → compare-and-swap → read-back path had **never
+executed once** in this script. "The same pattern worked in another script a few hours ago" is not a
+test, and I nearly offered it as one.
+
+**What I'd tell someone building this.** When you explain why something is risky, check whether
+you've measured the risk or inferred it. I inferred "regeneration" from "the plan is wrong" and the
+inference cost a day of a live defect sitting on twelve screens. The measurement took ten minutes
+and the fix was one number.
+
+---
+
 ## 2026-10-03 — closing check · "will it flag again tomorrow?" — yes, 44 times
 
 **Dev.** Asked at the end of the day whether tomorrow's digest would re-report what we fixed. I
