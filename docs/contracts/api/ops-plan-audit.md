@@ -100,13 +100,24 @@ a code already present was already triaged.
 version of the classifier produced.
 
 Per-plan verdicts are also written into the `plan_rule_invalid` event detail as `verdicts` and
-`verdict_note`, so triage does not have to re-derive them.
+`verdict_note`, so triage does not have to re-derive them — **and as a sentence in `reason`**, via
+`verdictReason()`.
+
+⚠️ **`reason` is not a duplicate of `verdicts`; it is the field the CONSUMER already reads.** The
+daily digest's Q4 selects `detail->>'reason'` and prints it, so writing there means the existing
+consumer reports the verdict without depending on a second edit somewhere untestable. The three
+sentences are mutually exclusive and a regression outranks an undecidable, asserted in
+`regressionVsNewRule.test.ts` — a digest that reads "NOT A DEFECT" over a regression would be worse
+than silence.
 
 ## Consumers
 
-- The **daily ops digest** — a cloud routine, not repo code (editable via RemoteTrigger). ⚠️ **It
-  does not read `cause` yet.** Until it is pointed at it, the field is computed and unread, which is
-  the decorative-config shape. That is the open half of `OPS-DIGEST-STORED-PLAN-DEBT-01`.
+- The **daily ops digest** — a cloud routine, not repo code (editable via RemoteTrigger).
+  ✅ **Wired 2026-10-04**: its Q4 now selects `verdicts` and `verdict_note`, carries the three-way
+  interpretation, and gained a pre-escalation check 0 — *the violation may be a defect in the
+  CHECKER, not in the plan*. Verified byte-identical after the write; next run 2026-10-04 06:09.
+  ⚠️ **`reason` is the belt to that braces**: even with the prompt unchanged, the digest would have
+  printed the verdict, because `reason` is a field it already read.
 - No app or website surface reads this route. It is ops-only.
 
 ## Limits, stated

@@ -5,7 +5,7 @@ import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { findWeekCollisions, type LiveWeekRow } from '@/lib/ops/planWeekCollision'
 import { validateReshapedPlan } from '@/lib/plan/invariants'
 import { storedPlanCodes } from '@/lib/ops/storedPlanProbes'
-import { classifyCodes, summariseVerdicts, type CodeVerdict } from '@/lib/ops/regressionVsNewRule'
+import { classifyCodes, summariseVerdicts, verdictReason, type CodeVerdict } from '@/lib/ops/regressionVsNewRule'
 import type { Plan } from '@/types/plan'
 
 // GET/POST /api/ops/plan-audit — PLAN-AUDIT-01 daily constitutional audit.
@@ -212,6 +212,10 @@ export async function POST(req: NextRequest) {
         // queue item; `undecidable` means regeneration could not produce a comparable
         // plan and MUST NOT be read as clean.
         ...(Object.keys(verdicts).length ? { verdicts, verdict_note: verdictNote } : {}),
+        // ⚠️ ALSO AS PROSE IN `reason`, because that is the field the daily digest ALREADY
+        // selects and prints. The structured map above is for triage; this is what makes the
+        // existing consumer say the right thing tomorrow without a second edit elsewhere.
+        ...(verdictReason(verdicts, verdictNote) ? { reason: verdictReason(verdicts, verdictNote) } : {}),
         // Foundation weeks (n <= 0) are the class no other server-side check
         // sees at all — call them out so triage starts in the right place.
         foundation_week_violations: errors.filter(v => (v.week ?? 1) <= 0).length,

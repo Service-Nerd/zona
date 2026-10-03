@@ -150,6 +150,37 @@ export function classifyCodes(
   }
 }
 
+/**
+ * The verdict as a sentence, written into the ops_event's `reason` field.
+ *
+ * ⚠️ WHY `reason` AND NOT A NEW FIELD. The daily digest already selects
+ * `detail->>'reason'` and already prints it. Writing here means the EXISTING consumer
+ * reports the verdict tomorrow morning with no change to the digest at all — and a
+ * mechanism that works with the consumer as it is beats one that needs a second edit
+ * somewhere I cannot test. The structured `verdicts` map stays beside it for triage.
+ *
+ * This is the lesson from `run_walk_strategy` and `LoadShape.ariaLabel` applied in
+ * advance: a value whose only consumer is a change someone still has to make is a value
+ * nothing reads.
+ */
+export function verdictReason(verdicts: Record<string, CodeVerdict>, note: string): string | null {
+  const codes = Object.keys(verdicts)
+  if (!codes.length) return null
+  const regressions = codes.filter(c => verdicts[c] === 'engine_regression')
+  const undecided = codes.filter(c => verdicts[c] === 'undecidable')
+  if (regressions.length) {
+    return `ENGINE REGRESSION — today's engine reproduces ${regressions.join(', ')} from the same inputs. `
+      + `This is a live defect, escalate it.`
+  }
+  if (undecided.length) {
+    return `UNDECIDABLE for ${undecided.join(', ')} — the plan could not be regenerated into a comparable `
+      + `shape (${note}), so there is no verdict. Treat as actionable: "could not tell" is not "fine".`
+  }
+  return `NOT A DEFECT — the rule post-dates the plan. Today's engine does not reproduce `
+    + `${codes.join(', ')} from the same inputs, so this is an older plan meeting a newer rule. `
+    + `Remediation queue, not an alert.`
+}
+
 /** Roll per-plan verdicts into the one line a daily report should lead with. */
 export function summariseVerdicts(all: Array<Record<string, CodeVerdict>>) {
   const counts = { engine_regression: 0, rule_newer_than_plan: 0, undecidable: 0 }

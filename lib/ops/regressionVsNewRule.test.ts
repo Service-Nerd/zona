@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import { classifyCodes, summariseVerdicts } from './regressionVsNewRule'
+import { classifyCodes, summariseVerdicts, verdictReason } from './regressionVsNewRule'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
 import { PINNED_PLAN_START_0907 } from '@/lib/plan/__fixtures__/pinnedPlanStart'
@@ -127,5 +127,46 @@ describe('summariseVerdicts — only a regression or an unknown may page anyone'
     const s = summariseVerdicts([{ A: 'undecidable' }])
     expect(s.actionable).toBe(true)
     expect(s.engine_regression).toBe(0)
+  })
+})
+
+/**
+ * `verdictReason` is what the EXISTING digest prints, because it already selects
+ * `detail->>'reason'`. These arms assert the three sentences say the opposite things they
+ * must — a digest that reads "NOT A DEFECT" for a regression is worse than silence.
+ */
+describe('verdictReason — the sentence the digest already prints', () => {
+  it('names a regression as a live defect to escalate', () => {
+    const r = verdictReason({ A: 'engine_regression', B: 'rule_newer_than_plan' }, 'shape matches')!
+    expect(r).toMatch(/ENGINE REGRESSION/)
+    expect(r).toMatch(/\bA\b/)
+    expect(r).toMatch(/escalate/i)
+    // It must NOT also tell the reader this is fine.
+    expect(r).not.toMatch(/NOT A DEFECT/)
+  })
+
+  it('says NOT A DEFECT, and says why, for a rule that post-dates the plan', () => {
+    const r = verdictReason({ A: 'rule_newer_than_plan' }, 'shape matches')!
+    expect(r).toMatch(/NOT A DEFECT/)
+    expect(r).toMatch(/older plan meeting a newer rule/)
+    expect(r).toMatch(/Remediation queue, not an alert/)
+    expect(r).not.toMatch(/ENGINE REGRESSION/)
+  })
+
+  it('an UNDECIDABLE reads as actionable and carries the reason', () => {
+    const r = verdictReason({ A: 'undecidable' }, 'foundation weeks 3 → 0')!
+    expect(r).toMatch(/UNDECIDABLE/)
+    expect(r).toMatch(/foundation weeks 3 → 0/)
+    expect(r).toMatch(/not "fine"/)
+    expect(r).not.toMatch(/NOT A DEFECT/)
+  })
+
+  it('a REGRESSION outranks an undecidable in the same set — the worst news leads', () => {
+    const r = verdictReason({ A: 'undecidable', B: 'engine_regression' }, 'x')!
+    expect(r).toMatch(/ENGINE REGRESSION/)
+  })
+
+  it('returns null for an empty set rather than an empty-sounding sentence', () => {
+    expect(verdictReason({}, 'x')).toBeNull()
   })
 })

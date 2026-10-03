@@ -2438,35 +2438,6 @@ but **invisible to every check** — stated plainly because the founder was not 
 option was put to him, and the alternative (keep the duration, carry the breach as declared debt)
 was not offered until afterwards. See `FOUNDATION-LR-S9-01`.
 
-#### 🔻 `OPS-DIGEST-READ-CAUSE-01` — the `cause` block is computed and nothing reads it *(P1, filed 2026-10-04)*
-
-👤 **FOUNDER** — not because it is a judgement call, but because the **digest is a cloud routine, not
-repo code** (editable via RemoteTrigger) and the routine write is not available to me.
-
-**The shipped half** (`OPS-DIGEST-STORED-PLAN-DEBT-01`, `cffae6cf`, registry row written) made
-`/api/ops/plan-audit` return a `cause` block that says, per newly-appeared violation code, whether
-**today's engine reproduces it** (`engine_regression` — act) or **the rule post-dates the plan**
-(`rule_newer_than_plan` — remediation queue), or that no honest verdict exists (`undecidable`).
-
-🔴 **UNTIL THE DIGEST READS IT, THE FIELD IS DECORATIVE** — computed on every run, consumed by
-nothing. That is the exact shape this repo has paid for repeatedly (`configConsumer.test.ts` exists
-for it; `LoadShape.ariaLabel`; §117's `run_walk_strategy` stamped for three days with no reader).
-**A value with no consumer is not a feature, and the fact that it is correct makes it worse, not
-better** — the next person sees a populated field and assumes someone is looking at it.
-
-**What the digest needs to do, in one line each:**
-1. Lead with `cause.actionable`. **Only that field should ever wake anyone.**
-2. When false, report the findings as *"N plans meeting a newer rule"* — informational, no triage.
-3. When true, name `cause.regressionCodes` and treat it as a live defect.
-4. ⚠️ **Treat `undecidable` as actionable**, not as clean. `actionable` already does; a prompt that
-   re-derives the rule from the counts must not drop that arm.
-5. Add the Q4 guidance missed on 2026-10-03: **a reported constitutional violation may be a
-   VALIDATOR defect rather than an engine one.** Both of that morning's were.
-
-📐 **The measurement that makes the case:** of 60 stored error-severity violations across 13 codes,
-**60 are `rule_newer_than_plan` and 0 are engine regressions.** A digest reading `cause` would have
-said so in one line instead of costing a day.
-
 #### 🟡 `AUDIT-CONTRACT-MENTION-01` — the contract check counts a passing MENTION as a contract *(P3, filed 2026-10-04)*
 
 ⚙️ **NO BOARD.** Tooling.
