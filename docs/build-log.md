@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-03 — `MWM-FLOOR-VALIDATOR-01` · the engine had three exemptions and the checker had two
+**Shipped:** The weekday-cap invariant now shares §82's floor-protection exemption, and the property sweep has a slow runner in it for the first time.
+
+**Dev learning:** The ops digest flagged two live marathon plans breaching a runner's stated weekday limit — 65 error-severity violations between them. They weren't breaching anything. `applyWeekdayMinsCap` has three ways to leave a weekday session over the cap: the long run, a structured session, and §82's floor protection, where rather than shrink an easy run below 4 km the engine holds it at the floor and lets the duration run a few minutes long. The first two were mirrored into the validator. The third, ruled the same day in the same function, wasn't.
+
+The part that stings: that function's comment warns about this exact shape, in these words — *"an engine exemption the validator does not share is a plan that fails its own constitution."* It was written for §81. Nobody carried it to the rule thirty lines below it.
+
+**The real find was the gate.** A prior investigation concluded the error needed a per-day budget of 25 minutes or less and that the current engine couldn't produce it at 30. Both wrong. Per-day budgets make no difference at all — flat 30, all-30, mon-20, tue/wed/fri-25 all give exactly 46 violations. The gate is **pace**: a 30-minute cap covers the 4 km floor only at 7:30/km, so it binds for every runner slower than that and none faster. 0% firing at an HM benchmark of 2:00, 100% at 2:16. Which is why nobody saw it: the sweep's entire benchmark set was *no benchmark* or *10 km in 48:30*. Every runner in it was fast. The declared baseline of zero was true of the grid and false of the product, and the cohort it excluded is the charity intake — both live cases were 2:16 and 2:29 half-marathoners.
+
+**AI-building learning:** I nearly wrote the exemption as a blanket `if (floor_protected) continue`. Instead I made it verify §82's *justification* — the session must also sit at the floor — and falsification paid that back immediately: weakening it to the blanket version reddens exactly one arm, the one asserting the stamp isn't trusted, and nothing else. A one-line shortcut would have left a hole one boolean wide and every test still green.
+
+Then the same lesson arrived from the other direction. The test file written for §82 asserts `errors).toEqual([])` on a fixture with a 30-minute cap and floor-protected sessions — which should have caught this on day one. Its three floor-protected sessions land at **exactly 30 minutes**, and the assertion is `>= cap`, so it passes on the boundary while the invariant only fires strictly over. The guard for the principle sat precisely on the line it was policing. My replacement fixture is a slow runner, and its first arm asserts the overrun is *strict*, so it can't drift back.
+
+That's three population-too-narrow findings in one investigation: the sweep's fast-only benchmarks, the day-budget grid floor, and §82's own test fixture.
+
+**The honest bit:** no live plan needed changing, because none was wrong — 34 minutes against 30 is the trade the board ratified, and nothing was written to production. But widening the sweep immediately surfaced a *different* live defect: §121 firing because a slow runner's taper week can be their biggest week, 51 km against a 47 km peak. I filed it rather than absorbing it into the baseline, and measured the attribution before claiming it — it appears with the slow benchmark and without my fix, so it's the population's, not mine. And the biggest thing I found isn't fixed at all: foundation weeks carry no `duration_mins`, so neither the cap nor the check can see them, and Grace's first three Mondays are 55–60 minutes against the 30 she asked for. Her plan is the one the invariant called clean.
+
+---
+
 ## 2026-10-02 — `COHORT-BASELINE-RED-01` · the baseline was typed, not measured
 **Shipped:** Regenerated the coaching cohort baseline. `npm run verify` exits 0 for the first time in weeks.
 

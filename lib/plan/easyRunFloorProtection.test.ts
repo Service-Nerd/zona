@@ -81,3 +81,78 @@ describe('CoachingPrinciples §82 — easy-run floor protection', () => {
     expect(Object.values(raceWeek.sessions).some(s => s?.floor_protected)).toBe(false)
   })
 })
+
+/**
+ * MWM-FLOOR-VALIDATOR-01 (2026-10-03) — §82 IS AN EXEMPTION FROM
+ * INV-PLAN-MAX-WEEKDAY-MINS, AND THE CHECK DID NOT KNOW.
+ *
+ * `applyWeekdayMinsCap` has THREE ways to leave a weekday session over its cap:
+ * the long run (§81), a structured session (§81), and §82's floor protection.
+ * The validator mirrored the first two and not the third, so every plan where the
+ * floor binds raised error-severity violations for doing exactly what the board
+ * ratified. Measured: two live paid marathon plans at 19 and 46 violations, and
+ * 10,096 across the sweep once a slow benchmark could reach the cohort.
+ *
+ * 🔴 WHY THE TESTS ABOVE DID NOT CATCH IT, AND THIS IS THE WHOLE LESSON.
+ * `LOW_VOLUME_MARATHON` produces 3 floor-protected sessions and all three land at
+ * EXACTLY 30 minutes against a 30-minute cap. The assertion above is
+ * `toBeGreaterThanOrEqual(cap)`, which passes on the boundary, and the invariant
+ * only fires STRICTLY over. So the test written for §82 had a fixture that could
+ * not reach §82's failure — the population-excludes-the-case-at-risk class, inside
+ * the guard for the principle itself.
+ *
+ * The gate is PACE: a 30-minute cap covers the 4 km floor only at 7:30/km, so the
+ * floor binds for runners slower than that and for nobody faster. `SLOW_RUNNER`
+ * below carries a benchmark that puts it the right side of that line, and the
+ * first arm asserts the fixture STRICTLY exceeds — so this file cannot rot back
+ * into the boundary case it was written to escape.
+ */
+const SLOW_RUNNER: GeneratorInput = {
+  ...LOW_VOLUME_MARATHON,
+  // HM 2:30 => easy pace well slower than 7:30/km, which is what makes the floor bind.
+  benchmark: { type: 'race', distance_km: 21.1, time: '2:30:00' },
+  current_weekly_km: 15, longest_recent_run_km: 9,
+} as GeneratorInput
+
+describe('§82 floor protection is an exemption the VALIDATOR shares (MWM-FLOOR-VALIDATOR-01)', () => {
+  it('has a fixture that STRICTLY exceeds the cap — the arm the old fixture could not reach', () => {
+    const plan = generateRulePlan(SLOW_RUNNER, 'paid', PINNED_PLAN_START_0907)
+    const over = plan.weeks.flatMap(w => Object.values(w.sessions))
+      .filter((s): s is NonNullable<typeof s> =>
+        !!s?.floor_protected && (s.duration_mins ?? 0) > SLOW_RUNNER.max_weekday_mins!)
+    // Not >= . If this ever reads 0 the rest of this file is vacuous.
+    expect(over.length).toBeGreaterThan(0)
+  })
+
+  it('raises NO INV-PLAN-MAX-WEEKDAY-MINS for a floor-protected run over the cap', () => {
+    const plan = generateRulePlan(SLOW_RUNNER, 'paid', PINNED_PLAN_START_0907)
+    const mwm = validatePlan(plan, SLOW_RUNNER)
+      .filter(v => v.code === 'INV-PLAN-MAX-WEEKDAY-MINS')
+    expect(mwm).toEqual([])
+  })
+
+  it('does NOT take the stamp on trust — floor_protected away from the floor still fires', () => {
+    const plan = generateRulePlan(SLOW_RUNNER, 'paid', PINNED_PLAN_START_0907)
+    // §82's justification is that the session sits AT the floor. Move it off the
+    // floor and the exemption must not apply, or the arm is a hole one boolean wide.
+    const target = plan.weeks.flatMap(w => Object.values(w.sessions))
+      .find((s): s is NonNullable<typeof s> => !!s?.floor_protected)
+    expect(target).toBeTruthy()
+    target!.distance_km = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy + 1
+    target!.duration_mins = SLOW_RUNNER.max_weekday_mins! + 20
+    const mwm = validatePlan(plan, SLOW_RUNNER)
+      .filter(v => v.code === 'INV-PLAN-MAX-WEEKDAY-MINS')
+    expect(mwm.length).toBeGreaterThan(0)
+  })
+
+  it('stays narrow — an UNSTAMPED easy run over the cap still fires', () => {
+    const plan = generateRulePlan(SLOW_RUNNER, 'paid', PINNED_PLAN_START_0907)
+    const target = plan.weeks.flatMap(w => Object.values(w.sessions))
+      .find((s): s is NonNullable<typeof s> => !!s?.floor_protected)
+    expect(target).toBeTruthy()
+    delete target!.floor_protected
+    const mwm = validatePlan(plan, SLOW_RUNNER)
+      .filter(v => v.code === 'INV-PLAN-MAX-WEEKDAY-MINS')
+    expect(mwm.length).toBeGreaterThan(0)
+  })
+})

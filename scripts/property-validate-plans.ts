@@ -267,9 +267,27 @@ const longRunDays: any[] = [
 // weekly volume arithmetic — differs from a benchmarked runner's. The entire
 // §9/§23 volume interaction behind SC-01 is pace-driven, so an unbenchmarked
 // grid cannot reach it.
+// 🔴 A SLOW BENCHMARK (added 2026-10-03, MWM-FLOOR-VALIDATOR-01). The comment
+// above already had the right idea — pace is a reachability axis — and then gave
+// the grid only FAST runners: no benchmark, or 10 km in 48:30 (~4:51/km). Every
+// point in it is quicker than 7:30/km easy.
+//
+// That is exactly the threshold §82's floor protection turns on. `applyWeekdayMinsCap`
+// holds an easy run at MIN_SESSION_DISTANCE_KM.easy (4 km) rather than scale it below,
+// and a 30-minute cap only covers 4 km at 7:30/km — so the floor binds for every
+// runner SLOWER than that and for none faster. Measured on this engine: 0% of plans
+// raise INV-PLAN-MAX-WEEKDAY-MINS at an HM benchmark of 1:30/1:45/2:00, and 100% at
+// 2:16/2:30/2:45.
+//
+// So the baseline's stated `'INV-PLAN-MAX-WEEKDAY-MINS': 0` was true of this grid and
+// false of the product, and the two live cases that surfaced it on 2026-10-03 were
+// HM 2:16 and HM 2:29 — a charity marathon cohort is mostly this runner, not the
+// 48-minute 10k one. The population excluded the cases at risk, which is the class
+// this repo has recorded most often.
 const benchmarkSets: any[] = [
   { label: 'none',   benchmark: undefined },
   { label: 'race10k', benchmark: { type: 'race', distance_km: 10, time: '0:48:30' } },
+  { label: 'slowHM',  benchmark: { type: 'race', distance_km: 21.1, time: '2:30:00' } },
 ]
 
 // TIER (added 2026-08-20). The sweep only ever generated FREE plans, so the
@@ -1321,13 +1339,18 @@ const BASELINE: Record<string, number> = {
   // The axis re-rolls the seeded sample, so counts move: MAIN-SET-ORDERING
   // 25 -> 26, TIME-TARGET-QUALITY-FLOOR 17 -> 13. **Declared, not absorbed.**
   // The population did not change; the sample did. Never re-baseline to go green.
-  'INV-PLAN-MAIN-SET-ORDERING': 26,
+  // 26 -> 21 (2026-10-03): the `slowHM` benchmark widened the population and five
+  // of these stopped firing. Lowered as the sweep instructs, same cause as
+  // RACE-NOT-VOLUME's rise, opposite sign. Not a fix — a different sample.
+  'INV-PLAN-MAIN-SET-ORDERING': 21,
   // 13 -> 0 on 2026-09-22. §120 anchored `hm_pace_intervals` to goal pace, so a
   // time-target plan that previously prescribed ZERO goal-pace quality now
   // prescribes some. Lowered to lock the fix in, per the rule above: "every
   // count that falls is progress and the baseline should be lowered."
   'INV-PLAN-TIME-TARGET-QUALITY-FLOOR': 0,
-  'INV-PLAN-PEAK-OVER-BASE': 1,
+  // 1 -> 0 (2026-10-03): same population widening. Held at an explicit 0 so a
+  // regression reads as NEW.
+  'INV-PLAN-PEAK-OVER-BASE': 0,
   // 1 -> 2 on 2026-09-24, then **2 -> 0 the same day: FIXED, not re-sampled**
   // (SWEEP-W1W2-LONG-CAP-01). The widened grid revealed it; the RCA found the
   // mechanism and it is closed at the producer.
@@ -1381,7 +1404,22 @@ const BASELINE: Record<string, number> = {
   // did. Never re-baseline to go green.") The rule "every count that falls is
   // progress" holds only when the fall IS progress — verify which before moving
   // this number.
-  'INV-PLAN-RACE-NOT-VOLUME': 10,
+  // 🔴 10 -> 18 (2026-10-03, MWM-FLOOR-VALIDATOR-01). THE POPULATION WIDENED, THE
+  // ENGINE DID NOT MOVE — and the 8 new firings are REAL error-severity defects,
+  // not an accounting artefact. Adding the `slowHM` benchmark above made a cohort
+  // reachable that this grid had never contained, and §121 fires on it: a taper
+  // week carrying MORE volume than the peak phase (measured: 51km against a 47km
+  // peak, 16 against 13, 14 against 12). A runner's taper reading as their hardest
+  // block is a coaching defect, and for the charity cohort it is live.
+  //
+  // ⚠️ ATTRIBUTION MEASURED, NOT ASSUMED: all 8 appear in a sweep run with the
+  // slow benchmark and WITHOUT the §82 validator fix, so they are the population's,
+  // not the fix's. The §82 fix is validator-only and cannot reach §121.
+  //
+  // 🔻 NOT FIXED, FILED: `TAPER-OVER-PEAK-SLOW-01` (P1, 🏃 COACHING BOARD). A
+  // declared reason is not a scheduled fix — this number is a debt register entry
+  // with an owner, and it must come DOWN, not be re-justified.
+  'INV-PLAN-RACE-NOT-VOLUME': 18,
 
   // ── §53 variety, ROTATION SPENDS A SHARED ROW (CB-BEGINNER-CATALOGUE-01, 2026-09-19) ──
   //

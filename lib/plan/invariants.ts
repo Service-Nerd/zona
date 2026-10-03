@@ -2119,6 +2119,32 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         // engine exemption the validator does not share is a plan that fails
         // its own constitution.
         if (isLongRun(s) || isStructuredSession(s)) continue
+        // 🔴 §82 — THE THIRD ENGINE EXEMPTION, AND THE ONE THIS CHECK NEVER LEARNED
+        // (MWM-FLOOR-VALIDATOR-01, 2026-10-03).
+        //
+        // `applyWeekdayMinsCap` does not only skip the long run and structured
+        // sessions. Where scaling an easy run to the cap would drive it below
+        // MIN_SESSION_DISTANCE_KM.easy, §82 (Coaching Board 2026-09-03) holds it AT
+        // the floor, lets duration follow at the runner's own easy pace, and stamps
+        // `floor_protected` — "the stated weekday cap is exceeded by a few minutes,
+        // not honoured by a session that trains nothing".
+        //
+        // §81's two exemptions were mirrored here. §82's was ruled THE SAME DAY, in
+        // the same function, and was not — so the engine shipped plans that fail
+        // their own constitution, which is the failure this check's own comment
+        // thirty lines up warns about in as many words. Measured 2026-10-03: two
+        // live paid marathon plans raising 19 and 46 error-severity violations, and
+        // 10,096 across the sweep once a slow benchmark could reach the cohort.
+        // EVERY firing was a floor-protected easy run; none was a real breach.
+        //
+        // ⚠️ THE STAMP IS NOT TAKEN ON TRUST. §82's justification is that the
+        // session sits AT the floor, so that is what is verified: a session claiming
+        // the exemption while NOT at the floor is still a violation. Otherwise this
+        // arm would be a hole the width of one boolean — anything that stamped
+        // `floor_protected` could overrun without limit, which is not what was
+        // ratified. The floor is recomputed from the same owner the engine uses.
+        if (s.floor_protected === true
+            && s.distance_km === sessionFloorsFor(input.longest_recent_run_km).easy) continue
         if (s.duration_mins > cap) {
           violations.push({
             code: 'INV-PLAN-MAX-WEEKDAY-MINS',
