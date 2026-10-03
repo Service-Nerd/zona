@@ -2438,60 +2438,97 @@ but **invisible to every check** — stated plainly because the founder was not 
 option was put to him, and the alternative (keep the duration, carry the breach as declared debt)
 was not offered until afterwards. See `FOUNDATION-LR-S9-01`.
 
-#### 🔴 `OPS-DIGEST-STORED-PLAN-DEBT-01` — a tightened validator reports every PRE-FIX stored plan, every day, forever *(P1, filed 2026-10-03)*
+#### 🟡 `OPS-DIGEST-STORED-PLAN-DEBT-01` — a code set changing because we ADDED A RULE is indistinguishable from the ENGINE REGRESSING *(P1, filed 2026-10-03, **reframed and mostly shipped** 2026-10-04)*
 
-⚙️ **NO BOARD** for the mechanism (the digest's scope is ops). 🏃 **COACHING BOARD only if the
-answer is to backfill**, which reverses a settled policy.
+⚙️ **NO BOARD.** No prescription changes.
 
-🔴 **MEASURED TONIGHT, ANSWERING "will the same issue flag again tomorrow?" — IT WILL.** Every
-live plan validated with the shipped validator: **44 error-severity violations across 8 of 21
-validatable plans.**
+🔴 **THE ORIGINAL FILING WAS WRONG ABOUT THE MECHANISM AND THE CORRECTION IS THE WHOLE ITEM.**
+It said *"a tightened validator reports every pre-fix stored plan, every day, forever"* and that
+*"every rule we tighten adds permanent daily noise."* **False.** `/api/ops/plan-audit` already
+alerts on a **TRANSITION**, not on state, and its own header reasons about exactly this hazard:
+*"a probe that alerts on 'is this plan invalid?' would fire on every row every day, forever, and
+train us to ignore it."* It fires **once** per change, then goes quiet. ⚠️ **I filed an item
+against a problem the code had already solved, without reading the code that solved it** —
+[[feedback-read-the-system-before-proposing-to-change-it]].
 
-| code | n | plans |
-|---|---|---|
-| `INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION` | **30** | 4 (3 real users + `test13@test.com`) |
-| `INV-PLAN-HEADER-PACE-MATCHES-WORK` | 13 | — |
-| `INV-PLAN-RACE-NOT-VOLUME` | **1** | 1 real user |
-| 11 others | 1–3 each | — |
+✅ **THE REAL GAP, WHICH IS NARROWER AND SHARPER.** That one alert is **ambiguous**. A violation
+code set changes for two opposite reasons and they present identically:
 
-⚠️ **NOT ONE IS THE ENGINE PRODUCING A BAD PLAN TODAY.** Every firing is a **stored plan
-generated before the rule that now judges it**: the 30 predate §122 (shipped this morning), the
-§121 one predates §121 (plan created **2026-09-12**, §121 shipped **2026-09-22**).
+| cause | right response |
+|---|---|
+| the engine started producing bad plans | **urgent** |
+| we shipped an invariant that judges OLD data | information, queue a remediation |
 
-🔴 **THE STRUCTURAL CONFLICT, AND IT IS THE REAL ITEM.** `project_live_plan_policy` is settled:
-**doctrine and engine fixes are NOT backfilled to existing plans.** The digest **validates stored
-plans.** Those two are in direct contradiction, so **every rule we tighten adds permanent daily
-noise** — and noise is what makes a digest stop being read, which this repo has recorded twice as
-equivalent to having no check at all (NOISE-GATE-01). **Today proves the cost: two of the three
-things the digest reported this morning were not defects, and the day went to proving it.**
+**Measured cost of the ambiguity: on 2026-10-03 the morning digest reported two code-set changes
+as defects and a full day went to proving neither was one** (§82's exemption missing from a
+checker; §121's invariant enforcing a proxy). Nothing in the report could say so.
 
-✅ **ONE FIRING IS A GENUINE LIVE RUNNER-FACING DEFECT and must not be lost in the noise.**
-Plan `2e4467a0` (Apple private-relay user, their ONLY plan, race **2026-12-12** so still active)
-stores **race week 13 at `weekly_km: 56` against a peak-phase maximum of 51** — the race folded
-into training volume. That is precisely §121's measured harm: *"the screen argues for the
-mistake."* **The runner is seeing it today.** ⚠️ The remediation is a plan REGENERATION, not a
-foundation recompose, so it is materially riskier than this morning's and needs its own plan and
-explicit authorisation.
+✅ **SHIPPED — `lib/ops/regressionVsNewRule.ts`, consumed by `/api/ops/plan-audit`.** Regenerate
+the plan from its own stored `generator_input` with today's engine and re-validate. Violation
+comes back → `engine_regression`. It does not → `rule_newer_than_plan`. **No date bookkeeping and
+no "when did each invariant ship" table to go stale.** The route now returns a `cause` block, and
+`actionable` is **true for `undecidable` as well as for a regression** — *"we could not tell"* must
+never read as *"fine"*.
 
-**The work, in order:**
-1. **Decide the digest's scope** — the cheap, correct fix is almost certainly to report a stored
-   plan against the rules that existed **when it was generated**, or to partition the report into
-   *"engine is producing this now"* (urgent) and *"pre-dates the rule"* (a remediation queue). The
-   digest is a **cloud routine, not repo code** (editable via RemoteTrigger), so this cannot be
-   done from a repo commit.
-2. **Remediate `2e4467a0`** — real, live, visible. Needs a written plan + authorisation.
-3. **The 30 foundation firings**: `scripts/recompose-foundation.ts` already does this safely, but
-   ⚠️ **its candidate filter selects plans that are OVER BUDGET**, and these are plans with **no
-   duration at all** — so as written it would skip every one of them. Widen the filter before
-   assuming the tool covers it.
-4. **`test13@test.com` is in the count** — purge it (`npm run purge:users -- --ids`) so the figure
-   stops being inflated by our own fixture.
+🔴 **THE DESIGN WAS EARNED BY FALSIFYING MY OWN FIRST VERSION, WHICH WAS WRONG IN THE REASSURING
+DIRECTION.** It called `generateRulePlan` alone — which does **not** compose the foundation block
+(`composePlanWithFoundation`, ADR-020). All four live plans regenerated with **0 foundation
+weeks**, so `INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION` **structurally could not fire**, and every
+one came back `rule_newer_than_plan`. **A genuine engine regression in a foundation week would have
+been labelled "nothing to see".** So the classifier now runs the **full pipeline** and refuses to
+answer unless the regenerated plan is **shape-comparable** (week count, foundation weeks,
+foundation weekday sessions, ±25% session count). ⚠️ **An allow-by-default arm is not a check.**
 
-⚠️ **Do not "fix" this by relaxing §122 or §121.** Both are correct and both were earned today.
-The defect is that a check scoped to stored data cannot tell *"we broke this"* from *"this was
-made before we knew better"*.
+📐 **Measured with the fixed classifier: all 13 codes across 60 stored violations are
+`rule_newer_than_plan`. Zero engine regressions.** 22 of 22 plans regenerate without refusal, so
+the verdict covers the whole population rather than a convenient subset.
+
+✅ **Falsified four ways, each mutation RUN:** remove the shape guard → red · **skip the ADR-020
+composition stage → red** · make `undecidable` return the reassuring verdict → red · make
+`actionable` ignore `undecidable` → red. ⚠️ **The composition mutation PASSED at first** — the
+vacuity arm reached `undecidable` either way, so it could not tell the two apart. A fifth arm was
+added with a plan whose foundation block regeneration **can** reproduce, and only then did it go
+red. **A mutation that does not redden anything is a missing test, not a safe change.**
+⚠️ **And `tsc` caught my fixture using `training_age: '2-5y'`, which is not a real value** —
+vitest does not typecheck, so the fixture was partly fiction (`'2-5yr'`). The verdicts did not
+depend on it, which is why it survived 8 green tests.
+
+🔻 **STILL OPEN, and it is the only part left:** the digest is a **cloud routine, not repo code**,
+so it must be pointed at the new `cause` block to benefit. Until then the data exists and nothing
+reads it — the decorative-config shape. **One prompt edit, needs the routine write unblocked.**
 
 ---
+
+### ✅ The 30 `INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION` firings — 1 of 4 done, 3 BLOCKED
+
+**`scripts/recompose-foundation.ts` now covers them, and it did not before.** Three fixes to that
+script, each a real defect:
+
+1. 🔴 **Its only candidate test was "over budget", which is the WRONG POPULATION for these.** These
+   sessions carry **no `duration_mins` at all**, so `overBudget` falls back to
+   `distance_km * pace` and finds most of them comfortably **inside** budget. Selecting on the
+   over-budget test alone reported **`candidates 0`** — I would have concluded the tool already
+   covered them. Added `noDurationWeekdays()`. **Sixth population-too-narrow finding in three days.**
+2. 🔴 **Its success guard required the RESULT to be violation-free**, which skipped **3 of 6** real
+   candidates over `INV-PLAN-COPY-MATCHES-SESSIONS` / `HEADER-PACE-MATCHES-WORK` — **all
+   pre-existing, all in main-plan weeks the script asserts byte-identical two lines above.** A
+   guard that blocks a good fix for an unrelated reason is a guard that gets switched off. It now
+   measures the **DELTA** and reports pre-existing errors as context.
+3. 🔴 **The candidate test and the success test used DIFFERENT definitions of "over budget".**
+   `stillOver` tolerates a §82 floor-protected session; the candidate test did not — so **the two
+   plans remediated on 2026-10-03 re-qualified the next day** and would have been rewritten for no
+   reason, **inflating any count of "plans remediated" by two.** Same definition, both sides.
+
+✅ **Proven on the test account first, and the new code path needed it:** the widened filter and
+delta guard had never written anything. `test13@test.com` **6 → 0** missing durations · 0
+invariant errors · **0 `MAX-WEEKDAY-MINS` errors now the sessions are VISIBLE**, so making them
+measurable revealed no hidden breach · that plan now has **0 error-severity violations at all** ·
+backup row written.
+
+🔻 **3 real plans BLOCKED, not done** — `6bpvjrhk8h`, `hfzc9gnktm`, `claymanwaterman` (24 of the 30
+sessions). The production write was refused by the sandbox as a shared-resource change. Dry run is
+clean: 3 candidates, 3 guards pass, 0 skipped. **Needs the founder to run or unblock:**
+`npm run remediate:foundation -- --write --i-have-authorisation`.
 
 ### ✅ §121 half: READY TO RUN, awaiting one word *(`RACE-WEEK-VOLUME-REMEDIATE-01`)*
 
@@ -2574,6 +2611,27 @@ noun.
 
 **Not scoped as a build.** It is a single string and it belongs to whichever surface already
 owns the constraint note. Do not open it as an engine item.
+
+#### 🟡 `AUDIT-CONTRACT-MENTION-01` — the contract check counts a passing MENTION as a contract *(P3, filed 2026-10-04)*
+
+⚙️ **NO BOARD.** Tooling.
+
+`scripts/audit-docs.sh → contracted()` falls back to `grep -rqF "<route path>" docs/contracts/api/`
+when no file matches the route's derived name. **So a route named anywhere in another contract's
+prose counts as documented.** Found 2026-10-04: `/api/ops/plan-audit` had **no contract of its own**
+and was counted as contracted because `ops-events.md` names it in a table row. Writing the real
+contract moved the debt figure by **zero**.
+
+⚠️ **This is the same class `ship-record-check.py` already guards against and this script does not:**
+that hook checks STRUCTURE (the ID must be in a registry row's **first cell** and a build-log `##`
+heading) precisely because *"a plain grep called GTM-CHARITY-02 covered because its ID appeared
+inside another feature's row."* `contracted()` does the bare grep.
+
+**The fix is a structural match**, e.g. require a `**Route:**` or `**Owner:**` line naming the path,
+the way the component check already reads each contract's own `**Component:** \`path\`` line. ⚠️ **It
+will RAISE the reported debt** — unknown by how much until it is run, and that increase is the
+finding, not a regression. 🔻 **Do not fix this while the number is being quoted elsewhere** without
+saying in the same breath that the definition changed, or the jump reads as decay.
 
 #### 🟡 `CONTRACT-COVERAGE-03` — 61 components still have no contract *(P3, filed 2026-10-02, falling register)*
 

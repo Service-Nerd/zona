@@ -38,6 +38,14 @@ recordOpsEvent(kind: OpsEventKind, detail?: Record<string, unknown>, userId?: st
 
 ## Probe — `GET|POST /api/ops/plan-audit`
 
+> 📄 **The ROUTE's own contract is `ops-plan-audit.md`** (added 2026-10-04): auth, the full
+> response shape including the `cause` block, and why a transition alert needed a cause
+> classifier. **This section owns the EVENT it writes; that file owns the route.** Kept as two
+> files rather than one because `plan_rule_invalid` has a second producer — the
+> `/api/generate-plan` stream — and folding the route into the event table would give that
+> producer's row an owner it does not have.
+
+
 **PLAN-AUDIT-01 (2026-09-03).** Runs `validateReshapedPlan` over every stored plan and records
 the ones breaching their own constitution.
 

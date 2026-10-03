@@ -5,6 +5,7 @@ import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { findWeekCollisions, type LiveWeekRow } from '@/lib/ops/planWeekCollision'
 import { validateReshapedPlan } from '@/lib/plan/invariants'
 import { storedPlanCodes } from '@/lib/ops/storedPlanProbes'
+import { classifyCodes, summariseVerdicts, type CodeVerdict } from '@/lib/ops/regressionVsNewRule'
 import type { Plan } from '@/types/plan'
 
 // GET/POST /api/ops/plan-audit — PLAN-AUDIT-01 daily constitutional audit.
@@ -107,6 +108,19 @@ export async function POST(req: NextRequest) {
   // AGE OF EVERY BREACHING PLAN, newest first. See the summary block at the end
   // for why this is the number that makes the audit readable.
   const invalidPlanAgesDays: number[] = []
+  // OPS-DIGEST-STORED-PLAN-DEBT-01 — WHY did this code set change?
+  //
+  // The transition logic above is right and is not the problem: it fires once per change,
+  // then goes quiet. The problem is that one alert is AMBIGUOUS. A new violation class
+  // appears both when the engine regresses and when we ship a new invariant that judges
+  // old plans, and those two demand opposite responses. On 2026-10-03 the morning digest
+  // reported two such changes as defects and a full day went to proving neither was one.
+  //
+  // So every CHANGED or NEW finding is now classified by regenerating the plan from its
+  // own stored `generator_input` with today's engine. Only the changed set is regenerated
+  // — this is a Vercel function, and generation is not cheap.
+  const verdictsByPlan: Array<Record<string, CodeVerdict>> = []
+  const verdictNotes: string[] = []
 
   for (const row of rows ?? []) {
     const plan = row.plan_json as Plan | null
@@ -169,12 +183,35 @@ export async function POST(req: NextRequest) {
     changed++
     flagged.push({ user_id: row.user_id, codes, state: prev ? 'changed' : 'new' })
 
+    // Classify only the codes that are NEW since the last sighting — those are the ones
+    // whose cause is in question. A code that was already there was already triaged.
+    const previously: string[] = prev ? JSON.parse(prev) : []
+    const newCodes = codes.filter(c => !previously.includes(c))
+    const input = (plan.meta as unknown as { generator_input?: Parameters<typeof classifyCodes>[1] })
+      .generator_input
+    let verdicts: Record<string, CodeVerdict> = {}
+    let verdictNote = 'not classified: stored plan carries no generator_input'
+    if (input && newCodes.length) {
+      const c = classifyCodes(plan, input, newCodes)
+      verdicts = c.verdicts
+      verdictNote = c.note
+    } else if (!newCodes.length) {
+      verdictNote = 'no new codes to classify'
+    }
+    if (Object.keys(verdicts).length) verdictsByPlan.push(verdicts)
+    verdictNotes.push(verdictNote)
+
     await recordOpsEvent(
       'plan_rule_invalid',
       {
         source: 'plan-audit',
         codes,
         ...(prev ? { previously: JSON.parse(prev) } : {}),
+        // Why the set changed, per NEW code. `engine_regression` is the only value that
+        // means "the engine is doing this now"; `rule_newer_than_plan` is a remediation
+        // queue item; `undecidable` means regeneration could not produce a comparable
+        // plan and MUST NOT be read as clean.
+        ...(Object.keys(verdicts).length ? { verdicts, verdict_note: verdictNote } : {}),
         // Foundation weeks (n <= 0) are the class no other server-side check
         // sees at all — call them out so triage starts in the right place.
         foundation_week_violations: errors.filter(v => (v.week ?? 1) <= 0).length,
@@ -285,5 +322,22 @@ export async function POST(req: NextRequest) {
     console.error('[plan-audit] week-collision probe failed', e)
   }
 
-  return NextResponse.json({ ...summary, unchanged, changed, flagged, collisions: collisions.length })
+  // ── THE LINE A DAILY REPORT SHOULD LEAD WITH ────────────────────────────────
+  //
+  // `cause` answers the question the transition alert could not: of the findings that
+  // CHANGED today, how many are the engine misbehaving now, and how many are an older
+  // plan meeting a newer rule? `actionable` is the only field that should wake anyone,
+  // and it is deliberately TRUE for `undecidable` as well as for a regression — "we could
+  // not tell" must never read as "fine", which is the whole lesson of the vacuous zero
+  // that the first version of this classifier produced.
+  const cause = summariseVerdicts(verdictsByPlan)
+
+  return NextResponse.json({
+    ...summary, unchanged, changed, flagged,
+    collisions: collisions.length,
+    cause,
+    // Kept for triage: the reason each classification reached its verdict, so an
+    // `undecidable` can be chased without re-deriving it by hand.
+    verdict_notes: verdictNotes.slice(0, 20),
+  })
 }

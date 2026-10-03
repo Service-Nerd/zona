@@ -25,6 +25,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
+import { validatePlan } from '../lib/plan/invariants'
 import { easyPaceFromPlan } from '../lib/plan/easyPace'
 import { isLongRun } from '../lib/plan/sessionRole'
 import type { GeneratorInput, Plan } from '../types/plan'
@@ -73,6 +74,27 @@ function overBudget(plan: Plan, input: GeneratorInput) {
   return { pace, out }
 }
 
+/**
+ * Weekday foundation sessions carrying a distance but NO duration (§122).
+ *
+ * A session with a distance and no duration is invisible to every time-based rule —
+ * `applyWeekdayMinsCap` and `INV-PLAN-MAX-WEEKDAY-MINS` both skip on `!s.duration_mins`
+ * — which is the whole of §122's reason for existing. Recomposing the block gives these
+ * sessions a duration, so they become measurable even where they were never over budget.
+ */
+function noDurationWeekdays(plan: Plan) {
+  const out: Array<{ week: number; day: string; km: number }> = []
+  for (const w of plan.weeks) {
+    if (w.n > 0) continue
+    for (const d of WEEKDAYS) {
+      const s = w.sessions[d]
+      if (!s || isLongRun(s) || s.distance_km == null) continue
+      if (s.duration_mins == null) out.push({ week: w.n, day: d, km: s.distance_km })
+    }
+  }
+  return out
+}
+
 /** Main-plan weeks, stringified for an exact comparison. Nothing here may move. */
 const mainWeeksFingerprint = (p: Plan) => JSON.stringify(p.weeks.filter(w => w.n > 0))
 /**
@@ -108,13 +130,32 @@ async function main() {
     if (ONLY && !row.id.startsWith(ONLY)) continue
 
     const before = overBudget(plan, input)
-    if (!before.out.length) continue
+    // ⚠️ TWO CANDIDATE TESTS, NOT ONE (2026-10-04, OPS-DIGEST-STORED-PLAN-DEBT-01).
+    //
+    // This script was written for FOUNDATION-BUDGET-01, so its only test was "is a
+    // weekday foundation session OVER the runner's stated budget". That is the wrong
+    // population for the 30 live `INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION` firings:
+    // those sessions carry **no `duration_mins` at all**, so `overBudget` cannot judge
+    // them — it falls back to `distance_km * pace` and most of them are comfortably
+    // INSIDE the budget. Selecting on the over-budget test alone would have reported
+    // `candidates 0` and I would have concluded the tool already covered them.
+    // Measured: 4 plans, 30 sessions, all missing a duration, none over budget.
+    const missingDuration = noDurationWeekdays(plan)
+    // ⚠️ THE CANDIDATE TEST AND THE SUCCESS TEST MUST USE THE SAME DEFINITION.
+    // `stillOver` below tolerates a §82 floor-protected session over its budget — 34
+    // minutes against 30 is the board's ratified "a few minutes, not a session that
+    // trains nothing". The candidate test did NOT, so the two plans remediated on
+    // 2026-10-03 re-qualified the next day and would have been rewritten for no reason,
+    // inflating any count of "plans remediated" by two. Same definition, both sides.
+    const overNow = before.out.filter(o => !o.floorProtected)
+    if (!overNow.length && !missingDuration.length) continue
     candidates++
 
     const { data: u } = await db.auth.admin.getUserById(row.user_id)
     const who = u?.user?.email ?? '(unknown)'
     console.log(`── ${who}  plan ${row.id.slice(0, 8)}`)
-    console.log(`   BEFORE: ${before.out.length} weekday session(s) over budget`)
+    console.log(`   BEFORE: ${overNow.length} over budget (excl. §82 floor-protected) · ${missingDuration.length} carrying NO duration`)
+    for (const o of missingDuration.slice(0, 4)) console.log(`     w${o.week} ${o.day}: ${o.km}km, no duration — invisible to every time-based rule`)
     for (const o of before.out) {
       console.log(`     w${o.week} ${o.day}: ${o.km}km ≈ ${o.mins} min vs ${o.cap} budget (+${Math.round(100*(o.mins-o.cap)/o.cap)}%)`)
     }
@@ -132,8 +173,24 @@ async function main() {
     if (!res.plan.weeks.some(w => w.n <= 0)) problems.push('no foundation weeks were rebuilt')
     const stillOver = after.out.filter(o => !o.floorProtected)
     if (stillOver.length) problems.push(`${stillOver.length} session(s) still over budget and NOT floor-protected`)
-    const errs = res.violations.filter(v => v.severity === 'error')
-    if (errs.length) problems.push(`${errs.length} error-severity violation(s): ${Array.from(new Set(errs.map(e => e.code))).join(', ')}`)
+    // §122's half: the recompose must leave EVERY weekday session measurable.
+    const stillNoDuration = noDurationWeekdays(res.plan)
+    if (stillNoDuration.length) problems.push(`${stillNoDuration.length} session(s) STILL carry no duration`)
+    // ⚠️ FAIL ON VIOLATIONS THIS RECOMPOSE *ADDS*, NOT ON ONES THE PLAN ALREADY HAD
+    // (2026-10-04). The first version required the RESULT to be violation-free, and that
+    // skipped 3 of 6 real candidates over `INV-PLAN-COPY-MATCHES-SESSIONS`,
+    // `INV-PLAN-HEADER-PACE-MATCHES-WORK` and friends — all pre-existing, all in
+    // MAIN-PLAN weeks this script does not touch and asserts byte-identical two lines
+    // up. A guard that blocks a good fix for an unrelated pre-existing reason is a guard
+    // that gets switched off. The question is the DELTA.
+    const errKey = (v: { code: string; week?: number; day?: string }) => `${v.code}|${v.week ?? ''}|${v.day ?? ''}`
+    const beforeErrs = new Set(
+      validatePlan(plan, input).filter(v => v.severity === 'error').map(errKey))
+    const added = res.violations
+      .filter(v => v.severity === 'error' && !beforeErrs.has(errKey(v)))
+    if (added.length) problems.push(`${added.length} NEW error-severity violation(s): ${Array.from(new Set(added.map(e => e.code))).join(', ')}`)
+    const preExisting = res.violations.filter(v => v.severity === 'error').length - added.length
+    if (preExisting > 0) console.log(`   (${preExisting} pre-existing error violation(s) in untouched main-plan weeks — not this script's, left alone)`)
 
     console.log(`   AFTER:  ${after.out.length} over budget (${after.out.filter(o => o.floorProtected).length} held at §82's floor, declared)`)
     // ⚠️ PRINT THE AFTER DETAIL. The first dry run printed only the count, and I read the
