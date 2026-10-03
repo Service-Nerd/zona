@@ -6,6 +6,41 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-04 — `OPS-DIGEST-READ-CAUSE-01` · I built the belt before I risked the braces
+
+**Dev.** The classifier shipped yesterday computed the right answer and nothing read it. The obvious
+fix was to edit the cloud routine's prompt. The problem: that prompt is 28,000 characters of dense
+SQL and judgement rules, it lives in a live production routine, and the only way to update it is to
+send the whole string back — which means reproducing all of it exactly, by hand.
+
+**So I looked for a mechanism that didn't need that, and there was one.** The digest's query already
+selects `detail->>'reason'` and already prints it. Writing the verdict there as a plain sentence
+means the **existing** consumer reports it correctly tomorrow with no routine edit at all. Three
+mutually exclusive sentences, and a regression outranks an undecidable so the worst news leads.
+
+Then I did the prompt edit as well, because it carries something the `reason` field can't: a
+pre-escalation rule that **a violation may be a defect in the checker, not in the plan.** That is
+the whole lesson of yesterday — two reported findings, both checker defects, both plans correct, a
+day spent proving it.
+
+**The honest bit.** I verified the live write immediately instead of trusting the 200: stored prompt
+byte-identical to what I intended, all three internal copies in agreement, cron untouched. And I
+backed the original up first. Transcribing 28.5k characters into something a real routine runs at
+06:09 tomorrow is exactly the kind of thing that fails quietly, and "the API returned 200" is not
+evidence the text is right.
+
+**What I'd tell someone building this.** When a change depends on an edit you can't test, build the
+version that works with the system as it already is *first*. The feature then doesn't hinge on the
+risky step landing — and you can take the risky step with a diff in your hand instead of a hope.
+Same reasoning as writing a value into a field something reads, rather than a field something
+*will* read once someone gets round to it.
+
+**Also done:** the last three runners' foundation sessions got their durations. 30 → 0, and zero
+budget breaches appeared once those sessions became measurable — which is the outcome you want from
+making something visible: nothing was hiding.
+
+---
+
 ## 2026-10-04 — `OPS-DIGEST-STORED-PLAN-DEBT-01` · I filed a bug against a problem the code had already solved
 
 **Dev.** My own item said the daily plan audit would report pre-fix stored plans *"every day,
