@@ -23,6 +23,101 @@ memory.
 
 
 
+## 2026-10-03 — MWM-FLOOR-VALIDATOR-01 · three weekday-cap exemptions, two mirrored — and a bound this board set then vacated the same day
+
+**TWO SITTINGS, and the second corrected the first. Both recorded, because this register
+exists precisely because answers changed without anyone being able to see why.**
+
+### Sitting 1 — three items
+
+**(a) The reported defect — NOT A BOARD MATTER. Routed back to build as exempt.**
+`INV-PLAN-MAX-WEEKDAY-MINS` fired 19 and 46 times on two live paid marathon plans.
+`applyWeekdayMinsCap` has THREE exemptions — long run (§81), structured session (§81), and
+**§82 floor protection** — and the validator mirrored only §81's two. Every firing was a
+floor-protected easy run at 33–34 min against a 30-min cap, inside §82's ratified *"a few
+minutes"*. **The plans were correct; the checker was wrong.** Defect fix restoring documented
+intent, shipped `d89dd476`, `verify:parity` IDENTICAL over 6,066 cases.
+
+**(b) ITEM F — DECLINED. The premise was falsified by this register's own contents.**
+The submission asked the board to set a tolerance for structured weekday sessions running up
+to +97% over a stated ceiling. ⚠️ **§81 Amendment (2026-09-11) had already ruled it**, on
+better measurement than the submission brought (`maintenance` 20% → 80%, +60pp, rejected),
+settling it as *"the runner is told, and the plan is not relabelled"* — **and the tolerance
+already exists as `LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT = 50`.** The real defect is that
+`INV-PLAN-STRUCTURED-OVERRUN-DECLARED` tests note PRESENCE, so an unrelated
+volume-shortfall note discharges the obligation. **Exempt defect fix, not board work.**
+🔴 **This is the second time this week the register answered a question asked fresh.**
+
+**(c) ITEM F′ — CORRECT WITH AMENDMENT.** The exemption stands (no scaling — McMillan,
+unanimous, *"don't shrink to fit"*); **placement becomes an obligation.** Measured: the live
+plan with `day_budgets wed 60 / thu 90` had **ZERO** structured overruns because placement put
+the session on a day with room. Where no weekday can hold it, the plan says so about the
+session, not via a shared note.
+
+### 🔴 Sitting 2 — the bound set in sitting 1 is VACATED
+
+Sitting 1 ruled `EASY_RUN_FLOOR_PROTECTION_MAX_OVERRUN_PCT = 50`, aligned to §81's existing
+50% rather than inventing a second number. **It was set from precedent, before the measurement
+existed.** The measurement, taken immediately after:
+
+| | |
+|---|---|
+| foundation weekday sessions measured | **2,376** across 276 plans |
+| over the runner's stated day budget | **1,132 — 47.6%** |
+| plans with at least one | **214 / 276 — 77.5%** |
+| **median overrun** | **+39%** |
+| worst | **90 min vs a 30-min cap — +201%**, a 9.5 km session |
+| **cannot be fixed by capping at ANY bound** | **339 of 1,132** — trimming puts them under §9's 4 km floor, so §82 holds them over |
+
+**A 50% bound would have declared the tail and blessed the median.** The chair records this as
+his own error: the board's own protocol says a ruling made without `measure:fitness`-class
+numbers is a ruling about how a plan is CLASSIFIED, not whether it works, and sitting 1's bound
+was exactly that.
+
+**ITEM E — CORRECT WITH AMENDMENT. The remedy is STRUCTURAL, not a percentage.**
+
+1. Foundation weekday sessions **carry `duration_mins`**, from the same easy pace the main plan
+   uses. ⚠️ **A session with no duration is the root cause** — `applyWeekdayMinsCap` and
+   `INV-PLAN-MAX-WEEKDAY-MINS` both skip on `!s.duration_mins`, so these sessions are neither
+   trimmed nor checked. **20,980 foundation weeks swept clean is the absence of an instrument,
+   not evidence** (expressibility, not reachability — distinct from `HARNESS-COMPOSE-GAP-01`).
+2. The block is **sized against stated day budgets at construction** (§52b's day-count lever),
+   not trimmed afterwards. A cap applied after sizing is what produces the 339 impossible cases.
+3. Where it still does not fit, **§82's floor applies and the plan says so** — same note, same
+   voice (Sims: no new copy).
+4. 🔴 **`EASY_RUN_FLOOR_PROTECTION_MAX_OVERRUN_PCT` IS NOT CREATED.** Recorded explicitly
+   because this board's artifact list normally names a constant: **here the correct answer is
+   that no new number is right.**
+
+**Precedent that should have prevented this (`CB-SUBFLOOR-ADMIT-01`, same module).**
+`foundationBlock.ts` already carries a measured hole of this exact shape — it read flat config
+instead of per-runner floors and handed a runner *"a 5.0 km foundation session (+67%) … it
+landed in week −1, BEFORE the 2.9 km week 1. **The first session the runner ever saw was the
+unsafe one.**"* Per-runner floors were threaded in. **The time budget was not.** One input
+later, same module, same failure.
+
+**Willy — BLOCKING CONDITION (on evidence, not correctness).** Foundation weeks enter the same
+load instrumentation as main weeks, and `measure:fitness` runs before/after: if trimming the
+block reduces net build for the injury cohort, that must be seen, not assumed. The affected
+cohort includes a four-flag runner (knee, hip, back, shin splints) whose weeks −3 to −1 are
+**55, 60 and 60 minutes against a stated 30**.
+
+**McMillan's framing, recorded:** the shape is backwards. **60, 60, 60, then 34.** The
+foundation block is meant to be the gentlest part of the plan and is currently the heaviest
+weekday the runner will ever see.
+
+**Seiler:** no §1 exposure — foundation weeks carry no quality, so none of this touches
+distribution. It is a scheduling-honesty question and must not be dressed as a load one.
+
+**Artifacts owed:** §122 *Foundation weeks are weeks* · §82 Amendment 1 (the "few minutes" is
+scoped to the magnitude ruled on; the bound is §52b, structural) · no new numeric ·
+`INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION` + `INV-PLAN-FOUNDATION-WEEKDAY-WITHIN-BUDGET`.
+
+**Not in this sitting:** `TAPER-OVER-PEAK-SLOW-01` (filed P1) — §121 firing 8 times because a
+slow runner's taper week carries more volume than the peak phase, 51 km against a 47 km peak.
+
+---
+
 ## 2026-09-25 — S90-WITHIN-COHORT-RATE-01 · the noise standard was measured against a denominator that hid it
 
 **Ruling: two questions, two answers.**
