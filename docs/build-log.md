@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-03 — `FOUNDATION-REMEDIATE-01` · I told him the fix hadn't worked, and it had
+**Shipped:** The two live runners' warm-up weeks rebuilt with the fixed engine. Grace's Mondays went from an hour to 34 minutes.
+
+**Dev learning:** Remediation here needed no new write path, which was the whole finding when I wrote the plan down: `composePlanWithFoundation` already exists, already owns `plan.weeks` after generation, and its own header says it must never re-pay for AI enrichment. So the job was strip the foundation weeks, call the owner, and prove nothing else moved. Main-plan weeks byte-identical, archive row first because a direct update bypasses the function that normally writes it, compare-and-swap on the timestamp, and then read the row back out of Postgres — that last one because the previous remediation printed WRITTEN while the database disagreed.
+
+**AI-building learning:** My dry run printed counts and not the after-detail, and on that basis I told the founder the overruns had survived the fix. They hadn't — Monday was already down to 34 minutes and I was looking at the BEFORE column. I only caught it because the numbers didn't match the floor arithmetic I'd worked out an hour earlier, so I went and queried the plan directly instead of trusting my own report.
+
+A diff that shows one side is not a diff. The fix was to print both, which is also the reason the final summary to him could be a table instead of a claim.
+
+The second mistake was the opposite failure: my meta guard compared *all* of meta and refused to write either plan. The two fields that had moved were the ones describing "weeks this plan doesn't cover", which are computed from today's date and therefore *must* change when you rebuild the block. An over-strict guard that blocks the correct action is as much a defect as a loose one — it just fails safe, so it's easier to leave in.
+
+**The honest bit:** the residual is still 33–34 minutes against a stated 30, and that is deliberate — §82 says a session held at the floor beats one too short to train anything. What changed is that it's now stamped and declarable instead of silent. And the long run in those weeks is untouched, because §9 and §81 disagree about it and that's with the board.
+
+---
+
 ## 2026-10-03 — `FOUNDATION-BUDGET-01` step 1 · the gate caught me three times
 **Shipped:** The warm-up weeks before a plan starts now respect the time the runner said they have. Problem 1 only; the long-run half went to the board.
 

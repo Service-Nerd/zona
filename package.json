@@ -40,6 +40,7 @@
     "falsify": "tsx scripts/test-liveness.ts --adhoc",
     "distinguish": "tsx scripts/distinguish.ts",
     "partition:foundation": "NODE_ENV=production tsx scripts/foundation-budget-partition.ts",
+    "remediate:foundation": "NODE_ENV=production tsx scripts/recompose-foundation.ts",
     "button:geometry": "tsx scripts/button-geometry.ts"
   },
   "dependencies": {
