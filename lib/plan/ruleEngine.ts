@@ -14,6 +14,7 @@ import {
   formatDate, addDays, parseDateLocal,
 } from './length'
 import { qualityCeilingFor } from './qualityCeiling'
+import { waterFillEasyKm } from './easyDistribution'
 import { LR_SHORTFALL_UNREHEARSED_FUELLING, FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { runWalkApplies, runWalkPeakKm, applyRunWalk } from './runWalkPlan'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
@@ -3830,46 +3831,6 @@ function applyWeekdayMinsCap(
 // while only the long run was exempt, and became load-bearing the moment §81
 // was extended to structured sessions.
 
-/**
- * UX-WIZARD-01 Stage B — REDISTRIBUTION. Distribute a fixed easy-volume pool
- * across the week's easy days weighted by each day's ceiling, so roomy days
- * absorb what tight days cannot hold instead of that volume being trimmed away.
- *
- * Water-filling, not proportional: the pool fills the lowest days first, so a
- * tight day sits at its ceiling and the surplus flows to days with room — which
- * is the whole point (Tuesday 30 caps out; Thursday 90 takes the rest). The
- * WEEKLY TOTAL is preserved (§2 curve unchanged); any residual that no day can
- * hold is un-fittable and the week honestly runs under, exactly as today. Each
- * ceiling already folds in §9's long-vs-easy cap, so no easy run can reach the
- * long run. Returns one km per input day, precision-rounded and clamped under
- * its ceiling so rounding can never lift a day over its budget or the §9 cap.
- */
-function waterFillEasyKm(ceils: number[], total: number, floorKm: number, precision: number): number[] {
-  const n = ceils.length
-  if (n === 0) return []
-  // Base everyone at the floor (a placed easy run is never below MIN_SESSION;
-  // the §82 floor-protection in applyWeekdayMinsCap owns the sub-budget case).
-  const assign = ceils.map(() => floorKm)
-  let remaining = total - floorKm * n
-  for (let guard = 0; guard < n + 2 && remaining > 1e-6; guard++) {
-    const active = assign.map((a, i) => (a < ceils[i] - 1e-9 ? i : -1)).filter(i => i >= 0)
-    if (active.length === 0) break
-    const share = remaining / active.length
-    let moved = 0
-    for (const i of active) {
-      const add = Math.min(share, ceils[i] - assign[i])
-      assign[i] += add
-      moved += add
-    }
-    remaining -= moved
-    if (moved <= 1e-9) break
-  }
-  return assign.map((a, i) => {
-    const rounded = Math.round(a / precision) * precision
-    const ceilRounded = Math.floor(ceils[i] / precision) * precision
-    return Math.max(floorKm, Math.min(rounded, ceilRounded))
-  })
-}
 
 // ─── Week metadata ────────────────────────────────────────────────────────────
 
