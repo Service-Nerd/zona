@@ -1114,7 +1114,14 @@ does not read as live to the next person who greps for it.
 
 ## ⚖️ FILED 2026-10-01 — `TAP-TARGET-DECISIONS-01`
 
-### 🔄 `TAP-TARGET-DECISIONS-01` — batch 8a SHIPPED 2026-10-05: 5 off, 12 remain, and NOT ONE was converted 🧭 **DESIGN BOARD**
+### 🔄 `TAP-TARGET-DECISIONS-01` — OPEN. Batch 8a done 2026-10-05 (5 off), **12 remain**, and not one was converted 🧭 **DESIGN BOARD**
+
+> ⚠️ **HEADING REWORDED 2026-10-05 — it said "batch 8a SHIPPED" and every parse read the WHOLE
+> ITEM as shipped**, so this item vanished from the open-design list while **12 controls were still
+> under the floor**. Identical to `STEPPER-CONTROL-01`'s *"(a)(b)(c) SHIPPED"*, corrected the same
+> day. 🥇 **" SHIPPED" ANYWHERE IN A HEADING MEANS THE ITEM SHIPPED — say it about the BATCH in the
+> body, never in the heading.** Fourth occurrence of the heading-vs-parse class today.
+
 
 > ✅ **BATCH 8a SHIPPED 2026-10-05 — `SessionPopupInner` + `Chip`. Register 17 → 12.**
 > 🔴 **NOT ONE CONTROL WAS CONVERTED, AND THAT CONTRADICTS THE RULING'S OWN ASSUMPTION.**
