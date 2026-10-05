@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — FIRSTRUN-MOMENTS-01 complete · and FIRSTRUN-MARATHON-01 halted on a false sentence
+**Shipped:** nothing. Both outcomes were findings, and both were worth more than the code would have been.
+
+**Dev learning:** I was about to build three first-run sub-items that already exist. My probes searched for the **spec's copy strings** — *"That's the whole job"*, *"The race is 42"* — and for symbol names I had **invented** — `totalPlanKm`, `worstDay`, `cohortFact`. The real names are `planScale`, `hardestRun`, `charityCohort`, and `PlanScaleCard.tsx` was sitting in my own earlier grep output, unfollowed. **A spec's copy is not the code's vocabulary**, and a probe built from a spec finds nothing and proves nothing. Four of the six sub-item headings simply never said SHIPPED.
+
+**Product/creator learning:** the other item stopped for a better reason. The board ruled that the first missed session should say *"Happens. Plan's been shifted."* — the locked line, the right voice, obviously correct. Then the handler says otherwise: the sheet renders **before** anything shifts, the shift only fires **after** the runner picks a reason, and for *"Too tired"* it is **absorbed and never fires at all**. So the sentence is false on render for everyone and false forever on one of four paths. **The useful sentence was the false one, for the second time today.**
+
+**AI-building learning:** the ruling's two halves also collide, and only the ordering shows it. Wroblewski ruled no multi-option chooser; the four reason buttons *are* the chooser **and** the only thing that triggers the shift the sentence would announce. Remove them and the sentence has no event. **Both halves cannot be satisfied as written**, which is not something a board can see from a screenshot — it needs the handler.
+
+**The honest bit:** I nearly built it anyway. The ruling was fresh, the copy was locked, the component was right there, and "render the shift" reads as a five-minute job. Checking what fires first took one file read.
+
+**Hook material:** the design board picked the perfect sentence for a missed session. The code shows nothing has been shifted when that screen appears — and for one of the four answers, nothing ever will be.
+
+**Postable?:** yes — "we ruled on the right sentence and the handler disagreed" is a clean, honest beat about design decisions needing the call order.
+
 ## 2026-10-05 — UI-PATTERNS-MOMENTS-01 · the gap was three answers, not none
 **Shipped:** `ui-patterns.md` § Moment weight — the three mechanisms the product already uses to make a moment land, each with its measurement.
 

@@ -9618,7 +9618,22 @@ this cohort should start here, not from the 29 historical accounts, most of whic
 
 ---
 
-## 🎬 FIRSTRUN-MOMENTS-01 — full specs (SLT-approved 2026-09-18)
+## ✅ FIRSTRUN-MOMENTS-01 — COMPLETE 2026-10-05. ALL SIX sub-items are built; the heading never said so ⚙️ **NO BOARD**
+
+> ✅ **CLOSED 2026-10-05 ON RE-VALIDATION — NOTHING WAS LEFT TO BUILD.**
+> 🔴 **I was about to build three sub-items that already exist.** `01a` and `01b` were marked
+> SHIPPED in their own headings; **`01c`, `01d`, `01e` and `01f` were not, and all four are live:**
+> `lib/plan/ceremonyLines.ts` (c) · `lib/plan/planScale.ts` + `PlanScaleCard` (**d AND e** — total
+> km and the hardest run, derived **live** via `sessionKmSelfPaced`, honouring Hutchinson's binding
+> condition that it must never be stamped) · `lib/plan/charityCohort.ts` + `CharityCohortCard` (f,
+> whose blocker was retracted). All four carry unit tests **and** markup tests.
+> 🔴 **FOUR FALSE NEGATIVES FROM MY OWN PROBES, ALL THE SAME MISTAKE:** I grepped for the **copy
+> strings** in the spec (*"That's the whole job"*, *"The race is 42"*) and for **guessed symbol
+> names** (`totalPlanKm`, `worstDay`, `cohortFact`). The real names are `planScale`, `hardestRun`,
+> `charityCohort`. ⚠️ **`PlanScaleCard.tsx` was in my own earlier grep output and I did not follow
+> it.** **A spec's copy is not the code's vocabulary**, and a probe built from a spec finds nothing
+> and proves nothing.
+
 
 *Six sub-items. **Five are copy and arithmetic over data the app already holds** — no new screens, no prescription change, no board. The sixth is blocked on redemption sequencing. Ordered by the SLT's own ranking.*
 
@@ -9754,7 +9769,40 @@ Proposed, to them:
 
 ---
 
-### ⚖️ SLT — `FIRSTRUN-MARATHON-01`, touchpoint 7: the first missed session. Sat 2026-09-18. 💼 **SLT** (framing already ruled), then 🧭 **DESIGN BOARD** per touchpoint
+### 🔴 SLT — `FIRSTRUN-MARATHON-01`, touchpoint 7 — BUILD HALTED: the ruling's sentence is false on render. Sat 2026-09-18. 💼 **SLT** (framing already ruled), then 🧭 **DESIGN BOARD** per touchpoint
+
+> 🔴 **BUILD HALTED 2026-10-05 — THE RULING'S SENTENCE IS FALSE AT THE MOMENT THIS SURFACE RENDERS,
+> AND PERMANENTLY FALSE ON ONE OF ITS FOUR PATHS. THE BOARD MUST RE-SIT WITH THIS FACT.**
+>
+> 🎓 Sierra's ruling rests on *"the product has one sentence to settle that, and it is already in
+> the brand: **'Happens. Plan's been shifted.'**"* **Measured in the handler at
+> `DashboardClient.tsx:2918`, the ordering is the opposite of what that assumes:**
+>
+> | Step | What happens |
+> |---|---|
+> | 1 | The sheet renders — **nothing has shifted** |
+> | 2 | The runner picks a reason |
+> | 3 | `upsertCompletion(... status: 'skipped', skip_reason)` |
+> | 4 | `/api/adjust-plan` fires — **and only for 3 of the 4 reasons.** `'Too tired'` is *absorbed*: **no adjustment is ever made** |
+>
+> **So leading with "Plan's been shifted." would be false on render for every runner, and false
+> forever for anyone who taps "Too tired".** That is hard rule 7 — *a line describing a consequence
+> the engine does not produce is a claim* — and it is the same trap caught this morning on
+> `SHEET-DAY-QUESTION-01`, where the useful sentence was the false one.
+>
+> ⚠️ **AND THE RULING'S OTHER HALF COLLIDES WITH THE SAME ORDERING.** 📱 Wroblewski ruled **no
+> multi-option chooser**. The four reason buttons **are** the chooser — and they are also *the only
+> thing that triggers the shift the sentence would announce*. Removing them removes the event; the
+> sentence needs the event. **They cannot both be satisfied as written.**
+> ✅ Capability-wise the reasons survive elsewhere (`SessionPopupInner:747` renders `SKIP_REASONS` in
+> the deliberate skip view), so removal is not a capability loss — **but it would reduce how often a
+> reason is captured, and `/api/adjust-plan` reads `skip_reason`.** That is a coaching-data question
+> (🏃 Coaching Board), not a design one.
+>
+> **What the board needs in order to rule:** whether the surface should (a) announce the shift
+> *after* it happens, on a different surface, or (b) stay a question and lose the locked sentence.
+> ⚠️ **Do not resolve this in a build.** ✅ The data half of this item is already DONE —
+> `FIRSTRUN-MISSED-01`'s `skip_reason` column shipped 2026-09-18 and the migration is applied.
 
 > ⚖️ **DESIGN BOARD RULED 2026-10-05 — SHIP, scoped to one surface and one sentence.** Record:
 > `docs/decisions/2026-10-05-design-board-backlog-clearance.md`.
