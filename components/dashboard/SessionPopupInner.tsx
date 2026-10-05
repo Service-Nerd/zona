@@ -13,6 +13,7 @@ import RPEScale from '@/components/shared/RPEScale'
 import ReflectionInput from '@/components/training/ReflectionInput'
 import SaveImageButton from '@/components/dashboard/SaveImageButton'
 import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import SessionSteps from '@/components/shared/SessionSteps'
 import TodayScreen from '@/components/dashboard/TodayScreen'
 import ZoneBar from '@/components/shared/ZoneBar'
@@ -983,23 +984,43 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
                 }
               </div>
               {/* Toggle */}
-              <div style={{ display: 'flex', background: 'var(--bg-soft)', borderRadius: '6px', padding: '2px', width: 'fit-content', border: '1px solid var(--line)' }}>
-                {(['distance', 'duration'] as const).map(m => (
-                  // 🔴 TAP-TARGET-DECISIONS-01 batch 8a — WAS 18px, the smallest
-                  // control in the product, against a 🟢 STANDING 44px floor.
-                  // ⚠️ NOT converted to `<SegmentedControl>`, which names "distance/
-                  // duration" as its own use case — because its segments are `flex: 1`,
-                  // so this compact `fit-content` pill would become a FULL-WIDTH band on
-                  // the session card. That is a layout change the board has not seen.
-                  // Filed as `METRIC-TOGGLE-SEGMENTED-01`.
-                  // ⚠️ `.btn--inline-target` is also not the answer: the board ruled it
-                  // suits "a small VISUAL carrying a 44px HIT AREA" in a settings row,
-                  // and this sits in a 2px track where the visual IS the hit area.
-                  <button key={m} onClick={() => updateSessionMetric(m === effectiveMetric && isMetricCustom ? null : m)} style={{ minHeight: TAP_TARGET_MIN_PX, display: 'inline-flex', alignItems: 'center', fontFamily: 'var(--font-ui)', fontSize: '10px', padding: '3px 9px', borderRadius: '4px', border: 'none', background: effectiveMetric === m ? config.color : 'none', color: effectiveMetric === m ? 'var(--card)' : 'var(--mute)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.15s' }}>
-                    {m === 'distance' ? preferredUnits : 'min'}
-                  </button>
-                ))}
-              </div>
+              {/* 🔴 METRIC-TOGGLE-SEGMENTED-01 — Design Board SHIP (adoption sitting,
+                  2026-10-05). This was a hand-rolled contained track at **18px**, the
+                  smallest control in the product, and `SegmentedControl`'s own doc names
+                  "distance/duration" as its use case: it is not a near-duplicate, it is
+                  the thing. 🎪 Collins: *"the other two are chips the way a hammer is a
+                  mallet — this one IS a segmented control."*
+
+                  🔴 THE "FULL-WIDTH BAND" THE BOARD ACCEPTED DOES NOT EXIST, and the
+                  refusal note that used to sit here said it would. MEASURED in the browser
+                  at 375px: the control is **124 x 50px inside a 150px metric card**, the
+                  same width as the "Distance" label and the "11 km" value above it, and
+                  `DISTANCE` / `EST. PACE` stay **exactly equal** at 150 x 120. Segments are
+                  57 x 44.
+                  🥇 `flex: 1` is a statement about a PARENT, not about a screen — it fills
+                  its 150px card, not the viewport. Both the board and this file's previous
+                  comment reasoned from an unmeasured assumption about the container, and it
+                  ran in the direction of NOT doing the right thing.
+                  📱 Wroblewski's argument stands and is now cheaper than he was told: *"an
+                  unobtrusive control is one you miss."*
+
+                  🔴 AND THE THIRD BEHAVIOUR IS DROPPED, DELIBERATELY — it was the board's
+                  one condition on this build. Tapping the ALREADY-ACTIVE segment used to
+                  reset to global. Measured: `isMetricCustom` gates **both** that hidden
+                  path and the visible "Reset to global" control below, so the hidden one
+                  was redundant in **every state where it existed** — a perfect
+                  substitution, not a trade. Keeping it would leave two paths to one
+                  outcome with one of them undiscoverable, which is `LOG-ONE-INTENTION-01`'s
+                  class: one intention, one verb, one control. */}
+              <SegmentedControl
+                ariaLabel="Show distance or duration"
+                options={[
+                  { value: 'distance', label: preferredUnits },
+                  { value: 'duration', label: 'min' },
+                ]}
+                value={effectiveMetric === 'duration' ? 'duration' : 'distance'}
+                onChange={(v: 'distance' | 'duration') => updateSessionMetric(v)}
+              />
               {isMetricCustom && (
                 <Button variant="ghost"  onClick={() => updateSessionMetric(null)} style={{ justifyContent: 'flex-start', fontSize: '10px', color: 'var(--warn-strong)', background: 'none', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
                   Reset to global
