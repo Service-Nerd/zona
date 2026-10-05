@@ -890,6 +890,23 @@ reason the number moved cannot be lost.
 
 ---
 
+#### 🟡 `TYPESCALE-APP-GATE-01` — the type-scale gate is marketing-only; the app's scale is ungated *(P3, filed 2026-10-05)* 🧭 **DESIGN BOARD**
+
+**Found by `UI-PATTERNS-ENFORCEMENT-01`'s measurement**, and it is the one real gap that audit
+turned up — **far narrower than the section it sits in.**
+
+📐 `lib/marketing/typeScale.test.ts` is `describe('marketing type scale')` over a `SURFACES` list of
+marketing pages. `ui-patterns.md` § **Typography Scale** governs the **app** too, and nothing holds
+that half. ⚠️ **The website precedent is exactly why this matters:** the site audit found **no type
+scale at all** — 170 hand-typed sizes and an H1:H2 step of **1.02×** — and neither was visible by
+looking. **A type scale is the thing that drifts without anyone noticing.**
+
+**Do:** extend the gate to the app's surfaces, or write an app-side sibling. ⚠️ **Measure the
+population first** — the app is inline-style-heavy, so the marketing test's approach may not
+transfer, and a gate that reports on a short population is this repo's most recorded failure.
+
+---
+
 ### ✅ `MKT-KITBYLINE-COPY-01` — RULED + BUILT 2026-10-05. 64 lines deleted; filed and closed the same day 🧭 **DESIGN BOARD**
 
 > ⚖️ **Design Board adoption sitting, 2026-10-05 — 🟢 SHIP.** `KitByline` (52 lines) and its local
@@ -4126,7 +4143,29 @@ Seiler's condition of approval and had only its long-run arm implemented.
 
 ---
 
-### 🔄 `UI-PATTERNS-ENFORCEMENT-01` — the counts are RE-MEASURED 2026-10-02; the honoured-count is still open 🧭 **DESIGN BOARD**
+### ✅ `UI-PATTERNS-ENFORCEMENT-01` — CLOSED 2026-10-05. The honoured-count is measured: ZERO drifted, and the proxy overstates the risk 🧭 **DESIGN BOARD**
+
+> ✅ **CLOSED 2026-10-05 — the open half is answered.** *Of the unguarded sections, how many are
+> HONOURED today?*
+> 📐 **Measured, all 14:** **4 ARE GUARDED by a test the section never named** (nav selected state →
+> `navActiveState.test.ts`; Training Zones → `trainingZones.markup.test.ts`, 4 suites; Dark Ground →
+> `sectionSurfaces.test.ts`, every `page.tsx`; Typography Scale → `typeScale.test.ts`) · **4 HONOURED
+> and unguarded** (Design Token Reference — 28 tokens listed, **0 missing** from `globals.css`; Card
+> Elevation — `--shadow-card` declared once, used in **36** files; `SameWeekTwice` and `FaqScreen`
+> both exist and render) · **2 PROSE** · **4 UNMEASURED** · 🥇 **0 DRIFTED.**
+> 🥇 **THE PROXY COUNTS NAMING, NOT GUARDING, SO THE UNGUARDED FIGURE OVERSTATES THE RISK.** Four
+> sections were guarded all along and simply did not say so. **The fix was four lines of
+> documentation, not four new gates** — which is exactly what the board ruled.
+> ⚠️ **THE ONE REAL GAP IS FAR NARROWER THAN THE SECTION:** `typeScale.test.ts` is
+> `describe('marketing type scale')` over a `SURFACES` list of marketing pages, so **the APP's type
+> scale is ungated.** That is a fraction of *"the Typography Scale section is unguarded"*, and it is
+> the thing worth acting on. **Filed as `TYPESCALE-APP-GATE-01`.**
+> **Gate:** `lib/marketing/uiPatternsEnforcement.test.ts` — unguarded count as a **falling register**
+> at 10 (was 14), an anti-rot arm asserting the four sections still name their gate, and an arm
+> asserting `typeScale.test.ts` is still marketing-scoped so the gap cannot be quoted as closed.
+> **Falsified twice:** stripping a gate reference reds the anti-rot arm; adding an unguarded section
+> reds the register.
+
 
 ⚖️ **Design Board: SHIP THE MEASUREMENT, NOT THE GATES** — which is this item's own stated first
 move. 📐 **Re-derived 2026-10-02: 3,230 lines / 28 sections / ~10 guarded is now 4,910 lines /

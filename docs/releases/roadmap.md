@@ -811,6 +811,10 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   THIRD reason — neither paid nor deleted: it fell below the `>=2 importers` threshold. **The
   proxy gave the wrong answer**, since a one-caller component that is the only door to a
   tier-sensitive feature needs a contract more, not less. `backlog.md`.
+- 🧭 `TYPESCALE-APP-GATE-01` — **LATER.** The type-scale gate is `describe('marketing type
+  scale')` over marketing pages; the APP's scale is ungated. The site audit found no type scale
+  at all (170 hand-typed sizes, H1:H2 step 1.02x) and neither was visible by looking. From
+  `UI-PATTERNS-ENFORCEMENT-01`'s measurement. `backlog.md`.
 - 🧭 `SESSIONPOPUP-PRIMITIVE-ADOPT-01` — **LATER.** Three controls that should adopt a shared
   primitive and cannot without losing something: fatigue tags would lose **semantic per-tag
   colour**, skip reasons a type scale and ground, the metric toggle its compact footprint.

@@ -91,6 +91,8 @@ Warm, grounded, athletic. No decoration for decoration's sake. Every element ear
 
 ## Typography Scale
 
+> ⚠️ **PARTIALLY gated, and the half that is missing is the important one.** `lib/marketing/typeScale.test.ts` holds the scale on the **marketing** surfaces in its `SURFACES` list. **The APP's type scale is not gated by it** — the test is `describe('marketing type scale')` and its population is marketing pages. Measured by `UI-PATTERNS-ENFORCEMENT-01`; the app half is the real unguarded rule in this section, not the whole section.
+
 All type uses **Inter** only. `var(--font-ui)` and `var(--font-brand)` both resolve to Inter. Never hardcode font family strings. Space Grotesk is retired (ADR-007).
 
 | Role | Token | Weight | Size | Usage |
@@ -492,6 +494,8 @@ met.
 ---
 
 ## Dark Ground — "The receipt" band (design_handoff_v2)
+
+> ✅ **Gated by `lib/marketing/sectionSurfaces.test.ts`**, which holds *"exactly one near-black section per marketing page"* (ADR-008) across **every** `page.tsx`, not just the homepage — `/about` once carried a full-bleed `inset` band for weeks because the population was one file.
 
 **Exactly one** near-black section per marketing page. It is a **punctuation mark, not a theme** — ADR-008 (single light theme, no dark mode, no toggle) stands. A second dark section would make it a dark theme; don't.
 
@@ -4619,6 +4623,8 @@ markup says otherwise is this repo's recurring failure. Falsified three ways (Mo
 
 ## § 7 Amendment — the bottom nav's selected state (NAV-ACTIVE-LOZENGE-01, 2026-09-28)
 
+> ✅ **Gated by `components/ui/navActiveState.test.ts`**, which names `NAV-ACTIVE-LOZENGE-01` and `NAV-FADE-01` directly. ⚠️ It always was — this line exists because `UI-PATTERNS-ENFORCEMENT-01` measured the document and found the section never said so, which made a guarded rule read as unguarded.
+
 **The selected tab carries a lozenge and a heavier label. Colour is never the sole signal.**
 
 🔴 **The measurement that caused the amendment.** The active label was `--moss-strong`
@@ -4777,6 +4783,8 @@ for one that is ours.
 ---
 
 ## Training Zones screen (ZONES-SURFACE-01)
+
+> ✅ **Gated by `components/shared/trainingZones.markup.test.ts`** — four suites covering `ZONES-SURFACE-01` (the ceiling leads), the toggle, `ZONES-INPUTS-01` (provenance, not a form) and `ZONES-BEGINNER-BANDS-01`. ⚠️ Named here because the section did not say so and therefore read as unguarded.
 
 **Ruled 2026-09-28. ⚠️ SPECIFIED, NOT YET BUILT** — this section is the spec the build
 follows, recorded now because a SHIP ruling owes its pattern whether or not the code

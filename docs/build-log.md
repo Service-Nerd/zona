@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — UI-PATTERNS-ENFORCEMENT-01 · four rules were guarded all along and never said so
+**Shipped:** the measurement the board asked for — of 14 unguarded pattern sections, how many have actually drifted. Answer: none.
+
+**Dev learning:** the item's headline was *18 of 28 sections are held by whoever remembers*, and that number is a regex for a test name **in the section body**. It counts **naming**, not **guarding**. Four of the fourteen were guarded the whole time by tests that simply weren't referenced — the nav selected state, the Training Zones screen, the dark marketing band, and half the type scale. The fix was four lines of documentation, not four new gates, which is precisely what the board ruled when it said *ship the measurement, not the gates*.
+
+**Product/creator learning:** the one real gap turned out to be a fraction of the section it lived in. "The Typography Scale section is unguarded" is alarming; "`typeScale.test.ts` is `describe('marketing type scale')` so the app half is ungated" is a half-day job with a clear population. **A measurement's value is mostly in how much of the scary number it dissolves.**
+
+**AI-building learning:** I nearly wrote four new gates. Checking whether a gate already existed took one `git ls-files` and saved all four — and the gates I'd have written would have duplicated tests that were already green, which is how a suite acquires two checks for one rule that later disagree.
+
+**The honest bit:** my own measurement has four sections in an **unmeasured** column, and I left them there rather than guessing. "Amber means cooked it" is a meaning, not a value; 24 files use `--warn` and deciding whether each is a coaching context needs reading, not grepping. An audit that reports 10 of 14 honestly beats one that reports 14 of 14 by waving at the hard ones.
+
+**Hook material:** the doc said eighteen rules were held by memory. Four of them had tests the whole time and just never mentioned them.
+
+**Postable?:** yes — "your coverage metric counts naming, not guarding" is transferable to anyone with a docs-to-tests mapping.
+
 ## 2026-10-05 — SESSIONPOPUP-PRIMITIVE-ADOPT-01 + MKT-KITBYLINE-COPY-01 · the cost we accepted turned out not to exist
 **Shipped:** the session metric toggle adopts `SegmentedControl`; the marketing site's hand-copied byline and its copied glyph are deleted. Two adoptions refused, with reasons.
 
