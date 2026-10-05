@@ -5237,27 +5237,13 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             {consolidatedRead.hasAiContent ? (
               <CoachByline working={consolidatedRead.isLoading} color="moss" role="This week" />
             ) : (
-              // Empty state: dimmed Kit identity, NO AIMark (Pattern 16
-              // provenance honesty — empty line is hand-authored).
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)', opacity: 0.45 }} aria-label={`${BRAND.coachName} · this week`}>
-                <span aria-hidden="true" style={{
-                  width: '22px', height: '22px', borderRadius: '50%',
-                  background: 'var(--moss)',
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'var(--card)', fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
-                  letterSpacing: '-0.02em', flexShrink: 0,
-                }}>
-                  {BRAND.coachName.charAt(0).toUpperCase()}
-                </span>
-                <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 700, color: 'var(--ink)' }}>
-                    {BRAND.coachName}
-                  </span>
-                  <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--moss)' }}>
-                    This week
-                  </span>
-                </span>
-              </span>
+              // 🔴 COACHBYLINE-EMPTY-VARIANT-01 — this was 17 hand-rolled lines
+              // reproducing the avatar, the name and the eyebrow, because the component
+              // always stamped `<AIMark />` and an empty line is hand-authored (Pattern
+              // 16 provenance honesty). The REASON was right and it survives: `empty`
+              // suppresses the whole provenance badge and dims the unit. The component
+              // owns its own empty state now.
+              <CoachByline empty color="moss" role="This week" />
             )}
             <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
               W{weekNum}/{totalWeeks}

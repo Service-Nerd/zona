@@ -1724,6 +1724,32 @@ For new AI-content cards, prefer `<CoachByline>` over a bare AIMark — the avat
 
 The mark is a claim about provenance, not aesthetics. Mark only what came from a model.
 
+### 🔴 The empty state belongs to `CoachByline`, not to its callers (`COACHBYLINE-EMPTY-VARIANT-01`, 2026-10-05)
+
+**`<CoachByline empty />`** — Kit's identity with **no AIMark badge at all**, dimmed as one unit.
+Use it wherever a coach surface has nothing generated to show yet.
+
+⚠️ **The rule above creates this state, and for a while there was no way to express it.**
+"Mark only what came from a model" plus "the byline always stamps the mark" leaves a caller with an
+empty coach line only one correct move: **hand-roll the byline without the glyph.** `DashboardClient`
+did exactly that — **17 lines reproducing the 22px avatar, the name and the eyebrow.** The reason was
+right; the hand-roll was the symptom of a **missing state**, which is why the fix is a variant and
+not a rule telling people not to do it.
+
+| | |
+|---|---|
+| **The whole badge goes, not just the glyph** | The white circle anchoring the sparkle is *itself* the provenance marker. A circle with nothing in it reads as a rendering fault rather than as an absence |
+| **The dim lands on the WHOLE unit** | `opacity: 0.45` on the wrapper. Applied per child it compounds where they nest, and the avatar and the name end up at different opacities — which is what reads as a bug rather than as a quiet state |
+| **`empty` beats `working`** | An empty line cannot be being generated. If a caller passes both, `empty` wins, so a caller mistake degrades to the **honest** state and never to a false claim of authorship |
+
+> 🥇 **A component that does not cover its own empty state will be hand-rolled again.** It is the
+> SLC rule applied to a primitive: a surface without its empty state is not complete. Held by
+> `components/shared/coachBylineOwner.test.ts`, which fails if anything outside the owner draws
+> Kit's avatar initial. ⚠️ `components/marketing/PhoneFrame.tsx` is **exempt by name** — its
+> `KitByline` is a declared copy and whether a marketing still tracks the live component is a board
+> question, filed as `MKT-KITBYLINE-COPY-01`. **The exemption names its item, so it cannot be
+> quietly forgotten.**
+
 Reference: `components/shared/AIMark.tsx`. Single source of truth — never reimplement the glyph.
 
 ---

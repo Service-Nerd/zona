@@ -793,6 +793,36 @@ one, the honest ruling may be "leave the override and revisit at two".
 > ⚠️ Both of these are *unfixed and untracked*, not accepted trade-offs — the distinction that
 > item's proposal turns on.
 
+### 🔲 `MKT-KITBYLINE-COPY-01` — the marketing site has a hand-copied `CoachByline`, and the component next to it uses the real one *(P3, filed 2026-10-05)* 🧭 **DESIGN BOARD**
+
+**Found while building `COACHBYLINE-EMPTY-VARIANT-01`**, by the gate written for that item: the
+`BRAND.coachName.charAt(0)` avatar initial has **two** sites, not one.
+
+📐 **Measured:** `components/marketing/PhoneFrame.tsx:111` declares `KitByline`, whose own doc
+comment says **"copy of CoachByline"** — plus a local `Sparkle` at `:100` which is a copy of
+`AIMark`. ⚠️ **And `components/marketing/TabbedPhone.tsx:218` renders the REAL
+`<CoachByline color="moss" role="This week" />`.** So two marketing components illustrate the same
+product surface two different ways, and only one of them tracks the app.
+
+**Why it is a BOARD question and not a defect fix.** There is a real argument on each side and it
+is not a code question:
+- **Use the real component** — a product still exists to show the actual product, and a copy drifts
+  silently. `TabbedPhone` already does this.
+- **Keep a pinned copy** — a marketing still may deliberately not move when the app does, so a
+  shipped page cannot be changed by an unrelated component edit.
+
+**The seam rule settles who rules, not which answer:** design owns the encoding. 🧭 **Design Board.**
+
+⚠️ **Deliberately NOT folded into `COACHBYLINE-EMPTY-VARIANT-01`** — that item is a dashboard empty
+state, this is a marketing-component decision, and bundling them is one job too many (SLC). The
+owner gate for that item **exempts `PhoneFrame.tsx` by name and points here**, so this cannot be
+quietly forgotten: the exemption is the record.
+
+🔻 **Not urgent.** Nothing is broken: both render correctly. The cost is drift, and the drift is
+invisible until someone notices the marketing phone showing an older Kit than the app.
+
+---
+
 ### `GUARD-TREE-SWEEP-01` — the colour guards see the diff, never the tree ⚙️ **NO BOARD**
 
 Out of `HOOK-RGBA-COMMENTS-01`. `.githooks/pre-commit` reads **staged files only**, which is not a
@@ -1705,7 +1735,33 @@ and fewer controls as the codebase does the right thing, and a shrinking populat
 failure this repo has recorded more than any other. **Fix: resolve a spread of a known
 constant before measuring, or fail loudly when a style object cannot be fully read.**
 
-#### 🔲 `COACHBYLINE-EMPTY-VARIANT-01` — `CoachByline` does not cover its own empty state, so it was hand-rolled *(P3, filed 2026-10-02 from MICRO-LABEL-CHIPS-01's sitting)* 🧭 **DESIGN BOARD**
+#### ✅ `COACHBYLINE-EMPTY-VARIANT-01` — SHIPPED 2026-10-05. 23 lines became 1, and the gate found a SECOND copy ⚙️ **NO BOARD**
+
+> ✅ **SHIPPED 2026-10-05**, Design Board SHIP (2026-10-05 clearance sitting).
+> **23 hand-rolled lines → `<CoachByline empty color="moss" role="This week" />`.**
+> ✋ **Silvanto's condition is honoured, not worked around:** the reason for the hand-roll was
+> CORRECT — an empty line is hand-authored, so stamping `<AIMark />` would claim a model wrote
+> something no model wrote (Pattern 16). `empty` suppresses **the whole provenance badge**, not just
+> the glyph: the white circle *is* the marker, and an empty circle reads as a rendering fault.
+> 📱 **Wroblewski's note honoured:** the dim is `opacity: 0.45` on the **whole unit**, never
+> per-child — applied per element it compounds where they nest and the avatar and the name land at
+> different opacities, which is what reads as a bug rather than a quiet state.
+> **`empty` beats `working` by construction** — an empty line cannot be being generated, so a caller
+> passing both degrades to the **honest** state, never to a false claim.
+> **One visible delta, stated:** the avatar goes from a flat `--moss` fill to the component's
+> `--moss → --moss-strong` gradient, at 45% opacity. Keeping two avatar treatments is the
+> duplication being removed. No new token; `--space-2` is 8px so the gap is identical.
+> **Artifacts (all three, one commit):** pattern → `ui-patterns.md` § *"The empty state belongs to
+> `CoachByline`"* · constant → the `empty` variant · check → `components/shared/coachBylineOwner.test.ts`,
+> population **derived from git**, with an arm that fails if the glob stops matching.
+> ✅ **Falsified three ways:** a new file drawing `coachName.charAt(` reds the owner arm · letting
+> `working` drive the glyph again reds the mutual-exclusion arm · reverting the call site reds the
+> call-site arm.
+> ➕ **The gate found a SECOND copy on its first run** → filed as `MKT-KITBYLINE-COPY-01`
+> (🧭 Design Board): `PhoneFrame.tsx`'s `KitByline` says *"copy of CoachByline"* in its own doc
+> comment, while `TabbedPhone.tsx` beside it renders the real one. **Exempt by name in the gate, and
+> the exemption names the item**, so it cannot be quietly forgotten.
+
 
 > ⚖️ **DESIGN BOARD RULED 2026-10-05 — SHIP.** Record:
 > `docs/decisions/2026-10-05-design-board-backlog-clearance.md`.

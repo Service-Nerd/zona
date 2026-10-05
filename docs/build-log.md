@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — COACHBYLINE-EMPTY-VARIANT-01 · the rule created a state the component couldn't express
+**Shipped:** `<CoachByline empty />`. Twenty-three hand-rolled lines in the dashboard became one.
+
+**Dev learning:** this looked like a careless call site and it wasn't. Our own provenance rule says *mark only what came from a model*, and the byline always stamped the AI glyph. Put those together and a caller with an empty coach line has exactly one correct move: hand-roll the byline without the glyph. **The rule created a state the component could not express.** That is why the fix is a variant and not a lint rule — a rule would have told a developer not to do the only correct thing available to them. Two details that are easy to get wrong: the whole badge goes, not just the sparkle, because the white circle anchoring it *is* the marker and an empty circle reads as a rendering fault; and the dim goes on the wrapper, because per-child it compounds where they nest and the avatar and the name end up at different opacities.
+
+**Product/creator learning:** `empty` beats `working` by construction. If a caller passes both, the honest state wins. That is a small thing that matters: the failure mode of getting it the other way round is the product claiming authorship of a line that does not exist, which is exactly the thing the provenance rule exists to prevent.
+
+**AI-building learning:** the gate I wrote to prove one owner found a second copy on its first run — `PhoneFrame.tsx`'s `KitByline`, whose own doc comment says *"copy of CoachByline"*, sitting next to a `TabbedPhone` that uses the real component. The tempting move was to fix it in the same commit. It is a Design Board question (does a marketing still track the live component or a deliberately pinned copy?), so it got filed, and the gate **exempts it by name while naming the item that owns it**. An exemption that names its item is a record; a blanket skip is a hole.
+
+**The honest bit:** I changed something visible and nearly didn't say so. The avatar goes from a flat moss fill to the component's moss gradient, at 45% opacity, because keeping two avatar treatments is the duplication I was removing. It is a tiny delta on a 22px circle, which is exactly the kind of thing that gets waved through and then shows up as "why does this look different".
+
+**Hook material:** 23 lines to 1, and the reason those 23 lines existed was *correct* — our own honesty rule left no other way to render an empty coach line.
+
+**Postable?:** yes — "the rule created a state the component couldn't express" is a genuinely transferable design-system point.
+
 ## 2026-10-05 — LEDGER-COACH-SITE-REMOVE-01 · deleting one line meant deleting six things
 **Shipped:** the discipline ledger's duplicate render site on Coach is gone, and so is the entire prefetch chain that existed only to feed it.
 

@@ -43,6 +43,23 @@ interface CoachBylineProps {
   onClick?: () => void
   /** Tooltip shown on hover (desktop) and long-press (iOS). */
   title?: string
+  /**
+   * The byline's own EMPTY state — Kit's identity with **no AIMark**, dimmed.
+   *
+   * 🔴 COACHBYLINE-EMPTY-VARIANT-01. This existed as 17 hand-rolled lines in
+   * `DashboardClient`, reproducing the avatar, the name and the eyebrow — because
+   * the component ALWAYS rendered `<AIMark />` and an empty line is hand-authored,
+   * so stamping it would claim a model wrote something no model wrote (Pattern 16
+   * provenance honesty). **The reason was right; the hand-roll was the symptom of a
+   * missing state.** A component that does not cover its own empty state gets
+   * hand-rolled again, which is also the SLC rule: a surface without its empty
+   * state is not complete.
+   *
+   * ⚠️ Mutually exclusive with `working` by construction — an empty line cannot be
+   * being generated. If both arrive, `empty` wins and the pulse is suppressed, so a
+   * caller mistake degrades to the honest state rather than to a false claim.
+   */
+  empty?: boolean
 }
 
 export default function CoachByline({
@@ -51,7 +68,10 @@ export default function CoachByline({
   role,
   onClick,
   title,
+  empty   = false,
 }: CoachBylineProps) {
+  // `empty` wins: provenance honesty beats a caller passing both.
+  const isWorking   = working && !empty
   const isMoss      = color === 'moss'
   const accent      = isMoss ? 'var(--moss)' : 'var(--warn)'
   const avatarStart = isMoss ? 'var(--moss)' : 'var(--warn)'
@@ -90,20 +110,25 @@ export default function CoachByline({
         }}
       >
         {initial}
-        <span
-          style={{
-            position:     'absolute',
-            bottom:       '-3px',
-            right:        '-3px',
-            background:   'var(--card)',
-            borderRadius: '50%',
-            padding:      '2px',
-            display:      'inline-flex',
-            lineHeight:   0,
-          }}
-        >
-          <AIMark size={10} color={accent} working={working} />
-        </span>
+        {/* ⚠️ The WHOLE badge goes when empty, not just the glyph: the white circle
+            is itself the provenance marker, and a circle with nothing in it reads as
+            a rendering fault rather than as an absence. */}
+        {!empty && (
+          <span
+            style={{
+              position:     'absolute',
+              bottom:       '-3px',
+              right:        '-3px',
+              background:   'var(--card)',
+              borderRadius: '50%',
+              padding:      '2px',
+              display:      'inline-flex',
+              lineHeight:   0,
+            }}
+          >
+            <AIMark size={10} color={accent} working={isWorking} />
+          </span>
+        )}
       </span>
 
       {/* Name + role */}
@@ -129,10 +154,10 @@ export default function CoachByline({
         <span
           style={{ ...MICRO_LABELS.eyebrow, fontFamily:    'var(--font-ui)',
             color:         accent,
-            opacity:       working ? 0.85 : 1 }}
+            opacity:       isWorking ? 0.85 : 1 }}
         >
           {roleLabel}
-          {working && (
+          {isWorking && (
             <span
               style={{
                 marginLeft: '4px',
@@ -152,6 +177,10 @@ export default function CoachByline({
     display:    'inline-flex',
     alignItems: 'center',
     gap:        '8px',
+    // ⚠️ The dim lands on the WHOLE unit, not per child. Applied per element it
+    // compounds where they nest and the avatar and the name end up at different
+    // opacities — which is exactly what reads as a bug rather than as a quiet state.
+    ...(empty ? { opacity: 0.45 } : null),
   }
 
   if (onClick) {
