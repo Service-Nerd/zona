@@ -882,6 +882,25 @@ does not read as live to the next person who greps for it.
 
 ### 🔄 `TAP-TARGET-DECISIONS-01` — part 1 + the FLOOR RULING shipped; 12 remain registered 🧭 **DESIGN BOARD**
 
+> ⚖️ **DESIGN BOARD RULED 2026-10-05 — SHIP, and this item MERGES with `BUTTON-MIGRATION-02`.**
+> Record: `docs/decisions/2026-10-05-design-board-backlog-clearance.md`.
+> 🔴 **BATCH BY FILE, not by height and not by variant.** The two items converge on **one file** and
+> nothing on the agenda said so: `SessionPopupInner.tsx` is the **#1 hand-rolled file** (7 controls,
+> 2x the next) **and 4 of the 10 runner-facing under-floor entries, including the worst in the
+> product at 18px.** ✋ Silvanto: *"the floor is a symptom of OWNERSHIP"* — `app/page.tsx` was 43px
+> because it hand-rolled seven properties `.btn` already owns, and became 47px the moment it used
+> the class. **Convert the control and the height is correct for free.**
+> **Batch 8a = `SessionPopupInner.tsx` alone.** Acceptance: 4 register entries removed, hand-rolled
+> 59 -> 52, `geometry moved: 0` on every other call site, `buttonOwnership` + `buttonGeometry` green.
+> ⚠️ **RE-MEASURED, AND THIS HEADING'S "12 remain" IS WRONG.** `REGISTERED_UNDER_FLOOR` holds **17**
+> entries, not 18: 4 preview harnesses (no ruling needed), 3 already-ruled display rows
+> (`TrainingZonesScreen` 43px, the two 41px settings rows), **10 runner-facing**. `app/page.tsx`
+> came off 2026-10-02; the `18` and its height multiset are a historical move-proof note inside the
+> test file. ⚠️ `charity-runners` (39px) is **already on `btn` classes** -> inspect before
+> converting, it may be a compact-variant question.
+> **Unchanged:** the 36 selected-state toggles and 15 icon-only controls are a different primitive,
+> out of scope. *"The floor is really 40"* stays **rejected on measurement** - nothing sits at 40.
+
 Out of `TAP-TARGET-FLOOR-01`, which made them **findable**. `ui-patterns.md:262` sets the floor
 at 44px (iOS HIG). **17 controls a runner can hit are under it**, measured 2026-10-01, smallest
 **18px**.
@@ -1630,6 +1649,22 @@ failure this repo has recorded more than any other. **Fix: resolve a spread of a
 constant before measuring, or fail loudly when a style object cannot be fully read.**
 
 #### 🔲 `COACHBYLINE-EMPTY-VARIANT-01` — `CoachByline` does not cover its own empty state, so it was hand-rolled *(P3, filed 2026-10-02 from MICRO-LABEL-CHIPS-01's sitting)* 🧭 **DESIGN BOARD**
+
+> ⚖️ **DESIGN BOARD RULED 2026-10-05 — SHIP.** Record:
+> `docs/decisions/2026-10-05-design-board-backlog-clearance.md`.
+> **Measured: `CoachByline` has 18 call sites; exactly one hand-roll.** `DashboardClient:5259-5275`
+> reproduces the component's 22px avatar, name and eyebrow in **17 lines**.
+> ✋ Silvanto: **the REASON for the hand-roll is correct and must survive the fix** — an empty state
+> carrying the AI glyph is the product claiming a model wrote a line no model wrote. Not a style
+> preference; honesty (Pattern 16).
+> 🧭 Zhuo: *"then the component is missing a STATE, not the call site being clever. **A component
+> that does not cover its own empty state will be hand-rolled again.**"*
+> **Build:** `CoachByline` gains an **`empty` variant** — no `<AIMark />`, dimmed, same geometry; the
+> call site collapses to one element. 📱 Wroblewski: the dimming lands on the **whole unit**, not
+> per-child. **Artifacts:** pattern note in `ui-patterns.md` § CoachByline (the empty state is the
+> component's, and why the AIMark must not render) + the variant as the named constant + a check that
+> **no call site outside `CoachByline.tsx` renders an avatar+name+eyebrow triple**, falsified by
+> re-adding the hand-roll.
 
 🧭 **DESIGN BOARD.** `DashboardClient` hand-rolls Kit's 22px avatar + name + role at
 `:5259–5275` as the **empty state** of `CoachByline`, because `CoachByline` always renders the
@@ -2732,22 +2767,60 @@ that reason in `lib/marketing/typeScale.test.ts`.
 
 ## ⚖️ FILED 2026-09-29 — two items from the LEDGER-REACH-01 round
 
-### 🟡 `LEDGER-PLACEMENT-01` — where the discipline ledger belongs on Me 💼 **SLT** first (parked pending reach data), then 🧭 **DESIGN BOARD** on placement
+### ✅ `LEDGER-PLACEMENT-01` — CLOSED 2026-10-05. Both of its own open questions were ALREADY RULED 💼 **SLT** unfroze it · 🧭 **DESIGN BOARD** had already answered it
 
-🧭 **DESIGN BOARD.** `LEDGER-REACH-01` restored the ledger to Me as a **defect fix**,
-in the position the feature registry already specified (leading `Your training`). It did
-**not** decide whether that is the right place.
+✅ **UNFROZEN on data, as the 2026-10-02 freeze required** (*"re-opening needs DATA, not an argument"*): `ledger_view` **164 events across 10 of 41 accounts in one week**, up from 2 users at freeze, with no promotion.
 
-Two live questions it deliberately left open:
-- The founder asked for *"something beside Pro"* — i.e. **next to the identity card**.
-  That is a placement decision, not a defect, so it was not taken unilaterally.
-- ⚠️ **`ME-PURPOSE-01` says *"nothing lives on Me, every row is a door"*, and the ledger
-  is a read-only CARD, not a door.** It predates that ruling and the ruling was made
-  without it on screen. Either it is a declared exception like *What Kit knows about you*,
-  or it moves. **The board never actually decided, because nobody knew it was gone.**
+🔴 **AND THEN BOTH LIVE QUESTIONS TURNED OUT TO HAVE BEEN RULED SIX DAYS EARLIER** — Design Board, 2026-09-29:
 
-Data to bring: `ledger_view` now carries `surface: 'me' | 'coach'`, which is the evidence
-`OPS-ARTIFACT-PLACEMENT-01` has been parked on.
+| the item's open question | the ruling |
+|---|---|
+| the founder's *"something beside Pro"* | **(d) 🔴 DON'T SHIP the identity-region placement** — *"a 44px number and a 10px badge cannot share a moment"* (Silvanto), *"one is a card, the other a label"* (Wroblewski). **It stays leading `Your training`.** |
+| `ME-PURPOSE-01`: *"nothing lives on Me, every row is a door"* vs a read-only CARD | **(e) `ME-PURPOSE-01` AMENDED, not excepted** — *"Me may carry a read-only card that reports the runner's own state; it may not carry a control that is not a door."* |
+
+**Third time in two days an item's premise was already settled elsewhere.** It stayed open because nobody connected it to a ruling from the same week.
+
+📐 **SURFACE SPLIT — the evidence this item asked for** (`ledger_view` carries `surface`): **`me` 123 views / 9 users · `coach` 33 / 8** · 8 unattributed pre-instrumentation views. **Me carries 79% of views and 9 of 10 users**, roughly 3.7:1. The Coach card is secondary but not dead.
+
+🔴 **A FINDING OF MINE, WITHDRAWN — recorded because the error is the lesson.** I reported to the SLT that this is a **tier defect**: *"a FREE feature whose only render site is behind a paid gate"*. **False.** There are **two** sites — `DashboardClient.tsx:5631` (`surface="coach"`, paid-gated) and **`components/dashboard/MeScreen.tsx:1167` (`surface="me"`, UNGATED)**. The tier defect was fixed by `LEDGER-REACH-01` and is **held by a test** (`components/shared/ledgerReach.test.ts`) whose own comment records being falsified by re-adding the gate. ⚠️ **I grepped `app/dashboard/MeScreen.tsx`, which does not exist** — the file is in `components/dashboard/`. **An empty result from a wrong path read as proof of absence**, which this repo has recorded twice before.
+
+🔻 **ONE NARROW RESIDUAL, routed:** given the 3.7:1 split, **should the Coach duplicate stay?** `MeScreen.tsx:1160` already argues yes, citing `353cbbad`'s stated reason (*"an identity / execution metric, not admin chrome"*). 🧭 Design Board. Decision note: `docs/decisions/2026-10-05-slt-artifacts-unfrozen.md`.
+
+### 🔲 `LEDGER-COACH-SITE-REMOVE-01` — the ledger has two render sites; the board killed one *(filed 2026-10-05)* ⚙️ **NO BOARD** (ruled)
+
+> ⚖️ **DESIGN BOARD RULED 2026-10-05 — DON'T SHIP the duplicate. The ledger is Me's.** Unanimous.
+> Record: `docs/decisions/2026-10-05-design-board-backlog-clearance.md`; register row in
+> `design-rulings.md` § 2. **No further board review — this item is the BUILD of a ruling.**
+
+Routed to the board by the SLT the same morning, with the measurement attached: **`me` 123 views /
+9 users vs `coach` 33 views / 8 users — a 3.7:1 split.**
+
+🧭 Zhuo: *"9 and 8 is near enough the same people. So this is not two audiences, it is **one
+audience with a clear preference about where it looks**."*
+🎪 Collins: *"**two doors to one thing is not generosity, it is indecision made visible.** Pick the
+door."*
+🎓 Sierra: *"the ledger is an execution metric — did you do what you said you would. That is
+identity, and identity lives on **Me**. Coach is where the product talks to you; the ledger is where
+you look at yourself."* — consistent with `LEDGER-PLACEMENT-01`'s *"an identity / execution metric,
+not admin chrome."*
+
+**Scope:** remove the Coach render site. `me` becomes the single home.
+
+🔴 **THIS IS A REMOVAL ACROSS A TIER GATE AND GETS `/build` § 5b IN FULL.** The Coach site sits
+behind `{screen === 'coach' && (hasPaidAccess ? … : <upgrade>)}`; the Me site at
+`components/dashboard/MeScreen.tsx:1167` is **ungated**. So removal changes **nothing** about reach
+for a free user **and must not be allowed to** — `LEDGER-01` already spent **four months** rendering
+a FREE feature only inside the paid Coach screen, and the move that caused it said *"no change to
+data or computation"*, which was true.
+- ✅ `components/shared/ledgerReach.test.ts` already asserts the Me render site is reachable by a
+  free user. **That arm is the regression guard; falsify it again after the removal** by re-adding
+  `{hasPaidAccess && …}` and watching it go red.
+- ✋ Silvanto's note is the § 5b ask that is **named and not answered**: *"when it leaves Coach,
+  check what reached it only from there."* Grep the anchor constants and any `onBack` that returned
+  to Coach via the ledger.
+- Check `/api/discipline-ledger` still serves every tier (it should — gate richness, never access).
+
+---
 
 ### ⏸️ `LEDGER-RESET-01` — PARKED 2026-10-02 (SLT). Both filed positions were WITHDRAWN on measurement
 
@@ -3047,7 +3120,13 @@ build, exactly as `configPrincipleSync` fails on a stale baseline row.
 
 ## ⚖️ FILED 2026-09-28 — after the attribution / trust / adaptation sitting
 
-### 🟡 `OPS-ARTIFACT-PLACEMENT-01` — where should the ledger and the share card live? 💼 **SLT** first — *"do not build, do not decide"* until the reach events accumulate — then 🧭 **DESIGN BOARD**
+### ⏸️ `OPS-ARTIFACT-PLACEMENT-01` — SLT 2026-10-05: the freeze STANDS, and the CONDITION is REPLACED 💼 **SLT**
+
+🔴 **THE OLD CONDITION WAS UNSATISFIABLE.** *"Do not build, do not decide until the reach events accumulate"* cannot be met: `ShareWeekButton` (`DashboardClient.tsx:5358`) renders only on `reportIsCurrent && weeklyReport?.zone_discipline_score != null`. Measured 2026-10-05: **18 weekly reports across 3 users; 13 carry a score, across 2 users** — so the eligible population is **2 of 41** — and the **newest scored report is 2026-09-23, twelve days old**, so the button has not been renderable recently at all. **`share_week_pressed` = 0, which is 0 of 2.** Waiting for usage data from a denominator of two is waiting forever.
+
+✅ **NEW CONDITION: REACHABILITY, NOT USAGE.** Until a meaningful number of users can SEE the button, press-rate is evidence of nothing. The constraint is the render gate, not demand. ⚠️ **5 of 18 reports carry a NULL `zone_discipline_score`**, so even generating a report does not guarantee the control appears — worth its own look.
+
+🔻 **Still not a build decision.** Decision note: `docs/decisions/2026-10-05-slt-artifacts-unfrozen.md`.
 
 🧭 **DESIGN BOARD** — **blocked on data, deliberately.** The SLT ruled that the UX and
 marketing of `LEDGER-01` / `SHARE-01` may not be touched until the reach chain is visible.
@@ -3065,6 +3144,19 @@ surface in the product"*) and will **kill any celebration, notification or progr
 added to it. `LEDGER-01`'s shipped rules stand.
 
 ### 🟡 `SITE-SCROLL-DEPTH-01` — the measurement that would settle the adaptation device 🧭 **DESIGN BOARD**
+
+> ⚠️ **DESIGN BOARD 2026-10-05 — INSUFFICIENT EVIDENCE RE-AFFIRMED, and this item is RE-TAGGED
+> 🧭 DESIGN BOARD -> ⚙️ NO BOARD (blocked on instrumentation).** Record:
+> `docs/decisions/2026-10-05-design-board-backlog-clearance.md`.
+> Re-checked today: **the 2026-09-28 condition is unmet and unchanged** — there is still no site
+> analytics, so nobody can say whether a visitor reaches `W-02` or `SameWeekTwice`.
+> 🧭 Zhuo: *"the answer is not a design decision, it is instrumentation. **This item should SAY it is
+> blocked rather than sit on the design agenda looking like a design question.**"*
+> **Unblock, named:** site-side scroll depth on `/` reaching the `W-02` section and `SameWeekTwice`.
+> **It returns to the board the day there is a number and not before.** Carries Traynor's standing
+> objection: *what is the traffic?* Same class as the SLT's `OPS-ARTIFACT-PLACEMENT-01` freeze —
+> a decision waiting on a POPULATION, not on a view. ⚡ Collins/Zhuo disagreement carried forward
+> unresolved; the board **declined to re-argue it without the measurement**.
 
 🧭 **DESIGN BOARD** (ruled **INSUFFICIENT EVIDENCE** 2026-09-28). The board could not rule on
 showing adaptation because **there is no site analytics at all**, so nobody can say whether a
@@ -3224,6 +3316,16 @@ never claimed it was safe for text — the gap is real and was simply never asse
 token in any other file still fails. Falsified: moving it to another file turns the gate red.
 
 ### 🧭 `BUTTON-MIGRATION-02` — the other 178 controls, batch by batch
+
+> ⚖️ **DESIGN BOARD RULED 2026-10-05 — SHIP, MERGED into `TAP-TARGET-DECISIONS-01`.**
+> Record: `docs/decisions/2026-10-05-design-board-backlog-clearance.md`. Batch by **FILE**, worst
+> under-floor count first, because the two items point at the same file.
+> 🔴 **THIS HEADING'S "178 controls" IS STALE BY 119, AND SO IS THE BREAKDOWN TABLE BELOW.**
+> Re-ran the log's own standing-count script today (the comment-stripping one, after it was found
+> inflating by 8): **203 total, 144 on a shared component (71%), 59 hand-rolled** — identical to the
+> 2026-10-02 row, so **no regression**. The 53/43/36/15/4/3/14 breakdown is keyed to the old 178 and
+> must not be quoted. 🎪 Collins: *"71% is the number I care about — the day it hits 100 for
+> everything that belongs in `Button`, a visual change is one edit instead of fifty-nine."*
 **Board: 🧭 DESIGN BOARD** for the two new primitives; ⚙️ NO BOARD for batches 2 and 3.
 
 📒 **Rolling log: `docs/component-migration-log.md`.** Counts, breakdown, batch history and the
@@ -4589,6 +4691,18 @@ rather than re-unitised — nothing was.
 
 ### 🧭 `SHEET-DATE-INPUT-01` — the race date is the only native control on the sheet
 
+> ✅ **CLOSED 2026-10-05 ON MEASUREMENT — Design Board backlog-clearance sitting.** Record:
+> `docs/decisions/2026-10-05-design-board-backlog-clearance.md`.
+> **The premise has been fixed and this item was never updated.** It is filed as *"a hand-rolled
+> `<input type="date">` at `fontSize: '13px'`, the only native and only centred control on a sheet of
+> six left-aligned `SegmentedControl`s, reading as a disabled field."*
+> `ModifyPlanSheet.tsx` `case 'race_date'` now returns **`<TextField type="date" />`**, and
+> `TextField` **locks 16px** and full width: the **iOS-zoom defect and the disabled-field look are
+> both gone**, and the component's own comment records the migration.
+> ⚠️ **The stale read was mine, carried INTO the sitting**, and it ran in the direction of a bigger
+> job — the third occurrence of that class in three days. **A comment recording a FIXED defect reads
+> exactly like one reporting a LIVE defect.**
+
 **Design Board DEFERRED it, and named why.** It is the *"doesn't line up"* the founder pointed at:
 on a sheet of **six left-aligned `SegmentedControl`s**, the race date is **the only centred control
 and the only native one** — a full-width `<input type="date">` that reads as a *disabled field*
@@ -5463,6 +5577,19 @@ findability problem on Me.**
 ---
 
 ### 🧭 `DESIGN-MILES-TAKEABLES-01` — the four patterns the open-lens review ruled SHIP
+
+> 🔴 **DESIGN BOARD 2026-10-05 — CLOSED. DON'T SHIP as filed.** Record:
+> `docs/decisions/2026-10-05-design-board-backlog-clearance.md`. Register row in
+> `design-rulings.md` § 2.
+> **Three of four arms were dead before the sitting opened** — M-1 retracted (already built), two
+> retracted on verification, one superseded the next day. 🧭 Zhuo: *"an item that is 75% retracted is
+> not an item, it is a residue, and leaving it open means every future scan re-reads four dead
+> proposals to find one live one."*
+> 🎪 Collins took the loss on the record: *"the cost of reviewing from impressions instead of
+> measurements"* — the same correction he took on the palette.
+> ➡️ **The surviving icon rule re-files on its own merit, with a measured population** (*how many
+> surfaces carry an icon beside a label today, and how many do not?*) **and no number quoted from
+> this item.**
 **Board: DESIGN.** ⚠️ **Two of the four were RETRACTED on verification and one was
 SUPERSEDED the next day.** What remains buildable is M-3 and the icon rule below.
 
@@ -9102,6 +9229,22 @@ Proposed, to them:
 ---
 
 ### ⚖️ SLT — `FIRSTRUN-MARATHON-01`, touchpoint 7: the first missed session. Sat 2026-09-18. 💼 **SLT** (framing already ruled), then 🧭 **DESIGN BOARD** per touchpoint
+
+> ⚖️ **DESIGN BOARD RULED 2026-10-05 — SHIP, scoped to one surface and one sentence.** Record:
+> `docs/decisions/2026-10-05-design-board-backlog-clearance.md`.
+> 🎓 Sierra: *"the only item in the sitting about the RUNNER getting better rather than the product
+> getting tidier. The first missed session is where someone decides whether they are a person whose
+> plan broke or a person who FAILED. The product has one sentence to settle that, and it is already
+> in the brand: **'Happens. Plan's been shifted.'**"*
+> **Renders:** the shift that was made, in the brand's **existing locked voice**, and **one** way to
+> disagree with it. ✋ Silvanto: progressive disclosure, not density — nothing on the screen may
+> compete with it. 📱 Wroblewski: **no multi-option chooser** — *"do not ask someone who has just
+> missed a run to choose between four rescheduling options."* **No recap of what was lost.**
+> ⚠️ **Build to this item's own 🔴 correction block, not to its sitting narrative** — the headline
+> claim was overstated and corrected before building.
+> 🏃 **Any claim about training consequence is NOT this board's** and routes to the Coaching Board
+> (the W-03 precedent). **Artifacts on build:** a pattern row + copy taken from `brand.md`'s locked
+> register (not newly written) + a check that the surface renders **exactly one** action.
 
 **Why this touchpoint.** The SLT batch named it the priority inside the P0: *the drop-out happens at the first missed session*, not at onboarding, where motivation is highest.
 

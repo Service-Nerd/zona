@@ -221,6 +221,8 @@ Record: `plan-arc-v2.md` · `slt-2026-08-29-planzy-ux.md` ·
 | **Pill words on the compliance statement** | 🔴 **CUT** | The colour carries the meaning. Sutherland: *"a glossary entry is what you write when you don't trust the thing you made."* Most runners see no change; a minority see jargon |
 | **A privacy reassurance sentence at the health-connect step** | 🔴 **CUT**, link only | Sutherland: *"a man saying 'I've never been to prison' during a job interview."* It introduces an AI, and things being sent to it, at the moment someone decides whether to hand over their heart rate |
 | **Dropping `ZoneRings`** | 🔴 **REVERSED — retained** | It is **one of three** components on the marketing homepage's ProductStill trio: literally one third of the public face. Its own header calls it *brand-mark-as-data-display* — the four concentric rings of the Zonna mark **are** the four zone buckets. Dropping it would recreate the defect class where the site promises what the app no longer contains |
+| **A second render site for the discipline ledger (the Coach duplicate)** | 🔴 **KILLED 2026-10-05**, backlog-clearance sitting, unanimous | **Measured split `me` 123 views / 9 users vs `coach` 33 / 8 — 3.7:1, and 9 against 8 is ONE audience with a preference, not two audiences.** Collins: *"two doors to one thing is not generosity, it is indecision made visible."* Sierra: the ledger is an execution metric, so it lives on **Me**, per `LEDGER-PLACEMENT-01`'s *"identity, not admin chrome"*. ⚠️ Removal is **across a tier gate** — the Coach site was behind `hasPaidAccess`, the Me site is ungated, and `ledgerReach.test.ts`'s free-user arm is the regression guard |
+| **`DESIGN-MILES-TAKEABLES-01` as filed (the four open-lens patterns)** | 🔴 **CLOSED 2026-10-05 — 3 of 4 arms dead before the sitting opened** | **M-1 RETRACTED (already built), two RETRACTED on verification, one SUPERSEDED the next day.** Collins took the loss on the record: *"the cost of reviewing from impressions instead of measurements."* The surviving icon rule is re-filed on its own merit **with a measured population and no number quoted from the old item** |
 
 ---
 
@@ -3865,3 +3867,61 @@ auth-gated and `/me-preview` does not cover them, so the destructive change was 
 half — *of the 16 unguarded sections, how many are HONOURED today?* — is **not** measured; only the
 counts are.
 
+
+---
+
+## Sitting — backlog clearance, 2026-10-05
+
+Record: `docs/decisions/2026-10-05-design-board-backlog-clearance.md`.
+Convened on founder instruction to take **every open backlog item carrying a 🧭 DESIGN BOARD tag**
+to the board in one pass. **Thirteen items carried the tag; the settled-ground scan found SEVEN
+already ruled or already closed**, which is what the scan is for.
+
+| Item | Ruling | The measurement behind it |
+|---|---|---|
+| **`TAP-TARGET-DECISIONS-01` + `BUTTON-MIGRATION-02`** | 🟢 **SHIP, MERGED — batch by FILE, not by height or variant** | **The two items converge on one file, and nothing on the agenda said so.** `SessionPopupInner.tsx` is the **#1 hand-rolled file** (7 controls, 2× the next) **and 4 of the 10 runner-facing under-floor entries, including the worst in the product at 18px.** Silvanto: *"the floor is a symptom of ownership"* — `app/page.tsx` was 43px because it hand-rolled seven properties `.btn` already owns, and became 47px the moment it used the class. **Batch 8a = that file alone**: 4 register entries off, hand-rolled 59 → 52, `geometry moved: 0` elsewhere |
+| **`COACHBYLINE-EMPTY-VARIANT-01`** | 🟢 **SHIP** — the component gains an `empty` variant | **18 call sites; one hand-roll.** `DashboardClient:5259–5275` reproduces the component's 22px avatar, name and eyebrow in 17 lines, **for a correct reason that must survive the fix**: `CoachByline` always renders `<AIMark />` and an empty line is hand-authored, so it must not claim provenance (Pattern 16). Zhuo: *"a component that does not cover its own empty state will be hand-rolled again"* |
+| **`DESIGN-MILES-TAKEABLES-01`** | 🔴 **CLOSED — 3 of 4 arms dead before the sitting opened** | See § 2 kills. The survivor re-files with a measured population |
+| **`SITE-SCROLL-DEPTH-01`** | ⚠️ **INSUFFICIENT EVIDENCE re-affirmed, and RE-TAGGED 🧭 → ⚙️ NO BOARD (blocked on instrumentation)** | Ruled INSUFFICIENT EVIDENCE 2026-09-28 because **there is no site analytics at all**; re-checked today, **the condition is unmet and unchanged**. Zhuo: *"the answer is not a design decision, it is instrumentation — this item should SAY it is blocked rather than sit on the design agenda looking like a design question."* Unblock: scroll depth on `/` reaching the `W-02` section and `SameWeekTwice`. Carries Traynor's standing objection: *what is the traffic?* |
+| **`FIRSTRUN-MARATHON-01`** (design half) | 🟢 **SHIP, scoped to one surface and one sentence** | The first missed session is where someone decides whether they are *a person whose plan broke* or *a person who failed*. Renders **the shift that was made, in the brand's existing locked voice, and one way to disagree**. No recap of the missed session, no multi-option chooser (Wroblewski: *"do not ask someone who has just missed a run to choose between four options"*). ⚠️ **Build to the item's own 🔴 correction, not its sitting narrative** — the headline claim was overstated and corrected before building. Any training-consequence claim routes to 🏃 the Coaching Board (W-03) |
+| **The Coach ledger duplicate** (SLT residual) | 🔴 **DON'T SHIP — the ledger is Me's** | See § 2 kills |
+
+**Already ruled, re-affirmed without re-argument:** `LEDGER-PLACEMENT-01` (closed) ·
+`SHEET-DAY-QUESTION-01` (SHIP, scoped; engine half → `DAYS-GATE-CAPACITY-01`) ·
+`STEPPER-CONTROL-01` (split, arm (d) insufficient) · `UI-PATTERNS-ENFORCEMENT-01` (*ship the
+measurement, not the gates*) · `UI-PATTERNS-MOMENTS-01` (insufficient, conditions named) ·
+`DESIGN-PERFORATION-01` (insufficient, artefact named).
+
+✅ **`SHEET-DATE-INPUT-01` is CLOSED on measurement.** Filed as *"a hand-rolled `<input type="date">`
+at 13px, the only native and only centred control on a sheet of six left-aligned
+`SegmentedControl`s, reading as a disabled field."* It is **already on `TextField`**, which locks
+**16px** and full width: the iOS-zoom defect and the disabled-field look are both gone.
+
+### 🔴 TWO OF THE SITTING'S OWN PRE-MEASUREMENTS WERE STALE, AND BOTH MADE THE WORK LOOK BIGGER
+| Carried in | The code says |
+|---|---|
+| *"`SegmentedControl` has no `minHeight` — 30px, five surfaces; fixing it clears ~7 of 18"* | `SEGMENTED_MIN_HEIGHT_PX = 44` **since 2026-10-01**, and it came off the register that day. **The reading was of the component's own past-tense comment describing the defect, as if it reported the state** |
+| *"the under-floor register holds 18 entries"* | **17.** `app/page.tsx = 43px` came off 2026-10-02; the `18` and its height multiset are a historical move-proof note inside the test file |
+
+⚠️ **A comment recording a FIXED defect reads exactly like one reporting a LIVE defect.** The repo's
+*an item is a snapshot, re-measure before you pick it up* rule applies to **source comments and to
+one's own notes**, not only to backlog items. Third occurrence of the class in three days.
+
+### ⚡ Recorded disagreement
+🎪 **Collins vs the chair on `SITE-SCROLL-DEPTH-01`**, carried forward unresolved from 2026-09-28.
+The board **declined to re-argue it without the measurement**. Both seats move on the same artefact.
+No new disagreement arose: rulings 1, 2, 5 and 6 were unanimous.
+
+### ⛔ Veto check
+**None exercised.** ✋ Silvanto declined explicitly on the tap-target ruling (a touch floor is not a
+palette or type regression) and his intervention on `COACHBYLINE-EMPTY-VARIANT-01` was substantive,
+not a veto: AIMark suppression is a **Pattern 16 provenance** requirement, **preserved by** the
+ruling rather than overridden by it.
+
+### ⚠️ What this sitting does not settle
+**Six rulings, zero lines of code** — every acceptance condition above is a claim about what a
+future build must prove, not a result. Nothing has run on a device: the 18px control was measured
+from computed style, never touched. `SessionPopupInner` is auth-gated and `/sheet-preview` does not
+cover it. The surviving icon rule has **no measured population yet**, which is the condition of its
+re-filing and is not met here. The ledger removal's *"what reached it only from Coach"* is named as
+a `/build` § 5b ask and **not answered**.
