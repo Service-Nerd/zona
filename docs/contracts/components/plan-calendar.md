@@ -107,11 +107,21 @@ differently and the register above could not see them — it only counts a liter
 are WRONG. They now spread `MICRO_LABELS.eyebrow`, and a new arm forbids a canonical literal.
 
 
-- Past weeks are collapsed behind a "Load N past weeks" button. Shown when tapped.
-- Its three moss controls ("Load N past weeks", the move-confirm and the abandon-move bar) render
-  through `Button` (`variant="primary"` / `"soft"`), not hand-rolled styles — `BUTTON-COMPONENT-01`,
-  2026-09-25. The abandon-move bar keeps only its `borderTop` as layout; every visual property is
-  `.btn`'s. See `docs/contracts/components/button.md`.
+- Past weeks are collapsed behind a "Load N past weeks" control, with a "Hide past weeks" twin once
+  shown. **Both render through `Button variant="secondary" fullWidth`** since `BUTTON-MIGRATION-02`
+  batch 8c, 2026-10-05. Only the typography is overridden — an 11px uppercase tracked label, which
+  is this calendar's own register; the box, border, cursor and the 44px tap floor are the
+  component's.
+- 🔴 **THIS LINE WAS FALSE UNTIL 2026-10-05 AND IS WORTH KEEPING AS A WARNING.** It read *"its three
+  moss controls ('Load N past weeks', the move-confirm and the abandon-move bar) render through
+  `Button` … not hand-rolled styles — `BUTTON-COMPONENT-01`, 2026-09-25"*. **The move-confirm and the
+  abandon-move bar did. "Load N past weeks" did not** — it was a hand-rolled `<button>` carrying
+  eight properties `Button` owns, for six weeks, while its own contract asserted otherwise.
+  **A contract naming three controls in one sentence is only as true as its least-checked third**,
+  and `audit-docs.sh`'s contract arm is what forced this re-read.
+- The move-confirm and the abandon-move bar render through `Button` (`variant="primary"` / `"soft"`).
+  The abandon-move bar keeps only its `borderTop` as layout; every visual property is `.btn`'s. See
+  `docs/contracts/components/button.md`.
 - Current week is determined by `week.type === 'current'`. Highlighted with teal left border.
 - Completed/deload_done weeks render at 50% opacity.
 - Sessions are rendered in `mon–sun` order regardless of plan JSON key order.

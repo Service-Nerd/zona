@@ -3657,10 +3657,22 @@ function MissedSessionSheet({
           I actually ran it →
         </Button>
 
-        <Button variant="secondary" size="compact" fullWidth 
-          onClick={close}>
-          Dismiss
-        </Button>
+        {/* 🔴 FIRSTRUN-MARATHON-01 — the DISMISS BUTTON IS GONE (Design Board
+            re-sitting, 2026-10-05). 📱 Wroblewski: six controls on the screen
+            where someone has just missed a run. `Sheet` already carries its own
+            close, so this was a second way to do the one thing the sheet does by
+            default — `LOG-ONE-INTENTION-01`'s class, one intention one control.
+            Five now: four reasons and the escape.
+
+            ⚠️ AND NO SHIFT IS CLAIMED HERE, DELIBERATELY. The board's first
+            ruling led this sheet with the locked line "Plan's been shifted."
+            Measured: this sheet renders BEFORE anything shifts, `/api/adjust-plan`
+            fires AFTER the runner answers and is `void authedFetch` (fire and
+            forget), and for `'Too tired'` it is absorbed and NEVER fires. There is
+            no moment here at which that sentence is true.
+            The shift is announced where it actually happens, by surfaces that
+            already exist and already gate on a real adjustment: the pending
+            banner on Today, and "Changed this week" in Plan adjustments. */}
       </div>
       )}
     </Sheet>

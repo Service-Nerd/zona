@@ -74,12 +74,14 @@ function formatDateRange(weekStartDate: Date): string {
   return `${formatDate(weekStartDate, 'short')} – ${formatDate(end, 'short')}`
 }
 
+// 🔴 BUTTON-MIGRATION-02 batch 8c — these two were hand-rolled `<button>`s with
+// eight properties `Button` already owns. Only the TYPOGRAPHY is particular to
+// this control (an 11px uppercase tracked label, which is the calendar's own
+// register), so that is all that remains as an override; the box, the border,
+// the cursor and the 44px floor come from `variant="secondary"`.
 const loadMoreStyle: React.CSSProperties = {
-  width: '100%', padding: '10px', background: 'none',
-  border: '1px solid var(--line)',
-  borderRadius: '10px', cursor: 'pointer',
-  fontFamily: 'var(--font-ui)', fontSize: '11px',
-  color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase',
+  fontSize: '11px', color: 'var(--mute)',
+  letterSpacing: '0.06em', textTransform: 'uppercase',
 }
 
 interface Props {
@@ -280,12 +282,12 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
           <>
             <SectionLabel>Past</SectionLabel>
             {pastWeeks.map(w => renderStrip(w, true))}
-            <button onClick={() => setShowPast(false)} style={loadMoreStyle}>↑ Hide past weeks</button>
+            <Button variant="secondary" fullWidth onClick={() => setShowPast(false)} style={loadMoreStyle}>↑ Hide past weeks</Button>
           </>
         ) : (
-          <button onClick={() => setShowPast(true)} style={loadMoreStyle}>
+          <Button variant="secondary" fullWidth onClick={() => setShowPast(true)} style={loadMoreStyle}>
             ↑ Load {pastWeeks.length} past week{pastWeeks.length !== 1 ? 's' : ''}
-          </button>
+          </Button>
         )
       )}
       {currentWeek && (

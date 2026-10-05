@@ -3641,7 +3641,32 @@ never claimed it was safe for text — the gap is real and was simply never asse
 **Baselined with its reason** in `buttonOwnership.test.ts`, keyed to file+token, so the same failing
 token in any other file still fails. Falsified: moving it to another file turns the gate red.
 
-### 🧭 `BUTTON-MIGRATION-02` — the other 178 controls, batch by batch
+### ✅ `BUTTON-MIGRATION-02` — CLOSED 2026-10-05. The remaining population is almost entirely NOT convertible, and that is correct ⚙️ **NO BOARD**
+
+> ✅ **CLOSED 2026-10-05.** 🔴 **THE NUMBER WENT 178 → 58 → 21 → ~5 ACROSS THREE SUCCESSIVE
+> MEASUREMENTS TODAY, AND EACH CORRECTION WAS MY OWN CLASSIFIER BEING TOO CRUDE.**
+> **Final state: 201 controls, 146 on the component (73%), 55 hand-rolled.** Reading every one of
+> the 55 rather than counting them:
+> | What | Why it must NOT convert |
+> |---|---|
+> | **Selected-state toggles** | Design Board, 2026-10-05: the moss active fill is the only selected affordance there is |
+> | **Shared primitives** (`ActionRow`, `NotificationRow`, `SignOutLink`, `IconButton`, `CoachByline`) | These **ARE** the primitive layer. A primitive built on `Button` is a circular dependency |
+> | **Rows with title + subtitle** (`PlanAdjustmentsScreen`, `ModifyPlanSheet`'s "Start a new plan") | `Button` would flatten two lines into a label |
+> | **Semantic colour** (`PendingAdjustmentBanner`'s amber Confirm, `SupportScreen`'s copied-state) | Converting makes them moss and deletes the meaning — the fatigue-tag class |
+> | **Preview harnesses** | Not product surfaces |
+> ✅ **Batch 8b: `UpgradeScreen`'s primary CTA** — eleven hand-rolled properties, and still painted
+> through **`--teal`, a RETIRED System-B token**: the most important tap on the paywall was going
+> through a compatibility shim.
+> ✅ **Batch 8c: `PlanCalendar`'s two load-more controls** → `variant="secondary" fullWidth`. Only
+> the 11px uppercase tracked label survives as an override; the box, border, cursor and 44px floor
+> come from the component. `PlanCalendar`: **0 under 44px**.
+> 🥇 **THE ITEM'S PREMISE IS RETIRED: "178 controls to migrate" was never 178 controls of WORK.**
+> It was a count of `<button>` tags, and most of them are hand-rolled **for reasons the board has
+> since ratified**. Closing it on that measurement rather than leaving a permanent 55-item debt that
+> nobody should ever pay. ⚠️ **`buttonOwnership.test.ts` and `buttonGeometry.test.ts` still hold the
+> line** — a NEW hand-rolled filled control still fails, which is the property that mattered.
+> **Geometry re-baselined with the number declared** on both batches.
+
 
 > 🔴 **BATCH 8b 2026-10-05, AND THE MEASUREMENT RESCOPES THE WHOLE ITEM: THE CONVERTIBLE
 > POPULATION IS 21, NOT 58.** Classified every remaining hand-rolled `<button>`:
@@ -9801,7 +9826,29 @@ Proposed, to them:
 
 ---
 
-### 🔴 SLT — `FIRSTRUN-MARATHON-01`, touchpoint 7 — BUILD HALTED: the ruling's sentence is false on render. Sat 2026-09-18. 💼 **SLT** (framing already ruled), then 🧭 **DESIGN BOARD** per touchpoint
+### ✅ SLT — `FIRSTRUN-MARATHON-01`, touchpoint 7 — RE-RULED + SHIPPED 2026-10-05. The sheet asks; the surfaces that TELL already existed.
+
+> ✅ **SHIPPED 2026-10-05 after a re-sitting.** The first ruling led this sheet with
+> *"Plan's been shifted."* **Measured, that is false on render for everyone and false FOREVER on one
+> of four paths:** the sheet renders first, `/api/adjust-plan` fires only after the runner answers,
+> it is `void authedFetch` (fire-and-forget, so the sheet closes before any outcome exists), and
+> `'Too tired'` is **absorbed — it never adjusts at all**.
+> ⚖️ **RE-RULED: the sheet ASKS, the adjustment surfaces TELL** — and **both tell-surfaces already
+> existed and already gate on a real adjustment**: the pending banner on Today, and *"Changed this
+> week"* in Plan adjustments. **No new surface was built, which is the ruling, not a shortcut.**
+> 📱 **Wroblewski WITHDREW HIS OWN no-multi-option-chooser ruling**: the four reason buttons are the
+> chooser **and** the only thing that triggers the shift the tell-surfaces announce. Removing them
+> deletes the event. **What went instead was the redundant `Dismiss`** — `Sheet` already carries its
+> own close, so it was a second control doing the sheet's default (`LOG-ONE-INTENTION-01`).
+> **Six controls → five.**
+> **Gate:** `components/shared/missedSessionSheet.test.ts` — the sheet makes **no shift claim**, the
+> reasons stay, the escape stays, `Dismiss` stays gone, no recap. **Falsified twice.**
+> 🔴 **My own gate fired on my own COMMENT** — the comment quoting the forbidden sentence to record
+> why it is absent. `HOOK-RGBA-COMMENTS-01`'s exact class (*"a colour inside a comment is prose"*);
+> **a claim inside a comment is prose too.** It strips comments now, line numbers preserved.
+> ✅ **The data half was already done** — `FIRSTRUN-MISSED-01`'s `skip_reason` column, 2026-09-18.
+
+💼 **SLT** (framing already ruled), then 🧭 **DESIGN BOARD** per touchpoint
 
 > 🔴 **BUILD HALTED 2026-10-05 — THE RULING'S SENTENCE IS FALSE AT THE MOMENT THIS SURFACE RENDERS,
 > AND PERMANENTLY FALSE ON ONE OF ITS FOUR PATHS. THE BOARD MUST RE-SIT WITH THIS FACT.**

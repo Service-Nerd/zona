@@ -148,7 +148,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "app/dashboard/DashboardClient.tsx#Button8": {
@@ -161,19 +161,19 @@
   },
   "app/dashboard/DashboardClient.tsx#Button9": {
     "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button10": {
-    "floor": 44,
     "padY": 8,
     "font": 13,
     "radius": "8px",
     "height": 44,
     "width": "auto"
+  },
+  "app/dashboard/DashboardClient.tsx#Button10": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
   },
   "app/dashboard/DashboardClient.tsx#Button11": {
     "floor": 44,
@@ -189,7 +189,7 @@
     "font": null,
     "radius": null,
     "height": 47,
-    "width": "full"
+    "width": "auto"
   },
   "app/dashboard/DashboardClient.tsx#Button13": {
     "floor": 44,
@@ -199,15 +199,7 @@
     "height": 47,
     "width": "auto"
   },
-  "app/dashboard/DashboardClient.tsx#Button14": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button[what-counts-as-in-zone-opens-an-]15": {
+  "app/dashboard/DashboardClient.tsx#Button[what-counts-as-in-zone-opens-an-]14": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -215,9 +207,17 @@
     "height": 47,
     "width": "100%"
   },
-  "app/dashboard/DashboardClient.tsx#Button16": {
+  "app/dashboard/DashboardClient.tsx#Button15": {
     "floor": 44,
     "padY": 2,
+    "font": 11,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "app/dashboard/DashboardClient.tsx#Button16": {
+    "floor": 44,
+    "padY": null,
     "font": 11,
     "radius": null,
     "height": 44,
@@ -234,20 +234,12 @@
   "app/dashboard/DashboardClient.tsx#Button18": {
     "floor": 44,
     "padY": null,
-    "font": 11,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button19": {
-    "floor": 44,
-    "padY": null,
     "font": null,
     "radius": null,
     "height": 44,
     "width": "auto"
   },
-  "app/dashboard/DashboardClient.tsx#Button20": {
+  "app/dashboard/DashboardClient.tsx#Button19": {
     "floor": 44,
     "padY": 14,
     "font": null,
@@ -255,7 +247,7 @@
     "height": 45,
     "width": "100%"
   },
-  "app/dashboard/DashboardClient.tsx#Button21": {
+  "app/dashboard/DashboardClient.tsx#Button20": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -1192,13 +1184,13 @@
     "height": 44,
     "width": "full"
   },
-  "components/training/PlanCalendar.tsx#Button[collapse-week]1": {
+  "components/training/PlanCalendar.tsx#Button1": {
     "floor": 44,
     "padY": null,
     "font": null,
     "radius": null,
     "height": 47,
-    "width": "100%"
+    "width": "full"
   },
   "components/training/PlanCalendar.tsx#Button2": {
     "floor": 44,
@@ -1208,13 +1200,13 @@
     "height": 47,
     "width": "full"
   },
-  "components/training/PlanCalendar.tsx#Button3": {
+  "components/training/PlanCalendar.tsx#Button[collapse-week]3": {
     "floor": 44,
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
-    "width": "auto"
+    "height": 47,
+    "width": "100%"
   },
   "components/training/PlanCalendar.tsx#Button4": {
     "floor": 44,
@@ -1222,9 +1214,25 @@
     "font": null,
     "radius": null,
     "height": 47,
+    "width": "full"
+  },
+  "components/training/PlanCalendar.tsx#Button5": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
     "width": "auto"
   },
-  "components/training/PlanCalendar.tsx#Button[move-this-session]5": {
+  "components/training/PlanCalendar.tsx#Button6": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "auto"
+  },
+  "components/training/PlanCalendar.tsx#Button[move-this-session]7": {
     "floor": 44,
     "padY": null,
     "font": 16,
@@ -1232,7 +1240,7 @@
     "height": 49,
     "width": "44px"
   },
-  "components/training/PlanCalendar.tsx#Button6": {
+  "components/training/PlanCalendar.tsx#Button8": {
     "floor": 44,
     "padY": null,
     "font": null,

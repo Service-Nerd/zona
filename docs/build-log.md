@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — FIRSTRUN-MARATHON-01 + BUTTON-MIGRATION-02 · two items that ended smaller than they started
+**Shipped:** the missed-session sheet trimmed to five controls with a gate that forbids it claiming a shift; two more controls onto the shared Button; and the button-migration item closed on a measurement rather than a sweep.
+
+**Dev learning:** the missed-session ruling wanted the locked line *"Plan's been shifted."* on the sheet. The handler says the sheet renders first, the adjustment fires only after the runner answers, the call is fire-and-forget so the sheet closes before any outcome exists, and for *"Too tired"* it is absorbed and never fires at all. There is **no moment there** at which that sentence is true — and the two surfaces that *do* announce it already exist and already gate on a real adjustment. The build turned out to be deleting a redundant Dismiss button and writing a gate that stops anyone putting the claim back.
+
+**Product/creator learning:** `BUTTON-MIGRATION-02` has read as a long slog since it was filed — "the other 178 controls". The number went 178 → 58 → 21 → about 5 across three measurements today, and every correction was my own classifier being too blunt. Reading all 55 remaining controls instead of counting them: selected-state toggles the board ruled must not convert, the shared primitives themselves (a primitive built on `Button` is circular), rows with a title and a subtitle that `Button` would flatten into a label, and two controls carrying semantic colour. **"178 controls to migrate" was never 178 controls of work** — it was a count of `<button>` tags.
+
+**AI-building learning:** my new gate failed on its first run **against my own comment** — the one quoting the forbidden sentence to explain why it is absent. The repo had already recorded this exact class in its pre-commit hook (*"a colour inside a comment is prose"*) and the remedy is the same helper. A claim inside a comment is prose too.
+
+**The honest bit:** I corrected my own measurement three times on one item in one day, each time downward, each time after someone (or a test) made me look again. The first number was in the item; the second was my grep; the third was my classifier. Only the fourth came from reading the code.
+
+**Hook material:** a backlog item that said "178 controls to migrate" closed at about five, because most of the rest were hand-rolled on purpose and the board had already said so.
+
+**Postable?:** yes — "the number went 178 to 5 and every correction was my own tool" is honest and transferable.
+
 ## 2026-10-05 — TYPESCALE-APP-GATE-01 + BUTTON-MIGRATION-02 batch 8b · both measurements rescoped their own item
 **Shipped:** a type-scale gate for the app, and the paywall's primary CTA onto the shared Button.
 
