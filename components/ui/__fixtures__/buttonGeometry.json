@@ -388,10 +388,18 @@
     "padY": null,
     "font": null,
     "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "app/dashboard/UpgradeScreen.tsx#Button3": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
     "height": 44,
     "width": "auto"
   },
-  "app/dashboard/UpgradeScreen.tsx#Button3": {
+  "app/dashboard/UpgradeScreen.tsx#Button4": {
     "floor": 44,
     "padY": null,
     "font": null,

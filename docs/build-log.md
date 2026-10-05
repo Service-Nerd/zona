@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — TYPESCALE-APP-GATE-01 + BUTTON-MIGRATION-02 batch 8b · both measurements rescoped their own item
+**Shipped:** a type-scale gate for the app, and the paywall's primary CTA onto the shared Button.
+
+**Dev learning:** the type-scale item read as "the app's scale is ungated, go gate it". Measured: 649 inline font sizes across 123 files, 22 distinct values — and the published scale declares **ten**. The most-used size in the entire app is **13px, 169 uses, and it is not in the scale**. That is not the code violating the doc; it is the doc failing to describe the product. So the gate holds the gap as a falling register and carries one arm that **goes green the day the board declares 13px**, telling its reader to delete it. A check that asks to be removed when it has won is better than one that quietly enforces a wrong number.
+
+**Product/creator learning:** the button item says "the other 178 controls" and reads like a long slog. Classifying the remaining 58 gives **21 convertible** — the rest are 18 selected-state (which the board ruled this morning must *not* convert), 11 preview-harness and 6 icon-only. The slog was mostly a category error. And the one control I did convert was still painted through `--teal`, a System-B token retired by ADR-007 and surviving on an alias: **the most important tap on the paywall was going through a compatibility shim.**
+
+**AI-building learning:** my classifier was wrong on 2 of the 3 controls in that file. It keyed on `aria-pressed` to detect selected state, and the monthly/annual price cards don't have it — so it called two direct purchase CTAs "convertible" when `Button` would have flattened a price, a period and a badge into a label. **A classifier keyed on one attribute mis-sorts everything that doesn't use it**, and I only caught it by reading the three controls before touching them.
+
+**The honest bit:** `tsc` caught me spreading a Map in the new test file — the exact gotcha `CLAUDE.md` documents in its TypeScript section, which I have read many times today. And the geometry baseline went red on the conversion, correctly: I re-baselined and declared the number rather than quietly accepting it, which is the only reason that register means anything.
+
+**Hook material:** the design doc declares ten font sizes. The app uses twenty-two, and the single most common one — 169 uses — isn't on the list.
+
+**Postable?:** yes — "your style guide omits your most-used value" is a sharp, checkable point.
+
 ## 2026-10-05 — FIRSTRUN-MOMENTS-01 complete · and FIRSTRUN-MARATHON-01 halted on a false sentence
 **Shipped:** nothing. Both outcomes were findings, and both were worth more than the code would have been.
 

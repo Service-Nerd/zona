@@ -237,3 +237,63 @@ stand.
 inventing one would be the ornament this ruling forbids*, which is recorded rather than skipped ·
 and the measurement held by `uiPatternsEnforcement.test.ts`'s register, since the new section names
 its own evidence.
+
+---
+
+# Re-sitting — `FIRSTRUN-MARATHON-01`, touchpoint 7 (the first missed session)
+
+**Why re-sat:** the 2026-10-05 clearance ruling was built on an ordering the handler contradicts.
+**Evidence** (`DashboardClient.tsx:2918`): the sheet renders → the runner picks a reason →
+`upsertCompletion(status:'skipped', skip_reason)` → `/api/adjust-plan` fires, **and only for 3 of
+the 4 reasons** — `'Too tired'` is absorbed and **never adjusts**.
+
+## 🔍 Settled-ground scan
+`LOG-ONE-INTENTION-01` (one intention, one verb, one control) · hard rule 7 (a line describing a
+consequence the engine does not produce is a claim) · the standing kill on gamifying a missed
+session · `SHEET-DAY-QUESTION-01`, ruled this morning on **the same trap**: the useful sentence was
+the false one. **Nothing here reverses a row.**
+
+## 🎓 Sierra
+*"My sentence was right about the moment and wrong about the clock. I was describing how a runner
+should feel **after** the plan absorbs a missed session — and I attached it to the screen that
+appears **before** anything has happened. The feeling I wanted belongs to the outcome, not the
+question."*
+
+## 📱 Wroblewski
+*"And my own ruling is the one that has to give. I said no multi-option chooser. Four buttons is a
+chooser — but it is also the only thing that **causes** the adjustment. Removing it to satisfy me
+would delete the event Sierra's sentence announces. **The chooser stays.** What I will not accept is
+six controls on that sheet."*
+
+## ✋ Silvanto
+*"Then this is two moments, not one, and the defect is that they were drawn as one screen. The
+question is a question. The reassurance is a **consequence**, and a consequence shown before it
+happens is a lie however kindly it is worded."*
+
+## 🧭 Zhuo (chair)
+*"Split it. The sheet asks; something else says what happened. And the 'Too tired' path is the proof
+the split is right — no adjustment ever fires there, so on that path there is **nothing true to
+say** and the honest surface says nothing at all."*
+
+## 🎪 Collins
+*"No objection. One warning: the second surface must not become a celebration. A missed session is
+the highest-risk place in this app to put a streak, and that is already a standing kill."*
+
+## ⚖️ RULING — **CORRECTED. SHIP AS TWO SURFACES, NOT ONE.**
+
+| | |
+|---|---|
+| **The sheet (asks)** | Keeps the four reasons — **they cause the adjustment**, and Wroblewski withdraws his own no-chooser ruling on that ground. **Cut to the question and the reasons**: the "I actually ran it" escape stays, `Dismiss` is the sheet's own close. **No recap of what was lost.** Six controls → four plus the escape |
+| **The confirmation (tells)** | `BRAND…planAdjusted` appears **only after `/api/adjust-plan` has actually adjusted** — on the existing `PendingAdjustmentBanner` / adjustment surface, which already exists for exactly this |
+| **The `'Too tired'` path** | 🔴 **Says NOTHING, deliberately.** No adjustment fires, so there is no true sentence. **Silence is the honest state** — "empty means calm, not broken" |
+
+⛔ **No new surface is authorised.** The confirmation uses the adjustment surface that already
+exists; inventing a second card is the ornament this board has killed twice.
+
+**Artifacts:** pattern row (the ask/tell split) · no new token or constant — the locked string and
+the adjustment surface both exist · a check that the sheet renders **no shift claim**, and that the
+claim's only site is behind an adjustment that actually happened.
+
+## ⚠️ What this does not settle
+**Reason-capture rate is untouched** — the chooser stays, so no coaching-data question arises. Had
+the chooser been removed, that routes to 🏃 the Coaching Board. **Nothing has run on a device.**

@@ -482,22 +482,23 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         )}
 
         {/* Primary CTA */}
-        <button
+        {/* 🔴 BUTTON-MIGRATION-02 batch 8b — the screen's primary CTA, hand-rolled
+            with eleven properties `Button` already owns. ✋ Silvanto's ruling applies
+            verbatim: "the floor is a symptom of OWNERSHIP" — it inherits the 44px
+            minimum, the shared disabled state and the focus ring for free.
+            ⚠️ AND IT DROPS A RETIRED TOKEN. `--teal` is System B, aliased to moss in
+            `globals.css` since ADR-007; the most important tap on the paywall was
+            still painted through the compatibility shim. `variant="primary"` is the
+            real `--moss`. */}
+        <Button
+          variant="primary"
+          fullWidth
           onClick={() => handleSubscribe(true)}
           disabled={loading}
-          style={{
-            marginTop: 'var(--space-5)', width: '100%', padding: '16px',
-            background: loading ? 'var(--border-col)' : 'var(--teal)',
-            border: 'none', borderRadius: '10px',
-            fontFamily: 'var(--font-ui)', fontWeight: 600,
-            fontSize: '1rem', color: 'var(--ink)',
-            cursor: loading ? 'default' : 'pointer',
-            letterSpacing: '0.02em',
-            transition: 'opacity 0.15s',
-          }}
+          style={{ marginTop: 'var(--space-5)' }}
         >
           {loading ? 'Loading…' : 'Start your subscription'}
-        </button>
+        </Button>
 
         {/* Free path — always visible */}
         <Button variant="ghost" size="compact" 

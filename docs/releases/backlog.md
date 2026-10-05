@@ -890,7 +890,23 @@ reason the number moved cannot be lost.
 
 ---
 
-#### 🟡 `TYPESCALE-APP-GATE-01` — the type-scale gate is marketing-only; the app's scale is ungated *(P3, filed 2026-10-05)* 🧭 **DESIGN BOARD**
+#### ✅ `TYPESCALE-APP-GATE-01` — SHIPPED 2026-10-05. The app is gated, and the DOC is what is wrong 🧭 **DESIGN BOARD**
+
+> ✅ **SHIPPED — `lib/ui/appTypeScale.test.ts`.** 📐 **Measured first, and the headline is not what
+> this item expected: 649 inline `fontSize` uses across 123 app files, 22 distinct sizes. The doc
+> declares TEN** (10 11 12 14 15 17 20 26 44 56). **Twelve sizes are undeclared — 246 uses, 37.9% of
+> all app type.**
+> 🔴 **AND THE BIGGEST IS THE DOC'S FAULT, NOT THE CODE'S: `13px` has 169 uses — the single
+> most-used size in the app — and it is not in the scale.** A scale omitting the product's most
+> common size is not being violated; it is **failing to describe it**. Changing the published scale
+> is the board's, so the gate holds the gap instead of pretending it is zero.
+> ⚠️ **The marketing approach does NOT transfer, as this item predicted.** That gate asserts every
+> size is a `--fs-*` token; the app is inline-style-heavy and uses raw px, so the same check would
+> fail 649 times on day one and be deleted rather than satisfied.
+> **Three registers, all falling-only:** distinct sizes at **22** · undeclared uses at **246** · and
+> a standing arm that **goes GREEN the day the board declares 13px**, telling its reader to delete
+> it. **Falsified twice:** a 23rd size reds the set arm; declaring 13px reds the standing arm.
+
 
 **Found by `UI-PATTERNS-ENFORCEMENT-01`'s measurement**, and it is the one real gap that audit
 turned up — **far narrower than the section it sits in.**
@@ -3626,6 +3642,22 @@ never claimed it was safe for text — the gap is real and was simply never asse
 token in any other file still fails. Falsified: moving it to another file turns the gate red.
 
 ### 🧭 `BUTTON-MIGRATION-02` — the other 178 controls, batch by batch
+
+> 🔴 **BATCH 8b 2026-10-05, AND THE MEASUREMENT RESCOPES THE WHOLE ITEM: THE CONVERTIBLE
+> POPULATION IS 21, NOT 58.** Classified every remaining hand-rolled `<button>`:
+> **22 convertible** (one of which is `Button.tsx` itself → **21**) · **18 selected-state**, which
+> the Design Board ruled on 2026-10-05 must **NOT** go into `Button` (the moss active fill is the
+> only selected affordance) · **11 preview harness** · **6 icon-only** (a different primitive).
+> **This item reads as a long slog and is a small finite job.**
+> ✅ **Batch 8b shipped: `UpgradeScreen`'s primary CTA** — eleven hand-rolled properties `Button`
+> already owns, and it was still painted through **`--teal`, a RETIRED System-B token** aliased to
+> moss since ADR-007. **The most important tap on the paywall was going through a compatibility
+> shim.** Now `variant="primary" fullWidth`; `UpgradeScreen` has **0 controls under 44px**.
+> ⚠️ **MY CLASSIFIER WAS WRONG ON 2 OF THE 3 IN THAT FILE.** The monthly/annual price *cards* have
+> no `aria-pressed`, so it called them convertible — they are two direct purchase CTAs carrying a
+> price, a period and a badge, and `Button` would delete that layout. **Read the control before
+> converting it; a classifier that keys on one attribute mis-sorts anything that does not use it.**
+
 
 > ⚖️ **DESIGN BOARD RULED 2026-10-05 — SHIP, MERGED into `TAP-TARGET-DECISIONS-01`.**
 > Record: `docs/decisions/2026-10-05-design-board-backlog-clearance.md`. Batch by **FILE**, worst
