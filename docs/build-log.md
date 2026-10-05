@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-05 — the adoption sitting · the cost we accepted turned out not to exist
+## 2026-10-05 — SESSIONPOPUP-PRIMITIVE-ADOPT-01 + MKT-KITBYLINE-COPY-01 · the cost we accepted turned out not to exist
 **Shipped:** the session metric toggle adopts `SegmentedControl`; the marketing site's hand-copied byline and its copied glyph are deleted. Two adoptions refused, with reasons.
 
 **Dev learning:** the board accepted a visible cost — the toggle becoming a "full-width band" — and argued for it on the merits. Then the founder told me to make sure the UI was actually right, I rendered it at 375px, and **there was no band**. The control is 124px inside a 150px metric card, the same width as the label and value above it, and the two cards either side stay exactly equal at 150×120. Everyone, including the refusal comment I had written into the code that morning, had read `flex: 1` as *"it will fill the screen"*. **It fills its parent.** The cost was argued, accepted, and did not exist — and the error ran in the direction of *not* doing the right thing.
