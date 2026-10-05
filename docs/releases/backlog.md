@@ -9674,7 +9674,7 @@ this cohort should start here, not from the 29 historical accounts, most of whic
 
 ---
 
-### `FIRSTRUN-MOMENTS-01c` — the ceremony says what they just told us · **S/M**
+### ✅ `FIRSTRUN-MOMENTS-01c` — SHIPPED. `lib/plan/ceremonyLines.ts → ceremonyLinesFor`, rendered by `GeneratingCeremony`
 
 **Simple.** Replace the five fixed ceremony lines with lines derived from **this runner's** `GeneratorInput`.
 
@@ -9693,7 +9693,7 @@ Proposed, to them:
 
 ---
 
-### `FIRSTRUN-MOMENTS-01d` — the distance reframe · **S**
+### ✅ `FIRSTRUN-MOMENTS-01d` — SHIPPED. `lib/plan/planScale.ts` (`totalKm`) + `PlanScaleCard`
 
 **Simple.** One line on the reveal: *"Between now and April you'll run about 900 km. The race is 42 of them."*
 
@@ -9704,7 +9704,7 @@ Proposed, to them:
 
 ---
 
-### `FIRSTRUN-MOMENTS-01e` — name the worst day · **S** · ⚠️ conditional
+### ✅ `FIRSTRUN-MOMENTS-01e` — SHIPPED. `planScale`'s `hardestRun`/`hardestMonth`, derived LIVE per Hutchinson's binding condition
 
 **Simple.** *"The hardest thing this plan asks of you is one 3h 28 run, in March. Once."*
 
@@ -9717,7 +9717,7 @@ Proposed, to them:
 
 ---
 
-### `FIRSTRUN-MOMENTS-01f` — "you are one of 500" · **M** · 🔴 BLOCKED
+### ✅ `FIRSTRUN-MOMENTS-01f` — SHIPPED. `lib/plan/charityCohort.ts` + `CharityCohortCard`; the blocker was retracted
 
 **Simple.** Once, for a charity-grant runner: *"You're one of 500 running London for Make-A-Wish. Most of them have never done this either."*
 
@@ -9731,7 +9731,7 @@ Proposed, to them:
 
 ---
 
-### ⚖️ SLT — `FIRSTRUN-MOMENTS-01`: make the generation moment feel like something. Sat 2026-09-18. 🧭 **DESIGN BOARD** — what a moment feels like is this board's, per ADR-023
+### ✅ SLT — `FIRSTRUN-MOMENTS-01`: the sitting record. ALL SIX sub-items BUILT (see the specs section). Sat 2026-09-18. 🧭 **DESIGN BOARD** — what a moment feels like is this board's, per ADR-023
 
 **Founder's brief.** *"Up to 500 marathon runners, the vast majority have never run the distance. Drop-off is high and some never start. When they use the app I want them to feel something. On the wizard and the generation, what can we do to inspire them, or let them know they're not alone, or that they can do this?"*
 
