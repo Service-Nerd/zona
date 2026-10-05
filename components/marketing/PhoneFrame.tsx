@@ -56,6 +56,7 @@
 // same reason.
 
 import { BRAND } from '@/lib/brand'
+import CoachByline from '@/components/shared/CoachByline'
 import { Wordmark } from '@/components/ui/Wordmark'
 
 import { PhoneShell } from '@/components/marketing/PhoneShell'
@@ -95,58 +96,6 @@ const DAYS = [
   { letter: 'S', date: 11, dot: 'var(--s-inter)' },
   { letter: 'S', date: 12, dot: 'var(--s-long)' },
 ]
-
-/** AIMark sparkle — copy of components/shared/AIMark.tsx (single-source glyph). */
-function Sparkle({ size = 10, color = 'var(--warn)' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true">
-      <path d="M5 1 L6 5 L10 6 L6 7 L5 11 L4 7 L0 6 L4 5 Z" fill={color} />
-      <path d="M11 9 L11.4 10.6 L13 11 L11.4 11.4 L11 13 L10.6 11.4 L9 11 L10.6 10.6 Z" fill={color} />
-    </svg>
-  )
-}
-
-/** Kit byline — copy of CoachByline: gradient avatar with anchored AIMark,
- *  name + role line. Coach surfaces use the 'warn' amber variant. */
-function KitByline({ role }: { role: string }) {
-  const initial = BRAND.coachName.charAt(0).toUpperCase()
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-      {/* COPY-CEILING-01 — "under 145 bpm", not "132-145".
-          §12 makes an easy run a CEILING, not a band: going slower than the
-          cap breaks nothing, and the guide we publish says so in as many
-          words. A range tells the runner 132 is a floor they should reach,
-          which is the opposite instruction, on the most-seen pixel on the
-          site. The card directly below it already reads "< 145 bpm", so the
-          two halves of one mockup were disagreeing. */}
-      <span style={{
-        position: 'relative', width: '22px', height: '22px', borderRadius: '50%',
-        background: 'var(--warn)',
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        color: 'var(--card)', fontSize: '11px', fontWeight: 700, letterSpacing: '-0.02em',
-        flexShrink: 0,
-      }}>
-        {initial}
-        <span style={{
-          position: 'absolute', bottom: '-3px', right: '-3px',
-          background: 'var(--warn-bg)', borderRadius: '50%', padding: '2px',
-          display: 'inline-flex', lineHeight: 0,
-        }}>
-          <Sparkle size={10} color="var(--warn)" />
-        </span>
-      </span>
-      <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.005em' }}>
-          {BRAND.coachName}
-        </span>
-        <span style={{
-          fontSize: '10px', fontWeight: 600, color: 'var(--warn-strong)',
-          letterSpacing: '0.06em', textTransform: 'uppercase',
-        }}>{role}</span>
-      </span>
-    </span>
-  )
-}
 
 /** Bottom-nav tab — the real DashboardClient nav icons (Today · Plan · Coach ·
  *  Me; Strava is admin-only and has no tab — CLAUDE.md). SVGs copied from
@@ -226,7 +175,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
           <div style={{ position: 'relative', background: 'var(--warn-bg)', borderRadius: '14px', padding: '16px 18px 16px 26px' }}>
             <span style={{ position: 'absolute', left: '8px', top: '16px', bottom: '16px', width: '3px', borderRadius: '2px', background: 'var(--warn)' }} />
             <div style={{ marginBottom: 'var(--space-2)' }}>
-              <KitByline role="Your coach" />
+              <CoachByline color="warn" role="Your coach" />
             </div>
             <div style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--coach-ink)' }}>
               Yesterday held Zone 2 the whole way. That&rsquo;s the win. Keep today just as dull.

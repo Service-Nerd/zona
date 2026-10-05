@@ -793,7 +793,30 @@ one, the honest ruling may be "leave the override and revisit at two".
 > ⚠️ Both of these are *unfixed and untracked*, not accepted trade-offs — the distinction that
 > item's proposal turns on.
 
-### 🔲 `SESSIONPOPUP-PRIMITIVE-ADOPT-01` — three controls that SHOULD adopt a shared primitive and cannot without losing something *(P3, filed 2026-10-05)* 🧭 **DESIGN BOARD**
+### ✅ `SESSIONPOPUP-PRIMITIVE-ADOPT-01` — RULED + BUILT 2026-10-05. One adoption, two refusals, and the accepted cost did not exist 🧭 **DESIGN BOARD**
+
+> ⚖️ **Design Board adoption sitting, 2026-10-05** — `docs/decisions/2026-10-05-design-board-adoption-sitting.md`.
+> **(c) metric toggle → `SegmentedControl` — 🟢 SHIP and BUILT.** It is the primitive's own named use
+> case. 🎪 Collins answered his own taxonomy objection against himself: *"the other two are chips the
+> way a hammer is a mallet — this one IS a segmented control."*
+> **(a) fatigue tags → 🔴 DON'T SHIP, and `Chip` does NOT gain a colour axis.** Fresh/Fine/Heavy/
+> Wrecked is a **scale**; the colour is the content. ⚠️ Refused on **correctness of meaning, not by
+> veto** — Silvanto asked for that explicitly.
+> **(b) skip reasons → 🔴 DON'T SHIP.** 🎓 Sierra: adoption means a bigger, whiter control for
+> choosing **why you missed a run**.
+> 🔴 **AND THE ACCEPTED COST DID NOT EXIST.** The board accepted a *"full-width band"* for (c) and
+> 📱 Wroblewski argued for it on the merits. **Rendered and measured at 375px: the control is
+> 124 × 50px inside a 150px metric card** — the same width as the "Distance" label and "11 km" value
+> above it — and `DISTANCE` / `EST. PACE` stay **exactly equal at 150 × 120, top 323, bottom 442**.
+> 🥇 **`flex: 1` is a statement about a PARENT, not about a screen.** The refusal note written into
+> the code that morning said it would fill the session card; it was wrong, **and wrong in the
+> direction of not doing the right thing.** Both the sitting record and the code comment carry the
+> measurement.
+> ⚠️ **The board's one condition was discharged with a measurement, not a preference:** the hidden
+> tap-active-to-reset is **dropped deliberately**, because `isMetricCustom` gates **both** it and the
+> visible "Reset to global" control — so it was redundant in **every state where it existed**. Two
+> paths to one outcome with one undiscoverable is `LOG-ONE-INTENTION-01`'s class.
+
 
 **Filed by `TAP-TARGET-DECISIONS-01` batch 8a, which measured the ruling's own assumption and found
 it does not hold for this file.** ✋ Silvanto ruled *"the floor is a symptom of OWNERSHIP — convert
@@ -867,7 +890,31 @@ reason the number moved cannot be lost.
 
 ---
 
-### 🔲 `MKT-KITBYLINE-COPY-01` — the marketing site has a hand-copied `CoachByline`, and the component next to it uses the real one *(P3, filed 2026-10-05)* 🧭 **DESIGN BOARD**
+### ✅ `MKT-KITBYLINE-COPY-01` — RULED + BUILT 2026-10-05. 64 lines deleted; filed and closed the same day 🧭 **DESIGN BOARD**
+
+> ⚖️ **Design Board adoption sitting, 2026-10-05 — 🟢 SHIP.** `KitByline` (52 lines) and its local
+> `Sparkle` (12 lines) are **deleted**; the marketing still renders the real
+> `<CoachByline color="warn" role="Your coach" />`.
+> ⚠️ **The argument FOR a pinned copy was made and is recorded, not ignored.** ✋ Silvanto: *"a
+> marketing still is a photograph — you do not want a component edit to change a shipped page's
+> picture without anyone looking."* **Rejected on one ground:** `TabbedPhone.tsx` already rendered
+> the real component on the same pages, so the house position was settled in code. 🧭 Zhuo: *"one of
+> the two is already the answer."*
+> 📐 **Measured before and after, at 375px, in the browser** — not reasoned: **89 → 91px wide, 23px
+> tall, same position.** A 2px delta on a marketing hero.
+> ➕ **An accessibility gain nobody had counted: the copy had NO `aria-label` at all.** The real
+> component carries `"Kit · your coach"`, so a screen reader went from nothing to the byline.
+> ✅ **`Sparkle` went in the same change** (📱 Wroblewski's condition) — a second glyph with no
+> caller is how the copy returns.
+> ✅ **AND THE GATE'S EXEMPTION CAME OFF.** `coachBylineOwner.test.ts` exempted `PhoneFrame.tsx`
+> **by name, for one day**. It named this item so it could not be quietly forgotten, and it was not:
+> the exemption is deleted and the gate is now strictly tighter — `CoachByline.tsx` is the only file
+> allowed to draw Kit's avatar initial, app or marketing. **A register that only ever grows is an
+> amnesty.** Falsified: re-adding a copy to `PhoneFrame` reds it.
+> ⚠️ 🎓 Sierra's condition is live: the still now carries a **provenance claim** (the AIMark), and it
+> is currently TRUE because Kit writes that line. **If the marketing surface ever shows text no model
+> wrote, the AIMark must go with it.**
+
 
 **Found while building `COACHBYLINE-EMPTY-VARIANT-01`**, by the gate written for that item: the
 `BRAND.coachName.charAt(0)` avatar initial has **two** sites, not one.

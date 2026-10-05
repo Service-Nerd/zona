@@ -26,17 +26,20 @@ const APP_FILES = execSync(
   { encoding: 'utf8' },
 ).trim().split('\n').filter(f => f && !f.includes('.test.'))
 
-// ⚠️ EXEMPT BY NAME, WITH ITS REASON AND ITS ITEM — not a blanket skip.
-//   • CoachByline.tsx IS the owner.
-//   • PhoneFrame.tsx declares `KitByline`, whose own doc comment says "copy of
-//     CoachByline". That is a REAL second duplication and it is FILED as
-//     `MKT-KITBYLINE-COPY-01` for the 🧭 Design Board — whether a marketing still
-//     uses the live component or a deliberately pinned copy is a design decision,
-//     not a defect, and `TabbedPhone.tsx` next to it uses the real one.
-//     **The exemption is the record**: it cannot be quietly forgotten while it
-//     names the item that owns it.
-const OWNER   = 'components/shared/CoachByline.tsx'
-const FILED_ELSEWHERE = 'components/marketing/PhoneFrame.tsx'
+// ✅ THE EXEMPTION IS GONE, AND THAT IS THE POINT OF A RATCHET.
+// `PhoneFrame.tsx` was exempt by name for one day: it declared `KitByline`, whose
+// own doc comment said "copy of CoachByline", plus a local `Sparkle` copying
+// `AIMark`. The 🧭 Design Board ruled SHIP on 2026-10-05 (adoption sitting) —
+// `TabbedPhone.tsx` beside it already rendered the real component, so the house
+// position was settled in code — and both copies were deleted.
+//
+// ⚠️ The exemption named its item (`MKT-KITBYLINE-COPY-01`) precisely so it could
+// not be quietly forgotten, and it was not: it lasted one day and came off when
+// the debt was paid. **A register that only ever grows is an amnesty.**
+//
+// The gate is now strictly tighter: `CoachByline.tsx` is the ONLY file allowed to
+// draw Kit's avatar initial, app or marketing.
+const OWNER = 'components/shared/CoachByline.tsx'
 
 describe('COACHBYLINE-EMPTY-VARIANT-01 — one owner of Kit\'s byline', () => {
   it('the population is real', () => {
@@ -51,7 +54,7 @@ describe('COACHBYLINE-EMPTY-VARIANT-01 — one owner of Kit\'s byline', () => {
     // has no other legitimate use. Matching the EXPRESSION, not the word "avatar",
     // because a name is not a usage.
     const offenders = APP_FILES.filter(f => {
-      if (f === OWNER || f === FILED_ELSEWHERE) return false
+      if (f === OWNER) return false
       return /coachName\.charAt\(/.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))
     })
     expect(offenders,

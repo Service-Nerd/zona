@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — the adoption sitting · the cost we accepted turned out not to exist
+**Shipped:** the session metric toggle adopts `SegmentedControl`; the marketing site's hand-copied byline and its copied glyph are deleted. Two adoptions refused, with reasons.
+
+**Dev learning:** the board accepted a visible cost — the toggle becoming a "full-width band" — and argued for it on the merits. Then the founder told me to make sure the UI was actually right, I rendered it at 375px, and **there was no band**. The control is 124px inside a 150px metric card, the same width as the label and value above it, and the two cards either side stay exactly equal at 150×120. Everyone, including the refusal comment I had written into the code that morning, had read `flex: 1` as *"it will fill the screen"*. **It fills its parent.** The cost was argued, accepted, and did not exist — and the error ran in the direction of *not* doing the right thing.
+
+**Product/creator learning:** two of the three adoptions were refused and the refusals are better reasoned than the adoption. Fresh/Fine/Heavy/Wrecked is a scale, and the colour is the content — giving the canonical chip a colour axis to serve one screen would make two other screens inherit a meaning they don't have. And converting the skip reasons would mean a bigger, whiter control for choosing *why you missed a run*, which is the product drawing attention to the moment someone failed. A design system absorbing everything is not the goal.
+
+**AI-building learning:** the gate I wrote yesterday exempted the marketing file **by name, and named the item that owned the exemption**. That exemption lasted one day. When the board ruled, the copy went and the exemption came off, leaving the gate strictly tighter than before. That's the difference between a register and an amnesty — an exemption that cites its item is a debt; one that just says "skip this" is a hole.
+
+**The honest bit:** I only measured because I was told to. The build was committed-ready on reasoning, the reasoning was wrong, and nothing in my process would have caught it — the test suite was green, the types were clean, the board had ruled. Rendering it took four minutes.
+
+**Hook material:** the design board accepted a visible cost, the build wrote a comment explaining it, and when someone finally looked at the screen the cost wasn't there. `flex: 1` fills a parent, not a page.
+
+**Postable?:** yes — "we accepted a cost that didn't exist" is a good, honest beat about reasoning versus looking.
+
 ## 2026-10-05 — SHEET-DAY-QUESTION-01 · the honest line is the one that refuses to predict
 **Shipped:** the modify sheet now says when its two day controls disagree. It still says nothing about what the plan will do, and that is the interesting part.
 
