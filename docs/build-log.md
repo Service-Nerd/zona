@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — TAP-TARGET-DECISIONS-01 batch 8a · the ruling was right about the wrong level
+**Shipped:** one owner for the 44px tap-target floor, and five controls off the under-floor register — including an 18px control, the smallest in the product.
+
+**Dev learning:** the board's ruling was *the floor is a symptom of ownership — convert the control and the height is correct for free*. That was measured and true for the marketing CTA. It is false for this file, and measuring is the only reason I know: all four sub-floor controls are selected-state controls, which our own rulings forbid sweeping into `Button` because the active fill is the only selected affordance we have. Converting them would have deleted a semantic colour, changed a type scale, or turned a compact pill into a full-width band. **So the ruling was right about the principle and wrong about the level** — the thing with no owner was not the controls, it was the number 44, written out in twenty-nine places including three separate named constants, two of them in the same file.
+
+**Product/creator learning:** I nearly shipped the conversions because the ruling said to. The acceptance criteria I wrote this morning — *"hand-rolled 59 → 52"* — assumed all seven controls convert, and it was written before anyone looked at them. Four hours later the measurement said zero can. That is the same lesson as every other item today, just applied to my own words instead of someone else's.
+
+**AI-building learning:** re-homing the value **broke the measuring instrument**, and the instrument had written the warning down itself: *"doing the right thing made it measure worse... a harness that punishes good code is a harness that will be worked around."* The moment the constants read `= TAP_TARGET_MIN_PX`, the px-literal reader lost them and three controls that are 44px reported 30, 35 and 43. I fixed the resolver rather than reverting — literal, then local alias, then one import hop. The alias step only exists because I ran it and the first version still missed a locally-declared name that merely aliases an import. **Predicting which hop you need is not the same as running it.**
+
+**The honest bit:** two of my own numbers were wrong today in this one item. I said 26 inline literals; the real figure for that predicate is 17, because my grep also matched CSS. And the new gate's vacuity arm failed on its first run for the dullest possible reason — the owner file was untracked, so `git ls-files` could not see it. That is a lesson I already have written down as *stage before you verify*.
+
+**Hook material:** a value written in 29 places, three of them named constants — and giving it one owner made the test harness report three correct controls as broken.
+
+**Postable?:** yes — "the ruling was right about the wrong level" plus the harness-punishes-good-code beat.
+
 ## 2026-10-05 — COACHBYLINE-EMPTY-VARIANT-01 · the rule created a state the component couldn't express
 **Shipped:** `<CoachByline empty />`. Twenty-three hand-rolled lines in the dashboard became one.
 

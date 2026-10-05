@@ -90,6 +90,42 @@ describe('button geometry', () => {
     // ModifyPlanSheet, Chip and DashboardClient. **The component extracted to be
     // reused is the one missing the floor.**
     const REGISTERED_UNDER_FLOOR = [
+      // ✅ FIVE CAME OFF 2026-10-05 (`TAP-TARGET-DECISIONS-01` batch 8a): all four
+      // `SessionPopupInner` entries (18 / 30 / 37 / 38px — the 18 was the smallest
+      // control in the product) and `Chip` (37px).
+      //
+      // 🔴 AND NOT ONE OF THEM WAS CONVERTED, WHICH CONTRADICTS THE RULING'S OWN
+      // ASSUMPTION AND IS WHY THE MEASUREMENT CAME FIRST. ✋ Silvanto ruled "the floor
+      // is a symptom of OWNERSHIP — convert the control and the height is correct for
+      // free", which held exactly for `app/page.tsx`. Measured on `SessionPopupInner`,
+      // all four are SELECTED-STATE controls, which `design-rulings.md` forbids
+      // sweeping into `Button` because the active fill is the only selected affordance
+      // there is — and each would lose something real:
+      //   · fatigue tags carry a colour PER TAG (Fresh/Fine/Heavy/Wrecked); `Chip` is
+      //     moss-only, so conversion DELETES MEANING (`CHIP-SEMANTIC-COLOUR-01`)
+      //   · skip reasons would change type scale 12 -> 14px and ground `--bg` -> `--card`
+      //     (`SKIP-REASON-CHIP-01`)
+      //   · the metric toggle would go from a compact `fit-content` pill to a FULL-WIDTH
+      //     band, because `SegmentedControl`'s segments are `flex: 1`
+      //     (`METRIC-TOGGLE-SEGMENTED-01`)
+      //   · the picker row is a full-width selected LIST ROW and no primitive owns that
+      //     shape; inventing one for a single call site is how a system acquires
+      //     near-duplicates
+      //
+      // 🥇 WHAT THE MEASUREMENT FOUND INSTEAD: the floor VALUE had no owner. `44` was
+      // written out in **29 places** — `TAB_MIN_HEIGHT_PX`, `PROVENANCE_MIN_HEIGHT_PX`
+      // and `SEGMENTED_MIN_HEIGHT_PX` (two of them in one file) plus **26 inline
+      // literals**. `components/ui/tapTarget.ts` is the one owner now and all three
+      // constants derive from it. That is the ownership fix, one level up from where the
+      // board was looking.
+      //
+      // ⚠️ AND RE-HOMING IT BROKE THE INSTRUMENT, exactly as `resolveSizeConstants`'s
+      // own header predicted ("doing the right thing made it measure worse"). The
+      // moment the constants became `= TAP_TARGET_MIN_PX`, the literal reader lost them
+      // and THREE controls that are 44px measured 30, 35 and 43. The resolver now
+      // follows a literal, a LOCAL ALIAS, then one `@/` import hop — the alias step
+      // added only after running it, because the first import-hop version still missed
+      // a locally-declared name that merely aliases an import.
       // ── preview harnesses, no ruling needed ──
       'app/onboarding-preview/page.tsx = 32px',
       'app/onboarding-preview/page.tsx = 32px',
@@ -122,12 +158,7 @@ describe('button geometry', () => {
       // under a relocation (82 both sides there). A register keyed by FILE re-keys whenever
       // code moves, which is `BUTTON-GEOMETRY-KEY-02`'s subject and is not solved here.
       'components/dashboard/PlanAdjustmentsScreen.tsx = 41px',
-      'components/dashboard/SessionPopupInner.tsx = 18px',
-      'components/dashboard/SessionPopupInner.tsx = 30px',
-      'components/dashboard/SessionPopupInner.tsx = 37px',
-      'components/dashboard/SessionPopupInner.tsx = 38px',
       'components/dashboard/SupportScreen.tsx = 24px',
-      'components/shared/Chip.tsx = 37px',
       'components/shared/ModifyPlanSheet.tsx = 30px',
       'components/shared/PendingAdjustmentBanner.tsx = 36px',
       // ✅ `SegmentedControl` came OFF this list on 2026-10-01

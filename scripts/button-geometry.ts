@@ -235,15 +235,92 @@ function renderedClasses(tag: string, name: string): string {
  * what hid the value from a literal reader. **A harness that punishes good code
  * is a harness that will be worked around.**
  *
- * Same-file `const NAME = <number>` only. An imported one stays unresolved and
- * is visible as such, for the reason given on `expandStyleSpreads`.
+ * Same-file `const NAME = <number>`, then **ONE HOP through an `@/`-aliased
+ * import**.
+ *
+ * 🔴 THE SECOND HALF WAS ADDED BY THE DEFECT THIS FUNCTION'S OWN HEADER PREDICTS.
+ * `TAP-TARGET-DECISIONS-01` batch 8a gave the 44px floor a single owner —
+ * `components/ui/tapTarget.ts` — because the value was written out in **29
+ * places**, three of them named constants. The moment `SEGMENTED_MIN_HEIGHT_PX`
+ * and `TAB_MIN_HEIGHT_PX` became `= TAP_TARGET_MIN_PX` instead of `= 44`, this
+ * resolver could no longer see them and **three controls that are 44px measured
+ * 30, 35 and 43.** Doing the right thing made it measure worse, for the second
+ * recorded time, exactly as the note above says.
+ *
+ * ⚠️ WHY ONE HOP AND NOT MODULE RESOLUTION. The caution above — *"a half-done
+ * resolver that returns partial values is worse than one that admits it cannot
+ * read"* — is about `const NAME = { ...object... }` spreads, where a partial
+ * object silently changes a box. A **numeric** constant is not that: it either
+ * resolves to one number or it does not resolve at all. So this follows
+ * `import { NAME } from '@/path'` to `path.ts`, reads `export const NAME =
+ * <number>`, and falls straight through to the previous behaviour on any
+ * failure — no tsconfig, no transitive hops, no object literals.
+ *
+ * ⚠️ AND IT IS NOT A HARDCODED PATH. Reading `components/ui/tapTarget.ts` by
+ * name would make this checker hold the producer's list, which this repo has
+ * recorded as its own defect class. The import statement in the file under
+ * measurement is the source of truth.
  */
+const CONST_SRC_CACHE = new Map<string, string>()
+
+/** Source of the module `name` is imported from via an `@/` alias, or ''. */
+function importedModuleSrc(name: string, src: string): string {
+  const imp = src.match(
+    new RegExp("import\\s*\\{[^}]*\\b" + name + "\\b[^}]*\\}\\s*from\\s*'@/([^']+)'"),
+  )
+  if (!imp) return ''
+  for (const ext of ['.ts', '.tsx']) {
+    const rel = imp[1] + ext
+    let text = CONST_SRC_CACHE.get(rel)
+    if (text === undefined) {
+      try { text = readFileSync(join(process.cwd(), rel), 'utf8') } catch { text = '' }
+      CONST_SRC_CACHE.set(rel, text)
+    }
+    if (text) return text
+  }
+  return ''
+}
+
+/**
+ * The NUMBER a size identifier ultimately means, or null.
+ *
+ * Follows three things, in order, and nothing else: a numeric literal in the
+ * current file, a LOCAL ALIAS to another identifier, and ONE `@/` import hop.
+ *
+ * 🔴 THE ALIAS STEP IS WHY THIS IS RECURSIVE, and it was found by running it.
+ * `TAP-TARGET-DECISIONS-01` batch 8a re-homed the floor, so `SegmentedControl`
+ * went from `export const SEGMENTED_MIN_HEIGHT_PX = 44` to
+ * `= TAP_TARGET_MIN_PX`. The literal reader missed it; the first import-hop
+ * version ALSO missed it, because the name is declared locally and merely
+ * ALIASES an import. Measured: a control that is 44px read **30**. The
+ * alias is the common shape when a value gets an owner, which is the shape this
+ * harness has now mis-measured twice.
+ *
+ * ⚠️ `depth` is a cycle guard, not a tuning knob. `A = B; B = A` would otherwise
+ * recurse forever, and a harness that hangs is worse than one that under-reports.
+ */
+function numericConst(name: string, src: string, depth = 0): string | null {
+  if (depth > 3 || !src) return null
+  const decl = src.match(new RegExp('const\\s+' + name + '\\s*(?::\\s*number\\s*)?=\\s*([A-Za-z0-9_.]+)'))
+  if (decl) {
+    const rhs = decl[1]
+    if (/^\d+(?:\.\d+)?$/.test(rhs)) return rhs
+    if (/^[A-Z_][A-Z0-9_]*$/.test(rhs) && rhs !== name) {
+      // a local alias: same file first, then the module it came from
+      return numericConst(rhs, src, depth + 1)
+          ?? numericConst(rhs, importedModuleSrc(rhs, src), depth + 1)
+    }
+    return null
+  }
+  return numericConst(name, importedModuleSrc(name, src), depth + 1)
+}
+
 export function resolveSizeConstants(tagText: string, src: string): string {
   return tagText.replace(
     /\b(minHeight|height|minWidth|width):\s*([A-Z_][A-Z0-9_]*)\b/g,
     (whole, prop: string, name: string) => {
-      const m = src.match(new RegExp('const\\s+' + name + '\\s*(?::\\s*number\\s*)?=\\s*(\\d+(?:\\.\\d+)?)\\b'))
-      return m ? `${prop}: '${m[1]}px'` : whole
+      const n = numericConst(name, src)
+      return n ? `${prop}: '${n}px'` : whole
     },
   )
 }

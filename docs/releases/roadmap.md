@@ -811,6 +811,14 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   THIRD reason — neither paid nor deleted: it fell below the `>=2 importers` threshold. **The
   proxy gave the wrong answer**, since a one-caller component that is the only door to a
   tier-sensitive feature needs a contract more, not less. `backlog.md`.
+- 🧭 `SESSIONPOPUP-PRIMITIVE-ADOPT-01` — **LATER.** Three controls that should adopt a shared
+  primitive and cannot without losing something: fatigue tags would lose **semantic per-tag
+  colour**, skip reasons a type scale and ground, the metric toggle its compact footprint.
+  One sitting, three arms, and the honest answer may be no for two. All four now clear the
+  44px floor, so nothing is broken. From `TAP-TARGET-DECISIONS-01` batch 8a. `backlog.md`.
+- ⚙️ `TAP-TARGET-INLINE-44-01` — **LATER, low.** 17 inline `minHeight: 44` literals should
+  import `TAP_TARGET_MIN_PX`. Registered as falling debt so it cannot grow; converting 17
+  sites is its own batch. `backlog.md`.
 - 🧭 `MKT-KITBYLINE-COPY-01` — **LATER, low.** `PhoneFrame.tsx`'s `KitByline` declares itself
   *"copy of CoachByline"* while `TabbedPhone.tsx` beside it renders the real one. Whether a
   marketing still tracks the live component or a deliberately pinned copy is a board

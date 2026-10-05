@@ -793,6 +793,52 @@ one, the honest ruling may be "leave the override and revisit at two".
 > ⚠️ Both of these are *unfixed and untracked*, not accepted trade-offs — the distinction that
 > item's proposal turns on.
 
+### 🔲 `SESSIONPOPUP-PRIMITIVE-ADOPT-01` — three controls that SHOULD adopt a shared primitive and cannot without losing something *(P3, filed 2026-10-05)* 🧭 **DESIGN BOARD**
+
+**Filed by `TAP-TARGET-DECISIONS-01` batch 8a, which measured the ruling's own assumption and found
+it does not hold for this file.** ✋ Silvanto ruled *"the floor is a symptom of OWNERSHIP — convert
+the control and the height is correct for free."* That held exactly for `app/page.tsx`. On
+`SessionPopupInner` all four sub-floor controls are **selected-state** controls, which
+`design-rulings.md` forbids sweeping into `Button` because the moss active fill is the only selected
+affordance there is — and each conversion costs something real.
+
+**All four took the 44px floor instead, each with its reason written at the call site.** These are
+the three where a primitive genuinely exists and adoption is a *design decision*, not a defect fix.
+One sitting can take all three; they are the same question asked three ways: **what is a primitive
+allowed to cost the surface that adopts it?**
+
+| Arm | The control | What adoption would cost |
+|---|---|---|
+| **(a)** | Fatigue tags (was 30px) | `Chip` is **moss-only**; these carry a colour **per tag** — Fresh / Fine / Heavy / Wrecked. Conversion **deletes meaning.** ⚠️ Exactly the trap `DANGER-TEXT-CONTRAST-01` recorded, where two controls were excluded by name *"because both carry a semantic colour a conversion would delete"*. **The real question: does `Chip` gain an optional accent axis?** That is a change to a canonical primitive used by the wizard and the benchmark screen |
+| **(b)** | Skip reasons (was 38px) | Nothing semantic is lost — `--accent` is a moss alias — but `Chip` is **14px on `--card`** against **12px on `--bg`** here, inside a 2-column grid. A **visible type-scale and ground change** on a live screen |
+| **(c)** | Metric toggle (was 18px, the smallest control in the product) | `SegmentedControl`'s own doc names *"distance/duration"* as its use case, so this is the clearest adoption of the three — **but its segments are `flex: 1`**, so a compact `fit-content` pill becomes a **full-width band** on the session card |
+
+⚠️ **The fourth is NOT here and will not be**: the run-picker row (was 37px) is a full-width selected
+**list row** and no primitive owns that shape. **Inventing one for a single call site is how a design
+system acquires near-duplicates**, which is the thing these items exist to prevent.
+
+🔻 **Nothing is broken.** All four now clear the floor, so the runner-facing harm is fixed. This is
+about whether the design system absorbs them, and the honest answer may be *"no"* for (a) and (b).
+
+---
+
+#### 🟡 `TAP-TARGET-INLINE-44-01` — 17 inline `minHeight: 44` literals that should import the owner *(P3, filed 2026-10-05)* ⚙️ **NO BOARD**
+
+`components/ui/tapTarget.ts` is the floor's single owner since batch 8a, and the three named
+constants derive from it. **17 inline `minHeight: 44` literals across 14 files do not.**
+
+📐 **MEASURED, AND MY FIRST NUMBER WAS WRONG: I wrote 26**, from a grep that also matched
+`min-height: 44px` in CSS and other forms. The figure for this predicate is **17**, which is why
+`components/ui/tapTarget.test.ts` derives the count rather than having it typed in.
+
+🔻 **Deliberately not converted in batch 8a.** 17 sites is its own batch, and a gate that blocks
+everything gets deleted rather than satisfied — this repo's own rule. **The register stops it
+growing**, so the next control imports the constant; that is the property that matters.
+⚠️ **The `.btn` classes in `globals.css` are a DIFFERENT layer and are not in scope** — the website
+has no React, so the CSS floor is correct there and is not a duplicate.
+
+---
+
 #### 🟡 `CONTRACT-LEDGERCARD-01` — `LedgerCard` is now the single render path of a FREE feature, and it has no contract *(P3, filed 2026-10-05)* ⚙️ **NO BOARD**
 
 **Found by `audit-docs.sh`'s own ratchet while shipping `LEDGER-COACH-SITE-REMOVE-01`**, and the
@@ -988,7 +1034,39 @@ does not read as live to the next person who greps for it.
 
 ## ⚖️ FILED 2026-10-01 — `TAP-TARGET-DECISIONS-01`
 
-### 🔄 `TAP-TARGET-DECISIONS-01` — part 1 + the FLOOR RULING shipped; 12 remain registered 🧭 **DESIGN BOARD**
+### 🔄 `TAP-TARGET-DECISIONS-01` — batch 8a SHIPPED 2026-10-05: 5 off, 12 remain, and NOT ONE was converted 🧭 **DESIGN BOARD**
+
+> ✅ **BATCH 8a SHIPPED 2026-10-05 — `SessionPopupInner` + `Chip`. Register 17 → 12.**
+> 🔴 **NOT ONE CONTROL WAS CONVERTED, AND THAT CONTRADICTS THE RULING'S OWN ASSUMPTION.**
+> ✋ Silvanto ruled *"the floor is a symptom of OWNERSHIP — convert the control and the height is
+> correct for free"*, which held exactly for `app/page.tsx`. **Measured here, all four
+> `SessionPopupInner` controls are SELECTED-STATE controls** — which `design-rulings.md` forbids
+> sweeping into `Button`, because the moss active fill is the only selected affordance there is — and
+> each conversion costs something real: semantic per-tag colour, a type scale, a compact footprint, or
+> a primitive that does not exist. → `SESSIONPOPUP-PRIMITIVE-ADOPT-01` (three arms, one sitting).
+> 🥇 **WHAT THE MEASUREMENT FOUND INSTEAD — THE FLOOR VALUE HAD NO OWNER.** `44` was written out in
+> **29 places**: `TAB_MIN_HEIGHT_PX`, `PROVENANCE_MIN_HEIGHT_PX` (both in one file) and
+> `SEGMENTED_MIN_HEIGHT_PX`, plus 26 inline. **`components/ui/tapTarget.ts` is the one owner now** and
+> all three constants derive from it. That IS the ownership fix — one level up from where the board
+> was looking, and the same class as `TIER-OWNER-01` / `DELOAD-OWNER-01`.
+> ⚠️ **AND RE-HOMING IT BROKE THE INSTRUMENT, exactly as `resolveSizeConstants`'s own header
+> predicted** (*"doing the right thing made it measure worse"*). The moment the constants became
+> `= TAP_TARGET_MIN_PX`, the literal reader lost them and **three controls that ARE 44px measured 30,
+> 35 and 43.** The resolver now follows a literal → a **local alias** → one `@/` import hop; the alias
+> step was added **only after running it**, because the first import-hop version still missed a
+> locally-declared name that merely aliases an import.
+> ✅ **`geometry moved: 0`** — no other control's height changed, which is the acceptance condition.
+> **Gates:** `buttonGeometry.test.ts` register at 12 (exact both ways) + new
+> `components/ui/tapTarget.test.ts` — floor is 44, **no named constant re-types it**, inline literals
+> as a falling register at **17** (I wrote 26 first; the count is derived in the test, not typed).
+> Falsified: re-typing 44 in a named constant reds the ownership arm **while the geometry gate stays
+> green**, because 44 is still 44 — the two gates ask different questions. A new inline 44 reds the
+> register. ⚠️ The vacuity arm **caught my own glob on its first run** (the new owner was untracked —
+> `git ls-files` could not see it).
+> 🔻 **Remaining 12**: 4 preview harnesses (no ruling needed), 3 already-ruled display rows, and 5
+> runner-facing — `DashboardClient` 30, `ModifyPlanSheet` 30, `PendingAdjustmentBanner` 36,
+> `SupportScreen` 24, `charity-runners` 39. **Next batch by file, worst count first.**
+
 
 > ⚖️ **DESIGN BOARD RULED 2026-10-05 — SHIP, and this item MERGES with `BUTTON-MIGRATION-02`.**
 > Record: `docs/decisions/2026-10-05-design-board-backlog-clearance.md`.

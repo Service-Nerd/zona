@@ -11,6 +11,7 @@
 // ui-patterns.md § Form Fields & Pickers → SegmentedControl.
 
 import type React from 'react'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 /**
  * The tap-target floor for a segment, as a named constant.
@@ -20,7 +21,12 @@ import type React from 'react'
  * just the presence of a number, which is how `TrainingZonesScreen`'s
  * equivalent is held.
  */
-export const SEGMENTED_MIN_HEIGHT_PX = 44
+// ⚠️ DERIVED, not re-typed. The floor's one owner is `TAP_TARGET_MIN_PX`
+// (TAP-TARGET-DECISIONS-01 batch 8a) — the value was written out in 29 places,
+// three of them named constants. The alias is kept because this module's markup
+// test asserts it BY NAME, and renaming the export in the same commit as
+// re-homing the value would make a failure ambiguous between the two changes.
+export const SEGMENTED_MIN_HEIGHT_PX = TAP_TARGET_MIN_PX
 
 export function SegmentedControl<T extends string>({
   options,

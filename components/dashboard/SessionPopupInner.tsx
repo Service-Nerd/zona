@@ -23,6 +23,7 @@ import type { PostRunData } from '@/components/dashboard/dashboardHelpers'
 import type { Zone } from '@/components/shared/ZoneBar'
 import { BRAND } from '@/lib/brand'
 import { FATIGUE_TAGS, SKIP_REASONS, isFatigueTag } from '@/lib/coaching/completionVocab'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import { isInLinkPool, rankLinkCandidates } from '@/lib/coaching/sessionMatch'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { SESSION_COLORS, getSessionColor, getSessionLabel } from '@/lib/session-types'
@@ -610,6 +611,15 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
                   saveRPEFatigue(rpe, newTag)
                   if (!reflectResponse) setReflectResponse(getReflectResponse(session.type, rpe, newTag))
                 }} style={{
+                  // 🔴 TAP-TARGET-DECISIONS-01 batch 8a — was 30px.
+                  // ⚠️ NOT converted to `<Chip>`, and the reason is semantic, not
+                  // cosmetic: `Chip` is moss-only, while these carry a colour PER TAG
+                  // (Fresh / Fine / Heavy / Wrecked). A conversion would delete meaning —
+                  // the exact trap `DANGER-TEXT-CONTRAST-01` recorded, where two controls
+                  // were excluded by name "because both carry a semantic colour a
+                  // conversion would delete". Whether `Chip` should gain a colour axis is
+                  // a 🧭 Design Board question, filed as `CHIP-SEMANTIC-COLOUR-01`.
+                  minHeight: TAP_TARGET_MIN_PX, display: 'inline-flex', alignItems: 'center',
                   fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '8px 18px',
                   borderRadius: '20px',
                   border: `0.5px solid ${isActive ? tagColor : 'var(--border-col)'}`,
@@ -756,6 +766,14 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
                   }
                 } catch {}
               }} style={{
+                // 🔴 TAP-TARGET-DECISIONS-01 batch 8a — was 38px.
+                // ⚠️ NOT converted to `<Chip>`: no semantics would be lost (`--accent`
+                // is a moss alias) but `Chip` is 14px on `--card`, against 12px on
+                // `--bg` here, inside a 2-column grid. That is a VISIBLE type-scale and
+                // ground change on a live screen and the board has not seen it — a
+                // conversion is not a floor fix. Filed as `SKIP-REASON-CHIP-01`.
+                minHeight: TAP_TARGET_MIN_PX, display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
                 padding: '12px 10px', borderRadius: '10px',
                 border: `0.5px solid ${isActive ? 'var(--accent)' : 'var(--border-col)'}`,
                 background: isActive ? 'var(--accent-soft)' : 'var(--bg)',
@@ -967,7 +985,17 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
               {/* Toggle */}
               <div style={{ display: 'flex', background: 'var(--bg-soft)', borderRadius: '6px', padding: '2px', width: 'fit-content', border: '1px solid var(--line)' }}>
                 {(['distance', 'duration'] as const).map(m => (
-                  <button key={m} onClick={() => updateSessionMetric(m === effectiveMetric && isMetricCustom ? null : m)} style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', padding: '3px 9px', borderRadius: '4px', border: 'none', background: effectiveMetric === m ? config.color : 'none', color: effectiveMetric === m ? 'var(--card)' : 'var(--mute)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.15s' }}>
+                  // 🔴 TAP-TARGET-DECISIONS-01 batch 8a — WAS 18px, the smallest
+                  // control in the product, against a 🟢 STANDING 44px floor.
+                  // ⚠️ NOT converted to `<SegmentedControl>`, which names "distance/
+                  // duration" as its own use case — because its segments are `flex: 1`,
+                  // so this compact `fit-content` pill would become a FULL-WIDTH band on
+                  // the session card. That is a layout change the board has not seen.
+                  // Filed as `METRIC-TOGGLE-SEGMENTED-01`.
+                  // ⚠️ `.btn--inline-target` is also not the answer: the board ruled it
+                  // suits "a small VISUAL carrying a 44px HIT AREA" in a settings row,
+                  // and this sits in a 2px track where the visual IS the hit area.
+                  <button key={m} onClick={() => updateSessionMetric(m === effectiveMetric && isMetricCustom ? null : m)} style={{ minHeight: TAP_TARGET_MIN_PX, display: 'inline-flex', alignItems: 'center', fontFamily: 'var(--font-ui)', fontSize: '10px', padding: '3px 9px', borderRadius: '4px', border: 'none', background: effectiveMetric === m ? config.color : 'none', color: effectiveMetric === m ? 'var(--card)' : 'var(--mute)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.15s' }}>
                     {m === 'distance' ? preferredUnits : 'min'}
                   </button>
                 ))}
@@ -1594,6 +1622,12 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
                     onClick={() => setSelectedActivity(isSelected ? null : run)}
                     aria-pressed={isSelected}
                     style={{
+                    // 🔴 TAP-TARGET-DECISIONS-01 batch 8a — was 37px. NOT converted:
+                    // this is a full-width SELECTED LIST ROW and no shared primitive
+                    // owns that shape. `Chip` and `SegmentedControl` are both the wrong
+                    // job, and inventing a third primitive for one call site is how a
+                    // design system acquires near-duplicates.
+                    minHeight: TAP_TARGET_MIN_PX,
                     width: '100%', textAlign: 'left', font: 'inherit', cursor: 'pointer',
                     background: isSelected ? 'var(--moss-soft)' : 'var(--bg-soft)',
                     border: `1px solid ${isSelected ? 'var(--moss-mid)' : 'var(--chrome-edge)'}`,

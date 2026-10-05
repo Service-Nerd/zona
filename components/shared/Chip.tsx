@@ -1,5 +1,7 @@
 'use client'
 
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
+
 // Chip — the single canonical select-chip for choosing from a set (race
 // distances, training-age bands, injuries, benchmark type). Lifted from the
 // wizard's Chip (the cleaner of the two prior versions) so the wizard and the
@@ -26,6 +28,12 @@ export function Chip({
       onClick={onClick}
       aria-pressed={active}
       style={{
+        // 🔴 TAP-TARGET-DECISIONS-01 batch 8a — this primitive rendered at 37px:
+        // `padding: '10px 18px'` around 14px text, no floor, against a 🟢 STANDING
+        // 44px minimum. Same shape as `SegmentedControl`'s own 30px miss — **the
+        // components extracted to be reused were the ones missing the floor.**
+        // Both its importers (the wizard, the benchmark screen) gain the floor here.
+        minHeight: TAP_TARGET_MIN_PX,
         padding: '10px 18px',
         borderRadius: 'var(--radius-md)',
         border: `1px solid ${active ? 'var(--moss)' : 'var(--line)'}`,

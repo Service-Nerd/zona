@@ -36,6 +36,7 @@
 // beat six where two are apologies (Seiler: "six bands is a menu").
 
 import { useState } from 'react'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import type React from 'react'
 import { convertPaceString } from '@/lib/format'
 import { bandCeiling, type PaceGuide } from '@/lib/plan/paceBands'
@@ -54,9 +55,9 @@ export type ZoneRow = {
 
 /** The 44pt tap-target floor, as a named constant so the check can read the same value
  *  the component uses rather than a literal typed twice. */
-export const TAB_MIN_HEIGHT_PX = 44
+export const TAB_MIN_HEIGHT_PX = TAP_TARGET_MIN_PX
 /** Same 44pt floor, same reason: hand-rolled, so the geometry gate cannot see it. */
-export const PROVENANCE_MIN_HEIGHT_PX = 44
+export const PROVENANCE_MIN_HEIGHT_PX = TAP_TARGET_MIN_PX
 
 /** The two tabs, named once so the label and the state cannot drift. */
 export const ZONES_TAB_HR = 'Heart rate'
