@@ -45,6 +45,7 @@
 // two-week trial, never to a request form.
 
 import type { Metadata } from 'next'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import { Section } from '@/components/marketing/Section'
 import Link from 'next/link'
 import { BRAND, PRICING } from '@/lib/brand'
@@ -406,7 +407,16 @@ export default function CharityRunnersPage() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
           {DISTANCES.map(d => (
             <Link key={d.slug} href={`/plans/${d.slug}`} style={{
+              // 🔴 TAP-TARGET-DECISIONS-01 — was 39px. It is a NAVIGATION control
+              // (it goes somewhere), so the 🟢 STANDING 44px floor reaches it, unlike
+              // `TrainingZonesScreen`'s 43px display GRID ROW which the register
+              // already ruled is not a control.
+              // ⚠️ `alignItems: 'baseline'` is KEPT deliberately — it aligns the
+              // distance label with the week count, and switching to `center` to gain
+              // height would change the visual to satisfy a number. The box grows; the
+              // two spans stay baseline-aligned inside it.
               display: 'inline-flex', alignItems: 'baseline', gap: 'var(--space-2)',
+              minHeight: TAP_TARGET_MIN_PX, boxSizing: 'border-box',
               textDecoration: 'none',
               background: 'var(--card)', border: '1px solid var(--line)',
               borderRadius: '100px', padding: '10px 18px',

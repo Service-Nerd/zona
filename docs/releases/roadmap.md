@@ -823,6 +823,11 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 - ⚙️ `TAP-TARGET-INLINE-44-01` — **LATER, low.** 17 inline `minHeight: 44` literals should
   import `TAP_TARGET_MIN_PX`. Registered as falling debt so it cannot grow; converting 17
   sites is its own batch. `backlog.md`.
+- 🧭 `FATIGUE-CHIP-DUPLICATE-01` — **LATER, low.** The Fresh/Fine/Heavy/Wrecked chip row exists
+  TWICE (`SessionPopupInner` + `DashboardClient`), with the per-tag colour MAPPING written out
+  in both. The board refused `Chip` a colour axis because the scale is real doctrine — and that
+  doctrine lives in two files with nothing comparing them. `completionVocab.ts` already owns
+  `FATIGUE_TAGS`; the colours were left behind. Found while flooring. `backlog.md`.
 - 🧭 `MKT-KITBYLINE-COPY-01` — **LATER, low.** `PhoneFrame.tsx`'s `KitByline` declares itself
   *"copy of CoachByline"* while `TabbedPhone.tsx` beside it renders the real one. Whether a
   marketing still tracks the live component or a deliberately pinned copy is a board

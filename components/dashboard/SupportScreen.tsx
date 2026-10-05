@@ -4,6 +4,7 @@
 //
 // It was a module-level function in a 14,447-line file, so it closed over nothing and
 // this move changes no behaviour. What it changes is REACH: nothing could import it,
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 // so it could not be rendered by a harness, a mounting test, or anything but a live
 // signed-in session. Fourteen screens were in that position.
 //
@@ -123,7 +124,11 @@ export default function SupportScreen({ onBack, email, hasPaidAccess, trialDaysL
             </span>
             <button
               onClick={handleCopy}
-              style={{ flexShrink: 0, padding: '5px 12px', borderRadius: '10px', border: `1px solid ${copied ? 'var(--moss)' : 'var(--line)'}`, background: copied ? 'var(--moss-soft)' : 'transparent', color: copied ? 'var(--moss)' : 'var(--mute)', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s, background 0.15s, border-color 0.15s' }}
+              // 🔴 TAP-TARGET-DECISIONS-01 — was 24px, the smallest control left in
+              // the product. NOT converted: its border goes `--moss` on `copied`, a
+              // transient confirmation `Button` has no vocabulary for, and flattening
+              // it would delete the only feedback this control gives.
+              style={{ flexShrink: 0, minHeight: TAP_TARGET_MIN_PX, display: 'inline-flex', alignItems: 'center', padding: '5px 12px', borderRadius: '10px', border: `1px solid ${copied ? 'var(--moss)' : 'var(--line)'}`, background: copied ? 'var(--moss-soft)' : 'transparent', color: copied ? 'var(--moss)' : 'var(--mute)', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s, background 0.15s, border-color 0.15s' }}
               aria-label="Copy support email address"
             >
               {copied ? 'Copied' : 'Copy'}

@@ -16,6 +16,7 @@
 // handles WHAT (rule-engine, no byline).
 
 import CoachByline from './CoachByline'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import AdjustmentDiff from './AdjustmentDiff'
 import type { SessionLike } from '@/lib/coaching/diff/sessionDiff'
 import type { DistanceUnits } from '@/lib/format'
@@ -114,6 +115,11 @@ export default function PendingAdjustmentBanner({
             onClick={onConfirm}
             disabled={loading}
             style={{
+              // 🔴 TAP-TARGET-DECISIONS-01 — was 36px.
+              // ⚠️ NOT converted: `Button variant="primary"` is MOSS and this is
+              // `--warn`, which is the coaching voice on this banner. Conversion
+              // would delete the semantic colour — the fatigue-tag class.
+              minHeight:    TAP_TARGET_MIN_PX,
               flex:         1,
               padding:      '10px 0',
               background:   loading ? 'var(--warn-bg)' : 'var(--warn)',

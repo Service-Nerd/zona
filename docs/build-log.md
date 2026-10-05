@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — TAP-TARGET-DECISIONS-01 closed · ten controls fixed, none converted
+**Shipped:** the last five sub-44px runner-facing controls take the floor. Zero remain.
+
+**Dev learning:** the ruling behind this item was *the floor is a symptom of ownership — convert the control and the height is correct for free*. It was measured and true for the marketing CTA that prompted it. Across all ten controls it covered, **it was true zero times**. Every one carried something a conversion would delete: a colour per tag, a selected-state fill, the coaching amber, a transient `copied` confirmation. The real ownership defect was one level up — the number 44 itself, written out in 29 places including three separate named constants.
+
+**Product/creator learning:** the most tempting fix on the marketing link was switching `alignItems: 'baseline'` to `center`, which would have gained the height for free. It would also have broken the thing the baseline was doing — aligning a distance label with its week count. **Changing a visual to satisfy a number is exactly what this register exists to prevent**, so the box grew and the alignment stayed.
+
+**AI-building learning:** my `grep -n "<button"` ordinals and the measurement tool's `#buttonN` ordinals **do not correspond**, and I nearly edited two cards believing they were the 30px controls. The measured box — `padY 8, font 12, radius 20px` — is what identified them: a pill chip, not a 16px-padded card. **Match on the measurement's own signature, not on a positional guess.**
+
+**The honest bit:** both copies of the fatigue chip row were sitting in the same register, and I floored them on the same day, hours apart, before noticing they were the same control. The duplicate only became visible because both appeared in one list — which is an argument for registers, and an admission that I wrote the same comment twice without reading it.
+
+**Hook material:** a design ruling said "convert the control and the height fixes itself". Across all ten controls it covered, that was true zero times — and the thing with no owner turned out to be the number.
+
+**Postable?:** yes — "the rule was right about the principle and wrong about the level" with the 29-copies beat.
+
 ## 2026-10-05 — FIRSTRUN-MARATHON-01 + BUTTON-MIGRATION-02 · two items that ended smaller than they started
 **Shipped:** the missed-session sheet trimmed to five controls with a gate that forbids it claiming a shift; two more controls onto the shared Button; and the button-migration item closed on a measurement rather than a sweep.
 

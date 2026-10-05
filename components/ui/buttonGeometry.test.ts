@@ -90,6 +90,30 @@ describe('button geometry', () => {
     // ModifyPlanSheet, Chip and DashboardClient. **The component extracted to be
     // reused is the one missing the floor.**
     const REGISTERED_UNDER_FLOOR = [
+      // ✅ ZERO RUNNER-FACING CONTROLS REMAIN UNDER THE FLOOR (2026-10-05).
+      // The last five came off together: `charity-runners` 39, `DashboardClient` 30,
+      // `SupportScreen` 24, `ModifyPlanSheet` 30, `PendingAdjustmentBanner` 36.
+      //
+      // 🔴 AND NOT ONE WAS CONVERTED EITHER, for the reasons the board ruled rather
+      // than for convenience — each is written at its own call site:
+      //   · `DashboardClient`'s fatigue chips carry a colour PER TAG, so `Chip` would
+      //     delete meaning. ⚠️ THEY ARE A SECOND COPY of `SessionPopupInner`'s
+      //     identical chip row — filed as `FATIGUE-CHIP-DUPLICATE-01`.
+      //   · `ModifyPlanSheet`'s injury chips are selected-state: the moss fill IS the
+      //     affordance.
+      //   · `PendingAdjustmentBanner`'s Confirm is `--warn` — the coaching voice;
+      //     `Button variant="primary"` is moss and would delete it.
+      //   · `SupportScreen`'s Copy goes moss on `copied`, a transient confirmation
+      //     `Button` has no vocabulary for.
+      //   · `charity-runners` is a NAVIGATION link, so the floor reaches it — and
+      //     `alignItems: 'baseline'` was KEPT rather than switched to `center` to gain
+      //     height, because changing a visual to satisfy a number is the thing this
+      //     register exists to prevent.
+      //
+      // WHAT IS LEFT IS 4 PREVIEW HARNESSES (not product surfaces) AND 3 ALREADY-RULED
+      // DISPLAY/SETTINGS ROWS. ⚠️ The two 41px rows and the 43px zone row are NOT
+      // controls under the floor — the floor does not reach a display row, which this
+      // register ruled on the 43px pair and has not reopened.
       // ✅ FIVE CAME OFF 2026-10-05 (`TAP-TARGET-DECISIONS-01` batch 8a): all four
       // `SessionPopupInner` entries (18 / 30 / 37 / 38px — the 18 was the smallest
       // control in the product) and `Chip` (37px).
@@ -132,8 +156,6 @@ describe('button geometry', () => {
       'app/wizard-preview/page.tsx = 27px',
       'app/wizard-preview/page.tsx = 29px',
       // ── runner-facing: → TAP-TARGET-DECISIONS-01 ──
-      'app/charity-runners/page.tsx = 39px',
-      'app/dashboard/DashboardClient.tsx = 30px',
       // ✅ `app/page.tsx = 43px` CAME OFF 2026-10-02 (`TAP-TARGET-DECISIONS-01`, Design Board
       // SHIP WITH AMENDMENT). It was the App Store CTA — the most important tap on the
       // marketing site — and the one unarguable miss in this register, because
@@ -158,9 +180,6 @@ describe('button geometry', () => {
       // under a relocation (82 both sides there). A register keyed by FILE re-keys whenever
       // code moves, which is `BUTTON-GEOMETRY-KEY-02`'s subject and is not solved here.
       'components/dashboard/PlanAdjustmentsScreen.tsx = 41px',
-      'components/dashboard/SupportScreen.tsx = 24px',
-      'components/shared/ModifyPlanSheet.tsx = 30px',
-      'components/shared/PendingAdjustmentBanner.tsx = 36px',
       // ✅ `SegmentedControl` came OFF this list on 2026-10-01
       // (`TAP-TARGET-DECISIONS-01`, Design Board SHIP). It was the highest-reach
       // control under the floor — login, Preferences, ModifyPlanSheet, Chip and

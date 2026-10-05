@@ -1,6 +1,7 @@
 'use client'
 
 import { calendarDaysBetween } from '@/lib/dates'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
 import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
@@ -7095,6 +7096,15 @@ function PostRunScreen({
                     }}
                     disabled={savingRPE}
                     style={{
+                      // 🔴 TAP-TARGET-DECISIONS-01 — was 30px.
+                      // ⚠️ NOT converted to `<Chip>`: these carry a colour PER TAG
+                      // (Fresh / Fine / Heavy / Wrecked), and `Chip` is moss-only, so
+                      // conversion DELETES MEANING — Design Board 2026-10-05 refused
+                      // exactly this, by name, on the identical control.
+                      // 🔴 AND IT IS THE IDENTICAL CONTROL: `SessionPopupInner` carries
+                      // a SECOND copy of this chip row, floored the same day for the
+                      // same reason. Filed as `FATIGUE-CHIP-DUPLICATE-01`.
+                      minHeight: TAP_TARGET_MIN_PX, display: 'inline-flex', alignItems: 'center',
                       fontFamily: 'var(--font-ui)', fontSize: '12px',
                       padding: '8px 18px',
                       borderRadius: '20px',

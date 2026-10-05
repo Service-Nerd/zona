@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import IconButton from '@/components/ui/IconButton'
 import Sheet from './Sheet'
 import { DayGridSelector } from './DayGridSelector'
@@ -438,6 +439,10 @@ function RowControl({ rowKey, value, onChange }: {
                   onChange(on ? cur.filter(x => x !== inj) : [...cur, inj])
                 }}
                 style={{
+                  // 🔴 TAP-TARGET-DECISIONS-01 — was 30px. A SELECTED-STATE chip: the
+                  // moss fill IS the selected affordance, which `design-rulings.md`
+                  // forbids sweeping into `Button`. It takes the floor instead.
+                  minHeight: TAP_TARGET_MIN_PX, display: 'inline-flex', alignItems: 'center',
                   padding: '7px 12px', borderRadius: '999px', cursor: 'pointer',
                   background: on ? 'var(--moss)' : 'var(--bg-soft)',
                   border: '1px solid var(--line)',

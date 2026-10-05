@@ -862,6 +862,35 @@ has no React, so the CSS floor is correct there and is not a duplicate.
 
 ---
 
+#### 🟡 `FATIGUE-CHIP-DUPLICATE-01` — the fatigue chips exist twice, with their semantic colour copied *(P3, filed 2026-10-05)* 🧭 **DESIGN BOARD**
+
+**Found while flooring the last five controls for `TAP-TARGET-DECISIONS-01`** — both copies turned
+up in the same register, were floored on the same day, and only then did it become obvious they are
+the same control.
+
+📐 **Measured:** `components/dashboard/SessionPopupInner.tsx` and `app/dashboard/DashboardClient.tsx`
+each render the Fresh / Fine / Heavy / Wrecked row — **same four tags, same per-tag colour mapping,
+same pill geometry (`padding: '8px 18px'`, `borderRadius: '20px'`, 12px), same active treatment**
+(`color-mix(... 12%, transparent)` fill + matching border). Both were 30px; both now carry the floor
+**separately**.
+
+🔴 **The colour mapping is the duplicated part that matters.** `Fresh → --session-green`,
+`Fine → --accent`, `Heavy → --amber`, `Wrecked → --danger` is a **meaning**, written out twice. The
+Design Board refused to give `Chip` a colour axis on 2026-10-05 precisely because *"a scale rendered
+in one colour is a list"* — so the scale is real doctrine, and it lives in two component files with
+nothing comparing them.
+
+**Why it is a BOARD question, not a refactor:** extracting it means deciding what the shared thing
+IS. A `FatigueChips` component? A colour map in `completionVocab.ts` beside `FATIGUE_TAGS` (which
+both files already import)? The second is smaller and probably right — **the vocabulary owner
+already exists and the colours were left behind.**
+
+⚠️ **Not folded into `TAP-TARGET-DECISIONS-01`** — that item floors controls; this one extracts a
+meaning, and bundling them is two jobs. 🔻 **Nothing is broken:** both render identically today. The
+cost is that a change to the scale must be made twice, and nothing says so.
+
+---
+
 #### 🟡 `CONTRACT-LEDGERCARD-01` — `LedgerCard` is now the single render path of a FREE feature, and it has no contract *(P3, filed 2026-10-05)* ⚙️ **NO BOARD**
 
 **Found by `audit-docs.sh`'s own ratchet while shipping `LEDGER-COACH-SITE-REMOVE-01`**, and the
@@ -1114,7 +1143,24 @@ does not read as live to the next person who greps for it.
 
 ## ⚖️ FILED 2026-10-01 — `TAP-TARGET-DECISIONS-01`
 
-### 🔄 `TAP-TARGET-DECISIONS-01` — OPEN. Batch 8a done 2026-10-05 (5 off), **12 remain**, and not one was converted 🧭 **DESIGN BOARD**
+### ✅ `TAP-TARGET-DECISIONS-01` — CLOSED 2026-10-05. ZERO runner-facing controls under the floor 🧭 **DESIGN BOARD**
+
+> ✅ **CLOSED 2026-10-05. Register 17 → 7, and every remaining entry is out of scope by a ruling
+> that already exists:** 4 preview harnesses (not product surfaces) and 3 display/settings rows the
+> register already ruled the floor does not reach. **No runner-facing control is under 44px.**
+> **The last five, each with its reason at the call site:** `charity-runners` 39 · `DashboardClient`
+> 30 · `SupportScreen` 24 · `ModifyPlanSheet` 30 · `PendingAdjustmentBanner` 36.
+> 🔴 **AND NOT ONE OF THE TEN WAS EVER CONVERTED** — which is the item's real finding against its own
+> ruling. Fatigue chips carry a colour **per tag**; injury chips are selected-state (the moss fill
+> IS the affordance); the Confirm is `--warn`, the coaching voice, and `Button` is moss; the Copy
+> chip goes moss on `copied`, a transient confirmation `Button` has no vocabulary for.
+> ⚠️ **`charity-runners` kept `alignItems: 'baseline'`** rather than switching to `center` to gain
+> height — **changing a visual to satisfy a number is the thing this register exists to prevent.**
+> ➕ **Found while flooring: `FATIGUE-CHIP-DUPLICATE-01`.** `DashboardClient` carries a **second
+> copy** of `SessionPopupInner`'s fatigue chip row — same four tags, same per-tag colour, same
+> shape, floored separately on the same day. Two copies of a selected-state control with semantic
+> colour is a missing owner.
+
 
 > ⚠️ **HEADING REWORDED 2026-10-05 — it said "batch 8a SHIPPED" and every parse read the WHOLE
 > ITEM as shipped**, so this item vanished from the open-design list while **12 controls were still
