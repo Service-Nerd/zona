@@ -28,7 +28,7 @@ already decided what it is.
 ---
 
 
-### 📱  — the untraced black line; **BLOCKED ON A DEVICE** (a native effect cannot be diagnosed from this machine) ⚙️ **NO BOARD**
+### `LOG-OFFPLAN-03` — clause 3: off-plan volume in the injury cap, blocked on sample size 🏃 COACHING BOARD
 
 > ⏸️ **COACHING BOARD 2026-10-05 — CORRECT, RE-AFFIRMED, AND STILL BLOCKED ON EVIDENCE.**
 > Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`. 🩹 Willy, re-stated: *"a 5% cap applied to a number that is not their load. The cap
@@ -670,7 +670,7 @@ guards do — preserving newlines** — or the reported line numbers go wrong, w
 repo has also already had (`^\s*//` matching `\n`).
 
 
-### `NAV-BLACK-LINE-01` — the untraced black line, now measured and narrowed ⚙️ NO BOARD
+### 📱 `NAV-BLACK-LINE-01` — the untraced black line; **BLOCKED ON A DEVICE** (a native effect cannot be diagnosed from this machine) ⚙️ **NO BOARD**
 **Reported 2026-09-26** (*"at the bottom there is a line of this open session screen, it looks bad"*).
 First recorded at the app review 2026-09-22: *"The black line above the nav. Untraced — it is not
 the nav's border."* No ruling was made on an unidentified artefact.
@@ -4991,6 +4991,10 @@ rather than re-unitised — nothing was.
 > `ModifyPlanSheet.tsx` `case 'race_date'` now returns **`<TextField type="date" />`**, and
 > `TextField` **locks 16px** and full width: the **iOS-zoom defect and the disabled-field look are
 > both gone**, and the component's own comment records the migration.
+> ✅ **NO REGISTRY ROW NEEDED, and that is checked not assumed:** the fix shipped under
+> **`PLANVERB-01`** (2026-09-22), whose registry row already records the `TextField` migration,
+> the 13px literal and the iOS focus-zoom it caused. **Two items, one fix** — this one was filed
+> from the design angle and closed by a build that came at it from the destructive-door angle.
 > ⚠️ **The stale read was mine, carried INTO the sitting**, and it ran in the direction of a bigger
 > job — the third occurrence of that class in three days. **A comment recording a FIXED defect reads
 > exactly like one reporting a LIVE defect.**
@@ -5489,6 +5493,32 @@ and check had disagreed three ways for months, and both docs are corrected.
 runner-facing notes with dev-only invariant text **in one file**, so a path-based rule would be
 wrong in both directions; and push-notification bodies — the *spoken word* half of the founder's
 own sentence — are untouched.
+
+### 📱 FOUNDER ACTION — THE DEVICE TESTS. Four items are blocked on these and on nothing else
+
+**Standing list, added 2026-10-05.** Each of these items names a device test as **its own settling
+condition** — not as a nice-to-have. Nothing in this product has ever run on a device, so **no
+amount of work on this machine moves any of them**, and each has been picked up and put down more
+than once because the heading did not say so. **They all now carry 📱 BLOCKED ON A DEVICE in their
+heading** so a parse can see it.
+
+⚠️ **Each test below says what BOTH outcomes mean.** A test that only describes the result you
+expect is how a predicate gets handed over and comes back with the same answer either way
+(`GATE-FALSIFY-01 (d)`, and it nearly declared a good migration failed).
+
+| # | Item | What to do, on the phone | What each outcome means |
+|---|---|---|---|
+| **1** | 📱 `NAV-BLACK-LINE-01` | Open a session screen. Scroll to the very bottom, then **overscroll — pull up past the end — and release.** Watch the band ~90pt above the bottom. | **Line appears and fades** → confirmed WKWebView scroll-boundary artefact. The fix is native (`bounces`, or the scroll view's background), **not CSS** — there is nothing in the CSS to fix. **Never appears, even on overscroll** → the hypothesis is wrong and the item reopens with a new one. Measured 1 of 8 captures and absent from the same screen a minute earlier, so **it is transient: one look proving nothing is not a result.** |
+| **2** | 📱 `STEPPER-CONTROL-01` (d) | Open the manual-run modal. Tap the **distance** field. Watch whether the page zooms when the numeric keyboard appears. | **It zooms** → the `type="number"` swap is refused and the 22-tap stepper stays; Wroblewski: *"I'd rather ship a 22-tap control that talks than a 2-tap control that traps the keyboard."* **It does not zoom** → Collins: *"get it in a hand and I'll take the swap the same afternoon."* ⚠️ Context: **22 taps to log a 21.1 km run**, accepted on the record, not overlooked. |
+| **3** | 📱 `TODAY-CTA-CLEARANCE-01` | Open **Today** and do not scroll. Is *"Log this run"* clipped by the bottom nav? Check it on a few different days, not once. | **Clipped at rest, often** → a sticky CTA above the nav on Today only. **Visible at rest** → the item closes, because the board's own note says *"how often the CTA is actually clipped is the number nobody has"* and this repo has twice ruled on an impression a measurement then contradicted. ⚠️ A fix was shipped and **reverted the same hour**; `design-rulings.md` carries that record. |
+| **4** | 📱 `DESIGN-PERFORATION-01` | Needs the **artefact**, not a verdict: the ticket-stub device rendered on a real Plan card at 375px, **beside** the current card, on the phone. | It has been ruled **INSUFFICIENT EVIDENCE twice** on the same evidence. ⚠️ **Re-running the sitting without the artefact is the re-litigation the register exists to prevent** — so this one needs the artefact built first, and that is a build, not a test. |
+
+🔻 **Nothing here is broken-and-waiting.** 1 is cosmetic and transient, 2 is a tap-count cost already
+accepted, 3 may not reproduce, 4 is a question not a defect. **They are blocked, not urgent** — the
+reason they are listed together is that four items drifting for want of one phone session is worth
+seeing in one place.
+
+---
 
 ### 🔻 FOUNDER ACTION — run these in the Supabase SQL editor
 
