@@ -4583,7 +4583,21 @@ today inverted at week 11 (32 → 33 km) with the long run **shrinking** 17 → 
 other sessions grew there. **A cap on the deload long run would not fix that one**, and any
 ruling should say which cases it closes and which it does not.
 
-### 🏃 `LR-2DAY-LOPSIDED-01` — a 2-day runner gets 77% of their week in one run, and the remedies are spent
+### ✅ 🏃 `LR-2DAY-LOPSIDED-01` — CLOSED 2026-10-05: the §34 statement ALREADY REACHES 100% of this cohort
+
+> ✅ **CLOSED 2026-10-05 as ALREADY DELIVERED. Nothing was built, and nothing needed to be.**
+> The ruled deliverable was *"a §34 honesty statement, nothing else"*. §52's lopsided-week note
+> already is that statement, and it reaches **252 of 252 (100%)** genuine 2-day plans:
+> *"...so by week N it takes up most of the week on its own. The lever is the other days: more
+> running across the week, not a longer long run."* It names the consequence, the cause and the
+> lever, which is what §34 asks for.
+> ⚠️ **Two filed figures do not reproduce, both overstating the defect.** Re-derived on the item's
+> own construction: mean long-run share of the delivered week **63.6%, not 77%**; and
+> `INV-PLAN-LR-MAX-WEEKLY-PCT` fires on **95.2%, not 72.9%** (that one UNDERSTATED it). The cohort
+> here is 252 plans against the item's 144, so the rates are the comparable figures, not the counts.
+> 🔻 **Negative space:** this closes the item as filed. It does **not** claim the sentence is the
+> best possible one, and adding to it was deliberately refused: the SLT cut that note from 123 words
+> in 2026-09-17 for making the same point four times, so lengthening it reverses a ruling.
 
 > ⚖️ **COACHING BOARD RULED 2026-10-05 — CORRECT AS IS. The product is behaving correctly and must
 > SAY so (§34). NO PRESCRIPTION CHANGE.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
@@ -4653,7 +4667,25 @@ shape. ⚠️ **Do not answer by adding an absolute-km floor** — measured abov
 Whether that is §106's "a plan never peaks below where the runner already is" is a separate
 question, and `INV-PLAN-PEAK-NOT-BELOW-START` is itself acknowledged at 30.7%.
 
-### 🏃 `STRIDES-2DAY-SILENT-GAP-01` — the 2-day runner loses their neuromuscular stimulus and is never told
+### ✅ 🏃 `STRIDES-2DAY-SILENT-GAP-01` — SHIPPED 2026-10-05: the runner was not silent-ed, they were told the OPPOSITE
+
+> ✅ **SHIPPED 2026-10-05. The deliverable was not the sentence the item asked for.** The board asked
+> for one honest sentence to fill a silence. **There was no silence: `hard_pref_note` asserted
+> *"the strides on your midweek run keep your legs quick"* unconditionally**, on plans where
+> `strideCarrierDay` had correctly declined and the plan carried no strides at all.
+>
+> 📊 **Measured on the item's own cohort** (252 genuine 2-day plans, count 2 + exactly five blocked
+> days): **116 carried the claim · 12 of those had ZERO neuromuscular weeks · across all 116 the
+> claim was false for 52.3% of running weeks (728 of 1,392).**
+> 🔧 The note now branches on `weekHasNeuromuscular`, the §28 owner's own predicate, so it cannot
+> drift from what the engine placed. **No prescription changed** (the gate is computed after `weeks`
+> is built and writes only to the note).
+> ⚖️ **Coaching Board EXEMPT** — ADR-017 exemption path, a claim/computation mismatch restoring §34
+> intent. The ruling below stands and is satisfied.
+> 🧪 `lib/plan/strideClaimHonesty.test.ts` — 3 arms, falsified by restoring the unconditional claim
+> (2 of 3 went red, naming 3 plans). It **builds the 2-day cohort itself**, because `cohortGrid()`
+> carries `days_available: 3` and never varies it, so the at-risk shape is not in any standing grid.
+> 📉 **Before/after: `review:coaching` identical on all six arms, envelope `WHOLE PRODUCT 95.9%`.**
 
 > ⚖️ **COACHING BOARD RULED 2026-10-05 — CORRECT AS IS. §34 honesty gap, structurally
 > unsatisfiable. NO PRESCRIPTION CHANGE.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
@@ -5400,7 +5432,7 @@ it was inherited."*
 the grid** — blocking 6 days is a legitimate statement ("I can run once a week"); the defect is
 that the other control then disagrees in silence.
 
-#### 🟠 `DAYS-GATE-CAPACITY-01` — **RCA DONE 2026-10-02. MOSTLY ALREADY RULED, and my headline claim was FALSE** *(P3; the one real half is a note's wrong REASON)*
+#### 🟠 `DAYS-GATE-CAPACITY-01` — **RCA DONE 2026-10-02. MOSTLY ALREADY RULED, and my headline claim was FALSE** 🏃 **COACHING BOARD** *(P3; the one real half is a note's wrong REASON)*
 
 🏃 **COACHING BOARD**, after `/zona-debug`. **Not a design question:** it changes what the
 engine REFUSES.

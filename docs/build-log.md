@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — STRIDES-2DAY-SILENT-GAP-01 · the gap was not silence, it was a sentence saying the opposite
+**Shipped:** `hard_pref_note` stops claiming "the strides on your midweek run keep your legs quick" on all-easy plans that carry no strides at all, and says what is missing and why instead.
+**Dev learning:** `days_available` is a **number**, not an array of day names. I spent four measurements passing `['tue','sat']`, which coerces to `NaN`, collapsed placement to one session a week, and produced a beautifully consistent fiction: "100% long-run share" for every day count from 2 to 6. The tell was that a *varying* axis produced an *identical* number. A uniform result across a varying input is a bug in the measurement, not a finding about the engine. The second tell was the engine rendering my bad array straight into runner-facing prose: "you can run tue,sat days a week".
+**Product/creator learning:** the board asked for one honest sentence to fill a silence, and the silence did not exist. What existed was worse: the plan told a two-day runner that strides on their midweek run were keeping their legs quick, on 116 of 252 plans, while `strideCarrierDay` had correctly refused to place any. Filling a silence and correcting a lie are different jobs with different urgency, and the item could not tell them apart because it had measured the invariant, not the copy.
+**AI-building learning:** my own scratch measurement files, written to the repo root as `*.tmp.ts`, broke `npm run verify` on the documented `[...Set]` gotcha that `CLAUDE.md` warns about on its own line. The harness type-checks the whole tree, so a throwaway script is not throwaway. The scratchpad directory exists; use it.
+**The honest bit:** every number I produced in the first half of this task was void, and I had already written a confident paragraph quoting two of those notes as evidence the item was closed. The thing that saved it was re-reading the item, which named its own construction ("exactly five blocked days") and did not match what I had built. The item was more careful than I was.
+**Hook material:** four measurements, one wrong type. `days_available: ['tue','sat']` → NaN → "100.0%" for every day count from 2 to 6. A varying axis that returns a constant is never a finding.
+**Postable?:** yes
+
+
 ## 2026-10-05 — TAP-TARGET-DECISIONS-01 closed · ten controls fixed, none converted
 **Shipped:** the last five sub-44px runner-facing controls take the floor. Zero remain.
 

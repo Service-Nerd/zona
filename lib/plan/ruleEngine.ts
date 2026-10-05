@@ -36,7 +36,7 @@ import { hasInjuryKeyword, hasVolumeCappedInjuryHistory } from './injuryScope'
 import { assessBaseBuild, baseVolumeRefusal, runWalkInadequateRefusal, BaseVolumeError } from './baseVolume'
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
-import { strideCarrierDay, isDayAfterLongRun, neuromuscularNote, neuromuscularLabel, hasHillRestrictingInjury } from './neuromuscular'
+import { strideCarrierDay, isDayAfterLongRun, neuromuscularNote, neuromuscularLabel, hasHillRestrictingInjury, weekHasNeuromuscular } from './neuromuscular'
 import { computeZones, type ZoneTargets } from './zones'
 import { effectiveStartKm } from './startVolume'
 import { weeksBetweenLocal } from './length'
@@ -9065,8 +9065,29 @@ function buildRulePlanOnce(
         }
       }
       if (!hasQuality) {
+        // STRIDES-2DAY-SILENT-GAP-01 (2026-10-05) — this sentence used to assert
+        // "the strides on your midweek run keep your legs quick" unconditionally.
+        // §28 offers strides on a MIDWEEK EASY run, and a two-day week has none
+        // that is not the long run or the day before it, so `strideCarrierDay`
+        // correctly returns null and the plan carries no strides at all. The note
+        // then told the runner the opposite of what it had built.
+        //
+        // Measured on the item's own cohort (252 genuine 2-day plans, exactly five
+        // blocked days): **116 carried the claim, 12 of them with ZERO
+        // neuromuscular weeks, and across all 116 it was false for 52.3% of
+        // running weeks (728 of 1,392).**
+        //
+        // The Coaching Board ruled the PRESCRIPTION correct as is and asked for
+        // one honest sentence (Willy: "tell them what they are missing and why,
+        // and tell them it is two days a week doing it, not us"). This changes no
+        // prescription; it stops the note claiming a session the plan does not
+        // contain. Gate reads `weekHasNeuromuscular`, the §28 owner's own
+        // predicate, so it cannot drift from what the engine actually placed.
+        const hasNeuromuscular = weeks.some(w => weekHasNeuromuscular(w))
         return {
-          hard_pref_note: 'This plan has no hard sessions in it. At your current base, easy running and the long run are what build the most, and the strides on your midweek run keep your legs quick. Adding intensity now would cost more than it returns.',
+          hard_pref_note: hasNeuromuscular
+            ? 'This plan has no hard sessions in it. At your current base, easy running and the long run are what build the most, and the strides on your midweek run keep your legs quick. Adding intensity now would cost more than it returns.'
+            : 'This plan has no hard sessions in it. At your current base, easy running and the long run are what build the most. Strides need a midweek easy day and your running days do not leave one, so this plan has none: another day is what brings them back.',
         }
       }
       return {}
