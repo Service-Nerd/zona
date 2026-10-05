@@ -580,7 +580,7 @@ lies about the schema to satisfy a test.
 if genuinely unread. Small, and it removes a reason for someone to wonder what the feature was.
 
 
-### `TODAY-CTA-CLEARANCE-01` — the screen's one action is bisected by the nav 🧭 DESIGN BOARD
+### `TODAY-CTA-CLEARANCE-01` — the original filing, for the record 🧭 DESIGN BOARD
 **Found 2026-09-25** in the founder's own screenshot, while ruling NAV-SLIM-01. Filed by the
 board rather than fixed there: it is a layout question about Today's bottom, not a nav question.
 
@@ -3500,7 +3500,7 @@ histogram."* **The chair gave Wroblewski this correction and Collins the next on
 48, 50, 52); **13 of 32 were BELOW the documented 44px**. ⚠️ **Derive a scale from the ROLES buttons
 play, never from the distribution** — that is precisely how 48px got chosen and why this item exists.
 
-### 📱 `STEPPER-CONTROL-01` — (a)(b)(c) SHIPPED; **(d) BLOCKED ON A DEVICE** 🧭 **DESIGN BOARD**
+### 📱 `STEPPER-CONTROL-01` — arms a/b/c done; **(d) BLOCKED ON A DEVICE** 🧭 **DESIGN BOARD**
 **Board: 🧭 DESIGN BOARD** — a new control type.
 
 Split out of `ICON-BUTTON-01` by Wroblewski: *"that is not four icon buttons, it is two steppers, and
