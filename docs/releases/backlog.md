@@ -247,7 +247,7 @@ reminder that 375 HIDES what a wider viewport exposes — the measurement that m
 one width only. If 320 ever returns to support it is an **SLT** cost question first, and it
 reopens every measurement taken at 375.
 
-### `MATCH-LIST-WINDOW-01` — the candidate list has no date filter 🏃 COACHING BOARD
+### `MATCH-LIST-WINDOW-01` — the run picker ignores the ±2-day window that already exists ⚙️ **NO BOARD** (re-tagged 2026-10-05: defect fix, not a board question)
 
 > 🔴 **COACHING BOARD 2026-10-05 — NOT THIS BOARD'S. EXEMPT as a defect fix restoring documented
 > intent (ADR-017 never-convene). RE-TAGGED 🏃 -> ⚙️ NO BOARD.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
@@ -493,7 +493,7 @@ clear while 106 go unexamined.
 **Do:** measure off-system controls too, and either convert each or record an inline-target
 exemption. The gate should fail on a NEW sub-44px control regardless of whether it is on the system.
 
-### `DANGER-TEXT-CONTRAST-01` — extended 2026-09-25
+### ✅ `DANGER-TEXT-CONTRAST-01` — extended 2026-09-25 (SHIPPED; registry carries it — this subsection is the record)
 Two further instances, both excluded by name in `buttonOwnership.test.ts` with their reason rather
 than silently restyled, because both carry a **semantic** colour a conversion would delete:
 - `ModifyPlanSheet.tsx` injury chip — white label on `--moss` selected fill, **3.68:1**. The moss
@@ -3178,7 +3178,7 @@ end of it.**
 surface in the product"*) and will **kill any celebration, notification or progress number**
 added to it. `LEDGER-01`'s shipped rules stand.
 
-### 🟡 `SITE-SCROLL-DEPTH-01` — the measurement that would settle the adaptation device 🧭 **DESIGN BOARD**
+### 🟡 `SITE-SCROLL-DEPTH-01` — the measurement that would settle the adaptation device ⚙️ **NO BOARD** (re-tagged 2026-10-05: blocked on instrumentation, returns to the Design Board with a number)
 
 > ⚠️ **DESIGN BOARD 2026-10-05 — INSUFFICIENT EVIDENCE RE-AFFIRMED, and this item is RE-TAGGED
 > 🧭 DESIGN BOARD -> ⚙️ NO BOARD (blocked on instrumentation).** Record:
@@ -4770,7 +4770,7 @@ rather than re-unitised — nothing was.
 
 ## ⚖️ FILED 2026-09-23 — the two `ModifyPlanSheet` items the board DEFERRED
 
-### 🧭 `SHEET-DATE-INPUT-01` — the race date is the only native control on the sheet
+### ✅ `SHEET-DATE-INPUT-01` — CLOSED 2026-10-05 on measurement: already migrated to `TextField` (16px, full width) ⚙️ **NO BOARD**
 
 > ✅ **CLOSED 2026-10-05 ON MEASUREMENT — Design Board backlog-clearance sitting.** Record:
 > `docs/decisions/2026-10-05-design-board-backlog-clearance.md`.
@@ -5668,7 +5668,7 @@ findability problem on Me.**
 
 ---
 
-### 🧭 `DESIGN-MILES-TAKEABLES-01` — the four patterns the open-lens review ruled SHIP
+### ✅ `DESIGN-MILES-TAKEABLES-01` — CLOSED 2026-10-05. Design Board: DON'T SHIP as filed; 3 of 4 arms were already dead ⚙️ **NO BOARD**
 
 > 🔴 **DESIGN BOARD 2026-10-05 — CLOSED. DON'T SHIP as filed.** Record:
 > `docs/decisions/2026-10-05-design-board-backlog-clearance.md`. Register row in
