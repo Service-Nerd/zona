@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — SHEET-DAY-QUESTION-01 · the honest line is the one that refuses to predict
+**Shipped:** the modify sheet now says when its two day controls disagree. It still says nothing about what the plan will do, and that is the interesting part.
+
+**Dev learning:** the obvious copy was *"the plan will use 2 days"*, and it would have been **false**. A sibling item had already established that the validator reads `days_available` and never looks at the blocked days — so the engine acts on the number the runner typed, not the number they can achieve. Writing the helpful sentence would have shipped a claim the engine does not honour, on a sheet whose own module rule says a subtitle describing a consequence the engine does not produce is a claim. **The line restates the runner's own two inputs and stops.** Knowing which sentence you are not allowed to write took longer than writing the one I did.
+
+**Product/creator learning:** the board left two options — ask it like the wizard (one grid) or show the effective count. I took the second, because collapsing two rows into one grid breaks the sheet's one-row-per-setting architecture for a single case, and the board scoped that as an option rather than choosing it. It also explicitly ruled out the move I'd have made first: capping the grid. Blocking six days is a legitimate thing to say — *I can run once a week* — and clamping it would have turned a true statement into a control that silently does nothing.
+
+**AI-building learning:** the reach arm is the one that earns its place. Six arms tested the arithmetic and every one of them would pass with the sheet completely silent — which is this repo's most expensive failure family, a value that is correct, documented, ratified and rendered nowhere. I deleted the render and watched it go red, then rendered it in amber and watched the voice arm go red. Two mutations, both run.
+
+**The honest bit:** I can't see it. `vitest.config.ts` is `environment: 'node'` with no jsdom, so the reach arm reads source text rather than a rendered tree, and the sheet is auth-gated so I never saw the line appear. That is the repo's documented substitute and it is weaker than looking.
+
+**Hook material:** the useful sentence was the false one. The engine reads the number you typed, not the number your own calendar allows — so the sheet can tell you your two answers disagree, and must not tell you which one wins.
+
+**Postable?:** yes — "the honest line is the one that refuses to predict" is a good, specific point about writing product copy against a system you've measured.
+
 ## 2026-10-05 — TAP-TARGET-DECISIONS-01 batch 8a · the ruling was right about the wrong level
 **Shipped:** one owner for the 44px tap-target floor, and five controls off the under-floor register — including an 18px control, the smallest in the product.
 

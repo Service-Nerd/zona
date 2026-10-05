@@ -9,7 +9,7 @@ import type { GeneratorInput, Plan } from '@/types/plan'
 import { formatDuration } from '@/lib/format'
 import { TextField } from '@/components/shared/TextField'
 import {
-  MODIFIABLE_ROWS, MODIFY_GROUP_LABELS, applyEdits, pendingKeys, editsResetLoggedWeeks,
+  MODIFIABLE_ROWS, MODIFY_GROUP_LABELS, applyEdits, dayConflict, pendingKeys, editsResetLoggedWeeks,
   type ModifyGroup, type PlanEdits, type ModifiableKey,
 } from '@/lib/plan/modifyPlan'
 import Button from '@/components/ui/Button'
@@ -175,6 +175,43 @@ export default function ModifyPlanSheet({
                           value={valueOf(row.key)}
                           onChange={(v) => set(row.key, v as never)}
                         />
+                        {/* 🔴 SHEET-DAY-QUESTION-01 — the sheet used to say NOTHING here.
+                            `days_available` and `days_cannot_train` are asked as two
+                            independent controls, so two taps state a contradiction: 5
+                            declared with 5 blocked leaves 2 clear and nothing said so.
+                            The wizard cannot do this — one `WeekGrid` derives both.
+
+                            ⚠️ MUTED, NOT AMBER. This sheet's own note rules that amber is
+                            coaching-warning voice, and the runner has not done anything
+                            wrong: they have stated two things that do not fit. It is the
+                            same treatment as `row.consequence` directly above, because it
+                            is the same kind of thing — a derived fact about the control.
+
+                            ⚠️ It says nothing about the PLAN. `DAYS-GATE-CAPACITY-01` is
+                            why: the engine reads the DECLARED number and never looks at
+                            the blocked days, so "the plan will use 2" would be false
+                            today. The arithmetic and that reasoning live in
+                            `lib/plan/modifyPlan.ts → dayConflict`, where a test can see
+                            them — copy in a component is copy no test can read.
+
+                            Rendered on the `days_available` row rather than the grid: the
+                            declared number is the one that turns out not to hold. */}
+                        {row.key === 'days_available' && (() => {
+                          const c = dayConflict(
+                            valueOf('days_available') as number | null,
+                            valueOf('days_cannot_train') as string[] | null,
+                          )
+                          if (!c) return null
+                          return (
+                            <div style={{
+                              fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+                              lineHeight: 1.5, marginTop: 'var(--space-2)',
+                            }}>
+                              You&apos;ve blocked {c.blocked} {c.blocked === 1 ? 'day' : 'days'}, so{' '}
+                              {c.clear} {c.clear === 1 ? 'is' : 'are'} clear.
+                            </div>
+                          )
+                        })()}
                       </div>
                     )
                   })}

@@ -168,3 +168,44 @@ export function editsResetLoggedWeeks(plan: Plan, edits: PlanEdits): boolean {
     { race_name: plan.meta?.race_name ?? null, race_date: next.race_date ?? null },
   )
 }
+
+/**
+ * The two day controls, reconciled — or `null` when they agree.
+ *
+ * 🔴 SHEET-DAY-QUESTION-01 (Design Board, SHIP scoped). `GeneratePlanScreen`
+ * derives BOTH `days_available` and `days_cannot_train` from a single `WeekGrid`,
+ * so in the wizard **they cannot contradict.** `ModifyPlanSheet` asks them as two
+ * independent controls — a `SegmentedControl` (2–6) and an uncapped 7-cell
+ * `DayGridSelector` — so **two taps state a contradiction and the sheet says
+ * nothing.** 🎪 Collins: *"one question rendered as two controls is the taxonomy
+ * defect — the wizard proves it, because there it's one grid."*
+ * 📱 Wroblewski: *"the error path wasn't designed, it was inherited."*
+ *
+ * ⚠️ THE BOARD RULED OUT A CAP, EXPLICITLY. Blocking six days is a legitimate
+ * statement — *"I can run once a week"* — so the grid is not clamped. The defect
+ * is that the OTHER control then disagrees in silence.
+ *
+ * 🔴 AND THIS DELIBERATELY SAYS NOTHING ABOUT WHAT THE PLAN WILL DO.
+ * `DAYS-GATE-CAPACITY-01` establishes that `validateDaysAvailable` reads
+ * `input.days_available` and **never mentions `days_cannot_train`** — so the
+ * engine acts on the number the runner TYPED, not the number they can achieve.
+ * A line reading *"the plan will use 2 days"* would therefore be **false today**,
+ * and hard rule 7 applies: a subtitle describing a consequence the engine does
+ * not produce is a claim. This restates the runner's own two inputs and stops
+ * there. The engine half is the 🏃 Coaching Board's.
+ *
+ * Returns `null` when there is nothing to say — the declared count is achievable,
+ * so a line would be noise on a sheet whose whole design is restraint.
+ */
+export function dayConflict(
+  daysAvailable: number | null | undefined,
+  daysCannotTrain: readonly string[] | null | undefined,
+): { declared: number; blocked: number; clear: number } | null {
+  const declared = typeof daysAvailable === 'number' ? daysAvailable : null
+  if (declared === null) return null
+  // Deduplicated: a repeated day in the stored array is one blocked day, and
+  // counting it twice would invent a conflict that the runner cannot see.
+  const blocked = new Set((daysCannotTrain ?? []).filter(d => typeof d === 'string')).size
+  const clear = Math.max(0, 7 - blocked)
+  return clear < declared ? { declared, blocked, clear } : null
+}

@@ -5117,7 +5117,38 @@ switch.
 🥇 **The sitting found the real one, and it IS a vocabulary problem — just not this one.**
 → `SHEET-DAY-QUESTION-01`, below.
 
-#### 🟡 `SHEET-DAY-QUESTION-01` — the sheet asks as TWO controls what the wizard asks as ONE, and they can contradict *(P2, filed 2026-10-02 from the `SHEET-CONTROL-VOCAB-01` sitting)* 🧭 **DESIGN BOARD**
+#### ✅ `SHEET-DAY-QUESTION-01` — SHIPPED 2026-10-05. The sheet is no longer silent; it still says nothing about the PLAN ⚙️ **NO BOARD**
+
+> ✅ **SHIPPED 2026-10-05**, Design Board SHIP (scoped).
+> **Of the two options the board left open** — *"ask it the way the wizard does, or show the
+> effective count live"* — **the second**, because collapsing two sheet rows into one grid breaks
+> the sheet's own one-row-per-setting architecture for a single case, and the board scoped it as an
+> option rather than choosing it.
+> ⚠️ **NOT a cap on the grid**, exactly as ruled: blocking six days is a legitimate statement
+> (*"I can run once a week"*). The defect was that the other control then disagreed **in silence**.
+> 🔴 **AND THE LINE DELIBERATELY SAYS NOTHING ABOUT THE PLAN.** `DAYS-GATE-CAPACITY-01` establishes
+> that `validateDaysAvailable` reads `input.days_available` and **never mentions
+> `days_cannot_train`** — so the engine acts on the number the runner TYPED. *"The plan will use 2
+> days"* would be **false today**, and hard rule 7 applies: a subtitle describing a consequence the
+> engine does not produce is a claim. **The line restates the runner's own two inputs and stops.**
+> The engine half remains 🏃 the Coaching Board's.
+> ⚠️ **Muted, not amber** — the sheet's own note rules amber is coaching-warning voice, and stating
+> two things that do not fit is not a warning. Same treatment as `row.consequence` above it, because
+> it is the same kind of thing: a derived fact about the control.
+> **Rendered on the `days_available` row**, not the grid: the declared number is the one that turns
+> out not to hold.
+> **Artifacts:** the arithmetic is `lib/plan/modifyPlan.ts → dayConflict` — **beside the rows, where
+> a test can see it**, because copy in a component is copy no test can read (that module's own rule).
+> **Gate:** `lib/plan/dayConflict.test.ts`, 7 arms, keyed to the item's own three measured cases,
+> plus **a REACH arm** — a correct helper nothing renders is the decorative-config class, and every
+> other arm would pass with the sheet still silent. ⚠️ Source-read, not rendered: `vitest.config.ts`
+> is `environment: 'node'` with no jsdom, which is weaker than a render test and is the documented
+> substitute. **Falsified twice:** deleting the render reds the reach arm; rendering it in `--warn`
+> reds the voice arm.
+> 👤 **The words are yours to change** — *"You've blocked 5 days, so 2 are clear."* It is new
+> functional copy, not a locked `brand.md` string, written to the documented voice (honest, dry, one
+> sentence, no cheerleading).
+
 
 🧭 **DESIGN BOARD — SHIP, scoped.** ⚙️ **The engine half is NOT this board's — see
 `DAYS-GATE-CAPACITY-01`.**
