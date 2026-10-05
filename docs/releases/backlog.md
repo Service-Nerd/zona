@@ -4423,7 +4423,62 @@ client. Falsified — restoring it names the file and both arms go red.
 **Contract updated** (`docs/contracts/api/recalibrate-zones.md`): the 404 row now says what it
 means and what it used to mean.
 
-### 🏃 `DELIVERED-RAMP-REAL-DRIVER-01` — what actually drives 98.6% of the firings is unknown
+### ✅ 🏃 `DELIVERED-RAMP-REAL-DRIVER-01` — CLOSED 2026-10-05: pass delivered, Q1 withdrawn, Q2 RULED (§94 Am. 3)
+
+> ✅ **CLOSED. Both questions answered, and the board VETOED the one it was asked to grant.**
+> Q2 asked whether a week gaining a session should count as a §2 ramp. **Refused**, on two grounds
+> and a measurement: **§2 Am. 2 carries Hutchinson's binding freeze** on relaxing this predicate
+> without adherence or injury data; **§94 Am. 1 had already REMOVED an exemption arm from this same
+> check** for silencing it when things were worst (202 weeks, all 202 with the long run growing); and
+> **the premise fails** — over 1,988 gained-session firings, mean km **per session** ALSO rose in
+> **65.0%**, rose >10% in **24.5%** (worst +33.3%), held or fell in only **35.0%**. An exemption would
+> have **silenced 1,293 compound-progression weeks to quieten 695 benign ones.**
+> ✅ **What shipped is §94 Amendment 3 — attribution, not relaxation.** Where the run count rose and
+> per-session mean did not rise at all (`DELIVERED_RAMP_FREQUENCY_PER_SESSION_MAX_RISE_PCT` = **0**,
+> zero by ruling), the message names **FREQUENCY** instead of `Driver NOT ATTRIBUTED`. Same severity,
+> nothing exempted, **no prescription change** — `review:coaching` identical on all six arms, envelope
+> **95.9%**.
+> 🧪 `lib/plan/rampFrequencyAttribution.test.ts`, 4 arms including a population arm, **falsified both
+> directions**. ⚠️ **And the pre-existing `deliveredRampDriver` gate went RED on the way in** because
+> it asserts *exactly three* attributions — which is precisely what an exhaustive-branch assertion is
+> for, and why this could not ship quietly.
+> ✅ **Repeatable: `npm run measure:ramp-attribution`**, firing set taken from `validatePlan` itself.
+
+> ✅ **THE EVIDENCE THE BOARD NAMED NOW EXISTS AND IS REPEATABLE: `npm run measure:ramp-attribution`**
+> (`scripts/measure-delivered-ramp-attribution.ts`). It takes its firing set from `validatePlan`
+> itself, never from a local re-derivation of §94's guards, because a checker that re-derives its
+> producer's predicate cannot catch the producer being wrong.
+>
+> 📊 **Re-derived on the FULL grid (39,632 plans, 10,556 firing week-instances), against the figures
+> filed on 2026-09-25 from a 3,000-plan sample:**
+>
+> | measure | filed | now |
+> |---|---|---|
+> | plan-wide rate | 27.2% | **19.6%** |
+> | half-marathons | 42.2% | **23.9%** |
+> | **LR largest contributor but BELOW the threshold, of non-led** | **34%** | **8.2%** (5.6% of all firings) |
+> | largest = easy | 47.1% | 46.8% |
+> | largest = long run | 34.0% | 32.2% |
+> | week gained a session | 25.2% | **18.8%** |
+>
+> 🥇 **THE LARGEST-CONTRIBUTOR SPLIT REPRODUCES ALMOST EXACTLY (46.8/32.2/21.0 against 47.1/34.0/18.9),
+> WHICH IS WHAT SAYS THE METHOD MATCHES.** Against that, the one figure the item's argument rests on
+> moved by a factor of four.
+>
+> ✅ **Q1 — "is `DELIVERED_RAMP_LR_ATTRIBUTION_PCT` (50) set too high?" ANSWERED: NO, and the premise
+> no longer holds.** The item reasoned that *"a third of firings are mostly long run and are not being
+> told so, which defeats §94 Am. 1's purpose"*. Today that set is **8.2% of non-led firings and 5.6%
+> of all firings**. 32.3% of firings are **already** reported as long-run-led. **No change recommended,
+> and no principle to author.**
+> ⚠️ **I cannot attribute the 34% → 8.2% move.** The filed figure came from a 3,000-plan sample and
+> mine from the full grid, so it is either an engine change or an unrepresentative sample, and
+> distinguishing them needs the 2026-09-25 code. **Both figures are stated; neither is withdrawn.**
+> 🔻 **Q2 IS STILL OPEN AND IS A REAL BOARD QUESTION:** should a week **GAINING a session** count as a
+> ramp at all? **18.8% of firings involve one**, and 3 runs → 4 is a structural change, not a volume
+> spike. That one needs a ruling, not a measurement.
+> 🔻 **The rate is still the largest warn in the product at 19.6% plan-wide**, and this pass **did not
+> reduce it by one firing** — it explains it. The honest reading from the filing stands: a delivered
+> week rises because sessions are added and grown, which is what a build phase is.
 
 > ⚠️ **COACHING BOARD 2026-10-05 — INSUFFICIENT EVIDENCE. The board cannot rule, and this item
 > already knows it.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.

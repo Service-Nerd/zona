@@ -42,7 +42,8 @@
     "partition:foundation": "NODE_ENV=production tsx scripts/foundation-budget-partition.ts",
     "remediate:foundation": "NODE_ENV=production tsx scripts/recompose-foundation.ts",
     "button:geometry": "tsx scripts/button-geometry.ts",
-    "remediate:raceweek": "tsx scripts/fix-race-week-volume.ts"
+    "remediate:raceweek": "tsx scripts/fix-race-week-volume.ts",
+    "measure:ramp-attribution": "tsx scripts/measure-delivered-ramp-attribution.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",

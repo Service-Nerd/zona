@@ -79,10 +79,15 @@ describe('the driver is computed, not asserted', () => {
     ).toEqual([])
   })
 
-  it('every firing carries exactly one of the three attributions', () => {
+  // §94 Amendment 3 (Coaching Board 2026-10-05) added a FOURTH branch: FREQUENCY,
+  // where the run count rose and per-session load did not. This arm is the reason
+  // that amendment could not be shipped quietly — it went red on the way in, which
+  // is what an exhaustive-branch assertion is for.
+  it('every firing carries exactly one of the four attributions', () => {
     const unclassified = all.filter(f =>
       !/The LONG RUN is driving it/.test(f.msg)
       && !/handed its deficit forward/.test(f.msg)
+      && !/FREQUENCY is driving it/.test(f.msg)
       && !/Driver NOT ATTRIBUTED/.test(f.msg))
     expect(unclassified.map(u => u.msg.slice(0, 90)), 'a firing with no driver branch').toEqual([])
   })

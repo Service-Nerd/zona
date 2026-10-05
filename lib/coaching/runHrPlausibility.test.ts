@@ -1,10 +1,32 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 import { isPlausibleRunHr, meanHr, buildHrTrendSeries, type RunRecord } from './runHistory'
 import { RUN_HR_PLAUSIBLE, TREND_SERIES } from './constants'
 
 // The Coach screen told the founder his easy runs went "77 (Apr avg) → 146
 // (now)" and Kit repeated it as fact. The trend maths was right the whole way;
 // it was faithfully averaging a corrupt `avg_hr` row. These pin the gate.
+//
+// ⚠️ THE FIXTURE IS BUILT IN UTC, AND THE CLOCK IS PINNED TO THE INSTANT THAT
+// USED TO BREAK IT. This file was green on 2026-10-05 and went RED during the
+// evening of the same day with no code change, two cases, one reporting
+// `expected 2 to be 3`.
+//
+// MY FIRST DIAGNOSIS WAS WRONG AND I HAD ALREADY CALLED IT. I blamed the date
+// rolling 10-05 → 10-06, which is the same mistake as the `nextMonday(new Date())`
+// break the day before: a date coincidence is the most convincing kind of wrong
+// answer. Pinning to 10-06 passed, which falsified it in one run.
+//
+// THE REAL CAUSE: `history()` built its dates with `setMonth`/`setDate`, which
+// operate in LOCAL time, while bucketing reads the UTC date out of
+// `toISOString()`. During BST, 23:30Z is 00:30 local the NEXT day, so `setDate(1)`
+// produces Oct 1 00:30 BST = **Sep 30 23:30 UTC** and day 1 of the month lands in
+// the previous month's bucket. Measured: 23:30Z on 2026-10-06 FAILS, 00:10Z and
+// 12:00Z pass, and 23:30Z on 2026-10-31 passes because BST has ended. It is a
+// one-hour window each night for seven months of the year.
+//
+// So the fixture now uses the UTC setters, which removes the fragility rather
+// than hiding it, and the clock is pinned to 23:30Z — the hostile instant — so a
+// regression cannot wait for nightfall to show up.
 
 describe('isPlausibleRunHr', () => {
   it('accepts a real easy-run average', () => expect(isPlausibleRunHr(146)).toBe(true))
@@ -56,7 +78,8 @@ function run(iso: string, avgHr: number | null, distanceKm = 8): RunRecord {
 function history(earlierHrs: (number | null)[], nowHrs: (number | null)[]): RunRecord[] {
   const now = new Date()
   const monthAgo = (n: number, day: number) => {
-    const d = new Date(now); d.setMonth(d.getMonth() - n); d.setDate(day); return d.toISOString()
+    // UTC setters, not local: see the header. `toISOString()` is what buckets read.
+    const d = new Date(now); d.setUTCMonth(d.getUTCMonth() - n); d.setUTCDate(day); return d.toISOString()
   }
   return [
     ...earlierHrs.map((hr, i) => run(monthAgo(2, i + 1), hr)),

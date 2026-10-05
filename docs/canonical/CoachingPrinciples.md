@@ -6578,6 +6578,78 @@ Hutchinson chairing (Willy leading; the chronic-load and both-portions scopes ar
 conditions of approval). Extends §90's basis to healthy runners at `warn`; does
 not loosen §2, §12, §52 or §90.
 
+### §94 Amendment 3 — FREQUENCY is a named driver when per-session load does not rise *(Coaching Board 2026-10-05, DELIVERED-RAMP-REAL-DRIVER-01)*
+
+**Ruling: INCORRECT as framed (a veto on the exemption), CORRECT WITH AMENDMENT on
+attribution.**
+
+**The question.** `INV-PLAN-DELIVERED-RAMP` fires on 18.8% of its week-instances
+(1,988 of 10,556) in weeks where the run count rose. The item asked whether such a
+week should count as a §2 ramp at all: *"going from 3 runs to 4 is a structural
+change, not a volume spike."*
+
+**Principle.** It counts. Nothing is exempted. But where the run count rose **and
+mean km per session did not rise at all**, the message names **frequency** as the
+driver instead of reporting `Driver NOT ATTRIBUTED`.
+Numeric: `DELIVERED_RAMP_FREQUENCY_PER_SESSION_MAX_RISE_PCT` = **0**.
+
+**Why the exemption was refused, on two grounds and a measurement.**
+
+1. **§2 Amendment 2 carries Hutchinson's binding condition** — this predicate is
+   *frozen until we hold adherence or injury data*, and *any further relaxation
+   needs outcome evidence, not another corpus measurement*. This submission was a
+   corpus measurement. Refused on that ground alone.
+2. **§94 Amendment 1 had already removed an exemption arm from this same check.**
+   The trimable arm fell silent precisely when the long run drove the spike: 202
+   silenced weeks, **all 202 with the long run growing, zero false positives of the
+   class it was written to prevent.** Adding a run-count exemption is that move
+   again.
+3. **The premise does not survive measurement.** Over the 1,988 gained-session
+   firings, mean km **per session** also rose in **65.0%**, rose by **>10% in 24.5%**
+   (worst **+33.3%**), and held or fell in only **35.0%**; the longest run failed to
+   grow in 32.0%. An exemption on run count would have silenced **1,293
+   compound-progression weeks to quieten 695 benign ones.**
+
+**Why attribution was granted.** §94 Amendment 1 made attribution a condition of
+approval, and for 35.0% of this set the driver is **known** while the message says it
+is not. 🩹 Willy: *"frequency rising at constant per-session load is the safer way to
+add volume: tissue sees more frequent, smaller bouts with recovery between. But that
+is 35% of this population, and exempting on run count would silence the compound case
+along with the benign one."* ⚕️ Sims: the frequency-up, load-flat subgroup is the one
+she would want **surfaced rather than hidden** for peri- and post-menopausal runners,
+which is an argument for attribution and against exemption. 🎯 McMillan: *"a runner
+going from three runs to four in a week where every run is also longer is doing two
+things at once, and that is the week I would ask about. Tell the others. Do not excuse
+them."*
+
+⚠️ **ZERO IS DELIBERATE, not an oversight.** Per-session mean must not rise at all.
+Any non-zero tolerance is an invented number and begins eating the compound cases.
+
+⚠️ **This amendment changes no prescription and no severity.** It changes one
+sentence the runner reads.
+
+#### Q1 withdrawn by measurement — do not re-derive it
+
+The item also argued `DELIVERED_RAMP_LR_ATTRIBUTION_PCT` (50) was too high, because
+*"a third of firings are mostly long run and are not being told so"*. Re-derived on
+the full grid (39,632 plans, 10,556 firings): that set is **8.2% of non-long-run-led
+firings and 5.6% of all firings, not 34%**, and **32.3% of firings are already
+reported as long-run-led.** No change. ⚠️ The 34% → 8.2% move is **unattributed**: the
+filed figure came from a 3,000-plan sample and the new one from the full grid, so it
+is either an engine change or an unrepresentative sample, and distinguishing them
+needs the 2026-09-25 code. Both figures stand; neither is withdrawn. The
+largest-contributor split reproduces almost exactly (easy 46.8% against 47.1%, long
+run 32.2% against 34.0%, quality 21.0% against 18.9%), which is what says the method
+matched.
+
+**Repeatable:** `npm run measure:ramp-attribution`. It takes its firing set from
+`validatePlan` itself rather than re-deriving §94's guards, because a checker that
+re-derives its producer's predicate cannot catch the producer being wrong.
+
+🔻 **The rate is unchanged by this sitting: 19.6% plan-wide, still the largest warn in
+the product.** This amendment explains part of it; it does not reduce it by one
+firing.
+
 ### Amendment 1 — the trimable arm is retired; §2's claim is the WHOLE week
 
 *(Coaching Board, 2026-09-17 — RAMP-GUARD-FAILS-OPEN-01. CORRECT WITH AMENDMENT.

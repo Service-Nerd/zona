@@ -4180,10 +4180,37 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         // somewhere to go instead of a dead end.
         const prevWasTrimmed = (plan.meta.rule_adjustments ?? []).some(a =>
           a.rule === 'V1-volume-quality-split' && (a.weeks_affected ?? []).includes(prev.n))
+        // §94 AMENDMENT 3 (Coaching Board 2026-10-05, DELIVERED-RAMP-REAL-DRIVER-01)
+        // — FREQUENCY, when per-session load did not rise.
+        //
+        // The board was asked to EXEMPT these weeks and refused: §2 Amendment 2
+        // freezes this predicate against corpus-justified relaxation, and §94
+        // Amendment 1 had already removed an exemption arm from this same check
+        // for silencing it exactly when things were worst. Measured over 1,988
+        // gained-session firings, per-session mean ALSO rose in 65.0%, so an
+        // exemption would have silenced 1,293 compound-progression weeks to
+        // quieten 695 benign ones.
+        //
+        // So this branch changes nothing about whether the check fires. It only
+        // names a driver that was known and reported as "NOT ATTRIBUTED" for
+        // 35.0% of the gained-session set. The condition is per-session mean not
+        // rising AT ALL (the constant is 0 by ruling, not by oversight).
+        const runCountOf = (wk: Week) => Object.values(wk.sessions)
+          .filter(sn => sn && sn.type !== 'rest' && sn.type !== 'strength').length
+        const prevRuns = runCountOf(prev)
+        const nowRuns = runCountOf(w)
+        const meanPerSession = (wk: Week, runs: number) => (runs > 0 ? deliveredKm(wk) / runs : 0)
+        const prevMean = meanPerSession(prev, prevRuns)
+        const nowMean = meanPerSession(w, nowRuns)
+        const perSessionRisePct = prevMean > 0 ? ((nowMean - prevMean) / prevMean) * 100 : 0
+        const frequencyLed = nowRuns > prevRuns
+          && perSessionRisePct <= GENERATION_CONFIG.DELIVERED_RAMP_FREQUENCY_PER_SESSION_MAX_RISE_PCT
         const driver = longRunLed
           ? `The LONG RUN is driving it (${longKmOf(prev).toFixed(0)}→${longKmOf(w).toFixed(0)}km, +${lrRiseKm.toFixed(0)}km of the +${totalAbsRiseKm.toFixed(0)}km) — legal under §45, which permits +20% or +5km whichever is greater. The engine may not deform a race-anchored long run, so treat this as a week to take the easy days genuinely easy.`
           : prevWasTrimmed
             ? `A volume/quality-split trim held week ${prev.n} flat and handed its deficit forward (§100) — confirmed against meta.rule_adjustments, not assumed.`
+            : frequencyLed
+            ? `FREQUENCY is driving it: the week goes from ${prevRuns} runs to ${nowRuns}, and the average run did not get longer (${prevMean.toFixed(1)}→${nowMean.toFixed(1)}km). §94 Am. 3 — more frequent running at the same per-session load is the lower-risk way to add volume, so treat this as a frequency step rather than a load spike. The week still clears §2's cap and is reported for that reason.`
             : `Driver NOT ATTRIBUTED: the rise is not long-run-led (${lrRiseKm.toFixed(0)}km of +${totalAbsRiseKm.toFixed(0)}km) and week ${prev.n} carries no V1 volume/quality-split trim. This is the majority case (98.6% when measured) and its cause is open — see DELIVERED-RAMP-FALSE-DRIVER-01. Do not read it as a §100 deficit hand-forward; that producer shipped 2026-09-11 and did not fire here.`
         if (breaches) {
           violations.push({

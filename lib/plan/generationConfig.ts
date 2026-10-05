@@ -1736,6 +1736,38 @@ export const GENERATION_CONFIG = {
   // 50% = "more of the rise came from the long run than from everything else".
   DELIVERED_RAMP_LR_ATTRIBUTION_PCT: 50,
 
+  // §94 Amendment 3 (Coaching Board 2026-10-05, DELIVERED-RAMP-REAL-DRIVER-01) —
+  // FREQUENCY is a named driver when per-session load does not rise.
+  //
+  // The sitting was asked to EXEMPT weeks that gain a session (18.8% of firings)
+  // on the item's argument that "3 runs to 4 is a structural change, not a volume
+  // spike". Refused, on two grounds and a measurement:
+  //
+  //   §2 Amendment 2 carries Hutchinson's binding condition — this predicate is
+  //   FROZEN until we hold adherence or injury data, and any further relaxation
+  //   needs outcome evidence, not another corpus measurement.
+  //
+  //   §94 Amendment 1 had already REMOVED an exemption arm from this same check
+  //   (the trimable arm) because it fell silent exactly when the long run drove
+  //   the spike: 202 silenced weeks, all 202 with the long run growing.
+  //
+  //   And the premise does not hold. Over 1,988 gained-session firings, mean km
+  //   PER SESSION also rose in 65.0%, rose >10% in 24.5% (worst +33.3%), and held
+  //   or fell in only 35.0%. An exemption on run count would silence 1,293
+  //   compound-progression weeks to quieten 695 benign ones.
+  //
+  // What the board DID grant is attribution, not relaxation: the firing still
+  // fires at the same severity and nothing is exempted, so the freeze is
+  // untouched. Where the run count rose and per-session load did not, the message
+  // says so instead of reading "Driver NOT ATTRIBUTED", which discharges §94
+  // Amendment 1's attribution condition for a case whose driver IS known.
+  //
+  // ZERO IS DELIBERATE. Per-session mean must not rise AT ALL. Willy: frequency
+  // rising at constant per-session load is the safer way to add volume, but any
+  // non-zero tolerance is an invented number that starts eating the compound
+  // cases this check exists to catch.
+  DELIVERED_RAMP_FREQUENCY_PER_SESSION_MAX_RISE_PCT: 0,
+
   // ── Injury-aware session selection (CoachingPrinciples §21) ────────────────
   // Injury keywords that trigger exclusion of hill sessions during base/build
   // phases. Substrings; matched case-insensitively against injury_history.
