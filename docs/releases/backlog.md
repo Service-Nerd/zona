@@ -1629,7 +1629,7 @@ and fewer controls as the codebase does the right thing, and a shrinking populat
 failure this repo has recorded more than any other. **Fix: resolve a spread of a known
 constant before measuring, or fail loudly when a style object cannot be fully read.**
 
-#### 🔲 `COACHBYLINE-EMPTY-VARIANT-01` — `CoachByline` does not cover its own empty state, so it was hand-rolled *(P3, filed 2026-10-02 from MICRO-LABEL-CHIPS-01's sitting)*
+#### 🔲 `COACHBYLINE-EMPTY-VARIANT-01` — `CoachByline` does not cover its own empty state, so it was hand-rolled *(P3, filed 2026-10-02 from MICRO-LABEL-CHIPS-01's sitting)* 🧭 **DESIGN BOARD**
 
 🧭 **DESIGN BOARD.** `DashboardClient` hand-rolls Kit's 22px avatar + name + role at
 `:5259–5275` as the **empty state** of `CoachByline`, because `CoachByline` always renders the
@@ -1988,7 +1988,7 @@ and the prop type, so a file-wide count reads 3 when correct and 4 when not: exa
 of number nobody notices moving. Second arm asserts the survivor is still the **status row**
 with its staleness string, because a count of 1 would stay green if it became a bare door.
 
-#### 🔴 `DOC-AUDIT-REG-FORMAT-01` — the registry has two row formats and the audit read one
+#### 🔴 `DOC-AUDIT-REG-FORMAT-01` — the registry has two row formats and the audit read one ⚙️ **NO BOARD**
 
 ⚙️ **NO BOARD** — tooling. **Parse fixed; the document having two formats is what remains.**
 
@@ -2262,7 +2262,7 @@ precedent when it split `W-01`:** one ID cannot be both a shipped record and an 
 audit is right to call that ambiguous. The alternative was a declared exemption, which is the
 heavier instrument.
 
-#### 🔴 `FOUNDATION-BUDGET-01` — foundation weeks ignore the runner's stated day budget *(P1, Coaching Board ruled 2026-10-03, step 0 DONE)*
+#### ✅ `FOUNDATION-BUDGET-01` — SHIPPED 2026-10-03 (`85105851`); registry row backfilled 2026-10-05 🏃 **COACHING BOARD**
 
 🏃 **COACHING BOARD — RULED.** Sitting 2, 2026-10-03, `coaching-rulings.md`: *CORRECT WITH
 AMENDMENT, the remedy is STRUCTURAL not a percentage.* RCA + remediation plan:
@@ -2438,7 +2438,7 @@ but **invisible to every check** — stated plainly because the founder was not 
 option was put to him, and the alternative (keep the duration, carry the breach as declared debt)
 was not offered until afterwards. See `FOUNDATION-LR-S9-01`.
 
-#### 🔻 `STORED-PLAN-DEBT-QUEUE-01` — 30 violations on 7 live plans, and clearing them means rewriting someone's training *(P3, filed 2026-10-04)*
+#### 🔻 `STORED-PLAN-DEBT-QUEUE-01` — 30 violations on 7 live plans, and clearing them means rewriting someone's training *(P3, filed 2026-10-04)* 👤 **FOUNDER**
 
 👤 **FOUNDER** — the only open question is whether to regenerate live plans, which is a policy call,
 not an engineering one.
@@ -2523,7 +2523,39 @@ reproduce it, which is why **two earlier versions of this gate were vacuous** an
 running them showed it. Falsified both ways: make the fix a no-op → red; drop the fake clock
 → red.
 
-#### 🔻 `BASEBUILD-AUDIT-BLIND-01` — base-build plans carry no `generator_input`, so nothing can audit them *(P2, filed 2026-10-04)*
+#### 🟡 `BACKLOG-TAG-IN-HEADING-01` — the filing rule has no check, and 18 of 23 items were tagged in the BODY *(P3, filed 2026-10-05)* ⚙️ **NO BOARD**
+
+📐 **Measured 2026-10-05 while tagging the untagged.** 23 items carried no board tag where the rule
+and every parse look — the **heading**. But **18 of the 23 already stated their board in the body**
+(*"Board: none until it is confirmed"*, *"P1, Coaching Board"*, *"SLT: do not build, do not
+decide"*). **Only 5 were genuinely undecided.** So the filing rule was largely being FOLLOWED and
+invisibly, which is the worst of both: the decision was made and could not be read.
+
+🔴 **The rule says so itself and it is the only one of the three board mechanisms with no gate.**
+`backlog.md` § Filing rule: *"This is a note, not a gate. This repo's own record says a rule that
+holds only while someone remembers is not a rule — the filing rule has no mechanical check, unlike
+the two board guards."* It was right.
+
+⚠️ **AND IT HID A SHIPPED ITEM.** Cross-referencing the roadmap's NOW section against registry FIRST
+CELLS found `FOUNDATION-BUDGET-01` shipped on 2026-10-03 (`85105851`) with **no registry row** — named
+three times in the file but never as a row's first cell, which is the only thing
+`ship-record-check.py` reads. Its two siblings had rows; the parent did not. **Backfilled
+2026-10-05.** No hook found it.
+
+**The check, if it is built:** parse every item heading, require one of the five tags, and fail on a
+heading with none. ⚠️ **It needs the four-shapes problem solved first** — `backlog.md` holds items as
+`###`/`####` headings, LATER table rows and bare bullets, and no parse written so far reads all four
+(four attempts on 2026-09-20 gave four different counts). **A tag check over a parse that sees one
+shape of four is a check that reports clean while missing 40%.** That is the real work here, and it
+is why this is P3 and not P1.
+
+🔻 **Second half, cheap and separable: `audit-docs.sh`'s shipped-but-open arm reads `backlog.md`
+ONLY, not `roadmap.md`.** So four NOW lines sat marked open with registry rows against them
+(`OPS-DIGEST-STORED-PLAN-DEBT-01`, `ZONES-SURFACE-01`, `LEDGER-FATIGUE-HONESTY-01`,
+`SITE-BTN-INVERT-01`) while the audit said ALL CLEAN. Extending that arm to the roadmap needs no
+parser — it is the same first-cell comparison against a second file.
+
+#### 🔻 `BASEBUILD-AUDIT-BLIND-01` — base-build plans carry no `generator_input`, so nothing can audit them *(P2, filed 2026-10-04)* ⚙️ **NO BOARD**
 
 ⚙️ **NO BOARD.** A coverage gap, not a prescription question.
 
@@ -2549,7 +2581,7 @@ allow-by-default shape this repo keeps paying for.
 race-specific work), so fewer invariants bear on it at all. But "fewer rules apply" is not "no rules
 apply", and right now nobody can tell which.
 
-#### 🟡 `AUDIT-CONTRACT-MENTION-01` — the contract check counts a passing MENTION as a contract *(P3, filed 2026-10-04)*
+#### 🟡 `AUDIT-CONTRACT-MENTION-01` — the contract check counts a passing MENTION as a contract *(P3, filed 2026-10-04)* ⚙️ **NO BOARD**
 
 ⚙️ **NO BOARD.** Tooling.
 
@@ -2570,7 +2602,7 @@ will RAISE the reported debt** — unknown by how much until it is run, and that
 finding, not a regression. 🔻 **Do not fix this while the number is being quoted elsewhere** without
 saying in the same breath that the definition changed, or the jump reads as decay.
 
-#### 🟡 `CONTRACT-COVERAGE-03` — 61 components still have no contract *(P3, filed 2026-10-02, falling register)*
+#### 🟡 `CONTRACT-COVERAGE-03` — 61 components still have no contract *(P3, filed 2026-10-02, falling register)* ⚙️ **NO BOARD**
 
 ⚙️ **NO BOARD.** The honest remainder after `-02` fixed the population: **61 of 86
 in-population components** have no contract, now counted across **all seven** component
@@ -2700,7 +2732,7 @@ that reason in `lib/marketing/typeScale.test.ts`.
 
 ## ⚖️ FILED 2026-09-29 — two items from the LEDGER-REACH-01 round
 
-### 🟡 `LEDGER-PLACEMENT-01` — where the discipline ledger belongs on Me
+### 🟡 `LEDGER-PLACEMENT-01` — where the discipline ledger belongs on Me 💼 **SLT** first (parked pending reach data), then 🧭 **DESIGN BOARD** on placement
 
 🧭 **DESIGN BOARD.** `LEDGER-REACH-01` restored the ledger to Me as a **defect fix**,
 in the position the feature registry already specified (leading `Your training`). It did
@@ -3015,7 +3047,7 @@ build, exactly as `configPrincipleSync` fails on a stale baseline row.
 
 ## ⚖️ FILED 2026-09-28 — after the attribution / trust / adaptation sitting
 
-### 🟡 `OPS-ARTIFACT-PLACEMENT-01` — where should the ledger and the share card live?
+### 🟡 `OPS-ARTIFACT-PLACEMENT-01` — where should the ledger and the share card live? 💼 **SLT** first — *"do not build, do not decide"* until the reach events accumulate — then 🧭 **DESIGN BOARD**
 
 🧭 **DESIGN BOARD** — **blocked on data, deliberately.** The SLT ruled that the UX and
 marketing of `LEDGER-01` / `SHARE-01` may not be touched until the reach chain is visible.
@@ -3032,7 +3064,7 @@ end of it.**
 surface in the product"*) and will **kill any celebration, notification or progress number**
 added to it. `LEDGER-01`'s shipped rules stand.
 
-### 🟡 `SITE-SCROLL-DEPTH-01` — the measurement that would settle the adaptation device
+### 🟡 `SITE-SCROLL-DEPTH-01` — the measurement that would settle the adaptation device 🧭 **DESIGN BOARD**
 
 🧭 **DESIGN BOARD** (ruled **INSUFFICIENT EVIDENCE** 2026-09-28). The board could not rule on
 showing adaptation because **there is no site analytics at all**, so nobody can say whether a
@@ -3699,7 +3731,7 @@ Seiler's condition of approval and had only its long-run arm implemented.
 
 ---
 
-### 🔄 `UI-PATTERNS-ENFORCEMENT-01` — the counts are RE-MEASURED 2026-10-02; the honoured-count is still open
+### 🔄 `UI-PATTERNS-ENFORCEMENT-01` — the counts are RE-MEASURED 2026-10-02; the honoured-count is still open 🧭 **DESIGN BOARD**
 
 ⚖️ **Design Board: SHIP THE MEASUREMENT, NOT THE GATES** — which is this item's own stated first
 move. 📐 **Re-derived 2026-10-02: 3,230 lines / 28 sections / ~10 guarded is now 4,910 lines /
@@ -3730,7 +3762,7 @@ taken: **of the unguarded sections, how many are actually being honoured today?*
 separates "unenforced and fine" from "unenforced and already drifted", and only the second
 needs a gate.
 
-### 🟡 `UI-PATTERNS-MOMENTS-01` — INSUFFICIENT EVIDENCE 2026-10-02; deferred with a condition
+### 🟡 `UI-PATTERNS-MOMENTS-01` — INSUFFICIENT EVIDENCE 2026-10-02; deferred with a condition 🧭 **DESIGN BOARD**
 
 ⚖️ **Design Board INSUFFICIENT EVIDENCE.** 🧭 Zhuo: *"the document has no vocabulary for weight"*
 is a brief without a success condition, and every ruling that stuck at this board had a number
@@ -4679,7 +4711,7 @@ switch.
 🥇 **The sitting found the real one, and it IS a vocabulary problem — just not this one.**
 → `SHEET-DAY-QUESTION-01`, below.
 
-#### 🟡 `SHEET-DAY-QUESTION-01` — the sheet asks as TWO controls what the wizard asks as ONE, and they can contradict *(P2, filed 2026-10-02 from the `SHEET-CONTROL-VOCAB-01` sitting)*
+#### 🟡 `SHEET-DAY-QUESTION-01` — the sheet asks as TWO controls what the wizard asks as ONE, and they can contradict *(P2, filed 2026-10-02 from the `SHEET-CONTROL-VOCAB-01` sitting)* 🧭 **DESIGN BOARD**
 
 🧭 **DESIGN BOARD — SHIP, scoped.** ⚙️ **The engine half is NOT this board's — see
 `DAYS-GATE-CAPACITY-01`.**
@@ -5486,7 +5518,7 @@ arithmetic was right throughout; its **purpose** was not. `BEHIND_VERDICT_MIN_SE
 `behindVerdict.test.ts` is exhaustive over the domain, because an example-based test would have
 passed the whole time.
 
-### 🔧 `PLAN-COUNTDOWN-SOURCE-01` — the days-to-race figure needs checking against the founder's screen
+### 🔧 `PLAN-COUNTDOWN-SOURCE-01` — the days-to-race figure needs checking against the founder's screen ⚙️ **NO BOARD** (open question — a board only if it is confirmed as a defect)
 **Board: none until it is confirmed.** Filed as an OPEN QUESTION, not a diagnosis.
 
 While confirming D6 I read the founder's live plan: **race 2026-12-12, which is 81 days out.**
@@ -5501,7 +5533,7 @@ Plan screen with his account: if it really says 214, there is a third countdown 
 named, and that is a two-writer split of the kind that has bitten this repo before. If it says 81,
 this closes and only the **vocabulary** problem remains, which is already ruled as **S5**.
 
-### 🔧 `CI-DURATION-TARGETEDGRID-01` — `npm run verify` is non-deterministic at the duration wall
+### 🔧 `CI-DURATION-TARGETEDGRID-01` — `npm run verify` is non-deterministic at the duration wall ⚙️ **NO BOARD**
 **Board: none.** Tooling, no user-facing surface, no prescription change.
 
 Two `npm run verify` runs over **identical code**, twenty minutes apart on the same machine:
@@ -5760,7 +5792,7 @@ on the sitting, not a reason to delay it.
 
 ---
 
-### ✅ `DESIGN-CD1-TAXONOMY-01` — CLOSED 2026-10-02. Both halves ruled; CD-1 is closed
+### ✅ `DESIGN-CD1-TAXONOMY-01` — CLOSED 2026-10-02. Both halves ruled; CD-1 is closed 🧭 **DESIGN BOARD** (the presentation half; the prescription half is 🏃 COACHING — CD-1 splits)
 
 ⚖️ **PRESCRIPTION HALF — Coaching Board 2026-10-02: INCORRECT, a veto on CD-1 options (b) and (c).**
 🔴 **§19 answers it and CD-1 never cited it:** *"If it is named 'Threshold' / 'Tempo' / 'Cruise' the
@@ -5783,7 +5815,7 @@ nothing changes what the engine prescribes.
 🔻 **What would reopen it:** evidence that T-pace should differ between continuous and intervallic
 delivery — an amendment to **§19**, not the catalogue.
 
-#### `DESIGN-CD1-TAXONOMY-01` — the 2026-10-02 design-half record
+#### `DESIGN-CD1-TAXONOMY-01` — the 2026-10-02 design-half record, for the record (CLOSED above) 🧭 **DESIGN BOARD**
 
 🔴 **DON'T SHIP AS FILED.** Measured against `sessionCatalogueData.ts`'s structured targets, the
 five sessions resolve to **THREE distinct pace anchors plus a progression, not one pace**:
@@ -5851,7 +5883,7 @@ problem to solve. The ruling changes only whether they come back.
 
 ---
 
-### 🟡 `CHECK-SLOW-NOISE-01` — the duration gate cries wolf under machine load
+### 🟡 `CHECK-SLOW-NOISE-01` — the duration gate cries wolf under machine load ⚙️ **NO BOARD**
 
 Filed 2026-09-21. **Not urgent, and it is a credibility problem rather than a correctness one.**
 
@@ -8387,7 +8419,7 @@ race-week display (D1), `MARATHON-pace` casing (D2), plus `lib/plan/planShapeInv
 
 ---
 
-### 🔴 `DELOAD-PLAN-OPENING-01` — OPEN, and **URGENCY RAISED 2026-09-21**. §119's producer change: deload placement needs a SEARCH.
+### 🔴 `DELOAD-PLAN-OPENING-01` — OPEN, and **URGENCY RAISED 2026-09-21**. §119's producer change: deload placement needs a SEARCH. 🏃 **COACHING BOARD** first (correctness), then 💼 **SLT** on order
 
 **Filed 2026-09-21** by the Coaching Board, which ratified the principle and declined the greedy fix.
 
@@ -8435,7 +8467,7 @@ no legitimate instances, unlike `INV-PLAN-PEAK-NOT-BELOW-START` beside it in the
 
 ---
 
-### 🟠 `WEEK12-LR-CAP-CLIFF-01` — OPEN. The 5K plan steps +44% in week 3, and it is not §94's residual.
+### 🟠 `WEEK12-LR-CAP-CLIFF-01` — OPEN. The 5K plan steps +44% in week 3, and it is not §94's residual. 🏃 **COACHING BOARD** — a +44% step in week 3 is what the engine PRESCRIBES
 
 **Filed 2026-09-21.** `5k-12-week` delivers **18 → 18 → 26 km**. Weeks 1–2 are held by
 `WEEK_1_2_LONG_RUN_CAP_MULTIPLIER` (long run capped to `longest_recent_run_km × m` = 5.5 km), and
@@ -8492,7 +8524,7 @@ One prose consequence, caught by the change: page 2 called Runna *"the most expe
 three"*, which £119.99 makes false. It now says **"the most expensive per month"**, which is true
 (Runna £15.99/mo; Coopah is dearest annually).
 
-### 🔴 `DELOAD-BADGE-TRUTH-01` — a week badged "Recovery" that is not a reduction *(P1, Coaching Board)*
+### 🔴 `DELOAD-BADGE-TRUTH-01` — a week badged "Recovery" that is not a reduction *(P1, Coaching Board)* 🏃 **COACHING BOARD** — the LATER table already said so; a week badged *Recovery* that is not a reduction is the ENGINE, not the badge
 
 **Measured 2026-09-21 on the 45,776-plan corpus: 9.6% of all recovery-badged weeks (10,664) carry
 volume at or above the week before them, and 18.9% of plans contain at least one.** The runner sees a
@@ -8908,7 +8940,7 @@ this cohort should start here, not from the 29 historical accounts, most of whic
 
 ---
 
-### ⚖️ SLT — `FOUNDATION-DECIDE-LATER-01`: delete the button, or make "later" real? Sat 2026-09-18.
+### ⚖️ SLT — `FOUNDATION-DECIDE-LATER-01`: delete the button, or make "later" real? Sat 2026-09-18. 🧭 **DESIGN BOARD** — delete a control or make its promise real is a screen-job decision
 
 **The choice.** Two handlers are byte-identical and the modal has one trigger, so "Decide later" is a promise the app cannot keep. **Fix A:** delete the third button. **Fix B:** build a real "later" — stamp the outstanding decision and re-offer it on the Plan screen.
 
@@ -9031,7 +9063,7 @@ Proposed, to them:
 
 ---
 
-### ⚖️ SLT — `FIRSTRUN-MOMENTS-01`: make the generation moment feel like something. Sat 2026-09-18.
+### ⚖️ SLT — `FIRSTRUN-MOMENTS-01`: make the generation moment feel like something. Sat 2026-09-18. 🧭 **DESIGN BOARD** — what a moment feels like is this board's, per ADR-023
 
 **Founder's brief.** *"Up to 500 marathon runners, the vast majority have never run the distance. Drop-off is high and some never start. When they use the app I want them to feel something. On the wizard and the generation, what can we do to inspire them, or let them know they're not alone, or that they can do this?"*
 
@@ -9069,7 +9101,7 @@ Proposed, to them:
 
 ---
 
-### ⚖️ SLT — `FIRSTRUN-MARATHON-01`, touchpoint 7: the first missed session. Sat 2026-09-18.
+### ⚖️ SLT — `FIRSTRUN-MARATHON-01`, touchpoint 7: the first missed session. Sat 2026-09-18. 💼 **SLT** (framing already ruled), then 🧭 **DESIGN BOARD** per touchpoint
 
 **Why this touchpoint.** The SLT batch named it the priority inside the P0: *the drop-out happens at the first missed session*, not at onboarding, where motivation is highest.
 
