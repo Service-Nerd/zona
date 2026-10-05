@@ -806,10 +806,6 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   as a defect fix to the position the registry specified; the founder asked for it *beside
   the tier chip*, and `ME-PURPOSE-01` says nothing lives on Me. Goes to the board with the
   tier-chip colour. `backlog.md`.
-- ⚙️ `LEDGER-COACH-SITE-REMOVE-01` — **NEXT.** The ledger has two render sites; the Design
-  Board killed the Coach one 2026-10-05 on a measured 3.7:1 split (`me` 123 views / 9 users
-  vs `coach` 33 / 8). ⚠️ **A removal ACROSS A TIER GATE** — `ledgerReach.test.ts`'s free-user
-  arm is the regression guard. Ruled, so no board. `backlog.md`.
 - 💼 `LEDGER-RESET-01` — **LATER, blocked on data.** The silent reset to zero. Sutherland
   and Wood disagree on the record and both call the hard reset a defect. `backlog.md`.
 - 🔄 `MICRO-LABEL-DRIFT-01` — **vocabulary SHIPPED 2026-09-29; migration open.** Three

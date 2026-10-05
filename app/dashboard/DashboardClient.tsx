@@ -149,7 +149,6 @@ import CoachTeaser from '@/components/dashboard/CoachTeaser'
 import OrientationScreen from '@/components/dashboard/OrientationScreen'
 import HRZonesSection from '@/components/dashboard/HRZonesSection'
 import ManualRunModal from '@/components/dashboard/ManualRunModal'
-import LedgerCard from '@/components/dashboard/LedgerCard'
 import MeScreen from '@/components/dashboard/MeScreen'
 import { getDeviceToken } from '@/components/dashboard/pushDevice'
 import SaveImageButton from '@/components/dashboard/SaveImageButton'
@@ -538,11 +537,6 @@ export default function DashboardClient() {
   // — used to show a skeleton instead of letting the RestraintCard pop in
   // a beat after the rest of the Today screen renders.
   const [runAnalysisReady, setRunAnalysisReady] = useState(false)
-  // Discipline ledger prefetched as part of the orchestrated paid-data load so
-  // the Coach LedgerCard is present on first paint instead of popping in after
-  // its own mount-time fetch. Coach is paid/trial-only, so this block covers
-  // every surface that shows the card; MeScreen/PostRun keep the hook.
-  const [disciplineLedger, setDisciplineLedger] = useState<LedgerSnapshot | null>(null)
   const [weeklyReport, setWeeklyReport] = useState<any | null>(null)
   const [pendingAdjustment, setPendingAdjustment] = useState<any | null>(null)
   // RESHAPE-FIX-WAVE3-PHASE2 — recent silent (auto_applied) adjustments for the
@@ -1538,7 +1532,7 @@ export default function DashboardClient() {
             // RESHAPE-FIX-WAVE3-PHASE2 — silent auto-applied changes from the last
             // 14 days for the Me-screen audit surface. Read-only; capped at 10.
             const recentChangesCutoff = new Date(Date.now() - 14 * 86_400_000).toISOString()
-            const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes, ledgerData, recentChangesRes] = await Promise.all([
+            const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes, recentChangesRes] = await Promise.all([
               supabase.from('run_analysis').select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id).is('superseded_at', null),
               supabase.from('weekly_reports').select('*').eq('user_id', user.id).is('superseded_at', null).order('week_n', { ascending: false }).limit(1).maybeSingle(),
               supabase.from('plan_adjustments').select('*').eq('user_id', user.id).is('superseded_at', null).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
@@ -1551,10 +1545,6 @@ export default function DashboardClient() {
               loadedPlan.meta.race_date
                 ? supabase.from('race_readiness_notes').select('content, generated_at').eq('user_id', user.id).eq('race_date', loadedPlan.meta.race_date).maybeSingle()
                 : Promise.resolve({ data: null, error: null }),
-              // Discipline ledger — prefetched here so the Coach LedgerCard
-              // doesn't pop in from its own mount fetch. authedFetch never
-              // throws on non-2xx, so guard on res.ok and swallow network errors.
-              authedFetch('/api/discipline-ledger').then(r => r.ok ? r.json() : null).catch(() => null),
               supabase.from('plan_adjustments')
                 .select('id, week_n, summary, sessions_before, sessions_after, created_at')
                 .eq('user_id', user.id).eq('status', 'auto_applied')
@@ -1577,12 +1567,6 @@ export default function DashboardClient() {
             if (typeof unreadCountRes.count === 'number') setUnreadNotifications(unreadCountRes.count)
             if (phaseSummaryRes.data) setPhaseSummary(phaseSummaryRes.data as any)
             if (raceReadinessRes.data) setRaceReadinessNote(raceReadinessRes.data as any)
-            if (ledgerData) setDisciplineLedger({
-              weeksWithinLines:  ledgerData.weeksWithinLines ?? 0,
-              currentWeekStatus: ledgerData.currentWeekStatus ?? 'pending',
-              advancedThisWeek:  !!ledgerData.advancedThisWeek,
-              tier:              ledgerData.tier ?? 'free',
-            })
           } catch {}
           finally { setRunAnalysisReady(true) }
 
@@ -2760,7 +2744,6 @@ export default function DashboardClient() {
                   onDismissRecal={dismissBenchmarkRecal}
                   onOpenBenchmark={() => setScreen('benchmark')}
                   runAnalysisReady={runAnalysisReady}
-                  disciplineLedger={disciplineLedger}
                   // 🔴 §5b.3 — TWO callers, not one. `onConnect` is used by the Coach
                   // empty-state CTA ("Connect a source") AND by `ZoneRings`. Both used to
                   // land on the Me INDEX, where the connection rows were. They are behind
@@ -4663,7 +4646,7 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
 
 
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, liveSessionsDueToDate, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, disciplineLedger, onConnect, restingHR, maxHR, healthkitConnectedAt }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, liveSessionsDueToDate, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, onConnect, restingHR, maxHR, healthkitConnectedAt }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string
@@ -4695,9 +4678,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
    *  fetched. Without it the skeleton can't tell "still loading" from "no data". */
   runAnalysisReady?: boolean
   /** Prefetched discipline ledger from the parent's orchestrated load, so the
-   *  LedgerCard renders resolved on first paint. null until loaded (or if the
-   *  fetch failed) — LedgerCard falls back to its own hook in that case. */
-  disciplineLedger?: LedgerSnapshot | null
   /** Navigate to where a runner connects a run source (Profile). Shown in the
    *  ZoneRings empty state when nothing is linked. */
   onConnect?: () => void
@@ -4797,8 +4777,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   // — a column nothing writes is not a measurement.
   useTrackOnce('weekly_report_open', !!weeklyReport?.headline,
     { week_n: weeklyReport?.week_n ?? null })
-  // `ledger_view` moved INTO `LedgerCard` (LEDGER-REACH-01) so both render surfaces are
-  // instrumented by one owner and carry `surface`. It is not fired here any more.
+  // `ledger_view` lives INSIDE `LedgerCard` (LEDGER-REACH-01), not here.
+  // ⚠️ "both render surfaces" was true until LEDGER-COACH-SITE-REMOVE-01 (2026-10-05)
+  // killed the Coach one. There is ONE surface now and the event still carries it,
+  // because `surface` stays a REQUIRED prop: a default is how the next second surface
+  // would ship mislabelled, which is the whole reason the event moved into the card.
 
   const [localPhaseSummary,  setLocalPhaseSummary]  = useState<{ content: string; generated_at: string } | null>(
     cachedPhaseSummaryValid && phaseSummary ? { content: phaseSummary.content, generated_at: phaseSummary.generated_at } : null
@@ -5626,9 +5609,18 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           </Sheet>
         )}
 
-        {/* ── LEDGER — "Weeks within the lines" ─────────────────────────
-            After the stats evidence tier. RestraintCard anatomy (Pattern 11). */}
-        <LedgerCard ledger={disciplineLedger} surface="coach" />
+        {/* 🔴 LEDGER-COACH-SITE-REMOVE-01 — THE LEDGER'S SECOND RENDER SITE WAS HERE
+            AND THE DESIGN BOARD KILLED IT (2026-10-05, unanimous), on the measurement:
+            `me` 123 views / 9 users against `coach` 33 / 8. Nine users and eight is ONE
+            audience with a preference, not two audiences. Collins: "two doors to one
+            thing is not generosity, it is indecision made visible."
+            Sierra: the ledger is an EXECUTION metric — did you do what you said you
+            would — so it belongs on Me, which `LEDGER-PLACEMENT-01` already settled as
+            "an identity / execution metric, not admin chrome".
+            ⚠️ Its whole prefetch chain went with it (state, the `/api/discipline-ledger`
+            request in the orchestrated load, the prop and the prop type): Me's card uses
+            `useDisciplineLedger`, so the prefetch had NO consumer left. Leaving it is the
+            `SMOKE-PLUMBING-01` shape — dead props and a live SELECT nobody reads. */}
 
         {/* ── AEROBIC TREND — the physiological answer to "am I getting
             fitter?". ONE card, founder's call 2026-09-12.

@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — LEDGER-COACH-SITE-REMOVE-01 · deleting one line meant deleting six things
+**Shipped:** the discipline ledger's duplicate render site on Coach is gone, and so is the entire prefetch chain that existed only to feed it.
+
+**Dev learning:** the board's ruling was "remove the Coach card", which reads like a one-line deletion. It was six: the state, the `/api/discipline-ledger` request inside an orchestrated `Promise.all`, the destructured name, the setter block, the prop pass, the prop type, and the `CoachScreen` signature. Me's card fetches its own data through a hook, so the prefetch had **no consumer left the moment that line went**. Leaving it would have been this repo's own `SMOKE-PLUMBING-01` shape: a live SELECT on every dashboard load plus props that read exactly like live ones. **`tsc` caught the one I missed** — the function signature — which is the argument for type-checking being part of a removal rather than a step after it.
+
+**Product/creator learning:** the measurement did the work the argument couldn't. `me` 123 views from 9 users against `coach` 33 from 8 is not two audiences, it's one audience with a preference, and nine against eight is the number that settles it. Collins' line — *two doors to one thing is not generosity, it is indecision made visible* — is only persuasive because the users were the same users.
+
+**AI-building learning:** my new "no dead plumbing" gate failed on its first run and I was briefly pleased with it. It had grepped the bare name `disciplineLedger` and fired on `LedgerCard`'s own comment pointing at `lib/coaching/disciplineLedger.ts` — a module that is alive and correct. **A name is not a usage.** That's the second over-broad gate I've written today and caught the same way: by running it rather than trusting it.
+
+**The honest bit:** two code comments had quietly become false and neither was wrong when written. One said *"Coach is paid/trial-only, so this block covers every surface that shows the card"* — true until the Me site landed and made it the opposite of true. The other said *"both render surfaces are instrumented"*. Comments don't get re-read when the thing they describe moves, which is the same failure I hit twice earlier today reading a comment about a fixed defect as if it were live.
+
+**Hook material:** the board said "delete the duplicate card". The diff deleted a card, a state hook, an API request, a destructuring, a setter, a prop, a type and a function parameter — and dropped one HTTP request from every dashboard load.
+
+**Postable?:** yes — "deleting one line meant deleting six things" with the dead-prefetch beat, and "a name is not a usage" as the gate lesson.
+
 ## 2026-10-05 — MATCH-LIST-WINDOW-01 · the item said there was no filter; there was a second one
 **Shipped:** the run-link picker now ranks its list with the same matcher the auto-linker uses, and the browse window became a named owner instead of inline date arithmetic.
 

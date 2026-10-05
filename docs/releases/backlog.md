@@ -2843,7 +2843,34 @@ that reason in `lib/marketing/typeScale.test.ts`.
 
 🔻 **ONE NARROW RESIDUAL, routed:** given the 3.7:1 split, **should the Coach duplicate stay?** `MeScreen.tsx:1160` already argues yes, citing `353cbbad`'s stated reason (*"an identity / execution metric, not admin chrome"*). 🧭 Design Board. Decision note: `docs/decisions/2026-10-05-slt-artifacts-unfrozen.md`.
 
-### 🔲 `LEDGER-COACH-SITE-REMOVE-01` — the ledger has two render sites; the board killed one *(filed 2026-10-05)* ⚙️ **NO BOARD** (ruled)
+### ✅ `LEDGER-COACH-SITE-REMOVE-01` — SHIPPED 2026-10-05. One site now, and the whole prefetch chain went with it ⚙️ **NO BOARD**
+
+> ✅ **SHIPPED 2026-10-05.** The Coach render site is gone; `me` is the single home.
+> 🔴 **THE REMOVAL WAS ONE LINE AND THE CHAIN BEHIND IT WAS SIX.** The Coach card was the
+> **only consumer of the prefetch** — Me's card uses `useDisciplineLedger` — so the state, the
+> `authedFetch('/api/discipline-ledger')` entry in the orchestrated load, the `Promise.all`
+> destructuring, the setter block, the prop pass, the prop type **and** the `CoachScreen`
+> signature all had to go with it. ➕ **Side effect worth having: one fewer API request on every
+> dashboard load for every paid/trial runner.**
+> ⚠️ **Leaving it would have been `SMOKE-PLUMBING-01` exactly** — a live SELECT on every load and
+> dead props that read like live ones. **`tsc` caught the one I missed** (the `CoachScreen`
+> destructuring), which is the argument for the type-check being part of the removal, not after it.
+> ⚠️ **Two comments asserted things that stopped being true** and are corrected: the prefetch
+> comment said *"Coach is paid/trial-only, so this block covers **every surface** that shows the
+> card"* — false since the Me site landed — and `CoachScreen`'s said *"**both** render surfaces are
+> instrumented"*.
+> **`surface` stays a REQUIRED prop on a single-caller component, deliberately.** A default is how
+> the next second surface ships mislabelled, which is why `ledger_view` moved into the card.
+> **Gates in `ledgerReach.test.ts`:** the two-site arm became *"exactly ONE render site, and it is
+> Me"* — **exact in both directions**, so a third site fails and so does going back to two — plus a
+> new arm asserting **no dead plumbing survived**. ⚠️ That arm's first version grepped the bare name
+> and fired on `LedgerCard`'s own comment pointing at `lib/coaching/disciplineLedger.ts`, **the
+> module, which is alive**; it now matches the syntactic forms. **A name is not a usage.**
+> ✅ **Falsified both ways:** re-adding the prop pass reds the plumbing arm; re-adding a second
+> `<LedgerCard surface="coach" />` reds the one-site arm.
+> ✅ **The free-reach arms are untouched and still green** — the Me site is ungated and Coach is
+> still paid-gated, which is the contrast that makes `LEDGER-REACH-01` mean anything.
+
 
 > ⚖️ **DESIGN BOARD RULED 2026-10-05 — DON'T SHIP the duplicate. The ledger is Me's.** Unanimous.
 > Record: `docs/decisions/2026-10-05-design-board-backlog-clearance.md`; register row in

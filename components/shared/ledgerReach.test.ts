@@ -127,14 +127,47 @@ describe('LEDGER-REACH-01 — two surfaces, one owner, and they are distinguisha
     expect(sig, 'surface must not have a default').not.toMatch(/surface\s*=/)
   })
 
-  it('both render sites declare a surface', () => {
+  // 🔴 ONE SITE, NOT TWO (LEDGER-COACH-SITE-REMOVE-01, Design Board 2026-10-05).
+  // This arm asserted TWO sites and named `surface="coach"` explicitly, so it CODIFIED
+  // the duplicate the board then killed on the measurement: `me` 123 views / 9 users
+  // against `coach` 33 / 8 — one audience with a preference, not two audiences.
+  //
+  // ⚠️ It is still an EXACT count, in both directions. A THIRD site fails, and so does
+  // going back to two: the point was never "at least one", it was "the ledger has one
+  // home". And `surface` stays REQUIRED on a single-caller prop deliberately — a default
+  // is how the next second surface ships mislabelled, which is why the event moved into
+  // the card in the first place.
+  it('the ledger has exactly ONE render site, and it is Me', () => {
     const re = /<LedgerCard\b[^/>]*/g
     const sites: string[] = []
     let m: RegExpExecArray | null
     while ((m = re.exec(SRC())) !== null) sites.push(m[0])
-    expect(sites.length, 'expected two render sites').toBe(2)
-    for (const s of sites) expect(s, `a LedgerCard render site has no surface: ${s}`).toMatch(/surface=/)
-    expect(sites.join(' ')).toContain('surface="me"')
-    expect(sites.join(' ')).toContain('surface="coach"')
+    expect(sites.length, `expected exactly one render site, found ${sites.length}: ${sites.join(' | ')}`).toBe(1)
+    expect(sites[0], 'the one render site must declare its surface').toMatch(/surface=/)
+    expect(sites[0]).toContain('surface="me"')
+  })
+
+  // ⚠️ AND THE REMOVAL MUST NOT LEAVE ITS PLUMBING BEHIND. `SMOKE-PLUMBING-01`: a
+  // component went for having zero call sites and a SELECT on every dashboard load, a
+  // date computation, three dead props and an unreachable branch all survived for
+  // months. The Coach site was the prefetch's ONLY consumer — Me's card uses
+  // `useDisciplineLedger` — so the request, the state, the prop and the prop type all
+  // had to go with it, and a stranded prop reads exactly like a live one.
+  it('the Coach prefetch chain went with it — no dead plumbing', () => {
+    const src = SRC()
+    // ⚠️ MATCH THE SYNTACTIC FORMS, not the bare name. The first version grepped
+    // /disciplineLedger/ and fired on `LedgerCard`'s own comment pointing at
+    // `lib/coaching/disciplineLedger.ts` — the MODULE, which is alive and correct.
+    // A name is not a usage, and an over-broad gate gets widened until it is useless.
+    for (const form of [
+      /disciplineLedger\s*=\s*\{/,     // the prop pass
+      /disciplineLedger\?\s*:/,         // the prop type
+      /setDisciplineLedger/,             // the setter
+      /\[\s*disciplineLedger\s*,/,      // the useState destructuring
+    ]) {
+      expect(src, `dead ledger plumbing survived the removal: ${form}`).not.toMatch(form)
+    }
+    expect(src, 'the orchestrated load still requests a ledger nobody renders there')
+      .not.toContain("authedFetch('/api/discipline-ledger')")
   })
 })
