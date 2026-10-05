@@ -9219,7 +9219,51 @@ race-week display (D1), `MARATHON-pace` casing (D2), plus `lib/plan/planShapeInv
 
 ---
 
-### 🔴 `DELOAD-PLAN-OPENING-01` — OPEN, and **URGENCY RAISED 2026-09-21**. §119's producer change: deload placement needs a SEARCH. 🏃 **COACHING BOARD** first (correctness), then 💼 **SLT** on order
+### 🟠 `DELOAD-PLAN-OPENING-01` — SEARCH BUILT AND MEASURED 2026-10-05, **NOT SHIPPED**. Blocked on ONE board question. 🏃 **COACHING BOARD**
+
+> 📄 **Full record: `docs/decisions/2026-10-05-deload-placement-search.md`.** The search the board
+> asked for was implemented in full and **it works** — it reproduces the board's own brute-force
+> answer (`[3,6,10]` on the 16-week standard case, one of the exactly two valid placements) and
+> rejects `[4,8,12]` for the right reason. **It is not shipped.**
+>
+> 📊 **Premise re-derived and SHARPENED. 100.0% of firings are week 2** (the opening-block claim is
+> exact), rate **25.8%** of 39,632 plans. ⚠️ **What the filing never said: it is a LONG-RACE defect
+> at a 19x gradient — 5K 2.8% · 10K 2.8% · HM 52.1% · marathon 49.9%.** Over half of all HM and
+> marathon plans opened with a week-2 deload.
+>
+> ✅ **What the search achieved:** `INV-PLAN-MIN-LOADING-BLOCK` 10,228 → **6,268** (−38.7%), and
+> **marathon 49.9% → 3.4% (−93%)**; `DELOAD-IS-A-REDUCTION` −24.7%; net **−2,544 warns** across every
+> invariant; **zero error-severity violations introduced.**
+>
+> 🔴 **WHY IT DOES NOT SHIP — three reasons, all measured:**
+> 1. **It breaks THREE PUBLISHED PLANS on the website.** `5k-12-week`, `10k-12-week`,
+>    `sub-25-5k-plan`: *"recovery week only 6% below w2 (18 → 17 km); band is 20–35%"*. Moving a
+>    deload changes the week it steps back FROM, so a placement that satisfies §119 can stop being a
+>    real reduction.
+> 2. `DELIVERED-RAMP` **+1,120** and `HEADER-PACE-MATCHES-WORK` **+1,184** (both `warn`).
+> 3. 🔴 **THE HALF-MARATHON HALF IS UNREACHABLE INSIDE RATIFIED DOCTRINE, AND THAT IS THE REAL
+>    FINDING.** The HM shape is base 1–5, build 6–10 at the **masters** cadence of 3, so a loading
+>    run is **exactly 2** and the only legal second placement is **week 6, a phase's first week**,
+>    which §87 excludes. Closing HM requires a **3-week masters loading block** — exactly what
+>    **Sims's §87 rule 3 forbids.** **So this item's own falsifier (*"the warn rate must go to ~0,
+>    not to a residual"*) CANNOT BE MET without a new ruling.**
+>
+> 🏃 **THE ONE QUESTION FOR THE BOARD:** may a masters loading block run 3 weeks to buy §119's
+> opening block? Everything else is implementation.
+>
+> ⚠️ **AND THE SEQUENCING AMENDMENT NEEDS REVISITING.** The board ruled placement lands FIRST
+> because it changes which transitions invert. Measured: placement **alone** makes three published
+> plans' deload depth illegal. **Placement first is right; placement ALONE is not shippable** — it
+> has to land together with `DELOAD-BADGE-TRUTH-01`'s depth arithmetic, not before it.
+>
+> ⚠️ **The defect is currently PINNED BY A TEST:** `deloadCadence.test.ts`'s *"STANDARD (freq 4):
+> clears position 2 and keeps the count"* asserts `[2,6,10]`. Legitimate to update, but only
+> alongside the ruling.
+>
+> ⚠️ **One bound in my search was INVENTED and measurement caught it:** I required the trailing block
+> to be `>= MIN_LOADING_BLOCK_WEEKS` by analogy; §119 never fires on a trailing block. Corrected to
+> `>= 1` — **and it changed nothing** (6,268 either way), which is how I learned the HM diagnosis I
+> had written was wrong.
 
 > ⚖️ **COACHING BOARD RULED 2026-10-05 — CORRECT, and it is a PREREQUISITE of
 > `DELOAD-BADGE-TRUTH-01`, not a sibling.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
