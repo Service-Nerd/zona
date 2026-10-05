@@ -114,3 +114,84 @@ violations were introduced.
 moving deloads changes which transitions invert. Measured: placement **on its own** makes three
 published plans' deload depth illegal. Placement first is right; placement **alone** is not
 shippable.
+
+
+---
+
+# Coaching Board sitting 2 — the masters question, answered
+
+**2026-10-05.** Asked: may a masters loading block run THREE weeks where that is the only way to
+give the plan a §119-compliant opening block?
+
+## ⚖️ INCORRECT — a veto, and a RE-AFFIRMATION rather than a new one
+
+🔴 **§95 had already ruled it, for this cohort, from the seat whose rule I came to relax.** §95
+governs *position 2* and §119 the *opening block*, so they are different defects — but the geometry,
+the cohort and the alternative are identical:
+
+> *"On masters plans the rule usually cannot be satisfied, and that is recorded rather than worked
+> around."* Unsatisfiable on **1,944 of 3,726 masters plans (52.2%)** and **0 of 3,726 standard**.
+> **D-21 applies.**
+>
+> ⚕️ **Sims: "masters are the population with the slowest bone and connective recovery, and the
+> alternatives (a longer loading block, or back-to-back deloads) both take real recovery away from
+> exactly them."**
+
+A longer loading block is **named and refused there**. A corpus count is not the outcome evidence
+that would reopen it.
+
+⚠️ **AND I NEARLY MIS-CITED IT, IN MY OWN FAVOUR OF CLOSING THE QUESTION.** §95's **52.2%** and my
+**52.1%** matched to a decimal, and I was about to report the question already-settled on that
+basis. They are **two different denominators** — *masters plans* against *HM plans*. The split
+disproved it: §119's defect is **masters 28.0% / standard 23.6%**, present in both, where §95's was
+**52.2% / 0.0%**. **The precedent governs the RESIDUAL, not the original defect.** Two near-identical
+percentages from different populations is the same trap as every other denominator error in this
+repo, and matching to one decimal place is what made it convincing.
+
+## The residual is ONE CELL, and that is what makes the carve-out right
+
+Measured with the search applied, by cadence x distance:
+
+| cohort | residual |
+|---|---|
+| **masters x half marathon** | **99.1%** (5,136 / 5,184) |
+| masters x marathon | 3.3% |
+| masters x 5K / 10K | 2.8% |
+| standard x half marathon | 5.1% |
+| standard x marathon | 3.5% |
+| standard x 5K / 10K | 2.8% |
+
+**That one cell is 82% of the entire 6,268 residual.** The search's whole gain was the MARATHON
+(49.9% → 3.4%); HM was never improved, because masters HM was always ~99% and standard HM was
+already ~5%.
+
+🎯 **McMillan, on the 99.1%:** *"this is not an edge case that slipped through — for a masters
+half-marathon runner it is what the plan ALWAYS does. But 'recorded rather than worked around' has
+to mean recorded TO THE RUNNER, not only in a document."*
+🩹 **Willy:** *"at cadence 3 the runner is already on the shortest recovery interval we prescribe
+because of their age. Extending the block to 3 weeks removes the one thing that cadence exists to
+deliver."*
+⚕️ **Sims:** *"99.1% is far worse than the 52.2% I ruled on, and worse in the direction of my own
+concern. The remedy is not a longer block; it is that §119 stops pretending this cohort has a legal
+placement."*
+🏃 **Hutchinson:** the §2 Am. 2 freeze is his and is scoped to §2's **ramp** predicate, **not** §87's
+placement rules — so it does **not** block this. §95's precedent does.
+
+## ✅ CORRECT, separately: §119 gains §95's masters carve-out under D-21
+
+A rule that cannot be honoured is a defect in the rule. For the masters cadence §119 becomes a
+**preference**, the residual carries an honesty flag as §95's `deload_position2_yielded` does, and
+McMillan's condition binds: **the runner is told.**
+
+🔴 **THIS OVERTURNS THE ITEM'S OWN ACCEPTANCE CRITERION.** `DELOAD-PLAN-OPENING-01` says *"the warn
+rate must go to ~0, not to a residual."* **That is unachievable and now ratified as such.** Restated:
+**~0 outside the declared masters set.**
+
+### Artifacts — and why they do NOT land yet
+1. **Principle** — §119 Amendment 1 (masters preference + honesty flag, mirroring §95).
+2. **Numeric** — none new; keys on the existing `MASTERS_AGE_THRESHOLD` (45).
+3. **Invariant** — `INV-PLAN-MIN-LOADING-BLOCK` reads the flag for the masters set.
+
+⚠️ Knowing *"no legal placement exists"* **requires the search**, and the search cannot ship alone
+(three published plans' deload depth). **All of it lands with the combined placement +
+`DELOAD-BADGE-TRUTH-01` depth ship.**

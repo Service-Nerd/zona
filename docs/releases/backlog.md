@@ -9248,8 +9248,22 @@ race-week display (D1), `MARATHON-pace` casing (D2), plus `lib/plan/planShapeInv
 >    **Sims's §87 rule 3 forbids.** **So this item's own falsifier (*"the warn rate must go to ~0,
 >    not to a residual"*) CANNOT BE MET without a new ruling.**
 >
-> 🏃 **THE ONE QUESTION FOR THE BOARD:** may a masters loading block run 3 weeks to buy §119's
-> opening block? Everything else is implementation.
+> ⚖️ **ANSWERED 2026-10-05, SITTING 2 — NO. VETO, as a RE-AFFIRMATION of §95.** A 3-week masters
+> loading block was already **named and refused by Sims in §95** for this cohort (*"the alternatives
+> both take real recovery away from exactly them"*), where the constraint set is recorded as
+> unsatisfiable on 52.2% of masters plans under D-21. A corpus count is not the outcome evidence that
+> reopens it. Hutchinson ruled his own §2 Am. 2 freeze **does not reach** §87's placement rules.
+> ✅ **GRANTED INSTEAD: §119 gets §95's masters carve-out** — a preference for the masters cadence,
+> with an honesty flag, and 🎯 **McMillan's binding condition that the runner is TOLD, not just the
+> document.**
+> 🔴 **THE RESIDUAL IS ONE CELL: masters × HM at 99.1% (5,136/5,184) — 82% of the whole residual.**
+> The search's entire gain was the MARATHON; HM was never improved because masters HM was always
+> ~99% and standard HM already ~5%. ⚠️ **And I nearly mis-cited the precedent to close the question:
+> §95's 52.2% and my 52.1% matched to a decimal and are DIFFERENT DENOMINATORS** (masters plans vs HM
+> plans) — §119's defect is masters 28.0% / standard 23.6%, in BOTH cohorts.
+> 🔴 **THIS ITEM'S ACCEPTANCE CRITERION IS OVERTURNED.** *"The warn rate must go to ~0, not to a
+> residual"* is **unachievable and now ratified as such.** Restated: **~0 outside the declared masters
+> set.**
 >
 > ⚠️ **AND THE SEQUENCING AMENDMENT NEEDS REVISITING.** The board ruled placement lands FIRST
 > because it changes which transitions invert. Measured: placement **alone** makes three published
