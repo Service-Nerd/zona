@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — `OPS-AUDIT-DIGEST-ORDER-01` · the report that had never read the thing it reports on
+**Shipped:** The daily ops digest moved from 07:00 to 18:00 Europe/London, so it finally runs after the plan audit it summarises.
+**Dev learning:** Two timestamps were written down three weeks apart and never subtracted from each other. The digest fired 06:00 UTC; the audit's cron is `45 7 * * *` UTC. That is not a near miss — the digest ran **before the audit was due, every single day, since it was built**. Worse, GitHub Actions has been starting that workflow 12:29–16:01 UTC, five to eight hours after its schedule, so the row being read was 17–24 hours old. Also learned the RemoteTrigger API takes a genuine partial update: `{"cron_expression": …}` alone left a 32,673-character prompt completely untouched. I had hand-retyped that prompt four times today before I checked whether I needed to.
+**Product/creator learning:** The fix costs something real and I said so rather than burying it — this is now an **evening** report. A gentle shift would not have worked, because the constraint is the audit's *observed* finish at 16:01 UTC, not its scheduled 07:45. Offering "later" without saying "later means after dinner" would have been the same kind of half-true as the thing being fixed.
+**AI-building learning:** The registry has asserted since 16 September that the event is "~45 min old when read". I had read that line several times and never checked it. 08:30 London is 07:30 UTC; the audit is 07:45. **A plausible sentence in your own documentation is the hardest kind of wrong to see, because it reads as something already verified.** The only thing that caught it was pulling the actual heartbeat timestamps out of the database and subtracting.
+**The honest bit:** This is the third defect in two days whose entire substance is two numbers nobody subtracted — the age metric reading the wrong clock, the cohort grid pinning one end of an interval, and now this. None needed cleverness. All three needed someone to do the arithmetic once.
+**Hook material:** A daily report that had never once read the same day's data. Scheduled 1h45m too early by design, then another 5–8 hours adrift because GitHub starts cron jobs when it feels like it. The docs said the data was "~45 minutes old". It was 17.6 hours old.
+**Postable?:** yes
+
+---
+
 ## 2026-10-05 — `COHORT-REVIEW-CLOCK-01` · two wrong diagnoses, and a date coincidence that fooled me
 
 **Dev.** `npm run verify` was red with no code change. I found the cause in about ten minutes: the
