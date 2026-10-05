@@ -771,6 +771,62 @@ one, the honest ruling may be "leave the override and revisit at two".
 > ⚠️ Both of these are *unfixed and untracked*, not accepted trade-offs — the distinction that
 > item's proposal turns on.
 
+### `LIVENESS-BASELINE-METADATA-01` — the liveness baseline reports 118 invariants and 107 woken; the registry has 139 ⚙️ **NO BOARD**
+
+**Filed 2026-10-05**, found while correcting three stale counts in `CLAUDE.md` — and **this file is
+where the stale number came from.** Fixing the doc without fixing the source means it regenerates.
+
+📐 **MEASURED TODAY, both directions:**
+
+| `lib/plan/__fixtures__/invariantLivenessBaseline.json` says | The code says |
+|---|---|
+| `totalInvariants: 118` | `INVARIANT_CODES.length` = **139** |
+| `wokenCount: 107` | recomputed live every run |
+| `generated: "2026-09-17"` | **18 days ago** |
+
+**21 invariants have been added since the baseline was written.**
+
+### ✅ THE GATE IS NOT BLIND, AND THAT IS THE POINT — THE FIELDS ARE DECORATIVE
+
+⚠️ **Do not file this as "the liveness gate is stale". It is not.** `invariantLiveness.test.ts`
+asserts against `report.plansProbed`, `MUTATIONS.length`, `report.woken.size` and
+**`INVARIANT_CODES.length`** — all recomputed from code on every run — plus `baseline.unproven`,
+which is the actual debt register and is correct (3 entries, each with a named
+`corpus` / `mutation` / `static` reason; **`unclassified` is still 0**).
+
+🔴 **All three metadata fields are WRITTEN by `--write` and DEREFERENCED BY NOTHING.**
+`scripts/invariant-liveness.ts:54–56` writes `generated`, `wokenCount`, `totalInvariants`.
+`invariantLiveness.test.ts:30` types the baseline as `{ unproven; wokenCount }` — **`wokenCount` is
+in the type annotation and never read in any `expect`**, and `totalInvariants` is not even in the
+type. **This is the decorative-config class** (`configConsumer.test.ts`'s whole subject) landing in a
+fixture instead of a config file: *a value whose only consumer is a change someone still has to make
+is a value nothing reads.*
+
+### 🔴 WHY IT STILL MATTERS, GIVEN THE GATE IS SOUND
+
+**The baseline file is the natural place a human looks to answer "how many invariants are there and
+how many wake?"** — and it answers **118 / 107**. That is precisely how `CLAUDE.md` came to claim 118
+for 18 days, and a number in a JSON fixture reads as **measured** in a way a number in prose does
+not. Severity is low; the failure mode is **a confidently wrong figure quoted onward**, which this
+repo has recorded repeatedly.
+
+### Two options
+
+| | |
+|---|---|
+| **(a) RECOMMENDED — delete the three fields** | They are read by nothing, so nothing can go stale. The file then holds only what is consumed: `_` (the human note), `reasons`, `unproven`. Requires dropping lines 54–56 of `scripts/invariant-liveness.ts`. **Singularity-correct**: the live counts already have an owner in `INVARIANT_CODES` and `report`, and a second copy in a fixture is the duplicate that drifted |
+| **(b) Regenerate the baseline** (`npm run invariant:liveness -- --write`) | ⛔ **Riskier and not recommended for this alone.** `--write` also rewrites `unproven`, which is the **debt register**, and *a ratchet must not move without a measurement*. It would refresh the metadata and silently re-baseline the debt in the same action |
+
+**Gate, if (a):** an arm asserting the baseline JSON carries **no key that the test does not read** —
+so the next decorative field fails on the way in rather than drifting for 18 days. Falsify it by
+re-adding `totalInvariants`.
+
+⚠️ **What this item does NOT claim:** that any invariant is unproven, that the debt register is
+wrong, or that a check is failing to fire. The 3 `unproven` entries and `unclassified: 0` were
+both re-derived today and are correct.
+
+---
+
 ### `GUARD-TREE-SWEEP-01` — the colour guards see the diff, never the tree ⚙️ **NO BOARD**
 
 Out of `HOOK-RGBA-COMMENTS-01`. `.githooks/pre-commit` reads **staged files only**, which is not a
