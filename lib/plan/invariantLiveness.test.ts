@@ -27,7 +27,7 @@ import { INVARIANT_CODES } from './invariants'
 
 const BASELINE = JSON.parse(
   readFileSync('lib/plan/__fixtures__/invariantLivenessBaseline.json', 'utf8'),
-) as { unproven: Record<string, string>; wokenCount: number }
+) as { _: string; reasons: Record<string, string>; unproven: Record<string, string> }
 
 const report = probeLiveness()
 
@@ -73,5 +73,29 @@ describe('invariant liveness — a rule that cannot fail is not a check', () => 
     const bad = Object.entries(BASELINE.unproven)
       .filter(([, r]) => !['corpus', 'mutation', 'static', 'unclassified'].includes(r))
     expect(bad).toEqual([])
+  })
+
+  it('the baseline carries no key the test ignores', () => {
+    // 🔴 LIVENESS-BASELINE-METADATA-01. `generated`, `wokenCount` and
+    // `totalInvariants` lived in this fixture and were dereferenced by NOTHING —
+    // the decorative-config class, in a fixture rather than a config file.
+    //
+    // ⚠️ The gate is not here because an unread key is untidy. It is here because
+    // THIS FILE IS WHERE A HUMAN LOOKS to answer "how many invariants are there
+    // and how many wake", it answered 118/107 against a live registry of 139 for
+    // 18 days, and that is where CLAUDE.md's stale 118 came from. A number in a
+    // JSON fixture reads as MEASURED and gets quoted onward.
+    //
+    // The live counts already have owners — INVARIANT_CODES.length and
+    // probeLiveness().woken — recomputed on every run by the arms above. A second
+    // copy in a fixture is the duplicate that drifted.
+    const READ_KEYS = ['_', 'reasons', 'unproven']
+    const extra = Object.keys(BASELINE).filter(k => !READ_KEYS.includes(k))
+    expect(extra, [
+      `the baseline holds ${extra.length} key(s) this test never reads: ${extra.join(', ')}`,
+      '',
+      'An unread key in a fixture goes stale silently and reads as measured.',
+      'Either assert it here, or do not write it in scripts/invariant-liveness.ts.',
+    ].join('\n')).toEqual([])
   })
 })

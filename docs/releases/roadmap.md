@@ -806,12 +806,6 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   as a defect fix to the position the registry specified; the founder asked for it *beside
   the tier chip*, and `ME-PURPOSE-01` says nothing lives on Me. Goes to the board with the
   tier-chip colour. `backlog.md`.
-- ⚙️ `LIVENESS-BASELINE-METADATA-01` — **LATER, low.** The liveness baseline fixture reports
-  `totalInvariants: 118` / `wokenCount: 107` / `generated: 2026-09-17` against a registry of
-  **139** — and it is where `CLAUDE.md`'s stale 118 came from. ✅ **The gate is NOT blind**: it
-  asserts against live `INVARIANT_CODES.length` and `report.*`; **all three fields are written
-  by `--write` and read by nothing** (the decorative-config class in a fixture). Recommended
-  fix is to delete them. `backlog.md`.
 - ⚙️ `LEDGER-COACH-SITE-REMOVE-01` — **NEXT.** The ledger has two render sites; the Design
   Board killed the Coach one 2026-10-05 on a measured 3.7:1 split (`me` 123 views / 9 users
   vs `coach` 33 / 8). ⚠️ **A removal ACROSS A TIER GATE** — `ledgerReach.test.ts`'s free-user

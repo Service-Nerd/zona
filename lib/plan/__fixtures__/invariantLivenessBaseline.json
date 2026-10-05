@@ -1,14 +1,11 @@
 {
   "_": "Invariants no mutation can wake. UNPROVEN, not proven dead. This list may only SHRINK.",
   "reasons": {
-    "corpus": "the harness never builds this plan SHAPE (foundation / recalibration / ultra are not in the cohort grid). Not a defect in the check. \u26a0\ufe0f MAINTENANCE IS NO LONGER IN THIS CATEGORY \u2014 MAINT-LIVENESS-01 (2026-09-19) found the 8 INV-MAINT-* codes were never unreachable by SHAPE: they are checked by validateMaintenanceBlock and the harness only ever called validatePlan. The harness was calling the wrong validator.",
+    "corpus": "the harness never builds this plan SHAPE (foundation / recalibration / ultra are not in the cohort grid). Not a defect in the check. ⚠️ MAINTENANCE IS NO LONGER IN THIS CATEGORY — MAINT-LIVENESS-01 (2026-09-19) found the 8 INV-MAINT-* codes were never unreachable by SHAPE: they are checked by validateMaintenanceBlock and the harness only ever called validatePlan. The harness was calling the wrong validator.",
     "mutation": "the battery does not yet perturb the field this rule reads. Add a mutation, not a fixture.",
-    "static": "the rule reads STATIC CONFIGURATION (the catalogue, the plan signatures), not the plan, so no plan mutation can reach it by construction \u2014 a `Plan => void` cannot perturb a module constant. Not debt and not a defect: it needs a config test that breaks the data, which is a different harness. Name that test when you use this.",
+    "static": "the rule reads STATIC CONFIGURATION (the catalogue, the plan signatures), not the plan, so no plan mutation can reach it by construction — a `Plan => void` cannot perturb a module constant. Not debt and not a defect: it needs a config test that breaks the data, which is a different harness. Name that test when you use this.",
     "unclassified": "nobody has looked yet. THIS is the column that should shrink."
   },
-  "generated": "2026-09-17",
-  "wokenCount": 107,
-  "totalInvariants": 118,
   "unproven": {
     "INV-INPUT-LONGEST-LE-WEEKLY": "mutation",
     "INV-PLAN-PHASE-FOCUS-REACHABLE": "static",

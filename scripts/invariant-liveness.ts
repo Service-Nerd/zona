@@ -19,7 +19,23 @@ console.log(`WOKEN        : ${r.woken.size}/${all}  (${(r.woken.size / all * 100
 console.log(`UNPROVEN     : ${r.unwoken.length}\n`)
 
 let prior: Record<string, string> = {}
-try { prior = JSON.parse(readFileSync(BASELINE, 'utf8')).unproven ?? {} } catch { /* first run */ }
+// `_` and `reasons` are PROSE, amended by hand after a finding — so the writer
+// reads them back and re-emits them unchanged rather than carrying its own copy.
+// 🔴 It used to carry a copy, and the copy went stale in the dangerous direction:
+// the writer still said `corpus` means "maintenance has its own generator", which
+// is the exact claim MAINT-LIVENESS-01 (2026-09-19) DISPROVED — the 8 INV-MAINT-*
+// codes were never unreachable by shape, the harness was calling the wrong
+// validator. So `--write` would have silently reverted a documented correction
+// and reinstated a falsified explanation. A second copy of prose is the same
+// defect as a second copy of a number (LIVENESS-BASELINE-METADATA-01).
+let priorNote = 'Invariants no mutation can wake. UNPROVEN, not proven dead. This list may only SHRINK.'
+let priorReasons: Record<string, string> | null = null
+try {
+  const b = JSON.parse(readFileSync(BASELINE, 'utf8'))
+  prior = b.unproven ?? {}
+  if (typeof b._ === 'string') priorNote = b._
+  if (b.reasons && typeof b.reasons === 'object') priorReasons = b.reasons
+} catch { /* first run */ }
 
 const byReason = new Map<string, string[]>()
 for (const code of r.unwoken) {
@@ -39,10 +55,19 @@ if (newlyUnproven.length) console.log(`\n✗ NEW and unproven: ${newlyUnproven.j
 if (process.argv.includes('--write')) {
   const unproven: Record<string, string> = {}
   for (const c of r.unwoken) unproven[c] = prior[c] ?? 'unclassified'
+  // ⚠️ EVERY KEY WRITTEN HERE MUST BE READ by invariantLiveness.test.ts.
+  // `generated`, `wokenCount` and `totalInvariants` lived here until 2026-10-05
+  // and were dereferenced by NOTHING — the decorative-config class, in a fixture
+  // instead of a config file. They are not merely useless: the baseline is where
+  // a human looks to answer "how many invariants are there", it answered 118/107
+  // against a live registry of 139, and that is where CLAUDE.md's stale 118 came
+  // from. The live counts already have owners (`INVARIANT_CODES`, `r.woken`), so
+  // a second copy in a fixture is the duplicate that drifted. Gated by
+  // `invariantLiveness.test.ts` § "the baseline carries no key the test ignores".
   writeFileSync(BASELINE, JSON.stringify({
-    _: 'Invariants no mutation can wake. UNPROVEN, not proven dead. This list may only SHRINK.',
-    reasons: {
-      corpus: 'the harness never builds this plan SHAPE (maintenance has its own generator; foundation / recalibration / ultra are not in the cohort grid). Not a defect in the check.',
+    _: priorNote,
+    reasons: priorReasons ?? {
+      corpus: 'the harness never builds this plan SHAPE (foundation / recalibration / ultra are not in the cohort grid). Not a defect in the check.',
       mutation: 'the battery does not yet perturb the field this rule reads. Add a mutation, not a fixture.',
       static: 'the rule reads STATIC CONFIGURATION (the catalogue, the plan '
         + 'signatures), not the plan, so no plan mutation can reach it by '
@@ -51,9 +76,6 @@ if (process.argv.includes('--write')) {
         + 'data, which is a different harness. Name that test when you use this.',
       unclassified: 'nobody has looked yet. THIS is the column that should shrink.',
     },
-    generated: new Date().toISOString().slice(0, 10),
-    wokenCount: r.woken.size,
-    totalInvariants: all,
     unproven,
   }, null, 2) + '\n')
   console.log(`\nbaseline written: ${r.unwoken.length} unproven`)

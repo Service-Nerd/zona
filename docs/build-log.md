@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — LIVENESS-BASELINE-METADATA-01 · a number in a fixture reads as measured
+**Shipped:** removed three unread metadata fields from the invariant-liveness baseline, stopped its writer overwriting hand-amended prose, and gated both.
+
+**Dev learning:** I went in to delete three dead fields and found the worse bug *in the lines I was already editing*. The writer carried its own hardcoded copy of the baseline's `reasons` prose, and that copy still said `corpus` means *"maintenance has its own generator"* — the exact claim `MAINT-LIVENESS-01` disproved back on 2026-09-19 after finding the harness was calling the wrong validator. So anyone running `npm run invariant:liveness -- --write` would have silently reverted a documented correction and reinstated a falsified explanation. **I proved it instead of asserting it**: checked out the old writer, ran it, watched the amendment revert and all three metadata keys come back. A second copy of *prose* is the same defect as a second copy of a *number*, and prose drifts more quietly because nothing compares it.
+
+**Product/creator learning:** the harm here was never a dead check — the gate reads live `INVARIANT_CODES.length` and was always correct. The harm is that **a number inside a JSON fixture reads as measured** in a way a number in prose does not. The baseline is the natural place a human looks to ask "how many invariants are there and how many wake", it answered 118/107 against a live 139, and that is literally where `CLAUDE.md`'s stale 118 came from. Fixing the doc without the source would have let it regenerate.
+
+**AI-building learning:** the founder asked me to fix "those two stale numbers". There were **three** in the same two sentences, and the third was one grep away. But the useful discipline was the opposite one — three *other* numbers nearby were correctly dated and I left them alone: `unclassified: 0` is still true, *"the then-93 invariants"* already says "then-", and line 521's *"107 principles is not 118 invariants"* is a record of what was **said** on 2026-09-15, so correcting it would falsify the incident the paragraph exists to preserve. Knowing which stale-looking number is actually a dated record is the part that needs judgement; the greps are free.
+
+**The honest bit:** this is the second time today I was caught reading a *comment* describing a fixed defect as if it reported a live one — earlier it was `SegmentedControl`'s `minHeight`, fixed four days ago, which I carried into a board sitting as a live 30px defect. Same class, twice in one day. The repo's rule that an item is a snapshot applies to source comments and to my own notes, not just to backlog entries.
+
+**Hook material:** three fields written by `--write` and read by nothing — and running the *old* writer reverted a correction that had stood for 18 days. 118 in a fixture, 139 in the code, and the fixture is where the docs got their number.
+
+**Postable?:** yes — "the number in your fixture reads as measured" is a specific, transferable point, and the proof-by-running-the-old-writer is a good beat.
+
 ## 2026-10-05 — `OPS-AUDIT-DIGEST-ORDER-01` · the report that had never read the thing it reports on
 **Shipped:** The daily ops digest moved from 07:00 to 18:00 Europe/London, so it finally runs after the plan audit it summarises.
 **Dev learning:** Two timestamps were written down three weeks apart and never subtracted from each other. The digest fired 06:00 UTC; the audit's cron is `45 7 * * *` UTC. That is not a near miss — the digest ran **before the audit was due, every single day, since it was built**. Worse, GitHub Actions has been starting that workflow 12:29–16:01 UTC, five to eight hours after its schedule, so the row being read was 17–24 hours old. Also learned the RemoteTrigger API takes a genuine partial update: `{"cron_expression": …}` alone left a 32,673-character prompt completely untouched. I had hand-retyped that prompt four times today before I checked whether I needed to.
