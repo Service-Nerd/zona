@@ -1065,3 +1065,80 @@ not run: no prescription changes.
 this retroactively changes every existing user's count, in the direction of more weeks surviving —
 under a `LEDGER-RESET-01` decision that board deliberately parked.
 
+
+---
+
+## Sitting — backlog clearance, 2026-10-05
+
+Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
+Convened on founder instruction to take **every open backlog item carrying a 🏃 COACHING BOARD tag**
+in one pass. **Eleven items; nine rulings; zero lines of code.**
+
+### 📐 EVERY NUMBER RE-DERIVED. FOUR ITEMS OVERSTATE THEIR OWN DEFECT, ALL IN THE SAME DIRECTION.
+
+Measured on `cohortGrid()` — **41,472 inputs → 39,632 plans → 96,460 deload weeks**. ⚠️ The grid is
+**41,472** today where `CLAUDE.md` says 31,104; the file is the source, as that line warns.
+
+| Item claimed | Re-derived | Gap |
+|---|---|---|
+| `DELOAD-BADGE-TRUTH-01` **9.6%** of recovery weeks ≥ prior | **5.6%** | ~1.7× over |
+| same, **18.9%** of plans | **9.8%** | ~1.9× over |
+| `DELOAD-LR-GROWS-01` long run explains **100%** | **45.3%**; **50.2% the long run did not grow at all** | not unanimous |
+| `WEEK12-LR-CAP-CLIFF-01` *"the 5K plan steps +44%"* | **0.3%** of 5K plans step ≥+25%; median **0.0%** | **32 plans of 10,368** |
+
+**Two of the four quote a 45,776-plan corpus that no committed harness runs**, so the figures were
+never comparable. 🏃 Hutchinson: *"an item that quotes a corpus nobody runs is unfalsifiable — it
+reads as rigour and cannot be checked, and doubling always in the direction of urgency is how a
+backlog acquires a fake P1."*
+
+🔴 **THE REAL FINDING IS IN NO ITEM — THE DEFECT IS RACE-DISTANCE-GATED, 13× ACROSS THE RANGE:**
+**5K 15.3% · 10K 7.0% · HM 1.8% · marathon 1.2%.** On a short-race plan the long run sits close to
+the easy runs, so the 4 km floor plus the §52-protected long run **already exceed 70% of the prior
+week and the deload target is unreachable by construction.** `WEEK12-LR-CAP-CLIFF-01` found the same
+wall from the other side and filed it separately. Split: **strictly bigger 3,604 (3.7%) · exactly
+equal 1,792 (1.9%)**; overshoot median **0.5 km**, max **4.27 km**.
+
+| Item | Ruling |
+|---|---|
+| **`DELOAD-BADGE-TRUTH-01` + `DELOAD-LR-GROWS-01` + `WEEK12-LR-CAP-CLIFF-01`** | 🟢 **CORRECT WITH AMENDMENT — they MERGE, and there are TWO fixes, not one.** **(a)** where a reduction is possible (3,604 weeks) fix the arithmetic; **(b)** where the floors forbid one (1,792 weeks) **fix the BADGE, not the volume (§34)** — ⛔ do not shrink the long run to fit, that is §81's standing veto which already traded 1,615 violations for 979; **(c)** the week-1-2 long-run cap **RAMPS**, it does not lift. ⛔ **`DELOAD-LR-GROWS-01`'s 100% attribution is NOT ratified** (Sims): half the defect has an unidentified cause. ⚠️ The cap item's mechanism is **corrected on the record** — the long run is FLAT across the step (6 → 7 → 7); the cap lifting is the trigger, the **easy-run floors** are the mechanism. **This is the "separate future ruling on healthy deload-week placement" that blocked promoting `INV-PLAN-DELOAD-IS-A-REDUCTION` to `error` — now unblocked for (a)'s population only.** |
+| **`DELOAD-PLAN-OPENING-01`** | 🟢 **CORRECT — and a PREREQUISITE of the above, not a sibling.** §119's producer needs a **search** over placements, not the greedy choice. ⚠️ **Sequencing amendment: it lands FIRST**, because moving where deloads fall changes which transitions invert. Hutchinson's 2026-09-21 reasoning re-affirmed: *"nobody is looking yet" is a schedule, not a credibility answer.* |
+| **`LR-2DAY-LOPSIDED-01`** | 🟢 **CORRECT AS IS — the product is right and must SAY so (§34).** 77% of the week in one run, 72.9% of 2-day plans, **all maintenance — §52's remedy already spent.** Binding via **§1 CD-21 Amendment 1**: at two runs a week the distribution is **undefined, not violated**, and **no remedy may assume a third session**. McMillan: *"two runs a week and one is the long run — that is what two runs a week IS."* No prescription change. |
+| **`STRIDES-2DAY-SILENT-GAP-01`** | 🟢 **CORRECT AS IS — §34 honesty gap, structurally unsatisfiable.** 74.2% of 2-day plans have no eligible carrier; `sat+sun` fires **27 of 27**. Willy: *"the cost of putting them on a day the runner has not got is a session they skip."* One honest sentence. ⛔ **Do not satisfy the invariant by relaxing carrier eligibility** — that puts strides on a long run or a rest day. |
+| **`MATCH-LIST-WINDOW-01`** | 🔴 **NOT THIS BOARD'S — EXEMPT, defect fix restoring documented intent. RE-TAG ⚙️ NO BOARD.** The item asks the board to pick a window; **the window is already ratified in code**: `sessionMatch.ts → findMatchCandidates` filters **±2 days** and scores **distance-aware** at 0.75–1.40 (0.85–1.15 duration), behind `MIN_AUTO_LINK_CONFIDENCE = 'high'`. **The founder's own capture fails that owner on BOTH axes** — 5 days (>2) and 14/8 = 1.75 (>1.40) — so the picker is not applying a looser window, **it applies NO window, because `stravaRuns.slice(0, 20)` never calls the owner.** Hutchinson: *"a board asked to rule on something already ruled will invent a second answer, and then there are two windows."* |
+| **`DELIVERED-RAMP-REAL-DRIVER-01`** | ⚠️ **INSUFFICIENT EVIDENCE — and the item already knows it.** The largest unexplained warn in the product (27.2% plan-wide, 42.2% of HMs); **276 of 280 non-long-run-led firings have no V1 trim** on the preceding week. **What would settle it:** an attribution pass over the 276 in the same shape as this sitting's deload attribution — which found the obvious mechanism explained **45.3%, not 100%**. ⚠️ §100 and §94 Am. 2 are **already falsified in the item; do not re-derive either.** Hutchinson: *"a warn that names its own cause stops anyone checking the cause."* |
+| **`MKT-PLAN-SEGMENT-ENGINE-BASIS-01`** | ✅ **ALREADY RULED (§25 Amendment 2) — no new sitting. ⚙️ NO BOARD.** The basis is settled as the long run's **duration**; `ruleEngine.ts:4949` still reads **distance**. A defect fix — **but it changes prescription**, so full regression: `verify:parity` + `cohort:shape` + `measure:fitness` before/after, any move declared as a number. Stays unbundled from the display fix (SLC), as already decided. |
+| **`LOG-OFFPLAN-03`** | ⏸️ **CORRECT, RE-AFFIRMED, STILL BLOCKED ON EVIDENCE.** Willy: *"a 5% cap applied to a number that is not their load — the cap is not conservative, it is decorative."* Blocker unchanged: **n=21, 12 of them the founder**, and the two worst-discipline off-plan runs are not his. Hutchinson: *"a threshold set on twenty-one runs twelve of which are one person is not a threshold, it is a preference with a decimal point."* ⚠️ **Blocked 8 days; nothing schedules the re-measurement, and subscribers today are ZERO so the sample cannot grow yet.** |
+| **`EMAIL-WAVE-4-PATTERN-01`** | 🔴 **CANNOT SHIP — blocked on POPULATION, and the population is one demo account.** Needs ≥3 analysed runs **with HR**: `zonna.demo@demo.com` has 72/72; **the one real user with 3 analyses has 0 with HR.** Sims: *"ADR-011's hard consequence arriving in the marketing layer — Apple controls what Strava writes."* **The bounded pattern set is NOT authored today**, because authoring it against one account fits the patterns to one person — the same error as `LOG-OFFPLAN-03`'s n=21. The 🧭 Design Board half does not convene either: there is nothing to lay out. |
+
+### ⚡ Recorded disagreements
+**🩹 Willy vs 🎯 McMillan on severity, not on the fix.** Willy: *"median 0.5 km is not an injury
+vector; this is a credibility defect, not a load defect."* McMillan: *"and a credibility defect is
+the one that makes them stop using the plan."* *Willy moves if* overshoot correlates with injury
+history; *McMillan moves if* the badge fix ships.
+**⚕️ Sims vs the FILING of `DELOAD-LR-GROWS-01`** (not a seat) — she declines its 100% attribution
+on the plan-wide measurement; *she moves if* the 2-day population is reached by a harness and the
+attribution reproduces there.
+
+### ⚠️ THE 2-DAY POPULATION WAS NOT REACHED, AND TWO RULINGS REST ON THE ITEMS' OWN NUMBERS
+🔴 **`cohortGrid()` has no days field at all.** The first run reported *"2-day plans: 0 deload
+transitions"* — impossible, and my bug, caught because **zero is not a rate**. A constructed cohort
+(1,200 inputs forced to `['tue','sat']`) gives **38.0% inverted, 100% long-run-explained, but
+overshoot median 0.0 and max 0.0** — every one **exactly equal**, a *flat* week, never a bigger one.
+⚠️ **That does NOT falsify the item and must not be reported as if it did:** the forced plans throw
+`INV-PLAN-QUALITY-EXPECTED` / `INV-PLAN-QUALITY-NOT-ZERO`, so they are not the item's *"144 genuine
+2-day plans"* — **I could not reach its population.** Same class as `measure:fitness` having to
+build injury × masters by hand because neither grid contains the cell.
+
+### ↗️ SLT escalation
+**One, carried by Hutchinson.** `EMAIL-WAVE-4-PATTERN-01` and `LOG-OFFPLAN-03` are both blocked on
+*real users existing* — a commercial question, not a correctness one. Both sit behind the same gate:
+`OPS-VERCEL-PLAN-01` / `OPS-SUPABASE-PLAN-01` and launch. Traynor's stood-down objection applies
+verbatim: **what is the traffic?**
+
+### ⚠️ What this sitting does not settle
+**Nine rulings, zero lines of code** — every artifact is an obligation on a future build. **Half of
+ruling 1's defect has no identified mechanism** (50.2%) and nothing here says what it is.
+`DELIVERED-RAMP-REAL-DRIVER-01` is the largest unexplained warn in the product and **this sitting
+did not reduce it by one firing**. The 5K/marathon split was measured on the cohort grid, not the
+corpus the items quote, and **neither is the live population, which is 21 plans.** Nothing ran on a
+device, and **no plan was read end to end by a human** — every figure is an aggregate.

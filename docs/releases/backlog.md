@@ -30,6 +30,17 @@ already decided what it is.
 
 ### `LOG-OFFPLAN-03` — clause 3: off-plan volume in the injury cap, blocked on sample size 🏃 COACHING BOARD
 
+> ⏸️ **COACHING BOARD 2026-10-05 — CORRECT, RE-AFFIRMED, AND STILL BLOCKED ON EVIDENCE.**
+> Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`. 🩹 Willy, re-stated: *"a 5% cap applied to a number that is not their load. The cap
+> is not conservative; it is **decorative**."*
+> 🏃 Hutchinson: *"a threshold set on twenty-one runs twelve of which are one person is not a
+> threshold, it is **a preference with a decimal point**."*
+> ⚠️ **A DECLARED REASON IS NOT A SCHEDULED FIX.** Blocked **8 days**; nothing in the repo schedules
+> the re-measurement, and **subscribers today are ZERO, so the sample cannot grow yet.**
+> ↗️ **Escalated to the SLT** with `EMAIL-WAVE-4-PATTERN-01`: both are blocked on *real users
+> existing*, which is commercial, not correctness. Same gate - `OPS-VERCEL-PLAN-01` /
+> `OPS-SUPABASE-PLAN-01` and launch. Traynor's stood-down objection verbatim: **what is the traffic?**
+
 **Ruled CORRECT by the board on 2026-09-27 and deliberately NOT built.** Willy: *"a runner
 with a knee history whose real week is 27% above prescription is getting a 5% cap applied to
 a number that is not their load. The cap is not conservative; it is decorative."*
@@ -237,6 +248,23 @@ one width only. If 320 ever returns to support it is an **SLT** cost question fi
 reopens every measurement taken at 375.
 
 ### `MATCH-LIST-WINDOW-01` — the candidate list has no date filter 🏃 COACHING BOARD
+
+> 🔴 **COACHING BOARD 2026-10-05 — NOT THIS BOARD'S. EXEMPT as a defect fix restoring documented
+> intent (ADR-017 never-convene). RE-TAGGED 🏃 -> ⚙️ NO BOARD.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
+> **This item asks the board to pick a window - *"+/-1 day? +/-3? distance-aware?"* - and THE WINDOW
+> IS ALREADY RATIFIED, IN CODE, TODAY.** `lib/coaching/sessionMatch.ts -> findMatchCandidates`
+> filters to **+/-2 days** (`windowMs = 2 * 24 * 60 * 60 * 1000`) and scores **distance-aware** at a
+> **0.75-1.40** ratio (0.85-1.15 on duration), feeding high/medium/low behind
+> `MIN_AUTO_LINK_CONFIDENCE = 'high'`.
+> 🔴 **The founder's own capture fails that owner on BOTH axes:** 20 Sep -> 25 Sep is **5 days (> 2)**
+> and **14 km / 8 km = 1.75 (> 1.40)**. So the picker is **not applying a looser window - it applies
+> NO window, because `stravaRuns.slice(0, 20)` never calls the owner.** The single-owner class.
+> 🏃 Hutchinson: *"a board asked to rule on something already ruled **will invent a second answer**,
+> and then there are two windows."*
+> **Build:** the picker calls `findMatchCandidates` and renders its candidates in confidence order.
+> Check: no call site re-filters runs itself.
+> ⚠️ **If a MANUAL pick should be allowed to exceed the AUTO window, that IS a board question** - but
+> it is a different and much narrower one, and it is not what this item asks.
 
 `stravaRuns.slice(0, 20)` — the activity picker offers the twenty most recent runs with **no
 proximity filter to the session's date**.
@@ -1325,6 +1353,13 @@ unit is silently wrong."* Optional-with-a-default is what hid this in the first 
 ## ⚖️ FILED 2026-09-30 — `MKT-PLAN-SEGMENT-ENGINE-BASIS-01`
 
 ### `MKT-PLAN-SEGMENT-ENGINE-BASIS-01` — align the engine to §25 Amendment 2's time basis 🏃 COACHING BOARD (ruled) · ⚙️ measurement-gated
+
+> ✅ **COACHING BOARD 2026-10-05 — ALREADY RULED (§25 Amendment 2). No new sitting. ⚙️ NO BOARD.**
+> Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`. Confirmed: a **defect fix restoring documented intent**.
+> ⚠️ **But it CHANGES PRESCRIPTION, so it carries the full regression obligation**: `verify:parity`
+> + `cohort:shape` + `measure:fitness` captured **before** and diffed, **any move declared as a
+> number and never re-baselined to turn a check green.**
+> **Stays deliberately unbundled from the display fix (SLC)**, exactly as the board decided.
 
 **The ruling is already made.** §25 Amendment 2 (Coaching Board 2026-09-30) settled that
 `race_pace_pct` is a share of the long run's **duration**. `sessionComposer.ts` was already
@@ -3957,6 +3992,18 @@ means and what it used to mean.
 
 ### 🏃 `DELIVERED-RAMP-REAL-DRIVER-01` — what actually drives 98.6% of the firings is unknown
 
+> ⚠️ **COACHING BOARD 2026-10-05 — INSUFFICIENT EVIDENCE. The board cannot rule, and this item
+> already knows it.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
+> **What would settle it, named:** an attribution pass over the 276 non-long-run-led firings,
+> classifying each by **which session grew** - in the same shape as this sitting's deload
+> attribution, which found the obvious mechanism explained **45.3%, not 100%**. That pass IS the
+> deliverable; there is no principle to author until it exists.
+> ⚠️ §100 and §94 Am. 2 are **both already falsified in this item - do not re-derive either.**
+> 🏃 Hutchinson: *"the old message asserted §100 and that is precisely why nobody looked. **A warn
+> that names its own cause stops anyone checking the cause.**"*
+> 🔻 **Still the largest unexplained warn in the product** (27.2% plan-wide, 42.2% of HMs) and this
+> sitting **did not reduce it by one firing.**
+
 **Filed 2026-09-25, separated from the message fix above. For the Coaching Board once
 measured.**
 
@@ -3998,6 +4045,22 @@ is. ⚠️ **That is a reading, not a ruling.** Two things a board should decide
    and going from 3 runs to 4 is a structural change, not a volume spike.
 
 ### 🏃 `DELOAD-LR-GROWS-01` — the "recovery" week is 27% bigger, and 100% of it is the long run
+
+> ⚖️ **COACHING BOARD 2026-10-05 — MERGED into `DELOAD-BADGE-TRUTH-01`, and its 100% ATTRIBUTION IS
+> NOT RATIFIED.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
+> 🔴 **Plan-wide, the long run explains 45.3% of inverting deload weeks - and in 50.2% THE LONG RUN
+> DID NOT GROW AT ALL.** ⚕️ Sims declined the finding: *"half this defect has an unidentified cause,
+> and the item claiming unanimity is scoped to a population the harness cannot reach. **Half an
+> explanation presented as a complete one is how a lever gets pulled on the wrong mechanism.**"*
+> ⚠️ **I COULD NOT REACH THIS ITEM'S POPULATION, AND THAT IS NOT EVIDENCE AGAINST IT.**
+> `cohortGrid()` **has no days field at all** - my first run printed *"2-day plans: 0 deload
+> transitions"*, which is impossible, and was caught because **zero is not a rate**. A constructed
+> 2-day cohort (1,200 inputs forced to `['tue','sat']`) gives **38.0% inverted, 100%
+> long-run-explained, but overshoot median 0.0 and max 0.0** - every one **exactly EQUAL**, a *flat*
+> week, never a bigger one. Those forced plans **throw `INV-PLAN-QUALITY-EXPECTED` /
+> `INV-PLAN-QUALITY-NOT-ZERO`** (zero quality sessions), so they are not this item's *"144 genuine
+> 2-day plans"*. Same class as `measure:fitness` building injury x masters by hand.
+> ➡️ **RE-SCOPED: measure the other 50.2% before pulling any lever on this one.**
 
 **Investigated 2026-09-25 (third of the four checks S90-WITHIN-COHORT-RATE-01 flagged).
 NOT noise. For the Coaching Board — and unlike the other two 2-day findings, THIS ONE HAS A
@@ -4089,6 +4152,15 @@ ruling should say which cases it closes and which it does not.
 
 ### 🏃 `LR-2DAY-LOPSIDED-01` — a 2-day runner gets 77% of their week in one run, and the remedies are spent
 
+> ⚖️ **COACHING BOARD RULED 2026-10-05 — CORRECT AS IS. The product is behaving correctly and must
+> SAY so (§34). NO PRESCRIPTION CHANGE.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
+> 📊 Seiler + ⚕️ Sims, **binding via §1 CD-21 Amendment 1**: at two runs a week the distribution is
+> **UNDEFINED, not violated** - so **no remedy may assume a third session the runner has not got**.
+> 🎯 McMillan: *"two runs a week and one of them is the long run - that is what two runs a week IS.
+> We are not going to apologise for arithmetic."*
+> **The invariant stays `warn` for maintenance and that is CORRECT, not debt.** §52's remedy is
+> already applied and spent, as this item says. **Deliverable: a §34 honesty statement, nothing else.**
+
 **Investigated 2026-09-25 (second of the four checks S90-WITHIN-COHORT-RATE-01 flagged).
 NOT noise. For the Coaching Board.**
 
@@ -4149,6 +4221,15 @@ Whether that is §106's "a plan never peaks below where the runner already is" i
 question, and `INV-PLAN-PEAK-NOT-BELOW-START` is itself acknowledged at 30.7%.
 
 ### 🏃 `STRIDES-2DAY-SILENT-GAP-01` — the 2-day runner loses their neuromuscular stimulus and is never told
+
+> ⚖️ **COACHING BOARD RULED 2026-10-05 — CORRECT AS IS. §34 honesty gap, structurally
+> unsatisfiable. NO PRESCRIPTION CHANGE.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
+> The item's own analysis - *"there is no third case"* - is **accepted**.
+> 🩹 Willy: *"strides are the cheapest neuromuscular stimulus there is and losing them is a real
+> cost, but **the cost of putting them on a day the runner has not got is a session they skip.**
+> Tell them what they are missing and why, and tell them it is two days a week doing it, not us."*
+> ⛔ **DO NOT satisfy the invariant by relaxing carrier eligibility** - that puts strides on a long
+> run or a rest day. **Deliverable: one honest sentence.**
 
 **Investigated 2026-09-25 (the first of the four checks S90-WITHIN-COHORT-RATE-01 flagged).
 NOT a defect, NOT noise. A §34 honesty gap. For the Coaching Board.**
@@ -5196,6 +5277,17 @@ session) and the production data write was refused by the sandbox as a shared-re
 has ever been created.
 
 ### 🏃 `EMAIL-WAVE-4-PATTERN-01` — the Pattern email, NOT BUILT, and the reason is the population
+
+> 🔴 **COACHING BOARD 2026-10-05 — CANNOT SHIP. Blocked on POPULATION, and the population is one
+> demo account. The bounded pattern set is NOT authored today.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
+> ⚕️ Sims: *"this is **ADR-011's hard consequence arriving in the marketing layer**. An iPhone-only
+> runner with no watch generates no HR stream, **Apple controls what Strava writes**, and we cannot
+> email someone a pattern we cannot see. This is not a build gap."*
+> **Authoring a pattern vocabulary against a single account fits the patterns to one person** - the
+> same error as `LOG-OFFPLAN-03`'s n=21.
+> **Unblock, named:** >=3 real non-demo users with >=3 HR-bearing analyses each.
+> ➡️ **The 🧭 Design Board half does not convene either: there is nothing to lay out.**
+> ↗️ Escalated to the SLT alongside `LOG-OFFPLAN-03`.
 **Board: 🏃 COACHING BOARD** (authors the bounded pattern set) then **🧭 DESIGN BOARD** (it has
 never seen the email). SLT-approved 2026-09-24 as tranche 4. **The conditional guide-link mechanism
 it depends on SHIPPED; the email did not.**
@@ -8548,6 +8640,15 @@ race-week display (D1), `MARATHON-pace` casing (D2), plus `lib/plan/planShapeInv
 
 ### 🔴 `DELOAD-PLAN-OPENING-01` — OPEN, and **URGENCY RAISED 2026-09-21**. §119's producer change: deload placement needs a SEARCH. 🏃 **COACHING BOARD** first (correctness), then 💼 **SLT** on order
 
+> ⚖️ **COACHING BOARD RULED 2026-10-05 — CORRECT, and it is a PREREQUISITE of
+> `DELOAD-BADGE-TRUTH-01`, not a sibling.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
+> §119's producer needs a **search** over placements, not the greedy choice.
+> ⚠️ **SEQUENCING AMENDMENT: THIS LANDS FIRST.** Moving where deloads fall changes **which
+> transitions invert**, so fixing the deload arithmetic before this would be measured against a
+> placement that is about to change.
+> 🏃 Hutchinson's 2026-09-21 reasoning **re-affirmed**: *"nobody is looking yet" is a schedule, not a
+> credibility answer.*
+
 **Filed 2026-09-21** by the Coaching Board, which ratified the principle and declined the greedy fix.
 
 > 🔴 **URGENCY RAISED THE SAME DAY BY `PLAN-ARC-V2`, AND THE REASON MATTERS MORE THAN THE FLAG.**
@@ -8595,6 +8696,19 @@ no legitimate instances, unlike `INV-PLAN-PEAK-NOT-BELOW-START` beside it in the
 ---
 
 ### 🟠 `WEEK12-LR-CAP-CLIFF-01` — OPEN. The 5K plan steps +44% in week 3, and it is not §94's residual. 🏃 **COACHING BOARD** — a +44% step in week 3 is what the engine PRESCRIBES
+
+> ⚖️ **COACHING BOARD RULED 2026-10-05 — CORRECT: RAMP THE CAP, DO NOT LIFT IT.** Merged into
+> `DELOAD-BADGE-TRUTH-01` as fix (c). Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
+> 🔴 **RE-DERIVED: IT IS 0.3% OF 5K PLANS, NOT "THE 5K PLAN".** 32 of 10,368 step >= +25% into week
+> 3. Median step **0.0%**, p90 **+9.1%**, max **+47.8%**. ⚠️ **Rate tiny, severity real** - the live
+> sample is **18.0 -> 19.0 -> 25.0 km, a +31.6% single-week step**, well past anything §2 or §3 would
+> permit elsewhere in the plan. 🩹 Willy: *"that is the thing that actually hurts people - the
+> correct reason to fix it and the wrong reason to call it a P1."*
+> 🔴 **THIS ITEM'S MECHANISM IS CORRECTED ON THE RECORD.** It attributes the jump to the cap lifting.
+> In the sample **the long run is FLAT across the step: 6.0 -> 7.0 -> 7.0 km.** The jump is the EASY
+> runs coming off the 4 km floor all at once. **The cap lifting is the TRIGGER; the floors are the
+> MECHANISM** - which is also why this is the same defect as `DELOAD-BADGE-TRUTH-01` and not a
+> sibling. Trigger is narrow: `longest_recent_run_km 8` against `current_weekly_km 20`.
 
 **Filed 2026-09-21.** `5k-12-week` delivers **18 → 18 → 26 km**. Weeks 1–2 are held by
 `WEEK_1_2_LONG_RUN_CAP_MULTIPLIER` (long run capped to `longest_recent_run_km × m` = 5.5 km), and
@@ -8652,6 +8766,27 @@ three"*, which £119.99 makes false. It now says **"the most expensive per month
 (Runna £15.99/mo; Coopah is dearest annually).
 
 ### 🔴 `DELOAD-BADGE-TRUTH-01` — a week badged "Recovery" that is not a reduction *(P1, Coaching Board)* 🏃 **COACHING BOARD** — the LATER table already said so; a week badged *Recovery* that is not a reduction is the ENGINE, not the badge
+
+> ⚖️ **COACHING BOARD RULED 2026-10-05 — CORRECT WITH AMENDMENT. This item MERGES with
+> `DELOAD-LR-GROWS-01` and `WEEK12-LR-CAP-CLIFF-01`: one defect, three populations.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
+> 🔴 **RE-DERIVED TODAY AND THIS ITEM'S NUMBERS ARE ~1.7-1.9x OVERSTATED.** On `cohortGrid()`
+> (41,472 inputs -> 39,632 plans -> 96,460 deload weeks): **5.6% of deload weeks are at-or-above the
+> prior week, not 9.6%**, and **9.8% of plans carry one, not 18.9%**. The 45,776-plan corpus this
+> item quotes **is not one any committed harness runs**, so the figures were never comparable.
+> 🔴 **THE REAL FINDING IS IN NO ITEM: THE DEFECT IS RACE-DISTANCE-GATED, 13x.**
+> **5K 15.3% · 10K 7.0% · HM 1.8% · marathon 1.2%.** On a short-race plan the long run sits close to
+> the easy runs, so **the 4 km floor plus the §52-protected long run already exceed 70% of the prior
+> week and the deload target is unreachable by construction.** Split: **strictly bigger 3,604 (3.7%)
+> · exactly equal 1,792 (1.9%)**; overshoot median **0.5 km**, max **4.27 km**.
+> **TWO FIXES, NOT ONE:** **(a)** where a reduction is possible (3,604) fix the arithmetic;
+> **(b)** where the floors forbid one (1,792) **fix the BADGE, not the volume (§34)** -
+> ⛔ do not shrink the long run to fit, that is §81's standing veto. **(c)** the week-1-2 cap
+> **ramps**, see `WEEK12-LR-CAP-CLIFF-01`.
+> ✅ **This IS the "separate future ruling on healthy deload-week placement" that blocked promoting
+> `INV-PLAN-DELOAD-IS-A-REDUCTION` to `error`. Unblocked for (a)'s population ONLY**; (b) carries a
+> distinct code.
+> ⚠️ **SEQUENCING: `DELOAD-PLAN-OPENING-01` LANDS FIRST** - moving where deloads fall changes which
+> transitions invert, so fixing the arithmetic first measures against a placement about to change.
 
 **Measured 2026-09-21 on the 45,776-plan corpus: 9.6% of all recovery-badged weeks (10,664) carry
 volume at or above the week before them, and 18.9% of plans contain at least one.** The runner sees a
