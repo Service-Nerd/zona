@@ -131,7 +131,39 @@ than silence.
   producer never writes it, so that blindness is **permanent for that plan type and grows with every
   on-ramp runner** — `BASEBUILD-AUDIT-BLIND-01`. ⚠️ **`checked` is therefore NOT the plan count**, and
   a reader who treats it as one will believe the fleet is fully audited when 27% of it is not.
-- The known baseline, so a RISE is visible: **30 violations across 7 plans at 2026-10-04, all
-  `rule_newer_than_plan`.** They sit in main-plan weeks and are expected to persist — the live-plan
-  policy forbids the regeneration that would clear them (`STORED-PLAN-DEBT-QUEUE-01`).
+- The known baseline, so a RISE is visible. ⚠️ **TWO DIFFERENT MEASURES, AND CONFUSING THEM CAUSED A
+  FALSE ALARM** (`PLAN-AUDIT-BASELINE-UNITS-01`, 2026-10-05):
+  - **`invalid` counts PLANS with ANY code** from the three probes — invariants at **any severity**,
+    plus `SCHEMA:` and `HR-`. Historically **10–16 every day, roughly half of `checked`**: 10/21,
+    11/23, 16/29, 15/30. **15 of 30 is normal.**
+  - **30 violations across 7 plans** counts only **error-severity invariant** violations on plans that
+    have a stored `generator_input` — the remediation queue (`STORED-PLAN-DEBT-QUEUE-01`), expected to
+    persist because the live-plan policy forbids the regeneration that would clear them.
+  🔴 The digest prompt was given the second figure as a floor for the first. **They were never
+  comparable**, and on 2026-10-05 the digest correctly spotted the mismatch and wrongly blamed the
+  audit. Corrected in the prompt the same day.
+
+## The age fields — `newest_invalid_plan_age_days` means CREATION (PLAN-AUDIT-AGE-SOURCE-01)
+
+🔴 **It was computed from `updated_at` while being named for the plan's age**, and the route did not
+even `select` `created_at`. Measured on the 2026-10-04 run: **23 plans fell in the `0-1d` bucket and
+nine had been generated 63–166 days earlier** — rewritten by `RACE-WEEK-VOLUME-REMEDIATE-01` and
+`FOUNDATION-BUDGET-01` the day before, not regenerated. One created **2026-04-21** was reported as
+under a day old. The digest's escalation rule reads that bucket as *"the current engine has recently
+produced a bad plan"*, so the inference was false for nine of them.
+
+```ts
+newest_invalid_plan_age_days      // by created_at — "did we just GENERATE this badly?"
+invalid_by_plan_age               // same question, bucketed 0-1d / 2-7d / 8-30d / 31d+
+newest_invalid_modified_age_days  // by updated_at — "did something just TOUCH a plan into breach?"
+modified_recently_but_older       // the divergence, counted: written <1d but generated earlier
+```
+
+⚠️ **The modification signal is kept, not replaced.** A reshape or a maintenance-block append pushing
+a previously-valid plan into violation is a real hazard and is the case the route's own header was
+reaching for. Collapsing the two into one number is what made both unreadable.
+
+Owner: `lib/ops/planAuditAges.ts → summarisePlanAges()`, extracted so it can be gated — the route had
+no test, and an inline reduce in a Vercel handler cannot have one. `ageDays` returns **null** for a
+missing, unparseable or future timestamp, never 0: a 0 would read as "brand new".
 - `cause` counts **codes**, not plans: one plan contributing three new codes contributes three.

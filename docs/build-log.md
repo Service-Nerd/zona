@@ -6,6 +6,49 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — the digest caught me, and it was right about the symptom and wrong about the cause
+
+**Dev.** The morning digest led with an inconsistency: 15 invalid plans of 30, newest breach "0 days
+old", and no plans generated in 24 hours. It concluded the audit was miscomputing. I'd have believed
+it — the reasoning was sound.
+
+It wasn't a computation bug. **The age metric was reading `updated_at` while being named for the
+plan's age.** On that run 23 plans landed in the "0–1 day" bucket and nine had been *generated* 63 to
+166 days earlier. One from April was reported as under a day old. They were all plans **I rewrote the
+day before** with two remediation scripts.
+
+So the defect predated me — but nothing had ever touched sixteen old plans in a single day, so nothing
+had made it visible.
+
+**And the second half was mine outright.** The day before I'd written a baseline into the digest
+prompt: "floor ≈7". The number the digest compares against counts something different — plans with any
+code at any severity, which has been 10–16 every single day. **Fifteen was normal.** I gave it two
+figures that were never comparable and it dutifully reported the mismatch.
+
+**The honest bit.** The digest was right that something was inconsistent and wrong about what. The
+inconsistency was between the audit and the number I'd handed it twelve hours earlier. That's the
+third time this week I've caused a false signal by reporting a measurement in units that didn't match
+the thing it would be compared to.
+
+**What I changed.** Both ages are now reported separately, each answering the question its name states
+— and `modified_recently_but_older` counts the divergence directly, so the next person doesn't have to
+rediscover it as an anomaly. The modification signal stayed: a reshape pushing a valid plan into
+breach is a real hazard, just a different one. Collapsing the two is what made both unreadable.
+
+Also extracted the whole thing out of the route so it could have a test at all. Four mutations, all
+red, including reverting to the original defect.
+
+**What I'd tell someone building this.** A metric's name is a claim about which clock it reads. When
+those disagree nothing errors — you get a plausible number that means something else, and it only
+surfaces when the two timestamps diverge, which may be months later and look like a fresh incident.
+
+**And one thing I found while checking that's worse than either:** the digest fires at 06:00 UTC and
+the audit is scheduled for 07:45. **It has never once read the same day's audit.** The registry has
+said "~45 minutes old when read" since September; that was wrong the day it was written. Which means
+this fix won't show up in a digest until Tuesday.
+
+---
+
 ## 2026-10-04 — the baseline, and the blind spot I assumed was just age
 
 **Dev.** Asked to make sure the digest knows all this going forward. Two things went in: a **known

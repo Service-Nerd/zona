@@ -6,6 +6,7 @@ import { findWeekCollisions, type LiveWeekRow } from '@/lib/ops/planWeekCollisio
 import { validateReshapedPlan } from '@/lib/plan/invariants'
 import { storedPlanCodes } from '@/lib/ops/storedPlanProbes'
 import { classifyCodes, summariseVerdicts, verdictReason, type CodeVerdict } from '@/lib/ops/regressionVsNewRule'
+import { summarisePlanAges, type PlanAgeRow } from '@/lib/ops/planAuditAges'
 import type { Plan } from '@/types/plan'
 
 // GET/POST /api/ops/plan-audit — PLAN-AUDIT-01 daily constitutional audit.
@@ -78,7 +79,10 @@ export async function POST(req: NextRequest) {
 
   const { data: rows, error } = await supabase
     .from('plans')
-    .select('user_id, plan_json, updated_at')
+    // `created_at` is selected for the AGE metric (PLAN-AUDIT-AGE-SOURCE-01). It was not,
+    // which is why the age was computed from `updated_at` and a 166-day-old plan read as
+    // under a day old once a remediation script rewrote it.
+    .select('user_id, plan_json, created_at, updated_at')
     .limit(MAX_PLANS)
   if (error) {
     console.error('[plan-audit] query failed', error.message)
@@ -107,7 +111,8 @@ export async function POST(req: NextRequest) {
   const flagged: Array<{ user_id: string; codes: string[]; state: 'new' | 'changed' | 'resolved' }> = []
   // AGE OF EVERY BREACHING PLAN, newest first. See the summary block at the end
   // for why this is the number that makes the audit readable.
-  const invalidPlanAgesDays: number[] = []
+  // BOTH timestamps per breaching plan; `summarisePlanAges` decides what each means.
+  const invalidPlanRows: PlanAgeRow[] = []
   // OPS-DIGEST-STORED-PLAN-DEBT-01 — WHY did this code set change?
   //
   // The transition logic above is right and is not the problem: it fires once per change,
@@ -177,8 +182,10 @@ export async function POST(req: NextRequest) {
     // identically every day still counts toward "how much of the fleet is
     // breaching", and excluding it would make the fleet look like it was
     // healing every time a finding went quiet.
-    invalidPlanAgesDays.push(
-      Math.floor((Date.now() - new Date(row.updated_at as string).getTime()) / 86_400_000))
+    invalidPlanRows.push({
+      created_at: row.created_at as string | null,
+      updated_at: row.updated_at as string | null,
+    })
     if (prev === now) { unchanged++; continue }
     changed++
     flagged.push({ user_id: row.user_id, codes, state: prev ? 'changed' : 'new' })
@@ -260,17 +267,18 @@ export async function POST(req: NextRequest) {
   // last deploy", which this route cannot know, and a hardcoded window would rot
   // silently the first time the deploy cadence changed. An age distribution needs
   // no maintenance and says more.
-  invalidPlanAgesDays.sort((a, b) => a - b)
-  const ageBuckets = {
-    '0-1d':  invalidPlanAgesDays.filter(d => d <= 1).length,
-    '2-7d':  invalidPlanAgesDays.filter(d => d > 1 && d <= 7).length,
-    '8-30d': invalidPlanAgesDays.filter(d => d > 7 && d <= 30).length,
-    '31d+':  invalidPlanAgesDays.filter(d => d > 30).length,
-  }
+  // PLAN-AUDIT-AGE-SOURCE-01 — `newest_invalid_plan_age_days` now measures what its name
+  // says: the age of the PLAN, by `created_at`. It was computed from `updated_at`, so on
+  // 2026-10-04 twenty-three plans landed in the "0-1d" bucket and nine of them had been
+  // generated 63 to 166 days earlier — rewritten, not regenerated, by two remediation
+  // scripts the day before. The digest reads that bucket as "the current engine has
+  // recently produced a bad plan" and raised a false alarm on it the next morning.
+  //
+  // The modification signal is KEPT as its own field, because "a reshape pushed a
+  // previously-valid plan into breach" is a real and separate hazard.
   const summary = {
     checked, invalid, skipped,
-    newest_invalid_plan_age_days: invalidPlanAgesDays[0] ?? null,
-    invalid_by_plan_age: ageBuckets,
+    ...summarisePlanAges(invalidPlanRows),
   }
 
   // A SUMMARY EVENT, so a digest has one row to read instead of N per-user rows.

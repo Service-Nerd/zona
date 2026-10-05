@@ -2471,6 +2471,77 @@ which is the current de-facto policy and would make the baseline permanent, or (
 regeneration offer belongs in the product — *"your plan was built before these improvements, rebuild
 it?"* — which is a feature, not a remediation, and would go to the SLT.
 
+#### 🔴 `COHORT-REVIEW-CLOCK-01` — `review:cohort` pins the grid but not the CLOCK, so the baseline breaks on a DATE *(P1, filed 2026-10-05)*
+
+⚙️ **NO BOARD.** Harness defect. **`npm run verify` is RED right now because of it**, and nothing in
+the engine changed.
+
+📐 **PROVEN, not inferred.** `scripts/cohort-review.ts` calls `distanceEnvelope(dist)` with no
+argument, so `plan_start` defaults to the pinned `'2026-11-02'`. **But the engine's behaviour depends
+on the runway from TODAY to that date, and nothing pins today.**
+
+| date | runway to `2026-11-02` | `classifyGap` |
+|---|---|---|
+| 2026-10-02 — baseline written (`d9965c3a`) | 31 days | `choice` |
+| 2026-10-04 — yesterday, `verify` green | 29 days | `choice` |
+| **2026-10-05 — today, `verify` RED** | **28 days** | **`auto`** |
+
+`FOUNDATION_GAP_AUTO_DAYS = 28`, so `<= 28` is `auto` and `> 28` is `choice`. **The threshold was
+crossed overnight.** The baseline encodes `choice` behaviour; today's engine produces `auto`. The
+table moved by 0.2-1.8pp across a handful of cells, with `n` wobbling ±1 — the signature of a
+population boundary shifting, not of a coaching change.
+
+🔴 **IT IS THE INVERSE OF `SWEEP-VACUOUS-01`, and that is why it was missed.** That incident was a
+grid that READ the wall clock and so silently changed what it measured; the fix everywhere was to pin
+`plan_start`. **This grid pins `plan_start` and leaves the OTHER END of the same subtraction free.**
+Pinning one end of an interval looks like pinning the interval.
+
+⚠️ **It will keep moving, and not only once.** As the calendar advances the runway shrinks through
+`FOUNDATION_GAP_NUDGE_DAYS = 7` as well, so there is a second flip around 2026-10-26, and after
+2026-11-02 the pinned start is in the PAST. **A baseline that must be re-blessed on dates nobody can
+predict is a baseline that teaches everyone to re-bless it**, which is precisely how
+`COHORT-BASELINE-RED-01` ended up hand-edited on 2026-10-02.
+
+**The fix:** pin both ends. `cohortGrid` already does this with `COHORT_PLAN_START` and a comment
+explaining why; `review:cohort` needs the same, passing a fixed reference "today" into generation
+rather than letting `new Date()` reach it. ⚠️ **Re-baseline ONLY after that**, or the new baseline
+encodes today's accident.
+
+🔻 **Do NOT re-baseline to clear the red.** The number did not move for a reason worth recording, and
+`npm run review:cohort -- --write` today would bake `auto` in and break again on the next boundary.
+
+#### 🔻 `OPS-AUDIT-DIGEST-ORDER-01` — the digest runs BEFORE the audit, so it always reads yesterday's *(P2, filed 2026-10-05)*
+
+⚙️ **NO BOARD.** Scheduling.
+
+📐 **Measured 2026-10-05:** the digest fires **07:00 Europe/London = 06:00 UTC**. The audit is
+scheduled **07:45 UTC** (`.github/workflows/ops-cron-plan-audit.yml`, `cron: '45 7 * * *'`). **So the
+digest runs 1h45m before the audit is even due** — it has *never* been able to read the same day's
+run. In practice GitHub Actions has been starting it later still: the last 12 runs landed
+**12:29–16:01 UTC**, so the row the digest reads is **17–24 hours old**. This morning's was **17.6h**.
+
+🔴 **AND THE REGISTRY HAS CLAIMED THE OPPOSITE SINCE 2026-09-16.** `OPS-DIGEST-PLAN-AUDIT-01`'s row
+says *"Audit runs 07:45 UTC, digest 08:30 London, so the event is ~45 min old when read."* 08:30
+London is **07:30 UTC** — still 15 minutes *before* the audit. **That sentence was wrong the day it
+was written**, and it has been the basis for reading the heartbeat as current ever since. The digest
+has since moved earlier, to 07:00, making it worse.
+
+⚠️ **Consequence, and it is not cosmetic:** any audit-side fix takes **two days** to appear in a
+digest — one for the audit to run with the new code, one for the digest to read that row. The
+2026-10-05 age fix will not show until 2026-10-07.
+
+**Three options, cheapest first:**
+1. **Move the audit cron earlier than the digest** — e.g. `cron: '0 4 * * *'`. ⚠️ GitHub Actions
+   free-tier scheduled runs drift by hours, which is exactly what the 12:29–16:01 spread shows, so
+   this reduces the gap without guaranteeing ordering.
+2. **Move the digest later** — founder-owned, since it decides when he reads it.
+3. **Have the digest trigger the audit itself** and read the result in the same run. Removes the
+   ordering question entirely; costs the digest a round-trip and needs `CRON_SECRET`, which a cloud
+   routine has no way to hold — the same blocker already recorded against `/api/ops/enrich-health`.
+
+✅ **Already mitigated, not fixed:** the digest prompt now states that the heartbeat it reads is
+normally the previous day's and must be reported with its timestamp rather than as this morning's.
+
 #### 🔻 `BASEBUILD-AUDIT-BLIND-01` — base-build plans carry no `generator_input`, so nothing can audit them *(P2, filed 2026-10-04)*
 
 ⚙️ **NO BOARD.** A coverage gap, not a prescription question.
