@@ -247,7 +247,29 @@ reminder that 375 HIDES what a wider viewport exposes — the measurement that m
 one width only. If 320 ever returns to support it is an **SLT** cost question first, and it
 reopens every measurement taken at 375.
 
-### `MATCH-LIST-WINDOW-01` — the run picker ignores the ±2-day window that already exists ⚙️ **NO BOARD** (re-tagged 2026-10-05: defect fix, not a board question)
+### ✅ `MATCH-LIST-WINDOW-01` — SHIPPED 2026-10-05. The premise was wrong: there WAS a filter, and it was a SECOND ANSWER ⚙️ **NO BOARD**
+
+> ✅ **SHIPPED 2026-10-05.** 🔴 **THE FILED PREMISE — *"the candidate list has no date filter"* — WAS FALSE, and the real
+> defect was worse.** There WAS a filter: a hand-rolled **−5/+0-day** window at
+> `SessionPopupInner.tsx:330` with **no distance component**, parallel to `findMatchCandidates`'s
+> **±2 days + 0.75–1.40 ratio**. **A second answer to one question** (`TIER-OWNER-01`'s class),
+> which is harder to see than a missing one.
+> 📐 **The founder's capture is explained exactly by it:** 25 Sep **− 5 = 20 Sep, the boundary**,
+> admitted; and 14 km / 8 km = **1.75**, far outside the matcher's ratio, never tested.
+> 🔴 **And the worse half: the parent ALREADY ran the matcher** and passed its ranked top candidate
+> in as the `autoMatch` prop — so the screen showed the right answer as a CTA **above a
+> recency-sorted list that contradicted it.**
+> **Fixed by RANKING, not NARROWING.** New owners in `lib/coaching/sessionMatch.ts`:
+> `LINK_POOL_LOOKBACK_DAYS` + `isInLinkPool` (the browse pool — deliberately wide) and
+> `rankLinkCandidates` (order — the matcher's job). ⚠️ **Narrowing the pool to ±2 days would stop a
+> runner linking a session they ran four days late. That is a capability question for the 🧭 Design
+> Board and was deliberately NOT taken as a defect fix** — filed below if it is ever wanted.
+> **Gate:** 6 arms in `lib/coaching/sessionMatch.test.ts`, keyed to the founder's own capture
+> rather than an invented case. **Falsified twice:** reverting to recency order reds the
+> founder's-case arm; widening the window to 6 days reds the boundary arm.
+> ⚠️ **`design-rulings.md`'s `LINK-HIERARCHY-01` row said "no date filter" too — corrected in the
+> same commit.**
+
 
 > 🔴 **COACHING BOARD 2026-10-05 — NOT THIS BOARD'S. EXEMPT as a defect fix restoring documented
 > intent (ADR-017 never-convene). RE-TAGGED 🏃 -> ⚙️ NO BOARD.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.

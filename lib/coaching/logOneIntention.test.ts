@@ -114,6 +114,34 @@ describe('LOG-ONE-INTENTION-01 — one intention, one verb, one button', () => {
     expect(DASH).toContain('Enter it manually')
   })
 
+  it('🔴 MATCH-LIST-WINDOW-01 — no component rolls its own link-pool window', () => {
+    // The gate above counts `findMatchCandidates` and was GREEN throughout the
+    // defect it was written to prevent, because the second answer did not use that
+    // symbol — it was hand-rolled DATE ARITHMETIC inside SessionPopupInner:
+    //   fiveDaysBefore.setDate(fiveDaysBefore.getDate() - 5)
+    // asymmetric -5/+0 days, no distance component, parallel to the matcher's
+    // +/-2 days + 0.75-1.40 ratio. A second answer to one question, and the arm
+    // above could not see it. **A gate that greps one SYMBOL cannot hold an
+    // INTENT** — this arm holds the intent.
+    // ⚠️ EXEMPT BY NAME, WITH ITS REASON — not a blanket skip, which is a hole one
+    // boolean wide. `startOfToday.getDate() - 1` builds the RELATIVE-TIME DISPLAY
+    // string ("this morning" / "yesterday" / "3d ago"), which is ADR-015's territory
+    // and not a data window: nothing is selected or excluded by it. Written as the
+    // EXACT expression, so `getDate() - 2` — or the same shape under any other
+    // variable — still fails. The first run of this arm flagged it, which is how the
+    // over-broad version was caught before it was trusted green.
+    const DISPLAY_RELATIVE_TIME = 'startOfToday.getDate() - 1'
+    const pool = (DASH.replace(DISPLAY_RELATIVE_TIME, '').match(/getDate\(\)\s*-\s*\d+/g) ?? [])
+    expect(pool,
+      'date-window arithmetic in the dashboard tree. The link pool is owned by ' +
+      '`isInLinkPool` in lib/coaching/sessionMatch.ts — import it, do not re-derive it.',
+    ).toEqual([])
+    // ...and the owner is actually reached, so the arm above cannot pass vacuously
+    // by the picker having no window at all.
+    expect(DASH, 'the picker must use the pool owner').toContain('isInLinkPool')
+    expect(DASH, 'the picker must use the ranking owner').toContain('rankLinkCandidates')
+  })
+
   it('🔴 ONE owner answers "which run is this" — no parallel classifier', () => {
     // The twelve lines were about to be copied into TodayScreen. The tier order
     // written three times, the deload cadence in five places, `sumWeeklyKm` by

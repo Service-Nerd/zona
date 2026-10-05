@@ -12,6 +12,79 @@ export interface MatchCandidate {
 // is explicit consent. Change this in one place; callers import, don't hardcode.
 export const MIN_AUTO_LINK_CONFIDENCE: MatchCandidate['confidence'] = 'high'
 
+// ── The BROWSE pool, which is a DIFFERENT QUESTION from a match candidate ──
+//
+// 🔴 MATCH-LIST-WINDOW-01. Two questions were sharing one answer, badly:
+//   1. "which run IS this session?"      -> findMatchCandidates below: +/-2 days,
+//                                          distance-aware (0.75-1.40), confidence-ranked.
+//   2. "which runs may I BROWSE to link?" -> wider on purpose, because a runner
+//                                          does a Tuesday session on Saturday and must
+//                                          still be able to link it.
+//
+// Question 2 was answered by a hand-rolled date test inside SessionPopupInner with
+// NO distance component and an ASYMMETRIC -5/+0-day window. So a 20 Sep / 14 km run
+// was offered for a Fri 25 Sep / 8 km session: 25 Sep - 5 = 20 Sep, exactly the
+// boundary, and 14/8 = 1.75 is far outside the matcher's ratio. The item was filed as
+// "the candidate list has no date filter" and that was WRONG — there was a filter,
+// it was a SECOND ANSWER, which is harder to see and worse (TIER-OWNER-01's class).
+//
+// The window stays deliberately wide. It is NAMED and lives HERE, beside the matcher,
+// so nobody can add a third answer without reading both. Ranking is the matcher's job.
+export const LINK_POOL_LOOKBACK_DAYS = 5
+
+/**
+ * Is `activityDate` inside the pool a runner may browse when linking `sessionDate`?
+ *
+ * A FUTURE session has no "session day" to look back from, so the pool is the last
+ * LINK_POOL_LOOKBACK_DAYS from `now` — you cannot have run a session that has not
+ * happened, but you may be linking an early effort. A session today or in the past
+ * looks back from the session and stops at the END of its own day.
+ */
+export function isInLinkPool(
+  activityDate: Date,
+  sessionDate: Date | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  const back = (from: Date) => {
+    const d = new Date(from)
+    d.setDate(d.getDate() - LINK_POOL_LOOKBACK_DAYS)
+    return d
+  }
+  if (!sessionDate || Number.isNaN(sessionDate.getTime())) return activityDate >= back(now)
+  if (sessionDate > now) return activityDate >= back(now)
+  const end = new Date(sessionDate)
+  end.setHours(23, 59, 59, 999)
+  return activityDate >= back(sessionDate) && activityDate <= end
+}
+
+/**
+ * The browse list, ranked by the SAME owner the auto-linker uses.
+ *
+ * Pool membership is `isInLinkPool` (wide, deliberate). ORDER is
+ * `findMatchCandidates` (narrow, distance-aware) — so the likely run is first and a
+ * five-day-old run of the wrong distance sinks instead of sitting at the top looking
+ * equivalent. Runs the matcher does not rank keep their incoming order after it.
+ *
+ * ⚠️ This RANKS, it does not FILTER. Narrowing the browse pool to the matcher's
+ * +/-2 days would stop a runner linking a session they ran four days late, which is a
+ * capability question for the Design Board, not a defect fix.
+ */
+export function rankLinkCandidates(
+  session: Session,
+  sessionDate: Date | null | undefined,
+  pool: StravaActivity[],
+): StravaActivity[] {
+  if (!sessionDate || Number.isNaN(sessionDate.getTime()) || !pool.length) return pool
+  const rank = new Map<unknown, number>()
+  findMatchCandidates(session, sessionDate, pool)
+    .forEach((c, i) => rank.set(c.activity.id, i))
+  return [...pool].sort((a, b) => {
+    const ra = rank.has(a.id) ? rank.get(a.id)! : Number.MAX_SAFE_INTEGER
+    const rb = rank.has(b.id) ? rank.get(b.id)! : Number.MAX_SAFE_INTEGER
+    return ra - rb
+  })
+}
+
 /**
  * Returns ordered match candidates for a planned session, best match first.
  * Auto-selects if exactly one 'high' confidence candidate.

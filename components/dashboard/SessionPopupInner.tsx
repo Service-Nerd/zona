@@ -18,11 +18,12 @@ import TodayScreen from '@/components/dashboard/TodayScreen'
 import ZoneBar from '@/components/shared/ZoneBar'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
-import type { Plan, Session, Week } from '@/types/plan'
+import type { Plan, Session, StravaActivity, Week } from '@/types/plan'
 import type { PostRunData } from '@/components/dashboard/dashboardHelpers'
 import type { Zone } from '@/components/shared/ZoneBar'
 import { BRAND } from '@/lib/brand'
 import { FATIGUE_TAGS, SKIP_REASONS, isFatigueTag } from '@/lib/coaching/completionVocab'
+import { isInLinkPool, rankLinkCandidates } from '@/lib/coaching/sessionMatch'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { SESSION_COLORS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { authedFetch } from '@/lib/supabase/authedFetch'
@@ -327,28 +328,29 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
     loadClaimed()
   }, [view])
 
-  const stravaRuns = [...preloadedRuns, ...freshRuns].filter((r: any) => {
-    if (claimedIds.has(r.id) && r.id !== completion?.strava_activity_id && r.id !== completion?.apple_health_uuid) return false
-    const actDate = new Date(r.start_date)
-    const today = new Date()
-    if (session.rawDate) {
-      const sessionDate = new Date(session.rawDate)
-      if (sessionDate > today) {
-        const fiveDaysAgo = new Date(today)
-        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5)
-        return actDate >= fiveDaysAgo
-      } else {
-        const sessionEnd = new Date(sessionDate)
-        sessionEnd.setHours(23, 59, 59, 999)
-        const fiveDaysBefore = new Date(sessionDate)
-        fiveDaysBefore.setDate(fiveDaysBefore.getDate() - 5)
-        return actDate >= fiveDaysBefore && actDate <= sessionEnd
-      }
-    }
-    const fiveDaysAgo = new Date(today)
-    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5)
-    return actDate >= fiveDaysAgo
-  })
+  // 🔴 MATCH-LIST-WINDOW-01. The pool window and the RANKING are two different
+  // questions and both now have one owner in `lib/coaching/sessionMatch.ts`.
+  //
+  // What was here: a hand-rolled -5/+0-day date test with NO distance component —
+  // a SECOND answer to "which run could be this session?", parallel to the matcher
+  // the parent ALREADY ran to produce the `autoMatch` CTA above this list. So the
+  // screen showed the ranked answer as a button and then a recency-sorted list that
+  // contradicted it: a 20 Sep / 14 km run sat at the top for a Fri 25 Sep / 8 km
+  // session (25 Sep - 5 = 20 Sep, exactly the boundary; 14/8 = 1.75, far outside the
+  // matcher's 0.75-1.40). The item was filed as "no date filter". There WAS one.
+  //
+  // `isInLinkPool` keeps the window deliberately wide — a runner does a Tuesday
+  // session on Saturday and must still be able to link it — and `rankLinkCandidates`
+  // puts the likely run first using the SAME owner the auto-linker uses.
+  const sessionDate = session.rawDate ? new Date(session.rawDate) : null
+  const stravaRuns = rankLinkCandidates(
+    session as Session,
+    sessionDate,
+    [...preloadedRuns, ...freshRuns].filter((r: any) => {
+      if (claimedIds.has(r.id) && r.id !== completion?.strava_activity_id && r.id !== completion?.apple_health_uuid) return false
+      return isInLinkPool(new Date(r.start_date), sessionDate)
+    }) as StravaActivity[],
+  ) as any[]
 
   async function saveCompletion(status: 'complete' | 'skipped', overrideActivity?: any) {
     setSaving(true)

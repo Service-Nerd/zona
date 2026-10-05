@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — MATCH-LIST-WINDOW-01 · the item said there was no filter; there was a second one
+**Shipped:** the run-link picker now ranks its list with the same matcher the auto-linker uses, and the browse window became a named owner instead of inline date arithmetic.
+
+**Dev learning:** the item was filed as *"the candidate list has no date filter"*. Validating before building — which the founder insisted on — found a filter sitting right there, a hand-rolled −5/+0-day window with no distance test. **That is a worse bug than the one filed, and much harder to see: a missing check is absent, a second answer looks like a check.** The founder's own capture decoded perfectly against it: 25 Sep minus 5 is 20 Sep, exactly the boundary, and 14 km against 8 km is 1.75 which nothing tested. Then the real sting: the parent component had **already** run the proper matcher and passed its ranked top candidate in as a prop. The screen showed the right answer as a button and an unranked list underneath that disagreed with it.
+
+**Product/creator learning:** the obvious fix — narrow the list to the matcher's ±2 days — is wrong, and measuring stopped me doing it. A runner does their Tuesday session on Saturday. Narrowing would have removed their ability to link it at all, and dressed a capability loss as a defect fix. **Rank, don't filter.** The wide window was never the bug; pretending it answered a different question was.
+
+**AI-building learning:** my new gate caught a real second site on its very first run — and it was a false positive, a relative-time display formatter doing `getDate() - 1` for "yesterday". The instinct is to widen the exemption. The repo's own record says a blanket skip is a hole one boolean wide, so it is exempt **by its exact expression**, and I proved the narrowness by mutating it to `- 2` and watching it still fail. Three falsifications on one commit: revert the ranking, widen the window, break the exemption.
+
+**The honest bit:** the existing one-owner gate — written for exactly this class, with a comment naming the tier order and the deload cadence as precedents — was **green through the entire life of this defect**, because it greps the string `findMatchCandidates` and the second answer used no such string. I nearly trusted that green. A gate that greps a symbol cannot hold an intent, and I now have an arm that does.
+
+**Hook material:** the bug report said "no date filter". There was a filter. It just disagreed with the other filter, and the screen showed both answers at once — one as a button, one as a list.
+
+**Postable?:** yes — "a second answer is harder to find than a missing one" is the whole post, and the 25 Sep minus 5 equals 20 Sep decode is a clean beat.
+
 ## 2026-10-05 — LIVENESS-BASELINE-METADATA-01 · a number in a fixture reads as measured
 **Shipped:** removed three unread metadata fields from the invariant-liveness baseline, stopped its writer overwriting hand-amended prose, and gated both.
 
