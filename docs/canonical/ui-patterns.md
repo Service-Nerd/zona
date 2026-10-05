@@ -3930,6 +3930,37 @@ Reference: inline in `app/dashboard/DashboardClient.tsx` (`showMaintTransition` 
 
 ---
 
+## Moment weight — the three mechanisms the product already uses (UI-PATTERNS-MOMENTS-01)
+
+🎪 **Collins filed this as "the document has no vocabulary for weight". Measured, it has three —
+and that is the worse finding**, because each was invented privately by whoever built that screen,
+nobody compared them, and nothing stops the fourth moment inventing a fourth.
+
+**This section NAMES WHAT EXISTS. It does not authorise a feel.** ⛔ W-11 (paper grain) and the
+"wow as ornament" row are standing kills and are not reopened by it.
+
+| Moment | Mechanism | Measurement | Where |
+|---|---|---|---|
+| **The plan arriving** | **TIME** — the screen is held on purpose | `minDelay = hasPaidAccess ? 3600 : 1800` ms before the reveal. **The product spends up to 3.6 seconds of a runner's time to make this land** | `components/GeneratingCeremony.tsx` |
+| **The first run logged** | **VOICE** — the only surface carrying *both* locked brand lines | `BRAND.voiceAnchor` **and** `BRAND.brandStatement` on one card | `components/shared/SessionCompleteCard.tsx` |
+| **The coach's verdict** | **PROVENANCE** — authorship made visible | `CoachByline` + a **3px `--warn` left rail**, `aiGenerated` only | `components/shared/CoachNoteBlock.tsx` |
+
+> ⚠️ **SIZE IS NOT A MECHANISM, and it is the obvious wrong answer.** The ordinary `LedgerCard`
+> also renders a **44px** numeral. **A moment is not a big number.**
+
+> 🔴 **EVERYTHING ELSE GETS NONE, AND THAT IS THE DEFAULT.** ✋ Silvanto: restraint is the default
+> and the document should make the default visible. Three moments have weight. Every other surface
+> in this product is deliberately flat, and a fourth claimant needs a ruling, not a precedent.
+
+> ✅ **Gated by `components/shared/momentWeight.test.ts`** — the section is nothing but three
+> measurements, so the gate asserts all three (the hold, both brand lines, the rail) plus the
+> *size is not a mechanism* comparison. **A doctrine section describing a mechanism the code no
+> longer has is worse than no section.**
+
+> 🎓 Sierra's condition, binding on anything added here: **describe MECHANISMS, never prescribe
+> FEELINGS.** *"The runner should feel understood"* is unfalsifiable. *"This surface spends 3.6
+> seconds"* can be argued with.
+
 ## What Not to Build
 
 > ⚖️ **This table is component guidance, not the rule statement.** The restraint rules

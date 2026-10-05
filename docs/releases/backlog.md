@@ -4196,7 +4196,33 @@ taken: **of the unguarded sections, how many are actually being honoured today?*
 separates "unenforced and fine" from "unenforced and already drifted", and only the second
 needs a gate.
 
-### 🟡 `UI-PATTERNS-MOMENTS-01` — INSUFFICIENT EVIDENCE 2026-10-02; deferred with a condition 🧭 **DESIGN BOARD**
+### ✅ `UI-PATTERNS-MOMENTS-01` — CONDITION DISCHARGED + SHIPPED 2026-10-05. The product had three mechanisms, not none 🧭 **DESIGN BOARD**
+
+> ✅ **The condition is discharged and the answer reframes the finding.** 🎪 Collins had to name
+> **three moments and what each should do differently**; the item already named them, so what was
+> missing was evidence about what each does **today**.
+> 📐 **Measured: all three already have weight, each by a DIFFERENT mechanism, none of them named.**
+> **TIME** — `GeneratingCeremony.tsx:225` holds the screen `minDelay = 3600` paid / `1800` free ms:
+> **the product spends up to 3.6 seconds of a runner's time to make the plan land.**
+> **VOICE** — `SessionCompleteCard` is the only surface carrying **both** locked brand lines.
+> **PROVENANCE** — `CoachNoteBlock` carries `CoachByline` + a 3px `--warn` rail.
+> ⚠️ **SIZE IS NOT A MECHANISM, and it was the obvious wrong answer:** the ordinary `LedgerCard`
+> renders the same **44px** numeral. **A moment is not a big number.**
+> 🎪 Collins, on the record: *"I was wrong about the gap and the real one is worse — it has three,
+> every one invented privately, nobody compared them, and nothing stops the fourth moment inventing
+> a fourth. That is a TAXONOMY problem, which is the thing I am actually here for."*
+> ⚖️ **RULED SHIP, scoped to NAMING WHAT EXISTS** — ⛔ no new moments, no ornament, no prescribed
+> feelings. W-11 and the ornament row stand. 🎓 Sierra's binding condition: **describe MECHANISMS,
+> never prescribe FEELINGS.** ✋ Silvanto's: **say which moments get NOTHING** — restraint is the
+> default and the document should make the default visible.
+> **Artifacts:** `ui-patterns.md` § **Moment weight** · **no token or constant, deliberately** —
+> the mechanisms already exist and inventing one would be the ornament this ruling forbids ·
+> `components/shared/momentWeight.test.ts`.
+> 🔴 **MY OWN ENFORCEMENT GATE CAUGHT THIS SECTION** the moment it landed — unguarded went 10 → 11
+> because it named no check. **The gate written an hour earlier fired on the very next section
+> added, including mine.** Falsified twice: setting the ceremony hold to 0 reds the TIME arm;
+> swapping a brand line reds the VOICE arm.
+
 
 ⚖️ **Design Board INSUFFICIENT EVIDENCE.** 🧭 Zhuo: *"the document has no vocabulary for weight"*
 is a brief without a success condition, and every ruling that stuck at this board had a number

@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-05 — UI-PATTERNS-MOMENTS-01 · the gap was three answers, not none
+**Shipped:** `ui-patterns.md` § Moment weight — the three mechanisms the product already uses to make a moment land, each with its measurement.
+
+**Dev learning:** the item said the document had no vocabulary for weight. It had three, and nobody had noticed because each lived in a different component. The plan arriving is held for a deliberate 1.8–3.6 seconds. The completion card is the only surface in the product carrying both locked brand lines. The coach note has a byline and a 3px rail. **Three screens, three private answers, zero comparison** — which Collins immediately reframed as a taxonomy problem rather than an ornament one, against his own filing.
+
+**Product/creator learning:** `minDelay = hasPaidAccess ? 3600 : 1800` is a design decision sitting in a component file. The product spends up to three and a half seconds of someone's time to make a plan feel like it arrived, and that is as real a design choice as a type scale — but it was never written down anywhere a designer would look. The obvious wrong answer was size: the ordinary ledger card renders the same 44px numeral as the completion card. **A moment is not a big number.**
+
+**AI-building learning:** the enforcement gate I wrote about an hour earlier caught this section the instant it landed — unguarded sections went 10 to 11 because my new section named no check. **A register that fires on its own author is the only kind worth having**, and it meant the section shipped with a gate asserting all three measurements rather than as prose that could quietly stop being true.
+
+**The honest bit:** I was one step from writing a "how moments should feel" section, which is exactly the ornament this board has killed twice. What stopped it was measuring what already existed first — and what existed turned out to be the answer.
+
+**Hook material:** the design doc had nothing on how a moment should land. The code had three different answers, one of them spending 3.6 seconds of the user's time, and none of them written down.
+
+**Postable?:** yes — "your design system already has the answer, in three places, under three names" is a strong and transferable beat.
+
 ## 2026-10-05 — UI-PATTERNS-ENFORCEMENT-01 · four rules were guarded all along and never said so
 **Shipped:** the measurement the board asked for — of 14 unguarded pattern sections, how many have actually drifted. Answer: none.
 

@@ -178,3 +178,62 @@ measured it.
   this sitting made.
 - `Chip` refusing a colour axis **leaves the fatigue tags hand-rolled forever** unless a different
   primitive is proposed. That is accepted, not deferred.
+
+---
+
+# Addendum — `UI-PATTERNS-MOMENTS-01`, the condition is discharged
+
+**The condition (2026-10-02):** 🎪 Collins names **three** moments and **what each should do
+differently**. ⚠️ He accepted the deferral and asked it be recorded that **deferring it twice
+becomes an answer** — so this is the last sitting at which it can be deferred.
+
+## 📐 The evidence, measured — and it reframes the gap
+
+The item named the three moments already: **the plan arriving · the first run logged · the coach's
+verdict.** What nobody had measured is what each does **today**.
+
+| Moment | What gives it weight today | Measured |
+|---|---|---|
+| **The plan arriving** | **TIME.** The ceremony holds the screen on purpose | `GeneratingCeremony.tsx:225` — `minDelay = hasPaidAccess ? 3600 : 1800` ms, a **deliberate minimum** before the reveal |
+| **The first run logged** | **VOICE.** The only surface carrying *both* locked brand lines | `SessionCompleteCard` renders `BRAND.voiceAnchor` **and** `BRAND.brandStatement`, plus a 44px numeral |
+| **The coach's verdict** | **PROVENANCE.** Authorship made visible | `CoachNoteBlock` — `CoachByline` + a **3px `--warn` left rail**, `aiGenerated` only |
+
+⚠️ **Size is NOT the differentiator, and that was the obvious wrong answer.** The ordinary
+`LedgerCard` also renders at **44px**. A moment is not a big number.
+
+## 🎪 Collins
+*"Then I was wrong about the gap and the real one is worse. I said the document had no vocabulary
+for weight. It has **three** — time, voice, provenance — and every one of them was invented
+privately by whoever built that screen. Nobody chose them, nobody compared them, and nothing stops
+the fourth moment inventing a fourth. **That is not an ornament problem, it is a taxonomy problem**,
+which is the thing I am actually here for."*
+
+## 🧭 Zhuo (chair)
+*"And it now has a number attached, which is what it was missing. `minDelay = 1800/3600` is a
+design decision somebody made in a component file — it is the product spending **up to 3.6 seconds
+of a runner's time** to make something land, and that is as real a design choice as a type scale.*
+
+*⚠️ What I will not have is this becoming a licence. The ruling is to **NAME WHAT EXISTS**, not to
+author a feel. W-11 and the ornament row are standing kills."*
+
+## ✋ Silvanto
+*"Supported, narrowly. My seat asks whether a moment carrying weight has been given any, and I have
+been asking it with nowhere to point. Three named mechanisms is somewhere to point. **It must say
+which moments get NOTHING, too** — restraint is the default and the document should make the
+default visible."*
+
+## 🎓 Sierra
+*"One condition: this must describe mechanisms, not prescribe feelings. *'The runner should feel
+understood'* is unfalsifiable. *'This surface spends 3.6 seconds'* can be argued with."*
+
+## ⚖️ RULING — 🟢 **SHIP, scoped to NAMING WHAT EXISTS**
+
+A short `ui-patterns.md` section: **the three weight mechanisms the product already uses, each with
+its measurement and its one call site**, and an explicit statement that **everything else gets
+none**. ⛔ **No new moments, no new ornament, no prescribed feelings** — W-11 and the ornament row
+stand.
+
+**Artifacts:** the section (pattern) · no token or constant — *the mechanisms already exist and
+inventing one would be the ornament this ruling forbids*, which is recorded rather than skipped ·
+and the measurement held by `uiPatternsEnforcement.test.ts`'s register, since the new section names
+its own evidence.
