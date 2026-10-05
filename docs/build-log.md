@@ -6,7 +6,43 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-05 — the digest caught me, and it was right about the symptom and wrong about the cause
+## 2026-10-05 — `COHORT-REVIEW-CLOCK-01` · two wrong diagnoses, and a date coincidence that fooled me
+
+**Dev.** `npm run verify` was red with no code change. I found the cause in about ten minutes: the
+cohort harness pins its plan start, but the engine's behaviour depends on the runway from *today* to
+that date, and the runway had gone 31 → 29 → **28** days overnight, crossing a config threshold
+exactly between yesterday and today. Clean arithmetic, exact night, documented constant. I wrote it
+up as proven.
+
+**It was wrong.** Pinning the clock changed the table by nothing — on four separate pin dates. The
+clock reaches generation through `nextMonday(new Date())`, which the override doesn't touch. The real
+mechanism: Friday, Saturday and Sunday all derive a plan start of 2026-10-04, and **Monday derives
+2026-10-11.** Today was Monday. Every plan's calendar jumped a week.
+
+**A date coincidence is the most convincing kind of wrong answer.** The threshold crossing was real,
+it landed on exactly the right night, and it had nothing to do with it.
+
+**Then fixing it turned up something worse than a red build.** The envelope computes each case's race
+date as *plan start + N weeks* from its own pinned date — and generation was planning from next
+Monday instead, four weeks earlier. **Every case's real window was ~4 weeks longer than the grid
+declared.** This harness has never measured the cohort it describes. The re-baseline isn't a
+regression, it's a correction: marathon 8 km/wk clean goes 14% → 10.1%, and that figure is now about
+the plans the grid says it's about.
+
+**The honest bit — I wrote three gates before one worked, and each failure was informative.** The
+first asserted the plan starts where the case declares; it doesn't, the engine derived 2027-01-18
+from a declared 2026-11-02 because plan length is capped. The second varied `todayOverride` and found
+zero divergence, which is the same vacuity that fooled me on the diagnosis. Only the third, using
+`vi.setSystemTime`, moves the clock this code actually reads. **Two of my three gates would have
+passed while testing nothing**, and running them is the only reason I know.
+
+**What I'd tell someone building this.** Pinning one end of an interval looks like pinning the
+interval. And when a fix changes nothing, that is data — I had that result in hand for four pin dates
+before I accepted what it meant.
+
+---
+
+## 2026-10-05 — `PLAN-AUDIT-AGE-SOURCE-01` · the digest caught me, and it was right about the symptom and wrong about the cause
 
 **Dev.** The morning digest led with an inconsistency: 15 invalid plans of 30, newest breach "0 days
 old", and no plans generated in 24 hours. It concluded the audit was miscomputing. I'd have believed

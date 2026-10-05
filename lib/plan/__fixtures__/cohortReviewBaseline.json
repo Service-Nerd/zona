@@ -8,50 +8,52 @@
     "refusedPct": 100,
     "cleanPct": 0,
     "servedPct": 100,
-    "doorPct": 80.3,
+    "doorPct": 81.7,
     "objections": {}
    },
    "8": {
     "n": 219,
-    "refusedPct": 69.3,
-    "cleanPct": 14,
+    "refusedPct": 67.9,
+    "cleanPct": 10.1,
     "servedPct": 100,
-    "doorPct": 99.5,
+    "doorPct": 100,
     "objections": {
-     "LONG-RUN-SHORT": 16.7
+     "LONG-RUN-SHORT": 21.9
     }
    },
    "15": {
     "n": 220,
-    "refusedPct": 36.7,
-    "cleanPct": 15.9,
+    "refusedPct": 35.1,
+    "cleanPct": 15.5,
     "servedPct": 100,
     "doorPct": 100,
     "objections": {
-     "LONG-RUN-SHORT": 42.4,
-     "WEEK1-LEAP": 25.7,
-     "BINGE-WEEK": 0
+     "LONG-RUN-SHORT": 45.6,
+     "WEEK1-LEAP": 27.3,
+     "BINGE-WEEK": 0.2
     }
    },
    "25": {
     "n": 219,
     "refusedPct": 0,
-    "cleanPct": 93.2,
+    "cleanPct": 90.5,
     "servedPct": 100,
     "doorPct": null,
     "objections": {
+     "LONG-RUN-SHORT": 4.7,
      "WEEK1-LEAP": 3.4,
-     "BINGE-WEEK": 2.4,
-     "LONG-RUN-SHORT": 1.1
+     "BINGE-WEEK": 1.5
     }
    },
    "35": {
     "n": 220,
     "refusedPct": 0,
-    "cleanPct": 100,
+    "cleanPct": 99.6,
     "servedPct": 100,
     "doorPct": null,
-    "objections": {}
+    "objections": {
+     "BINGE-WEEK": 0.4
+    }
    },
    "50": {
     "n": 219,
@@ -74,12 +76,12 @@
    "10": {
     "n": 165,
     "refusedPct": 0,
-    "cleanPct": 60.3,
+    "cleanPct": 58.1,
     "servedPct": 100,
     "doorPct": null,
     "objections": {
      "WEEK1-LEAP": 25,
-     "DEGENERATE-WEEK": 14.6
+     "DEGENERATE-WEEK": 16.8
     }
    },
    "20": {

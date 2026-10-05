@@ -137,6 +137,18 @@
       "title": "warm-up + main-set + cool-down = session total (distance, mi)",
       "ms": 1503,
       "reason": "2026-09-25. Same cause as the refusalCoherence pair above: a borderline test pushed over the reporting line by the contention from six test files added today, not by anything in the test. ⚠️ THIS IS THE THIRD BASELINE ENTRY IN ONE DAY FOR THE SAME REASON — the suite has grown 383 -> 390 files and the borderline band is being consumed one test at a time. Filed as SUITE-CONTENTION-01: the next person should widen the worker pool or split the plan-sweep tests, not add a fourth entry."
+    },
+    {
+      "file": "lib/plan/cohortReviewPinned.test.ts",
+      "title": "🔴 THE DEFECT, REPRODUCED: with NO plan_start, Sunday and Monday generate different plans",
+      "ms": 2898,
+      "reason": "COHORT-REVIEW-CLOCK-01. Generates the marathon envelope TWICE under two faked system clocks (Sunday and Monday), because that divergence IS the defect and nothing cheaper reproduces it — `todayOverride` cannot, which is why two earlier versions of this gate were vacuous. Thinned from every 25th case to every 60th (8,282 ms -> 2,898 ms); thinning further would start to threaten the vacuity arm, which asserts the sample is non-empty. 9.7% of budget."
+    },
+    {
+      "file": "lib/plan/cohortReviewPinned.test.ts",
+      "title": "✅ THE FIX: passing the envelope's own plan_start makes the two days identical",
+      "ms": 1527,
+      "reason": "COHORT-REVIEW-CLOCK-01, the other half. Same double generation under two faked clocks, proving the pinned plan_start removes the dependence. Cheaper than its sibling only because fewer cases refuse. 5.1% of budget."
     }
   ]
 }

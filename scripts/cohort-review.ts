@@ -78,6 +78,46 @@ type Report = { version?: number; stride: number; byDistance: Record<string, Dis
 
 const pc = (x: number, t: number) => t ? +(x / t * 100).toFixed(1) : 0
 
+// COHORT-REVIEW-CLOCK-01 (2026-10-05) — PIN BOTH ENDS, AND THE GRID WAS NOT MEASURING
+// THE PLANS IT DECLARED.
+//
+// 🔴 THIS HARNESS WENT RED ON A DATE, WITH NO CODE CHANGE. The call was
+// `generateRulePlan(c.input, 'paid')` with no `planStart`, so the engine derived one from
+// `nextMonday(new Date())`:
+//
+//     Fri 2026-10-02 (baseline written)  -> plan_start 2026-10-04
+//     Sat 10-03, Sun 10-04               -> 2026-10-04   (verify green)
+//     Mon 2026-10-05                     -> 2026-10-11   (verify RED)
+//
+// Becoming Monday moved every plan's calendar by SEVEN DAYS, which shifts §44 prep
+// windows, day-of-week placement and race-eve behaviour. `__fixtures__/pinnedPlanStart.ts`
+// warns about exactly this: a window that stays fixed while the DATES move, so
+// "day-of-week-sensitive behaviour drifts".
+//
+// ⚠️ I FIRST DIAGNOSED THIS AS THE FOUNDATION GAP CROSSING `FOUNDATION_GAP_AUTO_DAYS`
+// (31 -> 29 -> 28 days, 'choice' -> 'auto' overnight). That arithmetic is real and it is
+// NOT the cause: pinning the clock via `todayOverride` changed the table by NOTHING —
+// identical deltas on every pin date tried. The clock reaches generation through
+// `nextMonday`, not through the override. **A plausible mechanism that matches the dates
+// is not the mechanism.**
+//
+// 🔴 AND FIXING IT EXPOSED A LARGER MISMATCH. `distanceEnvelope` computes each case's
+// `race_date` as `plan_start + N weeks` from its own pinned `2026-11-02`. Generation
+// ignored that and planned from next Monday instead — about four weeks earlier — so every
+// case's REAL plan window was ~4 weeks longer than the envelope declared. The grid was not
+// measuring the cohort it described. Passing the envelope's own `plan_start` is therefore
+// a correction, not merely a pin, and it moves the table on purpose: marathon 8 km/wk
+// refused 69.1% -> 67.9%, clean 14% -> 10.1%, LONG-RUN-SHORT 16.9% -> 21.9%; 10K 10 km/wk
+// clean 60.3% -> 58.1%. Re-baselined once, deliberately, with those numbers recorded here
+// and in the commit.
+//
+// ⚠️ BOTH ENDS ARE PINNED, because pinning one end of an interval looks like pinning the
+// interval — which is the whole lesson of this defect.
+// Equal to the envelope's own `plan_start`, so the foundation runway is 0 days — exactly
+// what `nextMonday(today)` produced before, since it returned the plan start itself. That
+// keeps the gap class 'none' and isolates this change to the corrected plan WINDOW.
+const REVIEW_TODAY = '2026-11-02'
+
 function measure(): Report {
   const byDistance: Record<string, DistanceRows> = {}
   for (const dist of DISTANCES) {
@@ -89,7 +129,10 @@ function measure(): Report {
       const b = bands[key] ??= { n: 0, w: 0, refused: 0, clean: 0, served: 0, doorEligible: 0, door: 0, obj: {} }
       b.n++; b.w += c.weight
       let plan
-      try { plan = generateRulePlan(c.input, 'paid') }
+      // Both declared seams: `plan_start` from the envelope, `todayOverride` pinned.
+      // BOTH declared seams pinned: the envelope's own `plan_start` (which its `race_date`
+      // was computed from) and a fixed `todayOverride`.
+      try { plan = generateRulePlan(c.input, 'paid', (c.input as { plan_start?: string }).plan_start, undefined, REVIEW_TODAY) }
       catch (e) {
         // A non-designed throw is a crash, not a refusal, and must not be
         // silently folded into the refusal rate.
