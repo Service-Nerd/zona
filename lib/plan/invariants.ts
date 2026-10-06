@@ -22,6 +22,7 @@ import { hasDeliveredCapInjury, hasVolumeCappedInjuryHistory } from './injurySco
 import { assessBaseBuild } from './baseVolume'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
+import { requiredPaceAnchors } from './sessionCatalogueData'
 import { catalogueRowFor } from './catalogueLink'
 import { isLongRun, isShakeout, isTimeTrial, classifyStimulus, isVo2maxSession, isStructuredSession } from './sessionRole'
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
@@ -904,7 +905,19 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // beginner ceiling. That is exactly what the extended property sweep caught
   // (1,664 hard failures on `fitness_level: 'beginner'` + an upward
   // `user_declared_level`). Meta first, input second, structural last.
-  const fitness = plan.meta.fitness_intensity_level ?? input.fitness_intensity_level ?? input.fitness_level
+  // ⚠️ `plan.meta.fitness_level` IS THE LAST RUNG, AND LEAVING IT OFF WAS A HOLE.
+  // The runner need not declare a fitness level at all — the engine ASSESSES one
+  // and stamps it as `plan.meta.fitness_level`. Without that rung this resolved to
+  // `undefined` for every such plan, and both consumers treat unknown fitness as
+  // PERMISSIVE: §104's alternatives filter (correctly, it avoids false firing) and
+  // §93 Am.1's surviving-row count (incorrectly, it DENIED an exemption using
+  // `beginner_goal_pace_blocks` for a runner the engine had assessed as
+  // intermediate). Measured: `peakLrEarnedTier.test.ts`'s fixtures declare no
+  // fitness, and four of them went red on an engine that was behaving correctly.
+  // One resolution, both checks — the same reasoning as `fitness_intensity_level`
+  // being preferred above it.
+  const fitness = plan.meta.fitness_intensity_level ?? input.fitness_intensity_level
+    ?? input.fitness_level ?? plan.meta.fitness_level
   // §110 Am.2 — the ceiling is CONDITIONAL now (a beginner who set a time
   // target gets 1, not 0), so it comes from the shared owner rather than a
   // lookup repeated here. `buildWeekSessions` reads the same function: a
@@ -6558,10 +6571,55 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // and gets suppressed. **Delete the entry when the item ships — it is a debt
   // register, not a carve-out.**
   {
-    const PEAK_RS_DEBT: ReadonlySet<string> = new Set(['HM'])
+    // 🥇 HM IS NO LONGER DEBT, AND IT NEVER WAS A DEFECT. `HM-PEAK-RACE-SPECIFIC-GAP-01`
+    // was filed on this invariant's own 20.1% and the RCA found §120 Amendment 1,
+    // shipped 2026-09-22, describing the behaviour in as many words: *"the HM anchor
+    // resolves to goal pace, but never faster than the runner's own CV pace. Beyond
+    // that the `hm_pace_intervals` row is NOT OFFERED AT ALL and the slot falls
+    // through the selector to other work."* The amendment had already costed it —
+    // *"30.0% of grid sessions lose the row"*.
+    //
+    // ⚠️ Measured: the entire 576-plan set was runners whose goal pace is faster than
+    // their CV — a 1:55 half (5:27/km) off a 27:30 5K (5:30/km). It is not a cohort,
+    // it is a predicate, and the engine now STAMPS it (`hm_goal_anchor_withheld`).
+    // Reading the stamp takes this check from "20.1% of HM unexamined" to "every HM
+    // plan where the row WAS offered".
+    //
+    // ⚠️ THE DEBT ENTRY WAS THE WRONG INSTRUMENT, not a wrong value. A debt register
+    // records a defect you have not fixed; this was ratified behaviour with no trace.
+    // The fix was to make the producer say so, not to widen the exemption.
     const dk = raceDistanceKey(input.race_distance_km)
     const prefers = (GENERATION_CONFIG.TIME_TARGET_PEAK_RACE_SPECIFIC_DISTANCES as readonly string[])
       .includes(dk)
+    // §120 Am.1 withheld the HM anchor — but that only EXEMPTS the plan if it
+    // removes its last eligible row, and for a BEGINNER it does not.
+    //
+    // 🔴 THE FIRST CUT OF THIS EXEMPTION WAS TWICE AS WIDE AS THE DEFECT, measured:
+    // 1,152 plans carried the stamp and **576 of them had race-specific peak work
+    // anyway** — all beginners, all using `beginner_goal_pace_blocks`, which is
+    // anchored on `goal` rather than `HM` and so survives the withholding. Exempting
+    // them would have dropped 20% of the examined population for a reason that does
+    // not apply to them: the *"checker's population excludes the cases at risk"*
+    // fault, and the second time in two days a race-specific check has needed to be
+    // made fitness-aware (`VARIETY-ELIGIBILITY-01` was the first).
+    //
+    // So the exemption is computed, not assumed: a plan is excused only when NO
+    // race-specific peak row survives for its own fitness band once the withheld
+    // anchor is taken out. Long-run-shaped rows are excluded for the same reason
+    // §104's arm excludes them — they are not candidates for a QUALITY slot.
+    const anchorWithheld = plan.meta.hm_goal_anchor_withheld === true
+    const userRankPeak = fitness ? FITNESS_RANK[fitness] : undefined
+    const survivingRows = !anchorWithheld ? 1 : V1_SESSION_CATALOGUE.filter(r =>
+      r.category === 'race_specific'
+      && (r.distance_eligibility as readonly string[]).includes(dk)
+      && (r.phase_eligibility as readonly string[]).includes('peak')
+      && r.main_set_structure?.type !== 'long_run_with_segment'
+      && !requiredPaceAnchors(r).includes('HM')
+      && (userRankPeak === undefined || (
+        FITNESS_RANK[r.fitness_level_min] <= userRankPeak
+        && (r.fitness_level_max == null || userRankPeak <= FITNESS_RANK[r.fitness_level_max])
+      ))).length
+    const exemptByAnchor = anchorWithheld && survivingRows === 0
     // ⚠️ MAINTENANCE IS NOT EXCLUDED, AND THE FIRST CUT OF THIS ARM EXCLUDED IT.
     // That looked prudent and was the "checker's population excludes the cases at
     // risk" fault: **72.7% of marathon plans are `maintenance`**, so the skip
@@ -6570,7 +6628,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // still fills them (measured: three `mp_blocks` on the board's own fixture),
     // so there was nothing to exclude. Marathon fires ZERO either way; the only
     // thing the skip changed was how much of the product went unchecked.
-    if (isTimeTarget && prefers && !PEAK_RS_DEBT.has(dk)) {
+    if (isTimeTarget && prefers && !exemptByAnchor) {
       const peakQuality = plan.weeks
         .filter(w => w.n >= 1 && w.phase === 'peak' && w.type !== 'deload')
         .flatMap(w => Object.values(w.sessions).filter((sn): sn is Session => sn?.type === 'quality'))

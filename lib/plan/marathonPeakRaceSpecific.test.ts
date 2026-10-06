@@ -91,6 +91,66 @@ describe('§93 Am.1 — the marathon peak takes race-specific quality', () => {
     expect(raceSpecific(peakQuality(p)).length).toBe(0)
   })
 
+  // ── §120 Amendment 1, via HM-PEAK-RACE-SPECIFIC-GAP-01 ──────────────────────
+  //
+  // 🥇 THAT ITEM WAS NOT A DEFECT. It was filed on this invariant's own 20.1% HM
+  // debt, and the RCA found §120 Am.1 (shipped 2026-09-22) describing the
+  // behaviour in as many words: past CV the `hm_pace_intervals` row is "not
+  // offered at all and the slot falls through the selector to other work". The
+  // amendment had already costed it — 30.0% of grid sessions lose the row.
+  // Measured: the entire 576-plan set is runners whose goal pace is faster than
+  // their CV, e.g. a 1:55 half (5:27/km) off a 27:30 5K (5:30/km).
+  const hmPastCv = (fitness: string): GeneratorInput => ({
+    athlete_name: 'A', race_name: 'R', primary_metric: 'distance',
+    race_distance_km: 21.1, goal: 'time_target', target_time: '1:55:00',
+    current_weekly_km: 20, longest_recent_run_km: 8,
+    race_date: race(16), plan_start: TODAY,
+    days_available: 4, age: 35, resting_hr: 55, max_hr: 184,
+    fitness_level: fitness, recent_quality_training: 'occasional',
+    hard_session_relationship: 'neutral', injury_history: [],
+    // The benchmark is what makes the goal implausible, and it is the whole
+    // discriminator: with no benchmark the engine has no CV to bound against and
+    // 0 of 864 such plans lose the row.
+    benchmark: { type: 'race', distance_km: 5, time: '0:27:30', benchmark_date: '2026-04-01' },
+  } as unknown as GeneratorInput)
+
+  it('§120 Am.1 — the withholding is STAMPED, so it is observable', () => {
+    const input = hmPastCv('intermediate')
+    const p = generateRulePlan(input, 'paid', TODAY, undefined, TODAY)
+    // Goal 5:27/km off a 27:30 5K: past CV, so the HM anchor is withheld.
+    expect(p.meta.hm_goal_anchor_withheld).toBe(true)
+    // And the consequence the amendment describes: no race-specific peak quality.
+    expect(raceSpecific(peakQuality(p)).length).toBe(0)
+    // Which the invariant must NOT report, because doctrine withheld the row.
+    expect(validatePlan(p, input).map(v => v.code))
+      .not.toContain('INV-PLAN-PEAK-RACE-SPECIFIC-REACHED')
+  })
+
+  it('ARM 4 — the exemption is FITNESS-AWARE, and the first cut was twice too wide', () => {
+    // 🔴 Measured: 1,152 plans carried the stamp and 576 of them had race-specific
+    // peak work anyway — all beginners, using `beginner_goal_pace_blocks`, which is
+    // anchored `goal` not `HM` and survives the withholding. Exempting them would
+    // have dropped 20% of the examined population for a reason that does not apply
+    // to them. This arm is why the exemption counts SURVIVING ROWS per fitness band.
+    const input = hmPastCv('beginner')
+    const p = generateRulePlan(input, 'paid', TODAY, undefined, TODAY)
+    expect(p.meta.hm_goal_anchor_withheld).toBe(true)
+    // A beginner keeps an eligible row, so they are still REQUIRED to have one…
+    expect(raceSpecific(peakQuality(p)).length).toBeGreaterThan(0)
+    // …and removing it must still be caught. If this goes green with the row
+    // stripped, the exemption has widened back to "any stamped plan".
+    for (const w of p.weeks) {
+      if (w.n < 1 || w.phase !== 'peak' || w.type === 'deload') continue
+      for (const s of Object.values(w.sessions)) {
+        if (s?.type !== 'quality') continue
+        ;(s as { catalogue_id?: unknown }).catalogue_id = 'threshold_ladder'
+        ;(s as { label?: unknown }).label = 'Threshold ladder'
+      }
+    }
+    expect(validatePlan(p, input).map(v => v.code))
+      .toContain('INV-PLAN-PEAK-RACE-SPECIFIC-REACHED')
+  })
+
   it('the invariant fires when the category is absent', () => {
     const input = marathon('intermediate')
     const p = generateRulePlan(input, 'paid', TODAY, undefined, TODAY)

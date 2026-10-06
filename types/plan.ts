@@ -560,6 +560,13 @@ export interface PlanMeta {
   vdot?: number                           // Jack Daniels VDOT score (raw, benchmark-derived) — matches Daniels' published tables
   vdot_training_anchor?: number           // discounted VDOT used to derive training paces (CoachingPrinciples §10)
   goal_pace_per_km?: string               // e.g. "5:04 /km" — target race pace, not a training zone
+  /** §120 Amendment 1 — the HM goal anchor was WITHHELD: the runner's goal pace
+   *  sits past their own CV pace, so `hm_pace_intervals` was never offered and
+   *  the peak quality slot fell through to other work. Ratified behaviour with a
+   *  cost declared at the sitting (30.0% of grid sessions lose the row). Stamped
+   *  because it previously left no trace, which is why
+   *  `INV-PLAN-PEAK-RACE-SPECIFIC-REACHED` had to park 20.1% of HM plans as debt. */
+  hm_goal_anchor_withheld?: boolean
   recalibration_weeks?: number[]          // week numbers where a benchmark re-test is scheduled
   recalibrations_applied?: number[]       // PV2-H — recalibration weeks whose TT result has been applied (so the prompt fires once)
   benchmark?: BenchmarkInput              // stored so recalibration can reference original

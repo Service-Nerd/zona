@@ -4637,7 +4637,16 @@ is. ⚠️ **That is a reading, not a ruling.** Two things a board should decide
 2. **Should a week GAINING a session count as a ramp at all?** 25.2% of firings involve one,
    and going from 3 runs to 4 is a structural change, not a volume spike.
 
-### 🏃 `DELOAD-LR-GROWS-01` — the "recovery" week is 27% bigger, and 100% of it is the long run
+### ✅ 🏃 `DELOAD-LR-GROWS-01` — CLOSED 2026-10-06 (4th sitting). Merged, attribution unratified, direction already corrected by LR-DELOAD-CUT-01
+
+> ✅ **CLOSED 2026-10-06 BY THE 4th COACHING BOARD SITTING — NO CHANGE, AND THE CONSTITUTION ALREADY
+> SAID SO.** §3 Amendment (LR-DELOAD-CUT-01, 2026-09-17): *"§3 says 'volume drops to 70% of the prior
+> build week' — a statement about the WEEK. **Nothing in §3 asks the long run to be cut harder**."*
+> 📊 13,785 deload weeks: 82.9% short of a 30% drop, median **17.9%**; of those **65.6% reachable by
+> trimming easy runs**, 34.4% floor-bound, **2 of 11,431 long-run-bound**. 🔴 And trimming easy runs —
+> the only reachable remedy — takes the long-run share 36.4% → **56.0%** and §52 breaches 3.0% →
+> **28.9%**, which is the exact mechanism LR-DELOAD-CUT-01 was ratified to prevent. **The shortfall is
+> the arithmetic consequence of three ratified rules.** Full ruling: `coaching-rulings.md`.
 
 > ⚖️ **COACHING BOARD 2026-10-05 — MERGED into `DELOAD-BADGE-TRUTH-01`, and its 100% ATTRIBUTION IS
 > NOT RATIFIED.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
@@ -6341,10 +6350,60 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
 
-### 🟠 🏃 `HM-PEAK-RACE-SPECIFIC-GAP-01` — HM's peak preference returns `race_specific` and 20% of HM plans get none *(filed 2026-10-06, P2)* 🏃 **COACHING BOARD**
+### `GOAL-PAST-CV-SILENT-01` — a runner whose goal pace is past their CV is never told *(filed 2026-10-06, P2)* 🏃 **COACHING BOARD**
 
-> **Found by the invariant written for `MARATHON-PEAK-ROTATION-01`** — it is the first check that ever
-> asked whether the peak preference's named category actually arrives.
+> **Residual of `HM-PEAK-RACE-SPECIFIC-GAP-01`'s RCA.** §120 Amendment 1 withholds the
+> `hm_pace_intervals` row when goal pace is faster than CV, which is correct and ratified. The runner
+> is never told that it happened or why.
+>
+> **Measured on the exact cohort** (HM, 1:55 target, 5K/27:30 benchmark, intermediate): they receive
+> §44's `difficulty_note` (*"Demanding — your inputs cap how far the plan can build"* — about volume)
+> and a `volume_constraint_note` (*"built to get you round, not to chase a time"* — adjacent, and
+> written for the volume shortfall). **Neither names the goal pace, and neither was written for this.**
+>
+> ⚠️ **1,152 of 1,728 HM time-target plans in the grid carry the stamp** (`hm_goal_anchor_withheld`),
+> so this is not an edge case — though the grid's own pairing of a 1:55 target with a 27:30 5K is part
+> of what inflates it, and the live population is 21 plans.
+>
+> 🏃 **Board question, not a build:** §120 Am.1 chose to WITHHOLD rather than cap, on the reasoning
+> that renaming the session honestly *"stops it being race-specific, which is withholding with extra
+> steps."* The same argument applies to the note: does the plan say *"your goal is faster than your
+> current fitness supports, so we are training you at threshold"*? That is a §34 honesty question and
+> a voice question, so the copy is `brand.md`'s.
+>
+> ⚠️ **Re-measure before building.** The 1,152 is as of `eb00078a` on cohortGrid stride 3.
+
+---
+
+### ✅ 🏃 `HM-PEAK-RACE-SPECIFIC-GAP-01` — CLOSED 2026-10-06. **NOT A DEFECT: it is §120 Amendment 1 working, and one grep would have prevented the filing** *(filed 2026-10-06, P2)* 🏃 **COACHING BOARD**
+
+> ✅ **CLOSED BY RCA, NOT BY A FIX. §120 Amendment 1 (shipped 2026-09-22) describes this behaviour in as
+> many words:** *"the HM anchor resolves to goal pace, but never faster than the runner's own CV pace.
+> Beyond that the `hm_pace_intervals` row is **not offered at all** and the slot falls through the
+> selector to other work."* The amendment **already costed it**: *"30.0% of grid sessions lose the row,
+> and it is never a plan's only non-VO2max quality (0 of 4,320)."*
+>
+> 🔴 **I FILED THIS WITHOUT GREPPING §120, AND IT TOOK ONE GREP.** Second time in a day; the
+> `CHECK THE DOCTRINE BEFORE FILING A FINDING` note records the same mistake ten days earlier.
+>
+> **Measured discriminator — it is a predicate, not a cohort:** target 1:55 **with** a 5K/27:30
+> benchmark, 576 of 864 have no race-specific peak quality; **without** a benchmark, **0 of 864**. A
+> 1:55 half is 5:27/km against a 5:30/km 5K — the goal is faster than their current 5K, so
+> "HM-pace intervals" would be threshold-or-harder work under a race-pace label.
+>
+> ✅ **THE ONE REAL FINDING, FIXED: the withholding left no trace.** The engine now stamps
+> `hm_goal_anchor_withheld`, and `INV-PLAN-PEAK-RACE-SPECIFIC-REACHED` reads it instead of parking HM
+> as debt — coverage goes from **all of HM unexamined** to **2,289 of 2,865 (79.9%)**.
+>
+> 🔴 **And the first cut of that exemption was twice as wide as the defect:** 1,152 plans carried the
+> stamp and **576 had race-specific peak work anyway**, all beginners on `beginner_goal_pace_blocks`
+> (anchored `goal`, not `HM`). The exemption now counts surviving rows per fitness band.
+>
+> ⚠️ **What is NOT fixed:** nothing tells the runner their goal pace is past their CV. They get §44's
+> difficulty note and a volume `constraint_note` (*"built to get you round, not to chase a time"*),
+> neither written for this reason. Filed below as `GOAL-PAST-CV-SILENT-01`.
+>
+> **Original filing, for the record:** found by the invariant written for `MARATHON-PEAK-ROTATION-01`.
 >
 > 🔴 **MEASURED, with §93 Am.1 applied: 576 of 2,865 eligible plans (20.1%) carry NO race-specific
 > peak quality, and EVERY ONE IS HM.** Marathon fires zero. Breakdown: 288/576 intermediate at 3 peak
@@ -9749,7 +9808,16 @@ no legitimate instances, unlike `INV-PLAN-PEAK-NOT-BELOW-START` beside it in the
 
 ---
 
-### 🟠 `WEEK12-LR-CAP-CLIFF-01` — OPEN. The 5K plan steps +44% in week 3, and it is not §94's residual. 🏃 **COACHING BOARD** — a +44% step in week 3 is what the engine PRESCRIBES
+### ✅ `WEEK12-LR-CAP-CLIFF-01` — CLOSED 2026-10-06 (4th sitting). 0.3% of 5K plans, median 0.0%, same root as the cluster.
+
+> ✅ **CLOSED 2026-10-06 BY THE 4th COACHING BOARD SITTING — NO CHANGE, AND THE CONSTITUTION ALREADY
+> SAID SO.** §3 Amendment (LR-DELOAD-CUT-01, 2026-09-17): *"§3 says 'volume drops to 70% of the prior
+> build week' — a statement about the WEEK. **Nothing in §3 asks the long run to be cut harder**."*
+> 📊 13,785 deload weeks: 82.9% short of a 30% drop, median **17.9%**; of those **65.6% reachable by
+> trimming easy runs**, 34.4% floor-bound, **2 of 11,431 long-run-bound**. 🔴 And trimming easy runs —
+> the only reachable remedy — takes the long-run share 36.4% → **56.0%** and §52 breaches 3.0% →
+> **28.9%**, which is the exact mechanism LR-DELOAD-CUT-01 was ratified to prevent. **The shortfall is
+> the arithmetic consequence of three ratified rules.** Full ruling: `coaching-rulings.md`.
 
 > ⚖️ **COACHING BOARD RULED 2026-10-05 — CORRECT: RAMP THE CAP, DO NOT LIFT IT.** Merged into
 > `DELOAD-BADGE-TRUTH-01` as fix (c). Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
@@ -9819,7 +9887,16 @@ One prose consequence, caught by the change: page 2 called Runna *"the most expe
 three"*, which £119.99 makes false. It now says **"the most expensive per month"**, which is true
 (Runna £15.99/mo; Coopah is dearest annually).
 
-### 🟠 `DELOAD-BADGE-TRUTH-01` — **BUILD ATTEMPTED 2026-10-06, NOT SHIPPED. The (a)/(b) SPLIT IS UNMEASURED** 🏃 **COACHING BOARD**
+### ✅ `DELOAD-BADGE-TRUTH-01` — CLOSED 2026-10-06 (4th sitting). **No change: §3's 30% is not a delivery target**
+
+> ✅ **CLOSED 2026-10-06 BY THE 4th COACHING BOARD SITTING — NO CHANGE, AND THE CONSTITUTION ALREADY
+> SAID SO.** §3 Amendment (LR-DELOAD-CUT-01, 2026-09-17): *"§3 says 'volume drops to 70% of the prior
+> build week' — a statement about the WEEK. **Nothing in §3 asks the long run to be cut harder**."*
+> 📊 13,785 deload weeks: 82.9% short of a 30% drop, median **17.9%**; of those **65.6% reachable by
+> trimming easy runs**, 34.4% floor-bound, **2 of 11,431 long-run-bound**. 🔴 And trimming easy runs —
+> the only reachable remedy — takes the long-run share 36.4% → **56.0%** and §52 breaches 3.0% →
+> **28.9%**, which is the exact mechanism LR-DELOAD-CUT-01 was ratified to prevent. **The shortfall is
+> the arithmetic consequence of three ratified rules.** Full ruling: `coaching-rulings.md`.
 
 > 📄 **Full record: `docs/decisions/2026-10-06-deload-merged-build-blocked.md`.**
 > ✅ **PREMISE RE-DERIVED AND THE DISTANCE GATING REPRODUCES EXACTLY** (96,460 deload transitions):

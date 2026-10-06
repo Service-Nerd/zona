@@ -846,6 +846,39 @@ const CONTROLLED_THRESHOLD_CUE = 'Controlled effort — if you can’t say a sho
  * already makes every row needing it ineligible (CAT-ROW-ELIGIBILITY-01). One
  * owner prices the anchor and the same owner withholds it.
  */
+/**
+ * §120 Amendment 1 — DID THE HM ANCHOR GET WITHHELD FOR THIS RUNNER?
+ *
+ * The amendment is ratified and its cost was declared at the sitting: *"30.0% of
+ * grid sessions lose the row, and it is never a plan's only non-VO2max quality
+ * (0 of 4,320)."* Past CV an "HM-pace" rep is threshold-or-harder work wearing a
+ * race-pace label, so the row is **not offered at all** and the slot falls
+ * through the selector to other work.
+ *
+ * 🔴 WHY THIS PREDICATE EXISTS: THE WITHHOLDING LEFT NO TRACE. Nothing in the
+ * plan recorded that it happened, so no checker could tell a correctly-withheld
+ * row from a peak preference that had quietly died — and
+ * `INV-PLAN-PEAK-RACE-SPECIFIC-REACHED` had to park **20.1% of eligible plans**
+ * (576 of 2,865, every one HM) as undiagnosed debt because of it. Measured
+ * 2026-10-06: the entire set is runners whose goal pace is faster than their CV,
+ * e.g. a 1:55 half (5:27/km) off a 27:30 5K (5:30/km).
+ *
+ * ⚠️ IT CALLS THE OWNER AND DOES NOT RESTATE THE RULE. `resolveAnchorPace` prices
+ * the anchor and withholds it; this asks that same function whether it did. A
+ * second copy of the CV comparison here is the `DELOAD-OWNER-01` fault, and this
+ * file's own comment three lines up says *"one owner prices the anchor and the
+ * same owner withholds it"*.
+ *
+ * Returns false when there is no goal pace at all — a finish-goal plan never had
+ * an HM goal anchor to withhold, which is a different state from withholding one.
+ */
+export function hmGoalAnchorWithheld(
+  pace: PaceGuide, goalPaceMinPerKm: number | null,
+): boolean {
+  if (goalPaceMinPerKm == null) return false
+  return resolveAnchorPace('HM', pace, goalPaceMinPerKm) == null
+}
+
 function resolveAnchorPace(
   anchor: PaceAnchor, pace: PaceGuide, goalPaceMinPerKm: number | null,
 ): number | null {
@@ -8807,6 +8840,15 @@ function buildRulePlanOnce(
   const goalPaceMins = goalPace ? paceStrToMins(goalPace) : null
   const goalBeyondMeasuredFitness = goalPaceMins != null
     && goalPaceMins < pace.minPerKmInterval * (1 - GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT / 100)
+  // §120 Amendment 1 — RECORD THAT THE HM GOAL ANCHOR WAS WITHHELD.
+  //
+  // Sibling of `goalBeyondMeasuredFitness` one line up, one band down: that asks
+  // whether the goal is past INTERVAL pace, this whether it is past CV. The
+  // amendment withholds `hm_pace_intervals` entirely past CV, and until now it
+  // did so leaving NO TRACE in the plan — so nothing could tell a correctly
+  // withheld row from a peak preference that had quietly died.
+  const hmAnchorWithheld = raceDistanceKey(input.race_distance_km) === 'HM'
+    && hmGoalAnchorWithheld(pace, goalPaceMins)
 
   /**
    * §44 Amendment (Coaching Board 2026-09-19, DIFFICULTY-SHORTFALL-01) — A PLAN
@@ -9030,6 +9072,16 @@ function buildRulePlanOnce(
     // §89 — experience-gated quality onset surfaced for honesty + the
     // INV-PLAN-EARLY-ONSET-GATED invariant. Stamped only when it actually fired.
     ...(earlyQualityOnset ? { early_quality_onset: true } : {}),
+    // §120 Am.1 — the HM goal anchor was withheld because goal pace sits past the
+    // runner's CV, so `hm_pace_intervals` was never offered and the peak quality
+    // slot fell through to other work. Ratified behaviour with a declared cost
+    // (30.0% of grid sessions lose the row); stamped so it is OBSERVABLE, which it
+    // was not. `INV-PLAN-PEAK-RACE-SPECIFIC-REACHED` reads this instead of parking
+    // 20.1% of HM plans as undiagnosed debt.
+    //
+    // ⚠️ Stamped only when true, so its absence means "the anchor resolved" and
+    // never "nobody asked".
+    ...(hmAnchorWithheld ? { hm_goal_anchor_withheld: true } : {}),
     // §117 — stamped from the SINGLE evaluation of `runWalkApplies` above. The
     // session-stamping pass later in this file reads this flag rather than
     // re-deriving the predicate, so the two can never disagree.
