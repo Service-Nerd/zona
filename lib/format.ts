@@ -332,6 +332,52 @@ export function resolveSessionMetric(
 // Every duration the user sees — card, plan, session detail, push, diff — routes
 // here. Do not re-implement this rule anywhere (INV-FMT-001).
 /**
+ * ONE NOTATION FOR A ZONE, EVERYWHERE (SESSION-STEP-SLOTS-01, 2026-10-06).
+ *
+ * Founder: *"And the zones. Z etc. throughout all sessions the placement isn't
+ * consistent."* He was looking at **three notations on one card** — `Z2-Z3` on a
+ * step, `Zone 2` on the v1 main row, `Z1→Z2` on the warm-up header.
+ *
+ * 📐 Measured across the cohort grid: `session.zone` is already consistent at
+ * **"Zone N"** with an en dash for ranges — 13,483 `Zone 2`, 1,705 `Zone 3`, 691
+ * `Zone 4–5`, 505 `Zone 1`, 233 `Zone 2–3`. The outlier is `step.zone` at **373
+ * `Z2-Z3` (2.2%)**, abbreviated AND hyphenated. So this is a defect fix toward
+ * the dominant form, not a new convention: 16,384 strings were already right.
+ *
+ * Accepts `Z2`, `Z2-Z3`, `Z1→Z2`, `Zone 2`, `Zone 4–5` and returns the long form
+ * with an en dash. Anything it does not recognise passes through untouched —
+ * never guess at a string whose shape you have not seen.
+ */
+export function formatZone(zone: string | null | undefined): string {
+  if (!zone) return ''
+  const t = zone.trim()
+  const range = t.match(/^Z\s?(\d)\s*[-–—→]\s*Z?\s?(\d)$/i)
+  if (range) return `Zone ${range[1]}${t.includes('→') ? '→' : '–'}${range[2]}`
+  const single = t.match(/^Z\s?(\d)$/i)
+  if (single) return `Zone ${single[1]}`
+  return t
+}
+
+/**
+ * Split a formatted amount into its NUMBER and its UNIT, for the step row's
+ * two-weight treatment (SESSION-STEP-SLOTS-01, Design Board 2026-10-06).
+ *
+ * ✋ Silvanto's register split: the number carries the weight, the unit sits in
+ * the lighter one, so a glancing runner reads `1.4` before `km` without the unit
+ * ever being dropped. It is the same construction the distance tile has used
+ * since the pace-qualifier ruling (`10` at 22px, ` km` at 11px) — reused rather
+ * than re-invented.
+ *
+ * Returns the whole string as `value` with an empty `unit` when there is no
+ * trailing unit to split (a landmark, "until ready", a rep count).
+ */
+export function splitAmount(amount: string): { value: string; unit: string } {
+  const m = amount.match(/^(.*?)\s*([A-Za-z]+)$/)
+  if (!m || !m[1]) return { value: amount, unit: '' }
+  return { value: m[1].trim(), unit: m[2]! }
+}
+
+/**
  * A STEP's duration, for display — always carrying a unit.
  *
  * ADR-015 §1 owns every time string and states the rule this enforces:

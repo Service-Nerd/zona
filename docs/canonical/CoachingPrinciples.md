@@ -5865,7 +5865,12 @@ day carries **its own** declaration, naming the magnitude and the lever (§40c).
 exemption is unchanged and is not re-opened: 🎯 McMillan's *"don't shrink to fit"* stands,
 unanimous, twice.
 
-**Engine copy:** `About 37 min against the 30 min you set for weekdays. Quality work is not shrunk to fit the clock, so take this one on a day with more room, or raise your weekday time in Profile.`
+**Example copy:** `About 37 min against the 30 min you set for weekdays. Quality work is not shrunk to fit the clock, so take this one on a day with more room, or raise your weekday time in Profile.`
+
+⚠️ **`Example copy:`, not `Engine copy:`** — the duration and the cap are interpolated, and
+§34's DOC-CLAIM-01 convention says plainly: *"Do not mark a templated string with
+interpolated values as `Engine copy:` — the literal won't match."* I marked it anyway and
+the gate caught it.
 
 🎯 **McMillan, on why this is not cosmetic:** *"They do not conclude the session is
 ambitious; they conclude the app does not listen."* ⚕️ **Sims, on who it falls on:** a

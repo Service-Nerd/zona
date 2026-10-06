@@ -2794,6 +2794,54 @@ lacked. At 320: no horizontal overflow, rows 63/63/90/58/90/63.
 ⚠️ **Noteless work steps are 384 of 3,794 (10.1%)** and keep their role. Collins wanted the
 word gone from every work step; the chair held it to steps that have a replacement.
 
+#### Amendment 3 — THREE FIXED SLOTS, TARGET FIRST (Design Board, 2026-10-06)
+
+**Every row of every session — warm-up, strides, main set, race-pace segment and
+cool-down — renders the same three slots in the same order.**
+
+```
+[n] ●  role (if any)                              ~1.4 km   ← the runner's chosen metric
+       5:53 /km or slower                                   ← THE TARGET. Always. No exceptions.
+       9:20 min · Hold back. This is the part…              ← the other metric, then the instruction
+```
+
+🎓 **Sierra's finding carried the ruling.** Mid-run the runner answers one question — *am
+I doing the right thing right now?* — and the answer is the target. **Their watch already
+shows distance and time; it does not show what we told them to hold.** 📱 Measured at
+320px, the card gave **72px of its strongest position** to a number the watch displays and
+**192px of grey 11px** to the one only we know.
+
+**The lead slot takes the runner's chosen metric, symmetrically.** A step is prescribed in
+one metric and the other is derived from its pace; the lead takes whichever matches the
+toggle. 🔴 **The old code was asymmetric and that is why the toggle leaked:** the distance
+branch never consulted `opts.metric` at all, so a runner who chose DURATION read `400 m` on
+every distance-prescribed rep. Measured: the lead number switched unit mid-block on
+**29.2%** of blocks on distance and **33.2%** on duration — **the duration runner was served
+worse and nobody had measured it.**
+
+⚠️ **Where the chosen metric cannot be derived, the lead holds the PRESCRIPTION**, marked by
+the absence of a `~` rather than silently swapped. A zone-targeted step has no pace, so
+there is no distance to derive and the engine will not invent one (zone-rules never-invent).
+
+✋ **The number carries the weight, the unit sits in the lighter one** — `~1.4` + `km` — the
+same construction as the distance tile. 🔴 **A word unit takes a thin space, a symbol unit
+does not:** the first cut rendered `8min` and `13min`, caught by looking at the card.
+
+🔴 **ONE NOTATION FOR A ZONE, via `lib/format.ts → formatZone`.** The founder was looking at
+**three on one card** — `Z2-Z3` on a step, `Zone 2` on the v1 main row, `Z1→Z2` on the
+warm-up header. Measured: `session.zone` was already consistent at "Zone N" across **16,384**
+strings; the outlier was `step.zone` at **373 `Z2-Z3` (2.2%)**. A defect fix toward the
+dominant form, not a new convention.
+
+⚠️ **THE HAND-BUILT ROWS ARE INCLUDED, AND THE TYPE ENFORCES IT.** Founder: *"any changes we
+make need to apply to all types of sessions and the warm up and cool down. The look and feel
+has to be the same for the user."* Warm-up, strides, the v1 main row, the race-pace segment
+and cool-down have no `DerivedStep` behind them and previously carried free text; `StepRow`
+now **requires** `target` and `secondary`, so a hand-built row cannot opt out of the layout —
+which is how those five drifted from the main set in the first place. Their strings are the
+existing ratified copy **re-slotted, not rewritten**: "Final third in Zone 2" and
+"Conversational or slower" were always targets wearing a detail's clothes.
+
 **One producer for the rows: `lib/plan/sessionSteps.ts → buildSessionRows`.** The
 component maps over what it returns and composes nothing itself, so the gate can
 assert over the card's real shape rather than a second copy of it.

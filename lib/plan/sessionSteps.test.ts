@@ -19,6 +19,22 @@ describe('parseLength', () => {
   })
 })
 
+/**
+ * 🔴 `detail` IS NOW `target · secondary`, TARGET FIRST (SESSION-STEP-SLOTS-01,
+ * Design Board 2026-10-06). It used to read `duration · target`.
+ *
+ * 🎓 Sierra's finding carried the ruling: mid-run the runner is answering *am I
+ * doing the right thing right now?*, and the answer is the target. Their watch
+ * already shows distance and time; it does not show what we told them to hold.
+ * So the target is line two, first, on every row of every session — warm-up,
+ * strides, main set, race-pace segment and cool-down alike.
+ *
+ * ⚠️ The last expectation below gains `· ~1.1 km`: on the DURATION setting a step
+ * now carries the derived distance as its secondary. The old code's distance
+ * branch never consulted the toggle at all, which is why the duration setting
+ * mixed units on 33.2% of blocks against the distance setting's 29.2% — the
+ * duration runner was served worse and nobody had measured it.
+ */
 describe('targetClause', () => {
   const ceiling = { role: 'recovery', modality: 'jog', length: '1:30', pace: '5:53–7:02 /km', pace_mode: 'ceiling', advance: 'auto' } as const
   // 🔴 THIS CASE USED TO ASSERT `'≤ 5:53–7:02 /km'` AND WAS NAMED FOR IT
@@ -80,13 +96,13 @@ describe('buildStepGroups — VO2 rep set, distance toggle', () => {
     expect(work.role).toBe('Hard')
     expect(work.amountIsEstimate).toBe(true)
     expect(work.amount).toMatch(/^~/)          // pace-derived estimate
-    expect(work.detail).toBe('3 min · 4:30–4:42 /km')
+    expect(work.detail).toBe('4:30–4:42 /km · 3 min')
   })
   it('marks the recovery jog as rest with a pace ceiling', () => {
     const rest = groups[0].rows[1]
     expect(rest.kind).toBe('rest')
     expect(rest.role).toBe('Jog')
-    expect(rest.detail).toBe('2 min · 5:53 /km or slower')
+    expect(rest.detail).toBe('5:53 /km or slower · 2 min')
   })
 })
 
@@ -129,7 +145,7 @@ describe('buildStepGroups — hill reps (effort-based, mixed lengths)', () => {
     expect(groups[1].rows[1].amount).toBe('until ready')
     expect(groups[1].rows[2].role).toBe('Jog down')       // downhill jog
     expect(groups[1].rows[2].amountIsEstimate).toBe(true) // mirror → 1:30, estimated from pace
-    expect(groups[1].rows[2].detail).toBe('1:30 min · 5:53 /km or slower')
+    expect(groups[1].rows[2].detail).toBe('5:53 /km or slower · 1:30 min')
   })
 })
 
@@ -144,7 +160,7 @@ describe('buildStepGroups — duration toggle keeps time primary', () => {
     const groups = buildStepGroups(set, { metric: 'duration', units: 'km', formatDist: fmt })
     expect(groups[0].rows[0].amount).toBe('5 min')
     expect(groups[0].rows[0].amountIsEstimate).toBe(false)
-    expect(groups[0].rows[0].detail).toBe('4:25–4:35 /km')
+    expect(groups[0].rows[0].detail).toBe('4:25–4:35 /km · ~1.1 km')
   })
 })
 

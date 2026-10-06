@@ -6536,6 +6536,29 @@ A principle written before that number exists is the error the board recorded on
 
 ---
 
+### `METRIC-TOGGLE-SCOPE-01` — is the distance/duration toggle the wrong instrument? 🧭 **DESIGN BOARD** → 💼 **SLT**
+
+🎪 **Collins, filed not ruled, 2026-10-06.** He lost the layout argument and made a bigger one the
+chair declined to take in the same sitting:
+
+> *"A single global preference assumes every session is measurable the same way. It is not. Some
+> sessions are prescribed in distance and some in time, and that is a property of the SESSION, not of
+> the runner. We asked the runner a question the data cannot honour, and then built a card that has to
+> fudge it."*
+
+**Measured support:** 87.3% of blocks are prescribed in TIME, and the lead number switched unit
+mid-block on **29.2%** of blocks (distance setting) and **33.2%** (duration) before
+`SESSION-STEP-SLOTS-01`. Option E resolves the *display*; it does not resolve whether the question
+should have been asked.
+
+**His alternative, recorded so it is not re-derived:** the lead slot takes the SESSION's own unit, and
+the toggle governs how distances are *written* (km vs mi) rather than which fact is the headline.
+
+⚠️ **Do not re-propose without re-measuring.** E shipped after this was filed, so the 29.2% figure is
+historical — take the post-E number first.
+
+---
+
 ### `MKT-STEP-CEILING-BAND-01` — the website words the pace ceiling correctly and still prints it over a range 🧭 **DESIGN BOARD**
 
 **Found during `SESSION-STEP-LEGIBILITY-01` by opening the page, not by reading the code.** The

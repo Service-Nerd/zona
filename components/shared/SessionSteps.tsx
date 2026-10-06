@@ -18,7 +18,7 @@ import IconButton from '@/components/ui/IconButton'
 import type { SessionStructure } from '@/lib/plan/sessionComposer'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { buildSessionRows, type SessionRow, buildStepGroups, resolveDisplayFigures, type StepRow } from '@/lib/plan/sessionSteps'
-import { convertPaceString, formatDistance, formatDuration } from '@/lib/format'
+import { convertPaceString, formatDistance, formatDuration, formatZone } from '@/lib/format'
 import type { Zone } from '@/components/shared/ZoneBar'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 
@@ -84,7 +84,10 @@ function StepRowView({ num, dotColor, row }: { num: number | null; dotColor: str
   const isRest = row.kind === 'rest'
   // The pace/zone clause and the instruction read as one sentence of guidance,
   // joined by the same middot the detail already used internally ("9:20 min · …").
-  const guidance = [row.detail, row.note].filter(Boolean).join(' · ')
+  // SESSION-STEP-SLOTS-01: three fixed slots, in this order, on every row of
+  // every session — warm-up, strides, main set, race-pace segment and cool-down.
+  // The TARGET is line two and is never preceded by anything.
+  const rest = [row.secondary, row.note].filter(Boolean).join(' · ')
   return (
     <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', padding: '11px 13px', borderTop: '1px solid var(--line)' }}>
       <span style={{ flex: 'none', width: '20px', textAlign: 'center', fontSize: '14px', fontWeight: 800, fontStyle: 'italic', color: 'var(--mute-2)', fontVariantNumeric: 'tabular-nums', background: 'var(--card)' }}>
@@ -96,10 +99,28 @@ function StepRowView({ num, dotColor, row }: { num: number | null; dotColor: str
             <span style={{ width: '9px', height: '9px', borderRadius: '50%', flex: 'none', background: isRest ? 'transparent' : dotColor, border: isRest ? '1.5px solid var(--mute-2)' : 'none' }} />
             <span style={{ fontSize: '13px', fontWeight: isRest ? 600 : 700, color: isRest ? 'var(--ink-2)' : 'var(--ink)' }}>{row.role}</span>
           </div>
-          <div style={{ fontSize: '14px', fontWeight: 800, color: isRest ? 'var(--ink-2)' : 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1, flex: 'none', textAlign: 'right' }}>{row.amount}</div>
+          {/* ✋ The NUMBER carries the weight, the UNIT sits in the lighter one, so
+              a glancing runner reads `1.4` before `km` and the unit is never
+              dropped. Same construction as the distance tile (CD-11 ruling). */}
+          <div style={{ fontSize: '15px', fontWeight: 800, color: isRest ? 'var(--ink-2)' : 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1, flex: 'none', textAlign: 'right', whiteSpace: 'nowrap' }}>
+            {row.amountValue}
+            {/* 🔴 A WORD UNIT TAKES A SPACE, A SYMBOL UNIT DOES NOT. The first cut
+                rendered "8min" and "13min", because `splitAmount` trims and the two
+                spans were concatenated. `km`/`mi`/`s` sit tight to the number the way
+                the distance tile has always set them; `min` and `h` are words and
+                need the gap. Caught by looking at the rendered card, not by a test. */}
+            {row.amountUnit && (
+              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--mute)' }}>
+                {/^(min|h|hr|hrs)$/i.test(row.amountUnit) ? '\u2009' : ''}{row.amountUnit}
+              </span>
+            )}
+          </div>
         </div>
-        {guidance && (
-          <div style={{ fontSize: '11px', color: 'var(--mute)', marginTop: '4px', fontVariantNumeric: 'tabular-nums', lineHeight: 1.45 }}>{guidance}</div>
+        {row.target && (
+          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-2)', marginTop: '5px', fontVariantNumeric: 'tabular-nums', lineHeight: 1.4 }}>{row.target}</div>
+        )}
+        {rest && (
+          <div style={{ fontSize: '11px', color: 'var(--mute)', marginTop: '2px', fontVariantNumeric: 'tabular-nums', lineHeight: 1.45 }}>{rest}</div>
         )}
       </div>
     </div>
@@ -220,7 +241,11 @@ export default function SessionSteps({
   const rows = buildSessionRows(structure, derivedSet, {
     metric, units: preferredUnits,
     formatDist: (km) => formatDistance(km, preferredUnits, { exact: true }) ?? '—',
-    figures, raceSegmentDetail: racePaceDetail,
+    figures,
+    // The MP long run's race-pace row takes the same slots: its pace is the
+    // target, its duration the secondary.
+    raceSegmentTarget: racePacePace,
+    raceSegmentSecondary: seg && metric === 'distance' ? formatDuration(seg.duration_mins) ?? '' : '',
   })
   const section = (name: SessionRow['section']) => rows.filter(r => r.section === name)
 
@@ -229,14 +254,14 @@ export default function SessionSteps({
       <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: FONT, color: 'var(--mute)', marginBottom: 'var(--space-3)' }}>Session structure</div>
 
       {/* Warm-up */}
-      <SectionCard name="Warm-up" accent="var(--moss)" tintPct={13} totalStr={wuTotal} zoneStr={structure.warmup.zone} paceStr={easyPaceStr}>
+      <SectionCard name="Warm-up" accent="var(--moss)" tintPct={13} totalStr={wuTotal} zoneStr={formatZone(structure.warmup.zone)} paceStr={easyPaceStr}>
         {section('warmup').map((r, i) => (
           <StepRowView key={i} num={nextNum()} dotColor="var(--moss)" row={r.row} />
         ))}
       </SectionCard>
 
       {/* Main set */}
-      <SectionCard name="Main set" accent={mainAccent} tintPct={peak >= 5 ? 13 : 15} totalStr={mainTotal} zoneStr={zoneRangeLabel} info={onInfo}>
+      <SectionCard name="Main set" accent={mainAccent} tintPct={peak >= 5 ? 13 : 15} totalStr={mainTotal} zoneStr={formatZone(zoneRangeLabel)} info={onInfo}>
         {section('main').map((r, i) => (
           <React.Fragment key={i}>
             {r.startsGroup && r.repeat && r.repeat > 1 && (
@@ -256,7 +281,7 @@ export default function SessionSteps({
       </SectionCard>
 
       {/* Cool-down */}
-      <SectionCard name="Cool-down" accent="var(--s-strength)" tintPct={13} totalStr={cdTotal} zoneStr={structure.cooldown.zone} paceStr={easyPaceStr}>
+      <SectionCard name="Cool-down" accent="var(--s-strength)" tintPct={13} totalStr={cdTotal} zoneStr={formatZone(structure.cooldown.zone)} paceStr={easyPaceStr}>
         {section('cooldown').map((r, i) => (
           <StepRowView key={i} num={nextNum()} dotColor="var(--s-strength)" row={r.row} />
         ))}

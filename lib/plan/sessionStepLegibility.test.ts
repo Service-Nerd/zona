@@ -18,6 +18,8 @@
 // `/copy-preview` at 320 and 375 (role column 53–72px at 320, which is why the
 // board's first shape was not buildable), and nothing has run on a device.
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import { generateRulePlan } from './ruleEngine'
 import { cohortGrid, COHORT_PLAN_START } from './cohortGrid'
 import { buildSessionRows, resolveDisplayFigures, isV2DerivedSet } from './sessionSteps'
@@ -25,7 +27,7 @@ import { composeSession } from './sessionComposer'
 import { formatDistance } from '@/lib/format'
 import type { GeneratorInput } from '@/types/plan'
 
-interface Row { kind: string; role: string; amount: string; detail: string; note?: string }
+interface Row { kind: string; role: string; amount: string; amountValue: string; amountUnit: string; target: string; secondary: string; detail: string; note?: string }
 
 /**
  * EVERY ROW THE CARD RENDERS, for EVERY session type, through the component's own
@@ -60,7 +62,7 @@ function rendered(stride: number, units: 'km' | 'mi') {
           formatDist: (km: number) => formatDistance(km, units, { exact: true }) ?? '\u2014',
         }
         const figures = resolveDisplayFigures(structure, { ...opts, sessionDistanceKm: undefined })
-        const rows = buildSessionRows(structure, sess.derived_set, { ...opts, figures, raceSegmentDetail: '' })
+        const rows = buildSessionRows(structure, sess.derived_set, { ...opts, figures, raceSegmentTarget: '', raceSegmentSecondary: '' })
         let blockIdx = -1
         const steps = isV2DerivedSet(sess.derived_set)
           ? sess.derived_set.blocks.flatMap(b => b.steps)
@@ -189,6 +191,41 @@ describe('SESSION-STEP-LEGIBILITY-01 — a step row says what to do, on EVERY se
     const bad = ALL.filter(r => r.row.kind === 'work' && !r.row.note && !r.row.role?.trim())
     expect(bad.map(r => `${r.type}/${r.section} ${r.label}: amount="${r.row.amount}"`).slice(0, 5),
       'a work step with nothing to say lost its role AND has no note — the row says nothing').toEqual([])
+  })
+
+  it('EVERY row carries a TARGET — warm-up, strides, main set and cool-down alike', () => {
+    // 🔴 Founder: "any changes we make need to apply to all types of sessions and
+    // the warm up and cool down. The look and feel has to be the same." The five
+    // hand-built rows had no DerivedStep behind them and carried free text; they
+    // are the ones that drifted. A `rest` row whose only target is the literal
+    // "rest" is excluded — that IS its target.
+    const silent = ALL.filter(r => !r.row.target?.trim())
+    expect(silent.map(r => `${r.type}/${r.section} "${r.label}" ${r.row.amount}`).slice(0, 5),
+      `${silent.length} row(s) render no target. The target is line two, first, on every row.`).toEqual([])
+  })
+
+  it('ONE zone notation everywhere — never Z2-Z3 beside Zone 2', () => {
+    // Measured: session.zone was already "Zone N" across 16,384 strings; step.zone
+    // was the 2.2% outlier at 373 × "Z2-Z3", abbreviated AND hyphenated.
+    const abbrev = ALL.filter(r => /\bZ\d\b/.test(`${r.row.target} ${r.row.secondary}`))
+    expect(abbrev.map(r => `${r.type} "${r.label}": ${r.row.target}`).slice(0, 5),
+      'an abbreviated zone reached a row. Render every zone through lib/format.ts formatZone.').toEqual([])
+  })
+
+  it('the component puts a gap between a number and a WORD unit', () => {
+    // ⚠️ A DATA ASSERTION CANNOT SEE THIS. `row.amount` is already "8 min"; the
+    // jamming happened at RENDER, because the value and unit are two spans and
+    // `splitAmount` trims. The first cut shipped "8min" and "13min" and I found it
+    // by looking at the card, not by a test — so the test asserts the component.
+    const card = readFileSync(join(__dirname, '..', '..', 'components', 'shared', 'SessionSteps.tsx'), 'utf8')
+    // ⚠️ The source holds the ESCAPE `\u2009`, not the character, so looking for
+    // the character fails on a file that is doing the right thing. Match the
+    // fragment as written, with no regex gymnastics.
+    const hasBranch = card.includes('test(row.amountUnit)')
+    const hasThinSpace = card.includes(String.fromCharCode(92) + 'u2009') || card.includes(String.fromCharCode(0x2009))
+    expect(hasBranch && hasThinSpace,
+      'SessionSteps no longer inserts a thin space before a word unit, so a number and its ' +
+      'unit will render jammed together ("8min").').toBe(true)
   })
 
   it('a MILES reader never sees a /km pace, and vice versa', () => {

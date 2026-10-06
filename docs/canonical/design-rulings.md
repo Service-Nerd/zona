@@ -4008,3 +4008,49 @@ Pattern — `ui-patterns.md` §21b Am. 2 · Constant — none new, the rule live
 ### ⚠️ What this does not settle
 
 **Nothing has run on a device.** The lone accent dot on a roleless row's top line leaves white space between the number and the amount — acceptable with the ordinal anchoring the row, not loved, and not re-ruled. The `8 min` amount on a distance card stays: the alternative invents a distance the catalogue deliberately withholds.
+
+---
+
+## `SESSION-STEP-SLOTS-01` — where each metric lives on a step row (2026-10-06)
+
+**Trigger:** `buildRow` + `SessionSteps.tsx` — soft, qualifies. **Ruling: DON'T SHIP all four proposed options; SHIP a fifth the sitting produced.**
+
+Founder: *"why mix distance and duration when I've set for distance… as a user I should know where they will be on all sessions."* Two constraints he added bind it: **the runner is glancing mid-run**, and **the chosen metric must be honoured**.
+
+### 🔍 Settled ground
+
+| Row | Bearing |
+|---|---|
+| **`:723` `<1mi` sub-unit — KILLED** | *"a third notation on a card whose language is whole units behind a `~`."* **Pre-refuses Option C**, whose lead slot held a sentence |
+| **`:489` A8 RUN-NOW** | *"the problem is not length, it is that the thing you need mid-run is not at the top."* This board's own precedent on how to answer a glance complaint — and the one the ruling follows |
+| **`:3642` "11px is not a level"** | Kills Option B's 9px slot labels |
+
+### 📐 Evidence
+
+1,597 multi-row blocks / 5,543 rows, **both toggle states**. Lead number switches unit mid-block on **29.2%** (distance) and **33.2%** (duration). Second line opened with a number on 4,982 rows, a zone on 373, an RPE on 94. Zone notation: `session.zone` consistent at "Zone N" across 16,384 strings, `step.zone` the outlier at **373 `Z2-Z3` (2.2%)**. Geometry at 320/375 on `/copy-preview`, all five card types.
+
+⚠️ **The submission corrected its own headline figure mid-sitting** — first reported 5.9% because the classifier matched `mi` inside `"9:20 min"`. The board ruled on 29.2%.
+
+### ⚖️ Ruling — Option E
+
+| Slot | Holds |
+|---|---|
+| Lead | the runner's chosen metric, derived **symmetrically** in both directions; the prescription where it cannot be derived, marked by the absence of `~` |
+| Line 2 | **the target — pace, zone or RPE. First, always, on every row of every session** |
+| Line 3 | the other metric, then the instruction |
+
+**Applies to warm-up, strides, the v1 main row, the race-pace segment and cool-down**, not just the main set — founder's condition, and `StepRow` now requires the slots so a hand-built row cannot opt out.
+
+**Four DON'T SHIPs:** A ignores the toggle (*"a preference the product overrides whenever it finds it inconvenient is not a preference"*). B fails at 320px — the target column gets ~64px — and its labels fall foul of `:3642`. C was pre-killed by `:723`. D buries the target behind two numbers.
+
+**Collins lost, recorded:** he defended D and lost on the target's position. 🔻 **His structural argument was filed, not ruled** — that the toggle is the wrong instrument because being measured in time or distance is *"a property of the session, not the runner"*, so every option manages a contradiction we introduced → `METRIC-TOGGLE-SCOPE-01`.
+
+⛔ **Veto: none.** Silvanto flagged B's 9px labels as veto-eligible; B was not shipped, so none was exercised.
+
+### 📦 Artifacts
+
+Pattern — `ui-patterns.md` §21b Am. 3 · Constants — `lib/format.ts → formatZone`, `splitAmount`; no literal in a component · Check — `sessionStepLegibility.test.ts`, extended · Mock-ups — the four refused and the ruled option, drawn with the real session and palette.
+
+### ⚠️ What this does not settle
+
+**Nobody has watched a runner use this, mid-run or otherwise.** Sierra's and Wroblewski's claim that the target is read first is reasoning, not observation, and the whole ruling rests on it.

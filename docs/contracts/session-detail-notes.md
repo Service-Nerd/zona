@@ -5,6 +5,14 @@
 **Component:** `components/dashboard/SessionPopupInner.tsx`
 **Renderer:** `components/shared/CoachNoteBlock.tsx`
 
+> ⚠️ **NOT in `docs/contracts/components/`, deliberately.** `COMPONENT-CONTRACT-GATE-01`
+> requires every file in that folder to carry a fenced props block that matches its
+> component's own interface, and **it refused this file when I first filed it there** —
+> correctly: this is a RENDERING contract for one note family, not a props contract for a
+> screen. It sits beside `session-auto-match.md` at the `docs/contracts/` level, which is
+> where non-props contracts live. `SessionPopupInner`'s props remain uncontracted and
+> remain inside `CONTRACT-COVERAGE-01`'s declared debt.
+
 > ⚠️ **This contract exists because `SessionPopupInner` has none.** It is one of the 60 uncontracted shared components in `CONTRACT-COVERAGE-01`'s standing debt, and on 2026-10-06 a **new runner-facing surface** was added to it (`weekday_overrun_note`). `audit-docs.sh` reported **ok** throughout, because its contracts arm checks that a changed component's contract was *touched*, **not that its content agrees with the component** — the same shape as the stale ranked table found the same day. Rather than widen the debt silently, this documents the note family alone. The rest of the screen remains uncontracted and declared.
 
 ---

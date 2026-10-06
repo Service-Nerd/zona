@@ -14,7 +14,7 @@
 
 import type { DerivedSet, DerivedStep } from './resolveMainSet'
 import type { SessionStructure } from './sessionComposer'
-import { apportionRoundedDistance, convertPaceString, formatDuration, formatStepDuration } from '@/lib/format'
+import { apportionRoundedDistance, convertPaceString, formatDuration, formatStepDuration, splitAmount, formatZone } from '@/lib/format'
 import { easyPaceAsCeiling, paceAsFloor } from './easyPaceCeiling'
 
 export type StepKind = 'work' | 'rest'
@@ -27,7 +27,26 @@ export interface StepRow {
   amount: string
   /** True when `amount` is a pace-derived estimate (shows the ~ marker). */
   amountIsEstimate: boolean
-  /** Secondary line: "5 min · 4:25–4:35 /km", "RPE 8", "5:53 /km or slower", "rest". */
+  /**
+   * THE TARGET — pace band, zone, or RPE. **Line two, first, on every row of
+   * every session, with no exceptions** (SESSION-STEP-SLOTS-01, Design Board
+   * 2026-10-06).
+   *
+   * 🎓 Sierra's finding, which is the whole ruling: mid-run the runner is
+   * answering one question — *am I doing the right thing right now?* — and the
+   * answer is the target. **Their watch already shows distance and time; it does
+   * not show what we told them to hold.** Measured at 320px, the card gave 72px
+   * of its strongest position to a number the watch displays and 192px of grey
+   * 11px to the one only we know.
+   */
+  target: string
+  /** The OTHER metric — the one the runner did not choose. Empty when it cannot
+   *  be derived (no pace) or when it is the same as the lead. */
+  secondary: string
+  /** Lead amount split for the two-weight treatment: `~1.4` + `km`. */
+  amountValue: string
+  amountUnit: string
+  /** Kept as `target · secondary` for any consumer that still wants one string. */
   detail: string
   /**
    * The step's coaching instruction, verbatim from the catalogue row
@@ -190,7 +209,7 @@ export function targetClause(step: DerivedStep, units: 'km' | 'mi'): string {
     return converted
   }
   if (step.rpe != null) return `RPE ${step.rpe}`
-  if (step.zone) return step.zone
+  if (step.zone) return formatZone(step.zone)
   return ''
 }
 
@@ -217,93 +236,75 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
   const target = targetClause(step, opts.units)
 
   /**
-   * 🔴 THE NOTE IS THE ROLE (Design Board re-sitting, 2026-10-06).
-   *
-   * The founder's Progressive tempo read **"Hard" three times**. Measured across
-   * 1,597 multi-row blocks: **373 (23.4%) render every row with the same role,
-   * every one of them "Hard" — and 373 of 373 (100.0%) have DISTINCT notes,
-   * DISTINCT targets and DISTINCT lengths. ZERO are a genuine rep set.** So the
-   * word was never right: it always covered three different things.
-   *
-   * 🎪 Collins: *"We put the generic word in the bold 13px slot and the
-   * irreplaceable one in 11px grey. That is the hierarchy exactly inverted."*
-   * 🎓 Sierra: *"'Hard' teaches nothing."* After three progressions a runner who
-   * read "Hold back / Let it rise / Threshold now" has learned the SHAPE of a
-   * progression; one who read "Hard" has learned what we call things.
-   *
-   * ⚠️ A RULE, NOT A LIST — S4's lesson ("relabelled, not removed, and the board
-   * said removed"). The role is dropped ONLY where a note replaces it:
-   *   · a WORK step WITH a note      → the note is the role
-   *   · a WORK step with NO note     → keeps it (384 of 3,794, 10.1%)
-   *   · a RECOVERY step              → ALWAYS keeps it, note or not. `Jog`,
-   *     `Walk`, `Stand`, `Hike`, `Jog down` are the only MODALITY signal on the
-   *     row, and a runner who reads "2 min" with no verb does not know whether to
-   *     run it.
-   *
-   * 📱 Wroblewski's objection, and its answer: stripping the word would leave a
-   * 9px dot floating beside a number with no left-edge anchor. ✋ Silvanto's
-   * amendment carries the anchor instead — the sequence NUMBER renders on every
-   * row of a multi-step block rather than only the first, so the left edge gains
-   * ordinal meaning at zero pixel cost (the column already exists and is already
-   * reserved). These three steps are parts of ONE effort in sequence; the runner
-   * needs to know which part they are in, not that each is "hard".
+   * 🔴 THE NOTE IS THE ROLE (Design Board, 2026-10-06, Am. 2). A work step that
+   * carries a note renders no role word; a work step without one keeps it, and a
+   * RECOVERY step always keeps it — `Jog`, `Walk`, `Stand`, `Hike`, `Jog down`
+   * are the only modality signal on the row. Measured: of 373 same-role blocks,
+   * 373 (100.0%) had distinct notes, targets AND lengths. Zero were rep sets.
    */
   const role = kind === 'work' && step.note ? '' : roleLabelForStep(step, parsed)
 
-  // Every return below carries `note` — SESSION-STEP-LEGIBILITY-01. Spread last
-  // so a shape that forgets it cannot compile to a row without it.
-  const withNote = <T extends object>(row: T) => ({ ...row, ...(step.note ? { note: step.note } : {}) })
+  /**
+   * ONE MODEL FOR BOTH METRICS, AND IT IS SYMMETRIC (SESSION-STEP-SLOTS-01).
+   *
+   * A step is PRESCRIBED in one metric and the other is DERIVED from its pace.
+   * The lead slot takes whichever matches the runner's toggle; the other goes to
+   * `secondary`. When the chosen one cannot be derived, the lead holds the
+   * prescription — marked by the ABSENCE of a `~`, never silently swapped.
+   *
+   * 🔴 THE OLD CODE WAS ASYMMETRIC AND THAT IS WHY THE TOGGLE LEAKED. The
+   * distance branch never consulted `opts.metric` at all, so a runner who chose
+   * DURATION read `400 m` on every distance-prescribed rep. Measured: the lead
+   * number switched unit mid-block on **29.2%** of blocks on the distance
+   * setting and **33.2%** on duration — the duration runner was served worse, and
+   * nobody had looked.
+   *
+   * ⚠️ `roundEstKm` and the zero-estimate guard are unchanged (STEP-SUBUNIT-ZERO-01):
+   * an estimate that rounds to zero is not an estimate, so the lead falls back to
+   * the prescription rather than claiming the step covers no ground.
+   */
+  const paceSec = paceMeanSecPerKm(step.pace)
+  const wantsDistance = opts.metric === 'distance'
+  let lead: string
+  let secondary = ''
+  let isEstimate = false
 
-  // Distance-native step: the prescription IS a distance ("400 m") — show it.
   if (parsed.kind === 'distance') {
-    return withNote({ kind, role, amount: opts.formatDist(parsed.km), amountIsEstimate: false, detail: target })
-  }
-
-  // Duration-native step.
-  if (parsed.kind === 'duration') {
-    const durStr = formatSecsShort(parsed.secs)
-    // RAW `step.pace`, deliberately — this is sec/KM arithmetic (see targetClause).
-    const paceSec = paceMeanSecPerKm(step.pace)
-    if (opts.metric === 'distance' && paceSec) {
-      // Estimate distance from pace — same convention as the section totals.
-      const estKm = roundEstKm(parsed.secs / paceSec)
-      // 🔴 STEP-SUBUNIT-ZERO-01 — AN ESTIMATE THAT ROUNDS TO ZERO IS NOT AN
-      // ESTIMATE, IT IS A CARD TELLING THE RUNNER THE STEP COVERS NO GROUND.
-      //
-      // 📐 Measured across `targetedGrid()`: **640 rows of 188,928 read `~0mi`**,
-      // from 51,200 sessions over 6,144 inputs. Every one is the 30-second
-      // recovery `Jog` in a quality session, and every one already carries the
-      // honest number in its own detail line (`30s · <= 12:04-14:29 /mi`). So the
-      // row led with a zero and relegated the truth.
-      //
-      // ⚠️ MILES IS WHERE IT FIRES; KM IS ONE SLOWER PACE AWAY FROM IT. 30s at
-      // mile pace is ~0.04 mi, which formats `0mi`; at km pace it is 0.0625 km,
-      // which formats `0.1km` — so the corpus shows zero km hits and the bug is
-      // latent there, not absent: `formatDistance(0.04, 'km')` is `0km` too.
-      // **Hence the test is on the FORMATTED OUTPUT, not on the unit.**
-      //
-      // ⚠️ AND IT ASKS THE INJECTED FORMATTER WHAT ZERO LOOKS LIKE rather than
-      // regexing for `/^0/`. The formatter is a parameter, it has a sub-unit path
-      // for km, and ADR-015 owns it: if what it renders for zero ever changes,
-      // this comparison follows it. A regex would not.
-      //
-      // The fallback is NOT new behaviour — it is the duration-primary branch
-      // immediately below, which already exists for a step with no pace to
-      // estimate from. A zero-rounding estimate is the same situation: there is
-      // no honest distance to show.
-      const est = opts.formatDist(estKm)
-      if (est !== opts.formatDist(0)) {
-        const detail = [durStr, target].filter(Boolean).join(' · ')
-        return withNote({ kind, role, amount: `~${est}`, amountIsEstimate: true, detail })
-      }
+    const distStr = opts.formatDist(parsed.km)
+    const derivedSecs = paceSec ? Math.round(parsed.km * paceSec) : null
+    if (wantsDistance || derivedSecs == null) {
+      lead = distStr
+      if (derivedSecs != null) secondary = `~${formatStepDuration(derivedSecs)}`
+    } else {
+      lead = `~${formatStepDuration(derivedSecs)}`; isEstimate = true
+      secondary = distStr
     }
-    // Duration primary (toggle on time, or no pace to estimate from — e.g. a
-    // hill rep at RPE, where there is no honest distance to show).
-    return withNote({ kind, role, amount: durStr, amountIsEstimate: false, detail: target })
+  } else if (parsed.kind === 'duration') {
+    const durStr = formatStepDuration(parsed.secs)
+    const estKm = paceSec ? roundEstKm(parsed.secs / paceSec) : null
+    const estStr = estKm != null ? opts.formatDist(estKm) : null
+    const estUsable = estStr != null && estStr !== opts.formatDist(0)
+    if (wantsDistance && estUsable) {
+      lead = `~${estStr}`; isEstimate = true
+      secondary = durStr
+    } else {
+      lead = durStr
+      if (estUsable) secondary = `~${estStr}`
+    }
+  } else {
+    lead = parsed.text
   }
 
-  // Text length ("until ready", "to the bottom of the hill").
-  return withNote({ kind, role, amount: parsed.text, amountIsEstimate: false, detail: target || (kind === 'rest' ? 'rest' : '') })
+  const { value, unit } = splitAmount(lead)
+  return {
+    kind, role,
+    amount: lead, amountValue: value, amountUnit: unit,
+    amountIsEstimate: isEstimate,
+    target: target || (kind === 'rest' && parsed.kind === 'text' ? 'rest' : ''),
+    secondary,
+    detail: [target, secondary].filter(Boolean).join(' · '),
+    ...(step.note ? { note: step.note } : {}),
+  }
 }
 
 // ── session-total reconciliation (SESSION-RECONCILE-01) ─────────────────────
@@ -509,14 +510,38 @@ export interface SessionRow { section: 'warmup' | 'main' | 'cooldown'; row: Step
 export function buildSessionRows(
   structure: SessionStructure,
   derivedSet: unknown,
-  opts: BuildStepOpts & { figures: SessionDisplayFigures; raceSegmentDetail: string },
+  opts: BuildStepOpts & { figures: SessionDisplayFigures; raceSegmentTarget: string; raceSegmentSecondary: string },
 ): SessionRow[] {
   const out: SessionRow[] = []
   const { figures } = opts
 
-  out.push({ section: 'warmup', row: { kind: 'work', role: 'Easy run', amount: figures.warmup, amountIsEstimate: true, detail: 'Final third in Z2' } })
+  /**
+   * 🔴 THE SAME THREE SLOTS ON EVERY ROW OF EVERY SESSION — founder, 2026-10-06:
+   * *"any changes we make need to apply to all types of sessions and the warm up
+   * and cool down. The look and feel has to be the same for the user."*
+   *
+   * These rows are hand-built (they have no `DerivedStep` behind them), so before
+   * this they carried a free-text `detail` and nothing else. Under
+   * SESSION-STEP-SLOTS-01 they take `target` and `secondary` like any main-set
+   * step: **the target is line two, first, on a warm-up row exactly as on a
+   * threshold rep.** The TYPE forced this — `StepRow` now requires the slots, so
+   * a hand-built row cannot quietly opt out of the layout, which is how these
+   * four drifted from the main set in the first place.
+   *
+   * ⚠️ The strings are the EXISTING ratified copy, re-SLOTTED, not rewritten:
+   * "Final third in Z2" and "conversational or slower" were always targets
+   * wearing a detail's clothes, and strides' "fast & relaxed, full recovery" is a
+   * target and a note joined by a comma.
+   */
+  const row = (r: Omit<StepRow, 'amountValue' | 'amountUnit' | 'detail'>): StepRow => {
+    const { value, unit } = splitAmount(r.amount)
+    return { ...r, amountValue: value, amountUnit: unit,
+      detail: [r.target, r.secondary].filter(Boolean).join(' · ') }
+  }
+
+  out.push({ section: 'warmup', row: row({ kind: 'work', role: 'Easy run', amount: figures.warmup, amountIsEstimate: true, target: 'Final third in Zone 2', secondary: '' }) })
   if (structure.strides) {
-    out.push({ section: 'warmup', row: { kind: 'work', role: 'Strides', amount: `${structure.strides.count} × ${structure.strides.duration_secs}s`, amountIsEstimate: false, detail: 'fast & relaxed, full recovery' } })
+    out.push({ section: 'warmup', row: row({ kind: 'work', role: 'Strides', amount: `${structure.strides.count} × ${structure.strides.duration_secs}s`, amountIsEstimate: false, target: 'Fast and relaxed', secondary: '', note: 'Full recovery between each.' }) })
   }
 
   const groups = isV2DerivedSet(derivedSet) ? buildStepGroups(derivedSet, opts) : null
@@ -530,13 +555,15 @@ export function buildSessionRows(
       }))
     }
   } else {
-    out.push({ section: 'main', row: { kind: 'work', role: seg ? 'Easy' : 'Main set', amount: figures.mainEasy, amountIsEstimate: true, detail: structure.main.description }, startsGroup: true })
+    // v1 session (no derived_set): the main block's ZONE is its target, and its
+    // description is the instruction — the same split the v2 rows get.
+    out.push({ section: 'main', row: row({ kind: 'work', role: seg ? 'Easy' : 'Main set', amount: figures.mainEasy, amountIsEstimate: true, target: formatZone(structure.main.zone), secondary: '', note: structure.main.description }), startsGroup: true })
   }
   if (seg && figures.racePace) {
-    out.push({ section: 'main', row: { kind: 'work', role: 'Race pace', amount: figures.racePace, amountIsEstimate: true, detail: opts.raceSegmentDetail }, ...(groups ? {} : { startsGroup: true }) })
+    out.push({ section: 'main', row: row({ kind: 'work', role: 'Race pace', amount: figures.racePace, amountIsEstimate: true, target: opts.raceSegmentTarget, secondary: opts.raceSegmentSecondary }), ...(groups ? {} : { startsGroup: true }) })
   }
 
-  out.push({ section: 'cooldown', row: { kind: 'rest', role: 'Easy jog / walk', amount: figures.cooldown, amountIsEstimate: true, detail: 'conversational or slower' } })
+  out.push({ section: 'cooldown', row: row({ kind: 'rest', role: 'Easy jog / walk', amount: figures.cooldown, amountIsEstimate: true, target: 'Conversational or slower', secondary: '' }) })
   return out
 }
 

@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — SESSION-STEP-SLOTS-01 · the board threw out all four of my options, and the fifth was better
+**Shipped:** every step row on every session now puts the target in the same place, and the metric you chose is finally honoured in both directions.
+
+**Dev learning:** I measured the mixing at 5.9% and reported it. It is **29.2%**. My classifier tested `/mi/` against the rendered amount, and **"9:20 min" contains "mi"**, so every duration counted as a distance. Five times out, on the number the whole argument rested on. The second lesson came straight after: a blind global string replace in a test file corrupted a **fixture's input** (`pace: '4:25–4:35 /km'` became `'4:25–4:35 /km · ~1.1 km'`), and the only reason I caught it is that the test then failed in a way that made no sense. Edit expectations by hand; a regex does not know the difference between what a test asserts and what it feeds in.
+
+**Product/creator learning:** I proposed four layouts and the board refused all four — two of them because rulings it had **already made** killed them, which I would have found if I had read the register before drawing. The fifth came from Sierra reframing the question: every one of my options asked *which number leads*, and the right question mid-run is *which fact does the runner need first*. It is the target — the pace band or the zone — because their watch already shows distance and time and does not show what we told them to hold. Wroblewski put it in pixels: we were giving 72px of the strongest position to a number the watch displays, and 192px of grey 11px to the one only we know.
+
+**AI-building learning:** the type system did a design job. The founder added "this has to apply to warm-up and cool-down too" mid-build, and because I had put `target` and `secondary` on the `StepRow` **interface**, the compiler immediately listed the five hand-built rows that had been quietly opting out of the layout — warm-up, strides, the v1 main row, the race-pace segment, cool-down. Those five are exactly the ones that had drifted. Making the slots required rather than optional turned "remember to update the other rows" into an error I could not ship past.
+
+**The honest bit:** three self-inflicted defects in one build. The wrong measurement. The corrupted fixture. And `8min` / `13min` rendering with no space, because I split the amount into two spans and `splitAmount` trims — found by **looking at the card**, not by any test, which is the third time this week looking at the thing beat reasoning about it.
+
+**Hook material:** I told the founder the defect affected 5.9% of sessions. The real number was 29.2%, because my regex matched "mi" inside the word "min".
+
+**Postable?:** yes — the regex-in-"min" one is genuinely funny and the Sierra reframe is the useful half.
+
+---
+
 ## 2026-10-06 — SESSION-ACHIEVABLE-01 · the check fired zero times and that was the bug
 **Shipped:** a session that runs longer than the weekday you told us about now says so, on itself.
 
