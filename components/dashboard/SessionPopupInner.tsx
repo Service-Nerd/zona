@@ -1322,6 +1322,31 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
             </div>
           )}
 
+          {/* §81's second half — SESSION-ACHIEVABLE-01 (Coaching Board 2026-10-06).
+              The session is EXEMPT from the runner's stated weekday cap ("don't
+              shrink to fit", unanimous), and the exemption is conditional on the
+              plan saying it does not fit. Measured before this shipped: **675
+              structured weekday sessions past the ratified tolerance, every one
+              belonging to a runner who stated 30 minutes**, worst 86 min against
+              that 30 — and the card said nothing.
+
+              🎯 McMillan: *"They do not conclude the session is ambitious; they
+              conclude the app does not listen."*
+
+              ⚠️ ABOVE "WHY THIS SESSION", like the run-walk block it mirrors:
+              this is an INSTRUCTION about what the session asks of their day, not
+              a rationale, and CLAUDE.md's card hierarchy puts the prescription
+              above the why.
+
+              ⚠️ NO AIMark. Rule-engine copy from §81, not model output. */}
+          {session.weekday_overrun_note && (
+            <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
+              <CoachNoteBlock label="LONGER THAN YOUR WEEKDAY">
+                {session.weekday_overrun_note}
+              </CoachNoteBlock>
+            </div>
+          )}
+
           {(session.coach_notes?.filter(Boolean).length > 0 || guidance) && (
             <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
               <CoachNoteBlock

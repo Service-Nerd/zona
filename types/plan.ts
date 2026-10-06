@@ -315,6 +315,31 @@ export interface Session {
   /** Embedded run-walk strategy for the session, e.g. "9:1 from km 10" or
    *  "5:1 throughout". Free-form; displayed verbatim. Marathon / ultra primarily. */
   run_walk_strategy?: string
+  /**
+   * §81's own obligation, finally built (SESSION-ACHIEVABLE-01, Coaching Board
+   * 2026-10-06). A structured weekday session is EXEMPT from the runner's stated
+   * `max_weekday_mins` — ratified, re-affirmed unanimously, McMillan: *"don't
+   * shrink to fit"* — **on the condition that the plan says it does not fit.**
+   *
+   * 🔴 THE CONDITION WAS NEVER BUILT. §81's title carries both halves
+   * ("Structured sessions are exempt from the weekday cap — AND the plan says
+   * when they don't fit"), and the 2026-10-03 sitting named the defect exactly:
+   * *"the plan says so about the SESSION, not via a shared note."*
+   *
+   * 📐 MEASURED, 499 capped plans: **246 (49.3%)** carry a structured weekday
+   * session over the cap, **182 (36.5%)** past the ratified 50% tolerance, **675
+   * sessions in total — and EVERY ONE belongs to a runner who stated a 30-minute
+   * cap.** Worst: **86 min against that 30 (+187%)**, an `HM-pace intervals` for
+   * an experienced HM runner on 20 km/week. The invariant meant to catch it fired
+   * **zero** times, because it tested `volume_constraint_note`'s PRESENCE — a
+   * sentence about volume discharging an obligation about a session.
+   *
+   * 🎯 McMillan: *"They do not conclude the session is ambitious; they conclude
+   * the app does not listen."* ⚕️ Sims: a 30-minute weekday cap is the runner with
+   * caring responsibilities or a shift pattern, *"and we built an input that says
+   * tell us about your life, then ignore the answer and say nothing."*
+   */
+  weekday_overrun_note?: string
   /** In-session fueling protocol, e.g. "gel every 25 min from km 10" or
    *  "60g carb/hr, sip water at every aid station". Free-form; displayed verbatim. */
   fueling_protocol?: string

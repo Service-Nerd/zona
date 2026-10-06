@@ -53,6 +53,7 @@ export const SessionSchema = z.object({
   // AI-DEPTH-07 — additive depth fields (schema-only; engine doesn't populate yet)
   key_session:        z.boolean().optional(),
   run_walk_strategy:  z.string().optional(),
+  weekday_overrun_note: z.string().optional(),
   fueling_protocol:   z.string().optional(),
 })
 

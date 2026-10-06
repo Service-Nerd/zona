@@ -3911,7 +3911,47 @@ function applyWeekdayMinsCap(
     // session the failure is worse: the cap scales distance/duration but NOT
     // `derived_set`, so the work is unchanged and only the stated duration
     // moves. See isStructuredSession for the measured case.
-    if (isLongRun(s) || isStructuredSession(s)) continue
+    if (isLongRun(s) || isStructuredSession(s)) {
+      /**
+       * 🔴 §81's SECOND HALF, BUILT AT LAST (SESSION-ACHIEVABLE-01, Coaching
+       * Board 2026-10-06). The section's own title is *"Structured sessions are
+       * exempt from the weekday cap — AND the plan says when they don't fit"*,
+       * and this `continue` is the exemption. **The declaration belongs exactly
+       * here, because this is the line that grants it.**
+       *
+       * The 2026-10-03 sitting named the defect in as many words — *"the plan
+       * says so about the SESSION, not via a shared note"* — ruled it an exempt
+       * defect fix, and it was not done. Measured three days later: **675
+       * structured weekday sessions past the ratified 50% tolerance, EVERY ONE
+       * belonging to a runner who stated a 30-minute cap**, worst 86 min against
+       * that 30 (+187%); and `INV-PLAN-STRUCTURED-OVERRUN-DECLARED` fired **zero**
+       * times because it tested `volume_constraint_note`'s PRESENCE — a sentence
+       * about volume discharging an obligation about a session.
+       *
+       * ⚠️ STAMPED ON ANY OVERRUN, not only past the tolerance. The tolerance is
+       * where the INVARIANT bites; §81's obligation is simply "when they don't
+       * fit", and a session 7 minutes over does not fit either. This is not
+       * wallpaper: it is per-SESSION, so it appears only on the sessions that
+       * actually overrun, never as a banner across the plan.
+       *
+       * ⚠️ §40c: name the constraint AND the lever, never only the loss. The
+       * levers are real and both belong to the runner — move the session to a day
+       * with room (which is also what §81's placement obligation does
+       * automatically), or raise the weekday budget.
+       */
+      if (!isRaceWeek && s.duration_mins > cap) {
+        // ⚠️ BOTH DURATIONS THROUGH `formatDuration`, ADR-015's owner. Welding
+        // ` min` to an interpolated value is what `hardcodedUnits.test.ts` exists
+        // to stop, and it caught this on its first run — correctly: the owner
+        // also gives `1h 18` rather than a bare `78 min` once a session passes
+        // the hour, which several of these do (worst measured: 86 min).
+        s.weekday_overrun_note =
+          `About ${durationText(s.duration_mins)} against the ${durationText(cap)} you set for weekdays. ` +
+          `Quality work is not shrunk to fit the clock, so take this one on a day with more room, ` +
+          `or raise your weekday time in Profile.`
+      }
+      continue
+    }
     const originalDurationMins = s.duration_mins
     const ratio = cap / originalDurationMins
     const cappedDistance = s.distance_km != null ? roundDistance(s.distance_km * ratio) : undefined

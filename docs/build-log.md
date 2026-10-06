@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — SESSION-ACHIEVABLE-01 · the check fired zero times and that was the bug
+**Shipped:** a session that runs longer than the weekday you told us about now says so, on itself.
+
+**Dev learning:** the invariant had been green since it was written, and green was the defect. `INV-PLAN-STRUCTURED-OVERRUN-DECLARED` is supposed to catch a structured session running past the runner's stated weekday cap without the plan admitting it. It discharged on `plan.meta.volume_constraint_note` — a **presence** test against the *maintenance* note, which is written for an entirely different reason. Measured: of 182 plans past the tolerance, **all 182** discharged it, so it fired **zero** times, and 74 of them carried a note explicitly about volume. A check whose condition is "some note exists somewhere on the plan" is not checking the thing its own message describes.
+
+**Product/creator learning:** the shape of the number was the finding. 675 sessions past tolerance, and **every single one belongs to a runner who stated a 30-minute weekday cap** — not a spread across cap values, one value. The worst is 86 minutes against that 30. We built a wizard question that says *tell us about your life*, and on the sessions that matter most we ignored the answer and said nothing about it. McMillan's line in the sitting is the one I'll keep: *"They do not conclude the session is ambitious; they conclude the app does not listen."*
+
+**AI-building learning:** `verify:parity` came back **IDENTICAL on 6,066 cases** for a change that adds a stored field to 1,931 sessions. It was right and it was meaningless: **the parity grid never sets `max_weekday_mins`**, so the function I changed returns early on every case it generates. CLAUDE.md already records this exact trap from a previous incident, which is the only reason I checked instead of quoting the green tick. The real verification took ten minutes: hash 501 capped plans with the new field stripped, before and after — byte-identical, so the change is provably additive.
+
+**The honest bit:** the board had already named this defect **three days earlier**, in the 2026-10-03 sitting, in these words: *"the real defect is that it tests note PRESENCE, so an unrelated volume-shortfall note discharges the obligation. Exempt defect fix, not board work."* Ruled exempt, written down, and not done. It took the founder asking *"are these sessions achievable?"* for anyone to go and measure what it cost. A defect that is understood and recorded is not a defect that is fixed.
+
+**Hook material:** our check for "the plan must admit this session doesn't fit your day" was satisfied by a sentence about weekly volume. It fired zero times across 182 plans that needed it, and the worst case was an 86-minute session for someone who told us they had 30 minutes.
+
+**Postable?:** yes — "the test was green and green was the bug" is the line, and the 30-minute concentration is the detail that makes it real.
+
+---
+
 ## 2026-10-06 — SESSION-STEP-LEGIBILITY-01 · we wrote the coaching and rendered "Hard" three times
 **Shipped:** a session step row now says what to do, in the words the catalogue already contained.
 

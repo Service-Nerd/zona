@@ -4548,18 +4548,34 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         if (!sn || d === 'sat' || d === 'sun') continue
         if (isLongRun(sn) || !isStructuredSession(sn)) continue
         const mins = sn.duration_mins ?? 0
-        if (mins > limit && mins > worstMins) { worstMins = mins; worstWeek = w.n }
+        // 🔴 READS THE SESSION'S OWN DECLARATION (SESSION-ACHIEVABLE-01).
+        //
+        // This used to be discharged by `plan.meta.volume_constraint_note` —
+        // a PRESENCE test against the MAINTENANCE note, written for a different
+        // reason entirely. The 2026-10-03 sitting named it ("an unrelated
+        // volume-shortfall note discharges the obligation") and ruled the fix
+        // exempt. Measured before the fix: **of 182 plans past the tolerance,
+        // ALL 182 were discharged this way, so this invariant fired ZERO times** —
+        // and 74 of them carried a note explicitly about VOLUME ("built to get
+        // you round", "give your weekday runs more room"), not about the session
+        // that does not fit.
+        //
+        // §81's obligation is per-SESSION, so the check is per-session too: the
+        // session that overruns is the one that must say so.
+        if (mins > limit && !sn.weekday_overrun_note && mins > worstMins) {
+          worstMins = mins; worstWeek = w.n
+        }
       }
     }
-    if (worstMins > 0 && !plan.meta.volume_constraint_note) {
+    if (worstMins > 0) {
       violations.push({
         code: 'INV-PLAN-STRUCTURED-OVERRUN-DECLARED',
         principle_ref: 'CoachingPrinciples §81 (§40c)',
         severity: 'warn',
         week: worstWeek,
-        message: `A weekday structured session runs ${Math.round(worstMins)} min against a stated ${input.max_weekday_mins}-min ceiling (past the ${GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT}% overrun limit), and the plan says nothing. §81 exempts the session from the cap; the exemption obliges the plan to tell the runner it does not fit.`,
-        actual: `${Math.round(worstMins)} min, no volume_constraint_note`,
-        expected: 'a note naming the trade and the lever',
+        message: `A weekday structured session runs ${Math.round(worstMins)} min against a stated ${input.max_weekday_mins}-min ceiling (past the ${GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT}% overrun limit) and SAYS NOTHING ON THE SESSION. §81 exempts the session from the cap; the exemption obliges the plan to tell the runner it does not fit, about that session — not via a note about volume (MWM-FLOOR-VALIDATOR-01, 2026-10-03).`,
+        actual: `${Math.round(worstMins)} min, no session weekday_overrun_note`,
+        expected: "the SESSION carries its own note naming the trade and the lever (§81's obligation is per-session)",
       })
     }
   }

@@ -6495,6 +6495,47 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
 
+### `WEEKDAY-OVERRUN-BOUND-01` — is +187% over a stated weekday cap still "don't shrink to fit"? 🏃 **COACHING BOARD**
+
+⚖️ **INSUFFICIENT EVIDENCE, 2026-10-06.** §81's exemption is ratified twice and is not in question.
+The open question is whether there is a **magnitude** past which the engine should choose a DIFFERENT
+session rather than prescribe one and declare it.
+
+**Measured:** 675 structured weekday sessions past the ratified 50% tolerance, **every one belonging
+to a runner who stated a 30-minute cap**; worst **86 min against that 30 (+187%)**. Most affected:
+`CV intervals` 109, `Progressive tempo` 59, `HM-pace reps` 50, `Threshold ladder` 50.
+
+🏃 **Hutchinson declined to set a number in the sitting that found the problem**, having just
+criticised the 2026-10-03 bound as *"set from precedent before the measurement existed"*: *"I will not
+make the mirror-image error of setting a number because I happen to have one."*
+
+🔴 **THE EVIDENCE THAT UNBLOCKS IT, and nothing else will do:** for those 675 sessions, what does a
+bound COST — how many lose their quality session entirely, what the selector substitutes in its place,
+and `measure:fitness` on the affected cohort. 📊 Seiler's note belongs in that measurement:
+`CV intervals` is the most time-efficient session in the catalogue for a time-limited runner, so a
+bound that removes it from exactly those runners may be worse than the overrun.
+
+---
+
+### `SESSION-WEEK-SHARE-01` — no check anywhere looks at ONE SESSION as a share of the week 🏃 **COACHING BOARD**
+
+🩹 **Willy's gap, named 2026-10-06 and not previously recorded.** The worst case in
+`SESSION-ACHIEVABLE-01` is an **86-minute threshold session for a runner on 20 km/week** — roughly
+**half their weekly volume in one session**.
+
+⚠️ **This is NOT a claim that the engine breaches §2 or §12.** Both are measured on **weekly** volume
+and both are green on this cohort. **The point is that the gap is real either way:** every load rule
+in the constitution is weekly, and a single session's share of the week has no owner, no numeric and
+no invariant.
+
+Willy: *"That is not a time-budget problem, it is an acute-load problem, and it is the shape that
+produces the injury I spend my clinic time on."*
+
+**To take it up:** measure the distribution of max-single-session-share across the cohort grid first.
+A principle written before that number exists is the error the board recorded on 2026-10-03.
+
+---
+
 ### `MKT-STEP-CEILING-BAND-01` — the website words the pace ceiling correctly and still prints it over a range 🧭 **DESIGN BOARD**
 
 **Found during `SESSION-STEP-LEGIBILITY-01` by opening the page, not by reading the code.** The

@@ -5830,6 +5830,87 @@ check (ADR-020).
 
 ---
 
+
+### Amendment 2 — the SECOND HALF of this section, built (Coaching Board, 2026-10-06)
+
+**`SESSION-ACHIEVABLE-01`. The founder asked whether the sessions we hand people are
+achievable. The measurement says the exemption works and the obligation beside it was
+never built.**
+
+This section's title carries two clauses — *"Structured sessions are exempt from the
+weekday cap — **and the plan says when they don't fit**"*. The exemption shipped. The
+saying did not.
+
+**🔴 Measured, 499 capped plans (cohortGrid, stride 53):**
+
+| | |
+|---|---|
+| plans with a structured weekday session over the stated cap | **246 (49.3%)** |
+| past the ratified `LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT` (50%) | **182 (36.5%)** |
+| such sessions in total | **675** |
+| **stated caps involved** | **30 minutes. Every single one.** |
+| worst | **86 min against a 30-min cap, +187%** — `HM-pace intervals`, wk13, experienced HM runner on 20 km/week |
+| `INV-PLAN-STRUCTURED-OVERRUN-DECLARED` firings | **0** |
+
+**The invariant was silent because it tested `plan.meta.volume_constraint_note`'s
+PRESENCE** — the **maintenance** note, authored for a different reason entirely. All 182
+were discharged that way, and **74 carried a note explicitly about volume** (*"built to get
+you round"*, *"give your weekday runs more room"*), not about the session that does not fit.
+**`MWM-FLOOR-VALIDATOR-01` (2026-10-03) named this exact defect, ruled the fix exempt from
+the board, and it was not done.** Its words are the specification: *"the plan says so about
+the SESSION, not via a shared note."*
+
+**Principle.** A structured weekday session that exceeds the runner's stated budget for that
+day carries **its own** declaration, naming the magnitude and the lever (§40c). The
+exemption is unchanged and is not re-opened: 🎯 McMillan's *"don't shrink to fit"* stands,
+unanimous, twice.
+
+**Engine copy:** `About 37 min against the 30 min you set for weekdays. Quality work is not shrunk to fit the clock, so take this one on a day with more room, or raise your weekday time in Profile.`
+
+🎯 **McMillan, on why this is not cosmetic:** *"They do not conclude the session is
+ambitious; they conclude the app does not listen."* ⚕️ **Sims, on who it falls on:** a
+30-minute weekday cap is overwhelmingly the runner with caring responsibilities or a shift
+pattern, *"and we built an input that says tell us about your life, then ignore the answer
+on the sessions that matter most and say nothing."*
+
+⚠️ **Stamped on ANY overrun, not only past the tolerance.** The tolerance is where the
+INVARIANT bites; this section's obligation is simply *"when they don't fit"*. It is not
+wallpaper — it is per-session, so it appears on the 1,931 sessions that actually overrun and
+never as a plan-level banner.
+
+**Two questions this amendment deliberately leaves OPEN, both recorded by the board:**
+
+1. 🏃 **A magnitude bound — INSUFFICIENT EVIDENCE.** Is +187% still *"don't shrink to
+   fit"*, or is there a point past which the session must not be PRESCRIBED? Hutchinson
+   refused to set a number in the same sitting that criticised one set from precedent:
+   *"I will not make the mirror-image error of setting a number because I happen to have
+   one."* **The evidence that would settle it:** for the 675 sessions, what a bound COSTS —
+   how many lose their quality session, what the selector substitutes, and `measure:fitness`
+   on the affected cohort. Filed as `WEEKDAY-OVERRUN-BOUND-01`.
+2. 🩹 **A single session as a share of the week — Willy's gap, newly named.** The worst case
+   is an 86-minute threshold session for a runner on 20 km/week: *"approaching half their
+   weekly volume in one session."* §2 and §12 are measured on WEEKLY volume and are green;
+   **no check anywhere looks at one session as a share of the week.** Filed as
+   `SESSION-WEEK-SHARE-01`.
+
+**Config.** No new constant — `LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT` (50) already marks
+where the invariant bites, and a second number asking the same question in a different unit
+is the duplicate-semantics failure §120 Am. 1 rejected by name.
+**Owner.** `applyWeekdayMinsCap` stamps `Session.weekday_overrun_note` **at the `continue`
+that grants the exemption** — the declaration belongs on the line that creates the
+obligation.
+**Invariant.** `INV-PLAN-STRUCTURED-OVERRUN-DECLARED`, rewired to read the **session's** note.
+**Gate.** `lib/plan/weekdayOverrunDeclared.test.ts` — 5 arms, **falsified three ways**:
+remove the stamp → 3 arms red and the invariant fires 182×; drop the lever from the copy →
+the §40c arm red; stamp it but never render it → the render arm red.
+⚠️ **The render arm is not optional.** This repo has shipped a stamped field with no reader
+twice — `run_walk_strategy` and `DerivedStep.note`, the latter fixed the same day.
+
+⚠️ **`verify:parity` reported IDENTICAL and is STRUCTURALLY BLIND here: its grid never sets
+`max_weekday_mins`**, so `applyWeekdayMinsCap` returns early on all 6,066 cases. Verified
+instead on 501 capped plans with the new field stripped: **byte-identical hashes**, so the
+change is purely additive.
+
 ## 82. Easy runs are floor-protected against the weekday cap
 
 **Coaching Board, 2026-09-03. Unanimous.**
