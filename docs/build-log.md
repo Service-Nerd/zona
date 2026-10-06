@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — DELOAD-PLAN-OPENING-01 · the blocker that held this for a day was a `git stash` that stashed nothing
+**Shipped:** deload placement is a search instead of a greedy walk, so a plan stops opening with one week of training followed by a recovery week. Marathon plans with that defect: 50.0% to 3.4%.
+
+**Dev learning:** `git stash push <file>` on a file with **no unstaged changes is a no-op**, and it exits 0. Yesterday I used it to attribute a set of test findings: stash fix (b), re-run, see which findings survive, conclude they belong to the other change. The files were already committed. Nothing was stashed, (b) never left the tree, and the findings I attributed to the search were (b)'s. That false attribution went into the backlog as a shipping blocker and held a measured improvement for a day. The same no-op had already cost me an hour earlier the same day on a different pair of files — so this is the second time, and the first time it only wasted time while the second time it produced a **confident wrong conclusion**, which is much worse. Use copy-and-restore, or a worktree. Never stash to isolate a variable.
+
+**Product/creator learning:** the residual is 15.8% of plans and it is not a bug — it is two cells where the constraints genuinely cannot all hold: a masters half-marathon at a 3-week recovery cadence in a 10-week window with a phase boundary in the middle, and an experienced runner whose base phase is only two weeks long. Both are "a phase shorter than the cadence can fit". The temptation is to relax one rule and report ~0. The board had already refused that exact relaxation (a 3-week masters loading block) because masters recover connective tissue slowest. So the honest deliverable is the improvement plus a **stamped declaration**, and the number stays at 15.8% with a reason beside it.
+
+**AI-building learning:** I wrote an exemption to clear findings that did not exist. The findings came from my own reverted experiment; I saw them, assumed they were real, and wrote a rule excusing them. Then I measured it: 292 real findings suppressed, no board mandate, and on inspection the reasoning was wrong — a floor is a lower bound, so an easy run reaching its floor explains why the drop stopped, not why the drop was that large. I removed it. **The measurement is what caught it, not the review**; the code read perfectly plausibly. And the thing that exposed the whole chain was a one-line check: run the gate on HEAD and see whether it was ever red. It wasn't.
+
+**The honest bit:** three separate self-inflicted detours in one item. The phantom findings; the exemption written for them; and a test I "fixed" that turned out to be pinning a constitutional breach as proof of compliance — `expect(after).toEqual([2,6,10])` under the title *"clears position 2"*, where week 2 **is** a phase position 2. The value was recorded, the property was claimed, and nobody compared them for as long as the file existed. My search produced the compliant answer and the test called it a regression.
+
+**Hook material:** `git stash push` on a committed file stashes nothing and exits 0 — and the wrong conclusion I drew from it sat in the backlog as a shipping blocker for a day, holding a change that takes a defect from 50% of marathon plans to 3.4%.
+
+**Postable?:** yes — the stash one is a genuinely useful warning, and "the test pinned a violation as proof of compliance" is the better half of it.
+
+---
+
 ## 2026-10-06 — PROMPT-UNITS-ADJUST-01 · a required parameter, and a falsification that didn't go red
 **Shipped:** a miles runner no longer gets a km-voiced explanation of why their plan changed.
 **Dev learning:** `units` reaches this prompt by **two independent paths** — the `buildVoiceHeader` instruction line ("The runner measures distance in MILES") and the structural diff, where every line runs through `labelSession`. I threaded both, wrote a test, and the falsification stayed green: hardcoding the header back to `'km'` broke nothing, because my assertions were all on the diff lines. **One fix, two halves, and the test covered one.** The arm that closes it is the one I only wrote because the mutation refused to fail.
