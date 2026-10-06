@@ -469,7 +469,8 @@ say "── CONTRACTS: a SHARED component with no contract at all ──"
 # This asks the inverse: a component under `components/shared/` that EXPORTS a prop
 # interface and is imported by more than one file should have a contract. Existing
 # debt is declared below so it is visible and cannot grow.
-UNCONTRACTED_BASELINE=60   # 🔴 61 → 60 (LEDGER-COACH-SITE-REMOVE-01, 2026-10-05) AND IT IS A THIRD KIND OF MOVE, NEITHER PAID NOR DELETED.
+UNCONTRACTED_BASELINE=59   # 60 → 59 (SESSION-ACHIEVABLE-01, 2026-10-06) — PAID, not deleted: `session-detail-notes.md` written because a NEW runner-facing surface landed on an uncontracted component and this arm could not see it.
+#                          # 🔴 61 → 60 (LEDGER-COACH-SITE-REMOVE-01, 2026-10-05) AND IT IS A THIRD KIND OF MOVE, NEITHER PAID NOR DELETED.
                            # `LedgerCard` is STILL UNCONTRACTED. It had two importers (DashboardClient + MeScreen); removing the Coach render
                            # site left ONE, so it fell below this arm's `users >= 2` threshold and dropped out of the POPULATION. Lowering the
                            # number is right — the register must describe reality and may only fall — but recording it as a payment would be a lie.
