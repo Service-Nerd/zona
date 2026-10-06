@@ -312,3 +312,146 @@ in this attempt, reverted with the rest) AND a surface, because 🎯 McMillan's 
   state), **one unratified side effect** (`I6`, from placement), and **one design surface**.
 - ⛔ **Do not ship the search alone.** Three published marketing plans fail on `I4`, and that was
   true on 2026-10-05 and is true today.
+
+
+---
+
+# Coaching Board sitting 3, 2026-10-06 — (b) vacated, replacement built and REFUSED ON MEASUREMENT
+
+**Nothing shipped. Tree reverted. Three findings, all from measurement, each of which would have
+been invisible without building the thing.**
+
+## 1. "Fix the BADGE" is not implementable — measured, three error-severity invariants
+
+Withdrawing the recovery badge sets `type` away from `'deload'`, and `type: 'deload'` is
+load-bearing for three ratified rules. On `10k-12-week`:
+
+| invariant | |
+|---|---|
+| `INV-PLAN-DELOAD-PLACEMENT` (§87) | *"Plan has 1 recovery weeks but the §3 cadence calls for at least 2. Placement may SHIFT a deload, never remove one"* — 🩹 **Willy's own bound** |
+| `INV-PLAN-QUALITY-EXPECTED` (§1/§6/§8) | the demoted week is now a BUILD week and owes a quality session it never had |
+| `INV-PLAN-STRIDES-PRESENT` (§28) | strides required on every non-deload, non-race week from week 3 |
+
+**One root cause: a demoted week is structurally still a recovery week**, so every rule keyed on
+`type !== 'deload'` begins to apply to it. The ruling's phrase does not distinguish `Week['badge']`
+(display) from `Week['type']` (structure), and the engine's split makes that decisive.
+
+✅ For the record, **(b) DID fix what it was written for**: all three published-plan `I4` findings
+resolved and `10k-12-week` went fully clean.
+
+## 2. The ruling mis-cited its own authority
+
+It hung on **§34**. **§34 is *"Invariant registry — declared and exercised"*** and says nothing about
+what the runner is told. The precedent is **§81** — *"Structured sessions are exempt from the weekday
+cap **and the plan says when they don't fit**"*: a rule that cannot be honoured is exempted **and
+declared**. Reading §81 instead of reaching for §34 would have produced a different ruling.
+
+## 3. 🩹 Willy's "binding floor" already exists, at a different severity
+
+He ruled, binding: *"a week badged recovery whose delivered volume does not fall at all is a defect,
+not a declaration."* **`INV-PLAN-DELOAD-IS-A-REDUCTION` already says exactly that**, reading
+delivered `weekly_km`, and is ratified **`warn`** by a prior board — its own comment names the
+session floors as the cause and records that the healthy delivered divergence was *"deliberately
+LEFT to §52"*. Implemented as a new `error` arm it fired on **13.6% of plans (771)**.
+
+⚠️ **A second copy of a ratified rule at a second severity is the `DELOAD-OWNER-01` fault.** Removed
+rather than written. **The reuse check should have run before the implementation, not after.**
+
+## 4. 🔴 THE REPLACEMENT REMEDY WAS BUILT AND ITS OWN MEASUREMENT REFUSED IT
+
+§81's pattern was implemented in full: the week keeps `type` and `badge`, and the plan declares the
+shortfall (`deload_delivered_shortfall_weeks` + a runner-facing note), with the cause split so the
+arithmetic defect (a) stays visible. It typechecked, it left all three invariants above untouched,
+and all nine published plans stayed clean.
+
+**Then the distribution was measured.**
+
+| weekly volume | declaration rate | | race distance | declaration rate |
+|---|---|---|---|---|
+| 20 km/wk | 66.4% | | 5 km | 65.1% |
+| 35 km/wk | 58.8% | | 10 km | 61.3% |
+| 50 km/wk | 67.2% | | 21.1 km | 65.4% |
+| 70 km/wk | **71.3%** | | 42.2 km | 73.2% |
+
+**66.0% of plans, 6,699 weeks, and FLAT.**
+
+⚕️ **Sims's mechanism from this very sitting is disproved.** She argued the cohort skews small-volume
+*"because a 4 km floor is a far larger share of an 18 km week than of a 60 km one"* — and the rate is
+**higher at 70 km/wk than at 20**. Whatever drives this, it is not the floors-on-small-weeks story
+the remedy was built on.
+
+🎯 **And a note on two-thirds of all plans, evenly distributed, is wallpaper.** It fails McMillan's
+own test from the same sitting.
+
+🔴 **THE REAL FINDING: §3's "volume drops to 70% of the prior build week" is not a small-week
+near-miss. At a 20% delivered bar it is not what the engine delivers, generally** — on any volume, at
+any distance. That is a much larger statement than *"fix the badge on 1,792 weeks"*, and it cannot be
+answered by bolting a declaration onto a figure nobody meets.
+
+⚠️ **AND THE POPULATIONS WERE NEVER COMPARABLE.** The 2026-10-05 ruling costed (a) at **3,604 weeks**
+and (b) at **1,792 weeks**. This sitting measures **6,699** declared weeks plus 771 plans tripping the
+no-reduction floor, on `cohortGrid` at stride 7. Different corpora, never reconciled — the same
+*"a corpus nobody runs is unfalsifiable"* fault this repo has already recorded.
+
+## What the FOURTH attempt needs
+
+🏃 **A board ruling on what §3 should PROMISE**, which is a different question from every one asked so
+far:
+
+1. Is 70% a target for the **curve** (in which case §3's text must say so, and the delivered figure
+   needs its own, honest number), or
+2. is it a promise about **delivered volume** (in which case ~66% of plans are in breach and the
+   remedy is in `buildVolumeSequence` and the session floors, not in a note), or
+3. is the **20% bar itself** wrong — borrowed from `I4_MIN_DROP_PCT`, which was a bare `20` outside
+   `GENERATION_CONFIG` with no principle explaining it (the `peakKmByLevel` bypass class).
+
+⚠️ **Option 3 is the one to measure first and it is cheap.** Nothing in the constitution explains why
+20% is the floor for "a real reduction"; §3 says 70% of the prior week, i.e. a **30%** drop. The bar
+that produced the 66% figure has no stated derivation, and a defect rate measured against an
+underived bar is not yet a defect rate.
+
+
+## ✅ Option 3 was measured, and it is the answer the fourth sitting needs
+
+Because an underived bar makes an underived defect rate, the delivered drop was measured directly
+across `cohortGrid` at stride 7 — **13,785 deload weeks**, no implementation required:
+
+| | |
+|---|---|
+| **median delivered drop** | **17.9%** |
+| p10 / p25 / p75 / p90 | 3.7% / 8.7% / 27.8% / 33.3% |
+
+**§3's own promise is 70% of the prior build week, i.e. a 30% drop.**
+
+| bar | deload weeks delivering LESS |
+|---|---|
+| 0% (no reduction at all) | 494 — **3.6%** |
+| 5% | 1,759 — 12.8% |
+| 10% | 4,121 — 29.9% |
+| 15% | 5,823 — 42.2% |
+| 20% (`I4_MIN_DROP_PCT`, underived) | 7,767 — 56.3% |
+| 25% | 9,394 — 68.1% |
+| **30% (§3's actual promise)** | **11,431 — 82.9%** |
+
+✅ **THE 0% ROW RECONCILES WITH THE RATIFIED REGISTER, AND THAT MATTERS.**
+`INV-PLAN-DELOAD-IS-A-REDUCTION`'s own comment records *"~3.5% of swept plans"* for a deload that
+overshoots its reduced target. This measurement, on a different corpus and by a different route,
+gives **3.6%**. The method agrees with the invariant that has been live for weeks — which is what
+makes the rest of the column trustworthy.
+
+🔴 **SO THE DEFECT IS NOT A POPULATION OF 1,792 WEEKS WHERE THE FLOORS BITE. The delivered
+distribution is CENTRED BELOW §3's PROMISE** — median 17.9% against a promised 30%, with 82.9% of
+deload weeks short of it. The floors are not an edge case acting on small weeks; they are the normal
+case acting on every week, which is exactly what the flat 58.8-71.3% declaration rate across volume
+bands was saying.
+
+**The question for the fourth sitting is therefore one sentence:** §3 promises a 30% drop and the
+engine delivers a median of 17.9% — **which number is wrong?** Everything else (the badge, the
+declaration, I4's severity, the placement search) is downstream of that answer, and three sittings
+have now been spent on remedies that assume §3's figure is right and the exceptions are few.
+
+⚠️ **What this does NOT prove.** It measures the DELIVERED drop against the prior loading week on
+`cohortGrid` at stride 7, with `type === 'deload'` as the week filter. It does not measure the curve
+side (that needs instrumentation inside the engine), it says nothing about whether a 17.9% median is
+physiologically adequate — 🩹 Willy's and ⚕️ Sims's question, not a measurement's — and it was taken
+WITHOUT the placement search applied, so it describes the engine as it ships today.
