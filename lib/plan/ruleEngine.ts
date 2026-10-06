@@ -2597,6 +2597,7 @@ function buildWeekSessions(
   weekN: number,
   phase: PhaseType,
   isDeload: boolean,
+  deloadWeeksSet: ReadonlySet<number>,
   isRaceWeek: boolean,
   weeklyKm: number,
   input: GeneratorInput,
@@ -3211,9 +3212,42 @@ function buildWeekSessions(
   // or after — the peak path has never consulted it either, so the amendment
   // extends §25 to the same cohort §25 already serves. Measured, not inferred.
   const buildPhaseForRaceLR = phases.find(p => p.name === 'build')
-  const inRacePaceBuildWindow = phase === 'build'
-    && buildPhaseForRaceLR != null
-    && weekN > buildPhaseForRaceLR.end_week - GENERATION_CONFIG.RACE_PACE_LR_BUILD_WEEKS
+  // PROTOTYPE (distance-split sitting): LAST NON-DELOAD build week, not "the final
+  // week if it happens not to be a deload". Env-gated so both are measurable.
+  // §25 Am. 2 as CORRECTED by the distance-split sitting (Coaching Board
+  // 2026-10-06): the window is the LAST NON-DELOAD build week, walked back from
+  // build's end — NOT "the final build week if it happens not to be a deload".
+  //
+  // 🔴 WHY, AND THE NUMBER IS THE WHOLE ARGUMENT. The first version skipped the
+  // session whenever the final build week was a deload. Measured over time-target
+  // plans: that is **0.2% of HM plans (12 of 5,184) and 50.7% of MARATHON plans
+  // (1,728 of 3,408)**. So half of all marathon runners silently did not get the
+  // marathon-pace long run this amendment grants them, because the deload cadence
+  // happened to land there. 🎯 McMillan: "no coach would accept 'the deload ate
+  // it' as the reason."
+  //
+  // ⚠️ THE SITTING WAS CONVENED TO CONSIDER A DISTANCE-SPECIFIC DOSE and refused
+  // one. The chair's own hypothesis was that marathon needed MORE than HM; the
+  // data said marathon was not receiving what it had already been granted.
+  // Absolute race-pace long runs per plan: HM 3.00, marathon 1.55 → 2.06. The
+  // dose is unchanged at 1; only its landing changes.
+  //
+  // ⚠️ FREE IN WILLY'S DIMENSION, STRUCTURALLY RATHER THAN BY LUCK: the worst
+  // consecutive-week distribution is IDENTICAL before and after, because the week
+  // before a deload is followed by a deload and therefore cannot chain into peak.
+  //
+  // 🔻 The residual HM/marathon gap (3.00 vs 2.06) is peak LENGTH — 3.06 vs 2.10
+  // non-deload peak weeks — which is §93's question and is NOT ruled here.
+  let inRacePaceBuildWindow = false
+  if (phase === 'build' && buildPhaseForRaceLR != null) {
+    let placed = 0
+    for (let n = buildPhaseForRaceLR.end_week; n >= buildPhaseForRaceLR.start_week; n--) {
+      if (deloadWeeksSet.has(n)) continue
+      placed++
+      if (n === weekN) { inRacePaceBuildWindow = true; break }
+      if (placed >= GENERATION_CONFIG.RACE_PACE_LR_BUILD_WEEKS) break
+    }
+  }
   const useRaceSpecificLR = (phase === 'peak' || inRacePaceBuildWindow) && !isDeload && goalPace
   if (useRaceSpecificLR && distKey === 'MARATHON') {
     const mpRow = catalogue.find(r => r.id === 'mp_long_run')
@@ -6908,7 +6942,7 @@ function buildRulePlanOnce(
     })()
 
     const sessions = buildWeekSessions(
-      weekN, phase, isDeload, isRaceWeek,
+      weekN, phase, isDeload, deloadWeeks, isRaceWeek,
       adjustedKm, input, zones, pace, metric, phases,
       tier, catalogue,
       fitness,

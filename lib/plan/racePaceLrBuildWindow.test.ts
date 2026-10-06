@@ -108,6 +108,31 @@ describe('§25 Am. 2 — the race-pace long run in the final build week', () => 
     expect(fired.some(v => /CONSECUTIVE/.test(v.message ?? ''))).toBe(true)
   })
 
+  it('lands on the LAST NON-DELOAD build week, not merely the final one', () => {
+    // The distance-split sitting's correction. The first window was the calendar
+    // one and skipped the session whenever a deload landed on it: 50.7% of
+    // MARATHON plans against 0.2% of HM. So a marathon plan whose final build
+    // week is a deload must STILL carry the session, one week earlier.
+    let checked = 0
+    for (const g of cohortGrid()) {
+      if (g.race_distance_km !== 42.2 || g.goal !== 'time_target') continue
+      // A designed refusal (e.g. DaysAvailableError) is not this gate's subject.
+      let plan: Plan
+      try { plan = generateRulePlan(g, 'paid', COHORT_PLAN_START, undefined, COHORT_PLAN_START) } catch { continue }
+      const build = plan.weeks.filter(w => w.n >= 1 && w.phase === 'build')
+      const last = build[build.length - 1]
+      if (!last || (last.type !== 'deload' && last.badge !== 'deload')) continue
+      checked++
+      expect(segWeeks(plan).filter(w => w.phase === 'build').length,
+        'a marathon plan whose final build week is a deload must still get the session')
+        .toBe(GENERATION_CONFIG.RACE_PACE_LR_BUILD_WEEKS)
+      if (checked >= 8) break
+    }
+    // The population arm: if no such plan exists the assertion above is vacuous.
+    expect(checked, 'the grid must contain marathon plans whose final build week is a deload')
+      .toBeGreaterThan(0)
+  })
+
   it('does not fire on a finish-goal plan, whose long run is aerobic by design', () => {
     const g = cohortGrid().find(x => x.goal !== 'time_target'
       && (x.race_distance_km === 21.1 || x.race_distance_km === 42.2))

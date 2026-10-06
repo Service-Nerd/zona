@@ -6579,17 +6579,33 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         sn && isLongRun(sn) && Boolean(sn.lr_segment_pace))
 
     if (buildEnd != null) {
+      // §25 Am. 2 as CORRECTED (distance-split sitting): the legal weeks are the
+      // last `windowWeeks` NON-DELOAD build weeks, walked back from build's end.
+      // The first version tested `w.n > buildEnd - windowWeeks`, which is the
+      // calendar window and skipped the session whenever a deload landed on it —
+      // 50.7% of marathon plans against 0.2% of HM.
+      const legalBuildWeeks = new Set<number>()
+      {
+        const buildStart = (plan.phases ?? []).find(p => p.name === 'build')?.start_week ?? 1
+        let placed = 0
+        for (let n = buildEnd; n >= buildStart && placed < windowWeeks; n--) {
+          const wk = main.find(x => x.n === n)
+          if (!wk || wk.type === 'deload' || wk.badge === 'deload') continue
+          legalBuildWeeks.add(n)
+          placed++
+        }
+      }
       for (const w of main) {
         if (w.phase !== 'build' || !carriesSegment(w)) continue
-        if (w.n > buildEnd - windowWeeks) continue
+        if (legalBuildWeeks.has(w.n)) continue
         violations.push({
           code: 'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW',
           principle_ref: 'CoachingPrinciples §25 Amendment 2',
           severity: 'warn',
           week: w.n,
-          message: `Week ${w.n} carries a race-pace long run outside the sharpening window; §25 Am. 2 allows it only in the final ${windowWeeks} non-deload build week${windowWeeks === 1 ? '' : 's'} (build ends week ${buildEnd}).`,
+          message: `Week ${w.n} carries a race-pace long run outside the sharpening window; §25 Am. 2 allows it only in the last ${windowWeeks} NON-DELOAD build week${windowWeeks === 1 ? '' : 's'} (legal: ${Array.from(legalBuildWeeks).sort((a, b) => a - b).join(', ') || 'none'}).`,
           actual: `build week ${w.n}`,
-          expected: `> ${buildEnd - windowWeeks}`,
+          expected: `one of ${Array.from(legalBuildWeeks).sort((a, b) => a - b).join(', ') || 'none'}`,
         })
       }
     }

@@ -6392,10 +6392,19 @@ quality now prescribes some. Baseline lowered to lock it in.
 > `INV-PLAN-LR-SEGMENT-RECORDED` was peak-scoped while its producer now writes to two phases** —
 > broadened.
 >
-> 🔻 **STILL OPEN, and the number argues against the case that was made for it:** the **distance split**
-> Hutchinson raised is uncosted and unruled. Measured after shipping, dose 1 delivers **HM 12.8%** but
-> **marathon only 5.1%**, because the marathon's build phase is longer and one week is a smaller share.
-> **So the cohort with the strongest argument gets the least.** Worth a sitting; not decided here.
+> ✅ **DISTANCE-SPLIT SITTING HELD 2026-10-06 — NO SPLIT. The WINDOW was the defect.**
+> 🥇 **The share was the wrong measure and the absolute count inverted the question:** race-pace long
+> runs per time-target plan were **HM 3.00 vs marathon 1.55** — the marathon getting HALF, on a LONGER
+> plan with MORE build weeks. 🔴 **Cause: the final build week IS a deload in 50.7% of marathon plans
+> (1,728 of 3,408) against 0.2% of HM**, so `!isDeload` silently skipped the session for half of all
+> marathon runners. 🏃 **The chair's own hypothesis was refuted** — he argued marathon needed MORE; it
+> was not receiving what it had already been granted.
+> ✅ **Window corrected to the LAST NON-DELOAD build week.** Marathon **1.55 → 2.06**, HM **unchanged
+> at 3.00**, consecutive distribution **byte-identical** (the week before a deload is followed by a
+> deload, so it cannot chain into peak — free in Willy's dimension, structurally). **No
+> distance-specific constant.**
+> 🔻 **Residual gap (3.00 vs 2.06) is peak LENGTH** — 3.06 vs 2.10 non-deload peak weeks — **§93's
+> question, filed not decided.**
 > 🔻 **§5's `build.specific_pct` (30) stays DECLARATIVE** — no dose reaches it (all-build maxed at
 > 23.7% and was vetoed), and 5.5% is recorded as what the engine does, not dressed as compliance.
 > 🔻 **Ultras untouched** at 0.0%, same shape, no equivalent channel.

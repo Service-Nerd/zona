@@ -2350,10 +2350,30 @@ Two of those rendered **on the same card**: the runner read *"Final 30–50% at 
 
 **Ruling: CORRECT WITH AMENDMENT. Dose 1 — the final non-deload build week only.**
 
-**Principle.** §25's race-pace long run lands in the final `RACE_PACE_LR_BUILD_WEEKS` **non-deload
-build** weeks as well as peak, for time-targeted HM and marathon, at the fraction this section
-already ratifies (25–40%, owned by `race_pace_pct`). The dose is **1**.
-Check: `INV-PLAN-RACE-PACE-LR-BUILD-WINDOW` (`warn`).
+**Principle.** §25's race-pace long run lands in the **LAST NON-DELOAD build week** (the last
+`RACE_PACE_LR_BUILD_WEEKS` of them, walked back from build's end) as well as peak, for time-targeted
+HM and marathon, at the fraction this section already ratifies (25–40%, owned by `race_pace_pct`).
+The dose is **1**. Check: `INV-PLAN-RACE-PACE-LR-BUILD-WINDOW` (`warn`).
+
+🔴 **CORRECTED SAME DAY by the distance-split sitting, and the correction is the more important half.**
+This amendment first read *"the final build week, if it is not a deload"*. Measured on time-target
+plans, the final build week **IS** a deload in **0.2% of HM plans (12 of 5,184) and 50.7% of MARATHON
+plans (1,728 of 3,408)** — so **half of all marathon runners silently did not receive the session this
+amendment grants them**, because the deload cadence happened to land there. 🎯 McMillan: *"no coach
+would accept 'the deload ate it' as the reason."*
+
+⚠️ **THE SITTING WAS CONVENED TO CONSIDER A DISTANCE-SPECIFIC DOSE AND REFUSED ONE.** The chair's own
+hypothesis was that marathon needed MORE than HM; the measurement said marathon was not receiving what
+it had already been granted. **Absolute race-pace long runs per plan: HM 3.00 (unchanged), marathon
+1.55 → 2.06.** The dose is unchanged at 1; only its landing changed, and **no distance-specific
+constant was introduced.**
+
+⚠️ **Free in Willy's dimension, structurally rather than by luck:** the worst consecutive-week
+distribution is **identical** before and after, because the week before a deload is followed by a
+deload and therefore cannot chain into peak.
+
+🔻 **The residual HM/marathon gap (3.00 vs 2.06) is peak LENGTH** — 3.06 non-deload peak weeks against
+2.10 — **which is §93's question and is explicitly NOT ruled here.**
 
 **⚠️ §12's EASY-RUN CEILING, STATED RATHER THAN INHERITED.** §12 caps easy runs at the top of Z2,
 and this session's long run is `Zone 2–3`. This section has always carried that exception, but it
