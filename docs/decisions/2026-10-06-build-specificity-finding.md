@@ -100,3 +100,91 @@ this substitutes rather than adds.
 🔻 **`RACE-ANCHOR-CV-OVERRIDE-01` is now blocked on this, not the reverse.** The CV header lie, the
 voided fifth exemption and the build gap are **one defect**: build cannot select race-specific work,
 so §22 renames threshold work instead. Fix the ladder and the exemption becomes unnecessary.
+
+---
+
+# Sitting 5 — the mechanism, costed and REFUSED. The number is the defect.
+
+**2026-10-06.** Sitting 4 ruled the defect CORRECT and the mechanism INSUFFICIENT EVIDENCE with a
+named gate. **The gate was discharged, and it changed which lever is correct and then refused that
+one too.**
+
+## The ladder was the wrong lever, and the code said so in words
+
+`MIDWEEK_QUALITY_LADDER` excludes `race_specific` **deliberately**, with the reason on the line
+above it: *"they are long-run-slot work, not a midweek single-day session."* Measured anyway: a
+prototype `race_specific` midweek row was **selected 7,644 times and ZERO of them in build.** The
+ladder was never the lever and it was not changed.
+
+## The actual lever, found by measurement
+
+`useRaceSpecificLR = phase === 'peak' && !isDeload && goalPace` in `ruleEngine.ts`. That single
+expression is why the **designed** channel delivered 0% in build too. Widened to
+`(phase === 'peak' || phase === 'build')` and measured:
+
+| | before | after |
+|---|---|---|
+| build specific share | 0.0% | **23.7%** |
+| HM build | 0% | **37.6%** |
+| marathon build | 0% | **33.3%** |
+| 5K / 10K build | 0% | **0%** (untouched by construction) |
+
+⚠️ **And the rows' own `phase_eligibility` is NOT consulted on that path** — they are found by ID, so
+widening `hm_pace_long_run` / `mp_long_run` to `['build','peak']` changed **nothing, byte-identical.**
+That field is decorative there.
+
+**Every standing harness stayed green:** `verify` exit 0 / 4,331 tests · `measure:fitness`
+**byte-identical** on every cohort and marathon persona · refusals **1,840 unchanged** ·
+`cohort:shape` exit 0 · `review:coaching` six arms identical at **95.9%** · `verify:parity` 536 of
+5,832, all HM/marathon time-target.
+
+## 🔴 It was refused anyway, because the harnesses are green for STRUCTURAL reasons
+
+| | |
+|---|---|
+| build non-deload weeks gaining a race-pace long run | **45.2%** |
+| race-pace km **added per plan** across build | median **24.5 km**, p90 42.6, max 60.6 |
+| share of build long-run km now at race pace | **16.6%** (was 0%) |
+
+**§1 counts sessions and the long run's `type` stays `easy`. `measure:fitness` counts distance and
+no distance changed.** Session count was unchanged at **262,988** and intensity still rose *inside*
+the session. ⚕️ Sims's substitution condition was met and **was the wrong test**, which she owned.
+
+🎯 **McMillan:** *"a median of 24.5 km of added race-pace running across the build block, in 45% of
+its weeks, is not sharpening — it is racing your training."*
+🩹 **Willy:** *"I ruled on a substitution that lowers intensity; this adds intensity to the one
+session that is already the week's largest tissue exposure."*
+
+## The conflict scan is what settles it: BOTH channels are closed by explicit design
+
+1. **Midweek slot** — ladder excludes the category, with its reason written down.
+2. **Long-run slot** — **§25 reserves the race-pace long run for PEAK**, in its principle (*"Peak
+   phase ... MUST contain at least one"*) and its Config (*"peak-phase long-run path"*), on a
+   phase-specific rationale: late-race simulation on tired legs, named by Daniels and Pfitzinger as
+   **the single most race-specific session** for these distances.
+
+🏃 **Hutchinson:** *"when a declared number has no designed channel, the likeliest error is the
+number, not the delivery."*
+
+## ⚖️ Ruling
+
+- **The mechanism is INCORRECT — vetoed and reverted.** `ruleEngine.ts` and `invariants.ts` carry
+  **no diff**; the golden snapshots were restored.
+- **`.build.specific_pct` is an UNDEFENDED NUMBER, not an unmet obligation.** §5 Amendment rewritten
+  to say so; the constant is flagged **declarative** at source.
+- **`INV-PLAN-BUILD-SPECIFICITY` is WITHDRAWN.** It was written at `warn` and removed: a check firing
+  on essentially every plan to enforce a value the board has called into doubt trains people to
+  ignore the output. **Not mechanically checkable because the value is unsettled** — a stated known
+  risk.
+
+**Two seats corrected their own prior reasoning, and both corrections came from the measurement
+rather than from argument:** 📊 Seiler had called the ladder *"a different ladder than the one
+documented"* when its exclusion is deliberate and reasoned; ⚕️ Sims's session-count test could not
+see intensity moving inside a session.
+
+🔻 **What a future sitting needs: a DOSE decision** — how much race-pace work, in which build weeks,
+at what fraction of the long run — argued on physiology, not on satisfying a config entry.
+🔻 **Ultras are the same shape and also 0.0%**, for the same documented reasons, untouched.
+✅ **Kept from this work:** `npm run measure:build-specificity`, which measures both channels and
+whose first version counted only `type === 'quality'` and was blind to the long-run channel the
+ladder's own comment designates.

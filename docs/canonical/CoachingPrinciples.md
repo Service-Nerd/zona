@@ -785,6 +785,88 @@ Seiler, recorded: two isolated exposures in the last weeks before a taper are *t
 
 ---
 
+
+### §5 Amendment — the build share is DECLARATIVE, and it has no designed channel *(Coaching Board 2026-10-06, BUILD-SPECIFICITY-ZERO-01)*
+
+**Ruling: the mechanism was INCORRECT (vetoed and reverted). The finding stands and is recorded:
+`SPECIFICITY_BY_PHASE.build.specific_pct` is an UNDEFENDED NUMBER, not an unmet obligation.**
+
+**Principle.** `.build.specific_pct` (30) is **declarative**. It is not enforced, and no invariant
+checks it, **because the value itself is unsettled** — not because enforcement was forgotten.
+
+**What was measured, and it stands.** Over 39,632 plans, counting both channels through which
+specificity can reach a week (quality rows **and** segmented long runs):
+
+| phase | §5 declares | delivered |
+|---|---|---|
+| **build** | **30%** | **0.0% — 0 of 155,724 specific-work slots** |
+| peak | 60% | 33.9% |
+| taper | 70% | 33.8% |
+
+🔴 **And `.build.specific_pct` has no consumer.** The constant's only reader is
+`INV-PLAN-PEAK-SPECIFICITY`, taking `.peak` alone. `.build`, `.taper` and every `general_pct` are
+read by nothing; `configConsumer.test.ts` passes the key on the NAME, and its own header cites this
+very constant as a prior example of that class.
+
+**🔴 WHY IT IS THE NUMBER THAT IS WRONG, NOT THE DELIVERY. BOTH CANDIDATE CHANNELS ARE CLOSED BY
+EXPLICIT DESIGN, IN TWO DIFFERENT FILES.**
+
+1. **The midweek quality slot.** `MIDWEEK_QUALITY_LADDER` is `['aerobic','threshold','vo2max']` and
+   excludes `race_specific` **deliberately**, with the reason written beside it: *"they are
+   long-run-slot work, not a midweek single-day session."* Measured, not assumed: a prototype
+   `race_specific` midweek row was **selected 7,644 times and ZERO of them in build**, because the
+   rotation filters each distance's focus through that ladder.
+2. **The long-run slot.** **§25 reserves the race-pace long run for PEAK**, in its principle
+   (*"Peak phase ... MUST contain at least one"*) and in its Config (*"peak-phase long-run path"*),
+   and its rationale is phase-specific: late-race simulation on already-tired legs, named by Daniels
+   and Pfitzinger as **the single most race-specific session** for these distances.
+
+**A declared share that two independent ratified design decisions prevent is an undefended number.**
+🏃 Hutchinson: *"when a declared number has no designed channel, the likeliest error is the number,
+not the delivery."*
+
+**Why the mechanism was refused, with the number.** Widening the producer gate from
+`phase === 'peak'` to `peak || build` did deliver — build 0.0% → 23.7%, HM 37.6%, marathon 33.3%,
+5K/10K untouched by construction — and every standing harness stayed green (`measure:fitness`
+byte-identical on every cohort and persona, refusals 1,840, `cohort:shape` exit 0,
+`review:coaching` six arms identical at 95.9%, `verify:parity` 536 of 5,832 declared). **It was
+still refused, because the harnesses are green for structural reasons:**
+
+| | |
+|---|---|
+| build non-deload weeks gaining a race-pace long run | **45.2%** |
+| race-pace km **added per plan** across build | median **24.5 km**, p90 42.6, max 60.6 |
+| share of build long-run km now at race pace | **16.6%** (was 0%) |
+
+⚠️ **Neither §1 nor `measure:fitness` can see that.** §1 counts sessions and the long run's `type`
+stays `easy`; `measure:fitness` counts distance and no distance changed. **Session count was
+unchanged at 262,988 and intensity still rose inside the session.**
+
+🎯 **McMillan:** *"a median of 24.5 km of added race-pace running across the build block, in 45% of
+its weeks, is not sharpening — it is racing your training. The day-job runner who does that arrives
+at peak already flat."*
+🩹 **Willy:** *"I ruled on a substitution that lowers intensity; this adds intensity to the one
+session that is already the week's largest tissue exposure"* — at the most fatigued point of it.
+
+**Two seats corrected their own prior reasoning, and both corrections came from the measurement.**
+📊 Seiler had called the ladder *"a different ladder than the one documented"*; its exclusion is
+**deliberate and reasoned**, and he had treated a documented decision as an oversight.
+⚕️ Sims's substitution condition was satisfied on session count and **that was the wrong test** —
+counting sessions cannot see intensity moving inside one.
+
+⚠️ **No invariant ships.** `INV-PLAN-BUILD-SPECIFICITY` was written at `warn`, then **withdrawn**: a
+check that fires on essentially every plan to enforce a value the board has just called into doubt
+trains people to ignore the output. **Not mechanically checkable because the value is unsettled** —
+a stated known risk, not an oversight.
+
+🔻 **What a future sitting needs: a DOSE decision** — how much race-pace work, in which build weeks,
+at what fraction of the long run — argued on physiology rather than on satisfying a config entry.
+🎯 *"A handful of times, in the sharpening weeks."*
+
+🔻 **Ultras are the same shape and also untouched.** 50K/100K focus is
+`['threshold','ultra_specific']`, excluded from the midweek ladder for the same documented reason,
+with no ultra equivalent of §25's long-run path. Their build specificity is **0.0%** too.
+
 ## 6. Taper — maintain intensity, cut volume, never detrain
 
 **Principle.** Volume drops sharply in the taper. Intensity is kept — quality sessions stay on the schedule, just shorter. The race week is for shakeouts, not training.

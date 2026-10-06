@@ -43,7 +43,8 @@
     "remediate:foundation": "NODE_ENV=production tsx scripts/recompose-foundation.ts",
     "button:geometry": "tsx scripts/button-geometry.ts",
     "remediate:raceweek": "tsx scripts/fix-race-week-volume.ts",
-    "measure:ramp-attribution": "tsx scripts/measure-delivered-ramp-attribution.ts"
+    "measure:ramp-attribution": "tsx scripts/measure-delivered-ramp-attribution.ts",
+    "measure:build-specificity": "tsx scripts/measure-build-specificity.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",

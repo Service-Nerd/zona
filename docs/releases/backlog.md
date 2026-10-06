@@ -6351,7 +6351,35 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ---
 
-### 🔴 `BUILD-SPECIFICITY-ZERO-01` — §5 declares the build phase 30% specific; it delivers **0.0%** 🏃 **COACHING BOARD** *(ruled; mechanism gated)*
+### 🟡 `BUILD-SPECIFICITY-ZERO-01` — RULED 2026-10-06: the MECHANISM is vetoed, the **NUMBER** is the defect. Needs a **DOSE** sitting 🏃 **COACHING BOARD**
+
+> ⚖️ **SITTING 5 — THE MECHANISM IS INCORRECT (vetoed and reverted). `.build.specific_pct` is an
+> UNDEFENDED NUMBER, not an unmet obligation.** Record: `docs/decisions/2026-10-06-build-specificity-finding.md`.
+> 🔴 **The ladder was the wrong lever and the code says so in words** — `MIDWEEK_QUALITY_LADDER`
+> excludes `race_specific` **deliberately** (*"long-run-slot work, not a midweek single-day
+> session"*), and a prototype midweek row was **selected 7,644 times, ZERO in build.**
+> ✅ **The real lever was found and built:** `useRaceSpecificLR = phase === 'peak'` → `peak || build`
+> delivered **build 0.0% → 23.7%** (HM 37.6%, marathon 33.3%, 5K/10K untouched by construction), with
+> **every harness green** — `measure:fitness` byte-identical, refusals 1,840, `cohort:shape` exit 0,
+> `review:coaching` 95.9%, parity 536/5,832.
+> 🔴 **AND IT WAS REFUSED, BECAUSE THE HARNESSES ARE GREEN FOR STRUCTURAL REASONS.** It adds a median
+> **24.5 km** of race-pace running per plan (**45.2%** of build weeks, **16.6%** of build long-run km)
+> at the most fatigued point of the week's largest session. **§1 counts sessions and the long run's
+> `type` stays `easy`; `measure:fitness` counts distance and none changed.** Session count was
+> unchanged at 262,988 and intensity still rose *inside* the session.
+> 🔍 **The scan settles it: BOTH channels are closed by explicit design, in two different files** —
+> the ladder's exclusion, and **§25 reserving the race-pace long run for PEAK** in its principle and
+> Config, on a rationale that is phase-specific (late-race simulation on tired legs).
+> 🏃 *"When a declared number has no designed channel, the likeliest error is the number."*
+> ⛔ **`INV-PLAN-BUILD-SPECIFICITY` WITHDRAWN** — written at `warn`, removed: a check firing on
+> essentially every plan to enforce a doubted value trains people to ignore it.
+> 🔻 **NEEDS: a DOSE sitting** — how much race-pace work, in which build weeks, at what fraction of
+> the long run, argued on physiology rather than on satisfying a config entry. 🎯 *"A handful of
+> times, in the sharpening weeks."*
+> 🔻 **Ultras are the same shape and also 0.0%** (`['threshold','ultra_specific']`, excluded from the
+> ladder, no ultra equivalent of §25's path), untouched.
+> ✅ **Kept: `npm run measure:build-specificity`** — measures BOTH channels; its first version counted
+> only `type === 'quality'` and was blind to the long-run channel the ladder's own comment designates.
 
 > ⚖️ **COACHING BOARD 2026-10-06 — THE DEFECT IS CORRECT AND RATIFIED; INSUFFICIENT EVIDENCE ON THE
 > MECHANISM ONLY.** Record: `docs/decisions/2026-10-06-build-specificity-finding.md`.

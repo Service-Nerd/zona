@@ -350,8 +350,36 @@ export const GENERATION_CONFIG = {
   // a 44-year-old — with zero race-pace work before the taper.
   PEAK_MAX_VO2MAX_SESSIONS: 2,
 
+  // ⚠️ ONLY `.peak.specific_pct` IS AN OBLIGATION. Everything else here is
+  // DECLARATIVE, and §5 Amendment (Coaching Board 2026-10-06,
+  // BUILD-SPECIFICITY-ZERO-01) says so explicitly rather than leaving it implied.
+  //
+  // `.peak.specific_pct` is read by `INV-PLAN-PEAK-SPECIFICITY`. NOTHING reads
+  // `.build`, `.taper` or any `general_pct`. Measured over 39,632 plans, counting
+  // both channels that can carry specificity (quality rows AND segmented long
+  // runs): build delivers **0.0%** against the 30 below, peak 33.9% against 60,
+  // taper 33.8% against 70.
+  //
+  // 🔴 BUILD'S 30 IS AN UNDEFENDED NUMBER, NOT AN UNMET OBLIGATION, and the board
+  // ruled it so after refusing the fix. Both channels that could deliver it are
+  // closed by EXPLICIT DESIGN, in two different files: `MIDWEEK_QUALITY_LADDER`
+  // excludes `race_specific` ("long-run-slot work, not a midweek single-day
+  // session"), and §25 reserves the race-pace long run for PEAK, on a rationale
+  // that is phase-specific (late-race simulation on tired legs).
+  //
+  // Widening the producer gate to `peak || build` WAS built and measured: build
+  // 0.0% -> 23.7%, every standing harness green — and refused, because the
+  // harnesses are green for structural reasons. It added a median **24.5 km** of
+  // race-pace running per plan at the most fatigued point of the week's largest
+  // session, which §1 cannot see (it counts sessions; the long run stays `easy`)
+  // and `measure:fitness` cannot see (it counts distance; none changed).
+  //
+  // DO NOT add an invariant for `.build` without a DOSE ruling first. One was
+  // written at `warn` and withdrawn: a check firing on essentially every plan, to
+  // enforce a value the board has called into doubt, trains people to ignore it.
   SPECIFICITY_BY_PHASE: {
     base:  { general_pct: 100, specific_pct: 0 },
+    // DECLARATIVE — see the note above. Not enforced; the value is unsettled.
     build: { general_pct: 70,  specific_pct: 30 },
     peak:  { general_pct: 40,  specific_pct: 60 },
     taper: { general_pct: 30,  specific_pct: 70 },
