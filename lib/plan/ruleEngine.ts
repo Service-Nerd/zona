@@ -2588,7 +2588,14 @@ function preferredQualityCategory(
   // the engine naming a session "HM-pace intervals" and then prescribing generic
   // threshold pace (a §19 label-integrity violation). Finish goals train the peak
   // on threshold + the long run (§80, time on feet).
-  if (distKey === 'HM' && isTimeTarget)      return 'race_specific'  // hm_pace_intervals
+  // §93 Amendment 1 — read from config, not a per-distance `if` chain. HM takes
+  // `hm_pace_intervals`; MARATHON takes `mp_blocks`, whose own purpose field is
+  // *"marathon pace away from the long run"* and which was selected 0.14 times
+  // per plan before this. See the constant for the measurement and for why 50K
+  // and 100K are deliberately absent.
+  if (isTimeTarget
+      && (GENERATION_CONFIG.TIME_TARGET_PEAK_RACE_SPECIFIC_DISTANCES as readonly string[])
+        .includes(distKey)) return 'race_specific'
   // MARATHON, 50K, 100K peak quality stays threshold; race-specific work goes in long-run slot.
   return 'threshold'
 }

@@ -6605,6 +6605,92 @@ completes CD-16.
 
 ---
 
+
+### §93 Amendment 1 — THE TIME-TARGETED MARATHON TAKES RACE-SPECIFIC PEAK QUALITY TOO (Coaching Board 2026-10-06, MARATHON-PEAK-ROTATION-01)
+
+**Principle.** §93's rule — *every peak quality slot not spent on VO2max is race-specific work* — is
+written *"for a time-targeted 10K"*. It extends to the **time-targeted marathon**. The distances
+taking race-specific work in the peak quality slot are named in
+`TIME_TARGET_PEAK_RACE_SPECIFIC_DISTANCES`.
+
+🔴 **WHY — AND THE FILED ITEM'S DIAGNOSIS WAS WRONG, SO HERE IS THE MEASURED ONE.** The peak
+preference was a chain of per-distance `if`s. HM was in it; MARATHON fell through to `threshold`
+behind the comment *"MARATHON, 50K, 100K peak quality stays threshold; race-specific work goes in
+long-run slot."*
+
+**That reason does not distinguish the two distances.** HM has a race-pace long-run row
+(`hm_pace_long_run`) *and* the midweek slot. Marathon has `mp_long_run` and did not.
+
+| measured, time-target plans | HM | MARATHON |
+|---|---|---|
+| race-specific exposures per plan | **5.99** | **3.19** |
+| of which midweek | 2.99 | **1.14** |
+| plan length | 16 wk | 18 wk |
+
+⚠️ **`mp_blocks` WAS SELECTED 0.14 TIMES PER PLAN**, and the mechanism is the point: it was reachable
+only through a **second** peak quality slot, which only **experienced** runners get (2 per peak week
+against intermediate's 1). Measured by cohort, `mp_blocks` per plan was **0.00 for beginner and
+intermediate at every volume** and 0.17–0.50 for experienced. **So an intermediate marathoner's only
+midweek race-pace session in an eighteen-week block was the taper sharpener.**
+
+⚠️ **THE ROW'S OWN `purpose` FIELD DESCRIBED THE GAP:** *"Marathon pace away from the long run. Goal
+pace on fresh legs, so it survives a week the long run does not."* A catalogue row authored for a
+need the engine never met is decorative, which this board has paid for before.
+
+### What the filed item got wrong, recorded because two of its three premises did not survive
+
+| item claimed | measured |
+|---|---|
+| the marathon has **only ONE** race-specific peak row | **two** — the catalogue is **symmetric** with HM (`mp_long_run` + `mp_blocks` against `hm_pace_long_run` + `hm_pace_intervals`) |
+| the fall-through is an oversight; *"the line's own comment names only `hm_pace_intervals`"* | there is a **second comment line** covering MARATHON/50K/100K **with its reason** |
+| the marathon gets *"half the rehearsal"* on a 3.19-vs-6.00 count | 🏃 **the unit is wrong** — a 30 km marathon-pace long run is not one unit of the same thing as an 8.5 km sharpener. The argument is the **unreachable midweek slot**, not the count |
+
+🎯 **AND McMILLAN'S BLOCKING CONDITION DISSOLVED RATHER THAN BEING MET.** He required a **second**
+marathon race-specific peak row, because the costed version added **3,408**
+`INV-PLAN-RACE-SPECIFIC-VARIETY` firings. Re-measured: **0 firings.** `VARIETY-ELIGIBILITY-01`
+(shipped the same morning, for a different item) taught that invariant to filter alternatives by
+fitness, and the marathon has no *other* eligible midweek race-specific peak row — so §104 is
+satisfied **by its own text** (*"while another eligible row exists"*). **No new catalogue row was
+needed, and CD-1's taxonomy objection never arises.**
+
+### Measured, before and after (39,632-plan cohort grid)
+
+| | before | after |
+|---|---|---|
+| marathon race-specific exposure / plan | 3.19 | **5.15** |
+| `mp_blocks` / plan | 0.14 | **1.42** |
+| peak specific share (§5 declares 60%) | 33.9% | **39.8%** |
+| build specific share | 6.7% | 6.7% (untouched) |
+| ⚕️ **quality sessions** (Sims's substitution condition) | 262,988 | **262,988** |
+| 📊 **§1 quality share** (Seiler) | 11.8% | **11.8%** |
+| §104 firings · error-severity violations | — | **0 · 0** |
+| fit-for-purpose, every distance | — | **unchanged** (marathon 91.8%) |
+| 🩹 `measure:fitness` injury cohort (Willy, binding) | 36.4% / 41.2%, 0% never-builds | **identical** |
+| `cohort:shape` | — | **unchanged** |
+
+🩹 **Willy, withdrawing his dose objection:** *"it is a substitution, not an addition — and the
+session that leaves is a THRESHOLD session while the one that arrives is at marathon pace, which is
+slower. Per-km stress goes down; time-at-effort goes up."* ⚠️ **His standing caveat:** this places
+`mp_blocks` in the peak alongside the marathon-pace long run, and **the pattern scales with phase
+length — re-measure if the peak is ever lengthened.**
+
+⚠️ **50K AND 100K ARE DELIBERATELY ABSENT.** Nothing in this measurement speaks to them, and
+extending on symmetry alone is the mistake the item made.
+
+⚠️ **10K IS ABSENT FROM THE LIST AND STILL REACHES THE CATEGORY**, by a different route: its branch
+spends `PEAK_MAX_VO2MAX_SESSIONS` first and only then turns to race-specific. **The list is the
+DIRECT path, not an exhaustive statement of which distances get race-specific peak work.**
+
+**Config.** `TIME_TARGET_PEAK_RACE_SPECIFIC_DISTANCES = ['HM', 'MARATHON']`.
+**Enforced by** `INV-PLAN-PEAK-RACE-SPECIFIC-REACHED`.
+
+🔴 **THE INVARIANT EXPOSED A PRE-EXISTING HM DEFECT AND IT IS DECLARED DEBT, NOT AN EXEMPTION.**
+With this amendment applied, **576 of 2,865** eligible plans still carry no race-specific peak
+quality and **every one is HM** (288/576 intermediate, 288 experienced across slot counts) — HM's
+preference has returned `race_specific` all along. Filed as `HM-PEAK-RACE-SPECIFIC-GAP-01`; the
+`PEAK_RS_DEBT` entry is deleted when it ships. Gating it now would fire the check at 20.1%, which by
+🩹 Willy's own NOISE-GATE-01 standard is noise and gets suppressed.
+
 ## 94. §2 is measured at delivery for every runner, not only the injured
 
 **Principle.** The week-on-week volume cap is checked against the **placed

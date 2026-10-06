@@ -160,6 +160,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RUNWALK-PRESCRIBED',
   'INV-PLAN-RUNWALK-CAP-NOT-REDUCED',
   'INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY',
+  'INV-PLAN-PEAK-RACE-SPECIFIC-REACHED',
   'INV-PLAN-RUNWALK-ADEQUATE',
   'INV-PLAN-GET-RUNNING-BUILD-RATIO',
   'INV-PLAN-ONRAMP-CURVE-CLIMBS',
@@ -6526,6 +6527,71 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         actual: 'finish_goal_run_walk with a volume-capped injury history',
         expected: 'run_walk_prescribed only — the peak is not reduced',
       })
+    }
+  }
+
+  // INV-PLAN-PEAK-RACE-SPECIFIC-REACHED — §93 Amendment 1 (Coaching Board
+  // 2026-10-06, MARATHON-PEAK-ROTATION-01).
+  //
+  // A distance whose peak quality slot PREFERS race-specific work must actually
+  // receive some. §93's ladder was decorative once already — *"§5 declares
+  // peak 60% specific and no engine code has ever read it"* — and a preference
+  // that returns a category the catalogue cannot supply is the same failure
+  // wearing a different coat.
+  //
+  // 🔴 WHY IT IS NEEDED: `mp_blocks` was selected **0.14 times per marathon
+  // time-target plan**, because the preference line stopped at HM and the row was
+  // reachable only through a SECOND peak quality slot, which only experienced
+  // runners get (2 per peak week against intermediate's 1). Its own `purpose`
+  // field — *"marathon pace away from the long run"* — described a gap nothing
+  // filled.
+  //
+  // ⚠️ HM IS DECLARED DEBT, NOT AN EXEMPTION, and the number is the reason it is
+  // visible here rather than hidden in the predicate. Measured 2026-10-06 with
+  // §93 Am.1 applied: of 876 eligible plans, **316 still carry no race-specific
+  // peak quality and EVERY ONE IS HM** — 164/378 intermediate, 152/366
+  // experienced (measured without the maintenance skip: 576 of 2,865, 20.1%).
+  // Marathon fires **zero**. HM's preference has returned
+  // `race_specific` all along, so that is a PRE-EXISTING defect with its own
+  // cause, filed as `HM-PEAK-RACE-SPECIFIC-GAP-01`. Gating it here would make
+  // this check fire at 36%, which by Willy's own NOISE-GATE-01 standard is noise
+  // and gets suppressed. **Delete the entry when the item ships — it is a debt
+  // register, not a carve-out.**
+  {
+    const PEAK_RS_DEBT: ReadonlySet<string> = new Set(['HM'])
+    const dk = raceDistanceKey(input.race_distance_km)
+    const prefers = (GENERATION_CONFIG.TIME_TARGET_PEAK_RACE_SPECIFIC_DISTANCES as readonly string[])
+      .includes(dk)
+    // ⚠️ MAINTENANCE IS NOT EXCLUDED, AND THE FIRST CUT OF THIS ARM EXCLUDED IT.
+    // That looked prudent and was the "checker's population excludes the cases at
+    // risk" fault: **72.7% of marathon plans are `maintenance`**, so the skip
+    // removed most of the population this rule was written for — eligible plans
+    // went 2,865 -> 876. A maintenance plan still has peak quality slots and
+    // still fills them (measured: three `mp_blocks` on the board's own fixture),
+    // so there was nothing to exclude. Marathon fires ZERO either way; the only
+    // thing the skip changed was how much of the product went unchecked.
+    if (isTimeTarget && prefers && !PEAK_RS_DEBT.has(dk)) {
+      const peakQuality = plan.weeks
+        .filter(w => w.n >= 1 && w.phase === 'peak' && w.type !== 'deload')
+        .flatMap(w => Object.values(w.sessions).filter((sn): sn is Session => sn?.type === 'quality'))
+      // No peak quality at all is a different rule's business (§1's ceiling, §93's
+      // own provisioning). This asserts only that where slots EXIST, the category
+      // the preference names is reached.
+      if (peakQuality.length > 0) {
+        const anyRaceSpecific = peakQuality.some(sn =>
+          catalogueRowFor(sn, V1_SESSION_CATALOGUE)?.category === 'race_specific')
+        if (!anyRaceSpecific) {
+          violations.push({
+            code: 'INV-PLAN-PEAK-RACE-SPECIFIC-REACHED',
+            principle_ref: 'CoachingPrinciples §93 Am.1, §5, §22',
+            severity: 'error',
+            week: 0,
+            message: `Time-targeted ${dk} plan: the peak quality preference names race_specific and not one of its ${peakQuality.length} peak quality session(s) is race-specific work. §93 Am.1 — a preference the catalogue cannot supply is a declared ladder with nothing behind it.`,
+            actual: `0 of ${peakQuality.length} peak quality sessions race-specific`,
+            expected: 'at least one race-specific peak quality session',
+          })
+        }
+      }
     }
   }
 

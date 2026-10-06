@@ -275,6 +275,39 @@ export const GENERATION_CONFIG = {
   // contributes and is not yet traced. Do not read this as solved.
   INJURY_RECOVERY_WEEK_VOLUME_PCT: 85,
 
+  // §93 Amendment 1 (Coaching Board 2026-10-06, MARATHON-PEAK-ROTATION-01) —
+  // WHICH TIME-TARGET DISTANCES TAKE RACE-SPECIFIC WORK IN THE PEAK QUALITY SLOT.
+  //
+  // §93's principle is written *"for a time-targeted 10K"* — general in spirit,
+  // 10K in text — and the engine encoded it as a chain of per-distance `if`s.
+  // HM was in the chain; MARATHON fell through to `threshold` behind the comment
+  // *"MARATHON, 50K, 100K peak quality stays threshold; race-specific work goes
+  // in long-run slot."*
+  //
+  // 🔴 THAT REASON DOES NOT DISTINGUISH THE TWO DISTANCES. HM has a race-pace
+  // long-run row too (`hm_pace_long_run`), and gets the midweek slot as well.
+  // Measured: a time-target HM plan carries 5.99 race-specific exposures, a
+  // marathon 3.19 — and `mp_blocks` was selected **0.14 times per plan**, i.e.
+  // only ever in a SECOND peak quality slot, which only EXPERIENCED runners get
+  // (2 per peak week against intermediate's 1). So an intermediate marathoner's
+  // only midweek race-pace session in an 18-week block was the taper sharpener.
+  //
+  // ⚠️ `mp_blocks`'s own `purpose` field describes the gap: *"Marathon pace away
+  // from the long run. Goal pace on fresh legs, so it survives a week the long
+  // run does not."* The row was authored for this and was unreachable.
+  //
+  // ⚠️ 50K AND 100K ARE DELIBERATELY ABSENT. Nothing in the measurement speaks to
+  // them, and extending this on symmetry alone is the mistake the filed item made
+  // (it claimed the marathon had only one race-specific row; the catalogue is
+  // symmetric with HM, and the asymmetry was in the preference line).
+  //
+  // ⚠️ 10K IS ABSENT AND STILL GETS RACE-SPECIFIC PEAK WORK, by a different
+  // route: its branch spends `PEAK_MAX_VO2MAX_SESSIONS` first and only then turns
+  // to race-specific. This list is the DIRECT path, not the whole truth about
+  // which distances reach the category — a list that read as exhaustive would be
+  // the more dangerous shape.
+  TIME_TARGET_PEAK_RACE_SPECIFIC_DISTANCES: ['HM', 'MARATHON'] as const,
+
   // §2 Amendment 3 (PLAN-FITNESS-01, Coaching Board 2026-09-17) — WILLY'S
   // CONDITION, MADE MECHANICAL.
   //

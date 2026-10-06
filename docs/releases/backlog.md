@@ -6339,9 +6339,50 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
 
-### 🟠 🏃 `MARATHON-PEAK-ROTATION-01` — the marathon is the only time-target distance whose PEAK quality is not race-specific
+### 🟠 🏃 `HM-PEAK-RACE-SPECIFIC-GAP-01` — HM's peak preference returns `race_specific` and 20% of HM plans get none *(filed 2026-10-06, P2)* 🏃 **COACHING BOARD**
 
-> ⚖️ **COSTED AND NOT SHIPPED 2026-10-06 (peak-length sitting). INSUFFICIENT EVIDENCE on the dose.**
+> **Found by the invariant written for `MARATHON-PEAK-ROTATION-01`** — it is the first check that ever
+> asked whether the peak preference's named category actually arrives.
+>
+> 🔴 **MEASURED, with §93 Am.1 applied: 576 of 2,865 eligible plans (20.1%) carry NO race-specific
+> peak quality, and EVERY ONE IS HM.** Marathon fires zero. Breakdown: 288/576 intermediate at 3 peak
+> quality slots; the rest experienced across slot counts 2, 3, 4, 6, 8, 10.
+>
+> ⚠️ **This is PRE-EXISTING and nothing to do with the marathon change.** `if (distKey === 'HM' &&
+> isTimeTarget) return 'race_specific'` has been in the engine throughout, and `hm_pace_intervals` is
+> `fitness_level_min: 'intermediate'`, so eligibility is not the obvious cause. Aggregate selection is
+> **1.02 `hm_pace_intervals` per HM time-target plan** — consistent with roughly two thirds getting one
+> and a third getting none.
+>
+> 🔻 **The cause is NOT diagnosed.** Candidates, none measured: the VO2max allowance consuming the
+> slot (§93's `PEAK_MAX_VO2MAX_SESSIONS` vs a short peak); `hm_pace_intervals`'s `sizing: 'fixed'`
+> failing a session floor; or §104/§93's same-category-per-week rule displacing it. **Run
+> `/zona-debug` before `/build` — this needs an RCA, not a guess.**
+>
+> ⚠️ **Impact if not done:** a time-targeted HM runner can reach race week with no marathon-… no
+> HM-pace quality session in the peak phase at all, while the plan's own declared shape says the peak
+> is 60% specific (§5). Not a validity failure today — it is held as declared debt in
+> `INV-PLAN-PEAK-RACE-SPECIFIC-REACHED`'s `PEAK_RS_DEBT`, **and that entry is deleted when this
+> ships.**
+>
+> ⚠️ **Re-measure before picking it up.** The 20.1% is as of `59493a1c` on the 39,632-plan cohort grid
+> at stride 3; §93 Am.1 landed the same day and moved the denominator.
+
+---
+
+### ✅ 🏃 `MARATHON-PEAK-ROTATION-01` — SHIPPED 2026-10-06 (§93 Am. 1). Two of its three premises were wrong, and its blocker had already dissolved
+
+> ✅ **SHIPPED 2026-10-06 as §93 Amendment 1 — one line, reading `TIME_TARGET_PEAK_RACE_SPECIFIC_DISTANCES`.**
+> Marathon exposure/plan **3.19 → 5.15**, `mp_blocks` **0.14 → 1.42**, peak specific share 33.9% → 39.8%;
+> quality-session count and §1 share **identical both sides**; envelope, `measure:fitness` and `cohort:shape`
+> **all unchanged**. 🎯 **McMillan's blocking condition DISSOLVED rather than being met** — the 3,408 §104
+> firings that required a second catalogue row measure **0** now, because `VARIETY-ELIGIBILITY-01` (shipped the
+> same morning, for a different item) taught the variety invariant to filter alternatives by fitness.
+> 🔴 **Two of three premises were WRONG:** the catalogue is **symmetric** with HM (two race-specific rows each,
+> not one), and the fall-through is **documented intent** with a second comment line giving its reason — not an
+> oversight. The real argument is the **unreachable midweek slot**: `mp_blocks` was 0.00/plan for beginner AND
+> intermediate at every volume. 🔴 **It also exposed a pre-existing HM defect** → `HM-PEAK-RACE-SPECIFIC-GAP-01`.
+> ⚖️ **Superseded record below (costed, not shipped).**
 > Record: `docs/decisions/2026-10-06-build-specificity-finding.md`. Filed because it was found in
 > doctrine prose and nothing scheduled it.
 >
