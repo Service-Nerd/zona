@@ -5522,7 +5522,35 @@ it was inherited."*
 the grid** — blocking 6 days is a legitimate statement ("I can run once a week"); the defect is
 that the other control then disagrees in silence.
 
-#### 🟠 `DAYS-GATE-CAPACITY-01` — **RCA DONE 2026-10-02. MOSTLY ALREADY RULED, and my headline claim was FALSE** 🏃 **COACHING BOARD** *(P3; the one real half is a note's wrong REASON)*
+#### ✅ 🏃 `DAYS-GATE-CAPACITY-01` — HALF (1) SHIPPED 2026-10-06. Half (2) stays FOUNDER-OWNED. ⚙️ NO BOARD
+
+> ✅ **HALF (1) SHIPPED — the note names the REAL reason.** `frequency_constraint_note` fired whenever
+> `lo < declared`, which is cause-agnostic, and then hard-coded the volume sentence. §18 Amendment
+> requires it to name the days declared, the days used **and the reason**; it named a wrong one.
+> It now branches on whether capacity binds (`7 − blocked < declared`), with a third branch for both.
+> ⚙️ **Coaching Board EXEMPT** — restores documented intent, no prescription change, only the sentence.
+>
+> 📊 **MEASURED BEFORE BUILDING, AND THE DEFECT IS NARROW.** Of **2,218** plans carrying the note:
+> **99.5% (2,208) are genuinely volume-limited** and the old sentence was correct for them;
+> **0.5% (10) are blocked-day-limited** and were told the wrong thing. All ten came from a cohort I had
+> to construct, because `cohortGrid()` barely blocks days — which matches this item's own production
+> read: **0 of 19 checkable plans affected, most days ever blocked by a real runner is 4**, and the
+> path in is the Adjust sheet, which no runner has taken.
+>
+> 🧪 **`lib/plan/frequencyNoteCause.test.ts`** — 4 arms on a **constructed** cohort, because a gate
+> pointed at the grid would pass while saying nothing. **Falsified:** disabling the blocked-day branch
+> reddens two arms. ✅ **And the existing `frequencyConstraintNote.test.ts` arm 7 has been FLIPPED** —
+> it pinned the wrong reason deliberately with the instruction *"when half (1) ships, this expectation
+> must flip to naming the blocked days"*. It has, so it did.
+> ⚠️ **Fixture note:** `declared 6 / blocked 5` is deliberately avoided in both gates — it throws
+> `INV-PLAN-QUALITY-NOT-ZERO`, which is half (2). `blocked 4` is the same defect with a plan that
+> generates.
+>
+> 🛑 **HALF (2) IS UNTOUCHED AND STAYS THAT WAY.** The gate reading `days_available` rather than
+> `min(declared, 7 − blocked)` is the open **`block`-tier** question and carries *"Ask Russ before
+> touching it."* Patching it would decide an open ruling by implementation.
+> 📐 Regression: `verify` exit 0 / 4,331 tests · `review:coaching` all six arms identical, envelope
+> **95.9%**.
 
 🏃 **COACHING BOARD**, after `/zona-debug`. **Not a design question:** it changes what the
 engine REFUSES.

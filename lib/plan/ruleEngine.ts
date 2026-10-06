@@ -8834,9 +8834,49 @@ function buildRulePlanOnce(
     const lo = Math.min(...counts), hi = Math.max(...counts)
     if (lo >= declared) return null
     const grows = hi > lo
-    return `You told us you can run ${declared} days a week. This plan uses `
+
+    // DAYS-GATE-CAPACITY-01 (2026-10-06) — THE NOTE FIRED FOR EVERY CAUSE AND
+    // EXPLAINED ONLY ONE.
+    //
+    // It fires whenever `lo < declared`, which is cause-agnostic, and then
+    // hard-coded the VOLUME reason. §18 Amendment (FREQ-SILENCE-01) requires the
+    // note to name the days declared, the days used, AND THE REASON. A runner who
+    // blocked Monday to Friday was told their weekly volume was why, when their
+    // own blocked days were. Naming a wrong reason is worse than naming none: it
+    // sends them to the one lever that will not help.
+    //
+    // ⚠️ MEASURED FIRST, AND THE DEFECT IS NARROW. Of 2,218 plans carrying this
+    // note, **99.5% (2,208) are genuinely volume-limited** and the old sentence was
+    // correct for them; **0.5% (10) are blocked-day-limited**. All ten came from a
+    // constructed blocked-day cohort, because `cohortGrid()` barely blocks days —
+    // which matches the item's own production read (0 of 19 checkable plans
+    // affected, most days ever blocked by a real runner is 4, and this needs 5-6).
+    //
+    // ⚙️ Coaching Board EXEMPT: restores documented intent, no prescription change.
+    // Only the sentence moves.
+    const capacity = 7 - normaliseDays(input.days_cannot_train).size
+    const capacityBinds = capacity < declared
+    // Does volume cut BELOW what the clear days could carry?
+    const volumeAlsoBinds = lo < capacity
+
+    const opener = `You told us you can run ${declared} days a week. This plan uses `
       + (grows ? `${lo}, building to ${hi}` : `${lo}`)
-      + `, because your weekly volume spread any thinner would make every run too short to do much. `
+
+    if (capacityBinds && volumeAlsoBinds) {
+      // ⚠️ REACHED BY NOTHING IN TODAY'S CORPUS (measured: 0 of 2,218). Written
+      // anyway because the alternative is this case falling into one of the two
+      // branches below and naming half a reason, which is the defect being fixed.
+      return `${opener}. You have blocked ${7 - capacity} days, so ${capacity} are clear, and your `
+        + `weekly volume will not stretch across all of them yet. `
+        + (grows
+            ? `The days come back as the volume grows.`
+            : `More volume adds a day; freeing one up adds another.`)
+    }
+    if (capacityBinds) {
+      return `${opener}, because you have blocked ${7 - capacity} days and only ${capacity} are clear. `
+        + `Freeing up a day is what adds one, not more volume.`
+    }
+    return `${opener}, because your weekly volume spread any thinner would make every run too short to do much. `
       + (grows
           ? `The days come back as the volume grows.`
           : `More weekly volume is what adds days: until then, ${lo} honest runs beat ${declared} token ones.`)

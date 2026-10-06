@@ -133,12 +133,18 @@ describe('FREQ-SILENCE-01', () => {
   })
 
   // 🔴 PINNED DEFECT, not an endorsement. `DAYS-GATE-CAPACITY-01` half (1).
-  it('7. ⚠️ and it gives the WRONG REASON — pinned so the fix is deliberate', () => {
+  // ✅ FLIPPED 2026-10-06 (DAYS-GATE-CAPACITY-01 half 1). The previous arm pinned
+  // the WRONG REASON on purpose, with the instruction "when half (1) ships, this
+  // expectation must flip to naming the blocked days". It has shipped, so it has.
+  it('7. names the BLOCKED DAYS as the reason, because that is what binds here', () => {
     const plan = generateRulePlan(BLOCKED, 'paid', PINNED_PLAN_START_0921)
     const note = plan.meta!.frequency_constraint_note!
-    // The runner blocked Monday-Friday. Volume is not why. When half (1) ships,
-    // this expectation must flip to naming the blocked days, and this comment goes.
-    expect(note, 'if this no longer matches, the attribution was fixed — update the arm')
-      .toContain('your weekly volume spread any thinner')
+    // This runner declared 6 and blocked 4, so capacity is 3 and capacity is what
+    // binds. §18 Am. requires the note to name THE reason, and volume is not it.
+    expect(note).toMatch(/you have blocked 4 days and only 3 are clear/)
+    expect(note, 'must no longer blame weekly volume')
+      .not.toContain('your weekly volume spread any thinner')
+    expect(note, 'and must point at the lever that works')
+      .toContain('Freeing up a day is what adds one, not more volume')
   })
 })

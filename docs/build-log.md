@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — DAYS-GATE-CAPACITY-01 · a test that pinned the wrong answer on purpose, and told me when to flip it
+**Shipped:** the frequency note names blocked days as the reason when blocked days are the reason, instead of always blaming weekly volume.
+**Dev learning:** the best thing in this build was written ten days ago by someone else's hand: an existing test arm that asserted the WRONG behaviour, with a comment saying "when half (1) ships, this expectation must flip to naming the blocked days, and this comment goes". My fix turned it red, which is precisely what it was for. **A deliberately-pinned defect is a better handover than a TODO, because it fails when you fix it.**
+**Product/creator learning:** I measured before building and the defect is 0.5% of plans carrying this note. 99.5% are genuinely volume-limited and the old sentence was right for them. Worth fixing anyway, because naming a wrong reason is worse than naming none: it points the runner at the one lever that cannot help them.
+**AI-building learning:** both of my first fixtures were unusable and for opposite reasons. The blocked-day case I picked (declared 6, blocked 5) THROWS an error-severity invariant under NODE_ENV=test, which is the item's other half and explicitly do-not-fix. The volume case I picked emitted no note at all, because an intermediate at 25 km simply gets all six days. **Two vacuous arms in one file, caught only by asserting the note was non-empty first.**
+**The honest bit:** the throw did not reproduce when I ran the same input through tsx, which cost me a confusing few minutes. The difference is NODE_ENV: validatePlan throws on error severity under test and only logs otherwise. That is documented in CLAUDE.md and I had read it today.
+**Hook material:** 2,218 plans carry this note. 10 of them were being told the wrong reason. The fix is three branches and the test that caught it was written to fail.
+**Postable?:** maybe
+
+
 ## 2026-10-06 — MKT-PLAN-SEGMENT-ENGINE-BASIS-01 · a fixture that cannot tell two hypotheses apart is not a test
 **Shipped:** the engine now reads `race_pace_pct` as a share of the long run's DURATION, harmonically, matching §25 Am. 2 and the composer.
 **Dev learning:** I could not write the obvious gate. A generated plan carries no pace guide — `minPerKmEasy` appears nowhere in the plan JSON — and `pace_target` is a DISPLAY range ("7:00-8:20 /km") against an actual 8.58 min/km used for sizing. So a plan-level identity check would have had to re-derive VDOT, which is the checker computing the answer the same way the producer did. The gate became behavioural with injected paces instead, which is a better test and took three attempts to realise.
