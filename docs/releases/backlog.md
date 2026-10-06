@@ -28,6 +28,47 @@ already decided what it is.
 ---
 
 
+### 🟡 `ENVELOPE-BASELINE-UNGATED-01` — the envelope baseline RECORDS six quantities and GATES one *(filed 2026-10-06, P2)* ⚙️ **NO BOARD**
+
+> **Found while shipping `MARATHON-BEGINNER-FLOOR-01`, by comparing the committed baseline against
+> what HEAD actually produces before re-baselining.**
+
+**The committed baseline claimed marathon `fitPct` 89.5 and `doorPct` 90.2. HEAD produces 89.4 and
+90.5.** So 0.1pp and 0.3pp of drift were sitting in the fixture, uncaused by the change that then
+absorbed them into its own `--write` diff.
+
+`useCaseEnvelope.test.ts` compares **`fitPct` and `productFitPct` only**, at a **0.6pp** tolerance:
+
+```ts
+const check = (label, now, was) => { if (Math.abs(now - was) > 0.6) moves.push(...) }
+```
+
+So `doorPct`, `servedRefusedPct`, `refusedPct`, `objections` and `watched` are **written by
+`--write` and compared by nothing.** The fitPct drift hid under the tolerance; the doorPct drift had
+no gate at all.
+
+🔴 **WHY IT MATTERS, AND IT IS NOT THE 0.3pp.** `measure-envelope.ts`'s own header says
+re-baselining *"IS the statement of what a change did to the population"*. That is true only of the
+fields something compares. **A number in a JSON fixture reads as MEASURED AND GATED when it is
+merely recorded** — identical to `c67141e8` (three liveness-baseline fields written by `--write` and
+read by nothing) and to the decorative-config family. `doorPct` is the figure McMillan's §117 Am.4
+condition requires to be reported PER BAND; it is the one most likely to be quoted at a sitting.
+
+⚠️ **AND A RE-BASELINE SILENTLY LAUNDERS IT.** Whoever next runs `--write` for a real reason commits
+someone else's drift under their own change's name, which is exactly the
+`A RATCHET MUST NOT MOVE WITHOUT A MEASUREMENT` failure. **This item's drift has already been
+absorbed once, in this commit, and is declared there.**
+
+**The build.** Gate every numeric field the baseline records, each with its own declared tolerance
+(not one shared 0.6pp — a rate and a percentage-of-refusals are different quantities), and have
+`--write` print a field-by-field diff rather than only the fitPct line. **Falsify by hand-editing a
+single `doorPct` in the fixture and confirming the suite goes red** — today it stays green.
+
+⚠️ **Re-measure before building:** this item states 0.1pp/0.3pp as of HEAD `25893246`. Those figures
+move with the engine, and the item's point is the MISSING GATE, not the magnitude.
+
+---
+
 ### 🟠 `LOG-OFFPLAN-03` — STILL BLOCKED 2026-10-06, but **THE BLOCKER HAS CHANGED SHAPE: it is now the LINK RATE, not the user count** 🏃 COACHING BOARD
 
 > 🟠 **RE-MEASURED IN PRODUCTION (read-only) 2026-10-06. The sample grew; the thing it needs did not.**

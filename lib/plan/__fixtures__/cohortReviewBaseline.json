@@ -14,7 +14,7 @@
    "8": {
     "n": 219,
     "refusedPct": 67.9,
-    "cleanPct": 10.1,
+    "cleanPct": 10.2,
     "servedPct": 100,
     "doorPct": 100,
     "objections": {
@@ -24,11 +24,11 @@
    "15": {
     "n": 220,
     "refusedPct": 35.1,
-    "cleanPct": 15.5,
+    "cleanPct": 23.4,
     "servedPct": 100,
     "doorPct": 100,
     "objections": {
-     "LONG-RUN-SHORT": 45.6,
+     "LONG-RUN-SHORT": 35.3,
      "WEEK1-LEAP": 27.3,
      "BINGE-WEEK": 0.2
     }

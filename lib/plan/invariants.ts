@@ -10,6 +10,7 @@
 // logs in production (does not break the user).
 
 import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
+import { runWalkPrescriptionApplies } from './runWalkPlan'
 import { strideCarrierDay, isDayAfterLongRun, hasHillRestrictingInjury } from './neuromuscular'
 import { normaliseDays } from './days'
 import { sessionFloorsFor } from './sessionFloors'
@@ -158,6 +159,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-FOUNDATION-BLOCK',
   'INV-PLAN-RUNWALK-PRESCRIBED',
   'INV-PLAN-RUNWALK-CAP-NOT-REDUCED',
+  'INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY',
   'INV-PLAN-RUNWALK-ADEQUATE',
   'INV-PLAN-GET-RUNNING-BUILD-RATIO',
   'INV-PLAN-ONRAMP-CURVE-CLIMBS',
@@ -6523,6 +6525,47 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         message: `Plan carries §117's reduced peak AND a §12 volume-capped injury history (${injuries.join(', ')}). The reduction lowers §111's door, and this runner's door is already open — the cap lowered their peak for them. They keep the run-walk prescription and their own peak.`,
         actual: 'finish_goal_run_walk with a volume-capped injury history',
         expected: 'run_walk_prescribed only — the peak is not reduced',
+      })
+    }
+  }
+
+  // INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY — §117 amendment 5.
+  //
+  // A beginner finish-goal marathoner whose longest recent run is under
+  // RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE of the race gets the run-walk
+  // INSTRUCTION, whether or not their weekly volume put them below §117's door.
+  //
+  // 🔴 WHY IT IS AN INVARIANT AND NOT JUST A PREDICATE. The marathon read 89.4%
+  // against the founder's 90% per-distance floor, and the entire deficit was the
+  // 8 and 15 km/week beginner cohorts — a runner at 15 km/week clears the door by
+  // two kilometres with a 7 km longest run and was told to RUN 42.2 km.
+  //
+  // ⚠️ IT CALLS THE OWNER, IT DOES NOT RESTATE IT. `INJURY-GUARD-PREDICATE-01`,
+  // thirty lines above, is this file's own record of what a second copy costs:
+  // one arm matched `'Shin splints'` by substring luck and the other did not.
+  // `runWalkPrescriptionApplies` is a leaf both the engine and this file import.
+  //
+  // ⚠️ 🩹 WILLY'S BINDING CONDITION IS *NOT* CHECKED HERE, AND SAYING SO IS THE
+  // POINT. He made "no peak may fall" a condition of the ruling. A validator
+  // cannot see a counterfactual peak, and the honest expression of the condition
+  // — `runWalkApplies` returning false while the peak was still reduced —
+  // needs `standardLevelPeakKm`, which this function does not hold.
+  // It is held instead by `runWalkPrescribeReadiness.test.ts`: the readiness
+  // route must leave `finish_goal_run_walk` UNSET, which is the flag that
+  // reduces a peak, and the ruling's evidence is the 33,792-case before/after in
+  // which PEAK WEEK moved 0 times. An unenforceable half is a known risk, not an
+  // oversight.
+  {
+    const unready = runWalkPrescriptionApplies(input)
+    if (unready && !plan.meta.run_walk_prescribed) {
+      violations.push({
+        code: 'INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY',
+        principle_ref: 'CoachingPrinciples §117 Am.5',
+        severity: 'error',
+        week: 0,
+        message: `Beginner finish-goal ${input.race_distance_km}km runner whose longest recent run is ${input.longest_recent_run_km}km (${((input.longest_recent_run_km ?? 0) / input.race_distance_km * 100).toFixed(0)}% of the race) carries no run-walk prescription. §117 Am.5 — readiness to RUN is answered by the longest run, not by weekly volume. They are going to walk; a plan that does not say so is lying.`,
+        actual: 'no run_walk_prescribed',
+        expected: 'run_walk_prescribed, with the peak unchanged',
       })
     }
   }

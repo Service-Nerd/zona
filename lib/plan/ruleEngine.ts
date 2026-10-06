@@ -17,7 +17,7 @@ import { qualityCeilingFor } from './qualityCeiling'
 import { waterFillEasyKm } from './easyDistribution'
 import { longRunTimeCapMins } from './longRunTimeCap'
 import { LR_SHORTFALL_UNREHEARSED_FUELLING, FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
-import { runWalkApplies, runWalkPeakKm, applyRunWalk } from './runWalkPlan'
+import { runWalkApplies, runWalkPrescriptionApplies, runWalkPeakKm, applyRunWalk } from './runWalkPlan'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 // ADR-015 / INV-FMT-001 — `lib/format.ts` is the SOLE owner of every duration a
 // runner reads, and the rule is locked: under 60 minutes reads "45 min", at or
@@ -6527,6 +6527,27 @@ function buildRulePlanOnce(
   const runWalkVolumeCapped = hasVolumeCappedInjury(input)
   const isRunWalk = runWalkEligible && !runWalkVolumeCapped
   const levelPeakKm = isRunWalk ? runWalkPeakKm() : standardLevelPeakKm
+  // §117 Amendment 5 — THE SECOND ROUTE TO THE PRESCRIPTION, ON READINESS TO RUN.
+  //
+  // Am. 4 separated the prescription from the peak reduction for a runner whose
+  // door was already open. This is the MIRROR cohort: a beginner finish-goal
+  // marathoner whose WEEKLY VOLUME clears §117's door but whose LONGEST RECENT
+  // RUN says they are nowhere near running the distance.
+  //
+  // 🔴 MEASURED, and it is why the marathon sat at 89.4% against the founder's
+  // 90% per-distance floor while WHOLE PRODUCT read 95.9%. The entire deficit was
+  // the 8 and 15 km/week beginner cohorts. At 8 km/wk the runner falls BELOW the
+  // door (`effectiveStartKm < 13`) and gets run-walk; at 15 km/wk they clear it by
+  // two kilometres with an identical 7 km longest run and get nothing.
+  // LONG-RUN-SHORT then fired on 45.6% of that band against 21.9% of the one below.
+  //
+  // ⚠️ IT FEEDS ONLY THE PRESCRIPTION. `isRunWalk` is computed ABOVE this line and
+  // is deliberately untouched, so `levelPeakKm` cannot move. 🩹 Willy made "no peak
+  // may fall" a binding condition: this cohort's problem is that their long run is
+  // SHORT, and a lower peak would make it shorter. Measured over 33,792 envelope
+  // cases, peak week moved 0 times. Gated by `runWalkPrescribeReadiness.test.ts`
+  // ARM 2, which goes red if this predicate is wired into `isRunWalk` instead.
+  const runWalkPrescribed = runWalkEligible || runWalkPrescriptionApplies(input)
 
   const declaredUpward = declaredLevel !== undefined
     && FITNESS_RANK[declaredLevel] > FITNESS_RANK[assessedStructural]
@@ -9008,7 +9029,9 @@ function buildRulePlanOnce(
     ...(isRunWalk ? { finish_goal_run_walk: true } : {}),
     // §117 Am.4 — stamped for BOTH shapes. `finish_goal_run_walk` means the
     // peak was reduced; this means the sessions carry the interval.
-    ...(runWalkEligible ? { run_walk_prescribed: true } : {}),
+    // §117 Am.5 widens this to a runner whose longest recent run is too short,
+    // without touching `finish_goal_run_walk` and therefore without the peak.
+    ...(runWalkPrescribed ? { run_walk_prescribed: true } : {}),
     // §91 — the on-ramp credit, stamped because the INVARIANT cannot otherwise
     // see it. validatePlan runs twice on different objects: once here on the
     // bare plan (no foundation weeks exist yet) and again in

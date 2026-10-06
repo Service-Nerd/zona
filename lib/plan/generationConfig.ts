@@ -1332,6 +1332,52 @@ export const GENERATION_CONFIG = {
    *  and run-walks the last stretch finishes."* */
   FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM: 17,
 
+  // §117 Amendment 5 (Coaching Board 2026-10-06) — READINESS TO *RUN* IS ANSWERED
+  // BY THE LONGEST RECENT RUN, NOT BY WEEKLY VOLUME.
+  //
+  // A beginner finish-goal marathoner whose longest recent run is below this share
+  // of the race distance gets the run-walk PRESCRIPTION (walk intervals stamped on
+  // every session). They do NOT get §117's peak reduction — that is §117 Am. 4's
+  // separation, applied to the mirror cohort.
+  //
+  // 🔴 WHY: the founder's benchmark is 90-95% fit-for-purpose PER DISTANCE, and the
+  // MARATHON sat at **89.4%** while WHOLE PRODUCT read 95.9% — the aggregate hid it.
+  // The entire deficit is the 8 and 15 km/week cohorts (10.1% and 15.5% clean
+  // against 90.5% at 25 km/week), which is the marathon-beginner cohort.
+  //
+  // THE DISCRIMINATOR IS THE LONGEST RUN, MEASURED. Profiling the 832 failing plans
+  // against the 6,384 passing ones: identical 20-week runways, but
+  // `longest_recent_run_km` **7 km vs 16 km**, peak week 29 vs 64, peak long run
+  // **17.0 vs 29.0** against a 23.2 km bar. §52's 60%-of-week cap is what binds
+  // (17.0 is 59% of a 29 km week), and reaching 23.2 would need a 38.7 km peak week.
+  //
+  // ⚠️ §117's DOOR COULD NOT CATCH THEM AND MOVING IT WAS THE WRONG FIX. The door is
+  // `effectiveStartKm < ceil(peak / MAX_BASE_BUILD_RATIO)` = 13 km/wk for a beginner
+  // marathon, and `effectiveStartKm` reads `current_weekly_km` ONLY. At 8 km/wk the
+  // runner is below the door and gets run-walk (LONG-RUN-SHORT 36%); at 15 km/wk
+  // they clear it by 2 km and get nothing (LONG-RUN-SHORT 75%, n=256). But the door
+  // governs the PEAK REDUCTION, and this cohort does not need their peak reduced —
+  // 🩹 Willy made "no peak may fall" a binding condition.
+  //
+  // 25% of race: a marathon runner needs a longest run over **10.55 km**. The failing
+  // cohort sits at **16.6%** of race distance, the passing cohort at **37.9%** — so
+  // the threshold separates them with headroom on both sides rather than splitting a
+  // cluster.
+  //
+  // ⚠️ THIS IS A PRESCRIPTION CHANGE, NOT A RE-SCORE, and the distinction is
+  // Hutchinson's: `run_walk_prescribed` drives `applyRunWalk` over every session, so
+  // the runner is TOLD to walk. A beginner whose longest run is 7 km attempting
+  // 42.2 km **is going to walk**; a plan that does not say so is lying. The fit rate
+  // moving is a CONSEQUENCE of the plan becoming honest, which is why
+  // ZERO-REJECTION-SERVED-01's "a re-score is a correction, never an improvement"
+  // does not apply.
+  //
+  // ⚠️ AND THE GAIN IS PARTIAL BY DESIGN. §117 Am. 2 bounds the LONG-RUN-SHORT
+  // exemption at `FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM` (17 km) — below that a plan is
+  // SCORED, run-walk or not, which is Willy's condition. This cohort's median peak
+  // long run is 17.0 km, so about half stay scored. **That is the bound working.**
+  RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE: 25,
+
   FINISH_GOAL_RUNWALK_RUN_MINS: 6,
   FINISH_GOAL_RUNWALK_WALK_MINS: 1,
 

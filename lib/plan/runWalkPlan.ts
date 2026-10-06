@@ -53,6 +53,39 @@ export function runWalkDistanceApplies(distanceKm: number): boolean {
  * rather than recomputed, so the producer and this gate cannot disagree about
  * the number the door is derived from.
  */
+/**
+ * §117 Amendment 5 (Coaching Board 2026-10-06) — the run-walk PRESCRIPTION alone,
+ * granted on readiness to RUN rather than on weekly volume.
+ *
+ * ⚠️ THIS GRANTS THE INSTRUCTION AND NEVER THE PEAK REDUCTION. §117 Am. 4
+ * established that the two are separable ("a §12 volume-capped runner needs the
+ * second and not the first ... they keep the prescription"); this is the mirror
+ * cohort. 🩹 Willy's binding condition on the ruling was that no peak may fall, so
+ * this predicate is deliberately NOT wired into `isRunWalk`.
+ *
+ * WHY WEEKLY VOLUME CANNOT ANSWER IT. `runWalkApplies`'s door reads
+ * `effectiveStartKm`, i.e. `current_weekly_km`. A runner at 15 km/week whose longest
+ * ever run is 7 km is not more ready to RUN a marathon than one at 12 km/week with
+ * the same longest run — and measured, the 15 km/week cohort clears the 13 km door by
+ * 2 km and then fails LONG-RUN-SHORT 75% of the time (n=256), while the 8 km/week
+ * cohort falls below the door, gets run-walk, and fails only 36%.
+ *
+ * Shares `runWalkDistanceApplies`, `goal === 'finish'` and `fitness_level ===
+ * 'beginner'` with `runWalkApplies` deliberately: the board's ruling left those
+ * three exclusions untouched and did NOT extend to time-target or intermediate
+ * runners, both of which carry their own stated reasons.
+ */
+export function runWalkPrescriptionApplies(input: GeneratorInput): boolean {
+  if (!runWalkDistanceApplies(input.race_distance_km)) return false
+  if (input.goal !== 'finish') return false
+  if (input.fitness_level !== 'beginner') return false
+  const longest = input.longest_recent_run_km
+  if (typeof longest !== 'number' || longest <= 0) return false
+  const bar = input.race_distance_km
+    * (GENERATION_CONFIG.RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE / 100)
+  return longest < bar
+}
+
 export function runWalkApplies(input: GeneratorInput, standardPeakKm: number, planWeeks?: number): boolean {
   // ⚠️ LIVE since S117-PEAK-VS-TIME-01 (2026-09-20). It shipped DARK for
   // exactly as long as the board's own amendment 1 contradicted itself —

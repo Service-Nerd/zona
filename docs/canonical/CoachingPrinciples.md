@@ -9285,6 +9285,98 @@ and sixteen percentage points of a cohort get a plan. Declare the drop, do not d
 *the peak was reduced*; `run_walk_prescribed` means *the sessions carry the interval*. The first
 implies the second; the second does not imply the first.
 
+### §117 Amendment 5 — READINESS TO *RUN* IS ANSWERED BY THE LONGEST RUN, NOT BY WEEKLY VOLUME (Coaching Board 2026-10-06, MARATHON-BEGINNER-FLOOR-01)
+
+**Principle.** A beginner finish-goal marathoner whose **longest recent run** is below
+`RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE` (**25%**) of the race distance receives the run-walk
+**prescription** — walk intervals stamped on every session — **whether or not their weekly volume
+put them below §117's door.** They do **not** receive §117's peak reduction.
+
+🔴 **WHY: THE FOUNDER'S BENCHMARK IS PER DISTANCE, AND THE AGGREGATE WAS HIDING A FAILURE.**
+Measured 2026-10-06 with fit-for-purpose set at 90–95% **per distance** rather than whole-product:
+5K 100% · 10K 100% · 50K 100% · 100K 100% · HM 96.2% · **marathon 89.4%**, against a whole-product
+**95.9%**. The marathon was the only distance below the floor, and **the whole-product figure is
+why nobody had seen it.**
+
+**The entire deficit was two cohorts, and they are the cohort the founder named first.** Marathon
+clean rates by weekly volume: 4 km/wk 100% refused · **8 km/wk 10.1%** · **15 km/wk 15.5%** ·
+25 km/wk 90.5% · 35 km/wk 99.6% · 50 and 70 km/wk 100%.
+
+⚠️ **THE DISCRIMINATOR IS THE LONGEST RUN, AND IT WAS MEASURED, NOT INFERRED.** Profiling the 832
+failing plans against the 6,384 passing ones: **identical 20-week runways**, so not a runway
+problem. What differed was `longest_recent_run_km` — **7 km against 16 km** — and with it the peak
+week (29 vs 64) and the peak long run (**17.0 vs 29.0**, against a 23.2 km bar). §52's
+60%-of-week cap is what binds: 17.0 km *is* 59% of a 29 km week, and reaching 23.2 would need a
+38.7 km peak week.
+
+🔴 **§117's DOOR COULD NOT CATCH THEM, AND MOVING IT WAS RULED INCORRECT.** The door is
+`effectiveStartKm < ceil(peak / MAX_BASE_BUILD_RATIO)` — 13 km/week for a beginner marathon — and
+`effectiveStartKm` reads `current_weekly_km` **only**. At 8 km/wk the runner is below the door and
+gets run-walk (`LONG-RUN-SHORT` 21.9%); at 15 km/wk they clear it **by two kilometres**, with the
+same 7 km longest run, and get nothing (`LONG-RUN-SHORT` **45.6%**).
+
+**Lowering the door was the obvious fix and the wrong one.** 🩹 **Willy, binding:** the door
+governs the **peak reduction**, and this cohort's defect is that their long run is **short** — a
+lower peak makes it shorter. *"No peak may fall. Measured, per cohort, or the change is refused."*
+
+⚠️ **THE CONFLICT SCAN FOUND THE ANSWER ALREADY WRITTEN.** §117 **Amendment 4** had separated
+these two things fourteen days earlier, for the mirror cohort: *"§117 bundles two things: a lower
+peak, which lowers §111's door, and a run-walk instruction, which makes the lower peak honest…
+They keep the prescription."* Am. 4 covered the runner whose door was **already open**; this
+covers the runner whose door **never opens**. **One mechanism, two cohorts, and the second was
+reachable only because the first was written down.**
+
+⚠️ **THIS IS A PRESCRIPTION CHANGE, NOT A RE-SCORE, AND THE DISTINCTION IS THE CHAIR'S.**
+`run_walk_prescribed` drives `applyRunWalk` over **every** session, so the runner is **told to
+walk** — measured, 45–99 sessions per plan gain a named interval where they previously had none.
+A beginner whose longest run is 7 km attempting 42.2 km **is going to walk**; a plan that does not
+say so is lying. The fit rate moving is a **consequence** of the plan becoming honest, which is
+why `ZERO-REJECTION-SERVED-01`'s rule — *"a re-score is a correction, never an improvement"* —
+does not apply here. Hutchinson: had this moved the number without changing a session, it would
+have been refused on that ground alone.
+
+**Why 25%.** The failing cohort's longest run is **16.6%** of the race; the passing cohort's is
+**37.9%**. The bar separates them with headroom on both sides rather than splitting a cluster, and
+on its own terms it is defensible: 25% of a marathon is **10.55 km**, and a beginner who has never
+run that far is not being asked to run 42.2.
+
+⚠️ **AND THE GAIN IS PARTIAL BY DESIGN.** §117 Am. 2 bounds the exemption at
+`FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM` (17 km) — below it a plan is **scored**, run-walk or not.
+This cohort's median peak long run is **17.0 km**, so roughly half stay scored: the 15 km/wk band's
+`LONG-RUN-SHORT` fell 45.6% → 35.3%, not to zero. **That is Am. 2's bound working, and it is the
+reason this amendment does not claim to fix the cohort — only to stop lying to it.**
+
+**Measured, before and after, on the envelope population (33,792 cases, `tier: 'paid'`):**
+
+| | before | after |
+|---|---|---|
+| marathon fit-for-purpose | **89.4%** | **91.8%** |
+| marathon `LONG-RUN-SHORT` | 7% | 4.8% |
+| 15 km/wk band clean | 15.5% | **23.4%** (+7.9pp) |
+| 15 km/wk `LONG-RUN-SHORT` | 45.6% | 35.3% (−10.3pp) |
+| 25 / 35 / 50 / 70 km/wk bands | — | **unchanged** |
+| 5K · 10K · HM · 50K · 100K | — | **unchanged** |
+| 🩹 **peak week moved** | — | **0 of 33,792** |
+| peak long run · plan length · refusals moved | — | **0** |
+| plans gaining the prescription | — | **292** (256 at 15 km/wk, 36 at 8) |
+
+⚠️ **The 36 at 8 km/wk were not anticipated and are correct.** `runWalkApplies` refuses them
+because the on-ramp to the reduced 34 km peak does not fit their runway — so they were getting
+**neither** the peak reduction **nor** the instruction. Am. 4's logic again: the reduction is
+infeasible, the instruction still applies.
+
+**Config.** `RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE = 25`.
+**Owner.** `lib/plan/runWalkPlan.ts → runWalkPrescriptionApplies`, which feeds **only** the
+prescription; `isRunWalk` is computed above it and untouched.
+**Enforced by** `INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY`.
+
+⚠️ **ONE HALF IS NOT MECHANICALLY CHECKED, AND IT IS WILLY'S HALF.** A validator holds no
+counterfactual peak and no `standardLevelPeakKm`, so "no peak fell" cannot be an invariant. It is
+held by `runWalkPrescribeReadiness.test.ts` **ARM 2** — the readiness route must leave
+`finish_goal_run_walk` unset, that being the flag which swaps the peak — falsified by wiring the
+predicate into `isRunWalk`, which turns ARM 2 red. **An unenforceable half is a known risk, not an
+oversight.**
+
 ### §117 Amendment 2 — the `LONG-RUN-SHORT` exemption is BOUNDED (Coaching Board 2026-09-20, chair-mandated at S116-FLOOR-VS-TARGET-01)
 
 **Principle.** A finish-goal run-walk plan whose peak long run falls below

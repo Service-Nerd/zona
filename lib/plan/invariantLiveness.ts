@@ -5,6 +5,7 @@ import { validateBaseBuildBlock } from '@/lib/plan/baseBuildValidate'
 import { assessOnRamp, generateBaseBuildPlan } from '@/lib/plan/baseBuildOnRamp'
 import { generateMaintenanceBlock } from '@/lib/plan/maintenance'
 import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
+import { runWalkPrescriptionApplies } from './runWalkPlan'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import type { GeneratorInput, Plan, Session, Week } from '@/types/plan'
@@ -593,6 +594,17 @@ export const MUTATIONS: Mutation[] = [
     for (const s of sessionsOf(p)) delete (s as unknown as Poke).run_walk_strategy
   } },
 
+  // §117 Am.5 — INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY.
+  //
+  // The mirror of the mutation above: that one CLAIMS a prescription and removes
+  // the intervals; this one removes the CLAIM from a runner whose longest recent
+  // run says they need it. It wakes only on a plan whose INPUT is a beginner
+  // finish-goal marathoner under the readiness bar, which is why it is a
+  // deletion and not a poke — the input is the probe's, not ours to set.
+  { name: 'drop the run-walk claim from an unready runner', apply: p => {
+    delete (p.meta as unknown as Poke).run_walk_prescribed
+  } },
+
   // §116's three invariants are NOT probed here. They belong to
   // `validateBaseBuildBlock`, not `validatePlan`, and a base-build plan's weeks
   // are skipped by the main validator by design. They get their own probe
@@ -900,6 +912,21 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
     const r = i as unknown as { race_distance_km?: number; longest_recent_run_km?: number }
     const k = `${(i as {race_distance_km?: number}).race_distance_km}|${(i as {fitness_level?: string}).fitness_level}|${(i as {goal?: string}).goal}`
       + `|${(r.longest_recent_run_km ?? 0) >= (r.race_distance_km ?? 0) * 0.85 ? 'deep' : 'shallow'}`
+      // Extended 2026-10-06 with a SECOND longest-run bit, and it is the FOURTH
+      // time the sample has been the bug rather than the rules. The 0.85 bit
+      // above is §24/§35's floor; §117 Am.5 is gated at **0.25**, so every
+      // marathon beginner+finish row collapsed to one 'shallow' representative
+      // and whichever came first decided whether the family contained an unready
+      // runner at all. 432 of cohortGrid's 41,472 rows satisfy the predicate and
+      // the 64-plan sample reached none of them, so
+      // INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY read as unwakeable while a
+      // mutation woke it on the first qualifying plan tried by hand.
+      //
+      // ⚠️ It calls the OWNER rather than restating `< race * 0.25`. The bit has
+      // to move when the rule moves, and a second copy of the threshold here is
+      // how this key would silently stop distinguishing the thing it was added
+      // for — the same fault as `INJURY-GUARD-PREDICATE-01`.
+      + `|${runWalkPrescriptionApplies(i) ? 'unready' : 'ready'}`
     if (seen.has(k)) return false
     seen.add(k)
     return true
