@@ -16,6 +16,7 @@ import {
   generateFoundationBlock, classifyGap, gapDays, plannedFoundationWeeks, type GapClass,
 } from './foundationBlock'
 import { easyPaceFromPlan } from './easyPace'
+import { applyRunWalk } from './runWalkPlan'
 import { validatePlan, type Violation } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { Plan, GeneratorInput } from '@/types/plan'
@@ -56,7 +57,37 @@ export function composePlanWithFoundation(
     })
     if (foundationWeeks.length) {
       foundationWeeksBuilt = foundationWeeks.length
-      assembled = { ...plan, weeks: [...foundationWeeks, ...plan.weeks] }
+      // §117 Am.3 — THE FOUNDATION WEEKS NEED THE WALK INTERVAL TOO.
+      //
+      // 🔴 `generateRulePlan` stamps `run_walk_strategy` on every session as its
+      // LAST act, and this module then prepends weeks it has never seen — which
+      // is ADR-020's own documented hazard, in ADR-020's own module: *"foundation
+      // weeks were prepended after validatePlan() had already run — two live
+      // defects shipped from weeks the validator couldn't see."* This is a third.
+      //
+      // Measured on the board's own M1 persona (the charity cohort's first-time
+      // marathoner, 15 km/wk, longest 8 km, 21-week runway): the bare plan had
+      // 80 of 80 running sessions stamped, and foundation week -1 had **0 of 3**,
+      // producing three `INV-PLAN-RUNWALK-PRESCRIBED` errors. §117 Am.3's rule is
+      // that the walk break is PRESCRIBED, not permitted — a foundation week that
+      // tells a run-walk runner to run straight through is the plan "only
+      // permitting walking", which is precisely what the board refused to ship.
+      //
+      // ⚠️ `applyRunWalk` is the owner and is idempotent (it sets a field from a
+      // constant), so this re-stamps rather than re-deriving the predicate. The
+      // GATE is `plan.meta.run_walk_prescribed`, read and never recomputed —
+      // same discipline as `earlyOnset` three lines up.
+      const prescribed = (plan.meta as unknown as Record<string, unknown>).run_walk_prescribed === true
+      const composedWeeks = prescribed
+        ? foundationWeeks.map(w => ({
+            ...w,
+            sessions: Object.fromEntries(
+              Object.entries(w.sessions).map(([day, s]) => [day, s ? applyRunWalk(s) : s]),
+            ) as typeof w.sessions,
+          }))
+        : foundationWeeks
+      foundationWeeksBuilt = composedWeeks.length
+      assembled = { ...plan, weeks: [...composedWeeks, ...plan.weeks] }
     }
   }
 
