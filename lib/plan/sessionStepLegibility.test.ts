@@ -22,12 +22,12 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import { generateRulePlan } from './ruleEngine'
 import { cohortGrid, COHORT_PLAN_START } from './cohortGrid'
-import { buildSessionRows, resolveDisplayFigures, isV2DerivedSet } from './sessionSteps'
+import { buildSessionRows, resolveDisplayFigures, isV2DerivedSet, NO_PACE_QUALIFIER, targetClause } from './sessionSteps'
 import { composeSession } from './sessionComposer'
 import { formatDistance } from '@/lib/format'
 import type { GeneratorInput } from '@/types/plan'
 
-interface Row { kind: string; role: string; amount: string; amountValue: string; amountUnit: string; target: string; secondary: string; detail: string; note?: string }
+interface Row { kind: string; role: string; amount: string; amountValue: string; amountUnit: string; amountIsEstimate: boolean; target: string; secondary: string; detail: string; note?: string }
 
 /**
  * EVERY ROW THE CARD RENDERS, for EVERY session type, through the component's own
@@ -46,7 +46,7 @@ interface Row { kind: string; role: string; amount: string; amountValue: string;
  */
 function rendered(stride: number, units: 'km' | 'mi') {
   const grid = cohortGrid() as GeneratorInput[]
-  const out: { row: Row; srcNote?: string; label: string; type: string; section: string; sid: string; blockKey?: string }[] = []
+  const out: { row: Row; srcNote?: string; srcPace?: string | null; srcRole?: string; sessionHasDistance?: boolean; label: string; type: string; section: string; sid: string; blockKey?: string }[] = []
   let sid = 0
   for (let i = 0; i < grid.length; i += stride) {
     let p
@@ -70,9 +70,11 @@ function rendered(stride: number, units: 'km' | 'mi') {
         let mainIdx = 0
         const key = `${units}#${sid++}`
         for (const r of rows) {
-          const src = r.section === 'main' && steps.length ? steps[mainIdx++] : undefined
+          const src = (r.section === 'main' && steps.length ? steps[mainIdx++] : undefined) as { note?: string; pace?: string | null; role?: string } | undefined
           if (r.section === 'main' && r.startsGroup) blockIdx++
-          out.push({ row: r.row as Row, srcNote: src?.note, label: sess.label ?? '?', type: sess.type ?? '?', section: r.section, sid: key,
+          out.push({ row: r.row as Row, srcNote: src?.note, srcPace: src ? (src.pace ?? null) : undefined, srcRole: src?.role,
+            sessionHasDistance: structure.main.distance_km != null,
+            label: sess.label ?? '?', type: sess.type ?? '?', section: r.section, sid: key,
             ...(r.section === 'main' ? { blockKey: `${key}#b${blockIdx}` } : {}) })
         }
       }
@@ -236,5 +238,78 @@ describe('SESSION-STEP-LEGIBILITY-01 — a step row says what to do, on EVERY se
     const miLeak = ROWS.filter(r => /\/mi/.test(`${r.row.detail}`))
     expect(kmLeak.map(r => `${r.type}: ${r.row.detail}`).slice(0, 3), 'a miles reader was shown /km').toEqual([])
     expect(miLeak.map(r => `${r.type}: ${r.row.detail}`).slice(0, 3), 'a km reader was shown /mi').toEqual([])
+  })
+  // ── §21b Am. 4 — Design Board 2026-10-06 (evening re-sitting) ──────────────
+  //
+  // The founder read step 4 of his own Progressive tempo as a bug. The number
+  // was RATIFIED (sessionCatalogueData.ts, Coaching Board 2026-09-03: "rather
+  // than a false-precision pace"); what was missing is any statement that the
+  // absence is deliberate. These three arms hold the rule, the exclusion and the
+  // second producer shut.
+
+  it('a WORK step with no pace says the absence is deliberate, and one with a pace never does', () => {
+    const mainWork = ALL.filter(r => r.section === 'main' && r.srcPace !== undefined && r.srcRole === 'work')
+    expect(mainWork.length, 'no v2 work steps in the sample').toBeGreaterThan(500)
+
+    const silent = mainWork.filter(r => !r.srcPace && !r.row.target.includes(NO_PACE_QUALIFIER))
+    expect(silent.map(r => `${r.label}: "${r.row.target}"`).slice(0, 3),
+      `${silent.length} work step(s) carry no pace and do not say so, so a ratified refusal to ` +
+      'prescribe a pace renders identically to a failed computation.').toEqual([])
+
+    // The other direction, which is the one that rots: over-applying it.
+    const noisy = mainWork.filter(r => r.srcPace && r.row.target.includes(NO_PACE_QUALIFIER))
+    expect(noisy.map(r => `${r.label}: "${r.row.target}"`).slice(0, 3),
+      `${noisy.length} step(s) HAVE a pace and still claim they do not.`).toEqual([])
+
+    // ⚠️ Population arm. An empty set passes both arms above (the class the
+    // 2026-09-25 review named four times in one day), so prove both halves exist.
+    expect(mainWork.filter(r => !r.srcPace).length, 'no no-pace work steps reached the sample').toBeGreaterThan(50)
+    expect(mainWork.filter(r => r.srcPace).length, 'no paced work steps reached the sample').toBeGreaterThan(200)
+  })
+
+  it('a RECOVERY step never carries the qualifier', () => {
+    // Deliberate exclusion: "Jog", "Walk", "Stand" are already instructions by
+    // effort and have never carried a pace, so the qualifier would be noise on
+    // every one of them. §21b Am. 2's lesson — a RULE, with its exclusion named.
+    //
+    // ⚠️ THE CORPUS HALF OF THIS ARM IS VACUOUS TODAY AND IT IS SAID OUT LOUD.
+    // Measured: of 5,536 non-work steps, **5,303 carry a pace and 233 carry
+    // neither a zone nor an RPE** — so `targetClause` returns early or returns
+    // '' for every one, and removing the role guard changes NOTHING. Falsifying
+    // by deleting the guard left this green, which is how the hollowness was
+    // found. The guard is a declared defence against a future catalogue row, the
+    // same shape as `paceAsFloor` (0 of 6,014 steps). **The direct assertion
+    // below is the falsifiable half** and goes red the moment the guard is
+    // removed; the corpus half becomes live by itself if a recovery step ever
+    // gains a zone.
+    const recovery = ALL.filter(r => r.srcRole && r.srcRole !== 'work')
+    expect(recovery.length, 'no recovery steps in the sample').toBeGreaterThan(200)
+    const tagged = recovery.filter(r => r.row.target.includes(NO_PACE_QUALIFIER))
+    expect(tagged.map(r => `${r.label}: "${r.row.target}"`).slice(0, 3),
+      `${tagged.length} recovery step(s) carry the qualifier.`).toEqual([])
+
+    const zonedRecovery = { role: 'recovery', modality: 'jog', length: '2 min', pace: null, zone: 'Z1', advance: 'auto' }
+    expect(targetClause(zonedRecovery as never, 'km'),
+      'a recovery step with a zone and no pace took the qualifier — the role guard is gone.').toBe('Zone 1')
+    const zonedWork = { role: 'work', modality: 'run', length: '2 min', pace: null, zone: 'Z1', advance: 'auto' }
+    expect(targetClause(zonedWork as never, 'km'),
+      'the same step as WORK did not take it — the guard is inverted or the rule is off.')
+      .toBe(`Zone 1 \u00b7 ${NO_PACE_QUALIFIER}`)
+  })
+
+  it('a session with no distance of its own never shows a DERIVED distance on a step', () => {
+    // 🔴 The step rows were the only figure on the card in kilometres: the card
+    // total, both section headers and both bookends come from
+    // `resolveDisplayFigures` and were minutes, while `buildStepGroups` derived
+    // km from each step's own pace. 795 quality_continuous sessions.
+    //
+    // ⚠️ A step's OWN prescription is untouched — a `400 m` rep still reads
+    // `400 m`. Only a DERIVED figure is suppressed, which is exactly what
+    // `amountIsEstimate` marks.
+    const durationOnly = ALL.filter(r => r.sessionHasDistance === false)
+    expect(durationOnly.length, 'no duration-anchored sessions in the sample').toBeGreaterThan(100)
+    const derived = durationOnly.filter(r => r.row.amountIsEstimate && /^(km|mi|m)$/i.test(r.row.amountUnit))
+    expect(derived.map(r => `${r.label}: ${r.row.amount}`).slice(0, 3),
+      `${derived.length} step(s) invented a distance on a session the plan never prescribed in distance.`).toEqual([])
   })
 })

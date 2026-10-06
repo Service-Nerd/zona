@@ -2859,6 +2859,84 @@ week and no warm-up or cool-down row of anything. ⚠️ **And one arm was HOLLO
 `strides` also pushes warm-up rows. **A count across a corpus cannot see a section
 missing from a session.** It asserts per session now, and both mutations go red.
 
+#### Amendment 4 — A WITHHELD NUMBER MUST NOT LOOK LIKE A MISSING ONE (Design Board re-sitting, 2026-10-06 evening)
+
+**A work step with no pace target says so, in the target slot, after whatever IS
+prescribed.**
+
+```
+[3] ●                                            ~1.4 km
+      5:53 /km or slower
+      9:20 min · Hold back. This is the part…
+
+[4] ●                                            9:20 min
+      Zone 2–3 · effort, not pace          ← the absence is stated, not inferred
+      Let it rise. Don't chase it.
+```
+
+🔴 **The founder opened his own Progressive tempo and read step 4 as a bug.** Steps 3,
+4 and 5 are all 9:20; two lead with a distance and the middle one with minutes,
+because its target is the zone band `Z2-Z3` and it carries no pace. **The number was
+correct and ratified** — `sessionCatalogueData.ts` authors that step (Coaching Board,
+2026-09-03) as *"no single pace anchor describes a moving target, so its target is the
+zone band rather than a false-precision pace"*, Amendment 3 above already says the
+lead holds the prescription where nothing can be derived, and `CoachingPrinciples`
+§40b says an effort-governed step *"does not invent a number the runner cannot act on.
+What is absent is the pace, and only the pace."*
+
+⚠️ **So the defect was never the number. It was that a ruling and a failure render
+identically**, and the runner has no way to tell them apart. Amendment 3 made the lead
+honest; it did not make the ABSENCE legible.
+
+⚠️ **And the obvious fix is refused by all three of those rows.** `~1.7 km` over `9:20`
+**is** `5:29 /km` by division — printing the distance hands back the pace the catalogue
+deliberately withheld, on a step whose own note reads *"Don't chase it."* **No
+distance, no range, no midpoint on the lead.**
+
+🎪 **Collins carried the wording over the schema language** (*"no pace target"*) on 🎓
+Sierra's argument that it teaches: it tells the runner *how* to run it, and a runner who
+meets it three weeks running learns that some work is instructed by effort on purpose.
+✋ **Silvanto's precision is satisfied by the ORDER, not the words** — `Z2-Z3` is a
+heart-rate band and remains holdable on HR, so what is prescribed comes first and the
+absence second. Nothing implies the zone is gone.
+
+**It is a RULE, not a list.** Measured: **1,174 of 9,506 v2 work steps (12.4%)** carry no
+pace — 941 zone-only (the progressions) and 233 RPE-only (hill reps). Both take it. The
+hill reps do not *look* broken today only because their neighbours are also in time, and
+a rule conditioned on what the neighbours happen to show is not a rule.
+
+**Recovery steps are excluded, and the exclusion is declared dead.** "Jog", "Walk" and
+"Stand" are already instructions by effort. ⚠️ Measured: of **5,536** non-work steps,
+5,303 carry a pace and 233 carry neither a zone nor an RPE, so **removing the guard
+changes nothing today** — it is a declared defence against a future catalogue row, the
+same shape as `paceAsFloor`. Falsifying by deleting it left the corpus arm green, which
+is how the hollowness was found; the arm now also asserts `targetClause` directly.
+
+#### Amendment 4b — a card is measured in the unit the PLAN prescribed, not one it can derive
+
+**A session with no distance of its own never shows a derived distance on a step.**
+
+🔴 On a duration-anchored session the step rows were **the only figure on the card in
+kilometres**. The card total, both section headers and both bookends come from
+`resolveDisplayFigures` and were minutes; `buildStepGroups` derived km from each step's
+own pace. Measured **795 `quality_continuous` sessions**, reading
+`15 min | 4 × 20s | ~3.8km | 4 min`. **One fact, two producers.**
+
+⚠️ **This is NOT `UNITS-SUBUNIT-01` option B, which is killed and stays killed.** That
+option flipped a whole card to minutes *because one part was short*, overruling a toggle
+the runner had set. This is different: the plan never prescribed the session in distance
+at all, so there is no distance with which to honour the toggle — and `6t.`'s own
+guarantee (*"the fallback cannot hide real ground"*) had a hole, because these parts
+apportion to `undefined` rather than to exactly 0.
+
+⚠️ **A step's own prescription is never suppressed.** A `400 m` rep still reads `400 m`:
+that is the prescription, not a derivation. Only an estimate is withheld.
+
+⚠️ **The same-unit rule is still dead and is not being revived.** `UNITS-SUBUNIT-01`
+struck it down and the shipped time-trial diagram above renders `WARM-UP 10 min` beside a
+distance main set. **A card may mix kinds**; what it may not do is answer the same
+question two ways.
+
 
 ### 22. WeekStripCard
 

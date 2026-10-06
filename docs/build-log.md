@@ -6,6 +6,51 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+
+## STEP-NO-PACE-DECLARED-01 — the row that looked broken because it was right (2026-10-06)
+
+**The founder sent a third screenshot of his own Tuesday session, four hours after we shipped
+the new step rows:** *"I still see 9:20 on the middle session. Why? It doesn't make sense."*
+
+### The dev bit
+
+Steps 3, 4 and 5 of a Progressive tempo are all 9:20. Two lead with `~1.4km` and `~1.8km`; the
+middle one leads with `9:20 min`, because its target is the zone band `Z2-Z3` and it carries no
+pace to divide by. I had already filed an item proposing the lead become `~1.6-1.7 km`.
+
+**That item was wrong, and three documents said so** — the catalogue row for that exact session
+(Coaching Board, 2026-09-03: *"no single pace anchor describes a moving target, so its target is
+the zone band rather than a false-precision pace"*), `ui-patterns.md` §21b, and `CoachingPrinciples`
+§40b. **And the fix would have handed back the number they refused**: `~1.7 km` over `9:20` is
+`5:29 /km` by division, on a step whose own note reads *"Let it rise. Don't chase it."*
+
+### The product bit
+
+He was still right, about something better than the number. **A deliberate refusal to prescribe a
+pace was rendering identically to a failed computation**, and nothing on the card distinguished
+them. So the row says it now: `Zone 2–3 · effort, not pace`. Collins carried that wording over the
+schema language (*"no pace target"*) on Sierra's argument that it teaches — a runner who meets it
+three weeks running learns that some work is instructed by effort on purpose.
+
+### The AI-building bit
+
+**The tell was in a type I had already read.** `DerivedStep.pace` is `string | null` and the field
+comment says *"null when the step is **deliberately** effort-governed."* I traced the whole
+mechanism through that interface and read `null` as missing data instead of as a ruling. When a
+value is absent, the first question is not *"can I derive it?"* — it is **"who decided it should be
+missing, and why?"**
+
+### The honest bit
+
+**Two of the three items I brought to the board were already ruled, and I had written both of them
+that same evening.** `UNITS-SUBUNIT-01` struck down the same-unit rule and killed the whole-card
+flip three weeks ago; I re-proposed it. The settled-ground scan is the entire reason that board
+exists and I skipped it twice in one night.
+
+And the first falsification of my new recovery arm **passed** — deleting the guard it was written
+to protect changed nothing, because no recovery step in the corpus can reach that branch. It is a
+declared defence now, with the measurement beside it, and the arm asserts the function directly.
+
 ## 2026-10-06 — SESSION-STEP-SLOTS-01 · the board threw out all four of my options, and the fifth was better
 **Shipped:** every step row on every session now puts the target in the same place, and the metric you chose is finally honoured in both directions.
 

@@ -4054,3 +4054,45 @@ Pattern — `ui-patterns.md` §21b Am. 3 · Constants — `lib/format.ts → for
 ### ⚠️ What this does not settle
 
 **Nobody has watched a runner use this, mid-run or otherwise.** Sierra's and Wroblewski's claim that the target is read first is reasoning, not observation, and the whole ruling rests on it.
+
+## 6ac. STEP-NO-PACE-DECLARED-01 — a withheld number must not look like a missing one (2026-10-06, evening re-sitting)
+
+**Trigger:** `ui-patterns.md` §21b — hard. **Convened because the founder opened the card
+shipped four hours earlier and said *"I still see 9:20 on the middle session. Why? It
+doesn't make sense."***
+
+| Decision | Status | Why |
+|---|---|---|
+| **A work step with NO pace target says so, in the target slot, after what IS prescribed** | 🟢 **SHIP WITH AMENDMENT** | His Progressive tempo renders steps 3/4/5 all at `9:20`; two lead with `~1.4km` / `~1.8km`, the middle with `9:20 min`, because its target is `Z2-Z3` and it carries no pace. 🔴 **The number is RATIFIED** — `sessionCatalogueData.ts` (Coaching Board 2026-09-03): *"no single pace anchor describes a moving target, so its target is the zone band rather than a false-precision pace"*; §21b: *"no honest distance to show"*; §40b: *"what is absent is the pace, and only the pace."* **So a ruling and a failure were rendering identically**, and the runner has no way to tell them apart. Target reads `Zone 2–3 · effort, not pace` |
+| **The lead becomes `~1.6-1.7 km` (the item as filed)** | 🔴 **KILLED, PERMANENT** | 🔴 **I FILED IT AGAINST SETTLED GROUND AND THE FIX WOULD HAVE RE-INTRODUCED THE REFUSED NUMBER**: `~1.7 km` over `9:20` **is** `5:29 /km` by division, on a step whose own note reads *"Let it rise. Don't chase it."* No distance, no range, no midpoint on the lead. ⚠️ The filing also quoted the band as `~1.3-1.6 km` using the SESSION's easy bracket rather than the step's own span. **Two errors, both from reasoning instead of reading** |
+| **Collins' wording over the schema language** | 🟢 **SHIPPED — Collins WON this one** | He argued *"effort, not pace"* against *"no pace target"*: the second is the system describing its own schema, the first is a coach telling you how to run it. 🎓 Sierra carried it: a runner who meets it three weeks running **learns that some work is instructed by effort on purpose**, which is the most useful thing a progressive tempo can teach. ✋ Silvanto's precision — `Z2-Z3` is a heart-rate band and stays holdable on HR — **is satisfied by the ORDER**, not the words |
+| **It applies to RPE steps too** | 🟢 **SHIPPED** | A rule, not a list (§21b Am. 2's own lesson). **1,174 of 9,506 v2 work steps (12.4%)**: 941 zone-only, 233 RPE-only. 🎓 Sierra: *"the hill reps don't LOOK broken only because their neighbours are also in time, and a rule conditioned on what the neighbours happen to show is not a rule"* |
+| **Recovery steps excluded — and the exclusion is DECLARED DEAD** | 🟢 **SHIPPED with its reachability stated** | ⚠️ Of **5,536** non-work steps, 5,303 carry a pace and 233 carry neither zone nor RPE, so `targetClause` returns early or empty for every one: **removing the guard changes nothing today.** Falsifying by deleting it left the corpus arm GREEN — that is how the hollowness was found. Declared defence, same shape as `paceAsFloor` (0 of 6,014); the arm now asserts `targetClause` directly and goes red |
+| **A session with no distance of its own never shows a DERIVED distance on a step** | 🟢 **SHIPPED** | 🔴 On a duration-anchored session the step rows were **the only figure on the card in km** — card total, both section headers and both bookends come from `resolveDisplayFigures` and were minutes, while `buildStepGroups` derived km from each step's pace. **795 `quality_continuous` sessions**, reading `15 min \| 4 × 20s \| ~3.8km \| 4 min`. One fact, two producers. A step's OWN prescription (`400 m`) is untouched; only an estimate is withheld |
+| **`STEP-UNIT-OWNER-01` as filed — one card, one kind** | 🔴 **KILLED, PERMANENT — it is `6t.` option B** | 📱 **Wroblewski defended his own September kill:** flipping a card to minutes *"silently disables the distance toggle… the runner set that toggle; removing it is the product overruling a stated preference without saying so."* **The 862 shakeout sessions are `UNITS-SUBUNIT-01` behaving exactly as ruled** — a sub-unit part shows its duration beside a distance main set. ⚠️ **The same-unit rule is still dead** (`6t.`: *"it was never a ruling"*) and the shipped time-trial diagram renders `WARM-UP 10 min` beside a distance main set. **A card MAY mix kinds; what it may not do is answer the same question twice** |
+| **The `~5km` MAIN SET header against steps totalling `3.2km`** | 🔴 **DON'T SHIP — declared** | The header is the block's estimate from `withDistances` (session pace apportioned across parts), **not a sum of steps**. Once step 4 declares itself, the gap is explained by a **stated** absence rather than a missing number. Recorded so it is not re-raised |
+
+🥇 **The sitting's own finding: two of the three items brought to it were already ruled, and
+I had written both that evening.** `6t.` (2026-09-23) struck down the same-unit rule and
+killed the whole-card flip; §21b, §40b and the catalogue had settled the `9:20`. **The
+settled-ground scan is the entire reason this board exists and it was skipped twice in one
+evening.** → `feedback_check_doctrine_before_filing_a_finding`
+
+⚠️ **The tell both times was a field comment I had already read.** `DerivedStep.pace` is
+typed `string \| null` and says *"or null when the step is **deliberately** effort-governed."*
+**A `null` with a comment beside it is a ruling, not an absence of data.**
+
+### 📦 Artifacts
+
+Pattern — `ui-patterns.md` §21b Am. 4 + 4b · Constant — `lib/plan/sessionSteps.ts →
+NO_PACE_QUALIFIER`, plus `BuildStepOpts.sessionHasDistance`; no literal in a component ·
+Check — `sessionStepLegibility.test.ts` +3 arms, **each falsified: revert the qualifier →
+the no-pace arm goes red; delete the role guard → the recovery arm goes red (only after it
+was given a direct assertion — the corpus half alone stayed green); revert the
+duration-anchored gate → the derived-distance arm goes red.**
+
+### ⚠️ What this does not settle
+
+**Whether a runner understands *"effort, not pace"* without ever being told what it means.**
+There is no onboarding moment that explains effort-governed work, and **nothing has run on a
+device.**

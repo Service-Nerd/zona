@@ -86,6 +86,31 @@ export interface BuildStepOpts {
    *  amount; nothing answered it for the pace beside it. Same reasoning as
    *  `LimiterInputs.units`: make the compiler put the question to every caller. */
   units: 'km' | 'mi'
+  /**
+   * Does the SESSION itself carry a distance? Default true.
+   *
+   * ui-patterns.md §21b Am. 4 — Design Board, 2026-10-06. 🔴 **On a
+   * duration-anchored session the step rows were the ONLY figure on the card in
+   * kilometres.** The session has no `distance_km`, so `resolveDisplayFigures`
+   * gives minutes to the card total, both section headers and both bookends,
+   * while `buildStepGroups` derived km from each step's own resolved pace — a
+   * second producer answering a question the first had already answered.
+   * Measured: **795 `quality_continuous` sessions**, reading
+   * `15 min | 4 × 20s | ~3.8km | 4 min`.
+   *
+   * ⚠️ THIS IS NOT `UNITS-SUBUNIT-01` OPTION B, WHICH IS KILLED AND STAYS KILLED.
+   * That option flipped a whole card to minutes **because one part was short**,
+   * overruling a toggle the runner had set. This asks a different question: the
+   * plan never prescribed this session in distance at all, so there is no
+   * distance to honour the toggle WITH, and `6t.`'s own guarantee — *"the
+   * fallback cannot hide real ground"* — has a hole here, because these parts
+   * apportion to `undefined` rather than to exactly 0.
+   *
+   * ⚠️ A step's OWN prescription is never suppressed. A `400 m` rep still reads
+   * `400 m`: that is the prescription, not a derivation. What stops is inventing
+   * the unit the session does not have.
+   */
+  sessionHasDistance?: boolean
 }
 
 // ── length parsing ──────────────────────────────────────────────────────────
@@ -161,6 +186,44 @@ export function roleLabelForStep(step: DerivedStep, parsed: ParsedLength): strin
 // ── target (secondary detail) ────────────────────────────────────────────
 
 /**
+ * What a step says when it has NO pace target, appended to whatever IS prescribed.
+ *
+ * ui-patterns.md §21b Am. 4 — Design Board, 2026-10-06 (evening re-sitting), SHIP
+ * WITH AMENDMENT. The founder opened his own Progressive tempo and read step 4 as
+ * a bug: steps 3, 4 and 5 are all 9:20, two lead with `~1.4km` / `~1.8km`, and the
+ * middle one leads with `9:20 min` because its target is the zone band `Z2-Z3` and
+ * it carries no pace.
+ *
+ * 🔴 THE NUMBER IS CORRECT AND RATIFIED — the defect is that nothing SAYS so.
+ * `sessionCatalogueData.ts` authors that step (Coaching Board, 2026-09-03) as
+ * *"no single pace anchor describes a moving target, so its target is the zone
+ * band 'Z2-Z3' rather than a false-precision pace"*; §21b already says a rep with
+ * no pace keeps time as its primary; CoachingPrinciples §40b says an effort-
+ * governed step *"does not invent a number the runner cannot act on. What is
+ * absent is the pace, and only the pace."* **A deliberate decision was rendering
+ * identically to a failed computation**, so the runner reads a ruling as a bug.
+ *
+ * ⚠️ AND THE OBVIOUS FIX WAS REFUSED BY ALL THREE OF THOSE ROWS. `~1.7 km` over
+ * `9:20` IS `5:29 /km` by division, on a step whose own note reads *"Let it rise.
+ * Don't chase it."* Printing the distance hands back the pace the catalogue
+ * deliberately withheld.
+ *
+ * ⚠️ WORDING IS THE RULING'S, NOT A PREFERENCE. Collins carried *"effort, not
+ * pace"* over the schema language *"no pace target"* on Sierra's argument that it
+ * teaches — it tells the runner HOW to run it. Silvanto's precision (a zone IS
+ * holdable on HR, so nothing may imply the zone is absent) is satisfied by the
+ * ORDER: what is prescribed comes first, the absence second.
+ *
+ * Measured: **1,174 of 9,506 v2 work steps (12.4%)** carry no pace — 941 zone-only
+ * (`Z2-Z3`, the progressions) and 233 RPE-only (`RPE 8`, hill reps). Applied to
+ * BOTH, uniformly: a rule, not a list (§21b Am. 2's own recorded lesson). The hill
+ * reps do not LOOK broken today only because their neighbours are also in time,
+ * and a rule conditioned on what the neighbours happen to show is not a rule.
+ */
+export const NO_PACE_QUALIFIER = 'effort, not pace'
+
+
+/**
  * The pace / RPE / zone clause, without the length.
  *
  * 🔴 PACE-UNITS-STEPS-01 (2026-09-23) — this returned `step.pace` VERBATIM, and
@@ -208,8 +271,20 @@ export function targetClause(step: DerivedStep, units: 'km' | 'mi'): string {
     if (step.pace_mode === 'floor') return paceAsFloor(converted)
     return converted
   }
-  if (step.rpe != null) return `RPE ${step.rpe}`
-  if (step.zone) return formatZone(step.zone)
+  // §21b Am. 4 — no pace on a WORK step is a decision, so the row says so.
+  //
+  // ⚠️ THE RECOVERY GUARD IS A DECLARED DEFENCE AND IS DEAD TODAY. "Jog", "Walk"
+  // and "Stand" are already instructions by effort, so excluding them is right —
+  // but measured, of **5,536 non-work steps, 5,303 carry a pace and 233 carry
+  // neither a zone nor an RPE**, so both branches below return early or empty for
+  // every one of them and REMOVING THIS GUARD CHANGES NOTHING. Falsifying the
+  // gate by deleting it left the corpus arm GREEN, which is how that was found;
+  // the arm now asserts `targetClause` directly as well. Same shape as
+  // `paceAsFloor` (0 of 6,014): kept, stated, and live the moment the catalogue
+  // gives a recovery step a zone.
+  const absent = step.role === 'work' ? ` \u00b7 ${NO_PACE_QUALIFIER}` : ''
+  if (step.rpe != null) return `RPE ${step.rpe}${absent}`
+  if (step.zone) return `${formatZone(step.zone)}${absent}`
   return ''
 }
 
@@ -264,7 +339,7 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
    * the prescription rather than claiming the step covers no ground.
    */
   const paceSec = paceMeanSecPerKm(step.pace)
-  const wantsDistance = opts.metric === 'distance'
+  const wantsDistance = opts.metric === 'distance' && opts.sessionHasDistance !== false
   let lead: string
   let secondary = ''
   let isEstimate = false
@@ -544,7 +619,11 @@ export function buildSessionRows(
     out.push({ section: 'warmup', row: row({ kind: 'work', role: 'Strides', amount: `${structure.strides.count} × ${structure.strides.duration_secs}s`, amountIsEstimate: false, target: 'Fast and relaxed', secondary: '', note: 'Full recovery between each.' }) })
   }
 
-  const groups = isV2DerivedSet(derivedSet) ? buildStepGroups(derivedSet, opts) : null
+  // §21b Am. 4 — one answer to "is this card measured in distance?", asked of
+  // the composer's own stamp, so the step rows cannot disagree with the four
+  // figures `resolveDisplayFigures` already produced from the same fact.
+  const stepOpts: BuildStepOpts = { ...opts, sessionHasDistance: structure.main.distance_km != null }
+  const groups = isV2DerivedSet(derivedSet) ? buildStepGroups(derivedSet, stepOpts) : null
   const seg = structure.race_pace_segment
   if (groups) {
     for (const g of groups) {

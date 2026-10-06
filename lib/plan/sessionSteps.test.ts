@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildStepGroups, parseLength, roleLabelForStep, targetClause } from './sessionSteps'
+import { buildStepGroups, parseLength, roleLabelForStep, targetClause, NO_PACE_QUALIFIER } from './sessionSteps'
 import type { DerivedSet } from './resolveMainSet'
 import { formatDistance } from '@/lib/format'
 
@@ -53,8 +53,11 @@ describe('targetClause', () => {
     expect(targetClause(ceiling, 'km')).toBe('5:53 /km or slower')
     expect(targetClause(ceiling, 'km')).not.toContain('≤')
   })
-  it('uses RPE when effort-governed', () => {
-    expect(targetClause({ role: 'work', modality: 'run', length: '1:30', pace: null, rpe: 8, advance: 'auto' }, 'km')).toBe('RPE 8')
+  it('uses RPE when effort-governed, and says the pace is absent on purpose', () => {
+    // §21b Am. 4 (Design Board, 2026-10-06 evening). The qualifier is appended to
+    // what IS prescribed, never in place of it — Silvanto's precision condition.
+    expect(targetClause({ role: 'work', modality: 'run', length: '1:30', pace: null, rpe: 8, advance: 'auto' }, 'km'))
+      .toBe(`RPE 8 \u00b7 ${NO_PACE_QUALIFIER}`)
   })
   // PACE-UNITS-STEPS-01 — the QUALIFIER must survive the conversion, and the
   // conversion must not eat it. Both halves, because a qualifier lost to a regex
@@ -68,7 +71,10 @@ describe('targetClause', () => {
       .toBe('8:03 /mi')
   })
   it('leaves an RPE step alone in miles', () => {
-    expect(targetClause({ role: 'work', modality: 'run', length: '1:30', pace: null, rpe: 8, advance: 'auto' }, 'mi')).toBe('RPE 8')
+    // The unit conversion must not touch an RPE, and §21b Am. 4's qualifier is
+    // unit-free, so this reads identically in both systems.
+    expect(targetClause({ role: 'work', modality: 'run', length: '1:30', pace: null, rpe: 8, advance: 'auto' }, 'mi'))
+      .toBe(`RPE 8 \u00b7 ${NO_PACE_QUALIFIER}`)
   })
 })
 
@@ -138,7 +144,7 @@ describe('buildStepGroups — hill reps (effort-based, mixed lengths)', () => {
     // glyph ambiguity (minutes vs miles vs metres) that ADR renamed as a defect.
     expect(up.amount).toBe('1:30 min')
     expect(up.amountIsEstimate).toBe(false)
-    expect(up.detail).toBe('RPE 8')
+    expect(up.detail).toBe(`RPE 8 \u00b7 ${NO_PACE_QUALIFIER}`)
   })
   it('renders the stand and the downhill jog legibly', () => {
     expect(groups[1].rows[1].role).toBe('Stand')
