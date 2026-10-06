@@ -6039,7 +6039,46 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
-### `ANALYSIS-SUPERSEDE-PATTERN-01` — 87% of real-user analyses are superseded, so a pattern feature has nothing to read *(filed 2026-10-06, P2)* 🏃 **COACHING BOARD**
+### ⚖️ `ANALYSIS-SUPERSEDE-PATTERN-01` — RULED 2026-10-06 (§71 Am. 1). **The filed question was already answered and the premise was wrong; the real defect was the COMMENT** *(filed 2026-10-06, P2)* 🏃 **COACHING BOARD**
+
+> ⚖️ **INSUFFICIENT EVIDENCE on the build, principle RATIFIED as §71 Amendment 1.** The board ruled the
+> rule and declined to order the code, because the decisive number does not exist.
+>
+> 🔴 **THE FILED QUESTION WAS ALREADY ANSWERED.** *"Is a pattern claim scoped to the plan or the
+> runner?"* — `PLAN-WEEK-COLLISION-01`'s own justification for marking rather than deleting says it:
+> per-plan readers filter, **time-windowed history readers do not.** Third item in two days whose board
+> question dissolved on one read of existing doctrine (§120 for `HM-PEAK`, §44 CD-16 for `GOAL-PAST-CV`).
+>
+> 🔴 **AND THE PREMISE WAS WRONG.** The item said *"`superseded_at` is set when a plan is
+> regenerated"*. The owner's contract says **race-identity change only** — *"a reshape, recalibration,
+> sub-threshold auto-apply or the appended maintenance block all keep the same `week.n` sequence and
+> MUST keep their completions."* Not per-regeneration; per-race.
+>
+> 📊 **Ratified (Seiler's split):** a cohort comparison **may** cross a race boundary for
+> **zone-discipline** fields (`hr_in_zone_pct`, `hr_above_ceiling_pct`, `hr_below_floor_pct`) and **may
+> not** for fitness-denominated ones (`ef_trend_pct`, pace/distance scores) — the denominator changed.
+> 🎯 **McMillan binding:** a crossing comparison NAMES the boundary it crossed. 🩹 **Willy binding on the
+> trend card:** the boundary stays visible, never smoothed.
+>
+> 🔴 **THE ACTIONABLE DEFECT WAS NOT THE ONE FILED: `supersede.ts` asserted four readers aggregate
+> across plans and TWO OF THE FOUR DO NOT, with a third mis-classified.** `v_coach_engagement` does
+> (SQL, no filter, calendar-week grouped); the **discipline ledger** filters **and is right to** (it
+> scores ≥75% of PLANNED sessions, so it is plan-scoped — the comment mis-named it); the **reframe
+> cohort** (PAID, always-on) and the **aerobic trend card** both filter and should not. **A false claim
+> in the justification for a live data-retention decision.** Comment corrected and the claim made
+> mechanical: `lib/coaching/analysisSupersedeReaders.test.ts` derives every reader from the tree.
+>
+> ⚠️ **Why no build:** production holds 148 rows / 76 real / 10 live across **FOUR runners with any
+> analysis at all**, and nobody has measured whether ONE real runner has analyses on both sides of a
+> race boundary. **The measurement that unblocks it:** count real users with ≥1 superseded AND ≥1 live
+> analysis. Building for a population that may be zero is the decorative-config class.
+>
+> 🥇 **The gate earned its keep on its first run** and corrected me: it flagged two unfiltered reads in
+> `app/api/health/ingest` that I had hand-waved as writes. They are SELECTs — identity lookups by
+> `apple_health_uuid` — and traced through, `/api/analyse-run` upserts on
+> `onConflict: 'user_id,apple_health_uuid'`, so nothing is re-attributed and **adding the filter there
+> would be a defect**, silently stopping late-HR refresh for an old block's runs. Registered with the
+> trace.
 
 > **Found while correcting `EMAIL-WAVE-4-PATTERN-01`'s population measurement.**
 >

@@ -13,10 +13,39 @@
 // linked to runs from the previous April.
 //
 // WHY THE ROWS ARE MARKED AND NOT DELETED. Nothing renders per-week completions
-// for an archived plan — Plan History reads `plan_archive` alone. But the
-// TIME-WINDOWED readers aggregate across plans: the aerobic trend card, the
-// discipline ledger, the reframe cohort, `v_coach_engagement`. Deleting on every
-// new race would destroy a runner's training history to fix a display bug.
+// for an archived plan — Plan History reads `plan_archive` alone. Deleting on
+// every new race would destroy a runner's training history to fix a display bug,
+// and the marking is reversible where a delete is not.
+//
+// 🔴 THIS PARAGRAPH USED TO ASSERT SOMETHING ABOUT THE CODE THAT WAS NOT TRUE,
+// and it was the justification for a live data-retention decision
+// (§71 Amendment 1, Coaching Board 2026-10-06). It read: "the TIME-WINDOWED
+// readers aggregate across plans: the aerobic trend card, the discipline ledger,
+// the reframe cohort, `v_coach_engagement`." Measured 2026-10-06 — TWO OF THE
+// FOUR DO NOT, and a third is mis-classified:
+//
+//   v_coach_engagement   ✅ crosses plans. Reads `session_completions` in SQL
+//                           with no filter, grouped by calendar week.
+//   discipline ledger    ⚠️ filters, AND IS RIGHT TO — it scores ≥75% of the
+//                           PLANNED sessions, so it is plan-scoped by design.
+//                           The old paragraph mis-named it as time-windowed.
+//   reframe cohort       ❌ filters. A time-ordered scan of the last
+//                           PREVIOUS_SIMILAR_SCAN_ROWS, live-plan only. PAID.
+//   aerobic trend card   ❌ filters, via DashboardClient.
+//
+// So the rows are retained for consumers that do not exist yet. **That is still
+// the right call** — retention is cheap and reversible — but the reason is
+// "a history reader is permitted and may be built", not "history readers rely on
+// this today". §71 Amendment 1 ratifies WHEN one may cross: zone-discipline
+// fields only, naming the boundary it crossed, with the boundary left visible.
+// It did NOT order the build, because nobody has yet measured whether a single
+// real runner has analyses on both sides of a race boundary (production
+// 2026-10-06: 148 rows, 76 on real users, 10 live — across FOUR runners).
+//
+// ⚠️ The claim is now MECHANICAL, because a prose statement about which queries
+// filter is exactly what nothing in this repo was checking:
+// `lib/coaching/analysisSupersedeReaders.test.ts` derives every `run_analysis`
+// reader from the tree and fails when one changes sides.
 //
 // WHY THIS THROWS RATHER THAN LOGGING. `savePlanForUser` already throws when the
 // `plan_weekly_notes` invalidation fails, on the argument that "a cached note

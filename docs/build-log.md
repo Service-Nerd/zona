@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — ANALYSIS-SUPERSEDE-PATTERN-01 · the defect was a comment, and the gate I wrote to prove it corrected me within a minute
+**Shipped:** no feature. A board ruling, a corrected comment, and a test that makes a prose claim about the code mechanical.
+
+**Dev learning:** `lib/plan/supersede.ts` justifies marking rows rather than deleting them with a sentence about the code: *"the TIME-WINDOWED readers aggregate across plans — the aerobic trend card, the discipline ledger, the reframe cohort, v_coach_engagement."* Two of those four don't, and a third is mis-classified. That sentence is the stated reason for a live data-retention decision, and **nothing in this repo was checking it, because it is prose about which queries carry a filter.** So the artifact the board ordered is not an invariant — these are read paths, and `validatePlan` receives a plan — it's a source gate that walks the tree, finds every `.from('run_analysis')` read, and records whether its chain filters `superseded_at`. Three arms go red if you remove the filter from the reframe cohort.
+
+**Product/creator learning:** three items in two days have had their board question dissolve on one read of existing doctrine. §120 Am. 1 already described the HM behaviour I'd filed as a defect. §44 CD-16 had already ruled the "target beyond measured fitness" question, one band too lenient. And here, PLAN-WEEK-COLLISION-01's own comment already answered "plan-scoped or runner-scoped". **The constitution is now large enough that reading it is cheaper than reasoning about it**, and the conflict scan keeps being the highest-value step in the sitting — not because it finds conflicts, but because it finds the ruling that already exists.
+
+**AI-building learning:** I wrote the gate, ran it, and it immediately flagged two reads I had **explicitly hand-waved away one step earlier** — I'd said "the NO FILTER ones are writes/ingest paths". They're `SELECT`s. Tracing them properly showed the missing filter is correct there: they're identity lookups by HealthKit workout UUID, and the refresh upserts back on `onConflict: user_id,apple_health_uuid`, so adding a filter would silently stop late-HR refresh for an old block's runs. **The gate was right and my summary of the same data, written minutes before, was wrong.** That is the argument for mechanising a claim rather than asserting it, made against me, by me.
+
+**The honest bit:** the item I filed yesterday said 87% of analyses are superseded and concluded a pattern feature is blocked. The 87% is real. It's across **four runners who have any analysis at all**, and nobody — including me when I filed it — had checked whether a single real runner has analyses on both sides of a race boundary. The board declined to order the build on exactly that basis. I had enough production access all along to answer it and didn't.
+
+**Hook material:** the comment explaining why we keep superseded data named four features that read it. Two of them don't. It was the justification for a live data-retention decision, and no test could see it, because it was prose.
+
+**Postable?:** yes — "we had a test for the code and no test for the sentence explaining the code" is the line.
+
+---
+
 ## 2026-10-06 — GOAL-PAST-CV-SILENT-01 · my own regex manufactured the headline finding, and measuring the fix found a bigger bug
 **Shipped:** a runner whose goal pace is past their current fitness is told so, instead of being handed a plan labelled "comfortable".
 

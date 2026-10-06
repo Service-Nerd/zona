@@ -4546,6 +4546,66 @@ rule is inert — which is how a fix ships and does nothing.
 
 **Originating decision:** post-race coaching SLT review, 2026-07-14 — the §70 fix (2026-07-13) corrected the weekly report but the same deflating, mis-attributing debrief persisted on the Today note and the run-analysis reframe, because the verdict leak and the missing athlete-narrative channel were never closed on those surfaces.
 
+### Amendment 1 — a cohort comparison may cross a race boundary for DISCIPLINE fields, never for fitness-denominated ones (Coaching Board, 2026-10-06)
+
+**Ruling: INSUFFICIENT EVIDENCE on the build, `ANALYSIS-SUPERSEDE-PATTERN-01`. The principle is
+ratified; the build is not ordered, and the reason is a number nobody has.**
+
+**📊 Seiler's split, adopted — the restriction belongs to the FIELD, not the window.** A cohort
+comparison **may** cross a race boundary for **zone-discipline** fields (`hr_in_zone_pct`,
+`hr_above_ceiling_pct`, `hr_below_floor_pct`), because those ask *did you hold the zone you were
+told to hold* and the zone was recomputed for whoever the runner was at the time. It **may not**
+cross for **fitness-denominated** fields (`ef_trend_pct`, pace and distance scores): the denominator
+changed, so the comparison is not of like with like.
+
+**🎯 McMillan's condition, binding on any build:** a comparison that crosses a race boundary **names
+the boundary it crossed.** *"Your last block"* is a sentence a runner can discount; a silent
+comparison to eight months ago is not. And the experience he objected to is the live one — *"a runner
+who finishes a half, signs up for a 10K and logs their first run should not be told the app has never
+seen them run before."*
+
+**🩹 Willy's condition, binding on the trend card:** reading across race boundaries puts a
+**discontinuity at every race**, and a runner reading a step change as a decline is worse than a
+short chart. The boundary is visible, never smoothed.
+
+**⚕️ Sims on who this costs:** the runner with the longest history is the one who has raced most, so
+the current behaviour **penalises exactly the committed returning athlete** and hides the multi-season
+arc from the person who earned it — and for peri- and post-menopausal runners that arc is the
+clinically interesting one, because adaptation changes across seasons rather than within a block.
+
+**🔴 The filed question was already answered, and the item's premise was wrong.**
+`PLAN-WEEK-COLLISION-01`'s own justification for marking rather than deleting states it:
+*"the TIME-WINDOWED readers aggregate across plans... Deleting on every new race would destroy a
+runner's training history."* Per-plan readers filter; history readers do not. And supersession is set
+on a **race-identity change only** — the owner's contract says *"a reshape, recalibration,
+sub-threshold auto-apply or the appended maintenance block all keep the same `week.n` sequence and
+MUST keep their completions"* — not on every regeneration, as the item claimed.
+
+**🔴 What IS wrong today, measured: two of the four readers that justification names do not do what
+it says.**
+
+| Reader named in `supersede.ts` | Table | Crosses plans? |
+|---|---|---|
+| `v_coach_engagement` | `session_completions` | ✅ yes — no filter, grouped by calendar week |
+| discipline ledger | `run_analysis` | ❌ filters — **and is right to**: it scores ≥75% of *planned* sessions, so it is plan-scoped. **The justification mis-classifies it.** |
+| reframe "previous similar" cohort | `run_analysis` | ❌ **genuine** — a time-ordered scan of the last `PREVIOUS_SIMILAR_SCAN_ROWS` (20), live-plan only. **PAID and always-on.** |
+| aerobic trend card | `run_analysis` | ❌ **genuine** |
+
+**⚠️ WHY THE BUILD IS NOT ORDERED.** Production, read-only, 2026-10-06: `run_analysis` holds 148 rows,
+**76 on real users, 10 not superseded (87% superseded) — across FOUR runners with any analysis at
+all.** Nobody has measured whether a single real runner has analyses on **both sides** of a race
+boundary. Building a cross-boundary reader for a population that may be zero is this repo's
+decorative-config class with extra steps. **The measurement that unblocks it:** count real users with
+≥1 superseded and ≥1 live analysis.
+
+**Config.** None. `PREVIOUS_SIMILAR_SCAN_ROWS` already bounds the scan and a second constant would
+duplicate it.
+**Invariant.** **Not mechanically checkable as a plan invariant** — these are read paths, not plan
+content, and `validatePlan` receives a plan. Mechanised instead as a **source gate**
+(`lib/coaching/analysisSupersedeReaders.test.ts`) asserting for each `run_analysis` reader whether it
+filters, so the justification above and the code cannot disagree again without the build failing.
+That is the artifact: **the comment was the defect.**
+
 ---
 
 ## 72. An ultra effort is read as time-on-feet — never scored on fade
