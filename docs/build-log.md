@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — MKT-PLAN-SEGMENT-ENGINE-BASIS-01 · a fixture that cannot tell two hypotheses apart is not a test
+**Shipped:** the engine now reads `race_pace_pct` as a share of the long run's DURATION, harmonically, matching §25 Am. 2 and the composer.
+**Dev learning:** I could not write the obvious gate. A generated plan carries no pace guide — `minPerKmEasy` appears nowhere in the plan JSON — and `pace_target` is a DISPLAY range ("7:00-8:20 /km") against an actual 8.58 min/km used for sizing. So a plan-level identity check would have had to re-derive VDOT, which is the checker computing the answer the same way the producer did. The gate became behavioural with injected paces instead, which is a better test and took three attempts to realise.
+**Product/creator learning:** the item predicted the change would reach "time-target HM and marathon runners in peak". Measured: all four distances, 12,624 plans, with 5K and 10K reached through §24b's inline two-segment path — which the item describes one paragraph earlier. **An item can contain the correction to its own prediction and still not make it.**
+**AI-building learning:** my first fixture used easy 6:00 and HM 5:00, where the harmonic and arithmetic forms differ by 0.85 minutes on a 20 km session. `Math.round` erases that, so the test would have passed on either formula. The population arm caught the empty-set version and the distinguishability arm caught this one. **Write the arm that proves your fixture can fail.**
+**The honest bit:** three separate import errors before the test even ran (`isV2Structure` from the wrong module, `StructureV2Schema` from the wrong module, `PaceGuide` not exported from `@/types/plan`), and the first version of the whole test collected zero rows. The useful part was that each failure was caught by an assertion I had written for exactly that reason.
+**Hook material:** total duration across 16,264 sessions fell by 11,488 minutes — a mean of 0.71 min per session, and not one kilometre changed. The runner covers the same ground; the estimate stopped being wrong.
+**Postable?:** maybe
+
+
 ## 2026-10-06 — TAPER-OVER-PEAK-01 · the evidence gate was answerable by reading one line
 **Shipped:** nothing prescriptive. A ratchet, and the item closed.
 **Dev learning:** the board had blocked this on a precisely named unknown — is the easy pool computed before or after quality placement? It took one grep. `remainingVolume = Math.max(0, weeklyKm - placedKm)`, and `placedKm` sums the already-placed quality, so the pool is computed AFTER and the shortfall does enter it. The remedy the board asked for was already what the engine does. **An INSUFFICIENT EVIDENCE ruling is a question, and some questions are one line of source away from an answer.**

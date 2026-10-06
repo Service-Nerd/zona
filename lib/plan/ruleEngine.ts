@@ -4911,7 +4911,12 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide, floors: Sess
  * turns on it — but it is a real ambiguity in §25's `race_pace_pct` and it is
  * filed rather than silently resolved (MKT-PLAN-SEGMENT-BASIS-01).
  */
-function applyRacePaceSegmentDuration(weeks: Week[], pace: PaceGuide): void {
+/** Exported for `segmentTimeBasis.test.ts`: the §25 Am. 2 basis is only
+ *  assertable with KNOWN paces, and a generated plan does not carry its pace
+ *  guide (`minPerKmEasy` appears nowhere in the plan JSON), so a plan-level
+ *  identity check cannot reconstruct it without re-deriving VDOT — which would
+ *  be the checker computing the answer the same way the producer did. */
+export function applyRacePaceSegmentDuration(weeks: Week[], pace: PaceGuide): void {
   for (const w of weeks) {
     for (const s of Object.values(w.sessions) as (Session | undefined)[]) {
       if (!s || !isLongRun(s)) continue
@@ -4941,8 +4946,39 @@ function applyRacePaceSegmentDuration(weeks: Week[], pace: PaceGuide): void {
 
       const segFrac = segments.reduce((a, x) => a + x.frac, 0)
       if (segFrac <= 0 || segFrac > 1) continue
-      const mins = distKm * (1 - segFrac) * pace.minPerKmEasy
-        + segments.reduce((a, x) => a + distKm * x.frac * x.minPerKm, 0)
+      // §25 AMENDMENT 2 (Coaching Board 2026-09-30) — `race_pace_pct` IS A SHARE
+      // OF THE LONG RUN'S DURATION, NOT ITS DISTANCE.
+      // MKT-PLAN-SEGMENT-ENGINE-BASIS-01, a defect fix restoring documented
+      // intent: `sessionComposer.ts` was already on the time basis and this
+      // function was not, so the engine and the composer disagreed about the same
+      // declared dose.
+      //
+      // On the time basis the segment occupies `p` of the TOTAL TIME, so for a
+      // distance-anchored session the total follows from the distance rather than
+      // being summed from per-segment distances:
+      //
+      //     distKm = T * ( Σ frac_i / minPerKm_i  +  (1 − segFrac) / easyMinPerKm )
+      //   → T      = distKm / ( Σ frac_i / minPerKm_i  +  (1 − segFrac) / easyMinPerKm )
+      //
+      // i.e. the HARMONIC form where the old code used the arithmetic one.
+      //
+      // ⚠️ BOUNDED AND ALWAYS DOWNWARD. By Cauchy-Schwarz the harmonic mean never
+      // exceeds the arithmetic, so no minutes ceiling (§9's LONG_RUN_CAP_MINUTES,
+      // INV-PLAN-LONG-CAP-MINS) can be newly breached by this change. On the
+      // board's own example: 168 → 167 min.
+      //
+      // ⚠️ THE KILOMETRES DO NOT CHANGE. The session is distance-anchored and this
+      // function only ever writes `duration_mins`; `distKm` is read, never
+      // assigned. So the runner covers exactly the same ground.
+      //
+      // ⚠️ REACHES DISTANCE-ANCHORED RUNNERS ONLY — the `distKm == null` guard
+      // above returns early, and per SESSION-KM-01/02 beginners are
+      // duration-anchored on 95.8% of sessions. The cohort is intermediate and
+      // experienced time-target HM/marathon runners in peak.
+      const invRate = segments.reduce((a, x) => a + x.frac / x.minPerKm, 0)
+        + (1 - segFrac) / pace.minPerKmEasy
+      if (!(invRate > 0)) continue
+      const mins = distKm / invRate
       const priced = Math.round(mins)
       // Only ever REDUCES — a race-pace segment is by definition faster than
       // easy. A guard, not an expectation: if a pace table ever inverts, the

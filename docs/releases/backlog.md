@@ -1643,7 +1643,42 @@ unit is silently wrong."* Optional-with-a-default is what hid this in the first 
 
 ## ⚖️ FILED 2026-09-30 — `MKT-PLAN-SEGMENT-ENGINE-BASIS-01`
 
-### `MKT-PLAN-SEGMENT-ENGINE-BASIS-01` — align the engine to §25 Amendment 2's time basis 🏃 COACHING BOARD (ruled) · ⚙️ measurement-gated
+### ✅ `MKT-PLAN-SEGMENT-ENGINE-BASIS-01` — SHIPPED 2026-10-06. The engine is on §25 Am. 2's time basis. ⚙️ NO BOARD
+
+> ✅ **SHIPPED.** `applyRacePaceSegmentDuration` now derives the long run's duration harmonically —
+> `T = distKm / (Σ frac/segPace + (1−segFrac)/easyPace)` — instead of summing per-segment distances
+> arithmetically. §25 Am. 2 settled the basis; `sessionComposer.ts` was already correct and this
+> producer was not.
+>
+> 📊 **ALL THREE NAMED GATES RUN, BEFORE AND AFTER:**
+> · `measure:fitness` **IDENTICAL on every cohort** — healthy standard 28.6%/12.8%, injury standard
+>   36.4%/0%, masters 18.5%/18.6%, M4 29.5 km/70%/+47%. The item's recorded baseline reproduced
+>   exactly before the change, which is what made the comparison worth anything.
+> · `cohort:shape` **exit 0, unchanged** — no baseline moved, nothing re-baselined.
+> · `verify:parity` **659 of 5,832 cases changed — INTENDED AND DECLARED.**
+> · `review:coaching` all six arms identical, envelope **95.9%**.
+>
+> 📐 **THE MOVE, AS A NUMBER:** total duration across 16,264 segmented long runs
+> **1,913,736 → 1,902,248 min**, i.e. **−11,488 min, a mean of −0.71 min per session**. Golden
+> snapshots moved by exactly 1 minute each (79→78, 112→111 ×2, 152→151), matching the board's own
+> 168→167 example. **`distance_km` is never written — the runner covers the same ground.**
+>
+> ⚠️ **THE ITEM'S PREDICTED REACH WAS INCOMPLETE, AND THE ITEM CONTAINED THE REASON.** It said
+> *"intermediate/experienced time-target HM and marathon runners in peak"*. Measured: **12,624 plans
+> / 16,264 sessions, across ALL FOUR distances** — 5K and 10K at 1,728 plans per fitness level each,
+> via §24b's inline two-segment path, which the item describes one paragraph earlier and did not
+> carry into its prediction. Cohort otherwise exactly as stated: **time-target only, intermediate and
+> experienced only, zero beginners** (duration-anchored on 95.8% of sessions, SESSION-KM-01/02).
+>
+> 🧪 **`lib/plan/segmentTimeBasis.test.ts`** — 4 arms, **falsified**: restoring the arithmetic form
+> reddens the basis arm. ⚠️ **It is behavioural with INJECTED paces, and that is forced, not lazy:**
+> a generated plan carries no pace guide at all (`minPerKmEasy` appears nowhere in the plan JSON, and
+> `pace_target` is a display RANGE — *"7:00–8:20 /km"* against an actual **8.58** used for sizing), so
+> a plan-level identity check would have to re-derive VDOT, i.e. compute the answer the way the
+> producer did. ⚠️ **And my first fixture could not tell the two formulas apart** — at easy 6:00 / HM
+> 5:00 the bases differ by **0.85 min** on 20 km, which `Math.round` erases. The fixture now uses a
+> ~1:35 HM runner's paces and separates them by ~5 min; **a fixture that cannot distinguish the two
+> hypotheses is not a test.**
 
 > ✅ **COACHING BOARD 2026-10-05 — ALREADY RULED (§25 Amendment 2). No new sitting. ⚙️ NO BOARD.**
 > Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`. Confirmed: a **defect fix restoring documented intent**.
