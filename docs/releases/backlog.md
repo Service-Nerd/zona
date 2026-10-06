@@ -6557,6 +6557,42 @@ the toggle governs how distances are *written* (km vs mi) rather than which fact
 ⚠️ **Do not re-propose without re-measuring.** E shipped after this was filed, so the 29.2% figure is
 historical — take the post-E number first.
 
+### 📐 POST-E MEASUREMENT, 2026-10-06 — taken because the founder asked the right question: *"why do we have 9:20 when I am using distance?"*
+
+Corpus: `cohortGrid` stride 53, **41,009 sessions** (time trial excluded — ADR/§78 ratifies that its
+parts differ in KIND by design), work rows only, strides excluded (`4 × 20s` is a rep count, not a
+lead metric). The mid-block switch E was built for is **down from 29.2% of blocks to 2.29% of
+sessions**, and what remains splits in two:
+
+| Still mixing, on the DISTANCE setting | Sessions | % | Shapes |
+|---|---|---|---|
+| The kind switches **within the main set** | **941** | **2.29%** | `quality_continuous` |
+| The **bookends** disagree with the main set (warm-up in minutes, main in km) | **1,657** | **4.04%** | `shakeout` 862 · `quality_continuous` 795 |
+| Both at once | 0 | — | — |
+
+**The founder's `9:20` is row 1, and the cause is not a display bug.** Measured: of 47,768
+time-unit leads under the distance setting, **1,174** are a duration-prescribed main-set step with
+**no pace target at all** — the target is a ZONE (`Zone 2–3`). `buildRow` derives a distance from
+`paceMeanSecPerKm(step.pace)`, and there is no pace to divide by, so the prescription stays. His was
+a Progressive tempo: `9:20 min · Zone 2–3`, between `~0.8km` and `~0.9km` rows.
+
+🔴 **A zone is a pace BAND, so the honest conversion is a RANGE, not a number.** On his card's own
+bracket (5:53–7:02 /km) 9:20 is **~1.3–1.6 km**. So showing the time is a **choice** — it was never
+an impossibility — and the alternatives are: print the range, print the band's midpoint as a single
+`~1.4 km` (which invents a precision the zone does not have, against `zone-rules.md`'s never-invent
+rule), or leave it as E ships it. **That is a Design Board call and it is open.**
+
+**Row 2 is a two-writer split and is the stronger finding.** `resolveDisplayFigures` apportions
+distance only when **every** part has a `distance_km`, so a quality session whose warm-up is
+duration-anchored prints `15 min` — while the main-set rows come from `buildStepGroups(derived_set)`,
+a **completely independent producer** that reads the steps' own prescriptions and prints km. Two
+producers decide the same thing for one card and nothing makes them agree. `buildSessionRows` unified
+who BUILDS the rows; it did not unify who decides the row's KIND.
+
+⚠️ **Neither was fixed by `SESSION-STEP-SLOTS-01`** and neither is asserted anywhere: the legibility
+gate checks the strings a row emits, never whether two rows on one card agree about what a number
+means.
+
 ---
 
 ### `MKT-STEP-CEILING-BAND-01` — the website words the pace ceiling correctly and still prints it over a range 🧭 **DESIGN BOARD**
