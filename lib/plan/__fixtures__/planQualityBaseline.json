@@ -10,10 +10,10 @@
     "generated": 2872,
     "refused": 128,
     "NEVER-BUILDS": 1089,
-    "BINGE-WEEK": 281,
-    "LONG-RUN-SHORT": 40,
+    "BINGE-WEEK": 285,
     "WEEK1-LEAP": 22,
-    "BINGE-SEVERE-75": 20,
+    "LONG-RUN-SHORT": 20,
+    "BINGE-SEVERE-75": 19,
     "FLAT-CURVE": 3
   },
   "targetedGrid": {
