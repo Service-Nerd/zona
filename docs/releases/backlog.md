@@ -6536,30 +6536,47 @@ A principle written before that number exists is the error the board recorded on
 
 ---
 
-### `STEP-ZONE-RANGE-01` — a zone-only step shows its prescribed TIME; a range was always available 🧭 **DESIGN BOARD** → 🏃 **COACHING BOARD**
+### `STEP-ZONE-RANGE-01` — an effort-governed step looks exactly like one we failed to compute 🧭 **DESIGN BOARD**
 
-**Founder's own question, 2026-10-06, verbatim: _"I want to know why we have 9:20 when I am using
-distance."_** Measured answer: his step was `9:20 min · Zone 2–3` — prescribed as a duration of effort
-at a **zone**, and `buildRow` derives a distance by dividing by the step's PACE. A zone carries no
-pace, so the prescription stays. **1,174 rows** across the corpus are this shape.
+⚠️ **THIS ITEM WAS FILED WRONG ON 2026-10-06 AND IS KEPT, NOT REPLACED, BECAUSE THE ERROR IS THE
+POINT.** It was filed as *"a zone-only step shows its TIME; a range was always available"*, proposing
+the lead become `~1.6-1.7 km`. **That is settled ground and I filed against it**, one hour after
+writing the measurement, without running the scan:
 
-🔴 **I had been treating "there is no pace" as "there is no answer", and that is wrong.** A zone IS a
-pace band, so the conversion exists — it yields a **range**. On his card's own bracket (5:53–7:02 /km)
-`9:20` is **~1.3–1.6 km**. `SESSION-STEP-SLOTS-01` shipped the prescription because that is what the
-old code did, **not because a decision was taken.**
-
-| Option | Against it |
+| Where it was already decided | What it says |
 |---|---|
-| Leave it (ships today) | The lead unit switches mid-block on **941 sessions (2.29%)** — the thing he complained about |
-| Print the derived **range** (`~1.3–1.6 km`) | Four glyphs where every other lead is one number; and a ±20% band presented as "how far" is a claim |
-| Print the band's **midpoint** (`~1.4 km`) | ⛔ **Refused already** — `zone-rules.md`'s never-invent rule; a zone does not have a centre |
+| `sessionCatalogueData.ts`, Coaching Board **2026-09-03**, on this exact step | *"no single pace anchor describes a moving target, so its target is the zone band `Z2-Z3` **rather than a false-precision pace**"* |
+| `ui-patterns.md` **§21b** | *"A rep with no pace keeps **time** as its primary — **there is no honest distance to show**"* |
+| `CoachingPrinciples.md` **§40b** | an effort-governed step *"does not invent a number the runner cannot act on. **What is absent is the pace, and only the pace**"* |
 
-**Routing, in order.** 🧭 Design rules the **encoding** (is a range a legitimate lead?). 🏃 Coaching
-rules only if the answer is the range, because a derived distance from a band is a statement about
-what the runner will cover. Seam rule: design owns the encoding, coaching owns the meaning.
+🔴 **And the proposed fix would have re-introduced the exact number the board refused.** `~1.7 km` over
+`9:20` **is** `5:29 /km` by division — on a step whose own note reads *"Let it rise. Don't chase it."*
+Printing the distance hands back the pace the catalogue deliberately withheld. ⚠️ A second slip in the
+same filing: the range was quoted as `~1.3-1.6 km` using the SESSION's easy band from an earlier
+screenshot rather than **this step's** own span (Z2-Z3 sits between step 3's `5:53` ceiling and step
+5's `5:07-5:22`, so it is `~1.6-1.7 km`). **Two errors, both from reasoning instead of reading.**
 
-⚠️ **Do not fold this into `METRIC-TOGGLE-SCOPE-01`.** That item asks whether the toggle should exist
-at all; this one is answerable without touching it, and only this one answers the founder.
+### The real defect, which stands
+
+**The founder looked at his own shipped card and read a deliberate decision as a bug.** Steps 3, 4 and
+5 are all `9:20`; two lead with km and one with minutes; **nothing on the row says the pace is absent
+ON PURPOSE.** §40b governs what the engine prescribes and §21b governs which metric leads — **neither
+says the row must be visually indistinguishable from one where the derivation merely failed**, and
+that is the gap.
+
+> **The question for the board:** how does *"by feel, deliberately"* read differently from *"we had
+> nothing to divide by"*? It is one slot, it is already there (the target line carries `Zone 2-3`),
+> and the answer must not be a tooltip — this is read mid-run.
+
+**Population:** 1,174 rows carry a zone-only target with no pace. Shapes are `quality_continuous`
+(progressive tempo, 5K-pace progression). ⚠️ **Do not propose a number.** Any option that puts a
+distance, a range or a midpoint on the lead is refused by all three rows of the table above.
+
+**Second, smaller finding from the same screenshot:** the MAIN SET header reads `~5km` while steps 3
+and 5 account for `3.2km`. The header takes `main.distance_km` from `withDistances`, which apportions
+the SESSION's average pace across the parts — so it **silently includes** a distance for the very step
+the board refused to put a pace on. Not false (it is the block's estimate, not a sum of steps) but it
+is the same number, implied one row higher, with no `~` relationship stated.
 
 ---
 
