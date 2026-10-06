@@ -6337,9 +6337,45 @@ quality now prescribes some. Baseline lowered to lock it in.
 > sessions and the catalogue had nothing to give it in build. With the row, the ratio holds. The
 > catalogue row is the exemption's PREREQUISITE, not its alternative.**
 >
-> 🔻 **BLOCKED ON:** the deferred sitting for the catalogue row, with `measure:fitness` before/after,
-> a refusal count, and **selection measured, not inferred** — which is the exact error that reverted
-> the last attempt.
+> ✅ **SITTING 4 HELD 2026-10-06 — THE CATALOGUE ROW IS VETOED AND THIS ITEM IS NOW BLOCKED ON A
+> LARGER, RATIFIED DEFECT.** Record: `docs/decisions/2026-10-06-build-specificity-finding.md`.
+> The gate was discharged with a throwaway prototype (reverted): **selected 7,644 times, ZERO in
+> BUILD**, refusals unchanged, `measure:fitness` effectively unchanged. **Inert by construction** —
+> `MIDWEEK_QUALITY_LADDER` is `['aerobic','threshold','vo2max']`, so no build slot at any distance
+> ever prefers `race_specific`.
+> 🔴 **THE REAL FINDING: §5 declares build 30% specific and build delivers 0.0% (0 of 118,764 quality
+> sessions)**; peak 60% declared vs 17.3%, taper 70% vs 33.8%. **`.build.specific_pct` has NO
+> consumer** — the constant's only reader takes `.peak` alone. **So this item's defect is one face of
+> that: build cannot select race-specific work, so §22 renames threshold work instead. Fix the ladder
+> and the fifth exemption becomes unnecessary.** Filed as `BUILD-SPECIFICITY-ZERO-01`.
+
+---
+
+### 🔴 `BUILD-SPECIFICITY-ZERO-01` — §5 declares the build phase 30% specific; it delivers **0.0%** 🏃 **COACHING BOARD** *(ruled; mechanism gated)*
+
+> ⚖️ **COACHING BOARD 2026-10-06 — THE DEFECT IS CORRECT AND RATIFIED; INSUFFICIENT EVIDENCE ON THE
+> MECHANISM ONLY.** Record: `docs/decisions/2026-10-06-build-specificity-finding.md`.
+> 📊 **Measured, 39,632 plans:** build **0.0% specific (0 of 118,764 quality sessions)** against §5's
+> declared **30%**; peak **17.3%** against 60%; taper **33.8%** against 70%.
+> 🔴 **CAUSE:** `buildRotationCategories` filters `quality_categories_focus` through
+> `MIDWEEK_QUALITY_LADDER` = `['aerobic','threshold','vo2max']`. **`race_specific` is not in it**, so
+> HM/MARATHON's `['threshold','race_specific']` reduces to `['threshold']` and 5K/10K never mention it.
+> The selector's fallback cannot fire because threshold rows are eligible throughout build.
+> 🔴 **AND `.build.specific_pct` IS DECORATIVE CONFIG** — the constant's only consumer is
+> `invariants.ts:2709` reading `.peak.specific_pct`. `configConsumer.test.ts` passes it on the NAME,
+> and **its own header cites this very constant as a prior example of the class.** Same shape as §1's
+> `INTENSITY_DISTRIBUTION`, one key over.
+> 🔻 **GATE BEFORE IT SHIPS:** `measure:fitness` before/after · refusal count · `cohort:shape` ·
+> `verify:parity` · the §89 early-onset cell · an assertion that the change **SUBSTITUTES** a quality
+> session rather than adding one (⚕️ Sims) · **5K/10K costed SEPARATELY** from HM/marathon, because at
+> 5K goal pace is near vVO2max and SC-05 already excludes 5K from §22's ownership arm (🩹 Willy).
+> 📦 Artifacts authorised: **§5 Amendment** (the build share is an obligation, not a declaration) ·
+> **no new numeric** (the 30 already exists) · **`INV-PLAN-BUILD-SPECIFICITY` at `warn` FIRST** — at
+> 0.0% delivered it would fire on essentially every time-target plan, and promoting ahead of the fix
+> is what reverted `INV-PLAN-MAIN-SET-ORDERING`'s first promotion.
+> 🩹 **Load-neutral in the right direction:** at HM/marathon goal pace sits BELOW threshold, so the
+> substitution REDUCES intensity. §1 counts sessions and is untouched.
+> ⬅️ **`RACE-ANCHOR-CV-OVERRIDE-01` is blocked on this, not the reverse.**
 **Board: 🏃 COACHING BOARD.** **Two mechanisms have now failed, at opposite ends. Re-propose
 neither.**
 
