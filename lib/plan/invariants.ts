@@ -441,6 +441,33 @@ function rowHasMixedWorkAnchors(catalogueId: string): boolean {
   return anchors.size > 1
 }
 
+/**
+ * §85 Amendment (RACE-ANCHOR-CV-OVERRIDE-01) — the CHECKER's half of the fifth
+ * exemption. A row whose every working step is anchored at CV is exempt from §22's
+ * per-week goal-pace requirement, because §22's override no longer repaints it.
+ *
+ * ⚠️ DELIBERATELY DUPLICATED from the engine's `hasCvAnchoredWork`, for the reason
+ * `rowHasMixedWorkAnchors` states one function up: **a checker that imports the
+ * producer's predicate cannot catch the producer being wrong.** Same trade the four
+ * existing exemptions make.
+ *
+ * ⚠️ BOTH HALVES OR NEITHER. Removing the override without this left the per-week
+ * check correctly red on 100 tests, which is why the previous attempt was reverted.
+ */
+function rowIsCvAnchored(catalogueId: string): boolean {
+  const row = V1_SESSION_CATALOGUE.find(r => r.id === catalogueId)
+  if (!row || !isV2Structure(row.main_set_structure)) return false
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success) return false
+  const anchors = new Set(
+    parsed.data.blocks.flatMap(b => b.steps)
+      .filter(st => st.role === 'work' && st.target.kind === 'pace')
+      .map(st => (st.target as { anchor: string }).anchor)
+      .filter(a => a !== 'E'),
+  )
+  return anchors.size > 0 && Array.from(anchors).every(a => a === 'CV')
+}
+
 function rowIsEffortGoverned(catalogueId: string): boolean {
   const row = V1_SESSION_CATALOGUE.find(r => r.id === catalogueId)
   if (!row || !isV2Structure(row.main_set_structure)) return false
@@ -1265,6 +1292,9 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         // holds the PLAN to a race-pace share, and §53's rotation means an
         // over-under occupies at most a minority of second-half build slots.
         if (session.catalogue_id && rowHasMixedWorkAnchors(session.catalogue_id)) continue
+        // §85 Am. — the fifth exemption's checker half. CV rows are no longer
+        // repainted at goal pace, so §22 must stop demanding that they be.
+        if (session.catalogue_id && rowIsCvAnchored(session.catalogue_id)) continue
         // §22 Amendment (Coaching Board 2026-09-15, V2-SWAP-S22-01) — a session
         // RELOCATED into this week by §5's VO2max adaptation-window swap is
         // exempt, for the same reason the three exemptions above are.
@@ -2891,6 +2921,14 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // Lesson: "0/N" in a violation message says the numerator was zero, NOT that
   // it could never be non-zero. Confirm unsatisfiability by measuring the
   // satisfying case, not by reading the failure.
+  // ⚠️ NO PLAN-LEVEL EXEMPTION HERE, AND ONE WAS BUILT AND REMOVED. §120 Am.1
+  // withholds the HM goal anchor past CV, so §22's ratio looked unsatisfiable for
+  // that runner and I exempted the whole plan on the `hm_goal_anchor_withheld`
+  // stamp — the pattern used for §93 Am.1 an hour earlier. **It was dead weight:**
+  // with the CV-anchored denominator fix below, all 17 affected tests pass without
+  // it, and shipping it would have weakened §22 for 496 of 5,664 plans for nothing.
+  // The collision is real; the remedy is ARITHMETIC, not an exemption. I reached
+  // for the shape of the last fix instead of reading the numerator and denominator.
   if (isTimeTarget && plan.meta.goal_pace_per_km) {
     const goalMid = parsePaceMidpoint(plan.meta.goal_pace_per_km)
     if (goalMid != null) {
@@ -2911,6 +2949,25 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           // denominator with sessions §22 explicitly exempts. Same defect SC-09
           // was written to close, one function call away from the fix.
           if (isVo2maxSession(session, V1_SESSION_CATALOGUE)) continue
+          // §22 Amendment (RACE-ANCHOR-CV-OVERRIDE-01, 2026-10-06) — A CV-ANCHORED
+          // SESSION LEAVES THE DENOMINATOR, FOR THE SAME REASON VO2max DOES.
+          //
+          // 🔴 THE ARITHMETIC IS THE WHOLE ARGUMENT. This ratio's denominator is
+          // "the quality §22 expects to be goal-paced". §85 Am. now exempts a
+          // CV-anchored row from §22's override, so such a session is no longer
+          // expected to be goal-paced — and counting it in the denominator while
+          // exempting it from the numerator is guaranteed to fail.
+          //
+          // ⚠️ MEASURED, AND IT IS WHY THE FIRST CUT OF THIS SHIP WAS WRONG. Without
+          // this line the exemption produced **143 NEW error-severity violations,
+          // every one at 5K**, reading "33% (1/3)". This invariant's own comment
+          // above explains it: at 5K the ratio was satisfied *because* the rename
+          // painted goal pace on everything — "168 of 168 ... at 0% delta". Remove
+          // the rename from CV rows and the 5K denominator still counts them.
+          //
+          // ⚠️ It is the same shape as the VO2max exclusion twenty lines up, which
+          // SC-09 had to fix when it was left reading a label.
+          if (session.catalogue_id && rowIsCvAnchored(session.catalogue_id)) continue
           nonVo2Quality++
           if (!session.pace_target) continue
           const mid = parsePaceMidpoint(session.pace_target)

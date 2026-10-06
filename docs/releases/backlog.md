@@ -6465,8 +6465,28 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ---
 
-### 🟠 🏃 `RACE-ANCHOR-CV-OVERRIDE-01` — SETTLED 2026-10-06: the deadlock belongs to the CATALOGUE. Blocked on ONE deferred sitting.
+### ✅ 🏃 `RACE-ANCHOR-CV-OVERRIDE-01` — SHIPPED 2026-10-06 (5th sitting). **The blocker was §22's DENOMINATOR, not the exemption**
 
+> ✅ **SHIPPED 2026-10-06. `INV-PLAN-HEADER-PACE-MATCHES-WORK` 3,232 → 0**, both halves of the fifth
+> exemption (override + per-week check), plus a **§22 Amendment: a CV-anchored session leaves the
+> ratio's DENOMINATOR**, exactly as VO2max already does.
+>
+> 🔴 **FOUR SITTINGS BLAMED THE EXEMPTION AND IT WAS THE ARITHMETIC.** Exempting the numerator only
+> produced **143 NEW error-severity violations, all at 5K** — and the invariant's own comment already
+> explained why: at 5K the ratio was satisfied *because* §22's rename painted goal pace on everything
+> (*"168 of 168 … at 0% delta"*).
+>
+> 🔴 **I built a plan-level exemption first and removed it.** Keyed on `hm_goal_anchor_withheld`,
+> copying the §93 Am.1 pattern from an hour earlier; with the denominator right it was **dead** and
+> would have switched §22's ratio off for **496 of 5,664 plans**. ⚠️ Its falsification was **vacuous** —
+> `validatePlan` runs twice on different objects (bare plan 2/5, composed 4/5).
+>
+> ✅ Sweep clean on 14,268 plans · fit-for-purpose **identical** every distance · parity 196/6,066,
+> **`time_target` only, `finish` 0** · 0 error-severity. Record: `coaching-rulings.md`.
+>
+> ⚕️ **Residual open:** `GOAL-PAST-CV-SILENT-01`.
+>
+> **Superseded filing below, for the record.**
 > 📄 **Full record: `docs/decisions/2026-10-06-cv-override-settled.md`.**
 > ✅ **THE SETTLING ARTEFACT IS TAKEN AND IT ANSWERS THE OWNERSHIP QUESTION: NOTHING ELSE WAS
 > ELIGIBLE.** `race_specific` rows eligible in the **BUILD** phase number **exactly one** —

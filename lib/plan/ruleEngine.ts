@@ -990,6 +990,39 @@ function hasMixedWorkAnchors(row: SessionCatalogueRow | null | undefined): boole
   return anchors.size > 1
 }
 
+/**
+ * §85 Amendment (RACE-ANCHOR-CV-OVERRIDE-01) — IS EVERY WORKING STEP ANCHORED AT CV?
+ *
+ * The FIFTH exemption from §22's goal-pace override, on the identical reasoning as
+ * the four that exist (VO2max, effort-governed §40b, mixed-anchor §85,
+ * §5-displaced): a row authored at CV is authored at CV *because CV is the point*.
+ * §22 repainting it at goal pace produces a session whose header says one pace and
+ * whose work step means another, which is the §19 label-integrity defect
+ * `INV-PLAN-HEADER-PACE-MATCHES-WORK` exists to catch — it fired **3,232** times,
+ * every one a CV row.
+ *
+ * ⚠️ BOTH HALVES OR NEITHER. The previous attempt removed the override and left the
+ * per-week check, which then correctly went red on 100 tests. All four ratified
+ * exemptions do both, and so does this one.
+ *
+ * ⚠️ Mirrors `hasMixedWorkAnchors` deliberately, including its `'E'` filter: an
+ * easy-anchored step is a RAMP, not a second working pace, and excluding
+ * `progressive_tempo` on that basis once broke §22 across 74 tests.
+ */
+function hasCvAnchoredWork(row: SessionCatalogueRow | null | undefined): boolean {
+  if (!row || !isV2Structure(row.main_set_structure)) return false
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success) return false
+  const anchors = new Set(
+    parsed.data.blocks.flatMap(b => b.steps)
+      .filter(st => st.role === 'work' && st.target.kind === 'pace')
+      .map(st => (st.target as { anchor: string }).anchor)
+      .filter(a => a !== 'E'),
+  )
+  // `Array.from`, not a spread — CLAUDE.md's documented gotcha, which I hit here.
+  return anchors.size > 0 && Array.from(anchors).every(a => a === 'CV')
+}
+
 function pacedRepPlan(
   row: SessionCatalogueRow | null,
   fitness: FitnessLevel,
@@ -1517,8 +1550,12 @@ function makeQualitySession(args: {
   // §85 — a mixed-pace row is excluded here for the same reason effort-governed
   // rows are: see hasMixedWorkAnchors.
   const isMixedPaceRow = hasMixedWorkAnchors(catalogueRow)
+  // §85 Am. — the FIFTH exemption. A CV row is authored at CV because CV is the
+  // point; repainting it at goal pace is the §19 header-vs-work defect that
+  // `INV-PLAN-HEADER-PACE-MATCHES-WORK` fired 3,232 times on, every one a CV row.
+  const isCvAnchoredRow = hasCvAnchoredWork(catalogueRow)
   const useGoalPace = (goalPaceWeek === true || catalogueRowGoalPace)
-    && !isVo2max && !isEffortGoverned && !isMixedPaceRow && !!goalPace
+    && !isVo2max && !isEffortGoverned && !isMixedPaceRow && !isCvAnchoredRow && !!goalPace
   const goalCenterMins = useGoalPace ? paceStrToMins(goalPace!) : null
   // A threshold row's work step is authored at 'T' because that's what it
   // means on an ordinary week; race_specific rows are already intrinsically

@@ -1954,6 +1954,83 @@ exemption is void.
 voice pass, the same fault that silently killed the shakeout invariant for
 months.
 
+
+### §22 Amendment — A CV-ANCHORED SESSION LEAVES THE RATIO'S DENOMINATOR (Coaching Board 2026-10-06, RACE-ANCHOR-CV-OVERRIDE-01)
+
+**Principle.** `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO`'s denominator is *the quality §22 expects to
+be goal-paced*. §85's fifth exemption removes a CV-anchored row from §22's goal-pace override, so
+such a session is **no longer expected to be goal-paced** and leaves the denominator — exactly as a
+VO2max session already does.
+
+🔴 **THE ARITHMETIC IS THE WHOLE ARGUMENT, and getting it wrong is what blocked this item.** Exempting
+CV rows from the *numerator* while leaving them in the *denominator* is guaranteed to fail. Measured:
+the first cut produced **143 NEW error-severity violations, every one at 5K**, reading *"33% (1/3)"*.
+
+⚠️ **WHY 5K WAS THE COHORT, AND THE INVARIANT ALREADY SAID SO.** Its own comment records that at 5K
+the ratio was satisfied *because* §22's rename painted goal pace on everything — *"Across 108 5K
+time-target plans, 168 of 168 non-VO2max quality sessions in build/peak sit within ±5% of goal pace —
+at 0% delta, because the engine prescribes '5K-pace progression', '5K-pace sustained' and '5K-pace
+intervals'."* Stop renaming CV rows and the 5K denominator still counts them.
+
+### ⚠️ A plan-level exemption was built for this and REMOVED, and that is worth recording
+
+§120 Amendment 1 withholds the HM goal anchor past CV, so §22's ratio *looked* unsatisfiable for that
+runner — the §89 cell (`earlyQualityOnset.test.ts`, HM @ 4 days, time_target) threw at **40% (2/5)**.
+The first remedy exempted any plan carrying `hm_goal_anchor_withheld`, copying the §93 Amendment 1
+pattern ruled hours earlier.
+
+**With the denominator corrected it was dead weight.** All 17 affected tests pass without it, and
+shipping it would have switched §22's ratio off for **496 of 5,664 plans** for no reason. The
+collision between §22 and §120 Am.1 is real; **the remedy is arithmetic, not an exemption.** The
+error was reaching for the shape of the previous fix instead of reading the numerator and the
+denominator.
+
+⚠️ **AND THE OBVIOUS FALSIFICATION OF THAT EXEMPTION WAS VACUOUS**, which is why it survived as long as
+it did: deleting the stamp and re-validating returns zero firings, because **`validatePlan` runs twice
+on different objects** — the internal call sees the BARE plan (no §57 foundation weeks, so `halfWeek`
+lands differently and the ratio is 2/5) and a post-hoc call sees the COMPOSED plan (4/5, passing). A
+mutate-then-revalidate arm proves nothing about the path that fires.
+
+### Measured
+
+| | before | after |
+|---|---|---|
+| `INV-PLAN-HEADER-PACE-MATCHES-WORK` | **3,232** | **0** |
+| `INV-PLAN-RACE-SPECIFIC-EXPOSURE` (per week) | 439 with HALF the exemption | **0** with both halves |
+| `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` | 143 NEW with the numerator-only fix | **0** |
+| property sweep | — | **no NEW violations above baseline** (14,268 plans) |
+| error-severity violations, cohort grid | — | **0** |
+| fit-for-purpose, every distance | — | **identical** |
+
+⚠️ **BOTH HALVES OR NEITHER, measured rather than remembered.** Removing §22's override without
+exempting the per-week check puts `INV-PLAN-RACE-SPECIFIC-EXPOSURE` at **439**; the previous attempt's
+100 red tests were the same fact. All five exemptions do both halves.
+
+⚕️ **Sims's condition, recorded and open:** this makes the plan honest and still tells the runner
+nothing about why their goal pace never appears. `GOAL-PAST-CV-SILENT-01`.
+
+**Config.** None new. **Enforced by** the CV exclusion inside the ratio, mirroring the VO2max one.
+
+### Measured
+
+| | before | after |
+|---|---|---|
+| `INV-PLAN-HEADER-PACE-MATCHES-WORK` | **3,232** | **0** |
+| `INV-PLAN-RACE-SPECIFIC-EXPOSURE` (per week) | 439 with HALF the exemption | **0** with both halves |
+| `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` | 0 | **0**, with 496 of 5,664 plans exempt |
+| error-severity violations | — | **0** |
+| fit-for-purpose, every distance | — | **identical** |
+
+⚠️ **BOTH HALVES OR NEITHER, and this is now measured rather than remembered.** Removing §22's
+override without exempting the per-week check puts `INV-PLAN-RACE-SPECIFIC-EXPOSURE` at **439**. The
+previous attempt's 100 red tests were the same fact. All five exemptions do both halves.
+
+⚕️ **Sims's condition, recorded and open:** this makes the plan honest and still tells the runner
+nothing about why their goal pace never appears. `GOAL-PAST-CV-SILENT-01`.
+
+**Config.** None new — the gate reads the producer's `hm_goal_anchor_withheld` stamp.
+**Enforced by** the exemption inside `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` itself.
+
 ## 23. Peak overload requirement
 
 **Principle.** A plan presented as a "build" must produce overload. For plans of `PEAK_OVERLOAD_MIN_PLAN_WEEKS` weeks or longer, peak weekly volume MUST be at least `PEAK_OVER_BASE_RATIO` times week 1 volume. If the engine cannot achieve this overload given the runner's constraints (`days_available`, `max_weekday_mins`, `current_weekly_km` already near peak target, injury caps), it MUST surface `volume_profile = 'maintenance'` with a `volume_constraint_note` explaining why. The plan still runs; the runner is informed of what it is and isn't.
