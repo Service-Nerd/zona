@@ -165,6 +165,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-ONRAMP-PER-RUN-STEP',
   'INV-PLAN-5K10K-LR-PACE-CAP',
   'INV-PLAN-LR-SEGMENT-RECORDED',
+  'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW',
   'INV-PLAN-BUILD-LR-SEGMENT-CAP',
   'INV-PLAN-FINISH-GOAL-LR-CAP',
   'INV-PLAN-LR-FLOOR-NOT-ROUNDING',
@@ -6549,6 +6550,68 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // `validateMaintenanceBlock`: a different plan kind gets its own validator,
   // not a branch inside this one.
 
+  // INV-PLAN-RACE-PACE-LR-BUILD-WINDOW — §25 Amendment 2 (Coaching Board
+  // 2026-10-06, the dose sitting). `warn`.
+  //
+  // §25's race-pace long run now lands in the final `RACE_PACE_LR_BUILD_WEEKS`
+  // non-deload BUILD weeks as well as peak. Two things must hold, and the second
+  // is 🩹 Willy's hard limit rather than a tidiness check:
+  //
+  //   1. a build-phase race-pace long run appears ONLY inside that window;
+  //   2. NEVER three consecutive weeks carrying one.
+  //
+  // (2) is why dose 2 and 3 were refused by all five seats: dose 2 put 56.5% of
+  // time-targeted HM/marathon plans on three consecutive race-pace long runs.
+  // Willy: race pace on tired legs is the highest-stress exposure in the block
+  // and needs a week either side. Measured at dose 1, including a CONSTRUCTED
+  // injury x time-target x HM/marathon cell that `cohortGrid()` does not contain
+  // at all: worst consecutive is 2 everywhere, and an injury flag never increases
+  // it.
+  //
+  // Scoped to the plans §25 covers, so it cannot fire on a finish-goal plan whose
+  // long run is aerobic by design.
+  {
+    const windowWeeks = GENERATION_CONFIG.RACE_PACE_LR_BUILD_WEEKS
+    const buildEnd = (plan.phases ?? []).find(p => p.name === 'build')?.end_week
+    const main = plan.weeks.filter(w => w.n >= 1)
+    const carriesSegment = (w: typeof main[number]) =>
+      Object.values(w.sessions ?? {}).some(sn =>
+        sn && isLongRun(sn) && Boolean(sn.lr_segment_pace))
+
+    if (buildEnd != null) {
+      for (const w of main) {
+        if (w.phase !== 'build' || !carriesSegment(w)) continue
+        if (w.n > buildEnd - windowWeeks) continue
+        violations.push({
+          code: 'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW',
+          principle_ref: 'CoachingPrinciples §25 Amendment 2',
+          severity: 'warn',
+          week: w.n,
+          message: `Week ${w.n} carries a race-pace long run outside the sharpening window; §25 Am. 2 allows it only in the final ${windowWeeks} non-deload build week${windowWeeks === 1 ? '' : 's'} (build ends week ${buildEnd}).`,
+          actual: `build week ${w.n}`,
+          expected: `> ${buildEnd - windowWeeks}`,
+        })
+      }
+    }
+
+    let run = 0
+    for (const w of main) {
+      run = carriesSegment(w) ? run + 1 : 0
+      if (run >= 3) {
+        violations.push({
+          code: 'INV-PLAN-RACE-PACE-LR-BUILD-WINDOW',
+          principle_ref: 'CoachingPrinciples §25 Amendment 2 (Willy)',
+          severity: 'warn',
+          week: w.n,
+          message: `Week ${w.n} is the ${run}th CONSECUTIVE week carrying a race-pace long run. Race pace on tired legs is the block's highest-stress exposure and needs a week either side; three in a row is the dose the board refused.`,
+          actual: `${run} consecutive`,
+          expected: '<= 2 consecutive',
+        })
+        break
+      }
+    }
+  }
+
   // INV-PLAN-LR-SEGMENT-RECORDED — a §24b segmented long run must RECORD the
   // pace it prescribes.
   //
@@ -6583,7 +6646,19 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // finish-goal long run gets `longSession` ("Zone 2"), which this cannot key on.
   if (isTimeTarget && (distKey === '5K' || distKey === '10K' || distKey === 'HM' || distKey === 'MARATHON')) {
     for (const w of plan.weeks) {
-      if (w.phase !== 'peak' || w.type === 'deload') continue
+      // §25 AMENDMENT 2 (2026-10-06) — BUILD IS IN SCOPE BECAUSE THE PRODUCER IS.
+      // `useRaceSpecificLR` now reads `peak || inRacePaceBuildWindow`, so §25
+      // segmented long runs exist in the final build week and a peak-only check
+      // could not see them.
+      //
+      // ⚠️ THE EXISTING FALSIFICATION ARM CAUGHT THIS, TWICE, WHICH IS WHAT IT IS
+      // FOR. `lrSegmentRecorded.test.ts` strips the pace from the FIRST `Zone 2–3`
+      // session and asserts this invariant fires. That session used to be in peak;
+      // after the producer change it is in build, and the arm went red with
+      // "broadening is worthless if it cannot fire on this distance" — 0
+      // violations. A check scoped to one phase while its producer writes to two
+      // is the twin-defect shape this file is full of.
+      if ((w.phase !== 'peak' && w.phase !== 'build') || w.type === 'deload') continue
       for (const [day, s] of Object.entries(w.sessions) as [string, Session | undefined][]) {
         if (!s || !isLongRun(s)) continue
         if (s.zone !== 'Zone 2–3' || s.lr_segment_pace) continue

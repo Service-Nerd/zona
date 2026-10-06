@@ -6351,7 +6351,56 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ---
 
-### 🟡 `BUILD-SPECIFICITY-ZERO-01` — RULED 2026-10-06: the MECHANISM is vetoed, the **NUMBER** is the defect. Needs a **DOSE** sitting 🏃 **COACHING BOARD**
+### ✅ `BUILD-SPECIFICITY-ZERO-01` — CLOSED 2026-10-06. Dose sitting held; **dose 1 SHIPPED** (§25 Am. 2) 🏃 **COACHING BOARD**
+
+> ✅ **DOSE SITTING HELD AND SHIPPED. §25's race-pace long run now lands in the FINAL non-deload
+> build week** (`RACE_PACE_LR_BUILD_WEEKS: 1`), for time-targeted HM and marathon, at the fraction
+> §25 already ratifies. Record: `docs/decisions/2026-10-06-build-specificity-finding.md`.
+>
+> 🏃 **THE REASONING IS NOT §5's CONFIG ENTRY, AND THAT MATTERS** — sitting 5 forbade that. *"Today a
+> time-targeted marathon plan contains exactly ONE marathon-pace long run in the entire block, in
+> 100% of cases. **One is the anomaly here, not the proposal.**"* 🎯 McMillan: the final build week
+> sits immediately before peak, so one session there gives the runner **two race-pace long runs a
+> fortnight apart** going into the sharpening block.
+>
+> 📊 **DOSE 2 AND 3 REFUSED BY ALL FIVE SEATS.** Dose 2 puts **56.5%** of plans on **three consecutive**
+> race-pace long runs for **1.4pp** of specificity over dose 3. 🩹 Willy's hard limit: *"race pace on
+> tired legs is the highest-stress exposure in the block and needs a week either side."*
+>
+> | dose | build specificity | km added/plan (med/p90/max) | consecutive |
+> |---|---|---|---|
+> | today | 0.0% | 0 | 1 always |
+> | **1 — SHIPPED** | **5.5%** | **6.1 / 10.6 / 12.2** | **never 3** |
+> | 2 | 11.4% | 10.8 / 18.8 / 22.4 | 3 on 56.5% |
+> | 3 | 12.8% | 12.3 / 19.6 / 22.6 | same plans as 2 |
+>
+> ✅ **WILLY'S BLOCKING CONDITION DISCHARGED BY MEASUREMENT, AFTER MY FIRST ATTEMPT WAS VACUOUS.**
+> `cohortGrid()` contains **ZERO** time-targeted HM/marathon plans with an injury history (0 of
+> 8,592), and my first run reported *"identical rate"* **with one side of the comparison empty.** On a
+> **constructed** 16-row injury cell: every injury variant receives the **same build dose as its
+> healthy twin**, and where injury changes anything it **REDUCES** it (`42.2km experienced` peak 2 → 1
+> with a knee history). **Worst consecutive is 2 everywhere.**
+> ✅ **§12's Z2 ceiling is now STATED for build, not inherited** from §25's peak scoping — the board's
+> second blocking condition.
+>
+> 📐 **Regression:** `verify` exit 0 / **489 files / 4,337 tests** · `measure:fitness`
+> **byte-identical on every cohort** · `cohort:shape` exit 0 · `review:coaching` six arms identical,
+> envelope **95.9%** · `parity` 536/5,832, all HM/marathon time-target, declared · quality-session
+> count and refusals unchanged.
+> 🧪 `lib/plan/racePaceLrBuildWindow.test.ts` — 6 arms, **falsified by forging a third consecutive
+> week.** ⚠️ **And the existing `lrSegmentRecorded` falsification arm caught, for the second time, that
+> `INV-PLAN-LR-SEGMENT-RECORDED` was peak-scoped while its producer now writes to two phases** —
+> broadened.
+>
+> 🔻 **STILL OPEN, and the number argues against the case that was made for it:** the **distance split**
+> Hutchinson raised is uncosted and unruled. Measured after shipping, dose 1 delivers **HM 12.8%** but
+> **marathon only 5.1%**, because the marathon's build phase is longer and one week is a smaller share.
+> **So the cohort with the strongest argument gets the least.** Worth a sitting; not decided here.
+> 🔻 **§5's `build.specific_pct` (30) stays DECLARATIVE** — no dose reaches it (all-build maxed at
+> 23.7% and was vetoed), and 5.5% is recorded as what the engine does, not dressed as compliance.
+> 🔻 **Ultras untouched** at 0.0%, same shape, no equivalent channel.
+> ⚕️ **Standing condition on any future increase (Sims):** this does not grow again without a fuelling
+> surface.
 
 > ⚖️ **SITTING 5 — THE MECHANISM IS INCORRECT (vetoed and reverted). `.build.specific_pct` is an
 > UNDEFENDED NUMBER, not an unmet obligation.** Record: `docs/decisions/2026-10-06-build-specificity-finding.md`.

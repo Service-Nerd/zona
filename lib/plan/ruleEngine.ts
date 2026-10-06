@@ -3198,7 +3198,23 @@ function buildWeekSessions(
   // Marathon / HM peak: swap the standard long run for a race-specific long
   // run from the catalogue (CoachingPrinciples §25, ADR-009 spec 3.7) — only
   // when goal_pace is set and the runner is in a non-deload peak week.
-  const useRaceSpecificLR = phase === 'peak' && !isDeload && goalPace
+  // §25 Amendment 2 (Coaching Board 2026-10-06) — the race-pace long run also
+  // lands in the final `RACE_PACE_LR_BUILD_WEEKS` non-deload BUILD weeks.
+  //
+  // ⚠️ `!isDeload` is load-bearing, not defensive: a deload week carrying a
+  // race-pace finish is the `DELOAD-BADGE-TRUTH-01` shape (a week badged Recovery
+  // that is not one), and §87 means the week before peak may well be a deload.
+  //
+  // ⚠️ INJURY HISTORY IS NOT CONSULTED HERE, AND THAT IS §25'S EXISTING BEHAVIOUR
+  // RATHER THAN A NEW DECISION. Willy made it a blocking condition of this dose:
+  // confirm whether an injury flag changes who receives this. It does not, before
+  // or after — the peak path has never consulted it either, so the amendment
+  // extends §25 to the same cohort §25 already serves. Measured, not inferred.
+  const buildPhaseForRaceLR = phases.find(p => p.name === 'build')
+  const inRacePaceBuildWindow = phase === 'build'
+    && buildPhaseForRaceLR != null
+    && weekN > buildPhaseForRaceLR.end_week - GENERATION_CONFIG.RACE_PACE_LR_BUILD_WEEKS
+  const useRaceSpecificLR = (phase === 'peak' || inRacePaceBuildWindow) && !isDeload && goalPace
   if (useRaceSpecificLR && distKey === 'MARATHON') {
     const mpRow = catalogue.find(r => r.id === 'mp_long_run')
     if (mpRow && (tier !== 'free' || mpRow.is_free_tier)) {

@@ -350,6 +350,41 @@ export const GENERATION_CONFIG = {
   // a 44-year-old — with zero race-pace work before the taper.
   PEAK_MAX_VO2MAX_SESSIONS: 2,
 
+  // §25 Amendment 2 (Coaching Board 2026-10-06, BUILD-SPECIFICITY-ZERO-01 dose
+  // sitting) — how many of the FINAL non-deload BUILD weeks carry §25's race-pace
+  // long run, on top of peak's.
+  //
+  // A NAMED CONSTANT RATHER THAN A LITERAL `1`, by the board's explicit
+  // instruction: a dose is exactly the kind of knob a coach would want to tune,
+  // and a literal in the gate would be invisible to every governance layer this
+  // repo has.
+  //
+  // WHY 1, and the reasoning is NOT the config entry §5 declares. Measured over
+  // 39,632 plans, a time-targeted marathon plan today contains **exactly ONE**
+  // marathon-pace long run in the entire block, in 100% of cases. 🏃 Hutchinson:
+  // "one is the anomaly here, not the proposal." 🎯 McMillan: the final build week
+  // sits immediately before peak, so one session there gives the runner TWO
+  // race-pace long runs a fortnight apart going into the sharpening block, which
+  // is the rehearse / recover / rehearse pattern a coach would write.
+  //
+  // COSTED, and 2 and 3 were REFUSED BY ALL FIVE SEATS:
+  //   dose 1  build specificity 5.5%  median +6.1 km  max +12.2  never 3 consecutive
+  //   dose 2  build specificity 11.4% median +10.8 km            3 CONSECUTIVE on 56.5%
+  //   dose 3  build specificity 12.8% median +12.3 km            same 8,592 plans as 2
+  // 🩹 Willy: three consecutive race-pace long runs is not sharpening; race pace on
+  // tired legs needs a week either side. Dose 2 buys 1.4pp over dose 3 for a
+  // materially worse load profile.
+  //
+  // ⚠️ THIS DOES NOT DELIVER §5's DECLARED 30% AND IS NOT CLAIMED TO. No dose
+  // reaches it (all-build maxes at 23.7% and was vetoed at sitting 5), which is why
+  // `SPECIFICITY_BY_PHASE.build` is flagged declarative above rather than enforced.
+  // 5.5% is recorded as what the engine does, not dressed up as compliance.
+  //
+  // ⚕️ STANDING CONDITION ON ANY FUTURE INCREASE (Sims): race-pace volume on tired
+  // legs is where under-fuelling bites, and nothing in the plan surfaces fuelling
+  // for it. This does not grow again without a fuelling surface.
+  RACE_PACE_LR_BUILD_WEEKS: 1,
+
   // ⚠️ ONLY `.peak.specific_pct` IS AN OBLIGATION. Everything else here is
   // DECLARATIVE, and §5 Amendment (Coaching Board 2026-10-06,
   // BUILD-SPECIFICITY-ZERO-01) says so explicitly rather than leaving it implied.

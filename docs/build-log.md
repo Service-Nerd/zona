@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — BUILD-SPECIFICITY-ZERO-01 · asked to build the ladder fix; the ladder was the wrong lever and the code said so
+**Shipped:** §25's race-pace long run now also lands in the final non-deload build week for time-targeted HM and marathon. One session. Median 6.1 km of race pace added per plan.
+**Dev learning:** I was asked to build a ladder fix and spent the first hour proving the ladder could not work. `MIDWEEK_QUALITY_LADDER` excludes `race_specific` deliberately, with the reason written on the line above it, and a prototype row was selected 7,644 times with ZERO of them in build. The real lever was one expression — `useRaceSpecificLR = phase === 'peak'`. **A comment that explains an exclusion is load-bearing; read the line above the thing you are about to change.**
+**Product/creator learning:** the dose decision turned on a number nobody had: a time-targeted marathon plan contained exactly ONE marathon-pace long run in the entire block, in 100% of cases. That reframed the question from "how do we hit §5's 30%" to "is one enough", which is a coaching question with an answer. Four doses were costed and three were refused — dose 2 put 56.5% of plans on three consecutive race-pace long runs for 1.4pp of specificity.
+**AI-building learning:** I discharged a blocking condition with an empty population and nearly shipped it. Willy asked whether an injury flag changes who receives this; my script printed "identical rate" with INJURY plans = 0, because `cohortGrid()` has zero time-target HM/marathon plans with an injury history. The conclusion line was hard-coded prose. **A comparison with an empty side is not a comparison, and a script that prints its conclusion rather than deriving it will print it regardless.**
+**The honest bit:** three of my measurements across this item were wrong before being right. The first counted only `type === 'quality'` and was blind to the long-run channel the ladder's own comment designates. The second reported 0% reducible from a `number * object` NaN. The third was the empty injury cohort. Every one was caught by an assertion I had written for that purpose, which is the only reason this is a build and not an incident.
+**Hook material:** asked to build the ladder fix. Measured it: the prototype row was selected 7,644 times and zero of them in the phase it was meant to fix. The fix was one word in one expression, two files away.
+**Postable?:** yes
+
+
 ## 2026-10-06 — DAYS-GATE-CAPACITY-01 · a test that pinned the wrong answer on purpose, and told me when to flip it
 **Shipped:** the frequency note names blocked days as the reason when blocked days are the reason, instead of always blaming weekly volume.
 **Dev learning:** the best thing in this build was written ten days ago by someone else's hand: an existing test arm that asserted the WRONG behaviour, with a comment saying "when half (1) ships, this expectation must flip to naming the blocked days, and this comment goes". My fix turned it red, which is precisely what it was for. **A deliberately-pinned defect is a better handover than a TODO, because it fails when you fix it.**

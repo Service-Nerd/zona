@@ -2345,6 +2345,80 @@ Two of those rendered **on the same card**: the runner read *"Final 30–50% at 
 
 ---
 
+
+### §25 Amendment 2 — the final BUILD week carries it too *(Coaching Board 2026-10-06, BUILD-SPECIFICITY-ZERO-01 dose sitting)*
+
+**Ruling: CORRECT WITH AMENDMENT. Dose 1 — the final non-deload build week only.**
+
+**Principle.** §25's race-pace long run lands in the final `RACE_PACE_LR_BUILD_WEEKS` **non-deload
+build** weeks as well as peak, for time-targeted HM and marathon, at the fraction this section
+already ratifies (25–40%, owned by `race_pace_pct`). The dose is **1**.
+Check: `INV-PLAN-RACE-PACE-LR-BUILD-WINDOW` (`warn`).
+
+**⚠️ §12's EASY-RUN CEILING, STATED RATHER THAN INHERITED.** §12 caps easy runs at the top of Z2,
+and this session's long run is `Zone 2–3`. This section has always carried that exception, but it
+carried it *for peak*, so a build-phase instance would have been relying on scope it did not have.
+**The exception is explicit for the sharpening window.** The session's `type` stays `easy` (so §1,
+§52 and §9 continue to own it as volume, unchanged), and only its zone and its segment differ —
+which is the same arrangement peak has used since this section was written.
+
+**Why 1, and the reasoning is NOT §5's config entry.** Sitting 5 ruled `.build.specific_pct`
+declarative and this sitting confirmed why: **no dose reaches 30%**, the vetoed all-build option
+maxing at 23.7%. So the case for dose 1 had to stand on its own, and it does:
+
+🏃 **Hutchinson:** *"today a time-targeted marathon plan contains exactly ONE marathon-pace long run
+in the entire block, in 100% of cases. **One is the anomaly here, not the proposal.**"* Pfitzinger
+and most of the serious marathon literature prescribe several across a build. ⚠️ Caveat held on the
+record: those plans assume more training history than our runners have, and **no volume is imported
+from them** — only the observation that more than one race-pace long run is not an elite affectation.
+
+🎯 **McMillan:** the final build week sits immediately before peak, so one session there gives the
+runner **two race-pace long runs a fortnight apart** going into the sharpening block. *"That is how
+a coach builds toward a goal pace: you rehearse it, you recover, you rehearse it again harder. One
+session in sixteen weeks is not a rehearsal, it is a surprise."*
+
+**Costed, 39,632 plans. Dose 2 and 3 were refused by all five seats.**
+
+| dose | build specificity | race-pace km added per plan (median / p90 / max) | consecutive weeks |
+|---|---|---|---|
+| today | 0.0% | 0 | 1, always |
+| **1 — RATIFIED** | **5.5%** | **6.1 / 10.6 / 12.2** | **never 3** |
+| 2 | 11.4% | 10.8 / 18.8 / 22.4 | **3 consecutive on 56.5%** |
+| 3 | 12.8% | 12.3 / 19.6 / 22.6 | same 8,592 plans as dose 2 |
+
+🩹 **Willy, and this is a hard limit rather than a preference:** *"three consecutive race-pace long
+runs is not sharpening. Race pace on tired legs is the highest-stress exposure in the block and it
+needs a week either side."* Dose 2 buys **1.4pp** over dose 3 for a materially worse load profile.
+**The never-three-consecutive rule is enforced by the invariant, not left to the producer.**
+
+**Willy's blocking condition, discharged by measurement.** *Does an injury flag change who receives
+this?* 🔴 **The grid could not answer it — `cohortGrid()` contains ZERO time-targeted HM/marathon
+plans with an injury history (0 of 8,592), and my first attempt reported "identical rate" with one
+side of the comparison empty.** On a **constructed** injury × time-target × HM/marathon cell (16
+rows, knee / shin / achilles × intermediate / experienced × HM / marathon): **every injury variant
+receives the same build dose as its healthy twin — build 1, all 16 rows — and where an injury
+changes anything it REDUCES it** (`42.2km experienced` goes peak 2 → peak 1 with a knee history).
+**Worst consecutive is 2 everywhere, including every injury variant.**
+
+**Unchanged, measured:** quality-session count **262,988**, refusals **1,840**, and the total
+invariant firing count was **identical at every dose** — no dose newly fires any existing rule,
+including `INV-PLAN-LARGEST-SESSIONS-SPACED`.
+
+⚕️ **Sims — STANDING CONDITION ON ANY FUTURE INCREASE.** Race-pace volume on tired legs is where
+under-fuelling bites hardest, and nothing in the plan surfaces fuelling for it. *"That is not a
+reason to refuse 6 km; it is a reason this does not grow again without a fuelling surface."*
+
+⚠️ **A distance split was raised and is NOT ruled.** Hutchinson's argument is strongest for marathon
+and weakest for HM, where race pace sits close to threshold and midweek work already rehearses it.
+**It was not costed by distance at dose 1, so it is not decided** — the amendment applies to both,
+as this section does, until someone measures the split.
+
+🔻 **The honest limit.** Every number here is a generated plan. **Nothing has run on a device and no
+runner has executed one of these blocks.** §1 cannot see this change (it counts sessions; the long
+run's `type` stays `easy`) and `measure:fitness` cannot see it (it counts distance; none moved). The
+consecutive-weeks measurement is the only instrument that can see what was decided, and it was built
+for this sitting.
+
 ## 26. Race-week sharpening (not tempo)
 
 **Principle.** In the final 7 days before race day (race week), any quality session MUST be a sharpening session — short reps at race pace or faster, with full recovery, total work volume ≤5 km. Continuous tempo, threshold intervals, progression runs, hill repeats, and long runs above 50% of peak long run distance are prohibited in race week. Permitted: 3–5×1 km at goal pace with ≥90s recovery, 6×400m at goal pace or slightly faster with ≥60s recovery, 4–6×100m strides appended to a shakeout.
