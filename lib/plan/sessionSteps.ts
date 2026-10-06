@@ -14,7 +14,8 @@
 
 import type { DerivedSet, DerivedStep } from './resolveMainSet'
 import type { SessionStructure } from './sessionComposer'
-import { apportionRoundedDistance, convertPaceString, formatDuration } from '@/lib/format'
+import { apportionRoundedDistance, convertPaceString, formatDuration, formatStepDuration } from '@/lib/format'
+import { easyPaceAsCeiling, paceAsFloor } from './easyPaceCeiling'
 
 export type StepKind = 'work' | 'rest'
 
@@ -26,8 +27,26 @@ export interface StepRow {
   amount: string
   /** True when `amount` is a pace-derived estimate (shows the ~ marker). */
   amountIsEstimate: boolean
-  /** Secondary line: "5 min · 4:25–4:35 /km", "RPE 8", "≤ 5:53–7:02 /km", "rest". */
+  /** Secondary line: "5 min · 4:25–4:35 /km", "RPE 8", "5:53 /km or slower", "rest". */
   detail: string
+  /**
+   * The step's coaching instruction, verbatim from the catalogue row
+   * (SESSION-STEP-LEGIBILITY-01, Design Board 2026-10-06).
+   *
+   * 🔴 THE FIELD HAD A WRITER AND NO READER FOR AS LONG AS v2 HAS EXISTED.
+   * `resolveMainSet` copies `step.note` off the catalogue row and stamps it into
+   * `derived_set`; **5,152 of 6,014 rendered steps (85.7%) carried one and NOT ONE
+   * REACHED A SCREEN.** The founder's own progressive tempo authored *"Hold back.
+   * This is the part that makes the last third honest."* / *"Let it rise. Don't
+   * chase it."* / *"Threshold now."* and the card showed **"Hard" three times**,
+   * which is also why 18.0% of blocks had every row sharing one role: the thing
+   * that distinguishes the steps WAS the note.
+   *
+   * ⚠️ NEVER TRUNCATED (Wroblewski, binding). Longest authored note is 106 chars
+   * → 3 lines at 320px. Truncating a coaching instruction to fit is the worst
+   * available outcome.
+   */
+  note?: string
 }
 
 export interface StepGroup {
@@ -140,8 +159,35 @@ export function roleLabelForStep(step: DerivedStep, parsed: ParsedLength): strin
  */
 export function targetClause(step: DerivedStep, units: 'km' | 'mi'): string {
   if (step.pace) {
-    const prefix = step.pace_mode === 'ceiling' ? '≤ ' : step.pace_mode === 'floor' ? '≥ ' : ''
-    return `${prefix}${convertPaceString(step.pace, units) ?? step.pace}`
+    const converted = convertPaceString(step.pace, units) ?? step.pace
+    // 🔴 `≤` AND `≥` READ BACKWARDS FOR PACE, AND THE BOARD HAD ALREADY RULED IT.
+    //
+    // `design-rulings.md` (CD-11 / §12): *"'or slower' is ratified coaching
+    // doctrine — never a ≤ symbol, which reads backwards for pace."* This clause
+    // printed `≤ ` on **2,499 of 6,014 rendered steps (41.6%)**, and worse, over
+    // the whole BAND: `≤ 5:53–7:02 /km` is an operator applied to a range.
+    //
+    // ⚠️ THE SIGN WAS INVERTED, NOT MERELY UGLY. ADR-019 defines the modes in
+    // words — ceiling is *"warm up no faster than X"*, floor is *"jog the
+    // recovery no slower than 6:30"*. Those are limits on SPEED, and pace runs
+    // the opposite way: "no faster than 5:53" means the pace NUMBER must be
+    // ≥ 5:53. Printing `≤ 5:53` tells the runner to go quicker, on the step whose
+    // own note says *"Hold back."*
+    //
+    // ⚠️ AND THE SAME CARD ALREADY DISAGREED WITH ITSELF. `SessionPopupInner`
+    // renders the Pace target tile through `easyPaceAsCeiling`, which says
+    // "5:53 /km or slower" — so one screen stated the same fact two ways, one of
+    // them backwards. This routes through that owner instead of being a second
+    // writer of a pace qualifier (the duplication class this repo keeps paying
+    // for: TIER-OWNER-01, DELOAD-OWNER-01, SESSION-KM-01/02).
+    //
+    // ⚠️ `easyPaceAsCeiling` GATES ON SESSION TYPE because its own callers pass
+    // one; a step has no session type, and the mode IS the instruction here. So
+    // the band→ceiling reduction is called with the type it expects, and the
+    // mode decides whether to call it at all.
+    if (step.pace_mode === 'ceiling') return easyPaceAsCeiling(converted, 'easy') ?? converted
+    if (step.pace_mode === 'floor') return paceAsFloor(converted)
+    return converted
   }
   if (step.rpe != null) return `RPE ${step.rpe}`
   if (step.zone) return step.zone
@@ -150,11 +196,20 @@ export function targetClause(step: DerivedStep, units: 'km' | 'mi'): string {
 
 // ── row assembly ───────────────────────────────────────────────────────────
 
-function formatSecsShort(secs: number): string {
-  if (secs % 60 === 0) return `${secs / 60} min`
-  if (secs < 60) return `${secs}s`
-  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
-}
+/**
+ * A step's duration, ALWAYS carrying a unit.
+ *
+ * 🔴 THE `M:SS` BRANCH USED TO RETURN A BARE `9:20`, and it lands in the AMOUNT
+ * column where its sibling rows show `~1.4km`. **202 of 6,014 steps (3.4%)**, and
+ * the founder read his own session and asked *"9:20 what?"* — reasonably: on a
+ * card about distance, beside two rows showing kilometres, `9:20` reads as a pace.
+ *
+ * ⚠️ ADR-015 §1 RETIRED EXACTLY THIS GLYPH: *"never a lone `78m`. That glyph
+ * ambiguity (minutes vs miles vs metres) is the defect this retires."* The other
+ * two branches here already carried a unit (`9 min`, `30s`); the M:SS branch was
+ * the only one that did not, which is why it was invisible.
+ */
+const formatSecsShort = formatStepDuration
 
 function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
   const parsed = parseLength(step.length)
@@ -162,9 +217,13 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
   const role = roleLabelForStep(step, parsed)
   const target = targetClause(step, opts.units)
 
+  // Every return below carries `note` — SESSION-STEP-LEGIBILITY-01. Spread last
+  // so a shape that forgets it cannot compile to a row without it.
+  const withNote = <T extends object>(row: T) => ({ ...row, ...(step.note ? { note: step.note } : {}) })
+
   // Distance-native step: the prescription IS a distance ("400 m") — show it.
   if (parsed.kind === 'distance') {
-    return { kind, role, amount: opts.formatDist(parsed.km), amountIsEstimate: false, detail: target }
+    return withNote({ kind, role, amount: opts.formatDist(parsed.km), amountIsEstimate: false, detail: target })
   }
 
   // Duration-native step.
@@ -202,16 +261,16 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
       const est = opts.formatDist(estKm)
       if (est !== opts.formatDist(0)) {
         const detail = [durStr, target].filter(Boolean).join(' · ')
-        return { kind, role, amount: `~${est}`, amountIsEstimate: true, detail }
+        return withNote({ kind, role, amount: `~${est}`, amountIsEstimate: true, detail })
       }
     }
     // Duration primary (toggle on time, or no pace to estimate from — e.g. a
     // hill rep at RPE, where there is no honest distance to show).
-    return { kind, role, amount: durStr, amountIsEstimate: false, detail: target }
+    return withNote({ kind, role, amount: durStr, amountIsEstimate: false, detail: target })
   }
 
   // Text length ("until ready", "to the bottom of the hill").
-  return { kind, role, amount: parsed.text, amountIsEstimate: false, detail: target || (kind === 'rest' ? 'rest' : '') }
+  return withNote({ kind, role, amount: parsed.text, amountIsEstimate: false, detail: target || (kind === 'rest' ? 'rest' : '') })
 }
 
 // ── session-total reconciliation (SESSION-RECONCILE-01) ─────────────────────

@@ -2698,6 +2698,77 @@ Reference: `components/shared/SessionSteps.tsx` (render) + `lib/plan/sessionStep
 
 ---
 
+#### Amendment — the step row carries its INSTRUCTION, and the amount always carries a unit (SESSION-STEP-LEGIBILITY-01, Design Board 2026-10-06)
+
+**The row is two lines:**
+
+```
+[n]  ● Hard                                                   ~1.4km
+     9:20 min · 5:53 /km or slower · Hold back. This is the part that
+     makes the last third honest.
+```
+
+Line 1 is **role** (left) and **amount** (right). Line 2 is **full width** and reads
+`detail · note` — the pace or zone clause, then the step's coaching instruction
+verbatim from the catalogue.
+
+🔴 **THE FOUNDER OPENED HIS OWN SESSION AND COULD NOT TELL WHAT TO DO.** Three
+mechanisms each hid part of the instruction, measured on 1,974 v2 sessions /
+6,014 rendered steps:
+
+| | reach |
+|---|---|
+| `DerivedStep.note` had a **writer and no reader** | **5,152 steps (85.7%)** |
+| a pace ceiling printed `≤` over the whole band, sign inverted | **2,499 (41.6%)** |
+| every row in a block sharing one role, all "Hard" | 373 of 2,068 blocks (18.0%) |
+| a bare unitless `M:SS` in the amount column | 202 (3.4%) |
+
+His *Progressive tempo* showed **"Hard" three times** while the catalogue authored
+*"Hold back. This is the part that makes the last third honest."* / *"Let it rise.
+Don't chase it."* / *"Threshold now."* — the three sentences that are the entire
+point of the session.
+
+⚠️ **LINE 2 IS NOT NEW. IT MOVED.** `detail` already rendered under the amount,
+inside the right-hand column. **Measured on `/copy-preview`: 127px at a 320px
+viewport**, which made the cool-down row **82.5px tall** because a 24-character
+string wrapped. Full width gives it **192px measured at 320**, so the note costs
+**zero lines** and an existing wrap went away — the same fixture's rows went
+57.9/57.9/**82.5** → 63.4/63.4/**63.4**.
+
+🔴 **THE BOARD'S FIRST SHAPE COULD NOT BE BUILT, AND ONLY A MEASUREMENT SHOWED IT.**
+The ruling said *"the note replaces the role word, zero added lines"*. The role
+column measures **53–72px at 320** and the median authored note is **52
+characters**, needing ~290px — it would have wrapped to five lines. The ruling's
+own *"what this does not settle"* said no rendered geometry had been captured.
+**Arithmetic on character counts is not a layout**, and the chair amended on the
+measurement.
+
+⚠️ **NOTHING IS TRUNCATED** (Wroblewski, binding). Measured at 320px with the real
+strings: median 52 chars → 2 lines / 79.4px; p90 74 → 3 lines / 95.3px; **the
+longest authored note, 106 chars → 4 lines / 111.3px, no truncation, no horizontal
+overflow.** Truncating a coaching instruction to fit the card is the worst outcome
+available.
+
+**A pace qualifier has ONE writer: `lib/plan/easyPaceCeiling.ts`** —
+`easyPaceAsCeiling` ("5:53 /km or slower") and `paceAsFloor` ("6:30 /km or
+faster"). `design-rulings.md` CD-11/§12 already ruled it: *"never a ≤ symbol,
+which reads backwards for pace."* The operator was also **inverted** — ADR-019
+defines ceiling as *"no faster than"*, which on a pace NUMBER is `≥` — and applied
+to a **band**, which is meaningless. The same card already rendered its Pace
+target tile through that owner, so **one screen stated one fact two ways, one of
+them backwards.**
+
+**A step duration always carries a unit: `lib/format.ts → formatStepDuration` /
+`qualifyStepLength`.** ADR-015 §1 owns it and retired this exact glyph (*"never a
+lone 78m... minutes vs miles vs metres"*). ⚠️ **Two renderers broke it the same way
+on two surfaces** — the app card, and `stepParts` on the **website** plan pages
+(`jog 1:30`), which was found only by opening the page: the consumer check had
+named `PlanPage.tsx` and assumed it used the app's renderer. **It does not.**
+
+**Gate:** `lib/plan/sessionStepLegibility.test.ts` — 5 arms over the real corpus,
+each falsified by reverting its own fix.
+
+
 ### 22. WeekStripCard
 
 Compressed weekly summary used on the Plan screen for past weeks (when expanded) and distant-future weeks (≥2 weeks ahead). 7 status dots in a single row replace the full WeekCard's day list. Lets a 16-week plan read as an arc instead of a wall of rows.

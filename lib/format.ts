@@ -331,6 +331,46 @@ export function resolveSessionMetric(
 // that ambiguity (minutes vs miles vs metres) is the defect this function retires.
 // Every duration the user sees — card, plan, session detail, push, diff — routes
 // here. Do not re-implement this rule anywhere (INV-FMT-001).
+/**
+ * A STEP's duration, for display — always carrying a unit.
+ *
+ * ADR-015 §1 owns every time string and states the rule this enforces:
+ * *"never a lone `78m`. That glyph ambiguity (minutes vs miles vs metres) is the
+ * defect this retires."*
+ *
+ * 🔴 TWO RENDERERS BROKE IT THE SAME WAY, ON TWO SURFACES, and neither knew the
+ * other existed (SESSION-STEP-LEGIBILITY-01, 2026-10-06):
+ *   · the APP card — `formatSecsShort` in `sessionSteps.ts`, which emitted
+ *     `9 min` and `30s` with units and `9:20` **without**, into the column where
+ *     sibling rows show `~1.4km`. The founder read his own session and asked
+ *     *"9:20 what?"*
+ *   · the WEBSITE plan pages — `stepParts` in `resolveMainSet.ts`, printing
+ *     `jog 1:30`. **Found only by opening the page**: the consumer check had
+ *     named `PlanPage.tsx` as a consumer and assumed it went through the app's
+ *     renderer. It does not — it is a separate prose renderer.
+ *
+ * ⚠️ THE STORED `step.length` IS DELIBERATELY NOT CHANGED. `parseLength` accepts
+ * a bare `^(\d+):(\d{2})$` and nothing else, so re-formatting at the source would
+ * break the app's own round-trip and move every plan hash. This is a DISPLAY
+ * rule, applied at the two display sites, which is exactly where ADR-015 puts it.
+ */
+export function formatStepDuration(secs: number): string {
+  if (secs % 60 === 0) return `${secs / 60} min`
+  if (secs < 60) return `${secs}s`
+  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')} min`
+}
+
+/**
+ * The same rule applied to a stored length STRING rather than a seconds count.
+ *
+ * `stepParts` holds `step.length` as text ("3 min", "1:30", "1000 m", "to the
+ * bottom of the hill") and must leave everything that is not a bare clock
+ * untouched — a landmark is prose, not a duration.
+ */
+export function qualifyStepLength(raw: string): string {
+  return /^\d+:\d{2}$/.test(raw.trim()) ? `${raw.trim()} min` : raw
+}
+
 export function formatDuration(mins: number | null | undefined): string | null {
   if (mins == null || !Number.isFinite(mins) || mins < 0) return null
   const total = Math.round(mins)

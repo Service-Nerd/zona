@@ -27,6 +27,32 @@ export function easyPaceAsCeiling(
 }
 
 /**
+ * The mirror of `easyPaceAsCeiling` for a pace FLOOR — "no slower than".
+ *
+ * ADR-019 states both modes in words: ceiling is *"warm up no faster than X"*,
+ * floor is *"jog the recovery no slower than 6:30"*. A floor takes the SLOW end
+ * of the band and says "or faster", exactly as the ceiling takes the fast end
+ * and says "or slower". Same reason, same place, so a reader of one finds the
+ * other.
+ *
+ * ⚠️ **UNREACHABLE TODAY AND THAT IS STATED, NOT HIDDEN.** Measured across 6,014
+ * rendered steps: `target` 2,954, `ceiling` 2,499, **`floor` 0** — no catalogue
+ * row prescribes one yet. It is written because the v2 schema admits it and the
+ * alternative was leaving `≥` in place, which is the same inverted sign this
+ * module exists to prevent: on a pace NUMBER, "no slower than 6:30" means ≤ 6:30.
+ * A rule that is wrong only on the day it first fires is worse than one that is
+ * visibly unused.
+ */
+export function paceAsFloor(paceTarget: string | null | undefined): string {
+  if (!paceTarget) return paceTarget ?? ''
+  const m = paceTarget.match(/(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/)
+  if (!m) return paceTarget
+  const slow = m[2]
+  const unit = paceTarget.includes('/km') ? ' /km' : paceTarget.includes('/mi') ? ' /mi' : ''
+  return `${slow}${unit} or faster`
+}
+
+/**
  * Split a pace string into the METRIC and its QUALIFIER.
  *
  * 🔴 WHY THIS LIVES BESIDE THE PRODUCER. `easyPaceAsCeiling` above is what

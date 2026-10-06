@@ -21,17 +21,31 @@ describe('parseLength', () => {
 
 describe('targetClause', () => {
   const ceiling = { role: 'recovery', modality: 'jog', length: '1:30', pace: '5:53–7:02 /km', pace_mode: 'ceiling', advance: 'auto' } as const
-  it('marks a ceiling pace with ≤', () => {
-    expect(targetClause(ceiling, 'km')).toBe('≤ 5:53–7:02 /km')
+  // 🔴 THIS CASE USED TO ASSERT `'≤ 5:53–7:02 /km'` AND WAS NAMED FOR IT
+  // ("marks a ceiling pace with ≤"). `design-rulings.md` (CD-11 / §12) had
+  // already ruled the opposite, by name: *"'or slower' is ratified coaching
+  // doctrine — never a ≤ symbol, which reads backwards for pace."* So a test
+  // stood in for a ruling that said the reverse, on 41.6% of rendered steps,
+  // and `easyPaceCeilingReach.test.ts` asserted `.not.toContain('≤')` on the
+  // SAME quantity in another file. Same shape as `design-rulings.md:721` — a
+  // rule that lives only in a test is not a rule, and here it was not even that.
+  //
+  // ⚠️ THE SIGN WAS INVERTED, not merely ugly: ADR-019 defines ceiling as "no
+  // faster than", which on a pace NUMBER is ≥, not ≤. And it was printed over
+  // the whole BAND, which is an operator applied to a range.
+  it('renders a ceiling as the ratified "or slower", never an operator', () => {
+    expect(targetClause(ceiling, 'km')).toBe('5:53 /km or slower')
+    expect(targetClause(ceiling, 'km')).not.toContain('≤')
   })
   it('uses RPE when effort-governed', () => {
     expect(targetClause({ role: 'work', modality: 'run', length: '1:30', pace: null, rpe: 8, advance: 'auto' }, 'km')).toBe('RPE 8')
   })
-  // PACE-UNITS-STEPS-01 — the prefix must survive the conversion, and the
-  // conversion must not eat it. Both halves, because a ≤ lost to a regex is a
-  // ceiling silently re-read as a target.
-  it('converts a ceiling band to miles and keeps the ≤', () => {
-    expect(targetClause(ceiling, 'mi')).toBe('≤ 9:28–11:19 /mi')
+  // PACE-UNITS-STEPS-01 — the QUALIFIER must survive the conversion, and the
+  // conversion must not eat it. Both halves, because a qualifier lost to a regex
+  // is a ceiling silently re-read as a target. The band is reduced to its fast
+  // end AFTER conversion, so the number is the miles one.
+  it('converts a ceiling band to miles and keeps the qualifier', () => {
+    expect(targetClause(ceiling, 'mi')).toBe('9:28 /mi or slower')
   })
   it('converts a single target pace to miles', () => {
     expect(targetClause({ role: 'work', modality: 'run', length: '2 km', pace: '5:00 /km', pace_mode: 'target', advance: 'auto' }, 'mi'))
@@ -72,7 +86,7 @@ describe('buildStepGroups — VO2 rep set, distance toggle', () => {
     const rest = groups[0].rows[1]
     expect(rest.kind).toBe('rest')
     expect(rest.role).toBe('Jog')
-    expect(rest.detail).toBe('2 min · ≤ 5:53–7:02 /km')
+    expect(rest.detail).toBe('2 min · 5:53 /km or slower')
   })
 })
 
@@ -103,7 +117,10 @@ describe('buildStepGroups — hill reps (effort-based, mixed lengths)', () => {
   it('keeps the uphill effort-based: time primary, RPE detail (no invented distance)', () => {
     const up = groups[1].rows[0]
     expect(up.role).toBe('Uphill')
-    expect(up.amount).toBe('1:30')
+    // ADR-015 §1 — the amount ALWAYS carries a unit. This used to read a bare
+    // `1:30`, in the column where sibling rows show `~1.4km`, which is the
+    // glyph ambiguity (minutes vs miles vs metres) that ADR renamed as a defect.
+    expect(up.amount).toBe('1:30 min')
     expect(up.amountIsEstimate).toBe(false)
     expect(up.detail).toBe('RPE 8')
   })
@@ -112,7 +129,7 @@ describe('buildStepGroups — hill reps (effort-based, mixed lengths)', () => {
     expect(groups[1].rows[1].amount).toBe('until ready')
     expect(groups[1].rows[2].role).toBe('Jog down')       // downhill jog
     expect(groups[1].rows[2].amountIsEstimate).toBe(true) // mirror → 1:30, estimated from pace
-    expect(groups[1].rows[2].detail).toBe('1:30 · ≤ 5:53–7:02 /km')
+    expect(groups[1].rows[2].detail).toBe('1:30 min · 5:53 /km or slower')
   })
 })
 

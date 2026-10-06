@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — SESSION-STEP-LEGIBILITY-01 · we wrote the coaching and rendered "Hard" three times
+**Shipped:** a session step row now says what to do, in the words the catalogue already contained.
+
+**Dev learning:** `DerivedStep.note` had a producer and no consumer. `resolveMainSet` copied the catalogue's per-step instruction into every generated plan and **no renderer anywhere read it** — 85.7% of rendered steps. The founder opened his own session, saw "Hard / Hard / Hard" and asked what he was supposed to do; the answer was three sentences long and had been sitting in the plan JSON the whole time. The thing that makes this class invisible is that nothing errors: a field you do not read looks exactly like a field that is empty.
+
+**Product/creator learning:** the `≤` was worse than ugly, it was **backwards**. ADR-019 defines a pace ceiling as "no faster than", which on a pace *number* is `≥`. So the first block of a progressive tempo — whose own note says *"Hold back"* — rendered `≤ 5:53–7:02 /km`, which reads as "go quicker than 5:53". And the board had **already ruled** it: `design-rulings.md` says *"never a ≤ symbol, which reads backwards for pace"*, the correct renderer already existed, and the **same card** used it for the Pace target tile at the top. One screen, one fact, two renderings, one of them inverted.
+
+**AI-building learning:** the board ruled a shape that could not be built, and I only found out by measuring. "The note replaces the role word, zero added lines" — except the role column is **53–72px at 320px** and the median note is 52 characters. It would have wrapped to five lines. The ruling's own "what this does not settle" said no rendered geometry had been captured, so this was predicted-as-possible and still nearly shipped. **The amendment came from a browser, not from an argument:** the `detail` line was already a second line, just trapped in a 127px column; moving it full width cost zero lines, gained 65px, and made a pre-existing 82.5px wrap disappear.
+
+**The honest bit:** my consumer check listed the marketing plan pages and I assumed they rendered through the app's step builder. They do not — they have their own prose renderer, which had the **same** bare-`M:SS` defect and which I would have shipped past. I found it by opening the page at 320px and reading it. Two renderers, one of the same bugs, and the grep that would have caught it was the one I did not run.
+
+**Hook material:** our app told a runner to "hold back" and printed a pace limit that, read literally, told him to speed up. The correct wording was already in the codebase, already ratified, and already used on the same screen.
+
+**Postable?:** yes — "we wrote the coaching note and rendered the word Hard instead" is the line, and the inverted `≤` is the twist.
+
+---
+
 ## 2026-10-06 — ANALYSIS-SUPERSEDE-PATTERN-01 · the defect was a comment, and the gate I wrote to prove it corrected me within a minute
 **Shipped:** no feature. A board ruling, a corrected comment, and a test that makes a prose claim about the code mechanical.
 

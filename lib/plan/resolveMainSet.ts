@@ -10,6 +10,7 @@
 // Together with `catalogue_id` (ADR-018) this closes the seventh gap the audit
 // called blocking: identity told us WHICH row, the derived set tells us WHAT
 // this runner actually does. Without both, a v2 schema is invisible to a runner.
+import { qualifyStepLength } from '@/lib/format'
 import type { PaceAnchor, StepTarget, StructureV2 } from './sessionStructureV2'
 
 /** The runner's resolved paces, keyed by anchor. Absent anchors are legitimate —
@@ -198,7 +199,7 @@ export function stepParts(s: DerivedStep): { action: string; target: string } {
   // have it (a downhill mirror is the descent) rather than echoing "same as the…".
   const lengthPhrase = isMirror
     ? (s.terrain === 'downhill' ? 'back down' : 'for the same time')
-    : s.length
+    : qualifyStepLength(s.length)
 
   // Terrain belongs on the work step it shapes ("1:30 uphill at RPE 8").
   const terrainWord = isWork && s.terrain === 'uphill' ? ' uphill'

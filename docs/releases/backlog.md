@@ -6495,6 +6495,30 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
 
+### `MKT-STEP-CEILING-BAND-01` — the website words the pace ceiling correctly and still prints it over a range 🧭 **DESIGN BOARD**
+
+**Found during `SESSION-STEP-LEGIBILITY-01` by opening the page, not by reading the code.** The
+published plan pages render steps through a **second, prose renderer** (`stepParts` in
+`resolveMainSet.ts`, not the app's `buildStepGroups`) and print:
+
+> `jog 1:30 min at no faster than 6:30–7:30 /km`
+
+The **wording is right** — "no faster than", matching ADR-019 — where the app had the inverted `≤`.
+But it is still a comparison applied to a **band**: "no faster than 6:30–7:30" names two numbers
+where the ceiling is one (`6:30`). The app now reduces the band through the ratified owner
+(`easyPaceAsCeiling` → *"6:30 /km or slower"*).
+
+🔴 **Two surfaces, two phrasings, one fact.** Reducing the band is mechanical; choosing whether the
+website says *"no faster than 6:30 /km"* or adopts the app's *"6:30 /km or slower"* is a **copy
+decision across two surfaces**, which is why it was not folded into that build.
+
+⚠️ **The website also shows NO step notes at all** — `stepParts` returns action + target and never
+the instruction, so the 85.7% finding is fixed in the app and still live on the marketing pages.
+Whether a published plan page should carry coaching notes is a separate question (it is a sales
+surface, and the notes are the product).
+
+---
+
 ### 🔴 `PLAN-NOTE-BUDGET-INERT-01` — the engine stamps 3.66 honest notes per plan and the runner sees 0.95 *(filed 2026-10-06, P1)* 🧭 **DESIGN BOARD** → 💼 **SLT** (it set the caps)
 
 **Found while measuring `GOAL-PAST-CV-SILENT-01`'s remedy, and it changes that item's answer and

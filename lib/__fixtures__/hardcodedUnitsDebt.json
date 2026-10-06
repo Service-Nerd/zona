@@ -3,7 +3,7 @@
  "recorded": "2026-09-23",
  "reason": "PRODUCER-SIDE BY DESIGN, AND CONVERTED AT THE READ. These sites build a unit into a string at GENERATION or ANALYSIS time, where the reader's preference is not in scope. They are deliberately NOT fixed at the producer, for three reasons any one of which is sufficient: (1) 100% of generated plans and 19 of 19 stored plans already carry these strings, so a producer fix repairs none of them; (2) the units toggle is MUTABLE after generation, so baking miles is wrong for the runner who switches back; (3) the producer strings stay byte-identical, so section 44's REFUSAL_NAMES_NEXT_STEP and every other prose matcher keep passing - this repo broke 8 prose matchers across 5 files once by editing four refusal strings. The runner-facing READ sites are wired through lib/format.ts convertDistanceString: planRationaleNotes (the single owner of meta-note display), coach_notes in DashboardClient, the refusal message in GeneratePlanScreen, and GeneratingCeremony. Gated by lib/plan/prosePreference.test.ts. WHAT REMAINS, AND AN HONEST NOTE ON THE COUNT: after phases 1-4 most surviving entries are FALLBACK expressions behind the owner, not primary paths - `formatDuration(v) ?? `${v} min`` still matches this pattern, which is why the count moved 57 to 56 while four live defects were fixed. A count is not a measure of exposure here. Genuinely unwired: nothing runner-facing that has been measured as reachable. Ten of the eleven DURATION entries were measured UNREACHABLE at 60+ minutes across 48,547 sessions (`sessionComposer` descriptions and `buildStepGroups` rows produced ZERO) - a rep or a warm-up is minutes by construction, so they cannot breach ADR-015's 60-to-hours rule. The one that could was `amountStr`, the session-card header, at 21,062 of 48,547 sessions and a maximum of 172 raw minutes; it is fixed.  — 2026-09-28 (PACE-BANDS-OWNER-01): five entries RE-PATHED from lib/plan/ruleEngine.ts to lib/plan/paceBands.ts. The VDOT→band derivation was extracted so a client surface could call the producer instead of re-deriving it; the debt moved with the code and the COUNT IS UNCHANGED. Nothing was fixed and nothing was added. ⚠️ 2026-10-03 (FOUNDATION-BUDGET-01): the two `foundationBlock.ts` entries were RE-ANCHORED, not added. §122 changed the interpolated expression (`longRunFinalKm` → `lrCappedKm`, `eachKm` → the per-day `km`) so the register's old text no longer matched and the sites read as NEW. Same two sites, same debt, same `count`. The register is closed to new entries by design and stays closed.",
  "measured": "🔴 CORRECTED 2026-09-23. This field first read: '19 stored plans: 17 carry /km pace, ZERO carry prose km anywhere in the document. The class is REAL but currently UNREALISED in production.' THAT WAS WRONG, and the cause was the instrument, not the data: the production query used '\\d\\s*km\\b', and in Postgres POSIX regex \\b is a BACKSPACE CHARACTER, not a word boundary (\\y is). It matched nothing and returned a clean zero. Re-measured with \\y: ALL 19 of 19 stored plans carry prose km. 101 of 888 sessions carry it in runner-facing coach_notes, 16 of 19 plans in meta.notes, 7 in volume_constraint_note, 3 sessions in derived_set step lengths. Generated corpus agrees: 1,167 of 1,167 plans (100%). A clean zero from a broken pattern is indistinguishable from a clean zero from clean data.",
- "count": 56,
+ "count": 55,
  "entries": [
   {
    "file": "lib/coaching/limiter.ts",
@@ -220,10 +220,6 @@
   {
    "file": "lib/plan/sessionComposer.ts",
    "code": "return `${m.duration_mins ?? '—'} min progression: ${m.zone_start ?? 'Z2'} → ${m.zone_end ?? 'Z3'}.`"
-  },
-  {
-   "file": "lib/plan/sessionSteps.ts",
-   "code": "if (secs % 60 === 0) return `${secs / 60} min`"
   },
   {
    "file": "lib/plan/sessionSteps.ts",

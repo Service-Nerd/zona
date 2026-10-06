@@ -59,22 +59,53 @@ const FONT = 'var(--font-ui)'
 
 // ── row + card primitives ────────────────────────────────────────────────────
 
+/**
+ * One step of the session.
+ *
+ * ui-patterns.md § Session steps — SESSION-STEP-LEGIBILITY-01 (Design Board,
+ * 2026-10-06). Two lines:
+ *
+ *   [n]  ● Hard                                              ~1.4km
+ *        9:20 min · 5:53 /km or slower · Hold back. This is the part…
+ *
+ * 🔴 THE SECOND LINE IS NOT NEW — IT MOVED. `detail` already rendered under the
+ * amount, inside the right-hand column. **Measured on `/copy-preview`: that
+ * column is 127px at a 320px viewport, which made the cool-down row 82.5px tall
+ * because a 24-character detail wrapped.** Full width gives it **230px at 320 and
+ * 285px at 375**, so this costs ZERO lines and makes an existing wrap go away.
+ *
+ * ⚠️ WHICH IS WHY THE BOARD'S FIRST SHAPE COULD NOT BE BUILT. The ruling said
+ * *"the note replaces the role word, zero added lines"* — but the role column
+ * measures **53–72px at 320**, and the median authored note is **52 characters**,
+ * needing ~290px. It would have wrapped to five lines. The board's own ruling
+ * flagged that it had taken no rendered geometry; this is that measurement, and
+ * the chair amended on it. **Arithmetic on character counts is not a layout.**
+ *
+ * ⚠️ NOTHING IS TRUNCATED (Wroblewski, binding). The longest authored note is 106
+ * characters and takes three lines at 320px. Truncating a coaching instruction to
+ * fit the card is the worst outcome available here.
+ */
 function StepRowView({ num, dotColor, row }: { num: number | null; dotColor: string; row: StepRow }) {
   const isRest = row.kind === 'rest'
+  // The pace/zone clause and the instruction read as one sentence of guidance,
+  // joined by the same middot the detail already used internally ("9:20 min · …").
+  const guidance = [row.detail, row.note].filter(Boolean).join(' · ')
   return (
     <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', padding: '11px 13px', borderTop: '1px solid var(--line)' }}>
       <span style={{ flex: 'none', width: '20px', textAlign: 'center', fontSize: '14px', fontWeight: 800, fontStyle: 'italic', color: 'var(--mute-2)', fontVariantNumeric: 'tabular-nums', background: 'var(--card)' }}>
         {num ?? ''}
       </span>
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-        <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', paddingTop: '1px' }}>
-          <span style={{ width: '9px', height: '9px', borderRadius: '50%', flex: 'none', background: isRest ? 'transparent' : dotColor, border: isRest ? '1.5px solid var(--mute-2)' : 'none' }} />
-          <span style={{ fontSize: '13px', fontWeight: isRest ? 600 : 700, color: isRest ? 'var(--ink-2)' : 'var(--ink)' }}>{row.role}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+          <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', paddingTop: '1px' }}>
+            <span style={{ width: '9px', height: '9px', borderRadius: '50%', flex: 'none', background: isRest ? 'transparent' : dotColor, border: isRest ? '1.5px solid var(--mute-2)' : 'none' }} />
+            <span style={{ fontSize: '13px', fontWeight: isRest ? 600 : 700, color: isRest ? 'var(--ink-2)' : 'var(--ink)' }}>{row.role}</span>
+          </div>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: isRest ? 'var(--ink-2)' : 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1, flex: 'none', textAlign: 'right' }}>{row.amount}</div>
         </div>
-        <div style={{ textAlign: 'right', flex: 'none' }}>
-          <div style={{ fontSize: '14px', fontWeight: 800, color: isRest ? 'var(--ink-2)' : 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{row.amount}</div>
-          {row.detail && <div style={{ fontSize: '11px', color: 'var(--mute)', marginTop: '3px', fontVariantNumeric: 'tabular-nums' }}>{row.detail}</div>}
-        </div>
+        {guidance && (
+          <div style={{ fontSize: '11px', color: 'var(--mute)', marginTop: '4px', fontVariantNumeric: 'tabular-nums', lineHeight: 1.45 }}>{guidance}</div>
+        )}
       </div>
     </div>
   )

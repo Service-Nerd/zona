@@ -3928,3 +3928,38 @@ from computed style, never touched. `SessionPopupInner` is auth-gated and `/shee
 cover it. The surviving icon rule has **no measured population yet**, which is the condition of its
 re-filing and is not met here. The ledger removal's *"what reached it only from Coach"* is named as
 a `/build` § 5b ask and **not answered**.
+
+---
+
+## `SESSION-STEP-LEGIBILITY-01` — a step row that says what to do (2026-10-06)
+
+**Trigger:** founder's own live session, screenshot. *"It is not clear what I have to do. 9:20 what?"*
+**Ruling: SHIP WITH AMENDMENT.** Three of four defects fixed here; the fourth was never this board's.
+
+### 🔍 Settled ground — the scan returned RULINGS, not conflicts
+
+| Row | Bearing |
+|---|---|
+| **CD-11 / §12** (`:2938`) | *"'or slower' is ratified coaching doctrine — **never a ≤ symbol, which reads backwards for pace**."* The `≤` on 41.6% of steps contradicts a ratified row **by name**, so it is a **defect fix**, not a board matter |
+| **ADR-015 §1** | *"never a lone `78m`. That glyph ambiguity (minutes vs miles vs metres) is the defect this retires."* Settles the principle for the bare `M:SS`; the string is design's |
+| **`:721`** | *"a rule that lived only in a test is not a ruling."* `sessionSteps.test.ts:25` **pinned the wrong string** and was named for it (*"marks a ceiling pace with ≤"*), while `easyPaceCeilingReach.test.ts` asserted `.not.toContain('≤')` on the same quantity in another file |
+
+### 📐 Evidence
+
+1,974 v2 sessions / 6,014 steps: notes never rendered **5,152 (85.7%)**, `≤`-over-a-band **2,499 (41.6%)**, single-role blocks **373/2,068 (18.0%)**, unitless `M:SS` **202 (3.4%)**. Geometry measured on `/copy-preview`: role column **53–72px at 320**, guidance line **127px → 192px**, rows **57.9/57.9/82.5 → 63.4/63.4/63.4**. Longest note (106 chars) → **4 lines, 111.3px, no truncation, no overflow**.
+
+### ⚖️ The amendment, and why the first shape was not buildable
+
+The board ruled *"the note replaces the role word, zero added lines"*. **The role column is 53–72px at 320 and the median note is 52 characters (~290px) — it would have wrapped to five lines.** The ruling's own *"what this does not settle"* said no rendered geometry had been captured; it was captured, and the chair amended: the **`detail` line, which was already a second line inside the 127px right column, moves full width and carries the note**. Zero added lines, +65px of width, and the pre-existing 82.5px cool-down wrap disappears.
+
+**Arithmetic on character counts is not a layout.**
+
+### 📦 Artifacts
+
+1. **Pattern** — `ui-patterns.md` §21b Amendment
+2. **Constants** — `lib/format.ts → formatStepDuration` / `qualifyStepLength` (ADR-015's owner); pace qualifiers routed to `lib/plan/easyPaceCeiling.ts` (`easyPaceAsCeiling`, new `paceAsFloor`). **No new one-off values**
+3. **Mechanical check** — `lib/plan/sessionStepLegibility.test.ts`, 5 arms, **each falsified by reverting its own fix** (note dropped → arm 2 red; `≤` restored → arm 3 red; unitless `M:SS` restored → arm 4 red)
+
+### ⚠️ What this does not settle
+
+**Nothing has run on a device.** The role word still repeats within a block (373 blocks) — the guidance line now differentiates them, the role does not. **Collins' re-authored row is deferred, not refused.** The website prose still prints *"no faster than 6:30–7:30 /km"* — correctly worded, but a comparison over a range — filed as `MKT-STEP-CEILING-BAND-01`, and the website shows no notes at all.
