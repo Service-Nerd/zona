@@ -6498,7 +6498,34 @@ stamped notes is not a count of rendered notes, and this repo now has the measur
 
 ---
 
-### `GOAL-PAST-CV-SILENT-01` — a runner whose goal pace is past their CV is never told *(filed 2026-10-06, P2)* 🏃 **COACHING BOARD**
+### ✅ `GOAL-PAST-CV-SILENT-01` — SHIPPED 2026-10-06 as §44 Amendment 2. **The item overstated itself twice and one of the errors was my own regex** *(filed 2026-10-06, P2)* 🏃 **COACHING BOARD**
+
+> ✅ **SHIPPED.** Coaching Board 2026-10-06, CORRECT WITH AMENDMENT. **§44 CD-16 already ruled this
+> question** — *"a target beyond measured fitness is the same class of statement"* — with its threshold
+> at **interval** pace, while §120 Am. 1 later withheld the row at **CV**. Nobody reconciled the two,
+> and the gap between them was the silence. §44's third feasibility input now extends to CV.
+>
+> 🔴 **THE ITEM'S TWO NUMBERS WERE BOTH WRONG, BOTH IN THE DIRECTION OF LOOKING BIGGER.** The gap is
+> not 66.7% — of the 3,456 withheld plans, **864 were already told** by §44 CD-16, 1,776 already read
+> `demanding` for a volume reason, and the actual silent population is **816 (15.7% of HM time-target
+> plans)**, which corroborates §120 Am. 1's independent *"CV to interval = 15.0%"*. And *"ZERO name the
+> goal pace"* was a **regex artefact**: the shipped note says *"quicker than"* and my pattern looked for
+> *"faster than"*. **I nearly took that zero to the board as the headline finding.**
+>
+> 🎯 **McMillan's binding condition held:** the CV sentence may not be the interval-band copy, which
+> promises race-pace sessions the plan withheld. Separate sentence, naming the withholding and two real
+> levers.
+>
+> 📊 **Seiler's framing adopted over the word "correction":** CV crosses at 5.4–6.2% of current HM pace
+> against interval's 13.9–14.3%, so this **halves** the stretch a stated goal may carry before the band
+> speaks. A tightening, declared as one.
+>
+> ⚠️ **Measuring the remedy is what found `PLAN-NOTE-BUDGET-INERT-01`** — a plan-level note could not
+> have reached this runner at all. Using the BAND is why this shipped the same day.
+>
+> ⚠️ **`cohortShape` re-baselined with a reason:** `difficultyComfortablePct` **22.7 → 20.5 (−2.2pp)**,
+> which is the 816 moving band. Three other values moved from the deload search and were inside
+> tolerance, so they had gone undeclared; declared in the ship commit.
 
 > **Residual of `HM-PEAK-RACE-SPECIFIC-GAP-01`'s RCA.** §120 Amendment 1 withholds the
 > `hm_pace_intervals` row when goal pace is faster than CV, which is correct and ratified. The runner

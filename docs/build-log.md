@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — GOAL-PAST-CV-SILENT-01 · my own regex manufactured the headline finding, and measuring the fix found a bigger bug
+**Shipped:** a runner whose goal pace is past their current fitness is told so, instead of being handed a plan labelled "comfortable".
+
+**Dev learning:** two things, and the second is the one worth repeating. First: I reported "0 of 3,456 plans name the goal pace" as the defect. The shipped copy says *"the pace you're targeting is **quicker than** your benchmark currently supports"*; my pattern searched for *"faster than"*. **A regex that misses manufactures a zero, and a zero reads like a finding.** 864 runners were already being told, in almost the exact words I said were missing. Second: my falsification failed and I only noticed because I ran it twice. Deleting the new band arm should have turned the gate red; eight of nine arms stayed green, because `generateRulePlan` **throws** on an error-severity violation under `NODE_ENV=test` and my `catch { continue }` skipped precisely the at-risk plans. **The test reported health because it had stopped looking** — same shape as a filter that selects the already-compliant.
+
+**Product/creator learning:** the remedy the item assumed — "add a note" — was unavailable, and finding that out was worth more than the item. `planRationaleNotes` caps at 3 notes and 70 words. Across 5,664 plans the engine **stamps 3.66 honest notes and renders 0.95**: one note on 5,336 plans, two on 27, three on **zero**, 10,031 notes dropped, and on 46.5% the single rendered note alone exceeds the entire word budget. The 3-note cap is decorative — the word budget always bites first. So ten honesty obligations, each ratified and invariant-guarded individually, are written to fields nobody reads. The fix here deliberately used the **difficulty band** instead, which the runner already sees, which is why it shipped the same day.
+
+**AI-building learning:** the board sitting changed the answer because of one grep. The item was filed as "the runner is never told", routed to the Coaching Board, and §44's CD-16 amendment had ruled the same class of statement months earlier with its threshold one band too lenient. So the ruling was not "author a new rule", it was "move an existing threshold" — no new constant, no new surface, no new copy decision beyond one sentence. **Reading the constitution before designing the remedy turned a build into a one-line predicate change.** That is the third time in two days the conflict scan has been the highest-value step.
+
+**The honest bit:** I filed the item yesterday with a 66.7% figure and a zero. Both were wrong, both in the direction of making the work look bigger. Three quarters of that 66.7% was already handled. The real population was 816 plans, 15.7%, and it corroborated a number §120 had measured independently and written down — which means the right answer had been sitting in the constitution the whole time, next to the amendment I was investigating.
+
+**Hook material:** I reported that zero of 3,456 plans told the runner their goal was too fast. The real number was 864 — my regex searched for "faster than" and the shipped sentence says "quicker than".
+
+**Postable?:** yes — "the engine writes 3.66 honest notes per plan and the runner reads 0.95" is the strongest line, and the regex-manufactured zero is the setup for it.
+
+---
+
 ## 2026-10-06 — DELOAD-PLAN-OPENING-01 · the blocker that held this for a day was a `git stash` that stashed nothing
 **Shipped:** deload placement is a search instead of a greedy walk, so a plan stops opening with one week of training followed by a recovery week. Marathon plans with that defect: 50.0% to 3.4%.
 
