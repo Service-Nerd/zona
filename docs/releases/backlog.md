@@ -6191,7 +6191,50 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
 
-### 🏃 `RACE-ANCHOR-CV-OVERRIDE-01` — **RULED 2026-09-22, BUILT, AND REVERTED THE SAME DAY.**
+### 🟠 🏃 `RACE-ANCHOR-CV-OVERRIDE-01` — SETTLED 2026-10-06: the deadlock belongs to the CATALOGUE. Blocked on ONE deferred sitting.
+
+> 📄 **Full record: `docs/decisions/2026-10-06-cv-override-settled.md`.**
+> ✅ **THE SETTLING ARTEFACT IS TAKEN AND IT ANSWERS THE OWNERSHIP QUESTION: NOTHING ELSE WAS
+> ELIGIBLE.** `race_specific` rows eligible in the **BUILD** phase number **exactly one** —
+> `beginner_goal_pace_blocks`, `fitness_level_max: 'beginner'`, HM/MARATHON only. For an
+> intermediate-or-above runner in build: **ZERO.** At 5K or 10K in build: **zero at any fitness.**
+> Every other race_specific row is peak-only or taper-only. **So neither §22 nor §85 is wrong —
+> there is no row for them to disagree about.** ⚠️ §22's own text predicted it (*"it is where the
+> catalogue stopped"*): CD-18 fixed OWNERSHIP, the row it produced is peak/taper, and
+> **build-eligibility was never asked about.**
+>
+> ⚖️ **BOARD SITTING 3 (2026-10-06):** widening the beginner row **VETOED**; a new build-eligible
+> goal-paced row **INSUFFICIENT EVIDENCE, deferred with its own gate**; a **FIFTH exemption CORRECT**
+> on the identical reasoning as the four that exist, with §22's ratio as the **binding condition**.
+> ⚠️ **The previous attempt was HALF an exemption** — it removed the override and left the per-week
+> check, which then correctly went red on 100 tests. All four ratified exemptions do both halves.
+>
+> 🟠 **THE EXEMPTION WAS BUILT. `INV-PLAN-HEADER-PACE-MATCHES-WORK` went 3,232 → 0 with every other
+> invariant byte-identical.** 🔴 **Then the binding condition FAILED on a case no grid reaches:**
+> `earlyQualityOnset.test.ts`'s `HM @ 4 days, time_target` (§89 early-onset, `5yr+`, experienced) threw
+> `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` at **40% (2/5) against ≥50%**, error severity. **Void by the
+> board's own words. Reverted.**
+>
+> 🔴 **TWO OF MY OWN CLAIMS WERE WRONG AND MEASUREMENT CAUGHT BOTH.** (i) *"164 firings are
+> `hm_pace_intervals`, possibly a second defect"* — that row is HM-anchored so the exemption cannot
+> touch it, yet the count went to 0: my probe matched sessions by **label substring**. **All 3,232 were
+> CV rows; there is no second defect.** (ii) I then reframed it as *"the ratio was satisfied
+> fraudulently by the renamed sessions"*, which reads well and is **false at population scale** —
+> measured on 18,960 time-target plans, plans whose ratio depends on CV being counted: **ZERO.** True
+> only in the narrow §89 cell. ⚠️ **Third cohort I built by guessing instead of reading the fixture**
+> — my constructed grid returned 0 of 129 because §89 needs `user_declared_level` + `5yr+`, and **the
+> failing case was written down in the test file.**
+>
+> 🥇 **THE RESOLUTION SPACE IS NOW FULLY ENUMERATED AND ONE ROUTE REMAINS.** Override-only: closed.
+> Row-ineligible: closed (`neverBuildsPct` rose, 3 refusals). Fifth exemption: built, safe on 39,632
+> plans, blocked by the §89 cell. **A build-eligible goal-paced catalogue row is the only route not
+> closed — and the two converge: the §89 cell fails because that plan genuinely has 2 of 5 goal-paced
+> sessions and the catalogue had nothing to give it in build. With the row, the ratio holds. The
+> catalogue row is the exemption's PREREQUISITE, not its alternative.**
+>
+> 🔻 **BLOCKED ON:** the deferred sitting for the catalogue row, with `measure:fitness` before/after,
+> a refusal count, and **selection measured, not inferred** — which is the exact error that reverted
+> the last attempt.
 **Board: 🏃 COACHING BOARD.** **Two mechanisms have now failed, at opposite ends. Re-propose
 neither.**
 
