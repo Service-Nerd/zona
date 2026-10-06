@@ -28,7 +28,32 @@ already decided what it is.
 ---
 
 
-### `LOG-OFFPLAN-03` — clause 3: off-plan volume in the injury cap, blocked on sample size 🏃 COACHING BOARD
+### 🟠 `LOG-OFFPLAN-03` — STILL BLOCKED 2026-10-06, but **THE BLOCKER HAS CHANGED SHAPE: it is now the LINK RATE, not the user count** 🏃 COACHING BOARD
+
+> 🟠 **RE-MEASURED IN PRODUCTION (read-only) 2026-10-06. The sample grew; the thing it needs did not.**
+> | | at filing | now |
+> |---|---|---|
+> | runs in the profile | **21, 12 of them the founder** | **239 across 16 real runners** |
+> | the founder's share | **~57%** | **31%** (75 of 239) |
+> | injury-history runners with runs | effectively 1 | **5, contributing 48 runs** |
+>
+> 🔴 **BUT THE SPLIT THIS ITEM NEEDS CANNOT BE COMPUTED, FOR A NEW REASON.** Clause 3 is about
+> **off-plan volume versus linked volume**, and almost nothing is linked: **5 of 239 activities** are
+> linked to a session completion, and **0 of 135 live completions carry a Strava activity id** (130 are
+> manual, 5 carry a HealthKit uuid). Activities by source: apple_health 212, strava 21, manual 6.
+> **So "off-plan" and "did the session but tapped done manually" are indistinguishable in the data**,
+> which is exactly the distinction the cap would be set on.
+> ⚠️ **0 Strava-linked completions is consistent with the Strava APPLICATION being Inactive** (see
+> `project_strava_app_inactive`) — stated as a correlation, not a proven cause; the auto-link path
+> being dead would produce precisely this.
+> 🔻 **So the unblock condition should be restated:** not *"enough real runners accrue"* — they have —
+> but **"enough LINKED runs accrue to tell off-plan from manually-completed."** Willy's and
+> Hutchinson's objections stand unchanged on the evidence available.
+> ⚠️ **My first production query returned "0 runners with activity" and I nearly reported that.**
+> I selected `user_settings.user_id` and `user_settings.injury_history` — **neither column exists**
+> (the PK is `id`, and injury history lives in `plan_json.meta`) — did not check the error, and read
+> the empty result as a finding. **Same class as the `constraint_note` null that this item's own RCA
+> records me committing.**
 
 > ⏸️ **COACHING BOARD 2026-10-05 — CORRECT, RE-AFFIRMED, AND STILL BLOCKED ON EVIDENCE.**
 > Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`. 🩹 Willy, re-stated: *"a 5% cap applied to a number that is not their load. The cap
@@ -5920,7 +5945,24 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
-### 🏃 `EMAIL-WAVE-4-PATTERN-01` — the Pattern email, NOT BUILT, and the reason is the population
+### 🟢 🏃 `EMAIL-WAVE-4-PATTERN-01` — **UNBLOCKED 2026-10-06. The population condition is MET, 14 against a stated 3.**
+
+> 🟢 **THE BLOCKER HAS LIFTED, MEASURED IN PRODUCTION (read-only).** The item's own unblock condition
+> was *">=3 real non-demo users with >=3 HR-bearing analyses each."* Measured 2026-10-06 against
+> `auth.users` (not `user_settings.email`, which is null for most rows):
+> **14 real non-demo users with >=3 HR-bearing runs.** Top of the distribution: 64, 23, 20, 20, 17,
+> 16, 12, 10, 10, 7, 7, 5, 4, 3. **The demo account does not appear in the activity table at all.**
+> ⚠️ Identities are real people, not fixtures: gmail / hotmail / yahoo / Apple private-relay.
+> ⚠️ **I nearly mis-filtered this.** My first pass excluded demo/test accounts by
+> `user_settings.email`, which is **null for all but one row**, so the exclusion was doing nothing and
+> the number was unsafe. Re-run against `auth.users`, where every identity resolves.
+>
+> 🔻 **NOT "ready to build" — ready to SIT.** Sims's objection was that authoring a pattern vocabulary
+> against a single account *"fits the patterns to one person"*. That objection is now discharged by the
+> population, **but the bounded pattern set is still unauthored and that is the Coaching Board's job**,
+> followed by the 🧭 Design Board, which has never seen this email. **The blocker moved from POPULATION
+> to a SITTING.** ADR-011's hard consequence still applies to iPhone-only runners with no watch, and
+> 2 of the 16 runners with activity carry no HR at all.
 
 > 🔴 **COACHING BOARD 2026-10-05 — CANNOT SHIP. Blocked on POPULATION, and the population is one
 > demo account. The bounded pattern set is NOT authored today.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
