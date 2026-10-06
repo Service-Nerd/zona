@@ -3939,17 +3939,30 @@ Nothing else is blocked. These are, and two of them cannot be answered by anyone
 
 ### 3. What is actionable without him, ranked
 
+> 🔴 **THIS TABLE WAS STALE IN THREE OF ITS SIX ROWS WHEN IT WAS RE-READ ON 2026-10-06, AND
+> `audit-docs.sh` SAID ALL CLEAN THROUGHOUT** — it checks each item's own heading, which was
+> correct in every case, and cannot see a **curated ranked table** that disagrees with them.
+> `MKT-PLAN-SEGMENT-BASIS-01` was listed here as actionable while **the same file marks it ✅
+> SHIPPED** a few thousand lines below, and the feature registry has carried its row since
+> 2026-09-30. A hand-maintained ranking is a second copy of the backlog, and it drifts exactly
+> the way every second copy in this repo has.
+
 | | Item | Why now | Size |
 |---|---|---|---|
-| 1 | **`DELOAD-PLAN-OPENING-01`** | ✅ **SHIPPED 2026-10-06 — the search, plus §119 Amendment 1 and its honesty stamp.** `INV-PLAN-MIN-LOADING-BLOCK` **25.8% → 15.8%**, **marathon 50.0% → 3.4%**, both ratified bounds holding (count rose 0 and fell 0; mean delivered peak 41.54 → 41.53 km). `verify` exit 0 (4,378 tests / 496 files) · `verify:parity` **578 of 6,066 changed, declared** (marathon 264, 50K 160, 100K 154, **zero** on 5K/10K/HM) · `measure:envelope`, `review:cohort`, `measure:fitness` and `cohort:shape` **all unchanged**, Willy's injury baseline intact at 36.4%/41.2% and 0% never-builds. 🔴 **BOTH BLOCKERS DISSOLVED, and the first was MY measurement error:** the `I6`-on-two-published-plans finding was attributed to the search *"by stashing (b)"* with `git stash push` on **already-committed files**, which is a no-op — so (b) was never removed and the findings were its. With the search alone **all nine published plans are clean**, before and after. ⚠️ **The residual is 15.8% and is TWO declared infeasible cells, 0 outside them**: masters × HM 735/741 (**99.2%**, 82.2% of the residual, the closing relaxation refused at sitting 2 on Sims's objection) and ADR-021 early-onset `experienced` runners at 159 — both the same shape, a phase shorter than the cadence can accommodate. The item's *"warn must go to ~0"* was overturned at sitting 2 and is **~0 outside the declared cells**. ⚠️ **The SURFACE is filed, not skipped** — `planRationaleNotes` caps at **3 notes / 70 words**, so a 45-word fourth constraint is dropped or displaces a ranked volume note. Encoding is design's: `DELOAD-OPENING-SURFACE-01`. | L |
-| 2 | **`HM-ANCHOR-VS-GOAL-01` / §120** | Ratified by the Coaching Board, **not shipped**, blocked on ONE measurement: Willy's bound. Both obvious gates were rejected with reasons. ⚠️ **Anchor and header must ship TOGETHER** — fixing the header alone drops 555 plans below §22. | M |
-| 3 | **`DELOAD-BADGE-TRUTH-01`** | P1, Coaching Board. A week badged "Recovery" that is not a reduction. Sits beside #1 — worth one sitting for both. | M |
-| 4 | **`MKT-PLAN-SEGMENT-BASIS-01`** | Small and self-contained: is §25's `race_pace_pct` a share of distance or time? | S |
-| 5 | **B / D** (test coverage) | `PlanSchema` on the live path; four untested modules. P2/P3. | M |
-| 6 | `CHECK-SLOW-NOISE-01`, `A11Y-MOCKUP-CONTRAST-01` | Known, low, both documented with their reasons. | S |
+| — | **`DELOAD-PLAN-OPENING-01`** | ✅ **SHIPPED 2026-10-06** — §119 Am. 1, the placement search plus the honesty stamp. `INV-PLAN-MIN-LOADING-BLOCK` **25.8% → 15.8%**, marathon **50.0% → 3.4%**. | — |
+| — | **`HM-ANCHOR-VS-GOAL-01` / §120** | ✅ **SHIPPED 2026-09-22** (§120 + Am. 1). This row said *"not shipped, blocked on Willy's bound"* for two weeks after it landed; `RACE_PACE_ANCHOR_MAX_OVER_CV_PCT` is live in `generationConfig.ts` and read by `ruleEngine.ts`. | — |
+| — | **`DELOAD-BADGE-TRUTH-01`** | ✅ **CLOSED 2026-10-06, no code** — the 4th deload sitting returned a ruling rather than a conflict: §3's own amendment already states the 70% is *"a statement about the WEEK"*, and the only reachable remedy takes §52 breaches 3.0% → **28.9%**. | — |
+| — | **`MKT-PLAN-SEGMENT-BASIS-01`** | ✅ **SHIPPED 2026-09-30** — TIME, with the display fix. Registry row dated the same day. | — |
+| 1 | **`PLAN-NOTE-BUDGET-INERT-01`** | 🔴 **P1, filed 2026-10-06.** The engine **stamps 3.66 honest notes per plan and the runner reads 0.95** — three notes render on **zero** of 5,664 plans, 10,031 dropped. 🧭 Design Board → 💼 SLT (it set both caps). | M |
+| 2 | **`DELOAD-OPENING-SURFACE-01`** | §119 Am. 1's note is stamped and renders nowhere; McMillan's *"recorded TO THE RUNNER"* is binding. Blocked behind #1 by the same cap. 🧭 Design Board. | S |
+| 3 | **B / D** (test coverage) | `PlanSchema` on the live path; four untested modules. P2/P3. | M |
+| 4 | `CHECK-SLOW-NOISE-01`, `A11Y-MOCKUP-CONTRAST-01` | Known, low, both documented with their reasons. | S |
 
-✅ **`DESIGN-V3-FIDELITY` is CLOSED** (SLT, this evening: two shipped, one killed, one withdrawn
-earlier the same day). It is no longer on this list.
+**No coaching-engine item is actionable.** The four that remain open under a 🏃 tag are each blocked
+on something no amount of engineering supplies: `LOG-OFFPLAN-03` and `EMAIL-WAVE-4-PATTERN-01` on
+**live adherence data** (re-measured 2026-10-06: 1 real user has ≥3 HR-bearing analyses, and only 4
+runners have any analysis at all), `ANALYSIS-SUPERSEDE-PATTERN-01` on the same class of measurement
+(§71 Am. 1 ruled and declined the build), and the `§44/§52 block tier` is a founder decision.
 
 ### 4. Founder-owned, stated once and not chased
 
