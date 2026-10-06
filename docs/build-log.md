@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — TAPER-OVER-PEAK-01 · the evidence gate was answerable by reading one line
+**Shipped:** nothing prescriptive. A ratchet, and the item closed.
+**Dev learning:** the board had blocked this on a precisely named unknown — is the easy pool computed before or after quality placement? It took one grep. `remainingVolume = Math.max(0, weeklyKm - placedKm)`, and `placedKm` sums the already-placed quality, so the pool is computed AFTER and the shortfall does enter it. The remedy the board asked for was already what the engine does. **An INSUFFICIENT EVIDENCE ruling is a question, and some questions are one line of source away from an answer.**
+**Product/creator learning:** the item traced a 25% defect (peak 12 km, taper 15 km). On the full grid today it is 0.77% of plans at 3.5% mean severity, and the traced case does not reproduce. That is the fourth item this week to overstate its own defect, all in the same direction. The right output was a ratchet so it cannot grow back, not a fix for something that is now a margin.
+**AI-building learning:** I nearly filed a false finding off the same measurement run. "Peak delivered below 70% of its own target" came out at 48.86% and looked like the real story. §40c had already ruled it: the shortfall note is gated to time goals only, because a runner who asked only to finish was never promised a volume. I was measuring against a ceiling for a cohort that was never promised it. **The big number in your output is the one most likely to be a doctrine question you have not read.**
+**The honest bit:** I wrote the HM diagnosis for a different item earlier the same session, shipped a fix for it, and the fix changed nothing — which is how I found out the diagnosis was wrong. Twice in one session a correction I was confident about was falsified by running it.
+**Hook material:** the board blocked a build on an unknown. The unknown was one line: `remainingVolume = weeklyKm - placedKm`. The answer had been in the file the whole time.
+**Postable?:** maybe
+
+
 ## 2026-10-05 — DELIVERED-RAMP-REAL-DRIVER-01 · the board refused the exemption, and the premise was 65% wrong
 **Shipped:** §94 Amendment 3 — `INV-PLAN-DELIVERED-RAMP` names FREQUENCY as a driver when a week gains a run without each run getting longer, instead of reporting "Driver NOT ATTRIBUTED".
 **Dev learning:** I went to the board to ask whether gained-session weeks should be exempt, and the conflict scan answered it before any seat spoke. §2 Amendment 2 carries a *binding freeze* on relaxing this predicate without outcome data, and §94 Amendment 1 had already removed an exemption arm from the very same check eighteen days earlier for silencing it when things were worst. **Both were findable by reading the amendments rather than the section headings**, which is the thing this board's own skill warns about in capitals.

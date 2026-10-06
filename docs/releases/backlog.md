@@ -6087,7 +6087,42 @@ above came from it.
 device-independent auto-link path (`STRAVA-WEBHOOK-OBS-01`) and its external subscription state
 is already a recorded silent-failure class. Then the three true misses, then the ops routes.
 
-### 🏃 `TAPER-OVER-PEAK-01` — **RE-RULED 2026-09-22. CORRECT WITH AMENDMENT, not built.**
+### ✅ 🏃 `TAPER-OVER-PEAK-01` — CLOSED 2026-10-06. The evidence gate RESOLVED and the defect shrank to a margin. **DON'T SHIP.**
+
+> ✅ **CLOSED, and the ruling is satisfied without a prescription change.** The board's
+> INSUFFICIENT EVIDENCE was named precisely: *"`waterFillEasyKm` already redistributes an easy pool
+> weighted by each day's ceiling. **Whether that pool is computed before or after quality placement
+> is unmeasured** — if before, the shortfall never enters it."*
+>
+> ✅ **ANSWERED BY READING THE PRODUCER: it is computed AFTER.**
+> `remainingVolume = Math.max(0, weeklyKm - placedKm)` (`ruleEngine.ts:3595`), where `placedKm` sums
+> the already-placed long run **and quality**. **So the shortfall DOES enter the pool** — the
+> hypothesis the ruling was blocked on is false, and the remedy the board specified (the remaining
+> easy running absorbs what quality did not carry) is **already what the engine does.**
+> ⚠️ **One scoping fact neither the item nor the ruling states:** the water-fill only runs
+> `if (input.day_budgets)`. Without per-day budgets every easy day gets a uniform `easyKm`.
+>
+> 📊 **AND THE DEFECT HAS SHRUNK TO A MARGIN. Full grid, 39,632 plans:** taper delivered above peak
+> delivered is **304 plans = 0.77%**, mean severity **3.5%**, worst **5.8%** — against the item's
+> traced case at **25%** (peak 12 km, taper 15 km), which **no longer reproduces.** **0 of 304 are
+> silent**; every one carries an adjacent peak warning (`INV-PLAN-PEAK-SPECIFICITY` 304,
+> `INV-PLAN-PEAK-NOT-BELOW-START` 288).
+> ⚠️ **Negative space, stated: "carries an adjacent peak warning" is NOT the same as "is told the
+> taper exceeds the peak".** No invariant says that specifically. The judgement is that a taper 3.5%
+> above the peak week is below what a runner reads as a bigger week, not that they were warned about it.
+>
+> 🔴 **AND I NEARLY FILED A FALSE FINDING OFF THE SAME RUN.** I measured *"peak delivered < 70% of
+> `peak_km_target`"* at **48.86%** and almost reported it as the real defect. **§40c already ruled
+> it:** `peak_shortfall_note` is deliberately gated to **time goals only**, because *"a runner who
+> asked only to finish was never promised a volume, so nothing is being suppressed."* The 48.86% is
+> measured against a **ceiling** for a cohort that was never promised it. **Check the doctrine before
+> filing a finding.**
+>
+> 🧪 **A RATCHET SHIPS INSTEAD OF A FIX:** `lib/plan/taperNotOverPeak.test.ts` — rate ceiling 2.0%
+> (measured 0.77%) and severity ceiling 12.0% (measured worst 5.8%), strided not sliced, with a
+> population arm. **Falsified both ways:** inverting the comparison reddens the rate arm, emptying
+> the population reddens the population arm. A closed item has no other defence against its defect
+> growing back.
 **Board: 🏃 COACHING BOARD (re-sat; first ruling VACATED).** Baselined in `SWEEP-BASELINE-01` meanwhile.
 
 🔴 **The first ruling contradicted §1 CD-21 Amendment 1, which had already ruled on this exact
