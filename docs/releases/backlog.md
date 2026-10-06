@@ -4043,7 +4043,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-10-06 (last ship `8b0952da`). 500 files / 4,410 tests · REAL `verify` exit 0 from a FILE · docs ALL CLEAN.** 🥇 **FOUR SHIPS FROM ONE SCREENSHOT OF THE FOUNDER'S OWN SESSION.** ✅ **The coaching was already in the data** — `DerivedStep.note` had a **writer and no reader**, 5,152 of 6,014 steps (85.7%); his card said **"Hard" three times**. ✅ **The `≤` was BACKWARDS** (ceiling = "no faster than" = `≥` on a pace number), 41.6% of steps, **and CD-11/§12 had ruled it with the correct renderer ON THE SAME CARD**. ✅ **§81's second half built: 675 structured weekday sessions past tolerance, EVERY ONE a runner who stated 30 minutes**, worst **86 min against that 30**; the invariant fired **ZERO** times because it tested the MAINTENANCE note's presence. **The board had named that defect three days earlier and ruled it exempt; nobody did it.** ✅ **Three fixed slots, TARGET FIRST, on every row of every session** — the board threw out **all four** options I drew (two pre-refused by its own register) and ruled a fifth on 🎓 Sierra's reframe: *mid-run the runner needs the target, because their watch already shows distance and time.* 🔴 **I REPORTED 5.9% AND IT WAS 29.2%** — my classifier tested `/mi/` and **"9:20 min" CONTAINS "mi"**. 🔴 **A blind global replace corrupted a test FIXTURE'S INPUT.** 🔴 **My gate covered 11.7% of sessions** until he asked. ⚠️ **An AGGREGATE cannot see a section missing from a SESSION.** 🥇 **THE TYPE SYSTEM DID A DESIGN JOB:** making `target`/`secondary` REQUIRED on `StepRow` made the compiler list the five hand-built rows that had been opting out of the layout — exactly the ones that had drifted. 🥇 **Three times this week, LOOKING at the thing beat reasoning about it.** 🔻 **Filed:** `METRIC-TOGGLE-SCOPE-01` (Collins: measured-in-time-or-distance is a property of the SESSION, not the runner) · `WEEKDAY-OVERRUN-BOUND-01` · `SESSION-WEEK-SHARE-01` (**no check anywhere looks at ONE SESSION as a share of the week**). ⚠️ Fit-for-purpose unmoved; parity IDENTICAL on every display ship. **Nothing has run on a device.** → [the day](project_2026_10_06_three_items.md)
+**State at END of 2026-10-06 (last ship `8b0952da`). 500 files / 4,410 tests · REAL `verify` exit 0 from a FILE · docs ALL CLEAN.** 🥇 **FOUR SHIPS FROM ONE SCREENSHOT OF THE FOUNDER'S OWN SESSION.** ✅ **The coaching was already in the data** — `DerivedStep.note` had a **writer and no reader**, 5,152 of 6,014 steps (85.7%); his card said **"Hard" three times**. ✅ **The `≤` was BACKWARDS** (ceiling = "no faster than" = `≥` on a pace number), 41.6% of steps, **and CD-11/§12 had ruled it with the correct renderer ON THE SAME CARD**. ✅ **§81's second half built: 675 structured weekday sessions past tolerance, EVERY ONE a runner who stated 30 minutes**, worst **86 min against that 30**; the invariant fired **ZERO** times because it tested the MAINTENANCE note's presence. **The board had named that defect three days earlier and ruled it exempt; nobody did it.** ✅ **Three fixed slots, TARGET FIRST, on every row of every session** — the board threw out **all four** options I drew (two pre-refused by its own register) and ruled a fifth on 🎓 Sierra's reframe: *mid-run the runner needs the target, because their watch already shows distance and time.* 🔴 **I REPORTED 5.9% AND IT WAS 29.2%** — my classifier tested `/mi/` and **"9:20 min" CONTAINS "mi"**. 🔴 **A blind global replace corrupted a test FIXTURE'S INPUT.** 🔴 **My gate covered 11.7% of sessions** until he asked. ⚠️ **An AGGREGATE cannot see a section missing from a SESSION.** 🥇 **THE TYPE SYSTEM DID A DESIGN JOB:** making `target`/`secondary` REQUIRED on `StepRow` made the compiler list the five hand-built rows that had been opting out of the layout — exactly the ones that had drifted. 🥇 **Three times this week, LOOKING at the thing beat reasoning about it.** 🔻 **Filed:** `STEP-ZONE-RANGE-01` (**his `9:20` question answered: a zone IS a pace band, so `~1.3-1.6 km` was always available — showing the time was an UNDECIDED CHOICE, not an impossibility**) · `STEP-UNIT-OWNER-01` (**4.04% of cards print `15 min` above km: `buildSessionRows` unified who BUILDS the rows and left TWO owners of the DECISION, which is why every check is green**) · `METRIC-TOGGLE-SCOPE-01` (Collins: measured-in-time-or-distance is a property of the SESSION, not the runner) · `WEEKDAY-OVERRUN-BOUND-01` · `SESSION-WEEK-SHARE-01`. ⚠️ Fit-for-purpose unmoved; parity IDENTICAL on every display ship. **Nothing has run on a device.** → [the day](project_2026_10_06_three_items.md)
 
 **Prior — State at END of 2026-10-06 (earlier) (last ship `e56f8e7a`, `MARATHON-PEAK-ROTATION-01` / §93 Am. 1). 493 files / 4,358 tests, 0 failed. REAL `verify` exit 0 — captured by echoing `$?` after npm, never through a pipe. Invariants code=142 doc=142 orphans=0.** ⚖️ **TWO COACHING ITEMS CLOSED, ONE REFUSED ON ITS OWN MEASUREMENT.** ✅ **§117 Am. 5 took the MARATHON from 89.5% to 91.8%** — the only distance below the founder's new **per-distance** 90% floor, hidden by a whole-product 95.9%. 🩹 **Willy's "no peak may fall" held BY MEASUREMENT: peak week moved 0 of 33,792.** 🔴 **It surfaced a live defect that was not mine** (`RUNWALK-FOUNDATION-GAP-01`): foundation weeks are prepended AFTER the stamping pass, so **12 of 12** old-route cases told the charity cohort's first-timer to run straight through for three weeks. 🥇 **`INV-PLAN-RUNWALK-PRESCRIBED` was firing correctly all along — into a production log nobody reads.** ✅ **§93 Am. 1: the time-targeted marathon now takes race-specific peak quality** (exposure/plan 3.19 → 5.15, `mp_blocks` 0.14 → **1.42**, peak specific share 33.9% → 39.8%). 🥇 **ITS BLOCKER HAD ALREADY DISSOLVED AND NOTHING CONNECTED THE TWO** — McMillan required a second catalogue row because the costed version caused 3,408 §104 firings; re-measured **0**, because `VARIETY-ELIGIBILITY-01` (shipped the same morning for a different item) taught the variety invariant to filter alternatives by fitness. 🔴 **TWO OF THAT ITEM'S THREE PREMISES WERE WRONG, both making the work look bigger**: the catalogue is **symmetric** with HM (two rows each, not one) and the fall-through is **documented intent** with a second comment line. 🥇 **The real argument was the unreachable midweek slot — `mp_blocks` measured 0.00/plan for beginner AND intermediate at every volume**, because it needs a SECOND peak quality slot and only experienced runners get one. ⚠️ **Its own `purpose` field described the gap it was never reachable for.** 🔴 **I EXCLUDED `maintenance` FROM MY OWN NEW INVARIANT AND 72.7% OF MARATHON PLANS ARE MAINTENANCE** — coverage 2,865 → 876, the *population-excludes-the-cases-at-risk* fault, in my own check, on a day I wrote it up twice in other code. **Caught only because the falsification arm would not go red** — and the first mutation (deleting `catalogue_id`) did not work either, because ADR-018's legacy label fallback still resolves the row. 🔻 **THE DELOAD CLUSTER IS REFUSED, NOT SHIPPED, AND THREE SITTINGS WERE SPENT ON THE WRONG QUESTION:** "fix the BADGE" broke **three** error invariants (a demoted week is structurally still a recovery week); the ruling **mis-cited §34** (the invariant registry, not honesty — §81 is the precedent); **Willy's "binding floor" ALREADY EXISTED** as `INV-PLAN-DELOAD-IS-A-REDUCTION`, ratified `warn`. 🥇 **The §81 declaration was BUILT and its own measurement refused it: 66.0% of plans, FLAT 58.8–71.3% across volume — so Sims's small-week mechanism is DISPROVED and the note is wallpaper.** 🥇 **THE REAL FINDING: 13,785 deload weeks, MEDIAN DELIVERED DROP 17.9% against §3's PROMISED 30%; 82.9% short.** ✅ The 3.6%-no-reduction row **reconciles with the live invariant's own ~3.5%**. **The 4th sitting is one sentence: which number is wrong?** 🔻 `RACE-ANCHOR-CV-OVERRIDE-01` stays blocked — both routes closed as levers (the ladder excludes `race_specific` deliberately, prototype measured at **zero** in build) and §25 Am. 2 does **not** relieve the §89 cell, because the ratio counts only `type === 'quality'`. ⚠️ **Nothing has run on a device.**
 
@@ -6536,6 +6536,62 @@ A principle written before that number exists is the error the board recorded on
 
 ---
 
+### `STEP-ZONE-RANGE-01` — a zone-only step shows its prescribed TIME; a range was always available 🧭 **DESIGN BOARD** → 🏃 **COACHING BOARD**
+
+**Founder's own question, 2026-10-06, verbatim: _"I want to know why we have 9:20 when I am using
+distance."_** Measured answer: his step was `9:20 min · Zone 2–3` — prescribed as a duration of effort
+at a **zone**, and `buildRow` derives a distance by dividing by the step's PACE. A zone carries no
+pace, so the prescription stays. **1,174 rows** across the corpus are this shape.
+
+🔴 **I had been treating "there is no pace" as "there is no answer", and that is wrong.** A zone IS a
+pace band, so the conversion exists — it yields a **range**. On his card's own bracket (5:53–7:02 /km)
+`9:20` is **~1.3–1.6 km**. `SESSION-STEP-SLOTS-01` shipped the prescription because that is what the
+old code did, **not because a decision was taken.**
+
+| Option | Against it |
+|---|---|
+| Leave it (ships today) | The lead unit switches mid-block on **941 sessions (2.29%)** — the thing he complained about |
+| Print the derived **range** (`~1.3–1.6 km`) | Four glyphs where every other lead is one number; and a ±20% band presented as "how far" is a claim |
+| Print the band's **midpoint** (`~1.4 km`) | ⛔ **Refused already** — `zone-rules.md`'s never-invent rule; a zone does not have a centre |
+
+**Routing, in order.** 🧭 Design rules the **encoding** (is a range a legitimate lead?). 🏃 Coaching
+rules only if the answer is the range, because a derived distance from a band is a statement about
+what the runner will cover. Seam rule: design owns the encoding, coaching owns the meaning.
+
+⚠️ **Do not fold this into `METRIC-TOGGLE-SCOPE-01`.** That item asks whether the toggle should exist
+at all; this one is answerable without touching it, and only this one answers the founder.
+
+---
+
+### `STEP-UNIT-OWNER-01` — one card, two producers deciding whether a number is a distance or a duration ⚙️ **NO BOARD**
+
+**Found 2026-10-06 taking the post-E measurement `METRIC-TOGGLE-SCOPE-01` demanded.** On the DISTANCE
+setting, **1,657 sessions (4.04%)** print a warm-up of `15 min` above main-set rows in km. Not a
+rounding artefact: two completely independent producers decide the row's KIND for the same card.
+
+| Producer | Decides | How |
+|---|---|---|
+| `resolveDisplayFigures` | warm-up · cool-down · v1 main | apportions distance only when **EVERY** part has a `distance_km`; otherwise minutes for all of them |
+| `buildStepGroups(derived_set)` | every v2 main-set row | reads each step's own prescription and derives the other unit from its pace |
+
+A quality session whose warm-up is duration-anchored therefore gets minutes from the first and km from
+the second, **and neither is wrong on its own.** Shapes: `shakeout` 862 · `quality_continuous` 795.
+Time trial excluded — §78 ratifies that its parts differ in kind by design.
+
+🔴 **`buildSessionRows` made one producer of the ROWS and left two producers of the DECISION**, which
+is why the whole suite, the legibility gate and `verify:parity` are all green: both producers are
+unchanged and each output is individually well-formed. **Nothing anywhere asserts that two rows on one
+card agree about what their number means.**
+
+**Shape of the fix:** one owner answers *"what kind is this card measured in?"* once, for the whole
+card, and every row — hand-built or derived — takes it. Plus the arm that was missing: a card's work
+rows are all one kind, with the ratified exceptions named.
+
+⚠️ **Which kind WINS is `STEP-ZONE-RANGE-01`'s question, not this one.** This item is the ownership
+defect; it can land either way that one is ruled.
+
+---
+
 ### `METRIC-TOGGLE-SCOPE-01` — is the distance/duration toggle the wrong instrument? 🧭 **DESIGN BOARD** → 💼 **SLT**
 
 🎪 **Collins, filed not ruled, 2026-10-06.** He lost the layout argument and made a bigger one the
@@ -6592,6 +6648,11 @@ who BUILDS the rows; it did not unify who decides the row's KIND.
 ⚠️ **Neither was fixed by `SESSION-STEP-SLOTS-01`** and neither is asserted anywhere: the legibility
 gate checks the strings a row emits, never whether two rows on one card agree about what a number
 means.
+
+➡️ **Both are now filed as their own items, because each is answerable without settling this one:**
+row 1 is `STEP-ZONE-RANGE-01` (the encoding decision the founder's question actually asks), row 2 is
+`STEP-UNIT-OWNER-01` (the ownership defect). This item remains the bigger, separate question of
+whether the toggle should exist at all.
 
 ---
 
