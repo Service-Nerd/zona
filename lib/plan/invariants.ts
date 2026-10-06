@@ -3625,13 +3625,40 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         // and distance only — the runner-specific gates (fitness, pace anchors)
         // are the selector's business, so this asks the weaker, safer question.
         const used = Array.from(distinctUsed)[0]
+        // §104 AMENDMENT (Coaching Board 2026-10-06, peak-length sitting) — AN
+        // ALTERNATIVE IS ONE THE RUNNER IS ELIGIBLE FOR, NOT ONE THE CATALOGUE OWNS.
+        //
+        // 🔴 THIS FILTER HAD NO FITNESS GATE AND THE CHECK WAS FIRING FALSELY
+        // 3,456 TIMES, ALL ON HM PLANS (1,728 beginner · 864 intermediate · 864
+        // experienced). The message told a BEGINNER to use `hm_pace_intervals`,
+        // which is `fitness_level_min: 'intermediate'` — a session that runner
+        // cannot be prescribed. For the intermediate/experienced cells the cited
+        // alternative was `beginner_goal_pace_blocks`, `fitness_level_max:
+        // 'beginner'`. Every firing named an impossible remedy.
+        //
+        // ⚠️ VERBATIM THE ERROR RECORDED IN `RACE-ANCHOR-CV-OVERRIDE-01`: "I
+        // reasoned from the catalogue's contents to a runner's eligible set, and
+        // those are different objects." The same mistake was inside this check.
+        // 🎯 McMillan: "a warning that names an impossible remedy is worse than
+        // silence."
+        //
+        // Mirrors `selectCatalogueSession`'s own band test, including the
+        // `fitness_level_max` upper bound (CB-BEGINNER-CATALOGUE-01), so checker
+        // and producer agree about who can be given what. Tier and anchor gates
+        // are deliberately NOT added: narrowing this further on an unmeasured axis
+        // is how a check stops firing for reasons nobody checked.
+        const userRank = fitness ? FITNESS_RANK[fitness] : undefined
         const alternatives = V1_SESSION_CATALOGUE.filter(r =>
           r.category === 'race_specific'
           && r.id !== used
           && (r.distance_eligibility as readonly string[]).includes(distKey)
           && (r.phase_eligibility as readonly string[]).includes('peak')
           // A long-run-shaped row is not an alternative for a QUALITY slot.
-          && r.main_set_structure?.type !== 'long_run_with_segment')
+          && r.main_set_structure?.type !== 'long_run_with_segment'
+          && (userRank === undefined || (
+            FITNESS_RANK[r.fitness_level_min] <= userRank
+            && (r.fitness_level_max == null || userRank <= FITNESS_RANK[r.fitness_level_max])
+          )))
 
         if (alternatives.length > 0) {
           violations.push({

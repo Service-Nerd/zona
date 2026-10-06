@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — VARIETY-ELIGIBILITY-01 · sent to fix peak length, found a check telling beginners to use a session they cannot have
+**Shipped:** §104's variety check now judges alternatives by what the RUNNER is eligible for. It was firing 3,456 times, all on HM plans, and every message was impossible to act on.
+**Dev learning:** the premise I was sent with was mis-attributed and I had filed it myself. "Peak length" is not §93's — §93 governs peak CONTENT. Peak length is `MAX_TAPER_PHASE_WEEKS`, which is HM 3 and MARATHON 4, so the marathon's shorter peak is the consequence of a longer taper that is correct. **Reading the principle I had cited took two minutes and removed the whole item.**
+**Product/creator learning:** the measurement kept moving the question. Share of specificity looked like the defect; absolute counts inverted it; the absolute counts pointed at one line of rotation; and costing that line surfaced a check that had been lying since it was written. **Four reframings, each from a measurement rather than an argument.**
+**AI-building learning:** the fix took the check from 3,456 firings to 0, and "fires 0 times" is indistinguishable from "cannot fire" unless you go and look. HM and MARATHON turn out to have exactly one eligible race-specific peak row per fitness band, so the check is structurally silent for them — the firings were false by construction — and it survives only for 10K intermediate+. **I asserted that in the gate rather than discovering it later from a liveness baseline.**
+**The honest bit:** this is the fourth sitting on one item and the third time the thing I brought was not the thing that was wrong. The useful pattern is that every one of those corrections came from a number, and in two of them the number contradicted a seat's stated hypothesis including the chair's.
+**Hook material:** a check told 1,728 beginners their plan should have used a session marked "intermediate and above". It had been doing that since it was written, and it reported it as the plan's fault.
+**Postable?:** yes
+
+
 ## 2026-10-06 — BUILD-SPECIFICITY-ZERO-01 · asked to build the ladder fix; the ladder was the wrong lever and the code said so
 **Shipped:** §25's race-pace long run now also lands in the final non-deload build week for time-targeted HM and marathon. One session. Median 6.1 km of race pace added per plan.
 **Dev learning:** I was asked to build a ladder fix and spent the first hour proving the ladder could not work. `MIDWEEK_QUALITY_LADDER` excludes `race_specific` deliberately, with the reason written on the line above it, and a prototype row was selected 7,644 times with ZERO of them in build. The real lever was one expression — `useRaceSpecificLR = phase === 'peak'`. **A comment that explains an exclusion is load-bearing; read the line above the thing you are about to change.**

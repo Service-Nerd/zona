@@ -7716,6 +7716,48 @@ question from §93's existing slot logic.
 
 ---
 
+
+### §104 Amendment — an ALTERNATIVE is one the RUNNER is eligible for *(Coaching Board 2026-10-06, peak-length sitting)*
+
+**Ruling: CORRECT. A defect fix restoring documented intent.**
+
+**Principle.** `INV-PLAN-RACE-SPECIFIC-VARIETY` names an alternative row only if **this runner could
+be prescribed it.** The alternatives filter applies the same fitness-band test the selector applies,
+including `fitness_level_max`'s upper bound.
+
+**Why. It was firing 3,456 times and every message named a session the runner cannot have.** All on
+HM plans: **1,728 beginner · 864 intermediate · 864 experienced.** The filter checked category,
+distance, phase and shape, and **no fitness gate at all**, so it enumerated the catalogue rather than
+the runner's eligible set:
+
+| cell | the check said use | why the runner cannot |
+|---|---|---|
+| HM **beginner** (1,728) | `hm_pace_intervals` | `fitness_level_min: 'intermediate'` |
+| HM intermediate / experienced (1,728) | `beginner_goal_pace_blocks` | `fitness_level_max: 'beginner'` |
+
+🔴 **It is verbatim the error this board recorded against `RACE-ANCHOR-CV-OVERRIDE-01`'s second
+reverted attempt** — *"I reasoned from the catalogue's contents to a runner's eligible set, and those
+are different objects"* — sitting inside a check. 🎯 McMillan: *"a warning that names an impossible
+remedy is worse than silence."* ⚕️ Sims: the largest single cell is **beginners**, who are least able
+to tell a wrong recommendation from a right one.
+
+**Measured: 3,456 → 0.** No prescription changes; the check stops lying.
+
+⚠️ **AND THE FIX COULD HAVE SILENTLY KILLED THE CHECK, WHICH IS WHY ITS WAKEABILITY IS NOW ASSERTED.**
+With the gate applied, **HM and MARATHON have exactly ONE eligible race-specific peak quality row per
+fitness band**, so this check **cannot fire for them at all** — those 3,456 firings were false *by
+construction*. It remains wakeable only for **10K intermediate and experienced**, where
+`tenk_pace_intervals` and `tenk_race_simulation` are both eligible. *"Fires 0 times"* and *"cannot
+fire"* are different claims and the gate proves which one this is.
+
+⚠️ **Tier and anchor gates are deliberately NOT added.** They would narrow the filter further on an
+axis nobody has measured, and that is how a check stops firing for reasons no one checked.
+
+🔻 **What this exposes and does not fix: the MARATHON has one race-specific peak quality row for
+intermediate-and-above runners (`mp_blocks`).** 🎯 McMillan: the marathon gap should be closed *"with a
+second marathon race-specific session rather than by repeating `mp_blocks` four times"* — which is
+what §104 exists to prevent and would be right to fire on. **Filed, not decided.**
+
 ## 105. Marathon pace must exist away from the long run
 
 *(Coaching Board, 2026-09-11 — CAT-MARATHON-RACE-SPECIFIC-01. CORRECT WITH AMENDMENT.)*
