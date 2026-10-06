@@ -9587,7 +9587,42 @@ One prose consequence, caught by the change: page 2 called Runna *"the most expe
 three"*, which £119.99 makes false. It now says **"the most expensive per month"**, which is true
 (Runna £15.99/mo; Coopah is dearest annually).
 
-### 🔴 `DELOAD-BADGE-TRUTH-01` — a week badged "Recovery" that is not a reduction *(P1, Coaching Board)* 🏃 **COACHING BOARD** — the LATER table already said so; a week badged *Recovery* that is not a reduction is the ENGINE, not the badge
+### 🟠 `DELOAD-BADGE-TRUTH-01` — **BUILD ATTEMPTED 2026-10-06, NOT SHIPPED. The (a)/(b) SPLIT IS UNMEASURED** 🏃 **COACHING BOARD**
+
+> 📄 **Full record: `docs/decisions/2026-10-06-deload-merged-build-blocked.md`.**
+> ✅ **PREMISE RE-DERIVED AND THE DISTANCE GATING REPRODUCES EXACTLY** (96,460 deload transitions):
+> **5,396 at-or-above = 5.6%** · strictly above **3,604** · exactly equal **1,792** · overshoot median
+> **0.50 km**, max **4.27 km** · **5K 15.3% · 10K 7.0% · HM 1.8% · marathon 1.2%.**
+>
+> 🔴 **BLOCKER ONE — THE (a)/(b) SPLIT IS NOT MEASURED BY ANYONE, INCLUDING ME.** The fix plan assigns
+> 3,604 weeks to (a) and 1,792 to (b), but **that is an inference from the SIGN of the overshoot**,
+> not a test of whether a reduction is possible. **I tried twice and both attempts were unsound, in
+> opposite directions.** (1) `MIN_SESSION_DISTANCE_KM` is an **OBJECT** `{long:5, easy:4, quality:5}`,
+> so `count * FLOORS` is **NaN**, `NaN <= target` is always false, and everything read as floor-bound
+> — **my `?? 4` fallback never fired and masked the shape error.** (2) With the real per-type floors it
+> still read 0% reducible, and that is **self-evidently wrong**: on the worked 5K case the "irreducible
+> minimum" came out at **15.3 km against a week that delivers 14.5 km**, because **the engine is
+> already placing 3.6 km easy runs, below the 4 km floor I used.** With the long run alone as the
+> bound the same week flips to REDUCIBLE. **Two defensible bounds, opposite answers, same week.**
+> ⚠️ **And part of it is a COACHING question, not arithmetic:** a 3-session deload week becoming a
+> 2-session week is a frequency change, and §95/§119's whole argument is that frequency is not free.
+>
+> 🔴 **BLOCKER TWO — placement cannot land alone and the board says it lands first.** The search breaks
+> three PUBLISHED plans' deload depth, and **that failure is fix (a)'s subject.** So placement needs
+> (a), (a) needs the split, the split is unmeasured. **The sequencing is right that placement goes
+> first and wrong that it can go alone.**
+>
+> 🛑 **FIX (b) WAS DELIBERATELY NOT SHIPPED ALONE**, though it is tempting: no prescription change, and
+> it fixes the published page. **Its population IS the split.** Badging a week *"not a reduction"* when
+> the engine could have reduced it hard-codes a wrong reason into runner-facing copy, and the record on
+> that is one day old (`DAYS-GATE-CAPACITY-01`: *"naming a wrong reason is worse than naming none"*).
+>
+> 🔻 **NEXT, NAMED:** (1) measure reducibility **from the producer** (§82 floor protection /
+> `CB-SUBFLOOR-ADMIT-01`), not from declared config minimums; (2) route the **frequency** question to
+> the board; (3) then build **placement + (a) + (b) together**, (c) separable.
+> 🔻 **Not urgent in the runner's experience** — median overshoot **0.50 km**, severity `warn`. The
+> reason to do it properly is that promoting `INV-PLAN-DELOAD-IS-A-REDUCTION` to `error` is blocked
+> behind it.
 
 > ⚖️ **COACHING BOARD RULED 2026-10-05 — CORRECT WITH AMENDMENT. This item MERGES with
 > `DELOAD-LR-GROWS-01` and `WEEK12-LR-CAP-CLIFF-01`: one defect, three populations.** Record: `docs/decisions/2026-10-05-coaching-board-backlog-clearance.md`.
