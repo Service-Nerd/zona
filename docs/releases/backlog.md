@@ -6296,6 +6296,30 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
 
+### 🟠 🏃 `MARATHON-PEAK-ROTATION-01` — the marathon is the only time-target distance whose PEAK quality is not race-specific
+
+> ⚖️ **COSTED AND NOT SHIPPED 2026-10-06 (peak-length sitting). INSUFFICIENT EVIDENCE on the dose.**
+> Record: `docs/decisions/2026-10-06-build-specificity-finding.md`. Filed because it was found in
+> doctrine prose and nothing scheduled it.
+>
+> 🔴 **One line.** Peak quality preference reads `5K→vo2max`, `10K→vo2max then race_specific`,
+> **`HM→race_specific`, and MARATHON falls through to `threshold`** — and the line's own comment names
+> only `hm_pace_intervals`. **Total race-specific exposure per time-target plan: HM 6.00 vs marathon
+> 3.19**, on an 18-week plan against 16.
+> ✅ **Costed:** adding MARATHON raises exposure **3.19 → 5.15** and `mp_blocks` selections **472 →
+> 4,836**, with quality-session count and §1 share unchanged.
+> 🔴 **But it added 3,408 `INV-PLAN-RACE-SPECIFIC-VARIETY` firings** — one per plan — because the
+> **marathon has only ONE race-specific peak quality row for intermediate-and-above (`mp_blocks`)**, so
+> preferring the category just repeats it. §104 is right to object.
+> 🔻 **NEEDS, per the board:** 🎯 McMillan — close it with a **second marathon race-specific peak row**,
+> not by repeating `mp_blocks` four times in a 2.1-week peak. 🩹 Willy — that is a **dose** decision and
+> is uncosted. **Both must land together or §104 fires legitimately.**
+> ⚠️ **Impact if not done:** a marathon runner chasing a time gets **half** the race-pace rehearsal an
+> HM runner gets, on a longer plan. Not a validity failure — every check passes — so nothing surfaces
+> it.
+
+---
+
 ### 🟠 🏃 `RACE-ANCHOR-CV-OVERRIDE-01` — SETTLED 2026-10-06: the deadlock belongs to the CATALOGUE. Blocked on ONE deferred sitting.
 
 > 📄 **Full record: `docs/decisions/2026-10-06-cv-override-settled.md`.**
