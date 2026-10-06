@@ -109,6 +109,144 @@ export function isDeloadWeek(
  * a single loading week between them, which is safe but is not the 3:1 cadence
  * §3 promises. {2,5,8} is. The archetype matrix caught that as `cadence 2`.
  */
+/**
+ * §119 / DELOAD-PLAN-OPENING-01 — THE SEARCH OVER LEGAL PLACEMENTS.
+ *
+ * 🔴 WHY A SEARCH AND NOT A THRESHOLD. The greedy walk below places a deload before
+ * it knows a later one will be pulled early to clear a phase boundary, and its
+ * backward normalisation then parks the earliest at WEEK 2 — its own comment records
+ * `{3,5,8} -> {2,5,8}`. Measured on 5,664 cohort plans: `INV-PLAN-MIN-LOADING-BLOCK`
+ * fires on **25.8%**, and on **week 2 in 100.0% of cases**. It is a long-race
+ * defect: 5K 2.8% · 10K 2.8% · **HM 52.1% · marathon 50.0%**.
+ *
+ * ⚠️ THE OBVIOUS FIX IS PROVABLY UNIMPLEMENTABLE, which is why the board named a
+ * search. Moving a placed deload by one week always takes a week from one loading
+ * block and gives it to the other, so Sims's §87 rule 3 (never lengthen the worst
+ * loading run) rejects BOTH directions whenever the cadence divides evenly.
+ *
+ * Dynamic programme over IN-SCOPE weeks only, in E-INDEX SPACE so a peak or taper
+ * week can never be miscounted as a loading week.
+ *
+ * HARD: §87 not a phase's first week · §95 not phase position 2 · §119 every loading
+ * run >= MIN_LOADING_BLOCK_WEEKS INCLUDING THE OPENING RUN · §23 trailing run >= 1.
+ *
+ * BOUNDS, read off the LEGACY placement rather than assumed — the two constraints
+ * ratified when §95's first build was reverted:
+ *   · 🩹 Willy  the deload COUNT may rise, never fall
+ *   · ⚕️ Sims   the WORST loading run may never lengthen (`run <= maxRun`)
+ *
+ * SOFT: minimise `sum |gap - recoveryFreq|`, ties to the earlier placement.
+ *
+ * ⚠️ RETURNS `null` WHEN INFEASIBLE and the caller falls back to the legacy walk, so
+ * a plan is never left without deloads. For masters HM that is the NORMAL case: the
+ * shape is base 1-5, build 6-10, peak 11-13 at cadence 3, so a run is exactly 2
+ * (`maxRun === MIN`) and the only legal second placement is week 6 — a phase's first
+ * week, which §87 excludes. That cell is 99.1% infeasible and 82% of the residual.
+ * ⛔ Closing it needs a 3-WEEK masters loading block, which §95 named and refused
+ * and the board re-affirmed as a VETO on 2026-10-05.
+ *
+ * ⚠️ ONE BOUND WAS INVENTED AND CORRECTED BY MEASUREMENT: requiring the TRAILING run
+ * to be `>= MIN` too. §119 counts loading weeks BEFORE a deload and nothing follows
+ * the trailing block, so it can never fire there. The correction changed the firing
+ * count by 0.
+ */
+function searchDeloadPlacements(
+  eWeeks: readonly number[],
+  recoveryFreq: number,
+  isFirstWeekOfPhase: (n: number) => boolean,
+  isPhasePosition2: (n: number) => boolean,
+  avoidPosition2: boolean,
+  legacy: ReadonlySet<number>,
+): Set<number> | null {
+  const E = eWeeks.length
+  const MIN = GENERATION_CONFIG.MIN_LOADING_BLOCK_WEEKS
+  if (E < 1) return null
+
+  const legacyE: number[] = []
+  for (let i = 0; i < E; i++) if (legacy.has(eWeeks[i] as number)) legacyE.push(i)
+  const minCount = legacyE.length
+  if (minCount === 0) return null
+  let maxRun = legacyE[0] as number
+  for (let i = 1; i < legacyE.length; i++) {
+    maxRun = Math.max(maxRun, (legacyE[i] as number) - (legacyE[i - 1] as number) - 1)
+  }
+  const legacyTrailing = E - 1 - (legacyE[legacyE.length - 1] as number)
+  maxRun = Math.max(maxRun, legacyTrailing)
+  // ⚠️ THE TRAILING BOUND IS READ OFF THE LEGACY PLACEMENT, NOT ASSERTED AS 1.
+  // The first cut required a trailing loading week unconditionally, on the §23
+  // reasoning that a block must not END on a deload — and that made the search
+  // unable to reproduce a RATIFIED placement. The E-window is base+build only
+  // (peak and taper are out of scope), so on a 16-week plan it is weeks 1–12 and
+  // the legacy deload IS week 12: legacy trailing is 0, and the weeks that follow
+  // it are the peak, which is not a loading week this function places anything in.
+  // §23 is about the PLAN's last week, which this window cannot see. Caught by
+  // `deloadCadence.test.ts`'s §95 case, which pins {4,8,12}; the search returned
+  // {4,8,11} — a WORSE placement (run of 5 against legacy's 4) that my own
+  // `maxRun` bound should have rejected and could not, because the infeasible
+  // trailing rule had already removed the legacy answer from the candidate set.
+  const minTrailing = Math.min(1, legacyTrailing)
+
+  const legal = (i: number): boolean => {
+    const n = eWeeks[i] as number
+    if (isFirstWeekOfPhase(n)) return false
+    if (avoidPosition2 && isPhasePosition2(n)) return false
+    return true
+  }
+
+  const INF = Number.POSITIVE_INFINITY
+  const cost: number[][] = Array.from({ length: E }, () => Array(E + 2).fill(INF))
+  const prev: number[][] = Array.from({ length: E }, () => Array(E + 2).fill(-1))
+
+  for (let i = 0; i < E; i++) {
+    if (!legal(i)) continue
+    const opening = i
+    if (opening < MIN) continue
+    if (opening > maxRun) continue
+    cost[i]![1] = Math.abs(opening + 1 - recoveryFreq)
+  }
+
+  for (let k = 1; k <= E; k++) {
+    for (let i = 0; i < E; i++) {
+      const c = cost[i]![k] as number
+      if (!Number.isFinite(c)) continue
+      for (let j = i + 1; j < E; j++) {
+        if (!legal(j)) continue
+        const run = j - i - 1
+        if (run < MIN) continue
+        if (run > maxRun) continue
+        const add = Math.abs(run + 1 - recoveryFreq)
+        if (c + add < (cost[j]![k + 1] as number)) {
+          cost[j]![k + 1] = c + add
+          prev[j]![k + 1] = i
+        }
+      }
+    }
+  }
+
+  let bestI = -1, bestK = -1, bestC = INF
+  for (let k = minCount; k <= E; k++) {
+    for (let i = 0; i < E; i++) {
+      const c = cost[i]![k] as number
+      if (!Number.isFinite(c)) continue
+      const trailing = E - 1 - i
+      if (trailing < minTrailing) continue
+      if (trailing > maxRun) continue
+      if (c < bestC) { bestC = c; bestI = i; bestK = k }
+    }
+    if (bestI >= 0) break
+  }
+  if (bestI < 0) return null
+
+  const out = new Set<number>()
+  let i = bestI, k = bestK
+  while (i >= 0 && k >= 1) {
+    out.add(eWeeks[i] as number)
+    i = prev[i]![k] as number
+    k -= 1
+  }
+  return out
+}
+
 export function computeDeloadWeeks(
   totalWeeks: number,
   recoveryFreq: number,
@@ -220,7 +358,84 @@ export function computeDeloadWeeks(
     if (!moved) break
   }
 
-  return chosen
+  // §119 — THE SEARCH REPLACES THE WALK WHERE IT CAN.
+  //
+  // The walk above is retained deliberately and is NOT dead: it supplies the two
+  // bounds the board ratified (count may not fall, worst run may not lengthen),
+  // both defined RELATIVE to the placement this engine already produces. A search
+  // bounded by assumed numbers is how §95's first build shipped a count inflation.
+  const eWeeks: number[] = []
+  for (let n = 1; n <= totalWeeks; n++) if (inScope(n)) eWeeks.push(n)
+  const isPhasePosition2 = (n: number) =>
+    n >= 2 && phaseOf(n) === phaseOf(n - 1) && isFirstWeekOfPhase(n - 1)
+  const searched = searchDeloadPlacements(
+    eWeeks, recoveryFreq, isFirstWeekOfPhase, isPhasePosition2, avoidPosition2, chosen)
+
+  return searched ?? chosen
+}
+
+/**
+ * §119 Amendment 1 — THE RESIDUAL, REPORTED BY THE PLACEMENT OWNER ITSELF.
+ *
+ * Returns the recovery weeks whose preceding loading run is shorter than
+ * `MIN_LOADING_BLOCK_WEEKS` AFTER the search has done what it can. Empty when
+ * the placement is compliant.
+ *
+ * ⚠️ THIS EXISTS BECAUSE THE RESIDUAL IS NOT RECOMPUTABLE FROM THE PLAN.
+ * Reading `plan.weeks` tells you a loading run is short; it cannot tell you
+ * whether a compliant placement EXISTED, which is the whole difference between
+ * a defect and an infeasibility. Same reasoning as `uncovered_runway_weeks`:
+ * the phase map that bounds the search is generation-time state `validatePlan`
+ * never receives.
+ *
+ * 🔴 AND IT IS A SECOND READER OF THE SAME QUANTITY, SO IT SHARES THE PRODUCER.
+ * It calls `computeDeloadWeeks` rather than re-deriving a placement, because a
+ * checker that computes its own copy cannot catch the producer being wrong —
+ * DELOAD-OWNER-01's whole finding, and the reason `deloadCadence.test.ts` fails
+ * any producer outside this module.
+ *
+ * ⚠️ TWO DECLARED INFEASIBLE CELLS, measured on the cohort grid 2026-10-06 and
+ * ratified by the board's sitting 2 (masters) and recorded here (experienced):
+ *   • masters x HM — 735/741 (99.2%), 82.2% of the whole residual. Cadence 3 in a
+ *     10-week base+build window with a mid-window phase boundary: runs must be
+ *     exactly 2, and the only arithmetic slot is the boundary week §87 forbids.
+ *     §95 already refused the 3-week masters loading block that would close it
+ *     (Sims: masters are the slowest to recover connective tissue).
+ *   • experienced, ADR-021 early onset — 159 cases (~3.2% of everything outside
+ *     the masters cell), EVERY ONE `fitness_level: 'experienced'`. A 15% base
+ *     floored at 2 weeks puts a phase boundary at week 3, so §119's two-week
+ *     opening has nowhere legal to land either.
+ * Both are the same shape: a phase shorter than the cadence can accommodate.
+ */
+export function shortOpeningBlockWeeks(
+  totalWeeks: number,
+  recoveryFreq: number,
+  phaseForWeek: (weekN: number) => GeneratorPhase,
+  avoidPosition2 = true,
+): number[] {
+  const placed = Array.from(
+    computeDeloadWeeks(totalWeeks, recoveryFreq, phaseForWeek, avoidPosition2),
+  ).sort((a, b) => a - b)
+  if (!placed.length) return []
+
+  const phaseOf = (n: number) => phaseForWeek(n)
+  const inScope = (n: number) => {
+    const p = phaseOf(n)
+    return n >= 1 && n <= totalWeeks && p !== 'peak' && p !== 'taper'
+  }
+  const eWeeks: number[] = []
+  for (let n = 1; n <= totalWeeks; n++) if (inScope(n)) eWeeks.push(n)
+
+  const out: number[] = []
+  let prevIdx = -1
+  for (const w of placed) {
+    const idx = eWeeks.indexOf(w)
+    if (idx < 0) continue              // a deload outside the base/build window
+    const run = idx - prevIdx - 1
+    if (run < GENERATION_CONFIG.MIN_LOADING_BLOCK_WEEKS) out.push(w)
+    prevIdx = idx
+  }
+  return out
 }
 
 /**

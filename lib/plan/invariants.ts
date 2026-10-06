@@ -136,6 +136,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK',
   'INV-PLAN-TAPER-DELIVERED-DEPTH',
   'INV-PLAN-UNCOVERED-RUNWAY-DECLARED',
+  'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED',
   'INV-PLAN-STRIDES-PRESENT',
   'INV-PLAN-STRIDES-NO-CARRIER',
   'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
@@ -7930,6 +7931,39 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         message: `Plan leaves ${uncovered} week(s) between today and its first week with no note. §76: a runner handed an uncoached void fills it by guessing. Every other structural limit in this engine declares itself (§23, §34, §40c, §52); this one must too.`,
         actual: `${uncovered} uncovered weeks, no note`,
         expected: 'meta.uncovered_runway_note present',
+      })
+    }
+  }
+
+  // INV-PLAN-SHORT-OPENING-BLOCK-DECLARED (§119 Am. 1, DELOAD-PLAN-OPENING-01) —
+  // where the placement search could NOT reach a compliant opening block, the
+  // residual must carry its note. Same shape as the runway rule above, and here
+  // for the same reason: the stamp records something no reader of `plan.weeks`
+  // can recover — whether a compliant placement EXISTED.
+  //
+  // ⚠️ IT ASSERTS BOTH DIRECTIONS. A note with no stamp is as wrong as a stamp
+  // with no note: it would mean a runner was told a week is an early recovery
+  // week when the placement is in fact compliant. The repo has shipped the
+  // one-sided version of this shape before (`A ONE-SIDED REPAIR ON A JOIN`).
+  //
+  // SILENT when the stamp is absent and there is no note — that is the ordinary
+  // compliant plan, which is 84.2% of the cohort grid.
+  {
+    const weeksShort = plan.meta.short_opening_block_weeks
+    const hasStamp = Array.isArray(weeksShort) && weeksShort.length > 0
+    const hasNote = typeof plan.meta.short_opening_block_note === 'string'
+      && plan.meta.short_opening_block_note.length > 0
+    if (hasStamp !== hasNote) {
+      violations.push({
+        code: 'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED',
+        principle_ref: 'CoachingPrinciples §119 Am. 1, §34, §40c',
+        severity: 'error',
+        week: hasStamp ? (weeksShort[0] as number) : 0,
+        message: hasStamp
+          ? `Week ${weeksShort.join(', ')} open${weeksShort.length === 1 ? 's' : ''} a loading block shorter than §119's ${GENERATION_CONFIG.MIN_LOADING_BLOCK_WEEKS} weeks and the placement search could not relocate it, but the plan carries no note. §34: a structural residual is DECLARED. McMillan, 2026-10-05: "recorded rather than worked around has to mean recorded TO THE RUNNER."`
+          : `Plan carries a short-opening-block note with no stamp behind it, so a runner is being told a week is an early recovery week when the placement is compliant. The stamp is the producer's own record; the note may not outlive it.`,
+        actual: hasStamp ? `weeks [${weeksShort.join(', ')}], no note` : 'note present, no stamped weeks',
+        expected: 'meta.short_opening_block_weeks and meta.short_opening_block_note present together',
       })
     }
   }

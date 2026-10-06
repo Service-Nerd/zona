@@ -152,11 +152,29 @@ describe('§95 — a deload must not sit at phase position 2 either', () => {
   })
 
   it('STANDARD (freq 4): clears position 2 and keeps the count', () => {
+    // 🔴 THIS CASE USED TO PIN `after` AS [2, 6, 10], WHICH IS A §95 BREACH.
+    // Base runs 1–6, so week 2 IS a phase position 2 (`isPhasePosition2(2)` is
+    // true: same phase as week 1, and week 1 is the phase's first week). The
+    // sequential placer could not reach a compliant triple in this shape, and
+    // the assertion recorded its output while the test's NAME claimed the
+    // property — so a violation stood as the proof of compliance for as long as
+    // the file existed. The placement SEARCH (DELOAD-PLAN-OPENING-01) reaches
+    // [3, 6, 10]: no phase first week, no position 2, no run shorter than
+    // §119's MIN_LOADING_BLOCK_WEEKS including the opening.
+    //
+    // ⚠️ SO THE PROPERTY IS NOW ASSERTED, not only the triple. A pinned value
+    // cannot tell you WHY it is right, and this is the second time in this
+    // module that a pinned output outlived the rule it was standing in for.
     const pf = phases(6, 12, 14)
+    const isFirst = (n: number) => n === 1 || pf(n) !== pf(n - 1)
+    const isPos2 = (n: number) => n >= 2 && pf(n) === pf(n - 1) && isFirst(n - 1)
+
     const before = sorted(computeDeloadWeeks(16, 4, pf, false))
     const after = sorted(computeDeloadWeeks(16, 4, pf, true))
     expect(before).toEqual([4, 8, 12])
-    expect(after).toEqual([2, 6, 10])
+    expect(after).toEqual([3, 6, 10])
+    expect(after.filter(isPos2), `§95 breached: [${after}]`).toEqual([])
+    expect(after.filter(isFirst), `§87 breached: [${after}]`).toEqual([])
     expect(after.length).toBe(before.length)   // Willy: count may rise, never fall
     expect(adjacent(after)).toBe(false)
   })

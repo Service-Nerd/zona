@@ -9740,6 +9740,95 @@ trade, because it does not fix the plan that prompted it.
 deliberately does not read it. **Registered debt:** `DELOAD-PLAN-OPENING-01`,
 filed 2026-09-21, one day old at time of writing.
 
+### Amendment 1 — the search, and the two cells it cannot reach (Coaching Board, 2026-10-06)
+
+**`DELOAD-PLAN-OPENING-01` is taken.** The section above says it: *"the fix is a
+search, not a threshold"*. `computeDeloadWeeks` now ends in one, and the placement
+owner reads `MIN_LOADING_BLOCK_WEEKS` — the "checker only" line above is
+superseded.
+
+**The search is bounded by the placement the engine already produces, never by
+assumed numbers.** It is a dynamic program over the base+build window that
+minimises deviation from the cadence subject to four constraints: §87 (not a
+phase's first week), §95 (not phase position 2, when that preference has not
+yielded), §119 (every loading run ≥ 2, **including the opening** — which is the
+whole point), and three bounds read off the greedy walk's own answer — the
+recovery **count may not fall** (Willy, §87), the **worst loading run may not
+lengthen**, and the trailing run may not shrink below what the walk delivered.
+When no placement satisfies all of them it returns nothing and the walk's answer
+stands. ⚠️ **The greedy walk is therefore NOT dead code** and must not be deleted:
+it supplies three of the bounds. A search bounded by invented numbers is how §95's
+first build shipped a count inflation.
+
+⚠️ **The trailing bound is READ, not asserted, and the first cut got this wrong.**
+Requiring a trailing loading week unconditionally made the search unable to
+reproduce a *ratified* placement: the window is base+build only, so on a 16-week
+plan it ends at week 12 and the legacy deload IS week 12. Caught by
+`deloadCadence.test.ts`'s §95 case.
+
+**Measured, cohort grid (5,664 plans, 2026-10-06).**
+
+| | before | after |
+|---|---|---|
+| `INV-PLAN-MIN-LOADING-BLOCK` | 25.8% | **15.8%** |
+| marathon | 50.0% | **3.4%** |
+| HM | 52.1% | 52.1% |
+| 5K / 10K | ~2.8% | ~2.8% |
+
+`verify:parity`: **578 of 6,066 cases changed (9.5%)** — marathon 264, 50K 160,
+100K 154, and **zero** on 5K/10K/HM, which is the infeasibility below showing up
+in the diff. `measure:envelope` unchanged on every distance; `cohort:shape` and
+`measure:fitness` unmoved.
+
+**TWO DECLARED INFEASIBLE CELLS. Both are the same shape — a phase shorter than
+the cadence can accommodate — and neither is a defect in the producer.**
+
+1. **masters × HM: 735 of 741 (99.2%)**, which is **82.2% of the whole residual.**
+   Cadence 3 (§95's masters carve-out) in a 10-week base+build window with a
+   mid-window phase boundary forces every loading run to be *exactly* 2, and the
+   only arithmetic slot left is the boundary week §87 forbids. **Sitting 2
+   (2026-10-05) already refused the one relaxation that closes it** — a 3-week
+   masters loading block — on Sims's objection that masters are the population
+   with the slowest connective recovery. McMillan: *"for a masters HM runner it is
+   what the plan ALWAYS does."*
+2. **experienced runners under ADR-021's early onset: 159 cases**, ~3.2% of
+   everything outside cell 1, and **every single one `fitness_level:
+   'experienced'`.** A 15% base floored at two weeks puts a phase boundary at
+   week 3, so §119's two-week opening again has nowhere legal to land. **This cell
+   was not known at sitting 2** and is recorded here rather than treated as a
+   residual of cell 1.
+
+🔴 **So the item's original acceptance criterion — "the warn rate must go to ~0" —
+is overturned, and was overturned at sitting 2.** It is **~0 outside the two
+declared cells**. 15.8% residual, of which 894 − 735 − 159 = **0** sits outside
+them.
+
+**§34's obligation is met by a STAMP, not by a recomputation.** Whether a
+compliant placement *existed* is generation-time knowledge; a later reader of
+`plan.weeks` can see that a run is short and can never see that nothing better was
+available. So `meta.short_opening_block_weeks` is stamped by the producer and
+`meta.short_opening_block_note` carries the honest sentence, exactly as §57
+Amendment's `uncovered_runway_weeks` does.
+
+⚠️ **The SURFACE is the Design Board's, and the measurement says why.** McMillan's
+binding condition at sitting 2 was *"recorded rather than worked around has to mean
+recorded TO THE RUNNER"*, and the ratified single renderer for this note family
+(`planRationaleNotes`, PLAN-NOTE-SURFACE-01) is capped at **3 notes and 70 words**.
+A 45-word fourth constraint either gets dropped or displaces a volume note the SLT
+already ranked above it, so adding it there would satisfy the condition on paper
+and lose it in the cap. The note's words are coaching's and are ratified here; **where
+it renders is encoding, and encoding is design's** (ownership-map seam rule). Filed
+as `DELOAD-OPENING-SURFACE-01`.
+
+**Config.** `GENERATION_CONFIG.MIN_LOADING_BLOCK_WEEKS = 2`, now read by the
+producer as well as the checker.
+**Owner.** `lib/plan/deloadCadence.ts` — `computeDeloadWeeks` (placement) and
+`shortOpeningBlockWeeks` (the residual, which calls the producer rather than
+deriving its own copy, per DELOAD-OWNER-01).
+**Invariant.** `INV-PLAN-SHORT-OPENING-BLOCK-DECLARED` — stamp and note present
+together, **asserted in both directions**, because a note with no stamp tells a
+runner a week is an early recovery week when the placement is in fact compliant.
+
 ---
 
 ## 120. "Race pace" means the pace of the race you are training for

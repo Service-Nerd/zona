@@ -7008,6 +7008,10 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
     "race_date": "2026-11-18",
     "race_distance_km": 21.1,
     "race_name": "",
+    "short_opening_block_note": "Week 2 is an early recovery week. You recover every 3 weeks, and where the plan's phases change fixes which weeks that can land on, so this one arrives before a full block. Take it as written: an easy week early costs you nothing.",
+    "short_opening_block_weeks": [
+      2,
+    ],
     "tier": "trial",
     "time_compressed": false,
     "training_age": "6-18mo",

@@ -39,6 +39,7 @@ import { isLongRun, isShakeout, isTimeTrial } from './sessionRole'
 import { catalogueRowFor } from './catalogueLink'
 import { sessionKmSelfPaced } from './sessionDistance'
 import { trainingKm } from './weekVolume'
+import { sessionFloorsFor } from './sessionFloors'
 
 export interface ShapeFinding {
   id: string
@@ -346,13 +347,50 @@ export function checkPlanShape(plan: Plan): ShapeFinding[] {
         const conflicts = volumeCappedInjury && injuryCut < I4_MIN_DROP_PCT
           ? `§2 Amendment 2 (2026-09-16) — a §12 volume-capped injury runner gets a deliberately SHALLOWER cut (INJURY_RECOVERY_WEEK_VOLUME_PCT = ${GENERATION_CONFIG.INJURY_RECOVERY_WEEK_VOLUME_PCT}, i.e. ${injuryCut}%), which sits below I4's ${I4_MIN_DROP_PCT}% floor by ratified design`
           : undefined
+        // §3 Amendment (LR-DELOAD-CUT-01) + the 4th deload sitting, 2026-10-06 —
+        // WHERE THE FLOORS FORBID THE CUT, THIS RECORDS RATHER THAN GATES.
+        //
+        // §3's own amendment states the 70% is *"a statement about the WEEK.
+        // Nothing in §3 asks the long run to be cut harder"*, and bounds the long
+        // run by §52's share and §9's cap. So on a week whose long run plus its
+        // easy FLOORS already exceed the 70% target, the cut is arithmetically
+        // unreachable without doing one of the two things doctrine refuses:
+        // trimming the long run (§81's standing veto, refused twice by Sims) or
+        // pushing the long run past §52's 60% share.
+        //
+        // 🔴 MEASURED, 13,785 deload weeks: 82.9% fall short of a 30% drop, median
+        // delivered 17.9%; of the short weeks 65.6% are reachable ONLY by trimming
+        // easy runs, and doing that takes §52 breaches from 3.0% to **28.9%** —
+        // the exact mechanism LR-DELOAD-CUT-01 was ratified to prevent. Just
+        // **2 of 11,431** are long-run-bound, so §81's veto was never the binding
+        // constraint; the floors are.
+        //
+        // ⚠️ SYMMETRIC WITH THE TOO-DEEP ARM twelve lines below, which is already
+        // advisory for the mirror-image reason ("the DELIVERED deload lands lower
+        // because its smaller week hits session floors harder"). A rule that gates
+        // one side of a floor and excuses the other is not a band.
+        //
+        // HOW LOW THIS WEEK COULD GO: its delivered volume less all the headroom
+        // its easy runs have above §9's floor. Derived from `trainingKm` — the
+        // SAME owner the drop itself is measured with, never a second hand-rolled
+        // sum (SESSION-KM-01/02: a parallel weekly-km expression disagreed with
+        // this very file about the same week, 37.0 against 32).
+        const floorsI4 = sessionFloorsFor(plan.meta.generator_input?.longest_recent_run_km)
+        const easyI4 = easyRunsKm(w)
+        const headroom = easyI4.reduce((t, v) => t + Math.max(0, v - floorsI4.easy), 0)
+        const irreducible = curr - headroom
+        const targetKm = prev * (1 - I4_MIN_DROP_PCT / 100)
+        const floorsForbid = irreducible > targetKm + 0.01
         if (drop < I4_MIN_DROP_PCT - 0.5) {
           // TOO SHALLOW — GATES. This is the direction the audit found (a
           // recovery week 3% below the week it recovers from), and it has no
           // doctrinal defender: §3 promises 70%.
+          const reason = conflicts ?? (floorsForbid
+            ? `§3 Am. (LR-DELOAD-CUT-01) + 4th deload sitting 2026-10-06 — this week cannot go below ${irreducible.toFixed(1)} km (${curr} km less ${headroom.toFixed(1)} km of headroom above §9's ${floorsI4.easy} km easy floor, across ${easyI4.length} easy run(s)) against a ${targetKm.toFixed(1)} km target, so the cut is unreachable without trimming the long run (§81's veto) or pushing it past §52's 60% share. Measured: forcing it takes §52 breaches 3.0% → 28.9%.`
+            : undefined)
           push('I4', w.n,
             `recovery week only ${drop.toFixed(0)}% below w${prevLoading.n} (${prev} → ${curr} km); band is ${I4_MIN_DROP_PCT}–${I4_MAX_DROP_PCT}%`,
-            !conflicts, conflicts)
+            !reason, reason)
         } else if (drop > I4_MAX_DROP_PCT + 0.5) {
           // TOO DEEP — ADVISORY. §3's 70% is applied to the volume CURVE by
           // `buildVolumeSequence`; the DELIVERED deload lands lower because its

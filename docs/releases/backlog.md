@@ -1686,7 +1686,18 @@ guard's own comment, which is where residuals go to be forgotten.
 
 ## ⚖️ FILED 2026-10-01 — `PROMPT-UNITS-ADJUST-01`
 
-### `PROMPT-UNITS-ADJUST-01` — the plan-adjustment prompt is unit-blind ⚙️ **NO BOARD**
+### ✅ `PROMPT-UNITS-ADJUST-01` — SHIPPED 2026-10-06 (`20fe34cd`). The falsification did not go red first time ⚙️ **NO BOARD**
+
+> ✅ **SHIPPED.** The route reads `getUserDisplayPrefs` and threads `units` into
+> `buildAdjustmentExplanationPrompt` — **required and second**, because a default is what let the
+> defect exist and TypeScript will not take a required parameter after an optional one.
+> `summariseDiff(diff, { units })` carries it to all seven `labelSession` sites.
+> ⚠️ **The falsification did NOT go red first time:** `units` reaches the prompt by TWO paths (the
+> voice-header instruction line and the diff lines) and the test asserted only the diff, so
+> hardcoding the header back to `'km'` left it green. The voice-header arm exists because of that.
+> Contract updated in the same commit. Gate: `adjustmentUnits.test.ts`, 5 arms.
+
+> **Original filing, for the record.**
 
 **Found by making `buildVoiceHeader`'s `units` REQUIRED** (KIT-EXEMPLAR-LEAK-01). The compiler
 then named every site that could not answer. One genuinely cannot:
@@ -3930,7 +3941,7 @@ Nothing else is blocked. These are, and two of them cannot be answered by anyone
 
 | | Item | Why now | Size |
 |---|---|---|---|
-| 1 | **`DELOAD-PLAN-OPENING-01`** | 🔴 **THIRD ATTEMPT 2026-10-06: the search was rebuilt and re-measured, fix (b) was implemented, and (b) IS NOT IMPLEMENTABLE AS RULED.** Premise re-measured and UNCHANGED (25.8% of plans, **week 2 on 100.0% of firings**, HM 52.1% / marathon 50.0%). The search reproduces its recorded result exactly (marathon **50.0% → 3.4%**) and **both ratified bounds hold measured — deload count rose 0 and fell 0 across 5,663 plans, mean delivered peak 41.54 → 41.53 km**. ⚠️ Fix (b) resolved **all three** published-plan `I4` findings and then tripped **three error-severity invariants** — `INV-PLAN-DELOAD-PLACEMENT` (§87: *placement may SHIFT a deload, never remove one* — 🩹 Willy's own bound), `INV-PLAN-QUALITY-EXPECTED` (§1/§6/§8) and `INV-PLAN-STRIDES-PRESENT` (§28). **One root cause: a demoted week is structurally still a recovery week, so every rule keyed on `type !== 'deload'` starts applying to it**, and the ruling's *"fix the BADGE"* does not distinguish `Week['badge']` (display) from `Week['type']` (structure). 🏃 **NEEDS A THIRD BOARD SITTING** to choose: a third week state · `I4`'s too-shallow arm becomes advisory where the floors are the cause (symmetric with its already-advisory too-DEEP arm) · or withdraw the display badge only and have `I4` read it. ⚠️ A separate blocker belongs to the SEARCH and survives all three: two published plans carry `I6` (*longest easy run fell −27% between loading weeks*; 4 km is §9's floor), **attributed by stashing (b) — present with the search alone**. ⚠️ §119 Am.1 also needs a SURFACE (McMillan binding: *recorded TO THE RUNNER*), so the combined ship is **cross-board**. Record: `docs/decisions/2026-10-05-deload-placement-search.md`. ⛔ **Do not ship the search alone** — three published marketing plans fail `I4`, true on 10-05 and true today. | L |
+| 1 | **`DELOAD-PLAN-OPENING-01`** | ✅ **SHIPPED 2026-10-06 — the search, plus §119 Amendment 1 and its honesty stamp.** `INV-PLAN-MIN-LOADING-BLOCK` **25.8% → 15.8%**, **marathon 50.0% → 3.4%**, both ratified bounds holding (count rose 0 and fell 0; mean delivered peak 41.54 → 41.53 km). `verify` exit 0 (4,378 tests / 496 files) · `verify:parity` **578 of 6,066 changed, declared** (marathon 264, 50K 160, 100K 154, **zero** on 5K/10K/HM) · `measure:envelope`, `review:cohort`, `measure:fitness` and `cohort:shape` **all unchanged**, Willy's injury baseline intact at 36.4%/41.2% and 0% never-builds. 🔴 **BOTH BLOCKERS DISSOLVED, and the first was MY measurement error:** the `I6`-on-two-published-plans finding was attributed to the search *"by stashing (b)"* with `git stash push` on **already-committed files**, which is a no-op — so (b) was never removed and the findings were its. With the search alone **all nine published plans are clean**, before and after. ⚠️ **The residual is 15.8% and is TWO declared infeasible cells, 0 outside them**: masters × HM 735/741 (**99.2%**, 82.2% of the residual, the closing relaxation refused at sitting 2 on Sims's objection) and ADR-021 early-onset `experienced` runners at 159 — both the same shape, a phase shorter than the cadence can accommodate. The item's *"warn must go to ~0"* was overturned at sitting 2 and is **~0 outside the declared cells**. ⚠️ **The SURFACE is filed, not skipped** — `planRationaleNotes` caps at **3 notes / 70 words**, so a 45-word fourth constraint is dropped or displaces a ranked volume note. Encoding is design's: `DELOAD-OPENING-SURFACE-01`. | L |
 | 2 | **`HM-ANCHOR-VS-GOAL-01` / §120** | Ratified by the Coaching Board, **not shipped**, blocked on ONE measurement: Willy's bound. Both obvious gates were rejected with reasons. ⚠️ **Anchor and header must ship TOGETHER** — fixing the header alone drops 555 plans below §22. | M |
 | 3 | **`DELOAD-BADGE-TRUTH-01`** | P1, Coaching Board. A week badged "Recovery" that is not a reduction. Sits beside #1 — worth one sitting for both. | M |
 | 4 | **`MKT-PLAN-SEGMENT-BASIS-01`** | Small and self-contained: is §25's `race_pace_pct` a share of distance or time? | S |
@@ -9795,7 +9806,79 @@ race-week display (D1), `MARATHON-pace` casing (D2), plus `lib/plan/planShapeInv
 
 ---
 
-### 🟠 `DELOAD-PLAN-OPENING-01` — SEARCH BUILT AND MEASURED 2026-10-05, **NOT SHIPPED**. Blocked on ONE board question. 🏃 **COACHING BOARD**
+### `DELOAD-OPENING-SURFACE-01` — the early-recovery-week note has words and nowhere to render 🧭 **DESIGN BOARD**
+
+**The coaching half is DONE and ratified** (§119 Amendment 1, 2026-10-06). The engine stamps
+`meta.short_opening_block_weeks` and `meta.short_opening_block_note` on **15.8% of plans** — of which
+**99.2% of masters half-marathon plans** — and McMillan's condition at sitting 2 is binding:
+*"recorded rather than worked around has to mean recorded TO THE RUNNER."* Right now it is recorded
+to the plan JSON and to the invariant, and **the runner sees nothing.**
+
+🔴 **MEASURE BEFORE PLANNING AGAINST THIS ITEM — the obvious home is measured and does not fit.**
+`planRationaleNotes` is the ratified single renderer for the plan-note family (PLAN-NOTE-SURFACE-01,
+*"never a second path"*) and it caps at **`PLAN_RATIONALE_MAX_NOTES = 3`** and
+**`PLAN_RATIONALE_MAX_WORDS = 70`**. The note is ~45 words and would rank fourth behind the volume
+and long-run constraints, so it is either dropped by the cap or it displaces a note the SLT already
+ranked above it. **Adding it there satisfies the condition on paper and loses it in the cap** — the
+`uncovered_runway_note` precedent is instructive: it is rendered by its own card
+(`RunwayRevealCard`), explicitly *"not in planRationaleNotes"*.
+
+**The question for the board is WHERE, and it is an encoding question** (ownership-map seam rule:
+design owns the encoding, coaching owns the meaning). Candidates, none chosen:
+- on the **week itself** — the runner's question is local to week 2, and a week-level line is not
+  competing for the plan's 70-word budget
+- a **fourth note slot** reserved for structural residuals, which means re-opening the cap the SLT set
+- its **own card** at plan reveal, the `RunwayRevealCard` pattern
+
+⚠️ **Do not re-word the note.** The sentence is ratified coaching copy in §119 Am. 1 and it was
+written to avoid a claim that is false on the masters cell (the first draft said the first phase is
+short; in that cell the base is five weeks and the binding constraint is a mid-window phase
+boundary).
+
+**Acceptance:** the note is visible to a runner on a plan that carries the stamp, and a mechanical
+check asserts the render site reads `short_opening_block_note` — asserting it is **reached**, not
+merely present (`LEDGER-01`: a render site that exists behind a gate nobody reaches is not a surface).
+
+### ✅ `DELOAD-PLAN-OPENING-01` — SHIPPED 2026-10-06 (§119 Am. 1). Kept below for the record; the live residual is tracked by `DELOAD-OPENING-SURFACE-01` ⚙️ **NO BOARD** (ruled)
+
+> ✅ **SHIPPED.** Search + §119 Amendment 1 + `meta.short_opening_block_weeks`/`_note` +
+> `INV-PLAN-SHORT-OPENING-BLOCK-DECLARED` (asserts both directions; stamp and invariant reconcile
+> at 894/5,664 with **0 disagreements**). Gate: `lib/plan/deloadOpeningResidual.test.ts`, falsified
+> by disabling the search.
+>
+> 🔴 **BLOCKER 1 WAS MY OWN MEASUREMENT ERROR.** The `I6` finding was attributed to the search
+> *"by stashing (b) and re-running"* — with `git stash push` on **files that were already
+> committed**, which stashes nothing. Fix (b) stayed in the tree, so the findings were (b)'s all
+> along. With the search alone the nine published plans are clean, and were clean on HEAD too.
+> **The same no-op stash had already cost an hour earlier the same day; the second time it produced
+> a false attribution that sat in this backlog as a shipping blocker.**
+>
+> 🔻 **BLOCKER 2 is now its own item.** McMillan's *"recorded TO THE RUNNER"* cannot go in the
+> ratified renderer: `planRationaleNotes` caps at 3 notes and 70 words, so the note is dropped or
+> displaces a volume note the SLT ranked above it. Coaching owns the words (ratified in §119 Am. 1);
+> design owns where they render.
+
+> ⚖️ **UPDATED 2026-10-06 by the 4th deload sitting.** The board question that blocked this —
+> *"which number is wrong, §3's 30% or the engine's 17.9%?"* — **is answered**: §3's Amendment
+> (LR-DELOAD-CUT-01) already states the 70% is *"a statement about the WEEK"*, and the only
+> reachable remedy (trimming easy runs) takes §52 breaches **3.0% → 28.9%**, the exact mechanism
+> that amendment exists to prevent. **So the depth question is settled and the three sibling items
+> are closed.**
+>
+> ✅ **The placement search itself is good and twice-measured:** `INV-PLAN-MIN-LOADING-BLOCK`
+> **25.8% → 15.8%** of plans, **marathon 50.0% → 3.4%**, with both ratified bounds holding — deload
+> count rose 0 and fell 0 across 5,663 plans, mean delivered peak 41.54 → 41.53 km.
+>
+> 🔻 **TWO BLOCKERS REMAIN, both named and neither the depth question:**
+> 1. **`I6` on two published plans** — *longest easy run fell −27% between loading weeks*, where 4 km
+>    is §9's floor. **Attributed by stashing (b) and re-running: present with the SEARCH alone**, so
+>    it belongs to placement and survives every depth remedy.
+> 2. **§119 Amendment 1 needs a SURFACE** — McMillan's condition is binding (*"recorded rather than
+>    worked around has to mean recorded TO THE RUNNER"*), so the ship is **cross-board**.
+>
+> ⚠️ **`I4`'s too-shallow arm going advisory where the FLOORS are the cause is now justified by
+> LR-DELOAD-CUT-01** rather than by an implementer's judgement — which is what it needed.
+> Record: `docs/decisions/2026-10-05-deload-placement-search.md` (three attempts).
 
 > 📄 **Full record: `docs/decisions/2026-10-05-deload-placement-search.md`.** The search the board
 > asked for was implemented in full and **it works** — it reproduces the board's own brute-force

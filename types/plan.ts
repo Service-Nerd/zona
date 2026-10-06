@@ -666,6 +666,23 @@ export interface PlanMeta {
   /** The honest note for those weeks. Present iff `uncovered_runway_weeks` is at
    *  or above `FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD`. */
   uncovered_runway_note?: string
+  /**
+   * CoachingPrinciples §119 Amendment 1 (DELOAD-PLAN-OPENING-01, Coaching Board
+   * 2026-10-06) — the recovery weeks whose PRECEDING loading run is shorter than
+   * `MIN_LOADING_BLOCK_WEEKS`, which the placement SEARCH could not relocate.
+   *
+   * STAMPED, not recomputable, for the same reason as `uncovered_runway_weeks`
+   * above: the search's feasibility depends on the phase map held at generation
+   * time, and `validatePlan` never receives it. Recomputing from `plan.weeks`
+   * would answer a different question — whether the run is short (visible) —
+   * never whether a compliant placement EXISTED (not visible).
+   *
+   * Empty/absent means the search succeeded or there was nothing to fix.
+   */
+  short_opening_block_weeks?: number[]
+  /** The honest note for those weeks (§34, §40c). Present iff
+   *  `short_opening_block_weeks` is non-empty. */
+  short_opening_block_note?: string
   /** §34/§106 — present when the delivered peak falls below the runner's stated
    *  weekly volume and no more specific note (volume_constraint / maintenance)
    *  already covers it. Names the binding constraint and the lever (§40c). */

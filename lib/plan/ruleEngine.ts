@@ -49,7 +49,7 @@ import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
 import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
-import { isDeloadWeek, computeDeloadWeeks, deloadVolumeFraction } from './deloadCadence'
+import { isDeloadWeek, computeDeloadWeeks, deloadVolumeFraction, shortOpeningBlockWeeks } from './deloadCadence'
 import { computeIntensityReentry } from './intensityReentry'
 import { catalogueRowFor } from './catalogueLink'
 import { plannedFoundationWeeks } from './foundationBlock'
@@ -6864,6 +6864,15 @@ function buildRulePlanOnce(
   const deloadWeeks = computeDeloadWeeks(
     totalWeeks, recoveryFreq, wn => getPhaseForWeek(wn, phases), deloadAvoidPosition2)
 
+  // §119 Amendment 1 — WHAT THE SEARCH COULD NOT FIX, DECLARED RATHER THAN HIDDEN.
+  //
+  // §34's standing obligation: a structural residual is DECLARED. The placement
+  // owner reports it from the SAME phase map used to place, because the residual
+  // is "no compliant placement existed", which no later reader of `plan.weeks`
+  // can distinguish from "a short run was left there by mistake".
+  const shortOpeningWeeks = shortOpeningBlockWeeks(
+    totalWeeks, recoveryFreq, wn => getPhaseForWeek(wn, phases), deloadAvoidPosition2)
+
   const { volumes, compressed: capCompressed } = buildVolumeSequence(
     totalWeeks, phases, startKm, peakKm, input.race_distance_km,
     recoveryFreq, returningRunner,
@@ -9193,6 +9202,20 @@ function buildRulePlanOnce(
     ...(finalVolumeNote    ? { volume_constraint_note: finalVolumeNote } : {}),
     ...(finishGoalLrShortfallNote ? { long_run_shortfall_note: finishGoalLrShortfallNote } : {}),
     ...(peakShortfallNote ? { peak_shortfall_note: peakShortfallNote } : {}),
+    // §119 Am. 1 — the stamp and its note travel together, asserted by
+    // INV-PLAN-SHORT-OPENING-BLOCK-DECLARED. §40c: name the reason, not just
+    // the loss. There is no lever the RUNNER holds here — the cadence is what
+    // their age earns (§95) and the phase lengths are the plan's — so the note
+    // says what the week IS rather than inventing an action they cannot take.
+    ...(shortOpeningWeeks.length
+      ? {
+          short_opening_block_weeks: shortOpeningWeeks,
+          short_opening_block_note:
+            shortOpeningWeeks.length > 1
+              ? `Weeks ${shortOpeningWeeks.join(' and ')} are early recovery weeks. You recover every ${recoveryFreq} weeks, and where the plan's phases change fixes which weeks that can land on, so these arrive before a full block. Take them as written: an easy week early costs you nothing.`
+              : `Week ${shortOpeningWeeks[0]} is an early recovery week. You recover every ${recoveryFreq} weeks, and where the plan's phases change fixes which weeks that can land on, so this one arrives before a full block. Take it as written: an easy week early costs you nothing.`,
+        }
+      : {}),
     ...(loadResidualNote ? { load_residual_note: loadResidualNote } : {}),
     ...(volumeShortfallNote ? { volume_shortfall_note: volumeShortfallNote } : {}),
     ...(volumeShortfallPct != null ? { volume_shortfall_pct: Math.round(volumeShortfallPct * 10) / 10 } : {}),
