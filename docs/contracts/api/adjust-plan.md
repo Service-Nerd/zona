@@ -138,3 +138,27 @@ This route no longer calls Anthropic directly. It goes through
   route previously could not tell those apart.
 - `noRawAnthropicCalls.test.ts` fails the build if this file names
   `api.anthropic.com` again. Full contract: `docs/contracts/api/ops-ai-spend.md`.
+
+## Display units — PROMPT-UNITS-ADJUST-01 (2026-10-06)
+
+This route now **reads `getUserDisplayPrefs(supabase, user.id)`** and threads `units`
+into `buildAdjustmentExplanationPrompt`. It did not before, and the consequence was
+user-facing: **a miles runner received a km-voiced explanation of their own plan
+change**, and the structural diff fed to the model was in kilometres too, because
+every `summariseDiff` line runs through `labelSession`, which formats a distance.
+
+ADR-015 Amendment governs this: **the AI layer is a display surface.** A number handed
+to the model becomes user-facing the moment the model repeats it.
+
+- `buildAdjustmentExplanationPrompt(adjustment, units, athleteContext?, previousAdjustment?)`
+  — `units` is **required and second**. Required because a default is exactly what let
+  this defect exist; second because TypeScript will not take a required parameter after
+  an optional one.
+- `summariseDiff(diff, { units })` carries it to all seven `labelSession` call sites.
+- **Two halves, and a test must cover both.** `units` reaches the prompt by two
+  independent paths — the `buildVoiceHeader` instruction line (*"The runner measures
+  distance in MILES"*) and the diff lines. A test asserting only the diff stays green
+  when the header is hardcoded back; `adjustmentUnits.test.ts` asserts both, and that
+  arm exists because the falsification did not go red without it.
+- No request or response shape changes. An unset preference resolves to `'km'` inside
+  `getUserDisplayPrefs`, as every other surface already does.

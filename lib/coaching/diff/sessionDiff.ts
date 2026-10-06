@@ -129,31 +129,37 @@ export function hasStructuralChange(diff: DiffEntry[]): boolean {
  */
 export function summariseDiff(
   diff: DiffEntry[],
-  opts: { includeUnchanged?: boolean } = {},
+  // PROMPT-UNITS-ADJUST-01 — `units` travels with the diff, because every line it
+  // emits runs through `labelSession`, which formats a distance. It stays optional
+  // here (default 'km') only because `labelSession`'s own default is, and changing
+  // both at once would widen this item into every diff consumer; the one caller
+  // that could not answer — the adjustment prompt — now does.
+  opts: { includeUnchanged?: boolean; units?: DistanceUnits } = {},
 ): string[] {
+  const units: DistanceUnits = opts.units ?? 'km'
   const out: string[] = []
   for (const e of diff) {
     const dayLabel = e.day.charAt(0).toUpperCase() + e.day.slice(1)
     if (e.kind === 'unchanged') {
       if (opts.includeUnchanged && e.before) {
-        out.push(`${dayLabel}: ${labelSession(e.before)} (unchanged)`)
+        out.push(`${dayLabel}: ${labelSession(e.before, units)} (unchanged)`)
       }
       continue
     }
     if (e.kind === 'added' && e.after) {
-      out.push(`${dayLabel}: + ${labelSession(e.after)}`)
+      out.push(`${dayLabel}: + ${labelSession(e.after, units)}`)
       continue
     }
     if (e.kind === 'removed' && e.before) {
-      out.push(`${dayLabel}: − ${labelSession(e.before)} (now empty)`)
+      out.push(`${dayLabel}: − ${labelSession(e.before, units)} (now empty)`)
       continue
     }
     if (e.kind === 'replaced' && e.before && e.after) {
-      out.push(`${dayLabel}: ${labelSession(e.before)} → ${labelSession(e.after)}`)
+      out.push(`${dayLabel}: ${labelSession(e.before, units)} → ${labelSession(e.after, units)}`)
       continue
     }
     if (e.kind === 'modified' && e.before && e.after) {
-      out.push(`${dayLabel}: ${labelSession(e.before)} → ${labelSession(e.after)}`)
+      out.push(`${dayLabel}: ${labelSession(e.before, units)} → ${labelSession(e.after, units)}`)
       continue
     }
   }

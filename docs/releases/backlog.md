@@ -2926,8 +2926,35 @@ but **invisible to every check** — stated plainly because the founder was not 
 option was put to him, and the alternative (keep the duration, carry the breach as declared debt)
 was not offered until afterwards. See `FOUNDATION-LR-S9-01`.
 
-#### 🔻 `STORED-PLAN-DEBT-QUEUE-01` — 30 violations on 7 live plans, and clearing them means rewriting someone's training *(P3, filed 2026-10-04)* 👤 **FOUNDER**
+#### 🔻 `STORED-PLAN-DEBT-QUEUE-01` — **36 violations on 11 live plans** (re-measured 2026-10-06), and clearing them means rewriting someone's training *(P3, filed 2026-10-04)* 👤 **FOUNDER**
 
+
+> 📐 **RE-MEASURED 2026-10-06 against the live database, after the day's engine ships. The debt GREW,
+> and the growth is mine.**
+>
+> | | 2026-10-04 | 2026-10-06 |
+> |---|---|---|
+> | validatable stored plans | 22 | 22 |
+> | plans with >=1 error-severity violation | **7** | **11** |
+> | error-severity violations | **30** | **36** |
+>
+> 🔴 **+6 are `INV-PLAN-PEAK-RACE-SPECIFIC-REACHED`, the invariant shipped today with §93 Amendment 1.**
+> All six are MARATHON time-target plans generated before that amendment existed, so they carry
+> threshold peak quality where the rule now requires race-specific work. ⚠️ **I checked whether they
+> were FALSE indictments and they are not:** my first hypothesis was that the §120 Am.1 exemption reads
+> a `hm_goal_anchor_withheld` stamp that pre-existing plans cannot carry — true, but irrelevant here,
+> because none of the six is a half marathon. They are genuine `rule_newer_than_plan` debt, the same
+> class as the other 30. (`pace_guide` is also absent from stored `meta`, so there is no route to
+> compute the withholding retrospectively even where it would apply.)
+>
+> ✅ **AND ONE BLOCK OF THE DEBT IS NOW CLOSED-ENDED: the 13 `INV-PLAN-HEADER-PACE-MATCHES-WORK`.**
+> `RACE-ANCHOR-CV-OVERRIDE-01` shipped today takes that invariant from **3,232 firings to 0** in
+> generation, so **no new plan will accrue one.** The 13 on stored plans are a fixed, non-growing set.
+>
+> 🔻 **The recommendation is unchanged and the call is still yours:** these are plans built months ago
+> judged by rules written since; the runner sees nothing wrong, and clearing them means regenerating
+> mid-block, which [[project-live-plan-policy]] exists to prevent. **Engineering's only contribution
+> here is telling you whether the debt is growing. It is — by 6 today — and 13 of it has stopped.**
 👤 **FOUNDER** — the only open question is whether to regenerate live plans, which is a policy call,
 not an engineering one.
 
@@ -5999,8 +6026,61 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
-### 🟢 🏃 `EMAIL-WAVE-4-PATTERN-01` — **UNBLOCKED 2026-10-06. The population condition is MET, 14 against a stated 3.**
+### `ANALYSIS-SUPERSEDE-PATTERN-01` — 87% of real-user analyses are superseded, so a pattern feature has nothing to read *(filed 2026-10-06, P2)* 🏃 **COACHING BOARD**
 
+> **Found while correcting `EMAIL-WAVE-4-PATTERN-01`'s population measurement.**
+>
+> Measured in production (read-only): `run_analysis` holds **148 rows, 76 on real users, and only 10
+> of those are not superseded** — **87% superseded**. `superseded_at` is set when a plan is
+> regenerated, which is correct for plan-scoped scoring (`supersedeCoverage`) and fatal for anything
+> that wants a runner's HISTORY.
+>
+> 🔴 **The consequence is structural, not a volume problem.** A runner with months of activity and a
+> regenerated plan has an almost empty non-superseded analysis set, so any feature reading it — the
+> wave-4 pattern email, a trend card, a "since you started" claim — sees nothing. **Launch and traffic
+> will not fix this**; more runners simply means more superseded rows.
+>
+> 🏃 **The board question:** is a pattern claim scoped to the CURRENT plan (in which case supersession
+> is right and the feature must say "this block"), or to the RUNNER (in which case it must read
+> superseded rows too, and §71's post-race lifecycle has already thought about plan boundaries)?
+>
+> ⚠️ **Re-measure before building.** 148/76/10 is as of `7593a050`; the live population is small enough
+> that one regeneration moves these numbers materially.
+
+---
+
+### 🔴 🏃 `EMAIL-WAVE-4-PATTERN-01` — **STILL BLOCKED. The 2026-10-06 "unblock" WAS MEASURED ON THE WRONG TABLE: 1 user, not 14.**
+
+> 🔴 **CORRECTION, SAME DAY (2026-10-06, later). THE UNBLOCK IS WITHDRAWN.** The condition is
+> *">=3 real non-demo users with >=3 HR-bearing **ANALYSES** each"*. I measured HR-bearing **RUNS** in
+> `strava_activities` and reported 14. Measured on `run_analysis`, which is where every pattern signal
+> actually lives (`hr_in_zone_pct`, `hr_pct_z3`, `ef_trend_pct`):
+>
+> | | |
+> |---|---|
+> | `run_analysis` rows, ALL | 148 |
+> | on real (non-demo) users | 76 |
+> | real **and not superseded** | **10** |
+> | real, not superseded, HR present | **4** |
+> | **real users with >=3 HR-bearing ANALYSES** | **1** |
+> | real users with >=3 HR-bearing RUNS (what I measured before) | 14 |
+>
+> ⚠️ **Runs and analyses are different objects and the gap is 14x.** A run exists the moment it is
+> logged; an analysis exists only once it is matched to a prescribed session and scored. The pattern
+> email reads the latter. **Same class as every other denominator error in this repo — I measured the
+> adjacent table and reported the number it gave.**
+>
+> 🔴 **AND A SECOND FINDING, LARGER THAN THE FIRST: 66 of 76 real-user analyses are SUPERSEDED (87%).**
+> `superseded_at` is set when a plan is regenerated, so a runner's analysis history is wiped from the
+> non-superseded set every time they take a new plan. **A pattern email reading non-superseded
+> `run_analysis` therefore has almost nothing to read even for runners with months of activity** —
+> which is a design constraint on this feature, not a data-volume problem that launch will fix. Filed
+> as `ANALYSIS-SUPERSEDE-PATTERN-01`.
+>
+> 🔻 **So the blocker is unchanged: POPULATION, and it is Sims's original objection intact** —
+> authoring a pattern vocabulary against one account fits the patterns to one person. Candidate
+> patterns were measured against that single user and the result is meaningless by construction
+> (0 or 1 of 1 on all six). **Do not convene the board on this.**
 > 🟢 **THE BLOCKER HAS LIFTED, MEASURED IN PRODUCTION (read-only).** The item's own unblock condition
 > was *">=3 real non-demo users with >=3 HR-bearing analyses each."* Measured 2026-10-06 against
 > `auth.users` (not `user_settings.email`, which is null for most rows):

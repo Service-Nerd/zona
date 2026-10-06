@@ -1,3 +1,4 @@
+import type { DistanceUnits } from '@/lib/format'
 import type { ProposedAdjustment } from '../planAdjustment'
 import { buildVoiceHeader } from './voiceRules'
 import { computeSessionDiff, summariseDiff } from '../diff/sessionDiff'
@@ -47,6 +48,21 @@ export interface PreviousAdjustmentSummary {
 
 export function buildAdjustmentExplanationPrompt(
   adjustment: ProposedAdjustment,
+  /**
+   * PROMPT-UNITS-ADJUST-01 — REQUIRED, and SECOND, and both are the fix.
+   *
+   * ADR-015 Amendment: the AI layer is a display surface. A number handed to the
+   * model becomes user-facing the moment the model repeats it, so a miles runner
+   * must not receive a km-voiced explanation of their own plan change. This was a
+   * DECLARED GAP hardcoded to `'km'` here so that it sat in the diff rather than
+   * hiding inside a parameter default; the route now reads `getUserDisplayPrefs`.
+   *
+   * ⚠️ NO DEFAULT, and ahead of the optional arguments because TypeScript will not
+   * take a required parameter after an optional one. The compiler is what makes the
+   * next caller answer — which is exactly how `buildVoiceHeader` surfaced this site
+   * (KIT-EXEMPLAR-LEAK-01). A default here would re-create the defect silently.
+   */
+  units: DistanceUnits,
   athleteContext?: string,
   previousAdjustment?: PreviousAdjustmentSummary | null,
 ): string {
@@ -64,7 +80,7 @@ export function buildAdjustmentExplanationPrompt(
   // "Day: before → after" so the structural change is unambiguous.
   // The model is also told NOT to summarise the diff itself — that's
   // the rule-engine diff renderer's job. The model writes the WHY.
-  const structuralDiff = summariseDiff(computeSessionDiff(sessionsBefore, sessionsAfter))
+  const structuralDiff = summariseDiff(computeSessionDiff(sessionsBefore, sessionsAfter), { units })
   const diffBlock = structuralDiff.length > 0
     ? structuralDiff.map(line => `- ${line}`).join('\n')
     : '- (no per-day changes — coaching-note adjustment only)'
@@ -72,15 +88,9 @@ export function buildAdjustmentExplanationPrompt(
   const voiceHeader = buildVoiceHeader({
     role: 'explaining a plan adjustment',
     outputConstraint: 'One paragraph, 1–3 sentences. Fewer is fine if the trigger is simple.',
-    // 🔴 DECLARED GAP, NOT A CHOICE — PROMPT-UNITS-ADJUST-01.
-    // `units` is required precisely so this site cannot default in silence.
-    // Nothing on this path HAS the runner's units: this builder takes none and its
-    // only caller (`app/api/adjust-plan/route.ts`) never reads `getUserDisplayPrefs`.
-    // So a miles runner gets a km-voiced adjustment explanation, and `labelSession`
-    // in the same prompt defaults the same way. Threading units from the route is
-    // its own item; hardcoding it HERE puts the gap in the diff instead of hiding
-    // it inside a parameter default.
-    units: 'km',
+    // PROMPT-UNITS-ADJUST-01 — the runner's own units, read from
+    // `getUserDisplayPrefs` in the route. Was hardcoded 'km' as a declared gap.
+    units,
   })
 
   const previousAdjustmentBlock = previousAdjustment

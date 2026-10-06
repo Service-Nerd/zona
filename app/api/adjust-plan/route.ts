@@ -1,4 +1,5 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
@@ -372,7 +373,15 @@ export async function POST(req: NextRequest) {
           ),
         }
       : null
-    const prompt  = buildAdjustmentExplanationPrompt(proposed, buildAthleteContext({ plan }), previousAdjustment)
+    // PROMPT-UNITS-ADJUST-01 — the runner's own units reach the model.
+    //
+    // ADR-015 Amendment: the AI layer is a display surface, so a miles runner must
+    // not be told why their plan changed in kilometres. This route never read
+    // `getUserDisplayPrefs`, which is why `buildAdjustmentExplanationPrompt`
+    // carried a hardcoded `'km'` as a declared gap.
+    const { units } = await getUserDisplayPrefs(supabase, user.id)
+    const prompt  = buildAdjustmentExplanationPrompt(
+      proposed, units, buildAthleteContext({ plan }), previousAdjustment)
     const aiRes   = await callAnthropic({
       surface:    'adjust-plan',
       model:      ANTHROPIC_MODEL_DEEP,

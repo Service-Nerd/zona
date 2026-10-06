@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-06 — PROMPT-UNITS-ADJUST-01 · a required parameter, and a falsification that didn't go red
+**Shipped:** a miles runner no longer gets a km-voiced explanation of why their plan changed.
+**Dev learning:** `units` reaches this prompt by **two independent paths** — the `buildVoiceHeader` instruction line ("The runner measures distance in MILES") and the structural diff, where every line runs through `labelSession`. I threaded both, wrote a test, and the falsification stayed green: hardcoding the header back to `'km'` broke nothing, because my assertions were all on the diff lines. **One fix, two halves, and the test covered one.** The arm that closes it is the one I only wrote because the mutation refused to fail.
+**Product/creator learning:** the parameter is required and sits second in the signature. Required because a default is precisely what allowed a miles runner to be addressed in kilometres for months; second because TypeScript will not accept a required parameter after an optional one. The compiler is the mechanism — this site was found in the first place by making `buildVoiceHeader`'s `units` required and letting the compiler name every caller that couldn't answer.
+**AI-building learning:** two of my own assertions were wrong before the code was. `/\bmi\b/` does not match "15mi" — digit-to-letter is not a word boundary — so a correct prompt failed. And my first fixture passed day-keyed objects to `computeSessionDiff`, which takes **arrays indexed by day order**, so the diff came back as seven `unchanged/null` entries and three assertions failed against an empty string. **Both times the product was right and my test was wrong, and both cost more than the fix.**
+**The honest bit:** the fix itself is about fifteen lines. Getting the test to be worth having took three attempts and a falsification that quietly passed.
+**Hook material:** the falsification passed. That is the whole story — a green test on a fix I had half-made.
+**Postable?:** yes — "my test went green on a bug I'd only half fixed" is the most useful thing in it.
+
 ## 2026-10-06 — HM-PEAK-RACE-SPECIFIC-GAP-01 + RACE-ANCHOR-CV-OVERRIDE-01 · two items where the answer was already written down
 **Shipped:** §120 Am.1's silent withholding now leaves a trace, and §85's fifth exemption finally shipped with the §22 amendment that actually unblocks it.
 **Dev learning:** I filed `HM-PEAK-RACE-SPECIFIC-GAP-01` in the afternoon and closed it two hours later as not-a-defect. §120 Amendment 1, shipped two weeks earlier, describes the behaviour in as many words — *"the row is not offered at all and the slot falls through the selector to other work"* — and had already measured the cost at 30% of grid sessions. **One grep would have prevented the filing**, and my own notes record making the identical mistake ten days ago. The useful half was real though: the withholding stamped nothing, so no checker could tell a correctly-withheld row from a preference that had quietly died.
