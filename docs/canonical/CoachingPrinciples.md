@@ -2940,6 +2940,86 @@ Heuristic AND-gates: BOTH thresholds must be hit. Implemented in `generateRulePl
 
 When neither suggestion applies, the diagnosis is surfaced alone (no false guidance). The bottleneck list expands as new inputs become tunable.
 
+### Amendment 2 — the feasibility threshold extends from INTERVAL pace to **CV** pace (Coaching Board, 2026-10-06)
+
+**Ruling: CORRECT WITH AMENDMENT, `GOAL-PAST-CV-SILENT-01`.**
+
+**Principle.** §44 CD-16's third feasibility input — *"whether the runner's stated
+target pace is faster than the interval pace their benchmark supports"* — extends to
+**CV pace**. When §120 Amendment 1 withholds the `hm_pace_intervals` row because goal
+pace is past CV, the band reads at least `demanding` and the plan carries the sentence
+saying why.
+
+**📊 Seiler's framing, adopted by the chair and recorded instead of the word
+"correction".** §120 Amendment 1's own measurement puts the CV crossing at **5.4–6.2%**
+of current HM pace and the interval crossing at **13.9–14.3%**, so this roughly
+**HALVES the stretch a stated goal may carry before the band speaks.** That is a
+deliberate tightening. §44's interval threshold was chosen at CD-16; §120 Amendment 1
+later drew a second, stricter line at CV; **nobody reconciled the two, and the gap
+between them was the silence.**
+
+**🔴 Measured, 5,184 HM time-target plans (2026-10-06).**
+
+| | n | share |
+|---|---|---|
+| goal past CV, row withheld | 3,456 | 66.7% of HM time-target |
+| …also past interval, so **§44 CD-16 already spoke** | 864 | 25.0% of withheld |
+| …past CV only, band `demanding` for a VOLUME reason | 1,776 | — |
+| …past CV only, band **`comfortable`, no note at all** | **816** | **15.7% of HM time-target** |
+
+The 816 are the whole defect, and they corroborate §120 Amendment 1's independently
+measured *"CV to interval = 15.0%"* of sessions. **After the amendment: 0 read
+`comfortable`, all 3,456 carry a note, and exactly the 816 receive this amendment's own
+new sentence** — a plan with a louder reason keeps that reason's note.
+
+⚠️ **The item that filed this overstated it twice, both one way.** It reported the gap
+as 66.7% when three quarters of that population was already covered, and it reported
+that **zero** plans named the goal pace — which was a **regex artefact**: the shipped
+§44 CD-16 note says *"quicker than"* and the pattern searched for *"faster than"*.
+**Measure the population the sentence actually describes, not the one a pattern
+matches.**
+
+**🎯 McMillan's condition is binding: this may NOT be the interval-band sentence.**
+That one says race-pace sessions *"will bite harder than the interval work"*, which for
+a CV-band runner is **false** — there is no race-pace session, §120 Amendment 1
+withheld it. *"Writing a note that describes a session the plan does not contain is
+worse than silence."* So the CV sentence names the withholding and the two real levers
+(§38: diagnosis **and** prescription; §40c: name the lever, never only the loss).
+
+**Engine copy:** `Demanding — the pace you're chasing is quicker than your current fitness supports, so the plan trains you at threshold rather than rehearsing a pace you cannot hold yet. Get fitter and it comes to you; or set a target you could race today.`
+
+**⚕️ Sims's reason this is the cheapest ruling available:** a runner told their plan is
+`comfortable` while privately still chasing a target it cannot reach is the runner who
+adds work on their own. *"Low energy availability does not come from the plan; it comes
+from the gap between the plan and the goal the runner is still privately chasing."*
+Naming the gap is the intervention that closes it, and it costs no new surface.
+
+**🩹 No injury vector** — the row is withheld either way, so no tissue sees a different
+load. This changes a label and a sentence.
+
+**§44 point 3 holds.** CV is derived from the benchmark **before any session exists**,
+which §120 Amendment 1 already argued and settled as the correct side of the
+pre-generation boundary. The band does not read plan-quality signals, and
+`difficulty_band` drives no session selection — measured: it is read by `cohortShape`
+(a metric), the enrichment prompt (a display surface, ADR-015 Am.) and `featureGates`
+(the FREE tag), and by nothing that prescribes.
+
+⚠️ **It moves `cohortShape`'s `comfortableBand` metric, by construction** — 816 plans
+change band. Declared, re-baselined with a reason, never re-baselined to turn a test
+green.
+
+**Config.** No new constant. `RACE_PACE_ANCHOR_MAX_OVER_CV_PCT` (0.5%) already defines
+the crossing, and a second constant asking the same question in a different unit is the
+duplicate-semantics failure **§120 Amendment 1 rejected by name**.
+**Invariant.** `INV-PLAN-GOAL-PAST-CV-DECLARED` — withheld ⇒ band ≥ `demanding` **and**
+a note present. Reads the producer's stamp (`hm_goal_anchor_withheld`), because the
+withholding depends on the `PaceGuide` the validator never receives.
+**Gate.** `lib/plan/goalPastCvDeclared.test.ts`. ⚠️ **Its first version was falsified and
+the falsification FAILED TO GO RED on eight of nine arms**, because `generateRulePlan`
+throws on an error-severity violation under `NODE_ENV=test` and a bare `catch { continue }`
+skipped exactly the at-risk plans. A designed refusal is a legitimate skip; a throw naming
+the invariant under test is the defect. Two arms go red now.
+
 ---
 
 ## 39. Race-week mid-week easy run for HM/marathon

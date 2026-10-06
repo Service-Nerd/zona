@@ -6443,6 +6443,61 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
 
+### 🔴 `PLAN-NOTE-BUDGET-INERT-01` — the engine stamps 3.66 honest notes per plan and the runner sees 0.95 *(filed 2026-10-06, P1)* 🧭 **DESIGN BOARD** → 💼 **SLT** (it set the caps)
+
+**Found while measuring `GOAL-PAST-CV-SILENT-01`'s remedy, and it changes that item's answer and
+`DELOAD-OPENING-SURFACE-01`'s. Measured across 5,664 cohort-grid plans:**
+
+| | |
+|---|---|
+| mean `*_note` fields stamped per plan | **3.66** |
+| mean notes the runner actually reads | **0.95** |
+| rendered-count distribution | **0 notes: 301 · 1 note: 5,336 · 2 notes: 27 · 3 notes: 0** |
+| plans where the budget dropped an eligible note | **5,364 (94.7%)** |
+| notes dropped in total | **10,031** |
+| plans whose SINGLE rendered note alone exceeds the whole 70-word budget | **2,636 (46.5%)** |
+
+🔴 **`PLAN_RATIONALE_MAX_NOTES = 3` IS DECORATIVE — IT CAN NEVER BIND.** `PLAN_RATIONALE_MAX_WORDS = 70`
+always bites first, because the notes that win the first slot are long: the maintenance note measures
+~95 words on its own. The loop keeps the first unconditionally (*"a budget that can return nothing
+would silently drop a constraint, and honesty outranks brevity when they collide"* — correct, and it is
+the only reason anything renders at all), then breaks on the second. **So the product renders exactly
+one note on 94.2% of plans and has never rendered three.**
+
+⚠️ **THIS IS THE "DECLARED BUT INERT" CLASS, AT THE SCALE OF EVERY HONESTY OBLIGATION THE ENGINE HAS.**
+§34's standing requirement is that a structural residual is DECLARED, and the engine discharges it by
+stamping a note. Ten different notes exist for ten different residuals — volume constraint, volume
+shortfall, long-run shortfall, fitness signal, hard preference, quality-timing yield, terrain effort,
+intensity re-entry omission, load residual, peak shortfall, frequency constraint, and now
+`short_opening_block_note`. **For 94% of plans, nine of them are written to a field nobody reads.** Each
+was ratified, tested, and invariant-guarded individually; none of those checks can see the renderer's
+budget. `configConsumer.test.ts` would count every one as consumed, because `planRationaleNotes` names
+them all.
+
+⚠️ **The caps are not wrong and this is not a request to raise them.** Both have reasons on the record:
+Wood set the count cap against note-stacking, and the SLT's *"ONE CAUSE, ONE TILE"* ruling (2026-09-17)
+removed a second note that blamed the same cause as the first — measured, 78.5% of co-occurrences
+blamed the runner's weekday time cap twice. **The defect is that the engine keeps producing notes as if
+there were room**, so the ranking in `planRationaleNotes` is doing all the deciding and nobody has
+looked at what it decides. Measured, on the plans where §120 Am. 1 withheld the HM anchor: the slots go
+`Maintenance` 78.5%, `Your level` 17.2%, `Volume` 4.3% — and **nothing else, ever.**
+
+**Options, none chosen (this is a finding, not a plan):**
+- shorten the long notes so the budget admits a second (the maintenance note is ~95 words against a
+  70-word total; it was written before the budget existed)
+- progressive disclosure: one note with the rest behind a tap (Silvanto's standing position — depth
+  through disclosure, never density)
+- accept that one note is the product and **stop stamping the other nine**, which at least makes the
+  silence honest and would fail `configConsumer`-style checks loudly
+- a per-residual surface rather than a shared tile, as `uncovered_runway_note` already does with
+  `RunwayRevealCard`
+
+**Acceptance:** whatever is chosen, a mechanical check asserts the number of notes the engine STAMPS
+against the number a runner can READ, and fails when they diverge beyond a declared figure. A count of
+stamped notes is not a count of rendered notes, and this repo now has the measurement to prove it.
+
+---
+
 ### `GOAL-PAST-CV-SILENT-01` — a runner whose goal pace is past their CV is never told *(filed 2026-10-06, P2)* 🏃 **COACHING BOARD**
 
 > **Residual of `HM-PEAK-RACE-SPECIFIC-GAP-01`'s RCA.** §120 Amendment 1 withholds the

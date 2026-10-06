@@ -137,6 +137,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-TAPER-DELIVERED-DEPTH',
   'INV-PLAN-UNCOVERED-RUNWAY-DECLARED',
   'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED',
+  'INV-PLAN-GOAL-PAST-CV-DECLARED',
   'INV-PLAN-STRIDES-PRESENT',
   'INV-PLAN-STRIDES-NO-CARRIER',
   'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
@@ -7932,6 +7933,50 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         actual: `${uncovered} uncovered weeks, no note`,
         expected: 'meta.uncovered_runway_note present',
       })
+    }
+  }
+
+  // INV-PLAN-GOAL-PAST-CV-DECLARED (§44 Am. 2, GOAL-PAST-CV-SILENT-01) — a plan
+  // that WITHHELD the race-specific row because the runner's goal is past their
+  // own CV pace may not then read `comfortable`, and must carry the sentence.
+  //
+  // §44 defines the bottom rung as "plan REACHES ITS TARGET", and a plan that
+  // cannot rehearse the target pace at all does not reach it. Measured 2026-10-06:
+  // 816 of 5,184 HM time-target plans (15.7%) read `comfortable` with the row
+  // withheld and NO note — and 864 others were already covered by §44 CD-16's
+  // interval threshold, which is why this is a threshold extension rather than a
+  // new rule.
+  //
+  // ⚠️ READS THE PRODUCER'S OWN STAMP (`hm_goal_anchor_withheld`), not a
+  // recomputation. The withholding depends on the `PaceGuide` the engine built,
+  // which the validator does not receive — the same reason §120 Am. 1 added the
+  // stamp in the first place. Silent when the stamp is absent, which is every
+  // plan that is not an HM time-target past CV.
+  {
+    if (plan.meta.hm_goal_anchor_withheld === true) {
+      const band = plan.meta.difficulty_band
+      const note = plan.meta.difficulty_note
+      if (band === 'comfortable' || !band) {
+        violations.push({
+          code: 'INV-PLAN-GOAL-PAST-CV-DECLARED',
+          principle_ref: 'CoachingPrinciples §44 Am. 2, §120 Am. 1',
+          severity: 'error',
+          week: 0,
+          message: `The race-specific row was withheld because goal pace is past this runner's CV pace, and the plan reads '${band ?? 'unset'}'. §44's bottom rung means the plan REACHES ITS TARGET; this one cannot rehearse the target pace at all. Band must be at least 'demanding'.`,
+          actual: `hm_goal_anchor_withheld with difficulty_band '${band ?? 'unset'}'`,
+          expected: "difficulty_band 'demanding' or 'very_demanding'",
+        })
+      } else if (typeof note !== 'string' || !note.length) {
+        violations.push({
+          code: 'INV-PLAN-GOAL-PAST-CV-DECLARED',
+          principle_ref: 'CoachingPrinciples §44 Am. 2, §38, §40c',
+          severity: 'error',
+          week: 0,
+          message: `The race-specific row was withheld past CV and the band reads '${band}', but there is no difficulty_note to say why. §38: the note carries the diagnosis AND the prescription. A band with no sentence is a label the runner cannot act on.`,
+          actual: `difficulty_band '${band}', no difficulty_note`,
+          expected: 'difficulty_note present',
+        })
+      }
     }
   }
 

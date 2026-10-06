@@ -8927,6 +8927,43 @@ function buildRulePlanOnce(
     // keeps that reason's note. This arm only ever moves a plan that would
     // otherwise have read 'comfortable', which is the 751 and nothing else.
     : declaresShortfall ? 'demanding'
+    /**
+     * §44 Amendment 2 (Coaching Board 2026-10-06, GOAL-PAST-CV-SILENT-01) — THE
+     * FEASIBILITY THRESHOLD EXTENDS FROM INTERVAL PACE TO **CV** PACE.
+     *
+     * 📊 Seiler's framing, adopted by the chair and recorded instead of calling
+     * this a correction: CV crosses at **5.4–6.2%** of current HM pace and
+     * interval at **13.9–14.3%** (§120 Am. 1's own measurement), so this roughly
+     * **HALVES the stretch a stated goal may carry before the band speaks.** That
+     * is a deliberate tightening, not a slip being fixed. §44's interval
+     * threshold was chosen at CD-16; §120 Am. 1 later drew a second, stricter
+     * line at CV and nobody reconciled the two. The gap between them WAS the
+     * silence.
+     *
+     * 🔴 MEASURED, 5,184 HM time-target plans: 3,456 (66.7%) have the row
+     * withheld past CV. **864 of those are also past interval, so §44 already
+     * tells them** — in copy that nearly says it outright. 2,592 read
+     * `demanding` for a VOLUME reason, and **816 read `comfortable` and were
+     * told nothing at all.** Those 816 are 15.7% of HM time-target plans and
+     * corroborate §120 Am. 1's independently measured "CV to interval = 15.0%"
+     * of sessions.
+     *
+     * ⚠️ The item that filed this put the gap at 66.7% and reported that ZERO
+     * plans named the goal pace. Both were wrong: the second was a REGEX
+     * ARTEFACT — the shipped note says *"quicker than"*, the pattern looked for
+     * *"faster than"*. Measure the population the sentence actually describes.
+     *
+     * ⚕️ Sims's reason this is the cheapest ruling available: a runner told their
+     * plan is `comfortable` while privately still chasing a target it cannot
+     * reach is the runner who adds work on their own. The gap between the plan
+     * and the goal is where low energy availability comes from, not the plan.
+     *
+     * §44 point 3 holds — CV is derived from the benchmark BEFORE any session
+     * exists, which §120 Am. 1 already argued and settled as the correct side of
+     * the pre-generation boundary. Placed after `declaresShortfall` for the same
+     * reason that arm is last: a louder reason keeps its note.
+     */
+    : hmAnchorWithheld ? 'demanding'
     : 'comfortable'
 
   // One-line honest "why" for the demanding tiers only (mirrors
@@ -8946,9 +8983,24 @@ function buildRulePlanOnce(
       ? `Demanding — the pace you're targeting is quicker than your benchmark currently supports, so race-pace sessions will bite harder than the interval work. That gap is the plan's job.`
     : (input.goal === 'time_target' && prepMargin < GENERATION_CONFIG.DIFFICULTY_COMFORTABLE_MARGIN_WEEKS)
       ? `Demanding on ${prepTime.weeks_available} weeks — a tight but workable timeline for the time you're chasing. Hold the easy days and it stays honest.`
-    // §44 Amendment (DIFFICULTY-SHORTFALL-01) — the only remaining cause. The
-    // shortfall note itself names WHICH part and why, so this does not repeat it.
-      : `Demanding — this plan does not fully reach what this distance usually asks for. The shortfall note says which part, and what would lift it.`
+    // §44 Amendment 2 (GOAL-PAST-CV-SILENT-01) — 🎯 McMILLAN'S BINDING CONDITION:
+    // THIS MAY NOT BE THE INTERVAL-BAND SENTENCE. That one says race-pace
+    // sessions "will bite harder than the interval work", which for this runner
+    // is FALSE — there is no race-pace session, §120 Am. 1 withheld it. "Writing
+    // a note that describes a session the plan does not contain is worse than
+    // silence." So this names the withholding itself and the two real levers
+    // (§38: diagnosis plus prescription; §40c: name the lever, never only the
+    // loss).
+    //
+    // ⚠️ ORDERED TO MIRROR THE BAND CHAIN EXACTLY — shortfall first, then this.
+    // The first cut had them in opposite orders and patched the difference with
+    // `&& !declaresShortfall`, which is equivalent today and a drift waiting to
+    // happen: two chains deciding the same thing in two orders is the
+    // duplicate-semantics failure this file has paid for repeatedly. Same
+    // sequence, no guard.
+    : declaresShortfall
+      ? `Demanding — this plan does not fully reach what this distance usually asks for. The shortfall note says which part, and what would lift it.`
+      : `Demanding — the pace you're chasing is quicker than your current fitness supports, so the plan trains you at threshold rather than rehearsing a pace you cannot hold yet. Get fitter and it comes to you; or set a target you could race today.`
 
   // §18 Amendment (FREQ-SILENCE-01, 2026-09-19) — WHEN VOLUME, NOT LIFE, SETS
   // THE NUMBER OF RUNNING DAYS, SAY SO.
