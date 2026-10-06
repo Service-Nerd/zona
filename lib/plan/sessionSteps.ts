@@ -442,6 +442,71 @@ export function resolveDisplayFigures(
   }
 }
 
+/**
+ * EVERY ROW THE SESSION CARD RENDERS, from one producer.
+ *
+ * 🔴 WHY THIS EXISTS. `sessionStepLegibility.test.ts` first asserted its
+ * properties over `buildStepGroups` alone — which is the v2 MAIN SET and nothing
+ * else. **Measured: that is 1,974 of 16,919 sessions (11.7%).** The other 88.3%
+ * — every easy run and long run (14,221), the 5K time trial (422), race week
+ * (302) — plus the warm-up, strides and cool-down rows of ALL of them, render
+ * through the same `StepRowView` and were covered by nothing. The founder asked
+ * whether the other session types had been regression-tested. They had not.
+ *
+ * ⚠️ AND THE TEST MUST NOT REBUILD THE COMPOSITION ITSELF. A test that assembles
+ * its own idea of the rows is a second writer of the card's shape and drifts from
+ * it silently — this repo's most expensive class, and the reason `deloadCadence`,
+ * `tierResolution` and `sumWeeklyKm` all have single owners. So the COMPONENT
+ * renders what this returns, and the GATE asserts over what this returns, and
+ * there is no third version.
+ *
+ * Returns the rows in render order with their section, so a caller can style per
+ * section without knowing how a section is built.
+ */
+/** Narrow the Session's `unknown` derived_set to a renderable v2 set.
+ *  Lives here, beside the row producer, so the component and the gate cannot
+ *  disagree about what "renderable" means. */
+export function isV2DerivedSet(ds: unknown): ds is DerivedSet {
+  return !!ds && (ds as { version?: number }).version === 2
+    && Array.isArray((ds as { blocks?: unknown }).blocks) && (ds as DerivedSet).blocks.length > 0
+}
+
+export interface SessionRow { section: 'warmup' | 'main' | 'cooldown'; row: StepRow; repeat?: number; repeatLabel?: string; startsGroup?: boolean }
+
+export function buildSessionRows(
+  structure: SessionStructure,
+  derivedSet: unknown,
+  opts: BuildStepOpts & { figures: SessionDisplayFigures; raceSegmentDetail: string },
+): SessionRow[] {
+  const out: SessionRow[] = []
+  const { figures } = opts
+
+  out.push({ section: 'warmup', row: { kind: 'work', role: 'Easy run', amount: figures.warmup, amountIsEstimate: true, detail: 'Final third in Z2' } })
+  if (structure.strides) {
+    out.push({ section: 'warmup', row: { kind: 'work', role: 'Strides', amount: `${structure.strides.count} × ${structure.strides.duration_secs}s`, amountIsEstimate: false, detail: 'fast & relaxed, full recovery' } })
+  }
+
+  const groups = isV2DerivedSet(derivedSet) ? buildStepGroups(derivedSet, opts) : null
+  const seg = structure.race_pace_segment
+  if (groups) {
+    for (const g of groups) {
+      g.rows.forEach((row, ri) => out.push({
+        section: 'main', row,
+        ...(g.repeat > 1 ? { repeat: g.repeat, repeatLabel: g.repeatLabel } : {}),
+        ...(ri === 0 ? { startsGroup: true } : {}),
+      }))
+    }
+  } else {
+    out.push({ section: 'main', row: { kind: 'work', role: seg ? 'Easy' : 'Main set', amount: figures.mainEasy, amountIsEstimate: true, detail: structure.main.description }, startsGroup: true })
+  }
+  if (seg && figures.racePace) {
+    out.push({ section: 'main', row: { kind: 'work', role: 'Race pace', amount: figures.racePace, amountIsEstimate: true, detail: opts.raceSegmentDetail }, ...(groups ? {} : { startsGroup: true }) })
+  }
+
+  out.push({ section: 'cooldown', row: { kind: 'rest', role: 'Easy jog / walk', amount: figures.cooldown, amountIsEstimate: true, detail: 'conversational or slower' } })
+  return out
+}
+
 /** Turn a resolved derived set into display-ready step groups. */
 export function buildStepGroups(set: DerivedSet, opts: BuildStepOpts): StepGroup[] {
   return set.blocks.map(block => {

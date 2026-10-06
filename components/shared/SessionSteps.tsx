@@ -17,15 +17,10 @@ import React from 'react'
 import IconButton from '@/components/ui/IconButton'
 import type { SessionStructure } from '@/lib/plan/sessionComposer'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
-import { buildStepGroups, resolveDisplayFigures, type StepRow } from '@/lib/plan/sessionSteps'
+import { buildSessionRows, type SessionRow, buildStepGroups, resolveDisplayFigures, type StepRow } from '@/lib/plan/sessionSteps'
 import { convertPaceString, formatDistance, formatDuration } from '@/lib/format'
 import type { Zone } from '@/components/shared/ZoneBar'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
-
-/** Narrow the Session's `unknown` derived_set to a renderable v2 set. */
-function isV2DerivedSet(ds: DerivedSet | null | undefined): ds is DerivedSet {
-  return !!ds && (ds as { version?: number }).version === 2 && Array.isArray((ds as { blocks?: unknown }).blocks) && (ds as DerivedSet).blocks.length > 0
-}
 
 export interface SessionStepsProps {
   structure: SessionStructure
@@ -217,9 +212,17 @@ export default function SessionSteps({
   // render a useful number anyway — it would have printed "undefinedmi". A bare
   // em dash is the app's no-value placeholder and is exempt from the em-dash
   // rule as typography rather than prose.
-  const groups = isV2DerivedSet(derivedSet)
-    ? buildStepGroups(derivedSet, { metric, units: preferredUnits, formatDist: (km) => formatDistance(km, preferredUnits, { exact: true }) ?? '—' })
-    : null
+  // ONE PRODUCER FOR THE ROWS (SESSION-STEP-LEGIBILITY-01 regression pass).
+  // `buildSessionRows` returns every row this card renders, in order, and the
+  // gate asserts over the SAME call. A test that rebuilt the composition would
+  // be a second writer of the card's shape — the class this repo keeps paying
+  // for — and it is what left 88.3% of sessions untested on the first pass.
+  const rows = buildSessionRows(structure, derivedSet, {
+    metric, units: preferredUnits,
+    formatDist: (km) => formatDistance(km, preferredUnits, { exact: true }) ?? '—',
+    figures, raceSegmentDetail: racePaceDetail,
+  })
+  const section = (name: SessionRow['section']) => rows.filter(r => r.section === name)
 
   return (
     <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
@@ -227,39 +230,31 @@ export default function SessionSteps({
 
       {/* Warm-up */}
       <SectionCard name="Warm-up" accent="var(--moss)" tintPct={13} totalStr={wuTotal} zoneStr={structure.warmup.zone} paceStr={easyPaceStr}>
-        <StepRowView num={nextNum()} dotColor="var(--moss)" row={{ kind: 'work', role: 'Easy run', amount: wuTotal, amountIsEstimate: true, detail: 'Final third in Z2' }} />
-        {structure.strides && (
-          <StepRowView num={nextNum()} dotColor="var(--moss)" row={{ kind: 'work', role: 'Strides', amount: `${structure.strides.count} × ${structure.strides.duration_secs}s`, amountIsEstimate: false, detail: 'fast & relaxed, full recovery' }} />
-        )}
+        {section('warmup').map((r, i) => (
+          <StepRowView key={i} num={nextNum()} dotColor="var(--moss)" row={r.row} />
+        ))}
       </SectionCard>
 
       {/* Main set */}
       <SectionCard name="Main set" accent={mainAccent} tintPct={peak >= 5 ? 13 : 15} totalStr={mainTotal} zoneStr={zoneRangeLabel} info={onInfo}>
-        {groups
-          ? groups.map((g, gi) => (
-              <React.Fragment key={gi}>
-                {g.repeat > 1 && (
-                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', padding: '8px 13px 8px 44px', background: 'var(--bg-soft)' }}>
-                    <span style={{ fontFamily: FONT, fontSize: '15px', fontWeight: 800, fontStyle: 'italic', color: mainAccent, fontVariantNumeric: 'tabular-nums' }}>{g.repeat}×</span>
-                    <span style={{ fontFamily: FONT, fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--ink-2)' }}>{g.repeatLabel}</span>
-                  </div>
-                )}
-                {g.rows.map((row, ri) => (
-                  <StepRowView key={ri} num={ri === 0 ? nextNum() : null} dotColor={workDot} row={row} />
-                ))}
-              </React.Fragment>
-            ))
-          : (
-            <StepRowView num={nextNum()} dotColor={workDot} row={{ kind: 'work', role: seg ? 'Easy' : 'Main set', amount: figures.mainEasy, amountIsEstimate: true, detail: structure.main.description }} />
-          )}
-        {seg && figures.racePace && (
-          <StepRowView num={groups ? null : nextNum()} dotColor={workDot} row={{ kind: 'work', role: 'Race pace', amount: figures.racePace, amountIsEstimate: true, detail: racePaceDetail }} />
-        )}
+        {section('main').map((r, i) => (
+          <React.Fragment key={i}>
+            {r.startsGroup && r.repeat && r.repeat > 1 && (
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', padding: '8px 13px 8px 44px', background: 'var(--bg-soft)' }}>
+                <span style={{ fontFamily: FONT, fontSize: '15px', fontWeight: 800, fontStyle: 'italic', color: mainAccent, fontVariantNumeric: 'tabular-nums' }}>{r.repeat}×</span>
+                <span style={{ fontFamily: FONT, fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--ink-2)' }}>{r.repeatLabel}</span>
+              </div>
+            )}
+            <StepRowView num={r.startsGroup ? nextNum() : null} dotColor={workDot} row={r.row} />
+          </React.Fragment>
+        ))}
       </SectionCard>
 
       {/* Cool-down */}
       <SectionCard name="Cool-down" accent="var(--s-strength)" tintPct={13} totalStr={cdTotal} zoneStr={structure.cooldown.zone} paceStr={easyPaceStr}>
-        <StepRowView num={nextNum()} dotColor="var(--s-strength)" row={{ kind: 'rest', role: 'Easy jog / walk', amount: cdTotal, amountIsEstimate: true, detail: 'conversational or slower' }} />
+        {section('cooldown').map((r, i) => (
+          <StepRowView key={i} num={nextNum()} dotColor="var(--s-strength)" row={r.row} />
+        ))}
       </SectionCard>
     </div>
   )

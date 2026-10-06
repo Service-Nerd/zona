@@ -2765,8 +2765,22 @@ on two surfaces** — the app card, and `stepParts` on the **website** plan page
 (`jog 1:30`), which was found only by opening the page: the consumer check had
 named `PlanPage.tsx` and assumed it used the app's renderer. **It does not.**
 
-**Gate:** `lib/plan/sessionStepLegibility.test.ts` — 5 arms over the real corpus,
-each falsified by reverting its own fix.
+**One producer for the rows: `lib/plan/sessionSteps.ts → buildSessionRows`.** The
+component maps over what it returns and composes nothing itself, so the gate can
+assert over the card's real shape rather than a second copy of it.
+
+**Gate:** `lib/plan/sessionStepLegibility.test.ts` — 7 arms over **33,838 sessions
+/ 114,386 rows**, every session type (easy incl. long runs, quality, the 5K time
+trial, race week), every section, **both unit systems**, each arm falsified by
+reverting its own fix and running it.
+
+🔴 **ITS FIRST VERSION COVERED 11.7%** — it asserted over `buildStepGroups`, the v2
+main set alone, and could see no easy run, no long run, no time trial, no race
+week and no warm-up or cool-down row of anything. ⚠️ **And one arm was HOLLOW:**
+"every session renders a warm-up" was written as an AGGREGATE (`warmup rows >
+1000`), so deleting the warm-up run from the producer left it green, because
+`strides` also pushes warm-up rows. **A count across a corpus cannot see a section
+missing from a session.** It asserts per session now, and both mutations go red.
 
 
 ### 22. WeekStripCard
