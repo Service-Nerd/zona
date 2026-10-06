@@ -25,7 +25,7 @@ import { composeSession } from './sessionComposer'
 import { formatDistance } from '@/lib/format'
 import type { GeneratorInput } from '@/types/plan'
 
-interface Row { role: string; amount: string; detail: string; note?: string }
+interface Row { kind: string; role: string; amount: string; detail: string; note?: string }
 
 /**
  * EVERY ROW THE CARD RENDERS, for EVERY session type, through the component's own
@@ -44,7 +44,7 @@ interface Row { role: string; amount: string; detail: string; note?: string }
  */
 function rendered(stride: number, units: 'km' | 'mi') {
   const grid = cohortGrid() as GeneratorInput[]
-  const out: { row: Row; srcNote?: string; label: string; type: string; section: string; sid: string }[] = []
+  const out: { row: Row; srcNote?: string; label: string; type: string; section: string; sid: string; blockKey?: string }[] = []
   let sid = 0
   for (let i = 0; i < grid.length; i += stride) {
     let p
@@ -61,6 +61,7 @@ function rendered(stride: number, units: 'km' | 'mi') {
         }
         const figures = resolveDisplayFigures(structure, { ...opts, sessionDistanceKm: undefined })
         const rows = buildSessionRows(structure, sess.derived_set, { ...opts, figures, raceSegmentDetail: '' })
+        let blockIdx = -1
         const steps = isV2DerivedSet(sess.derived_set)
           ? sess.derived_set.blocks.flatMap(b => b.steps)
           : []
@@ -68,7 +69,9 @@ function rendered(stride: number, units: 'km' | 'mi') {
         const key = `${units}#${sid++}`
         for (const r of rows) {
           const src = r.section === 'main' && steps.length ? steps[mainIdx++] : undefined
-          out.push({ row: r.row as Row, srcNote: src?.note, label: sess.label ?? '?', type: sess.type ?? '?', section: r.section, sid: key })
+          if (r.section === 'main' && r.startsGroup) blockIdx++
+          out.push({ row: r.row as Row, srcNote: src?.note, label: sess.label ?? '?', type: sess.type ?? '?', section: r.section, sid: key,
+            ...(r.section === 'main' ? { blockKey: `${key}#b${blockIdx}` } : {}) })
         }
       }
     }
@@ -123,7 +126,9 @@ describe('SESSION-STEP-LEGIBILITY-01 — a step row says what to do, on EVERY se
     // The refactor that put every row behind one producer could have dropped a
     // field silently on a path the v2 gate never visited — which is most of them.
     const bad = ALL.filter(r =>
-      !r.row.role?.trim() || !r.row.amount?.trim()
+      // An EMPTY role is legitimate on a work step that carries a note (Am. 2):
+      // the note IS the role. Every other empty field is still a defect.
+      (!r.row.role?.trim() && !(r.row.kind === 'work' && r.row.note)) || !r.row.amount?.trim()
       || /undefined|NaN|null|\[object/i.test(`${r.row.role}|${r.row.amount}|${r.row.detail}|${r.row.note ?? ''}`))
     expect(bad.map(r => `${r.type}/${r.section} ${r.label}: role="${r.row.role}" amount="${r.row.amount}" detail="${r.row.detail}"`).slice(0, 5),
       'A row is missing a field or rendering a broken value.').toEqual([])
@@ -146,6 +151,44 @@ describe('SESSION-STEP-LEGIBILITY-01 — a step row says what to do, on EVERY se
       .filter(e => !(e.sections.has('warmup') && e.sections.has('main') && e.sections.has('cooldown')))
     expect(incomplete.map(e => `${e.type} "${e.label}" has only [${Array.from(e.sections).join(', ')}]`).slice(0, 5),
       `${incomplete.length} session(s) lost a section. Every session the card renders has all three.`).toEqual([])
+  })
+
+  it('NO multi-row block renders the SAME role on every row — "Hard x3" is never right', () => {
+    // 🔴 THE FOUNDER'S ORIGINAL COMPLAINT, and the measurement that settled it:
+    // of 1,597 multi-row blocks, 373 (23.4%) rendered one role on every row and
+    // every one was "Hard" — while **373 of 373 (100.0%) had DISTINCT notes,
+    // DISTINCT targets and DISTINCT lengths.** ZERO were a genuine rep set, so
+    // the word was never correct: it always covered three different things.
+    //
+    // ⚠️ Scoped to blocks whose steps actually DIFFER, because a true n× rep set
+    // repeating one label IS correct — the repeat bar carries the count.
+    const byBlock = new Map<string, { roles: string[]; details: string[]; label: string; type: string }>()
+    for (const r of ALL) {
+      if (r.section !== 'main' || !r.blockKey) continue
+      const e = byBlock.get(r.blockKey) ?? { roles: [], details: [], label: r.label, type: r.type }
+      e.roles.push(r.row.role); e.details.push(`${r.row.amount}|${r.row.detail}|${r.row.note ?? ''}`)
+      byBlock.set(r.blockKey, e)
+    }
+    const multi = Array.from(byBlock.values()).filter(b => b.roles.length > 1)
+    expect(multi.length, 'no multi-row blocks in the sample').toBeGreaterThan(200)
+    const bad = multi.filter(b =>
+      new Set(b.roles).size === 1 && b.roles[0] !== '' && new Set(b.details).size > 1)
+    expect(bad.map(b => `${b.type} "${b.label}": ${b.roles.length}× "${b.roles[0]}"`).slice(0, 5),
+      `${bad.length} block(s) render one role over structurally DIFFERENT steps. The note is the role.`).toEqual([])
+  })
+
+  it('a RECOVERY step ALWAYS keeps its role — it is the only modality signal on the row', () => {
+    // S4's lesson: a rule, not a list. "Jog", "Walk", "Stand", "Hike", "Jog down"
+    // tell the runner not to run it; a recovery row reading only "2 min" does not.
+    const bad = ALL.filter(r => r.row.kind === 'rest' && !r.row.role?.trim())
+    expect(bad.map(r => `${r.type}/${r.section} ${r.label}: amount="${r.row.amount}"`).slice(0, 5),
+      'a recovery step lost its verb').toEqual([])
+  })
+
+  it('a WORK step with NO note keeps its role — 10.1% of work steps', () => {
+    const bad = ALL.filter(r => r.row.kind === 'work' && !r.row.note && !r.row.role?.trim())
+    expect(bad.map(r => `${r.type}/${r.section} ${r.label}: amount="${r.row.amount}"`).slice(0, 5),
+      'a work step with nothing to say lost its role AND has no note — the row says nothing').toEqual([])
   })
 
   it('a MILES reader never sees a /km pace, and vice versa', () => {

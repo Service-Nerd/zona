@@ -3963,3 +3963,48 @@ The board ruled *"the note replaces the role word, zero added lines"*. **The rol
 ### ⚠️ What this does not settle
 
 **Nothing has run on a device.** The role word still repeats within a block (373 blocks) — the guidance line now differentiates them, the role does not. **Collins' re-authored row is deferred, not refused.** The website prose still prints *"no faster than 6:30–7:30 /km"* — correctly worded, but a comparison over a range — filed as `MKT-STEP-CEILING-BAND-01`, and the website shows no notes at all.
+
+---
+
+## `SESSION-STEP-LEGIBILITY-01` — re-sitting on the rendered screens (2026-10-06)
+
+**Trigger:** `roleLabelForStep` — soft, qualifies. **Ruling: SHIP WITH AMENDMENT.**
+
+The first sitting ruled without seeing a rendered card. The founder, on the result: *"This
+is our main screen for users. It has to be right."* **The defect it left: "Hard" three
+times** — his original complaint.
+
+### 🔍 Settled ground
+
+| Row | Bearing |
+|---|---|
+| **`:1220` CD-1** | *"Does the product show distinctions the engine does not make?"* **This is that question inverted** — the engine makes three and the product prints one word. Collins' own assignment, mirrored |
+| **`:517` S4** | *"relabelled, not removed, and the board said removed"* — binds: the rule must be conditional and executable, never a list |
+| **`:3824` MICRO-LABEL-CHIPS-01** | *"don't ship a fourth role"* — respected: this removes a label, adds no register |
+
+### 📐 Evidence
+
+**Of 1,597 multi-row blocks, 373 (23.4%) render one role on every row, every one "Hard" — and 373 of 373 (100.0%) have DISTINCT notes, DISTINCT targets AND DISTINCT lengths. ZERO are a genuine rep set.** Role column 53–72px at 320. Noteless work steps 384/3,794 (10.1%). Rendered and screenshotted at 320 and 375, all five card types.
+
+### ⚖️ Ruling
+
+1. A **work step with a note** drops the role — the note is the role
+2. A **work step with no note** keeps it; a **recovery step always** keeps it (modality signal)
+3. ✋📱 **Binding:** the sequence number renders on **every** row of a multi-step block
+4. The `n×` repeat bar is unchanged
+
+**Disagreement recorded:** Collins wanted the role gone from every work step. The chair held it to steps with a replacement, on the 10.1% measurement. *Collins lost this one.*
+
+⛔ **Veto: none.**
+
+### 📦 Artifacts
+
+Pattern — `ui-patterns.md` §21b Am. 2 · Constant — none new, the rule lives in `buildRow` · Check — `sessionStepLegibility.test.ts` +3 arms, **falsified three ways: revert the rule → the same-role arm goes red; over-apply it to recovery → the modality arm goes red; over-apply it to all work steps (Collins' version) → the noteless arm goes red.**
+
+### ↗️ Routing
+
+**Coaching Board**, two items: *"same effort as rep three of a cruise set"* forward-references a session the runner may never have run; and the founder's real question — **are these sessions achievable?**
+
+### ⚠️ What this does not settle
+
+**Nothing has run on a device.** The lone accent dot on a roleless row's top line leaves white space between the number and the amount — acceptable with the ordinal anchoring the row, not loved, and not re-ruled. The `8 min` amount on a distance card stays: the alternative invents a distance the catalogue deliberately withholds.

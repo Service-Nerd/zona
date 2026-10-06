@@ -87,6 +87,40 @@ const sessionProps = {
   preferredMetric: 'distance' as const,
 }
 
+/**
+ * 🔴 THE PREVIEW SHOWED ONE SESSION TYPE, AND IT WAS THE ONE THAT CHANGED LEAST.
+ *
+ * `firstSession` is the first key of the current week, which is an easy run — no
+ * `derived_set`, no steps, no notes. So `SESSION-STEP-LEGIBILITY-01` could be
+ * verified by reading strings and **never looked at**: the quality card, which is
+ * the only type that renders step rows, notes, pace ceilings and rep groups, had
+ * no preview at all. The founder asked whether the screens had been seen. For the
+ * type that changed most, they had not.
+ *
+ * Picked BY SHAPE from the real harness plan, never by week index — a hardcoded
+ * index is what made this page contradict itself about which week it was showing.
+ */
+function pickSession(match: (s: Record<string, unknown>) => boolean) {
+  for (const w of harnessPlan.weeks) {
+    for (const s of Object.values((w.sessions ?? {}) as Record<string, unknown>)) {
+      if (s && match(s as Record<string, unknown>)) return { session: s, weekN: w.n, theme: w.theme }
+    }
+  }
+  return null
+}
+const stepCount = (s: Record<string, unknown>) => {
+  const ds = s.derived_set as { version?: number; blocks?: { steps: unknown[] }[] } | undefined
+  return ds?.version === 2 ? (ds.blocks ?? []).reduce((n, b) => n + b.steps.length, 0) : 0
+}
+const progressive = pickSession(s => s.label === 'Progressive tempo' && stepCount(s) >= 3)
+const reps = pickSession(s => stepCount(s) >= 2 && s.label !== 'Progressive tempo')
+const longRun = pickSession(s => !!(s.structure as { race_pace_segment?: unknown } | undefined)?.race_pace_segment)
+  ?? pickSession(s => s.type === 'easy' && Number(s.distance_km ?? 0) > 15)
+const raceDay = pickSession(s => s.type === 'race')
+const caseProps = (picked: ReturnType<typeof pickSession>, units: 'km' | 'mi' = 'km') => picked && ({
+  ...sessionProps, session: picked.session, weekTheme: picked.theme, weekN: picked.weekN, preferredUnits: units,
+})
+
 function Case({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: '32px' }}>
@@ -351,7 +385,22 @@ export default function CopyPreview() {
           <MeScreen {...meProps} />
         </Case>
 
-        <Case title="SessionPopupInner" note="Session detail, 2 rewrites.">
+        <Case title="SessionPopupInner — QUALITY, progressive tempo (v2 steps + notes)" note="SESSION-STEP-LEGIBILITY-01: three steps, three different instructions, a pace ceiling as 'or slower', durations with units.">
+          {caseProps(progressive) ? <SessionPopupInner {...caseProps(progressive)!} /> : <p>no progressive tempo in the fixture</p>}
+        </Case>
+        <Case title="SessionPopupInner — QUALITY in MILES" note="The same card for a miles reader: no /km may appear.">
+          {caseProps(progressive, 'mi') ? <SessionPopupInner {...caseProps(progressive, 'mi')!} /> : <p>n/a</p>}
+        </Case>
+        <Case title="SessionPopupInner — QUALITY, rep block (repeat label)" note="The grouped path: a repeat bar above its rows.">
+          {caseProps(reps) ? <SessionPopupInner {...caseProps(reps)!} /> : <p>no rep session in the fixture</p>}
+        </Case>
+        <Case title="SessionPopupInner — LONG RUN" note="v1 path: no derived_set, so one main-set row and no notes.">
+          {caseProps(longRun) ? <SessionPopupInner {...caseProps(longRun)!} /> : <p>no long run in the fixture</p>}
+        </Case>
+        <Case title="SessionPopupInner — RACE DAY" note="Race week renders the same card.">
+          {caseProps(raceDay) ? <SessionPopupInner {...caseProps(raceDay)!} /> : <p>no race session in the fixture</p>}
+        </Case>
+        <Case title="SessionPopupInner — EASY (the original case)" note="Session detail, 2 rewrites.">
           <SessionPopupInner {...sessionProps} />
         </Case>
 

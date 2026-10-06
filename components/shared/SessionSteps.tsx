@@ -245,7 +245,12 @@ export default function SessionSteps({
                 <span style={{ fontFamily: FONT, fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--ink-2)' }}>{r.repeatLabel}</span>
               </div>
             )}
-            <StepRowView num={r.startsGroup ? nextNum() : null} dotColor={workDot} row={r.row} />
+            {/* ✋ EVERY ROW OF A MULTI-STEP BLOCK IS NUMBERED, not only the first
+                (Design Board re-sitting, 2026-10-06). The row's left edge lost its
+                anchor when the role word went, and these steps are parts of ONE
+                effort in sequence — the ordinal IS the information. Zero pixel
+                cost: the 20px column already exists and was being blanked. */}
+            <StepRowView num={nextNum()} dotColor={workDot} row={r.row} />
           </React.Fragment>
         ))}
       </SectionCard>

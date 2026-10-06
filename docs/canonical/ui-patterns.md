@@ -2765,6 +2765,35 @@ on two surfaces** — the app card, and `stepParts` on the **website** plan page
 (`jog 1:30`), which was found only by opening the page: the consumer check had
 named `PlanPage.tsx` and assumed it used the app's renderer. **It does not.**
 
+#### Amendment 2 — the note IS the role, and every row of a block is numbered (Design Board re-sitting, 2026-10-06)
+
+**A work step that carries a note renders NO role word.** A work step with no note keeps
+it, and a **recovery step always keeps it** — `Jog`, `Walk`, `Stand`, `Hike`, `Jog down`
+are the only **modality** signal on the row, and a runner reading `2 min` with no verb does
+not know whether to run it. **A rule, not a list** (`design-rulings.md` S4: *"relabelled,
+not removed, and the board said removed"*).
+
+🔴 **MEASURED: of 1,597 multi-row blocks, 373 (23.4%) rendered one role on every row and
+every one was the word "Hard" — while 373 of 373 (100.0%) had DISTINCT notes, DISTINCT
+targets AND DISTINCT lengths. ZERO were a genuine rep set.** The word was never correct:
+it always covered three different things. 🎪 Collins: *"We put the generic word in the bold
+13px slot and the irreplaceable one in 11px grey — the hierarchy exactly inverted."*
+🎓 Sierra: *"'Hard' teaches nothing."*
+
+**Every row of a multi-step block carries its sequence number**, where previously only the
+first did. 📱 Wroblewski's objection — stripping the word leaves a 9px dot with no left-edge
+anchor — is answered by ✋ Silvanto's amendment: these steps are parts of **one effort in
+sequence**, so the ordinal is the information the runner needs, and the 20px column already
+existed and was being blanked. **Zero pixel cost.**
+
+**Verified in the browser, both widths, all five card types.** At 375 the rep block renders
+`3 (none) | ~1.5km` for the work step and **`4 Jog | ~0.3km`** for its recovery — the rule
+discriminating correctly in the real render, which is the evidence the first sitting
+lacked. At 320: no horizontal overflow, rows 63/63/90/58/90/63.
+
+⚠️ **Noteless work steps are 384 of 3,794 (10.1%)** and keep their role. Collins wanted the
+word gone from every work step; the chair held it to steps that have a replacement.
+
 **One producer for the rows: `lib/plan/sessionSteps.ts → buildSessionRows`.** The
 component maps over what it returns and composes nothing itself, so the gate can
 assert over the card's real shape rather than a second copy of it.

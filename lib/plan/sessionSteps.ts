@@ -214,8 +214,41 @@ const formatSecsShort = formatStepDuration
 function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
   const parsed = parseLength(step.length)
   const kind: StepKind = step.role === 'work' ? 'work' : 'rest'
-  const role = roleLabelForStep(step, parsed)
   const target = targetClause(step, opts.units)
+
+  /**
+   * 🔴 THE NOTE IS THE ROLE (Design Board re-sitting, 2026-10-06).
+   *
+   * The founder's Progressive tempo read **"Hard" three times**. Measured across
+   * 1,597 multi-row blocks: **373 (23.4%) render every row with the same role,
+   * every one of them "Hard" — and 373 of 373 (100.0%) have DISTINCT notes,
+   * DISTINCT targets and DISTINCT lengths. ZERO are a genuine rep set.** So the
+   * word was never right: it always covered three different things.
+   *
+   * 🎪 Collins: *"We put the generic word in the bold 13px slot and the
+   * irreplaceable one in 11px grey. That is the hierarchy exactly inverted."*
+   * 🎓 Sierra: *"'Hard' teaches nothing."* After three progressions a runner who
+   * read "Hold back / Let it rise / Threshold now" has learned the SHAPE of a
+   * progression; one who read "Hard" has learned what we call things.
+   *
+   * ⚠️ A RULE, NOT A LIST — S4's lesson ("relabelled, not removed, and the board
+   * said removed"). The role is dropped ONLY where a note replaces it:
+   *   · a WORK step WITH a note      → the note is the role
+   *   · a WORK step with NO note     → keeps it (384 of 3,794, 10.1%)
+   *   · a RECOVERY step              → ALWAYS keeps it, note or not. `Jog`,
+   *     `Walk`, `Stand`, `Hike`, `Jog down` are the only MODALITY signal on the
+   *     row, and a runner who reads "2 min" with no verb does not know whether to
+   *     run it.
+   *
+   * 📱 Wroblewski's objection, and its answer: stripping the word would leave a
+   * 9px dot floating beside a number with no left-edge anchor. ✋ Silvanto's
+   * amendment carries the anchor instead — the sequence NUMBER renders on every
+   * row of a multi-step block rather than only the first, so the left edge gains
+   * ordinal meaning at zero pixel cost (the column already exists and is already
+   * reserved). These three steps are parts of ONE effort in sequence; the runner
+   * needs to know which part they are in, not that each is "hard".
+   */
+  const role = kind === 'work' && step.note ? '' : roleLabelForStep(step, parsed)
 
   // Every return below carries `note` — SESSION-STEP-LEGIBILITY-01. Spread last
   // so a shape that forgets it cannot compile to a row without it.
