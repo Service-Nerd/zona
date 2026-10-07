@@ -18,6 +18,51 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-10-07 — AUTOLINK-OVERRIDE-BLIND-01: the only thing that acts on a move didn't know about it
+
+**Dev.** He asked why yesterday's run hadn't auto-linked now that the permission was on
+and the run had clearly arrived. It had arrived. The auto-linker scored it against the
+wrong day, because **`autoMatchAndAnalyse` read `plan_json` directly and never consulted
+`session_overrides`.** He had moved that session from Wednesday to Tuesday.
+
+**The number that made it a rule rather than an anecdote.** `sameWeekday` is worth **40 of
+the 70 points** auto-link requires. His session is `quality` (so no effort points) and
+`primary_metric: 'distance'` (so no duration points), which leaves a **ceiling of 30 on the
+wrong day.** It could not have linked. Generalised: **any distance-primary session that is
+moved can never auto-link — 927 of 1,705 sessions, 54.4% of every session in every live
+plan.** A duration-primary easy run can just scrape 70 off-day, which is the only reason
+this has not looked like a total failure of the feature.
+
+**The structural shape, and it is one this repo keeps producing.**
+`lib/plan/effectiveSessions.ts` is the named owner of override resolution and had **ten
+importers**: the dashboard, the daily coach note, the daily push, the home-screen widget,
+the plan calendar, the day picker. **Everything that shows the runner their week respected
+the move. The one thing that acts on it did not.** The two-writer split between
+`session_overrides` and `plan_json` is already in the debug catalogue; it had been closed on
+the display side and left open on the behaviour side.
+
+**AI-building.** The trap in the fix is not the lookup, it is the key. Completions are keyed
+`(user_id, week_n, session_day)` on the day the session is **defined** on, as are the deep
+link and the analyse-run payload — so the matcher must **score the slot and write the
+original day.** Writing the slot would have produced a completion row the UI can never
+find: a silent phantom, strictly worse than the bug I was fixing. `resolveEffectiveSessions`
+already preserves `originalDay` for precisely this reason, which is a good sign that
+whoever wrote it had thought past the first case.
+
+**The honest bit.** My first regression test re-implemented the matcher's loop as a local
+helper, and **the helper diverged on its very first run** — it passed every override to the
+resolver where production filters by week, so the arm I had written to prove week-scoping
+failed against my own copy rather than against the code. That is `TIER-OWNER-01` exactly: a
+test that asserts its own copy cannot catch the producer drifting. I rewrote it to drive the
+real `autoMatchAndAnalyse` through a fake client that captures the completion row at the
+`claim_session_completion` RPC, which also meant the test could assert the one thing that
+actually matters — the `session_day` written — instead of the one thing that was convenient.
+
+⚠️ **And it does not fix his run.** The matcher already ran and declined; code shipped today
+does not re-litigate yesterday. A re-post inside the client's 24-hour lookback will link it,
+and after that window closes the picker is the answer. Same class as *a fix to the engine
+reaches no existing plan* — the fix is for the next move, not the last one.
+
 ## 2026-10-07 — HEALTH-SYNC-OBS-01 + MATCH-EMPTY-CAUSE-01 + HEALTH-SYNC-STALENESS-01: the app knew and never said
 
 **Dev.** The founder moved a session to Tuesday, ran it, and it neither auto-linked nor

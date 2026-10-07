@@ -63,16 +63,52 @@ export async function autoMatchAndAnalyse(
   const week         = plan.weeks[weekIndex]
   if (!week) return
 
-  const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-  const weekStartDate = new Date(week.date)
+  // 🔴 AUTOLINK-OVERRIDE-BLIND-01 (2026-10-07) — THE MATCHER MUST SEE THE WEEK THE
+  // RUNNER SEES. This read `week.sessions[day]` straight out of `plan_json` and never
+  // consulted `session_overrides`, so a session the runner had MOVED was scored
+  // against the day the plan still thought it lived on.
+  //
+  // Measured on the founder's own run: week 3 `wed → tue`, tempo moved to Tuesday,
+  // 9.88 km run on Tue 6 Oct. The matcher scored it against WEDNESDAY, so
+  // `sameWeekday` paid 0 of its 40 points. `scoreMatch` needs 70; the session is
+  // `quality` (no effort points) and `primary_metric: 'distance'` (no duration
+  // points), leaving a CEILING OF 30. Not unlucky — arithmetically impossible.
+  //
+  // ⚠️ THE GENERAL RULE, which nobody had written down: `sameWeekday` is 40 of the
+  // 70, so ANY distance-primary session that is moved can never auto-link. That is
+  // 927 of 1,705 sessions (54.4%) across every live plan. A duration-primary easy
+  // run can just reach 70 off-day (30 + 30 + 10) if both ratios and HR land, which
+  // is why this never looked like a universal failure.
+  //
+  // ⚠️ `effectiveSessions.ts` IS the owner of this question and had TEN importers —
+  // the dashboard, the daily coach note, the daily push, the widget, the plan
+  // calendar, the day picker. Everything that SHOWS the runner their week respected
+  // the move; the only thing that ACTS on it did not. The two-writer split
+  // (`session_overrides` vs `plan_json`) applied to one side.
+  const { resolveEffectiveSessions, DAY_KEYS } = await import('@/lib/plan/effectiveSessions')
+  const { data: overrideRows } = await supabase
+    .from('session_overrides')
+    .select('week_n, original_day, new_day')
+    .eq('user_id', userId)
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
+  const weekOverrides = (overrideRows ?? []).filter((o: any) => o.week_n === week.n)
 
-  const plannedSessions = days
-    .map((day, idx) => {
-      const session = week.sessions[day]
-      if (!session) return null
+  const weekStartDate = new Date(week.date)
+  const effective = resolveEffectiveSessions(week, weekOverrides)
+
+  // 🔴 MATCH ON THE SLOT, WRITE ON THE ORIGINAL DAY. `session_completions` is keyed
+  // `(user_id, week_n, session_day)` on the day the session is DEFINED on, and so are
+  // the deep link and the analyse-run payload. Keying the completion to the slot
+  // instead would write a row the UI can never find — a silent phantom completion,
+  // worse than the defect being fixed. `resolveEffectiveSessions` preserves
+  // `originalDay` for exactly this reason.
+  const plannedSessions = DAY_KEYS
+    .map((slot, idx) => {
+      const entry = effective[slot]
+      if (!entry) return null
       const sessionDate = new Date(weekStartDate)
       sessionDate.setDate(weekStartDate.getDate() + idx)
-      return { session, day, sessionDate }
+      return { session: entry.session, day: entry.originalDay, sessionDate }
     })
     .filter(Boolean) as { session: any; day: string; sessionDate: Date }[]
 

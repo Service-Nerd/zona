@@ -63,6 +63,57 @@ ranked top candidate in as `autoMatch`, so the screen showed the right answer as
 recency-sorted list that contradicted it. The item was filed as *"no date filter"*; **there was a
 filter, and a second answer is harder to see than a missing one.**
 
+## 🔴 AND THE SCORER MUST SCORE AGAINST THE WEEK THE RUNNER SEES (`AUTOLINK-OVERRIDE-BLIND-01`, 2026-10-07)
+
+A fourth question, and it is upstream of all three above: **which week is being scored?**
+
+`autoMatchAndAnalyse` read `week.sessions[day]` straight out of `plan_json` and never
+consulted `session_overrides`, so a session the runner had **moved** was scored against the
+day the plan still thought it lived on.
+
+🔴 **Measured on the founder's own run.** Week 3 `wed → tue` (override live,
+`superseded_at: null`); the Progressive tempo moved to Tuesday; 9.88 km / 61 min / HR 154
+run on **Tue 6 Oct**. The matcher scored it against **Wednesday**, so `sameWeekday` paid
+**0 of its 40 points**:
+
+| Day tried | Score | Reasons |
+|---|---|---|
+| Mon 5 Oct, Easy 7 km | **10** | `effort match` only; 9.88/7 = **1.41**, just past the 1.40 ceiling |
+| Wed 7 Oct, Progressive tempo 8.5 km | **30** | `distance match` only |
+
+⚠️ **`sameWeekday` IS 40 OF THE 70 NEEDED, so the ceiling for that session off-day was 30:
+not unlucky, arithmetically impossible.** It is `quality` (no effort points) and
+`primary_metric: 'distance'` (no duration points). **The general rule, which nothing had
+written down: any distance-primary session that is moved can never auto-link** — **927 of
+1,705 sessions (54.4%)** across every live plan. A duration-primary easy run can just reach
+70 off-day (30 + 30 + 10) if both ratios and HR land, which is why this never presented as a
+universal failure.
+
+⚠️ **`lib/plan/effectiveSessions.ts` was already the owner of this question and had TEN
+importers** — dashboard, daily coach note, daily push, widget, plan calendar, day picker.
+**Everything that SHOWS the runner their week respected the move; the only thing that ACTS
+on it did not.** The two-writer split (`session_overrides` vs `plan_json`) applied to one
+side. `autoMatchAndAnalyse` is now the eleventh importer.
+
+🔴 **MATCH ON THE SLOT, WRITE ON THE ORIGINAL DAY.** `session_completions` is keyed
+`(user_id, week_n, session_day)` on the day the session is **defined** on, and so are the
+post-run deep link and the analyse-run payload. `resolveEffectiveSessions` preserves
+`originalDay` for exactly this reason. **Keying the completion to the slot would write a row
+the UI can never find — a silent phantom completion, worse than the defect.**
+
+Overrides are filtered to the matched week and to `superseded_at is null`
+(`PLAN-WEEK-COLLISION-01`), the same filter `daily-coach-note` uses. The 70-point threshold
+and the ±2-day window are **unchanged**: this fix makes the matcher look at the right day, it
+does not make it more willing to match.
+
+**Gate:** `lib/coaching/autoLinkOverride.test.ts` — 8 arms, built on the founder's real week
+and real activity row, **driving the real `autoMatchAndAnalyse`** through a fake client that
+captures the completion row at the `claim_session_completion` RPC. ⚠️ **The first version
+re-implemented the loop as a local helper and the helper diverged immediately** (it did not
+filter overrides by week), so an arm failed against a wrong copy rather than against the
+code — `TIER-OWNER-01`'s flaw. Falsified three ways: revert to `plan_json` · write the slot
+instead of the original day · drop the per-week filter.
+
 ## Callers
 
 `DashboardClient` — the session screen's `activeAutoMatch`, and `TodayScreen`'s
