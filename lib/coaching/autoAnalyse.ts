@@ -244,8 +244,25 @@ export async function claimAutoLink(
   const claimRes = await supabase.rpc('claim_session_completion', { p: completionRow })
 
   if (claimRes.error) {
-    // Unexpected DB error — never push on uncertainty.
+    // Unexpected DB error — never push on uncertainty. That part is unchanged.
+    //
+    // 🔴 COMPLETION-CLAIM-UUID-01: a `console.warn` was the ONLY signal, and it ran
+    // twenty times in two minutes on the day this was found while the runner saw
+    // nothing. Worse, the 'exists' return below means "already linked" to every
+    // caller, so a hard failure and a benign race are the same value. The event is
+    // the difference between a silent two-week outage and a question someone can
+    // ask of `ops_events`.
     console.warn('[auto-analyse] claimAutoLink claim failed', claimRes.error.message)
+    // Imported lazily, like every other dependency in this module: `recordOpsEvent`
+    // builds a SERVICE-ROLE client, and `clientBundleBoundary.test.ts` exists
+    // because this repo cares which modules can reach a browser bundle.
+    const { recordOpsEvent } = await import('@/lib/ops/recordOpsEvent')
+    await recordOpsEvent('completion_claim_failed', {
+      week_n:      completionRow.week_n ?? null,
+      session_day: completionRow.session_day ?? null,
+      source:      completionRow.strava_activity_id != null ? 'strava' : 'apple_health',
+      message:     String(claimRes.error.message ?? '').slice(0, 500),
+    }, (completionRow.user_id as string) ?? null)
     return 'exists'
   }
 

@@ -18,6 +18,57 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-10-07 — COMPLETION-CLAIM-UUID-01: a one-word type error that turned off auto-link for everyone
+
+**Dev.** Fixing the matcher this morning made it reach code it had never reached, and that
+code was broken. `claim_session_completion` declared `inserted_id bigint` and ended
+`returning id into inserted_id`. **`session_completions.id` is a uuid.** The insert
+succeeded, the assignment threw, the transaction rolled back. The function could not
+return true. **No auto-link wrote a completion for any user for two weeks.**
+
+**Why two weeks of silence.** Three layers of camouflage, and each one is a lesson.
+First, the migration that introduced it says in its own comment that it replaced a
+working `.insert()` + catch-23505 **because that logged an ERROR on every routine
+auto-link** — and the replacement also logs on every auto-link, so the new failure was
+indistinguishable from the noise it existed to remove. Second, `claimAutoLink` turns the
+failure into `'exists'`, which to every caller means *someone already linked it* — the
+one return value that makes doing nothing look correct. Third, **the suite has no
+Postgres**, so 4,478 green tests had nothing to say about a type mismatch inside a stored
+function.
+
+**The probe I nearly got wrong.** To verify the founder's SQL fix I wanted to call the
+function, but the obvious test — calling it for a day that is already complete — hits
+`on conflict do nothing`, never reaches the `returning` line, and **passes whether or not
+the fix was applied.** A predicate that cannot separate the two states is worthless, and
+I had already written three of those earlier in the day. What worked: call it for real,
+then `raise exception` immediately after, so the insert is exercised and then rolled
+back. It returned `PROBE_RESULT=t` and left zero rows.
+
+**AI-building.** My own gate failed twice on its first run, both times against my own
+artefacts rather than the code. It parsed the **explanatory comment in the fix migration**
+— which quotes `returning id into inserted_id` to describe the defect — as if it were
+code. That is the third recorded instance of that class in this repo and the second
+today. And it read the **superseded** 2026-09-24 migration as authoritative, which would
+have made it fire forever on settled history; a check that cries wolf gets switched off,
+which this repo already records as equivalent to having no check.
+
+**The honest bit, and it is the best thing that happened today.** The gate found a
+second, unrelated defect on its first run: **`TABLE_COLUMNS` had been stale for nine
+days.** A migration inserts `subscriptions.is_comped`, the column has been live since
+28 September, and the committed snapshot never got it. The file promises that a missing
+column *"fails a build rather than shipping a silent query"* — and that promise only ever
+covered **reads**. The write side had no check at all.
+
+And the morning's sweep telemetry paid for itself within hours. `HK-NEVER-SYNCED-COHORT-01`
+was filed with *"cause unknown"*; the events answered it. **Seven of the thirteen are free
+tier, and `/api/health/ingest` returns 403 and discards their runs** — one sweep reported
+`workouts_found: 10, posted: 0, failed: 10`. HealthKit has their runs; the server refuses
+every one. That is deliberate, documented behaviour, so it is not mine to change: it is an
+SLT question about whether run history is *richness* or *access*, and the sharp end is that
+**the client's lookback is 30 days, so the hole a lapsed runner accrues is permanent.** The
+remaining six include two whose sweeps found nothing at all, which is the only shape the
+device genuinely cannot tell from "did not run".
+
 ## 2026-10-07 — AUTOLINK-OVERRIDE-BLIND-01: the only thing that acts on a move didn't know about it
 
 **Dev.** He asked why yesterday's run hadn't auto-linked now that the permission was on

@@ -266,6 +266,26 @@ export type OpsEventKind =
   // could not see either — `postWorkout` returns false and the caller counts a
   // failure without ever learning why.
   | 'health_ingest_failed'
+  // COMPLETION-CLAIM-UUID-01 (2026-10-07) — the atomic auto-link claim FAILED, as
+  // opposed to losing a race.
+  //
+  // 🔴 WHY THIS EXISTS. `claim_session_completion` declared `inserted_id bigint`
+  // while `session_completions.id` is a uuid, so the insert succeeded, the
+  // assignment threw, the transaction rolled back, and the function could NEVER
+  // return true. **No auto-link wrote a completion for ANY user from 2026-09-24
+  // until 2026-10-07.**
+  //
+  // ⚠️ IT WAS INVISIBLE FOR TWO REASONS AND BOTH ARE FIXED HERE. First, the only
+  // signal was a `console.warn` — and the migration it replaced had been swapped in
+  // precisely BECAUSE the old implementation logged on every routine auto-link, so
+  // the new failure was indistinguishable from the noise it was meant to remove.
+  // Second, `claimAutoLink` converts the failure to `'exists'`, which means
+  // "someone already linked it" — **the one return value that makes doing nothing
+  // look correct.** The degradation stays (never push on uncertainty); what changes
+  // is that it leaves a durable trace.
+  //
+  // `detail`: `{ week_n, session_day, source, message }`. No PII.
+  | 'completion_claim_failed'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

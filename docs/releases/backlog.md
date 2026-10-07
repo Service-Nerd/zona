@@ -28,7 +28,35 @@ already decided what it is.
 ---
 
 
-### 🔴 `HK-NEVER-SYNCED-COHORT-01` — twelve real runners have never had one run arrive *(filed 2026-10-07, **P1**)* ⚙️ **NO BOARD**
+### 🔴 `HK-NEVER-SYNCED-COHORT-01` — RE-MEASURED the same day: 7 of 13 are a TIER GATE, not a defect *(filed 2026-10-07, **P1**)* 💼 **SLT** · ⚙️ NO BOARD *(for the residual 6)*
+
+🔴 **RE-MEASURED 2026-10-07 once `health_sync_swept` had a few hours of data, and the
+item's own premise ("cause unknown") was answered within hours. The cohort SPLITS:**
+
+| | |
+|---|---|
+| **7 of 13 are FREE tier** (no sub, no grant, no live trial, not admin) | 🔴 **`/api/health/ingest` returns 403 `Subscription required` and their runs are DISCARDED.** The telemetry caught it directly: one sweep reported **`workouts_found: 10, posted: 0, failed: 10`** over a 30-day lookback, another `3 / 0 / 3`. **HealthKit HAS their runs. The server refuses every one.** Both users' trials started 2026-09-17 and 2026-09-23 and lapsed |
+| **6 of 13 are entitled** (paid / trial / grant / admin) | Cause still unknown. Two of them reported sweeps finding **`workouts_found: 0`**, which is the permission-off or no-device-writing-workouts case — the only shape the device genuinely cannot distinguish |
+
+⚠️ **THE 403 IS DELIBERATE** — the route's own comment says *"Free users cannot ingest —
+the iOS sync should not call this for free tier (the gate also lives client-side in
+`lib/health/sync.ts`)"*. So this is **not a defect to fix quietly; it is a line to rule
+on.** Two things follow, and they are different items:
+
+**(a) 💼 SLT — should a free runner's run history be ingested at all?** `CLAUDE.md` says
+*"gate richness (AI labels, coaching voice), never gate access (the plan itself, the
+session card, **the log action**)"*, and ADR-011 makes HealthKit **the system of record
+for all run-derived data**. Discarding the SOR means a lapsed runner has no history, the
+plan cannot know they ran, load tracking is blind and nothing can be linked. 🔴 **And it
+is UNRECOVERABLE: the client's lookback is 30 days, so a user who lapses and later
+subscribes has a permanent hole.** That is the argument the SLT needs and nobody has put
+to it. ⚠️ Not mine to decide — FREE/PAID is theirs.
+
+**(b) ⚙️ The client keeps trying anyway.** The client-side gate is evidently not holding:
+these users POST and collect 403s **ten at a time, repeatedly**. Wasted requests on both
+sides and it is why `failed` is non-zero. A contained defect, independent of (a).
+
+**Original filing, retained because the number is still the headline:**
 
 **Measured in production, service-role read, 2026-10-07 — the measurement that drove
 `HEALTH-SYNC-STALENESS-01`.** 28 users have `user_settings.healthkit_connected_at` set.

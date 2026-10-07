@@ -19,7 +19,75 @@
 // which fails a build rather than shipping a silent query. That is the safe
 // direction to be wrong in, and it is deliberate.
 //
-// Snapshot taken 2026-09-22 against project wkppmpsvqkaxbekdgzdm.
+// Snapshot taken 2026-09-22, REFRESHED 2026-10-07 against project wkppmpsvqkaxbekdgzdm.
+//
+// 🔴 THE REFRESH FOUND REAL DRIFT, and a gate written for a DIFFERENT defect found
+// it (`COMPLETION-CLAIM-UUID-01`): `20260928_comped_entitlement` INSERTS
+// `subscriptions.is_comped`, the column has been live since 2026-09-28, and this
+// snapshot did not carry it — **stale for nine days.** Nothing broke only because
+// no `.select()` names it by hand.
+//
+// ⚠️ THE PROMISE ABOVE ONLY EVER COVERED READS. "A column added to the database and
+// NOT to this file reads as missing here" is enforced by `selectColumnsExist`, which
+// inspects `.select()` calls. **The WRITE side had no check at all** until
+// `migrationPlpgsqlTypes.test.ts`, which is what caught this.
+//
+// ⚠️ Measured delta at the refresh: ONE column missing, ZERO phantom columns, and
+// five VIEWS live but absent here (`v_coach_engagement`, `v_hr_present_pct`,
+// `v_partner_cohort`, `v_paying_users`, `v_trial_conversion`). The views are omitted
+// deliberately — this file gates table `.select()`s and views are declared in
+// `userDataSurfaces.ts` § DERIVED_VIEWS — and they are named here so the next
+// refresh does not read their absence as a new gap.
+/**
+ * Committed snapshot of every `public.<table>.id` column's Postgres type.
+ *
+ * COMPLETION-CLAIM-UUID-01 (2026-10-07). `claim_session_completion` declared
+ * `inserted_id bigint` and ended `returning id into inserted_id`, while
+ * `session_completions.id` is a **uuid**. The insert succeeded, the assignment
+ * threw, the transaction rolled back — so the function could NEVER return true
+ * and **no auto-link wrote a completion for any user for two weeks.**
+ *
+ * ⚠️ THE IDS ARE NOT UNIFORMLY UUID, which is the whole reason this has to be a
+ * snapshot rather than an assumption: `session_guidance.id` is **bigint** and
+ * `session_catalogue.id` is **text**. "They're all uuid" would have been a
+ * plausible, wrong, and unfalsifiable guess.
+ *
+ * ⚠️ HAND-MAINTAINED, for the same reason as `TABLE_COLUMNS` above: a test that
+ * queries the live database needs credentials, so it would not run in CI, and a
+ * check that does not run is not a check. Refresh with:
+ *
+ *   select table_name, data_type from information_schema.columns
+ *   where table_schema = 'public' and column_name = 'id' order by 1;
+ *
+ * Snapshot taken 2026-10-07 against project wkppmpsvqkaxbekdgzdm.
+ */
+export const ID_COLUMN_TYPES: Record<string, string> = {
+  admin_user_directory:     'uuid',
+  admin_user_tiers:         'uuid',
+  analytics_events:         'uuid',
+  charity_batches:          'uuid',
+  charity_codes:            'uuid',
+  notifications:            'uuid',
+  ops_events:               'uuid',
+  plan_adjustments:         'uuid',
+  plan_archive:             'uuid',
+  plans:                    'uuid',
+  post_race_reshapes:       'uuid',
+  push_subscriptions:       'uuid',
+  run_analysis:             'uuid',
+  session_catalogue:        'text',     // ⚠️ not uuid
+  session_completions:      'uuid',
+  session_guidance:         'bigint',   // ⚠️ not uuid
+  session_metric_overrides: 'uuid',
+  session_overrides:        'uuid',
+  session_reflections:      'uuid',
+  strava_activities:        'uuid',
+  subscriptions:            'uuid',
+  user_settings:            'uuid',
+  waitlist:                 'uuid',
+  weekly_reports:           'uuid',
+}
+
 export const TABLE_COLUMNS: Record<string, string[]> = {
   admin_user_directory: ['email', 'first_name', 'id', 'is_admin', 'last_name', 'last_sign_in_at', 'signed_up', 'trial_started_at'],
   admin_user_tiers: ['email', 'first_name', 'grant_expires', 'grant_partner', 'id', 'is_admin', 'last_name', 'last_sign_in_at', 'signed_up', 'sub_provider', 'sub_renews', 'sub_status', 'tier', 'trial_days_left', 'trial_started_at'],
@@ -48,7 +116,7 @@ export const TABLE_COLUMNS: Record<string, string[]> = {
   session_overrides: ['id', 'new_day', 'original_day', 'superseded_at', 'updated_at', 'user_id', 'week_n'],
   session_reflections: ['created_at', 'id', 'note_source', 'note_text', 'reframe_data_tier', 'reframe_generated_at', 'reframe_model', 'reframe_prompt_version', 'reframe_silenced', 'reframe_silenced_reason', 'reframe_text', 'session_day', 'superseded_at', 'updated_at', 'user_id', 'voice_duration_s', 'voice_transcript_confidence', 'week_n'],
   strava_activities: ['activity_type', 'apple_health_uuid', 'avg_hr', 'avg_speed', 'avg_temp_c', 'calories_kcal', 'created_at', 'distance_m', 'elapsed_time_s', 'elevation_gain', 'hr_above_ceiling_pct', 'hr_arrived_late_at', 'hr_below_floor_pct', 'hr_bpm_histogram', 'hr_in_zone_pct', 'hr_pct_z1', 'hr_pct_z2', 'hr_pct_z3', 'hr_pct_z4_5', 'hr_present_at_first_query', 'id', 'manual_uuid', 'max_hr', 'moving_time_s', 'name', 'processed_at', 'raw_payload', 'source', 'splits_metric', 'sport_type', 'start_date', 'strava_activity_id', 'suffer_score', 'user_id'],
-  subscriptions: ['created_at', 'current_period_end', 'id', 'last_event_at', 'provider', 'status', 'updated_at', 'user_id'],
+  subscriptions: ['created_at', 'current_period_end', 'id', 'is_comped', 'last_event_at', 'provider', 'status', 'updated_at', 'user_id'],
   user_settings: ['benchmark_recal_dismissed_at', 'birth_year', 'connect_runs_banner_dismissed_at', 'connect_runs_seen', 'daily_push_enabled', 'daily_push_last_sent_on', 'date_of_birth', 'dynamic_adjustments_enabled', 'email', 'email_unsubscribe_token', 'email_unsubscribed_at', 'first_name', 'first_read_email_sent_at', 'gist_url', 'has_onboarded', 'healthkit_connected_at', 'id', 'is_admin', 'last_adjustment_check_at', 'last_adjustment_check_found_change', 'last_name', 'last_today_open_at', 'max_hr', 'max_hr_source', 'orientation_seen', 'plan_json', 'preferred_metric', 'preferred_units', 'push_permission_seen', 'quit_date', 'resting_hr', 'smoke_tracker_enabled', 'strava_access_token', 'strava_athlete_id', 'strava_client_secret', 'strava_refresh_token', 'strava_token_expires_at', 'timezone', 'trial_email_day11_sent_at', 'trial_email_day14_sent_at', 'trial_insight_push_sent_at', 'trial_started_at', 'updated_at', 'zone_boundaries', 'zone_drift_dismissed_at'],
   waitlist: ['created_at', 'email', 'id', 'source'],
   weekly_reports: ['acute_chronic_ratio', 'ai_model', 'avg_rpe', 'body', 'created_at', 'cta', 'dominant_flag', 'generated_at', 'headline', 'id', 'opened_at', 'rule_engine_version', 'sessions_completed', 'sessions_planned', 'superseded_at', 'total_km_actual', 'total_km_planned', 'user_id', 'week_n', 'zone_discipline_score'],
