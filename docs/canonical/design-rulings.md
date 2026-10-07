@@ -4112,3 +4112,44 @@ answers it: design owns the encoding, **coaching owns whether there is anything 
 **Whether a runner understands *"effort, not pace"* without ever being told what it means.**
 There is no onboarding moment that explains effort-governed work, and **nothing has run on a
 device.**
+
+
+## 6ad. COPY-TERM-HANDLE-01 — our glosses were written in terms of each other (2026-10-07)
+
+**Founder:** *"Are there any places or text that we are presenting to a runner where they may
+not know what it is or refers to? ... they will do a quick check before the session then glance
+when doing it, so we cannot have them flicking between screens."*
+
+| Decision | Status | Why |
+|---|---|---|
+| **A coaching term may NAME a thing; it may not BE the instruction** | 🟢 **SHIP WITH AMENDMENT** | Measured 16,919 cards: **VO2max explained on the same card 24%**, threshold 57%, tempo 61%; seven other terms at 100%. ⚠️ **0 step notes use a term with no pace on the row**, so the target slot already satisfies the first half — what this binds is the second |
+| **A gloss written in another coaching term is not a gloss** | 🟢 **SHIPPED — and this is the finding** | *"Four minutes at critical velocity — just past **threshold**"*, *"The over — just past **threshold**"*. ✋ Silvanto: *"a vocabulary that is internally consistent and externally closed."* The 100% scores for CV and over-unders were **circular** and the card-level measurement could not see it |
+| **`threshold` is the keystone and stays** | 🟢 **SHIPPED** | Four terms are defined against it; it is the one glossed in plain sensation (*"comfortably hard"*). Make it plain and the others become legible |
+| **A glossary, tooltip or term sheet** | 🔴 **DON'T SHIP — permanent** | Pre-refused by the compliance-statement row (Sutherland: *"a glossary entry is what you write when you don't trust the thing you made"*), and anything behind a tap fails the founder's own constraint. `ZONES-SURFACE-01` answers *"what is my threshold pace?"* **at the kitchen table**, not mid-run |
+| **Stripping the terms** | 🔴 **DON'T SHIP** | 🎓 Sierra: a runner who learns what threshold *feels* like keeps it. Strip the vocabulary and the app tells them what to do forever |
+| **Removing `VO2max` from the card** (Collins) | 🔴 **DEFERRED TO CD-1 — Collins LOST on scope** | *"A number from a treadmill test we do not administer, used as an adjective."* ⚠️ **His point is unrefuted.** It loses because the term is the session's NAME, which travels to the Plan screen, the week strip and push — a taxonomy question, not a copy fix |
+
+**Shipped copy** (Coaching Board, same sitting, CORRECT — 🏃 Hutchinson: VO2max's standard
+plain handle is a DURATION, not a race, so it needs no event the runner may never have run):
+
+- `Three minutes at VO2max effort — about as hard as you could hold for ten minutes.`
+- `Thirty seconds at VO2max effort — hard, but repeatable.`
+- `Four minutes at critical velocity — a notch past comfortably hard, and controlled.`
+- `The over — a notch past comfortably hard.` · `The under — back to comfortably hard.`
+
+🔴 **A FALSIFICATION PASSED AND THE HOLE WAS IN MY OWN CHECK — the second time today.**
+Restoring the circular CV gloss left the gate green, because my "plain handle" list contained
+**`controlled`** — which describes **manner, not intensity**. The runner still does not know how
+hard. Manner words are now absent by name; `conversational` stays, because being able to talk
+IS an intensity.
+
+### 📦 Artifacts
+
+Pattern — `ui-patterns.md` §21b Am. 5 · Constants — `COACHING_TERM` / `PLAIN_HANDLE` in the
+gate, no literal in a component · Check — `copyCalibrationReferent.test.ts`, **falsified three
+ways** (restore each circular gloss) plus a NEW one it had never seen.
+
+### ⚠️ What this does not settle
+
+**Whether a runner actually learns the vocabulary.** Nobody has watched one use this, and
+nothing has run on a device.

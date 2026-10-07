@@ -11,6 +11,64 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+
+## COPY-CALIBRATION-REFERENT-01 — the scan he asked for, and why the obvious one was wrong (2026-10-07)
+
+*"Is there any way to do a scan or determine when those kinds of sentences would be presented in
+other scenarios?"*
+
+Yes — but not the scan I reached for first. Deriving session nouns from the catalogue and grepping
+every runner-facing string gave **3,920 hits across 748 plans** and nearly all were ordinary
+English: *"Time on feet is the point"* is not a reference to the `time_on_feet` session.
+
+The defect is not **mentioning** another session. It is **calibrating against** one — assuming an
+experience the runner may not have had. So the test is two filters: find the comparison, then look
+at what it points at. **125,302 runner-facing strings, 2,756 calibrations**, and after the
+cruise-set fix every one points at the runner's own pace, their own effort, or an earlier part of
+the session they are standing in.
+
+**It also walks `derived_set` step notes**, which the older emitted-copy walker does not collect —
+and which is exactly where the sentence he found had been sitting.
+
+## COPY-TERM-HANDLE-01 — a vocabulary that was internally consistent and externally closed (2026-10-07)
+
+*"Are there any places or text that we are presenting to a runner where they may not know what it
+is or refers to?"*
+
+### The dev bit
+
+The obvious scan — session names, grepped across every runner-facing string — gave 3,920 hits and
+was 97% noise. *"Time on feet is the point"* is English. *"Your race benchmark"* is the runner's own
+number. A gate that loud gets switched off, which this repo records as equivalent to having no gate.
+
+The signal was the **construction**, not the noun: find every comparison, then look at what it
+points at. 125,302 strings, 2,756 calibrations, all self-referential.
+
+### The product bit
+
+Then the card-level version, 16,919 cards: VO2max explained 24% of the time, threshold 57%, tempo
+61%. Seven other terms at 100% — and **that number was the misleading one.** The glosses are written
+in terms of each other: critical velocity is *"just past threshold"*; the over is *"just past
+threshold"*. For a runner who has neither word, that is a definition in a closed loop.
+
+Threshold turned out to be the keystone: four terms are defined against it and it is the only one
+explained in plain sensation. Make it plain, and the rest become legible.
+
+### The AI-building bit
+
+**A falsification passed, for the second time today, and both times the hole was in my own check.**
+Restoring the circular CV gloss left the gate green because my list of acceptable plain handles
+contained `controlled` — which describes *manner*, not *how hard*. The runner still has no idea of
+the intensity. Manner words are out by name now.
+
+### The honest bit
+
+I also wrote the first version of the gate as an allow-list of acceptable referents, and it flagged
+22 sentences, every one a false positive, 21 of them *"slower than feels right"*. The temptation is
+to widen the list until it goes green. That is how a gate stops meaning anything. The shape was
+wrong, not the width.
+
 ## STEP-NOTE-SELF-CONTAINED-01 — the note that assumed a workout you may never have done (2026-10-07)
 
 *"On the last rep (5) it says 'same effort as rep three of a cruise set'. That has no context and

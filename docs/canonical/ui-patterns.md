@@ -2931,6 +2931,46 @@ rule it states survives **exactly** where the absence is real.
 notation was introduced. The qualifier, the ramp and the zone all occupy the same slot: the
 target, line two, first.
 
+#### Amendment 5 — A COACHING TERM MAY NAME A THING; IT MAY NOT BE THE INSTRUCTION
+
+**Founder's constraint, and it decides the whole rule:** *"these runners will probably do a
+quick check before the session then glance when doing the sessions, so we cannot have them
+flicking between screens to understand."*
+
+| | |
+|---|---|
+| ✅ A term beside a pace | `Threshold, held.` next to `5:07–5:22 /km` — the slot carries the instruction, the word is a label |
+| ✅ A term beside a sensation | *"a notch past comfortably hard"* |
+| 🔴 A term explained by **another term** | *"just past threshold"*, *"not a VO2max rep"* |
+| 🔴 A glossary, tooltip or term sheet | Pre-refused: *"a glossary entry is what you write when you don't trust the thing you made"* (Sutherland, compliance-statement row), and anything behind a tap fails the founder's constraint |
+
+🔴 **THE FINDING THAT MOVED THE RULING: our glosses were written in terms of each other.**
+*"Four minutes at critical velocity — just past **threshold**"*, *"The over — just past
+**threshold**"*. They gloss, into a second word the runner may not have. ✋ Silvanto: *"we
+have built a vocabulary that is internally consistent and externally closed."*
+
+📐 **Measured across 16,919 cards** before the sitting, asking per CARD whether a term appears
+*and* whether anything on that same card explains it: **VO2max 24% · threshold 57% · tempo
+61%**, and seven terms at 100% — several of them **circularly**, which the card-level number
+could not see.
+
+⚠️ **The engine is mostly good at this and the ruling says so.** Of 11 terms, 7 were already
+glossed on every card. This binds the three most central ones, which are the ones most likely
+to be assumed.
+
+🎓 **Sierra, carried: do not strip the terms.** A runner who finishes sixteen weeks knowing
+what threshold *feels* like has gained something they keep. The term rides **beside** the
+sensation; that is how a word gets learned.
+🎪 **Collins lost, recorded:** he argued `VO2max` does not belong on a non-elite runner's card
+at all — *"a number from a treadmill test we do not administer, used as an adjective."* He
+loses on **scope, not merit**: the term is on the session's NAME, which travels to the Plan
+screen, the week strip and push, so renaming it is **CD-1's taxonomy question**. Glossed now,
+name filed there.
+
+**Gate:** `copyCalibrationReferent.test.ts` — the clause after a gloss marker may not resolve
+to another coaching term. ⚠️ **Naming a term is explicitly NOT caught**, because the target
+slot beside it is the instruction.
+
 #### Amendment 4d — A FIX TO THE ENGINE REACHES NO EXISTING PLAN
 
 **The ramp is stamped into `plan_json` at generation.** `resolveMainSet` runs when a plan

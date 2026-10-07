@@ -411,10 +411,10 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
         steps: [
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 180 },
             target: { kind: 'pace', anchor: 'CV', mode: 'target' }, advance: 'auto',
-            note: 'The over — just past threshold. A gear change, not a surge.' },
+            note: 'The over — a notch past comfortably hard. A gear change, not a surge.' },
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 180 },
             target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
-            note: 'The under — back to threshold without stopping. This half is the session.' },
+            note: 'The under — back to comfortably hard, without stopping. This half is the session.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 120 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
             note: 'Two minutes easy before the next block.' },
@@ -554,7 +554,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
         steps: [
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 180 },
             target: { kind: 'pace', anchor: 'I', mode: 'target' }, advance: 'auto',
-            note: 'Three minutes at VO2max effort. Even splits — don\'t blow rep one.' },
+            note: 'Three minutes at VO2max effort — about as hard as you could hold for ten minutes. Even splits; don\'t blow rep one.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 120 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
             note: 'Full jog recovery. Let it come back before the next one.' },
@@ -661,7 +661,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
         steps: [
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 30 },
             target: { kind: 'pace', anchor: 'I', mode: 'target' }, advance: 'auto',
-            note: 'Thirty seconds at VO2max effort. Quick, not a sprint — you do this many times.' },
+            note: 'Thirty seconds at VO2max effort — hard, but repeatable. Quick, not a sprint: you do this many times.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 30 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
             note: 'Thirty seconds easy. Keep moving — the short float is the session.' },
@@ -735,7 +735,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
           // (McMillan) and squarely in the standard CV/cruise-interval range.
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 240 },
             target: { kind: 'pace', anchor: 'CV', mode: 'target' }, advance: 'auto',
-            note: 'Four minutes at critical velocity — just past threshold, controlled. Not a VO2max rep.' },
+            note: 'Four minutes at critical velocity — a notch past comfortably hard, and controlled. Not flat out.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
             note: 'Ninety seconds easy. Short — the point is to keep the ceiling pressure on.' },

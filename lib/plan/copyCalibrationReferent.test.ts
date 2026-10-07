@@ -91,6 +91,38 @@ const SESSION_NOUNS: RegExp = (() => {
   return new RegExp(`\\b(?:${all.join('|')})s?\\b`, 'i')
 })()
 
+/**
+ * §21b Am. 5 — Design Board, 2026-10-07. **A COACHING TERM MAY NAME A THING; IT MAY
+ * NOT BE THE INSTRUCTION, AND IT MAY NOT BE EXPLAINED BY ANOTHER COACHING TERM.**
+ *
+ * 🔴 The finding that moved the ruling was that our glosses were written in terms of
+ * each other: *"Four minutes at critical velocity — just past THRESHOLD"*, *"The over
+ * — just past THRESHOLD"*. They gloss, into a second word the runner may not have.
+ * ✋ Silvanto: *"we have built a vocabulary that is internally consistent and
+ * externally closed."*
+ *
+ * 📐 Measured across 16,919 cards before the sitting: VO2max explained on the same
+ * card **24%** of the time, threshold **57%**, tempo **61%** — and seven other terms
+ * at 100%, several of them circularly.
+ *
+ * ⚠️ A term is fine where the row carries a PACE: the target slot is the instruction
+ * and the word is a label (measured: 0 step notes use a term with no pace on the
+ * row). What this catches is a note whose only handle on the EFFORT is another term.
+ */
+const COACHING_TERM = /\b(VO2\s?max|critical velocity|threshold|tempo|CV|lactate|aerobic|anaerobic|fartlek)\b/i
+/**
+ * A handle on the INTENSITY that a runner can act on without knowing any of our words.
+ *
+ * 🔴 THIS LIST WAS TOO GENEROUS AND A FALSIFICATION PASSED BECAUSE OF IT. It contained
+ * `controlled`, so *"just past threshold, controlled"* counted as glossed — and
+ * `controlled` describes **manner**, not **how hard**. The runner still does not know
+ * the intensity. **Second time today a falsification went green for a reason inside my
+ * own check rather than the code.** Manner words (`controlled`, `relaxed`, `steady`)
+ * are deliberately absent; `conversational` stays, because being able to talk IS an
+ * intensity.
+ */
+const PLAIN_HANDLE = /comfortably hard|\d+:\d{2}|\bhard\b|\beasy\b|conversational|all.?out|sprint|\bquick\b|\bfast\b|repeatable|flat out|breathing|hold for|could hold/i
+
 describe('COPY-CALIBRATION-REFERENT-01 — a comparison points at something the runner HAS', () => {
   const grid = cohortGrid() as GeneratorInput[]
   const found: { field: string; text: string; referent: string }[] = []
@@ -121,5 +153,30 @@ describe('COPY-CALIBRATION-REFERENT-01 — a comparison points at something the 
       `${uniq.length} sentence(s) calibrate the runner against something outside their own ` +
       'experience. A runner who has never been prescribed that session cannot act on it — and ' +
       '`progressive_tempo`, where this was found, is eligible from BASE phase.').toEqual([])
+  })
+  it('a coaching term is never explained by ANOTHER coaching term alone', () => {
+    const grid2 = cohortGrid() as GeneratorInput[]
+    const bad = new Map<string, string>()
+    for (let i = 0; i < grid2.length; i += STRIDE) {
+      let plan: Plan
+      try { plan = generateRulePlan(grid2[i]!, 'paid', COHORT_PLAN_START, undefined, COHORT_PLAN_START) } catch { continue }
+      for (const { field, text } of runnerStrings(plan)) {
+        if (field !== 'step.note') continue
+        // ⚠️ NAMING A TERM IS FINE AND THE RULING SAYS SO — the target slot beside it
+        // carries the pace, so "Threshold, held." is a LABEL next to an instruction.
+        // What is caught is an attempted EXPLANATION that resolves to another term:
+        // the clause after a gloss marker contains a coaching word and no plain handle.
+        const gloss = text.match(/(?:\u2014|\u2013|:|,)\s*((?:just past|back to|a notch|not a|like a|about)[^.;]*)/i)
+        if (!gloss) continue
+        const clause = gloss[1]!
+        if (!COACHING_TERM.test(clause)) continue
+        if (PLAIN_HANDLE.test(clause)) continue
+        bad.set(text, field)
+      }
+    }
+    expect(Array.from(bad.keys()),
+      `${bad.size} step note(s) use a coaching term with no handle a runner can act on. ` +
+      '\u2714 "a notch past comfortably hard" \u2718 "just past threshold" \u2014 the second is a ' +
+      'definition in a closed loop (\u00a721b Am. 5).').toEqual([])
   })
 })

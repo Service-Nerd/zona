@@ -33,7 +33,7 @@
     "days_available": 3,
     "hard_session_relationship": "love",
     "terrain": "mixed",
-    "generated_at": "2026-10-07T08:09:23.042Z",
+    "generated_at": "2026-10-07T09:23:41.955Z",
     "generator_version": "2.0",
     "generator_input": {
       "age": 43,
@@ -781,7 +781,7 @@
                     "pace": "6:09–6:22 /km",
                     "pace_mode": "target",
                     "advance": "auto",
-                    "note": "The over — just past threshold. A gear change, not a surge."
+                    "note": "The over — a notch past comfortably hard. A gear change, not a surge."
                   },
                   {
                     "role": "work",
@@ -790,7 +790,7 @@
                     "pace": "6:22–6:40 /km",
                     "pace_mode": "target",
                     "advance": "auto",
-                    "note": "The under — back to threshold without stopping. This half is the session."
+                    "note": "The under — back to comfortably hard, without stopping. This half is the session."
                   },
                   {
                     "role": "recovery",
