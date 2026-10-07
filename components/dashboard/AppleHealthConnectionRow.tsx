@@ -135,7 +135,16 @@ export default function AppleHealthConnectionRow({ onHRFound }: {
             border at rest and inverts it on hover — the family's one named exception. */}
         {!isLoading && (
           connected ? (
-            <Button variant="destructive" size="compact" onClick={disconnect} disabled={busy}>
+            /* 🔴 `btn--inline-target`, NOT `size="compact"` (CONNECTIONS-ROW-TWIN-01,
+               Design Board 2026-10-07). Measured at 375px this row rendered
+               Disconnect at 99x44 beside Connect at 88x29 — 52% taller, every
+               geometry property different. ⚠️ **September's ruling IS this ruling**:
+               `.btn--inline-target` was created because the founder said the Apple
+               Health Connect looked *"fat compared to the strava connect one"*, and
+               the remedy reached both CONNECT buttons and not this one. The twin.
+               📱 Wroblewski: the 44px target is kept by the `::after` overlay, so
+               this loses 15px of visual and nothing of hit area. */
+            <Button variant="destructive" className="btn--inline-target" onClick={disconnect} disabled={busy}>
               {busy ? 'Saving...' : 'Disconnect'}
             </Button>
           ) : (
@@ -145,9 +154,9 @@ export default function AppleHealthConnectionRow({ onHRFound }: {
               className="btn--inline-target"
               onClick={connect}
               disabled={busy}
-              /* Its original box, restored: 29px in a space-between row. The
-                 44px target is `.btn--inline-target`'s invisible overlay. */
-              style={{ padding: '8px 14px', fontSize: '11px', borderRadius: '8px', letterSpacing: '0.06em', textTransform: 'uppercase' }}
+              /* 29px in a space-between row; the 44px target is the class's
+                 invisible overlay. The type is the CLASS's now, not an inline
+                 re-declaration (CONNECTIONS-ROW-TWIN-01). */
             >
               {busy ? 'Connecting...' : 'Connect'}
             </Button>

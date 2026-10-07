@@ -886,7 +886,24 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  * target is an invisible overlay: the pill keeps its 29px box and `::after`
  * carries a 44px hit area centred on it. `:262` is met without the control
  * changing size. */
-.btn--inline-target { position: relative; min-height: 0; }
+/* 🔴 THE TYPOGRAPHY LIVES HERE NOW (CONNECTIONS-ROW-TWIN-01, Design Board
+ * 2026-10-07). This class set `position` and `min-height` and NOTHING ELSE, so
+ * the 11px uppercase Silvanto specified for the chip at the 2026-09-25 sitting —
+ * *"an inline Connect chip in a settings row, 11px uppercase"* — was re-declared
+ * as an inline style at every call site. **A class that cannot carry its own
+ * species forces each site to re-invent it**, which is how the Connections row
+ * ended up with `Disconnect` in sentence case beside `CONNECT` in caps.
+ *
+ * A call site may still override; it no longer has to. */
+.btn--inline-target {
+  position: relative;
+  min-height: 0;
+  padding: 8px 14px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 8px;
+}
 .btn--inline-target::after {
   content: '';
   position: absolute;
@@ -903,7 +920,31 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
    while cards had 19: the product elevated its cards and gave its buttons
    nothing, so a moss button sat visually BEHIND the card it was on. */
 .btn--primary { background: var(--moss-strong); color: var(--card); box-shadow: var(--shadow-lifted); }
-.btn--primary:hover:not(:disabled) { background: var(--moss-deep); }
+/* 🔴 EVERY `:hover` IN THIS FILE IS GUARDED BY `@media (hover: hover)`, AND IT
+ * WAS NOT UNTIL 2026-10-07 (HOVER-STICKY-TOUCH-01).
+ *
+ * On iOS WKWebView a tapped element KEEPS its `:hover` style until the runner
+ * taps somewhere else. With 9 unguarded hover rules, every button on the app
+ * could sit in its hover state indefinitely — and `destructive` is the most
+ * dramatic inversion in the family, so the founder photographed a Disconnect
+ * button rendering as a SOLID RED RECTANGLE when `BUTTON-SYSTEM-01` makes it
+ * `--card` with a `--danger` border at rest. The component's own comment says
+ * in as many words that it "does NOT become a filled red rectangle".
+ *
+ * ⚠️ MEASURED, NOT ASSUMED, AND THE ALTERNATIVE WAS RULED OUT: at rest the
+ * button computes `rgb(255,255,255)` / `rgb(184,69,69)`, and the only rule in
+ * this file producing solid `--danger` with `--card` text is the hover one.
+ * An older build was checked and does not explain it — before
+ * `DESTRUCTIVE-WIRING-01` that button was `variant="ghost"`, a text button.
+ *
+ * ⚠️ WHAT WAS NOT PROVEN: Chrome's touch emulation did NOT reproduce the sticky
+ * state (`matches(':hover') === false` after a synthetic tap). Chrome's
+ * synthetic click is not a WKWebView touch, so that is inconclusive rather than
+ * a refutation — and nothing here has run on a device.
+ *
+ * A pointing device still gets every hover. A touch device gets none, which is
+ * correct: there is no hover on a finger. */
+@media (hover: hover) { .btn--primary:hover:not(:disabled) { background: var(--moss-deep); } }
 .btn--primary:active:not(:disabled) { transform: translateY(1px); box-shadow: var(--shadow-card); }
 
 .btn--secondary { background: var(--card); color: var(--ink-2); border: 1px solid var(--line); }
@@ -916,13 +957,13 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  * ⚠️ `destructive` is the SINGLE NAMED EXCEPTION and it is deliberate (Sierra):
  * a delete button that fills red under your finger is telling you something the
  * others do not need to. Consistency is a means, not the goal. */
-.btn--secondary:hover:not(:disabled) { background: var(--bg-soft); border-color: var(--moss-strong); }
+@media (hover: hover) { .btn--secondary:hover:not(:disabled) { background: var(--bg-soft); border-color: var(--moss-strong); } }
 .btn--secondary:active:not(:disabled) { transform: translateY(1px); }
 
 /* Quiet — a label, not a surface. `--moss-strong` clears 4.5:1 on all three
    grounds (4.82 / 4.52 / 5.48); plain `--moss` cleared none of them. */
 .btn--quiet { background: none; color: var(--moss-strong); box-shadow: none; }
-.btn--quiet:hover:not(:disabled) { color: var(--moss-deep); }
+@media (hover: hover) { .btn--quiet:hover:not(:disabled) { color: var(--moss-deep); } }
 .btn--quiet:active:not(:disabled) { transform: translateY(1px); }
 
 /* Soft — the moss-tinted pill. An EXISTING product shape (3 uses: the profile
@@ -938,7 +979,7 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  * ELEVATION — a coloured patch with no edge (Silvanto). `secondary` and
  * `destructive` both carry `1px`; this closes the family. */
 .btn--soft { background: var(--moss-soft); color: var(--moss-deep); border: 1px solid var(--line); }
-.btn--soft:hover:not(:disabled) { background: var(--moss-mid); }
+@media (hover: hover) { .btn--soft:hover:not(:disabled) { background: var(--moss-mid); } }
 .btn--soft:active:not(:disabled) { transform: translateY(1px); }
 
 /* Ghost — a DE-EMPHASISED text action: skip, cancel, dismiss, "not now".
@@ -960,13 +1001,13 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  * and renaming 14 call sites to fix a word is churn with no user impact. The
  * distinction that matters is ACCENT vs DE-EMPHASISED, and it is :456's. */
 .btn--ghost { background: none; color: var(--mute); box-shadow: none; }
-.btn--ghost:hover:not(:disabled) { color: var(--ink-2); }
+@media (hover: hover) { .btn--ghost:hover:not(:disabled) { color: var(--ink-2); } }
 .btn--ghost:active:not(:disabled) { transform: translateY(1px); }
 
 /* Destructive — modal confirmations only (delete, disconnect). `--danger` is
    never used in the training UI. */
 .btn--destructive { background: var(--card); color: var(--danger); border: 1px solid var(--danger); }
-.btn--destructive:hover:not(:disabled) { background: var(--danger); color: var(--card); }
+@media (hover: hover) { .btn--destructive:hover:not(:disabled) { background: var(--danger); color: var(--card); } }
 .btn--destructive:active:not(:disabled) { transform: translateY(1px); }
 
 /* Disabled is FLAT and never lifted: an elevated control that does nothing is
@@ -1053,7 +1094,7 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   background: var(--bg-soft);
   border: 1px solid var(--chrome-edge);
 }
-.icon-btn--circle:hover:not(:disabled) { background: var(--line); }
+@media (hover: hover) { .icon-btn--circle:hover:not(:disabled) { background: var(--line); } }
 /* Square: steppers and inline controls sitting inside a bordered group. */
 /* ⚠️ `--bg-soft`, MATCHING `circle`. Two grounds for one idea had no reason:
  * `--bg-soft` is the inset ground and an icon button sits IN a surface, not on
@@ -1063,7 +1104,7 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   background: var(--bg-soft);
   border: 1px solid var(--chrome-edge);
 }
-.icon-btn--square:hover:not(:disabled) { background: var(--line); }
+@media (hover: hover) { .icon-btn--square:hover:not(:disabled) { background: var(--line); } }
 /* Bare: no surface, for a glyph in a dense row (the notification bell, a
    move handle). Still 44px of target.
    ⛔ DELIBERATELY NO EDGE (`ICON-EDGE-01`). Wroblewski: all five uses are inline
@@ -1071,7 +1112,7 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
    `bare` is surfaceless BY DESIGN; giving it an edge would make it a third
    shape wearing the first one's clothes. */
 .icon-btn--bare { background: none; border: none; }
-.icon-btn--bare:hover:not(:disabled) { color: var(--moss-deep); }
+@media (hover: hover) { .icon-btn--bare:hover:not(:disabled) { color: var(--moss-deep); } }
 
 /* ⚠️ THE INLINE-MARK EXCEPTION, and it is narrow BY CONSTRUCTION.
  * `SessionSteps`' 15px ringed "i" sits inside a 12px uppercase label. At 44px

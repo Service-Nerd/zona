@@ -423,8 +423,8 @@
     "height": 47,
     "width": "auto"
   },
-  "components/dashboard/AppleHealthConnectionRow.tsx#Button1": {
-    "floor": 44,
+  "components/dashboard/AppleHealthConnectionRow.tsx#Button[btn-inline-target]1": {
+    "floor": 0,
     "padY": null,
     "font": null,
     "radius": null,
@@ -433,9 +433,9 @@
   },
   "components/dashboard/AppleHealthConnectionRow.tsx#Button[btn-inline-target]2": {
     "floor": 0,
-    "padY": 8,
-    "font": 11,
-    "radius": "8px",
+    "padY": null,
+    "font": null,
+    "radius": null,
     "height": 44,
     "width": "auto"
   },
@@ -535,8 +535,8 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/MeScreen.tsx#Button1": {
-    "floor": 44,
+  "components/dashboard/MeScreen.tsx#Button[btn-inline-target]1": {
+    "floor": 0,
     "padY": null,
     "font": null,
     "radius": null,
@@ -545,9 +545,9 @@
   },
   "components/dashboard/MeScreen.tsx#Button[btn-inline-target]2": {
     "floor": 0,
-    "padY": 8,
-    "font": 11,
-    "radius": "8px",
+    "padY": null,
+    "font": null,
+    "radius": null,
     "height": 44,
     "width": "auto"
   },

@@ -17,6 +17,44 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## CONNECTIONS-ROW-TWIN-01 — the ruling had already been made, for this exact row (2026-10-07)
+
+*"The buttons look inconsistent… I was more referring to the size."*
+
+### The dev bit
+
+Measured at 375px: Disconnect 99×44 beside Connect 88×29. Every geometry property differed.
+
+Then the settled-ground scan found something better than a new rule: **`.btn--inline-target`
+exists because of this founder's mirror complaint, nine days earlier** — *"still looks fat
+compared to the strava connect one"* — when Apple Health's Connect was the 44px one. The fix
+reached both CONNECT buttons and neither DISCONNECT. **The remedy was already correct and had
+been applied to one twin.**
+
+### The AI-building bit
+
+**Both buttons passed every check we have.** `buttonGeometry.test.ts` arms the 44px floor, the
+committed baseline, coverage and border growth — every one of them per control. Disconnect
+cleared the floor. Connect is a ruled exception with a 44px hit area. **Each was correct
+alone**, and the defect was the relationship between them, which no per-control arm can see.
+
+The new check then found a third button within a minute of existing: Strava's own Disconnect,
+still `ghost` + `compact`, missed by both rulings its sibling received. **The founder could
+not have reported that one — his Strava isn't connected.**
+
+### The honest bit
+
+I lowered the inline-override register from 2 to 1 on an assumption, because I'd removed
+three of four overrides from a call site. **It counts sites, not properties**, so the number
+hadn't moved at all. The register caught me in the same run.
+
+And the typography finding is the one I'd keep: the class set `position` and `min-height` and
+nothing else, so the "11px uppercase" the board specified lived as an inline style at every
+call site. **A class that cannot carry its own species forces each site to re-invent it** —
+which is precisely how one row ended up with `Disconnect` in sentence case next to `CONNECT`
+in caps.
+
 ## PLAN-NOTE-BUDGET-INERT-01 — two correct numbers that happened to be the same (2026-10-07)
 
 ### The dev bit

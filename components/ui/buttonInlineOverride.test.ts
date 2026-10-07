@@ -84,8 +84,19 @@ const BASELINE: Record<string, number> = {
   // ME-BENCHMARK-DUP-01 (2026-09-29): 3 → 2. DEBT PAID, not a re-key — the duplicate
   // `Race benchmark` ghost Button was one of the three, so removing the door removed an
   // inline override with it. The stale arm is what demanded this number come down.
+  // 🥇 1 → 0 on AppleHealthConnectionRow (CONNECTIONS-ROW-TWIN-01, 2026-10-07):
+  // the chip's box and type moved INTO `.btn--inline-target`, where the
+  // 2026-09-25 ruling put them, so the call site stopped re-declaring
+  // `padding`/`fontSize`/`borderRadius` and its style prop is gone entirely.
+  //
+  // ⚠️ MeScreen HOLDS AT 2, AND I FIRST LOWERED IT TO 1 ON AN ASSUMPTION. Three
+  // of the same properties came off the Strava Connect, but it still carries
+  // `background: var(--strava)` — a NAMED partner-brand exception, not drift —
+  // and the register counts a call site once however many properties it sets.
+  // **Removing three of four overrides on a button moves this number by zero.**
+  // The check caught the wrong figure immediately, which is the register working.
   'components/dashboard/MeScreen.tsx': 2,
-  'components/dashboard/AppleHealthConnectionRow.tsx': 1,
+  'components/dashboard/AppleHealthConnectionRow.tsx': 0,
   'components/dashboard/CoachTeaser.tsx': 2,
   'components/dashboard/HRZonesSection.tsx': 1,
   'components/dashboard/ManualRunModal.tsx': 2,

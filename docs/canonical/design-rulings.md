@@ -4192,3 +4192,55 @@ budget · un-wire either note type). `verify` 505 files / 4,440 tests exit 0; pa
 
 **Whether 180 words across three tiles is readable on a phone — nobody has seen it, and nothing has
 run on a device.**
+
+## 6af. CONNECTIONS-ROW-TWIN-01 — one row, two size systems, and a ruling applied to one twin (2026-10-07)
+
+**Founder, with a screenshot of Me → Connections:** *"The buttons look inconsistent… I was
+more referring to the size. Also can we confirm these buttons use a centralised component or
+our ui standards."*
+
+**The centralisation answer, both halves:** ✅ both ARE the central `<Button>`. 🔴 They sat on
+**two different size systems**, and both Connects overrode `padding`/`fontSize`/`borderRadius`
+inline — properties `buttonInlineOverride.test.ts` lists as OWNED.
+
+| Decision | Status | Why |
+|---|---|---|
+| **Disconnect adopts `.btn--inline-target`** | 🟢 **SHIP** | Measured 375px: **99×44 vs 88×29**, 52% taller, every property different. After: **109×29 vs 88×29**. 📱 Wroblewski: the `::after` keeps the 44px target, so it loses 15px of visual and nothing of hit area |
+| **The chip's typography moves INTO the class** | 🟢 **SHIP** | ✋ Silvanto: the class set `position` and `min-height` and nothing else, so his own *"11px uppercase"* lived inline at every call site — **which is exactly how one row got `Disconnect` in sentence case beside `CONNECT` in caps.** Three sites stopped re-declaring it |
+| **A Button `case` axis for all 106 inline `textTransform` sites** | 🔴 **DON'T SHIP — out of scope** | 📱 Wroblewski: *"the chip is ONE species with a documented type spec. Fix the species; leave the other 100 for their own sitting."* |
+| **`--strava` #FC4C02 recorded as a NAMED partner-brand exception** | 🟢 **SHIP** | 🎪 Collins: their guidelines require it on a connect affordance; it is the only off-palette value on the screen and should be distinguishable from drift |
+| **Strava's own Disconnect** | 🟢 **SHIPPED — FOUND BY THE NEW CHECK, NOT BY EYE** | `variant="ghost" size="compact"`: missed by **both** rulings its sibling received, including `DESTRUCTIVE-WIRING-01`. **The founder could not have reported it — his Strava is not connected** |
+
+🔴 **THE REMEDY ALREADY EXISTED AND REACHED ONE TWIN.** `.btn--inline-target` was created on
+2026-09-25 *because of this founder's mirror complaint* — *"still looks fat compared to the
+strava connect one"* — when Apple Health's Connect was 44px beside Strava's 29px. The fix
+reached **both CONNECT buttons and neither DISCONNECT.** Ninth recorded instance of the class.
+
+🥇 **BOTH BUTTONS PASSED EVERY EXISTING CHECK, AND THAT IS THE GENERAL FINDING.**
+`buttonGeometry.test.ts` arms the 44px floor, the baseline, coverage and borders — **all per
+control.** Disconnect cleared the floor; Connect is a ruled exception. **Each was correct
+alone; the defect is a RELATIONSHIP between two, which no per-control arm can see.**
+
+🎓 **Sierra's caution, recorded:** the destructive action is now smaller and marginally easier
+to hit by accident. The outline treatment carries the signalling. **If an accidental
+disconnect is ever reported, this is the row to revisit.**
+
+### 📦 Artifacts
+
+Pattern — `ui-patterns.md` §38 Amendment · Constants — `.btn--inline-target` gains
+`padding`/`font-size`/`letter-spacing`/`text-transform`/`border-radius` · Check —
+`lib/ui/connectionRowSizing.test.ts`, population **derived from MeScreen** and resolving a
+component whether it has its own file or is declared inline, **falsified three ways** (revert
+Disconnect to `size="compact"` · strip the type back out of the class · empty the population).
+
+⚠️ **Two registers moved and both are declared:** `buttonGeometry.json` re-baselined, diff
+**22 lines touching exactly the two Disconnect buttons**; the inline-override register
+**1 → 0** on `AppleHealthConnectionRow`. ⚠️ **MeScreen HOLDS AT 2 and I first lowered it to 1
+on an assumption** — removing three of four overrides on a call site moves the count by zero,
+because it counts sites not properties. The register caught it immediately.
+
+### ⚠️ What this does not settle
+
+**Nothing has run on a device**, and the 106 inline `textTransform` sites outside this species
+remain. Also open: `HOVER-STICKY-TOUCH-01`'s diagnosis rests on CSS and pixels — **Chrome's
+touch emulation did not reproduce the sticky hover.**

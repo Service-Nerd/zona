@@ -394,7 +394,16 @@ function StravaConnectionRow() {
 
         {!isLoading && (
           connected ? (
-            <Button variant="ghost" size="compact"  onClick={disconnect} disabled={disconnecting}>
+            /* 🔴 THE SAME TWIN, TWICE (CONNECTIONS-ROW-TWIN-01, 2026-10-07). This
+               button was missed by BOTH rulings its sibling received:
+               `DESTRUCTIVE-WIRING-01` (2026-10-02) made disconnecting a data source
+               `destructive` and reached only `AppleHealthConnectionRow`; the
+               2026-09-25 chip ruling reached only the two CONNECT buttons. So a
+               connected Strava rendered a 44px GHOST Disconnect where Apple Health
+               renders a 29px destructive chip. **Found by the new row check, not by
+               eye** — the founder cannot see it, because his Strava is not
+               connected. */
+            <Button variant="destructive" className="btn--inline-target" onClick={disconnect} disabled={disconnecting}>
               {disconnecting ? 'Disconnecting...' : 'Disconnect'}
             </Button>
           ) : (
@@ -420,10 +429,12 @@ function StravaConnectionRow() {
               }
               window.location.href = url
             }} disabled={!userId}  style={{
+              /* ⚠️ ONLY the partner brand colour is inline now — the chip's box and
+                 type belong to `.btn--inline-target` (CONNECTIONS-ROW-TWIN-01).
+                 `--strava` is a NAMED EXCEPTION, not drift: Strava's brand
+                 guidelines require their colour on a connect affordance, and it is
+                 the one off-palette value on the screen. */
               background: 'var(--strava)', color: 'var(--card)',
-              borderRadius: '8px', padding: '8px 14px',
-              fontSize: '11px',
-              letterSpacing: '0.06em', textTransform: 'uppercase',
               cursor: userId ? 'pointer' : 'default',
               opacity: userId ? 1 : 0.5,
             }}>

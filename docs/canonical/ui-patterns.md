@@ -4875,6 +4875,55 @@ themselves — which is the half `lib/a11yContrast.test.ts` structurally cannot 
 `white on --moss-strong >= 4.5`: true, and a fact about a *token*, which is why it stayed green over
 all 42 failing controls. Its own header says it checks the tokens and not where they are used.
 
+#### Amendment — ONE ROW, ONE SIZE SYSTEM (`CONNECTIONS-ROW-TWIN-01`, Design Board 2026-10-07)
+
+**Two controls in the same settings row use the same size system.** A settings row is one
+line of text with an action at its end, and that action is a **chip**:
+`.btn--inline-target`, not `size="compact"`.
+
+🔴 **Measured at 375px on the Connections screen: `Disconnect` 99×44 beside `CONNECT`
+88×29** — 52% taller, and every geometry property different (font 12 vs 11, padding 12/16
+vs 8/14, radius 10 vs 8, min-height 44 vs 0). After: **109×29 and 88×29**, identical but
+for the length of the word.
+
+⚠️ **BOTH PASSED EVERY EXISTING CHECK, AND THAT IS THE GENERAL LESSON.**
+`buttonGeometry.test.ts` has arms for the 44px floor, the committed baseline, coverage and
+border growth — **all per control.** Disconnect cleared the floor; Connect is a ruled
+exception carrying a 44px `::after`. **Each was correct alone. The defect is a
+RELATIONSHIP, and no per-control arm can see one.**
+
+🔴 **THE REMEDY ALREADY EXISTED AND HAD BEEN APPLIED TO ONE TWIN.**
+`.btn--inline-target` was created on 2026-09-25 *because of the founder's mirror
+complaint* — *"still looks fat compared to the strava connect one"* — when Apple Health's
+Connect was 44px beside Strava's 29px. The fix reached **both CONNECT buttons and neither
+DISCONNECT.**
+
+🔴 **AND THE CHECK FOUND A THIRD BUTTON BY EYE NOBODY HAD SEEN.** Strava's own Disconnect
+was `variant="ghost" size="compact"` — missed by **both** rulings its sibling received,
+including `DESTRUCTIVE-WIRING-01`. The founder could not have reported it: his Strava is
+not connected.
+
+✋ **The chip now carries its own typography.** `.btn--inline-target` set `position` and
+`min-height` and nothing else, so the *"11px uppercase"* Silvanto specified lived as an
+inline style at **every** call site — which is exactly how one row ended up with
+`Disconnect` in sentence case beside `CONNECT` in caps. **A class that cannot carry its
+species forces each site to re-invent it.** Three call sites stopped re-declaring
+`padding`/`fontSize`/`borderRadius`.
+
+🎪 **`--strava` (#FC4C02) is a NAMED PARTNER-BRAND EXCEPTION, not drift.** Strava's own
+guidelines require their colour on a connect affordance. It is the one off-palette value on
+the screen and the only property that call site still sets inline.
+
+🎓 **Sierra's recorded caution:** Disconnect is the destructive action and is now smaller,
+so marginally easier to hit by accident. The outline treatment does the signalling size was
+doing badly — **but if an accidental disconnect is ever reported, this is the row to
+revisit.**
+
+**Gate:** `lib/ui/connectionRowSizing.test.ts`. Its population is **derived from MeScreen's
+Connections section**, never hand-listed, and resolves a component whether it has its own
+file or is declared inline — ⚠️ the two rows do not live in the same place, which is
+plausibly how they drifted.
+
 ### 38a. Selectable row, and when the primary appears *(Design Board 2026-09-26, `LINK-HIERARCHY-01`)*
 
 A list the runner **picks from** — the activity picker on the link-a-run screen is the first — plus

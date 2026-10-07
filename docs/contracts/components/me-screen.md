@@ -67,6 +67,16 @@ interface MeScreenProps {
    *  `undefined` = not loaded yet, which is a third state the subtitle must render. */
   healthkitConnectedAt?: string | null | undefined
   stravaConnected?: boolean
+  /* 🔴 ONE ROW, ONE SIZE SYSTEM (`CONNECTIONS-ROW-TWIN-01`, Design Board 2026-10-07).
+   * Every Button inside a connection row — Apple Health AND Strava, connect AND
+   * disconnect — is `.btn--inline-target`, never `size="compact"`. A settings row is one
+   * line of text with an action at its end; the action is a chip (ui-patterns §38).
+   * ⚠️ Measured before the fix: Disconnect 99x44 beside Connect 88x29. Both passed every
+   * per-control check — the defect was the RELATIONSHIP. Gate:
+   * `lib/ui/connectionRowSizing.test.ts`, population derived from this file.
+   * ⚠️ `StravaConnectionRow` is declared INSIDE MeScreen while `AppleHealthConnectionRow`
+   * has its own file; the gate resolves either, and the asymmetry is plausibly how they
+   * drifted. */
 
   // ── Display preferences (ADR-015) ──
   theme: 'dark' | 'light' | 'auto'
