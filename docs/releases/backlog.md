@@ -3953,8 +3953,8 @@ Nothing else is blocked. These are, and two of them cannot be answered by anyone
 | — | **`HM-ANCHOR-VS-GOAL-01` / §120** | ✅ **SHIPPED 2026-09-22** (§120 + Am. 1). This row said *"not shipped, blocked on Willy's bound"* for two weeks after it landed; `RACE_PACE_ANCHOR_MAX_OVER_CV_PCT` is live in `generationConfig.ts` and read by `ruleEngine.ts`. | — |
 | — | **`DELOAD-BADGE-TRUTH-01`** | ✅ **CLOSED 2026-10-06, no code** — the 4th deload sitting returned a ruling rather than a conflict: §3's own amendment already states the 70% is *"a statement about the WEEK"*, and the only reachable remedy takes §52 breaches 3.0% → **28.9%**. | — |
 | — | **`MKT-PLAN-SEGMENT-BASIS-01`** | ✅ **SHIPPED 2026-09-30** — TIME, with the display fix. Registry row dated the same day. | — |
-| 1 | **`PLAN-NOTE-BUDGET-INERT-01`** | 🔴 **P1, filed 2026-10-06.** The engine **stamps 3.66 honest notes per plan and the runner reads 0.95** — three notes render on **zero** of 5,664 plans, 10,031 dropped. 🧭 Design Board → 💼 SLT (it set both caps). | M |
-| 2 | **`DELOAD-OPENING-SURFACE-01`** | §119 Am. 1's note is stamped and renders nowhere; McMillan's *"recorded TO THE RUNNER"* is binding. Blocked behind #1 by the same cap. 🧭 Design Board. | S |
+| 1 | ✅ **`PLAN-NOTE-BUDGET-INERT-01` — SHIPPED 2026-10-07.** Cause was arithmetic: the budget (70) equalled the mean note (70), so it held ONE note and the 3-tile cap was decoration. 70 → **180**; delivery **1.01 → 1.88** per plan. New check `PLAN-NOTE-DELIVERY-01`, per note type. Register `design-rulings.md` 6ae. | ✅ |
+| 2 | ✅ **`DELOAD-OPENING-SURFACE-01` — SHIPPED 2026-10-07, and the item was FILED WRONG.** Not *"blocked behind #1 by the same cap"*: `short_opening_block_note` was in **no renderer at all** — not `planRationale.ts`, not `app/`, not `components/`. Never competing for a tile; never given one. Now renders on **115 of 116** plans that stamp it. | ✅ |
 | 3 | **B / D** (test coverage) | `PlanSchema` on the live path; four untested modules. P2/P3. | M |
 | 4 | `CHECK-SLOW-NOISE-01`, `A11Y-MOCKUP-CONTRAST-01` | Known, low, both documented with their reasons. | S |
 

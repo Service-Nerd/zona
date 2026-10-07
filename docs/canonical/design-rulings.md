@@ -4153,3 +4153,42 @@ ways** (restore each circular gloss) plus a NEW one it had never seen.
 
 **Whether a runner actually learns the vocabulary.** Nobody has watched one use this, and
 nothing has run on a device.
+
+
+## 6ae. PLAN-NOTE-BUDGET-INERT-01 — the budget equalled the mean, so it held one note (2026-10-07)
+
+**Founder: *"fix the note budget."*** Filed P1 on 2026-10-06; it had just blocked §44 Am. 3 from
+reaching a runner, two hours after the same cap blocked §119 Am. 1.
+
+| Decision | Status | Why |
+|---|---|---|
+| **`PLAN_RATIONALE_MAX_WORDS` 70 → 180**, cap stays 3 | 🟢 **SHIP WITH AMENDMENT** | 🔴 **70 was also `MEAN_WORDS`**, so the cumulative budget admitted exactly ONE note by arithmetic and `MAX_NOTES = 3` was decoration. **1.01 of 2.27 stamped notes rendered per plan**; **357 of 709 first notes (50.4%) exceeded the whole budget on their own.** After: **1.88** |
+| **180, not 220** | 🟢 **AMENDED** | 📱 Wroblewski: 90% of plans see everything for a worst case he can defend; 220 buys 7pp for a 40-word looser ceiling. ⚠️ This is the **Plan screen**, not mid-run — the glance constraint does not bind |
+| **The per-note ratchet stays, and stays downward-only** | 🟢 **UNCHANGED** | ✋ Silvanto: *"length is held by the ratchet, which reaches the copy. A runtime budget cannot reach copy — it can only hide it."* Two guards for one job, and the runtime one was the only one that could delete coaching silently |
+| **ONE CAUSE, ONE TILE** | 🟢 **UNTOUCHED** | Still correct; `Volume` renders on 13% by design and that is the suppression, not the budget |
+| **`short_opening_block_note` wired to the renderer** | 🟢 **SHIPPED — and the item was filed WRONG** | The backlog said §119 Am. 1's note was *"blocked behind #1 by the same cap."* Measured: it appeared in **no renderer at all** — not `planRationale.ts`, not `app/`, not `components/`. **It was never competing for a tile; it had never been given one.** 🎯 McMillan's *"recorded TO THE RUNNER"* is binding, so wiring it delivers an existing ruling |
+| **The stale justification rewritten, not just the number** | 🟢 **SHIPPED** | The constant's header said *"this budget now decides almost nothing at runtime"* — true at 510-of-513 single-note plans in September, **false at 538 of 709 today.** A rule whose stated reason has expired is how this happened, and the reason is the part that rots |
+
+🥇 **The measurement that mattered was DELIVERY, and nothing had ever taken it.** The length ratchet
+held notes short; the invariants held them stamped; **between those two, nobody asked how many the
+runner reads.** `PLAN-NOTE-DELIVERY-01` now does, per note type.
+
+⚠️ **Its coarse arm was not enough and falsification proved it:** un-wiring `short_opening_block_note`
+— exactly the live defect — left delivery at 1.78 against a 1.70 floor and the arm stayed **green**.
+**An average cannot see one note type going dark.**
+
+⚠️ **The old MEAN ratchet was conflating two things** and failed on this change at 113 words/plan. It
+measured delivered words PER PLAN, mixing copy length with delivery volume; re-expressed **per NOTE**
+it is invariant to how many render. Measured **60.3**, slightly better than the 67 recorded when one
+note rendered. **No copy got longer; the runner is told more.**
+
+### 📦 Artifacts
+
+Pattern — `ui-patterns.md` §18 · Constants — `PLAN_RATIONALE_MAX_WORDS = 180`,
+`MEAN_WORDS_PER_NOTE = 62` · Check — `PLAN-NOTE-DELIVERY-01`, falsified three ways (revert the
+budget · un-wire either note type). `verify` 505 files / 4,440 tests exit 0; parity **IDENTICAL**.
+
+### ⚠️ What this does not settle
+
+**Whether 180 words across three tiles is readable on a phone — nobody has seen it, and nothing has
+run on a device.**

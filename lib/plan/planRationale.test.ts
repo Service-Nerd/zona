@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { planRationaleNotes, levelFitNote, PLAN_RATIONALE_MAX_NOTES } from './planRationale'
+import { planRationaleNotes, levelFitNote, PLAN_RATIONALE_MAX_NOTES, PLAN_RATIONALE_MAX_WORDS } from './planRationale'
+import type { GeneratorInput } from '@/types/plan'
+
+/** The length ratchet's own measured mean, referenced so the two cannot drift apart. */
+const MEAN_NOTE_WORDS_REF = 70
 import type { Plan } from '@/types/plan'
 
 const meta = (o: Partial<Plan['meta']>) => o as Plan['meta']
@@ -122,9 +126,95 @@ describe('§98 — the §1 yield is visible to the runner (ONSET-YIELD-NOTE-01)'
 import { cohortGrid, COHORT_PLAN_START } from './cohortGrid'
 import { generateRulePlan } from './ruleEngine'
 
+// PLAN-NOTE-DELIVERY-01 (2026-10-07) — 🔴 NOTHING MEASURED WHETHER A STAMPED
+// NOTE REACHED THE RUNNER, WHICH IS HOW THIS ROTTED FOR THREE WEEKS.
+//
+// `PLAN-NOTE-LENGTH-01` below holds each note SHORT. `planRationale.test.ts` and
+// the invariants hold each note STAMPED. **Between those two is the question
+// nobody asked: of the notes the engine writes, how many does the runner read?**
+//
+// Measured when the budget was 70 words: **1.01 of 2.27 per plan**, and three
+// note types rendered on ZERO plans. The cause was arithmetic, not policy — the
+// cumulative budget was set to 70 and `MEAN_WORDS` is also 70, so it admitted
+// exactly one note and `PLAN_RATIONALE_MAX_NOTES = 3` was decoration.
+//
+// ⚠️ A RATCHET ON DELIVERY, the mirror of the length ratchet below. Delivery may
+// RISE freely; a fall means copy grew or a cap tightened and notes went quiet
+// again. **The failure this guards is silent by construction** — every other
+// check in this file stays green while the runner reads nothing.
+describe('PLAN-NOTE-DELIVERY-01 — a stamped note reaches the runner', () => {
+  const FIELDS = ['volume_constraint_note', 'volume_shortfall_note', 'long_run_shortfall_note',
+    'goal_below_easy_ceiling_note', 'short_opening_block_note', 'fitness_signal_note',
+    'hard_pref_note', 'terrain_effort_note', 'intensity_reentry_omission_note'] as const
+  const DELIVERY_FLOOR = 1.70   // measured 1.88 at a 180-word budget, up from 1.01 at 70
+  const STRIDE = 53
+
+  const grid = cohortGrid() as GeneratorInput[]
+  const LABEL_OF: Record<string, string> = {
+    volume_constraint_note: 'Maintenance', volume_shortfall_note: 'Volume',
+    long_run_shortfall_note: 'Long run', goal_below_easy_ceiling_note: 'Your target',
+    short_opening_block_note: 'Recovery week', fitness_signal_note: 'Your level',
+    hard_pref_note: 'Hard sessions', terrain_effort_note: 'Off-road',
+    intensity_reentry_omission_note: 'Coming back',
+  }
+  const byType: Record<string, { stamped: number; rendered: number }> = {}
+  let plans = 0, stamped = 0, rendered = 0
+  for (let i = 0; i < grid.length; i += STRIDE) {
+    let p: Plan
+    try { p = generateRulePlan(grid[i]!, 'paid', COHORT_PLAN_START, undefined, COHORT_PLAN_START) as unknown as Plan } catch { continue }
+    const m = p.meta as unknown as Record<string, unknown>
+    const present = FIELDS.filter(f => typeof m?.[f] === 'string' && m[f])
+    if (!present.length) continue
+    const out = planRationaleNotes(p.meta)
+    const labels = new Set(out.map(x => x.label))
+    for (const f of present) {
+      const label = LABEL_OF[f]
+      const e = byType[f] ??= { stamped: 0, rendered: 0 }
+      e.stamped++
+      if (label && labels.has(label)) e.rendered++
+    }
+    plans++; stamped += present.length; rendered += out.length
+  }
+
+  it('the corpus is real', () => {
+    expect(plans, 'no plans carry a rationale note — this file is measuring nothing').toBeGreaterThan(300)
+  })
+
+  it('delivers at least the measured floor of notes per plan', () => {
+    const perPlan = rendered / plans
+    expect(perPlan, `${perPlan.toFixed(2)} notes rendered per plan against a floor of ${DELIVERY_FLOOR} ` +
+      `(${(stamped / plans).toFixed(2)} stamped). Notes have gone quiet: either copy grew past the budget ` +
+      'or a cap tightened. Raise the copy\u2019s efficiency or the budget \u2014 do NOT lower this floor.')
+      .toBeGreaterThanOrEqual(DELIVERY_FLOOR)
+  })
+
+  // 🔴 THE FLOOR ABOVE IS TOO COARSE TO CATCH THE ACTUAL DEFECT, AND FALSIFICATION
+  // SHOWED IT. Un-wiring `short_opening_block_note` — exactly how that note sat
+  // stamped and invisible for a day — left delivery at 1.78 against a 1.70 floor
+  // and the arm stayed GREEN. An average cannot see one note type going dark.
+  //
+  // This is the precise guard: a note the engine STAMPS must reach the runner on
+  // at least one plan. It would have caught `short_opening_block_note` (rendered
+  // on 0 of 116) and `goal_below_easy_ceiling_note` (0 of 10).
+  it('every note the engine stamps renders on at least one plan', () => {
+    const dark = Object.entries(byType)
+      .filter(([, v]) => v.stamped > 0 && v.rendered === 0)
+      .map(([k, v]) => `${k}: stamped on ${v.stamped} plans, rendered on 0`)
+    expect(dark, 'a note type is stamped and reaches no renderer. Either wire it into ' +
+      'planRationaleNotes or stop stamping it \u2014 a note nobody reads is not honesty.').toEqual([])
+  })
+
+  it('and the budget can still hold more than one note \u2014 the arithmetic that broke it', () => {
+    // 🔴 The defect was that PLAN_RATIONALE_MAX_WORDS equalled MEAN_WORDS, so the
+    // tile cap could never be reached. Assert the relationship, not the number.
+    expect(PLAN_RATIONALE_MAX_WORDS, 'the total budget is no larger than ONE mean note, so it can only ever ' +
+      'show one and PLAN_RATIONALE_MAX_NOTES is decoration').toBeGreaterThan(MEAN_NOTE_WORDS_REF * 1.5)
+  })
+})
+
 describe('PLAN-NOTE-LENGTH-01 — no single rationale note becomes a wall', () => {
   const WORST_NOTE_WORDS = 117   // measured 2026-09-17, down from 254
-  const MEAN_WORDS       = 70    // measured 67
+  const MEAN_WORDS_PER_NOTE = 62  // measured 60.3 on 2026-10-07 (per NOTE, not per plan — see below)
   const STRIDE           = 53
 
   const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length
@@ -159,14 +249,27 @@ describe('PLAN-NOTE-LENGTH-01 — no single rationale note becomes a wall', () =
       .toBeLessThanOrEqual(WORST_NOTE_WORDS)
   })
 
-  it('the MEAN stays low, so the tail cannot hide behind a good worst case', () => {
+  // 🔴 RE-EXPRESSED PER NOTE, 2026-10-07, AND THE OLD FORM WAS CONFLATING TWO
+  // THINGS. It measured total delivered words PER PLAN, which mixes **copy
+  // length** (what an author controls, what this ratchet is for) with **delivery
+  // volume** (what the board's budget controls). When `PLAN-NOTE-BUDGET-INERT-01`
+  // raised the budget 70 → 180 and delivery went 1.01 → 1.88 notes per plan, this
+  // went 67 → 113 and failed — **not because any copy got longer, but because the
+  // runner is now told more, which was the point of the ruling.**
+  //
+  // Per NOTE it is invariant to how many render, so it guards the thing it is
+  // named for and cannot be tripped by a delivery decision again. Measured at the
+  // changeover: **60.3 words per note**, slightly BETTER than the 67 the old
+  // per-plan number recorded when ~1 note rendered. Still a downward-only ratchet.
+  it('the MEAN NOTE stays short, so the tail cannot hide behind a good worst case', () => {
     let total = 0, n = 0
     for (const notes of sample) {
-      total += notes.reduce((a, x) => a + words(x.text), 0)
-      n++
+      for (const x of notes) { total += words(x.text); n++ }
     }
     const mean = total / n
-    expect(mean, `mean ${mean.toFixed(1)} words per plan (ratchet ${MEAN_WORDS})`).toBeLessThanOrEqual(MEAN_WORDS)
+    expect(mean, `mean ${mean.toFixed(1)} words per NOTE (ratchet ${MEAN_WORDS_PER_NOTE}). ` +
+      'Shorten the copy: consequence, then cause, then the one lever. Do not raise the ratchet.')
+      .toBeLessThanOrEqual(MEAN_WORDS_PER_NOTE)
   })
 
   it('the maintenance and volume tiles are never shown together', () => {

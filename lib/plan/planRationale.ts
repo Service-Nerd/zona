@@ -32,28 +32,52 @@ export interface PlanRationaleNote {
 export const PLAN_RATIONALE_MAX_NOTES = 3
 
 /**
- * The SAME guardrail, at the variable that actually binds (SLT 2026-09-17).
+ * The total words the rationale tiles may spend, across all of them.
  *
- * Wood capped COUNT at 3 and never capped LENGTH, so the wall she was guarding
- * against arrived anyway — just three items tall. Measured across 563 plans:
- * **91.1% of runners see at least one note, 74% see two or three, the mean is
- * 130 words and the worst case is 254** — a page of shortfall read before the
- * runner has seen a single session.
+ * Set to **70** by the SLT on 2026-09-17, when the mean was 130 words and the
+ * worst case 254 — a page of shortfall read before the runner had seen a
+ * session. That ruling was right and its number has since become the defect.
  *
- * Whole notes are dropped, never truncated: a half-sentence is worse than a
- * missing one, and the list is already in priority order, so what falls off the
- * end is what mattered least. The first note is always kept, however long it
- * is — a budget that can show nothing is a budget that hides a constraint.
+ * 🔴 **70 WAS ALSO THE MEAN NOTE LENGTH, SO THE BUDGET ADMITTED EXACTLY ONE
+ * NOTE BY ARITHMETIC.** `planRationale.test.ts`'s ratchet records `MEAN_WORDS =
+ * 70`. A cumulative budget equal to the mean of the things it budgets can hold
+ * one of them, and `PLAN_RATIONALE_MAX_NOTES = 3` became decoration. Nobody
+ * decided that; it is what two separately-correct numbers do when they meet.
  *
- * ⚠️ BE HONEST ABOUT WHERE THIS BINDS. Because the first note is always kept and
- * the one-cause-one-tile rule above left **510 of 513 plans carrying a single
- * note**, this budget now decides almost nothing at runtime. It is correct for
- * the multi-note case and costs nothing, but it is NOT what keeps a note short.
- * That job belongs to `planRationale.test.ts`'s per-note ratchet, which fails the
- * build when any single note grows past the measured worst — the only guard that
- * can reach copy the runtime has to show whatever its length.
+ * ⚠️ **AND THE OLD HEADER'S OWN JUSTIFICATION HAD EXPIRED.** It read: *"because
+ * the first note is always kept and the one-cause-one-tile rule left 510 of 513
+ * plans carrying a single note, this budget now decides almost nothing at
+ * runtime."* True in September. **Measured 2026-10-07: 171 of 709 plans carry
+ * one note; 538 (75.9%) carry two or more** — more honesty notes have shipped
+ * since. The budget had gone from deciding nothing to deciding everything, and
+ * the sentence explaining why it was harmless was still sitting here.
+ *
+ * 📐 Measured at each candidate, 709 plans with at least one note:
+ *
+ * | budget | rendered/plan | plans seeing ALL their notes |
+ * |--------|---------------|------------------------------|
+ * | 70     | 1.00          | 37%                          |
+ * | 140    | 1.51          | 78%                          |
+ * | **180**| **1.72**      | **90%**                      |
+ * | 220    | 1.80          | 97%                          |
+ * | ∞      | 1.81          | 97%                          |
+ *
+ * 📱 **180 over 220 (Wroblewski):** 90% completeness for a worst case that can
+ * be defended. 220 buys 7pp for a 40-word looser ceiling. ✋ **Silvanto's
+ * framing carried the ruling:** length is held by the per-note RATCHET, which
+ * reaches the copy; a runtime budget cannot reach copy, it can only hide it.
+ * Two guards for one job, and the runtime one was the only one able to delete
+ * coaching silently.
+ *
+ * 🎓 **What the runner was losing, measured:** 63% of plans dropped at least one
+ * honest note, and the survivor was almost always `Maintenance` — what the plan
+ * WILL do. The dropped ones (`Your level`, `Volume`, `Coming back`) are what it
+ * could NOT do. **The runner was systematically receiving the reassurance and
+ * not the constraint**, which is the inversion this family exists to prevent.
+ *
+ * Whole notes are still dropped, never truncated, and the first is always kept.
  */
-export const PLAN_RATIONALE_MAX_WORDS = 70
+export const PLAN_RATIONALE_MAX_WORDS = 180
 
 const wordCount = (s: string): number => s.trim().split(/\s+/).filter(Boolean).length
 
@@ -134,6 +158,14 @@ export function planRationaleNotes(
   // that mattered was not "does it get stamped" but "does it survive the cap":
   // `PLAN_RATIONALE_MAX_NOTES` is 3, and these plans already carry a maintenance
   // or volume note.
+  // §119 Am. 1 (DELOAD-OPENING-SURFACE-01) — 🔴 STAMPED SINCE 2026-10-06 AND
+  // WIRED TO NOTHING. The backlog recorded this as "blocked behind the note
+  // budget by the same cap"; measured 2026-10-07, `short_opening_block_note`
+  // appeared in **no renderer at all** — not here, not in `app/`, not in
+  // `components/`. It was not competing for a tile, it had never been given one.
+  // 🎯 McMillan's condition on that ruling is binding and in his words: the
+  // early recovery week is "recorded TO THE RUNNER", not to the plan JSON.
+  if (meta.short_opening_block_note) notes.push({ label: 'Recovery week', text: meta.short_opening_block_note })
   if (meta.goal_below_easy_ceiling_note) notes.push({ label: 'Your target', text: meta.goal_below_easy_ceiling_note })
   if (meta.fitness_signal_note)     notes.push({ label: 'Your level',    text: meta.fitness_signal_note })
   if (meta.hard_pref_note)          notes.push({ label: 'Hard sessions', text: meta.hard_pref_note })

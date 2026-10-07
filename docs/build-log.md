@@ -16,6 +16,46 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## PLAN-NOTE-BUDGET-INERT-01 — two correct numbers that happened to be the same (2026-10-07)
+
+### The dev bit
+
+`PLAN_RATIONALE_MAX_WORDS` was 70. The length ratchet records `MEAN_WORDS = 70`. **A cumulative
+budget equal to the mean of the things it budgets holds exactly one of them** — so the 3-tile cap
+had been decoration since the day more than one note started appearing, and nobody decided that.
+
+Measured: 1.01 of 2.27 stamped notes rendered per plan, three types on zero plans, and **357 of 709
+first notes exceeded the whole budget on their own.** At 180 words it is 1.88.
+
+### The honest bit
+
+The constant's header carried its own justification: *"the one-cause-one-tile rule left 510 of 513
+plans carrying a single note, so this budget now decides almost nothing at runtime."* That was true
+when written. **538 of 709 plans carry two or more today** — more honesty notes shipped underneath
+it, and the sentence explaining why it was harmless sat there while it became the opposite.
+
+So the fix is not only the number. **A rule whose stated reason has expired is how this happened**,
+and the reason is the part that rots first.
+
+### The AI-building bit
+
+Two things falsification caught that I would have shipped:
+
+**The coarse arm was not enough.** I wrote a delivery floor of 1.70 notes per plan, then un-wired
+one note type — the exact live defect — and it stayed green at 1.78. **An average cannot see one
+note type going dark.** The per-type arm is the real guard.
+
+**And the old MEAN ratchet was measuring two things at once**: delivered words per plan mixes copy
+length with delivery volume, so the board's deliberate decision to show more tripped a guard meant
+for authors writing long. Per note it is 60.3 — slightly better than the 67 recorded when one note
+rendered. No copy got longer; the runner is told more.
+
+### The one filed wrong
+
+`DELOAD-OPENING-SURFACE-01` said §119 Am. 1's note was *"blocked behind #1 by the same cap."* It was
+in **no renderer at all**. It was never competing for a tile; it had never been given one.
+
 ## GOAL-BELOW-EASY-DECLARED-01 — the fix that measurement refused (2026-10-07)
 
 ### The dev bit

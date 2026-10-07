@@ -1941,6 +1941,14 @@ The engine's honest, rule-engine explanation of **why the plan is shaped this wa
 - **Single owner:** `lib/plan/planRationale.ts → planRationaleNotes(meta)` decides which notes, in what order, under what label — the UI renders from it, never greps meta itself.
 - **Ordering:** honest *constraints* first (they explain a surprising shape and are behaviour-relevant); the brag-risky "Shaped for you" line ranks **last**.
 - **Cap:** `PLAN_RATIONALE_MAX_NOTES` (3) — a plan never becomes a wall of notes.
+- **Word budget:** `PLAN_RATIONALE_MAX_WORDS` — **180** (Design Board, 2026-10-07, `PLAN-NOTE-BUDGET-INERT-01`), raised from the SLT's original 70.
+  - 🔴 **70 WAS ALSO THE MEAN NOTE LENGTH, SO THE BUDGET ADMITTED EXACTLY ONE NOTE AND THE 3-TILE CAP WAS DECORATION.** Not a policy choice — what two separately-correct numbers do when they meet. Measured: **1.01 of 2.27 stamped notes rendered per plan**, with three note types rendering on **zero** plans.
+  - ⚠️ **The rule's own stated justification had expired.** It read *"the one-cause-one-tile rule left 510 of 513 plans carrying a single note, so this budget now decides almost nothing."* True in September; measured 2026-10-07 at **171 of 709 carrying one, 538 (75.9%) carrying two or more.** More honesty notes had shipped underneath it.
+  - 📐 **180 over 220** (Wroblewski): 90% of plans see every note, for a worst case that can be defended. 220 buys 7pp for a 40-word looser ceiling. After: **1.88 rendered per plan.**
+  - ✋ **Silvanto carried the ruling:** length is held by the per-note RATCHET in `planRationale.test.ts`, which reaches the copy. A runtime budget cannot reach copy — **it can only hide it.** Two guards for one job, and the runtime one was the only one able to delete coaching silently.
+  - 🎓 **What the runner was losing** (Sierra): 63% of plans dropped at least one honest note, and the survivor was almost always `Maintenance` — what the plan WILL do. The dropped ones were what it could NOT do. **The runner systematically received the reassurance and not the constraint.**
+- **Delivery is measured, not assumed** — `PLAN-NOTE-DELIVERY-01`. A note the engine stamps must render on at least one plan. ⚠️ **An average cannot see one note type going dark**: un-wiring `short_opening_block_note` left delivery at 1.78 against a 1.70 floor and the coarse arm stayed green. The per-type arm is the real guard.
+- **ONE CAUSE, ONE TILE stands** (SLT 2026-09-17) — the volume-shortfall tile is still suppressed beside Maintenance. It is not what made notes inert.
 - **Empty state:** zero notes → render nothing (no empty card).
 - **Provenance:** all rule-engine → no AIMark. If a note ever became AI-derived it would move to `aiGenerated`.
 
