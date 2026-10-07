@@ -88,6 +88,47 @@ Founder: *"seems i can still manually link it to the same run its linked against
 
 `lib/health/adapter.ts:104` — `name: payload.sourceName ? \`Run (${payload.sourceName})\` : 'Run'`. `sourceName` is the app that wrote the workout into Apple Health, so the picker shows **"Run (Strava)"** above the subtitle **"Apple Health"**, and **"Run (Connect)"** (Garmin) for another. Both statements are true and they read as a contradiction. ⚠️ Related but distinct: `run_analysis.source` was stamped **`'strava'`** on an `apple_health` activity — provenance disagreeing with ADR-011's own column.
 
+### 🧭 `SESSION-JOURNEY-01` — the WHOLE arc, prescribe → understand → do → log → read → aggregate *(widened 2026-10-07 by founder instruction, P1)* 🧭 DESIGN BOARD → 🏃 COACHING BOARD → 💼 SLT
+
+**Founder, widening `POSTRUN-JOURNEY-01` the same day it was ruled:** *"I want us to consider the
+whole experience from I get my session, I understand what I need to do, to I've now logged it, to
+oh I can look at those metrics… if we need to, we need to look at experience in isolation but also
+realistically from end to end."*
+
+🔴 **THIS IS THE ONE THING NONE OF OUR GOVERNANCE CAN SEE.** Every board sitting on record is
+**screen-by-screen** — 6t post-run and reshape, 6af the connections row, 6ah the post-run card.
+Every mechanical check asks *"is this element correct?"* and **not one asks "does tapping X land
+on Y?"**. `feedback_no_check_walks_a_journey` records nine founder-found defects where **both
+surfaces were correct alone and only the relationship was wrong** — a door labelled *"Common
+questions"* opening *"The ones people actually ask"*, a pinned header covering its own back arrow,
+a zone row that rendered perfectly and connected to nothing.
+
+**The arc to review as ONE object, not six:**
+
+| Step | Surface | Known state |
+|---|---|---|
+| 1. I get my session | Today card → Session detail | §21b step rows shipped 10-06; prescription is dense and was the subject of four ships that week |
+| 2. I understand what to do | Session detail: zone, target, structure, why | `STEP-TARGET-EVERY-ROW-01` shipped; the "why" is a collapsed brief |
+| 3. I do it | — | Nothing. No pre-run readiness (Planzy has one), no mid-run surface |
+| 4. I log it | Auto-link, or picker | **Three defects fixed 10-07**; `LINK-PICKER-ALREADY-LINKED-01` open |
+| 5. I read how it went | Post-run card | **Ruled 6ah**, build outstanding |
+| 6. I see it add up | Coach screen | 🔴 **THE GAP.** Per-session metrics exist; nothing aggregates them. Coach's documented failure is *"seven blocks, no subject"* |
+
+⚠️ **Step 6 is where the founder keeps arriving and it is ALSO the open SLT bet** — the
+2026-09-13 competitive investigation found **no competitor joins the run to the block** and named
+*"the per-run moment carrying block-level meaning"* as the empty space, routing it to the SLT where
+it has sat **since 13 September**. His *"if we measure these on each session i'd expect us to do
+that overall in terms of the plan"* is that item, asked a third way.
+
+⚠️ **Steps 3 and 6 are not design gaps, they are PRODUCT gaps** — there is nothing to critique,
+because nothing is built. That is an SLT scope call before any board draws anything.
+
+**What this needs that a sitting cannot give:** a walk. ⚠️ `feedback_no_check_walks_a_journey`'s
+own conclusion is that **the cheapest journey-walker is a person with the app open**, and the
+founder is still the only one who has ever walked it. Nothing has run on a device.
+
+---
+
 ### 🧭 `POSTRUN-JOURNEY-01` — ⚖️ **RULED 2026-10-07** (`design-rulings.md` 6ah), mockups approved, **BUILD OUTSTANDING** *(P1)* 🧭 DESIGN BOARD → 🏃 COACHING BOARD → 💼 SLT
 
 ✅ **Board ruled SHIP WITH AMENDMENT; founder approved boards B and E of the mockups on 2026-10-07.** To build: (1) zone signal above Kit's read; (2) delete the four-column loading skeleton and replace it with the silhouette of the real result; (3) `POST_RUN_READ_MAX_WORDS = 40` plus a gate; (4) RPE asked before the read, **with the founder's skip amendment** — skip always visible and one tap, no streak, no nag, no second ask, and **answering must PAY** (the read acknowledges it: *"You called it hard, and it was"*), because a prompt standing between a runner and something they want becomes noise. His own words: *"Sometimes on garmin i just click through it to save it without paying attention."*
