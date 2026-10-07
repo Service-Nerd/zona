@@ -7,6 +7,7 @@ import type { LimiterHypothesis } from '../limiter'
 import { limiterLabel } from '../limiter'
 import { buildRaceNarrativeBlock } from '../raceNarrative'
 import { LIMITER } from '../constants'
+import { readBudgetInstruction } from '@/lib/coaching/readBudget'
 import { buildVoiceHeader } from './voiceRules'
 import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
 import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
@@ -311,7 +312,10 @@ If today's numbers diverge meaningfully from this cohort (HR ±5 bpm, pace ±${f
     // UX-POSTRUN-01 (SLT 2026-09-13) — tightened from 2–4. The screenshot that
     // opened the review ran to 90 words and five sentences at the moment a runner
     // has just stopped running. Voice rule: one sentence is better than two.
-    outputConstraint: 'One paragraph only. TWO sentences, three at the absolute most. Never more.',
+    // POSTRUN-JOURNEY-01 — the budget moved to WORDS and now comes from one owner.
+    // Sentences were the wrong unit: the founder's own read was three sentences and
+    // SEVENTY-SIX words, fully compliant with the line this replaces.
+    outputConstraint: readBudgetInstruction(),
     units,
   })
 

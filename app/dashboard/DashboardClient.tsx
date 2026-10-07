@@ -6051,6 +6051,11 @@ export function RunFeedbackCard({
   // `min(100, hrInZonePct)`), so this reads the score row rather than
   // recomputing from `hr_in_zone_pct` and risking two answers to one question.
   const zoneSignal = analysis.hr_discipline_score as number | null
+  /** POSTRUN-JOURNEY-01 — the signed pair. Null on a manual run and on any analysis
+   *  written before these columns were selected; the bar then renders the single
+   *  segment it always did, so an old row degrades rather than breaking. */
+  const aboveCeilingPct = (analysis.hr_above_ceiling_pct ?? null) as number | null
+  const belowFloorPct   = (analysis.hr_below_floor_pct   ?? null) as number | null
   const hrNotAvailable = !isManual && zoneSignal == null
 
   // UX-POSTRUN-01 — the card's palette follows the verdict.
@@ -6074,44 +6079,29 @@ export function RunFeedbackCard({
 
   return (
     <>
-      {/* UX-POSTRUN-01 (SLT 2026-09-13) — KIT LEADS.
+      {/* 🔴 POSTRUN-JOURNEY-01 (2026-10-07) — THE SIGNAL LEADS, THE READ FOLLOWS.
+       * THIS REVERSES UX-POSTRUN-01's "KIT LEADS", AND THE REVERSAL IS THE FOUNDER'S.
        *
-       * The rule-derived verdict card used to come first, so the runner met a
-       * grade before they met a coach. Traynor: this is PAID surface leading
-       * with the commodity — any free tracker computes a score; the read is what
-       * they are paying for, and it was below the fold behind a grading panel.
-       * The post-run moment is where a trial user decides whether they bought a
-       * coach or a tracker, and a mark out of 100 answers "tracker".
-       */}
-      {/* AI card — LLM-generated read of your run. Only renders when feedback exists.
-       *  White card + moss rail + CoachByline = the canonical "this is from Kit" treatment. */}
-      {feedback && (
-        <div style={{
-          position: 'relative',
-          marginTop: 'var(--space-3)',
-          background: 'var(--card)',
-          borderRadius: '14px',
-          border: '1px solid var(--line)',
-          padding: '14px 16px 14px 22px',
-        }}>
-          <span aria-hidden="true" style={{
-            position: 'absolute', left: '8px', top: '14px', bottom: '14px',
-            width: '3px', borderRadius: '2px', background: 'var(--moss)',
-          }} />
-          <div style={{ marginBottom: 'var(--space-3)' }}>
-            <CoachByline color="moss" role="Read of your run" onClick={onOpenCoach} />
-          </div>
-          <div style={{
-            fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
-            color: 'var(--ink-2)', lineHeight: 1.55,
-          }}>
-            {feedback}
-          </div>
-        </div>
-      )}
-      {/* Verdict card — rule-derived headline + (metrics if !isManual). No AI mark.
-       *  AI-VIS-01: the LLM paragraph used to live here too — provenance was muddy.
-       *  Now split into a separate AI card below. */}
+       * UX-POSTRUN-01 (SLT, 2026-09-13) put Kit first and its reasoning was sound:
+       * Traynor — "this is PAID surface leading with the commodity; any free tracker
+       * computes a score, the read is what they are paying for", and "a mark out of
+       * 100 answers 'tracker'". That argument is NOT withdrawn and the score is still
+       * demoted to a collapsed chip: what leads now is the ZONE SIGNAL, which is the
+       * one number only this product produces, not the grade.
+       *
+       * ⚠️ The Design Board could not have made this change — ADR-023 runs one way,
+       * the SLT may overturn design and not the reverse. 6ah's part 1 was ruled
+       * against settled ground that the sitting's own scan missed, and the FOUNDER
+       * overruled it on 2026-10-07 after being shown both orders as mockups.
+       *
+       * His reason, recorded: a runner opening this screen is asking "how did I do?",
+       * and today they meet 76 words before the one number that answers it. Measured:
+       * mean read 12 words, but his own was 76 and fully rule-compliant.
+       *
+       * ⚠️ Kit has NOT been demoted to the bottom of the screen — the read sits
+       * immediately below, above the fold on a 390pt phone. The grade did not move
+       * back up; it is still behind the toggle. */}
+      {/* Verdict card — rule-derived zone signal + headline. No AI mark. */}
       <div style={{
         marginTop: 'var(--space-2)',
         background: pal.bg,
@@ -6186,19 +6176,53 @@ export function RunFeedbackCard({
                 {scoreBandLabel(zoneSignal)}
               </div>
             </div>
+            {/* 🔴 POSTRUN-JOURNEY-01 — THE BAR IS SIGNED, and that is the point of it.
+              * `hr_in_zone_pct` alone says you missed; it cannot say whether you went
+              * too HARD or too EASY, and those need opposite advice. Garmin's Training
+              * Effect is unsigned, so this split is a thing only this product can show
+              * — and §12 Am. 1 already established the direction matters, after the old
+              * detector flagged 6 of 22 runs (27%) that were merely too easy.
+              * ⚠️ Above-ceiling is `--warn`; below-floor is MUTED, never alarming:
+              * running easier than prescribed breaks no principle. */}
             <div style={{
-              height: '3px', background: pal.track, borderRadius: '2px',
-              overflow: 'hidden',
+              height: '6px', background: pal.track, borderRadius: '3px',
+              overflow: 'hidden', display: 'flex',
             }}>
               <div style={{
                 height: '100%',
                 width: `${Math.min(100, Math.max(0, zoneSignal))}%`,
                 background: zoneHeld ? 'var(--moss)' : 'var(--warn)',
                 opacity: zoneHeld ? 0.8 : zoneSignal >= 60 ? 0.55 : 1,
-                borderRadius: '2px',
                 transition: 'width 0.4s ease',
               }} />
-            </div>
+              <div style={{
+                height: '100%',
+                width: `${Math.min(100, Math.max(0, aboveCeilingPct ?? 0))}%`,
+                background: 'var(--warn)',
+                transition: 'width 0.4s ease',
+              }} />
+              <div style={{
+                height: '100%',
+                width: `${Math.min(100, Math.max(0, belowFloorPct ?? 0))}%`,
+                background: pal.label,
+                opacity: 0.35,
+                transition: 'width 0.4s ease',
+              }} />
+
+            {/* The sentence the bar cannot say on its own. One line, only when there
+              * is a direction worth naming. */}
+            {(aboveCeilingPct != null || belowFloorPct != null) && (
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                marginTop: 'var(--space-2)',
+                fontFamily: 'var(--font-ui)', fontSize: '11px', color: pal.label,
+              }}>
+                <span>{Math.round(zoneSignal)}% in the band</span>
+                {(aboveCeilingPct ?? 0) >= (belowFloorPct ?? 0)
+                  ? <span style={{ fontWeight: 600 }}>{Math.round(aboveCeilingPct ?? 0)}% above it</span>
+                  : <span>{Math.round(belowFloorPct ?? 0)}% below it</span>}
+              </div>
+            )}            </div>
           </div>
         )}
         {hrNotAvailable && (
@@ -6263,6 +6287,32 @@ export function RunFeedbackCard({
         )}
       </div>
 
+      {/* AI card — LLM-generated read of your run. Only renders when feedback exists.
+       *  White card + moss rail + CoachByline = the canonical "this is from Kit" treatment. */}
+      {feedback && (
+        <div style={{
+          position: 'relative',
+          marginTop: 'var(--space-3)',
+          background: 'var(--card)',
+          borderRadius: '14px',
+          border: '1px solid var(--line)',
+          padding: '14px 16px 14px 22px',
+        }}>
+          <span aria-hidden="true" style={{
+            position: 'absolute', left: '8px', top: '14px', bottom: '14px',
+            width: '3px', borderRadius: '2px', background: 'var(--moss)',
+          }} />
+          <div style={{ marginBottom: 'var(--space-3)' }}>
+            <CoachByline color="moss" role="Read of your run" onClick={onOpenCoach} />
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
+            color: 'var(--ink-2)', lineHeight: 1.55,
+          }}>
+            {feedback}
+          </div>
+        </div>
+      )}
     </>
   )
 }

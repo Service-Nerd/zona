@@ -10,6 +10,8 @@ import { scoreSession } from '@/lib/coaching/sessionScore'
 import { computeEF, computeEFBaseline } from '@/lib/coaching/efTrend'
 import { COACHING_RULE_ENGINE_VERSION, COHORT_SIMILARITY } from '@/lib/coaching/constants'
 import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedback'
+import { isWithinReadBudget, countWords, POST_RUN_READ_MAX_WORDS } from '@/lib/coaching/readBudget'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { computeHrStreamSummary } from '@/lib/coaching/streamAnalysis'
 import { computePaceFadeSummary, type StravaSplitMetric } from '@/lib/coaching/paceAnalysis'
@@ -423,6 +425,19 @@ const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userI
 
     if (aiRes.ok) {
       feedbackText = aiRes.text.trim() || null
+      // POSTRUN-JOURNEY-01 — the boundary check. A prompt instruction is not a
+      // mechanism: the model was already asked for two sentences and produced 76
+      // words inside three of them. ⚠️ IT DOES NOT TRUNCATE. A read sliced mid
+      // sentence is worse than a long one, and the honest response to an over-budget
+      // read is to leave it and record that it happened, so the rate is visible
+      // rather than silently repaired.
+      if (feedbackText && !isWithinReadBudget(feedbackText)) {
+        const words = countWords(feedbackText)
+        console.warn('[analyse-run] read over budget', words, '>', POST_RUN_READ_MAX_WORDS)
+        void recordOpsEvent('read_over_budget', {
+          words, budget: POST_RUN_READ_MAX_WORDS, week_n, session_day,
+        }, userId)
+      }
     }
   } catch {
     // silent fallback — scoring row still written below

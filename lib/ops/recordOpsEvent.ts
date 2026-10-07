@@ -266,6 +266,17 @@ export type OpsEventKind =
   // could not see either — `postWorkout` returns false and the caller counts a
   // failure without ever learning why.
   | 'health_ingest_failed'
+  // POSTRUN-JOURNEY-01 (2026-10-07) — the AI read came back over its WORD budget.
+  //
+  // The budget used to be in SENTENCES ("two, three at the absolute most") and the
+  // founder's own read was three sentences and SEVENTY-SIX words — fully compliant,
+  // and six times the corpus mean of 12. A limit in the wrong unit is not a limit.
+  //
+  // ⚠️ IT IS RECORDED, NOT REPAIRED. The read is left exactly as written: a sentence
+  // sliced at word 40 is worse than a long one, and silently trimming would hide the
+  // rate. This event is how we find out whether 40 is the right number — if it fires
+  // constantly the budget is wrong, not the model.
+  | 'read_over_budget'
   // COMPLETION-CLAIM-UUID-01 (2026-10-07) — the atomic auto-link claim FAILED, as
   // opposed to losing a race.
   //

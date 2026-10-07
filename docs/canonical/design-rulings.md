@@ -4390,3 +4390,63 @@ boards B and E on 2026-10-07.
 **No runner but the founder has used this screen, and nothing has run on a device.** It does not
 settle what the score is of (routed), the Coach carry-over (SLT), or whether asking RPE first
 helps a beginner rather than annoying them — which only real use will show.
+
+
+---
+
+## 6ai. POSTRUN-JOURNEY-01 parts 1-3 BUILT, and part 1 reversed an SLT ruling my own scan missed (2026-10-07)
+
+**6ah ruled four parts and the founder approved the mockups. Building part 1 surfaced that
+it contradicted `UX-POSTRUN-01` (SLT, 2026-09-13), which ruled "Kit's read leads".**
+
+🔴 **THE SETTLED-GROUND SCAN FAILED, AND IT FAILED IN THE CHAIR'S HANDS.** 6ah's scan read
+`UX-POSTRUN-01`'s summary line — *"Kit's read leads, the four-column panel is one zone
+signal"* — and took it as a statement about the four columns. **The reasoning was never in
+the register. It was in a comment at the exact line the build would edit:**
+
+> *"The rule-derived verdict card used to come first, so the runner met a grade before they
+> met a coach. Traynor: this is PAID surface leading with the commodity, any free tracker
+> computes a score; the read is what they are paying for. A mark out of 100 answers
+> 'tracker'."*
+
+⚠️ **AND THE BOARD COULD NOT HAVE MADE THAT CHANGE ANYWAY.** ADR-023 runs one way: the SLT
+may overturn design, not the reverse. 6ah part 1 was a ruling the board had no authority to
+make, against ground it did not know it was standing on.
+
+**It shipped because the FOUNDER overruled it** on 2026-10-07, after being shown both orders
+as mockups and told plainly that it reversed his own SLT decision. **Recorded as an overturn
+per ADR-023 §5, with his reason:** a runner opens this screen asking *"how did I do?"* and
+meets 76 words before the number that answers it.
+
+⚠️ **Traynor's argument is NOT withdrawn and the mitigation is the point:** what leads is the
+**zone signal**, the one number only this product produces. **The score stays demoted to a
+collapsed chip.** The grade did not move back up; Kit sits immediately below, above the fold
+at 390pt.
+
+| Part | Status |
+|---|---|
+| **1 — the signal leads, and the bar is SIGNED** | 🟢 **BUILT.** `hr_above_ceiling_pct` vs `hr_below_floor_pct` as separate segments: above is `--warn`, below is MUTED, because running easier than prescribed breaks no principle (§12 Am. 1). ⚠️ The poll did not FETCH those two columns; the bar would have had nothing to split on |
+| **2 — the skeleton is the silhouette of its result** | 🟢 **BUILT.** The four-column loading row is deleted. **Compliance with UX-POSTRUN-01, not a reversal** — it was the ghost of the panel the SLT removed, left in the waiting screen when the finished one was rebuilt |
+| **3 — `POST_RUN_READ_MAX_WORDS = 40`** | 🟢 **BUILT.** Enforced in the prompt AND at the boundary, because a prompt instruction is not a mechanism. ⚠️ **It RECORDS, it never TRUNCATES** — a sentence sliced at word 40 is worse than a long one, and silent repair would hide the rate. New ops kind `read_over_budget` |
+| **4 — RPE before the read** | ⏸️ **NEXT, as its own build.** It is a MOVE (the "How did it feel?" block relocates above the analysis) and `/build` §5b exists because a move shipped five silent defects under a green suite |
+
+### 🔴 A finding the build produced that no sitting had
+
+**The AI read overclaims, and the signed bar is what exposed it.** Kit told the founder he
+*"spent most of it above the zone."* **The real split is 32.3% in zone, 38.7% above, 29.0%
+below** — 38.7% is the largest bucket and nowhere near "most". ⚠️ **My own mockup made the
+identical error**, writing "68% above" by assuming everything outside the band was above it.
+**Two independent readers made the same unsigned assumption, which is the argument for the
+signed bar in one line.** Filed as `READ-DIRECTION-OVERCLAIM-01` → 🏃 Coaching Board.
+
+**Artifacts:** `lib/coaching/readBudget.ts` (the owner, prompt and check share one number) ·
+`lib/ui/postRunOrder.test.ts` 6 arms + `lib/coaching/readBudget.test.ts` 8 arms, **falsified
+three ways** (put Kit back on top · restore the four columns · raise the budget so the
+76-word read passes). ⚠️ The order arm went red on **my own comment** quoting the founder
+saying "efficiency" — the third time in one day a check matched its own prose. It strips
+comments now.
+
+### ⚠️ What this does not settle
+
+Nothing has run on a device. The order inversion is approved on mockups and **no runner has
+seen it**. Whether 40 words is right is unknown until `read_over_budget` has data.

@@ -88,6 +88,31 @@ Founder: *"seems i can still manually link it to the same run its linked against
 
 `lib/health/adapter.ts:104` — `name: payload.sourceName ? \`Run (${payload.sourceName})\` : 'Run'`. `sourceName` is the app that wrote the workout into Apple Health, so the picker shows **"Run (Strava)"** above the subtitle **"Apple Health"**, and **"Run (Connect)"** (Garmin) for another. Both statements are true and they read as a contradiction. ⚠️ Related but distinct: `run_analysis.source` was stamped **`'strava'`** on an `apple_health` activity — provenance disagreeing with ADR-011's own column.
 
+### 🟠 `READ-DIRECTION-OVERCLAIM-01` — the AI read says "most of it above the zone" when it was 38.7% *(filed 2026-10-07, P2)* 🏃 **COACHING BOARD**
+
+**Found while building the signed bar.** Kit told the founder his run *"spent most of it above
+the zone."* The real split, from his own `run_analysis` row: **32.3% in zone, 38.7% above,
+29.0% below.** 38.7% is the largest bucket and **nowhere near "most"** — he spent 61% of that
+run not-above.
+
+🔴 **MY OWN MOCKUP MADE THE IDENTICAL ERROR**, writing *"68% above it"* by assuming everything
+outside the band was above it. **Two independent readers made the same unsigned assumption on
+the same data**, which is the argument for the signed bar in one line — and the reason this is
+a coaching question rather than a copy one.
+
+**Why it is the board's:** it is a claim about what the runner did, and it changes the advice.
+"Most of it above" says ease back. "38% above and 29% below" on a PROGRESSIVE TEMPO may be
+correct execution — a progression starts below the band and finishes above it by design.
+⚠️ **So the read may not merely be imprecise; it may be scoring a progression as a failure.**
+
+**MEASURED, so the board does not have to ask.** `sessionFeedback.ts:224` DOES pass
+`hrAboveCeilingPct` when it exceeds 10, so the model was told *"39% above ceiling"* and wrote
+*"most of it above the zone"* anyway. **It had the number.** ⚠️ But it is **never given
+`hrBelowFloorPct`** — so it sees 32% in zone and 39% above and is left to infer the remaining
+29%, which makes the overclaim easy rather than perverse. **Two candidate fixes and they are
+different rulings:** pass the third figure so the split is explicit, or forbid the word "most"
+for anything under a majority. The first is an input fix; the second is a voice rule.
+
 ### ⏸️ `SESSION-JOURNEY-01` — ⚖️ **SLT RULED 2026-10-07: DON'T BUILD, re-measure 2026-11-04** *(P1)* 💼 SLT
 
 **Decision note: `docs/decisions/slt-2026-10-07-session-journey.md`.**

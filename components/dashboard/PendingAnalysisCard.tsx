@@ -11,7 +11,6 @@
 // so the move stays reviewable as a move.
 
 import CoachByline from '@/components/shared/CoachByline'
-import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 // Loading-state sibling of RunFeedbackCard — shown while analyse-run is in flight.
 // Uses the CoachByline pulse instead of a spinner (per ui-patterns.md § CoachByline).
@@ -41,19 +40,36 @@ export default function PendingAnalysisCard({ onOpenCoach }: { onOpenCoach?: () 
       }}>
         Analysing your run. Usually takes 15–30 seconds.
       </div>
-      {/* Skeleton metric row — hint at what's coming */}
-      <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-        {['HR', 'Distance', 'Pace', 'Efficiency'].map(label => (
-          <div key={label} style={{ flex: 1 }}>
-            <div style={{ ...MICRO_LABELS.dataLabel, fontFamily: 'var(--font-ui)',
-              color: 'var(--mute)',
-              marginBottom: 'var(--space-2)' }}>{label}</div>
-            <div style={{
-              height: '3px', background: 'var(--line)', borderRadius: '2px',
-              animation: 'ai-mark-pulse 1.6s ease-in-out infinite',
-            }} />
-          </div>
-        ))}
+      {/* 🔴 POSTRUN-JOURNEY-01 (2026-10-07) — A SKELETON IS THE SILHOUETTE OF ITS
+        * RESULT, AND THIS ONE WAS THE SILHOUETTE OF A DELETED SCREEN.
+        *
+        * It rendered four labelled columns — HR / Distance / Pace / Efficiency — over
+        * pulsing bars. They were NEVER DATA: a loading placeholder with four headings
+        * and no values behind them. The founder, looking at his own run: "the card at
+        * the top showing HR, distance, pace, efficiency are now gone and so I question
+        * how valid they are." His instinct was right and the answer was worse than he
+        * thought: there were no values at any point.
+        *
+        * ⚠️ AND THEY WERE THE GHOST OF THE DASHBOARD THE SLT DELETED. UX-POSTRUN-01
+        * (2026-09-13) killed the four-column score panel on two MUST/NEVER violations —
+        * "no dashboards or noise" and "deliberately omits gamification" — and replaced
+        * it with one zone signal. Nobody rebuilt the WAITING screen when they rebuilt
+        * the finished one, so the loading state kept advertising a result that can no
+        * longer arrive. Removing it is COMPLIANCE with that ruling, not a reversal.
+        *
+        * What arrives is one zone-signal block and a short read, so that is what this
+        * is the shape of. ✋ Silvanto: "a skeleton's only job is to be the silhouette
+        * of what is coming." */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        {/* the zone signal: one number, then its bar */}
+        <div style={{
+          width: '38%', height: '10px', background: 'var(--line)', borderRadius: '3px',
+          animation: 'ai-mark-pulse 1.6s ease-in-out infinite',
+        }} />
+        <div style={{
+          height: '6px', background: 'var(--line)', borderRadius: '3px',
+          animation: 'ai-mark-pulse 1.6s ease-in-out infinite',
+        }} />
       </div>
     </div>
   )

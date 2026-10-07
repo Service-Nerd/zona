@@ -28,6 +28,11 @@
 /** The columns the post-run card and the session card both read. */
 export const RUN_ANALYSIS_COLUMNS =
   'session_day, week_n, source, verdict, total_score, feedback_text, hr_in_zone_pct, ' +
+  // POSTRUN-JOURNEY-01 — the DIRECTIONAL pair. `hr_in_zone_pct` alone cannot say
+  // whether a runner went too HARD or too EASY, and the signed split is the one
+  // thing Garmin's unsigned Training Effect cannot tell you. Without these two the
+  // post-run bar has nothing to split on.
+  'hr_above_ceiling_pct, hr_below_floor_pct, ' +
   'ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, ' +
   'planned_load_km, actual_load_km, planned_load_mins, actual_load_mins'
 

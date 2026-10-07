@@ -27,7 +27,7 @@ const CASES: Case[] = [
     analysis: {
       source: 'strava', verdict: 'off_target', total_score: 50,
       hr_discipline_score: 32, distance_score: 80, pace_score: 40, ef_score: 80,
-      hr_in_zone_pct: 32.26,
+      hr_in_zone_pct: 32.26, hr_above_ceiling_pct: 38.71, hr_below_floor_pct: 29.03,
       planned_load_km: 8.5, actual_load_km: 9.88,
       planned_load_mins: 48, actual_load_mins: 61.12,
       ef_value: 0.0175, ef_baseline: 0.0179, ef_trend_pct: -2.39,

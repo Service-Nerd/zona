@@ -18,6 +18,52 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-10-07 — POSTRUN-JOURNEY-01 (1–3): the skeleton was a ghost, the budget was in the wrong unit, and I nearly reversed a ruling I was enforcing
+
+**Dev.** Three things on the screen a runner sees after a run, all found by looking at four
+screenshots the founder sent.
+
+**The loading card showed four labelled columns — HR, DISTANCE, PACE, EFFICIENCY — over pulsing
+bars.** They were skeletons. There was never any data behind them, and the finished card has no
+four columns. **It was the ghost of a dashboard the SLT deleted three weeks earlier** for
+violating *"no dashboards or noise"*: the verdict card got rebuilt, the waiting state did not.
+So for three weeks the product promised four metrics while it was thinking and then delivered one
+sentence. Deleting them is compliance with that ruling, not a reversal of it — and that
+distinction mattered, because at a glance it looks like a designer taking something away.
+
+**The read budget said "two sentences, three at the absolute most" and nothing counted words.**
+The founder's read was 76 words in three sentences and fully compliant. Across all 83 live reads
+the mean is **12 words** and 77 of 83 are under 20 — his sits alone at six times the mean, breaking
+no rule. **A limit expressed in a unit the thing is not measured in is not a limit**, which is the
+same shape as the oldest live defect in this engine (an intensity ratio counted in sessions and
+enforced in minutes). 40 words now, as a named constant, enforced in the prompt *and* at the
+boundary, because a prompt instruction is a request and not a mechanism. It **records** an
+over-budget read rather than truncating one: a half-sentence from a coach is worse than a long one.
+
+**The honest bit.** Part 1 inverts the order — the zone number leads, the coach's sentence
+follows. I ran a design board on it, the board approved it, and only while writing up the ruling
+did I notice **it reverses an SLT decision from 2026-09-13 that deliberately put the read first.**
+My settled-ground scan had read the register's summary line; the reasoning was in a code comment
+next to the implementation. **The scan ran. It ran against the wrong artifact.** I flagged it
+before writing any code and the founder overruled it knowingly — which is the right outcome, and
+it is only the right outcome because he got to make the call instead of discovering it later.
+
+**AI-building.** The signed bar came out of my own mistake. My mockup wrote *"32% in the band,
+68% above"*; the real split is **32.3% in, 38.7% above, 29.0% below**. I had assumed everything
+outside the band was above it — and **Kit's shipped read made the identical error in the same
+sentence**, saying he *"spent most of it above the zone"*. Two independent readers drew the same
+wrong conclusion from one unsigned number, which is a better argument for signing it than anything
+in the ruling. The data was already in the table and nothing on the screen read it.
+
+**Product.** Part 4 — asking how it felt *before* telling him how it went — is not in this ship,
+and that is a decision rather than a shortfall. It relocates a block, and this repo's move
+checklist exists because a relocation shipped five silent defects under a fully green suite: a
+control whose scroll target had moved behind a conditional render, so `getElementById` returned
+null, the optional chain swallowed it, and a chevron did nothing forever with no error and no log.
+A move needs its own six questions and its own check. It gets both, next.
+
+---
+
 ## 2026-10-07 — HK-FREE-INGEST-LINE-01 + SESSION-JOURNEY-01: the route disagreed with itself, and the funnel was measured through four defects
 
 **Dev.** The founder sent the whole-journey question to the SLT. The board asked for the funnel
