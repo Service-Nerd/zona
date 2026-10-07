@@ -24,7 +24,15 @@ const EM = '—'
 /** Runner-facing by construction. Guarded WHOLESALE rather than by a file list:
  *  a hand-maintained list of guarded files is blind to the file nobody added to
  *  it, which this repo has recorded as a class of its own. */
-const SURFACES = ['components', 'app/dashboard']
+// 🔴 `lib/ui` ADDED 2026-10-07 (HEALTH-SYNC-STALENESS-01 / MATCH-EMPTY-CAUSE-01).
+// Extracting runner-facing copy into an OWNER MODULE is the right move and it moved
+// those sentences OUT OF THIS GUARD'S POPULATION. `matchEmptyCopy` and
+// `connectionStaleCopy` are read by the runner on the link picker and the Connections
+// screen, and the day they were written this file could not see either of them.
+// "The checker's population excludes the cases at risk", caused by a refactor that was
+// otherwise correct. Added clean: all 5 arms stayed green, so there was no debt to
+// declare, and the next sentence that lands in a `lib/ui` owner is covered on the way in.
+const SURFACES = ['components', 'app/dashboard', 'lib/ui']
 
 /** Not a sentence the runner reads, so out of scope by the founder's own words.
  *  Each entry names WHY, because an exemption without a reason becomes a place

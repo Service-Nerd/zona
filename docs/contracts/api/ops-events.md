@@ -36,6 +36,34 @@ recordOpsEvent(kind: OpsEventKind, detail?: Record<string, unknown>, userId?: st
 | `plan_enrich_failed` | `/api/generate-plan` stream | **GEN-FIX-02.** AI enrichment fell back silently and the user holds rule-engine output. `detail`: `{ reason, detail, tier, race_distance_km }` where `reason` ∈ `no_api_key` \| `api_error` \| `fetch_failed` \| `parse_error` \| `schema_invalid` \| `post_enrich_invalid`. The `post_enrich_invalid` row also carries `codes` (the violations charged to the enricher) and `pre_existing` (the rule plan's own, which are **not**). Written for trial **and** paid — a paid user receiving an unenriched plan is a paid feature not delivered. |
 | `plan_rule_invalid` | `/api/generate-plan` stream **and** `/api/ops/plan-audit` (daily) | **ENRICH-ATTRIB-01 (2026-09-03).** A *generated rule plan* violated its own constitution. `generateRulePlan` throws on this in dev/test but only `console.error`s in production, and a console line on a Vercel function is not a record — so a live constitutional violation had no durable signal at all until it took enrichment down with it. `detail`: `{ codes, tier, race_distance_km }`. Recorded by the route rather than the engine because `lib/plan/*` must stay free of the service-role client (it is imported by `DashboardClient`). **More serious than `plan_enrich_failed`:** the runner holds a plan that breaches a coaching principle, not merely an unenriched one. |
 
+| `health_sync_swept` | `POST /api/ops/health-sync-report`, posted by `syncRecentWorkouts` in the **browser** | **HEALTH-SYNC-OBS-01 (2026-10-07).** One row per HealthKit workout sweep, **including the sweeps that found nothing — which is the entire reason it exists.** `detail`: `{ workouts_found, posted, failed, lookback_from, error }`. ⚠️ **A server-side event on `/api/health/ingest` is structurally blind to the only failure that actually happened**: with the Apple Health *Workouts* permission off, `queryWorkouts` resolves EMPTY (a denied read is not an error in `@capgo/capacitor-health`), `syncRecentWorkouts` breaks on `if (!res.workouts.length)`, and **no request is made**. The founder ran 17 days that way. Three states separate: no events at all = the sync is not running; `workouts_found: 0` = permission off or genuinely no runs; `found > 0, posted: 0` = the ingest is rejecting them. ⚠️ **It cannot tell "permission off" from "did not run" and must never claim to.** Success of an individual ingest is deliberately **not** recorded: a successful ingest already leaves a `strava_activities` row, which is a better record than an event about one. |
+| `health_ingest_failed` | `/api/health/ingest` upsert-error path | **HEALTH-SYNC-OBS-01.** The persist failed. Until now this was a `console.error` and nothing else, and the client's `postWorkout` reads only `res.ok` — so a 500 left the runner's run silently unsynced with no record anywhere a human would look. `detail`: `{ stage, message, uuid }`. |
+
+## Route — `POST /api/ops/health-sync-report`
+
+Bearer-authed. `syncRecentWorkouts` runs in the Capacitor webview and cannot call
+`recordOpsEvent` (service-role, server-only), so it posts its sweep result here. Same
+shape and the same reason as `/api/ops/onboarding-event`.
+
+| | |
+|---|---|
+| Body | `{ workoutsFound?, posted?, failed?, lookbackFrom?, error? }` |
+| Response | `{ ok: true }`, always — telemetry must never fail the path it monitors |
+| Auth | `getUserFromRequest`. **The user id comes from the verified token, never the body.** |
+
+⚠️ **The event KIND is hardcoded in the route, not taken from the body**, for the same
+reason the user id is not: a client that could name its own kind could write anything
+into the ledger `/api/ops/ai-spend` reads. Counts are clamped to non-negative integers
+≤ 10,000 and strings are truncated.
+
+⚠️ **The report is AWAITED, not fired and forgotten.** This event is a heartbeat, so
+"no events at all" has to mean "the sync did not run" — a dropped POST from a
+backgrounding webview would look exactly like that.
+
+Gate: `lib/health/healthSyncReport.test.ts` — behavioural, with an injected fake
+`@capgo/capacitor-health`. A source assertion would pass on a comment, and the path
+being guarded is an **early return**.
+
 ## Probe — `GET|POST /api/ops/plan-audit`
 
 > 📄 **The ROUTE's own contract is `ops-plan-audit.md`** (added 2026-10-04): auth, the full

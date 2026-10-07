@@ -11,6 +11,7 @@
 import Button from '@/components/ui/Button'
 import { BRAND } from '@/lib/brand'
 import { syncOnAppOpen } from '@/lib/health/clientSync'
+import { connectionFreshness, connectionStaleCopy, connectionToneVar } from '@/lib/ui/connectionFreshness'
 import { createClient } from '@/lib/supabase/client'
 import { Capacitor } from '@capacitor/core'
 import { useEffect, useState } from 'react'
@@ -20,10 +21,14 @@ import { useEffect, useState } from 'react'
  * Mirrors StravaConnectionRow shape; HealthKit auth is plugin-based (no OAuth
  * redirect), so the connect button calls the plugin directly.
  */
-export default function AppleHealthConnectionRow({ onHRFound }: {
+export default function AppleHealthConnectionRow({ onHRFound, lastArrival }: {
   /** Called after a successful connect with resting/max HR from HealthKit.
    *  Null = HealthKit had no reading (Garmin user etc). */
   onHRFound?: (rhr: number | null, mhr: number | null) => void
+  /** HEALTH-SYNC-STALENESS-01 — start date of the most recent `apple_health`
+   *  activity, server-side. `null` = nothing has ever arrived. NOT localStorage:
+   *  that answers "this device" where the question is "this runner". */
+  lastArrival?: string | null
 }) {
   const [isNative, setIsNative] = useState(false)
   const [connectedAt, setConnectedAt] = useState<string | null | undefined>(undefined)  // undefined = checking
@@ -112,6 +117,14 @@ export default function AppleHealthConnectionRow({ onHRFound }: {
 
   const isLoading = connectedAt === undefined
   const connected = !!connectedAt
+  // HEALTH-SYNC-STALENESS-01 (Design Board, 2026-10-07). "Connected" was read off
+  // `healthkit_connected_at`, which is the moment the runner TAPPED CONNECT. It is
+  // an INTENT, not a working pipe. Measured in production the day this shipped:
+  // of 28 users with that column set, THIRTEEN had never had one `apple_health`
+  // activity, and FIVE of them had tapped Connect 93 to 123 DAYS earlier. This row
+  // told them "Connected", in a positive accent, for three to four months.
+  const freshness = connectionFreshness(connectedAt, lastArrival)
+  const staleCopy = connectionStaleCopy(freshness, lastArrival, 'Apple Health')
 
   return (
     <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
@@ -122,7 +135,10 @@ export default function AppleHealthConnectionRow({ onHRFound }: {
           </div>
           <div>
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Apple Health</div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', marginTop: '1px', color: isLoading ? 'var(--text-muted)' : connected ? 'var(--teal)' : 'var(--text-muted)' }}>
+            {/* ⚠️ `--teal` was a System-B legacy alias (it resolves to `var(--moss)`
+                at globals.css:404, so there is no visual delta) and the tone now
+                comes from the ruled §17c state scale via `connectionToneVar`. */}
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', marginTop: '1px', color: isLoading ? 'var(--text-muted)' : connectionToneVar(freshness) }}>
               {isLoading ? 'checking...' : connected ? 'Connected' : 'Not connected'}
             </div>
           </div>
@@ -166,6 +182,17 @@ export default function AppleHealthConnectionRow({ onHRFound }: {
       {!isLoading && !connected && (
         <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
           {BRAND.name} reads your runs from Apple Health to coach you. Read-only: {BRAND.name} never writes to Apple Health.
+        </div>
+      )}
+      {/* 📱 Wroblewski: ZERO new structure. This explain-row slot already existed
+          and rendered only in the not-connected state; the stale line reuses it,
+          so there is nothing new to measure at 320px.
+          ⛔ SILENCE WHEN FRESH is Silvanto's binding amendment: `staleCopy` is
+          `null` for a working connection and this block does not render. If it
+          ever renders for 'fresh', the ruling has been reversed. */}
+      {!isLoading && connected && staleCopy && (
+        <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', lineHeight: 1.55 }}>
+          {staleCopy}
         </div>
       )}
     </div>

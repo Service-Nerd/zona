@@ -37,6 +37,14 @@ interface MeDoorNavigation {
   onOpenZones?: (returnTo?: string) => void
   /** ME-ORDER-01 — read ONLY for the Connections row's subtitle. `undefined` = not loaded. */
   healthkitConnectedAt?: string | null | undefined
+  /** HEALTH-SYNC-STALENESS-01 — start date of the most recent activity PER SOURCE,
+   *  server-side. `null` = nothing has ever arrived. Derived in `DashboardClient` from
+   *  the activity list already in memory, so it costs no query, and deliberately NOT
+   *  from `getLastSyncIso()`: localStorage answers "this device" where the question is
+   *  "this runner". Drives the honest-staleness sub-line (ui-patterns.md §17c
+   *  amendment) on both connection rows and on the ME-ATHLETE Recovery row. */
+  lastAppleHealthArrival?: string | null
+  lastStravaArrival?: string | null
   stravaConnected?: boolean
 }
 ```

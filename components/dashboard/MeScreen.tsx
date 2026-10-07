@@ -12,6 +12,7 @@ import { getDeviceToken } from '@/components/dashboard/pushDevice'
 import ActionRow from '@/components/shared/ActionRow'
 import PlanAdjustmentsScreen from '@/components/dashboard/PlanAdjustmentsScreen'
 import AppleHealthConnectionRow from '@/components/dashboard/AppleHealthConnectionRow'
+import { connectionFreshness, connectionStaleCopy, connectionToneVar } from '@/lib/ui/connectionFreshness'
 import BackButton from '@/components/shared/BackButton'
 import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 import Button from '@/components/ui/Button'
@@ -330,7 +331,18 @@ function DailyPushToggleRow({ enabled, onChange, disabled = false }: {
 // Strava API approval is pending — showing a Connect button that fails to all
 // non-admin users damages trust and implies Strava is required (it isn't).
 // Admins still see it for testing. Removes itself silently when is_admin=false.
-function StravaConnectionRow() {
+function StravaConnectionRow({ lastArrival }: {
+  /** HEALTH-SYNC-STALENESS-01 — most recent `source='strava'` activity, server-side.
+   *  ⚠️ THE POPULATION HERE IS ADMIN-ONLY (DS-03, the early return below), which
+   *  deflates the Collins/Wroblewski disagreement recorded at the sitting: they
+   *  were arguing about whether "nothing has synced" would alarm Strava users, and
+   *  no non-admin runner can see this row at all. Applied anyway, because the
+   *  remedy is a MECHANISM and a mechanism applied to one twin is this repo's most
+   *  expensive habit (the ninth instance landed on this same row nine hours ago).
+   *  It will read "nothing has synced" for the founder, which is TRUE: the Strava
+   *  application is Inactive. */
+  lastArrival?: string | null
+}) {
   const [connected, setConnected] = useState<boolean | null>(null)
   const [isAdminUser, setIsAdminUser] = useState<boolean | null>(null) // null = loading
   const [disconnecting, setDisconnecting] = useState(false)
@@ -374,6 +386,9 @@ function StravaConnectionRow() {
 
   // Resolve loading: both flags must be non-null before rendering anything.
   const isLoading = connected === null || isAdminUser === null
+  const stravaFreshness = connectionFreshness(connected ? 'connected' : null, lastArrival)
+  const stravaStaleCopy = connectionStaleCopy(stravaFreshness, lastArrival, 'Strava')
+
   // Non-admins never see the Strava row (Strava API approval pending — DS-03).
   if (!isLoading && !isAdminUser) return null
 
@@ -386,7 +401,7 @@ function StravaConnectionRow() {
           </div>
           <div>
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Strava</div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', marginTop: '1px', color: isLoading ? 'var(--text-muted)' : connected ? 'var(--teal)' : 'var(--text-muted)' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', marginTop: '1px', color: isLoading ? 'var(--text-muted)' : connectionToneVar(stravaFreshness) }}>
               {isLoading ? 'checking...' : connected ? 'Connected' : 'Not connected'}
             </div>
           </div>
@@ -446,6 +461,12 @@ function StravaConnectionRow() {
       {!isLoading && !connected && (
         <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
           Kit reads your Strava runs. Nothing else. We're not interested in your followers.
+        </div>
+      )}
+      {/* The twin of the Apple Health stale line, same slot, same silence-when-fresh. */}
+      {!isLoading && connected && stravaStaleCopy && (
+        <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', lineHeight: 1.55 }}>
+          {stravaStaleCopy}
         </div>
       )}
     </div>
@@ -728,7 +749,7 @@ async function hasServerSubscription(platform: 'ios' | 'web'): Promise<boolean> 
   }
 }
 
-export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, stravaConnected, plan, initials, athlete, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, onActiveSectionChange, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, lastAppleHealthArrival, lastStravaArrival, stravaConnected, plan, initials, athlete, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, onActiveSectionChange, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   /** ME-DOORS-01 — open Me AT a door instead of at the index. Consumed once, then cleared
    *  by `onOpenSectionConsumed`, so a later visit to Me lands on the index as usual. */
   openSection?: string | null
@@ -742,6 +763,9 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
    *  behind the door and do not mount until it is opened, so they cannot tell the index
    *  anything. `undefined` = not loaded yet. */
   healthkitConnectedAt?: string | null | undefined
+  /** HEALTH-SYNC-STALENESS-01 — most recent arrival per source, server-side truth. */
+  lastAppleHealthArrival?: string | null
+  lastStravaArrival?: string | null
   stravaConnected?: boolean
   plan: Plan; initials: string; athlete: string
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
@@ -803,6 +827,16 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   recentChanges?: any[]
 }) {
   const signOut = useSignOut()
+
+  // HEALTH-SYNC-STALENESS-01 — "is my data arriving?", which is a different
+  // question from "did I once tap Connect" and the only one the runner has.
+  // Not a hook, so it is safe above the early returns either way.
+  const hkFreshness = connectionFreshness(healthkitConnectedAt, lastAppleHealthArrival)
+  // Resolved ONCE: the condition and the rendered string must never be able to
+  // disagree. `null` when fresh, which is Silvanto's amendment.
+  const hkRecoveryNote = hkFreshness === 'not_connected'
+    ? 'Connect below to feed readiness checks.'
+    : connectionStaleCopy(hkFreshness, lastAppleHealthArrival, 'Apple Health')
   const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'plan-adjustments' | 'connections' | 'delete-account' | 'support' | 'faq' | 'plan-history'>('main')
 
   // ⚠️ BEFORE THE EARLY RETURNS. `MeScreen` returns early for every door, so a hook placed
@@ -905,8 +939,8 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
       <ScreenHeader title={CONNECTIONS_TITLE} sub="Where your runs come from"
         onBack={() => setActiveSection('main')} />
       <div style={{ padding: '0 16px', paddingBottom: 'var(--space-7)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-        <AppleHealthConnectionRow onHRFound={(rhr, mhr) => onDeviceHRFound?.(rhr, mhr)} />
-        <StravaConnectionRow />
+        <AppleHealthConnectionRow lastArrival={lastAppleHealthArrival} onHRFound={(rhr, mhr) => onDeviceHRFound?.(rhr, mhr)} />
+        <StravaConnectionRow lastArrival={lastStravaArrival} />
       </div>
     </>
   )
@@ -1101,18 +1135,38 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
               )}
 
               {/* Recovery signals — no longer the last row now that injuries
-                  sit beneath it. Same display-only treatment as before. */}
+                  sit beneath it. ⚠️ This comment used to end "same display-only
+                  treatment as before" and that stopped being true below. */}
               <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>Recovery signals</span>
+                  {/* 🔴 HEALTH-SYNC-STALENESS-01 — THIS ROW WAS AN UNCONDITIONAL
+                      LITERAL. A 0.4-opacity moss dot (which §17c defines as "source
+                      available but not connected") and the words "Connect below to
+                      feed readiness checks", rendered to EVERYONE: to the runner
+                      syncing happily every morning and to the five runners whose
+                      pipe had never once worked. It read nothing.
+                      ⚠️ `healthkitConnectedAt` was already a prop of this component
+                      and is used 200 lines below for the Connections door subtitle.
+                      The state was in scope and the row did not look at it.
+                      This is a defect against §17c's own standing rule, "Stale state
+                      must be rendered (silent staleness is the bug the card exists
+                      to fix)", so it needed no board of its own. */}
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--moss)', flexShrink: 0, opacity: 0.4 }} />
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: connectionToneVar(hkFreshness), flexShrink: 0, opacity: hkFreshness === 'not_connected' ? 0.4 : 1 }} />
                     Apple Health
                   </span>
                 </div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '4px', lineHeight: 1.4 }}>
-                  Connect below to feed readiness checks.
-                </div>
+                {/* ⛔ SILVANTO'S BINDING AMENDMENT: SILENCE WHEN FRESH. When the
+                    pipe works the row says nothing extra. No confirmation that we
+                    are doing our job, no second colour. `ux-principles.md` "empty
+                    means calm, not broken", and a row that ALWAYS carries a status
+                    line has taught the runner to stop reading it. */}
+                {hkRecoveryNote && (
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: hkFreshness === 'not_connected' ? 'var(--mute)' : 'var(--warn)', marginTop: '4px', lineHeight: 1.4 }}>
+                    {hkRecoveryNote}
+                  </div>
+                )}
               </div>
 
               {/* Injury flags — last row, no border below. Empty list reads

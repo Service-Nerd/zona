@@ -18,6 +18,73 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-10-07 — HEALTH-SYNC-OBS-01 + MATCH-EMPTY-CAUSE-01 + HEALTH-SYNC-STALENESS-01: the app knew and never said
+
+**Dev.** The founder moved a session to Tuesday, ran it, and it neither auto-linked nor
+appeared in the manual link list. There was no linking defect. His Apple Health
+**Workouts** permission was off, `strava_activities` had held nothing for 17 days, and
+**every surface that could have told him said the opposite or said nothing.** Three fixes
+came out of that, and the third one found something worse than the bug I was fixing.
+
+**The one I nearly built wrong.** "No ingest telemetry" was my own item, and the obvious
+fix — record an `ops_event` in `/api/health/ingest` — is **structurally blind to the only
+failure that occurred.** `@capgo/capacitor-health` resolves a DENIED read as an EMPTY
+RESULT rather than an error, so `queryWorkouts` returned zero, `syncRecentWorkouts` broke
+on `if (!res.workouts.length)`, and **no request was made.** You cannot instrument a
+request that does not exist. The sweep has to be reported by the client, including the
+sweeps that find nothing — *especially* those. I caught this by asking what the 17 days
+would have looked like through the telemetry I was about to write, which is a question
+worth asking before writing any telemetry at all.
+
+**The string that had been fixed twice.** The picker's *"No activities found near this
+session date"* blames the date window. Its own comments say *"Layer 2 of the sync fix"* —
+and **both layers addressed the ERROR case**, an RLS failure and a thrown fetch, each of
+which used to render as an empty list. Neither looked at the fetch **succeeding** and
+returning zero. Two fixes, same string, same blind spot. The remedy was applied to one
+twin, twice.
+
+**AI-building.** Six of my own steps were wrong today and the checks caught five of them.
+A `Society` where I meant `Session`, from a careless find-and-replace. An anchor on
+`aerobicPace` when the variable is `liveAerobicPace` — I had read the name off a grep hit
+and assumed the rest. An insertion that **split a one-line comment from the block it
+described.** Two dead values I created myself: a `stravaStaleCopy` computed and never
+rendered, and a duplicate `stravaFreshness` the row already owned — the exact inert class
+this repo keeps paying for, authored by me, in the commit that cites it. And a check that
+**grepped the whole of `DashboardClient` for `getLastSyncIso` and went red on the comment
+I had just written explaining why I don't use it**: the "an ownership arm matching its own
+comment" class recorded on 2026-10-01, repeated six days later. Bound the region. Never
+grep the file. I keep writing that down and keep needing to.
+
+**The honest bit.** I brought the Design Board a measurement: 28 users have tapped
+Connect and **13 have never had a single run arrive, five of them 93 to 123 days ago.**
+The board's settled-ground scan then found the thing I had missed, one screen away.
+**§17c's own Recovery-signals row was an unconditional literal** — a dimmed dot above
+*"Connect below to feed readiness checks"*, rendered to everyone, to the runner syncing
+every morning and to the five whose pipe had never worked. It read no state at all, and
+**`healthkitConnectedAt` was already a prop of that component, used 200 lines further
+down.** So §17c's standing rule, *"silent staleness is the bug the card exists to fix"*,
+was broken by the card the rule was written for. Three surfaces on one screen reported
+this connection and two of them contradicted each other.
+
+Two amendments bound me and both improved the work. Silvanto's **silence when fresh**: a
+row that always carries a status line has taught the runner to stop reading it. Sierra's
+**state the fact, never the cause**: nothing on the device can distinguish a revoked
+permission from a fortnight off, so *"Last run synced 17 days ago"* is honest and *"your
+permissions are off"* would be a guess — and being wrongly accused of a settings error is
+worse than being told nothing. Wroblewski overturned my own premise: I had filed
+`getLastSyncIso()` as **inert and therefore in need of wiring**, and it is inert *because
+it is the wrong source* — localStorage answers "this device" where the question is "this
+runner". A true observation, the wrong conclusion.
+
+And the chair got one wrong too, which is recorded: I let Collins and Wroblewski argue
+about whether the Strava row would alarm users, **and that row is admin-gated.** They were
+debating a population of zero and none of us checked, including me.
+
+⚠️ The new gate fires for **18 of 28 connected users (64.3%)**. That is not a noisy
+threshold. The feature is broken for two thirds of the people who switched it on, the
+check firing is the product finally reporting it, and **this work makes those 13 runners
+visible without repairing a single one of them.** Nothing has run on a device.
+
 ## CONNECTIONS-ROW-TWIN-01 — the ruling had already been made, for this exact row (2026-10-07)
 
 *"The buttons look inconsistent… I was more referring to the size."*

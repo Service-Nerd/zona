@@ -1865,6 +1865,62 @@ A benchmark four weeks old silently softens pace targets via VDOT's staleness di
 
 Reference: inline render in `MeScreen` above the existing Identity card.
 
+#### Amendment — HONEST STALENESS EXTENDS TO CONNECTION ROWS (`HEALTH-SYNC-STALENESS-01`, Design Board 2026-10-07)
+
+**A connection row reports ARRIVAL, not AUTHORISATION.** The state scale and the
+optional sub-line above now govern `AppleHealthConnectionRow` and
+`StravaConnectionRow`, not only the ME-ATHLETE card.
+
+🔴 **Both rows read "Connected" off `user_settings.healthkit_connected_at`, which is the
+timestamp of the moment the runner TAPPED CONNECT.** It is a record of an intent and
+nothing on the screen read whether a single run had ever arrived. **Measured in
+production, 2026-10-07: of 28 users with that column set, THIRTEEN (46.4%) had never had
+one `strava_activities` row with `source='apple_health'`. Twelve were real accounts, and
+FIVE had tapped Connect 93, 102, 117, 118 and 123 DAYS earlier.** Only 8 of 28 (28.6%)
+had anything from the last three days. The row told those five "Connected", in a
+positive accent, for three to four months.
+
+🔴 **AND §17c's OWN RECOVERY-SIGNALS ROW WAS AN UNCONDITIONAL LITERAL.** A 0.4-opacity
+moss dot — which this section defines as *"source available but not connected"* — above
+the words *"Connect below to feed readiness checks"*, rendered to **everyone**: to the
+runner syncing fine every morning and to the five whose pipe had never worked. It read
+no state at all, while **`healthkitConnectedAt` was already a prop of `MeScreen` and is
+used 200 lines below for the Connections door subtitle.** The state was in scope and the
+row did not look at it. So the standing rule in this section — *"Stale state must be
+rendered (silent staleness is the bug the card exists to fix)"* — **was violated by the
+card it was written for.** Three surfaces on one screen reported this connection and two
+of them contradicted each other.
+
+| | |
+|---|---|
+| **Owner** | `lib/ui/connectionFreshness.ts` — `connectionFreshness`, `connectionStaleCopy`, `connectionToneVar` |
+| **Constant** | `CONNECTION_STALE_DAYS = 14`. ⚠️ **Not in `GENERATION_CONFIG`**, deliberately: it governs a display state, not what the engine prescribes. §17c's benchmark threshold *is* a coaching numeric because VDOT's staleness discount actually softens pace targets; this one changes a sentence. A fortnight absorbs a holiday, a taper or flu without nagging a runner who is fine |
+| **Source of truth** | the activity list already in memory in `DashboardClient` (`lastArrivalBySource`). ⚠️ **NOT `getLastSyncIso()`** — localStorage answers *"this device"* where the question is *"this runner"*, so on a new phone it reads null for a four-month-happy user and the row lies in the opposite direction. The filed item said it was inert and should therefore be wired; **it is inert because it is the wrong source** |
+| **Gate** | `lib/ui/connectionFreshness.test.ts`, 15 arms, **five falsified** |
+
+**⛔ Silvanto, binding — SILENCE WHEN FRESH.** No sub-line, no second colour, no
+confirmation that we are doing our job. `ux-principles.md`: *empty means calm, not
+broken*. A row that **always** carries a status line has taught the runner to stop
+reading it. `connectionStaleCopy` returns `null` for `fresh`, and if it ever returns a
+string the ruling has been reversed.
+
+**🎓 Sierra, binding — STATE THE FACT, NEVER THE CAUSE.** `@capgo/capacitor-health`
+resolves a DENIED read as an EMPTY RESULT rather than an error, so **no code on the
+device can tell "permission off" from "has not run"**. *"Last run synced 17 days ago."*
+is a fact; *"your permissions are off"* would be a guess, and being wrongly accused of a
+settings error is worse than being told nothing.
+
+**`--warn` is correct here and is not the coaching-only use `StatusBadge`'s header warns
+about** — that constraint is scoped to a TIER badge, where any styled-up state becomes
+celebration. This section rules `--warn` for staleness explicitly, one document away.
+✋ Silvanto declined to veto on exactly that ground and asked it be recorded: **had he
+read only the component header he would have blocked this on a rule that does not reach
+the surface. Check the token layer and the pattern layer in the same pass.**
+
+⚠️ **At 14 days this fires for 18 of 28 connected users (64.3%).** That is not a noisy
+threshold. It is the feature being broken for two thirds of the people who switched it
+on, and the check firing is the product reporting it.
+
 ---
 
 ### 18. Plan Rationale — "Why this plan" (PLAN-NOTE-SURFACE-01)

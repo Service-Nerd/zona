@@ -2240,6 +2240,20 @@ export default function DashboardClient() {
     return plan?.meta?.zone2_ceiling ?? null
   }, [restingHR, effectiveMaxHR, plan])
 
+  // HEALTH-SYNC-STALENESS-01 — the most recent arrival PER SOURCE, derived from
+  // the activity list already in memory. Device-independent, and no new query:
+  // 📱 Wroblewski ruled out `getLastSyncIso()` because localStorage answers
+  // "this device" where the question is "this runner".
+  const lastArrivalBySource = useMemo(() => {
+    const latest: { apple_health: string | null; strava: string | null } = { apple_health: null, strava: null }
+    for (const r of stravaRuns ?? []) {
+      const src = r?.source === 'strava' ? 'strava' : r?.source === 'apple_health' ? 'apple_health' : null
+      if (!src || !r?.start_date) continue
+      if (!latest[src] || new Date(r.start_date) > new Date(latest[src]!)) latest[src] = r.start_date
+    }
+    return latest
+  }, [stravaRuns])
+
   // Aerobic pace derived from Strava runs in user's Z2 HR band
   // Aerobic pace is derived from Strava runs in the user's Z2 band — a
   // network-bound input that can lag behind first paint when Strava is
@@ -2762,7 +2776,7 @@ export default function DashboardClient() {
             No UI path opens it for non-admins, but the render gate prevents a future commit
             from accidentally exposing admin UI via state mutation or a new entry point. */}
         {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} preferredUnits={preferredUnits} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR ?? undefined} maxHR={effectiveMaxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} tierReason={tierReason} healthkitConnectedAt={healthkitConnectedAt} stravaConnected={stravaConnected} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
+        {screen === 'me'       && <MeScreen openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} tierReason={tierReason} healthkitConnectedAt={healthkitConnectedAt} lastAppleHealthArrival={lastArrivalBySource.apple_health} lastStravaArrival={lastArrivalBySource.strava} stravaConnected={stravaConnected} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
   // §50 (HR-MAX-01) — device reconnect from Settings. Fill only missing values;
   // tag a fresh device max 'observed' (a floor) so the guard rejects it below the
   // age estimate. Never clobber a user_confirmed value. Display refreshes via

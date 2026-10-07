@@ -9,6 +9,7 @@ import { adaptHealthKitWorkout, adaptManualRun, type HealthKitWorkoutPayload, ty
 import { autoMatchAndAnalyse, getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
 import { consolidateIncomingHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 import { decideLateArrival } from '@/lib/coaching/lateArrivalGate'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 
 // POST /api/health/ingest
 //
@@ -144,7 +145,15 @@ export async function POST(req: NextRequest) {
     .upsert(rowToWrite, { onConflict: 'user_id,apple_health_uuid' })
 
   if (error) {
+    // HEALTH-SYNC-OBS-01 — this was a `console.error` and nothing else. The
+    // client's `postWorkout` reads only `res.ok`, so a 500 here left the runner's
+    // run silently unsynced and left no record anywhere a human would look.
     console.error('[health-ingest] upsert failed', error.message)
+    await recordOpsEvent('health_ingest_failed', {
+      stage:   'upsert',
+      message: error.message.slice(0, 500),
+      uuid:    payload.uuid,
+    }, userId)
     return NextResponse.json({ error: 'Persist failed' }, { status: 500 })
   }
 

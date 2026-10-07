@@ -28,6 +28,43 @@ already decided what it is.
 ---
 
 
+### 🔴 `HK-NEVER-SYNCED-COHORT-01` — twelve real runners have never had one run arrive *(filed 2026-10-07, **P1**)* ⚙️ **NO BOARD**
+
+**Measured in production, service-role read, 2026-10-07 — the measurement that drove
+`HEALTH-SYNC-STALENESS-01`.** 28 users have `user_settings.healthkit_connected_at` set.
+**THIRTEEN (46.4%) have never had one `strava_activities` row with
+`source='apple_health'`.** One is `zonna.demo@demo.com`; **twelve are real accounts**, and
+five of those tapped Connect **93, 102, 117, 118 and 123 days ago**. A further 6 are 8+
+days silent. **8 of 28 (28.6%) are current.**
+
+⚠️ **`HEALTH-SYNC-STALENESS-01` MAKES THESE PEOPLE VISIBLE AND REPAIRS NOT ONE OF THEM.**
+A declared reason is not a fixed problem, and this is the register entry saying so on the
+day it was created.
+
+**What is NOT known, and is the first step:** why. The honest candidates are a per-type
+HealthKit permission left off (the founder's own case, which is why this was found at
+all), a runner with no watch and no strap so nothing writes workouts to Health in the
+first place, an abandoned account, or an ingest/sync defect that only shows at scale.
+`health_sync_swept` (shipped the same day) is the instrument: give it a week and the
+`workouts_found: 0` rows separate "asked and got nothing" from "never asked".
+
+**Not a board question** — nothing here changes what the engine prescribes or what the
+runner sees. It is support, ops and possibly a defect.
+
+### 🟡 `LAST-SYNC-ISO-DEAD-01` — `getLastSyncIso()` is confirmed dead, and the reason matters *(filed 2026-10-07, P3)* ⚙️ **NO BOARD**
+
+`lib/health/clientSync.ts:81`. **Zero call sites under `components/` or `app/`** (the only
+textual hit is now the comment in `DashboardClient` explaining why it is not used). Its
+setter is still live — `setLastSyncIso` is the sync watermark and must stay.
+
+⚠️ **DO NOT "FIX" THIS BY WIRING IT UP.** That was this item's original premise and
+📱 Wroblewski overturned it at the 2026-10-07 sitting: it reads localStorage, so it
+answers *"this device"* where every consumer question is *"this runner"* — on a new phone
+it returns null for someone who has synced happily for four months, and a row built on it
+would lie in the opposite direction. **It is inert because it is the wrong source, not
+because nobody got round to it.** Either delete the reader and keep the setter, or leave
+it with that reason recorded. The decision is which, not whether to wire it.
+
 ### 🟡 `ENVELOPE-BASELINE-UNGATED-01` — the envelope baseline RECORDS six quantities and GATES one *(filed 2026-10-06, P2)* ⚙️ **NO BOARD**
 
 > **Found while shipping `MARATHON-BEGINNER-FLOOR-01`, by comparing the committed baseline against

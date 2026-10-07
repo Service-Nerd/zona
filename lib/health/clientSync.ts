@@ -77,6 +77,34 @@ export async function postSamples(samples: Array<{
   }
 }
 
+/**
+ * HEALTH-SYNC-OBS-01: reports one workout sweep to `/api/ops/health-sync-report`.
+ *
+ * A sweep that found NOTHING is the reason this exists. The founder ran for 17
+ * days with the Apple Health *Workouts* permission off: `queryWorkouts` resolved
+ * EMPTY (a denied read is not an error in `@capgo/capacitor-health`), the loop
+ * broke on its first iteration, and no request reached the server. Telemetry on
+ * the ingest route cannot see a request that was never made.
+ *
+ * Never throws and never blocks: a sweep must not fail because its own
+ * bookkeeping did.
+ */
+async function reportSweep(report: {
+  workoutsFound: number
+  posted:        number
+  failed:        number
+  lookbackFrom:  string
+  error?:        string
+}): Promise<void> {
+  try {
+    await authedFetch('/api/ops/health-sync-report', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(report),
+    })
+  } catch { /* telemetry is never load-bearing */ }
+}
+
 /** Last-sync timestamp tracked in localStorage so we don't re-post every workout. */
 export function getLastSyncIso(): string | null {
   try { return localStorage.getItem(LAST_SYNC_KEY) } catch { return null }
@@ -257,60 +285,88 @@ async function syncRecentWorkouts(Health: HealthModule): Promise<void> {
 
   let anchor: string | undefined
   let totalSynced = 0
+  // HEALTH-SYNC-OBS-01 — `totalSynced` counts only SUCCESSES, so on its own it
+  // cannot separate "HealthKit gave us nothing" from "it gave us runs the server
+  // refused". Both report zero synced and they need different fixes.
+  let totalFound  = 0
+  let totalFailed = 0
 
-  // Pagination loop — Cap-go's queryWorkouts returns an anchor when more data
-  // is available. Bound the loop to avoid runaway requests.
-  for (let page = 0; page < 10; page++) {
-    const res = await Health.queryWorkouts({
-      workoutType: 'running',
-      startDate,
-      endDate,
-      limit:       50,
-      ascending:   true,  // post oldest first so partial failures still advance lastSync
-      anchor,
-    })
-    if (!res.workouts.length) break
+  let sweepError: unknown
+  try {
+    // Pagination loop — Cap-go's queryWorkouts returns an anchor when more data
+    // is available. Bound the loop to avoid runaway requests.
+    for (let page = 0; page < 10; page++) {
+      const res = await Health.queryWorkouts({
+        workoutType: 'running',
+        startDate,
+        endDate,
+        limit:       50,
+        ascending:   true,  // post oldest first so partial failures still advance lastSync
+        anchor,
+      })
+      if (!res.workouts.length) break
+      totalFound += res.workouts.length
 
-    for (const workout of res.workouts) {
-      try {
-        const hrSamplesRes = await Health.readSamples({
-          dataType:  'heartRate',
-          startDate: workout.startDate,
-          endDate:   workout.endDate,
-          limit:     HR_SAMPLES_PER_WORKOUT_LIMIT,
-          ascending: true,
-        })
-        const hrSamples = hrSamplesRes.samples.map(s => ({
-          valueBpm:  s.value,
-          timestamp: s.startDate,
-        }))
+      for (const workout of res.workouts) {
+        try {
+          const hrSamplesRes = await Health.readSamples({
+            dataType:  'heartRate',
+            startDate: workout.startDate,
+            endDate:   workout.endDate,
+            limit:     HR_SAMPLES_PER_WORKOUT_LIMIT,
+            ascending: true,
+          })
+          const hrSamples = hrSamplesRes.samples.map(s => ({
+            valueBpm:  s.value,
+            timestamp: s.startDate,
+          }))
 
-        const payload: HealthKitWorkoutPayload = {
-          uuid:                workout.platformId ?? `${workout.startDate}-${workout.duration}`,
-          startDate:           workout.startDate,
-          endDate:             workout.endDate,
-          totalDistanceMeters: workout.totalDistance ?? 0,
-          durationSeconds:     workout.duration,
-          totalEnergyKcal:     workout.totalEnergyBurned,
-          elevationGainMeters: parseElevation(workout.metadata),
-          hrSamples,
-          workoutType:         'running',
-          sourceName:          workout.sourceName,
+          const payload: HealthKitWorkoutPayload = {
+            uuid:                workout.platformId ?? `${workout.startDate}-${workout.duration}`,
+            startDate:           workout.startDate,
+            endDate:             workout.endDate,
+            totalDistanceMeters: workout.totalDistance ?? 0,
+            durationSeconds:     workout.duration,
+            totalEnergyKcal:     workout.totalEnergyBurned,
+            elevationGainMeters: parseElevation(workout.metadata),
+            hrSamples,
+            workoutType:         'running',
+            sourceName:          workout.sourceName,
+          }
+          const ok = await postWorkout(payload)
+          if (ok) totalSynced++
+          else totalFailed++
+        } catch (err) {
+          totalFailed++
+          // eslint-disable-next-line no-console
+          console.warn('[health-sync] workout failed', workout.platformId, err)
         }
-        const ok = await postWorkout(payload)
-        if (ok) totalSynced++
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.warn('[health-sync] workout failed', workout.platformId, err)
       }
-    }
 
-    if (!res.anchor) break
-    anchor = res.anchor
+      if (!res.anchor) break
+      anchor = res.anchor
+    }
+  } catch (err) {
+    // The plugin query itself threw. Recorded, then rethrown so the caller's
+    // `Promise.allSettled` behaves exactly as it did before.
+    sweepError = err
   }
 
   // Advance lastSync only when at least one workout posted successfully.
   if (totalSynced > 0) setLastSyncIso(endDate)
+
+  // HEALTH-SYNC-OBS-01 — awaited, not fired and forgotten. This event is a
+  // HEARTBEAT: "no events at all" has to mean "the sync did not run", and a
+  // dropped POST from a backgrounding webview would look exactly like that.
+  await reportSweep({
+    workoutsFound: totalFound,
+    posted:        totalSynced,
+    failed:        totalFailed,
+    lookbackFrom:  startDate,
+    ...(sweepError ? { error: sweepError instanceof Error ? sweepError.message : String(sweepError) } : {}),
+  })
+
+  if (sweepError) throw sweepError
 }
 
 // ─── HR-SYNC-01: foreground retry for HR-pending rows ───────────────────────

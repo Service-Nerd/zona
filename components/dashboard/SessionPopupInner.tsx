@@ -25,6 +25,7 @@ import type { Zone } from '@/components/shared/ZoneBar'
 import { BRAND } from '@/lib/brand'
 import { FATIGUE_TAGS, SKIP_REASONS, isFatigueTag } from '@/lib/coaching/completionVocab'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
+import { matchEmptyCause, matchEmptyCopy } from '@/lib/ui/matchEmptyCause'
 import { isInLinkPool, rankLinkCandidates } from '@/lib/coaching/sessionMatch'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { SESSION_COLORS, getSessionColor, getSessionLabel } from '@/lib/session-types'
@@ -345,14 +346,34 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
   // session on Saturday and must still be able to link it — and `rankLinkCandidates`
   // puts the likely run first using the SAME owner the auto-linker uses.
   const sessionDate = session.rawDate ? new Date(session.rawDate) : null
+
+  // 🔴 MATCH-EMPTY-CAUSE-01 (2026-10-07). The same two filters as before, in two
+  // named steps, because an empty list had ONE message and THREE causes.
+  //
+  // "No activities found near this session date" blames the DATE WINDOW. The
+  // founder's Tuesday run was missing because his Apple Health *Workouts*
+  // permission was off and `strava_activities` had held nothing for 17 days: the
+  // pipe was empty, the window was innocent, and the screen named the wrong one.
+  //
+  // ⚠️ THIS STRING HAD ALREADY BEEN FIXED TWICE — see the `claimedError` comments
+  // above (":152", ":263", "Layer 2 of the sync fix"). BOTH layers addressed the
+  // ERROR case: an RLS failure and a thrown fetch used to render as an empty
+  // list. Neither looked at the case where the fetch SUCCEEDS and returns zero.
+  // The remedy was applied to one twin, twice.
+  //
+  // Splitting it changes no behaviour: the two predicates were ANDed, so order
+  // cannot move `stravaRuns`. Held by `lib/ui/matchEmptyCause.test.ts`.
+  const pooledRuns = [...preloadedRuns, ...freshRuns]
+  const inLinkWindow = pooledRuns.filter((r: any) => isInLinkPool(new Date(r.start_date), sessionDate))
   const stravaRuns = rankLinkCandidates(
     session as Session,
     sessionDate,
-    [...preloadedRuns, ...freshRuns].filter((r: any) => {
+    inLinkWindow.filter((r: any) => {
       if (claimedIds.has(r.id) && r.id !== completion?.strava_activity_id && r.id !== completion?.apple_health_uuid) return false
-      return isInLinkPool(new Date(r.start_date), sessionDate)
+      return true
     }) as StravaActivity[],
   ) as any[]
+  const emptyCause = matchEmptyCause({ pooled: pooledRuns.length, inWindow: inLinkWindow.length })
 
   async function saveCompletion(status: 'complete' | 'skipped', overrideActivity?: any) {
     setSaving(true)
@@ -1693,7 +1714,7 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
               })}
             </div>
           ) : (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: 'var(--space-2)' }}>No activities found near this session date</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: 'var(--space-2)' }}>{matchEmptyCopy(emptyCause)}</div>
           )}
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
             <Button variant="secondary" size="compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</Button>

@@ -4244,3 +4244,77 @@ because it counts sites not properties. The register caught it immediately.
 **Nothing has run on a device**, and the 106 inline `textTransform` sites outside this species
 remain. Also open: `HOVER-STICKY-TOUCH-01`'s diagnosis rests on CSS and pixels — **Chrome's
 touch emulation did not reproduce the sticky hover.**
+
+---
+
+## 6ag. HEALTH-SYNC-STALENESS-01 — the row said "Connected" to five runners for four months (2026-10-07)
+
+**Founder's bug report, this session:** *"i moved that session to yesterday... I then did
+the run, however it did not auto link. Nor when i go to complete and maually link the
+session does it show up."* The RCA found no linking defect: his Apple Health **Workouts**
+permission was off and `strava_activities` had held nothing for **17 days**. This is
+defect 3 of the 3 he then asked for.
+
+**Change:** a connection row reports **arrival**, not authorisation.
+
+🔴 **The measurement, production service-role read, 2026-10-07.** 28 users have
+`healthkit_connected_at` set. **THIRTEEN (46.4%) have never had one `apple_health`
+activity.** One is the demo account; **twelve are real, and FIVE tapped Connect 93, 102,
+117, 118 and 123 DAYS ago.** A further 6 are 8+ days silent. **8 of 28 (28.6%) are
+current.** `healthkit_connected_at` is the timestamp of the moment the runner **tapped
+Connect** — an intent, not a pipe — and nothing on the screen read whether data arrived.
+
+🔴 **The finding the sitting's own scan produced, which the item did not contain: §17c's
+Recovery-signals row was an UNCONDITIONAL LITERAL.** A 0.4-opacity moss dot (§17c:
+*"source available but not connected"*) above *"Connect below to feed readiness checks"*,
+for **everyone**. **`healthkitConnectedAt` was already a prop of `MeScreen`, used 200
+lines below.** So §17c's own rule — *"silent staleness is the bug the card exists to
+fix"* — was broken by the card it was written for, and **three surfaces on one screen
+reported this connection while two of them contradicted each other.**
+
+| Decision | Status | Why |
+|---|---|---|
+| **A connection row states when a run last arrived** | 🟢 **SHIP** | §17c's honest-staleness pattern extended from the card to the rows. 🧭 Zhuo: *"the item says the row is imprecise; the measurement says the feature does not work for 46% of the people who turned it on, and no surface would tell them"* |
+| **⛔ SILENCE WHEN FRESH** | 🟢 **SHIP — binding amendment** | ✋ Silvanto: no sub-line, no second colour, no confirmation we are doing our job. *Empty means calm.* **A row that always carries a status line has taught the runner to stop reading it** |
+| **⛔ STATE THE FACT, NEVER THE CAUSE** | 🟢 **SHIP — binding amendment** | 🎓 Sierra: `@capgo/capacitor-health` resolves a DENIED read as an EMPTY RESULT, so **nothing on the device can tell "permission off" from "did not run"**. Being wrongly accused of a settings error is worse than being told nothing |
+| **Source = the activity list, NOT `getLastSyncIso()`** | 🟢 **SHIP** | 📱 Wroblewski: localStorage answers *"this device"*, the question is *"this runner"*; on a new phone it reads null for a happy four-month user. **The item said it was inert and should be wired. It is inert BECAUSE IT IS THE WRONG SOURCE** — a true observation, the wrong conclusion. Already in memory, no new query |
+| **Zero new structure** | 🟢 **SHIP** | 📱 The explain-row slot already existed and rendered only when disconnected. Nothing new to measure at 320px |
+| **The ME-ATHLETE Recovery row** | 🟢 **SHIPPED — no board of its own** | A straight §17c defect, so exempt. **Found by the settled-ground scan, not by the item** |
+| **The Me index door subtitle** | 🔴 **LEFT ALONE, deliberately** | *"Apple Health connected"* is TRUE: they did connect. A door says what is **configured**; the screen says whether it **works**. That is Silvanto's horizon split, and it is a decision, not a dodge |
+| **The Strava twin** | 🟢 **SHIP** | 🎪 Collins, over 📱 Wroblewski. The remedy is a MECHANISM and **the ninth instance of the one-twin class landed on this same row nine hours earlier** |
+
+### ⚡ Recorded disagreement, and why it was MOOT
+
+Collins wanted the Strava row; Wroblewski argued that surfacing *"nothing has synced"*
+to every Strava user reports an ops outage as a personal problem. **🔴 Both seats were
+arguing about a population of zero: `StravaConnectionRow` is admin-gated (DS-03,
+`MeScreen.tsx:378`) because Strava API approval is pending, so no non-admin runner can
+see it.** The chair ruled with Collins on the mechanism, and records that **the
+disagreement was settled by a fact neither seat checked** — including the chair, who
+should have. It will read "nothing has synced" for the founder, which is true: the
+Strava application is Inactive.
+
+### ⛔ Veto check
+
+**None, and ✋ Silvanto asked the reason be recorded.** `--warn` on a staleness dot is
+licensed by §17c explicitly. `StatusBadge`'s header says *"`--warn` is coaching-only"* —
+**scoped to a TIER badge**, where a styled-up state becomes celebration. **Had he read
+only that header he would have blocked this on a rule that does not reach this surface.
+Check the token layer and the pattern layer in the same pass.**
+
+### 📦 Artifacts
+
+**Pattern** — `ui-patterns.md` §17c amendment. **Constant** — `CONNECTION_STALE_DAYS = 14`
+in `lib/ui/connectionFreshness.ts`, deliberately **not** `GENERATION_CONFIG` (it changes a
+sentence; §17c's benchmark threshold changes a pace target). **Check** —
+`lib/ui/connectionFreshness.test.ts`, **15 arms, FIVE falsified**: break silence-when-fresh ·
+diagnose the cause · revert the ME-ATHLETE literal · drop the Strava twin · degrade a dead
+pipe to `fresh`. All five red, restore green.
+
+### ⚠️ What this does not settle
+
+It **cannot** distinguish a denied permission from a runner who has not run, and must
+never claim to. At 14 days it fires for **18 of 28 connected users (64.3%)** — not a noisy
+check: **the feature is broken for two thirds of the people who enabled it, and the check
+firing is the product reporting it.** The 13 never-synced users are not repaired by this,
+only made visible. **Nothing has run on a device.**

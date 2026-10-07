@@ -236,6 +236,36 @@ export type OpsEventKind =
   // are different facts, and a caller that cannot tell them apart will stamp a
   // sent-column for an email nobody received.
   | 'email_sent'
+  // HEALTH-SYNC-OBS-01 (2026-10-07) — the HealthKit ingest pipe, which is the
+  // SYSTEM OF RECORD (ADR-011) and had no telemetry at all while its SUPPLEMENT,
+  // the Strava webhook, has carried three kinds since STRAVA-WEBHOOK-OBS-01.
+  // The remedy was applied to one twin.
+  //
+  // WHY `_swept` AND NOT AN INGEST-SUCCESS EVENT: the founder ran for 17 days
+  // with the Apple Health *Workouts* permission off. `queryWorkouts` returned
+  // zero, `syncRecentWorkouts` hit its `if (!res.workouts.length) break`, and
+  // NOTHING WAS POSTED. There was no request to instrument. A server-side event
+  // on `/api/health/ingest` is structurally blind to this failure, which is the
+  // only failure that actually happened. So the CLIENT reports the sweep —
+  // "I asked HealthKit for runs since X and got N" — and the three states
+  // separate: no events at all = the sync is not running; events with
+  // `workouts_found: 0` = permission off or genuinely no runs; found > 0 with
+  // `posted: 0` = the ingest is rejecting them.
+  //
+  // ⚠️ IT CANNOT TELL "PERMISSION OFF" FROM "DID NOT RUN". Nothing on the device
+  // can: `@capgo/capacitor-health` resolves a denied read as an empty result, not
+  // an error. A RUN of zero-found sweeps is the signal, and it is a signal for a
+  // human to read, never a claim to put in front of the runner.
+  //
+  // A success is NOT recorded: a successful ingest already leaves a row in
+  // `strava_activities`, which is a better record than an event about it.
+  //
+  // No PII: counts, a lookback timestamp and a truncated error string.
+  | 'health_sync_swept'
+  // The ingest upsert failed. Until now this was a `console.error` the client
+  // could not see either — `postWorkout` returns false and the caller counts a
+  // failure without ever learning why.
+  | 'health_ingest_failed'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a
