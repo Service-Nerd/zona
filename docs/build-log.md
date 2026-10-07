@@ -18,7 +18,7 @@ it specific, no polish. The content system adds the voice.
 
 
 
-## 2026-10-07 — POSTRUN: the loading state was fictional, and the board found the brief was wrong
+## 2026-10-07 — POSTRUN-POLL-WEEK-BLIND-01 + POSTRUN-PACE-NULL-01: the loading state was fictional, and the board found the brief was wrong
 
 **Dev.** Four screenshots of the founder's own run. He asked whether "Kit is reading the run" is
 a good experience. **It was not a slow analysis. The read finished in 127 milliseconds** — the
