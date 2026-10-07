@@ -1159,3 +1159,34 @@ ruling 1's defect has no identified mechanism** (50.2%) and nothing here says wh
 did not reduce it by one firing**. The 5K/marathon split was measured on the cohort grid, not the
 corpus the items quote, and **neither is the live population, which is 21 plans.** Nothing ran on a
 device, and **no plan was read end to end by a human** — every figure is an aggregate.
+
+
+## STEP-NOTE-SELF-CONTAINED-01 — a step note stands on its own (2026-10-07)
+
+**Trigger:** `sessionCatalogueData.ts` — hard. **Ruling: CORRECT WITH AMENDMENT.**
+
+| | |
+|---|---|
+| **Was** | *"Threshold now. Same effort as rep three of a cruise set."* |
+| **Is** | *"Threshold now. It should feel harder than the same pace would feel fresh."* |
+
+🔴 **The founder read it on his own card:** *"That has no context and does not make sense."*
+🎯 **McMillan:** a coach's shorthand that fails the moment the athlete has not done the other
+workout — and `progressive_tempo` is eligible from **base** phase, so a runner meets this note
+in week 3 having possibly never been prescribed a cruise interval.
+🏃 **Hutchinson, which shaped the amendment:** the reference was doing real work — *"rep three"*
+means **threshold effort when already fatigued**, nineteen minutes into a progression, which is a
+different sensation from threshold off a fresh warm-up. **Strip the reference and you must keep
+the calibration, or the card is tidier and the coaching thinner.**
+
+📐 **Measured: 1 of 52 distinct step notes.** Every other note calibrates WITHIN its own session
+(*"rep three should look like rep one"*) or against an effort band (*"threshold effort — comfortably
+hard"*). The only cross-session reference in the catalogue.
+
+⚠️ **THE DESIGN BOARD ROUTED THIS TO COACHING THE SAME MORNING AND NOBODY FILED IT.** The ruling
+existed and the work did not — the same gap that left §81's second half unbuilt for three days
+after the board named it. **The gate is the part that does not depend on remembering.**
+
+**Artifacts:** the catalogue note · no new numeric (the `T` anchor already carries the dose) ·
+`lib/plan/stepNoteSelfContained.test.ts`, which matches session **nouns** so a within-session
+*"rep one"* stays legal, falsified by restoring the old string.

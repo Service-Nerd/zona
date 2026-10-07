@@ -10,6 +10,33 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## STEP-NOTE-SELF-CONTAINED-01 — the note that assumed a workout you may never have done (2026-10-07)
+
+*"On the last rep (5) it says 'same effort as rep three of a cruise set'. That has no context and
+does not make sense."*
+
+### The product bit
+
+It's a coach's shorthand, and it's a good one if you've done cruise intervals. `progressive_tempo`
+is eligible from **base** phase, so a runner can meet that sentence in week 3 of their first plan.
+
+What saved it from being a pure deletion was Hutchinson's point: the reference carried real
+information. *"Rep three"* means threshold effort **while already tired** — nineteen minutes into a
+progression is not the same sensation as threshold off a fresh warm-up. So the replacement had to
+keep the calibration and lose the cross-reference: *"It should feel harder than the same pace would
+feel fresh."*
+
+### The honest bit
+
+**The Design Board routed this to the Coaching Board this morning and nobody filed it.** I know,
+because I was the one who routed it. That is the second time this week a board named a defect and
+the work did not happen — §81's second half sat for three days the same way.
+
+The difference now is the gate. One string in a catalogue is exactly the kind of thing that gets
+re-introduced by someone writing the next session's copy, and a rule that lives only in a ruling
+document is a rule that holds until the next person types.
+
 ## LEGACY-RAMP-BACKFILL-01 — three answers about the generator, to a question about his plan (2026-10-07)
 
 *"This is now the 3rd time of asking: why my progressive tempo last night shows me 3 sets in the

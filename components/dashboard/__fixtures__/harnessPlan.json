@@ -33,7 +33,7 @@
     "days_available": 3,
     "hard_session_relationship": "love",
     "terrain": "mixed",
-    "generated_at": "2026-10-07T05:37:28.792Z",
+    "generated_at": "2026-10-07T08:09:23.042Z",
     "generator_version": "2.0",
     "generator_input": {
       "age": 43,
@@ -696,7 +696,7 @@
                     "pace": "6:22–6:40 /km",
                     "pace_mode": "target",
                     "advance": "auto",
-                    "note": "Threshold now. Same effort as rep three of a cruise set."
+                    "note": "Threshold now. It should feel harder than the same pace would feel fresh."
                   }
                 ]
               }
@@ -1071,7 +1071,7 @@
                     "pace": "6:22–6:40 /km",
                     "pace_mode": "target",
                     "advance": "auto",
-                    "note": "Threshold now. Same effort as rep three of a cruise set."
+                    "note": "Threshold now. It should feel harder than the same pace would feel fresh."
                   }
                 ]
               }

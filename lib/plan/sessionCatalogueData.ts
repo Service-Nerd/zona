@@ -305,7 +305,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
             note: 'Let it rise. Don’t chase it.' },
           { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'third_secs' },
             target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
-            note: 'Threshold now. Same effort as rep three of a cruise set.' },
+            note: 'Threshold now. It should feel harder than the same pace would feel fresh.' },
         ],
       }],
     },
