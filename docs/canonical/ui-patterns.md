@@ -2931,6 +2931,25 @@ rule it states survives **exactly** where the absence is real.
 notation was introduced. The qualifier, the ramp and the zone all occupy the same slot: the
 target, line two, first.
 
+#### Amendment 5b — A COPY FIX IS A FIX TO THE GENERATOR TOO
+
+🔴 **A step note is CACHED in `plan_json` at generation**, so rewriting the catalogue
+reaches new plans only. Measured against the live table the moment the copy shipped:
+**336 notes stamped, 46 stale** — 30 carrying the *"cruise set"* sentence the founder
+reported, 11 the circular *"just past threshold"*, 5 the bare *"VO2max effort."*
+
+⚠️ **THIS IS AMENDMENT 4d AGAIN, TWO HOURS LATER, AND I STILL GOT IT WRONG.** 4d says in
+as many words: *when a fix lands in the engine, ask what an existing plan will do.* I wrote
+that rule, then told the founder these strings "are read at render, so they'll reach your
+existing plan." They are not. **Writing a rule down is not the same as applying it.**
+
+`lib/plan/supersededNotes.ts → currentNote` repairs a stored note at read. ⚠️ **An exact
+string map, not a re-read of the catalogue:** re-resolving would mean index-matching a
+stored step back to a row whose structure may have changed, and a wrong index shows the
+wrong instruction — worse than stale copy. ⚠️ **Apostrophe form is normalised**, because
+four stored notes read `don't` straight where the source writes it curly, and the first
+version of the map missed all four. **Found by running against production, not a fixture.**
+
 #### Amendment 5 — A COACHING TERM MAY NAME A THING; IT MAY NOT BE THE INSTRUCTION
 
 **Founder's constraint, and it decides the whole rule:** *"these runners will probably do a

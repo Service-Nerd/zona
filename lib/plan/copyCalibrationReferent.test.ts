@@ -126,6 +126,7 @@ const PLAIN_HANDLE = /comfortably hard|\d+:\d{2}|\bhard\b|\beasy\b|conversationa
 describe('COPY-CALIBRATION-REFERENT-01 — a comparison points at something the runner HAS', () => {
   const grid = cohortGrid() as GeneratorInput[]
   const found: { field: string; text: string; referent: string }[] = []
+  const circular = new Map<string, string>()
   let strings = 0, calibrations = 0
   for (let i = 0; i < grid.length; i += STRIDE) {
     let plan: Plan
@@ -138,6 +139,14 @@ describe('COPY-CALIBRATION-REFERENT-01 — a comparison points at something the 
         calibrations++
         const referent = (m[1] ?? '').trim()
         if (SESSION_NOUNS.test(referent)) found.push({ field, text, referent })
+      }
+      // ⚠️ SAME PASS, DELIBERATELY. This arm had its own corpus loop and the
+      // duration gate caught it at 2,022 ms — generating 50-odd plans twice to ask
+      // two questions of the same strings. One walk, two collections.
+      if (field === 'step.note') {
+        const gl = text.match(/(?:\u2014|\u2013|:|,)\s*((?:just past|back to|a notch|not a|like a|about)[^.;]*)/i)
+        const clause = gl?.[1]
+        if (clause && COACHING_TERM.test(clause) && !PLAIN_HANDLE.test(clause)) circular.set(text, field)
       }
     }
   }
@@ -155,27 +164,8 @@ describe('COPY-CALIBRATION-REFERENT-01 — a comparison points at something the 
       '`progressive_tempo`, where this was found, is eligible from BASE phase.').toEqual([])
   })
   it('a coaching term is never explained by ANOTHER coaching term alone', () => {
-    const grid2 = cohortGrid() as GeneratorInput[]
-    const bad = new Map<string, string>()
-    for (let i = 0; i < grid2.length; i += STRIDE) {
-      let plan: Plan
-      try { plan = generateRulePlan(grid2[i]!, 'paid', COHORT_PLAN_START, undefined, COHORT_PLAN_START) } catch { continue }
-      for (const { field, text } of runnerStrings(plan)) {
-        if (field !== 'step.note') continue
-        // ⚠️ NAMING A TERM IS FINE AND THE RULING SAYS SO — the target slot beside it
-        // carries the pace, so "Threshold, held." is a LABEL next to an instruction.
-        // What is caught is an attempted EXPLANATION that resolves to another term:
-        // the clause after a gloss marker contains a coaching word and no plain handle.
-        const gloss = text.match(/(?:\u2014|\u2013|:|,)\s*((?:just past|back to|a notch|not a|like a|about)[^.;]*)/i)
-        if (!gloss) continue
-        const clause = gloss[1]!
-        if (!COACHING_TERM.test(clause)) continue
-        if (PLAIN_HANDLE.test(clause)) continue
-        bad.set(text, field)
-      }
-    }
-    expect(Array.from(bad.keys()),
-      `${bad.size} step note(s) use a coaching term with no handle a runner can act on. ` +
+    expect(Array.from(circular.keys()),
+      `${circular.size} step note(s) use a coaching term with no handle a runner can act on. ` +
       '\u2714 "a notch past comfortably hard" \u2718 "just past threshold" \u2014 the second is a ' +
       'definition in a closed loop (\u00a721b Am. 5).').toEqual([])
   })

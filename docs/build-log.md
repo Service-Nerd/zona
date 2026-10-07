@@ -13,6 +13,36 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## SUPERSEDED-NOTES-01 — I wrote the rule, then broke it two hours later (2026-10-07)
+
+*"deploy it"*
+
+### The dev bit
+
+The deploy went out and was live and correct. Then I checked one sentence I had written in my
+previous message — *"these are catalogue strings read at render, so they'll reach your existing
+plan"* — and it was false. A step note is stamped into `plan_json` at generation. **336 notes
+stamped in production, 46 of them stale**, including the exact sentence the founder had reported.
+
+### The honest bit
+
+This is the same defect as `LEGACY-RAMP-BACKFILL-01`, which I fixed **two hours earlier**, and
+whose lesson I wrote into `ui-patterns.md` myself: *when a fix lands in the engine, ask what an
+existing plan will do.* I wrote the rule down and then did not apply it to the very next change.
+**Writing a rule down is not the same as having it.**
+
+The second one: the first version of the repair map missed four stored notes because they read
+`don't` with a straight apostrophe where the source writes it curly. **An exact-string map breaks
+on exactly that, and I only saw it because I ran against production instead of a fixture.**
+
+### The AI-building bit
+
+Both gates I added today had a hole in the *check* rather than the code, and both were found by
+running the mutation rather than predicting it. The pattern across all of today: every real finding
+came from pointing the thing at live data — the stored row, the production bundle, the actual
+table — and every wrong conclusion came from reasoning about the code.
+
 ## COPY-CALIBRATION-REFERENT-01 — the scan he asked for, and why the obvious one was wrong (2026-10-07)
 
 *"Is there any way to do a scan or determine when those kinds of sentences would be presented in

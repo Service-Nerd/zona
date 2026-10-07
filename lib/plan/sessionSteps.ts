@@ -17,6 +17,7 @@ import type { SessionStructure } from './sessionComposer'
 import { apportionRoundedDistance, convertPaceString, formatDuration, formatStepDuration, splitAmount, formatZone } from '@/lib/format'
 import { easyPaceAsCeiling, paceAsFloor } from './easyPaceCeiling'
 import { transitionBand } from './progressionTransition'
+import { currentNote } from './supersededNotes'
 
 export type StepKind = 'work' | 'rest'
 
@@ -408,7 +409,12 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
     target: target || (kind === 'rest' ? 'rest' : ''),
     secondary,
     detail: [target, secondary].filter(Boolean).join(' · '),
-    ...(step.note ? { note: step.note } : {}),
+    // §21b Am. 5 / STEP-NOTE-SELF-CONTAINED-01 — a note is CACHED in plan_json at
+    // generation, so rewriting the catalogue reaches new plans only. Measured when
+    // the copy shipped: 30 stored steps still carried the "cruise set" sentence the
+    // founder reported, 11 the circular "just past threshold", 5 the bare "VO2max
+    // effort." `currentNote` is the read-time repair; new plans never match it.
+    ...(step.note ? { note: currentNote(step.note) } : {}),
   }
 }
 
