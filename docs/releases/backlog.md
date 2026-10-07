@@ -28,6 +28,76 @@ already decided what it is.
 ---
 
 
+### ✅ `POSTRUN-POLL-WEEK-BLIND-01` — SHIPPED 2026-10-07 ⚙️ **NO BOARD**
+
+**Founder, with four screenshots:** *"it shows Kit is reading the run - Not sure thats a great experience"*. **It is not a slow-analysis problem. The analysis was already finished.**
+
+🔴 **MEASURED ON HIS OWN RUN.** The single `ai_call` for `analyse-run` landed at **13:45:52.945Z**; the `run_analysis` row was written at **13:45:53.072Z** — **127 ms later**. His screenshots then show *"Analysing your run. Usually takes 15–30 seconds"* at 13:46Z, *"Taking longer than usual"* at 14:00Z, and the finished read at 14:03Z. **He watched a loading state for 17 minutes over data that had been on the server the whole time.**
+
+**The cause, `DashboardClient.tsx:6793-6801`:**
+```ts
+.eq('user_id', user.id).is('superseded_at', null)
+.eq('session_day', sessionDay)        // ← NO week_n
+.maybeSingle()
+```
+He has **two** live rows with `session_day = 'wed'` (week 3 and week 1). `.maybeSingle()` on two rows returns an **error with `data: null`**, and `const { data: row }` **discards the error**. The poll can never resolve, ticks 16 × 2.5 s, and sets `pollGaveUp`.
+
+⚠️ **THIS IS THE EXACT CLASS `tableColumns.ts` WAS WRITTEN FOR** — *"Supabase answers a bad column with `{ data: null, error }`, both call sites destructured the error away, and the guard that followed read the failure as 'no runs'"* (`HK-ELEV-COLUMN-01`). Same shape, different cause: here the query is valid and the CARDINALITY is wrong.
+
+🔴 **BLAST RADIUS, measured: 2 of the 5 users with any analysis are ALREADY in this state; the worst collision is 19 rows on one weekday.** It is not a tail case — **it degrades for every runner over time**, because any two analysed runs on the same weekday in different weeks collide. A runner is permanently stuck on a fake loading screen from roughly week 2 onward.
+
+**Fix:** add `.eq('week_n', weekN)` (the screen already holds `weekN`), and **read the error** rather than destructuring it away. ⚠️ Gate must assert the *cardinality*, not just that a row comes back — a fixture with one row passes either way.
+
+### ✅ `POSTRUN-PACE-NULL-01` — SHIPPED 2026-10-07 ⚙️ **NO BOARD**
+
+`PostRunScreen` renders `<RunFeedbackCard actualAvgSpeedMs={null} />` — **hardcoded** (`DashboardClient.tsx:7024`). `SessionScreen` passes the real value (`:6451`). So `buildScoreExplanations` takes the `else if (paceTarget)` branch and the Pace row reads **"Target 5:07–5:22 /km."** with no actual, forever, on the screen the runner lands on straight after a run.
+
+⚠️ **The screen HAS the data** — its own header renders *"Apple Health · 9.9km"* from the linked activity. ⚠️ **Eleventh recorded instance of the one-twin class**: two call sites of one component, the remedy applied to one.
+
+### 🟠 `POSTRUN-SKELETON-PROMISE-01` — the loading state promises a dashboard that never arrives *(filed 2026-10-07, P2)* 🧭 **DESIGN BOARD**
+
+`PendingAnalysisCard` renders a row labelled **HR · Distance · Pace · Efficiency** over 3 px pulsing bars. **Those are skeletons. They were never data.** The founder: *"the card at the top … are now gone (not sure if i can ever see them again) and so i question how valid they are."* **His instinct was right and the answer is worse than he thought — there were no values at any point.**
+
+What actually arrives is a different shape: one headline zone %, a score, and the same four labels **behind a tap**. So the loading state advertises a four-metric dashboard and the result hides it. 📌 For the board: either the skeleton reflects the real result, or the result reflects the skeleton. It cannot be both.
+
+### 🟠 `POSTRUN-METRIC-PREF-01` — the run read ignores the distance/duration preference *(filed 2026-10-07, P2)* ⚙️ **NO BOARD** *(ADR-015 restoration)*
+
+`buildScoreExplanations(analysis, paceTarget, actualAvgSpeedMs, preferredUnits)` takes **units (km/mi)** and **not `preferredMetric` (distance/duration)**. The Distance line prefers `planned_load_km` whenever it is non-null, so a runner who has set the session to **minutes** is still told *"Planned 8.5km, ran 9.9km."* Founder: *"we need to consider duration there too, as i may have it set based on duration."*
+
+⚠️ **The duration branch EXISTS and is good** (`:5884`, with a declared 2-minute tolerance that is the time-axis sibling of the 0.3 km one) — it is simply unreachable whenever km data is present. ADR-015/INV-PREF-001: the preference propagates everywhere, including notifications. This surface was missed.
+
+### 🟠 `READ-WORD-BUDGET-01` — ✅ **NUMBER SET: 40 WORDS** (founder, 2026-10-07). Build outstanding *(P2)* 🏃 **COACHING BOARD** *(claim)* · 👤 **FOUNDER** *(voice)*
+
+`sessionFeedback.ts:314` — `'One paragraph only. TWO sentences, three at the absolute most. Never more.'`
+
+**Measured across all 83 live reads in production:** mean **12 words**; **77 of 83 are ≤ 20 words**; only **1** breaks the sentence rule. **The founder's read is 76 words in 3 sentences — fully compliant, and 6× the corpus mean.** One sentence in it runs 38 words and contains both an em dash and a colon.
+
+🔴 **A limit measured in the wrong unit is the class this repo keeps paying for** (§1 counting sessions vs minutes). The prompt's own comment at `:312` already records a prior incident at *"90 words and five sentences"* — the fix added a sentence cap and **left the word count ungoverned**.
+
+### 🔴 `READ-EM-DASH-01` — 18% of AI reads break the founder's own punctuation rule *(filed 2026-10-07, P1)* 👤 **FOUNDER** *(his rule)* · ⚙️ build
+
+**Measured: 15 of 83 live `feedback_text` rows contain an em dash.** The founder settled the scope on 2026-09-22: *"No em dash in text or spoken word … I just don't want it in sentences."* A run read is a sentence the runner reads.
+
+🔴 **NO GUARD COVERS MODEL OUTPUT AT RUNTIME.** `noEmDashApp.test.ts` reads `components/` and `app/dashboard/` **source**; `lib/ui` was added today. **Text generated by the model and shown to the runner is outside every guard this repo has.** The prompt does not forbid it either. Fix is two-sided: forbid it in the prompt **and** strip/replace at the boundary, because a prompt instruction is not a mechanism.
+
+### 🟡 `LINK-PICKER-ALREADY-LINKED-01` — the picker offers the run the session is already linked to *(filed 2026-10-07, P2)* 🧭 **DESIGN BOARD**
+
+Founder: *"seems i can still manually link it to the same run its linked against."* Confirmed in `SessionPopupInner`: the claimed-filter **deliberately keeps** the activity this session already holds (`r.id !== completion?.strava_activity_id && r.id !== completion?.apple_health_uuid`), so it can render as selected. But the session was `DONE`, the post-run screen already offers **"Unlink this run"**, and the log view still presents a fresh "Optional, select from recent runs" list. **Two surfaces, two different mental models of the same state.** Not obviously a defect — a ruling on what the log view should say once a session is linked.
+
+### 🟡 `ACTIVITY-NAME-WRITER-01` — "Run (Connect)" is the app that wrote it, shown as the run's name *(filed 2026-10-07, P3)* 🧭 **DESIGN BOARD**
+
+`lib/health/adapter.ts:104` — `name: payload.sourceName ? \`Run (${payload.sourceName})\` : 'Run'`. `sourceName` is the app that wrote the workout into Apple Health, so the picker shows **"Run (Strava)"** above the subtitle **"Apple Health"**, and **"Run (Connect)"** (Garmin) for another. Both statements are true and they read as a contradiction. ⚠️ Related but distinct: `run_analysis.source` was stamped **`'strava'`** on an `apple_health` activity — provenance disagreeing with ADR-011's own column.
+
+### 🧭 `POSTRUN-JOURNEY-01` — ⚖️ **RULED 2026-10-07** (`design-rulings.md` 6ah), mockups approved, **BUILD OUTSTANDING** *(P1)* 🧭 DESIGN BOARD → 🏃 COACHING BOARD → 💼 SLT
+
+✅ **Board ruled SHIP WITH AMENDMENT; founder approved boards B and E of the mockups on 2026-10-07.** To build: (1) zone signal above Kit's read; (2) delete the four-column loading skeleton and replace it with the silhouette of the real result; (3) `POST_RUN_READ_MAX_WORDS = 40` plus a gate; (4) RPE asked before the read, **with the founder's skip amendment** — skip always visible and one tap, no streak, no nag, no second ask, and **answering must PAY** (the read acknowledges it: *"You called it hard, and it was"*), because a prompt standing between a runner and something they want becomes noise. His own words: *"Sometimes on garmin i just click through it to save it without paying attention."*
+
+🔴 **THE SCORE STAYS — Collins lost, overturned by the founder:** *"i got 83% on my garmin last night against their prescribed run and gives a sense im going in the right direction."* ⚠️ **But that reopens a sharper question, routed to the 🏃 COACHING BOARD: what is the score OF?** His Garmin 83% was a single adherence number. Ours is a **composite of four sub-scores in which the one that matters (HR discipline, 32) is diluted by three that do not (distance 80, pace 40, efficiency 80) into a 50**, sitting on the same card as the honest 32%. **Two numbers measuring overlapping things.** Whether the score should simply BE the zone number is correctness, not design.
+
+Founder, in full: *"does it tell them anything? does it give them a good feeling or a feeling of achievement? … I'd like to see how we carry the metrics we gather/analyse on post 1 run over to the coach screen. If we measure these on each session i'd expect us to do that overall in terms of the plan … I love visuals to show either progress or where I am falling down … bear in mind the state of mind after a run, people will look at this to see 'how did I do?'"* And: **a lot of beginners.**
+
+Specifics to rule on: is the read too wordy · is the information visual enough · what does the journey look like **when all the data is in** · per-session metrics → plan-level view on Coach · what a beginner sees. **Mockups required before any build.** Design Board may challenge brand where needed.
+
 ### 🔴 `HK-NEVER-SYNCED-COHORT-01` — RE-MEASURED the same day: 7 of 13 are a TIER GATE, not a defect *(filed 2026-10-07, **P1**)* 💼 **SLT** · ⚙️ NO BOARD *(for the residual 6)*
 
 🔴 **RE-MEASURED 2026-10-07 once `health_sync_swept` had a few hours of data, and the

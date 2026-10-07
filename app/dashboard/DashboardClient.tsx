@@ -146,6 +146,7 @@ import { DAY_OFFSETS, DOW_FULL, DOW_LETTER, DOW_ORDER, PUSH_OFF_KEY, ZONE_DEFS, 
 import type { PostRunData, SessionEntry } from '@/components/dashboard/dashboardHelpers'
 import IconMe from '@/components/dashboard/IconMe'
 import AppleHealthConnectionRow from '@/components/dashboard/AppleHealthConnectionRow'
+import { fetchRunAnalysis } from '@/lib/coaching/fetchRunAnalysis'
 import CoachTeaser from '@/components/dashboard/CoachTeaser'
 import OrientationScreen from '@/components/dashboard/OrientationScreen'
 import HRZonesSection from '@/components/dashboard/HRZonesSection'
@@ -6656,6 +6657,9 @@ function PostRunScreen({
   const [pollGaveUp, setPollGaveUp]         = useState(false)
   const [linkFired, setLinkFired]           = useState(false)
   const [hydratedActivity, setHydratedActivity] = useState<PostRunData['linkedActivity']>(null)
+  /** POSTRUN-PACE-NULL-01 — metres/second from the linked activity, so the Pace row
+   *  can say what was actually run rather than only what was targeted. */
+  const [avgSpeedMs, setAvgSpeedMs] = useState<number | null>(null)
   const [isHKCompletion, setIsHKCompletion] = useState(false)
   // HR-SYNC-02: fields needed to classify HR-pending for the linked HK
   // activity. Fetched alongside the completion when this is an HK-linked run.
@@ -6687,7 +6691,7 @@ function PostRunScreen({
         if (!user) return
         const { data: row } = await supabase
           .from('session_completions')
-          .select('rpe, fatigue_tag, strava_activity_name, strava_activity_km, apple_health_uuid')
+          .select('rpe, fatigue_tag, strava_activity_name, strava_activity_km, apple_health_uuid, strava_activity_id')
           .eq('user_id', user.id)
           .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
           .eq('week_n', weekN)
@@ -6707,19 +6711,37 @@ function PostRunScreen({
           // HR-SYNC-02: fetch the activity row's HR-pending fields when this
           // completion is HK-linked. Used to gate the morph chain on whether
           // HR has actually landed yet.
-          if (isHK) {
-            const { data: act } = await supabase
+          //
+          // 🔴 POSTRUN-PACE-NULL-01 (2026-10-07) — `avg_speed` is now read here too,
+          // and the fetch runs for a STRAVA-linked completion as well, because
+          // `RunFeedbackCard` was being handed `actualAvgSpeedMs={null}` HARDCODED on
+          // this screen. `buildScoreExplanations` then took its `else if (paceTarget)`
+          // branch and the Pace row read "Target 5:07–5:22 /km." with no actual pace —
+          // **forever, on the screen the runner lands on straight after a run.**
+          // `SessionScreen` passed the real value all along: eleventh recorded instance
+          // of the one-twin class, two call sites of one component.
+          //
+          // ⚠️ THE HR-PENDING GATE STAYS HK-ONLY. `classifyHrPending` is about
+          // HealthKit's late HR delivery and means nothing for Strava, so only the
+          // SPEED read is generalised; `setHrPendingActivity` is still inside `isHK`.
+          {
+            const q = supabase
               .from('strava_activities')
-              .select('avg_hr, start_date, moving_time_s')
+              .select('avg_hr, start_date, moving_time_s, avg_speed')
               .eq('user_id', user.id)
-              .eq('apple_health_uuid', row.apple_health_uuid)
-              .maybeSingle()
+            const { data: act } = await (isHK
+              ? q.eq('apple_health_uuid', row.apple_health_uuid)
+              : q.eq('strava_activity_id', row.strava_activity_id)
+            ).maybeSingle()
             if (!cancelled && act) {
-              setHrPendingActivity({
-                avg_hr:        (act.avg_hr as number | null) ?? null,
-                start_date:    (act.start_date as string | null) ?? null,
-                moving_time_s: (act.moving_time_s as number | null) ?? null,
-              })
+              setAvgSpeedMs((act.avg_speed as number | null) ?? null)
+              if (isHK) {
+                setHrPendingActivity({
+                  avg_hr:        (act.avg_hr as number | null) ?? null,
+                  start_date:    (act.start_date as string | null) ?? null,
+                  moving_time_s: (act.moving_time_s as number | null) ?? null,
+                })
+              }
             }
           }
         }
@@ -6792,13 +6814,35 @@ function PostRunScreen({
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
-        const { data: row } = await supabase
-          .from('run_analysis')
-          .select('session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score')
-          .eq('user_id', user.id)
-          .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
-          .eq('session_day', sessionDay)
-          .maybeSingle()
+        // 🔴 POSTRUN-POLL-WEEK-BLIND-01 (2026-10-07) — `.eq('week_n', weekN)` WAS
+        // MISSING, and `.maybeSingle()` ERRORS ON MORE THAN ONE ROW.
+        //
+        // `session_day` alone is not a key. A runner with analysed runs on the same
+        // weekday in two different weeks has two live rows, `maybeSingle()` returns
+        // `{ data: null, error }`, and `const { data: row }` THREW THE ERROR AWAY —
+        // so the poll could never resolve, ticked 16 × 2.5s and gave up.
+        //
+        // MEASURED ON THE FOUNDER'S OWN RUN: the `ai_call` landed at 13:45:52.945Z
+        // and the row was written at 13:45:53.072Z — **127 ms**. His screenshots show
+        // "Analysing your run" at 13:46Z, "Taking longer than usual" at 14:00Z and the
+        // finished read at 14:03Z. **He watched a loading state for 17 minutes over
+        // data that was already on the server.** The analysis was never slow.
+        //
+        // ⚠️ 2 of the 5 users with any analysis were ALREADY in this state, worst
+        // collision 19 rows on one weekday — and it degrades for EVERY runner over
+        // time, because week 2 onward is when weekdays start repeating.
+        //
+        // ⚠️ THE CORRECT PATTERN WAS NINETY LINES ABOVE THIS, in the completion
+        // hydration: `.eq('week_n', weekN).eq('session_day', sessionDay)`. Same file,
+        // same screen, same `weekN` in scope.
+        //
+        // Same family as `HK-ELEV-COLUMN-01` (quoted in `lib/contracts/tableColumns.ts`):
+        // Supabase answers with `{ data: null, error }` and the call site destructures
+        // the error away, so a hard failure reads as "no data yet". There the COLUMN
+        // was wrong; here the query is valid and the CARDINALITY is wrong.
+        const { row, error: pollError } = await fetchRunAnalysis(supabase, user.id, weekN, sessionDay)
+        // Read it. A swallowed error is why this took seventeen minutes to notice.
+        if (pollError) console.warn('[post-run] analysis poll failed', pollError.message)
         if (!cancelled && row) {
           setAnalysis(row)
           // POST-RUN-02: lift the row into the parent's runAnalysisMap so a
@@ -6817,7 +6861,7 @@ function PostRunScreen({
     }
     const initial = setTimeout(tick, 2500)
     return () => { cancelled = true; clearTimeout(initial) }
-  }, [isAnalysisPending, sessionDay, supabase, onSaved, onAnalysisLoaded])
+  }, [isAnalysisPending, sessionDay, weekN, supabase, onSaved, onAnalysisLoaded])
 
   // ── RPE / fatigue auto-save (mirrors SessionPopupInner.saveRPEFatigue) ──
   async function saveRPEFatigue(newRpe: number | null, newTag: string | null) {
@@ -7021,7 +7065,7 @@ function PostRunScreen({
           <RunFeedbackCard
             analysis={analysis}
             paceTarget={paceTarget}
-            actualAvgSpeedMs={null}
+            actualAvgSpeedMs={avgSpeedMs}
             onOpenCoach={onOpenCoach}
             preferredUnits={preferredUnits}
           />

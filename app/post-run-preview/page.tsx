@@ -21,6 +21,21 @@ type Case = { title: string; note: string; analysis: Record<string, unknown>; pa
 
 const CASES: Case[] = [
   {
+    title: 'THE FOUNDER\'S REAL RUN — 2026-10-07, week 3 Progressive tempo',
+    note: "Copied VERBATIM from run_analysis in production (week 3 / wed, created 13:45Z). Nothing invented: this is the card he screenshotted at 15:03. Added so the post-run review is run on the real thing rather than on a plausible fixture.",
+    paceTarget: '5:07–5:22 /km',
+    analysis: {
+      source: 'strava', verdict: 'off_target', total_score: 50,
+      hr_discipline_score: 32, distance_score: 80, pace_score: 40, ef_score: 80,
+      hr_in_zone_pct: 32.26,
+      planned_load_km: 8.5, actual_load_km: 9.88,
+      planned_load_mins: 48, actual_load_mins: 61.12,
+      ef_value: 0.0175, ef_baseline: 0.0179, ef_trend_pct: -2.39,
+      feedback_text:
+        "You ran 1.4km longer than planned and spent most of it above the zone, which means the session drifted from tempo into steady-state effort. HR climbed 13 bpm in the back third\u2014the limiter looks like aerobic capacity, not leg speed\u2014so hold the zone next time: if you're creeping above 158, ease back rather than push through. This suggests you need more patience on the build phase; quality tempo only counts when it stays in the band.",
+    },
+  },
+  {
     title: 'No heart rate — §108 Amendment 1',
     note: "THE FOUNDER'S SCREENSHOT. Was a confident 69/100 with a four-column dashboard, 37.5 points of which were a default for the axis nothing measured. Now: no number, no verdict, one honest line.",
     paceTarget: '7:00–7:45 /km',

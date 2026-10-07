@@ -80,6 +80,20 @@ const allReaders: Reader[] = walk(join(ROOT, 'app'))
  * reads `session_completions` in SQL, so it is outside this file's reach and
  * recorded in §71 Am. 1 instead.
  */
+/**
+ * ⚠️ `lib/coaching/fetchRunAnalysis.ts` (added 2026-10-07, POSTRUN-POLL-WEEK-BLIND-01)
+ * is PLAN-SCOPED and the decision is deliberate, not inherited.
+ *
+ * It answers "what is the analysis for THIS session of THIS plan?" for the post-run
+ * card, keyed `(user_id, week_n, session_day)`. A superseded row belongs to a plan the
+ * runner is no longer on, and showing last block's verdict against this block's session
+ * would be a straight misattribution — the §71 Am. 1 hazard, not an exception to it.
+ *
+ * It is the extraction of the poll that was querying `session_day` ALONE, where
+ * `.maybeSingle()` errored on two rows and the caller discarded the error. Registering
+ * it here is how this gate found it, which is the second time today a check written for
+ * something else caught a new reader on the way in.
+ */
 const EXPECT_FILTERS: Record<string, boolean> = {
   'app/api/adjust-plan/route.ts': true,
   'app/api/analyse-run/route.ts': true,
@@ -98,6 +112,7 @@ const EXPECT_FILTERS: Record<string, boolean> = {
   'app/api/recalibrate-taper/route.ts': true,
   'app/api/weekly-report/route.ts': true,
   'app/dashboard/DashboardClient.tsx': true,             // 🔴 the aerobic trend card — §71 Am. 1's second gap
+  'lib/coaching/fetchRunAnalysis.ts': true,              // POSTRUN-POLL-WEEK-BLIND-01 — see below
   'lib/coaching/healthkitConsolidate.ts': true,
   'lib/coaching/weeklyActualLoad.ts': true,
 

@@ -18,6 +18,61 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-10-07 — POSTRUN: the loading state was fictional, and the board found the brief was wrong
+
+**Dev.** Four screenshots of the founder's own run. He asked whether "Kit is reading the run" is
+a good experience. **It was not a slow analysis. The read finished in 127 milliseconds** — the
+`ai_call` at 13:45:52.945Z, the row written at 13:45:53.072Z — and he then watched a loading
+state for **seventeen minutes** over data that was already on the server.
+
+The poll queried `run_analysis` by `session_day` with **no `week_n`** and then `.maybeSingle()`.
+Two live Wednesday rows make that return `{ data: null, error }`, and the call site destructured
+the error away. It could never resolve. **The correct pattern was ninety lines above it** in the
+same file, in the completion hydration, with the same `weekN` already in scope.
+
+Two of the five users with any analysis were already in that state; the worst had nineteen rows
+colliding on one weekday. **It degrades for every runner from about week two**, when weekdays
+start repeating.
+
+**AI-building.** I extracted the query into its own module purely so it could be **run**. Inside
+a React effect the only available check was a source assertion, and a source assertion passes on
+a comment. The gate that matters asserts **cardinality**, not presence — a one-row fixture is
+green against the defect — so the fake client reproduces `maybeSingle()`'s real behaviour and the
+fixture is his actual two rows. Removing `week_n` turns four arms red.
+
+**And the suite caught me on the way through.** §71 Amendment 1 keeps a register of every
+`run_analysis` reader and whether it is plan-scoped or history. My new module was a new reader and
+the build went red until I declared it. That is the second time today a check written for
+something else caught a thing on its way in.
+
+**The honest bit, and it is about the brief rather than the code.** The founder asked for more
+visuals and asked whether he could have the four metrics back. The settled-ground scan answered
+both before any seat spoke: **the SLT deleted that four-column dashboard on 2026-09-13**, on two
+MUST/NEVER violations, and this board cannot restore it. What it could find was that **the
+loading skeleton still advertises those four columns** — the ghost of a deleted design, left in
+the waiting screen because nobody rebuilt it when they rebuilt the finished one. So his instinct
+*"I question how valid they are"* was right, and the answer was worse than he thought: **they
+were never data at all.**
+
+The chair then refused the framing. The screen is not short of visuals; **it is in the wrong
+order** — 76 words before the one number that answers *how did I do?*. The fix is swapping two
+blocks. No new component, no dashboard, no reversal.
+
+Two things I would have got wrong alone. **Sierra declined the "feeling of achievement" the brief
+asked for**, because he drifted 1.4 km over and spent 68% above his zone, and an achievement
+feeling there is a lie the brand exists not to tell. And **Collins lost the argument to kill the
+50/100** — overturned the same day by the founder, who said a Garmin 83% *"gives a sense im going
+in the right direction"*. That is recorded as a loss, per ADR-023. But it sharpened the real
+question: his 83% was a single adherence number, while **ours is a composite in which the one
+sub-score that matters, HR discipline at 32, is diluted by three that do not into a 50** — sitting
+on the same card as the honest 32%. **Two numbers measuring overlapping things.** That is
+correctness, not design, and it went to the Coaching Board.
+
+⚠️ His best objection was to my own mockup: *"what if people dont remember to say how it felt, or
+just dont bother. Sometimes on garmin i just click through it."* A prompt standing between a
+runner and something they want becomes noise, and it poisons the data it collects. Skip stays one
+tap and always visible, nothing nags, and **answering has to pay** — the read acknowledges it.
+
 ## 2026-10-07 — COMPLETION-CLAIM-UUID-01: a one-word type error that turned off auto-link for everyone
 
 **Dev.** Fixing the matcher this morning made it reach code it had never reached, and that

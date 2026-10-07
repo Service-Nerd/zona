@@ -4318,3 +4318,75 @@ never claim to. At 14 days it fires for **18 of 28 connected users (64.3%)** —
 check: **the feature is broken for two thirds of the people who enabled it, and the check
 firing is the product reporting it.** The 13 never-synced users are not repaired by this,
 only made visible. **Nothing has run on a device.**
+
+
+---
+
+## 6ah. POSTRUN-JOURNEY-01 — the post-run moment: the screen was not short of visuals, it was in the wrong order (2026-10-07)
+
+**Founder, four screenshots of his own live run:** *"does it tell them anything? does it give
+them a good feeling or a feeling of achievement? … bear in mind the state of mind after a run,
+people will look at this to see 'how did I do?'"* Plus: a lot of **beginners**.
+
+### 🔍 Settled ground that changed the brief
+
+**UX-POSTRUN-01 (2026-09-13)** — the **SLT killed the four-column dashboard** on two MUST/NEVER
+violations, *"no dashboards or noise"* and *"deliberately omits gamification"*. **So "can I see
+those metrics again" is a request to reverse an SLT ruling and this board cannot grant it.** But
+the **loading skeleton still advertises those four columns**, which makes deleting it
+**compliance with the ruling, not a reversal.** §108 Am. 1 (score withheld with no HR) and 6t
+(post-run navigation only) are untouched.
+
+### 📐 Evidence
+
+Production, n=83 reads: **mean 12 words, 77 of 83 ≤20 words**, 1 breaking the 3-sentence rule.
+**His read: 76 words in 3 sentences — fully compliant, 6× the mean**, because the budget counts
+SENTENCES and nothing counted words. **15 of 83 (18%) carry an em dash** against his own rule, and
+**no guard covers model output at runtime.** The 17-minute "Kit is reading" was a query defect
+(`POSTRUN-POLL-WEEK-BLIND-01`), fixed before the sitting so the board ruled on the experience.
+
+### ⚖️ Ruling — SHIP WITH AMENDMENT, mockups first (delivered, founder approved)
+
+| Decision | Status | Why |
+|---|---|---|
+| **The zone signal leads, Kit's read follows** | 🟢 **SHIP** | 🧭 Zhuo: *"the screen is not short of visuals, it is in the wrong order"* — 76 words before the number that answers the question. **Two blocks swapped, no new component.** The bar becomes **signed** (32% in band / **68% above**), which is the one thing Garmin's unsigned Training Effect cannot say |
+| **The skeleton must be the silhouette of its result** | 🟢 **SHIP** | ✋ Silvanto: four labelled columns over pulsing bars are **the ghost of the dashboard the SLT deleted**, left in the waiting screen when the finished one was rebuilt. **They were never data** — which is why the founder's *"I question how valid they are"* was right, and worse than he thought |
+| **The read's budget moves to WORDS, at 40** | 🟢 **SHIP** | A limit in the wrong unit, the §1 sessions-vs-minutes class. **Number set by the founder, 2026-10-07.** 🎓 Sierra: the read does three jobs — what happened, what it means, what to do — at the moment the runner has least capacity for any |
+| **RPE asked BEFORE the read** | 🟢 **SHIP WITH AMENDMENT** | Runna gates its analysis behind the runner's own verdict; we ask below it, so we say how it went before they say how it felt — the opposite of our own thesis. ⚠️ **Founder's amendment, and it is the right objection:** *"what if people dont remember to say how it felt, or just dont bother. Sometimes on garmin i just click through it to save it"*. See the amendment below |
+| **"A feeling of achievement"** | 🔴 **DECLINED, recorded** | 🎓 Sierra: he drifted 1.4 km over and spent 68% above his zone. **An achievement feeling there is a lie, and not telling it is the brand's position.** What is honestly available is *recognition of the fact*, not of the outcome |
+| **Kill the 50/100 entirely** | 🔴 **COLLINS LOST — overturned by the founder** | 🎪 Collins: Runna ships no grade and publishes why; we kept a number, demoted it to a chip and called that a decision. **Founder, same day:** *"I do like the score of some description - i got 83% on my garmin last night against their prescribed run and gives a sense im going in the right direction."* **The score stays.** The measurement was never disproved and the reversal is recorded, per ADR-023 |
+
+### 🔧 Amendment — the skip case (founder, 2026-10-07)
+
+**The ask must never be a toll.** A prompt standing between a runner and something they want
+becomes noise, and they learn to tap through it — which is exactly what he described doing on
+Garmin, and it would also poison the data we collected.
+
+- **Skip is always visible and always one tap.** The read is never blocked.
+- **No streak, no nag, no second ask.** Skipping must cost nothing.
+- **Answering must PAY.** The read acknowledges it — *"You called it hard, and it was."* That
+  makes the question worth answering rather than a gate to clear. An unanswered run simply gets
+  the read without that line.
+- RPE remains capturable afterwards in **Session details · tweak how it felt**, so a skip is a
+  deferral, not a loss.
+
+### ↗️ Routing
+
+**🏃 Coaching Board** — ⚠️ **what the score is OF.** The founder's Garmin 83% was a single
+adherence number; ours is a **composite of four sub-scores** where the one that matters
+(HR discipline, 32) is diluted by three that do not (distance 80, pace 40, efficiency 80) into a
+50. **Two numbers on one card measure overlapping things and the 32% is the honest one.** Whether
+the score should simply BE the zone number is a correctness question, not a design one.
+**💼 SLT** — the Coach carry-over, open since 2026-09-13.
+
+### 📦 Artifacts
+
+Pattern — `ui-patterns.md` post-run section. Constant — `POST_RUN_READ_MAX_WORDS = 40`.
+Check — ordering + word-budget gates, falsified. Mockups — five artboards, founder approved
+boards B and E on 2026-10-07.
+
+### ⚠️ What this ruling does not settle
+
+**No runner but the founder has used this screen, and nothing has run on a device.** It does not
+settle what the score is of (routed), the Coach carry-over (SLT), or whether asking RPE first
+helps a beginner rather than annoying them — which only real use will show.
