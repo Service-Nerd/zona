@@ -4091,6 +4091,22 @@ the no-pace arm goes red; delete the role guard → the recovery arm goes red (o
 was given a direct assertion — the corpus half alone stayed green); revert the
 duration-anchored gate → the derived-distance arm goes red.**
 
+### 🔴 CORRECTED THE NEXT MORNING — the founder looked again
+
+> *"The middle part is still saying 9:20. I feel we need to give a distance and some kind of
+> pacing. Right now I'd have to run 9:20 and look what my zone 3 is and not go over it."*
+
+**He was right and this board's ruling was half of an answer.** `effort, not pace` made the
+refusal legible; it did not make the step actionable, because **for 941 of the 1,174 steps the
+refusal should not have existed.** Routed to the Coaching Board, which amended §8: a
+progression's middle third resolves to the ramp it already describes (`7:30 → 6:30 /km`) and
+therefore carries a distance. The qualifier **stays on the 233 RPE hill reps**, which are
+§40b's real population.
+
+⚠️ **The lesson for this board is the seam, not the wording.** *"A step has no pace"* looked
+like an encoding question and was a **prescription** question wearing one. The seam rule
+answers it: design owns the encoding, **coaching owns whether there is anything to encode.**
+
 ### ⚠️ What this does not settle
 
 **Whether a runner understands *"effort, not pace"* without ever being told what it means.**

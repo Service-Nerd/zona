@@ -6536,6 +6536,28 @@ A principle written before that number exists is the error the board recorded on
 
 ---
 
+### `PROGRESSION-GOAL-INVERTED-01` — a goal-paced progression whose "threshold" third is EASIER than its easy third 🏃 **COACHING BOARD**
+
+**Found 2026-10-07 while building §8 Am.'s transition, by the arithmetic refusing to produce a
+rising ramp.** Measured: **7 of 941** zone-targeted steps. Every one is a `Marathon-pace
+progression` on a §22 goal-paced week.
+
+**The mechanism.** On a goal-paced week `T` is substituted with the runner's **goal band**. An
+experienced runner chasing **4:15** gets a goal pace of **5:56–6:10 /km** — and the fast edge of
+their own easy band is **5:45 /km**. So the session's *final* third is prescribed **slower than
+the cap on its first third**, and the ramp between them would have pointed downhill.
+
+🔴 **The display fix withholds the arrow; it does not fix the session.** A progression that does
+not progress is still shipped, and `pace_target` on those sessions reads `5:56–6:10 /km` while
+step 3 reads `7:18 /km or slower`. **The runner is being asked to do a progression that is,
+for them, three thirds of the same effort or easier.**
+
+**For the board:** is this §120's territory (goal pace vs current fitness), §44's (goal past CV,
+the other direction), or a selection defect — should a `*-pace progression` row be *eligible* for a
+runner whose goal pace sits inside their easy band at all? ⚠️ **Do not fix it in the renderer.**
+
+---
+
 ### `METRIC-TOGGLE-SCOPE-01` — is the distance/duration toggle the wrong instrument? 🧭 **DESIGN BOARD** → 💼 **SLT**
 
 🎪 **Collins, filed not ruled, 2026-10-06.** He lost the layout argument and made a bigger one the

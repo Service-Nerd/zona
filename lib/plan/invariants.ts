@@ -51,6 +51,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-ONRAMP-FLOOR',
   'INV-PLAN-ONSET-YIELD-BOUNDED',
   'INV-PLAN-DERIVED-SET-PACED',
+  'INV-PLAN-PROGRESSION-TRANSITION-PACED',
   'INV-PLAN-PEAK-SPECIFICITY',
   'INV-PLAN-QUALITY-NOT-ZERO',
   'INV-PLAN-TIME-TARGET-QUALITY-FLOOR',
@@ -4478,6 +4479,51 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
                 expected: 'a resolved pace, or the row filtered out before selection',
               })
             }
+          }
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-PROGRESSION-TRANSITION-PACED (CoachingPrinciples §8 Amendment, 2026-10-07)
+  //
+  // A progression's middle third is authored against a ZONE BAND, not a pace
+  // anchor, so `INV-PLAN-DERIVED-SET-PACED` above is structurally blind to it —
+  // it scopes itself to steps carrying `pace_mode`, which only a pace-anchored
+  // target produces. That is correct for hill reps (§40b) and was the hole this
+  // one fills: **941 steps the engine resolved to nothing, and no invariant could
+  // see it**, because "no pace" was indistinguishable from "effort-governed".
+  //
+  // 🔴 The founder found it from his own card, three times. The board ruled the
+  // step must name the ramp it already describes — the E anchor's fast edge to
+  // the T anchor's fast edge.
+  //
+  // ⚠️ THE EXEMPTION IS NARROW AND MEASURED: a ramp is withheld only when it
+  // would not RISE (`PROGRESSION-GOAL-INVERTED-01` — 7 of 941, all a
+  // `Marathon-pace progression` on a §22 goal-paced week whose goal band is
+  // slower than the runner's own easy ceiling) or when an anchor is absent
+  // (§24b). Both degrade to the zone, which is what shipped before. A zone step
+  // that resolves to nothing for any OTHER reason is the defect this catches.
+  {
+    for (const w of plan.weeks) {
+      for (const sn of Object.values(w.sessions ?? {})) {
+        const ds = (sn as { derived_set?: { blocks?: Array<{ steps?: Array<Record<string, unknown>> }> } } | null)?.derived_set
+        if (!ds?.blocks) continue
+        for (const b of ds.blocks) {
+          for (const st of b.steps ?? []) {
+            if (st.role !== 'work' || st.pace_mode !== undefined) continue
+            if (typeof st.zone !== 'string' || st.zone === '') continue
+            if (typeof st.pace === 'string' && st.pace.includes('\u2192')) continue
+            if (st.pace == null) continue  // the two declared degradations above
+            violations.push({
+              code: 'INV-PLAN-PROGRESSION-TRANSITION-PACED',
+              principle_ref: 'CoachingPrinciples §8 Amendment (2026-10-07), §11',
+              severity: 'error',
+              week: w.n,
+              message: `Session "${(sn as { label?: string }).label}" has a zone-targeted work step whose resolved pace is neither a transition nor absent (${String(st.pace)}). A zone band resolves to a ramp or to nothing; a point or a plain band on this step is the false precision §8 refused.`,
+              actual: String(st.pace),
+              expected: 'a "X \u2192 Y /km" transition, or null',
+            })
           }
         }
       }

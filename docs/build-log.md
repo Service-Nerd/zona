@@ -7,6 +7,51 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+
+## PROGRESSION-TRANSITION-01 — we decided how to express a target and accidentally decided to express nothing (2026-10-07)
+
+**Third screenshot of the same row.** *"The middle part is still saying 9:20. I feel we need to
+give a distance and some kind of pacing. Right now I'd have to run 9:20 and look what my zone 3
+is and not go over it. Very confusing."*
+
+### The dev bit
+
+Last night I shipped `effort, not pace` on that row and told him the number was ratified. It was.
+What I had not done was ask **what the ratified decision rendered as.** The 2026-09-03 board ruling
+refused a *point* pace on a progression's middle third — correctly, it is a moving target. The
+consequence, which nobody wrote down and nobody looked at, is that `resolvePace` returns `null`,
+so no distance can be derived either, so the row leads with bare minutes between two rows leading
+with kilometres.
+
+A transition is neither a point nor a single anchor. It is the two anchors that section's own
+sentence already names. **941 zone-only steps; 100.0% of them sit between two paced work steps.**
+
+### The product bit
+
+He asked for a distance and some pacing, and the honest version of both already existed in his own
+plan. `7:18 → 6:22 /km`, and the distance follows. The main-set header reconciles as a side effect.
+
+### The AI-building bit
+
+**The arithmetic caught what the reasoning did not.** My first cut ramped to "where threshold
+begins" — the T band's slow edge — which *sounds* right and **coincides with the easy band's fast
+edge for a large minority of runners**: 61 of 941 came out `7:30 → 7:30`, and **7 came out
+backwards**, instructing a runner to slow down through a step whose note says *"let it rise."* I
+would not have found either by re-reading the code. I found them by rendering 941 of them and
+counting.
+
+Then a falsification **passed** — reverting to the slow edge left every arm green, because the
+guard I had written withheld the bad ramps. Nothing wrong shipped; 68 steps just quietly lost their
+ramp. **A guard that silently absorbs a regression hides it**, so there is now an arm on coverage,
+not just correctness.
+
+### The honest bit
+
+Three nights running I have been confidently wrong about this one row in three different ways: the
+unit, then the premise, then the edge. Each time the correction came from measuring the thing
+rather than reasoning about it, and each time he found it first by simply looking at his own
+session.
+
 ## STEP-NO-PACE-DECLARED-01 — the row that looked broken because it was right (2026-10-06)
 
 **The founder sent a third screenshot of his own Tuesday session, four hours after we shipped

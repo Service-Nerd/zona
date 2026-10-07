@@ -2912,6 +2912,25 @@ changes nothing today** — it is a declared defence against a future catalogue 
 same shape as `paceAsFloor`. Falsifying by deleting it left the corpus arm green, which
 is how the hollowness was found; the arm now also asserts `targetClause` directly.
 
+#### Amendment 4 — CORRECTED SAME DAY: it applied one rule to two unlike things
+
+🔴 **The founder saw Am. 4 ship and said it still did not tell him what to do.** He was
+right, and the correction is the Coaching Board's (§8 Am., 2026-10-07), not this board's:
+**a progression's middle third was never effort-governed — it was UNDER-RESOLVED.**
+
+| | §40b effort-governed | A progression's middle third |
+|---|---|---|
+| Hill reps, 233 steps | *"The gradient decides it."* There is genuinely no pace | Sits **between two prescribed paces**, on the rows above and below |
+| Qualifier | **Keeps** `effort, not pace` | **Withdrawn.** It now names its ramp: `7:30 → 6:30 /km`, and carries a distance like its siblings |
+
+⚠️ **Naming an absence is not the same as removing it.** Am. 4 made the refusal legible,
+which was a real improvement and the wrong fix for 941 of the 1,174 steps it covered. The
+rule it states survives **exactly** where the absence is real.
+
+**The `→` is the existing glyph** — `Z1→Z2` already renders on the warm-up header — so no new
+notation was introduced. The qualifier, the ramp and the zone all occupy the same slot: the
+target, line two, first.
+
 #### Amendment 4b — a card is measured in the unit the PLAN prescribed, not one it can derive
 
 **A session with no distance of its own never shows a derived distance on a step.**

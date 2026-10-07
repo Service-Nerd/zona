@@ -12,7 +12,7 @@
     "max_hr": 178,
     "zone2_ceiling": 146,
     "version": "2.0",
-    "last_updated": "2026-09-30",
+    "last_updated": "2026-10-07",
     "notes": "Standard plan — 21.1km, 14 weeks",
     "primary_metric": "distance",
     "fitness_level": "beginner",
@@ -33,7 +33,7 @@
     "days_available": 3,
     "hard_session_relationship": "love",
     "terrain": "mixed",
-    "generated_at": "2026-09-30T08:46:47.075Z",
+    "generated_at": "2026-10-07T05:37:28.792Z",
     "generator_version": "2.0",
     "generator_input": {
       "age": 43,
@@ -684,7 +684,7 @@
                     "role": "work",
                     "modality": "run",
                     "length": "8 min",
-                    "pace": null,
+                    "pace": "7:18 → 6:22 /km",
                     "zone": "Z2-Z3",
                     "advance": "auto",
                     "note": "Let it rise. Don’t chase it."
@@ -1059,7 +1059,7 @@
                     "role": "work",
                     "modality": "run",
                     "length": "6:40",
-                    "pace": null,
+                    "pace": "7:18 → 6:22 /km",
                     "zone": "Z2-Z3",
                     "advance": "auto",
                     "note": "Let it rise. Don’t chase it."

@@ -267,6 +267,45 @@ describe('SESSION-STEP-LEGIBILITY-01 — a step row says what to do, on EVERY se
     expect(mainWork.filter(r => r.srcPace).length, 'no paced work steps reached the sample').toBeGreaterThan(200)
   })
 
+  it('a progression\u2019s middle third names its ramp, and leads with a distance like its siblings', () => {
+    // §8 Am. (Coaching Board, 2026-10-07). The founder raised this three times
+    // from his own card: the middle third led with `9:20 min` between two rows
+    // leading with kilometres, because a zone target resolved to no pace and so
+    // no distance could be derived.
+    const zoneSteps = ALL.filter(r => r.section === 'main' && r.srcRole === 'work' && /Zone \d/.test(r.row.target))
+    const ramps = ALL.filter(r => r.section === 'main' && r.srcRole === 'work' && /\u2192/.test(r.row.target))
+    expect(ramps.length, 'no transitions rendered at all \u2014 the zone target is resolving to nothing again').toBeGreaterThan(200)
+
+    // Every rendered ramp RISES. A `X \u2192 Y` where Y is slower instructs the
+    // runner to slow down through a step whose note says "let it rise" \u2014 the
+    // defect the first implementation had on 7 of 941, plus 61 degenerate.
+    const secs = (t: string) => { const [m, x] = t.split(':').map(Number); return (m ?? 0) * 60 + (x ?? 0) }
+    const notRising = ramps.filter(r => {
+      const m = r.row.target.match(/(\d+:\d{2})\s*\u2192\s*(\d+:\d{2})/)
+      return !m || secs(m[1]!) <= secs(m[2]!)
+    })
+    expect(notRising.map(r => `${r.label}: ${r.row.target}`).slice(0, 3),
+      `${notRising.length} ramp(s) do not rise. A transition that is flat or backwards must be WITHHELD ` +
+      '(it degrades to the zone band), never drawn.').toEqual([])
+
+    // And it now leads with the runner's chosen metric, like rows 3 and 5.
+    const stillMinutes = ramps.filter(r => /^(min|h|hr|hrs)$/i.test(r.row.amountUnit) && r.sessionHasDistance !== false)
+    expect(stillMinutes.map(r => `${r.label}: ${r.row.amount}`).slice(0, 3),
+      `${stillMinutes.length} ramp row(s) still lead with minutes on a distance-anchored session.`).toEqual([])
+
+    // ⚠️ COVERAGE, NOT JUST CORRECTNESS \u2014 AND THIS ARM EXISTS BECAUSE A
+    // FALSIFICATION PASSED. Reverting to the T band's SLOW edge produces 61
+    // degenerate ramps, which the rise guard then WITHHOLDS, so nothing wrong
+    // ships and every other arm stays green: the damage is that 68 steps quietly
+    // lose their ramp and go back to the state the founder complained about.
+    // **A guard that silently absorbs a regression hides it.** The declared
+    // degradations are 7 of 941 (0.74%); the slow-edge version is 7.2%.
+    const degraded = zoneSteps.length / (zoneSteps.length + ramps.length)
+    expect(degraded, `${zoneSteps.length} of ${zoneSteps.length + ramps.length} zone steps have NO ramp ` +
+      '(declared: an absent anchor per \u00a724b, or a ramp that would not rise per PROGRESSION-GOAL-INVERTED-01). ' +
+      'Above 5% means the resolution is failing for a reason nobody declared.').toBeLessThan(0.05)
+  })
+
   it('a RECOVERY step never carries the qualifier', () => {
     // Deliberate exclusion: "Jog", "Walk", "Stand" are already instructions by
     // effort and have never carried a pace, so the qualifier would be noise on

@@ -373,6 +373,23 @@ export const MUTATIONS: Mutation[] = [
     // INV-PLAN-HEADER-PACE-MATCHES-WORK by accident.
     ;(sn as unknown as { pace_target?: string }).pace_target = '5:30–5:45 /km'
   } },
+  // §8 Am. / INV-PLAN-PROGRESSION-TRANSITION-PACED — a zone-targeted work step
+  // resolves to a RAMP or to nothing. This writes the third state: a plain band,
+  // which is exactly the false precision the 2026-09-03 ruling refused and which
+  // `INV-PLAN-DERIVED-SET-PACED` cannot see (it scopes to `pace_mode`, and a zone
+  // target produces none).
+  { name: 'flatten a progression ramp to a band', apply: p => {
+    for (const s of sessionsOf(p)) {
+      const ds = (s as unknown as { derived_set?: { blocks?: Array<{ steps?: Array<Record<string, unknown>> }> } }).derived_set
+      for (const b of ds?.blocks ?? []) {
+        for (const st of b.steps ?? []) {
+          if (st.role === 'work' && typeof st.zone === 'string' && st.zone !== '' && st.pace_mode === undefined) {
+            st.pace = '6:30\u20137:30 /km'
+          }
+        }
+      }
+    }
+  } },
   { name: 'strip coach_notes',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).coach_notes }) },
   { name: 'strip derived_set',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).derived_set }) },
   { name: 'strip catalogue_id',        apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).catalogue_id }) },

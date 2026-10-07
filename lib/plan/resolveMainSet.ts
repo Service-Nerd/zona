@@ -12,6 +12,8 @@
 // this runner actually does. Without both, a v2 schema is invisible to a runner.
 import { qualifyStepLength } from '@/lib/format'
 import type { PaceAnchor, StepTarget, StructureV2 } from './sessionStructureV2'
+import { bandCeiling } from './paceBands'
+import { GENERATION_CONFIG } from './generationConfig'
 
 /** The runner's resolved paces, keyed by anchor. Absent anchors are legitimate —
  *  a beginner has no marathon pace, and `goal` exists only for a time target. */
@@ -86,8 +88,73 @@ function formatDistance(m: number): string {
  * inventing a number, which is the whole point of anchors over literals.
  */
 function resolvePace(target: StepTarget, ctx: ResolveContext): string | null {
+  if (target.kind === 'zone') return resolveTransition(ctx)
   if (target.kind !== 'pace') return null
   return ctx.anchors[target.anchor] ?? null
+}
+
+/**
+ * A zone-band target resolves to the RAMP it describes — §8 Amendment, Coaching
+ * Board 2026-10-07.
+ *
+ * 🔴 **The founder raised this three times from his own session.** A progression's
+ * middle third carried `{ kind: 'zone', zone: 'Z2-Z3' }`, this function returned
+ * `null` by construction, so no distance could be derived and the row led with
+ * `9:20 min` between two rows leading with kilometres: *"I'd have to run 9:20 and
+ * look what my zone 3 is and not go over it. Very confusing."*
+ *
+ * ⚠️ WE NEVER DECIDED TO TELL THE RUNNER NOTHING. The 2026-09-03 ruling refused a
+ * **point** pace on this step — *"a moving target between Z2 and Z3 formatted as a
+ * point pace would be false precision"* — and silence was the CONSEQUENCE, which
+ * nobody looked at. A transition is not a point and not a single anchor: it is the
+ * two anchors the step already moves between, both already prescribed on the rows
+ * immediately above and below it.
+ *
+ * 📐 Measured before the sitting: of **941** zone-only work steps, **100.0%** are
+ * bracketed on both sides by a paced work step. Zero have one side. Zero have
+ * neither. Every one is a progression's middle third.
+ *
+ * ⚠️ RESOLVED FROM THE ANCHORS, NEVER FROM THE NEIGHBOURING STEPS — Willy's
+ * binding condition. Reading the next step would ramp a `5K-pace progression` to
+ * `4:54–5:06` and roughly double the session's hard component. The step's own
+ * target says `Z2-Z3`, and **Z3 is threshold: that is where the ramp stops.**
+ *
+ * ⚠️ BOTH EDGES ARE THE BAND'S FAST END, AND THE FIRST CUT GOT THE SECOND ONE
+ * WRONG. "Ramp to where threshold BEGINS" sounds right and means the T band's
+ * SLOW edge — which **coincides with the easy band's fast edge for a large
+ * minority of runners**. Measured: **61 of 941 transitions (6.5%) came out
+ * degenerate (`7:30 → 7:30`) and 7 came out INVERTED (`5:45 → 6:10`), telling the
+ * runner to slow down through a step whose note says "let it rise."** The fast
+ * edge of T is still inside Z3 — the top of it — so Willy's condition holds, and
+ * `end < start` is then true by construction because threshold is faster than
+ * easy. **The arithmetic of a band, not its name, decides which edge is which.**
+ *
+ * Returns `null` when either anchor is missing, which is a legitimate absence
+ * (§24b) and degrades to the zone exactly as before — never a half-built ramp.
+ */
+function toSecs(mmss: string): number {
+  const [m, sec] = mmss.split(':').map(Number)
+  return (m ?? 0) * 60 + (sec ?? 0)
+}
+
+function resolveTransition(ctx: ResolveContext): string | null {
+  const { from, to } = GENERATION_CONFIG.PROGRESSION_TRANSITION_ANCHORS
+  const start = bandCeiling(ctx.anchors[from])
+  const end = bandCeiling(ctx.anchors[to])
+  if (!start || !end) return null
+  // ⚠️ A RAMP THAT IS NOT A RISE IS NOT RENDERED, and the 7 cases that reach this
+  // are a real finding rather than an arithmetic edge. All of them are a
+  // `Marathon-pace progression` on a §22 goal-paced week, where `T` is
+  // substituted with the runner's GOAL band — and an experienced runner chasing
+  // 4:15 has a goal pace (5:56–6:10) SLOWER than the fast edge of their own easy
+  // band (5:45). So the final third really is easier than the first third's cap:
+  // the session is not a progression for them, and drawing an arrow downward on a
+  // step that says "let it rise" would state that contradiction as an
+  // instruction. Degrades to the zone band, which is what shipped before.
+  // Filed as `PROGRESSION-GOAL-INVERTED-01`.
+  if (toSecs(start) <= toSecs(end)) return null
+  const unit = /\/mi\b/.test(ctx.anchors[to] ?? '') ? '/mi' : '/km'
+  return `${start} \u2192 ${end} ${unit}`
 }
 
 function requireParam(param: string, ctx: ResolveContext): number {

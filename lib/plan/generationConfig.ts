@@ -957,6 +957,35 @@ export const GENERATION_CONFIG = {
     recovery_weeks_may_decrease: false,
   },
 
+  // §8 Amendment (Coaching Board, 2026-10-07) — THE PROGRESSION'S MIDDLE THIRD
+  // NAMES ITS TRANSITION. A zone-band target resolves to a ramp between these
+  // two anchors: the E anchor's FAST edge, to the T anchor's SLOW edge.
+  //
+  // 🔴 The 2026-09-03 ruling refused a POINT pace on that step ("a moving target
+  // between Z2 and Z3 formatted as a point pace would be false precision") and
+  // the consequence — which nobody looked at — was that the runner was told
+  // NOTHING. The founder raised it three times from his own session: *"I'd have
+  // to run 9:20 and look what my zone 3 is and not go over it. Very confusing."*
+  // A transition is not a point and not a single anchor; it is the two anchors
+  // the step already moves between, both already on the rows above and below.
+  //
+  // ⚠️ `to: 'T'` IS WILLY'S BINDING CONDITION, NOT A DEFAULT. The ramp stops at
+  // THRESHOLD on every row, never at the following step's anchor. On a
+  // `5K-pace progression` the final third is 4:54–5:06; ramping the middle third
+  // to THAT would roughly double the session's hard component. The step's own
+  // target says `Z2-Z3`, and Z3 is threshold — that is where the ramp stops.
+  //
+  // ⚠️ And the EDGES are not interchangeable. From = the easy band's fast edge
+  // (where the previous third was capped); to = the threshold band's SLOW edge
+  // (where threshold begins). Taking T's fast edge would finish the ramp at the
+  // hardest end of Z3. On a pace number, slower is the BIGGER number.
+  //
+  // 📊 Seiler's point, recorded because it reverses the intuition: the step
+  // currently has no SLOW bound at all, so "let it rise" has nothing to rise
+  // from. For a runner this product exists to keep out of the grey zone, the
+  // protective number is the floor — and it was the one being withheld.
+  PROGRESSION_TRANSITION_ANCHORS: { from: 'E', to: 'T' } as const,
+
   // Progressive tempo (continuous shape, not reps) — Coaching Board
   // 2026-09-03. `progressive_tempo`'s v1 description ("30 min Z2→Z3") has no
   // rep count to scale, so it doesn't use the WORK_MIN/MAX/TARGET band

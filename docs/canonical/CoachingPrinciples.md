@@ -1182,6 +1182,63 @@ target and needs to have run at it — is the case that got built.
 > **A goal-paced week's override must reach the derived_set, not just the label.** §22's existing goal-pace-week mechanism renames a session's label and `pace_target` to goal pace but, before this fix, never touched a v2 row's `derived_set` — so a threshold session could show "10K-pace progression" at goal pace on its headline while its own rep detail underneath still read true threshold pace. The T anchor now resolves to goal pace (formatted as the same band `pace_target` uses, not a bare point) whenever the session itself is goal-paced, for every threshold-category row — closing the same mismatch on `threshold_ladder` (migrated earlier, same category) as an unplanned but correct side effect.
 >
 > **Phase 2 — `progressive_tempo`'s continuous shape (same sitting, same ruling).** Not a reps structure — nothing repeats; it is one continuous effort that changes character as it goes. The board's ruling: one block, three equal sequential work steps — first third easy (E-anchor, ceiling — "hold back"), middle third the honest transition, final third threshold (T-anchor). The middle third has no single pace anchor a runner could hit and still be doing what this session is for — a moving target between Z2 and Z3 formatted as a point pace would be false precision — so it carries the zone band `Z2-Z3` as its target instead of a pace anchor. Sized directly by `GENERATION_CONFIG.PROGRESSIVE_TEMPO_MAIN_MINS` (fitness × phase, same shape as the WORK_TARGET bands above minus the reps-count derivation those need, since there is no rep count here to derive), split into three equal thirds. `threshold_ladder` is the structurally identical shape (one block, repeat 1, several sequential work steps, `scaling: 'fixed'`) and is **not** this ruling — nothing in the v2 schema marks "this is a progression, not a ladder", so the engine (`progressiveTempoPlan`) and the invariant (`progressiveTempoExpectedMainMins`) both key on the row's own id rather than any structural signal, which is honest about the schema's limit rather than inventing a discriminator the schema doesn't have.
+
+
+> ### Amendment — the transition is NAMED, not withheld (Coaching Board, 2026-10-07)
+>
+> **Principle.** A progression's middle third resolves to the **ramp it already
+> describes**: from the **E anchor's fast edge** to the **T anchor's fast edge**,
+> rendered `7:30 → 6:30 /km`. The step then carries a distance like its siblings.
+>
+> **Why.** The 2026-09-03 ruling above refused a **point** pace on this step, and it
+> was right to. **What nobody checked is what the refusal RENDERED as**: `resolvePace`
+> returns `null` for a zone target by construction, so no distance could be derived
+> either, and the row led with bare minutes between two rows leading with kilometres.
+> The founder raised it three times from his own session: *"I'd have to run 9:20 and
+> look what my zone 3 is and not go over it. Very confusing."* **We decided how to
+> express a target and accidentally decided to express nothing.**
+>
+> A transition is neither a point nor a single anchor. It is the two anchors this
+> section's own sentence already names — E below, T above — both already prescribed on
+> the rows immediately above and below. Measured: of **941** zone-only work steps,
+> **100.0%** are bracketed on both sides by a paced work step; every one is a
+> progression's middle third. §11 supports it — where a pace exists it is a range, and
+> a ramp is a range with a direction.
+>
+> 📊 **Seiler, recorded because it reverses the intuition:** the step had no SLOW
+> bound at all, so *"let it rise"* had nothing to rise from. For a runner this product
+> exists to keep out of the grey zone, the protective number is the **floor** — and it
+> was the one being withheld.
+>
+> 🩹 **Willy's binding condition.** The ramp is resolved from the **anchors, never from
+> the neighbouring step.** On a `5K-pace progression` the final third is `4:54–5:06`;
+> ramping the middle third to *that* would roughly double the session's hard
+> component. The step's own target says `Z2-Z3`, and **Z3 is threshold — that is where
+> the ramp stops.**
+>
+> ⚠️ **The first implementation was wrong and the arithmetic, not the reasoning, caught
+> it.** "Ramp to where threshold *begins*" means the T band's SLOW edge, which
+> **coincides with the easy band's fast edge for a large minority of runners**:
+> **61 of 941 (6.5%) came out degenerate** (`7:30 → 7:30`) and **7 came out INVERTED**
+> (`5:45 → 6:10`), instructing the runner to slow down through a step whose note says
+> *"let it rise."* Both edges are the band's fast end.
+>
+> ⚠️ **A ramp that would not rise is withheld, and those 7 are a finding of their own.**
+> All are a `Marathon-pace progression` on a §22 goal-paced week where `T` is
+> substituted with the runner's GOAL band — and an experienced runner chasing 4:15 has
+> a goal pace (`5:56–6:10`) **slower than the fast edge of their own easy band**
+> (`5:45`). The final third really is easier than the first third's cap: **the session
+> is not a progression for them.** Filed as `PROGRESSION-GOAL-INVERTED-01`; the step
+> degrades to the zone band, which is what shipped before.
+>
+> **The hill reps are untouched.** §40b governs work where effort is the *whole*
+> prescription and the gradient decides the pace. A progression's middle third sits
+> between two prescribed paces: it was never effort-governed, it was **under-resolved**,
+> and `ui-patterns.md` §21b Am. 4's *"effort, not pace"* is withdrawn from zone steps
+> and kept on the 233 RPE steps where it is true.
+>
+> **Config.** `GENERATION_CONFIG.PROGRESSION_TRANSITION_ANCHORS = { from: 'E', to: 'T' }`.
+> **Invariant.** `INV-PLAN-PROGRESSION-TRANSITION-PACED`.
 >
 > Enforced by `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` — a structured session's `duration_mins` must be internally consistent with its own `derived_set` (work + recovery + the §16 warm-up/cool-down floors), within `MAIN_SET_ORDERING_TOLERANCE_MINS` rounding tolerance. Mechanically prevents the exact incoherence (a session's own stated length not fitting its own prescribed structure) that surfaced this ruling. **Scoped to `scaling: 'reps'` rows** — the ones `pacedRepPlan` sizes (`tempo_cruise_short`, `tenk_pace_intervals`, the vo2max rows) — **plus `progressive_tempo` specifically**, whose expected main minutes are re-derived from `PROGRESSIVE_TEMPO_MAIN_MINS` directly (its row has no literal length on it to sum — `{ kind: 'parameter' }` lengths, ADR-019's whole point — so the row-only reader that works for reps/ladder shapes cannot recompute it). `threshold_ladder` carries `scaling: 'fixed'` and was never given structure-driven sizing by this or any prior ruling — its `duration_mins` still comes from the older generic quality-session formula, so this invariant does not check it; the goal-pace/`derived_set` fix in the paragraph above still applies to it, sizing does not.
 

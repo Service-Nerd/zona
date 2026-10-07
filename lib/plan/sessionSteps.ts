@@ -282,6 +282,16 @@ export function targetClause(step: DerivedStep, units: 'km' | 'mi'): string {
   // the arm now asserts `targetClause` directly as well. Same shape as
   // `paceAsFloor` (0 of 6,014): kept, stated, and live the moment the catalogue
   // gives a recovery step a zone.
+  //
+  // 🔴 WITHDRAWN FROM ZONE STEPS BY §8 Am. (Coaching Board, 2026-10-07) AND THE
+  // WITHDRAWAL IS THE POINT. Am. 4 applied one rule to two unlike things: a hill
+  // rep IS effort-governed (§40b — "the gradient decides it"), while a
+  // progression's middle third was merely UNDER-RESOLVED, sitting between two
+  // prescribed paces. The founder saw `Zone 2–3 · effort, not pace` and said it
+  // still did not tell him what to do — correctly, because naming an absence is
+  // not the same as removing it. Those steps now carry a resolved ramp and never
+  // reach this branch; a zone step that still does is one with no anchors (§24b),
+  // where the statement is true.
   const absent = step.role === 'work' ? ` \u00b7 ${NO_PACE_QUALIFIER}` : ''
   if (step.rpe != null) return `RPE ${step.rpe}${absent}`
   if (step.zone) return `${formatZone(step.zone)}${absent}`
