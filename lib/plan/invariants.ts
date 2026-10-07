@@ -139,6 +139,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-UNCOVERED-RUNWAY-DECLARED',
   'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED',
   'INV-PLAN-GOAL-PAST-CV-DECLARED',
+  'INV-PLAN-GOAL-BELOW-EASY-DECLARED',
   'INV-PLAN-STRIDES-PRESENT',
   'INV-PLAN-STRIDES-NO-CARRIER',
   'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
@@ -4482,6 +4483,40 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           }
         }
       }
+    }
+  }
+
+  // INV-PLAN-GOAL-BELOW-EASY-DECLARED (§44 Am. 3, PROGRESSION-GOAL-INVERTED-01)
+  //
+  // The mirror of INV-PLAN-GOAL-PAST-CV-DECLARED: a plan whose goal pace is
+  // SLOWER than the runner's own easy ceiling must say so. Measured: 10 of 359
+  // time-target plans, marathon only, every one `experienced` declared at
+  // 20-35 km/week chasing 4:15.
+  //
+  // 🔴 WHY THIS IS NOT ONLY A NOTICE: on those plans **62 of 115 sessions
+  // labelled `quality` (53.9%) are prescribed slower than that easy ceiling**,
+  // against **0 of 2,574 (0.0%)** on 349 control plans. §1 counts SESSIONS, so
+  // the plan claims an intensity distribution it does not deliver.
+  //
+  // ⚠️ IT CHECKS THE STAMP, NOT THE SCREEN, AND THAT LIMIT IS LOAD-BEARING HERE.
+  // `planRationaleNotes` renders **1.01 of 2.27 stamped honesty notes per plan**
+  // (70-word budget, 3-tile cap), and on these 10 the single surviving tile is
+  // `Maintenance`. **So this invariant can be green while the runner is told
+  // nothing** — blocked on `PLAN-NOTE-BUDGET-INERT-01`, which is why the stamp
+  // is severity `warn` rather than `error`: an error would assert a delivery the
+  // surface cannot make.
+  {
+    const meta = plan.meta as { goal_below_easy_ceiling?: boolean; goal_below_easy_ceiling_note?: string } | undefined
+    if (meta?.goal_below_easy_ceiling === true && !meta.goal_below_easy_ceiling_note) {
+      violations.push({
+        code: 'INV-PLAN-GOAL-BELOW-EASY-DECLARED',
+        principle_ref: 'CoachingPrinciples §44 Amendment 3 (2026-10-07), §40c',
+        severity: 'warn',
+        week: 0,
+        message: 'The goal pace is slower than this runner\u2019s own easy ceiling and the plan does not say so. More than half the sessions labelled quality will be easier than their easy runs.',
+        actual: 'goal_below_easy_ceiling with no note',
+        expected: 'goal_below_easy_ceiling_note stamped',
+      })
     }
   }
 

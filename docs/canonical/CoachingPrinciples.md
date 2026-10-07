@@ -3079,6 +3079,62 @@ the invariant under test is the defect. Two arms go red now.
 
 ---
 
+
+### Amendment 3 — the MIRROR: a goal pace SLOWER than the runner's easy ceiling is stated (Coaching Board, 2026-10-07, PROGRESSION-GOAL-INVERTED-01)
+
+**Principle.** A time-target plan whose goal pace is **slower than the fast edge of the
+runner's own easy band** says so. `meta.goal_below_easy_ceiling` + its note; the difficulty
+band may not read `comfortable`.
+
+**Why.** Amendment 2 guards the goal that is too **fast**. Nothing guarded the goal that is
+too **slow**, and the band could not see it — `goalBeyondMeasuredFitness` and
+`hmAnchorWithheld` both compare in one direction.
+
+📐 **Measured: 10 of 359 time-target plans (2.8%), MARATHON only** (10 of 65; zero at 5K,
+10K, HM). Every one the same shape: `experienced` declared at **20–35 km/week** chasing
+**4:15**, giving a goal of `6:03 /km` against an easy ceiling of `5:45`.
+
+📊 **Seiler's finding, and it is why this is not only a notice.** On those plans **62 of 115
+sessions labelled `quality` (53.9%) are prescribed SLOWER than the runner's own easy
+ceiling** — against **0 of 2,574 (0.0%)** on the 349 control plans. §1 counts SESSIONS, so
+the plan declares an intensity distribution it does not deliver, **in the direction that
+looks compliant.** A "marathon-pace" rep at `5:56–6:10` for a runner capped at `5:45` on
+easy days is an easy run with a label on it.
+
+🎯 **McMillan:** a 4:15 marathon off 20 km a week is an **ambitious** goal, not a soft one —
+which is what makes this strange. The engine has decided the runner is fast. *"You are told
+to run marathon pace and it feels easier than your easy run. They either run it faster than
+prescribed — which makes it a different session, unmeasured — or they stop believing the
+plan."*
+
+### 🔴 The obvious fix was MEASURED and is REFUSED
+
+Making §22's goal-pace override yield when the goal is below the easy ceiling was built as a
+probe and measured. **It does not work, for two independent reasons:**
+
+| | |
+|---|---|
+| **It fixes only half** | 62 → 33 sessions (53.9% → 28.7%). The remainder are `race_specific` rows (`Marathon-pace blocks`, `Goal-pace sharpener`) which are **intrinsically goal-anchored** and never went through the T-substitution the probe gates |
+| **It breaks §22** | `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` fires: the goal-pace share of second-half build/peak drops to **44%** against §22's **≥50%** floor. It trades a §1 delivery defect for a §22 violation |
+
+⚠️ `measure:fitness` and `cohort:shape` both exited **0** on the probe — and that is not
+evidence it was safe. **10 plans of 748 is 1.3%, below what either aggregate resolves.** The
+direct per-session measurement is what refused it.
+
+➡️ **So the root is upstream, not at the pace layer.** Every one of the 10 is `experienced`
+declared at 20–35 km/week: **§79's declared-versus-demonstrated split.** The engine believes
+a VDOT the training volume does not support. Filed separately; fixing the symptom at §22
+leaves it intact.
+
+⚠️ **AND THE RUNNER IS STILL NOT TOLD.** The sentence is stamped on 10 of 10 and renders on
+**0 of 10**: `planRationaleNotes` delivers **1.01 of 2.27** stamped honesty notes per plan
+(3-tile cap, 70-word budget), and on all ten the single surviving tile is `Maintenance`.
+**A declaration that cannot render is not a declaration** — blocked on
+`PLAN-NOTE-BUDGET-INERT-01`, which is why the invariant is `warn` and not `error`.
+
+**Config.** none — the comparison is `goalPaceMins > bandCeiling(pace.easyPaceStr)`, both
+already owned. **Invariant.** `INV-PLAN-GOAL-BELOW-EASY-DECLARED`.
+
 ## 39. Race-week mid-week easy run for HM/marathon
 
 **Principle.** For HM and marathon time-targeted plans, race week MUST include one slightly longer easy run (6–8 km for HM, 8–10 km for marathon) on a non-shakeout day, when the runner has `days_available >= 4`. For 10K and below, the existing shakeout-only race week is sufficient. Race day, two shakeouts, and one easy mid-week run = four sessions in race week.

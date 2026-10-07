@@ -1242,3 +1242,47 @@ JSON-path diff over 197 regenerated plans shows the only differing paths are
 ⚠️ **The ruling reaches no existing plan on its own.** `derived_set` is stamped at generation;
 `backfillLegacyRamp` (`LEGACY-RAMP-BACKFILL-01`) is the read-time half, and without it 13 of 30
 stored plans would still show the bare duration.
+
+## PROGRESSION-GOAL-INVERTED-01 — §44 Amendment 3: the mirror (2026-10-07)
+
+**Trigger:** `ruleEngine.ts` — soft, qualifies. **Ruling: INSUFFICIENT EVIDENCE → CORRECT**
+once Seiler's condition was measured.
+
+**The filed item said "7 of 941 steps".** That was the *display* symptom. Re-measured before
+the sitting: **10 of 359 time-target plans (2.8%), marathon only**, and **115 quality
+sessions** — the prescription reaches far wider than the renderer.
+
+| | |
+|---|---|
+| 📊 **Seiler's condition, discharged** | **62 of 115 sessions labelled `quality` (53.9%) prescribed SLOWER than the runner's own easy ceiling**, vs **0 of 2,574 (0.0%)** on 349 controls. §1 counts SESSIONS: the plan declares a distribution it does not deliver |
+| 🎯 **McMillan** | *"You are told to run marathon pace and it feels easier than your easy run."* A 4:15 off 20 km/week is ambitious, not soft — the engine has decided the runner is fast |
+| 🩹 **Willy** | No injury vector; the work is easier than prescribed. His condition was on the FIX, not the finding |
+| ⚕️ **Sims** | A plan whose hard days are not hard costs the time and fuelling of a quality session for no adaptation |
+
+### 🔴 The obvious fix was built as a probe, measured, and REFUSED
+
+Making §22's goal-pace override yield: **fixes only half** (62 → 33; the rest are
+`race_specific` rows, intrinsically goal-anchored) **and breaks §22** —
+`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` drops to **44%** against a **≥50%** floor. It trades
+a §1 delivery defect for a §22 violation.
+
+⚠️ **`measure:fitness` and `cohort:shape` both exited 0 on the probe, and that proved
+nothing** — 10 plans of 748 is **1.3%**, below either aggregate's resolution. **The direct
+per-session measurement is what refused it.** An aggregate cannot see ten plans.
+
+➡️ **Root cause is §79, not the pace layer:** every one is `experienced` declared at
+20–35 km/week. Routed separately.
+
+### ⚠️ What shipped, and what the runner actually gets
+
+The detection, the flag, the sentence and the invariant ship. **The sentence renders on 0 of
+10 plans**: `planRationaleNotes` delivers **1.01 of 2.27** stamped honesty notes per plan
+(3-tile cap, 70-word budget) and the surviving tile on all ten is `Maintenance`. **So the
+runner is still not told**, and the invariant is `warn` rather than `error` so it cannot
+assert a delivery the surface will not make. Blocked on `PLAN-NOTE-BUDGET-INERT-01`.
+
+**Artifacts:** §44 Amendment 3 · no new numeric (both operands already owned) ·
+`INV-PLAN-GOAL-BELOW-EASY-DECLARED` + liveness mutation ·
+`lib/plan/goalBelowEasyDeclared.test.ts`, falsified three ways.
+⚠️ `verify:parity` changed 140 of 6,066 — **proven** by a JSON-path diff over 197 regenerated
+plans to be the two new meta keys and nothing else.

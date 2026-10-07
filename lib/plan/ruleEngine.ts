@@ -83,7 +83,7 @@ export {
 } from './paceBands'
 export type { PaceGuide } from './paceBands'
 import {
-  velocityAtFraction, paceAtFraction, formatPace, paceBandStr, buildPaceFromVDOT,
+  velocityAtFraction, paceAtFraction, formatPace, paceBandStr, buildPaceFromVDOT, bandCeiling,
 } from './paceBands'
 import type { PaceGuide } from './paceBands'
 
@@ -8958,6 +8958,47 @@ function buildRulePlanOnce(
    */
   const declaresShortfall = !!(finishGoalLrShortfallNote || peakShortfallNote || volumeShortfallNote)
 
+  /**
+   * §44 Amendment 3 (Coaching Board 2026-10-07, PROGRESSION-GOAL-INVERTED-01) —
+   * THE MIRROR OF AMENDMENT 2: A GOAL PACE **SLOWER** THAN THE RUNNER'S OWN EASY
+   * CEILING IS STATED, NEVER ABSORBED.
+   *
+   * §44 Am. 2 guards the goal that is too FAST (past CV). Nothing guarded the
+   * goal that is too SLOW, and the band could not see it: `goalBeyondMeasuredFitness`
+   * and `hmAnchorWithheld` both compare in one direction.
+   *
+   * 🔴 MEASURED. 10 of 359 time-target plans (2.8%), **marathon only** — 10 of 65
+   * — and every one the same shape: `experienced` declared at 20–35 km/week
+   * chasing 4:15, giving a goal of `6:03 /km` against an easy ceiling of `5:45`.
+   * The engine believes a VDOT the training volume does not support (§79's
+   * declared-vs-demonstrated split, and the likelier ROOT CAUSE than the goal).
+   *
+   * 📊 SEILER'S FINDING, AND IT IS WHY THIS IS NOT ONLY A NOTICE. On those plans
+   * **62 of 115 sessions labelled `quality` (53.9%) are prescribed SLOWER than
+   * the runner's own easy ceiling** — against **0 of 2,574 (0.0%)** on the 349
+   * control plans. §1 counts SESSIONS, so the plan declares an intensity
+   * distribution it does not deliver, in the direction that looks compliant. A
+   * "marathon-pace" rep at `5:56–6:10` for a runner capped at `5:45` on easy days
+   * is an easy run with a label on it.
+   *
+   * ⚠️ WHAT THIS AMENDMENT DOES **NOT** DO: change the prescription. Making §22's
+   * goal-pace override yield would move 62 sessions back to true threshold, which
+   * is a real intensity increase nobody has measured — 🩹 Willy's standing
+   * condition. That half is ruled separately and is not here.
+   *
+   * ⚠️ THE EASY CEILING IS READ FROM THE SAME `PaceGuide` THE SESSIONS ARE BUILT
+   * FROM, never rebuilt from `meta.vdot`. A VDOT rebuild agrees everywhere both
+   * exist (183 of 183) but **`meta.vdot` is absent on 176 of 359 time-target
+   * plans — including all 10 of these** — so a measurement taken that way reports
+   * a confident ZERO. Two sources, one of them blind to half the population.
+   */
+  const goalBelowEasyCeiling = (() => {
+    if (input.goal !== 'time_target' || goalPaceMins == null) return false
+    const ceilStr = bandCeiling(pace.easyPaceStr)
+    const easyCeil = ceilStr ? paceStrToMins(ceilStr) : null
+    return easyCeil != null && goalPaceMins > easyCeil
+  })()
+
   const difficultyBand: 'comfortable' | 'demanding' | 'very_demanding' =
     prepTime.status === 'warn' ? 'very_demanding'
     : compressionClassification === 'constrained_by_inputs' ? 'demanding'
@@ -9004,6 +9045,10 @@ function buildRulePlanOnce(
      * reason that arm is last: a louder reason keeps its note.
      */
     : hmAnchorWithheld ? 'demanding'
+    // §44 Am. 3 — the mirror. Placed last for the same reason the arms above are
+    // ordered as they are: a plan already demanding for a louder reason keeps
+    // that reason's note.
+    : goalBelowEasyCeiling ? 'demanding'
     : 'comfortable'
 
   // One-line honest "why" for the demanding tiers only (mirrors
@@ -9040,6 +9085,13 @@ function buildRulePlanOnce(
     // sequence, no guard.
     : declaresShortfall
       ? `Demanding — this plan does not fully reach what this distance usually asks for. The shortfall note says which part, and what would lift it.`
+      // 🔴 §44 Am. 3's SENTENCE IS NOT HERE, AND THE FIRST CUT PUT IT HERE.
+      // Measured immediately after: the flag set on 10 of 10 plans, the band was
+      // already `demanding`, and the sentence rendered on **ZERO** — every one
+      // of those plans reads `constrained_by_inputs`, which wins the chain
+      // above. **A declaration that cannot render is not a declaration**
+      // (PLAN-NOTE-BUDGET-INERT-01, filed two days before I built one). The
+      // sentence is its own meta note, surfaced by `planRationaleNotes`.
       : `Demanding — the pace you're chasing is quicker than your current fitness supports, so the plan trains you at threshold rather than rehearsing a pace you cannot hold yet. Get fitter and it comes to you; or set a target you could race today.`
 
   // §18 Amendment (FREQ-SILENCE-01, 2026-09-19) — WHEN VOLUME, NOT LIFE, SETS
@@ -9220,6 +9272,15 @@ function buildRulePlanOnce(
     // ⚠️ Stamped only when true, so its absence means "the anchor resolved" and
     // never "nobody asked".
     ...(hmAnchorWithheld ? { hm_goal_anchor_withheld: true } : {}),
+    ...(goalBelowEasyCeiling ? {
+      goal_below_easy_ceiling: true,
+      // §40c — name the lever, never only the loss. §38 — diagnosis plus
+      // prescription. The runner's two levers are the target and the fitness
+      // level they declared, and one of them is wrong; the note says which two.
+      goal_below_easy_ceiling_note:
+        `Your goal pace is slower than the pace you already run easy, so the race-pace sessions will not feel like work. `
+        + `Either you are fitter than this target assumes and could chase a quicker one, or the fitness level you entered is ahead of your current weekly distance.`,
+    } : {}),
     // §117 — stamped from the SINGLE evaluation of `runWalkApplies` above. The
     // session-stamping pass later in this file reads this flag rather than
     // re-deriving the predicate, so the two can never disagree.

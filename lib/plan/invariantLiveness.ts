@@ -390,6 +390,13 @@ export const MUTATIONS: Mutation[] = [
       }
     }
   } },
+  // §44 Am. 3 / INV-PLAN-GOAL-BELOW-EASY-DECLARED — flag the condition and remove
+  // the sentence, which is the exact shape of the defect: the engine knows the
+  // goal is slower than the runner's easy ceiling and does not say so.
+  { name: 'flag goal-below-easy with no note', apply: p => {
+    const m = (p as unknown as { meta?: Record<string, unknown> }).meta
+    if (m) { m.goal_below_easy_ceiling = true; delete m.goal_below_easy_ceiling_note }
+  } },
   { name: 'strip coach_notes',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).coach_notes }) },
   { name: 'strip derived_set',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).derived_set }) },
   { name: 'strip catalogue_id',        apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).catalogue_id }) },

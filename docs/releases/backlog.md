@@ -6536,25 +6536,26 @@ A principle written before that number exists is the error the board recorded on
 
 ---
 
-### `PROGRESSION-GOAL-INVERTED-01` — a goal-paced progression whose "threshold" third is EASIER than its easy third 🏃 **COACHING BOARD**
+### ✅ `PROGRESSION-GOAL-INVERTED-01` — RULED AND PART-SHIPPED 2026-10-07 (§44 Am. 3)
 
-**Found 2026-10-07 while building §8 Am.'s transition, by the arithmetic refusing to produce a
-rising ramp.** Measured: **7 of 941** zone-targeted steps. Every one is a `Marathon-pace
-progression` on a §22 goal-paced week.
+**Coaching Board: CORRECT**, once Seiler's condition was measured. Re-measured first and the
+item understated it: not 7 steps but **10 of 359 time-target plans, 115 quality sessions**.
 
-**The mechanism.** On a goal-paced week `T` is substituted with the runner's **goal band**. An
-experienced runner chasing **4:15** gets a goal pace of **5:56–6:10 /km** — and the fast edge of
-their own easy band is **5:45 /km**. So the session's *final* third is prescribed **slower than
-the cap on its first third**, and the ramp between them would have pointed downhill.
+✅ **Shipped:** detection, `meta.goal_below_easy_ceiling` + note, the difficulty band,
+`INV-PLAN-GOAL-BELOW-EASY-DECLARED`, gate falsified three ways.
 
-🔴 **The display fix withholds the arrow; it does not fix the session.** A progression that does
-not progress is still shipped, and `pace_target` on those sessions reads `5:56–6:10 /km` while
-step 3 reads `7:18 /km or slower`. **The runner is being asked to do a progression that is,
-for them, three thirds of the same effort or easier.**
+🔴 **REFUSED by measurement, do not re-propose without new evidence:** making §22's goal-pace
+override yield. It fixes **only half** (62 → 33; the rest are intrinsically goal-anchored
+`race_specific` rows) **and breaks `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO`** — 44% against a
+≥50% floor. ⚠️ `measure:fitness` and `cohort:shape` both exited **0** on that probe and
+**proved nothing**: 1.3% of plans is below either aggregate's resolution.
 
-**For the board:** is this §120's territory (goal pace vs current fitness), §44's (goal past CV,
-the other direction), or a selection defect — should a `*-pace progression` row be *eligible* for a
-runner whose goal pace sits inside their easy band at all? ⚠️ **Do not fix it in the renderer.**
+🔻 **STILL OPEN, two things:**
+1. **The runner is not told.** Stamped 10/10, rendered **0/10** — blocked on
+   `PLAN-NOTE-BUDGET-INERT-01` (**P1**). Fixing that is what makes this ship.
+2. **The root cause is §79**, not the pace layer: every one of the 10 is `experienced`
+   declared at 20–35 km/week, so the engine believes a VDOT the volume does not support.
+   🏃 **COACHING BOARD**, filed as the real question.
 
 ---
 

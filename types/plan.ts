@@ -758,6 +758,9 @@ export interface PlanMeta {
    */
   quality_pool_sizes?: number[]
   fitness_signal_note?: string
+  /** §44 Am. 3 — the goal pace is SLOWER than the runner's own easy ceiling. */
+  goal_below_easy_ceiling?: boolean
+  goal_below_easy_ceiling_note?: string
   // §40b Amendment 2 (CB-TERRAIN-01) — set when meta.terrain ∈ TERRAIN_EFFORT_GOVERNS
   // (trail/mixed). Tells the runner to let effort/HR lead off-road and treat the
   // pace targets as a road reference. Same family as volume_constraint_note — a

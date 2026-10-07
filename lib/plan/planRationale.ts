@@ -128,6 +128,13 @@ export function planRationaleNotes(
   // nobody has ever acted on 17%.
   else if (meta.volume_shortfall_note) notes.push({ label: 'Volume', text: meta.volume_shortfall_note })
   if (meta.long_run_shortfall_note) notes.push({ label: 'Long run',      text: meta.long_run_shortfall_note })
+  // §44 Am. 3 (PROGRESSION-GOAL-INVERTED-01) — ranked ABOVE `Your level`, which
+  // is the same family of signal and fires on a different trigger (VDOT vs
+  // volume); these 10 plans trip neither. ⚠️ Placed here because the measurement
+  // that mattered was not "does it get stamped" but "does it survive the cap":
+  // `PLAN_RATIONALE_MAX_NOTES` is 3, and these plans already carry a maintenance
+  // or volume note.
+  if (meta.goal_below_easy_ceiling_note) notes.push({ label: 'Your target', text: meta.goal_below_easy_ceiling_note })
   if (meta.fitness_signal_note)     notes.push({ label: 'Your level',    text: meta.fitness_signal_note })
   if (meta.hard_pref_note)          notes.push({ label: 'Hard sessions', text: meta.hard_pref_note })
   const yielded = onsetYieldNote(meta)

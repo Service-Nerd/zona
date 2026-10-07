@@ -15,6 +15,41 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## GOAL-BELOW-EASY-DECLARED-01 — the fix that measurement refused (2026-10-07)
+
+### The dev bit
+
+The board said INSUFFICIENT EVIDENCE and named exactly what would settle it: are these
+"quality" sessions actually landing in Z2? **62 of 115 (53.9%), against 0 of 2,574 on the
+controls.** Clean separation, condition discharged.
+
+Then the obvious fix — make §22's goal-pace override yield — built as a probe and measured.
+**It fixes half the sessions and breaks a constitutional invariant**, dropping §22's
+race-specific share to 44% against a 50% floor. Reverted. The root is §79's
+declared-versus-demonstrated split, not the pace layer.
+
+### The AI-building bit
+
+**`measure:fitness` and `cohort:shape` both exited 0 on the probe, and both were useless
+here.** Ten plans of 748 is 1.3% — below what either aggregate resolves. If I had stopped at
+"the harnesses are green" I would have shipped a change that violates §22.
+
+It is my own recorded lesson arriving from a new direction: an aggregate cannot see a
+session missing from a session, and it cannot see ten plans either. **The direct measurement
+is the one that refuses things.**
+
+### The honest bit
+
+I built the declaration, verified the flag on 10 of 10 — and then checked what the runner
+sees. **Zero.** The sentence loses to the 70-word note budget every time; the surviving tile
+is always `Maintenance`. So I shipped a declaration that declares nothing, discovered it by
+measuring the render rather than the stamp, and the only honest response was to mark the
+invariant `warn` and say so in four places rather than claim the runner is told.
+
+That is `PLAN-NOTE-BUDGET-INERT-01`, which I filed two days ago and then walked straight
+into.
+
 ## RULING-REGISTER-REACH-01 — the audit was green while the gap existed (2026-10-07)
 
 I reported the docs complete, then checked them against git rather than against the audit script,
