@@ -16,6 +16,7 @@ import type { DerivedSet, DerivedStep } from './resolveMainSet'
 import type { SessionStructure } from './sessionComposer'
 import { apportionRoundedDistance, convertPaceString, formatDuration, formatStepDuration, splitAmount, formatZone } from '@/lib/format'
 import { easyPaceAsCeiling, paceAsFloor } from './easyPaceCeiling'
+import { transitionBand } from './progressionTransition'
 
 export type StepKind = 'work' | 'rest'
 
@@ -111,6 +112,11 @@ export interface BuildStepOpts {
    * the unit the session does not have.
    */
   sessionHasDistance?: boolean
+  /**
+   * The session's catalogue row id, for the LEGACY ramp backfill below.
+   * Absent is safe: the backfill simply does not run.
+   */
+  catalogueId?: string
 }
 
 // ── length parsing ──────────────────────────────────────────────────────────
@@ -670,10 +676,57 @@ export function buildSessionRows(
   return out
 }
 
+/**
+ * 🔴 THE RAMP IS STAMPED AT GENERATION, SO A FIX TO THE ENGINE REACHES NO
+ * EXISTING PLAN. This fills it in at READ time for a plan generated before
+ * §8 Am. (2026-10-07).
+ *
+ * The founder asked three times why his own Tuesday session still showed
+ * `9:20 min` in the middle of its main set while the rows above and below showed
+ * kilometres. Every answer I gave was about the generator. **The answer was in
+ * his stored row**, written 2026-04-21 and unchanged by anything shipped since:
+ *
+ *     step1  9:20  pace="5:53–7:02 /km"
+ *     step2  9:20  pace=null  zone="Z2-Z3"
+ *     step3  9:20  pace="5:07–5:22 /km"
+ *
+ * 📐 Measured across the WHOLE production `plans` table: **13 of 30 plans
+ * affected, 30 steps, and 30 of 30 are `progressive_tempo`**, every one bracketed
+ * by a paced work step on both sides. Only 9 of the 13 carry `meta.vdot`, so
+ * rebuilding the pace guide would have reached two thirds of them; the
+ * neighbours reach all 13 and need no production write (the live-plan policy is
+ * "new plans only", and this changes no stored data).
+ *
+ * ⚠️ SCOPED TO `progressive_tempo`, AND THE SCOPE IS THE BOARD'S CONDITION, NOT
+ * TIDINESS. Willy's binding ruling is that the ramp resolves from the ANCHORS,
+ * never from the neighbouring step — because on a `5K-pace progression` the
+ * following third is the 5K anchor, and ramping to it would roughly double the
+ * session's hard component. On `progressive_tempo` the following third **IS** the
+ * T anchor by construction (`{ kind: 'pace', anchor: 'T' }` in the catalogue), so
+ * reading the neighbour returns exactly what the anchors would. No other row has
+ * a stored step of this shape — 30 of 30, the complete population, not a sample.
+ *
+ * New plans never reach this: `resolveMainSet` has already stamped the ramp.
+ */
+export function backfillLegacyRamp(steps: DerivedStep[], opts: BuildStepOpts): DerivedStep[] {
+  if (opts.catalogueId !== 'progressive_tempo') return steps
+  const work = steps.map((s, i) => ({ s, i })).filter(x => x.s.role === 'work')
+  const patch = new Map<number, string>()
+  work.forEach((x, k) => {
+    if (x.s.pace || !x.s.zone) return
+    const prev = k > 0 ? work[k - 1]!.s.pace : null
+    const next = k < work.length - 1 ? work[k + 1]!.s.pace : null
+    const band = transitionBand(prev, next)
+    if (band) patch.set(x.i, band)
+  })
+  if (patch.size === 0) return steps
+  return steps.map((s, i) => (patch.has(i) ? { ...s, pace: patch.get(i)! } : s))
+}
+
 /** Turn a resolved derived set into display-ready step groups. */
 export function buildStepGroups(set: DerivedSet, opts: BuildStepOpts): StepGroup[] {
   return set.blocks.map(block => {
-    const rows = block.steps.map(step => buildRow(step, opts))
+    const rows = backfillLegacyRamp(block.steps, opts).map(step => buildRow(step, opts))
     const isHills = block.steps.some(s => s.terrain === 'uphill' || s.terrain === 'downhill')
     return {
       repeat: block.repeat,

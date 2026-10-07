@@ -9,6 +9,43 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## LEGACY-RAMP-BACKFILL-01 — three answers about the generator, to a question about his plan (2026-10-07)
+
+*"This is now the 3rd time of asking: why my progressive tempo last night shows me 3 sets in the
+main set and the middle is 9:20 min yet the others are distance."*
+
+### The dev bit
+
+I had shipped the fix. It was correct. It was also never going to reach him, because
+`resolveMainSet` runs when a plan is **built** and the result is stamped into `plan_json`. His plan
+was generated on 2026-04-21. Every subsequent engine fix changed what new plans contain.
+
+I found it in ninety seconds by querying production and reading his actual row:
+
+```
+step2  9:20  pace=null  zone="Z2-Z3"
+```
+
+The two bands the ramp needs were sitting in the steps either side of it, in his own stored JSON.
+So the card fills it at read time. 13 of 30 stored plans affected, 30 steps, all `progressive_tempo`,
+all bracketed — all 30 now render it, with no production write.
+
+### The AI-building bit
+
+**Three times I answered a question about his data by investigating the code.** The question was
+always *"why does MY session show this"* and I kept hearing *"why does the engine produce this."*
+The repo even records the rule — production is queryable from here, a missing connector is not a
+missing capability — and I did not reach for it until the third asking, when he told me he would
+not send another screenshot.
+
+### The honest bit
+
+The lesson generalises past this row and is now in `ui-patterns.md`: **when a fix lands in the
+engine, ask what an existing plan will do.** The answer is usually *nothing*, and for a runner
+mid-block that is the only answer that matters. Nothing in this codebase asked that question
+before today.
+
 ## STEP-TARGET-EVERY-ROW-01 — "did we check all session types?" (2026-10-07)
 
 Six words from the founder, immediately after I reported a ship as verified across *"84,108

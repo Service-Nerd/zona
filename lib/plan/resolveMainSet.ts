@@ -12,7 +12,7 @@
 // this runner actually does. Without both, a v2 schema is invisible to a runner.
 import { qualifyStepLength } from '@/lib/format'
 import type { PaceAnchor, StepTarget, StructureV2 } from './sessionStructureV2'
-import { bandCeiling } from './paceBands'
+import { transitionBand } from './progressionTransition'
 import { GENERATION_CONFIG } from './generationConfig'
 
 /** The runner's resolved paces, keyed by anchor. Absent anchors are legitimate —
@@ -132,29 +132,9 @@ function resolvePace(target: StepTarget, ctx: ResolveContext): string | null {
  * Returns `null` when either anchor is missing, which is a legitimate absence
  * (§24b) and degrades to the zone exactly as before — never a half-built ramp.
  */
-function toSecs(mmss: string): number {
-  const [m, sec] = mmss.split(':').map(Number)
-  return (m ?? 0) * 60 + (sec ?? 0)
-}
-
 function resolveTransition(ctx: ResolveContext): string | null {
   const { from, to } = GENERATION_CONFIG.PROGRESSION_TRANSITION_ANCHORS
-  const start = bandCeiling(ctx.anchors[from])
-  const end = bandCeiling(ctx.anchors[to])
-  if (!start || !end) return null
-  // ⚠️ A RAMP THAT IS NOT A RISE IS NOT RENDERED, and the 7 cases that reach this
-  // are a real finding rather than an arithmetic edge. All of them are a
-  // `Marathon-pace progression` on a §22 goal-paced week, where `T` is
-  // substituted with the runner's GOAL band — and an experienced runner chasing
-  // 4:15 has a goal pace (5:56–6:10) SLOWER than the fast edge of their own easy
-  // band (5:45). So the final third really is easier than the first third's cap:
-  // the session is not a progression for them, and drawing an arrow downward on a
-  // step that says "let it rise" would state that contradiction as an
-  // instruction. Degrades to the zone band, which is what shipped before.
-  // Filed as `PROGRESSION-GOAL-INVERTED-01`.
-  if (toSecs(start) <= toSecs(end)) return null
-  const unit = /\/mi\b/.test(ctx.anchors[to] ?? '') ? '/mi' : '/km'
-  return `${start} \u2192 ${end} ${unit}`
+  return transitionBand(ctx.anchors[from], ctx.anchors[to])
 }
 
 function requireParam(param: string, ctx: ResolveContext): number {

@@ -21,6 +21,7 @@ interface SessionStepsProps {
   preferredUnits: 'km' | 'mi'
   sessionDistanceKm?: number          // added to this contract 2026-09-18: it was on the component and not here
   easyPaceStr?: string | null         // Strava-derived easy band for warm-up/cool-down; null → zone only
+  catalogueId?: string                // the session's catalogue row id — drives the LEGACY ramp backfill (§8 Am.); absent is safe
   onInfo?: () => void                 // opens the zone-education sheet from the main-set ⓘ
 }
 ```

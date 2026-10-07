@@ -1248,6 +1248,7 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
                 preferredUnits={preferredUnits}
                 sessionDistanceKm={session.distance_km ?? null}
                 easyPaceStr={aerobicPace ?? null}
+                catalogueId={(session as { catalogue_id?: string }).catalogue_id}
                 onInfo={() => setZoneSheetOpen(true)}
               />
             )

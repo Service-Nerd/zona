@@ -2931,6 +2931,43 @@ rule it states survives **exactly** where the absence is real.
 notation was introduced. The qualifier, the ramp and the zone all occupy the same slot: the
 target, line two, first.
 
+#### Amendment 4d — A FIX TO THE ENGINE REACHES NO EXISTING PLAN
+
+**The ramp is stamped into `plan_json` at generation.** `resolveMainSet` runs when a plan
+is BUILT, so §8 Am. changed what new plans contain and changed nothing a runner already
+has.
+
+🔴 **The founder asked three times why his own Tuesday session still showed `9:20 min`,
+and all three answers were about the generator.** The answer was in his stored row,
+written 2026-04-21 and untouched by anything shipped since:
+
+```
+step1  9:20  pace="5:53–7:02 /km"
+step2  9:20  pace=null  zone="Z2-Z3"     ← nothing would ever fill this
+step3  9:20  pace="5:07–5:22 /km"
+```
+
+**So the card fills it at READ time.** `backfillLegacyRamp` resolves the middle third from
+the bands its own neighbours carry, which are in the stored JSON already. 📐 Measured
+across the **whole production `plans` table** (not a sample): **13 of 30 plans, 30 steps,
+30 of 30 `progressive_tempo`, 30 of 30 bracketed by paced neighbours.** All 30 now render
+a ramp; none needed a production write, and the live-plan policy ("new plans only") is
+untouched because no stored data changes.
+
+⚠️ **Scoped to `progressive_tempo`, and the scope IS the board's condition.** Willy's
+ruling is that the ramp resolves from the ANCHORS, never the neighbour — on a
+`5K-pace progression` the following third is the 5K anchor and ramping to it would roughly
+double the session's hard component. On `progressive_tempo` the following third **is** the
+T anchor by construction, so the neighbour returns exactly what the anchors would.
+
+**One owner for the string:** `lib/plan/progressionTransition.ts → transitionBand`, called
+by the generator and by the read path. Two callers of one rule is how this repo's most
+expensive defects start.
+
+⚠️ **The general lesson, because it is not about this row:** whenever a fix lands in the
+engine, ask **what an existing plan will do** — the answer is usually *nothing*, and for a
+runner mid-block that is the only answer that matters.
+
 #### Amendment 4c — the guarantee is per ROLE, and the gate now reaches the ultra rows
 
 **Every row carries a target. A recovery with nothing prescribed says `rest`.** The

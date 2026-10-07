@@ -38,6 +38,9 @@ export interface SessionStepsProps {
   sessionDistanceKm?: number | null
   /** Strava-derived easy band ("6:45/km") for warm-up / cool-down. Null → zone only. */
   easyPaceStr?: string | null
+  /** The session's catalogue row id — drives the LEGACY ramp backfill for plans
+   *  generated before §8 Am. (2026-10-07). Absent is safe. */
+  catalogueId?: string
   /** Opens the zone-education sheet from the main-set ⓘ. */
   onInfo?: () => void
 }
@@ -196,7 +199,7 @@ function SectionCard({
 
 export default function SessionSteps({
   structure, derivedSet, sessionType, displayZones, zoneRangeLabel,
-  metric, preferredUnits, sessionDistanceKm, easyPaceStr, onInfo,
+  metric, preferredUnits, sessionDistanceKm, easyPaceStr, catalogueId, onInfo,
 }: SessionStepsProps) {
   const peak = displayZones.length ? displayZones[displayZones.length - 1] : 3
   const mainAccent = peak >= 5 ? 'var(--s-inter)' : peak >= 4 ? 'var(--s-quality)' : 'var(--s-quality)'
@@ -246,6 +249,7 @@ export default function SessionSteps({
     // target, its duration the secondary.
     raceSegmentTarget: racePacePace,
     raceSegmentSecondary: seg && metric === 'distance' ? formatDuration(seg.duration_mins) ?? '' : '',
+    catalogueId,
   })
   const section = (name: SessionRow['section']) => rows.filter(r => r.section === name)
 
