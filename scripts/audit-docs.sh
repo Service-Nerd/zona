@@ -192,6 +192,20 @@ for id in $ids; do
   if grep -qE "^> (🔲|🔴|🔵|⏸️) \*\*${id}[ —].*\*\(" docs/releases/backlog.md; then
     say "  STILL OPEN $id (shipped today, backlog says otherwise)"; bfail=1; fail=1
   fi
+  # 🔴 AND THE HEADING FORM, WHICH THIS ARM COULD NOT SEE AT ALL UNTIL 2026-10-07.
+  # The pattern above anchors `^> ` — a QUOTED BULLET. Measured the night it was
+  # found: 118 open items use that form and **34 use a `### <status> \`ID\`` heading**,
+  # so the arm was blind to 22% of the file by construction. Both items it missed
+  # that night (ANALYSIS-SUPERSEDE-PATTERN-01, PLAN-NOTE-BUDGET-INERT-01) shipped,
+  # got registry rows, and kept open headings while this printed "ok".
+  # ⚠️ The status set is WIDER here on purpose. ⚖️/🧭 mean "ruled, build
+  # outstanding", which is a legitimate open state in general — but this arm is
+  # scoped to TODAY'S SHIP SCOPES, so for an item that shipped today it is stale
+  # by construction. 🟡 stays excluded for the same reason as above.
+  # The `\*\(` provenance discriminator is kept: a heading carries *(filed …, P2)*.
+  if grep -qE "^### (🔲|🔴|🔵|⏸️|🟠|🧭|⚖️) \`${id}\`[ —].*\*\(" docs/releases/backlog.md; then
+    say "  STILL OPEN $id (shipped today, backlog HEADING says otherwise)"; bfail=1; fail=1
+  fi
 done
 [ "$bfail" = "0" ] && say "  ok"
 
@@ -269,7 +283,20 @@ sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`? *(\([^)]*\) *)?[—/|].*/\1/p'
   # carry registry rows. So the shipped-but-open arm was blind on BOTH SIDES at once: the
   # registry extractor could not see a qualified first cell, and this could not see a `####`
   # heading. Fixing either alone changes nothing observable, which is why the gap survived.
-  grep -oE '^#{3,4} (🔲|🟡|🟠|🟢|🔵|⏸️) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
+  # ⚠️ ⚖️ AND 🧭 ADDED 2026-10-07. Both mean "a board RULED, build outstanding" and
+  # neither has a killed meaning in either header shape, so they are safe to include where
+  # 🔴 is not. `ANALYSIS-SUPERSEDE-PATTERN-01` sat as `### ⚖️` with a registry row dated the
+  # same day and BOTH backlog arms printed ok — the today-scoped one anchors `^> ` and could
+  # not see a heading at all, and this one saw headings but not that marker. **Two arms, one
+  # blind spot each, in opposite places.**
+  # 🔴 STILL EXCLUDED, AND THE DOCUMENT IS THE REASON. In the `###` form 🔴 means KILLED,
+  # so adding it would report every withdrawn item as open (W-06, W-11 — recorded above).
+  # But `PLAN-NOTE-BUDGET-INERT-01` was filed `### 🔴` meaning *open at P1*, which violates
+  # that convention, shipped, and stayed open past its ship day invisible to both arms.
+  # The today-scoped arm now catches that case, because within a range of items that
+  # DEMONSTRABLY SHIPPED, "🔴 means killed" cannot apply. Normalising the document is still
+  # the better fix and is still not done.
+  grep -oE '^#{3,4} (🔲|🟡|🟠|🟢|🔵|⏸️|⚖️|🧭) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
     | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
 } | sort -u > /tmp/_open
 # ⚠️ DECLARED EXEMPTIONS — an ID that is legitimately BOTH shipped and open, each with its

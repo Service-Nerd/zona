@@ -6339,7 +6339,9 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
-### ⚖️ `ANALYSIS-SUPERSEDE-PATTERN-01` — RULED 2026-10-06 (§71 Am. 1). **The filed question was already answered and the premise was wrong; the real defect was the COMMENT** *(filed 2026-10-06, P2)* 🏃 **COACHING BOARD**
+### ✅ `ANALYSIS-SUPERSEDE-PATTERN-01` — **SHIPPED 2026-10-07** (`72dce708`), §71 **Amendment 2** discharging Am. 1's INSUFFICIENT EVIDENCE 🏃 **COACHING BOARD**
+
+✅ **The number Am. 1 asked for: 43 scored runs, 42 killed by the `superseded_at` filter, 1 visible** — the drift detector needs four rows, so it **could not fire at all**. 🔴 **Lifting the filter alone would have been PERFECTLY INERT**: hidden weeks 15–35 against a plan of 1–12, zero overlap, so all 42 recovered rows drop at the `week_n` join. The build is therefore a **stamp** (`run_analysis.session_type`, ADR-018's shape), raw `session.type` so it answers the same question as the fallback, and an unresolvable type is **EXCLUDED, never assumed easy**. 🥇 **The sitting only happened because the founder challenged me** — *"I thought we already do that somewhere?"* — and he was right: Coach's aggregation was **STARVED, not missing**. 🔻 Residual → `ANALYSIS-TYPE-BACKFILL-01` (reads forward only, Willy binding).
 
 > ⚖️ **INSUFFICIENT EVIDENCE on the build, principle RATIFIED as §71 Amendment 1.** The board ruled the
 > rule and declined to order the code, because the decisive number does not exist.
@@ -6975,7 +6977,9 @@ surface, and the notes are the product).
 
 ---
 
-### 🔴 `PLAN-NOTE-BUDGET-INERT-01` — the engine stamps 3.66 honest notes per plan and the runner sees 0.95 *(filed 2026-10-06, P1)* 🧭 **DESIGN BOARD** → 💼 **SLT** (it set the caps)
+### ✅ `PLAN-NOTE-BUDGET-INERT-01` — **SHIPPED 2026-10-07**; delivery **1.01 → 1.88** notes per plan 🧭 **DESIGN BOARD** → 💼 **SLT** (it set the caps)
+
+✅ **Design Board SHIP WITH AMENDMENT.** 🥇 **THE BUDGET EQUALLED THE MEAN NOTE**, so a budget of 70 held exactly ONE note and the 3-tile cap was decoration — raised to 180. It had been blocking §44 Am. 3 the same day. ⚠️ **The rule's stated reason had rotted before its number**: *"this budget decides almost nothing"* was true in September and false by October.
 
 **Found while measuring `GOAL-PAST-CV-SILENT-01`'s remedy, and it changes that item's answer and
 `DELOAD-OPENING-SURFACE-01`'s. Measured across 5,664 cohort-grid plans:**
