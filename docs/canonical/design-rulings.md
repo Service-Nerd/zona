@@ -4428,7 +4428,7 @@ at 390pt.
 | **1 — the signal leads, and the bar is SIGNED** | 🟢 **BUILT.** `hr_above_ceiling_pct` vs `hr_below_floor_pct` as separate segments: above is `--warn`, below is MUTED, because running easier than prescribed breaks no principle (§12 Am. 1). ⚠️ The poll did not FETCH those two columns; the bar would have had nothing to split on |
 | **2 — the skeleton is the silhouette of its result** | 🟢 **BUILT.** The four-column loading row is deleted. **Compliance with UX-POSTRUN-01, not a reversal** — it was the ghost of the panel the SLT removed, left in the waiting screen when the finished one was rebuilt |
 | **3 — `POST_RUN_READ_MAX_WORDS = 40`** | 🟢 **BUILT.** Enforced in the prompt AND at the boundary, because a prompt instruction is not a mechanism. ⚠️ **It RECORDS, it never TRUNCATES** — a sentence sliced at word 40 is worse than a long one, and silent repair would hide the rate. New ops kind `read_over_budget` |
-| **4 — RPE before the read** | ⏸️ **NEXT, as its own build.** It is a MOVE (the "How did it feel?" block relocates above the analysis) and `/build` §5b exists because a move shipped five silent defects under a green suite |
+| **4 — RPE before the read** | 🟢 **BUILT — see 6aj.** It is a MOVE (the "How did it feel?" block relocates above the analysis) and `/build` §5b exists because a move shipped five silent defects under a green suite |
 
 ### 🔴 A finding the build produced that no sitting had
 
@@ -4450,3 +4450,94 @@ comments now.
 
 Nothing has run on a device. The order inversion is approved on mockups and **no runner has
 seen it**. Whether 40 words is right is unknown until `read_over_budget` has data.
+
+---
+
+## 6aj. POSTRUN-JOURNEY-01 part 4 — the question before the answer, and three places my own mockup was wrong (2026-10-07)
+
+**Amendment to 6ah part 4. No new sitting: the direction was ruled in 6ah and authorised by
+the founder (*"Build both as designed"*). What follows is what MEASURING the premise changed,
+recorded because all three changes went against my own drawing.**
+
+### The move, and why it is worth making
+
+`PostRunScreen`'s "How did it feel?" block now renders **above** the AI card. It was below
+until today, and the consequence was not cosmetic: the analysis is written by the ingest
+pipeline with **`RPE: not logged`**, the runner reads that, *then* answers, and
+`saveRPEFatigue` re-runs `/api/analyse-run` and **replaces the card underneath them**.
+
+🥇 **THE PAYOFF WAS ALREADY WIRED AND MERELY UNREACHABLE IN TIME.** The prompt has always
+taken `rpe` and `fatigueTag`, and every one of its few-shot examples cites RPE. So part 4
+adds no new reward mechanic; **it makes the first read a runner sees the one that used their
+answer.** That is the whole value, and it is why this is a move and not a feature.
+
+### 🔴 Three corrections the measurement forced, all against my own mockup
+
+| What the mockup drew | What the code and the data say |
+|---|---|
+| Four buttons: **Easy / Steady / Hard / Wrecked** | **I invented that vocabulary.** The live one is `FATIGUE_TAGS = ['Fresh', 'Fine', 'Heavy', 'Wrecked']`, consumed by the coaching flag and `reframeRiskGate`. Three of four labels were wrong, and changing the words is a **voice** decision that is not this build's to make. **Shipped verbatim from the owner** |
+| *"Skip, just show me"*, always visible, one tap | **No skip control was built, and that is MORE compliant with the founder's amendment, not less.** His binding condition was *"the read is NEVER blocked"*. Nothing is blocked: the read renders whether or not they answer. **A skip link only has meaning if something is gated** — shipping one would be a control that does nothing, and it would imply a gate to a runner who is looking at both cards at once. ⚠️ **Stated plainly so he can reverse it:** he asked for the control, and I have shipped the condition instead of the control |
+| A new subtitle: *"Before I tell you what the numbers say."* | **Not shipped.** The existing *"Effort and body state. That's all I need."* reads correctly in first position, and copy tone is the founder's. **Zero copy change in this ship** |
+
+### 📊 The number the founder asked for, and why I will not quote the headline
+
+He asked: *"what if people dont remember to say how it felt, or just dont bother. Sometimes
+on garmin i just click through it to save it without paying attention."*
+
+**140 of 149 analysed runs (94.0%) have an RPE.** ⚠️ **That figure is not an answer to his
+question and must not be used as one.**
+
+| Account | Analysed runs | With RPE | Fatigue tag |
+|---|---|---|---|
+| `zonna.demo@demo.com` | 72 | **72** | **0** | 
+| the founder | 69 | 63 | 58 |
+| four real runners | **8** | **5** | 4 |
+
+🔴 **48% of that 94% is a DEMO ACCOUNT's seeded rows** — 72 of 72 with RPE and **not one
+fatigue tag**, which is what seeded data looks like and not what a person does. Strip the
+demo account and the founder and **the entire real population is four runners and eight
+runs**, of whom **two logged no RPE at all** — and one of those answered the **fatigue tag
+three times while never touching the number.**
+
+**So: the question cannot be answered from this data, and the one real signal that exists
+points at the WORD being answered and the NUMBER being skipped.** The block keeps both,
+unchanged, because removing the scale on n=1 would be worse than the thing it fixes.
+
+### ⚖️ Ruling
+
+**SHIP, as an amendment to 6ah part 4.** The move is the ruling; the three corrections above
+are recorded as deviations from the approved mockup with their reasons.
+
+**Artifacts:** the reorder in `app/dashboard/DashboardClient.tsx` (pure JSX relocation, **no
+hooks in the moved block**, so hook order cannot change) · the step-order doc comment above
+`PostRunScreen` corrected in the same commit, because it listed the old order ·
+`lib/ui/postRunOrder.test.ts` **+4 arms, all four falsified independently**.
+
+🔴 **THE ARM THAT MATTERS IS THE TIER ONE, AND IT IS THE `LEDGER-01` CLASS.** RPE logging is
+**FREE** (DS-06: *"FREE log, PAID scoring"*), and the block now sits **directly above a
+`hasPaidAccess &&` cluster**. A move can cross a tier gate without changing a line of logic,
+nothing would error, and the screen would simply stop asking free runners how it felt.
+**The arm asserts UNGATED, not merely present** — `LEDGER-01`'s first test asserted presence
+and stayed green when the gate was re-added. Falsified by wrapping the block in
+`hasPaidAccess &&` while leaving it on top: red.
+
+### ⚠️ The six move asks, answered mechanically rather than assumed
+
+| # | Answer |
+|---|---|
+| 1 — navigates in by anchor/id? | **None.** No `id=`, `getElementById` or `scrollIntoView` anywhere in the 105 moved lines |
+| 2 — reached only from it? | **None.** The block has no navigation; `saveRPEFatigue` lives in the component body, not the JSX |
+| 3 — reached from both? | 🔴 **This is the ask that paid.** `RunFeedbackCard` has **three** call sites and they do not pass the same props → `POSTRUN-CONTEXT-TWIN-01` filed |
+| 4 — copy naming the old location? | **One, and it was wrong already:** the `PostRunScreen` banner comment listed *"2. Show the read / 3. Collect RPE"*. Corrected. No runner-facing copy names a position |
+| 5 — duplicated header? | **No.** Neither the block nor the AI cluster carries a header the other repeats |
+| 6 — ran on mount? | **Nothing.** The moved region is pure JSX with no hooks, so reordering it cannot change mount or hook order |
+| 7 — who is allowed to mount it? | 🔴 **The real risk. See the tier arm above** |
+
+### ⚠️ What this does not settle
+
+**Nothing has run on a device**, and this is an order change on a screen reached after a real
+run — the one surface a fixture page cannot honestly stand in for. `/post-run-preview` renders
+`RunFeedbackCard`, **not `PostRunScreen`**, so the new order is asserted on the source and has
+been looked at nowhere. Whether asking first actually raises the RPE rate is unmeasurable until
+there are more than four runners.
+

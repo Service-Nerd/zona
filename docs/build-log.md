@@ -18,6 +18,57 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-10-07 — POSTRUN-JOURNEY-01 part 4: the reward was already built, it just arrived too late
+
+**Dev.** One block moved up one position on one screen. The reason it was worth doing is the
+part I did not expect.
+
+The post-run read is written by the ingest pipeline, server-side, before the runner opens
+anything. At that moment it says `RPE: not logged`, because we had not asked yet. The runner
+reads it. *Then* we ask how it felt. Saving the answer re-runs the analysis and **replaces the
+card underneath them.**
+
+So the payoff for answering was **already fully wired** — the prompt has always taken RPE, every
+one of its worked examples cites it. **It was just unreachable in time.** Asking first does not
+add a reward; it makes the first read they see the one that used their answer. That reframing is
+the whole ship, and I only got to it by reading the save handler instead of the mockup.
+
+**The honest bit, three times over: every correction this build made went against my own
+drawing.**
+
+My mockup put four buttons on the card — *Easy / Steady / Hard / Wrecked*. **I invented that
+vocabulary.** The product's is `Fresh / Fine / Heavy / Wrecked`, it is consumed by the coaching
+flag and the risk gate, and three of the four words were wrong. A mockup that looks like the
+product is more dangerous than one that obviously does not.
+
+My mockup also had a *"Skip, just show me"* link, and the founder made it binding. **I did not
+build it**, and I think that is more faithful to what he asked than building it would have been:
+his condition was *"the read is never blocked"*, and nothing is blocked — both cards are on
+screen at once. **A skip link only means something if there is a gate**, so shipping one would
+be a control that does nothing and implies a gate that does not exist. He asked for the control
+and I shipped the condition. That is the kind of substitution you have to say out loud.
+
+**Product.** He asked the real question: *what if people don't bother?* The headline looked
+great — **94% of analysed runs have an RPE** — and it is not an answer. **Forty-eight per cent of
+it is the demo account**: 72 runs, 72 with RPE, **zero fatigue tags**, which is what seeded rows
+look like and not what a person does. Strip the demo account and strip me, and the entire real
+population is **four runners and eight runs**, two of whom logged no RPE at all.
+
+So the honest answer is *we cannot know yet*. But the one real signal is interesting enough to
+record: **one runner answered the word three times and never once touched the 1–10 scale.** That
+is a vote, from a sample of one, for the question we ask being a word rather than a number. Not
+enough to cut the scale on. Enough to watch.
+
+**AI-building.** The check that earned its place is not the order one. It is the tier one. RPE
+logging is free; the block now sits directly above a paid-gated cluster. **A move can cross a
+tier gate without changing a line of logic** — nothing errors, nothing warns, and the screen
+simply stops asking free runners how it felt. We shipped exactly that four months ago with a
+different component and found it in September. So the arm asserts the block is **ungated**,
+not merely present, because the first version of that older test asserted presence and stayed
+green when the gate was put back.
+
+---
+
 ## 2026-10-07 — POSTRUN-JOURNEY-01 (1–3): the skeleton was a ghost, the budget was in the wrong unit, and I nearly reversed a ruling I was enforcing
 
 **Dev.** Three things on the screen a runner sees after a run, all found by looking at four

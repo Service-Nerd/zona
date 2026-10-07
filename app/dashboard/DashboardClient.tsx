@@ -6677,8 +6677,20 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
 // Destination screen for a Strava-linked completion. Replaces the old Reflect
 // sheet for the linked path. Three jobs on one surface:
 //   1. Confirm the linked Strava activity (header row + "change" escape)
-//   2. Show the LLM "Read of your run" (PendingAnalysisCard → RunFeedbackCard)
-//   3. Collect RPE + fatigue inline (auto-save on every interaction)
+//   2. Collect RPE + fatigue inline (auto-save on every interaction)
+//   3. Show the LLM "Read of your run" (PendingAnalysisCard → RunFeedbackCard)
+//
+// 🔴 THE ORDER OF 2 AND 3 IS THE PRODUCT, NOT THE LAYOUT (POSTRUN-JOURNEY-01
+// part 4, Design Board 6ah + founder). It was 3-then-2 until 2026-10-07, which
+// meant the first read a runner saw was written with `RPE: not logged` — then
+// `saveRPEFatigue` re-ran analyse-run and REPLACED the card underneath them.
+// The payoff was already wired; it was just unreachable in time. Asking first
+// is what makes the first read they see the one that used their answer.
+// ⚠️ The question is NEVER A GATE: the read renders whether or not they answer,
+// so there is nothing to skip and no skip control was built. Gated by
+// `lib/ui/postRunOrder.test.ts`, including an arm asserting this block stays
+// OUTSIDE `hasPaidAccess` — RPE logging is FREE (DS-06) and it now sits
+// directly above a paid-gated cluster, which is the LEDGER-01 class.
 //
 // "Done" returns the user to Today only after they've actually seen the
 // analysis. Manual completions (no Strava activity) keep the existing Reflect
@@ -7128,34 +7140,6 @@ function PostRunScreen({
           </div>
         )}
 
-        {/* ── AI CARD — pending or done ───────────────────────────── */}
-        {/* HR-SYNC-02 morph chain: PendingHrCard (waiting on HK sync) →
-            PendingAnalysisCard (analyse-run in flight) → RunFeedbackCard.
-            When HR is still pending we suppress the AI surfaces — coaching
-            depth is meaningless without HR. */}
-        {hasPaidAccess && hrPendingState && (
-          <PendingHrCard
-            state={hrPendingState}
-            onRetry={hrPendingState === 'fallback' ? handlePostRunHrRetry : undefined}
-            isRetrying={isHrRetrying}
-          />
-        )}
-        {hasPaidAccess && !hrPendingState && analysis && (
-          <RunFeedbackCard
-            analysis={analysis}
-            paceTarget={paceTarget}
-            actualAvgSpeedMs={avgSpeedMs}
-            onOpenCoach={onOpenCoach}
-            preferredUnits={preferredUnits}
-          />
-        )}
-        {hasPaidAccess && !hrPendingState && !analysis && !pollGaveUp && (
-          <PendingAnalysisCard onOpenCoach={onOpenCoach} />
-        )}
-        {hasPaidAccess && !hrPendingState && !analysis && pollGaveUp && (
-          <GaveUpCard onOpenCoach={onOpenCoach} />
-        )}
-
         {/* ── HOW DID IT FEEL? ────────────────────────────────────── */}
         <div style={{
           background: 'var(--card)', boxShadow: 'var(--shadow-card)',
@@ -7260,6 +7244,34 @@ function PostRunScreen({
             </div>
           </div>
         </div>
+
+        {/* ── AI CARD — pending or done ───────────────────────────── */}
+        {/* HR-SYNC-02 morph chain: PendingHrCard (waiting on HK sync) →
+            PendingAnalysisCard (analyse-run in flight) → RunFeedbackCard.
+            When HR is still pending we suppress the AI surfaces — coaching
+            depth is meaningless without HR. */}
+        {hasPaidAccess && hrPendingState && (
+          <PendingHrCard
+            state={hrPendingState}
+            onRetry={hrPendingState === 'fallback' ? handlePostRunHrRetry : undefined}
+            isRetrying={isHrRetrying}
+          />
+        )}
+        {hasPaidAccess && !hrPendingState && analysis && (
+          <RunFeedbackCard
+            analysis={analysis}
+            paceTarget={paceTarget}
+            actualAvgSpeedMs={avgSpeedMs}
+            onOpenCoach={onOpenCoach}
+            preferredUnits={preferredUnits}
+          />
+        )}
+        {hasPaidAccess && !hrPendingState && !analysis && !pollGaveUp && (
+          <PendingAnalysisCard onOpenCoach={onOpenCoach} />
+        )}
+        {hasPaidAccess && !hrPendingState && !analysis && pollGaveUp && (
+          <GaveUpCard onOpenCoach={onOpenCoach} />
+        )}
 
         {/* COMPLETE-01 — peak-end artefact. Mounts once RPE is set. Renders
             State A (zone bar + % in zone) when the run_analysis row has
