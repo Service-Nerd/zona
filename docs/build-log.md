@@ -8,6 +8,34 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## STEP-TARGET-EVERY-ROW-01 — "did we check all session types?" (2026-10-07)
+
+Six words from the founder, immediately after I reported a ship as verified across *"84,108
+sessions, every shape, both toggles."*
+
+### The dev bit
+
+That sentence was true and it was not the answer. The sweep runs on `cohortGrid`, which **cannot
+generate a 50K or 100K plan** — so four catalogue rows were outside the gate by construction, and
+nothing in the gate's own output said so. Reaching them took twenty minutes and found
+`vert_hike_repeats`' walk-back-down rendering a 10-minute row with an **empty second line**.
+
+The cause is the kind of thing that only looks obvious afterwards: the `rest` fallback keyed on how
+the step's **length** parses. `hill_reps`' stand step says *"until ready"* — text, so it got
+`rest`. The walk-down's length is a mirror, which parses as a duration, so it got nothing. **The
+two steps differ in an accident of parsing that has nothing to do with whether they have a target.**
+
+### The honest bit
+
+I have now twice this week reported a population figure that was large, accurate and not the
+population in question. The first was 11.7% of sessions; this was 23 of 30 catalogue rows, reported
+as "every shape". **A count is only as good as the thing it counts, and the number being big is not
+evidence that it is the right number.**
+
+The gate carries an ultra corpus now, with an arm that fails if it comes back empty — because an
+empty corpus passes every other arm in the file, which is exactly how this hid.
+
 ## PROGRESSION-TRANSITION-01 — we decided how to express a target and accidentally decided to express nothing (2026-10-07)
 
 **Third screenshot of the same row.** *"The middle part is still saying 9:20. I feel we need to

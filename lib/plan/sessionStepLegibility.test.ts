@@ -85,7 +85,63 @@ function rendered(stride: number, units: 'km' | 'mi') {
 
 const ROWS = rendered(131, 'km')
 const ROWS_MI = rendered(131, 'mi')
-const ALL = [...ROWS, ...ROWS_MI]
+
+/**
+ * 🔴 THE ULTRA CORPUS, AND WHY IT IS A SEPARATE FUNCTION.
+ *
+ * `cohortGrid` cannot generate a 50K or 100K plan — a documented limit it shares
+ * with the liveness baseline — so **4 of the 30 catalogue rows were outside this
+ * gate by construction**: `vert_hike_repeats`, `ultra_race_sim`,
+ * `back_to_back_long`, `time_on_feet`. The sweep above reports 84,108 sessions
+ * and 23 of 30 rows, and a reader naturally takes that for "every session type".
+ *
+ * ⚠️ IT WAS NOT, AND THE GAP HELD A LIVE DEFECT. The founder asked *"did we check
+ * all session types are consistent?"*; reaching these four found
+ * `vert_hike_repeats`' walk-back-down rendering a 10-minute row with **no target
+ * at all**, against §21b Am. 3's guarantee that every row carries one. Its sibling
+ * `stand` step was fine purely because its LENGTH parses as text.
+ */
+function renderedUltra(units: 'km' | 'mi') {
+  const base = {
+    athlete_name: 'Athlete', age: 38, race_name: 'Test', primary_metric: 'distance' as const,
+    plan_start: COHORT_PLAN_START, race_date: '2027-06-06', goal: 'finish',
+    resting_hr: 55, max_hr: 184, recent_quality_training: 'regular',
+    hard_session_relationship: 'neutral', injury_history: [] as string[],
+    days_available: 5, days_cannot_train: [] as string[], terrain: 'trail',
+  }
+  const out: typeof ROWS = []
+  for (const km of [50, 100]) for (const level of ['intermediate', 'experienced'])
+  for (const cwk of [50, 80]) {
+    const input = { ...base, race_distance_km: km, fitness_level: level, current_weekly_km: cwk,
+      longest_recent_run_km: Math.max(3, Math.round(cwk * 0.4)) } as unknown as GeneratorInput
+    let p
+    try { p = generateRulePlan(input, 'paid', COHORT_PLAN_START, undefined, COHORT_PLAN_START) } catch { continue }
+    for (const w of (p as { weeks: { sessions?: Record<string, unknown> }[] }).weeks) {
+      for (const s of Object.values(w.sessions ?? {})) {
+        const sess = s as { derived_set?: unknown; label?: string; type?: string; distance_km?: number }
+        if (!sess) continue
+        const structure = composeSession({ session: sess as never })
+        if (!structure) continue
+        const opts = { metric: 'distance' as const, units,
+          formatDist: (km2: number) => formatDistance(km2, units, { exact: true }) ?? '\u2014' }
+        const figures = resolveDisplayFigures(structure, { ...opts, sessionDistanceKm: sess.distance_km ?? undefined })
+        const rows = buildSessionRows(structure, sess.derived_set, { ...opts, figures, raceSegmentTarget: '', raceSegmentSecondary: '' })
+        const steps = isV2DerivedSet(sess.derived_set) ? sess.derived_set.blocks.flatMap(b => b.steps) : []
+        let mainIdx = 0
+        for (const r of rows) {
+          const src = (r.section === 'main' && steps.length ? steps[mainIdx++] : undefined) as { note?: string; pace?: string | null; role?: string } | undefined
+          out.push({ row: r.row as never, srcNote: src?.note, srcPace: src ? (src.pace ?? null) : undefined, srcRole: src?.role,
+            sessionHasDistance: structure.main.distance_km != null,
+            label: sess.label ?? '?', type: sess.type ?? '?', section: r.section, sid: `ultra-${units}` })
+        }
+      }
+    }
+  }
+  return out
+}
+
+const ULTRA = [...renderedUltra('km'), ...renderedUltra('mi')]
+const ALL = [...ROWS, ...ROWS_MI, ...ULTRA]
 
 
 describe('SESSION-STEP-LEGIBILITY-01 — a step row says what to do, on EVERY session type', () => {
@@ -100,6 +156,16 @@ describe('SESSION-STEP-LEGIBILITY-01 — a step row says what to do, on EVERY se
     for (const sec of ['warmup', 'main', 'cooldown']) {
       expect(sections.has(sec), `no ${sec} rows — these render through the same StepRowView`).toBe(true)
     }
+    // 🔴 THE ULTRA ARM. `cohortGrid` cannot generate a 50K/100K plan, so four
+    // catalogue rows sat outside this gate by construction and one of them was
+    // shipping a row with NO TARGET. An empty ultra corpus passes every other arm
+    // in this file, so its presence is asserted, not assumed.
+    expect(ULTRA.length, 'the ultra corpus is EMPTY — the generator refused every input, so 4 ' +
+      'catalogue rows are unchecked again (vert_hike_repeats, ultra_race_sim, back_to_back_long, time_on_feet)')
+      .toBeGreaterThan(500)
+    const ultraLabels = new Set(ULTRA.map(r => r.label))
+    expect(Array.from(ultraLabels).some(l => /climb|hike/i.test(l)),
+      'no climb/hike session in the ultra corpus — vert_hike_repeats is the row that was broken').toBe(true)
   })
 
   it('every step that HAS a note renders it, in full and untruncated', () => {
@@ -265,6 +331,20 @@ describe('SESSION-STEP-LEGIBILITY-01 — a step row says what to do, on EVERY se
     // 2026-09-25 review named four times in one day), so prove both halves exist.
     expect(mainWork.filter(r => !r.srcPace).length, 'no no-pace work steps reached the sample').toBeGreaterThan(50)
     expect(mainWork.filter(r => r.srcPace).length, 'no paced work steps reached the sample').toBeGreaterThan(200)
+  })
+
+  it('EVERY row of EVERY session carries a target \u2014 \u00a721b Am. 3\u2019s guarantee', () => {
+    // 🔴 THIS WAS FALSE AND THE GATE COULD NOT SEE IT. `vert_hike_repeats`'
+    // walk-back-down is authored `target: { kind: 'none' }` and its length is a
+    // MIRROR, which parses as a duration \u2014 so `buildRow`'s rest fallback, which
+    // was conditioned on the length parsing as TEXT, did not fire and the runner
+    // got a 10-minute row with an empty second line. Its sibling `stand` step was
+    // fine only because "until ready" happens to parse as text. **The two differ
+    // in how their LENGTH parses, which has nothing to do with having a target.**
+    const blank = ALL.filter(r => !r.row.target)
+    expect(blank.map(r => `${r.label} [${r.section}]: ${r.row.amount}`).slice(0, 3),
+      `${blank.length} row(s) render with no target. The target is line two on every row of every ` +
+      'session (\u00a721b Am. 3); a recovery with nothing prescribed says "rest".').toEqual([])
   })
 
   it('a progression\u2019s middle third names its ramp, and leads with a distance like its siblings', () => {

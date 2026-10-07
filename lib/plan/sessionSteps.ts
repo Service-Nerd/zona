@@ -385,7 +385,21 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
     kind, role,
     amount: lead, amountValue: value, amountUnit: unit,
     amountIsEstimate: isEstimate,
-    target: target || (kind === 'rest' && parsed.kind === 'text' ? 'rest' : ''),
+    // 🔴 THE `parsed.kind === 'text'` CONDITION WAS AN ACCIDENT, NOT A RULE, and
+    // it broke §21b Am. 3's guarantee that EVERY row carries a target. Two
+    // recovery steps are authored `target: { kind: 'none' }`: `hill_reps`' STAND
+    // ("until ready" — parses as text, so it got "rest") and
+    // `vert_hike_repeats`' WALK BACK DOWN (a mirror length, which parses as a
+    // DURATION, so it got nothing). The runner saw a 10-minute row with an empty
+    // second line. **The two steps differ only in how their LENGTH happens to
+    // parse, which has nothing to do with whether they have a target.**
+    //
+    // ⚠️ Found only by reaching the ULTRA catalogue rows, which the cohort grid
+    // cannot generate — `sessionStepLegibility.test.ts` swept 84,108 sessions and
+    // 23 of 30 catalogue rows and was structurally blind to this one. The founder
+    // asked "did we check all session types are consistent?" and the honest
+    // answer was no. The gate now carries an ultra corpus.
+    target: target || (kind === 'rest' ? 'rest' : ''),
     secondary,
     detail: [target, secondary].filter(Boolean).join(' · '),
     ...(step.note ? { note: step.note } : {}),

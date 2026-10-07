@@ -2931,6 +2931,26 @@ rule it states survives **exactly** where the absence is real.
 notation was introduced. The qualifier, the ramp and the zone all occupy the same slot: the
 target, line two, first.
 
+#### Amendment 4c — the guarantee is per ROLE, and the gate now reaches the ultra rows
+
+**Every row carries a target. A recovery with nothing prescribed says `rest`.** The
+fallback keys on the step's **role**, never on how its length happens to parse.
+
+🔴 **It keyed on the length until the founder asked "did we check all session types are
+consistent?"** The answer was no. `cohortGrid` cannot generate a 50K or 100K plan, so
+**4 of the 30 catalogue rows — `vert_hike_repeats`, `ultra_race_sim`,
+`back_to_back_long`, `time_on_feet` — were outside the gate by construction**, and the
+sweep's honest-looking *"84,108 sessions, every shape, both toggles"* read as *"every
+session type"* to anyone who did not check which rows it reached.
+
+Reaching them found `vert_hike_repeats`' walk-back-down rendering a **10-minute row with
+an empty second line**. Its sibling `stand` step was correct purely because *"until
+ready"* parses as text while a mirror length parses as a duration. **A guarantee
+conditioned on an accident of parsing is not a guarantee.**
+
+**The gate carries an ultra corpus now**, with an arm that fails if it comes back empty —
+an empty corpus passes every other arm in the file.
+
 #### Amendment 4b — a card is measured in the unit the PLAN prescribed, not one it can derive
 
 **A session with no distance of its own never shows a derived distance on a step.**
