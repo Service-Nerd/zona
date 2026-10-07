@@ -75,6 +75,29 @@ Coaching row for a session completed without a linked device activity. Writes `r
 
 The run itself is stored separately as a `source='manual'` row in `strava_activities` via the `/api/health/ingest` manual branch (see ADR-011 §4b) — that row is what counts in history / cohorts / load.
 
+## The row carries its own session type — ANALYSIS-SUPERSEDE-PATTERN-01 (2026-10-07)
+
+The upsert stamps **`session_type`**: the **raw `session.type`** this run was scored against.
+
+🔴 **Why.** §71 Amendment 2 lets the zone-drift detector read **across a race boundary** for
+discipline fields. That detector keeps only easy/recovery runs — above the Z2 ceiling is drift on an
+easy run and **correct execution on a tempo (§12)** — and it used to resolve the type by joining the
+row's `week_n` against the **current plan's weeks**. Measured on the founder: his hidden analyses
+are weeks **15–35**, his current plan is weeks **1–12**, **zero overlap**. So recovering those rows
+without a stamped type would drop every one at the join: an inert build.
+
+ADR-018's shape — a session stamps `catalogue_id` at construction because the label re-join broke
+when the enricher renamed things. A row must carry its own meaning rather than depend on a plan that
+may be archived.
+
+⚠️ **RAW `session.type`, NOT `coachingSessionType()`.** The stamp has to answer the same question as
+the legacy plan-join it replaces, or the two become a parallel classifier and drift — the class that
+left `type === 'long'` dead everywhere.
+
+⚠️ **Nullable, never backfilled by this route.** Rows written before 2026-10-07 keep `null` and fall
+back to the plan-join; a type that cannot be resolved is **EXCLUDED, never assumed easy**. Willy's
+binding condition on the amendment is that the feature **reads forward**.
+
 ## Data scoping — PLAN-WEEK-COLLISION-01 (2026-09-18)
 
 Every read this route makes against a **week-keyed** table

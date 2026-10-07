@@ -38,7 +38,20 @@ function walk(dir: string, out: string[] = []): string[] {
   return out
 }
 
-interface Reader { file: string; filters: boolean }
+interface Reader { file: string; filters: boolean; fitnessFields: string[] }
+
+/**
+ * 🔴 §71 Am. 1's SPLIT, encoded. Seiler: a comparison may cross a race boundary for
+ * DISCIPLINE fields, never for FITNESS-DENOMINATED ones, because the denominator
+ * changed at the boundary and the comparison stops being like with like.
+ *
+ * So an unfiltered read is not judged by WHICH query it is — a name or a comment
+ * token would be a label, and a label is not a mechanism — but by WHAT IT SELECTS.
+ */
+const FITNESS_DENOMINATED = [
+  'ef_trend_pct', 'ef_value', 'ef_baseline', 'ef_score',
+  'pace_score', 'distance_score', 'total_score',
+]
 
 /** A `.from('run_analysis')` query and whether its chain carries the
  *  `superseded_at` filter. Bounded to the statement, not the file — a file-level
@@ -62,7 +75,15 @@ function readersIn(src: string, file: string): Reader[] {
     // A WRITE is not a read: insert/update/upsert/delete chains are not history
     // readers and the justification makes no claim about them.
     if (/\.(insert|update|upsert|delete)\(/.test(chain)) continue
-    out.push({ file, filters: /superseded_at/.test(chain) })
+    // 🔴 A FILTER, NOT A MENTION. This was `/superseded_at/.test(chain)`, and the
+    // first query to SELECT the column as data — `ANALYSIS-SUPERSEDE-PATTERN-01`'s
+    // deliberately cross-plan drift read — passed as "filtered" because the word
+    // appeared in its `.select()`. The guard would have certified the exact query
+    // §71 Am. 1 authorises as the opposite of what it is. Match the predicate.
+    const filters = /\.(is|eq|not)\(\s*['"]superseded_at['"]/.test(chain)
+    const sel = /\.select\(\s*(['"])([\s\S]*?)\1/.exec(chain)?.[2] ?? ''
+    const fitnessFields = FITNESS_DENOMINATED.filter(f => sel.includes(f))
+    out.push({ file, filters, fitnessFields })
   }
   return out
 }
@@ -94,7 +115,18 @@ const allReaders: Reader[] = walk(join(ROOT, 'app'))
  * it here is how this gate found it, which is the second time today a check written for
  * something else caught a new reader on the way in.
  */
-const EXPECT_FILTERS: Record<string, boolean> = {
+/**
+ * 🔴 `'mixed'` ADDED 2026-10-07 (ANALYSIS-SUPERSEDE-PATTERN-01). A file may now hold
+ * BOTH a plan-scoped read and an authorised cross-plan one, and `boolean` could not
+ * say so — it would have forced either a false "this file crosses" (hiding that its
+ * other queries must keep filtering) or a false "it filters" (hiding the crossing the
+ * board ruled on). `'mixed'` requires BOTH to be present, so deleting either one fails
+ * the build: the cross-plan read cannot silently disappear, and the plan-scoped ones
+ * cannot silently join it.
+ */
+type Expectation = boolean | 'mixed'
+
+const EXPECT_FILTERS: Record<string, Expectation> = {
   'app/api/adjust-plan/route.ts': true,
   'app/api/analyse-run/route.ts': true,
   'app/api/daily-coach-note/route.ts': true,
@@ -111,7 +143,23 @@ const EXPECT_FILTERS: Record<string, boolean> = {
   'app/api/recalibrate-hr/route.ts': true,
   'app/api/recalibrate-taper/route.ts': true,
   'app/api/weekly-report/route.ts': true,
-  'app/dashboard/DashboardClient.tsx': true,             // 🔴 the aerobic trend card — §71 Am. 1's second gap
+  /**
+   * 🔴 MIXED, and both halves are deliberate (ANALYSIS-SUPERSEDE-PATTERN-01,
+   * Coaching Board 2026-10-07).
+   *
+   * FILTERED: the `runAnalysisMap` load, which feeds ZoneRings, the session cards and
+   * the weekly discipline percentage. All plan-scoped, all indexed by `week_n` — and
+   * old plans REUSE week numbers, so unfiltering it would ship `PLAN-WEEK-COLLISION-01`
+   * again (a new plan arrived 94% pre-completed).
+   *
+   * UNFILTERED: the narrow zone-drift history query. §71 Am. 1 authorises crossing a
+   * race boundary for DISCIPLINE fields, and that query selects
+   * `hr_above_ceiling_pct` and nothing fitness-denominated — `ef_trend_pct` is
+   * deliberately absent, because the denominator changed at the boundary.
+   *
+   * ⚠️ Still the home of §71 Am. 1's second gap, the aerobic trend card.
+   */
+  'app/dashboard/DashboardClient.tsx': 'mixed',
   'lib/coaching/fetchRunAnalysis.ts': true,              // POSTRUN-POLL-WEEK-BLIND-01 — see below
   'lib/coaching/healthkitConsolidate.ts': true,
   'lib/coaching/weeklyActualLoad.ts': true,
@@ -156,6 +204,13 @@ describe('§71 Am. 1 — the run_analysis reader register is accurate', () => {
       const found = allReaders.filter(r => r.file === file)
       if (!found.length) continue   // file may legitimately stop reading the table
       const anyUnfiltered = found.some(r => !r.filters)
+      const anyFiltered   = found.some(r => r.filters)
+      if (shouldFilter === 'mixed') {
+        // Both must exist. Either one vanishing is a silent change to what crosses.
+        expect(anyFiltered,   `${file}: register says mixed, found NO plan-scoped read`).toBe(true)
+        expect(anyUnfiltered, `${file}: register says mixed, found NO cross-plan read`).toBe(true)
+        continue
+      }
       expect(!anyUnfiltered, `${file}: register says filters=${shouldFilter}, found an unfiltered read`)
         .toBe(shouldFilter)
     }
@@ -170,7 +225,9 @@ describe('§71 Am. 1 — the run_analysis reader register is accurate', () => {
     // NAME the boundary it crossed (McMillan), and the boundary must stay
     // visible (Willy). A new entry here is a board matter, not a tidy-up.
     const unfiltered = Array.from(new Set(allReaders.filter(r => !r.filters).map(r => r.file))).sort()
-    const declared = Object.entries(EXPECT_FILTERS).filter(([, f]) => !f).map(([k]) => k).sort()
+    const declared = Object.entries(EXPECT_FILTERS)
+      .filter(([, f]) => f === false || f === 'mixed')
+      .map(([k]) => k).sort()
     expect(unfiltered,
       'The unfiltered run_analysis readers changed. If a HISTORY reader now crosses a race ' +
       'boundary, that is §71 Am. 1 territory and needs the board; if an identity lookup was ' +
@@ -178,9 +235,27 @@ describe('§71 Am. 1 — the run_analysis reader register is accurate', () => {
     ).toEqual(declared)
   })
 
+  it('🔴 an UNFILTERED read may select DISCIPLINE fields only — Seiler\'s split, enforced', () => {
+    // The arm that makes `mixed` mean something. Requiring "one filtered and one
+    // unfiltered" only counts queries; it cannot tell WHICH query crosses, so
+    // unfiltering a plan-scoped map load stayed green while the drift query sat
+    // beside it. Measured during the build: DashboardClient holds FOUR
+    // `run_analysis` reads and two are map loads.
+    //
+    // §71 Am. 1 restricts the FIELD, not the window, so that is what is checked.
+    const offenders = allReaders
+      .filter(r => !r.filters && r.fitnessFields.length > 0)
+      .map(r => `${r.file} selects ${r.fitnessFields.join(', ')}`)
+    expect(offenders,
+      'A cross-plan run_analysis read selects a FITNESS-DENOMINATED field. §71 Am. 1 forbids ' +
+      'crossing a race boundary for those: the denominator changed, so the comparison is not ' +
+      'of like with like. Either filter on superseded_at, or drop the field from the select.',
+    ).toEqual([])
+  })
+
   it('no reader that the register says is plan-scoped has drifted to unfiltered', () => {
     const drifted = allReaders
-      .filter(r => !r.filters && EXPECT_FILTERS[r.file] === true)
+      .filter(r => !r.filters && EXPECT_FILTERS[r.file] === true)   // 'mixed' is exempt BY DECLARATION, not by accident
       .map(r => r.file)
     expect(Array.from(new Set(drifted))).toEqual([])
   })

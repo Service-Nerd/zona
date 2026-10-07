@@ -435,6 +435,17 @@ const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userI
     user_id:               userId,
     week_n,
     session_day,
+    // ANALYSIS-SUPERSEDE-PATTERN-01 (Coaching Board, 2026-10-07) — the row carries
+    // the session type it was scored against, so a cross-plan reader does not have
+    // to join back to a plan that may be archived. ADR-018's shape: a session
+    // stamps `catalogue_id` at construction because the label re-join broke.
+    //
+    // ⚠️ RAW `session.type`, NOT `coachingSessionType()`. The stamp has to answer the
+    // SAME question as the legacy plan-join it replaces — `type === 'easy' ||
+    // 'recovery'` — or the two become a parallel classifier and drift, which is how
+    // `type === 'long'` ended up dead everywhere. Changing the classifier is its own
+    // decision and is not smuggled in here.
+    session_type:          (session as any)?.type ?? null,
     strava_activity_id:    strava_activity_id ?? null,
     apple_health_uuid:     apple_health_uuid  ?? null,
     hr_discipline_score:   scoreResult.hrDisciplineScore,

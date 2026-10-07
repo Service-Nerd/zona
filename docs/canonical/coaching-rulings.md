@@ -1286,3 +1286,64 @@ assert a delivery the surface will not make. Blocked on `PLAN-NOTE-BUDGET-INERT-
 `lib/plan/goalBelowEasyDeclared.test.ts`, falsified three ways.
 ⚠️ `verify:parity` changed 140 of 6,066 — **proven** by a JSON-path diff over 197 regenerated
 plans to be the two new meta keys and nothing else.
+
+---
+
+## ANALYSIS-SUPERSEDE-PATTERN-01 — the hold is lifted, and the build is the STAMP not the filter (2026-10-07)
+
+**§71 Amendment 2. Ruling: CORRECT WITH AMENDMENT.** Amendment 1's INSUFFICIENT EVIDENCE,
+placed one day earlier, is discharged on a measured number.
+
+### How this sitting started, which is worth recording
+
+The founder asked why Coach never shows him a pattern across runs. **I proposed building
+"Coach aggregation". He replied *"I thought we already do that somewhere?"* — and he was
+right.** Coach already renders ZoneRings, a zone-drift detector, three TrendCards, LoadShape,
+a weekly report, phase summaries and a race-readiness note. **Nothing needed building. The
+aggregation is STARVED, not missing.** I should have inventoried before proposing, and that is
+the second time in one day I nearly built something that existed.
+
+### The number Amendment 1 asked for
+
+**43 scored runs; 42 hidden by the `superseded_at` filter; 1 visible.** The detector needs four
+rows, so it **cannot fire for him at all**. Across all users: 3 with scored runs, 119 runs,
+42 hidden (35.3%), **all 42 belonging to one runner**.
+
+🏃 **n=1 was accepted because the effect is DETERMINISTIC, not sampled** — supersession is set
+on a race-identity change, so every runner who finishes a block loses their discipline history
+by construction. The 42 confirms the rule fires; it does not estimate a rate, and **the chair
+records he would reject the same number for a claim about rate.**
+
+### 🔴 The finding that reshaped the build
+
+**Lifting the filter alone would have been perfectly inert.** The detector keeps easy/recovery
+runs only (§12: above the ceiling is drift on an easy run, correct on a tempo) and resolved
+type by joining `week_n` against the **current plan**. Hidden weeks **15–35**, current plan
+**1–12**, **zero overlap** — 42 rows recovered, 42 dropped at the join.
+
+So `run_analysis` **stamps `session_type` at write time** (ADR-018's shape). Raw `session.type`,
+not `coachingSessionType()`, so the stamp answers the same question as the fallback it replaces.
+An unresolvable type is **EXCLUDED, never assumed easy**.
+
+| Decision | |
+|---|---|
+| Drift detector crosses the boundary | 🟢 discipline field (`hr_above_ceiling_pct`), Seiler's split |
+| It NAMES the boundary | 🟢 🎯 McMillan BINDING — *"…, including your last block."* |
+| Reads FORWARD, no backfill | 🟢 🩹 Willy BINDING — filed as `ANALYSIS-TYPE-BACKFILL-01`, opt-in |
+| TrendCards cross | 🔴 **NO** — `ef_trend_pct` is fitness-denominated |
+| ZoneRings | 🔴 unchanged, weekly, correct as-is |
+| A SEPARATE query, not the shared map | 🟢 old plans reuse week numbers; unfiltering the shared map ships `PLAN-WEEK-COLLISION-01` again |
+| §108 score composition | 🔴 **UNTOUCHED — my submission misdescribed it as an average and the conflict scan caught it.** HR discipline is already 0.50 by ruling |
+
+**Artifacts:** §71 Amendment 2 · `ZONE_DRIFT_MIN_ROWS` + `ZONE_DRIFT_WINDOW` moved from inline
+literals into `lib/coaching/constants.ts` · `lib/coaching/zoneDrift.ts` as the owner ·
+`zoneDrift.test.ts` 13 arms **falsified four ways** · `analysisSupersedeReaders.test.ts` now
+**enforces Seiler's split mechanically** (an unfiltered read may select discipline fields only),
+falsified three ways.
+
+⚠️ **Not checkable by `validatePlan()`** — it governs a read of historical analyses, not a
+generated plan. Stated rather than left implicit.
+
+⚠️ **That register had a FALSE NEGATIVE, found during this build:** it tested `/superseded_at/`
+against the whole query chain, so the first query to SELECT the column as data read as
+*filtered*. It would have certified the exact cross-plan read §71 authorises as its opposite.

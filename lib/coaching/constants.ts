@@ -48,6 +48,20 @@ export const VERDICT_BANDS = {
 export const ZONE_DRIFT_ABOVE_CEILING_PCT = 20
 
 /**
+ * ANALYSIS-SUPERSEDE-PATTERN-01 (Coaching Board, 2026-10-07) — how much history the
+ * zone-drift pattern may speak from, now that §71 Am. 1 lets it cross a race boundary.
+ *
+ * Both were inline literals in `DashboardClient`'s detector (`>= 4`, `slice(0, 8)`).
+ * They are coaching choices — how many runs make a PATTERN rather than a bad week —
+ * so they belong here under the Configuration Singularity, not in a component.
+ *
+ * ⚠️ The floor is a SILENCE rule, not a display default: below it the detector returns
+ * `null` and the card does not render. "3 of 3" would be a verdict on a fortnight.
+ */
+export const ZONE_DRIFT_MIN_ROWS = 4
+export const ZONE_DRIFT_WINDOW   = 8
+
+/**
  * §12 Amendment 2 (Coaching Board, 2026-09-24) — the ceiling for PRAISE.
  *
  * 🔴 TWO THRESHOLDS, TWO JOBS, AND THE ASYMMETRY IS THE PRINCIPLE. `§12 Am.1`

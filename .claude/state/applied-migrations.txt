@@ -75,3 +75,4 @@
 20260925_trial_conversion_real.sql
 20260928_comped_entitlement_not_a_conversion.sql
 20261007_claim_completion_uuid.sql
+20261007_run_analysis_session_type.sql

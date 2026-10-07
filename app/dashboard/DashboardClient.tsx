@@ -147,6 +147,7 @@ import type { PostRunData, SessionEntry } from '@/components/dashboard/dashboard
 import IconMe from '@/components/dashboard/IconMe'
 import AppleHealthConnectionRow from '@/components/dashboard/AppleHealthConnectionRow'
 import { fetchRunAnalysis } from '@/lib/coaching/fetchRunAnalysis'
+import { computeZoneDriftPattern, zoneDriftLine } from '@/lib/coaching/zoneDrift'
 import CoachTeaser from '@/components/dashboard/CoachTeaser'
 import OrientationScreen from '@/components/dashboard/OrientationScreen'
 import HRZonesSection from '@/components/dashboard/HRZonesSection'
@@ -534,6 +535,9 @@ export default function DashboardClient() {
   // week dimension, rows from different weeks collide on the same key and
   // "this week" silently reads another week's run. (Bug fixed 2026-05-27.)
   const [runAnalysisMap, setRunAnalysisMap] = useState<Record<number, Record<string, any>>>({})
+  /** ANALYSIS-SUPERSEDE-PATTERN-01 — cross-plan discipline rows for the drift
+   *  detector ONLY. Never merged into `runAnalysisMap`: see the load comment. */
+  const [zoneDriftRows, setZoneDriftRows] = useState<any[]>([])
   // Tracks whether the run_analysis fetch has completed (success OR empty).
   // Lets downstream UI distinguish "still loading" from "definitely no data"
   // — used to show a skeleton instead of letting the RestraintCard pop in
@@ -1762,6 +1766,31 @@ export default function DashboardClient() {
         })
         setRunAnalysisMap(map)
       }
+
+      // ANALYSIS-SUPERSEDE-PATTERN-01 (Coaching Board, 2026-10-07) — a SECOND,
+      // NARROW query for the zone-drift history, deliberately not filtered on
+      // `superseded_at`.
+      //
+      // 🔴 IT IS SEPARATE ON PURPOSE AND MUST STAY SEPARATE. The map above feeds
+      // ZoneRings, the session cards and the weekly discipline percentage, all of
+      // which are PLAN-SCOPED and index by `week_n`. Old plans REUSE week numbers —
+      // the founder's hidden rows are weeks 15-35 and `PLAN-WEEK-COLLISION-01` is
+      // what happens when two plans' week 3 meet in one map: a new plan arrived 94%
+      // pre-completed. Unfiltering the shared map to serve one card would ship that
+      // again. §71 Am. 1's split is per-FIELD, so the cross-plan read is per-READER.
+      //
+      // Discipline columns only (`hr_above_ceiling_pct`), which is exactly what the
+      // amendment authorises to cross. `ef_trend_pct` is NOT selected here: it is
+      // fitness-denominated and the amendment forbids it crossing.
+      const { data: driftRows, error: driftErr } = await supabase
+        .from('run_analysis')
+        .select('week_n, session_day, source, session_type, hr_above_ceiling_pct, superseded_at')
+        .eq('user_id', user.id)
+        .not('hr_above_ceiling_pct', 'is', null)
+        .order('week_n', { ascending: false })
+        .limit(60)
+      if (driftErr) console.warn('[coach] drift history load failed', driftErr.message)
+      if (driftRows) setZoneDriftRows(driftRows as any[])
     } catch {}
   }
 
@@ -2679,44 +2708,40 @@ export default function DashboardClient() {
               const zoneTimePctByZone = zoneTimeSplit(zoneHistogramRows).split
               const zoneHistogramHits = zoneHistogramRows.length
 
-              // R30 — zone drift pattern detection.
-              // Walk the nested runAnalysisMap (week → day → row), keep easy/
-              // recovery rows, then check the most recent 8 for hr_in_zone_pct
-              // < 60%. (Previously parsed a `week_N_day` string key that the map
-              // never produced — so this was dead. Revived by the nested-map fix.)
-              const allEasyRecoveryRows = Object.entries(runAnalysisMap ?? {})
-                .flatMap(([weekNStr, days]: [string, any]) =>
-                  Object.entries((days ?? {}) as Record<string, any>).map(([dayShort, analysis]: [string, any]) => {
-                    if (!analysis || analysis.hr_in_zone_pct == null) return null
-                    if (analysis.source === 'manual') return null
-                    const weekN    = parseInt(weekNStr, 10)
-                    const weekData = plan.weeks.find((w: any) => w.n === weekN)
-                    const sType    = (weekData?.sessions as any)?.[dayShort]?.type ?? null
-                    if (sType !== 'easy' && sType !== 'recovery') return null
-                    return {
-                      weekN,
-                      hr_in_zone_pct: analysis.hr_in_zone_pct as number,
-                      hr_above_ceiling_pct: (analysis.hr_above_ceiling_pct ?? 0) as number,
-                    }
-                  })
-                )
-                .filter((r): r is { weekN: number; hr_in_zone_pct: number; hr_above_ceiling_pct: number } => r !== null)
-                .sort((a, b) => b.weekN - a.weekN)
-                .slice(0, 8)
-              // §12 Amendment 1 / R30-DIRECTIONAL-01 (Coaching Board 2026-09-13, which
-              // ruled the SHIPPED detector INCORRECT) — drift is DIRECTIONAL.
+              // ANALYSIS-SUPERSEDE-PATTERN-01 (Coaching Board, 2026-10-07) — the
+              // detector now READS ACROSS A RACE BOUNDARY, and its logic lives in
+              // `lib/coaching/zoneDrift.ts` so the board's two binding conditions
+              // can actually be tested.
               //
-              // This counted `hr_in_zone_pct < 60`, a BAND. §12 prescribes a CAP:
-              // "Easy runs are capped at the top of Z2." Running BELOW Z2 breaks no
-              // principle, so counting it as drift told the runner who had finally
-              // understood the product that they were failing — McMillan's "worst
-              // possible false positive". Measured: 6 of 22 flagged runs (27%) were
-              // predominantly too EASY, one at 17% in zone with 0% above the ceiling.
-              const zoneDriftCount   = allEasyRecoveryRows
-                .filter(r => r.hr_above_ceiling_pct > ZONE_DRIFT_ABOVE_CEILING_PCT).length
-              const zoneDriftPattern = allEasyRecoveryRows.length >= 4 && zoneDriftCount >= 4
-                ? { count: zoneDriftCount, total: allEasyRecoveryRows.length }
-                : null
+              // 🔴 WHAT THIS REPLACED, AND WHY LIFTING THE FILTER ALONE WOULD HAVE
+              // DONE NOTHING. The old block walked `runAnalysisMap` (superseded_at
+              // filtered) and resolved the session type by joining `week_n` against
+              // the CURRENT plan's weeks. Measured on the founder: 43 scored runs,
+              // 42 hidden by the filter, 1 visible — and his hidden weeks are 15-35
+              // against a current plan of 1-12, ZERO OVERLAP. So recovering the rows
+              // without `session_type` would drop every one of them at the join: a
+              // perfectly inert build.
+              //
+              // The rows come from `zoneDriftRows`, a separate narrow query; they are
+              // deliberately NOT in `runAnalysisMap`, because old plans reuse week
+              // numbers and that map is plan-scoped (PLAN-WEEK-COLLISION-01).
+              //
+              // `session_type` is stamped at write time from 2026-10-07; older rows
+              // fall back to the current-plan join, which resolves `null` for a
+              // previous block and is correctly EXCLUDED rather than assumed easy.
+              const zoneDriftPattern = computeZoneDriftPattern(
+                (zoneDriftRows ?? []).map((r: any) => {
+                  const legacyType = (plan.weeks.find((w: any) => w.n === r.week_n)
+                    ?.sessions as any)?.[r.session_day]?.type ?? null
+                  return {
+                    weekN:             r.week_n as number,
+                    sessionType:       (r.session_type as string | null) ?? legacyType,
+                    hrAboveCeilingPct: (r.hr_above_ceiling_pct ?? 0) as number,
+                    fromPreviousBlock: r.superseded_at != null,
+                    source:            r.source as string | null,
+                  }
+                }),
+              )
 
               // R30 dismiss handler — 14-day window
               async function dismissZoneDrift() {
@@ -4695,7 +4720,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   raceReadinessNote?: { content: string; generated_at: string } | null
   onRaceReadinessGenerated?: (n: { content: string; generated_at: string }) => void
   // R30 zone drift pattern
-  zoneDriftPattern?: { count: number; total: number } | null
+  /** ANALYSIS-SUPERSEDE-PATTERN-01 — `crossesBlockBoundary` is McMillan's BINDING
+   *  condition: a comparison that reaches into a finished block says so. */
+  zoneDriftPattern?: { count: number; total: number; crossesBlockBoundary?: boolean } | null
   zoneDriftDismissedAt?: string | null
   onDismissZoneDrift?: () => void
   // R32 recalibration nudge (passed through to RaceTimesCard)
@@ -5078,7 +5105,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
       if (localPhaseSummary) {
         const body: string[] = [localPhaseSummary.content]
         if (zoneDriftPattern) {
-          body.push(`${zoneDriftPattern.count} of your last ${zoneDriftPattern.total} easy sessions crept above Zone 2.`)
+          body.push(zoneDriftLine(zoneDriftPattern as any))
         }
         return {
           headline: "You've crossed into a new phase.",
@@ -5099,7 +5126,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
       const body: string[] = []
       if (weeklyReport.body) body.push(weeklyReport.body)
       if (zoneDriftPattern) {
-        body.push(`${zoneDriftPattern.count} of your last ${zoneDriftPattern.total} easy sessions crept above Zone 2. If easy isn't easy, hard can't be hard.`)
+        // The voice clause stays; the SENTENCE is the owner's (it now names a
+        // crossed block boundary, which it could not before).
+        body.push(`${zoneDriftLine(zoneDriftPattern as any)} If easy isn't easy, hard can't be hard.`)
       }
       // Trend fold — when the trend engine returned a live state with a gloss
       // (i.e. hrIsTrending), surface as a templated sentence in Kit's voice.

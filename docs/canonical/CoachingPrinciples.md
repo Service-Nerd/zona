@@ -4721,6 +4721,72 @@ That is the artifact: **the comment was the defect.**
 
 ---
 
+
+### Amendment 2 — ANALYSIS-SUPERSEDE-PATTERN-01: the hold is lifted, and the build is the STAMP, not the filter (Coaching Board, 2026-10-07)
+
+**Ruling: CORRECT WITH AMENDMENT. Amendment 1's INSUFFICIENT EVIDENCE is discharged.**
+
+**📊 The number Amendment 1 asked for, measured in production 2026-10-07.** One runner: **43
+scored runs, 42 hidden by the `superseded_at` filter, 1 visible.** The zone-drift detector needs
+four rows and therefore **cannot fire for him at all**. Across all users: 3 with any scored runs,
+119 runs, 42 hidden (35.3%), **every hidden row belonging to that one runner.**
+
+**🏃 Why n=1 was accepted, and the limit on that.** The effect is **deterministic, not sampled**:
+supersession is set on a race-identity change, so every runner who finishes a block loses their
+zone-discipline history **by construction**. The 42 confirms the rule fires; it does not estimate a
+rate, and the chair records that he would reject the same number for a claim about *rate*. We have
+one such runner because one runner has finished a block. ⚕️ Sims predicted exactly this cohort in
+Amendment 1 — the committed returning athlete is the one penalised.
+
+**🔴 THE BUILD IS THE STAMP, AND LIFTING THE FILTER ALONE WOULD HAVE BEEN INERT.** The detector
+keeps only easy/recovery runs, because above the Z2 ceiling is drift on an easy run and **correct
+execution on a tempo (§12)** — and it resolved that type by joining the row's `week_n` against the
+**current plan's weeks**. The hidden rows are weeks **15–35**; the current plan is weeks **1–12**;
+**zero overlap.** Recovering 42 rows without a type would drop all 42 at the join.
+
+So `run_analysis` now **stamps `session_type` at write time** (ADR-018's shape: a session stamps
+`catalogue_id` at construction because re-joining by label broke the moment the enricher renamed
+things). The plan-join survives as the legacy fallback, and a row whose type cannot be resolved is
+**EXCLUDED, never assumed easy** — assuming would invent drift out of tempo sessions.
+
+**⚠️ The stamp is the RAW `session.type`, not `coachingSessionType()`,** deliberately: it must
+answer the same question as the fallback it replaces, or the two become a parallel classifier and
+drift — the class that left `type === 'long'` dead everywhere.
+
+**🩹 Willy's condition, honoured by construction:** no backfill, so it **reads forward**. The 42
+stay invisible until someone chooses to backfill them from `plan_archive` (filed separately as
+`ANALYSIS-TYPE-BACKFILL-01`). A runner must not open the app and be told they have drifted for
+eight months because a filter changed.
+
+**🎯 McMillan's condition, now a sentence:** when the window reaches into a finished block the line
+says so — *"…, including your last block."* It states what the window contains; it does not
+re-score anything.
+
+**🔴 The cross-plan read is a SEPARATE QUERY and must stay one.** The shared `runAnalysisMap` feeds
+ZoneRings, the session cards and the weekly discipline percentage, all plan-scoped and indexed by
+`week_n` — and **old plans reuse week numbers**, which is `PLAN-WEEK-COLLISION-01`, the defect that
+delivered a new plan 94% pre-completed. Unfiltering the shared map to serve one card would ship
+that again. Amendment 1's split is per-FIELD, so the crossing is **per-READER**.
+
+**Scope held:** the trend cards do **not** cross (`ef_trend_pct` is fitness-denominated), ZoneRings
+stays weekly, the discipline ledger stays plan-scoped, and **§108's score composition is untouched
+— the submission that reached this board misdescribed it as an average and the conflict scan caught
+it.**
+
+**Numerics:** `ZONE_DRIFT_MIN_ROWS = 4`, `ZONE_DRIFT_WINDOW = 8`, `ZONE_DRIFT_ABOVE_CEILING_PCT = 20`
+in `lib/coaching/constants.ts`.
+
+**Enforcement:** `lib/coaching/zoneDrift.test.ts` (13 arms, four falsified: drop the boundary clause ·
+treat an unknown type as easy · let a filtered-out row set the clause · count below-floor as drift)
+and `lib/coaching/analysisSupersedeReaders.test.ts`, which now **enforces Seiler's split
+mechanically**: an unfiltered `run_analysis` read may select discipline fields only. ⚠️ That guard
+had a false negative found during this build — it tested `/superseded_at/` against the whole chain,
+so the first query to SELECT the column as data read as *filtered*. It matches the predicate now.
+
+**Not mechanically checkable by `validatePlan()`,** and that is stated rather than left implicit:
+this governs a **read of historical analyses**, not a generated plan, so no plan invariant can see
+it. The two test files above are the enforcement, and both were falsified before being trusted.
+
 ## 72. An ultra effort is read as time-on-feet — never scored on fade
 
 **Principle.** Over ultra distance, back-half pace fade and late cardiac drift are **expected physiology** — glycogen depletion and accumulated fatigue, not a pacing error or a fitness gap. The coaching surfaces (`sessionFeedback`, `sessionReframe`, and the limiter) must not cite that fade as a fault or tell the runner to "start slower". This applies to any effort at/above the ultra threshold — a race *or* a 50km+ long run — not only to sessions tagged `type === 'race'`.

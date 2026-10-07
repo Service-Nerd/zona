@@ -13955,3 +13955,21 @@ The Vetra → Zonna rename (commits `fda3ff6` + `ba469df`) is complete in code, 
 Revisits two resolved-but-watchable decisions if commercial signals warrant:
 - ⚠️ **Intensity distribution — RE-OPENED 2026-08-19 as a *coaching* decision. See SC-03 (Wave 1d); this entry is no longer the owner.** ~~engine produces ~90% easy across distances; spec target was 75–88%. Currently kept by design (restraint as the brand). If users drop off citing under-stimulation, smallest change is +1 quality session in build phase for HM/Marathon intermediate+~~ **The Coaching Board (CD-19) ruled this a §34 enforcement failure — a declared constitutional value with zero mechanical check — and contested the target itself (Seiler: the 80/20 finding is a session-count observation misapplied to a time denominator, so the delivered ~90% is more defensible than the config).** Filing it here, as a commercial watch item to revisit if conversion warranted, is **why it survived four months unresolved**. Do not re-decide it on commercial signals: it is a board matter with a ruling attached.
 - **Free regeneration policy** — currently lenient (free users regen freely; AI enrichment is the paid value). If conversion is low and "fresh start" emerges as a real subscription motivator, gate regen only when active future-dated plan exists
+
+### 🟡 `ANALYSIS-TYPE-BACKFILL-01` — the founder's 42 hidden runs could count today *(filed 2026-10-07, P3)* ⚙️ **NO BOARD**
+
+`ANALYSIS-SUPERSEDE-PATTERN-01` stamps `run_analysis.session_type` from 2026-10-07 and leaves every
+earlier row `null`, so the founder's **42 recovered analyses are visible to the query and still
+excluded by the type filter** — his hidden weeks are 15–35 and his current plan is 1–12, so the
+legacy plan-join resolves nothing.
+
+⚠️ **That is COMPLIANT, not a shortfall.** 🩹 Willy's binding condition on §71 Am. 2 is that it
+**reads forward**: a runner must not open the app and be told they have drifted for eight months
+because a filter changed. Forward-only is the ruling.
+
+**But it is recoverable and the data is there.** `plan_archive` holds his previous plans covering
+weeks **1–25** and **26–36**, which spans the whole hidden range, so a one-off script could resolve
+each row's `session_type` and write it. ⚠️ **A production WRITE, so the founder runs it**, and it
+should be opt-in rather than automatic — the moment it lands, the drift card can speak about a
+block that finished in September, which is exactly the ambush Willy named. Surface it as *"include
+my previous blocks"* or not at all.

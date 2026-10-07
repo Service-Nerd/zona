@@ -96,3 +96,111 @@ describe('§12 Amendment 1 — drift is measured above the ceiling, not outside 
     expect(newRuleFlags(sneaky), 'the new rule does not').toBe(true)
   })
 })
+
+
+// ──────────────────────────────────────────────────────────────────────────
+// ANALYSIS-SUPERSEDE-PATTERN-01 (Coaching Board, §71 Amendment 2, 2026-10-07)
+//
+// ⚠️ APPENDED, NOT REPLACING. The §12 Amendment 1 arms above carry REAL
+// production fixtures from 2026-09-13 — the six too-easy runs McMillan called
+// the worst possible false positive, and the four genuine drifts — and they keep
+// the OLD rule executable so the fix cannot silently revert. I overwrote this
+// file with `cat >` while adding the arms below and destroyed all six; the test
+// COUNT in the verify log is what caught it (514 files but +8 arms where +14 was
+// expected). Look at the target before writing over it.
+// ──────────────────────────────────────────────────────────────────────────
+
+import {
+  computeZoneDriftPattern, zoneDriftLine, countsForDrift,
+  ZONE_DRIFT_MIN_ROWS, ZONE_DRIFT_WINDOW, type ZoneDriftRow,
+} from './zoneDrift'
+
+const row = (o: Partial<ZoneDriftRow> & { weekN: number }): ZoneDriftRow => ({
+  sessionType: 'easy', hrAboveCeilingPct: 50, fromPreviousBlock: false, source: 'apple_health', ...o,
+})
+
+/** The founder's real shape: old-plan weeks, none of them in the current plan. */
+const PREVIOUS_BLOCK = [31, 32, 33, 34].map(w =>
+  row({ weekN: w, fromPreviousBlock: true, hrAboveCeilingPct: 60 }))
+
+describe('ANALYSIS-SUPERSEDE-PATTERN-01 — drift reads across a race boundary', () => {
+  it('fires on a window made ENTIRELY of a previous block', () => {
+    const p = computeZoneDriftPattern(PREVIOUS_BLOCK)
+    expect(p).not.toBeNull()
+    expect(p!.count).toBe(4)
+    expect(p!.crossesBlockBoundary).toBe(true)
+  })
+
+  it('🎯 McMillan BINDING: a crossing comparison NAMES the boundary', () => {
+    const line = zoneDriftLine(computeZoneDriftPattern(PREVIOUS_BLOCK)!)
+    expect(line).toContain('including your last block')
+  })
+
+  it('and does NOT name it when the window is all current-block', () => {
+    const current = [1, 2, 3, 4].map(w => row({ weekN: w, hrAboveCeilingPct: 60 }))
+    const line = zoneDriftLine(computeZoneDriftPattern(current)!)
+    expect(line).not.toContain('last block')
+  })
+
+  it('a previous-block row that is FILTERED OUT must not add the clause', () => {
+    // A quality run from the old block is excluded by §12, so it cannot make the
+    // claim cross a boundary. Only the rows actually counted may.
+    const rows = [
+      ...[1, 2, 3, 4].map(w => row({ weekN: w, hrAboveCeilingPct: 60 })),
+      row({ weekN: 30, fromPreviousBlock: true, sessionType: 'quality', hrAboveCeilingPct: 90 }),
+    ]
+    expect(computeZoneDriftPattern(rows)!.crossesBlockBoundary).toBe(false)
+  })
+
+  it('§12: a TEMPO above the ceiling is correct execution, never drift', () => {
+    const quality = [1, 2, 3, 4, 5].map(w => row({ weekN: w, sessionType: 'quality', hrAboveCeilingPct: 95 }))
+    expect(computeZoneDriftPattern(quality)).toBeNull()
+    expect(countsForDrift(quality[0])).toBe(false)
+  })
+
+  it('an UNKNOWN type is excluded, never assumed easy', () => {
+    // Pre-stamp rows with no current-plan week resolve to null. Counting them as
+    // easy would invent drift out of tempo sessions.
+    const unknown = [1, 2, 3, 4].map(w => row({ weekN: w, sessionType: null, hrAboveCeilingPct: 60 }))
+    expect(computeZoneDriftPattern(unknown)).toBeNull()
+  })
+
+  it('manual runs are excluded: no HR stream to judge', () => {
+    expect(countsForDrift(row({ weekN: 1, source: 'manual' }))).toBe(false)
+  })
+
+  it('below the floor it stays SILENT rather than reporting a zero pattern', () => {
+    const three = [1, 2, 3].map(w => row({ weekN: w, hrAboveCeilingPct: 60 }))
+    expect(three.length).toBeLessThan(ZONE_DRIFT_MIN_ROWS)
+    expect(computeZoneDriftPattern(three)).toBeNull()
+  })
+
+  it('a runner who is holding the zone gets nothing', () => {
+    const good = [1, 2, 3, 4, 5, 6].map(w => row({ weekN: w, hrAboveCeilingPct: 0 }))
+    expect(computeZoneDriftPattern(good)).toBeNull()
+  })
+
+  it('running too EASY is not drift (the 27% false-positive McMillan killed)', () => {
+    const tooEasy = [1, 2, 3, 4, 5].map(w => row({ weekN: w, hrAboveCeilingPct: 0 }))
+    expect(computeZoneDriftPattern(tooEasy)).toBeNull()
+  })
+
+  it('the window is bounded and takes the MOST RECENT rows', () => {
+    const many = Array.from({ length: 20 }, (_, i) => row({ weekN: i + 1, hrAboveCeilingPct: 60 }))
+    const p = computeZoneDriftPattern(many)!
+    expect(p.total).toBe(ZONE_DRIFT_WINDOW)
+  })
+
+  it('the threshold is the shared constant, not a local literal', () => {
+    const atThreshold = [1, 2, 3, 4].map(w => row({ weekN: w, hrAboveCeilingPct: ZONE_DRIFT_ABOVE_CEILING_PCT }))
+    expect(computeZoneDriftPattern(atThreshold)).toBeNull()   // strictly greater
+    const above = [1, 2, 3, 4].map(w => row({ weekN: w, hrAboveCeilingPct: ZONE_DRIFT_ABOVE_CEILING_PCT + 1 }))
+    expect(computeZoneDriftPattern(above)).not.toBeNull()
+  })
+
+  it('🩹 Willy BINDING: the line reports the window, it does not pass a verdict', () => {
+    const line = zoneDriftLine(computeZoneDriftPattern(PREVIOUS_BLOCK)!)
+    expect(line).not.toMatch(/fail|wrong|bad|months|always|never improve/i)
+    expect(line).not.toContain('—')   // no em dash: a sentence the runner reads
+  })
+})

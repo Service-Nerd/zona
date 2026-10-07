@@ -18,6 +18,55 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-10-07 — ANALYSIS-SUPERSEDE-PATTERN-01: the founder stopped me building something that existed
+
+**Dev.** He asked why Coach never shows him a pattern across his runs. I explained what
+"Coach aggregation" would be and pitched it as a build. He replied: *"I thought we already do
+that somewhere?"*
+
+He was right. Coach already has ZoneRings, a zone-drift detector, three trend cards, a load
+shape, a weekly report, phase summaries and a race-readiness note. **The aggregation was never
+missing. It was starved.** He has 43 scored runs and the app could see one of them, because
+every cross-plan row is hidden by a `superseded_at` filter and the drift detector needs four.
+
+That is the second time in one day I nearly built something that already existed, and the only
+reason I did not is that he asked a four-word question. The inventory should have been the first
+move, not the thing I did after being challenged.
+
+**The finding that reshaped the build.** The obvious fix is to lift the filter. It would have
+done **nothing**. The detector keeps only easy and recovery runs — above the Z2 ceiling is drift
+on an easy run and correct execution on a tempo — and it resolved the type by joining the row's
+week number against the **current plan**. His hidden rows are weeks 15 to 35; his current plan is
+weeks 1 to 12. Zero overlap. Forty-two rows recovered, forty-two dropped one line later.
+
+So the build is a **stamp**, not a filter change: the analysis row now carries the session type it
+was scored against, which is ADR-018's shape — a session stamps its catalogue id at construction
+because re-joining by label broke the moment the enricher renamed things. A row has to carry its
+own meaning rather than depend on a plan that may be archived.
+
+**AI-building.** Two guards earned their place and one of them was mine. The reader register that
+polices §71 had a **false negative**: it tested for the string `superseded_at` anywhere in the
+query chain, so the first query to SELECT that column as data read as *filtered*. It would have
+certified the exact cross-plan read the board authorised as its opposite. It now enforces the
+ruling itself — an unfiltered read may select discipline fields only — which also catches
+unfiltering the shared map, something the count-based version could not.
+
+**The honest bit, and it is the worst mistake of the day.** I wrote the new tests with `cat >` on
+a path I had not read. The file existed. It held six arms carrying **real production fixtures**
+from the day the board ruled the old detector incorrect — the six too-easy runs McMillan called
+the worst possible false positive, and the old rule kept executable so the fix could not silently
+revert. I destroyed all six.
+
+**Nothing failed. The suite was green.** What caught it was arithmetic: I expected the test count
+to rise by fourteen and it rose by eight, so I diffed the per-file counts instead of shrugging at
+a green tick. Had I reported "verify exit 0" and moved on, fixtures bought with a real defect
+would have gone in the bin, and the next person to weaken that rule would have met no resistance.
+
+The rule I broke is one I already knew and have written down for other people: **look at the
+target before you write over it.** `cat >` is not a safe default on a path you have not read.
+The restored file now carries a note explaining how it nearly went, because the next person to
+append to it will be in exactly the same hurry I was.
+
 ## 2026-10-07 — POSTRUN-POLL-WEEK-BLIND-01 + POSTRUN-PACE-NULL-01: the loading state was fictional, and the board found the brief was wrong
 
 **Dev.** Four screenshots of the founder's own run. He asked whether "Kit is reading the run" is
