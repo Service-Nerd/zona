@@ -6579,6 +6579,36 @@ the toggle governs how distances are *written* (km vs mi) rather than which fact
 ⚠️ **Do not re-propose without re-measuring.** E shipped after this was filed, so the 29.2% figure is
 historical — take the post-E number first.
 
+### 👤 FOUNDER DECISION, 2026-10-07 — KEEP AS IS
+
+Asked directly whether every session renders consistently *"in terms of look and feel, metrics
+presented, and what metric the user is set up to see"*, the honest answer was **no**, and the
+measurement was put to him:
+
+| Measured, 260,047 rows, all six shapes, both toggle settings | |
+|---|---|
+| Rows leading in the runner's **chosen** metric | **83.68%** |
+| Rows that do **not** | **16.32%** |
+| …because the **session is duration-anchored** (no distance exists to show) | **37,913 — 89% of the misses** |
+| …sub-unit bookend (`UNITS-SUBUNIT-01`, ratified) | 4,285 |
+| …main-set step with no pace to derive from (§21b, ratified) | 240 |
+
+| Level | Duration-anchored |
+|---|---|
+| **beginner** | **91.1%** |
+| intermediate | 1.8% |
+| experienced | 1.8% |
+
+🔴 **So a beginner who sets the app to distance sees minutes on nearly every row**, because
+§21b Am. 4b made the card take the unit the PLAN prescribed rather than the one the runner chose.
+That is in tension with Wroblewski's September reasoning (*"it silently disables the distance
+toggle; the runner set that toggle"*) and the tension was put to the founder with three options.
+
+**He ruled: KEEP AS IS.** 🔻 Recorded here rather than only in a state paragraph, so it is not
+re-opened as a defect. The toggle's wider instrument question below remains open.
+
+---
+
 ### 📐 POST-E MEASUREMENT, 2026-10-06 — taken because the founder asked the right question: *"why do we have 9:20 when I am using distance?"*
 
 Corpus: `cohortGrid` stride 53, **41,009 sessions** (time trial excluded — ADR/§78 ratifies that its

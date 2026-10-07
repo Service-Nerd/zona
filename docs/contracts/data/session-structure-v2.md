@@ -89,8 +89,13 @@ experienced ones**. See `docs/canonical/session-catalogue.md`.
 A catalogue row is shared across runners, so it cannot hold both *"4 × 1000 m"* and *this runner's* numbers. The row holds the shape; the **session** holds the resolved set.
 
 - `resolveMainSet(row, ctx)` is the **single owner** of shape + runner context → concrete steps (D-08).
+- 🔴 **A `{ kind: 'zone' }` TARGET RESOLVES TO A RAMP, NOT TO NOTHING** (§8 Amendment, Coaching Board 2026-10-07 — `PROGRESSION-TRANSITION-01`). `DerivedStep.pace` on such a step is a **transition string**: `"7:18 → 6:22 /km"`, built from the **E anchor's fast edge to the T anchor's fast edge** by `lib/plan/progressionTransition.ts → transitionBand`, the single owner shared with the read-time repair.
+  - ⚠️ **Consumers must expect three shapes on `DerivedStep.pace`, not two**: a band (`6:30–7:30 /km`), a **ramp** (`7:18 → 6:22 /km`), or `null`. Anything parsing a pace off a step must handle the arrow. The field's own comment — *"null when the step is deliberately effort-governed"* — remains true **only** for effort-governed steps (§40b hill reps); a zone-targeted step is now resolved.
+  - ⚠️ **`null` survives for two declared reasons**: an absent anchor (§24b), and a ramp that would not RISE (`PROGRESSION-GOAL-INVERTED-01` — measured 7 of 941, all a `Marathon-pace progression` on a goal-paced week whose goal band is slower than the runner's own easy ceiling). Both degrade to the zone band.
+  - 🩹 **Resolved from the ANCHORS, never the neighbouring step** (Willy, binding): on a `5K-pace progression` the following third is the 5K anchor, and ramping to it would roughly double the session's hard component. **Z3 is threshold and that is where the ramp stops.**
 - The generator stamps the result on `Session.derived_set`.
 - The display renders `derived_set` when present and falls back to the v1 composer otherwise.
+- 🔴 **`DerivedStep.note` IS A CACHE OF CATALOGUE COPY, NOT A SOURCE.** It is stamped at generation, so **editing a catalogue note changes new plans only** — measured 2026-10-07 against the live table: **336 notes stamped, 46 stale** after two copy fixes. `lib/plan/supersededNotes.ts → currentNote` repairs a stored note at READ (`SUPERSEDED-NOTES-01`); a consumer reading `derived_set` directly, rather than through `buildSessionRows`, **gets the stale string**.
 
 **Two display consumers of `derived_set`, one owner each:**
 - `describeDerivedSet(set)` (`resolveMainSet.ts`) — the **one-line string** used in notifications, the plan calendar, and as the session-card fallback. Per-step grammar: a non-run recovery action leads with its verb ("stand until ready", "jog back down"), work steps weave terrain ("1:30 uphill at RPE 8"), and `open`/`mirror` lengths get real phrasing. **Never** the old flat `length + pace + modality` concatenation, which shipped "until ready stand" and "same as the 1:30 … jog" and dropped the descent's direction (SESSION-STRUCTURE-REDESIGN, 2026-09-04).
@@ -113,6 +118,7 @@ SC-10 built exactly that (category-specific shares of weekly volume), swept it a
 | `INV-CAT-V2-NO-LITERAL-PACE` | No v2 step target contains a numeric pace. Targets name an anchor; the runner's paces resolve it. |
 | `INV-CAT-V2-WELL-FORMED` | Every v2 row parses against the schema: ≥1 block, each block ≥1 step, `repeat >= 1`, and every `mirror` step has a preceding work step to mirror. |
 | `INV-PLAN-DERIVED-SET` | A session produced from a v2 row carries a non-empty `derived_set`. |
+| `INV-PLAN-PROGRESSION-TRANSITION-PACED` | A zone-targeted WORK step resolves to a **transition** or to `null` — never a point or a plain band, which is the false precision §8 refused. ⚠️ `INV-PLAN-DERIVED-SET-PACED` is structurally blind to these steps: it scopes to `pace_mode`, which only a pace-anchored target produces. |
 
 ## Out of scope for Phase 1
 

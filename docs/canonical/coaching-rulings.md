@@ -1190,3 +1190,55 @@ after the board named it. **The gate is the part that does not depend on remembe
 **Artifacts:** the catalogue note · no new numeric (the `T` anchor already carries the dose) ·
 `lib/plan/stepNoteSelfContained.test.ts`, which matches session **nouns** so a within-session
 *"rep one"* stays legal, falsified by restoring the old string.
+
+## PROGRESSION-TRANSITION-01 — §8 Amendment: the transition is NAMED, not withheld (2026-10-07)
+
+**Trigger:** `sessionCatalogueData.ts` + `resolveMainSet.ts` — hard. **Ruling: CORRECT WITH AMENDMENT.**
+
+**The founder raised the same row three times** from his own session: *"The middle part is still
+saying 9:20... I'd have to run 9:20 and look what my zone 3 is and not go over it. Very confusing."*
+
+| | |
+|---|---|
+| **Was** | `{ kind: 'zone', zone: 'Z2-Z3' }` → `resolvePace` returns `null` → no pace, so no distance |
+| **Is** | A ramp from the **E anchor's fast edge to the T anchor's fast edge**: `7:18 → 6:22 /km`, and the row carries a distance like its siblings |
+
+🔴 **The 2026-09-03 ruling refused a POINT pace on that step and was right to. What nobody checked
+is what the refusal RENDERED as** — the runner was told nothing, and the row led with bare minutes
+between two rows leading with kilometres. **We decided how to express a target and accidentally
+decided to express nothing.**
+
+📐 **Measured before the sitting:** of **941** zone-only work steps, **100.0%** are bracketed on both
+sides by a paced work step; every one is a progression's middle third (Progressive tempo 672, 5K 87,
+HM 84, Marathon 52, 10K 46). §11 supports it — where a pace exists it is a range, and a ramp is a
+range with a direction.
+
+📊 **Seiler, recorded because it reverses the intuition:** the step had no SLOW bound at all, so
+*"let it rise"* had nothing to rise from. For a product that exists to keep runners out of the grey
+zone, the protective number is the **floor**, and it was the one being withheld.
+
+🩹 **Willy's binding condition:** resolved from the **anchors, never the neighbouring step**. On a
+`5K-pace progression` the final third is `4:54–5:06`; ramping to that would roughly double the
+session's hard component. **Z3 is threshold and that is where the ramp stops.**
+
+⚠️ **The first implementation was wrong and the ARITHMETIC caught it, not the reasoning.** "Ramp to
+where threshold begins" means the T band's SLOW edge, which **coincides with the easy band's fast
+edge for a large minority of runners**: **61 of 941 (6.5%) degenerate** (`7:30 → 7:30`) and **7
+INVERTED** (`5:45 → 6:10`), instructing a runner to slow down through a step whose note says *"let
+it rise."* Both edges are the band's fast end.
+
+🔻 **A ramp that would not rise is withheld, and those 7 are a finding of their own** —
+`PROGRESSION-GOAL-INVERTED-01`: a `Marathon-pace progression` on a §22 goal-paced week where an
+experienced runner chasing 4:15 has a goal band (`5:56–6:10`) **slower than the fast edge of their
+own easy band** (`5:45`). **The session is not a progression for them.** Open for the board.
+
+**Artifacts:** `CoachingPrinciples.md` §8 Amendment · `GENERATION_CONFIG.PROGRESSION_TRANSITION_ANCHORS`
+· `INV-PLAN-PROGRESSION-TRANSITION-PACED` + a liveness mutation that wakes it.
+
+⚠️ **`verify:parity` CHANGED on 2,996 of 6,066 — intended, and PROVEN rather than asserted:** a
+JSON-path diff over 197 regenerated plans shows the only differing paths are
+`derived_set…steps[].pace` and `meta.generated_at`.
+
+⚠️ **The ruling reaches no existing plan on its own.** `derived_set` is stamped at generation;
+`backfillLegacyRamp` (`LEGACY-RAMP-BACKFILL-01`) is the read-time half, and without it 13 of 30
+stored plans would still show the bare duration.
