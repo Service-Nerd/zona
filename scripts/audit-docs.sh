@@ -758,6 +758,80 @@ print("  ok")
 PYEOF
 [ "$pfail" = 1 ] && fail=1
 
+say "── board rulings: a DOCTRINE section that names a board has a register row ──"
+# 🔴 THE ARM BELOW READS BACKLOG HEADINGS, AND THAT IS A POPULATION, NOT THE RULE.
+#
+# On 2026-10-07 `PROGRESSION-TRANSITION-01` shipped a Coaching Board CORRECT WITH
+# AMENDMENT -- principle §, config constant, invariant, liveness mutation, the lot --
+# and had NO row in `coaching-rulings.md`, while this script printed ALL CLEAN. It was
+# never in the backlog: founder report -> board -> ship. **The checker's population
+# excluded the cases at risk**, which is the single most repeated failure in this repo.
+#
+# The rule that does not depend on the backlog: **a doctrine section that ATTRIBUTES
+# ITSELF to a board is a ruling by its own words.** If `CoachingPrinciples.md` or
+# `ui-patterns.md` says "Coaching Board" or "Design Board" beside an item id, that id
+# belongs in a register the settled-ground scan actually reads.
+#
+# ⚠️ DEBT, DECLARED, NOT EXEMPTIONS. 50 sections were already in neither register when
+# this shipped -- `coaching-rulings.md` is far younger than the constitution, so most of
+# them predate it. The baseline stops the number GROWING; it does not shrink it, and
+# nothing here schedules that.
+dfail=0
+python3 - <<'PYEOF' || dfail=1
+import re, sys, json, pathlib
+docs = ['docs/canonical/CoachingPrinciples.md', 'docs/canonical/ui-patterns.md']
+reg = (pathlib.Path('docs/canonical/coaching-rulings.md').read_text(encoding='utf-8')
+       + pathlib.Path('docs/canonical/design-rulings.md').read_text(encoding='utf-8'))
+base = json.loads(pathlib.Path('lib/plan/__fixtures__/boardRulingRegisterDebt.json').read_text(encoding='utf-8'))
+known = {tuple(e['ids']) for e in base['unregistered']}
+known_noid = set(base['no_id'])
+ID = re.compile(r'\b([A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+-\d{2})\b')
+BOARD = re.compile(r'(Coaching Board|Design Board)', re.I)
+found, new = 0, []
+for d in docs:
+    text = pathlib.Path(d).read_text(encoding='utf-8')
+    # ⚠️ A `> ` PREFIX IS ALLOWED, AND THE FIRST CUT MISSED IT. §8's own amendment
+    # — the ruling that exposed this whole gap — is written as a BLOCKQUOTE, so a
+    # matcher anchored to line start could not see it, and the falsification that
+    # removed its register row stayed GREEN. Third time today a mutation found a
+    # hole in the CHECK rather than in the code.
+    secs = list(re.finditer(r'^>?\s*#{2,4}\s+(.*)$', text, re.M))
+    for i, m in enumerate(secs):
+        body = text[m.end(): secs[i+1].start() if i+1 < len(secs) else len(text)]
+        head = m.group(1)
+        if not BOARD.search(head + ' ' + body[:600]):
+            continue
+        found += 1
+        ids = sorted(set(ID.findall(head + ' ' + body[:900])))
+        if not ids:
+            # ⚠️ A SECOND, LARGER DEBT CLASS, AND TODAY'S RULING WAS IN IT. A section
+            # that names a board and no item id is UNTRACEABLE: nothing can look it up
+            # in a register, so the arm below is blind to it by construction. §8's own
+            # amendment carried no id until the gap was found.
+            key = f"{pathlib.Path(d).name}|{head[:80]}"
+            if key not in known_noid:
+                new.append(f"{pathlib.Path(d).name}: \"{head[:70]}\" -> NAMES A BOARD, NAMES NO ITEM ID")
+            continue
+        if any(x in reg for x in ids):
+            continue
+        if tuple(ids) in known:
+            continue
+        new.append(f"{pathlib.Path(d).name}: \"{head[:70]}\" -> {ids}")
+if found < 100:
+    print(f"  POPULATION COLLAPSED: only {found} board-attributed sections found (expected 140+).")
+    print("  The matcher has drifted from the documents and this check is now blind.")
+    sys.exit(1)
+if new:
+    print(f"  {len(new)} board ruling(s) in doctrine with NO row in any ruling register:")
+    for n in new[:6]:
+        print(f"    {n}")
+    print("  A ruling the settled-ground scan cannot read is a ruling that gets re-proposed.")
+    print("  Append the row, or add it to lib/plan/__fixtures__/boardRulingRegisterDebt.json WITH A REASON.")
+    sys.exit(1)
+print(f"  ok  ({found} board-attributed sections; declared debt: {base['unregistered_count']} unregistered, {base['no_id_count']} with no id; 0 new)")
+PYEOF
+[ "$dfail" = 1 ] && fail=1
+
 say "── board rulings: a RULED item has a register row ──"
 # ⚠️ THE GAP THIS CLOSES, AND IT IS THE ONE THE FOUNDER KEEPS FINDING.
 #

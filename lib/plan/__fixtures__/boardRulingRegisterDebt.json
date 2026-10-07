@@ -1,0 +1,411 @@
+{
+  "_why": "RULING-REGISTER-REACH-01 (2026-10-07). A doctrine section that ATTRIBUTES ITSELF to a board is a ruling by its own words. Two things must then be true: it NAMES its item id, and that id is in a register the settled-ground scan reads. Both were measured when this shipped and both are DEBT, not exemptions -- the ruling registers are far younger than CoachingPrinciples.md, so most of these predate them. The baselines stop the numbers GROWING. They do not shrink them, and nothing in this repo schedules that.",
+  "_found_by": "PROGRESSION-TRANSITION-01 shipped with all three artifacts and no register row while audit-docs.sh printed ALL CLEAN. The existing arm reads BACKLOG HEADINGS and that ruling never passed through the backlog. \u26a0\ufe0f The first cut of THIS check could not see it either: its own amendment is written as a BLOCKQUOTE, and the matcher was anchored to line start. The second cut still could not: the section named no item id at all. Both fixed; the id is now in the \u00a78 heading.",
+  "unregistered_count": 50,
+  "unregistered": [
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "The denominator is the MAIN PLAN \u2014 \u00a757 foundation weeks are excluded (Coaching Board CB-FO",
+      "ids": [
+        "CB-FOUNDATION-DENOM-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "50K reopened \u2014 15% \u2192 17% (Coaching Board CB-INTENSITY-50K-01, 2026-09-09)",
+      "ids": [
+        "CB-INTENSITY-50K-01",
+        "INTENSITY-FOUNDATION-BLIND-01",
+        "INTENSITY-LONGDIST-LOWDAY-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 3 \u2014 the injury bounceback returns to pre-deload (PLAN-FITNESS-01, Coaching Board",
+      "ids": [
+        "PLAN-FITNESS-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "\u00a72 Amendment 2 \u2014 the weekly ratio is a SCREEN; the per-run step is the confirmation (Coach",
+      "ids": [
+        "HM-WEEK1-PERRUN-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "\u00a72 Amendment \u2014 the week-1 step is measured against what the runner RUNS, and has three arm",
+      "ids": [
+        "WEEK1-FLOOR-SHORT-DIST-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 1 \u2014 the taper long run may not exceed the peak long run (PEAK-LR-NOT-IN-PEAK-01,",
+      "ids": [
+        "PEAK-LR-NOT-IN-PEAK-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 2 \u2014 the cut is a percentage of the week the runner ACTUALLY DID (TAPER-DEPTH-02,",
+      "ids": [
+        "TAPER-DEPTH-02"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 1 \u2014 drift is DIRECTIONAL; below the cap is not a breach \u2014 added 2026-09-13 (Coac",
+      "ids": [
+        "R30-DIRECTIONAL-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment \u2014 a session displaced by \u00a75's adaptation window is exempt (Coaching Board, 2026-",
+      "ids": [
+        "QUALITY-ONSET-ORDER-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 1 \u2014 the floor comparison is not decided by the engine's own rounding \u2014 added 202",
+      "ids": [
+        "MARATHON-MAINT-LABEL-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "\u00a724e Amendment \u2014 the fuelling cue is gated on DURATION, not on the race being an ultra (Co",
+      "ids": [
+        "CAT-ULTRA-FUELLING-01",
+        "LONG-SESSION-FUEL-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 2 \u2014 the floor is PACE-CONDITIONAL, and the constitution now says so *(Coaching B",
+      "ids": [
+        "S24-FLOOR-REACHABILITY-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "\u00a728 Amendment 1 \u2014 strides and hill strides are ONE neuromuscular family (Coaching Board 20",
+      "ids": [
+        "CB-BEGINNER-HILLS-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 1 \u2014 the tier is a SIZING floor, not a delivery promise (LR-EARNED-TIER-01, Coach",
+      "ids": [
+        "LR-EARNED-TIER-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 2 \u2014 two rungs, not three (LR-TIER-GATE-RECONCILE-01, Coaching Board 2026-09-15)",
+      "ids": [
+        "LR-EARNED-TIER-01",
+        "LR-TIER-GATE-RECONCILE-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "40d. A plan that cannot progress is labelled, not disguised",
+      "ids": [
+        "VOL-STRUCTURE-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "40c. A suppressed target is stated, never absorbed",
+      "ids": [
+        "VOL-SHORTFALL-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "52b. A training day must be able to carry a real session",
+      "ids": [
+        "INPUT-FLOOR-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 3 \u2014 runner-environment terrain governs pace-vs-effort EMPHASIS, never a fabricat",
+      "ids": [
+        "CB-TERRAIN-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "\u00a744 Amendment \u2014 a plan that admits it falls short may not read `comfortable` (Coaching Boa",
+      "ids": [
+        "DIFFICULTY-SHORTFALL-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 2 \u2014 the ABSOLUTE arm tapers on a small week (LR-ABS-CAP-LOWVOL-01, Coaching Boar",
+      "ids": [
+        "LR-ABS-CAP-LOWVOL-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 1 \u2014 a runner prescribed in MINUTES is not exempt from a distance rule",
+      "ids": [
+        "LR-CAP-BLIND-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 1 \u2014 a duration-anchored plan steps back in MINUTES (PEAK-LR-STEPBACK-MINUTES-01,",
+      "ids": [
+        "PEAK-LR-STEPBACK-MINUTES-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Asymmetry \u2014 amended 2026-08-31 (HR-MAX-01, Coaching Board CORRECT WITH AMENDMENT)",
+      "ids": [
+        "HR-MAX-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 1 \u2014 a safety cap is never exempted, only downgraded \u2014 added 2026-09-13 (Coaching",
+      "ids": [
+        "MAINT-EXEMPT-SCOPE-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 2 \u2014 the window may OMIT VO2max entirely, and omission must be DECLARED (Coaching",
+      "ids": [
+        "REENTRY-DEPTH-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 5 \u2014 the re-entry note must name the reason the window actually opened (Coaching ",
+      "ids": [
+        "REENTRY-CAUSE-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Duration-anchored display \u2014 amended 2026-08-31 (Coaching Board, CORRECT WITH AMENDMENT \u2014 H",
+      "ids": [
+        "HR-MAX-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment \u2014 the specificity floor ramps through BUILD (PLAN-FITNESS-01, Coaching Board 202",
+      "ids": [
+        "PLAN-FITNESS-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "\u00a780 Amendment 1 \u2014 the shortfall note must name the constraint that is actually binding, an",
+      "ids": [
+        "LR-SHORTFALL-CAUSE-01",
+        "M5-EASY-CEILING-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "\u00a780 Amendment 2 \u2014 the floor yields to \u00a790's injury ceiling, and says so *(Coaching Board 2",
+      "ids": [
+        "S80-VS-S90-PRIORITY-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "122. Foundation weeks are weeks",
+      "ids": [
+        "FOUNDATION-BUDGET-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "82. Easy runs are floor-protected against the weekday cap",
+      "ids": [
+        "SWEEP-VISIBLE-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "\u00a790 \u2014 RECORDED FINDING: the easy-run trim has no floor, and for one cohort the build phase",
+      "ids": [
+        "S52-LOPSIDED-BOUND-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 1 \u2014 the trimable arm is retired; \u00a72's claim is the WHOLE week",
+      "ids": [
+        "CB-RAMP-02",
+        "LR-CAP-BLIND-01",
+        "RAMP-GUARD-FAILS-OPEN-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment \u2014 the headroom is granted on SURPLUS, not on \u00a789's gate (LONG-RUNWAY-EARNS-PLAN-",
+      "ids": [
+        "LONG-RUNWAY-EARNS-PLAN-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "100. A safety trim must not hand its deficit to the next week",
+      "ids": [
+        "RAMP-PRODUCER-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "104. A peak rehearses the race more than one way",
+      "ids": [
+        "CAT-10K-RACE-SPECIFIC-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "105. Marathon pace must exist away from the long run",
+      "ids": [
+        "CAT-MARATHON-RACE-SPECIFIC-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "106. A plan never peaks below where the runner already is",
+      "ids": [
+        "MAINT-PROFILE-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "107. A session may not prescribe work it does not record",
+      "ids": [
+        "ZONE-BAND-02"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "108. What a run SCORES, and what stays outside the score",
+      "ids": [
+        "UX-POSTRUN-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "110. `avoid` is a floor, not a switch",
+      "ids": [
+        "CB-HSR-AVOID-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "111. The base-build ceiling \u2014 a marathon plan may not build too far off the base the runne",
+      "ids": [
+        "MARATHON-VOLUME-GATE-01",
+        "REFUSAL-SCREEN-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "Amendment 2 \u2014 the denominator is the volume the engine STARTS FROM (Coaching Board + SLT, ",
+      "ids": [
+        "S111-DENOMINATOR-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "112. Consecutive self-reported cost softens the long run \u2014 and a skip is part of the evide",
+      "ids": [
+        "FIRSTRUN-MISSED-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "113. Long-run readiness \u2014 a plan must have something to build FROM",
+      "ids": [
+        "LONGEST-RUN-GATE-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "\u00a7117 Amendment 2 \u2014 the `LONG-RUN-SHORT` exemption is BOUNDED (Coaching Board 2026-09-20, c",
+      "ids": [
+        "S116-FLOOR-VS-TARGET-01"
+      ]
+    },
+    {
+      "doc": "CoachingPrinciples.md",
+      "heading": "118. The get-running plan \u2014 what we offer the runner no race plan can serve",
+      "ids": [
+        "S116-FLOOR-VS-TARGET-01"
+      ]
+    },
+    {
+      "doc": "ui-patterns.md",
+      "heading": "35. Post-run card (Pattern 32 applied to the post-run moment)",
+      "ids": [
+        "UX-POSTRUN-01"
+      ]
+    }
+  ],
+  "no_id_count": 43,
+  "no_id": [
+    "CoachingPrinciples.md|109. A progress surface may remember and compare. It may not predict.",
+    "CoachingPrinciples.md|114. The long run fits the week it is in \u2014 the \"get you round\" plan",
+    "CoachingPrinciples.md|116. The base-build on-ramp \u2014 \u00a7111's named remedy, made possible",
+    "CoachingPrinciples.md|40b. Effort-governed sessions \u2014 when there is no pace to check",
+    "CoachingPrinciples.md|53. Quality session variety across the full plan",
+    "CoachingPrinciples.md|81. Structured sessions are exempt from the weekday cap \u2014 and the plan says when",
+    "CoachingPrinciples.md|83. Sessions must be coherent with each other, not only with themselves",
+    "CoachingPrinciples.md|A quality session's distance is priced segment by segment \u2014 added 2026-09-04 (Co",
+    "CoachingPrinciples.md|A time-anchored dose band cannot be filled by a distance-anchored rep \u2014 added 20",
+    "CoachingPrinciples.md|Amendment (Coaching Board, 2026-09-11) \u2014 the CLASSIFICATION does not extend to s",
+    "CoachingPrinciples.md|Amendment 1 \u2014 an effort-governed row is excluded from \u00a722's goal-pace override \u2014",
+    "CoachingPrinciples.md|Amendment 1 \u2014 no composite score when the HR axis is unmeasured \u2014 added 2026-09-",
+    "CoachingPrinciples.md|Amendment 1 \u2014 the preference YIELDS, and on masters plans it usually must (Coach",
+    "CoachingPrinciples.md|Amendment 1 \u2014 the zone string is DERIVED from the HR target, not authored beside",
+    "CoachingPrinciples.md|Amendment 1 \u2014 when there is NO measurement, state the band, not the time (Coachi",
+    "CoachingPrinciples.md|Amendment 2 \u2014 a step-back is a VOLUME step-back, not only an intensity one (Coac",
+    "CoachingPrinciples.md|Amendment 2 \u2014 an effort-governed session is still sized against its own structur",
+    "CoachingPrinciples.md|Amendment 2 \u2014 the ceiling rule governs ACCUSATION; praise needs both sides \u2014 add",
+    "CoachingPrinciples.md|Amendment 2 \u2014 the cut had to give, not the cap (COMPLIANCE-FIX-2, Coaching Board",
+    "CoachingPrinciples.md|Amendment 2 \u2014 what may be claimed PUBLICLY about the method \u2014 added 2026-09-21 (",
+    "CoachingPrinciples.md|Amendment 3 \u2014 a user-raised NOVICE gets the same re-entry window a returner does",
+    "CoachingPrinciples.md|Amendment \u2014 the plan may not fall below its OWN start either (COMPLIANCE-FIX-1, ",
+    "CoachingPrinciples.md|How this document is amended",
+    "CoachingPrinciples.md|Invariants",
+    "CoachingPrinciples.md|Returning runners & user-selectable level \u2014 amended 2026-08-31 (Coaching Board, ",
+    "CoachingPrinciples.md|The distribution is a share of SESSIONS, plan-wide, and it is a CEILING \u2014 correc",
+    "CoachingPrinciples.md|The floor stays; the warn band becomes an honest difficulty signal \u2014 amended 202",
+    "CoachingPrinciples.md|VO2max belongs in build, not only in peak \u2014 added 2026-08-20 (Coaching Board CD-",
+    "CoachingPrinciples.md|What a foundation block is FOR (Coaching Board CB-1, 2026-09-03)",
+    "CoachingPrinciples.md|\u00a7104 Amendment \u2014 an ALTERNATIVE is one the RUNNER is eligible for *(Coaching Boa",
+    "CoachingPrinciples.md|\u00a7111 Amendment 3 \u2014 the reckless ceiling is a RATIO, and \u00a7117 does not breach it ",
+    "CoachingPrinciples.md|\u00a7120 Amendment 1 \u2014 the bound, measured (Coaching Board, 2026-09-22)",
+    "CoachingPrinciples.md|\u00a7121 \u2014 The race is the test, not the training (Coaching Board, 2026-09-22)",
+    "CoachingPrinciples.md|\u00a782 Amendment 1 \u2014 \"a few minutes\" is scoped to the magnitude it was ruled on *(C",
+    "ui-patterns.md|Amendment 2 \u2014 the note IS the role, and every row of a block is numbered (Design",
+    "ui-patterns.md|Amendment 3 \u2014 THREE FIXED SLOTS, TARGET FIRST (Design Board, 2026-10-06)",
+    "ui-patterns.md|Amendment 4 \u2014 A WITHHELD NUMBER MUST NOT LOOK LIKE A MISSING ONE (Design Board r",
+    "ui-patterns.md|Amendment 4 \u2014 CORRECTED SAME DAY: it applied one rule to two unlike things",
+    "ui-patterns.md|App review wave 1 \u2014 Design Board sitting three, 2026-09-22",
+    "ui-patterns.md|ONE LEFT EDGE \u2014 SITE-MEASURE-EDGE, Design Board 2026-09-22",
+    "ui-patterns.md|Ruler (`components/shared/Ruler.tsx`)",
+    "ui-patterns.md|Time to race \u2014 one vocabulary (S5, Design Board 2026-09-22)",
+    "ui-patterns.md|What Not to Build"
+  ]
+}

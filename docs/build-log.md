@@ -14,6 +14,38 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## RULING-REGISTER-REACH-01 — the audit was green while the gap existed (2026-10-07)
+
+I reported the docs complete, then checked them against git rather than against the audit script,
+and found a Coaching Board ruling with all three artifacts and no register row. `audit-docs.sh` had
+printed ALL CLEAN throughout.
+
+### The dev bit
+
+The existing arm reads **backlog headings**. `PROGRESSION-TRANSITION-01` never touched the backlog —
+founder report, board, ship. **The checker's population excluded the cases at risk**, which is the
+failure class this repo has recorded more than any other, and I wrote the check that had it.
+
+The replacement derives its population from the doctrine: a section that says *"Coaching Board"* or
+*"Design Board"* is a ruling by its own words. 148 of them.
+
+### The honest bit
+
+**The first cut could not see the very ruling it was written for.** §8's amendment is a blockquote
+and my matcher was anchored to line start — so the falsification that removed its register row
+stayed green. **The second cut still could not**, because the section named no item id at all, which
+turned out to be a second and larger debt class: 43 sections name a board and nothing lookup-able.
+
+That is three falsifications today where the hole was in my own check rather than the code. The
+pattern is consistent enough to be a rule: **when a mutation does not go red, suspect the check's
+population and vocabulary before concluding the code is fine.**
+
+### The negative space
+
+50 unregistered rulings and 43 untraceable ones are **declared debt, not exemptions**. The baseline
+stops them growing. It does not shrink them, and nothing in this repo schedules that.
+
 ## SUPERSEDED-NOTES-01 — I wrote the rule, then broke it two hours later (2026-10-07)
 
 *"deploy it"*
