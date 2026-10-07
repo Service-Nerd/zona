@@ -18,6 +18,43 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-10-07 — AUDIT-BACKLOG-HEADING-01: two checks, one blind spot each, in opposite places
+
+**Dev.** The founder asked whether the documents were up to date. I have a script for exactly
+that question, precisely because answering it from memory has been wrong every time it has been
+tried. The script said ALL CLEAN. **I checked by hand anyway, and two items that shipped today
+were still sitting in the backlog as open problem statements.**
+
+Both had registry rows. Both had shipped commits. Both headings still read as unbuilt.
+
+**Why neither of the two arms that exist for this caught it is the interesting part.** There are
+two: one scoped to today's ships, one all-time. They have **opposite blind spots**.
+
+The today-scoped one anchors on `^> ` — a quoted bullet. That is the convention in that file, and
+**118 open items use it. Thirty-four use a `### <status> ID` heading instead.** So the arm was
+blind to 22% of the document by construction, and both of tonight's items were in that fifth.
+
+The all-time one *does* read headings. Its status list just did not include the two markers these
+items carried. **Each arm could see exactly what the other could not.** Fifth time this repo has
+recorded "an audit is only ever as wide as its list", and the first time two siblings covered for
+each other's gap by accident and then both failed on the same two rows.
+
+**The honest bit.** I widened the today-scoped arm, re-opened one of the headings to prove it went
+red, and **it stayed green.** My first instinct was right: suspect the check, not the code. The
+arm is incremental — it only looks at commits since the last audit — so my mutation was outside
+its range and proved nothing either way. Re-run with an explicit date range it goes red properly.
+**A falsification that runs on the wrong population is not a falsification**, and it reads exactly
+like a passing one.
+
+**The thing I did not fix, on purpose.** One of the two was filed as `### 🔴` meaning *open at high
+priority*. In that heading form, 🔴 means **killed** — the all-time arm excludes it deliberately,
+because including it once reported two withdrawn items as open. So the document contradicts its
+own convention, and the right fix is normalising the document, not loosening the check until it
+cannot tell a killed item from a live one. The today-scoped arm covers that case instead, because
+within a set of things that demonstrably shipped, "🔴 means killed" cannot be true.
+
+---
+
 ## 2026-10-07 — POSTRUN-JOURNEY-01 part 4: the reward was already built, it just arrived too late
 
 **Dev.** One block moved up one position on one screen. The reason it was worth doing is the
