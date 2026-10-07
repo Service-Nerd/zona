@@ -49,10 +49,34 @@ export async function POST(req: NextRequest) {
     return handleManualIngest(user.id, body as Partial<ManualRunPayload>)
   }
 
+  // 🔴 HK-FREE-INGEST-LINE-01 (SLT, 2026-10-07) — THE ROW LANDS FOR EVERYONE. THE
+  // COACHING DOES NOT.
+  //
+  // This route used to 403 a free runner before storing anything, and that
+  // CONTRADICTED THE RULING FORTY LINES ABOVE IT. DS-06's comment states the
+  // doctrine: "logging is free, richer analysis stays gated downstream". So a free
+  // runner could TYPE "8km, 45 minutes" by hand and we stored it forever, while the
+  // identical run measured by their watch was thrown away. Same user, same route,
+  // same table, opposite answers.
+  //
+  // MEASURED: 7 of the 13 users who have never had a run arrive are free tier. One
+  // sweep reported `workouts_found: 10, posted: 0, failed: 10` — HealthKit HAD their
+  // runs and the server refused all ten.
+  //
+  // ⚠️ AND IT IS IRREVERSIBLE. The client looks back 30 days, so a run refused today
+  // is unrecoverable next month even if the runner subscribes. 🧠 Sutherland: when one
+  // side of a decision is undoable and the other is free, you do not need a conversion
+  // model. ADR-011 makes HealthKit the SYSTEM OF RECORD, and we were discarding it
+  // while accepting the hand-typed substitute.
+  //
+  // 🔴 WHAT STAYS PAID, AND THIS IS THE WHOLE TRAP: `autoMatchAndAnalyse` below
+  // triggers the AI read, the score and a push. Letting the row land while leaving
+  // that trigger in place would hand free users the paid product. The gate moves from
+  // the TOP of the route to the ANALYSIS, which is where DS-06 put it. Every other
+  // surface is gated at its own route and is untouched: /api/analyse-run,
+  // /api/weekly-report, /api/phase-summary, /api/health/samples.
   const tier = await getUserTier(user.id)
-  if (!isFeatureAllowed('activity_intelligence', tier)) {
-    return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
-  }
+  const canAnalyse = isFeatureAllowed('activity_intelligence', tier)
 
   const payload = body as HealthKitWorkoutPayload
 
@@ -91,7 +115,9 @@ export async function POST(req: NextRequest) {
         .eq('apple_health_uuid', dedup.canonicalAppleHealthUuid)
         .maybeSingle()
       if (canonicalAnalysis) {
-        waitUntil(triggerHrRefreshAnalysis(userId, dedup.canonicalAppleHealthUuid,
+        // HK-FREE-INGEST-LINE-01 — the SECOND of three analysis triggers in this
+        // route. It re-runs analyse-run, so it is the paid product too.
+        if (canAnalyse) waitUntil(triggerHrRefreshAnalysis(userId, dedup.canonicalAppleHealthUuid,
           canonicalAnalysis.week_n, canonicalAnalysis.session_day,
           dedup.withinFreshWindow === false))
       }
@@ -190,7 +216,9 @@ export async function POST(req: NextRequest) {
       .eq('apple_health_uuid', payload.uuid)
       .maybeSingle()
     if (existingAnalysis) {
-      waitUntil(triggerHrRefreshAnalysis(userId, payload.uuid,
+      // HK-FREE-INGEST-LINE-01 — the THIRD. Gating one of three would have handed
+      // free users the paid read by a different door.
+      if (canAnalyse) waitUntil(triggerHrRefreshAnalysis(userId, payload.uuid,
         existingAnalysis.week_n, existingAnalysis.session_day,
         !lateArrival.withinFreshWindow))
     }
@@ -198,7 +226,12 @@ export async function POST(req: NextRequest) {
 
   // Auto-match + analysis runs in the background. Fire-and-forget via waitUntil
   // mirrors the Strava webhook behaviour (the AI step takes 5-15s).
-  waitUntil(
+  //
+  // 🔴 HK-FREE-INGEST-LINE-01 — GATED HERE, not at the top of the route. This is the
+  // paid product: the match, the score, the AI read and the link-time push. A free
+  // runner gets their run stored and visible in the picker and can log the session by
+  // hand; they do not get the coaching.
+  if (canAnalyse) waitUntil(
     autoMatchAndAnalyse(
       supabase,
       userId,

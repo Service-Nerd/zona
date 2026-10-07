@@ -88,7 +88,33 @@ Founder: *"seems i can still manually link it to the same run its linked against
 
 `lib/health/adapter.ts:104` — `name: payload.sourceName ? \`Run (${payload.sourceName})\` : 'Run'`. `sourceName` is the app that wrote the workout into Apple Health, so the picker shows **"Run (Strava)"** above the subtitle **"Apple Health"**, and **"Run (Connect)"** (Garmin) for another. Both statements are true and they read as a contradiction. ⚠️ Related but distinct: `run_analysis.source` was stamped **`'strava'`** on an `apple_health` activity — provenance disagreeing with ADR-011's own column.
 
-### 🧭 `SESSION-JOURNEY-01` — the WHOLE arc, prescribe → understand → do → log → read → aggregate *(widened 2026-10-07 by founder instruction, P1)* 🧭 DESIGN BOARD → 🏃 COACHING BOARD → 💼 SLT
+### ⏸️ `SESSION-JOURNEY-01` — ⚖️ **SLT RULED 2026-10-07: DON'T BUILD, re-measure 2026-11-04** *(P1)* 💼 SLT
+
+**Decision note: `docs/decisions/slt-2026-10-07-session-journey.md`.**
+
+🔴 **THE FUNNEL REFRAMED IT.** 30 have a plan → 28 connected → **16 ever had a run ARRIVE** →
+**6 logged a session** → 3 got a scored read → **3 logged anything in 14 days.** 18 users have
+opened Coach while 3 have any scored runs. **The arc breaks at steps 3 and 4, not step 6** — the
+aggregation the founder keeps asking for would serve THREE people while 24 of 30 plan-holders have
+never logged a session. 📦 Fried: *"That is not an absence of aggregation. That is seven
+aggregations nobody can see."* 🔬 Wood used the kill mandate: aggregation is the
+**illusion-of-progress class** — it makes the APP look like it understands the runner and changes
+no context at the moment of the behaviour.
+
+⚠️ **AND THE FUNNEL WAS MEASURED THROUGH FOUR DEFECTS FIXED THE SAME DAY**, so "nobody logs
+sessions" may be a measurement of a broken product rather than of demand. **That is why the ruling
+is a re-measurement with a DATE and a NUMBER rather than a verdict: 2026-11-04, and the deciding
+figure is users-who-log-a-session, 6 today.**
+
+⚠️ **Nobody priced it.** Traynor's seat is stood down and the recall trigger is NOT met (revenue
+zero, all 16 subscriptions comped), so *"what does churn cost if we don't build it"* got silence,
+not an answer. 🧭 Zhuo's standing condition: **"you cannot review a journey nobody has walked"** —
+every board sitting on record is screen-by-screen, and the deliverable worth funding is one runner,
+one device, one block, observed.
+
+**Still open within it:** the Coach empty-state fix (→ Design Board, item 4 of the ruling).
+
+### 🧭 `SESSION-JOURNEY-01` — the original filing, for the record *(widened 2026-10-07)* 🧭 DESIGN BOARD → 🏃 COACHING BOARD → 💼 SLT
 
 **Founder, widening `POSTRUN-JOURNEY-01` the same day it was ruled:** *"I want us to consider the
 whole experience from I get my session, I understand what I need to do, to I've now logged it, to
@@ -138,6 +164,35 @@ founder is still the only one who has ever walked it. Nothing has run on a devic
 Founder, in full: *"does it tell them anything? does it give them a good feeling or a feeling of achievement? … I'd like to see how we carry the metrics we gather/analyse on post 1 run over to the coach screen. If we measure these on each session i'd expect us to do that overall in terms of the plan … I love visuals to show either progress or where I am falling down … bear in mind the state of mind after a run, people will look at this to see 'how did I do?'"* And: **a lot of beginners.**
 
 Specifics to rule on: is the read too wordy · is the information visual enough · what does the journey look like **when all the data is in** · per-session metrics → plan-level view on Coach · what a beginner sees. **Mockups required before any build.** Design Board may challenge brand where needed.
+
+### ✅ `HK-FREE-INGEST-LINE-01` — SHIPPED 2026-10-07. **It was not a tier decision; the route contradicted itself** 💼 SLT
+
+**SLT ruling, 2026-10-07: BUILD, recorded as a defect fix restoring DS-06's documented intent.**
+
+🔴 **THE FINDING: `/api/health/ingest` CONTRADICTED A RULING FORTY LINES ABOVE IT.** Its manual
+branch (DS-06) is explicitly FREE and its comment states the doctrine — *"logging is free, richer
+analysis stays gated downstream"*. The HealthKit branch then 403'd the same runner. **So a free
+runner could TYPE "8km, 45 minutes" by hand and we stored it forever, while the identical run
+measured by their watch was discarded.** Same user, same route, same table, opposite answers.
+
+**Measured:** 7 of the 13 users who have never had a run arrive are free tier; one sweep reported
+`workouts_found: 10, posted: 0, failed: 10` — HealthKit HAD their runs and the server refused all
+ten. ⚠️ **Irreversible**: the client looks back 30 days, so a run refused today is unrecoverable
+next month even if they subscribe. 🧠 Sutherland: *"when one side of a decision is undoable and the
+other is free, you do not need a conversion model."* 🏃 Hutchinson: *"we are deleting an athlete's
+training history to enforce a price"* — ADR-011 makes HealthKit the SYSTEM OF RECORD and we were
+discarding it while accepting the hand-typed substitute.
+
+**The build: the gate MOVED, it was not removed.** From the top of the route to the analysis,
+which is where DS-06 put it. 🔴 **Three triggers, not one** — `autoMatchAndAnalyse` plus two
+`triggerHrRefreshAnalysis` calls on the dedup and same-uuid paths; gating one would have handed
+free users the paid read by a different door. Everything genuinely rich stays gated at its own
+route: `/api/analyse-run`, `/api/weekly-report`, `/api/phase-summary`, `/api/health/samples`.
+
+**Gate:** `lib/health/freeIngestLine.test.ts`, 6 arms, **falsified three ways** (restore the 403 ·
+ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shaped and declared as
+such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
+`environment: 'node'`.
 
 ### 🔴 `HK-NEVER-SYNCED-COHORT-01` — RE-MEASURED the same day: 7 of 13 are a TIER GATE, not a defect *(filed 2026-10-07, **P1**)* 💼 **SLT** · ⚙️ NO BOARD *(for the residual 6)*
 

@@ -18,6 +18,50 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-10-07 — HK-FREE-INGEST-LINE-01 + SESSION-JOURNEY-01: the route disagreed with itself, and the funnel was measured through four defects
+
+**Dev.** The founder sent the whole-journey question to the SLT. The board asked for the funnel
+first, and the funnel answered a different question than the one on the table. **30 users have a
+plan. 16 have ever had a single run arrive. 6 have logged a session. 3 in the last fortnight.**
+Eighteen people have opened Coach while three have anything in it.
+
+So the arc does not break where he keeps arriving. It breaks two steps earlier, at the run
+reaching us at all, and the aggregation he wants would serve three people. Fried's line is the one
+I would keep: *"that is not an absence of aggregation, that is seven aggregations nobody can see."*
+
+⚠️ **But I would not let the board rule on that number without its caveat, and the caveat is
+large: the funnel was measured through four defects fixed the same day.** A claim RPC that had
+blocked every auto-link for two weeks, a matcher blind to moved sessions, a post-run screen that
+could not find data it already had, and a 403 that discarded free users' runs. **"Nobody logs
+sessions" may be a measurement of a broken product rather than of demand, and I cannot tell those
+apart from here.** That is why the ruling is a re-measurement with a date and a number rather than
+a verdict.
+
+**The item that turned out not to be a decision at all.** `HK-FREE-INGEST-LINE-01` went in as a
+FREE/PAID question. It is not one. `/api/health/ingest` has a manual branch whose own comment
+states the doctrine — *"logging is free, richer analysis stays gated downstream"* — and then
+403s the same runner forty lines later on the HealthKit path. **A free runner could type a run in
+by hand and we kept it forever; the same run measured by their watch was thrown away.** Same user,
+same route, same table, opposite answers. Nobody decided that; one path simply never got the
+ruling the other had.
+
+**AI-building.** The trap in the fix was not the gate, it was the count. Letting the row land
+while leaving the analysis trigger in place would have handed free users the paid product — and
+there are **three** triggers in that route, not one, because two `triggerHrRefreshAnalysis` calls
+sit on the dedup and same-uuid paths. Gating the obvious one would have been the eleventh instance
+of the twin class this week. The gate asserts all three and goes red when any is removed.
+
+**The honest bit.** Hutchinson's framing is the part I had not reached on my own: this was never a
+trade. **Storing the row costs almost nothing and is reversible. Not storing it is irreversible
+after thirty days**, because that is the client's lookback. When one side of a decision is undoable
+and the other is free, the conversion model is irrelevant — and ADR-011 says HealthKit is the
+system of record, so we were discarding the system of record while accepting its hand-typed
+substitute.
+
+⚠️ And the thing nobody at that table could answer: **Traynor's seat is stood down, revenue is
+zero and all sixteen subscriptions are comped, so "what does this cost us in churn" got silence.**
+Recorded as silence rather than allowed to read as agreement.
+
 ## 2026-10-07 — ANALYSIS-SUPERSEDE-PATTERN-01: the founder stopped me building something that existed
 
 **Dev.** He asked why Coach never shows him a pattern across his runs. I explained what
