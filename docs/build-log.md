@@ -6,6 +6,61 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 — two board sittings · both items were filed as one kind of question and were another
+
+**Shipped:** The link picker now says what a session is already linked to instead of
+offering to link it. The Coaching Board ruled on the run read and found a scoring defect
+underneath the wording question it was asked about.
+
+**Dev learning:** Two measurements decided two rulings, and in both cases the filed item
+had the wrong target.
+
+`hr_in_zone_pct` means `hr_in_zone_2_pct`. It is Z2-anchored unconditionally, it IS the
+HR discipline score (`return Math.round(Math.min(100, hrInZonePct))`, verified equal on
+100% of production rows), and HR discipline is half the composite score. The
+`progressive_tempo` catalogue row prescribes "3 equal thirds (E ceiling → Z2-Z3
+transition → T target)", so two thirds of a correct execution sit above the Z2 ceiling
+and **the maximum reachable score on a correctly-run tempo is about 33**. The founder
+got 32. He did the session right.
+
+The thing I will remember is that the field name claimed generality the implementation
+never had, and the comment next to it said `legacy` without saying legacy to what.
+Nobody reads a comment that says `legacy` as a warning.
+
+**Product/creator learning:** No aggregate would ever have found that. 77 of 77 analysed
+rows with HR are easy-type at a mean 79% in-zone, where Z2-anchoring is exactly right.
+The population barely contains the sessions where the measure is wrong. **One founder
+running one tempo beat every dashboard I could have built.** That is the argument for
+dogfooding over instrumentation when the user count is six.
+
+**AI-building learning:** The Design Board's seats did real work this time, and the
+specific value was a seat *refusing* to agree with me. I brought the item saying the
+picker suspiciously keeps the already-linked run in its list. Silvanto's seat declined
+to veto and pointed out that keeping it is **compliance** with a documented rule — the
+moss fill is the only selected affordance, so removing the run would delete the only
+signal saying "this is the one you have". I had the defect pointed at the one correct
+line on the screen.
+
+Running a board as five genuinely different lenses rather than five paragraphs of
+agreement is what produced that. The cost is that it is slow and two of the five
+sittings end in "insufficient evidence", which feels like failure and is not.
+
+**The honest bit:** I published a categorised backlog to the founder this morning with
+two already-shipped items on it, and quoted him a 47.3% figure that included superseded
+rows before noticing. Both from reading summaries instead of measuring. Then I nearly
+shipped a coaching judgement inside a display fix, because the item I was working from
+never mentioned the principle that governs it, and I only found §66 Amendment 1 because
+the build skill made me scan for it. On 22% of the rows where both axes exist they
+disagree, so that would have been wrong on real runs.
+
+**Hook material:** The app told him he drifted off plan and scored his run 32/100. The
+session's own design puts two thirds of it above the zone the score measures. A perfect
+execution could not have scored above 33.
+
+**Postable?:** yes — "we graded him an F for doing it right" is the whole story, and the
+cause is one unconditional line of zone maths.
+
+
 ## 2026-10-08 — READ-EM-DASH-01 / POSTRUN-METRIC-PREF-01 / POSTRUN-CONTEXT-TWIN-01 · the instruction was there all along, and the prompt was arguing with itself
 
 **Shipped:** The founder's no-em-dash rule now reaches text the model writes at runtime, the
