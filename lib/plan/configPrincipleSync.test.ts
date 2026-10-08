@@ -65,6 +65,38 @@ const KNOWN_MISSING = new Set([
  */
 const COACHING_CONSTANTS = { SCORE_WEIGHTS, VERDICT_BANDS } as const
 
+/**
+ * 🔴 RESHAPE-CONFIG-GATE-01 (2026-10-08) — THE SAME BYPASS, A THIRD TIME, AND THIS CHECK
+ * WAS THE THING THAT WAS SUPPOSED TO HAVE ENDED IT.
+ *
+ * The comment above says, correctly, that "widening the check is the only fix that does not
+ * depend on someone remembering". It was then widened to **two named exports** —
+ * `SCORE_WEIGHTS` and `VERDICT_BANDS` — and stopped. **A hand-written surface list is the
+ * same hole one file deeper**, which is this repo's `A checker sharing the producer's LIST
+ * is blind to that list` class.
+ *
+ * What it could not see: the whole **reshape engine**. Measured 2026-10-08,
+ * `lib/coaching/constants.ts` exports 41 constants and **12 had no principle**, including
+ * `SHADOW_LOAD_THRESHOLD_PCT`, `EF_DECLINE_THRESHOLD_PCT` and `MAX_ADJUSTMENTS_PER_WEEK` —
+ * three numbers that decide whether a real runner's plan is rewritten, with no written
+ * reason anywhere. The founder asked whether the reshape rules had been ruled and documented;
+ * for those three the answer was no, and nothing in the repo could have told him.
+ *
+ * ⚠️ SO THE LIST IS DERIVED FROM THE FILE, NOT TYPED HERE. Every `export const NAME` in
+ * `lib/coaching/constants.ts` is covered the day it is written. The two objects above keep
+ * their explicit nested treatment because a principle must name the LEAF, not the group.
+ */
+const CONSTANTS_SRC = readFileSync(
+  join(process.cwd(), 'lib/coaching/constants.ts'), 'utf8',
+)
+// ⚠️ `Array.from`, not a spread. `[...x.matchAll(...)]` fails this tsconfig with TS2802,
+// the same family as the `[...seen]` on a `Set<string>` that CLAUDE.md already records.
+// It passes under vitest (esbuild does not care) and fails under `tsc`, so the spread
+// version would have shipped green locally and broken the build.
+const CONSTANTS_EXPORTS = Array.from(
+  CONSTANTS_SRC.matchAll(/^export const ([A-Z][A-Z0-9_]*)\s*[:=]/gm),
+).map(m => m[1]!)
+
 const keys = [
   ...Object.keys(GENERATION_CONFIG),
   // Nested one level: the principle must name the WEIGHT, not just the group —
@@ -72,6 +104,9 @@ const keys = [
   // one word, which is how a table ends up explained by its own title.
   ...Object.entries(COACHING_CONSTANTS).flatMap(([group, v]) =>
     typeof v === 'object' && v !== null ? Object.keys(v).map(k => `${group}.${k}`) : [group]),
+  // …and every other top-level constant in that file, the group names above excluded
+  // so they are not demanded twice under two different rules.
+  ...CONSTANTS_EXPORTS.filter(n => !(n in COACHING_CONSTANTS)),
 ]
 
 /** `SCORE_WEIGHTS.hr_discipline` is documented by a section naming both parts. */
@@ -81,11 +116,37 @@ const documented = (k: string): boolean => {
   return PRINCIPLES.includes(group!) && PRINCIPLES.includes(leaf!)
 }
 
+// 🔻 RESHAPE-CONFIG-GATE-01's debt register. Each entry carries WHY and WHEN, because
+// CLAUDE.md's own warning applies to the pattern I am using here: "a declared reason is
+// not a fixed problem … nothing in this repo schedules it." A dated entry at least makes
+// the age visible to the next reader.
+//
+// FACT = not a coaching choice, exempt under CLAUDE.md's tunability test ("if a coach
+//        could reasonably want to tune it → config; if it's a fact → inline").
+// DEBT = a real coaching choice with no written reason. Owned by
+//        `RESHAPE-PRINCIPLE-DEBT-01` (🏃 Coaching Board).
+const CONSTANTS_DEBT: Record<string, string> = {
+  COACHING_RULE_ENGINE_VERSION:    'FACT 2026-10-08 — a version string, not a coaching value',
+  RUN_HR_PLAUSIBLE:                'FACT 2026-10-08 — a physiological plausibility bound for rejecting junk data, not a prescription',
+  HR_ZONE_TOLERANCE_BPM:           'FACT 2026-10-08 — measurement tolerance on a device reading',
+  ZONE_BLOCK_VERDICT_MIN_RUNS:     'DEBT 2026-10-08 — how many runs before we will judge a block',
+  ZONE_DISCIPLINE_BANDS:           'DEBT 2026-10-08 — and its only reader `classifyZoneDiscipline` has NO call sites (see configConsumer limits)',
+  SHADOW_LOAD_THRESHOLD_PCT:       'DEBT 2026-10-08 — 15% over plan triggers a reflection. Is this ADR-012\'s 15% or a coincidence?',
+  EF_DECLINE_THRESHOLD_PCT:        'DEBT 2026-10-08 — why -8% and not -5 or -12? Reshapes a real plan',
+  EF_BASELINE_WINDOW:              'DEBT 2026-10-08 — the window the decline is measured against',
+  MAX_ADJUSTMENTS_PER_WEEK:        'DEBT 2026-10-08 — 2. A coaching limit or a politeness limit? Nobody has said',
+  MIN_QUALITY_GAP_HOURS:           'DEBT 2026-10-08 — spacing between quality sessions; adjacent to §12 and not joined to it',
+  MAX_VOLUME_INCREASE_PCT:         'DEBT 2026-10-08 — overlaps GENERATION_CONFIG\'s own increase caps; which binds?',
+  TREND_PACE_CONFOUND_SEC_PER_KM:  'DEBT 2026-10-08 — the trend card\'s noise floor',
+}
+
 const missing = keys.filter(k => !documented(k))
 
 describe('Configuration Singularity — every numeric points back to a principle', () => {
   it('no NEW config key ships without a principle section', () => {
-    const undocumented = missing.filter(k => !KNOWN_MISSING.has(k))
+    // RESHAPE-CONFIG-GATE-01: a key declared in CONSTANTS_DEBT with a FACT/DEBT reason
+    // is accounted for by its own arms below, not ignored.
+    const undocumented = missing.filter(k => !KNOWN_MISSING.has(k) && !(k in CONSTANTS_DEBT))
     expect(
       undocumented,
       `Add a section to docs/canonical/CoachingPrinciples.md explaining these, or ` +
@@ -109,7 +170,51 @@ describe('Configuration Singularity — every numeric points back to a principle
 
   it('the debt is only ever paid down, never grown', () => {
     // The number itself, pinned. Lower it when you fix one.
-    expect(missing.length).toBeLessThanOrEqual(KNOWN_MISSING.size)
+    expect(missing.length).toBeLessThanOrEqual(KNOWN_MISSING.size + Object.keys(CONSTANTS_DEBT).length)
+  })
+
+  it('🔴 every undocumented coaching constant carries a REASON, not just a pass', () => {
+    // The arm that makes the widening honest. A baseline without reasons is a list of
+    // numbers nobody has to defend — which is how `KNOWN_MISSING` above grew to 27.
+    const undeclared = CONSTANTS_EXPORTS
+      .filter(n => !(n in COACHING_CONSTANTS))
+      .filter(n => !PRINCIPLES.includes(n))
+      .filter(n => !(n in CONSTANTS_DEBT))
+    expect(
+      undeclared,
+      `A new coaching constant in lib/coaching/constants.ts has no principle AND no ` +
+      `declared reason. Write the principle, or add it to CONSTANTS_DEBT with FACT/DEBT ` +
+      `and a date: ${undeclared.join(', ')}`,
+    ).toEqual([])
+  })
+
+  it('the constants debt register does not go stale either', () => {
+    const resolved = Object.keys(CONSTANTS_DEBT).filter(k => PRINCIPLES.includes(k))
+    expect(
+      resolved,
+      `These now have a principle — remove them from CONSTANTS_DEBT: ${resolved.join(', ')}`,
+    ).toEqual([])
+  })
+
+  it('…and names every entry FACT or DEBT, so the two never blur', () => {
+    // ⚠️ A reason that says neither is the thing this arm exists to prevent: "exempt" and
+    // "not done yet" are different states and only one of them should ever shrink.
+    for (const [k, why] of Object.entries(CONSTANTS_DEBT)) {
+      expect(why, `${k}'s reason must start FACT or DEBT`).toMatch(/^(FACT|DEBT) \d{4}-\d{2}-\d{2} — /)
+    }
+  })
+
+  it('🔴 the RESHAPE thresholds are really inside the derived population', () => {
+    // The falsification target. If the regex or the path ever stops matching, these three
+    // vanish and every arm above passes on an empty set — this repo's `an empty population
+    // renders as a clean result` class, recorded earlier the same day.
+    for (const k of ['SHADOW_LOAD_THRESHOLD_PCT', 'EF_DECLINE_THRESHOLD_PCT', 'MAX_ADJUSTMENTS_PER_WEEK']) {
+      expect(CONSTANTS_EXPORTS).toContain(k)
+      expect(keys).toContain(k)
+    }
+    // And the file really was read: 41 exports measured 2026-10-08, so a parse returning a
+    // handful means the regex broke, not that the file shrank.
+    expect(CONSTANTS_EXPORTS.length).toBeGreaterThan(30)
   })
 
   it('the check can actually fail — it is not vacuous', () => {

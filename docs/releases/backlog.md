@@ -825,6 +825,110 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
+## 🗺️ WAVE — RESHAPE GOVERNANCE *(planned 2026-10-08, founder instruction)*
+
+**Why this wave exists.** The adaptive engine was dead for 104 days
+(`ADJUST-ENGINE-DEAD-01`) and nothing noticed, because the only thing watching it was a
+500 nobody read. Fixing the throw restored the mechanism. **This wave is about whether the
+mechanism is GOVERNED** — and then, only then, about telling the runner it exists.
+
+🔴 **The founder asked the question that set the order: *"have the reshape rules been ruled
+and documented by the coaching board?"*** Measured answer: **partly.** Fatigue accumulation
+has §112; zone drift, fitness signal and long-run shortfall are each named; shadow load and
+acute:chronic have a board ruling. **But the thresholds live in `lib/coaching/constants.ts`,
+not `generationConfig.ts`, so `configPrincipleSync` — the gate that fails the build when a
+coaching numeric ships with no written principle — does not reach a single one of them.**
+That is `peakKmByLevel` for the third time: *"every governance layer this project has,
+bypassed by a table being in the wrong place."*
+
+| # | Item | State | Blocked on |
+|---|---|---|---|
+| 1 | `RESHAPE-CONFIG-GATE-01` — bring every numeric in `lib/coaching/constants.ts` under the principle gate | **DO NOW** | nothing |
+| 2 | `LEDGER-ZERO-UNIT-01` — the ledger's bare `0` | **DO NOW** | nothing |
+| 3 | `RESHAPE-FIRST-FIRINGS-01` — read the first real adjustments the woken engine produces | watch | the engine firing in the wild |
+| 4 | `ADJUST-TRIGGER-REACH-02` — re-run the backtest | wait ~3 weeks | runners need **4+ weeks** of history; two triggers cannot fire on three |
+| 5 | `POSTRUN-PLAN-FEEDBACK-01` — tell the runner the plan changed | **blocked** | 3 and 4. Nothing truthful to say yet |
+
+⚠️ **The order is not negotiable and 5 is the reason.** The founder wants the announcement,
+and it is the right feature; but the only genuine detection that has ever fired in production
+is `zone_drift`, **three times, reverted all three**, and the one readable message says
+*"zero discipline this week."* **A tone rejection and a wrong detection look identical in the
+data**, and announcing a reshape engine whose firings get reverted is worse than staying quiet.
+
+### ✅ `RESHAPE-CONFIG-GATE-01` — **SHIPPED 2026-10-08.** The whole file is in the gate now, derived not listed ⚙️ **NO BOARD**
+
+> ✅ **`configPrincipleSync.test.ts` now derives its key list from `lib/coaching/constants.ts`
+> itself** (`^export const NAME`), so a constant is covered the day it is written. Measured:
+> **41 exports, 29 documented, 12 declared** — each with a **FACT or DEBT classification and a
+> date**, because *"exempt"* and *"not done yet"* are different states and only one should ever
+> shrink.
+>
+> 🔴 **THE THING THIS FOUND: `SHADOW_LOAD_THRESHOLD_PCT`, `EF_DECLINE_THRESHOLD_PCT` and
+> `MAX_ADJUSTMENTS_PER_WEEK` decide whether a real runner's plan is rewritten and have no
+> written reason anywhere.** Now visible and ratcheted. Doctrine is `RESHAPE-PRINCIPLE-DEBT-01`.
+>
+> **4 new arms, falsified 4 ways:** a NEW undocumented constant (3 red) · the derived
+> population breaking (1 red) · a reason losing its FACT/DEBT prefix (1 red) · an entry that
+> gained a principle but stayed in the register (1 red).
+>
+> ⚠️ **`[...matchAll()]` fails this tsconfig (TS2802) while passing under vitest** — esbuild
+> does not typecheck, so the spread version was green locally and would have broken the build.
+> `Array.from`. Same family as the recorded `[...seen]` on a `Set<string>`.
+
+> 🔴 **MEASURED 2026-10-08: `lib/coaching/constants.ts` exports 41 constants, 29 named in
+> `CoachingPrinciples.md`, 12 NOT.** Among the undocumented: `SHADOW_LOAD_THRESHOLD_PCT`,
+> `EF_DECLINE_THRESHOLD_PCT` and `MAX_ADJUSTMENTS_PER_WEEK` — three numbers that decide
+> whether a real runner's plan gets rewritten, with no written reason anywhere.
+>
+> ⚠️ **`configPrincipleSync.test.ts` already records this exact class happening twice**
+> (`peakKmByLevel`, then `SCORE_WEIGHTS`/`VERDICT_BANDS`) and its own comment says *"widening
+> the check is the only fix that does not depend on someone remembering."* It was widened to
+> **two named exports** and no further. **A hand-written surface list is the same hole one
+> file deeper.**
+>
+> **Scope:** derive the key list from the FILE (`^export const NAME`), never a hand-list, so a
+> new constant is covered the day it is written. Baseline the 12 as declared debt **with a
+> reason each**, classified — a version string is a FACT (CLAUDE.md's tunability test), a load
+> threshold is a coaching CHOICE and real debt.
+>
+> 🔻 **This ships the GATE, not the doctrine.** Writing the missing principles is authoring
+> the constitution and therefore a **Coaching Board** sitting, filed separately as
+> `RESHAPE-PRINCIPLE-DEBT-01`. ⚠️ **CLAUDE.md's own warning applies to what I am about to
+> build:** *"a declared reason is not a fixed problem … nothing in this repo schedules it."*
+> So the register carries the date each entry was declared.
+
+### 🟡 `RESHAPE-PRINCIPLE-DEBT-01` — write the missing principles for the reshape thresholds *(filed 2026-10-08, P2)* 🏃 **COACHING BOARD**
+
+> The doctrine half of `RESHAPE-CONFIG-GATE-01`. Each undocumented threshold that is a
+> coaching CHOICE needs a principle § explaining the value, which is a board sitting and
+> three artifacts, not a tooling change.
+>
+> **Open questions the board will have to answer**, and they are real: why is efficiency
+> decline **−8%** and not −5 or −12? Why **two** adjustments per week — is that a coaching
+> limit or a politeness limit? Is shadow load's **15%** the same 15% as ADR-012's structural
+> threshold, or a coincidence two numbers share?
+>
+> ⚠️ **One of these is likely to be revealed as arbitrary, and that is the point of asking.**
+
+### 🟡 `RESHAPE-FIRST-FIRINGS-01` — read the first adjustments the woken engine produces *(filed 2026-10-08, P1)* ⚙️ **NO BOARD**
+
+> The engine has been silent for 104 days and is now live. **Something will fire.** Each of
+> the first firings gets read by a human before anything is announced: was the detection
+> right, and was the sentence we wrote defensible?
+>
+> **Query:** `plan_adjustments` ordered by `created_at` desc, reading `trigger_type`,
+> `trigger_detail`, `summary`, `reverted_at`. ⚠️ **A revert is the signal to study, not the
+> metric to minimise** — the three historical `zone_drift` reverts may have been correct
+> detections rejected for their tone.
+>
+> 🔻 **Also check `ops_events` for `reshape_invalid`.** In production a reshape that violates
+> the constitution is **logged and saved anyway** (deliberate ADR-006 soft-degrade), so a
+> non-zero count there means a runner is holding a plan the constitution rejects.
+>
+> ⚠️ **And `plan-invariants.md` is STALE on this**: it says full output validation is
+> *"deferred to Wave 3 of the reshape remediation"*. It was built — `validateReshapedPlan` is
+> called at `adjust-plan/route.ts:450`. Corrected in the same commit as this filing.
+
 ### ✅ `ADJUST-ENGINE-DEAD-01` — **FIXED 2026-10-08.** 31 of 31 plans threw; now 93 week-checks, 0 throws ⚙️ **NO BOARD** *(defect fix restoring documented intent)*
 
 > ✅ **FIX: `lib/plan/weekSessions.ts → orderedWeekSessions(week)`**, the single owner of "a
@@ -977,7 +1081,25 @@ such: the route needs auth, a tier lookup and a service-role client, none of whi
 > week"* — **a tone rejection and a wrong detection look identical in this table**, and
 > separating them needs a human reading each firing.
 
-### 🟡 `LEDGER-ZERO-UNIT-01` — at zero the ledger tile shows a bare number with no noun *(filed 2026-10-08, P2)* 🧭 **DESIGN BOARD**
+### ✅ `LEDGER-ZERO-UNIT-01` — **SHIPPED 2026-10-08.** The unit never disappears now ⚙️ **NO BOARD** *(board tag retired: no new copy, no new pattern)*
+
+> ✅ *"weeks within the lines"* renders **unconditionally**; at zero the reassurance appears
+> **beneath** it instead of replacing it. **No new copy** — both sentences already existed, so
+> there was no voice decision to make and nothing for the board to rule on.
+>
+> 🔴 **THE RATCHET CAUGHT MY FIRST ATTEMPT.** A second sized `div` took
+> `TYPESCALE-APP-GATE-01` from 246 undeclared 13px uses to **247**. 13px is the app's
+> most-used size and is deliberately undeclared, tracked on a ratchet. **Raising the baseline
+> to go green is precisely what `A RATCHET MUST NOT MOVE WITHOUT A MEASUREMENT` forbids** — so
+> the reassurance became a nested `<span>` inheriting the size. Costs nothing, better CSS,
+> baseline untouched at 246.
+>
+> ⚠️ **And my own ordering arm failed on the wrong instance first** — the label also appears
+> in the EMPTY-state branch higher up the file, so a bare `indexOf` compared the wrong pair.
+> Region bounded from the number onward. *Bound the region, never grep the file.*
+>
+> **Gate** `lib/ui/ledgerZeroUnit.test.ts` — 6 arms, falsified by reverting to the ternary
+> (2 red), re-run after the restructure rather than predicted.
 
 > 🔴 **FOUNDER, 2026-10-08: *"it says i have done 0 (this week starts the count). What is
 > that counting as I have done 1 run this week already"*.** The count is CORRECT — it is

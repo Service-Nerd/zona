@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 — RESHAPE-CONFIG-GATE-01 + LEDGER-ZERO-UNIT-01 · the gate that was meant to end a class, ended it two exports in
+**Shipped:** Every coaching constant in `lib/coaching/constants.ts` is now inside the principle gate, derived from the file rather than hand-listed. And the discipline ledger stopped deleting the word "weeks" at zero.
+
+**Dev learning:** The founder asked whether the plan-reshape rules had been ruled and documented by the Coaching Board. Half had. The other half were invisible to every governance layer the repo owns, because the thresholds live in `lib/coaching/constants.ts` and `configPrincipleSync.test.ts` read `GENERATION_CONFIG` plus **two named exports**. Its own comment says "widening the check is the only fix that does not depend on someone remembering" — and then the widening was itself a hand-written list of two. Deriving the keys from `^export const NAME` found 41 constants, 12 with no principle, including three that decide whether a real runner's plan is rewritten. Also: `[...str.matchAll(...)]` fails this tsconfig with TS2802 while passing under vitest, because esbuild doesn't typecheck — so the spread version was green locally and would have broken the build. `Array.from`.
+
+**Product/creator learning:** The debt register needed a FACT/DEBT classification, not just a list, and that distinction did real work: a version string and a heart-rate plausibility bound are genuinely not coaching choices, while `EF_DECLINE_THRESHOLD_PCT = -8` and `MAX_ADJUSTMENTS_PER_WEEK = 2` are choices nobody has defended. Writing the reasons out is what turned "12 undocumented constants" into three actual questions for the board: why −8 and not −5? Is two adjustments a week a coaching limit or a politeness limit? Is shadow load's 15% the same 15% as ADR-012's, or a coincidence two numbers share?
+
+**AI-building learning:** Two of my own checks were wrong before they were right, both in the same way. The ledger's ordering arm compared the wrong instance — the label also appears in the empty-state branch higher up the file, so a bare `indexOf` found that one. And the type-scale ratchet caught my first ledger fix growing the undeclared-13px register from 246 to 247; the tempting move is to raise the baseline, which is exactly what this repo forbids, so the reassurance became a nested span inheriting the size instead. **Both were caught by mechanisms I'd written on previous days, not by care on this one.**
+
+**The honest bit:** I filed the board tag on the ledger item myself, then removed it on building, because the fix turned out to use only strings that already existed — there was no voice decision to route. That is the second board tag I've removed on measurement today. Filing a tag is cheap and filing the *right* tag needs the measurement I hadn't done yet.
+
+**Hook material:** A check written to end "a coaching number with no written reason" was widened by exactly two exports and stopped. One file away sat three numbers that rewrite a runner's training plan, with nothing explaining any of them.
+
+**Postable?:** yes
+
 ## 2026-10-08 — ADJUST-ENGINE-DEAD-01 · a commit called "correctness foundation" killed the engine
 **Shipped:** The adaptive engine runs again. It had thrown on every real plan for three and a half months.
 

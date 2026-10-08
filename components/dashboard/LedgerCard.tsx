@@ -81,10 +81,32 @@ export default function LedgerCard({ ledger: ledgerProp, surface }: { ledger?: L
               <StatusBadge label="pending" tone="none" />
             )}
           </div>
+          {/* 🔴 LEDGER-ZERO-UNIT-01 (2026-10-08) — THE UNIT NEVER DISAPPEARS, INCLUDING AT ZERO.
+              FOUNDER: "it says i have done 0 (this week starts the count). What is that
+              counting as I have done 1 run this week already". The count was CORRECT — these
+              are consecutive WEEKS within the lines, and his week 1 had a skipped Monday,
+              week 2 nothing logged, and this week is still in progress. **The number was
+              right and the screen was wrong.**
+              This branch used to REPLACE 'weeks within the lines' with 'This week starts the
+              count.', so the one state where a reader cannot infer the unit is the exact
+              state where the unit was deleted — a bare 44px `0` with no noun above it.
+              Guessing "runs" is the most reasonable reading available.
+              ⚠️ No new copy: both strings already existed, and the zero state now shows the
+              noun with the reassurance BENEATH it rather than instead of it. */}
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: ledger.weeksWithinLines === 0 ? 'var(--ink-2)' : 'var(--mute)', lineHeight: 1.5, marginBottom: 'var(--space-4)' }}>
-            {ledger.weeksWithinLines === 0
-              ? 'This week starts the count.'
-              : 'weeks within the lines'}
+            weeks within the lines
+            {/* ⚠️ A NESTED SPAN WITH NO fontSize, INHERITING THE 13px ABOVE — not a second
+                sized div. `TYPESCALE-APP-GATE-01` caught the first version at 247 vs a
+                baseline of 246: 13px is the app's most-used size and is DELIBERATELY
+                undeclared, tracked as debt on a ratchet. Growing that register by one for a
+                copy fix, then raising the baseline to go green, is exactly what
+                `A RATCHET MUST NOT MOVE WITHOUT A MEASUREMENT` forbids. Inheriting costs
+                nothing and is better CSS anyway. */}
+            {ledger.weeksWithinLines === 0 && (
+              <span style={{ display: 'block', color: 'var(--mute)', marginTop: 'var(--space-1)' }}>
+                This week starts the count.
+              </span>
+            )}
           </div>
           <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
             color: 'var(--mute)' }}>
