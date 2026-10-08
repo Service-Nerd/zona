@@ -77,3 +77,52 @@ export function withoutEmDashes(text: string): string {
     .replace(/\s{2,}/g, ' ')
     .trim()
 }
+
+/**
+ * The field names the founder EXEMPTED, 2026-09-22 and confirmed 2026-10-08:
+ * *"In descriptions for sessions it's ok."*
+ *
+ * ⚠️ NAMED, NOT PATTERN-MATCHED, and that is the whole point. Measured in production
+ * 2026-10-08, `label` alone held **300 of the 834** em-dash prose fields in live plans, so
+ * a sweep that ignored the exemption would have "fixed" the largest bucket **against his
+ * stated wish** — and `CLAUDE.md` already records that a raw count of 544 on this same
+ * rule *"would have misled"*.
+ */
+export const EM_DASH_EXEMPT_FIELDS: ReadonlySet<string> = new Set(['label', 'detail'])
+
+/**
+ * Walk a model-generated payload and repair every runner-facing string in it, leaving
+ * the exempt fields alone.
+ *
+ * 🔴 WHY A DEEP WALK AND NOT A FIELD LIST. The enriched plan's prose fields are
+ * `coach_notes`, `coach_intro`, `theme`, `confidence_risks` TODAY. A hand-kept list is
+ * blind to the field nobody adds to it, which this repo has recorded as a class of its
+ * own — most recently when copy moved into `lib/ui` and left the em-dash guard's
+ * population. **The default here is "repair it", and the exemption is the thing that is
+ * enumerated**, because that is the direction in which being wrong is cheap: a repaired
+ * session description reads fine, an unrepaired sentence breaks the founder's rule.
+ *
+ * Arrays keep their shape and indices (`coach_notes` is a fixed-length tuple in the
+ * schema, so this must not reshape it).
+ */
+export function withoutEmDashesDeep<T>(value: T, parentKey?: string): T {
+  if (typeof value === 'string') {
+    return (parentKey && EM_DASH_EXEMPT_FIELDS.has(parentKey)
+      ? value
+      : withoutEmDashes(value)) as unknown as T
+  }
+  if (Array.isArray(value)) {
+    // The parent key carries THROUGH an array, so `coach_notes: [string, ...]` is
+    // judged by the field name and not by the index.
+    return value.map(v => withoutEmDashesDeep(v, parentKey)) as unknown as T
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = withoutEmDashesDeep(v, k)
+    }
+    return out as unknown as T
+  }
+  return value
+}
+

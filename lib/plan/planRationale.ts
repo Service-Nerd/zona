@@ -97,7 +97,7 @@ export function levelFitNote(meta: Plan['meta']): string | null {
   // honest note for that runner is `onsetYieldNote`, not this one.
   if (meta.onset_yield && meta.onset_yield.effective >= meta.onset_yield.bound) return null
   if (meta.early_quality_onset) {
-    return 'Quality work starts earlier here than a novice plan — your training history says your legs are ready for it.'
+    return 'Quality work starts earlier here than a novice plan: your training history says your legs are ready for it.'
   }
   return null
 }

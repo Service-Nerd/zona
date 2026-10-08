@@ -229,8 +229,8 @@ function buildHRZonesWithFallback(input: GeneratorInput): HRZoneFallbackResult {
       // value below the estimate is a floor — the highest the device happened to
       // catch, not a maximum. A value far above it is a stray reading.
       assumption_note: outcome === 'floored'
-        ? `The max HR on file (${suppliedMax} bpm) is below the age estimate for ${input.age} (${estimatedMax} bpm). A recorded max below the estimate is a floor — the highest your device happened to catch, not your true ceiling — so zones use ${estimatedMax} bpm (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${suppliedMax} really is your max, set it in Profile and we'll use it.`
-        : `The max HR on file (${suppliedMax} bpm) is well above the typical range for age ${input.age} — worth double-checking it wasn't a stray reading. Zones use the age estimate of ${estimatedMax} bpm instead (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${suppliedMax} really is your max, set it in Profile and we'll use it.`,
+        ? `The max HR on file (${suppliedMax} bpm) is below the age estimate for ${input.age} (${estimatedMax} bpm). A recorded max below the estimate is a floor: the highest your device happened to catch, not your true ceiling, so zones use ${estimatedMax} bpm (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${suppliedMax} really is your max, set it in Profile and we'll use it.`
+        : `The max HR on file (${suppliedMax} bpm) is well above the typical range for age ${input.age}, worth double-checking it wasn't a stray reading. Zones use the age estimate of ${estimatedMax} bpm instead (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${suppliedMax} really is your max, set it in Profile and we'll use it.`,
     }
   }
 
@@ -251,7 +251,7 @@ function buildHRZonesWithFallback(input: GeneratorInput): HRZoneFallbackResult {
       derived_max: estimatedMax,
       method: 'percent_of_estimated_max',
       estimated_max: estimatedMax,
-      assumption_note: `Both max and resting HR missing — zones estimated from age alone (max ≈ ${estimatedMax} bpm, Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). Working approximation. Recommend a HR field test in the first 2 weeks. If easy runs feel consistently too hard or too easy, your true max differs from the estimate — update your inputs.`,
+      assumption_note: `Both max and resting HR missing: zones estimated from age alone (max ≈ ${estimatedMax} bpm, Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). Working approximation. Recommend a HR field test in the first 2 weeks. If easy runs feel consistently too hard or too easy, your true max differs from the estimate. Update your inputs.`,
     }
   }
 
@@ -269,7 +269,7 @@ function buildHRZonesWithFallback(input: GeneratorInput): HRZoneFallbackResult {
       method: 'observed_max',
       estimated_max: estimatedMax,
       max_source: 'observed',
-      assumption_note: `Max HR (${max} bpm) is the highest your device has recorded, not a measured maximum — if you have never run flat out wearing it, your true max is likely higher. The ${GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL.distance_km}K time trial in your recalibration weeks will sharpen this.`,
+      assumption_note: `Max HR (${max} bpm) is the highest your device has recorded, not a measured maximum: if you have never run flat out wearing it, your true max is likely higher. The ${GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL.distance_km}K time trial in your recalibration weeks will sharpen this.`,
     }
   }
 
@@ -7918,9 +7918,9 @@ function buildRulePlanOnce(
     || input.days_available < daysCheck.days_required_ok
     || daysCheck.status === 'warn'
   const daysLowNote = daysLowMaintenance
-    ? `This plan is built to get you round, not to build you up — ${input.days_available} day${input.days_available === 1 ? '' : 's'}/week is ${
+    ? `This plan is built to get you round, not to build you up. ${input.days_available} day${input.days_available === 1 ? '' : 's'}/week is ${
         input.days_available <= 2 ? 'too few sessions to avoid structurally lopsided weeks (long run dominates weekly volume)' : `below the recommended ${daysCheck.days_required_ok}-day-minimum for a ${raceDistanceKey(input.race_distance_km)} build`
-      }. You will get fitter doing it — starting from where you are, you could hardly not. What it will not do is build toward a time goal. If you want it to build instead: run at least ${Math.max(daysCheck.days_required_ok, 3)} days a week.`
+      }. You will get fitter doing it, starting from where you are, you could hardly not. What it will not do is build toward a time goal. If you want it to build instead: run at least ${Math.max(daysCheck.days_required_ok, 3)} days a week.`
     : null
 
   // VOL-STRUCTURE-01 / §52 (fourth trigger, 2026-08-20) — the runner's volume
@@ -9060,14 +9060,14 @@ function buildRulePlanOnce(
     : prepTime.status === 'warn'
       ? `Very demanding on ${prepTime.weeks_available} weeks — below the ${prepTime.weeks_required_ok}-week mark for this race. It can be run; the timeline is the constraint, not your effort.`
     : compressionClassification === 'constrained_by_inputs'
-      ? `Demanding — your inputs (days available, weekday time, or starting volume) cap how far the plan can build. Freeing one of those lifts the ceiling.`
+      ? `Demanding: your inputs (days available, weekday time, or starting volume) cap how far the plan can build. Freeing one of those lifts the ceiling.`
     : goalBeyondMeasuredFitness
       // §44 voice: the demand is on the target, not the athlete. Says the thing
       // the runner would otherwise discover mid-plan — that their race-pace
       // sessions feel harder than their interval sessions — and why.
-      ? `Demanding — the pace you're targeting is quicker than your benchmark currently supports, so race-pace sessions will bite harder than the interval work. That gap is the plan's job.`
+      ? `Demanding: the pace you're targeting is quicker than your benchmark currently supports, so race-pace sessions will bite harder than the interval work. That gap is the plan's job.`
     : (input.goal === 'time_target' && prepMargin < GENERATION_CONFIG.DIFFICULTY_COMFORTABLE_MARGIN_WEEKS)
-      ? `Demanding on ${prepTime.weeks_available} weeks — a tight but workable timeline for the time you're chasing. Hold the easy days and it stays honest.`
+      ? `Demanding on ${prepTime.weeks_available} weeks: a tight but workable timeline for the time you're chasing. Hold the easy days and it stays honest.`
     // §44 Amendment 2 (GOAL-PAST-CV-SILENT-01) — 🎯 McMILLAN'S BINDING CONDITION:
     // THIS MAY NOT BE THE INTERVAL-BAND SENTENCE. That one says race-pace
     // sessions "will bite harder than the interval work", which for this runner
@@ -9084,7 +9084,7 @@ function buildRulePlanOnce(
     // duplicate-semantics failure this file has paid for repeatedly. Same
     // sequence, no guard.
     : declaresShortfall
-      ? `Demanding — this plan does not fully reach what this distance usually asks for. The shortfall note says which part, and what would lift it.`
+      ? `Demanding: this plan does not fully reach what this distance usually asks for. The shortfall note says which part, and what would lift it.`
       // 🔴 §44 Am. 3's SENTENCE IS NOT HERE, AND THE FIRST CUT PUT IT HERE.
       // Measured immediately after: the flag set on 10 of 10 plans, the band was
       // already `demanding`, and the sentence rendered on **ZERO** — every one
@@ -9092,7 +9092,7 @@ function buildRulePlanOnce(
       // above. **A declaration that cannot render is not a declaration**
       // (PLAN-NOTE-BUDGET-INERT-01, filed two days before I built one). The
       // sentence is its own meta note, surfaced by `planRationaleNotes`.
-      : `Demanding — the pace you're chasing is quicker than your current fitness supports, so the plan trains you at threshold rather than rehearsing a pace you cannot hold yet. Get fitter and it comes to you; or set a target you could race today.`
+      : `Demanding: the pace you're chasing is quicker than your current fitness supports, so the plan trains you at threshold rather than rehearsing a pace you cannot hold yet. Get fitter and it comes to you; or set a target you could race today.`
 
   // §18 Amendment (FREQ-SILENCE-01, 2026-09-19) — WHEN VOLUME, NOT LIFE, SETS
   // THE NUMBER OF RUNNING DAYS, SAY SO.
@@ -9378,7 +9378,7 @@ function buildRulePlanOnce(
     // and pace is a road reference (§40b: do not invent a number the runner cannot
     // act on). Asserted present by INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED.
     ...((GENERATION_CONFIG.TERRAIN_EFFORT_GOVERNS as readonly string[]).includes(input.terrain ?? '')
-      ? { terrain_effort_note: 'Off-road, let effort and HR lead — the pace targets are a road reference, not a number to chase.' }
+      ? { terrain_effort_note: 'Off-road, let effort and HR lead: the pace targets are a road reference, not a number to chase.' }
       : {}),
     // §79 Amendment 2 (Coaching Board 2026-09-15, REENTRY-DEPTH-01) — WHERE THE
     // RE-ENTRY WINDOW MEANS NO VO2max THIS CYCLE, SAY SO.
@@ -9416,7 +9416,7 @@ function buildRulePlanOnce(
             // cohort the engine has certified as ready.
             : reentryCause === 'early_onset'
             ? 'No interval or hill sessions this block. Your base is solid enough that quality starts earlier than standard, so it opens with tempo and threshold and works toward the sharper sessions rather than starting there.'
-            : 'No interval or hill sessions this block. You are coming back, so the quality work leads with tempo and threshold while your legs re-adapt — sharper work earns its place in the next cycle, not this one.' }
+            : 'No interval or hill sessions this block. You are coming back, so the quality work leads with tempo and threshold while your legs re-adapt. Sharper work earns its place in the next cycle, not this one.' }
       : {}),
     // §96 / HSR-INERT-01 (brand-routed honesty, CB-HSR-01) — a `love` runner below the
     // 5yr+ tier does not get love's full structural effect (peak-LR stretch + §47

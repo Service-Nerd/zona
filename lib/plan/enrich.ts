@@ -11,6 +11,7 @@ import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { labelImplications } from './invariants'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { EnrichedPlanSchema } from './schema'
+import { withoutEmDashesDeep } from '@/lib/coaching/runnerProse'
 import type { Tier } from './ruleEngine'
 import { isFeatureAllowed } from './canUseFeature'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
@@ -410,8 +411,27 @@ export async function enrich(
       }
     }
   }
+  // READ-EM-DASH-02 — repair the model's punctuation BEFORE validation, so every
+  // downstream consumer of the enriched plan sees clean prose and none of them has to
+  // know about the rule.
+  //
+  // ⚠️ BEFORE `safeParse`, not after, for a reason: the walk must not be able to change
+  // the SHAPE the schema just approved. Running it first means the schema validates
+  // exactly what gets used, and `coach_notes`' fixed-length tuple is checked after the
+  // repair rather than before it.
+  //
+  // ⚠️ `label` and `detail` are exempt by NAME (`EM_DASH_EXEMPT_FIELDS`) — the founder's
+  // own scope: *"In descriptions for sessions it's ok."* `label` alone was 300 of the 834
+  // em-dash fields measured in live plans, so sweeping it would have gone against the
+  // ruling rather than enforcing it.
+  //
+  // ⚠️ AND THE PROMPT ALREADY FORBIDS IT — `buildVoiceHeader` has carried "Never use an
+  // em dash" since BRAND-EMDASH-APP-01, across all 14 surfaces, and the model did it
+  // anyway on 18.1% of live run reads. A prompt instruction is not a mechanism.
+  const cleaned = withoutEmDashesDeep(parsed)
+
   // Validate shape — only allowed fields accepted
-  const result = EnrichedPlanSchema.safeParse(parsed)
+  const result = EnrichedPlanSchema.safeParse(cleaned)
   if (!result.success) {
     console.error('[enrich] schema validation failed', result.error.issues.slice(0, 5))
     return {

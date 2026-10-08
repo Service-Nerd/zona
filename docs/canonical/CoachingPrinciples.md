@@ -3043,7 +3043,7 @@ withheld it. *"Writing a note that describes a session the plan does not contain
 worse than silence."* So the CV sentence names the withholding and the two real levers
 (§38: diagnosis **and** prescription; §40c: name the lever, never only the loss).
 
-**Engine copy:** `Demanding — the pace you're chasing is quicker than your current fitness supports, so the plan trains you at threshold rather than rehearsing a pace you cannot hold yet. Get fitter and it comes to you; or set a target you could race today.`
+**Engine copy:** `Demanding: the pace you're chasing is quicker than your current fitness supports, so the plan trains you at threshold rather than rehearsing a pace you cannot hold yet. Get fitter and it comes to you; or set a target you could race today.`
 
 **⚕️ Sims's reason this is the cheapest ruling available:** a runner told their plan is
 `comfortable` while privately still chasing a target it cannot reach is the runner who

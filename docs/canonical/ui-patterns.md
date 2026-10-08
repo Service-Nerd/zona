@@ -1982,7 +1982,7 @@ The engine's honest, rule-engine explanation of **why the plan is shaped this wa
 └─────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────┐
 │  OFF-ROAD                                   │
-│  Off-road, let effort and HR lead — the     │
+│  Off-road, let effort and HR lead: the     │
 │  pace targets are a road reference…         │
 └─────────────────────────────────────────────┘
 ```
