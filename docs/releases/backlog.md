@@ -54,19 +54,68 @@ He has **two** live rows with `session_day = 'wed'` (week 3 and week 1). `.maybe
 
 ⚠️ **The screen HAS the data** — its own header renders *"Apple Health · 9.9km"* from the linked activity. ⚠️ **Eleventh recorded instance of the one-twin class**: two call sites of one component, the remedy applied to one.
 
-### 🟠 `POSTRUN-SKELETON-PROMISE-01` — the loading state promises a dashboard that never arrives *(filed 2026-10-07, P2)* 🧭 **DESIGN BOARD**
+### ✅ `POSTRUN-SKELETON-PROMISE-01` — **SHIPPED 2026-10-07 as `POSTRUN-JOURNEY-01` part 2** 🧭 **DESIGN BOARD**
+
+> 🔴 **THIS HEADING WAS STALE FOR A DAY AND IT COST A MIS-SCOPED MORNING (found 2026-10-08).**
+> It still read 🟠 open while `POSTRUN-JOURNEY-01`'s own *"what was built"* list closed it:
+> *"(2) delete the four-column loading skeleton and replace it with the silhouette of the
+> real result."* Verified in code — `PendingAnalysisCard.tsx` renders the zone-signal
+> silhouette and carries the UX-POSTRUN-01 reasoning. **A backlog review that reads
+> headings reads this as open**, which is exactly what happened when the open set was
+> derived for the founder on 2026-10-08. ⚠️ **The lesson is the one this file already
+> states and I still paid for: grep the code for the artifact the item would have created
+> before planning against it.** `POST_RUN_READ_MAX_WORDS` took ONE grep.
+
 
 `PendingAnalysisCard` renders a row labelled **HR · Distance · Pace · Efficiency** over 3 px pulsing bars. **Those are skeletons. They were never data.** The founder: *"the card at the top … are now gone (not sure if i can ever see them again) and so i question how valid they are."* **His instinct was right and the answer is worse than he thought — there were no values at any point.**
 
 What actually arrives is a different shape: one headline zone %, a score, and the same four labels **behind a tap**. So the loading state advertises a four-metric dashboard and the result hides it. 📌 For the board: either the skeleton reflects the real result, or the result reflects the skeleton. It cannot be both.
 
-### 🟠 `POSTRUN-METRIC-PREF-01` — the run read ignores the distance/duration preference *(filed 2026-10-07, P2)* ⚙️ **NO BOARD** *(ADR-015 restoration)*
+### ✅ `POSTRUN-METRIC-PREF-01` — **SHIPPED 2026-10-08.** The duration branch had never run ⚙️ **NO BOARD** *(ADR-015 restoration)*
+
+> 🔴 **THE ITEM UNDERSTATED ITS OWN DEFECT.** It said the duration branch was
+> *"unreachable whenever km data is present"*. Measured on all **83 live** `run_analysis`
+> rows: **81 km-comparable, 9 minutes-comparable, and ALL NINE of those km-comparable
+> too** — so **zero live rows reached the `else if`. The branch had never executed.**
+>
+> ⚠️ **§66 AMENDMENT 1 IS DIRECTLY RELEVANT AND THE ITEM DID NOT MENTION IT:**
+> *"Distance still wins where the session carried one... A fast runner covering 95% of the
+> distance in 60% of the time is not short."* Resolved on the ratified seam — **design owns
+> the ENCODING, coaching owns the MEANING.** The preference chooses the unit the runner
+> reads; §66 keeps the verdict.
+>
+> 🔴 **AND THE AXES GENUINELY CONTRADICT EACH OTHER: 2 of the 9 both-axes rows (22%)
+> disagree about whether the run was short.** Where they disagree the verdict word is
+> **WITHHELD** rather than asserted, so `short` is nullable as a deliberate third state. A
+> display fix must not make a new coaching claim.
+>
+> 🏃 **OPEN TO THE COACHING BOARD, and it is the only thing left here: WHICH AXIS OWNS
+> "Short."** when the runner has chosen the other one.
+>
+> Owner `lib/coaching/loadComparison.ts` · gate `loadComparison.test.ts` 12 behavioural arms,
+> falsified twice · **verified rendered** on `/post-run-preview` (`"Planned 48 min, ran 1h
+> 01."`, and the disagreement case carries no "Short.").
+
 
 `buildScoreExplanations(analysis, paceTarget, actualAvgSpeedMs, preferredUnits)` takes **units (km/mi)** and **not `preferredMetric` (distance/duration)**. The Distance line prefers `planned_load_km` whenever it is non-null, so a runner who has set the session to **minutes** is still told *"Planned 8.5km, ran 9.9km."* Founder: *"we need to consider duration there too, as i may have it set based on duration."*
 
 ⚠️ **The duration branch EXISTS and is good** (`:5884`, with a declared 2-minute tolerance that is the time-axis sibling of the 0.3 km one) — it is simply unreachable whenever km data is present. ADR-015/INV-PREF-001: the preference propagates everywhere, including notifications. This surface was missed.
 
-### 🟠 `READ-WORD-BUDGET-01` — ✅ **NUMBER SET: 40 WORDS** (founder, 2026-10-07). Build outstanding *(P2)* 🏃 **COACHING BOARD** *(claim)* · 👤 **FOUNDER** *(voice)*
+### ✅ `READ-WORD-BUDGET-01` — **SHIPPED 2026-10-07 as `POSTRUN-JOURNEY-01` part 3** 🏃 **COACHING BOARD** *(claim)* · 👤 **FOUNDER** *(voice)*
+
+> 🔴 **ALSO A STALE HEADING — *"Build outstanding"* was true when written and false by
+> the end of that day.** `lib/coaching/readBudget.ts` owns `POST_RUN_READ_MAX_WORDS = 40`,
+> the instruction builder and `isWithinReadBudget`; the boundary check and its
+> `read_over_budget` ops event are live in `app/api/analyse-run/route.ts`; 3 test arms.
+>
+> ⚠️ **BUT THE GATE IS UNPROVEN IN PRODUCTION, AND THAT IS WORTH SAYING OUT LOUD.**
+> Measured 2026-10-08: **`ops_events` holds ZERO `read_over_budget` rows**, and only **one**
+> analysis has run since the budget shipped — and **that row predates it** (13:45Z on
+> 10-07, 76 words, the founder's own). So the mechanism has had **one opportunity and took
+> it zero times.** It is not a defect; it is a check with no traffic, which this repo has
+> recorded as indistinguishable from a check that does not work. **Falsified locally, so
+> the logic is sound; the production rate is simply not yet observable.**
+
 
 `sessionFeedback.ts:314` — `'One paragraph only. TWO sentences, three at the absolute most. Never more.'`
 
@@ -74,11 +123,120 @@ What actually arrives is a different shape: one headline zone %, a score, and th
 
 🔴 **A limit measured in the wrong unit is the class this repo keeps paying for** (§1 counting sessions vs minutes). The prompt's own comment at `:312` already records a prior incident at *"90 words and five sentences"* — the fix added a sentence cap and **left the word count ungoverned**.
 
-### 🔴 `READ-EM-DASH-01` — 18% of AI reads break the founder's own punctuation rule *(filed 2026-10-07, P1)* 👤 **FOUNDER** *(his rule)* · ⚙️ build
+### ✅ `READ-EM-DASH-01` — **SHIPPED 2026-10-08.** The prompt already forbade it, and then demonstrated it five times 👤 **FOUNDER** *(his rule)* · ⚙️ build
+
+> 🔴 **BOTH HALVES OF THE FILING WERE WRONG, AND THE CORRECTION IS THE FINDING.**
+>
+> **(1) "The prompt does not forbid it either" — IT DID.** `buildVoiceHeader` has carried
+> *"Never use an em dash. Use a colon, comma, semicolon or full stop."* since
+> `BRAND-EMDASH-APP-01`, reaching **all 14 model surfaces**. The instruction was live the
+> entire time the model was producing em dashes on 18.1% of live reads.
+>
+> 🥇 **WHAT IT WAS COMPETING WITH WAS ITSELF.** The same shared header used **five** em
+> dashes in its own text: one in the sentence **directly above the rule**, one inside a
+> **worked example of good style**, plus the voice anchor, `nameToken.ts`, and the budget
+> instruction it injects. **A model mimics demonstrated style over stated rules.**
+> ⚠️ `BRAND-EMDASH-APP-01` had recorded this exact shape (*"contradicted by that prompt's
+> own worked example"*) and fixed it in **one prompt** while leaving the ones in the
+> **shared owner every prompt inherits**.
+>
+> **(2) It is not only a model problem.** `"5km — right on the number."` and `"No activity
+> data — RPE next time..."` appear in production **repeated verbatim**, because they are
+> template literals in `manualSessionFeedback.ts` — rule-engine prose in `lib/coaching/`,
+> outside every guard's roots. A model-only fix would have left the founder still reading
+> them. **Tenth one-twin instance.**
+>
+> 📐 **Denominators, both stated because they answer different questions:** **15 of 83
+> LIVE** rows (18.1%) is what a runner can see; **70 of all 148** (47.3%) is what the model
+> actually produces.
+>
+> Three-sided fix · owner `lib/coaching/runnerProse.ts` · `read_em_dash_repaired` ops event
+> so a silent repair is not a silent failure · **8 literals repunctuated with no words
+> changed** · 5 prompt em dashes removed · gate `runnerProse.test.ts` **15 behavioural arms,
+> falsified 4 ways**. ⚠️ **En dashes untouched and falsified** — `6:30–7:30 /km` and
+> `Zone 4–5` are correct per `CLAUDE.md` and the marks are one keystroke apart.
+>
+> 🥇 **The matrix arm found a FIFTH em dash my own grep had missed**, in a different file,
+> reachable only on the `firstName` branch. **Composing the real header beat scanning one
+> file's source.**
+>
+> 🔻 **RESIDUALS, both filed below:** `BRAND-EMDASH-LIB-01` still owns the `ruleEngine.ts`
+> + push-notification half, and `READ-EM-DASH-02` is the plan-JSON population.
+
 
 **Measured: 15 of 83 live `feedback_text` rows contain an em dash.** The founder settled the scope on 2026-09-22: *"No em dash in text or spoken word … I just don't want it in sentences."* A run read is a sentence the runner reads.
 
 🔴 **NO GUARD COVERS MODEL OUTPUT AT RUNTIME.** `noEmDashApp.test.ts` reads `components/` and `app/dashboard/` **source**; `lib/ui` was added today. **Text generated by the model and shown to the runner is outside every guard this repo has.** The prompt does not forbid it either. Fix is two-sided: forbid it in the prompt **and** strip/replace at the boundary, because a prompt instruction is not a mechanism.
+
+### 🟡 `READ-EM-DASH-02` — the em-dash population in PLAN JSON needs a SCOPE RULING, not a sweep *(filed 2026-10-08, P2)* 👤 **FOUNDER** *(scope of his own rule)* → ⚙️ build
+
+**Found while shipping `READ-EM-DASH-01`, measured rather than estimated, and deliberately
+NOT swept** — because the honest answer depends on a question only the founder can settle.
+
+📐 **MEASURED IN PRODUCTION (service-role read, 2026-10-08):** **834 em-dash prose fields
+across 29 of 30 live plans**, in **19 distinct field names**:
+
+| Field | EM count | Provenance |
+|---|---|---|
+| `label` | **300** | session catalogue / rule engine |
+| `coach_notes` | 210 | **model** (`enrich.ts`) |
+| `detail` | 103 | rule engine |
+| `note` / `theme` | 57 / 51 | mixed — `theme` is `enrichMaintenance.ts` (**model**) |
+| `hr_assumption_note`, `difficulty_note`, `volume_*_note`, … | ~90 | **rule engine** (`ruleEngine.ts`) |
+| `coach_intro`, `confidence_risks` | 11 | **model** (`enrich.ts` / `freeIntro.ts`) |
+
+🔴 **THE REASON THIS IS NOT A REGEX JOB: the founder's rule already exempts part of it.**
+His own scope, 2026-09-22: *"No em dash in text or spoken word. **In descriptions for
+sessions it's ok.** I just don't want it in sentences."* `label` alone is **300 of the 834**
+and is plainly session description. So a sweep would “fix” the largest bucket **against his
+stated wish**, and `CLAUDE.md` records that a raw count of 544 *"would have misled"* on
+exactly this rule once already.
+
+⚠️ **AND THE PROVENANCE SPLIT DECIDES THE MECHANISM, NOT JUST THE SCOPE.** Model-written
+fields need a runtime boundary (the `READ-EM-DASH-01` shape). Rule-engine fields are OUR
+literals and are fixable at source. **`coach_notes` can be EITHER** — ADR-006's silent
+fallback means the rule engine writes it when enrichment fails — so a boundary alone would
+leave the fallback path emitting them.
+
+⚠️ **Do NOT extend `noEmDashApp.test.ts` to `lib/`.** `BRAND-EMDASH-LIB-01` already ruled
+that out: it would fire on 250 literals, most never read by a runner, *"and a guard that
+fires on ordinary work gets switched off"*.
+
+**What is needed first, and it is one question:** which of these 19 fields are *sentences the
+runner reads* and which are *session descriptions*? One pass over the field list with the
+founder settles the whole item. **Until then this is scope, not work.**
+
+---
+
+### 🟡 `HEALTH-ACCESS-DENIED-SURFACE-01` — iOS tells us Health access is blocked and we tell the runner nothing *(filed 2026-10-08, P2)* 🧭 **DESIGN BOARD**
+
+**Found closing `HK-NEVER-SYNCED-COHORT-01`'s residual.** The `health_sync_swept`
+instrument has a week of data and it **separates the causes**, exactly as that item
+predicted it would.
+
+📐 **MEASURED across 400 sweep rows / 13 users (2026-10-08):**
+- ✅ **`failed: 0` on every single row** — the repeated 403s are gone; the
+  `HK-FREE-INGEST-LINE-01` gate move fixed them. *(That closes arm (b).)*
+- **6 users report `workouts_found: 0` on EVERY sweep** (38/38, 18/18, 14/14, 10/10, 2/2,
+  1/1) — asked, and HealthKit returned nothing. **Not an ingest defect.**
+- 2 are intermittent (26/38, 6/14) — permission working, no runs in the window. Normal.
+- 🔴 **1 carries a NAMED, USER-FIXABLE cause in the payload:**
+  `error: "Protected health data is inaccessible"`.
+
+**The gap: we detect that string and the runner is never told.** They see a Connections row
+that says connected, no runs arriving, and no reason. The data to explain it is already in
+hand — nothing new needs measuring or building server-side.
+
+⚠️ **This is the shape `HEALTH-SYNC-STALENESS-01` already half-solved** — that ruling made
+staleness visible; this is the next question it raises, which is *why*. The board owns it
+because it is a surface and a sentence, and `connectionStaleCopy` in `lib/ui` is the owner
+to extend rather than a new string somewhere else.
+
+🔻 **Not the whole cohort.** The other 6 `workouts_found: 0` users have no named error:
+either no device writes workouts to Health, or an abandoned account. **A surface cannot fix
+a runner with no watch**, and saying so honestly is part of the ruling.
+
+---
 
 ### 🟡 `LINK-PICKER-ALREADY-LINKED-01` — the picker offers the run the session is already linked to *(filed 2026-10-07, P2)* 🧭 **DESIGN BOARD**
 
@@ -88,7 +246,24 @@ Founder: *"seems i can still manually link it to the same run its linked against
 
 `lib/health/adapter.ts:104` — `name: payload.sourceName ? \`Run (${payload.sourceName})\` : 'Run'`. `sourceName` is the app that wrote the workout into Apple Health, so the picker shows **"Run (Strava)"** above the subtitle **"Apple Health"**, and **"Run (Connect)"** (Garmin) for another. Both statements are true and they read as a contradiction. ⚠️ Related but distinct: `run_analysis.source` was stamped **`'strava'`** on an `apple_health` activity — provenance disagreeing with ADR-011's own column.
 
-### 🟠 `POSTRUN-CONTEXT-TWIN-01` — the block-level context line never reaches the POST-RUN screen *(filed 2026-10-07, P2)* ⚙️ **NO BOARD**
+### ✅ `POSTRUN-CONTEXT-TWIN-01` — **SHIPPED 2026-10-08**, with the call-site gate the scope asked for ⚙️ **NO BOARD**
+
+> ✅ Confirmed exactly as filed, and **re-measuring first was right: the line number had
+> already moved** (`:7261`, not the `:7144` on file). `PostRunScreen` holds neither `plan`
+> nor `runAnalysisMap`, so it takes `driftContext` as a prop from the parent via
+> `buildDriftContext` — the pattern `SessionScreen`'s render already uses.
+>
+> Gate `lib/ui/runFeedbackCardProps.test.ts` asserts **every** `<RunFeedbackCard>` in the
+> tree passes every context prop, with **call sites DISCOVERED by walking `app/` and
+> `components/`, never listed** — a hand-kept list is blind to the file nobody adds to it,
+> which bit the em-dash guard when copy moved into `lib/ui`. Region bounded at `/>` not
+> `>`, because a lone `>` is the tail of `=>`.
+>
+> 🥇 **It found a third site immediately:** `/post-run-preview` was missing
+> `preferredMetric` — which matters more than it looks, because that harness is where the
+> rendered sentence is checked by eye, so without it the duration fix **could not have been
+> looked at.**
+
 
 **Found by the move-impact hook on the POSTRUN-JOURNEY-01 commit**, answering ask 3: *what is
 reached from BOTH it and its old parent?* `RunFeedbackCard` has three call sites and they do not
@@ -251,6 +426,19 @@ such: the route needs auth, a tier lookup and a service-role client, none of whi
 `environment: 'node'`.
 
 ### 🔴 `HK-NEVER-SYNCED-COHORT-01` — RE-MEASURED the same day: 7 of 13 are a TIER GATE, not a defect *(filed 2026-10-07, **P1**)* 💼 **SLT** · ⚙️ NO BOARD *(for the residual 6)*
+
+> ✅ **ARM (b) CLOSED BY MEASUREMENT 2026-10-08, AND THE INSTRUMENT DID ITS JOB.** This item
+> said *"give it a week and the `workouts_found: 0` rows separate 'asked and got nothing'
+> from 'never asked'"*. It did. Across **400 sweep rows / 13 users**: **`failed: 0` on every
+> row** — nothing is collecting 403s any more, so arm (b)'s *"the client keeps trying
+> anyway"* is resolved by the `HK-FREE-INGEST-LINE-01` gate move. **6 users report
+> `workouts_found: 0` on every sweep** (asked, got nothing — not an ingest defect) and
+> **one carries a named cause**: `error: "Protected health data is inaccessible"`.
+> 🔻 **So the residual is NOT a build.** The product gap it exposes is filed as
+> `HEALTH-ACCESS-DENIED-SURFACE-01` (🧭 Design Board). ⚠️ Also fixed today: this route's
+> header still asserted the OLD rule and named `lib/health/sync.ts`, **a file that does not
+> exist** — the same self-contradicting-route defect this item was filed for, pointing the
+> other way, introduced by its own fix (`c2158e08`).
 
 🔴 **RE-MEASURED 2026-10-07 once `health_sync_swept` had a few hours of data, and the
 item's own premise ("cause unknown") was answered within hours. The cohort SPLITS:**
@@ -7411,6 +7599,22 @@ green. Tracing why is what found the false premise. Bounding the replacement too
 now goes red on the real swap.
 
 ### 👤 `BRAND-EMDASH-LIB-01` — the half the app guard cannot reach
+
+> 🔻 **PART OF ARM 1 IS NOW DONE, and the rest is unchanged (2026-10-08,
+> `READ-EM-DASH-01`).** `manualSessionFeedback.ts` was found emitting em dashes into
+> **live `run_analysis.feedback_text`** — `"5km — right on the number."` repeated verbatim
+> in production — so 8 of its runner-facing literals were repunctuated with **no words
+> changed**, gated **behaviourally** by `lib/coaching/runnerProse.test.ts` (every
+> type × rpe × fatigue and HR × distance × units branch walked, not sampled).
+>
+> ✅ **AND IT WAS DONE THE WAY THIS ITEM ASKED** — *"needs the strings separated by where
+> they SURFACE, not by where they live"* — by gating the FUNCTION'S OUTPUT rather than
+> adding `lib/` to the guard's roots, which this item explicitly forbids.
+>
+> 🔻 **STILL OPEN, both named here and unchanged:** `ruleEngine.ts`'s 79 literals (mixed
+> runner-facing and dev-only in one file) and **push notification bodies** — literally the
+> *"spoken word"* half of the rule, and the one a phone reads aloud. See also
+> `READ-EM-DASH-02` for the plan-JSON population, which is a scope question first.
 **Board: FOUNDER** (his rule) / ⚙️ no board to implement. Residual from
 `BRAND-EMDASH-APP-01`, filed rather than silently left.
 

@@ -6,6 +6,63 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 — READ-EM-DASH-01 / POSTRUN-METRIC-PREF-01 / POSTRUN-CONTEXT-TWIN-01 · the instruction was there all along, and the prompt was arguing with itself
+
+**Shipped:** The founder's no-em-dash rule now reaches text the model writes at runtime, the
+post-run read speaks the distance/duration axis the runner actually chose, and every
+`RunFeedbackCard` in the tree is gated to receive the same context.
+
+**Dev learning:** Two of the eight items I set out to build had already shipped. I had
+derived the list from backlog HEADINGS, and the headings were stale: `POSTRUN-JOURNEY-01`'s
+"what was built" line closed both of them the day before. The backlog's own rule says an
+item is a snapshot, and I still got caught by it, because a heading reads like status and
+isn't. The cheap fix is to grep the code for the artifact the item would have created
+before planning against it. `POST_RUN_READ_MAX_WORDS` took one grep.
+
+Also: `OpsEventKind` being a closed union refused my new event name at compile time until I
+declared it in the vocabulary owner. That is exactly what `lib/ai/surfaces.ts` was written
+for, and it is the first time I have been on the receiving end of it. It cost ten seconds
+and it is the reason two spellings of one event can't drift apart.
+
+**Product/creator learning:** Measuring the right denominator changed the whole shape of
+one item. Em dashes appear in 47.3% of all run-read rows ever written, and 18.1% of the
+rows a runner can currently see. The first number is about the model, the second is about
+the product. Quoting the wrong one would have made the problem look twice as bad as it is,
+or half as bad as it was, depending on which way I leaned. Separately: the duration branch
+of the post-run read had never executed in production. Not "rarely" — never. 81 of 83 live
+rows go down the distance path and all 9 duration-comparable rows are also
+distance-comparable. A feature can be written, reviewed, shipped and dead.
+
+**AI-building learning:** The best finding of the day was that the prompt had forbidden em
+dashes for weeks and used five of its own. One sat in the sentence directly above the rule.
+One sat inside a worked example of good style. Models copy what you show them more
+reliably than what you tell them, so the header was quietly out-voting itself. The item was
+filed saying "the prompt does not forbid it either" and that was simply wrong — which is a
+good argument for checking the prompt before theorising about the model.
+
+The other one: my behavioural test matrix found a fifth em dash my own `grep` had missed,
+in a different file, on a branch only reachable when a first name is passed. I had grepped
+one file and concluded I was done. Composing the real thing and reading its real output
+beat inspecting the source, which is the whole argument for behavioural gates over source
+scans when a model is involved.
+
+**The honest bit:** I published a categorised backlog this morning that listed two shipped
+items as open and quoted a 47.3% figure at the founder before noticing it included
+superseded rows. Both errors came from the same habit: reading a summary instead of
+measuring the thing. I also nearly shipped the metric fix without reading §66 Amendment 1,
+which says distance wins where the session carried one — the item never mentioned it, and
+had I just flipped the axis I would have moved a coaching judgement inside a display fix.
+On 22% of the rows where both axes exist they disagree about whether the run was short, so
+that would have been wrong on real rows, not hypothetically.
+
+**Hook material:** The prompt said "Never use an em dash" and then used five of them,
+one of them inside its own example of good writing. 18% of AI coaching notes broke the
+rule. The instruction had been live for weeks.
+
+**Postable?:** yes — the self-contradicting prompt is the strongest AI-building story in
+weeks, and it needs no context to land.
+
+
 
 
 
