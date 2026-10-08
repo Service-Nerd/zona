@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-08 (end) — AUDIT-ROADMAP-MIRROR-01 / HK-INGEST-REASON-01 · the check predicted its own blind spot in a comment
+## 2026-10-08 (end) — AUDIT-ROADMAP-MIRROR-01 / HK-INGEST-REASON-01 / HK-HR-LOCKED-DROPS-RUN-01 / HK-ZERO-DISTANCE-RUN-01 · the check predicted its own blind spot in a comment
 
 **Shipped:** A second roadmap arm in `audit-docs.sh`, asking the direction the first one
 never did. Fifteen stale rows closed behind it.
@@ -56,6 +56,23 @@ I shipped only the instrumentation and stopped. The leading hypothesis is good �
 rejects a zero distance and the client sends `?? 0`, so an indoor run can never be stored —
 but it is a hypothesis, and shipping the fix would have been fixing a bug I had not
 identified. The device will report the answer on the next sweep.
+
+**And the instrumentation paid off within minutes.** The answer came back on one runner:
+`charlotteestreet@icloud.com`, connected 23 September, 28 of 30 sweeps finding runs and not
+one ever arriving. Two causes, and the bigger one was the one I had dismissed. I had decided
+the "Protected health data is inaccessible" error was benign noise, because two other users
+get it occasionally and sync fine. For her it is 8 of 9 runs — iOS protects heart rate
+behind device unlock, her sync runs in the background, and a failed HR read was taking the
+whole run down with it. The run's distance, duration and start time were all sitting in
+memory, already read.
+
+The lesson I keep relearning: an error that is benign for most users is not benign. I had
+the right data and drew the wrong conclusion from the aggregate.
+
+And the founder caught something I should have: I said this needed a TestFlight build. It
+does not — the iOS app loads the entire web app from Vercel, so the fix went live on deploy.
+I pattern-matched "HealthKit means native" and never checked, and the architecture is written
+down in CLAUDE.md, which I had read that morning.
 
 **Hook material:** The script said ALL CLEAN. Fifteen rows said open on work that had
 shipped. The check that missed them had predicted exactly this in its own source comment.
