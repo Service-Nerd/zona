@@ -15,7 +15,11 @@ export interface SessionScoreInput {
 
 export interface SessionScoreResult {
   hrDisciplineScore: number | null  // null = no HR data available (not a bad score)
-  distanceScore:     number
+  // §108 Amendment 1, extended to this axis by HK-ZERO-DISTANCE-RUN-01 — NULL when the
+  // run's distance was never measured (an indoor or treadmill run). Nullable so the
+  // compiler forces every consumer to handle "we did not measure this" rather than
+  // rendering a fabricated number, which is the mechanism that ruling praised.
+  distanceScore:     number | null
   paceScore:         number
   efScore:           number
   // §108 Amendment 1 (Coaching Board 2026-09-13) — NULL when HR is unmeasured.
@@ -52,7 +56,9 @@ export function scoreSession(input: SessionScoreInput): SessionScoreResult {
   // Renormalising over the remaining axes was REJECTED by the board: it would
   // make a no-HR score MORE confident, not less. The honest output is no number.
   // Same principle as §107 — a session may not prescribe work it does not record.
-  const totalScore = hrDisciplineScore === null
+  // HK-ZERO-DISTANCE-RUN-01 — the composite declines when EITHER weighted axis is
+  // unmeasured, not only HR. Same reasoning, same ruling (§108 Am. 1).
+  const totalScore = hrDisciplineScore === null || distanceScore === null
     ? null
     : Math.round(
         hrDisciplineScore * SCORE_WEIGHTS.hr_discipline +
@@ -102,9 +108,31 @@ export function parseHRCeiling(hrTarget: string): number | null {
   return null
 }
 
-function computeDistanceScore({ session, actualDistKm }: SessionScoreInput): number {
+function computeDistanceScore({ session, actualDistKm }: SessionScoreInput): number | null {
   const planned = session.distance_km
   if (!planned || planned === 0) return 75 // duration-primary session — neutral
+  // 🔴 HK-ZERO-DISTANCE-RUN-01 (2026-10-08) — NULL WHEN THE RUN'S DISTANCE WAS NEVER
+  // MEASURED, following §108 Amendment 1 rather than inventing a number for it.
+  //
+  // `/api/health/ingest` now accepts a run with no distance (an indoor or treadmill run:
+  // ADR-011 makes HealthKit the SOR and §80 makes time on feet the prescription). Those
+  // rows reach here as `actualDistKm = 0` — `(activity.distance_m ?? 0) / 1000` — and the
+  // ratio arithmetic below would return **20, the worst band, for a run that HAS no
+  // distance to compare.**
+  //
+  // ⚠️ §108 Am. 1 ruled exactly this shape for the HR axis: substituting a neutral for an
+  // unmeasured axis meant "37.5 of every no-HR score was invented", and SEVEN no-HR runs
+  // were told **"nailed"**. It also recorded that renormalising was REJECTED, because it
+  // makes an unmeasured score MORE confident. *"The honest output is no number."*
+  //
+  // ⚠️ 75 WOULD REPEAT THE DEFECT THAT RULING NAMED, so this returns null and the
+  // composite declines, exactly as it does for HR. **Nullable deliberately: the type IS
+  // the mechanical check.**
+  //
+  // 🏃 ROUTED TO THE COACHING BOARD FOR RATIFICATION, not permission — §108 Am. 1 is
+  // explicit for HR and silent on distance, and extending a principle is the board's.
+  // If they rule a neutral instead, it is one line.
+  if (!actualDistKm) return null
   const ratio = actualDistKm / planned
   if (ratio >= 0.95 && ratio <= 1.10) return 100
   if (ratio >= 0.85 && ratio <  0.95) return 80

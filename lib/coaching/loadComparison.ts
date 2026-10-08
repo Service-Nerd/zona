@@ -74,7 +74,16 @@ export function compareLoad(
   { plannedKm, actualKm, plannedMins, actualMins }: LoadInputs,
   preferredMetric: 'distance' | 'duration' = 'distance',
 ): LoadComparison {
-  const kmComparable   = plannedKm   != null && actualKm   != null
+  // 🔴 `actualKm > 0`, ADDED BY HK-ZERO-DISTANCE-RUN-01 (2026-10-08). Since
+  // `/api/health/ingest` now accepts an indoor or treadmill run with no distance, those
+  // rows arrive as `actual_load_km = 0` — and without this the line read
+  // **"Planned 8.5km, ran 0km. Short."** about a run that covered real ground on a
+  // treadmill. A stored zero means UNMEASURED, never "covered no ground": that is the
+  // `distance_km ?? 0` lesson (SESSION-KM-01/02) arriving on the actual side.
+  //
+  // ⚠️ It falls through to the DURATION axis, which is the honest one for such a run and
+  // is exactly what §80 says the prescription is for a duration-anchored runner.
+  const kmComparable   = plannedKm   != null && actualKm   != null && actualKm > 0
   const minsComparable = plannedMins != null && actualMins != null
 
   const kmShort   = kmComparable   && (actualKm!   - plannedKm!)   <= -DISTANCE_TOLERANCE_KM

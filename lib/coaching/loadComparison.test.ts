@@ -97,3 +97,35 @@ describe('the two tolerances forgive the same amount of session', () => {
     expect(compareLoad(row, 'duration').onTarget).toBe(false)
   })
 })
+
+describe('HK-ZERO-DISTANCE-RUN-01 — a stored zero means UNMEASURED', () => {
+  // 🔴 `/api/health/ingest` now accepts an indoor or treadmill run with no distance, so
+  // those rows arrive as `actual_load_km = 0`. Without the `actualKm > 0` guard the line
+  // read **"Planned 8.5km, ran 0km. Short."** about a run that covered real ground.
+  // The `distance_km ?? 0` lesson (SESSION-KM-01/02), arriving on the actual side.
+  const INDOOR = { plannedKm: 8.5, actualKm: 0, plannedMins: 48, actualMins: 32 }
+
+  it('falls through to the DURATION axis instead of reporting 0km', () => {
+    const c = compareLoad(INDOOR, 'distance')
+    expect(c.axis).toBe('duration')
+  })
+
+  it('and the verdict comes from the axis that was measured', () => {
+    // 32 of 48 minutes IS short, and saying so is correct — it is the 0km that was wrong.
+    expect(compareLoad(INDOOR, 'duration').short).toBe(true)
+  })
+
+  it('a real distance of 0.0 is still unmeasured, not "covered no ground"', () => {
+    const noAxis = { plannedKm: 8.5, actualKm: 0, plannedMins: null, actualMins: null }
+    expect(compareLoad(noAxis, 'distance').axis).toBe('none')
+    expect(compareLoad(noAxis, 'distance').short).toBeNull()
+  })
+
+  it('a genuine small distance is NOT swallowed by the guard', () => {
+    // ⚠️ The guard must be `> 0`, not a tolerance: a 0.4 km run is measured.
+    const tiny = { plannedKm: 8.5, actualKm: 0.4, plannedMins: null, actualMins: null }
+    expect(compareLoad(tiny, 'distance').axis).toBe('distance')
+    expect(compareLoad(tiny, 'distance').short).toBe(true)
+  })
+})
+

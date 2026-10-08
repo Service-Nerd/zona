@@ -18,6 +18,8 @@
 // UPSERT, so zero rows ever eliminates the write entirely — the request is rejected at an
 // early return, and all three of those were silent on both sides.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 const fetchMock = vi.fn()
 vi.mock('@/lib/supabase/authedFetch', () => ({
@@ -156,3 +158,71 @@ describe('formatFailures deduplicates with counts', () => {
     expect(mod.noteFailure).toBeUndefined()
   })
 })
+
+// ─── HK-HR-LOCKED-DROPS-RUN-01 + HK-ZERO-DISTANCE-RUN-01 ────────────────────────────
+//
+// Both found by the instrumentation above, within minutes of it deploying, on one real
+// runner: `charlotteestreet@icloud.com`, connected 2026-09-23, **28 of 30 sweeps found
+// workouts and ZERO ever posted.**
+//
+//   failures: "no-response: Protected health data is inaccessible x8
+//              · 422: missing or zero: totalDistanceMeters"
+//
+// Nine runs, two causes, neither of them the one I had guessed hardest at.
+describe('a failed heart-rate read must not throw away the run', () => {
+  const SRC = readFileSync(join(process.cwd(), 'lib/health/clientSync.ts'), 'utf8')
+
+  it('readSamples has its OWN try, inside the workout loop', () => {
+    // 🔴 It used to sit in the outer try, so a throw skipped the post entirely — even
+    // though uuid, start, duration and distance were already in hand. iOS protects heart
+    // rate behind device unlock and does NOT protect workout metadata, which is why
+    // `queryWorkouts` succeeded in the very same sweep where every `readSamples` failed.
+    expect(SRC).toMatch(/let hrSamples: Array<\{ valueBpm: number; timestamp: string \}> = \[\]/)
+    // ⚠️ ORDER ASSERTED BY INDEX, not by a character window. My first version sliced
+    // 1400 chars and failed because the explanatory comment is longer than that — a
+    // window is a guess about length, an index comparison is the actual claim.
+    const declared = SRC.indexOf('let hrSamples:')
+    const innerCatch = SRC.indexOf('catch (hrErr)', declared)
+    const post = SRC.indexOf('const outcome = await postWorkout(payload)', declared)
+    expect(declared).toBeGreaterThan(-1)
+    expect(innerCatch).toBeGreaterThan(declared)
+    // 🔴 The whole fix: the post is reached AFTER the inner catch, so an unreadable
+    // heart rate no longer skips it.
+    expect(post).toBeGreaterThan(innerCatch)
+  })
+
+  it('the deferral is RECORDED, so a never-unlocked device is visible not silent', () => {
+    expect(SRC).toContain('hr-deferred:')
+    expect(SRC).toMatch(/noteFailure\(failureReasons, \{\s*\n?\s*ok: false/)
+  })
+
+  it('and it is a DEFERRAL, because the backfill already exists', () => {
+    // `retryPendingHrRows` selects apple_health rows with avg_hr IS NULL and re-reads HR
+    // later. Posting without HR hands the run to machinery built for exactly this.
+    expect(SRC).toContain("is('avg_hr', null)")
+  })
+})
+
+describe('a run with no distance is still a run', () => {
+  const ROUTE = readFileSync(join(process.cwd(), 'app/api/health/ingest/route.ts'), 'utf8')
+
+  it('distance is OPTIONAL; duration is REQUIRED', () => {
+    // 🔴 `!payload.totalDistanceMeters` rejected ZERO, and the client sends
+    // `totalDistance ?? 0` — so an indoor run was refused every time it was offered,
+    // forever. Measured: `distance_m: 0, duration_s: 1941, source_name: "Connect"`.
+    const i = ROUTE.indexOf('const missing = [')
+    const block = ROUTE.slice(i, ROUTE.indexOf(']', i))
+    expect(block).toContain("'uuid'")
+    expect(block).toContain("'startDate'")
+    expect(block).toContain("'durationSeconds'")
+    // The whole fix, as one assertion.
+    expect(block).not.toContain("'totalDistanceMeters'")
+  })
+
+  it('a run must still be measurable on at least ONE axis', () => {
+    // Accepting everything would be the opposite defect: §80 makes time on feet the
+    // prescription, so duration is the axis HealthKit always has.
+    expect(ROUTE).toContain('!payload.durationSeconds')
+  })
+})
+

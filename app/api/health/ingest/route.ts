@@ -107,10 +107,25 @@ export async function POST(req: NextRequest) {
   // rejected every time. ADR-011 makes HealthKit the system of record, and duration plus
   // HR are the coaching-relevant parts, so discarding it is not obviously correct.
   // **Whether to accept it is a separate decision; this event is what makes it decidable.**
+  // ✅ HK-ZERO-DISTANCE-RUN-01 (2026-10-08) — A RUN WITH NO DISTANCE IS STILL A RUN.
+  //
+  // 🔴 `!payload.totalDistanceMeters` REJECTED ZERO, and `clientSync` sends
+  // `totalDistance ?? 0`. So an indoor or treadmill run — no GPS, no footpod — was
+  // rejected with a 422 **every single time it was offered**, forever.
+  //
+  // 📐 Measured the moment the new logging landed: `distance_m: 0, duration_s: 1941,
+  // source_name: "Connect"` — a real 32-minute Garmin run, permanently refused.
+  //
+  // ⚠️ ADR-011 MAKES HEALTHKIT THE SYSTEM OF RECORD, and §80 holds that for a
+  // duration-anchored runner the prescription IS their time on feet. A 32-minute run with
+  // a heart-rate trace is exactly the data the coaching uses; discarding it because the
+  // treadmill did not report metres contradicts both.
+  //
+  // Distance is now OPTIONAL and duration is REQUIRED — a run must be measurable on at
+  // least one axis, and time on feet is the one HealthKit always has.
   const missing = [
     !payload.uuid && 'uuid',
     !payload.startDate && 'startDate',
-    !payload.totalDistanceMeters && 'totalDistanceMeters',
     !payload.durationSeconds && 'durationSeconds',
   ].filter(Boolean) as string[]
   if (missing.length) {

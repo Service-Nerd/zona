@@ -384,17 +384,55 @@ async function syncRecentWorkouts(Health: HealthModule): Promise<void> {
 
       for (const workout of res.workouts) {
         try {
-          const hrSamplesRes = await Health.readSamples({
-            dataType:  'heartRate',
-            startDate: workout.startDate,
-            endDate:   workout.endDate,
-            limit:     HR_SAMPLES_PER_WORKOUT_LIMIT,
-            ascending: true,
-          })
-          const hrSamples = hrSamplesRes.samples.map(s => ({
-            valueBpm:  s.value,
-            timestamp: s.startDate,
-          }))
+          // 🔴 HK-HR-LOCKED-DROPS-RUN-01 (2026-10-08) — A FAILED HEART-RATE READ USED TO
+          // THROW AWAY THE WHOLE RUN.
+          //
+          // `readSamples` was inside the outer try, so when it threw the workout was
+          // never posted at all — even though its uuid, start, duration and distance were
+          // already in hand. **Heart rate is an ENRICHMENT; the run is the record.**
+          //
+          // 📐 MEASURED THE MOMENT THE NEW LOGGING LANDED: one runner
+          // (`charlotteestreet@icloud.com`, connected 2026-09-23) had **28 of 30 sweeps
+          // find workouts and ZERO ever post**, and the reason was
+          // `no-response: Protected health data is inaccessible` on **8 of her 9 runs**.
+          // iOS protects heart rate behind device unlock; workout METADATA is not
+          // protected, which is why `queryWorkouts` succeeded in the same sweep that
+          // every `readSamples` failed. **So every background sweep lost every run.**
+          //
+          // ⚠️ ADR-011 ALREADY SETTLES THE PRINCIPLE: HealthKit is the system of record,
+          // and iPhone-only runners with no HR source get the run stored and simply get
+          // HR-less coaching. Dropping the run because HR is momentarily unreadable is
+          // strictly worse than the case the doctrine already accepts.
+          //
+          // ✅ AND THE BACKFILL ALREADY EXISTS: `retryPendingHrRows` selects
+          // `source='apple_health' AND avg_hr IS NULL` and re-reads HR later, so posting
+          // without HR is not a loss of HR — it is a DEFERRAL to machinery built for
+          // exactly this. ⚠️ Its window is `HR_RETRY_LOOKBACK_HOURS = 48`, so a run older
+          // than two days lands permanently HR-less. That is a known limit, not a
+          // silent one, and it is still strictly better than the run never arriving.
+          let hrSamples: Array<{ valueBpm: number; timestamp: string }> = []
+          try {
+            const hrSamplesRes = await Health.readSamples({
+              dataType:  'heartRate',
+              startDate: workout.startDate,
+              endDate:   workout.endDate,
+              limit:     HR_SAMPLES_PER_WORKOUT_LIMIT,
+              ascending: true,
+            })
+            hrSamples = hrSamplesRes.samples.map(s => ({
+              valueBpm:  s.value,
+              timestamp: s.startDate,
+            }))
+          } catch (hrErr) {
+            // Recorded, not swallowed: the sweep says the run landed WITHOUT HR and why,
+            // so a device that never unlocks is visible rather than silent.
+            noteFailure(failureReasons, {
+              ok: false, status: null,
+              reason: `hr-deferred: ${hrErr instanceof Error ? hrErr.message : String(hrErr)}`,
+            })
+            // eslint-disable-next-line no-console
+            console.warn('[health-sync] hr unreadable, posting run without it', workout.platformId, hrErr)
+          }
 
           const payload: HealthKitWorkoutPayload = {
             uuid:                workout.platformId ?? `${workout.startDate}-${workout.duration}`,
