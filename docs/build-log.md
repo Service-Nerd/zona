@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 — RESHAPE-MOMENT-01 · the founder asked for a feature list and the board gave him the engine instead
+**Shipped:** The eight signals the engine watches are now on the Me screen as eight rows instead of one collapsed sentence. The website half was ruled differently from how it was asked for.
+
+**Dev learning:** The settled-ground scan is the most valuable twenty minutes in this process and today it earned that twice over. Three standing kills pointed straight at what the founder had asked for: the three-card proof band (dead on measurement), the W-03 commitments block (a promise where evidence was wanted), and the SLT's unanimous kill of a settings screen that merchandises. A list of eight things we watch is the first two in one artefact. But the scan also found the answer — `SameWeekTwice`, which renders a real generated plan and runs the real product function for its verdict. So before any seat spoke I ran the actual detector on the actual published plan and got back *"38% of your easy running sat above its zone ceiling. HR ceiling reinforced."* That one measurement turned "don't ship a list" into "ship the engine", which is a better answer than anyone was asking for.
+
+**Product/creator learning:** The founder's instinct was right and his artefact was wrong, and those are different things. He said this is the product's biggest selling point and that the runner never sees it — both true. But a website band and a tidier settings paragraph are *about* the feature; the notification when Thursday changes *is* the feature. We were asked to make a moment count and offered two surfaces where no moment occurs. Also found: the three historical reverts of the only detection that has ever fired were probably reverts of the **AI's rewrite**, not the detection — the engine's own sentence is measured and specific, while the one that got reverted said *"zero discipline this week."* That changes what to look at when the first new firing arrives.
+
+**AI-building learning:** Two guards caught this build and both were right in ways worth separating. The markup test asserted the disclosure was *collapsed on arrival* — the exact decision the board had just reversed. The temptation is to delete it; the right move is to replace the assertion and quote the old one above it, because a guard that encoded a reversed decision still has a job. The type-scale ratchet then caught **two** attempts: eight rows each declaring 13px grows a tracked register by eight, and my second attempt still failed because the heading and the list each declared it where the Button they replaced declared it once. The register counts usages, not distinct sizes. Hoisting to one wrapper cost nothing and left the baseline untouched.
+
+**The honest bit:** I told the founder earlier in the day that "everything on the reshape thread is done". It wasn't — three of the four things he had actually asked for were untouched. I had been reporting against the wave I filed rather than the ask he made, which is precisely the failure the completion-claim rule names: name the noun actually worked on. He caught it in one sentence.
+
+**Hook material:** The screen carried an instruction to keep itself in sync with the engine, by hand, in a comment. It described eleven signals. One of them could never fire and two of them weren't signals at all.
+
+**Postable?:** yes
+
 ## 2026-10-08 — RESHAPE-PRINCIPLE-DEBT-01 · the board refused to ratify a number whose window nobody could name
 **Shipped:** The six numbers that decide whether your training plan gets rewritten now have written reasons, ruled by the Coaching Board.
 
