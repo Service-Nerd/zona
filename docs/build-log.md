@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-08 (end) — AUDIT-ROADMAP-MIRROR-01 · the check predicted its own blind spot in a comment
+## 2026-10-08 (end) — AUDIT-ROADMAP-MIRROR-01 / HK-INGEST-REASON-01 · the check predicted its own blind spot in a comment
 
 **Shipped:** A second roadmap arm in `audit-docs.sh`, asking the direction the first one
 never did. Fifteen stale rows closed behind it.
@@ -41,6 +41,21 @@ by hand once. Twenty minutes, fifteen findings, one new gate.
 stale backlog headings that morning, wrote up the lesson about headings reading like status,
 saved a memory about it — and left the matching roadmap rows open. I fixed the instance and
 not the pair.
+
+**And then the RCA.** HealthKit uploads were failing silently. The cause of the *silence*
+was `return res.ok` — one line that collapsed 401, 422, 500 and every network error into a
+single `false`, with the route's own explanation discarded at the boundary. The caller's only
+logging line was unreachable, because the function it guarded never throws.
+
+What actually cracked it was a ZERO. `health_ingest_failed` has no rows, ever — and that
+event fires at the database write. Zero rows eliminates the write entirely and proves the
+rejection is an early return. **An event that has never fired was more informative than the
+847 that had.**
+
+I shipped only the instrumentation and stopped. The leading hypothesis is good — the route
+rejects a zero distance and the client sends `?? 0`, so an indoor run can never be stored —
+but it is a hypothesis, and shipping the fix would have been fixing a bug I had not
+identified. The device will report the answer on the next sweep.
 
 **Hook material:** The script said ALL CLEAN. Fifteen rows said open on work that had
 shipped. The check that missed them had predicted exactly this in its own source comment.

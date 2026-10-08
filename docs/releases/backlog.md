@@ -230,7 +230,81 @@ founder settles the whole item. **Until then this is scope, not work.**
 
 ---
 
-### 🟡 `HEALTH-ACCESS-DENIED-SURFACE-01` — iOS tells us Health access is blocked and we tell the runner nothing *(filed 2026-10-08, P2)* 🧭 **DESIGN BOARD**
+### ✅ `HK-INGEST-REASON-01` — **SHIPPED 2026-10-08.** A failed upload now says why; the CAUSE is still open ⚙️ **NO BOARD** *(ADR-011 restoration)*
+
+**RCA via `/zona-debug`, Systemic.** 🔴 **This is the live defect behind
+`HK-NEVER-SYNCED-COHORT-01`, and it was undiagnosable by construction.**
+
+📐 **Measured 2026-10-08:** 14 sweeps across 2 users read `workouts_found: 1, posted: 0,
+failed: 1, error: null`. **One user (`0a972fdf`) has 24 sweeps, 22 that found workouts, and
+ZERO that ever posted** — their runs have never arrived.
+
+**Root cause of the undiagnosability, at `lib/health/clientSync.ts:45`:**
+`postWorkout` returned `boolean` — `return res.ok` collapsed **401, 422, 429, 500 and every
+network error into one `false`**, while the route DOES return its reason in the body.
+⚠️ **And the caller's only logging line was UNREACHABLE**: its `catch` could never fire
+because `postWorkout` never threw, so every real failure took the silent `else
+totalFailed++` branch. Catalogue class *unchecked response*, worst form — `res.ok` **is**
+read correctly, and then the WHY is thrown away.
+
+🥇 **ZERO `health_ingest_failed` ROWS EVER IS WHAT NARROWED IT.** That event is recorded at
+the UPSERT, so zero rows **eliminates the database write entirely** — the request is
+rejected at an **early return**, and all three of those were silent on both sides.
+
+⚠️ **TWO HYPOTHESES FALSIFIED rather than left open:** the watermark is **not** stuck (90
+sweeps posted *after* the first failure), and it is **not** a missing session (`reportSweep`
+uses the same `authedFetch` and its event lands).
+
+**Leading hypothesis, stated as a hypothesis:** `!payload.totalDistanceMeters` **rejects
+ZERO**, and the client sends `totalDistance ?? 0` — so an indoor or treadmill run with no
+GPS and no footpod is a legitimate run that can **never** be stored and is re-offered on
+every sweep.
+
+**Shipped (option 1 of the RCA — instrumentation only, deliberately):**
+- `PostOutcome { ok, status, reason }` through one shared `postJson`
+- 🥇 **the twin, found by sweeping for the SHAPE: `postSamples` had the identical
+  `return res.ok / catch → false`.** Found 2, fixed 2
+- a `failures` field on the sweep event, **deduplicated with counts** (`422 x13`) and
+  **distinct from `error`** — `error` means the sweep threw, `failures` means workouts were
+  rejected, and collapsing them would recreate the original ambiguity
+- server side: `health_ingest_rejected` naming the missing field **and its value**, because
+  `!x` cannot tell `0` from `undefined` and that difference is the whole diagnosis
+- gate: `lib/health/ingestReason.test.ts`, 12 arms, **falsified 4 ways**
+
+🔻 **OPEN, and this is the point of shipping instrumentation alone: the CAUSE.** The next
+sweep from an affected device reports it. ⚠️ **Fixing it now would have been fixing a bug I
+had not identified.** When the reason lands, the likely decision is whether a 0-distance run
+should be STORED — ADR-011 makes HealthKit the SOR and duration + HR are the
+coaching-relevant parts, so discarding it is not obviously correct. ⚠️ That change would
+let such rows reach `analyse-run`, where `distance_score` divides by planned distance —
+**check before building.**
+
+⚠️ **Needs a TestFlight build to produce the answer.** The sweep runs in the Capacitor
+webview and cannot be triggered from here; the instrumentation is designed so the **device**
+reports the cause rather than me guessing it.
+
+### 🟡 `HEALTH-ACCESS-DENIED-SURFACE-01` — 🔴 **PREMISE CORRECTED 2026-10-08: it is NOT 6 users who need telling, and the existing doctrine already forbids the fix as filed** *(P3, was P2)* 🧭 **DESIGN BOARD**
+
+> 🔴 **I FILED THIS AS *“tell 6 users their Health access is off”*. Measured, those 6 split
+> three ways and only 3 are even candidates:**
+>
+> | Users | Evidence | Reality |
+> |---|---|---|
+> | **2** (`1afc17e4`, `60d4bdd5`) | **76 and 90 successful posts**; the error on 1 and 10 of 118/154 sweeps | ⛔ **Transient.** Telling them access is off is a **FALSE ACCUSATION** — almost certainly the device locked during a background sweep, which is normal iOS and self-resolves |
+> | **1** (`0a972fdf`) | finds runs, never posts | 🔴 **This is `HK-INGEST-REASON-01`'s bug**, not an access problem |
+> | **3** (`24ba65cb`, `2bce83cd`, `e98c3253`) | **0 workouts found, ever** | The only plausible access cases — and **indistinguishable from “no watch”** |
+>
+> ⚠️ **AND `matchEmptyCopy`'S OWN COMMENT ALREADY FORBIDS WHAT THIS ITEM PROPOSED**, in as
+> many words: *“IT NEVER NAMES THE CAUSE IT CANNOT KNOW. A denied HealthKit read resolves
+> EMPTY, not as an error, so 'no runs have synced' is a fact and 'your permission is off'
+> would be a guess.”* **Settled ground, and I filed against it.**
+>
+> 🔻 **So this is a REWRITE, not a build.** What is actually left: (a) **filter** the
+> transient `"Protected health data is inaccessible"` so it stops reading as a defect in
+> ops, and (b) decide whether the 3 never-found users get anything beyond the honest line
+> that already exists. **Dropped to P3** — the real defect in this area is
+> `HK-INGEST-REASON-01`.
+
 
 **Found closing `HK-NEVER-SYNCED-COHORT-01`'s residual.** The `health_sync_swept`
 instrument has a week of data and it **separates the causes**, exactly as that item
@@ -678,11 +752,23 @@ such: the route needs auth, a tier lookup and a service-role client, none of whi
 
 ### 🔴 `HK-NEVER-SYNCED-COHORT-01` — RE-MEASURED the same day: 7 of 13 are a TIER GATE, not a defect *(filed 2026-10-07, **P1**)* 💼 **SLT** · ⚙️ NO BOARD *(for the residual 6)*
 
-> ✅ **ARM (b) CLOSED BY MEASUREMENT 2026-10-08, AND THE INSTRUMENT DID ITS JOB.** This item
-> said *"give it a week and the `workouts_found: 0` rows separate 'asked and got nothing'
-> from 'never asked'"*. It did. Across **400 sweep rows / 13 users**: **`failed: 0` on every
-> row** — nothing is collecting 403s any more, so arm (b)'s *"the client keeps trying
-> anyway"* is resolved by the `HK-FREE-INGEST-LINE-01` gate move. **6 users report
+> 🔴 **CORRECTION 2026-10-08, SAME DAY: I CLOSED ARM (b) ON A FALSE MEASUREMENT.** I wrote
+> *"`failed: 0` on every row, so the client is no longer collecting failures"*. **That was
+> wrong, and it was wrong because I read 400 of 847 rows** — the most recent window
+> happened to be clean. **A big accurate count on the wrong population.**
+>
+> 📐 **Re-measured on the full table: 169 sweeps have `failed > 0`, ALL of them AFTER the
+> gate move, including 14 today across 2 users.** The 403s are indeed gone; something else
+> is failing and **arm (b) is not closed.**
+>
+> 🔴 **And one user is acute: `0a972fdf` — 24 sweeps, 22 found workouts, ZERO ever
+> posted.** Their runs have never once arrived.
+>
+> → **RCA complete, filed as `HK-INGEST-REASON-01`.** Root cause of the *undiagnosability*:
+> `postWorkout` returned `boolean`, collapsing 401 / 422 / 429 / 500 / network into one
+> `false`, and the caller's only logging line was **unreachable** because that function
+> never threw. 🥇 **`health_ingest_failed` having ZERO rows ever is what narrowed it** —
+> that event is recorded at the upsert, so the rejection must be an early return. **6 users report
 > `workouts_found: 0` on every sweep** (asked, got nothing — not an ingest defect) and
 > **one carries a named cause**: `error: "Protected health data is inaccessible"`.
 > 🔻 **So the residual is NOT a build.** The product gap it exposes is filed as
@@ -740,7 +826,28 @@ first place, an abandoned account, or an ingest/sync defect that only shows at s
 **Not a board question** — nothing here changes what the engine prescribes or what the
 runner sees. It is support, ops and possibly a defect.
 
-### 🟡 `LAST-SYNC-ISO-DEAD-01` — `getLastSyncIso()` is confirmed dead, and the reason matters *(filed 2026-10-07, P3)* ⚙️ **NO BOARD**
+### ✅ `LAST-SYNC-ISO-DEAD-01` — **CLOSED 2026-10-08, NO CODE. The decision it asked for answers itself** ⚙️ **NO BOARD**
+
+> The item posed one question: *“either delete the reader and keep the setter, or leave it with
+> that reason recorded. The decision is which, not whether to wire it.”*
+>
+> ✅ **Validated 2026-10-08: deleting is not available.** `getLastSyncIso()` has a **live
+> internal caller** at `lib/health/clientSync.ts:275` — `syncRecentWorkouts` reads it as the
+> sync watermark to set the lookback window. The item's “zero call sites” is exact and
+> correctly scoped (*“under `components/` or `app/`”*): it is dead as a **UI data source** and
+> load-bearing as an **internal watermark**.
+>
+> ⚠️ **So the decision resolves itself: leave it.** 📱 Wroblewski's reason stands recorded —
+> it reads `localStorage`, so it answers *“this device”* where every UI question is *“this
+> runner”*, and `lib/ui/connectionFreshness.ts` already carries that reasoning at its head with
+> an arm asserting the module does not reach for it. **Nothing to build; the risk this item
+> existed to prevent (someone wiring it to a UI row) is already gated.**
+>
+> 🔴 **And my own one-line summary of this item was wrong.** I reported it as *“confirmed
+> dead code”* in a backlog review; it is not dead, it is dead **in one scope**. The item said
+> so precisely and I compressed the scope out of it. **A correctly-scoped claim loses its
+> scope the moment it is summarised.**
+
 
 `lib/health/clientSync.ts:81`. **Zero call sites under `components/` or `app/`** (the only
 textual hit is now the comment in `DashboardClient` explaining why it is not used). Its

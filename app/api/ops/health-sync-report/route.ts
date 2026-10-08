@@ -23,6 +23,8 @@ interface Body {
   failed?: number
   lookbackFrom?: string
   error?: string
+  /** HK-INGEST-REASON-01 — per-workout rejection reasons, deduplicated with counts. */
+  failures?: string
 }
 
 /** A client-supplied count is only trusted as a bounded non-negative integer. */
@@ -45,6 +47,11 @@ export async function POST(req: NextRequest) {
       failed:         count(body.failed),
       lookback_from:  typeof body.lookbackFrom === 'string' ? body.lookbackFrom.slice(0, 40) : null,
       error:          typeof body.error === 'string' ? body.error.slice(0, 500) : null,
+      // HK-INGEST-REASON-01 — DISTINCT FROM `error`, and the distinction is the point.
+      // `error` means the sweep THREW (the plugin query failed). `failures` means
+      // individual workouts were REJECTED while the sweep itself ran fine — the case
+      // that read `failed: 1, error: null` and was undiagnosable for exactly that reason.
+      failures:       typeof body.failures === 'string' ? body.failures.slice(0, 500) : null,
     },
     user.id,
   )

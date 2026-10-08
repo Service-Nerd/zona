@@ -41,17 +41,95 @@ const WORKOUT_PEAK_MAX_PAGES = 2
 
 // ─── Plugin-agnostic transport helpers ─────────────────────────────────────
 
+/**
+ * The outcome of one transport attempt, with the REASON intact.
+ *
+ * 🔴 HK-INGEST-REASON-01 (2026-10-08) — THIS USED TO RETURN `boolean`, AND THAT IS WHY
+ * A LIVE FAILURE WAS UNDIAGNOSABLE.
+ *
+ * Measured in production: 14 sweeps on 2026-10-08 across 2 users read
+ * `workouts_found: 1, posted: 0, failed: 1, error: null` — HealthKit found the run, the
+ * upload failed, and **nothing anywhere recorded why**. One user (`0a972fdf`) has 22
+ * sweeps that found workouts and **zero that ever posted**.
+ *
+ * The cause was not the telemetry. `health_sync_swept` records exactly what it was
+ * built to record. The reason was **destroyed two layers earlier**: `return res.ok`
+ * collapsed 401, 422, 429, 500 and every network error into one `false`, and the route
+ * DOES return a reason in its body (`{ error: 'uuid, startDate, totalDistanceMeters,
+ * durationSeconds required' }`) which was thrown away at this boundary.
+ *
+ * ⚠️ AND THE ONLY LINE THAT LOGGED ANYTHING WAS UNREACHABLE. The caller's
+ * `catch (err) { totalFailed++; console.warn(...) }` can never fire for an upload
+ * failure, because this function never throws — every real failure took the silent
+ * `else totalFailed++` branch. Catalogue class "unchecked response", in its worst form:
+ * `res.ok` IS read, correctly, and then the WHY is discarded.
+ */
+export interface PostOutcome {
+  ok: boolean
+  /** HTTP status, or null when the request never completed. */
+  status: number | null
+  /** The server's own reason, or the thrown message. Null only on success. */
+  reason: string | null
+}
+
+/**
+ * Collect failure reasons for the sweep event, DEDUPLICATED WITH A COUNT.
+ *
+ * ⚠️ Deduplicated on purpose. One user logged 13 failing sweeps in a day and a stuck
+ * workout re-enters the window every sweep, so a raw list would be the same sentence
+ * thirteen times and the 500-char column would truncate the SECOND distinct reason —
+ * which is the one worth having. `422 x13` is strictly more informative and shorter.
+ */
+function noteFailure(into: Map<string, number>, o: PostOutcome): void {
+  const key = `${o.status ?? 'no-response'}: ${o.reason ?? 'unknown'}`.slice(0, 120)
+  into.set(key, (into.get(key) ?? 0) + 1)
+}
+
+/** `422 x13 · 401 x1` — stable order so two sweeps with the same causes read the same. */
+function formatFailures(reasons: Map<string, number>): string | undefined {
+  if (reasons.size === 0) return undefined
+  return Array.from(reasons.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([k, n]) => (n > 1 ? `${k} x${n}` : k))
+    .join(' \u00b7 ')
+}
+
 /** Posts a single workout payload to /api/health/ingest. */
-export async function postWorkout(payload: HealthKitWorkoutPayload): Promise<boolean> {
+export async function postWorkout(payload: HealthKitWorkoutPayload): Promise<PostOutcome> {
+  return postJson('/api/health/ingest', payload)
+}
+
+/**
+ * One transport, so the reason cannot be discarded in one place and kept in another.
+ *
+ * ⚠️ THE SWEEP FOR THE TWIN FOUND IT IMMEDIATELY: `postSamples` had the identical
+ * `return res.ok / catch → false` shape, so the same blindness applied to daily
+ * recovery samples. Both go through here now. (Exit criterion 3: grep for the SHAPE of
+ * the fix — found 2, fixed 2.)
+ */
+async function postJson(url: string, body: unknown): Promise<PostOutcome> {
   try {
-    const res = await authedFetch('/api/health/ingest', {
+    const res = await authedFetch(url, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
+      body:    JSON.stringify(body),
     })
-    return res.ok
-  } catch {
-    return false
+    if (res.ok) return { ok: true, status: res.status, reason: null }
+    // The route's own message, where it has one. ⚠️ Read defensively and never let
+    // reading it turn a diagnosable failure into an undiagnosable one: a non-JSON
+    // body (an HTML error page from the edge, say) must still yield the STATUS.
+    let reason: string | null = null
+    try {
+      const text = await res.text()
+      if (text) {
+        try { reason = (JSON.parse(text) as { error?: string }).error ?? text.slice(0, 200) }
+        catch { reason = text.slice(0, 200) }
+      }
+    } catch { /* body unreadable; the status is still the finding */ }
+    return { ok: false, status: res.status, reason: reason ?? `HTTP ${res.status}` }
+  } catch (err) {
+    // Never completed: no status exists, and saying so is the point.
+    return { ok: false, status: null, reason: err instanceof Error ? err.message : String(err) }
   }
 }
 
@@ -63,18 +141,12 @@ export async function postSamples(samples: Array<{
   sleepHours?:  number | null
   sleepStages?: { deep: number; rem: number; light: number; awake: number } | null
   vo2Max?:      number | null
-}>): Promise<boolean> {
-  if (samples.length === 0) return true
-  try {
-    const res = await authedFetch('/api/health/samples', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ samples }),
-    })
-    return res.ok
-  } catch {
-    return false
-  }
+}>): Promise<PostOutcome> {
+  // 🔴 THE TWIN, found by sweeping for the SHAPE of the postWorkout fix rather than its
+  // symptom (exit criterion 3). It had the identical `return res.ok / catch → false`,
+  // so a failed recovery-sample upload was exactly as undiagnosable as a failed run.
+  if (samples.length === 0) return { ok: true, status: null, reason: null }
+  return postJson('/api/health/samples', { samples })
 }
 
 /**
@@ -95,6 +167,7 @@ async function reportSweep(report: {
   failed:        number
   lookbackFrom:  string
   error?:        string
+  failures?:     string
 }): Promise<void> {
   try {
     await authedFetch('/api/ops/health-sync-report', {
@@ -292,6 +365,8 @@ async function syncRecentWorkouts(Health: HealthModule): Promise<void> {
   let totalFailed = 0
 
   let sweepError: unknown
+  /** HK-INGEST-REASON-01 — reason -> count, so the sweep event says WHY. */
+  const failureReasons = new Map<string, number>()
   try {
     // Pagination loop — Cap-go's queryWorkouts returns an anchor when more data
     // is available. Bound the loop to avoid runaway requests.
@@ -333,11 +408,22 @@ async function syncRecentWorkouts(Health: HealthModule): Promise<void> {
             workoutType:         'running',
             sourceName:          workout.sourceName,
           }
-          const ok = await postWorkout(payload)
-          if (ok) totalSynced++
-          else totalFailed++
+          const outcome = await postWorkout(payload)
+          if (outcome.ok) totalSynced++
+          else {
+            totalFailed++
+            // HK-INGEST-REASON-01 — the reason now REACHES the sweep event. This branch
+            // used to increment a counter and record nothing at all; the `catch` below
+            // was unreachable because `postWorkout` never threw.
+            noteFailure(failureReasons, outcome)
+            // eslint-disable-next-line no-console
+            console.warn('[health-sync] workout rejected', workout.platformId, outcome.status, outcome.reason)
+          }
         } catch (err) {
+          // Still reachable for a THROW in the HR read or payload build above, which is
+          // a different failure from a rejected upload and is labelled as such.
           totalFailed++
+          noteFailure(failureReasons, { ok: false, status: null, reason: err instanceof Error ? err.message : String(err) })
           // eslint-disable-next-line no-console
           console.warn('[health-sync] workout failed', workout.platformId, err)
         }
@@ -364,6 +450,9 @@ async function syncRecentWorkouts(Health: HealthModule): Promise<void> {
     failed:        totalFailed,
     lookbackFrom:  startDate,
     ...(sweepError ? { error: sweepError instanceof Error ? sweepError.message : String(sweepError) } : {}),
+    // HK-INGEST-REASON-01 — distinct from `error`, which is the sweep THROWING.
+    // `failures` is per-workout rejection, which is the case that was invisible.
+    ...(formatFailures(failureReasons) ? { failures: formatFailures(failureReasons) } : {}),
   })
 
   if (sweepError) throw sweepError

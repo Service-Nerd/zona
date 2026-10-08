@@ -91,8 +91,41 @@ export async function POST(req: NextRequest) {
 
   const payload = body as HealthKitWorkoutPayload
 
-  if (!payload.uuid || !payload.startDate || !payload.totalDistanceMeters || !payload.durationSeconds) {
-    return NextResponse.json({ error: 'uuid, startDate, totalDistanceMeters, durationSeconds required' }, { status: 422 })
+  // 🔴 HK-INGEST-REASON-01 (2026-10-08) — THE REJECTION IS NOW RECORDED, AND ZERO
+  // `health_ingest_failed` ROWS IS WHAT PROVED IT HAD TO BE.
+  //
+  // Measured: 14 sweeps on 2026-10-08 reported `failed: 1` with no reason, and one user
+  // has 22 sweeps that found workouts and NEVER posted. `health_ingest_failed` is
+  // recorded further down this route and has **zero rows ever**, which eliminates the
+  // upsert entirely: the request is rejected BEFORE the route does any work, and every
+  // early return here was silent on both sides.
+  //
+  // ⚠️ `!payload.totalDistanceMeters` REJECTS ZERO, which is the leading hypothesis and
+  // the reason this event names the field. `clientSync` sends
+  // `totalDistance ?? 0`, so an indoor or treadmill run with no GPS and no footpod is a
+  // legitimate run that can NEVER be stored — it is re-offered on every sweep and
+  // rejected every time. ADR-011 makes HealthKit the system of record, and duration plus
+  // HR are the coaching-relevant parts, so discarding it is not obviously correct.
+  // **Whether to accept it is a separate decision; this event is what makes it decidable.**
+  const missing = [
+    !payload.uuid && 'uuid',
+    !payload.startDate && 'startDate',
+    !payload.totalDistanceMeters && 'totalDistanceMeters',
+    !payload.durationSeconds && 'durationSeconds',
+  ].filter(Boolean) as string[]
+  if (missing.length) {
+    await recordOpsEvent('health_ingest_rejected', {
+      status:  422,
+      missing: missing.join(','),
+      // The VALUES, not just the names: `totalDistanceMeters: 0` and `undefined` are
+      // different findings and `!x` cannot tell them apart.
+      distance_m:       payload.totalDistanceMeters ?? null,
+      duration_s:       payload.durationSeconds ?? null,
+      has_uuid:         payload.uuid != null,
+      has_start:        payload.startDate != null,
+      source_name:      payload.sourceName ?? null,
+    }, user.id)
+    return NextResponse.json({ error: `missing or zero: ${missing.join(', ')}` }, { status: 422 })
   }
   if (payload.workoutType !== 'running') {
     return NextResponse.json({ status: 'ignored', reason: 'non-run workout' })

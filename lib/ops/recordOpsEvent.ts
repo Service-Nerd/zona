@@ -266,6 +266,23 @@ export type OpsEventKind =
   // could not see either — `postWorkout` returns false and the caller counts a
   // failure without ever learning why.
   | 'health_ingest_failed'
+  // HK-INGEST-REASON-01 (2026-10-08) — the ingest route REJECTED a payload before doing
+  // any work, naming the field that was missing or zero.
+  //
+  // 🔴 ITS SIBLING `health_ingest_failed` HAS ZERO ROWS EVER, AND THAT IS WHAT MADE THIS
+  // NECESSARY. 14 sweeps on 2026-10-08 reported `failed: 1, error: null`, and one user
+  // has 22 sweeps that found workouts and never posted one. `health_ingest_failed` is
+  // recorded at the UPSERT, so zero rows eliminates the write entirely: the rejection
+  // happens at an early return, and every early return was silent on BOTH sides —
+  // `postWorkout` collapsed the status into `false` on the client, and the route
+  // recorded nothing on the server.
+  //
+  // ⚠️ IT CARRIES THE VALUES, NOT ONLY THE FIELD NAMES. `!payload.totalDistanceMeters`
+  // rejects ZERO as well as absent, and those are different findings: a 0-distance
+  // running workout is an indoor or treadmill run, which is a legitimate run that can
+  // never be stored and is re-offered on every sweep. `!x` cannot tell 0 from undefined;
+  // this event can.
+  | 'health_ingest_rejected'
   // POSTRUN-JOURNEY-01 (2026-10-07) — the AI read came back over its WORD budget.
   //
   // The budget used to be in SENTENCES ("two, three at the absolute most") and the
