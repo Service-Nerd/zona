@@ -4701,3 +4701,59 @@ be re-put to the founder rather than inherited: the choice he was offered descri
 highlighted list that did not exist. **A defaulted or uninitialised value is how a missing
 consumer looks like a finished one** — `POSTRUN-CONTEXT-TWIN-01`, same class, same day.
 
+---
+
+## ✅ `LINK-PICKER-LIST-SHAPE-01` — RULED BY THE FOUNDER, 2026-10-08. Shape (b): Collins won
+
+The board left this **INSUFFICIENT EVIDENCE** and named the missing artefact: *the founder,
+on a linked session, saying which of the two he wanted.* He has.
+
+> **🎪 COLLINS' SHAPE SHIPS.** On an already-linked session the screen states
+> **“Linked to your 9.9km run, Wednesday.”** and the list starts **hidden** behind
+> **“Wrong one?”**.
+
+### 📱✋ Wroblewski and Silvanto LOST, and this is recorded as a loss
+
+They argued to keep the list, with **remove** brought onto the surface. 🔴 **They argued it on
+the assumption that the selection rendered** — and `LINK-PICKER-SELECTION-UNWIRED-01` then
+measured that it never had. The thing they were defending did not exist, so the position was
+not defeated on taste; **its premise was false.**
+
+⚠️ **Wroblewski's concession is honoured, not discarded.** He said the two shapes converge if
+*“Wrong one?”* opens exactly his list. **It does.** The list is one tap away, unchanged, and an
+UNLINKED session still gets it immediately — nothing moved for the first-time case.
+
+🔴 **AND HE ONLY RULED AFTER THE CHOICE WAS RE-PUT.** The first version offered him *“the
+list with your run highlighted”*, which was wrong. His reply — *“It doesn't do what you think
+it does now”* — is what sent me back to measure it. **A ruling obtained on a false description
+of the status quo is not a ruling**, and this one nearly was.
+
+### 🥇 Two things the implementation gets for free, both worth keeping
+
+| | |
+|---|---|
+| **The control is the one already live** | *“Wrong one?”* exists fifty lines up on the auto-match suggestion. 🎪 Collins: *“You wrote the right control and did not reuse it on the state that needs it most.”* A second string for one job is how a vocabulary drifts. |
+| **The statement names the run by DISTANCE AND DAY, never by its name** | This sidesteps a filed defect instead of quoting it into a new surface: `ACTIVITY-NAME-WRITER-01` records that `name` is `Run (${sourceName})` — the app that WROTE the workout — so it renders as **“Run (Connect)”** above a subtitle saying “Apple Health”. Naming the run by **what the runner did** cannot have that problem. |
+
+⚠️ The distance string comes from `lib/format.ts` (ADR-015 owns every distance string) and is
+passed in already formatted, so `linkPickerCopy` never grows a second opinion about units.
+
+### 📦 Artifacts
+Pattern already landed (`ux-principles.md` § *the already-done state is a SIXTH state*) ·
+constant `lib/ui/linkPickerCopy.ts` + `linkedRunDescriptor` · 19 arms, **falsified three ways**
+(render the list by default, drop the reveal control, use the activity name) · this row.
+
+⚠️ **Button geometry re-baselined with its reason**: one control added, the reveal, identical
+to its three `btn--inline-target` siblings bar an explicit 12px font because it sits under a
+12px subtitle rather than inside an 11px row.
+
+### ⚠️ What this still does not settle
+**Where unlink lives.** `UX-POSTRUN-01` put it on `SessionScreen`, and Wroblewski's objection
+that the destructive action is absent from the surface offering the constructive one is
+**still recorded and still unruled.** Shape (b) does not answer it — it arguably sharpens it,
+since the runner now reads a statement about a link they still cannot remove from here.
+
+⚠️ **NOT VISUALLY VERIFIED.** The picker view is reachable only by tapping inside an
+auth-gated screen and `/copy-preview` holds no linked-completion fixture, so the rendered
+result has been looked at **nowhere**. Nothing has run on a device.
+

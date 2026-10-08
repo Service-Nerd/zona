@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-08 (later) — LOG-UPDATE-SILENT-RELINK-01 / READ-DIRECTION-OVERCLAIM-01 / READ-EM-DASH-02 / LINK-PICKER-SELECTION-UNWIRED-01 · I told the board the wrong cause and the conclusion survived anyway
+## 2026-10-08 (later) — LOG-UPDATE-SILENT-RELINK-01 / READ-DIRECTION-OVERCLAIM-01 / READ-EM-DASH-02 / LINK-PICKER-SELECTION-UNWIRED-01 / LINK-PICKER-LIST-SHAPE-01 · I told the board the wrong cause and the conclusion survived anyway
 
 **Shipped:** "Update log" can no longer silently relink a run. §123: a run is scored
 against the band its session prescribes, not the one its type names. And the plan's
@@ -59,6 +59,13 @@ shipped items on a backlog list I gave the founder, a 47.3% figure that included
 superseded rows, and a board mechanism that was false. Every one came from reading a
 summary instead of measuring the thing, and every one was caught by a mechanism rather
 than by me being careful. The repo's checks are doing more work than I am.
+
+**And the ending is the best bit.** He picked Collins' shape — statement first, list behind
+"Wrong one?" — which means two seats lost an argument they had made on a premise that turned
+out to be false. The list is still one tap away, because that was the exact convergence
+Wroblewski had named as his own concession at the sitting. Three of the five seats
+contributed something that survived into the shipped code, and the one that "lost" set the
+condition that made the winning shape acceptable.
 
 **Hook material:** I wrote a formal finding, took it to a review board, got a ruling, and
 then discovered my stated cause was wrong. The conclusion held. The reason did not.
