@@ -144,6 +144,7 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
   const [manualAccumulate, setManualAccumulate] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null)
+
   const [claimedIds, setClaimedIds] = useState<Set<number>>(new Set())
   const [freshRuns, setFreshRuns] = useState<any[]>([])
   // LEDGER-01 / DOCTRINE-01 — when the discipline ledger advanced this week,
@@ -381,6 +382,39 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
     }) as StravaActivity[],
   ) as any[]
   const emptyCause = matchEmptyCause({ pooled: pooledRuns.length, inWindow: inLinkWindow.length })
+
+  // 🔴 LINK-PICKER-SELECTION-UNWIRED-01 (founder, 2026-10-08: "It doesn't do what you
+  // think it does now") — SEED THE SELECTION FROM THE EXISTING LINK.
+  //
+  // `setSelectedActivity` had exactly ONE caller: a user's tap at `:1739`. Nothing ever
+  // seeded it from `completion`, so on an already-linked session this state was null and
+  // FOUR things silently read as "never logged":
+  //   1. `isSelected` was false for every row, so the linked run sat in the list
+  //      visually identical to the others, with no `aria-pressed` either;
+  //   2. the AIMark "analysis will fire" hint did not render;
+  //   3. the CTA read "Just mark it done" and routed to `reflect`, not "Confirm complete";
+  //   4. "Enter it manually" was offered, to a runner whose run was already attached.
+  //
+  // ⚠️ AND IT FALSIFIES THE CLAIMED-FILTER'S OWN STATED REASON. `:372` deliberately KEEPS
+  // the already-linked activity in the list, and the comment there says it is kept "so it
+  // can render as selected". It never could: the selection was never set. The filter was
+  // doing its half of a two-part feature whose other half was never wired.
+  //
+  // 🔴 THIS INVALIDATED A BOARD PREMISE. Silvanto declined to veto
+  // `LINK-PICKER-ALREADY-LINKED-01` on the grounds that keeping the run was COMPLIANCE
+  // with `BUTTON-COMPONENT-01` ("the moss active fill is the only selected affordance").
+  // There was no moss fill. `design-rulings.md` carries the amendment.
+  //
+  // A defaulted optional value is how a missing consumer looks like a finished one
+  // (POSTRUN-CONTEXT-TWIN-01, same class, same day).
+  useEffect(() => {
+    const linkedId = completion?.apple_health_uuid ?? completion?.strava_activity_id ?? null
+    if (linkedId == null) return
+    const linked = pooledRuns.find((r: any) => r.id === linkedId)
+    // ⚠️ Only SEEDS. A runner who taps another row, or taps the linked row to clear it,
+    // owns the selection from then on — so this must not re-assert on every render.
+    if (linked) setSelectedActivity((prev: any) => prev ?? linked)
+  }, [completion?.apple_health_uuid, completion?.strava_activity_id, pooledRuns])
 
   // LINK-PICKER-ALREADY-LINKED-01 — is this session ALREADY linked, and to what?
   // ⚠️ The name is looked up in the same pool the list renders from, so a windowed

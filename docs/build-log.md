@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-08 (later) — LOG-UPDATE-SILENT-RELINK-01 / READ-DIRECTION-OVERCLAIM-01 / READ-EM-DASH-02 · I told the board the wrong cause and the conclusion survived anyway
+## 2026-10-08 (later) — LOG-UPDATE-SILENT-RELINK-01 / READ-DIRECTION-OVERCLAIM-01 / READ-EM-DASH-02 / LINK-PICKER-SELECTION-UNWIRED-01 · I told the board the wrong cause and the conclusion survived anyway
 
 **Shipped:** "Update log" can no longer silently relink a run. §123: a run is scored
 against the band its session prescribes, not the one its type names. And the plan's
@@ -45,6 +45,14 @@ grepped and fixed, I would have shipped five of them.
 And the boards keep earning it by disagreeing with me rather than agreeing. Silvanto
 declined to veto the thing I brought him as a defect, because it was compliance with a
 rule I had not read properly.
+
+**And a fourth, after I thought I was finished:** I described the link picker's current
+behaviour to the founder and he replied "it doesn't do what you think it does now." He was
+right. The selected state was never wired — one caller, a user's tap, nothing seeding it from
+the completion — so the already-linked run sat in a list looking exactly like every other
+run, the CTA said "Just mark it done", and the screen offered manual entry to someone whose
+run was already attached. **A board seat had declined to veto on the strength of that
+selection rendering.** It never rendered.
 
 **The honest bit:** three separate times today I was confidently wrong in writing — two
 shipped items on a backlog list I gave the founder, a 47.3% figure that included

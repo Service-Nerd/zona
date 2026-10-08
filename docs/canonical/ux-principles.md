@@ -184,6 +184,16 @@ picker for *keeping* the already-linked run in its list; that is **compliance** 
 `BUTTON-COMPONENT-01` (*the moss active fill is the only selected affordance*), because the
 run must stay in the list to carry it. **The state must be SAID, not removed.**
 
+> 🔴 **AND THAT WAS TRUE OF THE RULE AND FALSE OF THE CODE UNTIL 2026-10-08.** The founder:
+> *“It doesn't do what you think it does now.”* `setSelectedActivity` had exactly one caller —
+> a user's tap — so **the already-linked run was never selected and never carried the fill**,
+> and three other consumers read as “never logged” with it (the AIMark hint, the CTA label,
+> and the offer of manual entry). The filter was doing its half of a two-part feature whose
+> other half was never wired, while its comment asserted the half that did not happen.
+> Fixed as `LINK-PICKER-SELECTION-UNWIRED-01`; `design-rulings.md` carries the amendment,
+> **including that a seat's non-veto had rested on the false premise.**
+> **A defaulted or uninitialised value is how a missing consumer looks like a finished one.**
+
 **Where the copy lives:** an owner module under `lib/ui/`, never a literal in the component
 — `linkPickerCopy.ts` beside `matchEmptyCopy` and `connectionStaleCopy`. A ternary in JSX
 cannot be called, so which branch renders cannot be proven.

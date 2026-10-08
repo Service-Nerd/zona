@@ -6,6 +6,7 @@
 // mount. Same limit, same declaration, as `postRunPaceWired.test.ts`.
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { linkPickerCopy } from './linkPickerCopy'
 
 const EMPTY_STATE_SUBTITLE = 'Optional, select from recent runs'
@@ -89,3 +90,50 @@ describe('the picker renders the owner, not a literal', () => {
     expect(SRC).toContain("r.id !== completion?.strava_activity_id && r.id !== completion?.apple_health_uuid")
   })
 })
+
+// LINK-PICKER-SELECTION-UNWIRED-01 — the linked run must be IDENTIFIABLE on the screen.
+//
+// 🔴 FOUNDER, 2026-10-08: "It doesn't do what you think it does now." He was right, and
+// my description of the current behaviour to him was wrong. `setSelectedActivity` had
+// exactly ONE caller — a user's tap — so on an already-linked session the state was null
+// and FOUR consumers read as "never logged": no row highlighted, no `aria-pressed`, no
+// AIMark hint, the CTA reading "Just mark it done" instead of "Confirm complete", and
+// "Enter it manually" offered to a runner whose run was already attached.
+//
+// ⚠️ IT ALSO FALSIFIED THE CLAIMED-FILTER'S OWN STATED REASON, and a board premise with
+// it: `:372` keeps the already-linked activity "so it can render as selected", and
+// Silvanto declined to veto on the grounds that keeping it was compliance with
+// `BUTTON-COMPONENT-01`'s moss-fill rule. There was no moss fill. The filter was doing
+// its half of a two-part feature whose other half was never wired.
+describe('LINK-PICKER-SELECTION-UNWIRED-01 — the existing link seeds the selection', () => {
+  const SRC = readFileSync(join(process.cwd(), 'components/dashboard/SessionPopupInner.tsx'), 'utf8')
+
+  it('an effect seeds selectedActivity from the completion', () => {
+    expect(SRC).toMatch(/const linkedId = completion\?\.apple_health_uuid \?\? completion\?\.strava_activity_id/)
+    expect(SRC).toContain('setSelectedActivity((prev: any) => prev ?? linked)')
+  })
+
+  it('it reads BOTH id columns, so a HealthKit link is not left unseeded', () => {
+    // ADR-011 makes HealthKit the SOR and the common case; a Strava-only read would
+    // leave most linked sessions looking unlogged, which is the same defect narrowed.
+    const i = SRC.indexOf('const linkedId =')
+    const decl = SRC.slice(i, SRC.indexOf('\n', i))
+    expect(decl).toContain('apple_health_uuid')
+    expect(decl).toContain('strava_activity_id')
+  })
+
+  it('🔴 it SEEDS and never re-asserts, so the runner keeps control', () => {
+    // `prev ?? linked` is the whole safety property: a runner who taps another row, or
+    // taps the linked row to clear it, must not have the selection snap back on the next
+    // render. An unconditional `setSelectedActivity(linked)` would make the list unusable.
+    expect(SRC).not.toMatch(/if \(linked\) setSelectedActivity\(linked\)/)
+    expect(SRC).toContain('prev ?? linked')
+  })
+
+  it('and it does nothing when the session carries no link', () => {
+    const i = SRC.indexOf('const linkedId =')
+    const after = SRC.slice(i, i + 300)
+    expect(after).toContain('if (linkedId == null) return')
+  })
+})
+

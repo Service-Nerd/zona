@@ -4644,3 +4644,60 @@ founder on a device. It also does not settle **where unlink lives**: `UX-POSTRUN
 `SessionScreen`, and Wroblewski's point that the destructive action is absent from the surface offering
 the constructive one is **recorded and not ruled on.**
 
+---
+
+## 🔴 `LINK-PICKER-ALREADY-LINKED-01` AMENDMENT 1 (2026-10-08) — the non-veto rested on a premise that was FALSE. The selected state was never wired
+
+**Founder, shown the ruling: *“It doesn't do what you think it does now.”*** He was right, and
+what I described to him as the current behaviour does not exist.
+
+### 📐 Measured
+
+`setSelectedActivity` has **exactly one caller**: a user's tap at `SessionPopupInner.tsx:1739`.
+**Nothing ever seeded it from `completion`.** So on an already-linked session `selectedActivity`
+was `null` and **four consumers read as “never logged”**:
+
+| | Consumer | What the runner saw |
+|---|---|---|
+| 1 | `:1710` `isSelected` | **no row highlighted** — the linked run sat in the list visually identical to every other, and with no `aria-pressed` either |
+| 2 | `:775` AIMark hint | the *“analysis will fire”* line did not render |
+| 3 | `:1793-1797` the CTA | read **“Just mark it done”** and routed to `reflect`, not “Confirm complete” |
+| 4 | `:1808` manual entry | **“Enter it manually” offered** to a runner whose run was already attached |
+
+### ⛔ WHAT THIS DOES TO THE RULING
+
+🔴 **Silvanto's non-veto is amended.** He declined to veto on the grounds that the
+claimed-filter at `:372` **keeping** the already-linked activity was *compliance* with
+`BUTTON-COMPONENT-01` — *“the moss active fill is the only selected affordance”*, so removing
+the run would delete the only signal saying *this is the one you have*.
+
+**There was no moss fill.** The filter was doing its half of a two-part feature whose other
+half was never wired, and its own comment asserts the half that does not happen (*“so it can
+render as selected”*). **The reasoning was sound about the rule and false about the code.**
+
+⚠️ **The SHIPPED half of the ruling stands and is unaffected** — the heading still lied under
+either shape, and `linkPickerCopy` names the linked run in prose, which is the identification
+the screen needed most urgently.
+
+🔴 **But 🎪 COLLINS' POSITION IS NOW SUBSTANTIALLY STRONGER, and the record should say so.**
+His argument was that the list communicates nothing about the current state and should be
+replaced by a statement plus *“Wrong one?”*. **Measured, the list communicated nothing about
+the current state** — not as a judgement about hierarchy, but literally. 📱✋
+Wroblewski/Silvanto's “keep the list” position was argued on the assumption that the selection
+rendered. It did not.
+
+### ✅ Fixed, because it is wanted under EITHER shape
+
+`LINK-PICKER-SELECTION-UNWIRED-01` — an effect seeds `selectedActivity` from
+`completion.apple_health_uuid ?? completion.strava_activity_id`. ⚠️ **It SEEDS and never
+re-asserts** (`prev ?? linked`), so a runner who taps another row, or clears the selection,
+keeps control — an unconditional set would make the list unusable. Both id columns are read,
+because ADR-011 makes HealthKit the SOR and a Strava-only read would leave most linked
+sessions unseeded. Gated by 4 arms in `linkPickerCopy.test.ts`, **falsified three ways**
+(remove the effect, make it re-assert, narrow it to Strava).
+
+⚠️ **`LINK-PICKER-LIST-SHAPE-01` IS STILL OPEN AND NOW HAS BETTER EVIDENCE**, so it should
+be re-put to the founder rather than inherited: the choice he was offered described a
+highlighted list that did not exist. **A defaulted or uninitialised value is how a missing
+consumer looks like a finished one** — `POSTRUN-CONTEXT-TWIN-01`, same class, same day.
+

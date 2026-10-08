@@ -286,6 +286,28 @@ a runner with no watch**, and saying so honestly is part of the ruling.
 
 Founder: *"seems i can still manually link it to the same run its linked against."* Confirmed in `SessionPopupInner`: the claimed-filter **deliberately keeps** the activity this session already holds (`r.id !== completion?.strava_activity_id && r.id !== completion?.apple_health_uuid`), so it can render as selected. But the session was `DONE`, the post-run screen already offers **"Unlink this run"**, and the log view still presents a fresh "Optional, select from recent runs" list. **Two surfaces, two different mental models of the same state.** Not obviously a defect — a ruling on what the log view should say once a session is linked.
 
+### ✅ `LINK-PICKER-SELECTION-UNWIRED-01` — **SHIPPED 2026-10-08.** The selected state was never wired, and a board premise rested on it ⚙️ **NO BOARD**
+
+> 🔴 **FOUNDER, SHOWN THE RULING: *“It doesn't do what you think it does now.”*** He was
+> right, and **what I described to him as the current behaviour did not exist.**
+>
+> 📐 `setSelectedActivity` had **exactly one caller** — a user's tap at `:1739` — and
+> **nothing ever seeded it from `completion`.** So on an already-linked session four
+> consumers read as *never logged*: **no row highlighted and no `aria-pressed`**, no AIMark
+> hint, the CTA reading **“Just mark it done”** and routing to `reflect`, and **“Enter it
+> manually” offered** to a runner whose run was already attached.
+>
+> ⚠️ **IT FALSIFIED THE FILTER'S OWN STATED REASON AND A BOARD PREMISE WITH IT.** `:372`
+> keeps the linked activity *“so it can render as selected”* — it never could. Silvanto's
+> non-veto rested on that being compliance with `BUTTON-COMPONENT-01`'s moss-fill rule, and
+> **there was no moss fill.** `design-rulings.md` Amendment 1 records it.
+>
+> ✅ Fixed because it is wanted under **either** shape: an effect seeds from
+> `apple_health_uuid ?? strava_activity_id`. ⚠️ **It SEEDS and never re-asserts**
+> (`prev ?? linked`), so a runner who taps another row keeps control. 4 arms, falsified 3
+> ways. **A defaulted or uninitialised value is how a missing consumer looks like a
+> finished one** — `POSTRUN-CONTEXT-TWIN-01`, same class, same day.
+
 ### 🟡 `LINK-PICKER-LIST-SHAPE-01` — should the link picker's LIST exist on an already-linked session? *(filed 2026-10-08, P2)* 🧭 **DESIGN BOARD** · 🔻 **BLOCKED ON A DEVICE**
 
 **The open half of `LINK-PICKER-ALREADY-LINKED-01`, given its own id** because the copy half
@@ -303,6 +325,14 @@ unresolved rather than merged, because the first screen the runner sees differs:
 ⚠️ **The chair's note is the route out, and it means this is SEQUENCING, not a real
 disagreement about the end state: the two CONVERGE if “Wrong one?” opens exactly
 Wroblewski's list**, pre-scrolled to the current selection.
+
+🔴 **RE-PUT TO THE FOUNDER 2026-10-08, BECAUSE THE CHOICE HE WAS OFFERED DESCRIBED A SCREEN
+THAT DID NOT EXIST.** `LINK-PICKER-SELECTION-UNWIRED-01` found the selected state was never
+wired, so option (a) was not *“the list with your run highlighted”* — it was an
+undifferentiated list. 🎪 **Collins' position is substantially stronger as a result**: his
+argument was that the list communicates nothing about the current state, and measured, it
+communicated nothing about the current state. 📱✋ Wroblewski and Silvanto argued “keep the
+list” on the assumption that the selection rendered.
 
 🔻 **What would settle it, and it is the only thing that would: the founder on a device, on a
 linked session, saying which of the two he wanted when he tapped it.** Six runners have ever
