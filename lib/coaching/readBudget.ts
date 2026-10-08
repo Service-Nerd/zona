@@ -33,6 +33,6 @@ export function isWithinReadBudget(text: string): boolean {
  * instruction cannot drift from the check that enforces it.
  */
 export function readBudgetInstruction(): string {
-  return `One paragraph only. Hard limit ${POST_RUN_READ_MAX_WORDS} words — count them. ` +
+  return `One paragraph only. Hard limit ${POST_RUN_READ_MAX_WORDS} words: count them. ` +
     `Two sentences, three at the absolute most. Shorter is better; most good reads are under 20 words.`
 }

@@ -66,7 +66,7 @@ export const VOICE_DOESNT_WORK_EXAMPLES = [
  * Omit only for structural copy (upgrade prompts, settings) where zone execution
  * is not the subject.
  */
-export const VOICE_ANCHOR_INSTRUCTION = `Voice anchor for zone-discipline moments: "${BRAND.voiceAnchor}" — use this phrase or echo its framing when the feedback is about committing to (or failing to commit to) the prescribed zone. Applies to all session types: easy days (hold Zone 2), hard days (hit the band, don't coast), long runs (don't drift).`
+export const VOICE_ANCHOR_INSTRUCTION = `Voice anchor for zone-discipline moments: "${BRAND.voiceAnchor}": use this phrase or echo its framing when the feedback is about committing to (or failing to commit to) the prescribed zone. Applies to all session types: easy days (hold Zone 2), hard days (hit the band, don't coast), long runs (don't drift).`
 
 // ---------------------------------------------------------------------------
 // Builder
@@ -146,7 +146,7 @@ export function buildVoiceHeader({
   units,
 }: VoiceHeaderOptions): string {
   const lines: string[] = [
-    `You are ${BRAND.coachName}, ${BRAND.name}'s AI coach — ${role}. Voice rules, non-negotiable:`,
+    `You are ${BRAND.coachName}, ${BRAND.name}'s AI coach, ${role}. Voice rules, non-negotiable:`,
     `- Honest, slightly dry, self-aware. Never cheerleader.`,
   ]
 
@@ -156,7 +156,7 @@ export function buildVoiceHeader({
 
   lines.push(
     `- Specific beats abstract. Reference specific facts and numbers from the data.`,
-    `- Interpret, don't recite. Reach for observational stems — "This suggests…", "The important detail here…", "The limiter looks like…", "A key distinction is…" — when the data warrants a hypothesis. A reading without a read is a dashboard, not a coach. Never invent causes; only frame what the numbers point at.`,
+    `- Interpret, don't recite. Reach for observational stems ("This suggests…", "The important detail here…", "The limiter looks like…", "A key distinction is…") when the data warrants a hypothesis. A reading without a read is a dashboard, not a coach. Never invent causes; only frame what the numbers point at.`,
     `- Use "you" throughout.`,
     // BRAND-EMDASH-APP-01 — "sentences the runner reads or hears, no em dash".
     // ⚠️ THIS LIVED IN ONE PROMPT OF FOUR and was contradicted by that prompt's
@@ -182,7 +182,7 @@ export function buildVoiceHeader({
     // ENRICH-PII-MINIMISE-01 — the NAME never reaches the model. It is told to
     // write a literal token, and `resolveRunnerName` puts the real name back
     // server-side before anything is persisted or returned.
-    lines.push(`- You may address the runner as ${RUNNER_NAME_TOKEN} once if it lands naturally — don't force it.`)
+    lines.push(`- You may address the runner as ${RUNNER_NAME_TOKEN} once if it lands naturally. Don't force it.`)
     lines.push(RUNNER_NAME_TOKEN_INSTRUCTION)
   }
 

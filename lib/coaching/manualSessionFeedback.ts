@@ -86,7 +86,7 @@ export function manualFeedbackText(
     if (fatigueTag === 'Fine')    return 'Solid. Nothing to worry about.'
     if (fatigueTag === 'Heavy')   return 'Noted. The load is building.'
     if (fatigueTag === 'Wrecked') return 'Proper recovery tonight. Not optional.'
-    return 'No activity data — RPE next time gives a clearer picture.'
+    return 'No activity data. RPE next time gives a clearer picture.'
   }
 
   const isEasy = ['easy', 'recovery', 'run'].includes(sessionType)
@@ -147,12 +147,12 @@ export function manualMetricsFeedbackText(sessionType: string, m: ManualMetrics,
   if (m.avgHr != null && m.hrCeiling != null) {
     const breach = m.avgHr - m.hrCeiling
     if (isEasy) {
-      if (breach <= 0) return `Average HR ${m.avgHr} — inside the band. That's the discipline.`
-      if (breach <= 8) return `Average HR ${m.avgHr} — a touch over the ceiling. Ease it next time.`
-      return `Average HR ${m.avgHr} — ran hot for an easy day. That's where weeks get quietly wrecked.`
+      if (breach <= 0) return `Average HR ${m.avgHr}: inside the band. That's the discipline.`
+      if (breach <= 8) return `Average HR ${m.avgHr}: a touch over the ceiling. Ease it next time.`
+      return `Average HR ${m.avgHr}: ran hot for an easy day. That's where weeks get quietly wrecked.`
     }
-    if (breach >= 0) return `Average HR ${m.avgHr} — up in the work. That's the session.`
-    return `Average HR ${m.avgHr} — sat under the target. Room to push next time.`
+    if (breach >= 0) return `Average HR ${m.avgHr}: up in the work. That's the session.`
+    return `Average HR ${m.avgHr}: sat under the target. Room to push next time.`
   }
 
   // No HR entered — judge on distance vs planned. Distance honours the user's
@@ -160,9 +160,9 @@ export function manualMetricsFeedbackText(sessionType: string, m: ManualMetrics,
   const dist = formatDistance(m.distanceKm, units, { exact: true })
   if (m.plannedKm && m.plannedKm > 0) {
     const ratio = m.distanceKm / m.plannedKm
-    if (ratio >= 0.95 && ratio <= 1.1) return `${dist} — right on the number.`
+    if (ratio >= 0.95 && ratio <= 1.1) return `${dist}, right on the number.`
     if (ratio < 0.95)                  return `${dist} of ${formatDistance(m.plannedKm, units, { exact: true })} planned. Short, but logged.`
-    return `${dist} — a bit long. Fine if the legs are good.`
+    return `${dist}, a bit long. Fine if the legs are good.`
   }
 
   return `${dist} logged.`

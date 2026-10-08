@@ -11,6 +11,7 @@ import { computeEF, computeEFBaseline } from '@/lib/coaching/efTrend'
 import { COACHING_RULE_ENGINE_VERSION, COHORT_SIMILARITY } from '@/lib/coaching/constants'
 import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedback'
 import { isWithinReadBudget, countWords, POST_RUN_READ_MAX_WORDS } from '@/lib/coaching/readBudget'
+import { withoutEmDashes } from '@/lib/coaching/runnerProse'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { computeHrStreamSummary } from '@/lib/coaching/streamAnalysis'
@@ -424,7 +425,17 @@ const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userI
     })
 
     if (aiRes.ok) {
-      feedbackText = aiRes.text.trim() || null
+      // READ-EM-DASH-01 — the runtime boundary for the founder's punctuation rule.
+      //
+      // 🔴 THREE GUARDS HOLD THIS RULE AND ALL THREE READ SOURCE, so the one producer
+      // that writes sentences AFTER the build has passed was outside every one of
+      // them. Measured 2026-10-08: 15 of the 83 live reads carried an em dash (18.1%),
+      // and 70 of all 148 rows ever written (47.3%).
+      //
+      // ⚠️ THE PROMPT ASKS FOR THIS TOO, and the prompt is not the mechanism. The word
+      // budget is the precedent in the same file: the model was told "two sentences"
+      // and returned 76 words. Told AND repaired.
+      feedbackText = withoutEmDashes(aiRes.text.trim()) || null
       // POSTRUN-JOURNEY-01 — the boundary check. A prompt instruction is not a
       // mechanism: the model was already asked for two sentences and produced 76
       // words inside three of them. ⚠️ IT DOES NOT TRUNCATE. A read sliced mid

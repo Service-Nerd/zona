@@ -28,7 +28,7 @@ export const RUNNER_NAME_TOKEN = '{{RUNNER}}'
  * literal — a model told only "use a placeholder" will invent one.
  */
 export const RUNNER_NAME_TOKEN_INSTRUCTION =
-  `- If you address the runner by name, write exactly ${RUNNER_NAME_TOKEN} — it is substituted before they see it. Never invent a name.`
+  `- If you address the runner by name, write exactly ${RUNNER_NAME_TOKEN}, which is substituted before they see it. Never invent a name.`
 
 /**
  * Put the name back. Call this on EVERY string that came from a model, before
