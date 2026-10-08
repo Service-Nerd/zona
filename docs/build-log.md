@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 — RESHAPE-MOMENT-04 · the founder said it was awful and the house style already said why
+**Shipped:** The eight signals the engine watches now lead with their real thresholds, grouped by horizon, instead of being eight sentences in a row.
+
+**Dev learning:** The founder's words were *"it's boring and just a list of words. It's awful."* My own design doc had already diagnosed it: § Metric Pair says *"large numbers, small muted labels underneath; value always dominates"*, and what I had shipped was eight label-plus-sentence rows with no value in them anywhere. **The craft failure was not taste, it was putting prose on a surface whose documented pattern is metric hierarchy.** The fix was sitting right there: the Coaching Board had ratified every one of those thresholds that same morning, so `20%`, `1.4×`, `−8%`, `82%` became quotable for the first time. Before that ruling they were undocumented magic numbers and printing them would have asserted a precision nobody had defended — which is exactly why the three-card proof band died. **A number is not publishable because it is true; it is publishable because it is defended.**
+
+**Product/creator learning:** Two process misses, both mine, both worth more than the fix. **The board ruled on the wrong question** — I asked it where the moment lives and what may go on each surface, and it answered placement and framing. Nobody ruled on treatment, and I treated "the board said SHIP" as though it covered the visual. **And `frontend-design` was never invoked**, though `/build` names it explicitly for UI craft. I ran the governance and skipped the craft, which is a predictable way to ship something correct and lifeless.
+
+**AI-building learning:** The guards keep finding things in files they were not pointed at. `hardcodedUnits.test.ts` caught `${s.distance_km}km` in the website block I had shipped two hours earlier — a unit glyph welded to an interpolated value, bypassing ADR-015, so a miles reader would see km. `SameWeekTwice` carries a comment saying the identical pattern was a defect on its own first write, and I made the same mistake one component later **with that warning visible in the file I copied the shape from**. And the reason `verify` missed it at the time: the guard gathers files with `git ls-files`, which cannot see an **untracked** file. The component existed but was uncommitted, so it was invisible on that run and appeared the moment I committed. Same family as the pre-commit hook reading only staged files — **a new file's violations are systematically invisible on its first verify.**
+
+**The honest bit:** three of my own new checks were wrong before they were right. `CODE` was block-scoped to a different describe (tsc caught it; vitest would have thrown at runtime). My `figure:` line filter counted the interface declaration `figure: string` as a ninth figure — a population error, in the checker written to prevent one. That is the second time today a check of mine miscounted its own population.
+
+**Hook material:** The founder called it awful. My own design documentation had already explained why, in a sentence written months earlier: value always dominates. I had shipped eight rows with no value in them.
+
+**Postable?:** yes
+
 ## 2026-10-08 — RESHAPE-MOMENT-02 · the homepage now runs the engine instead of describing it
 **Shipped:** A homepage section that calls the real adaptive engine at render time and prints the sentence it produces. The founder asked for a list of the eight signals; the list was killed and this went in instead.
 
