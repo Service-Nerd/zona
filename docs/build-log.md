@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 — RESHAPE-PRINCIPLE-DEBT-01 · the board refused to ratify a number whose window nobody could name
+**Shipped:** The six numbers that decide whether your training plan gets rewritten now have written reasons, ruled by the Coaching Board.
+
+**Dev learning:** The conflict scan earned its place twice. First it found that §2 Amendment 4 already governed what shadow load MEANS — off-plan running counts toward it always, never reaches the acute:chronic ratio — so the gap was the number, not the principle, and the output was an amendment rather than a new section. Second, and better: it answered the founder's own question about whether shadow load's 15% is ADR-012's 15%. It isn't. ADR-012's note says its thresholds *"mirror the existing LOAD_RATIO.watch trim so the engine's two magnitudes agree"* — a declared coupling to something else entirely. The engine carries three fifteens with two stated reasons between them, and now says so.
+
+**Product/creator learning:** The best thing the sitting produced was a refusal. `EF_DECLINE_THRESHOLD_PCT`'s comment said "8% drop vs 4-week rolling avg" and the code takes the last **6 activities**. Not a documentation gap — a claim that is false about its own mechanism, and the units disagree too. Six activities is a fortnight for a three-runs-a-week runner and barely a week for a six-day runner, so the same threshold means different things to different people, and a busy week *lengthens* the baseline it is compared against. That stayed an activity count for a real reason (a time-boxed window on a sparse week can hold one run and compare someone against a single day) but the asymmetry is now written down instead of hidden in a wrong comment.
+
+**AI-building learning:** Two guards I shipped earlier the same day did the work. The stale-debt arm in `configPrincipleSync` went red the moment the principles landed and **forced** six entries out of the register — the debt shrank 12 → 6 mechanically, not because anyone remembered to tidy. Then `principleCoverage` refused the new section until its test was registered with the mutation harness. I registered it as a SUBJECT, the harness correctly reported UNPROVEN (41 constants in that file, my test guards 6, so random perturbation lands outside them), and the honest home turned out to be the exemption list with the five hand falsifications named. **The guard talked me out of my first answer.**
+
+**The honest bit:** my first consumer count came back `consumers=0` for all nine constants, which I nearly wrote down. It was a broken `grep --include` glob in zsh — the ninth time this week a uniform zero has meant "my query is wrong", not "nothing uses this". And four of my prose assertions failed because the constitution is hard-wrapped at ~90 characters and my regexes assumed single lines.
+
+**Hook material:** A comment claimed a four-week rolling average. The code took the last six runs. For one user that is a fortnight; for another it is a week. Nobody noticed until somebody asked why the number was eight.
+
+**Postable?:** yes
+
 ## 2026-10-08 — PLAN-SAVE-TWO-WRITER-01 + ADJUST-TRIGGER-MANUAL-DEAD-01 · a break statement was losing people their AI coaching
 **Shipped:** The modify sheet stops abandoning the enrichment stream, so accepting a plan change no longer races the server and overwrites your AI coaching with the plain rule plan. And a trigger type that could never fire is gone.
 
