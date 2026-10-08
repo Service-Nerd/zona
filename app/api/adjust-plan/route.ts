@@ -9,6 +9,7 @@ import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { checkAdjustmentTriggers } from '@/lib/coaching/planAdjustment'
 import { fetchWeeklyLoad, priorWeeks, EMPTY_LOAD } from '@/lib/coaching/weeklyActualLoad'
 import { isLongRun } from '@/lib/plan/sessionRole'
+import { orderedWeekSessions } from '@/lib/plan/weekSessions'
 import { recordQualityDowngrade } from '@/lib/coaching/qualityDowngrade'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildAdjustmentExplanationPrompt } from '@/lib/coaching/prompts/planAdjustment'
@@ -267,10 +268,18 @@ export async function POST(req: NextRequest) {
   // now guaranteed to be 7 entries, indexed mon=0 … sun=6. A null sentinel
   // preserves the slot when the day genuinely has no session, so the
   // length-7 invariant in checkAdjustmentTriggers can assert structure.
-  const DAY_ORDER_LOCAL = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-  const currentWeekSessions = DAY_ORDER_LOCAL.map(
-    d => (week.sessions as Record<string, unknown>)[d] ?? null,
-  ) as any[]
+  // 🔴 ADJUST-ENGINE-DEAD-01 (2026-10-08) — WAS `DAY_ORDER.map(d => week.sessions[d] ?? null)`,
+  // AND THAT NULL KILLED THE ENGINE FOR THREE AND A HALF MONTHS.
+  // The comment above is right that the slot must be preserved and wrong about what to
+  // preserve it with: `checkAdjustmentTriggers` throws on a null slot (correctly — `{...null}`
+  // is `{}`, which would flow through all eleven of its positional consumers as a typeless
+  // object). Measured: **31 of 31 live plans threw**, because no real plan carries seven days
+  // and `Week.sessions` is `Partial<Record<Day, Session>>`.
+  // §64 (GEN-FIX-09) makes an explicit `{type:'rest'}` entry and an absent day EQUALLY valid
+  // representations of a rest day, so materialising one here is lossless and sanctioned.
+  // ⚠️ Single owner now: never re-roll this mapping inline. There were two copies by the time
+  // it was found.
+  const currentWeekSessions = orderedWeekSessions(week as unknown as { sessions: Record<string, never> }) as any[]
 
   const skipSignal = skipSignalRaw
     ? { ...skipSignalRaw, weekSessionsByDay: week.sessions as Record<string, any> }

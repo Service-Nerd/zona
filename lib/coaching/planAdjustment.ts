@@ -23,6 +23,7 @@ import {
 import { acuteChronicRatio, shadowLoadPct, zoneDisciplineScore, zoneDriftScore } from './loadCalc'
 import { weekHasRestDay, findQualityLongSpacingViolations } from '@/lib/plan/invariants'
 import { isLongRun } from '@/lib/plan/sessionRole'
+import { restSession } from '@/lib/plan/weekSessions'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { BRAND } from '@/lib/brand'
 import type { Session } from '@/types/plan'
@@ -671,7 +672,8 @@ function buildReorderAdjustment(
   const toSession     = sessionsAfter[toIdx]
   if (!fromSession) return null  // nothing to move
 
-  sessionsAfter[fromIdx] = toSession ?? { type: 'rest', label: 'Rest', detail: null }
+  // ADJUST-ENGINE-DEAD-01: the third hand-rolled copy of this object. Now the owner's.
+  sessionsAfter[fromIdx] = toSession ?? restSession()
   sessionsAfter[toIdx]   = fromSession
 
   // §7 check: detect back-to-back hard sessions after the move

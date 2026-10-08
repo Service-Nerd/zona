@@ -46,6 +46,7 @@ import { createClient } from '@supabase/supabase-js'
 import { loadEnvConfig } from '@next/env'
 import { checkAdjustmentTriggers, type AdjustmentCheckInput, type TriggerType } from '../lib/coaching/planAdjustment'
 import { fetchWeeklyLoad, priorWeeks, EMPTY_LOAD } from '../lib/coaching/weeklyActualLoad'
+import { orderedWeekSessions } from '../lib/plan/weekSessions'
 import type { Plan, Session } from '../types/plan'
 
 loadEnvConfig(process.cwd())
@@ -117,10 +118,10 @@ async function main() {
     for (const week of plan.weeks) {
       const weekN = Number((week as { n?: number }).n)
       if (!weekN || weekN > reached) continue
-      const sessions = DAY_ORDER.map(d => (week.sessions as Record<string, Session>)?.[d])
-      if (sessions.length !== 7 || sessions.some(s => s == null || typeof s.type !== 'string')) {
-        skipped.push(`${email} w${weekN}: malformed week`); continue
-      }
+      // ADJUST-ENGINE-DEAD-01: was a SECOND hand-rolled copy of the route's broken
+      // mapping, and it discarded every real week as "malformed" — which is how this
+      // harness came to report "0 of 8 reachable" having replayed nothing.
+      const sessions = orderedWeekSessions(week)
 
       const weekComps    = (comps ?? []).filter(c => Number(c.week_n) === weekN)
       const weekAnalyses = (analyses ?? []).filter(a => Number(a.week_n) === weekN)

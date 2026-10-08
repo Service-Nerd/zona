@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 — ADJUST-ENGINE-DEAD-01 · a commit called "correctness foundation" killed the engine
+**Shipped:** The adaptive engine runs again. It had thrown on every real plan for three and a half months.
+
+**Dev learning:** `Week.sessions` is `Partial<Record<Day, Session>>` and `generateRulePlan` omits a rest day's key, so no real plan has seven days (measured: `1×1 · 2×2 · 3×13 · 4×10 · 5×2 · 6×3`). The route filled the gaps with `null`; the detector threw on `null`. Both landed in `a2673172`, each under a comment asserting the other's behaviour. The fix went at the boundary rather than inside the engine, and the reason is doctrine not convenience: §64 as amended by GEN-FIX-09 already declares an explicit `{type:'rest'}` entry and an absent day to be **equally valid** representations, so converting one to the other is sanctioned. I kept the engine's assertion deliberately — `{...null}` is `{}` in JavaScript, which would have flowed through all eleven positional `sessions.map(s => ({...s}))` consumers as a typeless object and corrupted a reshape with no error at all. **The assertion was right. The caller was the bug.**
+
+**Product/creator learning:** §64's own history is this exact defect pointing the other way. In August someone found `weekHasRestDay` accepted only the explicit-entry form, so *"every generated plan failed this invariant once per non-race week — invisible because validatePlan throws in dev/test but logs in production. The engine was right; the rule was wrong."* Same two representations, same asymmetry, same silence, written up two months earlier and never carried across to the sibling. That is the *remedy applied to one twin* class, and this repo has now recorded nine of them.
+
+**AI-building learning:** My ownership arm — the one asserting nobody hand-rolls the dead mapping any more — **failed on the route's own comment**, which quotes the dead expression so the next reader knows what was wrong. A guard firing on prose that documents a defect is this codebase's recorded `an ownership arm matching its own comment` class, three of which landed on 2026-10-01 alone. I stripped comments and then added a second arm proving the strip doesn't blind the check, because removing prose is worthless unless you also prove you didn't remove code.
+
+**The honest bit:** 4,676 tests pass today and 4,660 passed yesterday while the engine was completely dead. Every fixture in the suite hand-builds a seven-day week. **A well-formed week was never the case that mattered**, and no amount of test count would have found this — only calling the real function with the real shape production actually stores.
+
+**Hook material:** 31 of 31 live plans, 100%, threw on every check for 104 days. The commit that did it is titled "correctness foundation", and both halves of the contradiction are in it, each correctly describing itself.
+
+**Postable?:** yes
+
 ## 2026-10-08 — ADJUST-TRIGGER-REACH-01 · I was sent to audit eleven triggers and found the engine was dead
 **Shipped:** A backtest harness that replays every real runner's history through the live adjustment detector. It cannot report a result yet, because running it proved the detector throws on every real plan.
 

@@ -825,7 +825,45 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
-### 🔴 `ADJUST-ENGINE-DEAD-01` — **THE ADAPTIVE ENGINE HAS THROWN ON EVERY CHECK SINCE 2026-06-26** *(filed 2026-10-08, **P0**)* ⚙️ **NO BOARD** *(defect fix restoring documented intent)*
+### ✅ `ADJUST-ENGINE-DEAD-01` — **FIXED 2026-10-08.** 31 of 31 plans threw; now 93 week-checks, 0 throws ⚙️ **NO BOARD** *(defect fix restoring documented intent)*
+
+> ✅ **FIX: `lib/plan/weekSessions.ts → orderedWeekSessions(week)`**, the single owner of "a
+> week as seven ordered day-slots", materialising an explicit `{type:'rest'}` for an absent
+> day. **At the boundary, and §64 is why, not convenience:** GEN-FIX-09 makes the explicit
+> entry and the absent day **equally valid** representations, so the conversion is lossless
+> and sanctioned.
+>
+> ✅ **THE ENGINE'S ASSERTION STAYS, AND IS CORRECT.** `{...null}` is `{}` in JavaScript, so
+> a null slot would flow through all **eleven** positional `sessions.map(s => ({...s}))`
+> consumers as a typeless object and corrupt a reshape with no error. The assertion was
+> protecting against exactly that. **The caller was the bug.**
+>
+> 📐 **Blast radius MEASURED, not assumed:** all 11 engine consumers are positional `map`
+> with `s.type ===` / `isLongRun(s)` predicates and **none count or filter**, so a rest slot
+> falls through every branch unchanged; `computeSessionDiff` returns `unchanged` for two rest
+> slots (checked by reading its comparison, not by hoping); and a rest slot has no distance,
+> so it cannot move an ADR-012 magnitude. **Website: no consumer.**
+>
+> 🥇 **THREE hand-rolled rest objects existed** (`planAdjustment.ts:674`,
+> `maintenance.ts:265`, and the route's `null`). Two unified; **`maintenance.ts` deliberately
+> left alone** because there the rest day IS the prescription and carries `'Rest day.'` on
+> purpose. §64's own distinction, respected rather than tidied away.
+>
+> **Acceptance, measured:** `93 week-checks | THREW: 0` against the pre-fix `31 of 31`, and
+> `ADJUST-TRIGGER-REACH-02`'s backtest now replays **37 week-checks across 7 runners**
+> instead of exiting 2.
+>
+> **Gate** `lib/plan/weekSessions.test.ts` — 16 cases, **falsified 3 ways** (owner returns
+> null → 4 red; route reverts to the hand-rolled mapping → 2 red; rest day given copy → 1
+> red). 🔴 **The fixture is a THREE-DAY week, deliberately**: every pre-existing fixture in
+> the suite hand-builds seven days, which is why 4,660 tests stayed green through the whole
+> outage. **A well-formed week was never the case that mattered.**
+>
+> 🔴 **AND MY OWN OWNERSHIP ARM FIRED ON ITS OWN COMMENT** — the route's comment QUOTES the
+> dead expression so the next reader knows what was wrong, and the regex matched the prose.
+> This repo's recorded `an ownership arm matching its own comment` class (2026-10-01, one of
+> three that day). Comments stripped first, **plus an arm proving the strip does not blind
+> it** — the dead expression as CODE still fails.
 
 > 🔴 **MEASURED: 31 of 31 live plans — 100% — make `checkAdjustmentTriggers` THROW.**
 > Reproduced by calling the real function with the array the real route builds:
@@ -912,9 +950,16 @@ such: the route needs auth, a tier lookup and a service-role client, none of whi
 
 ### 🟡 `ADJUST-TRIGGER-REACH-02` — RUN the backtest and report which of the 8 detectors a real runner reaches *(filed 2026-10-08, P1)* ⚙️ **NO BOARD**
 
-> 🔻 **BLOCKED ON `ADJUST-ENGINE-DEAD-01`.** The harness exists and works; it exits **2**
-> with *"ZERO WEEK-CHECKS REPLAYED"* because every real week is discarded by the same
-> throw. **Run it the moment the engine is fixed** — one command, no new code:
+> ✅ **UNBLOCKED AND RUN, 2026-10-08.** First real result: **37 week-checks across 7 runners,
+> 2 fires, both `zone_drift`** — so **1 of the 8 is proven reachable and 7 are silent.**
+>
+> ⚠️ **7 SILENT IS NOT 7 DEAD, AND THE DENOMINATOR IS WHY.** Five of the seven runners
+> reached only **1 to 3 weeks**, while `acute_chronic_high` needs a 4-week rolling average
+> and `ef_decline` a 4-week window — **by construction they cannot fire on a 3-week history.**
+> The only long history is the demo account (25 weeks, 0 fires), which is worth one probe of
+> its own. 🔻 **Open: re-run when real runners have 4+ weeks**, and probe the demo account.
+>
+> **Re-run any time** — one command, no new code:
 >
 > ```
 > npx tsx scripts/backtest-adjustment-triggers.ts
