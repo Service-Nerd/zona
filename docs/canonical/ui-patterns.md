@@ -5619,3 +5619,51 @@ Nor may it merchandise — the SLT killed *"a settings screen that merchandises"
 (Me is the lowest-frequency surface, so the worst place for a conversion moment). No tier
 language, no CTA. Enforced by `lib/coaching/watchedSignals.test.ts`.
 
+---
+
+## Run the engine on the page — the proof pattern
+
+*(Design Board + Coaching Board, 2026-10-08, `RESHAPE-MOMENT-02`. Names the pattern
+`SameWeekTwice` (W-04) established and `WhenItNotices` now reuses, so the third instance has
+something to conform to instead of a precedent to re-derive.)*
+
+**A marketing section that makes a product claim should RUN the product, not describe it.**
+
+| | |
+|---|---|
+| **Weakest** | A list of what the product does. Killed twice: the three-card proof band, and W-03's commitments block |
+| **Weak** | A screenshot. Evidence about a screenshot |
+| **Strongest** | The real function, called at render time, printing its real output |
+
+🎪 Collins, which is the argument: *"a competitor can write 'we adapt your plan' this
+afternoon. What they cannot do is run their own engine on the page and print the sentence it
+produces."*
+
+### The four rules, each bought with a defect
+
+1. **The PRESCRIPTION comes from the engine.** `generateRulePlan` at render time, out of a
+   published plan, so the block cannot drift from the plan it cites.
+2. **The VERDICT is the product's own function**, not copy that paraphrases it. If the
+   product's wording changes the section changes with it, because it **is** the wording.
+3. 🔴 **THE SCENARIO HALF IS LABELLED ON THE SURFACE.** Hutchinson's binding condition:
+   *"use real generated plans, or do not build it. The outcome half is where you will be
+   tempted to invent numbers."* A runner's inputs have to be constructed; **say so in the
+   copy, on the page**, as both instances do.
+4. 🔴 **CLAIM ONLY WHAT THE FUNCTION ACTUALLY DID.** `WhenItNotices` had to be told this:
+   `computeSessionDiff` returns **no structural change** for `zone_drift`, so the block says
+   *"no session was moved"* rather than implying a reshuffle. **Measure the output before
+   writing the sentence about it.**
+
+⚠️ **The constructed half must be derived, not typed.** `WhenItNotices` builds its
+illustration from `ZONE_DRIFT_ABOVE_CEILING_PCT + 18`, so it cannot drift below the threshold
+it exists to cross.
+
+⚠️ **The block returns `null` rather than printing a stale sentence** if the engine stops
+producing a trigger for its input. A proof that has quietly stopped being true is worse than
+no proof.
+
+⚠️ **A test asserting on a literal must not live inside the population of a guard that counts
+that literal.** `whenItNotices.test.ts` sat in `components/marketing/` and its two assertions
+naming `surface="card"` were counted by `sectionSurfaces.test.ts` as two extra white
+spotlights. The guard was right. Marketing guards live in `lib/marketing/`.
+

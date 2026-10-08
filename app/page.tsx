@@ -50,6 +50,7 @@ import { HeroTrace } from '@/components/marketing/HeroTrace'
 import { Section } from '@/components/marketing/Section'
 import { ProductStill } from '@/components/marketing/ProductStill'
 import { SameWeekTwice } from '@/components/marketing/SameWeekTwice'
+import { WhenItNotices } from '@/components/marketing/WhenItNotices'
 import { Wordmark } from '@/components/ui/Wordmark'
 
 // GTM-SITE-02 item 3 — the real app components, not imitations of them.
@@ -486,6 +487,11 @@ export default async function Home() {
           to explain how the product works three times before showing that the
           claim was true. */}
       <SameWeekTwice />
+      {/* RESHAPE-MOMENT-02 — directly after the proof, deliberately. `SameWeekTwice` shows
+          the app can TELL the difference between a week held and a week run in the grey
+          middle; this shows what it DOES about it. Separating them would make the reader
+          hold the first across a section break to understand the second. */}
+      <WhenItNotices />
 
 
       {/* ── What it does — three pillars + product mockups ───────────── */}
