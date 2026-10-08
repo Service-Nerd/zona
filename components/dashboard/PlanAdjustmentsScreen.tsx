@@ -64,7 +64,8 @@ import Button from '@/components/ui/Button'
 import Switch from '@/components/ui/Switch'
 import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import { BRAND } from '@/lib/brand'
-import { watchedSignals } from '@/lib/coaching/watchedSignals'
+import { watchedSignalsByHorizon } from '@/lib/coaching/watchedSignals'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 export default function PlanAdjustmentsScreen({
   dynamicAdjustmentsEnabled,
@@ -223,51 +224,65 @@ export default function PlanAdjustmentsScreen({
           />
         </div>
 
-        {/* 🧭 RESHAPE-MOMENT-01 (Design Board, 2026-10-08) — WAS ONE COLLAPSED PARAGRAPH.
-            Founder: the section is "very wordy" and should "sing a bit more". Measured: two
-            taps to read ONE truncated 12px sentence holding eight distinct signals, so the
-            runner did the sorting.
-            ✋ Silvanto, twice on the record: **density, not disclosure.** The eight are now
-            on the screen, structured, nearest-horizon first (readiness before efficiency
-            trend) because flattening two horizons into one stack is the Coach screen's
-            documented failure.
-            📱 Wroblewski: this REMOVES a tap and relocates nothing.
-            💼 It is NOT merchandising, and the SLT kill ("a settings screen that
-            merchandises", unanimous) does not reach it: no tier language, no CTA, no feature
-            list framing. This is Me doing its own job legibly.
-            🔴 The copy lives in `lib/coaching/watchedSignals.ts`, keyed by the engine's own
-            `DetectedTrigger`, because the old version carried a SYNC RULE enforced by a
-            comment and had already drifted: it described a taxonomy of eleven when one
-            member could never fire and two were runner-initiated. */}
-        {/* ⚠️ ONE 13px DECLARATION FOR THE WHOLE BLOCK, on this wrapper. The heading and the
-            eight labels all inherit it. My second attempt put it on the heading AND the list
-            and `TYPESCALE-APP-GATE-01` still read 247 vs 246 — two declarations where the
-            Button it replaced had one. The register counts USAGES, not distinct sizes. */}
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px' }}>
-        <div style={{ padding: '14px 16px 4px' }}>
-          <div style={{ color: 'var(--ink-2)', lineHeight: 1.4 }}>
+        {/* 🧭 RESHAPE-MOMENT-01 (Design Board, 2026-10-08) un-collapsed this; 🎨
+            RESHAPE-MOMENT-04 (frontend-design, same day) gave it a treatment.
+            WAS one collapsed 12px run-on paragraph holding eight signals. The board ruled it
+            open (✋ Silvanto, density not disclosure) and I shipped eight label/detail pairs
+            with hairlines between them. The founder: **"It's boring and just a list of words.
+            Make it stand out and sing about it. It's awful."** He was right, and the house
+            style says exactly why:
+
+              ui-patterns.md § Metric Pair — "large numbers, small muted labels underneath;
+              value always dominates"
+
+            🔴 **A LIST OF EIGHT PROSE ROWS HAS NO VALUE IN IT AT ALL.** The craft failure was
+            not taste, it was shipping prose onto a surface whose documented pattern is metric
+            hierarchy. And the metric was available: the Coaching Board ratified every one of
+            these thresholds the same morning (§2 Am.5, §124, §109 Am.1), so the real numbers
+            became quotable for the first time.
+            ⚠️ Before that ruling they were undocumented magic numbers and printing them would
+            have asserted a precision nobody had defended.
+
+            ✋ Hierarchy of horizon is now STRUCTURAL, not implied by row order: three groups,
+            nearest first. 💼 Still no merchandising — no tier language, no CTA. ⚕️ Still no
+            cause stated. 🎓 Still no promise: these are thresholds we WATCH, and seven of the
+            eight have never fired. */}
+        <div style={{ fontFamily: 'var(--font-ui)', padding: '14px 16px 4px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.4 }}>
             What we watch for
           </div>
+          <p style={{ fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, margin: 'var(--space-1) 0 0' }}>
+            The thresholds, as the engine actually holds them.
+          </p>
         </div>
-        {/* ⚠️ THE SIZE IS SET ONCE ON THE LIST AND THE LABELS INHERIT IT, which is not a
-            style preference. `TYPESCALE-APP-GATE-01` caught the first version at 247 vs a
-            baseline of 246: 13px is the app's most-used size and is DELIBERATELY undeclared,
-            tracked on a ratchet, and eight rows each declaring it would have grown that
-            register by eight. **Raising a ratchet to go green is what
-            `A RATCHET MUST NOT MOVE WITHOUT A MEASUREMENT` forbids.** The detail line
-            overrides to 12px, which IS a declared size and therefore free. */}
-        <ul style={{ listStyle: 'none', margin: 0, padding: '0 16px 16px' }}>
-          {watchedSignals().map(sig => (
-            <li key={sig.type} style={{ padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
-              <div style={{ color: 'var(--ink)', lineHeight: 1.4 }}>
-                {sig.label}
+
+        <div style={{ fontFamily: 'var(--font-ui)', padding: '0 16px 16px' }}>
+          {watchedSignalsByHorizon().map(group => (
+            <div key={group.key} style={{ marginTop: 'var(--space-5)' }}>
+              <div style={{ ...MICRO_LABELS.sectionLabel, color: 'var(--mute)' }}>
+                {group.label}
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '2px' }}>
-                {sig.detail}
-              </div>
-            </li>
+              {group.signals.map(sig => (
+                <div key={sig.type} style={{ marginTop: 'var(--space-4)' }}>
+                  {/* The canonical metric pair: value first and dominant, label beneath.
+                      `ui-patterns.md`: "Never put label above value." */}
+                  <div style={{
+                    fontSize: '20px', fontWeight: 700, color: 'var(--ink)',
+                    lineHeight: 1.1, fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.02em',
+                  }}>
+                    {sig.figure}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--ink-2)', lineHeight: 1.45, marginTop: '2px' }}>
+                    {sig.label}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '2px' }}>
+                    {sig.detail}
+                  </div>
+                </div>
+              ))}
+            </div>
           ))}
-        </ul>
         </div>
       </div>
     </div>

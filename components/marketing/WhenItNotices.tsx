@@ -48,6 +48,7 @@ import { checkAdjustmentTriggers } from '@/lib/coaching/planAdjustment'
 import { orderedWeekSessions } from '@/lib/plan/weekSessions'
 import { ZONE_DRIFT_ABOVE_CEILING_PCT } from '@/lib/coaching/constants'
 import { Section } from '@/components/marketing/Section'
+import { formatDistance } from '@/lib/format'
 import type { Session } from '@/types/plan'
 
 const SOURCE_SLUG = 'half-marathon-12-week'
@@ -131,8 +132,16 @@ export function WhenItNotices() {
               padding: 'var(--space-3) 0', borderBottom: '1px solid var(--line)',
             }}>
               <span style={{ color: 'var(--ink)' }}>{s.label}</span>
+              {/* 🔴 WAS `${s.distance_km}km` AND THAT IS A REAL DEFECT, caught by
+                  `hardcodedUnits.test.ts`. A unit glyph welded to an interpolated value
+                  bypasses ADR-015's single owner, and `SameWeekTwice` carries a comment
+                  saying the IDENTICAL pattern was a defect on its own first write. I made
+                  the same mistake one component later, with the precedent's warning
+                  visible in the file I copied the shape from.
+                  ⚠️ `'km'` is passed explicitly because a site visitor has no stored
+                  preference, which is exactly what `SameWeekTwice` does. */}
               <span style={{ color: 'var(--mute)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
-                {s.distance_km ? `${s.distance_km}km` : ''}
+                {s.distance_km ? formatDistance(s.distance_km, 'km') : ''}
               </span>
             </li>
           ))}

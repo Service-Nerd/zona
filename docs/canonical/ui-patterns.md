@@ -5667,3 +5667,33 @@ that literal.** `whenItNotices.test.ts` sat in `components/marketing/` and its t
 naming `surface="card"` were counted by `sectionSurfaces.test.ts` as two extra white
 spotlights. The guard was right. Marketing guards live in `lib/marketing/`.
 
+### Amendment — un-collapsing is half the job; the rows still need a VALUE *(RESHAPE-MOMENT-04, 2026-10-08)*
+
+🔴 **The first build of this ruling un-collapsed the eight signals into eight label-plus-
+sentence rows, and the founder's verdict was *"boring and just a list of words. It's awful."*
+He was right, and this document already said why:**
+
+> § Metric Pair — *"large numbers, small muted labels underneath; value always dominates"*
+
+**A list of eight prose rows has no value in it at all.** Legibility was fixed and craft was
+not, and the gap is not a matter of taste: a surface whose documented pattern is metric
+hierarchy was given prose.
+
+**What fixed it:** every row leads with its **real threshold** — `+7 bpm`, `20%`, `1.4×`,
+`15%`, `3 in a row`, `−8%`, `3 sessions`, `82%` — at 20px/700 tabular-nums above a 12px label,
+grouped under three horizon headings using the documented `MICRO_LABELS.sectionLabel`.
+
+⚠️ **THE NUMBERS WERE ONLY PRINTABLE BECAUSE THEY HAD JUST BEEN RATIFIED.** The Coaching
+Board gave every one of these thresholds a principle on the same morning (§2 Am.5, §124,
+§109 Am.1). **Before that they were undocumented magic numbers, and putting them on a screen
+would have asserted a precision nobody had defended** — the three-card proof band's error.
+**A number is not publishable because it is true; it is publishable because it is defended.**
+
+⚠️ **Derive every figure from its constant.** `watchedSignals.ts` builds each one with a
+template literal off the live export, so a board ruling that moves a threshold moves the
+screen with it. A hand-typed `20%` passes on the day it is written and drifts silently
+afterwards; `watchedSignals.test.ts` fails if any figure stops being interpolated.
+
+⚠️ **`−` is U+2212, not a hyphen.** At 20px display weight a hyphen-minus reads as
+punctuation.
+

@@ -15,7 +15,13 @@ import { join } from 'node:path'
 import { DETECTED_TRIGGER_TYPES, TRIGGER_TYPES } from './planAdjustment'
 import {
   WATCHED_SIGNALS, WATCHED_SIGNAL_ORDER, WATCHED_SIGNAL_COUNT, watchedSignals,
+  watchedSignalsByHorizon,
 } from './watchedSignals'
+import {
+  ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO, SHADOW_LOAD_THRESHOLD_PCT,
+  FATIGUE_ACCUMULATION_THRESHOLD, EF_DECLINE_THRESHOLD_PCT,
+  FITNESS_SIGNAL_SESSION_THRESHOLD, LONG_RUN_SHORTFALL_COMPLETION_PCT, READINESS,
+} from './constants'
 
 describe('every signal the engine detects is described to the runner', () => {
   it('🔴 THE MECHANISM: a new detected trigger has no description and FAILS THE BUILD', () => {
@@ -118,7 +124,7 @@ describe('the screen renders the owner, and the disclosure is GONE', () => {
   it('🔴 the eight are ON the screen, not behind a chevron', () => {
     // ✋ "Density, not disclosure", twice on Silvanto's record. 📱 Wroblewski: this removes
     // a tap. Comments stripped first — this file quotes the dead state for the next reader.
-    expect(CODE).toContain('watchedSignals().map')
+    expect(CODE).toContain('watchedSignalsByHorizon().map')
     expect(CODE).not.toContain('adjustmentsDisclosureOpen')
     expect(CODE).not.toContain('setAdjustmentsDisclosureOpen')
   })
@@ -131,6 +137,97 @@ describe('the screen renders the owner, and the disclosure is GONE', () => {
     for (const s of watchedSignals()) {
       expect(CODE).not.toContain(s.label)
       expect(CODE).not.toContain(s.detail)
+    }
+  })
+})
+
+describe('🎨 RESHAPE-MOMENT-04 — the figures are DERIVED, which is the whole integrity claim', () => {
+  // 🔴 The first version of this block had no figures at all. The founder: "It's boring and
+  // just a list of words. Make it stand out and sing about it." The house style says why:
+  // `ui-patterns.md` § Metric Pair is "large numbers, small muted labels underneath; value
+  // always dominates", and eight rows of prose have no value in them.
+  //
+  // ⚠️ These numbers are only printable because the Coaching Board ratified them the same
+  // morning (§2 Am.5, §124, §109 Am.1). Printing an unratified threshold would assert a
+  // precision nobody had defended, which is the three-card proof band's error.
+  const all = watchedSignals()
+  // Re-derived here: the `CODE` in the previous describe is block-scoped to it, and tsc
+  // caught the reach rather than vitest, which would have failed at runtime.
+  const SCREEN = readFileSync(join(process.cwd(), 'components/dashboard/PlanAdjustmentsScreen.tsx'), 'utf8')
+    .split('\n').filter(l => !/^\s*(\/\/|\*|\/\*|\{\/\*)/.test(l)).join('\n')
+
+  it('🔴 EVERY signal carries a figure, and it matches its live constant', () => {
+    // The arm that makes the screen quote the engine rather than describe it from memory.
+    // If the board moves a threshold, this screen moves with it or this test fails.
+    const expected: Record<string, string> = {
+      readiness_signal:     `+${READINESS.RHR_ELEVATION_BPM} bpm`,
+      zone_drift:           `${ZONE_DRIFT_ABOVE_CEILING_PCT}%`,
+      acute_chronic_high:   `${LOAD_RATIO.flag}\u00d7`,
+      shadow_load:          `${SHADOW_LOAD_THRESHOLD_PCT}%`,
+      fatigue_accumulation: `${FATIGUE_ACCUMULATION_THRESHOLD} in a row`,
+      ef_decline:           `\u2212${Math.abs(EF_DECLINE_THRESHOLD_PCT)}%`,
+      fitness_signal:       `${FITNESS_SIGNAL_SESSION_THRESHOLD} sessions`,
+      long_run_shortfall:   `${Math.round(LONG_RUN_SHORTFALL_COMPLETION_PCT * 100)}%`,
+    }
+    for (const s of all) {
+      expect(s.figure, `${s.type} has no figure`).toBeTruthy()
+      expect(s.figure, `${s.type}'s figure is not its live constant`).toBe(expected[s.type])
+    }
+  })
+
+  it('…and no figure is a typed literal in the owner', () => {
+    // ⚠️ A hand-typed "20%" would pass the arm above on the day it was written and drift
+    // silently the day the board moved the threshold. The template literals are the point.
+    const SRC = readFileSync(join(process.cwd(), 'lib/coaching/watchedSignals.ts'), 'utf8')
+    const code = SRC.split('\n').filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n')
+    // ⚠️ `figure: \`` with the backtick, NOT `figure:` alone — my first version counted the
+    // INTERFACE declaration `figure: string` as a ninth figure and failed at 9 vs 8. A
+    // checker's population error, in the checker written to prevent one.
+    const figureLines = code.split('\n').filter(l => /^\s*figure:\s*`/.test(l))
+    expect(figureLines).toHaveLength(WATCHED_SIGNAL_COUNT)
+    for (const l of figureLines) {
+      expect(l, `a figure is hardcoded: ${l.trim()}`).toMatch(/\$\{/)
+    }
+  })
+
+  it('\u2212 is a real MINUS SIGN, not a hyphen', () => {
+    // At 20px display weight a hyphen-minus reads as punctuation.
+    const ef = all.find(s => s.type === 'ef_decline')!
+    expect(ef.figure.startsWith('\u2212')).toBe(true)
+    expect(ef.figure).not.toContain('-')
+  })
+
+  it('✋ the three horizons are complete, ordered nearest-first, and none is empty', () => {
+    const groups = watchedSignalsByHorizon()
+    expect(groups.map(g => g.key)).toEqual(['before', 'week', 'block'])
+    expect(groups.flatMap(g => g.signals)).toHaveLength(WATCHED_SIGNAL_COUNT)
+    for (const g of groups) expect(g.signals.length).toBeGreaterThan(0)
+  })
+
+  it('every signal is in exactly one horizon', () => {
+    const seen = watchedSignalsByHorizon().flatMap(g => g.signals.map(s => s.type))
+    expect(new Set(seen).size).toBe(seen.length)
+  })
+
+  it('🔴 the screen renders the metric pair: VALUE above label', () => {
+    // `ui-patterns.md`: "Never put label above value. Value always dominates." The figure
+    // must appear before its label in the markup, and at a larger size.
+    const fig = SCREEN.indexOf('{sig.figure}')
+    const lab = SCREEN.indexOf('{sig.label}')
+    expect(fig).toBeGreaterThan(-1)
+    expect(lab).toBeGreaterThan(fig)
+    expect(SCREEN).toMatch(/fontSize: '20px', fontWeight: 700/)
+    expect(SCREEN).toContain("fontVariantNumeric: 'tabular-nums'")
+  })
+
+  it('…and the horizon headings use the documented micro-label, not a hand-rolled one', () => {
+    // MICRO-LABEL-DRIFT-01: "After the race" once existed at 10px AND 11px on two surfaces.
+    expect(SCREEN).toContain('MICRO_LABELS.sectionLabel')
+  })
+
+  it('the figures stay SHORT enough to be a metric, not a sentence', () => {
+    for (const s of all) {
+      expect(s.figure.length, `${s.type}'s figure is too long to read as a value`).toBeLessThanOrEqual(11)
     }
   })
 })
