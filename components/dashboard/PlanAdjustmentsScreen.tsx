@@ -20,8 +20,12 @@
 // by-product rather than the motive.
 //
 // ── 🔴 WHAT THE RELOCATION ASKS TURNED UP (/build § 5b) ──────────────────────
-// `adjustmentsDisclosureOpen` was `MeScreen` state used ONLY inside this door, so it is
-// local here — one fewer prop, and the disclosure can no longer be read or set from outside.
+// `adjustmentsDisclosureOpen` was `MeScreen` state used ONLY inside this door, so it became
+// local here — one fewer prop, and the disclosure could no longer be read or set from outside.
+// 🔴 IT IS NOW GONE ENTIRELY. `RESHAPE-MOMENT-01` (Design Board, 2026-10-08) ruled the
+// "What we watch for" disclosure open — density, not disclosure — so the state had no reader
+// and was deleted with it. **A comment describing state that no longer exists is how a file
+// starts lying about itself**, which is why this line was corrected rather than left.
 //
 // ⚠️ `lastCheckedLabel` IS A PROP AND MUST STAY ONE. It is derived in `MeScreen` and is also
 // read by the INDEX row's subtitle (`subtitle={hasPendingAdjustment ? … : lastCheckedLabel ??
@@ -60,6 +64,7 @@ import Button from '@/components/ui/Button'
 import Switch from '@/components/ui/Switch'
 import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import { BRAND } from '@/lib/brand'
+import { watchedSignals } from '@/lib/coaching/watchedSignals'
 
 export default function PlanAdjustmentsScreen({
   dynamicAdjustmentsEnabled,
@@ -88,7 +93,6 @@ export default function PlanAdjustmentsScreen({
   recentChanges?: any[]
   preferredUnits: 'km' | 'mi'
 }) {
-  const [adjustmentsDisclosureOpen, setAdjustmentsDisclosureOpen] = useState(false)
 
   // RESHAPE-FIX-WAVE3-PHASE2 — per-change dismissal for the "Changed this week"
   // audit surface, persisted client-side (matches the MAINT-01 dismissable-card
@@ -219,22 +223,52 @@ export default function PlanAdjustmentsScreen({
           />
         </div>
 
-        {/* What we watch for — user-facing disclosure of trigger taxonomy.
-            SYNC RULE: keep in step with TriggerType in lib/coaching/planAdjustment.ts.
-            If you add or remove a trigger type, update this copy in the same commit. */}
-        <Button variant="ghost" 
-          onClick={() => setAdjustmentsDisclosureOpen(o => !o)} style={{ justifyContent: 'flex-start', width: '100%', padding: '14px 16px', background: 'none', textAlign: 'left' }}
-          aria-expanded={adjustmentsDisclosureOpen}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.4 }}>
+        {/* 🧭 RESHAPE-MOMENT-01 (Design Board, 2026-10-08) — WAS ONE COLLAPSED PARAGRAPH.
+            Founder: the section is "very wordy" and should "sing a bit more". Measured: two
+            taps to read ONE truncated 12px sentence holding eight distinct signals, so the
+            runner did the sorting.
+            ✋ Silvanto, twice on the record: **density, not disclosure.** The eight are now
+            on the screen, structured, nearest-horizon first (readiness before efficiency
+            trend) because flattening two horizons into one stack is the Coach screen's
+            documented failure.
+            📱 Wroblewski: this REMOVES a tap and relocates nothing.
+            💼 It is NOT merchandising, and the SLT kill ("a settings screen that
+            merchandises", unanimous) does not reach it: no tier language, no CTA, no feature
+            list framing. This is Me doing its own job legibly.
+            🔴 The copy lives in `lib/coaching/watchedSignals.ts`, keyed by the engine's own
+            `DetectedTrigger`, because the old version carried a SYNC RULE enforced by a
+            comment and had already drifted: it described a taxonomy of eleven when one
+            member could never fire and two were runner-initiated. */}
+        {/* ⚠️ ONE 13px DECLARATION FOR THE WHOLE BLOCK, on this wrapper. The heading and the
+            eight labels all inherit it. My second attempt put it on the heading AND the list
+            and `TYPESCALE-APP-GATE-01` still read 247 vs 246 — two declarations where the
+            Button it replaced had one. The register counts USAGES, not distinct sizes. */}
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px' }}>
+        <div style={{ padding: '14px 16px 4px' }}>
+          <div style={{ color: 'var(--ink-2)', lineHeight: 1.4 }}>
             What we watch for
           </div>
-          <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)', transform: adjustmentsDisclosureOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}><Chevron /></div>
-        </Button>
-        {adjustmentsDisclosureOpen && (
-          <div style={{ padding: '0 16px 16px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.6 }}>
-            Recovery signals before hard sessions: resting HR, HRV, sleep. Easy runs drifting above Zone 2. Load spiking against your recent weeks. Aerobic efficiency slipping over time. Long runs consistently finishing short. Missed or rearranged sessions. Quality sessions running faster than target at controlled effort, a signal your fitness may have moved. When something looks off, you&apos;ll get a notification and can review it here.
-          </div>
-        )}
+        </div>
+        {/* ⚠️ THE SIZE IS SET ONCE ON THE LIST AND THE LABELS INHERIT IT, which is not a
+            style preference. `TYPESCALE-APP-GATE-01` caught the first version at 247 vs a
+            baseline of 246: 13px is the app's most-used size and is DELIBERATELY undeclared,
+            tracked on a ratchet, and eight rows each declaring it would have grown that
+            register by eight. **Raising a ratchet to go green is what
+            `A RATCHET MUST NOT MOVE WITHOUT A MEASUREMENT` forbids.** The detail line
+            overrides to 12px, which IS a declared size and therefore free. */}
+        <ul style={{ listStyle: 'none', margin: 0, padding: '0 16px 16px' }}>
+          {watchedSignals().map(sig => (
+            <li key={sig.type} style={{ padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
+              <div style={{ color: 'var(--ink)', lineHeight: 1.4 }}>
+                {sig.label}
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '2px' }}>
+                {sig.detail}
+              </div>
+            </li>
+          ))}
+        </ul>
+        </div>
       </div>
     </div>
   )

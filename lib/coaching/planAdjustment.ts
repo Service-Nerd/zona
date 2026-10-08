@@ -414,7 +414,14 @@ function buildShadowLoadAdjustment(input: AdjustmentCheckInput, shadowPct: numbe
     weekN:          input.currentWeekN,
     trigger:        { type: 'shadow_load', detail: { shadowPct, threshold: SHADOW_LOAD_THRESHOLD_PCT } },
     adjustmentType: 'flag_for_review',
-    summary:        `Actual load ${Math.round(shadowPct)}% above plan. Flagged — no auto-change applied.`,
+    // 🔴 BRAND-EMDASH-LIB-01 — WAS "Flagged — no auto-change applied." `brand.md` (founder,
+    // 2026-09-11): no em dash in a sentence the runner READS, and this is read. Two siblings
+    // at :439 and :796 carried the same mark and were repunctuated with it.
+    // ⚠️ `noEmDashApp.test.ts` guards `components/` and `app/dashboard/` only, so every
+    // string in `lib/coaching/` is OUTSIDE its population — the engine could write an em
+    // dash into the runner's screen and no guard could see it. `watchedSignals.test.ts`
+    // asserts the rule for its own strings; the general case stays open as the item.
+    summary:        `Actual load ${Math.round(shadowPct)}% above plan. Flagged, no auto-change applied.`,
     sessionsBefore,
     sessionsAfter,
     requiresConfirmation: true,
@@ -436,7 +443,7 @@ function buildEFDeclineAdjustment(input: AdjustmentCheckInput, efTrend: number):
       weekN:          input.currentWeekN,
       trigger:        { type: 'ef_decline', detail: { efTrend, threshold: EF_DECLINE_THRESHOLD_PCT, phase: 'peak' } },
       adjustmentType: 'flag_for_review',
-      summary:        `Aerobic efficiency down ${Math.abs(Math.round(efTrend))}%. Peak phase — coach note only.`,
+      summary:        `Aerobic efficiency down ${Math.abs(Math.round(efTrend))}%. Peak phase, so this is a coach note only.`,
       sessionsBefore,
       sessionsAfter,
       requiresConfirmation: true,
@@ -793,7 +800,7 @@ function buildFitnessSignalAdjustment(input: AdjustmentCheckInput): ProposedAdju
     // Sessions unchanged — this is informational only.
     // The notification body (AI-generated via buildAdjustmentExplanationPrompt)
     // carries the coaching message; the ReshapeScreen CTA routes to benchmark update.
-    summary:              `${qualifying.length} quality sessions ran ahead of target at controlled effort. Fitness may have moved — worth a benchmark test.`,
+    summary:              `${qualifying.length} quality sessions ran ahead of target at controlled effort. Fitness may have moved, so a benchmark test is worth it.`,
     sessionsBefore,
     sessionsAfter:        sessionsBefore,
     // requiresConfirmation: true — nothing to auto-apply; this is informational.

@@ -623,14 +623,6 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/PlanAdjustmentsScreen.tsx#Button2": {
-    "floor": 44,
-    "padY": 14,
-    "font": null,
-    "radius": null,
-    "height": 45,
-    "width": "100%"
-  },
   "components/dashboard/PlanAdjustmentsScreen.tsx#Switch1": {
     "floor": null,
     "padY": null,

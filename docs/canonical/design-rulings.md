@@ -4757,3 +4757,55 @@ since the runner now reads a statement about a link they still cannot remove fro
 auth-gated screen and `/copy-preview` holds no linked-completion fixture, so the rendered
 result has been looked at **nowhere**. Nothing has run on a device.
 
+---
+
+## RESHAPE-MOMENT-01 — the reshape engine the runner never sees (2026-10-08)
+
+**Founder:** *"We need to make these moments count for the runner. This is one of the apps
+biggest selling points so we need to make it pop."* Three asks: a website section, the Me
+disclosure, and the moment itself.
+
+**📐 Evidence taken before any seat spoke.** The REAL detector, run at render time on the
+REAL published 12-week HM plan (week 5, 41.0 km):
+
+| Input | What the engine actually writes |
+|---|---|
+| ran the easy days hard | *"38% of your easy running sat above its zone ceiling. HR ceiling reinforced."* |
+| ran 25% further than prescribed | *"Actual load 25% above plan. Flagged, no auto-change applied."* |
+
+| Ask | Ruling | Why |
+|---|---|---|
+| **Website: a list of the eight things we look for** | 🔴 **DON'T SHIP — PERMANENT** | It is the three-card proof band and the W-03 commitments block in one artefact. A list of eight signals, **seven of which have never fired**, is a promise where evidence is wanted. Sutherland stands: *"when you have a photograph, don't also draw a diagram."* **May not return as a list with better wording.** |
+| **Website: a block running the REAL engine on a REAL plan** | 🟢 **SHIP** | `SameWeekTwice` (W-04) shape. Collins: *"a competitor can write 'we adapt your plan' this afternoon; what they cannot do is run their own engine on the page and print the sentence it produces."* Hutchinson's binding condition met by construction. **Built as a separate unit.** |
+| **Me: un-collapse and structure the eight** | 🟢 **SHIP WITH AMENDMENT** | Legibility only. ✋ Density not disclosure; 📱 removes a tap. ⚠️ **The amendment: no merchandising** — the SLT kill stands, this is Me doing its own job, not a conversion moment. |
+| **The moment a reshape happens** | ↗️ **ROUTED UP — this is the founder's actual ask** | 🧭 Zhuo: *"a website list and a tidier settings paragraph are ABOUT the feature; the notification when Thursday changes IS the feature. We have been asked to make a moment count and offered two surfaces where no moment occurs."* |
+
+**⚡ Recorded disagreement.** 🎓 Sierra held that advertising eight signals with field
+evidence for one is the proof band's error in a new coat, and that *"a website band teaches
+nobody anything"*. 🎪 Collins' answer, which the chair accepted: show **one** signal working
+on real data rather than eight asserted. **Sierra's objection is not resolved by that, it is
+narrowed** — she would still prefer the budget went entirely to the moment.
+
+**⛔ Veto check:** none. No palette or type regression named.
+
+**🔴 Two findings the brief did not contain:**
+1. **The three historical reverts were probably the AI's VOICE, not the detection.** The
+   stored summary is `explanationText` — the model's rewrite. The engine's own sentence is
+   *"38% of your easy running sat above its zone ceiling."*; the reverted one said *"zero
+   discipline this week."* **We may have been diagnosing a detector problem that was a tone
+   problem**, which changes what `RESHAPE-FIRST-FIRINGS-01` should look at.
+2. **The engine wrote an em dash into three sentences the runner reads**
+   (`planAdjustment.ts:417/439/796`), and `noEmDashApp.test.ts` covers `components/` and
+   `app/dashboard/` only — **every string in `lib/coaching/` is outside its population.**
+   Repunctuated here; the general case is `BRAND-EMDASH-LIB-01`.
+
+**📦 Artifacts.** Pattern: `ui-patterns.md` § *Disclosure vs density* · Constant:
+`lib/coaching/watchedSignals.ts` (keyed by the engine's own `DetectedTrigger`, count derived)
+· Check: `lib/coaching/watchedSignals.test.ts` — 14 arms, **falsified 5 ways, one per seat's
+clause** (em dash · Sims' cause clause · Sierra's promise clause · Silvanto's horizon order ·
+the disclosure returning).
+
+⚠️ **What this ruling does not settle:** whether the website block will actually land — it is
+ruled SHIP and not yet built, and the Coaching Board must pass its wording (W-03: a claim
+about what we detect is a physiology claim). **And nothing here has been seen on a device.**
+

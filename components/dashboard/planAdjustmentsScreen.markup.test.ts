@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { watchedSignals, WATCHED_SIGNAL_COUNT } from '@/lib/coaching/watchedSignals'
 import React from 'react'
 import { renderToStaticMarkup as html } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
@@ -96,11 +97,39 @@ describe('ME-ADJUSTMENTS-EXTRACT-01 — the Plan adjustments door renders', () =
 
   // The disclosure is shut on arrival: its body is a long taxonomy and opening by default
   // would bury the two controls the screen exists for.
-  it('the "What we watch for" disclosure is collapsed on arrival', () => {
+  // 🧭 REVERSED BY RESHAPE-MOMENT-01 (Design Board, 2026-10-08), and the old assertion is
+  // kept in the comment because it was RIGHT until the ruling. It read:
+  //
+  //     expect(m).toContain('aria-expanded="false"')          // collapsed on arrival
+  //     expect(m).not.toContain('Recovery signals before hard sessions')
+  //
+  // That encoded "the eight signals start hidden". The board ruled the opposite: ✋ Silvanto,
+  // **density not disclosure** (twice on his record), because the eight were flattened into
+  // one truncated 12px sentence and the runner did the sorting. 📱 Wroblewski: un-collapsing
+  // REMOVES a tap. 💼 It is not merchandising, so the SLT's settings-merchandising kill does
+  // not reach it.
+  //
+  // ⚠️ THE ARM IS REPLACED, NOT DELETED. A guard that encoded a reversed decision still has
+  // a job: assert the NEW decision, so the next change has to argue with something.
+  it('the eight watched signals are ON the screen, not behind a disclosure', () => {
     const m = screen()
     expect(m).toContain('What we watch for')
-    expect(m).toContain('aria-expanded="false"')
+    // No toggle, so no expanded state to be in.
+    expect(m).not.toContain('aria-expanded')
+    // The replaced run-on paragraph must not come back.
     expect(m).not.toContain('Recovery signals before hard sessions')
+    // And the real thing renders: every signal, from the owner.
+    for (const sig of watchedSignals()) {
+      expect(m, `${sig.type} is missing from the rendered screen`).toContain(sig.label)
+    }
+  })
+
+  it('…and all eight are present, counted from the engine', () => {
+    // 🔴 The count is DERIVED. If a new detector ships, this fails until the runner is told
+    // about it — which is the whole mechanism the old SYNC-RULE comment could not provide.
+    const m = screen()
+    const shown = watchedSignals().filter(s => m.includes(s.label))
+    expect(shown).toHaveLength(WATCHED_SIGNAL_COUNT)
   })
 
   // ⚠️ THE DISMISSAL MECHANISM MOVED WHOLESALE AND MUST NOT COME BACK IN TWO PLACES. All

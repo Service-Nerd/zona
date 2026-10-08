@@ -93,3 +93,34 @@ is unchanged by the extraction.
 | Renders; three "Last checked" states; pending row; collapsed disclosure; no own title; no unguarded browser global | `components/dashboard/planAdjustmentsScreen.markup.test.ts` |
 | A door says its name once, following extracted doors | `components/shared/meDoorTitles.test.ts` |
 | Seen at 375px, all three states | `/preferences-preview` |
+
+## "What we watch for" — rendered, not disclosed (RESHAPE-MOMENT-01, 2026-10-08)
+
+The eight watched signals render **unconditionally**, as eight rows, from
+`lib/coaching/watchedSignals.ts → watchedSignals()`. There is **no disclosure toggle and no
+`aria-expanded`** on this block, and the component holds **no copy of its own** for it.
+
+🔴 **It used to be a collapsed `Button` holding one 12px run-on sentence**, and the component
+carried this instruction:
+
+> *SYNC RULE: keep in step with TriggerType in lib/coaching/planAdjustment.ts. If you add or
+> remove a trigger type, update this copy in the same commit.*
+
+**A sync rule enforced by a comment, which had already failed:** the union declared eleven
+members while one could never fire and two are runner-initiated, so the screen described a
+taxonomy the engine did not have. The copy is now keyed by the engine's own `DetectedTrigger`
+and `watchedSignals.test.ts` fails the build when a new detector has no description.
+
+**Contract for anyone editing this block:**
+
+| Rule | Enforced by |
+|---|---|
+| Every detected trigger is described; nothing else is | `Record<DetectedTrigger, …>` + `watchedSignals.test.ts` |
+| The count is DERIVED, never typed on a surface | `WATCHED_SIGNAL_COUNT` |
+| Rows run nearest-horizon first | `WATCHED_SIGNAL_ORDER` |
+| No em dash, no stated cause, no promise, no merchandising | `watchedSignals.test.ts`, one arm per board clause |
+| The 13px size is declared ONCE on the wrapper | `TYPESCALE-APP-GATE-01`, which caught two attempts |
+
+⚠️ **`adjustmentsDisclosureOpen` no longer exists.** It was local state with one reader, and
+the reader went with the chevron.
+

@@ -5574,3 +5574,48 @@ rendered BY `MeScreen`, moving two sections behind one left every number identic
 value was right and the population was wrong**, this repo's most-recorded check failure.
 The region now starts at the last early return, an arm asserts that anchor sits after every
 door, and a second arm proves what left the index is findable in one rather than deleted.
+
+---
+
+## Disclosure vs density — when a chevron is the wrong answer
+
+*(Design Board, 2026-10-08, `RESHAPE-MOMENT-01`. Silvanto's "density, not disclosure",
+now a pattern rather than a position stated twice in a register.)*
+
+**A collapsed disclosure is correct when the content is one thing the runner may or may not
+want. It is wrong when the content is SEVERAL things of different weight**, because
+collapsing them does not reduce the reading, it just hides the structure and makes the
+runner reconstruct it.
+
+**The measured case.** Me → Plan adjustments → *"What we watch for"* held **eight distinct
+signals** in one 12px run-on sentence behind a chevron. Two taps to read one truncated line.
+The founder's words were *"very wordy"*; the defect was **hierarchy**, not length — eight
+things flattened to one, with the runner doing the sorting. Un-collapsed and given eight
+rows, it is the same scroll with the structure visible, and **one fewer tap**.
+
+| Use a disclosure | Use density |
+|---|---|
+| One optional thing (a legal note, a rarely-wanted detail) | **Several things of different weight** |
+| The runner has already decided they don't need it | The runner cannot tell what is in there without opening it |
+| Opening it answers a question they asked | Opening it reveals a list they now have to parse |
+
+⚠️ **Order the rows by HORIZON, nearest first.** Readiness is checked before this morning's
+session; an efficiency trend spans six runs. Alphabetical or declaration order puts the
+sorting back on the runner, which is the Coach screen's documented failure (seven blocks, no
+subject). Encoded as `WATCHED_SIGNAL_ORDER`, not as the object's key order, so it is a
+decision rather than an accident of typing.
+
+⚠️ **Set the type size ONCE on a wrapper and let the rows inherit.** `TYPESCALE-APP-GATE-01`
+counts *usages*, not distinct sizes, and 13px is the app's most-used size and deliberately
+undeclared, tracked on a ratchet. Eight rows each declaring 13px grows that register by
+eight. **Two attempts were caught by that gate before this landed** — the second still read
+247 vs 246 because the heading and the list each declared it where the Button they replaced
+declared it once.
+
+🔴 **A list of what the product watches for is NOT a feature list, and the line is the
+framing.** It describes what is **looked at**. It may not promise what is **caught**:
+`DETECTED_TRIGGER_TYPES` holds eight signals and **seven have never fired in production**.
+Nor may it merchandise — the SLT killed *"a settings screen that merchandises"* unanimously
+(Me is the lowest-frequency surface, so the worst place for a conversion moment). No tier
+language, no CTA. Enforced by `lib/coaching/watchedSignals.test.ts`.
+
