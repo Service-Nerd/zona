@@ -788,7 +788,26 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
-### 🔴 `HK-NEVER-SYNCED-COHORT-01` — RE-MEASURED the same day: 7 of 13 are a TIER GATE, not a defect *(filed 2026-10-07, **P1**)* 💼 **SLT** · ⚙️ NO BOARD *(for the residual 6)*
+### 🟡 `HK-NEVER-SYNCED-COHORT-01` — **BOTH ROOT CAUSES FIXED 2026-10-08. What remains is a RE-MEASURE, not a build** *(was P1, now P2)* 💼 SLT *(done)* · ⚙️ NO BOARD
+
+> ✅ **This item's question — *why have 13 of 28 connected runners never had a run arrive?*
+> — is now ANSWERED, and the causes are shipped:**
+>
+> | | Cause | Fix |
+> |---|---|---|
+> | 1 | Free runners' HealthKit runs were 403'd and discarded | ✅ `HK-FREE-INGEST-LINE-01` (SLT, 10-07) |
+> | 2 | **A failed heart-rate read threw away the whole run** — iOS protects HR behind device unlock, so **every background sweep lost every run** | ✅ `HK-HR-LOCKED-DROPS-RUN-01` (10-08) |
+> | 3 | **A zero-distance run was rejected forever** (indoor / treadmill) | ✅ `HK-ZERO-DISTANCE-RUN-01` (10-08) |
+>
+> 🔻 **WHAT IS LEFT IS ONE MEASUREMENT, in a few days: how many of the 13 now sync?**
+> Causes 2 and 3 were found on ONE runner (`charlotteestreet@icloud.com`, 28 of 30 sweeps
+> finding runs and zero posting) and plausibly explain a large share of the cohort — but
+> **“plausibly” is not a measurement**, and phones have to sync against the new code first.
+> ⚠️ **Do not close this on the reasoning; close it on the number.**
+>
+> 🔴 **AND MY OWN EARLIER CLOSURE OF ARM (b) WAS FALSE** — I wrote *“`failed: 0` on every
+> row”* having read **400 of 847 rows**, a big accurate count on the wrong population. The
+> real figure was **169 failing sweeps, all after the gate move.** Corrected above.
 
 > 🔴 **CORRECTION 2026-10-08, SAME DAY: I CLOSED ARM (b) ON A FALSE MEASUREMENT.** I wrote
 > *"`failed: 0` on every row, so the client is no longer collecting failures"*. **That was
@@ -14673,7 +14692,23 @@ Revisits two resolved-but-watchable decisions if commercial signals warrant:
 - ⚠️ **Intensity distribution — RE-OPENED 2026-08-19 as a *coaching* decision. See SC-03 (Wave 1d); this entry is no longer the owner.** ~~engine produces ~90% easy across distances; spec target was 75–88%. Currently kept by design (restraint as the brand). If users drop off citing under-stimulation, smallest change is +1 quality session in build phase for HM/Marathon intermediate+~~ **The Coaching Board (CD-19) ruled this a §34 enforcement failure — a declared constitutional value with zero mechanical check — and contested the target itself (Seiler: the 80/20 finding is a session-count observation misapplied to a time denominator, so the delivered ~90% is more defensible than the config).** Filing it here, as a commercial watch item to revisit if conversion warranted, is **why it survived four months unresolved**. Do not re-decide it on commercial signals: it is a board matter with a ruling attached.
 - **Free regeneration policy** — currently lenient (free users regen freely; AI enrichment is the paid value). If conversion is low and "fresh start" emerges as a real subscription motivator, gate regen only when active future-dated plan exists
 
-### 🟡 `ANALYSIS-TYPE-BACKFILL-01` — the founder's 42 hidden runs could count today *(filed 2026-10-07, P3)* ⚙️ **NO BOARD**
+### 🟡 `ANALYSIS-TYPE-BACKFILL-01` — 🔴 **RE-MEASURED 2026-10-08: it is 72 runs, not 42, and only about HALF are recoverable** *(P3)* ⚙️ **NO BOARD**
+
+> 📐 **Measured, service-role read:**
+> - `run_analysis.session_type` is NULL on **83 of 83 live rows** — so
+>   `ANALYSIS-SUPERSEDE-PATTERN-01`'s stamp has **never fired on a live row** (no analysis
+>   has run since it shipped).
+> - The founder holds **72** null rows, not the 42 this item claimed.
+> - 🔴 **THE REMEDY IS ONLY HALF POSSIBLE.** This item states that `plan_archive`
+>   *“holds his previous plans covering weeks 1–25 and 26–36, which spans the whole hidden
+>   range”*. **It does not.** He has **two archived plans and both cover weeks 1–25**. His
+>   hidden weeks are 15–35, so **15–25 is recoverable and 26–35 is not** — the plans those
+>   rows belonged to were never archived.
+>
+> ⚠️ Everything else in the filing stands: a production WRITE, so **the founder runs it**,
+> and it must be **opt-in** (*“include my previous blocks”*) or not at all — 🩹 Willy's
+> binding condition on §71 Am. 2 is that the read goes FORWARD, and the moment this lands
+> the drift card can speak about a block that finished in September.
 
 `ANALYSIS-SUPERSEDE-PATTERN-01` stamps `run_analysis.session_type` from 2026-10-07 and leaves every
 earlier row `null`, so the founder's **42 recovered analyses are visible to the query and still
