@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 — ADJUST-TRIGGER-REACH-01 · I was sent to audit eleven triggers and found the engine was dead
+**Shipped:** A backtest harness that replays every real runner's history through the live adjustment detector. It cannot report a result yet, because running it proved the detector throws on every real plan.
+
+**Dev learning:** The founder wanted to announce "your plan changed because of your run", and the coaching board had blocked it pending an audit of the eleven triggers' false-positive rate. Production said 18 adjustments ever, 8 of 11 triggers never fired, nothing since 2026-06-29. My first conclusion was "no evidence — the engine is PAID and has only ever run for 2 users", which was wrong and comfortable. The real answer: **31 of 31 live plans make `checkAdjustmentTriggers` throw.** No real plan carries seven days of sessions; rest days are *absent keys*. The route maps `week.sessions[d] ?? null` and writes a null sentinel for a rest day **on purpose**, under a comment saying it does so "so the length-7 invariant in checkAdjustmentTriggers can assert structure" — and that invariant throws on null, under a comment asserting "rest days are stored as `{type:'rest'}` not null". **Both halves landed in the same commit** (`a2673172`, titled "correctness foundation"), each documented as if the other behaved differently. The last adjustment row in production is dated three days after it. The PAID gate is what hid it: free users 403 before reaching the throw, so only a handful of people could ever have hit the 500 — and every client caller is `void authedFetch` with no `res.ok`, so the 500 was discarded on the way back too.
+
+**Product/creator learning:** The marketing ask was "shout about our eleven triggers". Counted from the union: one (`manual`) has zero producers and can never fire, and two (`skip_with_reason`, `session_reorder`) are the runner telling us, not us noticing. So the honest number is **eight**, and today the evidence for all eight is zero. Also worth separating: the only genuine detection that ever fired was `zone_drift`, three times, **reverted all three** — and the one message I can read says *"zero discipline this week"*. That may be a tone rejection recorded as a false positive. Those are different problems and we were about to fix the wrong one.
+
+**AI-building learning:** My own harness printed **"0 of 8 reachable, 8 silent"** having replayed **zero weeks** — every week silently discarded as malformed, headline rendered anyway. A clean-looking result over an empty population, in a measurement script, written by someone who has recorded that exact lesson twice in this repo. The only reason I caught it was that I had printed a skipped-list underneath. It now refuses with exit 2 before printing any table. **An empty population must never be able to render as a finding.**
+
+**The honest bit:** I nearly shipped the opposite conclusion. "There is no data because the feature is paid and we have no paying users" is tidy, plausible, flattering to the codebase, and wrong. What made the difference was reproducing rather than reasoning — one script that called the real function with the real array the real route builds, and it came back 31 of 31.
+
+**Hook material:** A commit titled "correctness foundation" killed the adaptive engine for three and a half months. One half of it writes `null` for a rest day on purpose; the other half throws on `null`. Both comments are confident. Neither is wrong about itself.
+
+**Postable?:** yes
+
 ## 2026-10-08 — ACTIVITY-NAME-WRITER-01 · the app that wrote the run, shown as the run's name
 **Shipped:** A logged run now shows a title only when the runner actually wrote one; HealthKit runs lead with the date, distance and heart rate instead of a fabricated "Run (Connect)".
 
