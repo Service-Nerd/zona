@@ -6,6 +6,49 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 (end) — AUDIT-ROADMAP-MIRROR-01 · the check predicted its own blind spot in a comment
+
+**Shipped:** A second roadmap arm in `audit-docs.sh`, asking the direction the first one
+never did. Fifteen stale rows closed behind it.
+
+**Dev learning:** Asked to make sure the three documents were up to date, I ran the script
+first — ALL CLEAN — and then cross-checked the documents against each other anyway. Fifteen
+roadmap rows said a thing was open that the backlog said had shipped. The existing arm asks
+"is there a roadmap line for this OPEN item?" and nobody ever asked the mirror.
+
+The part I keep not learning: that arm's own comment says *"each was written to answer the
+question that had just been asked, and the NEXT question was always outside it."* It is the
+sixth instance in this file's history. A directional check feels complete because it is
+correct — it answers its question perfectly and says nothing about the other direction, and
+green looks the same either way.
+
+Also: my hand check missed one that the new gate caught. I wrote a quick Python cross-check,
+found 14, built the gate, and the gate found a 15th — an item with TWO roadmap rows, the
+original filing left open beside the ruled one. My script assumed one row per id. Writing
+the gate was faster than finishing the hand check and it was more correct.
+
+**Product/creator learning:** This is the direct cause of a real cost earlier the same day:
+the backlog summary I gave the founder listed two shipped items as actionable. He spent
+attention on work that was already done, because the documents I derived it from disagreed
+with each other and the script that exists to catch that was looking the other way.
+
+**AI-building learning:** "Run the check" and "the check is sufficient" are different claims
+and I keep collapsing them. The useful habit is not running the script — I did run it — it
+is asking what shape of wrongness the script cannot express, and then looking for that shape
+by hand once. Twenty minutes, fifteen findings, one new gate.
+
+**The honest bit:** two of the fifteen were mine from four hours earlier. I corrected two
+stale backlog headings that morning, wrote up the lesson about headings reading like status,
+saved a memory about it — and left the matching roadmap rows open. I fixed the instance and
+not the pair.
+
+**Hook material:** The script said ALL CLEAN. Fifteen rows said open on work that had
+shipped. The check that missed them had predicted exactly this in its own source comment.
+
+**Postable?:** maybe — "the check predicted its own blind spot in a comment and nobody read
+it" is a good line, but it is the third documentation-drift post in two days.
+
+
 ## 2026-10-08 (later) — LOG-UPDATE-SILENT-RELINK-01 / READ-DIRECTION-OVERCLAIM-01 / READ-EM-DASH-02 / LINK-PICKER-SELECTION-UNWIRED-01 / LINK-PICKER-LIST-SHAPE-01 · I told the board the wrong cause and the conclusion survived anyway
 
 **Shipped:** "Update log" can no longer silently relink a run. §123: a run is scored

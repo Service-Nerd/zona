@@ -286,6 +286,44 @@ a runner with no watch**, and saying so honestly is part of the ruling.
 
 Founder: *"seems i can still manually link it to the same run its linked against."* Confirmed in `SessionPopupInner`: the claimed-filter **deliberately keeps** the activity this session already holds (`r.id !== completion?.strava_activity_id && r.id !== completion?.apple_health_uuid`), so it can render as selected. But the session was `DONE`, the post-run screen already offers **"Unlink this run"**, and the log view still presents a fresh "Optional, select from recent runs" list. **Two surfaces, two different mental models of the same state.** Not obviously a defect — a ruling on what the log view should say once a session is linked.
 
+### ✅ `AUDIT-ROADMAP-MIRROR-01` — **SHIPPED 2026-10-08.** The roadmap check asked one direction, and fifteen rows sat open behind an ALL CLEAN ⚙️ **NO BOARD**
+
+**Found answering *“ensure backlog, feature list and build log are up to date”* by cross-checking
+the three documents against each other rather than reading the script's verdict.**
+
+🔴 **`audit-docs.sh` printed ALL CLEAN over FIFTEEN stale rows.** Its roadmap arm asks
+exactly one question — *an OPEN backlog item with no roadmap line* — and **nothing asked the
+mirror**: a **CLOSED** backlog item whose roadmap row still says open.
+
+⚠️ **THE ARM ABOVE PREDICTED THIS IN ITS OWN COMMENT WHILE BEING WRITTEN:** *“each was
+written to answer the question that had just been asked, and the NEXT question was always
+outside it.”* **Sixth recorded instance.** Prior five: `DOC-AUDIT-WINDOW-01`,
+`BACKLOG-STALE-ALLTIME-01`, the blockquote-only shape, the emoji-required shape, and
+`AUDIT-BACKLOG-HEADING-01` (two arms blind in opposite directions, 2026-10-07).
+
+📐 **The fifteen:** 2 were mine from the same session — `POSTRUN-SKELETON-PROMISE-01` and
+`READ-WORD-BUDGET-01`, whose stale BACKLOG headings I corrected that morning **while leaving
+their roadmap rows behind**. 12 were pre-existing, oldest 2026-10-05. The 15th,
+`ANALYSIS-SUPERSEDE-PATTERN-01`, had **TWO roadmap rows** — an original filing left at 🔲 and
+the ruled row below it — and **my own ad-hoc cross-check missed it** because it assumed one
+row per id. **The gate found what my hand check could not.**
+
+⚠️ **THE COST WAS NOT COSMETIC.** The open set published to the founder on 2026-10-08 was
+derived from these documents and listed two already-shipped items as actionable.
+
+**The fix is a gate, not a sweep** (*a declared reason is not a scheduled fix*): a new
+`audit-docs.sh` arm, **narrow by construction**. It reads only roadmap TABLE ROWS naming an id
+in the first cell, flags one whose STATUS cell lacks ✅ while the backlog heading carries ✅,
+and ignores prose, horizon bullets and state paragraphs — **the arm above is deliberately
+loose about where an item is NAMED, this one is deliberately strict about where its STATUS
+lives, because a status is only a status in a status cell.**
+
+⚠️ **It keys off the BACKLOG's ✅, not the registry.** Five of the fifteen had no registry row
+because they closed as WITHDRAWN, CLOSED-no-code, or **shipped inside another item's commit**
+(`POSTRUN-JOURNEY-01` parts 2 and 3). Keying off the registry would have missed exactly those.
+
+✅ **Falsified**: re-opening one row by hand goes red, restoring it goes green.
+
 ### ✅ `LINK-PICKER-SELECTION-UNWIRED-01` — **SHIPPED 2026-10-08.** The selected state was never wired, and a board premise rested on it ⚙️ **NO BOARD**
 
 > 🔴 **FOUNDER, SHOWN THE RULING: *“It doesn't do what you think it does now.”*** He was

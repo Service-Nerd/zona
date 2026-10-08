@@ -401,6 +401,55 @@ while IFS= read -r id; do
 done < /tmp/_openids
 [ "$rfail2" = "0" ] && say "  ok"
 
+say "── roadmap rows still OPEN for a backlog item that is CLOSED ──"
+# 🔴 SIXTH TIME, 2026-10-08, AND THE ARM ABOVE PREDICTED IT WHILE BEING WRITTEN:
+# "each was written to answer the question that had just been asked, and the NEXT
+# question was always outside it." The arm above asks ONE DIRECTION — an OPEN
+# backlog item with no roadmap line. Nothing asked the mirror: a CLOSED backlog
+# item whose roadmap row still says open.
+#
+# Measured when the founder asked for the three documents to be brought up to
+# date: FOURTEEN rows, and `audit-docs.sh` printed ALL CLEAN over every one.
+# Two were from that same session — `POSTRUN-SKELETON-PROMISE-01` and
+# `READ-WORD-BUDGET-01`, whose stale BACKLOG headings had been corrected that
+# morning while their roadmap rows were left behind. The other twelve were
+# pre-existing, the oldest from 2026-10-05.
+#
+# ⚠️ AND THE COST IS NOT COSMETIC. The open set published to the founder on
+# 2026-10-08 was derived from these documents and listed two already-shipped
+# items as actionable. A reader scanning the roadmap for "what is left" reads
+# every one of these as work.
+#
+# ⚠️ IT IS NARROW BY CONSTRUCTION, because a loose version here is noise. It
+# looks ONLY at roadmap TABLE ROWS naming an id in their first cell, and only
+# flags one whose status cell lacks ✅ while the backlog heading for that id
+# carries ✅. A prose mention, a horizon bullet or a state paragraph is ignored:
+# the arm above is deliberately loose about where an item is NAMED, and this one
+# is deliberately strict about where its STATUS lives, because a status is only
+# a status in a status cell.
+#
+# ⚠️ CLOSED-WITHOUT-CODE COUNTS AS CLOSED. Five of the fourteen had no registry
+# row because they closed as WITHDRAWN, CLOSED-no-code, or shipped inside
+# another item's commit (`POSTRUN-JOURNEY-01` parts 2 and 3). Keying off the
+# registry would have missed exactly those, so this keys off the BACKLOG's own
+# ✅ — the thing a reader would be looking at.
+rfail3=0
+# Backlog headings carrying ✅, as `id` in backticks. Emoji optional, same shape
+# fix the arm above needed twice.
+grep -oE '^#{2,4} [^`]*✅[^`]*`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
+  | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | sort -u > /tmp/_closedids
+while IFS= read -r id; do
+  [ -z "$id" ] && continue
+  # A table row naming this id in its FIRST cell, whose SECOND cell has no ✅.
+  if awk -F' \\| ' -v id="$id" '
+      /^\|/ && NF >= 3 && index($1, "(" id ")") > 0 && index($2, "✅") == 0 { found=1 }
+      END { exit !found }' docs/releases/roadmap.md; then
+    say "  ROADMAP ROW STILL OPEN $id (backlog says ✅)"
+    rfail3=1; fail=1
+  fi
+done < /tmp/_closedids
+[ "$rfail3" = "0" ] && say "  ok"
+
 say "── invariants: code vs plan-invariants.md ──"
 grep -oE "'INV-[A-Z0-9-]+'" lib/plan/invariants.ts | tr -d "'" | sort -u > /tmp/_a
 grep -oE '^\| `INV-[A-Z0-9-]+`' docs/canonical/plan-invariants.md | grep -oE 'INV-[A-Z0-9-]+' | sort -u > /tmp/_b
