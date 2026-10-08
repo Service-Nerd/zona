@@ -101,7 +101,27 @@ export function adaptHealthKitWorkout(
     strava_activity_id:   null,
     activity_type:        'Run',
     sport_type:           'Run',
-    name:                 payload.sourceName ? `Run (${payload.sourceName})` : 'Run',
+    // 🔴 ACTIVITY-NAME-WRITER-01 (2026-10-08) — THIS USED TO BE
+    // `payload.sourceName ? \`Run (${payload.sourceName})\` : 'Run'`, WHICH PRESENTED THE
+    // APP THAT WROTE THE WORKOUT AS THE RUN'S NAME.
+    //
+    // `sourceName` is whatever pushed the workout into Apple Health, so the picker showed
+    // **"Run (Strava)"** above a subtitle reading **"Apple Health"**, and **"Run (Connect)"**
+    // for a Garmin. Both statements are true and together they read as a contradiction.
+    // ⚠️ It leaked further than the picker: `strava_activity_name` is copied from this and
+    // renders on the **plan calendar** (`PlanCalendar.tsx:897`) and on **Today**.
+    //
+    // ⚠️ A STRAVA `name` IS THE RUNNER'S OWN TITLE ("Morning Run") and is real. This one was
+    // SYNTHESISED BY US from a provenance field. Provenance already has a column — `source`
+    // — and ADR-011 is explicit that it is provenance, not authority. So the fix is to stop
+    // fabricating rather than to fabricate something better.
+    //
+    // ⚠️ AND NOT A DESCRIPTOR EITHER, though `ManualRunModal` writes one here
+    // (`"Manual log · 8km"`). That is client-side and knows the runner's units; this runs at
+    // INGEST and does not. Baking "km" into a stored string would freeze it for a miles
+    // runner, against ADR-015 / INV-PREF-001 — `lib/format.ts` is the sole owner of every
+    // distance string. The surfaces format; the row stores the plain fact.
+    name:                 'Run',
     start_date:           payload.startDate,
     distance_m:           Math.round(payload.totalDistanceMeters * 100) / 100,
     moving_time_s:        Math.round(payload.durationSeconds),

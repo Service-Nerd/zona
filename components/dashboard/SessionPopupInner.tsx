@@ -27,6 +27,7 @@ import { FATIGUE_TAGS, SKIP_REASONS, isFatigueTag } from '@/lib/coaching/complet
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import { matchEmptyCause, matchEmptyCopy } from '@/lib/ui/matchEmptyCause'
 import { linkPickerCopy, linkedRunDescriptor } from '@/lib/ui/linkPickerCopy'
+import { runnerAuthoredTitle } from '@/lib/health/activityTitle'
 import { isInLinkPool, rankLinkCandidates } from '@/lib/coaching/sessionMatch'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { SESSION_COLORS, getSessionColor, getSessionLabel } from '@/lib/session-types'
@@ -474,7 +475,9 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
                 ...(activity.source === 'apple_health'
                   ? { apple_health_uuid: activity.apple_health_uuid ?? activity.id }
                   : { strava_activity_id: activity.id ?? null }),
-                strava_activity_name: activity.name ?? null,
+                // ACTIVITY-NAME-WRITER-01: a runner-authored title or nothing. See
+                // `runnerAuthoredTitle` for why `source` is the test and not the name.
+                strava_activity_name: runnerAuthoredTitle(activity.source, activity.name),
                 strava_activity_km:   +(activity.distance / 1000).toFixed(1),
                 avg_hr:               activity.average_heartrate ? Math.round(activity.average_heartrate) : null,
               }
@@ -1820,8 +1823,33 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   }}>
                     <div>
-                      <div style={{ fontSize: '13px', color: 'var(--ink)', fontWeight: 500 }}>{run.name}</div>
-                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {/* 🔴 ACTIVITY-NAME-WRITER-01 (2026-10-08) — THE TITLE LINE RENDERS ONLY
+                          WHEN THERE IS A RUNNER-AUTHORED TITLE.
+                          A Strava `name` is the runner's own ("Morning Run") and is worth the
+                          prominent slot. An Apple Health run has none — we used to synthesise
+                          one from `sourceName`, the app that WROTE the workout, so this line
+                          read "Run (Connect)" above a subtitle saying "Apple Health". Two true
+                          statements that read as a contradiction.
+                          ⚠️ The adapter no longer fabricates, so an HK row now carries the
+                          plain 'Run'. Rendering that would be a generic label in the loudest
+                          position on every row, with the identifying facts demoted below it —
+                          so the row leads with the facts instead and invents nothing.
+                          🧭 Applies the LINK-PICKER-LIST-SHAPE-01 ruling (2026-10-08): "name
+                          the run by what the runner DID, not by the app that wrote it." */}
+                      {runnerAuthoredTitle(run.source, run.name) && (
+                        <div style={{ fontSize: '13px', color: 'var(--ink)', fontWeight: 500 }}>
+                          {runnerAuthoredTitle(run.source, run.name)}
+                        </div>
+                      )}
+                      {/* When no title renders above, THIS is the row's primary line, so it
+                          takes the primary treatment rather than staying a 10px subtitle in
+                          the top slot. `GHOST-AFFORDANCE-01`'s reasoning: the thing the
+                          runner reads to choose is the thing that gets the weight. */}
+                      <div style={{ fontFamily: 'var(--font-ui)',
+                        fontSize:   runnerAuthoredTitle(run.source, run.name) ? '10px' : '13px',
+                        color:      runnerAuthoredTitle(run.source, run.name) ? 'var(--text-muted)' : 'var(--ink)',
+                        fontWeight: runnerAuthoredTitle(run.source, run.name) ? 400 : 500,
+                        marginTop: '2px' }}>
                         {formatDate(run.start_date, 'short')} · {formatDistance(run.distance / 1000, preferredUnits, { exact: true })} {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''} · {run.source === 'apple_health' ? 'Apple Health' : 'Strava'}
                       </div>
                     </div>

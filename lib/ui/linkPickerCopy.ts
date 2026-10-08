@@ -130,3 +130,4 @@ function weekdayOf(startDate: string | null | undefined): string | null {
   if (Number.isNaN(d.getTime())) return null
   return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d.getDay()]
 }
+

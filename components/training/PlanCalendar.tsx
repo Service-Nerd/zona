@@ -894,9 +894,21 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
               })() : session.detail ? (
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.detail}</span>
               ) : null}
-              {isComplete && completion?.strava_activity_name && (
+              {/* 🔴 ACTIVITY-NAME-WRITER-01 (2026-10-08) — THE LINE IS GATED ON THE
+                  DISTANCE AS WELL AS THE NAME, not on the name alone.
+                  It used to require `strava_activity_name`, and the writers copied the
+                  adapter's SYNTHESISED name onto every HealthKit completion, so this
+                  rendered `● Run (Connect) · 9.9km` — the app that wrote the workout,
+                  presented as the run's title. Measured: 37 of 200 live completions
+                  carrying a name were fabricated, and 47 stored activity rows name a
+                  person ("Run (Ollie's Apple Watch)").
+                  ⚠️ The writers now store a runner-authored title or NULL, so gating on
+                  the name alone would have silently dropped the distance from ~98% of
+                  logged runs — the confirmation this line exists to give. The name is
+                  now an optional prefix to the fact, which is the right way round. */}
+              {isComplete && (completion?.strava_activity_name || completion?.strava_activity_km) && (
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--strava)' }}>
-                  ● {completion.strava_activity_name}{completion.strava_activity_km ? ` · ${formatDistance(completion.strava_activity_km, units, { exact: true })}` : ''}
+                  ● {completion.strava_activity_name ? `${completion.strava_activity_name}${completion.strava_activity_km ? ' · ' : ''}` : ''}{completion.strava_activity_km ? formatDistance(completion.strava_activity_km, units, { exact: true }) : ''}
                 </span>
               )}
               {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)' }}>skipped</span>}

@@ -584,9 +584,72 @@ one-taps, linked does not write.
 but this path looks identical to him whenever the match resolves to the same run. **Which one he
 hit is unknown.**
 
-### 🟡 `ACTIVITY-NAME-WRITER-01` — "Run (Connect)" is the app that wrote it, shown as the run's name *(filed 2026-10-07, P3)* 🧭 **DESIGN BOARD**
+### ✅ `ACTIVITY-NAME-WRITER-01` — **SHIPPED 2026-10-08**; the item UNDERSTATED its own defect ⚙️ **NO BOARD**
 
-`lib/health/adapter.ts:104` — `name: payload.sourceName ? \`Run (${payload.sourceName})\` : 'Run'`. `sourceName` is the app that wrote the workout into Apple Health, so the picker shows **"Run (Strava)"** above the subtitle **"Apple Health"**, and **"Run (Connect)"** (Garmin) for another. Both statements are true and they read as a contradiction. ⚠️ Related but distinct: `run_analysis.source` was stamped **`'strava'`** on an `apple_health` activity — provenance disagreeing with ADR-011's own column.
+> 🔴 **Confirmed, and it reached three more places than the item knew about.** Filed P3 as a
+> picker-row cosmetic. Measured in production first, which is what found the rest:
+>
+> | | |
+> |---|---|
+> | `strava_activities` apple_health rows | **229**, of which **225 (98.3%)** carry a fabricated name |
+> | the writers | `Run (Connect)` x107 · `Run (Strava)` x51 · `Run (Runna)` x11 · `Run (Nike Run Club)` x5 |
+> | **rows naming a PERSON** | **47** — `Run (Ollie's Apple Watch)` x16, `Kellie's` x13, `Grace's` x11, `Clay's` x7 |
+> | `session_completions.strava_activity_name` | **37 of 200** fabricated, copied by the two link writers |
+> | rows carrying a plain `'Run'` | 🥇 **ZERO** |
+>
+> 🥇 **THAT LAST ROW DECIDED THE DESIGN.** Not one stored HealthKit row carries an
+> unfabricated name, so a predicate that sniffed the STRING would have fixed nothing for
+> the 225 already in the table: the adapter fix only reaches rows ingested after it
+> deploys. **`source` is the test, never the name** — correct for the stored rows and the
+> new ones alike.
+>
+> ⚠️ **`Run (Strava) x51` is a HealthKit row whose WRITER was the Strava app**, so the row
+> read "Run (Strava)" directly above a subtitle saying "Apple Health". The item quoted that
+> contradiction as the whole defect; it was the visible corner of it.
+>
+> **Four layers, one predicate.** `lib/health/activityTitle.ts → runnerAuthoredTitle` —
+> deliberately NOT in `lib/ui/linkPickerCopy.ts` where it started, because
+> `lib/coaching/autoAnalyse.ts` needs it and `lib/coaching/` importing `lib/ui/` is the
+> wrong direction. Fixed: the adapter stops fabricating (`name: 'Run'`), **both** copy
+> writers store a runner-authored title or NULL, the picker row renders a title only when
+> one exists and otherwise promotes the facts, and `PlanCalendar`'s confirmation line is
+> re-gated on **name OR distance**.
+>
+> 🔴 **THAT LAST ONE IS THE DEFECT THE FIX WOULD HAVE CAUSED.** `PlanCalendar:897` gated
+> the whole `● name · 9.9km` line on the NAME. Nulling the name at the writers would have
+> silently dropped the **distance** from ~98% of logged runs: the confirmation that line
+> exists to give. The name is now an optional prefix to the fact, which is the right way
+> round. Found by the consumer check, not by a test.
+>
+> ✅ **`SessionCard` was never affected and the reason is now asserted** — it gates on
+> `viaStrava` (`!!strava_activity_id`), so a HealthKit completion never reached it. One
+> consumer of four was correct by construction; the arm stops a later tidy-up removing it.
+>
+> 🧭 **BOARD TAG REMOVED, second time today** (after `SHEET-ARIA-LABEL-01`). It was routed
+> to the Design Board because naming a run is a copy decision. **That decision was already
+> made** — `LINK-PICKER-LIST-SHAPE-01`, ruled this morning: *"name the run by what the
+> runner DID, not by the app that wrote it."* This applies that ruling to the row it was
+> ruled for. Nothing new to rule on.
+>
+> ⚠️ **`sourceName` is still stored**, in `source_name`, which is the column it belongs in.
+> ADR-011: `source` is provenance, not authority. Nothing was lost but the fabrication.
+>
+> Gate `lib/health/activityTitle.test.ts` — 15 cases, production strings as fixtures.
+> **Falsified four ways, one per layer**: each of the predicate, the adapter, the
+> auto-link writer and the `PlanCalendar` gate reverted in turn, each going red on a
+> different arm (1, 2, 3 and 4 failures respectively).
+>
+> 🔴 **AND THE RESTORE DESTROYED THE FIX, which is the lesson worth more than the item.**
+> I undid each mutation with `git checkout <file>` on files that were **uncommitted**, so
+> it reverted the real work with the mutation. `autoAnalyse.ts` and `PlanCalendar.tsx`
+> went back to their pre-fix state and the suite stayed red — and for a moment the red
+> looked like the code failing rather than the tooling. **`git checkout` is not an undo
+> for a mutation on uncommitted work.** `LOOK AT THE TARGET BEFORE YOU OVERWRITE IT`,
+> arriving by a new route: commit first, or invert the edit.
+>
+> ⚠️ **What this does NOT prove:** the 225 stored rows still carry their fabricated names.
+> Nothing was back-filled, deliberately — `source` makes them render correctly, so the
+> stored string is now inert rather than wrong. Nothing has run on a device.
 
 ### ✅ `POSTRUN-CONTEXT-TWIN-01` — **SHIPPED 2026-10-08**, with the call-site gate the scope asked for ⚙️ **NO BOARD**
 
@@ -14692,7 +14755,28 @@ Revisits two resolved-but-watchable decisions if commercial signals warrant:
 - ⚠️ **Intensity distribution — RE-OPENED 2026-08-19 as a *coaching* decision. See SC-03 (Wave 1d); this entry is no longer the owner.** ~~engine produces ~90% easy across distances; spec target was 75–88%. Currently kept by design (restraint as the brand). If users drop off citing under-stimulation, smallest change is +1 quality session in build phase for HM/Marathon intermediate+~~ **The Coaching Board (CD-19) ruled this a §34 enforcement failure — a declared constitutional value with zero mechanical check — and contested the target itself (Seiler: the 80/20 finding is a session-count observation misapplied to a time denominator, so the delivered ~90% is more defensible than the config).** Filing it here, as a commercial watch item to revisit if conversion warranted, is **why it survived four months unresolved**. Do not re-decide it on commercial signals: it is a board matter with a ruling attached.
 - **Free regeneration policy** — currently lenient (free users regen freely; AI enrichment is the paid value). If conversion is low and "fresh start" emerges as a real subscription motivator, gate regen only when active future-dated plan exists
 
-### 🟡 `ANALYSIS-TYPE-BACKFILL-01` — 🔴 **RE-MEASURED 2026-10-08: it is 72 runs, not 42, and only about HALF are recoverable** *(P3)* ⚙️ **NO BOARD**
+### ✅ `ANALYSIS-TYPE-BACKFILL-01` — **CLOSED 2026-10-08, FOUNDER DECISION: DO NOT RECOVER** ⚙️ **NO BOARD**
+
+> 👤 **Founder, 2026-10-08: *“Lets not recover it.”*** Closed on his call, not on a
+> measurement — and the measurement is why the call is easy to agree with.
+>
+> 📐 **Re-measured before putting it to him, and the filing was wrong twice:**
+> - **72** null rows, not the 42 this item claimed.
+> - 🔴 **The remedy was only half possible.** The item states `plan_archive` *“holds his
+>   previous plans covering weeks 1–25 and 26–36, which spans the whole hidden range”*.
+>   **It does not** — he has **two archived plans and both cover weeks 1–25**, so of hidden
+>   weeks 15–35 only **15–25** was ever recoverable and **26–35** never was.
+> - `run_analysis.session_type` is NULL on **83 of 83 live rows**, so
+>   `ANALYSIS-SUPERSEDE-PATTERN-01`'s stamp has **never fired on a live row.**
+>
+> ⚠️ **So the offer was “half your history, with a production write and a new opt-in
+> surface”**, against 🩹 Willy's §71 Am. 2 condition that the read goes FORWARD. Partial
+> history is arguably worse than none: a drift card speaking about weeks 15–25 while 26–35
+> stays invisible is a gap the runner cannot see or explain.
+>
+> ✅ **Nothing to build. Forward-only stands, which is what §71 Am. 2 ruled in the first
+> place.** 🔻 If this is ever re-opened it needs `plan_archive` coverage checked FIRST —
+> this item was filed on an archive range that did not exist.
 
 > 📐 **Measured, service-role read:**
 > - `run_analysis.session_type` is NULL on **83 of 83 live rows** — so

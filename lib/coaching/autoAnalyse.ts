@@ -8,6 +8,10 @@
  * analyse-run fetch are identical; only the ID column differs.
  */
 
+// The only import in this otherwise dependency-free module, and deliberately a
+// PURE predicate: `runnerAuthoredTitle` reads two strings and returns a string.
+import { runnerAuthoredTitle } from '@/lib/health/activityTitle'
+
 export type ActivitySourceRef =
   | { source: 'strava'; stravaActivityId: number }
   | { source: 'apple_health'; appleHealthUuid: string }
@@ -151,7 +155,13 @@ export async function autoMatchAndAnalyse(
     week_n:               week.n,
     session_day:          bestDay,
     status:               'complete',
-    strava_activity_name: activity.name ?? null,
+    // ACTIVITY-NAME-WRITER-01: only a RUNNER-AUTHORED title is copied here. A
+    // HealthKit workout has no name, so the adapter's synthesised one ("Run
+    // (Connect)") used to be copied onto the completion and rendered on the plan
+    // calendar as `● Run (Connect)`. `ref.source` is the test, not the string:
+    // 225 of 229 stored HK rows carry a fabricated name and NONE carry a plain
+    // 'Run', so sniffing the text would have fixed nothing.
+    strava_activity_name: runnerAuthoredTitle(ref.source === 'strava' ? 'strava' : 'apple_health', activity.name),
     strava_activity_km:   activity.distance ? +(activity.distance / 1000).toFixed(1) : null,
     avg_hr:               activity.average_heartrate ?? null,
     updated_at:           new Date().toISOString(),

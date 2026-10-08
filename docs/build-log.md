@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 — ACTIVITY-NAME-WRITER-01 · the app that wrote the run, shown as the run's name
+**Shipped:** A logged run now shows a title only when the runner actually wrote one; HealthKit runs lead with the date, distance and heart rate instead of a fabricated "Run (Connect)".
+
+**Dev learning:** `lib/health/adapter.ts` stored `name: payload.sourceName ? \`Run (${payload.sourceName})\` : 'Run'`, and `sourceName` is whatever pushed the workout into Apple Health. The one measurement that decided the whole design was **`plain 'Run': 0`** — not a single stored HealthKit row carried an unfabricated name, which means a predicate that sniffed the STRING would have fixed nothing for the 225 rows already in the table, because an adapter fix only reaches rows ingested after it deploys. Reading `source` is correct for the stored rows and the new ones at once. The second lesson is the one I nearly shipped a defect over: `PlanCalendar:897` gated the whole `● name · 9.9km` line on the NAME, so nulling the name at the writers would have silently dropped the **distance** from ~98% of logged runs — the confirmation that line exists to give. The consumer check found it; no test would have, because no test asserted the distance was there.
+
+**Product/creator learning:** The backlog item understated its own defect, which is the opposite direction from the three I re-measured this morning and found overstated. It was filed P3 as a cosmetic picker-row contradiction. Measured: it had also been copied onto 37 live completions and was rendering on the plan calendar, and **47 rows name a person** — `Run (Ollie's Apple Watch)`, `Kellie's`, `Grace's`, `Clay's`. Each is that runner's own device so nothing leaks across users, but a first name was occupying the loudest line on the row and nobody chose to put it there. Re-measuring cuts both ways: this one got bigger.
+
+**AI-building learning:** I started the predicate in `lib/ui/linkPickerCopy.ts` because that is where the picker copy lives, and had to move it the moment the server-side auto-link writer needed it — `lib/coaching/` importing `lib/ui/` is the wrong direction. The question was never "what copy does the picker show", it was "what does this stored field mean", and the right home follows from the question, not from the first call site. Also: `autoAnalyse.ts` has **zero** static imports, deliberately, and noticing that before adding one is the difference between respecting a design and eroding it.
+
+**The honest bit:** I falsified the gate four ways, one per layer, and all four went red correctly — then **destroyed the fix restoring them.** I undid each mutation with `git checkout <file>` on files that were uncommitted, so it reverted the real work along with the mutation. `autoAnalyse.ts` and `PlanCalendar.tsx` went back to their pre-fix state, the suite stayed red, and for a moment the red read as the code failing rather than my tooling. `git checkout` is not an undo for a mutation on uncommitted work: commit first, or invert the edit by hand.
+
+**Hook material:** 225 of 229 stored runs carried a name the runner never wrote. Forty-seven of them were somebody's first name. Zero carried a plain "Run" — which is the number that proved I had to read the source and not the string.
+
+**Postable?:** yes
+
 ## 2026-10-08 (end) — AUDIT-ROADMAP-MIRROR-01 / HK-INGEST-REASON-01 / HK-HR-LOCKED-DROPS-RUN-01 / HK-ZERO-DISTANCE-RUN-01 · the check predicted its own blind spot in a comment
 
 **Shipped:** A second roadmap arm in `audit-docs.sh`, asking the direction the first one
