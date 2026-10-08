@@ -162,3 +162,32 @@ to the model becomes user-facing the moment the model repeats it.
   arm exists because the falsification did not go red without it.
 - No request or response shape changes. An unset preference resolves to `'km'` inside
   `getUserDisplayPrefs`, as every other surface already does.
+
+## The week handed to the engine — seven real slots (ADJUST-ENGINE-DEAD-01, 2026-10-08)
+
+`currentWeekSessions` MUST be **exactly seven non-null `Session` objects, mon=0 … sun=6**,
+produced by `lib/plan/weekSessions.ts → orderedWeekSessions(week)`. Nothing else is a valid
+input, and the route must not build this array itself.
+
+🔴 **This is contracted because getting it wrong took the whole engine down for 104 days.**
+`Week.sessions` is `Partial<Record<Day, Session>>` and the generator omits a rest day's key,
+so **no real plan carries seven days** (measured across all 31 live plans:
+`1×1 · 2×2 · 3×13 · 4×10 · 5×2 · 6×3`). The route previously passed
+`DAY_ORDER.map(d => week.sessions[d] ?? null)` and `checkAdjustmentTriggers` throws on a
+null slot, so **31 of 31 plans threw on every check** from 2026-06-26 to 2026-10-08.
+
+⚠️ **The throw is correct and must not be relaxed.** `{...null}` is `{}` in JavaScript, so a
+null slot would pass through all eleven positional `sessions.map(s => ({...s}))` consumers
+in the engine as a typeless object and corrupt a reshape with **no error**. The assertion is
+the only thing standing between a sparse week and a silently wrong plan.
+
+**An absent day becomes an explicit `{type:'rest', label:'Rest', detail:null}`.** §64 as
+amended by GEN-FIX-09 declares the explicit entry and the absent day to be equally valid
+representations of a rest day, so this conversion is lossless and sanctioned rather than a
+workaround.
+
+⚠️ **Failure mode to know when reading logs:** the route 500s **before**
+`recordAdjustmentCheck`, so a throw here leaves `last_adjustment_check_at` untouched and the
+Me screen's "Last checked …" line simply never advances. Every client caller is
+`void authedFetch(...)` with no `res.ok`, so the 500 is discarded on the way back too. A
+broken engine is indistinguishable from an engine with nothing to suggest.
