@@ -17,7 +17,22 @@
 // provisional**, which makes them responsible for checking it every time. That
 // undercuts the one claim the encouragement apps cannot make.
 //
-// ⚠️ WHAT THIS DELIBERATELY DOES **NOT** DO, because the board did not rule it.
+// ✅ SHAPE RULED BY THE FOUNDER, 2026-10-08: option (b), Collins' shape. The list starts
+// HIDDEN behind "Wrong one?" and the screen states what it has.
+//
+// 🔴 HE RULED IT ONLY AFTER THE CHOICE WAS RE-PUT, because the first version I gave him
+// described a highlighted list that did not exist (`LINK-PICKER-SELECTION-UNWIRED-01` —
+// the selected state had never been wired). 🎪 Collins' argument was that the list
+// communicates nothing about the current state; measured, it communicated nothing about
+// the current state. 📱✋ Wroblewski and Silvanto argued to keep the list on the
+// assumption that the selection rendered, and **lost** — recorded as a loss in
+// `design-rulings.md`, not softened.
+//
+// ⚠️ THE LIST IS NOT DELETED. It is one tap away, and `linkPickerCopy` returns the label
+// for the control that reveals it. Wroblewski's concession was explicit: the two shapes
+// converge if "Wrong one?" opens exactly his list.
+//
+// ⚠️ WHAT THIS STILL DOES **NOT** DO, because the board did not rule it.
 // Collins argued the list should not exist in this state at all — *"Linked to your 9.9km
 // run, Wednesday. Wrong one?"*, reusing the affordance already live on the auto-match
 // suggestion fifty lines up. Wroblewski and Silvanto want the list kept with a remove
@@ -38,10 +53,15 @@
 // caught that guard out on 2026-10-07.
 
 export interface LinkPickerCopy {
-  /** The eyebrow above the list. */
+  /** The eyebrow. */
   eyebrow: string
   /** The line under it. Empty string renders nothing. */
   subtitle: string
+  /**
+   * The label for the control that REVEALS the list, or null when the list is already
+   * the screen. Non-null means the list starts hidden.
+   */
+  changeLabel: string | null
 }
 
 /**
@@ -52,19 +72,61 @@ export interface LinkPickerCopy {
  */
 export function linkPickerCopy(
   isLinked: boolean,
-  linkedName: string | null = null,
+  linkedDescriptor: string | null = null,
 ): LinkPickerCopy {
   if (!isLinked) {
-    // Unchanged. This is the state the original copy was written for and it is right.
-    return { eyebrow: 'Link an activity', subtitle: 'Optional, select from recent runs' }
+    // Unchanged. This is the state the original copy was written for and it is right,
+    // and the list IS the screen here — there is nothing yet to state.
+    return {
+      eyebrow: 'Link an activity',
+      subtitle: 'Optional, select from recent runs',
+      changeLabel: null,
+    }
   }
 
   return {
-    // PAST TENSE, and it states the state rather than instructing. The runner is not
-    // being asked to do the thing they have done.
     eyebrow: 'Linked run',
-    subtitle: linkedName
-      ? `This session is linked to ${linkedName}. Pick another to change it.`
-      : 'This session is already linked. Pick another to change it.',
+    // PAST TENSE, and it states the state rather than instructing.
+    subtitle: linkedDescriptor
+      ? `Linked to your ${linkedDescriptor}.`
+      : 'This session is already linked.',
+    // 🎪 Collins' control, and it is DELIBERATELY the one already live on the
+    // auto-match suggestion rather than a new string: *"You wrote the right control and
+    // did not reuse it on the state that needs it most."*
+    changeLabel: 'Wrong one?',
   }
+}
+
+/**
+ * `"9.9km run, Wednesday"` — the descriptor for the statement.
+ *
+ * 🥇 DISTANCE AND DAY, NOT THE ACTIVITY'S NAME, AND THAT IS NOT A STYLE CHOICE.
+ * `ACTIVITY-NAME-WRITER-01` (filed, P3) records that `lib/health/adapter.ts` sets
+ * `name` to `Run (${sourceName})` — the app that WROTE the workout into Apple Health —
+ * so the name renders as **“Run (Connect)”** or **“Run (Strava)”** above a subtitle
+ * saying “Apple Health”. Two true statements that read as a contradiction. Naming the
+ * run by **what the runner did** sidesteps that defect entirely instead of quoting it
+ * into a new surface.
+ *
+ * ⚠️ `distanceText` is passed in already formatted, because `lib/format.ts` is the sole
+ * owner of every distance string (ADR-015 / INV-FMT-001) and this module must not grow a
+ * second opinion about units.
+ */
+export function linkedRunDescriptor(
+  distanceText: string | null,
+  startDate: string | null | undefined,
+): string | null {
+  const day = weekdayOf(startDate)
+  if (distanceText && day) return `${distanceText} run, ${day}`
+  if (distanceText)        return `${distanceText} run`
+  if (day)                 return `run from ${day}`
+  return null
+}
+
+/** Local weekday, or null when the date is absent or unparseable. */
+function weekdayOf(startDate: string | null | undefined): string | null {
+  if (!startDate) return null
+  const d = new Date(startDate)
+  if (Number.isNaN(d.getTime())) return null
+  return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d.getDay()]
 }

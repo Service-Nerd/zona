@@ -7,57 +7,85 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { linkPickerCopy } from './linkPickerCopy'
+import { linkPickerCopy, linkedRunDescriptor } from './linkPickerCopy'
 
 const EMPTY_STATE_SUBTITLE = 'Optional, select from recent runs'
 
-describe('linkPickerCopy — the state is stated before the action is offered', () => {
-  it('UNLINKED is unchanged: the original copy was written for this state and is right', () => {
+describe('linkPickerCopy — shape (b), ruled by the founder 2026-10-08', () => {
+  it('UNLINKED is unchanged, and the list IS the screen', () => {
     expect(linkPickerCopy(false)).toEqual({
       eyebrow: 'Link an activity',
       subtitle: EMPTY_STATE_SUBTITLE,
+      changeLabel: null,     // null = nothing to reveal, the list is already shown
     })
   })
 
   // 🔴 THE DEFECT, as an assertion. This is what the founder read on a linked session.
   it('LINKED never renders the empty-state instruction', () => {
-    const withName = linkPickerCopy(true, 'Morning Run')
-    const without  = linkPickerCopy(true, null)
-    for (const c of [withName, without]) {
+    for (const c of [linkPickerCopy(true, '9.9km run, Wednesday'), linkPickerCopy(true, null)]) {
       expect(c.subtitle).not.toBe(EMPTY_STATE_SUBTITLE)
       expect(c.subtitle).not.toContain('Optional')
       expect(c.eyebrow).not.toBe('Link an activity')
     }
   })
 
-  it('LINKED states it in the past tense and names the run when known', () => {
-    const c = linkPickerCopy(true, 'Morning Run')
+  it('🎪 LINKED states what it has and hides the list behind "Wrong one?"', () => {
+    const c = linkPickerCopy(true, '9.9km run, Wednesday')
     expect(c.eyebrow).toBe('Linked run')
-    expect(c.subtitle).toBe('This session is linked to Morning Run. Pick another to change it.')
+    expect(c.subtitle).toBe('Linked to your 9.9km run, Wednesday.')
+    // A non-null changeLabel is what makes the list start hidden.
+    expect(c.changeLabel).toBe('Wrong one?')
   })
 
-  // ⚠️ The pool is windowed, so a missing name is NORMAL, not an error. It must read as
-  // a complete sentence: never "linked to your ." and never a bare placeholder.
-  it('a missing name still reads as a complete sentence', () => {
+  // ⚠️ The label is DELIBERATELY the one already live on the auto-match suggestion.
+  // Collins: "You wrote the right control and did not reuse it on the state that needs
+  // it most." A second string for the same job is how a vocabulary drifts.
+  it('reuses the existing affordance rather than inventing a second one', () => {
+    const inner = readFileSync(join(process.cwd(), 'components/dashboard/SessionPopupInner.tsx'), 'utf8')
+    // It appears as the auto-match escape AND is now returned by the owner.
+    expect(inner).toContain('Wrong one?')
+    expect(linkPickerCopy(true, 'x').changeLabel).toBe('Wrong one?')
+  })
+
+  it('a missing descriptor still reads as a complete sentence', () => {
     const c = linkPickerCopy(true, null)
-    expect(c.subtitle).toBe('This session is already linked. Pick another to change it.')
-    expect(c.subtitle).not.toMatch(/\s\.|undefined|null|—/)
-  })
-
-  it('still offers the change, because the board did NOT remove the list', () => {
-    // Collins argued for removing it; that position is recorded UNRESOLVED and needs
-    // the founder on a device. This arm exists so a future edit cannot quietly
-    // implement his half under cover of this ruling.
-    for (const name of ['Morning Run', null]) {
-      expect(linkPickerCopy(true, name).subtitle).toContain('Pick another to change it')
-    }
+    expect(c.subtitle).toBe('This session is already linked.')
+    expect(c.subtitle).not.toMatch(/\s\.|undefined|null|\u2014/)
+    // ⚠️ And it STILL offers the change, so a pool that does not hold the run cannot
+    // strand the runner with a statement and no way out.
+    expect(c.changeLabel).toBe('Wrong one?')
   })
 
   it('no em dash in any branch: these are sentences the runner reads', () => {
-    const all = [linkPickerCopy(false), linkPickerCopy(true, 'Run (Strava)'), linkPickerCopy(true, null)]
-    for (const c of all) {
-      expect(c.eyebrow + c.subtitle).not.toContain('—')
+    for (const c of [linkPickerCopy(false), linkPickerCopy(true, '5km run, Monday'), linkPickerCopy(true, null)]) {
+      expect(c.eyebrow + c.subtitle + (c.changeLabel ?? '')).not.toContain('\u2014')
     }
+  })
+})
+
+describe('linkedRunDescriptor — distance and day, never the activity name', () => {
+  // 🥇 NOT A STYLE CHOICE. `ACTIVITY-NAME-WRITER-01` records that `name` is set to
+  // `Run (${sourceName})` — the app that WROTE the workout — so it renders as
+  // "Run (Connect)" above a subtitle saying "Apple Health". Naming the run by what the
+  // runner DID sidesteps that filed defect instead of quoting it into a new surface.
+  it('builds the Collins line from distance and weekday', () => {
+    expect(linkedRunDescriptor('9.9km', '2026-10-07T13:45:00.000Z')).toBe('9.9km run, Wednesday')
+  })
+
+  it('degrades a step at a time and never to a fragment', () => {
+    expect(linkedRunDescriptor('9.9km', null)).toBe('9.9km run')
+    expect(linkedRunDescriptor(null, '2026-10-07T13:45:00.000Z')).toBe('run from Wednesday')
+    expect(linkedRunDescriptor(null, null)).toBeNull()
+  })
+
+  it('an unparseable date is absent, not "Invalid Date"', () => {
+    expect(linkedRunDescriptor('9.9km', 'not-a-date')).toBe('9.9km run')
+  })
+
+  it('takes the distance ALREADY FORMATTED, so units have one owner', () => {
+    // ADR-015 / INV-FMT-001: `lib/format.ts` owns every distance string. This module
+    // must not grow a second opinion about km vs miles.
+    expect(linkedRunDescriptor('6.1mi', '2026-10-07T13:45:00.000Z')).toBe('6.1mi run, Wednesday')
   })
 })
 
@@ -68,6 +96,15 @@ describe('the picker renders the owner, not a literal', () => {
     expect(SRC).toContain("from '@/lib/ui/linkPickerCopy'")
     expect(SRC).toContain('{pickerCopy.eyebrow}')
     expect(SRC).toContain('{pickerCopy.subtitle}')
+  })
+
+  it('🎪 the list is gated on the reveal, not rendered by default', () => {
+    // Shape (b). `showRunList` is true when nothing is linked (changeLabel null) or once
+    // the runner taps through, so an UNLINKED session still gets the list immediately.
+    expect(SRC).toContain('const showRunList = pickerCopy.changeLabel == null || pickerRevealed')
+    expect(SRC).toContain('{showRunList && (loadingClaimed ? (')
+    // And the reveal control exists and sets the state.
+    expect(SRC).toContain('onClick={() => setPickerRevealed(true)}')
   })
 
   it('the hardcoded empty-state heading is GONE from the component', () => {

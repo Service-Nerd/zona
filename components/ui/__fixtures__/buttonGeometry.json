@@ -759,10 +759,10 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/SessionPopupInner.tsx#Button15": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
+  "components/dashboard/SessionPopupInner.tsx#Button[btn-inline-target]15": {
+    "floor": 0,
+    "padY": 6,
+    "font": 12,
     "radius": null,
     "height": 44,
     "width": "auto"
@@ -773,12 +773,20 @@
     "font": null,
     "radius": null,
     "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button17": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
     "width": "auto",
     "unreadable": [
       "MICRO_LABELS"
     ]
   },
-  "components/dashboard/SessionPopupInner.tsx#Button[btn-inline-target]17": {
+  "components/dashboard/SessionPopupInner.tsx#Button[btn-inline-target]18": {
     "floor": 0,
     "padY": null,
     "font": null,
@@ -786,7 +794,7 @@
     "height": 44,
     "width": "full"
   },
-  "components/dashboard/SessionPopupInner.tsx#Button18": {
+  "components/dashboard/SessionPopupInner.tsx#Button19": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -794,7 +802,7 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/SessionPopupInner.tsx#Button19": {
+  "components/dashboard/SessionPopupInner.tsx#Button20": {
     "floor": 44,
     "padY": null,
     "font": null,

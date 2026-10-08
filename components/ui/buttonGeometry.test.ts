@@ -337,7 +337,10 @@ describe('button geometry', () => {
     // control's box depends on the call site and **cannot be measured from
     // source at all**, by construction, not by omission.
     const KNOWN_UNREADABLE: Record<string, string[]> = {
-      'components/dashboard/SessionPopupInner.tsx#Button16': ['MICRO_LABELS'],
+      // ⚠️ INDEX SHIFTED 16 -> 17 on 2026-10-08 (`LINK-PICKER-LIST-SHAPE-01` inserted
+      // the "Wrong one?" reveal above it). Same control, same unreadable spread — only
+      // the ORDINAL moved, which is the documented cost of that key, recorded above.
+      'components/dashboard/SessionPopupInner.tsx#Button17': ['MICRO_LABELS'],
       'components/shared/BackButton.tsx#Button2': ['style'],
       'components/shared/RedeemCodeLink.tsx#Button1': ['style'],
     }

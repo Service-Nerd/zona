@@ -26,7 +26,7 @@ import { BRAND } from '@/lib/brand'
 import { FATIGUE_TAGS, SKIP_REASONS, isFatigueTag } from '@/lib/coaching/completionVocab'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import { matchEmptyCause, matchEmptyCopy } from '@/lib/ui/matchEmptyCause'
-import { linkPickerCopy } from '@/lib/ui/linkPickerCopy'
+import { linkPickerCopy, linkedRunDescriptor } from '@/lib/ui/linkPickerCopy'
 import { isInLinkPool, rankLinkCandidates } from '@/lib/coaching/sessionMatch'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { SESSION_COLORS, getSessionColor, getSessionLabel } from '@/lib/session-types'
@@ -424,7 +424,31 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
   const linkedRunName = linkedActivityId != null
     ? (pooledRuns.find((r: any) => r.id === linkedActivityId)?.name ?? null)
     : null
-  const pickerCopy = linkPickerCopy(linkedActivityId != null, linkedRunName)
+  // ✅ SHAPE RULED BY THE FOUNDER 2026-10-08: option (b), Collins' shape. On an
+  // already-linked session the screen STATES what it has and the list starts hidden
+  // behind "Wrong one?" — the control already live on the auto-match suggestion.
+  //
+  // 🎪 Collins: *"You wrote the right control and did not reuse it on the state that
+  // needs it most."* 📱✋ Wroblewski and Silvanto argued to keep the list and lost;
+  // recorded as a loss in `design-rulings.md`. ⚠️ **The list is NOT deleted** — it is one
+  // tap away, which is the convergence Wroblewski named as his concession.
+  const linkedRun = linkedActivityId != null
+    ? pooledRuns.find((r: any) => r.id === linkedActivityId)
+    : undefined
+  const linkedDescriptor = linkedRun
+    ? linkedRunDescriptor(
+        // ADR-015: `lib/format.ts` owns every distance string. Formatted HERE and passed
+        // in, so the copy owner never grows a second opinion about units.
+        typeof linkedRun.distance === 'number' && linkedRun.distance > 0
+          ? formatDistance(linkedRun.distance / 1000, preferredUnits, { exact: true })
+          : null,
+        linkedRun.start_date,
+      )
+    : null
+  const pickerCopy = linkPickerCopy(linkedActivityId != null, linkedDescriptor)
+  /** The list is revealed by the runner, never by default, whenever one is linked. */
+  const [pickerRevealed, setPickerRevealed] = useState(false)
+  const showRunList = pickerCopy.changeLabel == null || pickerRevealed
 
   async function saveCompletion(status: 'complete' | 'skipped', overrideActivity?: any) {
     setSaving(true)
@@ -1725,7 +1749,17 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
               The DECISION lives in `linkPickerCopy`; this renders it. */}
           <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--teal)', marginBottom: 'var(--space-4)' }}>{pickerCopy.eyebrow}</div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>{pickerCopy.subtitle}</div>
-          {loadingClaimed ? (
+          {/* 🎪 The reveal. Reuses the "Wrong one?" affordance already live on the
+              auto-match suggestion rather than inventing a second way to say it. */}
+          {pickerCopy.changeLabel != null && !pickerRevealed && (
+            <Button variant="ghost" className="btn--inline-target"
+              onClick={() => setPickerRevealed(true)}
+              style={{ padding: '6px 0', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+                       textDecoration: 'underline', textUnderlineOffset: '3px', minHeight: '32px' }}>
+              {pickerCopy.changeLabel}
+            </Button>
+          )}
+          {showRunList && (loadingClaimed ? (
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0' }}>Loading activities...</div>
           ) : claimedError ? (
             // Explicit failure path. Without this branch the same UI rendered
@@ -1798,7 +1832,7 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
             </div>
           ) : (
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: 'var(--space-2)' }}>{matchEmptyCopy(emptyCause)}</div>
-          )}
+          ))}
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
             <Button variant="secondary" size="compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</Button>
             {/* RESHAPE-FIX-WAVE2B (Defect 10): the 2026-06-26 incident's
