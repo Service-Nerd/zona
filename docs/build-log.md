@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 — RESHAPE-MOMENT-02 · the homepage now runs the engine instead of describing it
+**Shipped:** A homepage section that calls the real adaptive engine at render time and prints the sentence it produces. The founder asked for a list of the eight signals; the list was killed and this went in instead.
+
+**Dev learning:** Four things were caught in one build and each was a different flavour of the same lesson. `var(--measure-prose)` **does not exist** — I invented it, and CSS drops an unknown custom property silently, so the prose would have run the full page width with nothing failing anywhere. The real token is `--measure-read`, and the gate now validates every `var()` against `globals.css` rather than trusting me. `new Set(used)` iteration fails `tsc` while passing `vitest`, because esbuild does not typecheck — third time in that family today. And `sectionSurfaces.test.ts` counted my own test file's two assertions naming `surface="card"` as two extra white spotlights, taking W-08's count to three. The guard was right: **a test that asserts on a literal must not live inside the population of a guard that counts that literal.** Moved it to `lib/marketing/` where the other marketing guards already live.
+
+**Product/creator learning:** The Coaching Board's second amendment was the one that mattered and I would not have thought of it. I was about to write copy implying the engine rewrites your week, and `computeSessionDiff` over this trigger's own output returns **no structural change** — zone drift reinforces the ceiling and writes a note, it moves nothing. So the block says *"no session was moved. The week is the same week: the ceiling on it just stopped being a suggestion."* **That is a better sentence than the one I was going to write, and it is better because it is true.** Measure what the function did before writing the claim about it.
+
+**AI-building learning:** The settled-ground scan turned a request into a different and stronger artefact, and the pivot came from a measurement rather than an argument. Three standing kills said "no list". Rather than negotiate, I ran the real detector on the real published plan and got a usable sentence back in one command. **That measurement is what let the board say "ship the engine" instead of "don't ship the list"** — a refusal with a replacement, which is worth far more than a refusal.
+
+**The honest bit:** I invented a design token and did not check it existed. The repo's own warning about this is explicit — the rule and the token live in different documents, and `--surface-moss-wash` was legal in one and forbidden by the other. I read that warning this afternoon, in the skill file, before writing the component.
+
+**Hook material:** The website used to say the plan adapts. It now runs the function that adapts it and prints the output, including the part where it admits nothing moved.
+
+**Postable?:** yes
+
 ## 2026-10-08 — RESHAPE-MOMENT-01 · the founder asked for a feature list and the board gave him the engine instead
 **Shipped:** The eight signals the engine watches are now on the Me screen as eight rows instead of one collapsed sentence. The website half was ruled differently from how it was asked for.
 
