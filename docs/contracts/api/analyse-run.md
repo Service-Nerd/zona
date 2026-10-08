@@ -56,6 +56,32 @@ All three fields required. Returns 422 if any are missing.
 | 422 | Missing required fields |
 | **429** | **Per-user AI rate limit exceeded (SEC-15, 2026-09-20).** Interactive callers only — the internal post-run ingest path is NOT limited, because a finished run must still analyse. ⚠️ Rate limit only, no body-size cap: this route reads a body, so `guardAiRequest`'s byte arm would also apply, but it is deliberately out of scope until real payload sizes are measured. ⚠️ Fails open by design. |
 
+## `feedback_text` is SANITISED at this boundary (READ-EM-DASH-01, 2026-10-08)
+
+The model's read is not persisted as returned. It passes through
+`withoutEmDashes` (`lib/coaching/runnerProse.ts`) before it is written to
+`run_analysis.feedback_text`, so **no consumer of this field ever sees an em dash**.
+
+**Consumers may rely on that.** It is a boundary guarantee, not a best effort:
+`runnerProse.test.ts` asserts the wiring, and the repair is behavioural rather than
+prompt-dependent.
+
+| Behaviour | Why it is this way |
+|---|---|
+| Em dash → **repaired** (replaced with a comma) | Swapping one mark costs the sentence nothing. ⚠️ A comma, never a full stop: an em dash is nearly always appositive and a stop would manufacture sentence fragments. |
+| En dash (`–`) → **untouched** | `6:30–7:30 /km`, `Zone 4–5`, `RPE 1–10` are correct per `CLAUDE.md` and a transform reaching U+2013 would corrupt every pace band this product states. Falsified with a range string. |
+| Over the **40-word** budget → **recorded, NOT repaired** | `POST_RUN_READ_MAX_WORDS`. A read sliced at word 40 is worse than a long one. The opposite choice from the em dash, for a stated reason. |
+
+**Both emit an ops event, so neither is silent:** `read_em_dash_repaired` and
+`read_over_budget`. 🔴 A silent repair is still a silent failure — without the event
+nobody learns that the model ignores an instruction it has had since
+`BRAND-EMDASH-APP-01`, or notices the rate worsening. Baseline: **18.1% of live reads**
+carried an em dash when this shipped.
+
+⚠️ **The prompt asks for both too, and the prompt is not the mechanism.** The model was
+already told *"Never use an em dash"* across all 14 surfaces and did it anyway on 18.1%
+of live reads; it was told *"two sentences"* and returned 76 words.
+
 ## Notes
 
 - Upserts to `run_analysis` table (conflict key: `user_id, strava_activity_id`).
