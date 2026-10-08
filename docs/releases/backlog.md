@@ -825,6 +825,121 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
+### 🔴 `ADJUST-ENGINE-DEAD-01` — **THE ADAPTIVE ENGINE HAS THROWN ON EVERY CHECK SINCE 2026-06-26** *(filed 2026-10-08, **P0**)* ⚙️ **NO BOARD** *(defect fix restoring documented intent)*
+
+> 🔴 **MEASURED: 31 of 31 live plans — 100% — make `checkAdjustmentTriggers` THROW.**
+> Reproduced by calling the real function with the array the real route builds:
+>
+> ```
+> plans tested: 31 | THREW: 31 (100.0%)
+>   checkAdjustmentTriggers: currentWeekSessions[0] (mon) is not a valid session object
+> days-with-a-session in week 1: 1×1 · 2×2 · 3×13 · 4×10 · 5×2 · 6×3
+> ```
+>
+> **No real plan carries seven days of sessions.** The most is six, and only three plans
+> reach that. Rest days are **absent keys**, not objects.
+>
+> 🔴 **THE TWO HALVES OF ONE COMMIT CONTRADICT EACH OTHER.** `a2673172` (2026-06-26,
+> *"RESHAPE-FIX-WAVE1 — correctness foundation"*) fixed a real `Object.values` ordering bug
+> and introduced BOTH:
+>
+> | Half | What it does |
+> |---|---|
+> | `app/api/adjust-plan/route.ts:271` | `DAY_ORDER.map(d => week.sessions[d] ?? null)` — writes **null** for a rest day, and its comment says this is deliberate: *"A null sentinel preserves the slot … so the length-7 invariant in checkAdjustmentTriggers can assert structure"* |
+> | `lib/coaching/planAdjustment.ts:194` | throws when any slot `== null`, under a comment asserting *"rest days are stored as `{type:'rest', …}` not null"* |
+>
+> **One side sends the sentinel; the other treats the sentinel as the failure.** The
+> engine's assertion is arguably correct and the route violates its stated contract — but
+> the route's comment believes it is satisfying it. Nobody compared them.
+>
+> 🔴 **IT IS DOUBLE-SILENT, WHICH IS WHY IT RAN FOR THREE AND A HALF MONTHS.**
+> 1. The call is **not** wrapped in try/catch, so the route 500s before
+>    `recordAdjustmentCheck` — which is why `last_adjustment_check_at` is **NEVER for 42 of
+>    44 users**.
+> 2. **Every client caller is `void authedFetch(...)`** — no `await`, no `res.ok`. The 500
+>    is discarded on the way back. `SessionPopupInner:240`, `ManualRunModal:254`,
+>    `DashboardClient:7028`, `PlanCalendar:168/218`. The *unchecked-response* class.
+>
+> 📅 **THE DATES CONFIRM IT.** Guard landed **2026-06-26**; the last `plan_adjustments` row
+> of any kind is **2026-06-29**, three days later. Nothing since.
+>
+> ⚠️ **WHAT THIS KILLS, and it is the reason `POSTRUN-PLAN-FEEDBACK-01` could not be
+> audited:** I set out to measure the eleven triggers' false-positive rate and concluded
+> *"no evidence, the engine is PAID and has only run for 2 users"*. **That was the wrong
+> conclusion.** The engine is gated AND broken, and the gate hid the breakage: free users
+> 403 before the throw, so the only people who could have hit the 500 are the handful of
+> paid ones. **"No data" was a symptom, not the cause.**
+>
+> **FIX — recommended (a), at the boundary, NOT inside the engine:**
+> | | |
+> |---|---|
+> | **(a) materialise the rest day** | one owner, e.g. `lib/plan/weekSessions.ts → orderedWeekSessions(week)`, returning 7 real sessions with `{type:'rest'}` for an absent day. **The engine's contract was right; the caller was wrong.** Zero change to the 11 internal consumers. ✅ Recommended |
+> | (b) make the engine null-tolerant | 11 internal `const sessions = input.currentWeekSessions` sites must each decide what a missing day means. That is a coaching question per trigger and risks producing WRONG adjustments, which is worse than none |
+>
+> ⚠️ **(a) needs a single owner because the week→7-slots mapping is currently written out
+> by hand in the route AND in `scripts/backtest-adjustment-triggers.ts`** — the second
+> producer appeared within an hour of the first being examined, which is the usual sign.
+>
+> **Gate:** a test that calls the real detector with a real stored plan's week and asserts
+> it does NOT throw, plus an arm asserting no caller passes a bare `null`. ⚠️ **Falsify it
+> against this incident**, not an invented case: a hand-built 7-day fixture passes today
+> and proves nothing, which is exactly why the existing tests are green.
+
+### 🟡 `ADJUST-TRIGGER-REACH-01` — the trigger backtest, blocked on `ADJUST-ENGINE-DEAD-01` *(filed 2026-10-08, P1)* ⚙️ **NO BOARD**
+
+> ✅ **Harness SHIPPED** — `scripts/backtest-adjustment-triggers.ts` replays every real
+> runner's history through the live `checkAdjustmentTriggers`, reusing the route's own load
+> producers (`fetchWeeklyLoad`, `priorWeeks`). **It is what found `ADJUST-ENGINE-DEAD-01`.**
+>
+> 🔻 **It cannot report yet, and it says so instead of pretending.** Every week is
+> discarded by the same throw, so it exits **2** with *"ZERO WEEK-CHECKS REPLAYED. There is
+> no result here, only a broken harness."*
+>
+> 🔴 **ITS FIRST RUN DID NOT SAY THAT — IT REPORTED “0 of 8 reachable, 8 silent”, HAVING
+> REPLAYED NOTHING.** A clean-looking headline over an empty population: this repo's
+> `AN ALLOW-BY-DEFAULT ARM IS NOT A CHECK`, in a measurement script, written by the person
+> who had recorded that lesson twice. The refusal is now the first thing it does.
+>
+> **Run it again the moment the engine is fixed.** Then it answers the question
+> `POSTRUN-PLAN-FEEDBACK-01` actually needs: which of the eight detectors real runners can
+> reach at all.
+>
+> ⚠️ **Two limits, declared:** it is a **second assembler** of `AdjustmentCheckInput` (the
+> route builds it inline), so it proves detector REACHABILITY, never route wiring; and
+> nothing in it knows whether a firing would have been CORRECT. **The detector returns the
+> FIRST match in priority order**, so a silent trigger may be unreachable or merely always
+> outranked — `TRIGGER-BACKTEST-02` (masking analysis) is stubbed and not built.
+
+### 🟡 `LEDGER-ZERO-UNIT-01` — at zero the ledger tile shows a bare number with no noun *(filed 2026-10-08, P2)* 🧭 **DESIGN BOARD**
+
+> 🔴 **FOUNDER, 2026-10-08: *"it says i have done 0 (this week starts the count). What is
+> that counting as I have done 1 run this week already"*.** The count is CORRECT — it is
+> consecutive **weeks** within the lines, and his week 1 had a skipped Monday, week 2
+> nothing, and this week is in progress. **The number is right and the screen is wrong.**
+>
+> `LedgerCard.tsx:84-87`: when the count is **> 0** the label beneath reads *"weeks within
+> the lines"*. When it is **0** that label is **REPLACED** by *"This week starts the
+> count."* — so the one state where a reader cannot infer the unit is the exact state where
+> the unit is deleted. A bare `0`, 44px, no noun. **He guessed runs, which is the most
+> reasonable guess available.**
+>
+> **Fix is copy, not layout:** keep the noun in the zero state. One line. ⚠️ Check the
+> em-dash and voice rules on whatever replaces it, and `LEDGER-FATIGUE-HONESTY-01` is a
+> separate open question about the criteria, not this.
+
+### ⚙️ `ADJUST-TRIGGER-MANUAL-DEAD-01` — `'manual'` is a TriggerType with no producer *(filed 2026-10-08, P3)* ⚙️ **NO BOARD**
+
+> `TriggerType` declares eleven members; **nothing in the repo constructs `{ type: 'manual' }`**
+> (0 producers, measured). The "Check now" button runs the whole detector set rather than
+> emitting a `manual` trigger, so the member is inert — the declared-but-no-producer class
+> (`LoadShape.ariaLabel`, decorative config).
+>
+> ⚠️ **It matters because of the marketing ask.** The SLT's *"eleven live triggers"* is the
+> union's length. Of those eleven, **one cannot fire** and **two are user-initiated**
+> (`skip_with_reason`, `session_reorder` — the runner telling us, not us noticing), so the
+> honest count of *things we watch for* is **eight**. Delete the member or give it a
+> producer; either way the number on any surface is 8.
+
 ### 🟡 `HK-NEVER-SYNCED-COHORT-01` — **BOTH ROOT CAUSES FIXED 2026-10-08. What remains is a RE-MEASURE, not a build** *(was P1, now P2)* 💼 SLT *(done)* · ⚙️ NO BOARD
 
 > ✅ **This item's question — *why have 13 of 28 connected runners never had a run arrive?*
