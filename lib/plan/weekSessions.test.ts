@@ -166,3 +166,46 @@ describe('no caller hand-rolls the mapping any more', () => {
     expect(stripComments("  // DAY_ORDER.map(d => (week.sessions)[d] ?? null)")).not.toMatch(/week\.sessions/)
   })
 })
+
+describe('🔴 THE ONE SHAPE THAT NEVER THREW, and my RCA overstated it', () => {
+  // CORRECTION, 2026-10-08, same day as the fix. I reported "the adaptive engine has thrown
+  // on every check since 2026-06-26". Measured across ALL 31 live plans and ALL 468 of their
+  // weeks: **0 weeks carry seven populated days** (max 6, on 46 weeks), so the claim holds
+  // for every one of them. But it is NOT universal, and the evidence was in production the
+  // whole time: `last_adjustment_check_at` for the founder's own account reads **2026-09-11
+  // with foundChange=false** — a stamp written at `adjust-plan/route.ts:362`, which sits
+  // AFTER the detector returns. The detector completed that day. It did not throw.
+  //
+  // §64 explains it: the post-race MAINTENANCE block emits representation (1), an explicit
+  // `type: 'rest'` entry, for every non-training day — `maintenance.ts` builds
+  // `restDays = TRAINING_DAYS.filter(d => !trainingDays.includes(d))` and fills each one. So
+  // **a maintenance week has all seven keys and sails through the assertion.**
+  //
+  // ⚠️ The honest claim is therefore: dead for every RACE plan, alive for a maintenance
+  // plan — and all 31 current plans are race plans, which is why the measurement read as
+  // universal. **My first measurement looked at week 1 of each plan; the route reads the
+  // CURRENT week.** Same population error, one index deep.
+  it('a maintenance-shaped week already satisfies the assertion, unchanged', () => {
+    const maint = {
+      sessions: Object.fromEntries(DAY_ORDER.map((d, i) => [
+        d, i % 2 === 0 ? { type: 'easy', label: 'Easy run', distance_km: 6 }
+                       : { type: 'rest', label: 'Rest', detail: 'Rest day.' },
+      ])),
+    } as never
+    const out = orderedWeekSessions(maint)
+    expect(out).toHaveLength(7)
+    expect(() => checkAdjustmentTriggers(baseInput(out))).not.toThrow()
+    // And the owner is a no-op on it: nothing was absent, so nothing was materialised.
+    expect(out.filter(s => (s as { detail?: string }).detail === 'Rest day.')).toHaveLength(3)
+  })
+
+  it('…which is why maintenance.ts keeps its OWN rest object', () => {
+    // `restSession()` here carries `detail: null` because it fills a GAP. Maintenance's
+    // carries 'Rest day.' because there the rest IS the prescription. Two meanings, and
+    // this is the arm that stops someone unifying them for tidiness.
+    const maint = readFileSync(join(process.cwd(), 'lib/plan/maintenance.ts'), 'utf8')
+    expect(maint).toContain("detail: 'Rest day.'")
+    expect(maint).toMatch(/restDays\s*=\s*TRAINING_DAYS\.filter/)
+  })
+})
+

@@ -1008,6 +1008,26 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > left alone** because there the rest day IS the prescription and carries `'Rest day.'` on
 > purpose. §64's own distinction, respected rather than tidied away.
 >
+> 🔴 **CORRECTION, SAME DAY — I OVERSTATED THIS AND PRODUCTION HELD THE EVIDENCE.** I reported
+> *"the adaptive engine has thrown on EVERY check since 2026-06-26"*. Re-measured across **all
+> 31 live plans and all 468 of their weeks: 0 carry seven populated days** (max 6, on 46
+> weeks) — so it holds for every current plan, and my original figure was understated, not
+> over. **But it is not universal.** `last_adjustment_check_at` on the founder's own account
+> reads **2026-09-11, foundChange=false** — a stamp written at `route.ts:362`, which sits
+> AFTER the detector returns. **The detector completed that day.**
+>
+> §64 explains it: the post-race **MAINTENANCE** block emits representation (1) — an explicit
+> `type: 'rest'` entry — for every non-training day (`maintenance.ts`:
+> `restDays = TRAINING_DAYS.filter(d => !trainingDays.includes(d))`). **A maintenance week has
+> all seven keys and never threw.** The honest claim: **dead for every RACE plan, alive for a
+> maintenance plan**, and all 31 current plans are race plans, which is why it read as
+> universal.
+>
+> ⚠️ **And the shape of my error is the familiar one: my first measurement read WEEK 1 of each
+> plan; the route reads the CURRENT week.** Same population error, one index deep. Caught only
+> because a stamp date contradicted the story and I chased it instead of explaining it away.
+> Exception now asserted in the gate so the next reader finds it.
+>
 > **Acceptance, measured:** `93 week-checks | THREW: 0` against the pre-fix `31 of 31`, and
 > `ADJUST-TRIGGER-REACH-02`'s backtest now replays **37 week-checks across 7 runners**
 > instead of exiting 2.

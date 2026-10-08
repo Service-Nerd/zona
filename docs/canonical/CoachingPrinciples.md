@@ -10763,7 +10763,10 @@ say what it measured and what it changed. It may not tell the runner why their e
 fell.
 
 ⚠️ **Confidence: LOW across this whole section, stated rather than implied.** The engine was
-dead for 104 days (`ADJUST-ENGINE-DEAD-01`), `ef_decline` has **never fired in production**,
+dead for 104 days for every RACE plan (`ADJUST-ENGINE-DEAD-01` — 0 of 468 weeks across all 31
+live plans carries seven populated days; a post-race MAINTENANCE week does, because §64
+representation (1) fills every non-training day, so those never threw), `ef_decline` has
+**never fired in production**,
 and the backtest currently reaches **1 of 8** detectors — on a corpus where five of seven
 runners have 1–3 weeks of history, so silent is **unproven, not dead**. These are reasoned
 values awaiting their first evidence.
