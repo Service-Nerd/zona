@@ -277,6 +277,21 @@ export type OpsEventKind =
   // rate. This event is how we find out whether 40 is the right number — if it fires
   // constantly the budget is wrong, not the model.
   | 'read_over_budget'
+  // READ-EM-DASH-01 (2026-10-08) — the model emitted an em dash in a run read and the
+  // boundary repaired it.
+  //
+  // ⚠️ THE SIBLING OF `read_over_budget`, AND THE OPPOSITE CHOICE, FOR A STATED REASON.
+  // An over-long read is RECORDED and left alone, because slicing a sentence is worse
+  // than a long one. An em dash is RECORDED AND REPAIRED, because swapping one mark for
+  // a comma costs the sentence nothing. What the two share is that neither is silent:
+  // a repair nobody can see is how you stop finding out that the instruction is being
+  // ignored, or that the rate is getting worse.
+  //
+  // 🔴 AND THE INSTRUCTION WAS ALREADY THERE. `buildVoiceHeader` has carried "Never use
+  // an em dash" since BRAND-EMDASH-APP-01 and the model still did it on 18.1% of live
+  // reads, which is the baseline this event is measured against. If it fires at a
+  // materially different rate, something changed in the prompt or the model.
+  | 'read_em_dash_repaired'
   // COMPLETION-CLAIM-UUID-01 (2026-10-07) — the atomic auto-link claim FAILED, as
   // opposed to losing a race.
   //

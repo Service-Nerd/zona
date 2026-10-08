@@ -11,7 +11,7 @@ import { computeEF, computeEFBaseline } from '@/lib/coaching/efTrend'
 import { COACHING_RULE_ENGINE_VERSION, COHORT_SIMILARITY } from '@/lib/coaching/constants'
 import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedback'
 import { isWithinReadBudget, countWords, POST_RUN_READ_MAX_WORDS } from '@/lib/coaching/readBudget'
-import { withoutEmDashes } from '@/lib/coaching/runnerProse'
+import { withoutEmDashes, containsEmDash } from '@/lib/coaching/runnerProse'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { computeHrStreamSummary } from '@/lib/coaching/streamAnalysis'
@@ -435,7 +435,17 @@ const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userI
       // ⚠️ THE PROMPT ASKS FOR THIS TOO, and the prompt is not the mechanism. The word
       // budget is the precedent in the same file: the model was told "two sentences"
       // and returned 76 words. Told AND repaired.
-      feedbackText = withoutEmDashes(aiRes.text.trim()) || null
+      const rawRead = aiRes.text.trim()
+      feedbackText = withoutEmDashes(rawRead) || null
+      // ⚠️ A SILENT REPAIR IS STILL A SILENT FAILURE. The sanitiser fixes the read,
+      // which means nobody would ever learn that the model ignores the instruction, or
+      // notice if the rate got worse. `read_over_budget` set the precedent in this same
+      // block: notice it, record it, do not hide it. The baseline to compare against is
+      // 18.1% of live rows.
+      if (containsEmDash(rawRead)) {
+        console.warn('[analyse-run] model emitted an em dash; repaired at the boundary')
+        void recordOpsEvent('read_em_dash_repaired', { week_n, session_day }, userId)
+      }
       // POSTRUN-JOURNEY-01 — the boundary check. A prompt instruction is not a
       // mechanism: the model was already asked for two sentences and produced 76
       // words inside three of them. ⚠️ IT DOES NOT TRUNCATE. A read sliced mid

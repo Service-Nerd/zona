@@ -181,6 +181,9 @@ describe('the prompt does not demonstrate what it forbids', () => {
     const src = readFileSync(join(process.cwd(), 'app/api/analyse-run/route.ts'), 'utf8')
     expect(src).toContain("from '@/lib/coaching/runnerProse'")
     expect(src).toMatch(/feedbackText\s*=\s*withoutEmDashes\(/)
+    // A SILENT REPAIR IS STILL A SILENT FAILURE: the rate has to stay visible, or
+    // nobody learns the model ignores the instruction and nobody notices it worsening.
+    expect(src).toContain("recordOpsEvent('read_em_dash_repaired'")
   })
 
   it('readBudgetInstruction never contains an em dash', () => {
