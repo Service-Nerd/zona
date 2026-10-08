@@ -1534,3 +1534,72 @@ founder has ruled BUILD.** The binding conditions are unchanged and one is now
 ⚠️ **What this amendment does NOT change:** the escalation stands. It still moves
 `total_score` on live rows and the founder has approved that.
 
+---
+
+## RESHAPE-PRINCIPLE-DEBT-01 — the reshape thresholds had no written reason (2026-10-08)
+
+**Ruling: CORRECT WITH AMENDMENT (3).** Hutchinson chairing; Seiler, McMillan, Willy, Sims.
+
+**Submission.** Six live numerics decided whether a real runner's plan is rewritten and none
+had a principle. They sit in `lib/coaching/constants.ts`, which `configPrincipleSync` reached
+through **two hand-named exports** — the third bypass-by-file-path after `peakKmByLevel` and
+`SCORE_WEIGHTS`/`VERDICT_BANDS`. Found because the founder asked whether the reshape rules had
+been ruled and documented. **Half had.**
+
+| Ruled | Where it landed |
+|---|---|
+| `SHADOW_LOAD_THRESHOLD_PCT` = 15 | **§2 Amendment 5** |
+| `MAX_ADJUSTMENTS_PER_WEEK` = 2 · `EF_DECLINE_THRESHOLD_PCT` = −8 · `EF_BASELINE_WINDOW` = 6 | **§124** (new) |
+| `ZONE_BLOCK_VERDICT_MIN_RUNS` = 3 · `TREND_PACE_CONFOUND_SEC_PER_KM` = 20 | **§109 Amendment 1** |
+
+**The three amendments to the submission as filed:**
+
+1. **Confidence is STATED, not implied.** The engine was dead for 104 days; `shadow_load` and
+   `ef_decline` have **never fired in production**. Hutchinson would not ratify prose that
+   reads as settled science over a near-zero evidence base.
+2. 🔴 **`EF_BASELINE_WINDOW` is 6 ACTIVITIES and the comment claimed a 4-WEEK rolling
+   average.** The documented mechanism and the real one disagreed, and the units disagreed
+   with both. Corrected as a **defect**, not amended as doctrine — *"I will not ratify a
+   number whose window I cannot name"* (Hutchinson). Seiler's consequence is recorded in §124
+   rather than resolved: **the same threshold means two different things to two runners.**
+3. ⚕️ **Sims' clause is mandatory.** Every trigger here is a decline detector, and that
+   pattern is also how low energy availability presents in the women using this. The engine
+   reduces load, which is *right by accident and for the wrong reason*. **It may say what it
+   measured and what it changed; it may never state a cause.**
+
+**Recorded disagreement.** Seiler wants the EF baseline expressed in TIME, not activity count;
+Hutchinson required the mechanism named before anything moves. Neither accepted the pre-sitting
+state where the comment and the code disagreed. **Settled by naming the unit and fixing the
+false comment**; the asymmetry is declared and is the first thing to re-examine when
+`ADJUST-TRIGGER-REACH-02` has field data.
+
+**Findings the scan produced that the submission did not contain:**
+
+- 🔴 **ADR-012's 15% is NOT this 15%.** Its own note says `RESHAPE_AUTOAPPLY_THRESHOLDS`
+  *"mirrors the existing `LOAD_RATIO.watch` trim so the engine's two magnitudes agree"* —
+  a declared coupling to the trim, not to shadow load. **The engine carries three fifteens
+  with two stated reasons between them, and they are not required to move together.**
+- 🩹 **Willy, for the record:** 15%-over is the most common path into injury he sees
+  clinically, so the standing temptation will be to make this trigger trim the week. **§2
+  Am. 4 clause 2 forbids it and it stays forbidden.**
+- **Not ruled, re-routed:** `ZONE_DISCIPLINE_BANDS` is read only by `classifyZoneDiscipline`,
+  which has **no call sites**. The board declined to write a principle for a value nothing can
+  reach — **a deletion question, not a doctrine one.** Filed `ZONE-DISCIPLINE-BANDS-DEAD-01`.
+- **Reclassified, no doctrine owed:** `MIN_QUALITY_GAP_HOURS` and `MAX_VOLUME_INCREASE_PCT`
+  are re-exports of documented `GENERATION_CONFIG` keys. A second principle would be a second
+  source of truth for one number.
+
+**Artifacts.** Principle: §2 Am.5, §124, §109 Am.1 · Numeric: the six constants, each now
+carrying its reason in `constants.ts` · Check: `lib/coaching/reshapeLimits.test.ts` — 15 arms,
+**falsified 5 ways** (EF loosened to the −5 Seiler refused · cap raised to 4 · the false
+"4-week" comment restored · Sims' clause deleted · block verdict dropped to 2 runs).
+
+⚠️ **A test, not a `validatePlan()` invariant, and the reason is declared:** the validator
+inspects a GENERATED PLAN and none of these six appear in one. They govern the engine's
+willingness to RESHAPE and a surface's willingness to pass a verdict, so a `Plan =>
+Violation[]` cannot reach them by construction — the liveness harness's own `static` category.
+
+🥇 **The debt register shrank mechanically, 12 → 6.** The stale-debt arm written this morning
+is what forced the six out of `CONSTANTS_DEBT`; nobody had to remember to tidy it. Surviving:
+3 FACT, 2 ALIAS, 1 DEAD.
+

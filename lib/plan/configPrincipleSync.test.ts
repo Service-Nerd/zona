@@ -126,18 +126,25 @@ const documented = (k: string): boolean => {
 // DEBT = a real coaching choice with no written reason. Owned by
 //        `RESHAPE-PRINCIPLE-DEBT-01` (🏃 Coaching Board).
 const CONSTANTS_DEBT: Record<string, string> = {
+  // 🥇 WAS 12 ENTRIES THIS MORNING AND IS 6 TONIGHT. The Coaching Board sat on
+  // `RESHAPE-PRINCIPLE-DEBT-01` (2026-10-08) and the six real coaching choices gained
+  // principles — §2 Am.5 (shadow load), §124 (reshape limits + EF), §109 Am.1 (the two
+  // display floors). **The stale-debt arm below is what forced them out of this list**, so
+  // the register shrank mechanically rather than because someone remembered to tidy it.
+  //
+  // ⚠️ CLAUDE.md: "a declared reason is not a fixed problem … nothing in this repo
+  // schedules it." It was scheduled by the founder asking, and the arm made the payment
+  // visible. Every surviving entry keeps its date so its age stays legible.
   COACHING_RULE_ENGINE_VERSION:    'FACT 2026-10-08 — a version string, not a coaching value',
-  RUN_HR_PLAUSIBLE:                'FACT 2026-10-08 — a physiological plausibility bound for rejecting junk data, not a prescription',
+  RUN_HR_PLAUSIBLE:                'FACT 2026-10-08 — a physiological plausibility bound for rejecting junk device data, not a prescription',
   HR_ZONE_TOLERANCE_BPM:           'FACT 2026-10-08 — measurement tolerance on a device reading',
-  ZONE_BLOCK_VERDICT_MIN_RUNS:     'DEBT 2026-10-08 — how many runs before we will judge a block',
-  ZONE_DISCIPLINE_BANDS:           'DEBT 2026-10-08 — and its only reader `classifyZoneDiscipline` has NO call sites (see configConsumer limits)',
-  SHADOW_LOAD_THRESHOLD_PCT:       'DEBT 2026-10-08 — 15% over plan triggers a reflection. Is this ADR-012\'s 15% or a coincidence?',
-  EF_DECLINE_THRESHOLD_PCT:        'DEBT 2026-10-08 — why -8% and not -5 or -12? Reshapes a real plan',
-  EF_BASELINE_WINDOW:              'DEBT 2026-10-08 — the window the decline is measured against',
-  MAX_ADJUSTMENTS_PER_WEEK:        'DEBT 2026-10-08 — 2. A coaching limit or a politeness limit? Nobody has said',
-  MIN_QUALITY_GAP_HOURS:           'DEBT 2026-10-08 — spacing between quality sessions; adjacent to §12 and not joined to it',
-  MAX_VOLUME_INCREASE_PCT:         'DEBT 2026-10-08 — overlaps GENERATION_CONFIG\'s own increase caps; which binds?',
-  TREND_PACE_CONFOUND_SEC_PER_KM:  'DEBT 2026-10-08 — the trend card\'s noise floor',
+  // ALIAS = the value is documented under the GENERATION_CONFIG key it re-exports, so a
+  // second principle would be a second source of truth for one number.
+  MIN_QUALITY_GAP_HOURS:           'ALIAS 2026-10-08 — re-exports GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY, documented there',
+  MAX_VOLUME_INCREASE_PCT:         'ALIAS 2026-10-08 — re-exports GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT, documented there',
+  // DEAD = a deletion question, not a doctrine one. The board declined to write a
+  // principle for a value nothing can reach.
+  ZONE_DISCIPLINE_BANDS:           'DEAD 2026-10-08 — read ONLY by `classifyZoneDiscipline`, which has NO call sites (verified: its 3 references are its own definition plus two comments saying so). Board: delete it, do not document it. Filed as ZONE-DISCIPLINE-BANDS-DEAD-01',
 }
 
 const missing = keys.filter(k => !documented(k))
@@ -196,11 +203,14 @@ describe('Configuration Singularity — every numeric points back to a principle
     ).toEqual([])
   })
 
-  it('…and names every entry FACT or DEBT, so the two never blur', () => {
-    // ⚠️ A reason that says neither is the thing this arm exists to prevent: "exempt" and
-    // "not done yet" are different states and only one of them should ever shrink.
+  it('…and names every entry FACT / DEBT / ALIAS / DEAD, so the states never blur', () => {
+    // ⚠️ A reason that says none of them is what this arm exists to prevent. FACT (exempt),
+    // DEBT (not done yet), ALIAS (documented elsewhere) and DEAD (delete, do not document)
+    // are four different states and **only DEBT should ever shrink** — collapsing them is how
+    // a register becomes a place to hide work.
     for (const [k, why] of Object.entries(CONSTANTS_DEBT)) {
-      expect(why, `${k}'s reason must start FACT or DEBT`).toMatch(/^(FACT|DEBT) \d{4}-\d{2}-\d{2} — /)
+      expect(why, `${k}'s reason must start FACT, DEBT, ALIAS or DEAD`)
+        .toMatch(/^(FACT|DEBT|ALIAS|DEAD) \d{4}-\d{2}-\d{2} — /)
     }
   })
 

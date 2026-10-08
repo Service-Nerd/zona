@@ -128,6 +128,11 @@ export const TRIAL_SUMMARY_MIN_RUNS = 8
  * words, as `ZONE_DRIFT_ABOVE_CEILING_PCT` above: re-measure once the cohort
  * grows. The October charity intake is the first chance.
  */
+// §109 Amendment 1 (Coaching Board, 2026-10-08). A block verdict is a claim about a
+// PATTERN: two runs describe a line between two points and one of them is as likely to be
+// the weather. Three is the minimum at which "this is how the block went" is a statement
+// about behaviour rather than about a day. Below it the surface says NOTHING, which §109
+// and the restraint doctrine both prefer to a hedged sentence.
 export const ZONE_BLOCK_VERDICT_MIN_RUNS = 3
 
 export const ZONE_DISCIPLINE_BANDS = {
@@ -202,12 +207,46 @@ export const DUPLICATE_ACTIVITY = {
   DISTANCE_TOLERANCE_PCT: 3,
 } as const
 
-export const SHADOW_LOAD_THRESHOLD_PCT = 15  // >15% over plan triggers reflection
+// §2 Amendment 5 (Coaching Board, 2026-10-08). >15% over the prescribed week flags shadow
+// load. The smallest overshoot that cannot be an artefact: sessions round to 0.1 km and a
+// runner's watch disagrees with ours by 1-2% on GPS alone, so ~5% would flag measurement
+// noise as behaviour; above ~20% the signal is real but late. 15% is about ONE EASY RUN on
+// a four-run week, which is the unit runners actually overshoot by.
+//
+// 🔴 NOT ADR-012's 15, AND THE COINCIDENCE WAS NEVER ARGUED. `RESHAPE_AUTOAPPLY_THRESHOLDS`
+// is 15/15 and its own note says it "mirrors the existing `LOAD_RATIO.watch` trim so the
+// engine's two magnitudes agree" — tied to the trim, not to this. Three fifteens, two
+// stated reasons. **They are not required to move together; say which one you are changing.**
+//
+// ⚠️ §2 Am. 4 clause 2 forbids this flag from trimming the week, and Willy asked for that
+// to stay forbidden on the record: a runner's own extra run must not silently shrink the
+// next week, even though 15%-over is the most common path into injury he sees clinically.
+export const SHADOW_LOAD_THRESHOLD_PCT = 15
 
-// EF trend — aerobic efficiency decline
-export const EF_DECLINE_THRESHOLD_PCT = -8  // >8% drop vs 4-week rolling avg
-
-// Max activities to include in EF baseline
+// EF trend — aerobic efficiency decline. §124 (Coaching Board, 2026-10-08).
+//
+// A FLOOR CHOSEN TO SIT OUTSIDE THE NOISE, not a physiological boundary. §108 already
+// rules aerobic efficiency "the longest-horizon signal and the noisiest run-to-run",
+// which is why it carries the smallest SCORE weight (0.10) — and that binds harder on a
+// TRIGGER, because a noisy score axis is diluted by three others while a noisy trigger
+// acts alone. -5% would fire on heat, a hillier route, or a chest strap sitting
+// differently. Nothing in the literature marks 8% as meaningful and §124 does not claim
+// it does.
+export const EF_DECLINE_THRESHOLD_PCT = -8
+//
+// 🔴 THIS COMMENT USED TO READ "> 8% drop vs 4-week rolling avg" ON THE LINE ABOVE, AND
+// THE BASELINE IS NOT A 4-WEEK WINDOW — it is the last 6 ACTIVITIES (`efTrend.ts`:
+// `.slice(0, EF_BASELINE_WINDOW)`). The documented mechanism and the real one disagreed,
+// and the UNITS disagreed with them both. Hutchinson refused to ratify a number whose
+// window he could not name; corrected as a defect, not amended as doctrine.
+//
+// ⚠️ AN ACTIVITY COUNT IS NOT A TIME WINDOW, and §124 records the consequence instead of
+// hiding it: six activities is a fortnight for a three-runs-a-week runner and barely a
+// week for a six-day runner, so **the same threshold means two different things to two
+// runners** (Seiler), and a busy week LENGTHENS the baseline it is compared against.
+// It stays a count because efficiency is computed per run: a time-boxed window on a
+// sparse week can hold ONE activity and compare a runner against themselves on a single
+// day. First thing to re-examine once `ADJUST-TRIGGER-REACH-02` has field data.
 export const EF_BASELINE_WINDOW = 6
 
 // HR stream zone margin (bpm tolerance around zone boundaries).
@@ -482,4 +521,10 @@ export const RUN_HR_PLAUSIBLE = { MIN_BPM: 90, MAX_BPM: 220 } as const
  * Direction matters as much as magnitude, and the consumer
  * (`trendSentence.ts`) reads it signed — never through `Math.abs`.
  */
+// §109 Amendment 1 (Coaching Board, 2026-10-08). The measured size of the confounds this
+// product cannot see: no GPS route, no per-segment elevation, no cadence, no temperature
+// (ADR-011). A pace difference of this order is routinely a hillier route or a warmer day
+// rather than fitness. Reporting it as improvement is §44's fabricated precision; reporting
+// it as DECLINE is worse — telling a runner they are going backwards on evidence we do not
+// have. A display floor, never a prescription.
 export const TREND_PACE_CONFOUND_SEC_PER_KM = 20

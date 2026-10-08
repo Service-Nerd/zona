@@ -293,6 +293,38 @@ reads linked volume only.
 Recorded disagreement: Willy vs McMillan on whether off-plan load should reach the cap
 silently; resolved by clause 3 stating it rather than applying it.
 
+### Amendment 5 — the shadow-load threshold is 15%, and it is a THIRD 15 (RESHAPE-PRINCIPLE-DEBT-01, Coaching Board 2026-10-08)
+
+**Principle.** `SHADOW_LOAD_THRESHOLD_PCT = 15`. A runner who covers **more than 15% beyond
+the prescribed week** has their shadow load flagged. Amendment 4 already settled what that
+flag may and may not do: it counts toward actual load **always**, and it **never** reaches
+the acute:chronic ratio. This amendment settles only the number.
+
+**Why 15.** It is the smallest overshoot that cannot be an artefact. A week's prescription is
+rounded to 0.1 km per session and a runner's watch disagrees with ours by 1–2% on GPS alone,
+so a threshold near 5% would flag measurement noise as behaviour. Above ~20% the signal is
+real but late — by then the runner has added most of an extra session. 15% is roughly **one
+easy run on a four-run week**, which is the unit a runner actually overshoots by.
+
+🔴 **IT IS NOT ADR-012's 15, AND THE COINCIDENCE WAS NEVER ARGUED.** ADR-012's
+`RESHAPE_AUTOAPPLY_THRESHOLDS` is 15% per session and 15% week-total, and its own note says
+it *"mirrors the existing `LOAD_RATIO.watch` trim so the engine's two magnitudes agree"* —
+deliberately tied to the trim, not to this. So the engine carries **three** fifteens with two
+stated reasons between them. **They are not required to move together**, and anyone changing
+one must say which.
+
+⚠️ **Willy, for the record:** a runner doing 15% more than prescribed is the most common path
+into injury he sees clinically, and the standing temptation will be to make this trigger trim
+the week. **Amendment 4 clause 2 forbids that and it stays forbidden** — a runner's own extra
+run must not silently shrink the next week.
+
+⚠️ **Confidence: LOW, and stated rather than implied.** The engine was dead for 104 days
+(`ADJUST-ENGINE-DEAD-01`) and `shadow_load` has **never fired in production**. This number is
+reasoned, not observed. `ADJUST-TRIGGER-REACH-02` is the measurement that can move it.
+
+**Config.** `lib/coaching/constants.ts → SHADOW_LOAD_THRESHOLD_PCT`.
+**Board:** RESHAPE-PRINCIPLE-DEBT-01, 2026-10-08 — CORRECT WITH AMENDMENT (Willy clause recorded).
+
 ### Amendment 3 — the injury bounceback returns to pre-deload (PLAN-FITNESS-01, Coaching Board 2026-09-17)
 
 **Principle.** For an injury-history runner the post-deload week may return to the
@@ -10657,4 +10689,126 @@ reverted this principle on every row it touched.
 its own `main_set_structure` prescribes, must be able to reach a passing HR-discipline
 score. **It goes red on `progressive_tempo` under the pre-§123 rule**, which is how it was
 falsified.
+
+## 124. A reshape must be rare, and driven by a signal that is not noise
+
+*(Coaching Board, 2026-10-08, RESHAPE-PRINCIPLE-DEBT-01 — CORRECT WITH AMENDMENT.
+The reshape engine's own limits. §2 Am. 4–5 govern what counts as load; this
+section governs how often the engine may act on it and on how thin a signal.)*
+
+**Principle.** The engine holds three numbers that decide how willing it is to rewrite a
+runner's week. All three are deliberately conservative, and the reason is the same in each
+case: **a plan that moves often is not a plan.**
+
+| Numeric | Value | What it governs |
+|---|---|---|
+| `MAX_ADJUSTMENTS_PER_WEEK` | **2** | how many times one week may be rewritten |
+| `EF_DECLINE_THRESHOLD_PCT` | **−8** | how far aerobic efficiency must fall before the engine acts |
+| `EF_BASELINE_WINDOW` | **6 activities** | what that fall is measured against |
+
+### Why two adjustments a week
+
+**It is a coaching limit, not a politeness limit, and a coach would set it lower if
+anything** (McMillan). A runner has to be able to hold their week in their head. The second
+change is already asking them to re-learn a plan they had accepted; a third means they are
+no longer following a plan, they are receiving instructions. The cap also bounds the blast
+radius of a wrong trigger — with the engine's field evidence as thin as it is, the number of
+times it may be wrong per week matters more than usual.
+
+🔴 **The production record argues for it rather than against it.** All-time, the engine has
+produced **18** adjustments, and the only genuine detection ever to fire is `zone_drift` —
+**three times, reverted all three.** A runner who reverts is telling us the plan moved for a
+reason they did not accept. **Two is the ceiling on how often we may be told that in a week.**
+
+### Why −8% on efficiency, and why it is the most conservative threshold here
+
+§108 already rules aerobic efficiency **"the longest-horizon signal and the noisiest
+run-to-run"**, which is why it carries the smallest score weight (0.10) *"without being able
+to dominate"*. The same reasoning binds harder on a **trigger** than on a score: a score axis
+that is noisy gets diluted by three others, whereas a trigger that is noisy acts alone.
+
+So −8% is a **floor chosen to sit outside the noise**, not a physiological boundary. A −5%
+threshold would fire on heat, a hilly route, or a chest strap sitting differently; Seiler's
+position on the record is that −5 *"would fire on measurement drift"*. Nothing in the
+literature marks 8% as a meaningful decrement, and **this principle does not claim it does.**
+
+### Why the window is 6 ACTIVITIES, and the unit is the point
+
+⚠️ **This number was documented as *"4-week rolling avg"* and the code takes the last 6
+activities** (`efTrend.ts`: `.slice(0, EF_BASELINE_WINDOW)`). The comment was false about its
+own mechanism and has been corrected. **An activity count is not a time window**, and the
+board recorded the consequence rather than papering over it:
+
+> 🔴 **The same threshold means two different things to two runners** (Seiler). Six
+> activities is a fortnight for a three-runs-a-week runner and barely a week for a six-day
+> runner. A busy week therefore *lengthens* the baseline it is compared against.
+
+**It stays an activity count, for one reason:** efficiency is computed per run, so a
+time-boxed window on a sparse week can contain **one** activity and compare a runner against
+themselves on a single day. A count guarantees the comparison has something in it. **The
+asymmetry is real, is now written down, and is the first thing to re-examine when
+`ADJUST-TRIGGER-REACH-02` has field data.**
+
+### ⚕️ Sims' clause — mandatory, not advisory
+
+**A decline we cannot explain is not a decline we have diagnosed.** Every trigger in this
+section is a *decline* detector, and the pattern they detect — efficiency falling, heart rate
+drifting up, zone discipline apparently slipping — is also how **low energy availability**
+presents in the women using this product. The engine's response is to reduce load, which is
+correct by accident and for the wrong reason.
+
+Zonna cannot diagnose RED-S and must not imply it can (ADR-011: no cycle data, and §44 on
+fabricated precision). **What it must not do is state a cause.** An EF-decline adjustment may
+say what it measured and what it changed. It may not tell the runner why their efficiency
+fell.
+
+⚠️ **Confidence: LOW across this whole section, stated rather than implied.** The engine was
+dead for 104 days (`ADJUST-ENGINE-DEAD-01`), `ef_decline` has **never fired in production**,
+and the backtest currently reaches **1 of 8** detectors — on a corpus where five of seven
+runners have 1–3 weeks of history, so silent is **unproven, not dead**. These are reasoned
+values awaiting their first evidence.
+
+**Config.** `lib/coaching/constants.ts` → `MAX_ADJUSTMENTS_PER_WEEK`,
+`EF_DECLINE_THRESHOLD_PCT`, `EF_BASELINE_WINDOW`.
+**Enforced by** `lib/coaching/reshapeLimits.test.ts` — see § Required artifacts.
+**Board:** RESHAPE-PRINCIPLE-DEBT-01, 2026-10-08 — CORRECT WITH AMENDMENT (3).
+
+---
+
+## §109 Amendment 1 — a progress surface has two noise floors, and both are numbers
+
+*(Coaching Board, 2026-10-08, RESHAPE-PRINCIPLE-DEBT-01. Extends §109's
+"may remember and compare, may not predict" to the thresholds that decide
+whether there is anything honest to compare.)*
+
+**Principle.** §109 permits a surface to state where a runner was and where they are. Two
+numerics decide when it may do so at all, and both exist to stop the product reporting noise
+as progress — §44's fabricated-precision doctrine, applied to a comparison rather than a
+projection.
+
+| Numeric | Value | The floor it sets |
+|---|---|---|
+| `ZONE_BLOCK_VERDICT_MIN_RUNS` | **3** | fewer than three analysed runs in a block and we pass no verdict on it |
+| `TREND_PACE_CONFOUND_SEC_PER_KM` | **20** | a pace change smaller than 20 s/km is inside the confound and is not reported as a change |
+
+**Why three runs.** A block verdict is a claim about a *pattern*. Two runs can only describe
+a line between two points, and one of them is as likely to be the weather as the runner.
+Three is the minimum at which "this is how the block went" is a statement about behaviour
+rather than about a day. **Below it the surface says nothing — which §109 and the restraint
+doctrine both already prefer to a hedged sentence.**
+
+**Why 20 s/km.** It is the measured size of the confounds the product cannot see. Zonna has
+no GPS route, no elevation per segment, no cadence and no temperature (ADR-011), so a pace
+difference of that order is routinely explained by a hillier route or a warmer day rather
+than by fitness. Reporting it as improvement would be exactly the fabricated precision §44
+forbids, and reporting it as decline would be worse — **it would tell a runner they are going
+backwards on evidence we do not have.**
+
+⚠️ **Both are display floors, not prescription.** Neither changes a session. They decide
+whether a sentence may be written, which is why they live here under §109 rather than in
+§124's reshape limits.
+
+**Config.** `lib/coaching/constants.ts` → `ZONE_BLOCK_VERDICT_MIN_RUNS`,
+`TREND_PACE_CONFOUND_SEC_PER_KM`.
+**Board:** RESHAPE-PRINCIPLE-DEBT-01, 2026-10-08.
 

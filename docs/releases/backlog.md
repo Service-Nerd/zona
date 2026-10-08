@@ -897,7 +897,62 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > build:** *"a declared reason is not a fixed problem … nothing in this repo schedules it."*
 > So the register carries the date each entry was declared.
 
-### 🟡 `RESHAPE-PRINCIPLE-DEBT-01` — write the missing principles for the reshape thresholds *(filed 2026-10-08, P2)* 🏃 **COACHING BOARD**
+### ✅ `RESHAPE-PRINCIPLE-DEBT-01` — **BOARD SAT AND RULED 2026-10-08.** CORRECT WITH AMENDMENT (3) 🏃 **COACHING BOARD**
+
+> ✅ **Six live numerics now carry a written reason.** §2 Am.5 (shadow load's 15), §124 (the
+> reshape limits: 2/week, EF −8%, 6-activity baseline), §109 Am.1 (the two display floors).
+> Register row in `coaching-rulings.md`; coverage row in `principleCoverage.ts`; check in
+> `lib/coaching/reshapeLimits.test.ts` (15 arms, **falsified 5 ways**).
+>
+> **The three amendments:**
+> 1. **Confidence STATED, not implied** — `shadow_load` and `ef_decline` have **never fired
+>    in production**, so prose reading as settled science was refused.
+> 2. 🔴 **`EF_BASELINE_WINDOW` is 6 ACTIVITIES; the comment claimed a 4-WEEK rolling
+>    average.** Corrected as a DEFECT, not amended as doctrine — *"I will not ratify a number
+>    whose window I cannot name"*. Seiler's consequence is **declared, not resolved**: six
+>    activities is a fortnight for a 3-run week and a week for a 6-day week, so **the same
+>    threshold means two different things to two runners**, and a busy week LENGTHENS its own
+>    baseline.
+> 3. ⚕️ **Sims' clause is mandatory** — every trigger here is a decline detector and that
+>    pattern is also how low energy availability presents. The engine reduces load, **right
+>    by accident and for the wrong reason.** It may state what it measured and what it
+>    changed; **never a cause.**
+>
+> 🔴 **THE SCAN FOUND WHAT THE SUBMISSION DID NOT: ADR-012's 15% IS NOT THIS 15%.** Its own
+> note ties `RESHAPE_AUTOAPPLY_THRESHOLDS` to **`LOAD_RATIO.watch`'s trim**, deliberately. So
+> the engine carries **three fifteens with two stated reasons**, and they are **not required
+> to move together** — say which one you are changing.
+>
+> 🔻 **Two items came OUT of the sitting rather than into it:** `ZONE_DISCIPLINE_BANDS` is
+> read only by a function with **no call sites**, so the board declined to document it — **a
+> deletion question** (`ZONE-DISCIPLINE-BANDS-DEAD-01`). And two constants are re-exports of
+> documented `GENERATION_CONFIG` keys, so a second principle would be a second source of
+> truth for one number.
+>
+> 🥇 **THE DEBT REGISTER SHRANK MECHANICALLY, 12 → 6.** The stale-debt arm written **this
+> morning** is what forced the six out of `CONSTANTS_DEBT` — nobody had to remember. Surviving:
+> **3 FACT · 2 ALIAS · 1 DEAD**, and the four states are now asserted distinct, because *only
+> DEBT should ever shrink.*
+>
+> ⚠️ **A test, not a `validatePlan()` invariant, declared not glossed:** the validator inspects
+> a GENERATED PLAN and none of these six appear in one. ⚠️ **And the mutation harness reports it
+> UNPROVEN, correctly** — `constants.ts` holds 41 constants and the test guards 6, so a random
+> perturbation lands outside them more often than inside (the `ruleEngine.ts` too-broad-subject
+> case). Registered in `NO_SUBJECT` **with the five hand falsifications named.**
+>
+> Post-artifact: `property-validate-plans` exit 0 — **14,268 plans, no new violations.**
+
+### 🟡 `ZONE-DISCIPLINE-BANDS-DEAD-01` — a config table read only by a function with no call sites *(filed 2026-10-08, P3)* ⚙️ **NO BOARD**
+
+> 🔻 **Routed OUT of `RESHAPE-PRINCIPLE-DEBT-01`'s sitting**: the board declined to write a
+> principle for a value nothing can reach. `ZONE_DISCIPLINE_BANDS` (`{disciplined: 85,
+> decent: 70, loose: 50}`) is read only by `classifyZoneDiscipline`, which has **no call
+> sites** — verified: its three references are its own definition plus two comments saying so.
+>
+> **Delete both, or give the function a consumer.** ⚠️ `configConsumer.test.ts` counts this as
+> consumed and says so in its own declared limits: *"a key read only by a DEAD function in the
+> same module counts as consumed — which is exactly `ZONE_DISCIPLINE_BANDS`."* **The gate
+> already knows and cannot act.**
 
 > The doctrine half of `RESHAPE-CONFIG-GATE-01`. Each undocumented threshold that is a
 > coaching CHOICE needs a principle § explaining the value, which is a board sitting and

@@ -63,6 +63,16 @@ const SUBJECTS: Record<string, string[]> = {
 
 // Tests with NO mutable subject, recorded rather than silently absent.
 const NO_SUBJECT: Record<string, string> = {
+  'lib/coaching/reshapeLimits.test.ts':
+    '§124 + §2 Am.5 + §109 Am.1 (Coaching Board 2026-10-08). Registered as a SUBJECT first and '
+    + 'the harness reported UNPROVEN, correctly: `lib/coaching/constants.ts` holds 41 exported '
+    + 'constants and this test guards 6, so a random numeric perturbation lands outside them far '
+    + 'more often than inside — the same too-broad-subject case as ruleEngine.ts above, for the '
+    + 'same reason. FALSIFIED BY HAND, 5 ways, each going red on a different arm: EF loosened to '
+    + 'the -5 Seiler refused; MAX_ADJUSTMENTS_PER_WEEK raised to 4; the false "4-week rolling avg" '
+    + 'comment restored; Sims\' mandatory clause deleted from the constitution; '
+    + 'ZONE_BLOCK_VERDICT_MIN_RUNS dropped to 2. The board\'s reasoning is a set of RELATIONSHIPS '
+    + 'between six named values, which a battery of operator flips cannot express.',
   'lib/coaching/raceProjectionHonesty.test.ts':
     'Asserts over PROMPT TEXT it builds inline; there is no separate module whose behaviour a '
     + 'mutation could change. Its own FALSIFICATION block is the liveness proof.',
