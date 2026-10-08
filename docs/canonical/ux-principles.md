@@ -149,6 +149,45 @@ Every screen must handle all of these before shipping:
 
 "Complete" is part of SLC. A screen that does not handle its empty or error state is not shipped.
 
+### 🔴 THE ALREADY-DONE STATE IS A SIXTH STATE, AND IT IS THE ONE THAT GETS MISSED
+
+**A surface that offers an action the runner has ALREADY TAKEN must state the existing
+state first, in the past tense, before offering to change it.**
+
+*(Design Board, `LINK-PICKER-ALREADY-LINKED-01`, 2026-10-08. Register row in
+`design-rulings.md`.)*
+
+⚠️ **It is not covered by the five states above, which is why it survived.** The table
+asks for Loading / Empty / Error / Data / Edge. *Already-done* renders through the **Data
+present** branch with a **full** list and a valid selection, so every box above is ticked
+and the screen is still wrong. **The defect is not a missing state; it is the right state
+wearing the empty state's words.**
+
+| | |
+|---|---|
+| 🔴 **The instance** | A linked, completed session reached via *“Update log”* rendered **“Link an activity”** over **“Optional, select from recent runs”** — a first-time instruction above a list whose selection had already been made and was already visible. Founder: *“seems i can still manually link it to the same run its linked against.”* |
+| ✋ **Why it matters at the craft level** | Silvanto: *“a sentence written for an empty state, rendered over a full one. The runner reads 'optional' and has to work out whether the selection they can see is a choice they already made or a suggestion we are offering. **That is the sorting we are supposed to do for them.**”* |
+| 🎓 **Why it matters at the product level** | Sierra: a surface that keeps offering to redo a done thing teaches the runner that **our record of their training is provisional**, which makes them responsible for checking it every time. That is load spent on our interface instead of on their running, and it undercuts the one claim the encouragement apps cannot make. |
+
+**The test, and it is one question:** *would this sentence be correct if the runner had
+never done this before?* If yes, and they have, **it is the wrong sentence.**
+
+⚠️ **This rule governs the SENTENCE, not the control.** Whether the control should be
+present at all on a done surface is a separate ruling each time: on
+`LINK-PICKER-ALREADY-LINKED-01` the board **split** on it (Collins: remove the list behind
+an existing *“Wrong one?”*; Wroblewski and Silvanto: keep it and bring **remove** onto the
+surface) and recorded the split **unresolved**, needing the founder on a device.
+**Do not cite this rule as authority for deleting a control.**
+
+⚠️ **And it does not license deleting the selected affordance.** The same item flagged the
+picker for *keeping* the already-linked run in its list; that is **compliance** with
+`BUTTON-COMPONENT-01` (*the moss active fill is the only selected affordance*), because the
+run must stay in the list to carry it. **The state must be SAID, not removed.**
+
+**Where the copy lives:** an owner module under `lib/ui/`, never a literal in the component
+— `linkPickerCopy.ts` beside `matchEmptyCopy` and `connectionStaleCopy`. A ternary in JSX
+cannot be called, so which branch renders cannot be proven.
+
 ---
 
 ## Upgrade Prompt UX Rules

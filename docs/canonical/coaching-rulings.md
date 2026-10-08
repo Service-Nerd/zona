@@ -1347,3 +1347,100 @@ generated plan. Stated rather than left implicit.
 ⚠️ **That register had a FALSE NEGATIVE, found during this build:** it tested `/superseded_at/`
 against the whole query chain, so the first query to SELECT the column as data read as
 *filtered*. It would have certified the exact cross-plan read §71 authorises as its opposite.
+
+---
+
+## `READ-DIRECTION-OVERCLAIM-01` — SPLIT RULING, 2026-10-08. The filed question was a symptom; the scan found a scoring defect
+
+**Convened on:** `sessionScore.ts` / `strava.ts` / `sessionFeedback.ts` — soft trigger, qualifies
+(it changes what the runner is told they did, and half the score).
+
+### 1. On the filed question — ⛔ INCORRECT AS SCOPED. Neither candidate fix ships.
+
+The item asked whether to pass `hrBelowFloorPct` to the prompt, or forbid the word “most” below
+a majority. **Both would have closed the item and left the defect.** Passing a third figure makes
+the sentence more precise about a number measured against the wrong band; a voice rule
+suppresses an accurate report of a broken measurement.
+
+🔴 **The model did not overclaim. It was told “32% in zone, 39% above ceiling” and wrote the
+only sentence those two numbers support.** It reasoned correctly from a false premise.
+
+### 2. On what the conflict scan found — ✅ CORRECT. `hr_in_zone_pct` means `hr_in_zone_2_pct`.
+
+**Measured mechanically, not inferred:**
+- `lib/strava.ts:112` — `const ceiling = zones.zone2Ceiling ?? …`, under its own comment
+  *“Z2-anchored counts — legacy fields”*. **Unconditional, for every session type.**
+- `lib/coaching/sessionScore.ts:76` — `if (hrInZonePct !== null) return Math.round(Math.min(100,
+  hrInZonePct))`. **The HR discipline score IS the Zone-2 percentage.** Verified in production:
+  `hr_discipline_score === round(hr_in_zone_pct)` on **100% of rows**.
+- `grep 'session.type' lib/coaching/sessionScore.ts` → **empty.** The scorer never branches on type.
+- The session’s own `hr_target` is parsed **only in the fallback branch**, so it is ignored
+  whenever stream data exists — exactly when the data is best.
+
+🔴 **CONSEQUENCE, FROM CATALOGUE ROW 7’S OWN STRUCTURE** (*“continuous, 3 equal thirds
+(E ceiling → Z2-Z3 transition → T target)”*): **two of three thirds are DESIGNED to sit at or
+above the Z2 ceiling, so a perfectly executed progressive tempo cannot score above ~33 on half
+of §108’s composite.** The founder scored **32** on a split of **29.0% below / 32.3% in /
+38.7% above** — almost exactly thirds. **He ran the session as prescribed and the engine graded
+it a failure, then narrated that failure back to him.**
+
+⚠️ **And the card asserts it in words:** *“32% in your **prescribed zone**”*. It is not his
+prescribed zone. It is Zone 2.
+
+### 🔍 Conflict scan
+
+| § | Interaction |
+|---|---|
+| **§108** | 🔴 **Direct.** Weights “HR discipline” at **0.50** and justifies it as *“heart rate in **the wrong zone**”* — which presupposes a PRESCRIBED zone. The implementation uses Z2 regardless. §108 governs the WEIGHTS and is silent on the BAND. |
+| **§12** | ✅ No conflict, **and this is why it survived**: Z2-anchoring is correct for easy/recovery/long, which is 77 of 77 analysed rows with HR. |
+| **§14** | Threshold and VO2max sessions are prescribed in Z3/Z4–5 by definition; a Z2-anchored measure cannot describe them. |
+| **§1** | Not weakened — §1 counts sessions, not zone percentages. |
+
+### ⛔ Binding conditions
+
+1. **Willy, close to a veto:** do **NOT** repoint `hr_above_ceiling_pct` or `hr_in_zone_pct`.
+   `limiter.ts:203` reads them as a Z2 overload signal (`PACING_HOT_PCT_THRESHOLD`), and
+   re-anchoring per session type would make a correctly-executed tempo read as *“ran hot”*.
+   **Add a prescription-relative field beside them; do not redefine the existing columns.**
+2. **Sims:** the **below-floor** bucket must not score as indiscipline on a session whose own
+   structure prescribes a below-band opening third. 29% below is in the founder’s own row.
+
+### ⚡ Recorded disagreement — McMillan vs Seiler, UNRESOLVED
+
+Seiler wants a prescription-relative in-band percentage per session type. McMillan holds a
+tempo’s real compliance question is binary — *did you reach the work and hold it* — and that a
+percentage-in-band model imported from easy running will mislead on intervals, where recovery
+jogs are **supposed** to fall out of band. **Settled by:** the distribution of
+`strava_activities.hr_bpm_histogram` across the prescribed band for structured sessions.
+**Nobody has looked**, and live data cannot settle it yet — `run_analysis.session_type` is null
+on all 77 rows because the stamp only landed 2026-10-07.
+
+⚠️ **No aggregate would ever have surfaced this.** The analysed population is 77 easy-type
+rows at a mean 79% in-zone. **The founder found it by running one tempo.**
+
+### 3. ✅ Second routed question — WHICH AXIS OWNS “Short.” — CORRECT AS SHIPPED
+
+`POSTRUN-METRIC-PREF-01` routed it. §66 Am. 1 already governs (*“distance still wins where the
+session carried one”*), and **withholding** the verdict where the axes contradict asserts nothing
+§66 does not already say. **22% disagreement (2 of 9 both-axes live rows) is too high to pick an
+axis silently and too low to justify a new principle.** 📐 Both seats noted the number is the
+interesting part: **one in five analysed runs is judged on an axis the runner did not choose.**
+Revisit as a principle when the population exceeds nine rows.
+
+### 📦 Artifacts
+
+| | |
+|---|---|
+| Register row (this) | ✅ **done, including the INCORRECT half** |
+| Principle `§109` — *what band a run is scored against* | 🔲 drafted, **NOT committed** — blocked on the founder |
+| Numeric — prescription-relative band resolver (`SCORE_WEIGHTS` untouched) | 🔲 blocked on the founder |
+| Invariant — *every catalogue row, executed as its own `main_set_structure` prescribes, must be able to reach a passing HR discipline score* | 🔲 **ship this first even if the rest waits** — checkable from the catalogue alone, needs no live data, and **goes RED today on row 7** |
+
+### ↗️ SLT escalation — YES, and the board does not decide it
+
+The remedy changes `total_score` on live rows, and the founder explicitly **kept** the score
+(*“i got 83% on my garmin last night … gives a sense im going in the right direction”*). **Score
+composition is his and the SLT’s.** This board rules only that the measure is incorrect for
+quality sessions. Hutchinson carries it. Related open §108 question already routed here: *what
+is the score OF* — **same root, and this ruling is the answer to half of it.**
+

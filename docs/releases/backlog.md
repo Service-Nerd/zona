@@ -242,6 +242,52 @@ a runner with no watch**, and saying so honestly is part of the ruling.
 
 Founder: *"seems i can still manually link it to the same run its linked against."* Confirmed in `SessionPopupInner`: the claimed-filter **deliberately keeps** the activity this session already holds (`r.id !== completion?.strava_activity_id && r.id !== completion?.apple_health_uuid`), so it can render as selected. But the session was `DONE`, the post-run screen already offers **"Unlink this run"**, and the log view still presents a fresh "Optional, select from recent runs" list. **Two surfaces, two different mental models of the same state.** Not obviously a defect — a ruling on what the log view should say once a session is linked.
 
+### 🔴 `LOG-UPDATE-SILENT-RELINK-01` — “Update log” can silently relink a session to a different run *(filed 2026-10-08, P1)* ⚙️ **NO BOARD** *(ADR-012 restoration)*
+
+**Severed from `LINK-PICKER-ALREADY-LINKED-01` by the Design Board, 2026-10-08**, which ruled it
+is a defect and must not wait on the design question it was filed under. 🧭 Zhuo: *“a button
+labelled 'Update log' that performs a write with no confirmation and no visible change is not a
+design preference, it is a defect.”*
+
+**Measured in source:**
+
+`handleMarkComplete` (`SessionPopupInner.tsx:466`):
+```ts
+if (autoMatch) { void saveCompletion('complete', autoMatch.activity); return }
+```
+
+🔴 **`resolveAutoMatch` NEVER CHECKS COMPLETION STATUS** — `sessionAutoMatch.ts:56-73` takes
+session, week start, day key and activities, and nothing else. So `autoMatch` is live on a session
+that is **already complete and already linked**, and `Update log` (`:1473`, which routes a
+non-manual completion to `handleMarkComplete`) **takes that branch before any picker opens.**
+
+`saveCompletion` then overwrites the link IDs (`:394-401`), so:
+
+> **If the auto-match resolves to a DIFFERENT activity than the one currently linked, the session
+> is silently relinked to a different run.** No picker, no confirmation, no visible change, and
+> the discarded record is not recoverable from the UI.
+
+⚠️ **Two documented rules this restores, so it needs no board:**
+- **ADR-012** — magnitude-calibrated confirmation: a structural change surfaces a confirmation
+  tile. Replacing the activity a session is scored against is structural by any reading.
+- **`CLAUDE.md` § UI Principles** — *“Modals only for destructive confirmations (delete,
+  disconnect)”*. This is a destructive write with no confirmation at all.
+
+🎓 **Sierra set the stake at the sitting:** *“a runner who taps 'Update log' to change their RPE,
+and whose linked run changes underneath them, would never attribute that to us. They would
+conclude the app is unreliable and be right.”*
+
+**Scope when picked up:** `handleMarkComplete` must not write when the session already carries a
+link. ⚠️ **Re-measure first and check the OTHER caller** — the same auto-match branch is correct
+and wanted on an UNLINKED session (it is the one-tap log path), so the gate is on completion
+state, not on removing the branch. **Gate must assert both directions**: unlinked still
+one-taps, linked does not write.
+
+⚠️ **NOT confirmed against a device, and this matters here:** the founder's words
+(*“seems i can still manually link it to the same run its linked against”*) fit the PICKER path,
+but this path looks identical to him whenever the match resolves to the same run. **Which one he
+hit is unknown.**
+
 ### 🟡 `ACTIVITY-NAME-WRITER-01` — "Run (Connect)" is the app that wrote it, shown as the run's name *(filed 2026-10-07, P3)* 🧭 **DESIGN BOARD**
 
 `lib/health/adapter.ts:104` — `name: payload.sourceName ? \`Run (${payload.sourceName})\` : 'Run'`. `sourceName` is the app that wrote the workout into Apple Health, so the picker shows **"Run (Strava)"** above the subtitle **"Apple Health"**, and **"Run (Connect)"** (Garmin) for another. Both statements are true and they read as a contradiction. ⚠️ Related but distinct: `run_analysis.source` was stamped **`'strava'`** on an `apple_health` activity — provenance disagreeing with ADR-011's own column.

@@ -4541,3 +4541,106 @@ run — the one surface a fixture page cannot honestly stand in for. `/post-run-
 been looked at nowhere. Whether asking first actually raises the RPE rate is unmeasurable until
 there are more than four runners.
 
+---
+
+## `LINK-PICKER-ALREADY-LINKED-01` — SPLIT RULING, 2026-10-08. A defect severed, a heading shipped, a shape unresolved
+
+**Trigger:** `components/dashboard/SessionPopupInner.tsx` — soft, qualifies (the runner must learn
+what a list means in a state the list does not describe). **Tier: FREE** (logging is free, DS-06).
+
+**Founder:** *“seems i can still manually link it to the same run its linked against.”*
+
+### 🔍 Settled-ground scan — and it protects the part the item flagged
+
+| Row | Interaction |
+|---|---|
+| **`BUTTON-COMPONENT-01` selected-state rule** | ⚠️ *“The moss active fill is the only selected affordance”* — 15 selected-state buttons were deliberately not converted for this reason. **The picker keeping the linked run so it can render `--moss-soft` is COMPLIANCE, not an oversight.** Removing it would delete the only signal that says *this is the one you have*. |
+| **`MATCH-EMPTY-CAUSE-01`** (2026-10-07) | The empty and error states of this exact list were ruled **yesterday**. The *already-linked* state was not among them. |
+| **`UX-POSTRUN-01` residual** | Unlink is settled — **on the other surface** (`SessionScreen`, below “Up next”). |
+| **`GHOST-AFFORDANCE-01`** | Row affordance already correct (`--bg-soft` + `--chrome-edge`, real `<button>`, `aria-pressed`). Not in question. |
+
+**No existing row rules on the already-linked state.** Clean ground.
+
+### 📐 Evidence — two reachable paths, and the second is worse than the filed one
+
+**Path A (filed).** `:1473` — on a complete session `Update log` calls `handleMarkComplete`; with no
+auto-match it reaches `setView('complete')` → the picker, headed **“Link an activity”** over
+**“Optional, select from recent runs”**, with the linked run retained by the filter at `:372`.
+
+🔴 **PATH B — FOUND DURING THIS SCAN, NOT IN THE ITEM.** `handleMarkComplete:466`:
+`if (autoMatch) { void saveCompletion('complete', autoMatch.activity); return }`. **`resolveAutoMatch`
+never checks completion status** (`sessionAutoMatch.ts:56-73` — session, date, activities only). So on
+an **already-linked** session with a live auto-match, “Update log” **writes immediately: no picker, no
+confirmation, no visible change** — and `saveCompletion` overwrites the link IDs (`:394-401`), so **if
+the match resolves to a different activity the session is silently relinked to a different run.**
+
+⚠️ **NOT measured: which path the founder hit.** His words fit Path A, but Path B looks identical to
+him when the match is the same run. **Nothing has run on a device.**
+
+### ⛔ Veto check
+**None.** Silvanto declined explicitly — no palette or type regression, and the behaviour the item
+flags is compliance with a documented rule.
+
+### ⚖️ Ruling — SPLIT
+
+**1. 🔴 Path B is a DEFECT and is SEVERED from this item** → `LOG-UPDATE-SILENT-RELINK-01`,
+⚙️ **no board** (restores documented intent: ADR-012's magnitude-calibrated confirmation, and
+*modals for destructive confirmations only*). A button reading “Update log” performing an unconfirmed
+relink does not wait on a design ruling.
+
+**2. ⚖️ INSUFFICIENT EVIDENCE on the filed question.** Two coherent shapes, no basis to choose.
+**The missing artefact is named: the founder on a device, on a linked session, saying which he wanted.**
+Six runners have ever logged a run, so no behavioural measurement exists and inventing one would be the
+three-card proof band again.
+
+**3. ✅ SHIP WITH AMENDMENT — the heading lies, and both shapes agree it must go.** A linked session
+may not be headed *“Link an activity / Optional, select from recent runs.”* It **states what it has, in
+the past tense, naming the run**, before offering to change it. Unanimous, independent of the
+unresolved split, and it is the half the founder actually complained about.
+
+### ⚡ Recorded disagreement — Collins vs Wroblewski/Silvanto, UNRESOLVED
+
+🎪 **Collins:** the screen should not exist in this state. *“Linked to your 9.9km run, Wednesday.
+Wrong one?”* — and **“Wrong one?” is already live on the auto-match suggestion fifty lines up.*
+“You wrote the right control and did not reuse it on the state that needs it most.”* No list until the
+runner says the link is wrong.
+
+📱✋ **Wroblewski + Silvanto:** keep the list, fix the headings, and bring **remove** onto this
+surface — unlink currently lives on `SessionScreen`, so *the one thing a runner here might want is the
+one thing absent*. Wroblewski counted Path A at **four actions to confirm what the previous screen
+already said**.
+
+**What would move each:** Collins concedes if runners reach this screen *intending* to change the link.
+Wroblewski concedes if statement-plus-escape is fewer taps for the correction case — true **only** if
+“Wrong one?” opens the picker pre-scrolled to the current selection. ⚠️ **Chair's note: the two
+converge if “Wrong one?” opens exactly Wroblewski's list, so this is a SEQUENCING question**, recorded
+unresolved rather than merged because the first screen the runner sees differs.
+
+🎓 **Sierra, not a disagreement, recorded because it sets the stake:** a screen that keeps offering
+to re-link teaches the runner **our record of their training is provisional**, which makes them
+responsible for checking it every time. *“That is load spent on our interface instead of on their
+running”* — and it undercuts the one claim the encouragement apps cannot make.
+
+### 📦 Artifacts
+
+1. **Pattern** — `ux-principles.md`: *a surface that offers an action already taken must state the
+   existing state first, in the past tense, before offering to change it.* Generalises; the
+   post-run / log-view divergence is its first instance.
+2. **Constant** — copy in `lib/ui` beside `matchEmptyCopy` / `connectionStaleCopy`, **never a literal**.
+   ⚠️ **And the trap is already known:** moving copy into `lib/ui` is correct AND puts it inside
+   `noEmDashApp.test.ts`'s roots — the population change that bit that guard on 2026-10-07. Covered on
+   the way in.
+3. **Mechanical check** — markup arm: the linked branch renders past-tense copy and never the
+   empty-state string. Falsify by reverting the heading.
+4. **Register row** — this.
+
+### ↗️ Routing
+**None.** Nothing changes what the engine prescribes (not Coaching); no tier or cost implication,
+logging is FREE under DS-06 (not SLT).
+
+### ⚠️ What this ruling does not settle
+**Whether the list should exist on a linked session at all** — Collins' position is live and needs the
+founder on a device. It also does not settle **where unlink lives**: `UX-POSTRUN-01` put it on
+`SessionScreen`, and Wroblewski's point that the destructive action is absent from the surface offering
+the constructive one is **recorded and not ruled on.**
+
