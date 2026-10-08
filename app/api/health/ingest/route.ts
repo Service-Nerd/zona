@@ -17,9 +17,20 @@ import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 // canonical strava_activities row shape, persists it, and triggers the same
 // auto-match + AI analysis pipeline the Strava webhook uses.
 //
-// Auth: bearer token (paid/trial). Tier-gated on `activity_intelligence`.
-// Free users cannot ingest — the iOS sync should not call this for free tier
-// (the gate also lives client-side in lib/health/sync.ts).
+// Auth: bearer token, ANY authenticated user. The ROW lands for everyone; the
+// ANALYSIS is tier-gated on `activity_intelligence` further down (HK-FREE-INGEST-LINE-01,
+// SLT 2026-10-07). ADR-011 makes HealthKit the system of record, and DS-06 forty lines
+// below already held that logging is free.
+//
+// 🔴 THIS HEADER SAID THE OPPOSITE UNTIL 2026-10-08, AND THAT IS THE SECOND TIME THIS
+// FILE HAS CONTRADICTED ITSELF. It read "Free users cannot ingest... the gate also
+// lives client-side in lib/health/sync.ts" — describing a gate that had MOVED to the
+// analysis below it, and naming a file that DOES NOT EXIST (there is no tier gate
+// anywhere in `lib/health/`; verified, so the server-side move is not inert).
+// `HK-NEVER-SYNCED-COHORT-01` was filed because this route's top contradicted its own
+// DS-06 branch; the fix corrected the code and left a header asserting the old rule,
+// which is the same defect pointing the other way. A reader deciding how urgent an
+// ingest bug is would have read this first.
 
 let _supabase: ReturnType<typeof createServiceClient> | undefined
 function getSupabase(): any {
