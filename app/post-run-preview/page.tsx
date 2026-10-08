@@ -17,7 +17,7 @@
 import { notFound } from 'next/navigation'
 import { RunFeedbackCard } from '../dashboard/DashboardClient'
 
-type Case = { title: string; note: string; analysis: Record<string, unknown>; paceTarget?: string | null; driftContext?: { show: boolean; drifted: number; total: number } | null }
+type Case = { title: string; note: string; analysis: Record<string, unknown>; paceTarget?: string | null; driftContext?: { show: boolean; drifted: number; total: number } | null; preferredMetric?: 'distance' | 'duration' }
 
 const CASES: Case[] = [
   {
@@ -33,6 +33,36 @@ const CASES: Case[] = [
       ef_value: 0.0175, ef_baseline: 0.0179, ef_trend_pct: -2.39,
       feedback_text:
         "You ran 1.4km longer than planned and spent most of it above the zone, which means the session drifted from tempo into steady-state effort. HR climbed 13 bpm in the back third\u2014the limiter looks like aerobic capacity, not leg speed\u2014so hold the zone next time: if you're creeping above 158, ease back rather than push through. This suggests you need more patience on the build phase; quality tempo only counts when it stays in the band.",
+    },
+  },
+  {
+    title: 'POSTRUN-METRIC-PREF-01 — THE SAME RUN, read by a runner who chose MINUTES',
+    note: "Identical production row to the case above, with preferredMetric='duration'. The Distance line must read \"Planned 48 min, ran 1h 01\" rather than \"Planned 8.5km, ran 9.9km\". MEASURED: the duration branch had never run in production — 81 of 83 live rows are km-comparable, 9 are minutes-comparable, and all 9 of those are km-comparable too, so there was no live row that reached it. ⚠️ The verdict stays on distance (§66 Am. 1) and on this row the two axes AGREE he ran long, so no 'Short.' appears either way.",
+    paceTarget: '5:07–5:22 /km',
+    preferredMetric: 'duration',
+    analysis: {
+      source: 'strava', verdict: 'off_target', total_score: 50,
+      hr_discipline_score: 32, distance_score: 80, pace_score: 40, ef_score: 80,
+      hr_in_zone_pct: 32.26, hr_above_ceiling_pct: 38.71, hr_below_floor_pct: 29.03,
+      planned_load_km: 8.5, actual_load_km: 9.88,
+      planned_load_mins: 48, actual_load_mins: 61.12,
+      ef_value: 0.0175, ef_baseline: 0.0179, ef_trend_pct: -2.39,
+      feedback_text:
+        "You ran 1.4km longer than planned and spent most of it above the zone, which means the session drifted from tempo into steady-state effort.",
+    },
+  },
+  {
+    title: 'POSTRUN-METRIC-PREF-01 — the axes DISAGREE, so the verdict is WITHHELD',
+    note: "The case that decided the design. On the 9 live rows comparable on both axes, 2 (22%) disagree about whether the run was short — so this is not theoretical. Here the runner covered the full distance in LESS time than planned: distance says fine, duration says short. §66 Am. 1 is explicit that 'a fast runner covering 95% of the distance in 60% of the time is not short', so the numbers move to the axis he chose and the verdict word is omitted rather than asserted on a contested axis. WHICH AXIS OWNS 'Short.' is routed to the Coaching Board.",
+    paceTarget: '5:07–5:22 /km',
+    preferredMetric: 'duration',
+    analysis: {
+      source: 'strava', verdict: 'close', total_score: 72,
+      hr_discipline_score: 70, distance_score: 95, pace_score: 85, ef_score: 70,
+      hr_in_zone_pct: 70,
+      planned_load_km: 8.5, actual_load_km: 8.4,
+      planned_load_mins: 48, actual_load_mins: 41,
+      feedback_text: "You covered the distance and did it quicker than the plan asked. Fine once, but easy days are meant to feel easy.",
     },
   },
   {
@@ -139,7 +169,7 @@ export default function PostRunPreviewPage() {
           <p style={{ fontSize: '12px', color: 'var(--mute)', margin: '0 0 10px', lineHeight: 1.5 }}>
             {c.note}
           </p>
-          <RunFeedbackCard analysis={c.analysis} paceTarget={c.paceTarget ?? null} driftContext={c.driftContext ?? null} />
+          <RunFeedbackCard analysis={c.analysis} paceTarget={c.paceTarget ?? null} driftContext={c.driftContext ?? null} preferredMetric={c.preferredMetric ?? 'distance'} />
         </section>
       ))}
     </main>

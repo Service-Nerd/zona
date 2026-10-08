@@ -47,6 +47,7 @@ import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO, BEHIND_VERDICT_MIN_SESSIONS } from '@/lib/coaching/constants'
 import { zoneVerdict, zoneVerdictColour, zoneVerdictLabel } from '@/lib/coaching/zoneVerdict'
 import { driftContextFor } from '@/lib/coaching/loadCalc'
+import { compareLoad } from '@/lib/coaching/loadComparison'
 import { BRAND, PRICING } from '@/lib/brand'
 import { profileInitials } from '@/lib/profileInitials'
 import { sessionNotesAreAiAuthored } from '@/lib/plan/notesProvenance'
@@ -2828,7 +2829,7 @@ export default function DashboardClient() {
 }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onSaveName={async (name: string) => { setFirstName(name); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return false; const { error } = await supabase.from('user_settings').upsert({ id: user.id, first_name: name, updated_at: new Date().toISOString() }); if (error) { setFirstName(firstName); return false } return true } catch { setFirstName(firstName); return false } }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} onActiveSectionChange={setMeActiveSection} onOpenZones={(returnTo?: string, editHr?: boolean) => { setZonesReturnSection(returnTo ?? null); setHrSheetOpen(!!editHr); setScreen('zones') }} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} aiNotes={sessionNotesAreAiAuthored(activeSessionData, plan?.meta, plan?.weeks?.find(w => w.n === activeSessionData.weekN))} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(sessionOrigin)} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} driftContext={buildDriftContext(plan, runAnalysisMap, activeSessionData?.weekN, activeSessionData?.key)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('session')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setPostRunOrigin('session'); setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
-        {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
+        {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} preferredMetric={preferredMetric} driftContext={buildDriftContext(plan, runAnalysisMap, activePostRunData.weekN, activePostRunData.session?.key)} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
           // SessionScreen renders inline) is the resting state — not Today.
@@ -5867,6 +5868,9 @@ function buildScoreExplanations(
   paceTarget: string | null,
   actualAvgSpeedMs: number | null,
   units: 'km' | 'mi' = 'km',
+  /** POSTRUN-METRIC-PREF-01 — ADR-015's distance/duration preference. Defaults to
+   *  `distance`, which is the behaviour every caller had before it existed. */
+  preferredMetric: 'distance' | 'duration' = 'distance',
 ): { label: string; value: number | undefined; line: string }[] {
   // HR
   const inZone = analysis.hr_in_zone_pct as number | null | undefined
@@ -5902,27 +5906,50 @@ function buildScoreExplanations(
   const actual  = analysis.actual_load_km  as number | null | undefined
   const plannedMins = analysis.planned_load_mins as number | null | undefined
   const actualMins  = analysis.actual_load_mins  as number | null | undefined
+
+  // POSTRUN-METRIC-PREF-01 (ADR-015 / INV-PREF-001 restoration) — the runner's
+  // distance/duration preference reaches this line.
+  //
+  // 🔴 THE DURATION BRANCH BELOW HAD NEVER RUN IN PRODUCTION. The item said it was
+  // "unreachable whenever km data is present", which understates it: measured on all
+  // 83 live `run_analysis` rows, 81 are km-comparable, 9 are minutes-comparable, and
+  // ALL NINE of those are km-comparable too. There is not one live row that reaches
+  // the `else if`. So a runner who sets a session to minutes was told "Planned
+  // 8.5km, ran 9.9km" every time. Founder: "we need to consider duration there too,
+  // as i may have it set based on duration."
+  //
+  // ⚠️ THE NUMBERS MOVE TO THE PREFERRED AXIS. THE VERDICT DOES NOT, AND THAT IS
+  // DELIBERATE. §66 Amendment 1 is explicit: "Distance still wins where the session
+  // carried one... A fast runner covering 95% of the distance in 60% of the time is
+  // not short." The ownership seam settles the split — design owns the ENCODING (what
+  // unit the runner reads), coaching owns the MEANING (whether they fell short). So
+  // the preference chooses the unit and §66 keeps the judgement.
+  //
+  // 🔴 AND THE TWO AXES REALLY DO DISAGREE, SO THIS IS NOT A THEORETICAL SEAM: on the
+  // 9 live rows comparable on both, 2 (22%) disagree about whether the run was short.
+  // Where they disagree the verdict word is OMITTED rather than asserted on one axis
+  // or the other, because picking one would be a new coaching claim and this is a
+  // display fix. Routed to the Coaching Board as the open question: WHICH AXIS OWNS
+  // "Short." when the runner has chosen the other one.
+  const cmp = compareLoad(
+    { plannedKm: planned, actualKm: actual, plannedMins, actualMins },
+    preferredMetric,
+  )
+  const shortSuffix = cmp.short === true ? ' Short.' : ''
+
   let distLine: string
-  if (planned != null && actual != null) {
-    if (Math.abs(actual - planned) < 0.3) {
-      distLine = `Hit the planned distance: ${formatDistance(actual, units, { exact: true })}.`
-    } else if (actual > planned) {
-      distLine = `Planned ${formatDistance(planned, units, { exact: true })}, ran ${formatDistance(actual, units, { exact: true })}.`
-    } else {
-      distLine = `Planned ${formatDistance(planned, units, { exact: true })}, ran ${formatDistance(actual, units, { exact: true })}. Short.`
-    }
-  } else if (plannedMins != null && actualMins != null) {
-    // 2 minutes is the time-axis sibling of the 0.3 km tolerance above: at the
-    // engine's easy pace (~6.3 min/km) 0.3 km IS about two minutes, so the two
-    // axes forgive the same amount of session rather than two different amounts.
-    const TIME_TOLERANCE_MINS = 2
-    if (Math.abs(actualMins - plannedMins) < TIME_TOLERANCE_MINS) {
-      distLine = `Hit the planned time: ${formatDuration(actualMins)}.`
-    } else if (actualMins > plannedMins) {
-      distLine = `Planned ${formatDuration(plannedMins)}, ran ${formatDuration(actualMins)}.`
-    } else {
-      distLine = `Planned ${formatDuration(plannedMins)}, ran ${formatDuration(actualMins)}. Short.`
-    }
+  if (cmp.axis === 'duration') {
+    // The axis the runner asked to be spoken to in. 2 minutes is the time-axis
+    // sibling of the 0.3 km tolerance: at the engine's easy pace (~6.3 min/km)
+    // 0.3 km IS about two minutes, so the two axes forgive the same amount of
+    // session rather than two different amounts.
+    distLine = cmp.onTarget
+      ? `Hit the planned time: ${formatDuration(actualMins!)}.`
+      : `Planned ${formatDuration(plannedMins!)}, ran ${formatDuration(actualMins!)}.${shortSuffix}`
+  } else if (cmp.axis === 'distance') {
+    distLine = cmp.onTarget
+      ? `Hit the planned distance: ${formatDistance(actual!, units, { exact: true })}.`
+      : `Planned ${formatDistance(planned!, units, { exact: true })}, ran ${formatDistance(actual!, units, { exact: true })}.${shortSuffix}`
   } else {
     distLine = 'No distance data.'
   }
@@ -6027,6 +6054,7 @@ export function RunFeedbackCard({
   actualAvgSpeedMs = null,
   onOpenCoach,
   preferredUnits = 'km',
+  preferredMetric = 'distance',
   driftContext = null,
 }: {
   analysis: any
@@ -6034,6 +6062,9 @@ export function RunFeedbackCard({
   actualAvgSpeedMs?: number | null
   onOpenCoach?: () => void
   preferredUnits?: 'km' | 'mi'
+  /** POSTRUN-METRIC-PREF-01 — chooses the AXIS the planned-vs-actual line speaks in.
+   *  The verdict stays on distance where the session carried one (§66 Am. 1). */
+  preferredMetric?: 'distance' | 'duration'
   // POST-RUN-CONTEXT-01 — the block-level count, decided by `driftContextFor`.
   // The card renders it; it does not decide it. Null when there is nothing to say.
   driftContext?: { show: boolean; drifted: number; total: number } | null
@@ -6044,7 +6075,7 @@ export function RunFeedbackCard({
   const isManual   = (analysis.source as string | undefined) === 'manual'
   const voice      = getVerdictVoice(verdict)
   const [expanded, setExpanded] = useState(false)
-  const explanations = buildScoreExplanations(analysis, paceTarget, actualAvgSpeedMs, preferredUnits)
+  const explanations = buildScoreExplanations(analysis, paceTarget, actualAvgSpeedMs, preferredUnits, preferredMetric)
 
   // UX-POSTRUN-01 — the one behavioural signal that survives the dashboard cut.
   // `hr_discipline_score` IS the in-zone percentage (scoreSession returns
@@ -6531,6 +6562,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
                 actualAvgSpeedMs={linkedAct?.average_speed ?? null}
                 onOpenCoach={onOpenCoach}
                 preferredUnits={preferredUnits}
+                preferredMetric={preferredMetric}
                 driftContext={driftContext}
               />
             </>
@@ -6703,12 +6735,14 @@ function PostRunScreen({
   onSaved,
   onAnalysisLoaded,
   preferredUnits = 'km',
+  preferredMetric = 'distance',
   zone2Ceiling,
   hasPaidAccess,
   onOpenCoach,
   runAnalysis,
   aerobicPace,
   goalPace,
+  driftContext = null,
 }: {
   data: PostRunData
   /** Back arrow — returns to Today. */
@@ -6723,6 +6757,10 @@ function PostRunScreen({
    *  verdict immediately instead of re-polling. */
   onAnalysisLoaded?: (sessionDay: string, row: any) => void
   preferredUnits?: 'km' | 'mi'
+  /** POSTRUN-METRIC-PREF-01 — ADR-015's distance/duration preference. `SessionScreen`
+   *  has taken this since the preference existed; this screen never did, which is why
+   *  the run read spoke kilometres to a runner who had chosen minutes. */
+  preferredMetric?: 'distance' | 'duration'
   zone2Ceiling?: number | null
   hasPaidAccess?: boolean
   onOpenCoach?: () => void
@@ -6730,6 +6768,10 @@ function PostRunScreen({
   runAnalysis?: any | null
   aerobicPace?: string | null
   goalPace?: string | null
+  /** POSTRUN-CONTEXT-TWIN-01 — the block-level drift count, decided by
+   *  `driftContextFor`. Computed by the parent, which holds the plan and the
+   *  analysis map; this screen holds neither and cannot derive it. */
+  driftContext?: { show: boolean; drifted: number; total: number } | null
 }) {
   const supabase = createClient()
   const { session, weekN, pendingActivityId, pendingAppleHealthUuid, linkedActivity } = data
@@ -7264,6 +7306,8 @@ function PostRunScreen({
             actualAvgSpeedMs={avgSpeedMs}
             onOpenCoach={onOpenCoach}
             preferredUnits={preferredUnits}
+            preferredMetric={preferredMetric}
+            driftContext={driftContext}
           />
         )}
         {hasPaidAccess && !hrPendingState && !analysis && !pollGaveUp && (
