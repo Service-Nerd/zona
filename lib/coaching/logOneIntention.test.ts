@@ -160,6 +160,43 @@ describe('resolveAutoMatch — the owner', () => {
     expect(resolveAutoMatch({}, '2026-09-21', 'mon', [])).toBeNull()
   })
 
+  // 🔴 THE ARM THIS DESCRIBE BLOCK WAS MISSING, AND THE REASON IT MATTERED.
+  //
+  // Every assertion above returns NULL, so all four passed against a function that
+  // could not match anything at all — they would pass against `() => null`. And it was
+  // not hypothetical: `resolveAutoMatch` lazily did
+  // `require('@/lib/coaching/sessionMatch')` inside a try/catch, the aliased require
+  // threw under `environment: 'node'`, the catch swallowed it, and **this owner
+  // returned null for every input in this harness** while `findMatchCandidates`
+  // reported `confidence: 'high'` on the same data. Found 2026-10-08 while gating
+  // `LOG-UPDATE-SILENT-RELINK-01`; the require became a static import (no circularity
+  // existed, verified) and the catch went with it.
+  //
+  // ⚠️ Same class as `invariant:liveness`: a rule nothing can WAKE is unproven, not
+  // proven. A guard suite that only ever asserts the guards proves the guards.
+  it('🥇 CAN ACTUALLY MATCH — the liveness arm, so null never passes vacuously again', () => {
+    const run = {
+      id: 'run-A', type: 'Run', sport_type: 'Run',
+      start_date: '2026-10-07T13:45:00.000Z', distance: 9880, moving_time: 3667,
+    }
+    // Week starting Monday 2026-10-05, `wed` → 2026-10-07. Same weekday, 8 km planned
+    // against 9.88 km actual (ratio 1.235, inside the 0.75–1.40 band).
+    const m = resolveAutoMatch({ type: 'easy', distance_km: 8, label: 'Easy run' }, '2026-10-05', 'wed', [run])
+    expect(m).not.toBeNull()
+    expect(m!.confidence).toBe('high')
+    expect((m!.activity as { id: string }).id).toBe('run-A')
+  })
+
+  it('and it declines a run that is nowhere near the session', () => {
+    // The other half of liveness: it must still say no. Five days out is outside the
+    // ±2 day window `findMatchCandidates` uses.
+    const faraway = {
+      id: 'run-B', type: 'Run', sport_type: 'Run',
+      start_date: '2026-10-12T13:45:00.000Z', distance: 9880, moving_time: 3667,
+    }
+    expect(resolveAutoMatch({ type: 'easy', distance_km: 8 }, '2026-10-05', 'wed', [faraway])).toBeNull()
+  })
+
   it('offsets the session date by its day key', () => {
     expect(sessionDateFor('2026-09-21', 'mon')!.getDate()).toBe(21)
     expect(sessionDateFor('2026-09-21', 'sun')!.getDate()).toBe(27)

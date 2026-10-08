@@ -198,6 +198,12 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
   const isManualCompletion = isComplete
     && !completion?.strava_activity_id
     && !completion?.apple_health_uuid
+  /** LOG-UPDATE-SILENT-RELINK-01 — does this session ALREADY hold a run?
+   *  ⚠️ BOTH id columns. ADR-011 makes HealthKit the SOR and the common case, so
+   *  reading only `strava_activity_id` would leave every HK-linked session looking
+   *  unlinked, which is the same defect in a narrower population. */
+  const isAlreadyLinked = completion?.strava_activity_id != null
+    || completion?.apple_health_uuid != null
   const isSkipped = completion?.status === 'skipped'
 
   // Load existing RPE/fatigue from completion
@@ -472,7 +478,35 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
     // body state are collected before the row is created. saveReflect's
     // upsert creates the row on first chip-tap with full metadata.
     if (!isRun) { setView('reflect'); return }
-    if (autoMatch) {
+    // LOG-UPDATE-SILENT-RELINK-01 (2026-10-08) — the one-tap auto-match log is for an
+    // UNLINKED session only.
+    //
+    // 🔴 THE DEFECT. `resolveAutoMatch` cannot know whether the session is already
+    // logged: it takes session, week start, day key and activities, and nothing else
+    // (`sessionAutoMatch.ts:56-73`). "Update log" on a COMPLETE session routes here
+    // (`:1473`), so this branch fired on an already-linked session and
+    // `saveCompletion` overwrote the link ids — **silently relinking the session to a
+    // different run whenever the match resolved to a different activity.** No picker,
+    // no confirmation, no visible change, and the displaced record is unrecoverable
+    // from the UI.
+    //
+    // ⚠️ IT IS NARROW AND THAT MAKES IT WORSE, NOT BETTER. `findMatchCandidates` uses
+    // a ±2 day window (`sessionMatch.ts:100`), so this is only reachable while the
+    // session is within two days of a pooled run — which is **exactly** the window in
+    // which a runner goes back in to add their RPE. The founder reproduced the PICKER
+    // path on 2026-10-08 on an older session, outside the window; inside it he would
+    // have hit this instead and seen nothing happen.
+    //
+    // ⚠️ THE BRANCH IS CORRECT AND WANTED WHEN UNLINKED — it is the one-tap log path
+    // (POST-RUN-02 / AUTO-MATCH-02) and the CTA above it is already gated on
+    // `!isComplete && !isSkipped` (`:1505`). Only THIS caller was ungated. So the fix
+    // is a condition, never a deletion, and the gate asserts BOTH directions.
+    //
+    // Restores documented intent, so no board: ADR-012 (a structural change surfaces
+    // a confirmation) and `CLAUDE.md` § UI Principles (modals only for destructive
+    // confirmations). Design Board severed it from
+    // `LINK-PICKER-ALREADY-LINKED-01` on 2026-10-08 for exactly that reason.
+    if (autoMatch && !isAlreadyLinked) {
       void saveCompletion('complete', autoMatch.activity)
       return
     }

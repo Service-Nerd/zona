@@ -22,6 +22,7 @@
 // consequence, and the confidence gates differ for that reason.
 
 import { parseLocalDate } from '@/lib/plan/weekResolution'
+import { findMatchCandidates } from '@/lib/coaching/sessionMatch'
 
 export interface AutoMatch {
   activity: unknown
@@ -62,18 +63,28 @@ export function resolveAutoMatch(
   if (!session || !weekStartDate || !dayKey || !activities?.length) return null
   const when = sessionDateFor(weekStartDate, dayKey)
   if (!when) return null
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { findMatchCandidates } = require('@/lib/coaching/sessionMatch')
-    const top = findMatchCandidates(session, when, activities)?.[0]
-    if (!top) return null
-    if (top.confidence === 'high' || top.confidence === 'medium') {
-      return { activity: top.activity, confidence: top.confidence }
-    }
-    return null
-  } catch {
-    // A throw here must read as "we do not know", never as "no run" — the
-    // caller's no-match branch opens manual entry, which is always correct.
-    return null
+  // 🔴 THIS WAS A LAZY `require('@/lib/coaching/sessionMatch')` INSIDE A try/catch, AND
+  // IT MADE THIS OWNER UNPROVABLE (found 2026-10-08 while gating
+  // LOG-UPDATE-SILENT-RELINK-01).
+  //
+  // Under `environment: 'node'` the aliased `require` throws, the catch swallowed it,
+  // and the function returned `null` — which is indistinguishable from "no match".
+  // So `findMatchCandidates` reported `confidence: 'high'` on the same inputs where
+  // this returned null, and **all four existing arms in `logOneIntention.test.ts`
+  // asserted only null-returning cases, so every one of them passed VACUOUSLY.** They
+  // would pass against `() => null`. The single owner created to stop two classifiers
+  // drifting had no arm proving it can match at all.
+  //
+  // ⚠️ THERE WAS NO CIRCULARITY TO JUSTIFY IT — `sessionMatch.ts` does not import this
+  // module, verified. A static import changes WHEN the module loads, never WHETHER:
+  // webpack resolved the aliased require in the Next build and resolves the import
+  // the same way. The catch is gone with it, because a silent catch over a pure
+  // function has nothing to fail on and was hiding a resolution error, not a data one.
+  type Args = Parameters<typeof findMatchCandidates>
+  const top = findMatchCandidates(session as Args[0], when, activities as Args[2])?.[0]
+  if (!top) return null
+  if (top.confidence === 'high' || top.confidence === 'medium') {
+    return { activity: top.activity, confidence: top.confidence }
   }
+  return null
 }
