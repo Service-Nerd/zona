@@ -945,25 +945,56 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > and the W-03 commitments block in one artefact, and it *"may not return as a list with
 > better wording."*
 
-### 🟡 `RESHAPE-MOMENT-03` — tell the runner their plan changed, and why *(filed 2026-10-08, P1)* 🧭 **DESIGN BOARD** → 🏃 **COACHING BOARD**
+### 🔴 `RESHAPE-MOMENT-03` — **CLOSED 2026-10-08, NOTHING TO BUILD. The premise was false and I filed it.** ⚙️ **NO BOARD**
 
-> 🧭 **ZHUO, CHAIRING, ON WHAT THE FOUNDER ACTUALLY ASKED FOR:** *"a website list and a tidier
-> settings paragraph are ABOUT the feature; the notification when Thursday changes IS the
-> feature. We have been asked to make a moment count and offered two surfaces where no moment
-> occurs."* **This is the ask.** Supersedes the framing of `POSTRUN-PLAN-FEEDBACK-01`, which
-> stays filed as the SLT's prior review of it.
+> 🔴 **MEASURED, AFTER THE FOUNDER ASKED "can we build that now?": the runner IS told, and has
+> been since May.**
 >
-> 🔻 **Still gated on `RESHAPE-FIRST-FIRINGS-01`** — the engine woke today and nothing has
-> fired yet. 🔴 **But the gate is now narrower than it was this morning**, because the sitting
-> found that the three historical reverts were probably reverts of the **AI's rewrite**, not
-> of the detection: the stored `summary` is `explanationText` (the model), the engine's own
-> sentence is *"38% of your easy running sat above its zone ceiling."*, and the reverted one
-> said *"zero discipline this week."* **A tone rejection and a wrong detection look identical
-> in the data, and this is the first evidence they are different things.**
+> ```
+> notifications  type=plan_adjustment, ALL TIME: 12
+>   2026-06-22  "Plan's been shifted."  read=yes
+>   2026-06-17  "Plan's been shifted."  read=yes   (×2)
+>   2026-06-09  "Plan's been shifted."  read=yes   (×2)
+>   ...
+> ```
 >
-> ⚠️ **So the first question for the build is which sentence the runner sees** — the engine's
-> measured one or the model's rewrite. ⚕️ Sims' §124 clause binds either way: it may say what
-> was measured and what changed, **never a cause.**
+> **Newest is four days before the engine died. Every one was READ.** The chain works end to
+> end: engine fires, notification lands, runner opens it. It went quiet in June because the
+> **engine** stopped, not because anything was missing.
+>
+> **What actually exists, measured in `app/api/adjust-plan/route.ts`:**
+>
+> | Path | What the runner gets |
+> |---|---|
+> | `auto_applied` (sub-threshold) | a durable **inbox row** (`recordNotification`), push deliberately suppressed |
+> | `pending` (high magnitude) | **push + inbox row**, deep-linked to review and confirm |
+> | Me → Plan adjustments | the `recentChanges` audit log, read-only, dismissable per row, rendering the **real `AdjustmentDiff`** |
+> | Today | a bell dot driven by the unread count (NOTIF-01) |
+>
+> 🔴 **I FILED THIS ITEM SAYING "the runner is told NOTHING", AND I TOLD THE DESIGN BOARD THE
+> SAME THING.** It is in the sitting brief for `RESHAPE-MOMENT-01` in as many words. The
+> ruling that came out of it still stands on its own terms — Zhuo's point that a list is
+> *about* the feature while the notification *is* the feature is correct, and
+> `RESHAPE-MOMENT-02` shipped on better grounds than the brief gave it — but **one of the three
+> asks it was weighing did not exist.**
+>
+> ⚠️ **THE CAUSE, AND IT IS THE SECOND TIME TODAY.** I inherited the premise from
+> `POSTRUN-PLAN-FEEDBACK-01`, an older filed item, and carried it into a new filing and then
+> into a board brief **without re-measuring it** — the exact rule CLAUDE.md states and that I
+> applied correctly to three other items earlier the same day. The morning's version was a
+> false HR mechanism taken to the Coaching Board, caught while building. **This one was caught
+> only because the founder asked a question that made me look.**
+>
+> ✅ **The residual is genuinely zero.** The quietness of the sub-threshold push is a
+> *deliberate* ADR-012/§69 decision with its reasoning on the line above it (*"a lock-screen
+> ping for a small silent trim is notification noise"*), and reversing it would need the
+> Design Board and a reason, not a build. **When the engine next fires, the existing chain
+> does the job.**
+>
+> 🔻 **What `RESHAPE-FIRST-FIRINGS-01` now means:** not *"build the telling"* but *"watch the
+> telling work for the first time in four months"* — and check the one open question the
+> sitting did surface, which is whether the runner sees the ENGINE's sentence or the model's
+> rewrite. That is a real question and it is answered by reading, not building.
 
 ### ✅ `RESHAPE-PRINCIPLE-DEBT-01` — **BOARD SAT AND RULED 2026-10-08.** CORRECT WITH AMENDMENT (3) 🏃 **COACHING BOARD**
 
