@@ -27,28 +27,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getStravaToken, bucketHRSamples, bucketHRHistogram, getUserHRZones } from '@/lib/strava'
-import { zoneForSessionType } from '@/lib/coaching/zoneRules'
+import { prescribedZoneFigures } from '@/lib/coaching/prescribedZoneFigures'
 import { fetchPlanForUser } from '@/lib/plan'
 
 const LOOKBACK_DAYS = 90
 
-// Re-implementation of derivePrescribedZoneHrFigures (private in analyse-run).
-// Kept local so we don't need to export it from a heavy route file.
-function derivePrescribed(
-  z1: number | null, z2: number | null, z3: number | null, z4_5: number | null,
-  prescribedZone: ReturnType<typeof zoneForSessionType>,
-): { hrInZonePct: number | null; hrAboveCeilingPct: number | null } {
-  if (!prescribedZone) return { hrInZonePct: null, hrAboveCeilingPct: null }
-  const safe = (v: number | null): number => v ?? 0
-  const sum  = (...vs: Array<number | null>): number =>
-    Math.round(vs.reduce<number>((acc, v) => acc + safe(v), 0) * 100) / 100
-  switch (prescribedZone.zone) {
-    case 'Z2':  return { hrInZonePct: safe(z2),   hrAboveCeilingPct: sum(z3, z4_5) }
-    case 'Z3':  return { hrInZonePct: safe(z3),   hrAboveCeilingPct: sum(z4_5)     }
-    case 'Z4-5':return { hrInZonePct: safe(z4_5), hrAboveCeilingPct: 0              }
-    default:    return { hrInZonePct: null,        hrAboveCeilingPct: null          }
-  }
-}
+// 🔴 THE RE-IMPLEMENTATION THAT LIVED HERE IS GONE (§123, 2026-10-08).
+//
+// Its own comment said what it was: *"Re-implementation of
+// derivePrescribedZoneHrFigures (private in analyse-run). Kept local so we don't need
+// to export it from a heavy route file."* Two producers of one classification,
+// acknowledged in writing and left in place.
+//
+// ⚠️ AND IT WAS NOT MERELY UNTIDY, BECAUSE THIS ROUTE *WRITES* `hr_in_zone_pct` AND
+// `hr_above_ceiling_pct` BACK TO `run_analysis`. Left as a copy, it would have kept the
+// TYPE-only logic while `analyse-run` moved to the structure-aware owner — so a single
+// HR recalibration would have **silently reverted the §123 fix on every row it
+// touched**, and the two numbers in one row would have been produced by two different
+// rules. That is the drift the singularity doctrine exists to prevent, arriving by the
+// shortest available route.
 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
@@ -187,6 +184,7 @@ export async function POST(req: NextRequest) {
       // Resolve session type from plan to get the prescribed zone
       const sessionDay: string | null = analysis.session_day
       let sessionType: string | null = null
+      let sessionForDay: { type?: string } | null = null
       if (plan?.weeks && sessionDay) {
         // session_day format: "week_N_dow" or just "dow"
         const parts    = sessionDay.split('_')
@@ -195,18 +193,28 @@ export async function POST(req: NextRequest) {
         const week     = weekN != null
           ? plan.weeks.find((w: any) => w.n === weekN)
           : plan.weeks[0]
-        if (week?.sessions?.[dow]) sessionType = week.sessions[dow].type
+        if (week?.sessions?.[dow]) {
+          sessionForDay = week.sessions[dow]
+          sessionType   = sessionForDay?.type ?? null
+        }
       }
 
       if (!sessionType) continue
-      const prescribedZone = zoneForSessionType(sessionType)
-      const derived = derivePrescribed(z1, z2, z3, z4_5, prescribedZone)
+      // §123 — the WHOLE session, not just its type: the band set comes from its
+      // structure, and a type-only read is the defect this fix removes.
+      const derived = prescribedZoneFigures(
+        { z1, z2, z3, z4_5 },
+        sessionForDay ?? { type: sessionType },
+        { hrInZonePct: null, hrAboveCeilingPct: null, hrBelowFloorPct: null },
+      )
 
       if (derived.hrInZonePct == null && derived.hrAboveCeilingPct == null) continue
 
       await supabase.from('run_analysis').update({
         hr_in_zone_pct:       derived.hrInZonePct,
         hr_above_ceiling_pct: derived.hrAboveCeilingPct,
+        // Written too, so the three figures in one row cannot come from two rules.
+        hr_below_floor_pct:   derived.hrBelowFloorPct,
       }).eq('id', analysis.id)
 
       updated++

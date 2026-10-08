@@ -1444,3 +1444,93 @@ composition is his and the SLT’s.** This board rules only that the measure is 
 quality sessions. Hutchinson carries it. Related open §108 question already routed here: *what
 is the score OF* — **same root, and this ruling is the answer to half of it.**
 
+---
+
+## 🔴 AMENDMENT 1, SAME DAY (2026-10-08) — the mechanism I gave the board was WRONG. The conclusion survives; the cause does not
+
+**Found while building the fix, by tracing the call path I should have traced before the
+sitting.** This amendment exists because leaving a false mechanism in this register is
+exactly the failure the register was created to stop.
+
+### What I told the board, and what is actually true
+
+| I said | Measured |
+|---|---|
+| *“`hr_in_zone_pct` is Z2-anchored **unconditionally**”* | ❌ **FALSE for the histogram path.** `derivePrescribedZoneHrFigures` (`analyse-run/route.ts:605`) **already** buckets relative to the prescribed zone: Z3 prescribed → `in = z3`, `above = z4_5`, `below = z1+z2`. |
+| *“the founder's run was scored against Zone 2”* | ❌ **FALSE.** His row carries `z1=3.23 z2=25.81 z3=32.26 z4_5=38.71`, and `in=32.26` **is** `z3`, `below=29.04` **is** `z1+z2`. **It was scored against Z3, correctly relative to his prescribed zone.** |
+| *“a correct progressive tempo cannot score above ~33”* | ✅ **TRUE, and for a different reason** — see below. |
+
+⚠️ **I measured `bucketHRHistogram` and `computeHRScore` and did not trace WHICH
+`hrInZonePct` reaches the scorer.** It is `prescribedHrFigures.hrInZonePct` (`:251`), not
+the Z2-anchored column. **“Trace the producer, not the consumers you can imagine”, run
+backwards.**
+
+### 🔴 THE REAL DEFECT, AND IT IS NARROWER AND SHARPER
+
+**`zoneForSessionType` returns ONE zone for a session the catalogue prescribes in THREE
+bands.** Measured across the 30 live plans, `progressive_tempo`'s own `derived_set` step
+targets are literally:
+
+```
+ceiling / Z2-Z3 / target        (session.zone says "Zone 3")
+```
+
+So on a correctly-executed progressive tempo, scored against Z3 alone:
+- the **opening third at the Easy ceiling** lands in Z2 and is counted **BELOW FLOOR**
+- the **closing third at Threshold** reaches Z4–5 and is counted **ABOVE CEILING**
+- **only the middle third counts as “in zone”**
+
+**The founder: `below 29.04 / in 32.26 / above 38.71`. Almost exactly thirds. The ~33
+ceiling on a correct execution is real.** The engine scored the structure it prescribed as
+a failure to hold a band it never prescribed.
+
+⚠️ **And it is not one row type.** Every quality row with a `ceiling` step has the same
+shape — `threshold_ladder`, `cv_intervals`, `tempo_over_under`, `goal_pace_sharpener`,
+`threshold_pyramid` — because a **recovery jog is PRESCRIBED out of the work band**. That is
+exactly 🎯 **McMillan's objection, and it is now evidence rather than a worry.**
+
+### ✅ AND THE RECORDED DISAGREEMENT IS RESOLVED BY THE DATA, NOT BY A CASTING VOTE
+
+📊 Seiler wanted a prescription-relative in-band percentage. 🎯 McMillan held a
+percentage-in-band model would mislead on intervals because recovery jogs fall out of band
+**by design**. **Both are satisfied by scoring against the union of the session's OWN STEP
+TARGETS**, weighted by step length: a recovery step declares `ceiling`, so time there is
+**in prescription**, not below floor. 📏 **The vocabulary already exists in the data** —
+`mp_long_run` declares `session.zone: "Zone 2–3"`, a band RANGE, today.
+
+### 🔻 A SECOND, SEPARATE FINDING: the legacy fallback is doing most of the work
+
+📐 **Only 5 of 77 live analyses (6.5%) carry the per-zone histogram.** The other
+**93.5% fall through to the legacy Z2-anchored columns**, which the code's own comment
+calls *“correct for easy/long/recovery sessions and **meaningless elsewhere**”*.
+
+⚠️ **So my original claim was true of the POPULATION and false of the founder's ROW** —
+the one row I used to argue it. The 93.5% are Z2-anchored; his was not. Both halves of the
+fix are needed and they are different: **structure-aware bands** for the histogram path,
+and **histogram coverage** for everything else.
+
+### ⚠️ A DUPLICATE PRODUCER, found in the same pass
+
+`derivePrescribedZoneHrFigures` is **private to `analyse-run/route.ts`** and
+`app/api/recalibrate-hr/route.ts:35` carries a **re-implementation that says so in its own
+comment** (*“Re-implementation of derivePrescribedZoneHrFigures (private in analyse-run)”*).
+Two producers of one classification, acknowledged in writing and left in place. **It must
+become one owner before the band logic gets more complicated**, or this repo acquires its
+sixth recorded parallel classifier.
+
+### ⚖️ Ruling, restated
+
+**The 2026-10-08 ruling STANDS: the measure is incorrect for quality sessions, and the
+founder has ruled BUILD.** The binding conditions are unchanged and one is now
+*more* relevant, not less:
+
+1. ⛔ **Willy:** do not repoint `hr_above_ceiling_pct` / `hr_in_zone_pct`. ⚠️ The thing to
+   change is `derivePrescribedZoneHrFigures`, **not** `bucketHRHistogram` — the limiter
+   reads the raw Z2-anchored activity columns and must keep doing so.
+2. ⛔ **Sims:** below-floor must not score as indiscipline where the session prescribes a
+   below-band opening third. **This is now the precise mechanism of the defect**, not a
+   side condition.
+
+⚠️ **What this amendment does NOT change:** the escalation stands. It still moves
+`total_score` on live rows and the founder has approved that.
+

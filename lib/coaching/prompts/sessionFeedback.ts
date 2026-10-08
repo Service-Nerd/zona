@@ -28,6 +28,11 @@ export interface SessionFeedbackPromptInput {
   actualPaceSecPerKm?: number | null
   hrInZonePct: number | null
   hrAboveCeilingPct: number | null
+  /** READ-DIRECTION-OVERCLAIM-01 — the THIRD figure, and the model was never given it.
+   *  It was told "32% in zone, 39% above ceiling" and left to infer the remaining 29%,
+   *  which is how "most of it above the zone" became the easy sentence to write rather
+   *  than a perverse one. The split is now explicit. */
+  hrBelowFloorPct?: number | null
   efTrendPct: number | null
   rpe: number | null
   fatigueTag: string | null
@@ -130,7 +135,7 @@ Output: "Good start. HR stayed where it needed to and effort was honest, and tha
 
 export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): string {
   const { session, weekN, plan, verdict,
-    actualDistKm, actualAvgHr, actualPaceSecPerKm, hrInZonePct, hrAboveCeilingPct,
+    actualDistKm, actualAvgHr, actualPaceSecPerKm, hrInZonePct, hrAboveCeilingPct, hrBelowFloorPct,
     efTrendPct, rpe, fatigueTag, weekPhase,
     prescribedZoneLabel, prescribedHrBand, cohortContext,
     isFirstAnalysis, athleteContext, streamSummary, previousSimilarSession, tempC, limiter, paceFadeSummary,
@@ -220,8 +225,25 @@ POST-RACE MAINTENANCE — this run is part of a recovery/maintenance block after
     : (plan.meta.zone2_ceiling ? `≤${plan.meta.zone2_ceiling}` : null)
   const zoneStr = prescribedZoneLabel && zoneTarget ? `${prescribedZoneLabel}, ${zoneTarget}` : zoneTarget ?? null
 
+  // READ-DIRECTION-OVERCLAIM-01 — ALL THREE FIGURES, UNCONDITIONALLY WHERE THEY EXIST.
+  //
+  // 🔴 The old line stated "in zone" always and "above ceiling" only above 10, and
+  // NEVER stated below-floor. So the model saw 32% in and 39% above and had to infer
+  // the missing 29% — and wrote "spent most of it above the zone" about the LARGEST of
+  // three buckets that was nowhere near a majority. It had two thirds of a split and
+  // reported it as a whole.
+  //
+  // ⚠️ The >10 threshold is gone with it. Suppressing a small figure is what forced
+  // the inference: a model told two numbers that do not sum to 100 will supply the
+  // third itself.
+  const hrSplit = [
+    hrInZonePct       !== null && hrInZonePct       !== undefined ? `${hrInZonePct.toFixed(0)}% in the prescribed band` : null,
+    hrAboveCeilingPct !== null && hrAboveCeilingPct !== undefined ? `${hrAboveCeilingPct.toFixed(0)}% above it` : null,
+    hrBelowFloorPct   !== null && hrBelowFloorPct   !== undefined ? `${hrBelowFloorPct.toFixed(0)}% below it` : null,
+  ].filter(Boolean).join(', ')
+
   const hrLine = actualAvgHr
-    ? `Avg HR: ${actualAvgHr} bpm${zoneStr ? ` (target: ${zoneStr})` : ''}${hrInZonePct !== null ? `, ${hrInZonePct.toFixed(0)}% in zone` : ''}${hrAboveCeilingPct !== null && hrAboveCeilingPct > 10 ? `, ${hrAboveCeilingPct.toFixed(0)}% above ceiling` : ''}`
+    ? `Avg HR: ${actualAvgHr} bpm${zoneStr ? ` (target: ${zoneStr})` : ''}${hrSplit ? `. Split: ${hrSplit}` : ''}`
     : 'HR: not recorded'
 
   const efLine = efTrendPct !== null

@@ -10569,3 +10569,92 @@ so reduced that +5 km does not clear a peak week. The table above reads *5K 0% �
 which looks like "the defect does not occur there" and is partly "this shape of check cannot see
 it there". **Layer 1 exists for precisely that gap**, which is why the mechanism is gated and
 not only the symptom.
+
+---
+
+## 123. A run is scored against the band its SESSION prescribes, not the band its TYPE names
+
+*(Coaching Board `READ-DIRECTION-OVERCLAIM-01` + Amendment 1, 2026-10-08. Founder ruled
+BUILD on the escalation, because it moves `total_score`. Register:
+`coaching-rulings.md`; record: `docs/decisions/2026-10-08-boards-postrun-residuals.md`.)*
+
+**Principle.** The HR-discipline axis is measured against **the set of bands the session's
+own structure prescribes**. A session that prescribes more than one band is in compliance
+across all of them, and a step the session prescribes BELOW the work band is compliance,
+never indiscipline.
+
+### 🔴 Why. A correctly-executed progressive tempo could not score above about 33.
+
+`zoneForSessionType` returns ONE zone per session type. `quality` → Z3. But the catalogue
+row prescribes three bands, and its own `derived_set` step targets say so — measured
+across all 30 live plans:
+
+```
+progressive_tempo:   ceiling / Z2-Z3 / target        (session.zone says "Zone 3")
+```
+
+Scored against Z3 alone, on a session run exactly as prescribed:
+
+| Third | Prescribed | Scored as |
+|---|---|---|
+| opening | Easy **ceiling** → lands in Z2 | ❌ **below floor** |
+| middle | Z2–Z3 transition | ✅ in zone |
+| closing | **Threshold** target → reaches Z4–5 | ❌ **above ceiling** |
+
+**Only the middle third counted.** The founder's own run: **below 29.04 / in 32.26 /
+above 38.71**, HR discipline **32**, and §108 weights HR discipline at **0.50** — half the
+composite. **The engine scored the structure it prescribed as a failure to hold a band it
+never prescribed**, and Kit then narrated that failure back to him.
+
+⚠️ **It is not one row.** Every quality row carrying a `ceiling` step has the same shape —
+`threshold_ladder`, `cv_intervals`, `tempo_over_under`, `goal_pace_sharpener`,
+`threshold_pyramid` — because **a recovery jog is prescribed out of the work band**. That
+was 🎯 McMillan's objection at the sitting; the step data turned it from a worry into
+evidence.
+
+### ⚖️ It resolves a recorded disagreement with data rather than a casting vote
+
+📊 Seiler wanted a prescription-relative in-band percentage. 🎯 McMillan held that a
+percentage-in-band model imported from easy running would mislead on intervals, where
+recovery jogs fall out of band **by design**. **Scoring against the band set the session's
+own structure names gives Seiler his measure and makes McMillan's recovery steps
+compliance.** 📐 The vocabulary already existed in live data: `mp_long_run` declares
+`session.zone: "Zone 2–3"`, a band range, today.
+
+### ⛔ Two binding conditions, both carried into the implementation
+
+1. **Willy.** The raw `hr_in_zone_pct` / `hr_above_ceiling_pct` columns on
+   `strava_activities` are **not repointed**. `limiter.ts` reads them as a Z2 overload
+   signal (`PACING_HOT_PCT_THRESHOLD`) and must keep doing so, or a correctly-executed
+   tempo begins reading as *"ran hot"* — a worse defect than the one being fixed. The
+   owner derives a **separate** answer from the same histogram.
+2. **Sims.** The below-floor bucket may not score as indiscipline where the session
+   prescribes a below-band opening third. This is now the **mechanism** of the defect, not
+   a side condition, and it reduces to one line: a `pace_mode: 'ceiling'` step contributes
+   the easy band to the prescribed set.
+
+### 🔻 The residual, declared rather than hidden
+
+📐 **Only 5 of 77 live analyses (6.5%) carry the per-zone histogram.** The other 93.5%
+fall through to the legacy Z2-anchored figures, which are correct for easy/long/recovery
+and **meaningless for quality**. So this principle governs new analyses and **repairs
+almost none of the existing ones**. Backfilling is a separate decision: it would rewrite
+scores a runner has already seen.
+
+⚠️ **And the amendment that got here is worth keeping.** The mechanism first taken to the
+board was wrong — it claimed the figures were Z2-anchored *unconditionally*, which is true
+of the 93.5% fallback and **false of the histogram path and of the founder's own row**. The
+conclusion survived the correction; the cause did not. `coaching-rulings.md` Amendment 1
+records it.
+
+**Config.** `lib/coaching/prescribedZoneFigures.ts` — `prescribedZonesFor` (the band set)
+and `prescribedZoneFigures` (the split). **Single owner**: this logic was private to
+`analyse-run` while `recalibrate-hr` carried a re-implementation that said so in its own
+comment, and that route **writes these columns back**, so the copy would have silently
+reverted this principle on every row it touched.
+
+**Invariant.** `INV-SCORE-PRESCRIBED-REACHABLE` — every catalogue row, executed exactly as
+its own `main_set_structure` prescribes, must be able to reach a passing HR-discipline
+score. **It goes red on `progressive_tempo` under the pre-§123 rule**, which is how it was
+falsified.
+

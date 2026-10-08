@@ -38,6 +38,10 @@ import { join } from 'node:path'
 // someone reorders an import block. Declaring it makes the pairing reviewable,
 // and makes an unmapped test file a visible gap rather than an absent one.
 const SUBJECTS: Record<string, string[]> = {
+  // §123 — the scorer must agree with the catalogue. Both arms point at the OWNER, so a
+  // mutation to the band logic has to be caught by one of them.
+  'lib/coaching/scorePrescribedReachable.test.ts': ['lib/coaching/prescribedZoneFigures.ts'],
+  'lib/coaching/prescribedZoneFigures.test.ts':    ['lib/coaching/prescribedZoneFigures.ts'],
   'lib/coaching/cohortSimilarity.test.ts':          ['lib/coaching/runHistory.ts'],
   'lib/coaching/fatigueAccumulation.test.ts':       ['lib/coaching/fatigueAccumulation.ts'],
   'lib/plan/longRunReadiness.test.ts':              ['lib/plan/longRunReadiness.ts'],

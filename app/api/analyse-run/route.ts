@@ -18,6 +18,7 @@ import { computeHrStreamSummary } from '@/lib/coaching/streamAnalysis'
 import { computePaceFadeSummary, type StravaSplitMetric } from '@/lib/coaching/paceAnalysis'
 import { fetchRunHistory, findSimilarRuns, summariseCohort, pickWindowDays } from '@/lib/coaching/runHistory'
 import { zoneForSessionType, sessionHRBand } from '@/lib/coaching/zoneRules'
+import { prescribedZoneFigures } from '@/lib/coaching/prescribedZoneFigures'
 import { inferLimiter } from '@/lib/coaching/limiter'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { raceInjuryFlagged } from '@/lib/coaching/raceNarrative'
@@ -239,8 +240,21 @@ export async function POST(req: NextRequest) {
   // lets us pick whichever zone the session prescribed and treat that as "in
   // zone". Falls back to legacy Z2-anchored values when the histogram is
   // missing (rows ingested before the migration).
-  const prescribedZoneForScoring = zoneForSessionType(session.type)
-  const prescribedHrFigures = derivePrescribedZoneHrFigures(activity, prescribedZoneForScoring)
+  // §123 — the band set comes from the SESSION, not from its type alone.
+  const prescribedHrFigures = prescribedZoneFigures(
+    {
+      z1:   activity.hr_pct_z1   as number | null | undefined,
+      z2:   activity.hr_pct_z2   as number | null | undefined,
+      z3:   activity.hr_pct_z3   as number | null | undefined,
+      z4_5: activity.hr_pct_z4_5 as number | null | undefined,
+    },
+    session,
+    {
+      hrInZonePct:       (activity.hr_in_zone_pct       as number | null) ?? null,
+      hrAboveCeilingPct: (activity.hr_above_ceiling_pct as number | null) ?? null,
+      hrBelowFloorPct:   (activity.hr_below_floor_pct   as number | null) ?? null,
+    },
+  )
 
   // Score the session
   const scoreResult = scoreSession({
@@ -399,6 +413,7 @@ const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userI
       actualAvgHr:         activity.avg_hr ?? null,
       hrInZonePct:         prescribedHrFigures.hrInZonePct,
       hrAboveCeilingPct:   prescribedHrFigures.hrAboveCeilingPct,
+      hrBelowFloorPct:     prescribedHrFigures.hrBelowFloorPct,
       efTrendPct,
       rpe:                 completionRes.data?.rpe ?? null,
       fatigueTag:          completionRes.data?.fatigue_tag ?? null,
@@ -590,75 +605,13 @@ const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userI
   })
 }
 
-interface PrescribedHrFigures {
-  hrInZonePct:       number | null
-  hrAboveCeilingPct: number | null
-  hrBelowFloorPct:   number | null
-}
-
-// Maps the activity's full zone histogram onto the session's prescribed zone:
-// "in zone" = % in the prescribed zone band, "above ceiling" = % above that
-// band, "below floor" = % below it. Falls back to the activity's legacy
-// Z2-anchored figures when the histogram is missing (rows ingested before
-// the 20260522 migration). Returns nulls when the session prescribes no zone
-// (rest / strength / cross-train) — those sessions are scored on other axes.
-function derivePrescribedZoneHrFigures(
-  activity: Record<string, any>,
-  prescribedZone: ReturnType<typeof zoneForSessionType>,
-): PrescribedHrFigures {
-  const z1   = activity.hr_pct_z1   as number | null | undefined
-  const z2   = activity.hr_pct_z2   as number | null | undefined
-  const z3   = activity.hr_pct_z3   as number | null | undefined
-  const z4_5 = activity.hr_pct_z4_5 as number | null | undefined
-  const hasHistogram = [z1, z2, z3, z4_5].some(v => v != null)
-
-  // Legacy fallback: pre-migration rows have only the Z2-anchored fields.
-  // They're correct for easy/long/recovery sessions and meaningless elsewhere
-  // — but that's how scoring used to work, so the fallback preserves behaviour
-  // rather than silently dropping data on old runs.
-  if (!hasHistogram) {
-    return {
-      hrInZonePct:       activity.hr_in_zone_pct       ?? null,
-      hrAboveCeilingPct: activity.hr_above_ceiling_pct ?? null,
-      hrBelowFloorPct:   activity.hr_below_floor_pct   ?? null,
-    }
-  }
-
-  if (!prescribedZone) {
-    return { hrInZonePct: null, hrAboveCeilingPct: null, hrBelowFloorPct: null }
-  }
-
-  const safe = (v: number | null | undefined): number => v ?? 0
-  const sum  = (...vs: Array<number | null | undefined>): number =>
-    Math.round(vs.reduce<number>((acc, v) => acc + safe(v), 0) * 100) / 100
-
-  switch (prescribedZone.zone) {
-    case 'Z2':
-      return {
-        hrInZonePct:       safe(z2),
-        hrAboveCeilingPct: sum(z3, z4_5),
-        hrBelowFloorPct:   safe(z1),
-      }
-    case 'Z3':
-      return {
-        hrInZonePct:       safe(z3),
-        hrAboveCeilingPct: safe(z4_5),
-        hrBelowFloorPct:   sum(z1, z2),
-      }
-    case 'Z4-5':
-      return {
-        hrInZonePct:       safe(z4_5),
-        hrAboveCeilingPct: 0,
-        hrBelowFloorPct:   sum(z1, z2, z3),
-      }
-    case 'Z1':
-      return {
-        hrInZonePct:       safe(z1),
-        hrAboveCeilingPct: sum(z2, z3, z4_5),
-        hrBelowFloorPct:   0,
-      }
-    default:
-      return { hrInZonePct: null, hrAboveCeilingPct: null, hrBelowFloorPct: null }
-  }
-}
+// 🔴 `derivePrescribedZoneHrFigures` AND ITS `PrescribedHrFigures` TYPE MOVED OUT, to
+// `lib/coaching/prescribedZoneFigures.ts` (§123, 2026-10-08).
+//
+// It was private here while `app/api/recalibrate-hr/route.ts` carried a
+// RE-IMPLEMENTATION that said so in its own comment. Two producers of one
+// classification, acknowledged in writing. The owner now also reads the session's
+// STRUCTURE rather than only its type, which is the §123 fix: `zoneForSessionType`
+// returns ONE zone for a session the catalogue prescribes in THREE bands, so a
+// correctly-executed progressive tempo scored ~33 on half the composite.
 
