@@ -194,3 +194,26 @@ owner, which dates were never brought under until now. `formatDate` returns **nu
 unparseable input where a bare `toLocaleDateString` renders the string **"Invalid Date"**, so
 callers supply their own fallback. ⚠️ **`plan_start` / `race_date` remain ISO** — they are storage
 and sort keys, not display strings. Gated by `lib/format.dates.test.ts`.
+
+## Completion confirmation line — `● <name?> · <distance>` (ACTIVITY-NAME-WRITER-01, 2026-10-08)
+
+A complete session renders one 10px `var(--strava)` line confirming what was logged. It is
+gated on **`strava_activity_name` OR `strava_activity_km`**, and the distance is the part that
+must survive.
+
+🔴 **It used to be gated on the NAME ALONE, and that became a defect the moment the writers
+stopped fabricating one.** `lib/health/adapter.ts` synthesised a name from `sourceName` — the
+app that WROTE the workout into Apple Health — so this line rendered `● Run (Connect) · 9.9km`.
+Measured 2026-10-08: **37 of 200** live completions carrying a name were fabricated, and **225
+of 229** stored `apple_health` activity rows (47 of them naming a person). The writers now store
+a runner-authored title or **NULL** via `lib/health/activityTitle.ts → runnerAuthoredTitle`, so
+a name-only gate would have **silently dropped the distance from ~98% of logged runs** — the
+confirmation this line exists to give.
+
+**So the name is an optional PREFIX to the fact, not the condition for showing it.** The
+separator `·` appears only when both halves are present. A HealthKit run renders `● 9.9km`.
+
+⚠️ `allCompletions` is `Record<number, Record<string, any>>`, so **the compiler cannot hold this
+gate** — `lib/health/activityTitle.test.ts` asserts the condition's source form, and reverting it
+to `isComplete && completion?.strava_activity_name &&` fails that arm.
+
