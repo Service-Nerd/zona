@@ -6,6 +6,60 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 (later) — LOG-UPDATE-SILENT-RELINK-01 / READ-DIRECTION-OVERCLAIM-01 / READ-EM-DASH-02 · I told the board the wrong cause and the conclusion survived anyway
+
+**Shipped:** "Update log" can no longer silently relink a run. §123: a run is scored
+against the band its session prescribes, not the one its type names. And the plan's
+runner-facing notes lost their em dashes, scoped by the founder's own exemption.
+
+**Dev learning:** I gave the Coaching Board a mechanism that was wrong, in writing, and
+only found out while building the fix. I claimed the HR figures were Zone-2 anchored
+unconditionally. They are not — there has always been a prescription-relative path, and
+the founder's own row went down it. I had measured the two functions either side and
+never traced which value actually reaches the scorer. "Trace the producer" works
+backwards too, and I only ran it forwards.
+
+The conclusion survived, which is the uncomfortable part. A correctly-run progressive
+tempo still could not score above ~33, because `zoneForSessionType` returns one zone for
+a session the catalogue prescribes in three. So the ruling stood and the amendment
+replaced its cause. If I had not gone looking I would have shipped a fix with a false
+rationale attached to it forever.
+
+Second thing: the mutation harness killed only 5 of 12 mutations on my new module. Chasing
+them found a real bug — I read the session type's zone and the step zones and never
+`session.zone`, which is the one field already carrying a range in production — and proved
+one of my own guards was unreachable. One survivor I deleted instead of declaring, because
+the branch it mutated was provably redundant. A survivor you can delete is dead code in the
+source, not a gap in the test.
+
+**Product/creator learning:** The scoping conversation was worth more than the sweep. 834
+em-dash fields sounds like a day's work; 300 of them were session labels the founder had
+already said were fine. Asking him which fields counted turned a sweep into a 15-literal
+fix. The same rule had already been misreported once in this repo with a raw count of 544.
+
+**AI-building learning:** Writing the gate before the fix changed what got fixed. The
+check named nine strings; repairing those surfaced five more with a second dash later in
+the same sentence that my one-pass replacement had skipped straight over. If I had
+grepped and fixed, I would have shipped five of them.
+
+And the boards keep earning it by disagreeing with me rather than agreeing. Silvanto
+declined to veto the thing I brought him as a defect, because it was compliance with a
+rule I had not read properly.
+
+**The honest bit:** three separate times today I was confidently wrong in writing — two
+shipped items on a backlog list I gave the founder, a 47.3% figure that included
+superseded rows, and a board mechanism that was false. Every one came from reading a
+summary instead of measuring the thing, and every one was caught by a mechanism rather
+than by me being careful. The repo's checks are doing more work than I am.
+
+**Hook material:** I wrote a formal finding, took it to a review board, got a ruling, and
+then discovered my stated cause was wrong. The conclusion held. The reason did not.
+
+**Postable?:** yes — "I was right for the wrong reason and only found out because I kept
+digging" is a better story than a clean fix, and the self-contradicting prompt from this
+morning is still the strongest hook of the day.
+
+
 ## 2026-10-08 — LINK-PICKER-ALREADY-LINKED-01 / READ-DIRECTION-OVERCLAIM-01 · two sittings, and both items were filed as the wrong kind of question
 
 **Shipped:** The link picker now says what a session is already linked to instead of
