@@ -321,57 +321,31 @@ let such rows reach `analyse-run`, where `distance_score` divides by planned dis
 webview and cannot be triggered from here; the instrumentation is designed so the **device**
 reports the cause rather than me guessing it.
 
-### 🟡 `HEALTH-ACCESS-DENIED-SURFACE-01` — 🔴 **PREMISE CORRECTED 2026-10-08: it is NOT 6 users who need telling, and the existing doctrine already forbids the fix as filed** *(P3, was P2)* 🧭 **DESIGN BOARD**
+### ✅ `HEALTH-ACCESS-DENIED-SURFACE-01` — **CLOSED 2026-10-08, WILL NOT BUILD AS FILED.** Its own measurement refused it 🧭 **DESIGN BOARD** *(tag retired with the item)*
 
-> 🔴 **I FILED THIS AS *“tell 6 users their Health access is off”*. Measured, those 6 split
-> three ways and only 3 are even candidates:**
+> 🔴 **I FILED THIS AS *"tell 6 users their Health access is off"*. Measured, those 6 split three
+> ways and NOT ONE is a clean case for the surface:**
 >
-> | Users | Evidence | Reality |
+> | Users | Evidence | Verdict |
 > |---|---|---|
-> | **2** (`1afc17e4`, `60d4bdd5`) | **76 and 90 successful posts**; the error on 1 and 10 of 118/154 sweeps | ⛔ **Transient.** Telling them access is off is a **FALSE ACCUSATION** — almost certainly the device locked during a background sweep, which is normal iOS and self-resolves |
-> | **1** (`0a972fdf`) | finds runs, never posts | 🔴 **This is `HK-INGEST-REASON-01`'s bug**, not an access problem |
-> | **3** (`24ba65cb`, `2bce83cd`, `e98c3253`) | **0 workouts found, ever** | The only plausible access cases — and **indistinguishable from “no watch”** |
+> | **2** (`1afc17e4`, `60d4bdd5`) | **76 and 90 SUCCESSFUL posts**; the error on 1 and 10 of 118/154 sweeps | ⛔ **Transient.** Telling them access is off is a **FALSE ACCUSATION** |
+> | **1** (`0a972fdf`) | finds runs, never posts | ✅ **Was `HK-INGEST-REASON-01`'s bug** — fixed 2026-10-08, not an access problem at all |
+> | **3** (`24ba65cb`, `2bce83cd`, `e98c3253`) | **0 workouts found, ever** | ⛔ **Indistinguishable from "owns no watch"** |
 >
-> ⚠️ **AND `matchEmptyCopy`'S OWN COMMENT ALREADY FORBIDS WHAT THIS ITEM PROPOSED**, in as
-> many words: *“IT NEVER NAMES THE CAUSE IT CANNOT KNOW. A denied HealthKit read resolves
-> EMPTY, not as an error, so 'no runs have synced' is a fact and 'your permission is off'
-> would be a guess.”* **Settled ground, and I filed against it.**
+> 🔴 **AND `matchEmptyCopy`'S OWN COMMENT ALREADY FORBADE THE FIX, IN AS MANY WORDS:** *"it never
+> names the cause it cannot know. A denied HealthKit read resolves to the same empty list as a
+> runner who has not run."* **I filed against settled ground that was written in the file I would
+> have had to edit.** → [[feedback-check-doctrine-before-filing-a-finding]]
 >
-> 🔻 **So this is a REWRITE, not a build.** What is actually left: (a) **filter** the
-> transient `"Protected health data is inaccessible"` so it stops reading as a defect in
-> ops, and (b) decide whether the 3 never-found users get anything beyond the honest line
-> that already exists. **Dropped to P3** — the real defect in this area is
-> `HK-INGEST-REASON-01`.
-
-
-**Found closing `HK-NEVER-SYNCED-COHORT-01`'s residual.** The `health_sync_swept`
-instrument has a week of data and it **separates the causes**, exactly as that item
-predicted it would.
-
-📐 **MEASURED across 400 sweep rows / 13 users (2026-10-08):**
-- ✅ **`failed: 0` on every single row** — the repeated 403s are gone; the
-  `HK-FREE-INGEST-LINE-01` gate move fixed them. *(That closes arm (b).)*
-- **6 users report `workouts_found: 0` on EVERY sweep** (38/38, 18/18, 14/14, 10/10, 2/2,
-  1/1) — asked, and HealthKit returned nothing. **Not an ingest defect.**
-- 2 are intermittent (26/38, 6/14) — permission working, no runs in the window. Normal.
-- 🔴 **1 carries a NAMED, USER-FIXABLE cause in the payload:**
-  `error: "Protected health data is inaccessible"`.
-
-**The gap: we detect that string and the runner is never told.** They see a Connections row
-that says connected, no runs arriving, and no reason. The data to explain it is already in
-hand — nothing new needs measuring or building server-side.
-
-⚠️ **This is the shape `HEALTH-SYNC-STALENESS-01` already half-solved** — that ruling made
-staleness visible; this is the next question it raises, which is *why*. The board owns it
-because it is a surface and a sentence, and `connectionStaleCopy` in `lib/ui` is the owner
-to extend rather than a new string somewhere else.
-
-🔻 **Not the whole cohort.** The other 6 `workouts_found: 0` users have no named error:
-either no device writes workouts to Health, or an abandoned account. **A surface cannot fix
-a runner with no watch**, and saying so honestly is part of the ruling.
-
----
-
+> ⚠️ **The honest residual is that there is nothing to say.** Apple's privacy model makes a silent
+> denial read as an empty array (see `HEALTHKIT-ASKED-VS-FLOWING-01`, closed alongside this), so
+> the product genuinely cannot distinguish *"you blocked us"* from *"you have no watch"* from
+> *"you have not run"*. `HEALTH-SYNC-STALENESS-01` already shipped the one true thing we CAN say:
+> **nothing has arrived, and when.** Naming a cause on top of that would be invention.
+>
+> ✅ **What actually fixed this cohort was not a surface.** Three shipped defect fixes
+> (`HK-FREE-INGEST-LINE-01`, `HK-HR-LOCKED-DROPS-RUN-01`, `HK-ZERO-DISTANCE-RUN-01`) removed the
+> real reasons runs were not arriving. **The screen was never the problem.**
 ### ✅ `LINK-PICKER-ALREADY-LINKED-01` — 🧭 **DESIGN BOARD RULED 2026-10-08: SPLIT. The copy half SHIPPED.** The open half is re-filed as `LINK-PICKER-LIST-SHAPE-01` below
 
 > ✅ **SHIPPED — the unanimous half.** A linked session no longer renders the empty-state
@@ -892,7 +866,7 @@ such: the route needs auth, a tier lookup and a service-role client, none of whi
 > `workouts_found: 0` on every sweep** (asked, got nothing — not an ingest defect) and
 > **one carries a named cause**: `error: "Protected health data is inaccessible"`.
 > 🔻 **So the residual is NOT a build.** The product gap it exposes is filed as
-> `HEALTH-ACCESS-DENIED-SURFACE-01` (🧭 Design Board). ⚠️ Also fixed today: this route's
+> `HEALTH-ACCESS-DENIED-SURFACE-01` — ✅ **since CLOSED 2026-10-08, will not build: its own measurement showed 2 of the 6 have 76 and 90 successful posts, so naming a cause would be a false accusation.** ⚠️ Also fixed today: this route's
 > header still asserted the OLD rule and named `lib/health/sync.ts`, **a file that does not
 > exist** — the same self-contradicting-route defect this item was filed for, pointing the
 > other way, introduced by its own fix (`c2158e08`).
@@ -7162,40 +7136,36 @@ authors the pattern set against a corpus that can falsify it, and the Design Boa
 for, *"so it would just work when the pages arrive"*. A missing guide **removes the paragraph**;
 it never degrades to a hub.
 
-### ⚙️ `HEALTHKIT-ASKED-VS-FLOWING-01` — the connect flag records that we ASKED, not that we can READ
-**Board: ⚙️ NO BOARD.** Found 2026-09-24 measuring reach for the Connect email. **RCA done, fix
-deliberately NOT built** — see the population below.
+### ✅ `HEALTHKIT-ASKED-VS-FLOWING-01` — **CLOSED 2026-10-08 as a DOCUMENTED LIMITATION with a recall trigger.** RCA stands; the fix waits on scale ⚙️ **NO BOARD**
 
-`healthkit_connected_at` is written when `requestHealthKitAuth()` returns true, and that function
-returns `Array.isArray(status.readAuthorized)` — **true whenever the call succeeded**. Its own
-comment says so: *"HealthKit can't tell us if read access was actually granted (Apple's privacy
-model — silent denial reads as empty arrays)… treat the call succeeding as 'user saw the prompt and
-didn't bail out'."* **The code is correct and Apple's model is not negotiable. The column name is
-the lie**, and every consumer reads it as an outcome.
-
-`syncOnAppOpen()` is then fired-and-forgotten with a `console.warn`, so a user who granted nothing
-looks permanently connected and the Today connect banner never returns.
-
-⚠️ **THE ALARM WAS MOSTLY WRONG AND THAT IS WHY THIS IS NOT URGENT.** 8 of 16 connected users have
-zero activities, which reads like a broken pipeline. Measured:
-
-- **1 is `zonna.demo@demo.com`**, the demo account.
-- **7 of 8 have NO PLAN AT ALL.** They onboarded, connected, and never generated one. Not blocked: gone.
-- **1 (2026-09-23) has 16 `health_daily_samples` and 0 activities** — the pipeline demonstrably
-  works for them; they have not run.
-
-**Consequence for the email programme, and it is the real cost:** the Connect email targets
-`healthkit_connected_at IS NULL`, so **the people who tapped connect and granted nothing can never
-receive it** — the exact group it was written for.
-
-**The fix when it is worth doing:** add `healthkit_last_data_at`, set on first successful ingest,
-and derive one state every consumer reads — `asked` / `flowing` / `asked_but_silent`. Additive, one
-column, no board. 🔴 **The denial path itself cannot be verified from here** — it needs a device and
-a TestFlight build to confirm what a denying user actually produces.
-
-**Why it waits:** the population today is seven abandoned signups and a demo account. It matters at
-300 users, not 30.
-
+> ✅ **The finding is real and is not going away:** `healthkit_connected_at` is written when
+> `requestHealthKitAuth()` returns true, and that returns `Array.isArray(status.readAuthorized)` —
+> **true whenever the CALL succeeded.** So the column records that we **asked**, not that we can
+> **read**. Its own comment says so. **The code is correct, Apple's privacy model is not
+> negotiable, and the COLUMN NAME is the lie** — every consumer reads it as an outcome.
+>
+> **The real cost, stated plainly:** the Connect email targets `healthkit_connected_at IS NULL`, so
+> **the people who tapped connect and granted nothing can never receive it** — the exact group it
+> was written for.
+>
+> 🔻 **CLOSED, NOT KILLED, AND THE RECALL TRIGGER IS THE POINT** (same pattern as the SLT's
+> stood-down commercial seat). **Today's population is seven abandoned signups and a demo
+> account.** ⚠️ **It matters at 300 users, not 30.**
+>
+> **Recall trigger — reopen when ANY of these is true:**
+> - installs or connected runners pass **~100**
+> - the Connect email programme is actually sent and its reach is measured
+> - a device/TestFlight build exists that can confirm what a *denying* user produces
+>   (🔴 **the denial path cannot be verified from this machine at all** — that is a hard blocker on
+>   the fix, not a preference)
+>
+> **The fix when it is worth doing, already scoped:** add `healthkit_last_data_at`, set on first
+> successful ingest, and derive ONE state every consumer reads — `asked` / `flowing` /
+> `asked_but_silent`. Additive, one column, no board, no migration risk.
+>
+> ⚠️ **Closing this records a known product limitation rather than pending work.** A reader asking
+> *"does `healthkit_connected_at` mean they're connected?"* must find the answer **no** — which is
+> why this stays written down instead of being deleted.
 ### ⚙️ `PLAN-META-HR-DIVERGENCE-01` — `plan.meta` HR can drift from `user_settings`
 **Board: ⚙️ NO BOARD.** Found 2026-09-24 while fixing `PLAN-ZONE-VS-HRTARGET-01`; **founder ruled
 the two paths below are left alone for now.**
