@@ -1116,7 +1116,31 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > em-dash and voice rules on whatever replaces it, and `LEDGER-FATIGUE-HONESTY-01` is a
 > separate open question about the criteria, not this.
 
-### ⚙️ `ADJUST-TRIGGER-MANUAL-DEAD-01` — `'manual'` is a TriggerType with no producer *(filed 2026-10-08, P3)* ⚙️ **NO BOARD**
+### ✅ `ADJUST-TRIGGER-MANUAL-DEAD-01` — **SHIPPED 2026-10-08.** Deleted, and the class is gated ⚙️ **NO BOARD**
+
+> ✅ **`'manual'` removed.** Zero producers measured; no stored `plan_adjustments` row carried
+> it. "Check now" sets `body.manual`, which the route reads as `isManual` to gate throttling
+> and confirmation — whatever fires carries its own type.
+>
+> 🥇 **THE ARRAY IS NOW THE SOURCE AND THE TYPE IS DERIVED FROM IT** (`TRIGGER_TYPES`, with
+> `DETECTED_TRIGGER_TYPES` as the eight). **The compiler proved why within seconds:** deleting
+> the member broke `scripts/backtest-adjustment-triggers.ts`, which had hand-written its own
+> copy of the union **twice**. A vocabulary with two hand-maintained copies is this repo's
+> most-recorded shape; there is one now.
+>
+> 🔻 **So the number for any surface is EIGHT, derived**: ten declared, minus the two that are
+> the runner telling us (`skip_with_reason`, `session_reorder`). It cannot drift from the code
+> the way *"eleven"* did.
+>
+> **Gate** `lib/coaching/triggerProducers.test.ts` — walks every file under `lib/` and `app/`
+> (never a hand-list) and fails if **any** union member has no producer. 6 arms, falsified 2
+> ways. ⚠️ Includes a population arm, because an empty file walk would make every other arm
+> pass on nothing — the class I shipped earlier the same day.
+>
+> 🔴 **And `hollowTestShapes.test.ts`, shipped earlier today, caught my own new test**:
+> `toContain('TRIGGER_TYPES')` also passes against `TRIGGER_TYPESX`. My lint, my test, same day.
+
+### ⚙️ `ADJUST-TRIGGER-MANUAL-DEAD-01` — the original filing, for the record ⚙️
 
 > `TriggerType` declares eleven members; **nothing in the repo constructs `{ type: 'manual' }`**
 > (0 producers, measured). The "Check now" button runs the whole detector set rather than
@@ -6724,7 +6748,48 @@ goes through `TextField`. Replacing a native date input re-opens that.
 
 ---
 
-### ⚙️ `PLAN-SAVE-TWO-WRITER-01` — the sheet saves the rule plan over the server's enriched one
+### ✅ `PLAN-SAVE-TWO-WRITER-01` — **SHIPPED 2026-10-08.** The stream is drained, not abandoned ⚙️ **NO BOARD**
+
+> ✅ **Confirmed exactly as filed (2026-09-23), and still live today.** `runModifyPreview` read
+> until `rule_plan` then `break`ed out of a `for await` — **which cancels the reader**
+> (`readPlanStream`'s own doc says so). The route's `waitUntil` kept enriching and wrote the
+> ENRICHED plan to `plans`; `acceptModify` then saved the RULE plan to the same row. **Two
+> writers, one row, last write wins** — a runner accepting after enrichment landed silently
+> overwrote their own AI coaching.
+>
+> 🔴 **ONE CORRECTION TO THE ITEM, AND IT CHANGED THE BUILD.** It says *"likely answer is to
+> reuse that coordinator"*. The coordinator needs an `enrichmentArrived` call and **the sheet
+> never sees the enrichment, because it closed the stream.** So the fix is TWO parts: keep
+> draining in the background, and *then* `enrichSaveCoordinator` applies completely unchanged.
+> Reuse was right; it was not sufficient.
+>
+> ⚠️ **`it.next()` BY HAND.** A `break` out of a `for await` calls `.return()` and closes the
+> generator — the very behaviour being removed. A `break` out of a `while` does not. **Proved
+> behaviourally on the real generator**, both directions, rather than asserted.
+>
+> ⚠️ **The sheet still does NOT wait**, per the item's own warning: ADR-006 requires a complete
+> plan before the model runs and `PLAN-STREAM-OWNER-01` removed a measured 38,924 ms hold. The
+> UI returns at `rule_plan` exactly as before; only the drain is detached. It uses a **ref**,
+> because it can resolve after the sheet has closed and `setState` would be a no-op — the same
+> reason `GeneratePlanScreen` uses one.
+>
+> 🥇 **`'ignore'` IS THE SUBTLE ONE.** For the wizard it means *"the pending save will carry
+> it"* because `planRef` already holds the merged plan. Here it only means that **because the
+> drain writes the enriched plan into `modifyPreviewRef`** — without that one line, `'ignore'`
+> would mean *discard*, which is the original defect wearing a coordinator.
+>
+> **Gate** `lib/plan/modifySaveRace.test.ts` — 13 arms, **falsified 4 ways** (the pre-fix
+> `for await` shape · `beginSave` moved after the first await · `'ignore'` discarding again ·
+> no fresh coordinator per flow). 🔴 **The gate had to assert ORDERING, not content** — *"it
+> yields the rule plan"* is true of the broken version too, which is the lesson
+> `PLAN-STREAM-OWNER-01` recorded when its own gate had to compare TIME.
+>
+> ⚠️ **`modifyPlanSheet.markup.test.ts` pinned the exact expression and failed on a correct
+> change.** Rewritten to assert the INVARIANT (every write goes through `savePlanForUser`,
+> never `plans` directly) plus the new second write. **A test that pins the spelling of a
+> right line fails on a right change and catches nothing extra.**
+
+### ⚙️ `PLAN-SAVE-TWO-WRITER-01` — the original filing, for the record
 
 Found during `PLAN-STREAM-OWNER-01` (2026-09-23), **pre-existing and unchanged by it.**
 

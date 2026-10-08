@@ -21,7 +21,8 @@ import ReflectionInput from '@/components/training/ReflectionInput'
 // Calendar screen retired — CalendarOverlay.tsx renamed to .old.tsx (brand-product-alignment v2)
 import StravaPanel from '@/components/strava/StravaPanel'
 import { convertDistanceString, convertPaceString, formatPace } from '@/lib/format'
-import { readPlanStream } from '@/lib/planStream'
+import { readPlanStream, type PlanStreamMessage } from '@/lib/planStream'
+import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { upsertCompletion } from '@/lib/plan/completions'
 import { createClient } from '@/lib/supabase/client'
 import { trackEvent } from '@/lib/analytics'
@@ -299,6 +300,11 @@ export default function DashboardClient() {
    */
   const [postRunOrigin, setPostRunOrigin] = useState<'today' | 'session'>('today')
   const [modifyBusy, setModifyBusy] = useState(false)
+  /** PLAN-SAVE-TWO-WRITER-01 — the preview, readable from a detached stream drain that may
+   *  resolve after this component has re-rendered or the sheet has closed. */
+  const modifyPreviewRef = useRef<{ next: Plan; resets: boolean } | null>(null)
+  /** One coordinator per modify flow, reset on clear. Same owner the wizard uses. */
+  const modifyCoordRef = useRef(createEnrichSaveCoordinator<Plan>())
   const [modifyError, setModifyError] = useState<string | null>(null)
 
   /** Regenerate from the overlaid input. Nothing is saved at this point. */
@@ -334,11 +340,37 @@ export default function DashboardClient() {
       const ct = res.headers.get('content-type') ?? ''
       let next: Plan | null = null
       if (ct.includes('ndjson')) {
-        for await (const msg of readPlanStream(res)) {
-          if (msg.type === 'rule_plan') { next = msg.plan; break }
+        // 🔴 PLAN-SAVE-TWO-WRITER-01 (fixed 2026-10-08) — THE STREAM IS NO LONGER ABANDONED.
+        //
+        // This used to `break` out of a `for await` at `rule_plan`, which cancels the
+        // reader. The route's `waitUntil` kept enriching and wrote the ENRICHED plan to
+        // `plans`; `acceptModify` then saved the RULE plan to the same row. **Two writers,
+        // one row, whichever lands last wins** — so a runner who accepted after enrichment
+        // had landed silently overwrote their own AI coaching with the bare rule plan.
+        //
+        // ⚠️ `it.next()` BY HAND, NOT `for await` + `break`. Breaking out of a `for await`
+        // calls `.return()` on the generator and closes the stream, which is precisely the
+        // behaviour being removed — `readPlanStream`'s own doc says "a consumer that
+        // `break`s gets the reader cancelled for it". A plain `break` out of a `while` does
+        // not.
+        //
+        // ⚠️ AND THE SHEET STILL DOES NOT WAIT. ADR-006 requires the runner to hold a
+        // complete plan before the model runs, and `PLAN-STREAM-OWNER-01` removed a measured
+        // 38,924 ms hold. The UI returns at `rule_plan` exactly as before; only the DRAIN
+        // continues, detached.
+        const it = readPlanStream(res)
+        for (;;) {
+          const { value, done } = await it.next()
+          if (done || !value) break
+          if (value.type === 'rule_plan') { next = value.plan; break }
+        }
+        if (next) {
+          modifyPreviewRef.current = { next, resets }
+          drainModifyEnrichment(it)
         }
       } else {
         next = ((await res.json()).plan as Plan) ?? null
+        if (next) modifyPreviewRef.current = { next, resets }
       }
       if (!next) { setModifyError('That change could not be built into a plan.'); return }
       setModifyOpen(false)
@@ -354,19 +386,82 @@ export default function DashboardClient() {
    *  Accept and discard both end here; the back arrow deliberately does not. */
   function clearModify() {
     setModifyPreview(null); setModifyOpen(false); setModifyEdits({}); setModifyError(null)
+    // PLAN-SAVE-TWO-WRITER-01 — a fresh flow gets a fresh coordinator, or a stale 'saved'
+    // state would make the NEXT modification's enrichment patch over an unrelated save.
+    modifyPreviewRef.current = null
+    modifyCoordRef.current = createEnrichSaveCoordinator<Plan>()
+  }
+
+  /**
+   * PLAN-SAVE-TWO-WRITER-01 — drain the rest of the enrichment stream after the preview
+   * has been shown, and order the result against the runner's save.
+   *
+   * Detached on purpose: the runner holds a valid plan either way (ADR-006), so this must
+   * never block the sheet and never surface an error. It mirrors `GeneratePlanScreen`'s
+   * handling exactly, including the REF — this can resolve after the sheet has closed and
+   * the component has re-rendered, and `setState` would be a no-op by then.
+   */
+  function drainModifyEnrichment(it: AsyncGenerator<PlanStreamMessage>) {
+    void (async () => {
+      try {
+        for (;;) {
+          const { value, done } = await it.next()
+          if (done || !value) break
+          if (value.type !== 'final_plan') continue
+          const enriched = value.plan
+          const action = modifyCoordRef.current.enrichmentArrived(enriched)
+          if (action === 'patch') {
+            // Already saved. Write the enriched copy over what they committed.
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) await savePlanForUser(user.id, enriched, supabase)
+            setPlan(enriched)
+          } else if (action === 'ignore') {
+            // Not accepted yet, so the pending accept will carry it — but ONLY because
+            // this line puts it where `acceptModify` reads from. Without it, 'ignore'
+            // would mean "throw the enrichment away", which is the original defect.
+            if (modifyPreviewRef.current) {
+              modifyPreviewRef.current = { ...modifyPreviewRef.current, next: enriched }
+              setModifyPreview(p => (p ? { ...p, next: enriched } : p))
+            }
+          }
+          // 'queue' needs nothing here — a save is in flight and the coordinator holds the
+          // plan until `saveCompleted()` hands it back.
+          break
+        }
+      } catch {
+        // A malformed or dropped stream leaves the runner on the rule plan, which is a
+        // complete plan. Silent by design (ADR-006), and the server's own waitUntil write
+        // remains the backstop.
+      }
+    })()
   }
 
   /** Accept. ⚠️ Saves through `savePlanForUser`, never a direct write. */
   async function acceptModify() {
-    if (!modifyPreview) return
+    const pending = modifyPreviewRef.current ?? modifyPreview
+    if (!pending) return
     setModifyBusy(true); setModifyError(null)
+    // PLAN-SAVE-TWO-WRITER-01 — declare the save BEFORE awaiting anything, so an
+    // enrichment arriving mid-save is queued rather than patched over a write that has
+    // not landed. That ordering is the whole point of the coordinator.
+    modifyCoordRef.current.beginSave()
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setModifyError('You are signed out. Sign in and try again.'); return }
-      await savePlanForUser(user.id, modifyPreview.next, supabase)
-      setPlan(modifyPreview.next)
+      if (!user) {
+        modifyCoordRef.current.saveFailed()
+        setModifyError('You are signed out. Sign in and try again.'); return
+      }
+      await savePlanForUser(user.id, pending.next, supabase)
+      setPlan(pending.next)
+      // Anything that arrived mid-save is now safe to write.
+      const queued = modifyCoordRef.current.saveCompleted()
+      if (queued) {
+        await savePlanForUser(user.id, queued, supabase)
+        setPlan(queued)
+      }
       clearModify()
     } catch {
+      modifyCoordRef.current.saveFailed()
       setModifyError('Could not save that change. Try again.')
     } finally {
       setModifyBusy(false)

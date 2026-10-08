@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-08 — PLAN-SAVE-TWO-WRITER-01 + ADJUST-TRIGGER-MANUAL-DEAD-01 · a break statement was losing people their AI coaching
+**Shipped:** The modify sheet stops abandoning the enrichment stream, so accepting a plan change no longer races the server and overwrites your AI coaching with the plain rule plan. And a trigger type that could never fire is gone.
+
+**Dev learning:** `break`ing out of a `for await` calls `.return()` on the async generator and closes the stream — `readPlanStream`'s own doc comment says so, and the sheet was relying on exactly that to "stop early". It did stop early. It also meant the client never saw the enriched plan, while the server went on writing it to the same row the client was about to overwrite. Two writers, one row, last write wins. The fix is to drive `it.next()` by hand, because a `break` out of a plain `while` does *not* close the generator. I proved that behaviourally on the real generator in both directions rather than asserting it, which turned out to matter: it is the kind of thing you can believe either way.
+
+**Product/creator learning:** The backlog item said "likely answer is to reuse that coordinator" and that was right but not sufficient — the coordinator needs an `enrichmentArrived` call, and the sheet had no enrichment to hand it, because it had closed the stream. So reuse was two parts, not one. The subtle bit is `'ignore'`: in the wizard it means "the pending save will carry it" because a ref already holds the merged plan. In the sheet it only means that *because the drain writes the enriched plan into the ref*. Without that one line, `'ignore'` means discard, which is the original defect wearing a coordinator.
+
+**AI-building learning:** Two guards I shipped earlier the same day caught my own work within the hour. `hollowTestShapes.test.ts` flagged my new test for `toContain('TRIGGER_TYPES')`, which also passes against `TRIGGER_TYPESX`. And deleting the dead `'manual'` member made the **compiler** find two hand-written copies of the trigger vocabulary in a script I wrote this morning — so the array became the source and the type is derived from it. The deletion was worth more for what it exposed than for what it removed.
+
+**The honest bit:** `modifyPlanSheet.markup.test.ts` failed on my correct change, because it pinned the exact string `savePlanForUser(user.id, modifyPreview.next, supabase)`. The invariant it exists to guard — every write goes through `savePlanForUser`, never `plans` directly — was never in danger. A test that pins the spelling of a right line fails on a right change and catches nothing extra, so I rewrote it to assert the rule and added an arm for the new second write. It is easy to read a red test as "I broke something" and reach for the old shape.
+
+**Hook material:** One `break` statement. The server spent 39 seconds writing your AI coaching to the database, and the client then wrote the plain version over the top of it, and whether you kept it depended on which request finished last.
+
+**Postable?:** yes
+
 ## 2026-10-08 — RESHAPE-CONFIG-GATE-01 + LEDGER-ZERO-UNIT-01 · the gate that was meant to end a class, ended it two exports in
 **Shipped:** Every coaching constant in `lib/coaching/constants.ts` is now inside the principle gate, derived from the file rather than hand-listed. And the discipline ledger stopped deleting the word "weeks" at zero.
 

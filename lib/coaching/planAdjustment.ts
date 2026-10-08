@@ -38,18 +38,46 @@ export type AdjustmentType = 'reduce_volume' | 'swap_session' | 'extend_recovery
 // engine does. It's on the same screen as the Auto-adjust toggle — the runner
 // reads it to decide whether to trust the feature with their plan.
 // ─────────────────────────────────────────────────────────────────────────────
-export type TriggerType    =
-  | 'acute_chronic_high'   // load ratio spike vs 4-week rolling avg
-  | 'zone_drift'           // easy runs running too hard (HR score + RPE fallback)
-  | 'shadow_load'          // actual km > planned km by threshold
-  | 'ef_decline'           // aerobic efficiency drop over 4-week window
-  | 'fatigue_accumulation' // N consecutive heavy/wrecked sessions
-  | 'skip_with_reason'     // user-initiated: session skipped with a reason
-  | 'session_reorder'      // user-initiated: session moved to another day
-  | 'readiness_signal'     // pre-session RHR / HRV / sleep deviation
-  | 'manual'               // user tapped "Check now" (ReshapeScreen)
-  | 'fitness_signal'       // ENGINE-01: quality sessions consistently faster than band with HR controlled → benchmark recal prompt
-  | 'long_run_shortfall'   // ENGINE-02: consecutive long runs significantly under planned distance → reduce prescription
+// 🔴 ADJUST-TRIGGER-MANUAL-DEAD-01 (2026-10-08) — `'manual'` WAS REMOVED FROM THIS UNION.
+// It had **zero producers**: nothing in the repo ever constructed `{ type: 'manual' }`, and
+// no stored `plan_adjustments` row carries it. The "Check now" button does not emit a
+// trigger — it sets `body.manual`, which `adjust-plan/route.ts` reads as `isManual` to gate
+// throttling and confirmation, and whatever actually fires carries its OWN type.
+//
+// ⚠️ IT WAS NOT HARMLESS, AND THAT IS WHY IT WENT. The SLT's "eleven live triggers" is this
+// union's LENGTH, and the founder asked for those eleven to be put on the website. One
+// could never fire and two more (`skip_with_reason`, `session_reorder`) are the runner
+// telling us rather than us noticing — so the honest number of things we WATCH FOR is
+// **eight**. A dead union member became a marketing claim.
+//
+// `triggerProducers.test.ts` now fails the build if any member loses its producer.
+//
+// ⚠️ THE ARRAY IS THE SOURCE AND THE TYPE IS DERIVED FROM IT, not the other way round.
+// `scripts/backtest-adjustment-triggers.ts` had hand-written its own copy of these ten, and
+// the compiler caught it diverging the moment `'manual'` was removed. A vocabulary with two
+// hand-maintained copies is this repo's most-recorded defect shape, so there is now one.
+export const TRIGGER_TYPES = [
+  'acute_chronic_high',   // load ratio spike vs 4-week rolling avg
+  'zone_drift',           // easy runs running too hard (HR score + RPE fallback)
+  'shadow_load',          // actual km > planned km by threshold
+  'ef_decline',           // aerobic efficiency drop over 4-week window
+  'fatigue_accumulation', // N consecutive heavy/wrecked sessions
+  'skip_with_reason',     // user-initiated: session skipped with a reason
+  'session_reorder',      // user-initiated: session moved to another day
+  'readiness_signal',     // pre-session RHR / HRV / sleep deviation
+  'fitness_signal',       // ENGINE-01: quality faster than band with HR controlled → benchmark recal prompt
+  'long_run_shortfall',   // ENGINE-02: consecutive long runs under planned distance → reduce prescription
+] as const
+
+/**
+ * The eight the product could honestly claim to WATCH FOR. The other two are the runner
+ * telling us, not us noticing — and that distinction is the whole reason the marketing
+ * number is eight and not ten.
+ */
+export const DETECTED_TRIGGER_TYPES = TRIGGER_TYPES
+  .filter(t => t !== 'skip_with_reason' && t !== 'session_reorder')
+
+export type TriggerType    = typeof TRIGGER_TYPES[number]
 
 export interface AdjustmentTrigger {
   type:   TriggerType

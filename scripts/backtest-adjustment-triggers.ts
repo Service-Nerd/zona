@@ -44,7 +44,10 @@
 // READS ONLY. Never writes.
 import { createClient } from '@supabase/supabase-js'
 import { loadEnvConfig } from '@next/env'
-import { checkAdjustmentTriggers, type AdjustmentCheckInput, type TriggerType } from '../lib/coaching/planAdjustment'
+import {
+  checkAdjustmentTriggers, TRIGGER_TYPES, DETECTED_TRIGGER_TYPES,
+  type AdjustmentCheckInput, type TriggerType,
+} from '../lib/coaching/planAdjustment'
 import { fetchWeeklyLoad, priorWeeks, EMPTY_LOAD } from '../lib/coaching/weeklyActualLoad'
 import { orderedWeekSessions } from '../lib/plan/weekSessions'
 import type { Plan, Session } from '../types/plan'
@@ -54,18 +57,11 @@ const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPAB
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 
-/** The eleven declared types, from the union itself. */
-const ALL_TRIGGERS: TriggerType[] = [
-  'acute_chronic_high', 'zone_drift', 'shadow_load', 'ef_decline', 'fatigue_accumulation',
-  'skip_with_reason', 'session_reorder', 'readiness_signal', 'manual', 'fitness_signal',
-  'long_run_shortfall',
-]
-/** The eight the product could honestly claim to WATCH FOR. The other three are either
- *  user-initiated (`skip_with_reason`, `session_reorder`) or have no producer (`manual`). */
-const DETECTED: TriggerType[] = [
-  'acute_chronic_high', 'zone_drift', 'shadow_load', 'ef_decline',
-  'fatigue_accumulation', 'readiness_signal', 'fitness_signal', 'long_run_shortfall',
-]
+// 🔴 WAS TWO HAND-WRITTEN COPIES OF THE ENGINE'S OWN VOCABULARY, and the compiler proved it
+// the moment `'manual'` was deleted from the union (`ADJUST-TRIGGER-MANUAL-DEAD-01`): both
+// lists still named it. Imported from the owner now.
+const ALL_TRIGGERS: readonly TriggerType[] = TRIGGER_TYPES
+const DETECTED:     readonly TriggerType[] = DETECTED_TRIGGER_TYPES
 
 const QUALITY_TYPES = new Set(['quality', 'intervals', 'tempo'])
 const arg = (f: string) => { const i = process.argv.indexOf(f); return i > -1 ? process.argv[i + 1] : null }
@@ -198,7 +194,8 @@ async function main() {
   for (const t of ALL_TRIGGERS) {
     const e = fired.get(t)
     const detected = DETECTED.includes(t)
-    const tag = detected ? '' : (t === 'manual' ? '  [no producer]' : '  [user-initiated]')
+    // `'manual'` used to need a third tag here; it was deleted for having no producer.
+    const tag = detected ? '' : '  [user-initiated]'
     if (e) {
       reachable++
       console.log(`  ✅ ${t.padEnd(22)} n=${String(e.n).padStart(3)}  runners=${e.users.size}${tag}`)
@@ -208,7 +205,7 @@ async function main() {
     }
   }
   const detectedReachable = DETECTED.filter(t => fired.has(t))
-  console.log(`\n  OF THE EIGHT WE WOULD CLAIM TO WATCH FOR: ${detectedReachable.length} reachable, ${8 - detectedReachable.length} silent`)
+  console.log(`\n  OF THE ${DETECTED.length} WE WOULD CLAIM TO WATCH FOR: ${detectedReachable.length} reachable, ${DETECTED.length - detectedReachable.length} silent`)
   if (detectedReachable.length) console.log(`    reachable: ${detectedReachable.join(' · ')}`)
   const silent = DETECTED.filter(t => !fired.has(t))
   if (silent.length) console.log(`    silent   : ${silent.join(' · ')}`)

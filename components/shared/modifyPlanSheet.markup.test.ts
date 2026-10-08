@@ -25,9 +25,21 @@ describe('P-02 — the save path is the single writer', () => {
     // Nine routes once bypassed it and persisted unvalidated plans
     // (SAVE-VALIDATE-01). It is ALSO what supersedes week-keyed rows, so a
     // direct write would skip the collision guard as well.
-    expect(DASH).toContain('await savePlanForUser(user.id, modifyPreview.next, supabase)')
-    const fn = DASH.slice(DASH.indexOf('async function acceptModify'), DASH.indexOf('async function acceptModify') + 900)
+    // ⚠️ ASSERTS THE INVARIANT, NOT THE LITERAL LINE. This used to pin the exact
+    // expression `savePlanForUser(user.id, modifyPreview.next, supabase)`, and
+    // `PLAN-SAVE-TWO-WRITER-01` (2026-10-08) legitimately changed it: accept now reads
+    // `pending` (the ref, so a detached stream drain can update it) and saves a SECOND
+    // time when the coordinator hands back a plan that arrived mid-save. The rule being
+    // guarded — every write goes through `savePlanForUser` and never touches `plans`
+    // directly — is unchanged, and a test that pins the spelling of a correct line fails
+    // on a correct change while catching nothing extra.
+    const i  = DASH.indexOf('async function acceptModify')
+    const fn = DASH.slice(i, i + 1600)
+    expect(fn).toMatch(/await savePlanForUser\(user\.id, [A-Za-z.]+, supabase\)/)
     expect(fn).not.toMatch(/from\('plans'\)|plan_json/)
+    // 🔴 And the second write — the queued enrichment — must go through it too. That is
+    // the write the two-writer race was losing.
+    expect(fn).toContain('const queued = modifyCoordRef.current.saveCompleted()')
   })
 
   it('nothing regenerates until Apply, and nothing saves until Accept', () => {
