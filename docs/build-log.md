@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-08 — two board sittings · both items were filed as one kind of question and were another
+## 2026-10-08 — LINK-PICKER-ALREADY-LINKED-01 / READ-DIRECTION-OVERCLAIM-01 · two sittings, and both items were filed as the wrong kind of question
 
 **Shipped:** The link picker now says what a session is already linked to instead of
 offering to link it. The Coaching Board ruled on the run read and found a scoring defect

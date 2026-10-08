@@ -238,9 +238,63 @@ a runner with no watch**, and saying so honestly is part of the ruling.
 
 ---
 
-### 🟡 `LINK-PICKER-ALREADY-LINKED-01` — the picker offers the run the session is already linked to *(filed 2026-10-07, P2)* 🧭 **DESIGN BOARD**
+### ✅ `LINK-PICKER-ALREADY-LINKED-01` — 🧭 **DESIGN BOARD RULED 2026-10-08: SPLIT. The copy half SHIPPED.** The open half is re-filed as `LINK-PICKER-LIST-SHAPE-01` below
+
+> ✅ **SHIPPED — the unanimous half.** A linked session no longer renders the empty-state
+> instruction over a full list. Pattern `ux-principles.md` § *the already-done state is a
+> SIXTH state* · constant `lib/ui/linkPickerCopy.ts` · gate `linkPickerCopy.test.ts`
+> (10 arms, falsified 3 ways). Registry row dated 2026-10-08.
+>
+> ⛔ **NO VETO, AND THE REASON IS THE FINDING.** Silvanto declined explicitly: the filter
+> this item flagged as the bug — **keeping** the already-linked run so it can render
+> `--moss-soft` — is **compliance** with `BUTTON-COMPONENT-01` (*the moss active fill is the
+> only selected affordance*). Removing it would delete the only signal saying *this is the
+> one you have*. **The state must be SAID, not removed**, and `:372` is untouched.
+>
+> ⚖️ **STILL OPEN, and this is why the item is not closed: should the list exist on a
+> linked session at all?** 🎪 Collins — remove it, reuse the *“Wrong one?”* control already
+> live fifty lines up. 📱✋ Wroblewski + Silvanto — keep it, and bring **remove** onto this
+> surface, since unlink lives on `SessionScreen`. **Recorded UNRESOLVED.** The chair noted
+> the two **converge** if “Wrong one?” opens exactly that list, so it is a sequencing
+> question. 🔻 **The missing artefact is named: the founder on a device.** Six runners have
+> ever logged a run, so no behavioural measurement exists.
+>
+> 🔴 **A worse defect was SEVERED → `LOG-UPDATE-SILENT-RELINK-01`** (P1, ⚙️ no board).
+
 
 Founder: *"seems i can still manually link it to the same run its linked against."* Confirmed in `SessionPopupInner`: the claimed-filter **deliberately keeps** the activity this session already holds (`r.id !== completion?.strava_activity_id && r.id !== completion?.apple_health_uuid`), so it can render as selected. But the session was `DONE`, the post-run screen already offers **"Unlink this run"**, and the log view still presents a fresh "Optional, select from recent runs" list. **Two surfaces, two different mental models of the same state.** Not obviously a defect — a ruling on what the log view should say once a session is linked.
+
+### 🟡 `LINK-PICKER-LIST-SHAPE-01` — should the link picker's LIST exist on an already-linked session? *(filed 2026-10-08, P2)* 🧭 **DESIGN BOARD** · 🔻 **BLOCKED ON A DEVICE**
+
+**The open half of `LINK-PICKER-ALREADY-LINKED-01`, given its own id** because the copy half
+shipped and one id cannot sit in both registers — `audit-docs.sh` flags exactly that, and it
+was right to.
+
+⚖️ **Design Board 2026-10-08: INSUFFICIENT EVIDENCE.** Two coherent shapes, recorded
+unresolved rather than merged, because the first screen the runner sees differs:
+
+| Seat | Position |
+|---|---|
+| 🎪 **Collins** | **The list should not exist in this state.** *“Linked to your 9.9km run, Wednesday. Wrong one?”* — and **“Wrong one?” is already live** on the auto-match suggestion fifty lines up. *“You wrote the right control and did not reuse it on the state that needs it most.”* |
+| 📱 **Wroblewski** + ✋ **Silvanto** | **Keep the list, and bring REMOVE onto this surface.** Unlink lives on `SessionScreen`, so *the one thing a runner here might want is the one thing absent*. Wroblewski counted the current path at **four actions to confirm what the previous screen already said.** |
+
+⚠️ **The chair's note is the route out, and it means this is SEQUENCING, not a real
+disagreement about the end state: the two CONVERGE if “Wrong one?” opens exactly
+Wroblewski's list**, pre-scrolled to the current selection.
+
+🔻 **What would settle it, and it is the only thing that would: the founder on a device, on a
+linked session, saying which of the two he wanted when he tapped it.** Six runners have ever
+logged a run, so **no behavioural measurement exists** and manufacturing one would be the
+three-card proof band again.
+
+⛔ **DO NOT implement Collins' half citing `ux-principles.md` § the already-done state.** That
+rule governs the SENTENCE, not the control, and says so in as many words. An arm in
+`linkPickerCopy.test.ts` asserts the change-offer is still present precisely so a future edit
+cannot quietly take his side under cover of the shipped ruling.
+
+⚠️ **Also not ruled on: where unlink lives.** `UX-POSTRUN-01` placed it on `SessionScreen`;
+Wroblewski's objection that the destructive action is absent from the surface offering the
+constructive one is recorded and open.
 
 ### 🔴 `LOG-UPDATE-SILENT-RELINK-01` — “Update log” can silently relink a session to a different run *(filed 2026-10-08, P1)* ⚙️ **NO BOARD** *(ADR-012 restoration)*
 
