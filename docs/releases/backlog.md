@@ -992,6 +992,42 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > from `5:24–5:39` to `4:48–5:00` and `4:15–4:25`, i.e. **faster, on a runner whose fitness had gone
 > the other way.** Now scoped to sessions whose steps actually moved; he changes **0 sessions**.
 
+### 🔴 `CLAY-PLAN-THREE-FAULTS-01` — his plan is NOT a recalibration victim; it was born inconsistent *(filed 2026-10-09)* ⚙️ **NO BOARD** *(needs `/zona-debug` first)*
+
+> 🔴 **I HAD CLAY'S STORY WRONG TWICE AND THE ARCHIVE SETTLED IT.** I said he generated a plan and
+> *"later came back and gave us a 5K time"*, so `applyRecalibration` left his steps behind. **Both
+> halves are false.**
+>
+> **Evidence — `plan_archive` holds the exact pre-write state.** His 5K of 20:30, `vdot 48.4`,
+> `anchor 46.9` and the 4:29–4:42 headers are ALL present in the snapshot taken *before* the only
+> write his plan has ever had. **He gave the benchmark in the wizard on 2 Oct; the plan was
+> inconsistent from the moment it was created.** `recalibrations_applied` is null and
+> `meta.generated_at` never moved.
+>
+> **What the 3 Oct write actually was:** his **foundation weeks being composed** (plan starts
+> 2027-01-04, created 2026-10-02 — a 13-week runway, so ADR-020's deferred decision). The full
+> 38-field diff shows it added `uncovered_runway_weeks: 10` and replaced week 0's sessions.
+>
+> **So his plan carries THREE distinct faults, none of them the recalibration bug:**
+>
+> | | |
+> |---|---|
+> | **1** | Quality **steps** priced from `buildFallbackPace`'s level table while the **headers** came from his benchmark — **present at creation**, cause unidentified. His generation was messy: `plan_enrich_failed`, `plan_save_invalid`, and **three** `plan_refused_by_design` events inside 30 minutes. |
+> | **2** | The 3 Oct foundation compose **stripped `pace_target` and `hr_target` off his foundation sessions** and substituted `duration_mins`. The archive HAS `5:09–6:10 /km` on them; the live plan has nothing. **12 sessions with no pace or HR guidance.** |
+> | **3** | Generic `"Quality: Threshold"` labels with no catalogue identity — an older engine, pre-ADR-018. |
+>
+> ⚠️ **IS FAULT 2 STILL LIVE? UNKNOWN, AND I DID NOT MANAGE TO REPRODUCE IT.** My attempt composed
+> **zero** foundation weeks because I passed the plan start as both the start and today, so the gap
+> was nil — the test did not reach the condition and proves nothing either way. **This matters: if
+> the foundation compose still drops paces, every runner with a long runway loses them.** It needs
+> `/zona-debug`, not a guess.
+>
+> **Not repairable by re-pricing** (the gate refuses: fixing the pace breaks
+> `INV-PLAN-LABEL-MATCHES-PACE`, because his sessions are labelled Threshold with CV-anchored steps).
+> **Regenerating gives 15 errors → 0** and real session names. He has 0 runs logged and starts
+> 4 Jan, so regeneration is cheap — but it should wait until fault 2 is understood, or it may be
+> rebuilt straight back in.
+
 ### 🏃 `RECAL-DISTANCE-CLAUSE3-01` — §125 clause 3 is ruled and NOT built; here is the number the ruling lacked *(filed 2026-10-09)* 🏃 **COACHING BOARD**
 
 > The board ruled that a recalibration re-derives **everything** descending from pace, distance
