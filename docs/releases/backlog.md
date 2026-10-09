@@ -950,29 +950,24 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > ⚠️ **Ops-only. No runner-facing surface, no prescription, no tier, engine untouched** — the
 > founder's "minimum negative impact" constraint.
 
-### ✅ `RECAL-PACE-TWO-WRITER-01` — **SHIPPED 2026-10-09.** Recalibration re-prices the prescription ⚙️ **NO BOARD** *(defect fix)* + 🏃 **COACHING BOARD** *(§125 ruled, RECAL-SIZING-PROPERTY-01)*
+### 🔻 `RECAL-LIVE-REPAIR-01` — three live plans still hold paces from a fitness their runner no longer has *(filed 2026-10-09, FOUNDER DECISION)* 👤 **FOUNDER**
 
-> ✅ **Fixed, in four stages, each with its own gate.** `applyRecalibration` rewrote `pace_target`
-> and `hr_target` only, so a confirmed recalibration moved the display and left the prescription.
-> Now: steps re-priced from their recovered structural anchors, header **scaled** (not recomputed,
-> so a no-op is byte-identical), the progression ramp re-priced, and the HR write **removed**.
+> The engine fix shipped in `441bf20c` (`RECAL-PACE-TWO-WRITER-01`, stages 0–3). **It reaches no
+> existing plan**, because the live-plan policy is new-plans-only and a recalibration only re-prices
+> when the runner logs a new benchmark and confirms.
 >
-> 🥇 **THE COMPOSITION GATE FOUND TWO MORE LIVE DEFECTS THE ITEM DID NOT KNOW ABOUT**, because
-> **zero harnesses had ever called `applyRecalibration`** — not the 14,268-plan sweep, not the
-> 6,066-case parity grid, not the cohort or fitness harnesses: **(a)** the HR write put THRESHOLD
-> HR on VO2max sessions whose own zone string said Zone 4–5, **45 sessions across 36 plans, at every
-> magnitude including a no-op**; **(b)** the progression RAMP (`5:58 → 5:12 /km`) matched no single
-> anchor band and was left stale on every recalibration.
+> **Three stored plans carry the defect**, measured by `INV-PLAN-STEP-PACE-FROM-GUIDE`:
+> `c5d3ae8b` (8 sessions), `3cc7c3a9` (4), `8a2858ab` (1). ⚠️ **`c5d3ae8b` starts 12 Oct** —
+> Battersea Half, knee history, her quality steps priced ~25 s/km faster than her own stated
+> fitness.
 >
-> 🔴 **AND IT FOUND ONE OF MINE: my first fix was not idempotent.** Recalibrating a runner to the
-> benchmark they already held introduced **72 new violations across 36 plans**, because the header
-> was *recomputed* through the generator's own owner — a legitimate branch, the wrong one here, since
-> it emits a different FORM than generation wrote. Fixed by scaling the stored band.
+> **The repair is deterministic and needs no runner contact:** re-run the corrected recalibration
+> with each plan's own stored `meta.benchmark`. It goes through the governed owner and invents no
+> prescription. ⚠️ **Production is READ-ONLY from the dev environment**, so this is a script the
+> founder runs or an action taken through the app — with a per-plan before/after diff to approve
+> first, and a predicate proven to answer differently in the two states (`/build` §4b).
 >
-> **Verified:** 537 files / 4,807 tests · production build clean · `verify:parity` **IDENTICAL,
-> 6,066 cases** (generation provably untouched) · sweep **0 new violations on 14,268 plans** ·
-> liveness **woken** · composition gate 10 arms, falsified 3 ways (revert the header scale, stop
-> re-pricing steps, declare the dose writable).
+> 🔻 **Founder's call, because it writes to live plans three days before one of them starts.**
 
 ### 🏃 `RECAL-DISTANCE-CLAUSE3-01` — §125 clause 3 is ruled and NOT built; here is the number the ruling lacked *(filed 2026-10-09)* 🏃 **COACHING BOARD**
 

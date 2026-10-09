@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — RECAL-PACE-TWO-WRITER-01 · the recalibration moved the display and left the prescription
+**Shipped:** a confirmed benchmark recalibration now re-prices a plan's actual work steps and header instead of only the header, and no longer touches heart rate at all.
+
+**Dev learning:** three separate lessons, and the order matters because each one only showed up after the previous fix.
+(1) **The function I needed did not exist, so nothing could share it.** The §120 header rule was an inline expression inside the session composer. That is *why* `applyRecalibration` wrote the generic category band — there was no `qualityHeaderPace` to call. Extracting it was the actual fix; everything else was consequence.
+(2) **I wrote a duplicate owner and deleted it the same hour.** I needed the inverse of `durationForMainSet`, wrote `mainSetForDuration`, and only then read `durationForMainSet`'s own doc comment, whose FIRST LINE says "the inverse of `mainSetMinutes`". Mine agreed with the existing one to six decimal places and still had to go.
+(3) **Scaling beats recomputing when you cannot reconstruct the original inputs.** My first fix recomputed the header through the generator's own owner — a legitimate branch, the wrong one here, because without the rep plan it emits a different *form*. So recalibrating a runner to the benchmark they already had introduced 72 new invariant violations at zero fitness change. Scaling the stored band is a no-op at factor 1 by construction.
+
+**Product/creator learning:** the defect's harm ran the opposite way to my first write-up. I told the founder a runner would under-run her sessions because the header looked slow. Measured, her *steps* were ~25 s/km too FAST for her own stated fitness, with a knee history — the header was the honest number and the prescription was the stale one. Also: "re-price" and "reshape" sound like the same job and are not. The dose is the prescription; the distance is a consequence. Getting that seam right is what let a defect fix stay a defect fix.
+
+**AI-building learning:** the single most valuable thing I did was write the check that had never existed — a test that runs `generate → recalibrate → validate`. **Zero harnesses had ever called `applyRecalibration`**: not the 14,268-plan sweep, not the 6,066-case parity grid, not the cohort or fitness harnesses. It found two live defects the item did not know about AND the non-idempotency in my own fix, within minutes of being written. The lesson is uncomfortable and general: I had been reasoning carefully about a function that no check had ever executed, and careful reasoning found none of the three things one cheap composition test found immediately.
+
+**The honest bit:** my RCA was wrong twice before it was right, and both times I had written it down confidently. First "her plan predates the CV fix" — her plan was built two days *after* it. Then "the engine is clean, regenerating gives zero hits" — true, and an artefact of my own input, because I regenerated from a stale stored field the buggy writer never updates. I was comparing two different runners and reporting it as evidence. Then the invariant the board specified turned out to be unable to fire: four cuts, 4,713 → 4,680 → 2,213 → 0 false fires, and that fourth, clean version was **also 0 on every broken plan**. Quiet on correct plans and quiet on broken ones. The skip was the signal — a band the pace guide cannot produce IS the violation — but I only saw that after building the wrong check four times.
+
+**Hook material:** "The check I wrote to catch the bug came back green on all four plans that had it. The reason it skipped them was the bug." Or: four attempts, 4,713 false alarms, then zero — and zero catches, because a stale pace matches nothing in a guide rebuilt from the new benchmark.
+
+**Postable?:** yes — the composition-gap finding is the strongest one. A function that had never been executed by any check, found by one test, three defects in minutes.
+
 ## 2026-10-09 — AUDIT-FOUNDATION-MISCOUNT-01 · the digest escalated an engine regression that did not exist
 **Shipped:** The plan audit stops reporting plan-wide invariant violations as foundation-week violations, and an input-level breach stops being labelled an engine regression.
 
