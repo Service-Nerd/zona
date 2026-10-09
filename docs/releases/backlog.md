@@ -7821,6 +7821,29 @@ seeing in one place.
 
 ---
 
+### 🔻 FOUNDER ACTION — paste the corrected Q2 into the daily digest routine *(filed 2026-10-09)*
+
+`OPS-DIGEST-TRIAL-COHORT-01` is shipped on the repo side and **has no effect until the cloud
+routine's prompt is updated.** The routine is at claude.ai (trigger `trig_01P5snwo2k4reDGrX4Z3wkyC`),
+not in this repo, so nothing here can apply it.
+
+**What to do:** open the routine's prompt, replace the whole `Q2` block with the SQL in
+`docs/runbooks/digest-trial-funnel.md` § *"Q2 — active-user tiers and the TRIAL FUNNEL"*, then
+paste it back into that runbook verbatim so the transcript stays byte-identical, and run
+`npx vitest run lib/ops/digestTrialSqlMirror.test.ts`.
+
+**Optional but useful:** the runbook also carries a `Q2B` ("WHO, not how many"), to run whenever
+`at_risk_trialing > 0`. A count says there is a leak; it does not say where.
+
+✅ **The SQL was executed against production before being written down** — old predicate **0**,
+corrected **5 on trial**, **1 at risk**. It is not an untested block.
+
+⚠️ **Until this is pasted, the digest still reports a trial funnel of zero every morning**, and
+that reads exactly like nothing to report. The at-risk runner it cannot see started 2026-10-02
+and was 6 days quiet on day 6 of 14 when measured.
+
+---
+
 ### 🔻 FOUNDER ACTION — run these in the Supabase SQL editor
 
 **1. Apply the migration** — paste the contents of
