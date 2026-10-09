@@ -29,6 +29,23 @@ Auto-migration is transparent to the user. After the first load, all subsequent 
 Upserts to `plans` table with `onConflict: 'user_id'` (one row per user).
 Called by every plan-mutation path: `DashboardClient.handlePlanSaved` (wizard), the in-client save, and the server routes (`adjust-plan`, `confirm-adjustment`, `revert-adjustment`, `recalibrate-zones`, `recalibrate-taper`, `post-race-reshape*`, `maintenance-block`).
 
+**Validation (single owner, and it dispatches by plan kind):** before the upsert,
+`savePlanForUser` validates the plan through `validateSavedPlan`
+(`lib/plan/validateStoredPlan.ts`) — §116's `validateBaseBuildBlock` for a base-build plan,
+§75's `validateMaintenanceBlock` for a maintenance plan, and `validatePlan` for a race plan.
+It **throws only under `NODE_ENV=test`**; in production it records `plan_save_invalid` and
+persists anyway, because a runner whose reshape fails to save is worse off than one holding a
+plan with a violation in it.
+
+⚠️ **GATED ON `meta.generator_input`, which is a real limitation.** `validatePlan` needs the
+input the plan was built from; legacy plans predate the field and are skipped rather than
+guessed at. 🔴 **`generateBaseBuildPlan` did not stamp it until 2026-10-09**
+(`BASEBUILD-GENINPUT-01`), so base-build plans were saved with this gate silently skipped — and
+stamping it then exposed that the gate ran the RACE validator on every kind, which is why
+`validateSavedPlan` dispatches. Deliberately **`validatePlan` and not `validateReshapedPlan`
+for a race plan**: the reshape variant skips two race-week invariants, which is correct there
+and a silent weakening of this gate.
+
 **Archiving (single owner):** before the upsert, `savePlanForUser` reads the currently-stored plan and, **only when the incoming plan is for a different race** (`race_name|race_date` signature differs), inserts the prior plan into `plan_archive` (surfaces the Me → Plan history screen). Same-race mutations — reshape, recalibrate, sub-threshold auto-apply — deliberately do **not** archive, so the race-labelled history screen isn't flooded with near-duplicate "replaced today" rows. Archive failure is logged, never thrown (best-effort vs the primary upsert; N-015-compliant — no silent void write). Because archiving is centralised here, it fires under the same client (and thus the same RLS/service-role context) that successfully persists the plan.
 
 **Maintenance handoff (ADR-013):** the post-race maintenance plan is a **standalone plan** (`meta.plan_kind='maintenance'`, name "After {race}"), not weeks appended to the race plan. `/api/maintenance-block` saves it via `savePlanForUser`; because its `race_name` differs from the finished race plan, the **same race-change archive path above** moves the completed race plan into history — reused, not a separate code path. Maintenance `week_n` continues the sequence (26+) so its completions don't collide with the archived race plan's; the app keys `week_n` by `week.n` (not array position).

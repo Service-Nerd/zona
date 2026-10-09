@@ -215,3 +215,82 @@ describe('AUDIT-MAINTENANCE-KIND-01 — the maintenance kind is dispatched', () 
     expect(src).toMatch(/source_injured:/)
   })
 })
+
+// 🔴 THE CONTRACTS NAME THE OWNER — and two of them did not, invisibly.
+//
+// Asked on 2026-10-09 whether the ops-digest fixes had updated the contracts,
+// `audit-docs.sh` said ALL CLEAN. It was right about what it checks and wrong about
+// the question. TWO contracts were stale:
+//
+//   · `api/ops-plan-audit.md` said "Runs `validatePlan` … over every stored plan".
+//   · `api/ops-events.md` said "`validateReshapedPlan` … is the single owner of
+//     'validate a stored plan'" — an OWNERSHIP claim, so a reader following D-08
+//     would reach for the wrong function.
+//
+// ⚠️ NEITHER WAS REACHABLE BY THE EXISTING CHECK, for two structural reasons worth
+// recording because they will recur:
+//   1. The audit maps `app/api/X/Y/route.ts` -> `docs/contracts/api/X-Y.md` BY
+//      FILENAME. `ops-events.md` documents behaviour that lives in the plan-audit
+//      route and names a different route as its owner, so a change to plan-audit is
+//      invisible to it.
+//   2. "Touched" means committed TODAY. `ops-plan-audit.md` was updated earlier the
+//      same day by a different ship, which satisfied the arm for the whole day — a
+//      per-day granularity cannot see a SECOND change to the same route.
+//
+// ⚠️ AND A CITATION-MATCHING GATE WAS MEASURED AND REJECTED. Flagging any contract
+// that cites a changed source path yields 15 candidates, nearly all false: 14
+// contracts cite `DashboardClient.tsx`, so any edit to that 7,000-line file would
+// flag all of them. A check that cries wolf gets switched off, which this repo
+// already records as equivalent to having none.
+//
+// So this arm is deliberately NARROW: the two contracts that document the
+// stored-plan audit must name the dispatcher. No false positives by construction.
+describe('the stored-plan audit contracts name the current owner', () => {
+  const read = (f: string) =>
+    readFileSync(join(__dirname, '..', '..', 'docs', 'contracts', 'api', f), 'utf8')
+
+  /**
+   * ⚠️ NEGATIVES ARE ANCHORED TO LINE START, and that is the whole trick here.
+   *
+   * The first cut asserted `.not.toMatch(/Runs `validatePlan`/)` over the whole
+   * file — and failed, because the CORRECTION I had just written quotes the stale
+   * claim in order to explain it. Third instance today of an arm matching its own
+   * prose.
+   *
+   * A contract's LIVE claim is a line-initial statement; a quoted historical one is
+   * inline inside a sentence. Anchoring to `^` separates them by construction,
+   * without needing to strip or recognise correction notes.
+   */
+  const liveClaims = (doc: string) =>
+    doc.split('\n').filter(l => /^(Runs|Uses) `/.test(l.trim()) && l.trim() === l)
+
+  it('ops-plan-audit.md names validateStoredPlan as what it runs', () => {
+    const doc = read('ops-plan-audit.md')
+    const claims = liveClaims(doc)
+    expect(claims.length, 'no line-initial "Runs `…`" claim found — the arm is vacuous')
+      .toBeGreaterThan(0)
+    expect(claims.join(' ')).toMatch(/Runs `validateStoredPlan`/)
+    expect(claims.join(' '), 'the live claim names validatePlan again')
+      .not.toMatch(/Runs `validatePlan`/)
+  })
+
+  it('ops-events.md names validateStoredPlan as the owner, not validateReshapedPlan', () => {
+    const doc = read('ops-events.md')
+    const claims = liveClaims(doc)
+    expect(claims.length, 'no line-initial "Uses `…`" claim found — the arm is vacuous')
+      .toBeGreaterThan(0)
+    expect(claims.join(' ')).toMatch(/Uses `validateStoredPlan`/)
+    expect(claims.join(' '), 'the live claim names validateReshapedPlan as the owner again')
+      .not.toMatch(/Uses `validateReshapedPlan`/)
+  })
+
+  // ⚠️ THE OTHER DIRECTION. `validateReshapedPlan` is NOT deprecated — the reshape
+  // route calls it for exactly what its name says. An arm that pushed the contracts
+  // to disown it would be wrong, so this pins that it stays described.
+  it('validateReshapedPlan is still documented as the RESHAPE validator', () => {
+    const doc = read('ops-events.md')
+    expect(doc).toMatch(/`validateReshapedPlan`/)
+    expect(doc).toMatch(/reshape/i)
+  })
+})
+

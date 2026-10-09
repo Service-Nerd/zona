@@ -74,15 +74,16 @@ being guarded is an **early return**.
 > producer's row an owner it does not have.
 
 
-**PLAN-AUDIT-01 (2026-09-03).** Runs `validateReshapedPlan` over every stored plan and records
-the ones breaching their own constitution.
+**PLAN-AUDIT-01 (2026-09-03).** Runs `validateStoredPlan` over every stored plan and records
+the ones breaching their own constitution. *(Was `validateReshapedPlan` until 2026-10-09 — see
+below.)*
 
 **PLAN-STORED-SCHEMA-DRIFT-01 (2026-09-24) — it now asks three questions, not one.**
 `lib/ops/storedPlanProbes.ts → storedPlanCodes()` is the single owner of a stored plan's code set:
 
 | Source | Code shape | The defect it exists for |
 |---|---|---|
-| `validateReshapedPlan` | `INV-PLAN-…` | the original probe |
+| `validateStoredPlan` | `INV-PLAN-…` / `INV-MAINT-…` | the original probe; dispatches by `plan_kind` since 2026-10-09 |
 | `schemaCodesFor` — `PlanSchema` over the stored row | `SCHEMA:<path>` | `meta.resting_hr = 0` made **10 of 22 plans** schema-invalid on a `.positive()` rule that had been right since the day it was written, and **nothing ever parsed a stored plan**, so it was invisible for months |
 | `hrBandCodesFor` | `HR-ZONE-STRING-MISMATCH`, `HR-BAND-MISMATCH` | a VO2max session rewritten into the threshold band is **self-consistent**, so `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` passes it. Only comparing against the catalogue category finds it |
 
@@ -129,9 +130,19 @@ set against the last set it recorded: a first sighting alerts once then goes qui
 alerts immediately (the regression case), and a **resolved** plan alerts once so improvement is
 visible too. Self-baselining — no snapshot to maintain, no cutoff to go stale.
 
-Uses `validateReshapedPlan` rather than a second implementation (D-08): that function is the single
-owner of "validate a stored plan", preferring `meta.generator_input` and falling back for pre-PV2-A
-plans. Deduped per user within 20h. `detail` carries `codes`, `foundation_week_violations`, a
+Uses `validateStoredPlan` rather than a second implementation (D-08).
+
+🔴 **THIS PARAGRAPH NAMED THE WRONG OWNER UNTIL 2026-10-09.** It said
+*"`validateReshapedPlan` … is the single owner of 'validate a stored plan'"*. It is not, and a
+reader following D-08 would have reached for the wrong function. **`validateStoredPlan`
+(`lib/plan/validateStoredPlan.ts`) is the owner**; it dispatches on `plan_kind` to §116's
+`validateBaseBuildBlock`, §75's `validateMaintenanceBlock`, or `validateReshapedPlan` for a
+race plan — which still prefers `meta.generator_input` and falls back for pre-PV2-A plans.
+
+⚠️ **`validateReshapedPlan` IS STILL CORRECT IN ITS OWN RIGHT** and is not deprecated:
+`app/api/adjust-plan/route.ts` calls it to validate a **reshape**, which is what its name says
+and what it is for. The stale claim was about ownership of the STORED-PLAN audit, not about the
+function. Deduped per user within 20h. `detail` carries `codes`, `foundation_week_violations`, a
 5-violation `sample`, and `plan_updated_at`.
 
 **Response 200:** `{ checked, invalid, unchanged, changed, skipped, flagged }` — watch `changed`, not `invalid`.

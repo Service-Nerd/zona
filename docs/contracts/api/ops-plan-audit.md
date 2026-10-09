@@ -9,8 +9,29 @@
 
 ## What it does
 
-Runs `validatePlan` plus the schema and HR-band probes over **every stored plan** and records
-breaches as `ops_events` of kind `plan_rule_invalid`.
+Runs `validateStoredPlan` plus the schema and HR-band probes over **every stored plan** and
+records breaches as `ops_events` of kind `plan_rule_invalid`.
+
+🔴 **IT IS `validateStoredPlan`, AND THE DISPATCH IS THE POINT (AUDIT-PLAN-KIND-01 +
+AUDIT-MAINTENANCE-KIND-01, 2026-10-09).** This line read *"Runs `validatePlan`"* and the route
+in fact called `validateReshapedPlan` on **every plan kind**, which is the race-plan
+constitution. `validateStoredPlan` now picks the constitution that applies to the plan's
+`plan_kind`:
+
+| `plan_kind` | validator |
+|---|---|
+| `base_build` | §116's `validateBaseBuildBlock` |
+| `maintenance` | §75's `validateMaintenanceBlock`, from the three `source_*` fields the plan stamped |
+| `race` / absent | `validateReshapedPlan` |
+
+**Measured the day it changed: the fleet's reported errors went 363 → 262**, because the two
+base-build plans were contributing **101 phantoms** — mean 50.5 against 8.2 for every other
+plan — by being asked whether a plan with no start line had annotated its prep time. A reader
+of this contract would have mis-read those counts.
+
+⚠️ A maintenance plan **without** the `source_*` stamp falls through to
+`validateReshapedPlan` rather than reporting clean. An empty result would read as *"this plan
+is fine"*; the fall-through is loud and imperfect, which is the safer wrong answer.
 
 It exists because `generateRulePlan` validates at generation time but in production only
 `console.error`s and returns the plan — and a console line on a Vercel function is not a record.
