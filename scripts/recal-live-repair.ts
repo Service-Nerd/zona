@@ -41,7 +41,11 @@ import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import {
   repriceWeeksFrom, buildFallbackPace, applyVdotDiscount, calcVDOTFromBenchmark,
+  generateRulePlan,
 } from '../lib/plan/ruleEngine'
+import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
+import { fitnessAnchorMap } from '../lib/plan/fitnessAnchorMap'
+import { alignDerivedToStructure } from '../lib/plan/derivedSetAnchors'
 import { buildPaceFromVDOT } from '../lib/plan/paceBands'
 import { validatePlan } from '../lib/plan/invariants'
 import { getCurrentWeek } from '../lib/plan/weekResolution'
@@ -53,12 +57,48 @@ import type { FitnessLevel } from '../lib/plan/fitnessAssessment'
 
 const APPLY  = process.argv.includes('--apply')
 const VERIFY = process.argv.includes('--verify')
+/**
+ * MODE 2 — RE-PRICE FROM THE RECOVERED ANCHOR, not from a reconstructed old guide.
+ *
+ * The default mode re-prices only a step that reads what its anchor meant at the
+ * OLD fitness, which is accountable and right when the provenance survives. On a
+ * plan recalibrated more than once it does not: Duncan's week-9 VO2max step reads
+ * 4:15–4:25, a band NEITHER of his recorded benchmarks produces, so the default
+ * mode changes nothing and the gate refuses him.
+ *
+ * ⚠️ THE PROVENANCE IS UNRECOVERABLE; THE CORRECT VALUE IS NOT, AND I CONFLATED
+ * THE TWO. The step's anchor is recoverable from the catalogue structure
+ * (`alignDerivedToStructure`), and the anchor plus the plan's own current guide
+ * determine the answer exactly: his step is `I`-anchored and his guide's I band
+ * is 4:45–4:57, so his reps are ~30 s/km too fast for a VO2max interval. No
+ * guess is involved.
+ *
+ * Scope is the invariant's own: it touches ONLY a work step whose band the plan's
+ * guide cannot produce — i.e. exactly what `INV-PLAN-STEP-PACE-FROM-GUIDE` flags.
+ * The fix and the check therefore agree by construction rather than by my reading.
+ */
+const FROM_ANCHOR = process.argv.includes('--from-anchor')
+/**
+ * MODE 3 — REGENERATE. For a plan re-pricing cannot repair, because more than its
+ * paces are wrong. Clay's sessions are labelled "Quality: Threshold" with
+ * CV-anchored steps, so correcting the pace breaks `INV-PLAN-LABEL-MATCHES-PACE`;
+ * his whole plan is on fallback-table pacing with generic labels and no catalogue
+ * identity, from an older engine. Measured: stored 23 weeks / 27 errors →
+ * regenerated 23 weeks (3 foundation) / 0 errors, with real session names.
+ *
+ * ⚠️ IT INJECTS `meta.benchmark` INTO THE INPUT, and that is the load-bearing
+ * part. His `generator_input` has no benchmark — he gave his 5K in the wizard but
+ * it never reached the stored input — so regenerating from the input alone
+ * reproduces fault 1 by pricing him off the level table again.
+ */
+const REGENERATE = process.argv.includes('--regenerate')
 const ONLY   = (() => {
   const i = process.argv.indexOf('--only')
   return i >= 0 ? process.argv[i + 1] : null
 })()
 
 const CODE = 'INV-PLAN-STEP-PACE-FROM-GUIDE'
+const TODAY = new Date().toISOString().slice(0, 10)
 
 const env = Object.fromEntries(
   fs.readFileSync('.env.local', 'utf8').split('\n').filter(Boolean).map(l => {
@@ -119,8 +159,116 @@ async function verify() {
       + `\n  fresh timestamp -> it ran and did not fix it; stop and report this`}`)
 }
 
+/**
+ * MODE 3 — regenerate a plan re-pricing cannot repair. Same safety as the
+ * re-price path: dry-run by default, per-plan diff, refuses unless the result
+ * validates CLEAN, archives before writing, writes through `savePlanForUser`.
+ */
+async function regenerate() {
+  console.log(`RECAL-LIVE-REPAIR-01 · REGENERATE · ${APPLY ? 'APPLY (WRITING)' : 'DRY-RUN (nothing is written)'}`
+    + `${ONLY ? ` · only ${ONLY}` : ''}\n`)
+  if (!ONLY) {
+    console.log('REFUSED — regeneration REPLACES a runner\'s sessions, so it is never a sweep.')
+    console.log('          Name the plan: --regenerate --only <id-prefix>')
+    return
+  }
+  const rows = (await load()).filter(r => r.id.startsWith(ONLY))
+  if (!rows.length) { console.log(`no plan matches ${ONLY}`); return }
+
+  for (const r of rows) {
+    const before = r.plan_json
+    const short = r.id.slice(0, 8)
+    const meta = before.meta as unknown as Record<string, unknown>
+    const storedInput = meta.generator_input as GeneratorInput | undefined
+    const planStart = meta.plan_start as string | undefined
+    console.log('─'.repeat(78))
+    console.log(`PLAN ${short}  ${meta.race_name ?? '—'} ${meta.race_date ?? '—'}  starts ${planStart ?? '—'}`)
+
+    if (!storedInput || !planStart) {
+      console.log('  SKIP — no stored generator_input or plan_start; nothing to regenerate from.')
+      continue
+    }
+    const completions = await sb.from('session_completions')
+      .select('week_n', { count: 'exact', head: true }).eq('user_id', r.user_id)
+    const analyses = await sb.from('run_analysis')
+      .select('week_n', { count: 'exact', head: true }).eq('user_id', r.user_id)
+    console.log(`  logged: ${completions.count ?? 0} completions · ${analyses.count ?? 0} analyses`)
+    if ((completions.count ?? 0) > 0 || (analyses.count ?? 0) > 0) {
+      // 🔴 A REGENERATION REPLACES SESSIONS, AND COMPLETIONS ARE KEYED BY WEEK.
+      // A runner with history would have their logged work pointing at sessions
+      // that no longer exist — PLAN-WEEK-COLLISION-01's shape. Refused outright.
+      console.log('  REFUSED — this runner has logged work. Regeneration would leave it')
+      console.log('            pointing at sessions that no longer exist. Re-price or hand-fix.')
+      continue
+    }
+
+    // ⚠️ THE BENCHMARK INJECTION IS THE POINT. `generator_input` may carry no
+    // benchmark even though the runner gave one in the wizard (`meta.benchmark`
+    // holds it), and regenerating from the input alone then prices them off the
+    // fallback LEVEL TABLE again — which is the original fault, reproduced.
+    const bm = meta.benchmark as BenchmarkInput | undefined
+    const input = { ...storedInput } as GeneratorInput & { benchmark?: BenchmarkInput }
+    if (!input.benchmark && bm?.time && bm?.distance_km) {
+      input.benchmark = bm
+      console.log(`  benchmark injected from meta: ${bm.distance_km}km in ${bm.time}`)
+    }
+
+    const tier = ((meta.tier as string) === 'free' ? 'free'
+      : (meta.tier as string) === 'paid' ? 'paid' : 'trial') as 'free' | 'trial' | 'paid'
+    let candidate: Plan
+    try {
+      const rule = generateRulePlan(input, tier, planStart, undefined, TODAY)
+      candidate = composePlanWithFoundation(rule, input, TODAY, 'add').plan
+    } catch (e) {
+      console.log(`  SKIP — regeneration threw: ${(e as Error).message.split('\n')[0]}`)
+      continue
+    }
+
+    const errsBefore = errCodes(before, storedInput)
+    const errsAfter = errCodes(candidate, input)
+    const fnd = (p: Plan) => p.weeks.filter(w => w.n <= 0).length
+    const labels = (p: Plan) => Array.from(new Set(p.weeks.filter(w => w.n > 0)
+      .flatMap(w => Object.values(w.sessions).filter(x => x?.type === 'quality').map(x => x!.label))))
+    console.log(`  weeks   ${before.weeks.length} (${fnd(before)} foundation)  ->  ${candidate.weeks.length} (${fnd(candidate)} foundation)`)
+    console.log(`  errors  ${errsBefore.length} [${Array.from(new Set(errsBefore.map(v => v.code))).join(', ')}]`)
+    console.log(`       -> ${errsAfter.length} [${Array.from(new Set(errsAfter.map(v => v.code))).join(', ')}]`)
+    console.log(`  quality sessions BEFORE: ${labels(before).join(' | ')}`)
+    console.log(`  quality sessions AFTER : ${labels(candidate).slice(0, 8).join(' | ')}`)
+
+    if (errsAfter.length > 0) {
+      console.log(`  REFUSED — the regenerated plan is not clean (${errsAfter.length} errors).`)
+      continue
+    }
+    if (candidate.weeks.length !== before.weeks.length) {
+      // Not fatal in principle, but it changes the runner's race countdown, so it
+      // is a decision rather than a repair. Measured for Clay: 23 -> 23.
+      console.log(`  ⚠️  WEEK COUNT CHANGES ${before.weeks.length} -> ${candidate.weeks.length} — read this before applying.`)
+    }
+    console.log('  ✅ CLEAN — regenerated plan validates with 0 errors.')
+    if (!APPLY) continue
+
+    const arch = await sb.from('plan_archive').insert({
+      user_id: r.user_id, plan_json: before,
+      race_name: before.meta.race_name ?? null, race_date: before.meta.race_date ?? null,
+    })
+    if (arch.error) {
+      console.log(`  ! ARCHIVE FAILED (${arch.error.message}) — NOT writing.`)
+      continue
+    }
+    try {
+      await savePlanForUser(r.user_id, candidate, sb as never)
+      console.log('  WRITTEN (prior plan archived first).')
+    } catch (e) {
+      console.log(`  ! WRITE FAILED: ${(e as Error).message}`)
+    }
+  }
+  console.log('─'.repeat(78))
+  if (!APPLY) console.log('DRY-RUN — nothing written. Review above, then add --apply.')
+}
+
 async function main() {
   if (VERIFY) return verify()
+  if (REGENERATE) return regenerate()
 
   console.log(`RECAL-LIVE-REPAIR-01 · ${APPLY ? 'APPLY (WRITING)' : 'DRY-RUN (nothing is written)'}`
     + `${ONLY ? ` · only ${ONLY}` : ''}\n`)
@@ -231,7 +379,51 @@ async function main() {
     let after: Plan
     try {
       after = JSON.parse(JSON.stringify(before)) as Plan
-      repriceWeeksFrom(after, asPriced, nowPace, fromWeekN)
+      if (FROM_ANCHOR) {
+        // 🔴 DRIVEN BY THE INVARIANT'S OWN VERDICTS, AND THE FIRST VERSION WAS
+        // NOT — it re-derived the test as "is this band in the guide?" and that
+        // is LOOSER than the check. Measured on a live plan: two T-anchored
+        // sessions read `4:48–5:00`, which is 11.3% from that runner's T band and
+        // **exactly his goal band** (`goal_pace_per_km: 4:54`) — §22's goal-pace
+        // substitution, entirely deliberate, which the invariant admits by name.
+        // My version would have re-priced them back to T and DESTROYED §22's
+        // override on two sessions. The invariant was right and the fix was wrong.
+        //
+        // So the fix now reads the violations instead of reasoning about them: a
+        // step is re-priced if and only if `INV-PLAN-STEP-PACE-FROM-GUIDE` names
+        // its band. Sharing the predicate was the stated design and re-deriving
+        // it was the bug; this makes divergence impossible rather than unlikely.
+        const flagged = new Map<number, Set<string>>()
+        for (const v of validatePlan(before, gi)) {
+          if (v.code !== CODE || v.week == null) continue
+          for (const band of String(v.actual ?? '').split(',').map(x => x.trim()).filter(Boolean)) {
+            if (!flagged.has(v.week)) flagged.set(v.week, new Set())
+            flagged.get(v.week)!.add(band)
+          }
+        }
+        const admitted = fitnessAnchorMap(nowPace)
+        let touched = 0
+        for (const w of after.weeks) {
+          const bands = flagged.get(w.n)
+          if (!bands?.size) continue
+          for (const session of Object.values(w.sessions)) {
+            if (!session || session.type !== 'quality' || !session.derived_set) continue
+            const aligned = alignDerivedToStructure(session)
+            if (!aligned) continue
+            for (const { derived, structural } of aligned) {
+              if (structural.role !== 'work' || structural.target.kind !== 'pace') continue
+              if (!derived.pace || !bands.has(derived.pace)) continue
+              const want = admitted[structural.target.anchor]
+              if (!want) continue
+              derived.pace = want
+              touched++
+            }
+          }
+        }
+        console.log(`  from-anchor: ${touched} work step(s) the invariant flagged, re-priced to their own anchor`)
+      } else {
+        repriceWeeksFrom(after, asPriced, nowPace, fromWeekN)
+      }
 
       // 🔴 THE HEADER IS RESOLVED, NOT SCALED, AND IT WAS WRONG TWICE BEFORE THIS.
       // `repriceWeeksFrom` scales the header by the factor its steps moved, which
@@ -324,14 +516,41 @@ async function main() {
       console.log(`  REFUSED — the repair introduces ${introduced.length} new violation(s).`)
       continue
     }
-    // Pass 3 restores the headers; this is what proves it was the right call
-    // rather than a convenient one. §120: the header IS the work pace, ±3%.
-    const hdrAfter = errsAfter.filter(v => v.code === 'INV-PLAN-HEADER-PACE-MATCHES-WORK')
-    const hdrBefore = errsBefore.filter(v => v.code === 'INV-PLAN-HEADER-PACE-MATCHES-WORK')
-    console.log(`  INV-PLAN-HEADER-PACE-MATCHES-WORK: ${hdrBefore.length} -> ${hdrAfter.length}`)
-    if (hdrAfter.length > 0) {
-      console.log(`  REFUSED — ${hdrAfter.length} session(s) still show a header their own steps contradict.`)
+    // §120: the header IS the work pace, ±3%. This is what proves the header pass
+    // was the right call rather than a convenient one.
+    //
+    // ⚠️ THE GATE IS "STRICTLY BETTER", NOT "PERFECT", AND IT USED TO BE THE
+    // LATTER. Requiring ZERO header violations was right for the first plan,
+    // which came out fully clean, and WRONG as a universal rule: it refused a
+    // correct single-session repair because FOUR UNRELATED header violations
+    // already existed on that plan (generic-label sessions, a separate defect
+    // family). A gate that demands a whole plan be perfect before any part of it
+    // may be repaired keeps every imperfect plan broken forever.
+    //
+    // ⚠️ AND IT IS NOT A WEAKENING TO LET MY CHANGE THROUGH — that is the
+    // "guard that absorbs a regression" failure and it is worth naming out loud.
+    // The three conditions below are what "strictly better" means, and they are
+    // jointly stronger than the old single one on the thing that matters: the
+    // targeted defect must clear, NOTHING new may appear, and no code's count
+    // may rise. A residual is then printed rather than silently tolerated.
+    const countBy = (vs: typeof errsAfter) => {
+      const m = new Map<string, number>()
+      for (const v of vs) m.set(v.code, (m.get(v.code) ?? 0) + 1)
+      return m
+    }
+    const cBefore = countBy(errsBefore), cAfter = countBy(errsAfter)
+    const worse = Array.from(cAfter).filter(([code, n]) => n > (cBefore.get(code) ?? 0))
+    const hdrBefore = cBefore.get('INV-PLAN-HEADER-PACE-MATCHES-WORK') ?? 0
+    const hdrAfter = cAfter.get('INV-PLAN-HEADER-PACE-MATCHES-WORK') ?? 0
+    console.log(`  INV-PLAN-HEADER-PACE-MATCHES-WORK: ${hdrBefore} -> ${hdrAfter}`)
+    if (worse.length > 0) {
+      console.log(`  REFUSED — a code got WORSE: ${worse.map(([c, n]) => `${c} ${cBefore.get(c) ?? 0}->${n}`).join(', ')}`)
       continue
+    }
+    if (errsAfter.length > 0) {
+      console.log(`  ⚠️  RESIDUAL, pre-existing and NOT fixed by this repair:`)
+      for (const [code, n] of Array.from(cAfter)) console.log(`        ${code} x${n}`)
+      console.log(`      These are a different defect family. The repair is strictly better, not complete.`)
     }
     if (changed === 0) {
       console.log('  REFUSED — nothing changed, so this plan is not repairable by re-pricing.')

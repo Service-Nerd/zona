@@ -16,6 +16,7 @@ import { normaliseDays } from './days'
 import { sessionFloorsFor } from './sessionFloors'
 import { easyPaceFromPlan } from './easyPace'
 import { fitnessAnchorMap } from './fitnessAnchorMap'
+import { alignDerivedToStructure } from './derivedSetAnchors'
 import { buildPaceFromVDOT, paceBandStr, bandCeiling } from './paceBands'
 import { qualityCeilingFor } from './qualityCeiling'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
@@ -3260,14 +3261,61 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       const near = (value: number, pool: number[]) =>
         pool.some(p => p > 0 && Math.abs(value - p) / p <= 0.03)
 
+      // 🔴 COMPARE A STEP TO *ITS OWN* ANCHOR, NOT TO THE UNION — the first cut
+      // compared against every admitted band at once, and that has a FALSE
+      // NEGATIVE I found by running the repair on real data. A live plan's
+      // T-anchored step read `4:48–5:00`, which is **9.1% from its own T band**
+      // (5:16–5:31) and plainly stale — and **1.0% from the same runner's I band**
+      // (4:45–4:57), so the union test excused it. A stale value can coincide with
+      // a DIFFERENT anchor's band, and the wider the guide the likelier that is.
+      //
+      // The anchor is recoverable from the catalogue structure, so the strict test
+      // is available: a work step must sit within §19's 3% of the band ITS OWN
+      // anchor means. The union remains the fallback for a step whose anchor
+      // cannot be recovered — a ramp, a mixed row, an unstamped session — because
+      // there the looser test is the only one there is, and a false negative
+      // beats inventing a verdict.
+      const goalCentres = (() => {
+        const out: number[] = []
+        const gb = plan.meta.goal_pace_per_km
+        if (gb) {
+          const c = bandCentre(gb); if (c != null) out.push(c)
+          const mid = parsePaceMidpoint(gb)
+          if (mid != null) { const c2 = bandCentre(paceBandStr(mid, 2)); if (c2 != null) out.push(c2) }
+        }
+        return out
+      })()
+
       for (const w of plan.weeks) {
         for (const session of Object.values(w.sessions)) {
           if (!session || session.type !== 'quality' || !session.derived_set) continue
+          // Per-step anchors, by position, from the row that produced them.
+          const aligned = alignDerivedToStructure(session)
+          const anchorOf = new Map<string, string>()
+          if (aligned) {
+            for (const a of aligned) {
+              if (a.structural.role !== 'work') continue
+              if (a.structural.target.kind !== 'pace') continue
+              if (a.derived.pace) anchorOf.set(a.derived.pace, a.structural.target.anchor)
+            }
+          }
           const offGuide = Array.from(new Set(
             session.derived_set.blocks.flatMap(b => b.steps)
               .filter(st => st.role === 'work' && st.pace)
               .map(st => st.pace as string),
           )).filter(band => {
+            // Strict: this step's own anchor, plus §22's goal substitution.
+            const anchor = anchorOf.get(band)
+            if (anchor && !band.includes('\u2192')) {
+              const own = admitted.has(anchor) ? bandCentre(anchor) : null
+              const ownBand = (fitnessAnchorMap(guide) as Record<string, string | undefined>)[anchor]
+              const target = ownBand ? bandCentre(ownBand) : null
+              const c = bandCentre(band)
+              if (c == null || target == null) return false
+              void own
+              return !near(c, [target, ...goalCentres])
+            }
+            return (() => {
             if (band.includes('→')) {
               // A ramp: both ends must be paces this guide produces, compared
               // against the band CEILINGS because that is the quantity
@@ -3279,6 +3327,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             const c = bandCentre(band)
             if (c == null) return false          // unparseable — not this check's claim
             return !near(c, admittedCentres)
+            })()
           })
           if (offGuide.length === 0) continue
           violations.push({
