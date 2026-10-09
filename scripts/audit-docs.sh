@@ -719,13 +719,34 @@ done
 # silently drops first is the feedback, which is the half with no other copy.
 # Budget deliberately below the limit: a state block is ~500 bytes and a day adds
 # one, so a check that only fires AT the limit fires after the loss.
+#
+# 🔴 AND IT HAPPENED AGAIN ON 2026-10-09, BECAUSE THERE ARE **TWO** LIMITS AND THIS
+# GATE ONLY KNEW ONE. The file was 23,100B -- comfortably inside the byte budget and
+# reported ALL CLEAN -- and **201 LINES against a 200-line limit**, so the loader cut
+# line 201 and dropped `Rebrand Gotchas` from the index. The warning again arrived
+# only inside the truncated copy.
+#
+# ⚠️ The byte budget was written the day the first truncation was found, against the
+# only limit that incident exposed. **A gate built from one incident knows one
+# failure mode**, and a day that adds index LINES without adding many bytes walks
+# straight past it -- which is exactly what a run of short feedback hooks does.
 MEM_BUDGET=23800
+MEM_LINE_BUDGET=195
 if [ -f "$mem" ]; then
   mbytes=$(wc -c < "$mem" | tr -d ' ')
+  mlines=$(wc -l < "$mem" | tr -d ' ')
   if [ "$mbytes" -gt "$MEM_BUDGET" ]; then
     say "  OVER BUDGET MEMORY.md is ${mbytes}B against ${MEM_BUDGET}B (hard load limit 24400B)"
     say "            index entries are truncated from the END, which is the feedback list."
     say "            Move detail into a topic file and leave a one-line hook."
+    sfail=1; fail=1
+  fi
+  # Line budget deliberately below 200, for the same reason the byte budget sits below
+  # 24400: a day adds index lines, so a check that fires AT the limit fires after the loss.
+  if [ "$mlines" -gt "$MEM_LINE_BUDGET" ]; then
+    say "  OVER LINE BUDGET MEMORY.md is ${mlines} lines against ${MEM_LINE_BUDGET} (hard load limit 200)"
+    say "            Lines are cut from the END just as bytes are, so the feedback list goes first."
+    say "            MERGE two related index entries rather than deleting one."
     sfail=1; fail=1
   fi
 fi
