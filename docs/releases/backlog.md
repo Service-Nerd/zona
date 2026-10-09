@@ -28,6 +28,118 @@ already decided what it is.
 ---
 
 
+### 🔻 `WEEKTHEME-PROP-DEAD-01` — a `weekTheme` prop threaded through three layers and never used ⚙️ **NO BOARD**
+
+**Filed 2026-10-09, out of `WEEK-THEME-DEAD-01`, and deliberately NOT bundled with it.**
+
+`week.theme` is read in `PlanCalendar.tsx:421` and `TodayScreen.tsx:938`, passed through
+`onSessionTap` / `onOpenSession`, carried across `DashboardClient` and handed to
+`SessionPopupInner` as a `weekTheme` prop — which **destructures it and never uses it in the
+body**. **15 references across 6 files.**
+
+**Why it was split off rather than folded in:** removing it changes `PlanCalendar`'s
+`onSessionTap` signature (3 args → 2) in two declarations plus its call site, and touches
+`copy-preview`. That is a refactor across 6 files with **no runner-facing effect**, and
+bundling it would have widened a clean 98-line deletion into a signature change. SLC: one job.
+
+⚠️ **It is inert, not harmful** — unlike `PlanCoachingCard`, which rendered the theme as
+prose and was one JSX line from showing 11 runners a raw `{{zone2_ceiling}}`. That is why one
+shipped today and this did not.
+
+✅ **`week.theme` still has one REACHABLE render** and it is correct now: `TodayScreen`'s
+maintenance-transition line, which `COACH-INTRO-TOKEN-01` routed through `renderPlanProse`.
+0 maintenance plans live, so it is latent — but `/api/post-race-reshape:249` writes
+`theme: enrichment.theme ?? week.theme`, so an AI-written theme can reach it.
+
+**Scope:** drop the prop from `SessionPopupInner`, unthread it, narrow the two `onSessionTap`
+signatures. ⚠️ `lib/ui/noDeadLocalComponents.test.ts` cannot see a dead PROP — only a dead
+component — so this needs its own arm or it will not be noticed again.
+
+---
+
+### 🔻 `LR-TAPER-BUMP-01` — V4 can INCREMENT a long run in the taper 🏃 **COACHING BOARD** *(PROPOSED, NOT BUILT)*
+
+**Filed 2026-10-09. Not built: it changes what the engine prescribes, and the founder's
+standing rule is propose, do not implement.**
+
+`V4-long-run-repeat-ceiling` (`ruleEngine.ts:5944`) breaks a repeated long run by adding
+`incrementKm`. It **iterates every week and skips only `type === 'deload'`**. Its two safety
+guards are §40/§9's absolute time cap and §52's LR/weekly cap. **Neither knows about
+phases**, so the bump can land in the taper.
+
+**Reproduced deterministically** from plan `86ac765d`'s own stored input:
+`V4 weeks + their phases: w14=build, **w17=taper**`.
+
+| week | phase | long run | weekly km |
+|---|---|---|---|
+| w13 | build | 118 min | 26 |
+| **w14** | build | **126 min** | **27** |
+| w15, w16 | **peak** | 118 min | 26 |
+| **w17** | **taper** | **126 min** | **27** |
+
+So the plan's **longest run and its highest weekly volume both sit outside the peak phase**,
+one of them in the taper — the phase whose entire job is to shed load.
+
+🔴 **POPULATION, AND MY FIRST GRID SAID ZERO.** A grid built from `real-inputs` case 0
+(HM, 3 days, 30 km/wk, no weekday cap) gave **0 of 1,709**. A grid built around the real case
+gives, over **1,840** plans:
+
+- V4 fires on **1,312 (71.3%)**
+- **a TAPER week bumped: 416 — 31.7% of V4 plans, 22.6% of all**
+- phases touched: `peak 868, build 640, taper 416, base 67`; **race week 0**
+- it reaches **self-consistent** inputs (`cwk=10, lrr=6`), so it is NOT an artefact of that
+  runner's contradictory intake
+
+⚠️ **The cohort is the low-volume, few-days, weekday-capped beginner — Zonna's stated
+demographic.** That is why the generic grid missed it: *varying an axis is not reaching the
+interaction.*
+
+🔴 **`INV-PLAN-PEAK-IN-PEAK-PHASE` EXISTS AND DID NOT FIRE.** It guards `weekly_km`, and
+on this plan the max weekly is TIED (27 in w14 and w17), so the strict comparison passes.
+**Nothing at all guards the LONG RUN by phase.**
+
+**The board's question, in one line:** may a repeat-breaking increment ever apply to a taper
+or peak-adjacent week, or must V4 be phase-aware? The obvious fix (exclude taper and race
+weeks) is a prescription change on **22.6% of this cohort** and needs a ruling, plus the
+third artifact — there is no invariant for "the long run peaks in the peak phase".
+
+✅ **The evidence script is committed: `scripts/board-evidence-taper-bump.ts`.**
+
+```
+PATH=... NODE_ENV=production npx tsx scripts/board-evidence-taper-bump.ts
+```
+
+⚠️ **`NODE_ENV=production` is REQUIRED, not incidental.** That runner's input is
+self-contradictory (longest 20 km > weekly 10 km), which `INV-INPUT-LONGEST-LE-WEEKLY` throws
+on in dev/test and only logs in production — which is why the plan exists at all. Under
+`NODE_ENV=test` the whole grid refuses and **the answer reads zero**.
+
+⚠️ **Measure again before the sitting.** These numbers are from one day's engine; re-derive
+them, and run `npm run measure:fitness` — a change that lowers a taper long run is a load
+change on a beginner cohort and the board must see the build numbers.
+
+---
+
+### 🔻 `LR-NOTE-SCOPE-01` — the §80 note says "tops out at" and reads the peak phase only ⚙️ **NO BOARD** *(BLOCKED on `LR-TAPER-BUMP-01`)*
+
+`ruleEngine.ts` ~8274 computes the note's figure from `w.phase === 'peak' && w.type !== 'deload'`,
+and the sentence is unqualified: *"Your longest run tops out at 1h 58."* On plan `86ac765d`
+the plan's longest run is **126 min** and the note says **118**.
+
+✅ **Measured: the computation is RIGHT wherever the plan's shape is right** — **373 of 373**
+generated plans where the note fires have `peak-phase max == plan max`. Live: **1 of 5**
+plans carrying the note understates, and that one is `LR-TAPER-BUMP-01`.
+
+🔴 **DO NOT FIX THE WORDING WHILE THE CAUSE IS OPEN.** Qualifying the sentence, or
+computing a plan-wide max for it, would make the shape defect **invisible** — right now this
+note is the only surface that reveals it. It was how the defect was found at all.
+
+**After the board rules:** if V4 becomes phase-aware, the peak-phase read becomes correct by
+construction and this item closes with no code change. If the board allows a taper bump, the
+sentence needs qualifying and this becomes a one-line fix. **Either way it waits.**
+
+---
+
 ### 🔻 `AUDIT-MAINTENANCE-KIND-01` — the race validator still judges a maintenance plan ⚙️ **NO BOARD** *(ADR-013 restoration)*
 
 **Filed 2026-10-09**, out of `AUDIT-PLAN-KIND-01`. `validateStoredPlan` now routes a
@@ -5791,7 +5903,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-10-09 (last ship `e3dc40d2`). 548 files / 4,870 tests · `verify` exit 0 · Build 0 · sweep 0 new on 14,268 plans · parity IDENTICAL 6,066.** 🔴 **28% OF THE FLEET'S REPORTED DEFECTS WERE PHANTOMS, AND I ONLY FOUND IT BY FIXING SOMETHING ELSE.** `generateBaseBuildPlan` — the SECOND producer of a plan from an input — never stamped `meta.generator_input`, so **2 of 34 live plans** lost the Modify sheet, saved with the validate gate skipped, and could not be classified or repaired. **Adding the stamp OPENS that gate, and the gate runs the RACE-plan validator, which fires 61 errors on a VALID base-build plan.** Checking whether that was new found the audit had been doing it all along: **(race) 32 plans / 262 errors / mean 8.2 vs base_build 2 plans / 101 errors / mean 50.5. Fleet 363 → 262, base_build → 0.** `baseBuildValidate.ts`'s own header predicted it in writing — *"a SEPARATE VALIDATOR, NOT AN EXEMPTION"* — and nothing read it. **Second day running that the checker was the broken thing.** ⚠️ **The dispatch keys on `plan_kind`, which both plans DO carry, so the fix reached them with no write to a runner's plan.** 🥇 **THE PRODUCER GATE FOUND A FOURTH PRODUCER ON ITS FIRST RUN** after my written analysis said *"exactly two"* — it derives the set from SOURCE. 🔴 **AND I FIXED ONE HALF OF A PAIR AND NEARLY STOPPED**: widening `PlanMeta['plan_kind']` left the Zod twin rejecting `'base_build'`, which the live probe showed on **exactly those 2 plans of 34** — found by re-measuring the output, not by reading the code. 🔴 **THE DIGEST'S TRIAL FUNNEL COULD NEVER REPORT A TRIALLING RUNNER**: it counted `subscriptions.status='trialing'` and the reverse trial is not a subscription, so the count AND the at-risk column the prompt tells itself to *"always surface prominently"* were **structurally zero every day**. Live: **0 → 5 on trial, 1 at risk** — a runner who started 2 Oct, never came back, **6 days quiet on day 6 of 14**; two more on day 12 and 13. 🥇 **MY FIRST GATE FOR IT WAS HOLLOW AND MUTATION CAUGHT IT**: five mutations, four red, and the one reinstating the *exact original defect* stayed **GREEN** — the regex anchored on the wrong side of `as trialing_total`, because a table name comes BEFORE the alias. **Bind the region, never grep the file.** 🔴 **A DESIGNED REFUSAL RECORDED NO LEVEL AT ALL** — `input.fitness_level` is the API override the wizard never sends, and the type's own comment forbids repurposing it: **20 events, 0 carrying any level**, inert from the day it shipped. §79's four levels now have ONE owner the engine and the telemetry both call; parity **IDENTICAL, 6,066**. 🥇 That same telemetry is the **only surviving record of two runners' race dates** — the base-build writer overwrites `race_date: ''`, so the obvious one-field backfill would stamp an input with no race date **and look complete**. 🔻 **Two founder actions: paste the Q2 SQL into the cloud routine, and rule on the backfill.** ⚠️ **Nothing has run on a device.**
+**State at END of 2026-10-09 (last ship `e3dc40d2`). 551 files / 4,898 tests · `verify` exit 0 · Build 0 · sweep 0 new on 14,268 plans · parity IDENTICAL 6,066.** 🔴 **28% OF THE FLEET'S REPORTED DEFECTS WERE PHANTOMS, AND I FOUND IT BY FIXING SOMETHING ELSE.** The 2nd plan producer never stamped `generator_input` (**2 of 34 live plans**). **Adding the stamp OPENS the save gate, and that gate runs the RACE validator, which fires 61 errors on a VALID base-build plan.** The audit had been doing it all along: **base_build mean 50.5 vs race 8.2; fleet 363 → 262.** Its own header predicted it in writing. **Second day running the CHECKER was the broken thing.** ✅ It keys on `plan_kind`, which both plans carry: **no write to a runner's plan**. 🥇 The producer gate found a **FOURTH** producer on its first run after my analysis said "exactly two". 🔴 **I FIXED HALF A PAIR**: the TS union widened, the Zod twin left rejecting `base_build` on exactly those 2 of 34. 🔴 **THE TRIAL KPI COULD NEVER MOVE**: it counted `subscriptions.status='trialing'` and the reverse trial is not a subscription, so the at-risk column it tells itself to "always surface prominently" was **structurally 0 every day**. Live **0 → 5 on trial, 1 at risk** — one 6 days quiet on day 6 of 14. 🥇 **MY GATE FOR IT WAS HOLLOW**: 5 mutations, 4 red, and the one reinstating the EXACT original defect stayed GREEN — the regex anchored on the wrong side of `as trialing_total`. 🔴 **A DESIGNED REFUSAL RECORDED NO LEVEL AT ALL** — **20 events, 0 levels**, inert from day one; §79's levels now have ONE owner, parity IDENTICAL. 🔴 **THEN A RAW `{{token}}` ON THE SCREEN AFTER PLAN GENERATION** — and the guard for it had **BOTH failure classes at once**: no `{{` in its vocabulary, no `meta.*` field in its population, which is exactly where the only visible token lived. 🥇 **A MUTATION STAYED GREEN AGAIN** and found a missing arm: removing `ORPHAN_RE` passed everything because my brace arm used well-formed tokens the main regex handles alone. 🔴 **AND A 72-LINE COMPONENT RENDERED `week.theme` AS RAW PROSE WITH ZERO RENDER SITES** — 18 days after DESIGN-V3 removed its only one, **one JSX line from showing 11 runners `{{zone2_ceiling}}`**; the gate written for it found **THREE TWINS in the same file**. 🔴 **AND THE DIGEST SAID "NO CANCELLATIONS" WHILE 3 WERE ARRIVING A FORTNIGHT** — the query selected only the kinds we ALERT on, so an event we had DECIDED not to act on was indistinguishable from one that never arrived. 🥇 **BEST FINDING OF THE DAY IS ONE I MAY NOT FIX**: `V4` increments a long run in the **TAPER** — **416 of 1,840 (22.6%)** in the low-volume beginner cohort, **and my first grid said 0 of 1,709**. Filed for the Coaching Board; **qualifying the note would have made it invisible.** ⚠️ **Nothing has run on a device.**
 
 **Prior - State at END of 2026-10-09 (last ship `5735c57e`). 537 files / 4,807 tests · `verify` exit 0 · Build 0 · sweep 0 new on 14,268 plans · parity IDENTICAL 6,066 · liveness 144/147 woken.** 🔴 **THE MORNING DIGEST'S "ENGINE REGRESSION" WAS A MONITORING BUG, AND THE REAL DEFECT WAS UNDERNEATH IT.** `applyRecalibration` wrote `pace_target` + `hr_target` and nothing else, so a confirmed recalibration **moved the display and left the prescription** — work steps kept the runner's OLD paces and the §120 header was overwritten with the generic band. **3 of 32 live plans**; one HM plan (starts 12 Oct, knee history) had quality steps ~25 s/km too FAST for her own stated fitness, which is the OPPOSITE direction to my first write-up. 🥇 **THE COMPOSITION GATE WAS THE WHOLE BUILD: ZERO HARNESSES HAD EVER CALLED THAT FUNCTION** — not the 14,268-plan sweep, not the 6,066-case parity grid, not the cohort or fitness harnesses — and one test found **two more live defects plus one of mine** in minutes: the HR write put **threshold HR on VO2max rows whose own zone said Zone 4–5 (45 sessions / 36 plans, at every magnitude including a no-op)**; the progression ramp was left stale on every recalibration; and **my first fix was NOT IDEMPOTENT** — recalibrating to the benchmark a runner already held introduced **72 new violations at zero fitness change**, because I recomputed the header instead of scaling it. 🔴 **MY RCA WAS WRONG TWICE IN WRITING FIRST.** *"Her plan predates the CV fix"* — it was built two days after it. *"The engine is clean, regenerating gives 0 hits"* — true, and an artefact of my own input, because the buggy writer leaves `generator_input` stale, so I was comparing two different runners and calling it evidence. 🥇 **AND THE INVARIANT THE BOARD SPECIFIED COULD NOT FIRE.** Four cuts: **4,713 → 4,680 → 2,213 → 0** false fires — and that clean version was **also 0 on all four broken plans.** A stale step matches nothing in a guide rebuilt from the new benchmark, so it skipped exactly the sessions that were wrong: *the population excluded the cases at risk.* **The skip was the signal** — a band the guide cannot produce IS the violation — and `INV-PLAN-STEP-PACE-FROM-GUIDE` replaced it. ⚖️ **§125 ruled CORRECT WITH AMENDMENT ×3; clause 3 (re-derive distance) is RULED AND DEFERRED on a number the board did not have** — it breaches `DELIVERED-RAMP` 10–13× per 36 plans in the ±4–8% COMMON band. 🔻 **Three live plans still hold stale paces and the repair is the founder's call** (`RECAL-LIVE-REPAIR-01`). ⚠️ **Nothing has run on a device.**
 
@@ -7818,6 +7930,28 @@ expect is how a predicate gets handed over and comes back with the same answer e
 accepted, 3 may not reproduce, 4 is a question not a defect. **They are blocked, not urgent** — the
 reason they are listed together is that four items drifting for want of one phone session is worth
 seeing in one place.
+
+---
+
+### 🔻 FOUNDER ACTION — paste the corrected Q9 into the daily digest routine *(filed 2026-10-09)*
+
+`OPS-SUBS-UNHANDLED-SEEN-01` is shipped on the repo side. The digest's Q9 still selects only
+the four money-critical kinds, so it still cannot see an event we deliberately do not act on.
+
+**What to do:** `docs/runbooks/digest-subscription-observed.md` — replace the Q9 SQL block
+**and** append the rendering rule to the Q9 instruction in STEP 2C.
+
+🔴 **BOTH HALVES OR NEITHER.** The SQL alone makes the digest scream about every
+cancellation — and `SUBS-CANCELLATION-TIER-01` records that an offer code with auto-renew off
+emits `CANCELLATION` **~2 minutes after every redemption**, so red on this would be red on a
+normal charity signup. That is worse than the blindness it replaces. The rendering rule makes
+these a neutral counted line, exactly like pre-signup redemptions.
+
+✅ **Run against production first:** 8 rows in 7 days — 6 pre-signup `INITIAL_PURCHASE`
+(already carved out) and **2 `CANCELLATION` events attributable to real runners, invisible to
+the old Q9.**
+
+🔻 **This can go in the SAME sitting as the Q2 paste below — two blocks, one visit.**
 
 ---
 

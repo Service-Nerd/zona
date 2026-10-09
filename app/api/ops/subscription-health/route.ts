@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { secretMatches } from '@/lib/security/secrets'
 import {
   ENTITLEMENT_AT_RISK_KINDS,
+  ENTITLEMENT_OBSERVED_KINDS,
   AT_RISK_WINDOW_DAYS,
   judgeEntitlementRisk,
   isPreSignupRedemption,
@@ -55,7 +56,11 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from('ops_events')
     .select('kind, created_at, user_id, detail')
-    .in('kind', ENTITLEMENT_AT_RISK_KINDS as unknown as string[])
+    // OPS-SUBS-UNHANDLED-SEEN-01 — BOTH lists, from the owner. Selecting only the
+    // at-risk kinds is what made "no rows" readable as "no events": 3 unhandled
+    // RevenueCat events had been arriving for 14 days and this query could not see
+    // one of them. `judgeEntitlementRisk` counts them without alerting.
+    .in('kind', [...ENTITLEMENT_AT_RISK_KINDS, ...ENTITLEMENT_OBSERVED_KINDS] as unknown as string[])
     .gte('created_at', since)
     .order('created_at', { ascending: false })
 

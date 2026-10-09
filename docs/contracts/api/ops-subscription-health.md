@@ -70,6 +70,24 @@ from `verdict.alert` and counted in `verdict.preSignupRedemptions`. An offer cre
 auto-renew OFF also emits `CANCELLATION` ~2 minutes after every redemption, so each redemption
 leaves **two** rows.
 
+🔴 **AND UNTIL 2026-10-09 THIS ROUTE COULD ONLY EVER SEE ONE OF THOSE TWO ROWS**
+(`OPS-SUBS-UNHANDLED-SEEN-01`). The sentence above was already written here — the document
+knew a `CANCELLATION` followed every redemption — and the query selected only
+`ENTITLEMENT_AT_RISK_KINDS`, which does not contain `revenuecat_event_unhandled`. So an event
+we had **decided** not to act on was indistinguishable from an event that never arrived.
+Measured that day: **3 `revenuecat_event_unhandled` and 17 `revenuecat_event_unusable` in 14
+days**, and the honest read of the digest was *"no rows, so no cancellations."*
+
+The route now selects `[...ENTITLEMENT_AT_RISK_KINDS, ...ENTITLEMENT_OBSERVED_KINDS]`, and
+`verdict.observedNotActioned` counts the second list. **It never raises `alert`** — the same
+treatment `preSignupRedemptions` gets, and for the same reason: alerting on a CANCELLATION
+would alert on every charity redemption. `webhookTrace.ts` states the principle: *"absence of
+ops events did not prove the webhooks never fired."*
+
+⚠️ **A consumer rendering this field must not colour it as a failure.**
+`docs/runbooks/digest-subscription-observed.md` carries the rendering rule, and pasting the
+SQL without it is worse than the blindness it replaces.
+
 ## What the route may NOT do
 
 Guarded by `lib/ops/subscriptionHealthConsumer.test.ts`, which fails the build if any of these
@@ -78,6 +96,8 @@ regress:
 | Must not | Why |
 |---|---|
 | Hardcode a `*_unusable` / `*_write_failed` kind string | That is how the digest's Q9 and the module drifted apart in the first place. Read `ENTITLEMENT_AT_RISK_KINDS` |
+| Select only the at-risk kinds | An event we deliberately do not act on is still an event. Select `ENTITLEMENT_OBSERVED_KINDS` too, or "no rows" reads as "no events" |
+| Alert on an `*_unhandled` row | `CANCELLATION` means auto-renew off, not access ended. Alerting fires on every charity redemption — counted, never alerted |
 | Decide for itself which rows are pre-signup | A second copy of the rule, agreeing only by accident — `TIER-OWNER-01`'s shape |
 | Write its own remedy text | The instruction and the detection must not drift; `remedyFor()` owns it |
 

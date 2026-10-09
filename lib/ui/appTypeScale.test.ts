@@ -72,7 +72,13 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // the gap where it is rather than pretending it is zero — the debt-register
     // pattern, because a gate demanding 0 here would be deleted on day one.
     const DECLARED = new Set(['10', '11', '12', '14', '15', '17', '20', '26', '44', '56'])
-    const UNDECLARED_USES_BASELINE = 246
+    // 246 -> 242 on 2026-10-09 (WEEK-THEME-DEAD-01). FOUR uses went, and the
+    // reason is a DELETION, not a conversion: `PlanCoachingCard` (72 lines, 0
+    // render sites), `IconStrava`, `IconMore` and `Card` were removed from
+    // `DashboardClient.tsx`. No size was converted to a declared one, so the
+    // ratio is unchanged in spirit — the denominator shrank with the numerator.
+    // Declared here because a ratchet must never move without a measurement.
+    const UNDECLARED_USES_BASELINE = 242
     let n = 0
     for (const [size, count] of Array.from(sizes())) if (!DECLARED.has(size)) n += count
     expect(n,

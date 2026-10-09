@@ -32,7 +32,8 @@ import { TRIAL_DAYS } from '@/lib/trial'
 import { Wordmark } from '@/components/ui/Wordmark'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
-import { convertPaceString, formatDate, formatDistance, formatDuration, formatRaceCountdown, resolveSessionMetric } from '@/lib/format'
+import { convertDistanceString, convertPaceString, formatDate, formatDistance, formatDuration, formatRaceCountdown, resolveSessionMetric } from '@/lib/format'
+import { renderPlanProse, planProseContext } from '@/lib/plan/renderGuidance'
 import { easyPaceAsCeiling } from '@/lib/plan/easyPaceCeiling'
 import { getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { isFatigueTag } from '@/lib/coaching/completionVocab'
@@ -1561,7 +1562,14 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                     lineHeight: '1.4',
                     margin: '0 0 10px',
                   }}>
-                    {maintThemeLine || 'Base running.'}
+                    {/* COACH-INTRO-TOKEN-01 — a week theme can be AI-written
+                        (`/api/post-race-reshape` writes `enrichment.theme`), so it
+                        can carry an unresolved `{{token}}`. Through the owner. */}
+                    {renderPlanProse(
+                      maintThemeLine,
+                      planProseContext(plan.meta),
+                      t => convertDistanceString(t, preferredUnits),
+                    ) || 'Base running.'}
                   </p>
                 </>
               )}

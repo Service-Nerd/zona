@@ -98,3 +98,74 @@ export function guidanceContextFromSession(args: {
     session_label:    s?.label,
   }
 }
+
+/**
+ * PLAN-LEVEL prose: `meta.coach_intro`, `meta.plan_intro`, and a week `theme`.
+ *
+ * ── WHY THIS EXISTS, AND WHY IT IS NOT `guidanceContextFromSession` ──────────
+ * COACH-INTRO-TOKEN-01 (2026-10-09). `GeneratePlanScreen` rendered
+ * `meta.coach_intro` through `convertDistanceString` alone, so an unresolved
+ * `{{token}}` the enricher emitted reached the runner verbatim, on the first
+ * screen they see after their plan is generated.
+ *
+ * Measured across all 34 live plans, by field:
+ *   session.coach_notes  1,115 tokens / 22 plans — REQUIRED by design, and
+ *                        already substituted by `renderGuidance`. Correct.
+ *   week.theme              49 tokens / 11 plans — no reachable render today.
+ *   meta.coach_intro         1 token  /  1 plan  — RENDERED RAW. 🔴
+ *   meta.notes               1 token  /  1 plan  — no consumer at all.
+ *
+ * Both live tokens are `{{zone2_ceiling}}`, which is a PLAN-level value, so the
+ * substitution is real and not a strip-and-hope.
+ *
+ * ⚠️ IT TAKES THE PLAN'S OWN `meta`, NOT THE DASHBOARD'S DEVICE-DERIVED CEILING,
+ * and that is a decision rather than convenience. `effectiveZone2Ceiling` prefers
+ * a Karvonen value computed from today's resting/max HR; `meta.zone2_ceiling` is
+ * what the engine built the plan with and what the enricher saw when it wrote
+ * `{{zone2_ceiling}}` into that sentence. Printing the device value would put a
+ * number in the prose that contradicts the plan's own HR targets. Taking `meta`
+ * also means no call site can pick a different source — one rule, three surfaces,
+ * no per-site variation to drift.
+ *
+ * ⚠️ THE SESSION CONTEXT IS DELIBERATELY ABSENT, not forgotten. These strings are
+ * about the whole plan and there is no session in scope where they render, so a
+ * session token in one of them has no correct value — `renderGuidance` resolves it
+ * to its fallback or to empty, and `ORPHAN_RE` guarantees no brace survives either
+ * way. That is `renderGuidance`'s own documented promise: "belt-and-braces against
+ * raw `{{...}}` ever reaching the user". This is the surface where that promise was
+ * not kept.
+ */
+export function planProseContext(
+  meta: {
+    zone2_ceiling?: number | null
+    max_hr?: number | null
+    resting_hr?: number | null
+    goal_pace_per_km?: string | null
+  } | null | undefined,
+): GuidanceContext {
+  return {
+    zone2_ceiling: meta?.zone2_ceiling ?? undefined,
+    max_hr:        meta?.max_hr ?? undefined,
+    resting_hr:    meta?.resting_hr ?? undefined,
+    goal_pace:     meta?.goal_pace_per_km ?? undefined,
+  }
+}
+
+/**
+ * THE SINGLE OWNER of "render a plan-level string to a runner".
+ *
+ * Substitutes plan-level tokens, strips any orphan brace, and then applies the
+ * reader's unit preference — in that ORDER, deliberately: `convertDistanceString`
+ * rewrites "12 km" into "7 mi", and a token that resolves to a distance has to
+ * exist before it can be converted. Doing it the other way round converts the
+ * literal text of the template and leaves the brace.
+ */
+export function renderPlanProse(
+  text: string | null | undefined,
+  ctx: GuidanceContext,
+  convert: (s: string) => string | null | undefined,
+): string {
+  const substituted = renderGuidance(text, ctx)
+  if (!substituted) return ''
+  return convert(substituted) ?? substituted
+}

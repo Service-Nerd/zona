@@ -6,6 +6,27 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — COACH-INTRO-TOKEN-01 + WEEK-THEME-DEAD-01 + OPS-SUBS-UNHANDLED-SEEN-01 · two of my own triage conclusions were wrong, and the corrections were the round
+**Shipped:** plan-level prose can no longer emit a raw `{{token}}`; 98 lines of dead components deleted; and the subscription digest can now see the events it deliberately does not act on.
+
+**Dev learning:** **a guard can have both of its failure modes at once, and this one did.** `INV-PLAN-NO-PLACEHOLDER-COPY` has existed for months to stop placeholder copy reaching a runner. Its *vocabulary* was four hand-typed strings — `Target Race`, `TBD`, `undefined`, `null` — with no `{{` among them. Its *population* was week and session fields, with **no `meta.*` prose field at all**. The only runner-visible token in the entire fleet lived in `meta.coach_intro`. So the check was correct, bounded, falsifiable, and pointed at a world that could not contain the defect.
+
+The other half was a render path. `GeneratePlanScreen` handed `meta.coach_intro` to `convertDistanceString` and nothing else, while `renderGuidance` — whose own header promises *"belt-and-braces against raw `{{...}}` ever reaching the user"* — sat one import away, used only by the session popup. **The promise was real and the surface had never been wired to it.**
+
+**Product/creator learning:** I reported two things in the triage that measurement then contradicted, and both errors made the defects look *smaller*. I said the 49 `week.theme` tokens were *"threaded to `SessionPopupInner` and never rendered. Invisible."* The conclusion held, but the mechanism was wrong: `week.theme` has **four** consumer paths, and one of them was `PlanCoachingCard` — a 72-line component rendering the theme as raw prose with **zero render sites**, left behind 18 days earlier when a Design Board ruling removed its only render site. It was one JSX line from showing 11 runners `{{zone2_ceiling}}`. I got the right answer for the wrong reason, which is indistinguishable from luck.
+
+**AI-building learning:** **the mutation that matters is the one that reinstates the original defect, and twice today a neighbouring mutation passed instead.** On the digest SQL gate I ran five mutations: four red, and the fifth — putting the exact original bug back — stayed **green**, because my regex anchored on the wrong side of the SQL alias. On the prose gate I ran four: removing `ORPHAN_RE` stayed **green**, because every arm I had written used *well-formed* tokens, which the main regex substitutes without ever reaching the orphan strip. Both holes were found by mutating, not by re-reading.
+
+And a third instance of one specific class, in one day: **a source-scanning arm matching its own comment.** The population arm flagged `PlanIntroCard` because that file names `plan_intro` in its doc comments and renders nothing. A check that cannot tell prose from code is not a check.
+
+**The honest bit:** the best finding of the round is one I am **not allowed to fix**, and I nearly fixed the wrong thing instead. The triage said *"the AI says 126, the engine says 118 — qualify the wording"*. Chasing it to the plan's own `rule_adjustments` found `V4-long-run-repeat-ceiling` had incremented the long run on **w14 (build) and w17 (taper)** — so the plan's longest run and its highest weekly volume both sit outside the peak phase, one of them in the taper, the phase whose entire job is to shed load. Measured: **416 of 1,840 plans (22.6%) get a taper bump** in the low-volume beginner cohort. My first grid said **0 of 1,709**, because it was built from a different real input and never reached the interaction. That is a coaching change, so it is filed and proposed, not built — and **qualifying the sentence would have made it invisible**, because that sentence is currently the only surface that reveals it.
+
+**Hook material:** our dashboard reported "no RevenueCat cancellations". There had been three a fortnight, plus seventeen unusable events. The query selected only the kinds we alert on, so an event we had *decided* not to act on was indistinguishable from an event that never arrived.
+
+**Postable?:** yes
+
+---
+
 ## 2026-10-09 — BASEBUILD-SCHEMA-KIND-01 · the twin I left behind, found by re-measuring my own fix
 **Shipped:** the canonical plan schema now admits `plan_kind: 'base_build'`, the kind the engine has emitted since August.
 

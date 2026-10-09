@@ -49,6 +49,35 @@ import type { OpsEventKind } from '@/lib/ops/recordOpsEvent'
  * carrying any other `missing` value is still a real dropped payment, and the kind
  * must stay listed so the completeness test below keeps covering it.
  */
+/**
+ * Kinds the digest must COUNT and REPORT but never ALERT on.
+ *
+ * ── WHY, AND IT IS A HOLE IN AN ABSENCE ARGUMENT (OPS-SUBS-UNHANDLED-SEEN-01) ──
+ * `revenuecat_event_unhandled` is recorded when the webhook arrives and
+ * `toStatus()` returns null — i.e. an event type we deliberately do not map.
+ * `CANCELLATION` is exactly that: `SUBS-CANCELLATION-TIER-01` ruled it means
+ * "auto-renew switched off", NOT "access ended", so NOT acting on it is correct
+ * and alerting on it would be noise (NOISE-GATE-01).
+ *
+ * 🔴 BUT THE DIGEST'S Q9 SELECTS ONLY `ENTITLEMENT_AT_RISK_KINDS`, SO IT CANNOT SEE
+ * THEM AT ALL — and on 2026-10-09 that produced a confident wrong answer: asked
+ * whether RevenueCat cancellations were arriving, the honest read of the digest was
+ * "no rows, so no events". Measured directly: **3 `revenuecat_event_unhandled` and
+ * 17 `revenuecat_event_unusable` in 14 days.** They were arriving the whole time.
+ *
+ * `webhookTrace.ts`'s own header states the principle this restores: *"ABSENCE OF
+ * OPS EVENTS DID NOT PROVE THE WEBHOOKS NEVER FIRED ... a healthy webhook and an
+ * unreachable one looked identical."*
+ *
+ * ⚠️ SAME TREATMENT AS `preSignupRedemptions`, which is the ratified pattern one
+ * screen away: counted, reported, never alerted on. A kind is either money-critical
+ * or it is observable; silent is not one of the options.
+ */
+export const ENTITLEMENT_OBSERVED_KINDS: readonly OpsEventKind[] = [
+  'revenuecat_event_unhandled',
+  'stripe_event_unhandled',
+]
+
 export const ENTITLEMENT_AT_RISK_KINDS: readonly OpsEventKind[] = [
   'stripe_event_unusable',
   'revenuecat_event_unusable',
@@ -91,6 +120,9 @@ export interface AtRiskVerdict {
    *  on — see `isPreSignupRedemption`. Reported so the path stays VISIBLE while it
    *  stops being read as a lost sale. */
   preSignupRedemptions: number
+  /** Events the provider sent that we deliberately do not act on. Counted so
+   *  "no rows" can never again be read as "no events". Never raises `alert`. */
+  observedNotActioned: number
   headline: string
 }
 
@@ -158,6 +190,16 @@ export function judgeEntitlementRisk(rows: readonly AtRiskRow[]): AtRiskVerdict 
   const flagged = rows.filter(r => isEntitlementAtRisk(r.kind))
   const preSignupRedemptions = flagged.filter(isPreSignupRedemption).length
   const at = flagged.filter(r => !isPreSignupRedemption(r))
+  // Counted from the SAME rows, so a caller cannot select one set and forget the
+  // other — the hole this closes was exactly a query that selected only the first.
+  const observedNotActioned = rows.filter(r =>
+    (ENTITLEMENT_OBSERVED_KINDS as readonly string[]).includes(r.kind)).length
+
+  const observedNote = observedNotActioned
+    ? ` ${observedNotActioned} provider event(s) arrived that we deliberately do not act on`
+      + ' (e.g. CANCELLATION = auto-renew off, not access ended). Reported so absence of'
+      + ' rows is never read as absence of events.'
+    : ''
 
   const preSignupNote = preSignupRedemptions
     ? ` Separately, ${preSignupRedemptions} pre-signup offer-code redemption(s) were recorded:`
@@ -167,8 +209,9 @@ export function judgeEntitlementRisk(rows: readonly AtRiskRow[]): AtRiskVerdict 
   if (at.length === 0) {
     return {
       alert: false, count: 0, worst: null,
-      affectedAccounts: 0, unattributable: 0, preSignupRedemptions,
-      headline: 'No subscription write has failed — every purchase became an entitlement.' + preSignupNote,
+      affectedAccounts: 0, unattributable: 0, preSignupRedemptions, observedNotActioned,
+      headline: 'No subscription write has failed — every purchase became an entitlement.'
+        + preSignupNote + observedNote,
     }
   }
 
@@ -183,12 +226,13 @@ export function judgeEntitlementRisk(rows: readonly AtRiskRow[]): AtRiskVerdict 
     affectedAccounts: withUser.size,
     unattributable,
     preSignupRedemptions,
+    observedNotActioned,
     headline:
       `${at.length} subscription write(s) failed in the last ${AT_RISK_WINDOW_DAYS} days — `
       + `${withUser.size} identified account(s)`
       + (unattributable ? `, ${unattributable} UNATTRIBUTABLE (no user_id — a lost sale we cannot trace)` : '')
       + `. These runners paid and resolveTier still reads them as unentitled.`
-      + preSignupNote,
+      + preSignupNote + observedNote,
   }
 }
 

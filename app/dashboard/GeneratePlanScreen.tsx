@@ -22,6 +22,7 @@ import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { weekVolumeLabel } from '@/lib/plan/weekVolume'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { convertDistanceString, formatDate, formatDistance, formatDuration } from '@/lib/format'
+import { renderPlanProse, planProseContext } from '@/lib/plan/renderGuidance'
 import { isPaidDistance } from '@/lib/plan/canUseFeature'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
@@ -1347,6 +1348,19 @@ export default function GeneratePlanScreen({
 
   if (appStep === 'preview' && plan) {
     const { meta, weeks } = plan
+    // COACH-INTRO-TOKEN-01 — plan-level prose goes through ONE owner, which
+    // substitutes plan-level tokens and then applies the unit preference. This
+    // screen rendered `meta.coach_intro` through `convertDistanceString` alone,
+    // so an unresolved `{{token}}` the enricher emitted reached the runner raw on
+    // the first screen after their plan was built. Measured: 1 live plan.
+    // The context comes from the PLAN's own meta, never the device-derived
+    // ceiling — see `planProseContext`.
+    const planProse = (text: string | null | undefined) =>
+      renderPlanProse(
+        text,
+        planProseContext(meta),
+        t => convertDistanceString(t, preferredUnits),
+      )
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
         {/* BACK-ARROW-FLOAT-02 — founder: "float the pill as-is". It keeps its caption,
@@ -1475,7 +1489,7 @@ export default function GeneratePlanScreen({
                     plan enriched before the reader switched units still names
                     kilometres. The prompt now speaks the reader's units, but
                     every plan generated before that does not. */}
-                {convertDistanceString(meta.coach_intro, preferredUnits)}
+                {planProse(meta.coach_intro)}
               </div>
             </div>
           )}
@@ -1484,7 +1498,7 @@ export default function GeneratePlanScreen({
               co-exists with the paid coach_intro above. */}
           {meta.plan_intro && (
             <div style={{ margin: '16px 0' }}>
-              <PlanIntroCard text={convertDistanceString(meta.plan_intro, preferredUnits) ?? meta.plan_intro} />
+              <PlanIntroCard text={planProse(meta.plan_intro) || meta.plan_intro} />
             </div>
           )}
 

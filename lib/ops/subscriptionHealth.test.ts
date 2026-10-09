@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest'
 import {
   ENTITLEMENT_AT_RISK_KINDS, AT_RISK_WINDOW_DAYS,
   isEntitlementAtRisk, judgeEntitlementRisk, remedyFor, type AtRiskRow,
-  isPreSignupRedemption, PRE_SIGNUP_MISSING,
+  isPreSignupRedemption, PRE_SIGNUP_MISSING, ENTITLEMENT_OBSERVED_KINDS,
 } from './subscriptionHealth'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { webhookTrace, SUBSCRIPTION_PROVIDERS } from '@/lib/subscriptions/webhookTrace'
 
 // OPS-SUBS-ALERT-01. These kinds fire only when a runner HAS PAID and the
@@ -175,3 +177,60 @@ describe('pre-signup offer-code redemptions are counted, not alerted on', () => 
     expect(isEntitlementAtRisk('revenuecat_event_unusable')).toBe(true)
   })
 })
+
+// OPS-SUBS-UNHANDLED-SEEN-01 (2026-10-09) — an event we do not act on is still an
+// event, and the digest could not see one.
+describe('observedNotActioned — counted, reported, never alerting', () => {
+  const row = (kind: string, over: Partial<AtRiskRow> = {}): AtRiskRow =>
+    ({ kind, created_at: '2026-10-09T12:00:00Z', user_id: 'u1', detail: {}, ...over })
+
+  // \U0001F534 THE POPULATION ARM, DERIVED FROM THE VOCABULARY. Every `*_unhandled`
+  // kind the ops vocabulary admits must be in one of the two lists, so a NEW one
+  // cannot be silent by default. A hand-written list is what left this one out.
+  it('every *_unhandled kind in the vocabulary is declared observable', () => {
+    const src = readFileSync(join(__dirname, 'recordOpsEvent.ts'), 'utf8')
+    const kinds = Array.from(src.matchAll(/^\s*\|\s*'([a-z_]*_unhandled)'/gm)).map(m => m[1]!)
+    expect(kinds.length, 'no *_unhandled kinds parsed — the union moved').toBeGreaterThan(1)
+    const declared = new Set<string>([...ENTITLEMENT_OBSERVED_KINDS, ...ENTITLEMENT_AT_RISK_KINDS])
+    expect(kinds.filter(k => !declared.has(k)),
+      'an *_unhandled kind is neither at-risk nor observable, so the digest cannot see it')
+      .toEqual([])
+  })
+
+  it('counts an unhandled event and does NOT alert on it', () => {
+    const v = judgeEntitlementRisk([row('revenuecat_event_unhandled')])
+    expect(v.observedNotActioned).toBe(1)
+    expect(v.alert).toBe(false)
+    expect(v.count).toBe(0)
+    expect(v.headline).toMatch(/deliberately do not act on/)
+  })
+
+  it('says nothing when there are none — the clean headline stays clean', () => {
+    const v = judgeEntitlementRisk([])
+    expect(v.observedNotActioned).toBe(0)
+    expect(v.headline).not.toMatch(/deliberately do not act on/)
+  })
+
+  // Both sets come from the SAME rows, so a real failure beside an unhandled event
+  // must still alert and still be counted separately.
+  it('a real failure still alerts, with the unhandled count beside it', () => {
+    const v = judgeEntitlementRisk([
+      row('revenuecat_event_unhandled'),
+      row('stripe_event_write_failed', { user_id: 'u2' }),
+    ])
+    expect(v.alert).toBe(true)
+    expect(v.count).toBe(1)
+    expect(v.observedNotActioned).toBe(1)
+    expect(v.headline).toMatch(/deliberately do not act on/)
+  })
+
+  it('the route selects BOTH lists — the hole was the query, not the judgement', () => {
+    const src = readFileSync(join(__dirname, '..', '..', 'app', 'api', 'ops',
+      'subscription-health', 'route.ts'), 'utf8')
+    // Anchored: a bare `toContain` also passes against `ENTITLEMENT_OBSERVED_KINDSX`,
+    // and `hollowTestShapes.test.ts` caught exactly that here.
+    expect(src).toMatch(/\bENTITLEMENT_OBSERVED_KINDS\b/)
+    expect(src).toMatch(/\.in\('kind',\s*\[\.\.\.ENTITLEMENT_AT_RISK_KINDS,\s*\.\.\.ENTITLEMENT_OBSERVED_KINDS/)
+  })
+})
+

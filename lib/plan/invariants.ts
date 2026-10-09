@@ -6414,7 +6414,27 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // placeholders are truthy, so they render exactly as if they were real.
   {
     const PLACEHOLDERS = ['Target Race', 'TBD', 'undefined', 'null']
+    // COACH-INTRO-TOKEN-01 (2026-10-09) — an UNRESOLVED `{{token}}` is a
+    // placeholder too, and this check could not see one.
+    //
+    // 🔴 BOTH OF THIS REPO'S CHECK-FAILURE CLASSES, IN ONE CHECK. Its VOCABULARY
+    // was four hand-typed strings with no `{{` among them, and its POPULATION was
+    // week and session fields with **no `meta.*` prose field at all** — which is
+    // where the only runner-visible token actually lived.
+    //
+    // Measured across 34 live plans: `meta.coach_intro` 1 token (RENDERED RAW on
+    // the screen after generation), `meta.notes` 1, `week.theme` 49 across 11
+    // plans, `session.coach_notes` 1,115 across 22.
+    const TOKEN_RE = /\{\{[^}]*\}\}/
     const scan: Array<[string, string | undefined]> = []
+    // META prose — the fields a runner reads as sentences. `coach_intro` and
+    // `plan_intro` are model-authored; the `*_note` family is engine-authored and
+    // must never contain a token at all, so including them is free coverage.
+    const m = plan.meta as unknown as Record<string, unknown>
+    for (const k of Object.keys(m)) {
+      if (k !== 'coach_intro' && k !== 'plan_intro' && k !== 'notes' && !k.endsWith('_note')) continue
+      if (typeof m[k] === 'string') scan.push([`meta.${k}`, m[k] as string])
+    }
     for (const w of plan.weeks) {
       scan.push([`w${w.n}.label`, w.label])
       scan.push([`w${w.n}.theme`, w.theme])
@@ -6422,11 +6442,31 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       for (const [day, sess] of Object.entries(w.sessions ?? {})) {
         if (!sess) continue
         scan.push([`w${w.n}.${day}.label`, sess.label])
+        // ⚠️ `coach_notes` is DELIBERATELY NOT token-scanned. A token there is
+        // REQUIRED by design (`enrich.ts`) and resolved at render by
+        // `renderGuidance` — 1,115 of them are live and correct. Scanning them
+        // would fire on 22 of 34 plans for doing the right thing, which is how a
+        // guard gets switched off. The string checks below still apply to them.
         for (const n of sess.coach_notes ?? []) scan.push([`w${w.n}.${day}.coach_note`, n])
       }
     }
     for (const [where, text] of scan) {
       if (!text) continue
+      // A token is only a defect where it is NOT the designed carrier.
+      if (!where.endsWith('.coach_note')) {
+        const tok = text.match(TOKEN_RE)?.[0]
+        if (tok) {
+          violations.push({
+            code: 'INV-PLAN-NO-PLACEHOLDER-COPY',
+            principle_ref: 'analysis F6',
+            severity: 'warn',
+            week: 0,
+            message: `Unresolved template token "${tok}" in user-facing copy at ${where}: "${text.slice(0, 160)}"`,
+            actual: tok,
+            expected: 'a resolved value — only session.coach_notes may carry a token',
+          })
+        }
+      }
       const hit = PLACEHOLDERS.find(ph => text.includes(ph))
       if (hit) {
         violations.push({

@@ -107,7 +107,7 @@ import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneStri
 import { zoneDiscipline, zoneTimeSplit, weightOf } from '@/lib/coaching/weeklyZoneAggregate'
 import { trendSentence } from '@/lib/coaching/trendSentence'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
-import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
+import { renderGuidance, guidanceContextFromSession, renderPlanProse, planProseContext } from '@/lib/plan/renderGuidance'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
 import dynamic from 'next/dynamic'
 import { Capacitor } from '@capacitor/core'
@@ -226,26 +226,7 @@ function IconCoach({ active }: { active: boolean }) {
   )
 }
 
-function IconStrava({ active }: { active: boolean }) {
-  const c = active ? 'var(--accent)' : 'var(--text-muted)'
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-      <circle cx="11" cy="11" r="7" stroke={c} strokeWidth="1.2" />
-      <polyline points="11,7 11,11 14,13" stroke={c} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
 
-function IconMore({ active }: { active: boolean }) {
-  const c = active ? 'var(--accent)' : 'var(--text-muted)'
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-      <circle cx="6"  cy="11" r="1.5" fill={c} />
-      <circle cx="11" cy="11" r="1.5" fill={c} />
-      <circle cx="16" cy="11" r="1.5" fill={c} />
-    </svg>
-  )
-}
 
 
 
@@ -3694,13 +3675,6 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
 
 // ── Card wrapper ──────────────────────────────────────────────────────────
 
-function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return (
-    <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', margin: '0 12px', ...style }}>
-      {children}
-    </div>
-  )
-}
 
 // ── SCREEN GUIDE ──────────────────────────────────────────────────────────
 
@@ -4504,7 +4478,13 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           first-plans — paid plans carry coach_intro instead and never this. */}
       {plan.meta.plan_intro && (
         <div style={{ padding: '16px 16px 0' }}>
-          <PlanIntroCard text={convertDistanceString(plan.meta.plan_intro, preferredUnits) ?? plan.meta.plan_intro} />
+          {/* COACH-INTRO-TOKEN-01 — plan-level prose through the one owner, so an
+              unresolved `{{token}}` can never reach the runner. */}
+          <PlanIntroCard text={renderPlanProse(
+            plan.meta.plan_intro,
+            planProseContext(plan.meta),
+            t => convertDistanceString(t, preferredUnits),
+          ) || plan.meta.plan_intro} />
         </div>
       )}
 
@@ -4633,7 +4613,9 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
                   </>
                 )}
               </div>
-              {/* Km target footer — mirrors PlanCoachingCard footer pattern */}
+              {/* Km target footer. (The pattern it used to mirror,
+                  `PlanCoachingCard`, was deleted by WEEK-THEME-DEAD-01 — its
+                  render site went with DESIGN-V3 and the component stayed.) */}
               {weeklyKmTarget > 0 && (
                 <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
@@ -4661,78 +4643,6 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   )
 }
 
-function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
-  plan: Plan; currentWeek: Week; units?: 'km' | 'mi'; trackedKm?: number | null
-}) {
-  const sessions = Object.values((currentWeek as any).sessions ?? {}) as any[]
-  const phase    = (currentWeek as any).phase as string | undefined
-  const theme    = (currentWeek as any).theme as string | undefined
-  // Sum of rounded session distances — agrees with per-row displays.
-  const weeklyKm = sumRoundedDistance(sessions.map(s => s?.distance_km as number | undefined), units)
-
-  const phaseCap = phase ? (PHASE_LABELS[phase] ?? phase) : null
-  const ctx      = buildWeekVoiceContext(currentWeek, plan)
-  const items    = getWeekVoiceItems(ctx)
-
-  // SESSION-DIST-UNITS-01 — km with a unit suffix, unconverted.
-  const doneDisplay = trackedKm != null && trackedKm > 0
-    ? `${formatDistance(trackedKm, units, { exact: true }) ?? ''} done`
-    : null
-
-  return (
-    <div style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-      {/* Header */}
-      <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-        <span style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)' }}>Week notes</span>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', opacity: 0.6 }}>· Your training plan</span>
-        {phaseCap && (
-          <span style={{ ...MICRO_LABELS.eyebrow, marginLeft: 'auto', fontFamily: 'var(--font-ui)', color: 'var(--moss)' }}>
-            {phaseCap}
-          </span>
-        )}
-      </div>
-      {/* Body */}
-      <div style={{ padding: '16px' }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35, marginBottom: theme || items.length > 0 ? '10px' : 0, letterSpacing: '-0.2px' }}>
-          {getWeekVoiceHeadline(ctx)}
-        </div>
-        {theme && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.6, marginBottom: items.length > 0 ? '12px' : 0, fontStyle: 'italic' }}>
-            {theme}
-          </div>
-        )}
-        {items.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            {items.map((item, i) => (
-              <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.65 }}>
-                {item}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      {/* Distance footer — target + done together so the gap is visible */}
-      {weeklyKm > 0 && (
-        <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
-            {weeklyKm}{units} target
-          </span>
-          {doneDisplay && (
-            <>
-              <span style={{ color: 'var(--line-strong)', fontSize: '12px' }}>·</span>
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', fontWeight: 500 }}>
-                {doneDisplay}
-              </span>
-            </>
-          )}
-          {!doneDisplay && (
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>no runs logged yet</span>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ── COACH SCREEN ──────────────────────────────────────────────────────────
 
