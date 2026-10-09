@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — WIZARD-ZERO-VOLUME-REFUSAL-01 · the item asked the wrong question and the measurement found an inversion
+
+**Shipped:** a declared `longest_recent_run_km = 0` stopped being read as "unknown", so the week-1/2 long-run cap applies to it, and a declared zero is refused at half marathon and above instead of being admitted.
+
+**Dev learning:** `> 0` is not a null check, and writing it four times is four copies of the same wrong idea. `ruleEngine.ts` x2, `invariants.ts`, `longRunReadiness.ts` — and the one in `invariants.ts` is the interesting one, because that is `INV-PLAN-WEEK-1-2-LONG-CAP`, the invariant whose entire job is catching an over-large opening long run. **It shared the producer's predicate, so it could not fire on the cohort that got one: 0 fires at every rung of the ladder.** A checker that derives its scope from the thing it checks is not a checker. Also: `weeksToReachFloor(0, 5)` returned `0` — "no weeks needed" — for a runner who has not run. Compounding from zero never reaches a positive floor. That is arithmetic written backwards, and it read as a sensible guard for a year.
+
+**Product/creator learning:** the inversion is the whole story and it is about honesty being punished. Declare zero, get a 12.5 km first long run on a half-marathon plan and a plan. Declare one kilometre, get 2.0 km and a refusal. **The runner who told us the most useful true thing about themselves got the worst outcome.** You cannot design that deliberately; you get it by treating a slider position as a missing value.
+
+**AI-building learning:** the board contradicted itself and the measurement is what caught it. The ruling demanded two artifacts — "a declared zero caps at 5 km" and "the function must be monotonic in `longest_recent_run_km`" — and those cannot both hold, because 5 sits above the 2.0 km rung a different amendment ratified three weeks ago. I only found it because I ran the ladder before writing the engine change instead of after. **Three sittings in one session, each forced by a number, and every one of them improved the ruling.** The reflex to protect is: when a ruling hands you a number AND a property, substitute the number into the property before you write a line.
+
+**The honest bit:** my fix introduced four new error-severity violations and I nearly shipped them. `INV-PLAN-LR-SHORTFALL-CAUSE` on HM / 2 days / 10 weeks, and chasing it found a plan whose **largest long run was inside the taper** — 16.0 km against a peak-phase best of 11.0, volume climbing 21 → 24 → 28 through a taper, +112% at week 4, seven warns. That plan existed because §113 admitted a declared zero. So the regression I caused was the thing that exposed the fourth site. I also inferred a ruling nobody asked for — widening §44's 10K door to half-marathoners — and an existing test pinned the opposite with a filed item owning the number. Backed out in the same session. And four pre-existing test arms had `0` sitting in a list with `null` and `undefined`, which is where the defect was ratified in advance.
+
+**Hook material:** declare 0 km and get a 12.5 km first long run. Declare 1 km and get 2.0. The same app, the same week, 6.25× apart, and the honest answer is the one that gets punished.
+
+**Postable?:** yes
+
+## 2026-10-09 — WIZARD-WEEKDAY-CONFIRM-01 · the board killed what the SLT asked for, on a 37.5% fire rate
+
+**Shipped:** the wizard's race-date field reads its value back in full — `Race day: Sunday 20 June.` — instead of confirming it.
+
+**Dev learning:** a native `type="date"` input shows the runner their keystrokes, not their decision. `20/06/2027` never says Sunday, and the weekday is the half of a race date the plan is actually built from. The fix needed no new code in `lib/format.ts`: `formatDate(iso, 'weekday-long')` already existed and already returned `null` on an unparseable value, **which is also the component's empty state** — so the value and the empty test are one call. The alternative, a `raceDateReadback()` helper, would have been a duplicate of a function that already did the whole job.
+
+**Product/creator learning:** the SLT ruled "build the weekday confirmation" and the Design Board killed it with one number. 37.5% fire rate, and the two most common race weekdays among live plans are Saturday (12) and Sunday (13) — so a confirm interrupts a third of runners to tell them something almost always correct, and one plan is named "Parkrun", whose runner knows which day it is. **Confirming and showing are different products.** The honest consequence: the SLT's success condition ("a weekday the runner did not confirm") is no longer achievable, and I flagged that for an overturn rather than quietly delivering less than was asked for.
+
+**AI-building learning:** two defects in my own gate, both found by running it rather than reading it. **2027-06-20 is a Sunday and I had typed Saturday** — a hand-typed weekday in a test about showing the runner the right weekday. The expected days are now derived from the `Date`. And the gate bounded its region with `indexOf("case 'race-details':")`, which found the *validation* switch 960 lines earlier, so every structural arm failed against a correct component. Two switches, one case label. **Bounding a region by a label that appears twice is the same class as grepping the whole file.**
+
+**The honest bit:** I wrote "Saturday 20 June" into the board's own ruling text before checking a calendar, and it survived into my first test. If the test had been a source assertion rather than a behavioural one, it would have shipped.
+
+**Hook material:** the test I wrote to prove the app shows the right weekday asserted the wrong weekday. 2027-06-20 is a Sunday.
+
+**Postable?:** yes
+
+
 ## 2026-10-09 — AUDIT-MAINTENANCE-KIND-01 + WEEKTHEME-PROP-DEAD-01 · the fix was at the source, and I repeated a mistake I had already written down
 **Shipped:** maintenance plans are now judged by §75 instead of the race-plan validator, and a prop threaded through three layers that nothing ever read is gone.
 
