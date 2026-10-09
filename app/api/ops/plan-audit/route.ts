@@ -5,6 +5,7 @@ import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { findWeekCollisions, type LiveWeekRow } from '@/lib/ops/planWeekCollision'
 import { validateReshapedPlan } from '@/lib/plan/invariants'
 import { storedPlanCodes } from '@/lib/ops/storedPlanProbes'
+import { summariseRepairable } from '@/lib/ops/repairableDamage'
 import {
   classifyCodes, verdictReason, summariseVerdicts, foundationWeekViolations,
   type CodeVerdict,
@@ -128,6 +129,10 @@ export async function POST(req: NextRequest) {
   // own stored `generator_input` with today's engine. Only the changed set is regenerated
   // — this is a Vercel function, and generation is not cheap.
   const verdictsByPlan: Array<Record<string, CodeVerdict>> = []
+  // REPAIRABLE DAMAGE (DIGEST-REPAIRABLE-01) — collected per plan here and
+  // summarised by `summariseRepairable`, which owns the reasoning for why this
+  // one is a STANDING report rather than a transition alert.
+  const repairableRows: Array<{ user_id: string; codes: string[] }> = []
   const verdictNotes: string[] = []
 
   for (const row of rows ?? []) {
@@ -155,6 +160,10 @@ export async function POST(req: NextRequest) {
     // into the threshold band is self-CONSISTENT, which is all
     // INV-PLAN-DISPLAY-ZONE-MATCHES-WORK asks.
     const codes = storedPlanCodes(plan as never, errors.map(v => v.code))
+    // Which of this plan's violations have a remedy, read from the SAME list the
+    // repair script's own population filter reads (`planRepairs.ts`). One list,
+    // so the digest cannot advertise a command that does not cover the damage.
+    repairableRows.push({ user_id: row.user_id as string, codes })
     const prev = lastSeen.get(row.user_id)
     const now = JSON.stringify(codes)
 
@@ -290,9 +299,15 @@ export async function POST(req: NextRequest) {
   //
   // The modification signal is KEPT as its own field, because "a reshape pushed a
   // previously-valid plan into breach" is a real and separate hazard.
+  // ⚠️ ABSENT WHEN THERE IS NOTHING TO DO, not present-and-zero. A digest line
+  // that reads "repairable: 0" every morning is the noise this field exists to
+  // avoid being.
+  const repairable = summariseRepairable(repairableRows)
+
   const summary = {
     checked, invalid, skipped,
     ...summarisePlanAges(invalidPlanRows),
+    ...(repairable ? { repairable } : {}),
   }
 
   // A SUMMARY EVENT, so a digest has one row to read instead of N per-user rows.

@@ -79,6 +79,14 @@ a code already present was already triaged.
 ```ts
 {
   ...summary,                      // the existing audit summary
+  // DIGEST-REPAIRABLE-01 — present ONLY when at least one plan carries a
+  // violation that has a remedy. ABSENT, never zeroed, when there is nothing
+  // to do. See § Repairable damage below.
+  repairable?: {
+    plans:    number,              // distinct plans, counted once each
+    by_code:  Record<string, number>,   // commonest first
+    command:  string,              // a DRY RUN; `--apply` is never advertised
+  },
   unchanged: number,               // breaching, same code set as last time — not re-reported
   changed:   number,
   flagged:   Array<{ user_id: string; codes: string[]; state: 'new' | 'changed' | 'resolved' }>,
@@ -212,3 +220,48 @@ breaching input therefore yields `undecidable` under test and reached `engine_re
 production. Any test of this path must stub `NODE_ENV=production` or it asserts a verdict the
 live system never emits.
 
+
+
+## Repairable damage — `repairable` (DIGEST-REPAIRABLE-01, 2026-10-09)
+
+**The audit described; this field instructs.** `lib/ops/repairableDamage.ts →
+summariseRepairable` owns it.
+
+🔴 **IT IS A STANDING REPORT, AND THAT IS THE OPPOSITE RULE FROM THE CODE-SET
+ALERT ABOVE.** `PLAN-AUDIT-01` alerts on a **transition** because *"an alert that
+always fires is an alert nobody reads"* — correct for debt with no known remedy.
+It is wrong for damage that has one, and the six-day gap is the proof: the
+recalibration defect (`RECAL-PACE-TWO-WRITER-01`) broke three live plans on
+**2026-10-03**, the transition alert fired once and then went quiet — correctly,
+by its own rule, because nothing changed after that — and **the damage sat for six
+days** while the digest said nothing. It surfaced only because the founder read an
+unrelated line in the same report and asked about it.
+
+A standing count does not decay into noise here because it is **self-clearing**:
+one command fixes it and the field disappears. *"Something happened"* is worth
+saying once; *"this is still true, and here is the fix"* is worth saying until it
+is not.
+
+⚠️ **ABSENT, NEVER ZEROED.** A digest line reading `repairable: 0 plans` every
+morning is exactly the noise this exists to avoid being. Absence is the clean
+signal.
+
+⚠️ **ONE LIST, SHARED.** The codes it counts come from `REPAIRABLE_CODES` in
+`lib/plan/planRepairs.ts` — the same list the repair script's own population
+filter reads. So the digest can never advertise a command that does not cover the
+damage it is reporting. That drift already happened once inside the script itself:
+it selected plans by one code, and a plan carrying eight repairable violations
+dropped out of its target set the moment the first was fixed.
+
+⚠️ **THE COMMAND IS A DRY RUN AND IS ASSERTED TO BE.** `--apply` is never
+advertised: a digest should not hand over a live write. The dry run prints a
+per-plan before/after diff, and every write archives the prior plan first.
+
+**Verified against production both ways (2026-10-09):** 21 invalid plans and the
+field **absent**, because the repairs had already run; with one synthetic damaged
+plan added it returns `{ plans: 1, by_code: { INV-PLAN-HEADER-PACE-MATCHES-WORK:
+1 }, command: … }`.
+
+🔻 **THE DIGEST PROMPT ITSELF IS NOT REPO CODE.** The daily ops digest is a cloud
+routine. This field makes the information available; **surfacing it is a one-line
+change to that routine's prompt**, which is the founder's to make.
