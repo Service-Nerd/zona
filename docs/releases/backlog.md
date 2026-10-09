@@ -57,6 +57,49 @@ component — so this needs its own arm or it will not be noticed again.
 
 ---
 
+### 🔻 `WEEK-THEME-TOKEN-ENRICH-01` — the enricher puts SESSION tokens in WEEK themes, against its own prompt ⚙️ **NO BOARD**
+
+**Filed 2026-10-09, after verifying `COACH-INTRO-TOKEN-01` against live data rather than
+trusting the unit tests.**
+
+🔴 **The prompt already forbids it, in as many words** (`enrich.ts`):
+*"Use placeholders ONLY for coach_notes. Week labels and themes do NOT contain numerics —
+**never put placeholders in them**."* The model does it anyway, on **11 of 34 plans**, and
+nothing enforced the rule until `COACH-INTRO-TOKEN-01` widened
+`INV-PLAN-NO-PLACEHOLDER-COPY` today — at `warn`.
+
+**Measured, by token name, across 49 live `week.theme` tokens:**
+
+| token | count | resolves to |
+|---|---|---|
+| `{{session_zone}}` | **37** | **BLANK** — there is no session in scope for a week-level string |
+| `{{session_distance}}` | 8 | **BLANK** |
+| `{{zone2_ceiling}}` | 4 | **147 bpm** — correct, it is a plan-level value |
+
+⚠️ **SO `COACH-INTRO-TOKEN-01` GUARANTEES NO BRACE, NOT A COMPLETE SENTENCE**, and that
+limitation is the reason this item exists. Rendered today those 37 would read:
+
+> *"Strides appear now on Wednesday and Sunday. Still all. These short bursts wake the legs."*
+> *"Quality returns to 7 km in. Volume stays at 38 km."*
+
+✅ **No runner sees them today** — `week.theme`'s only reachable render is `TodayScreen`'s
+maintenance-transition line, there are **0 maintenance plans live**, and maintenance themes are
+rule-authored (`enrichMaintenance.ts` does not rewrite them). But `/api/post-race-reshape:249`
+writes `theme: enrichment.theme ?? week.theme`, so an AI theme can reach it.
+
+✅ **It cannot cost a runner their AI voice.** `violationsIntroducedBy` filters
+`severity === 'error'`, and the new arm is `warn` — verified, not assumed, because an
+over-eager invariant discarding enriched weeks is a recorded defect class here.
+
+**Scope, and the order matters:** (1) decide whether the enricher should be made to obey its
+own prompt (a schema/validation reject on a themed token, so the week reverts to rule copy
+rather than shipping a gapped sentence), or whether `week.theme` should be allowed session
+tokens with a session-aware render. (2) Only then decide the severity of the invariant arm.
+⚠️ **Do not simply raise it to `error`** — that WOULD start reverting enriched weeks, which
+is the trade this item exists to make deliberately.
+
+---
+
 ### 🔻 `LR-TAPER-BUMP-01` — V4 can INCREMENT a long run in the taper 🏃 **COACHING BOARD** *(PROPOSED, NOT BUILT)*
 
 **Filed 2026-10-09. Not built: it changes what the engine prescribes, and the founder's
@@ -7930,6 +7973,47 @@ expect is how a predicate gets handed over and comes back with the same answer e
 accepted, 3 may not reproduce, 4 is a question not a defect. **They are blocked, not urgent** — the
 reason they are listed together is that four items drifting for want of one phone session is worth
 seeing in one place.
+
+---
+
+### 🔻 FOUR DECISIONS FROM THE 2026-10-09 OPS-DIGEST TRIAGE — none of these had a home until now 👤 **FOUNDER**
+
+🔴 **These existed only in a chat transcript.** Filed 2026-10-09 after an accounting of
+all 13 triage rows found four with no backlog entry — the worst place for an open question is
+a conversation nobody re-reads.
+
+**(a) `RACE-NAME-SANITY-01`** — NOT a defect, an option. Race name is free text with no
+lookup: **8 London plans, 8 different spellings**, including *"London maratgon"* and
+*"London Mara "*. Seven are 24/25 Apr; one runner typed **2027-05-17**. `generator_input.race_date`
+matches `meta.race_date` on all of them, so the engine is faithful to what was typed.
+**Question: warn when a named major's date is more than ~2 weeks off a known date?** It needs
+a date list we would have to maintain, which is the real cost. ⚙️ NO BOARD if built.
+
+**(b) `FINISH-WORDING-FLOOR-01`** — 🏃 **COACHING BOARD if you want it changed.** The
+"gets you round" wording branches on *which check fails*, not on the runner's goal, and
+`CB-PLAN-REVIEW-01` ratified that as correct. **But there is no magnitude floor**, so a
+runner **1 km** short of the long-run bar reads the same sentence as one **20 km** short
+(measured: peak 52 v 53 km, long run 29 v 31.7 km). §40c's own principle — *"notes that fire
+on noise get ignored"* — and §80 Am.1 already applies a 5% materiality floor to the
+neighbouring note. **Question: apply the same floor here?**
+
+**(c) Contradictory intake** — 🔴 **AND IT IS ALREADY FILED.** `SUBFLOOR-COHERENCE-01`,
+**SLT-ruled BUILD on 2026-09-19** and unbuilt for 20 days, is the sibling: *"worth asking the
+wizard to reconcile the two answers rather than generating from an inconsistent pair."*
+⚠️ **They are not identical and both are live.** SUBFLOOR is an *incoherent but valid*
+pair (longest run below the weekly average). This is a pair that **violates an input
+invariant and generates anyway**: `INV-INPUT-LONGEST-LE-WEEKLY` throws in dev/test and only
+LOGS in production, so **3 plans exist with longest > weekly** (one at 20 km vs 10 km/wk — and
+that is the plan carrying `LR-TAPER-BUMP-01`). **Decision: fold this into
+`SUBFLOOR-COHERENCE-01`'s build, or keep it separate?** 🔴 I triaged it as a new finding
+without recognising the filed item — REUSE applies to my own backlog.
+
+**(d) `V1-LOAD-STEP-SHAPE-01`** — 🏃 **COACHING BOARD.** Two runners' curves, both
+*correct* by the current rule and both odd to look at. Duncan **44 → 33 → 40**: `V1` held the
+volume because *"week 5 introduced the first quality session AND stepped volume 33 → 46"*, and
+the intent is "do not add volume and intensity together". Floe **week 9 +31%**. **Question:
+when `V1` blocks a step, should the week hold at the DELOAD level, or take a smaller rise?**
+Holding at deload makes the next step bigger, which is the thing §2/§3 exist to prevent.
 
 ---
 
