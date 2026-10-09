@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — AUDIT-MEMORY-LINES-01 · the gate knew bytes, the limit was also lines
+**Shipped:** The docs audit now checks MEMORY.md's line count as well as its byte count, because a line got silently dropped overnight.
+
+**Dev learning:** The file was 23,100 bytes against a 23,800 budget and reported ALL CLEAN. It was also **201 lines against a 200-line load limit**, so the loader cut the last line and `Rebrand Gotchas` left my index. **There were two limits and the gate knew one.** The byte budget was written the day the first truncation was found, against the only limit that incident had exposed — so the gate was shaped by its origin story rather than by the mechanism. A day that adds several short index hooks adds lines without adding many bytes, which is exactly what yesterday did, and it walked straight past.
+
+**Product/creator learning:** Getting back under the limit was the interesting part, because the lazy fix is to delete an entry and the whole point of the file is that nothing in it has another copy. Line 4 turned out to be an **orphaned duplicate** state paragraph left behind when I rewrote line 3 yesterday — but it carried two facts the rewrite had lost, so those got folded back in before the line went. Then three families of related feedback entries collapsed onto one line each with every file reference intact, and I verified afterwards that every `feedback_*.md` on disk is still linked. **Merging is how an index shrinks; deleting is how it loses.**
+
+**AI-building learning:** This is the second time a self-truncating memory file has cost me an entry, and both times the warning was only visible *inside the already-damaged copy* — a session that has lost the line is the only session told about it. That is the shape worth remembering: when a system reports its own degradation only to the degraded instance, the gate has to live outside it.
+
+**The honest bit:** The founder asked "still an active session?" and the honest answer involved admitting my own memory had quietly lost a line overnight. I would not have noticed if the loader hadn't printed the warning into the context.
+
+**Hook material:** Two limits, one gate, and the one it knew about was the one the previous incident happened to expose.
+
+**Postable?:** maybe
+
 ## 2026-10-08 — RESHAPE-MOMENT-04 · the founder said it was awful and the house style already said why
 **Shipped:** The eight signals the engine watches now lead with their real thresholds, grouped by horizon, instead of being eight sentences in a row.
 
