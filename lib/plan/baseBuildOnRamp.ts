@@ -259,6 +259,23 @@ export function generateBaseBuildPlan(
   return {
     meta: {
       ...(input as unknown as Record<string, unknown>),
+      // PV2-A / §1 — the SECOND producer of a plan from a GeneratorInput, and
+      // for its whole life the only one that did not stamp the input it was
+      // built from. The spread above copies the input's FIELDS flat, which
+      // reads like the same thing and is not: every consumer reads the nested
+      // `meta.generator_input`, so a base-build runner could not open the
+      // Modify sheet (`canModifyPlan`), their plan saved without
+      // `savePlanForUser`'s validate gate running, the daily audit could not
+      // classify it, `validateReshapedPlan` fell to its legacy branch with
+      // three fields zeroed, and five repair scripts skipped them.
+      //
+      // ⚠️ `canModifyPlan`'s own doc comment said "every plan generated from
+      // today carries the stamp, so this shrinks on its own". True when it was
+      // written; false from the moment §118 shipped a second producer. Measured
+      // 2026-10-09: 2 live base-build plans unstamped, both created after the
+      // field existed, and the daily digest reported them under the SAME cause
+      // as the 7 genuinely pre-PV2-A legacy rows.
+      generator_input: input,
       plan_kind: 'base_build',
       base_build_onramp: true,
       race_name: 'Base building',

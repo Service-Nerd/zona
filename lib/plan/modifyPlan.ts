@@ -117,9 +117,19 @@ export type PlanEdits = Partial<Pick<GeneratorInput, ModifiableKey>>
  * Those runners cannot be served by guessing the original answers — a
  * regeneration from invented inputs changes things the runner never asked to
  * change, silently. So the sheet is unavailable and says why, rather than
- * offering an edit it cannot honour. Every plan generated from today carries
- * the stamp, so this shrinks on its own; the October charity cohort is
- * unaffected because their plans will all be new.
+ * offering an edit it cannot honour. The October charity cohort is unaffected
+ * because their plans will all be new.
+ *
+ * 🔴 THIS COMMENT USED TO END "every plan generated from today carries the
+ * stamp, so this shrinks on its own". True when written, and FALSE from the
+ * moment §118 shipped a second producer: `generateBaseBuildPlan` did not stamp
+ * it, so every base-build runner silently lost this sheet. Measured 2026-10-09:
+ * 9 of 34 stored plans unstamped, of which **2 were base-build plans created
+ * after the field existed** — one of them 29 minutes after that day's deploy.
+ * Fixed in BASEBUILD-GENINPUT-01 and now held by `generatorInputStamp.test.ts`,
+ * which derives the producer set from source rather than trusting a sentence.
+ * ⚠️ A claim about ALL producers, parked in a comment next to ONE of them, is a
+ * claim nobody re-checks when the second one arrives.
  */
 export function canModifyPlan(plan: Plan | null | undefined): boolean {
   return !!plan?.meta?.generator_input

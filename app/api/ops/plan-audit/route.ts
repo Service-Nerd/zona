@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { secretMatches } from '@/lib/security/secrets'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { findWeekCollisions, type LiveWeekRow } from '@/lib/ops/planWeekCollision'
-import { validateReshapedPlan } from '@/lib/plan/invariants'
+import { validateStoredPlan } from '@/lib/plan/validateStoredPlan'
 import { storedPlanCodes } from '@/lib/ops/storedPlanProbes'
 import { summariseRepairable } from '@/lib/ops/repairableDamage'
 import {
@@ -141,10 +141,18 @@ export async function POST(req: NextRequest) {
 
     let errors
     try {
-      // Single owner for "validate a stored plan" — it prefers the persisted
-      // meta.generator_input and falls back for pre-PV2-A plans. A second
-      // implementation here would be free to drift (D-08).
-      errors = validateReshapedPlan(plan).filter(v => v.severity === 'error')
+      // Single owner for "validate a stored plan" — it picks the constitution
+      // that applies to this plan's KIND, then (for a race plan) prefers the
+      // persisted meta.generator_input and falls back for pre-PV2-A plans. A
+      // second implementation here would be free to drift (D-08).
+      //
+      // ⚠️ IT USED TO CALL `validateReshapedPlan` DIRECTLY, WHICH IS THE RACE-PLAN
+      // VALIDATOR, ON EVERY PLAN KIND. Measured 2026-10-09: the two base-build
+      // plans in the fleet produced 101 of its 363 reported errors — 28%, mean
+      // 50.5 against 8.2 for every other plan — and every one was a phantom,
+      // because a plan with no start line has no prep-time status to annotate.
+      // `baseBuildValidate.ts`'s own header had predicted it in writing.
+      errors = validateStoredPlan(plan).filter(v => v.severity === 'error')
     } catch (e) {
       // A validator throw is itself a finding, but must not abort the audit.
       console.error('[plan-audit] validate threw', e)

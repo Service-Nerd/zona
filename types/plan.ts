@@ -912,7 +912,13 @@ export interface PlanMeta {
   // to the race plan (§75). When the race completes, the race plan is archived as
   // completed and the active plan becomes a standalone maintenance plan carrying
   // this marker. `plan_kind` absent/'race' = a normal goal-race plan.
-  plan_kind?:        'race' | 'maintenance'
+  // §116/§118 — `base_build` was written at runtime by `generateBaseBuildPlan`
+  // and `generateGetRunningPlan` for its whole life while absent from this union,
+  // so every writer went through an `as unknown as Plan['meta']` cast and no
+  // reader could narrow on it. `validateStoredPlan` dispatches on this field, and
+  // a dispatch keyed on a value the type does not admit is a dispatch nobody can
+  // type-check.
+  plan_kind?:        'race' | 'maintenance' | 'base_build'
   source_race_name?: string   // maintenance plan: the race it follows (for copy + next-goal)
   source_race_distance_km?: number  // maintenance plan: race distance (drives next-goal ladder)
   source_race_date?: string         // maintenance plan: ISO date the source race was run — drives "N weeks post-race" coaching recency (ADR-013). Carried from the race plan's race_date before it's cleared.

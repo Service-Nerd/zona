@@ -1,4 +1,4 @@
-import { validatePlan } from './plan/invariants'
+import { validateSavedPlan } from './plan/validateStoredPlan'
 import { PlanSchema } from './plan/schema'
 import { recordOpsEvent } from './ops/recordOpsEvent'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -130,9 +130,19 @@ export async function savePlanForUser(
   // dependency graph is almost entirely present already. The lazy version was
   // built and measured before being reverted: it bought a rounding error and
   // cost a dynamic import in a hot path.
+  //
+  // ⚠️ AND THE CHECKER IS CHOSEN BY PLAN KIND, NOT ASSUMED. `validatePlan` is the
+  // RACE-plan constitution. `generateBaseBuildPlan` began stamping
+  // `generator_input` in BASEBUILD-GENINPUT-01, which opened this door for a plan
+  // kind that has no race week, no taper and no peak — 61 "errors" on a valid
+  // base-build plan, every one of them the validator asking a plan with no start
+  // line whether it annotated its prep time. `validateSavedPlan` owns the
+  // dispatch; §116's `validateBaseBuildBlock` is the base-build constitution.
+  // It keeps `validatePlan` for a race plan — NOT the reshape variant, which
+  // skips two race-week invariants and would quietly weaken this gate.
   const generatorInput = plan?.meta?.generator_input
   if (generatorInput && plan.weeks?.length) {
-    const errors = validatePlan(plan, generatorInput).filter(v => v.severity === 'error')
+    const errors = validateSavedPlan(plan, generatorInput).filter(v => v.severity === 'error')
     if (errors.length) {
       const detail = {
         count: errors.length,
