@@ -86,6 +86,7 @@ import {
   velocityAtFraction, paceAtFraction, formatPace, paceBandStr, buildPaceFromVDOT, bandCeiling,
 } from './paceBands'
 import type { PaceGuide } from './paceBands'
+import { qualityHeaderPace } from './qualityHeaderPace'
 
 // ─── VDOT model (Jack Daniels) ────────────────────────────────────────────────
 
@@ -1845,19 +1846,27 @@ function makeQualitySession(args: {
     // reached rows that dose.
     //
     // ⚠️ DISPLAY ONLY — `minPerKm` above is deliberately untouched. It sizes the
-    // session and therefore sets its prescribed DISTANCE, and moving it is a
-    // prescription change the board has NOT ruled on: §120 §6 parks it by name
-    // ("the sizing twin of the header defect"). Raise it as its own item.
-    const derivedWorkPaces = new Set(
-      (derivedSet?.blocks ?? []).flatMap(b => b.steps)
-        .filter(st => st.role === 'work' && st.pace)
-        .map(st => st.pace as string),
-    )
-    paceTarget = repPlan
-      ? paceBandStr(repPlan.workPaceMinPerKm, 2)
-      : derivedWorkPaces.size === 1
-        ? Array.from(derivedWorkPaces)[0]
-        : pace.qualityPaceStr
+    // session and therefore sets its prescribed DISTANCE at GENERATION, where
+    // the two are computed together from one pace guide and cannot disagree.
+    //
+    // 🔴 THE COMMENT HERE USED TO SAY "§120 §6 parks it by name ('the sizing
+    // twin of the header defect'). Raise it as its own item." THAT WAS STALE AND
+    // IT NEARLY COST A BOARD SITTING. `SESSION-SIZING-ANCHOR-01` was raised,
+    // measured and CLOSED AS A FALSE PREMISE — 1,320 quality sessions, 0 sized
+    // at threshold while running elsewhere — and the register says in terms "do
+    // not re-file it". The instruction outlived the question it was written for.
+    // What IS live is the POST-GENERATION case the closed item never covered:
+    // a recalibration moves the pace guide, so distance must be re-derived with
+    // it (Coaching Board RECAL-SIZING-PROPERTY-01, §125).
+    //
+    // The header itself is `qualityHeaderPace`'s, and this call is the reason
+    // that module exists — the expression was inline, so `applyRecalibration`
+    // had nothing to share and wrote the category band instead.
+    paceTarget = qualityHeaderPace({
+      repWorkPaceMinPerKm: repPlan?.workPaceMinPerKm ?? null,
+      derivedSet,
+      categoryBand: pace.qualityPaceStr,
+    })
     zone = zones.qualityZone
     hrTarget = zones.qualityHR
   }

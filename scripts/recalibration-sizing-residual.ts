@@ -15,18 +15,18 @@ console.log('recal        Δbenchmark   comparable  mis-sized  mean err  worst e
 for (const to of ['0:22:00', '0:25:00', '0:26:00', '0:28:00', '0:32:00']) {
   const from = '24:00'
   const gi = JSON.parse(JSON.stringify(base))
-  const recal = applyRecalibration(generateRulePlan(gi), { type: 'race', distance_km: 5, time: to } as any, 1) as any
+  const recal = applyRecalibration(generateRulePlan(gi, 'paid'), { type: 'race', distance_km: 5, time: to } as any, 1) as any
   const giTo = JSON.parse(JSON.stringify(base)); giTo.benchmark.time = to
-  const fresh = generateRulePlan(giTo) as any
+  const fresh = generateRulePlan(giTo, 'paid') as any
   const a = quals(recal), b = quals(fresh)
-  const pure = a.map((q, i) => ({ q, f: b[i] })).filter(x => x.f && x.q.m != null && x.q.m === x.f.m && x.q.d != null && x.f.d != null)
-  const errs = pure.map(x => Math.abs(x.q.d! - x.f.d!) / x.f.d!)
-  const mis = errs.filter(e => e > 0.001).length
+  const pure = a.map((q: any, i: number) => ({ q, f: b[i] })).filter((x: any) => x.f && x.q.m != null && x.q.m === x.f.m && x.q.d != null && x.f.d != null)
+  const errs = pure.map((x: any) => Math.abs(x.q.d! - x.f.d!) / x.f.d!)
+  const mis = errs.filter((e: number) => e > 0.001).length
   const weekly = (p: any) => (p.weeks ?? []).filter((w: any) => w.n > 0).map((w: any) =>
     Object.values(w.sessions ?? {}).reduce((t: number, s: any) => t + (sessionKmSelfPaced(s) ?? 0), 0))
   const wa = weekly(recal), wb = weekly(fresh)
   const n = Math.min(wa.length, wb.length)
   const werr = n ? wa.slice(0, n).map((k: number, i: number) => Math.abs(k - wb[i]) / (wb[i] || 1)) : []
   const d = (secs(to.slice(2)) - secs(from)) / secs(from)
-  console.log(`24:00→${to.slice(2)}   ${(100 * d).toFixed(1).padStart(6)}%   ${String(pure.length).padStart(7)}   ${String(mis).padStart(7)}   ${errs.length ? (100 * errs.reduce((s, x) => s + x, 0) / errs.length).toFixed(1).padStart(6) + '%' : '    n/a'}  ${errs.length ? (100 * Math.max(...errs)).toFixed(1).padStart(6) + '%' : '    n/a'}   ${werr.length ? (100 * werr.reduce((s, x) => s + x, 0) / werr.length).toFixed(1).padStart(5) + '%' : '  n/a'}`)
+  console.log(`24:00→${to.slice(2)}   ${(100 * d).toFixed(1).padStart(6)}%   ${String(pure.length).padStart(7)}   ${String(mis).padStart(7)}   ${errs.length ? (100 * errs.reduce((acc: number, x: number) => acc + x, 0) / errs.length).toFixed(1).padStart(6) + '%' : '    n/a'}  ${errs.length ? (100 * Math.max(...errs)).toFixed(1).padStart(6) + '%' : '    n/a'}   ${werr.length ? (100 * werr.reduce((acc: number, x: number) => acc + x, 0) / werr.length).toFixed(1).padStart(5) + '%' : '  n/a'}`)
 }
