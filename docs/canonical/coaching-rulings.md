@@ -1605,3 +1605,121 @@ Violation[]` cannot reach them by construction — the liveness harness's own `s
 is what forced the six out of `CONSTANTS_DEBT`; nobody had to remember to tidy it. Surviving:
 3 FACT, 2 ALIAS, 1 DEAD.
 
+---
+
+## LR-TAPER-BUMP-01 — V4 pushed a long run above the peak in the taper, and §6 Am.1 already forbade it (2026-10-09)
+
+**Ruling: CORRECT WITH AMENDMENT.** Hutchinson chairing. **Not new doctrine — enforcement of
+§6 Amendment 1**, which the engine was breaching.
+
+### 🔴 THE SUBMISSION WAS WRONG ON ITS CENTRAL CLAIM, AND THE CONFLICT SCAN CAUGHT IT
+
+I took the board a question framed as *"must V4 be phase-aware?"*, asserting that **"nothing in
+`validatePlan()` guards the long run by phase."** False. **§6 Amendment 1
+(`PEAK-LR-NOT-IN-PEAK-01`, this board, 2026-09-15)** already rules it, in as many words:
+
+> *"A taper week's long run MUST NOT exceed the longest long run of the **peak** phase, within
+> `TAPER_LR_VS_PEAK_TOLERANCE_KM`."*
+
+The numeric exists (0.5 km). The invariant exists (`INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK`). An
+engine cap exists (`ruleEngine.ts:4298`). **The law was fine; the engine was not.**
+
+⚠️ This is the fifth sitting convened on something already ruled. The register exists for
+exactly this and I did not read it first.
+
+### 🥇 THE ATTRIBUTION IS SINGLE-CAUSE, WHICH IS AS CLEAN AS THIS BOARD GETS
+
+4,808 plans, grid built around a real stored plan's own input:
+
+| | plans | breach §6 Am.1 |
+|---|---|---|
+| V4 bumped a taper week | 923 | **827 (89.6%)** |
+| V4 did NOT | 3,885 | **0 (0.0%)** |
+
+`INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` fires on **827 of 4,808 (17.2%)**. Zero breaches occur
+without V4's taper bump.
+
+### 🔴 AND THE MECHANISM IS NOT WHAT I TOLD THE BOARD EITHER — THE CAP NEVER RAN
+
+I briefed an ORDERING defect: cap at 4298, V4 at 5944, V4 overwrites. Measured on the real
+plan, the truth is worse:
+
+| week | phase | `distance_km` | `duration_mins` |
+|---|---|---|---|
+| w15, w16 | peak | 14.5 | 118 |
+| w17–w19 | **taper** | **NULL** | 126 / 98 / 65 |
+
+The cap bails on `if (!long || long.distance_km == null) continue`. **The taper long runs are
+duration-anchored, so the cap was structurally blind and never applied.** V4 did not undo it.
+
+⚠️ **Third-plus occurrence of the `LR-CAP-BLIND-01` / `SESSION-KM-01` class** — a
+`distance_km == null` hole on the cohort that is **95.8% duration-anchored**. The irony is that
+**V4 is the modern code**: it reads `sessionKmSelfPaced` and writes back to the anchor the
+session actually uses, with a comment saying why. The ratified cap is the one with the hole.
+
+### Seats
+
+- **Hutchinson (chair):** *"The submission asked me to legislate something I ruled on four
+  weeks ago. What it should have asked is why my ruling isn't holding."*
+- **Seiler:** no objection on distribution — a long run is an easy session and §1 counts
+  sessions. Recorded: *"+1 km is trivially small, and that is precisely why it survived."*
+- **McMillan:** *"that is a dress rehearsal, not a taper"* (restated from 09-15). Wants the
+  fix scoped to V4's own written rationale — *"a flat long run across 4+ **BUILD** weeks"* —
+  rather than new doctrine.
+- **Willy:** 🔴 **rejected my denominator.** I offered **0.2%** (taper = plan maximum) as
+  the severe case; the ratified test is *above the **peak phase***, which is **17.2%**. My
+  number understated the breach by ~86×. Condition of approval: the fix must be the
+  construction path, not a severity change alone.
+- **Sims:** the cohort is beginners, injury history, three days a week; in taper they are told
+  volume drops, intake drops with it, and then they are handed the longest run of the block —
+  a glycogen and bone-loading event where fuelling has relaxed.
+
+### ⚡ Recorded disagreement — the `warn` severity
+
+**Sims** wants `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` at `error`. **Hutchinson** dissents: once the
+construction path is fixed, the only remaining firings are the **§9-pinned residual** the
+invariant's own row already explains, and `error` would fail plans for §9 doing its job.
+
+🥇 **Sims's sharper point, which the chair accepted:** the `warn` is justified for the
+unfixable §9 residual and was therefore **absorbing a trivially fixable V4 breach behind that
+justification.** One severity, two causes, and the fixable one invisible. *A guard that absorbs
+a regression hides it.*
+
+**Resolved by sequence, not by casting vote:** fix the construction path, re-measure the
+residual, then revisit severity. **Sims's condition is binding** — if the residual does not
+fall to the §9-pinned cases, severity returns to this board.
+
+### ⚖️ The amendment, three parts
+
+1. **V4 is scoped to the phases its own rationale names** — `base`, `build`, `peak`. Not
+   `taper`, not `race`. A defect fix against the config's written reason.
+2. **The §6 Am.1 cap must read the session's actual anchor**, not `distance_km` alone, and
+   write back to it — the same correction V4 already carries.
+3. **Severity stays `warn`, and is re-measured with the number stated.**
+
+**REJECTED:** *"any phase, provided the result does not exceed the peak."* It fixes 0.2% on the
+wrong denominator and leaves §6 Am.1 breached on 17.2%.
+
+### 📦 Artifacts
+
+1. **Principle** — §6 Am.1 gains an enforcement note (cap applies at construction AND binds V4).
+   No new section; the rule is already written.
+2. **Numeric** — `LR_REPEAT_ELIGIBLE_PHASES` in `GENERATION_CONFIG`, so the phase list is
+   config rather than a literal in `ruleEngine.ts`.
+3. **Check** — `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` exists; the artifact is its **falsification**
+   plus a new test asserting V4 never touches a taper or race week.
+
+### ✅ Three sibling withdrawals, upheld
+
+- **`FINISH-WORDING-FLOOR-01`** — withdrawal upheld. The board already applied
+  `lrFloorTolerated` (0.5 km) and the prompting case's gap was **5.4×** it, so the sentence was
+  CORRECT on that plan. My premise (*"a 1 km gap reads the same as 20 km"*) is unsupported.
+- **`V1-LOAD-STEP-SHAPE-01`** — withdrawal upheld as filed: **0 of 1,077** dip-then-jump cases.
+  The measured finding (V1 plans breach §2's delivered rise at **93.0%** against a **66.4%**
+  control, whole cohort 72.4%) is **ADR-022's** declared residual; Willy asks it be filed there.
+- **`LR-NOTE-SCOPE-01`** — the hold was right **and it resolves itself**: once V4 respects the
+  cap, the §80 note's peak-phase read is correct by construction and no wording changes.
+
+### ⇗ SLT escalation
+
+None.

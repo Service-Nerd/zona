@@ -2673,6 +2673,22 @@ export const GENERATION_CONFIG = {
   // pure repetition without over-extending.
   LR_MAX_CONSECUTIVE_REPEATS: 2,
   LR_REPEAT_INCREMENT_KM:     1,
+  // Phases V4 may increment in (Coaching Board LR-TAPER-BUMP-01, 2026-10-09).
+  //
+  // 🔴 THE RATIONALE ABOVE ALREADY SAID "BUILD WEEKS" AND THE CODE SAID
+  // "NOT DELOAD". V4 iterated every week and skipped only deloads, so it
+  // incremented TAPER long runs — which §6 Amendment 1 (PEAK-LR-NOT-IN-PEAK-01,
+  // 2026-09-15) forbids: "a taper week's long run MUST NOT exceed the longest
+  // long run of the peak phase".
+  //
+  // Measured, 4,808 plans: V4 bumped a taper week on 923, and
+  // INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK fired on 827 of those (89.6%) against
+  // **0 of 3,885** plans where it did not. Single-cause attribution.
+  //
+  // ⚠️ `race` is excluded too. It never fired there (the time cap and §52 bind
+  // first), so this is belt-and-braces rather than a measured fix — stated so
+  // nobody reads the exclusion as evidence of a defect that was found.
+  LR_REPEAT_ELIGIBLE_PHASES: ['base', 'build', 'peak'] as readonly string[],
   LR_RACE_DISTANCE_MULT_SHORT: 1.8,  // ≤ 21km races
   LR_RACE_DISTANCE_MULT_LONG:  2.0,  // > 21km races
 

@@ -100,66 +100,154 @@ is the trade this item exists to make deliberately.
 
 ---
 
-### 🔻 `LR-TAPER-BUMP-01` — V4 can INCREMENT a long run in the taper 🏃 **COACHING BOARD** *(PROPOSED, NOT BUILT)*
+### ✅ `LR-TAPER-BUMP-01` — **SHIPPED 2026-10-09.** §6 Am.1 was already law; two writers were breaking it 🏃 **COACHING BOARD RULED: CORRECT WITH AMENDMENT**
 
-**Filed 2026-10-09. Not built: it changes what the engine prescribes, and the founder's
-standing rule is propose, do not implement.**
+🔴 **I took the board a question it had already answered.** I asked *"must V4 be
+phase-aware?"* and asserted *"nothing in `validatePlan()` guards the long run by phase."*
+**§6 Amendment 1 (`PEAK-LR-NOT-IN-PEAK-01`, 2026-09-15)** rules it in as many words, with a
+numeric and an invariant. The conflict scan caught it. Full ruling:
+`docs/canonical/coaching-rulings.md`.
 
-`V4-long-run-repeat-ceiling` (`ruleEngine.ts:5944`) breaks a repeated long run by adding
-`incrementKm`. It **iterates every week and skips only `type === 'deload'`**. Its two safety
-guards are §40/§9's absolute time cap and §52's LR/weekly cap. **Neither knows about
-phases**, so the bump can land in the taper.
+**Two independent failures let the engine breach a ratified rule:**
+1. `V4-long-run-repeat-ceiling` iterated **every** week and skipped only deloads — while its
+   own config rationale says *"a flat long run across 4+ **BUILD** weeks"*. Principle scoped,
+   code not.
+2. §6 Am.1's engine cap bailed on `distance_km == null`, so it **never ran on a
+   duration-anchored plan** — and beginners are **95.8% duration-anchored**. On the real plan:
+   peak long runs `distance_km: 14.5`, taper's `null` + 126 min, cap bailed, taper shipped
+   **15.5 km against a 14.5 km peak**. Third-plus `LR-CAP-BLIND-01`.
 
-**Reproduced deterministically** from plan `86ac765d`'s own stored input:
-`V4 weeks + their phases: w14=build, **w17=taper**`.
+**Measured, 4,808 plans — single-cause attribution:** V4 bumped a taper week on 923, and
+`INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` fired on **827 of those (89.6%)** against **0 of 3,885**
+without. After: taper bumps **0**, race bumps **0**, cohort fires **0**.
+**Sweep residual 3.7% → 0.3% (44/14,268)**, which satisfies Sims's binding condition for
+leaving the severity at `warn`.
 
-| week | phase | long run | weekly km |
-|---|---|---|---|
-| w13 | build | 118 min | 26 |
-| **w14** | build | **126 min** | **27** |
-| w15, w16 | **peak** | 118 min | 26 |
-| **w17** | **taper** | **126 min** | **27** |
+⚠️ **Willy rejected my denominator.** I offered **0.2%** (taper = plan maximum); the ratified
+test is *above the **peak phase***, which is **17.2%**. My figure understated it **~86×**.
 
-So the plan's **longest run and its highest weekly volume both sit outside the peak phase**,
-one of them in the taper — the phase whose entire job is to shed load.
+⚠️ **What the gate does NOT prove, found by mutation:** restoring the cap's blindness leaves
+every arm green, because with V4 scoped no inversion exists for the cap to resolve. 1,712 of
+4,745 taper long runs (36%) are duration-anchored, 0 inverted. Half two is **defence in depth,
+unproven by reachability** — declared in the test file, not papered over.
 
-🔴 **POPULATION, AND MY FIRST GRID SAID ZERO.** A grid built from `real-inputs` case 0
-(HM, 3 days, 30 km/wk, no weekday cap) gave **0 of 1,709**. A grid built around the real case
-gives, over **1,840** plans:
+---
 
-- V4 fires on **1,312 (71.3%)**
-- **a TAPER week bumped: 416 — 31.7% of V4 plans, 22.6% of all**
-- phases touched: `peak 868, build 640, taper 416, base 67`; **race week 0**
-- it reaches **self-consistent** inputs (`cwk=10, lrr=6`), so it is NOT an artefact of that
-  runner's contradictory intake
+### ✅ `LR-NOTE-SCOPE-01` — **CLOSED 2026-10-09 WITH NO CODE CHANGE.** The hold was right and it resolved itself ⚙️ NO BOARD
 
-⚠️ **The cohort is the low-volume, few-days, weekday-capped beginner — Zonna's stated
-demographic.** That is why the generic grid missed it: *varying an axis is not reaching the
-interaction.*
+Held BLOCKED on `LR-TAPER-BUMP-01` rather than fixing the wording, because qualifying the
+sentence would have made the shape defect **invisible** — and that sentence is how the defect
+was found. ✅ **Vindicated:** with V4 phase-scoped, the §80 note's peak-phase read is correct
+**by construction**. Measured: 373 of 373 generated plans where the note fires have
+`peak-phase max == plan max`.
 
-🔴 **`INV-PLAN-PEAK-IN-PEAK-PHASE` EXISTS AND DID NOT FIRE.** It guards `weekly_km`, and
-on this plan the max weekly is TIED (27 in w14 and w17), so the strict comparison passes.
-**Nothing at all guards the LONG RUN by phase.**
+🥇 **The lesson is the reason this item existed:** a symptom that is the only visible
+evidence of its cause must not be silenced before the cause is understood. Chair concurred.
 
-**The board's question, in one line:** may a repeat-breaking increment ever apply to a taper
-or peak-adjacent week, or must V4 be phase-aware? The obvious fix (exclude taper and race
-weeks) is a prescription change on **22.6% of this cohort** and needs a ruling, plus the
-third artifact — there is no invariant for "the long run peaks in the peak phase".
+---
 
-✅ **The evidence script is committed: `scripts/board-evidence-taper-bump.ts`.**
+### 🔻 `WEEKTHEME-PROP-DEAD-01` — a `weekTheme` prop threaded through three layers and never used ⚙️ **NO BOARD**
 
-```
-PATH=... NODE_ENV=production npx tsx scripts/board-evidence-taper-bump.ts
-```
+**Filed 2026-10-09, out of `WEEK-THEME-DEAD-01`, and deliberately NOT bundled with it.**
 
-⚠️ **`NODE_ENV=production` is REQUIRED, not incidental.** That runner's input is
-self-contradictory (longest 20 km > weekly 10 km), which `INV-INPUT-LONGEST-LE-WEEKLY` throws
-on in dev/test and only logs in production — which is why the plan exists at all. Under
-`NODE_ENV=test` the whole grid refuses and **the answer reads zero**.
+`week.theme` is read in `PlanCalendar.tsx:421` and `TodayScreen.tsx:938`, passed through
+`onSessionTap` / `onOpenSession`, carried across `DashboardClient` and handed to
+`SessionPopupInner` as a `weekTheme` prop — which **destructures it and never uses it in the
+body**. **15 references across 6 files.**
 
-⚠️ **Measure again before the sitting.** These numbers are from one day's engine; re-derive
-them, and run `npm run measure:fitness` — a change that lowers a taper long run is a load
-change on a beginner cohort and the board must see the build numbers.
+**Why it was split off rather than folded in:** removing it changes `PlanCalendar`'s
+`onSessionTap` signature (3 args → 2) in two declarations plus its call site, and touches
+`copy-preview`. That is a refactor across 6 files with **no runner-facing effect**, and
+bundling it would have widened a clean 98-line deletion into a signature change. SLC: one job.
+
+⚠️ **It is inert, not harmful** — unlike `PlanCoachingCard`, which rendered the theme as
+prose and was one JSX line from showing 11 runners a raw `{{zone2_ceiling}}`. That is why one
+shipped today and this did not.
+
+✅ **`week.theme` still has one REACHABLE render** and it is correct now: `TodayScreen`'s
+maintenance-transition line, which `COACH-INTRO-TOKEN-01` routed through `renderPlanProse`.
+0 maintenance plans live, so it is latent — but `/api/post-race-reshape:249` writes
+`theme: enrichment.theme ?? week.theme`, so an AI-written theme can reach it.
+
+**Scope:** drop the prop from `SessionPopupInner`, unthread it, narrow the two `onSessionTap`
+signatures. ⚠️ `lib/ui/noDeadLocalComponents.test.ts` cannot see a dead PROP — only a dead
+component — so this needs its own arm or it will not be noticed again.
+
+---
+
+### 🔻 `WEEK-THEME-TOKEN-ENRICH-01` — the enricher puts SESSION tokens in WEEK themes, against its own prompt ⚙️ **NO BOARD**
+
+**Filed 2026-10-09, after verifying `COACH-INTRO-TOKEN-01` against live data rather than
+trusting the unit tests.**
+
+🔴 **The prompt already forbids it, in as many words** (`enrich.ts`):
+*"Use placeholders ONLY for coach_notes. Week labels and themes do NOT contain numerics —
+**never put placeholders in them**."* The model does it anyway, on **11 of 34 plans**, and
+nothing enforced the rule until `COACH-INTRO-TOKEN-01` widened
+`INV-PLAN-NO-PLACEHOLDER-COPY` today — at `warn`.
+
+**Measured, by token name, across 49 live `week.theme` tokens:**
+
+| token | count | resolves to |
+|---|---|---|
+| `{{session_zone}}` | **37** | **BLANK** — there is no session in scope for a week-level string |
+| `{{session_distance}}` | 8 | **BLANK** |
+| `{{zone2_ceiling}}` | 4 | **147 bpm** — correct, it is a plan-level value |
+
+⚠️ **SO `COACH-INTRO-TOKEN-01` GUARANTEES NO BRACE, NOT A COMPLETE SENTENCE**, and that
+limitation is the reason this item exists. Rendered today those 37 would read:
+
+> *"Strides appear now on Wednesday and Sunday. Still all. These short bursts wake the legs."*
+> *"Quality returns to 7 km in. Volume stays at 38 km."*
+
+✅ **No runner sees them today** — `week.theme`'s only reachable render is `TodayScreen`'s
+maintenance-transition line, there are **0 maintenance plans live**, and maintenance themes are
+rule-authored (`enrichMaintenance.ts` does not rewrite them). But `/api/post-race-reshape:249`
+writes `theme: enrichment.theme ?? week.theme`, so an AI theme can reach it.
+
+✅ **It cannot cost a runner their AI voice.** `violationsIntroducedBy` filters
+`severity === 'error'`, and the new arm is `warn` — verified, not assumed, because an
+over-eager invariant discarding enriched weeks is a recorded defect class here.
+
+**Scope, and the order matters:** (1) decide whether the enricher should be made to obey its
+own prompt (a schema/validation reject on a themed token, so the week reverts to rule copy
+rather than shipping a gapped sentence), or whether `week.theme` should be allowed session
+tokens with a session-aware render. (2) Only then decide the severity of the invariant arm.
+⚠️ **Do not simply raise it to `error`** — that WOULD start reverting enriched weeks, which
+is the trade this item exists to make deliberately.
+
+---
+
+### ✅ `LR-TAPER-BUMP-01` — **SHIPPED 2026-10-09.** §6 Am.1 was already law; two writers were breaking it 🏃 **COACHING BOARD RULED: CORRECT WITH AMENDMENT**
+
+🔴 **I took the board a question it had already answered.** I asked *"must V4 be
+phase-aware?"* and asserted *"nothing in `validatePlan()` guards the long run by phase."*
+**§6 Amendment 1 (`PEAK-LR-NOT-IN-PEAK-01`, 2026-09-15)** rules it in as many words, with a
+numeric and an invariant. The conflict scan caught it. Full ruling:
+`docs/canonical/coaching-rulings.md`.
+
+**Two independent failures let the engine breach a ratified rule:**
+1. `V4-long-run-repeat-ceiling` iterated **every** week and skipped only deloads — while its
+   own config rationale says *"a flat long run across 4+ **BUILD** weeks"*. Principle scoped,
+   code not.
+2. §6 Am.1's engine cap bailed on `distance_km == null`, so it **never ran on a
+   duration-anchored plan** — and beginners are **95.8% duration-anchored**. On the real plan:
+   peak long runs `distance_km: 14.5`, taper's `null` + 126 min, cap bailed, taper shipped
+   **15.5 km against a 14.5 km peak**. Third-plus `LR-CAP-BLIND-01`.
+
+**Measured, 4,808 plans — single-cause attribution:** V4 bumped a taper week on 923, and
+`INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` fired on **827 of those (89.6%)** against **0 of 3,885**
+without. After: taper bumps **0**, race bumps **0**, cohort fires **0**.
+**Sweep residual 3.7% → 0.3% (44/14,268)**, which satisfies Sims's binding condition for
+leaving the severity at `warn`.
+
+⚠️ **Willy rejected my denominator.** I offered **0.2%** (taper = plan maximum); the ratified
+test is *above the **peak phase***, which is **17.2%**. My figure understated it **~86×**.
+
+⚠️ **What the gate does NOT prove, found by mutation:** restoring the cap's blindness leaves
+every arm green, because with V4 scoped no inversion exists for the cap to resolve. 1,712 of
+4,745 taper long runs (36%) are duration-anchored, 0 inverted. Half two is **defence in depth,
+unproven by reachability** — declared in the test file, not papered over.
 
 ---
 
@@ -7976,44 +8064,71 @@ seeing in one place.
 
 ---
 
-### 🔻 FOUR DECISIONS FROM THE 2026-10-09 OPS-DIGEST TRIAGE — none of these had a home until now 👤 **FOUNDER**
+### 🔻 `WIZARD-WEEKDAY-CONFIRM-01` — confirm the race weekday 🧭 **DESIGN BOARD** *(routed; treatment unruled)*
 
-🔴 **These existed only in a chat transcript.** Filed 2026-10-09 after an accounting of
-all 13 triage rows found four with no backlog entry — the worst place for an open question is
-a conversation nobody re-reads.
+💼 **SLT ruled BUILD 2026-10-09. FREE.** Catches **4 of 4** wrong dates in the live set with
+**no data dependency**: London 2027 is Sunday 25 April; 3 runners entered the Saturday and one
+entered **2027-05-17, a Monday, 22 days late**. That runner's plan peaks and tapers three weeks
+after their actual race — Hutchinson: *"they arrive at London mid-build, carrying peak-phase
+fatigue."* Strongest single finding of the sitting, and neither item as I filed them.
 
-**(a) `RACE-NAME-SANITY-01`** — NOT a defect, an option. Race name is free text with no
-lookup: **8 London plans, 8 different spellings**, including *"London maratgon"* and
-*"London Mara "*. Seven are 24/25 Apr; one runner typed **2027-05-17**. `generator_input.race_date`
-matches `meta.race_date` on all of them, so the engine is faithful to what was typed.
-**Question: warn when a named major's date is more than ~2 weeks off a known date?** It needs
-a date list we would have to maintain, which is the real cost. ⚙️ NO BOARD if built.
+❌ **The major-race date list was REJECTED** and must not be re-proposed as the fix. Fried: *"a
+subscription to somebody else's data, forever, so that we can be clever about eight plans."*
 
-**(b) `FINISH-WORDING-FLOOR-01`** — 🏃 **COACHING BOARD if you want it changed.** The
-"gets you round" wording branches on *which check fails*, not on the runner's goal, and
-`CB-PLAN-REVIEW-01` ratified that as correct. **But there is no magnitude floor**, so a
-runner **1 km** short of the long-run bar reads the same sentence as one **20 km** short
-(measured: peak 52 v 53 km, long run 29 v 31.7 km). §40c's own principle — *"notes that fire
-on noise get ignored"* — and §80 Am.1 already applies a 5% materiality floor to the
-neighbouring note. **Question: apply the same floor here?**
+⚠️ **TREATMENT IS THE DESIGN BOARD'S.** Zhuo stopped the SLT sitting: *"three of the four asks
+decide what a screen shows, and this board has no designer."* Already constrained: **Wood's
+kill-threat — NOT a blocking modal** (friction at the product's highest-abandonment point, for
+first-time charity marathoners), and `ux-principles.md` permits modals only for destructive
+confirmation. **No new screen needed** — the date already has a step.
 
-**(c) Contradictory intake** — 🔴 **AND IT IS ALREADY FILED.** `SUBFLOOR-COHERENCE-01`,
-**SLT-ruled BUILD on 2026-09-19** and unbuilt for 20 days, is the sibling: *"worth asking the
-wizard to reconcile the two answers rather than generating from an inconsistent pair."*
-⚠️ **They are not identical and both are live.** SUBFLOOR is an *incoherent but valid*
-pair (longest run below the weekly average). This is a pair that **violates an input
-invariant and generates anyway**: `INV-INPUT-LONGEST-LE-WEEKLY` throws in dev/test and only
-LOGS in production, so **3 plans exist with longest > weekly** (one at 20 km vs 10 km/wk — and
-that is the plan carrying `LR-TAPER-BUMP-01`). **Decision: fold this into
-`SUBFLOOR-COHERENCE-01`'s build, or keep it separate?** 🔴 I triaged it as a new finding
-without recognising the filed item — REUSE applies to my own backlog.
+**Success condition, stated before design:** zero new plans whose race date falls on a weekday
+the runner did not confirm.
 
-**(d) `V1-LOAD-STEP-SHAPE-01`** — 🏃 **COACHING BOARD.** Two runners' curves, both
-*correct* by the current rule and both odd to look at. Duncan **44 → 33 → 40**: `V1` held the
-volume because *"week 5 introduced the first quality session AND stepped volume 33 → 46"*, and
-the intent is "do not add volume and intensity together". Floe **week 9 +31%**. **Question:
-when `V1` blocks a step, should the week hold at the DELOAD level, or take a smaller rise?**
-Holding at deload makes the next step bigger, which is the thing §2/§3 exist to prevent.
+---
+
+### 🔻 `WIZARD-ZERO-VOLUME-REFUSAL-01` — `current_weekly_km = 0` should refuse, not generate 🏃 **COACHING BOARD** *(routed, unruled)*
+
+💼 **SLT routed it down 2026-10-09**: it changes what the engine REFUSES, which is coaching.
+**2 live plans were built from a declared zero**, because `WIZARD_VOLUME_RULER.WEEKLY_KM_MIN`
+is **0** and the slider accepts it. Hutchinson wants it on record that marathon-adjacent plans
+were generated this way and that **§111's volume floor exists precisely to refuse it**.
+
+**Question for the board:** is a declared zero a §111 refusal, a floor-clamp, or a
+wizard-level block? ⚠️ Same surface as `WIZARD-WEEKDAY-CONFIRM-01` — sequence them.
+
+---
+
+### 🔻 `ADR022-V1-DELIVERED-RISE-01` — V1 aggravates ADR-022's declared residual 🏃 **COACHING BOARD** *(filed at Willy's request)*
+
+Out of `V1-LOAD-STEP-SHAPE-01`'s withdrawal. The filed premise (dip-then-jump) measured **0 of
+1,077**. What the measurement found instead: V1 plans breach §2's **delivered** 10%
+week-on-week rise at **93.0%**, against a **66.4%** control on non-V1 plans in the same cohort
+(whole cohort **72.4%**). So V1 does not CREATE the breach — ADR-022's curve-vs-delivered
+divergence does — but it raises the rate by **26.6pp**.
+
+⚠️ **ADR-022 scoped its fix to INJURY runners and left healthy divergence to §52**, so this may
+sit entirely inside its declared residual. **Measure against ADR-022's own numbers before
+treating it as new.** Not urgent; filed so it is not rediscovered as a fresh finding.
+
+---
+
+### ⚖️ THE FOUR TRIAGE DECISIONS — ALL RULED 2026-10-09
+
+Taken to the relevant board rather than left as questions. Registers:
+`docs/canonical/coaching-rulings.md` · `docs/decisions/slt-wizard-intake-trust-01.md`.
+
+| | Ruled | Outcome |
+|---|---|---|
+| **(a) Race name / date sanity** | 💼 **SLT** | ✅ **BUILD the weekday confirmation. DON'T BUILD the date list.** Free, no data dependency, catches **4 of 4** wrong dates. Fried: a maintained race-date list is *"a subscription to somebody else's data, forever, so that we can be clever about eight plans."* → `WIZARD-WEEKDAY-CONFIRM-01` |
+| **(b) Finish-wording magnitude floor** | 🏃 **COACHING BOARD** | ❌ **WITHDRAWN, upheld.** Already ruled: `lrFloorTolerated = longRunFloorKm − DISTANCE_ROUNDING_PRECISION_KM`. The prompting case's gap was **5.4×** that tolerance, so the sentence was CORRECT on that plan. My premise unsupported. **Do not re-file.** |
+| **(c) Contradictory intake** | 💼 **SLT** | ✅ **BUILD, re-scoped** — folded into `SUBFLOOR-COHERENCE-01` (one surface, one item). Plus `current_weekly_km = 0` becomes a **refusal**, not a slider value → routed to the Coaching Board as `WIZARD-ZERO-VOLUME-REFUSAL-01` |
+| **(d) V1 load-step shape** | 🏃 **COACHING BOARD** | ❌ **WITHDRAWN as filed, upheld.** **0 of 1,077** dip-then-jump cases. The real finding is ADR-022's: V1 plans breach §2's delivered rise at **93.0%** against a **66.4%** control (whole cohort 72.4%) → `ADR022-V1-DELIVERED-RISE-01` |
+
+🔴 **THE SITTINGS CORRECTED MY FRAMING ON THREE OF THE FOUR.** (a) was not a naming
+problem — Sutherland: *"one question per screen removes the only moment a person would have
+caught themselves."* Both volume inputs are **`Ruler` sliders on two separate screens**, not
+free text as I filed. (b) and (d) were already answered. **The only item whose premise
+survived contact was (c), and that one this board had already ruled 20 days earlier.**
 
 ---
 

@@ -926,6 +926,32 @@ MARATHON     → 21 days, 55% reduction, [1, 1, 1, 0]
 **Principle.** A taper week's long run MUST NOT exceed the longest long run of the
 **peak** phase, within `TAPER_LR_VS_PEAK_TOLERANCE_KM`.
 
+> 🔴 **ENFORCEMENT NOTE — THIS RULE WAS BEING BREACHED BY A LATER WRITER, AND BY A
+> BLIND CAP (LR-TAPER-BUMP-01, Coaching Board 2026-10-09).** The principle, the numeric and
+> the invariant were all correct and in place since 2026-09-15. Two separate failures let the
+> engine breach it anyway:
+>
+> 1. **`V4-long-run-repeat-ceiling` iterated every week and skipped only deloads**, so it
+>    incremented TAPER long runs — while V4's own config rationale says *"a flat long run
+>    across 4+ **BUILD** weeks"*. The principle was scoped; the code was not. V4 is now bound
+>    by `LR_REPEAT_ELIGIBLE_PHASES` (`base`, `build`, `peak`).
+> 2. **The cap bailed on `distance_km == null`, so it NEVER RAN on a duration-anchored plan**
+>    — and beginners are 95.8% duration-anchored (SESSION-KM-01). It now reads the session's
+>    real anchor and writes back to it without converting it.
+>
+> **Measured, 4,808 plans:** V4 bumped a taper week on 923, and
+> `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` fired on **827 of those (89.6%)** against **0 of 3,885**
+> plans where it did not — single-cause attribution. After the fix: taper bumps 0, race bumps
+> 0, invariant fires **0** on that cohort.
+>
+> ⚠️ **The severity stays `warn` and Sims's condition is BINDING:** the `warn` was justified
+> for the §9-pinned residual this rule cannot fix, and it was therefore *absorbing* a
+> trivially fixable V4 breach behind that justification. One severity, two causes. If the
+> re-measured residual does not fall to the §9-pinned cases, severity returns to the board.
+>
+> ⚠️ **A cap applied once and then overwritten is not a cap.** The lesson generalises: this
+> rule is enforced at construction AND must bind every later writer that touches a long run.
+
 **Why.** §6 already says volume drops sharply in the taper. §9's phase shares
 say base 28% / build 30% / peak 32% / **taper 40%** — the taper takes the
 *largest* share of a smaller week. That is defensible in itself (you cut easy

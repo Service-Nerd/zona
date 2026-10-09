@@ -6,6 +6,27 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — LR-TAPER-BUMP-01 · I took the board a question it had already answered, and the scan caught me
+**Shipped:** V4's long-run increment is phase-scoped, and §6 Amendment 1's cap now works on a duration-anchored plan.
+
+**Dev learning:** **a cap applied once and then overwritten is not a cap.** §6 Am.1 was ruled four weeks ago with all three artifacts — principle, numeric, invariant — and the engine broke it anyway, two separate ways. One writer ran later and undid it; and the cap itself bailed on `distance_km == null`, so it had never run on the cohort that is 95.8% duration-anchored. The rule was never wrong. Nothing about the doctrine needed changing. The whole sitting was about why law doesn't hold.
+
+**Product/creator learning:** the config's own rationale said *"a flat long run across 4+ **BUILD** weeks"* and the code said `if (w.type === 'deload') continue`. The principle was scoped and the implementation wasn't, and both have been sitting there, adjacent, for months. **The gap between a written reason and the code it justifies is the cheapest defect to find and the easiest to never look for** — nobody re-reads a rationale they agree with.
+
+**AI-building learning:** 🔴 **the mandatory conflict scan earned its place today.** I wrote, in a formal submission, *"nothing in `validatePlan()` guards the long run by phase."* It was false — there is a principle, a numeric, an invariant and an engine cap, all named, all four weeks old. I only found out because the skill forces the scan before any seat speaks. If that step were advisory I'd have asked five experts to legislate something already law.
+
+And the board corrected my *numbers*, not just my framing. I offered 0.2% as the severe case — the rate at which a taper long run becomes the plan's maximum. Willy pointed out the ratified test is *above the peak phase*, which is **17.2%**. I had understated the breach by about **86×** while believing I was being precise, because I'd measured a stricter rule than the one that exists.
+
+**The honest bit:** this is the fifth sitting convened on something already ruled, and the ruling register exists specifically to stop that. I didn't read it first. The register was built because the founder kept asking why the board gives different answers to the same question — and the answer, again, is that the sitting was convened from the plans rather than from the prior rulings.
+
+Also: a mutation told me my own gate doesn't prove half the fix. Restoring the cap's blindness leaves all five arms green, because with V4 scoped there's no inversion left for the cap to resolve. That's reachability, not a hole in the arms — but the honest thing was to write it into the test file rather than let the green imply coverage it doesn't have.
+
+**Hook material:** 827 of 923 plans broke a rule we'd ratified four weeks earlier. Zero of the 3,885 that avoided one code path broke it. The rule, the number and the checker all existed — the checker was set to `warn`, and warnings are filtered out of every report we read.
+
+**Postable?:** yes
+
+---
+
 ## 2026-10-09 — COACH-INTRO-TOKEN-01 + WEEK-THEME-DEAD-01 + OPS-SUBS-UNHANDLED-SEEN-01 · two of my own triage conclusions were wrong, and the corrections were the round
 **Shipped:** plan-level prose can no longer emit a raw `{{token}}`; 98 lines of dead components deleted; and the subscription digest can now see the events it deliberately does not act on.
 

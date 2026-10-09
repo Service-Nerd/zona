@@ -4304,8 +4304,21 @@ function applyTaperLongRunCap(weeks: Week[], pace: PaceGuide): void {
       .find(([, sn]) => sn && isLongRun(sn))
     if (!entry) continue
     const [day, long] = entry
-    if (!long || long.distance_km == null) continue
-    if (long.distance_km <= peakLr + tol) continue
+    if (!long) continue
+    // 🔴 THIS USED TO READ `if (long.distance_km == null) continue`, SO THE CAP
+    // NEVER RAN ON A DURATION-ANCHORED PLAN — and beginners are 95.8%
+    // duration-anchored (SESSION-KM-01). Measured on a real stored plan: its
+    // peak long runs carried `distance_km: 14.5` and its TAPER long runs carried
+    // `distance_km: null, duration_mins: 126`, so §6 Amendment 1's cap bailed out
+    // and the taper shipped 15.5 km against a 14.5 km peak.
+    //
+    // Third-plus occurrence of the `LR-CAP-BLIND-01` class: a ratified rule made
+    // inert for one cohort by a `distance_km`-shaped hole. `sessionKmSelfPaced`
+    // is the single owner of "how far is this session" and answers for both
+    // anchors (Coaching Board LR-TAPER-BUMP-01, 2026-10-09).
+    const longKm = sessionKmOrZero(long, pace.minPerKmEasy)
+    if (!(longKm > 0)) continue
+    if (longKm <= peakLr + tol) continue
 
     // §9's floor: the long run must stay at least `ratio` times the longest
     // other run in the week, or capping §6's inversion creates §9's.
@@ -4314,12 +4327,19 @@ function applyTaperLongRunCap(weeks: Week[], pace: PaceGuide): void {
       .map(([, sn]) => sessionKmOrZero(sn!, pace.minPerKmEasy)))
     const floorFromRatio = longestOther * ratio
     const capped = Math.max(peakLr, floorFromRatio)
-    if (capped >= long.distance_km) continue
+    if (capped >= longKm) continue
 
     const rounded = roundDistance(capped)
+    // ⚠️ WRITE BACK TO THE ANCHOR THE SESSION ACTUALLY USES — the same
+    // correction V4 carries, and for the same stated reason: "setting
+    // `distance_km` on a duration-anchored session would flip a beginner's card
+    // from minutes to kilometres and break §79/§80's metric contract". The old
+    // write set `distance_km` unconditionally, which was unreachable for a
+    // duration-anchored plan (the guard above bailed first) and would have
+    // converted the anchor the moment that guard was fixed.
     w.sessions[day] = {
       ...long,
-      distance_km: rounded,
+      ...(long.distance_km != null ? { distance_km: rounded } : {}),
       duration_mins: dur(rounded, pace.minPerKmEasy),
     }
     w.weekly_km = sumWeeklyKm(w.sessions, pace)
@@ -5904,6 +5924,21 @@ function applyV4LongRunRepeatCeiling(
   for (let i = 0; i < weeks.length; i++) {
     const w = weeks[i]
     if (w.type === 'race') continue
+    // §6 Am.1 / LR-TAPER-BUMP-01 (Coaching Board 2026-10-09) — V4 may only
+    // increment in the phases its OWN rationale names. It previously iterated
+    // every week and skipped only deloads, so it incremented TAPER long runs,
+    // which §6 Amendment 1 forbids: "a taper week's long run MUST NOT exceed the
+    // longest long run of the peak phase".
+    //
+    // ⚠️ `continue` WITHOUT resetting the streak, and the honest note is that
+    // this is a NO-OP TODAY: no eligible phase follows the taper (race is also
+    // excluded), so nothing downstream can observe the difference. Falsified —
+    // making this arm reset the streak leaves every test green. Preserving the
+    // streak is the behaviour that would still be right if a post-taper eligible
+    // phase ever existed; it is a choice, not a proven requirement, and it is
+    // recorded as one rather than defended with a reason the code cannot show.
+    if (!GENERATION_CONFIG.LR_REPEAT_ELIGIBLE_PHASES.includes(w.phase ?? '')) continue
+
     if (w.type === 'deload') {
       // Deload resets the streak — the post-deload week starts fresh.
       streakDist = null
