@@ -221,3 +221,36 @@ describe('every plan-prose render site goes through the owner', () => {
     expect(offenders, 'a surface renders plan prose and is not in SITES').toEqual([])
   })
 })
+
+describe('INV-PLAN-NO-PLACEHOLDER-COPY — `meta.race_name`, the field it was written about', () => {
+  // 🔴 Measured 2026-10-09: 3 live plans carry the literal "Target Race" in
+  // `meta.race_name` — the exact string in `PLACEHOLDERS` — and the scan
+  // population did not include the field. The invariant's own comment names
+  // that incident ("Race day: Target Race." shipped to the first organic user).
+  // Same class as COACH-INTRO-TOKEN-01, one field over, found the same day.
+  const codes = (p: Plan) => validatePlan(p, mk()).filter(v => v.code === 'INV-PLAN-NO-PLACEHOLDER-COPY')
+  const basePlan = () => generateRulePlan(mk(), 'paid', PINNED) as Plan
+
+  it('🔴 a placeholder race name is caught', () => {
+    const p = basePlan()
+    ;(p.meta as unknown as Record<string, unknown>).race_name = 'Target Race'
+    const v = codes(p)
+    expect(v.length, '"Target Race" in meta.race_name must be surfaced').toBeGreaterThan(0)
+    expect(v.some(x => String(x.message).includes('meta.race_name'))).toBe(true)
+    expect(v[0].severity, 'a pass-through field is a signal, not a hard failure').toBe('warn')
+  })
+
+  it('a real race name is clean, and so is the engine\'s empty default', () => {
+    for (const name of ['London Marathon', 'Parkrun', 'Great North Run', '']) {
+      const p = basePlan()
+      ;(p.meta as unknown as Record<string, unknown>).race_name = name
+      expect(codes(p), `race_name ${JSON.stringify(name)}`).toEqual([])
+    }
+  })
+
+  it('an unresolved token in the race name is caught too', () => {
+    const p = basePlan()
+    ;(p.meta as unknown as Record<string, unknown>).race_name = '{{race_name}}'
+    expect(codes(p).length).toBeGreaterThan(0)
+  })
+})

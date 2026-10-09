@@ -8088,7 +8088,15 @@ seeing in one place.
 
 ---
 
-### 🔻 `WIZARD-WEEKDAY-CONFIRM-01` — confirm the race weekday 🧭 **DESIGN BOARD** *(routed; treatment unruled)*
+### ✅ `WIZARD-WEEKDAY-CONFIRM-01` — SHIPPED 2026-10-09 as a READBACK, not a confirmation 🧭 **DESIGN BOARD** *(SHIP WITH AMENDMENT; the kill is permanent)*
+
+**Ruled and built.** The `race-details` step now reads the date back in full — **`Race day: Sunday 20 June.`** — under the input, with the existing reason kept below it (Silvanto's amendment). Rows for the kill, the ship and the routed-out race-name item: `design-rulings.md` 2026-10-09. Pattern: `ui-patterns.md` § *A date field reads its value back in full*.
+
+🔻 **FOR THE SLT, AND NOT MINE TO RESOLVE: THE SUCCESS CONDITION BELOW IS NO LONGER ACHIEVABLE AS WRITTEN.** The SLT ruled *"BUILD the weekday confirmation"* and set the condition *"zero new plans whose race date falls on a weekday the runner did not confirm."* The Design Board ruled a **confirmation** DON'T SHIP, PERMANENT — 37.5% fire rate, Saturday 12 vs Sunday 13 live, one plan named *"Parkrun"* — and shipped a readback instead, **so nothing is confirmed and the condition cannot be met.** That is within its mandate (the SLT routed treatment to it in as many words: *"treatment is the Design Board's"*), and per ADR-023 the **SLT may overturn it on commercial grounds, with the overturn recorded.** What the ship actually delivers is the weaker, honest claim: **the weekday is SEEN before the plan is generated.** If the SLT wants the stronger guarantee, it has to overturn the kill, and the board's measurement is the thing to argue with.
+
+*(Original entry, kept because it holds the measurement that justified the work.)*
+
+### 🔻 `WIZARD-WEEKDAY-CONFIRM-01` — the SLT's original ask 🧭 **DESIGN BOARD** *(superseded by the ruling above)*
 
 💼 **SLT ruled BUILD 2026-10-09. FREE.** Catches **4 of 4** wrong dates in the live set with
 **no data dependency**: London 2027 is Sunday 25 April; 3 runners entered the Saturday and one

@@ -3623,6 +3623,34 @@ The single text/number/email/password/date input. Two rules are enforced inside 
 
 There is no separate "NumberStepper" — a numeric value is a `TextField type="number"` with a `unit`. The only +/− stepper is DurationPicker (time).
 
+### A date field reads its value back in full, including the weekday *(Design Board 2026-10-09, `WIZARD-WEEKDAY-CONFIRM-01`)*
+
+**A native date input shows the runner their keystrokes, not their decision.** `type="date"` renders `20/06/2027` and never says *Sunday* — and the weekday is the half of a race date that actually shapes the plan, because every long run is placed backwards from it.
+
+**The pattern.** Immediately under the input, when a value is set:
+
+```
+RACE DATE                                ← FieldLabel, 11px uppercase --mute
+[ 20/06/2027 ]                           ← TextField type="date"
+Race day: Sunday 20 June.                ← the READBACK — 14px / 600 / --ink
+Date locks the plan length. Everything   ← the REASON — FIELD_HINT, 12px / 400 / --mute
+works backwards from here.
+```
+
+| Rule | Why |
+|---|---|
+| **The readback sits closest to the input, the reason below it** | the thing that changed when you typed is adjacent to where you typed |
+| **Hierarchy comes from WEIGHT AND COLOUR, never size** | 14px against 12px is a 1.17× step; the readback is distinguished by `600`/`--ink` against `400`/`--mute`. ⚠️ A 13px-against-12px version was rejected: *"a difference too small to read as hierarchy and too large to be nothing"* is the same 1.02× failure measured twice in this repo |
+| **The string comes from `formatDate(iso, 'weekday-long')`** | ADR-015 / INV-FMT-001 — `lib/format.ts` is the sole owner of every date string. **Never `toLocaleDateString` in a component.** The style already existed; no new formatter was written |
+| **Empty renders NOTHING** | `formatDate` returns `null` on a missing or unparseable value, which is also the empty state. Rendering an empty element leaves its margin behind and reads as a layout bug. ⚠️ Not hypothetical: the wizard restores `raceDate` from `zona_wizard_draft` in sessionStorage, so a corrupt draft is a real path |
+| **It is a readback, NOT a confirmation** | see the kill below |
+
+🔴 **WHAT IS DON'T SHIP, PERMANENTLY: a weekday confirmation.** *"You've picked a Tuesday. Is that right?"* measured a **37.5% fire rate**, and the two most common race weekdays among live plans are **Saturday (12)** and **Sunday (13)** — so a confirm interrupts a third of runners to tell them something that is almost always correct, and one live plan is named *"Parkrun"*, whose runner knows exactly which day it is. **The board ruled on SEEN, not CONFIRMED.** No prompt, no modal (Wood's standing kill-threat), no step. Held mechanically by `lib/ui/raceDateReadback.test.ts`, which asserts the kill as well as the ship.
+
+⚠️ **The reason is NOT traded for the readback** (Silvanto's amendment, verbatim): *"we have traded a reason for a readback. Both, or the readback goes somewhere else."* Both render, in that order, and the order is asserted.
+
+**Implementation:** `FieldReadback` in `app/dashboard/GeneratePlanScreen.tsx`, beside `FieldNote`. It is body text carrying a value, **not a fourth micro-label role** — no tracking, no uppercase, so `MICRO_LABELS` stays closed at three (MICRO-LABEL-DRIFT-01). Generalise it to a shared primitive when a second field needs it, not before.
+
 ### DurationPicker (`components/shared/DurationPicker.tsx`)
 
 The canonical time entry — scroll **wheels** (hrs : min : sec), no keyboard, no format-guessing, no zoom. `showSeconds` adds a third wheel (default off): use it for **race finish times**, where a short race is minutes:seconds and the seconds decide a PB. Target/benchmark times stay HH:MM. `showHours={false}` drops the hours column for a **minutes:seconds** picker and runs the minutes wheel `0..maxMins` (default 90) so a slow 10K past 59 min is still reachable — used by the **5K/10K time-trial result** (RecalibrationEntryScreen). Composes `WheelPicker` columns internally; its public API (`hours`/`mins`/`secs` + `on*Change`, `maxHours`, `showSeconds`, `showHours`, `maxMins`) means callers never hand-roll a time control. **Every time/duration control in the app goes through it** (FORMS-PRIM-01): wizard target time, benchmark, race finish (RaceResultSheet), manual run log (DashboardClient), and the time-trial result. There is no bespoke hrs/min/sec stepper left.

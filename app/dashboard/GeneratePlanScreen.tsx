@@ -332,8 +332,55 @@ function WizardInput({ value, onChange, placeholder, type = 'text', min, max }: 
 }
 
 function FieldNote({ children }: { children: React.ReactNode }) {
+  // ⚠️ `FIELD_HINT` is the documented owner of these values (MICRO-LABEL-FIELDHINT-01,
+  // Design Board 2026-10-02: a hint beside an input is body text — `--font-ui` 400
+  // 12px `--mute`). They were written out by hand here, which is a second copy of a
+  // value that has a named owner; the board's own register says the VALUES need one
+  // owner. Layout stays local, because line height and spacing are this note's, not
+  // the hint role's.
   return (
-    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: 'var(--space-2)' }}>
+    <div style={{ ...FIELD_HINT, lineHeight: 1.5, marginTop: 'var(--space-2)' }}>
+      {children}
+    </div>
+  )
+}
+
+/**
+ * `WIZARD-WEEKDAY-CONFIRM-01` (b) — Design Board 2026-10-09, SHIP WITH AMENDMENT.
+ *
+ * A date field reads its value back in full, **including the weekday**. A runner
+ * typing `2027-06-20` into a native date input is shown their keystrokes, not
+ * their decision, and the weekday is the half of a race date that actually
+ * shapes the plan: every long run is placed backwards from it.
+ *
+ * 🔴 WHAT THE BOARD KILLED, PERMANENTLY: a weekday **confirmation** step. It
+ * measured a **37.5% fire rate**, and the two most common race weekdays are
+ * Saturday (12 live) and Sunday (13) — so a confirm would interrupt a third of
+ * runners to tell them something that is almost always right, which is Wood's
+ * standing objection in its purest form. **The board ruled on SEEN, not
+ * CONFIRMED.** Do not re-propose a prompt, a modal or a step here.
+ *
+ * ⚠️ AND IT KEEPS THE REASON (Silvanto's amendment, verbatim): *"we have traded
+ * a reason for a readback. Both, or the readback goes somewhere else."* So this
+ * sits ABOVE the existing `FieldNote` rather than replacing it, and the two are
+ * separated by WEIGHT AND COLOUR rather than size — 14px/600/`--ink` against
+ * 12px/400/`--mute`. A 13px-against-12px step would be the 1.02x failure this
+ * repo has already measured twice: too small to read as hierarchy and too large
+ * to be nothing.
+ *
+ * The value comes from `formatDate` (ADR-015 / INV-FMT-001 — `lib/format.ts` is
+ * the sole owner of every date string, and `'weekday-long'` already existed, so
+ * no new formatter was written). `formatDate` returns **null** on a missing or
+ * unparseable value, which is also this component's empty state: the wizard
+ * restores `raceDate` from `zona_wizard_draft` in sessionStorage, so a corrupt
+ * draft is a real path and must render nothing rather than "Invalid Date".
+ */
+function FieldReadback({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
+      color: 'var(--ink)', lineHeight: 1.4, marginTop: 'var(--space-2)',
+    }}>
       {children}
     </div>
   )
@@ -1858,7 +1905,10 @@ export default function GeneratePlanScreen({
         )
 
       // ── Race details ───────────────────────────────────────────────────────
-      case 'race-details':
+      case 'race-details': {
+        // Computed once: `formatDate` is both the value and the empty-state test,
+        // so calling it twice would be two chances to disagree.
+        const raceDayReadback = formatDate(raceDate, 'weekday-long')
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <div>
@@ -1868,10 +1918,12 @@ export default function GeneratePlanScreen({
             <div>
               <FieldLabel>Race date</FieldLabel>
               <WizardInput type="date" value={raceDate} onChange={setRaceDate} />
+              {raceDayReadback && <FieldReadback>Race day: {raceDayReadback}.</FieldReadback>}
               <FieldNote>Date locks the plan length. Everything works backwards from here.</FieldNote>
             </div>
           </div>
         )
+      }
 
       // ── Goal ───────────────────────────────────────────────────────────────
       case 'goal':

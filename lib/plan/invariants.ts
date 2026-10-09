@@ -6457,7 +6457,23 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // must never contain a token at all, so including them is free coverage.
     const m = plan.meta as unknown as Record<string, unknown>
     for (const k of Object.keys(m)) {
-      if (k !== 'coach_intro' && k !== 'plan_intro' && k !== 'notes' && !k.endsWith('_note')) continue
+      // 🔴 `race_name` IS THE FIELD THIS CHECK WAS WRITTEN ABOUT AND IT WAS NOT
+      // SCANNED (2026-10-09, routed out of the `WIZARD-WEEKDAY-CONFIRM-01`
+      // sitting as validation rather than design). The comment above names the
+      // incident — *"Race day: Target Race." shipped to the first organic user* —
+      // and the scan population was week fields, session fields and the prose
+      // `meta.*` keys added this morning. **Measured: 3 live plans carry the
+      // literal `"Target Race"` in `meta.race_name`**, the exact string in
+      // `PLACEHOLDERS`, in the one place nothing looked. Same population-hole
+      // class as COACH-INTRO-TOKEN-01, one field over, found the same day.
+      //
+      // ⚠️ IT IS A SIGNAL, NOT NECESSARILY A PRODUCER DEFECT, and `warn` is the
+      // right severity for that. `meta.race_name` is `input.race_name ?? ''` —
+      // a pass-through of what the runner typed — so a hit means either an old
+      // producer put it there or a human did. Either way the plan now says
+      // "Target Race" to a runner, which is what this check exists to surface.
+      if (k !== 'coach_intro' && k !== 'plan_intro' && k !== 'notes'
+          && k !== 'race_name' && !k.endsWith('_note')) continue
       if (typeof m[k] === 'string') scan.push([`meta.${k}`, m[k] as string])
     }
     for (const w of plan.weeks) {
