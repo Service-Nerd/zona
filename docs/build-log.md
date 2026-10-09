@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — DUNCAN-RESIDUAL-LOAD-01 · the invariant stopped my fix twice
+**Shipped:** four plan repairs, each scoped by the invariant that names the defect, taking a live runner's plan from nine error-severity violations to one.
+
+**Dev learning:** **make the fix read the check's verdicts instead of re-deriving its test.** My first repair asked "is this pace band one the runner's guide produces?" — looser than the invariant, which also admits the GOAL band because §22 deliberately repaints a threshold session at goal pace. Two of his sessions sat exactly on that goal band, and my version would have reverted them. The invariant caught it. Passing `violations` in as a parameter makes scope and remedy the same predicate by construction, and that single change is why the second version was right. Also: one wrongly-written field produced TWO errors — a pace on `hill_reps` tripped both §40b *and* the VO2max main-set cap, because the presence of a pace is what made the row classify as VO2max at all. I confirmed that by deleting the field rather than asserting it.
+
+**Product/creator learning:** **a violation message that misdescribes its own cause gets triaged as the thing it sounds like.** `LR-PROGRESSION-CAP` told me "13.5km is a +59% jump from W4 (8.5km)" and I reported three load failures to the founder on the strength of it. W4 was a deload; the arm that actually bound was a step-back allowance against W3's 12.5km, and the breach was **0.375 km** — less than one rounding increment. Same data, opposite urgency. The message now names the arm that bound and says plainly that the raw delta is not it.
+
+**AI-building learning:** the tool I wrote to repair these plans had the same defect class as the checks it repairs. It selected plans by ONE violation code, so the moment I fixed that code on his plan, the plan dropped out of the target set — while still carrying eight other repairable violations, invisible to the tool built for them. "The checker's population excludes the cases at risk", in my own remediation script. The fix was one exported list that both the population filter and the remedies read.
+
+**The honest bit:** I was wrong twice inside this one investigation, after being wrong five times earlier in the day. I told the founder three of the nine were load rules — one was, and marginally. And I hypothesised the pace-cap check derived its HM ceiling separately from the engine, the "checker reads a different source" class I have cited all day; they agree to 0.1%, and my test had used a band from the wrong VDOT pairing. Both corrections came from measuring, not from re-reading.
+
+**Hook material:** "The check I wrote stopped the fix I wrote from undoing a feature I'd forgotten about." Or: a violation that said +59% when the real number was 0.375 km.
+
+**Postable?:** yes — "make the fix read the check's verdicts" is a transferable rule, and the message-misdescribes-its-cause story is the kind of thing nobody writes about.
+
 ## 2026-10-09 — FOUNDATION-PACE-STRIPPED-01 · the on-ramp told a new runner "Zone 2" and gave them no number
 **Shipped:** foundation-week sessions now carry the pace band and HR ceiling the rest of the plan uses.
 
