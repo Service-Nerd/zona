@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — BASEBUILD-SCHEMA-KIND-01 · the twin I left behind, found by re-measuring my own fix
+**Shipped:** the canonical plan schema now admits `plan_kind: 'base_build'`, the kind the engine has emitted since August.
+
+**Dev learning:** `plan_kind` is declared twice — a TypeScript union in `types/plan.ts` and a `z.enum` in `schema.ts`, the file whose own header calls it *"the single source of runtime validation for plan JSON"*. Earlier today I widened the union so a new validator dispatch could narrow on `'base_build'`. I did not touch the Zod twin, which had been rejecting that value since §116 shipped. The producer writes it through an `as unknown as Plan['meta']` cast, so the compiler was never in a position to ask.
+
+**The number is what makes it legible:** `SCHEMA:meta.plan_kind` appeared on **2 of 34 live plans, and they were exactly the two base-build ones.** Not a sample, not a correlation — the entire affected set, identified by the code the audit had been printing all along.
+
+**AI-building learning:** **I found it in the verification step, not in the code.** Having fixed the invariant half, I re-ran the live audit probe to confirm the phantom errors were gone — and printed the FULL per-plan code set rather than only the invariant count I had set out to change. The schema code was sitting right there. A fix's own verification is the cheapest place in the process to find its twin, and the only thing that made it visible was printing more than I needed.
+
+**The honest bit:** "fix the pair, not the instance" is already a saved lesson here, written on 2026-10-08 after I corrected two backlog headings and left the matching roadmap rows open. Less than 24 hours later I did the same shape again with a type and its schema. The lesson being written down did not stop it; measuring the output did.
+
+**Hook material:** one enum was missing one string. Every base-build plan we have ever generated failed our own canonical schema because of it — silently, and visibly, at the same time: the audit printed the code every night and it read like background debt.
+
+**Postable?:** maybe
+
+---
+
 ## 2026-10-09 — BASEBUILD-GENINPUT-01 + AUDIT-PLAN-KIND-01 · the field I added opened a door, and the room behind it was already on fire
 **Shipped:** base-build plans now stamp the input they were built from, and the daily audit judges a base-build plan by its own constitution instead of the race-plan one.
 
