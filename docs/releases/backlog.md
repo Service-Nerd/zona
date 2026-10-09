@@ -950,75 +950,41 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > ⚠️ **Ops-only. No runner-facing surface, no prescription, no tier, engine untouched** — the
 > founder's "minimum negative impact" constraint.
 
-### 🔻 `RECAL-LIVE-REPAIR-01` — ✅ **Floe repaired 2026-10-09.** Clay needs REGENERATION, Duncan needs a look *(FOUNDER DECISION on the two)* 👤 **FOUNDER**
+### ✅ `RECAL-LIVE-REPAIR-01` — **ALL THREE PLANS REPAIRED 2026-10-09, verified from the live DB** ⚙️ **NO BOARD**
 
-> ✅ **`c5d3ae8b` (Floe Henderson, Battersea Half, starts 12 Oct) — REPAIRED AND VERIFIED FROM THE
-> LIVE DB.** Written 11:56:13, prior plan archived 11:56:13. **16 error violations → 1**; every
-> header now agrees with its own steps, the CV session correctly at `5:24–5:36` rather than flattened
-> to the threshold band. Plan length, session days, distances and durations all unchanged. The
-> residual is `INV-INPUT-LONGEST-LE-WEEKLY` — her own contradictory sign-up answers (5 km/week,
-> longest run 6 km), which no re-pricing can fix.
->
-> 🔻 **`3cc7c3a9` (Clay Manwaterman, London Marathon, starts 4 Jan 2027) — RE-PRICING IS THE WRONG
-> TOOL. REGENERATE.** 0 runs logged.
->
-> ⚠️ **I CALLED HIM UNREPAIRABLE AND THAT WAS WRONG** — the script only knew how to re-price from a
-> stored *benchmark*, and he never gave one. His paces came from `buildFallbackPace`'s **level
-> table**: his stale steps are the `intermediate` row verbatim (easy `6:30–7:30`; CV `5:21–5:34` =
-> quality 5:45 × 0.95), and **no VDOT between 25 and 55 produces either band**, which is how the
-> table was identified rather than guessed. The script now handles that source (`repriceWeeksFrom`
-> takes the as-priced guide as a parameter) and **his stale steps clear 4 → 0, errors 15 → 10.**
->
-> 🔴 **But the gate still refuses him, and it is right to.** Re-pricing surfaces a THIRD
-> inconsistency: his sessions are labelled *"Quality: Threshold"* while their steps are CV-anchored,
-> so fixing the pace breaks `INV-PLAN-LABEL-MATCHES-PACE`. His plan also wants **17 sessions**
-> changed, not 4 — the recalibration never reached *any* step, so the whole plan is on table pacing
-> with generic labels and no catalogue identity. **It is from an older engine.**
-> **Measured: regenerating from his own input + the 20:30 benchmark gives 15 errors → 0**, and real
-> sessions (Progressive tempo, Over-unders, Marathon-pace ladder) instead of four identical
-> *"Quality: Threshold"* rows. ⚠️ A regeneration must compose the foundation block —
-> `scripts/fleet-invalid-debt-01-regen.ts` already does that; the naive call drops his 3 foundation
-> weeks (23 → 20).
->
-> 🔻 **`8a2858ab` (Duncan Bennett) — still open, and now UNTOUCHED by the script.** Trial, **8 runs
-> logged, 4 analysed — he is actively training**, so regeneration is the wrong tool for him. One
-> stale session in week 9 (≈ mid-November) sits at `4:15–4:25`, a **third** fitness neither of his
-> recorded values produces: recalibrated more than once, the intermediate value unrecoverable.
-> Likeliest answer is one hand-corrected session.
->
-> 🥇 **DUNCAN FOUND A REAL FLAW IN MY HEADER PASS, AND THE GATE CATCHING HIM WAS LUCK.** It resolved
-> the header from a session's steps even when those steps had NOT been re-priced, which makes the
-> header match a STALE step — this defect inverted. It would have pulled four of his correct headers
-> from `5:24–5:39` to `4:48–5:00` and `4:15–4:25`, i.e. **faster, on a runner whose fitness had gone
-> the other way.** Now scoped to sessions whose steps actually moved; he changes **0 sessions**.
-
->
-> ✅ **BOTH NOW PREPARED (`001f43e7`), dry-run, awaiting your `--apply`:**
->
-> | | command | dry-run result |
+> | plan | runner | result |
 > |---|---|---|
-> | **Clay** `3cc7c3a9` | `--regenerate --only 3cc7c3a9` | 23 weeks (3 foundation) → **23 weeks (3 foundation)**, **28 errors → 0**. Six identical *"Quality: Threshold"* rows → eight real session types. ⚠️ **Injects `meta.benchmark`** — his `generator_input` has none, so regenerating from the input alone prices him off the level table again. ⚠️ Refuses a runner with logged work, and refuses to run without `--only`. |
-> | **Duncan** `8a2858ab` | `--from-anchor --only 8a2858ab` | **1 session.** Week-9 VO2max steps 4:15–4:25 → **4:45–4:57** (his own I band), header to match. Step-pace **1 → 0**, nothing introduced, 9 pre-existing residuals printed. |
+> | `c5d3ae8b` | Floe Henderson · Battersea Half, started 12 Oct | **re-priced.** 16 errors → **1** (her own contradictory sign-up answers: 5 km/week, longest run 6 km). 16 weeks, headers and steps agree, CV session correctly at its own band. |
+> | `3cc7c3a9` | Clay Manwaterman · London Marathon, starts 4 Jan | **regenerated.** 23 weeks (3 foundation) → 23 weeks (3 foundation), **28 errors → 0**, 0 paceless foundation sessions. Six identical *"Quality: Threshold"* rows → eight real session types. |
+> | `8a2858ab` | Duncan Bennett · actively training | **one session.** Week-9 VO2max steps 4:15–4:25 → **4:45–4:57** (his own I band), header to match. Stale steps **1 → 0**, errors 11 → 9. |
 >
-> 🥇 **I HAD CONFLATED PROVENANCE WITH VALUE ON DUNCAN.** Where his 4:15–4:25 came from is
-> unrecoverable; **what it should be is fully determined** — the anchor comes from the catalogue
-> structure and his own guide gives the band. His reps were ~30 s/km too fast for a VO2max interval
-> while the header showed his *threshold* band.
+> **`--verify` reads CLEAN: no stored plan carries a step priced at a fitness its runner no longer
+> has.** Each plan archived in the same second as its write (`plan_archive`), so all three are
+> reversible.
 >
-> 🔴 **AND THE INVARIANT CAUGHT MY FIX DESTROYING §22.** My first `--from-anchor` re-derived the test
-> as *"is this band in the guide?"*, which is looser than the check. Two of his T-anchored sessions
-> read `4:48–5:00` — 11.3% from his T band and **exactly his goal band** (`goal_pace_per_km 4:54`),
-> i.e. §22's deliberate substitution — and my version re-priced them back to T. **The invariant was
-> right and the fix was wrong.** It now reads the violations instead of reasoning about them.
+> ⚠️ **ONE HONEST GAP: the `ops_events` row did not record for these saves.** `savePlanForUser`
+> correctly emitted `plan_save_invalid` for Duncan's 9 pre-existing errors — that is the documented
+> log-never-block behaviour — but the recorder builds its own client from `process.env`, which a
+> `tsx` script does not set, so the event threw instead of landing. **The plans are correct; the
+> audit trail of these three repairs is not in `ops_events`.** Not worth a fix for three one-off
+> runs, but a repair script that writes should set the recorder's env or pass a client.
+
+### 🔴 `DUNCAN-RESIDUAL-LOAD-01` — nine pre-existing errors on an ACTIVELY TRAINING runner, three of them load rules *(filed 2026-10-09)* ⚙️ **NO BOARD** *(needs `/zona-debug`)*
+
+> `RECAL-LIVE-REPAIR-01` fixed Duncan's stale pace and deliberately left the rest: **9 error-severity
+> violations remain**, and unlike Floe's single residual they are not his own data entry.
 >
-> 🔴 **Two of my own checks were wrong, and both were found by USING them on live data.** (a) The
-> invariant shipped that morning compared a step against the **union** of admitted bands, so a stale
-> value could be excused by coinciding with a *different* anchor's band — now compared to its own
-> anchor. (b) The gate demanded a plan be **perfect** before any part could be repaired, refusing a
-> correct single-session fix over four unrelated pre-existing violations — now **strictly-better**,
-> with the residual printed rather than tolerated.
+> `INV-PLAN-LR-PROGRESSION-CAP` · `INV-PLAN-VO2MAX-MAIN-SET-CAP` · `INV-PLAN-5K10K-LR-PACE-CAP` ·
+> `INV-PLAN-HEADER-PACE-MATCHES-WORK` ×4 · `INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED` ·
+> `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO`
 >
-> 🔻 **Nothing has been written to either plan.**
+> ⚠️ **The first three are LOAD and sizing rules, not display**, and he is **8 runs into the plan with
+> 4 analysed** — the only one of the three affected runners actually training. His race is
+> **2026-12-13**, so this has a real deadline. ⚠️ **Same generic-`"Quality"`-label, no-catalogue-id
+> shape as Clay's third fault**, so it is probably the same older-engine origin and may be one
+> investigation rather than two. **Regeneration is NOT available to him** — completions are keyed by
+> week, so replacing his sessions would leave his logged work pointing at sessions that no longer
+> exist (`PLAN-WEEK-COLLISION-01`'s shape, and the script refuses it outright).
 
 ### ✅ `FOUNDATION-PACE-STRIPPED-01` — **SHIPPED 2026-10-09.** The on-ramp now tells the runner how fast ⚙️ **NO BOARD** *(defect fix; §12 restored)*
 
@@ -4302,7 +4268,7 @@ is the entire ruling.
 correct source** (it probed for a self-closing `/>` and found `ZonesTabs`' own), so it was
 rewritten to bound the region.
 
- ✅ **Floe repaired and verified from the live DB: 16 error violations → 1**, plan length/days/distances unchanged. 🔴 **I called Clay unrepairable and was wrong** — his paces came from `buildFallbackPace`'s LEVEL TABLE, not a benchmark (stale steps are the `intermediate` row verbatim; **no VDOT 25–55 produces either band**). His steps now clear 4 → 0, but the gate still refuses: re-pricing surfaces a THIRD inconsistency (sessions labelled *"Quality: Threshold"* with CV-anchored steps) and wants **17** sessions, not 4 — the recalibration never reached any step. **Regenerating him gives 15 errors → 0.** 🥇 **Duncan exposed a real flaw and the gate catching him was LUCK** — the header pass resolved headers from steps that had NOT been re-priced, which would have pulled four correct headers FASTER on a runner whose fitness went the other way.  🥇 **AND HIS QUESTION FOUND A LIVE DEFECT IN A THIRD PLACE.** Asked *“so Clay came back later with a 5K time?”* — `plan_archive` disproved my story in ninety seconds (benchmark, vdot and headers all present BEFORE his plan's only write), and chasing it found **`generateFoundationBlock` has NEVER set a `pace_target` or `hr_target`** — **381 of 381** foundation easy sessions against **0 of 1,355** main-plan ones, **73 of 73 live across 7 of 32 plans**. The on-ramp said *“Zone 2. Conversational pace.”* and gave a new runner no number. 🔴 **The UI fallback was not a defence** — it substitutes a pace from RUN HISTORY, and **3 of the 7 affected plans have zero logged runs**. 🥇 **`INV-PLAN-EFFORT-OR-PACE` asked exactly the right question of the wrong SET** (`quality|intervals|tempo`), so easy sessions were uncovered by construction. Fixed + new sibling invariant; falsified at **75,909 → 0** — ⚠️ **which I first reported as 6**, having grepped the summary instead of the total.  ✅ **Clay and Duncan PREPARED, dry-run, awaiting `--apply`** — Clay regenerates **28 errors → 0** at the same 23 weeks; Duncan is **one session** (VO2max steps 4:15–4:25 → his own I band). 🥇 **I had conflated PROVENANCE with VALUE**: where his band came from is unrecoverable, what it should be is determined. 🔴 **AND THE INVARIANT CAUGHT MY FIX DESTROYING §22** — I re-derived its test as a looser one, and two of his T-anchored steps sat exactly on his GOAL band (§22's deliberate substitution). **The check was right, the fix was wrong.** 🔴 **Two of my own checks were wrong, both found by USING them on live data**: the invariant excused a stale band that coincided with a DIFFERENT anchor's, and the gate demanded a plan be PERFECT before any part could be repaired. ⚠️ **Nothing has run on a device.** How tall the group now reads in the hand is unmeasured, and
+ ✅ **Floe repaired and verified from the live DB: 16 error violations → 1**, plan length/days/distances unchanged. 🔴 **I called Clay unrepairable and was wrong** — his paces came from `buildFallbackPace`'s LEVEL TABLE, not a benchmark (stale steps are the `intermediate` row verbatim; **no VDOT 25–55 produces either band**). His steps now clear 4 → 0, but the gate still refuses: re-pricing surfaces a THIRD inconsistency (sessions labelled *"Quality: Threshold"* with CV-anchored steps) and wants **17** sessions, not 4 — the recalibration never reached any step. **Regenerating him gives 15 errors → 0.** 🥇 **Duncan exposed a real flaw and the gate catching him was LUCK** — the header pass resolved headers from steps that had NOT been re-priced, which would have pulled four correct headers FASTER on a runner whose fitness went the other way.  🥇 **AND HIS QUESTION FOUND A LIVE DEFECT IN A THIRD PLACE.** Asked *“so Clay came back later with a 5K time?”* — `plan_archive` disproved my story in ninety seconds (benchmark, vdot and headers all present BEFORE his plan's only write), and chasing it found **`generateFoundationBlock` has NEVER set a `pace_target` or `hr_target`** — **381 of 381** foundation easy sessions against **0 of 1,355** main-plan ones, **73 of 73 live across 7 of 32 plans**. The on-ramp said *“Zone 2. Conversational pace.”* and gave a new runner no number. 🔴 **The UI fallback was not a defence** — it substitutes a pace from RUN HISTORY, and **3 of the 7 affected plans have zero logged runs**. 🥇 **`INV-PLAN-EFFORT-OR-PACE` asked exactly the right question of the wrong SET** (`quality|intervals|tempo`), so easy sessions were uncovered by construction. Fixed + new sibling invariant; falsified at **75,909 → 0** — ⚠️ **which I first reported as 6**, having grepped the summary instead of the total.  ✅ **Clay and Duncan PREPARED, dry-run, awaiting `--apply`** — Clay regenerates **28 errors → 0** at the same 23 weeks; Duncan is **one session** (VO2max steps 4:15–4:25 → his own I band). 🥇 **I had conflated PROVENANCE with VALUE**: where his band came from is unrecoverable, what it should be is determined. 🔴 **AND THE INVARIANT CAUGHT MY FIX DESTROYING §22** — I re-derived its test as a looser one, and two of his T-anchored steps sat exactly on his GOAL band (§22's deliberate substitution). **The check was right, the fix was wrong.** 🔴 **Two of my own checks were wrong, both found by USING them on live data**: the invariant excused a stale band that coincided with a DIFFERENT anchor's, and the gate demanded a plan be PERFECT before any part could be repaired.  ✅ **ALL THREE LIVE PLANS NOW REPAIRED AND VERIFIED FROM THE DB** — Floe re-priced (16 errors → 1, her own input), Clay **regenerated 28 → 0** at the same 23 weeks, Duncan **one session** (VO2max 4:15–4:25 → his I band 4:45–4:57). `--verify` reads CLEAN; each archived in the same second as its write. ⚠️ **The `ops_events` row did NOT record for these saves** — the recorder builds its own client from `process.env`, which a `tsx` script does not set, so the repairs are correct but absent from the audit trail. 🔻 **Duncan still carries 9 pre-existing errors, THREE of them LOAD rules**, and he is the one who is actually training (8 runs, race 13 Dec) — filed `DUNCAN-RESIDUAL-LOAD-01`; regeneration is unavailable to him because completions are week-keyed. ⚠️ **Nothing has run on a device.** How tall the group now reads in the hand is unmeasured, and
 it is the one question that decides whether the amendment gets spent.
 
 ⚠️ **Measure before ruling:** the band's height at 375px and at 320px, with and without the
