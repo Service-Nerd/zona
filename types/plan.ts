@@ -920,6 +920,33 @@ export interface PlanMeta {
   // type-check.
   plan_kind?:        'race' | 'maintenance' | 'base_build'
   source_race_name?: string   // maintenance plan: the race it follows (for copy + next-goal)
+  /**
+   * AUDIT-MAINTENANCE-KIND-01 (2026-10-09) — the three arguments
+   * `validateMaintenanceBlock(weeks, baseWeeklyKm, injured, sourceRunDays)` needs,
+   * stamped so a STORED maintenance plan can be re-validated by its own
+   * constitution rather than by the race-plan validator.
+   *
+   * 🔴 WHY THEY HAD TO BE STAMPED. `maintenance.ts:432` already validates
+   * correctly at construction, where all three are in scope. The daily audit reads
+   * rows out of the database, and `baseWeeklyKm` is NOT derivable from a stored
+   * plan: it is the race plan's base volume and it drives §75's
+   * `VOLUME_CEILING_PCT_OF_BASE` hard cap, so deriving it from the maintenance
+   * weeks would measure the weeks against themselves.
+   *
+   * ⚠️ `injured` and the run-day count ARE recoverable from the inherited
+   * `generator_input` (the route spreads `...plan.meta`), but they are stamped
+   * beside the one that is not — a validator reconstructing two of three inputs
+   * from one place and the third from another is how the `distance_km ?? 0` family
+   * starts.
+   *
+   * ⚠️ Absent on any maintenance plan generated before this. `validateStoredPlan`
+   * falls back rather than guessing a ceiling. Measured 2026-10-09: **0
+   * maintenance plans in production**, so this reaches 100% of the future
+   * population and strands nobody — the rare case where new-plans-only is complete.
+   */
+  source_base_weekly_km?: number
+  source_run_days_per_week?: number
+  source_injured?: boolean
   source_race_distance_km?: number  // maintenance plan: race distance (drives next-goal ladder)
   source_race_date?: string         // maintenance plan: ISO date the source race was run — drives "N weeks post-race" coaching recency (ADR-013). Carried from the race plan's race_date before it's cleared.
   source_race_outcome?: string      // maintenance plan: on_target | dnf | ...

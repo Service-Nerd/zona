@@ -205,6 +205,14 @@ export async function POST(req: NextRequest) {
       race_name:               plan.meta.race_name ? `After ${plan.meta.race_name}` : 'Post-race maintenance',
       race_date:               '',   // no upcoming race → countdown / projections no-op
       source_race_name:        plan.meta.race_name,
+      // AUDIT-MAINTENANCE-KIND-01 — the three arguments `validateMaintenanceBlock`
+      // takes, captured HERE because this is the only place they all exist. The
+      // daily audit reads a stored row and cannot recover `baseWeeklyKm`: it is the
+      // race plan's base volume driving §75's ceiling, so deriving it from the
+      // maintenance weeks would check them against themselves.
+      source_base_weekly_km:   baseWeeklyKm,
+      source_run_days_per_week: runDaysPerWeek,
+      source_injured:          (injuryHistory?.length ?? 0) > 0,
       source_race_distance_km: plan.meta.race_distance_km,
       // Capture the race date BEFORE race_date is wiped to '' above. Without
       // this, nothing downstream knows when the race was, and post-race coaching

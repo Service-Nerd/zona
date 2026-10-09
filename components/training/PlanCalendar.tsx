@@ -89,7 +89,7 @@ interface Props {
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   allCompletions: Record<number, Record<string, Completion>>
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
-  onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
+  onSessionTap: (session: SessionTapPayload, weekN: number) => void
   overridesReady?: boolean
   units?: DistanceUnits
   /** Global distance/duration preference from MeScreen. */
@@ -398,7 +398,7 @@ function MaintSeam() {
 
 function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides }: {
   week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string }[]
-  onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
+  onSessionTap: (session: SessionTapPayload, weekN: number) => void
   onMove: (weekN: number, originalDay: string, newDay: string, currentSlot: string) => void
   onSwap: (weekN: number, sourceOriginal: string, sourceSlot: string, targetOriginal: string, targetSlot: string) => void
   units: DistanceUnits
@@ -418,7 +418,6 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   const isRace = (week as any).type === 'race' || (week as any).badge === 'race'
   const phase = (week as any).phase as string | undefined
   const isMaint = phase === 'maintenance_restoration' || phase === 'maintenance_base'
-  const weekTheme = week.theme ?? ''
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()]
   const [movingDay, setMovingDay] = useState<string | null>(null)
   // RESHAPE-FIX-WAVE2C (Defect 11) — pending move staged between target-tap
@@ -684,7 +683,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
                 pace_target:    s.pace_target,
                 rpe_target:     s.rpe_target,
                 coach_notes:    s.coach_notes,
-              }, weekNum, weekTheme)
+              }, weekNum)
             }}
             onMoveIconTap={() => handleMoveIconTap(key)}
           />

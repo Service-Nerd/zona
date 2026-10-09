@@ -28,32 +28,39 @@ already decided what it is.
 ---
 
 
-### 🔻 `WEEKTHEME-PROP-DEAD-01` — a `weekTheme` prop threaded through three layers and never used ⚙️ **NO BOARD**
+### ✅ `WEEKTHEME-PROP-DEAD-01` — **SHIPPED 2026-10-09.** 15 references, 5 files, nothing read it ⚙️ **NO BOARD**
 
-**Filed 2026-10-09, out of `WEEK-THEME-DEAD-01`, and deliberately NOT bundled with it.**
+`week.theme` was derived in `PlanCalendar` and `TodayScreen`, carried through
+`onSessionTap` → `onOpenSession` → `DashboardClient`, and handed to `SessionPopupInner`
+as a prop that **destructured it and never read it**. Gone, and `onSessionTap` narrows
+from 3 arguments to 2.
 
-`week.theme` is read in `PlanCalendar.tsx:421` and `TodayScreen.tsx:938`, passed through
-`onSessionTap` / `onOpenSession`, carried across `DashboardClient` and handed to
-`SessionPopupInner` as a `weekTheme` prop — which **destructures it and never uses it in the
-body**. **15 references across 6 files.**
+⚠️ **My item said 6 files; it is 5** — re-measured before building, as an item is a
+snapshot of the day it was written.
 
-**Why it was split off rather than folded in:** removing it changes `PlanCalendar`'s
-`onSessionTap` signature (3 args → 2) in two declarations plus its call site, and touches
-`copy-preview`. That is a refactor across 6 files with **no runner-facing effect**, and
-bundling it would have widened a clean 98-line deletion into a signature change. SLC: one job.
+✅ **`week.theme` itself STAYS** and still has exactly one reachable render:
+`TodayScreen`'s maintenance-transition line, which `COACH-INTRO-TOKEN-01` routed through
+`renderPlanProse`. The engine still writes the field; only the dead plumbing went.
 
-⚠️ **It is inert, not harmful** — unlike `PlanCoachingCard`, which rendered the theme as
-prose and was one JSX line from showing 11 runners a raw `{{zone2_ceiling}}`. That is why one
-shipped today and this did not.
+🔴 **The contract had to narrow with the signature.**
+`docs/contracts/components/plan-calendar.md` documented the 3-arg `onSessionTap`, and
+`audit-docs.sh` checks changed components against `docs/contracts/`. Updated in the same
+commit, with the reason recorded where the next reader will look.
 
-✅ **`week.theme` still has one REACHABLE render** and it is correct now: `TodayScreen`'s
-maintenance-transition line, which `COACH-INTRO-TOKEN-01` routed through `renderPlanProse`.
-0 maintenance plans live, so it is latent — but `/api/post-race-reshape:249` writes
-`theme: enrichment.theme ?? week.theme`, so an AI-written theme can reach it.
+🔴 **AND I REPEATED A RECORDED MISTAKE DOING IT.** My first removal matched
+`"                  weekTheme,"` as a SUBSTRING — which also matches inside the
+22-space-indented line below it, so one pattern hit two different sites and the assert
+fired. That is the substring-bias class CLAUDE.md records for the hooks (*"bound the
+region, never grep the file"*). Redone as a **whole-line match on stripped content**, so
+indentation cannot alias. ⚠️ **The only reason it surfaced is that I asserted an
+expected match COUNT per site** rather than calling `replace`; a bare replace would have
+silently edited the wrong line.
 
-**Scope:** drop the prop from `SessionPopupInner`, unthread it, narrow the two `onSessionTap`
-signatures. ⚠️ `lib/ui/noDeadLocalComponents.test.ts` cannot see a dead PROP — only a dead
-component — so this needs its own arm or it will not be noticed again.
+**Gate:** `noDeadLocalComponents.test.ts` gains three arms — the component walk cannot
+see a dead PROP, which is why this needed its own. Includes a vacuity arm asserting
+`week.theme` still exists and is still rendered through the owner, because the main arm
+passes trivially if the field vanishes. Falsified both ways: re-adding the prop, and
+reverting the contract.
 
 ---
 
@@ -271,26 +278,43 @@ sentence needs qualifying and this becomes a one-line fix. **Either way it waits
 
 ---
 
-### 🔻 `AUDIT-MAINTENANCE-KIND-01` — the race validator still judges a maintenance plan ⚙️ **NO BOARD** *(ADR-013 restoration)*
+### ✅ `AUDIT-MAINTENANCE-KIND-01` — **SHIPPED 2026-10-09.** The maintenance kind gets §75 ⚙️ **NO BOARD** *(ADR-013 restoration)*
 
-**Filed 2026-10-09**, out of `AUDIT-PLAN-KIND-01`. `validateStoredPlan` now routes a
-`plan_kind: 'base_build'` plan to §116's own validator instead of the race-plan one, which
-took **101 phantom errors (28% of the fleet's 363) down to 0**. `plan_kind: 'maintenance'`
-is the same latent defect and is deliberately NOT dispatched.
+The last of the three plan kinds to be judged by its own constitution.
+`validateStoredPlan` now dispatches `plan_kind: 'maintenance'` →
+`validateMaintenanceBlock`.
 
-**Why it was left:** `validateMaintenanceBlock` takes three arguments
-(`baseWeeklyKm`, `injured`, `sourceRunDays`) that a stored plan's meta does not reliably
-carry, so routing it would mean guessing a base volume — trading a measured phantom for an
-unmeasured one.
+🔴 **The blocker I filed was real, and the fix was at the SOURCE, not the checker.**
+`validateMaintenanceBlock(weeks, baseWeeklyKm, injured, sourceRunDays)` — and
+`maintenance.ts:432` already called it correctly **at construction**, where all three
+extra arguments are in scope. The daily audit reads a stored row, and **`baseWeeklyKm`
+was not recoverable**: it is the RACE plan's base volume, driving §75's
+`VOLUME_CEILING_PCT_OF_BASE: 100` hard cap, so deriving it from the maintenance weeks
+would measure them against themselves. Now stamped by
+`app/api/maintenance-block/route.ts` — the only place all three exist — as
+`source_base_weekly_km`, `source_run_days_per_week`, `source_injured`.
 
-**Measured 2026-10-09: 0 maintenance plans in production** (34 plans: 32 race, 2
-base_build). So the defect is latent, not live, and it becomes live the first time a runner
-finishes a race.
+✅ **AND THE USUAL CAVEAT DOES NOT BITE.** Measured: **0 maintenance plans in
+production**, so a stamp-at-construction fix reaches **100% of the future population and
+strands nobody**. That is the rare case where "new plans only" is complete rather than a
+limitation — and it is why this was worth building before the first runner finishes a
+race rather than after.
 
-**Scope:** decide where `baseWeeklyKm` comes from for a stored maintenance plan (ADR-013
-says maintenance is its own plan object — check whether it stamps its own anchor), then add
-the arm to `validateStoredPlan` and extend `validateStoredPlan.test.ts`. ⚠️ Re-measure the
-maintenance count before picking it up; an item is a snapshot of the day it was written.
+🔴 **`maintenanceErrors` returns `null`, NOT `[]`, for an unstamped plan**, and that is
+the whole safety argument. `[]` would read as *"this maintenance plan is clean"* — the
+silent pass this repo keeps paying for. `null` means *"this validator cannot speak"*, and
+the caller falls through to the race validator: loud and imperfect, which is the safer of
+the two wrong answers.
+
+⚠️ **FIX THE PAIR — and I had to be told once already today.** The three fields are
+registered in **both** `types/plan.ts` and `lib/plan/schema.ts`'s Zod twin in this
+commit. I widened `plan_kind`'s TS union this morning and left the Zod schema rejecting
+`'base_build'` on exactly the 2 affected plans; `planKindsAgree.test.ts` guards only
+`plan_kind` and would not have caught these. An arm now asserts all three are in the
+schema — without it a re-parse silently strips them.
+
+**Falsified four ways:** removing the dispatch (2 arms red), returning `[]` instead of
+`null` (2 red), dropping a Zod registration (1 red), and un-stamping the route (1 red).
 
 ---
 

@@ -14,7 +14,23 @@ interface Props {
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   allCompletions: Record<number, Record<string, any>>   // keyed by week number, then day
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
-  onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
+  onSessionTap: (session: SessionTapPayload, weekN: number) => void
+
+> 🔴 **`weekTheme` WAS A THIRD ARGUMENT AND IT WENT (WEEKTHEME-PROP-DEAD-01,
+> 2026-10-09).** `week.theme` was derived here and in `TodayScreen`, carried through
+> `onSessionTap` → `onOpenSession` → `DashboardClient`, and handed to
+> `SessionPopupInner` as a prop that **destructured it and never read it**. 15
+> references across 5 files, terminating in nothing.
+>
+> ⚠️ It was left in place when `WEEK-THEME-DEAD-01` deleted `PlanCoachingCard`
+> earlier the same day, deliberately: that was a 98-line deletion and this is a
+> signature change, and bundling them would have widened a clean removal into a
+> refactor. **Inert, not harmful** — unlike `PlanCoachingCard`, which rendered the
+> theme as raw prose and was one JSX line from showing 11 runners a `{{token}}`.
+>
+> `week.theme` still has exactly one reachable render: `TodayScreen`'s
+> maintenance-transition line, which `COACH-INTRO-TOKEN-01` routed through
+> `renderPlanProse`.
 
   // Corrected 2026-09-18: these four were on the component and NOT in this
   // contract. Found by hand during a docs audit, because the audit script

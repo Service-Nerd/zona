@@ -99,12 +99,12 @@ function parseEffortCount(name?: string | null): number {
   return m ? parseInt(m[1], 10) : 1
 }
 
-export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, savedMetricOverride = null, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatch, runAnalysis = null }: {
+export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, savedMetricOverride = null, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatch, runAnalysis = null }: {
   /** P-01 — the completion pill's verdict comes from here. `null` is the honest
    *  majority case (no HR, or a free-tier runner without `activity_intelligence`)
    *  and resolves to `unknown`, never to `held`. */
   runAnalysis?: { hr_above_ceiling_pct?: number | null } | null
-  session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
+  session: any; weekN: number; preloadedRuns: any[]
   /** AI-PROVENANCE-01 — did a MODEL write this session's coach notes? Resolved by
    *  `sessionNotesAreAiAuthored` where the plan is in scope; never re-derived here,
    *  and never inferred from whether the notes array is non-empty (the rule engine

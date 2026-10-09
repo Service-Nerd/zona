@@ -80,3 +80,51 @@ describe('WEEK-THEME-DEAD-01 — no locally-declared component is unrendered', (
       .toEqual([])
   })
 })
+
+// WEEKTHEME-PROP-DEAD-01 (2026-10-09) — a dead PROP, which the arm above cannot see.
+//
+// 🔴 `noDeadLocalComponents` finds a component nothing renders. It cannot find a
+// PROP nothing reads, and `weekTheme` was exactly that: derived in `PlanCalendar` and
+// `TodayScreen`, carried through `onSessionTap` -> `onOpenSession` -> `DashboardClient`,
+// and handed to `SessionPopupInner` as a prop it DESTRUCTURED AND NEVER READ. 15
+// references across 5 files, terminating in nothing.
+//
+// ⚠️ Filed separately from `WEEK-THEME-DEAD-01`'s 98-line deletion on purpose: that
+// was a removal, this is a signature change across 5 files with no runner-facing
+// effect. Bundling would have widened a clean deletion into a refactor.
+describe('WEEKTHEME-PROP-DEAD-01 — the dead prop stays gone', () => {
+  const files = tsxFiles()
+
+  it('nothing in app/ or components/ names weekTheme', () => {
+    const offenders: string[] = []
+    for (const f of files) {
+      if (/\bweekTheme\b/.test(readFileSync(f, 'utf8'))) {
+        offenders.push(f.replace(/^.*\/(app|components)\//, '$1/'))
+      }
+    }
+    expect(offenders, `weekTheme is back:\n  ${offenders.join('\n  ')}`).toEqual([])
+  })
+
+  // ⚠️ THE VACUITY ARM, and it is not decoration here. The arm above passes
+  // trivially if the file walk breaks or if `week.theme` stops existing — and
+  // `week.theme` must KEEP existing: it still has one reachable render
+  // (`TodayScreen`'s maintenance-transition line, routed through `renderPlanProse`
+  // by COACH-INTRO-TOKEN-01) and the engine still writes it.
+  it('week.theme itself still exists and is still rendered somewhere', () => {
+    const all = files.map(f => readFileSync(f, 'utf8')).join('\n')
+    expect(all, 'week.theme has vanished entirely — this test is now vacuous')
+      .toMatch(/maintThemeLine|\.theme\b/)
+    expect(all, 'the one reachable theme render no longer goes through the owner')
+      .toContain('renderPlanProse')
+  })
+
+  // The signature narrowed, so the contract had to narrow with it.
+  it('the PlanCalendar contract documents the 2-arg onSessionTap', () => {
+    const doc = readFileSync(join(__dirname, '..', '..', 'docs', 'contracts',
+      'components', 'plan-calendar.md'), 'utf8')
+    expect(doc).toMatch(/onSessionTap:\s*\(session: SessionTapPayload, weekN: number\)\s*=>\s*void/)
+    expect(doc, 'the contract still documents a weekTheme argument')
+      .not.toMatch(/onSessionTap:[^\n]*weekTheme/)
+  })
+})
+

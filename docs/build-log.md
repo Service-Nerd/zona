@@ -6,6 +6,29 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — AUDIT-MAINTENANCE-KIND-01 + WEEKTHEME-PROP-DEAD-01 · the fix was at the source, and I repeated a mistake I had already written down
+**Shipped:** maintenance plans are now judged by §75 instead of the race-plan validator, and a prop threaded through three layers that nothing ever read is gone.
+
+**Dev learning:** **when a checker can't run, the honest question is whether the data is missing rather than whether the checker is wrong.** `validateMaintenanceBlock` needs four arguments and the construction path already passed all four correctly. The audit reads rows from a database, and one of those arguments — the race plan's base volume — is not recoverable from a stored maintenance plan, because it is the ceiling the plan's own weeks get measured against. Deriving it from those weeks would be checking them against themselves. So the fix wasn't in the validator or the dispatch; it was stamping three fields at the one point in the codebase where all three exist.
+
+The second thing I'd defend in review: `maintenanceErrors` returns `null` rather than `[]` when the stamp is absent. An empty array reads as *"this plan is clean"*, and that is the exact silent-pass shape this codebase keeps paying for. `null` means *the validator cannot speak*, and the caller falls back to the race validator — loud and wrong in detail, which beats quiet and wrong about everything.
+
+**Product/creator learning:** this one had a property I almost never get: **there are zero maintenance plans in production.** Normally "an engine fix reaches no existing plan" is a caveat I have to write into the item and hand to the founder as a remediation decision. Here it means the fix covers **100% of the future population and strands nobody** — which is precisely the argument for building it *before* the first runner finishes a race rather than after. Timing was the whole value.
+
+**AI-building learning:** 🔴 **I repeated a mistake that is already written down in this repo's own CLAUDE.md.** Removing the dead prop, I matched `"                  weekTheme,"` as a substring — which also matches inside the line below it, indented four spaces deeper. One pattern, two sites. CLAUDE.md records this exact class for the Claude Code hooks, under the words *"bound the region, never grep the file"*, and I did it anyway on a routine deletion.
+
+The only reason it surfaced is a habit rather than a rule: I asserted an **expected match count per site** instead of calling `replace`. A bare replace would have edited the wrong line and left `tsc` happy, because both lines are syntactically identical. **The assertion wasn't rigour, it was the thing that caught it.**
+
+**The honest bit:** I also had to be told about "fix the pair" twice in one day by my own tooling. This morning I widened a TypeScript union and left the Zod schema behind, on exactly the two plans that mattered. This afternoon I added three new meta fields — and the only reason the Zod half went in the same commit is that I'd been burned nine hours earlier and wrote an arm asserting it. The lesson didn't generalise from being written down; it generalised from a test.
+
+And twice today `audit-docs.sh`'s roadmap mirror arm caught me leaving an open roadmap row beside the closed one I'd just added. I built that arm. It has now corrected its author four times.
+
+**Hook material:** the validator for maintenance plans had been written, tested and correct for weeks. It never ran on a stored plan, because the one number it needs is the ceiling you'd have to measure the plan against — and nothing had written that number down.
+
+**Postable?:** yes
+
+---
+
 ## 2026-10-09 — LR-TAPER-BUMP-01 · I took the board a question it had already answered, and the scan caught me
 **Shipped:** V4's long-run increment is phase-scoped, and §6 Amendment 1's cap now works on a duration-anchored plan.
 

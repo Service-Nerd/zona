@@ -936,7 +936,6 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
     s.rawDate > (selectedSession?.rawDate ?? now) && RUN_TYPES.includes(s.type)
   ) ?? null
 
-  const weekTheme = (currentWeek as any).theme ?? ''
 
   // Week narrative data — phase, session progress, km target
   const totalSessionsThisWeek = sessions.filter(s => s.type !== 'rest').length
@@ -1926,7 +1925,6 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                   isPast,
                   isFuture,
                   weekN: weekNum,
-                  weekTheme,
                 })
               }}
             />
@@ -1989,7 +1987,6 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                       isPast: false,
                       isFuture: false,
                       weekN: weekNum,
-                      weekTheme,
                     })
                     return
                   }

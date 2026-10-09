@@ -282,6 +282,16 @@ export const PlanMetaSchema = z.object({
   // the two, so the next value cannot be added to one alone.
   plan_kind:                   z.enum(['race', 'maintenance', 'base_build']).optional(),
   source_race_name:            z.string().optional(),
+  // AUDIT-MAINTENANCE-KIND-01 — the three `validateMaintenanceBlock` arguments.
+  // ⚠️ REGISTERED HERE IN THE SAME COMMIT AS `types/plan.ts`, deliberately. Earlier
+  // today I widened `plan_kind`'s TS union and left this file rejecting
+  // `'base_build'` on exactly the 2 affected plans (BASEBUILD-SCHEMA-KIND-01), and
+  // `planKindsAgree.test.ts` only guards `plan_kind` — it would not have caught
+  // these. A field must be registered here or a re-parse through the schema strips
+  // it, which is the same reason `plan_intro` and the `source_*` family are listed.
+  source_base_weekly_km:       z.number().positive().optional(),
+  source_run_days_per_week:    z.number().int().positive().optional(),
+  source_injured:              z.boolean().optional(),
   source_race_distance_km:     z.number().positive().optional(),
   source_race_date:            z.string().optional(),
   source_race_outcome:         z.string().optional(),

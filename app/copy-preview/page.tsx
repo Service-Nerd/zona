@@ -82,7 +82,7 @@ const meProps = {
   onHRChange: noop,
 }
 const sessionProps = {
-  session: firstSession, weekTheme: week.theme, weekN: week.n, preloadedRuns: [],
+  session: firstSession, weekN: week.n, preloadedRuns: [],
   aiNotes: true, onClose: noop, preferredUnits: 'km' as const, zone2Ceiling: 148,
   preferredMetric: 'distance' as const,
 }
@@ -118,7 +118,7 @@ const longRun = pickSession(s => !!(s.structure as { race_pace_segment?: unknown
   ?? pickSession(s => s.type === 'easy' && Number(s.distance_km ?? 0) > 15)
 const raceDay = pickSession(s => s.type === 'race')
 const caseProps = (picked: ReturnType<typeof pickSession>, units: 'km' | 'mi' = 'km') => picked && ({
-  ...sessionProps, session: picked.session, weekTheme: picked.theme, weekN: picked.weekN, preferredUnits: units,
+  ...sessionProps, session: picked.session, weekN: picked.weekN, preferredUnits: units,
 })
 
 function Case({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {

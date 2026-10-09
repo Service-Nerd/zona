@@ -1094,7 +1094,6 @@ export default function DashboardClient() {
       key:       sessionDay,
       day:       sessionDay,
       weekN,
-      weekTheme: week.theme ?? '',
     }
 
     if (target === 'post-run') {
@@ -4448,8 +4447,8 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           units={preferredUnits}
           preferredMetric={preferredMetric}
           sessionMetricOverrides={sessionMetricOverrides}
-          onSessionTap={(session, weekN, weekTheme) => {
-            onOpenSession?.({ ...session, weekN, weekTheme })
+          onSessionTap={(session, weekN) => {
+            onOpenSession?.({ ...session, weekN })
           }}
         />
       </div>
@@ -6680,7 +6679,6 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
             <SessionPopupInner
               runAnalysis={runAnalysis}
               session={session}
-              weekTheme={session.weekTheme ?? ''}
               weekN={session.weekN ?? 1}
               aiNotes={aiNotes}
               preloadedRuns={preloadedRuns}
