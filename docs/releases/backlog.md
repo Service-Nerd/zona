@@ -967,6 +967,26 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > founder runs or an action taken through the app — with a per-plan before/after diff to approve
 > first, and a predicate proven to answer differently in the two states (`/build` §4b).
 >
+> ✅ **SCRIPT PREPARED — `scripts/recal-live-repair.ts`, dry-run by default** (`eaabac14`).
+> `npx tsx scripts/recal-live-repair.ts` prints the per-plan diff; `--apply` writes; `--verify`
+> reads back. Population selected by the invariant firing, never a typed list.
+>
+> **Dry run, measured over all 32 stored plans:**
+>
+> | plan | result |
+> |---|---|
+> | `c5d3ae8b` *(Battersea Half, starts 12 Oct)* | **REPAIRABLE** — 16 errors → 1 · step-pace **8 → 0** · header-pace **7 → 0** · introduced **0** · dose and variants untouched. The residual is `INV-INPUT-LONGEST-LE-WEEKLY` (longest 6 km > weekly 5 km), **her own incoherent input, not a pricing fault.** |
+> | `8a2858ab` | **REFUSED by the gate** — improves 11 → 5, but one session sits at **4:15–4:25**, a THIRD fitness neither of its recorded benchmarks produces. Recalibrated more than once; the intermediate value is unrecoverable. |
+> | `3cc7c3a9` | **SKIPPED** — no `meta.generator_input.benchmark`, so nothing records what its steps were priced at. Refused rather than guessed at. |
+>
+> 🔴 **THE DEFECT DESTROYED THE RECORD NEEDED TO REPAIR IT.** The first version of the script was a
+> **no-op on all three plans**: `applyRecalibration` re-prices a step only when its stored pace is
+> what its anchor meant at the OLD fitness (rebuilt from `meta.vdot`) — and the broken writer had
+> already moved `meta.vdot` forward while leaving the steps behind. The only surviving record is
+> `meta.generator_input.benchmark`, **the same stale field that made my first RCA wrong.** So the
+> repair reconstructs the self-consistent pre-recalibration state, then re-prices — two passes
+> through the owner, no hand-written metadata.
+>
 > 🔻 **Founder's call, because it writes to live plans three days before one of them starts.**
 
 ### 🏃 `RECAL-DISTANCE-CLAUSE3-01` — §125 clause 3 is ruled and NOT built; here is the number the ruling lacked *(filed 2026-10-09)* 🏃 **COACHING BOARD**
