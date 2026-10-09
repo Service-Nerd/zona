@@ -144,7 +144,7 @@ function paceStrToMins(s: string): number | null {
 // second-copy-that-drifts class this repo has recorded five times; calling the
 // producer with the producer's own recorded inputs is not.
 
-function calcVDOTFromBenchmark(b: BenchmarkInput): number {
+export function calcVDOTFromBenchmark(b: BenchmarkInput): number {
   const mins = parseBenchmarkTime(b.time)
   return calcVDOT(b.distance_km, mins)
 }
@@ -320,7 +320,7 @@ const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source' | 'marathonPaceS
  */
 const CV_PACE_RATIO_OF_T = 0.855 / 0.90
 
-function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
+export function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
   const base = PACE_GUIDE[fitness]
   const cvMins = base.minPerKmQuality * CV_PACE_RATIO_OF_T
   // Marathon and HM segment paces derived from quality pace midpoint + offset.
@@ -6188,10 +6188,37 @@ export function applyRecalibration(
   const oldPace = plan.meta.vdot != null && plan.meta.vdot_training_anchor != null
     ? buildPaceFromVDOT(plan.meta.vdot_training_anchor, plan.meta.vdot)
     : null
+
+  repriceWeeksFrom(updated, oldPace, pace, fromWeekN)
+
+  return updated
+}
+
+/**
+ * THE SINGLE OWNER OF RE-PRICING A PLAN'S WEEKS (§125), mutating `plan` in place
+ * from `fromWeekN` onwards.
+ *
+ * ⚠️ `oldPace` IS A PARAMETER AND THAT IS THE WHOLE POINT. `applyRecalibration`
+ * derives it from the plan's own stamped VDOTs, which is right for a live
+ * recalibration. A REPAIR cannot: `RECAL-PACE-TWO-WRITER-01`'s own writer moved
+ * `meta.vdot` forward while leaving the steps behind, so on a damaged plan the
+ * metadata no longer describes what the steps read, and the caller is the only
+ * thing that knows. Exported so `scripts/recal-live-repair.ts` can say so
+ * explicitly — including the case where the steps were never priced from a VDOT
+ * at all, but from `buildFallbackPace`'s level table (a runner who generated a
+ * plan with no benchmark). Two entry points, ONE implementation: the repair must
+ * not be a second copy of this walk.
+ */
+export function repriceWeeksFrom(
+  plan: Plan,
+  oldPace: PaceGuide | null,
+  pace: PaceGuide,
+  fromWeekN: number,
+): void {
   const oldAnchors = oldPace ? fitnessAnchorMap(oldPace) : null
   const newAnchors = fitnessAnchorMap(pace)
 
-  for (const week of updated.weeks) {
+  for (const week of plan.weeks) {
     if (week.n < fromWeekN) continue
     for (const session of Object.values(week.sessions)) {
       if (!session || session.type === 'strength' || session.type === 'rest') continue
@@ -6211,8 +6238,6 @@ export function applyRecalibration(
       }
     }
   }
-
-  return updated
 }
 
 /**

@@ -950,44 +950,47 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > ⚠️ **Ops-only. No runner-facing surface, no prescription, no tier, engine untouched** — the
 > founder's "minimum negative impact" constraint.
 
-### 🔻 `RECAL-LIVE-REPAIR-01` — three live plans still hold paces from a fitness their runner no longer has *(filed 2026-10-09, FOUNDER DECISION)* 👤 **FOUNDER**
+### 🔻 `RECAL-LIVE-REPAIR-01` — ✅ **Floe repaired 2026-10-09.** Clay needs REGENERATION, Duncan needs a look *(FOUNDER DECISION on the two)* 👤 **FOUNDER**
 
-> The engine fix shipped in `441bf20c` (`RECAL-PACE-TWO-WRITER-01`, stages 0–3). **It reaches no
-> existing plan**, because the live-plan policy is new-plans-only and a recalibration only re-prices
-> when the runner logs a new benchmark and confirms.
+> ✅ **`c5d3ae8b` (Floe Henderson, Battersea Half, starts 12 Oct) — REPAIRED AND VERIFIED FROM THE
+> LIVE DB.** Written 11:56:13, prior plan archived 11:56:13. **16 error violations → 1**; every
+> header now agrees with its own steps, the CV session correctly at `5:24–5:36` rather than flattened
+> to the threshold band. Plan length, session days, distances and durations all unchanged. The
+> residual is `INV-INPUT-LONGEST-LE-WEEKLY` — her own contradictory sign-up answers (5 km/week,
+> longest run 6 km), which no re-pricing can fix.
 >
-> **Three stored plans carry the defect**, measured by `INV-PLAN-STEP-PACE-FROM-GUIDE`:
-> `c5d3ae8b` (8 sessions), `3cc7c3a9` (4), `8a2858ab` (1). ⚠️ **`c5d3ae8b` starts 12 Oct** —
-> Battersea Half, knee history, her quality steps priced ~25 s/km faster than her own stated
-> fitness.
+> 🔻 **`3cc7c3a9` (Clay Manwaterman, London Marathon, starts 4 Jan 2027) — RE-PRICING IS THE WRONG
+> TOOL. REGENERATE.** 0 runs logged.
 >
-> **The repair is deterministic and needs no runner contact:** re-run the corrected recalibration
-> with each plan's own stored `meta.benchmark`. It goes through the governed owner and invents no
-> prescription. ⚠️ **Production is READ-ONLY from the dev environment**, so this is a script the
-> founder runs or an action taken through the app — with a per-plan before/after diff to approve
-> first, and a predicate proven to answer differently in the two states (`/build` §4b).
+> ⚠️ **I CALLED HIM UNREPAIRABLE AND THAT WAS WRONG** — the script only knew how to re-price from a
+> stored *benchmark*, and he never gave one. His paces came from `buildFallbackPace`'s **level
+> table**: his stale steps are the `intermediate` row verbatim (easy `6:30–7:30`; CV `5:21–5:34` =
+> quality 5:45 × 0.95), and **no VDOT between 25 and 55 produces either band**, which is how the
+> table was identified rather than guessed. The script now handles that source (`repriceWeeksFrom`
+> takes the as-priced guide as a parameter) and **his stale steps clear 4 → 0, errors 15 → 10.**
 >
-> ✅ **SCRIPT PREPARED — `scripts/recal-live-repair.ts`, dry-run by default** (`eaabac14`).
-> `npx tsx scripts/recal-live-repair.ts` prints the per-plan diff; `--apply` writes; `--verify`
-> reads back. Population selected by the invariant firing, never a typed list.
+> 🔴 **But the gate still refuses him, and it is right to.** Re-pricing surfaces a THIRD
+> inconsistency: his sessions are labelled *"Quality: Threshold"* while their steps are CV-anchored,
+> so fixing the pace breaks `INV-PLAN-LABEL-MATCHES-PACE`. His plan also wants **17 sessions**
+> changed, not 4 — the recalibration never reached *any* step, so the whole plan is on table pacing
+> with generic labels and no catalogue identity. **It is from an older engine.**
+> **Measured: regenerating from his own input + the 20:30 benchmark gives 15 errors → 0**, and real
+> sessions (Progressive tempo, Over-unders, Marathon-pace ladder) instead of four identical
+> *"Quality: Threshold"* rows. ⚠️ A regeneration must compose the foundation block —
+> `scripts/fleet-invalid-debt-01-regen.ts` already does that; the naive call drops his 3 foundation
+> weeks (23 → 20).
 >
-> **Dry run, measured over all 32 stored plans:**
+> 🔻 **`8a2858ab` (Duncan Bennett) — still open, and now UNTOUCHED by the script.** Trial, **8 runs
+> logged, 4 analysed — he is actively training**, so regeneration is the wrong tool for him. One
+> stale session in week 9 (≈ mid-November) sits at `4:15–4:25`, a **third** fitness neither of his
+> recorded values produces: recalibrated more than once, the intermediate value unrecoverable.
+> Likeliest answer is one hand-corrected session.
 >
-> | plan | result |
-> |---|---|
-> | `c5d3ae8b` *(Battersea Half, starts 12 Oct)* | **REPAIRABLE** — 16 errors → 1 · step-pace **8 → 0** · header-pace **7 → 0** · introduced **0** · dose and variants untouched. The residual is `INV-INPUT-LONGEST-LE-WEEKLY` (longest 6 km > weekly 5 km), **her own incoherent input, not a pricing fault.** |
-> | `8a2858ab` | **REFUSED by the gate** — improves 11 → 5, but one session sits at **4:15–4:25**, a THIRD fitness neither of its recorded benchmarks produces. Recalibrated more than once; the intermediate value is unrecoverable. |
-> | `3cc7c3a9` | **SKIPPED** — no `meta.generator_input.benchmark`, so nothing records what its steps were priced at. Refused rather than guessed at. |
->
-> 🔴 **THE DEFECT DESTROYED THE RECORD NEEDED TO REPAIR IT.** The first version of the script was a
-> **no-op on all three plans**: `applyRecalibration` re-prices a step only when its stored pace is
-> what its anchor meant at the OLD fitness (rebuilt from `meta.vdot`) — and the broken writer had
-> already moved `meta.vdot` forward while leaving the steps behind. The only surviving record is
-> `meta.generator_input.benchmark`, **the same stale field that made my first RCA wrong.** So the
-> repair reconstructs the self-consistent pre-recalibration state, then re-prices — two passes
-> through the owner, no hand-written metadata.
->
-> 🔻 **Founder's call, because it writes to live plans three days before one of them starts.**
+> 🥇 **DUNCAN FOUND A REAL FLAW IN MY HEADER PASS, AND THE GATE CATCHING HIM WAS LUCK.** It resolved
+> the header from a session's steps even when those steps had NOT been re-priced, which makes the
+> header match a STALE step — this defect inverted. It would have pulled four of his correct headers
+> from `5:24–5:39` to `4:48–5:00` and `4:15–4:25`, i.e. **faster, on a runner whose fitness had gone
+> the other way.** Now scoped to sessions whose steps actually moved; he changes **0 sessions**.
 
 ### 🏃 `RECAL-DISTANCE-CLAUSE3-01` — §125 clause 3 is ruled and NOT built; here is the number the ruling lacked *(filed 2026-10-09)* 🏃 **COACHING BOARD**
 

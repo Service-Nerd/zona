@@ -39,12 +39,17 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
-import { applyRecalibration } from '../lib/plan/ruleEngine'
+import {
+  repriceWeeksFrom, buildFallbackPace, applyVdotDiscount, calcVDOTFromBenchmark,
+} from '../lib/plan/ruleEngine'
+import { buildPaceFromVDOT } from '../lib/plan/paceBands'
 import { validatePlan } from '../lib/plan/invariants'
 import { getCurrentWeek } from '../lib/plan/weekResolution'
 import { qualityHeaderPace } from '../lib/plan/qualityHeaderPace'
 import { savePlanForUser } from '../lib/plan'
 import type { Plan, GeneratorInput, Session, BenchmarkInput } from '../types/plan'
+import type { PaceGuide } from '../lib/plan/paceBands'
+import type { FitnessLevel } from '../lib/plan/fitnessAssessment'
 
 const APPLY  = process.argv.includes('--apply')
 const VERIFY = process.argv.includes('--verify')
@@ -166,76 +171,97 @@ async function main() {
     console.log(`  completions ${completions.count ?? 0} logged`
       + `   (weeks before ${fromWeekN} are not touched)`)
 
-    // 🔴 THE DEFECT DESTROYED THE RECORD NEEDED TO REPAIR IT, AND THIS IS THE
-    // WORK-AROUND. `applyRecalibration` re-prices a step only when its stored
-    // pace is what its anchor meant at the OLD fitness — rebuilt from
-    // `meta.vdot`. That rule is correct and it is what stops §22's goal
-    // substitution being re-aimed. But the broken writer ALREADY moved
-    // `meta.vdot` to the new benchmark and left the steps behind, so on these
-    // plans nothing matches its own metadata and a straight re-run is a no-op.
-    // Measured: 0 of 3 repaired, 0 sessions changed on two of them.
+    // 🔴 THE DEFECT DESTROYED THE RECORD OF WHAT THE STEPS READ, SO THE CALLER
+    // HAS TO SUPPLY IT. `applyRecalibration` derives the OLD pace guide from
+    // `meta.vdot`, which is right for a live recalibration and useless here: the
+    // broken writer moved `meta.vdot` forward and left the steps behind, so on a
+    // damaged plan the metadata describes a fitness the steps never had. The
+    // first version of this script ran `applyRecalibration` straight and was a
+    // NO-OP on all three plans for exactly that reason.
     //
-    // The only surviving record of the fitness those steps were actually priced
-    // at is `meta.generator_input.benchmark` — the field the broken writer never
-    // updates, which is the same staleness that made my first RCA wrong. So the
-    // repair is TWO passes through the same owner, no hand-written metadata:
+    // `repriceWeeksFrom` takes the as-priced guide as a PARAMETER, so this says
+    // explicitly what the steps read. There are two ways a plan can have been
+    // priced, and BOTH are in the live data:
     //
-    //   1. recalibrate to the GENERATOR-INPUT benchmark. The steps already read
-    //      that fitness, so they do not move; what moves is `meta`, which now
-    //      describes the plan as it actually is. This reconstructs the
-    //      self-consistent pre-recalibration state the runner should have had.
-    //   2. recalibrate to `meta.benchmark`, the real one. Now every step matches
-    //      its own anchor, the accountable rule engages, and the plan is re-priced
-    //      exactly as the runner's own confirmed recalibration should have done.
+    //   (a) FROM A BENCHMARK — `meta.generator_input.benchmark` survives, because
+    //       it is the field the broken writer never updates. Same VDOT path
+    //       generation used, discount included.
     //
-    // ⚠️ A plan with no `generator_input.benchmark` CANNOT be repaired this way,
-    // because nothing records what its steps were priced at. It is refused by
-    // the gate below rather than guessed at.
-    const asPriced = (before.meta.generator_input as GeneratorInput | undefined)?.benchmark as
+    //   (b) FROM THE LEVEL TABLE — a runner who generated a plan with NO
+    //       benchmark gets `buildFallbackPace(level)`, a hardcoded table, not a
+    //       VDOT. ⚠️ I first called this plan unrepairable because the script
+    //       only knew (a). It is not: its stale steps are the `intermediate`
+    //       row verbatim — easy `6:30–7:30`, and CV `5:21–5:34` from quality
+    //       5:45 × 0.95 — and **no VDOT between 25 and 55 produces either band**,
+    //       which is how the table was identified rather than guessed.
+    const giBm = (before.meta.generator_input as GeneratorInput | undefined)?.benchmark as
       BenchmarkInput | undefined
-    if (!asPriced?.time || !asPriced?.distance_km) {
-      console.log('  SKIP — no meta.generator_input.benchmark, so nothing records the fitness')
-      console.log('         these steps were priced at. Not repairable by re-pricing.')
+    const level = (before.meta.fitness_level_declared ?? before.meta.fitness_level
+      ?? (before.meta.generator_input as GeneratorInput | undefined)?.user_declared_level) as
+      FitnessLevel | undefined
+
+    let asPriced: PaceGuide | null = null
+    if (giBm?.time && giBm?.distance_km) {
+      const raw = calcVDOTFromBenchmark(giBm)
+      const { vdot } = applyVdotDiscount(raw, giBm, new Date())
+      asPriced = buildPaceFromVDOT(Math.round(vdot * 10) / 10, Math.round(raw * 10) / 10)
+      console.log(`  as priced   BENCHMARK ${giBm.distance_km}km in ${giBm.time}`
+        + `  ->  easy ${asPriced.easyPaceStr}  T ${asPriced.qualityPaceStr}`)
+    } else if (level && ['beginner', 'intermediate', 'experienced'].includes(level)) {
+      asPriced = buildFallbackPace(level)
+      console.log(`  as priced   LEVEL TABLE "${level}" (no benchmark at generation)`
+        + `  ->  easy ${asPriced.easyPaceStr}  T ${asPriced.qualityPaceStr}`)
+    }
+    if (!asPriced) {
+      console.log('  SKIP — neither a stored benchmark nor a declared level, so nothing')
+      console.log('         records what these steps were priced at. Not repairable.')
       continue
     }
-    console.log(`  as priced   ${asPriced.distance_km}km in ${asPriced.time}`
-      + `   (from meta.generator_input — the fitness the STEPS read)`)
+
+    const nowPace = before.meta.vdot != null && before.meta.vdot_training_anchor != null
+      ? buildPaceFromVDOT(before.meta.vdot_training_anchor, before.meta.vdot)
+      : null
+    if (!nowPace) {
+      console.log('  SKIP — the plan stamps no VDOT, so there is no current guide to re-price TO.')
+      continue
+    }
+    console.log(`  re-price to easy ${nowPace.easyPaceStr}  T ${nowPace.qualityPaceStr}`
+      + `  (from meta.vdot ${before.meta.vdot})`)
 
     let after: Plan
     try {
-      const reconstructed = applyRecalibration(before, asPriced, fromWeekN)
-      after = applyRecalibration(reconstructed, bm, fromWeekN)
+      after = JSON.parse(JSON.stringify(before)) as Plan
+      repriceWeeksFrom(after, asPriced, nowPace, fromWeekN)
 
-      // 🔴 PASS 3 — PUT THE HEADERS BACK, BECAUSE THE HEADER IS THE ONE FIELD
-      // THE BROKEN WRITER GOT RIGHT.
+      // 🔴 THE HEADER IS RESOLVED, NOT SCALED, AND IT WAS WRONG TWICE BEFORE THIS.
+      // `repriceWeeksFrom` scales the header by the factor its steps moved, which
+      // is correct for a live recalibration where the two start in sync. Here they
+      // do not: the broken writer moved the header to the NEW fitness and left the
+      // steps at the old one, so scaling overshoots — measured 5:36–5:52 ->
+      // 6:02–6:19, a header SLOWER than its own re-priced steps, 13 new violations.
+      // Restoring the stored value wholesale was then wrong on ONE row, because the
+      // writer flattened EVERY quality header to the category band and a
+      // CV-anchored row's stored header is therefore the THRESHOLD band.
       //
-      // `applyRecalibration` scales the header by the factor its steps moved,
-      // which is correct for a real recalibration, where the header and the
-      // steps start in sync. Here they do not: the broken writer moved the
-      // header to the NEW fitness and left the steps at the old one. So pass 2
-      // scales a header that is already at its destination and overshoots —
-      // measured 5:36–5:52 -> 6:02–6:19, i.e. a header now SLOWER than its own
-      // re-priced steps, which is the original defect inverted and 13 new
-      // violations.
-      //
-      // The correct final header is §120's rule: the band its own work steps
-      // run. So it is resolved through `qualityHeaderPace`, the owner of that
-      // rule, with the STORED header as the fallback — which is what keeps a
-      // §85 mixed-anchor row (whose header is a mean that equals no single step,
-      // and which the invariant skips by design) exactly as it was.
-      //
-      // ⚠️ RESTORING THE STORED HEADER WHOLESALE WAS THE FIRST VERSION AND IT
-      // WAS WRONG ON ONE ROW. The broken writer flattened EVERY quality header
-      // to the single category band, so for a CV-anchored row the stored value
-      // is the THRESHOLD band — restoring it put 5:36–5:52 over re-priced steps
-      // at 5:24–5:36 and the gate caught it as a new §120 violation. Right for
-      // the threshold rows, wrong for the CV one; the rule is right for both.
+      // §120's rule is right for both: the header is the band its own work steps
+      // run. Resolved through `qualityHeaderPace`, its owner, with the stored value
+      // as the fallback — which leaves a §85 mixed-anchor row (a mean that equals
+      // no single step, skipped by the invariant by design) exactly as it was.
+      // ⚠️ ONLY WHERE THE STEPS ACTUALLY MOVED, AND THE FIRST VERSION MISSED
+      // THIS. Resolving the header from a session whose steps were NOT re-priced
+      // makes the header match a STALE step — which is this defect inverted, and
+      // strictly worse than leaving it alone. Measured on `8a2858ab`: it would
+      // have pulled four correct headers from 5:24–5:39 to 4:48–5:00 and
+      // 4:15–4:25, i.e. FASTER, on a runner whose fitness had gone the other
+      // way. The gate refused that plan for an unrelated reason, which is luck,
+      // not design.
       for (const w of after.weeks) {
         const bw = before.weeks.find(x => x.n === w.n)
         if (!bw) continue
         for (const day of Object.keys(w.sessions) as (keyof typeof w.sessions)[]) {
           const a = w.sessions[day], b = bw.sessions[day]
           if (!a || !b || b.pace_target == null) continue
+          if (steps(a).join(',') === steps(b).join(',')) continue   // steps held — leave the header
           a.pace_target = qualityHeaderPace({
             derivedSet: a.derived_set ?? null,
             categoryBand: b.pace_target,
@@ -243,7 +269,7 @@ async function main() {
         }
       }
     } catch (e) {
-      console.log(`  SKIP — applyRecalibration threw: ${(e as Error).message.split('\n')[0]}`)
+      console.log(`  SKIP — re-pricing threw: ${(e as Error).message.split('\n')[0]}`)
       continue
     }
 
