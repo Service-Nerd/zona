@@ -897,6 +897,85 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > build:** *"a declared reason is not a fixed problem … nothing in this repo schedules it."*
 > So the register carries the date each entry was declared.
 
+### ✅ `AUDIT-FOUNDATION-MISCOUNT-01` — **FIXED 2026-10-09.** 49 phantom foundation violations across 19 plans, now 0 ⚙️ **NO BOARD**
+
+> 🔴 **THE DIGEST ESCALATED AN ENGINE REGRESSION AND THERE WAS NO ENGINE DEFECT.** 2026-10-08
+> led with `INV-INPUT-LONGEST-LE-WEEKLY` as live, *"in the foundation week
+> (foundation_hits = 1)"*, and recommended *"stop the generator setting an early/foundation
+> long run above weekly volume"*. **The plan had ZERO foundation weeks, no generated week
+> breached anything, and the runner had stated a 5 km week with a 6 km longest run.**
+>
+> **TWO CONVENTIONS COLLIDE ON ONE SENTINEL:**
+>
+> | | |
+> |---|---|
+> | ADR-020 | a foundation week has `n <= 0` |
+> | `invariants.ts:1013` | `week: 0` means *"input-level, plan-wide, NO specific week"* |
+>
+> **64 invariants use `week: 0`**, so `errors.filter(v => (v.week ?? 1) <= 0)` counted every
+> plan-wide violation as a foundation one.
+>
+> 📐 **MEASURED ACROSS ALL 32 STORED PLANS: 49 "foundation" violations on 19 plans; true
+> value 0 on every one, across 15 distinct codes** (`DIFFICULTY-ANNOTATED` ×8,
+> `COMPRESSION-SPLIT` ×8, `COMPRESSION-CLASSIFICATION` ×7, `PEAK-RACE-SPECIFIC-REACHED` ×6 …).
+> **100% wrong**, on a field whose own comment says it exists so *"triage starts in the right
+> place"*. After: **0**.
+>
+> 🔴 **MY FIRST BLAST RADIUS WAS WRONG BY 19×** — I measured the population of the one code I
+> was looking at, not the population of the defect.
+>
+> ✅ **Also: an input-level code can no longer be `engine_regression`.** `INV-INPUT-*` guards
+> the runner's STATED input, so regenerating from the stored input reproduces it **by
+> construction** — it could only ever receive the one verdict meaning *"act on the engine"*.
+> New `input_breach` verdict: **not actionable-as-an-alert, and explicitly NOT clean.**
+>
+> ⚠️ **THE PREFIX IS THE DISCRIMINATOR, NOT `week === 0`** — the shared sentinel is the whole
+> collision, so reusing it would have rebuilt the defect inside its own fix.
+>
+> 🥇 **AND THE PATH IS ENVIRONMENT-DEPENDENT, which the RCA did not have.** `generateRulePlan`
+> and `validatePlan` THROW on error severity under test/dev and LOG in production (ADR-006).
+> So in test a breaching input makes regeneration throw → `undecidable`; **in production it
+> logs, regeneration succeeds, and the verdict WAS `engine_regression`** — the digest's value.
+> A test in the default environment would have asserted a verdict the live system never
+> emits. The composition arm runs under `vi.stubEnv('NODE_ENV','production')`.
+>
+> **Gate** `lib/ops/regressionVsNewRule.test.ts` — 27 arms (13 pre-existing, 14 new),
+> **falsified 7 ways.** 🔴 **One mutation stayed GREEN and that found a hole in my own
+> tests**: turning the input-level branch off failed nothing, because every arm handed
+> `'input_breach'` in by hand and **nothing ran `classifyCodes`** — the *"both halves correct,
+> the COMPOSITION untested"* class, in the file written to close this defect. Added, and M3
+> now goes red. ⚠️ My first composition fixture used the file's MARATHON input and hit a
+> designed refusal (`BaseVolumeError`); the refusal was right and the test was wrong.
+>
+> ⚠️ **Ops-only. No runner-facing surface, no prescription, no tier, engine untouched** — the
+> founder's "minimum negative impact" constraint.
+
+### 🔻 `HEADER-PACE-REMEDIATION-01` — 7 of her 16 weeks carry a header that understates the work pace *(filed 2026-10-09, FOUNDER DECISION)* 👤 **FOUNDER**
+
+> 🔴 **NOT AN ENGINE DEFECT, AND I HAD IT THE OTHER WAY ROUND IN MY OWN RCA.** I wrote that
+> the digest had under-classified this and that *"this is the one that actually reaches her"*,
+> implying a live defect. **Measured: regenerating her plan from her own stored
+> `generator_input` on today's engine gives 0 HEADER-PACE hits.** The audit's
+> `rule_newer_than_plan` was **correct** and I doubted it. Second time in two days I have
+> doubted that classifier; **it was wrong once and right once.**
+>
+> **What remains is real but is remediation, not a build.** Her STORED plan
+> (`floehenderson@icloud.com`, Battersea Half, starts **12 Oct**) has 7 of 16 weeks (6, 7, 10,
+> 11, 12, 13, 14) where the session header reads **5:36–5:52 /km** over work steps at
+> **5:12–5:27 /km**. A runner following the header under-runs every quality session in the
+> second half of the block.
+>
+> 🔻 **FOUNDER'S CALL, because the live-plan policy says NEW PLANS ONLY** and this would touch
+> a live plan three days before it starts. Options: leave it (she sees the step paces on the
+> session card either way), regenerate (loses nothing — 0 completions, all sessions future),
+> or patch the headers only.
+>
+> ⚠️ **Separately, and NOT this item:** `auditPlanQuality` already flags `WEEK1-LEAP` on her
+> plan — declared **5 km/week → week 1 is 14 km, ×2.8**, with a knee history. The reviewer's
+> concern is correct and the engine's own quality audit already knows. Also worth asking her
+> whether 6 km was her longest *ever* rather than her current week, because if so her true
+> weekly is higher and the leap is less severe than it reads.
+
 ### ✅ `RESHAPE-MOMENT-02` — **SHIPPED 2026-10-08.** The homepage runs the engine 🧭 **DESIGN BOARD** + 🏃 **COACHING BOARD** *(both sat)*
 
 > ✅ **Coaching Board CORRECT WITH AMENDMENT (3)**, routed under W-03. Live after

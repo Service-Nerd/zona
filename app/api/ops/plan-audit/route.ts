@@ -5,7 +5,10 @@ import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { findWeekCollisions, type LiveWeekRow } from '@/lib/ops/planWeekCollision'
 import { validateReshapedPlan } from '@/lib/plan/invariants'
 import { storedPlanCodes } from '@/lib/ops/storedPlanProbes'
-import { classifyCodes, summariseVerdicts, verdictReason, type CodeVerdict } from '@/lib/ops/regressionVsNewRule'
+import {
+  classifyCodes, verdictReason, summariseVerdicts, foundationWeekViolations,
+  type CodeVerdict,
+} from '@/lib/ops/regressionVsNewRule'
 import { summarisePlanAges, type PlanAgeRow } from '@/lib/ops/planAuditAges'
 import type { Plan } from '@/types/plan'
 
@@ -225,7 +228,18 @@ export async function POST(req: NextRequest) {
         ...(verdictReason(verdicts, verdictNote) ? { reason: verdictReason(verdicts, verdictNote) } : {}),
         // Foundation weeks (n <= 0) are the class no other server-side check
         // sees at all — call them out so triage starts in the right place.
-        foundation_week_violations: errors.filter(v => (v.week ?? 1) <= 0).length,
+        //
+        // 🔴 WAS `errors.filter(v => (v.week ?? 1) <= 0).length` AND IT WAS WRONG ON EVERY
+        // PLAN THAT HAD ANY VIOLATION (`AUDIT-FOUNDATION-MISCOUNT-01`, 2026-10-09).
+        // ADR-020 gives a foundation week `n <= 0`; `invariants.ts:1013` uses `week: 0` to
+        // mean "input-level, plan-wide, NO specific week". **64 invariants use `week: 0`**,
+        // so the expression counted plan-wide violations as foundation ones.
+        // ⚠️ Measured across all 32 stored plans: reported >0 on **19**, true value **0 on
+        // all 19**, across **15 distinct codes**. The comment above says this field exists
+        // so triage starts in the right place; it was sending it to the wrong one, and on
+        // 2026-10-08 it sent the digest's recommended fix at a generator doing nothing wrong.
+        // Now derived from the plan's OWN foundation week numbers, in the single owner.
+        foundation_week_violations: foundationWeekViolations(plan, errors),
         // `sample` carries INVARIANT detail only — the schema and HR-band probes
         // return codes with no week/day, and `codes` above is where they appear.
         // Said explicitly so an empty sample beside a non-empty `codes` reads as

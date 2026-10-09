@@ -49,6 +49,25 @@ export type CodeVerdict =
   | 'rule_newer_than_plan'
   /** Regeneration could not produce a comparable plan, so no honest verdict exists. */
   | 'undecidable'
+  /**
+   * 🔴 THE CODE GUARDS THE RUNNER'S OWN STATED INPUT, SO REPLAY CANNOT SAY ANYTHING
+   * ABOUT THE ENGINE. `AUDIT-FOUNDATION-MISCOUNT-01`, 2026-10-09.
+   *
+   * `INV-INPUT-*` reads `input.current_weekly_km` / `input.longest_recent_run_km` and
+   * nothing else. The input is STORED, so regenerating from it necessarily reproduces the
+   * breach — which meant an input-level code could only ever come back
+   * `engine_regression`, the one verdict that means "act on the engine".
+   *
+   * ⚠️ MEASURED CONSEQUENCE, 2026-10-08: the daily digest escalated
+   * `INV-INPUT-LONGEST-LE-WEEKLY` as a live engine regression and recommended
+   * *"stop the generator setting an early/foundation long run above weekly volume"*. The
+   * generator was doing nothing of the kind. The runner had stated a 5 km week with a 6 km
+   * longest run, which is impossible as entered, and the plan was fine.
+   *
+   * **Not clean, and must not be read as clean** — the same caveat `undecidable` carries.
+   * It is a REAL breach that needs the runner's input corrected, not an engine change.
+   */
+  | 'input_breach'
 
 export interface ClassifyResult {
   verdicts: Record<string, CodeVerdict>
@@ -62,6 +81,43 @@ const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri'] as const
 const countSessions = (weeks: Week[]) =>
   weeks.reduce((n, w) => n + Object.values(w.sessions ?? {}).filter(Boolean).length, 0)
 const foundationWeeks = (p: Plan) => p.weeks.filter(w => w.n <= 0)
+
+/**
+ * Does this code guard the runner's stated INPUT rather than the generated plan?
+ *
+ * The `INV-INPUT-` prefix is the declaration, and it is deliberately the prefix rather
+ * than `week === 0`: **64 invariants use `week: 0`** as the plan-wide sentinel, so that
+ * number cannot distinguish an input-level code from a plan-wide one, and it is the
+ * collision this whole item exists to undo.
+ */
+export const isInputLevelCode = (code: string) => code.startsWith('INV-INPUT-')
+
+/**
+ * Violations that genuinely fall in a FOUNDATION week, i.e. one the plan actually carries
+ * at `n <= 0` (ADR-020).
+ *
+ * 🔴 WHY THIS IS A FUNCTION AND NOT `(v.week ?? 1) <= 0`, WHICH IS WHAT IT REPLACED.
+ * Two conventions collide on one sentinel:
+ *   · ADR-020  — a foundation week has `n <= 0`
+ *   · invariants.ts:1013 — `week: 0` means "input-level, plan-wide, NO specific week"
+ * **64 invariants use `week: 0`.** So the old expression counted every plan-wide violation
+ * as a foundation-week violation.
+ *
+ * ⚠️ MEASURED ACROSS ALL 32 STORED PLANS, 2026-10-09: the audit reported
+ * `foundation_week_violations > 0` on **19** plans; the true count was **0 on every one of
+ * them**, across **15 distinct codes**. **100% of the reports were wrong**, and the field's
+ * own comment says it exists so *"triage starts in the right place"*.
+ */
+export function foundationWeekViolations(
+  plan: Plan,
+  violations: ReadonlyArray<{ week?: number | null }>,
+): number {
+  const ns = new Set(foundationWeeks(plan).map(w => w.n))
+  // Membership in the plan's OWN foundation week numbers. A plan with no foundation block
+  // has an empty set, so nothing can be counted against it — which is the case that was
+  // being misreported.
+  return violations.filter(v => v.week != null && ns.has(v.week)).length
+}
 const foundationWeekdaySessions = (p: Plan) =>
   foundationWeeks(p).reduce((n, w) => n + WEEKDAYS.filter(d => w.sessions?.[d]).length, 0)
 
@@ -143,8 +199,12 @@ export function classifyCodes(
   }
 
   return {
+    // `isInputLevelCode` FIRST: an input-level code reproduces by construction, so asking
+    // `freshCodes.has(c)` about it is asking a question whose answer is always yes.
     verdicts: Object.fromEntries(codes.map(c =>
-      [c, freshCodes.has(c) ? 'engine_regression' : 'rule_newer_than_plan'])) as Record<string, CodeVerdict>,
+      [c, isInputLevelCode(c) ? 'input_breach'
+        : freshCodes.has(c) ? 'engine_regression'
+        : 'rule_newer_than_plan'])) as Record<string, CodeVerdict>,
     note: shape.why,
     comparable: true,
   }
@@ -168,9 +228,23 @@ export function verdictReason(verdicts: Record<string, CodeVerdict>, note: strin
   if (!codes.length) return null
   const regressions = codes.filter(c => verdicts[c] === 'engine_regression')
   const undecided = codes.filter(c => verdicts[c] === 'undecidable')
+  const inputs = codes.filter(c => verdicts[c] === 'input_breach')
+  // 🔴 INPUT BREACHES ARE REPORTED FIRST AND NAMED AS WHAT THEY ARE. On 2026-10-08 one
+  // of these reached the digest as "ENGINE REGRESSION ... escalate it", and the
+  // recommended fix was aimed at a generator doing nothing wrong. The sentence has to
+  // say whose number is wrong, because the reader acts on the sentence.
+  if (inputs.length && !regressions.length && !undecided.length) {
+    return `INPUT BREACH — ${inputs.join(', ')} guards the runner's own STATED input, so `
+      + `regenerating from the stored input reproduces it by construction and says nothing `
+      + `about the engine. Not an engine defect and NOT clean: the runner's figures need `
+      + `correcting, most often two fields entered on different bases.`
+  }
   if (regressions.length) {
     return `ENGINE REGRESSION — today's engine reproduces ${regressions.join(', ')} from the same inputs. `
       + `This is a live defect, escalate it.`
+      // ⚠️ Appended rather than dropped: a co-occurring input breach is still a real
+      // finding, and the escalation sentence must not be the only thing the reader sees.
+      + (inputs.length ? ` Also an INPUT BREACH on ${inputs.join(', ')} (the runner's stated figures, not the engine).` : '')
   }
   if (undecided.length) {
     return `UNDECIDABLE for ${undecided.join(', ')} — the plan could not be regenerated into a comparable `
@@ -183,7 +257,12 @@ export function verdictReason(verdicts: Record<string, CodeVerdict>, note: strin
 
 /** Roll per-plan verdicts into the one line a daily report should lead with. */
 export function summariseVerdicts(all: Array<Record<string, CodeVerdict>>) {
-  const counts = { engine_regression: 0, rule_newer_than_plan: 0, undecidable: 0 }
+  // ⚠️ `Record<CodeVerdict, number>`, not a literal — the compiler then forces every new
+  // verdict to be handled here. It caught `input_breach` the moment it was added, which is
+  // the only reason this tally and the union cannot drift.
+  const counts: Record<CodeVerdict, number> = {
+    engine_regression: 0, rule_newer_than_plan: 0, undecidable: 0, input_breach: 0,
+  }
   const regressionCodes = new Set<string>()
   for (const v of all) {
     for (const [code, verdict] of Object.entries(v)) {
@@ -194,7 +273,16 @@ export function summariseVerdicts(all: Array<Record<string, CodeVerdict>>) {
   return {
     ...counts,
     regressionCodes: Array.from(regressionCodes).sort(),
-    /** The only field that should ever page anyone. */
+    /**
+     * The only field that should ever page anyone.
+     *
+     * ⚠️ `input_breach` is DELIBERATELY NOT actionable-as-an-engine-alert: nothing in the
+     * engine needs changing, the runner's stated input does. It is still not CLEAN, and
+     * `verdictReason` says so in prose, but waking someone for it would be the same noise
+     * that made this field unread in the first place (NOISE-GATE-01).
+     */
     actionable: counts.engine_regression > 0 || counts.undecidable > 0,
+    /** Separate, so a real input breach is visible without paging. */
+    inputBreaches: counts.input_breach,
   }
 }

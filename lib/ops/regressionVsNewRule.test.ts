@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import { classifyCodes, summariseVerdicts, verdictReason } from './regressionVsNewRule'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { classifyCodes, summariseVerdicts, verdictReason, foundationWeekViolations, isInputLevelCode } from './regressionVsNewRule'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
 import { PINNED_PLAN_START_0907 } from '@/lib/plan/__fixtures__/pinnedPlanStart'
@@ -168,5 +170,201 @@ describe('verdictReason — the sentence the digest already prints', () => {
 
   it('returns null for an empty set rather than an empty-sounding sentence', () => {
     expect(verdictReason({}, 'x')).toBeNull()
+  })
+})
+
+// ─── AUDIT-FOUNDATION-MISCOUNT-01 (2026-10-09) ──────────────────────────────
+//
+// 🔴 THE DEFECT, MEASURED IN PRODUCTION. `plan-audit/route.ts` reported
+// `foundation_week_violations: errors.filter(v => (v.week ?? 1) <= 0).length`.
+//
+// Two conventions collide on one sentinel:
+//   · ADR-020           — a foundation week has `n <= 0`
+//   · invariants.ts:1013 — `week: 0` means "input-level, plan-wide, NO specific week"
+//
+// **64 invariants use `week: 0`.** Across all 32 stored plans the audit reported
+// `foundation_week_violations > 0` on **19**; the true count was **0 on every one**, over
+// **15 distinct codes**. 100% of the reports were wrong, and the field exists, in its own
+// words, so that *"triage starts in the right place"*.
+//
+// ⚠️ IT HAD A CONSEQUENCE, WHICH IS WHY THIS IS NOT TIDYING. On 2026-10-08 the daily digest
+// escalated `INV-INPUT-LONGEST-LE-WEEKLY` as a live engine regression in a foundation week
+// and recommended *"stop the generator setting an early/foundation long run above weekly
+// volume"*. The plan had ZERO foundation weeks, no generated week breached anything, and the
+// runner had simply stated a 5 km week with a 6 km longest run.
+describe('AUDIT-FOUNDATION-MISCOUNT-01 — foundation means n <= 0, not week === 0', () => {
+  const planWith = (ns: number[]): Plan => ({
+    weeks: ns.map(n => ({ n, sessions: {} })),
+  } as unknown as Plan)
+
+  it('🔴 THE DEFECT: a plan-wide violation is NOT a foundation-week violation', () => {
+    // `week: 0` is the plan-wide sentinel. This plan has no foundation block at all.
+    const plan = planWith([1, 2, 3])
+    expect(foundationWeekViolations(plan, [{ week: 0 }])).toBe(0)
+    // And the expression it replaced would have said 1 — stated so the regression is legible.
+    expect([{ week: 0 }].filter(v => (v.week ?? 1) <= 0).length).toBe(1)
+  })
+
+  it('…and it still counts a REAL foundation violation', () => {
+    // The risk of over-correcting: the honest predicate must not stop counting.
+    const plan = planWith([0, 1, 2])
+    expect(foundationWeekViolations(plan, [{ week: 0 }])).toBe(1)
+    const deeper = planWith([-1, 0, 1])
+    expect(foundationWeekViolations(deeper, [{ week: -1 }, { week: 0 }, { week: 1 }])).toBe(2)
+  })
+
+  it('counts only the weeks the plan ACTUALLY carries', () => {
+    // A violation citing a foundation week the plan does not have is not a foundation hit.
+    expect(foundationWeekViolations(planWith([1, 2]), [{ week: -3 }])).toBe(0)
+  })
+
+  it('a missing or null week is not a foundation hit', () => {
+    // The old `?? 1` defaulted an absent week to 1 and then compared; membership needs no
+    // default, which is the point of using a set.
+    expect(foundationWeekViolations(planWith([0, 1]), [{}, { week: null }])).toBe(0)
+  })
+
+  it('⚠️ the sentinel is genuinely ambiguous, so the test says so out loud', () => {
+    // The SAME violation shape (`week: 0`) is a real hit on one plan and a plan-wide
+    // sentinel on another. Nothing about the violation can tell them apart — only the plan
+    // can, which is why the predicate takes the plan.
+    const v = [{ week: 0 }]
+    expect(foundationWeekViolations(planWith([0, 1, 2]), v)).toBe(1)
+    expect(foundationWeekViolations(planWith([1, 2, 3]), v)).toBe(0)
+  })
+
+  it('the route uses the single owner, not a local copy', () => {
+    const raw = readFileSync(join(process.cwd(), 'app/api/ops/plan-audit/route.ts'), 'utf8')
+    // ⚠️ COMMENTS STRIPPED. The route QUOTES the dead expression so the next reader knows
+    // what was wrong, and the first version of this arm matched that prose — the recorded
+    // `an ownership arm matching its own comment` class, and the THIRD time I have hit it
+    // in two days. A guard that fires on prose recording a defect gets switched off, which
+    // CLAUDE.md treats as equivalent to having no guard.
+    const route = raw.split('\n').filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n')
+    expect(route).toContain('foundationWeekViolations(plan, errors)')
+    // 🔴 The exact expression that was wrong must not come back AS CODE.
+    expect(route).not.toMatch(/errors\.filter\(v => \(v\.week \?\? 1\) <= 0\)/)
+    // …and the strip must not blind it: the same text as code still fails.
+    const asCode = '  const n = errors.filter(v => (v.week ?? 1) <= 0).length'
+    expect(asCode.split('\n').filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n'))
+      .toMatch(/errors\.filter\(v => \(v\.week \?\? 1\) <= 0\)/)
+  })
+})
+
+describe('AUDIT-FOUNDATION-MISCOUNT-01 — an input-level code cannot be an engine regression', () => {
+  // 🔴 THE ARM THAT WAS MISSING, AND I FOUND IT BY FALSIFICATION. Turning the input-level
+  // branch OFF in `classifyCodes` left all 25 tests green: every other arm here hands
+  // `'input_breach'` in by hand and asserts what the REPORTER does with it, so nothing ran
+  // `classifyCodes` and checked what it PRODUCES. That is the catalogue's "both halves
+  // correct, the COMPOSITION untested" class, in the file written to close this defect.
+  //
+  // ⚠️ AND WRITING IT TURNED UP SOMETHING THE RCA DID NOT HAVE: this path is
+  // ENVIRONMENT-DEPENDENT. `generateRulePlan` and `validatePlan` THROW on error severity
+  // under NODE_ENV=test/development and LOG in production (ADR-006 posture). So:
+  //   · in TEST      — regeneration throws → `unresolved()` → verdict `undecidable`
+  //   · in PRODUCTION — it logs, regeneration succeeds, the input code reappears in
+  //                     `freshCodes`, and the verdict WAS `engine_regression`
+  // The production digest reported `engine_regression`, which only the production posture
+  // produces. A test that ran in the default environment would have asserted a verdict the
+  // live system never emits. `vi.stubEnv` puts the test on the real path.
+  it('🔴 END TO END on the PRODUCTION path: a real input breach becomes `input_breach`', () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    try {
+      // ⚠️ A HALF, NOT THE FILE'S MARATHON FIXTURE. 5 km/week into a marathon is a DESIGNED
+      // REFUSAL (`BaseVolumeError`), which the first version of this arm hit — the refusal
+      // fired correctly and my test was wrong. The real runner was a half marathon.
+      const breaching = {
+        ...INPUT, race_distance_km: 21.1, goal: 'finish',
+        current_weekly_km: 5, longest_recent_run_km: 6,
+        user_declared_level: 'beginner', injury_history: ['knee'],
+      } as unknown as GeneratorInput
+      const p = generateRulePlan(breaching, 'paid', PINNED_PLAN_START_0907) as Plan
+      const meta = p.meta as unknown as Record<string, unknown>
+      meta.plan_start = PINNED_PLAN_START_0907
+      meta.generated_at = `${PINNED_PLAN_START_0907}T06:00:00.000Z`
+      meta.tier = 'paid'
+
+      const r = classifyCodes(p, breaching, ['INV-INPUT-LONGEST-LE-WEEKLY'])
+      // 🔴 Before this item it came back `engine_regression` — the one verdict meaning
+      // "act on the engine" — which is how the digest recommended a generator fix.
+      expect(r.verdicts['INV-INPUT-LONGEST-LE-WEEKLY']).toBe('input_breach')
+      expect(r.verdicts['INV-INPUT-LONGEST-LE-WEEKLY']).not.toBe('engine_regression')
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
+  it('…and a plan-level code in the SAME call is still judged on its own merits', () => {
+    // The branch must not swallow everything: only the `INV-INPUT-` prefix diverts.
+    vi.stubEnv('NODE_ENV', 'production')
+    try {
+      const breaching = {
+        ...INPUT, race_distance_km: 21.1, goal: 'finish',
+        current_weekly_km: 5, longest_recent_run_km: 6,
+        user_declared_level: 'beginner', injury_history: ['knee'],
+      } as unknown as GeneratorInput
+      const p = generateRulePlan(breaching, 'paid', PINNED_PLAN_START_0907) as Plan
+      const meta = p.meta as unknown as Record<string, unknown>
+      meta.plan_start = PINNED_PLAN_START_0907
+      meta.generated_at = `${PINNED_PLAN_START_0907}T06:00:00.000Z`
+      meta.tier = 'paid'
+      const r = classifyCodes(p, breaching,
+        ['INV-INPUT-LONGEST-LE-WEEKLY', 'INV-PLAN-A-RULE-THAT-NOTHING-BREAKS'])
+      expect(r.verdicts['INV-INPUT-LONGEST-LE-WEEKLY']).toBe('input_breach')
+      expect(r.verdicts['INV-PLAN-A-RULE-THAT-NOTHING-BREAKS']).not.toBe('input_breach')
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
+  it('🔴 `INV-INPUT-*` is classified `input_breach`, never `engine_regression`', () => {
+    // It guards the runner's STATED input, so regenerating from the stored input
+    // reproduces it by construction. `engine_regression` is the one verdict meaning
+    // "act on the engine", and it was the only one this code could ever receive.
+    expect(isInputLevelCode('INV-INPUT-LONGEST-LE-WEEKLY')).toBe(true)
+    expect(isInputLevelCode('INV-PLAN-HEADER-PACE-MATCHES-WORK')).toBe(false)
+  })
+
+  it('the prefix is the declaration, NOT `week === 0`', () => {
+    // ⚠️ 64 invariants use `week: 0` as the plan-wide sentinel, so that number cannot
+    // distinguish input-level from plan-wide — it is the collision this item undoes.
+    const src = readFileSync(join(process.cwd(), 'lib/plan/invariants.ts'), 'utf8')
+    const weekZero = (src.match(/week: 0,/g) ?? []).length
+    expect(weekZero, 'the sentinel is shared, so the prefix must stay the discriminator')
+      .toBeGreaterThan(10)
+  })
+
+  it('the digest sentence names whose number is wrong', () => {
+    // The reader acts on the prose. On 2026-10-08 it said "ENGINE REGRESSION ... escalate
+    // it" and the recommended fix was aimed at the generator.
+    const r = verdictReason({ 'INV-INPUT-LONGEST-LE-WEEKLY': 'input_breach' }, 'comparable')
+    expect(r).toMatch(/INPUT BREACH/)
+    expect(r).toMatch(/says nothing\s+about the engine/)
+    expect(r).toMatch(/NOT clean/)
+    expect(r).not.toMatch(/ENGINE REGRESSION/)
+  })
+
+  it('…and a co-occurring input breach is appended, never swallowed', () => {
+    const r = verdictReason({
+      'INV-PLAN-PEAK-OVER-BASE': 'engine_regression',
+      'INV-INPUT-LONGEST-LE-WEEKLY': 'input_breach',
+    }, 'comparable')
+    expect(r).toMatch(/ENGINE REGRESSION/)
+    expect(r).toMatch(/Also an INPUT BREACH/)
+  })
+
+  it('⚠️ an input breach does NOT page, and is still reported', () => {
+    // NOISE-GATE-01: waking someone for a data-entry problem is how this field became
+    // unread. But it is not clean either, so it gets its own counter.
+    const s = summariseVerdicts([{ 'INV-INPUT-LONGEST-LE-WEEKLY': 'input_breach' }])
+    expect(s.actionable).toBe(false)
+    expect(s.inputBreaches).toBe(1)
+    expect(s.engine_regression).toBe(0)
+  })
+
+  it('the tally handles EVERY verdict, enforced by the compiler', () => {
+    // `Record<CodeVerdict, number>` is what caught `input_breach` when it was added.
+    const s = summariseVerdicts([{ a: 'engine_regression', b: 'rule_newer_than_plan', c: 'undecidable', d: 'input_breach' }])
+    expect(s.engine_regression + s.rule_newer_than_plan + s.undecidable + s.input_breach).toBe(4)
   })
 })
