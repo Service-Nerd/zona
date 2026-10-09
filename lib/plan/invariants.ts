@@ -66,6 +66,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
   'INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED',
   'INV-PLAN-EFFORT-OR-PACE',
+  'INV-PLAN-EASY-PACE-PRESENT',
   'INV-PLAN-LABEL-MATCHES-STRUCTURE',
   'INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED',
   'INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND',
@@ -4894,7 +4895,76 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     }
   }
 
+  // INV-PLAN-EASY-PACE-PRESENT — §12 / FOUNDATION-PACE-STRIPPED-01.
+  //
+  // An easy run's pace is a CEILING (§12 caps it at the top of Z2), and a
+  // ceiling with no number is not a ceiling. Every running session that is not
+  // quality/intervals/tempo must therefore carry a `pace_target`.
+  //
+  // 🔴 WHY THIS IS A SECOND INVARIANT AND NOT A WIDER `INV-PLAN-EFFORT-OR-PACE`.
+  // That check asks the same question — *does this session tell the runner how
+  // hard to go?* — and scopes itself to `quality | intervals | tempo`, so **easy
+  // sessions were outside its population by construction.** Widening it was the
+  // first instinct and it is wrong: its message and its principle refs are
+  // quality-specific (*"hill reps are governed by gradient, so say it in RPE"*,
+  // §19/§41/§40), and an easy run has no effort-target alternative — §12 gives it
+  // a pace ceiling or nothing. Two rules, two checks, cross-referenced so the
+  // next reader sees the PAIR rather than assuming either covers both.
+  //
+  // ⚠️ WHAT IT CAUGHT, measured across 33 composed plans: **381 of 381
+  // FOUNDATION easy sessions carried no `pace_target` and no `hr_target`,
+  // against 0 of 1,355 main-plan easy sessions.** `foundationBlock.ts` has never
+  // set either field in its whole history (`git log -S` returns nothing on
+  // either name), so the three weeks of on-ramp — a new runner's first contact
+  // with zone discipline — said *"Zone 2. Conversational pace."* and gave them no
+  // number, while the identical easy run a week later showed both.
+  //
+  // ⚠️ THE UI FALLBACK IS NOT A DEFENCE, and that is the sharpest part. Today and
+  // the session popup substitute an aerobic pace derived from RUN HISTORY when
+  // `pace_target` is absent. A foundation block exists for a runner with a long
+  // runway and typically no history: **3 of the 7 live plans carrying this had
+  // zero logged runs**, so the fallback had nothing to show them. The population
+  // the fallback cannot serve is exactly the population at risk — the same class
+  // as the invariant gap above, one layer up.
+  for (const w of plan.weeks) {
+    for (const [day, sn] of Object.entries(w.sessions)) {
+      if (!sn) continue
+      // Derived as "a running session the sibling does not cover", rather than a
+      // hand-listed type. A new running type is then guarded on arrival instead
+      // of silently joining the uncovered set.
+      // Not-running, so there is no pace to prescribe.
+      if (sn.type === 'rest' || sn.type === 'strength' || sn.type === 'cross-train') continue
+      // Prescribed work — the sibling check below owns these (pace OR effort).
+      if (sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo') continue
+      // §78's recalibration time trial: maximal by design, no band to hold.
+      if (sn.type === 'hard') continue
+      // §121 — THE RACE IS THE TEST, NOT THE TRAINING, so it carries no pace and
+      // that is doctrine rather than an omission. ⚠️ I had the population wider
+      // than this and the sweep said so: 14,279 fires, every one a `race` day
+      // (and my first list said `cross` where the type is `cross-train`). Derived
+      // wide on purpose, narrowed by the measurement rather than by assumption.
+      if (sn.type === 'race') continue
+      const hasPace = typeof sn.pace_target === 'string' && sn.pace_target.trim().length > 0
+      if (hasPace) continue
+      violations.push({
+        code: 'INV-PLAN-EASY-PACE-PRESENT',
+        principle_ref: 'CoachingPrinciples §12, §57',
+        severity: 'error',
+        week: w.n, day,
+        message: `"${sn.label}" (type ${sn.type}) carries no pace target. §12 makes an easy run's pace a CEILING, and a ceiling with no number is one the runner cannot hold — the card falls back to a pace derived from run history, which a runner on a foundation block does not have.`,
+        actual: 'pace_target absent',
+        expected: 'the easy pace band this plan gives its other easy sessions',
+      })
+    }
+  }
+
   // INV-PLAN-EFFORT-OR-PACE (CoachingPrinciples §19/§41 — SC-09 / CD-17a)
+  //
+  // ⚠️ SCOPED TO QUALITY, AND ITS SIBLING ABOVE COVERS THE REST. Read them as a
+  // pair: this one is pace-OR-effort for prescribed work, `INV-PLAN-EASY-PACE-
+  // PRESENT` is pace-REQUIRED for everything else. Until FOUNDATION-PACE-
+  // STRIPPED-01 only this one existed, and its scope line is why 381 of 381
+  // foundation easy sessions shipped with no pace at all.
   //
   // Every quality session must tell the runner HOW HARD, by one route or the
   // other: a pace target, or an effort target. Never neither.

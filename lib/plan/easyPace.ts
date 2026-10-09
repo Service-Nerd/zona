@@ -61,3 +61,54 @@ export function easyPaceFromPlan(plan: PaceReadablePlan | null | undefined): num
   }
   return null
 }
+
+/**
+ * This runner's easy TARGETS as the runner sees them — the pace band and the HR
+ * ceiling — read from the plan's own first main-week easy session.
+ *
+ * ⚠️ A SIBLING OF `easyPaceFromPlan`, NOT A SECOND DERIVATION. Same module, same
+ * main-weeks-only rule, same refusal to invent a default. That function answers
+ * "how many minutes per km" for SIZING; this one answers "what strings does the
+ * card show" for DISPLAY. Both read the generated plan rather than recomputing
+ * from a VDOT, which is EASY-PACE-OWNER-01's whole point: the number that sized
+ * the session and the number the runner reads must be the same one.
+ *
+ * ⚠️ WHY IT EXISTS. `generateFoundationBlock` built easy sessions with a zone, a
+ * distance and a duration and NEVER a `pace_target` or `hr_target` — measured
+ * across 33 composed plans, **381 of 381 foundation easy sessions carried
+ * neither, against 0 of 1,355 main-plan easy sessions**. So the on-ramp, the
+ * three weeks before a plan starts, told the runner "Zone 2, conversational
+ * pace" and gave them no number to hold it to, while the identical easy run in
+ * week 1 showed both (FOUNDATION-PACE-STRIPPED-01).
+ *
+ * ⚠️ MAIN-PLAN WEEKS ONLY (`n > 0`), for the same reason as its sibling: the
+ * foundation weeks are the ones being built, so reading one is circular.
+ *
+ * ⚠️ `null` for a field the plan does not carry, never a fallback string. "We do
+ * not know this runner's easy pace" must not render as a number they could act
+ * on — the `?? 0` class, which has four measured defects here. A caller that
+ * gets null must omit the field, exactly as the engine omits it today.
+ */
+export function easyTargetsFromPlan(
+  plan: { weeks?: Array<{ n: number; sessions?: Record<string, {
+    type?: string; role?: string; label?: string
+    pace_target?: string | null; hr_target?: string | null
+  } | undefined> }> } | null | undefined,
+): { paceTarget: string | null; hrTarget: string | null } {
+  const ALL_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+  for (const w of plan?.weeks ?? []) {
+    if (w.n <= 0) continue
+    for (const d of ALL_DAYS) {
+      const s = w.sessions?.[d]
+      if (!s || s.type !== 'easy') continue
+      // ⚠️ THE LONG RUN IS NOT EXCLUDED HERE, AND IT IS IN THE SIBLING. There the
+      // exclusion matters because a long run's minutes-per-km would misprice a
+      // weekday budget; here both carry the SAME easy band and HR ceiling (§12,
+      // one easy zone), so skipping it would only narrow the search for nothing.
+      const paceTarget = typeof s.pace_target === 'string' && s.pace_target.trim() ? s.pace_target : null
+      const hrTarget   = typeof s.hr_target   === 'string' && s.hr_target.trim()   ? s.hr_target   : null
+      if (paceTarget || hrTarget) return { paceTarget, hrTarget }
+    }
+  }
+  return { paceTarget: null, hrTarget: null }
+}

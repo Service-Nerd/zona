@@ -15,7 +15,7 @@
 import {
   generateFoundationBlock, classifyGap, gapDays, plannedFoundationWeeks, type GapClass,
 } from './foundationBlock'
-import { easyPaceFromPlan } from './easyPace'
+import { easyPaceFromPlan, easyTargetsFromPlan } from './easyPace'
 import { applyRunWalk } from './runWalkPlan'
 import { validatePlan, type Violation } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
@@ -54,6 +54,12 @@ export function composePlanWithFoundation(
       // GENERATED plan, so it is the same number the engine already gave every easy
       // session rather than a second derivation of it (EASY-PACE-OWNER-01).
       easyPaceMinPerKm: easyPaceFromPlan(plan),
+      // FOUNDATION-PACE-STRIPPED-01 — the easy pace BAND and HR ceiling the
+      // runner reads, from the same generated plan and for the same reason as
+      // the line above: the engine already chose these strings for every easy
+      // session it placed. Measured before this: 381 of 381 foundation easy
+      // sessions carried neither, against 0 of 1,355 main-plan easy sessions.
+      easyTargets: easyTargetsFromPlan(plan),
     })
     if (foundationWeeks.length) {
       foundationWeeksBuilt = foundationWeeks.length

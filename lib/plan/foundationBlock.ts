@@ -164,6 +164,18 @@ function buildFoundationSessions(
   easyPaceMinPerKm?: number | null,
   dayBudgets?: Partial<Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri', number>>,
   maxWeekdayMins?: number | null,
+  /**
+   * FOUNDATION-PACE-STRIPPED-01 — the easy pace band and HR ceiling the runner
+   * SEES, from `easyTargetsFromPlan` on the generated plan. Threaded exactly as
+   * `easyPaceMinPerKm` is, and for the same reason: the engine already chose
+   * these strings for every easy session it placed, and a second producer would
+   * be the `DELOAD-OWNER-01` class.
+   *
+   * ⚠️ NULL-ABLE, AND A NULL MEANS OMIT THE FIELD — never a default band. A
+   * foundation session showing a pace this runner was never given is worse than
+   * one showing none, which is the `?? 0` class in display clothing.
+   */
+  easyTargets?: { paceTarget: string | null; hrTarget: string | null },
 ): Week['sessions'] {
   // Normalise before comparing. The wizard sends full day names ('monday') and
   // DEFAULT_DAYS is short form ('mon'), so a raw `new Set(blockedDays)` matched
@@ -291,6 +303,26 @@ function buildFoundationSessions(
   // written about, that is the one number they most need.
   const paceOk = easyPaceMinPerKm != null && Number.isFinite(easyPaceMinPerKm) && easyPaceMinPerKm > 0
 
+  // FOUNDATION-PACE-STRIPPED-01 — the targets the card reads, spread onto both
+  // constructors below so the long run and the weekday runs cannot diverge.
+  //
+  // 🔴 THESE FIELDS WERE NEVER SET HERE, IN THIS FILE'S WHOLE HISTORY (`git log -S`
+  // on either name returns nothing). Measured across 33 composed plans: **381 of
+  // 381 foundation easy sessions carried no `pace_target` and no `hr_target`,
+  // against 0 of 1,355 main-plan easy sessions** — so the three weeks of on-ramp
+  // said "Zone 2. Conversational pace." and gave the runner no number, while the
+  // identical easy run in week 1 showed both. §12 caps an easy run at the top of
+  // Z2; a ceiling with no number is not a ceiling.
+  //
+  // ⚠️ It survived because `INV-PLAN-EFFORT-OR-PACE` — the one invariant that
+  // asks "does this session tell the runner how hard to go?" — scopes itself to
+  // `quality | intervals | tempo`. **Easy sessions were outside its population
+  // by construction**, and a foundation block is nothing but easy sessions.
+  const easyDisplay = {
+    ...(easyTargets?.paceTarget ? { pace_target: easyTargets.paceTarget } : {}),
+    ...(easyTargets?.hrTarget   ? { hr_target:   easyTargets.hrTarget   } : {}),
+  }
+
   if (longDay) {
     sessions[longDay] = {
       type: 'easy',
@@ -310,6 +342,7 @@ function buildFoundationSessions(
       // §122 Am.1 — measurable, and deliberately uncapped. See the block comment above.
       ...(paceOk ? { duration_mins: Math.round(floor1dp(longRunFinalKm) * (easyPaceMinPerKm as number)) } : {}),
       zone: 'Zone 2',
+      ...easyDisplay,
       coach_notes: ['This is your longest run of the week. Keep it slow.'],
     }
   }
@@ -383,6 +416,7 @@ function buildFoundationSessions(
       // every rule that guards on time, which is the root cause this fixes.
       ...(mins != null ? { duration_mins: mins } : {}),
       zone: 'Zone 2',
+      ...easyDisplay,
       coach_notes: ['Zone 2 only. If you can\'t hold a conversation, slow down.'],
       // §82 — held at the floor and therefore over the stated budget, on purpose.
       ...(mins != null && budget != null && mins > budget ? { floor_protected: true } : {}),
@@ -455,6 +489,13 @@ export interface FoundationBlockOptions {
    */
   easyPaceMinPerKm?: number | null
   /**
+   * FOUNDATION-PACE-STRIPPED-01 — the easy pace band and HR ceiling the runner
+   * sees, from `easyTargetsFromPlan` on the GENERATED plan. Same threading and
+   * same reasoning as `easyPaceMinPerKm` above; absent/null omits the fields,
+   * which is the pre-fix behaviour and the safe direction.
+   */
+  easyTargets?: { paceTarget: string | null; hrTarget: string | null }
+  /**
    * §116 (P-16) — which volume policy sizes the weeks.
    *
    * `'flat'` is §57 and the DEFAULT: `min(baseline x 1.1^i, baseline x 1.10)`,
@@ -483,7 +524,10 @@ export interface FoundationBlockResult {
 }
 
 export function generateFoundationBlock(opts: FoundationBlockOptions): FoundationBlockResult {
-  const { input, planStartDate, today, forceWeeks, earlyOnset = false, curve = 'flat', rampWeeklyKm, easyPaceMinPerKm } = opts
+  const {
+    input, planStartDate, today, forceWeeks, earlyOnset = false, curve = 'flat',
+    rampWeeklyKm, easyPaceMinPerKm, easyTargets,
+  } = opts
 
   const gap = gapDays(today, planStartDate)
   // §116 — a ramp's length is decided by `onRampWeeksNeeded`, not by the gap.
@@ -608,6 +652,8 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
       easyPaceMinPerKm,
       input.day_budgets,
       input.max_weekday_mins,
+      // FOUNDATION-PACE-STRIPPED-01 — the targets the card reads.
+      easyTargets,
     )
 
     weeks.push({
