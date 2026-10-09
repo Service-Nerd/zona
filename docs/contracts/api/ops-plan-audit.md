@@ -167,3 +167,48 @@ Owner: `lib/ops/planAuditAges.ts → summarisePlanAges()`, extracted so it can b
 no test, and an inline reduce in a Vercel handler cannot have one. `ageDays` returns **null** for a
 missing, unparseable or future timestamp, never 0: a 0 would read as "brand new".
 - `cause` counts **codes**, not plans: one plan contributing three new codes contributes three.
+
+## `foundation_week_violations` counts REAL foundation weeks (AUDIT-FOUNDATION-MISCOUNT-01, 2026-10-09)
+
+The field counts violations whose `week` is a week **the plan actually carries at `n <= 0`**
+(ADR-020), derived by `lib/ops/regressionVsNewRule.ts → foundationWeekViolations(plan, errors)`.
+**The route must not compute this itself.**
+
+🔴 **It was `errors.filter(v => (v.week ?? 1) <= 0).length`, and that was wrong on every plan
+that had any violation.** Two conventions collide on one sentinel:
+
+| | |
+|---|---|
+| ADR-020 | a foundation week has `n <= 0` |
+| `invariants.ts:1013` | `week: 0` means *"input-level, plan-wide, NO specific week"* |
+
+**64 invariants use `week: 0`.** Measured across all 32 stored plans: **49 phantom
+"foundation" violations on 19 plans, true value 0 on every one**, across 15 distinct codes.
+On 2026-10-08 it made the daily digest escalate a non-existent engine regression and
+recommend a generator fix for a data-entry problem.
+
+## Verdicts, and the one that is new
+
+| Verdict | Means | Pages? |
+|---|---|---|
+| `engine_regression` | today's engine reproduces it from the same inputs | **yes** |
+| `rule_newer_than_plan` | the rule post-dates the plan; remediation queue | no |
+| `undecidable` | no comparable plan could be regenerated. **Not clean** | **yes** |
+| `input_breach` ⭐ | an `INV-INPUT-*` code: the runner's STATED input is wrong. **Not clean** | no |
+
+⚠️ **`input_breach` exists because replay cannot speak to the engine here.** The input is
+stored, so regenerating from it reproduces an input breach **by construction** — the code
+could only ever receive `engine_regression`. It does not page (waking someone for a
+data-entry problem is the noise that made this field unread in the first place) and it is
+**not** clean: `summariseVerdicts().inputBreaches` carries it, and `verdictReason` names it
+in prose.
+
+⚠️ **The discriminator is the `INV-INPUT-` PREFIX, never `week === 0`** — the shared sentinel
+is the collision above, so reusing it would rebuild the defect inside its own fix.
+
+⚠️ **This path is ENVIRONMENT-DEPENDENT.** `generateRulePlan` and `validatePlan` throw on
+error severity under `NODE_ENV=test`/`development` and log in production (ADR-006). A
+breaching input therefore yields `undecidable` under test and reached `engine_regression` in
+production. Any test of this path must stub `NODE_ENV=production` or it asserts a verdict the
+live system never emits.
+

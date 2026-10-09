@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — AUDIT-FOUNDATION-MISCOUNT-01 · the digest escalated an engine regression that did not exist
+**Shipped:** The plan audit stops reporting plan-wide invariant violations as foundation-week violations, and an input-level breach stops being labelled an engine regression.
+
+**Dev learning:** Two conventions collide on one sentinel. ADR-020 gives a foundation week `n <= 0`; the invariant layer uses `week: 0` to mean *"input-level, plan-wide, no specific week"* — and **64 invariants use `week: 0`**. So `errors.filter(v => (v.week ?? 1) <= 0)` counted every plan-wide violation as a foundation one: measured across all 32 stored plans, **49 phantom foundation violations on 19 plans, true value 0 on every one**, across 15 distinct codes. The field's own comment says it exists so *"triage starts in the right place"*, and it has been sending triage to the wrong place on every plan with any violation. The second half is subtler: an `INV-INPUT-*` code guards the runner's **stated input**, so regenerating from the stored input reproduces it by construction — meaning it could only ever come back `engine_regression`, the one verdict that means *act on the engine*. The discriminator is the **prefix**, deliberately not `week === 0`, because reusing the shared sentinel would have rebuilt the defect inside its own fix.
+
+**Product/creator learning:** I doubted the audit's classifier twice yesterday and it was **wrong once and right once**. It was wrong to call an input breach an engine regression. It was **right** to call the header-pace mismatch `rule_newer_than_plan` — I wrote in my own RCA that it was under-classified and *"the one that actually reaches her"*, and regenerating her plan from her own stored input on today's engine gives **zero** HEADER-PACE hits. The engine is clean; her stored plan predates the fix. Doubting a classifier is cheap; the measurement that settles it was one script.
+
+**AI-building learning:** A mutation stayed **green** and that was the most valuable moment of the build. Turning the input-level branch off failed nothing, because every arm I had written handed `'input_breach'` in by hand and asserted what the *reporter* did with it — **nothing ran `classifyCodes` and checked what it produced**. That is the catalogue's *"both halves correct, the composition untested"* class, committed by me, in the file written to close this very defect. Writing the missing arm then surfaced something the RCA did not have: the path is **environment-dependent**, because the engine throws on error severity in test and logs in production, so the verdict in test is `undecidable` where production emitted `engine_regression`. A test in the default environment would have asserted a verdict the live system never produces.
+
+**The honest bit:** my first blast radius was wrong by **19×**. I measured the population of the one code I happened to be looking at, not the population of the defect — and I did that on the same day I wrote a memory about exactly this. My first composition fixture also hit a designed refusal (`BaseVolumeError`: 5 km/week into a marathon), where the refusal was correct and my test was wrong.
+
+**Hook material:** A field built so that triage starts in the right place reported 49 violations that did not exist, in a category no plan in the database has, and sent yesterday's escalation at a generator doing nothing wrong.
+
+**Postable?:** yes
+
 ## 2026-10-09 — AUDIT-MEMORY-LINES-01 · the gate knew bytes, the limit was also lines
 **Shipped:** The docs audit now checks MEMORY.md's line count as well as its byte count, because a line got silently dropped overnight.
 
