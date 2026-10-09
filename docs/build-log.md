@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — FOUNDATION-PACE-STRIPPED-01 · the on-ramp told a new runner "Zone 2" and gave them no number
+**Shipped:** foundation-week sessions now carry the pace band and HR ceiling the rest of the plan uses.
+
+**Dev learning:** **the invariant that should have caught this asked exactly the right question and asked it of the wrong set.** `INV-PLAN-EFFORT-OR-PACE` means *does this session tell the runner how hard to go?* — and scoped itself to `quality | intervals | tempo`. Easy sessions were outside its population by construction, and a foundation block is nothing but easy sessions. The fix that matters is not the four lines in the builder, it is the second invariant. Also: I derived the new invariant's population deliberately WIDE (everything that is not quality and not non-running) and let the sweep narrow it. It fired 14,279 times, every one a race day — §121 ratifies the race as carrying no pace — and told me my own type name was wrong (`cross-train`, not `cross`). **Measuring beat guessing twice in one step.**
+
+**Product/creator learning:** the UI had a fallback and it looked like mitigation until I asked who it serves. The card substitutes a pace derived from the runner's own run history. A foundation block exists precisely for a runner with a long runway and no history — **3 of the 7 affected plans had zero logged runs.** The population the fallback cannot serve is exactly the population at risk. That is the same shape as the invariant gap, one layer up, and I would have missed it if I had stopped at "there is a fallback".
+
+**AI-building learning:** I reported the falsification as **6 violations**. The real number was **75,909**, stated plainly three lines further down in the same output. I had grepped the summary lines and counted those. The reflex that saved it was distrusting a number that felt too small for the population — 8,492 composed foundation blocks cannot produce 6 — and the general rule is that a falsification result which is *surprisingly mild* deserves the same scrutiny as one that is surprisingly severe.
+
+**The honest bit:** I got the diagnosis wrong twice before this, in writing, to the founder. I said the 3 Oct write "stripped" the paces, then corrected myself to say the builder never set them — and both were half right: the write did replace the sessions, and the builder never set the fields, so the values on the old ones had come from somewhere else entirely. The founder's question — *"so he generated it and then came back with a 5K time?"* — is what forced me to the archive, and the archive disproved my story in about ninety seconds. I should have gone there first; a `plan_archive` snapshot is a free before-state and I had been reasoning about history instead of reading it.
+
+**Hook material:** "The check that should have caught it asked the right question. It just never asked it of easy runs — and the broken block was nothing but easy runs." Or: 381 of 381 versus 0 of 1,355, in the same plans.
+
+**Postable?:** yes — the "scoped to the wrong population" shape plus the fallback-serves-nobody twist is a strong pair.
+
 ## 2026-10-09 — RECAL-LIVE-REPAIR-01 · the bug deleted the evidence needed to fix it
 **Shipped:** a dry-run-first script that re-prices the live plans left holding paces from a fitness their runner no longer has, with a per-plan before/after diff to approve before anything is written.
 
