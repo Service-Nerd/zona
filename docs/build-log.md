@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — DIGEST-REPAIRABLE-01 · the alert rule that was right became the rule that was wrong
+**Shipped:** the daily plan audit now reports how many live plans carry damage that has a remedy, and the command that fixes it.
+
+**Dev learning:** **two alerts in the same report can need opposite rules, and the right one depends on whether a remedy exists.** The audit alerts on a *transition* — a runner's set of violation codes changing — and the reasoning written beside it is sound: "an alert that always fires is an alert nobody reads". That is correct for debt nobody can act on. It is wrong for damage with a one-command fix, and the proof is a measured six days: the recalibration defect broke three plans, the transition alerted once, then went quiet *exactly as designed*, and nothing said anything again while the damage sat there. The new field is a **standing** count, and the thing that stops it becoming noise is not restraint — it is that it is self-clearing.
+
+**Product/creator learning:** the founder's question was "can we add something to monitor this", and the honest answer was that monitoring already existed and had already caught it. The gap was that it said *what changed* rather than *what to do*. Turning a description into an instruction was a smaller change than adding a new probe would have been, and better.
+
+**AI-building learning:** I verified it against production **in both directions** — absent today because the repairs had run, present with one synthetic damaged plan. Only the second direction proves anything. An "all clear" from a field that is supposed to be absent when clean is indistinguishable from a field that never populates, which is the vacuous-zero shape I have hit twice today already.
+
+**The honest bit:** the field counts `REPAIRABLE_CODES`, a list I only have because the repair script's own population filter had been wrong — it selected plans by one code, so a plan with eight repairable violations dropped out of the target set the moment the first was fixed. The digest field would have inherited that bug exactly if I had written its own list. Sharing one list was not foresight; it was the second time today the same mistake nearly happened.
+
+**Hook material:** "The alert worked perfectly and the bug still sat there for six days — because it alerts when something *changes*, and nothing changed after it broke."
+
+**Postable?:** yes — the "transition vs standing, decided by whether a remedy exists" distinction is genuinely useful and I have not seen it written down.
+
 ## 2026-10-09 — DUNCAN-RESIDUAL-LOAD-01 · the invariant stopped my fix twice
 **Shipped:** four plan repairs, each scoped by the invariant that names the defect, taking a live runner's plan from nine error-severity violations to one.
 
