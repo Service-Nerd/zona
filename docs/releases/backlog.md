@@ -950,31 +950,53 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > ⚠️ **Ops-only. No runner-facing surface, no prescription, no tier, engine untouched** — the
 > founder's "minimum negative impact" constraint.
 
-### 🔻 `HEADER-PACE-REMEDIATION-01` — 7 of her 16 weeks carry a header that understates the work pace *(filed 2026-10-09, FOUNDER DECISION)* 👤 **FOUNDER**
+### 🔴 `RECAL-PACE-TWO-WRITER-01` — recalibration moves the header and HR and never reaches the prescription *(filed 2026-10-09)* ⚙️ **NO BOARD** *(defect fix restoring §120 and ADR-014's documented intent)*
 
-> 🔴 **NOT AN ENGINE DEFECT, AND I HAD IT THE OTHER WAY ROUND IN MY OWN RCA.** I wrote that
-> the digest had under-classified this and that *"this is the one that actually reaches her"*,
-> implying a live defect. **Measured: regenerating her plan from her own stored
-> `generator_input` on today's engine gives 0 HEADER-PACE hits.** The audit's
-> `rule_newer_than_plan` was **correct** and I doubted it. Second time in two days I have
-> doubted that classifier; **it was wrong once and right once.**
+> 🔴 **A LIVE ENGINE DEFECT, AND MY OWN RCA HAD IT BACKWARDS TWICE.** I first said her
+> plan predated `RACE-ANCHOR-CV-OVERRIDE-01` (2026-10-06). **Her plan was built
+> 2026-10-08 12:53, two days after it**, and the PRE-fix engine gives the correct pace on
+> her input — so that fix is not the cause. I then said *"the engine is clean, regenerating
+> gives 0 HEADER-PACE hits"*. **That measurement was an artefact of my own input:** I
+> regenerated from `meta.generator_input` (**24:00** 5K) while the plan was built and then
+> recalibrated at **26:00**. Regenerating at 26:00 also gives 0 hits. **The generator is
+> clean at both benchmarks; the RECALIBRATION writer is not.**
 >
-> **What remains is real but is remediation, not a build.** Her STORED plan
-> (`floehenderson@icloud.com`, Battersea Half, starts **12 Oct**) has 7 of 16 weeks (6, 7, 10,
-> 11, 12, 13, 14) where the session header reads **5:36–5:52 /km** over work steps at
-> **5:12–5:27 /km**. A runner following the header under-runs every quality session in the
-> second half of the block.
+> **`applyRecalibration` (`ruleEngine.ts:6126`) has two defects, and the second is the
+> serious one:**
 >
-> 🔻 **FOUNDER'S CALL, because the live-plan policy says NEW PLANS ONLY** and this would touch
-> a live plan three days before it starts. Options: leave it (she sees the step paces on the
-> session card either way), regenerate (loses nothing — 0 completions, all sessions future),
-> or patch the headers only.
+> | | |
+> |---|---|
+> | **(a)** | It sets every quality session's `pace_target` to the single generic band `pace.qualityPaceStr`, which **undoes §120 / HM-ANCHOR-VS-GOAL-01** — the ruling that the header is the ROW'S OWN anchor. One flat band replaces the three a clean plan carries, so 7 of her 9 quality sessions display a header their own work steps contradict |
+> | **(b)** | 🔴 **It never re-resolves `derived_set`, so the actual prescribed work steps keep the PRE-recalibration paces.** It rewrites `pace_target` and `hr_target` and nothing else. ADR-014 says a confirmed recalibration *"rewrites forward paces"*. **It rewrites the display and leaves the prescription.** Her steps are still priced at her faster 24:00 fitness (CV **5:12–5:27**) after she recalibrated DOWN to 26:00 — **~25 s/km too fast, on a knee history.** This is the opposite direction of harm from what the stale item below claimed |
 >
-> ⚠️ **Separately, and NOT this item:** `auditPlanQuality` already flags `WEEK1-LEAP` on her
-> plan — declared **5 km/week → week 1 is 14 km, ×2.8**, with a knee history. The reviewer's
-> concern is correct and the engine's own quality audit already knows. Also worth asking her
-> whether 6 km was her longest *ever* rather than her current week, because if so her true
-> weekly is higher and the leap is less severe than it reads.
+> ✅ **REPRODUCED EXACTLY, not inferred.** Generate her input @24:00 → vdot 40.2, **3**
+> quality bands, **0** hits. Run `applyRecalibration` @26:00 from week 1 → vdot 36.6, **1**
+> band `5:36–5:52`, **7** hits, and **the identical four work-step pace strings her stored
+> plan carries**. Script: `scripts/recalibration-header-drift.ts` (read-only).
+>
+> **Blast radius, measured across all 32 stored plans:** **3** carry the flat-single-band
+> signature — `c5d3ae8b` (7 hits), `3cc7c3a9` (8 hits), `8a2858ab` (5 hits). A 4th
+> (`4b037d2c`, 1 hit, 3 bands) is the separate §22-vs-§85 `warn` case, not this. **0** plans
+> set `meta.recalibrations_applied`, so that field cannot be used to find them — the
+> signature is the flat band plus `meta.benchmark != meta.generator_input.benchmark`.
+>
+> ⚠️ **It also leaves `meta.generator_input` stale**, which is what misled me: the plan's
+> stored input disagrees with the benchmark the plan was actually priced at, so any
+> regeneration-based check silently compares two different runners.
+>
+> **Fix, in order:** (1) `applyRecalibration` writes the per-anchor header via the
+> generator's own owner and re-resolves `derived_set`, with an arm that fails if a
+> recalibrated plan gains a HEADER-PACE hit or keeps a stale step pace; (2) then repair the
+> 3 stored plans by re-running the corrected recalibration with each plan's OWN
+> `meta.benchmark` — deterministic, through the governed owner, inventing no prescription,
+> with a per-plan before/after diff shown before anything is written. **No runner contact
+> needed for either step.**
+>
+> ⚠️ **Not this item, still open:** `auditPlanQuality` flags `WEEK1-LEAP` on `c5d3ae8b` —
+> declared **5 km/week → week 1 is 14 km, ×2.8**, knee history. Her inputs are incoherent
+> (longest 6 km > weekly 5 km, caught by `INV-INPUT-LONGEST-LE-WEEKLY`). **Founder has ruled
+> ZERO runner contact**, so this is settled by taking the conservative reading (5 km/week is
+> true) and belongs to the input-coherence rule, not to her.
 
 ### ✅ `RESHAPE-MOMENT-02` — **SHIPPED 2026-10-08.** The homepage runs the engine 🧭 **DESIGN BOARD** + 🏃 **COACHING BOARD** *(both sat)*
 
