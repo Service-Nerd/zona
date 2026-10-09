@@ -6,6 +6,7 @@ import { assessOnRamp, generateBaseBuildPlan } from './baseBuildOnRamp'
 import { generateGetRunningPlan } from './getRunningPlan'
 import { resizeForDeferredFoundationAdd } from './foundationResize'
 import type { GeneratorInput } from '@/types/plan'
+import { PINNED_PLAN_START_1012 as PINNED } from './__fixtures__/pinnedPlanStart'
 
 // BASEBUILD-GENINPUT-01 (2026-10-09) — EVERY producer of a plan stamps the input
 // it was built from.
@@ -102,7 +103,7 @@ describe('BASEBUILD-GENINPUT-01 — every plan producer stamps meta.generator_in
   it('generateRulePlan stamps it', () => {
     const i = input({ race_distance_km: 21.1, current_weekly_km: 40, longest_recent_run_km: 14,
       training_age: '2-5yr', user_declared_level: 'intermediate' })
-    const plan = generateRulePlan(i, 'paid')
+    const plan = generateRulePlan(i, 'paid', PINNED)
     expect(plan.meta.generator_input).toBeTruthy()
     expect(plan.meta.generator_input?.race_distance_km).toBe(21.1)
   })
@@ -113,7 +114,7 @@ describe('BASEBUILD-GENINPUT-01 — every plan producer stamps meta.generator_in
   it('generateBaseBuildPlan stamps it — and the flat spread is NOT the same thing', () => {
     const i = input()
     const a = assessOnRamp(i, 18, 29)
-    const plan = generateBaseBuildPlan(i, '2026-10-05', a)
+    const plan = generateBaseBuildPlan(i, PINNED, a)
     expect(plan.meta.plan_kind).toBe('base_build')
     // The flat echo that made the absence invisible:
     expect((plan.meta as unknown as Record<string, unknown>).current_weekly_km).toBe(8)
@@ -124,7 +125,7 @@ describe('BASEBUILD-GENINPUT-01 — every plan producer stamps meta.generator_in
   })
 
   it('generateGetRunningPlan stamps it — §118 wraps the same producer', () => {
-    const { plan } = generateGetRunningPlan(input(), '2026-10-05', 29)
+    const { plan } = generateGetRunningPlan(input(), PINNED, 29)
     expect(plan.meta.plan_kind).toBe('base_build')
     expect(plan.meta.generator_input).toBeTruthy()
   })
@@ -140,11 +141,11 @@ describe('BASEBUILD-GENINPUT-01 — every plan producer stamps meta.generator_in
       recent_quality_training: 'regular', user_declared_level: 'experienced',
       benchmark: { type: 'race', distance_km: 5, time: '0:21:30' },
     } as Partial<GeneratorInput>)
-    const incoming = generateRulePlan(i, 'paid', '2026-10-05', undefined, '2026-10-01')
+    const incoming = generateRulePlan(i, 'paid', PINNED, undefined, PINNED)
     // The branch condition, pinned: without §91's credit there is nothing to resize.
     expect(incoming.meta.early_quality_onset, 'fixture no longer reaches the resize path').toBe(true)
 
-    const out = resizeForDeferredFoundationAdd(incoming, i, 'paid', '2026-10-01')
+    const out = resizeForDeferredFoundationAdd(incoming, i, 'paid', PINNED)
     expect(out).not.toBe(incoming)
     // The stamp must carry the decision the plan was REBUILT with, or a replay
     // from the stamp reproduces a different plan than the runner is holding.
@@ -154,10 +155,10 @@ describe('BASEBUILD-GENINPUT-01 — every plan producer stamps meta.generator_in
   it('resizeForDeferredFoundationAdd — the PASS-THROUGH path preserves the stamp', () => {
     const i = input({ race_distance_km: 10, race_date: '2027-03-21',
       current_weekly_km: 12, longest_recent_run_km: 5, training_age: '<6mo' })
-    const incoming = generateRulePlan(i, 'paid', '2026-10-05', undefined, '2026-10-01')
+    const incoming = generateRulePlan(i, 'paid', PINNED, undefined, PINNED)
     expect(incoming.meta.early_quality_onset, 'fixture now reaches the resize path').not.toBe(true)
 
-    const out = resizeForDeferredFoundationAdd(incoming, i, 'paid', '2026-10-01')
+    const out = resizeForDeferredFoundationAdd(incoming, i, 'paid', PINNED)
     expect(out).toBe(incoming)
     expect(out.meta.generator_input).toBe(incoming.meta.generator_input)
   })
@@ -166,7 +167,7 @@ describe('BASEBUILD-GENINPUT-01 — every plan producer stamps meta.generator_in
   // reason the stamp matters at all, and the arm that would have failed loudest.
   it('a base-build plan is now modifiable, audit-classifiable and save-validated', async () => {
     const { canModifyPlan } = await import('./modifyPlan')
-    const { plan } = generateGetRunningPlan(input(), '2026-10-05', 29)
+    const { plan } = generateGetRunningPlan(input(), PINNED, 29)
     expect(canModifyPlan(plan)).toBe(true)
   })
 })

@@ -93,3 +93,9 @@ export const PINNED_PLAN_START_0907 = '2026-09-07'
 export const PINNED_PLAN_START_0921 = '2026-09-21'
 /** `nextMonday()` for files first committed 2026-09-22 … 09-28. */
 export const PINNED_PLAN_START_0928 = '2026-09-28'
+/** `nextMonday()` for files first committed 2026-10-06 … 10-12.
+ *  Added for `generatorInputStamp` + `validateStoredPlan` (BASEBUILD-GENINPUT-01,
+ *  first committed 2026-10-09). Its own Monday, not a borrowed one: the header
+ *  above is explicit that "it went green" is not evidence the plan is the one you
+ *  meant to assert on. */
+export const PINNED_PLAN_START_1012 = '2026-10-12'

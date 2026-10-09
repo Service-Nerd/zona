@@ -28,6 +28,72 @@ already decided what it is.
 ---
 
 
+### 🔻 `AUDIT-MAINTENANCE-KIND-01` — the race validator still judges a maintenance plan ⚙️ **NO BOARD** *(ADR-013 restoration)*
+
+**Filed 2026-10-09**, out of `AUDIT-PLAN-KIND-01`. `validateStoredPlan` now routes a
+`plan_kind: 'base_build'` plan to §116's own validator instead of the race-plan one, which
+took **101 phantom errors (28% of the fleet's 363) down to 0**. `plan_kind: 'maintenance'`
+is the same latent defect and is deliberately NOT dispatched.
+
+**Why it was left:** `validateMaintenanceBlock` takes three arguments
+(`baseWeeklyKm`, `injured`, `sourceRunDays`) that a stored plan's meta does not reliably
+carry, so routing it would mean guessing a base volume — trading a measured phantom for an
+unmeasured one.
+
+**Measured 2026-10-09: 0 maintenance plans in production** (34 plans: 32 race, 2
+base_build). So the defect is latent, not live, and it becomes live the first time a runner
+finishes a race.
+
+**Scope:** decide where `baseWeeklyKm` comes from for a stored maintenance plan (ADR-013
+says maintenance is its own plan object — check whether it stamps its own anchor), then add
+the arm to `validateStoredPlan` and extend `validateStoredPlan.test.ts`. ⚠️ Re-measure the
+maintenance count before picking it up; an item is a snapshot of the day it was written.
+
+---
+
+### 🔻 `BASEBUILD-GENINPUT-REMEDIATION-01` — two live plans still carry no stamp 👤 **FOUNDER** *(live-plan policy)*
+
+**Filed 2026-10-09.** `BASEBUILD-GENINPUT-01` fixed the producer, and an engine fix reaches
+no existing plan. Two stored base-build plans have no `meta.generator_input`:
+`812e7e2e` (2026-10-02) and `3df045d5` (2026-10-09). Consequence for those two runners:
+**the Modify Plan sheet is unavailable** (`canModifyPlan`), and the five repair scripts skip
+them.
+
+⚠️ **The audit half needs no remediation** — `validateStoredPlan` dispatches on `plan_kind`,
+which both plans DO carry, so their phantom errors are already gone without touching a
+runner's plan.
+
+🔴 **IT IS NOT A ONE-FIELD BACKFILL, AND I NEARLY FILED IT AS ONE.** The obvious fix is to
+rebuild `meta.generator_input` from the flat input fields the same meta already carries.
+Measured against the two rows: **15 and 18 input keys are recoverable — and `race_date` is
+NOT one of them.** The base-build writer spreads the input and then overwrites
+`race_date: ''` and `race_name: 'Base building'`, so both rows read:
+
+| | `812e7e2e` | `3df045d5` |
+|---|---|---|
+| flat `race_date` | `''` | `''` |
+| flat `race_name` | `Base building` | `Base building` |
+| `race_distance_km` | 42.2 | 42.2 |
+
+A backfill from the echo would stamp an input with **no race date** — the one field
+everything anchors on — and it would look complete. That is a worse outcome than no stamp,
+because `canModifyPlan` would then say yes and the regeneration would be anchored on
+nothing.
+
+✅ **The race date IS recoverable, from the refusal telemetry.** `plan_refused_by_design`
+carries `weeks_to_race`: **29** on 2026-10-02 and **28** on 2026-10-09, both marathons —
+a late-April 2027 race in each case, to within the rounding. So REFUSAL-TELEMETRY-01 is the
+only surviving record of these two runners' race dates, which is some vindication of why it
+exists.
+
+**Scope:** reconstruct the input from the flat echo PLUS `weeks_to_race` for the date, show
+the founder the per-plan diff, and only then write. It is a WRITE to a live plan and needs
+his sign-off per the live-plan policy. ⚠️ A date reconstructed to ±1 week is not the
+runner's date; consider asking them, or leaving the stamp off and saying why, rather than
+writing a plausible wrong one.
+
+---
+
 ### ✅ `POSTRUN-POLL-WEEK-BLIND-01` — SHIPPED 2026-10-07 ⚙️ **NO BOARD**
 
 **Founder, with four screenshots:** *"it shows Kit is reading the run - Not sure thats a great experience"*. **It is not a slow-analysis problem. The analysis was already finished.**

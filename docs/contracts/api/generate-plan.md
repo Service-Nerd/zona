@@ -189,8 +189,29 @@ with the paid `coach_intro`; subsequent free plans (a `plans` row exists) omit i
 > type cannot be added without telemetry. The detail carries the inputs that
 > caused it — `rule`, `race_distance_km`, `current_weekly_km`,
 > `effective_start_km`, `longest_recent_run_km`, `days_available`,
-> `fitness_level`, `training_age`, `goal`, `weeks_to_race`. **Behavioural only:
-> no name, no free text.**
+> `training_age`, `goal`, `weeks_to_race`, plus **five level fields**
+> (REFUSAL-TELEMETRY-LEVEL-01, 2026-10-09): `fitness_level_declared` (what the
+> runner picked in the wizard, or `null`), `fitness_level_assessed` (what the
+> engine read from volume + VDOT + training age), `fitness_level_structural` and
+> `fitness_level_intensity` (what a plan would have been BUILT at — §79's two
+> axes), and `fitness_level_api_override` (`input.fitness_level`, or `null`).
+> **Behavioural only: no name, no free text.**
+>
+> 🔴 **It used to record a single `fitness_level: input.fitness_level`, and that
+> key was ABSENT from all 20 events in production.** `input.fitness_level` is the
+> API-level STRUCTURAL override; the wizard sends `user_declared_level`, and
+> `types/plan.ts` says in as many words "do NOT repurpose it for the wizard's
+> user selection". So the field was inert from the day it shipped, and a refusal
+> we cannot attribute to a level says nothing about WHICH runners the engine
+> turns away — which is the whole purpose below. The five fields are computed by
+> `derivedLevelsFor` (`lib/plan/ruleEngine.ts`), which composes the same two
+> owners generation uses (`vdotFor` + `resolveLevels`), so the recorded level
+> cannot drift from the level a plan would have been built at. Gated by
+> `lib/plan/levelResolution.test.ts`.
+>
+> ⚠️ Both halves are kept because they answer different questions: what the
+> runner SAID about themselves, and what the engine ASSESSED. A refusal where
+> those disagree is the interesting one.
 >
 > Why it exists: §111's door sits at 12 km/week and no public data says what
 > share of real charity signups fall under it — the literature says what a

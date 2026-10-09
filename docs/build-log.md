@@ -6,6 +6,61 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — BASEBUILD-GENINPUT-01 + AUDIT-PLAN-KIND-01 · the field I added opened a door, and the room behind it was already on fire
+**Shipped:** base-build plans now stamp the input they were built from, and the daily audit judges a base-build plan by its own constitution instead of the race-plan one.
+
+**Dev learning:** **a missing field is invisible, because the absence of a thing looks exactly like the polite handling of its absence.** `generateBaseBuildPlan` never wrote `meta.generator_input`. Seven consumers read that field, and every single one is written to skip a legacy plan gracefully — so a base-build runner silently lost the Modify Plan sheet, their plan saved with the validate gate skipped, the audit could not classify them, and five repair scripts walked past. Nothing errored. Nothing logged. The field just was not there, and every reader shrugged exactly as designed.
+
+Then the fix found the real defect. Stamping the field *opens* `savePlanForUser`'s validate gate, and that gate runs `validatePlan` — the RACE-plan constitution. It fires **61 errors on a perfectly valid base-build plan**: a plan with no start line being asked whether it annotated its prep time. I went to check whether that was new, and it was not: the daily audit had been doing the same thing all along. Measured live: the two base-build plans in the fleet contributed **101 of its 363 reported errors — 28%, mean 50.5 against 8.2 for every other plan** — and every one was a phantom.
+
+**Product/creator learning:** the comment that hid it is the part worth keeping. `canModifyPlan`'s doc said *"every plan generated from today carries the stamp, so this shrinks on its own."* That was **true on the day it was written** and false from the moment a second producer shipped. It is a claim about ALL producers, parked in a comment next to ONE of them, and nobody re-reads a comment when the thing it quietly depends on arrives. The gate I replaced it with derives the producer set from the source — and found a **fourth** producer on its first run, after my own written analysis had said "exactly two".
+
+**AI-building learning:** **I had the answer in front of me and did not read it.** `baseBuildValidate.ts` opens with: *"A SEPARATE VALIDATOR, NOT AN EXEMPTION ... running it through `validatePlan` would fire a long tail of rules describing a race block it is not."* That sentence describes the defect precisely, in a file I had open. The thing that found it was not reading — it was running the validator and looking at the number.
+
+**The honest bit:** second day in a row that the thing reporting the defect was the defect. Yesterday I escalated 49 phantom violations to the founder that came from `week: 0` meaning "plan-wide" in one layer and "a foundation week" in another. Today, 28% of the fleet's error count was a validator pointed at the wrong kind of plan. His own standing rule covers both — *"when a plan and a rule disagree, work out which one is wrong before you call anything a defect"* — and twice now the rule has been the wrong one.
+
+**Hook material:** adding one field to a plan generator turned a valid plan into 61 errors. Not because the field was wrong, but because it unlocked a checker that had never been asked whether it was reading the right kind of plan — and that checker had been quietly producing 28% of our fleet's reported defects for a week.
+
+**Postable?:** yes
+
+---
+
+## 2026-10-09 — OPS-DIGEST-TRIAL-COHORT-01 · the KPI that could not move, and the gate that could not see it
+**Shipped:** the daily digest's trial funnel counts the actual reverse-trial cohort, and the SQL is held to the repo's own definition by a test.
+
+**Dev learning:** `select count(*) from subscriptions where status='trialing'` had been the digest's trial count since it was written. Our reverse trial is not a subscription — it is a timestamp on `user_settings` plus a resolver — and no code path has ever written that status. So the count was **structurally zero**, and `at_risk_trialing`, derived from the same predicate, was too. The prompt instructs itself to *"always surface prominently"* the at-risk trial number as the conversion leak. **A KPI that cannot move reads exactly like a KPI with nothing to report**, every single day, which is why nobody noticed. Corrected: 0 → 5 on trial, 1 at risk. There is a real person who started a trial on 2 October, never came back, and is now six days quiet on day six of fourteen.
+
+**AI-building learning:** 🔴 **I wrote the gate, ran five mutations against it, and the one that mattered stayed green.** The arm I had labelled "THE DEFECT, PINNED" asserted `not /as trialing_total[\s\S]{0,80}subscriptions/`. Read it quickly and it looks right. It anchors on the **wrong side of the alias**: in SQL the table name comes *before* `as <column>`, never after. So re-inserting the exact original bug passed the test written specifically to catch it. I only found out because I mutated the file rather than re-reading my own regex.
+
+The fix was to stop grepping and start parsing — a depth-aware scan backwards from `as <alias>` to the enclosing comma, so the assertion is bounded to one column's expression. **Bind the region, never grep the file.** This repo has recorded that lesson four times now and I keep paying for it in a new disguise.
+
+**The honest bit:** I also nearly handed the founder a SQL block I had never executed. The rule exists here already — a query handed to a human is untested code — and the only reason it got run is that I remembered the rule, not that anything enforced it. It returned 5 and 1 where the old one returned 0 and 0, which is the entire argument for the change and would have been an assumption otherwise.
+
+**Hook material:** our dashboard's "at-risk trials" number was zero every day for weeks. Not because nothing was at risk — because the query asked a table that structurally cannot answer. The real number was 1, and he'd been quiet for six days.
+
+**Postable?:** yes
+
+---
+
+## 2026-10-09 — REFUSAL-TELEMETRY-LEVEL-01 · the field that was inert from the day it shipped
+**Shipped:** a designed plan refusal now records what the runner said about their fitness AND what the engine assessed, through the engine's own resolver.
+
+**Dev learning:** the refusal telemetry existed to answer one question — *which* runners does the engine turn away? It recorded `fitness_level: input.fitness_level`. That field is the API-level structural override; the wizard sends `user_declared_level`, and the type's own doc comment says, in as many words, *"do NOT repurpose it for the wizard's user selection."* So the key was `undefined`, JSON dropped it, and **all 20 refusal events in production carry no level at all.** Inert from day one, and invisible because a missing JSON key is not an error.
+
+The reason it reached for the wrong field is structural: fifteen lines of §79's asymmetric level resolution lived inside the generator and nowhere else, so there was nothing else to call. Copying them into the route would have been the duplication defect this codebase has paid for five separate times. They moved into one owner instead; the engine and the telemetry now call the same function.
+
+**Product/creator learning:** that same telemetry turned out to be the **only surviving record of two runners' race dates.** The base-build writer overwrites `race_date: ''` in plan meta, so a plan that lacks `generator_input` has no recoverable race date — except that `plan_refused_by_design` stored `weeks_to_race: 29` and `28`. A piece of instrumentation built to measure a policy question ended up being the thing that makes a remediation possible at all.
+
+**AI-building learning:** my source-level assertion failed on **its own explanatory comment** — the comment above the fix quotes the defective line verbatim, and the regex could not tell prose from code. That is the third instance of that exact class in this repo. Strip comments before matching, always.
+
+**The honest bit:** the only thing that made this shippable was `verify:parity` — 6,066 cases, byte-for-byte identical. Moving fifteen lines out of the single most consequential derivation in the engine is not a refactor you ship on a green unit suite, and I would not have believed the unit tests on their own.
+
+**Hook material:** 20 refusal events, 0 with the one field they were built to record. It read `input.fitness_level` and the type's own comment says don't.
+
+**Postable?:** maybe
+
+---
+
 ## 2026-10-09 — DIGEST-REPAIRABLE-01 · the alert rule that was right became the rule that was wrong
 **Shipped:** the daily plan audit now reports how many live plans carry damage that has a remedy, and the command that fixes it.
 

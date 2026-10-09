@@ -131,3 +131,94 @@ export function recommendFitnessLevel(
   const a = assessFitness(weeklyKm, longestKm, vdot, trainingAgeExperienced)
   return { level: a.intensity, isReturning: a.intensityLiftedForReturn }
 }
+
+/** The four levels a plan is built with. §79 keeps them separate on purpose. */
+export interface ResolvedLevels {
+  /** What the assessment read from volume + VDOT + training age, before any
+   *  declaration or API override. Structural. */
+  assessedStructural: FitnessLevel
+  /** Ditto, for the intensity allowance. */
+  assessedIntensity: FitnessLevel
+  /** What the runner picked in the wizard, if they picked anything. */
+  declared?: FitnessLevel
+  /** THE structural level the plan is built with: volume, peak km, long-run caps. */
+  structural: FitnessLevel
+  /** THE intensity level: QUALITY_SESSIONS_PER_WEEK_MAX and the §1 ceiling. */
+  intensity: FitnessLevel
+  /** The raw two-signal read, for the callers that need `signalsDisagree` and
+   *  `intensityLiftedForReturn` (surfaced in meta, and §79's re-entry gate). */
+  assessment: FitnessAssessment
+  /** §79's returning-runner predicate, derived from `training_age`. Returned
+   *  rather than re-derived by each caller — it is the same one-line rule and
+   *  this repo has paid for one-line rules written out twice. */
+  trainingAgeIsExperienced: boolean
+}
+
+/**
+ * THE SINGLE OWNER of "what levels is this runner's plan built at".
+ *
+ * ── WHY IT IS A FUNCTION AND NOT FIFTEEN LINES INSIDE THE ENGINE ─────────────
+ * It was those fifteen lines, inside `buildRulePlanOnce`, and nothing outside
+ * generation could ask the question. `REFUSAL-TELEMETRY-01` wanted it — it
+ * records `fitness_level` on every designed refusal so we can see WHICH runners
+ * the engine turns away — and reached for `input.fitness_level`, which is the
+ * API-level structural override the wizard never sends. Measured 2026-10-09: **20
+ * refusal events, 0 carrying any level.** The field had been inert since the day
+ * it shipped, and the type's own doc comment says, in as many words, "do NOT
+ * repurpose it for the wizard's user selection".
+ *
+ * Copying the fifteen lines into the route would have been the `deloadCadence`
+ * defect by hand — a predicate in two places, agreeing until one moves. So the
+ * engine and the telemetry now call the same function.
+ *
+ * ── THE ASYMMETRY IS §79 AND IT IS LOAD-BEARING ──────────────────────────────
+ * A runner's declaration binds UPWARD on intensity only (a self-declaration is
+ * not evidence of tissue tolerance — §10, Willy) and DOWNWARD on both (a runner
+ * volunteering caution is credible about caution). Measured before that fix: a
+ * 10K runner at 15 km/wk declaring `experienced` went week 1 13 -> 20 km and peak
+ * 18 -> 35.
+ *
+ * @param vdot  Already discounted (§10/§42). Optional: a benchmark may not have
+ *              been collected, and volume plus training age alone give a safe
+ *              read.
+ */
+export function resolveLevels(
+  input: Pick<import('@/types/plan').GeneratorInput,
+    'current_weekly_km' | 'longest_recent_run_km' | 'training_age' | 'fitness_level' | 'user_declared_level'>,
+  vdot?: number,
+): ResolvedLevels {
+  // D2 — VDOT and volume answer different questions; consult both. §79 — a deep
+  // training age lifts the INTENSITY read off the beginner floor for a returning
+  // runner whose current volume alone would misclassify them.
+  const trainingAgeIsExperienced = input.training_age === '2-5yr' || input.training_age === '5yr+'
+  const assessed = assessFitness(
+    input.current_weekly_km, input.longest_recent_run_km, vdot, trainingAgeIsExperienced)
+
+  // `input.fitness_level` is the API-level STRUCTURAL declaration. When supplied
+  // it stands in for the volume-derived assessment (long-standing contract; the
+  // archetype matrix and property sweep rely on it).
+  const assessedStructural: FitnessLevel = input.fitness_level ?? assessed.structural
+  const assessedIntensity:  FitnessLevel = input.fitness_level ?? assessed.intensity
+
+  const declaredLevel = input.user_declared_level
+  const declaredIsDownward =
+    declaredLevel !== undefined
+    && FITNESS_RANK[declaredLevel] < FITNESS_RANK[assessedStructural]
+
+  // Structure moves for a declaration ONLY downward (the config flag names the
+  // rule; flipping it to false would restore symmetric binding).
+  const structural: FitnessLevel =
+    (GENERATION_CONFIG.USER_DECLARED_LEVEL_BINDS_STRUCTURE_DOWNWARD_ONLY
+      ? (declaredIsDownward ? declaredLevel! : assessedStructural)
+      : (declaredLevel ?? assessedStructural))
+
+  // Intensity always follows the declaration when there is one — that is the
+  // agency the wizard offers. §1's distribution ceiling and the §79 re-entry
+  // gate remain binding at the elevated level.
+  const intensity: FitnessLevel = declaredLevel ?? assessedIntensity
+
+  return {
+    assessedStructural, assessedIntensity, declared: declaredLevel, structural, intensity,
+    assessment: assessed, trainingAgeIsExperienced,
+  }
+}

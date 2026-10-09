@@ -5,7 +5,7 @@ import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
 import { canGenerateDistance } from '@/lib/plan/canUseFeature'
-import { generateRulePlan } from '@/lib/plan/ruleEngine'
+import { generateRulePlan, derivedLevelsFor } from '@/lib/plan/ruleEngine'
 import { validatePlan, enforceViolations } from '@/lib/plan/invariants'
 import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
@@ -191,7 +191,31 @@ export async function POST(req: NextRequest) {
           effective_start_km: Math.round(effectiveStartKm(input) * 10) / 10,
           longest_recent_run_km: input.longest_recent_run_km,
           days_available: input.days_available,
-          fitness_level: input.fitness_level,
+          // REFUSAL-TELEMETRY-LEVEL-01 (2026-10-09) — this line used to be
+          // `fitness_level: input.fitness_level`, which is the API-level
+          // STRUCTURAL override the wizard never sends; `types/plan.ts` says so
+          // in as many words ("do NOT repurpose it for the wizard's user
+          // selection; that is `user_declared_level`"). Measured: 20
+          // plan_refused_by_design events, 0 carrying any level. The field was
+          // inert from the day it shipped, and a refusal we cannot attribute to a
+          // level tells us nothing about WHICH runners the engine turns away.
+          //
+          // Both halves are recorded, because they answer different questions:
+          // what the runner SAID about themselves, and what the engine ASSESSED.
+          // A refusal where those disagree is the interesting one.
+          //
+          // Via `derivedLevelsFor` — the engine's own owner — so this cannot
+          // drift from what generation would have used.
+          ...(() => {
+            const l = derivedLevelsFor(input)
+            return {
+              fitness_level_declared:  l.declared ?? null,
+              fitness_level_assessed:  l.assessedStructural,
+              fitness_level_structural: l.structural,
+              fitness_level_intensity: l.intensity,
+              fitness_level_api_override: input.fitness_level ?? null,
+            }
+          })(),
           training_age: input.training_age,
           goal: input.goal,
           weeks_to_race: input.race_date

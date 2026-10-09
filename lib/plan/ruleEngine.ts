@@ -30,7 +30,7 @@ import { formatDuration, raceDistanceDisplayName } from '@/lib/format'
 // positive number) must not print "null".
 const durationText = (mins: number): string => formatDuration(mins) ?? `${Math.round(mins)} min`
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
-import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type FitnessLevel } from './fitnessAssessment'
+import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, resolveLevels, type FitnessLevel, type ResolvedLevels } from './fitnessAssessment'
 import { validatePlan, copyClaimsIntensity, enforceViolations } from './invariants'
 import { hasInjuryKeyword, hasVolumeCappedInjuryHistory } from './injuryScope'
 import { assessBaseBuild, baseVolumeRefusal, runWalkInadequateRefusal, BaseVolumeError } from './baseVolume'
@@ -165,6 +165,44 @@ export function applyVdotDiscount(rawVdot: number, b: BenchmarkInput, today: Dat
     discountPct = Math.min(discountPct, GENERATION_CONFIG.VDOT_STALENESS_MAX_DISCOUNT_PCT)
   }
   return { vdot: rawVdot * (1 - discountPct / 100), discountPct }
+}
+
+/**
+ * THE SINGLE PRODUCER of "what VDOT is this runner's plan priced from".
+ *
+ * Extracted from `buildRulePlanOnce`, where it was an IIFE assigning to two
+ * closure variables. It is exported because the refusal telemetry needs the same
+ * answer without generating a plan (REFUSAL-TELEMETRY-LEVEL-01), and a second
+ * copy of a four-line derivation is how the `deloadCadence` family starts.
+ *
+ * ⚠️ `applyVdotDiscount` is handed `new Date()`, NOT a plan's `today` override.
+ * That was true before the extraction and is preserved deliberately: the
+ * staleness ramp measures how long ago the runner actually ran, which is a fact
+ * about the wall clock, not about the plan's anchoring. Changing it would reprice
+ * every stale-benchmark plan.
+ */
+export function vdotFor(input: Pick<GeneratorInput, 'benchmark'>): {
+  vdot?: number
+  /** Undiscounted — interval paces use it (§10/§19 Stance B). */
+  vdotRaw?: number
+  discountPct: number
+} {
+  if (!input.benchmark) return { discountPct: 0 }
+  const raw = calcVDOTFromBenchmark(input.benchmark)
+  if (!Number.isFinite(raw) || raw <= 0) return { discountPct: 0 }
+  const { vdot, discountPct } = applyVdotDiscount(raw, input.benchmark, new Date())
+  return { vdot, vdotRaw: raw, discountPct }
+}
+
+/**
+ * THE LEVELS, for a caller that holds an input but is not generating a plan —
+ * principally the designed-refusal telemetry, which needs to know WHICH runners
+ * the engine turns away.
+ *
+ * It composes the two owners and adds nothing: `vdotFor` then `resolveLevels`.
+ */
+export function derivedLevelsFor(input: GeneratorInput): ResolvedLevels {
+  return resolveLevels(input, vdotFor(input).vdot)
 }
 
 // ─── Tanaka max HR formula ────────────────────────────────────────────────────
@@ -6657,63 +6695,26 @@ function buildRulePlanOnce(
   const zones = hrFallback.zones
 
   // ── Derive VDOT, fitness level, paces ───────────────────────────────────────
-  let vdotDiscountPct = 0
-  let vdotRaw: number | undefined
-  const vdot: number | undefined = (() => {
-    if (!input.benchmark) return undefined
-    const raw = calcVDOTFromBenchmark(input.benchmark)
-    if (!Number.isFinite(raw) || raw <= 0) return undefined
-    vdotRaw = raw
-    const { vdot: discounted, discountPct } = applyVdotDiscount(raw, input.benchmark, new Date())
-    vdotDiscountPct = discountPct
-    return discounted
-  })()
+  // Both owned elsewhere now, and the move is the point: `vdotFor` and
+  // `resolveLevels` are the only producers of these answers, so the refusal
+  // telemetry can ask the same question without generating a plan. Fifteen lines
+  // of §79 asymmetry lived here and nowhere else, which is why
+  // REFUSAL-TELEMETRY-01 reached for the wrong field and recorded nothing for 20
+  // refusals.
+  const { vdot, vdotRaw, discountPct: vdotDiscountPct } = vdotFor(input)
 
-  // D2 — VDOT and volume answer different questions; consult both. §79 (2026-08-31)
-  // — a deep training age lifts the INTENSITY read off the beginner floor for a
-  // returning runner whose current volume alone would misclassify them.
-  const trainingAgeIsExperienced = input.training_age === '2-5yr' || input.training_age === '5yr+'
-  const assessed = assessFitness(input.current_weekly_km, input.longest_recent_run_km, vdot, trainingAgeIsExperienced)
-  // §79 (2026-09-02, Coaching Board) — TWO axes, TWO inputs. Do not merge them.
-  //
-  //   `input.fitness_level`       — the API-level STRUCTURAL declaration. When
-  //                                 supplied it stands in for the volume-derived
-  //                                 assessment (long-standing contract; the
-  //                                 archetype matrix and property sweep rely on
-  //                                 it). Unchanged by this amendment.
-  //   `input.user_declared_level` — what the RUNNER picked in the wizard.
-  //
-  // The runner's declaration binds asymmetrically:
-  //   UPWARD   → intensity allowance only. Peak km, the week-1 volume floor, the
-  //              ramp and the long-run caps stay on the assessment.
-  //   DOWNWARD → both. A runner volunteering caution is credible about caution.
-  //
-  // The previous revision let a declaration set `fitness`, and `fitness` sets
-  // `peakKm`, and `peakKm` sets the week-1 floor at BUILD_VOL_INIT_FLOOR_VS_PEAK
-  // (`Math.max(startKm, initFloor)`) — so a dropdown raised starting tonnage
-  // above the runner's actual current volume. The comment that used to sit here
-  // claimed the start volume was independent of the level; line 477 disagreed.
-  // Measured before the fix: 10K 15km/wk declaring `experienced` went wk1 13→20,
-  // peak 18→35; a `<6mo` novice's marathon peak went 42→55.
-  const assessedStructural: FitnessLevel = input.fitness_level ?? assessed.structural
-  const assessedIntensity:  FitnessLevel = input.fitness_level ?? assessed.intensity
-
-  const declaredLevel = input.user_declared_level
-  const declaredIsDownward =
-    declaredLevel !== undefined
-    && FITNESS_RANK[declaredLevel] < FITNESS_RANK[assessedStructural]
-
-  // Structure moves for a declaration ONLY downward (the config flag names the
-  // rule; flipping it to false would restore symmetric binding).
-  const fitness: FitnessLevel =
-    (GENERATION_CONFIG.USER_DECLARED_LEVEL_BINDS_STRUCTURE_DOWNWARD_ONLY
-      ? (declaredIsDownward ? declaredLevel! : assessedStructural)
-      : (declaredLevel ?? assessedStructural))
-
-  // Intensity always follows the declaration when there is one — that is the
-  // agency the wizard offers. §1's distribution ceiling and the §79 re-entry
-  // gate remain binding at the elevated level.
-  const intensityFitness: FitnessLevel = declaredLevel ?? assessedIntensity
+  // §79's four levels, from their single owner. The full reasoning — the
+  // API-level override, the asymmetric binding, and the measured defect where a
+  // dropdown raised starting tonnage above the runner's actual volume — lives in
+  // `resolveLevels`' doc comment rather than being restated here.
+  const levels = resolveLevels(input, vdot)
+  const assessedStructural: FitnessLevel = levels.assessedStructural
+  const assessedIntensity:  FitnessLevel = levels.assessedIntensity
+  const declaredLevel = levels.declared
+  const fitness: FitnessLevel = levels.structural
+  const assessed = levels.assessment
+  const trainingAgeIsExperienced = levels.trainingAgeIsExperienced
+  const intensityFitness: FitnessLevel = levels.intensity
 
   const rhr = input.resting_hr && input.resting_hr > 0 ? input.resting_hr : undefined
   const pace: PaceGuide = (vdot !== undefined && vdotRaw !== undefined)

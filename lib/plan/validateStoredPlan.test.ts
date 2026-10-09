@@ -4,6 +4,7 @@ import { validateReshapedPlan, validatePlan, type Violation } from './invariants
 import { generateGetRunningPlan } from './getRunningPlan'
 import { generateRulePlan } from './ruleEngine'
 import type { GeneratorInput, Plan } from '@/types/plan'
+import { PINNED_PLAN_START_1012 as PINNED } from './__fixtures__/pinnedPlanStart'
 
 // AUDIT-PLAN-KIND-01 (2026-10-09) — the right constitution for the right plan kind.
 //
@@ -27,13 +28,13 @@ const mk = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
 
 const errs = (v: Violation[]) => v.filter(x => x.severity === 'error')
 const baseBuild = (over: Partial<GeneratorInput> = {}): Plan =>
-  generateGetRunningPlan(mk(over), '2026-10-05', 29).plan
+  generateGetRunningPlan(mk(over), PINNED, 29).plan
 
 describe('AUDIT-PLAN-KIND-01 — the audit judges a base-build plan by §116', () => {
   it('the predicate narrows on the kind the producers actually write', () => {
     expect(isBaseBuildPlan(baseBuild())).toBe(true)
     expect(isBaseBuildPlan(generateRulePlan(mk({ race_distance_km: 10, current_weekly_km: 25,
-      longest_recent_run_km: 8, training_age: '2-5yr' }), 'paid'))).toBe(false)
+      longest_recent_run_km: 8, training_age: '2-5yr' }), 'paid', PINNED))).toBe(false)
     expect(isBaseBuildPlan(null)).toBe(false)
   })
 
@@ -66,7 +67,7 @@ describe('AUDIT-PLAN-KIND-01 — the audit judges a base-build plan by §116', (
   it('a race plan is unchanged — the dispatch is additive, not a rewrite', () => {
     const i = mk({ race_distance_km: 21.1, race_date: '2027-03-21', current_weekly_km: 40,
       longest_recent_run_km: 14, training_age: '2-5yr', days_available: 5 })
-    const plan = generateRulePlan(i, 'paid')
+    const plan = generateRulePlan(i, 'paid', PINNED)
     expect(validateStoredPlan(plan)).toEqual(validateReshapedPlan(plan))
     expect(validateSavedPlan(plan, i)).toEqual(validatePlan(plan, i))
   })
@@ -79,7 +80,7 @@ describe('AUDIT-PLAN-KIND-01 — the audit judges a base-build plan by §116', (
   it('the save policy is STRICTER than the audit policy for a race plan', () => {
     const i = mk({ race_distance_km: 10, race_date: '2027-03-21', current_weekly_km: 25,
       longest_recent_run_km: 8, training_age: '2-5yr' })
-    const plan = JSON.parse(JSON.stringify(generateRulePlan(i, 'paid'))) as Plan
+    const plan = JSON.parse(JSON.stringify(generateRulePlan(i, 'paid', PINNED))) as Plan
     // Move race day out of the plan's final week. The invariant reads
     // `plan.meta.race_date`, so that is what has to move.
     plan.meta.race_date = '2028-01-01'
