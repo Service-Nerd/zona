@@ -268,7 +268,19 @@ export const PlanMetaSchema = z.object({
   // race forward. These MUST be registered here so a re-parse through the schema
   // doesn't strip them (same reason as `plan_intro` above). `source_race_date`
   // drives "N weeks post-race" coaching recency in sessionFeedback.
-  plan_kind:                   z.enum(['race', 'maintenance']).optional(),
+  // 🔴 `'base_build'` WAS MISSING UNTIL 2026-10-09, AND §116 SHIPPED IT IN AUGUST.
+  // This file declares itself "the single source of runtime validation for plan
+  // JSON", and it rejected a plan kind the engine emits. Measured against
+  // production: `SCHEMA:meta.plan_kind` appeared on **2 of 34 plans, and they were
+  // exactly the two base-build ones** — so every base-build save had been failing
+  // the canonical schema since the feature shipped, silently (SCHEMA-LIVE-01 never
+  // throws, by design) and visibly in the daily audit's code set, where it read as
+  // one more line of fleet schema debt.
+  //
+  // ⚠️ IT IS THE RUNTIME TWIN OF `PlanMeta['plan_kind']` IN `types/plan.ts`, AND I
+  // WIDENED THAT ONE FIRST AND LEFT THIS BEHIND. `planKindsAgree.test.ts` compares
+  // the two, so the next value cannot be added to one alone.
+  plan_kind:                   z.enum(['race', 'maintenance', 'base_build']).optional(),
   source_race_name:            z.string().optional(),
   source_race_distance_km:     z.number().positive().optional(),
   source_race_date:            z.string().optional(),
