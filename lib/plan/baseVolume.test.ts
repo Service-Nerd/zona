@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
+import { LongRunReadinessError } from './longRunReadiness'
 import { assessBaseBuild, deliveredPeakKm, BaseVolumeError } from './baseVolume'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput, Plan } from '@/types/plan'
@@ -96,7 +97,29 @@ describe('§111 base-build ceiling — the refusal', () => {
   })
 
   it('a current volume of 0 is refused (cannot build a marathon off no base)', () => {
+    // ⚠️ THE REFUSAL HOLDS; WHICH GATE SPEAKS FIRST CHANGED (§10 Amendment,
+    // `WIZARD-ZERO-VOLUME-REFUSAL-01` Am.3, 2026-10-09). §113 is an INPUT gate
+    // and §111 is a PLAN-EXIT gate (`finalise`, after generation — it needs the
+    // generated plan to assess), so §113 structurally speaks first. It used to
+    // fall through on a declared zero because its guard read `!(longest > 0)`,
+    // which treated the answer as a gap; now it refuses, so a zero/zero
+    // marathoner gets §113's message instead of §111's.
+    //
+    // The runner is NOT worse off: both throw the same refusal shape and render
+    // the same "not yet" screen, and §113's ask ("build up to one 5 km run,
+    // then come back") is a smaller and clearer first step than a weekly base.
+    // This arm therefore asserts the REFUSAL, which is what it was written for.
     const { plan, err } = gen(marathon({ current_weekly_km: 0, longest_recent_run_km: 0 }))
+    expect(plan).toBeNull()
+    expect(err).toBeInstanceOf(LongRunReadinessError)
+  })
+
+  it('§111 still owns the refusal when the longest run is adequate', () => {
+    // The arm above no longer exercises §111, so this one does — a runner with a
+    // real long run and no weekly base is §111's cohort alone. Without this,
+    // moving the zero case to §113 would have quietly removed §111's only
+    // zero-volume assertion.
+    const { plan, err } = gen(marathon({ current_weekly_km: 0, longest_recent_run_km: 12 }))
     expect(plan).toBeNull()
     expect(err).toBeInstanceOf(BaseVolumeError)
   })

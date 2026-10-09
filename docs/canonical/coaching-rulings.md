@@ -1723,3 +1723,31 @@ wrong denominator and leaves §6 Am.1 breached on 17.2%.
 ### ⇗ SLT escalation
 
 None.
+
+---
+
+## 2026-10-09 — `WIZARD-ZERO-VOLUME-REFUSAL-01` · a declared zero was read as "unknown" and the cap was skipped
+
+**Trigger:** soft (`ruleEngine.ts`, `sessionFloors.ts`, `longRunReadiness.ts`, `invariants.ts`) and it changes what the engine prescribes AND refuses, so convened. **Routed down from the SLT** (`docs/decisions/slt-wizard-intake-trust-01.md`): *"it changes what the engine REFUSES, which is coaching."*
+
+**Ruling: CORRECT WITH AMENDMENT, three times, in one session.** Each amendment was forced by a measurement, not by a change of mind, and that sequence is the record.
+
+| | What was ruled | What forced it |
+|---|---|---|
+| **Am. 1** | `> 0` becomes "is a number": zero is a reachable Ruler position, so it is a declaration not a gap. Floor the cap through the existing `sessionFloorsFor` owner. **Both** producer sites in one commit. §111's scope ratified, **not** extended; Sims ruled OUT raising the slider minimum to make zero unreachable | the inversion: a declared zero produced the **largest** week-1 long run in the ladder (12.5 km HM) while a declared 1 km produced **2.0** |
+| **Am. 2** | Am. 1's *"a declared zero caps at 5 km"* is **superseded**. A declared zero resolves to `MIN_SESSION_DISTANCE_ABSOLUTE_KM` — the same rung as a declared 1 km. `sessionFloorsFor` itself distinguishes the declaration from the gap. **Three sites, not two**: `INV-PLAN-WEEK-1-2-LONG-CAP` carried the identical `> 0` | **the ruling's own two artifacts contradicted each other.** 5 km sits above the 2.0 km rung §113 Am. 1 ratified, so it cannot be monotone. *"A number that breaks an ordering loses to the ordering"* (Hutchinson) |
+| **Am. 3** | Am. 1 applies to **all four** sites, §113's refusal gate included. `weeksToReachFloor(0, floor)` returns `Infinity` | a declared zero was **ADMITTED** at half marathon while a declared 1 km was **REFUSED** — measured, and the admitted plan carried its largest long run **inside the taper** (16.0 km against a peak-phase best of 11.0), 7 warns and 1 error |
+
+**Recorded disagreement (McMillan), unresolved by this ruling.** He accepts the lowest-state treatment and maintains the real defect is upstream: a zero longest run declared alongside a substantial weekly volume is probably an untouched slider, and reconciling it silently in the engine is not coaching. Filed as **`WIZARD-ZERO-LONGEST-VS-WEEKLY-01`** (🧭 Design Board, then 🏃 for the reconciliation rule). What would change his mind: evidence that runners who leave the slider at zero mean it.
+
+**Artifacts** — §10 Amendment · **no new numeric** (`MIN_SESSION_DISTANCE_ABSOLUTE_KM` already exists and is read) · `INV-PLAN-WEEK-1-2-LONG-CAP` widened plus `earlyLongRunMonotonic.test.ts` for the ORDERING, which no single-plan invariant can see.
+
+**Measured delivery.** Monotone on all five cohorts, zero inversions. Beginner-marathon corpus: **668 of 6,480** rows move to a governed *"not yet"*, **not one `longest > 0` row changes** (3,703 → 3,035 generated = the unchanged non-zero count exactly); `LONG-RUN-SHORT` 2,176 → 1,764 and `WEEK1-LEAP` 435 → 284, because the plans removed were the worst ones. `cohort:shape` and `measure:fitness` unmoved — their grids' minimum longest run is 8. ⚠️ **`verify:parity` is structurally blind**: its grid is `Math.max(5, weekly/3)`.
+
+**What this does not prove.** The second producer site (the deload re-anchor at `curr.n <= 2`) is **UNCOVERED and provably unreachable for this cohort** — a week-2 deload occurs on **0 of 560** declared-zero rows probed, so its mutation stays green because nothing can wake it, not because the check is short. It was changed for consistency of predicate, and that is the whole claim. Nothing has run on a device.
+
+**Backed out in the same session, deliberately.** Widening §44's 10K alternative from `>= 42` to every distance §113 governs — a refused HM runner gets one door, "build up to one 5 km run", which is a long way from zero. The boundary is pinned by `longRunReadiness.test.ts` and the hardcoded `42` is already owned by the filed item **`LR-ALT-42-CONFIG-01`**; moving it edits `generationConfig.ts` and belongs to that item's sitting. Inferring a ruling the board was not asked for is how settled ground gets reversed quietly.
+
+### ⇗ SLT escalation
+
+None. The commercial question (should the wizard challenge a zero at all) is in `WIZARD-ZERO-LONGEST-VS-WEEKLY-01`.

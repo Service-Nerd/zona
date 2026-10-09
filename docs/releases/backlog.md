@@ -8110,15 +8110,64 @@ the runner did not confirm.
 
 ---
 
-### 🔻 `WIZARD-ZERO-VOLUME-REFUSAL-01` — `current_weekly_km = 0` should refuse, not generate 🏃 **COACHING BOARD** *(routed, unruled)*
+### ✅ `WIZARD-ZERO-VOLUME-REFUSAL-01` — SHIPPED 2026-10-09 · the question in this item was the wrong one 🏃 **COACHING BOARD** *(CORRECT WITH AMENDMENT x3)*
 
-💼 **SLT routed it down 2026-10-09**: it changes what the engine REFUSES, which is coaching.
-**2 live plans were built from a declared zero**, because `WIZARD_VOLUME_RULER.WEEKLY_KM_MIN`
-is **0** and the slider accepts it. Hutchinson wants it on record that marathon-adjacent plans
-were generated this way and that **§111's volume floor exists precisely to refuse it**.
+**Ruled and built.** Ruling, principle and measurements: `coaching-rulings.md` 2026-10-09 and
+**§10 Amendment**.
 
-**Question for the board:** is a declared zero a §111 refusal, a floor-clamp, or a
-wizard-level block? ⚠️ Same surface as `WIZARD-WEEKDAY-CONFIRM-01` — sequence them.
+🔴 **BOTH OF THIS ITEM'S PREMISES WERE FALSE, AND MEASURING THEM FIRST IS WHAT FOUND THE REAL
+DEFECT.** It asked whether `current_weekly_km = 0` should be a §111 refusal. Measured: **§111
+already refuses it** for the marathon and the ultra, and the two live zero-volume plans are a
+5K and a 10K, so *"marathon-adjacent plans were generated this way"* was not borne out at
+`weekly = 0` — it was passed on without checking. The real defect was one field over and the
+other way round: **`longest_recent_run_km = 0` was read as "unknown" by a `> 0` guard in FOUR
+places**, so §9's week-1/2 long-run cap was skipped and the most deconditioned runner received
+the **largest** opening long run in the ladder (12.5 km on a half marathon, against 2.0 km for a
+runner who declared one kilometre). A declared zero was also **admitted** at HM while a declared
+1 km was **refused**. ⚠️ And the marathon premise WAS true in the shape nobody wrote down: at
+`weekly = 60, longest = 0` a marathon plan generated with a 9.0 km week-1 long run.
+
+---
+
+### 🔻 `WIZARD-ZERO-LONGEST-VS-WEEKLY-01` — a zero longest run beside a real weekly volume is probably an untouched slider 🧭 **DESIGN BOARD**, then 🏃 **COACHING BOARD**
+
+**McMillan's recorded disagreement from the `WIZARD-ZERO-VOLUME-REFUSAL-01` sitting**, which the
+ruling did not resolve and deliberately left open.
+
+`INV-INPUT-LONGEST-LE-WEEKLY` catches `longest > weekly`. It does not catch `longest = 0`
+beside `weekly = 30`, which is coherent arithmetically and almost certainly means the Ruler was
+never dragged. The engine now reconciles it silently by treating zero as the lowest state, and
+the runner gets a **7 km first week against 30 km declared** — correct per §10, and McMillan's
+objection is that it is a refusal wearing a plan's clothes.
+
+**Order:** 🧭 design rules on whether the wizard questions the pair at the point of entry (and
+how, without a modal — Wood's standing kill-threat); 🏃 then rules on the reconciliation if
+design decides not to ask. ⚠️ **What would settle it is evidence, not argument:** do runners who
+leave the slider at zero mean it? That is `ops_events` on wizard submissions, which we do not
+yet record for this pair.
+
+---
+
+### 🔻 `LR-ALT-42-CONFIG-01` — §44's 10K door is marathon-only, behind a hardcoded `42` ⚙️ **NO BOARD** for the move · 🏃 **COACHING BOARD** for the scope
+
+**Filed properly 2026-10-09.** It was named in `longRunReadiness.test.ts`'s comments as "filed"
+and **had no backlog entry** — a declared reason that reached nobody, which is the pattern this
+repo keeps paying for.
+
+`alternativesFor` reads `21` from `GENERATION_CONFIG.LONG_RUN_READINESS_MIN_RACE_KM` four lines
+above a literal **`42`** — a coaching numeric living in `lib/plan/`, which the Configuration
+Singularity forbids, invisible to `configPrincipleSync` and to the coaching-guard hook.
+
+🔴 **AND THE SCOPE QUESTION IS NOW LIVE, WHICH IT WAS NOT WHEN THIS WAS FILED.** §113 governs
+every race at or above 21 km, so a refused **half**-marathoner gets exactly one alternative:
+*"build up to one 5 km run."* The §10 Amendment made a declared zero refusable, so that refusal
+now reaches runners who have not run at all, for whom 5 km is a long way off — while a **10K
+plan generates for them today** (measured). Widening the condition was tried during that build
+and **backed out in the same session**: the boundary is pinned by `longRunReadiness.test.ts` and
+inferring a ruling the board was not asked for is how settled ground gets reversed quietly.
+
+**Two artifacts, one sitting:** move the `42` into `GENERATION_CONFIG` with a principle, and
+rule on whether the door is marathon-only or belongs to every distance §113 can refuse.
 
 ---
 

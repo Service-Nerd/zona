@@ -64,6 +64,20 @@ function alternativesFor(floor: number, raceDistanceKm: number): string[] {
   const alts = [
     `Build up to one ${floor} km run, then come back. Nothing else needs to change.`,
   ]
+  // ⚠️ A HALF-MARATHONER IS NOT OFFERED THIS DOOR, AND THAT IS NOW A LIVE
+  // QUESTION RATHER THAN A SETTLED ONE. §113 governs everything at or above
+  // `LONG_RUN_READINESS_MIN_RACE_KM` (21 km), so a refused HM runner gets one
+  // alternative — "build up to one 5 km run" — while a marathoner gets that AND
+  // a distance that opens today. Amendment 3 (2026-10-09) made a DECLARED ZERO
+  // refusable, so the HM refusal now reaches runners who have not run at all,
+  // for whom a 5 km run is a long way off and a 10K plan generates (measured).
+  // Widening it was tried and BACKED OUT in the same session: the boundary is
+  // pinned by `longRunReadiness.test.ts`, and the `42` is already owned by the
+  // filed item `LR-ALT-42-CONFIG-01` (it is a hardcoded coaching numeric in
+  // `lib/plan/`, which the Configuration Singularity forbids). Moving it is a
+  // `generationConfig.ts` edit and belongs to that item's board sitting, not to
+  // this one. The §44 obligation is still met for an HM: two alternatives, both
+  // reachable.
   if (raceDistanceKm >= 42) {
     // ⚠️ THIS USED TO SAY "start with a half marathon plan, which asks less of
     // your longest run." IT IS FALSE, and it is false for the single worst
@@ -100,7 +114,20 @@ function alternativesFor(floor: number, raceDistanceKm: number): string[] {
  * producer would then refuse to deliver.
  */
 export function weeksToReachFloor(longestKm: number, floorKm: number): number {
-  if (!(longestKm > 0) || longestKm >= floorKm) return 0
+  if (longestKm >= floorKm) return 0
+  // ⚠️ ZERO IS NOT "ALREADY THERE", AND IT IS THE ONLY NON-POSITIVE VALUE THAT
+  // MEANS ANYTHING. The guard used to be `!(longestKm > 0)`, which returned 0 —
+  // "no weeks needed" — for a runner who has not run at all, the opposite of
+  // the truth. Compound growth from zero never reaches a positive floor, so the
+  // honest answer is Infinity and the caller's `weeksAvailable >= ramp + block`
+  // comparison then correctly refuses (§10 Amendment, Coaching Board
+  // 2026-10-09).
+  if (longestKm === 0) return Number.POSITIVE_INFINITY
+  // Garbage, not a declaration: negative or non-finite. The original comment's
+  // reasoning stands for exactly these — inventing an unsatisfiable ramp would
+  // turn an unanswered question into a permanent refusal, which is a different
+  // defect. A declared zero is NOT in this set, which is the whole amendment.
+  if (!(longestKm > 0)) return 0
   const rate = 1 + GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT / 100
   return Math.ceil(Math.log(floorKm / longestKm) / Math.log(rate))
 }
@@ -127,7 +154,35 @@ export function assessLongRunReadiness(
   // Not governed, or nothing stated — §113 has nothing to say. A missing value
   // is not a short one, and refusing on absence would turn an unanswered
   // question into a rejection.
-  if (!governs(input.race_distance_km) || typeof longest !== 'number' || !(longest > 0)) {
+  //
+  // 🔴 BUT A DECLARED ZERO IS STATED, AND THIS GUARD USED TO SAY IT WAS NOT
+  // (§10 Amendment, Coaching Board 2026-10-09, `WIZARD-ZERO-VOLUME-REFUSAL-01`
+  // Amendment 3). The predicate was `!(longest > 0)` — the fourth copy of the
+  // same expression, after the two producer sites and
+  // `INV-PLAN-WEEK-1-2-LONG-CAP` — and it produced an inversion the product
+  // cannot defend. Measured on HM / 2 days / 10 weeks:
+  //
+  //     longest 0  -> ADMITTED. weekly [4,4,8,17,18,21,24,28,24] — +112% at
+  //                   week 4, the TAPER carrying the plan's largest long run
+  //                   (16.0 km against a peak-phase best of 11.0), seven warn
+  //                   violations and one error
+  //     longest 1  -> REFUSED
+  //     longest 2  -> REFUSED
+  //
+  // **Declaring one honest kilometre got you refused; declaring zero got you a
+  // ten-week plan the validator hated.** The more honest answer bought the
+  // worse outcome, which is the same inversion as the long-run cap and the same
+  // cause.
+  //
+  // ⚠️ A DECLARED ZERO CANNOT BE RAMPED, AND THAT IS ARITHMETIC, NOT POLICY.
+  // §113 Amendment 1 admits a sub-floor runner whose runway covers reaching the
+  // floor at `LONG_RUN_PROGRESSION_CAP_PCT`. That is compound growth, so from
+  // zero it never arrives — `weeksToReachFloor(0, floor)` is infinite by
+  // construction. There is no runway that rescues a declared zero at this
+  // distance, so the refusal is honest and §44's alternatives are the real
+  // coaching: build up to one 5 km run, or take a 10K plan, which still opens.
+  if (!governs(input.race_distance_km) || typeof longest !== 'number'
+      || !Number.isFinite(longest) || longest < 0) {
     return { ...base, ok: true, message: '' }
   }
 

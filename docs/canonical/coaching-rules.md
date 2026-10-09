@@ -171,6 +171,8 @@ longest_recent_run_km × GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
 
 This prevents a "first long run" being a 50% jump for a returning runner.
 
+⚠️ **§10 Amendment (2026-10-09, `WIZARD-ZERO-VOLUME-REFUSAL-01`) — THE GUARD WAS `> 0` AND A DECLARED ZERO IS AN ANSWER.** Zero is a reachable Ruler position, so reading it as "unknown" skipped this cap entirely and handed the most deconditioned runner the **largest** opening long run (12.5 km on a half marathon, against 2.0 km for a declared 1 km). A declared zero now resolves to `MIN_SESSION_DISTANCE_ABSOLUTE_KM`, the same rung as a declared 1 km; **absence** (`null`/`undefined`/non-finite) keeps the configured floors. The cap is floored at `sessionFloorsFor(longest).long` at both producer sites and in the invariant, so it is no longer discarded by a floor applied after it — a no-op for every runner at or above 2 km.
+
 ⚠️ **§113 Amendment 1 (2026-09-18) — THE CAP IS NOW ACTUALLY THE CAP.** `MIN_SESSION_DISTANCE_KM.long` used to be applied AFTER this cap and won, so for a runner below the floor the cap was silently discarded (3 km longest: cap places 3.3 km, the floor overrode it to 5.0 km, +67%). Floors are now resolved per runner (`lib/plan/sessionFloors.ts`) and bounded by the runner's own longest run, so the override is unreachable. `INV-PLAN-WEEK-1-2-LONG-CAP` no longer carries a floor allowance.
 
 ---

@@ -23,9 +23,24 @@ describe('sessionFloorsFor — the no-op property', () => {
   it('an unknown longest run returns the configured floors, never a collapsed one', () => {
     // "We do not know" must not read as "this runner can only manage 2 km" —
     // the `?? 0` class this repo has four measured defects from.
-    for (const v of [null, undefined, 0, -1, NaN, Infinity] as any[]) {
+    //
+    // ⚠️ `0` USED TO BE IN THIS LIST AND IS NOT ABSENCE (§10 Amendment, Coaching
+    // Board 2026-10-09, `WIZARD-ZERO-VOLUME-REFUSAL-01`).
+    // `WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MIN` is 0, so reaching zero is an
+    // ANSWER — *I have not run* — and grouping it here is what handed the most
+    // deconditioned runner the largest opening long run in the ladder (12.5 km
+    // on a half marathon, against 2.0 km for a declared 1 km). Its own rung is
+    // asserted below.
+    for (const v of [null, undefined, -1, NaN, Infinity] as any[]) {
       expect(sessionFloorsFor(v), String(v)).toEqual(CFG)
     }
+  })
+
+  it('🔴 but a DECLARED zero is the lowest state, not an unknown one', () => {
+    // Same rung as a declared 1 km, which is what makes the week-1 long run
+    // monotonic in `longest_recent_run_km` (`earlyLongRunMonotonic.test.ts`).
+    expect(sessionFloorsFor(0).long).toBe(GENERATION_CONFIG.MIN_SESSION_DISTANCE_ABSOLUTE_KM)
+    expect(sessionFloorsFor(0)).toEqual(sessionFloorsFor(1))
   })
 })
 

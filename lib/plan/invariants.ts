@@ -2050,8 +2050,33 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // THE CAP IS NOW THE CAP: this is the "no floor override" check the
     // Coaching Board required, enforced by amending the existing invariant
     // rather than adding a second one that would assert the same rule twice.
-    if (w.n <= 2 && input.longest_recent_run_km > 0 && long?.session.distance_km != null) {
-      const rawCap = input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
+    //
+    // 🔴 AND THIS CHECK CARRIED THE PRODUCER'S OWN BLIND SPOT FOR AS LONG AS THE
+    // PRODUCER DID (§10 Amendment, Coaching Board 2026-10-09,
+    // `WIZARD-ZERO-VOLUME-REFUSAL-01` Amendment 2). The guard was
+    // `input.longest_recent_run_km > 0` — the identical expression the engine
+    // used to skip the cap — so the one invariant written to catch an
+    // over-large opening long run **could not fire on the cohort that got
+    // one**. Measured: `capFires = 0` at every rung of the longest-run ladder,
+    // including the 12.5 km half-marathon week one.
+    //
+    // ⚠️ The board's amendment named TWO sites to fix. There were three, and
+    // this was the third: a checker that shares the producer's predicate cannot
+    // catch the producer being wrong. Same class as `deloadCadence`.
+    //
+    // The cap is floored at `sessionFloorsFor(...).long` to match the producer
+    // exactly. That is NOT the floor override §113 Amendment 1 removed: the old
+    // `Math.max(rawCap, MIN_SESSION_DISTANCE_KM.long)` read the FLAT config
+    // value and so permitted a +67% opening week at a 3 km longest run. This
+    // reads the RESOLVED per-runner floor, which is bounded by the runner's own
+    // longest run and therefore cannot exceed `rawCap` above 2 km — the
+    // permission stays unreachable, and below 2 km it states the floor the
+    // producer will actually place rather than a ceiling under it.
+    if (w.n <= 2 && typeof input.longest_recent_run_km === 'number' && long?.session.distance_km != null) {
+      const rawCap = Math.max(
+        input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER,
+        sessionFloorsFor(input.longest_recent_run_km).long,
+      )
       const effectiveCap = rawCap
       if (long.session.distance_km > effectiveCap + 0.01) {
         violations.push({

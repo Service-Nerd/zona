@@ -16,6 +16,7 @@
 import { describe, it, expect } from 'vitest'
 import { validateInputFields, InputFieldError } from './inputs'
 import { generateRulePlan } from './ruleEngine'
+import { LongRunReadinessError } from './longRunReadiness'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
 import { BaseVolumeError } from './baseVolume'
@@ -76,14 +77,36 @@ describe('a beginner who has never run', () => {
   // handed the reckless 18km-week-1 plan; they get a governed "not yet" naming
   // the base to reach. UX-BEGINNER-01's spirit (a coaching answer, not a DB
   // field name), honoured through a refusal rather than a hazardous plan.
-  it('a never-run beginner targeting a MARATHON gets a governed "not yet" (§111)', () => {
+  // ⚠️ WHICH GATE SPEAKS CHANGED, THE REFUSAL DID NOT (§10 Amendment,
+  // `WIZARD-ZERO-VOLUME-REFUSAL-01` Am.3, 2026-10-09). `beginner()` declares a
+  // longest recent run of ZERO, and §113 is an INPUT gate while §111 is a
+  // PLAN-EXIT gate, so §113 now speaks first for this runner. It used to fall
+  // through because its guard read `!(longest > 0)` and treated the answer as a
+  // gap. Both throw the same refusal shape and render the same "not yet" screen;
+  // §113's ask ("build up to one 5 km run, then come back") is a smaller and
+  // clearer first step than a weekly base. UX-BEGINNER-01's claim — a coaching
+  // answer, not a schema field name — is asserted against whichever gate fires.
+  it('a never-run beginner targeting a MARATHON gets a governed "not yet"', () => {
     let err: Error | null = null
     try { generateRulePlan(beginner(), 'paid', '2026-04-27', undefined, '2026-04-27') }
+    catch (e) { err = e as Error }
+    expect(err).toBeInstanceOf(LongRunReadinessError)
+    const r = (err as LongRunReadinessError).readiness
+    expect(r.message).toMatch(/longest recent run/)
+    expect(r.message).not.toMatch(/[a-z]+_[a-z_]+/) // no schema words, per UX-BEGINNER-01
+    expect(r.alternatives.length, 'a refusal names what would change it (§44)').toBeGreaterThan(0)
+    expect(r.alternatives.join(' ')).not.toMatch(/[a-z]+_[a-z_]+/)
+  })
+
+  it('§111 still owns the never-run marathon refusal once the long run is adequate', () => {
+    // Keeps §111's assertion alive: the arm above no longer reaches it.
+    let err: Error | null = null
+    try { generateRulePlan(beginner({ longest_recent_run_km: 12 }), 'paid', '2026-04-27', undefined, '2026-04-27') }
     catch (e) { err = e as Error }
     expect(err).toBeInstanceOf(BaseVolumeError)
     const base = (err as BaseVolumeError).base
     expect(base.message).toMatch(/too low to build safely/)
-    expect(base.message).not.toMatch(/[a-z]+_[a-z_]+/) // no schema words, per UX-BEGINNER-01
+    expect(base.message).not.toMatch(/[a-z]+_[a-z_]+/)
     expect(base.min_base_km).toBeGreaterThan(0)
   })
 })

@@ -3142,8 +3142,29 @@ function buildWeekSessions(
   }
 
   // Apply caps after redistribution.
-  if (weekN <= 2 && input.longest_recent_run_km > 0) {
-    const earlyCap = input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
+  //
+  // 🔴 THE GUARD USED TO BE `> 0`, WHICH SKIPPED THE CAP ENTIRELY FOR THE ONE
+  // RUNNER IT MATTERS MOST TO (§10 Amendment, Coaching Board 2026-10-09,
+  // `WIZARD-ZERO-VOLUME-REFUSAL-01`). A declared zero is a reachable slider
+  // position (`WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MIN` is 0), so it is an answer
+  // — *I have not run* — and reading it as "unknown" meant the most
+  // deconditioned runner received the LARGEST opening long run in the ladder:
+  // 12.5 km on a half-marathon plan, against 2.0 km for a runner who declared
+  // one kilometre. Measured non-monotonic at exactly that step on all five
+  // cohorts tested.
+  //
+  // ⚠️ THE FLOOR IS PART OF THE CAP, not a competing rule. `minDist.long` is
+  // applied AFTER this (`sessionFloorsFor`, see `:3300`), so a cap below the
+  // floor is silently discarded — that is the whole mechanism §113 Amendment 1
+  // was written about. Taking the max here states the real ceiling instead of
+  // one the next pass overrides. **Measured a no-op for every
+  // `longest_recent_run_km >= 2`**: `l * 1.10 >= min(5, l)` holds there, so only
+  // the sub-2 km band moves, and it moved already via the floor.
+  if (weekN <= 2 && typeof input.longest_recent_run_km === 'number') {
+    const earlyCap = Math.max(
+      input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER,
+      sessionFloorsFor(input.longest_recent_run_km).long,
+    )
     if (longKm > earlyCap) longKm = earlyCap
   }
 
@@ -7530,8 +7551,16 @@ function buildRulePlanOnce(
     //
     // Same defect class as the invariant's own history: an earlier decision
     // undone by a later pass that never learned about it.
-    if (curr.n > 0 && curr.n <= 2 && input.longest_recent_run_km > 0) {
-      const earlyCap = input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
+    //
+    // ⚠️ AND THE SAME `> 0` HOLE LIVED HERE TOO — one cap, three copies of the
+    // same guard (this, the sizing pass above, and `INV-PLAN-WEEK-1-2-LONG-CAP`
+    // itself). "A cap honoured on one path and bypassed on the other is not a
+    // cap" (Coaching Board, 2026-10-09). All three now read the same predicate.
+    if (curr.n > 0 && curr.n <= 2 && typeof input.longest_recent_run_km === 'number') {
+      const earlyCap = Math.max(
+        input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER,
+        sessionFloorsFor(input.longest_recent_run_km).long,
+      )
       set = Math.min(set, Math.floor(earlyCap / precision) * precision)
     }
     if (set <= currKm + 0.01) continue   // the cap left nothing to raise

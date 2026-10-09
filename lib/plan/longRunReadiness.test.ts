@@ -159,12 +159,25 @@ describe('§113 — long-run readiness', () => {
     // runner falls through to `Math.log(floor / 0)` = Infinity, and `Math.ceil(Infinity)`
     // is Infinity — a ramp no runway can ever satisfy, which silently converts
     // "we do not know your longest run" into a permanent refusal.
-    it('a non-positive longest run yields no ramp, never an infinite one', () => {
-      for (const km of [0, -1, Number.NaN]) {
+    // ⚠️ `0` HAS LEFT THIS SET (§10 Amendment, Coaching Board 2026-10-09,
+    // `WIZARD-ZERO-VOLUME-REFUSAL-01` Am.3). The comment above is still exactly
+    // right about ABSENCE and garbage — inventing an unsatisfiable ramp would
+    // turn an unanswered question into a permanent refusal. A DECLARED zero is
+    // not an unanswered question: it is an answer, and compounding from it never
+    // reaches a positive floor, so Infinity is the arithmetic rather than a
+    // policy. Returning 0 there read as "no weeks needed" for a runner who has
+    // not run, and it ADMITTED a declared-zero half-marathoner while refusing a
+    // declared 1 km.
+    it('a negative or unparseable longest run yields no ramp, never an infinite one', () => {
+      for (const km of [-1, Number.NaN]) {
         const w = weeksToReachFloor(km, floor)
         expect(w, `longest=${km} must not produce an unsatisfiable ramp`).toBe(0)
         expect(Number.isFinite(w)).toBe(true)
       }
+    })
+
+    it('🔴 a DECLARED zero yields an infinite ramp, because compounding from zero never arrives', () => {
+      expect(weeksToReachFloor(0, floor)).toBe(Number.POSITIVE_INFINITY)
     })
 
     it('below the floor yields a finite ramp that shortens as the runner gets closer', () => {
@@ -185,9 +198,22 @@ describe('§113 — long-run readiness', () => {
 
   it('🔴 a MISSING longest run passes — absence is not shortness', () => {
     // Turning an unanswered question into a rejection is a different defect.
-    for (const v of [undefined, null, 0]) {
-      expect(assessLongRunReadiness(base({ longest_recent_run_km: v as never })).ok).toBe(true)
+    //
+    // ⚠️ `0` USED TO BE IN THIS LIST. It is a DECLARATION, not a gap (§10
+    // Amendment, Am.3) — and while it sat here, a declared-zero half-marathoner
+    // was ADMITTED while a declared 1 km was REFUSED, so the honest answer
+    // bought the worse outcome. Garbage still passes: `NaN` is not an answer.
+    for (const v of [undefined, null, Number.NaN, -1]) {
+      expect(assessLongRunReadiness(base({ longest_recent_run_km: v as never })).ok,
+        `longest=${String(v)}`).toBe(true)
     }
+  })
+
+  it('🔴 a DECLARED zero does NOT pass — zero is an answer, and it is the lowest one', () => {
+    expect(assessLongRunReadiness(base({ longest_recent_run_km: 0 })).ok).toBe(false)
+    // And no runway rescues it, unlike every other sub-floor value.
+    expect(assessLongRunReadiness(base({ longest_recent_run_km: 0 }), 200).ok).toBe(false)
+    expect(assessLongRunReadiness(base({ longest_recent_run_km: 1 }), 200).ok).toBe(true)
   })
 
   it('the ENGINE throws it, so the sweep and the route both see it', () => {
