@@ -46,6 +46,7 @@ import {
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import { fitnessAnchorMap } from '../lib/plan/fitnessAnchorMap'
 import { alignDerivedToStructure } from '../lib/plan/derivedSetAnchors'
+import { repairPlan, REPAIRABLE_CODES } from '../lib/plan/planRepairs'
 import { buildPaceFromVDOT } from '../lib/plan/paceBands'
 import { validatePlan } from '../lib/plan/invariants'
 import { getCurrentWeek } from '../lib/plan/weekResolution'
@@ -58,7 +59,12 @@ import type { FitnessLevel } from '../lib/plan/fitnessAssessment'
 const APPLY  = process.argv.includes('--apply')
 const VERIFY = process.argv.includes('--verify')
 /**
- * MODE 2 — RE-PRICE FROM THE RECOVERED ANCHOR, not from a reconstructed old guide.
+ * MODE 2 — REPAIR (`--repair`, or `--from-anchor` which is kept as an alias).
+ *
+ * Four remedies, every one scoped by the invariant that names the defect, so the
+ * fix and the check are the same predicate by construction. See
+ * `lib/plan/planRepairs.ts` for what each does and the two wrong turns that
+ * shaped them.
  *
  * The default mode re-prices only a step that reads what its anchor meant at the
  * OLD fitness, which is accountable and right when the provenance survives. On a
@@ -77,7 +83,7 @@ const VERIFY = process.argv.includes('--verify')
  * guide cannot produce — i.e. exactly what `INV-PLAN-STEP-PACE-FROM-GUIDE` flags.
  * The fix and the check therefore agree by construction rather than by my reading.
  */
-const FROM_ANCHOR = process.argv.includes('--from-anchor')
+const REPAIR = process.argv.includes('--repair') || process.argv.includes('--from-anchor')
 /**
  * MODE 3 — REGENERATE. For a plan re-pricing cannot repair, because more than its
  * paces are wrong. Clay's sessions are labelled "Quality: Threshold" with
@@ -111,6 +117,16 @@ const errCodes = (p: Plan, gi: GeneratorInput) =>
   validatePlan(p, gi).filter(v => v.severity === 'error')
 
 const stale = (p: Plan, gi: GeneratorInput) => errCodes(p, gi).filter(v => v.code === CODE)
+
+/**
+ * ⚠️ THE POPULATION IS WHAT THE REPAIRS CAN FIX, NOT ONE CODE. Selecting on
+ * `INV-PLAN-STEP-PACE-FROM-GUIDE` alone meant that once a plan's steps were
+ * repaired it dropped out of the target set entirely — and the motivating plan
+ * still had EIGHT other repairable violations at that moment, invisible to the
+ * tool written for them. The list lives in `planRepairs.ts` beside the remedies.
+ */
+const repairableViolations = (p: Plan, gi: GeneratorInput) =>
+  errCodes(p, gi).filter(v => (REPAIRABLE_CODES as readonly string[]).includes(v.code))
 
 /** Work-step paces of a session, in order, for the diff. */
 const steps = (s: Session): string[] =>
@@ -278,10 +294,10 @@ async function main() {
     const gi = r.plan_json?.meta?.generator_input as GeneratorInput | undefined
     if (!r.plan_json?.weeks?.length || !gi) return false
     if (ONLY && !r.id.startsWith(ONLY)) return false
-    return stale(r.plan_json, gi).length > 0
+    return (REPAIR ? repairableViolations : stale)(r.plan_json, gi).length > 0
   })
 
-  console.log(`${rows.length} stored plans · ${targets.length} carry the defect`
+  console.log(`${rows.length} stored plans · ${targets.length} carry a ${REPAIR ? 'repairable violation' : 'stale step'}`
     + `${ONLY ? ' (filtered)' : ''}\n`)
   if (targets.length === 0) {
     console.log('Nothing to repair.')
@@ -379,48 +395,13 @@ async function main() {
     let after: Plan
     try {
       after = JSON.parse(JSON.stringify(before)) as Plan
-      if (FROM_ANCHOR) {
-        // 🔴 DRIVEN BY THE INVARIANT'S OWN VERDICTS, AND THE FIRST VERSION WAS
-        // NOT — it re-derived the test as "is this band in the guide?" and that
-        // is LOOSER than the check. Measured on a live plan: two T-anchored
-        // sessions read `4:48–5:00`, which is 11.3% from that runner's T band and
-        // **exactly his goal band** (`goal_pace_per_km: 4:54`) — §22's goal-pace
-        // substitution, entirely deliberate, which the invariant admits by name.
-        // My version would have re-priced them back to T and DESTROYED §22's
-        // override on two sessions. The invariant was right and the fix was wrong.
-        //
-        // So the fix now reads the violations instead of reasoning about them: a
-        // step is re-priced if and only if `INV-PLAN-STEP-PACE-FROM-GUIDE` names
-        // its band. Sharing the predicate was the stated design and re-deriving
-        // it was the bug; this makes divergence impossible rather than unlikely.
-        const flagged = new Map<number, Set<string>>()
-        for (const v of validatePlan(before, gi)) {
-          if (v.code !== CODE || v.week == null) continue
-          for (const band of String(v.actual ?? '').split(',').map(x => x.trim()).filter(Boolean)) {
-            if (!flagged.has(v.week)) flagged.set(v.week, new Set())
-            flagged.get(v.week)!.add(band)
-          }
-        }
-        const admitted = fitnessAnchorMap(nowPace)
-        let touched = 0
-        for (const w of after.weeks) {
-          const bands = flagged.get(w.n)
-          if (!bands?.size) continue
-          for (const session of Object.values(w.sessions)) {
-            if (!session || session.type !== 'quality' || !session.derived_set) continue
-            const aligned = alignDerivedToStructure(session)
-            if (!aligned) continue
-            for (const { derived, structural } of aligned) {
-              if (structural.role !== 'work' || structural.target.kind !== 'pace') continue
-              if (!derived.pace || !bands.has(derived.pace)) continue
-              const want = admitted[structural.target.anchor]
-              if (!want) continue
-              derived.pace = want
-              touched++
-            }
-          }
-        }
-        console.log(`  from-anchor: ${touched} work step(s) the invariant flagged, re-priced to their own anchor`)
+      if (REPAIR) {
+        // Every repair is driven by the invariant's OWN verdicts — see the module
+        // header for why that is load-bearing rather than tidy. Four remedies,
+        // measured on this runner: 9 error-severity violations become 1.
+        const r = repairPlan(after, validatePlan(before, gi), nowPace)
+        console.log(`  repairs: ${r.steps} stale step(s) · ${r.headers} header(s) matched to their steps`
+          + ` · ${r.stripped} effort-governed pace(s) REMOVED · ${r.segments} long-run segment(s) re-priced`)
       } else {
         repriceWeeksFrom(after, asPriced, nowPace, fromWeekN)
       }

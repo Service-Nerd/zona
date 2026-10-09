@@ -5895,7 +5895,8 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       const prevWasStepBack = prevPrev != null
         && prev.type !== 'race'
         && prevLR < prevPrev - 0.01
-      if (prev.type === 'deload' || prevWasStepBack) {
+      const prevWasStepBackOrDeload = prev.type === 'deload' || prevWasStepBack
+      if (prevWasStepBackOrDeload) {
         if (prevPrev != null && currLR <= prevPrev * stepBackTol + 0.01) continue
       }
       // ROUNDING HEADROOM (2026-08-20). Session distances round to
@@ -5924,7 +5925,23 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           principle_ref: 'CoachingPrinciples §45',
           severity: 'error',
           week: curr.n,
-          message: `W${curr.n} long run ${currLR}km is a ${pctJump}% jump from W${prev.n} (${prevLR}km). Cap is +${GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT}% or +${absArmKm.toFixed(1)}km, whichever is greater (§45 Am.2: the absolute arm tapers to ${GENERATION_CONFIG.LONG_RUN_ABS_STEP_MAX_PCT_OF_LR}% of the prior long run, capped at +${capAbs}km).`,
+          // ⚠️ NAME THE ARM THAT ACTUALLY BOUND. The message used to report the
+          // raw week-on-week delta even when the STEP-BACK arm was the one that
+          // failed, and after a deload those are wildly different numbers: a live
+          // plan read *"13.5km is a +59% jump from W4 (8.5km)"* when W4 was a
+          // DELOAD and the arm that bound was the step-back allowance against W3's
+          // 12.5km — **13.125km allowed, over by 0.375km**, less than one rounding
+          // increment. The headline said injury risk; the arithmetic said rounding.
+          // A violation that misdescribes its own cause gets triaged as the thing
+          // it sounds like, which is how a marginal breach was reported upward as
+          // three load failures (DUNCAN-RESIDUAL-LOAD-01).
+          message: prevWasStepBackOrDeload && prevPrev != null
+            ? `W${curr.n} long run ${currLR}km follows a step-back week (W${prev.n}, ${prevLR}km), `
+              + `so the STEP-BACK arm applies: at most ${(prevPrev * stepBackTol).toFixed(2)}km `
+              + `(W${plan.weeks[i - 2].n}'s ${prevPrev}km +${GENERATION_CONFIG.LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT}%), `
+              + `over by ${(currLR - prevPrev * stepBackTol).toFixed(2)}km. `
+              + `(The raw week-on-week delta is +${pctJump}%, which is NOT the arm that bound.)`
+            : `W${curr.n} long run ${currLR}km is a ${pctJump}% jump from W${prev.n} (${prevLR}km). Cap is +${GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT}% or +${absArmKm.toFixed(1)}km, whichever is greater (§45 Am.2: the absolute arm tapers to ${GENERATION_CONFIG.LONG_RUN_ABS_STEP_MAX_PCT_OF_LR}% of the prior long run, capped at +${capAbs}km).`,
           actual: `${currLR} (jump +${actualJumpKm.toFixed(1)}km)`,
           expected: `≤ ${prevLR + allowedJumpKm}km`,
         })
