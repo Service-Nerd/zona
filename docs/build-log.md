@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-09 — WIZARD-ZERO-VOLUME-REFUSAL-01 · the item asked the wrong question and the measurement found an inversion
+## 2026-10-10 — WIZARD-ZERO-VOLUME-REFUSAL-01 · the item asked the wrong question and the measurement found an inversion
 
 **Shipped:** a declared `longest_recent_run_km = 0` stopped being read as "unknown", so the week-1/2 long-run cap applies to it, and a declared zero is refused at half marathon and above instead of being admitted.
 
@@ -22,7 +22,7 @@ it specific, no polish. The content system adds the voice.
 
 **Postable?:** yes
 
-## 2026-10-09 — WIZARD-WEEKDAY-CONFIRM-01 · the board killed what the SLT asked for, on a 37.5% fire rate
+## 2026-10-10 — WIZARD-WEEKDAY-CONFIRM-01 · the board killed what the SLT asked for, on a 37.5% fire rate
 
 **Shipped:** the wizard's race-date field reads its value back in full — `Race day: Sunday 20 June.` — instead of confirming it.
 
