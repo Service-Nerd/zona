@@ -15,6 +15,8 @@ import { strideCarrierDay, isDayAfterLongRun, hasHillRestrictingInjury } from '.
 import { normaliseDays } from './days'
 import { sessionFloorsFor } from './sessionFloors'
 import { easyPaceFromPlan } from './easyPace'
+import { fitnessAnchorMap } from './fitnessAnchorMap'
+import { buildPaceFromVDOT, paceBandStr, bandCeiling } from './paceBands'
 import { qualityCeilingFor } from './qualityCeiling'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
@@ -87,6 +89,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
   'INV-PLAN-HEADER-PACE-MATCHES-WORK',
+  'INV-PLAN-STEP-PACE-FROM-GUIDE',
   'INV-PLAN-RACE-ANCHOR-MATCHES-GOAL',
   'INV-PLAN-RACE-NOT-VOLUME',
   'INV-PLAN-RACE-SPECIFIC-VARIETY',
@@ -3158,6 +3161,137 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           actual: session.pace_target,
           expected: Array.from(workPaces)[0],
         })
+      }
+    }
+  }
+
+  // INV-PLAN-STEP-PACE-FROM-GUIDE — §125 / RECAL-SIZING-PROPERTY-01.
+  //
+  // Every paced work step must carry a band THIS PLAN'S OWN PACE GUIDE
+  // PRODUCES. A step priced at any other band was priced for a different
+  // runner — or, which is the same thing, for this runner at a fitness they no
+  // longer have.
+  //
+  // 🔴 THIS IS THE SECOND DESIGN, AND THE FIRST ONE COULD NOT FIRE AT ALL.
+  // §125 asked for a check that a session's DISTANCE still matches its pace, so
+  // that is what was built: re-derive the distance and compare. Three cuts of it
+  // false-fired 4,713 / 4,680 / 2,213 times across 14,268 swept plans, and the
+  // fourth — an exact "does any admissible dose price this distance?" test —
+  // finally came back **0 false fires, sweep green**.
+  //
+  // It was also **0 on all four live plans that carry the defect**. Quiet on
+  // correct plans and quiet on broken ones is not a check; it is a green tick
+  // with nothing behind it, and this repo has shipped several. The reason is
+  // exact and worth keeping: recovering the work pace meant matching a step's
+  // band against the guide, and a STALE step's band matches nothing in a guide
+  // rebuilt from the NEW benchmark — so the check skipped precisely the sessions
+  // that were wrong. **The population excluded the cases at risk**, which is the
+  // most expensive class in this catalogue.
+  //
+  // The skip was the signal. A band the guide cannot produce IS the violation,
+  // so the check is the provenance of the pace rather than the arithmetic of the
+  // distance: it fires directly on clause 2 of §125 (every pace re-derived from
+  // the new VDOT) instead of inferring it from clause 3.
+  //
+  // ⚠️ THE ADMITTED BANDS ARE DERIVED, NEVER LISTED. `fitnessAnchorMap` is the
+  // producer's own map, read here rather than restated, plus the two bands §22
+  // and §120 may substitute (the goal band, at both widths generation emits).
+  // A new anchor therefore widens this check automatically; a hand-written list
+  // would have gone stale at the next one.
+  {
+    const guide = plan.meta.vdot != null && plan.meta.vdot_training_anchor != null
+      ? buildPaceFromVDOT(plan.meta.vdot_training_anchor, plan.meta.vdot)
+      : null
+    if (guide != null) {
+      const admitted = new Set<string>(Object.values(fitnessAnchorMap(guide)))
+      // §22 / §120 — a goal-paced session is priced at the GOAL, which is not a
+      // function of fitness and must not be re-derived (§125 clause 2). Both
+      // widths generation emits are admitted: the ±2% band it writes when it
+      // substitutes, and the stored string itself.
+      const goalBand = plan.meta.goal_pace_per_km
+      if (goalBand) {
+        admitted.add(goalBand)
+        const mid = parsePaceMidpoint(goalBand)
+        if (mid != null) admitted.add(paceBandStr(mid, 2))
+      }
+      // A progression's RAMP is a work step priced from TWO anchors and rendered
+      // as "5:58 → 5:12 /km", so it is a legitimate band that equals no single
+      // one. Its endpoints are band CEILINGS, not centres (`transitionBand`
+      // reads `bandCeiling`), so they are admitted separately below.
+      //
+      // ⚠️ AND IT IS NOT ONLY E → T. Admitting just the ramp that
+      // PROGRESSION_TRANSITION_ANCHORS names left 129 sweep fires, every one a
+      // MARATHON-pace progression ramping E → M. A ramp is legitimate when both
+      // of its ends are paces this guide produces — the general statement. The
+      // named pair was the instance in front of me, which is not the same thing.
+      // ⚠️ COMPARE THE PACE, NOT THE STRING, AND THE FIRST CUT COMPARED THE
+      // STRING — 25,811 false fires across 14,268 swept plans, every one of them
+      // ONE SECOND out (`5:11–5:26` against an admitted `5:11–5:25`). Generation
+      // prices from the unrounded VDOT and stamps it rounded to 1dp, so a plan's
+      // own bands are not reproducible from its own metadata to the second. That
+      // is a real and separate finding (filed as `PLAN-VDOT-ROUNDTRIP-01`); it is
+      // not this check's business, and string equality made it this check's
+      // business.
+      //
+      // So the comparison is numeric, at §19's existing 3% — no new tolerance
+      // invented, and the board has already refused one where a margin exists
+      // (`HM-ANCHOR-VS-GOAL-01`). It separates the two cases by a wide margin:
+      // reconstruction noise is ~0.3%, while the live defect's stale step sits
+      // 7.7% from the band its runner's fitness now produces.
+      //
+      // `bandCentre` averages every mm:ss token in the string, so it reads a
+      // range (`5:11–5:26`), a ramp (`5:57 → 4:53`) and a point (`4:30`) alike —
+      // all three are forms the engine emits for a work step.
+      const bandCentre = (band: string): number | null => {
+        const secs = Array.from(band.matchAll(/(\d+):(\d{2})/g))
+          .map(m => Number(m[1]) * 60 + Number(m[2]))
+        if (secs.length === 0) return null
+        return secs.reduce((a, b) => a + b, 0) / secs.length
+      }
+      const admittedCentres = Array.from(admitted)
+        .map(bandCentre).filter((x): x is number => x != null)
+      // The fast end of each admitted band, through the producer's own helper.
+      // `bandCeiling` returns the band's fast end as a STRING ("5:57"), so it
+      // goes through the same centre parser to become comparable seconds.
+      const admittedCeilings = Array.from(admitted)
+        .map(b => bandCentre(bandCeiling(b) ?? ''))
+        .filter((x): x is number => x != null)
+      const near = (value: number, pool: number[]) =>
+        pool.some(p => p > 0 && Math.abs(value - p) / p <= 0.03)
+
+      for (const w of plan.weeks) {
+        for (const session of Object.values(w.sessions)) {
+          if (!session || session.type !== 'quality' || !session.derived_set) continue
+          const offGuide = Array.from(new Set(
+            session.derived_set.blocks.flatMap(b => b.steps)
+              .filter(st => st.role === 'work' && st.pace)
+              .map(st => st.pace as string),
+          )).filter(band => {
+            if (band.includes('→')) {
+              // A ramp: both ends must be paces this guide produces, compared
+              // against the band CEILINGS because that is the quantity
+              // `transitionBand` put there.
+              const ends = band.split('→').map(bandCentre)
+              if (ends.some(e => e == null)) return false
+              return !ends.every(e => near(e!, admittedCeilings))
+            }
+            const c = bandCentre(band)
+            if (c == null) return false          // unparseable — not this check's claim
+            return !near(c, admittedCentres)
+          })
+          if (offGuide.length === 0) continue
+          violations.push({
+            code: 'INV-PLAN-STEP-PACE-FROM-GUIDE',
+            principle_ref: 'CoachingPrinciples §125, §120',
+            severity: 'error',
+            week: w.n,
+            message: `${session.label ?? 'session'} has work steps at `
+              + `${offGuide.join(', ')}, which this plan's own pace guide does not `
+              + `produce — the step was priced at a fitness this runner no longer has`,
+            actual: offGuide.join(', '),
+            expected: Array.from(admitted).join(' | '),
+          })
+        }
       }
     }
   }

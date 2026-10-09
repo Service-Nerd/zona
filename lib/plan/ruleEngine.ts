@@ -47,7 +47,7 @@ import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 import { isLongRun, isShakeout, classifyStimulus, isStructuredSession, isVo2maxSession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
-import { durationForMainSet } from './sessionFormat'
+import { durationForMainSet, segmentPricedDistance } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import { isDeloadWeek, computeDeloadWeeks, deloadVolumeFraction, shortOpeningBlockWeeks } from './deloadCadence'
 import { computeIntensityReentry } from './intensityReentry'
@@ -87,6 +87,12 @@ import {
 } from './paceBands'
 import type { PaceGuide } from './paceBands'
 import { qualityHeaderPace } from './qualityHeaderPace'
+import { fitnessAnchorMap } from './fitnessAnchorMap'
+import { alignDerivedToStructure } from './derivedSetAnchors'
+import { roundDistance } from './sessionDistance'
+import { writeScoped } from './recalibrationScope'
+import { transitionBand } from './progressionTransition'
+import { rescalePaceBand, paceBandCentreSecs } from './rescalePaceBand'
 
 // ─── VDOT model (Jack Daniels) ────────────────────────────────────────────────
 
@@ -742,13 +748,6 @@ function dur(distKm: number, minsPerKm: number): number {
   return Math.round(distKm * minsPerKm)
 }
 
-// Round a distance to GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM.
-// Single source for display-friendly distances (matches CoachingPrinciples §11
-// — "specific beats abstract" — but cleaner than 0.1 km precision).
-function roundDistance(distKm: number): number {
-  const p = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-  return Math.round(distKm / p) * p
-}
 
 function easySession(
   weekN: number, day: Day,
@@ -1404,10 +1403,6 @@ function continuousThresholdPlan(
  *  Coaching Board 2026-09-04). Shared by the sizing functions and their callers
  *  so a floor check can never be measured in different units from the session it
  *  guards — which is exactly how a 4.5 km session passed a 5 km floor. */
-function segmentPricedDistance(mainMins: number, workPaceMinPerKm: number, easyPaceMinPerKm: number): number {
-  const total = durationForMainSet(mainMins)
-  return (total - mainMins) / easyPaceMinPerKm + mainMins / workPaceMinPerKm
-}
 
 function makeQualitySession(args: {
   weekN: number; day: Day; distKm: number; metric: 'distance' | 'duration'
@@ -1632,18 +1627,17 @@ function makeQualitySession(args: {
     // posture) rather than denying a runner a plan over a bad row.
     if (!parsed.success) return null
     const anchors: PaceAnchorMap = {
-      E: pace.easyPaceStr,
+      // The fitness-derived base is `fitnessAnchorMap`'s, so a recalibration
+      // re-prices the SAME map rather than a second copy of it. The three
+      // goal-aware overrides below stay here, because none of them moves when a
+      // benchmark moves (RECAL-PACE-TWO-WRITER-01 / §125).
+      ...fitnessAnchorMap(pace),
       // Band, not the bare goalPace point — matches paceTarget's own
       // paceBandStr(goalCenterMins, 2) below exactly, so the derived_set's
       // displayed pace and the session's headline pace_target read as the
       // same prescription formatted the same way, not just the same number.
-      T: substituteThresholdWithGoal && goalCenterMins != null ? paceBandStr(goalCenterMins, 2) : pace.qualityPaceStr,
-      // §85 — never substituted by §22's goal-pace override. The "over" of an
-      // over-under is defined relative to the runner's THRESHOLD, not to their
-      // race goal; a goal-paced week must not silently redefine what "over" means.
-      CV: pace.cvPaceStr,
-      I: pace.intervalPaceStr,
-      ...(pace.marathonPaceStr ? { M: pace.marathonPaceStr } : {}),
+      ...(substituteThresholdWithGoal && goalCenterMins != null
+        ? { T: paceBandStr(goalCenterMins, 2) } : {}),
       // CAT-ROW-ELIGIBILITY-01 — the DISPLAY half of the HM anchor. This map and
       // `resolveAnchorPace` are two resolvers for the same question (which pace
       // does this anchor mean for this runner?), one returning a band string for
@@ -6143,35 +6137,201 @@ export function applyRecalibration(
   // Apply the same conservative discount as initial generation (CoachingPrinciples §10).
   const { vdot, discountPct } = applyVdotDiscount(rawVdot, benchmark, new Date())
 
-  const mhr = plan.meta.max_hr
-  // The `> 0 ? ... : undefined` guard that used to sit here has moved INTO
-  // `computeZones` (PLAN-RESTING-HR-ZERO-01). It was correct and it was in one
-  // place out of four — a judgement made where someone hit the problem rather
-  // than where both sides read it.
-  const zones = computeZones(mhr, plan.meta.resting_hr)
-  const pace  = buildPaceFromVDOT(vdot, rawVdot)
+  // ⚠️ PRICE FROM THE VALUES THAT GET STAMPED, NOT THE ONES COMPUTED. `meta`
+  // stores both VDOTs rounded to 1dp, so pricing from the unrounded figures
+  // leaves a plan whose own bands cannot be reproduced from its own metadata —
+  // measured as a ONE SECOND drift, which is enough to make
+  // `INV-PLAN-STEP-PACE-FROM-GUIDE` call a correctly re-priced CV step
+  // off-guide. Rounding first costs nothing a runner can perceive and makes the
+  // plan self-describing (§125).
+  const storedRawVdot = Math.round(rawVdot * 10) / 10
+  const storedVdot    = Math.round(vdot * 10) / 10
+
+  // 🔴 HR IS NOT WRITTEN BY A RECALIBRATION, AND IT USED TO BE — A SECOND LIVE
+  // DEFECT, FOUND BY THE COMPOSITION GATE RATHER THAN BY THIS FIX.
+  //
+  // The old code set `hr_target = zones.qualityHR` on EVERY quality, tempo and
+  // intervals session. Generation pairs a session's `zone` with the matching HR
+  // band, so a VO2max row carries `zone: "Zone 4-5"` and `intervalsHR`; the flat
+  // write replaced that with THRESHOLD HR and left the zone string alone.
+  // Measured: **45 sessions across 36 plans state a zone their own HR target
+  // contradicts**, at every recalibration magnitude INCLUDING a no-op, i.e. it
+  // fired on runners whose fitness had not moved at all. §84's
+  // `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` had caught this class once before, on
+  // the generation side; nothing validated a recalibrated plan, so this copy
+  // survived.
+  //
+  // The correct write is NO WRITE. HR zones derive from max and resting HR
+  // (§14), neither of which a BENCHMARK changes, so the values `computeZones`
+  // would return here are the ones generation already stored. Writing them can
+  // only ever be a no-op or a corruption, and it was a corruption.
+  // `applyHrToPlan` remains the owner of applying HR to a plan.
+  const pace  = buildPaceFromVDOT(storedVdot, storedRawVdot)
 
   const updated: Plan = JSON.parse(JSON.stringify(plan))
-  updated.meta.vdot                       = Math.round(rawVdot * 10) / 10
-  updated.meta.vdot_training_anchor       = Math.round(vdot * 10) / 10
-  updated.meta.benchmark                  = benchmark
-  if (discountPct > 0) updated.meta.vdot_discount_applied_pct = discountPct
+  // §125 — every write below goes through the declared scope, so an undeclared
+  // one fails the build rather than reaching a plan.
+  writeScoped(updated.meta, 'meta', 'vdot', storedRawVdot)
+  writeScoped(updated.meta, 'meta', 'vdot_training_anchor', storedVdot)
+  writeScoped(updated.meta, 'meta', 'benchmark', benchmark)
+  if (discountPct > 0) writeScoped(updated.meta, 'meta', 'vdot_discount_applied_pct', discountPct)
+
+  // §125 — EVERY QUANTITY THAT DESCENDS FROM PACE IS RE-DERIVED WITH IT.
+  //
+  // The old pace guide, rebuilt from the plan's own stamped VDOTs, is what makes
+  // the re-pricing accountable rather than a guess: a step is re-priced only
+  // when its stored band is the band its anchor meant at the OLD fitness. A step
+  // that reads anything else was overridden by something this function does not
+  // own — §22's goal substitution is the live example — and is left exactly
+  // alone. Re-pricing it would silently re-aim a goal-paced rep at the runner's
+  // new threshold, which is §22's override undone.
+  const oldPace = plan.meta.vdot != null && plan.meta.vdot_training_anchor != null
+    ? buildPaceFromVDOT(plan.meta.vdot_training_anchor, plan.meta.vdot)
+    : null
+  const oldAnchors = oldPace ? fitnessAnchorMap(oldPace) : null
+  const newAnchors = fitnessAnchorMap(pace)
 
   for (const week of updated.weeks) {
     if (week.n < fromWeekN) continue
     for (const session of Object.values(week.sessions)) {
       if (!session || session.type === 'strength' || session.type === 'rest') continue
       if (session.type === 'easy' || isLongRun(session) || session.type === 'recovery') {
-        session.hr_target    = zones.easyHR
-        session.pace_target  = pace.easyPaceStr
+        writeScoped(session, 'session', 'pace_target', pace.easyPaceStr)
+        // ⚠️ `duration_mins` IS DELIBERATELY NOT RE-DERIVED HERE, AND IT IS A
+        // DECLARED RESIDUAL, NOT AN OVERSIGHT. An easy run is distance-anchored
+        // from the week's volume budget and its duration is `dur(km, easyPace)`,
+        // so it IS pace-derived and §125 reads as covering it. But growing a
+        // beginner's prescribed minutes is a load change on the cohort whose
+        // sessions are 95.8% duration-anchored, and that cohort was not in the
+        // submission the board measured (quality-session sizing). Extending a
+        // ruling to a population it never saw is how this repo has shipped
+        // defects before. Filed as RECAL-EASY-DURATION-01.
       } else if (session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals') {
-        session.hr_target    = zones.qualityHR
-        session.pace_target  = pace.qualityPaceStr
+        repriceStructuredSession(session, { oldAnchors, newAnchors, pace })
       }
     }
   }
 
   return updated
+}
+
+/**
+ * §125 — re-price ONE structured session's steps, header and distance.
+ *
+ * ⚠️ RE-DERIVATION ONLY, NEVER RE-SELECTION (Coaching Board
+ * RECAL-SIZING-PROPERTY-01 amendment 2). No variant changes, no session is
+ * substituted, and the WORK-MINUTE DOSE is untouched — Willy's binding
+ * amendment, and the reason `duration_mins` is never written here. Distance
+ * follows the dose; the dose never follows the distance.
+ *
+ * ⚠️ THE FALLBACK IS THE CATEGORY BAND AND THAT IS NOT A SHRUG. Where the
+ * session's anchors cannot be recovered, the header is the runner's threshold
+ * band at the NEW fitness — re-priced, never stale — which is exactly what
+ * generation itself emits for a row it cannot dose. The alternative, leaving the
+ * old band in place, is the defect this whole item exists to fix.
+ */
+function repriceStructuredSession(
+  session: Session,
+  ctx: {
+    oldAnchors: PaceAnchorMap | null
+    newAnchors: PaceAnchorMap
+    pace: PaceGuide
+  },
+): void {
+  const { oldAnchors, newAnchors, pace } = ctx
+  const aligned = oldAnchors ? alignDerivedToStructure(session) : null
+  if (!aligned) return
+
+  // The factor the runner's fitness moved by, taken from the FIRST work step
+  // whose anchor is accountable. One factor per session, so the header, the
+  // ramp and the distance all move together rather than being recomputed
+  // independently and disagreeing.
+  let factor: number | null = null
+
+  for (const { derived, structural, } of aligned) {
+    if (structural.target.kind !== 'pace') continue        // effort / zone — §24b
+    const anchor = structural.target.anchor
+    const was = oldAnchors![anchor]
+    const now = newAnchors[anchor]
+    // Both halves required: an anchor with no band at the new fitness (§24b — a
+    // beginner is prescribed no M/HM segment) and a step that does not read what
+    // its anchor used to mean are both left alone, on purpose. The second is how
+    // §22's goal substitution survives: a goal-paced step reads the goal band,
+    // not the old T band, so it never matches and is never re-aimed.
+    if (was == null || now == null || derived.pace !== was) continue
+    if (factor == null && structural.role === 'work') {
+      const a = paceBandCentreSecs(was), b = paceBandCentreSecs(now)
+      if (a != null && b != null && a > 0) factor = b / a
+    }
+    writeScoped(derived, 'derived_step', 'pace', now)
+  }
+
+  // ⚠️ THE PROGRESSION RAMP IS A WORK STEP AND THE LOOP ABOVE CANNOT SEE IT.
+  // `resolveTransition` prices a ramp from TWO anchors and renders it as
+  // "5:58 → 5:12 /km", so its stored pace matches no single anchor band and it
+  // was silently left stale — found by `INV-PLAN-STEP-PACE-FROM-GUIDE` firing on
+  // this function's own output, which is the only reason it is handled at all.
+  const { from, to } = GENERATION_CONFIG.PROGRESSION_TRANSITION_ANCHORS
+  const wasRamp = transitionBand(oldAnchors![from], oldAnchors![to])
+  const nowRamp = transitionBand(newAnchors[from], newAnchors[to])
+  if (wasRamp && nowRamp) {
+    for (const { derived } of aligned) {
+      if (derived.pace === wasRamp) writeScoped(derived, 'derived_step', 'pace', nowRamp)
+    }
+  }
+
+  // Nothing was accountably re-priced, so nothing downstream may move either.
+  // ⚠️ `factor === 1` IS THE NO-OP CASE AND IT MUST RETURN HERE. Recalibrating
+  // to the benchmark the runner already had changed 7 plans' delivered volume,
+  // because re-deriving the distance round-trips through the rounded duration
+  // and lands a rounding step away from the stored value. A recalibration that
+  // changes nothing must change nothing.
+  if (factor == null || factor === 1) return
+
+  // ⚠️ THE HEADER IS SCALED, NOT RECOMPUTED, AND THAT IS THE WHOLE LESSON OF
+  // THIS FUNCTION'S FIRST VERSION. Recomputing it through `qualityHeaderPace`
+  // without a rep plan is a legitimate branch and the wrong one here: it emits a
+  // different FORM from the one generation wrote, so recalibrating a runner to
+  // the benchmark they already had introduced 72 new violations across 36 plans.
+  // Scaling preserves width and shape and is a no-op at factor 1.
+  if (session.pace_target != null) {
+    writeScoped(session, 'structured', 'pace_target',
+      rescalePaceBand(session.pace_target, factor))
+  }
+
+  // 🔴 CLAUSE 3 — RE-DERIVING THE DISTANCE — IS DEFERRED, AND THE DEFERRAL IS
+  // MEASURED RATHER THAN CAUTIOUS. §125 clause 3 says everything descending
+  // from pace is re-derived, distance included, and the board ruled that having
+  // measured the session-level error (mean 7%, worst 11.9%) and the weekly
+  // effect (0.5–0.8%). It did NOT have these numbers, which the composition gate
+  // produced afterwards — new invariant violations introduced per 36 plans:
+  //
+  //   clause 3 OFF : same benchmark 0 (byte-identical) · ±4–8% 0 · ±12.5% 9 · +20.8% 24
+  //   clause 3 ON  : same benchmark 0 (byte-identical) · ±4–8% 10–13 · ±12.5% 21 · +20.8% 59
+  //
+  // Re-deriving the distance moves the week's delivered volume, so §2's
+  // `INV-PLAN-DELIVERED-RAMP` and the minimum session size start breaching at
+  // magnitudes where nothing breaches today — INCLUDING the ±4–8% band that is
+  // the common case. **A fix that introduces a load-rule breach at the common
+  // magnitude is not a fix**, and whether the remedy is to let the week absorb
+  // it (ADR-022's mirror) or to re-size the plan is a Coaching Board question,
+  // not a judgement to make inside a defect fix.
+  //
+  // So the distance is left as generation priced it, which is the status quo and
+  // the declared residual §125 already carries. Filed as RECAL-DISTANCE-CLAUSE3-01
+  // with these figures. The remaining 9/24 at large magnitudes are §8's
+  // coherence check on DISTANCE-ANCHORED REP ROWS, where clauses 1 and 2
+  // genuinely contradict each other — 6 × 1600 m run slower takes longer, so a
+  // fixed dose and a re-derived pace cannot both hold. Leaving those rows stale
+  // was measured too and is WORSE (it trips §125's own step-provenance check at
+  // every magnitude, 24–51 per 36 plans), so they are re-priced and the breach
+  // is declared. Filed as RECAL-DISTANCE-REPS-01.
+  // The implementation is deliberately NOT left behind an `if (false)`. Dead code
+  // behind a flag is how a deferral stops being read; the one line it needs is
+  //   distance_km = roundDistance(segmentPricedDistance(
+  //     mainSetMinutes(duration_mins), bandCentre(pace_target), pace.minPerKmEasy))
+  // and `scripts/recalibration-sizing-residual.ts` regenerates the numbers above
+  // on demand.
 }
 
 // ─── §98 — the §1 yield ladder (Coaching Board CB-ONSET-YIELD-01, 2026-09-10) ──

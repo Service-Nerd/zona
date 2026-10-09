@@ -10815,3 +10815,52 @@ whether a sentence may be written, which is why they live here under §109 rathe
 `TREND_PACE_CONFOUND_SEC_PER_KM`.
 **Board:** RESHAPE-PRINCIPLE-DEBT-01, 2026-10-08.
 
+
+---
+
+## 125. A recalibration re-derives; it never re-selects
+
+**Principle.** When a runner logs a new benchmark and confirms the rewrite (ADR-014 — never silent, §69), the plan's forward weeks are **re-priced through the same owners generation uses**, and three things are true of the result:
+
+1. **The work-minute dose is untouched.** A structured session's duration comes from its rep structure, never from distance ÷ pace (§8 Amendment, §40b Amendment 2), and a recalibration does not write it. If the runner's Thursday was a 43-minute tempo last night, it is a 43-minute tempo this morning.
+2. **Every pace is re-derived from the new VDOT through the same anchor map generation reads** — `fitnessAnchorMap`. A step is re-priced only when its stored band is the band its anchor meant at the *old* fitness; a step reading anything else was overridden by something else (§22's goal substitution is the live case) and is left exactly alone.
+3. **Everything that descends from pace is re-derived with it, distance included.** A quality session's distance is segment-priced from its work pace, so when the pace moves the distance must move or the two stop describing the same session. 🔻 **RULED, NOT YET BUILT — see the deferral below, which carries the measurement the ruling was made without.**
+
+**A no-op is a no-op.** Re-pricing is done by SCALING the stored band, not by recomputing it, so recalibrating a runner to the benchmark they already hold returns a byte-identical plan. The first implementation recomputed the header through the generator's own owner — a legitimate branch, and the wrong one here, because it emits a different *form* from the one generation wrote and so introduced **72 new violations across 36 plans at zero fitness change.**
+
+**And nothing else moves.** No variant is re-chosen, no session is substituted, no week is reshaped.
+
+**Why the re-selection ban is load-bearing rather than conservative.** A session stamps `catalogue_id` but **no variant id and no params**, so re-running `resolveMainSet` would have to *guess* which variant produced `length: "18 min"` — and a guess that lands on the wrong variant reshapes the session while looking like a re-price. Forbidding re-selection removes the need to know, which is why the missing stamp is not a blocker.
+
+**Why.** `applyRecalibration` rewrote `pace_target` and `hr_target` and nothing else. So a confirmed recalibration **moved the display and left the prescription**: the work steps kept their pre-recalibration paces, and the header was overwritten with the generic category band, undoing §120's rule that the header is the row's own anchor. Measured 2026-10-09 across all 32 stored plans: **3 carried the signature** — one flat quality band plus `INV-PLAN-HEADER-PACE-MATCHES-WORK` hits (7, 8 and 5). A live runner's half-marathon plan displayed **5:36–5:52 /km over work steps at 5:12–5:27 /km** after she corrected her 5K from 24:00 to 26:00: her intervals were still priced at the faster fitness, ~25 s/km too hard, with a knee history.
+
+**The residual the board priced, and the direction that matters.** The stale distance tracks the recalibration magnitude roughly **1:1** and is **symmetric** — an improvement mis-sizes as much as a decline (measured: −8.3% → 7.1% mean / 10.5% worst; +8.3% → 7.5% / 10.0%; +16.7% → 11.9% / 15.4%). Weekly volume moves **0.5–0.8%**, because quality is a small share of the week.
+
+> ⚠️ **AN HONESTY FIX, NOT A SAFETY ONE** (Hutchinson + Willy, binding, on §121's precedent). The executable prescription is the step list and the steps are in minutes, so a runner working from the steps gets the right dose whatever the summary says. At 0.5–0.8% of weekly volume this is not injury prevention and must not be sold as it.
+>
+> 🩹 **Willy's amendment is the protected quantity, and it is binding:** the dose is the invariant, distance follows the dose, and the dose never follows the distance. **Recalibration downward is the returning runner** — post-illness, post-injury, after a broken block — so the cohort that recalibrates slower is the cohort with the least tissue tolerance. A runner there working off the stale distance covers it 7–12% slower, i.e. longer in time, at the moment they can least absorb it. ⚕️ **Sims:** that cohort also includes peri- and post-menopausal runners and anyone in low energy availability, and the symmetric half is not harmless either — an improving runner is under-dosed by the same margin, which is wasted adaptation rather than risk.
+
+**What this does NOT cover, declared.** An easy run is distance-anchored from the week's volume budget and its duration is `dur(km, easyPace)`, so it is pace-derived too and clause 3 reads as covering it. It is deliberately out of scope: growing a beginner's prescribed minutes is a **load change** on the cohort whose sessions are **95.8% duration-anchored**, and that cohort was not in the submission the board measured. Filed as `RECAL-EASY-DURATION-01`. Mixed-anchor rows (§85 over-unders, **82 of 297 generated quality sessions**) take the category band at the new fitness rather than §85's time-weighted mean, because **192 of their 228 work-step lengths are `parameter` kind** whose values are not stored — re-priced, never stale, and `INV-PLAN-HEADER-PACE-MATCHES-WORK` skips those rows by design. Filed as `RECAL-MIXED-MEAN-01`.
+
+**Not re-filing `SESSION-SIZING-ANCHOR-01`.** That item claimed a sizing twin at *generation* and was **CLOSED as a false premise** — 1,320 quality sessions, 0 sized at threshold while running elsewhere — and the register says do not re-file it. It is what establishes the property this section defends: *a structured session prices its distance from its own work pace.* The question here is whether a **post-generation writer** must maintain it, which that item never asked.
+
+**Config.** `GENERATION_CONFIG.RECALIBRATION_SCOPE` — the declared list of fields a recalibration may write, enforced at the write by `lib/plan/recalibrationScope.ts → writeScoped`, which throws outside production on an undeclared field. **No new tolerance:** the comparison margin is §19's existing 3%, reused. The board has already rejected inventing a constant where one exists (`HM-ANCHOR-VS-GOAL-01` — *"right question, wrong unit"*).
+
+⚠️ **`hr_target` IS NOT IN THAT LIST, and removing it fixed a second live defect.** The old writer put `zones.qualityHR` on every quality, tempo and intervals session, so a VO2max row kept `zone: "Zone 4–5"` and was given **threshold** HR — **45 sessions across 36 plans, at every recalibration magnitude including a no-op.** HR zones derive from max and resting HR (§14), neither of which a *benchmark* moves, so the correct write is no write.
+
+**Enforced by** `INV-PLAN-STEP-PACE-FROM-GUIDE` (error severity) — every paced work step must carry a band this plan's own guide produces, which is clause 2 directly.
+
+> 🔴 **THE INVARIANT THIS SECTION FIRST NAMED COULD NOT FIRE, AND THAT IS WORTH KEEPING.** The artifact specified was `INV-PLAN-SESSION-SIZE-MATCHES-PACE`: re-derive the distance and compare. Three tolerance-based cuts false-fired **4,713 / 4,680 / 2,213** times across 14,268 swept plans; a fourth, exact form ("does any admissible dose price this distance?") came back **0 false fires, sweep green** — and **0 on all four live plans carrying the defect.** Quiet on correct plans and quiet on broken ones is a green tick with nothing behind it. The cause: recovering the work pace meant matching a step's band against the guide, and a **stale** step matches nothing in a guide rebuilt from the **new** benchmark, so the check skipped precisely the sessions that were wrong — *the population excluded the cases at risk.* **The skip was the signal**: a band the guide cannot produce IS the violation, so the check moved from the arithmetic of the distance to the provenance of the pace.
+
+🔻 **CLAUSE 3 IS RULED AND DEFERRED, with the number that was missing when it was ruled.** The board measured the session-level distance error and the weekly effect; it did not have the invariant-breach count, which only the composition gate could produce. Measured, new violations introduced per 36 plans:
+
+| | same benchmark | ±4–8% | ±12.5% | +20.8% |
+|---|---|---|---|---|
+| **clause 3 off** (shipped) | **0**, byte-identical | **0** | 9 | 24 |
+| clause 3 on | 0, byte-identical | **10–13** | 21 | 59 |
+
+Re-deriving the distance moves the week's delivered volume, so §2's `INV-PLAN-DELIVERED-RAMP` and the minimum session size begin breaching **in the ±4–8% band that is the common case**. A fix that breaches a load rule at the common magnitude is not a fix, and whether the remedy is for the week to absorb it (ADR-022's mirror) or for the plan to be re-sized is this board's question, not a defect fix's. Filed as `RECAL-DISTANCE-CLAUSE3-01`.
+
+🔻 **AND CLAUSES 1 AND 2 CONTRADICT EACH OTHER ON ONE ROW SHAPE.** A **distance-anchored rep row** — 6 × 1600 m — run slower takes longer, so a fixed dose (clause 1) and a re-derived pace (clause 2) cannot both hold, and §8's `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` correctly fires: **9 sessions at −12.5%, 24 at +20.8%, zero at ±4–8%.** ⚠️ **Leaving those rows stale was measured and is WORSE** — it trips this section's own `INV-PLAN-STEP-PACE-FROM-GUIDE` at *every* magnitude (24–51 per 36 plans). Both options breach something; the smaller and more honest one ships, the residual is a declared register in `recalibrationComposition.test.ts`, and it is filed as `RECAL-DISTANCE-REPS-01`.
+
+**Board:** `RECAL-SIZING-PROPERTY-01`, 2026-10-09 — **CORRECT WITH AMENDMENT** (3: dose protected · re-derivation only · ships as honesty).

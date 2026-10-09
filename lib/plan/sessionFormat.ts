@@ -106,3 +106,34 @@ export function durationForMainSet(mainSetMins: number): number {
   }
   return flooredTotal
 }
+
+
+/**
+ * ⚠️ NO `mainSetForDuration` HERE, AND THAT IS THE POINT. One was written during
+ * RECAL-PACE-TWO-WRITER-01 and deleted the same hour: `mainSetMinutes` above IS
+ * the inverse of `durationForMainSet`, and `durationForMainSet`'s own doc
+ * comment says so in its first line. A second one agreed with it to six decimal
+ * places and still had to go — two functions answering "how long is the main
+ * set?" is how they stop agreeing later. Use `mainSetMinutes`.
+ */
+
+/**
+ * A session's DISTANCE, priced segment by segment at the pace each segment is
+ * actually run (§8 Amendment, 2026-09-04).
+ *
+ * Distance and duration used to be two views of one number — total duration
+ * divided by the work pace — which made them consistent and both wrong, because
+ * the warm-up and cool-down are not run at the work pace.
+ *
+ * ⚠️ MOVED HERE FROM `ruleEngine`, NOT COPIED. It is the arithmetic of this
+ * module's own universal structure, and §125's invariant needs the same answer
+ * the producer computes. Two copies of this expression is how a checker ends up
+ * measuring something adjacent to the thing it guards, which this repo has
+ * recorded three times in one day.
+ */
+export function segmentPricedDistance(
+  mainMins: number, workPaceMinPerKm: number, easyPaceMinPerKm: number,
+): number {
+  const total = durationForMainSet(mainMins)
+  return (total - mainMins) / easyPaceMinPerKm + mainMins / workPaceMinPerKm
+}

@@ -240,7 +240,24 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   // none of these six appear in one — they govern the engine's willingness to RESHAPE a plan
   // and a surface's willingness to pass a verdict. A `Plan => Violation[]` cannot reach them
   // by construction, which is the liveness harness's own `static` category.
-  { n: 124, by: 'test', ref: 'lib/coaching/reshapeLimits.test.ts' },  // A reshape must be rare, and driven by a signal that is not noise  // A run is scored against the band its SESSION prescribes, not the band its TYPE names. ⚠️ `by: 'test'` AND NOT `'invariant'`, DELIBERATELY: `validatePlan()` takes a `Plan` and asks whether the plan is legal, while §123 asks whether the SCORER and the CATALOGUE agree — a question about two modules that no plan can answer. Shoehorning it into `plan-invariants.md` would make it read a plan it does not need. 🔴 `INV-SCORE-PRESCRIBED-REACHABLE` asserts that every session executed exactly as its own `main_set_structure` prescribes can reach 100 on HR discipline, over `generateRulePlan`'s real output across five cohorts — not a fixture. It carries its own falsification arm: the same perfect execution scored under the pre-§123 TYPE-only rule goes RED on `progressive_tempo`, which is the session that was wrong. ⚠️ What it does NOT cover: the 93.5% of live analyses with no per-zone histogram, which still fall through to the legacy Z2-anchored figures.
+  { n: 124, by: 'test', ref: 'lib/coaching/reshapeLimits.test.ts' },
+  // §125 — a recalibration re-derives; it never re-selects (RECAL-SIZING-PROPERTY-01,
+  // Coaching Board 2026-10-09). CLAUSE 2 is the enforced one:
+  // `INV-PLAN-STEP-PACE-FROM-GUIDE` asserts every paced work step carries a band
+  // this plan's own guide produces. 0 false fires on 14,268 swept plans and fires
+  // on all 3 live plans that carry the defect.
+  //
+  // ⚠️ CLAUSE 1 (the dose is untouched) and the no-op property are covered by
+  // `recalibrationComposition.test.ts`, not by the invariant — `validatePlan`
+  // takes ONE plan and both are statements about a plan BEFORE and AFTER a
+  // writer, which no single plan can answer. Same reasoning as §123's `by: 'test'`.
+  //
+  // 🔻 CLAUSE 3 (distance re-derived) IS RULED AND DEFERRED, with the measurement
+  // the ruling lacked: re-deriving it introduces 10–13 INV-PLAN-DELIVERED-RAMP
+  // breaches per 36 plans in the ±4–8% common band. Filed RECAL-DISTANCE-CLAUSE3-01.
+  // This entry is `invariant` for what shipped, and the deferral is named in §125
+  // rather than left as a principle claiming enforcement it does not have.
+  { n: 125, by: 'invariant', ref: 'INV-PLAN-STEP-PACE-FROM-GUIDE' },  // A reshape must be rare, and driven by a signal that is not noise  // A run is scored against the band its SESSION prescribes, not the band its TYPE names. ⚠️ `by: 'test'` AND NOT `'invariant'`, DELIBERATELY: `validatePlan()` takes a `Plan` and asks whether the plan is legal, while §123 asks whether the SCORER and the CATALOGUE agree — a question about two modules that no plan can answer. Shoehorning it into `plan-invariants.md` would make it read a plan it does not need. 🔴 `INV-SCORE-PRESCRIBED-REACHABLE` asserts that every session executed exactly as its own `main_set_structure` prescribes can reach 100 on HR discipline, over `generateRulePlan`'s real output across five cohorts — not a fixture. It carries its own falsification arm: the same perfect execution scored under the pre-§123 TYPE-only rule goes RED on `progressive_tempo`, which is the session that was wrong. ⚠️ What it does NOT cover: the 93.5% of live analyses with no per-zone histogram, which still fall through to the legacy Z2-anchored figures.
   { n: 120, by: 'unverified',
     why: 'RATIFIED, NOT SHIPPED (Coaching Board 2026-09-21, HM-ANCHOR-VS-GOAL-01). '
        + 'On a time-target plan the HM anchor must resolve to GOAL pace, as T has since '

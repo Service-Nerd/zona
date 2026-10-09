@@ -1,3 +1,4 @@
+import { GENERATION_CONFIG } from './generationConfig'
 import type { Session } from '@/types/plan'
 
 /**
@@ -100,4 +101,20 @@ export function sessionKmSelfPaced(
   if (!session) return 0
   if (session.distance_km != null) return session.distance_km
   return sessionKm(session, paceBandMidpointMinPerKm(session.pace_target))
+}
+
+/**
+ * Round a distance to `GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM`.
+ *
+ * ⚠️ MOVED HERE FROM `ruleEngine`, where it was private, so the INVARIANT LAYER
+ * can round the way the producer rounds. §125's size check asks whether any
+ * admissible dose prices the stored distance, and "prices" means *rounds to* —
+ * a second copy of this expression in the checker would be the "checker reads a
+ * different source from the producer" class, which this repo has recorded three
+ * times in one day. `invariants` cannot import `ruleEngine` (that is the cycle),
+ * so the shared helper lives with the other distance questions.
+ */
+export function roundDistance(distKm: number): number {
+  const p = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+  return Math.round(distKm / p) * p
 }

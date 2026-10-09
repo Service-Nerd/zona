@@ -205,6 +205,41 @@ export const GENERATION_CONFIG = {
     min_slot_km: 7,   // 5K + ~1km warm-up + ~1km cool-down
   },
 
+  // CoachingPrinciples §125 — "a recalibration re-derives; it never re-selects."
+  // The DECLARED SET OF FIELDS a confirmed recalibration may write on a forward
+  // session, and the only reason it is a constant rather than a comment is that
+  // `recalibrationScope.test.ts` compares it against the fields the code
+  // actually writes, in BOTH directions. A field that appears here and is never
+  // written is a promise nothing keeps; a field written and not declared here is
+  // the defect this section exists to prevent — `applyRecalibration` wrote
+  // `pace_target` on every quality session with no declared licence to, and
+  // undid §120 on every recalibrated plan for as long as it did.
+  //
+  // ⚠️ `duration_mins` IS ABSENT ON PURPOSE. It is the work-minute dose, and
+  // Willy's binding amendment is that the dose is the invariant: distance
+  // follows the dose, never the reverse. Adding it here is a Coaching Board
+  // question, not an implementation detail.
+  RECALIBRATION_SCOPE: {
+    // Written on every re-priced session type.
+    //
+    // ⚠️ `hr_target` IS NOT HERE, AND IT WAS WRITTEN BEFORE THIS ITEM. HR zones
+    // derive from max and resting HR (§14), neither of which a BENCHMARK moves,
+    // so a recalibration has nothing to say about them — and the flat write it
+    // used to do put THRESHOLD HR on VO2max sessions whose own zone string said
+    // Zone 4-5 (45 sessions across 36 plans, at every magnitude including a
+    // no-op). Removing the field from this list is what makes the write
+    // impossible rather than merely absent.
+    session_fields: ['pace_target'],
+    // Written on structured (quality / tempo / intervals) sessions only,
+    // because only their distance is segment-priced from the work pace.
+    structured_only_fields: ['distance_km'],
+    // Written inside `derived_set`, per step, and only where the step's stored
+    // band is the band its anchor meant at the OLD fitness.
+    derived_step_fields: ['pace'],
+    // Plan-level, so the plan records what it was priced at.
+    meta_fields: ['vdot', 'vdot_training_anchor', 'benchmark', 'vdot_discount_applied_pct'],
+  },
+
   // CoachingPrinciples §64 — "six-on / one-off is the upper limit for non-elite
   // runners; seven-on is overreaching dressed as commitment." A runner who
   // selects 7 available days still gets 6 training days and one rest day.

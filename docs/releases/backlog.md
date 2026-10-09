@@ -950,53 +950,89 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > ⚠️ **Ops-only. No runner-facing surface, no prescription, no tier, engine untouched** — the
 > founder's "minimum negative impact" constraint.
 
-### 🔴 `RECAL-PACE-TWO-WRITER-01` — recalibration moves the header and HR and never reaches the prescription *(filed 2026-10-09)* ⚙️ **NO BOARD** *(defect fix restoring §120 and ADR-014's documented intent)*
+### ✅ `RECAL-PACE-TWO-WRITER-01` — **SHIPPED 2026-10-09.** Recalibration re-prices the prescription ⚙️ **NO BOARD** *(defect fix)* + 🏃 **COACHING BOARD** *(§125 ruled, RECAL-SIZING-PROPERTY-01)*
 
-> 🔴 **A LIVE ENGINE DEFECT, AND MY OWN RCA HAD IT BACKWARDS TWICE.** I first said her
-> plan predated `RACE-ANCHOR-CV-OVERRIDE-01` (2026-10-06). **Her plan was built
-> 2026-10-08 12:53, two days after it**, and the PRE-fix engine gives the correct pace on
-> her input — so that fix is not the cause. I then said *"the engine is clean, regenerating
-> gives 0 HEADER-PACE hits"*. **That measurement was an artefact of my own input:** I
-> regenerated from `meta.generator_input` (**24:00** 5K) while the plan was built and then
-> recalibrated at **26:00**. Regenerating at 26:00 also gives 0 hits. **The generator is
-> clean at both benchmarks; the RECALIBRATION writer is not.**
+> ✅ **Fixed, in four stages, each with its own gate.** `applyRecalibration` rewrote `pace_target`
+> and `hr_target` only, so a confirmed recalibration moved the display and left the prescription.
+> Now: steps re-priced from their recovered structural anchors, header **scaled** (not recomputed,
+> so a no-op is byte-identical), the progression ramp re-priced, and the HR write **removed**.
 >
-> **`applyRecalibration` (`ruleEngine.ts:6126`) has two defects, and the second is the
-> serious one:**
+> 🥇 **THE COMPOSITION GATE FOUND TWO MORE LIVE DEFECTS THE ITEM DID NOT KNOW ABOUT**, because
+> **zero harnesses had ever called `applyRecalibration`** — not the 14,268-plan sweep, not the
+> 6,066-case parity grid, not the cohort or fitness harnesses: **(a)** the HR write put THRESHOLD
+> HR on VO2max sessions whose own zone string said Zone 4–5, **45 sessions across 36 plans, at every
+> magnitude including a no-op**; **(b)** the progression RAMP (`5:58 → 5:12 /km`) matched no single
+> anchor band and was left stale on every recalibration.
 >
-> | | |
-> |---|---|
-> | **(a)** | It sets every quality session's `pace_target` to the single generic band `pace.qualityPaceStr`, which **undoes §120 / HM-ANCHOR-VS-GOAL-01** — the ruling that the header is the ROW'S OWN anchor. One flat band replaces the three a clean plan carries, so 7 of her 9 quality sessions display a header their own work steps contradict |
-> | **(b)** | 🔴 **It never re-resolves `derived_set`, so the actual prescribed work steps keep the PRE-recalibration paces.** It rewrites `pace_target` and `hr_target` and nothing else. ADR-014 says a confirmed recalibration *"rewrites forward paces"*. **It rewrites the display and leaves the prescription.** Her steps are still priced at her faster 24:00 fitness (CV **5:12–5:27**) after she recalibrated DOWN to 26:00 — **~25 s/km too fast, on a knee history.** This is the opposite direction of harm from what the stale item below claimed |
+> 🔴 **AND IT FOUND ONE OF MINE: my first fix was not idempotent.** Recalibrating a runner to the
+> benchmark they already held introduced **72 new violations across 36 plans**, because the header
+> was *recomputed* through the generator's own owner — a legitimate branch, the wrong one here, since
+> it emits a different FORM than generation wrote. Fixed by scaling the stored band.
 >
-> ✅ **REPRODUCED EXACTLY, not inferred.** Generate her input @24:00 → vdot 40.2, **3**
-> quality bands, **0** hits. Run `applyRecalibration` @26:00 from week 1 → vdot 36.6, **1**
-> band `5:36–5:52`, **7** hits, and **the identical four work-step pace strings her stored
-> plan carries**. Script: `scripts/recalibration-header-drift.ts` (read-only).
+> **Verified:** 537 files / 4,807 tests · production build clean · `verify:parity` **IDENTICAL,
+> 6,066 cases** (generation provably untouched) · sweep **0 new violations on 14,268 plans** ·
+> liveness **woken** · composition gate 10 arms, falsified 3 ways (revert the header scale, stop
+> re-pricing steps, declare the dose writable).
+
+### 🏃 `RECAL-DISTANCE-CLAUSE3-01` — §125 clause 3 is ruled and NOT built; here is the number the ruling lacked *(filed 2026-10-09)* 🏃 **COACHING BOARD**
+
+> The board ruled that a recalibration re-derives **everything** descending from pace, distance
+> included, having measured the session-level error (mean 7%, worst 11.9%) and the weekly effect
+> (0.5–0.8%). It did **not** have the invariant-breach count, which only the composition gate could
+> produce. New violations introduced per 36 plans:
 >
-> **Blast radius, measured across all 32 stored plans:** **3** carry the flat-single-band
-> signature — `c5d3ae8b` (7 hits), `3cc7c3a9` (8 hits), `8a2858ab` (5 hits). A 4th
-> (`4b037d2c`, 1 hit, 3 bands) is the separate §22-vs-§85 `warn` case, not this. **0** plans
-> set `meta.recalibrations_applied`, so that field cannot be used to find them — the
-> signature is the flat band plus `meta.benchmark != meta.generator_input.benchmark`.
+> | | same benchmark | ±4–8% | ±12.5% | +20.8% |
+> |---|---|---|---|---|
+> | **clause 3 off** (shipped) | **0**, byte-identical | **0** | 9 | 24 |
+> | clause 3 on | 0, byte-identical | **10–13** | 21 | 59 |
 >
-> ⚠️ **It also leaves `meta.generator_input` stale**, which is what misled me: the plan's
-> stored input disagrees with the benchmark the plan was actually priced at, so any
-> regeneration-based check silently compares two different runners.
+> Re-deriving the distance moves the week's delivered volume, so §2's `INV-PLAN-DELIVERED-RAMP` and
+> the minimum session size breach **in the ±4–8% band that is the common case**. ⚠️ **A fix that
+> breaches a load rule at the common magnitude is not a fix.** Whether the week absorbs it
+> (ADR-022's mirror) or the plan is re-sized is the board's call. The one line it needs is in
+> `ruleEngine.ts`'s deferral comment; `scripts/recalibration-sizing-residual.ts` regenerates the
+> numbers.
+
+### 🏃 `RECAL-DISTANCE-REPS-01` — §125's clauses 1 and 2 contradict each other on one row shape *(filed 2026-10-09)* 🏃 **COACHING BOARD**
+
+> A **distance-anchored rep row** — 6 × 1600 m — run slower takes longer. Clause 1 fixes the
+> work-minute dose (Willy, binding); clause 2 re-derives every pace. Both cannot hold, and §8's
+> `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` correctly fires: **9 sessions at −12.5%, 24 at
+> +20.8%, zero at ±4–8%.**
 >
-> **Fix, in order:** (1) `applyRecalibration` writes the per-anchor header via the
-> generator's own owner and re-resolves `derived_set`, with an arm that fails if a
-> recalibrated plan gains a HEADER-PACE hit or keeps a stale step pace; (2) then repair the
-> 3 stored plans by re-running the corrected recalibration with each plan's OWN
-> `meta.benchmark` — deterministic, through the governed owner, inventing no prescription,
-> with a per-plan before/after diff shown before anything is written. **No runner contact
-> needed for either step.**
->
-> ⚠️ **Not this item, still open:** `auditPlanQuality` flags `WEEK1-LEAP` on `c5d3ae8b` —
-> declared **5 km/week → week 1 is 14 km, ×2.8**, knee history. Her inputs are incoherent
-> (longest 6 km > weekly 5 km, caught by `INV-INPUT-LONGEST-LE-WEEKLY`). **Founder has ruled
-> ZERO runner contact**, so this is settled by taking the conservative reading (5 km/week is
-> true) and belongs to the input-coherence rule, not to her.
+> ⚠️ **Leaving those rows stale was measured and is WORSE** — it trips §125's own
+> `INV-PLAN-STEP-PACE-FROM-GUIDE` at *every* magnitude (24–51 per 36 plans). Both options breach
+> something; the smaller ships, held as a **declared register** in
+> `recalibrationComposition.test.ts` so anything new fails the build. Options for the board: the
+> duration follows (clause 1 amended), or the reps' distance shrinks (which clause 2 forbids as
+> re-selection).
+
+### 🏃 `RECAL-EASY-DURATION-01` — the easy-run mirror, deliberately out of scope *(filed 2026-10-09)* 🏃 **COACHING BOARD**
+
+> An easy run is distance-anchored from the week's volume budget and its duration is
+> `dur(km, easyPace)`, so it IS pace-derived and §125 clause 3 reads as covering it. Excluded on
+> purpose: growing a beginner's prescribed minutes is a **load change** on the cohort whose sessions
+> are **95.8% duration-anchored**, and that cohort was not in the submission the board measured.
+
+### 🏃 `RECAL-MIXED-MEAN-01` — an over-under keeps the category band, not §85's mean *(filed 2026-10-09)* 🏃 **COACHING BOARD**
+
+> **82 of 297** generated quality sessions are mixed-anchor (`progressive_tempo`,
+> `tempo_over_under`). Their header is §85's time-weighted mean, which needs step weights — and
+> **192 of their 228 work-step lengths are `parameter` kind** whose values are not stored, so the
+> mean cannot be recomputed. They are re-priced by scaling (never stale) but a future exact fix needs
+> the variant params stamped at generation. `INV-PLAN-HEADER-PACE-MATCHES-WORK` skips those rows by
+> design, so nothing is unguarded that was guarded before.
+
+### ⚙️ `PLAN-VDOT-ROUNDTRIP-01` — a plan's own bands are not reproducible from its own metadata *(filed 2026-10-09)* ⚙️ **NO BOARD**
+
+> Generation prices from the **unrounded** VDOT and stamps it **rounded to 1dp**, so rebuilding the
+> guide from `meta.vdot` / `meta.vdot_training_anchor` reproduces every band **one second out**.
+> Found when `INV-PLAN-STEP-PACE-FROM-GUIDE` compared band STRINGS and false-fired **25,811 times**
+> across 14,268 plans, every one of them that one second. The invariant now compares numerically at
+> §19's 3%, so this is not blocking — but a plan that cannot describe itself is a trap for the next
+> checker. `applyRecalibration` already prices from the stamped values; generation does not.
+> ⚠️ Changing it moves generated output by ~1 s/km on every band, so it needs a parity run and a
+> declared reason, not a quiet fix.
 
 ### ✅ `RESHAPE-MOMENT-02` — **SHIPPED 2026-10-08.** The homepage runs the engine 🧭 **DESIGN BOARD** + 🏃 **COACHING BOARD** *(both sat)*
 
