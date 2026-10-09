@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-09 — RECAL-LIVE-REPAIR-01 · the bug deleted the evidence needed to fix it
+**Shipped:** a dry-run-first script that re-prices the live plans left holding paces from a fitness their runner no longer has, with a per-plan before/after diff to approve before anything is written.
+
+**Dev learning:** **the accountable rule that makes the fix safe is the same rule that makes the repair impossible.** `applyRecalibration` re-prices a step only when its stored pace is what its anchor meant at the *old* fitness — rebuilt from `meta.vdot` — and that is exactly what stops it re-aiming a goal-paced session. But the broken writer had already moved `meta.vdot` to the new benchmark and left the steps behind, so on the damaged plans nothing matches its own metadata. My first script was a **no-op on all three**. The only surviving record of what those steps were priced at is `meta.generator_input.benchmark`: the stale field that made my RCA wrong this morning is the evidence the repair runs on. Two passes through the owner — reconstruct the self-consistent prior state, then re-price — and no hand-written metadata anywhere.
+
+**Product/creator learning:** a repair script's real output is the *diff*, not the write. Once the dry run printed per-session before/after, the decisions made themselves: one plan obviously repairable, one obviously not, one holding a session at a third fitness that nothing records. I would not have trusted my own description of any of those; I trusted the table.
+
+**AI-building learning:** I got the header pass wrong twice and **the gate caught both, not my reading of the code.** First I scaled it — but the header was the one field the broken writer got *right*, so scaling double-applied and produced a header slower than its own steps (13 new violations). Then I restored it wholesale — right for threshold rows, wrong for the CV row, because the writer had flattened every header to one band. Both times the refusal arrived as a number from the gate. The lesson I keep relearning: write the gate before the clever bit, and let it tell you you are wrong.
+
+**The honest bit:** three wrong versions of a script whose job is one function call, and the reason each was wrong was something I could have predicted by reading the code I had written an hour earlier. I also pushed the script with a `feat(` scope and no registry row, and the push hook told me the all-time debt baseline had grown 291 → 292. The records only stay honest because something counts them.
+
+**Hook material:** "The bug deleted the information needed to fix the bug. The only surviving copy was the stale field that had made my diagnosis wrong in the first place."
+
+**Postable?:** yes — the "accountable rule blocks its own repair" shape is unusual and genuinely instructive.
+
 ## 2026-10-09 — RECAL-PACE-TWO-WRITER-01 · the recalibration moved the display and left the prescription
 **Shipped:** a confirmed benchmark recalibration now re-prices a plan's actual work steps and header instead of only the header, and no longer touches heart rate at all.
 
