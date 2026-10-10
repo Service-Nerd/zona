@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-10 — LR-PEAK-NOT-LONGEST-01 · I got sign-off on a number that was wrong, and had to go back
+**Shipped:** a `warn` monitor for the plan's longest run sitting in the base phase. No engine change, because the one I wrote did nothing.
+
+**Dev learning:** a tie-break destroyed the whole premise. I found "the longest run" by scanning weeks and keeping the first maximum I met — and base weeks come first, so every plan whose long run **never grows** (10km, 10km, 10km, 10km) got counted as "longest run in base". That is a flat plan, not a backwards one. First-wins said **13.6%**; strictly greater said **0.0%**. Then the single real live case dissolved the same way: its 23 km sits in a **deload** week, which this rule and every sibling rule exclude by design, and the genuine defect there (a deload carrying 41 km against the previous week's 32) was already being flagged nightly by a different invariant.
+
+**Product/creator learning:** the founder asked me to make it simple, I said "1 plan in 10", he said yes — and the number was mine and wrong. Going back to him was the only honest move, and it cost less than building a fix for a defect with no cases would have. He then approved the monitor-only version in one word. **A wrong number given confidently is worse than a hedge, because he acts on it.**
+
+**AI-building learning:** I wrote the engine pass before measuring whether it fired. It was **identical with and without**, on 2,294 plans. Deleting it felt like losing the work; shipping it would have been a green tick with nothing behind it, which this repo has paid for repeatedly. The thing that saved the invariant from the same fate was the liveness harness: it wakes the rule from its **own** mutation battery, so "fires on nothing today" is demonstrably a healthy silence rather than a dead one.
+
+**The honest bit:** I cited the `INV-PLAN-PEAK-IN-PEAK-PHASE` tie lesson earlier the same day and then made exactly that mistake, in the measurement I used to brief a board and get a sign-off. Three separate claims in this item turned out to be artefacts of how I counted, not facts about the engine.
+
+**Hook material:** "base 10km, build 10km, peak 10km, taper 10km" counted as a training-plan defect in 312 plans, because my loop kept the first maximum it met.
+
+**Postable?:** yes — the tie-break is a tiny, extremely repeatable bug with an expensive blast radius.
+
 ## 2026-10-10 — BASEBUILD-HANDOVER-01 and BASEBUILD-ADJUST-REBUILD-01 · the measurement kept changing what the build was
 **Shipped:** a base-build block that ends now says so and offers the race plan; the Adjust sheet on such a plan rebuilds the base build and shows the two rows that work.
 
