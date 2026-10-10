@@ -11,6 +11,7 @@ import {
   type CodeVerdict,
 } from '@/lib/ops/regressionVsNewRule'
 import { summarisePlanAges, type PlanAgeRow } from '@/lib/ops/planAuditAges'
+import { summariseCodeStep } from '@/lib/ops/planAuditCodeStep'
 import type { Plan } from '@/types/plan'
 
 // GET/POST /api/ops/plan-audit — PLAN-AUDIT-01 daily constitutional audit.
@@ -103,9 +104,18 @@ export async function POST(req: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(1000)
   const lastSeen = new Map<string, string>()
+  // AUDIT-STEP-UNDECLARED-01 — the previous SUMMARY's code set, read from the rows
+  // this loop already has rather than a second query. `null` means no baseline in
+  // the window, and `summariseCodeStep` then declines to call anything new.
+  let prevCodesSeen: string[] | null = null
   for (const row of history ?? []) {
     const d = row.detail as Record<string, unknown> | null
-    if (!d || d.source !== 'plan-audit') continue
+    if (!d) continue
+    if (d.source === 'plan-audit-summary') {
+      if (prevCodesSeen == null && Array.isArray(d.codes_seen)) prevCodesSeen = d.codes_seen as string[]
+      continue
+    }
+    if (d.source !== 'plan-audit') continue
     if (!lastSeen.has(row.user_id)) {
       lastSeen.set(row.user_id, JSON.stringify(((d[CODES_KEY] as string[]) ?? []).slice().sort()))
     }
@@ -117,6 +127,9 @@ export async function POST(req: NextRequest) {
   // for why this is the number that makes the audit readable.
   // BOTH timestamps per breaching plan; `summarisePlanAges` decides what each means.
   const invalidPlanRows: PlanAgeRow[] = []
+  // Every code seen this run, for the fleet-level step. Per-USER transitions are
+  // already detected below; this is the FLEET view, which is what was missing.
+  const codesThisRun: string[] = []
   // OPS-DIGEST-STORED-PLAN-DEBT-01 — WHY did this code set change?
   //
   // The transition logic above is right and is not the problem: it fires once per change,
@@ -202,6 +215,7 @@ export async function POST(req: NextRequest) {
     // identically every day still counts toward "how much of the fleet is
     // breaching", and excluding it would make the fleet look like it was
     // healing every time a finding went quiet.
+    codesThisRun.push(...codes)
     invalidPlanRows.push({
       created_at: row.created_at as string | null,
       updated_at: row.updated_at as string | null,
@@ -323,6 +337,10 @@ export async function POST(req: NextRequest) {
   const summary = {
     checked, invalid, skipped,
     ...summarisePlanAges(invalidPlanRows),
+    // AUDIT-STEP-UNDECLARED-01 — `checked` and `invalid` alone cannot say WHY the
+    // number moved, and on 2026-10-06 it moved with `checked` flat. This names the
+    // rule. Absent when empty or when there is no baseline; see the module.
+    ...summariseCodeStep({ codesThisRun, prevCodesSeen }),
     ...(repairable ? { repairable } : {}),
   }
 
