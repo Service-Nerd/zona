@@ -8086,11 +8086,17 @@ Filed by the board the same day and closed before a sitting was staged, because 
 
 ---
 
-### 🔻 `MIN-KM-DAY-BOUNDARY-01` — nine week-instances at 4.5 km/day, and it may be correct as it stands 🏃 **COACHING BOARD** *(filed 2026-10-10, P3)*
+### ✅ `MIN-KM-DAY-BOUNDARY-01` — **CLOSED 2026-10-10: correct as it stands, measured** 🏃 **COACHING BOARD** *(no ruling needed)*
 
-The precise residual left by `V1-LOWVOL-MULTIDAY-01`'s withdrawal. **Nine of 936 week-instances place 18 km over 4 days = 4.5 km/day**, just under the 5 km floor, all at `cwk=10–15` in weeks 1 and 3: `floor(18/5) = 3` permits three days and four are placed.
+The item asked for one measurement before anything was proposed, and the measurement closes it.
 
-⚠️ **This is a rounding boundary, not a doctrine gap, and `MIN_KM_PER_TRAINING_DAY`'s own reasoning may already dismiss it:** *"sub-floor sessions run at 13% below 2 km/day, 7% at 2–3, and ZERO at 3 km/day and above."* At 4.5 km/day the measured harm is **zero**. **Measure the sub-floor session count on those nine before proposing anything** — if it is zero, this closes as correct-as-is rather than as a fix.
+📐 **All nine week-instances, measured:** `18 km / 4 days = 4.5 km/day`, **smallest session exactly 4.0 km on every one** — which is the resolved easy floor for that runner (`sessionFloorsFor(8).easy`). **Sub-floor sessions: 0. Min-session invariant violations: 0.**
+
+🔴 **SO THE `daysVolumeCanFill` OVERSHOOT PRODUCES NO HARM, AND THE REASON IS THAT A DIFFERENT GUARD CATCHES IT.** `MIN_KM_PER_TRAINING_DAY` bounds the day COUNT; `MIN_SESSION_DISTANCE_KM` bounds the session SIZE. The nine weeks exceed the first by one day and land exactly on the second. `MIN_KM_PER_TRAINING_DAY`'s own recorded reasoning predicted this: *"sub-floor sessions run at 13% below 2 km/day, 7% at 2–3, and **ZERO at 3 km/day and above**."* At 4.5 km/day, zero is what it is.
+
+✅ **No new gate, and that is deliberate.** `INV-PLAN-MIN-SESSION-SIZE` already guards the property that matters, it fires 0 here, and it is **provably wakeable** — not in `invariantLivenessBaseline.json`'s unproven register. A second check over the same property would be the parallel-semantics defect this repo keeps paying for.
+
+⚠️ **What this does not prove:** that four days at 4.5 km/day is the *best* shape for a 10–15 km/week runner, only that it breaches nothing. That is a different question and nobody has asked it.
 
 ### ⚖️ THE FOUR TRIAGE DECISIONS — ALL RULED 2026-10-09
 
