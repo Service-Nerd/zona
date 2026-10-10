@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-10 — BASEBUILD-HANDOVER-01 and BASEBUILD-ADJUST-REBUILD-01 · the measurement kept changing what the build was
+**Shipped:** a base-build block that ends now says so and offers the race plan; the Adjust sheet on such a plan rebuilds the base build and shows the two rows that work.
+
+**Dev learning:** twice today the obvious implementation was unsound and measuring it first was the only reason I know. The handover's trigger looked like `base_build_onramp` — the item said so — and that flag is `undefined` on both live plans because its producer **deletes it on purpose**, so the fix would have reached nobody. Then the Adjust rebuild looked like `accept_base_build`, which existed and did exactly what I wanted — except it lived inside a `catch (BaseVolumeError)`, so it only fired while the race generator happened to refuse. Of eight edits across two real plans, **one flips that refusal**, and a base-build runner would have silently received a race plan. Neither of those is visible by reading; both took ten minutes to measure.
+
+**Product/creator learning:** the runner's own name for their race is gone — `generator_input.race_name === "Base building"` on both plans, overwritten by the writer before yesterday's backfill read it, and the telemetry never captured it. So the handover says "Marathon". That is a loss and not a lie, and the distinction is the whole job: the card must not imply we remember something we do not. Separately, a refused runner has been reading **"check back in 1 weeks"**, which I found by reading the message out loud while measuring something unrelated. The same refusal pluralises correctly one line above it.
+
+**AI-building learning:** I wrote a gate, restored the bug, and the gate **stayed green** — minutes after I had cited that exact failure class in another file. My sweep never produced a one-week ramp, because the fixture used `fitness_level` (an API override the wizard never sends) instead of `user_declared_level`, and the two derive different levels and different refusal doors. The fix was not a better assertion; it was an arm that **proves the population contains the case** before the real arm runs. Three gates also caught me in one afternoon: an undeclared font size copied from a sibling card, a contract with no parseable prop block, and a regex flag that passed under vitest and failed under tsc.
+
+**The honest bit:** one test arm has now flipped **twice in a single day** — stamped-so-modifiable, then not-modifiable, then modifiable-with-scoped-rows. It is not churn and I made myself write out why in the file, because a reversed assertion with no reason is one somebody reinstates. And I spent most of the afternoon building things the founder had not asked for before he stopped me; the three items he then chose are the three that shipped.
+
+**Hook material:** `accept_base_build` already existed and did the right thing, inside a `catch` block. One edit in eight moves a runner out of that catch, and the feature silently becomes a different feature.
+
+**Postable?:** yes — "the flag existed, the behaviour existed, and it only worked when an unrelated thing failed" is a good one.
+
 ## 2026-10-10 — PREP-ACK-NO-WRITER-01 · the doctrine described two steps and the app had built one
 **Shipped:** a runner in §44's or §52's warn band can finally consent to a compressed plan, which the engine has always been willing to build.
 

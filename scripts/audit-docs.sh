@@ -598,7 +598,14 @@ say "── CONTRACTS: a SHARED component with no contract at all ──"
 # This asks the inverse: a component under `components/shared/` that EXPORTS a prop
 # interface and is imported by more than one file should have a contract. Existing
 # debt is declared below so it is visible and cannot grow.
-UNCONTRACTED_BASELINE=60   # ⚠️ 59 → 60, REVERTED same day: `session-detail-notes.md` documents a NOTE FAMILY, not a component's props, so COMPONENT-CONTRACT-GATE-01 refused it in docs/contracts/components/ and it moved a level up. The debt was never paid — claiming it was is the register-over-counting failure this repo records.
+UNCONTRACTED_BASELINE=59   # ⚠️ 60 → 59, 2026-10-10: `RefusalView` gained a real contract in
+# `docs/contracts/components/refusal-view.md` because `PREP-ACK-NO-WRITER-01` changed its PROP
+# INTERFACE, and `COMPONENT-CONTRACT-GATE-01` accepted it (fenced `interface` block + a
+# `**Component:**` line, both of which it refused on my first attempt). ⚠️ THIS IS A REAL
+# PAYMENT, UNLIKE THE LAST ONE: the earlier 59 was reverted because `session-detail-notes.md`
+# documents a NOTE FAMILY rather than a component's props and the gate rightly refused it, so the
+# debt was never paid. This one is a component contract the gate verifies against the component.
+# Prior note, kept: ⚠️ 59 → 60, REVERTED same day: `session-detail-notes.md` documents a NOTE FAMILY, not a component's props, so COMPONENT-CONTRACT-GATE-01 refused it in docs/contracts/components/ and it moved a level up. The debt was never paid — claiming it was is the register-over-counting failure this repo records.
 #                          # 🔴 61 → 60 (LEDGER-COACH-SITE-REMOVE-01, 2026-10-05) AND IT IS A THIRD KIND OF MOVE, NEITHER PAID NOR DELETED.
                            # `LedgerCard` is STILL UNCONTRACTED. It had two importers (DashboardClient + MeScreen); removing the Coach render
                            # site left ONE, so it fell below this arm's `users >= 2` threshold and dropped out of the POPULATION. Lowering the
