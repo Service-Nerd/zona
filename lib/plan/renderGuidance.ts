@@ -53,6 +53,38 @@ const TOKEN_RE = /\{\{\s*(\w+)\s*(?:\|([^}]*))?\}\}/g
 // raw `{{...}}` ever reaching the user.
 const ORPHAN_RE = /\{\{[^}]*\}?\}?/g
 
+/**
+ * Does this string carry a template placeholder? Returns the first one found,
+ * or `null`.
+ *
+ * 🔴 EXPORTED BECAUSE THE CONCEPT HAD TWO PRIVATE COPIES AND WAS ABOUT TO GET A
+ * THIRD (`WEEK-THEME-TOKEN-ENRICH-01`, 2026-10-10). This module owns plan-prose
+ * rendering, so it owns the question "is there a token in here" — `enrich.ts`
+ * needs it at the MERGE boundary to refuse model copy that breaks the prompt's
+ * own rule, and `invariants.ts` carries its own `TOKEN_RE` for
+ * `INV-PLAN-NO-PLACEHOLDER-COPY`.
+ *
+ * ⚠️ IT USES BOTH REGEXES, AND THAT IS THE POINT. `TOKEN_RE` only matches a
+ * WELL-FORMED `{{word}}`; `ORPHAN_RE` is what catches braces it cannot parse,
+ * and a mutation proved last night that a check relying on `TOKEN_RE` alone
+ * stays green when `ORPHAN_RE` is deleted, because every brace in the test table
+ * was well-formed. A guard at a boundary must be the broader of the two: the
+ * cost of refusing a malformed brace is one week of engine voice, and the cost
+ * of accepting one is a literal `{{` in front of a runner.
+ *
+ * ⚠️ `invariants.ts` is deliberately NOT rewired onto this in the same commit —
+ * that would change a LIVE `warn` invariant's fire rate without a measurement,
+ * and its own arms pin the current behaviour. `enrichWeekCopy.test.ts` asserts
+ * this predicate is at least as strict, so the dangerous direction (a token the
+ * invariant flags but the merge let through) cannot open up.
+ */
+export function firstPlaceholder(text: string | null | undefined): string | null {
+  if (!text) return null
+  return text.match(new RegExp(TOKEN_RE.source))?.[0]
+      ?? text.match(new RegExp(ORPHAN_RE.source))?.[0]
+      ?? null
+}
+
 export function renderGuidance(
   text: string | null | undefined,
   ctx: GuidanceContext,

@@ -65,6 +65,32 @@ export async function POST(req: NextRequest) {
 
   const verdict = judgeEnrichHealth(rows)
 
+  // WEEK-THEME-TOKEN-ENRICH-01 (2026-10-10) — the BOUNDARY counter, reported
+  // beside the state verdict and deliberately NOT inside it.
+  //
+  // ⚠️ THIS ROUTE'S HEADER WARNS AGAINST READING ops_events, AND THAT WARNING IS
+  // ABOUT DENOMINATORS, NOT ABOUT EVENTS. The 67% figure was wrong because an
+  // event count was used as a RATE against a denominator that was a subset of
+  // successes. This number is never a rate: it is "how many times the model
+  // handed back a week label or theme containing a placeholder, and the merge
+  // kept engine copy instead". The state the runner HAS is still judged only
+  // from `plans`, which is what `denominator` below says.
+  //
+  // It is here because a new ops kind with no reader is the inert-field class
+  // (`run_walk_strategy`: a writer, no reader, and an invariant that could not
+  // see a screen). `OPS-SUBS-UNHANDLED-SEEN-01`'s rule applies — counted and
+  // reported, never alerting: a rejection is the guard WORKING, so it must not
+  // move `healthy`.
+  const since = new Date(Date.now() - 30 * 86_400_000).toISOString()
+  const { data: rejectRows, error: rejectErr } = await supabase
+    .from('ops_events')
+    .select('created_at')
+    .eq('kind', 'plan_enrich_week_copy_rejected')
+    .gte('created_at', since)
+  // A failed count must read as UNKNOWN, never as zero — "no rows" and "did not
+  // look" are the pair this repo keeps confusing (`OPS-SUBS-UNHANDLED-SEEN-01`).
+  const weekCopyRejected30d: number | null = rejectErr ? null : (rejectRows?.length ?? 0)
+
   console.log(
     `[ops/enrich-health] alert=${verdict.alert} without_voice=${verdict.withoutVoice}`
     + `/${verdict.eligible} (${verdict.withoutVoicePct}%)`,
@@ -76,5 +102,11 @@ export async function POST(req: NextRequest) {
     // event rate, and `plans` is the denominator.
     denominator: 'plans.plan_json.meta.enrichment (NOT ops_events)',
     verdict,
+    // Reported, never alerting, and never a denominator. `null` means the count
+    // could not be read, which is not the same as none.
+    boundary: {
+      weekCopyRejected30d,
+      meaning: 'model-authored week label/theme carrying a {{placeholder}}, refused by the merge; engine copy kept',
+    },
   })
 }

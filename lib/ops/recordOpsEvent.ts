@@ -79,6 +79,21 @@ export type OpsEventKind =
   // limit — doubling spend on a 429 is how a retry becomes an incident.
   | 'plan_enrich_retry_recovered'
   | 'plan_enrich_server_save_failed'
+  // WEEK-THEME-TOKEN-ENRICH-01 (2026-10-10) — the enricher handed back a week
+  // LABEL or THEME containing a `{{placeholder}}`, which its own prompt forbids
+  // in as many words, so the merge kept the engine's copy for that field.
+  //
+  // WHY IT IS OBSERVABLE AND NOT SILENT: ADR-006 makes enrichment degrade
+  // quietly by design, and ENRICH-ATTRIB-01 is the amendment — attribute before
+  // you swallow. Measured at the time: 49 placeholders in `week.theme` across
+  // 11 of 34 live plans, resolving to NOTHING at week level and leaving gapped
+  // sentences. The rate is the only thing that will ever tell us whether the
+  // prompt needs changing or the model drifted, and a rule enforced at a
+  // boundary with no counter is a rule nobody can tune.
+  //
+  // ⚠️ Counted and reported, never alerting — the `preSignupRedemptions` /
+  // `OPS-SUBS-UNHANDLED-SEEN-01` treatment. A rejection is the system working.
+  | 'plan_enrich_week_copy_rejected'
   // GTM-CHARITY-03 (2026-09-11) — a RevenueCat webhook event the handler has no
   // mapping for. It used to reply "received" and do nothing, which is why a
   // comp grant could fail without a trace: the subscriptions row was never

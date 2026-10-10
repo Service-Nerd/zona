@@ -10,6 +10,7 @@ import { isTimeTrial } from './sessionRole'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { labelImplications } from './invariants'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
+import { firstPlaceholder } from './renderGuidance'
 import { EnrichedPlanSchema } from './schema'
 import { withoutEmDashesDeep } from '@/lib/coaching/runnerProse'
 import type { Tier } from './ruleEngine'
@@ -444,7 +445,20 @@ export async function enrich(
     }
   }
 
-  return { plan: mergePlan(plan, result.data, tier), outcome: { status: 'applied' } }
+  // WEEK-THEME-TOKEN-ENRICH-01 — the merge is pure, so attribution happens here,
+  // where `userId` and the rest of the `plan_enrich_*` family already live.
+  const weekCopyRejected: WeekCopyRejection[] = []
+  const merged = mergePlan(plan, result.data, tier, r => weekCopyRejected.push(r))
+  if (weekCopyRejected.length > 0) {
+    void recordOpsEvent('plan_enrich_week_copy_rejected', {
+      user_id: userId,
+      count: weekCopyRejected.length,
+      // The tokens, not the sentences — enough to see WHICH rule the model broke
+      // without logging runner-facing prose into the ops ledger.
+      fields: weekCopyRejected.map(r => `w${r.weekN}.${r.field}:${r.token}`).slice(0, 12),
+    })
+  }
+  return { plan: merged, outcome: { status: 'applied' } }
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -664,10 +678,26 @@ Return the enriched JSON object now.`
 // needed the merge itself under test: both defects it fixes are things the merge
 // does to the enricher's output, and neither is observable from the outside
 // without generating a plan and calling a model.
+export interface WeekCopyRejection {
+  weekN: number
+  field: 'label' | 'theme'
+  /** The offending placeholder, for the ops event. Never the whole sentence. */
+  token: string
+}
+
 export function mergePlan(
   original: Plan,
   enriched: ReturnType<typeof EnrichedPlanSchema.parse>,
   tier: Tier,
+  /**
+   * ⚠️ AN INJECTED SINK, BECAUSE THIS FUNCTION IS PURE AND MUST STAY PURE — its
+   * own header says so, and the tests call it directly with no I/O available.
+   * `recordOpsEvent` therefore cannot go in here; `enrich()` already holds the
+   * `userId` and already records the `plan_enrich_*` family, so the caller
+   * attributes. Same injected-dependency shape as `releaseOnNextFrame(release,
+   * timers?)`, used there for the same reason.
+   */
+  onRejectWeekCopy?: (r: WeekCopyRejection) => void,
 ): Plan {
   // Deep clone — never mutate rule engine output
   const plan: Plan = JSON.parse(JSON.stringify(original))
@@ -686,8 +716,47 @@ export function mergePlan(
   for (const ew of enriched.weeks) {
     const week = plan.weeks.find(w => w.n === ew.n)
     if (!week) continue
-    if (ew.label) week.label = ew.label
-    if (ew.theme) week.theme = ew.theme
+    // 🔴 WEEK-THEME-TOKEN-ENRICH-01 (2026-10-10) — THE PROMPT'S OWN RULE, NOW
+    // ENFORCED AT THE BOUNDARY. `buildEnrichUserPrompt` says it in as many
+    // words: "Week labels and themes do NOT contain numerics — never put
+    // placeholders in them." **A rule stated only in a prompt is a request.**
+    // Measured in production: 49 `{{…}}` in `week.theme` across 11 of 34 plans
+    // — `{{session_zone}}` 37, `{{session_distance}}` 8 (both resolve to
+    // NOTHING at week level, because no session is in scope), `{{zone2_ceiling}}`
+    // 4. Rendered, the 37 read as gapped sentences: "Strides appear now on
+    // Wednesday and Sunday. Still all. These short bursts wake the legs."
+    //
+    // 🔴 AND THE FIELD WITH *ZERO* TOKENS IS THE DANGEROUS ONE. `week.theme` has
+    // one render and it goes through `renderPlanProse`, which strips an orphan —
+    // so the failure is a gap. **`week.label` renders RAW at four sites in
+    // `PlanCalendar` (`:596`, `:1040`, `:1044`, `:1120`) with no prose owner**,
+    // so a token there puts a literal `{{session_zone}}` on the Plan screen.
+    // Production carries 0 label tokens today; that is luck, not a guarantee,
+    // and it is why both fields are guarded by one predicate rather than only
+    // the one that has already failed.
+    //
+    // ⚠️ THE REJECTION IS A FALLBACK TO ENGINE COPY, AND IT IS ATTRIBUTED. A
+    // silent degrade is ADR-006's design, but ENRICH-ATTRIB-01 is the amendment:
+    // attribute before you swallow. The caller records
+    // `plan_enrich_week_copy_rejected`.
+    //
+    // ⚠️ WHY NOT ALLOW PLAN-LEVEL TOKENS, which would keep the 4 correct
+    // `{{zone2_ceiling}}`: it is derivable from `planProseContext`'s keys so it
+    // needs no hand-written list, but it is CHOOSING NEW INTENT rather than
+    // restoring the prompt's, and it leaves a token in a field whose only safe
+    // render is one call site — which is `COACH-INTRO-TOKEN-01`'s exact defect.
+    // A week label and a week theme must be complete as written.
+    //
+    // Same family as the §78 branch below: the enricher may add VOICE, it may
+    // not add or remove PRESCRIPTION, and it may not hand us an incomplete
+    // sentence.
+    for (const field of ['label', 'theme'] as const) {
+      const incoming = ew[field]
+      if (!incoming) continue
+      const token = firstPlaceholder(incoming)
+      if (token) { onRejectWeekCopy?.({ weekN: ew.n, field, token }); continue }
+      week[field] = incoming
+    }
     if (!ew.sessions) continue
     for (const [day, es] of Object.entries(ew.sessions)) {
       const session = week.sessions?.[day as keyof typeof week.sessions]
