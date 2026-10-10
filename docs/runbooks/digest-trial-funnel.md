@@ -144,9 +144,63 @@ them at risk.
 ⚠️ **This is an observation query, not an outreach list.** The founder's standing
 instruction is zero contact with runners without his sign-off.
 
+## What the live prompt carries AROUND Q2B, and why the prose is gated too
+
+**Applied to the live routine 2026-10-10.** Q2B is now IN the prompt (it was only ever
+described here), conditional on `at_risk_trialing > 0`. STEP 1's `"Run these TEN queries"`
+became `"Run the queries below … Q2B is conditional; every other query runs every time"` —
+the count was already wrong by one before Q2B existed, and a hardcoded count in a document
+that gains queries is a number that rots.
+
+🔴 **TWO DEFECTS SHIPPED IN THIS PROSE AND BOTH WERE FOUND BY RUNNING IT, NOT BY READING
+IT.** The SQL was correct on every attempt; the instruction that interprets it was wrong
+twice. A prompt's surface is the agent, so it was driven against real and synthetic query
+results three times.
+
+| # | What the instruction said | What it did |
+|---|---|---|
+| 1 | *"RUN Q2B AND RENDER THE ROWS"* | Q2B returns the **whole trial cohort**, so the rows (4) and the KPI (`at_risk_trialing` 1) disagreed. Rendered at face value it **overstates the leak 4×** |
+| 2 | at risk = `days_quiet >= 3` | **`-1` is not `>= 3`.** The sentinel for *no signal at all* — the worst case — failed the only test naming it, so testing `>= 3` alone silently drops it |
+
+Defect 2 is the same shape as a declared zero read as a gap by `> 0`: **a sentinel is not a
+number, and a comparison written for numbers discards it.** It was authored hours after that
+lesson was cited.
+
+**The settled wording, which `digestTrialSqlMirror.test.ts` now pins against the SQL:**
+
+> WHEN at_risk_trialing > 0, RUN Q2B AND RENDER THE ROWS (trial_day, last_seen, days_quiet)
+> — a count says there is a leak and does not say where, and this is the only place the leak
+> becomes actionable. 🔴 Q2B RETURNS THE WHOLE TRIAL COHORT, NOT THE AT-RISK SUBSET: a row is
+> at risk if days_quiet >= 3 OR days_quiet = -1, and the number of those rows MUST EQUAL
+> at_risk_trialing. ⚠️ -1 IS A SENTINEL, NOT A NUMBER — it means no activity signal of any
+> kind and it FAILS a >= 3 test, so testing only >= 3 silently drops the worst case. Render
+> the at-risk rows under the at-risk heading and put any remaining cohort rows in a clearly
+> separate list labelled as context, never under the at-risk heading. If the two numbers
+> disagree, say so and trust at_risk_trialing. days_quiet = -1 means NO activity signal at
+> all, which is the worst case and not a missing value; rank those first. ⚠️ This is an
+> OBSERVATION list, never an outreach list: Russ's standing instruction is zero contact with
+> runners without his sign-off, so never draft a message or suggest emailing them.
+
+⚠️ **Q2B's `where` clause was a SECOND hand-written copy of the trial predicate with no
+gate.** The mirror test parsed only the `## Q2 —` block, so `trialFunnel.ts` and Q2 were
+locked together while Q2B could drift silently — the `deloadCadence` / `tierResolution` class
+this very file's test header names. Gated 2026-10-10: Q2B's four exclusion clauses are now
+compared against Q2's `trial` CTE, and the prose above is compared against the SQL it
+interprets.
+
+⚠️ **The `-1` sentinel has never occurred on live data** — no trialling runner has yet had
+zero signal. The arm is real and unexercised in production, which is why defect 2 needed a
+synthetic case to catch.
+
 ## Re-application
 
 1. Open the routine's prompt at claude.ai (trigger `trig_01P5snwo2k4reDGrX4Z3wkyC`).
-2. Replace the `Q2` block with the SQL above, verbatim.
-3. Paste it back into this file so the transcript stays byte-identical.
-4. `npx vitest run lib/ops/digestTrialSqlMirror.test.ts`.
+2. Replace the `Q2` block with the SQL above, verbatim, and the `Q2B` block likewise.
+3. Re-apply the STEP 1 and STEP 3 prose from § *What the live prompt carries around Q2B* —
+   **the SQL alone is not the change.** Q2B without its rendering rule over-counts the leak
+   4× and drops the no-signal case.
+4. Paste it all back into this file so the transcript stays byte-identical.
+5. `npx vitest run lib/ops/digestTrialSqlMirror.test.ts`.
+6. **Then verify at the surface, not by reading.** Both prose defects above were invisible on
+   the page and obvious on the first run. Drive the instruction against one real day and one
+   synthetic day carrying a `days_quiet = -1` row.

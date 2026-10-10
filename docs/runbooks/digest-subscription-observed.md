@@ -96,6 +96,22 @@ NOT apply to the two new kinds. Add to the Q9 instruction:
 cancellations every time one arrives** — which is worse than the blindness it replaces, and
 is how a section stops being read (NOISE-GATE-01).
 
+## ⚠️ A THIRD change this file did not declare: `limit 20` is gone
+
+The section above says *"Two changes to the existing Q9. Nothing else moves."* **Its own SQL
+block also drops `limit 20`**, which the original Q9 carried. That is a third change, it went
+unstated, and it was found by diffing the delivered prompt rather than by reading this file.
+
+**Measured before accepting it (2026-10-10, live):** the worst 7-day window in the whole
+history of these kinds is **14 rows** — 20 rows all time, first on 2026-09-28 — so a limit of
+20 has never once truncated anything and removing it changes no result today.
+
+🔻 **It is unbounded during a campaign, and this file predicts the number itself:** *"A
+500-runner campaign produces roughly a thousand of these."* At that volume an unlimited Q9
+returns every row into the digest's context every morning. **Put a `limit 200` on it before a
+charity campaign goes out**, which keeps the pre-signup count honest while bounding the pull.
+Not done now: today's ceiling is 14.
+
 ## Re-application
 
 1. Open the routine's prompt at claude.ai (trigger `trig_01P5snwo2k4reDGrX4Z3wkyC`).

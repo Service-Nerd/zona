@@ -28,6 +28,44 @@ function q2Sql(): string {
   return src.slice(open + 6, close)
 }
 
+/**
+ * The Q2B SQL as the runbook records it. Q2B is the "WHO, not how many" query and
+ * its WHERE is a SECOND hand-written copy of the trial predicate — ungated until
+ * 2026-10-10, so Q2 was locked to the lib while Q2B could drift on its own. That
+ * is the `deloadCadence` / `tierResolution` class this file's own header names.
+ */
+function q2bSql(): string {
+  const src = readFileSync(RUNBOOK, 'utf8')
+  const h = src.indexOf('## Q2B — WHO, not how many')
+  if (h < 0) return ''
+  const open = src.indexOf('```sql', h)
+  const close = src.indexOf('```', open + 6)
+  if (open < 0 || close < 0) return ''
+  return src.slice(open + 6, close)
+}
+
+/**
+ * The STEP 3 prose the live prompt carries, as recorded in the runbook: the
+ * blockquote under § "What the live prompt carries AROUND Q2B".
+ *
+ * 🔴 WHY THE PROSE IS GATED AT ALL. The SQL was correct on every attempt and the
+ * INSTRUCTION INTERPRETING IT WAS WRONG TWICE — it told the digest to render
+ * Q2B's rows as the at-risk list (they are the whole cohort, so a 4× overstatement)
+ * and defined at risk as `days_quiet >= 3`, which the `-1` sentinel fails. Neither
+ * was visible on the page; both were obvious on the first run. A rule in a prompt
+ * is not a constraint, so the two properties it must carry are asserted here.
+ */
+function step3Prose(): string {
+  const src = readFileSync(RUNBOOK, 'utf8')
+  const h = src.indexOf('**The settled wording, which `digestTrialSqlMirror.test.ts` now pins')
+  if (h < 0) return ''
+  const start = src.indexOf('> WHEN at_risk_trialing', h)
+  if (start < 0) return ''
+  const end = src.indexOf('\n\n', start)
+  return (end < 0 ? src.slice(start) : src.slice(start, end))
+    .split('\n').map(l => (l.startsWith('> ') ? l.slice(2) : l.replace(/^>/, ''))).join(' ')
+}
+
 /** The `trial` CTE alone — the predicate that decides the cohort. */
 function trialCte(): string {
   const sql = q2Sql()
@@ -158,5 +196,91 @@ describe('the digest Q2 trial SQL mirrors trialFunnel.ts', () => {
     expect(v.paid).toBe(3)
     expect(v.free).toBe(1)
     expect(v.alert).toBe(false)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Q2B — the second copy of the predicate, and the prose that reads its rows.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('the digest Q2B cohort SQL and its rendering rule', () => {
+  // ⚠️ VACUITY FIRST. Both readers return '' when the runbook headings move, and
+  // an empty string passes a surprising number of plausible assertions.
+  it('finds the Q2B SQL and the recorded STEP 3 prose at all', () => {
+    expect(q2bSql()).not.toBe('')
+    expect(q2bSql()).toContain('with sig as (')
+    expect(step3Prose()).not.toBe('')
+    expect(step3Prose()).toContain('at_risk_trialing')
+  })
+
+  // 🔴 THE DRIFT THIS GATE EXISTS FOR. Q2B must select the SAME cohort as Q2's
+  // `trial` CTE. Compared clause by clause on whitespace-stripped SQL, so a
+  // reformat does not go red and a changed predicate does.
+  it("selects the same cohort as Q2's trial CTE, clause for clause", () => {
+    const squash = (s: string) => s.replace(/\s+/g, '')
+    const a = squash(trialCte())
+    const b = squash(q2bSql())
+    const clauses = [
+      `us.trial_started_at>now()-interval'${TRIAL_DAYS}days'`,
+      'coalesce(us.is_admin,false)=false',
+      "s.statusin('trialing','active')",
+      's.current_period_end>now()',
+      'cc.claimed_by=us.id',
+      'cc.expires_at>now()',
+    ]
+    for (const c of clauses) {
+      expect(a, `Q2 trial CTE lost: ${c}`).toContain(c)
+      expect(b, `Q2B lost: ${c}`).toContain(c)
+    }
+    // Neither may treat a NULL grant expiry as active — `isGrantActive` does not.
+    expect(b).not.toMatch(/cc\.expires_at\s+is\s+null/)
+  })
+
+  // 🔴 DEFECT 1, PINNED. Q2B is the COHORT query, and the prose must say so.
+  // If anyone adds the at-risk filter to Q2B, this goes red and the prose has to
+  // change with it — the two cannot drift apart silently again.
+  it('is unfiltered, and the prose says so rather than calling the rows at-risk', () => {
+    expect(
+      q2bSql().replace(/\s+/g, ''),
+      'Q2B must NOT filter to at-risk — it is the cohort query the prose describes',
+    ).not.toContain(`interval'${AT_RISK_NO_ACTIVITY_DAYS}days'`)
+    const prose = step3Prose()
+    expect(prose, 'prose must state Q2B returns the whole cohort').toMatch(/WHOLE TRIAL COHORT/)
+    expect(prose, 'prose must state the at-risk rows reconcile to the count').toMatch(
+      /MUST EQUAL at_risk_trialing/,
+    )
+  })
+
+  // 🔴 DEFECT 2, PINNED. `-1` is a SENTINEL and FAILS `>= 3`. The prose must
+  // name both arms, or the worst case is dropped by the only rule naming it.
+  it('defines at-risk as >= 3 OR the -1 sentinel, never >= 3 alone', () => {
+    const prose = step3Prose()
+    expect(prose, 'the sentinel must be produced by the SQL').toBeTruthy()
+    expect(q2bSql().replace(/\s+/g, ''), 'Q2B must emit -1 for no signal').toContain(
+      ',-1)asdays_quiet',
+    )
+    expect(prose, `at-risk must admit the sentinel, not just >= ${AT_RISK_NO_ACTIVITY_DAYS}`)
+      .toMatch(
+        new RegExp(`days_quiet\\s*>=\\s*${AT_RISK_NO_ACTIVITY_DAYS}\\s*OR\\s*days_quiet\\s*=\\s*-1`),
+      )
+    expect(prose, 'the prose must say WHY -1 needs its own arm').toMatch(/FAILS a >= 3 test/)
+  })
+
+  // The lib agrees: a no-signal runner is at risk, so the prose and
+  // `judgeTrialFunnel` cannot disagree about the sentinel.
+  it('matches judgeTrialFunnel on the no-signal runner being at risk', () => {
+    const now = new Date('2026-12-06T12:00:00Z')
+    const v = judgeTrialFunnel(
+      [{ user_id: 'nosignal', trialStartedAt: '2026-12-02T00:00:00Z', lastSeen: null }],
+      now,
+    )
+    expect(v.onTrial).toBe(1)
+    expect(v.atRisk).toBe(1)
+    expect(v.atRiskUsers[0]?.daysQuiet ?? null).toBeNull()
+  })
+
+  // ⚠️ The standing instruction is zero contact. The prose that reaches a model
+  // every morning must carry it, or the model will helpfully draft an email.
+  it('tells the digest this is an observation list, never an outreach list', () => {
+    expect(step3Prose()).toMatch(/OBSERVATION list, never an outreach list/)
   })
 })
