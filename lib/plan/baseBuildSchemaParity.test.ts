@@ -120,6 +120,22 @@ describe('BASEBUILD-SCHEMA-CEREMONY-01', () => {
     expect(missing,
       `the TS union allows a week phase the schema rejects, so every plan carrying it fails: ${missing.join(', ')}`,
     ).toEqual([])
+
+    // 🔴 AND THE DOC IS A THIRD COPY, WHICH WAS THREE VALUES BEHIND. `plan-schema.md`
+    // listed only the four phases the RACE generator builds, while the TS union and the
+    // Zod schema had carried `foundation` since ADR-020 and the two `maintenance_*`
+    // values since ADR-013. Adding `base_build` on 2026-10-10 found it already stale.
+    // Three hand-kept lists with a human between each pair is the `deloadCadence` class,
+    // so the doc is asserted here rather than trusted.
+    const doc = readFileSync(
+      join(__dirname, '..', '..', 'docs', 'canonical', 'plan-schema.md'), 'utf8')
+    const docDecl = /phase\?:\s*((?:'[a-z_]+'[^\n]*\n?\s*\|?\s*)+)/.exec(doc)
+    expect(docDecl, 'could not find Week.phase in plan-schema.md — the parse is broken').toBeTruthy()
+    const docPhases = Array.from(docDecl![1].matchAll(/'([a-z_]+)'/g)).map(m => m[1])
+    const docMissing = tsPhases.filter(x => !docPhases.includes(x))
+    expect(docMissing,
+      `plan-schema.md documents fewer week phases than the code accepts: ${docMissing.join(', ')}`,
+    ).toEqual([])
   })
 
   it('7. and `base_build` specifically is on BOTH sides — the measured defect', () => {

@@ -65,7 +65,18 @@ export interface Week {
   label: string
   theme: string
   type: WeekType
+  // 🔴 THIS LINE WAS A SUBSET FOR MONTHS AND NOBODY NOTICED. It listed only the four
+  // phases the RACE generator builds, while `types/plan.ts` and the Zod schema had
+  // carried `foundation` since ADR-020 and the two `maintenance_*` values since
+  // ADR-013. `base_build` was added 2026-10-10 (BASEBUILD-SCHEMA-CEREMONY-01) and
+  // found the doc already three values behind — a THIRD copy of the same list, with
+  // a human between each pair. Gated now by `baseBuildSchemaParity.test.ts`, which
+  // parses all three sources rather than trusting any of them.
   phase?: 'base' | 'build' | 'peak' | 'taper'
+         | 'foundation'                  // ADR-020 — pre-plan runway weeks
+         | 'base_build'                  // §118 — the standalone base-build plan
+         | 'maintenance_restoration'     // ADR-013 — post-race
+         | 'maintenance_base'
   badge?: 'deload' | 'holiday' | 'race'
   sessions: Partial<Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', Session>>
   long_run_hrs: number | null
@@ -192,7 +203,17 @@ export interface PlanMeta {
   // unreachable API from unparseable model output from a plan the route
   // discarded itself. It was the third. Bare 'failed' is retained for historical
   // rows only and is never written by current code.
-  enrichment?: 'applied' | 'skipped' | 'pending'
+  // ⚠️ THIS LIST WAS ALSO BEHIND — `applied_partial` was missing, and it is not a
+  // rare state: it is what ENRICH-PARTIAL-01 writes whenever `revertWeekCopy` puts
+  // one week back. Found 2026-10-10 while adding `skipped_plan_kind`.
+  enrichment?: 'applied' | 'applied_partial' | 'skipped' | 'pending'
+              | 'skipped_plan_kind'    // NOT ELIGIBLE BECAUSE OF WHAT THE PLAN IS, not
+                                       // the runner's tier — a base build returns from
+                                       // the route before enrich() for EVERY tier.
+                                       // Deliberately not 'skipped' (which reads as
+                                       // "free tier" and is filtered OUT of the fleet
+                                       // metric's denominator, hiding the cohort).
+                                       // BASEBUILD-ENRICH-VISIBILITY-01.
               | 'failed_no_api_key'    // ANTHROPIC_API_KEY absent — deploy config
               | 'failed_api_error'     // non-2xx from Anthropic, or transport threw
               | 'failed_unparseable'   // not JSON, or failed EnrichedPlanSchema

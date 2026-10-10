@@ -108,6 +108,11 @@ a code already present was already triaged.
     by_code:  Record<string, number>,   // commonest first
     command:  string,              // a DRY RUN; `--apply` is never advertised
   },
+  // AUDIT-STEP-UNDECLARED-01 (2026-10-10) — WHEN `invalid` RISES, WHICH RULE IS NEW?
+  // `lib/ops/planAuditCodeStep.ts` is the owner; the previous summary is read from
+  // the history rows this route already fetches, so there is no second query.
+  codes_seen: string[],            // every distinct violation code this run, sorted, @suffix stripped
+  codes_new_since_last_run?: string[],  // present ONLY when a code is genuinely new — see below
   unchanged: number,               // breaching, same code set as last time — not re-reported
   changed:   number,
   flagged:   Array<{ user_id: string; codes: string[]; state: 'new' | 'changed' | 'resolved' }>,
@@ -178,14 +183,56 @@ than silence.
 - The known baseline, so a RISE is visible. ⚠️ **TWO DIFFERENT MEASURES, AND CONFUSING THEM CAUSED A
   FALSE ALARM** (`PLAN-AUDIT-BASELINE-UNITS-01`, 2026-10-05):
   - **`invalid` counts PLANS with ANY code** from the three probes — invariants at **any severity**,
-    plus `SCHEMA:` and `HR-`. Historically **10–16 every day, roughly half of `checked`**: 10/21,
-    11/23, 16/29, 15/30. **15 of 30 is normal.**
+    plus `SCHEMA:` and `HR-`. Earlier figures: 10/21, 11/23, 16/29, 15/30.
+    🔴 **THE "10–16 EVERY DAY" BAND IN THIS LINE WENT STALE AND THE DAILY DIGEST QUOTED IT BACK AS
+    EVIDENCE OF A REGRESSION** (2026-10-10). Measured from `ops_events`:
+
+    | date | checked | invalid |
+    |---|---|---|
+    | 10-05 | 30 | **15** |
+    | 10-06 | 30 | **20** |
+    | 10-07 | 30 | 20 |
+    | 10-08 | 31 | 21 |
+    | 10-09 | 33 | 21 |
+    | 10-10 | 34 | **22** |
+
+    **The step was 15 → 20 on 2026-10-06 with `checked` FLAT at 30**, caused by
+    `INV-PLAN-PEAK-RACE-SPECIFIC-REACHED` shipping at 13:55 that day (`e56f8e7a`, §93 Am.1,
+    severity `error`) — the audit ran 34 minutes later. A new error invariant judging existing
+    plans is CORRECT (the live-plan policy never backfills doctrine); the defect was that the step
+    was never DECLARED, so the digest reached for *"the audit is seeing more plans"*, which
+    `checked` flatly contradicts. **Six of those plans were regenerated clean on 2026-10-10; one
+    was reverted — see `REGEN-LIVE-PLAN-GUARD-01`.** ⚠️ **Do not re-pin a band here.** A band in a
+    contract is a number that rots and then gets quoted; `codes_new_since_last_run` below is the
+    mechanism that replaces it.
   - **30 violations across 7 plans** counts only **error-severity invariant** violations on plans that
     have a stored `generator_input` — the remediation queue (`STORED-PLAN-DEBT-QUEUE-01`), expected to
     persist because the live-plan policy forbids the regeneration that would clear them.
   🔴 The digest prompt was given the second figure as a floor for the first. **They were never
   comparable**, and on 2026-10-05 the digest correctly spotted the mismatch and wrongly blamed the
   audit. Corrected in the prompt the same day.
+
+## The code step — `codes_seen` / `codes_new_since_last_run` (AUDIT-STEP-UNDECLARED-01, 2026-10-10)
+
+**`checked` and `invalid` cannot say WHY the number moved**, and on 2026-10-06 it moved with
+`checked` flat. Per-USER code transitions were already detected (that is what `flagged` and
+`verdicts` are); what was missing was the **FLEET** view.
+
+- **`codes_seen`** — every distinct violation code across breaching plans this run, sorted.
+  ⚠️ The per-site suffix is stripped: `INV-INPUT-LONGEST-LE-WEEKLY@w0:-` and the bare form are
+  the **same rule**, and live data carries both. Comparing them raw would report a rule as new for
+  firing on a different week, which is the exact false alarm this field exists to prevent.
+- **`codes_new_since_last_run`** — codes present now and absent from the previous summary.
+
+**Two absence rules, both load-bearing:**
+1. ⚠️ **ABSENT when nothing is new**, following `repairable`'s convention in this same route: a
+   digest line reading *"new codes: 0"* every morning is the noise the field exists to avoid being.
+2. 🔴 **ABSENT when there is NO BASELINE.** With no previous summary in the history window every
+   code looks new, so a first run would declare the entire constitution as a step. **A confident
+   wrong answer is worse than silence**, so the field requires a prior set to compare against.
+
+Owner: `lib/ops/planAuditCodeStep.ts` (pure, so it is testable without the route). Gated by
+`lib/ops/planAuditCodeStep.test.ts` — 7 arms, falsified 5 ways.
 
 ## The age fields — `newest_invalid_plan_age_days` means CREATION (PLAN-AUDIT-AGE-SOURCE-01)
 
