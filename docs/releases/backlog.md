@@ -140,141 +140,63 @@ unproven by reachability** — declared in the test file, not papered over.
 
 ---
 
-### ✅ `LR-NOTE-SCOPE-01` — **CLOSED 2026-10-09 WITH NO CODE CHANGE.** The hold was right and it resolved itself ⚙️ NO BOARD
+### 🔻 `LR-NOTE-SCOPE-01` — RE-OPENED 2026-10-10. **The closure's measurement checked the wrong quantity** ⚙️ **NO BOARD**
 
-Held BLOCKED on `LR-TAPER-BUMP-01` rather than fixing the wording, because qualifying the
-sentence would have made the shape defect **invisible** — and that sentence is how the defect
-was found. ✅ **Vindicated:** with V4 phase-scoped, the §80 note's peak-phase read is correct
-**by construction**. Measured: 373 of 373 generated plans where the note fires have
-`peak-phase max == plan max`.
+**Closed 2026-10-09 as "resolved itself"; re-opened on measurement the next morning.**
 
-🥇 **The lesson is the reason this item existed:** a symptom that is the only visible
-evidence of its cause must not be silenced before the cause is understood. Chair concurred.
+🔴 **THE CLOSING EVIDENCE WAS A TAUTOLOGY.** It read *"373 of 373 generated plans where the
+note fires have `peak-phase max == plan max`"* — and **the note's figure IS the peak-phase
+max**, so that arm compared the note's own source to itself. It could not fail. The question
+this item asks is different: does *"tops out at X"* state the plan's **actual** longest run?
 
----
+📐 **Re-measured on 1,200 cohort-grid plans, 118 of which carry the note: 2 disagree (1.7%).**
+Both have the plan's longest run in the **BUILD** phase, not the taper that `LR-TAPER-BUMP-01`
+fixed:
 
-### 🔻 `WEEKTHEME-PROP-DEAD-01` — a `weekTheme` prop threaded through three layers and never used ⚙️ **NO BOARD**
+```
+42.2km cwk=20 longest=8 days=3 age=52
+  note "tops out at 2h 24" = 144 min  = peak-phase max ✓
+  plan's true longest run  = 153 min  in w11, BUILD
+  long runs: w7/build:103 w8:134 w9:78 w10:122 w11:153 w12:81 w13/peak:113 w14/peak:144
+42.2km cwk=35 longest=14 days=3 age=52 — note 175, plan max 179 (w11, build)
+```
 
-**Filed 2026-10-09, out of `WEEK-THEME-DEAD-01`, and deliberately NOT bundled with it.**
+⚠️ **The hold was still right and the lesson stands** — qualifying the sentence before the
+cause was understood would have hidden the shape defect, and that sentence is how **both**
+defects were found. What changed is that the cause is only **half** fixed.
 
-`week.theme` is read in `PlanCalendar.tsx:421` and `TodayScreen.tsx:938`, passed through
-`onSessionTap` / `onOpenSession`, carried across `DashboardClient` and handed to
-`SessionPopupInner` as a `weekTheme` prop — which **destructures it and never uses it in the
-body**. **15 references across 6 files.**
-
-**Why it was split off rather than folded in:** removing it changes `PlanCalendar`'s
-`onSessionTap` signature (3 args → 2) in two declarations plus its call site, and touches
-`copy-preview`. That is a refactor across 6 files with **no runner-facing effect**, and
-bundling it would have widened a clean 98-line deletion into a signature change. SLC: one job.
-
-⚠️ **It is inert, not harmful** — unlike `PlanCoachingCard`, which rendered the theme as
-prose and was one JSX line from showing 11 runners a raw `{{zone2_ceiling}}`. That is why one
-shipped today and this did not.
-
-✅ **`week.theme` still has one REACHABLE render** and it is correct now: `TodayScreen`'s
-maintenance-transition line, which `COACH-INTRO-TOKEN-01` routed through `renderPlanProse`.
-0 maintenance plans live, so it is latent — but `/api/post-race-reshape:249` writes
-`theme: enrichment.theme ?? week.theme`, so an AI-written theme can reach it.
-
-**Scope:** drop the prop from `SessionPopupInner`, unthread it, narrow the two `onSessionTap`
-signatures. ⚠️ `lib/ui/noDeadLocalComponents.test.ts` cannot see a dead PROP — only a dead
-component — so this needs its own arm or it will not be noticed again.
+**Fix is still one line** once `LR-LONGEST-IN-BUILD-01` below is ruled: either the note reads
+the plan's max rather than the peak phase's, or the engine stops producing a build-phase
+maximum and the note becomes correct by construction for real. **Do not qualify the wording
+while the second item is open** — same reason as the original hold.
 
 ---
 
-### 🔻 `WEEK-THEME-TOKEN-ENRICH-01` — the enricher puts SESSION tokens in WEEK themes, against its own prompt ⚙️ **NO BOARD**
+### 🔻 `LR-LONGEST-IN-BUILD-01` — the plan's longest run can sit in BUILD, above the peak phase 🏃 **COACHING BOARD**
 
-**Filed 2026-10-09, after verifying `COACH-INTRO-TOKEN-01` against live data rather than
-trusting the unit tests.**
+**Found 2026-10-10 under `LR-NOTE-SCOPE-01`'s residual.** `LR-TAPER-BUMP-01` scoped V4's
+long-run repeat ceiling to `LR_REPEAT_ELIGIBLE_PHASES: ['base','build','peak']`, which stopped
+it bumping a **taper** long run above the peak. **Build was left in**, so V4 can still raise a
+build-phase long run above anything the peak phase delivers:
 
-🔴 **The prompt already forbids it, in as many words** (`enrich.ts`):
-*"Use placeholders ONLY for coach_notes. Week labels and themes do NOT contain numerics —
-**never put placeholders in them**."* The model does it anyway, on **11 of 34 plans**, and
-nothing enforced the rule until `COACH-INTRO-TOKEN-01` widened
-`INV-PLAN-NO-PLACEHOLDER-COPY` today — at `warn`.
+```
+w11/build 153 min   vs   w14/peak 144 min      (and 179 vs 175 on the second case)
+```
 
-**Measured, by token name, across 49 live `week.theme` tokens:**
+The runner's biggest day is **three weeks before peak**, and the peak phase then asks for
+**less**. ⚠️ **`INV-PLAN-PEAK-IN-PEAK-PHASE` cannot see it** — it guards `weekly_km`, not the
+long run, which is the gap `LR-TAPER-BUMP-01`'s own record already names in writing
+(*"nothing guards the long run by phase"*). The taper half got an invariant; this half got
+nothing.
 
-| token | count | resolves to |
-|---|---|---|
-| `{{session_zone}}` | **37** | **BLANK** — there is no session in scope for a week-level string |
-| `{{session_distance}}` | 8 | **BLANK** |
-| `{{zone2_ceiling}}` | 4 | **147 bpm** — correct, it is a plan-level value |
+**This is the "remedy applied to ONE TWIN" class**, and the twin was named in the fix's own
+commit message.
 
-⚠️ **SO `COACH-INTRO-TOKEN-01` GUARANTEES NO BRACE, NOT A COMPLETE SENTENCE**, and that
-limitation is the reason this item exists. Rendered today those 37 would read:
-
-> *"Strides appear now on Wednesday and Sunday. Still all. These short bursts wake the legs."*
-> *"Quality returns to 7 km in. Volume stays at 38 km."*
-
-✅ **No runner sees them today** — `week.theme`'s only reachable render is `TodayScreen`'s
-maintenance-transition line, there are **0 maintenance plans live**, and maintenance themes are
-rule-authored (`enrichMaintenance.ts` does not rewrite them). But `/api/post-race-reshape:249`
-writes `theme: enrichment.theme ?? week.theme`, so an AI theme can reach it.
-
-✅ **It cannot cost a runner their AI voice.** `violationsIntroducedBy` filters
-`severity === 'error'`, and the new arm is `warn` — verified, not assumed, because an
-over-eager invariant discarding enriched weeks is a recorded defect class here.
-
-**Scope, and the order matters:** (1) decide whether the enricher should be made to obey its
-own prompt (a schema/validation reject on a themed token, so the week reverts to rule copy
-rather than shipping a gapped sentence), or whether `week.theme` should be allowed session
-tokens with a session-aware render. (2) Only then decide the severity of the invariant arm.
-⚠️ **Do not simply raise it to `error`** — that WOULD start reverting enriched weeks, which
-is the trade this item exists to make deliberately.
-
----
-
-### ✅ `LR-TAPER-BUMP-01` — **SHIPPED 2026-10-09.** §6 Am.1 was already law; two writers were breaking it 🏃 **COACHING BOARD RULED: CORRECT WITH AMENDMENT**
-
-🔴 **I took the board a question it had already answered.** I asked *"must V4 be
-phase-aware?"* and asserted *"nothing in `validatePlan()` guards the long run by phase."*
-**§6 Amendment 1 (`PEAK-LR-NOT-IN-PEAK-01`, 2026-09-15)** rules it in as many words, with a
-numeric and an invariant. The conflict scan caught it. Full ruling:
-`docs/canonical/coaching-rulings.md`.
-
-**Two independent failures let the engine breach a ratified rule:**
-1. `V4-long-run-repeat-ceiling` iterated **every** week and skipped only deloads — while its
-   own config rationale says *"a flat long run across 4+ **BUILD** weeks"*. Principle scoped,
-   code not.
-2. §6 Am.1's engine cap bailed on `distance_km == null`, so it **never ran on a
-   duration-anchored plan** — and beginners are **95.8% duration-anchored**. On the real plan:
-   peak long runs `distance_km: 14.5`, taper's `null` + 126 min, cap bailed, taper shipped
-   **15.5 km against a 14.5 km peak**. Third-plus `LR-CAP-BLIND-01`.
-
-**Measured, 4,808 plans — single-cause attribution:** V4 bumped a taper week on 923, and
-`INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` fired on **827 of those (89.6%)** against **0 of 3,885**
-without. After: taper bumps **0**, race bumps **0**, cohort fires **0**.
-**Sweep residual 3.7% → 0.3% (44/14,268)**, which satisfies Sims's binding condition for
-leaving the severity at `warn`.
-
-⚠️ **Willy rejected my denominator.** I offered **0.2%** (taper = plan maximum); the ratified
-test is *above the **peak phase***, which is **17.2%**. My figure understated it **~86×**.
-
-⚠️ **What the gate does NOT prove, found by mutation:** restoring the cap's blindness leaves
-every arm green, because with V4 scoped no inversion exists for the cap to resolve. 1,712 of
-4,745 taper long runs (36%) are duration-anchored, 0 inverted. Half two is **defence in depth,
-unproven by reachability** — declared in the test file, not papered over.
-
----
-
-### 🔻 `LR-NOTE-SCOPE-01` — the §80 note says "tops out at" and reads the peak phase only ⚙️ **NO BOARD** *(BLOCKED on `LR-TAPER-BUMP-01`)*
-
-`ruleEngine.ts` ~8274 computes the note's figure from `w.phase === 'peak' && w.type !== 'deload'`,
-and the sentence is unqualified: *"Your longest run tops out at 1h 58."* On plan `86ac765d`
-the plan's longest run is **126 min** and the note says **118**.
-
-✅ **Measured: the computation is RIGHT wherever the plan's shape is right** — **373 of 373**
-generated plans where the note fires have `peak-phase max == plan max`. Live: **1 of 5**
-plans carrying the note understates, and that one is `LR-TAPER-BUMP-01`.
-
-🔴 **DO NOT FIX THE WORDING WHILE THE CAUSE IS OPEN.** Qualifying the sentence, or
-computing a plan-wide max for it, would make the shape defect **invisible** — right now this
-note is the only surface that reveals it. It was how the defect was found at all.
-
-**After the board rules:** if V4 becomes phase-aware, the peak-phase read becomes correct by
-construction and this item closes with no code change. If the board allows a taper bump, the
-sentence needs qualifying and this becomes a one-line fix. **Either way it waits.**
+🔻 **For the board, not to be built unilaterally:** is a build-phase long-run maximum ever
+correct (a deliberate overreach followed by consolidation), or does §24/§80's specificity
+require the longest run inside the peak phase? Rate is **2 of 118 noted plans** in the sampled
+cohort; **measure the whole grid before ruling** — the note only fires on shortfall plans, so
+the real population is larger than 118 and nobody has counted it.
 
 ---
 
@@ -8098,7 +8020,7 @@ seeing in one place.
 
 *(Original entry, kept because it holds the measurement that justified the work.)*
 
-### 🔻 `WIZARD-WEEKDAY-CONFIRM-01` — the SLT's original ask 🧭 **DESIGN BOARD** *(superseded by the ruling above)*
+### 📜 `WIZARD-WEEKDAY-CONFIRM-01` — the SLT's original ask, kept for its measurement *(superseded by the ruling above; NOT an open item)*
 
 💼 **SLT ruled BUILD 2026-10-09. FREE.** Catches **4 of 4** wrong dates in the live set with
 **no data dependency**: London 2027 is Sunday 25 April; 3 runners entered the Saturday and one

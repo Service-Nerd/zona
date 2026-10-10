@@ -1717,8 +1717,16 @@ wrong denominator and leaves §6 Am.1 breached on 17.2%.
 - **`V1-LOAD-STEP-SHAPE-01`** — withdrawal upheld as filed: **0 of 1,077** dip-then-jump cases.
   The measured finding (V1 plans breach §2's delivered rise at **93.0%** against a **66.4%**
   control, whole cohort 72.4%) is **ADR-022's** declared residual; Willy asks it be filed there.
-- **`LR-NOTE-SCOPE-01`** — the hold was right **and it resolves itself**: once V4 respects the
-  cap, the §80 note's peak-phase read is correct by construction and no wording changes.
+- **`LR-NOTE-SCOPE-01`** — the hold was right. 🔴 **BUT "IT RESOLVES ITSELF" WAS WRONG, AND THE
+  EVIDENCE FOR IT WAS A TAUTOLOGY** (corrected 2026-10-10). The closing measurement read
+  *"373 of 373 plans have `peak-phase max == plan max`"* — and **the note's figure IS the
+  peak-phase max**, so that arm compared the note's own source to itself and could not fail.
+  Re-measured against the question the item actually asks (*does "tops out at X" state the
+  plan's real longest run?*): **2 of 118 noted plans disagree**, both with the plan's maximum in
+  the **BUILD** phase — `w11/build 153 min` against `w14/peak 144`. V4 was scoped to exclude
+  taper and race; **build was left in**, so the remedy reached one twin. Re-opened, and the
+  shape half filed as `LR-LONGEST-IN-BUILD-01` for this board. ⚠️ `INV-PLAN-PEAK-IN-PEAK-PHASE`
+  guards `weekly_km`, not the long run — the gap this ruling's own record names in writing.
 
 ### ⇗ SLT escalation
 

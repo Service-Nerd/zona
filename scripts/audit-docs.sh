@@ -203,7 +203,19 @@ for id in $ids; do
   # scoped to TODAY'S SHIP SCOPES, so for an item that shipped today it is stale
   # by construction. 🟡 stays excluded for the same reason as above.
   # The `\*\(` provenance discriminator is kept: a heading carries *(filed …, P2)*.
-  if grep -qE "^### (🔲|🔴|🔵|⏸️|🟠|🧭|⚖️) \`${id}\`[ —].*\*\(" docs/releases/backlog.md; then
+  # 🔴 🔻 WAS MISSING FROM BOTH ARMS AND IT IS THE MOST COMMON OPEN MARKER IN
+  # THE FILE (2026-10-10). Measured: 14 `###`/`####` headings use 🔻 against 10
+  # for 🟡, 6 for 🔴 and one each for 🟠/🧭. Every one means OPEN — none is a
+  # kill, unlike 🔴 in this form. `WEEKTHEME-PROP-DEAD-01` shipped with a
+  # registry row and kept a 🔻 heading, and BOTH arms printed ok, which is how a
+  # shipped item reached an answer to "what is still open?".
+  # ⚠️ AND THE `*(` PROVENANCE DISCRIMINATOR IS DROPPED HERE, DELIBERATELY. It
+  # exists to stop the `^> ` bullet arm firing on NARRATIVE inside a quoted
+  # ruling. A `### <marker> \`ID\` —` line cannot be narrative: it is an item
+  # heading by construction. Measured, it was suppressing 5 of 10 🔻 headings and
+  # 4 of 6 🔴 ones — so the discriminator was doing more hiding than
+  # disambiguating on this arm. The bullet arm above keeps it.
+  if grep -qE "^#{3,4} (🔻|🔲|🔴|🔵|⏸️|🟠|🧭|⚖️) \`${id}\`[ —]" docs/releases/backlog.md; then
     say "  STILL OPEN $id (shipped today, backlog HEADING says otherwise)"; bfail=1; fail=1
   fi
 done
@@ -296,7 +308,12 @@ sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`? *(\([^)]*\) *)?[—/|].*/\1/p'
   # The today-scoped arm now catches that case, because within a range of items that
   # DEMONSTRABLY SHIPPED, "🔴 means killed" cannot apply. Normalising the document is still
   # the better fix and is still not done.
-  grep -oE '^#{3,4} (🔲|🟡|🟠|🟢|🔵|⏸️|⚖️|🧭) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
+  # 🔴 🔻 ADDED 2026-10-10 — see the note on the today-scoped arm. It is the
+  # most common open marker in the file (14 headings) and was absent from BOTH
+  # arms, so between them they could not see the dominant way an open item is
+  # written. Safe to include where 🔴 is not: 🔻 has no killed meaning in either
+  # header shape, checked across all 14.
+  grep -oE '^#{3,4} (🔻|🔲|🟡|🟠|🟢|🔵|⏸️|⚖️|🧭) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
     | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
 } | sort -u > /tmp/_open
 # ⚠️ DECLARED EXEMPTIONS — an ID that is legitimately BOTH shipped and open, each with its
@@ -400,6 +417,42 @@ while IFS= read -r id; do
     || { say "  NO ROADMAP LINE $id (open in backlog.md)"; rfail2=1; fail=1; }
 done < /tmp/_openids
 [ "$rfail2" = "0" ] && say "  ok"
+
+# ── roadmap says CLOSED while the backlog says OPEN ─────────────────────────
+#
+# 🔴 THE MIRROR OF THE ARM BELOW, AND IT WAS MISSING (2026-10-10). That arm asks
+# "does the roadmap still show work that is done?". Nothing asked the opposite:
+# **does the roadmap claim something is DONE that the backlog has re-opened?**
+# `LR-NOTE-SCOPE-01` was closed on 2026-10-09 and RE-OPENED the next morning
+# when its closing measurement turned out to compare the note's figure against
+# its own source; the backlog heading went 🔻 and the roadmap row kept its ✅,
+# and this script printed ALL CLEAN.
+#
+# ⚠️ IT IS THE WORSE DIRECTION OF THE TWO. A roadmap row that still shows done
+# work costs a reader a second of confusion. A row that says ✅ over an OPEN
+# defect removes it from "what is left" entirely — which is the exact question
+# the founder asks this file, and the exact answer it would have got wrong.
+# One-sided join, third recorded instance.
+say "── roadmap rows marked CLOSED for a backlog item that is OPEN ──"
+rcfail=0
+# ⚠️ 🔴 IS EXCLUDED HERE, and it was included in the first cut — which produced a
+# false positive on `RESHAPE-MOMENT-03` within a minute. In the `###` form 🔴
+# means KILLED or WITHDRAWN (the all-time arm above documents this and excludes
+# it for the same reason); `RESHAPE-MOMENT-03` is `### 🔴 CLOSED, NOTHING TO
+# BUILD — THE PREMISE WAS FALSE`, and its roadmap ✅ is correct. A check that
+# fires on correct work gets switched off, which this repo records as equivalent
+# to having no check. 🟡 is excluded too: "code shipped, item still open" is a
+# legitimate state where a ✅ roadmap row is defensible.
+for id in $(grep -oE '^#{3,4} (🔻|🔲|🔵|⏸️|🟠|🧭|⚖️) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
+              | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | sort -u); do
+  # Skip anything with a registry row: shipped-but-open is the arms above's job,
+  # and a part-shipped item legitimately carries both.
+  grep -qxF "$id" /tmp/_reg 2>/dev/null && continue
+  if grep -qE "^\|.*\(${id}\)[^|]*\| *✅" docs/releases/roadmap.md; then
+    say "  ROADMAP SAYS DONE $id (backlog heading says open)"; rcfail=1; fail=1
+  fi
+done
+[ "$rcfail" = "0" ] && say "  ok"
 
 say "── roadmap rows still OPEN for a backlog item that is CLOSED ──"
 # 🔴 SIXTH TIME, 2026-10-08, AND THE ARM ABOVE PREDICTED IT WHILE BEING WRITTEN:
