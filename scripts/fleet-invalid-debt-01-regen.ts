@@ -21,6 +21,7 @@ import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import { validateReshapedPlan } from '../lib/plan/invariants'
 import type { Plan, GeneratorInput } from '../types/plan'
+import { regenRefusalReason } from '../lib/ops/regenEligibility'
 
 const APPLY = process.argv.includes('--apply')
 // ⚠️ DERIVED, NOT PINNED. This was hardcoded `'2026-09-17'` — the day the script was
@@ -50,10 +51,15 @@ async function usersWithData(table: string): Promise<Set<string>> {
 async function main() {
   console.log(`FLEET-INVALID-DEBT-01 regen · ${APPLY ? 'APPLY (writing)' : 'DRY-RUN'} · today ${TODAY}\n`)
 
-  const [{ data: rows, error }, completed, analysed, admins] = await Promise.all([
+  const [{ data: rows, error }, completed, analysed, active, admins] = await Promise.all([
     sb.from('plans').select('user_id, plan_json, created_at, updated_at'),
     usersWithData('session_completions'),
     usersWithData('run_analysis'),
+    // REGEN-LIVE-PLAN-GUARD-01 — the signal this script could not see. ADR-011 makes
+    // `strava_activities` the SOURCE-AGNOSTIC activity log (Apple Health included), so a
+    // runner who syncs runs and never taps "done" was reading as dormant. One did, and
+    // their live block was rewritten in week 8 of 14.
+    usersWithData('strava_activities'),
     sb.from('user_settings').select('id, is_admin, email').then(r => r.data ?? []),
   ])
   if (error) { console.error(error.message); process.exit(1) }
@@ -84,11 +90,18 @@ async function main() {
       console.log(`SKIP  ${short}  ${planStart || '—'}→${raceDate || '—'}  ${before.length} codes  [${reason}]${emailById.get(user) ? ` <${emailById.get(user)}>` : ''}`)
     }
 
-    if (!raceDate || raceDate < TODAY) { skip('past-race'); continue }
-    if (!gi) { skip('no-generator-input'); continue }
-    if (completed.has(user)) { skip('has-completions'); continue }
-    if (analysed.has(user)) { skip('has-run-analysis'); continue }
-    if (adminIds.has(user)) { skip('is-admin'); continue }
+    // REGEN-LIVE-PLAN-GUARD-01 — ONE OWNER for "is this safe to silently rewrite".
+    // It was a chain of `continue`s here, untestable, and it was missing two guards:
+    // the activity check could not see Strava, and nothing asked whether the BLOCK HAD
+    // STARTED (a future race is not a future start). See lib/ops/regenEligibility.ts.
+    const refusal = regenRefusalReason({
+      planStart, raceDate, hasGeneratorInput: !!gi,
+      isAdmin: adminIds.has(user),
+      hasCompletions: completed.has(user),
+      hasRunAnalysis: analysed.has(user),
+      hasActivities: active.has(user),
+    }, TODAY)
+    if (refusal) { skip(refusal); continue }
 
     // Regenerate: rule engine + foundation compose, anchored to the ORIGINAL
     // plan_start so main-week identity (week.n / dates) is unchanged. gap 0 →
