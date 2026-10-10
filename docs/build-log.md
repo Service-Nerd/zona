@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-10 — BASEBUILD-GENINPUT-REMEDIATION-01 · the write was right and the check was wrong, so it reverted two live plans
+**Shipped:** both unstamped base-build plans backfilled with `meta.generator_input`, after the first attempt wrote correctly and then undid itself.
+
+**Dev learning:** `plan_json` is **jsonb**, and jsonb does not preserve object key order — it normalises to (key length, then bytewise). My post-write verification compared `JSON.stringify(fromDb) === JSON.stringify(whatIWrote)`. The stamp is built in `GeneratorInput` declaration order, so the strings differed on every row while **every value was correct**, and the script's auto-revert dutifully rolled back two live plans. Measured on the 25 already-stamped plans: returned key order matches jsonb normalisation exactly and does not match declaration order. The fix is a canonicalising comparison, and the real work was making sure it is **not weaker** than the string compare — 6 of its 9 arms assert `false`, and array order is deliberately left unsorted because `days_cannot_train` order is data.
+
+**Product/creator learning:** failing safe is the correct behaviour, and a false negative is still a defect. A verification that **cannot pass on correct data** is one you learn to bypass — and this repo's own record says that is how a guard dies, four times over. So the fix was not "loosen the check until it passes", it was "find out why the data looked different and prove the new comparison still catches a real change".
+
+**AI-building learning:** the sequencing was the part I could have got wrong invisibly. The stamp's only runner-visible effect was opening a door I had just measured at a 0% success rate, so the gate had to be **deployed** before the write — not merely pushed. I confirmed the production deployment by commit SHA (`--meta githubCommitSha`) rather than trusting that a successful push means a live deploy, and the script itself refuses to write if the gate is missing. **Interlocking the migration with the guard meant the ordering could not be forgotten by me or anyone else.**
+
+**The honest bit:** I wrote "the race date is gone" into the backlog as a fact, having checked three places. The founder asked four words — *"can we not recover it?"* — and it was in telemetry I had widened the day before. **My own roadmap row already said it was recoverable.** Then I inverted it with a formula I rewrote from memory instead of copying, wrong in both anchor and rounding, and handed him a window that **excluded his own answer**.
+
+**Hook material:** my own safety check reverted two real users' plans because Postgres sorts JSON keys by length. The write was perfect. The verification was comparing `{"race_distance_km":42.2,"goal":...}` against `{"age":26,"goal":...}` and calling it corruption.
+
+**Postable?:** yes — "my rollback fired on a correct write" is a better story than a clean deploy.
+
 ## 2026-10-10 — BASEBUILD-ADJUST-DOOR-01 · the backfill was safe; the thing it unlocked was not
 **Shipped:** the "Adjust your plan" row is withheld on a base-build plan, and a backfill script that refuses to write if that gate is absent.
 
