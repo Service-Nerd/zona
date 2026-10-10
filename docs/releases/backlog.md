@@ -1300,6 +1300,132 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
+## ⚖️ FILED 2026-10-10 — ops digest triage, two items (RCA done, premises corrected)
+
+Both from the 2026-10-10 digest, both with a full `/zona-debug` RCA behind them. 🔴 **Three
+of the digest's six findings were PHANTOMS and one of its headline explanations was WRONG** —
+see each item. The third defect it raised (Q7 reading a dead key) was fixed in the routine the
+same evening and is not an item.
+
+---
+
+### `BASEBUILD-SCHEMA-CEREMONY-01` — the schema demands five retired fields, and one real one is genuinely missing
+⚙️ **NO BOARD** for the schema half (defect fix restoring documented intent) · 💼 **SLT** for the enrichment half (tier)
+
+**Symptom.** The daily audit reports `base_build` plans as schema-invalid on
+`meta.athlete`, `charity`, `handle`, `notes`, `quit_date`, `version` (+`max_hr` on one).
+Two live runners, **one PAID**.
+
+🔴 **MY FILING PREMISE WAS HALF WRONG AND THE RCA SPLIT IT.** I wrote *"the schema demands
+retired fields, so the plans are NOT malformed"*. Measured readers, non-test, excluding the
+schema itself:
+
+| field | live readers | verdict |
+|---|---|---|
+| `handle` | **0** | dead — schema should not require it |
+| `charity` | **0** | dead |
+| `quit_date` | **0** | dead — it is the SMOKE TRACKER field, retired by `SMOKE-PLUMBING-01` (2026-10-01) |
+| `version` | **0** | dead |
+| `notes` | writer only (`enrich.ts:706`); `renderGuidance.ts:148` measured *"no consumer at all"* | should be `.optional()` |
+| **`athlete`** | **7** — `profileInitials.ts`, `postRaceReshape.ts:75`, `DashboardClient.tsx:1163` | 🔴 **a genuine producer gap** |
+
+**Root cause.** `generateBaseBuildPlan` (`lib/plan/baseBuildOnRamp.ts:258-291`) builds `meta`
+from scratch — `...input` spread plus eleven explicit keys — and writes none of the six.
+`ruleEngine.ts:9494-9501` satisfies them for race plans with **empty strings**
+(`handle: ''`, `charity: ''`, `quit_date: ''`). ⚠️ **My brief named `generateGetRunningPlan`
+as the producer and that was wrong** — it only mutates three keys on an already-built plan.
+
+**Severity of the real half is LOW, measured not assumed.** `profileInitials` is
+firstName → planAthlete → **email initial** → `'?'`, so a base-build runner with no saved
+first name gets their email initial, not a broken avatar. `postRaceReshape` already does
+`|| 'the runner'` and a base build has no race anyway.
+
+🔻 **THE WORSE HALF, AND IT IS A PRODUCT DECISION NEVER TAKEN.** `app/api/generate-plan/route.ts:179-181`
+returns the base-build plan **before** `enrich()` at line 535. So **a base-build plan is never
+enriched, for any tier** — the PAID runner on `3df045d5` has no AI coaching copy at all, and
+because `meta.enrichment` is absent they are **not in the denominator** of the fleet metric
+that reported *"0 of 23 missing — every eligible plan has its AI copy"*. Wrong-population
+class. ⚠️ **This is the same shape as `BASEBUILD-HANDOVER-01`:** the code is honest, the gap
+is a decision nobody made. Do not "fix" it by enriching base builds without an SLT ruling.
+
+**Fix shape.** `.optional()` on the four dead fields + `notes` in `PlanMetaSchema`
+(precedent: `resting_hr` in the same object, `PLAN-RESTING-HR-ZERO-01` — *"`.optional()` is
+what lets a runner with no resting HR have a SCHEMA-VALID plan instead of a lie that
+parses"*); write `athlete` in `generateBaseBuildPlan`; delete the dead fields from
+`docs/canonical/plan-schema.md:112,264`; **route the enrichment question to the SLT.**
+⚠️ Deleting the fields outright is a bigger decision than making them optional and needs its
+own pass over the 19 stored plans that carry them.
+
+---
+
+### `COPY-CLAIM-CROSS-WEEK-01` — a deload week is rejected for naming the work it is recovering FROM
+⚙️ **NO BOARD** — defect fix restoring documented intent (§27/§41 judge THIS week's copy against THIS week's sessions)
+
+**Symptom.** `INV-PLAN-COPY-MATCHES-SESSIONS` rejected
+*"Deload week. No quality work… absorbs the threshold work from weeks 10 and 11"*, costing a
+**paid** runner's brand-new 20-week plan its AI copy on weeks 12 and 20. Silent by design
+(ADR-006).
+
+**Root cause, exact.** `COPY_CLAIMS_INTENSITY_NAMED = /quality|threshold|tempo|interval|vo2/`
+(`invariants.ts:804`). `withoutNegatedClauses` (`:843-855`) drops a clause only when a
+**NEGATOR precedes the claim word**. *"No quality work"* is correctly disarmed;
+*"absorbs the threshold work from weeks 10 and 11"* carries **no negator**, so it survives,
+matches on `threshold`, the deload week has no quality session, and the whole week's
+enrichment is discarded.
+
+🔴 **CATALOGUE CLASS: THE REMEDY WAS APPLIED TO ONE TWIN.** The stripper's own comment
+records the first half — *"'No quality work this week' is not a promise of quality, and
+reading it as one threw away 3 live enrichments on 2026-10-02 alone"*. **Negation was fixed.
+PAST / CROSS-WEEK REFERENCE was not**, and it is the same defect: copy that names a session
+type belonging to a *different week* is read as a promise about *this* week. The check has no
+notion of tense or of week reference.
+
+**Fix shape.** Extend the clause filter to disarm a clause that explicitly references another
+week or the past (`from weeks N and M`, `absorbs`, `last week`, `earlier`) by the same
+precedes-the-claim rule the negator uses. ⚠️ **Sweep for the third twin before closing** —
+grep every consumer of `COPY_CLAIMS_*` and state the count, because this is the second
+instance of this exact class in nine days.
+
+**Also measured while here:** `INV-PLAN-COPY-MATCHES-SESSIONS` is the most frequent firer in
+the live audit, present on 10-04, 10-06, 10-08 **and** 10-10. Establish how many of those are
+this same false positive before assuming they are distinct defects.
+
+---
+
+### 🔴 AND THE DIGEST'S HEADLINE EXPLANATION WAS WRONG — `AUDIT-STEP-UNDECLARED-01`
+⚙️ **NO BOARD** — process, not prescription
+
+The digest said *"the plan audit flagged 22 of 34, above the usual 10–16… this most likely
+reflects the audit seeing more plans, not a new defect."* **Measured from `ops_events`:**
+
+| date | checked | invalid |
+|---|---|---|
+| 10-05 | 30 | **15** |
+| 10-06 | 30 | **20** |
+| 10-07 | 30 | 20 |
+| 10-08 | 31 | 21 |
+| 10-09 | 33 | 21 |
+| 10-10 | 34 | **22** |
+
+**Today's 22 is +1 on yesterday. The step was 15 → 20 on 2026-10-06 with `checked` FLAT at
+30** — five plans became invalid with no plans added, so widened coverage explains none of it.
+Cause, found by code: `INV-PLAN-PEAK-RACE-SPECIFIC-REACHED` shipped at **2026-10-06 13:55** in
+`e56f8e7a` (`MARATHON-PEAK-ROTATION-01`, §93 Am.1) at severity **error**; the audit ran **34
+minutes later** at 14:29. It appears on **6 plans** from 10-06 and on **none** on 10-04.
+
+⚠️ **A new error-severity invariant judging existing plans is CORRECT behaviour, not a
+defect** — but it was never declared, so the number has read as unexplained for four days and
+the digest then attributed it to the wrong cause. This is
+`feedback_engine_changes_need_regression_and_remediation` with no mechanism behind it.
+
+**Fix shape.** Two parts, and the second is the one that lasts: (a) decide whether those 6
+plans are remediated or accepted as pre-dating §93 Am.1; (b) **make the audit declare the
+step** — when `invalid` rises while `checked` is flat, the digest should name the invariant
+codes that are new since the previous run rather than reaching for coverage. The data to do it
+is already in `ops_events`.
+
+---
+
 ## 🗺️ WAVE — RESHAPE GOVERNANCE *(planned 2026-10-08, founder instruction)*
 
 **Why this wave exists.** The adaptive engine was dead for 104 days
