@@ -135,11 +135,43 @@ Body: GeneratorInput
 }
 ```
 
+### Body fields that are NOT on `GeneratorInput`
+
+⚠️ **Three UI intents ride the raw body and are read off it directly.** They are
+deliberately NOT on `GeneratorInput`: that type is a runner plus a tier (ADR-003), and a
+client intent about *which plan to build* is neither. Putting them on it would leak a UI
+decision into the engine's input type and into every grid that sweeps those fields.
+
+🔴 **ALL THREE WERE UNDOCUMENTED UNTIL 2026-10-10**, including one that had existed since
+P-15 and two the UI could not send at all. Added when `PREP-ACK-NO-WRITER-01` and
+`BASEBUILD-ADJUST-REBUILD-01` changed what they do.
+
+| Field | Meaning |
+|---|---|
+| `accept_base_build?: true` | Build the §118 **base-build** plan rather than a race plan. 🔴 **Behaviour CHANGED 2026-10-10 (`BASEBUILD-ADJUST-REBUILD-01`): it is now honoured BEFORE generation is attempted, guarded only by `getRunningApplies(input)`.** It used to live inside the `BaseVolumeError` catch, so it worked only while §111 happened to refuse the input — fine for P-15's flow (the runner is accepting an offer just made) and **unsound for a runner editing a base-build plan they already have**, because §111's refusal is not stable under the edits the Adjust sheet offers. Measured: of 8 edits across the two live base-build plans, **one flips §111 from refusing to admitting**, and under the old placement that edit silently returned a **race plan**. Returns `{ plan }` with `plan_kind: 'base_build'`. |
+| `acknowledged_prep_warning?: true` | §44 step two. The runner has seen a prep-time **warn** and consents to a compressed block. Without it a `warn` is refused (422, `reason: 'warn_unacknowledged'`). |
+| `acknowledged_days_warning?: true` | §52's twin of the same two-step pattern, for days-available. |
+
+🔴 **`PREP-ACK-NO-WRITER-01` (2026-10-10): the two acknowledgment flags had NO UI WRITER,
+ever.** The route returned `requires_acknowledgment: true` and `GeneratePlanScreen` read it
+**zero times**, so §44's documented *"two-step pattern: first call surfaces the warning,
+second call (with explicit acknowledgment) generates"* only ever had one step, and a
+time-goal runner in the warn band was refused with no way to proceed. **Clients must send
+the flag named by `lib/plan/warnAcknowledgement.ts → ACK_FIELD`, never a hardcoded
+string** — both flags are stripped before the input is stored, so a typo reads as a runner
+who never acknowledged anything, which is silent by construction.
+
 ---
 
 ## Responses
 
 ### 200 — Plan generated
+
+⚠️ **`plan.meta.plan_kind` says WHICH plan came back.** A request carrying
+`accept_base_build` returns `plan_kind: 'base_build'` — a different plan object with no
+race week, no taper and no peak, judged by its own constitution
+(`validateBaseBuildBlock`, §116) rather than by `validatePlan`. A consumer that assumes a
+race plan will mis-read it; `validateStoredPlan` owns the dispatch.
 
 ```json
 { "plan": Plan }

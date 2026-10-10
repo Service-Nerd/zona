@@ -598,7 +598,13 @@ say "── CONTRACTS: a SHARED component with no contract at all ──"
 # This asks the inverse: a component under `components/shared/` that EXPORTS a prop
 # interface and is imported by more than one file should have a contract. Existing
 # debt is declared below so it is visible and cannot grow.
-UNCONTRACTED_BASELINE=59   # ⚠️ 60 → 59, 2026-10-10: `RefusalView` gained a real contract in
+UNCONTRACTED_BASELINE=58   # ⚠️ 59 → 58, 2026-10-10 (second payment, same day): `TodayScreen`
+# gained a contract because `BASEBUILD-HANDOVER-01` added four props to it and it had none,
+# while being one of the register-counted components (4 importers). ⚠️ `ModifyPlanSheet` also
+# gained a real contract the same day and it does NOT move this number: it has ONE importer,
+# and this register counts only components with >= 2. Stating that so the two payments are not
+# conflated — the register-over-counting failure this repo records.
+# Prior note: ⚠️ 60 → 59, 2026-10-10: `RefusalView` gained a real contract in
 # `docs/contracts/components/refusal-view.md` because `PREP-ACK-NO-WRITER-01` changed its PROP
 # INTERFACE, and `COMPONENT-CONTRACT-GATE-01` accepted it (fenced `interface` block + a
 # `**Component:**` line, both of which it refused on my first attempt). ⚠️ THIS IS A REAL
