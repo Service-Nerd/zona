@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-10 — WEEK-THEME-TOKEN-ENRICH-01 · a rule that lives only in a prompt has no enforcement
+
+**Shipped:** the enrichment merge now refuses a model-authored week label or theme containing a `{{placeholder}}`, keeps the engine's copy, and records why.
+
+**Dev learning:** the prompt said *"never put placeholders in them"* and the merge said `if (ew.theme) week.theme = ew.theme`. **A prompt is a request; the merge is the boundary.** The same function already defends the engine's copy for time-trial notes, and that branch's own comment records the model writing `{{session_zone}}, {{session_distance}}` into a live plan — the same two token names, 45 of the 49 I found. The remedy existed for one twin. Also: `mergePlan` is deliberately pure, so `recordOpsEvent` could not go in it; the sink is injected and the already-impure caller attributes.
+
+**Product/creator learning:** the consumer check inverted the whole item. I filed it about `week.theme`, which had all 49 tokens — and `theme` goes through the prose renderer, which strips an orphan, so its worst case is a sentence with a hole in it. **`week.label` has zero tokens and renders raw at four sites on the Plan screen.** The field with no observed defect was the dangerous one. *"Where is this read"* is a different question from *"where did it break"*, and only the first one found that.
+
+**AI-building learning:** a meta-test caught my test. `hollowTestShapes.test.ts` rejects a bare `toContain('identifier')` against source text, because it also passes against `identifierX` — and, more to the point, against the identifier appearing only in a comment. The route I was asserting on mentions the kind twice in its own explanatory block, so my arm would have passed with the query deleted. The gate told me which form to use. **A source assertion passes on a comment** is a lesson this repo has written down, and now enforces.
+
+**The honest bit:** I ran `git add -A` and my item-3 commit swallowed item 4's entire diff. Caught it when the second commit said "nothing to commit, working tree clean" — then soft-reset and split, which means `ship-record-check` can match each scope. One keystroke from two items sharing one commit message and one of them being invisible to the records.
+
+**Hook material:** the field with 49 bugs in it was the safe one. The field with zero was one model token away from printing `{{session_zone}}` on the Plan screen.
+
+**Postable?:** yes
+
+## 2026-10-10 — LR-NOTE-SCOPE-01 · the sentence lied, the number was right, and the hold cost me a wrong plan first
+
+**Shipped:** §80's shortfall note now opens *"Your longest run **in the peak weeks** tops out at…"*, plus a baselined check that keeps the shape defect visible.
+
+**Dev learning:** two quantities, 115 lines apart in one file, both named `peakLr*`, with different populations — peak-phase only, and every race-directed week. They are not duplicates, so collapsing them would have been the wrong fix; the names were the bug. Swept the shape across the repo: three candidates, one carried it, and it was inside the invariant that reads this very note. **D-16's "no parallel semantics" is about two computations of the same quantity. Two different quantities with the same name stem is a different defect and needs the opposite remedy.**
+
+**Product/creator learning:** §80 is explicitly peak-scoped because race specificity is the point — a one-off long run six weeks out followed by detraining should not satisfy the floor. So the number was right, and the plan was simply saying the wrong words about it. Checking the doctrine before picking a side is what stopped me "fixing" the computation.
+
+**AI-building learning:** I asked for my own proposed trade to be stress-tested and it failed. The plan was to put the replacement signal in `planShapeInvariants` I3, which already has a "peak is the peak" arm — and `audit:plan-shape` is **not in `verify:ci`**. It runs when somebody types it. That is the difference between a check and a note, and I would have shipped the note. Second time in two days that asking "does this actually run?" changed the answer.
+
+**The honest bit:** the item I filed that morning was wrong by an order of magnitude and misnamed. I filed `LR-LONGEST-IN-BUILD-01` off two observed cases; measured properly it is **592 of 2,872 (20.6%)**, the maximum sits in **base** more often than build, and **535 of 592 are time-target plans where doctrine says nothing about long-run size** — so most of my "defect" is unruled behaviour. Taking that to the board as a 592-case alarm would have been the "big accurate count, wrong population" error with my name on it. And the previous day's closure of this same item rested on a tautology. Two wrong framings of one defect, by me, inside 24 hours.
+
+**Hook material:** 592 cases, 20.6%, and the number I should have taken to the board was 19.
+
+**Postable?:** yes
+
+
 ## 2026-10-10 — BACKLOG-OPEN-SET-01 · the question was "what's left?" and the records couldn't say
 
 **Shipped:** removed a 125-line duplicate region of the backlog, taught both shipped-but-open audit arms the marker that 14 open items actually use, re-opened an item whose closure evidence was circular, and added the mirror arm for a roadmap row that claims done over an open item.

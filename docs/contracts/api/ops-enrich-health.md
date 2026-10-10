@@ -36,9 +36,24 @@ names runners is not public. `GET` delegates to `POST`.
       { "user_id": "…", "created_at": "…", "enrichment": "failed_invalid_copy" }
     ],
     "alert": true
+  },
+  "boundary": {                     // WEEK-THEME-TOKEN-ENRICH-01, 2026-10-10
+    "weekCopyRejected30d": 0,       // null when the count could NOT be read
+    "meaning": "model-authored week label/theme carrying a {{placeholder}}, refused by the merge; engine copy kept"
   }
 }
 ```
+
+⚠️ **`boundary` IS NOT PART OF THE VERDICT, AND THAT SEPARATION IS THE CONTRACT.** It is the
+only `ops_events` read in this route, and it exists because a new ops kind with no reader is the
+inert-field class (`run_walk_strategy`: a writer, no reader, and a green invariant that could
+not see a screen). Three rules bind it:
+
+| Rule | Why |
+|---|---|
+| **It is never a rate and never a denominator** | the `denominator` note below is about exactly this mistake. `weekCopyRejected30d` is a count of refusals at the merge boundary, not a share of anything |
+| **It must not move `healthy`** | a rejection is the guard **working** — `OPS-SUBS-UNHANDLED-SEEN-01`'s rule: counted and reported, never alerting |
+| **`null` means "could not read", not "none"** | *"no rows"* and *"did not look"* are the pair this repo keeps confusing, which is the whole of `OPS-SUBS-UNHANDLED-SEEN-01` |
 
 ⚠️ **The `denominator` field is deliberate.** The first version of this measurement derived a
 rate from `ops_events` as `failed / (failed + plan_enrich_server_saved)` and reported **67%**.

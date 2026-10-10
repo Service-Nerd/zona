@@ -64,47 +64,11 @@ reverting the contract.
 
 ---
 
-### 🔻 `WEEK-THEME-TOKEN-ENRICH-01` — the enricher puts SESSION tokens in WEEK themes, against its own prompt ⚙️ **NO BOARD**
+### ✅ `WEEK-THEME-TOKEN-ENRICH-01` — **SHIPPED 2026-10-10.** A rule stated only in a prompt is a request ⚙️ **NO BOARD**
 
-**Filed 2026-10-09, after verifying `COACH-INTRO-TOKEN-01` against live data rather than
-trusting the unit tests.**
+The merge now refuses a model-authored week `label` or `theme` carrying a `{{placeholder}}` and keeps the engine's copy, attributed via `plan_enrich_week_copy_rejected`. Full reasoning: `feature-registry.md`.
 
-🔴 **The prompt already forbids it, in as many words** (`enrich.ts`):
-*"Use placeholders ONLY for coach_notes. Week labels and themes do NOT contain numerics —
-**never put placeholders in them**."* The model does it anyway, on **11 of 34 plans**, and
-nothing enforced the rule until `COACH-INTRO-TOKEN-01` widened
-`INV-PLAN-NO-PLACEHOLDER-COPY` today — at `warn`.
-
-**Measured, by token name, across 49 live `week.theme` tokens:**
-
-| token | count | resolves to |
-|---|---|---|
-| `{{session_zone}}` | **37** | **BLANK** — there is no session in scope for a week-level string |
-| `{{session_distance}}` | 8 | **BLANK** |
-| `{{zone2_ceiling}}` | 4 | **147 bpm** — correct, it is a plan-level value |
-
-⚠️ **SO `COACH-INTRO-TOKEN-01` GUARANTEES NO BRACE, NOT A COMPLETE SENTENCE**, and that
-limitation is the reason this item exists. Rendered today those 37 would read:
-
-> *"Strides appear now on Wednesday and Sunday. Still all. These short bursts wake the legs."*
-> *"Quality returns to 7 km in. Volume stays at 38 km."*
-
-✅ **No runner sees them today** — `week.theme`'s only reachable render is `TodayScreen`'s
-maintenance-transition line, there are **0 maintenance plans live**, and maintenance themes are
-rule-authored (`enrichMaintenance.ts` does not rewrite them). But `/api/post-race-reshape:249`
-writes `theme: enrichment.theme ?? week.theme`, so an AI theme can reach it.
-
-✅ **It cannot cost a runner their AI voice.** `violationsIntroducedBy` filters
-`severity === 'error'`, and the new arm is `warn` — verified, not assumed, because an
-over-eager invariant discarding enriched weeks is a recorded defect class here.
-
-**Scope, and the order matters:** (1) decide whether the enricher should be made to obey its
-own prompt (a schema/validation reject on a themed token, so the week reverts to rule copy
-rather than shipping a gapped sentence), or whether `week.theme` should be allowed session
-tokens with a session-aware render. (2) Only then decide the severity of the invariant arm.
-⚠️ **Do not simply raise it to `error`** — that WOULD start reverting enriched weeks, which
-is the trade this item exists to make deliberately.
-
+🔴 **THE CONSUMER CHECK INVERTED THE ITEM.** This entry was about `theme` (49 tokens, 11 of 34 plans). `week.theme` has one render and it goes through `renderPlanProse`, which strips an orphan — so its failure is a **gap** in a sentence. **`week.label` renders RAW at four sites in `PlanCalendar` with no prose owner**, so a token there puts a literal `{{session_zone}}` on the Plan screen. Production carries **0** label tokens: luck, not a guarantee. The field with no observed defect was the higher-severity half.
 ---
 
 ### ✅ `LR-TAPER-BUMP-01` — **SHIPPED 2026-10-09.** §6 Am.1 was already law; two writers were breaking it 🏃 **COACHING BOARD RULED: CORRECT WITH AMENDMENT**
@@ -140,64 +104,32 @@ unproven by reachability** — declared in the test file, not papered over.
 
 ---
 
-### 🔻 `LR-NOTE-SCOPE-01` — RE-OPENED 2026-10-10. **The closure's measurement checked the wrong quantity** ⚙️ **NO BOARD**
+### ✅ `LR-NOTE-SCOPE-01` — **SHIPPED 2026-10-10.** The words moved; the number did not ⚙️ **NO BOARD**
 
-**Closed 2026-10-09 as "resolved itself"; re-opened on measurement the next morning.**
+The note now opens *"Your longest run **in the peak weeks** tops out at X"*. §80 is explicitly peak-scoped, so the computation was correct and the sentence was what lied. Full reasoning: `feature-registry.md`.
 
-🔴 **THE CLOSING EVIDENCE WAS A TAUTOLOGY.** It read *"373 of 373 generated plans where the
-note fires have `peak-phase max == plan max`"* — and **the note's figure IS the peak-phase
-max**, so that arm compared the note's own source to itself. It could not fail. The question
-this item asks is different: does *"tops out at X"* state the plan's **actual** longest run?
-
-📐 **Re-measured on 1,200 cohort-grid plans, 118 of which carry the note: 2 disagree (1.7%).**
-Both have the plan's longest run in the **BUILD** phase, not the taper that `LR-TAPER-BUMP-01`
-fixed:
-
-```
-42.2km cwk=20 longest=8 days=3 age=52
-  note "tops out at 2h 24" = 144 min  = peak-phase max ✓
-  plan's true longest run  = 153 min  in w11, BUILD
-  long runs: w7/build:103 w8:134 w9:78 w10:122 w11:153 w12:81 w13/peak:113 w14/peak:144
-42.2km cwk=35 longest=14 days=3 age=52 — note 175, plan max 179 (w11, build)
-```
-
-⚠️ **The hold was still right and the lesson stands** — qualifying the sentence before the
-cause was understood would have hidden the shape defect, and that sentence is how **both**
-defects were found. What changed is that the cause is only **half** fixed.
-
-**Fix is still one line** once `LR-LONGEST-IN-BUILD-01` below is ruled: either the note reads
-the plan's max rather than the peak phase's, or the engine stops producing a build-phase
-maximum and the note becomes correct by construction for real. **Do not qualify the wording
-while the second item is open** — same reason as the original hold.
-
+⚠️ **The hold was released by a measurement, not a promise.** The sentence was the only visible evidence of its cause, so the wording could not move until the shape defect was independently visible. `longRunPeakPhase.test.ts` carries it as a non-growing baseline — **15 of 600 (2.5%) in §80's cohort, all in build**. 🔴 **My first plan for that failed its own stress-test:** `planShapeInvariants` I3 was the obvious home and `audit:plan-shape` is **not in `verify:ci`**, so it would have run only when somebody typed it.
 ---
 
-### 🔻 `LR-LONGEST-IN-BUILD-01` — the plan's longest run can sit in BUILD, above the peak phase 🏃 **COACHING BOARD**
+### 🔻 `LR-PEAK-NOT-LONGEST-01` — the peak phase need not contain the plan's longest run, and doctrine never said it must 🏃 **COACHING BOARD**
 
-**Found 2026-10-10 under `LR-NOTE-SCOPE-01`'s residual.** `LR-TAPER-BUMP-01` scoped V4's
-long-run repeat ceiling to `LR_REPEAT_ELIGIBLE_PHASES: ['base','build','peak']`, which stopped
-it bumping a **taper** long run above the peak. **Build was left in**, so V4 can still raise a
-build-phase long run above anything the peak phase delivers:
+**Re-scoped and RENAMED 2026-10-10 from `LR-LONGEST-IN-BUILD-01`, because I filed it wrong by an order of magnitude and the name was wrong too.** Filed on 2 observed cases; measured properly during the `LR-NOTE-SCOPE-01` build.
 
-```
-w11/build 153 min   vs   w14/peak 144 min      (and 179 vs 175 on the second case)
-```
+📐 **Across 2,872 generated cohortGrid plans the peak phase sits below the plan's long-run maximum on 592 (20.6%).** Where that maximum actually sits:
 
-The runner's biggest day is **three weeks before peak**, and the peak phase then asks for
-**less**. ⚠️ **`INV-PLAN-PEAK-IN-PEAK-PHASE` cannot see it** — it guards `weekly_km`, not the
-long run, which is the gap `LR-TAPER-BUMP-01`'s own record already names in writing
-(*"nothing guards the long run by phase"*). The taper half got an invariant; this half got
-nothing.
+| phase | n | by distance |
+|---|---|---|
+| **base** | **309** | 5K 123 · 10K 98 · HM 88 |
+| build | 215 | 10K 87 · 5K 54 · HM 46 · M 28 |
+| taper | 68 | HM 28 · 5K 28 · M 12 |
 
-**This is the "remedy applied to ONE TWIN" class**, and the twin was named in the fix's own
-commit message.
+🔴 **SO "IN BUILD" WAS THE WRONG NAME — base is the commonest.** And **535 of the 592 are `time_target`**, where §24b/§24c restructure the 5K/10K long run and say nothing about its size. **Most of that 592 is unruled behaviour, not a defect**, which is exactly why it must not be taken to the board as a 592-case alarm.
 
-🔻 **For the board, not to be built unilaterally:** is a build-phase long-run maximum ever
-correct (a deliberate overreach followed by consolidation), or does §24/§80's specificity
-require the longest run inside the peak phase? Rate is **2 of 118 noted plans** in the sampled
-cohort; **measure the whole grid before ruling** — the note only fires on shortfall plans, so
-the real population is larger than 118 and nobody has counted it.
+⚠️ **§80's own cohort — HM and marathon, goal `finish` — is 19, all in build.** That is the only part with a doctrinal floor behind it, and it is the part now baselined by `longRunPeakPhase.test.ts`.
 
+✅ **`LR-TAPER-BUMP-01` has NOT regressed** — the 68 taper cases breach `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` **0 times**, sitting inside its declared km tolerance (median gap 8 min, max 28).
+
+🔴 **THE QUESTION FOR THE BOARD, AND WHY IT IS A PRINCIPLE RATHER THAN A FIX: DOCTRINE IS SILENT.** §23's overload requirement is **weekly volume only**; `INV-PLAN-PEAK-IN-PEAK-PHASE` and `planShapeInvariants` I3 both guard **km**; §45 sets a peak long-run floor for time-targeted HM and §80 for finish-goal HM/marathon, and neither says the peak phase must hold the plan's *maximum*. So *"the peak phase contains the longest run"* is an **unwritten principle**. Either it is ratified (and then it needs a numeric and an invariant, and 592 cases need a remediation story), or the 5K/10K behaviour is declared correct and the scope is narrowed to §80's cohort. **Measure the whole grid before ruling — the note fires only on shortfall plans, so the population is larger than any sample taken so far.**
 ---
 
 ### ✅ `AUDIT-MAINTENANCE-KIND-01` — **SHIPPED 2026-10-09.** The maintenance kind gets §75 ⚙️ **NO BOARD** *(ADR-013 restoration)*
@@ -5980,7 +5912,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of the 2026-10-09 session, continued past midnight (last ship `c5126097`). 551 files / 4,946 tests · `verify` exit 0 · Build 0 · sweep 0 new on 14,268 plans · parity IDENTICAL 6,066 · `audit:plans` re-baselined with a declared reason.** 🔴 **TWO BOARDS SAT AND BOTH RULINGS CHANGED UNDER MEASUREMENT.** 🏃 `WIZARD-ZERO-VOLUME-REFUSAL-01` was **CORRECT WITH AMENDMENT three times in one session**, each amendment forced by a number: **(1)** the item's own two premises were FALSE — §111 already refuses a zero weekly volume, and the real defect was `longest_recent_run_km = 0` read as a GAP by `> 0` in **FOUR** places, so §9's cap was skipped and **a declared zero produced a 12.5 km first long run on a half marathon against 2.0 km for a declared 1 km**; **(2)** the ruling's own two artifacts **contradicted each other** — "cap a declared zero at 5 km" cannot be monotone against §113 Am.1's ratified 2.0 km rung, so the number yielded to the ordering; **(3)** §113's gate carried the same expression, so a declared zero was **ADMITTED** at HM while a declared 1 km was **REFUSED**, and the admitted plan carried its **largest long run inside the taper** (16.0 vs a peak of 11.0), +112% at week 4. 🔴 **THE CHECKER WAS BLIND FOR THE SAME REASON THE PRODUCER WAS** — `INV-PLAN-WEEK-1-2-LONG-CAP` shared `> 0`, so the one invariant written to catch an over-large opening long run fired **0 times at every rung**. 🥇 **MY OWN FIX INTRODUCED FOUR ERROR-LEVEL VIOLATIONS and chasing them found the fourth site** — the regression I caused is what exposed it. 🥇 **I also inferred a ruling nobody asked for** (widening §44's 10K door to half-marathoners) and backed it out: an existing test pinned the opposite and `LR-ALT-42-CONFIG-01` owns the number — which had been called "filed" in a test comment with **no backlog entry at all**. 🧭 `WIZARD-WEEKDAY-CONFIRM-01`: the Design Board **KILLED what the SLT asked for** — a weekday confirmation, on a **37.5% fire rate** with Saturday 12 vs Sunday 13 live — and shipped a **readback** instead. 🔻 **So the SLT's success condition is no longer achievable and that is flagged for an overturn, not dropped.** 🥇 **TWO DEFECTS IN MY OWN GATE, both caught by running it: 2027-06-20 is a SUNDAY and I had typed Saturday**, and the bounded region found the **validation** switch 960 lines earlier because two switches share one case label. **Measured: 668 of 6,480 beginner-marathon rows move to a governed "not yet" and NOT ONE `longest > 0` row changes.** 🔴 **AND THE COVERAGE REGISTER WAS SHORT BY ONE PRINCIPLE FOR THREE WEEKS** — `principlesInDoc()` matched `^## N. ` while §121 is written `## §N — `, so a ratified principle **with an invariant already citing it** was invisible to the assertion written to catch exactly that; `doc.length` 120 → 121, and **the number was never 120, the parser was.** 🥇 **§10's own exemption reason went stale three hours after MY amendment invalidated it** — *"there is no plan property to assert"* — because **an `exempt` entry is never re-examined.** The new arm walks **code → manifest**, the half nothing walked. 🔴 **AND THE RECORDS COULD NOT ANSWER "WHAT IS STILL OPEN?"** — a **125-line region of `backlog.md` was DUPLICATED with the two copies in DIFFERENT STATES** (`LR-NOTE-SCOPE-01` as ✅ CLOSED *and* 🔻 BLOCKED), and **🔻 — the most common open marker, 14 headings — was in NEITHER shipped-but-open audit arm.** 🥇 **AND THAT ITEM'S CLOSURE EVIDENCE WAS A TAUTOLOGY**: *"373 of 373 have `peak-phase max == plan max`"*, and the note's figure **IS** the peak-phase max, so it compared its own source to itself. Re-measured: **2 of 118 understate the plan's longest run**, the maximum sitting in **BUILD** (`w11:153` vs `w14/peak:144`) — `LR-TAPER-BUMP-01` scoped V4 out of the taper and **left build in**, the twin named in its own record. Re-opened + `LR-LONGEST-IN-BUILD-01` filed. ⚠️ **Nothing has ever run on a device.**
+**State at END of the 2026-10-09 session, continued into 2026-10-10 (last ship `4165f0b2`). 551 files / 4,946 tests · `verify` exit 0 · Build 0 · sweep 0 new on 14,268 plans · parity IDENTICAL 6,066 · `audit:plans` re-baselined with a declared reason.** 🔴 **TWO BOARDS SAT AND BOTH RULINGS CHANGED UNDER MEASUREMENT.** 🏃 `WIZARD-ZERO-VOLUME-REFUSAL-01` was **CORRECT WITH AMENDMENT three times in one session**, each amendment forced by a number: **(1)** the item's own two premises were FALSE — §111 already refuses a zero weekly volume, and the real defect was `longest_recent_run_km = 0` read as a GAP by `> 0` in **FOUR** places, so §9's cap was skipped and **a declared zero produced a 12.5 km first long run on a half marathon against 2.0 km for a declared 1 km**; **(2)** the ruling's own two artifacts **contradicted each other** — "cap a declared zero at 5 km" cannot be monotone against §113 Am.1's ratified 2.0 km rung, so the number yielded to the ordering; **(3)** §113's gate carried the same expression, so a declared zero was **ADMITTED** at HM while a declared 1 km was **REFUSED**, and the admitted plan carried its **largest long run inside the taper** (16.0 vs a peak of 11.0), +112% at week 4. 🔴 **THE CHECKER WAS BLIND FOR THE SAME REASON THE PRODUCER WAS** — `INV-PLAN-WEEK-1-2-LONG-CAP` shared `> 0`, so the one invariant written to catch an over-large opening long run fired **0 times at every rung**. 🥇 **MY OWN FIX INTRODUCED FOUR ERROR-LEVEL VIOLATIONS and chasing them found the fourth site** — the regression I caused is what exposed it. 🥇 **I also inferred a ruling nobody asked for** (widening §44's 10K door to half-marathoners) and backed it out: an existing test pinned the opposite and `LR-ALT-42-CONFIG-01` owns the number — which had been called "filed" in a test comment with **no backlog entry at all**. 🧭 `WIZARD-WEEKDAY-CONFIRM-01`: the Design Board **KILLED what the SLT asked for** — a weekday confirmation, on a **37.5% fire rate** with Saturday 12 vs Sunday 13 live — and shipped a **readback** instead. 🔻 **So the SLT's success condition is no longer achievable and that is flagged for an overturn, not dropped.** 🥇 **TWO DEFECTS IN MY OWN GATE, both caught by running it: 2027-06-20 is a SUNDAY and I had typed Saturday**, and the bounded region found the **validation** switch 960 lines earlier because two switches share one case label. **Measured: 668 of 6,480 beginner-marathon rows move to a governed "not yet" and NOT ONE `longest > 0` row changes.** 🔴 **AND THE COVERAGE REGISTER WAS SHORT BY ONE PRINCIPLE FOR THREE WEEKS** — `principlesInDoc()` matched `^## N. ` while §121 is written `## §N — `, so a ratified principle **with an invariant already citing it** was invisible to the assertion written to catch exactly that; `doc.length` 120 → 121, and **the number was never 120, the parser was.** 🥇 **§10's own exemption reason went stale three hours after MY amendment invalidated it** — *"there is no plan property to assert"* — because **an `exempt` entry is never re-examined.** The new arm walks **code → manifest**, the half nothing walked. 🔴 **AND THE RECORDS COULD NOT ANSWER "WHAT IS STILL OPEN?"** — a **125-line region of `backlog.md` was DUPLICATED with the two copies in DIFFERENT STATES** (`LR-NOTE-SCOPE-01` as ✅ CLOSED *and* 🔻 BLOCKED), and **🔻 — the most common open marker, 14 headings — was in NEITHER shipped-but-open audit arm.** 🥇 **AND THAT ITEM'S CLOSURE EVIDENCE WAS A TAUTOLOGY**: *"373 of 373 have `peak-phase max == plan max`"*, and the note's figure **IS** the peak-phase max, so it compared its own source to itself. Re-measured: **2 of 118 understate the plan's longest run**, the maximum sitting in **BUILD** (`w11:153` vs `w14/peak:144`) — `LR-TAPER-BUMP-01` scoped V4 out of the taper and **left build in**, the twin named in its own record. Re-opened + `LR-LONGEST-IN-BUILD-01` filed. 🔴 **THEN TWO DEFECTS WHERE A RULE EXISTED AND NOTHING ENFORCED IT.** The enricher's prompt forbids placeholders in week copy *in as many words* and the merge took them anyway: **49 in `week.theme`, 11 of 34 plans**. ⚠️ **THE CONSUMER CHECK INVERTED THE ITEM** — `theme` strips its tokens at render, while **`label`, with ZERO tokens, renders RAW at four `PlanCalendar` sites**: the field with no observed defect was the dangerous half. And §80's note said *"your longest run"* about the **peak phase's** maximum — right number, wrong words — so the words moved and the number did not. 🥇 **THE HOLD ON THAT WORDING WAS RELEASED BY A MEASUREMENT, AND MY FIRST PLAN FOR IT FAILED ITS OWN STRESS-TEST**: `audit:plan-shape` is **not in `verify:ci`**, so the replacement signal would have run only when somebody typed it. 🥇 **AND THE ITEM I FILED THAT MORNING WAS WRONG BY AN ORDER OF MAGNITUDE** — 592 of 2,872 (20.6%), the maximum sitting in **base** more often than build, and **535 of 592 time-target where doctrine is silent**; the number for the board is **19**. ⚠️ **Nothing has ever run on a device.**
 
 **Prior — State at END of 2026-10-09 (last ship `0c6489ff`). 551 files / 4,898 tests · `verify` exit 0 · Build 0 · sweep 0 new on 14,268 plans · parity IDENTICAL 6,066.** 🔴 **28% OF THE FLEET'S REPORTED DEFECTS WERE PHANTOMS, AND I FOUND IT BY FIXING SOMETHING ELSE.** The 2nd plan producer never stamped `generator_input` (**2 of 34 live plans**). **Adding the stamp OPENS the save gate, and that gate runs the RACE validator, which fires 61 errors on a VALID base-build plan.** The audit had been doing it all along: **base_build mean 50.5 vs race 8.2; fleet 363 → 262.** Its own header predicted it in writing. **Second day running the CHECKER was the broken thing.** ✅ It keys on `plan_kind`, which both plans carry: **no write to a runner's plan**. 🥇 The producer gate found a **FOURTH** producer on its first run after my analysis said "exactly two". 🔴 **I FIXED HALF A PAIR**: the TS union widened, the Zod twin left rejecting `base_build` on exactly those 2 of 34. 🔴 **THE TRIAL KPI COULD NEVER MOVE**: it counted `subscriptions.status='trialing'` and the reverse trial is not a subscription, so the at-risk column it tells itself to "always surface prominently" was **structurally 0 every day**. Live **0 → 5 on trial, 1 at risk** — one 6 days quiet on day 6 of 14. 🥇 **MY GATE FOR IT WAS HOLLOW**: 5 mutations, 4 red, and the one reinstating the EXACT original defect stayed GREEN — the regex anchored on the wrong side of `as trialing_total`. 🔴 **A DESIGNED REFUSAL RECORDED NO LEVEL AT ALL** — **20 events, 0 levels**, inert from day one; §79's levels now have ONE owner, parity IDENTICAL. 🔴 **THEN A RAW `{{token}}` ON THE SCREEN AFTER PLAN GENERATION** — and the guard for it had **BOTH failure classes at once**: no `{{` in its vocabulary, no `meta.*` field in its population, which is exactly where the only visible token lived. 🥇 **A MUTATION STAYED GREEN AGAIN** and found a missing arm: removing `ORPHAN_RE` passed everything because my brace arm used well-formed tokens the main regex handles alone. 🔴 **AND A 72-LINE COMPONENT RENDERED `week.theme` AS RAW PROSE WITH ZERO RENDER SITES** — 18 days after DESIGN-V3 removed its only one, **one JSX line from showing 11 runners `{{zone2_ceiling}}`**; the gate written for it found **THREE TWINS in the same file**. 🔴 **AND THE DIGEST SAID "NO CANCELLATIONS" WHILE 3 WERE ARRIVING A FORTNIGHT** — the query selected only the kinds we ALERT on, so an event we had DECIDED not to act on was indistinguishable from one that never arrived. 🥇 **BEST FINDING OF THE DAY IS ONE I MAY NOT FIX**: `V4` increments a long run in the **TAPER** — **416 of 1,840 (22.6%)** in the low-volume beginner cohort, **and my first grid said 0 of 1,709**. Filed for the Coaching Board; **qualifying the note would have made it invisible.** ⚠️ **Nothing has run on a device.**
 
