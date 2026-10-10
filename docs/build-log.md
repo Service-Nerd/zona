@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-10 — BACKLOG-OPEN-SET-01 · the question was "what's left?" and the records couldn't say
+
+**Shipped:** removed a 125-line duplicate region of the backlog, taught both shipped-but-open audit arms the marker that 14 open items actually use, re-opened an item whose closure evidence was circular, and added the mirror arm for a roadmap row that claims done over an open item.
+
+**Dev learning:** `grep -oE '^#{3,4} (🔲|🟡|🟠|🟢|🔵|⏸️|⚖️|🧭)'` — a status set written as a literal alternation is a hand-written list, and hand-written lists go short. **🔻 was the most common open marker in the file and was in neither arm.** The script's own comments record this class four times ("an audit is only ever as wide as its list") and the arms still each had a blind spot, in opposite places. The fix that matters isn't adding 🔻; it's that a marker set should be derived from the document and asserted non-empty, which is still not done.
+
+**Product/creator learning:** the founder asked a one-line question and the honest answer required fixing the records first. A duplicated block with the two copies in **different states** is worse than either state alone, because every grep returns both and you pick the one that confirms you.
+
+**AI-building learning:** I closed `LR-NOTE-SCOPE-01` the previous day on "373 of 373 plans have peak-phase max == plan max" — and **the note's figure IS the peak-phase max**, so the measurement compared its own source to itself and could not fail. A tautology reads exactly like strong evidence: big N, crisp ratio, no exceptions. The tell is that the two sides of the comparison come from the same expression. **When a check reports 100%, look at what the denominator was computed from.**
+
+**The honest bit:** my new audit arm produced a false positive within sixty seconds, on `RESHAPE-MOMENT-03`, because 🔴 means *killed* in the heading form and I'd copied a status set without the convention that goes with it. The existing arm documents that exclusion in a comment I had just read. Also: my first deletion of the duplicate block asserted the wrong end boundary and threw — which is the only reason I didn't cut 125 lines from the wrong place.
+
+**Hook material:** the measurement that closed the bug compared the number in the sentence against the number the sentence was printed from. 373 of 373, and it could not have failed.
+
+**Postable?:** yes
+
+
 ## 2026-10-10 — PRINCIPLE-COVERAGE-POPULATION-01 · an exemption's reason rots like any other claim
 
 **Shipped:** the principle-coverage gate now reads both of the constitution's heading forms, §10's classification matches what its own amendment made true, and a new arm walks code → manifest instead of only manifest → code.
