@@ -398,6 +398,47 @@ build. **That is a §116 question as much as a design one.**
 whose `meta.race_date` is deliberately `''`, does that group appear at all? (Silvanto called the
 group title a category error on this plan kind.)
 
+### 🔻 `PREP-ACK-NO-WRITER-01` — **THE ENGINE OFFERS AN ACKNOWLEDGMENT THE APP CANNOT SEND** 🧭 **DESIGN BOARD** *(found 2026-10-10 in `BASEBUILD-HANDOVER-01`'s analysis; a PREREQUISITE for it)*
+
+`/api/generate-plan` returns **`requires_acknowledgment: true`** on a `PrepTimeError` whose reason is
+`warn_unacknowledged`. **`GeneratePlanScreen` reads that field ZERO times.** And
+`acknowledged_prep_warning` — the `GeneratorInput` field the engine checks — is written only by
+`lib/plan/charityCohort.ts` (a fixture path) and `lib/plan/useCaseEnvelope.ts` (a measurement
+harness). `git log -S"acknowledged_prep_warning: true" -- app components` returns **nothing, ever**.
+
+**So a runner in the warn band is shown a REFUSAL with no way to proceed, while the engine is
+explicitly designed to admit them on acknowledgment.** `inputs.ts:237` —
+`if (prep.status === 'warn' && !input.acknowledged_prep_warning) throw`. Same class as
+`run_walk_strategy`: **a field with a consumer and no writer.**
+
+📐 **MEASURED ON A REAL RUNNER, and the band is GOAL-DEPENDENT, which is why a grid missed it:**
+
+| Tom's projected handover input | outcome |
+|---|---|
+| as-is (`goal: 'time_target'`, 12 weeks to race) | ⛔ `PrepTimeError (warn_unacknowledged)` — *"12 weeks is under the 16 weeks a time goal needs for a marathon"* |
+| **+ `acknowledged_prep_warning: true`** | ✅ **GENERATES — 13 weeks** |
+
+⚠️ **MY FIRST TWO GRIDS SAID "NO DEFECT" AND BOTH WERE THE WRONG POPULATION.** A 21-runway sweep
+across three fitness profiles found PrepTime refusing only **below** the hard `block` threshold
+(marathon <10, HM <8), where acknowledgment is irrelevant **by construction** — so it reported
+*"acknowledgment would admit: none"*, which reads as no defect. **Every row used `goal: 'finish'`.**
+The warn band only exists for a **time goal** (`PREP_TIME_THRESHOLDS.MARATHON = { block: 10, warn:
+16 }` bites on the goal, not the level). **Third time in one day a grid varied axes and never
+reached the INTERACTION** — see [[feedback-varying-an-axis-is-not-reaching-the-interaction]]. The
+real case settled it in one run.
+
+🔻 **Live blast radius is UNMEASURABLE from telemetry as it stands:** 12 of 20
+`plan_refused_by_design` events are `PrepTimeError`, but the detail records `rule` and **not
+`reason`**, so block and warn cannot be told apart after the fact. Two of the 12 carry
+`weeks_to_race: -20` (a race date in the past). **Recording `reason` is a one-line addition and is
+part of this item.**
+
+🧭 **WHY THE DESIGN BOARD:** the remedy is a new affordance on the refusal screen — the runner must
+be able to say *"I know it is short, build it anyway"* — and `REFUSAL-SCREEN-01` ruled that screen's
+voice is *"not yet"*, not *"no"*. An acknowledge-and-proceed button changes what that screen IS.
+⚠️ **It must not become a dismissable warning**: §44 requires a refusal to name a lever, and here
+the lever is the runner's own informed consent to a compressed block.
+
 ### 🔻 `BASEBUILD-HANDOVER-01` — **SLT APPROVED 2026-10-10, BUILD FIRST. AND IT IS MAINT-06's TWIN, NOT A NEW SURFACE** 💼 **SLT** → 🧭 **DESIGN BOARD** + 🏃 **COACHING BOARD** *(founder funds; he does not design it)*
 
 ⚖️ **SLT: BUILD, and FIRST** — the only item of the three with a dated cost (100 and 107 days). `slt-2026-10-10-basebuild-escalations.md`.
