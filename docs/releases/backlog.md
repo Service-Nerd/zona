@@ -111,25 +111,22 @@ The note now opens *"Your longest run **in the peak weeks** tops out at X"*. §8
 ⚠️ **The hold was released by a measurement, not a promise.** The sentence was the only visible evidence of its cause, so the wording could not move until the shape defect was independently visible. `longRunPeakPhase.test.ts` carries it as a non-growing baseline — **15 of 600 (2.5%) in §80's cohort, all in build**. 🔴 **My first plan for that failed its own stress-test:** `planShapeInvariants` I3 was the obvious home and `audit:plan-shape` is **not in `verify:ci`**, so it would have run only when somebody typed it.
 ---
 
-### 🔻 `LR-PEAK-NOT-LONGEST-01` — the peak phase need not contain the plan's longest run, and doctrine never said it must 🏃 **COACHING BOARD**
+### 🔻 `LR-PEAK-NOT-LONGEST-01` — **RULED 2026-10-10, BASE ARM AWAITING FOUNDER SIGN-OFF** 🏃 **COACHING BOARD** → 👤 **FOUNDER**
 
-**Re-scoped and RENAMED 2026-10-10 from `LR-LONGEST-IN-BUILD-01`, because I filed it wrong by an order of magnitude and the name was wrong too.** Filed on 2 observed cases; measured properly during the `LR-NOTE-SCOPE-01` build.
+**Coaching Board: CORRECT IN PART / INSUFFICIENT EVIDENCE IN PART**, split by phase. Full sitting: `coaching-rulings.md` 2026-10-10.
 
-📐 **Across 2,872 generated cohortGrid plans the peak phase sits below the plan's long-run maximum on 592 (20.6%).** Where that maximum actually sits:
-
-| phase | n | by distance |
+| Arm | Ruling | Next |
 |---|---|---|
-| **base** | **309** | 5K 123 · 10K 98 · HM 88 |
-| build | 215 | 10K 87 · 5K 54 · HM 46 · M 28 |
-| taper | 68 | HM 28 · 5K 28 · M 12 |
+| **BASE (309 · 10.8% of plans)** | ✅ **CORRECT to guard** — unanimous. Willy: *"a tissue risk expressed backwards."* Sims: inverted for peri/post-menopausal bone response, and masters already never-build at **18.6%** | 🔻 **FOUNDER SIGN-OFF**, then 3 artifacts |
+| **BUILD (215)** | ⏸️ **INSUFFICIENT EVIDENCE** — McMillan and Willy genuinely differ | blocked on a §24b measurement that **does not exist** |
+| **TAPER (68)** | ✅ already ruled (§6 Am.1), 0 invariant breaches | none |
+| **`time_target` (535 of 592)** | ✅ **not a defect** (Seiler) | must be written against the MECHANISM, never as "5K/10K are exempt" (Sims, binding) |
 
-🔴 **SO "IN BUILD" WAS THE WRONG NAME — base is the commonest.** And **535 of the 592 are `time_target`**, where §24b/§24c restructure the 5K/10K long run and say nothing about its size. **Most of that 592 is unruled behaviour, not a defect**, which is exactly why it must not be taken to the board as a 592-case alarm.
+🔻 **WHAT THE FOUNDER IS BEING ASKED TO SIGN OFF.** §23 Amendment (peak-overload extends from weekly volume to the single longest session; the plan's longest run may not fall in `base`), **no new numeric**, and `INV-PLAN-LONGEST-RUN-NOT-IN-BASE` at **`warn`** on first ship because it fires on 10.8% of plans today. **It changes what the engine prescribes to roughly one plan in ten**, so it also needs a remediation decision for live plans under the live-plan policy. Nothing is built.
 
-⚠️ **§80's own cohort — HM and marathon, goal `finish` — is 19, all in build.** That is the only part with a doctrinal floor behind it, and it is the part now baselined by `longRunPeakPhase.test.ts`.
+⚠️ **The build arm is blocked on evidence, not on effort.** Two detectors for "is this peak long run §24b-restructured" both returned **100.0%** — one matched the field name `pace_target`, the other required a non-empty value, which every session carries. Both were removed rather than reported. **The evidence for the 535 time-target cases is missing, not weak**, and settling the build arm means re-deriving `resolveMainSet`.
 
-✅ **`LR-TAPER-BUMP-01` has NOT regressed** — the 68 taper cases breach `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` **0 times**, sitting inside its declared km tolerance (median gap 8 min, max 28).
-
-🔴 **THE QUESTION FOR THE BOARD, AND WHY IT IS A PRINCIPLE RATHER THAN A FIX: DOCTRINE IS SILENT.** §23's overload requirement is **weekly volume only**; `INV-PLAN-PEAK-IN-PEAK-PHASE` and `planShapeInvariants` I3 both guard **km**; §45 sets a peak long-run floor for time-targeted HM and §80 for finish-goal HM/marathon, and neither says the peak phase must hold the plan's *maximum*. So *"the peak phase contains the longest run"* is an **unwritten principle**. Either it is ratified (and then it needs a numeric and an invariant, and 592 cases need a remediation story), or the 5K/10K behaviour is declared correct and the scope is narrowed to §80's cohort. **Measure the whole grid before ruling — the note fires only on shortfall plans, so the population is larger than any sample taken so far.**
+✅ Held non-growing meanwhile by `longRunPeakPhase.test.ts` (15 of 600 in §80's cohort) — a watched number, deliberately not an invariant.
 ---
 
 ### ✅ `AUDIT-MAINTENANCE-KIND-01` — **SHIPPED 2026-10-09.** The maintenance kind gets §75 ⚙️ **NO BOARD** *(ADR-013 restoration)*
@@ -8064,18 +8061,29 @@ rule on whether the door is marathon-only or belongs to every distance §113 can
 
 ---
 
-### 🔻 `ADR022-V1-DELIVERED-RISE-01` — V1 aggravates ADR-022's declared residual 🏃 **COACHING BOARD** *(filed at Willy's request)*
+### ✅ `ADR022-V1-DELIVERED-RISE-01` — **WITHDRAWN 2026-10-10. INCORRECT AS FILED** 🏃 **COACHING BOARD**
 
-Out of `V1-LOAD-STEP-SHAPE-01`'s withdrawal. The filed premise (dip-then-jump) measured **0 of
-1,077**. What the measurement found instead: V1 plans breach §2's **delivered** 10%
-week-on-week rise at **93.0%**, against a **66.4%** control on non-V1 plans in the same cohort
-(whole cohort **72.4%**). So V1 does not CREATE the breach — ADR-022's curve-vs-delivered
-divergence does — but it raises the rate by **26.6pp**.
+🔴 **THE CONFLICT SCAN ANSWERED IT BEFORE A SEAT SPOKE.** §100 (RAMP-PRODUCER-01, 2026-09-11) had already ruled the question — *"when a rule deliberately holds a week's volume DOWN, the following week ramps from the volume the runner **actually received**"* — naming V1 as the producer, `reanchorWeekAfterTrim` as the fix and **§94's `INV-PLAN-DELIVERED-RAMP` as the detector**, with a declared residual of **34.0% → 16.4%**.
 
-⚠️ **ADR-022 scoped its fix to INJURY runners and left healthy divergence to §52**, so this may
-sit entirely inside its declared residual. **Measure against ADR-022's own numbers before
-treating it as new.** Not urgent; filed so it is not rediscovered as a fresh finding.
+🔴 **AND THREE NUMBERS WERE OFFERED FOR ONE QUESTION; ONLY THE RATIFIED INSTRUMENT MEASURED WHAT THE CONSTITUTION BOUNDS:**
 
+| instrument | V1 | control |
+|---|---|---|
+| as filed | 93.0% | 66.4% |
+| hand-rolled week-on-week delivered rise | 77.4% | 44.7% |
+| **`INV-PLAN-DELIVERED-RAMP` (§94)** | **21.3%** | **16.2%** |
+
+Control lands on §100's 16.4% to within 0.2pp. The real excess is **+5.1pp**, and the item's title mis-attributed it to **ADR-022's** residual when it belongs to **§100's**.
+
+---
+
+### 🔻 `V1-DELIVERED-TAIL-01` — watch the TAIL, not the rate 🏃 **COACHING BOARD** *(Willy's condition on the withdrawal above)*
+
+**Willy accepted `ADR022-V1-DELIVERED-RISE-01`'s withdrawal on one binding condition:** *"the worst delivered rise was 79% before §100 and 79% after — the tail did not move, and the tail is what injures people."*
+
+So the residual **+5.1pp** on V1 plans is not the thing to chase. **The worst single delivered week rise is**, and §100 recorded it as **unchanged by its own fix**. Nothing currently measures or baselines it: `INV-PLAN-DELIVERED-RAMP` fires on *whether* a week breached, never on *how far*.
+
+**Scope:** measure the distribution of delivered rises above §2's ceiling (not the count), baseline the p99 and the maximum, and bring the board a number for where a tail becomes a refusal rather than a `warn`. ⚠️ **Do not re-open the rate** — it is ruled.
 ---
 
 ### ⚖️ THE FOUR TRIAGE DECISIONS — ALL RULED 2026-10-09

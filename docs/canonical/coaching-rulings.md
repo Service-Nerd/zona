@@ -1759,3 +1759,46 @@ None.
 ### ⇗ SLT escalation
 
 None. The commercial question (should the wizard challenge a zero at all) is in `WIZARD-ZERO-LONGEST-VS-WEEKLY-01`.
+
+---
+
+## 2026-10-10 — `LR-PEAK-NOT-LONGEST-01` + `ADR022-V1-DELIVERED-RISE-01` · one sitting, and the conflict scan dissolved one of them
+
+**Trigger:** soft (`ruleEngine.ts`, `invariants.ts`), convened because neither restores documented intent. Fitness baseline in the submission: never-builds 0% injury / 12.8% healthy standard / **18.6% healthy masters**; marathon peak LR 61.6–66.4% of race.
+
+### ⚖️ `ADR022-V1-DELIVERED-RISE-01` — **INCORRECT AS FILED. WITHDRAWN.**
+
+🔴 **THE CONFLICT SCAN ANSWERED THE ITEM'S FIRST QUESTION BEFORE A SEAT SPOKE.** §100 (RAMP-PRODUCER-01, this board, 2026-09-11) already ruled it in as many words — *"when a rule deliberately holds a week's volume DOWN, the following week ramps from the volume the runner **actually received**"* — naming V1 as the producer, `reanchorWeekAfterTrim` as the fix and **§94's `INV-PLAN-DELIVERED-RAMP` as the detector**, with a declared residual of **34.0% → 16.4%** left at `warn` for the §52-exempt long run and the §52 partial-apply floor.
+
+🔴 **AND THREE NUMBERS WERE OFFERED FOR ONE QUESTION; ONLY THE THIRD MEASURED WHAT THE CONSTITUTION BOUNDS.**
+
+| instrument | V1 | control |
+|---|---|---|
+| as filed | 93.0% | 66.4% |
+| hand-rolled week-on-week delivered rise (submitted) | 77.4% | 44.7% |
+| **`INV-PLAN-DELIVERED-RAMP` (§94) — the ratified detector** | **21.3%** | **16.2%** |
+
+Control lands on §100's declared 16.4% to within 0.2pp. The real V1 excess is **+5.1pp**, not +26.6pp, and the item's title mis-attributed it to ADR-022's residual when it belongs to §100's. 🩹 **Willy, who asked for the filing, accepts the withdrawal** on one condition, binding: *"the worst delivered rise was 79% before §100 and 79% after — the tail did not move, and the tail is what injures people. Watch the tail, not the rate."* Filed as `V1-DELIVERED-TAIL-01`. 🎯 McMillan on V1 itself: *"the one thing in this engine a runner actually notices and thanks you for. Leave it alone."*
+
+### ⚖️ `LR-PEAK-NOT-LONGEST-01` — **CORRECT IN PART / INSUFFICIENT EVIDENCE IN PART**, split by phase
+
+Measured n=3,000 (2,872 with a peak long run): the plan's longest run sits outside the peak phase on **592 (20.6%)** — **base 309 · build 215 · taper 68** — and `time_target` runs **41–50%** against `finish` **1–6%**.
+
+| Arm | Ruling |
+|---|---|
+| **maximum in BASE (309, 10.8% of plans)** | ✅ **CORRECT to guard.** Unanimous. 🩹 Willy: *"a tissue risk expressed backwards"* — the largest single session arrives when bone and tendon are least prepared. ⚕️ Sims: inverted for peri/post-menopausal bone response, and **`measure:fitness` already shows healthy masters never-building at 18.6% against 12.8%**, so a base maximum on a flat plan means one big day and then nothing. 🎯 McMillan: *"a plan that peaked before it started"* |
+| **maximum in BUILD (215)** | ⏸️ **INSUFFICIENT EVIDENCE.** Recorded disagreement: McMillan defends a big day then consolidation as real coaching; Willy would guard it as readily as base. **What settles it:** whether the build maximum coincides with a §24b-restructured peak long run — a measurement that **does not exist**. Two detectors were attempted and both returned 100.0% (one matched the field NAME `pace_target`, the other required a non-empty value, which every session carries); they were **removed rather than reported**, so the evidence for the 535 time-target cases is *missing, not weak* |
+| **maximum in TAPER (68)** | ✅ **Already ruled** — §6 Amendment 1, inside its declared km tolerance, **0** `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` breaches. No action; `LR-TAPER-BUMP-01` has not regressed |
+| **`time_target` generally** | ✅ **Not a defect.** 📊 Seiler: for a time-targeted 5K the long run yielding into peak *is what the distribution demands* — total load is finite and peak is where quality lands. He objects to forcing the maximum into peak for 5K/10K, which would push them toward threshold-everything. ⚕️ **Sims, binding: it must be written against the MECHANISM — intensity displacing volume — never as "5K/10K are exempt", or the next distance inherits a blanket licence** |
+
+### 📦 Artifacts — BASE arm only, **ruled and NOT built**
+
+1. **Principle** — §23 Amendment: peak-overload extends from weekly volume to the **single longest session**; the plan's longest run may not fall in `base`. Carries Seiler's mechanism clause and Sims's wording condition.
+2. **Numeric** — **none.** The rule is ordinal, not a threshold, and reuses the phase labels `computePhases` already assigns. Stated explicitly: an unnecessary constant is the decorative-config class.
+3. **Invariant** — `INV-PLAN-LONGEST-RUN-NOT-IN-BASE`, **`warn` on first ship**. It fires on 309 of 2,872 (10.8%) today, so `error` would break the build on unremediated debt — the same reasoning that holds ADR-022's three at `warn`. Promoted when the rate reaches zero.
+
+🔻 **FOUNDER-GATED, DELIBERATELY NOT BUILT.** Coaching logic is proposed, not implemented, and this changes what the engine prescribes to roughly **one plan in ten**. It needs his sign-off and a remediation story under the live-plan policy before a line is written.
+
+### ↗️ SLT escalation
+
+None on correctness. One cost note: the build arm's blocking evidence requires re-deriving `resolveMainSet` to detect a §24b-restructured long run — real work on an unruled question.
