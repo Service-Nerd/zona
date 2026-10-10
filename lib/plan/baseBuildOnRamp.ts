@@ -2,6 +2,7 @@ import type { GeneratorInput, Plan, Week } from '@/types/plan'
 import { generateFoundationBlock } from './foundationBlock'
 import { GENERATION_CONFIG } from './generationConfig'
 import { effectiveStartKm } from './startVolume'
+import { buildHRZonesWithFallback } from './hrZones'
 
 /**
  * P-16 — the base-build on-ramp. §116.
@@ -237,7 +238,50 @@ export function generateBaseBuildPlan(
 ): Plan {
   const weeklyKm = onRampCurve(assessment.startKm, assessment.rampWeeks)
 
+  // 🔴 BASEBUILD-ZONE-CEILING-01 (Coaching Board, 2026-10-10) — §84 Am.1 says
+  // `hr_target` IS the prescription and `session.zone` is a label ABOUT it. Measured
+  // on both live base-build plans: every session carried `zone: "Zone 2"` and ZERO
+  // carried an `hr_target` (51/51 and 30/30), against ~86% on race plans. **The label
+  // was standing on its own.**
+  //
+  // ⚠️ THE MECHANISM ALREADY EXISTED AND THIS CALLER NEVER USED IT.
+  // `generateFoundationBlock` sets `hr_target` from `easyTargets` (shipped yesterday as
+  // FOUNDATION-PACE-STRIPPED-01, after 381 of 381 foundation sessions carried neither
+  // pace nor HR). `foundationCompose` passes it via `easyTargetsFromPlan(plan)` — which
+  // reads a GENERATED plan, and a base build has none at this point. That chicken-and-egg
+  // is why it was never threaded, so the fix derives from the INPUT instead.
+  //
+  // 🔴 AMENDMENT 1 (Hutchinson, binding): DERIVED THROUGH §50's GUARD, NEVER THE RAW
+  // INPUT. `buildHRZonesWithFallback` calls `resolveMaxHr`, which rejects a supplied max
+  // below the age estimate as a device FLOOR. On live plan `3df045d5` — age 25,
+  // `max_hr: 182`, `max_hr_source: 'observed'`, Tanaka 191 — the raw value would have
+  // given a Z2 ceiling of ~144 against ~150 from the estimate: **six beats low for
+  // fifteen weeks**, which is the 2026-08-06 incident §50 exists for.
+  //
+  // ⚠️ AMENDMENT 4 (McMillan, Willy concurring): A CEILING, NOT A TARGET. `zones.easyHR`
+  // is already `"< NNN bpm"`, and the existing note — *"Zone 2 only. If you can't hold a
+  // conversation, slow down."* — is UNCHANGED and stays FIRST. The talk test governs; the
+  // number is the backstop.
+  //
+  // ⚠️ `paceTarget` stays null, deliberately. There is no finished plan to read a pace
+  // from here — the same reason the ramp's sessions carry no `duration_mins` (§122, below).
+  const hr = buildHRZonesWithFallback(input)
+  // 🔴 AMENDMENT 2, AND THE SCHEMA CAUGHT ME NOT IMPLEMENTING IT. The first cut wrote
+  // these fields unconditionally. With no `age` and no `max_hr` there is nothing for
+  // Tanaka to work from, so the ceiling comes back non-finite and the plan failed
+  // `meta.zone2_ceiling: z.number().positive().optional()` — i.e. the amendment's own
+  // case ("where nothing can be derived, the field stays absent") reached production
+  // as a NaN rather than as an absence. A `.optional()` field written with a junk
+  // value is worse than an unwritten one: it is the `?? 0` class wearing a number.
+  //
+  // ⚠️ `Number.isFinite`, not a truthiness check — NaN is falsy here by accident and
+  // 0 would also have to go, but relying on that is the kind of coincidence this
+  // repo has paid for before.
+  const hrDerivable = Number.isFinite(hr.zones.zone2Ceiling) && hr.zones.zone2Ceiling > 0
+    && Number.isFinite(hr.derived_max) && hr.derived_max > 0
+
   const { weeks: built } = generateFoundationBlock({
+    easyTargets: { paceTarget: null, hrTarget: hrDerivable ? hr.zones.easyHR : null },
     input,
     // The block generator dates weeks BACKWARDS from a plan start, so handing
     // it the start of the race plan would date the ramp into the past. The
@@ -295,6 +339,28 @@ export function generateBaseBuildPlan(
       // What it is FOR, so the handover is legible to the runner and to us.
       base_build_target_km: assessment.targetKm,
       base_build_start_km: assessment.startKm,
+      // §50 / §14 Am. — the SAME field set `ruleEngine` writes, so the two producers
+      // cannot describe their HR provenance differently. `INV-PLAN-HR-ASSUMPTIONS-SURFACED`
+      // requires `hr_zone_method` on EVERY plan at `error` severity and was firing on both
+      // live base-build plans for want of it.
+      //
+      // ⚠️ AMENDMENT 3 (Sims, binding): the provenance note is MANDATORY wherever the
+      // number appears. Tanaka is derived from predominantly male cohorts and its error
+      // bars widen through the menopause transition, so a derived ceiling presented
+      // without its provenance is the thing she objected to — not the ceiling.
+      //
+      // ⚠️ `max_hr` is left as the input spread supplies it and `hr_derived_max` carries
+      // the max the zones were BUILT on, exactly as the race path does. The two differ
+      // precisely when §50 overrode a floor, and that difference is the signal
+      // `INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR` reads.
+      ...(hrDerivable ? {
+        zone2_ceiling: hr.zones.zone2Ceiling,
+        hr_zone_method: hr.method,
+        hr_derived_max: hr.derived_max,
+        ...(hr.assumption_note ? { hr_assumption_note: hr.assumption_note } : {}),
+        ...(hr.estimated_max !== undefined ? { hr_estimated_max: hr.estimated_max } : {}),
+        ...(hr.max_source ? { hr_max_source: hr.max_source } : {}),
+      } : {}),
       last_updated: new Date().toISOString(),
     } as unknown as Plan['meta'],
     weeks,

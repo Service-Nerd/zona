@@ -3,6 +3,7 @@ import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan, validateMaintenanceBlock, INVARIANT_CODES, type Violation } from '@/lib/plan/invariants'
 import { validateBaseBuildBlock } from '@/lib/plan/baseBuildValidate'
 import { assessOnRamp, generateBaseBuildPlan } from '@/lib/plan/baseBuildOnRamp'
+import { generateGetRunningPlan } from '@/lib/plan/getRunningPlan'
 import { generateMaintenanceBlock } from '@/lib/plan/maintenance'
 import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
 import { runWalkPrescriptionApplies } from './runWalkPlan'
@@ -1150,6 +1151,45 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
         const w = JSON.parse(JSON.stringify(base)) as Week[]
         try { m.apply(w) } catch { continue }
         checkBB(w, m.name)
+      }
+
+      // ── A WHOLE base-build PLAN through validatePlan ───────────────────────
+      // 🔴 THE BLOCK PROBE ABOVE CANNOT REACH A PLAN-LEVEL RULE, and that is how
+      // `INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION` arrived unprovable. `checkBB` calls
+      // `validateBaseBuildBlock(weeks)` — week-level — while the new rule lives in
+      // `validatePlan` and reads `plan.meta.plan_kind`. So the base-build SHAPE was
+      // in this harness and the base-build PLAN was not, and the difference is
+      // invisible until a plan-level rule needs waking.
+      //
+      // ⚠️ `generateGetRunningPlan`, not `generateBaseBuildPlan` — the former is what
+      // stamps `plan_kind: 'base_build'`, and without the stamp the rule correctly
+      // declines to fire. Classifying this as `corpus` would have been accepting
+      // "cannot be woken" when the honest answer was "the corpus was one layer short".
+      const bbPlan = generateGetRunningPlan(input, '2026-10-05', 29).plan
+      const checkBBPlan = (pl: Plan, why: string) => {
+        for (const v of validatePlan(pl, input)) {
+          if (!woken.has(v.code)) woken.set(v.code, why)
+        }
+      }
+      const BB_PLAN_MUTATIONS: { name: string; apply: (p: Plan) => void }[] = [
+        { name: 'bb plan: strip every hr_target, keeping the zone label', apply: pl => {
+            for (const w of pl.weeks)
+              for (const s of Object.values(w.sessions ?? {})) {
+                if (s) delete (s as unknown as Poke).hr_target
+              }
+          } },
+        { name: 'bb plan: strip the zone label too (must NOT fire — label gone, no claim)', apply: pl => {
+            for (const w of pl.weeks)
+              for (const s of Object.values(w.sessions ?? {})) {
+                if (s) { delete (s as unknown as Poke).hr_target; delete (s as unknown as Poke).zone }
+              }
+          } },
+      ]
+      checkBBPlan(bbPlan, 'fires on a valid base-build PLAN')
+      for (const m of BB_PLAN_MUTATIONS) {
+        const pl = JSON.parse(JSON.stringify(bbPlan)) as Plan
+        try { m.apply(pl) } catch { continue }
+        checkBBPlan(pl, m.name)
       }
     }
   }

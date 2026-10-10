@@ -145,7 +145,13 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 11, by: 'exempt', why: 'Display convention (ranges not points), owned by lib/format.ts under ADR-015 — a formatting rule, not a prescription.' },  // Pace ranges, not points
   { n: 12, by: 'invariant', ref: 'INV-PLAN-EASY-RUN-ZONE-CAP' },  // Easy-run zone cap — Z2 ceiling
   { n: 13, by: 'test', ref: 'lib/plan/fitnessThresholds.test.ts', why: 'The three levels and where each boundary falls. §13\'s DERIVATION rule was superseded by §79 (dual-signal); what it still owns is the definition, and nothing asserted it.' },  // Fitness classification — VDOT first, volume fallback
-  { n: 14, by: 'exempt', why: 'Zone FORMULAS (Karvonen / %MaxHR / Tanaka). Exempt for the same reason as §10 — arithmetic, not a coaching choice.' },  // HR zones — five zones, two formulas, one config
+  // ⚠️ RECLASSIFIED 2026-10-10 (BASEBUILD-ZONE-CEILING-01). The FORMULAS remain
+  // arithmetic and are still exempt on their own — but §14's Amendment is not a
+  // formula, it is a rule about WHICH PLANS derive zones at all, and
+  // `INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION` enforces it. This gate caught the
+  // mismatch in the same commit as the invariant, which is exactly its job: an
+  // invariant naming a principle the manifest says nothing can enforce.
+  { n: 14, by: 'invariant', ref: 'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION', why: 'Zone FORMULAS (Karvonen / %MaxHR / Tanaka) are arithmetic and exempt on their own, as §10 is. §14 Amendment is NOT: every plan kind must derive zones through §50 or carry no number, enforced by INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION (scoped to base_build; ZONE-LABEL-RACE-SCOPE-01 tracks the race-plan scope).' },  // HR zones — five zones, two formulas, one config
   { n: 15, by: 'test', ref: 'lib/plan/featureGates.test.ts', why: 'Option A tier semantics through `canUseFeature`, the place it is actually enforced. Not an invariant: validatePlan never sees a tier.' },  // Tier semantics — Option A: granted-at-trial, retained-in-fre
   { n: 16, by: 'invariant', ref: 'INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND' },  // Universal run format — every run has a shape
   { n: 17, by: 'invariant', ref: 'INV-PLAN-PHASE-FOCUS-REACHABLE' },  // Plan signatures — distance shapes the plan

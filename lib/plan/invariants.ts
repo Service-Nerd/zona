@@ -164,6 +164,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-REENTRY-OMISSION-DECLARED',
   'INV-PLAN-QUALITY-VARIETY-FULL-PLAN',
   'INV-PLAN-LR-MAX-WEEKLY-PCT',
+  'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION',
   'INV-PLAN-HR-ASSUMPTIONS-SURFACED',
   'INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR',
   'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE',
@@ -6569,6 +6570,48 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           actual: hit,
           expected: 'a real value, or copy that omits it',
         })
+      }
+    }
+  }
+
+  // INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION — §14 Am. / §84 Am.1, Coaching Board
+  // 2026-10-10 (BASEBUILD-ZONE-CEILING-01).
+  //
+  // §84 Am.1: *"`hr_target` is the prescription; `session.zone` is a label ABOUT it."*
+  // Measured on both live base-build plans — every session carried `zone: "Zone 2"`
+  // and **ZERO carried an `hr_target`** (51/51 and 30/30), against ~86% on race
+  // plans. The label was standing on its own, because `generateBaseBuildPlan` built
+  // its meta from scratch and never computed zones at all.
+  //
+  // ⚠️ SCOPED TO `base_build`, AND THE SCOPE IS A KNOWN LIMIT RATHER THAN A CHOICE
+  // I CAN DEFEND AS COMPLETE. Race plans sit at 57/66, 69/75, 62/74, 51/51 — i.e.
+  // ~86%, not 100% — so a plan-wide rule would fire on the ~9 easy sessions per plan
+  // that legitimately carry no target, and I have NOT established why those nine are
+  // exempt. Widening this without first explaining them would be inventing an
+  // exemption to make a check pass, which is the opposite of the job. Filed:
+  // `ZONE-LABEL-RACE-SCOPE-01`.
+  //
+  // ⚠️ THE ESCAPE HATCH IS DERIVABILITY, NOT ABSENCE OF DATA. `buildHRZonesWithFallback`
+  // falls back to Tanaka, so a runner who supplied nothing still gets a ceiling WITH a
+  // §50 note (Amendment 3). The only genuine exemption is a plan where nothing could be
+  // derived at all — no `hr_derived_max` — because then there is no number to give.
+  if ((plan.meta as unknown as Record<string, unknown>).plan_kind === 'base_build') {
+    const derivedMax = (plan.meta as unknown as Record<string, unknown>).hr_derived_max
+    if (derivedMax != null) {
+      for (const w of plan.weeks) {
+        for (const [day, sn] of Object.entries(w.sessions ?? {})) {
+          if (!sn?.zone) continue
+          if (sn.hr_target) continue
+          violations.push({
+            code: 'INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION',
+            principle_ref: 'CoachingPrinciples §14 Am., §84 Am.1',
+            severity: 'error',
+            week: w.n, day,
+            message: `Week ${w.n} ${day} shows the runner "${sn.zone}" with no hr_target behind it. §84 Am.1 — the zone is a LABEL about the prescription, and this plan can derive one (hr_derived_max ${String(derivedMax)}).`,
+            actual: `zone "${sn.zone}", hr_target absent`,
+            expected: 'an hr_target the zone label describes',
+          })
+        }
       }
     }
   }

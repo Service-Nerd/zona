@@ -1762,6 +1762,76 @@ The forward-compat hook for a future paid "zone method selector" feature lives h
 
 ---
 
+### §14 Amendment — EVERY plan kind derives its zones, and the SECOND producer did not *(Coaching Board 2026-10-10, BASEBUILD-ZONE-CEILING-01)*
+
+**Principle.** A zone a runner SEES must have a prescription behind it. Every plan kind
+derives its HR zones through §50's guard, or — where nothing can be derived — carries no
+number and lets effort govern. `session.zone` without `session.hr_target` is a label about
+nothing.
+
+**Why.** §84 Amendment 1 already settled the direction of travel: *"`hr_target` is the
+prescription; `session.zone` is a label **about** it."* It was written about the display and
+assumed one producer. There are two. `generateBaseBuildPlan` builds `meta` from scratch and
+**never computed zones at all**, so measured on both live base-build plans every session
+carried `zone: "Zone 2"` with **ZERO `hr_target`** — 51/51 and 30/30 — against ~86% on race
+plans (57/66, 69/75, 62/74, 51/51). **0% against 86% is not a tail, it is a producer that
+was never wired**, and `INV-PLAN-HR-ASSUMPTIONS-SURFACED` had been firing on both plans at
+`error` severity for want of `hr_zone_method`.
+
+⚠️ **The mechanism already existed and the caller never used it.** `generateFoundationBlock`
+sets `hr_target` from `easyTargets`; `foundationCompose` passes it via
+`easyTargetsFromPlan(plan)`, which reads a **generated plan** — and a base build has none at
+that point in generation. That chicken-and-egg is why it was never threaded, so the fix
+derives from the INPUT. The HR owner was extracted to `lib/plan/hrZones.ts` to make it
+reachable, proven inert by `verify:parity` IDENTICAL on 6,066 cases before the behaviour
+changed.
+
+**Amendment 1 — derive through §50's guard, NEVER the raw input (Hutchinson, binding).**
+Live plan `3df045d5`: age **25**, `max_hr: 182`, `max_hr_source: 'observed'`, Tanaka **191**.
+`resolveMaxHr` rejects a recorded max below the age estimate as a device **floor**, so the
+ceiling is **151 from 191**, not ~144 from 182 — *six beats low for fifteen weeks*, which is
+the 2026-08-06 incident §50 exists for. *"A wrong ceiling on fifteen weeks of easy running is
+worse than no ceiling, because the runner will believe it."*
+
+**Amendment 2 — conditional by construction.** Where nothing can be derived, the field stays
+absent and the talk test IS the prescription. ⚠️ **"Nothing derivable" means no
+`hr_derived_max`, not "the runner supplied nothing"** — §50 falls back to Tanaka, so a runner
+with no HR data still gets a ceiling *with a note*, exactly as the race path gives them one.
+Reading it as "supplied nothing → no number" would have handed base-build runners LESS than
+race runners on identical inputs, reinstating the asymmetry this amendment exists to remove.
+
+**Amendment 3 — the provenance note is MANDATORY wherever the number appears (Sims,
+binding).** Tanaka is derived from predominantly male cohorts and its error bars widen
+through the menopause transition, so a derived ceiling presented as precise is worse for
+those runners than for the 25-year-old who prompted this. `hr_assumption_note` was `null` on
+both live plans.
+
+**Amendment 4 — a CEILING, not a target; the talk test stays FIRST (McMillan, Willy
+concurring).** `zones.easyHR` is `"< NNN bpm"`. The existing cue — *"Zone 2 only. If you
+can't hold a conversation, slow down."* — is unchanged and leads. *"The moment a runner sees
+144 they will run at 143, and on a block whose whole job is easy volume that is the
+failure."* The number works on a hill, in heat and at week 14 only as a backstop; the effort
+cue governs.
+
+⚠️ **RECORDED DISAGREEMENT, NOT RESOLVED.** Seiler holds that an imprecise ceiling still
+beats none, because grey-zone drift is near-universal in this population and the ceiling is
+the only enforcement easy running has — *"an inaccurate ceiling and no ceiling fail the same
+way."* Hutchinson and Sims hold that a six-beat-low ceiling is fifteen weeks in the wrong
+zone, made worse by the runner's trust. **What would settle it: post-hoc HealthKit HR
+distribution for base-build runners on easy runs. Zonna can collect it and NOBODY HAS
+LOOKED.** Until then Seiler's position is a strong prior, not evidence, and he says so. Both
+seats accept the amendment, so it did not block.
+
+**Config.** No new numeric, and that is part of the ruling: reuses `zones.zone2Ceiling` and
+§50's existing guard. A fresh constant here would be an invented number.
+
+**Enforced by** `INV-PLAN-ZONE-LABEL-HAS-PRESCRIPTION` (`error`). ⚠️ **Scoped to
+`plan_kind: 'base_build'`, and the scope is a known limit rather than a defensible
+completion** — race plans sit at ~86%, so a plan-wide rule would fire on the ~9 easy
+sessions per plan that legitimately carry no target, and **those nine have not been
+explained**. Widening it without explaining them would be inventing an exemption to make a
+check pass. Filed: `ZONE-LABEL-RACE-SCOPE-01`.
+
 ## 15. Tier semantics — Option A: granted-at-trial, retained-in-free
 
 **Principle.** What a user gets during their 14-day trial is theirs to keep within the free tier — *for the plan they generated*. Ongoing intelligent features (new plan generation, dynamic reshaping, AI coach notes on new sessions, Strava-derived intelligence) become paid-only at downgrade.
