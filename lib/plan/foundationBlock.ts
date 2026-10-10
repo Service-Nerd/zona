@@ -94,6 +94,54 @@ function themeForPosition(position: number, total: number): string {
   return THEMES[2]
 }
 
+/**
+ * BASEBUILD-WEEK-COPY-01 — a base build is up to FIFTEEN weeks and had THREE themes.
+ *
+ * 🔴 MEASURED on a generated 15-week base build: **3 distinct week themes and 1
+ * distinct session note across 51 sessions.** A runner got *"Building the base."* for
+ * roughly twelve consecutive weeks, so week 4 was indistinguishable from week 11.
+ * Zhuo's SLT condition on the paid-voice question was to read what the engine already
+ * writes first; this is what it wrote, and it is why the paid gate was sent back — the
+ * alternative to AI voice was never silence, it was **repetition**, and fixing
+ * repetition is free.
+ *
+ * ⚠️ SCOPED TO `curve === 'ramp'`. `themeForPosition` above is SHARED with race-plan
+ * foundation blocks, which are short (1-3 weeks) and where three themes are the right
+ * number. Widening it would have changed every race plan's foundation copy — the same
+ * shared-producer trap that nearly cost 20,983 foundation weeks earlier today.
+ *
+ * ⚠️ NO DISTANCE NUMBER, DELIBERATELY, AND IT SHAPES THE WHOLE DESIGN. ADR-015 makes
+ * `lib/format.ts` the sole owner of distance strings and units a per-runner preference;
+ * `hardcodedUnitsDebt` has measured **16 of 19 stored plans carrying prose km**, which a
+ * miles runner reads in the wrong unit. Fifteen more instances per plan would grow that
+ * debt. A `{{...}}` token is not the escape either: today's ruling is that week copy must
+ * be **complete as written** (`ENRICH-META-TOKEN-01`). So the copy distinguishes weeks by
+ * POSITION and DIRECTION, which need no units.
+ *
+ * ⚠️ AND IT PROMISES NO RACE PLAN. The last week says *"Last week of the base"* and stops.
+ * A standalone base build has no destination — `generateGetRunningPlan` deletes
+ * `base_build_onramp` precisely so no reader infers one — so the race-plan wording that is
+ * correct for `curve: 'foundation'` would be a claim this plan cannot honour
+ * (`BASEBUILD-HANDOVER-01`).
+ *
+ * Factual, not physiological: no adaptation claim, so no Coaching Board. Voice per
+ * `brand.md` — dry, one sentence, never motivational, no em dash.
+ */
+function rampTheme(a: {
+  position: number
+  total: number
+  isDeload: boolean
+  /** Is this week's volume above the previous week's? */
+  isClimb: boolean
+}): string {
+  if (a.position === 1) return 'Week 1. It is meant to feel too easy.'
+  if (a.position === a.total) return 'Last week of the base. Nothing clever.'
+  if (a.isDeload) return 'Step back this week. The climb picks up again next week.'
+  const left = a.total - a.position
+  const tail = left === 1 ? '1 week of base left.' : `${left} weeks of base left.`
+  return a.isClimb ? `Volume climbs again. ${tail}` : `Holding steady this week. ${tail}`
+}
+
 // ── Session builder ────────────────────────────────────────────────────────
 // Foundation weeks: easy runs on training days + rest days.
 // Long run placed on the last available training day (usually Sat/Sun).
@@ -660,7 +708,15 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
       n: weekN,
       date: weekStartDate.toISOString().split('T')[0],
       label: curve === 'ramp' ? `Base ${position}` : `Foundation ${position}`,
-      theme: themeForPosition(position, weekCount),
+      // BASEBUILD-WEEK-COPY-01 — a 15-week ramp gets per-week copy; a short
+      // race-plan foundation block keeps its three themes. See `rampTheme`.
+      theme: curve === 'ramp'
+        ? rampTheme({
+            position, total: weekCount,
+            isDeload: i > 0 && weeklyKm < (rampWeeklyKm as number[])[i - 1],
+            isClimb: i > 0 && weeklyKm > (rampWeeklyKm as number[])[i - 1],
+          })
+        : themeForPosition(position, weekCount),
       // §116 — a ramp DELOADS, and it marks them exactly as the main plan does
       // (`type: 'deload'`), so every checker that already exempts a deload
       // bounceback exempts this one too. A second marker would be a second
