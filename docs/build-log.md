@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-10 — COPY-CLAIM-CROSS-WEEK-01, BASEBUILD-SCHEMA-CEREMONY-01, AUDIT-STEP-UNDECLARED-01, BASEBUILD-ENRICH-VISIBILITY-01, ENRICH-META-TOKEN-01, BASEBUILD-ZONE-CEILING-01 and REGEN-LIVE-PLAN-GUARD-01 · the day I wrote to a real runner's plan on a briefing I had over-generalised
+## 2026-10-10 — COPY-CLAIM-CROSS-WEEK-01, BASEBUILD-SCHEMA-CEREMONY-01, AUDIT-STEP-UNDECLARED-01, BASEBUILD-ENRICH-VISIBILITY-01, ENRICH-META-TOKEN-01, BASEBUILD-ZONE-CEILING-01, REGEN-LIVE-PLAN-GUARD-01 and BASEBUILD-WEEK-COPY-01 · the day I wrote to a real runner's plan on a briefing I had over-generalised
 
 **Scopes:** `COPY-CLAIM-CROSS-WEEK-01`, `BASEBUILD-SCHEMA-CEREMONY-01`, `AUDIT-STEP-UNDECLARED-01`, `BASEBUILD-ENRICH-VISIBILITY-01`
 
@@ -119,6 +119,20 @@ untestable by construction**, which is exactly why two missing guards were invis
 long as the script has existed; it is a module with seven arms now. And **when a filter and a
 briefing both have to be right, the briefing is the weaker one** — the filter at least gets
 re-run.
+
+**Ten, and it is the one I am most pleased about.** He told me to decide the base-build voice
+and build it. The honest answer turned out to be *don't build the thing you asked me to cost*.
+Zhuo's SLT condition — read what the engine already writes first — measured **three themes
+across fifteen weeks and one session note across fifty-one sessions.** The SLT had weighed
+"should the AI voice be PAID" against an implied alternative of **silence**. The real
+alternative was **repetition**, and repetition is a free defect. **A paid gate in front of it
+would have sold a subscription for a sentence the engine should already have written.**
+
+So the free fix shipped and the paid gate stayed unbuilt. ⚠️ And the constraint that shaped
+the copy was not taste: ADR-015 plus the measured units debt (16 of 19 stored plans carrying
+prose km) meant **no distance could go in the prose**, and this morning's own token ruling
+meant no `{{token}}` either. Weeks are told apart by position and direction instead — which
+needs no units and cannot drift.
 
 **Still open and the founder's:** the base-build voice gate (SLT pieces 2 and 3, and Wood's
 condition that it must not ship before the handover), `BASEBUILD-ZONE-CEILING-01`, and
