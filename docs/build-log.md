@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-10 — COPY-CLAIM-CROSS-WEEK-01, BASEBUILD-SCHEMA-CEREMONY-01, AUDIT-STEP-UNDECLARED-01, BASEBUILD-ENRICH-VISIBILITY-01 and ENRICH-META-TOKEN-01 · the digest was wrong about the one thing it explained
+## 2026-10-10 — COPY-CLAIM-CROSS-WEEK-01, BASEBUILD-SCHEMA-CEREMONY-01, AUDIT-STEP-UNDECLARED-01, BASEBUILD-ENRICH-VISIBILITY-01, ENRICH-META-TOKEN-01 and BASEBUILD-ZONE-CEILING-01 · the digest was wrong about the one thing it explained, and two of my own premises moved under me
 
 **Scopes:** `COPY-CLAIM-CROSS-WEEK-01`, `BASEBUILD-SCHEMA-CEREMONY-01`, `AUDIT-STEP-UNDECLARED-01`, `BASEBUILD-ENRICH-VISIBILITY-01`
 
@@ -72,6 +72,33 @@ so *"Taper — sharpen"* over a week with strides is honest), but the honest fix
 bundled regex, changes a shared predicate's signature, and **reduces the weeks §90 rewrites
 — which changes generated plans.** One `warn` against a generation diff is not my call, so
 it is re-routed with the measurement rather than carried as an open defect.
+
+**Six — the gates caught me three times in one build, and that is the system working.**
+On `BASEBUILD-ZONE-CEILING-01` the board gave four binding amendments and I shipped the
+first cut having implemented three. **The schema caught Amendment 2**: with no age there is
+nothing for Tanaka, so the ceiling came back non-finite and `zone2_ceiling:
+z.number().positive().optional()` rejected it — the amendment's own case ("where nothing can
+be derived, the field stays absent") reached the gate as a **NaN instead of an absence**.
+Then `principleCoverage` caught §14 still classified `exempt` while an invariant named it,
+and the liveness harness caught the invariant being unwakeable. **None of those three was in
+code I wrote; all three were in the records about it.**
+
+**Seven, and it nearly cost 20,983 foundation weeks.** The base-build sessions come from
+`generateFoundationBlock`, which is **shared with race plans**. Editing it was the obvious
+move and would have changed 8,492 plans the board never ruled on. The actual fix was one
+argument — the mechanism already existed and this caller had never passed it, because
+`easyTargetsFromPlan` reads a *generated plan* and a base build has none at that point.
+**"Where does this already happen?" beat "where do I add this?" by three orders of
+magnitude.**
+
+**Eight — and this one I did NOT build.** The founder said yes to the base-build voice gate.
+Zhuo's SLT condition was to read what the engine already writes first, and measured: **3
+distinct week themes across 15 weeks, 1 session note across 51 sessions.** A runner gets
+*"Building the base."* for twelve consecutive weeks. So the SLT weighed "should the AI voice
+be PAID" against an implied alternative of silence, when the real alternative is **an engine
+repeating itself** — a free content gap, not a missing paid feature. Putting that behind a
+paid gate would be gating access, not richness. **Sent back to the SLT with the number
+rather than built**, which is what their own condition was for.
 
 **Still open and the founder's:** the base-build voice gate (SLT pieces 2 and 3, and Wood's
 condition that it must not ship before the handover), `BASEBUILD-ZONE-CEILING-01`, and
