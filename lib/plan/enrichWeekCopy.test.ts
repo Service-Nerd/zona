@@ -51,6 +51,122 @@ function merge(over: Record<string, unknown>): { plan: Plan; rejected: WeekCopyR
   return { plan, rejected }
 }
 
+/** The plan-level prose path: meta, not weeks. */
+function mergeMeta(
+  meta: Record<string, unknown>,
+  tier: 'free' | 'trial' | 'paid' = 'paid',
+  /** Omit to model a plan that CANNOT resolve a plan-level token. */
+  planMeta: Record<string, unknown> = { zone2_ceiling: 137 },
+) {
+  const rejected: WeekCopyRejection[] = []
+  const plan = mergePlan(
+    { meta: { notes: 'engine notes', coach_intro: 'engine intro', ...planMeta } as never, weeks: [] } as unknown as Plan,
+    { meta, weeks: [] } as never, tier, r => rejected.push(r),
+  )
+  return { plan, rejected }
+}
+
+describe('ENRICH-META-TOKEN-01 — plan-level prose is token-checked too', () => {
+  // 🔴 THE OTHER HALF OF WEEK-THEME-TOKEN-ENRICH-01. That item built the rejector
+  // for `label` and `theme`; the meta merge said "text fields always allowed" and
+  // took whatever the model sent. The remedy applied to one twin.
+  //
+  // ⚠️ MEASURED ON A LIVE PAID RUNNER'S PLAN, 2026-10-10 (`a1a1b638`):
+  // `INV-PLAN-NO-PLACEHOLDER-COPY` fired at `meta.coach_intro` carrying
+  // `{{zone2_ceiling}}` — and the invariant has always said only
+  // `session.coach_notes` may carry a token.
+
+  /** Verbatim from the live plan's stored `meta.coach_intro`. */
+  const LIVE_INTRO =
+    'This plan is built for you to finish, not to chase the time. Your starting volume '
+    + 'is low for a marathon, so the first half builds consistency before intensity '
+    + 'arrives. Keep easy runs under {{zone2_ceiling}} bpm.'
+
+  it('1. voice WITHOUT a token is accepted — the vacuity arm', () => {
+    const { plan, rejected } = mergeMeta({
+      notes: 'Four days a week. The long run is the one that matters.',
+      coach_intro: 'You are not short of fitness. You are short of patience.',
+    })
+    expect(plan.meta.notes).toBe('Four days a week. The long run is the one that matters.')
+    expect(plan.meta.coach_intro).toBe('You are not short of fitness. You are short of patience.')
+    expect(rejected).toEqual([])
+  })
+
+  it('2. 🔴 the LIVE coach_intro token is REJECTED and the engine copy survives', () => {
+    // ⚠️ THIS ARM INVERTED TWICE DURING THE BUILD AND THE RECORD IS THE POINT.
+    // I wrote reject, then "corrected" it to allow-if-resolvable — reasoning that
+    // `COACH-INTRO-TOKEN-01` gave this field a resolving renderer on 2026-10-09, so
+    // rejecting throws away good AI copy. **The arm 70 lines below had already
+    // considered exactly that and decided against it, the day before, on the twin
+    // field:** allowing it *"leaves a token in a field whose only safe render is one
+    // call site — COACH-INTRO-TOKEN-01's exact defect."* `meta.coach_intro` has
+    // exactly ONE render site, so the argument is stronger here. Plan-level prose
+    // must be complete as written.
+    const { plan, rejected } = mergeMeta({ coach_intro: LIVE_INTRO })
+    expect(plan.meta.coach_intro, 'the engine copy must be kept, not replaced').toBe('engine intro')
+    expect(rejected).toHaveLength(1)
+    expect(rejected[0].field).toBe('coach_intro')
+    expect(rejected[0].token).toBe('{{zone2_ceiling}}')
+  })
+
+  it('2b. rejected EVEN WHEN the plan could resolve it — symmetry with the week path', () => {
+    // The harness supplies `zone2_ceiling: 137` by default, so this plan CAN resolve
+    // it. Still rejected. If anyone reintroduces an allow-if-resolvable branch, this
+    // goes red and sends them to the ruling above rather than to a rewrite.
+    const { plan, rejected } = mergeMeta({ coach_intro: LIVE_INTRO }, 'paid', { zone2_ceiling: 137 })
+    expect(plan.meta.coach_intro).toBe('engine intro')
+    expect(rejected).toHaveLength(1)
+  })
+
+  it('2c. a SESSION token is rejected too — no session is in scope in plan prose', () => {
+    const { plan, rejected } = mergeMeta({ coach_intro: 'Run it at {{session_zone}} today.' })
+    expect(plan.meta.coach_intro).toBe('engine intro')
+    expect(rejected[0].token).toBe('{{session_zone}}')
+  })
+
+  it('3. 🔴 `meta.notes` is guarded TOO, and it is the more dangerous half', () => {
+    // `coach_intro` resolves at render via `planProse`; `renderGuidance.ts` has
+    // measured `meta.notes` as having "no consumer at all", so a token there would
+    // never resolve and never be seen to be wrong. Zero observed defects is not
+    // safety — it is the absence of a witness.
+    // ⚠️ REJECTED EVEN THOUGH the plan HOLDS zone2_ceiling — unlike coach_intro,
+    // nothing renders this field, so the value being available changes nothing.
+    const { plan, rejected } = mergeMeta({ notes: 'Easy under {{zone2_ceiling}} bpm.' })
+    expect(plan.meta.notes).toBe('engine notes')
+    expect(rejected.map(r => r.field)).toEqual(['notes'])
+  })
+
+  it('4. ⚠️ the week number is NULL for meta, never the 0 sentinel', () => {
+    // `week: 0` already means "plan-wide" to the invariant layer and "foundation"
+    // to ADR-020, and that one overloaded value produced 49 phantom violations
+    // across 19 plans. A third meaning on it is how that recurs.
+    const { rejected } = mergeMeta({ coach_intro: LIVE_INTRO })
+    expect(rejected[0].weekN).toBeNull()
+    expect(rejected[0].weekN).not.toBe(0)
+  })
+
+  it('5. one token in one field does not discard the other field', () => {
+    const { plan, rejected } = mergeMeta({
+      notes: 'Clean prose, no tokens.',
+      coach_intro: LIVE_INTRO,
+    })
+    expect(plan.meta.notes, 'a clean field must still merge').toBe('Clean prose, no tokens.')
+    expect(plan.meta.coach_intro).toBe('engine intro')
+    expect(rejected).toHaveLength(1)
+  })
+
+  it('6. the token check uses the SAME owner as the week path', () => {
+    // Not a second definition of "carries a token" — `firstPlaceholder` is the owner.
+    expect(firstPlaceholder(LIVE_INTRO)).toBe('{{zone2_ceiling}}')
+  })
+
+  it('7. a FREE tier never gets coach_intro at all, token or not (INV-PLAN-008)', () => {
+    const { plan, rejected } = mergeMeta({ coach_intro: 'Clean paid-only prose.' }, 'free')
+    expect(plan.meta.coach_intro, 'coach_intro is paid-only').toBe('engine intro')
+    expect(rejected, 'a tier block is not a token rejection').toEqual([])
+  })
+})
+
 describe('WEEK-THEME-TOKEN-ENRICH-01 — the merge refuses week copy carrying a placeholder', () => {
   it('voice WITHOUT a placeholder is accepted, so this is a guard and not a wall', () => {
     // The vacuity arm. Without it, "reject everything" passes every arm below.

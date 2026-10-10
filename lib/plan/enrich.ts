@@ -455,7 +455,8 @@ export async function enrich(
       count: weekCopyRejected.length,
       // The tokens, not the sentences — enough to see WHICH rule the model broke
       // without logging runner-facing prose into the ops ledger.
-      fields: weekCopyRejected.map(r => `w${r.weekN}.${r.field}:${r.token}`).slice(0, 12),
+      fields: weekCopyRejected.map(r =>
+        `${r.weekN == null ? 'meta' : `w${r.weekN}`}.${r.field}:${r.token}`).slice(0, 12),
     })
   }
   return { plan: merged, outcome: { status: 'applied' } }
@@ -679,8 +680,17 @@ Return the enriched JSON object now.`
 // does to the enricher's output, and neither is observable from the outside
 // without generating a plan and calling a model.
 export interface WeekCopyRejection {
-  weekN: number
-  field: 'label' | 'theme'
+  /**
+   * The week the copy belongs to, or **null for PLAN-LEVEL meta prose**.
+   *
+   * ⚠️ NULL RATHER THAN 0, DELIBERATELY. `week: 0` already means "plan-wide" to the
+   * invariant layer and "the foundation block" to ADR-020, and that single overloaded
+   * sentinel produced **49 phantom violations across 19 plans** once already
+   * (`AUDIT-FOUNDATION-MISCOUNT-01`). A third meaning on the same value is how that
+   * happens again, so meta carries no week number at all.
+   */
+  weekN: number | null
+  field: 'label' | 'theme' | 'coach_intro' | 'notes'
   /** The offending placeholder, for the ops event. Never the whole sentence. */
   token: string
 }
@@ -702,12 +712,70 @@ export function mergePlan(
   // Deep clone — never mutate rule engine output
   const plan: Plan = JSON.parse(JSON.stringify(original))
 
-  // Meta — text fields always allowed
-  if (enriched.meta.notes) plan.meta.notes = enriched.meta.notes
+  // 🔴 META PROSE IS TOKEN-CHECKED TOO — ENRICH-META-TOKEN-01 (2026-10-10).
+  //
+  // This comment used to read "Meta — text fields always allowed", and it was the
+  // other half of `WEEK-THEME-TOKEN-ENRICH-01`: that item built `onRejectWeekCopy`
+  // for `label` and `theme` and left plan-level prose merged unchecked. The remedy
+  // applied to one twin, again.
+  //
+  // `INV-PLAN-NO-PLACEHOLDER-COPY` has said all along that **only
+  // `session.coach_notes` may carry a token**, and it fired on a live PAID runner's
+  // plan on the day this was found (`a1a1b638`, `meta.coach_intro` carrying
+  // `{{zone2_ceiling}}`).
+  //
+  // ⚠️ `coach_intro` RESOLVES AT RENDER and `notes` DOES NOT, which is why both are
+  // guarded rather than just the one that was caught. `GeneratePlanScreen` renders
+  // the intro through `planProse`, so the runner saw a number; `renderGuidance.ts`
+  // has measured `meta.notes` as having **"no consumer at all"**, so a token there
+  // would never resolve and never be seen to be wrong. **The unguarded field with no
+  // observed defect is the more dangerous half** — the same shape as
+  // `week.label` vs `week.theme`.
+  //
+  // Same owner as the week path (`firstPlaceholder`) and the same ops event, so there
+  // is one definition of "this copy carries a token" and one place it is reported.
+  // ⚠️ I BUILT THE ASYMMETRIC RULE FIRST AND IT WAS WRONG. The reasoning was that
+  // `COACH-INTRO-TOKEN-01` gave this field a RESOLVING renderer on 2026-10-09, so a
+  // plan-level token it can resolve is safe and rejecting it throws away good AI
+  // copy. **`enrichWeekCopy.test.ts` had already considered exactly that and
+  // decided against it, the day before, on the twin field:**
+  //
+  //   *"`{{zone2_ceiling}}` resolves correctly at week level (4 live instances), so
+  //   allowing it was a real option. It was REJECTED: that is choosing new intent
+  //   rather than restoring the prompt's, and it leaves a token in a field whose
+  //   only safe render is one call site — COACH-INTRO-TOKEN-01's exact defect. A
+  //   week label and a week theme must be complete as written."*
+  //
+  // That argument is STRONGER here, not weaker: `meta.coach_intro` has exactly ONE
+  // render site (`GeneratePlanScreen` → `planProse`). So the rule is symmetric and
+  // plan-level prose must be complete as written. The cost is accepted and is the
+  // one the week path already accepted: a rejected field falls back to engine copy.
+  //
+  // 🔴 AND THIS IS THE OTHER HALF OF `WEEK-THEME-TOKEN-ENRICH-01`, which built the
+  // rejector for `label` and `theme` and left the meta merge saying "text fields
+  // always allowed". The remedy applied to one twin, again.
+  //
+  // ⚠️ `coach_intro` RESOLVES AT RENDER and `notes` DOES NOT (`renderGuidance.ts`
+  // has measured it as having "no consumer at all"), so the field with NO observed
+  // defect is the more dangerous half — the same shape as `week.label` vs
+  // `week.theme`. Both guarded.
+  //
+  // Same owner as the week path (`firstPlaceholder`) and the same ops event, so
+  // there is one definition of "this copy carries a token" and one place it lands.
+  for (const field of ['notes', 'coach_intro'] as const) {
+    const incoming = enriched.meta[field]
+    if (!incoming) continue
+    // `coach_intro` is paid-only (INV-PLAN-008); the gate below enforces that. A
+    // rejection here is about the TOKEN, never the tier.
+    if (field === 'coach_intro' && tier !== 'paid') continue
+    const token = firstPlaceholder(incoming)
+    if (token) { onRejectWeekCopy?.({ weekN: null, field, token }); continue }
+    if (field === 'notes') plan.meta.notes = incoming
+    else plan.meta.coach_intro = incoming
+  }
 
   // Paid-only meta fields (INV-PLAN-008)
   if (tier === 'paid') {
-    if (enriched.meta.coach_intro)             plan.meta.coach_intro = enriched.meta.coach_intro
     if (enriched.meta.confidence_score != null) plan.meta.confidence_score = enriched.meta.confidence_score
     if (enriched.meta.confidence_risks?.length) plan.meta.confidence_risks = enriched.meta.confidence_risks
   }
