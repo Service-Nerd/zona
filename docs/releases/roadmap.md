@@ -817,6 +817,21 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 
 ### 🏃 Product — SLT priority order (reviewed 2026-06-06; **re-topped 2026-08-06**)
 
+- ⚙️💼 `BASEBUILD-SCHEMA-CEREMONY-01` — **NEXT.** `PlanMetaSchema` requires five fields with
+  **0 live readers** (`handle`, `charity`, `quit_date` — the retired smoke-tracker field —
+  `version`, `notes`), so every `base_build` plan audits as invalid. `athlete` DOES have 7
+  readers and is a real producer gap, severity low (initials fall through to email). 🔻 The
+  worse half is SLT's: the route returns a base build **before** `enrich()`, so a **paid**
+  runner has no AI copy and is absent from the metric's denominator. `backlog.md`.
+- ⚙️ `COPY-CLAIM-CROSS-WEEK-01` — **NEXT.** `INV-PLAN-COPY-MATCHES-SESSIONS` rejects a deload
+  week for naming the threshold work it is **recovering from** — `withoutNegatedClauses`
+  disarms a negated claim but not a cross-week one. Cost a paid runner 2 of 20 weeks of AI
+  copy. Second instance of the one-twin class in nine days. `backlog.md`.
+- ⚙️ `AUDIT-STEP-UNDECLARED-01` — **NEXT, small.** The audit's `invalid` stepped 15 → 20 on
+  2026-10-06 with `checked` flat, caused by `INV-PLAN-PEAK-RACE-SPECIFIC-REACHED` shipping 34
+  minutes earlier (`e56f8e7a`, §93 Am.1, severity error). Correct behaviour, never declared, so
+  the digest attributed it to coverage for four days. Make the audit name newly-appearing codes
+  when `invalid` rises while `checked` is flat. `backlog.md`.
 - 🧭 `MICRO-LABEL-FIELDHINT-01` — **NEXT.** A field hint (`optional`, lowercase,
   untracked, beside an input) fits none of the three ruled roles and survives only as an
   exclusion. Fourth role, or body text? Board's. `backlog.md`.
