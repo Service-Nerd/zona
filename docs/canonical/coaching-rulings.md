@@ -1844,3 +1844,31 @@ None.
 
 ### 🔻 Filed, not built
 `DELIVERED-TAIL-LEVERS-01` (extend ADR-022's three levers to the healthy — blocked on outcome data, exactly as §2 Am.2 requires) · `V1-LOWVOL-MULTIDAY-01` (McMillan's cohort question).
+
+---
+
+## 2026-10-10 — `V1-LOWVOL-MULTIDAY-01` · WITHDRAWN on measurement: already governed by `MIN_KM_PER_TRAINING_DAY`
+
+**Filed by this board the same day**, from 🎯 McMillan's observation that all six worst delivered weeks were one shape: *"that is not a distribution, that is one runner… why are we adding a fourth and fifth session to someone running 4 km at a time."* **Brought back measured before a sitting was staged, and the measurement closes it.**
+
+🔴 **THE ENGINE ALREADY BOUNDS DAY COUNT BY VOLUME, PER WEEK, AND HAS SINCE R23.** `daysVolumeCanFill = max(MIN_TRAINING_DAYS_VOLUME_FLOOR, floor(dayCountKm / MIN_KM_PER_TRAINING_DAY))` with `MIN_KM_PER_TRAINING_DAY = 5`, and `daysAvailable` is the **min** of the runner's selection, the unblocked days, the cap, and that figure. So *"is there a weekly volume below which five sessions is the wrong shape"* is **already answered, by a ratified numeric.**
+
+⚠️ **AND THE PREMISE IS FALSE FOR McMILLAN'S OWN NAMED COHORT.** `cwk=20 / longest=8 / days=5` does **not** get five sessions at 20 km:
+
+| week | 1 | 2 | 3 | 4 | 5 | 6 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|
+| weekly km | 20 | 24 | 27 | 21 | 28 | 30 | 32 | 35 |
+| run days | **4** | **4** | 5 | 5 | 5 | 5 | 5 | 5 |
+| km/day | 5.0 | 6.0 | 5.4 | 4.2 | 5.6 | 6.0 | 6.4 | 7.0 |
+
+It places **four** days until the week reaches 27 km. The fifth arrives with the volume to fill it. ⚠️ **And the §94 breach on that cohort is at week 2 — `+21% week, +22% non-long-run` — a RAMP, with the day count flat at four.** The day count is not the driver.
+
+🔴 **MY FIRST MEASUREMENT USED THE WRONG FORMULA AND WOULD HAVE TAKEN A 7× OVERSTATEMENT TO A BOARD.** A naive `floor(weekly_km / 5)` reported **67 of 936 week-instances (7.2%)** exceeding what volume permits — and flagged weeks 4 and 8 of McMillan's own cohort. Both are **deloads**, and `dayCountKm` **grosses a deload back up to the pre-deload level for the day count only** — ADR-022's deliberate design, *"a recovery week is lower-volume, not fewer-days"*. With the engine's own formula: **9 of 936 (1.0%)**. The deload gross-up was 58 of the 67.
+
+### ⚖️ Ruling — **WITHDRAWN AS FILED.** Not a defect; already governed.
+
+No principle, no numeric, no invariant. 🎯 McMillan's instinct — *fix the cohort, not the percentile* — was right about where to look and the engine was already looking there.
+
+### 🔻 Filed, precisely, instead
+
+**`MIN-KM-DAY-BOUNDARY-01`** — the 1.0% residual, and it is one shape, not a question: **nine week-instances place 18 km over 4 days = 4.5 km/day**, marginally under the 5 km floor, all at `cwk=10–15` in weeks 1 and 3. `floor(18/5) = 3` permits three days and four are placed. This is a rounding boundary, not a doctrine gap — ⚠️ **and whether 4.5 km/day matters at all is a question `MIN_KM_PER_TRAINING_DAY`'s own reasoning already answers**: *"sub-floor sessions run at 13% below 2 km/day, 7% at 2–3, and ZERO at 3 km/day and above."* At 4.5 the measured harm is zero, so this may be correct as it stands. **Measure the sub-floor session count on those nine before proposing anything.**

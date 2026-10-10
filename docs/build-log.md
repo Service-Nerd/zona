@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-10 — BASEBUILD-AUDIT-BLIND-01 · the explanation was computed and then thrown away
+
+**Shipped:** a stored plan with no `generator_input` now tells the daily digest *why* it cannot be classified, instead of appearing as an unexplained violation.
+
+**Dev learning:** `verdictReason` returned `null` for an empty verdict map, and the route recorded `verdict_note` only when verdicts existed. `classifyCodes` returns an empty map in exactly one situation — no stored input — so the two guards agreed to drop the one sentence that explained the only case they both covered. **Neither line is wrong on its own.** That is what makes this class hard: the defect lives in the conjunction, and each half reads as defensive programming.
+
+**Product/creator learning:** the item said these plans "cannot be validated or classified at all" and were "absent from the invalid count". Validation worked and they were counted. **Re-measuring shrank the item to something much more specific and much worse** — not invisible, but visible and unexplained, nightly, for nine plans. And the name was wrong too: 7 of the 9 are race plans, not base-build.
+
+**AI-building learning:** a mutation stayed green. I re-gated `verdict_note` on verdicts existing — which *is* the original defect — and all four arms passed, because I had tested the sentence builder and not the thing that writes it. Fixing `verdictReason` is half a fix; the route has to record it. **Test the composition, not the halves** is in `/ship`'s own pre-ship gate, and I still needed the mutation to tell me.
+
+**The honest bit:** I deleted seven backlog entries, two of them still open. My edit sliced the entry's end at the next `---`, and an entry's body contains `---` separators, so the boundary ran past six more headings. **The same boundary error I made this morning, where an assertion caught it — this time I had written no assertion.** `itemXref.test.ts` caught it: a line promised an entry that no longer existed. Restored from HEAD and redone with a helper that bounds on the next heading and asserts it swallows exactly one.
+
+**Hook material:** my edit quietly deleted two live backlog items, and the thing that noticed was a test checking that cross-references in a markdown file still point at something.
+
+**Postable?:** yes
+
+## 2026-10-10 — V1-LOWVOL-MULTIDAY-01 · withdrawn, because the engine was already doing it
+
+**Shipped:** nothing. The item is closed on measurement.
+
+**Dev learning:** `daysVolumeCanFill = max(3, floor(dayCountKm / MIN_KM_PER_TRAINING_DAY))` has bounded day count by weekly volume since R23, and `daysAvailable` takes the min of that and the runner's selection. The board's question — *is there a volume below which five sessions is the wrong shape* — was already answered by a ratified numeric. I found that by reading the engine before staging a sitting.
+
+**Product/creator learning:** the premise was false for the cohort that prompted it. `cwk=20 / days=5` gets **four** sessions until the week reaches 27 km; the fifth arrives with the volume to fill it. And that cohort's §94 breach is at week 2 — a ramp, with the day count flat. **The thing that looked like a day-count problem was a ramp problem wearing a day count.**
+
+**AI-building learning:** my first predicate reported 67 of 936 week-instances (7.2%) exceeding what volume permits. The engine's own formula says 9 (1.0%). The difference is `dayCountKm`, which **grosses a deload back up** for the day count only — ADR-022's deliberate "lower-volume, not fewer-days" design — so my naive `floor(weekly_km / 5)` flagged every deload. **A 7x overstatement, and I would have taken it to a board.** Third time today that restating a formula instead of calling it produced the wrong number.
+
+**The honest bit:** `tsc` caught me filtering sessions on `type !== 'cross'` when the type union has no such member — a comparison that can never be true, in a line that looked like it was filtering. It did not change the result, which is the unsettling part: the number was right by luck.
+
+**Hook material:** 7.2% versus 1.0%. The gap was one line of the engine I had restated instead of called.
+
+**Postable?:** maybe
+
+
 ## 2026-10-10 — V1-DELIVERED-TAIL-01 · the board refused to set a number, and that was the right ruling
 
 **Shipped:** the magnitude of a delivered-ramp breach is now a segmented, non-growing baseline, governed on the trimable arm. No threshold.

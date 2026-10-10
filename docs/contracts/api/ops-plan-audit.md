@@ -132,6 +132,21 @@ Per-plan verdicts are also written into the `plan_rule_invalid` event detail as 
 `verdict_note`, so triage does not have to re-derive them — **and as a sentence in `reason`**, via
 `verdictReason()`.
 
+🔴 **A PLAN WITH NO `meta.generator_input` IS NOT CLASSIFIABLE, AND IT IS NO LONGER SILENT ABOUT IT** *(`BASEBUILD-AUDIT-BLIND-01`, 2026-10-10)*. `classifyCodes` yields **no verdicts** for such a plan — correctly, there is nothing to regenerate from — and that produced a hole:
+
+| | before | now |
+|---|---|---|
+| counted as invalid | ✅ yes | ✅ yes |
+| `verdicts` | — (correctly empty) | — (correctly empty) |
+| `verdict_note` | ❌ **dropped** — gated on verdicts existing | ✅ recorded whenever a note exists |
+| `reason` (what Q4 prints) | ❌ **null** — `verdictReason` returned null on an empty map | ✅ `NOT CLASSIFIABLE — …` |
+
+**Measured: 9 of 34 live plans** carry no stamp (2 `base_build`, 7 race plans from April–June 2026 that predate the field). Their violations were counted and **their cause was never reported**, which is the exact state this module's own `undecidable` branch exists to prevent — *"could not tell" is not "fine"*. The rule was written; one case escaped it.
+
+⚠️ **The sentence says PERMANENT, not transient.** A regeneration failure may clear on the next run; a missing stamp never will for that row, and remediation is founder-gated under the live-plan policy. The sentence names `BASEBUILD-GENINPUT-REMEDIATION-01` so the reader does not re-triage it nightly.
+
+⚠️ **`NO_INPUT_NOTE` is exported from `regressionVsNewRule.ts` and the route uses it** — `verdictReason` branches on that text, so a second literal in the route would silently stop matching. One copy, asserted.
+
 ⚠️ **`reason` is not a duplicate of `verdicts`; it is the field the CONSUMER already reads.** The
 daily digest's Q4 selects `detail->>'reason'` and prints it, so writing there means the existing
 consumer reports the verdict without depending on a second edit somewhere untestable. The three

@@ -4947,44 +4947,15 @@ ONLY, not `roadmap.md`.** So four NOW lines sat marked open with registry rows a
 `SITE-BTN-INVERT-01`) while the audit said ALL CLEAN. Extending that arm to the roadmap needs no
 parser — it is the same first-cell comparison against a second file.
 
-#### 🔻 `BASEBUILD-AUDIT-BLIND-01` — stored plans carrying no `generator_input` cannot be validated or classified *(P2, filed 2026-10-04 · re-measured 2026-10-10)* ⚙️ **NO BOARD**
+#### ✅ `BASEBUILD-AUDIT-BLIND-01` — **the CODE half is SHIPPED 2026-10-10; what remains is the founder's backfill decision** ⚙️ **NO BOARD** → 👤 **FOUNDER**
 
-🔴 **RE-MEASURED 2026-10-10 AGAINST PRODUCTION, AND THE ITEM'S NAME IS WRONG. 9 of 34 plans are unstamped, and SEVEN OF THE NINE ARE RACE PLANS, not base-build:**
+🔴 **THE ITEM'S PREMISE WAS PARTLY STALE AND I RE-MEASURED BEFORE BUILDING.** It claimed unstamped plans *"cannot be validated OR classified at all"* and are *"absent from the audit's invalid count"*. **Validation works** — `validateStoredPlan(plan)` takes no input, and the route counts them as invalid before classification runs. And the count moved: **"8 of 30" is now 9 of 34**, of which **7 are RACE plans** from April–June 2026, not base-build.
 
-| kind | n | dates |
-|---|---|---|
-| `(race)` | **7** | 2026-04-28 · 05-15 · 05-28 · 06-10 · 06-11 · 06-21 · 06-26 — all genuinely pre-PV2-A, predating the field |
-| `base_build` | 2 | `812e7e2e` (10-02) · `3df045d5` (10-09) |
+**What was genuinely broken was narrower and worse.** `verdictReason` returned `null` on an empty verdict map, and the route recorded `verdict_note` only when verdicts existed — so for those 9 plans the sentence *"not classified: stored plan carries no generator_input"* was **computed and thrown away**, and the digest's Q4 (`detail->>'reason'`) printed **nothing about why**. Their violations were counted and their cause was never reported, which is the exact state `regressionVsNewRule`'s own `undecidable` branch exists to prevent: *"could not tell" is not "fine"*.
 
-✅ **The PRODUCER half is fixed** (`BASEBUILD-GENINPUT-01`, 2026-10-09), so no new plan can join either group — the stamp is written at construction for all four producers.
+✅ **Fixed, no live data touched.** Q4 now prints `NOT CLASSIFIABLE — … Permanent for this row, not a transient failure. Treat as actionable…`, naming `BASEBUILD-GENINPUT-REMEDIATION-01` so the reader does not re-triage it nightly. `NO_INPUT_NOTE` is exported so the deciding string has one copy. Contract updated. ⚠️ **One mutation stayed GREEN first time** — re-gating `verdict_note` on verdicts existing *is* the original defect, and no arm caught it until I added one.
 
-⚠️ **THE RESIDUAL SPLITS, AND ONLY HALF OF IT HAS AN OWNER.** The 2 base-build rows are `BASEBUILD-GENINPUT-REMEDIATION-01` (founder-gated, live-plan policy). **The 7 legacy race plans are named by no other item** — they are the reason this one stays open, and the reason its title no longer says "base-build". "8 of 30" was true on 2026-10-04; the denominator grew.
-
-⚠️ **For the 7, a backfill is NOT obviously safe and that is the open question** — the same trap `BASEBUILD-GENINPUT-REMEDIATION-01` records: a stamp reconstructed from the plan's own flattened meta would be missing fields the input had, and **would look complete**. Decide per field what is recoverable before writing anything.
-
-⚙️ **NO BOARD.** A coverage gap, not a prescription question.
-
-🔴 **Originally measured as 8 of 30 stored plans; now 9 of 34** — no `generator_input`, so
-`validatePlan` has no second argument and `regressionVsNewRule` has nothing to regenerate from. They
-are absent from the audit's `invalid` count, from Q4, and from any future remediation. **A defect in
-one of them would be invisible.**
-
-⚠️ **I ASSUMED THIS WAS AGE AND IT IS NOT — the measurement is the finding.** Seven pre-date the
-field. **The eighth was created 2026-10-02**, and it is `plan_kind: base_build` — the on-ramp plan
-offered when a race plan is refused (`lib/plan/baseBuildOnRamp.ts`). **That producer never writes
-`generator_input`**, so the blindness is *permanent for that plan type*, not historical, and it grows
-by one every time a runner takes the on-ramp. Its meta carries its own inputs
-(`base_build_start_km`, `base_build_target_km`, `accept_base_build`, plus the wizard fields) — so the
-information exists; it is simply not in the shape the audit reads.
-
-**The work:** have the base-build path persist a `generator_input` (or have `storedPlanCodes` and the
-classifier accept the base-build meta shape). Then assert the gap cannot reopen: **a stored plan with
-no classifiable input should FAIL a test**, not be skipped silently — that skip is the
-allow-by-default shape this repo keeps paying for.
-
-⚠️ **Not urgent, and say why:** the on-ramp plan is simpler than a race plan (no peak, no taper, no
-race-specific work), so fewer invariants bear on it at all. But "fewer rules apply" is not "no rules
-apply", and right now nobody can tell which.
+🔻 **ALL THAT REMAINS IS YOURS, AND IT IS ONE DECISION:** whether to backfill the 7 legacy race plans. **My read is that it cannot be done safely** — a stamp reconstructed from flattened meta would be missing fields and **would look complete**, the same trap `BASEBUILD-GENINPUT-REMEDIATION-01` carries. If you agree, both items close as WON'T-FIX with the audit now saying so out loud; if not, the backfill needs a per-field recoverability review first.
 
 #### 🟡 `AUDIT-CONTRACT-MENTION-01` — the contract check counts a passing MENTION as a contract *(P3, filed 2026-10-04)* ⚙️ **NO BOARD**
 
@@ -8105,14 +8076,21 @@ Measured, same arm and instrument: **injury max 18% · healthy masters 79% · he
 
 ---
 
-### 🔻 `V1-LOWVOL-MULTIDAY-01` — the worst week is one runner, not a distribution 🏃 **COACHING BOARD** *(McMillan, 2026-10-10)*
+### ✅ `V1-LOWVOL-MULTIDAY-01` — **WITHDRAWN 2026-10-10 on measurement: already governed** 🏃 **COACHING BOARD**
 
-**The most useful finding of the sitting and nobody had commented on it.** All six worst delivered weeks are the same shape: **`cwk=20 / longest=8 / 4–5 days / week 9–10`**, V1-affected. On the trimable arm the maximum repeats, which is why `deliveredRampTail.test.ts` asserts the duplication — it is **one recurring week shape, not the engine's ceiling.**
+Filed by the board the same day and closed before a sitting was staged, because the measurement answers it. Full account: `coaching-rulings.md` 2026-10-10.
 
-🎯 **McMillan:** *"That is not a distribution, that is one runner: 20 km a week spread over five days, an 8 km longest run, and the plan tries to introduce quality around week nine. A coach would not ask whether 67% is above a threshold — they would ask **why we are adding a fourth and fifth session to someone running 4 km at a time.** Fix the cohort, not the percentile."*
+🔴 **The engine already bounds day count by volume, per week, and has since R23** — `daysVolumeCanFill = max(3, floor(dayCountKm / MIN_KM_PER_TRAINING_DAY))`, and `daysAvailable` is the **min** of the runner's selection and that figure. ⚠️ **The premise is false for McMillan's own cohort:** `cwk=20 / days=5` places **four** sessions until the week reaches 27 km, and its §94 breach is at week 2 — a **ramp**, with the day count flat at four.
 
-**The question for the board:** should `days_available` be bounded by volume — i.e. is there a weekly volume below which 5 sessions is the wrong shape whatever the runner selected? ⚠️ **Scan §18 (blocked-day enforcement), §1 CD-21 Am.1 (which ruled on the TWO-day end of exactly this axis) and `MIN_KM_PER_TRAINING_DAY` before proposing anything** — the low-day end is already ruled and the high-day-low-volume end may be its mirror.
+🔴 **My first measurement used the wrong formula and would have taken a 7× overstatement to a board** — a naive `floor(weekly_km/5)` said 67 of 936 (7.2%); the engine's own formula says **9 of 936 (1.0%)**. The difference is the **deload gross-up** (`dayCountKm`), ADR-022's deliberate *"lower-volume, not fewer-days"* design, which my predicate read as 58 breaches.
+
 ---
+
+### 🔻 `MIN-KM-DAY-BOUNDARY-01` — nine week-instances at 4.5 km/day, and it may be correct as it stands 🏃 **COACHING BOARD** *(filed 2026-10-10, P3)*
+
+The precise residual left by `V1-LOWVOL-MULTIDAY-01`'s withdrawal. **Nine of 936 week-instances place 18 km over 4 days = 4.5 km/day**, just under the 5 km floor, all at `cwk=10–15` in weeks 1 and 3: `floor(18/5) = 3` permits three days and four are placed.
+
+⚠️ **This is a rounding boundary, not a doctrine gap, and `MIN_KM_PER_TRAINING_DAY`'s own reasoning may already dismiss it:** *"sub-floor sessions run at 13% below 2 km/day, 7% at 2–3, and ZERO at 3 km/day and above."* At 4.5 km/day the measured harm is **zero**. **Measure the sub-floor session count on those nine before proposing anything** — if it is zero, this closes as correct-as-is rather than as a fix.
 
 ### ⚖️ THE FOUR TRIAGE DECISIONS — ALL RULED 2026-10-09
 

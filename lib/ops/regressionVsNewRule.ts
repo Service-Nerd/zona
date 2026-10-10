@@ -223,9 +223,45 @@ export function classifyCodes(
  * advance: a value whose only consumer is a change someone still has to make is a value
  * nothing reads.
  */
+/**
+ * The note the audit route passes when a stored plan carries no
+ * `meta.generator_input`. Exported so the route and this module cannot drift
+ * apart on the string that decides the branch below — the `deloadCadence` /
+ * `TIER-OWNER-01` lesson applied to a sentence.
+ */
+export const NO_INPUT_NOTE = 'not classified: stored plan carries no generator_input'
+
 export function verdictReason(verdicts: Record<string, CodeVerdict>, note: string): string | null {
   const codes = Object.keys(verdicts)
-  if (!codes.length) return null
+  // 🔴 AN EMPTY VERDICT MAP USED TO RETURN `null`, AND THAT IS HOW NINE LIVE
+  // PLANS BECAME SILENT (`BASEBUILD-AUDIT-BLIND-01`, 2026-10-10).
+  //
+  // `classifyCodes` returns no verdicts when the stored plan carries no
+  // `meta.generator_input` — there is nothing to regenerate from, so the absence
+  // is CORRECT and permanent for those rows. But the route only records
+  // `verdict_note` when verdicts exist, so the one sentence explaining why
+  // ("not classified: stored plan carries no generator_input") was **computed
+  // and then thrown away**, and the daily digest's Q4 — which selects
+  // `detail->>'reason'` — printed nothing at all.
+  //
+  // ⚠️ MEASURED: 9 of 34 live plans carry no stamp (2 base_build, 7 race plans
+  // from April–June 2026 that predate the field). Their violations were counted
+  // as invalid and their CAUSE was never reported, which is precisely the state
+  // this module's own `UNDECIDABLE` branch exists to prevent — *"could not tell"
+  // is not "fine"*. The rule was written; one case escaped it.
+  //
+  // So an empty map is no longer silence. It is only silence when there is also
+  // nothing to say, i.e. no note.
+  if (!codes.length) {
+    if (note === NO_INPUT_NOTE) {
+      return 'NOT CLASSIFIABLE — this plan carries no stored `generator_input`, so it cannot be '
+        + 'regenerated and its violations cannot be attributed to a cause. Permanent for this '
+        + 'row, not a transient failure. Treat as actionable: the violations are real and '
+        + 'unexplained. Remediation is founder-gated under the live-plan policy '
+        + '(BASEBUILD-GENINPUT-REMEDIATION-01, BASEBUILD-AUDIT-BLIND-01).'
+    }
+    return note ? `NO VERDICT — ${note}. "Could not tell" is not "fine".` : null
+  }
   const regressions = codes.filter(c => verdicts[c] === 'engine_regression')
   const undecided = codes.filter(c => verdicts[c] === 'undecidable')
   const inputs = codes.filter(c => verdicts[c] === 'input_breach')

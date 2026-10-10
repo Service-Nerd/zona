@@ -7,7 +7,7 @@ import { validateStoredPlan } from '@/lib/plan/validateStoredPlan'
 import { storedPlanCodes } from '@/lib/ops/storedPlanProbes'
 import { summariseRepairable } from '@/lib/ops/repairableDamage'
 import {
-  classifyCodes, verdictReason, summariseVerdicts, foundationWeekViolations,
+  classifyCodes, verdictReason, summariseVerdicts, foundationWeekViolations, NO_INPUT_NOTE,
   type CodeVerdict,
 } from '@/lib/ops/regressionVsNewRule'
 import { summarisePlanAges, type PlanAgeRow } from '@/lib/ops/planAuditAges'
@@ -217,7 +217,10 @@ export async function POST(req: NextRequest) {
     const input = (plan.meta as unknown as { generator_input?: Parameters<typeof classifyCodes>[1] })
       .generator_input
     let verdicts: Record<string, CodeVerdict> = {}
-    let verdictNote = 'not classified: stored plan carries no generator_input'
+    // The string is the OWNER's, not a local literal — `verdictReason` branches on
+    // it, and two copies of a sentence that decides a branch is the
+    // `deloadCadence` defect in prose form.
+    let verdictNote: string = NO_INPUT_NOTE
     if (input && newCodes.length) {
       const c = classifyCodes(plan, input, newCodes)
       verdicts = c.verdicts
@@ -238,7 +241,12 @@ export async function POST(req: NextRequest) {
         // means "the engine is doing this now"; `rule_newer_than_plan` is a remediation
         // queue item; `undecidable` means regeneration could not produce a comparable
         // plan and MUST NOT be read as clean.
-        ...(Object.keys(verdicts).length ? { verdicts, verdict_note: verdictNote } : {}),
+        // ⚠️ `verdict_note` IS RECORDED EVEN WITH NO VERDICTS (2026-10-10). It used
+        // to be gated on `verdicts` being non-empty, so the no-input case — 9 of
+        // 34 live plans — recorded neither a verdict, nor a note, nor a reason.
+        // The violations were counted and their cause was never reported.
+        ...(Object.keys(verdicts).length ? { verdicts } : {}),
+        ...(verdictNote ? { verdict_note: verdictNote } : {}),
         // ⚠️ ALSO AS PROSE IN `reason`, because that is the field the daily digest ALREADY
         // selects and prints. The structured map above is for triage; this is what makes the
         // existing consumer say the right thing tomorrow without a second edit elsewhere.

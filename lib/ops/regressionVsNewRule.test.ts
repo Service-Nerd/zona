@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { classifyCodes, summariseVerdicts, verdictReason, foundationWeekViolations, isInputLevelCode } from './regressionVsNewRule'
+import { classifyCodes, summariseVerdicts, verdictReason, foundationWeekViolations, isInputLevelCode, NO_INPUT_NOTE } from './regressionVsNewRule'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
 import { PINNED_PLAN_START_0907 } from '@/lib/plan/__fixtures__/pinnedPlanStart'
@@ -168,8 +168,20 @@ describe('verdictReason — the sentence the digest already prints', () => {
     expect(r).toMatch(/ENGINE REGRESSION/)
   })
 
-  it('returns null for an empty set rather than an empty-sounding sentence', () => {
-    expect(verdictReason({}, 'x')).toBeNull()
+  // 🔴 THIS ARM ENCODED THE DEFECT AND IS NOW SPLIT (BASEBUILD-AUDIT-BLIND-01,
+  // 2026-10-10). "Returns null for an empty set" was written to avoid an
+  // empty-sounding sentence, which is a real concern — but `classifyCodes`
+  // returns an EMPTY SET precisely when a stored plan has no
+  // `meta.generator_input`, so the rule silenced the one case that most needed
+  // saying: 9 of 34 live plans whose violations were counted and whose cause was
+  // never reported. The original intent is preserved below in the arm that keeps
+  // null when there is genuinely nothing to say.
+  it('an empty set with a NOTE now says something — silence was hiding nine plans', () => {
+    expect(verdictReason({}, 'x')).toMatch(/NO VERDICT — x\./)
+  })
+
+  it('an empty set with NO note is still null — the original intent, kept', () => {
+    expect(verdictReason({}, '')).toBeNull()
   })
 })
 
@@ -366,5 +378,71 @@ describe('AUDIT-FOUNDATION-MISCOUNT-01 — an input-level code cannot be an engi
     // `Record<CodeVerdict, number>` is what caught `input_breach` when it was added.
     const s = summariseVerdicts([{ a: 'engine_regression', b: 'rule_newer_than_plan', c: 'undecidable', d: 'input_breach' }])
     expect(s.engine_regression + s.rule_newer_than_plan + s.undecidable + s.input_breach).toBe(4)
+  })
+})
+
+describe('BASEBUILD-AUDIT-BLIND-01 — an unclassifiable plan is not a silent one', () => {
+  // 🔴 `verdictReason` returned `null` on an empty verdict map, and that is how
+  // NINE LIVE PLANS became silent. `classifyCodes` yields no verdicts when the
+  // stored plan has no `meta.generator_input` — correctly, there is nothing to
+  // regenerate from — but the route only recorded `verdict_note` when verdicts
+  // existed, so the sentence explaining why was computed and thrown away and the
+  // digest's Q4 (`detail->>'reason'`) printed nothing.
+  //
+  // 📐 Measured 2026-10-10: 9 of 34 live plans carry no stamp — 2 base_build and
+  // 7 race plans from April–June 2026 that predate the field.
+
+  it('🔴 the no-input case returns a sentence, not null', () => {
+    const r = verdictReason({}, NO_INPUT_NOTE)
+    expect(r, 'an unexplained violation must reach the digest').not.toBeNull()
+    expect(r).toMatch(/NOT CLASSIFIABLE/)
+    expect(r, 'the reader must know it is permanent, not a transient failure').toMatch(/[Pp]ermanent/)
+    expect(r, '"could not tell" must not read as "fine"').toMatch(/actionable/)
+    expect(r, 'and where the remediation lives').toMatch(/BASEBUILD-GENINPUT-REMEDIATION-01/)
+  })
+
+  it('the route and this module share ONE copy of the deciding string', () => {
+    // The branch above keys on the note text, so a second literal in the route
+    // would silently stop matching — the `deloadCadence` defect in prose form.
+    const routeSrc = readFileSync(
+      join(__dirname, '..', '..', 'app', 'api', 'ops', 'plan-audit', 'route.ts'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '')
+    expect(routeSrc, 'the route must use the exported constant, not its own literal')
+      .toMatch(/verdictNote:\s*string\s*=\s*NO_INPUT_NOTE/)
+    expect(routeSrc, 'no second copy of the sentence')
+      .not.toMatch(/'not classified: stored plan carries no generator_input'/)
+  })
+
+  it('🔴 the route records `verdict_note` UNCONDITIONALLY — the original defect', () => {
+    // A mutation re-gating this on `Object.keys(verdicts).length` stayed GREEN
+    // through every arm above, and that gate IS the defect: with no input there
+    // are no verdicts, so the note was dropped and the cause went unreported.
+    // `verdictReason` returning a sentence is only half the fix — the route has
+    // to write it.
+    const routeSrc = readFileSync(
+      join(__dirname, '..', '..', 'app', 'api', 'ops', 'plan-audit', 'route.ts'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '')
+    expect(routeSrc, '`verdict_note` must not be gated on verdicts existing')
+      .toMatch(/\.\.\.\(verdictNote \? \{ verdict_note: verdictNote \} : \{\}\)/)
+    expect(routeSrc, 'and the old combined gate must be gone')
+      .not.toMatch(/Object\.keys\(verdicts\)\.length[^\n]*verdict_note/)
+  })
+
+  it('an empty map with SOME OTHER note still says something', () => {
+    const r = verdictReason({}, 'regeneration threw')
+    expect(r).toMatch(/NO VERDICT — regeneration threw/)
+    expect(r).toMatch(/not "fine"/)
+  })
+
+  it('an empty map with NO note is still null — silence is correct when there is nothing to say', () => {
+    // The vacuity guard. Without it, "always return a sentence" would put a
+    // meaningless line in the digest on every clean plan.
+    expect(verdictReason({}, '')).toBeNull()
+  })
+
+  it('a populated map is unchanged — this is an addition, not a rewrite', () => {
+    const r = verdictReason({ 'INV-X': 'engine_regression' }, 'note')
+    expect(r).toMatch(/ENGINE REGRESSION/)
+    expect(r).not.toMatch(/NOT CLASSIFIABLE/)
   })
 })
