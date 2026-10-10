@@ -27,6 +27,7 @@ import type { Zone } from '@/components/shared/ZoneBar'
 import { BRAND } from '@/lib/brand'
 import { DOW_FULL, DOW_LETTER, DOW_ORDER, computeSessionDate, displayZonesForSession, fmtDurationMins, getSessionHRDisplay } from '@/components/dashboard/dashboardHelpers'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
+import type { HandoverCopy } from '@/lib/ui/handoverCopy'
 import { NotificationBell } from '@/components/shared/NotificationBell'
 import { TRIAL_DAYS } from '@/lib/trial'
 import { Wordmark } from '@/components/ui/Wordmark'
@@ -570,7 +571,7 @@ function getRestCopy(weekType?: string, weekPhase?: string, sessionType?: string
   }
 }
 
-export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow }: {
+export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, handover, onBuildRacePlan, onDismissHandover, handoverBusy, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow }: {
   recalTile?: React.ReactNode
   /** OPS-ATTRIB-01 — passed as a NODE, the same shape as `recalTile`, so Today
    *  does not need a Supabase client or the answered-state. Design Board
@@ -634,6 +635,11 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   onDismissMaintCard?: () => void
   /** #1 — one-time post-race announcement that the maintenance block is live. */
   showMaintTransition?: boolean
+  /** `BASEBUILD-HANDOVER-01` — the base-build block has finished. */
+  handover?: HandoverCopy | null
+  onBuildRacePlan?: () => void
+  onDismissHandover?: () => void
+  handoverBusy?: boolean
   /** MAINT-07 — runner is in the §75 Phase 3 window (real current week, not the
    *  viewed one: the register follows where they actually are). */
   maintReengagement?: boolean
@@ -1447,6 +1453,84 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             affordance is "See the plan" (→ adjust on the Plan screen), never
             accept/decline. Rule-engine copy → NO AIMark. Recovery-green rail
             mirrors the Plan-screen seam. */}
+        {/* `BASEBUILD-HANDOVER-01` — THE BLOCK ENDED AND SOMETHING HAS TO SAY SO.
+            A base-build plan is finite. It ran out, and until now NOTHING NOTICED: the
+            only route to the race plan it was building toward was the wizard, **which
+            archives the block the runner just completed.**
+
+            💼 SLT 2026-10-10: this is MAINT-06's TWIN, not a new surface. ADR-013 §36
+            names `user generates next race` in the same lifecycle MAINT-06 solved, so
+            this reuses that card's anatomy exactly: one-time announcement, keyed off
+            `plan_kind`, seen-state on the plan's own meta, rail + eyebrow + headline +
+            one line + muted metric + primary and secondary.
+
+            ⚠️ THE RAIL IS `--s-easy`, NOT MAINT-06's `--s-recov`, AND THE RULE IS
+            GENERALISABLE: **the transition card's rail names the block that is ENDING.**
+            A maintenance block IS recovery, so that card is recovery-green; a base-build
+            block is fifteen weeks of easy aerobic running. Cloning the maintenance rail
+            would have made the colour decorative at the second use.
+
+            ⚠️ NO AIMark: rule-engine output, not model output.
+            ⚠️ Copy comes from `lib/ui/handoverCopy.ts`, never assembled here, because a
+            ternary in JSX cannot be called and hard rule 7 binds every string in it. */}
+        {handover && (
+          <div style={{ marginBottom: 'var(--space-4)' }}>
+            <div style={{
+              position: 'relative',
+              background: 'var(--card)', boxShadow: 'var(--shadow-card)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '16px 16px 12px 19px',
+              border: '1px solid var(--line)',
+              overflow: 'hidden',
+            }}>
+              <span style={{
+                position: 'absolute', left: '8px', top: '16px', bottom: '16px',
+                width: '3px', borderRadius: '2px', background: 'var(--s-easy)',
+              }} />
+              <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
+                color: 'var(--s-easy)', marginBottom: 'var(--space-2)' }}>
+                {handover.eyebrow}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 800,
+                color: 'var(--ink)', letterSpacing: '-0.01em', marginBottom: 'var(--space-2)',
+              }}>
+                {handover.title}
+              </div>
+              {/* ⚠️ 14px, NOT the 13px this card's sibling uses. `appTypeScale.test.ts`
+                  declares {10,11,12,14,15,17,20,26,44,56} and **13 is undeclared** — I
+                  copied it from MAINT-06 and the gate caught the import of its debt
+                  (243 vs a 242 baseline). The register is meant to FALL, so a new card
+                  may not add to it. One pixel from its sibling, and nobody has seen
+                  either on a device, so that difference is arithmetic and not an
+                  observation. */}
+              <p style={{
+                fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)',
+                lineHeight: '1.45', margin: '0 0 10px',
+              }}>
+                {handover.line}
+              </p>
+              {/* The achievement, stated as fact. Absent rather than half-stated when the
+                  block recorded no volumes. */}
+              {handover.metric && (
+                <div style={{ ...MICRO_LABELS.sectionLabel, fontFamily: 'var(--font-ui)',
+                  color: 'var(--mute)', marginBottom: 'var(--space-4)' }}>
+                  {handover.metric}
+                </div>
+              )}
+              <Button variant="primary" fullWidth
+                onClick={onBuildRacePlan} disabled={handoverBusy}
+                style={{ marginBottom: '4px' }}>
+                {handoverBusy ? 'Building…' : handover.primary}
+              </Button>
+              <Button variant="secondary" size="compact" fullWidth
+                onClick={onDismissHandover} disabled={handoverBusy}>
+                {handover.secondary}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {showMaintTransition && (
           <div style={{ marginBottom: 'var(--space-4)' }}>
             <div style={{

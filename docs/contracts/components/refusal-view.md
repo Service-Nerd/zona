@@ -1,6 +1,8 @@
 # `RefusalView` — contract
 
-`components/shared/RefusalView.tsx`. What a runner sees when the engine will not build
+**Component:** `components/shared/RefusalView.tsx`
+
+What a runner sees when the engine will not build
 the plan they asked for.
 
 ⚠️ **Written 2026-10-10 because `PREP-ACK-NO-WRITER-01` changed this component's prop
@@ -23,7 +25,7 @@ Conflating the first two was `REFUSAL-SCREEN-01`: a coaching decision presented 
 ## Prop interface
 
 ```typescript
-{
+interface RefusalViewProps {
   isRefusal: boolean           // 422 → true. Drives voice, not layout.
   message: string | null       // server-authored. Never assembled here.
   alternatives: string[]       // server-authored, ORDERED by the server.

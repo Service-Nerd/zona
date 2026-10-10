@@ -895,7 +895,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "components/dashboard/TodayScreen.tsx#Button12": {
@@ -903,10 +903,26 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 47,
+    "height": 44,
     "width": "full"
   },
   "components/dashboard/TodayScreen.tsx#Button13": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "full"
+  },
+  "components/dashboard/TodayScreen.tsx#Button14": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/TodayScreen.tsx#Button15": {
     "floor": 44,
     "padY": null,
     "font": null,

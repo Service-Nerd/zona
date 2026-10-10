@@ -5,6 +5,8 @@ import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
 import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
+import { handoverState, handoverInput, handoverSeenPatch } from '@/lib/plan/baseBuildHandover'
+import { handoverCopy } from '@/lib/ui/handoverCopy'
 import { resolveAutoMatch } from '@/lib/coaching/sessionAutoMatch'
 import { applyHrToPlan } from '@/lib/plan/zones'
 import MePlanCard from '@/components/shared/MePlanCard'
@@ -2149,6 +2151,69 @@ export default function DashboardClient() {
   // (`plan_kind`), not the (now-archived) race week. The transition announcement
   // + ongoing "Base running" card + their seen/dismiss state live on the
   // maintenance plan's meta, so they survive the race→maintenance handoff.
+  /**
+   * `BASEBUILD-HANDOVER-01` — the base-build block has finished.
+   *
+   * 💼 SLT 2026-10-10: **MAINT-06's twin.** The decision itself is in
+   * `lib/plan/baseBuildHandover.ts` so it can be tested; this only renders it and owns
+   * the write. ⚠️ `new Date()` is passed IN rather than read inside the predicate, which
+   * is why the module is testable at all.
+   */
+  const handover = handoverState(plan, new Date())
+  const [handoverBusy, setHandoverBusy] = useState(false)
+  const handoverCopyData = handover.show
+    ? handoverCopy({
+        raceDistanceKm: handover.input.race_distance_km,
+        blockWeeks: plan?.weeks.length ?? 0,
+        startKm: Number((plan?.meta as unknown as Record<string, unknown>)?.base_build_start_km ?? 0),
+        deliveredKm: Number((plan?.meta as unknown as Record<string, unknown>)?.base_build_target_km ?? 0),
+        units: preferredUnits,
+      })
+    : null
+
+  /**
+   * Build the race plan the block was building toward.
+   *
+   * ⚠️ REUSES `runModifyPreview`, WHICH IS THE WHOLE POINT. That path already POSTs a
+   * `GeneratorInput` to `/api/generate-plan`, previews the result, surfaces a 422 as a
+   * DESIGNED REFUSAL rather than an error, and saves on accept. A second generate-and-save
+   * path here would be a duplicate of the most consequential write in the app.
+   *
+   * 🔴 AND IT ONLY WORKS BECAUSE OF TWO THINGS SHIPPED EARLIER TODAY:
+   * `BASEBUILD-GENINPUT-REMEDIATION-01` stamped `generator_input` on these plans (before
+   * that there was nothing to regenerate from), and `PREP-ACK-NO-WRITER-01` built §44's
+   * second step — without it Tom's handover dead-ends on `warn_unacknowledged`, which is
+   * measured, not predicted.
+   */
+  async function handleBuildRacePlan() {
+    if (!handover.show || !plan) return
+    setHandoverBusy(true)
+    try {
+      await runModifyPreview(handoverInput(plan, handover.input), true)
+    } finally {
+      setHandoverBusy(false)
+    }
+  }
+
+  /**
+   * Dismiss, writing the seen-flag.
+   *
+   * 🔴 THE RISK THE SLT NAMED IS IN THIS FUNCTION. `savePlanForUser` archives on a
+   * RACE-IDENTITY change (`race_name|race_date`), so writing a seen-flag is safe ONLY
+   * because `handoverSeenPatch` touches neither. A variant that also set `race_name`
+   * would **archive the runner's block while announcing it.** The patch comes from the
+   * owner precisely so that cannot be written by hand here.
+   */
+  async function handleDismissHandover() {
+    if (!plan) return
+    const next = { ...plan, meta: { ...plan.meta, ...handoverSeenPatch() } } as Plan
+    setPlan(next)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) await savePlanForUser(user.id, next, supabase)
+    } catch (err) { console.error('[handover] seen-flag save failed', err) }
+  }
+
   const maintCardSig = isMaintenancePlan ? ((plan!.meta as any).source_race_name ?? 'maintenance') : null
   const maintTransitionSeen = !!(plan?.meta as any)?.maintenance_transition_seen
   // #1 — one-time transition announcement. The maintenance plan is auto-live, but
@@ -2630,7 +2695,7 @@ export default function DashboardClient() {
             ? <AttributionRow supabase={supabase} userId={userId}
                 onResolved={() => setAttributionResolved(true)} />
             : null
-        } recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); hasPaidAccess ? setScreen('recalibration') : openUpgrade('recal_tile') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        } recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); hasPaidAccess ? setScreen('recalibration') : openUpgrade('recal_tile') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} handover={handoverCopyData} onBuildRacePlan={handleBuildRacePlan} onDismissHandover={handleDismissHandover} handoverBusy={handoverBusy} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
