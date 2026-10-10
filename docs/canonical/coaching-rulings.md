@@ -1872,3 +1872,105 @@ No principle, no numeric, no invariant. 🎯 McMillan's instinct — *fix the co
 ### 🔻 Filed, precisely, instead
 
 **`MIN-KM-DAY-BOUNDARY-01`** — the 1.0% residual, and it is one shape, not a question: **nine week-instances place 18 km over 4 days = 4.5 km/day**, marginally under the 5 km floor, all at `cwk=10–15` in weeks 1 and 3. `floor(18/5) = 3` permits three days and four are placed. This is a rounding boundary, not a doctrine gap — ⚠️ **and whether 4.5 km/day matters at all is a question `MIN_KM_PER_TRAINING_DAY`'s own reasoning already answers**: *"sub-floor sessions run at 13% below 2 km/day, 7% at 2–3, and ZERO at 3 km/day and above."* At 4.5 the measured harm is zero, so this may be correct as it stands. **Measure the sub-floor session count on those nine before proposing anything.**
+
+---
+
+## 2026-10-10 — `BASEBUILD-ADJUST-MONOTONIC-01`: §111's numerator can be shrunk by the runner
+
+**Ruling: CORRECT WITH AMENDMENT, unanimous on the defect. 🔻 IMPLEMENTATION WITHHELD** pending the
+founder's sign-off (his standing rule on coaching logic) **and** a real cost measurement.
+
+**The defect.** §111 refuses on `deliveredPeakKm(plan) ÷ effectiveStartKm`. The numerator is the
+plan *after* the weekday cap, ADR-022's injury levers and the day count have shrunk it, so anything
+that shrinks the plan lowers the ratio and buys admission.
+
+**Measured** (600 marathon/ultra inputs, `plan_start` pinned, `longest ≤ weekly` enforced — §18
+rejects the rest, and my first grid ignored that and buried the signal in validator noise). §111
+refuses 86. Of those 86:
+
+| the runner changes | admitted | rate |
+|---|---|---|
+| `injury_history [] → ['knee']` (an injury they do not have) | 62 | **72.1%** |
+| `max_weekday_mins 45 → 20` | 50 | 58.1% |
+| `max_weekday_mins 45 → 30` | 42 | 48.8% |
+| `days_available 4 → 3` | 26 | 30.2% |
+| **at least one of the above** | **62** | **72.1%** |
+
+**Control:** raising `current_weekly_km` on an admitted plan → **0 refusals in 1,028 checks.** The
+guarantee holds on the one axis with a test (`baseVolume.test.ts`) and on none of the others.
+**Nobody had to care until `MODIFIABLE_ROWS` turned two of them into runner-facing controls.**
+
+🔴 **THE CONFLICT SCAN FOUND THE PRECEDENT AND CAUGHT THE SUBMISSION.** The brief quoted §111's
+metric as "÷ raw stated `current_weekly_km`" — **the superseded original text.** §111
+**Amendment 2** (2026-09-19) changed the denominator to `effectiveStartKm` three weeks earlier, for
+the *same reason as this sitting*: *"the gate scored a build no runner performs… a check measuring
+the wrong thing."* **This is that finding, on the other half of the fraction.** Amendment 2 accepted
+**+456 refusals (+19.6% for the cohort ranked first)** and recorded 🏃 *"declining to apply a
+correction because the truth is expensive is not a coaching position"* — plus **"THE CAP CANNOT
+ABSORB THE CORRECTION — do not retry it."** Both bind here.
+
+⚠️ **REACHABILITY: the filed item said "not currently reachable" and that was WRONG.**
+`BASEBUILD-ADJUST-DOOR-01` shut the Adjust sheet, but **the wizard is a second path** — the refusal
+screen carries a back button, field state is preserved, `zona_wizard_draft` persists it. A refused
+marathoner goes back, ticks an injury, and gets a plan. **It is live.** That correction moved this
+from P2 to urgent.
+
+### The seats
+
+🏃 **Hutchinson (chair):** *"a gate a runner clears by ticking a knee injury they do not have is not
+a safety gate, it is a form"* — and the runner is not gaming us, they are honestly answering a
+question about their weekday time and being rewarded for it.
+📊 **Seiler:** no objection; stated for the record that **§1 counts SESSIONS (CD-19)**, so a
+shrunken week cannot move the intensity ratio. **This defect does not touch §1.**
+🎯 **McMillan:** two women with the same aerobic base told opposite things about the same race, and
+**the one with less time to train is the one admitted.**
+🩹 **Willy:** *"we built a safety mechanism and then used its output as evidence of safety."*
+ADR-022's levers protect tissue, which shrinks the delivered week, which opens the door. Circular —
+and it admits a low-base beginner with a stated knee history into a marathon build, **"the clearest
+bone-stress setup in this whole engine."**
+⚕️ **Sims:** the weekday-cap axis is **not sex-neutral in who it selects** — a 30-minute weekday
+ceiling tracks unpaid-work load, which skews female in every time-use dataset. So the axis that most
+readily buys admission preferentially admits women into an under-prepared build.
+
+### ⚡ Recorded disagreement — on the remedy's FORM, not the defect
+
+Hutchinson and Willy want the **numerator corrected**. McMillan would rather §111 became an
+**INPUT gate** — *"if it is a fact about the runner, ask it before you build"* — and accepts the
+numerator fix as the interim. **What would settle it:** each form's refusal delta measured on the
+engine's real `peakKm`. Neither seat will choose on a proxy.
+
+### The binding amendments
+
+1. **The numerator becomes the engine's own peak TARGET (`peakKm`), not the delivered peak**, so
+   §106's `PEAK_FLOOR_VS_START_RATIO` and §117's bypass are both carried. ⛔ **A raw
+   `peakKmByLevel` lookup is expressly FORBIDDEN** — §117 opens its door *by lowering the peak*
+   (52 → 32), and a table read would re-close it.
+2. **No threshold change. 4.0 stands.** §2 Am.2's freeze does not bind a numerator correction, and
+   the cap may not be raised to hold refusals flat.
+3. ⚕️ **Sims, binding:** the newly-refused population is reported **segmented** (masters,
+   injury-history), not as one aggregate. Amendment 2 reported one number for one cohort.
+4. 🎯 **McMillan, binding:** §44 still applies — the refusal names a lever in plain words, not a
+   ratio.
+
+⚠️ **THE 14.0% COST FIGURE IS A PROXY AND MAY NOT BE QUOTED AS THE PRICE.** It read the raw level
+table, which misses §106's floor (raises refusals) and §117's reduction (lowers them). The engine's
+`peakKm` is not exported, so the true cost needs that one change first. Robust detail: the figure is
+unchanged under both denominators, because `effectiveStartKm` diverges from the raw figure only
+above 30 km/wk.
+
+### Artifacts — SPECIFIED, NOT BUILT
+
+1. **Principle** — §111 **Amendment 4**: *the numerator is the peak the plan TARGETS, not the peak
+   it delivers; a runner's stated constraints may not purchase admission.*
+2. **Numeric** — **none, deliberately.** No new constant; the change is which existing quantity the
+   ratio reads. Amendment 2 set that pattern.
+3. **Invariant** — `INV-PLAN-BASE-BUILD-RATIO` follows `assessBaseBuild` automatically. **A new
+   MONOTONICITY arm is required:** for a refused input, no tightening of `max_weekday_mins`,
+   `injury_history` or `days_available` may produce a plan. ⚠️ Falsify it against the **current**
+   engine, where it fires **62** times.
+
+**↗️ SLT escalation — on the PRICE only.** A refusal increase on the marathon cohort the founder
+ranks first, for the second time in a month. ⚠️ **Traynor's seat is stood down, so nobody at that
+table prices churn** — stated rather than left as an expectation.
+
+**Evidence script:** `scripts/board-evidence-111-monotonic.ts`.

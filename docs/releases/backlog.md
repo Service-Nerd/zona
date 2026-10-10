@@ -306,7 +306,20 @@ still modifiable"* stays green, so the gate is scoped, not a kill. One arm names
 
 ---
 
-### 🔻 `BASEBUILD-ADJUST-MONOTONIC-01` — **§111 IS MONOTONIC IN ONE AXIS AND NON-MONOTONIC IN THE OTHERS** 🏃 **COACHING BOARD** *(proposed, NOT built — coaching logic needs founder sign-off)*
+### 🔻 `BASEBUILD-ADJUST-MONOTONIC-01` — **RULED CORRECT 2026-10-10 (UNANIMOUS). BLOCKED ON ONE MEASUREMENT, THEN THE FOUNDER'S SIGN-OFF** 🏃 **COACHING BOARD** → 💼 **SLT** → 👤 **FOUNDER**
+
+⚖️ **Coaching Board: CORRECT WITH AMENDMENT, unanimous.** Full sitting in `coaching-rulings.md` 2026-10-10.
+⚖️ **SLT: blocked on a measurement, NOT on a decision** — `slt-2026-10-10-basebuild-escalations.md`.
+
+🔴 **THE CONFLICT SCAN FOUND THE PRECEDENT AND CAUGHT MY BRIEF.** I quoted §111's metric as *"÷ raw stated `current_weekly_km`"* — **the superseded original text.** §111 **Amendment 2** (2026-09-19) changed the denominator to `effectiveStartKm` three weeks earlier, **for the same reason as this sitting**. This is that finding on the other half of the fraction.
+
+⚠️ **REACHABILITY: the entry below said "not currently reachable" and that was WRONG.** The Adjust door is shut, but **the wizard is a second path** — the refusal screen carries a back button and field state is preserved. **It is live**, which moved this from P2 to urgent.
+
+**The binding amendments:** (1) the numerator becomes the engine's own peak TARGET (`peakKm`), so §106's floor and §117's bypass are carried — ⛔ **a raw `peakKmByLevel` lookup is FORBIDDEN**, it would re-close §117's door; (2) **no threshold change, 4.0 stands** — §2 Am.2's freeze does not bind a numerator correction and the cap may not be raised to absorb it; (3) ⚕️ **Sims, binding:** report the newly-refused population **segmented** (masters, injury-history), not as one aggregate; (4) 🎯 **McMillan, binding:** §44 still applies, the refusal names a lever in plain words.
+
+🔻 **WHAT UNBLOCKS IT — one small change, then one decision.** Export `peakKm`, re-measure, report segmented. ⚠️ **My 14.0% cost figure is a PROXY and may not be quoted as the price** (it read the raw level table, missing §106's floor and §117's reduction). 📦 **Fried refused to price it:** *"get `peakKm` exported, take the real measurement, then it is a one-line decision. That is not a delay, it is the work."* 🏃 **And the SLT recorded that it will NOT refuse a correct correction on cost** — Amendment 2 accepted +456 refusals (+19.6% for the cohort ranked first) on evidence of a 5.57× median true build ratio and **zero genuine defects**.
+
+**Measured, 600 valid marathon/ultra inputs — §111 refuses 86, and of those 86:**
 
 **Measured 2026-10-10 on two live plans** while validating `BASEBUILD-GENINPUT-REMEDIATION-01`.
 §111 refuses marathon/ultra on `delivered_peak ÷ current_weekly_km > MAX_BASE_BUILD_RATIO`, so
@@ -335,7 +348,19 @@ alternatives name the constraint as the lever? The first is a §111 amendment; t
 
 ---
 
-### 🔻 `BASEBUILD-ADJUST-REBUILD-01` — **THE ADJUST SHEET MUST REBUILD THE BASE BUILD, NOT A RACE PLAN** 🧭 **DESIGN BOARD** *(destination ruled 2026-10-10; Sierra's dissent is the driver)*
+### 🔻 `BASEBUILD-ADJUST-REBUILD-01` — **RULED 2026-10-10: TWO ROWS, NOT EIGHT. APPROVED, BUILD LAST** 🧭 **DESIGN BOARD** → 💼 **SLT**
+
+⚖️ **Design Board: SHIP WITH AMENDMENT** (`design-rulings.md` 2026-10-10). ⚖️ **SLT: BUILD, low priority, behind `BASEBUILD-HANDOVER-01`** — approved on marginal cost, **not** on user count.
+
+📐 **THE MEASUREMENT RESHAPED THE ITEM.** Against the real producer (`generateBaseBuildPlan`), both live plans, session-level fingerprint: **`days_cannot_train` 2/2, `days_available` 1/2, the other six ZERO.** The item as filed would have shipped eight rows where six do nothing — **the door defect one layer along**, against 🧭 Zhuo's own standard from that sitting.
+
+**The shape, settled:** two rows, the other six withheld, `race_date` and the *"The race"* group do not render. ⛔ **NOT collapsed into one week grid — `SHEET-DAY-QUESTION-01` declined exactly that on 2026-10-05** (*"breaks the sheet's own one-row-per-setting architecture"*); its live reconciliation line is reused. **Withholding must be MECHANICAL**, so a key that becomes effective later is a decision, not an oversight.
+
+🥇 **SIERRA'S DISSENT IS WITHDRAWN ON MEASUREMENT, NOT OVERRULED.** She had said a runner cannot move her long run off a day she cannot run. **A base-build block carries 0 long runs (Sheena) and 1 in 15 weeks (Tom).** *"I was reasoning from the race-plan mental model, which is the mistake Collins named: a base build is not a small marathon."* The capability that IS real — *"I cannot run Tuesdays any more"* — is one of the two surviving rows.
+
+⚠️ **TWO MEASUREMENT CORRECTIONS, BOTH MINE.** My first harness passed `base_build_target_km` where `min_base_km` goes and one plan rebuilt to **ZERO weeks** — I would have published *"0 of 8"*. The harness now reads the assessment back from the plan and **refuses to measure unless the baseline reproduces the stored plan**. And my `preferred_long_run_day` arm tested the runner's current answer plus **a day he cannot run** — re-tested on **6 genuinely available** alternatives across both runners: **inert on all six.**
+
+🔻 **Routed, not ruled:** *is a 15-week block with 0–1 long runs correct?* → 🏃 Coaching Board.
 
 **Ruled as the destination at the `BASEBUILD-ADJUST-DOOR-01` sitting, which withheld the row as
 an INTERIM.** The board bound the interim to this item so it cannot be read later as *"base-build
@@ -363,31 +388,59 @@ build. **That is a §116 question as much as a design one.**
 whose `meta.race_date` is deliberately `''`, does that group appear at all? (Silvanto called the
 group title a category error on this plan kind.)
 
-### 🔻 `BASEBUILD-HANDOVER-01` — **A BASE BUILD ENDS AND NOTHING OFFERS THE RACE PLAN IT WAS BUILT FOR** 👤 **FOUNDER** → 💼 **SLT** → 🧭 **DESIGN BOARD**
+### 🔻 `BASEBUILD-HANDOVER-01` — **SLT APPROVED 2026-10-10, BUILD FIRST. AND IT IS MAINT-06's TWIN, NOT A NEW SURFACE** 💼 **SLT** → 🧭 **DESIGN BOARD** + 🏃 **COACHING BOARD** *(founder funds; he does not design it)*
 
-**Found 2026-10-10 while validating the backfill, and it is the bigger problem for these two
-runners.** Both hold a 15-week base build with `base_build_onramp: true` — §116's marker meaning
-*this IS an on-ramp to a marathon*:
+⚖️ **SLT: BUILD, and FIRST** — the only item of the three with a dated cost (100 and 107 days). `slt-2026-10-10-basebuild-escalations.md`.
 
-| runner | base build ends | race | weeks between |
-|---|---|---|---|
-| Sheena | ~18 Jan 2027 | 24 Apr 2027 | ~14 |
-| Tom | ~25 Jan 2027 | 24 Apr 2027 | ~13 |
+🥇 **THE REGISTRY CHECK RESHAPED THIS BEFORE ANY SEAT SPOKE. MAINT-06 ALREADY SHIPPED THE MECHANISM** — a one-time transition announcement on Today keyed off `plan_kind`, seen-state on the plan's own meta, an ongoing status card, and CA-03's goal ladder gated to the re-engagement window. **So this is a `plan_kind` branch on a surface that already does this job, and ADR-013 §36 names `user generates next race` in the same lifecycle MAINT-06 solved.** The *"hazard solved for one transition, named but not solved for its twin"* class, verbatim. 📦 Fried: *"it is not a programme, it is an afternoon."*
 
-**Both windows are long enough for a marathon block. There is no mechanism that notices.** Grep
-across `app/`, `lib/` and `components/`: nothing reads `base_build_onramp`, nothing detects a
-finished base build, and nothing offers the race plan. The only route is the wizard, **which
-archives the plan they just completed.**
+⛔ **KILLED, PERMANENT — "tell the two runners directly".** 🔬 Wood, kill mandate: *"a message from the founder to two runners is not a mechanism; it is a person remembering… the third runner gets nothing. **An intervention that depends on someone remembering is not an intervention.**"* It also collides with the standing *"zero contact with our runners"*. **Option (c), do nothing, is also rejected** — the only route left is the wizard, **which archives the block they just completed.**
 
-⚠️ **§118's own code says the handover is the point** — `getRunningPlan.ts` deletes the
-`base_build_onramp` marker for the non-marathon variant specifically so *"a downstream reader
-cannot infer a marathon handover that does not exist"*. **For these two the marker is set, the
-handover does exist on paper, and there is no downstream reader at all.** Same class as
-`run_walk_strategy`: a field with a producer and no consumer.
+🧭 **The success condition is set NOW, before any design** (Zhuo): *a runner whose block ends either holds a race plan or has explicitly declined one.* **Not "saw the card"** — otherwise we build a thing that feels like a handover.
+
+🔬 **Wood, binding (inherited from MAINT-06):** the announcement **suppresses the ongoing card until acknowledged.** Two cards competing at the moment of highest uncertainty is the failure mode.
+
+🏃 **Coaching Board owns the copy, not the builder:** **Tom's handover returns `PrepTimeError (warn_unacknowledged)`, not a plan.** Hutchinson: a card that does not carry that honestly is *"a cheerful door onto a compressed block."*
+
+🔴 **THE RISK IS MAINT-06 ITSELF.** `markMaintenanceTransitionSeen` writes through `savePlanForUser` and **relies on `race_name` being unchanged so the save does not archive the plan** — a base-build variant that gets that wrong would **archive the runner's block while announcing it.** Also touches CA-03's `nextGoalGateOpen`, which assumes "not maintenance" means "race".
+
+⚠️ **Traynor's seat is stood down, so nobody priced the CHURN** — a runner hitting a dead end after fifteen successful weeks. Stated rather than left as silence; this is recall-trigger evidence.
+
+🔴 **I FILED THIS ON A FALSE PREMISE AND THE CORRECTION INVERTS IT.** The entry said *"both hold a
+15-week base build with `base_build_onramp: true` — §116's marker meaning this IS an on-ramp to a
+marathon"*, and called it *"a field with a producer and no consumer"*. **Measured 2026-10-10:
+`base_build_onramp` is `undefined` on BOTH plans.** They came through
+`generateGetRunningPlan`, which **deletes** the marker, and its own comment says exactly why:
+*"this plan is not an on-ramp to anything, and leaving the flag on would let a downstream reader
+infer a marathon handover that does not exist."*
+
+⚠️ **So the code is HONEST and I had it backwards.** This is not a producer with no reader — the
+producer deliberately does not claim a handover. **The gap is a product decision never taken**, not
+a defect, and that is a different question for a different body. Same lesson as
+[[feedback-check-doctrine-before-filing-a-finding]]: the file I quoted as proving my point said the
+opposite, one line down.
+
+**What is actually true, measured:**
+
+| runner | start volume → block target | block ends | race | weeks between | race plan at handover |
+|---|---|---|---|---|---|
+| Sheena | 5 → **18.9** km/wk | 18 Jan 2027 | 24 Apr 2027 | 13 | ✅ **generates, 14 weeks** |
+| Tom | 10 → **37.9** km/wk | 25 Jan 2027 | 24 Apr 2027 | 12 | ⚠️ `PrepTimeError (warn_unacknowledged)` |
+
+⚠️ **AND I NEARLY REPORTED A REFUSAL HERE TOO.** `DISTANCE_CONFIGS.minWeeks` is **14** for a
+marathon, so 12 and 13 weeks read as below the minimum — but the refusal gate is
+`PREP_TIME_THRESHOLDS.MARATHON = { block: 10, warn: 16 }`. **Two different numbers for two
+different jobs.** Neither runner is refused; Tom needs to acknowledge a short-prep warning.
+
+**So the real question is narrow and it is commercial, not technical:** both runners finish a block
+in January having roughly tripled or quadrupled their volume, with a marathon 12–13 weeks later and
+**no surface that says so**. The engine will build them a plan the moment they ask. **Nothing asks
+them.** The only route is the wizard, which archives the plan they just completed, and §118 never
+promised otherwise.
 
 **Why it is the founder's first:** it needs a new surface (🧭), a tier call (💼), and it bumps into
 his standing *"zero contact with our runners"* — the alternative to a surface is telling them. It is
-also time-boxed: **the January window is real and these are real people.**
+time-boxed: **the January dates are real and these are real people.**
 
 ### ✅ `POSTRUN-POLL-WEEK-BLIND-01` — SHIPPED 2026-10-07 ⚙️ **NO BOARD**
 

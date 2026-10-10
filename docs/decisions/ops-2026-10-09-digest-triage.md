@@ -76,7 +76,7 @@ All three came out of item 10's build, and none existed before 2026-10-10.
 
 | Item | Owner | Why it is not mine to build |
 |---|---|---|
-| `BASEBUILD-HANDOVER-01` | 👤 FOUNDER → 💼 SLT → 🧭 DESIGN | `base_build_onramp: true` has a producer and **zero readers** — nothing detects a finished base build. Both runners end in January racing 24 Apr (~14 and ~13 weeks clear). Needs a new surface, a tier call, and it brushes "zero contact with our runners". **Time-boxed to January.** |
+| `BASEBUILD-HANDOVER-01` | 👤 FOUNDER → 💼 SLT → 🧭 DESIGN | 🔴 **I filed this on a false premise; see the backlog entry.** `base_build_onramp` is **`undefined`** on both plans — `generateGetRunningPlan` deletes it on purpose, so the code never claimed a handover. Measured: Sheena's race plan **generates (14 weeks)** at handover; Tom's needs a short-prep acknowledgment. **The gap is a product decision never taken, not a defect.** Both end in January racing 24 Apr. **Time-boxed.** |
 | `BASEBUILD-ADJUST-MONOTONIC-01` | 🏃 COACHING BOARD | §111 is monotonic in `current_weekly_km` only; a *tighter* weekday cap and an injury the runner does not have each ADMIT a plan the honest answer is refused. **Coaching logic needs sign-off — proposed, not built.** |
 | `BASEBUILD-ADJUST-REBUILD-01` | 🧭 DESIGN BOARD | The destination the door ruling bound itself to. Sierra's dissent is the driver. |
 
