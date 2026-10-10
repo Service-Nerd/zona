@@ -76,6 +76,34 @@ describe('BASEBUILD-SCHEMA-CEREMONY-01', () => {
   //
   // ⚠️ BOTH SIDES ARE PARSED FROM THE SOURCE, never typed here. A list typed into
   // this test would be a THIRD copy to drift.
+  // ── BASEBUILD-ENRICH-VISIBILITY-01 ───────────────────────────────────────
+  // 🔴 The fleet metric reported "every eligible plan has its AI coaching copy,
+  // 0 of 23 missing" on a morning when a PAID runner held a base-build plan with
+  // no voice. True, and it excluded the one runner it was about: `meta.enrichment`
+  // was ABSENT, and absent is outside `enrichment is not null`.
+  it('8. 🔴 a base-build plan SAYS it has no AI voice, and says WHY', () => {
+    const { plan } = generateGetRunningPlan(input(), PINNED, 29)
+    expect(plan.meta.enrichment,
+      'absent is how a paid runner with no voice became invisible to the fleet metric',
+    ).toBe('skipped_plan_kind')
+  })
+
+  it("9. the value is NOT 'skipped' — that one means free tier and is filtered OUT", () => {
+    const { plan } = generateGetRunningPlan(input(), PINNED, 29)
+    // The metric's own predicate: eligible = not null AND <> 'skipped'. This value
+    // must land INSIDE that set, or the runner is invisible with a tidier field.
+    const e = plan.meta.enrichment as string
+    expect(e).not.toBe('skipped')
+    expect(e != null && e !== 'skipped', 'must be countable as eligible-but-without-voice').toBe(true)
+    // ...and it must not be mistaken for a success state.
+    expect(['applied', 'applied_partial']).not.toContain(e)
+  })
+
+  it('10. the enum accepts it, so a stamped plan still parses', () => {
+    const { plan } = generateGetRunningPlan(input(), PINNED, 29)
+    expect(PlanSchema.safeParse(plan).success).toBe(true)
+  })
+
   it('6. 🔴 every `Week.phase` the TS union allows is accepted by the Zod twin', () => {
     const types = readFileSync(join(__dirname, '..', '..', 'types', 'plan.ts'), 'utf8')
     const decl = /phase\?:\s*((?:'[a-z_]+'\s*\|\s*)+'[a-z_]+')/.exec(types)

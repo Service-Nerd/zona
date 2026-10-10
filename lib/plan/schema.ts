@@ -284,6 +284,24 @@ export const PlanMetaSchema = z.object({
                   'failed_no_api_key', 'failed_api_error',
                   'failed_unparseable', 'failed_invalid_copy', 'applied_partial',
                   'failed',
+                  // 🔴 'skipped_plan_kind' — NOT ELIGIBLE BECAUSE OF WHAT THIS PLAN IS,
+                  // not because of the runner's tier, and the distinction is the whole
+                  // point of the value (BASEBUILD-ENRICH-VISIBILITY-01, 2026-10-10).
+                  //
+                  // A base build returns from the route BEFORE `enrich()`, for every
+                  // tier. `meta.enrichment` was left ABSENT, so the fleet metric —
+                  // `enrichment is not null and enrichment <> 'skipped'` — could not see
+                  // the cohort at all: the digest reported "every eligible plan has its
+                  // AI coaching copy, 0 of 23 missing" on a morning when a PAID runner
+                  // held the only plan they have with no voice on it. A true sentence
+                  // that excluded the one runner it was about.
+                  //
+                  // ⚠️ STAMPING 'skipped' WOULD NOT HAVE FIXED IT — that value is read
+                  // as "free tier, by design" and is filtered OUT of the eligible
+                  // denominator, so the runner stays invisible with a tidier field. This
+                  // value is deliberately NOT 'skipped' so it lands in the metric's
+                  // eligible set and surfaces as without-voice, carrying its reason.
+                  'skipped_plan_kind',
                 ]).optional(),
 
   // ADR-020 Option A — gap classification from composePlanWithFoundation.

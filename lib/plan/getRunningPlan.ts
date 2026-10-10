@@ -95,6 +95,17 @@ export function generateGetRunningPlan(
   // failure mode this whole day has been about.
   delete meta.base_build_onramp
   meta.race_name = 'Base building'
+  // BASEBUILD-ENRICH-VISIBILITY-01 — SAY THAT THIS PLAN HAS NO AI VOICE, rather
+  // than leaving the field absent. The route returns a base build before
+  // `enrich()` for every tier, which is a product decision nobody has taken
+  // (SLT 2026-10-10: the PLAN is FREE "because it is the door"; a `base_build_coaching`
+  // gate mirroring MAINT-02 is piece 2 and awaits the founder). Until then the
+  // honest state is "not eligible because of what this plan is".
+  //
+  // ⚠️ DELIBERATELY NOT 'skipped', which means "free tier" and is filtered out of
+  // the fleet metric's denominator. See the enum in `schema.ts` for the full
+  // reasoning: a paid runner with no voice must be COUNTABLE, not tidy.
+  meta.enrichment = 'skipped_plan_kind'
 
   return { plan, endsAtKm, weeks }
 }
