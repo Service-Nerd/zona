@@ -169,49 +169,26 @@ schema — without it a re-parse silently strips them.
 
 ---
 
-### 🔻 `BASEBUILD-GENINPUT-REMEDIATION-01` — two live plans still carry no stamp 👤 **FOUNDER** *(live-plan policy)*
+### 🔻 `BASEBUILD-GENINPUT-REMEDIATION-01` — **FOUNDER CHOSE BACKFILL; THE PER-FIELD REVIEW SAYS IT CANNOT BE DONE FOR ANY OF THE 9** 👤 **FOUNDER** *(awaiting his call on the finding)*
 
-**Filed 2026-10-09.** `BASEBUILD-GENINPUT-01` fixed the producer, and an engine fix reaches
-no existing plan. Two stored base-build plans have no `meta.generator_input`:
-`812e7e2e` (2026-10-02) and `3df045d5` (2026-10-09). Consequence for those two runners:
-**the Modify Plan sheet is unavailable** (`canModifyPlan`), and the five repair scripts skip
-them.
+**Founder ruled option B (backfill) on 2026-10-10, conditional on recoverability, thorough testing, and correcting it if we got it wrong.** The review he asked for ran first and **refuses the write**. `scripts/backfill-generator-input-review.ts` — read-only, field set parsed from `types/plan.ts`, never hand-listed.
 
-⚠️ **The audit half needs no remediation** — `validateStoredPlan` dispatches on `plan_kind`,
-which both plans DO carry, so their phantom errors are already gone without touching a
-runner's plan.
+🔴 **ZERO of the 9 plans can be completely stamped, and the two groups fail on opposite fields:**
 
-🔴 **IT IS NOT A ONE-FIELD BACKFILL, AND I NEARLY FILED IT AS ONE.** The obvious fix is to
-rebuild `meta.generator_input` from the flat input fields the same meta already carries.
-Measured against the two rows: **15 and 18 input keys are recoverable — and `race_date` is
-NOT one of them.** The base-build writer spreads the input and then overwrites
-`race_date: ''` and `race_name: 'Base building'`, so both rows read:
+| group | n | has | **missing REQUIRED** |
+|---|---|---|---|
+| base_build (`812e7e2e`, `3df045d5`) | 2 | the volumes | **`race_date`** |
+| race plans (6 real + 1 demo) | 7 | the race date | **`current_weekly_km`, `longest_recent_run_km`** (one also lacks `age`) |
 
-| | `812e7e2e` | `3df045d5` |
-|---|---|---|
-| flat `race_date` | `''` | `''` |
-| flat `race_name` | `Base building` | `Base building` |
-| `race_distance_km` | 42.2 | 42.2 |
+⚠️ **AND I HAD THIS WRONG WHEN I FILED IT.** The entry said *"`weeks_to_race` 29 and 28 give it to within a week"*. **Measured: `weeks_to_race` is `undefined` on both base-build rows**, `race_date` is `""`, and `user_settings` carries no race date for either user. The race date for those two is **not approximate — it is gone.**
 
-A backfill from the echo would stamp an input with **no race date** — the one field
-everything anchors on — and it would look complete. That is a worse outcome than no stamp,
-because `canModifyPlan` would then say yes and the regeneration would be anchored on
-nothing.
+🔴 **AND THE RACE PLANS' GAP IS NOT MERELY UNKNOWN, IT IS NOT INVERTIBLE.** `current_weekly_km` and `longest_recent_run_km` are the two inputs that drive the whole plan shape (§10/CD-6's beginner cap, §111, §113, §45's week-1/2 cap). You cannot read them back from week 1's volume, because week 1 is a **many-to-one image** of those two plus `training_age`, `weeks_at_current_volume`, `fitness_level` and `days_available` — several of which are **also missing**. Different runners produce identical first weeks.
 
-✅ **The race date IS recoverable, from the refusal telemetry.** `plan_refused_by_design`
-carries `weeks_to_race`: **29** on 2026-10-02 and **28** on 2026-10-09, both marathons —
-a late-April 2027 race in each case, to within the rounding. So REFUSAL-TELEMETRY-01 is the
-only surviving record of these two runners' race dates, which is some vindication of why it
-exists.
+⚠️ **WHY A PARTIAL STAMP IS WORSE THAN NONE, mechanically.** `canModifyPlan` checks only that the field EXISTS. Any stamp unlocks the Adjust sheet, and `applyEdits` then spreads that input into a regeneration — so an invented `current_weekly_km` would hand the runner a **different plan** on their first edit, having asked them nothing. The sheet is withheld today precisely to prevent that.
 
-**Scope:** reconstruct the input from the flat echo PLUS `weeks_to_race` for the date, show
-the founder the per-plan diff, and only then write. It is a WRITE to a live plan and needs
-his sign-off per the live-plan policy. ⚠️ A date reconstructed to ±1 week is not the
-runner's date; consider asking them, or leaving the stamp off and saying why, rather than
-writing a plausible wrong one.
+🔻 **BACK TO THE FOUNDER WITH THE FINDING.** The options are now (a) won't-fix, the audit already says so out loud nightly; or (b) **ask the 8 runners for the 2–3 missing answers in-app** — which is not a backfill but a new surface, needs 🧭 Design + 💼 SLT, and runs against his standing *"zero contact with our runners"*. **Nothing will be written until he rules on this.**
 
----
-
+**Full per-field table:** `npx tsx scripts/backfill-generator-input-review.ts`.
 ### ✅ `POSTRUN-POLL-WEEK-BLIND-01` — SHIPPED 2026-10-07 ⚙️ **NO BOARD**
 
 **Founder, with four screenshots:** *"it shows Kit is reading the run - Not sure thats a great experience"*. **It is not a slow-analysis problem. The analysis was already finished.**
