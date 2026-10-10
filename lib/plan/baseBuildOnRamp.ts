@@ -276,6 +276,14 @@ export function generateBaseBuildPlan(
       // field existed, and the daily digest reported them under the SAME cause
       // as the 7 genuinely pre-PV2-A legacy rows.
       generator_input: input,
+      // BASEBUILD-SCHEMA-CEREMONY-01 — `meta.athlete` has SEVEN readers
+      // (`profileInitials`, `postRaceReshape`'s prompt, `DashboardClient`'s avatar)
+      // and this producer never wrote it, so every base-build plan failed the
+      // schema on a field that is actually used. Written exactly as `ruleEngine`
+      // writes it, so the two producers cannot disagree about the same key.
+      // ⚠️ Severity was LOW and is stated rather than inflated: `profileInitials`
+      // falls through to the email initial, so the avatar was never broken.
+      athlete: input.athlete_name ?? '',
       plan_kind: 'base_build',
       base_build_onramp: true,
       race_name: 'Base building',

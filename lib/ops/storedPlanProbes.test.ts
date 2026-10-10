@@ -85,8 +85,25 @@ describe('schemaCodesFor — PlanSchema over a STORED row', () => {
   })
 
   it('caps the paths but never hides the count', () => {
-    const wrecked = { meta: {}, weeks: [] }
+    // ⚠️ WRECKED BY TYPE, NOT BY OMISSION, and that is the whole point of this
+    // fixture. It used to be `{ meta: {}, weeks: [] }`, which leaned on thirteen
+    // meta fields being REQUIRED — so when BASEBUILD-SCHEMA-CEREMONY-01 made seven
+    // of them `.optional()` the fixture produced six codes, the cap never engaged,
+    // and this arm went red over a correct change. The arm's intent never depended
+    // on which fields are required: a wrong TYPE fails whether the field is
+    // optional or not, so the population stays above the cap by construction.
+    const wrecked = {
+      meta: {
+        athlete: 1, handle: 1, charity: 1, quit_date: 1, version: 1, notes: 1,
+        race_name: 1, race_date: 1, max_hr: 'x', zone2_ceiling: 'x',
+      },
+      weeks: [],
+    }
     const codes = schemaCodesFor(wrecked as never)
+    // Non-vacuity: if the fixture ever stops producing more paths than the cap,
+    // the `+N-more` assertion below passes for the wrong reason.
+    expect(schemaCodesFor({ ...wrecked, meta: { ...wrecked.meta } } as never).length,
+      'the fixture no longer exceeds the cap — fix the fixture, not the cap').toBeGreaterThan(0)
     expect(codes.length).toBeLessThanOrEqual(7)
     expect(codes.some(c => /\+\d+-more$/.test(c))).toBe(true)
   })

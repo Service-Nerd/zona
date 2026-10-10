@@ -104,7 +104,20 @@ export const WeekSchema = z.object({
   label:                z.string(),
   theme:                z.string(),
   type:                 WeekTypeSchema,
-  phase:                z.enum(['base', 'build', 'peak', 'taper', 'foundation', 'maintenance_restoration', 'maintenance_base']).optional(),
+  // 🔴 `'base_build'` WAS MISSING HERE TOO, AND THIS IS THE SECOND HALF OF THE
+  // SAME PAIR. `BASEBUILD-SCHEMA-KIND-01` added it to `plan_kind` below on
+  // 2026-10-09 — the TS union in `types/plan.ts:367` has carried it since §116
+  // shipped in August, and the Zod twin had it for NEITHER field. Fixing one
+  // field and not its sibling thirty lines away is "the remedy applied to one
+  // twin", the most-recorded survival class in `/zona-debug`'s catalogue, and it
+  // cost a second day: every base-build plan went on failing its own schema on
+  // all fifteen weeks.
+  //
+  // ⚠️ IT WAS HIDDEN BY A TRUNCATION. The audit reports at most six codes plus
+  // `SCHEMA:+2-more`, and the meta fields filled the list — so neither the daily
+  // digest nor the first pass of this RCA ever saw `weeks.N.phase`. It surfaced
+  // only when a test parsed a generated plan and printed every failing path.
+  phase:                z.enum(['base', 'build', 'peak', 'taper', 'foundation', 'base_build', 'maintenance_restoration', 'maintenance_base']).optional(),
   badge:                z.enum(['deload', 'holiday', 'race']).optional(),
   // partialRecord (Zod v4): the plan populates only the days that have sessions.
   // Plain z.record(enum, …) requires ALL seven day keys — see enrichMaintenance.ts.
@@ -146,15 +159,41 @@ export const PhaseSchema = z.object({
 
 // ─── Plan meta ────────────────────────────────────────────────────────────────
 
+/**
+ * 🔴 BASEBUILD-SCHEMA-CEREMONY-01 (2026-10-10) — FIVE OF THESE FIELDS HAD NO
+ * READER AND WERE REQUIRED ANYWAY, SO A WHOLE PLAN KIND AUDITED AS INVALID.
+ *
+ * `generateBaseBuildPlan` builds `meta` from scratch; `ruleEngine` satisfied the
+ * required-but-dead fields with EMPTY STRINGS (`handle: ''`, `charity: ''`,
+ * `quit_date: ''`). So race plans parsed by paying ceremony and base-build plans —
+ * two live runners, one PAID — failed on fields nothing reads.
+ *
+ * Measured live readers, non-test, excluding this file:
+ *   handle 0 · charity 0 · version 0 · quit_date 0 (the SMOKE TRACKER field, the
+ *   feature retired end-to-end by SMOKE-PLUMBING-01) · notes writer-only
+ *   (`enrich.ts` writes it; `renderGuidance.ts` measured "no consumer at all").
+ *
+ * ⚠️ `athlete` IS NOT IN THAT LIST — it has 7 readers and was a genuine producer
+ * gap, fixed in `baseBuildOnRamp.ts` in the same commit. The schema was wrong
+ * about five fields and right about that one; "the checker is broken" was half
+ * the answer.
+ *
+ * ⚠️ OPTIONAL, NOT DELETED. 19 stored plans carry these keys and
+ * `plan-schema.md` documented them, so dropping them is a bigger decision with a
+ * stored-data pass behind it. Optional makes the audit honest today without
+ * touching one runner's plan.
+ */
 export const PlanMetaSchema = z.object({
   athlete:        z.string(),
-  handle:         z.string(),
+  // Dead but still written by `ruleEngine` — see the block above. Optional so a
+  // producer that does not write ceremony is not thereby invalid.
+  handle:         z.string().optional(),
   race_name:      z.string(),
   race_date:      z.string(),
   race_distance_km: z.number().positive(),
-  charity:        z.string(),
+  charity:        z.string().optional(),
   plan_start:     z.string(),
-  quit_date:      z.string(),
+  quit_date:      z.string().optional(),
 
   // PLAN-RESTING-HR-ZERO-01 — positive or ABSENT, never 0. This line already
   // said `.positive()`, so the schema has always rejected the `rhr ?? 0` the
@@ -162,12 +201,21 @@ export const PlanMetaSchema = z.object({
   // is what lets a runner with no resting HR have a SCHEMA-VALID plan instead of
   // a lie that parses.
   resting_hr:     z.number().positive().optional(),
-  max_hr:         z.number().positive(),
-  zone2_ceiling:  z.number().positive(),
+  // ⚠️ OPTIONAL BY THE SAME ARGUMENT AS `resting_hr` DIRECTLY ABOVE, and measured
+  // on the same two plans: one base-build runner has NO HR data at all, so a
+  // required `max_hr` forces the producer to invent one. Every reader already
+  // handles absence (`strava.ts` → `?? null`, `planProseContext` → `?? undefined`).
+  // 🔻 The OTHER half is a producer gap and is NOT fixed here — plan `3df045d5`
+  // carries max_hr 182 and resting_hr 56 and STILL no `zone2_ceiling`, because
+  // `generateBaseBuildPlan` never computes zones. Filed as
+  // `BASEBUILD-ZONE-CEILING-01`: giving a base-build runner an HR ceiling where
+  // they had none is a coaching change and needs the founder, not a schema edit.
+  max_hr:         z.number().positive().optional(),
+  zone2_ceiling:  z.number().positive().optional(),
 
-  version:        z.string(),
+  version:        z.string().optional(),
   last_updated:   z.string(),
-  notes:          z.string(),
+  notes:          z.string().optional(),
   primary_metric: z.enum(['distance', 'duration']).optional(),
 
   fitness_level:             z.enum(['beginner', 'intermediate', 'experienced']).optional(),

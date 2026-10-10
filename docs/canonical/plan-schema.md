@@ -102,25 +102,45 @@ export interface RaceResult {
 ```typescript
 export interface PlanMeta {
   // Core identity
-  athlete: string
-  handle: string
+  athlete: string            // REQUIRED — 7 live readers (avatar initials, reshape prompt)
+  handle?: string            // ⚠️ legacy, ZERO readers — see § Ceremony fields below
   race_name: string
   race_date: string
   race_distance_km: number
-  charity: string
+  charity?: string           // ⚠️ legacy, ZERO readers
   plan_start: string
-  quit_date: string
+  quit_date?: string         // ⚠️ RETIRED — the smoke tracker (SMOKE-PLUMBING-01)
 
-  // HR profile
-  resting_hr: number
-  max_hr: number
-  zone2_ceiling: number
+  // HR profile — all three OPTIONAL: a runner may have no HR data at all
+  resting_hr?: number
+  max_hr?: number
+  zone2_ceiling?: number
 
   // Plan metadata
-  version: string
+  version?: string           // ⚠️ legacy, ZERO readers
   last_updated: string
-  notes: string
+  notes?: string             // written by the enricher; no render consumer
   primary_metric?: 'distance' | 'duration'  // 'distance' assumed if absent (legacy compat)
+
+> 🔴 **§ Ceremony fields — `handle`, `charity`, `quit_date`, `version`, `notes`**
+> *(BASEBUILD-SCHEMA-CEREMONY-01, 2026-10-10)*
+>
+> These five were **required by `PlanMetaSchema` and read by nothing.** `ruleEngine`
+> satisfied them with empty strings (`handle: ''`, `charity: ''`, `quit_date: ''`), so
+> race plans parsed by paying ceremony — and `generateBaseBuildPlan`, which builds its
+> `meta` from scratch, failed the schema on all five. **Two live runners, one PAID,
+> audited as invalid for fields nothing reads.** `quit_date` is the smoke-tracker field,
+> whose feature was removed end-to-end by `SMOKE-PLUMBING-01` (2026-10-01).
+>
+> They are now `.optional()`, **not deleted**: 19 stored plans carry them, so dropping
+> them is a separate decision with a stored-data pass behind it.
+>
+> ⚠️ **`athlete` is NOT one of them** — it has 7 live readers and was a genuine producer
+> gap, now written by both producers. *"The checker is broken"* was half the answer.
+>
+> Gated by `lib/plan/baseBuildSchemaParity.test.ts`, both directions: re-tightening one
+> of the five fails, and loosening `athlete` fails too.
+
 
   // Athlete profile — stored for R20 reshaper
   fitness_level?: 'beginner' | 'intermediate' | 'experienced'
