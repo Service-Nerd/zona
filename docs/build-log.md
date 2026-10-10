@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-10 — COPY-CLAIM-CROSS-WEEK-01, BASEBUILD-SCHEMA-CEREMONY-01, AUDIT-STEP-UNDECLARED-01, BASEBUILD-ENRICH-VISIBILITY-01, ENRICH-META-TOKEN-01 and BASEBUILD-ZONE-CEILING-01 · the digest was wrong about the one thing it explained, and two of my own premises moved under me
+## 2026-10-10 — COPY-CLAIM-CROSS-WEEK-01, BASEBUILD-SCHEMA-CEREMONY-01, AUDIT-STEP-UNDECLARED-01, BASEBUILD-ENRICH-VISIBILITY-01, ENRICH-META-TOKEN-01, BASEBUILD-ZONE-CEILING-01 and REGEN-LIVE-PLAN-GUARD-01 · the day I wrote to a real runner's plan on a briefing I had over-generalised
 
 **Scopes:** `COPY-CLAIM-CROSS-WEEK-01`, `BASEBUILD-SCHEMA-CEREMONY-01`, `AUDIT-STEP-UNDECLARED-01`, `BASEBUILD-ENRICH-VISIBILITY-01`
 
@@ -99,6 +99,26 @@ be PAID" against an implied alternative of silence, when the real alternative is
 repeating itself** — a free content gap, not a missing paid feature. Putting that behind a
 paid gate would be gating access, not richness. **Sent back to the SLT with the number
 rather than built**, which is what their own condition was for.
+
+**Nine, and it is the worst thing I did today.** The founder approved the fleet repair and
+told me to run it. Seven plans archived and rewritten — and **one was a real runner in week 8
+of 14 with a race five and a half weeks away.** Restored byte-for-byte within minutes, six
+repairs stood, nobody was contacted.
+
+**The cause was not the script. It was a sentence I wrote.** I measured five plans, found
+them all starting 7 December, and told him *"none of these plans has begun"* — then let that
+sentence cover all seven. The script's filter was the only thing left to catch the other two,
+and it could not: it tested `session_completions` and `run_analysis`, and that runner has
+eleven Strava runs and never taps "done". **An active runner read as dormant because the
+check looked at two of three signals.** And nothing anywhere asked whether the block had
+STARTED — *"the race is in the future"* had been standing in for that, and the two sentences
+are not the same.
+
+Two things I will keep from it. **A guard living as a chain of `continue`s inside a script is
+untestable by construction**, which is exactly why two missing guards were invisible for as
+long as the script has existed; it is a module with seven arms now. And **when a filter and a
+briefing both have to be right, the briefing is the weaker one** — the filter at least gets
+re-run.
 
 **Still open and the founder's:** the base-build voice gate (SLT pieces 2 and 3, and Wood's
 condition that it must not ship before the handover), `BASEBUILD-ZONE-CEILING-01`, and
