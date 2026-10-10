@@ -141,7 +141,7 @@ describe('P-02 — the rows and their consequence subtitles', () => {
 })
 
 /**
- * `BASEBUILD-GENINPUT-DOOR-01` — the door stays shut on a base-build plan.
+ * `BASEBUILD-ADJUST-DOOR-01` — the door stays shut on a base-build plan.
  *
  * 🔴 WHY THIS IS A BEHAVIOURAL ARM AND NOT A SOURCE ASSERTION. A source grep for
  * `'base_build'` in `modifyPlan.ts` passes against this file's own comments, and
@@ -155,7 +155,7 @@ describe('P-02 — the rows and their consequence subtitles', () => {
  * fixtures are stamped, which is the state `BASEBUILD-GENINPUT-01` put every
  * future base-build runner in and the state the remediation backfill creates.
  */
-describe('BASEBUILD-GENINPUT-DOOR-01 — a base-build plan is not race-modifiable', () => {
+describe('BASEBUILD-ADJUST-DOOR-01 — a base-build plan is not race-modifiable', () => {
   const kinded = (kind: string | undefined): Plan => ({
     meta: { race_name: 'Base building', race_date: '', plan_kind: kind, generator_input: base },
     weeks: [],

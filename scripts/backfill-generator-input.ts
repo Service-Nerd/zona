@@ -40,7 +40,7 @@
  * ── ORDER OF OPERATIONS (do not reorder) ─────────────────────────────────────
  * The stamp's ONLY runner-visible effect is `canModifyPlan: false -> true`. On a
  * base-build plan that door is a dead end — measured 0 of 27 and 2 of 27 offered
- * edits regenerate, and both of the 2 are perverse. `BASEBUILD-GENINPUT-DOOR-01`
+ * edits regenerate, and both of the 2 are perverse. `BASEBUILD-ADJUST-DOOR-01`
  * gates it. **DEPLOY THAT GATE BEFORE RUNNING THIS WITH `--apply`**, or the
  * backfill is itself the thing that opens the door.
  *
@@ -225,9 +225,9 @@ async function main() {
     metaMinus(t.plan) === metaMinus(next)
       ? pass('meta byte-identical apart from the stamp') : fail('meta changed beyond the stamp')
 
-    // 5. THE DOOR. After BASEBUILD-GENINPUT-DOOR-01 this must stay SHUT.
+    // 5. THE DOOR. After BASEBUILD-ADJUST-DOOR-01 this must stay SHUT.
     canModifyPlan(next) === false
-      ? pass('Adjust door stays shut (BASEBUILD-GENINPUT-DOOR-01)')
+      ? pass('Adjust door stays shut (BASEBUILD-ADJUST-DOOR-01)')
       : fail('Adjust door would OPEN — the gate is missing or not deployed; '
            + 'measured 0/27 and 2/27 offered edits regenerate, both of the 2 perverse')
 
@@ -241,7 +241,7 @@ async function main() {
   console.log(`${go.length} of ${targets.length} target(s) pass every check`)
   if (!APPLY) {
     console.log('\nDRY RUN — nothing written. Re-run with --apply to write.')
-    console.log('⚠️ Deploy BASEBUILD-GENINPUT-DOOR-01 first, or check 5 fails by design.')
+    console.log('⚠️ Deploy BASEBUILD-ADJUST-DOOR-01 first, or check 5 fails by design.')
     return
   }
   if (!go.length) { console.log('nothing passes; nothing written'); return }

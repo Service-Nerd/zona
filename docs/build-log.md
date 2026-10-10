@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-10 — BASEBUILD-ADJUST-DOOR-01 · the backfill was safe; the thing it unlocked was not
+**Shipped:** the "Adjust your plan" row is withheld on a base-build plan, and a backfill script that refuses to write if that gate is absent.
+
+**Dev learning:** `canModifyPlan` returned `!!plan.meta.generator_input` — *do we hold the input?* The row it gates asks *can this plan be modified?* Those are different questions and the data one is easier, which is why it was the one being asked. I only found it because the stamp's one runner-visible effect was `false -> true` on that predicate, so I walked all eight editable keys through the real engine instead of reasoning about them: **0 of 27 edits produce a plan for one runner, 2 of 27 for the other, and both of those 2 are backwards** — a tighter time cap and an injury he does not have, because §111 refuses on peak ÷ current volume, so anything that shrinks the plan clears the gate. The honest answer is refused; the self-constraining one is admitted.
+
+**Product/creator learning:** the founder asked a four-word question — *"can we not recover it?"* — about a race date I had written into the backlog as **gone**. It was in the refusal telemetry. Worse: **my own roadmap row already said so**, in the adjacent file, while the backlog said the opposite. Two registers with me in between. And the thing the recovery unlocked turned out not to be the thing worth having: both runners finish their base build in January with a marathon in April and **nothing in the codebase detects a finished base build** — `base_build_onramp: true` has a producer and no reader at all.
+
+**AI-building learning:** I claimed the gate as an exempt defect fix and started building it. The suite stopped me: a test shipped **the previous day** asserted the exact opposite — *"a base-build plan is now modifiable"*, described in its own comment as "the arm that would have failed loudest". It asserted the MECHANISM and claimed the INTENT, and I was about to delete it quietly. That is a governance reversal, not a defect fix, so the Design Board sat and ruled it an **interim** with a dissent recorded. **The honest move after being wrong about the exemption was to run the board, not to argue the exemption harder.**
+
+**The honest bit:** three of my own errors in one task. The race-date inversion was wrong in **both** anchor and rounding (`plan_start` + `floor` where the route uses `Date.now()` + `round`), so the window I confidently handed the founder **excluded his own answer** — and the fix was to copy the route's expression instead of rewriting it. I hand-wrote the plan-kind predicate when `isBaseBuildPlan` already owned it. And I shipped the whole thing under **two different ids**, which `audit-docs.sh` caught — the exact "one id, everywhere" trap `/ship` warns about in writing. I also nearly filed a phantom finding that `npm run verify` exits 0 on a failing test; it exits 1, and the 0 was a background wrapper reporting a compound command.
+
+**Hook material:** "0 of 27." A button on a real runner's plan, measured against the real engine, that could not work — and the only two edits that *did* work for the other runner were *tighten your time budget* and *claim an injury you don't have*.
+
+**Postable?:** yes — the arc is a one-line predicate asking the easy question, found by measuring a button instead of reading it.
+
 ## 2026-10-10 — BASEBUILD-AUDIT-BLIND-01 · the explanation was computed and then thrown away
 
 **Shipped:** a stored plan with no `generator_input` now tells the daily digest *why* it cannot be classified, instead of appearing as an unexplained violation.

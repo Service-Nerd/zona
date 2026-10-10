@@ -138,7 +138,7 @@ export type PlanEdits = Partial<Pick<GeneratorInput, ModifiableKey>>
  */
 export function canModifyPlan(plan: Plan | null | undefined): boolean {
   // 🔴 A BASE-BUILD PLAN IS NOT A RACE PLAN, AND THIS SHEET REGENERATES A RACE
-  // PLAN. `BASEBUILD-GENINPUT-DOOR-01`, 2026-10-10.
+  // PLAN. `BASEBUILD-ADJUST-DOOR-01`, 2026-10-10.
   //
   // The predicate above asks "do we hold the input?" The row it gates asks "can
   // this plan be modified?", and for `plan_kind: 'base_build'` the answer is no
