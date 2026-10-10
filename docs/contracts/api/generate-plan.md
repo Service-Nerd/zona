@@ -289,6 +289,18 @@ A post-enrich violation no longer discards more copy than it has to:
 
 **Every rung is re-validated, never assumed** — the rule `ENRICH-PARTIAL-01` already set.
 
+**Added by `WEEK-THEME-TOKEN-ENRICH-01` (2026-10-10): a FIELD-level refusal at the MERGE, before the ladder exists.**
+
+The ladder above reacts to a post-enrich **violation**. This is earlier and narrower: at merge time, a model-authored `week.label` or `week.theme` containing a `{{placeholder}}` is **refused outright** and that one field keeps rule-engine copy. The rest of the week — the other field, and every session — stays enriched.
+
+| | |
+|---|---|
+| **Why at the merge** | the enricher's own prompt forbids placeholders in week copy *in as many words*, and a rule stated only in a prompt has no enforcement. Measured before the fix: **49 placeholders in `week.theme` across 11 of 34 live plans** |
+| **Why both fields** | `week.theme` renders through `renderPlanProse`, which strips an orphan, so its failure is a gapped sentence. **`week.label` renders RAW at four `PlanCalendar` sites**, so a token there is a literal `{{session_zone}}` on the Plan screen. Production had **0** label tokens — luck, not a guarantee |
+| **Attribution** | `plan_enrich_week_copy_rejected` in `ops_events`, read back by `/api/ops/enrich-health` as a **boundary** counter. ADR-006 keeps the fallback silent to the runner; `ENRICH-ATTRIB-01` requires it to be visible to us |
+| **Not a violation** | it never reaches `validatePlan`, so it does not consume a rung and cannot escalate to a week- or full-plan revert |
+| **Predicate** | `firstPlaceholder` (`lib/plan/renderGuidance.ts`) — the single owner, and deliberately **broader** than a well-formed `{{word}}`, because a malformed brace is the case that reaches a runner |
+
 🔴 **A reverted session is stamped `Session.enrichment_reverted`, and that field is
 load-bearing for PROVENANCE, not bookkeeping.** `sessionNotesAreAiAuthored` is the single owner
 of *"did a model write this?"*, and `AI-PROVENANCE-01` holds the error asymmetric: crediting a
@@ -296,8 +308,13 @@ model for engine copy is a **false claim**, failing to credit it is modesty. A w
 cannot express *"four of these five sessions are Kit's"*, so without the session flag this rung
 would put the AIMark over the engine's words. ⚠️ **It is in `SessionSchema` too** — a field absent
 from the Zod schema is stripped on save, so it would read correctly in memory and be gone by the
-time a screen asked. The enricher cannot set it: `EnrichedWeekSchema` exposes only `label` and
-`coach_notes`.
+time a screen asked. The enricher cannot set it: `EnrichedWeekSchema` is
+`WeekSchema.pick({ label, theme, n })` plus a partial-record of sessions exposing `coach_notes`,
+so `enrichment_reverted` is not reachable from it. ⚠️ **This sentence used to read "exposes only
+`label` and `coach_notes`", which omitted `theme` and `n`** — the conclusion was right and the
+enumeration was not, and the same wrong enumeration sat in `schema.ts`'s own comment. Corrected
+2026-10-10 while checking the contract against the schema for `WEEK-THEME-TOKEN-ENRICH-01`;
+`theme` being settable is precisely what that item was about.
 
 **`ops_events` detail gains `outcome: 'partial_revert_session'` and `reverted_sessions`**, because
 a session revert and a week revert otherwise log identically and the narrowing would be invisible

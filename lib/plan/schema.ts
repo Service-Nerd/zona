@@ -33,8 +33,14 @@ export const SessionSchema = z.object({
   // rep structure survives renaming and enrichment. See types/plan.ts.
   catalogue_id:   z.string().optional(),
   // SC-08b — the resolved set for THIS runner, from a v2 row. Structural, not
-  // display: the enricher cannot reach it (EnrichedWeekSchema exposes only
-  // label + coach_notes). Loosely typed here on purpose — DerivedSet is owned
+  // display: the enricher cannot reach it (`EnrichedWeekSchema` is
+  // `WeekSchema.pick({ label, theme, n })` plus a partial-record of sessions
+  // exposing `coach_notes`, so `derived_set` is not in it).
+  // ⚠️ This comment used to say "exposes only label + coach_notes", which omitted
+  // `theme` and `n` — the conclusion held, the enumeration did not, and the same
+  // wrong list was in `docs/contracts/api/generate-plan.md`. Corrected
+  // 2026-10-10: `theme` IS settable by the enricher, which is the whole of
+  // `WEEK-THEME-TOKEN-ENRICH-01`. Loosely typed here on purpose — DerivedSet is owned
   // by lib/plan/resolveMainSet.ts and validated there; duplicating its shape in
   // Zod would create a second owner to drift (D-08).
   derived_set:    z.unknown().optional(),
