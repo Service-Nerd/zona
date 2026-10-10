@@ -157,6 +157,30 @@ export async function POST(req: NextRequest) {
       }, { status: 403 })
     }
 
+    // 🔴 `accept_base_build` IS HONOURED BEFORE GENERATION, NOT INSIDE THE REFUSAL
+    // CATCH, AND THE OLD PLACEMENT WAS UNSOUND (`BASEBUILD-ADJUST-REBUILD-01`).
+    //
+    // It used to live only inside `catch (err) { if (err instanceof BaseVolumeError) }`,
+    // so "give me the base build" was honoured ONLY IF the race generator happened to
+    // refuse this input. That is fine for P-15's original flow (the runner is accepting
+    // an offer they were just made) and **unsound for a runner who already HAS a
+    // base-build plan and is editing it**, because §111's refusal is not stable under
+    // the edits the Adjust sheet offers.
+    //
+    // ⚠️ MEASURED on the two live base-build plans, walking the editable keys: of 8
+    // edits, **one flips §111 from refusing to admitting** (Tom at `days_available: 3`).
+    // Under the old placement that edit would have silently handed a base-build runner a
+    // RACE PLAN. The cause is the inversion `BASEBUILD-ADJUST-MONOTONIC-01` measured:
+    // fewer days lowers the delivered peak, which lowers the ratio, which admits.
+    //
+    // So the intent is now unconditional, guarded only by whether a base build is a
+    // thing this runner can have at all (`getRunningApplies`). A client asking for a
+    // base build gets a base build, whatever the race generator would have said.
+    if (acceptBaseBuild && getRunningApplies(input)) {
+      const { plan: baseBuildPlan } = generateGetRunningPlan(input, planStart, weeksBetweenLocal(planStart, input.race_date))
+      return NextResponse.json({ plan: baseBuildPlan })
+    }
+
     // Rule engine runs synchronously and may throw validation errors that
     // need a 422 status — must run before opening a stream.
     let rulePlan: Plan
@@ -337,10 +361,11 @@ export async function POST(req: NextRequest) {
         // already has. No enrichment and no foundation composition: §118 sets
         // `plan_kind: 'base_build'`, which is its own plan object, and both of
         // those passes are shaped for a race block.
-        if (acceptBaseBuild && getRunningApplies(input)) {
-          const { plan: baseBuildPlan } = generateGetRunningPlan(input, planStart, runway)
-          return NextResponse.json({ plan: baseBuildPlan })
-        }
+        // ⚠️ THE ACCEPT BRANCH USED TO LIVE HERE AND HAS MOVED ABOVE THE GENERATION
+        // ATTEMPT (`BASEBUILD-ADJUST-REBUILD-01`). Leaving a second copy here would be
+        // two producers of one decision, and the one down here could only fire when
+        // §111 happened to refuse — which is exactly the unsoundness that moved it.
+        // The offer below is unaffected: it DESCRIBES a base build, it does not build one.
 
         let getRunning: Record<string, unknown> | null = null
         if (!onramp && getRunningApplies(input)) {

@@ -6,6 +6,7 @@ import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
 import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
 import { handoverState, handoverInput, handoverSeenPatch } from '@/lib/plan/baseBuildHandover'
+import { rebuildsBaseBuild } from '@/lib/plan/modifyPlan'
 import { handoverCopy } from '@/lib/ui/handoverCopy'
 import { resolveAutoMatch } from '@/lib/coaching/sessionAutoMatch'
 import { applyHrToPlan } from '@/lib/plan/zones'
@@ -291,13 +292,24 @@ export default function DashboardClient() {
   const [modifyError, setModifyError] = useState<string | null>(null)
 
   /** Regenerate from the overlaid input. Nothing is saved at this point. */
-  async function runModifyPreview(nextInput: GeneratorInput, resets: boolean) {
+  /**
+   * @param asBaseBuild rebuild the runner's OWN plan kind rather than a race plan.
+   *
+   * 🔴 EXPLICIT, NOT INFERRED FROM A REFUSAL (`BASEBUILD-ADJUST-REBUILD-01`). The route
+   * used to honour `accept_base_build` only inside its BaseVolumeError catch, so
+   * "rebuild my base build" worked only while §111 happened to refuse the input.
+   * Measured: of 8 edits across the two live base-build plans, **one flips §111 from
+   * refusing to admitting**, and under the old placement that edit silently returned a
+   * RACE PLAN to a base-build runner.
+   */
+  async function runModifyPreview(nextInput: GeneratorInput, resets: boolean, asBaseBuild = false) {
     setModifyBusy(true); setModifyError(null)
     try {
       const res = await authedFetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nextInput),
+        // The plan KIND the runner already has, carried explicitly.
+        body: JSON.stringify(asBaseBuild ? { ...nextInput, accept_base_build: true } : nextInput),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -2189,7 +2201,7 @@ export default function DashboardClient() {
     if (!handover.show || !plan) return
     setHandoverBusy(true)
     try {
-      await runModifyPreview(handoverInput(plan, handover.input), true)
+      await runModifyPreview(handoverInput(plan, handover.input), true, false)
     } finally {
       setHandoverBusy(false)
     }
@@ -2759,7 +2771,7 @@ export default function DashboardClient() {
             edits={modifyEdits}
             onEditsChange={setModifyEdits}
             onClose={clearModify}
-            onApply={(next, resets) => void runModifyPreview(next, resets)}
+            onApply={(next, resets) => void runModifyPreview(next, resets, rebuildsBaseBuild(plan))}
             // PLANVERB-01 — the escape out of "adjust" into "start again".
             // Closes the sheet first: leaving it mounted behind the wizard
             // would put two plan-editing surfaces on screen at once.

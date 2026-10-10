@@ -196,13 +196,31 @@ describe('BASEBUILD-GENINPUT-01 — every plan producer stamps meta.generator_in
    * The other two halves of the old sentence are unaffected and still asserted
    * above: the stamp makes the plan audit-classifiable and save-validated.
    */
-  it('a base-build plan is stamped but NOT race-modifiable (BASEBUILD-ADJUST-DOOR-01)', async () => {
-    const { canModifyPlan } = await import('./modifyPlan')
+  /**
+   * 🔴 THIS ARM HAS FLIPPED TWICE IN ONE DAY AND THE HISTORY IS THE POINT.
+   *
+   *   morning  `BASEBUILD-GENINPUT-01`      stamped → asserted MODIFIABLE (true)
+   *   midday   `BASEBUILD-ADJUST-DOOR-01`   measured 0/27 → asserted NOT (false)
+   *   evening  `BASEBUILD-ADJUST-REBUILD-01` sheet rebuilds the base build → true again
+   *
+   * ⚠️ IT IS NOT CHURN. Each flip was a different claim. The first asserted the stamp
+   * was present and read "modifiable" off that. The second measured what the sheet
+   * actually DID and found a door with a 0% success rate. The third changed what the
+   * sheet does, so the door can open — with the ROWS scoped instead, which is the part
+   * the first version never had.
+   *
+   * ⚠️ The invariant that survived all three: **holding the input was never the same
+   * question as "can this plan be modified".** That is asserted below and in
+   * `modifyPlan.test.ts`, and it is the only one of the three claims that was true
+   * throughout.
+   */
+  it('a base-build plan is stamped, modifiable, and SCOPED to the rows that work', async () => {
+    const { canModifyPlan, modifiableRowsFor, MODIFIABLE_ROWS } = await import('./modifyPlan')
     const { plan } = generateGetRunningPlan(input(), PINNED, 29)
     // The stamp IS present — that is BASEBUILD-GENINPUT-01 and it still holds.
     expect(plan.meta.generator_input).toBeTruthy()
-    // And the door is shut anyway, which is the whole point: the stamp was never
-    // what made this plan modifiable.
-    expect(canModifyPlan(plan)).toBe(false)
+    expect(canModifyPlan(plan)).toBe(true)
+    // ...and the stamp is still not what decides what the runner SEES.
+    expect(modifiableRowsFor(plan).length).toBeLessThan(MODIFIABLE_ROWS.length)
   })
 })

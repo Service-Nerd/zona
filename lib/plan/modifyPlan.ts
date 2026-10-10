@@ -175,8 +175,51 @@ export function canModifyPlan(plan: Plan | null | undefined): boolean {
   // ⚠️ REGRESSES NOTHING. Measured 2026-10-10: 2 base-build plans in the fleet,
   // **both unstamped**, so no runner has ever been offered this row. Without this
   // line the remediation backfill would have been the thing that first offered it.
-  if (isBaseBuildPlan(plan)) return false
+  // 🧭 `BASEBUILD-ADJUST-REBUILD-01` (Design Board, SHIP WITH AMENDMENT, 2026-10-10)
+  // SUPERSEDES THE INTERIM ABOVE. A base-build plan IS modifiable now, because the
+  // sheet rebuilds the base build instead of a race plan — but it offers only the keys
+  // that change the output of the producer it actually calls.
+  //
+  // 📐 Measured against `generateBaseBuildPlan` on both live plans:
+  // `days_cannot_train` changes the plan 2/2, `days_available` 1/2, **the other six do
+  // NOTHING.** Six rows that cannot move the output would be the door defect one layer
+  // along, against this board's own standard (*"a control with a measured 0% success
+  // rate is not a capability, it is an affordance"*).
+  if (isBaseBuildPlan(plan)) return !!plan?.meta?.generator_input
   return !!plan?.meta?.generator_input
+}
+
+/**
+ * Which rows this plan kind may offer.
+ *
+ * 🔴 DERIVED FROM A DECLARED PER-KIND SET, NOT A HAND-WRITTEN LIST AT THE CALL SITE,
+ * and the Design Board made that binding: *"withholding must be MECHANICAL, so a key
+ * that becomes effective later is a DECISION and not an oversight."* A hand-typed list
+ * in the component is this repo's most-recorded gate failure (`const HOME`,
+ * `CONSUMERS`, the six-file `appScreenTitle` list).
+ *
+ * ⚠️ `preferred_long_run_day` IS WITHHELD AND IT IS THE INTERESTING ONE. A base-build
+ * block carries **0 long runs (one live plan) and 1 in 15 weeks (the other)**, and the
+ * key is inert across **6 genuinely available alternative days** on both. There is
+ * almost nothing to place. 🎓 Sierra WITHDREW her door-sitting dissent on exactly that
+ * measurement rather than being overruled. Whether a 15-week block SHOULD carry more
+ * long runs is routed to the Coaching Board, not decided here.
+ */
+export const MODIFIABLE_KEYS_BY_PLAN_KIND: Readonly<Record<'base_build', readonly ModifiableKey[]>> = {
+  base_build: ['days_available', 'days_cannot_train'],
+}
+
+/** The rows to render for this plan. Every other kind gets the full set. */
+export function modifiableRowsFor(plan: Plan | null | undefined): readonly ModifiableRow[] {
+  if (!isBaseBuildPlan(plan)) return MODIFIABLE_ROWS
+  const allowed = MODIFIABLE_KEYS_BY_PLAN_KIND.base_build
+  return MODIFIABLE_ROWS.filter(r => allowed.includes(r.key))
+}
+
+/** Does this plan rebuild its OWN kind rather than a race plan?
+ *  One predicate, so the sheet and the request body cannot disagree. */
+export function rebuildsBaseBuild(plan: Plan | null | undefined): boolean {
+  return isBaseBuildPlan(plan)
 }
 
 /** Apply the overlay. Returns a new input; never mutates the stored one. */

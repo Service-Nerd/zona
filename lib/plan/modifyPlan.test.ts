@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   MODIFIABLE_ROWS, canModifyPlan, applyEdits, pendingKeys, editsResetLoggedWeeks,
+  modifiableRowsFor, rebuildsBaseBuild, MODIFIABLE_KEYS_BY_PLAN_KIND,
   type PlanEdits,
 } from './modifyPlan'
 import type { GeneratorInput, Plan } from '@/types/plan'
@@ -155,40 +156,97 @@ describe('P-02 — the rows and their consequence subtitles', () => {
  * fixtures are stamped, which is the state `BASEBUILD-GENINPUT-01` put every
  * future base-build runner in and the state the remediation backfill creates.
  */
-describe('BASEBUILD-ADJUST-DOOR-01 — a base-build plan is not race-modifiable', () => {
+describe('BASEBUILD-ADJUST-DOOR-01 — the INTERIM, now superseded and kept for its reason', () => {
   const kinded = (kind: string | undefined): Plan => ({
     meta: { race_name: 'Base building', race_date: '', plan_kind: kind, generator_input: base },
     weeks: [],
   } as unknown as Plan)
 
-  it('a STAMPED base-build plan is NOT modifiable — the sheet regenerates a race plan', () => {
-    // Falsification: delete the `isBaseBuildPlan` line in modifyPlan.ts and this
-    // goes red. The stamp is present, so the pre-existing arm cannot carry it.
-    expect(canModifyPlan(kinded('base_build'))).toBe(false)
+  /**
+   * 🔴 THREE ARMS HERE ASSERTED THE OPPOSITE THIS MORNING AND ARE REVERSED, NOT DELETED.
+   *
+   * `BASEBUILD-ADJUST-DOOR-01` withheld the Adjust row from a base-build plan, because
+   * the sheet POSTed to the RACE generator and **0 of 27 / 2 of 27 offered edits produced
+   * a plan**. That was ruled an **INTERIM** and bound to a destination.
+   * `BASEBUILD-ADJUST-REBUILD-01` built the destination: the sheet now rebuilds the BASE
+   * BUILD, so the door opens and the ROWS are scoped instead.
+   *
+   * ⚠️ The reversal is recorded here rather than in the commit, because **a reversed
+   * assertion with no reason is one somebody reinstates** — the same discipline applied
+   * to `generatorInputStamp.test.ts` when the door ruling reversed IT.
+   */
+  it('the door is OPEN again, because the sheet no longer regenerates a race plan', () => {
+    expect(canModifyPlan(kinded('base_build'))).toBe(true)
   })
 
-  it('a stamped RACE plan is still modifiable — the gate is scoped, not a kill', () => {
+  it('a stamped RACE plan was never affected either way', () => {
     expect(canModifyPlan(kinded('race'))).toBe(true)
     expect(canModifyPlan(kinded(undefined))).toBe(true)   // legacy rows carry no plan_kind
   })
 
-  it('the stamp alone no longer decides it, which is the whole defect', () => {
-    // Before this item, `generator_input` present ⇒ door open, for every kind.
+  it('🔴 the STAMP alone still does not decide what the sheet SHOWS', () => {
+    // The door item's real lesson survives its own reversal: holding the input was never
+    // the same question as "can this plan be modified". The answer moved from "no" to
+    // "yes, these two rows" — it never became "yes, all eight".
     const bb = kinded('base_build')
     expect(!!bb.meta?.generator_input).toBe(true)
-    expect(canModifyPlan(bb)).toBe(false)
+    expect(modifiableRowsFor(bb).length).toBeLessThan(MODIFIABLE_ROWS.length)
   })
 
-  /**
-   * ⚠️ THE OTHER KINDS ARE NAMED SO A NEW ONE CANNOT INHERIT A GUESS. The gate is
-   * scoped to `base_build` because that is the kind measured to produce 0-of-27
-   * and 2-of-27 regenerations. `maintenance` is deliberately left modifiable and
-   * is NOT evidence that it should be — nothing has measured it (0 maintenance
-   * plans in production, 2026-10-10). If a maintenance plan ever reaches a runner,
-   * walk its edit set the same way before trusting this line.
-   */
   it('names every plan_kind the schema allows, so a new kind is a decision', () => {
     const kinds = ['race', 'maintenance', 'base_build'] as const
-    expect(kinds.map(k => canModifyPlan(kinded(k)))).toEqual([true, true, false])
+    // All modifiable now; what DIFFERS per kind is the row set, asserted below.
+    expect(kinds.map(k => canModifyPlan(kinded(k)))).toEqual([true, true, true])
+    expect(kinds.map(k => modifiableRowsFor(kinded(k)).length))
+      .toEqual([MODIFIABLE_ROWS.length, MODIFIABLE_ROWS.length, 2])
+  })
+})
+
+describe('BASEBUILD-ADJUST-REBUILD-01 — the sheet offers only what moves the plan', () => {
+  const bb = (): Plan => ({
+    meta: { plan_kind: 'base_build', race_name: 'Base building', race_date: '',
+            generator_input: base },
+    weeks: [],
+  } as unknown as Plan)
+
+  it('a base-build plan IS modifiable now — the door interim is superseded', () => {
+    expect(canModifyPlan(bb())).toBe(true)
+  })
+
+  it('offers exactly the two rows measured to change a base-build plan', () => {
+    const keys = modifiableRowsFor(bb()).map(r => r.key)
+    expect(keys).toEqual(['days_available', 'days_cannot_train'])
+  })
+
+  it('🔴 withholds the six that do NOT change the output, including race_date', () => {
+    const keys = modifiableRowsFor(bb()).map(r => r.key)
+    for (const k of ['preferred_long_run_day', 'max_weekday_mins', 'injury_history',
+                     'hard_session_relationship', 'terrain', 'race_date'] as const) {
+      expect(keys, `${k} is offered but cannot change a base-build plan`).not.toContain(k)
+    }
+    // ✋ Silvanto: the "The race" group must not render on a plan whose race_date is
+    // deliberately empty. With `race_date` withheld, the group has no rows at all.
+    expect(modifiableRowsFor(bb()).some(r => r.group === 'race')).toBe(false)
+  })
+
+  it('a RACE plan still gets the full set — the scoping is per kind, not a global cut', () => {
+    const race = { meta: { plan_kind: 'race', generator_input: base }, weeks: [] } as unknown as Plan
+    expect(modifiableRowsFor(race)).toHaveLength(MODIFIABLE_ROWS.length)
+    expect(modifiableRowsFor(null)).toHaveLength(MODIFIABLE_ROWS.length)
+  })
+
+  it('every key in the per-kind set is a REAL row, so a typo cannot silently drop one', () => {
+    // A key that matches no row would reduce the sheet to nothing with no error.
+    const real = new Set(MODIFIABLE_ROWS.map(r => r.key))
+    for (const k of MODIFIABLE_KEYS_BY_PLAN_KIND.base_build) {
+      expect(real.has(k), `${k} is not a MODIFIABLE_ROWS key`).toBe(true)
+    }
+    expect(modifiableRowsFor(bb()).length).toBe(MODIFIABLE_KEYS_BY_PLAN_KIND.base_build.length)
+  })
+
+  it('rebuildsBaseBuild is the one predicate the request body reads', () => {
+    expect(rebuildsBaseBuild(bb())).toBe(true)
+    expect(rebuildsBaseBuild({ meta: { plan_kind: 'race' }, weeks: [] } as unknown as Plan)).toBe(false)
+    expect(rebuildsBaseBuild(null)).toBe(false)
   })
 })

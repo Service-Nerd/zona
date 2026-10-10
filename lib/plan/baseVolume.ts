@@ -231,7 +231,13 @@ export function baseVolumeRefusal(
     : [
         `Build your weekly volume to around ${a.minBaseKm} km, then generate this plan.`,
         weeksToBase != null
-          ? `Run easy ${weeksToBase > 8 ? 'three or four' : 'three'} times a week and check back in ${weeksToBase} weeks.`
+          // ⚠️ "check back in 1 weeks" reached a REFUSED RUNNER. Found 2026-10-10 by
+          // reading the message out loud while measuring something else
+          // (`BASEBUILD-ADJUST-MONOTONIC-01`), not by any check — the §111 message
+          // itself pluralises correctly one line up ("about 1 week of steady easy
+          // running"), so the two halves of the same refusal disagreed. A refused
+          // runner is the last person who should be reading a grammar slip.
+          ? `Run easy ${weeksToBase > 8 ? 'three or four' : 'three'} times a week and check back in ${weeksToBase} week${weeksToBase === 1 ? '' : 's'}.`
           : `Spend the next few weeks running easy to raise your base before the ${label} block begins.`,
       ]
   return {

@@ -1974,3 +1974,90 @@ ranks first, for the second time in a month. ⚠️ **Traynor's seat is stood do
 table prices churn** — stated rather than left as an expectation.
 
 **Evidence script:** `scripts/board-evidence-111-monotonic.ts`.
+
+---
+
+## 2026-10-10 — `BASEBUILD-ADJUST-MONOTONIC-01` RE-SITTING: **INCORRECT. Amendment 1 VACATED.**
+
+🔴 **THIS BOARD WAS UNANIMOUS IN BOTH DIRECTIONS ON THE SAME DAY**, and the difference was
+not argument quality. The morning sitting ruled CORRECT WITH AMENDMENT on a defect framing
+that a measurement has now dissolved. **Nobody had computed the two candidate numerators
+against §111's own ratified table.** Recorded prominently because the first ruling will
+otherwise read as settled ground.
+
+### What the measurement found
+
+⚠️ **The blocker reported to the SLT did not exist.** `meta.peak_km_target` has been
+stamped on every plan all along (`ruleEngine.ts:9525`); nothing needed exporting.
+
+🔴 **A false finding, tested before it was filed.** The claim was going to be that §111's
+ratified table was computed on the STRUCTURAL TARGET, which would have made amendment 1 a
+restoration of intent. §111's table says 5km→9.4×, 12→3.9×, 15→3.1×, 20→2.6×, 40→1.3×.
+Measured on a first-timer marathon:
+
+| cwk | §111 says | target/start | delivered/start | matches |
+|---|---|---|---|---|
+| 12 | 3.9 | 4.33 | **4.00** | delivered |
+| 15 | 3.1 | 3.47 | **3.20** | delivered |
+| 20 | 2.6 | 2.60 | 2.60 | both (equal here) |
+| 40 | 1.3 | 1.73 | 1.73 | neither |
+
+**The table is DELIVERED-consistent.** Amendment 1 was a genuine tightening, not a
+restoration, and the strongest argument for it does not hold.
+
+🔴 **The real cost was 20.0%, not the 14% proxy** (1,418 of 7,082 admitted marathon/ultra
+inputs on a 7,344-row grid). A third option was measured — delivered numerator with the
+runner's constraints NEUTRALISED — at **10.9%**, segmented per Sims: injury 12.1%,
+non-masters 12.0%, masters 9.8%, masters+injury 10.7%. ⚠️ **Its first measurement said
+0.0% and that was an allow-by-default arm**: rows where the neutralised input was itself
+refused returned null and were skipped, and those rows ARE the inversion cases.
+
+### 🔴 The reading that dissolved the item
+
+🏃 **Hutchinson:** §111's metric is the **delivered peak**, the acute stimulus. A runner who
+tightens their weekday cap or declares an injury **genuinely receives a smaller plan**, and
+the gate then admits a smaller plan. **That is §111 working as ratified, not a loophole.**
+What they "buy" is a conservative plan, not a dangerous one.
+
+🩹 **Willy KILLED option B, on §90.** The injury levers are *"a promise about the load on
+healing tissue"*. Option B would judge an injury-history runner against the peak they would
+reach **with those protections removed** — a plan we would never prescribe, for a body they
+do not have. ***"The protection becomes the thing that disqualifies them."*** And: a
+declared injury producing a lower peak is the one case where a runner telling us something
+makes their plan safer and our gate notices. **Do not break that.**
+
+⚕️ **Sims:** the segmentation **killed** the option rather than qualifying it — 12.1% on the
+injury cohort means the newly refused are disproportionately those whose plans were already
+most constrained. *"My binding condition was that the split be reported; it was, and it
+kills the option."*
+
+📊 **Seiler:** no objection. None of this moves §1 (session counts, CD-19).
+
+### ⚖️ Ruling: INCORRECT. Both options refused. Amendment 1 vacated.
+
+⚠️ **Do not re-propose a numerator change without OUTCOME evidence** — the same condition
+§2 Amendment 2 sets. A corpus measurement will not settle it.
+
+🔻 **The monotonicity invariant specified at the morning sitting is WITHDRAWN.** It would
+have asserted a property this board has now ruled is not required. **A gate built to a
+vacated ruling is worse than no gate.**
+
+↗️ **The SLT escalation is withdrawn.** There is no price to pay.
+
+### ✅ What survives, and it is the honest half
+
+🎯 **McMillan:** *"My objection this morning was real and it was about the wrong thing. I
+framed it as a safety inversion and it is not — the one with less time is admitted because
+she is being given less. What is genuinely wrong is what we SAY to the one we refuse. She
+is told 'your base is too low to build safely to a marathon.' The truth is 'your base is
+too low for the plan we would build at 45 minutes a weekday.' **We are reporting her body
+as the problem when the binding constraint is her calendar**, and we never tell her the
+calendar is a lever at all."*
+
+⚕️ Sims, same point in her terms: *"a woman with a 30-minute weekday ceiling is carrying an
+unpaid-work load, and telling her HER BASE is the problem is the app misreading her life."*
+
+**Filed as `REFUSAL-NAME-THE-BINDING-LEVER-01`** — §44 requires a refusal to name the
+lever. **A copy-and-alternatives change: no plan changes and nothing is newly refused.**
+
+**Evidence:** `scripts/board-evidence-111-monotonic.ts`.

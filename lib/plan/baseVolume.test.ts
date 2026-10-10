@@ -157,3 +157,83 @@ describe('INV-PLAN-BASE-BUILD-RATIO — the backstop invariant', () => {
     expect(validatePlan(plan, input).some(x => x.code === 'INV-PLAN-BASE-BUILD-RATIO')).toBe(false)
   })
 })
+
+/**
+ * `REFUSAL-PLURAL-01` — "check back in 1 weeks" reached a refused runner.
+ *
+ * Found 2026-10-10 by READING THE MESSAGE OUT LOUD while measuring something else, not
+ * by any check. The §111 message itself pluralises correctly one line up ("about 1 week
+ * of steady easy running"), so **the two halves of the same refusal disagreed** and a
+ * runner being told no was reading a grammar slip.
+ */
+describe('REFUSAL-PLURAL-01 — a refusal does not say "1 weeks"', () => {
+  /**
+   * 🔴 MY FIRST VERSION OF THIS ARM STAYED GREEN WHEN I RESTORED THE BUG, and the
+   * reason is the class I had just cited one file over: **the population excluded the
+   * case at risk.** It swept `current_weekly_km` 10..15 against this file's fixture,
+   * where §117 puts §111's door at 8 km, so every refused case had `weeksToBase` of
+   * 15/8/5/4/2 and **never 1**. A one-week ramp needs a fixture whose door sits
+   * HIGHER, which is what `max_weekday_mins` does.
+   *
+   * So this arm PROVES it reaches the case before it asserts anything about it.
+   */
+  function refusalsMentioningWeeks() {
+    const out: { cwk: number; message: string; alternatives: string[] }[] = []
+    for (let cwk = 8; cwk <= 20; cwk++) {
+      const { err } = gen(marathon({
+        current_weekly_km: cwk,
+        longest_recent_run_km: Math.min(8, cwk),
+        max_weekday_mins: 45,
+        // 🔴 `user_declared_level`, NOT this file's `fitness_level`. That is the
+        // API-level STRUCTURAL override the wizard never sends (`types/plan.ts` says so
+        // in as many words), and the two derive DIFFERENT levels, different peaks and a
+        // different §111 door. With `fitness_level` the sweep produced **zero** §111
+        // refusals and the arm failed honestly rather than passing on an empty set.
+        // Searched: 17 input combinations yield a one-week ramp, all of them on
+        // `user_declared_level`.
+        user_declared_level: 'beginner',
+        fitness_level: undefined,
+      } as never))
+      if (err instanceof BaseVolumeError) {
+        out.push({ cwk, message: err.base.message, alternatives: err.base.alternatives })
+      }
+    }
+    return out
+  }
+
+  it('the population actually contains a ONE-week ramp', () => {
+    const hits = refusalsMentioningWeeks()
+    expect(hits.length, 'no §111 refusal at all in the sweep').toBeGreaterThan(0)
+    // Without this the arm below can pass by never meeting the case, which is exactly
+    // how its first version stayed green on the restored bug.
+    expect(
+      hits.some(h => /\babout 1 week\b/.test(h.message)),
+      `no one-week ramp in the sweep, so the pluralisation arm proves nothing. Messages: `
+        + hits.map(h => `${h.cwk}:${h.message.slice(0, 60)}`).join(' | '),
+    ).toBe(true)
+  })
+
+  it('never renders "1 weeks", in the message or any alternative', () => {
+    for (const h of refusalsMentioningWeeks()) {
+      expect(h.message, `cwk=${h.cwk}`).not.toMatch(/\b1 weeks\b/)
+      for (const alt of h.alternatives) {
+        expect(alt, `cwk=${h.cwk}: ${alt}`).not.toMatch(/\b1 weeks\b/)
+      }
+    }
+  })
+
+  /**
+   * ⚠️ THE SIBLING COPY IS NOT FIXED BECAUSE IT IS NOT REACHABLE, AND THIS PINS WHY.
+   * `baseBuildCopy.ts` renders `${o.weeks} weeks of base building` with no ternary,
+   * which looks like the same defect. It is not: `baseBuildOfferLine` has exactly one
+   * caller, with `weeks` from `generateGetRunningPlan`, floored at
+   * `GET_RUNNING_MIN_WEEKS`. **A defensive ternary would be decoration; asserting the
+   * floor catches the day somebody lowers it.**
+   */
+  it('the base-build offer copy cannot receive 1 week, and the floor is why', () => {
+    expect(GENERATION_CONFIG.GET_RUNNING_MIN_WEEKS,
+      'GET_RUNNING_MIN_WEEKS dropped below 2, so "1 weeks of base building" is now '
+      + 'reachable and baseBuildCopy.ts needs the pluralisation it does not have')
+      .toBeGreaterThanOrEqual(2)
+  })
+})

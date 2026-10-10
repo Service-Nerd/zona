@@ -11,6 +11,7 @@ import { formatDuration } from '@/lib/format'
 import { TextField } from '@/components/shared/TextField'
 import {
   MODIFIABLE_ROWS, MODIFY_GROUP_LABELS, applyEdits, dayConflict, pendingKeys, editsResetLoggedWeeks,
+  modifiableRowsFor,
   type ModifyGroup, type PlanEdits, type ModifiableKey,
 } from '@/lib/plan/modifyPlan'
 import Button from '@/components/ui/Button'
@@ -94,6 +95,10 @@ export default function ModifyPlanSheet({
   onEditsChange: (next: PlanEdits) => void
 }) {
   const base = plan.meta?.generator_input as GeneratorInput
+  // 🧭 `BASEBUILD-ADJUST-REBUILD-01` — the rows this PLAN KIND may offer, derived from
+  // a declared per-kind set rather than a list typed here. Six of the eight cannot
+  // change a base-build plan's output, measured against the real producer.
+  const rows = modifiableRowsFor(plan)
 
   const pending = useMemo(() => (base ? pendingKeys(base, edits) : []), [base, edits])
   const resets  = useMemo(() => editsResetLoggedWeeks(plan, edits), [plan, edits])
@@ -144,7 +149,7 @@ export default function ModifyPlanSheet({
               <div key={group}>
                 {label(MODIFY_GROUP_LABELS[group])}
                 <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-                  {MODIFIABLE_ROWS.filter(r => r.group === group).map((row, i, arr) => {
+                  {rows.filter(r => r.group === group).map((row, i, arr) => {
                     const changed = pending.includes(row.key)
                     return (
                       <div key={row.key} style={{
