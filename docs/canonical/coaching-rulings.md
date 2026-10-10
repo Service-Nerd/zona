@@ -1802,3 +1802,45 @@ Measured n=3,000 (2,872 with a peak long run): the plan's longest run sits outsi
 ### ↗️ SLT escalation
 
 None on correctness. One cost note: the build arm's blocking evidence requires re-deriving `resolveMainSet` to detect a §24b-restructured long run — real work on an unruled question.
+
+---
+
+## 2026-10-10 — `V1-DELIVERED-TAIL-01` · the magnitude is measured, the threshold is refused
+
+**Trigger:** soft (`invariants.ts`), convened — the magnitude was ungoverned, so there was no intent to restore. Item filed by this board the previous sitting, brought back **measured** rather than left filed.
+
+### 🔍 Conflict scan — it set the ruling before a seat spoke
+
+🔴 **§2 Amendment 2 carries Hutchinson's binding condition and it lands on half the submission:** the predicate is *"frozen until we hold adherence or injury data"*, and *"any further relaxation needs **outcome evidence, not another corpus measurement**"*. The submission was a corpus measurement. It does not ask for a relaxation, so the freeze does not block it — **but it does block inventing a threshold.**
+**§94 Amendment 3** is the precedent in both directions: it **refused** an exemption (*"any non-zero tolerance is an invented number"*) and **granted attribution**. Extending attribution from *which driver* to *how far* is the same move. **§94 Am.1** removed an exemption arm (202 silenced weeks, all 202 with the long run growing). **§34** requires a residual be declared and exercised. **§111/§113** refuse on a fact about the runner, never a property of the plan. No conflict with §1.
+
+### ⚖️ Ruling — **CORRECT WITH AMENDMENT**, the amendment being a refusal to set a threshold
+
+| Question | Ruling |
+|---|---|
+| Is the magnitude governed, and on which arm? | ✅ **Governed, on the TRIMABLE arm.** 🩹 Willy: *"§52 exempts the long run BY RULING, so a whole-week number partly measures a thing we have decided not to control. Govern what you chose."* |
+| Refusal, louder residual, or baseline? | ⛔ **No refusal, no threshold** — §2 Am.2 binds, and a percentile is not a dose. ✅ A **segmented** non-growing baseline |
+| Healthy worse than injured? | ✅ **An artefact of lever count, not a tolerance judgement.** 🩹 Willy: *"healthy tissue does absorb more… 105% is not a higher ceiling. It is an unbounded portion."* |
+| Prescribes or reports? | ✅ **Reports only** — buildable with no founder sign-off, no live-plan remediation, parity identical by construction |
+
+⚕️ **Sims, binding:** segmented by cohort or not at all — *"a magnitude baseline that reports only the global p99 will hide them"*, masters plans being the flattest to begin with (18.6% never-build against 12.8%).
+🎯 **McMillan, and nobody had commented on it:** the six worst weeks are **all** `cwk=20 / longest=8 / 4–5 days / week 9–10`. *"That is not a distribution, that is one runner… why are we adding a fifth session to someone running 4 km at a time is a better question than any percentile."* **Filed as `V1-LOWVOL-MULTIDAY-01`.**
+📊 **Seiler refused to read p99 ≈ MAX as a tail** — *"something is clamping it"* — and he was right to ask. Answered: **seven identical maxima then a fifteen-point gap** is one recurring week shape, so **the maximum is a corpus property, not the engine's ceiling.**
+
+### 📦 Artifacts — all three landed
+
+1. **Principle** — **§94 Amendment 4**, carrying Hutchinson's no-threshold condition and Sims's segmentation condition verbatim.
+2. **Numeric** — **none, and that is the ruling.** A gate asserts no such `GENERATION_CONFIG` key exists, so a future threshold cannot arrive unremarked.
+3. **Mechanical check** — `deliveredRampTail.test.ts`, 6 arms, **falsified 4 ways**. Not a new invariant: `INV-PLAN-DELIVERED-RAMP` already carries both magnitudes.
+
+### 🔴 Two of the submission's own claims were false and the gate caught both
+
+- **"§94 cannot fire on an injured plan by construction"** — it fires **51 times**. The claim came from measuring that arm on `cohortGrid`, which holds **0 injury rows of 41,472**, so a corpus artefact was read as a rule. ⚠️ The corrected figures **strengthen** the inversion: injury maxes at **18%** against healthy-standard **105%** and masters **79%**, same arm, same corpus, same instrument.
+- **A self-referential arm.** The first version asserted this file's source contained no names like `REFUSAL_THRESHOLD` — which the assertion itself contained, so it could only fail. Replaced with the honest property: a threshold would have to be a **coaching numeric**, so the check reads `GENERATION_CONFIG`'s keys and never this file.
+- ⚠️ And a third, weaker: the parse assertion sat at module level, so a changed message made the file **fail to collect**. The build still exited 1 — verified — but vitest reported *"no tests"*. **A gate that vanishes reads very differently from a gate that goes red.** Moved into a named arm.
+
+### ↗️ SLT escalation
+None.
+
+### 🔻 Filed, not built
+`DELIVERED-TAIL-LEVERS-01` (extend ADR-022's three levers to the healthy — blocked on outcome data, exactly as §2 Am.2 requires) · `V1-LOWVOL-MULTIDAY-01` (McMillan's cohort question).

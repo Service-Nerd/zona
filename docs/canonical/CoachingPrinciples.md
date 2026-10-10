@@ -7474,6 +7474,38 @@ re-derives its producer's predicate cannot catch the producer being wrong.
 the product.** This amendment explains part of it; it does not reduce it by one
 firing.
 
+### §94 Amendment 4 — the MAGNITUDE is measured and segmented; the THRESHOLD is refused *(Coaching Board 2026-10-10, `V1-DELIVERED-TAIL-01`)*
+
+**Ruling: CORRECT WITH AMENDMENT, and the amendment is a refusal to set a threshold.**
+
+**The question.** `INV-PLAN-DELIVERED-RAMP` fires on **whether** a week breached §2 at delivery. It never reported **how far**. So 🩹 Willy's condition on withdrawing `ADR022-V1-DELIVERED-RISE-01` — *"the worst delivered rise was 79% before §100 and 79% after; the tail did not move, and the tail is what injures people. Watch the tail, not the rate"* — was an observation **nobody could check**.
+
+**Principle.** The magnitude of a delivered-ramp breach is a **reported, baselined quantity**, governed on the **trimable (non-long-run)** arm and **segmented by cohort**. It carries **no threshold and no refusal.**
+
+**Why the governed arm is the trimable one.** 🩹 Willy: *"§52 exempts the long run BY RULING, so a whole-week number partly measures a thing we have decided not to control. Govern what you chose."* Both arms are reported; only the trimable one may not grow.
+
+🔴 **WHY THERE IS NO THRESHOLD, AND WHY THAT IS THE RULING RATHER THAN AN OMISSION.** §2 Amendment 2 carries 🏃 Hutchinson's binding condition **verbatim**: the predicate is *"frozen until we hold adherence or injury data"*, and *"any further relaxation needs **outcome evidence, not another corpus measurement**"*. A refusal threshold chosen from where a corpus distribution thins is **a percentile, not a dose** — and §111 and §113, the only two refusal precedents, both refuse on **a fact about the runner**, never on a property of the generated plan. §94 Amendment 3 had already recorded the general form: *"any non-zero tolerance is an invented number."* **There is no `GENERATION_CONFIG` constant for this and a gate asserts there is not.**
+
+⚕️ **SEGMENTATION IS BINDING (Sims).** *"A magnitude baseline that reports only the global p99 will hide them."* Masters plans are the flattest to begin with — **18.6% never-build against 12.8% standard** — so the same percentage is a larger share of that runner's total training stress. Three segments, measured separately.
+
+**Measured 2026-10-10** (1,800 inputs, 1,750 generated; magnitude **parsed from the invariant's own `actual`**, never re-derived):
+
+| segment | plans | firings | trimable p50 / p90 / p99 / max |
+|---|---|---|---|
+| healthy standard | 573 | 141 | 22 / 43 / 105 / **105** |
+| healthy masters | 577 | 170 | 22 / 40 / 59 / **79** |
+| injury history | 600 | 51 | 12 / 18 / 18 / **18** |
+
+🔴 **THE HEALTHY TAIL IS WORSE THAN THE INJURED TAIL, AND IT IS AN ARTEFACT OF LEVER COUNT RATHER THAN A TOLERANCE JUDGEMENT** (Willy). ADR-022 gave injury-history runners three levers; §94/§100 left the healthy with §100's re-anchor and §52's floor, and those two cannot reach the floor-dominated case. 🩹 Willy, on the record: *"healthy tissue does absorb more than previously-injured tissue, so a higher ceiling for the healthy is defensible in principle. 105% is not a higher ceiling. It is an unbounded portion."* **Filed as `DELIVERED-TAIL-LEVERS-01`, blocked on outcome data exactly as §2 Am.2 requires.**
+
+🔴 **A CLAIM MADE AT THE SITTING WAS FALSE AND THE GATE CAUGHT IT.** The submission stated that §94 *"cannot fire on an injured plan by construction"*, because §94 exists precisely to cover the healthy whom ADR-022 did not. **It fires 51 times on the injury segment.** The claim came from measuring the §94 arm on `cohortGrid` alone — which holds **0 injury rows of 41,472** — so a corpus artefact was being read as a rule. The corrected figures *strengthen* the inversion rather than removing it.
+
+📊 **SEILER'S OPEN QUESTION, ASKED AND ANSWERED.** He refused to read p99 ≈ MAX as a tail: *"that is not a tail, that is a ceiling — something is clamping it."* The whole-week top is `67 67 67 67 67 67 67 65 65 62 62 52 …` — **seven identical maxima then a fifteen-point gap**, which is one worst-case week shape (`cwk=20 / longest=8 / 4–5 days`) recurring across grid rows that differ only on irrelevant axes. **So the maximum is a property of the grid's density, not of the engine: a different input could exceed it, and no figure here may be quoted as a ceiling.** ⚠️ That sequence is the *whole-week* arm on a 3,000-row `cohortGrid`-only sample; on the segmented corpus the governed trimable maximum repeats **twice**. The conclusion holds; the figure is arm- and corpus-specific.
+
+**Config.** **None, and that is the ruling.** The baseline is a fixture in `lib/plan/deliveredRampTail.test.ts`, not a coaching constant.
+
+**Mechanical check.** Not a new invariant — `INV-PLAN-DELIVERED-RAMP` already carries both magnitudes. `deliveredRampTail.test.ts` baselines them per segment and fails when the tail **grows**, with a population arm per segment (an empty segment passes every percentile arm, and that is the defect that bit this measurement twice in one day). ⚠️ **It reports only: not one generated plan changes, so no prescription moved and `verify:parity` is identical by construction.**
+
 ### Amendment 1 — the trimable arm is retired; §2's claim is the WHOLE week
 
 *(Coaching Board, 2026-09-17 — RAMP-GUARD-FAILS-OPEN-01. CORRECT WITH AMENDMENT.

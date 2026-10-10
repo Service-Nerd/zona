@@ -114,6 +114,14 @@ for (const code of ['INV-PLAN-INJURY-CAP-DELIVERED', 'INV-PLAN-BOUNCEBACK-BOUNDE
   }
 }
 
+// 📊 SEILER'S QUESTION: p99 ~= MAX. Is something CLAMPING it, or is the tail just thin?
+console.log('\nTOP OF THE DISTRIBUTION, whole-week (Seiler: "is that a tail or a ceiling?"):')
+const tops = fires.map(f => f.total).sort((a, b) => b - a)
+console.log('  the 20 highest: ' + tops.slice(0, 20).join(' '))
+const hist: Record<string, number> = {}
+for (const v of tops) { const b = Math.floor(v / 5) * 5; hist[`${b}-${b+4}`] = (hist[`${b}-${b+4}`] ?? 0) + 1 }
+console.log('  5-point buckets: ' + Object.entries(hist).sort((a,b)=>Number(b[0].split('-')[0])-Number(a[0].split('-')[0])).map(([k,v])=>`${k}:${v}`).join(' '))
+
 // How much of the tail is above each candidate threshold?
 console.log('\nSHARE OF FIRINGS ABOVE A CANDIDATE REFUSAL THRESHOLD (whole-week rise):')
 for (const t of [15, 20, 25, 30, 40, 50]) {

@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-10 — V1-DELIVERED-TAIL-01 · the board refused to set a number, and that was the right ruling
+
+**Shipped:** the magnitude of a delivered-ramp breach is now a segmented, non-growing baseline, governed on the trimable arm. No threshold.
+
+**Dev learning:** the gate **parses the invariant's own `actual` string** rather than recomputing the quantity, and that is deliberate. The day before, one question about this same defect produced three different numbers — 93%, 77%, 21% — because each attempt re-derived it with its own instrument. Parsing the ratified detector's output is uglier and it is the only version that cannot drift from what the constitution actually bounds. A named arm asserts the message shape, so a producer change fails loudly instead of silently measuring nothing.
+
+**Product/creator learning:** I went in expecting to recommend a refusal threshold and the board refused it on a principle I had read and not applied — §2 Amendment 2 freezes the predicate until we hold adherence or injury data. **A threshold picked from where a corpus distribution thins is a percentile, not a dose.** The useful output was not a number but a measurement that cannot grow, plus two filed questions better than the one I brought.
+
+**AI-building learning:** the gate caught two false claims of mine on its first run. I had written *"§94 cannot fire on an injured plan by construction"* into a doctrine-adjacent file — it fires 51 times, and my evidence for the claim came from a corpus with zero injury rows. And my banned-token arm asserted that this file's source did not contain names like `REFUSAL_THRESHOLD`, which the assertion itself contained, so it could only ever fail. **Both were caught by running the thing, not by reading it.** The deeper lesson is the same one twice: an assertion about the absence of something needs to look somewhere other than at itself.
+
+**The honest bit:** three separate corpus mistakes in one day, all the same shape. `cohortGrid` has zero injury rows out of 41,472, and I hit that twice — once in the board evidence, where I nearly submitted "no injury exposure" as a finding, and once in the baseline comment. The grid looked complete because it is enormous. **Size is not coverage**, and I knew that in the morning.
+
+**Hook material:** the test I wrote to prove no threshold exists asserted that its own source code did not contain the word "threshold". It contained it three times — in the assertion.
+
+**Postable?:** yes
+
+
 ## 2026-10-10 — WEEK-THEME-TOKEN-ENRICH-01 · a rule that lives only in a prompt has no enforcement
 
 **Shipped:** the enrichment merge now refuses a model-authored week label or theme containing a `{{placeholder}}`, keeps the engine's copy, and records why.

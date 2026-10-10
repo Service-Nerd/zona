@@ -8077,13 +8077,41 @@ Control lands on §100's 16.4% to within 0.2pp. The real excess is **+5.1pp**, a
 
 ---
 
-### 🔻 `V1-DELIVERED-TAIL-01` — watch the TAIL, not the rate 🏃 **COACHING BOARD** *(Willy's condition on the withdrawal above)*
+### ✅ `V1-DELIVERED-TAIL-01` — **RULED AND BUILT 2026-10-10** 🏃 **COACHING BOARD**
 
-**Willy accepted `ADR022-V1-DELIVERED-RISE-01`'s withdrawal on one binding condition:** *"the worst delivered rise was 79% before §100 and 79% after — the tail did not move, and the tail is what injures people."*
+**CORRECT WITH AMENDMENT, and the amendment is a refusal to set a threshold.** Sitting: `coaching-rulings.md` 2026-10-10. Principle: **§94 Amendment 4**. Gate: `deliveredRampTail.test.ts`.
 
-So the residual **+5.1pp** on V1 plans is not the thing to chase. **The worst single delivered week rise is**, and §100 recorded it as **unchanged by its own fix**. Nothing currently measures or baselines it: `INV-PLAN-DELIVERED-RAMP` fires on *whether* a week breached, never on *how far*.
+The magnitude of a delivered-ramp breach is now a **reported, segmented, non-growing baseline**, governed on the **trimable (non-long-run)** arm — Willy: *"§52 exempts the long run BY RULING, so a whole-week number partly measures a thing we have decided not to control."* **No threshold and no refusal:** §2 Am.2 freezes the predicate until outcome data exists, and a percentile is not a dose.
 
-**Scope:** measure the distribution of delivered rises above §2's ceiling (not the count), baseline the p99 and the maximum, and bring the board a number for where a tail becomes a refusal rather than a `warn`. ⚠️ **Do not re-open the rate** — it is ruled.
+| segment | plans | firings | trimable p99 / max |
+|---|---|---|---|
+| healthy standard | 573 | 141 | 105 / **105** |
+| healthy masters | 577 | 170 | 59 / **79** |
+| injury history | 600 | 51 | 18 / **18** |
+
+🔴 **Two of my own claims were false and the gate caught both:** *"§94 cannot fire on an injured plan"* (it fires 51 times — the claim came from a corpus with 0 injury rows), and a banned-token arm that asserted its own source did not contain the tokens it listed. ⚠️ **Reports only** — not one generated plan changes.
+
+---
+
+### 🔻 `DELIVERED-TAIL-LEVERS-01` — the healthy tail is worse than the injured one, and that is a lever count 🏃 **COACHING BOARD** *(blocked on outcome data)*
+
+**Filed by the board 2026-10-10, deliberately not built.** ADR-022 gave injury-history runners three levers (deload re-anchored to the POST-CAP prior week; the injury peak week yields its 2nd quality to §12; easy runs trim while §52's long run never does). §94/§100 left the healthy with §100's re-anchor and §52's floor, **and those two cannot reach the floor-dominated case.**
+
+Measured, same arm and instrument: **injury max 18% · healthy masters 79% · healthy standard 105%.**
+
+🩹 **Willy, on the record:** *"healthy tissue does absorb more than previously-injured tissue, so a higher ceiling for the healthy is defensible in principle. **105% is not a higher ceiling. It is an unbounded portion.**"*
+
+⛔ **BLOCKED, and the block is doctrine rather than effort.** §2 Amendment 2 carries Hutchinson's condition: the predicate is *"frozen until we hold adherence or injury data"* and *"any further relaxation needs outcome evidence, not another corpus measurement."* Extending levers is a prescription change. **Do not bring another corpus measurement to this item** — it needs adherence or injury outcomes, which the product does not yet collect.
+
+---
+
+### 🔻 `V1-LOWVOL-MULTIDAY-01` — the worst week is one runner, not a distribution 🏃 **COACHING BOARD** *(McMillan, 2026-10-10)*
+
+**The most useful finding of the sitting and nobody had commented on it.** All six worst delivered weeks are the same shape: **`cwk=20 / longest=8 / 4–5 days / week 9–10`**, V1-affected. On the trimable arm the maximum repeats, which is why `deliveredRampTail.test.ts` asserts the duplication — it is **one recurring week shape, not the engine's ceiling.**
+
+🎯 **McMillan:** *"That is not a distribution, that is one runner: 20 km a week spread over five days, an 8 km longest run, and the plan tries to introduce quality around week nine. A coach would not ask whether 67% is above a threshold — they would ask **why we are adding a fourth and fifth session to someone running 4 km at a time.** Fix the cohort, not the percentile."*
+
+**The question for the board:** should `days_available` be bounded by volume — i.e. is there a weekly volume below which 5 sessions is the wrong shape whatever the runner selected? ⚠️ **Scan §18 (blocked-day enforcement), §1 CD-21 Am.1 (which ruled on the TWO-day end of exactly this axis) and `MIN_KM_PER_TRAINING_DAY` before proposing anything** — the low-day end is already ruled and the high-day-low-volume end may be its mirror.
 ---
 
 ### ⚖️ THE FOUR TRIAGE DECISIONS — ALL RULED 2026-10-09
