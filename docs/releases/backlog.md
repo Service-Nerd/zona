@@ -242,6 +242,41 @@ absent (falsified: gate removed → 0 of 2 targets pass).
 **What this does NOT prove:** nothing has run on a device; the 7 race plans are untouched; and the
 stamp does not give these two runners a route to their marathon — that is `BASEBUILD-HANDOVER-01`.
 
+#### ✅ APPLIED 2026-10-10, AND THE FIRST RUN REVERTED ITSELF
+
+**Both plans are stamped and verified by an independent re-read** (17 and 21 fields, `race_date:
+"2027-04-24"`, `meta.race_date` still `''` so no countdown appears, nightly audit 0 errors, save gate
+0 errors, Adjust door shut, 15 weeks unchanged). Fleet-wide unstamped is now **7** — the
+non-invertible race plans.
+
+**Order of operations mattered and was followed:** the door gate was pushed, the Vercel production
+deployment confirmed as commit `19751f49` (`--meta githubCommitSha=…`, aliased to `www.zonna.run`,
+200), and only then was `--apply` run. A push is not a deploy, and the backfill refuses to write if
+the gate is absent.
+
+🔴 **THE FIRST `--apply` WROTE, FAILED ITS OWN POST-WRITE CHECK, AND AUTO-REVERTED BOTH ROWS. THE
+WRITE WAS CORRECT AND THE CHECK WAS WRONG.** `plan_json` is **jsonb**, which normalises object key
+order to (length, then bytewise). The stamp is built in `GeneratorInput` **declaration** order, and
+the check compared `JSON.stringify(fromDb) === JSON.stringify(whatIWrote)` — so it differed on every
+row while every value was right. **Measured on the 25 already-stamped production plans: the returned
+key order matches jsonb normalisation exactly and does not match declaration order.**
+
+⚠️ **Failing safe is the correct behaviour; a false negative is still a defect.** A verification that
+cannot pass on correct data is one you learn to bypass, which this repo records as how a guard dies.
+**The revert was then proven clean** — both rows byte-equivalent to the pre-write snapshot, with
+`generator_input` absent — before anything else was tried.
+
+**New owner:** `lib/ops/canonicalJson.ts` → `jsonEquivalent`, used by both the stamp and the weeks
+comparison (the weeks arm had the same exposure and passed **only by luck**, because both sides
+happened to come from the database). ⚠️ **It must not be weaker than the string compare it replaced**,
+so `canonicalJson.test.ts` is **6 negative arms out of 9**: a changed value, a missing key, an extra
+key, a retyped value, `null` vs absent, and **array order, which is deliberately NOT sorted** —
+`days_cannot_train` and `injury_history` order is data.
+
+⚠️ **Honest falsification note:** the comparison is falsified at unit level by those 6 arms. The
+post-write arm's **wiring** is proven by the incident itself — it demonstrably fired and reverted;
+it fired on the wrong predicate. I did not stage a second production write to re-prove the wiring.
+
 ---
 
 ### ✅ `BASEBUILD-ADJUST-DOOR-01` — **SHIPPED 2026-10-10. A base-build plan is not race-modifiable** ⚙️ **NO BOARD** *(defect fix restoring `canModifyPlan`'s documented intent)*

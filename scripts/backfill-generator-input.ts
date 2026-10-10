@@ -62,6 +62,7 @@ for (const l of readFileSync('.env.local', 'utf8').split('\n')) {
   const m = l.match(/^([A-Z0-9_]+)=(.*)$/); if (m) process.env[m[1]] ??= m[2].replace(/^["']|["']$/g, '')
 }
 import { validateSavedPlan, isBaseBuildPlan } from '@/lib/plan/validateStoredPlan'
+import { jsonEquivalent } from '@/lib/ops/canonicalJson'
 import { canModifyPlan } from '@/lib/plan/modifyPlan'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
@@ -271,8 +272,17 @@ async function main() {
     const t = go.find(x => x.id === r.id)!
     const gi = (r.plan_json.meta as unknown as Record<string, unknown>).generator_input
     const errs = validateSavedPlan(r.plan_json, gi as GeneratorInput).filter(x => x.severity === 'error')
-    const weeksOk = JSON.stringify(r.plan_json.weeks) === JSON.stringify(t.plan.weeks)
-    const stampOk = JSON.stringify(gi) === JSON.stringify(t.stamp)
+    // Same exposure, and it passed only by luck: `t.plan` was ALSO read from the database,
+    // so both sides were already in jsonb order. Using the owner removes the luck.
+    const weeksOk = jsonEquivalent(r.plan_json.weeks, t.plan.weeks)
+    // 🔴 `jsonEquivalent`, NOT `JSON.stringify(a) === JSON.stringify(b)`. `plan_json` is
+    // **jsonb**, which normalises object key order to (length, then bytewise). The stamp is
+    // built in `GeneratorInput` DECLARATION order, so a string compare differs on every row
+    // while every value is correct. **Measured: this check reverted both live plans on the
+    // first --apply run** — the write was right and the verification was wrong. It still
+    // catches a changed, missing, extra or retyped value, and it deliberately does NOT sort
+    // arrays (`days_cannot_train` order is data). Gate: `lib/ops/canonicalJson.test.ts`.
+    const stampOk = jsonEquivalent(gi, t.stamp)
     const doorOk  = canModifyPlan(r.plan_json) === false
     const ok = !!gi && !errs.length && weeksOk && stampOk && doorOk
     if (!ok) bad++
