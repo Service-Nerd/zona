@@ -6,6 +6,61 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-10 — COPY-CLAIM-CROSS-WEEK-01, BASEBUILD-SCHEMA-CEREMONY-01, AUDIT-STEP-UNDECLARED-01 and BASEBUILD-ENRICH-VISIBILITY-01 · the digest was wrong about the one thing it explained
+
+**Scopes:** `COPY-CLAIM-CROSS-WEEK-01`, `BASEBUILD-SCHEMA-CEREMONY-01`, `AUDIT-STEP-UNDECLARED-01`, `BASEBUILD-ENRICH-VISIBILITY-01`
+
+**Dev.** Three of the digest's six findings were phantoms, checked in code rather than
+assumed: the refusal-telemetry fix had shipped three hours after the last refusal, the
+`{{zone2_ceiling}}` placeholder is substituted at render, and the invalid-count jump was
+not a regression. The fourth finding — Q7 reading `fitness_level`, **a key nothing has
+ever written** — was a defect in the digest's own query, and the thing it caused was the
+digest confidently concluding the opposite of the truth.
+
+**And its headline explanation did not survive measurement.** It said 22 of 34 invalid
+*"most likely reflects the audit seeing more plans"*. The step was **15 → 20 on 10-06
+with `checked` flat at 30**, four days earlier, caused by an invariant that shipped 34
+minutes before that run. Today's 22 was +1 on yesterday. A new error-severity invariant
+judging old plans is correct behaviour; never declaring it is what made four days of
+elevated numbers unreadable.
+
+**Product.** `generateBaseBuildPlan` builds its `meta` from scratch, and the schema
+required five fields with **zero live readers** — including `quit_date`, the smoke-tracker
+field whose feature was removed end to end nine days earlier. `ruleEngine` had been
+satisfying them with empty strings, so race plans passed by paying ceremony and an entire
+plan kind audited as invalid. Two live runners, one paid.
+
+**AI-building.** The most useful tool today was running the prompt against an agent rather
+than reading it. Twice. The instruction I wrote for Q2B was wrong twice and the SQL was
+right all three times — the prose is the half with no compiler.
+
+**The honest bit.** Four things, and they rhyme.
+
+**One:** I fixed `plan_kind` for the Zod twin on 2026-10-09 and `weeks[].phase` was broken
+in the same file, thirty lines away, the whole time. *The remedy applied to one twin.* I
+have now hit that class three times in two days and the third one was mine.
+
+**Two:** my own measurement for `COPY-CLAIM-CROSS-WEEK-01` was structurally incapable of
+finding the defect. I measured stored plans for rejected copy — **rejected enrichment is
+discarded, so it can never be in the `plans` table.** And I used `type === 'quality'`
+where the real check uses `weekIntensityFlags`. Wrong population, twice, in one script.
+The evidence was in `plan_enrich_failed.detail.messages` all along.
+
+**Three:** the two live rejections needed **two different signals**, and I had designed a
+fix for one of them. Had I shipped it, that would have been a fresh instance of the exact
+class I was fixing.
+
+**Four, and the one I will keep:** the metric was not wrong. *"Every eligible plan has its
+AI coaching copy — 0 of 23 missing"* was **true**, and it excluded the one paid runner it
+was about, because an absent field is outside `is not null`. The tempting fix was to stamp
+`'skipped'` and tidy the field — which the metric filters out, leaving the runner just as
+invisible and the record looking healthier. **A tidy value that hides a cohort is worse
+than a null that looks odd.**
+
+**Still open and the founder's:** the base-build voice gate (SLT pieces 2 and 3, and Wood's
+condition that it must not ship before the handover), `BASEBUILD-ZONE-CEILING-01`, and
+whether 6 plans breaching §93 Am.1 are remediated or accepted. Nothing has run on a device.
+
 ## 2026-10-10 — LR-PEAK-NOT-LONGEST-01 · I got sign-off on a number that was wrong, and had to go back
 **Shipped:** a `warn` monitor for the plan's longest run sitting in the base phase. No engine change, because the one I wrote did nothing.
 
