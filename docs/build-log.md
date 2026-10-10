@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-10 — PREP-ACK-NO-WRITER-01 · the doctrine described two steps and the app had built one
+**Shipped:** a runner in §44's or §52's warn band can finally consent to a compressed plan, which the engine has always been willing to build.
+
+**Dev learning:** §44 does not describe a refusal. It describes a **two-step pattern**, and says so in the section text: *"first call surfaces the warning, second call (with explicit acknowledgment) generates."* The engine implemented it exactly. The route returned `requires_acknowledgment: true` exactly. **The screen read that field zero times**, and `git log -S` shows no UI writer for the flag in the project's whole history. Both halves correct, the composition never built — so the test I wrote is a composition test, because a unit test on either side would have passed throughout.
+
+**Product/creator learning:** the band is **goal-dependent**, and that single fact defeated two of my measurement grids. §44 says *"for `goal: 'finish'`, only `block` thresholds apply"* — so a 21-runway sweep across three fitness profiles found PrepTime refusing only below the hard block, where acknowledgment is irrelevant by construction, and printed *"acknowledgment would admit: none"*. **That reads as "no defect".** Every row used a finish goal. One real runner's stored input settled it in a single run. Third time in one day that varying axes never reached the interaction.
+
+**AI-building learning:** I had to correct my own design mid-build, and the correction made the module five times smaller. My first cut authored `title`/`line`/`why` copy for the warning — and the warn result **already carries its own `message` and `alternatives`**. I was about to create a second copy of a sentence that had an owner, which is the duplication class this repo keeps paying for. Reading the producer before writing the consumer would have caught it; I read it only when a field name I'd guessed turned out not to exist.
+
+**The honest bit:** I guessed two field names (`weeks_recommended`, `days_recommended`) and neither exists. I only found out because I checked before running, which I did because the repo has a memory about exactly that. And I nearly shipped a magic number: the dead-end markup test asserted `toBe(2)` branches, my change made it 3, and bumping it would have been the easiest thing in the world. Deriving the branch count instead caught the real invariant, and the falsification then flagged a dead end **and** a wrong primary action in one mutation.
+
+**Hook material:** the doctrine said "two-step pattern" in plain English, the engine implemented it, the API returned the flag, and the one line of UI that would have used it was never written. `git log -S` on the field name: zero commits, ever.
+
+**Postable?:** yes — "both halves were right and nobody ran them together" is the most repeatable bug story I have.
+
 ## 2026-10-10 — BASEBUILD-GENINPUT-REMEDIATION-01 · the write was right and the check was wrong, so it reverted two live plans
 **Shipped:** both unstamped base-build plans backfilled with `meta.generator_input`, after the first attempt wrote correctly and then undid itself.
 
