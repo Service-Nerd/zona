@@ -8334,14 +8334,22 @@ function buildRulePlanOnce(
     if (!(pace.minPerKmEasy > 0)) return null
     const projectedRaceMins = input.race_distance_km * pace.minPerKmEasy
     const floorMins = projectedRaceMins * GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION
-    let peakLrMins = 0
+    // ⚠️ `peakPhaseLrMins`, NOT `peakLrMins`, AND THE RENAME IS THE FIX'S OTHER
+    // HALF (LR-NOTE-SCOPE-01, 2026-10-10). This is the maximum long run **in the
+    // peak phase** — which is what §80 is about — and 115 lines below there is a
+    // SECOND quantity, `planLrMinsDelivered`, that is the maximum across every
+    // race-directed week. They are DIFFERENT quantities for different purposes,
+    // not duplicates, so they are not collapsed; they were both called
+    // `peakLr*`, and that is how a sentence came to claim one while printing the
+    // other.
+    let peakPhaseLrMins = 0
     for (const w of weeks) {
       if (w.phase !== 'peak' || w.type === 'deload') continue
       for (const sess of Object.values(w.sessions)) {
         if (!sess || sess.type !== 'easy') continue
         if (!isLongRun(sess)) continue
         const mins = sess.duration_mins ?? ((sess.distance_km ?? 0) * pace.minPerKmEasy)
-        peakLrMins = Math.max(peakLrMins, mins)
+        peakPhaseLrMins = Math.max(peakPhaseLrMins, mins)
       }
     }
     // §80 Am.1 — MATERIALITY. The note used to fire at a 2-minute shortfall
@@ -8349,7 +8357,7 @@ function buildRulePlanOnce(
     // "new territory". §40c: "notes that fire on noise get ignored, which costs
     // more than the note gains". 5% silences 2.6%; 10% would silence 30.5%.
     const materialFloorMins = floorMins * (1 - GENERATION_CONFIG.LONG_RUN_SHORTFALL_MATERIAL_PCT / 100)
-    if (peakLrMins === 0 || peakLrMins >= materialFloorMins) return null
+    if (peakPhaseLrMins === 0 || peakPhaseLrMins >= materialFloorMins) return null
     // ⚠️ SECOND INSTANCE OF THE SAME DEFECT AS `structuralNote` ABOVE, found
     // while fixing that one (M5-EASY-CEILING-01, Coaching Board 2026-09-16).
     //
@@ -8372,7 +8380,7 @@ function buildRulePlanOnce(
     // and blamed weekly volume, which for a marathoner 2 minutes under a
     // 210-minute ceiling is an injury vector served as advice (Willy).
     const atTimeCap = capMins > 0
-      && peakLrMins + GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS >= capMins
+      && peakPhaseLrMins + GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS >= capMins
     // ⚠️ THE CAP BRANCH NAMES NO LEVER, ON PURPOSE (McMillan, §80 Am.1). §40c
     // says name the lever that would change it; when the ceiling binds there
     // isn't one, and §40 already settled that "the caps do not move". Implying
@@ -8420,11 +8428,36 @@ function buildRulePlanOnce(
     // is §24e's own bar for "long enough that fuelling matters". A gap wider than
     // that is more than a whole fuelling-relevant session spent in untested
     // territory. Reusing §24e's constant rather than inventing a second one.
-    const fuellingGapMins = projectedRaceMins - peakLrMins
+    const fuellingGapMins = projectedRaceMins - peakPhaseLrMins
     const fuellingTail = fuellingGapMins > GENERATION_CONFIG.FUELLING_PRACTICE_MIN_SESSION_MINS
       ? ` ${LR_SHORTFALL_UNREHEARSED_FUELLING}`
       : ''
-    return `Your longest run tops out at ${durationText(peakLrMins)}. For a race you'll likely be moving for around ${durationText(projectedRaceMins)}, and we'd normally want it nearer ${durationText(floorMins)}, ${why}. Expect the last stretch of race day to be new territory; go out slower than feels right and take the walk breaks early rather than late.${fuellingTail}`
+    // 🔴 "IN THE PEAK WEEKS" IS LOAD-BEARING (LR-NOTE-SCOPE-01, re-opened
+    // 2026-10-10). The sentence used to open *"Your longest run tops out at X"*
+    // while X is `peakPhaseLrMins` — the peak PHASE's maximum. Measured on a
+    // 600-plan §80 cohort: on **15 (2.5%)** the runner's actual longest run is
+    // larger and sits in the BUILD phase (`w11 153 min` against `w14/peak 144`),
+    // so the plan said "your longest run" about a number that was not it.
+    //
+    // ⚠️ THE COMPUTATION IS CORRECT AND IS NOT CHANGED. §80 is explicitly
+    // peak-scoped — "the PEAK long run must reach
+    // FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION of projected race duration" —
+    // and its rationale is race specificity. Measuring the floor against the
+    // plan's maximum would let a one-off build long run followed by detraining
+    // satisfy §80, which §80's own reasoning rejects. So the words move and the
+    // number does not: the shortfall trigger, `atTimeCap` and `fuellingGapMins`
+    // all read the same unchanged value.
+    //
+    // ⚠️ AND THIS WORDING WAS HELD BACK ONCE, DELIBERATELY. Qualifying it while
+    // the shape defect was invisible would have silenced the only visible
+    // evidence of its cause — this sentence is how that defect was found. The
+    // hold is released because `longRunPeakPhase.test.ts` now carries the shape
+    // defect as a measured, non-growing baseline, so the symptom has stopped
+    // being load-bearing. 🔻 The shape question itself is `LR-PEAK-NOT-LONGEST-01`,
+    // with the Coaching Board: doctrine is SILENT on whether the peak phase must
+    // contain the plan's longest run (§23's overload is weekly volume only, and
+    // both `INV-PLAN-PEAK-IN-PEAK-PHASE` and `planShapeInvariants` I3 guard km).
+    return `Your longest run in the peak weeks tops out at ${durationText(peakPhaseLrMins)}. For a race you'll likely be moving for around ${durationText(projectedRaceMins)}, and we'd normally want it nearer ${durationText(floorMins)}, ${why}. Expect the last stretch of race day to be new territory; go out slower than feels right and take the walk breaks early rather than late.${fuellingTail}`
   })()
 
   // Compose final values. §23's note wins (more specific) when both trigger.
@@ -8449,14 +8482,17 @@ function buildRulePlanOnce(
   // wrong one matters: a runner who reads "the long run is at its time cap"
   // learns nothing they can act on when it is not.
   const longRunCapMinsForNote = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[raceDistanceKey(input.race_distance_km)]
-  const peakLrMinsDelivered = Math.max(0, ...weeks
+  // ⚠️ `planLrMinsDelivered`, NOT `peakLrMinsDelivered` — this is the maximum
+  // across EVERY race-directed week, which is a different quantity from
+  // `peakPhaseLrMins` 115 lines above. Both were called `peakLr*`.
+  const planLrMinsDelivered = Math.max(0, ...weeks
     .filter(w => w.n >= 1 && w.type !== 'race')
     .map(w => {
       const lr = Object.values(w.sessions ?? {}).find(sn => !!sn && isLongRun(sn))
       return lr?.duration_mins ?? 0
     }))
   const longRunIsAtTimeCap = longRunCapMinsForNote > 0
-    && peakLrMinsDelivered + 1 >= longRunCapMinsForNote
+    && planLrMinsDelivered + 1 >= longRunCapMinsForNote
   const whyItCannotGrow = longRunIsAtTimeCap
     ? 'The long run is already at its time cap and the easy runs are capped against it'
     : 'Your easy runs are held below your long run so it stays the longest run of the week, and the long run is itself a share of that week'

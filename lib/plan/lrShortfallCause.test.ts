@@ -89,7 +89,7 @@ describe('INV-PLAN-LR-SHORTFALL-CAUSE — FALSIFICATION: it must be able to go R
       meta: {
         ...p.meta,
         long_run_shortfall_note:
-          "Your longest run tops out at 2h 16. For a race you'll likely be moving for around 5h 38, "
+          "Your longest run in the peak weeks tops out at 2h 16. For a race you'll likely be moving for around 5h 38, "
           + "and we'd normally want it nearer 3h 56, but your weekly volume is what limits it: the long "
           + 'run is sized as a share of the week, and this week cannot carry more.',
       },

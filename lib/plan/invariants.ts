@@ -8471,7 +8471,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // against its own time cap.
   //
   // WHY THIS EXISTS AND WHY IT IS NOT A CHECKER SHARING THE PRODUCER'S
-  // PREDICATE. The producer decides the cause with `peakLrMins + TOLERANCE >=
+  // PREDICATE. The producer decides the cause with `peakPhaseLrMins + TOLERANCE >=
   // capMins`; this reads the NOTE TEXT the runner receives and compares it
   // against the plan's own delivered long run. The old producer carried a
   // comment claiming it "names whichever one is actually binding" and named the
@@ -8492,12 +8492,26 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       const capMins = distKey ? GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey] : 0
       // The delivered peak long run, read from the plan rather than recomputed
       // from the curve — the note describes what the runner actually got.
-      let peakLrMins = 0
+      //
+      // ⚠️ `planLrMinsDelivered`, AND THE ASYMMETRY WITH THE NOTE IS DELIBERATE
+      // AND NOW WRITTEN DOWN (LR-NOTE-SCOPE-01, 2026-10-10). It was called
+      // `peakLrMins` while iterating EVERY race-directed week, so the name said
+      // peak phase and the loop said whole plan — the third copy of that trap,
+      // and the one inside the checker that reads the note. The producer's
+      // peak-phase quantity is `peakPhaseLrMins` (`ruleEngine:8337`).
+      //
+      // The POPULATION is unchanged and is right for THIS question: Willy's
+      // reasoning in §80 Am.1 is about the runner's exposure — a marathoner who
+      // actually ran to within two minutes of a 210-minute ceiling must not be
+      // told to look at their weekly volume, whichever phase that run fell in.
+      // The note's figure is peak-scoped because §80's floor is; this check's is
+      // plan-wide because tissue does not care which phase it was.
+      let planLrMinsDelivered = 0
       for (const w of plan.weeks) {
         if (w.n < 1 || w.type === 'race') continue
         for (const sn of Object.values(w.sessions ?? {})) {
           if (!sn || !isLongRun(sn)) continue
-          if (typeof sn.duration_mins === 'number') peakLrMins = Math.max(peakLrMins, sn.duration_mins)
+          if (typeof sn.duration_mins === 'number') planLrMinsDelivered = Math.max(planLrMinsDelivered, sn.duration_mins)
         }
       }
       const blamesVolume = note.includes('your weekly volume is what limits it')
@@ -8530,14 +8544,14 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         })
       }
 
-      if (blamesVolume && capMins > 0 && peakLrMins > 0 && peakLrMins + tol >= capMins) {
+      if (blamesVolume && capMins > 0 && planLrMinsDelivered > 0 && planLrMinsDelivered + tol >= capMins) {
         violations.push({
           code: 'INV-PLAN-LR-SHORTFALL-CAUSE',
           principle_ref: 'CoachingPrinciples §80 Am.1, §40c',
           severity: 'error',
           week: 0,
-          message: `Long-run shortfall note blames weekly volume, but the peak long run (${Math.round(peakLrMins)} min) is within ${tol} min of its ${capMins}-minute cap — the ceiling is what bound it. §40c requires the note to name the constraint that is actually binding.`,
-          actual: `note blames weekly volume; long run ${Math.round(peakLrMins)} min vs cap ${capMins} min`,
+          message: `Long-run shortfall note blames weekly volume, but the peak long run (${Math.round(planLrMinsDelivered)} min) is within ${tol} min of its ${capMins}-minute cap — the ceiling is what bound it. §40c requires the note to name the constraint that is actually binding.`,
+          actual: `note blames weekly volume; long run ${Math.round(planLrMinsDelivered)} min vs cap ${capMins} min`,
           expected: `note names the long-run ceiling when the long run is within ${tol} min of it`,
         })
       }

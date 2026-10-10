@@ -85,7 +85,7 @@ export const MUTATIONS: Mutation[] = [
     meta.race_distance_km = km
     const cap = km >= 40 ? 210 : km >= 20 ? 135 : km >= 9 ? 120 : 90
     meta.long_run_shortfall_note =
-      'Your longest run tops out at 3h 28. For a race you will likely be moving for around 5h 38, '
+      'Your longest run in the peak weeks tops out at 3h 28. For a race you will likely be moving for around 5h 38, '
       + 'and we would normally want it nearer 3h 57, but your weekly volume is what limits it: the long '
       + 'run is sized as a share of the week, and this week cannot carry more.'
     // Park the longest long run one minute under the ceiling.
