@@ -48,6 +48,8 @@ export default function RefusalView({
   offerFailed,
   onAccept,
   onAdjust,
+  ackLabel,
+  onAcknowledge,
 }: {
   isRefusal: boolean
   message: string | null
@@ -60,8 +62,22 @@ export default function RefusalView({
   offerFailed: boolean
   onAccept: () => void
   onAdjust: () => void
+  /**
+   * §44 / §52 step two — the consent label, when this refusal is a WARNING the
+   * runner may acknowledge rather than a decision they cannot move.
+   *
+   * ⚠️ AUTHORED SERVER-SIDE (`lib/plan/warnAcknowledgement.ts → ACK_LABEL`), like
+   * every other string here. `null` when the refusal is not acknowledgeable, which
+   * is most of them: §111, §113 and every `block` tier are not negotiable and must
+   * NOT grow a button that implies they are.
+   */
+  ackLabel?: string | null
+  onAcknowledge?: () => void
 }) {
   const showOffer = isRefusal && !!offer
+  // An acknowledgeable warning never coexists with a §118 offer: the offer rides a
+  // BASE-VOLUME refusal and the warning rides §44/§52, which are different errors.
+  const showAck = isRefusal && !showOffer && !!ackLabel && !!onAcknowledge
 
   return (
     <>
@@ -144,6 +160,34 @@ export default function RefusalView({
           <Button variant="secondary" size="compact" fullWidth 
             onClick={onAdjust} style={{ marginTop: '4px' }}>
             Adjust my answers
+          </Button>
+        </>
+      ) : showAck ? (
+        /* §44 / §52 — THE SECOND STEP OF A TWO-STEP PATTERN (`PREP-ACK-NO-WRITER-01`).
+           §44: *"first call surfaces the warning, second call (with explicit
+           acknowledgment) generates."* This screen IS the first call. Step two was
+           never built, so a warn-band runner was refused with no way forward while the
+           engine was built to admit them.
+
+           ⚠️ THE CONSENT IS SECONDARY AND "ADJUST" IS PRIMARY, which inverts the offer
+           branch above, deliberately. 🏃 Hutchinson, binding (Coaching Board
+           2026-10-10): the acknowledgment is a DISTINCT PRIOR STEP and a warn-band
+           runner must not reach a plan in one tap. In the P-15 branch the offer IS the
+           coaching recommendation, so it leads. Here the recommendation is one of the
+           alternatives above, and consenting to a compressed block is the runner
+           overriding us. **The thing we advise goes first.**
+
+           ⚠️ Not a modal, not a checkbox, and the label is a consent rather than a
+           build ("I know it is tight. Build it anyway."), so the two steps cannot read
+           as one button that appeared twice. */
+        <>
+          <Button variant="primary" fullWidth
+            onClick={onAdjust}>
+            Adjust my answers
+          </Button>
+          <Button variant="secondary" size="compact" fullWidth
+            onClick={onAcknowledge} style={{ marginTop: '4px' }}>
+            {ackLabel}
           </Button>
         </>
       ) : (

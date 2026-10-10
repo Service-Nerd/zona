@@ -102,11 +102,24 @@ describe('P-15 — a refusal never terminates without a named next action', () =
     expect(ROUTE).toContain('NextResponse.json({ plan: baseBuildPlan })')
   })
 
-  it('never a dead end: adjusting the answers stays visible alongside the offer', () => {
+  it('never a dead end: EVERY CTA branch keeps the adjust path', () => {
     // ux-principles bars dead ends and the design system treats a CTA with no
-    // visible alternative as a dark pattern. Both branches keep the path.
-    const count = VIEW.split('Adjust my answers').length - 1
-    expect(count, 'the secondary path must exist in BOTH the offer and no-offer branches').toBe(2)
+    // visible alternative as a dark pattern.
+    //
+    // 🔴 THIS ASSERTED `toBe(2)` AND I AM NOT BUMPING IT TO 3. `PREP-ACK-NO-WRITER-01`
+    // added a THIRD branch (§44/§52's acknowledgeable warning), and a magic number
+    // here would have to be edited by hand every time a branch is added — which is
+    // the moment someone edits it to match reality instead of checking whether
+    // reality is right. **Derive it.**
+    //
+    // The invariant is not "there are two of these". It is **no CTA branch
+    // terminates without the adjust path**, so the count of adjust affordances must
+    // equal the count of CTA branches.
+    const adjustAffordances = (VIEW.match(/onClick=\{onAdjust\}/g) ?? []).length
+    // The CTA branches are the arms of the hierarchy block: `showOffer ? … : showAck ? … : …`.
+    const branches = 1 + (VIEW.match(/\n      \) : /g) ?? []).length
+    expect(adjustAffordances, 'a CTA branch exists with no visible way back').toBe(branches)
+    expect(branches, 'fewer than two branches means the slice stopped matching').toBeGreaterThanOrEqual(2)
   })
 
   it('is not a modal, which P-15 names explicitly', () => {

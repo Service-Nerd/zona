@@ -160,20 +160,35 @@ function alternativesFor(
   okThreshold: number,
   input: GeneratorInput,
 ): string[] {
+  // 🎯 McMILLAN, BINDING (Coaching Board 2026-10-10, `PREP-ACK-WARN-OFFER-01`):
+  // ORDER BY WHAT THE RUNNER CAN STILL CHANGE. Defer the race first; convert the
+  // goal second; change the distance last.
+  //
+  // The old order led with "race a shorter distance" and put deferring LAST.
+  // McMillan: *"the alternative I want surfaced first is defer the race. If his race
+  // is fixed, he has already lost that option, and THEN the honest trade is the goal.
+  // A man who has gone from 10 to 38 kilometres a week has not been casually
+  // optimistic; handing him 'drop your time goal' first reads as the app not having
+  // noticed."* Changing the distance is the largest concession and goes last.
+  //
+  // ⚠️ EM DASHES REMOVED from the two strings below. They are sentences the runner
+  // READS, which the founder's 2026-09-11 call covers, and `noEmDashApp.test.ts`
+  // could never see them: it guards `components/` and `app/dashboard/`, and this is
+  // `lib/plan/`. A rule enforced on two directories is not enforced on the sentence.
   const alts: string[] = []
+  alts.push(`Defer the race to one with at least ${okThreshold} weeks of prep.`)
+  if (input.goal === 'time_target') {
+    alts.push(`Switch goal to "finish". Finish goals are achievable on shorter timelines.`)
+  }
   if (distKey === 'MARATHON' && weeks >= 8) {
-    alts.push(`Race the half marathon at this event instead — ${weeks} weeks is adequate for an HM build.`)
+    alts.push(`Race the half marathon at this event instead. ${weeks} weeks is adequate for an HM build.`)
   }
   if (distKey === 'HM' && weeks >= 6) {
     alts.push(`Race the 10K at this event instead.`)
   }
   if ((distKey === '50K' || distKey === '100K') && weeks >= 10) {
-    alts.push(`Race the marathon distance at this event instead — ${weeks} weeks is closer to a marathon timeline.`)
+    alts.push(`Race the marathon distance at this event instead. ${weeks} weeks is closer to a marathon timeline.`)
   }
-  if (input.goal === 'time_target') {
-    alts.push(`Switch goal to "finish" — finish goals are achievable on shorter timelines.`)
-  }
-  alts.push(`Defer the race to one with at least ${okThreshold} weeks of prep.`)
   return alts
 }
 
@@ -208,7 +223,16 @@ export function validatePrepTime(input: GeneratorInput, planStart: string): Prep
   if (weeks < warnAt && input.goal === 'time_target') {
     return {
       status: 'warn',
-      message: `${weeks} weeks is under the ${warnAt} weeks a time goal needs for a ${raceLabelFor(distKey)}. The plan will build at maintenance volume rather than a true build, so the time may not be there on the day.`,
+      // ⚕️ SIMS, BINDING: name WHAT GETS COMPRESSED, not only what gets missed.
+      // This said only *"the time may not be there on the day"* — a performance
+      // statement. *"If the warning only talks about the finish time, it is written
+      // for the male athlete who cares about the number."* A short block means less
+      // absolute recovery between hard weeks at the SAME ratio, and for peri/post
+      // menopausal runners that margin is already the thinner one.
+      // 🩹 And it may NOT imply added injury risk: Willy's check confirms §2's ramp,
+      // §3's cadence and §52's ceiling do not loosen for a short block, so it is as
+      // safe per week and simply arrives lower.
+      message: `${weeks} weeks is under the ${warnAt} weeks a time goal needs for a ${raceLabelFor(distKey)}. The plan will build at maintenance volume rather than a true build, so the hard weeks sit closer together with less room to absorb a bad one, and the time is the first thing that gives.`,
       alternatives: alternativesFor(distKey, weeks, warnAt, input),
       weeks_available: weeks,
       weeks_required_ok: warnAt,
@@ -267,10 +291,12 @@ function daysAlternativesFor(
   alts.push(`Increase your training days from ${daysAvailable} to ${okThreshold} per week.`)
   const shorter = shortcuts[distKey]
   if (shorter) {
-    alts.push(`Race the ${shorter} at this event instead — it's trainable on ${daysAvailable} day${daysAvailable === 1 ? '' : 's'}/wk.`)
+    // Em dash removed: a sentence the runner reads (founder, 2026-09-11), and
+    // `noEmDashApp.test.ts` cannot see `lib/plan/`.
+    alts.push(`Race the ${shorter} at this event instead. It's trainable on ${daysAvailable} day${daysAvailable === 1 ? '' : 's'}/wk.`)
   }
   if (input.goal === 'time_target') {
-    alts.push(`Switch goal to "finish" — finish goals tolerate lower training frequencies.`)
+    alts.push(`Switch goal to "finish". Finish goals tolerate lower training frequencies.`)
   }
   return alts
 }
@@ -333,7 +359,10 @@ export function validateDaysAvailable(input: GeneratorInput, planStart?: string)
   if (days < okAt && input.goal === 'time_target') {
     return {
       status: 'warn',
-      message: `${days} day${days === 1 ? '' : 's'} a week is under the ${okAt} days a time goal needs for a ${raceLabelFor(distKey)}. The plan will build at maintenance volume, so expect to finish rather than hit the time.`,
+      // ⚕️ SIMS, BINDING — the §52 twin of the same condition. Said only *"expect to
+      // finish rather than hit the time"*. Fewer days means each run carries more and
+      // the week holds less slack, which is what the runner actually feels.
+      message: `${days} day${days === 1 ? '' : 's'} a week is under the ${okAt} days a time goal needs for a ${raceLabelFor(distKey)}. The plan will build at maintenance volume, so each run has to carry more and one missed session costs more than it would on more days.`,
       alternatives: daysAlternativesFor(distKey, days, okAt, input),
       days_available: days,
       days_required_ok: okAt,
@@ -399,7 +428,7 @@ export class InputEnumError extends Error {
     // and the logs.
     super(
       `We could not read one of your answers, so the plan was not built. ` +
-      `This usually means the app needs a refresh — try again, and if it keeps ` +
+      `This usually means the app needs a refresh. Try again, and if it keeps ` +
       `happening it is ours to fix, not yours.`,
     )
     this.name = 'InputEnumError'
@@ -429,9 +458,9 @@ const FIELD_COPY: Record<string, (value: number, range: InputFieldRange) => stri
   age: (_v, r) =>
     `We need your age to work out your heart-rate zones. It has to be between ${r.min} and ${r.max}.`,
   resting_hr: (_v, r) =>
-    `That resting heart rate does not look right. A real one sits between ${r.min} and ${r.max} bpm — or leave it blank and we will estimate.`,
+    `That resting heart rate does not look right. A real one sits between ${r.min} and ${r.max} bpm, or leave it blank and we will estimate.`,
   max_hr: (_v, r) =>
-    `That maximum heart rate does not look right. A real one sits between ${r.min} and ${r.max} bpm — or leave it blank and we will estimate from your age.`,
+    `That maximum heart rate does not look right. A real one sits between ${r.min} and ${r.max} bpm, or leave it blank and we will estimate from your age.`,
   // Zero is accepted, so this only fires on a negative or missing value —
   // broken input rather than an answer.
   current_weekly_km: () =>

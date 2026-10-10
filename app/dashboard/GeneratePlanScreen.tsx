@@ -3,6 +3,7 @@
 // One decision per screen. Slide transitions between steps.
 'use client'
 
+import { ACK_FIELD, ACK_LABEL, warnKindOf, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import PlanHeroMetrics from '@/components/shared/PlanHeroMetrics'
 import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
@@ -598,6 +599,11 @@ export default function GeneratePlanScreen({
    * runner it would mislead is the one we can least afford to mislead.
    * `lib/plan/baseBuildCopy.ts` is the single owner; this only renders.
    */
+  /** §44/§52 step two — which acknowledgeable warning the last 422 carried, or null.
+   *  `PREP-ACK-NO-WRITER-01`: the route has always returned `requires_acknowledgment`
+   *  and this screen read it ZERO times, so the documented two-step pattern had one
+   *  step. The runner was refused with no way to proceed. */
+  const [ackKind, setAckKind] = useState<WarnKind | null>(null)
   const [errorOffer, setErrorOffer] = useState<
     { title: string; line: string; why: string } | null
   >(null)
@@ -987,7 +993,7 @@ export default function GeneratePlanScreen({
    * ⚠️ Not wired to an onClick directly anywhere: a bare `onClick={handleGenerate}`
    * would pass a MouseEvent as `opts`. Both call sites pass explicitly.
    */
-  async function handleGenerate(opts?: { acceptBaseBuild?: boolean }) {
+  async function handleGenerate(opts?: { acceptBaseBuild?: boolean; acknowledge?: WarnKind }) {
     setRevealComplete(false)
     setRulePlanReady(false)
     setAppStep('generating')
@@ -998,6 +1004,7 @@ export default function GeneratePlanScreen({
     // transport failure mid-acceptance returns the runner to a screen that
     // still has the card they just tapped rather than a bare refusal.
     if (!opts?.acceptBaseBuild) setErrorOffer(null)
+    if (!opts?.acknowledge) setAckKind(null)
 
     const ageYears      = birthYear !== null ? new Date().getFullYear() - birthYear : 30
     const weeklyKmVal   = weeklyKm   ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_ANCHOR
@@ -1129,7 +1136,15 @@ export default function GeneratePlanScreen({
         // P-15 — the accept flag rides the same payload. The server reads it
         // off the raw body and never puts it on GeneratorInput (ADR-003: the
         // engine takes a runner and a tier, not a UI intent).
-        body: JSON.stringify(opts?.acceptBaseBuild ? { ...input, accept_base_build: true } : input),
+        // P-15's accept flag and §44/§52's acknowledgment ride the same payload, and
+        // the ack FIELD NAME comes from `ACK_FIELD` rather than being written here:
+        // both flags are stripped before the input is stored, so a typo would read as
+        // a runner who never acknowledged anything, which is silent by construction.
+        body: JSON.stringify({
+          ...input,
+          ...(opts?.acceptBaseBuild ? { accept_base_build: true } : {}),
+          ...(opts?.acknowledge ? { [ACK_FIELD[opts.acknowledge]]: true } : {}),
+        }),
       })
 
       if (!res.ok) {
@@ -1147,6 +1162,10 @@ export default function GeneratePlanScreen({
         // BASE-VOLUME refusal: a prep-time or days refusal gets no offer and
         // must render none, which is why this reads `data.get_running` rather
         // than inferring an offer from the refusal itself.
+        // §44/§52 step one: surface the warning AND record that it is acknowledgeable.
+        // `warnKindOf` is the shared predicate, so the route and this screen cannot
+        // disagree about what counts as a warning the runner may consent to.
+        setAckKind(warnKindOf(data as { reason?: unknown; prep?: unknown; days?: unknown }))
         const offer = (data as { get_running?: { title?: unknown; line?: unknown; why?: unknown } }).get_running
         setErrorOffer(
           offer && typeof offer.title === 'string' && typeof offer.line === 'string' && typeof offer.why === 'string'
@@ -1247,7 +1266,7 @@ export default function GeneratePlanScreen({
       // the runner said yes and the network dropped, so keep the card and let
       // them retry. It is cleared only on a fresh generate (below) and on a
       // refusal that carries no offer (above).
-      if (opts?.acceptBaseBuild) setOfferFailed(true)
+      if (opts?.acceptBaseBuild || opts?.acknowledge) setOfferFailed(true)
       setAppStep('error')
     }
   }
@@ -1383,6 +1402,8 @@ export default function GeneratePlanScreen({
             message={convertDistanceString(error, preferredUnits) ?? error}
             alternatives={errorAlternatives}
             offer={errorOffer}
+            ackLabel={ackKind ? ACK_LABEL[ackKind] : null}
+            onAcknowledge={ackKind ? () => void handleGenerate({ acknowledge: ackKind }) : undefined}
             offerFailed={offerFailed}
             onAccept={() => void handleGenerate({ acceptBaseBuild: true })}
             onAdjust={() => navigateTo(getLastWizardStep(), 'back')}

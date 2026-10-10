@@ -218,6 +218,14 @@ export async function POST(req: NextRequest) {
           })(),
           training_age: input.training_age,
           goal: input.goal,
+          // 🔴 `reason` WAS NOT RECORDED, so a designed refusal could not be told
+          // apart from a warning the runner could have acknowledged. Measured
+          // 2026-10-10: 12 of 20 `plan_refused_by_design` events are PrepTimeError
+          // and the block/warn split was **unmeasurable from telemetry**, which is
+          // exactly the question `PREP-ACK-NO-WRITER-01` needed answering. Same
+          // class as `REFUSAL-TELEMETRY-LEVEL-01`: a refusal we cannot attribute
+          // tells us nothing about which runners the engine turns away.
+          reason: (err as { reason?: unknown }).reason ?? null,
           weeks_to_race: input.race_date
             ? Math.round((new Date(input.race_date).getTime() - Date.now()) / 6048e5)
             : null,
