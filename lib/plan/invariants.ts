@@ -140,6 +140,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-COMPRESSION-CLASSIFICATION',
   'INV-PLAN-COMPRESSION-SPLIT',
   'INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK',
+  'INV-PLAN-LONGEST-RUN-NOT-IN-BASE',
   'INV-PLAN-TAPER-DELIVERED-DEPTH',
   'INV-PLAN-UNCOVERED-RUNWAY-DECLARED',
   'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED',
@@ -8231,6 +8232,68 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           expected: `≤ ${(peakLr + tol).toFixed(1)}km`,
         })
       }
+    }
+  }
+
+  // INV-PLAN-LONGEST-RUN-NOT-IN-BASE (§23 Amendment) — the plan's single longest run
+  // may not sit in the BASE phase.
+  //
+  // 🩹 Willy, unanimous (Coaching Board `LR-PEAK-NOT-LONGEST-01`, 2026-10-10):
+  // ***"a tissue risk expressed backwards"*** — the largest single session arrives when
+  // bone and tendon are least prepared, and the runs then get SHORTER as the runner gets
+  // fitter. ⚕️ Sims: inverted for peri/post-menopausal bone response, and masters runners
+  // already never-build at 18.6%.
+  //
+  // 🔴 THE RATE WE TOOK TO THE BOARD WAS WRONG BY A TIE-BREAK, AND IT IS WHY THIS SHIPS
+  // AS A MONITOR AND NOTHING ELSE. The board was given **309 of 2,872 (10.8%)**, measured
+  // by scanning for the longest run and keeping the FIRST maximum met — and base weeks
+  // come first, so every plan whose long run never grows (10km, 10km, 10km, 10km) was
+  // counted as an inversion. Re-measured STRICTLY on 2,294 generated plans:
+  //
+  //     base holds the max, first-wins      312   13.6%   ← what was reported
+  //     base STRICTLY greater than later      0    0.0%   ← the actual defect
+  //     tied with a later phase             312   13.6%   ← flat, not backwards
+  //
+  // ⚠️ **It is the same tie flaw already recorded for `INV-PLAN-PEAK-IN-PEAK-PHASE`**
+  // (*"the max is TIED, so it passed"*). A candidate engine pass was written, measured
+  // **identical with and without**, and DELETED rather than shipped: a cap that fires on
+  // nothing is the decorative-config class.
+  //
+  // ✅ THE DEFECT IS REAL, AND IT IS ONE RUNNER. Live fleet, 31 plans with a base long
+  // run: **1 strict inversion** (base 23.0km against a later max of 20.5km) and 1 tie.
+  // ⚠️ That plan is legacy and UNSTAMPED, so it cannot be regenerated and the live-plan
+  // policy leaves it alone. This invariant is what makes it visible to the nightly audit.
+  //
+  // `warn`, deliberately: it fires on 1 of 32 live plans, so `error` would break the
+  // build on debt no new plan creates (the reasoning that holds ADR-022's three at warn).
+  //
+  // ⚠️ STRICTLY GREATER, AND A TIE IS NOT A VIOLATION. A flat long run is §23's
+  // maintenance case, already honestly classified, and 📊 Seiler ruled the related
+  // `time_target` pattern **not a defect**: for a time-targeted 5K the long run yielding
+  // INTO peak is what the distribution demands. ⚕️ **Sims, binding: expressed against the
+  // MECHANISM, never as "5K/10K are exempt"** — there is no distance or goal clause here.
+  {
+    const scored = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
+    const lrOf = (w: Week): number => {
+      const sn = Object.values(w.sessions).find(x => x && isLongRun(x))
+      return sn ? sessionKmSelfPaced(sn) ?? 0 : 0
+    }
+    const maxIn = (phase: string) =>
+      Math.max(0, ...scored.filter(w => w.phase === phase).map(lrOf))
+    const baseLr = maxIn('base')
+    const laterLr = Math.max(maxIn('build'), maxIn('peak'), maxIn('taper'))
+    // A plan with no later long run at all has nothing to invert against.
+    if (baseLr > 0 && laterLr > 0 && baseLr > laterLr) {
+      const wk = scored.find(w => w.phase === 'base' && lrOf(w) === baseLr)
+      violations.push({
+        code: 'INV-PLAN-LONGEST-RUN-NOT-IN-BASE',
+        principle_ref: 'CoachingPrinciples §23 Amendment, §9',
+        severity: 'warn',
+        week: wk?.n ?? 0,
+        message: `The plan's longest run (${baseLr.toFixed(1)}km, week ${wk?.n ?? '?'}) sits in the BASE phase, above everything that follows (${laterLr.toFixed(1)}km). The biggest single session arrives when the runner is least prepared for it, and the long runs then shorten as they get fitter.`,
+        actual: `base ${baseLr.toFixed(1)}km > later ${laterLr.toFixed(1)}km`,
+        expected: `base long run ≤ ${laterLr.toFixed(1)}km`,
+      })
     }
   }
 

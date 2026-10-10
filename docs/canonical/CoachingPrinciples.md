@@ -2184,6 +2184,56 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) which sets `plan.
 
 ---
 
+### §23 Amendment — the plan's longest RUN may not sit in the base phase (Coaching Board `LR-PEAK-NOT-LONGEST-01`, 2026-10-10; founder sign-off same day)
+
+**Principle.** §23's peak-overload requirement extends from weekly **volume** to the
+**single longest session**: the plan's longest run may not be **strictly greater** than
+every long run that follows it. A plan whose biggest day sits in `base` is overloading the
+runner when they are least prepared, and its long runs then shorten as they get fitter.
+
+🩹 **Willy, unanimous:** ***"a tissue risk expressed backwards."*** ⚕️ **Sims:** inverted
+for peri/post-menopausal bone response, and masters runners already never-build at 18.6%.
+
+⚠️ **ONLY THE BASE ARM IS RULED.** The **build** arm is **INSUFFICIENT EVIDENCE** —
+McMillan defends a big day then consolidation as real coaching, Willy would guard it as
+readily as base, and the blocking §24b measurement does not exist. The **taper** arm was
+already ruled by §6 Amendment 1. **Do not extend this to build or taper without evidence.**
+
+⚠️ **A TIE IS NOT A VIOLATION, AND THAT CLAUSE IS THE WHOLE AMENDMENT.** A flat long run
+(10 km in base, build, peak and taper) is §23's maintenance case, already honestly
+classified. 📊 **Seiler's clause:** the related `time_target` pattern is **not a defect** —
+for a time-targeted 5K the long run *yielding into* peak is what the distribution demands,
+total load being finite. ⚕️ **Sims, binding: written against the MECHANISM, never as
+"5K/10K are exempt."**
+
+🔴 **THE RATE PUT TO THIS BOARD WAS WRONG BY A TIE-BREAK, AND IT CHANGED WHAT SHIPPED.**
+The sitting was given **309 of 2,872 (10.8%)**, measured by scanning for the longest run
+and keeping the **first** maximum met — and base weeks come first, so every flat-long-run
+plan counted as an inversion. Re-measured strictly on **2,294** generated plans:
+
+| | n | rate |
+|---|---|---|
+| base holds the max, first-wins *(what was reported)* | 312 | 13.6% |
+| **base STRICTLY greater than every later phase** *(the defect)* | **0** | **0.0%** |
+| tied with a later phase *(flat, not backwards)* | 312 | 13.6% |
+
+⚠️ **It is the same tie flaw already recorded for `INV-PLAN-PEAK-IN-PEAK-PHASE`**
+(*"the max is TIED, so it passed"*). **A candidate engine pass was written, measured
+IDENTICAL with and without, and deleted rather than shipped** — a cap that fires on
+nothing is the decorative-config class this repo keeps paying for.
+
+✅ **The defect is real and it is ONE RUNNER.** Live fleet, 31 plans with a base long run:
+**1 strict inversion** (base 23.0 km against a later max of 20.5 km) and 1 tie. ⚠️ That
+plan is legacy and **unstamped**, so it cannot be regenerated, and the live-plan policy
+leaves it alone.
+
+**Enforcement.** `INV-PLAN-LONGEST-RUN-NOT-IN-BASE`, **`warn`**. It fires on 1 of 32 live
+plans, so `error` would break the build on debt no new plan creates — the reasoning that
+holds ADR-022's three at `warn`. **No numeric:** the rule is ordinal and reuses the phase
+labels `computePhases` already assigns; an unnecessary constant is the decorative-config
+class. **No engine change shipped**, deliberately: the measurement that justified one did
+not survive re-measurement.
+
 ## 24. Long-run race specificity (HM and marathon)
 
 **Principle.** Time-targeted plans for HM and longer require race-distance specificity in the long run. For HM, peak long run MUST reach ≥85% of race distance; for marathon, ≥75%. Distances ≤10K have no such minimum (the long run is for aerobic development, not specificity). The absolute `LONG_RUN_CAP_MINUTES` ceiling per distance still wins — the engine never prescribes a long run that exceeds the time cap, even if doing so would satisfy this floor.
