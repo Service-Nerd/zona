@@ -8139,6 +8139,22 @@ runner who declared one kilometre). A declared zero was also **admitted** at HM 
 
 ---
 
+### 🔻 `PRINCIPLE-REGISTER-CROSSCHECK-01` — three principles an invariant enforces while the manifest says nothing can 🏃 **COACHING BOARD** *(classification, not doctrine)*
+
+**Found 2026-10-09 by the new code→manifest arm in `principleCoverage.test.ts`**, written because the §10 Amendment gave §10 a plan property while its manifest entry still read *"there is no plan property to assert."* **An `exempt` entry is never re-examined** — the gate asks whether every principle is ACCOUNTED FOR, and an exemption with a written reason is accounted for forever. **An exemption's reason is a claim about the code and it rots like any other.**
+
+| § | manifest says | but an invariant names it |
+|---|---|---|
+| **§11** | `exempt` — *"display convention, owned by `lib/format.ts`"* | `INV-PLAN-...` at `invariants.ts:4769` (`'§8 Amendment (2026-10-07), §11'`) |
+| **§34** | `exempt` — *"invariant registry, a meta-principle"* | `invariants.ts:8457` (`'§119 Am. 1, §34, §40c'`) |
+| **§120** | `unverified` — ratified by the board and **deliberately not shipped** | three sites: `:3187`, `:3365`, `:8415` |
+
+**Each needs one of two answers, and the board should give it:** either the manifest entry is reclassified (and for §120 that moves `UNVERIFIED_BASELINE`, which is why it is not being done unilaterally), or the `§N` is dropped from the `principle_ref` because it is **context rather than enforcement** — citing a neighbouring principle for the reader is legitimate and is probably what §11 and §34 are. Both answers are cheap; guessing between them is not.
+
+⚠️ **Baselined at three in `CROSS_CHECK_BASELINE`, and the register may FALL, never rise** — so a fourth fails the build while these three stay visible. Declared debt, not a fix.
+
+---
+
 ### 🔻 `WIZARD-ZERO-LONGEST-VS-WEEKLY-01` — a zero longest run beside a real weekly volume is probably an untouched slider 🧭 **DESIGN BOARD**, then 🏃 **COACHING BOARD**
 
 **McMillan's recorded disagreement from the `WIZARD-ZERO-VOLUME-REFUSAL-01` sitting**, which the

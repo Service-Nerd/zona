@@ -2084,7 +2084,12 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           // §113 Am.1 joins §9 here: the amendment REMOVED this check's floor
           // allowance, so the claim and the code must cite each other or
           // principleCoverage cannot tell them apart from §92's phantom enforcer.
-          principle_ref: 'CoachingPrinciples §9, §113',
+          // §10 joins §9 and §113 here (2026-10-09). The §10 Amendment's
+          // declared-zero rule is enforced by THIS invariant, and
+          // `principleCoverage` reads the manifest, not the code — so without
+          // the ref the two registers would name different enforcers for the
+          // same rule, which is the §92 phantom-enforcer shape.
+          principle_ref: 'CoachingPrinciples §9, §10, §113',
           severity: 'error',
           week: w.n, day: long.day,
           message: `Week ${w.n} long run exceeds longest_recent_run × ${GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER}`,

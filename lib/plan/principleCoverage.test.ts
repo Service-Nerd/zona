@@ -19,10 +19,27 @@ import { INVARIANT_CODES } from './invariants'
  */
 const PRINCIPLES_MD = join(process.cwd(), 'docs', 'canonical', 'CoachingPrinciples.md')
 
-/** Section numbers actually present in the constitution. */
+/**
+ * Section numbers actually present in the constitution.
+ *
+ * 🔴 TWO HEADING FORMS, AND THIS PARSER COULD ONLY SEE ONE (found 2026-10-09).
+ * It matched `^## N. ` only. Newer sections are written `## §N — Title`, and
+ * **§121 ("The race is the test, not the training", Coaching Board 2026-09-22)
+ * is §-form only** — so a ratified principle with an invariant already citing
+ * it (`invariants.ts:3104`) sat outside the coverage register for three weeks,
+ * **invisible to the load-bearing assertion written to catch exactly that.**
+ * §109 and §120 happen to carry both forms, which is why only one section was
+ * lost and why nothing looked wrong.
+ *
+ * The population of a gate about "every rule" cannot be one of two spellings of
+ * a rule's heading. Same class as every other short-population defect here.
+ */
 function principlesInDoc(): number[] {
   const src = readFileSync(PRINCIPLES_MD, 'utf8')
-  return Array.from(src.matchAll(/^## (\d+)\. /gm)).map(m => Number(m[1])).sort((a, b) => a - b)
+  const ns = new Set<number>()
+  for (const m of Array.from(src.matchAll(/^## (\d+)\. /gm))) ns.add(Number(m[1]))
+  for (const m of Array.from(src.matchAll(/^## §\s*(\d+)/gm))) ns.add(Number(m[1]))
+  return Array.from(ns).sort((a, b) => a - b)
 }
 
 describe('principle coverage — every rule is enforced, tested, exempt, or openly unverified', () => {
@@ -279,6 +296,66 @@ describe('principle coverage — every rule is enforced, tested, exempt, or open
     ).toEqual([])
   })
 
+  // 🔴 THE OTHER HALF OF THE JOIN (added 2026-10-09). The arm above — "a
+  // principle that CLAIMS an invariant enforces it is telling the truth" — walks
+  // MANIFEST -> CODE. Nothing walked CODE -> MANIFEST, so an invariant could
+  // name §N while the manifest called §N `exempt` ("nothing in a generated plan
+  // can satisfy or breach it") and the two registers would disagree in silence.
+  //
+  // ⚠️ THIS IS NOT HYPOTHETICAL AND IT WAS MINE. The §10 Amendment
+  // (`WIZARD-ZERO-VOLUME-REFUSAL-01`, 2026-10-09) gave §10 a plan property and
+  // an invariant, while its manifest entry still read *"there is no plan
+  // property to assert."* **An `exempt` entry is never re-examined**, because
+  // the gate asks whether every principle is ACCOUNTED FOR and an exemption with
+  // a written reason is accounted for forever. **An exemption's reason is a
+  // claim about the code and it rots like any other.**
+  //
+  // The three baselined below are NOT mine and are deliberately not reclassified
+  // here: §120's `unverified` is a ratified-but-not-shipped state whose
+  // reclassification needs the board (it would move `UNVERIFIED_BASELINE`), and
+  // §11/§34 are display/meta exemptions whose citing invariants may be naming
+  // them for context rather than enforcement. Filed as `PRINCIPLE-REGISTER-
+  // CROSSCHECK-01`. The baseline may FALL, never rise.
+  const CROSS_CHECK_BASELINE: readonly number[] = [11, 34, 120]
+
+  it('🔴 no invariant names a principle the manifest calls exempt or unverified', () => {
+    const src = readFileSync(join(process.cwd(), 'lib', 'plan', 'invariants.ts'), 'utf8')
+      + readFileSync(join(process.cwd(), 'lib', 'plan', 'planShapeInvariants.ts'), 'utf8')
+    const named = new Set<number>()
+    for (const m of Array.from(src.matchAll(/principle_ref:\s*'([^']*)'/g)))
+      for (const sec of Array.from(m[1].matchAll(/§\s*(\d+)/g))) named.add(Number(sec[1]))
+
+    expect(named.size, 'the principle_ref population stopped matching').toBeGreaterThan(50)
+
+    const conflicts = Array.from(named).sort((a, b) => a - b).filter(n => {
+      const e = manifest.get(n)
+      return e !== undefined && (e.by === 'exempt' || e.by === 'unverified')
+    })
+    const fresh = conflicts.filter(n => !CROSS_CHECK_BASELINE.includes(n))
+    expect(
+      fresh,
+      'An invariant enforces these principles while the manifest says nothing can. ' +
+      'Reclassify the manifest entry in the same commit as the invariant, or drop ' +
+      'the §N from principle_ref if it is context rather than enforcement.',
+    ).toEqual([])
+    // The register may only shrink.
+    expect(conflicts.length, 'the cross-check baseline must FALL, never rise')
+      .toBeLessThanOrEqual(CROSS_CHECK_BASELINE.length)
+  })
+
+  it('every principle an invariant names actually exists in the constitution', () => {
+    // §121 was cited by an invariant and absent from the manifest because the
+    // doc parser could not see its heading form. This asserts the citation side
+    // too, so a typo'd or retired section number cannot sit in a principle_ref.
+    const src = readFileSync(join(process.cwd(), 'lib', 'plan', 'invariants.ts'), 'utf8')
+      + readFileSync(join(process.cwd(), 'lib', 'plan', 'planShapeInvariants.ts'), 'utf8')
+    const named = new Set<number>()
+    for (const m of Array.from(src.matchAll(/principle_ref:\s*'([^']*)'/g)))
+      for (const sec of Array.from(m[1].matchAll(/§\s*(\d+)/g))) named.add(Number(sec[1]))
+    const dangling = Array.from(named).sort((a, b) => a - b).filter(n => !doc.includes(n))
+    expect(dangling, 'an invariant cites a section that is not in the constitution').toEqual([])
+  })
+
   it('the unverified debt does not grow', () => {
     // SWEEP-BASELINE-01's pattern. The count may FALL — lower the baseline in
     // the same commit that classifies one, which locks the progress in. It may
@@ -297,6 +374,8 @@ describe('principle coverage — every rule is enforced, tested, exempt, or open
     // read on every build rather than measured by hand when someone wonders.
     const by = (k: string) => PRINCIPLE_COVERAGE.filter(e => e.by === k).length
     const accounted = by('invariant') + by('test') + by('exempt')
+    // ⚠️ `doc.length` moved 120 -> 121 on 2026-10-09 when the parser learned the
+    // second heading form. The number was never 120; the parser was.
     // eslint-disable-next-line no-console
     console.log(
       `\n  coaching principles: ${doc.length}` +

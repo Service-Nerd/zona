@@ -126,7 +126,22 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 7, by: 'invariant', ref: 'INV-PLAN-QUALITY-LONG-SPACING' },  // Hard / easy — never two hard days in a row
   { n: 8, by: 'invariant', ref: 'INV-PLAN-QUALITY-PER-WEEK' },  // Quality session frequency — fitness ceiling
   { n: 9, by: 'invariant', ref: 'INV-PLAN-MIN-SESSION-SIZE' },  // Long-run rules — fraction of weekly, capped by distance
-  { n: 10, by: 'exempt', why: 'Algorithm formula (Daniels VDOT discount). INV-CFG-003 exempts formula constants; there is no plan property to assert.' },  // VDOT conservatism — protect users from themselves (selective
+  // 🔴 WAS `exempt`, AND ITS REASON WENT STALE ON 2026-10-09, three hours after
+  // the amendment that invalidated it. The entry read: *"Algorithm formula
+  // (Daniels VDOT discount). INV-CFG-003 exempts formula constants; there is no
+  // plan property to assert."* True of §10 as written; **false of §10 as
+  // amended.** The §10 Amendment (`WIZARD-ZERO-VOLUME-REFUSAL-01`) added a rule
+  // that IS a plan property — a declared `longest_recent_run_km = 0` is the
+  // lowest state, so the week-1/2 long run of a declared-zero runner must not
+  // exceed a runner who declared more — and `INV-PLAN-WEEK-1-2-LONG-CAP`
+  // enforces it on every generated plan.
+  //
+  // ⚠️ NOTHING FLAGGED IT, AND THAT IS THE CLASS: an `exempt` entry is never
+  // re-examined, because the gate asks whether every principle is ACCOUNTED FOR
+  // and an exemption with a written reason is accounted for forever. An
+  // exemption's reason is a claim about the code, and it rots like any other.
+  { n: 10, by: 'invariant', ref: 'INV-PLAN-WEEK-1-2-LONG-CAP',
+    why: 'The VDOT-discount half remains a formula with no plan property (INV-CFG-003). The §10 Amendment half is enforced: a DECLARED zero longest run is the lowest state, so `sessionFloorsFor` resolves it to MIN_SESSION_DISTANCE_ABSOLUTE_KM and the week-1/2 cap applies to it. Ordering across runners is `lib/plan/earlyLongRunMonotonic.test.ts`, which an invariant cannot see.' },  // VDOT conservatism — protect users from themselves (selective
   { n: 11, by: 'exempt', why: 'Display convention (ranges not points), owned by lib/format.ts under ADR-015 — a formatting rule, not a prescription.' },  // Pace ranges, not points
   { n: 12, by: 'invariant', ref: 'INV-PLAN-EASY-RUN-ZONE-CAP' },  // Easy-run zone cap — Z2 ceiling
   { n: 13, by: 'test', ref: 'lib/plan/fitnessThresholds.test.ts', why: 'The three levels and where each boundary falls. §13\'s DERIVATION rule was superseded by §79 (dual-signal); what it still owns is the definition, and nothing asserted it.' },  // Fitness classification — VDOT first, volume fallback
@@ -258,6 +273,21 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   // This entry is `invariant` for what shipped, and the deferral is named in §125
   // rather than left as a principle claiming enforcement it does not have.
   { n: 125, by: 'invariant', ref: 'INV-PLAN-STEP-PACE-FROM-GUIDE' },  // A reshape must be rare, and driven by a signal that is not noise  // A run is scored against the band its SESSION prescribes, not the band its TYPE names. ⚠️ `by: 'test'` AND NOT `'invariant'`, DELIBERATELY: `validatePlan()` takes a `Plan` and asks whether the plan is legal, while §123 asks whether the SCORER and the CATALOGUE agree — a question about two modules that no plan can answer. Shoehorning it into `plan-invariants.md` would make it read a plan it does not need. 🔴 `INV-SCORE-PRESCRIBED-REACHABLE` asserts that every session executed exactly as its own `main_set_structure` prescribes can reach 100 on HR discipline, over `generateRulePlan`'s real output across five cohorts — not a fixture. It carries its own falsification arm: the same perfect execution scored under the pre-§123 TYPE-only rule goes RED on `progressive_tempo`, which is the session that was wrong. ⚠️ What it does NOT cover: the 93.5% of live analyses with no per-zone histogram, which still fall through to the legacy Z2-anchored figures.
+  // 🔴 ADDED 2026-10-09, AND IT SHOULD HAVE BEEN HERE SINCE 2026-09-22.
+  // §121 is written `## §121 — ...` while every older section is `## N. ...`,
+  // and `principlesInDoc()` matched only the second form — so the gate whose
+  // whole job is "every principle has an entry" could not see this one, and a
+  // ratified principle with an invariant already citing it sat outside the
+  // register for three weeks. The parser now reads both forms, which is what
+  // surfaced this.
+  //
+  // ⚠️ CLASSIFIED FROM THE EVIDENCE, NOT FROM A SITTING: `INV-PLAN-RACE-NOT-VOLUME`
+  // names `CoachingPrinciples §121` in its own `principle_ref`
+  // (`invariants.ts:3104`) and asserts exactly what the principle states — a race
+  // week may not carry more TRAINING volume than the peak phase. The Coaching
+  // Board should confirm the classification; it is recorded rather than left
+  // missing, because missing is the state that hid for three weeks.
+  { n: 121, by: 'invariant', ref: 'INV-PLAN-RACE-NOT-VOLUME' },  // The race is the test, not the training
   { n: 120, by: 'unverified',
     why: 'RATIFIED, NOT SHIPPED (Coaching Board 2026-09-21, HM-ANCHOR-VS-GOAL-01). '
        + 'On a time-target plan the HM anchor must resolve to GOAL pace, as T has since '
