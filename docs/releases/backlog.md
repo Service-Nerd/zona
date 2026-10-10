@@ -4950,11 +4950,24 @@ ONLY, not `roadmap.md`.** So four NOW lines sat marked open with registry rows a
 `SITE-BTN-INVERT-01`) while the audit said ALL CLEAN. Extending that arm to the roadmap needs no
 parser — it is the same first-cell comparison against a second file.
 
-#### 🔻 `BASEBUILD-AUDIT-BLIND-01` — base-build plans carry no `generator_input`, so nothing can audit them *(P2, filed 2026-10-04)* ⚙️ **NO BOARD**
+#### 🔻 `BASEBUILD-AUDIT-BLIND-01` — stored plans carrying no `generator_input` cannot be validated or classified *(P2, filed 2026-10-04 · re-measured 2026-10-10)* ⚙️ **NO BOARD**
+
+🔴 **RE-MEASURED 2026-10-10 AGAINST PRODUCTION, AND THE ITEM'S NAME IS WRONG. 9 of 34 plans are unstamped, and SEVEN OF THE NINE ARE RACE PLANS, not base-build:**
+
+| kind | n | dates |
+|---|---|---|
+| `(race)` | **7** | 2026-04-28 · 05-15 · 05-28 · 06-10 · 06-11 · 06-21 · 06-26 — all genuinely pre-PV2-A, predating the field |
+| `base_build` | 2 | `812e7e2e` (10-02) · `3df045d5` (10-09) |
+
+✅ **The PRODUCER half is fixed** (`BASEBUILD-GENINPUT-01`, 2026-10-09), so no new plan can join either group — the stamp is written at construction for all four producers.
+
+⚠️ **THE RESIDUAL SPLITS, AND ONLY HALF OF IT HAS AN OWNER.** The 2 base-build rows are `BASEBUILD-GENINPUT-REMEDIATION-01` (founder-gated, live-plan policy). **The 7 legacy race plans are named by no other item** — they are the reason this one stays open, and the reason its title no longer says "base-build". "8 of 30" was true on 2026-10-04; the denominator grew.
+
+⚠️ **For the 7, a backfill is NOT obviously safe and that is the open question** — the same trap `BASEBUILD-GENINPUT-REMEDIATION-01` records: a stamp reconstructed from the plan's own flattened meta would be missing fields the input had, and **would look complete**. Decide per field what is recoverable before writing anything.
 
 ⚙️ **NO BOARD.** A coverage gap, not a prescription question.
 
-🔴 **8 of 30 stored plans cannot be validated OR classified at all** — no `generator_input`, so
+🔴 **Originally measured as 8 of 30 stored plans; now 9 of 34** — no `generator_input`, so
 `validatePlan` has no second argument and `regressionVsNewRule` has nothing to regenerate from. They
 are absent from the audit's `invalid` count, from Q4, and from any future remediation. **A defect in
 one of them would be invisible.**
