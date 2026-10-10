@@ -14,7 +14,7 @@
 // quality session" through for FOURTEEN WEEKS (analysis F4/N4). Those must still fire,
 // and they are asserted below. A negation fix that swallows them re-opens the original.
 import { describe, it, expect } from 'vitest'
-import { copyClaimsIntensity, withoutNegatedClauses } from './invariants'
+import { copyClaimsIntensity, withoutNonClaimClauses } from './invariants'
 
 /** The three week themes that were actually discarded in production on 2026-10-02. */
 const LIVE_HONEST_DELOADS: Array<[string, string]> = [
@@ -60,10 +60,57 @@ describe('ENRICH-COPY-NEGATION-01', () => {
     expect(copyClaimsIntensity('Build', 'A lighter tempo than last week.')).toBe(true)
   })
 
+  // ── COPY-CLAIM-CROSS-WEEK-01 (2026-10-10) ────────────────────────────────
+  // The SAME defect in its other form, left alone for eight days after negation
+  // was fixed. A paid runner's new 20-week London plan lost weeks 12 and 20.
+  // ⚠️ The two rejections needed TWO different signals, so a fix for only the
+  // absorption one would have been a third instance of the one-twin class.
+
+  /** Verbatim from `plan_enrich_failed.detail.messages`, 2026-10-10 17:30, tier=paid. */
+  const LIVE_CROSS_WEEK: Array<[string, string]> = [
+    ['Build — recovery and consolidation',
+     'Deload week. No quality work. Long run drops to 15.5 km. Your system absorbs the threshold work from weeks 10 and 11.'],
+    ['Race — execute',
+     'London Marathon. The work is done. You have built from 25 km/week to a 52 km peak. You have run 28 km long runs and held threshold pace for weeks. Go run your race.'],
+  ]
+
+  it('6. 🔴 the two LIVE cross-week rejections no longer read as claims', () => {
+    for (const [label, theme] of LIVE_CROSS_WEEK) {
+      expect(copyClaimsIntensity(label, theme),
+        `discarded in production on 2026-10-10 and honest: "${label}"`).toBe(false)
+    }
+  })
+
+  it('7. prior attribution disarms only what FOLLOWS it', () => {
+    // The work belongs to another week → a mention.
+    expect(copyClaimsIntensity('Deload', 'Your system absorbs the threshold work from weeks 10 and 11.')).toBe(false)
+    // ...but the attribution must not reach into the next clause and silence a real claim.
+    expect(copyClaimsIntensity('Build', 'Absorbs last week. One threshold session.')).toBe(true)
+    // ...and a backward reference AFTER the keyword disarms nothing (arm 4's direction).
+    expect(copyClaimsIntensity('Build', 'A lighter tempo than last week.')).toBe(true)
+    expect(copyClaimsIntensity('Build', 'Back to threshold work after the time trial.')).toBe(true)
+  })
+
+  it('8. "you have" ALONE is not a disarmer — it needs a completion participle', () => {
+    // 🔴 The narrowing that keeps this from swallowing a real claim. "You have X"
+    // is the most natural way to STATE this week's content.
+    expect(copyClaimsIntensity('Build', 'You have one quality session this week.')).toBe(true)
+    expect(copyClaimsIntensity('Build', 'You have a threshold run on Wednesday.')).toBe(true)
+    // ...while the retrospective form is a mention.
+    expect(copyClaimsIntensity('Race', 'You have held threshold pace for weeks.')).toBe(false)
+  })
+
+  it('9. the prior-attribution class is not vacuous', () => {
+    const stripped = withoutNonClaimClauses(
+      'your system absorbs the threshold work from weeks 10 and 11. one tempo session.')
+    expect(stripped, 'the attributed clause survived').not.toContain('absorbs')
+    expect(stripped, 'the real claim was swallowed').toContain('tempo')
+  })
+
   it('5. the stripper is not vacuous — it removes something and keeps something', () => {
     // An empty-population guard: if this ever returns the input unchanged, or
     // everything, the arms above pass for the wrong reason.
-    const stripped = withoutNegatedClauses('no quality work. one threshold session.')
+    const stripped = withoutNonClaimClauses('no quality work. one threshold session.')
     expect(stripped, 'the negated clause survived').not.toContain('quality')
     expect(stripped, 'the real claim was swallowed').toContain('threshold')
   })

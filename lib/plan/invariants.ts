@@ -839,19 +839,63 @@ export const COPY_CLAIMS_HARD = /feels? hard/
 const CLAUSE_SPLIT = /[.;:]|\s—\s/
 const NEGATOR = /\b(no|not|none|never|without|zero|removed?|drops? out|comes? out)\b/
 
-/** The copy with negated clauses removed, for claim-matching only. */
-export function withoutNegatedClauses(text: string): string {
+/**
+ * 🔴 THE SECOND WAY A MENTION IS NOT A CLAIM: THE WORK BELONGS TO ANOTHER WEEK.
+ *
+ * COPY-CLAIM-CROSS-WEEK-01 (2026-10-10). Negation was fixed on 2026-10-02 after it
+ * threw away 3 live enrichments. **The identical defect in its other form was left
+ * alone for eight days** — "the remedy applied to one twin", which is the
+ * most-recorded survival class in `/zona-debug`'s catalogue. Both halves say the
+ * same thing: the keyword is in the sentence, and the sentence is not a promise
+ * about THIS week.
+ *
+ * ⚠️ MEASURED ON LIVE TRAFFIC, 2026-10-10. A **paid** runner's brand-new 20-week
+ * London plan lost its AI copy on weeks 12 and 20, and the two rejections needed
+ * two different signals — which is why a fix for only the first one would have
+ * been a third instance of the same mistake:
+ *   · w12 "Deload week. No quality work. Long run drops to 15.5 km. Your system
+ *     ABSORBS THE THRESHOLD WORK FROM WEEKS 10 AND 11."   → absorption verb
+ *   · w20 "London Marathon. The work is done. YOU HAVE RUN 28 km long runs and
+ *     HELD THRESHOLD PACE for weeks. Go run your race."    → past-perfect retrospective
+ *
+ * Scoped by the same three rules the negator states, deliberately:
+ *   · clause-bounded, so an attribution cannot reach into the next sentence;
+ *   · it disarms only when it appears BEFORE the keyword — both live cases do;
+ *   · the list is closed and short. `you have` alone is NOT in it — "You have one
+ *     quality session this week" IS a claim — so it requires a completion
+ *     participle (`run|built|held|done|completed`).
+ *
+ * ⚠️ IT MUST NOT SWALLOW THE REGRESSION THIS CHECK EXISTS FOR, exactly as the
+ * negator must not. *"One quality session. Everything else stays easy."* and
+ * *"Build — first quality session"* carry no prior attribution and still fire.
+ * Asserted in `copyClaimNegation.test.ts`, both directions.
+ */
+const PRIOR_ATTRIBUTION = /\b(absorbs?|absorbing|consolidat(?:e|es|ed|ing)|recover(?:y|s|ing)?\s+from|you\s+have\s+(?:run|built|held|done|completed)|you've\s+(?:run|built|held|done|completed)|from\s+weeks?\s+\d|last\s+week|previous\s+week)/
+
+/** Every token class that makes a clause a MENTION rather than a CLAIM. */
+const DISARMERS = [NEGATOR, PRIOR_ATTRIBUTION] as const
+
+const clauseClaims = (s: string): boolean =>
+  COPY_CLAIMS_INTENSITY_NAMED.test(s)
+  || COPY_CLAIMS_INTENSITY_IMPLIED.test(s)
+  || COPY_CLAIMS_HARD.test(s)
+
+/**
+ * The copy with non-claim clauses removed, for claim-matching only.
+ *
+ * ⚠️ RENAMED from `withoutNegatedClauses` in the same commit that gave it a second
+ * token class. The old name described ONE of the two reasons a clause is disarmed,
+ * and a name that documents half a rule is how the other half goes missing — which
+ * is precisely what happened here for eight days.
+ */
+export function withoutNonClaimClauses(text: string): string {
   return text
     .split(CLAUSE_SPLIT)
-    .filter(clause => {
-      const neg = NEGATOR.exec(clause)
-      if (!neg) return true
-      // A negator only disarms the clause if it precedes the thing being claimed.
-      const after = clause.slice(neg.index + neg[0].length)
-      return !(COPY_CLAIMS_INTENSITY_NAMED.test(after)
-        || COPY_CLAIMS_INTENSITY_IMPLIED.test(after)
-        || COPY_CLAIMS_HARD.test(after))
-    })
+    .filter(clause => !DISARMERS.some(re => {
+      const m = re.exec(clause)
+      // A disarmer only disarms the clause if it precedes the thing being claimed.
+      return m ? clauseClaims(clause.slice(m.index + m[0].length)) : false
+    }))
     .join(' | ')
 }
 
@@ -894,7 +938,7 @@ export function copyClaimsIntensity(label?: string | null, theme?: string | null
   // recorded cost of producer and checker drifting apart here was 84 plans. If only
   // the checker learned about negation, the engine would go on rewriting a week
   // whose copy already says "no quality work" — correct copy, replaced for nothing.
-  const text = withoutNegatedClauses(`${(label ?? '').toLowerCase()} | ${(theme ?? '').toLowerCase()}`)
+  const text = withoutNonClaimClauses(`${(label ?? '').toLowerCase()} | ${(theme ?? '').toLowerCase()}`)
   return COPY_CLAIMS_INTENSITY_NAMED.test(text)
     || COPY_CLAIMS_INTENSITY_IMPLIED.test(text)
     || COPY_CLAIMS_HARD.test(text)
@@ -1378,10 +1422,10 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // true of THIS week. Applies to the theme AND the label — the label was
       // never checked at all before.
       const labelText = (w.label ?? '').toLowerCase()
-      // Negated clauses removed first — see `withoutNegatedClauses`. "No quality
+      // Non-claim clauses removed first — see `withoutNonClaimClauses`. "No quality
       // work this week" is not a promise of quality, and reading it as one threw
       // away 3 live enrichments on 2026-10-02 alone.
-      const copy = withoutNegatedClauses(`${labelText} | ${themeText}`)
+      const copy = withoutNonClaimClauses(`${labelText} | ${themeText}`)
       // Derived through the shared owner so the enrich prompt (which is told
       // these same two flags) cannot disagree with the check that judges its
       // output — see lib/plan/weekIntensityFlags.ts.
