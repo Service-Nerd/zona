@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-10 — PRINCIPLE-COVERAGE-POPULATION-01 · an exemption's reason rots like any other claim
+
+**Shipped:** the principle-coverage gate now reads both of the constitution's heading forms, §10's classification matches what its own amendment made true, and a new arm walks code → manifest instead of only manifest → code.
+
+**Dev learning:** two registers with a human in between, again. `principleCoverage.ts` is a hand-written manifest saying how each principle is checked; `invariants.ts` carries a `principle_ref` on each violation. The existing test walked manifest → code ("a principle that CLAIMS an invariant is telling the truth") and **nothing walked the other way**, so an invariant could enforce §N while the manifest said nothing in a plan can satisfy or breach it. Four conflicts when I measured. And the doc parser was `^## N. ` while one section is written `## §N — `, so the assertion "every principle has an entry" had a population that excluded a principle. §109 and §120 happen to carry both heading forms, which is exactly why only one section was lost and why nothing ever looked wrong.
+
+**Product/creator learning:** nothing user-facing. What it protects is the claim I make to the founder when he asks "is this covered?" — that claim is only as good as the register's population, and the register had 120 of 121 and said 120 of 120.
+
+**AI-building learning:** I invalidated §10's exemption myself, three hours earlier, and did not notice. The reason it survived is structural and worth keeping: **an `exempt` entry is never re-examined.** The gate asks whether every principle is accounted for, and an exemption with a written reason is accounted for forever — so the one classification that can silently go false is the one nothing ever revisits. The habit to build: when an amendment gives a principle a plan property, its coverage entry is part of the amendment, not paperwork afterwards.
+
+**The honest bit:** my mutation revert did not take. I patched §10 to `exempt` with one tool and reverted with a hand-written string that no longer matched, so the file sat with `ref2: 'x'` in it and the suite stayed red while I thought I had restored it. Caught by grepping the actual line rather than trusting the revert — the "git checkout is not a mutation undo" lesson arriving from a new direction. I also first committed this with the scope naming the item I was deliberately leaving OPEN, which `ship-record-check.py` reads, so it would have demanded a registry row for undone work. Amended before pushing.
+
+**Hook material:** the test that asserts every coaching principle is accounted for could not see one of them, because its heading used `§` instead of a full stop. Three weeks, one invariant already citing it, fully green suite.
+
+**Postable?:** yes
+
+
 ## 2026-10-10 — WIZARD-ZERO-VOLUME-REFUSAL-01 · the item asked the wrong question and the measurement found an inversion
 
 **Shipped:** a declared `longest_recent_run_km = 0` stopped being read as "unknown", so the week-1/2 long-run cap applies to it, and a declared zero is refused at half marathon and above instead of being admitted.
