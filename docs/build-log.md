@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-10 — COPY-CLAIM-CROSS-WEEK-01, BASEBUILD-SCHEMA-CEREMONY-01, AUDIT-STEP-UNDECLARED-01 and BASEBUILD-ENRICH-VISIBILITY-01 · the digest was wrong about the one thing it explained
+## 2026-10-10 — COPY-CLAIM-CROSS-WEEK-01, BASEBUILD-SCHEMA-CEREMONY-01, AUDIT-STEP-UNDECLARED-01, BASEBUILD-ENRICH-VISIBILITY-01 and ENRICH-META-TOKEN-01 · the digest was wrong about the one thing it explained
 
 **Scopes:** `COPY-CLAIM-CROSS-WEEK-01`, `BASEBUILD-SCHEMA-CEREMONY-01`, `AUDIT-STEP-UNDECLARED-01`, `BASEBUILD-ENRICH-VISIBILITY-01`
 
@@ -56,6 +56,22 @@ was about, because an absent field is outside `is not null`. The tempting fix wa
 `'skipped'` and tidy the field — which the metric filters out, leaving the runner just as
 invisible and the record looking healthier. **A tidy value that hides a cohort is worse
 than a null that looks odd.**
+
+**Five, and it is the one I would most like back.** On `ENRICH-META-TOKEN-01` I wrote the
+rejection, then talked myself out of it — the field has a resolving renderer, so why throw
+away good AI copy? — and built an allow-if-resolvable branch instead. **The test file for
+the twin field had already considered exactly that argument and ruled against it the day
+before**, in writing: allowing it *"leaves a token in a field whose only safe render is one
+call site — COACH-INTRO-TOKEN-01's exact defect."* I read that arm only because a mutation
+made me look again. **Reading the adjacent ruling is cheaper than being talked out of the
+right answer by my own reasoning**, and I had the ruling the whole time.
+
+**And one I deliberately did NOT build.** `ENGINE-COPY-SHARPEN-01` looked like a one-line
+loosening. Measured: no runner harm at all (§28 says strides ARE a neuromuscular stimulus,
+so *"Taper — sharpen"* over a week with strides is honest), but the honest fix splits a
+bundled regex, changes a shared predicate's signature, and **reduces the weeks §90 rewrites
+— which changes generated plans.** One `warn` against a generation diff is not my call, so
+it is re-routed with the measurement rather than carried as an open defect.
 
 **Still open and the founder's:** the base-build voice gate (SLT pieces 2 and 3, and Wood's
 condition that it must not ship before the handover), `BASEBUILD-ZONE-CEILING-01`, and
