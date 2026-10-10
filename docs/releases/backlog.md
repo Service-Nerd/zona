@@ -362,6 +362,16 @@ alternatives name the constraint as the lever? The first is a §111 amendment; t
 
 🔻 **Routed, not ruled:** *is a 15-week block with 0–1 long runs correct?* → 🏃 Coaching Board.
 
+📋 **A CONTRACT IS OWED AT BUILD TIME AND THERE IS NONE TODAY.** Checked 2026-10-10:
+`ModifyPlanSheet` has **no contract of its own** — it appears only as a named consumer in
+`docs/contracts/components/sheet.md` — so it sits in the 60-component declared debt
+(`CONTRACT-COVERAGE-03`). ⚠️ **Nothing is stale right now**, because `canModifyPlan` is a `lib/`
+predicate and `BASEBUILD-ADJUST-DOOR-01` changed no prop: `audit-docs.sh`'s contracts arm watches
+**changed API routes and components**, and a `lib/plan/` behaviour change is invisible to it either
+way. **But this item changes what the sheet RENDERS per plan kind**, which is squarely the
+*"update `docs/contracts/` in the same commit"* rule — so the contract is part of this build, not a
+follow-up. Writing it is also a code review, which is the point.
+
 **Ruled as the destination at the `BASEBUILD-ADJUST-DOOR-01` sitting, which withheld the row as
 an INTERIM.** The board bound the interim to this item so it cannot be read later as *"base-build
 runners cannot adjust anything"*.
