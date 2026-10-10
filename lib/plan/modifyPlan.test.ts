@@ -139,3 +139,56 @@ describe('P-02 — the rows and their consequence subtitles', () => {
     expect(new Set(MODIFIABLE_ROWS.map(r => r.group))).toEqual(new Set(['week', 'body', 'race']))
   })
 })
+
+/**
+ * `BASEBUILD-GENINPUT-DOOR-01` — the door stays shut on a base-build plan.
+ *
+ * 🔴 WHY THIS IS A BEHAVIOURAL ARM AND NOT A SOURCE ASSERTION. A source grep for
+ * `'base_build'` in `modifyPlan.ts` passes against this file's own comments, and
+ * it passed against the hand-written predicate I wrote first and then replaced
+ * with the owner. **The question is what `canModifyPlan` RETURNS**, so that is
+ * what is asserted.
+ *
+ * ⚠️ AND THE STAMP IS PRESENT IN EVERY ARM, deliberately. The old predicate was
+ * `!!plan?.meta?.generator_input`, so an UNSTAMPED base-build plan returns false
+ * for the old reason and would keep this green with the new line deleted. The
+ * fixtures are stamped, which is the state `BASEBUILD-GENINPUT-01` put every
+ * future base-build runner in and the state the remediation backfill creates.
+ */
+describe('BASEBUILD-GENINPUT-DOOR-01 — a base-build plan is not race-modifiable', () => {
+  const kinded = (kind: string | undefined): Plan => ({
+    meta: { race_name: 'Base building', race_date: '', plan_kind: kind, generator_input: base },
+    weeks: [],
+  } as unknown as Plan)
+
+  it('a STAMPED base-build plan is NOT modifiable — the sheet regenerates a race plan', () => {
+    // Falsification: delete the `isBaseBuildPlan` line in modifyPlan.ts and this
+    // goes red. The stamp is present, so the pre-existing arm cannot carry it.
+    expect(canModifyPlan(kinded('base_build'))).toBe(false)
+  })
+
+  it('a stamped RACE plan is still modifiable — the gate is scoped, not a kill', () => {
+    expect(canModifyPlan(kinded('race'))).toBe(true)
+    expect(canModifyPlan(kinded(undefined))).toBe(true)   // legacy rows carry no plan_kind
+  })
+
+  it('the stamp alone no longer decides it, which is the whole defect', () => {
+    // Before this item, `generator_input` present ⇒ door open, for every kind.
+    const bb = kinded('base_build')
+    expect(!!bb.meta?.generator_input).toBe(true)
+    expect(canModifyPlan(bb)).toBe(false)
+  })
+
+  /**
+   * ⚠️ THE OTHER KINDS ARE NAMED SO A NEW ONE CANNOT INHERIT A GUESS. The gate is
+   * scoped to `base_build` because that is the kind measured to produce 0-of-27
+   * and 2-of-27 regenerations. `maintenance` is deliberately left modifiable and
+   * is NOT evidence that it should be — nothing has measured it (0 maintenance
+   * plans in production, 2026-10-10). If a maintenance plan ever reaches a runner,
+   * walk its edit set the same way before trusting this line.
+   */
+  it('names every plan_kind the schema allows, so a new kind is a decision', () => {
+    const kinds = ['race', 'maintenance', 'base_build'] as const
+    expect(kinds.map(k => canModifyPlan(kinded(k)))).toEqual([true, true, false])
+  })
+})

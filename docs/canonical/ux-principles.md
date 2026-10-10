@@ -198,6 +198,46 @@ run must stay in the list to carry it. **The state must be SAID, not removed.**
 — `linkPickerCopy.ts` beside `matchEmptyCopy` and `connectionStaleCopy`. A ternary in JSX
 cannot be called, so which branch renders cannot be proven.
 
+### 🔴 AN AFFORDANCE IS WITHHELD WHEN THE ACTION CANNOT SUCCEED, NOT WHEN THE DATA IS MISSING
+
+**Before a control is offered, the question is not "do we hold what the action needs?" but
+"would the action succeed?" Those are different questions and the first one is the easy one,
+which is why it gets asked instead.**
+
+*(Design Board, `BASEBUILD-ADJUST-DOOR-01`, 2026-10-10. Register row in `design-rulings.md`.)*
+
+⚠️ **IT IS THE INVERSE OF THE ALREADY-DONE STATE ABOVE.** There, every state was handled and
+the SENTENCE was wrong. Here the sentence is fine and the **ACTION** is impossible, so no
+state in the table above is violated: the control renders, the sheet opens, the fields hold
+real values, and the error path even produces a designed message. **Nothing is missing. It
+simply cannot work.**
+
+| | |
+|---|---|
+| 🔴 **The instance** | `canModifyPlan` returned `!!plan.meta.generator_input` — *do we hold the input?* The row it gates asks *can this plan be modified?* The Adjust sheet POSTs the overlaid input to `/api/generate-plan`, **the race generator**, and a base-build runner is on that plan **because the race generator refused them** (§111's base-volume door). Measured by walking all 8 editable keys through the real engine on both live plans: **Sheena 0 of 27 offered edits produce a plan; Tom 2 of 27, and both of those are perverse** — a *tighter* weekday cap and an injury he does not have, because §111 refuses on peak ÷ current volume, so anything that shrinks the plan clears the gate |
+| 🧭 **The standard** | Zhuo: *"a control with a measured 0% success rate is not a capability, it is an affordance."* |
+| 📱 **Why it is worse than silence** | Wroblewski: the 422 is surfaced, so moving a long run to Saturday returns *"5 km a week is too low to build safely to a marathon yet."* **The app argues with a runner who asked about her calendar.** It also breaches P-02's own standing rule against *"implying the runner has failed to do something"* |
+| ✋ **Why it is a category error, not a bug** | Silvanto: a race-plan affordance on a plan whose `race_date` is deliberately `''` so that no countdown can claim a start line. The construction already decided this plan does not speak about a race, and then the sheet's last group is titled *"The race"* |
+
+**The test, and it is one question:** *if the runner takes this action with the most ordinary
+value available, does anything happen?* **Measure it against the real producer** — do not
+reason about it. A control whose only outcome is a refusal is not offered.
+
+⚠️ **WITHHOLDING IS AN INTERIM AND MUST BE RECORDED AS ONE.** Sierra's dissent is on the
+record and was not resolved: a runner on a **15-week** plan who cannot move a long run off a
+day she cannot run has lost a real capability, and *"empty means calm, not broken"* covers a
+blank space, not *"you may change nothing for fifteen weeks."* **The fix is to point the
+action at the right producer** (`BASEBUILD-ADJUST-REBUILD-01` — the sheet rebuilds the base
+build), not to hide the row forever. A withheld affordance with no filed destination becomes
+a decision nobody made.
+
+⚠️ **Nothing replaces the row.** An inapplicable affordance is not an empty state, and a
+placeholder would be chrome — the empty-state illustration kill (2026-09-22) governs.
+
+⚠️ **AND THE PREDICATE IS NOT RE-WRITTEN AT THE CONTROL.** `isBaseBuildPlan`
+(`validateStoredPlan.ts`) is the single owner of the kind test, so the validator and the
+affordance cannot disagree about what a base-build plan is.
+
 ---
 
 ## Upgrade Prompt UX Rules

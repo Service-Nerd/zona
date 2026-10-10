@@ -163,11 +163,46 @@ describe('BASEBUILD-GENINPUT-01 — every plan producer stamps meta.generator_in
     expect(out.meta.generator_input).toBe(incoming.meta.generator_input)
   })
 
-  // The CONSEQUENCE, asserted at the consumer rather than at the field — the
-  // reason the stamp matters at all, and the arm that would have failed loudest.
-  it('a base-build plan is now modifiable, audit-classifiable and save-validated', async () => {
+  /**
+   * The CONSEQUENCE, asserted at the consumer rather than at the field — the reason
+   * the stamp matters at all.
+   *
+   * 🔴 THIS ARM IS REVERSED, AND THE REASON IS WRITTEN HERE RATHER THAN IN THE
+   * COMMIT, BECAUSE A REVERSED ASSERTION WITH NO REASON IS ONE SOMEBODY REINSTATES.
+   * It read `expect(canModifyPlan(plan)).toBe(true)` and was described as "the arm
+   * that would have failed loudest". Design Board, `BASEBUILD-ADJUST-DOOR-01`,
+   * 2026-10-10: **SHIP WITH AMENDMENT — the row is withheld on a base-build plan.**
+   *
+   * ⚠️ THE OLD SENTENCE ASSERTED THE MECHANISM AND CLAIMED THE INTENT. "Modifiable"
+   * was true of the predicate (the stamp is there, it returns true) and false of the
+   * runner (the sheet POSTs to `/api/generate-plan`, the RACE generator, and a
+   * base-build runner is on that plan BECAUSE the race generator refused them).
+   * Measured on both live base-build plans, walking all 8 editable keys through the
+   * real engine:
+   *
+   *     Sheena  0 of 27 offered edits produce a plan
+   *     Tom     2 of 27 — `max_weekday_mins: 30` (a TIGHTER cap) and
+   *             `injury_history: ['knee']` (an injury he does not have)
+   *
+   * Zhuo: *"a control with a measured 0% success rate is not a capability."*
+   * Wroblewski: it is not even silent — the 422's §111 message is surfaced, so the
+   * app ARGUES with a runner who only moved her long run.
+   *
+   * ⚠️ RECORDED AS AN INTERIM. The destination is `BASEBUILD-ADJUST-REBUILD-01`: the
+   * sheet should rebuild the BASE BUILD, not a race plan. Sierra's dissent is on the
+   * record — a 15-week plan with no editable control is a capability loss. **Do not
+   * read this arm as "base-build runners cannot adjust anything".**
+   *
+   * The other two halves of the old sentence are unaffected and still asserted
+   * above: the stamp makes the plan audit-classifiable and save-validated.
+   */
+  it('a base-build plan is stamped but NOT race-modifiable (BASEBUILD-ADJUST-DOOR-01)', async () => {
     const { canModifyPlan } = await import('./modifyPlan')
     const { plan } = generateGetRunningPlan(input(), PINNED, 29)
-    expect(canModifyPlan(plan)).toBe(true)
+    // The stamp IS present — that is BASEBUILD-GENINPUT-01 and it still holds.
+    expect(plan.meta.generator_input).toBeTruthy()
+    // And the door is shut anyway, which is the whole point: the stamp was never
+    // what made this plan modifiable.
+    expect(canModifyPlan(plan)).toBe(false)
   })
 })

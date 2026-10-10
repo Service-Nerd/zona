@@ -1,5 +1,10 @@
 import type { GeneratorInput, Plan } from '@/types/plan'
 import { isRaceIdentityChange } from './supersede'
+// ⚠️ THE KIND PREDICATE IS NOT RE-WRITTEN HERE. `isBaseBuildPlan` is its single
+// owner (`validateStoredPlan.ts`), which exists so two policies cannot disagree
+// about what a base-build plan IS — the `deloadCadence` / `TIER-OWNER-01` lesson.
+// Costs nothing: `lib/plan.ts` already pulls that module into the dashboard graph.
+import { isBaseBuildPlan } from './validateStoredPlan'
 
 /**
  * P-02 — what a runner may change about a live plan, and what changing it does.
@@ -132,6 +137,45 @@ export type PlanEdits = Partial<Pick<GeneratorInput, ModifiableKey>>
  * claim nobody re-checks when the second one arrives.
  */
 export function canModifyPlan(plan: Plan | null | undefined): boolean {
+  // 🔴 A BASE-BUILD PLAN IS NOT A RACE PLAN, AND THIS SHEET REGENERATES A RACE
+  // PLAN. `BASEBUILD-GENINPUT-DOOR-01`, 2026-10-10.
+  //
+  // The predicate above asks "do we hold the input?" The row it gates asks "can
+  // this plan be modified?", and for `plan_kind: 'base_build'` the answer is no
+  // for a reason the stamp cannot fix: `runModifyPreview` POSTs the overlaid
+  // input to `/api/generate-plan`, which is the RACE generator. A base-build
+  // runner is on that plan *because* the race generator refused them (§111's
+  // base-volume door, §113's long-run floor), and none of the eight editable
+  // keys is the one that was refused — `current_weekly_km` is deliberately not
+  // modifiable.
+  //
+  // ⚠️ MEASURED on the two live base-build plans, every offered edit walked
+  // (`BASEBUILD-GENINPUT-REMEDIATION-01`'s dry run):
+  //
+  //     Sheena  0 of 27 edits produce a plan
+  //     Tom     2 of 27 — `max_weekday_mins: 30` (a TIGHTER cap) and
+  //             `injury_history: ['knee']` (an injury she/he does not have)
+  //
+  // Both of Tom's work for the same wrong reason: §111 refuses on delivered peak
+  // ÷ current volume, so anything that SHRINKS the plan clears the gate. **The
+  // honest answer is refused and the self-constraining one is admitted** — the
+  // §113 `longest > 0` inversion again, one axis over. §111's monotonicity
+  // guarantee is proven over `current_weekly_km` only (`baseVolume.test.ts`);
+  // the constraint axes were never monotonic and the Adjust sheet turned two of
+  // them into runner-facing controls. Filed for the Coaching Board as
+  // `BASEBUILD-ADJUST-MONOTONIC-01` — proposed, not built, per the standing rule
+  // that coaching logic needs sign-off.
+  //
+  // So the row is withheld for the SAME reason the doc comment above gives for
+  // withholding it from a legacy plan: we do not offer an edit we cannot honour.
+  // This is not the design question "what SHOULD a base-build runner be able to
+  // change?" — that needs a surface that regenerates the base build rather than
+  // a race, and it is filed with the handover item (`BASEBUILD-HANDOVER-01`).
+  //
+  // ⚠️ REGRESSES NOTHING. Measured 2026-10-10: 2 base-build plans in the fleet,
+  // **both unstamped**, so no runner has ever been offered this row. Without this
+  // line the remediation backfill would have been the thing that first offered it.
+  if (isBaseBuildPlan(plan)) return false
   return !!plan?.meta?.generator_input
 }
 

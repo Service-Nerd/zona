@@ -169,26 +169,191 @@ schema — without it a re-parse silently strips them.
 
 ---
 
-### 🔻 `BASEBUILD-GENINPUT-REMEDIATION-01` — **FOUNDER CHOSE BACKFILL; THE PER-FIELD REVIEW SAYS IT CANNOT BE DONE FOR ANY OF THE 9** 👤 **FOUNDER** *(awaiting his call on the finding)*
+### ✅ `BASEBUILD-GENINPUT-REMEDIATION-01` — **SHIPPED 2026-10-10. THE BACKFILL RAN; THE RACE DATE WAS RECOVERABLE AFTER ALL** ⚙️ **NO BOARD** *(founder-supplied input; defect prevention)*
 
-**Founder ruled option B (backfill) on 2026-10-10, conditional on recoverability, thorough testing, and correcting it if we got it wrong.** The review he asked for ran first and **refuses the write**. `scripts/backfill-generator-input-review.ts` — read-only, field set parsed from `types/plan.ts`, never hand-listed.
+**Founder ruled option B (backfill) on 2026-10-10**, conditional on recoverability, thorough
+testing, and correcting it if we got it wrong. He then supplied the race date: **24 April 2027.**
 
-🔴 **ZERO of the 9 plans can be completely stamped, and the two groups fail on opposite fields:**
+🔴 **THE ENTRY SAID THE DATE WAS GONE AND THAT WAS WRONG.** It read *"the race date for those two
+is not approximate — it is gone"*, after I checked `plan_json.meta`, `plan_archive` (0 rows) and
+`user_settings`. The founder asked **"are you confident we don't have their race date? Can we not
+recover it?"** — and it was sitting in `plan_refused_by_design` telemetry as `weeks_to_race`, a
+source the review never read. ⚠️ **Three places checked is not "nowhere", and I wrote "gone" as a
+fact.**
 
-| group | n | has | **missing REQUIRED** |
+⚠️ **MY FIRST INVERSION WAS ALSO WRONG, IN BOTH ANCHOR AND ROUNDING.** I used `plan_start` +
+`Math.floor`; the route uses `Math.round((race_date − Date.now()) / 1 week)` taken at the moment of
+refusal. The window I reported to the founder (26 Apr – 2 May) **excluded his own answer.** Corrected
+against the route's own expression, all four events corroborate it:
+
+| | recorded | predicted from 24 Apr | window admitted |
 |---|---|---|---|
-| base_build (`812e7e2e`, `3df045d5`) | 2 | the volumes | **`race_date`** |
-| race plans (6 real + 1 demo) | 7 | the race date | **`current_weekly_km`, `longest_recent_run_km`** (one also lacks `age`) |
+| Sheena × 2 | 29 | **29 ✅** | 21–27 Apr 2027 |
+| Tom × 2 | 28 | **28 ✅** | 21–27 Apr 2027 |
 
-⚠️ **AND I HAD THIS WRONG WHEN I FILED IT.** The entry said *"`weeks_to_race` 29 and 28 give it to within a week"*. **Measured: `weeks_to_race` is `undefined` on both base-build rows**, `race_date` is `""`, and `user_settings` carries no race date for either user. The race date for those two is **not approximate — it is gone.**
+⚠️ **THE TELEMETRY PINS A WEEK, NOT A DAY.** It refuses a date a week out and **cannot distinguish
+21 Apr from 24 Apr** — falsified both ways. The founder's answer is the authority for the day; the
+corroboration catches a gross error, which is all it claims.
 
-🔴 **AND THE RACE PLANS' GAP IS NOT MERELY UNKNOWN, IT IS NOT INVERTIBLE.** `current_weekly_km` and `longest_recent_run_km` are the two inputs that drive the whole plan shape (§10/CD-6's beginner cap, §111, §113, §45's week-1/2 cap). You cannot read them back from week 1's volume, because week 1 is a **many-to-one image** of those two plus `training_age`, `weeks_at_current_volume`, `fitness_level` and `days_available` — several of which are **also missing**. Different runners produce identical first weeks.
+**Scope: base-build only.** The 7 unstamped RACE plans stay out — their gap is
+`current_weekly_km` / `longest_recent_run_km`, and week 1 is a many-to-one image of those plus
+`training_age`, `weeks_at_current_volume` and `days_available`. Still not invertible.
 
-⚠️ **WHY A PARTIAL STAMP IS WORSE THAN NONE, mechanically.** `canModifyPlan` checks only that the field EXISTS. Any stamp unlocks the Adjust sheet, and `applyEdits` then spreads that input into a regeneration — so an invented `current_weekly_km` would hand the runner a **different plan** on their first edit, having asked them nothing. The sheet is withheld today precisely to prevent that.
+#### 🔴 THE FINDING THAT NEARLY MADE THIS SHIP THE DEFECT
 
-🔻 **BACK TO THE FOUNDER WITH THE FINDING.** The options are now (a) won't-fix, the audit already says so out loud nightly; or (b) **ask the 8 runners for the 2–3 missing answers in-app** — which is not a backfill but a new surface, needs 🧭 Design + 💼 SLT, and runs against his standing *"zero contact with our runners"*. **Nothing will be written until he rules on this.**
+The stamp's **only** runner-visible effect is `canModifyPlan: false → true`. So I walked every
+edit the Adjust sheet offers, through the real engine, on both live plans:
 
-**Full per-field table:** `npx tsx scripts/backfill-generator-input-review.ts`.
+| | offered edits that produce a plan |
+|---|---|
+| Sheena | **0 of 27** |
+| Tom | **2 of 27 — and both are perverse** |
+
+Tom's only two working edits are `max_weekday_mins: 30` (a **tighter** cap) and
+`injury_history: ['knee']` (an injury he does not have). Both work for the same reason: §111
+refuses on delivered peak ÷ current volume, so **anything that shrinks the plan clears the gate.**
+The honest answer is refused; the self-constraining one is admitted — the §113 `longest > 0`
+inversion again, one axis over.
+
+⚠️ **AND THE BACKFILL WOULD HAVE BEEN THE THING THAT OPENED IT.** Measured: **2 base-build plans in
+the fleet, both unstamped** — no runner has ever been offered this row. Gating it regresses nothing;
+*not* gating it introduces the defect. Fixed in the same ship as
+[`BASEBUILD-GENINPUT-DOOR-01`](#) below, and the backfill script **refuses to write** if the gate is
+absent (falsified: gate removed → 0 of 2 targets pass).
+
+#### What landed
+
+- **`scripts/backfill-generator-input.ts`** — dry run by DEFAULT; `--race-date` is **required and
+  never hardcoded**; field set parsed from `types/plan.ts`; population derived, never a list of ids;
+  snapshots every target to `.backups/` **read back from the database** before writing; re-reads and
+  re-validates after writing; **auto-reverts** on any post-write failure; `--revert=<snapshot>` is
+  the recovery path the founder made a condition.
+- **Nine checks per target**, all green on both: telemetry corroborates the date · no foreign keys ·
+  all 7 required fields present · every value byte-identical to the stored meta · survives the JSON
+  round trip · save gate 0 errors · weeks byte-identical · meta byte-identical apart from the stamp ·
+  **Adjust door stays shut**.
+- **Seven consumers measured before/after.** `validateStoredPlan` (nightly audit) **unchanged** —
+  base-build kind reads the weeks, not the stamp. `storedPlanCodes` unchanged. `sessionFloorsFor`
+  unchanged. Save gate turns **on** and returns clean. Audit classifier loses 2 nightly
+  *"cannot classify"* rows. Repair scripts were already eligible via `?? meta`.
+- **Race-countdown risk ruled out:** every runner-facing `race_date` reader uses `meta.race_date`
+  (still `''`). Only `ModifyPlanSheet` reads the nested one.
+
+**What this does NOT prove:** nothing has run on a device; the 7 race plans are untouched; and the
+stamp does not give these two runners a route to their marathon — that is `BASEBUILD-HANDOVER-01`.
+
+---
+
+### ✅ `BASEBUILD-GENINPUT-DOOR-01` — **SHIPPED 2026-10-10. A base-build plan is not race-modifiable** ⚙️ **NO BOARD** *(defect fix restoring `canModifyPlan`'s documented intent)*
+
+`canModifyPlan` asked *"do we hold the input?"*; the row it gates asks *"can this plan be
+modified?"*. For `plan_kind: 'base_build'` the answer is no, for a reason the stamp cannot fix:
+`runModifyPreview` POSTs the overlaid input to `/api/generate-plan`, **the race generator** — and a
+base-build runner is on that plan *because* the race generator refused them. None of the eight
+editable keys is the one that was refused; `current_weekly_km` is deliberately not modifiable.
+
+**Exemption stated rather than a board sitting:** `canModifyPlan`'s own doc comment already gives
+the rule — *"the sheet is unavailable and says why, rather than offering an edit it cannot
+honour"* — and there is **zero behaviour delta against production** (0 stamped base-build plans).
+The real design question, *what SHOULD a base-build runner be able to change?*, needs a surface that
+regenerates the base build rather than a race, and is filed with `BASEBUILD-HANDOVER-01` for 🧭 the
+Design Board.
+
+⚠️ **The predicate is NOT re-written here.** `isBaseBuildPlan` (`validateStoredPlan.ts`) is its
+single owner, so two policies cannot disagree about what a base-build plan is. Costs no bundle:
+`lib/plan.ts` already pulls that module into the dashboard graph.
+
+**Gate:** 4 behavioural arms in `modifyPlan.test.ts`, **stamped fixtures in every one** — an
+unstamped base-build plan returns false for the OLD reason and would have kept them green with the
+new line deleted. Falsified: removing the line turns **3 arms red** while *"a stamped race plan is
+still modifiable"* stays green, so the gate is scoped, not a kill. One arm names all three
+`plan_kind`s so a new kind is a decision rather than an inherited guess.
+
+---
+
+### 🔻 `BASEBUILD-ADJUST-MONOTONIC-01` — **§111 IS MONOTONIC IN ONE AXIS AND NON-MONOTONIC IN THE OTHERS** 🏃 **COACHING BOARD** *(proposed, NOT built — coaching logic needs founder sign-off)*
+
+**Measured 2026-10-10 on two live plans** while validating `BASEBUILD-GENINPUT-REMEDIATION-01`.
+§111 refuses marathon/ultra on `delivered_peak ÷ current_weekly_km > MAX_BASE_BUILD_RATIO`, so
+**anything that shrinks the delivered peak clears the gate**:
+
+| edit | effect | §111 |
+|---|---|---|
+| `max_weekday_mins: 45 → 30` | a **tighter** time budget | **ADMITS** a plan that 45 refuses |
+| `injury_history: [] → ['knee']` | declares an injury he does not have | **ADMITS** a plan that `[]` refuses |
+
+**`baseVolume.test.ts` proves monotonicity over `current_weekly_km` only** — *"once a base
+generates, every higher base also generates"* — and that is the axis §111 was written to fix (the old
+route gate refused 15 and permitted 20). **The constraint axes were never monotonic**, and nobody had
+to care until `MODIFIABLE_ROWS` turned two of them into runner-facing controls.
+
+**This is the §113 `longest > 0` inversion one axis over:** the more honest answer buys the worse
+outcome. ⚠️ **Not currently reachable** — `BASEBUILD-GENINPUT-DOOR-01` shuts the door, and the
+wizard derives `max_weekday_mins` and `injury_history` before any refusal, so a runner cannot
+A/B them. **But the engine's answer is still wrong**, and a monotonicity guarantee that holds on one
+of three axes should say so.
+
+**For the board:** should §111's ratio be taken against a peak computed **before** the
+constraint caps (so constraining yourself cannot buy admission), or should the §44 obligation's
+alternatives name the constraint as the lever? The first is a §111 amendment; the second is copy.
+⚠️ **Do not build either without sign-off** — it changes what the engine refuses.
+
+---
+
+### 🔻 `BASEBUILD-ADJUST-REBUILD-01` — **THE ADJUST SHEET MUST REBUILD THE BASE BUILD, NOT A RACE PLAN** 🧭 **DESIGN BOARD** *(destination ruled 2026-10-10; Sierra's dissent is the driver)*
+
+**Ruled as the destination at the `BASEBUILD-ADJUST-DOOR-01` sitting, which withheld the row as
+an INTERIM.** The board bound the interim to this item so it cannot be read later as *"base-build
+runners cannot adjust anything"*.
+
+🎓 **Sierra's dissent, unresolved and recorded:** a runner on a **15-week** plan who cannot move a
+long run off a day she cannot run has lost a real capability. *"Empty means calm, not broken"*
+covers a blank space, not *"you may change nothing for fifteen weeks."*
+
+**The defect is the producer, not the control.** `runModifyPreview` POSTs the overlaid
+`GeneratorInput` to `/api/generate-plan` — the RACE generator — so every edit a base-build runner
+makes is judged by the gate that refused them in the first place (**0 of 27** and **2 of 27**
+measured). Point it at the base-build producer and six of the eight editable keys become
+meaningful immediately: days, days-cannot-train, long-run day, weekday cap, injuries, terrain.
+
+⚠️ **NOT THREE LINES, and the reason is named so nobody scopes it as one.** `/api/generate-plan`
+already has an `accept_base_build` branch that returns a base-build plan from the same input — but
+it routes through `generateGetRunningPlan`, which **deletes `base_build_onramp`** precisely so
+*"a downstream reader cannot infer a marathon handover that does not exist"*. Both live plans came
+from §116's on-ramp path and **have** that marker. So the route must know which base-build variant
+it is rebuilding, or a modify would silently convert a marathon on-ramp into a standalone base
+build. **That is a §116 question as much as a design one.**
+
+**Open for the board:** `race_date` is in `MODIFIABLE_ROWS` under the group *"The race"*. On a plan
+whose `meta.race_date` is deliberately `''`, does that group appear at all? (Silvanto called the
+group title a category error on this plan kind.)
+
+### 🔻 `BASEBUILD-HANDOVER-01` — **A BASE BUILD ENDS AND NOTHING OFFERS THE RACE PLAN IT WAS BUILT FOR** 👤 **FOUNDER** → 💼 **SLT** → 🧭 **DESIGN BOARD**
+
+**Found 2026-10-10 while validating the backfill, and it is the bigger problem for these two
+runners.** Both hold a 15-week base build with `base_build_onramp: true` — §116's marker meaning
+*this IS an on-ramp to a marathon*:
+
+| runner | base build ends | race | weeks between |
+|---|---|---|---|
+| Sheena | ~18 Jan 2027 | 24 Apr 2027 | ~14 |
+| Tom | ~25 Jan 2027 | 24 Apr 2027 | ~13 |
+
+**Both windows are long enough for a marathon block. There is no mechanism that notices.** Grep
+across `app/`, `lib/` and `components/`: nothing reads `base_build_onramp`, nothing detects a
+finished base build, and nothing offers the race plan. The only route is the wizard, **which
+archives the plan they just completed.**
+
+⚠️ **§118's own code says the handover is the point** — `getRunningPlan.ts` deletes the
+`base_build_onramp` marker for the non-marathon variant specifically so *"a downstream reader
+cannot infer a marathon handover that does not exist"*. **For these two the marker is set, the
+handover does exist on paper, and there is no downstream reader at all.** Same class as
+`run_walk_strategy`: a field with a producer and no consumer.
+
+**Why it is the founder's first:** it needs a new surface (🧭), a tier call (💼), and it bumps into
+his standing *"zero contact with our runners"* — the alternative to a surface is telling them. It is
+also time-boxed: **the January window is real and these are real people.**
+
 ### ✅ `POSTRUN-POLL-WEEK-BLIND-01` — SHIPPED 2026-10-07 ⚙️ **NO BOARD**
 
 **Founder, with four screenshots:** *"it shows Kit is reading the run - Not sure thats a great experience"*. **It is not a slow-analysis problem. The analysis was already finished.**
