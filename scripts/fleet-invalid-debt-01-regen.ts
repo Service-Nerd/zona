@@ -23,7 +23,14 @@ import { validateReshapedPlan } from '../lib/plan/invariants'
 import type { Plan, GeneratorInput } from '../types/plan'
 
 const APPLY = process.argv.includes('--apply')
-const TODAY = '2026-09-17'
+// ⚠️ DERIVED, NOT PINNED. This was hardcoded `'2026-09-17'` — the day the script was
+// written — and it is the only guard stopping a PAST race from being regenerated (the
+// engine anchors to the race date, so a past race regenerates into nonsense). Re-run on
+// 2026-10-10 it was three weeks stale; it happened not to matter because every affected
+// race is in 2027, but a pinned "today" in a past-race filter is a trap that fires the
+// first time a race falls inside the gap. Pinning belongs in a FIXTURE, not in a live
+// population filter.
+const TODAY = new Date().toISOString().slice(0, 10)
 
 const env = Object.fromEntries(
   fs.readFileSync('.env.local', 'utf8').split('\n').filter(Boolean).map(l => {
