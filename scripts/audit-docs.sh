@@ -315,6 +315,28 @@ sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`? *(\([^)]*\) *)?[—/|].*/\1/p'
   # header shape, checked across all 14.
   grep -oE '^#{3,4} (🔻|🔲|🟡|🟠|🟢|🔵|⏸️|⚖️|🧭) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
     | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
+  # 🔴 SEVENTH TIME, 2026-10-11, AND THIS ONE HAD NO MARKER AT ALL. Every arm above
+  # keys on a status emoji, so the comment chain above reads as a list of markers
+  # that were missing — 🔻 added 2026-10-10, 🔴 argued about twice. NOBODY ASKED WHAT
+  # HAPPENS WHEN THERE IS NO MARKER. `BASEBUILD-ZONE-CEILING-01` shipped 2026-10-10
+  # (registry row, build-log heading, `feat 9b43e8f7`, closed in `79564b55`'s own
+  # subject) and its heading was a bare "### `ID` — a base-build runner with HR data
+  # still gets no zone ceiling". Invisible to all three arms, ALL CLEAN throughout,
+  # and on 2026-10-11 it was read as live work and put on the FOUNDER'S blocked list.
+  # ⚠️ THE ROADMAP WAS CORRECT THE WHOLE TIME (`- ✅ BASEBUILD-ZONE-CEILING-01`), so the
+  # cross-arm at line ~436 had the evidence and could not use it: that arm needs a
+  # marker too, AND skips any ID with a registry row, AND matches only `(ID)` in a
+  # table cell rather than a bullet. Three independent reasons, one miss.
+  # 📐 Measured before adding: 27 unmarked ID headings, 15 with a registry row, and
+  # 14 of those 15 are "— the original filing, for the record" (the archived filing
+  # kept under a stamped heading) with the 15th already reading ✅ CLOSED. So the
+  # exclusion below is the whole false-positive set, and this arm adds ZERO findings
+  # on a clean tree while catching the class. Falsified by restoring the stale
+  # heading and confirming STILL OPEN fires.
+  grep -E '^#{3,4} `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
+    | grep -viE 'for the record|SHIPPED|CLOSED|RESOLVED|WITHDRAWN|SUPERSEDED|DEAD|PARKED' \
+    | grep -oE '`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' | head -1000 \
+    | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
 } | sort -u > /tmp/_open
 # ⚠️ DECLARED EXEMPTIONS — an ID that is legitimately BOTH shipped and open, each with its
 # reason. Added 2026-09-29, when widening `_reg` to the registry's second row format

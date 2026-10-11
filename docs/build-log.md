@@ -6,6 +6,58 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-11 — AUDIT-HEADING-UNMARKED-01
+
+**Scopes:** `AUDIT-HEADING-UNMARKED-01`
+
+**The honest bit.** He asked what was in the backlog. I gave him a list, and on it — under
+*founder-owned, blocked on you* — was an item that had shipped the day before. `BASEBUILD-ZONE-CEILING-01`
+had a feature-registry row, a build-log heading, a `refactor` and a `feat`, and a commit whose
+subject line says *"both base-build items closed"*. I put it in front of him as work he owed me.
+
+**Dev.** The arm that catches this already existed. It joins the registry against the set of open
+backlog items and says `STILL OPEN <id> (has a feature-registry row)`. The join was fine. The
+POPULATION was the bug: all three greps that build that set match ``^### <emoji> `ID` ``, and this
+heading had **no emoji at all**. What makes it worth writing down is the comment block directly
+above those greps — five entries, each one a marker that had been missing and was added: 🔻 on
+2026-10-10, 🔴 argued over twice. Five people-shaped passes at *"which marker is missing?"* and not
+one at *"what if there is no marker?"*
+
+**The part that stings.** The roadmap had it right the whole time: `- ✅ BASEBUILD-ZONE-CEILING-01 —
+SHIPPED 2026-10-10`. There is an arm whose entire job is *"roadmap says done, backlog says open"*.
+It held the disproof and could not reach it for three independent reasons: it needs a marker too, it
+`continue`s on any ID that has a registry row (handing the case to the arm that was blind), and it
+matches `(ID)` inside a table cell when that roadmap entry is a bullet. Three reasons, one miss, and
+every one of them individually defensible.
+
+**Product.** Measure before widening a check, or you ship noise and the check gets switched off. 27
+unmarked headings exist; 15 have registry rows; **14 of those 15 are "— the original filing, for the
+record"**, the convention where the original filing is kept beneath a stamped status heading, and the
+15th already said ✅ CLOSED. Excluding that one phrase plus the closed words is the complete
+false-positive set, so the arm adds zero findings on a clean tree. Then I falsified it: put the stale
+heading back, watched it fire, exit 1. Restored from a copy rather than `git checkout`, because six
+record corrections were sitting uncommitted in the same file and a checkout would have eaten them.
+
+**What it does not cover, because a declared gap beats a quiet one.** `DELOAD-OPENING-SURFACE-01` sat
+open for four days after shipping and this arm cannot see it either: it shipped inside another item's
+wave and has no registry row of its own, so there is nothing to join against. A ship recorded only
+under another item's name is still invisible. Not fixed, not scheduled.
+
+**And the numbers were worse than the headings.** Re-deriving each one instead of reading it: the
+micro-label debt was **27**, not the 132 the item claimed for twelve days — it had overstated itself
+by 105 while the register it describes fell three times. Uncontracted components 61 → **58**. Route
+contracts 17 → **13 of 62**. Every one of those is a register doing its job beside a sentence that
+stopped describing it, with nothing comparing the two.
+
+**The one with a consequence.** Clay's item said the foundation compose *"stripped"* his paces and
+asked *"IS FAULT 2 STILL LIVE? UNKNOWN."* Nothing stripped anything — `generateFoundationBlock` had
+never set `pace_target` or `hr_target`, and `FOUNDATION-PACE-STRIPPED-01` fixed it on 2026-10-09.
+The item and the ship were filed the same day and never referenced each other. So the gate the item
+put on itself, *"regeneration should wait until fault 2 is understood"*, has been liftable for two
+days and nobody knew.
+
+---
+
 ## 2026-10-10 — COPY-CLAIM-CROSS-WEEK-01, BASEBUILD-SCHEMA-CEREMONY-01, AUDIT-STEP-UNDECLARED-01, BASEBUILD-ENRICH-VISIBILITY-01, ENRICH-META-TOKEN-01, BASEBUILD-ZONE-CEILING-01, REGEN-LIVE-PLAN-GUARD-01 and BASEBUILD-WEEK-COPY-01 · the day I wrote to a real runner's plan on a briefing I had over-generalised
 
 **Scopes:** `COPY-CLAIM-CROSS-WEEK-01`, `BASEBUILD-SCHEMA-CEREMONY-01`, `AUDIT-STEP-UNDECLARED-01`, `BASEBUILD-ENRICH-VISIBILITY-01`

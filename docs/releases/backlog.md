@@ -1426,14 +1426,82 @@ is already in `ops_events`.
 
 ---
 
+## ⚖️ FILED 2026-10-11 — `AUDIT-HEADING-UNMARKED-01`, and six stale records corrected
+
+### ✅ `AUDIT-HEADING-UNMARKED-01` — **SHIPPED 2026-10-11. Every backlog arm keyed on a status marker, and this one had none** ⚙️ **NO BOARD** *(tooling)*
+
+🔴 **THE FOUNDER ASKED WHAT WAS IN THE BACKLOG AND WAS HANDED A SHIPPED ITEM AS HIS OWN BLOCKED
+WORK.** `BASEBUILD-ZONE-CEILING-01` shipped 2026-10-10 with a registry row, a build-log heading, a
+`refactor` and a `feat`, and `79564b55` closing it **in its own subject line**. Its backlog heading
+was a bare ``### `ID` — a base-build runner with HR data still gets no zone ceiling``, and
+`audit-docs.sh` printed **ALL CLEAN** over it for a day.
+
+📐 **THE ARM THAT SHOULD HAVE CAUGHT IT ALREADY EXISTED** (*"shipped items still marked open"*,
+joining the registry against `/tmp/_open`). The defect was in the POPULATION, not the join: `_open`
+is built from ``^### <emoji> `ID` `` and **every one of its three greps requires a status emoji**. The
+comment chain above that grep is a five-entry history of markers being ADDED one at a time — 🔻 on
+2026-10-10, 🔴 argued over twice — and **not one of the five asked what happens when a heading
+carries no marker at all.** An unmarked heading was invisible to the whole file.
+
+⚠️ **AND THE ROADMAP WAS RIGHT THE ENTIRE TIME** — `- ✅ BASEBUILD-ZONE-CEILING-01 — SHIPPED
+2026-10-10`. The cross-arm *"roadmap rows marked CLOSED for a backlog item that is OPEN"* held the
+disproof and could not reach it, for **three independent reasons**: it needs a marker too, it
+`continue`s on any ID that has a registry row (handing the case to an arm that was blind), and it
+matches only `(ID)` inside a table cell, never a bullet. **Three reasons, one miss** — and this is
+the **seventh** recorded instance of an arm reporting ok by not looking.
+
+✅ **The fix is one grep, and it is narrow because it was measured first.** 27 unmarked ID headings
+exist; **15 have a registry row; 14 of those 15 are ``— the original filing, for the record``** (the
+archived filing kept beneath a stamped heading) and the 15th already read ✅ CLOSED. So excluding
+that convention plus the closed words **is the entire false-positive set**, and the arm adds **zero
+findings on a clean tree**.
+🔑 **FALSIFIED, NOT ASSERTED:** the stale heading was restored, the audit printed
+`STILL OPEN BASEBUILD-ZONE-CEILING-01 (has a feature-registry row)` and **exited 1**; restored from
+a copy rather than `git checkout`, because the corrections below were uncommitted and a checkout
+would have destroyed them.
+
+🔻 **WHAT THIS DOES NOT COVER, DECLARED.** `DELOAD-OPENING-SURFACE-01` sat open for four days after
+shipping and **this arm cannot see it either** — it shipped inside `PLAN-NOTE-BUDGET-INERT-01`'s
+wave and has **no registry row of its own**, so there is nothing to join against. A ship recorded
+only under another item's name is still invisible. Not fixed, not scheduled.
+
+**The six records corrected in the same commit**, each re-derived from the code or the gate rather
+than from the item:
+
+| | was | is | derived from |
+|---|---|---|---|
+| `BASEBUILD-ZONE-CEILING-01` | read open | ✅ SHIPPED 2026-10-10 | registry row, build-log, `9b43e8f7` |
+| `DELOAD-OPENING-SURFACE-01` | read open | ✅ SHIPPED 2026-10-07 | `planRationale.ts`, 115 of 116 plans |
+| `MICRO-LABEL-DRIFT-01` | **132** non-conforming | **27** | `NON_CONFORMING_BASELINE`, falling arm asserts exactly 27 |
+| `CONTRACT-COVERAGE-03` | **61** components | **58** | `UNCONTRACTED_BASELINE`, lowered twice since |
+| `CONTRACT-BACKFILL-01` | **17** of 56 routes | **13** of 62 | `audit-docs.sh` live count |
+| `CLAY-PLAN-THREE-FAULTS-01` | fault 2 UNKNOWN | **answered, engine fixed** | `foundationBlock.ts:370–371` |
+| `ICON-RULE-01` | read open | ✅ build declined | `design-rulings.md` § 2 |
+
+⚠️ **Clay's item is the one with a consequence, not just a stamp.** Its fault 2 said the foundation
+compose *"stripped"* the paces. Nothing stripped anything: `generateFoundationBlock` had **never**
+set `pace_target` or `hr_target`, `FOUNDATION-PACE-STRIPPED-01` fixed it on 2026-10-09, and the item
+and the ship **never referenced each other though they were filed the same day**. So the gate the
+item put on itself — *"regeneration should wait until fault 2 is understood"* — **is lifted.**
+
+---
+
 ## ⚖️ FILED 2026-10-10 — three residuals from the ops-digest wave
 
 Each found while BUILDING the three above, each deliberately not built.
 
 ---
 
-### `BASEBUILD-ZONE-CEILING-01` — a base-build runner with HR data still gets no zone ceiling
-🏃 **COACHING BOARD** → 👤 FOUNDER (coaching-logic change, sign-off required)
+### ✅ `BASEBUILD-ZONE-CEILING-01` — **SHIPPED 2026-10-10.** A zone label with nothing behind it, on every base-build session 🏃 **COACHING BOARD RULED: CORRECT WITH AMENDMENT** (§84 Am.1)
+> ✅ **SHIPPED 2026-10-10** — `refactor 8323caaf` extracted the HR-zone owner so the SECOND plan
+> producer could reach it, then `feat 9b43e8f7` landed the ceiling. Registry row dated 2026-10-10;
+> closed alongside `BASEBUILD-WEEK-COPY-01` by `79564b55`.
+>
+> 🔴 **AND THIS HEADING SAT OPEN FOR A DAY AFTER IT SHIPPED, THROUGH AN `ALL CLEAN` DOC AUDIT.**
+> It was read as live work and put on the founder's own blocked list on 2026-10-11. The audit has
+> an arm for a roadmap row disagreeing with a backlog item, in both directions, and **no arm for a
+> backlog heading disagreeing with the feature registry** — which is the one register that proves a
+> ship. Third recorded instance of this class (see the 2026-10-07 state block). Corrected 2026-10-11.
 
 **Measured, live.** Plan `3df045d5` (the PAID runner) carries `max_hr: 182` and
 `resting_hr: 56` and **no `meta.zone2_ceiling`**. Plan `812e7e2e` has no HR data at all,
@@ -1840,6 +1908,25 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > | **2** | The 3 Oct foundation compose **stripped `pace_target` and `hr_target` off his foundation sessions** and substituted `duration_mins`. The archive HAS `5:09–6:10 /km` on them; the live plan has nothing. **12 sessions with no pace or HR guidance.** |
 > | **3** | Generic `"Quality: Threshold"` labels with no catalogue identity — an older engine, pre-ADR-018. |
 >
+> ✅ **FAULT 2 IS ANSWERED AND THE ENGINE IS FIXED (2026-10-11), AND THE "STRIPPED" FRAMING BELOW
+> IS WRONG.** `FOUNDATION-PACE-STRIPPED-01` shipped 2026-10-09: `generateFoundationBlock` had
+> **never** set `pace_target` or `hr_target` on a foundation session — `git log -S` returns nothing
+> on either field for that file, ever — so nothing stripped anything. The 3 Oct compose **replaced
+> week 0's sessions**, and the replacements were foundation sessions that had never carried paces,
+> which is why the archive has `5:09–6:10 /km` and the live plan does not. Measured at the ship:
+> **381 of 381** foundation easy sessions carried neither, against **0 of 1,355** main-plan easy
+> sessions; live, **73 of 73 across 7 of 32** stored plans. `foundationBlock.ts:370–371` now sets
+> both from `easyTargetsFromPlan`, threaded through `foundationCompose.ts:62`.
+>
+> 🔑 **SO THIS ITEM'S OWN GATE IS LIFTED.** It said regeneration *"should wait until fault 2 is
+> understood, or it may be rebuilt straight back in"*. It is understood, and a regenerated plan
+> composes paced foundation weeks. ⚠️ **Clay's STORED plan is unchanged** — an engine fix reaches no
+> existing plan — so faults 1 and 3 stand in his data and the regeneration is now the open work.
+>
+> 🔻 **Kept below: the original, un-reproduced diagnosis.** It reasoned from a plausible mechanism
+> and named the wrong one, and the reproduction that would have caught that did not reach the
+> condition. **The ship that answered it landed the same day the item was filed, and neither
+> referenced the other for two days.**
 > ⚠️ **IS FAULT 2 STILL LIVE? UNKNOWN, AND I DID NOT MANAGE TO REPRODUCE IT.** My attempt composed
 > **zero** foundation weeks because I passed the plan start as both the start and today, so the gap
 > was nil — the test did not reach the condition and proves nothing either way. **This matters: if
@@ -4472,7 +4559,12 @@ say whether the Coach teaser converts better than the Me screen, which is the qu
 shared component, `PlanSectionLabel` folded in, and `microLabel.test.ts` holding the debt as
 a **non-growing register with a falling arm**.
 
-🔴 **STILL OPEN: 132 non-conforming micro-labels.** The register makes the debt visible and
+📐 **RE-MEASURED 2026-10-11: the debt is 27, not 132.** `NON_CONFORMING_BASELINE = 27` in
+`components/shared/microLabel.test.ts`, and its falling arm asserts **exactly** 27, so that is the
+live number and not a ceiling — test run, 23 passing. Wave 1a paid 47 and `MICRO-LABEL-HANDROLL-01`
+moved 51 more onto the owner. ⚠️ **This line said 132 for twelve days and overstated its own item
+by 105.** The register fell; the sentence describing it did not, and nothing compares the two.
+🔴 **STILL OPEN: 27 non-conforming micro-labels.** The register makes the debt visible and
 stops it growing; **it does not make it shrink, and this line is the only thing scheduling
 that.**
 
@@ -5556,9 +5648,14 @@ will RAISE the reported debt** — unknown by how much until it is run, and that
 finding, not a regression. 🔻 **Do not fix this while the number is being quoted elsewhere** without
 saying in the same breath that the definition changed, or the jump reads as decay.
 
-#### 🟡 `CONTRACT-COVERAGE-03` — 61 components still have no contract *(P3, filed 2026-10-02, falling register)* ⚙️ **NO BOARD**
+#### 🟡 `CONTRACT-COVERAGE-03` — **58** components still have no contract *(P3, filed 2026-10-02, falling register; count corrected 2026-10-11)* ⚙️ **NO BOARD**
 
-⚙️ **NO BOARD.** The honest remainder after `-02` fixed the population: **61 of 86
+📐 **RE-DERIVED 2026-10-11 FROM `audit-docs.sh`, NOT FROM THIS ITEM: the live figure is 58, not 61.**
+`UNCONTRACTED_BASELINE=58` in the script, lowered twice since this was written — 61 → 60
+(`LEDGER-COACH-SITE-REMOVE-01`, 2026-10-05) and 59 → 58 (second payment, 2026-10-10). The register
+is doing its job and falling; **the item was the only thing still quoting 61.** The denominator
+below (86) is the filing's own and has NOT been re-derived.
+⚙️ **NO BOARD.** The honest remainder after `-02` fixed the population: **58 of 86
 in-population components** have no contract, now counted across **all seven** component
 directories and both import forms.
 
@@ -9059,7 +9156,7 @@ to `lib/security/rateLimit.ts` when something else touches that area.
 declared surface **or a non-AI route**"* — that escape hatch already anticipated this, so nothing
 is failing, but the naming now understates what the module does.
 
-### 🅿️ `CONTRACT-BACKFILL-01` — write the 17 remaining API route contracts · **PARKED**
+### 🅿️ `CONTRACT-BACKFILL-01` — write the **13** remaining API route contracts · **PARKED** *(count corrected 2026-10-11: `audit-docs.sh` reports 13 of 62, not 17)*
 **Board: ⚙️ NO BOARD.** Split from `CONTRACT-COVERAGE-01` (the gate, shipped 2026-09-24).
 
 🔻 **PARKED BY THE FOUNDER 2026-09-24: *"I don't want to carry on with contract work just yet."***
@@ -9885,7 +9982,7 @@ about placement. Hutchinson: we would be **designing a funnel nobody has observe
 🔻 **FOUNDER ACTION, not a build: create the Make-A-Wish batch** (`docs/runbooks/charity-codes.md`).
 ⚠️ **Traynor's recall trigger is a redeemed-code funnel; it still does not exist.**
 
-### 🔴 `ICON-RULE-01` — the icons are NOT BEING BUILT (founder, 2026-09-22)
+### ✅ `ICON-RULE-01` — **CLOSED 2026-09-22: the rule SHIPPED and is gated; the BUILD is declined** (founder) 🧭 **DESIGN BOARD**
 **Board: ruled; the BUILD is declined.** `design-rulings.md` § 2.
 
 The **rule stands and is gated** (`lib/marketing/iconRule.test.ts`): an icon earns its place by
@@ -12868,7 +12965,17 @@ race-week display (D1), `MARATHON-pace` casing (D2), plus `lib/plan/planShapeInv
 
 ---
 
-### `DELOAD-OPENING-SURFACE-01` — the early-recovery-week note has words and nowhere to render 🧭 **DESIGN BOARD**
+### ✅ `DELOAD-OPENING-SURFACE-01` — **SHIPPED 2026-10-07, and the item was FILED WRONG** 🧭 **DESIGN BOARD**
+> ✅ **SHIPPED 2026-10-07.** Not *"blocked behind the note cap"* as filed below:
+> `short_opening_block_note` was in **no renderer at all** — not `planRationale.ts`, not `app/`, not
+> `components/` — so it was never competing for a tile and never dropped by
+> `PLAN_RATIONALE_MAX_NOTES`. It now renders on **115 of 116** plans that stamp it.
+> `planRationale.ts` carries it; the ranked table in § START HERE TOMORROW records the ship.
+>
+> 🔴 **The filing below is kept for the record and its diagnosis is wrong.** It reasoned from the
+> cap, which was the obvious mechanism and not the live one. **Nothing read the field at all.**
+> Heading stamped 2026-10-11, four days late — a registry sweep cannot catch this one, because it
+> shipped inside `PLAN-NOTE-BUDGET-INERT-01`'s wave and has no registry row of its own.
 
 **The coaching half is DONE and ratified** (§119 Amendment 1, 2026-10-06). The engine stamps
 `meta.short_opening_block_weeks` and `meta.short_opening_block_note` on **15.8% of plans** — of which
