@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-10-11 — the Coaching Board sat on five items and three of them dissolved
+## 2026-10-11 — FOUNDATION-TARGETS-DOCTRINE-01, RECAL-EASY-DURATION-01, SESSION-WEEK-SHARE-01 — the board sat on five and three dissolved
 
 **Scopes:** `FOUNDATION-TARGETS-DOCTRINE-01`, `RECAL-EASY-DURATION-01`, `SESSION-WEEK-SHARE-01`
 
