@@ -4338,6 +4338,37 @@ The Foundation Block is a pre-plan preparation phase generated when the gap betw
 
 Foundation weeks contain only: `easy`, `rest`, `cross-train`. No quality sessions, no tempo, no intervals, no strides.
 
+### Targets — a foundation session carries the plan's own easy band (Coaching Board, 2026-10-11, `FOUNDATION-TARGETS-DOCTRINE-01`)
+
+**Principle.** A foundation easy run carries the **same pace band and the same top-of-Z2 HR ceiling
+as a main-plan easy run** — the plan's own, not a band of its own.
+
+**Why.** §122 already ruled the general case: *"a foundation week is subject to the same time-budget
+and load rules as any other week. It is pre-plan, not pre-coaching."* The specific case follows
+without a new argument. And §12 Amendment 1 makes "its own band" the wrong shape for the question —
+**§12 is a ceiling, not a band**, so there is nothing to widen or narrow, only a ceiling to apply.
+🏃 The chair: an on-ramp band would need evidence that a returning runner's aerobic ceiling sits
+somewhere other than the top of Z2, and there is none, **because the ceiling is derived from their
+own current benchmark, which is already the thing that moved.**
+
+🔴 **THIS SECTION'S SILENCE WAS THE DEFECT, AND IT COST THE WHOLE HISTORY OF THE FEATURE.** §57 said
+what a foundation block IS and §122 what sizes it; nothing said what targets its sessions carry, so
+`generateFoundationBlock` shipped easy sessions with a zone and **no pace** for its entire life —
+**381 of 381** on the grid and **73 of 73 live across 7 of 32** stored plans. `git log -S` returns
+nothing on either field for that file, ever. The fix (`FOUNDATION-PACE-STRIPPED-01`, 2026-10-09) was
+board-exempt because it restores §12; **this line exists so the next producer does not repeat it.**
+
+**Config.** None, and deliberately so: the band is read from the plan by
+`easyPaceFromPlan` / `easyTargetsFromPlan` (`lib/plan/easyPace.ts`), **main-plan weeks only**, so a
+foundation week can never become its own source and the function returns `null` rather than a
+default — the `?? 0` class in display clothing.
+
+**Enforced by** `INV-PLAN-EASY-PACE-PRESENT` (error severity), with `foundationPaceTargets.test.ts`
+holding the composed case in both directions: every composed foundation session carries a band AND
+an HR ceiling, they are the **same strings** the main plan uses, the long run takes them too so the
+two constructors cannot diverge, §122's size fields are undisturbed, and the falsification goes red
+when a foundation session loses its pace.
+
 This is enforced by `INV-PLAN-FOUNDATION-BLOCK`.
 
 ### Prep-time integration
@@ -11040,6 +11071,30 @@ whether a sentence may be written, which is why they live here under §109 rathe
 >
 > 🩹 **Willy's amendment is the protected quantity, and it is binding:** the dose is the invariant, distance follows the dose, and the dose never follows the distance. **Recalibration downward is the returning runner** — post-illness, post-injury, after a broken block — so the cohort that recalibrates slower is the cohort with the least tissue tolerance. A runner there working off the stale distance covers it 7–12% slower, i.e. longer in time, at the moment they can least absorb it. ⚕️ **Sims:** that cohort also includes peri- and post-menopausal runners and anyone in low energy availability, and the symmetric half is not harmless either — an improving runner is under-dosed by the same margin, which is wasted adaptation rather than risk.
 
+## Amendment 5 — a recalibration re-prices an easy run and never grows its minutes — added 2026-10-11 (Coaching Board, `RECAL-EASY-DURATION-01`)
+
+**Principle.** A recalibration may re-price an easy run's pace band. It **must never increase that
+session's `duration_mins`.**
+
+**Why — and this replaces the reason the exclusion was originally filed under.** The exclusion used
+to read *"that cohort was not in the submission the board measured"*, which is a statement about the
+submission, not about the runner. 🎯 McMillan refused it in that form: beginners are **95.8%
+duration-anchored**, so they are *the* population a recalibration's minutes move, and they were left
+out of the measurement that then ruled on them. The affirmative rule is:
+
+⚕️ **A mechanism whose output is "your prescribed minutes went up because you got faster", with no
+fuelling or recovery signal attached, is a low-energy-availability risk on the cohort least equipped
+to absorb it** (Sims, RED-S). 🩹 **And it inverts load management**: a faster 5K is not a mandate for
+more minutes (Willy). §1 cannot be the counter-argument — CD-19 makes the intensity denominator
+session-count, so a duration change cannot move it either way.
+
+**Config.** `GENERATION_CONFIG.RECALIBRATION_SCOPE` — `duration_mins` is **absent from every field
+list**, which is the enforcement. Per CB-FOUNDATION-DENOM-01 (*"a defect class that cannot occur
+beats a check that catches it"*) the mechanism is a build-time impossibility at `writeScoped`, not a
+`validatePlan` rule: an out-of-scope write throws rather than producing a plan to be checked.
+**Asserted in both directions** by `recalibrationComposition.test.ts`, which now states the absence
+explicitly rather than leaving it to a comment.
+
 **What this does NOT cover, declared.** An easy run is distance-anchored from the week's volume budget and its duration is `dur(km, easyPace)`, so it is pace-derived too and clause 3 reads as covering it. It is deliberately out of scope: growing a beginner's prescribed minutes is a **load change** on the cohort whose sessions are **95.8% duration-anchored**, and that cohort was not in the submission the board measured. Filed as `RECAL-EASY-DURATION-01`. Mixed-anchor rows (§85 over-unders, **82 of 297 generated quality sessions**) take the category band at the new fitness rather than §85's time-weighted mean, because **192 of their 228 work-step lengths are `parameter` kind** whose values are not stored — re-priced, never stale, and `INV-PLAN-HEADER-PACE-MATCHES-WORK` skips those rows by design. Filed as `RECAL-MIXED-MEAN-01`.
 
 **Not re-filing `SESSION-SIZING-ANCHOR-01`.** That item claimed a sizing twin at *generation* and was **CLOSED as a false premise** — 1,320 quality sessions, 0 sized at threshold while running elsewhere — and the register says do not re-file it. It is what establishes the property this section defends: *a structured session prices its distance from its own work pace.* The question here is whether a **post-generation writer** must maintain it, which that item never asked.
@@ -11052,7 +11107,27 @@ whether a sentence may be written, which is why they live here under §109 rathe
 
 > 🔴 **THE INVARIANT THIS SECTION FIRST NAMED COULD NOT FIRE, AND THAT IS WORTH KEEPING.** The artifact specified was `INV-PLAN-SESSION-SIZE-MATCHES-PACE`: re-derive the distance and compare. Three tolerance-based cuts false-fired **4,713 / 4,680 / 2,213** times across 14,268 swept plans; a fourth, exact form ("does any admissible dose price this distance?") came back **0 false fires, sweep green** — and **0 on all four live plans carrying the defect.** Quiet on correct plans and quiet on broken ones is a green tick with nothing behind it. The cause: recovering the work pace meant matching a step's band against the guide, and a **stale** step matches nothing in a guide rebuilt from the **new** benchmark, so the check skipped precisely the sessions that were wrong — *the population excluded the cases at risk.* **The skip was the signal**: a band the guide cannot produce IS the violation, so the check moved from the arithmetic of the distance to the provenance of the pace.
 
-🔻 **CLAUSE 3 IS RULED AND DEFERRED, with the number that was missing when it was ruled.** The board measured the session-level distance error and the weekly effect; it did not have the invariant-breach count, which only the composition gate could produce. Measured, new violations introduced per 36 plans:
+## Amendment 3 — clause 3 is SETTLED OFF, not deferred — added 2026-10-11 (Coaching Board, `RECAL-DISTANCE-CLAUSE3-01`)
+
+⛔ **CLAUSE 3 DOES NOT SHIP. This is a veto, and it is the board ruling on the number it deferred for.**
+The 2026-10-09 sitting deferred clause 3 explicitly because it lacked the invariant-breach count.
+That count is the table below: **10–13 new `INV-PLAN-DELIVERED-RAMP` breaches per 36 plans in the
+±4–8% band, which is the band an ordinary recalibration occupies** — against a weekly honesty gain
+of **0.5–0.8%**.
+
+**Why the trade fails, in the chair's words.** *"A fix that introduces a load-rule breach at the
+common magnitude is not a fix."* `measure:fitness` at the sitting records healthy masters already
+failing to build in **18.6%** of cases (n=6,712); spending a one-in-three chance of a delivered-ramp
+breach to buy sub-1% honesty is not a trade this board will make. §121's honesty-versus-safety
+precedent cuts the other way here: §121 removed a number that was *wrong*, and clause 3 would add a
+number that is *more precise and less safe*.
+
+🔑 **WHAT WOULD REOPEN IT, and nothing less will.** A re-derivation that holds the delivered ramp —
+clause 3 applied **through** §2/§3 rather than ahead of them, so the week absorbs the change
+(ADR-022's mirror) or the plan re-sizes. Until that exists, the stale distance is the ratified state
+and **not** a declared defect.
+
+🔻 **The original deferral, kept because the number is the ruling.** The board measured the session-level distance error and the weekly effect; it did not have the invariant-breach count, which only the composition gate could produce. Measured, new violations introduced per 36 plans:
 
 | | same benchmark | ±4–8% | ±12.5% | +20.8% |
 |---|---|---|---|---|
@@ -11061,6 +11136,38 @@ whether a sentence may be written, which is why they live here under §109 rathe
 
 Re-deriving the distance moves the week's delivered volume, so §2's `INV-PLAN-DELIVERED-RAMP` and the minimum session size begin breaching **in the ±4–8% band that is the common case**. A fix that breaches a load rule at the common magnitude is not a fix, and whether the remedy is for the week to absorb it (ADR-022's mirror) or for the plan to be re-sized is this board's question, not a defect fix's. Filed as `RECAL-DISTANCE-CLAUSE3-01`.
 
-🔻 **AND CLAUSES 1 AND 2 CONTRADICT EACH OTHER ON ONE ROW SHAPE.** A **distance-anchored rep row** — 6 × 1600 m — run slower takes longer, so a fixed dose (clause 1) and a re-derived pace (clause 2) cannot both hold, and §8's `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` correctly fires: **9 sessions at −12.5%, 24 at +20.8%, zero at ±4–8%.** ⚠️ **Leaving those rows stale was measured and is WORSE** — it trips this section's own `INV-PLAN-STEP-PACE-FROM-GUIDE` at *every* magnitude (24–51 per 36 plans). Both options breach something; the smaller and more honest one ships, the residual is a declared register in `recalibrationComposition.test.ts`, and it is filed as `RECAL-DISTANCE-REPS-01`.
+## Amendment 4 — the clause 1/2 contradiction: dose prevails, the remedy is NOT settled — added 2026-10-11 (Coaching Board, `RECAL-DISTANCE-REPS-01`)
+
+⚖️ **CLAUSE 1 PREVAILS: the dose is untouched, which is what the code already does.** What is
+**not** settled is how the session's stated structure is reconciled with the preserved dose, and the
+board ruled **INSUFFICIENT EVIDENCE** after vacating its own ruling of the same day.
+
+🔴 **THE FIRST RULING WAS MADE ON A CONTROL THE BOARD HAD NOT LOCATED.** It ruled that *"the
+distance label yields"* — grow the rep length, hold the minutes. Then the label was found:
+
+| | where it lives | can a recalibration move it? |
+|---|---|---|
+| step **length** (`1600 m`) | `V1_SESSION_CATALOGUE.main_set_structure`, read by `pacedRepMainMinutes` | **No.** `DerivedStep.length` on the session is a human-readable STRING, so writing it changes what the runner reads and leaves what §8 prices untouched — a two-writer pricing drift, the class `invariants.ts` exists to catch |
+| step **repeat** (`6 ×`) | resolved per-runner onto `derived_set.blocks[].repeat`, and read back by `pacedRepMainMinutes` | **Yes** — the same operation `pacedRepPlan` performs at generation |
+
+So of three remedies, one is **ineffective** (length-on-session: invisible to the check it exists to
+satisfy), one is **forbidden** (editing the catalogue row is re-selection, clause 2's amendment), and
+the third — moving the **rep count** — was never costed.
+
+⚡ **Recorded disagreement, unresolved.** 🩹 Willy prefers the count to move if anything does: more,
+shorter exposures is the conservative direction for a runner whose fitness just improved. 📊 Seiler
+refuses both: *"a 6 × 1600 m cruise set and a 7 × 1600 m cruise set are not the same session"* — shape
+change is re-selection wearing re-derivation's clothes, and he would rather the dose drift a few per
+cent than the shape change silently. Settled by the cost measurement, not by argument.
+
+🔑 **WHAT WOULD SETTLE IT:** the rep-count remedy measured — how many sessions change shape, by how
+many reps, and whether `measure:fitness` and the objections harness move. **Prerequisite:** step
+lengths resolved onto the session, which is `RECAL-MIXED-MEAN-01`'s blocker. **Those two items are
+one build**, and the board was told the opposite in the same sitting.
+
+Until then the declared §8 breach below is the **ratified status quo**: 9 sessions at ±12.5%, 24 at
++20.8%, and leaving the rows stale instead was measured and is worse (24–51 per 36 plans).
+
+🔻 **The original statement of the contradiction.** A **distance-anchored rep row** — 6 × 1600 m — run slower takes longer, so a fixed dose (clause 1) and a re-derived pace (clause 2) cannot both hold, and §8's `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` correctly fires: **9 sessions at −12.5%, 24 at +20.8%, zero at ±4–8%.** ⚠️ **Leaving those rows stale was measured and is WORSE** — it trips this section's own `INV-PLAN-STEP-PACE-FROM-GUIDE` at *every* magnitude (24–51 per 36 plans). Both options breach something; the smaller and more honest one ships, the residual is a declared register in `recalibrationComposition.test.ts`, and it is filed as `RECAL-DISTANCE-REPS-01`.
 
 **Board:** `RECAL-SIZING-PROPERTY-01`, 2026-10-09 — **CORRECT WITH AMENDMENT** (3: dose protected · re-derivation only · ships as honesty).

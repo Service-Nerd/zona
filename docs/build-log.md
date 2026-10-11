@@ -6,6 +6,66 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-11 — the Coaching Board sat on five items and three of them dissolved
+
+**Scopes:** `FOUNDATION-TARGETS-DOCTRINE-01`, `RECAL-EASY-DURATION-01`, `SESSION-WEEK-SHARE-01`
+
+**The honest bit.** He asked why there were so many open Coaching Board items when he thought most
+were done. He was right and I was wrong, and the way I was wrong is worth recording: I had filed
+anything carrying a 🏃 tag as "the board needs to sit", when the filing rule means "this touches
+prescription". Seven of the ten had already sat. A ruled-and-deferred item is not an open question.
+
+**Product.** Of five items taken to the board, **one shipped doctrine, one shipped a prohibition,
+one was vetoed, one was vacated mid-sitting, and one dissolved under its own measurement.** That is
+a good day's output and almost none of it is code.
+
+**The one I am least comfortable with.** I took the board a submission, it ruled CORRECT WITH
+AMENDMENT on the clause 1 / clause 2 contradiction — *"the distance label yields"* — and then I went
+to implement it and **could not find the label**. Step length lives in
+`V1_SESSION_CATALOGUE.main_set_structure`, which is what `pacedRepMainMinutes` prices;
+`DerivedStep.length` on the session is a human-readable **string**. So writing it would change what
+the runner reads and leave what §8 prices untouched — a two-writer pricing drift, which is the exact
+class `invariants.ts` exists to catch. The ruling was not hard to implement, it was **ineffective**.
+Vacated and re-ruled INSUFFICIENT EVIDENCE the same day. **A board can only rule on a control
+someone has located, and locating it is the submitter's job, not the chair's.**
+
+**And the third remedy nobody costed.** While proving the first two were dead I found that `repeat`
+*is* resolved onto the session and read back by the same function, so moving the rep count is
+implementable. Willy prefers it (more, shorter onsets is conservative for a runner who just
+improved); Seiler refuses it (*"a 6 × 1600 m cruise set and a 7 × 1600 m cruise set are not the same
+session"*). That disagreement is recorded, not synthesised, and it settles on a measurement.
+
+**Dev — the harness bugs were mine, twice, in the same hour.** Writing the share measurement I
+omitted the pinned `today` argument and every one of 783 inputs came back refused: *"−13 weeks isn't
+enough to build a 5K safely"*. It printed `plans 0 · refused 783` and a table of `NaN`, which is the
+only reason I noticed. Then, with it working, the worst cases were **90.4% / 85.8% / 84.1%** — and
+every one was a **42.2 km race** in a 46–50 km week. I nearly carried that to the board as the worst
+single-session share in the product. **§121 had already ruled the race is not training volume three
+weeks earlier**, so the exclusion was not a methodological choice I got right, it was a ruling I had
+not read. The script now refuses to report on an empty population at all.
+
+**The measurement killed the item it was built to support**, which is the best outcome available.
+Willy's objection was that no check looks at one session as a share of the week — true — and that an
+86-minute session for a 20 km/week runner approaches half their volume. Measured: over 40% is
+**0.4%** of sessions, over 50% is **one**, and in his own cohort the three worst are a 5 km shakeout
+in a 10 km taper week. He withdrew the frequency half himself. What survived is a single cell, and
+it belongs to an item already waiting on the same cost measurement, so two items became one.
+
+**AI-building.** The board skill earns its place at the moment it stops me. Twice today a seat's
+objection was answered by a principle I had not scanned — §122 for the foundation question, §121 for
+the race exclusion — and both times the conflict scan found it before anyone spoke. The thing that
+does *not* work is the round file: it closes with *"warns are the board's to weigh"* and writes no
+warn codes at all, only counts. `grep -c "INV-PLAN" generated-plans.md` returns 0. So the protocol
+asks for a judgement it withholds the evidence for, and the 29 cases carry 15, 9, 8 and 6 warns in
+the time-constrained cohort that another open item is already about. Filed rather than waved at.
+
+**Verify 0, audit ALL CLEAN, 564 files / 5,104 tests. `review:coaching` whole product 96.5% against
+the 90–95% target band, byte-identical across the sitting** — which is the correct result for a veto,
+a vacated ruling, a doctrine line and a prohibition that ratifies what the code already did. A rate
+that does not move is the claim here, not a rate that improved.
+
+---
+
 ## 2026-10-11 — AUDIT-HEADING-UNMARKED-01
 
 **Scopes:** `AUDIT-HEADING-UNMARKED-01`

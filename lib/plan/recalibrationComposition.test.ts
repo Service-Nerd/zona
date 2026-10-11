@@ -237,6 +237,73 @@ describe('recalibration scope — the declared list is the authority', () => {
     expect(inRecalibrationScope('session', 'distance_km')).toBe(false)
   })
 
+  // ── §125 Amendment 5 (Coaching Board 2026-10-11, RECAL-EASY-DURATION-01) ──
+  //
+  // THE SCOPE LIST IS ASSERTED ABOVE; THIS ASSERTS THE PROPERTY. The list is a
+  // promise about a field name, and the amendment is a promise about a runner:
+  // "a recalibration may re-price an easy run's pace and must never grow its
+  // minutes." Those are not the same claim, and the halves can both pass while
+  // the composition fails — which is the lesson of this file's own existence
+  // (zero harnesses called `applyRecalibration` before 2026-10-09).
+  //
+  // ⚕️ Sims, RED-S: a mechanism whose output is "your prescribed minutes went up
+  // because you got faster", with no fuelling or recovery signal attached, is a
+  // low-energy-availability risk on the cohort least equipped to absorb it.
+  // 🩹 Willy: it inverts load management. A faster 5K is not a mandate for more
+  // minutes. The cohort is 95.8% duration-anchored, so it is THE population a
+  // recalibration's minutes move, and it was absent from the submission that
+  // first ruled on it (McMillan's objection, which this amendment answers).
+  // ONE comparator, used by the property AND its falsification. The first cut
+  // wrote the comparison twice, so the falsification proved only that its own
+  // inline loop could count — "a falsification on the wrong population reads
+  // exactly like a pass". Driving the real comparator is the point.
+  const easies = (pl: Plan): Session[] => pl.weeks.flatMap(w =>
+    (Object.values(w.sessions) as (Session | undefined)[])
+      .filter((x): x is Session => !!x && (x.type === 'easy' || x.type === 'recovery')))
+
+  const easyGrowth = (before: Plan, after: Plan, tag: string) => {
+    const b = easies(before), a = easies(after)
+    const grew: string[] = []
+    let compared = 0
+    for (let i = 0; i < Math.min(b.length, a.length); i++) {
+      if (b[i].duration_mins == null || a[i].duration_mins == null) continue
+      compared++
+      if (a[i].duration_mins! > b[i].duration_mins!)
+        grew.push(`${tag} ${b[i].label}: ${b[i].duration_mins} -> ${a[i].duration_mins} min`)
+    }
+    return { grew, compared, sameCount: b.length === a.length }
+  }
+
+  it('§125 Am.5 — no easy session gains minutes across a recalibration', () => {
+    expect(CASES.length).toBeGreaterThan(20)   // an empty corpus passes every loop
+    const grew: string[] = []
+    let compared = 0
+    for (const c of CASES) {
+      const r = easyGrowth(c.before, c.after, c.bm.time!)
+      expect(r.sameCount).toBe(true)           // re-derivation, never re-selection
+      grew.push(...r.grew); compared += r.compared
+    }
+    // The population must be real, or "nothing grew" is a statement about zero rows.
+    expect(compared).toBeGreaterThan(100)
+    expect(grew, `§125 Am.5 breached — a recalibration grew an easy session's minutes:\n  ${grew.join('\n  ')}`)
+      .toEqual([])
+  })
+
+  it('§125 Am.5 FALSIFICATION — the SAME comparator goes RED when the dose is written', () => {
+    const c = CASES.find(x => easies(x.before).some(s => s.duration_mins != null))
+    expect(c, 'no case carries a duration-anchored easy session').toBeTruthy()
+    // Clean, through the real comparator.
+    expect(easyGrowth(c!.before, c!.after, 'clean').grew).toEqual([])
+    // Now write the one field `RECALIBRATION_SCOPE` forbids and re-ask.
+    const mutated: Plan = JSON.parse(JSON.stringify(c!.after))
+    const target = easies(mutated).find(s => s.duration_mins != null)
+    expect(target).toBeTruthy()
+    target!.duration_mins = target!.duration_mins! + 5
+    const r = easyGrowth(c!.before, mutated, 'mutated')
+    expect(r.compared).toBeGreaterThan(0)
+    expect(r.grew.length).toBe(1)
+  })
+
   it('FALSIFICATION — an undeclared write throws outside production', () => {
     expect(() => writeScoped({} as object, 'structured', 'duration_mins', 1)).toThrow(/§125 does not declare/)
     expect(() => writeScoped({} as object, 'session', 'label', 'x')).toThrow(/does not declare/)

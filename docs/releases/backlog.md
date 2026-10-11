@@ -1426,6 +1426,34 @@ is already in `ops_events`.
 
 ---
 
+## ⚖️ FILED 2026-10-11 — `COACHING-ROUND-WARNS-BLIND-01`, from the board sitting
+
+### 🟡 `COACHING-ROUND-WARNS-BLIND-01` — the round tells the board to weigh warns and does not write the warns *(filed 2026-10-11, P2)* ⚙️ **NO BOARD** *(tooling)*
+
+🔴 **FOUND BY TRYING TO DO WHAT THE FILE ASKS.** `coaching-review/<date>/review.md` closes with
+*"Warns are the board's to weigh"* — and **neither it nor `generated-plans.md` records a single warn
+code, severity, week or message.** Only the per-case COUNT, in a table.
+📐 Measured: `grep -c "INV-PLAN" coaching-review/2026-10-11/generated-plans.md` → **0**.
+
+So the protocol's closing instruction is a request nobody can satisfy without reading 29 generated
+plans by eye, and a board that signs it off has weighed a number, not a finding. **Same shape as the
+decorative-config family: the artifact exists, says the right thing, and cannot be acted on.**
+
+📊 **The counts that went unweighed on 2026-10-11, and they do not look like noise:** `E5`
+intermediate marathon on 3 days with a 30-minute cap **15 warns** · `M4` sub-4:00 busy 3-day cap 45
+**9** · `PV2-G` Monday-race HM **8** · HM intermediate 1:55 **6** · `E6` 50K ultra **4** · `M3`
+returning + knee **4**. **The three worst are all time-constrained runners** — the same cohort as
+`WEEKDAY-OVERRUN-BOUND-01`, which is waiting on a cost measurement about exactly those sessions.
+
+**The build.** The round emits, per case, every warn's code + severity + week + day + message, and
+`review.md` carries a code-frequency tally across all cases so a repeated warn is visible as a
+pattern rather than as six separate ones. ⚠️ **Falsify by removing one warn from one case and
+confirming the tally moves** — a count that cannot move is the thing being fixed.
+🔻 **Not an error-severity gap:** every one of the 29 cases is 0 errors, and that half of the
+protocol works. This is the half the board was asked to judge.
+
+---
+
 ## ⚖️ FILED 2026-10-11 — `AUDIT-HEADING-UNMARKED-01`, and six stale records corrected
 
 ### ✅ `AUDIT-HEADING-UNMARKED-01` — **SHIPPED 2026-10-11. Every backlog arm keyed on a status marker, and this one had none** ⚙️ **NO BOARD** *(tooling)*
@@ -1875,7 +1903,16 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 >
 > 🔻 **Does not reach the 7 existing plans** (new-plans-only). Folded into the Clay/Duncan decision.
 
-### 🏃 `FOUNDATION-TARGETS-DOCTRINE-01` — §57 never says what targets a foundation session carries *(filed 2026-10-09)* 🏃 **COACHING BOARD**
+### ✅ `FOUNDATION-TARGETS-DOCTRINE-01` — **RULED CORRECT 2026-10-11, unanimous. §57 gains a *Targets* subsection** 🏃 **COACHING BOARD**
+> ✅ **A foundation easy run carries the plan's OWN pace band and top-of-Z2 ceiling, not a band of its
+> own.** §122 had already ruled the general case (*"a foundation week is pre-plan, not
+> pre-coaching"*) and §12 Am.1 makes "its own band" the wrong shape — **§12 is a ceiling**, so there
+> is nothing to widen. The chair: an on-ramp band would need evidence the returning runner's aerobic
+> ceiling sits elsewhere, and there is none, *because the ceiling derives from their own current
+> benchmark, which is already the thing that moved.* No seat objected.
+> **Artifacts:** §57 *Targets* · **no numeric, stated not omitted** (read from the plan by
+> `easyTargetsFromPlan`, main-plan weeks only, `null` never a default) · `INV-PLAN-EASY-PACE-PRESENT`
+> already live with `foundationPaceTargets.test.ts` holding the composed case and its falsification.
 
 > §57 says what a foundation block IS and §122 what sizes it. **Nothing says what its sessions'
 > targets should be**, and that silence is why the builder shipped easy sessions with a zone and no
@@ -1939,7 +1976,16 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > 4 Jan, so regeneration is cheap — but it should wait until fault 2 is understood, or it may be
 > rebuilt straight back in.
 
-### 🏃 `RECAL-DISTANCE-CLAUSE3-01` — §125 clause 3 is ruled and NOT built; here is the number the ruling lacked *(filed 2026-10-09)* 🏃 **COACHING BOARD**
+### ✅ `RECAL-DISTANCE-CLAUSE3-01` — **VETOED 2026-10-11. Clause 3 does not ship, and the number it was deferred for is the reason** 🏃 **COACHING BOARD**
+> ⛔ **INCORRECT — a veto.** 10–13 new `INV-PLAN-DELIVERED-RAMP` breaches per 36 plans **in the ±4–8%
+> band that an ordinary recalibration occupies**, against a 0.5–0.8% weekly honesty gain, on a
+> population where `measure:fitness` records healthy masters already never-building in **18.6%** of
+> cases (n=6,712). Chair: *"a fix that introduces a load-rule breach at the common magnitude is not a
+> fix."* §121's honesty precedent cuts the other way — §121 removed a number that was WRONG; clause 3
+> would add one that is **more precise and less safe**.
+> 🔑 **Reopens only on** a re-derivation that holds the delivered ramp — clause 3 applied THROUGH
+> §2/§3 rather than ahead of them. **The stale distance is now the ratified state, not a defect.**
+> No code: a veto leaves the engine as it is. §125 Amendment 3 records it.
 
 > The board ruled that a recalibration re-derives **everything** descending from pace, distance
 > included, having measured the session-level error (mean 7%, worst 11.9%) and the weekly effect
@@ -1958,7 +2004,27 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > `ruleEngine.ts`'s deferral comment; `scripts/recalibration-sizing-residual.ts` regenerates the
 > numbers.
 
-### 🏃 `RECAL-DISTANCE-REPS-01` — §125's clauses 1 and 2 contradict each other on one row shape *(filed 2026-10-09)* 🏃 **COACHING BOARD**
+### 🏃 `RECAL-DISTANCE-REPS-01` — **RULED, VACATED AND RE-RULED THE SAME DAY: INSUFFICIENT EVIDENCE. Merged with `RECAL-MIXED-MEAN-01` as ONE build** *(filed 2026-10-09)* 🏃 **COACHING BOARD**
+> 🔴 **THE BOARD'S FIRST RULING WAS MADE ON A CONTROL IT HAD NOT LOCATED, AND I GAVE IT THE
+> SUBMISSION THAT MADE THAT POSSIBLE.** It ruled *"clause 1 prevails, the distance label yields"* —
+> grow the rep length, hold the minutes. Then the label was found:
+>
+> | | where it lives | movable by a recalibration? |
+> |---|---|---|
+> | step **length** (`1600 m`) | `V1_SESSION_CATALOGUE.main_set_structure`, priced by `pacedRepMainMinutes` | **No.** `DerivedStep.length` on the session is a human-readable STRING — writing it changes what the runner READS and leaves what §8 PRICES untouched. A two-writer pricing drift |
+> | step **repeat** (`6 ×`) | resolved onto `derived_set.blocks[].repeat`, read back by the same function | **Yes** — the operation `pacedRepPlan` already performs at generation |
+>
+> So one remedy is **ineffective**, one is **forbidden** (editing the row is re-selection), and the
+> third — moving the **rep count** — was never costed. Ruling vacated; re-ruled INSUFFICIENT EVIDENCE.
+> ⚡ **Recorded, unresolved:** Willy prefers the count (more, shorter onsets is the conservative
+> direction); Seiler refuses both — *"a 6 × 1600 m cruise set and a 7 × 1600 m cruise set are not the
+> same session"* — and would rather the dose drift a few per cent than the shape change silently.
+> ✅ **Clause 1 still prevails: the dose is untouched, which is what the code already does.** The
+> declared §8 breach (9 at ±12.5%, 24 at +20.8%) is the **ratified status quo**; leaving those rows
+> stale instead was measured and is worse (24–51 per 36 plans).
+> 🔑 **Settles on** the rep-count cost measured. **Prerequisite: step lengths resolved onto the
+> session — which is `RECAL-MIXED-MEAN-01`'s blocker. THESE TWO ITEMS ARE ONE BUILD**, and the board
+> was told the opposite in the same sitting. §125 Amendment 4 records it.
 
 > A **distance-anchored rep row** — 6 × 1600 m — run slower takes longer. Clause 1 fixes the
 > work-minute dose (Willy, binding); clause 2 re-derives every pace. Both cannot hold, and §8's
@@ -1972,7 +2038,24 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > duration follows (clause 1 amended), or the reps' distance shrinks (which clause 2 forbids as
 > re-selection).
 
-### 🏃 `RECAL-EASY-DURATION-01` — the easy-run mirror, deliberately out of scope *(filed 2026-10-09)* 🏃 **COACHING BOARD**
+### ✅ `RECAL-EASY-DURATION-01` — **RULED CORRECT WITH AMENDMENT 2026-10-11. The exclusion is ratified, NOT on the grounds it was filed under** 🏃 **COACHING BOARD**
+> ✅ **§125 Amendment 5: a recalibration may re-price an easy run's pace and must NEVER increase its
+> `duration_mins`.**
+> 🎯 **McMillan refused the filed reason** — *"that cohort was not in the submission the board
+> measured"* is a statement about the submission, not about the runner. Beginners are **95.8%
+> duration-anchored**, so they are **the** population a recalibration's minutes move, and they were
+> absent from the measurement that then ruled on them. He accepted the conclusion and rejected the
+> reasoning, so the exclusion is now an affirmative rule rather than a footnote.
+> ⚕️ **Sims, RED-S:** a mechanism whose output is *"your minutes went up because you got faster"*,
+> with no fuelling or recovery signal, is a low-energy-availability risk on the cohort least equipped
+> to absorb it. 🩹 **Willy:** it inverts load management. §1 cannot counter-argue — CD-19 makes the
+> denominator session-count, so a duration change cannot move it either way.
+> **Artifacts:** §125 Am.5 · `RECALIBRATION_SCOPE` (`duration_mins` absent from every list — a
+> build-time impossibility at `writeScoped`, not a `validatePlan` rule, per CB-FOUNDATION-DENOM-01:
+> *a defect class that cannot occur beats a check that catches it*) · `recalibrationComposition.test.ts`
+> now asserts the **property** end-to-end, not just the scope list, with a falsification **driving the
+> same comparator** — the first cut wrote the comparison twice and proved only that its own loop
+> could count.
 
 > An easy run is distance-anchored from the week's volume budget and its duration is
 > `dur(km, easyPace)`, so it IS pace-derived and §125 clause 3 reads as covering it. Excluded on
@@ -6568,7 +6651,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-10-11 (last ship `17a45278`). 564 files / 5,102 tests · `verify` exit 0 from a FILE · Build 0 · `audit-docs.sh` ALL CLEAN.** 🔴 **THE RACE DATE WAS RECOVERABLE AND I HAD WRITTEN THAT IT WAS GONE** — the founder asked *"can we not recover it?"* and it was in `plan_refused_by_design.weeks_to_race`, a source the per-field review never read. ⚠️ **MY OWN ROADMAP ROW ALREADY SAID SO** while the backlog entry said the opposite: two registers, one of me in between. ⚠️ **My inversion was wrong in BOTH anchor and rounding** (`plan_start` + `floor`; the route uses `Date.now()` + `round`), so the window I handed him **EXCLUDED his own answer** — all four events now reproduce 24 Apr 2027 (29/29, 28/28), and the honest limit is that telemetry pins a **7-day window, not a day**. 🥇 **THE REAL FINDING WAS THE DOOR THE STAMP OPENS.** `canModifyPlan` returned *do we hold the input?* where the row asks *can this plan be modified?* — measured by walking all 8 editable keys through the real engine: **Sheena 0 of 27 offered edits produce a plan; Tom 2 of 27, and BOTH are perverse** (a *tighter* weekday cap; an injury he does not have), because §111 refuses on peak ÷ current volume so anything that SHRINKS the plan clears the gate. **The honest answer is refused.** 🔴 **I CLAIMED THE GATE AS AN EXEMPT DEFECT FIX AND THE SUITE PROVED ME WRONG** — a test shipped the PREVIOUS DAY asserted *"a base-build plan is now modifiable"*, the MECHANISM asserted while the INTENT was claimed. 🧭 Design Board sat: **SHIP WITH AMENDMENT**, recorded an **INTERIM** with Sierra's dissent unresolved. ✅ Population **2 base-build plans, both unstamped — no runner ever had the row**, so the founder-approved backfill would have been what first opened it; the script now **refuses to write** if the gate is absent (falsified 3 ways). 🔻 **AND NOTHING DETECTS A FINISHED BASE BUILD** — `base_build_onramp: true` has a producer and **zero readers**; both runners end in January with a marathon on 24 Apr, ~14 and ~13 weeks clear. ⚠️ **Two of my own slips caught by mechanisms:** I hand-wrote a predicate `isBaseBuildPlan` already owned, and shipped under **two ids**, which `audit-docs.sh` caught. I also nearly filed a phantom that `verify` exits 0 on a failing test — it exits **1**. ✅ **THE BACKFILL IS APPLIED AND VERIFIED** — both base-build plans stamped (17 and 21 fields, `race_date 2027-04-24`), `meta.race_date` still empty so no countdown, audit 0, save gate 0, door shut; fleet unstamped **9 → 7**. 🔴 **MY FIRST `--apply` WROTE CORRECTLY, FAILED ITS OWN CHECK AND AUTO-REVERTED TWO LIVE PLANS** — `plan_json` is **jsonb**, which normalises key order, and I compared stringified JSON built in declaration order. **The write was right; the check was wrong.** Revert proven clean first; new owner `jsonEquivalent` (**6 of 9 arms negative**, array order NOT sorted). 🥇 **AND §44 DESCRIBED A TWO-STEP PATTERN THE APP HAD BUILT ONE STEP OF** — `requires_acknowledgment` was returned by the route and read **ZERO times**; `acknowledged_prep_warning` had **no UI writer, ever**. A time-goal runner in the warn band was refused with no way to proceed. **Fixed the pair** (§52's twin was identically dead). ⚠️ Two of my grids said "no defect" because the band is GOAL-dependent and every row was a finish goal. Parity **486 of 6,066, all refusal TEXT, zero plans**. 🥇 **THEN HE STOPPED ME AND PICKED THREE, AND ALL THREE ARE DONE.** ✅ `BASEBUILD-HANDOVER-01` — a base-build block that ends now says so and offers the race plan (**MAINT-06's twin**; validated on both real plans, and Tom only works because of `PREP-ACK-NO-WRITER-01` shipped hours earlier). ✅ `BASEBUILD-ADJUST-REBUILD-01` — **two rows, not eight**, and the obvious implementation was **unsound**: `accept_base_build` only fired inside a refusal catch, and **1 of 8 edits flips that refusal**, which would have handed a base-build runner a RACE PLAN. 🔴 `BASEBUILD-ADJUST-MONOTONIC-01` — **the board REVERSED ITSELF and the defect DISSOLVED**: §111 measures the delivered peak, so a runner who constrains themselves receives a smaller plan and the gate correctly admits it. **A 20% refusal increase was prevented**, and two of my own claims were wrong (the table is delivered-consistent, not target; the real cost was 20.0% not my 14% proxy). ✅ One real bug fell out: *"check back in 1 weeks"* in front of a refused runner. ⚠️ **My gate for it stayed GREEN on the restored bug** — the population excluded the case at risk, minutes after I cited that class. ✅ **AND HIS SIGN-OFF EXPOSED MY OWN WRONG NUMBER.** `LR-PEAK-NOT-LONGEST-01` rested on **10.8%** — measured by keeping the FIRST maximum met, so every plan whose long run **never grows** counted as an inversion. **Strictly: 0 of 2,294.** The engine pass I wrote was **identical with and without** and was deleted; the one real live case sits in a **DELOAD** week and dissolved too (its genuine defect, a deload adding volume, was already flagged). **Shipped as a `warn` regression guard only**, proven wakeable by the liveness harness. ⚠️ **Nothing has run on a device.** 🔴 **AND THE LAST THING I SHIPPED HIM WAS BROKEN PROSE, NOT BROKEN SQL.** The digest's Q2/Q9/Q2B SQL needed no correction on any attempt; the INSTRUCTION reading Q2B's rows was wrong **twice** and both defects were invisible on the page: it told the digest to render the cohort as the at-risk list (**4× overstatement** against `at_risk_trialing`), and defined at risk as `days_quiet >= 3` when **-1 is not >= 3** — the sentinel for *no signal at all*, the worst case, failed the only rule naming it, authored hours after I cited that exact lesson. **A prompt's surface is the AGENT**, so it was driven three times: run 1 flagged defect 1 unprompted, run 2 reconciled defect 2 out loud, run 3 on a two-sentinel case came back clean. Q2B's `where` was also a **second ungated copy** of the trial predicate — the gate parsed only the `## Q2 —` block — so it now covers both AND the prose against the SQL it interprets (7→13 arms, all 7 mutations red). 🔴 **AND AUTONOMOUS ON THE OPS-DIGEST WAVE: THREE OF SIX DIGEST FINDINGS WERE PHANTOMS AND ITS HEADLINE EXPLANATION WAS FALSE.** `invalid` stepped **15 → 20 on 10-06 with `checked` FLAT at 30** — an error invariant that shipped **34 minutes** before that run — while the digest blamed *"the audit seeing more plans"*. ✅ Four ships: the cross-week copy class (**two live rejections needed TWO signals**; a fix for one would have been a third one-twin instance), five schema fields with **0 readers** plus `weeks[].phase` missing from the Zod twin **thirty lines from the twin I fixed the day before**, the audit now naming its own step, and a metric that said *"0 of 23 missing"* while **excluding the one PAID runner it was about** — where stamping `'skipped'` would have hidden them behind a tidier field. 🥇 **MY OWN MEASUREMENT COULD NOT FIND THE DEFECT:** rejected enrichment is discarded, so it can never be in `plans`, and I used `type === 'quality'` where the check uses `weekIntensityFlags` — **wrong population twice in one script.**
+**State at END of 2026-10-11 (last ship `PENDING`). 564 files / 5,104 tests · `verify` exit 0 from a FILE · Build 0 · `audit-docs.sh` ALL CLEAN.** 🔴 **THE RACE DATE WAS RECOVERABLE AND I HAD WRITTEN THAT IT WAS GONE** — the founder asked *"can we not recover it?"* and it was in `plan_refused_by_design.weeks_to_race`, a source the per-field review never read. ⚠️ **MY OWN ROADMAP ROW ALREADY SAID SO** while the backlog entry said the opposite: two registers, one of me in between. ⚠️ **My inversion was wrong in BOTH anchor and rounding** (`plan_start` + `floor`; the route uses `Date.now()` + `round`), so the window I handed him **EXCLUDED his own answer** — all four events now reproduce 24 Apr 2027 (29/29, 28/28), and the honest limit is that telemetry pins a **7-day window, not a day**. 🥇 **THE REAL FINDING WAS THE DOOR THE STAMP OPENS.** `canModifyPlan` returned *do we hold the input?* where the row asks *can this plan be modified?* — measured by walking all 8 editable keys through the real engine: **Sheena 0 of 27 offered edits produce a plan; Tom 2 of 27, and BOTH are perverse** (a *tighter* weekday cap; an injury he does not have), because §111 refuses on peak ÷ current volume so anything that SHRINKS the plan clears the gate. **The honest answer is refused.** 🔴 **I CLAIMED THE GATE AS AN EXEMPT DEFECT FIX AND THE SUITE PROVED ME WRONG** — a test shipped the PREVIOUS DAY asserted *"a base-build plan is now modifiable"*, the MECHANISM asserted while the INTENT was claimed. 🧭 Design Board sat: **SHIP WITH AMENDMENT**, recorded an **INTERIM** with Sierra's dissent unresolved. ✅ Population **2 base-build plans, both unstamped — no runner ever had the row**, so the founder-approved backfill would have been what first opened it; the script now **refuses to write** if the gate is absent (falsified 3 ways). 🔻 **AND NOTHING DETECTS A FINISHED BASE BUILD** — `base_build_onramp: true` has a producer and **zero readers**; both runners end in January with a marathon on 24 Apr, ~14 and ~13 weeks clear. ⚠️ **Two of my own slips caught by mechanisms:** I hand-wrote a predicate `isBaseBuildPlan` already owned, and shipped under **two ids**, which `audit-docs.sh` caught. I also nearly filed a phantom that `verify` exits 0 on a failing test — it exits **1**. ✅ **THE BACKFILL IS APPLIED AND VERIFIED** — both base-build plans stamped (17 and 21 fields, `race_date 2027-04-24`), `meta.race_date` still empty so no countdown, audit 0, save gate 0, door shut; fleet unstamped **9 → 7**. 🔴 **MY FIRST `--apply` WROTE CORRECTLY, FAILED ITS OWN CHECK AND AUTO-REVERTED TWO LIVE PLANS** — `plan_json` is **jsonb**, which normalises key order, and I compared stringified JSON built in declaration order. **The write was right; the check was wrong.** Revert proven clean first; new owner `jsonEquivalent` (**6 of 9 arms negative**, array order NOT sorted). 🥇 **AND §44 DESCRIBED A TWO-STEP PATTERN THE APP HAD BUILT ONE STEP OF** — `requires_acknowledgment` was returned by the route and read **ZERO times**; `acknowledged_prep_warning` had **no UI writer, ever**. A time-goal runner in the warn band was refused with no way to proceed. **Fixed the pair** (§52's twin was identically dead). ⚠️ Two of my grids said "no defect" because the band is GOAL-dependent and every row was a finish goal. Parity **486 of 6,066, all refusal TEXT, zero plans**. 🥇 **THEN HE STOPPED ME AND PICKED THREE, AND ALL THREE ARE DONE.** ✅ `BASEBUILD-HANDOVER-01` — a base-build block that ends now says so and offers the race plan (**MAINT-06's twin**; validated on both real plans, and Tom only works because of `PREP-ACK-NO-WRITER-01` shipped hours earlier). ✅ `BASEBUILD-ADJUST-REBUILD-01` — **two rows, not eight**, and the obvious implementation was **unsound**: `accept_base_build` only fired inside a refusal catch, and **1 of 8 edits flips that refusal**, which would have handed a base-build runner a RACE PLAN. 🔴 `BASEBUILD-ADJUST-MONOTONIC-01` — **the board REVERSED ITSELF and the defect DISSOLVED**: §111 measures the delivered peak, so a runner who constrains themselves receives a smaller plan and the gate correctly admits it. **A 20% refusal increase was prevented**, and two of my own claims were wrong (the table is delivered-consistent, not target; the real cost was 20.0% not my 14% proxy). ✅ One real bug fell out: *"check back in 1 weeks"* in front of a refused runner. ⚠️ **My gate for it stayed GREEN on the restored bug** — the population excluded the case at risk, minutes after I cited that class. ✅ **AND HIS SIGN-OFF EXPOSED MY OWN WRONG NUMBER.** `LR-PEAK-NOT-LONGEST-01` rested on **10.8%** — measured by keeping the FIRST maximum met, so every plan whose long run **never grows** counted as an inversion. **Strictly: 0 of 2,294.** The engine pass I wrote was **identical with and without** and was deleted; the one real live case sits in a **DELOAD** week and dissolved too (its genuine defect, a deload adding volume, was already flagged). **Shipped as a `warn` regression guard only**, proven wakeable by the liveness harness. ⚠️ **Nothing has run on a device.** 🔴 **AND THE LAST THING I SHIPPED HIM WAS BROKEN PROSE, NOT BROKEN SQL.** The digest's Q2/Q9/Q2B SQL needed no correction on any attempt; the INSTRUCTION reading Q2B's rows was wrong **twice** and both defects were invisible on the page: it told the digest to render the cohort as the at-risk list (**4× overstatement** against `at_risk_trialing`), and defined at risk as `days_quiet >= 3` when **-1 is not >= 3** — the sentinel for *no signal at all*, the worst case, failed the only rule naming it, authored hours after I cited that exact lesson. **A prompt's surface is the AGENT**, so it was driven three times: run 1 flagged defect 1 unprompted, run 2 reconciled defect 2 out loud, run 3 on a two-sentinel case came back clean. Q2B's `where` was also a **second ungated copy** of the trial predicate — the gate parsed only the `## Q2 —` block — so it now covers both AND the prose against the SQL it interprets (7→13 arms, all 7 mutations red). 🔴 **AND AUTONOMOUS ON THE OPS-DIGEST WAVE: THREE OF SIX DIGEST FINDINGS WERE PHANTOMS AND ITS HEADLINE EXPLANATION WAS FALSE.** `invalid` stepped **15 → 20 on 10-06 with `checked` FLAT at 30** — an error invariant that shipped **34 minutes** before that run — while the digest blamed *"the audit seeing more plans"*. ✅ Four ships: the cross-week copy class (**two live rejections needed TWO signals**; a fix for one would have been a third one-twin instance), five schema fields with **0 readers** plus `weeks[].phase` missing from the Zod twin **thirty lines from the twin I fixed the day before**, the audit now naming its own step, and a metric that said *"0 of 23 missing"* while **excluding the one PAID runner it was about** — where stamping `'skipped'` would have hidden them behind a tidier field. 🥇 **MY OWN MEASUREMENT COULD NOT FIND THE DEFECT:** rejected enrichment is discarded, so it can never be in `plans`, and I used `type === 'quality'` where the check uses `weekIntensityFlags` — **wrong population twice in one script.**
 
 **Prior — State at END of the 2026-10-09 session, continued into 2026-10-10 (last ship `36cb7593`). 551 files / 4,946 tests · `verify` exit 0 · Build 0 · sweep 0 new on 14,268 plans · parity IDENTICAL 6,066 · `audit:plans` re-baselined with a declared reason.** 🔴 **TWO BOARDS SAT AND BOTH RULINGS CHANGED UNDER MEASUREMENT.** 🏃 `WIZARD-ZERO-VOLUME-REFUSAL-01` was **CORRECT WITH AMENDMENT three times in one session**, each amendment forced by a number: **(1)** the item's own two premises were FALSE — §111 already refuses a zero weekly volume, and the real defect was `longest_recent_run_km = 0` read as a GAP by `> 0` in **FOUR** places, so §9's cap was skipped and **a declared zero produced a 12.5 km first long run on a half marathon against 2.0 km for a declared 1 km**; **(2)** the ruling's own two artifacts **contradicted each other** — "cap a declared zero at 5 km" cannot be monotone against §113 Am.1's ratified 2.0 km rung, so the number yielded to the ordering; **(3)** §113's gate carried the same expression, so a declared zero was **ADMITTED** at HM while a declared 1 km was **REFUSED**, and the admitted plan carried its **largest long run inside the taper** (16.0 vs a peak of 11.0), +112% at week 4. 🔴 **THE CHECKER WAS BLIND FOR THE SAME REASON THE PRODUCER WAS** — `INV-PLAN-WEEK-1-2-LONG-CAP` shared `> 0`, so the one invariant written to catch an over-large opening long run fired **0 times at every rung**. 🥇 **MY OWN FIX INTRODUCED FOUR ERROR-LEVEL VIOLATIONS and chasing them found the fourth site** — the regression I caused is what exposed it. 🥇 **I also inferred a ruling nobody asked for** (widening §44's 10K door to half-marathoners) and backed it out: an existing test pinned the opposite and `LR-ALT-42-CONFIG-01` owns the number — which had been called "filed" in a test comment with **no backlog entry at all**. 🧭 `WIZARD-WEEKDAY-CONFIRM-01`: the Design Board **KILLED what the SLT asked for** — a weekday confirmation, on a **37.5% fire rate** with Saturday 12 vs Sunday 13 live — and shipped a **readback** instead. 🔻 **So the SLT's success condition is no longer achievable and that is flagged for an overturn, not dropped.** 🥇 **TWO DEFECTS IN MY OWN GATE, both caught by running it: 2027-06-20 is a SUNDAY and I had typed Saturday**, and the bounded region found the **validation** switch 960 lines earlier because two switches share one case label. **Measured: 668 of 6,480 beginner-marathon rows move to a governed "not yet" and NOT ONE `longest > 0` row changes.** 🔴 **AND THE COVERAGE REGISTER WAS SHORT BY ONE PRINCIPLE FOR THREE WEEKS** — `principlesInDoc()` matched `^## N. ` while §121 is written `## §N — `, so a ratified principle **with an invariant already citing it** was invisible to the assertion written to catch exactly that; `doc.length` 120 → 121, and **the number was never 120, the parser was.** 🥇 **§10's own exemption reason went stale three hours after MY amendment invalidated it** — *"there is no plan property to assert"* — because **an `exempt` entry is never re-examined.** The new arm walks **code → manifest**, the half nothing walked. 🔴 **AND THE RECORDS COULD NOT ANSWER "WHAT IS STILL OPEN?"** — a **125-line region of `backlog.md` was DUPLICATED with the two copies in DIFFERENT STATES** (`LR-NOTE-SCOPE-01` as ✅ CLOSED *and* 🔻 BLOCKED), and **🔻 — the most common open marker, 14 headings — was in NEITHER shipped-but-open audit arm.** 🥇 **AND THAT ITEM'S CLOSURE EVIDENCE WAS A TAUTOLOGY**: *"373 of 373 have `peak-phase max == plan max`"*, and the note's figure **IS** the peak-phase max, so it compared its own source to itself. Re-measured: **2 of 118 understate the plan's longest run**, the maximum sitting in **BUILD** (`w11:153` vs `w14/peak:144`) — `LR-TAPER-BUMP-01` scoped V4 out of the taper and **left build in**, the twin named in its own record. Re-opened + `LR-LONGEST-IN-BUILD-01` filed. 🔴 **THEN TWO DEFECTS WHERE A RULE EXISTED AND NOTHING ENFORCED IT.** The enricher's prompt forbids placeholders in week copy *in as many words* and the merge took them anyway: **49 in `week.theme`, 11 of 34 plans**. ⚠️ **THE CONSUMER CHECK INVERTED THE ITEM** — `theme` strips its tokens at render, while **`label`, with ZERO tokens, renders RAW at four `PlanCalendar` sites**: the field with no observed defect was the dangerous half. And §80's note said *"your longest run"* about the **peak phase's** maximum — right number, wrong words — so the words moved and the number did not. 🥇 **THE HOLD ON THAT WORDING WAS RELEASED BY A MEASUREMENT, AND MY FIRST PLAN FOR IT FAILED ITS OWN STRESS-TEST**: `audit:plan-shape` is **not in `verify:ci`**, so the replacement signal would have run only when somebody typed it. 🥇 **AND THE ITEM I FILED THAT MORNING WAS WRONG BY AN ORDER OF MAGNITUDE** — 592 of 2,872 (20.6%), the maximum sitting in **base** more often than build, and **535 of 592 time-target where doctrine is silent**; the number for the board is **19**. 🔴 **THEN TWO BOARD SITTINGS, AND THE CONFLICT SCAN DISSOLVED ONE ITEM AND RE-SCOPED THE OTHER.** `ADR022-V1-DELIVERED-RISE-01` **WITHDRAWN** — §100 had ruled it a month earlier and §94 is its detector: **three numbers were offered for one question (93% / 77% / 21%) and only the ratified instrument measured what the constitution bounds.** `LR-PEAK-NOT-LONGEST-01` **split by phase** — BASE (309, 10.8%) correct to guard, BUILD insufficient evidence, `time_target` (535 of 592) not a defect; 🔻 **founder-gated**, it changes prescription on ~1 plan in 10. ✅ **§94 Amendment 4 built**: the delivered-ramp MAGNITUDE is now segmented and non-growing, and **the board REFUSED a threshold** — §2 Am.2 freezes the predicate until outcome data exists, and *a percentile is not a dose*. 🔴 **THE HEALTHY TAIL IS WORSE THAN THE INJURED** (105% vs 18%), an artefact of lever count. 🥇 **THREE CORPUS MISTAKES IN ONE DAY, ALL THE SAME SHAPE: `cohortGrid` has 0 injury rows of 41,472**, and I nearly submitted *"no injury exposure"* as a finding. **Size is not coverage.** 🥇 **And my own gate caught two false claims and a self-referential arm that asserted its source did not contain the token the assertion contained.** ⚠️ **Nothing has ever run on a device.**
 
@@ -9309,7 +9392,16 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
 
-### `WEEKDAY-OVERRUN-BOUND-01` — is +187% over a stated weekday cap still "don't shrink to fit"? 🏃 **COACHING BOARD**
+### 🏃 `WEEKDAY-OVERRUN-BOUND-01` — is +187% over a stated weekday cap still "don't shrink to fit"? **NOW CARRIES `SESSION-WEEK-SHARE-01` TOO (merged 2026-10-11)** 🏃 **COACHING BOARD**
+> ⚖️ **MERGED 2026-10-11.** `SESSION-WEEK-SHARE-01` was measured, Willy withdrew the frequency half
+> of his own objection, and what survived is **one cell** — CV intervals at **47.9% of the week**
+> (11.5 km of 24.0 km, experienced, 20 km/wk, cap 30). That is the same runner, the same session
+> type and the same selector as the 675 below, and it needs the same cost measurement. **One item,
+> two questions: is there a magnitude bound, and is there a share bound? Neither can be answered
+> without knowing what a bound COSTS.**
+> 📐 The share distribution is in `SESSION-WEEK-SHARE-01` above and the harness is
+> `scripts/measure-session-week-share.ts`; re-run it alongside the cost measurement so the bound is
+> argued against both quantities at once.
 
 ⚖️ **INSUFFICIENT EVIDENCE, 2026-10-06.** §81's exemption is ratified twice and is not in question.
 The open question is whether there is a **magnitude** past which the engine should choose a DIFFERENT
@@ -9331,7 +9423,31 @@ bound that removes it from exactly those runners may be worse than the overrun.
 
 ---
 
-### `SESSION-WEEK-SHARE-01` — no check anywhere looks at ONE SESSION as a share of the week 🏃 **COACHING BOARD**
+### ✅ `SESSION-WEEK-SHARE-01` — **MEASURED AND MERGED 2026-10-11. Willy withdrew half his own objection on the number** 🏃 **COACHING BOARD**
+> ⚖️ **INSUFFICIENT EVIDENCE, and merged into `WEEKDAY-OVERRUN-BOUND-01`** — same 675 sessions, same
+> selector, same cost measurement. **Do not carry it separately.**
+> 📐 **MEASURED FOR THE FIRST TIME** (`scripts/measure-session-week-share.ts`, cohort grid stride 53,
+> 748 plans, 19,962 non-long non-race sessions):
+>
+> | | median | p90 | p99 | max | >40% | >50% |
+> |---|---|---|---|---|---|---|
+> | share of DELIVERED week | 18.3% | 28.6% | 38.0% | **51.1%** | 79 (0.4%) | **1** |
+> | share EXCLUDING long run | 30.4% | 50.0% | 66.7% | 79.6% | 4,183 (21.0%) | 1,404 (7.0%) |
+>
+> **Willy's own cohort** (weekly ≤25 km AND a stated cap ≤30 min, 1,579 sessions): median 20.0%, p90
+> 29.5%, max **50.0%**, and only **7** sessions over 40% — **the worst three are a 5.0 km "Easy
+> shakeout" in a 10.0 km TAPER week**, which is taper arithmetic, not dose. 🩹 Willy: *"the objection
+> does not survive its own measurement at the magnitude I implied"*, frequency half withdrawn. What
+> survives is **one cell**: CV intervals at **47.9%** (11.5 km of 24.0 km, experienced, 20 km/wk, cap 30).
+> 🔴 **THE EXCLUSIONS ARE THE FINDING.** Long runs are out because §52 owns the long run's share at a
+> ratified ceiling. **Races and TTs are out because §121 already ruled the race is not training
+> volume** — and the first run of this harness, which included them, reported a worst case of 90.4%,
+> 85.8%, 84.1%, every one a 42.2 km RACE in a 46–50 km week. I would have carried that to the board
+> as the worst case. 📊 Seiler: share of a week is the wrong unit — §1 counts sessions (CD-19), so
+> concentration is a load question, not a distribution one.
+> ⚕️ **Sims, recorded and NOT synthesised:** she accepts the safety finding and rejects the
+> implication that the cohort is well served — *the board measured danger and reported adequacy* —
+> and wants the **18.6% masters never-builds** figure chased, which is on no agenda.
 
 🩹 **Willy's gap, named 2026-10-06 and not previously recorded.** The worst case in
 `SESSION-ACHIEVABLE-01` is an **86-minute threshold session for a runner on 20 km/week** — roughly
