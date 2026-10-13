@@ -1426,6 +1426,40 @@ is already in `ops_events`.
 
 ---
 
+## 🧭 PARKED 2026-10-13 — the confirm screen's two held design questions
+
+### 🔻 `MODIFY-CONFIRM-DEVICE-REVIEW-01` — B and C cannot be settled off a device *(parked 2026-10-13 by the founder, "I'm on my phone so I can't see")* 🧭 **DESIGN BOARD**
+
+**Board: 🧭 DESIGN BOARD** — this discharges an existing INSUFFICIENT EVIDENCE record
+(`design-rulings.md` → `MODIFY-CONFIRM-DIFF-01`, 2026-10-13). It is not a new question.
+
+**Prototype:** `~/Downloads/zonna-confirm-prototypes.html` — open it in a BROWSER, not an inline
+preview; it needs JS for the flip and the loop. Built on real tokens and the founder's real edit
+of 13 Oct (12 weeks to 8, his actual Mon/Wed/Fri/Sun days).
+
+| | The question | How to judge it |
+|---|---|---|
+| **B** | 🎪 Collins: is the title's type weight timid at 20px? | **Flip** button — A and B are stacked in ONE position, because a 6px delta cannot be judged across a gutter |
+| **C** | ✋ Silvanto: should the numbers ARRIVE rather than be present? | Both lanes loop together; left is today (everything at once), right staggers over ~850ms. 0.4× control for detail |
+
+📐 **The one number the sitting did not have, measured since:** at 375px, **B is +16px tall** and
+puts the primary CTA 16px lower. Both shapes already exceed a 667px viewport and scroll, so this
+is scroll depth, **not a hidden CTA**. 16px is close to noise, so **height is not an argument
+against B** — which means the question is purely how it reads in the hand.
+
+🔴 **The FIRST prototype page was not reviewable and the founder's verdict was correct.** C
+differed from A only by an animation that fired once at page load and had finished before anyone
+looked: every static measure of the two was identical. **A transition prototype that has already
+played is not a prototype.** Rebuilt and falsified — at 330ms A has 9 of 9 elements visible and C
+has 0 of 9. ⚠️ An earlier *"+53px"* figure was taken in a squeezed pane at an unintended width
+and was wrong; **a layout number measured at an unknown width is not a number.**
+
+**Exit:** the founder looks at it on a screen he can see, each of B and C gets SHIP or DON'T SHIP,
+and a row lands in `design-rulings.md` either way — including a DON'T SHIP, because a kill that
+is not in the register is a kill the next sitting re-proposes.
+
+---
+
 ## ⚖️ FILED 2026-10-13 — two residuals from the ops-digest fixes
 
 ### 🟡 `ADJUST-STATUS-WITHOUT-SAVE-01` — a failed plan save still flips the adjustment to confirmed *(filed 2026-10-13, P2)* ⚙️ **NO BOARD**
@@ -8048,7 +8082,22 @@ Also needs: a `adminViewTierParity`-style test that reads the migration and fail
 arms drift from `lib/trial.ts`, and `docs/contracts/api/analytics-events.md` updated in the
 same commit.
 
-### ⚙️ `OPS-AUDIT-FW-COUNT-01` — `foundation_week_violations` counts plan-level violations
+### ✅ `OPS-AUDIT-FW-COUNT-01` — **ALREADY FIXED 2026-10-09 by `AUDIT-FOUNDATION-MISCOUNT-01`. Closed 2026-10-13 without a build.** ⚙️ **NO BOARD**
+
+> 🔴 **THE `PUSH-UNITS-01` CLASS, SECOND RECORDED FORM.** This item sat open for four days after
+> its subject was fixed. `AUDIT-FOUNDATION-MISCOUNT-01` (`32bf52cf`) extracted the inline filter
+> into `lib/ops/regressionVsNewRule.ts → foundationWeekViolations(plan, errors)` and carries a
+> test asserting `week: 0` contributes **0**. ⚠️ **`backlog-touch.py` could not fire and is not at
+> fault**: this item names `app/api/ops/plan-audit/route.ts`, and while that file WAS touched, the
+> fix's substance landed in a different module — the hook greps changed paths against item text,
+> so it catches "you edited an item's own files", never "someone fixed the subject elsewhere".
+> 📐 **Found by re-measuring before picking it up**, which is the `/build` rule that caught it:
+> the item quotes `errors.filter(v => (v.week ?? 1) <= 0).length` and that expression no longer
+> exists. **The item's own quoted code is the cheapest staleness test there is.**
+
+<details><summary>Original item, for the record</summary>
+
+#### `foundation_week_violations` counts plan-level violations
 
 `app/api/ops/plan-audit/route.ts`: `errors.filter(v => (v.week ?? 1) <= 0).length`.
 Foundation weeks carry **negative** `n`; `week: 0` is the codebase's *plan-level,
@@ -8065,6 +8114,8 @@ different one misleads every reader — it already has.
 ⚠️ **No live gap underneath it.** Swept 41,472 grid inputs × 4 pre-plan runways →
 **158,528 composed plans, 79,264 carrying foundation weeks, 0 error violations.** ADR-020's
 server-side composition is working.
+
+</details>
 
 ### ⚙️ `OPS-AUDIT-CADENCE-DOC-01` — the 07:45 cron actually lands 12:04–14:33
 
