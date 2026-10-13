@@ -6,6 +6,49 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-13 — MODIFY-DIFF-DAY-MAP-01 · a screenshot caught what every test missed
+
+**Shipped:** the whole-plan confirm screen now names the right days, labels a long run as a
+long run, says why the totals moved, and the Design Board ruled on what the screen is for.
+
+**The honest bit first.** The founder sent a screenshot and asked "do these figures look
+right?". They did not. The screen said MON/TUE/WED/THU; he trains Mon/Wed/Fri/Sun. Sunday's
+16.5 km long run was displayed as a Monday 17 km easy run. **Every number on the screen was
+correct and every day was wrong**, which is exactly why nothing flagged it — the sizes
+matched, so it read as plausible.
+
+**Dev learning:** `computeSessionDiff`'s docstring says *"two 7-element session arrays,
+indexed mon=0…sun=6"*. The caller passed `Object.values(week.sessions)`, which is compact —
+only the days that have a session. A 3-day runner's Wed/Fri/Sun landed at 0,1,2 and got
+labelled Mon/Tue/Wed. TypeScript could not see it: both are `SessionLike[]`. **A documented
+contract with no teeth is a comment.** It throws now, and the thing that let it through was
+defensive zip-padding that made a wrong answer look like a plausible one.
+
+**Product/creator learning:** the founder called this a "wow moment we should capitalise
+on". Zhuo's reframe is the thing I'll keep: **it is a consent screen, not a reveal.** The
+runner already asked for the change; what they need is to understand what they are agreeing
+to. A reveal withholds and paces; a consent screen front-loads and is boring on purpose.
+Confusing the two gives you a confirmation flow that feels like it is selling you something
+you already asked for. The board then declined every decoration on the table, and Collins —
+the seat that exists to push for boldness — argued *for* the empty third.
+
+**AI-building learning:** I measured before the board spoke and two of the five questions
+dissolved. "Should we show the whole week?" died on 3.6 sessions of 7 days. "Is the long-run
+label a design question?" died on 371 of 371 — at that scale it is a defect, and Wroblewski
+routed it out rather than let five design seats ratify a bug fix.
+
+**Hook material:** 371 long runs across every live plan in production. All 371 labelled
+"easy". The one place a runner most needs to recognise their long run is the screen where
+they approve the plan containing it.
+
+**And the bit I'd normally hide:** I used 13px for the new sentence — a size that is not in
+the declared type scale — **two hours after the same gate caught me doing exactly that on
+TodayScreen**. Same mistake, same day, different file.
+
+**Postable?:** yes — "every number right, every day wrong" is the whole post.
+
+---
+
 ## 2026-10-13 — PEAK-STEPBACK-S52-FLOOR-01 · three diagnoses, two vacated board rulings, and the engine was right all along
 
 **Shipped:** `INV-PLAN-PEAK-STEPBACK-VOLUME` now recognises §52's long-run share floor as a
