@@ -75,6 +75,10 @@ interface TodayScreenProps {
   onBuildRacePlan?: () => void
   onDismissHandover?: () => void
   handoverBusy?: boolean
+  /** MODIFY-WARN-ACK-01 — the card must show its OWN outcome; see below. */
+  handoverError?: string | null
+  handoverAckLabel?: string | null
+  onHandoverAcknowledge?: () => void
   maintReengagement?: boolean
   maintThemeLine?: string
   onSeeMaintPlan?: () => void
@@ -125,3 +129,17 @@ What the engine prescribes (Coaching Board), tier and pricing (SLT), and the dec
 `lib/plan/baseBuildHandover.test.ts` (16 arms) · `lib/ui/handoverCopy.test.ts` (7) ·
 `components/ui/buttonGeometry.test.ts` · `lib/ui/appTypeScale.test.ts` ·
 `lib/contracts/componentContracts.test.ts` (this contract against the real interface).
+
+## The handover card shows its own outcome — MODIFY-WARN-ACK-01 (2026-10-13)
+
+🔴 **This card is on Today; the plan preview and every refusal surface render under
+`screen === 'plan'`.** So tapping "Build the marathon plan" and SUCCEEDING looked
+identical to being REFUSED: nothing happened, on a screen that renders neither.
+
+Now the refusal reason renders on the card (`--warn`, never `--danger` — a designed
+refusal is not an error state, §INV-DS-005), with §44/§52's consent step beneath it when
+the 422 is acknowledgeable. A SUCCESS navigates to Plan, where the preview lives.
+
+Affects the two live base-build runners when their blocks end (~11 Jan and ~18 Jan);
+Tom's is a time goal and lands in §44's warn band, so his is the refusal path.
+

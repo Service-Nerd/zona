@@ -1426,6 +1426,74 @@ is already in `ops_events`.
 
 ---
 
+## ⚖️ FILED 2026-10-13 — two residuals from the ops-digest fixes
+
+### 🟡 `ADJUST-STATUS-WITHOUT-SAVE-01` — a failed plan save still flips the adjustment to confirmed *(filed 2026-10-13, P2)* ⚙️ **NO BOARD**
+
+Found while fixing `ADJUST-PLAN-SAVE-CLIENT-01`, and deliberately **not** folded into it.
+
+`confirm-adjustment:76` and `revert-adjustment:78` run the save inside a `Promise.all`
+alongside the status update:
+
+```ts
+await Promise.all([
+  savePlanForUser(user.id, updatedPlan, serviceSupabase),
+  serviceSupabase.from('plan_adjustments').update({ status: 'confirmed', … }),
+  serviceSupabase.from('user_settings').update({ … }),
+])
+```
+
+**The siblings are already in flight when the save rejects**, so the row flips to
+`confirmed` / `reverted` whether or not the plan was written — the exact two-record
+disagreement `ADJUST-PLAN-SAVE-CLIENT-01` was about, reachable by any future save
+failure rather than by the client bug just fixed.
+
+🔴 **AND NEITHER ROUTE RECORDS `plan_save_failed`.** Only `adjust-plan:500` does
+(measured: `grep -rn "plan_save_failed" app lib` → one emitter). So the same failure
+that produced three visible ops events on `adjust-plan` would be **completely silent**
+on these two, and the only trace would be the daily integrity probe noticing a date
+mismatch days later.
+
+**The build.** Save first and only flip the status on success, and record
+`plan_save_failed` on both routes with their own `route:` tag. ⚠️ **Falsify by making
+`savePlanForUser` throw and asserting the row did NOT move** — a test that only checks
+the happy path proves nothing here, because the happy path already works.
+
+---
+
+### 🟡 `ENVELOPE-GENERATES-INVALID-PLAN-01` — the engine generates a plan that fails its own constitution *(filed 2026-10-13, P2)* 🏃 **COACHING BOARD** *(if the fix changes prescription)*
+
+🔴 **`useCaseEnvelope.test.ts` fails on untouched `main`, and it is NOT a stale number.**
+`invalidPlans = 1` for the 42.2 km band: one generated plan trips
+`INV-PLAN-PEAK-STEPBACK-VOLUME` (§47) — *"week 10: Peak step-back week W10 (33km)
+delivers MORE than the preceding week W9 (31km)"*. The second failure, fit-for-purpose
+**91.8% → 89.9%**, is a **consequence** of that one invalid plan, not a separate defect.
+
+**The case, fully pinned — no clock involved:**
+`42.2km · 25km/wk · intermediate · 3 days · age 48 · time_target · 12wk · healthy`,
+`race 2027-01-25`, `plan_start 2026-11-02`. A plausible real runner.
+
+📐 **Reproduces at `096267dc`, the commit that WROTE the 91.8 baseline**, so no engine
+ship since moved it and the fixture never matched its own commit.
+
+⚠️ **THREE HYPOTHESES TESTED AND DISCARDED before that**, recorded so nobody re-runs
+them: the clock via refusals (identical across every probed date), the clock via
+`todayOverride` (identical), and the VDOT staleness ramp (`applyVdotDiscount` takes
+`new Date()` by design — but the envelope grid carries **no benchmark at all**, so it
+cannot reach it).
+
+🔴 **IT MATTERS BEYOND THE TEST.** §47 is error-severity, and `validatePlan` only
+THROWS under `NODE_ENV=development|test`; in production it **logs and the plan is
+served**. So this shape reaches runners. Related standing state: the daily plan-audit
+reports **16 of 35 stored plans invalid**, set unchanged, which is why it stays quiet.
+
+🔻 **Not `ENVELOPE-BASELINE-UNGATED-01`** (that is about ungated FIELDS) and not
+`FLEET-INVALID-DEBT-01` (that is about STORED plans). This is the engine generating an
+invalid plan today. Left unfixed on instruction; the fix is a §47/§90 question and the
+board owns it if the remedy changes what the runner is prescribed.
+
+---
+
 ## ⚖️ FILED 2026-10-11 — `COACHING-ROUND-WARNS-BLIND-01`, from the board sitting
 
 ### 🟡 `COACHING-ROUND-WARNS-BLIND-01` — the round tells the board to weigh warns and does not write the warns *(filed 2026-10-11, P2)* ⚙️ **NO BOARD** *(tooling)*

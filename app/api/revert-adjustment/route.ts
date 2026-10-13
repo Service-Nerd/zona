@@ -1,6 +1,5 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { NextRequest, NextResponse } from 'next/server'
-import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
@@ -18,8 +17,7 @@ export async function POST(req: NextRequest) {
   // than service: `plans`, `plan_archive` and `plan_weekly_notes` all carry
   // `auth.uid() = user_id` policies, so RLS stays live. See adjust-plan for the
   // measured incident and the per-table reasoning.
-  const userClient = createUserScopedClient(req)
-  if (!user || !userClient) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const tier = await getUserTier(user.id)
   if (!isFeatureAllowed('dynamic_reshape_r20', tier)) {
@@ -81,7 +79,7 @@ export async function POST(req: NextRequest) {
   // so the Me-screen flag should reflect "nothing pending" after this runs.
   const nowIso = new Date().toISOString()
   await Promise.all([
-    savePlanForUser(user.id, updatedPlan, userClient),
+    savePlanForUser(user.id, updatedPlan, serviceSupabase),
     serviceSupabase
       .from('plan_adjustments')
       .update({ status: 'reverted', reverted_at: nowIso })

@@ -24,6 +24,9 @@ interface ModifyPlanSheetProps {
   onClose: () => void
   busy?: boolean
   error?: string | null
+  /** §44/§52 step two. Mirrors `RefusalView`'s contract deliberately. */
+  ackLabel?: string | null
+  onAcknowledge?: () => void
   onApply: (next: GeneratorInput, resetsLoggedWeeks: boolean) => void
   hasPaidAccess: boolean       // gates the rows carrying `gate: 'dynamic_reshape_r20'`
   onStartNewPlan?: () => void  // the wizard exit, which ARCHIVES the current plan
@@ -92,3 +95,20 @@ engine honours an edit is the Coaching Board's.
 `lib/plan/modifyPlan.test.ts` (25 arms — per-kind row set falsified 3 ways, including a
 typo'd key) · `lib/plan/modifySaveRace.test.ts` · `components/ui/buttonGeometry.test.ts`
 (`SegmentedControl` floors at 44px here) · `sheetPresentation.test.ts`.
+
+## Step two — MODIFY-WARN-ACK-01 (2026-10-13)
+
+`ackLabel` + `onAcknowledge` render a **secondary** consent button under the refusal
+reason, shown only when both are set and `error` is present.
+
+**The prop names mirror `RefusalView` on purpose.** That component already owns this
+affordance for the wizard, and a second vocabulary for the same consent step is how two
+surfaces start disagreeing about what the runner agreed to. The label always comes from
+`ACK_LABEL` — never written at the call site — because it is a **consent, not a build**
+(Hutchinson, binding, `PREP-ACK-WARN-OFFER-01`): *"Build my plan"* would make step two
+indistinguishable from step one.
+
+Before this the sheet showed a 422's reason with nothing to do about it, and Apply
+re-sent the identical request. Measured on a real runner 2026-10-11, twice, ten seconds
+apart, both `DaysAvailableError / warn_unacknowledged`.
+

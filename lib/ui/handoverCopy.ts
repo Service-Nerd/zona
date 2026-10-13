@@ -22,9 +22,15 @@
  * Measured the day after each live block ends: Sheena's race plan generates (14 weeks);
  * **Tom's returns `PrepTimeError (warn_unacknowledged)`** and only generates once he
  * acknowledges a short runway. So the action is *"Build the marathon plan"* — an
- * instruction to try — and never *"your plan is ready"*. If it refuses, `RefusalView`
- * carries it honestly (§44's two-step pattern, which `PREP-ACK-NO-WRITER-01` just made
- * reachable).
+ * instruction to try — and never *"your plan is ready"*.
+ *
+ * 🔴 **AND THE REFUSAL HAD NOWHERE TO GO UNTIL 2026-10-13.** This note used to say
+ * *"if it refuses, `RefusalView` carries it honestly (§44's two-step pattern, which
+ * `PREP-ACK-NO-WRITER-01` just made reachable)"*. `RefusalView` is not on this path:
+ * the card is on Today, and every refusal surface renders under `screen === 'plan'`.
+ * So a refused handover showed the runner **nothing at all**, and so did a successful
+ * one. `MODIFY-WARN-ACK-01` put the reason and §44's consent step on the card itself.
+ * Hard rule 7 was being kept by the COPY and broken by the WIRING.
  *
  * ⚠️ **NO QUALIFIER CLAUSE, DELIBERATELY.** MAINT-06's metric line ends *"below your
  * base, on purpose"* because a maintenance block's low volume is SURPRISING and needs

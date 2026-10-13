@@ -2,7 +2,6 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
-import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
@@ -73,17 +72,15 @@ export async function POST(req: NextRequest) {
   // That item fixed the read and its guard keys on `fetchPlanForUser`, so it was
   // structurally unable to see a save. The guard now keys on both.
   //
-  // ⚠️ USER-SCOPED, NOT SERVICE, AND THE CHOICE IS PER-TABLE. `savePlanForUser`
-  // touches `plans`, `plan_archive` and `plan_weekly_notes`, and all three carry
-  // full `auth.uid() = user_id` policies for the operations it performs, so RLS
-  // stays live as defence-in-depth (security audit finding 8) instead of being
-  // bypassed. `user_settings` below is DIFFERENT: no policy for it exists in
-  // `supabase/migrations`, so it gets the service client rather than a client
-  // whose success depends on a policy nobody can point at. `userScopedClient`'s
-  // own docstring requires exactly this per-table verification.
-  const userClient = createUserScopedClient(req)
-  if (!userClient) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+  // ⚠️ SERVICE, NOT USER-SCOPED, AND THE REASON IS A HELPER RATHER THAN A TABLE.
+  // The first cut of this fix used `createUserScopedClient`, reasoning that `plans`,
+  // `plan_archive` and `plan_weekly_notes` all carry `auth.uid() = user_id` policies
+  // so RLS could stay live. That checked what `savePlanForUser` WRITES and not what
+  // it CALLS: it invokes `reanchorCharityGrant`, which UPDATEs `charity_codes`, and a
+  // user-scoped client may only SELECT that table. The write would have no-opped
+  // SILENTLY and charity grants would have stopped re-anchoring to race day — for the
+  // 500 Make-A-Wish runners. `rlsCoverage.test.ts` caught it, which is exactly why
+  // that gate and `CLIENT_ACCEPTING_HELPERS` exist.
   const serviceSupabase = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -517,7 +514,7 @@ export async function POST(req: NextRequest) {
     // ops_events before rethrowing so it's visible without waiting for the
     // daily integrity probe (or founder dogfooding).
     try {
-      await savePlanForUser(user.id, updatedPlan, userClient)
+      await savePlanForUser(user.id, updatedPlan, serviceSupabase)
     } catch (err) {
       await recordOpsEvent(
         'plan_save_failed',

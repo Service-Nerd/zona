@@ -5,6 +5,7 @@ import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
 import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
+import { ACK_LABEL, warnKindOf, withAcknowledgement, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import { handoverState, handoverInput, handoverSeenPatch } from '@/lib/plan/baseBuildHandover'
 import { rebuildsBaseBuild } from '@/lib/plan/modifyPlan'
 import { handoverCopy } from '@/lib/ui/handoverCopy'
@@ -290,8 +291,37 @@ export default function DashboardClient() {
   /** One coordinator per modify flow, reset on clear. Same owner the wizard uses. */
   const modifyCoordRef = useRef(createEnrichSaveCoordinator<Plan>())
   const [modifyError, setModifyError] = useState<string | null>(null)
+  /**
+   * 🔴 MODIFY-WARN-ACK-01 — step two of §44/§52, which this screen never had.
+   *
+   * `PREP-ACK-NO-WRITER-01` (2026-10-10) built the two-step pattern in
+   * `GeneratePlanScreen` only, and its guard names that file by filename, so the
+   * OTHER client caller of `/api/generate-plan` was invisible to it. The Adjust
+   * sheet showed the refusal reason with no way to consent, and Apply re-sent the
+   * identical request — measured on a real runner 2026-10-11, twice, ten seconds
+   * apart, both `DaysAvailableError / warn_unacknowledged`.
+   *
+   * The LAST REQUEST is held because step two is the same input plus a flag, and
+   * the runner's edits live in the sheet's own state, not in a form we can re-read.
+   */
+  const [ackKind, setAckKind] = useState<WarnKind | null>(null)
+  const lastModifyReqRef = useRef<{ input: GeneratorInput; resets: boolean; asBaseBuild: boolean } | null>(null)
 
   /** Regenerate from the overlaid input. Nothing is saved at this point. */
+  /**
+   * Step two: re-send the SAME request with the acknowledgement flag.
+   *
+   * ⚠️ `withAcknowledgement` owns the field name and returns a NEW object. Writing
+   * the flag by hand here would be three silent failure modes — wrong field name,
+   * a mutated ref that keeps consenting on every later edit, or a flag the route
+   * never strips. The runner consents to THIS edit, once.
+   */
+  async function acknowledgeModify() {
+    const req = lastModifyReqRef.current
+    if (!req || !ackKind) return
+    await runModifyPreview(withAcknowledgement(req.input, ackKind), req.resets, req.asBaseBuild)
+  }
+
   /**
    * @param asBaseBuild rebuild the runner's OWN plan kind rather than a race plan.
    *
@@ -303,7 +333,9 @@ export default function DashboardClient() {
    * RACE PLAN to a base-build runner.
    */
   async function runModifyPreview(nextInput: GeneratorInput, resets: boolean, asBaseBuild = false) {
-    setModifyBusy(true); setModifyError(null)
+    setModifyBusy(true); setModifyError(null); setAckKind(null)
+    // Held for step two: §44/§52's acknowledgement re-sends THIS input plus a flag.
+    lastModifyReqRef.current = { input: nextInput, resets, asBaseBuild }
     try {
       const res = await authedFetch('/api/generate-plan', {
         method: 'POST',
@@ -317,6 +349,10 @@ export default function DashboardClient() {
         // the engine will not build (too few weeks, below the base door). It
         // is not an error and must not read as one.
         setModifyError(data.error ?? 'That change could not be built into a plan.')
+        // §44/§52 step two. `warnKindOf` is the shared predicate, so the route and
+        // this screen cannot drift about what counts as acknowledgeable — the same
+        // owner `GeneratePlanScreen` reads.
+        setAckKind(warnKindOf(data as { reason?: unknown; prep?: unknown; days?: unknown }))
         return
       }
       // The free-tier path returns plain JSON; the enriched path streams NDJSON
@@ -2191,17 +2227,27 @@ export default function DashboardClient() {
    * DESIGNED REFUSAL rather than an error, and saves on accept. A second generate-and-save
    * path here would be a duplicate of the most consequential write in the app.
    *
-   * 🔴 AND IT ONLY WORKS BECAUSE OF TWO THINGS SHIPPED EARLIER TODAY:
-   * `BASEBUILD-GENINPUT-REMEDIATION-01` stamped `generator_input` on these plans (before
-   * that there was nothing to regenerate from), and `PREP-ACK-NO-WRITER-01` built §44's
-   * second step — without it Tom's handover dead-ends on `warn_unacknowledged`, which is
-   * measured, not predicted.
+   * 🔴 THE SECOND HALF OF THIS NOTE WAS FALSE FOR THREE DAYS, AND IT IS WHY THE
+   * DEAD END SURVIVED. `BASEBUILD-GENINPUT-REMEDIATION-01` stamping `generator_input`
+   * is true. But `PREP-ACK-NO-WRITER-01` built §44's second step in
+   * `GeneratePlanScreen` ONLY, and this path goes through `runModifyPreview`, which
+   * had no acknowledgement at all — so the handover dead-ended on
+   * `warn_unacknowledged` exactly as this comment claimed it would not. A comment
+   * asserting the protection it lacks is worse than no comment: it is what a reader
+   * checks instead of the code. Fixed under `MODIFY-WARN-ACK-01` (2026-10-13).
    */
   async function handleBuildRacePlan() {
     if (!handover.show || !plan) return
     setHandoverBusy(true)
     try {
       await runModifyPreview(handoverInput(plan, handover.input), true, false)
+      // 🔴 THE PREVIEW RENDERS UNDER `screen === 'plan'` AND THIS CARD IS ON TODAY.
+      // Without this the runner tapped "Build the marathon plan", the request
+      // succeeded, and the screen did not change — indistinguishable from the
+      // refusal case, which was also invisible from here (MODIFY-WARN-ACK-01).
+      // Read `modifyPreviewRef`, not `modifyPreview`: the state setter has not
+      // flushed yet inside this handler.
+      if (modifyPreviewRef.current) setScreen('plan')
     } finally {
       setHandoverBusy(false)
     }
@@ -2707,7 +2753,7 @@ export default function DashboardClient() {
             ? <AttributionRow supabase={supabase} userId={userId}
                 onResolved={() => setAttributionResolved(true)} />
             : null
-        } recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); hasPaidAccess ? setScreen('recalibration') : openUpgrade('recal_tile') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} handover={handoverCopyData} onBuildRacePlan={handleBuildRacePlan} onDismissHandover={handleDismissHandover} handoverBusy={handoverBusy} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        } recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); hasPaidAccess ? setScreen('recalibration') : openUpgrade('recal_tile') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} handover={handoverCopyData} onBuildRacePlan={handleBuildRacePlan} onDismissHandover={handleDismissHandover} handoverBusy={handoverBusy} handoverError={modifyError} handoverAckLabel={ackKind ? ACK_LABEL[ackKind] : null} onHandoverAcknowledge={ackKind ? () => void acknowledgeModify() : undefined} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
@@ -2768,6 +2814,8 @@ export default function DashboardClient() {
             hasPaidAccess={!!hasPaidAccess}
             busy={modifyBusy}
             error={modifyError}
+            ackLabel={ackKind ? ACK_LABEL[ackKind] : null}
+            onAcknowledge={ackKind ? () => void acknowledgeModify() : undefined}
             edits={modifyEdits}
             onEditsChange={setModifyEdits}
             onClose={clearModify}

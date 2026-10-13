@@ -49,6 +49,8 @@ export default function ModifyPlanSheet({
   onClose,
   busy = false,
   error = null,
+  ackLabel = null,
+  onAcknowledge,
   onApply,
   hasPaidAccess,
   onStartNewPlan,
@@ -63,6 +65,18 @@ export default function ModifyPlanSheet({
    *  request has already SUCCEEDED, so the whole failure path was invisible. */
   busy?: boolean
   error?: string | null
+  /**
+   * §44/§52 step two — MODIFY-WARN-ACK-01 (2026-10-13).
+   *
+   * ⚠️ THE PROP CONTRACT MIRRORS `RefusalView` ON PURPOSE (`ackLabel` +
+   * `onAcknowledge`, both optional, both required together to render). That
+   * component already owns this affordance for the wizard; a second vocabulary
+   * for the same consent step is how two surfaces start disagreeing about what
+   * the runner just agreed to. The LABEL is never written here — it comes from
+   * `ACK_LABEL`, which is Hutchinson's binding condition rendered as a verb.
+   */
+  ackLabel?: string | null
+  onAcknowledge?: () => void
   onApply: (next: GeneratorInput, resetsLoggedWeeks: boolean) => void
   hasPaidAccess: boolean
   /**
@@ -326,6 +340,24 @@ export default function ModifyPlanSheet({
                   }}>
                     {error}
                   </div>
+                )}
+                {/* Step two, and it is a SECOND step rather than a relabelled
+                    first one (Hutchinson, binding, PREP-ACK-WARN-OFFER-01): a
+                    consent, visually subordinate to Apply, directly under the
+                    reason it consents to. Before this the sheet showed the
+                    reason and nothing to do about it, and Apply re-sent the
+                    identical request — measured twice on one runner, ten
+                    seconds apart. */}
+                {/* `size="compact"` and NO inline padding/radius/font-size: those
+                    belong to the variant (BUTTON-INLINE-OVERRIDE-01). Only the
+                    spacing to the next control is set here. */}
+                {error && ackLabel && onAcknowledge && (
+                  <Button variant="secondary" size="compact" fullWidth
+                    onClick={busy ? undefined : onAcknowledge}
+                    disabled={busy}
+                    style={{ marginBottom: 'var(--space-3)' }}>
+                    {ackLabel}
+                  </Button>
                 )}
                 <Button variant="primary" fullWidth 
                   onClick={busy ? undefined : () => onApply(applyEdits(base, edits), resets)}
