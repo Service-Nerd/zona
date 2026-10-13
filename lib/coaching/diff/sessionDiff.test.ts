@@ -1,3 +1,10 @@
+// ⚠️ EXPECTATIONS UPDATED 2026-10-13 (Design Board AMENDMENT 4,
+// MODIFY-CONFIRM-DIFF-01): `labelSession` reads the session ROLE via
+// `sessionRole.ts` (INV-CLASS) instead of `type`, so a long run prints
+// "long run" rather than "long". These fixtures use `type: 'long'`, the
+// parallel classifier this repo records as DEAD everywhere — the generator
+// emits `type: 'easy'` + `role: 'long_run'`. Measured: 371 of 371 long runs
+// on live plans were labelled "easy".
 import { describe, it, expect } from 'vitest'
 import {
   computeSessionDiff,
@@ -49,8 +56,8 @@ describe('summariseDiff', () => {
     const before = [easy(10), rest(), easy(5), rest(), easy(8), easy(5), long(24, 180)]
     const after  = [easy(10), long(24, 180), easy(5), rest(), easy(8), easy(5), rest()]
     expect(summariseDiff(computeSessionDiff(before, after))).toEqual([
-      'Tue: rest → long 24km',
-      'Sun: long 24km → rest',
+      'Tue: rest → long run 24km',
+      'Sun: long run 24km → rest',
     ])
   })
 
@@ -58,7 +65,7 @@ describe('summariseDiff', () => {
     const before = [easy(10), rest(), easy(5), rest(), easy(8), easy(5), long(24, 180)]
     const after  = [easy(10), rest(), easy(5), rest(), easy(8), easy(5), long(20, 150)]
     expect(summariseDiff(computeSessionDiff(before, after))).toEqual([
-      'Sun: long 24km → long 20km',
+      'Sun: long run 24km → long run 20km',
     ])
   })
 })
@@ -94,9 +101,9 @@ describe('labelSession', () => {
   })
 
   it('falls back to the canonical duration glyph when distance is absent', () => {
-    expect(labelSession({ type: 'long', label: null, duration_mins: 180 } as any)).toBe('long 3h')
-    expect(labelSession({ type: 'long', label: null, duration_mins: 45  } as any)).toBe('long 45 min')
-    expect(labelSession({ type: 'long', label: null, duration_mins: 90  } as any)).toBe('long 1h 30')
+    expect(labelSession({ type: 'long', label: null, duration_mins: 180 } as any)).toBe('long run 3h')
+    expect(labelSession({ type: 'long', label: null, duration_mins: 45  } as any)).toBe('long run 45 min')
+    expect(labelSession({ type: 'long', label: null, duration_mins: 90  } as any)).toBe('long run 1h 30')
   })
 
   it('uses label in parens for non-distance non-duration sessions', () => {

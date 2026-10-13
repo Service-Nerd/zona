@@ -23,8 +23,14 @@
 // shouldn't currently produce them (a 7-day week stays 7 days).
 
 import { formatDistance, formatDuration, type DistanceUnits } from '@/lib/format'
+import { isLongRun } from '@/lib/plan/sessionRole'
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+
+/** Exported so a caller can BUILD the 7-element array this module requires
+ *  rather than guess at it — `MODIFY-DIFF-DAY-MAP-01`, where a caller passed a
+ *  compact `Object.values(week.sessions)` and every day label was wrong. */
+export const DIFF_DAY_ORDER = DAY_ORDER
 type Day = typeof DAY_ORDER[number]
 
 /**
@@ -75,6 +81,26 @@ export function computeSessionDiff(
   before: ReadonlyArray<SessionLike | null | undefined>,
   after:  ReadonlyArray<SessionLike | null | undefined>,
 ): DiffEntry[] {
+  // 🔴 THE ZIP-PADDING BELOW IS WHAT HID `MODIFY-DIFF-DAY-MAP-01` FOR AS LONG AS
+  // IT EXISTED. A caller passing a COMPACT array (only the days that have a
+  // session) got a silently plausible answer with every day label shifted. The
+  // padding stays — a short array from the database is a real defensive case —
+  // but it is no longer silent: outside production this now throws, and the one
+  // caller that was wrong is the reason the contract needed teeth rather than a
+  // docstring (CB-FOUNDATION-DENOM-01: a defect class that cannot occur beats a
+  // check that catches it).
+  // ⚠️ EMPTY IS NOT SHORT. A caller with NOTHING to diff passes `[]` — the Plan
+  // adjustments door does exactly that when there is no pending change, and the
+  // first cut of this guard threw on it. Zero means "no data" and is allowed;
+  // any OTHER length that is not 7 is a compact array and is the defect.
+  const malformed = (n: number) => n !== 0 && n !== DAY_ORDER.length
+  if (malformed(before.length) || malformed(after.length)) {
+    const detail = `computeSessionDiff expects ${DAY_ORDER.length}-element day-indexed arrays `
+      + `(mon=0…sun=6); got before=${before.length}, after=${after.length}. `
+      + 'Build them with DIFF_DAY_ORDER.map(d => week.sessions[d] ?? null), never Object.values().'
+    if (process.env.NODE_ENV !== 'production') throw new Error(detail)
+    console.error('[sessionDiff] ' + detail)
+  }
   return DAY_ORDER.map((day, idx) => {
     const b = (before[idx] ?? null) as SessionLike | null
     const a = (after[idx]  ?? null) as SessionLike | null
@@ -177,7 +203,20 @@ export function summariseDiff(
  *   { type: 'strength', label: 'Mobility only' }      → "strength (Mobility only)"
  */
 export function labelSession(s: SessionLike, units: DistanceUnits = 'km'): string {
-  const type = String(s.type ?? 'session')
+  // 🔴 AMENDMENT 4 (Design Board MODIFY-CONFIRM-DIFF-01, 2026-10-13) — READ THE
+  // ROLE, NOT THE TYPE. A long run is `type: 'easy'` with `role: 'long_run'`
+  // (so §52/§9's ratio rules treat it as aerobic volume), so this printed
+  // "easy 17km" for the longest run of the runner's week — on the screen asking
+  // them to accept a whole-plan rewrite.
+  //
+  // 📐 Measured across all 35 live plans: 371 long runs, **371 labelled "easy"**.
+  // Every long run in every diff this product has rendered.
+  //
+  // ⚠️ `sessionRole.ts` is the documented single owner of session
+  // classification (INV-CLASS) and this is the parallel-classifier class the
+  // repo has shipped twice before. Wroblewski routed it OUT of the board as a
+  // defect rather than a design question, and he was right to.
+  const type = isLongRun(s as Parameters<typeof isLongRun>[0]) ? 'long run' : String(s.type ?? 'session')
   if (type === 'rest') return 'rest'
   if (typeof s.distance_km === 'number' && s.distance_km > 0) {
     // UPNEXT-EXACT-01 — a PRESCRIBED distance, so whole units, same as the card.

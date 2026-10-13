@@ -197,7 +197,12 @@ describe('MODIFY-CONFIRM-01 — the diff is reversible and names its own scale',
     // are ONE WEEK (`p.weeks[weekIndex]`). They rendered adjacent with nothing
     // between them, and the founder read them as one list.
     expect(CONFIRM).toContain('Your whole plan')
-    expect(CONFIRM).toMatch(/This week\{weekLabel\}/)
+    // ⚠️ AMENDED 2026-10-13 (Design Board `MODIFY-CONFIRM-DIFF-01`, amendment 1).
+    // Clause 2's requirement — the two scales are NAMED — still holds and is what
+    // this arm guards. The week label gained its filter: only CHANGED days render,
+    // and live plans average 3.6 sessions of 7 days, so a bare "This week" promised
+    // a week and delivered a diff.
+    expect(CONFIRM).toMatch(/What changes this week\{weekLabel\}/)
     expect(CONFIRM, 'the week must name itself, not say "this week" and stop')
       .toMatch(/week \$\{weekN\} of \$\{a\.weeks\}/)
   })

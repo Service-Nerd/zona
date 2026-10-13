@@ -4821,3 +4821,70 @@ about what we detect is a physiology claim). **And nothing here has been seen on
 | **`WIZARD-WEEKDAY-CONFIRM-01` (b) — the date field reads its value back** | 🟢 **SHIPPED 2026-10-09** · SHIP WITH AMENDMENT | A native `type="date"` shows the runner their **keystrokes, not their decision**: `20/06/2027`, never *Sunday* — and the weekday is the half of a race date that shapes the plan, because every long run is placed backwards from it. The `race-details` step now renders **`Race day: Sunday 20 June.`** under the input. ✋ **Silvanto's amendment, verbatim: *"we have traded a reason for a readback. Both, or the readback goes somewhere else."*** So the existing sentence (*"Date locks the plan length. Everything works backwards from here."*) **stays**, below the readback, and the ORDER is asserted. **Hierarchy by weight and colour, not size** — 14px/600/`--ink` against 12px/400/`--mute`; a 13px step was rejected as the 1.02× failure this repo has measured twice. ⚠️ **Reuse, not invention:** `formatDate(iso, 'weekday-long')` already existed in `lib/format.ts` (ADR-015 owns every date string) and `PlanCalendar` already renders the race weekday — the weekday was never new in the product, only new at the **point of entry**. Empty renders **nothing**, which matters because the wizard restores `raceDate` from `zona_wizard_draft` in sessionStorage and a corrupt draft is a real path to `Invalid Date`. `FieldReadback` is body text, **not a fourth micro-label role** — `MICRO_LABELS` stays closed at three. Pattern: `ui-patterns.md` § *A date field reads its value back in full*. Check: `lib/ui/raceDateReadback.test.ts`, 10 arms, **falsified 5 ways** (remove the element · drop the guard · replace the reason · downgrade to a weekday-less style · hardcode a colour). ⚠️ **Nothing has run on a device.** |
 
 | **`WIZARD-WEEKDAY-CONFIRM-01` (d) — the race-NAME free text** | ⚙️ **ROUTED OUT, not a design matter** | 3 live plans carry the literal **`"Target Race"`** in `meta.race_name` — **the exact string `INV-PLAN-NO-PLACEHOLDER-COPY` was written to ban**, in the one field it did not scan. The board declined it: this is validation, not design. Fixed the same day as a defect restoring documented intent — `meta.race_name` joins the scan population, `warn` severity because the field is `input.race_name ?? ''`, a pass-through of what the runner typed, so a hit is a **signal** rather than proof of a producer defect. Same population-hole class as `COACH-INTRO-TOKEN-01`, one field over, found the same day. |
+
+---
+
+## 🧭 RULED 2026-10-13 — `MODIFY-CONFIRM-DIFF-01`: "Here is what changes" is a CONSENT screen, not a reveal
+
+**Trigger:** founder — *"I also want the design board's view on that screen. It's a real wow
+moment we should capitalise on."* **Tier:** FREE.
+
+### ⚖️ SHIP WITH AMENDMENT (4), and the "wow" is explicitly NOT a visual brief
+
+🧭 **Zhuo, chairing:** *"'Wow moment' is an observation that the moment is important, which is
+true and is not a brief. This is not a reveal. It is a consent screen — the runner has already
+asked for the change. The closest thing in the product is a checkout page."* And: **the wow is
+that the product can say precisely what it is about to do to eight weeks of your life, before it
+does it. Almost nothing in this category can.** That is already the strongest thing on the screen
+and it is rendered as a plain table, which is probably right.
+
+⛔ **DECLINED, and recorded so it is not re-proposed:** a chart, an illustration, a ceremony, a
+progress animation. 🎪 **Collins argued FOR the screen as it is** — *"the empty third is the best
+part of the layout and the moment it gets a chart it becomes every other app. Quiet is right here."*
+
+| # | Amendment | Seat |
+|---|---|---|
+| 1 | The day-row header names the **filter**, not the week — *"What changes this week"*. Only changed days render and 📐 live plans average **3.6 sessions of 7 days**, so a whole week is mostly rest | 📱 Wroblewski |
+| 2 | The **accepted** value outranks the one it replaces; the struck-through old value drops to 12px (declared; 13 is not) | 📱 Wroblewski |
+| 3 | One **factual** sentence of why, from a named owner, **never a claim about training effect** | 🎓 Sierra |
+| 4 | A long run is labelled by its **role**, not its type — **routed OUT as a defect**, not ruled on | 📱 Wroblewski |
+
+📐 **Measured before the seats spoke:** 35 live plans · week 1 carries **mean 3.6 sessions of 7
+days** (min 1, max 6) · **371 long runs, 371 labelled "easy"** by `labelSession`. Amendment 4 is
+not an edge case; it is every long run in every diff this product has rendered.
+
+### ⚡ Recorded disagreement — Collins vs Zhuo, unresolved
+
+🎪 Collins: *"this is the most honest screen in the product and it looks like a receipt. 'Nothing
+is saved until you accept' is a genuinely brave sentence and it is set in grey at 15px."* The
+biggest number is *"Weeks 12 → 8"* and it is the least interesting thing on the screen. 🧭 Zhuo:
+a consent screen is boring on purpose and the restraint IS the design. **Neither moved.** Collins
+is not asking for decoration and Zhuo is not defending the current type — the gap is whether type
+weight here is craft or embellishment.
+
+### 🔻 INSUFFICIENT EVIDENCE — two items, prototypes built, neither felt in the hand
+
+- ✋ **Silvanto, the transition.** *"There is no moment where the old plan becomes the new one; the
+  screen simply IS the answer. That is a transition, not an illustration."* On the empty third:
+  *"I will not call that waste. But I will not call it designed either — it is empty because the
+  content ended, not because someone decided where the content should end."*
+- 🎪 **Collins, the type weight.** See the disagreement above.
+
+**Prototypes exist** (A shipping · B type weight · C transition, built on real tokens and the
+founder's real edit). **Nobody has used this screen on a device except the founder, once, on
+2026-10-13 — and that capture contained the day-mapping bug.** Settles on a device, not here.
+
+### ⛔ Veto check
+**None.** Silvanto declined for the **second sitting running**, on consistent grounds: no palette
+or type regression is proposed. ⚠️ Worth recording that this seat has now declined twice and the
+veto remains **untested**.
+
+### 📦 Artifacts
+`ui-patterns.md` § *Confirmation diff* · `lib/plan/planDeltaExplain.ts` (the sentence's owner,
+with a no-claims arm) · `components/shared/modifyConfirmDiff.markup.test.ts`, 7 arms, **every one
+falsified**.
+
+### ⚠️ What this ruling does not settle
+Whether any of it feels right in the hand. The two strongest proposals in the room both need a
+device and Zonna has never had one.
+

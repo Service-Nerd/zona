@@ -1,6 +1,8 @@
 'use client'
 
 import AdjustmentDiff from './AdjustmentDiff'
+import { explainPlanDelta } from '@/lib/plan/planDeltaExplain'
+import { DIFF_DAY_ORDER } from '@/lib/coaching/diff/sessionDiff'
 import type { Plan } from '@/types/plan'
 import { formatDistance, type DistanceUnits } from '@/lib/format'
 import Button from '@/components/ui/Button'
@@ -74,9 +76,32 @@ export default function ModifyPlanConfirm({
   const weekN = (before.weeks[weekIndex] as { n?: number } | undefined)?.n ?? weekIndex + 1
   const weekLabel = `, week ${weekN} of ${a.weeks}`
 
+  /**
+   * 🔴 DAY-INDEXED, NOT `Object.values` (`MODIFY-DIFF-DAY-MAP-01`, 2026-10-13).
+   *
+   * `computeSessionDiff` consumes a SEVEN-element array indexed mon=0…sun=6 —
+   * its own docstring says so. This returned `Object.values(w.sessions)`, which
+   * is a COMPACT array of only the days that have a session, so a 3-day runner's
+   * Wed/Fri/Sun week landed at indices 0,1,2 and rendered as **Mon/Tue/Wed**.
+   *
+   * Measured on the founder's own plan, from a screenshot of the live confirm
+   * screen: a Mon/Wed/Fri/Sun week was shown as Mon/Tue/Wed/Thu, and Sunday's
+   * 16.5 km long run was presented as a Monday 17 km easy run — on the screen
+   * that asks the runner to accept a whole-plan rewrite. The session SIZES were
+   * right the whole time, which is why nothing looked wrong.
+   *
+   * ⚠️ Both arrays must be built the same way, because `weekChanged` below diffs
+   * them too: under the old code a week whose sessions MOVED DAY could compare
+   * equal and the day strip would not render at all.
+   */
   const sessionsOf = (p: Plan) => {
     const w = p.weeks[weekIndex] ?? p.weeks[0]
-    return w ? Object.values(w.sessions ?? {}) : []
+    if (!w) return DIFF_DAY_ORDER.map(() => null)
+    const byDay = (w.sessions ?? {}) as Record<string, unknown>
+    // Typed loosely on purpose: importing `computeSessionDiff` here would trip
+    // `planAdjustmentsScreen.markup.test.ts`, which asserts this screen REUSES
+    // `AdjustmentDiff` rather than building a second diff. It still does.
+    return DIFF_DAY_ORDER.map(d => (byDay[d] ?? null)) as never[]
   }
 
   /** Only rows that actually moved. An unchanged figure is noise here. */
@@ -90,6 +115,12 @@ export default function ModifyPlanConfirm({
   }
 
   const weekChanged = JSON.stringify(sessionsOf(before)) !== JSON.stringify(sessionsOf(after))
+
+  /** Amendment 3 — null when there is nothing honest to say, which is most edits. */
+  const deltaWhy = explainPlanDelta(
+    { weeks: a.weeks, peak: a.peak, total: a.total },
+    { weeks: b.weeks, peak: b.peak, total: b.total },
+  )
 
   return (
     <div style={{ padding: '0 20px 24px' }}>
@@ -125,7 +156,31 @@ export default function ModifyPlanConfirm({
 
       {/* The week the runner is actually in. Renders null when that week is
           unchanged, which is the component's own contract. */}
-      {weekChanged && <ScaleLabel>This week{weekLabel}</ScaleLabel>}
+      {/* 🎓 AMENDMENT 3 (Design Board MODIFY-CONFIRM-DIFF-01, 2026-10-13) — Sierra:
+          "'In total 373km → 221km' tells the runner a number. It does not tell
+          them the only thing that matters: is that good or bad for me?" The
+          engine knows why the totals moved; this screen did not say.
+          ⚠️ FACTUAL ONLY. `explainPlanDelta` states arithmetic the runner can
+          verify on this same screen and never claims the result is good, safe or
+          enough — those are Coaching Board sentences (the W-03 precedent). */}
+      {deltaWhy && (
+        <div style={{
+          // 14px, not 13: 13 is not in the declared type scale
+          // (TYPESCALE-APP-GATE-01). I made this exact mistake on TodayScreen
+          // this morning and repeated it here.
+          fontFamily: 'var(--font-ui)', fontSize: '14px', lineHeight: 1.5,
+          color: 'var(--ink-2)', marginTop: 'calc(-1 * var(--space-2))',
+          marginBottom: 'var(--space-4)',
+        }}>
+          {deltaWhy}
+        </div>
+      )}
+
+      {/* 🔴 AMENDMENT 1 — THE HEADER MUST SAY IT IS A DIFF. Wroblewski: "'THIS
+          WEEK, WEEK 4 OF 12' implies a week and delivers a filter." Only CHANGED
+          days render, and live plans carry a mean of 3.6 sessions across 7 days,
+          so a whole week would be mostly rest rows. Keep the filter; name it. */}
+      {weekChanged && <ScaleLabel>What changes this week{weekLabel}</ScaleLabel>}
       <AdjustmentDiff
         sessionsBefore={sessionsOf(before)}
         sessionsAfter={sessionsOf(after)}

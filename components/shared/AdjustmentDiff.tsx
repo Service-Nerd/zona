@@ -89,9 +89,17 @@ export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 
             >
               {dayLabel}
             </span>
+            {/* 🔴 AMENDMENT 2 (Design Board, 2026-10-13) — THE ACCEPTED VALUE
+                OUTRANKS THE ONE IT REPLACES. Wroblewski: "on a 375px screen,
+                outdoors, that is two numbers of equal weight and a thin line.
+                The NEW plan is what they are accepting; it should not be the
+                same size as the thing it replaces." The old value is context,
+                not a choice — it drops a step on the type scale. 12px is
+                declared (TYPESCALE-APP-GATE-01); 13 is not. */}
             <span
               style={{
                 color:           'var(--mute)',
+                fontSize:        '12px',
                 textDecoration:  'line-through',
                 textDecorationColor: 'var(--coach-line-faint)',
                 flex:             '0 0 auto',

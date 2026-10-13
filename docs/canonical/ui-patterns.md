@@ -5725,3 +5725,39 @@ afterwards; `watchedSignals.test.ts` fails if any figure stops being interpolate
 ⚠️ **`−` is U+2212, not a hyphen.** At 20px display weight a hyphen-minus reads as
 punctuation.
 
+## Confirmation diff — consent, not reveal (Design Board `MODIFY-CONFIRM-DIFF-01`, 2026-10-13)
+
+**The pattern.** A screen that asks the runner to accept a change the engine has already
+computed is a **consent screen**, not a reveal. 🧭 Zhuo: *"the closest thing to it in the
+product is not the generating ceremony, it is a checkout page. A reveal and a consent
+screen want opposite things."* It front-loads, it is scannable, and it is boring on
+purpose. **The board explicitly declined a chart, an illustration, a ceremony and a
+progress animation** — recorded so they are not re-proposed.
+
+**Four rules.**
+
+1. **Name the scale, and name the filter.** Two blocks at different horizons (whole plan
+   vs one week) each carry an eyebrow. Where a block renders only *changed* rows, the
+   eyebrow says so — *"What changes this week"*, never *"This week"*. 📱 Wroblewski: a bare
+   week label *"implies a week and delivers a filter"*. 📐 Live plans carry a mean of
+   **3.6 sessions across 7 days**, so showing the whole week would be mostly rest rows.
+2. **The accepted value outranks the one it replaces.** The struck-through old value drops
+   a step on the type scale. It is context, not a choice. *"On a 375px screen, outdoors,
+   that is two numbers of equal weight and a thin line."*
+3. **A number that moves a long way says why, factually.** 🎓 Sierra: *"a 41% cut reads as
+   loss."* The sentence states arithmetic the runner can verify on the same screen and
+   **never claims the result is good, safe, enough, or that it will make them faster** —
+   those are Coaching Board sentences (the W-03 precedent). Owned by
+   `lib/plan/planDeltaExplain.ts`, which returns `null` when there is nothing honest to
+   say. A sentence on every edit is noise.
+4. **Label a session by its ROLE.** A long run is `type: 'easy'` with `role: 'long_run'`;
+   `sessionRole.ts` is the single owner (INV-CLASS). 📐 Measured: **371 of 371** long runs
+   on live plans were labelled *"easy"*.
+
+**Enforced by** `components/shared/modifyConfirmDiff.markup.test.ts` — 7 arms, every one
+falsified by breaking the thing it guards.
+
+🔻 **Two proposals were NOT settled and need a device**: the transition into the screen
+(Silvanto) and the title's type weight (Collins). Prototypes exist; neither has been felt
+in the hand. They are recorded in `design-rulings.md`, not killed.
+
