@@ -1460,6 +1460,28 @@ is not in the register is a kill the next sitting re-proposes.
 
 ---
 
+### ⚙️ `HOOK-SUITE-HOLLOW-01` — the hook runner cannot tell a passing suite from a vacuous one *(filed 2026-10-13, P3)* ⚙️ **NO BOARD**
+
+**Board: ⚙️ NO BOARD.** Found while building `HOOK-TEST-FIXTEST-01`, deliberately not folded in.
+
+`npm run test:hooks` proves two things: every hook has a suite, and every suite **exits 0**. It
+cannot prove a suite **asserts anything**. `ship-record-check.test.py` prints `all checks passed`
+with no count and no per-case marks, so the runner honestly reports `- cases` for it — and a suite
+that had been reduced to `print("all checks passed")` would pass the runner identically.
+
+⚠️ **The repo's hollow-check gate does not reach here.** `lib/hollowTestShapes.test.ts` lints
+**vitest TypeScript**; these are Python scripts, outside its glob by construction. So the one
+category of test this repo has measured as hollow **fifteen times** is the one category with no
+lint over it.
+
+🔑 **The cheap fix is probably the case count, not a linter**: require every suite to print a
+total the runner can read, and fail when a suite's count DROPS. That turns an unparsed suite into
+a visible gap and makes a gutted one impossible to hide. ⚠️ **Standardising the five output
+formats is the bulk of the work and has no behavioural payoff on its own** — which is why this is
+filed rather than built.
+
+---
+
 ## ⚖️ FILED 2026-10-13 — two residuals from the ops-digest fixes
 
 ### 🟡 `ADJUST-STATUS-WITHOUT-SAVE-01` — a failed plan save still flips the adjustment to confirmed *(filed 2026-10-13, P2)* ⚙️ **NO BOARD**
