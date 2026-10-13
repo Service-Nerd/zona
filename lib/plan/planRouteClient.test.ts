@@ -41,6 +41,26 @@ function routeFiles(dir = 'app/api', out: string[] = []): string[] {
 const PLAN_FETCHERS = routeFiles().filter(f =>
   /\bfetchPlanForUser\s*\(/.test(readFileSync(f, 'utf8')))
 
+/**
+ * 🔴 THE WRITE HALF, ADDED 2026-10-13 (`ADJUST-PLAN-SAVE-CLIENT-01`).
+ *
+ * The arm above has existed since `RECALIBRATE-ZONES-COOKIE-CLIENT-01`
+ * (2026-09-25) and keys on `fetchPlanForUser` — **so it can only ever see a
+ * READ**. Three routes went on handing the cookie client to `savePlanForUser`
+ * for another eighteen days, and the failure is worse than the read's: a read
+ * returns "No plan found", a write throws AFTER the adjustment row has been
+ * committed, so the two records disagree and only a daily probe notices.
+ *
+ * Measured on the founder's account: 3 `plan_save_failed`, all
+ * `new row violates row-level security policy for table "plans"`.
+ *
+ * ⚠️ THE POPULATION IS DERIVED, NOT LISTED. A hand-written file list is the
+ * failure class this repo has recorded four times in one day — the list stops
+ * matching the code and the check reports on a smaller world.
+ */
+const PLAN_SAVERS = routeFiles().filter(f =>
+  /\bsavePlanForUser\s*\(/.test(readFileSync(f, 'utf8')))
+
 describe('plan-fetching routes use the service client', () => {
   it('there ARE such routes — otherwise the assertion below is vacuous', () => {
     expect(PLAN_FETCHERS.length, 'no route calls fetchPlanForUser; has it been renamed?')
@@ -71,5 +91,45 @@ describe('plan-fetching routes use the service client', () => {
     expect(assignment.test(src),
       `${file}: fetchPlanForUser receives \`${passed}\`, which is not assigned from createServiceClient`,
     ).toBe(true)
+  })
+})
+
+describe('plan-SAVING routes never write through a cookie client', () => {
+  it('there ARE such routes — an empty population passes every arm below', () => {
+    expect(PLAN_SAVERS.length, 'no route calls savePlanForUser; has it been renamed?')
+      .toBeGreaterThanOrEqual(8)
+  })
+
+  // 🔴 THE REGRESSION CASE. Red against adjust-plan / confirm-adjustment /
+  // revert-adjustment as they stood on 2026-10-12.
+  it.each(PLAN_SAVERS)('%s passes a client that sets auth.uid() INTO savePlanForUser', file => {
+    const src = readFileSync(file, 'utf8')
+    const passed = src.match(/savePlanForUser\(\s*[^,]+,\s*[^,]+,\s*([A-Za-z_$][\w$]*)/)?.[1]
+    expect(passed, `${file}: could not read the client argument to savePlanForUser`).toBeTruthy()
+
+    // Either client is acceptable and the reason differs per table, so the check
+    // is "sets auth.uid() or bypasses RLS deliberately", never a single name:
+    //   · createServiceClient      — bypasses RLS
+    //   · createUserScopedClient   — sets auth.uid() from the Bearer token
+    // What is NEVER acceptable is the bare `createClient()` cookie client, whose
+    // auth.uid() is NULL on native.
+    const ok = new RegExp(
+      `(const|let)\\s+${passed}\\s*=\\s*(createServiceClient|createUserScopedClient)\\(`,
+    ).test(src)
+    expect(ok,
+      `${file}: savePlanForUser receives \`${passed}\`, which is not assigned from `
+      + 'createServiceClient or createUserScopedClient. A bearer-authenticated route that '
+      + 'writes through the cookie client has auth.uid() NULL on native, so RLS refuses the '
+      + 'upsert and savePlanForUser throws AFTER the caller has already recorded its work. '
+      + 'This is ADJUST-PLAN-SAVE-CLIENT-01, measured 3× on production.',
+    ).toBe(true)
+  })
+
+  it.each(PLAN_SAVERS)('%s does not build a cookie client at all', file => {
+    const src = readFileSync(file, 'utf8')
+    expect(/from '@\/lib\/supabase\/server'/.test(src),
+      `${file} saves a plan and still imports the cookie client. Even unused it is a loaded `
+      + 'footgun: the next edit reaches for the nearest client in scope.',
+    ).toBe(false)
   })
 })

@@ -46,7 +46,6 @@ export async function POST(req: NextRequest) {
     userId = headerUserId!
     tier   = 'trial'   // internal calls are always enriched
   } else {
-    const supabase = createClient()
     const user = await getUserFromRequest(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     userId = user.id

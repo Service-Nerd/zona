@@ -35,3 +35,10 @@ Client should redirect to `url` to complete payment.
 - `cancel_url` redirects to `/dashboard`.
 - `user_id` embedded in both `subscription_data.metadata` and `session.metadata` for webhook reconciliation.
 - Returns 503 (not 500) when Stripe is not yet configured — safe error message for pre-launch state.
+
+## Supabase client (2026-10-13)
+
+This route built a cookie client (`createClient()` from `@/lib/supabase/server`) and never
+called a method on it. Removed under `ADJUST-PLAN-SAVE-CLIENT-01`: unused, but the next
+edit reaches for the nearest client in scope, and on a bearer-authenticated route that is
+the one whose `auth.uid()` is NULL on native.
