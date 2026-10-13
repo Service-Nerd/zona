@@ -422,6 +422,10 @@ export interface Week {
    *  Absent on maintenance plans generated before MAINT-07 — read it through
    *  `isReengagementWeek()`, which falls back to deriving the window from the
    *  block's shape (no migration, no regeneration). */
+  /** §47 Am.3 — §47 stepped this week's long run back. STRUCTURAL signal for
+   *  `INV-PLAN-PEAK-STEPBACK-VOLUME`, which matched the coach-note string until
+   *  2026-10-13 (D-17 label-based classification). Producer stamps, checker reads. */
+  peak_stepback?: boolean
   reengagement?: boolean
 }
 

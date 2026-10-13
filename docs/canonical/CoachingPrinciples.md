@@ -3905,6 +3905,45 @@ Permitted patterns:
 
 Exception: runners with `hard_session_relationship: 'love'`, no `injury_history`, and `training_age: '5yr+'` may have one occurrence of consecutive peak long runs per plan.
 
+### Amendment 3 — §52 prevails when its share floor sits above the preceding week (PEAK-STEPBACK-S52-FLOOR-01, Coaching Board 2026-10-13)
+
+**Principle.** Amendment 2 requires a peak step-back week to DELIVER less than the week
+before it. Where satisfying that would push the week below
+`longRun / LONG_RUN_MAX_PCT_OF_WEEKLY` — §52's cap on the long run's share of the week —
+**§52 prevails, the trim stops, and the residual is DECLARED** (§34), reported as a `warn`
+rather than an error.
+
+**Why.** 🩹 Willy, binding: *§52 is a tissue-tolerance rule about the load landing in a
+single bout; §47 Am.2 is a rule about the shape of the week.* Deepening the long run to
+make a weekly total compare correctly would cut the one session doing the aerobic work in
+order to make a label true. 🎯 McMillan: *on three days a week the long run essentially IS
+the week* — there is almost nothing else to move.
+
+**The conflict, worked.** A step-back long run of 20 km floors its week at 20 / 0.60 =
+**33.33 km**. Where the preceding week delivered **31.0 km**, Am.2 demands < 31.0 and §52
+forbids < 33.33. **Both cannot hold.** `applyPeakStepBackVolume` already declined to trim
+for exactly this reason; the checker did not recognise it and called a correct engine a
+constitutional failure.
+
+📐 **Measured unstrided, 2026-10-13.** Marathon: 7,284 plans, **3,628** step-back weeks.
+**1,662** stop at `MIN_SESSION_DISTANCE_KM.easy` — a floor the checker already forgave and
+which is load-bearing. **44** hit §52's share floor, and **4** of those surfaced as errors.
+HM: 2,304 step-back weeks, **0**. cohortGrid: **1**, 0 errors.
+
+**Config.** None new. `LONG_RUN_MAX_PCT_OF_WEEKLY` (60) and `MIN_SESSION_DISTANCE_KM.easy`
+already exist, and this amendment introduces no tunable — stated rather than omitted.
+
+**Enforced by** `INV-PLAN-PEAK-STEPBACK-VOLUME`, which now recognises BOTH floors and
+identifies a step-back week by the structural `week.peak_stepback` stamp rather than by the
+coach-note string (D-17: the note is display copy the enricher may rewrite).
+
+🔴 **THE SITTING BEFORE THIS ONE WAS RUN ON A FALSE PREMISE AND IS VACATED.** It was told
+*"nothing trims easy volume"* and ruled that the trim be built. `applyPeakStepBackVolume`
+has done it since 2026-09-16, measured then on 6,720 plans, and every amendment that
+sitting added was already the shipped behaviour. **The engine needed no change at all; the
+checker did.** Recorded because a vacated ruling that is not written down is one the next
+sitting re-proposes.
+
 ### Amendment 1 — a duration-anchored plan steps back in MINUTES (PEAK-LR-STEPBACK-MINUTES-01, Coaching Board 2026-09-13)
 
 **Principle.** The step-back is applied on the axis the plan is anchored on.

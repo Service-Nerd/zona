@@ -3126,6 +3126,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
       "label": "Peak — consistency",
       "long_run_hrs": 1.1,
       "n": 11,
+      "peak_stepback": true,
       "phase": "peak",
       "sessions": {
         "fri": {
@@ -4656,6 +4657,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
       "label": "Peak — holding the volume",
       "long_run_hrs": 1.6,
       "n": 12,
+      "peak_stepback": true,
       "phase": "peak",
       "sessions": {
         "fri": {
@@ -6304,6 +6306,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       "label": "Peak — consistency",
       "long_run_hrs": 2.2,
       "n": 11,
+      "peak_stepback": true,
       "phase": "peak",
       "sessions": {
         "fri": {

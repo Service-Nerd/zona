@@ -137,6 +137,7 @@ export const WeekSchema = z.object({
   result_embedded:      RaceResultSchema.nullable().optional(),
   // MAINT-07 — §75 Phase 3 (re-engagement) marker. Optional: absent on both
   // non-maintenance weeks and pre-MAINT-07 maintenance plans.
+  peak_stepback:        z.boolean().optional(),   // §47 Am.3 — structural step-back signal
   reengagement:         z.boolean().optional(),
   // MAINT-02 — AI weekly debrief on maintenance weeks (PAID, `maintenance_coaching`).
   // Optional so legacy + non-enriched plans parse; distinct from `theme` (rule-engine).
