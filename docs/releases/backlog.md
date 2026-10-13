@@ -3822,6 +3822,23 @@ invisible until someone notices the marketing phone showing an older Kit than th
 
 ### `GUARD-TREE-SWEEP-01` — the colour guards see the diff, never the tree ⚙️ **NO BOARD**
 
+> 📐 **RE-MEASURED 2026-10-13 AND THE PREMISE HAS MOVED: THIS IS NOW A RATCHET, NOT A BUG FIX.**
+> The item's motivating defect was `var(--bg, #111)` in the dashboard layout, *"the one live
+> hardcoded hex in the whole app"*. **It is fixed** — the only thing matching that string today is
+> the COMMENT recording the fix. Swept the whole tree: **17 hex literals under `app/` and
+> `components/`, and not one is live code.** Two are inside that comment, one is in a comment in
+> `MeScreen.tsx` explaining `DESTRUCTIVE-WIRING-01`, one is in `buttonOwnership.test.ts`, and the
+> remaining 13 are `app/api/og/session-complete-card/route.tsx`, which CLAUDE.md exempts by name
+> because `next/og` cannot read CSS variables.
+>
+> ⚠️ **So the value changed shape.** The sweep will find nothing today; what it buys is that the
+> clean state cannot silently rot, which is worth less than the item implies and is still worth
+> something. **Whoever picks this up should not expect to find a defect.** 🔑 And the measurement
+> itself is a small joke at this item's expense: searching for the hardcoded colour found a
+> comment ABOUT the hardcoded colour, which is `HOOK-RGBA-COMMENTS-01` exactly — *a colour inside
+> a comment is prose*. The sweep must strip comments or it will report its own history as debt.
+
+
 Out of `HOOK-RGBA-COMMENTS-01`. `.githooks/pre-commit` reads **staged files only**, which is not a
 bug — **it is the shape of every commit-time check.** A guard scoped to the diff cannot see code
 already in place.
