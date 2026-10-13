@@ -38,7 +38,6 @@ export async function POST(req: NextRequest) {
   if (isInternalCall) {
     userId = headerUserId!
   } else {
-    const supabase = createClient()
     const user = await getUserFromRequest(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     userId = user.id

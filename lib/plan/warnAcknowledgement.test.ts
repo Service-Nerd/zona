@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
-import { ACK_FIELD, ACK_LABEL, warnKindOf } from './warnAcknowledgement'
+import { ACK_FIELD, ACK_LABEL, warnKindOf, withAcknowledgement } from './warnAcknowledgement'
 import { validatePrepTime, validateDaysAvailable, PrepTimeError, DaysAvailableError } from './inputs'
 import { generateRulePlan } from './ruleEngine'
 import type { GeneratorInput } from '@/types/plan'
@@ -131,3 +131,89 @@ describe('PREP-ACK-NO-WRITER-01 — the UI actually sends it', () => {
     }
   })
 })
+
+/**
+ * 🔴 MODIFY-WARN-ACK-01 (2026-10-13) — THE ARM ABOVE NAMED ONE FILE.
+ *
+ * `PREP-ACK-NO-WRITER-01` built §44/§52's second step and guarded it by reading
+ * `app/dashboard/GeneratePlanScreen.tsx` BY FILENAME. There is a second client
+ * caller of `/api/generate-plan` — `DashboardClient.runModifyPreview`, behind the
+ * Adjust sheet and the base-build handover — and a filename cannot see it. It had
+ * no acknowledgement at all: the sheet showed the refusal reason with nothing to
+ * do about it, and Apply re-sent the identical request. Measured on a real runner
+ * 2026-10-11, twice, ten seconds apart.
+ *
+ * ⚠️ THE POPULATION IS DERIVED, AND THE REGEX IS THE WHOLE TRAP. The call is
+ * `authedFetch('/api/generate-plan', …)`, so a pattern anchored with `\bfetch\(`
+ * matches NOTHING and the suite passes over an empty list — the same shape as the
+ * four blind checks of 2026-09-25. The emptiness arm below is what catches that,
+ * and it is not decoration: it failed first when this was written with `\b`.
+ */
+describe('withAcknowledgement — the resend payload', () => {
+  const input = { race_distance_km: 42.2, days_available: 3 } as Record<string, unknown>
+
+  it('sets the field ACK_FIELD owns, for each kind', () => {
+    expect(withAcknowledgement(input, 'days')).toMatchObject({ acknowledged_days_warning: true })
+    expect(withAcknowledgement(input, 'prep')).toMatchObject({ acknowledged_prep_warning: true })
+  })
+
+  it('carries the original input through untouched', () => {
+    expect(withAcknowledgement(input, 'days')).toMatchObject({ race_distance_km: 42.2, days_available: 3 })
+  })
+
+  // 🔴 THE ONE THAT MATTERS. DashboardClient holds the runner's edited input in a
+  // ref and re-sends it; a mutating helper would leave the flag stuck on, so the
+  // runner would consent ONCE and then silently keep consenting to every later
+  // edit — a refusal they never saw again.
+  it('does NOT mutate the input it was given', () => {
+    const original = { ...input }
+    withAcknowledgement(input, 'days')
+    expect(input).toEqual(original)
+    expect(input).not.toHaveProperty('acknowledged_days_warning')
+  })
+
+  it('sets exactly one flag, never both', () => {
+    const out = withAcknowledgement(input, 'days') as Record<string, unknown>
+    expect(out.acknowledged_prep_warning).toBeUndefined()
+  })
+})
+
+describe('every client caller of /api/generate-plan offers §44/§52 step two', () => {
+  const CALLERS = ['app/dashboard/GeneratePlanScreen.tsx', 'app/dashboard/DashboardClient.tsx']
+    // ⚠️ CASE-INSENSITIVE, AND THIS IS NOT STYLE. The call is `authedFetch(` with a
+    // CAPITAL F, so a lowercase `fetch(` matches nothing at all. Written without the
+    // `i` this filter returned [] and every arm below passed on zero files — caught
+    // only by the emptiness arm, on the first run.
+    .filter(f => /fetch\(\s*['"`]\/api\/generate-plan['"`]/i.test(readFileSync(f, 'utf8')))
+
+  it('the derived population is NOT empty — an empty list passes every arm below', () => {
+    expect(CALLERS.length,
+      'no file matched a fetch of /api/generate-plan. The call is authedFetch(...), so a '
+      + 'word-anchored \\bfetch\\( finds nothing and this suite would pass on zero files.',
+    ).toBe(2)
+  })
+
+  it.each(CALLERS)('%s reads the warn kind through the owner', file => {
+    expect(readFileSync(file, 'utf8'),
+      `${file} calls /api/generate-plan but never calls warnKindOf, so a 422 carrying `
+      + 'requires_acknowledgment dead-ends: the runner is shown the reason and cannot consent.',
+    ).toMatch(/warnKindOf\(/)
+  })
+
+  it.each(CALLERS)('%s offers the acknowledgement to the runner', file => {
+    expect(readFileSync(file, 'utf8'),
+      `${file} reads the warn kind but renders no consent affordance — step two exists `
+      + 'in the data and not on the screen.',
+    ).toMatch(/onAcknowledge|ACK_LABEL/)
+  })
+
+  it('the resend goes through withAcknowledgement, never a hand-written flag', () => {
+    const src = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+    expect(src).toMatch(/withAcknowledgement\(/)
+    const code = src.split('\n')
+      .filter(l => !l.trim().startsWith('*') && !l.trim().startsWith('//')).join('\n')
+    expect(code, 'DashboardClient hardcodes an ack field name instead of using the owner')
+      .not.toMatch(/['"`]acknowledged_(prep|days)_warning['"`]/)
+  })
+})
+

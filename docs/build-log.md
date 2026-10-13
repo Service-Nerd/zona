@@ -6,6 +6,53 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-13 — ADJUST-PLAN-SAVE-CLIENT-01, MODIFY-WARN-ACK-01 · the gate I didn't know existed caught me being clever
+
+**Shipped:** Three bearer-authed routes stopped writing plans through a cookie client, and
+the Adjust sheet and base-build handover gained §44/§52's missing consent step.
+
+**Dev learning:** I made an architect call, argued it well, and it was wrong. The brief
+proposed the service client; I recommended the **user-scoped** one because I'd verified
+that all three tables `savePlanForUser` writes — `plans`, `plan_archive`,
+`plan_weekly_notes` — carry `auth.uid() = user_id` policies, so RLS could stay live as
+defence-in-depth. Then `rlsCoverage.test.ts` failed and told me `savePlanForUser` calls
+`reanchorCharityGrant`, which UPDATEs `charity_codes`, a table a JWT client may only
+SELECT. The write would have **no-opped silently** and stopped charity grants re-anchoring
+to race day — for the 500 Make-A-Wish runners. **I checked what the helper writes and never
+asked what it calls.** The repo had already done that analysis, in
+`CLIENT_ACCEPTING_HELPERS`, with a comment saying a first pass of the same tooling cleared
+seven routes for conversion and would have broken all of them.
+
+**Product/creator learning:** The second bug is a consent gap, not an engine one. A runner
+edited 4 days to 3, got a refusal, and had no way to say "I know, do it anyway" — so they
+tapped Apply twice, ten seconds apart, and are still on 4 days. The engine was right every
+time. What was missing was the sentence after "no".
+
+**AI-building learning:** Three of my own hypotheses died in a row on the side-quest
+(clock-via-refusals, clock-via-`todayOverride`, the VDOT staleness ramp), each killed by one
+probe. The useful habit was refusing to write any of them down as a cause until a
+measurement agreed. The one that actually mattered — a generated plan failing §47 — only
+showed up when I stopped theorising and printed the failing case.
+
+**The honest bit:** I nearly filed a fourth defective route because `recalibrate-zones`
+names its *service* client `supabase`, and I'd been pattern-matching on the variable name.
+I also broke the JSX in `ModifyPlanSheet` by putting a `{/* comment */}` inside an `&& (`
+expression, and the two style tests I'd just "fixed" passed anyway — because they are
+source-regex tests and don't care whether the file compiles. Only `tsc` in the full verify
+caught it. A green test on a file that cannot build is not a green test.
+
+**Hook material:** Three gates caught my work before a human could: `rlsCoverage` stopped me
+silently breaking charity grants for 500 runners, `BUTTON-INLINE-OVERRIDE-01` caught padding
+I'd inlined onto a Button, and `TYPESCALE-APP-GATE-01` rejected `13px` because it isn't in
+the declared set. And my own new guard's emptiness arm failed on its first run — I'd written
+`\bfetch\(` and the call is `authedFetch` with a capital F, so it had been passing over an
+empty list of zero files.
+
+**Postable?:** yes — the user-scoped-client reversal is the strongest "the test knew more
+than I did" story this project has produced.
+
+---
+
 ## 2026-10-11 — FOUNDATION-TARGETS-DOCTRINE-01, RECAL-EASY-DURATION-01, SESSION-WEEK-SHARE-01 — the board sat on five and three dissolved
 
 **Scopes:** `FOUNDATION-TARGETS-DOCTRINE-01`, `RECAL-EASY-DURATION-01`, `SESSION-WEEK-SHARE-01`

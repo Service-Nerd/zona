@@ -1,6 +1,5 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
@@ -11,8 +10,13 @@ import type { Plan } from '@/types/plan'
 // Auth-gated (paid/trial). Reverts a plan adjustment using the sessions_before snapshot.
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
   const user = await getUserFromRequest(req)
+  // ADJUST-PLAN-SAVE-CLIENT-01 — bearer-authenticated route, so the save must go
+  // through a client that sets `auth.uid()`. The cookie client it used to pass has
+  // no session on native, and `plans` RLS refused the upsert. User-scoped rather
+  // than service: `plans`, `plan_archive` and `plan_weekly_notes` all carry
+  // `auth.uid() = user_id` policies, so RLS stays live. See adjust-plan for the
+  // measured incident and the per-table reasoning.
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const tier = await getUserTier(user.id)
@@ -75,7 +79,7 @@ export async function POST(req: NextRequest) {
   // so the Me-screen flag should reflect "nothing pending" after this runs.
   const nowIso = new Date().toISOString()
   await Promise.all([
-    savePlanForUser(user.id, updatedPlan, supabase),
+    savePlanForUser(user.id, updatedPlan, serviceSupabase),
     serviceSupabase
       .from('plan_adjustments')
       .update({ status: 'reverted', reverted_at: nowIso })

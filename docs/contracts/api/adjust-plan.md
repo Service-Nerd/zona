@@ -191,3 +191,19 @@ workaround.
 Me screen's "Last checked …" line simply never advances. Every client caller is
 `void authedFetch(...)` with no `res.ok`, so the 500 is discarded on the way back too. A
 broken engine is indistinguishable from an engine with nothing to suggest.
+
+## Supabase client — ADJUST-PLAN-SAVE-CLIENT-01 (2026-10-13)
+
+**This route authenticates off the Bearer token, so every write must go through a client
+that sets `auth.uid()`.** It passes `createUserScopedClient(req)` into `savePlanForUser`.
+
+It previously passed the cookie client (`createClient()` from `@/lib/supabase/server`).
+On native there is no cookie session, so `auth.uid()` is NULL, `plans` RLS refuses the
+upsert and `savePlanForUser` throws — **after** the caller has already recorded its work.
+Measured 3× on production, all one account, all
+`new row violates row-level security policy for table "plans"`.
+
+User-scoped rather than service because `plans`, `plan_archive` and `plan_weekly_notes`
+all carry `auth.uid() = user_id` policies, so RLS stays live as defence-in-depth.
+Enforced by `lib/plan/planRouteClient.test.ts`, whose population is derived from every
+`savePlanForUser` call in `app/api`.

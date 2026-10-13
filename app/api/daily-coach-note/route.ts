@@ -35,7 +35,6 @@ const DOW_OFFSET: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu
 const EXCLUDED_SESSION_TYPES = ['strength']
 
 export async function GET(req: NextRequest) {
-  const supabase = createClient()
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

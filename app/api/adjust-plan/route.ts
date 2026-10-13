@@ -2,7 +2,6 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
@@ -57,9 +56,35 @@ async function recordAdjustmentCheck(
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // 🔴 ADJUST-PLAN-SAVE-CLIENT-01 — THIS ROUTE AUTHENTICATES OFF THE BEARER TOKEN
+  // AND USED TO HAND `savePlanForUser` A COOKIE CLIENT. On native there is no
+  // cookie session, so `auth.uid()` is NULL, `plans` RLS refuses the upsert and
+  // the save throws — while the adjustment row had already been written. Measured
+  // on the founder's account: 3 `plan_save_failed` events (2026-10-11, 2×2026-08-17),
+  // every one `new row violates row-level security policy for table "plans"`, and
+  // a `plan_integrity_mismatch` the next day because `plans.updated_at` was 8 days
+  // older than the adjustment that claimed to have changed it.
+  //
+  // This is the WRITE half of `RECALIBRATE-ZONES-COOKIE-CLIENT-01` (2026-09-25).
+  // That item fixed the read and its guard keys on `fetchPlanForUser`, so it was
+  // structurally unable to see a save. The guard now keys on both.
+  //
+  // ⚠️ SERVICE, NOT USER-SCOPED, AND THE REASON IS A HELPER RATHER THAN A TABLE.
+  // The first cut of this fix used `createUserScopedClient`, reasoning that `plans`,
+  // `plan_archive` and `plan_weekly_notes` all carry `auth.uid() = user_id` policies
+  // so RLS could stay live. That checked what `savePlanForUser` WRITES and not what
+  // it CALLS: it invokes `reanchorCharityGrant`, which UPDATEs `charity_codes`, and a
+  // user-scoped client may only SELECT that table. The write would have no-opped
+  // SILENTLY and charity grants would have stopped re-anchoring to race day — for the
+  // 500 Make-A-Wish runners. `rlsCoverage.test.ts` caught it, which is exactly why
+  // that gate and `CLIENT_ACCEPTING_HELPERS` exist.
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   const tier = await getUserTier(user.id)
   if (!isFeatureAllowed('dynamic_reshape_r20', tier)) {
@@ -86,7 +111,7 @@ export async function POST(req: NextRequest) {
 
   // Respect the user's dynamic adjustments opt-out for automatic triggers only
   if (!isManual && !isExplicitSignal) {
-    const { data: settings } = await supabase
+    const { data: settings } = await serviceSupabase
       .from('user_settings')
       .select('dynamic_adjustments_enabled')
       .eq('id', user.id)
@@ -95,11 +120,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ skipped: true, reason: 'user_disabled' })
     }
   }
-
-  const serviceSupabase = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
 
   // Fetch plan first — weekN is needed to scope the adjustment count query.
   const planRes = await serviceSupabase.from('plans').select('plan_json').eq('user_id', user.id).single()
@@ -388,7 +408,7 @@ export async function POST(req: NextRequest) {
     // not be told why their plan changed in kilometres. This route never read
     // `getUserDisplayPrefs`, which is why `buildAdjustmentExplanationPrompt`
     // carried a hardcoded `'km'` as a declared gap.
-    const { units } = await getUserDisplayPrefs(supabase, user.id)
+    const { units } = await getUserDisplayPrefs(serviceSupabase, user.id)
     const prompt  = buildAdjustmentExplanationPrompt(
       proposed, units, buildAthleteContext({ plan }), previousAdjustment)
     const aiRes   = await callAnthropic({
@@ -494,7 +514,7 @@ export async function POST(req: NextRequest) {
     // ops_events before rethrowing so it's visible without waiting for the
     // daily integrity probe (or founder dogfooding).
     try {
-      await savePlanForUser(user.id, updatedPlan, supabase)
+      await savePlanForUser(user.id, updatedPlan, serviceSupabase)
     } catch (err) {
       await recordOpsEvent(
         'plan_save_failed',

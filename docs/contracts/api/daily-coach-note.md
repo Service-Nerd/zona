@@ -112,3 +112,10 @@ Guarded by `lib/coaching/prompts/exemplarHygiene.test.ts`: no exemplar may conta
 a unit, every call site must supply `units`, and the call-site population is **derived by walking
 `lib/`, `app/` and `components/`** rather than hand-listed — the grep that missed `freeIntro` was
 scoped to one directory.
+
+## Supabase client (2026-10-13)
+
+This route built a cookie client (`createClient()` from `@/lib/supabase/server`) and never
+called a method on it. Removed under `ADJUST-PLAN-SAVE-CLIENT-01`: unused, but the next
+edit reaches for the nearest client in scope, and on a bearer-authenticated route that is
+the one whose `auth.uid()` is NULL on native.

@@ -18,7 +18,6 @@
 
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
@@ -27,7 +26,6 @@ import { computeTaperRecalibration } from '@/lib/plan/taperRecalibration'
 import type { Plan } from '@/types/plan'
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

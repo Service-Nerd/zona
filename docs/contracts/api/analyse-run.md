@@ -196,3 +196,10 @@ and this trigger. Changing its definition changes who gets an email, which is no
 obvious from where it is computed.
 
 Full email contract: `docs/contracts/api/email.md`.
+
+## Supabase client (2026-10-13)
+
+This route built a cookie client (`createClient()` from `@/lib/supabase/server`) and never
+called a method on it. Removed under `ADJUST-PLAN-SAVE-CLIENT-01`: unused, but the next
+edit reaches for the nearest client in scope, and on a bearer-authenticated route that is
+the one whose `auth.uid()` is NULL on native.

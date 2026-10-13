@@ -89,3 +89,25 @@ export function warnKindOf(
   if (payload.days) return 'days'
   return null
 }
+
+/**
+ * THE SINGLE OWNER of "what does the second request look like".
+ *
+ * Step two of §44/§52's two-step pattern is the SAME input plus one acknowledgement
+ * flag. Written out by hand at a call site it is three chances to be wrong — the
+ * wrong field name, a mutated original, or a flag that never gets stripped — and
+ * every one of those is silent: the route reads a runner who did not acknowledge
+ * and refuses again, which looks exactly like the engine being stubborn.
+ *
+ * ⚠️ RETURNS A NEW OBJECT. `GeneratePlanScreen` spreads its input into a fresh
+ * payload each time, but `DashboardClient` holds the runner's edited input in a ref
+ * and re-sends it; mutating that would leave the acknowledgement stuck on for every
+ * later edit, so the runner would consent once and silently keep consenting.
+ *
+ * Added 2026-10-13 (`MODIFY-WARN-ACK-01`) when the Adjust sheet turned out never to
+ * have had step two at all.
+ */
+export function withAcknowledgement<T extends object>(input: T, kind: WarnKind): T & Record<AckField, true> {
+  return { ...input, [ACK_FIELD[kind]]: true } as T & Record<AckField, true>
+}
+

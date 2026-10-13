@@ -571,7 +571,7 @@ function getRestCopy(weekType?: string, weekPhase?: string, sessionType?: string
   }
 }
 
-export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, handover, onBuildRacePlan, onDismissHandover, handoverBusy, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow }: {
+export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, handover, onBuildRacePlan, onDismissHandover, handoverBusy, handoverError = null, handoverAckLabel = null, onHandoverAcknowledge, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow }: {
   recalTile?: React.ReactNode
   /** OPS-ATTRIB-01 — passed as a NODE, the same shape as `recalTile`, so Today
    *  does not need a Supabase client or the answered-state. Design Board
@@ -640,6 +640,17 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   onBuildRacePlan?: () => void
   onDismissHandover?: () => void
   handoverBusy?: boolean
+  /**
+   * 🔴 MODIFY-WARN-ACK-01 (2026-10-13) — THE CARD HAD NOWHERE TO PUT ITS OWN OUTCOME.
+   *
+   * This card lives on Today; the preview and every refusal render under
+   * `screen === 'plan'`. So a handover that SUCCEEDED and one that was REFUSED
+   * looked identical from here: nothing happened. The refusal text and §44/§52's
+   * consent step now render on the card itself, next to the button that caused them.
+   */
+  handoverError?: string | null
+  handoverAckLabel?: string | null
+  onHandoverAcknowledge?: () => void
   /** MAINT-07 — runner is in the §75 Phase 3 window (real current week, not the
    *  viewed one: the register follows where they actually are). */
   maintReengagement?: boolean
@@ -1523,6 +1534,26 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 style={{ marginBottom: '4px' }}>
                 {handoverBusy ? 'Building…' : handover.primary}
               </Button>
+              {/* The outcome, where the action was. `--warn`, never `--danger`:
+                  a designed refusal is not an error state (§INV-DS-005). */}
+              {handoverError && (
+                <div style={{
+                  // 14px, not 13: 13 is not in the app type scale's declared set
+                  // (TYPESCALE-APP-GATE-01), and a new undeclared size is a new
+                  // size whatever it looks like.
+                  marginTop: 'var(--space-2)', fontFamily: 'var(--font-ui)',
+                  fontSize: '14px', lineHeight: 1.5, color: 'var(--warn)',
+                }}>
+                  {handoverError}
+                </div>
+              )}
+              {handoverError && handoverAckLabel && onHandoverAcknowledge && (
+                <Button variant="secondary" size="compact" fullWidth
+                  onClick={handoverBusy ? undefined : onHandoverAcknowledge}
+                  disabled={handoverBusy} style={{ marginTop: 'var(--space-2)' }}>
+                  {handoverAckLabel}
+                </Button>
+              )}
               <Button variant="secondary" size="compact" fullWidth
                 onClick={onDismissHandover} disabled={handoverBusy}>
                 {handover.secondary}
