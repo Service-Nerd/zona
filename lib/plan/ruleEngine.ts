@@ -4555,6 +4555,11 @@ function applyPeakLongRunAlternation(
     // which weeks §47 actually stepped back. Only these are step-backs; a week
     // merely below peak is not (§35, §24).
     steppedBack.add(w.n)
+    // §47 Am.3 — the STRUCTURAL signal. `INV-PLAN-PEAK-STEPBACK-VOLUME` matched
+    // the coach-note string below until 2026-10-13, which is D-17 label-based
+    // classification: the note is display copy and the enricher is allowed to
+    // rewrite it. Stamped at the one place that decides a week is a step-back.
+    w.peak_stepback = true
 
     // Rewrite the session: strip race-specific label, coach notes, and pace
     // segment fields; restore the standard "Long run — Zone 2" prescription.

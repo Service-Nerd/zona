@@ -6,6 +6,49 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-13 — PEAK-STEPBACK-S52-FLOOR-01 · three diagnoses, two vacated board rulings, and the engine was right all along
+
+**Shipped:** `INV-PLAN-PEAK-STEPBACK-VOLUME` now recognises §52's long-run share floor as a
+legitimate reason the engine declined to trim, and identifies step-back weeks structurally
+instead of by a coach-note string. Red CI on main is green.
+
+**Dev learning:** I was wrong three times about the same defect, each time confidently, and
+each time a measurement killed it. (1) "§47 steps back weeks that were never peak-level" —
+built the guard, it was a no-op, the week *was* peak-level before the trim. (2) "Nothing
+trims easy volume" — `applyPeakStepBackVolume` has since 2026-09-16, measured then on 6,720
+plans. I found that one by tsc telling me I'd written a duplicate function name. (3) Only
+then: two floors stop the trim and the checker forgave one.
+
+**Product/creator learning:** the fix turned out to be *"delete the false alarm"*, not
+*"change what the runner runs"*. A 20 km long run in a 33 km week genuinely is a step-back
+from 25 km in a 42 km week — the runner's hardest day got easier. Trimming two more
+kilometres to make a weekly total compare correctly would have made the plan worse to
+satisfy a label. McMillan's line is the one I'll keep: on three days a week, the long run
+essentially *is* the week.
+
+**AI-building learning:** I took a board two false premises in one sitting-pair and the
+chair's own finding is the lesson — **the conflict scan runs against the constitution and
+nobody is scanning against the implementation.** A governance layer that only reads doctrine
+will ratify things that already exist. My reuse grep searched for `trimEasy*` and the
+function was called `applyPeakStepBackVolume`; a name-shaped search found nothing and I
+concluded nothing was there.
+
+**The honest bit:** I nearly shipped a duplicate of an existing function. I also "verified"
+the structural stamp against the wrong generated plan — my probe matched a label *prefix*
+and picked a different case, so I concluded the stamp didn't work when it did. And my own
+new test passed at that moment only because the invariant falls back to the note string,
+which is testing the halves, not the composition — again.
+
+**Hook material:** `verify:parity` said 1,171 plans changed on a fix that was supposed to
+change nothing. It was right: every one of them gained a 21-byte metadata key and not one
+prescribed kilometre moved. Proving that took one probe; believing the headline would have
+cost a board sitting.
+
+**Postable?:** yes — "the test knew more than I did" twice in one day, and the second time
+it was a duplicate-function error from the compiler.
+
+---
+
 ## 2026-10-13 — ADJUST-PLAN-SAVE-CLIENT-01, MODIFY-WARN-ACK-01 · the gate I didn't know existed caught me being clever
 
 **Shipped:** Three bearer-authed routes stopped writing plans through a cookie client, and

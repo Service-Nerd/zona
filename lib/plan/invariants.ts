@@ -6881,16 +6881,72 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       const w = plan.weeks[i]
       if (w.phase !== 'peak' || w.type === 'deload') continue
       const lr = Object.values(w.sessions).find(s => !!s && isLongRun(s))
-      if (!lr || !(lr.coach_notes ?? []).some(n => n?.includes(STEPBACK_NOTE))) continue
+      // §47 Am.3 — STRUCTURAL, not the note string. This read
+      // `lr.coach_notes.includes('Step-back week. Easy aerobic')` until
+      // 2026-10-13: D-17 label-based classification on copy the enricher may
+      // rewrite, and the class the pre-commit hook blocks for sessions. The
+      // producer stamps `peak_stepback` at the single point it decides.
+      // The note is still accepted for plans generated before the stamp existed.
+      const isStepBack = w.peak_stepback === true
+        || (lr?.coach_notes ?? []).some(n => n?.includes(STEPBACK_NOTE))
+      if (!lr || !isStepBack) continue
       const prev = plan.weeks[i - 1]
       if (!prev || prev.type === 'deload') continue
       if (w.weekly_km <= prev.weekly_km + tol) continue
-      // Floor-limited? Every easy (non-long-run) session at or below the floor.
+
+      // ── Two floors can stop the trim, and both are legitimate ──────────────
+      //
+      // §47 Am.3 (Coaching Board PEAK-STEPBACK-S52-FLOOR-01, 2026-10-13).
+      // `applyPeakStepBackVolume` declines to trim when trimming would breach a
+      // floor. It honours TWO; this checker forgave only one, so the producer
+      // was refusing for a reason the checker did not recognise and a correct
+      // engine read as a constitutional failure.
+      //
+      // 📐 Measured unstrided: 3,628 marathon step-back weeks. 1,662 rely on the
+      // min-easy floor below — load-bearing. 44 hit the §52 floor, and 4 of
+      // those became errors. 0 at HM, 0 in cohortGrid.
       const easies = Object.values(w.sessions).filter(
         (s): s is NonNullable<typeof s> => !!s && s.type === 'easy' && s.role !== 'long_run')
+
+      // Floor 1 — every easy session already at MIN_SESSION_DISTANCE_KM.easy.
       const allAtFloor = easies.every(s =>
         s.distance_km != null ? s.distance_km <= minEasy + 0.01 : true)
       if (allAtFloor) continue
+
+      // Floor 2 — §52. Trimming easy RAISES the long run's share of the week, so
+      // the week may never fall below `longRun / LONG_RUN_MAX_PCT_OF_WEEKLY`.
+      // Where that floor sits above the preceding week, §47 Am.2's target is
+      // unreachable without breaching §52 — and §52 prevails, because it is a
+      // tissue-tolerance rule about the load in a single bout while §47 Am.2 is
+      // about the shape of the week (Willy, binding). The residual is DECLARED
+      // (§34), not silently ignored: it is reported as a `warn`.
+      //
+      // ⚠️ SCOPED TO THIS ONE COMPUTABLE CONDITION. Every other cause of a
+      // climbing step-back week stays an `error`.
+      // ⚠️ `distance_km` WITHOUT `?? 0` (SESSION-KM-01). A duration-anchored long
+      // run has NO distance, and reading that as 0 would compute a share floor of
+      // 0 and silently deny this tolerance to exactly the plans most likely to
+      // need it. Absent is not zero: where there is no distance there is no
+      // km-based §52 floor to compute, so the tolerance does not apply and the
+      // error stands — honest, and visible rather than silently wrong.
+      const lrKm = lr.distance_km
+      const shareFloorKm = lrKm != null && lrKm > 0
+        ? lrKm / (GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100)
+        : null
+      if (shareFloorKm != null && shareFloorKm > prev.weekly_km + tol) {
+        violations.push({
+          code: 'INV-PLAN-PEAK-STEPBACK-VOLUME',
+          principle_ref: 'CoachingPrinciples §47 Am.3, §52, §34',
+          severity: 'warn',
+          week: w.n,
+          message: `Peak step-back week W${w.n} (${w.weekly_km}km) cannot deliver less than W${prev.n} `
+            + `(${prev.weekly_km}km) without breaching §52: its ${lrKm}km long run floors the week at `
+            + `${shareFloorKm.toFixed(1)}km. §52 prevails and the residual is declared (§47 Am.3).`,
+          actual: `W${w.n}=${w.weekly_km}km, §52 floor ${shareFloorKm.toFixed(1)}km > W${prev.n}=${prev.weekly_km}km`,
+          expected: 'declared residual — §52 prevails over §47 Am.2',
+        })
+        continue
+      }
       violations.push({
         code: 'INV-PLAN-PEAK-STEPBACK-VOLUME',
         principle_ref: 'CoachingPrinciples §47',
