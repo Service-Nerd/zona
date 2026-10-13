@@ -9317,16 +9317,6 @@ repo's "negative space" habit); or fail when a test file imports from `lib/` and
 `SUBJECTS` entry, with a declared baseline for the 351. ⚠️ **The second is a 351-entry baseline
 and would need a real reason not to become an amnesty.**
 
-### ⚙️ `HOOK-TEST-FIXTEST-01` — `fix-test-check.py` is the only hook with no tests
-**Board: ⚙️ NO BOARD.** Found 2026-09-24 while building `GATE-FALSIFY-01 (b)`, which mirrors it.
-
-**Seven of eight hooks carry a `.test.py`** — `backlog-touch`, `build-trigger` (29 cases),
-`coaching-guard` (56), `design-guard` (72), `guard-bash` (25), `ship-record-check`,
-`state-block-check`, and now `falsify-check` (12). **`fix-test-check.py` has none.**
-
-It is the hook whose whole subject is *"a fix with no test is worth a second look"*, and it is the
-one fix in the repo with no test. Both directions matter: the cases where it must stay SILENT are
-what stop it being disabled.
 
 ### ✅ `GATE-FALSIFY-01` — **ALL FOUR SHIPPED 2026-09-24.** Moved to `feature-registry.md`.
 The hollow-check class now has gates. *"Falsify any new check before trusting it green"* was

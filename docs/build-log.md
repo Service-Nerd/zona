@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-13 — HOOK-TEST-FIXTEST-01 · nine test suites nobody ran
+
+**Shipped:** tests for the two Claude Code hooks that had none, and `npm run test:hooks` — a runner that globs `.claude/hooks/*.py`, fails if any hook lacks a `.test.py`, runs all of them, and now sits inside `verify:ci`.
+
+**Dev learning:** the item said *"7 of 8 hooks carry a test, `fix-test-check.py` has none"*. Counting at pickup gave **11 hooks and two gaps** — `push-docs-check.py` was written after the item and inherited its absence. But the thing worth knowing is what the count led to: **nothing ran any of the nine suites that did exist.** 287+ assertions, including design-guard's 72 and coaching-guard's 56, executing only when somebody typed the filename. `verify:hooks` sounds like it covers this and is eslint over `app/`; `test:githooks` is the shell pre-commit. Two plausible names, neither doing the job, which is exactly how a gap survives being looked at. The fix is two arms, not one: running the suites is worth little without the coverage arm that makes hook twelve prove itself on the way in.
+
+**Product/creator learning:** the guard rails need guard rails, and the repo already knew it — *"a check that depends on remembering is a check that does not run"* is written down here in three places. It was true of the hooks themselves and nobody had turned it on the tooling.
+
+**AI-building learning:** two moments. First, the harness I copied (`state-block-check.test.py`) prints to **stderr** and both hooks I was testing write to **stdout** — a copy without that change asserts on a permanently empty string and passes on every input, including a deleted hook. I caught it by writing the stream difference into the file's header before writing a case. Second, my runner's case counter printed **"0 cases"** against a suite that runs **72**, because five different output conventions are in use and I grepped for mine. A count that reads 0 when the answer is 72 does not read as "unparsed", it reads as "empty suite" — so it now takes each suite's own stated total and prints `-` where there isn't one. Both are the same error: assuming the thing I was integrating with looked like the thing I wrote.
+
+**The honest bit:** I nearly shipped the runner with that zero. It was green, the exit code was right, all eleven suites ran — and the one human-readable number on the screen was wrong for eight of them. Three falsifications would not have caught it, because the gate's verdict was correct the whole time; only reading the output properly did.
+
+**Hook material:** eleven hooks, 287 test cases, zero of them ever run by anything. The npm script that sounds like it ran them (`verify:hooks`) is eslint over application code.
+
+**Postable?:** yes — "we wrote 287 tests for our guard rails and never ran one of them" is the shape of a real post, and the two-plausible-names detail is the bit that makes it land.
+
 ## 2026-10-13 — MODIFY-DIFF-DAY-MAP-01 · a screenshot caught what every test missed
 
 **Shipped:** the whole-plan confirm screen now names the right days, labels a long run as a

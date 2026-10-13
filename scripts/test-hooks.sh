@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# Run every Claude Code hook's test suite, and fail if a hook has none.
+#
+# 🔴 WHY THIS EXISTS. Measured 2026-10-13 while closing HOOK-TEST-FIXTEST-01:
+# nine of the eleven hooks under `.claude/hooks/` carried a `.test.py` — 72
+# cases, 56, 29, 25, 14, 12 — and NOTHING RAN ANY OF THEM. No npm script, no CI
+# job, no git hook. `verify:hooks` is eslint over app code; `test:githooks` is
+# the shell pre-commit only. So eight hundred-odd assertions guarding the
+# repo's own guard rails executed exactly when somebody remembered to type the
+# filename, and this repo's record is unambiguous about what that is worth:
+# a check that depends on remembering is a check that does not run.
+#
+# ⚠️ THE POPULATION IS GLOBBED, NEVER LISTED. A hand-written list of hooks is
+# correct on the day it is typed and silently short from the day hook twelve
+# lands — and "the checker's population excludes the cases at risk" is a class
+# this repo recorded FOUR times in one week (sheetClose.test.ts's four
+# hand-typed paths; buttonGeometry's arm reading a set that was pre-filtered to
+# the already-compliant). The coverage arm below exists so the next hook has to
+# prove itself on the way in rather than being added to a list by hand.
+#
+# Exit 1 if any hook lacks a suite, or any suite fails.
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+HOOKS="$ROOT/.claude/hooks"
+
+missing=()
+failed=()
+suites=0
+hooks=0
+
+shopt -s nullglob
+for hook in "$HOOKS"/*.py; do
+  base="$(basename "$hook" .py)"
+  case "$base" in *.test) continue ;; esac
+  hooks=$((hooks + 1))
+  if [ ! -f "$HOOKS/$base.test.py" ]; then
+    missing+=("$base")
+  fi
+done
+
+# ── coverage: every hook must carry a suite ──────────────────────────────────
+if [ ${#missing[@]} -gt 0 ]; then
+  echo "HOOKS WITH NO TESTS (${#missing[@]} of $hooks):"
+  for m in "${missing[@]}"; do echo "  ✗ .claude/hooks/$m.py"; done
+  echo
+  echo "A hook is a guard rail. An untested guard rail is a claim."
+  echo "Write .claude/hooks/<name>.test.py — both directions, because the cases"
+  echo "where a hook must stay SILENT are what stop it being switched off."
+fi
+
+# ── how many cases did a suite run? ──────────────────────────────────────────
+# ⚠️ THE SUITES DO NOT AGREE ON A FORMAT and this runner must not pretend they
+# do. Five conventions are in use: "N cases, 0 failure(s)", "N/N passed",
+# "0 failure(s)", "all checks passed", and per-line PASS marks. The first cut
+# of this function grepped for one of them and printed "0 cases" against
+# design-guard, which runs 72 — and a count that reads 0 when the answer is 72
+# is worse than no count, because it reads as an empty suite rather than an
+# unparsed one. So: take the suite's OWN stated total where it states one,
+# count per-case marks where it does not, and print "—" rather than a zero.
+count_cases() {
+  local out="$1" n=""
+  n="$(printf '%s\n' "$out" | grep -oE '[0-9]+ cases' | tail -1 | grep -oE '[0-9]+')"
+  [ -n "$n" ] || n="$(printf '%s\n' "$out" | grep -oE '[0-9]+/[0-9]+ passed' | tail -1 | grep -oE '^[0-9]+')"
+  [ -n "$n" ] || n="$(printf '%s\n' "$out" | grep -cE '^[[:space:]]*(✓|PASS|ok )')"
+  if [ "${n:-0}" -gt 0 ] 2>/dev/null; then printf '%s' "$n"; else printf '%s' '-'; fi
+}
+
+# ── execution: every suite must pass ─────────────────────────────────────────
+cases_total=0
+for suite in "$HOOKS"/*.test.py; do
+  suites=$((suites + 1))
+  name="$(basename "$suite")"
+  if out="$(python3 "$suite" 2>&1)"; then
+    n="$(count_cases "$out")"
+    [ "$n" = "-" ] || cases_total=$((cases_total + n))
+    printf '  ✓ %-34s %s cases\n' "$name" "$n"
+  else
+    failed+=("$name")
+    printf '  ✗ %-34s FAILED\n' "$name"
+    echo "$out" | sed 's/^/      /'
+  fi
+done
+shopt -u nullglob
+
+echo
+echo "$hooks hooks · $suites suites · $cases_total+ cases · ${#missing[@]} untested · ${#failed[@]} failing"
+
+if [ ${#missing[@]} -gt 0 ] || [ ${#failed[@]} -gt 0 ]; then
+  echo "HOOK TESTS: GAPS FOUND (above)"
+  exit 1
+fi
+echo "HOOK TESTS: ALL CLEAN"
+exit 0
