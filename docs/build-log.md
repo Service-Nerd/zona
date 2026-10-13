@@ -18,7 +18,9 @@ it specific, no polish. The content system adds the voice.
 
 **The honest bit:** I nearly shipped the runner with that zero. It was green, the exit code was right, all eleven suites ran — and the one human-readable number on the screen was wrong for eight of them. Three falsifications would not have caught it, because the gate's verdict was correct the whole time; only reading the output properly did.
 
-**Hook material:** eleven hooks, 287 test cases, zero of them ever run by anything. The npm script that sounds like it ran them (`verify:hooks`) is eslint over application code.
+**The second honest bit:** asked afterwards to make sure the documents were up to date, I ran the audit, got ALL CLEAN, and nearly stopped there. `audit-docs.sh` does not read `CLAUDE.md`. That section claimed **50** and **67** cases where the suites run **56** and **72**, and was missing two hooks entirely. Then I wrote into CLAUDE.md that the runner checks those counts — which was **not true when I wrote it**, so I had ten minutes where the single source of truth carried a claim with nothing behind it. Built the arm rather than softened the sentence.
+
+**Hook material:** eleven hooks, 287 test cases, zero of them ever run by anything. The npm script that sounds like it ran them (`verify:hooks`) is eslint over application code. And the doc describing all this was quoting case counts six and five short.
 
 **Postable?:** yes — "we wrote 287 tests for our guard rails and never ran one of them" is the shape of a real post, and the two-plausible-names detail is the bit that makes it land.
 

@@ -26,6 +26,9 @@ HOOKS="$ROOT/.claude/hooks"
 
 missing=()
 failed=()
+drifted=()
+checked=0
+counts=""
 suites=0
 hooks=0
 
@@ -74,6 +77,9 @@ for suite in "$HOOKS"/*.test.py; do
   if out="$(python3 "$suite" 2>&1)"; then
     n="$(count_cases "$out")"
     [ "$n" = "-" ] || cases_total=$((cases_total + n))
+    # bash 3.2 ships on macOS, so no associative arrays: a flat "name=N" list.
+    counts="$counts$(basename "$suite" .test.py)=$n
+"
     printf '  ✓ %-34s %s cases\n' "$name" "$n"
   else
     failed+=("$name")
@@ -83,10 +89,45 @@ for suite in "$HOOKS"/*.test.py; do
 done
 shopt -u nullglob
 
-echo
-echo "$hooks hooks · $suites suites · $cases_total+ cases · ${#missing[@]} untested · ${#failed[@]} failing"
+# ── documentation: the case counts CLAUDE.md quotes must be the real ones ────
+# ⚠️ WHY. When this runner was written, CLAUDE.md's hook section claimed
+# coaching-guard ran 50 cases and design-guard 67. They run 56 and 72. Nobody
+# wrote a wrong number: cases were added and the prose was not revisited, which
+# is the whole documented-but-drifting class this repo keeps paying for. The
+# counts are worth quoting -- they are what makes the section concrete -- so the
+# answer is not to delete them but to make them checkable.
+# A number in a doc drifts; a number a script checks does not.
+DOC="$ROOT/CLAUDE.md"
+if [ -f "$DOC" ]; then
+  while IFS= read -r pair; do
+    [ -n "$pair" ] || continue
+    hook="${pair%%=*}"; real="${pair##*=}"
+    # No backticks or asterisks in the pattern: the prose around the number uses
+    # a mix of `code spans`, em dashes and **bold**, and matching them literally
+    # is both fragile and a quoting minefield. Span whatever sits between the
+    # filename and the number instead.
+    claim="$(grep -oE "${hook}\.test\.py[^0-9]{0,24}[0-9]+ cases" "$DOC" \
+             | grep -oE '[0-9]+ cases' | grep -oE '[0-9]+' | head -1)"
+    [ -n "$claim" ] || continue          # not every hook quotes a count, and that is fine
+    [ "$real" = "-" ] && continue        # the suite states no total; nothing to compare
+    checked=$((checked + 1))
+    if [ "$claim" != "$real" ]; then
+      drifted+=("$hook: CLAUDE.md says $claim, the suite runs $real")
+    fi
+  done <<< "$counts"
+fi
 
-if [ ${#missing[@]} -gt 0 ] || [ ${#failed[@]} -gt 0 ]; then
+if [ ${#drifted[@]} -gt 0 ]; then
+  echo
+  echo "CLAUDE.md QUOTES A STALE CASE COUNT (${#drifted[@]}):"
+  for d in "${drifted[@]}"; do echo "  ✗ $d"; done
+  echo "  Update the number in CLAUDE.md § Claude Code Hooks, or remove the claim."
+fi
+
+echo
+echo "$hooks hooks · $suites suites · $cases_total+ cases · ${#missing[@]} untested · ${#failed[@]} failing · $checked doc counts checked, ${#drifted[@]} drifted"
+
+if [ ${#missing[@]} -gt 0 ] || [ ${#failed[@]} -gt 0 ] || [ ${#drifted[@]} -gt 0 ]; then
   echo "HOOK TESTS: GAPS FOUND (above)"
   exit 1
 fi
