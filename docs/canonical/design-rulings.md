@@ -4874,6 +4874,26 @@ weight here is craft or embellishment.
 founder's real edit). **Nobody has used this screen on a device except the founder, once, on
 2026-10-13 — and that capture contained the day-mapping bug.** Settles on a device, not here.
 
+🔴 **THE FIRST PROTOTYPE PAGE WAS NOT REVIEWABLE AND WAS REBUILT THE SAME DAY.** The founder's
+verdict was *"they all look the same"*, and for C that was **literally true**: C differed from A
+by an animation that fired once on page load and had finished before anyone looked, so every
+static measure of the two was identical (20px / 12px / 13px / same height). **A transition
+prototype that has already played is not a prototype.** B's three deltas were real but sat 378px
+apart in adjacent columns, which is not how a 6px type delta is judged. Rebuilt as an **in-place
+wipe plus flip** for B (same pixels, not adjacent ones) and a **synchronised loop** for C against
+an A that arrives all at once. Falsified: at 330ms A has **9 of 9** elements visible and C has
+**0 of 9**.
+
+📐 **AND IT PRODUCED THE NUMBER THE SITTING DID NOT HAVE — B's cost in height.** Measured from
+the rendered DOM at **375px** (the width this board measures at, and the real screen's own
+`0 20px 24px` container gives 335px of content either way): B is **+16px tall** and puts the
+primary CTA **16px further down**. Both shapes already exceed a 667px viewport and scroll, so
+this is a scroll-depth cost, **not a hidden CTA**. ⚠️ **An earlier figure of +53px was wrong** —
+it was taken in a squeezed preview pane at an unintended width, and a layout number measured at
+an unknown width is not a number. 16px is close enough to noise that **height is not an argument
+against B**; the open question stays exactly where the board left it, which is how it reads in
+the hand.
+
 ### ⛔ Veto check
 **None.** Silvanto declined for the **second sitting running**, on consistent grounds: no palette
 or type regression is proposed. ⚠️ Worth recording that this seat has now declined twice and the
