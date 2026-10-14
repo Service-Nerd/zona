@@ -140,6 +140,38 @@ with three micro roles instead: section label 12/600/0.1em, eyebrow 10/700/0.08e
 trackings** (0.12em / 0.08em / 0.04em) were found on `TodayScreen` during this migration and
 collapsed onto `MICRO_LABELS.eyebrow`. **Take the type from the owner; keep layout local.**
 
+### ⛔ 18px is NOT a level either — and it was a ROLE, not a stray
+
+**Ruled `FOUNDER-TYPE-18PX-01` (2026-10-14), permanent.** Refused on this board's own
+arithmetic: **17 → 18 is 1.059×**, below the 1.077× that killed 13px the day before. ✋ Silvanto,
+who objected at 1.02× on the website and at 16-versus-15 on a screen title, declined to argue
+for 1.059×.
+
+📐 **But the measurement found something the question did not ask for. 18px is not one thing —
+it is three.** Twenty uses, sorted by bounding each style object rather than grepping:
+
+| | Count | What it is |
+|---|---|---|
+| **A headline species** | **9** | `--font-brand`, 18px, weight 500 or 600, negative tracking. Auth ×4, `CoachTeaser` ×2, `FounderNoteScreen`, `ManualRunModal`, `StravaPanel` |
+| Glyph sizing on `IconButton` | 5 | `+` / `−` boxes |
+| Miscellaneous | 6 | incl. two tabular-nums metrics |
+
+🔴 **Nine sites, one shape, two weights, three trackings — nobody made a headline decision, they
+made it nine times from whatever was nearby.** That is `BUTTON-COMPONENT-01` verbatim, in type.
+🎪 **Collins' dissent that the scale is thin at the TOP is therefore SUPPORTED by this evidence
+and still did not win a new level** — his own words: *"three levels inside two pixels was my
+objection to other people's work; I am not going to run it in reverse because the role happens
+to be mine."* The role gets **its own row and its own class** — *Section headline / pull-line*,
+20px/700, `.section-headline` — at a size the scale already declares.
+
+⚠️ **A glyph's `fontSize` is a BOX DIMENSION, not a type level.** The five `IconButton` uses are
+outside this scale's scope, and counting them inflated the submission from 15 to 20 before
+anyone looked (Wroblewski). An 18px `→` on `TodayScreen` was already baselined on the same
+reasoning.
+
+🔻 **Eight of the nine keep 18px as declared debt.** Only the founder-note pull-line converged;
+sweeping six more surfaces nobody has looked at was not what was asked. Nothing schedules it.
+
 **Declared residue, baselined rather than converged** — eight declarations on `TodayScreen`, all
 of them a **visible delta on the home screen that nobody has seen**: the `copy.headline` pair
 (22px/500), one 40px metric, 17px ×3, and two glyphs (an 18px `→` and an 11px `▴▾`). 🎪 Collins'
@@ -155,6 +187,7 @@ All type uses **Inter** only. `var(--font-ui)` and `var(--font-brand)` both reso
 | Hero display | `--font-ui` | 800 | 56px | Today screen hero ("10km, slowly.") |
 | Screen title | `--font-ui` | 800 | 26px | Page headings ("Your plan", "Today") |
 | Screen title, compact | `--font-ui` | 800 | 20px, `-0.3px` | A screen title that **shares its line with chrome** — a back arrow to its left, sometimes a chip to its right (session detail, post-run) |
+| **Section headline / pull-line** | `--font-ui` | **700** | 20px, `-0.3px` | A **short declarative line above body copy** that is not a screen's name: the founder-note thesis, a Coach card headline, an auth screen's lead. Class `.section-headline`. 🎪 **Collins' condition on `FOUNDER-TYPE-18PX-01` — its own ROW and its own CLASS, not an extra job bolted to the compact title**, because *"a row describing two jobs under one job's name is how somebody types 19 in six months"*. 🔑 **It adds no SIZE to the scale**: 20px already exists, and 700-versus-800 is a weight distinction. ⚠️ **The proof that the condition was right is mechanical:** the first cut DID merge the two jobs into the compact row, and `appScreenTitle.test.ts` went red twice — it pins that row's text and owns 20px as the title role. **One class cannot hold two jobs; the gate says so out loud.** |
 | Screen subtitle | `--font-ui` | 400 | 12px, `0.04em`, `--mute` | The line under a screen title ("Heart rate and pace targets") |
 | Section label | `--font-ui` | 700 | 10px uppercase 0.08em | Eyebrows, category labels |
 | Card primary | `--font-ui` | 600 | 15px | Session name, main label |

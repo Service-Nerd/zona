@@ -1362,6 +1362,37 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  *
  * ⚠️ A THIRD HEADER LEVEL IS THE CEILING. Hero 56 / screen title 26 / compact
  * 20. A fourth needs the Design Board, exactly as the three micro-labels do. */
+/* Section headline / pull-line — FOUNDER-TYPE-18PX-01 (Design Board 2026-10-14).
+ *
+ * A short declarative line above body copy that is NOT a screen's name: the founder-note
+ * thesis, a Coach card headline, an auth screen's lead. 20px/700, against the compact
+ * screen title's 20px/800.
+ *
+ * 🔴 WHY ITS OWN CLASS AND NOT AN EXTRA JOB ON `--compact`. 🎪 Collins made it a condition
+ * of the ruling — "a row describing two jobs under one job's name is how somebody types 19
+ * in six months" — and the first cut ignored him and merged them. `appScreenTitle.test.ts`
+ * went red twice within the minute: it pins the compact row's documented text AND owns
+ * >=20px inline type on a pushed screen as "a hand-rolled screen title". **One class cannot
+ * hold two jobs, and the gate said so out loud.**
+ *
+ * 🔑 IT ADDS NO SIZE TO THE SCALE. 20px is already declared; 700-versus-800 is a weight.
+ * The role exists precisely so that 18px does not have to (17 -> 18 is 1.059x, below the
+ * 1.077x that killed 13px).
+ *
+ * ⚠️ TYPE ONLY. Keep layout at the call site — "take the type from the owner; keep layout
+ * local" is why `MICRO_LABELS` works, and a class that also owned margins would be
+ * un-reusable by the second consumer. The 3px rail beside the founder-note thesis is the
+ * call site's, not this class's. */
+.section-headline {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.35;
+  color: var(--ink);
+  margin: 0;
+}
+
 .screen-header__title--compact {
   font-family: var(--font-ui);
   font-size: 20px;

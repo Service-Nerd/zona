@@ -350,3 +350,92 @@ describe('DOC-TOKEN-DRIFT-01 — CLAUDE.md states the live hex for every token i
     expect(drift, drift.join('\n')).toEqual([])
   })
 })
+
+// ── A11Y-APP-TEXT-CONTRAST-01 (FOUNDER-TYPE-18PX-01, Design Board 2026-10-14) ──
+//
+// 🔴 THE SCANNER FOR THIS EXACT FAILURE ALREADY EXISTED AND POINTED AT TWO MARKETING
+// FILES. `A11Y-MOCKUP-CONTRAST-01` above has `MOCKUPS = [PhoneFrame, TabbedPhone]`. The
+// APP — every screen a paying runner actually uses — was in no population at all.
+//
+// Found when the founder said the founder-note page "does not look right". Sampled from
+// his own screenshot: the pull-line carrying `BRAND.coreTruth` rendered `#6B8E6B`
+// (`--moss`) on `--bg` = **3.24:1**, against AA's 4.5, while every other line on the page
+// was `--ink-2` at 9.95. **The one sentence the page exists to deliver was the faintest
+// text on it.** The 12px mailto — the only tappable thing besides the back arrow — was the
+// same colour.
+//
+// ⚠️ A SURFACES LIST, NOT THE WHOLE APP, AND THE REASON IS A MEASUREMENT. Pointed at every
+// app file this finds **69 candidate sites** (37 `--moss`, 19 `--warn`, 7 `--mute-2`,
+// 6 `--danger`). That is a CANDIDATE population and not a defect count: a static check
+// cannot know the rendered GROUND, and the sibling scanner's own header records throwing
+// away a ratio version after it produced **seven confident wrong findings** by pairing text
+// with a 6px dot's fill. Several of the 69 are moss-on-moss-tinted selected states, where
+// the correct bar is 3:1 for graphics. **So the list grows one audited surface at a time**,
+// which is the `SWEEP-BASELINE-01` pattern, and a file on it has been looked at.
+//
+// ⚠️ WHAT IT STILL CANNOT PROVE: that the ground under any of these is `--bg`. It forbids
+// the TOKEN on small text, exactly as the mockup arm does, because which token carries
+// small text is statically decidable and where it lands is not.
+describe('A11Y-APP-TEXT-CONTRAST-01 — audited app surfaces use AA-capable text tokens', () => {
+  /** Audited surfaces. ADD a file when you have looked at it; never to silence a failure. */
+  const SURFACES = ['app/dashboard/FounderNoteScreen.tsx']
+  const LARGE_PX = 24
+  const BANNED: Record<string, string> = {
+    '--moss': '--moss-strong (3.24 -> 4.82 on --bg)',
+    '--warn': '--warn-strong',
+    '--mute-2': '--mute',
+    '--danger': '--danger-strong',
+  }
+
+  /** ⚠️ BOUND THE STYLE OBJECT BY BRACE DEPTH. Never a proximity window — that is the
+   *  recorded failure that produced seven wrong findings in the sibling scanner. */
+  function colouredText(src: string): { token: string; size: number; line: number }[] {
+    const out: { token: string; size: number; line: number }[] = []
+    for (const m of Array.from(src.matchAll(/style=\{\{/g))) {
+      let i = m.index! + 'style={{'.length
+      let depth = 1
+      while (i < src.length && depth > 0) {
+        const c = src[i]
+        if (c === '{') depth++
+        else if (c === '}') depth--
+        i++
+      }
+      const obj = src.slice(m.index! + 'style={{'.length, i - 1)
+      const col = /(?:^|[\s,])color:\s*(?:[^,}]*\?\s*)?'var\((--[a-z0-9-]+)\)'/.exec(obj)
+      const size = /(?:^|[\s,])fontSize:\s*'(\d+)px'/.exec(obj)
+      if (!col || !size) continue
+      out.push({ token: col[1]!, size: Number(size[1]), line: src.slice(0, m.index!).split('\n').length })
+    }
+    return out
+  }
+
+  it('the scanner reaches real declarations on every listed surface', () => {
+    // An empty population passes the arm below in silence — four of this repo's
+    // measured check defects were exactly that.
+    for (const f of SURFACES) {
+      const n = colouredText(fs.readFileSync(path.resolve(__dirname, '..', f), 'utf8')).length
+      expect(n, `${f}: the scanner found no sized, coloured text — re-anchor it`).toBeGreaterThan(2)
+    }
+  })
+
+  it('the detector fires on the real defect and ignores a large-text use', () => {
+    // Both directions, against the ACTUAL shipped defect rather than an invented one.
+    const probe = (s: string) => colouredText(s).filter(t => t.size < LARGE_PX && BANNED[t.token])
+    expect(probe(`<p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--moss)' }}>x</p>`)).toHaveLength(1)
+    expect(probe(`<p style={{ fontSize: '18px', color: 'var(--ink)' }}>x</p>`)).toHaveLength(0)
+    expect(probe(`<p style={{ fontSize: '26px', color: 'var(--moss)' }}>x</p>`)).toHaveLength(0)
+    // a FILL is a graphic at 3:1, not text — `background` must never be read as `color`
+    expect(probe(`<span style={{ fontSize: '12px', background: 'var(--moss)' }} />`)).toHaveLength(0)
+  })
+
+  it('🔴 no sub-AA token carries small text on an audited surface', () => {
+    const fails: string[] = []
+    for (const f of SURFACES) {
+      for (const { token, size, line } of colouredText(fs.readFileSync(path.resolve(__dirname, '..', f), 'utf8'))) {
+        if (size >= LARGE_PX) continue
+        if (BANNED[token]) fails.push(`${f}:${line} — ${token} on ${size}px text. Use ${BANNED[token]}.`)
+      }
+    }
+    expect(fails, fails.join('\n')).toEqual([])
+  })
+})

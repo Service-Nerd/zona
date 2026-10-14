@@ -82,7 +82,11 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // not deleted: the plan-adjustment journey migrated 13px -> 14px Body and
     // 11px -> MICRO_LABELS.eyebrow after the Design Board ruled 13px is NOT a
     // level. Six of the seven journey files are now fully on-scale.
-    const UNDECLARED_USES_BASELINE = 214
+    // 214 -> 213 on 2026-10-14 (FOUNDER-TYPE-18PX-01). ONE use converted, not deleted:
+    // the founder-note pull-line went 18px -> 20px after the board refused 18 as a level
+    // (17 -> 18 is 1.059x). The other EIGHT sites of the same headline species keep 18px
+    // as declared debt; see the 18px arm below for why they were not swept.
+    const UNDECLARED_USES_BASELINE = 213
     let n = 0
     for (const [size, count] of Array.from(sizes())) if (!DECLARED.has(size)) n += count
     expect(n,
@@ -90,6 +94,52 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
         ? `undeclared-size usage grew (${n} vs ${UNDECLARED_USES_BASELINE}).`
         : `debt PAID: ${n} vs ${UNDECLARED_USES_BASELINE} — lower the baseline.`,
     ).toBe(UNDECLARED_USES_BASELINE)
+  })
+
+  it('⛔ 18px is NOT a level, and the count may only fall', () => {
+    // FOUNDER-TYPE-18PX-01 (Design Board, 2026-10-14) — refused permanently on the
+    // board's own arithmetic: 17 -> 18 is 1.059x, BELOW the 1.077x that killed 13px the
+    // day before.
+    //
+    // 📐 The measurement found a role, not a stray: NINE of the twenty 18px uses are one
+    // species (`--font-brand`, weight 500/600, negative tracking) across six surfaces.
+    // 🎪 Collins' standing dissent that the scale is thin at the TOP is SUPPORTED by that
+    // and still did not win a new level; the role is named on the 20px row instead.
+    //
+    // ⚠️ FIVE of the twenty are `IconButton` GLYPH sizing, which is a box dimension and
+    // not type at all. They are inside this count because `sizes()` reads every
+    // `fontSize`, and that is deliberate: excluding them would need the scanner to know
+    // what an element IS, which it cannot. The ratchet is still correct — the number may
+    // only fall — but do not read it as "20 type violations".
+    //
+    // 20 (2026-10-14, before) -> 19 (after the founder-note pull-line converged).
+    const EIGHTEEN_BASELINE = 19
+    const n = sizes().get('18') ?? 0
+    expect(n,
+      n > EIGHTEEN_BASELINE
+        ? `18px grew (${n} vs ${EIGHTEEN_BASELINE}). It is not a level — a short declarative `
+          + `headline above body copy is the 20px row at weight 700.`
+        : `debt PAID: ${n} vs ${EIGHTEEN_BASELINE} — lower EIGHTEEN_BASELINE and say which site went.`,
+    ).toBe(EIGHTEEN_BASELINE)
+
+    const doc = readFileSync('docs/canonical/ui-patterns.md', 'utf8')
+    expect(doc.includes('18px is NOT a level'),
+      'ui-patterns.md must carry the ruling that refuses 18px, or this arm enforces nothing',
+    ).toBe(true)
+    // The role has to have somewhere to GO, or the ratchet is just a prohibition.
+    // ⚠️ ASSERT THE ROW, NOT A SUBSTRING. The first cut was
+    // `doc.includes('section headline')` and went red on the real doc purely because the
+    // row is capitalised — a bare phrase matched against prose is the hollow shape
+    // `hollowTestShapes.test.ts` exists to refuse, and it would also have passed on the
+    // words appearing in a comment. Match the TABLE ROW, with its weight.
+    expect(doc,
+      'the type scale must carry a 20px/700 headline row — without it the 18px ratchet is a '
+      + 'prohibition with nowhere to send the nine sites',
+    ).toMatch(/\|\s*\*\*Section headline \/ pull-line\*\*\s*\|[^|]*\|\s*\*\*700\*\*\s*\|\s*20px/)
+    // ...and the class that row names must actually exist, or the doc is describing nothing.
+    expect(readFileSync('app/globals.css', 'utf8'),
+      '.section-headline is documented but not defined',
+    ).toMatch(/\.section-headline\s*\{[^}]*font-size:\s*20px[^}]*\}/)
   })
 
   it('🔴 13px is CONVERGING, and the count may only fall', () => {
@@ -125,7 +175,10 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // than a choice -- SectionLabel's inherited 400 was ruled "an accident, not
     // a decision" (MICRO-LABEL-DRIFT-01) and this is the same shape.
     const DECLARED_WEIGHTS = new Set([400, 600, 700, 800])
-    const WEIGHT_BASELINE = 86
+    // 86 -> 84 on 2026-10-14 (FOUNDER-TYPE-18PX-01). TWO uses converted: the founder
+    // note's caption and mailto went 12/500 -> 12/400. The table declares 12px at weight
+    // 400 only, and no 500 was authored at that size.
+    const WEIGHT_BASELINE = 84
     let n = 0
     for (const f of FILES) {
       const re = /fontWeight:\s*'?(\d+)'?/g
