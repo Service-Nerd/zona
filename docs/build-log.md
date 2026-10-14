@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-14 — DATE-FIELD-IOS-01 · diagnosed from a screenshot because I could not reproduce it
+
+**Shipped:** a WebKit-scoped reset so the race date field lays out like every other input on iOS.
+
+**Dev learning:** `<input type="date">` is the one input type iOS WKWebView refuses to lay out the way you asked. Without `appearance: none` it uses an intrinsic width instead of your `width: 100%`, and it renders its value through `::-webkit-date-and-time-value`, which centres by default. The tell was in the founder's screenshot and I nearly missed it: **the value was centred, and every other field in the app is left-aligned.** That is not a CSS rule we wrote, so it had to be WebKit's — which turned "something looks off" into a specific cause without ever reproducing it.
+
+**Product/creator learning:** the owner was already correct. `TextField` had the 16px floor, the border-box sizing, the full width; the CTAs were on pattern with 32 passing assertions behind them. Having the right component did not make the screen right, because one input type does not obey the component. "Is it using the standard?" and "does it look right on the device?" turned out to be different questions, and we had only ever been able to answer the first.
+
+**AI-building learning:** my verification browser is Chromium and the bug is WebKit, so I measured all three variants — 309px container, 309px control, zero overflow — and got a clean bill of health for a field that is visibly broken on a phone. The useful move was to stop trying to reproduce it and write the failure to reproduce *into the stylesheet*, with a test arm asserting that admission is still there. A fix nobody could verify should not be able to age into a fix that looks verified.
+
+**The honest bit:** this is the first defect in this project found by someone looking at it on a real device, and it was found by the founder, not by any of the 5,169 tests. Several of those tests assert this exact field goes through the right component. None of them can see it.
+
+**Hook material:** 5,169 passing tests, 32 of them about buttons on that screen, and the bug was that iOS centres one input type. The browser I verify in renders it perfectly.
+
+**Postable?:** yes — "every test passed and the screen was wrong" with the Chromium-vs-WebKit measurement is the post.
+
 ## 2026-10-14 — CONFIRM-STAGGER-01 · git checkout ate my build, twice in one day
 
 **Shipped:** the confirm screen's three totals and four day rows arrive over 580ms instead of being present, with the CTA pressable from the first frame.
