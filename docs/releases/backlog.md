@@ -1507,6 +1507,72 @@ about to BUILD**, and the cost here was his time, not mine.
 
 ---
 
+## 🎯 FILED 2026-10-14 — the engine boundary, three items, one goal
+
+> 🎯 **THE GOAL, so these are not read as tidying.** The founder intends to **lift the coaching
+> engine out of the app and host it centrally**, so the app calls it as a service — and
+> **possibly to monetise it**, so other apps can call it too. These three items do **not** do
+> that. They make it **mechanical** rather than a rebuild, and they pay for themselves
+> immediately in a codebase where nothing currently stops the boundary rotting.
+>
+> 📐 **MEASURED 2026-10-14, and the engine is already most of the way there.** `lib/plan` is
+> **98 files / ~79,000 lines**, `lib/coaching` **130 files**, and it imports **`next/` 0 times,
+> `react` 0, `@/app/` 0, `@/components/` 0**. Only **two** files touch Supabase
+> (`supersede.ts`, `completions.ts`) and both are persistence edges, not the generator. 5,000+
+> tests exercise it with no server. **The separation already exists; what is missing is a
+> boundary anyone is forced to respect.**
+>
+> ⚠️ **ARCHITECT'S POSITION, RECORDED: do NOT extract yet.** A service today buys a network hop
+> on a path where enrichment already takes 28–35 s, a second deploy target, API versioning and a
+> new failure mode, for **zero functional gain until a second consumer exists**. These three make
+> the day-it-is-real a weekend. **Monetisation is an SLT question** (uptime commitments,
+> versioning you cannot break, third-party auth, support) — and ⚠️ **the seat that would price it,
+> Traynor's, is stood down**, so nobody at that table asks *"what is the traffic?"* at 48 users.
+
+### 🧱 `ENGINE-ENTRY-01` — the route orchestrates 18 engine modules, so there is no entry point *(filed 2026-10-14, P2)* ⚙️ **NO BOARD**
+
+📐 **Measured:** `app/api/generate-plan/route.ts` imports **eighteen** separate `lib/plan`
+modules — `ruleEngine`, `enrich`, `foundationCompose`, `invariants`, `length`, `startVolume`,
+`baseVolume`, `inputs`, `designedRefusal`, `freeIntro`, `canUseFeature`, `getRunningPlan`,
+`longRunReadiness`, `baseBuildCopy`, `baseBuildOnRamp`, `enrichAttribution`,
+`enrichPartialRevert`, `enrichServerSave`. `adjust-plan` imports **ten**. `plan-audit` imports
+**one**.
+
+🔴 **That is the real finding: the ROUTE is the orchestrator, not the engine.** Extract today and
+**all eighteen become public API surface**, because the sequencing lives on the caller's side.
+One entry point — `generatePlan(input) → Plan` — moves the sequencing inside the boundary and
+leaves the route doing auth, tier and persistence, which is what ADR-003 already says it is for.
+
+⚠️ **NOT a rename.** `composePlanWithFoundation` is already the single owner of post-generation
+`plan.weeks` mutation (ADR-020) and that ownership must not be duplicated. The risk is a second
+orchestration path existing alongside the route's — `[[feedback-a-single-owner-of-construction-is-not-of-the-decision]]`.
+
+### 🧱 `ENGINE-CONTRACT-01` — the engine's input/output has no written contract *(filed 2026-10-14, P2)* ⚙️ **NO BOARD**
+
+`docs/contracts/` governs API routes and component props. **The engine's own interface —
+`GeneratorInput` in, `Plan` out — is governed by nothing**, which is the one contract that must
+exist before anything external can call it.
+
+🔑 **Writing a contract here is a code review** — it has surfaced a real defect twice in this
+repo (`SUBS-ORDERING-REVENUECAT-01`, `CHARITY-REDEEM-RATELIMIT-01`). Must state: every field,
+which are required, what a **designed refusal** returns and how it differs from an error, and the
+`tier` parameter's meaning (ADR-003). Depends on `ENGINE-ENTRY-01` — contract the entry point,
+not eighteen modules.
+
+### 🧱 `ENGINE-PURITY-GATE-01` — nothing stops the engine importing the app *(filed 2026-10-14, P2)* ⚙️ **NO BOARD**
+
+The purity above is **true today and enforced by nothing**. A gate fails the build if anything
+under `lib/plan` or `lib/coaching` imports `next/`, `react`, `@/app/`, `@/components/` or a
+Supabase client.
+
+⚠️ **The two known Supabase importers are DECLARED DEBT, not exceptions to wave through** —
+`supersede.ts` and `completions.ts` are persistence, and the honest fix is moving them out of
+`lib/plan` rather than baselining them there forever. Baseline them with that reason and the
+count may only fall. 🔑 **This is the item that stops the other two rotting**, and on this
+repo's record an unenforced boundary is a boundary that does not exist.
+
+---
+
 ## ⚖️ FILED 2026-10-13 — two residuals from the ops-digest fixes
 
 ### 🟡 `ADJUST-STATUS-WITHOUT-SAVE-01` — a failed plan save still flips the adjustment to confirmed *(filed 2026-10-13, P2)* ⚙️ **NO BOARD**
