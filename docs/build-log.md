@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-14 — CTA-INLINE-PAINT-01 · the gate was green because its regex stopped at the `>` inside `=>`
+**Shipped:** The plan-adjust Apply button stopped overriding the Button component's own paint and geometry, and the gate that was supposed to catch that learned to read a JSX tag.
+
+**Dev learning:** `/<Button\b(?:(?!<Button)[\s\S])*?>/` looks like it matches a JSX opening tag. It does not. It stops at the first `>`, and `onClick={busy ? undefined : () => onApply(x)}` has one in the arrow. So the match ended before `style` ever appeared and the call site counted as zero overrides. The proof took two lines: hold the markup byte-identical and change only the handler — arrow form scores 0, plain-handler form scores 1. Across the app the broken reader saw 32 overrides where a brace-depth-aware one sees 57. **44% of its own population, invisible, for the register's entire life.** Then the regression arm I wrote for the arrow case immediately failed my fix on `aria-label="next >"` — the depth counter tracked braces and not quotes. The lesson is not "handle arrows"; it is **bound the region, never stop at a character that can appear inside it**, and write the sibling case rather than only the one that bit you.
+
+**Product/creator learning:** The founder said *"buttons still don't look right in terms of style and colour"* and he was describing a 3.68:1 contrast failure he had no way to measure. I sampled his screenshot at pixel level and got `#6B8E6B` where the component paints `#557055`. **An eye beat four green gates again** — second time in three weeks. The deeper thing: the identical wrong paint had already been found and fixed in September, on the *marketing mockup*, and never on the live button. That is the fourth "remedy applied to one case and not its twin" in this one component's history, and it is now the failure mode I check for first.
+
+**AI-building learning:** The honest-register pattern nearly ate me. Fixing the reader made 25 pre-existing overrides visible at once, which meant raising ten frozen baseline numbers — and raising ten numbers in a debt register is indistinguishable from laundering a regression into it. The only way to tell was to run the *corrected* reader against the tree at the freeze commit: 60 then, 56 now. The debt had gone **down** four over the period the register thought it was flat. Without that comparison I would have written "these are all pre-existing" as an assertion, and it would have been true, and I would have had no right to say it.
+
+**The honest bit:** I shipped the compact-CTA sweep the day before and reported it complete. It was — for the thing it matched. It matched `size="compact"`, and this button smuggled the identical compact radius in through an inline style, two files away from the sweep, with a comment four lines above it naming the exact rule it was breaking. The gate said zero. The suite said 5,196 passing. The founder opened the app.
+
+**Hook material:** A regex that stopped at the `>` in `=>` hid 25 of 57 button-style violations — 44% — including one failing WCAG AA on the live app, four lines below a comment naming the rule it broke.
+
+**Postable?:** yes
+
 ## 2026-10-14 — ENGINE-CONTRACT-01 · a designed refusal is thrown, and a service would call that a 500
 
 **Shipped:** `docs/contracts/engine.md` plus a gate that checks its claims against the engine.
