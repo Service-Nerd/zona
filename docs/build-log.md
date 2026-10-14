@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-14 — CTA-COMPACT-SCOPE-01 · a size class named for size, used for layout, by seventeen people
+
+**Shipped:** `compact` documented as a row-layout class, the adjust journey off it, and the footer's reset renamed to what it actually does.
+
+**Dev learning:** `compact` exists because a **two-button row at flex:1/flex:2** wraps to 74px at regular size. That measurement is in the docs, under the class. Seventeen call sites then used it on **stacked full-width** buttons, where there is no wrapping to prevent, because the name says "small" and nobody re-reads the justification. The cost was 12px type and a 14px radius against the primary's 14px and 18px — a pair differing on three properties at once, which is what "dated" turned out to mean.
+
+**Product/creator learning:** the obvious fix was to make the two buttons match, and it was wrong. They are not peer actions: one accepts a rewrite of your plan, one resets a form, and on the confirm screen one of them is the **decline**. Matching a decline to an accept is a dark pattern. The ruling ended up with three different treatments across five buttons, which looks inconsistent in a diff and is correct on a screen.
+
+**AI-building learning:** I handed the board a settled-ground scan that missed the binding rule. `GHOST-AFFORDANCE-01` says a primary action takes a surface, and a sweep had already removed ten full-width ghosts — but I searched the register for *button*, *CTA* and *elevation*, and a rule about **ghost** contains none of those words. The board duly ruled a full-width ghost, and `buttonOwnership.test.ts` failed on the commit. **The test caught what the process did not**, which is the whole argument for the gates existing. Third incomplete brief in two days.
+
+**The honest bit:** one arm of my own new gate failed on my own comment — the one I wrote three lines above the button explaining why "Discard changes" had gone, which naturally quotes "Discard changes". Comments are prose; I taught a different gate exactly that lesson this morning and still wrote the bug by lunchtime.
+
+**Hook material:** a CSS class called `compact` whose documented reason is "stops a side-by-side row wrapping" was used on seventeen full-width buttons that cannot wrap. Nobody misread the docs — they read the name.
+
+**Postable?:** yes — "name your size classes after the problem, not the size" with the 17-site count, and the scan-missed-the-rule story as the second beat.
+
 ## 2026-10-14 — DATE-FIELD-IOS-01 · diagnosed from a screenshot because I could not reproduce it
 
 **Shipped:** a WebKit-scoped reset so the race date field lays out like every other input on iOS.
