@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-14 — FOUNDER-TYPE-18PX-01 · the website had already solved it and nobody told the app
+**Shipped:** The founder-note thesis stopped being the faintest text on its own page, and 18px was refused as a type level.
+
+**Dev learning:** The fix was not mine to invent. `app/about/page.tsx` renders the *same* `BRAND.coreTruth` string in the *same* 3px pull-rail, and it had already made the right call: text in `--ink`, moss in the **rail**. The app put moss in both and the sentence landed at **3.24:1** where every other line on the page is 9.95. A 3px rail is a graphic and owes 3:1; prose is text and owes 4.5. **Before reaching for a darker green, I should have grepped for the other place the string renders** — that took thirty seconds and produced a better answer than the one I was about to design. Second lesson, smaller and sharper: my first wrap measurement was taken before `document.fonts.ready`, so canvas had silently fallen back off Inter and I had numbers that were wrong by ~10px in a direction that still happened to support my conclusion. **A measurement that agrees with you is the one to re-take.**
+
+**Product/creator learning:** He said "the fonts don't look right" and what he was seeing was a contrast failure he had no vocabulary for. That is the second time this week. The useful translation is not "he means contrast" — it is **"he is pointing at the thing, and the thing is usually measurable."** Also worth saying: two of the four things I thought I'd found were not findings. The 15px body is explicitly legitimised in our own patterns doc, and the layout measured fine. The settled-ground scan caught both before they reached the board.
+
+**AI-building learning:** The best moment of the build was a test calling me wrong. The board attached a condition — Collins: *"name the role or in six months somebody types 19"* — and I ignored it and merged two jobs into one existing row because it was less work. `appScreenTitle.test.ts` went red twice inside a minute: it pins that row's documented text, and it owns ≥20px inline type as "a hand-rolled screen title". **The gate enforced a human's condition that I had quietly dropped.** That is the argument for writing the register and the gate at the same time as the ruling, rather than after.
+
+**The honest bit:** I wrote the ruling, then built something that contradicted it, and only the suite noticed. And earlier in the same build a stray backtick inside a `python -c` string got command-substituted by zsh and silently ate four words out of a doctrine file — I caught it because the test output looked wrong, not because I checked the write. Heredocs from now on.
+
+**Hook material:** The sentence the whole page exists to deliver was rendering at 3.24:1 — the faintest text on the screen — and the correct fix had been sitting in the marketing site for weeks, on the exact same string.
+
+**Postable?:** yes
+
 ## 2026-10-14 — CTA-INLINE-PAINT-01 · the gate was green because its regex stopped at the `>` inside `=>`
 **Shipped:** The plan-adjust Apply button stopped overriding the Button component's own paint and geometry, and the gate that was supposed to catch that learned to read a JSX tag.
 
