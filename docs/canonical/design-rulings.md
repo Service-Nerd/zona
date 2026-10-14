@@ -4987,3 +4987,68 @@ measured benefit to defend itself with.
 **Nothing was seen on a device.** 26/800 beside a chip at 375pt is arithmetic, and so is the
 600ms. The 381 remaining declarations are a register that stops the debt growing and **does not
 shrink it; nothing schedules that.** Collins' heading-band question is open.
+
+---
+
+## 🧭 RULED 2026-10-14 — `CTA-COMPACT-SCOPE-01`: **SHIP WITH AMENDMENT** (4). `compact` is a ROW class, and the board regressed a rule the scan missed
+
+**Founder, on a device:** *"The CTA's still look dated though. i.e. Apply x change and discard
+changes."* Evidence, not a verdict.
+
+### 🔴 The precedent that shaped the sitting
+
+He raised this **once before** — `BUTTON-COMPONENT-01`, 2026-09-24, *"all our cta buttons are
+very flat visually"*. This board ruled *"the question was wrong; the answer is a missing Button
+component, elevation is one of its properties."* **That shipped**: `--shadow-lifted` went from
+**0 consumers to 3**. **The complaint survived its own fix**, so polish was already a tried answer
+and the second sitting had to look at structure.
+
+### 📐 Measured, real `globals.css` at 375pt
+
+| | primary | secondary (`compact`) |
+|---|---|---|
+| height · font · radius | 47px · 14px · r18 | 44px · **12px** · **r14** |
+
+Same width, stacked 8px apart, **three properties differing at once**. `compact`'s entire
+justification is *"action rows use compact, because regular wraps"* — measured on a **two-button
+row at `flex:1`/`flex:2`**. A stacked full-width button has the whole 295px: measured at
+`regular`, **49px, one line**. **The class was being chosen by its name, by 17 call sites.**
+
+### ⚖️ The ruling
+
+1. **`compact` means FOR SIDE-BY-SIDE ROWS, not "small".** Binds all 17.
+2. **The adjust footer's reset becomes a quiet action** — 🎓 Sierra: *"these are not peer
+   actions."* ⚠️ **NOT "make the pair match"**: only one of the journey's five was a form reset.
+   *"Keep my current plan"* is the **decline on a consent screen** and stays a real button,
+   because **quietening a decline is a dark pattern**. Four became `regular`, one became `ghost`.
+3. **"Discard changes" → "Reset my selections"** (founder approved the wording). It clears the
+   selections and **leaves you on the sheet**; the X is what exits. The old label named the X's
+   outcome.
+4. **§ Typography Scale gains a Control label row** — ⛔ Silvanto declined the veto, naming his
+   grounds: the scale was **silent** on control labels, not violated (the `--surface-moss-wash`
+   shape, where the rule and the token had never met), and required the row instead.
+
+### 🔴 THE BOARD REGRESSED A STANDING RULE, AND THE SUITE CAUGHT IT, NOT THE SCAN
+
+Item 2 shipped as a **full-width** ghost. `GHOST-AFFORDANCE-01` (2026-09-25) rules that **"a
+button that is one of the primary actions takes a SURFACE"**, and a sweep removed ten full-width
+ghosts. **The settled-ground scan for this sitting missed that row** — it searched the register
+for *button*, *CTA* and *elevation*, and that row matched none of them. `buttonOwnership.test.ts`
+failed on the commit.
+
+**Reconciled without a re-sitting, because the rule is narrower than the ruling:**
+`GHOST-AFFORDANCE-01` forbids a **full-width** ghost. The reset is now a **centred** ghost — it
+keeps what the board wanted (a quiet action that is not a peer of Apply) and reverses nothing.
+⚠️ **Third incomplete brief handed to a board in two days.** The scan is only ever as good as the
+words it searches for, and a rule about *ghost* does not contain the word *button*.
+
+### 📦 Artifacts
+`ui-patterns.md` § compact-is-a-row-class + Control label row · the existing `ghost` variant, no
+new CSS · `components/ui/buttonSizeScope.test.ts` (7 arms, 4 falsified) + the 12 remaining
+baselined · 5 `buttonGeometry` entries re-baselined 44→47px, all still above the floor.
+
+### ⚠️ What this does not settle
+**Nothing was felt in a hand** — the three options were rendered at 375pt in **Chromium**, and
+Chromium is what hid `DATE-FIELD-IOS-01` from me the same day. And **this is the second time this
+board has answered "the CTAs look flat/dated". If it survives this fix too, the buttons are not
+the problem and we should stop treating them as though they are.**

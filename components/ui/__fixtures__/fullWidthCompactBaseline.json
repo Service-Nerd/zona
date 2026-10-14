@@ -1,0 +1,8 @@
+{
+  "app/auth/login/page.tsx": 1,
+  "app/dashboard/GeneratePlanScreen.tsx": 1,
+  "components/dashboard/SessionPopupInner.tsx": 2,
+  "components/dashboard/TodayScreen.tsx": 5,
+  "components/training/NextGoalCard.tsx": 1,
+  "components/training/PostRaceReshapeCard.tsx": 2
+}

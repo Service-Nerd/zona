@@ -157,7 +157,7 @@ export default function RefusalView({
             onClick={onAccept}>
             Start base building
           </Button>
-          <Button variant="secondary" size="compact" fullWidth 
+          <Button variant="secondary" fullWidth 
             onClick={onAdjust} style={{ marginTop: '4px' }}>
             Adjust my answers
           </Button>
@@ -185,7 +185,7 @@ export default function RefusalView({
             onClick={onAdjust}>
             Adjust my answers
           </Button>
-          <Button variant="secondary" size="compact" fullWidth
+          <Button variant="secondary" fullWidth
             onClick={onAcknowledge} style={{ marginTop: '4px' }}>
             {ackLabel}
           </Button>

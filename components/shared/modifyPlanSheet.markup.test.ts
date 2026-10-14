@@ -103,7 +103,10 @@ describe('P-02 — presentation and copy live where they belong', () => {
       .toMatch(/<IconButton[\s\S]{0,200}ariaLabel="Close"/)
     expect(SHEET, 'this sheet must not re-grow its own close')
       .not.toContain('ariaLabel="Close"')
-    expect(SHEET, 'and a pending state can still be abandoned').toContain('Discard changes')
+    // CTA-COMPACT-SCOPE-01 (2026-10-14) renamed this. The GUARANTEE is unchanged --
+    // a pending state can still be cleared -- but "Discard changes" named the X's
+    // outcome, not its own: it clears the selections and LEAVES YOU ON THE SHEET.
+    expect(SHEET, 'and a pending state can still be cleared').toContain('Reset my selections')
     // The thing actually forbidden, stated directly rather than implied by a
     // ternary's presence: no `disabled` primary painted in the CTA colour
     // while nothing is pending.

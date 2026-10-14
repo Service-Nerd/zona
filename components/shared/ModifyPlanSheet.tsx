@@ -352,7 +352,7 @@ export default function ModifyPlanSheet({
                     belong to the variant (BUTTON-INLINE-OVERRIDE-01). Only the
                     spacing to the next control is set here. */}
                 {error && ackLabel && onAcknowledge && (
-                  <Button variant="secondary" size="compact" fullWidth
+                  <Button variant="secondary" fullWidth
                     onClick={busy ? undefined : onAcknowledge}
                     disabled={busy}
                     style={{ marginBottom: 'var(--space-3)' }}>
@@ -366,9 +366,21 @@ export default function ModifyPlanSheet({
                     ? 'Rebuilding your plan…'
                     : `Apply ${pending.length} change${pending.length === 1 ? '' : 's'}`}
                 </Button>
-                <Button variant="secondary" size="compact" fullWidth 
-                  onClick={() => onEditsChange({})} style={{ marginTop: '4px' }}>
-                  Discard changes
+                {/* 🎓 Sierra, CTA-COMPACT-SCOPE-01: this is NOT a peer of Apply and
+                    must not look like one. It clears the pending selections and LEAVES
+                    YOU ON THE SHEET -- the X above is what exits -- so "Discard changes"
+                    named an outcome it does not produce. Founder approved the wording. */}
+                {/* ⚠️ NOT fullWidth. `GHOST-AFFORDANCE-01` (2026-09-25) rules that "a
+                    button that is one of the primary actions takes a SURFACE", and a
+                    sweep removed ten full-width ghosts. The settled-ground scan for
+                    CTA-COMPACT-SCOPE-01 MISSED that row and the board ruled a
+                    full-width ghost; `buttonOwnership.test.ts` caught it. A centred
+                    ghost keeps what the board wanted -- a quiet action that is not a
+                    peer of Apply -- without reversing a standing rule. */}
+                <Button variant="ghost"
+                  onClick={() => onEditsChange({})}
+                  style={{ marginTop: '4px', marginLeft: 'auto', marginRight: 'auto', display: 'block' }}>
+                  Reset my selections
                 </Button>
             </>
           </div>

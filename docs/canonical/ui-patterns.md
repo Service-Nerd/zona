@@ -160,6 +160,7 @@ All type uses **Inter** only. `var(--font-ui)` and `var(--font-brand)` both reso
 | Card primary | `--font-ui` | 600 | 15px | Session name, main label |
 | Card secondary | `--font-ui` | 400 | 12px | Zone, type, supporting detail — `--mute` |
 | Body / description | `--font-ui` | 400 | 14px | Session description, coach note |
+| **Control label** | `--font-ui` | **600** | **14px** | A button's own label. ⛔ **Silvanto's condition on `CTA-COMPACT-SCOPE-01`:** he declined the veto because the scale was **silent** on control labels rather than violated — the `--surface-moss-wash` shape, where the rule and the token had never met — and required the row instead. `.btn--regular` is 14px; `.btn--compact` is 12px and is a **row** class (above), so 12px is reachable only inside a side-by-side row |
 
 > 🔴 **THE SCREEN-SUBTITLE ROW WAS MISSING UNTIL 2026-09-29, AND IT SHIPPED ON EIGHT SCREENS
 > THE WHOLE TIME.** `.screen-header__sub` has existed in `globals.css` and rendered on every
@@ -5100,6 +5101,38 @@ in the row.
 the SOR carrying the HR stream, a manual log carries none, and CLAUDE.md states the consequence —
 those runners *"get no HR-based coaching"*. **Linking is better coaching, not tidier data.** Do not
 apply this to a screen where the two outcomes are genuinely equal; that is just hiding a button.
+
+#### 📐 `compact` is a ROW class, not a size *(CTA-COMPACT-SCOPE-01, Design Board 2026-10-14)*
+
+🔴 **THE NAME SAYS SIZE AND THE REASON IS LAYOUT, AND SEVENTEEN CALL SITES BELIEVED THE NAME.**
+The justification below is measured on **a two-button row at `flex: 1` / `flex: 2`**, where
+`regular` wraps to 74px. **A stacked full-width button has the whole 295px and cannot wrap** —
+measured at `regular`: **49px, one line**. So on a stack the class buys nothing and costs 12px
+type and a 14px radius against the primary's 14px and 18px.
+
+| | primary | secondary, `compact` |
+|---|---|---|
+| height | 47px | 44px |
+| font-size | 14px | **12px** |
+| border-radius | 18px | **14px** |
+
+**Same width, stacked 8px apart, differing on three properties at once.**
+
+⚠️ **AND THE RULING IS NOT "MAKE THE PAIR MATCH".** 🎓 Sierra: these are not peer actions. Only
+one of the adjust journey's five was a form **reset**, and that one became a `ghost` text action.
+*"Keep my current plan"* is the **decline on a consent screen** and stays a real button —
+**quietening a decline is a dark pattern**, and matching it to the accept says they are peers.
+Four became `regular`; one became `ghost`; none became a smaller slab.
+
+🔑 **The precedent this sitting had to clear:** the founder raised *"all our cta buttons are very
+flat visually"* on 2026-09-24, the board ruled the answer was a missing Button component with
+elevation as a property, **and that shipped** — `--shadow-lifted` went 0 consumers to 3. **The
+complaint survived its own fix**, which is why the second sitting looked at structure instead of
+polish. If it survives this one too, the buttons are not the problem.
+
+**Gate:** `components/ui/buttonSizeScope.test.ts` — the journey carries zero `fullWidth`+`compact`;
+the **12 elsewhere are declared debt that cannot grow**, because the founder declined the
+all-nine-screens option and the board shipped only the journey.
 
 #### 📐 Action rows use `compact`, because `regular` wraps
 
