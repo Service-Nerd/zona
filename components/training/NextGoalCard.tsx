@@ -70,7 +70,7 @@ export default function NextGoalCard({ achievement, options, onPick, onDismiss }
         ))}
       </div>
 
-      <Button variant="secondary" size="compact" fullWidth 
+      <Button variant="secondary" fullWidth 
         onClick={onDismiss}>
         Not yet
       </Button>

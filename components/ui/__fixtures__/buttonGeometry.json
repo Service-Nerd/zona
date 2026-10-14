@@ -12,7 +12,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "app/auth/login/page.tsx#Button3": {
@@ -292,7 +292,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "app/dashboard/GeneratePlanScreen.tsx#Button6": {
@@ -652,7 +652,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "components/dashboard/SessionPopupInner.tsx#Button3": {
@@ -831,7 +831,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "components/dashboard/TodayScreen.tsx#Button4": {
@@ -887,7 +887,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "components/dashboard/TodayScreen.tsx#Button11": {
@@ -895,7 +895,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "components/dashboard/TodayScreen.tsx#Button12": {
@@ -911,7 +911,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "components/dashboard/TodayScreen.tsx#Button14": {
@@ -919,7 +919,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "components/dashboard/TodayScreen.tsx#Button15": {
@@ -1229,7 +1229,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "components/training/PlanCalendar.tsx#Button1": {
@@ -1309,7 +1309,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "components/training/PostRaceReshapeCard.tsx#Button3": {
@@ -1325,7 +1325,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
+    "height": 47,
     "width": "full"
   },
   "components/training/RaceResultSheet.tsx#Button1": {

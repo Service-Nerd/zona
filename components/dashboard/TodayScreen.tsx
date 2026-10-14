@@ -359,7 +359,7 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
       {/* LOG-OFFPLAN-02. "a run", never "this run" — there is no session to
           point at, and that one word is the whole distinction. */}
       {onLogRun && (
-        <Button variant="secondary" size="compact" fullWidth
+        <Button variant="secondary" fullWidth
           onClick={onLogRun} style={{ marginTop: 'var(--space-3)' }}>
           Log a run
         </Button>
@@ -1544,13 +1544,13 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 </div>
               )}
               {handoverError && handoverAckLabel && onHandoverAcknowledge && (
-                <Button variant="secondary" size="compact" fullWidth
+                <Button variant="secondary" fullWidth
                   onClick={handoverBusy ? undefined : onHandoverAcknowledge}
                   disabled={handoverBusy} style={{ marginTop: 'var(--space-2)' }}>
                   {handoverAckLabel}
                 </Button>
               )}
-              <Button variant="secondary" size="compact" fullWidth
+              <Button variant="secondary" fullWidth
                 onClick={onDismissHandover} disabled={handoverBusy}>
                 {handover.secondary}
               </Button>
@@ -1602,7 +1602,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 onClick={onSeeMaintPlan} style={{ marginBottom: '4px' }}>
                 See the plan
               </Button>
-              <Button variant="secondary" size="compact" fullWidth 
+              <Button variant="secondary" fullWidth 
                 onClick={onAckMaintTransition}>
                 Got it
               </Button>
@@ -1683,7 +1683,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                   </p>
                 </>
               )}
-              <Button variant="secondary" size="compact" fullWidth 
+              <Button variant="secondary" fullWidth 
                 onClick={onDismissMaintCard}>
                 Dismiss
               </Button>

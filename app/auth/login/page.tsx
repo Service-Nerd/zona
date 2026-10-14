@@ -281,7 +281,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <Button variant="secondary" size="compact" fullWidth 
+          <Button variant="secondary" fullWidth 
             onClick={() => { setForgot(false); setError(null); setMessage(null) }} style={{ marginTop: '14px' }}>
             ← Back to sign in
           </Button>

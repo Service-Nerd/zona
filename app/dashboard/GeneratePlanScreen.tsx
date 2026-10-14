@@ -1791,7 +1791,7 @@ export default function GeneratePlanScreen({
             copy SITE-WIDE — the "app-side exception" CLAUDE.md refers to does
             not exist in that section. A comma. */}
         {stepMeta.optional && (
-          <Button variant="secondary" size="compact" fullWidth 
+          <Button variant="secondary" fullWidth 
             onClick={skipStep} style={{ marginBottom: 'var(--space-2)' }}>
             Not sure, continue
           </Button>

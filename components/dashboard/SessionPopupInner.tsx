@@ -849,7 +849,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
 
         {/* Upgrade nudge — free users only, shown after logging a session manually */}
         {!hasPaidAccess && onUpgrade && (
-          <Button variant="secondary" size="compact" fullWidth 
+          <Button variant="secondary" fullWidth 
             onClick={onUpgrade} style={{ marginTop: 'var(--space-3)' }}>
             Upgrade to unlock zone coaching.{' '}
             <span style={{ color: 'var(--moss)' }}>→</span>
