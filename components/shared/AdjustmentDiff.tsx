@@ -115,7 +115,7 @@ export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 
             </span>
             <span
               aria-hidden="true"
-              style={{ color: 'var(--mute)', fontSize: '11px' }}
+              style={{ color: 'var(--mute)', fontSize: '12px' }}
             >
               →
             </span>
