@@ -515,10 +515,20 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 >    checking before the work:** this item says Pro lifts the ceiling 60 s → 300 s, and current
 >    Vercel guidance says the default is **300 s on all plans**, which would make it moot.
 >    Unverified here — the Vercel docs connector is not authorised.
-> 2. 🔴 **`OPS-SUPABASE-PLAN-01`** — Supabase is on **Free**. Measured at ~1.5 MB/runner/block, 500 runners
->    is **765 MB – 1.02 GB against a 500 MB ceiling**, breaking at roughly **250–320 active runners**;
->    egress reaches ~60% of its allowance. And the part that is already true with zero runners: **Free has
->    no backups and no PITR**, and auto-pauses after 7 idle days. Pro is $25/mo.
+> 2. 🔴 **`OPS-SUPABASE-PLAN-01`** — Supabase is on **Free**. 📐 **RE-MEASURED 2026-10-14 against
+>    the live database, and the CAPACITY ARGUMENT IS NOT THE REASON:** **48 users · 35 plans ·
+>    51 archives · 612 health samples · 340 activities · 9,200 ops_events**. The item predicted a
+>    break at **250–320 active runners**; we are an order of magnitude below it and storage is not
+>    close. ⚠️ **Quoting the 765 MB figure as if it were current would be the stale-premise error
+>    again.**
+>
+>    🔴 **THE REASON IS BACKUPS, AND IT IS TRUE TODAY WITH ZERO SCALE.** Free has **no backups and
+>    no PITR**, and auto-pauses after 7 idle days. **35 real runners' plans are in there now**,
+>    charity runners among them. ⚠️ **`plan_archive` IS NOT A BACKUP** — it is an application table
+>    that is lost with the database. On 2026-10-10 a runner's plan was restored byte-for-byte
+>    *because an archive row happened to exist*, which is a data-protection feature working as
+>    designed and is **not** recovery. **Pro is $25/mo. Founder-owned; the decision is whether 35
+>    runners' plans are worth $25/mo of recoverability, not whether we are near a ceiling.**
 >
 > **AI cost is not a concern and should stop being treated as one:** ~$2.40 (**£1.80**) per runner over
 > seven months. **Costed in GBP 2026-09-18 at $1 = £0.7482:** Anthropic **£900 total / £129 a month** at
