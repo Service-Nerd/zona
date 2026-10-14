@@ -620,7 +620,12 @@ say "── CONTRACTS: a SHARED component with no contract at all ──"
 # This asks the inverse: a component under `components/shared/` that EXPORTS a prop
 # interface and is imported by more than one file should have a contract. Existing
 # debt is declared below so it is visible and cannot grow.
-UNCONTRACTED_BASELINE=58   # ⚠️ 59 → 58, 2026-10-10 (second payment, same day): `TodayScreen`
+UNCONTRACTED_BASELINE=57   # 58 -> 57, 2026-10-14: `AdjustmentDiff` gained a prop
+                           # (`stagger`, CONFIRM-STAGGER-01) and had no contract to
+                           # update, so CLAUDE.md's same-commit rule had nothing to
+                           # bite on. Written; the gate diffs its props against the
+                           # component and goes red if either side drifts.
+#   # ⚠️ 59 → 58, 2026-10-10 (second payment, same day): `TodayScreen`
 # gained a contract because `BASEBUILD-HANDOVER-01` added four props to it and it had none,
 # while being one of the register-counted components (4 importers). ⚠️ `ModifyPlanSheet` also
 # gained a real contract the same day and it does NOT move this number: it has ONE importer,
