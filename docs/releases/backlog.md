@@ -1482,6 +1482,31 @@ filed rather than built.
 
 ---
 
+### ⚙️ `OPS-FN-DURATION-01` — no route sets `maxDuration`, and the item's own premise may be stale *(filed 2026-10-14, P2)* ⚙️ **NO BOARD**
+
+**Board: ⚙️ NO BOARD.** Infrastructure. The residual of `OPS-VERCEL-PLAN-01`, which **closed
+2026-10-14** when the founder confirmed he had bought **Vercel Pro** — verified
+`npx vercel teams ls` → plan **`pro`**.
+
+**Measured:** `grep -rn maxDuration app/` returns **nothing**. Plan enrichment measures
+**28–35 s**. So every route runs on the platform default, whatever that currently is.
+
+⚠️ **CHECK THE PREMISE BEFORE DOING THE WORK.** `OPS-VERCEL-PLAN-01` stated Pro lifts the
+ceiling **60 s → 300 s**, which is the reason this residual exists. Current Vercel guidance in
+the session that filed this says the **default is now 300 s on all plans** — if that is right,
+**there is nothing to do and this item closes without a build.** It could not be verified here:
+the Vercel docs connector is not authorised. 🔑 **One lookup decides whether this is a
+one-line change or a DON'T BUILD.**
+
+🔴 **FILED BECAUSE I RECOMMENDED ITS PARENT WITHOUT RE-MEASURING IT.** I put
+`OPS-VERCEL-PLAN-01` to the founder as a live **P0** and he replied that he had already bought
+Pro. The backlog's own standing rule — *an item is a snapshot of the code on the day it was
+written; re-measure before you pick it up* — was applied to three other people's items the same
+day and not to this one. **An item I am about to RECOMMEND needs the same re-measure as one I am
+about to BUILD**, and the cost here was his time, not mine.
+
+---
+
 ## ⚖️ FILED 2026-10-13 — two residuals from the ops-digest fixes
 
 ### 🟡 `ADJUST-STATUS-WITHOUT-SAVE-01` — a failed plan save still flips the adjustment to confirmed *(filed 2026-10-13, P2)* ⚙️ **NO BOARD**

@@ -503,11 +503,18 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 >
 > **The two blockers are both plan-tier, and cost $315 across the seven months combined:**
 >
-> 1. 🔴 **`OPS-VERCEL-PLAN-01`** — Vercel is on **Hobby**, whose fair-use terms restrict it to
->    *non-commercial personal use*, and Zonna sells £7.99/month. **Out of compliance today**, before any
->    charity runner exists; the enforcement action is an account pause. Pro is $20/mo and also lifts the
->    function ceiling 60 s → 300 s (plan enrichment measures **28–35 s** and no route sets `maxDuration`).
->    **Closes the open half of `DEPLOY-QUOTA-01`.**
+> 1. ✅ **`OPS-VERCEL-PLAN-01` — CLOSED 2026-10-14. The founder bought Pro "the other Friday"**;
+>    verified `npx vercel teams ls` → plan **`pro`**. The compliance exposure is gone: Hobby's
+>    fair-use terms restrict it to *non-commercial personal use* and Zonna sells £7.99/month, so
+>    the account-pause risk was live with zero runners. 🔴 **I RECOMMENDED THIS ITEM WITHOUT
+>    RE-MEASURING IT** — the backlog's own standing rule, invoked three times today on other
+>    people's items and not applied to this one. The founder had to tell me.
+>    🔻 **The second half is still open and is now the whole item** → `OPS-FN-DURATION-01`:
+>    Pro's higher ceiling is **opt-in per route** via `maxDuration`, and **no route in `app/`
+>    sets it** (measured), while plan enrichment runs **28–35 s**. ⚠️ **The premise needs
+>    checking before the work:** this item says Pro lifts the ceiling 60 s → 300 s, and current
+>    Vercel guidance says the default is **300 s on all plans**, which would make it moot.
+>    Unverified here — the Vercel docs connector is not authorised.
 > 2. 🔴 **`OPS-SUPABASE-PLAN-01`** — Supabase is on **Free**. Measured at ~1.5 MB/runner/block, 500 runners
 >    is **765 MB – 1.02 GB against a 500 MB ceiling**, breaking at roughly **250–320 active runners**;
 >    egress reaches ~60% of its allowance. And the part that is already true with zero runners: **Free has
