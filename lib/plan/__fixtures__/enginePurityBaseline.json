@@ -1,0 +1,18 @@
+{
+  "_why": "NOT an exception list. Every file here should MOVE OUT of the engine -- four of the five are leaves that nothing in the engine imports, so moving them is a path change rather than a refactor. The count may only fall; a new offender fails the build. ENGINE-PURITY-GATE-01, 2026-10-14.",
+  "lib/coaching/reframeTier.ts": [
+    "@supabase/"
+  ],
+  "lib/coaching/runHistory.ts": [
+    "@supabase/"
+  ],
+  "lib/coaching/useDisciplineLedger.ts": [
+    "react"
+  ],
+  "lib/plan/completions.ts": [
+    "@supabase/"
+  ],
+  "lib/plan/supersede.ts": [
+    "@supabase/"
+  ]
+}
