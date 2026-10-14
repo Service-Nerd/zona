@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-14 — PARITY-NO-BENCHMARK-01 · the harness that proves nothing changed could not see the paces
+
+**Shipped:** a benchmark axis on the parity grid, built so it cannot drift with the wall clock.
+
+**Dev learning:** `benchmark` appeared **zero** times in `verify-parity.ts`, across 6,066 cases. It is the only input that reaches the engine's one wall-clock read, and VDOT prices every pace in the plan — so the harness everyone reaches for to prove a refactor changed nothing was blind to the entire pace path. I was about to lean on it for a route refactor. **The guard you trust most is the one worth measuring first.**
+
+**Product/creator learning:** adding benchmarks naively would have been worse than not adding them. A benchmark on the staleness ramp has a discount that moves with the real date, so parity would start failing tomorrow on code nobody touched — and a harness that cries wolf gets deleted. The two variants that shipped are stable *by construction*: one reads no clock at all, the other is already at the cap and can only stay there.
+
+**AI-building learning:** my first cut covered two distances and read as six. I used the same race date as the blocks above it, and falsification showed 6 of 18 cases moving instead of 18. The other twelve were **refused** — too few weeks for a half, marathon or ultra — and a refused row carries an error message, not a plan hash, so it can never detect a pricing change. **The run was green either way; only breaking the thing on purpose showed the coverage was a third of what it looked like.** That is the exact class I had filed an hour earlier, committed by me, within the hour.
+
+**The honest bit:** the arm I nearly left out is the one that makes the rest mean anything — a date deliberately *on* the ramp, asserted to drift. Without it, "these variants are stable" would have been true of every possible input and the other four arms would have proved nothing.
+
+**Hook material:** 6,066 test cases, zero of them exercising the code path that sets every pace in the product.
+
+**Postable?:** yes — "our regression harness could not see the thing it was guarding" plus the refused-rows twist.
+
 ## 2026-10-14 — ENGINE-PURITY-GATE-01 · the boundary was already there, guarded by nothing
 
 **Shipped:** a gate that fails the build if anything in `lib/plan` or `lib/coaching` imports Next, React, the app, components or a Supabase client. Part 1 of three toward hosting the engine as a service.
