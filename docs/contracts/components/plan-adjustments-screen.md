@@ -119,7 +119,7 @@ and `watchedSignals.test.ts` fails the build when a new detector has no descript
 | The count is DERIVED, never typed on a surface | `WATCHED_SIGNAL_COUNT` |
 | Rows run nearest-horizon first | `WATCHED_SIGNAL_ORDER` |
 | No em dash, no stated cause, no promise, no merchandising | `watchedSignals.test.ts`, one arm per board clause |
-| The 13px size is declared ONCE on the wrapper | `TYPESCALE-APP-GATE-01`, which caught two attempts |
+| ~~The 13px size is declared ONCE on the wrapper~~ **13px is GONE from this screen** (`ADJUST-JOURNEY-TYPE-01`, 2026-10-14) — the board ruled 13px is not a level; five uses converged to **Body 14/400** and three uppercase micro-labels at 11px/0.06em onto `MICRO_LABELS.eyebrow` | `TYPESCALE-APP-GATE-01` |
 
 ⚠️ **`adjustmentsDisclosureOpen` no longer exists.** It was local state with one reader, and
 the reader went with the chevron.

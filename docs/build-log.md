@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-14 — ADJUST-JOURNEY-TYPE-01 · I built a gate that already existed, in a file with the same name
+
+**Shipped:** the plan-adjustment journey on the documented type scale, six of seven files to zero off-scale, and two new arms (font weights, `--fs-*` resolution) on the gate that was already there.
+
+**Dev learning:** I searched for an existing app type-scale check with `find -name 'typeScale*.test.ts'`, found only the marketing one, and read two canonical documents that both said the app half was ungated. All three agreed, and all three were wrong: `lib/ui/appTypeScale.test.ts` has held it since 2026-10-05. **The filename is `appTypeScale`, and my glob anchored on `typeScale`.** So I wrote a second gate with the *same basename in a different directory* and only the full suite surfaced the original, when its baselines started failing against my migration. A negative search is not proof of absence — and when a doc asserts absence, it launders the bad search into a fact.
+
+**Product/creator learning:** the deeper miss is that the existing gate's author had argued the opposite case and left it in the code as a standing accusation: *"13px is still the most-used size, and still undeclared — the doc is what is wrong."* It was written to go green the day the Design Board adopted 13px. I took that exact question to the board without that argument in the brief, and the board ruled the other way. The ruling holds on its own arithmetic, but I briefed it incompletely and the register now says so.
+
+**AI-building learning:** three of my falsifications this session were no-ops — I predicted a mutation, the anchor did not match, and the test "passed". The habit that fixed it is one line: assert the file changed before reading the result. The second time, the assertion fired and told me so instead of me recording a green tick that meant nothing. Separately, `git checkout` cannot restore an untracked file, which I discovered after mutating a brand-new test twice and losing both repairs.
+
+**The honest bit:** I also rewrote a code comment that *recorded* a historical 13px defect, turning it into 14px — editing prose as if it were code, in the same hour I taught the gate to strip comments because a comment is prose. The migration script got the comment guard only after it had already done the damage once.
+
+**Hook material:** two files named `appTypeScale.test.ts` in one repo, 90 minutes apart, written by the same person, because a `find` pattern was anchored one word too late.
+
+**Postable?:** yes — the duplicate-gate story and "a doc that asserts absence launders a bad search into a fact" both land.
+
 ## 2026-10-13 — HOOK-TEST-FIXTEST-01 · nine test suites nobody ran
 
 **Shipped:** tests for the two Claude Code hooks that had none, and `npm run test:hooks` — a runner that globs `.claude/hooks/*.py`, fails if any hook lacks a `.test.py`, runs all of them, and now sits inside `verify:ci`.

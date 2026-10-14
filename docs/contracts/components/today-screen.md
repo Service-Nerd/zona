@@ -112,7 +112,7 @@ interface TodayScreenProps {
    JSX cannot be called, so which branch renders cannot be proven"* (`handoverCopy.ts`,
    `linkPickerCopy.ts`).
 7. **No modal, ever.** `CLAUDE.md` bars popups and Wood holds a standing kill-threat.
-8. **Type sizes come from the declared scale.** ⚠️ 13px is **undeclared**; copying it from
+8. **Type sizes come from the declared scale.** 🔴 **13px is REFUSED, not merely undeclared** (`ADJUST-JOURNEY-TYPE-01`, Design Board 2026-10-14): 12→13 is 1.083× and 13→14 is 1.077×, so three levels inside two pixels is not a scale. Eleven uses on this screen converged to **Body 14/400**. Eight declarations remain and are **baselined, not converged** — the 22px/500 headline, a 40px metric, 17px ×3 and two glyphs — because each is a visible delta on the home screen that nobody has seen on a device. ⚠️ 13px is undeclared; copying it from
    a sibling card is how the register grows (`appTypeScale.test.ts`, which is a FALLING
    register).
 9. **All five states ship together** — loading skeleton, empty, error, data, edge. *Empty

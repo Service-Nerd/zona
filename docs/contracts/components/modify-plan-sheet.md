@@ -112,3 +112,4 @@ Before this the sheet showed a 422's reason with nothing to do about it, and App
 re-sent the identical request. Measured on a real runner 2026-10-11, twice, ten seconds
 apart, both `DaysAvailableError / warn_unacknowledged`.
 
+> 📐 **`ADJUST-JOURNEY-TYPE-01` (2026-10-14) — type only, contract unchanged.** 13px converged to **Body 14/400** and weight 500 → 600. **No prop, no state, no behaviour**, and the 44px tap floor is untouched. Recorded because the docs audit flags any component change and an unanswered flag is indistinguishable from a missed one.

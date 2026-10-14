@@ -75,3 +75,5 @@ interface RefusalViewProps {
 `lib/plan/refusalOffer.markup.test.ts` (11 arms) · `lib/plan/warnAcknowledgement.test.ts`
 (7 arms, composition) · `components/ui/buttonGeometry.test.ts` (both new controls clear
 the 44px floor at 44 and 47px).
+
+> 📐 **`ADJUST-JOURNEY-TYPE-01` (2026-10-14) — type only, contract unchanged.** 13px converged to **Body 14/400** and weight 500 → 600. **No prop, no state, no behaviour**, and the 44px tap floor is untouched. Recorded because the docs audit flags any component change and an unanswered flag is indistinguishable from a missed one.
