@@ -298,6 +298,13 @@
   --motion-verdict:    0.22s ease;   /* the number and Kit's line */
   --motion-ui:         0.15s ease;   /* interactive state */
   --motion-fill:       0.2s ease;    /* colour fills */
+  /* CONFIRM-STAGGER-01 — the gap between one arriving element and the next.
+     The DURATION is `--motion-verdict`, which already exists and is documented
+     as "the number and Kit's line": exactly this job, so no second duration.
+     The Design Board capped the whole sequence at 600ms. Seven elements, so
+     0.22s + 6 x 60ms = 580ms. `confirmStagger.test.ts` does that arithmetic
+     from these two values rather than trusting this comment. */
+  --motion-stagger-step: 60ms;
 
   /* ── Card elevation (v2, design_handoff_v2) ──────────────────────────
      Two-layer card shadow. A 1px contact shadow seats the card on the warm
@@ -668,7 +675,10 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
    ⚠️ Scoped to the named tokens rather than a blanket
    `*{animation:none!important}`. A global kill also removes focus-visible
    transitions and the scroll behaviour people rely on, and this codebase has
-   no other animation worth suppressing. */
+   no other animation worth suppressing.
+     CONFIRM-STAGGER-01 (2026-10-14) made that last sentence false: the confirm
+     screen's totals and day rows now arrive in sequence, and both the duration
+     and the step collapse here. */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --motion-draw:      0s linear;
@@ -676,6 +686,7 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
     --motion-verdict:   0s linear;
     --motion-ui:        0s linear;
     --motion-fill:      0s linear;
+    --motion-stagger-step: 0ms;
   }
 }
 
@@ -1626,3 +1637,37 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   --nav-pill-tuck: 13px;
   --nav-pill-radius: 999px;
 }
+
+
+/* --- CONFIRM-STAGGER-01 (Design Board, ADJUST-JOURNEY-TYPE-01 amendment 5) -----
+   The three whole-plan totals and four day rows on the confirm screen ARRIVE
+   rather than being present. Silvanto: "the numbers arriving rather than being
+   present." Two groups, one continuous sequence, so `--late` starts where the
+   first group stops.
+
+   THREE CONDITIONS THE BOARD MADE BINDING, and why they are expressed here:
+   - TOKEN-DRIVEN. No literal duration in a component.
+   - TOTAL <= 600ms. 0.22s + 6 x 60ms = 580ms.
+   - THE CTA IS INTERACTIVE FROM FIRST PAINT. This screen's job is CONSENT, ruled
+     a "checkout page" by this board, so nothing here may touch the buttons. That
+     is why the selectors are scoped to two containers and never to the screen:
+     an element the runner must be able to press is not in the animated set.
+   nth-child, not an inline `--i`: this repo has NO precedent for setting a custom
+   property from a style object, and putting the timing in the component is the
+   thing the ruling forbids. */
+@keyframes zonna-stagger-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.zonna-stagger > *,
+.zonna-stagger--late > * {
+  animation: zonna-stagger-in var(--motion-verdict) both;
+}
+.zonna-stagger > *:nth-child(1) { animation-delay: calc(0 * var(--motion-stagger-step)); }
+.zonna-stagger > *:nth-child(2) { animation-delay: calc(1 * var(--motion-stagger-step)); }
+.zonna-stagger > *:nth-child(3) { animation-delay: calc(2 * var(--motion-stagger-step)); }
+.zonna-stagger--late > *:nth-child(1) { animation-delay: calc(3 * var(--motion-stagger-step)); }
+.zonna-stagger--late > *:nth-child(2) { animation-delay: calc(4 * var(--motion-stagger-step)); }
+.zonna-stagger--late > *:nth-child(3) { animation-delay: calc(5 * var(--motion-stagger-step)); }
+.zonna-stagger--late > *:nth-child(4) { animation-delay: calc(6 * var(--motion-stagger-step)); }

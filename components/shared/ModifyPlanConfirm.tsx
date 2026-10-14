@@ -141,7 +141,7 @@ export default function ModifyPlanConfirm({
           whole plan? it doesn't tell me a lot". */}
       {rows.length > 0 && <ScaleLabel>Your whole plan</ScaleLabel>}
       {rows.length > 0 && (
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '14px 16px', marginBottom: 'var(--space-4)' }}>
+        <div className="zonna-stagger" style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '14px 16px', marginBottom: 'var(--space-4)' }}>
           {rows.map((r, i) => (
             <div key={r.label} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: i < rows.length - 1 ? '10px' : 0 }}>
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)' }}>{r.label}</span>
@@ -186,6 +186,7 @@ export default function ModifyPlanConfirm({
         sessionsAfter={sessionsOf(after)}
         units={units}
         scopeLabel={`Changes to this week${weekLabel}`}
+        stagger
       />
 
       {resetsLoggedWeeks && (

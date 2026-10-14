@@ -36,6 +36,11 @@ interface Props {
    * two pending-adjustment call sites, which are genuinely a week.
    */
   scopeLabel?: string
+  /** CONFIRM-STAGGER-01 — opt IN to the arriving sequence. Default off: this
+   *  component has three consumers and only the confirm screen was ruled, so a
+   *  hardcoded class would animate the pending-adjustment banner and the
+   *  adjustments screen, which no board has looked at. */
+  stagger?: boolean
 }
 
 const DAY_LABEL: Record<string, string> = {
@@ -43,7 +48,7 @@ const DAY_LABEL: Record<string, string> = {
   fri: 'Fri', sat: 'Sat', sun: 'Sun',
 }
 
-export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 'km', scopeLabel = 'Changes to this week' }: Props) {
+export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 'km', scopeLabel = 'Changes to this week', stagger = false }: Props) {
   const diff = computeSessionDiff(sessionsBefore, sessionsAfter)
   const changes = diff.filter(d => d.kind !== 'unchanged')
 
@@ -56,6 +61,7 @@ export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 
     <div
       role="list"
       aria-label={scopeLabel}
+      className={stagger ? 'zonna-stagger--late' : undefined}
       style={{
         display:      'flex',
         flexDirection:'column',
