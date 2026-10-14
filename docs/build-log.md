@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-14 — ENGINE-PURITY-GATE-01 · the boundary was already there, guarded by nothing
+
+**Shipped:** a gate that fails the build if anything in `lib/plan` or `lib/coaching` imports Next, React, the app, components or a Supabase client. Part 1 of three toward hosting the engine as a service.
+
+**Dev learning:** the interesting measurement was how *little* was wrong. 171 engine files, ~79k lines, and the count of `next/` imports is **zero**. The separation the extraction needs already exists — what did not exist was anything stopping someone walking through it tomorrow. That is a different and cheaper problem than the one the goal implies, and finding it out took one grep rather than a design.
+
+**Product/creator learning:** my own backlog item, filed four hours earlier the same day, said "only two files touch Supabase". That was `lib/plan` only; across both engine directories it is five, one of them a React hook. I wrote the item and still got the population wrong by reading one directory. **A count is scoped to the set you measured, and the set is the easiest thing to get wrong.**
+
+**AI-building learning:** the hollow-test lint I shipped three weeks ago failed my new test, correctly. I had written `expect(raw).toContain('_why')` — a bare identifier substringed against file text, which also passes on `_whyever` or on the word in a comment. The fix was to parse the JSON and assert the key. **A gate catching its author is the only evidence that it is not decorative**, and this is the second time this week one of mine has caught me.
+
+**The honest bit:** I nearly shipped the baseline as a plain list of five files. A baseline read as an exception list is a boundary with a hole in it, and the difference is entirely in whether anyone wrote down that those files should *move*. So the reason now lives inside the JSON as a `_why` key, with an arm asserting it is there and says "move out" — because the reason and the data get separated the moment they live in different files.
+
+**Hook material:** 171 files, 79,000 lines, zero imports of the framework it lives inside — and nothing had ever checked.
+
+**Postable?:** yes — "the boundary already existed; what was missing was anyone being stopped" is the line.
+
 ## 2026-10-14 — CTA-COMPACT-SWEEP-01 · the two strings that could have wrapped were not in the source
 
 **Shipped:** the remaining 11 full-width secondaries off `compact`, across six screens.
