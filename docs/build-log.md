@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-14 — CTA-COMPACT-SWEEP-01 · the two strings that could have wrapped were not in the source
+
+**Shipped:** the remaining 11 full-width secondaries off `compact`, across six screens.
+
+**Dev learning:** the founder asked for proof of no negative impact as I went, and the risk had a precise shape — `compact` exists to stop a label **wrapping**, so making these 14px could wrap something that fits at 12px. Measuring the labels meant finding them, and **the two longest were not in the component at all**: `{handoverAckLabel}` resolves through a prop to `ACK_LABEL`, whose values are *"I know it is tight. Build it anyway."* and *"I know it is few days. Build it anyway."* — 36 and 39 characters, against "Got it" and "Dismiss" sitting next to them in the same file. A survey of the JSX would have measured the short ones and declared it safe.
+
+**Product/creator learning:** 11 changed, not 12. One of them is a `ghost` carrying `btn--inline-target`, which is the documented exemption for a button that sits inside a sentence rather than standing as a slab. The count in the brief was mine and it was one too high; the exemption was already written down.
+
+**AI-building learning:** `git checkout --` destroyed my work for the third time in one day. I mutated a file to falsify a gate, reverted with checkout, and because the sweep was **uncommitted**, the file went back to pre-sweep rather than post-mutation. I then read a scoped test run as green — it was, for the files it covered — and only the full suite caught it. **A narrow run that passes is not a tree that passes**, and the narrower it is the more confidently it lies.
+
+**The honest bit:** I have now written the same `git checkout` mistake three times in eight hours, after recording it as a lesson the first time. Writing it down did not stop me; what stopped me was the full suite, which I nearly skipped because the scoped run was green.
+
+**Hook material:** the two strings that could have broken the layout were not in the file being changed — they arrive through a prop from a constants module, 39 characters against the 7-character label beside them.
+
+**Postable?:** yes — "measure the labels you cannot see" is the lesson, and the git-checkout-three-times admission is the honest beat.
+
 ## 2026-10-14 — CTA-COMPACT-SCOPE-01 · a size class named for size, used for layout, by seventeen people
 
 **Shipped:** `compact` documented as a row-layout class, the adjust journey off it, and the footer's reset renamed to what it actually does.
