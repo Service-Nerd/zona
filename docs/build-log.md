@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-14 — CONFIRM-STAGGER-01 · git checkout ate my build, twice in one day
+
+**Shipped:** the confirm screen's three totals and four day rows arrive over 580ms instead of being present, with the CTA pressable from the first frame.
+
+**Dev learning:** `vitest.config.ts` here is `environment: 'node'` with no jsdom, so nothing in the suite can watch an animation. The temptation is a source assertion — *does the file contain the class?* — and this repo has already recorded that a source assertion passes on a comment. What worked instead was arithmetic: parse both token values out of `globals.css`, find the highest `nth-child` multiplier in the stylesheet, and assert `duration + n × step ≤ 600`. Change either number and it fails with the real total. I also checked it in a real browser against the real stylesheet, which needed only stripping three `@tailwind` lines, and got 0/60/120/180/240/300/360ms back.
+
+**Product/creator learning:** the board ruled against the founder's stated preference — he liked the 2.1s version, and a consent screen cannot make you wait two seconds to see what you are agreeing to. He then accepted 600ms. The mechanism that made that work was recording the disagreement as a disagreement, with the reason, rather than quietly shipping what he asked for or quietly shipping what the board wanted.
+
+**AI-building learning:** I destroyed my own uncommitted work with `git checkout --` while reverting a falsification mutation. **`git checkout` restores to HEAD, not to "before my mutation"** — and all three files were uncommitted, so it took the build with it. That is the second time today: the first was discovering it cannot restore an *untracked* file at all. Backups now go to `/tmp` before any mutation and restores come from there.
+
+**The honest bit:** two of my five falsifications were no-ops again — shell quoting ate a backslash and a multi-line argument — and only the `assert t != s` line stopped me recording a green tick that meant nothing. I have now been caught by that pattern five times in two days. The assertion is cheap; the habit was not there.
+
+**Hook material:** the test cannot see the animation, so it does the sum instead: two CSS custom properties, one `Math.max` over the stylesheet's own delay multipliers, and a number that has to come out under 600.
+
+**Postable?:** yes — "git checkout is not an undo for your mutation" plus "how do you test an animation when you have no DOM" is one post.
+
 ## 2026-10-14 — ADJUST-JOURNEY-TYPE-01 · I built a gate that already existed, in a file with the same name
 
 **Shipped:** the plan-adjustment journey on the documented type scale, six of seven files to zero off-scale, and two new arms (font weights, `--fs-*` resolution) on the gate that was already there.
