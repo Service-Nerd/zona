@@ -4973,6 +4973,17 @@ output you cannot see.*
 falsified with verified mutations**.
 
 ### ⚠️ What this ruling does not settle
+
+🔴 **NOBODY ESTABLISHED WHAT THE STAGGER IS FOR, AND SIERRA'S SEAT NEVER SPOKE ON IT.** Asked
+*"what is it for though?"* by the founder after it shipped, the complete recorded justification is
+one sentence from Silvanto: *"there is no moment where the old plan becomes the new one."* That is
+a CRAFT argument. **The only thing measured was the COST** (Wroblewski's time-to-act, which is why
+it is 580ms and not 2.1s). **No benefit was measured, because none was named** — and the seat
+whose whole lens is *"is the runner getting better, or is the app getting more engaging?"* did not
+rule on the transition in either sitting. **Kept, because it is cheap, capped and reversible; it
+must not be cited as settled user value.** If it ever competes with anything it loses, having no
+measured benefit to defend itself with.
+
 **Nothing was seen on a device.** 26/800 beside a chip at 375pt is arithmetic, and so is the
 600ms. The 381 remaining declarations are a register that stops the debt growing and **does not
 shrink it; nothing schedules that.** Collins' heading-band question is open.
