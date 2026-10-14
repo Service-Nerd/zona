@@ -4908,3 +4908,71 @@ falsified**.
 Whether any of it feels right in the hand. The two strongest proposals in the room both need a
 device and Zonna has never had one.
 
+
+---
+
+## 🧭 RULED 2026-10-14 — `ADJUST-JOURNEY-TYPE-01`: **SHIP WITH AMENDMENT** (5). 13px is not a level, and the app type scale is gated at last
+
+**Founder:** *"We should use our design standards whatever they are. In terms of fonts and
+weights. I like the slower staggered arrival. Also lets ensure the CTAs/buttons we use are also
+using standard. That goes for all screens that relate to plan adjustments i.e. the whole journey
+when adjusting a plan."* Then: *"include TodayScreen."*
+
+### 📐 Measured before any seat spoke
+
+**428 off-scale declarations across 65 of 105 app files** — `13px` ×124, `11px` ×76,
+`fontWeight: 500` ×64 — against a scale that this register, and `ui-patterns.md`, **both wrongly recorded as ungated**.
+🔴 **`TYPESCALE-APP-GATE-01` has held the app half since 2026-10-05.** A second gate was built on
+that false premise — same filename, different directory — and deleted once the suite surfaced the
+original; its two new arms (weights, `--fs-*` resolution) were folded into the owner. The search
+that missed it looked for `typeScale*.test.ts`. **A negative search is not proof of absence.**
+⚠️ **AND THE OWNER'S AUTHOR HAD ALREADY ARGUED THE OTHER SIDE OF QUESTION 1**, in a standing arm
+titled *"13px is still the most-used size, and still undeclared — the doc is what is wrong"*,
+written to go GREEN the day this board ADDED 13px. **The board was not told that**, and ruled the
+opposite. The ruling stands on its own arithmetic and on `MICRO-LABEL-DRIFT-01`'s precedent
+(Silvanto's recorded veto condition is *"any proposal that widened the doc to accommodate the
+existing 41"*), **but the chair should confirm it knowing the counter-argument existed.** 🔴 **The first
+measurement was wrong and the gate caught it:** `git ls-files 'app/dashboard/**/*.tsx'` requires a
+directory BETWEEN, so every file sitting directly in `app/dashboard/` — `DashboardClient.tsx`, 48
+declarations — was outside the set. Reported as 337, actually **428**. *A glob is a filter whose
+output you cannot see.*
+
+### ⚖️ The ruling
+
+1. **13px is NOT a role.** Prose → **Body 14/400**, secondary → **12/400**. ✋ The argument is
+   arithmetic: 12→13 is **1.083×**, 13→14 is **1.077×**, and Silvanto has refused that step twice
+   already (1.02× on the website H1:H2; 16-vs-15 on a screen title). **Three levels inside two
+   pixels is not a scale.** The marketing `--fs-sm: 13px` does not cross the boundary
+   (`SITE-HEADER-EDGE-01`).
+2. **`ModifyPlanConfirm` is a DEFECT FIX, no board.** `BackButton` sits on its own row, so the
+   title never qualified for the compact role it was using. 20px/**700** → **26/800** (700 is
+   neither title role's weight); values 13 → **15/600**; lede stays 12/400. 🔑 **This dissolves
+   prototype B** from `MODIFY-CONFIRM-DIFF-01`: B's 26px and 15px were *conformance*, and its one
+   real change (lede → 13px `--ink-2`) was a **regression**. An INSUFFICIENT EVIDENCE item closed
+   by reading the rule rather than by buying a device.
+3. **11px and weight-500 are MIGRATION, not rulings** — `MICRO-LABEL-DRIFT-01` already ruled 11px
+   out. Four more uppercase micro-labels at **three different trackings** were found on
+   `TodayScreen` and collapsed onto `MICRO_LABELS.eyebrow`.
+4. **17 / 22 / 40 are BASELINED, not converged** — visible deltas on the home screen that nobody
+   has seen. 🎪 **Collins dissents and it is recorded:** 17/800 and 22/500 are heading-shaped, so
+   the scale may be thin at the **top**, not the bottom. The chair declined to author levels on
+   single instances. **Open, not answered.**
+5. **Motion: the stagger SHIPS, amended** — token-driven, **total ≤ 600ms**, the CTA interactive
+   from first paint, collapsing under `prefers-reduced-motion`. ⚠️ **This is AGAINST the founder's
+   stated preference** for the 0.4× (~2.1s) variant he saw. 📱 Wroblewski: on a screen whose job
+   is consent — ruled a *"checkout page"* by this board the day before — two seconds before you
+   can see what you are agreeing to is a cost, not craft. **He may overturn it.**
+
+### ⛔ Veto check
+**None.** Silvanto declined and named his grounds: the confirm-screen title is a regression
+**already shipped**, and a veto blocks a proposed change, not existing code.
+
+### 📦 Artifacts
+`ui-patterns.md` § Typography Scale (amended) · `MICRO_LABELS` reused rather than retyped ·
+`components/ui/appTypeScale.test.ts` + `__fixtures__/appTypeScaleBaseline.json`, **five arms, four
+falsified with verified mutations**.
+
+### ⚠️ What this ruling does not settle
+**Nothing was seen on a device.** 26/800 beside a chip at 375pt is arithmetic, and so is the
+600ms. The 381 remaining declarations are a register that stops the debt growing and **does not
+shrink it; nothing schedules that.** Collins' heading-band question is open.

@@ -178,7 +178,12 @@ const EXEMPT = /components\/marketing\//
  * one did both at once. The 47 is the debt paid; the 16 is a correction. Stated
  * separately on purpose — a single number would have hidden which was which.
  */
-const NON_CONFORMING_BASELINE = 27
+// 27 -> 21 on 2026-10-14 (ADJUST-JOURNEY-TYPE-01). SIX conformed, and they are
+// conversions not deletions: four uppercase micro-labels on `TodayScreen` at 11px
+// and THREE different trackings (0.12em / 0.08em / 0.04em), plus three on
+// `PlanAdjustmentsScreen` at 11px/0.06em, all collapsed onto MICRO_LABELS.eyebrow.
+// This is the 41-combination drift this file was written for, paid down in situ.
+const NON_CONFORMING_BASELINE = 21
 
 const countNonConforming = () => {
   let n = 0

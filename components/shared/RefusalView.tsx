@@ -99,7 +99,7 @@ export default function RefusalView({
             {alternatives.map((alt, i) => (
               <div key={i} style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: i < alternatives.length - 1 ? '8px' : 0 }}>
                 <span aria-hidden style={{ color: 'var(--warn)', fontWeight: 700, lineHeight: 1.55 }}>·</span>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>{alt}</span>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>{alt}</span>
               </div>
             ))}
           </div>
@@ -139,7 +139,7 @@ export default function RefusalView({
           runner said yes and the network did not; losing the card would make
           the failure read as a second refusal. */}
       {offerFailed && (
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn)', lineHeight: 1.55, marginBottom: 'var(--space-3)' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--warn)', lineHeight: 1.55, marginBottom: 'var(--space-3)' }}>
           That did not go through. Try again.
         </div>
       )}

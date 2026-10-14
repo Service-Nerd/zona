@@ -90,7 +90,7 @@ export default function PendingAdjustmentBanner({
       <div
         style={{
           fontFamily: 'var(--font-ui)',
-          fontSize:   '13px',
+          fontSize:   '14px',
           fontWeight: 400,
           lineHeight: 1.55,
           color:      'var(--coach-ink)',
@@ -126,7 +126,7 @@ export default function PendingAdjustmentBanner({
               border:       'none',
               borderRadius: '100px',
               fontFamily:   'var(--font-ui)',
-              fontSize:     '13px',
+              fontSize:     '14px',
               fontWeight:   600,
               color:        'var(--card)',
               cursor:       loading ? 'default' : 'pointer',
@@ -141,7 +141,7 @@ export default function PendingAdjustmentBanner({
         {/* Ghost — Revert */}
         <Button variant="ghost" 
           onClick={onRevert}
-          disabled={loading} style={{ flex:         1, padding:      '10px 0', background:   'transparent', borderRadius: '100px', fontSize:     '13px', fontWeight:   500, color:        'var(--coach-ink)', cursor:       loading ? 'default' : 'pointer', opacity:      loading ? 0.6 : 1 }}>
+          disabled={loading} style={{ flex:         1, padding:      '10px 0', background:   'transparent', borderRadius: '100px', fontSize:     '14px', fontWeight:   600, color:        'var(--coach-ink)', cursor:       loading ? 'default' : 'pointer', opacity:      loading ? 0.6 : 1 }}>
           Revert
         </Button>
       </div>

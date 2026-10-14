@@ -191,7 +191,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect }: {
                 transition: 'background 0.15s',
               }}>
                 <span style={{
-                  fontFamily: 'var(--font-ui)', fontSize: '13px',
+                  fontFamily: 'var(--font-ui)', fontSize: '14px',
                   color: isSelected ? 'var(--card)' : isToday ? 'var(--accent)' : dateNum ? 'var(--text-muted)' : 'var(--text-primary)',
                   fontWeight: isToday || isSelected ? 600 : 400,
                 }}>
@@ -273,12 +273,11 @@ function ReadinessSteadyChip({ detail }: {
       }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', justifyContent: 'space-between' }}>
         <span style={{
-          fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
-          color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.12em',
+          fontFamily: 'var(--font-ui)', color: 'var(--moss)', ...MICRO_LABELS.eyebrow,
         }}>
           Readiness · steady
         </span>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
           {expanded ? '▴' : '▾'}
         </span>
       </div>
@@ -348,7 +347,7 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
             <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', marginBottom: '4px' }}>
               Next run · {nextSession.day} {nextSession.date}
             </div>
-            <div style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: 500 }}>{nextSession.title}</div>
+            <div style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: 600 }}>{nextSession.title}</div>
             {nextSession.detail && (
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{nextSession.detail}</div>
             )}
@@ -454,8 +453,8 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
         </span>
         {reasonChips.length > 0 && (
           <>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', opacity: 0.5 }}>·</span>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', opacity: 0.5 }}>·</span>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
               {reasonChips.join(' · ')}
             </span>
           </>
@@ -481,7 +480,7 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
         </Button>
         <Button variant="ghost" 
           onClick={runAnyway}
-          disabled={loading} style={{ background:   'transparent', color:        'var(--ink-2)', padding:      '0 12px', minHeight:    '44px', fontSize: '13px', fontWeight: 500, cursor:       loading ? 'default' : 'pointer', opacity:      loading ? 0.5 : 1 }}>
+          disabled={loading} style={{ background:   'transparent', color:        'var(--ink-2)', padding:      '0 12px', minHeight:    '44px', fontSize: '14px', fontWeight: 600, cursor:       loading ? 'default' : 'pointer', opacity:      loading ? 0.5 : 1 }}>
           Run it anyway →
         </Button>
       </div>
@@ -1150,11 +1149,8 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
         }}>
           <span style={{
             fontFamily: 'var(--font-ui)',
-            fontSize: '11px',
-            fontWeight: 600,
             color: 'var(--mute)',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
+             ...MICRO_LABELS.eyebrow,
           }}>
             {weekPhaseLabel ? `${weekPhaseLabel} · ` : ''}Week {weekOrdinal}
           </span>
@@ -1181,7 +1177,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             <div style={{
               fontFamily: 'var(--font-ui)',
               fontSize: '15px',
-              fontWeight: 500,
+              fontWeight: 600,
               color: 'var(--mute)',
               marginBottom: '4px',
               lineHeight: 1,
@@ -1218,7 +1214,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             </div>
             <div style={{
               fontFamily: 'var(--font-ui)',
-              fontSize: '13px',
+              fontSize: '14px',
               color: 'var(--mute)',
               marginBottom: daysToPlanStart > 3 ? '8px' : '20px',
             }}>
@@ -1241,7 +1237,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             <div style={{
               fontFamily: 'var(--font-ui)',
               fontSize: '15px',
-              fontWeight: 500,
+              fontWeight: 600,
               color: 'var(--mute)',
               marginBottom: '4px',
               lineHeight: 1,
@@ -1316,7 +1312,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             <div style={{
               fontFamily: 'var(--font-ui)',
               fontSize: '15px',
-              fontWeight: 500,
+              fontWeight: 600,
               color: 'var(--mute)',
               marginBottom: '4px',
             }}>
@@ -1366,7 +1362,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               <Button variant="secondary" 
                 onClick={onUpgrade} style={{ justifyContent: 'flex-start', width: '100%', textAlign: 'left', padding: '14px 16px', background: 'var(--card)', borderLeft: '3px solid var(--moss)', borderRadius: 'var(--radius-md)', gap: 'var(--space-3)' }}>
                 <div>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
                     {msg.headline}
                   </div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.4 }}>
@@ -1389,7 +1385,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             <Button variant="secondary" 
               onClick={onUpgrade} style={{ justifyContent: 'flex-start', width: '100%', textAlign: 'left', padding: '14px 16px', background: 'var(--card)', borderLeft: '3px solid var(--warn)', borderRadius: 'var(--radius-md)', gap: 'var(--space-3)' }}>
               <div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
                   Kit&rsquo;s gone quiet.
                 </div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.4 }}>
@@ -1591,7 +1587,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 })()}
               </div>
               <p style={{
-                fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)',
+                fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)',
                 lineHeight: '1.45', margin: '0 0 10px',
               }}>
                 Your body&apos;s still repairing. The plan&apos;s eased to base running while it does.
@@ -1642,7 +1638,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                     <CoachByline color="moss" role="Maintenance" />
                   </div>
                   <p style={{
-                    fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)',
+                    fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)',
                     lineHeight: '1.45', margin: '0 0 10px',
                   }}>
                     {maintDebrief}
@@ -1671,7 +1667,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                       language during Phase 1, where §75 forbids it. */}
                   <p style={{
                     fontFamily: 'var(--font-ui)',
-                    fontSize: '13px',
+                    fontSize: '14px',
                     color: 'var(--ink-2)',
                     lineHeight: '1.4',
                     margin: '0 0 10px',
@@ -1817,9 +1813,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               flexShrink: 0,
             }} />
             <span style={{
-              fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
-              color: 'var(--moss)',
-              letterSpacing: '0.12em', textTransform: 'uppercase',
+              fontFamily: 'var(--font-ui)', color: 'var(--moss)', ...MICRO_LABELS.eyebrow,
             }}>
               Hold the zone · {dz.rangeLabel} today
             </span>
@@ -1915,7 +1909,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                   {metric && (
                     <div style={{
                       marginTop: 'var(--space-2)',
-                      fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
+                      fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
                       color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums',
                     }}>
                       {metric}
@@ -2157,7 +2151,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 }} />
                 <span style={{
                   flex: 1, minWidth: 0,
-                  fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
+                  fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
                   color: 'var(--ink-2)', lineHeight: 1.4,
                 }}>
                   Tell Kit how {nudge.dayName}&apos;s {distLabel} felt
@@ -2184,7 +2178,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
         <div
           style={{
             fontFamily: 'var(--font-ui)',
-            fontSize: '13px',
+            fontSize: '14px',
             fontWeight: 600,
             color: 'var(--moss)',
             letterSpacing: '-0.005em',

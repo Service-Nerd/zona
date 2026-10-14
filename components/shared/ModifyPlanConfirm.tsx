@@ -128,7 +128,7 @@ export default function ModifyPlanConfirm({
           is always predictable and reversible". This screen had none, and its
           only exit DISCARDED every edit. */}
       <BackButton onClick={onBack} ariaLabel="Back to your changes" style={{ marginBottom: 'var(--space-4)' }} />
-      <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 700, color: 'var(--ink)' }}>
+      <div style={{ fontFamily: 'var(--font-brand)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)' }}>
         Here is what changes
       </div>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '4px', marginBottom: 'var(--space-4)' }}>
@@ -144,8 +144,8 @@ export default function ModifyPlanConfirm({
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '14px 16px', marginBottom: 'var(--space-4)' }}>
           {rows.map((r, i) => (
             <div key={r.label} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: i < rows.length - 1 ? '10px' : 0 }}>
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)' }}>{r.label}</span>
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)' }}>{r.label}</span>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)' }}>
                 {r.from} <span aria-hidden>{'→'}</span>{' '}
                 <span style={{ color: 'var(--ink)', fontWeight: 600 }}>{r.to}</span>
               </span>
@@ -191,7 +191,7 @@ export default function ModifyPlanConfirm({
       {resetsLoggedWeeks && (
         <div style={{
           background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '14px 16px',
-          marginTop: 'var(--space-4)', fontFamily: 'var(--font-ui)', fontSize: '13px',
+          marginTop: 'var(--space-4)', fontFamily: 'var(--font-ui)', fontSize: '14px',
           color: 'var(--coach-ink)', lineHeight: 1.55,
         }}>
           Moving the race starts a new block, so the weeks you have already logged stop counting

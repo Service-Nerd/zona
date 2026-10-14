@@ -91,7 +91,62 @@ Warm, grounded, athletic. No decoration for decoration's sake. Every element ear
 
 ## Typography Scale
 
-> ⚠️ **PARTIALLY gated, and the half that is missing is the important one.** `lib/marketing/typeScale.test.ts` holds the scale on the **marketing** surfaces in its `SURFACES` list. **The APP's type scale is not gated by it** — the test is `describe('marketing type scale')` and its population is marketing pages. Measured by `UI-PATTERNS-ENFORCEMENT-01`; the app half is the real unguarded rule in this section, not the whole section.
+> ✅ **THE APP HALF IS GATED — AND IT HAS BEEN SINCE 2026-10-05, WHICH THIS NOTE DENIED FOR NINE
+> DAYS.** `lib/ui/appTypeScale.test.ts` (`TYPESCALE-APP-GATE-01`) has held it all along.
+> 🔴 **The previous text here said the app half was unguarded, and `design-rulings.md` repeated
+> it, and both were wrong.** Acting on that during `ADJUST-JOURNEY-TYPE-01` a second gate was
+> built, with the **same filename in a different directory**, before the suite surfaced the
+> original. The search that missed it was `find -name 'typeScale*.test.ts'`; the file is
+> `appTypeScale.test.ts`. **A negative search is not proof of absence**, and a doc asserting
+> absence is how a duplicate gets built on purpose. The duplicate was deleted and its two genuinely
+> new arms folded into the owner. `lib/marketing/typeScale.test.ts` remains **marketing only** — it is
+> literally `describe('marketing type scale')` — and the two populations do not overlap:
+> `components/marketing/**` is pure `--fs-*` with zero px literals, measured.
+>
+> 📐 **Measured by the owner: 717 inline `fontSize` uses across the app, 22 distinct sizes, of
+> which the scale declares ten.** `13px` was the single most-used size in the product when that
+> gate was written (169 uses). A documented scale honoured by a minority of
+> the code is a scale in name only. The journey the board ruled on was migrated to **zero**; the
+> rest is a **declared debt register** that cannot grow, and nothing schedules its repayment.
+>
+> ⚠️ **The owner now reads BOTH paths in.** A size arrives as a px literal **or** through a `--fs-*`
+> var, so it resolves the var to px and checks that too. Today the app uses only `--fs-body` 14,
+> `--fs-caption` 12 and `--fs-micro` 10, all on-scale; `--fs-sm` 13 is one import away.
+>
+> ⚠️ **A size inside a COMMENT is prose** — the owner already stripped them; the duplicate did not, and counted one on its first run:
+> `ModifyPlanSheet.tsx` carries a comment *recording* a fixed 13px defect, and the check read it
+> as the defect. Comments are blanked, line numbers preserved, exactly as `HOOK-RGBA-COMMENTS-01`
+> settled it for the pre-commit hook. Both directions are asserted, including the two traps: code
+> before a trailing comment still counts, and a URL's `//` is not a comment.
+
+### ⛔ 13px is NOT a level, and neither is 11px
+
+**Ruled `ADJUST-JOURNEY-TYPE-01` (2026-10-14).** Prose and control labels converge to
+**Body 14/400**; genuinely secondary text to **Card secondary 12/400**.
+
+🔴 **The argument is arithmetic, not taste.** 12 → 13 is **1.083×** and 13 → 14 is **1.077×**.
+Silvanto has objected to exactly this twice in the register — **1.02×** on the website H1:H2, and
+16-versus-15 on a screen title, where a screen's own name rendered one pixel above the name of a
+card inside it. **Three levels inside two pixels is not a scale**, and the board declined to
+author the thing it had twice refused.
+
+⚠️ **The marketing scale names `--fs-sm: 13px /* dense supporting text */`, and that is not an
+argument.** `SITE-HEADER-EDGE-01` rules the two surfaces diverge deliberately; a level on one is
+not a level on the other.
+
+**11px was already settled** by `MICRO-LABEL-DRIFT-01` (2026-09-29) — *"11px is not a level"*,
+with three micro roles instead: section label 12/600/0.1em, eyebrow 10/700/0.08em, data label
+9/700/0.1em, owned by `MICRO_LABELS`. Four more uppercase micro-labels at **three different
+trackings** (0.12em / 0.08em / 0.04em) were found on `TodayScreen` during this migration and
+collapsed onto `MICRO_LABELS.eyebrow`. **Take the type from the owner; keep layout local.**
+
+**Declared residue, baselined rather than converged** — eight declarations on `TodayScreen`, all
+of them a **visible delta on the home screen that nobody has seen**: the `copy.headline` pair
+(22px/500), one 40px metric, 17px ×3, and two glyphs (an 18px `→` and an 11px `▴▾`). 🎪 Collins'
+dissent is recorded: he holds that 17/800 and 22/500 are **heading-shaped**, so the scale may be
+thin at the **top** rather than the bottom. The chair declined to author levels on single
+instances. **That question is open, not answered.**
+
 
 All type uses **Inter** only. `var(--font-ui)` and `var(--font-brand)` both resolve to Inter. Never hardcode font family strings. Space Grotesk is retired (ADR-007).
 

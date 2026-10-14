@@ -78,7 +78,11 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // `DashboardClient.tsx`. No size was converted to a declared one, so the
     // ratio is unchanged in spirit — the denominator shrank with the numerator.
     // Declared here because a ratchet must never move without a measurement.
-    const UNDECLARED_USES_BASELINE = 242
+    // 242 -> 214 on 2026-10-14 (ADJUST-JOURNEY-TYPE-01). TWENTY-EIGHT uses converted,
+    // not deleted: the plan-adjustment journey migrated 13px -> 14px Body and
+    // 11px -> MICRO_LABELS.eyebrow after the Design Board ruled 13px is NOT a
+    // level. Six of the seven journey files are now fully on-scale.
+    const UNDECLARED_USES_BASELINE = 214
     let n = 0
     for (const [size, count] of Array.from(sizes())) if (!DECLARED.has(size)) n += count
     expect(n,
@@ -88,20 +92,82 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     ).toBe(UNDECLARED_USES_BASELINE)
   })
 
-  it('🔴 13px is still the most-used size, and still undeclared — the doc is what is wrong', () => {
-    // This arm is a STANDING ACCUSATION AGAINST THE DOCUMENT, not the code, and
-    // it is here so the finding cannot be quietly forgotten: a scale that omits
-    // the product's most common size is failing to describe it.
-    // It goes GREEN the day the Design Board adds 13px to § Typography Scale —
-    // which is the outcome this is asking for, not a regression.
-    const counts = sizes()
-    const top = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0]
-    expect(top[0], 'the most-used size changed — re-measure before trusting the baselines above').toBe('13')
+  it('🔴 13px is CONVERGING, and the count may only fall', () => {
+    // 🔑 THIS ARM ASKED A QUESTION AND THE BOARD ANSWERED IT — the other way.
+    // It used to read "13px is still the most-used size, and still undeclared —
+    // the doc is what is wrong", and it was written to go GREEN the day the
+    // Design Board ADDED 13px to the scale. On 2026-10-14 the board declined:
+    // 12 -> 13 is 1.083x and 13 -> 14 is 1.077x, and Silvanto has refused that
+    // step twice already. Three levels inside two pixels is not a scale, so the
+    // answer is convergence, not adoption (ADJUST-JOURNEY-TYPE-01).
+    //
+    // ⚠️ The arm is kept, inverted, rather than deleted: an accusation that was
+    // answered still needs a ratchet, or 13px simply grows back.
+    // 169 (2026-10-05) -> 137 (2026-10-14). 12px is now the most-used size.
+    const THIRTEEN_BASELINE = 137
+    const n = sizes().get('13') ?? 0
+    expect(n,
+      n > THIRTEEN_BASELINE
+        ? `13px grew (${n} vs ${THIRTEEN_BASELINE}). It is not a level — use Body 14/400 or Card secondary 12/400.`
+        : `debt PAID: ${n} vs ${THIRTEEN_BASELINE} — lower THIRTEEN_BASELINE.`,
+    ).toBe(THIRTEEN_BASELINE)
+
     const doc = readFileSync('docs/canonical/ui-patterns.md', 'utf8')
-    const i = doc.indexOf('## Typography Scale')
-    const sec = doc.slice(i, doc.indexOf('\n## ', i + 5))
-    const declared = new Set(Array.from(sec.matchAll(/\|\s*(\d+)px/g)).map(m => m[1]))
-    expect(declared.has('13'),
-      '✅ 13px is now DECLARED — delete this arm, it has done its job.').toBe(false)
+    expect(doc.includes('13px is NOT a level'),
+      'ui-patterns.md must carry the ruling that refuses 13px, or this arm is enforcing nothing',
+    ).toBe(true)
+  })
+
+  it('a WEIGHT off the scale cannot grow either', () => {
+    // The scale names four weights; nothing had ever checked them. Measured
+    // 2026-10-14: `fontWeight: 500` x85 and one 300, none of them declared.
+    // 500 is the big one and it is almost always an un-decided default rather
+    // than a choice -- SectionLabel's inherited 400 was ruled "an accident, not
+    // a decision" (MICRO-LABEL-DRIFT-01) and this is the same shape.
+    const DECLARED_WEIGHTS = new Set([400, 600, 700, 800])
+    const WEIGHT_BASELINE = 86
+    let n = 0
+    for (const f of FILES) {
+      const re = /fontWeight:\s*'?(\d+)'?/g
+      const src = strip(readFileSync(f, 'utf8'))
+      let m: RegExpExecArray | null
+      while ((m = re.exec(src)) !== null) if (!DECLARED_WEIGHTS.has(Number(m[1]))) n++
+    }
+    expect(n,
+      n > WEIGHT_BASELINE
+        ? `an undeclared font weight landed (${n} vs ${WEIGHT_BASELINE}). The scale names 400/600/700/800.`
+        : `debt PAID: ${n} vs ${WEIGHT_BASELINE} — lower WEIGHT_BASELINE.`,
+    ).toBe(WEIGHT_BASELINE)
+  })
+
+  it('a size reached through a --fs-* var is checked too', () => {
+    // ⚠️ TWO PATHS IN, AND A GATE THAT READS ONE IS A HOLE WRITTEN ON PURPOSE.
+    // Every arm above reads px literals. A size also arrives via `--fs-*`, the
+    // MARKETING scale, which names `--fs-sm: 13px` — the exact value the board
+    // just refused for the app. Measured today the app side uses only
+    // --fs-body 14, --fs-caption 12 and --fs-micro 10, all on-scale.
+    const css = readFileSync('app/globals.css', 'utf8')
+    const tok: Record<string, number> = {}
+    const tre = /--(fs-[a-z0-9-]+):\s*(\d+)px\s*;/g
+    let t: RegExpExecArray | null
+    while ((t = tre.exec(css)) !== null) tok[t[1]] = Number(t[2])
+    expect(Object.keys(tok).length, 'the token map came back empty — the regex stopped matching').toBeGreaterThan(5)
+    expect(tok['fs-sm']).toBe(13)
+
+    const DECLARED = new Set([10, 11, 12, 14, 15, 17, 20, 26, 44, 56])
+    const offenders: string[] = []
+    for (const f of FILES) {
+      const isAppSurface = (f.startsWith('components/') && !f.startsWith('components/marketing/'))
+        || f.startsWith('app/dashboard/')
+      if (!isAppSurface) continue
+      const re = /fontSize:\s*'var\(--(fs-[a-z0-9-]+)\)'/g
+      const src = strip(readFileSync(f, 'utf8'))
+      let m: RegExpExecArray | null
+      while ((m = re.exec(src)) !== null) {
+        const px = tok[m[1]]
+        if (px !== undefined && !DECLARED.has(px)) offenders.push(`${f}: --${m[1]} (${px}px)`)
+      }
+    }
+    expect(offenders, offenders.length ? `an APP surface reached an undeclared size through a token:\n${offenders.join('\n')}` : 'ok').toEqual([])
   })
 })

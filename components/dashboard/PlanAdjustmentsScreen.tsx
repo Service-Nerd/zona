@@ -157,10 +157,10 @@ export default function PlanAdjustmentsScreen({
             }}
           >
             <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '3px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', color: 'var(--moss)', marginBottom: '3px', ...MICRO_LABELS.eyebrow }}>
                 1 change pending
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.4 }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.4 }}>
                 Tap to review and accept.
               </div>
             </div>
@@ -168,10 +168,10 @@ export default function PlanAdjustmentsScreen({
           </button>
         ) : (
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', background: 'var(--bg-soft)' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '3px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', color: 'var(--mute)', marginBottom: '3px', ...MICRO_LABELS.eyebrow }}>
               Last checked
             </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.4 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.4 }}>
               {lastCheckedLabel === null
                 ? 'Not yet. Tap Check now to run.'
                 : lastAdjustmentCheckFoundChange
@@ -189,12 +189,12 @@ export default function PlanAdjustmentsScreen({
             provenance stance as the "Plan tweaked" line above. */}
         {visibleChanges.length > 0 && (
           <div style={{ borderBottom: '1px solid var(--line)' }}>
-            <div style={{ padding: '12px 16px 2px', fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <div style={{ padding: '12px 16px 2px', fontFamily: 'var(--font-ui)', color: 'var(--mute)', ...MICRO_LABELS.eyebrow }}>
               Changed this week
             </div>
             {visibleChanges.map((c: any) => (
               <div key={c.id} style={{ padding: '8px 16px 14px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.45 }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.45 }}>
                   {c.summary}
                 </div>
                 <AdjustmentDiff sessionsBefore={c.sessions_before ?? []} sessionsAfter={c.sessions_after ?? []} units={preferredUnits} />
@@ -210,7 +210,7 @@ export default function PlanAdjustmentsScreen({
         {/* Auto-adjust toggle. */}
         <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', borderBottom: '1px solid var(--line)' }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', fontWeight: 600, lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
               {dynamicAdjustmentsEnabled
                 ? `${BRAND.name} checks automatically and suggests changes when something looks off.`
@@ -248,7 +248,7 @@ export default function PlanAdjustmentsScreen({
             cause stated. 🎓 Still no promise: these are thresholds we WATCH, and seven of the
             eight have never fired. */}
         <div style={{ fontFamily: 'var(--font-ui)', padding: '14px 16px 4px' }}>
-          <div style={{ fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.4 }}>
+          <div style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.4 }}>
             What we watch for
           </div>
           <p style={{ fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, margin: 'var(--space-1) 0 0' }}>

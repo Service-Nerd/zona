@@ -182,7 +182,7 @@ export default function ModifyPlanSheet({
                             }} />
                           )}
                           <div style={{
-                            fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
+                            fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
                             color: changed ? 'var(--ink)' : 'var(--ink-2)',
                           }}>{row.label}</div>
                         </div>
@@ -244,7 +244,7 @@ export default function ModifyPlanSheet({
             {resets && (
               <div style={{
                 background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '14px 16px',
-                marginTop: 'var(--space-4)', fontFamily: 'var(--font-ui)', fontSize: '13px',
+                marginTop: 'var(--space-4)', fontFamily: 'var(--font-ui)', fontSize: '14px',
                 color: 'var(--coach-ink)', lineHeight: 1.55,
               }}>
                 Moving the race starts a new block, so the weeks you have already logged stop
@@ -286,7 +286,7 @@ export default function ModifyPlanSheet({
                   }}
                 >
                   <span style={{ minWidth: 0 }}>
-                    <span style={{ display: 'block', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4 }}>
+                    <span style={{ display: 'block', fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4 }}>
                       Start a new plan
                     </span>
                     <span style={{ display: 'block', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '2px' }}>
@@ -335,7 +335,7 @@ export default function ModifyPlanSheet({
                     refusal is not an error state (§INV-DS-005). */}
                 {error && (
                   <div style={{
-                    marginBottom: 'var(--space-3)', fontFamily: 'var(--font-ui)', fontSize: '13px',
+                    marginBottom: 'var(--space-3)', fontFamily: 'var(--font-ui)', fontSize: '14px',
                     lineHeight: 1.5, color: 'var(--warn)',
                   }}>
                     {error}
@@ -483,7 +483,7 @@ function RowControl({ rowKey, value, onChange }: {
                   padding: '7px 12px', borderRadius: '999px', cursor: 'pointer',
                   background: on ? 'var(--moss)' : 'var(--bg-soft)',
                   border: '1px solid var(--line)',
-                  fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 500,
+                  fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
                   color: on ? 'var(--card)' : 'var(--ink-2)', textTransform: 'capitalize',
                 }}
               >
