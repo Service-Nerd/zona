@@ -370,6 +370,52 @@ for id in $_SHIPPED_AND_OPEN_OK; do
 done
 [ "$afail" = "0" ] && say "  ok"
 
+# ── REGISTRY ROW WITH NO BUILD-LOG ENTRY (REG-BUILDLOG-01, 2026-10-14) ───────
+# 🔴 THIS SCRIPT SAID "ALL CLEAN" OVER A REAL GAP AND WAS NOT WRONG — IT WAS BLIND.
+# Both existing build-log checks loop over COMMIT SCOPES, so they only ever ask
+# "did the thing I shipped get recorded?". `DOC-TOKEN-DRIFT-01` shipped INSIDE
+# another commit, earned its own registry row, and was never anybody's scope — so
+# no arm here could see that it had no build-log entry. Found by reconciling the
+# two registers by hand after the audit had already passed, which is the third
+# time "an audit is only ever as wide as its list" has bitten this file.
+#
+# This walks the OTHER register: every ID in a registry row's first cell must have
+# a `##` heading in the build-log.
+#
+# ⚠️ A DEBT REGISTER, NOT A DEMAND. Measured when written: 597 registry rows carry
+# a leading ID and **37** have no build-log heading. Many are legitimate — an item
+# that shipped as part of a larger build (the BUTTON-GEOMETRY trio say so in their
+# own rows). Demanding zero would fire 37 times on day one and be deleted, which
+# this repo has recorded twice as equivalent to having no check. The count may only
+# FALL; anything new fails.
+say "── registry rows with no build-log entry ──"
+rfail3=0
+grep '^## ' docs/build-log.md > /tmp/_blheads
+grep -oE '^\|[[:space:]]*[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' docs/canonical/feature-registry.md \
+  | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | sort -u > /tmp/_regids
+_nobl=0
+while read -r id; do
+  [ -z "$id" ] && continue
+  grep -qF -- "$id" /tmp/_blheads || _nobl=$((_nobl + 1))
+done < /tmp/_regids
+REG_NO_BUILDLOG_BASELINE=37
+if [ "$_nobl" -gt "$REG_NO_BUILDLOG_BASELINE" ]; then
+  say "  A REGISTRY ROW GAINED NO BUILD-LOG ENTRY ($_nobl vs $REG_NO_BUILDLOG_BASELINE)."
+  say "            Every shipped item earns a '##' heading in docs/build-log.md, including"
+  say "            one that shipped inside another commit. Run /ship."
+  rfail3=1; fail=1
+elif [ "$_nobl" -lt "$REG_NO_BUILDLOG_BASELINE" ]; then
+  say "  DEBT PAID: $_nobl vs $REG_NO_BUILDLOG_BASELINE — lower REG_NO_BUILDLOG_BASELINE in this script."
+  rfail3=1; fail=1
+fi
+# The population must be real: an empty or collapsed id list passes in silence.
+_regn=$(wc -l < /tmp/_regids | tr -d ' ')
+if [ "$_regn" -lt 400 ]; then
+  say "  THE REGISTRY ID SCAN COLLAPSED ($_regn ids) — re-anchor it before trusting this arm."
+  rfail3=1; fail=1
+fi
+[ "$rfail3" = "0" ] && say "  ok ($_regn registry ids, $_nobl without a build-log entry — declared debt)"
+
 say "── open backlog items with no roadmap line ──"
 # CLAUDE.md's doc system: "An open item lives in roadmap (as a line) + backlog
 # (as detail)." Nothing checked the roadmap half. Found 2026-09-21 by the peer

@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-14 — DOC-TOKEN-DRIFT-01 · the source of truth carried the value its own fix replaced
+**Shipped:** A gate that checks every hex in `CLAUDE.md`'s design-token table against `globals.css`. Shipped inside `CTA-INLINE-PAINT-01`'s commit; it gets its own entry because it has its own registry row and its own lesson.
+
+**Dev learning:** `CLAUDE.md` said `--mute` is `#8A857D`. It has been `#6D6963` since `A11Y-CONTRAST-01` darkened it to clear WCAG AA — **the single source of truth was publishing the value that fix had replaced.** I found it by accident: I needed a ghost button's contrast, took the hex from the table because that is what the table is for, and computed **3.14:1, a fail.** The real token measures **4.67, a pass.** One stale row turned a correct control into a defect in my own report. The gate checks the rows that EXIST rather than demanding every token have one, because the table is a curated subset by design and a check that fires on every new internal token gets switched off.
+
+**Product/creator learning:** Nothing about the product. About the documentation: a doc that is read by humans drifts silently, and a doc that is read by a script does not. The table had been wrong for an unknown number of weeks and nobody noticed because nobody re-derives a hex they can look up.
+
+**AI-building learning:** This is the second time in one day that the honest move was to convert a doc claim into an assertion rather than just correcting the prose. The correction takes a minute and lasts until the next change; the assertion takes fifteen and lasts.
+
+**The honest bit:** I reported a contrast failure that did not exist, in a message to the founder, sourced from our own canonical doc. I caught it only because the number felt wrong against the rendered screenshot and I went back to `globals.css`. If the stale value had been *lighter* instead of darker I would have reported a pass on a real failure and moved on.
+
+**Hook material:** Our single source of truth listed the exact colour value that an accessibility fix had already replaced — so I used it, and confidently reported a 3.14:1 failure on a control that actually measures 4.67:1 and passes.
+
+**Postable?:** maybe
+
 ## 2026-10-14 — FOUNDER-TYPE-18PX-01 · the website had already solved it and nobody told the app
 **Shipped:** The founder-note thesis stopped being the faintest text on its own page, and 18px was refused as a type level.
 
