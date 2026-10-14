@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-14 — ENGINE-CONTRACT-01 · a designed refusal is thrown, and a service would call that a 500
+
+**Shipped:** `docs/contracts/engine.md` plus a gate that checks its claims against the engine.
+
+**Dev learning:** the fact worth the whole exercise is that **`generateRulePlan` returns `Plan`, and a designed refusal is *thrown***. Four of them — not enough weeks, not enough days, base volume too low, longest run too short — and every one means the engine working correctly. The naive HTTP mapping of "it threw" is 500. So the day this becomes a service, the single most likely defect is turning a deliberate, well-reasoned coaching refusal into a server error, and nobody would have known to look because it was written down nowhere. Identification is by `error.name` rather than `instanceof`, which is quietly good design: `instanceof` does not survive a process boundary and a name does.
+
+**Product/creator learning:** the contract also had to record something uncomfortable — the engine is **not a pure function of its arguments**. It reads the wall clock when a benchmark is present, deliberately, because the staleness ramp measures how long ago the runner actually ran. That is correct and should not be "fixed", but it means a hosted service cannot cache by input hash and cannot reproduce a plan for support from inputs alone. Better to know that before selling access than after.
+
+**AI-building learning:** I deliberately did **not** restate the 31 input fields. A contract that copies a type is a second source that drifts, and this repo has the scars with names — `deloadCadence`, `sumWeeklyKm`, the tier order written three times. The gate instead checks the *claims*: that 7 is still the required count, that every refusal name in code appears in the table, and — the one I am happiest with — that a refusal is thrown, asserted by **running an impossible input through the real engine** rather than grepping for the word "throw".
+
+**The honest bit:** one of my five falsifications printed no verdict at all. The mutation applied, the test run produced nothing I could read, and I nearly recorded it as passed. I redid it and captured the output. That is the fifth time in two days a falsification has silently told me nothing, and the only reason it did not count as evidence is that I now look for the result line rather than the absence of a failure.
+
+**Hook material:** our plan engine throws four different exceptions that all mean "this is working correctly". The obvious HTTP mapping turns every one of them into a 500.
+
+**Postable?:** yes — "the exception that means success" is the hook, and the not-a-pure-function admission is the honest second half.
+
 ## 2026-10-14 — PARITY-NO-BENCHMARK-01 · the harness that proves nothing changed could not see the paces
 
 **Shipped:** a benchmark axis on the parity grid, built so it cannot drift with the wall clock.
