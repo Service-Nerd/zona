@@ -136,6 +136,28 @@ the first thing this signature cannot express.
 
 ---
 
+## 📌 Where the extraction stands — 2026-10-14
+
+| Part | State |
+|---|---|
+| **1 · `ENGINE-PURITY-GATE-01`** — the engine may not import the app | ✅ `05fa327e`. Parity IDENTICAL, 6,066 cases |
+| **2 · `ENGINE-ENTRY-01`** — one entry point instead of 18 route imports | 🔲 **the only piece left, and the only risky one** |
+| **3 · `ENGINE-CONTRACT-01`** — this document | ✅ `cc1d11b9`, 7 arms, 5 falsified |
+| *(found en route)* **`PARITY-NO-BENCHMARK-01`** | ✅ `58135cf9`. Grid 6,066 → 6,102 |
+
+**Nothing a runner sees has changed.** Proven twice by `verify:parity`.
+
+🔑 **The architect's position, recorded so it is not relitigated: do NOT extract yet.** A
+service today buys a network hop on a path where enrichment takes 28–35 s, a second deploy
+target, API versioning and a new failure mode — for **zero functional gain until a second
+consumer exists**. These parts make the day-it-is-real a weekend rather than a rebuild.
+
+⚠️ **Monetisation is an SLT question, not an architectural one** (uptime commitments,
+versioning you cannot break, third-party auth, support), and the seat that would price it —
+Traynor's — **is stood down**, so nobody at that table asks *"what is the traffic?"* at 48 users.
+
+---
+
 ## What a service boundary would still need
 
 Named so the work is visible rather than discovered later:

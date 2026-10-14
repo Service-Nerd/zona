@@ -1529,25 +1529,74 @@ about to BUILD**, and the cost here was his time, not mine.
 > versioning you cannot break, third-party auth, support) — and ⚠️ **the seat that would price it,
 > Traynor's, is stood down**, so nobody at that table asks *"what is the traffic?"* at 48 users.
 
-### 🧱 `ENGINE-ENTRY-01` — the route orchestrates 18 engine modules, so there is no entry point *(filed 2026-10-14, P2)* ⚙️ **NO BOARD**
+### 🧱 `ENGINE-ENTRY-01` — the LAST piece of the engine boundary. Everything needed to start is here *(filed 2026-10-14, P2)* ⚙️ **NO BOARD**
 
-📐 **Measured:** `app/api/generate-plan/route.ts` imports **eighteen** separate `lib/plan`
-modules — `ruleEngine`, `enrich`, `foundationCompose`, `invariants`, `length`, `startVolume`,
-`baseVolume`, `inputs`, `designedRefusal`, `freeIntro`, `canUseFeature`, `getRunningPlan`,
-`longRunReadiness`, `baseBuildCopy`, `baseBuildOnRamp`, `enrichAttribution`,
-`enrichPartialRevert`, `enrichServerSave`. `adjust-plan` imports **ten**. `plan-audit` imports
-**one**.
+> 🎯 **GOAL:** lift the coaching engine out to a hosted service, possibly monetised. **Parts 1
+> and 3 are DONE** (`ENGINE-PURITY-GATE-01` `05fa327e`, `ENGINE-CONTRACT-01` `cc1d11b9`), plus
+> `PARITY-NO-BENCHMARK-01` (`58135cf9`) found while writing the contract. **This is the only
+> piece left, and the only one carrying real risk.**
+>
+> 📌 **READ FIRST:** `docs/contracts/engine.md` — the interface, written and gated.
 
-🔴 **That is the real finding: the ROUTE is the orchestrator, not the engine.** Extract today and
-**all eighteen become public API surface**, because the sequencing lives on the caller's side.
-One entry point — `generatePlan(input) → Plan` — moves the sequencing inside the boundary and
-leaves the route doing auth, tier and persistence, which is what ADR-003 already says it is for.
+#### 📐 The measurements, so nothing needs re-deriving
 
-⚠️ **NOT a rename.** `composePlanWithFoundation` is already the single owner of post-generation
-`plan.weeks` mutation (ADR-020) and that ownership must not be duplicated. The risk is a second
-orchestration path existing alongside the route's — `[[feedback-a-single-owner-of-construction-is-not-of-the-decision]]`.
+| | |
+|---|---|
+| `lib/plan` | 98 files, ~79,000 lines |
+| `lib/coaching` | 130 files |
+| Engine imports of `next/` · `react` · `@/app/` · `@/components/` | **0 · 0 · 0 · 0** |
+| Files breaking purity | **5**, all leaves bar `supersede` (gated, baselined) |
+| `app/api/generate-plan` imports | **18** engine modules |
+| `app/api/adjust-plan` imports | **10** |
+| `app/api/ops/plan-audit` imports | **1** |
+| `generate-plan/route.ts` | **806 lines** |
 
-### 🧱 `ENGINE-PURITY-GATE-01` — nothing stops the engine importing the app *(filed 2026-10-14, P2)* ⚙️ **NO BOARD**
+🔴 **THE FINDING: the ROUTE is the orchestrator, not the engine.** Extract today and **all
+eighteen become public API surface**, because the sequencing lives on the caller's side.
+
+#### 🔴 THE SCOPE IS NARROWER THAN "COLLAPSE 18 IMPORTS", AND THIS IS WHY
+
+The route is **not** a thin wrapper. It interleaves the engine with auth, tier resolution,
+display prefs, AI rate limiting, ~10 ops events, direct Supabase reads and writes, and a
+`waitUntil` background chain that runs **after the response returns**. Two different things
+live in there:
+
+| | What | Moves? |
+|---|---|---|
+| **Synchronous** | inputs → refusal check → `ruleEngine` → `foundationCompose` → `validatePlan` → respond | **YES — this is the engine** |
+| **Background** | `waitUntil` → `enrich` → ops events → Supabase save | **NO — persistence and telemetry are the caller's (ADR-003)** |
+
+**Collapsing both would drag persistence INTO the engine, which `ENGINE-PURITY-GATE-01` now
+forbids.** Collapse only the synchronous half.
+
+#### ⚠️ Constraints that bind
+
+- **ADR-020:** `composePlanWithFoundation` is the single owner of post-generation `plan.weeks`
+  mutation. The entry point **calls** it; it must never duplicate it. The risk is a second
+  orchestration path alongside the route's.
+- **ADR-003:** the route is the auth boundary. **`tier` stays resolved in the route** — moving
+  `resolveTier` inside the engine crosses an auth boundary. This is `/build` § 5b ask 7.
+- All 18 imports are **app-pure** (verified, not assumed): none imports Supabase, Next or the
+  app. `enrichServerSave` is a pure predicate; `freeIntro` has no app imports but **does call
+  Anthropic**.
+
+#### 🧪 The guard, and what it can and cannot see
+
+`npm run verify:parity` — **6,102 cases**, now including a benchmark axis so it can see the
+VDOT and pace path (`PARITY-NO-BENCHMARK-01`). It must come back **IDENTICAL**.
+
+⚠️ **IDENTICAL is still not VERIFIED.** The grid pins `plan_start`, so it holds **no
+pre-plan-runway cases** — it was structurally blind to `FOUNDATION-LONG-RUNWAY-01`. Run
+`npm run review:coaching` as well.
+
+#### ✅ Acceptance
+
+One entry point · the 18 imports become 1 · auth, tier, persistence and telemetry still in the
+route · parity **IDENTICAL** over 6,102 · `review:coaching` unmoved · `enginePurity` and
+`engineContract` still green (the contract asserts the count is 18, **so it will go red when
+this lands — update it in the same commit**).
+
+### ✅ `ENGINE-PURITY-GATE-01` — **SHIPPED 2026-10-14** (`05fa327e`). Parity IDENTICAL, 6,066 cases ⚙️ **NO BOARD**
 
 The purity above is **true today and enforced by nothing**. A gate fails the build if anything
 under `lib/plan` or `lib/coaching` imports `next/`, `react`, `@/app/`, `@/components/` or a
