@@ -146,6 +146,38 @@ const DST_RACE_DATES = ['2027-04-04', '2027-04-18', '2027-05-09']   // Sundays, 
 // is safe — there is no stored baseline to invalidate.
 const HSR_EXTRA = ['love', 'overdo', 'avoid'] as const
 
+// ── PARITY-NO-BENCHMARK-01 (2026-10-14) — the grid had NEVER set a benchmark.
+// Measured before this existed: the string `benchmark` appeared ZERO times in
+// this file, across all 6,066 cases. That is expensive, because `benchmark` is
+// the ONLY input reaching the engine's wall-clock read —
+// `applyVdotDiscount(raw, b, new Date())` in `vdotFor` — and VDOT prices EVERY
+// pace in the plan. So the harness this repo reaches for to prove "my refactor
+// changed nothing" was structurally blind to the whole VDOT and pace path: a
+// change repricing every benchmarked plan returned IDENTICAL.
+//
+// Same class as FOUNDATION-LONG-RUNWAY-01, different axis — there the grid
+// pinned `plan_start` and held no runway cases; here it set no benchmark.
+//
+// 🔴 WHY ONLY TWO VARIANTS, AND WHY NEITHER IS "RECENT". The discount steps +1%
+// per 4 weeks beyond VDOT_STALENESS_FRESH_WEEKS (4), from a 3% base, capped at
+// VDOT_STALENESS_MAX_DISCOUNT_PCT (7). It reaches the cap at >= 16 weeks stale,
+// and because the real "today" only moves forward a fixed past date stays
+// capped FOREVER. Both variants are clock-stable by construction:
+//   · no benchmark_date      -> base 3%, no clock read (invariants.ts asserts it)
+//   · a date >= 16 weeks old -> pinned at the 7% cap
+// A benchmark 5–15 weeks old sits ON the ramp, so its discount would move as the
+// wall clock advances — it would make PARITY ITSELF non-deterministic, which is
+// the opposite of the point. Deliberately absent.
+//
+// `benchmarkStability.test.ts` machine-checks that arithmetic rather than
+// trusting this comment.
+const BENCHMARK_EXTRA: ReadonlyArray<{ tag: string; benchmark: Record<string, unknown> }> = [
+  { tag: 'bm-undated',
+    benchmark: { type: 'race', distance_km: 10, time: '45:00' } },
+  { tag: 'bm-capped',
+    benchmark: { type: 'race', distance_km: 10, time: '45:00', benchmark_date: '2024-01-07' } },
+]
+
 /**
  * The key's field order, in one place. Both the axis-coverage guard and the
  * changed-by-axis report read positions out of the key, and until now each
@@ -165,6 +197,7 @@ const EXPECTED_ROWS =
   + DISTANCES.length * LEVELS.length * GOALS.length * HSR_EXTRA.length
   + DISTANCES.length * LEVELS.length * DST_RACE_DATES.length          // PARITY-DST-01
   + DISTANCES.length * LEVELS.length * INJURY_EXTRA.length            // PARITY-GRID-PRODUCT-VALUES-01
+  + DISTANCES.length * LEVELS.length * BENCHMARK_EXTRA.length        // PARITY-NO-BENCHMARK-01
 
 /** Wall-clock / run-scoped fields. Present on both sides, different every run. */
 const STRIP_META = ['generated_at', 'created_at', 'updated_at']
@@ -266,6 +299,50 @@ async function probe(): Promise<void> {
         // block, so the key is unique without a prefix — same argument as DST.
         const key = [race_distance_km, race_date, fitness_level, days_available,
           injury_history.join('+'), current_weekly_km, tier, 'finish', 'unset'].join('|')
+        try {
+          const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
+          const stable = JSON.parse(JSON.stringify(plan))
+          for (const f of STRIP_META) {
+            if (stable?.meta) delete stable.meta[f]
+            delete stable[f]
+          }
+          rows.push(`${key}\tOK\t${createHash('sha256')
+            .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
+        } catch (e: any) {
+          rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
+        }
+      }
+
+  // ── PARITY-NO-BENCHMARK-01 block — see BENCHMARK_EXTRA above. Appended rather
+  // than multiplied into the cartesian product: every distance x level x the two
+  // clock-stable benchmark variants, at one race date / day count / volume.
+  for (const race_distance_km of DISTANCES)
+    for (const fitness_level of LEVELS)
+      for (const bm of BENCHMARK_EXTRA) {
+        // 🔴 RACE_DATES[2], NOT [0], AND THE REASON IS MEASURED. The first cut used
+        // RACE_DATES[0] ('2026-12-06') like the blocks above it, and TWELVE of the
+        // eighteen capped cases came back REFUSED with PrepTimeError — too few weeks
+        // for a half, marathon or ultra. So the axis exercised VDOT at 5K and 10K
+        // only, while reading as full coverage. Measured at four race dates:
+        // 2026-12-06 refuses 4 of 6 distances, 2027-01-17 refuses 2, 2027-03-28
+        // refuses none. A refused row carries a message rather than a plan hash, so
+        // it can never detect a pricing change.
+        const race_date = RACE_DATES[2]
+        const days_available = 5
+        const current_weekly_km = 30
+        const tier = 'paid'
+        const goal = 'time_target'
+        const input = {
+          goal, age: 40, resting_hr: 55, max_hr: 180,
+          preferred_long_run_day: 'sun',
+          target_time: TARGET_TIMES[race_distance_km],
+          race_date, race_distance_km, current_weekly_km,
+          longest_recent_run_km: Math.max(5, Math.round(current_weekly_km / 3)),
+          days_available, fitness_level, injury_history: [],
+          benchmark: bm.benchmark,
+        }
+        const key = [race_distance_km, race_date, fitness_level, days_available,
+          'none', current_weekly_km, tier, goal, bm.tag].join('|')
         try {
           const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
           const stable = JSON.parse(JSON.stringify(plan))
