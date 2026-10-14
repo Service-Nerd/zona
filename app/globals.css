@@ -1671,3 +1671,33 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 .zonna-stagger--late > *:nth-child(2) { animation-delay: calc(4 * var(--motion-stagger-step)); }
 .zonna-stagger--late > *:nth-child(3) { animation-delay: calc(5 * var(--motion-stagger-step)); }
 .zonna-stagger--late > *:nth-child(4) { animation-delay: calc(6 * var(--motion-stagger-step)); }
+
+
+/* --- DATE-FIELD-IOS-01 -------------------------------------------------------
+   `<input type="date">` is the ONE input type iOS WKWebView does not lay out
+   like the others. Without an appearance reset it uses an intrinsic width
+   instead of the author's `width: 100%`, and renders its value through
+   `::-webkit-date-and-time-value`, which CENTRES by default. Every other
+   `TextField` in the app is left-aligned, so on a device the race date was the
+   only field whose value did not line up with its own label.
+
+   Reported from a device screenshot, 2026-10-14: "the date entry is slightly
+   off screen", with the value visibly centred.
+
+   NOT REPRODUCIBLE ON THIS MACHINE. The verification browser is Chromium, which
+   lays all three variants out identically (measured: 309px container, 309px
+   control, 0px overflow, with and without the reset). This fix is reasoned from
+   the WebKit behaviour and the centring visible in the screenshot, and it needs
+   confirming on the device it was reported from. */
+.zonna-date-field {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+}
+.zonna-date-field::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+.zonna-date-field::-webkit-calendar-picker-indicator {
+  margin-left: auto;
+}

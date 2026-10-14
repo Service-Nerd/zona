@@ -57,6 +57,10 @@ export function TextField({
       required={required}
       autoComplete={autoComplete}
       aria-label={ariaLabel}
+      // DATE-FIELD-IOS-01 — scoped to `date` because it is the only type
+      // iOS lays out differently; every other type is already correct and
+      // an unscoped appearance reset would strip controls that need theirs.
+      className={type === 'date' ? 'zonna-date-field' : undefined}
       style={{
         width: '100%', boxSizing: 'border-box',
         background: readOnly ? 'var(--bg)' : 'var(--bg-soft)',

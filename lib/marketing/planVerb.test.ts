@@ -127,3 +127,37 @@ describe('PLANVERB-01 — the two plan doors', () => {
       .toMatch(/\bonStartNewPlan=\{\(\) =>/)
   })
 })
+
+describe('DATE-FIELD-IOS-01 — the one input type iOS lays out differently', () => {
+  it('a date TextField opts into the WebKit reset, and no other type does', () => {
+    // Reported from a device, 2026-10-14: "the date entry is slightly off
+    // screen", with the value visibly CENTRED while every other TextField is
+    // left-aligned. That centring is `::-webkit-date-and-time-value`'s default,
+    // not ours, which is what identified it.
+    const tf = readFileSync('components/shared/TextField.tsx', 'utf8')
+    expect(tf).toContain("type === 'date' ? 'zonna-date-field' : undefined")
+    // scoped, not blanket: an unscoped appearance reset strips controls that
+    // need theirs (selects, checkboxes, the picker indicator).
+    expect(tf).not.toMatch(/-?[Ww]ebkit[Aa]ppearance:\s*'none'/)
+  })
+
+  it('the reset actually sets the three things WebKit needs', () => {
+    const css = readFileSync('app/globals.css', 'utf8')
+    const i = css.indexOf('.zonna-date-field')
+    expect(i, 'the date-field rules are gone').toBeGreaterThan(-1)
+    const block = css.slice(i)
+    expect(block).toMatch(/appearance:\s*none/)                       // width honoured
+    expect(block).toMatch(/::-webkit-date-and-time-value[\s\S]{0,80}text-align:\s*left/) // value aligns
+    expect(block).toContain('::-webkit-calendar-picker-indicator')    // indicator stays reachable
+  })
+
+  it('🔴 states that it was NOT reproducible on the verification browser', () => {
+    // The browser here is Chromium and lays all three variants out identically
+    // (measured: 309px container, 309px control, 0 overflow, with and without
+    // the reset). A fix nobody could reproduce must say so where the next
+    // person looks, or it reads as verified.
+    const css = readFileSync('app/globals.css', 'utf8')
+    const i = css.indexOf('DATE-FIELD-IOS-01')
+    expect(css.slice(i, i + 1400)).toMatch(/NOT REPRODUCIBLE ON THIS MACHINE/)
+  })
+})
