@@ -314,3 +314,39 @@ describe('A11Y-MOCKUP-CONTRAST-01 — mockup small text uses AA-capable tokens',
     }
   })
 })
+
+// ── DOC-TOKEN-DRIFT-01 (2026-10-14) ─────────────────────────────────────────
+// 🔴 `CLAUDE.md`'s design-system table said `--mute` is `#8A857D`. It has been
+// `#6D6963` since `A11Y-CONTRAST-01` darkened it to clear AA — the whole point
+// of that ship. The doc carried the value the fix REPLACED.
+//
+// ⚠️ FOUND BY ACCIDENT, which is the argument for the arm. I was computing a
+// ghost button's contrast against the footer, took the hex from the table
+// because that is what the table is for, and got **3.14:1 — a fail**. The real
+// token measures **4.67 — a pass**. One stale row turned a correct control into
+// a defect in my own report, and the next reader to copy a hex out of that
+// table has no way to know which rows are current.
+//
+// ⚠️ IT CHECKS THE ROWS THAT EXIST, NOT THAT EVERY TOKEN HAS A ROW. CLAUDE.md's
+// table is a curated subset by design; demanding completeness would fire on
+// every new internal token and a gate that cries wolf gets switched off.
+describe('DOC-TOKEN-DRIFT-01 — CLAUDE.md states the live hex for every token it names', () => {
+  const DOC = fs.readFileSync(path.resolve(__dirname, '../CLAUDE.md'), 'utf8')
+  const rows = Array.from(DOC.matchAll(/\|\s*`(--[a-z0-9-]+)`\s*\|\s*`(#[0-9A-Fa-f]{6})`/g))
+    .map(m => [m[1], m[2].toUpperCase()] as const)
+
+  it('the population is real — a doc with no rows would pass everything', () => {
+    expect(rows.length).toBeGreaterThanOrEqual(10)
+    expect(rows.map(r => r[0])).toContain('--mute')
+  })
+
+  it('🔴 no row states a hex that globals.css no longer defines', () => {
+    const drift: string[] = []
+    for (const [name, docHex] of rows) {
+      const live = token(name)?.toUpperCase()
+      if (!live) continue            // a doc-only or aliased name is not this arm's business
+      if (live !== docHex) drift.push(`${name}: CLAUDE.md says ${docHex}, globals.css says ${live}`)
+    }
+    expect(drift, drift.join('\n')).toEqual([])
+  })
+})

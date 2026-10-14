@@ -162,7 +162,7 @@ Single light theme. No dark mode (ADR-008).
 | `--card` | `#FFFFFF` | Card surfaces |
 | `--ink` | `#1A1A1A` | Primary text |
 | `--ink-2` | `#3D3A36` | Secondary text |
-| `--mute` | `#8A857D` | Muted / supporting text |
+| `--mute` | `#6D6963` | Muted / supporting text — darkened from `#8A857D` by `A11Y-CONTRAST-01`; this row said the old value until 2026-10-14 |
 | `--moss` | `#6B8E6B` | Primary accent — CTA, active states |
 | `--warn` | `#B8853A` | Coaching, warnings |
 | `--danger` | `#B84545` | Errors only — never in training UI |

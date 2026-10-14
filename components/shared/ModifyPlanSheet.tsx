@@ -359,12 +359,32 @@ export default function ModifyPlanSheet({
                     {ackLabel}
                   </Button>
                 )}
-                <Button variant="primary" fullWidth 
+                {/* 🔴 NO INLINE STYLE, and every property it used to set was either
+                    WRONG or NOISE (BUTTON-INLINE-OVERRIDE-01, founder device review
+                    2026-10-14: *"buttons still don't look right in terms of style and
+                    colour"*). Sampled from his screenshot, the fill was **#6B8E6B** =
+                    `--moss`, where `.btn--primary` is `--moss-strong` #557055.
+
+                    ⚠️ White on `--moss` is **3.68:1** against AA's 4.5; on
+                    `--moss-strong` it is **5.48**. That is the precise failure
+                    `BUTTON-COMPONENT-01` shipped to fix, and `a11yContrast.test.ts`
+                    records the identical wrong paint being corrected on the MARKETING
+                    mockup in September. Fixed on the drawing, not on the live button —
+                    the fourth "remedy applied to one case and not its twin" in this family.
+
+                    ⚠️ `--radius-md` (14px) is **`.btn--compact`'s** radius on a
+                    regular button. `CTA-COMPACT-SCOPE-01` ruled compact a ROW class the
+                    day before; that sweep matched `size="compact"`, so a call site
+                    inline-styling the same geometry was invisible to it.
+
+                    The rest was noise: `fontSize`/`fontWeight` restated the variant's own
+                    values, and `.btn:disabled` + `.btn--busy` already own the busy paint
+                    and cursor — so `busy`/`busyLabel` replace the hand-rolled ternary and
+                    `aria-busy`, which this button never announced, now fires. */}
+                <Button variant="primary" fullWidth
                   onClick={busy ? undefined : () => onApply(applyEdits(base, edits), resets)}
-                  disabled={busy} style={{ padding: '14px', borderRadius: 'var(--radius-md)', background: busy ? 'var(--moss-soft)' : 'var(--moss)', cursor: busy ? 'progress' : 'pointer', fontSize: '14px', fontWeight: 600, color: busy ? 'var(--mute)' : 'var(--card)' }}>
-                  {busy
-                    ? 'Rebuilding your plan…'
-                    : `Apply ${pending.length} change${pending.length === 1 ? '' : 's'}`}
+                  busy={busy} busyLabel="Rebuilding your plan…">
+                  {`Apply ${pending.length} change${pending.length === 1 ? '' : 's'}`}
                 </Button>
                 {/* 🎓 Sierra, CTA-COMPACT-SCOPE-01: this is NOT a peer of Apply and
                     must not look like one. It clears the pending selections and LEAVES

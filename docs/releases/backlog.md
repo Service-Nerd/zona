@@ -28,6 +28,75 @@ already decided what it is.
 ---
 
 
+### ✅ `CTA-INLINE-PAINT-01` — **SHIPPED 2026-10-14.** The Apply CTA was a `Button` in name only ⚙️ **NO BOARD** *(defect fix restoring `BUTTON-COMPONENT-01` / `A11Y-CONTRAST-01` / `CTA-COMPACT-SCOPE-01`)*
+
+Founder, device review: *"Buttons still don't look right in terms of style and colour."*
+
+🔑 **Sampled from his screenshot rather than read from the source: the fill was `#6B8E6B`.** That
+is `--moss`; `.btn--primary` is `--moss-strong` `#557055`. `ModifyPlanSheet:362` was a
+`<Button variant="primary">` whose call site overrode **six** of the component's own properties.
+
+🔴 **White on `--moss` is 3.68:1 against AA's 4.5; on `--moss-strong` it is 5.48.** The exact
+failure `BUTTON-COMPONENT-01` shipped to fix — and `a11yContrast.test.ts` records the *identical*
+wrong paint being corrected on the **marketing mockup** in September. Fixed on the drawing, not on
+the live button: the fourth "remedy applied to one case and not its twin" in this family.
+
+🔴 **`--radius-md` is `.btn--compact`'s radius on a regular button.** `CTA-COMPACT-SCOPE-01` ruled
+compact a ROW class the day before. That sweep matched the `size="compact"` **prop**, so a call
+site inline-styling the same geometry was invisible to it. Measured delta: **45px → 47px**, one
+control of 173 moved in `buttonGeometry.json`.
+
+The rest was noise — `fontSize`/`fontWeight` restated the variant's own values, and
+`.btn:disabled` + `.btn--busy` already own the busy paint. `busy`/`busyLabel` replace the
+hand-rolled ternary, so **`aria-busy` now fires where it never had**.
+
+#### 🔴 And the gate for this existed, was green, and was blind to 44% of its own population
+
+`buttonInlineOverride.test.ts` allowed **0** for this file and reported **0**. Its tag regex
+`/<Button\b(?:(?!<Button)[\s\S])*?>/` stops at the first `>` — and `onClick={busy ? undefined :
+() => …}` **contains one, in the arrow**. Proven by holding the markup fixed and changing only the
+handler: arrow form **0**, identical plain-handler form **1**.
+
+📐 **Broken reader: 32. Depth-aware reader: 57. 25 invisible.** Five files understated, five with
+no entry at all.
+
+⚠️ **Raising ten baseline numbers is what laundering looks like, so it was checked.** The corrected
+reader against the **freeze commit** (`4d405bc9`, 2026-09-27) totals **60**; this tree was **57**
+before the fix and **56** after. **The debt is DOWN four over the period the register thought it
+was flat** — nothing crept in behind the blind spot.
+
+⚠️ **Second instance of a recorded class.** `CLAUDE.md` already carries *"a prop reader stopping at
+the `>` in `=>`"* from 2026-10-01, in the design guard. 🥇 **And the regression arm written for the
+arrow case found a SECOND hole in my own fix within a minute** — a `>` inside a quoted prop
+(`aria-label="next >"`) also ended the tag, because the counter tracked braces and not quotes.
+**Write the sibling case, not only the one that bit you.**
+
+#### 🥇 `DOC-TOKEN-DRIFT-01` — folded in, found by accident
+
+`CLAUDE.md`'s design-system table said `--mute` is `#8A857D`. It has been **`#6D6963`** since
+`A11Y-CONTRAST-01` darkened it to clear AA — **the doc carried the value the fix replaced.** Found
+while computing the ghost button's contrast: I took the hex from the table, because that is what
+the table is for, and got **3.14:1, a fail**, where the real token is **4.67, a pass**. One stale
+row turned a correct control into a defect in my own report. Gated in `a11yContrast.test.ts`;
+checks the rows that exist, deliberately not that every token has one.
+
+**Left open:** 56 inline overrides across 23 files, now all visible and frozen. A 56-call-site
+visual sweep is not what was asked and is exactly what the register exists to avoid — but the
+number is honest for the first time. See `CTA-INLINE-PAINT-02` below.
+
+### 🔲 `CTA-INLINE-PAINT-02` — the 56 remaining inline overrides, now visible 🧭 **DESIGN BOARD**
+
+⚠️ **Re-measure before picking this up.** The number moves every time one is paid; derive it from
+`buttonInlineOverride.test.ts`'s baseline, never from this line.
+
+Not a single sweep. The population sorts into three species and only one is a defect:
+**redundant restatements** (a `ghost` setting `background: 'none'`, which its own class already
+sets — free to delete), **deliberate exceptions** (`--strava` partner brand, Apple's black
+sign-in, `.btn--inline-target`'s chip — these need a named reason, not a conversion), and
+**genuine drift** like the one just paid. ⚠️ **The register counts CALL SITES, not properties**:
+removing three of four overrides on a button moves its number by **zero**.
+
+
 ### ✅ `WEEKTHEME-PROP-DEAD-01` — **SHIPPED 2026-10-09.** 15 references, 5 files, nothing read it ⚙️ **NO BOARD**
 
 `week.theme` was derived in `PlanCalendar` and `TodayScreen`, carried through

@@ -1047,10 +1047,10 @@
   },
   "components/shared/ModifyPlanSheet.tsx#Button2": {
     "floor": 44,
-    "padY": 14,
-    "font": 14,
-    "radius": "var(--radius-md)",
-    "height": 45,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
     "width": "full"
   },
   "components/shared/ModifyPlanSheet.tsx#Button3": {
