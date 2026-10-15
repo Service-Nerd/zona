@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-15 — PLAN-SAVE-SILENT-FAIL-01 · a real runner built a plan twice and we had no way to know whether they tried to save it
+**Shipped:** If saving a newly built plan fails, the runner now sees a message above the button and we get a record of it. Before, the button quietly reset and nothing happened on either side.
+
+**Dev learning:** The catch was `catch { saveFailed(); setIsSaving(false) }` — a bare catch that cannot even see the error. The save runs in the browser, so it cannot reach the service-role logger; the fix is the same small bearer route the app already uses for onboarding and health-sync failures, with the event kind and the user fixed server-side so a client cannot write anything else into the ledger. I first put the reporter in `lib/plan/`, which is the engine directory, and moved it before committing — the purity gate's regex would have let it through, which is exactly why the boundary has to be judged and not just grepped.
+
+**Product/creator learning:** It came out of a question about one runner. A Make-A-Wish runner built an identical marathon plan twice, two minutes apart, and saved neither. The honest answer to "why didn't it save?" was **"we cannot know"** — not tapping save and tapping it and failing left exactly the same nothing. **A defect you cannot see the cost of is still a defect; it is just one you cannot size.**
+
+**AI-building learning:** I tagged this for the Design Board when I filed it, then measured instead of convening: the app already has an inline alert on the code-redeem screen, and its colour on this background is 4.65:1, which passes. Reusing two existing patterns is conformance. **The filing tag is a guess made before analysis; analysis is allowed to overturn it, as long as it says so out loud.**
+
+**The honest bit:** My twin sweep used a 700-character window and flagged three "silent" save paths. Read properly, one already tells the runner, one is a deliberate background sync, and the full-defect count is zero. I have said "a window is not a region" several times today and still reached for one.
+
+**Hook material:** "Why didn't this runner save their plan?" The true answer was "we have no way of knowing" — because when a save failed, the app reset the button and told nobody, including us.
+
+**Postable?:** maybe — the "we cannot know" framing is good, but it overlaps the day's other silent-failure posts.
+
+
 ## 2026-10-15 — OPS-ANON-USER-ID-01 · I told him the error was not our code, and the sixth path was the one I had just fixed
 **Shipped:** A webhook branch that passed RevenueCat's temporary id into a UUID column, where the insert failed silently. 19 diagnostic traces had already been lost.
 
