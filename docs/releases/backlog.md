@@ -1703,20 +1703,56 @@ about to BUILD**, and the cost here was his time, not mine.
 > **Governance:** Coaching Board **exempt** (restores documented intent, changes no prescription);
 > SLT not required (no tier or scope change).
 
+### ✅ `ROUTE-E2E-GENERATE-01` — **SHIPPED 2026-10-15** (`e36d4f89`). The route is walked end to end: **17 arms**, 8 falsifications ⚙️ **NO BOARD**
+
+> 🔁 **`ENGINE-ENTRY-01`'s named residual, closed.** Nothing had ever executed `POST /api/generate-plan`:
+> auth → tier → `guardAiRequest` → the route's own gates → `runEngine` → the response. `tsc` catches a new
+> `EngineOutcome` kind at the destructure and `engineOutcomeHandled.test.ts` catches an unhandled branch; neither
+> runs the handler.
+>
+> 🔑 **IT WAS CHEAPER THAN THE ITEM IMPLIED, AND I MEASURED THAT BEFORE DECIDING.** The item left the door open to
+> concluding a full integration test costs more than it buys. It does not: `vitest.config.ts` is `environment: 'node'`,
+> `NextRequest`/`NextResponse` are Web-Fetch-based and work there, and **one** faked `createClient` serves tier
+> resolution, display prefs, the athlete's name, the first-plan count, every ops write and the enriched-plan persist.
+> Four mocks, all at IO boundaries; `getUserTier` → `resolveTier`, `getUserDisplayPrefs`, `guardAiRequest`'s body read,
+> `resolveAthleteFirstName`, `validate()`, `canGenerateDistance`, `runEngine`, `recordOpsEvent`, the NDJSON stream and
+> the `waitUntil` chain all run for real. The spike's first response came back with `meta.athlete: "Sam"`, which is
+> proof the user-scoped-client path executed rather than being stubbed past.
+>
+> 🔴 **THE HIGHEST-VALUE ARM IS THE ORDER, EXACTLY AS THE ITEM PREDICTED.** `validate()` (`days_available < 2`) runs
+> BEFORE `canGenerateDistance`, so a 1-day marathon on free tier is answered **422 on days**, never **403 on the
+> paywall**. `lib/plan/engine.ts`'s header names that order as the reason `validate()` stayed in the route, and
+> nothing asserted it: a refactor hoisting the commercial gate flips it with no type error and no visible symptom —
+> the runner is refused either way — while quietly contaminating `plan_distance_gate_blocked`, the only measurement
+> of who the paywall turns away.
+>
+> ⚠️ **WHAT IT DOES NOT PROVE, in the file header rather than in a summary:** no Postgres (the double speaks
+> PostgREST's shapes, not RLS, constraints or triggers); not the platform (`waitUntil` has no request context here,
+> so the guarded degraded path is what runs); **the 500 branch is unexercised**; not the rate limiter (the fake's
+> `rpc` returns `true` and `checkAiRateLimit` fails OPEN by design, so a broken double would admit requests for a
+> reason unrelated to the limit).
+>
+> 📐 **Tests live under `lib/**` or `components/**` ONLY.** A test beside the route in `app/` is collected by nothing
+> and reports *"No test files found"* rather than failing — this repo has shipped that mistake. `lib/api/` is the new
+> home for route-level behavioural tests; `lib/plan/` was rejected because app-importing code inside the engine
+> directory reads wrong even though `enginePurity.test.ts` filters `.test.` from its population.
+>
+> **Governance:** no board (tooling; no prescription, no tier, no visible delta).
+
 ### ✅ `ENGINE-ENTRY-01` — **SHIPPED 2026-10-15** (`1c10f90d`). **18 → 7**, route 806 → 605 lines. Parity IDENTICAL 6,102 ⚙️ **NO BOARD**
 
 > ✅ **THE ENGINE BOUNDARY IS COMPLETE — all three parts plus the two defects found writing them.**
 > `ENGINE-PURITY-GATE-01` (`05fa327e`) · `ENGINE-CONTRACT-01` (`cc1d11b9`) · **`ENGINE-ENTRY-01` (`1c10f90d`)**, plus
 > `PARITY-NO-BENCHMARK-01` (`58135cf9`) and `FOUNDATION-META-ALIAS-01` (`276e89b8`), both found by looking rather than reported.
 >
-> 🔁 **TWO FOLLOW-ONS, OPEN AND NOT SCHEDULED:**
-> — **`adjust-plan` still imports 14 engine modules** and has no entry point. It is the same shape of work, smaller,
->   and the contract now states the real figure.
-> — **Nothing walks `/api/generate-plan` end to end.** `tsc` catches a new outcome kind at the destructure and
->   `engineOutcomeHandled.test.ts` catches an unhandled branch, but no test exercises auth → engine → stream.
->   ⚠️ **And `verify:parity` cannot stand in for one**: it calls `generateRulePlan` at five sites and never
->   `composePlanWithFoundation` or `runEngine`, so IDENTICAL proves the engine was not disturbed, not that the route
->   still behaves the same.
+> 🔁 **ONE FOLLOW-ON OPEN, ONE CLOSED:**
+> — 🔻 **OPEN: `adjust-plan` still imports 14 engine modules** and has no entry point. It is the same shape of work,
+>   smaller, and the contract now states the real figure.
+> — ✅ **CLOSED 2026-10-15 by `ROUTE-E2E-GENERATE-01`** (`e36d4f89`): the route is walked end to end — 17 arms under
+>   `lib/api/generatePlanRoute.test.ts`, 8 falsifications. The claim *"no test exercises auth → engine → stream"* is
+>   no longer true, and *"`verify:parity` cannot stand in for one"* still is: parity never calls
+>   `composePlanWithFoundation` or `runEngine`, which is why mutation 2 of that ship re-introduces
+>   `FOUNDATION-META-ALIAS-01` and the new suite goes red where parity returned IDENTICAL.
 
 
 > 🎯 **GOAL:** lift the coaching engine out to a hosted service, possibly monetised. **Parts 1

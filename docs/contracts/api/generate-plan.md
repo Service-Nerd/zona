@@ -611,6 +611,29 @@ function of its arguments, so those arms now assert the 422 body, the telemetry 
 accept-base-build outcome directly. `engineOutcomeHandled.test.ts` holds the composition: every
 `EngineOutcome` kind must have a route branch, with the population parsed from the union itself.
 
+✅ **AND SINCE `ROUTE-E2E-GENERATE-01` (2026-10-15) THIS PAGE IS EXERCISED, NOT ONLY ASSERTED.**
+`lib/api/generatePlanRoute.test.ts` executes the handler — 17 arms covering **401** (and that auth
+outranks a malformed body), **400** on invalid JSON before the engine is reached, the **403** paywall
+*and* its ops row, a **422** designed refusal *with* the `plan_refused_by_design` write that only the
+route performs, the **free 200** (CA-01's `plan_intro` and GEN-FIX-02's `enrichment: 'skipped'` on the
+plan the route actually returns), the **base-build 200** as JSON rather than a stream, and the
+**NDJSON stream** read through `readPlanStream`, including the mid-stream save that
+`ENRICH-SERVER-SAVE-01`'s backstop must overwrite. One faked `createClient` stands in for the
+database; `getUserTier` → `resolveTier`, `getUserDisplayPrefs`, `guardAiRequest`, `validate()`,
+`canGenerateDistance`, `runEngine`, `recordOpsEvent`, the stream and the `waitUntil` chain all run.
+
+🔴 **IT ALSO PINS AN ORDER THIS PAGE DOES NOT STATE AND SHOULD:** the route-local `validate()` runs
+**before** `canGenerateDistance`, so a request with `days_available < 2` for a PAID distance on free
+tier is answered **422 on days**, never **403 on price**. Both refuse, so the flip has no visible
+symptom — but the 403 writes `plan_distance_gate_blocked`, the only measurement of who the paywall
+turns away, so a reordering would quietly count input mistakes as commercial demand.
+
+⚠️ **WHAT THAT SUITE STILL DOES NOT COVER**, so nobody reads it as more than it is: there is no
+Postgres (the double speaks PostgREST's shapes, not RLS, constraints or triggers), no platform
+`waitUntil` (the guarded degraded path is what runs under vitest), **no exercise of the 500 branch**,
+and no rate limiting (the fake's `rpc` returns `true` and `checkAiRateLimit` fails OPEN by design —
+the 429 belongs to `lib/ai/guardAiRequest.test.ts`).
+
 | Module | Responsibility |
 |--------|---------------|
 | **`lib/plan/engine.ts`** | **`ENGINE-ENTRY-01` — the engine's single entry point.** `runEngine()` is the whole synchronous path and the only engine door this route opens for generation. Returns a discriminated union; re-exports `validatePlan` so the enrichment chain re-validates through the same door. Documents what it deliberately does NOT take, and why |
