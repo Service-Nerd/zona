@@ -6,6 +6,37 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-15 — OPS-ANON-USER-ID-01 · I told him the error was not our code, and the sixth path was the one I had just fixed
+**Shipped:** A webhook branch that passed RevenueCat's temporary id into a UUID column, where the insert failed silently. 19 diagnostic traces had already been lost.
+
+**Dev learning:** `ops_events.user_id` is a UUID. One file had **two** writers of it — the anonymous-id guard, which correctly passes `null`, and the unhandled-event-type branch **twenty lines earlier**, which passed the raw id. `recordOpsEvent` only `console.error`s, so Postgres rejected the row, the route answered 200, and nothing anywhere knew. The branch's own comment says it exists because *"this branch used to be silent, which is how a comp grant could fail with no trace at all."* **It was silent again, for exactly the cohort it names, with 500 charity codes about to go out.**
+
+**Product/creator learning:** I filed it as latent — "fixed before it bit" — and then measured: **19 anonymous purchases, 19 follow-up CANCELLATION events expected, 0 traces recorded, 19 lost.** What I had missed was that RevenueCat sends two events one second apart, which this project had already written down months ago under a different item. **The thing that would have told me was in my own repo, not in the log.**
+
+**AI-building learning:** This is the one worth keeping. I checked five code paths, cleared them all, filed an item saying the cause was probably outside the repo, and told him to go look in RevenueCat's dashboard. He looked. Nothing there. **The sixth path was the one I had fixed ten minutes earlier**, and I had ruled it out by reasoning that `INITIAL_PURCHASE` is a handled type — true, and not the question I should have asked, which was *what else arrived in that second?* Two facts were already on screen: the error carried the **full 47-character** id while the guard only ever stores a **24-character** truncation, and the two-events pattern was documented. **I reached for an external cause while holding the internal evidence.**
+
+**The honest bit:** I sent the founder to check a dashboard because my own elimination was incomplete, and I presented it as a confident conclusion rather than a hypothesis. The useful part of his answer was "there's nothing there", which closed the question I should never have opened.
+
+**Hook material:** I told him the bug wasn't in our code and to go check the vendor. He checked. Nothing. The cause was a line I had patched ten minutes earlier and then eliminated as a suspect — and the proof was the length of a string in the error message: 47 characters, where the innocent path can only ever produce 24.
+
+**Postable?:** yes — "eliminate the path you just fixed LAST, not first" is a sharp, specific lesson, and the 47-vs-24 character tell makes it concrete.
+
+## 2026-10-15 — ADJUST-SESSIONDAY-PREFIX-01 · one word in a coach note turned out to be a contract with the homepage
+**Shipped:** §12's grey-zone drift detector had been reading an empty array for every runner since the format of a database field changed under it. Two of eight adaptive triggers were blind.
+
+**Dev learning:** The filter looked for session labels like `week_3_tue`; production has had bare `tue` for as long as any surviving row exists. **Nothing failed** — `.startsWith()` returned false, a write-side prefix strip became a no-op, and a safety detector quietly stopped having inputs. The contradiction was **three lines apart in one file**: two readers treated the field as a bare day, one as prefixed, and the odd one out was the one feeding the triggers. The test now guards the *class* — it fails if any reader in that file ever parses the field as composite again.
+
+**Product/creator learning:** ✋ The board's sharpest contribution was Sims's: *"a note that says 'slow down' is `listen to your body` wearing a prescription's clothes."* The note now carries the runner's actual bpm ceiling. **And my first attempt at that wording nearly broke the homepage** — I dropped the word "ceiling", and `WhenItNotices.tsx` finds the note to display by searching for that exact word. A live marketing section would have rendered nothing. My analysis block said *"Website: none."*
+
+**AI-building learning:** I brought the board a number that argued against my own case and did not notice. I said the detector was distrusted because 3 of 3 of its adjustments were reverted by runners — all three **pre-date** the repair the board made to it a month later. The conflict scan caught that, not me. **A ruling made on stale evidence is worse than no ruling, because it carries the board's authority.**
+
+**The honest bit:** One of the test arms I wrote was hollow — `expect(src).toContain('SOME_IDENTIFIER')` against source text, which would pass on a comment. The repo has a gate for exactly that shape and it failed me. I wrote a hollow assertion inside a commit about things that look verified and are not.
+
+**Hook material:** A coaching feature was silently dead because a database field changed shape and a filter didn't. Found by fixing a measuring script, whose answer got **worse** after the fix — 1 of 8 detectors reachable became 0 of 8. The worse number was the true one.
+
+**Postable?:** yes — "my safety feature read an empty array for six months and nothing failed" is the strongest version of the silent-failure post I have.
+
+
 ## 2026-10-15 — BACKTEST-SECOND-ASSEMBLY-01 · a harness that cannot feed a detector reports it as unreachable
 **Shipped:** The backtest that answers *"would any of the eight adaptive detectors ever have fired?"* now calls the engine's own signal builder instead of assembling the input itself. Correcting it found a live P1 in the route.
 

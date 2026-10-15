@@ -109,9 +109,27 @@ was written.
 ## Observability
 
 An unmapped `event.type` records `revenuecat_event_unhandled` via `recordOpsEvent`, carrying
-`{ event_type }` and `app_user_id`. That branch used to be **silent**, which is how a comp grant
-could fail leaving no trace at all. **If a charity runner reports a paywall they should not be
-seeing, look here first.**
+`{ event_type }` and — **only when it is a real Supabase user id** — `app_user_id`. That branch
+used to be **silent**, which is how a comp grant could fail leaving no trace at all. **If a
+charity runner reports a paywall they should not be seeing, look here first.**
+
+🔴 **AND IT WAS SILENT AGAIN, FOR 19 EVENTS, UNTIL `OPS-ANON-USER-ID-01` (2026-10-15).** This
+line said it carries `app_user_id`, and it did — **raw**. `ops_events.user_id` is a UUID, so an
+offer-code runner arriving as `$RCAnonymousID:…` made the insert fail with
+`22P02 invalid input syntax for type uuid`, and `recordOpsEvent` only `console.error`s. **The
+trace was dropped and the route still answered 200.**
+
+⚠️ **IT IS NOT RARE, AND THE PAIRING IS WHY.** RevenueCat emits **`CANCELLATION` in the same
+second as `INITIAL_PURCHASE`** for an auto-renew-off offer code (`SUBS-CANCELLATION-TIER-01`), and
+`CANCELLATION` is an unmapped type — so **every** anonymous-id redemption lands on this branch.
+Measured in production: **19 anonymous purchases, 19 CANCELLATIONs expected, 0 traces recorded,
+19 lost.** The 3 `revenuecat_event_unhandled` rows that did land are the 3 valid-id purchases.
+
+🔑 **The anonymous-id guard 20 lines below had always passed `null` correctly. The remedy was
+applied to one of the two writers.** Both validate now, and the unhandled branch keeps the shape
+in `detail` as `app_user_id_shape` exactly as the guard does. Held by
+`lib/subscriptions/opsEventUserId.test.ts`, whose population arm parses **every** `recordOpsEvent`
+call in the route rather than trusting a hand-written list.
 
 A missing `event_timestamp_ms` records `revenuecat_event_no_timestamp` — see the write section
 below for why null is the correct fallback and why it must still leave a trace.
@@ -168,7 +186,7 @@ at the RPC returned 500 with nothing durable to find it by.
 |---|---|---|
 | RPC ran | `revenuecat_event_received` | `{ provider, event_type, environment, status, applied }` |
 | RPC errored (→ 500) | `revenuecat_event_write_failed` | `{ provider, event_type, environment, status, message }` (truncated to 300 chars) |
-| No status mapping | `revenuecat_event_unhandled` | `{ provider, event_type, environment }` |
+| No status mapping | `revenuecat_event_unhandled` | `{ provider, event_type, environment }`, plus `app_user_id_shape` when the id is anonymous. ⚠️ **`user_id` is set ONLY for a real Supabase id** — `OPS-ANON-USER-ID-01`, 19 traces lost before this |
 | Anonymous `app_user_id` (→ **200**) | `revenuecat_event_unusable` | `{ provider, event_type, environment, missing: 'app_user_id_not_a_user', app_user_id_shape }` |
 
 ⚠️ **`environment` is `'sandbox' | 'production'`, OMITTED when it cannot be established**
