@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { newSlowVerdict } from '@/scripts/check-test-duration'
+// ⚠️ FROM THE RULES MODULE, NOT FROM THE SCRIPT. Importing from
+// `scripts/check-test-duration.ts` RUNS THE GATE — it reads the report at module scope
+// and calls `process.exit`, so these arms passed only while the gate happened to be
+// green, and a mutation that turned it red killed the worker and reported "no tests"
+// instead of a failure. Found by a falsification that stayed green.
+import { newSlowVerdict, driftVerdict } from '@/lib/ops/testDurationRules'
 
 /**
  * SUITE-CONTENTION-01 — `check:slow`'s rule 1 is load-normalised, and the script
@@ -145,7 +150,65 @@ describe('SUITE-CONTENTION-01 — rule 1 measures the code, not the machine', ()
   it('rule 3 still normalises, so the two rules cannot drift apart again', () => {
     // The adjacent register: rule 3 was right and rule 1 was wrong for three weeks
     // because nothing compared them. This arm is that comparison.
-    expect(SCRIPT).toContain('const expectedMs = b.ms * LOAD')
-    expect(SCRIPT).toMatch(/newSlowVerdict\(s\.ms,\s*LOAD\)/)
+    // Both rules now reach the SAME load factor through the same module, which is the
+    // structural reason they cannot diverge again — the previous divergence was two
+    // independent expressions, one of which nobody compared to the other.
+    expect(SCRIPT).toMatch(/newSlowVerdict\(s\.ms,\s*LOAD/)
+    expect(SCRIPT).toMatch(/driftVerdict\(s\.ms,\s*b\.ms,\s*LOAD/)
+    expect(SCRIPT, 'the rules must come from the module, not be redefined here')
+      .toContain("from '../lib/ops/testDurationRules'")
+    expect(SCRIPT, 'the script must not re-export the rules — that is what ran the gate')
+      .not.toContain('export function')
+  })
+
+  /**
+   * 🔴 THE SECOND MECHANISM, found by the gate firing on its own commit. Rule 3's
+   * premise — *"a busier machine scales EVERY test, so a test's SHARE of the suite's
+   * own total is load-invariant"* — is FALSE for a test that shells out to a process.
+   * `hooksGate.test.ts` runs `npx eslint` on one temp fixture, so it waits for a free
+   * core instead of being scheduled by this suite.
+   *
+   * 📐 MEASURED: **483 / 492 / 602 ms isolated** against **1,094 / 1,108 / 1,196 /
+   * 3,172 ms** in the full suite — a **6.5x** swing on a run whose aggregate moved
+   * **1.84x**, with no change to the test.
+   */
+  describe('rule 3 and process-spawn volatility', () => {
+    it('a genuine step change still FAILS at any load', () => {
+      // 1,000 -> 3,000 ms is a doubling of share at 1.5x load. That is the rule working.
+      expect(driftVerdict(3_000, 1_000, 1.5)).toBe('fails')
+      // And it is load-aware: the same 3,000 ms on a 3x run is the SAME share.
+      expect(driftVerdict(3_000, 1_000, 3)).toBe('ok')
+    })
+
+    it('a DECLARED volatile entry is skipped — and only rule 3', () => {
+      expect(driftVerdict(3_172, 1_094, 1.84)).toBe('fails')
+      expect(driftVerdict(3_172, 1_094, 1.84, true)).toBe('skipped')
+      // ⚠️ IT MUST NOT BECOME A BLANKET EXEMPTION. Rule 1 is a different function and
+      // is untouched by the flag, so a volatile NEWCOMER is still gated.
+      expect(newSlowVerdict(9_000, 1.84).verdict).toBe('fails')
+    })
+
+    it('⚠️ both `hooksGate` arms are declared, and every volatile entry states a MEASURED cost', () => {
+      // A flag with a vague reason is the debt-register failure this repo records: the
+      // reason column IS the answer, so it has to carry something checkable.
+      const base = JSON.parse(readFileSync('lib/plan/__fixtures__/testDurationBaseline.json', 'utf8'))
+      const vol = (base.tests as { file: string; reason: string; volatile?: true }[])
+        .filter(e => e.volatile)
+      expect(vol.length, 'the volatile set changed — is the new entry really spawn-bound?').toBe(2)
+      for (const e of vol) {
+        expect(e.file).toBe('lib/hooksGate.test.ts')
+        expect(e.reason, `${e.file}: a volatile entry must name the ISOLATED cost`)
+          .toMatch(/ISOLATION|isolated/i)
+        expect(e.reason, `${e.file}: and why rule 3's premise fails for it`)
+          .toMatch(/spawn/i)
+      }
+    })
+
+    it('the volatile flag reaches the real gate, not just this test', () => {
+      // A predicate nothing calls is the decorative-config class. Asserted on the
+      // source, because the call site is a branch rather than a value.
+      expect(SCRIPT).toMatch(/if \(b\.volatile\) \{/)
+      expect(SCRIPT).toContain('rule 3 skipped: declared process-spawn volatile')
+    })
   })
 })

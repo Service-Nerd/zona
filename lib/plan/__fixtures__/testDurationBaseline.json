@@ -74,15 +74,17 @@
       "file": "lib/hooksGate.test.ts",
       "title": "stays GREEN when the same hook sits above the early return",
       "ms": 1106,
-      "reason": "Generates a large plan corpus; the cost is the coverage.",
-      "budgetMs": 60000
+      "reason": "2026-10-15 (SUITE-CONTENTION-01). PROCESS-SPAWN VOLATILE, not slow. This arm shells out to `npx eslint` on one temp fixture, so its cost is a process spawn waiting for a free core rather than work this suite schedules -- which is exactly the premise rule 3 relies on and does not hold here. MEASURED: 483 / 492 / 602 ms in ISOLATION against 1,094 / 1,108 / 1,196 / 3,172 ms in the full suite, a 6.5x swing on a run whose suite aggregate moved 1.84x, with no change to the test. Rule 3 is skipped; rules 1 and 2 still apply. The real fix is not to spawn at all -- eslint has a Node API -- which is GATE-SPAWN-VOLATILITY-01.",
+      "budgetMs": 60000,
+      "volatile": true
     },
     {
       "file": "lib/hooksGate.test.ts",
       "title": "goes RED on a hook called after an early return",
       "ms": 1094,
-      "reason": "Generates a large plan corpus; the cost is the coverage.",
-      "budgetMs": 60000
+      "reason": "2026-10-15 (SUITE-CONTENTION-01). PROCESS-SPAWN VOLATILE, not slow. This arm shells out to `npx eslint` on one temp fixture, so its cost is a process spawn waiting for a free core rather than work this suite schedules -- which is exactly the premise rule 3 relies on and does not hold here. MEASURED: 483 / 492 / 602 ms in ISOLATION against 1,094 / 1,108 / 1,196 / 3,172 ms in the full suite, a 6.5x swing on a run whose suite aggregate moved 1.84x, with no change to the test. Rule 3 is skipped; rules 1 and 2 still apply. The real fix is not to spawn at all -- eslint has a Node API -- which is GATE-SPAWN-VOLATILITY-01.",
+      "budgetMs": 60000,
+      "volatile": true
     },
     {
       "file": "lib/plan/week1LeapDenominator.test.ts",

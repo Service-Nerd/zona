@@ -77,61 +77,46 @@ const REPORT_MS = (() => {
   return Number(m[1].replace(/_/g, ''))
 })()
 
-/** A test at 70% of its budget is in danger even before CI is slower. */
-const HARD_FRACTION = 0.7
-/**
- * A test must be meaningfully above the REPORTING threshold before "you have
- * added a slow test" is a claim worth failing on.
- *
- * ⚠️ NOT ARBITRARY. This check's own first run failed on `hooksGate.test.ts`,
- * which measured 793, 847 and 1,063 ms on three consecutive full-suite runs —
- * it sits ON the 1,000 ms reporting line and crosses it with ordinary machine
- * noise. A gate that fires depending on which side of its own boundary a test
- * landed this minute is the cry-wolf shape NOISE-GATE-01 names, and the
- * disabling move for it is deleting the check. Everything at or above
- * REPORT_MS is still LISTED; only a genuinely slow newcomer fails.
- */
-const NEW_FAIL_MS_MULTIPLE = 1.5
 
-/**
- * Rule 1's whole decision, as a pure function, so it can be tested in both
- * directions without a 160-second suite run.
- *
- * ⚠️ IT EXISTED ONLY AS INLINE SCRIPT LOGIC UNTIL 2026-10-15, AND THE SCRIPT HAD
- * NO TESTS AT ALL — `grep` for one returned nothing, while this repo's standing
- * rule is that a measurement script is a check and a check needs a test. The
- * defect it had was arithmetic, which is the kind a unit test catches instantly
- * and a 160-second run catches only if you happen to be loaded that minute.
- *
- * `load` is this run's suite total over the baseline's. It mixes machine
- * contention with SUITE GROWTH since the baseline was written, and both belong
- * here: a test at 1,572 ms in a suite 3.3x heavier than when the line was drawn
- * is not a 1,572 ms test, whichever cause did it.
- */
-export function newSlowVerdict(
-  ms: number,
-  load: number,
-  reportMs: number = REPORT_MS,
-  failMultiple: number = NEW_FAIL_MS_MULTIPLE,
-): { verdict: 'fails' | 'listed'; normalisedMs: number; failsAboveMs: number } {
-  // A load factor that is absent, zero or nonsense must not divide the
-  // measurement away — an unmeasurable load degrades to the old absolute
-  // behaviour, never to no check.
-  const safeLoad = Number.isFinite(load) && load > 0 ? load : 1
-  const normalisedMs = Math.round(ms / safeLoad)
-  const failsAboveMs = Math.round(reportMs * failMultiple)
-  return {
-    verdict: normalisedMs >= failsAboveMs ? 'fails' : 'listed',
-    normalisedMs,
-    failsAboveMs,
-  }
-}
-/** A step change, not creep. See the warning above. */
-const DRIFT_TOLERANCE = 1.4
+// 🔴 THE RULES LIVE IN A MODULE, NOT IN THIS SCRIPT. This script EXECUTES at import
+// time and calls `process.exit`, so a test importing a function from here ran the
+// WHOLE GATE and died with it on a non-zero verdict — the suite reported "no tests"
+// instead of a failure. Found by a falsification that stayed green, not by review.
+// See `lib/ops/testDurationRules.ts`. SUITE-CONTENTION-01, 2026-10-15.
+import {
+  newSlowVerdict, driftVerdict, NEW_FAIL_MS_MULTIPLE, DRIFT_TOLERANCE,
+} from '../lib/ops/testDurationRules'
+
 /** Orientation only — CI-TIMEOUT-01's measured runner ratio, in isolation. */
 const CI_RATIO_FOR_ORIENTATION = 3.5
 
-interface BaselineEntry { file: string; title: string; ms: number; reason: string; budgetMs?: number }
+/** A test at 70% of its budget is in danger even before CI is slower. */
+const HARD_FRACTION = 0.7
+
+interface BaselineEntry {
+  file: string; title: string; ms: number; reason: string; budgetMs?: number
+  /**
+   * Exempt from RULE 3 ONLY. For a test whose cost is dominated by an external
+   * PROCESS SPAWN rather than by work this suite schedules.
+   *
+   * 🔴 RULE 3's PREMISE DOES NOT HOLD FOR THESE, which is why an escape hatch is
+   * correct rather than lazy. The rule reasons that *"a busier machine scales EVERY
+   * test, so a test's SHARE of the suite's own total is load-invariant."* A test that
+   * shells out to `npx` is not scheduled by this suite at all — it waits for a free
+   * core, and that wait is far more volatile than the aggregate.
+   *
+   * 📐 MEASURED 2026-10-15 on `hooksGate.test.ts`: **483 / 492 / 602 ms in isolation**
+   * against **1,094 / 1,108 / 1,196 / 3,172 ms** in the full suite. A **6.5x** swing on
+   * a run where the suite aggregate moved **1.84x**, with no change to the test.
+   *
+   * ⚠️ WHAT IS LOST, SAID PLAINLY: rule 3 can no longer catch a genuine step change in
+   * a volatile test. Rules 1 and 2 still apply, so a newcomer and the hard wall are
+   * unaffected, and the entry's `reason` must carry the measured isolated cost so the
+   * next reader can check it by hand. ⚠️ THE REAL FIX IS NOT TO SPAWN — eslint has a
+   * Node API — which is `GATE-SPAWN-VOLATILITY-01`, filed rather than bolted on here.
+   */
+  volatile?: true
+}
 
 let SUITE_MS = 0
 function readSlowTests(): Array<{ file: string; title: string; ms: number }> {
@@ -240,7 +225,7 @@ for (const s of slow) {
   console.log(`          (orientation only: x${CI_RATIO_FOR_ORIENTATION} isolated-CI ratio = ~${ci} ms — NOT a gate, see header)`)
 
   if (!b) {
-    const v = newSlowVerdict(s.ms, LOAD)
+    const v = newSlowVerdict(s.ms, LOAD, REPORT_MS)
     if (v.verdict === 'listed') {
       console.log(`          (listed, not gated: ${v.normalisedMs} ms at this run's ${LOAD.toFixed(2)}x load, under ${v.failsAboveMs} ms — too close to the reporting line to call)`)
       continue
@@ -269,7 +254,9 @@ for (const s of slow) {
   // at the baseline share under today's load. Comparing against that removes the
   // machine from the measurement and leaves the code.
   const expectedMs = b.ms * LOAD
-  if (s.ms > expectedMs * DRIFT_TOLERANCE) {
+  if (b.volatile) {
+    console.log(`          (rule 3 skipped: declared process-spawn volatile — ${b.reason.slice(0, 70)}…)`)
+  } else if (driftVerdict(s.ms, b.ms, LOAD, b.volatile) === 'fails') {
     const shareNow = SUITE_MS > 0 ? ((s.ms / SUITE_MS) * 100).toFixed(2) : '?'
     const shareBase = BASE_SUITE_MS ? ((b.ms / BASE_SUITE_MS) * 100).toFixed(2) : '?'
     failures.push(
