@@ -376,7 +376,44 @@ function buildReduceVolumeAdjustment(input: AdjustmentCheckInput, ratio: number)
   }
 }
 
-const ZONE_DRIFT_NOTE = 'Zone 2 only. HR ceiling enforced: if HR climbs, slow down.'
+/**
+ * §12 Amendment 2 (`ADJUST-SESSIONDAY-PREFIX-01`, Coaching Board 2026-10-15) —
+ * THE DRIFT NOTE CARRIES THE CEILING, NOT JUST THE INSTRUCTION.
+ *
+ * ✋ Sims at the sitting: *"a note that says 'slow down' is `listen to your body`
+ * wearing a prescription's clothes. It tells her the outcome was wrong without
+ * telling her what to do differently."* A ceiling she can run to beats an
+ * instruction to ease off.
+ *
+ * ⚠️ IT CITES THE SESSION'S OWN `hr_target` AND NEVER RE-DERIVES ONE. The engine
+ * already resolved that string for this runner's active zone method (Karvonen
+ * where RHR exists, %MaxHR otherwise — §14), and ADR-015 owns every display
+ * string. A second computation of the same ceiling here is how
+ * `zoneDisciplineScore` and `zoneDriftScore` came to disagree in the first place.
+ *
+ * ⚠️ NO EM DASH — this is a sentence a runner reads (`brand.md` § Punctuation,
+ * guarded by `noEmDashApp.test.ts`).
+ *
+ * Falls back to the original wording when a session carries no `hr_target`, which
+ * is every HR-less plan: an iPhone-only runner with no watch gets no HR targets at
+ * all (ADR-011 §5), and telling them to hold a number they cannot see would be
+ * worse than the generic line.
+ */
+const ZONE_DRIFT_NOTE_GENERIC = 'Zone 2 only. HR ceiling enforced: if HR climbs, slow down.'
+
+function zoneDriftNote(session: Session): string {
+  const target = (session as { hr_target?: string }).hr_target?.trim()
+  // 🔴 THE WORD "ceiling" IS LOAD-BEARING AND NOT STYLISTIC. The HOMEPAGE
+  // renders this note live: `components/marketing/WhenItNotices.tsx:98` finds the
+  // session with `(s.coach_notes?.[0] ?? '').includes('ceiling')`. Drop the word and
+  // a live marketing section silently renders nothing. My first cut of Sims's
+  // amendment read "Zone 2 only. Keep HR < 143 bpm" and did exactly that — caught by
+  // `whenItNotices.test.ts`, not by my own consumer check, which had recorded the
+  // website as "none". See `MARKETING-NOTE-COPY-MATCH-01` for the fragile matcher.
+  return target
+    ? `Zone 2 ceiling: keep HR ${target}. If it climbs, slow down.`
+    : ZONE_DRIFT_NOTE_GENERIC
+}
 
 function buildZoneDriftAdjustment(input: AdjustmentCheckInput, driftPct: number): ProposedAdjustment {
   const sessions       = input.currentWeekSessions
@@ -389,8 +426,13 @@ function buildZoneDriftAdjustment(input: AdjustmentCheckInput, driftPct: number)
       // cue, §80's time-on-feet note. A silent auto-applied adjustment was
       // deleting coaching the board had ruled on.
       const existing = (s.coach_notes ?? []).filter(Boolean) as string[]
-      if (existing.includes(ZONE_DRIFT_NOTE)) return { ...s }
-      const merged = [...existing, ZONE_DRIFT_NOTE].slice(-3)
+      // §12 Am.2 — the note is per-session now, because the ceiling it cites is.
+      // De-dupe still checks the GENERIC form too: a plan adjusted before Am.2
+      // carries that wording, and appending the new one beside it would tell the
+      // runner the same thing twice.
+      const note = zoneDriftNote(s)
+      if (existing.includes(note) || existing.includes(ZONE_DRIFT_NOTE_GENERIC)) return { ...s }
+      const merged = [...existing, note].slice(-3)
       return { ...s, coach_notes: merged as [string, string?, string?] }
     }
     return { ...s }

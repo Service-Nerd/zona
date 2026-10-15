@@ -1889,6 +1889,139 @@ comments stripped** or it fires on the prose recording this. ⚠️ **Falsify by
 one converted site and confirming the gate moves** — a count that cannot move is the thing being
 fixed.
 
+### ✅ `OPS-ANON-USER-ID-01` — **SHIPPED 2026-10-15.** A webhook id reached a UUID column and the insert failed silently ⚙️ **NO BOARD** *(defect fix; found in a production log)*
+
+> 🔴 **FOUND IN A PRODUCTION POSTGRES LOG THE FOUNDER HANDED OVER, NOT BY A TEST.**
+> `22P02 invalid input syntax for type uuid: "$RCAnonymousID:03bbc78dfb1947d59972ec037ed47618"`
+> — 2026-10-15 11:08:56Z.
+>
+> `ops_events.user_id` is a **UUID** (`20260722_ops_events.sql:19`). `app/api/webhooks/revenuecat/route.ts`
+> had **TWO** writers of it, and **the remedy had been applied to one**: the anonymous-id guard
+> (`CHARITY-OFFER-CODE-01`) correctly passes `null`, while the **unhandled-event-type branch 20
+> lines earlier** passed `rc.app_user_id ?? null` raw.
+>
+> ⚠️ **AND IT FAILS SILENTLY, WHICH IS THE ENTIRE COST.** `recordOpsEvent` only
+> `console.error`s, so the insert is lost and the route still answers 200. The comment on that
+> very branch says it exists because *"this branch used to be silent, which is how a comp grant
+> could fail with no trace at all. If a charity runner reports a paywall they should not be
+> seeing, look here first."* **With 500 charity codes to go out, the branch written to end silent
+> failures was silent again for exactly that cohort.**
+>
+> 🔴 **IT WAS NOT LATENT. 19 TRACES HAVE ALREADY BEEN LOST, AND I FILED THE OPPOSITE BEFORE
+> MEASURING IT.** My first write-up of this item said *"all 3 live `revenuecat_event_unhandled`
+> events carried valid ids, so no trace has actually been lost — a latent hole, fixed before it
+> bit."* **Wrong, and wrong in the comfortable direction.**
+>
+> 🔑 **WHAT I MISSED: RevenueCat SENDS TWO EVENTS, ONE SECOND APART.** `SUBS-CANCELLATION-TIER-01`
+> already recorded it — an offer code with auto-renew off emits **`CANCELLATION`** in the same
+> second as `INITIAL_PURCHASE`. `CANCELLATION` is an UNHANDLED type, so it lands on exactly this
+> branch, carrying the same anonymous id.
+>
+> 📐 **Measured in production:**
+>
+> | | |
+> |---|---|
+> | anonymous `INITIAL_PURCHASE` (guard caught, recorded) | **19** |
+> | the `CANCELLATION` that follows each one | **19 expected** |
+> | anonymous `unhandled` traces actually recorded | **0** |
+> | **silently lost** | **19** |
+>
+> The 3 `unhandled` traces that DID land are the 3 valid-id purchases. **Every single
+> anonymous-id CANCELLATION trace since this code shipped has been dropped**, and the only reason
+> anybody knows is that the founder pasted a Postgres log.
+>
+> **Enforcement:** `lib/subscriptions/opsEventUserId.test.ts` — 5 arms, 1 falsified (restore the
+> raw id → red, naming the call). The population arm **parses every `recordOpsEvent` call in the
+> route by walking to its matching paren**, because a hand-typed list would have contained the
+> writer I had read and not the one I had not — and because a character-budget region has caused
+> a file to fall out of its own population three times here. One arm uses the **real id from the
+> log**, not a synthetic one.
+>
+> ✅ **THE 11:08:56 ERROR IS THIS DEFECT, AND I SAID IT WAS NOT.** I wrote *"the failing statement
+> is unattributed"* and theorised an integration configured in RevenueCat's dashboard writing to
+> Supabase directly. **The founder checked: there are no integrations, only our own webhook.**
+>
+> Two pieces of evidence settle it, and both were available when I guessed:
+> 1. **The error carries the FULL 47-character id.** The guard only ever stores a 24-character
+>    truncation (`app_user_id_shape`, confirmed on all 19 rows). The unhandled branch was the only
+>    place passing the full raw id.
+> 2. **The sequence.** 11:08:55 `INITIAL_PURCHASE` → guard → recorded. 11:08:56 `CANCELLATION`
+>    → unhandled branch → full raw id → **22P02**.
+>
+> ⚠️ **MY ERROR WAS REASONING FROM ONE EVENT.** I checked that `INITIAL_PURCHASE` is a handled
+> type, concluded the unhandled branch *"never ran"*, and never asked what else arrived in that
+> second — which this repo had already written down in `SUBS-CANCELLATION-TIER-01`.
+
+### 🔴 `OPS-RC-UNATTRIBUTED-UUID-01` — **CLOSED 2026-10-15, SAME DAY, ATTRIBUTED. The premise was mine and it was wrong** ⚙️ **NO BOARD**
+
+> ✅ **IT IS `OPS-ANON-USER-ID-01` — the defect fixed in the same breath as filing this.** I filed an
+> item saying the writer was probably outside the repo, having checked five repo paths and cleared
+> them all. **The sixth path was the one I had just fixed**, and I ruled it out by reasoning that
+> `INITIAL_PURCHASE` is a handled type — true, and not the question. RevenueCat sends `CANCELLATION`
+> one second later, it is UNHANDLED, and that branch carried the full raw id.
+>
+> 📐 **19 traces lost, measured.** ⚠️ **Two facts were in front of me when I guessed**: the error
+> carries the full 47-char id while the guard stores a 24-char truncation, and this repo already
+> documented the two-events-one-second pattern in `SUBS-CANCELLATION-TIER-01`. **I escalated to an
+> external-cause theory before exhausting the internal one.** Kept as the record of that, not deleted.
+> → `feedback-ask-what-else-arrived-in-that-second`
+
+> 🔴 `22P02 invalid input syntax for type uuid: "$RCAnonymousID:..."`, 2026-10-15 11:08:56Z, and
+> **every repo path that could produce it has been checked and cleared**:
+>
+> | path | verdict |
+> |---|---|
+> | `webhooks/revenuecat` guard | ✅ recorded correctly at 11:08:55 with a null user |
+> | `webhooks/revenuecat` unhandled branch | ✅ not reached — `INITIAL_PURCHASE` is a handled type (and now fixed anyway, `OPS-ANON-USER-ID-01`) |
+> | 3 × `apply_subscription_event` callers | ✅ all pass a real UUID (`user.id`, or a guarded `appUserId`) |
+> | client code | ✅ `Purchases.logIn/configure` talk to RevenueCat only; nothing sends an RC id to our API |
+> | repo edge functions / SQL | ✅ none exist; no migration mentions `app_user_id` |
+>
+> ⚠️ **So the writer is probably OUTSIDE THE REPO** — most plausibly a RevenueCat→Supabase
+> integration configured in RevenueCat's dashboard. That is `STRAVA-WEBHOOK-OBS-01`'s exact class:
+> state no repo code can see, failing silently until someone reads a log.
+>
+> **What would settle it, and neither is a build:** a Postgres log line carrying the **statement**
+> (not just the message), or RevenueCat's integrations list. 🔻 **If something external is
+> half-writing subscription rows, that matters more than the log line does.**
+
+### 🔵 `MARKETING-NOTE-COPY-MATCH-01` — the HOMEPAGE finds an engine coach note by matching the word "ceiling" *(filed 2026-10-15, P2)* 🧭 **DESIGN BOARD** *(marketing surface; the seam rule puts the encoding here)*
+
+> 🔴 **FOUND BY BREAKING IT**, while shipping §12 Amendment 2's note rewording.
+> `components/marketing/WhenItNotices.tsx:98`, rendered on **`app/page.tsx`** — the homepage —
+> locates the session to quote like this:
+>
+> ```ts
+> .find(s => s.type === 'easy' && (s.coach_notes?.[0] ?? '').includes('ceiling'))
+> const coachNote = noted?.coach_notes?.[0] ?? null
+> ```
+>
+> **It classifies an engine-authored session by a WORD IN RUNNER-FACING COPY**, which is the
+> recorded label-based-classification class (D-17) on a marketing surface. Change the note's
+> wording and `coachNote` goes null, so a live homepage section **renders nothing, silently**.
+> My first cut of Sims's amendment did exactly that.
+>
+> ⚠️ **NOT A BUG TODAY** — the note keeps the word, and `§12 Am.2`'s own test now asserts it
+> does, with the reason stated. So the coupling is visible rather than invisible. **This item is
+> to remove the coupling, not to fix a break.**
+>
+> 🔑 **THE HONEST FINDING IS ABOUT MY PROCESS, NOT THE CODE.** `/build` § 4 demands the
+> consumer check cover **app AND website, every time**, and `CLAUDE.md` says it in bold because
+> the founder named this exact class. **I recorded "Website: none" in my analysis block and the
+> suite caught me.** The check is only as good as the grep behind it: I searched for consumers
+> of the SIGNAL (`buildAdjustmentSignals`) and never for consumers of the STRING.
+>
+> **Shape of the fix:** the component should select the session structurally — the engine
+> already stamps what this is. Candidates: match on `session.type === 'easy'` plus the presence
+> of any `coach_notes` entry, or have the trigger stamp a field the marketing surface can read.
+> ⚠️ Design Board, because it changes what a marketing section renders and the seam rule puts
+> the encoding there.
+>
+> 📐 **MEASURED, SO THE NEXT PERSON DOES NOT HAVE TO: it is ONE instance, not two.** I wrote
+> "re-measure, `PlanPage.tsx` may be a second" and then checked — `PlanPage.tsx:50` does
+> `const howTo = s.coach_notes?.[0]`, which RENDERS the note and does not classify by its text.
+> `WhenItNotices.tsx:98` is the only copy-matcher.
+
 ### 🔴 `ADJUST-SESSIONDAY-PREFIX-01` — the zone-drift and EF triggers are fed NOTHING on live data *(filed 2026-10-15, P1)* 🏃 **COACHING BOARD**
 
 🔴 **FOUND BY CONVERTING THE BACKTEST HARNESS TO THE ROUTE'S OWN ASSEMBLER, which is the only

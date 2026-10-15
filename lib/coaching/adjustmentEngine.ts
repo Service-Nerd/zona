@@ -287,7 +287,30 @@ export function buildAdjustmentSignals(req: AdjustmentRequest): AdjustmentCheckI
     skip_reason: c.skip_reason ?? null,
   }))
 
-  const thisWeekAnalyses = analyses.filter(a => (a.session_day ?? '').startsWith(`week_${weekN}_`))
+  // 🔴 §12 Amendment 2 (`ADJUST-SESSIONDAY-PREFIX-01`, Coaching Board 2026-10-15) —
+  // THIS WEEK'S ANALYSES ARE SELECTED ON `week_n`, NEVER ON A `session_day` PREFIX.
+  //
+  // This line read `(a.session_day ?? '').startsWith(`week_${weekN}_`)`, and it matched
+  // NOTHING. Measured in production: **154 `run_analysis` rows, ZERO carry the prefix**,
+  // every one is a bare day key (`mon`, `tue`, …), and the oldest surviving row
+  // (2026-04-28) is already bare. 120 of them carry `hr_in_zone_pct`.
+  //
+  // So `hrInZoneData` was ALWAYS EMPTY and `efTrendPct` ALWAYS NULL for every real
+  // runner, and §12's drift detector had no input at all. Nothing failed: the writer's
+  // format changed, `.startsWith()` returned false, and a trigger quietly stopped
+  // having data.
+  //
+  // 🔑 THE CONTRADICTION WAS THREE LINES APART IN THIS FILE. `chronological()` above
+  // and the session lookup below both read `session_day` as a BARE DAY; only this line
+  // expected a prefix, and it was the one feeding two triggers. Two of three readers
+  // agreed with production.
+  //
+  // ⚠️ `week_n` is the right axis and is populated: **88 of 88 live rows**, 78 of them
+  // with HR. `app/api/analyse-run/route.ts` still strips a `week_${n}_` prefix on write,
+  // which is a silent no-op now that every producer sends a bare day
+  // (`autoAnalyse.ts`, `DashboardClient.tsx`) — that strip is harmless and is left alone
+  // deliberately, because removing it would reject any historical row that still has one.
+  const thisWeekAnalyses = analyses.filter(a => a.week_n === weekN)
   const plannedKm = week?.weekly_km ?? 0
 
   // ⚠️ A FETCH FAILURE MUST NOT READ AS "THE RUNNER DID NOTHING" — that is §68

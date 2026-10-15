@@ -1572,6 +1572,97 @@ missed `65% in zone / 26% above cap` case.
 
 **Config.** `GENERATION_CONFIG.EASY_RUN_ZONE_CAP = 'Z2_TOP'` — resolves at runtime to the top of `GENERATION_CONFIG.ZONES.Z2` for the user's active zone method.
 
+### §12 Amendment 2 — the drift detector's input is `week_n`-scoped, and its note carries the ceiling *(Coaching Board 2026-10-15, `ADJUST-SESSIONDAY-PREFIX-01`)*
+
+🔴 **AMENDMENT 1 REPAIRED THE DETECTOR AND IT HAS NEVER ONCE RUN.** `TRIGGER-AUDIT-01`
+(2026-09-14) moved the `zone_drift` trigger off the non-directional `zoneDisciplineScore`
+onto `zoneDriftScore` and stopped it clobbering `coach_notes`. **Its input was starved the
+whole time, so the repaired detector has zero production firings.**
+
+`buildAdjustmentSignals` selected this week's analyses with
+`(a.session_day ?? '').startsWith(`week_${weekN}_`)`.
+
+📐 **MEASURED IN PRODUCTION (read-only), and it matched nothing:**
+
+| | |
+|---|---|
+| `run_analysis` rows, all time | **154** (88 live) |
+| carrying a `week_N_` prefix | **0** — and the oldest surviving row, 2026-04-28, is already bare |
+| distinct `session_day` shapes | `mon` `tue` `wed` `fri` `sat` `sun` |
+| carrying `hr_in_zone_pct` | **120** (78 live) |
+| `week_n` populated on live rows | **88 of 88**, 78 of them with HR |
+
+**So `hrInZoneData` was ALWAYS EMPTY and `efTrendPct` ALWAYS NULL for every real runner.**
+§12's ceiling was enforced in the plan and unwatched in the data.
+
+⚠️ **NOTHING FAILED, WHICH IS WHY IT LASTED.** The writer's format changed and the reader's
+filter did not: `.startsWith()` returned false, `app/api/analyse-run/route.ts`'s
+``week_${week_n}_`` strip became a silent no-op, and a trigger quietly stopped having
+inputs. **The strip is deliberately left in place** — removing it would reject any
+historical row that still carries a prefix.
+
+🔑 **THE CONTRADICTION LIVED THREE LINES APART IN ONE FILE, and that is the class this
+amendment governs.** `chronological()` and the session lookup read `session_day` as a **bare
+day**; only the week filter expected a prefix. **Two of three readers agreed with
+production.** A file holding two incompatible beliefs about one field's shape is the defect;
+the prefix was only the instance.
+
+**Ruled:** select on **`week_n`**. `session_day` is a bare day key and no reader may parse it
+as a composite value.
+
+#### ✋ Sims's amendment — the note carries the number
+
+*"A note that says 'slow down' is `listen to your body` wearing a prescription's clothes. It
+tells her the outcome was wrong without telling her what to do differently."*
+
+The drift note now cites the session's **own `hr_target`** — *"Zone 2 only. Keep HR < 143 bpm:
+if it climbs, slow down."* ⚠️ **It quotes the string the engine already resolved and never
+re-derives a ceiling**: §14 picks Karvonen or %MaxHR per runner, ADR-015 owns every display
+string, and a second computation of the same ceiling here is exactly how
+`zoneDisciplineScore` and `zoneDriftScore` came to disagree. Falls back to the generic line
+when a plan carries no HR targets — an iPhone-only runner gets none (ADR-011 §5), and naming
+a number they cannot see is worse than the instruction.
+
+#### ⚖️ What this amendment does NOT do, each stated rather than implied
+
+- 🔴 **The evidence against the detector was VOID, and the submission brought it.** It argued
+  that `zone_drift` is 3 of 19 production adjustments and **3 of 3 reversions**, against 16
+  firings and zero reversions elsewhere. **All three reversions pre-date Amendment 1's repair
+  on 2026-09-14** (2026-04-27, 2026-08-17 ×2). Runners rejected the detector that flagged
+  *too-easy* running as drift and deleted their other coach notes — the one this board had
+  already condemned. And `shadow_load`, also `flag_for_review`, fired once and was **not**
+  reverted, which kills *"runners reject notes"* as the mechanism. **The conflict scan caught
+  this, not the submission.**
+- ⚠️ **§69's verdict was CHECKED, not assumed.** `computeReshapeMagnitude` returns **`'low'`**
+  for `adjustmentType === 'flag_for_review'`, so a note-only adjustment auto-applies by
+  design. The builder's own `requiresConfirmation: false` is **informational only**
+  post-Wave-3 and must never be cited as the authority.
+- 📐 **Blast radius, measured on real histories:** **2 firings across 25 replayed weeks, 2
+  runners.** Per-week analyses run 3–6 against `ZONE_DRIFT_MIN_ROWS = 4`, so weeks below the
+  minimum stay silent.
+- **No numeric moved.** `ZONE_DRIFT_ABOVE_CEILING_PCT = 20`, `ZONE_DRIFT_MIN_ROWS = 4`,
+  `ZONE_DRIFT_WINDOW = 8` and `EASY_RUN_ZONE_CAP = 'Z2_TOP'` are unchanged. This restores an
+  input; it does not retune a threshold — and Amendment 1's own caveat stands, that the cut
+  was set on **n = 42 rows**, called *thin*, and has **still never been exercised live**.
+- 🔻 **`ef_decline` stays silent after this fix and its zero is GENUINE, not starvation.**
+  Two causes that looked identical before the harness was corrected. Out of scope here, and
+  this ruling must not be read as clearing it.
+- 🔻 **NOT RULED: whether repeated drift should change the PRESCRIPTION rather than add a
+  note.** 📊 Seiler: *"a sentence is not a mechanism. If 20% of easy running sits above the
+  ceiling repeatedly, the prescription is too fast, and that is a plan problem, not a copy
+  problem."* Recorded as the larger open question.
+
+**Enforcement.** `lib/coaching/adjustmentSessionDayAxis.test.ts` — 7 arms, 2 falsified
+(restore the prefix filter → 3 red; drop the ceiling from the note → 1 red). Its last arm
+guards the **class**: it fails if any reader in `adjustmentEngine.ts` parses `session_day`
+with `startsWith` / `replace` / `match` / `slice`, with comments stripped so the file's own
+prose about the old format cannot trip it.
+
+⚠️ **Not mechanically checkable by `validatePlan()`** — same reason §71 records: this governs
+a **read of historical analyses**, not a generated plan, so no plan invariant can see it. The
+test file is the enforcement.
+
+
 ---
 
 
