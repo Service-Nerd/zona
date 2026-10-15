@@ -19,10 +19,20 @@
  * ── WHAT IT GATES, AND WHAT IT DELIBERATELY DOES NOT ─────────────────────────
  * Three rules, in descending order of how much I trust them:
  *
- *  1. NEW SLOW TEST (the one that earns its keep). Any test at or above
- *     `REPORT_MS` that is not in the baseline FAILS. This is the moment the
- *     decision is cheap — a test appearing at 9s is a choice, not a discovery
- *     made six weeks later on a loaded CI runner.
+ *  1. NEW SLOW TEST (the one that earns its keep). A test not in the baseline
+ *     FAILS once its LOAD-NORMALISED duration clears the line. This is the
+ *     moment the decision is cheap — a test appearing at 9s is a choice, not a
+ *     discovery made six weeks later on a loaded CI runner.
+ *
+ *     🔴 IT USED TO COMPARE ABSOLUTE MILLISECONDS, AND RULE 3 BELOW ALREADY DID
+ *     NOT (CI-SLOW-LOAD-01). SUITE-CONTENTION-01, 2026-10-15: `sessionReconcile
+ *     "(distance, km)"` failed this rule at **1,572 ms on a 3.32x run** — 473 ms
+ *     normalised, and 965 ms on a quiet one. The same morning the rule produced
+ *     **SEVEN** findings at 3.16x and **ZERO** at 1.61x, none of them belonging
+ *     to the commit under test. **The remedy had been applied to one of two
+ *     rules in the same file**, and the variable that fixes it was declared
+ *     three lines above. The hard wall (rule 2) stays absolute on purpose: a
+ *     timeout is an absolute thing.
  *
  *  2. HARD WALL. No test may exceed `HARD_FRACTION` of `testTimeout`.
  *
@@ -82,6 +92,40 @@ const HARD_FRACTION = 0.7
  * REPORT_MS is still LISTED; only a genuinely slow newcomer fails.
  */
 const NEW_FAIL_MS_MULTIPLE = 1.5
+
+/**
+ * Rule 1's whole decision, as a pure function, so it can be tested in both
+ * directions without a 160-second suite run.
+ *
+ * ⚠️ IT EXISTED ONLY AS INLINE SCRIPT LOGIC UNTIL 2026-10-15, AND THE SCRIPT HAD
+ * NO TESTS AT ALL — `grep` for one returned nothing, while this repo's standing
+ * rule is that a measurement script is a check and a check needs a test. The
+ * defect it had was arithmetic, which is the kind a unit test catches instantly
+ * and a 160-second run catches only if you happen to be loaded that minute.
+ *
+ * `load` is this run's suite total over the baseline's. It mixes machine
+ * contention with SUITE GROWTH since the baseline was written, and both belong
+ * here: a test at 1,572 ms in a suite 3.3x heavier than when the line was drawn
+ * is not a 1,572 ms test, whichever cause did it.
+ */
+export function newSlowVerdict(
+  ms: number,
+  load: number,
+  reportMs: number = REPORT_MS,
+  failMultiple: number = NEW_FAIL_MS_MULTIPLE,
+): { verdict: 'fails' | 'listed'; normalisedMs: number; failsAboveMs: number } {
+  // A load factor that is absent, zero or nonsense must not divide the
+  // measurement away — an unmeasurable load degrades to the old absolute
+  // behaviour, never to no check.
+  const safeLoad = Number.isFinite(load) && load > 0 ? load : 1
+  const normalisedMs = Math.round(ms / safeLoad)
+  const failsAboveMs = Math.round(reportMs * failMultiple)
+  return {
+    verdict: normalisedMs >= failsAboveMs ? 'fails' : 'listed',
+    normalisedMs,
+    failsAboveMs,
+  }
+}
 /** A step change, not creep. See the warning above. */
 const DRIFT_TOLERANCE = 1.4
 /** Orientation only — CI-TIMEOUT-01's measured runner ratio, in isolation. */
@@ -107,8 +151,13 @@ function readSlowTests(): Array<{ file: string; title: string; ms: number }> {
   //
   // A busier machine scales EVERY test, so a test's SHARE of the suite's own
   // total is load-invariant. That is the number rule 3 compares now. The hard
-  // wall and the new-slow-test rule stay in absolute ms, because a timeout is
-  // an absolute thing and a newcomer at 9 s is a choice whatever else is running.
+  // wall stays in absolute ms, because a timeout is an absolute thing.
+  //
+  // 🔴 THIS SENTENCE USED TO INCLUDE "and the new-slow-test rule", and it was
+  // TRUE when written. SUITE-CONTENTION-01 made it false in the same commit that
+  // fixed the rule — the third "a comment that was true when it was written"
+  // in this repo in one day. Rule 1 normalises too now; only the wall does not.
+  // `testDurationGate.test.ts` asserts the claim and the code agree.
   let suiteMs = 0
   for (const suite of report.testResults ?? []) {
     const file = String(suite.name).replace(process.cwd() + '/', '')
@@ -191,12 +240,14 @@ for (const s of slow) {
   console.log(`          (orientation only: x${CI_RATIO_FOR_ORIENTATION} isolated-CI ratio = ~${ci} ms — NOT a gate, see header)`)
 
   if (!b) {
-    if (s.ms < REPORT_MS * NEW_FAIL_MS_MULTIPLE) {
-      console.log(`          (listed, not gated: under ${Math.round(REPORT_MS * NEW_FAIL_MS_MULTIPLE)} ms — too close to the reporting line to call)`)
+    const v = newSlowVerdict(s.ms, LOAD)
+    if (v.verdict === 'listed') {
+      console.log(`          (listed, not gated: ${v.normalisedMs} ms at this run's ${LOAD.toFixed(2)}x load, under ${v.failsAboveMs} ms — too close to the reporting line to call)`)
       continue
     }
     failures.push(
-      `NEW SLOW TEST — ${s.file} · "${s.title}" at ${s.ms} ms.\n` +
+      `NEW SLOW TEST — ${s.file} · "${s.title}" at ${s.ms} ms ` +
+      `(${v.normalisedMs} ms normalised for this run's ${LOAD.toFixed(2)}x load).\n` +
       `    Make it faster, or add it to ${BASELINE} with a reason. Deciding now is cheap;\n` +
       `    discovering it on a loaded CI runner in six weeks is not.`,
     )
@@ -232,6 +283,9 @@ for (const s of slow) {
 for (const b of baseline) {
   // Only worth mentioning for a test that was genuinely slow — a registered
   // entry near the reporting line would print this every other run.
+  // ⚠️ `b.ms` is the BASELINE's own measurement, taken at the baseline's load, so
+  // it is compared raw. Normalising it would be comparing a number to itself
+  // through a factor that does not apply to it.
   if (b.ms >= REPORT_MS * NEW_FAIL_MS_MULTIPLE && !slow.some(s => s.file === b.file && s.title === b.title)) {
     console.log(`  · ${b.file} · ${b.title.slice(0, 50)} — now under ${REPORT_MS} ms. Drop the baseline entry.`)
   }

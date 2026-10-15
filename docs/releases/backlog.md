@@ -1759,54 +1759,83 @@ about to BUILD**, and the cost here was his time, not mine.
 >
 > **Governance:** Coaching Board **exempt** (relocation, no prescription delta); Design Board and SLT not required.
 
-### 🟡 `SUITE-CONTENTION-01` — declared inside a baseline reason, filed nowhere, for twenty days *(filed 2026-10-15, P2)* ⚙️ **NO BOARD** *(tooling)*
+### ✅ `SUITE-CONTENTION-01` — **SHIPPED 2026-10-15**. Rule 1 normalises by load; the item's own prescription was backwards ⚙️ **NO BOARD** *(tooling)*
 
-🔴 **FOUND BY `check:slow` GOING RED ON A TEST NEITHER OF TODAY'S SHIPS WROTE.** The item was named on
-2026-09-25, inside a `reason` string in `lib/plan/__fixtures__/testDurationBaseline.json`:
+🔴 **DECLARED INSIDE A BASELINE `reason` STRING ON 2026-09-25 AND FILED NOWHERE FOR TWENTY DAYS.**
+`grep -rl SUITE-CONTENTION-01 docs lib scripts` returned **one** hit: the JSON string that named it.
+Its instruction — *"widen the worker pool or split the plan-sweep tests, not add a fourth entry"* —
+sat in a field only `check-test-duration.ts` reads, with nothing scheduling it.
 
-> *"a borderline test pushed over the reporting line by the contention from six test files added
-> today, not by anything in the test. ⚠️ **THIS IS THE THIRD BASELINE ENTRY IN ONE DAY FOR THE SAME
-> REASON** — the suite has grown 383 → 390 files and the borderline band is being consumed one test
-> at a time. **Filed as SUITE-CONTENTION-01: the next person should widen the worker pool or split
-> the plan-sweep tests, not add a fourth entry.**"*
+🔴 **AND THE FIX WAS NEITHER OF THOSE. THE REMEDY HAD BEEN APPLIED TO ONE OF TWO RULES IN THE SAME
+FILE.** `CI-SLOW-LOAD-01` made **rule 3** (step-change drift) compare each test's SHARE of the suite
+total, with a header arguing the exact case: *"the same test measured 2,085 ms in the full parallel
+suite and ~700 ms in isolation."* **Rule 1 (NEW SLOW TEST) was left comparing absolute
+milliseconds** — and `LOAD`, the variable that fixes it, was declared **three lines above it**.
+**Eleventh recorded instance of the class, second of the day.**
 
-📐 **IT WAS NEVER FILED.** `grep -rl SUITE-CONTENTION-01 docs lib scripts` → **one** hit, the baseline
-JSON itself. So the instruction *"do not add a fourth entry"* has been sitting in a field that only
-`check-test-duration.ts` reads, with nothing scheduling the fix. **This repo's own rule: a declared
-reason is not a scheduled fix, and a note you intend to write up later is a note that does not
-exist.** Twenty days, and the suite is now **577 files** against the 390 that prompted it.
+📐 **MEASURED, four runs on one unchanged commit:**
 
-📐 **MEASURED TODAY, three runs plus a control:**
-
-| run | `check:slow` | finding |
+| run | load | rule-1 findings |
 |---|---|---|
-| `verify` while a sibling session ran its own full suite | **exit 1** | **7** NEW SLOW TESTs — noteVocabulary ×2, reentryCause, sessionDistanceReach, goalPastCv, sessionReconcile, planSchemaConformance |
-| `verify` quiet | **exit 1** | **1** — `sessionReconcile · "warm-up + main-set + cool-down = session total (distance, km)"` at 1572 ms |
-| `npm test` + `check:slow` quiet | **exit 0** | *"19 slow test(s), all baselined"* |
-| **control: clean worktree at HEAD, no uncommitted work** | **exit 0** | *"18 slow test(s), all baselined"* |
+| `verify`, a sibling session running its own suite | **3.16×** | **7** |
+| `verify`, quiet | **3.32×** | **1** — `sessionReconcile "(distance, km)"` at 1,572 ms |
+| `npm test` + `check:slow`, quiet | **1.61×** | **0** |
+| clean worktree at HEAD | ~1.6× | **0** |
 
-⚠️ **NONE OF THE NINE DISTINCT TESTS BELONGS TO EITHER SHIP.** Every one is a plan-corpus generator
-whose wall-clock sits in the 0.8–1.6 s band, and they cross the 1,000 ms reporting line as a
-function of **machine load**, which is exactly what the 2026-09-25 note said.
+1,572 ms at 3.32× is **473 ms normalised**; the same test measures **965 ms** on a quiet run. Not one
+of the nine distinct tests across those runs belonged to the commit under test.
 
-🔑 **AND THE ONE QUIET FINDING IS A PARAMETERISED TWIN OF AN ALREADY-BASELINED TEST.**
-`sessionReconcile.test.ts:122` is `it(\`warm-up + main-set + cool-down = session total (${metric}, ${units})\`)`.
-The baseline carries the **`mi`** variant at 1,503 ms. The **`km`** variant — the same test body, the
-other parameter — was left out. **Tenth recorded instance of *the remedy was applied to one twin*,**
-and the first one inside a test-infrastructure baseline rather than product code.
+📐 **THE PRESCRIPTION IS FALSIFIED WITH DATA, AND IT POINTED THE WRONG WAY.** Both pool widths run
+the identical population (1,751 suites / 5,256 tests / 0 failed — checked, because a short
+population is how this comparison would lie):
 
-**The build.** The note names the two real options and neither is "add an entry": **widen the worker
-pool** (`poolOptions`/`maxWorkers` — the contention is the cause, and the band is being eaten one
-test at a time) or **split the plan-sweep files** so a corpus generator is not contending with 576
-other files. ⚠️ **Then decide what `check:slow` should do about load at all** — its own header says
-it *"measures the LOCAL machine under full-suite contention"* and that it cannot see CI, so a
-load-sensitive 1,000 ms line will keep producing findings that are true and not about the test.
-⚠️ **Falsify by running the suite twice at different loads and confirming the verdict does NOT
-move** — a gate whose answer depends on what else is running is the `NOISE-GATE-01` shape, and this
-repo records four times that a guard firing on ordinary work gets switched off.
-🔻 **Deliberately NOT baselined by `ADJUST-ENGINE-ENTRY-01`**, on the 2026-09-25 note's own
-instruction. That ship adds **+1 file / +12 tests** and so contributes to the cause; it does not
-cause the finding.
+| pool | suite test-time | LOAD | tests ≥ 1,000 ms |
+|---|---|---|---|
+| default (9 forks on 10 CPUs) | 182,181 ms | **2.15×** | 27 |
+| `--maxWorkers=4` | **81,725 ms** | **0.96×** | **12** |
+
+**Narrowing** the pool halves per-test duration. Widening it — the note's instruction — moves
+per-test time the wrong way, because the suite is CPU-bound plan generation and more parallelism
+means less CPU each. ⚠️ **Not adopted**, deliberately: it would re-baseline all 24 duration entries
+for a reason that is not about the code, and the gate is load-invariant now so it does not need to.
+🔻 **Wall clock was NOT measured** and is the open half — filed as `SUITE-POOL-WALLCLOCK-01`.
+
+✅ **Shipped:** rule 1's decision is now `newSlowVerdict(ms, load)`, a pure exported function.
+⚠️ **The hard wall (rule 2) stays absolute on purpose** — a timeout is an absolute thing — and an
+arm pins that, because "normalise everything" is the obvious over-correction. ⚠️ **An unmeasurable
+load (0, NaN, a baseline with no `suiteMs`) degrades to the OLD absolute rule, never to no rule.**
+
+🔑 **THE SCRIPT HAD NO TESTS AT ALL** — folded in. `lib/ops/testDurationGate.test.ts`, 8 arms, both
+directions, using the four real load figures rather than hypotheticals.
+
+🔴 **AND THE CHANGE CREATED A STALE COMMENT IN ITS OWN COMMIT, WHICH THE TEST NOW GUARDS.** Line 154
+read *"the hard wall and the new-slow-test rule stay in absolute ms"* — **true when written**,
+falsified by this fix. **Third "a comment that was true when it was written" in this repo in one
+day.** Both halves asserted together now.
+
+⚠️ **TWO OF MY OWN TEST ARMS WENT RED FOR MY REASONS, NOT THE CODE'S**, and reading why was the
+point: `2999/2` is `1499.5`, which `Math.round` takes to **1,500**, so my "boundary" case was off by
+one; and a `toContain` on prose went red on a phrase that **is** in the file but **wrapped across two
+comment lines** — the matcher was asserting the line width. Falsified both ways: reverting the
+normalisation turns 4 arms red on the incident case, and normalising the hard wall too turns the
+wall arm red.
+
+### 🔵 `SUITE-POOL-WALLCLOCK-01` — narrowing the worker pool halves per-test time; the wall-clock cost is unmeasured *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(tooling)*
+
+Measured during `SUITE-CONTENTION-01`: `--maxWorkers=4` takes the suite's total test-time from
+**182,181 ms to 81,725 ms** on the identical population, and the count of tests over the 1,000 ms
+reporting line from **27 to 12**. So per-test fidelity improves sharply with *less* parallelism.
+
+⚠️ **I measured per-test duration and NOT wall clock**, which is the number anyone waiting on
+`npm run verify` actually cares about, and the two trade against each other. Fewer workers means
+each test is faster and the suite probably finishes later.
+
+**The build.** Measure wall clock at 4 / 6 / 9 / 10 workers, three runs each because this is exactly
+the band where one run proves nothing. Then decide what the suite is optimising for and write the
+reason into `vitest.config.ts` beside the setting. ⚠️ **If a pool setting is adopted, every duration
+baseline entry moves** — re-baseline with the declared reason, per `cohort:shape`'s rule, and never
+to turn something green. 🔻 **P3: the gate is load-invariant since `SUITE-CONTENTION-01`, so nothing
+is broken while this waits** — it is a speed and fidelity question, not a correctness one.
 
 ### 🟡 `QUALITY-TYPE-NO-OWNER-01` — nine hand-written answers to *"is this a quality session"* *(filed 2026-10-15, P2)* 🏃 **COACHING BOARD**
 
