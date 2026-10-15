@@ -225,9 +225,10 @@ describe('A — the double reproduces the reads the route depends on', () => {
    * 🔴 THE ARM EVERY OTHER ARM RESTS ON. A fake that silently returns nothing makes
    * a 401 look like a tier bug and makes `{ count: 0 }` look like a first plan. This
    * repo's recorded failure is a check that passes for a reason other than its name,
-   * so the double is proven POSITIVELY here rather than inferred from green arms.
+   * so the double is proven POSITIVELY here rather than inferred from the fifteen green arms
+   * below it.
    */
-  it('serves every shape the route asks for, through the mocked client', async () => {
+  it('A1 — serves every shape the route asks for, through the mocked client', async () => {
     const { createClient } = await import('@supabase/supabase-js')
     const sb = createClient('url', 'key') as unknown as {
       from: (t: string) => any
@@ -255,7 +256,7 @@ describe('A — the double reproduces the reads the route depends on', () => {
     expect((await sb.rpc('check_rate_limit')).data).toBe(true)
   })
 
-  it('filters by the column it was given, so a wrong user id reads as absent', async () => {
+  it('A2 — filters by the column it was given, so a wrong user id reads as absent', async () => {
     const { createClient } = await import('@supabase/supabase-js')
     const sb = createClient('url', 'key') as unknown as { from: (t: string) => any }
     expect((await sb.from('user_settings').select('*').eq('id', 'someone-else').maybeSingle()).data).toBeNull()
