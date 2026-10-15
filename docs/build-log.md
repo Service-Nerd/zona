@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-15 — FOUNDATION-META-ALIAS-01 · the comment was true when it was written, and that is the whole problem
+**Shipped:** The free-tier plan intro and the enrichment stamp stopped being silently dropped on any plan whose start is delayed. Found while analysing a refactor, not reported by anyone.
+
+**Dev learning:** The route mutated `rulePlan.meta` and returned `composedRule`, relying on them being the same object — and it **explained in a comment why that was safe**. It was safe. On 3 September. On 15 September a different commit added `meta: { ...assembled.meta, uncovered_runway_weeks }` to the composer for an unrelated coaching reason, and from that moment the comment was a lie that read like documentation. Neither commit referenced the other. **Thirty days.** The real lesson is not "comments go stale" — it is that `composePlanWithFoundation` returned `meta` in **three different identity states** depending on its input: the caller's own plan object, a fresh plan sharing the caller's meta, or fresh both. A function that aliases *conditionally* is a trap, because it rewards the caller who gets it wrong in the common case and punishes them in the rare one. I fixed the three call sites, but the fix that matters is making the alias unconditional — now a caller who mutates what it passed in is wrong *every* time, so the tests say so in seconds instead of in production in December.
+
+**Product/creator learning:** The thing that went missing was CA-01 — one AI-written line on a free runner's first plan. It is the only AI surface a free user gets, deliberately: the wedge moment. So the cheapest, most strategically loaded sentence in the product was the one quietly deleted, and the deletion was invisible because an absent field renders as nothing rather than as an error. **Also: 0 of 35 stored plans have ever carried that field**, which is a separate and possibly bigger question I filed rather than chased.
+
+**AI-building learning:** I nearly reported a live-damage number and it would have been wrong. `enrichment: ABSENT` has a second, benign cause — plans generated before the field existed — and **17 of the 32 UNAFFECTED plans also have it absent.** So the one affected row is *consistent with* the defect and not attributable to it. The discipline that saved it was asking what else produces this symptom before quoting a count. Same shape as the exposure figure: a uniform 6-52 week sweep says 76.6% of free plans break, which is true and useless, because real runners pick races 8-20 weeks out and the live figure is 3 of 35. **Two numbers, both honest, measuring different things — and the big one is the one that would have got quoted.**
+
+**The honest bit:** I only found this because I was reading the route line by line for a refactor and the words *"composedRule.meta IS rulePlan.meta"* didn't match what I'd just read in the composer. If I had trusted the comment — which is what comments are for — I would have carried the bug into the refactor and probably blamed the refactor for it. And my first regression test failed for the wrong reason: I picked a 10-week runway for a marathon, §44 correctly refused it, and the arm went red on a `PrepTimeError` rather than on the thing it was testing. A red test is not a passing falsification.
+
+**Hook material:** A code comment that was *true the day it was written* cost a free runner the one AI-written sentence in their plan, for 30 days, across 76.6% of a 6-52 week sweep. Nobody typed anything wrong. The comment described another file's internals, and that file changed twelve days later.
+
+**Postable?:** yes — "the comment was true when it was written" is the sharpest version of the stale-docs post I have, because it removes the easy moral (*write better comments*) and leaves the real one: **a load-bearing assumption about another module needs a test, not a sentence.**
+
 ## 2026-10-14 — DOC-TOKEN-DRIFT-01 · the source of truth carried the value its own fix replaced
 **Shipped:** A gate that checks every hex in `CLAUDE.md`'s design-token table against `globals.css`. Shipped inside `CTA-INLINE-PAINT-01`'s commit; it gets its own entry because it has its own registry row and its own lesson.
 
