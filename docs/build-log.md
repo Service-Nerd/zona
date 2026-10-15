@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-15 — ENGINE-ENTRY-01 · the tests that said "there is no unit-testable seam" were describing the route, not the problem
+**Shipped:** The coaching engine's synchronous path moved behind one entry point. The route went from importing 18 engine modules to 7, and from 806 lines to 605.
+
+**Dev learning:** The thing I expected to be hard — moving the engine — was mechanical, because `ENGINE-PURITY-GATE-01` had already proved the boundary was standing. The actual risk was somewhere I did not expect: **five test files gated this route by grepping its source text.** Move the logic and they go red, which is the good outcome; the trap is "fixing" them by pointing them at the new file, where the string still exists but may no longer be reachable. Two of them had written their own excuse in a comment: *"the refusal path needs auth, a request and a Supabase write, so there is no unit-testable seam."* That was a true statement about a Next.js handler and a false statement about the problem. A function that returns `{ kind: 'refusal', status: 422, body, telemetry }` has no auth and no Supabase, so the thing that was ungated for months — does a §113 refusal actually come back as the right shape? — is now four lines of assertion. **The refactor's real output was not fewer imports. It was that eight string-matches became behavioural tests.**
+
+**Product/creator learning:** The item's acceptance criterion was *"the 18 imports become 1"*, and it is arithmetically impossible: the same document that sets the goal assigns five of those eighteen to the caller, and one of them calls Anthropic. Nobody wrote a contradiction on purpose — the number was written as an aspiration in one paragraph and the constraint in another, and they were never multiplied together. **I nearly built against it.** The fix was mapping every imported symbol to the line that uses it, which took about fifteen minutes and turned an impossible target into a correct one (18 → 7).
+
+**AI-building learning:** Twice in this session I asserted something about the system instead of measuring it, and both times the measurement changed the work. I claimed the refusal telemetry's "assessed" level could never equal the API override — it can, because with that override set `derivedLevelsFor` returns it for all four levels and the engine's genuine read sits in a field the event does not carry. And I claimed four test files read the route's source; there were five, because one built its path with `join(__dirname, '..', '..', 'app', ...)` and my literal grep could not see it. **A negative grep is not proof of absence, and neither is a confident sentence about code I have read.** The habit that saved both: print the actual value before writing the claim.
+
+**The honest bit:** My very first regression test went red for the wrong reason. I picked a 10-week runway for a marathon, §44 refused it correctly, and the arm failed on a `PrepTimeError` rather than on the identity bug it existed to catch. For about a minute I had a red test and believed it was proving something. **A red test is not a passed falsification** — you have to read *why* it is red. Four falsifications later I trust these arms; I would not have trusted the first one.
+
+**Hook material:** Two test files contained the sentence *"there is no unit-testable seam"* as justification for grepping source code instead of running it. Both were true about the framework and false about the problem. Deleting the framework from the equation turned 8 string-matches into real assertions — and the acceptance criterion I was handed (18 → 1) was impossible against a constraint written two paragraphs above it.
+
+**Postable?:** yes — "your test says the code is untestable; it means the framework is" is a strong, specific post, and the impossible-acceptance-criterion bit is a good second beat about reading your own spec with a calculator.
+
 ## 2026-10-15 — FOUNDATION-META-ALIAS-01 · the comment was true when it was written, and that is the whole problem
 **Shipped:** The free-tier plan intro and the enrichment stamp stopped being silently dropped on any plan whose start is delayed. Found while analysing a refactor, not reported by anyone.
 
