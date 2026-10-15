@@ -1837,37 +1837,57 @@ baseline entry moves** — re-baseline with the declared reason, per `cohort:sha
 to turn something green. 🔻 **P3: the gate is load-invariant since `SUITE-CONTENTION-01`, so nothing
 is broken while this waits** — it is a speed and fidelity question, not a correctness one.
 
-### 🟡 `QUALITY-TYPE-NO-OWNER-01` — nine hand-written answers to *"is this a quality session"* *(filed 2026-10-15, P2)* 🏃 **COACHING BOARD**
+### 🔴 `QUALITY-TYPE-NO-OWNER-01` — **RE-MEASURED 2026-10-15 AND RE-FILED: it is eleven questions, not nine copies** *(P2)* 🏃 **COACHING BOARD**
 
-📐 **MEASURED while moving one of them** (`ADJUST-ENGINE-ENTRY-01`), by grepping `lib/` for the set:
+🔴 **I FILED THIS THIS MORNING OFF A GREP AND EVERY HEADLINE NUMBER WAS WRONG.** Re-derived
+before planning against it, which is the rule that exists for exactly this:
 
-| where | set |
+| | filed | derived |
+|---|---|---|
+| distinct multi-type sets | 9 | **11** |
+| bare `type === 'quality'` checks | not counted | **39** |
+| total sites | ~9 | **~50**, concentrated in `invariants.ts` and `ruleEngine.ts` |
+| governing doctrine | *"none"* | 🔴 **INV-CLASS-001/002 ALREADY EXIST**, cited five times in `CoachingPrinciples.md`, and `sessionRole.ts` is already the named owner |
+
+📐 **THE ELEVEN SETS, BY SITE COUNT:**
+
+| sites | membership |
 |---|---|
-| `lib/coaching/adjustmentEngine.ts` *(was the route)* | `quality · intervals · tempo` |
-| `scripts/backtest-adjustment-triggers.ts` | `quality · intervals · tempo` — **a second copy of the same line** |
-| `lib/plan/invariants.ts:5741` | `quality · intervals · tempo` |
-| `lib/plan/sessionComposer.ts:114` | `quality · tempo · intervals · hard` |
-| `lib/coaching/planAdjustment.ts:195` | `quality · intervals · tempo · long · hard` |
-| `lib/coaching/planAdjustment.ts:949`, `lib/coaching/coachingFlag.ts:19`, `lib/coaching/manualSessionFeedback.ts:42` and `:93`, `lib/coaching/prompts/postRaceReshape.ts:108` | `quality · intervals · tempo · hard` |
-| `lib/coaching/postRaceReshape.ts:53` | `quality · intervals · tempo · hard · long` |
-| `lib/plan/invariants.ts:2827` | `session.type === 'quality'` **alone** |
+| **13** | `quality · intervals · tempo` |
+| **11** | `quality · intervals · tempo · hard` |
+| 4 | `quality · intervals` |
+| 2 | `quality · hard` |
+| 2 | `quality · intervals · tempo · hard · long` |
+| 1 each | `+threshold`; `+threshold+vo2max+cruise+race`; `+long+race`; `+easy+run`; `quality · tempo`; `tempo·threshold·intervals·quality·vo2max·cruise` |
 
-🔴 **THEY DISAGREE ON `hard` AND `long`, AND BOTH DISAGREEMENTS ARE PRESCRIPTION-RELEVANT.** `type: 'hard'` is the 5K
-time trial (`SESSION-COLOUR-TT-01`) and `type: 'long'`/`'easy'`+`role: 'long_run'` is the long run — so whether a
-session counts as "quality" decides whether ENGINE-01's fitness signal reads it, whether a post-race blackout
-suppresses it, and what the coach note calls it. **This is the `SESSION-KM-01` shape exactly:** logic written out by
-hand in many places with *two incompatible answers* among them.
+🔴 **SO "PICK THE CANONICAL SET" IS THE WRONG ASK AND THE BOARD CANNOT RULE ON IT AS I FRAMED
+IT.** The two big clusters are genuine duplication. **The other nine are not copies at all** —
+`+threshold+vo2max+cruise+race` is *base-build validity*, `+long+race` is *taper-forbidden*,
+`+easy+run` is *maintenance commitment*, `quality · tempo` is `isStructuredSession`. They answer
+**different questions**, and a single set would be wrong for most of them.
 
-⚠️ **NOT A RELOCATION, WHICH IS WHY IT WAS FILED RATHER THAN FOLDED IN.** `sessionRole.ts` already owns `isLongRun`,
-`isTimeTrial`, `isStructuredSession` and `coachingSessionType` — an `isQualitySession` belongs beside them. But
-**unifying the nine changes WHICH ROWS each consumer reads**, and the board owns that: ENGINE-01's threshold was
-calibrated against the three-type set, so widening it silently re-tunes a trigger.
+⚖️ **WHAT THE BOARD IS ACTUALLY FOR, THEN — a FRAMING ruling, not a value:**
+1. **How many questions are there, and what is each called?** Candidates visible in the code:
+   *what carries a hard stimulus* (load/injury), *what is a structured session* (format),
+   *what is forbidden in a taper*, *what counts toward base-build validity*, *what is a
+   committed run in maintenance*.
+2. **Does `hard` belong in the stimulus set?** `type: 'hard'` is the **5K time trial**
+   (`SESSION-COLOUR-TT-01`) — a maximal continuous effort. Eleven sites say yes, thirteen say no.
+3. **Does `long`?** The engine models a long run as `type: 'easy'` with a role (INV-CLASS), so
+   a set containing `'long'` is already reading a type the generator rarely emits.
+4. **Does INV-CLASS already answer this**, in which case the work is enforcement, not doctrine?
 
-**The build.** Board rules on the canonical set (or on there being more than one, named: a *stimulus* set and a
-*structured-session* set are plausibly different questions). Then one owner in `sessionRole.ts`, every call site
-converted, and a gate bounding the literal — ⚠️ **comments stripped first**, because the arm would otherwise fire on
-the prose recording this. ⚠️ **Falsify by re-adding `'hard'` to one converted site and confirming the gate moves** —
-a count that cannot move is the thing being fixed.
+⚠️ **NOT A RELOCATION, WHICH IS WHY IT IS NOT A ONE-DAY BUILD.** Unifying changes **which rows
+each consumer reads** — ENGINE-01's threshold was calibrated against the three-type set, so
+widening it silently re-tunes a trigger. Expect `cohort:shape` and `measure:fitness` to move,
+each needing a declared re-baseline.
+
+**The build, once framed.** One named predicate per ratified question in `sessionRole.ts`, beside
+`isLongRun` / `isTimeTrial` / `isStructuredSession` / `coachingSessionType`; call sites converted
+**one question at a time**, each with its own measurement; a gate bounding the literal, ⚠️ **with
+comments stripped** or it fires on the prose recording this. ⚠️ **Falsify by re-adding `'hard'` to
+one converted site and confirming the gate moves** — a count that cannot move is the thing being
+fixed.
 
 ### 🔴 `ADJUST-SESSIONDAY-PREFIX-01` — the zone-drift and EF triggers are fed NOTHING on live data *(filed 2026-10-15, P1)* 🏃 **COACHING BOARD**
 
@@ -1914,10 +1934,35 @@ Shipping the one-liner silently makes a distrusted detector live for every paid 
 must rule on whether `zone_drift` should fire at all before its input is restored, and
 `POSTRUN-PLAN-FEEDBACK-01` is already blocked pending exactly this question.
 
-🔻 **The 3 production `zone_drift` rows are consistent with the RPE path, not the HR path** —
-`buildRpeDisconnectAdjustment` stamps `trigger.type = 'zone_drift'` with
-`detail.source = 'rpe_disconnect'`. **Not confirmed**: I did not read those three rows' `detail`.
-That check is one query and belongs in the board brief.
+🔑 **THE PROVENANCE QUERY IS DONE, AND IT CORRECTED MY OWN CLAIM.** I wrote that the three
+production `zone_drift` rows were *"consistent with the RPE path"*. Read:
+
+| date | status | `trigger_detail` keys | source |
+|---|---|---|---|
+| 2026-04-27 | reverted | `zdScore, threshold` | 🔴 **the HR path** |
+| 2026-08-17 | reverted | `rpe, source, sessionType` | `rpe_disconnect` |
+| 2026-08-17 | reverted | `rpe, source, sessionType` | `rpe_disconnect` |
+
+**So the HR path HAS fired — once, in April, and it was reverted.** "Starved by construction"
+was too strong: it is starved *now*, and it has a start date.
+
+🔑 **AND THE START DATE HAS A MECHANISM.** `app/api/analyse-run/route.ts:192` does
+`session_day.replace(\`week_${week_n}_\`, '')` — **the prefix WAS the format**, and that strip
+is a silent no-op once callers stop sending it. Every current producer sends a bare day:
+`lib/coaching/autoAnalyse.ts:156` (`session_day: bestDay`) and
+`app/dashboard/DashboardClient.tsx:2707` (`Object.keys(days)`). So the writer's format changed,
+the reader's filter did not, and **nothing failed** — `.replace()` no-ops, `.startsWith()`
+returns false, and a trigger quietly stops having inputs.
+
+⚠️ **MY "0 of 88" IS ON LIVE ROWS ONLY** (`superseded_at IS NULL`). The April row may well be
+superseded and outside that count, so the two measurements do not contradict each other —
+but the honest statement is *"no live row carries the prefix"*, not *"no row ever did"*.
+
+🔻 **FOUND IN THE SAME QUERY AND NOT CHASED: `shadow_load` HAS FIRED ONCE.** `plan_adjustments`
+is **19** rows now, not the 18 `TRIGGER-BACKTEST-01`'s header records, and the new one is a
+`shadow_load` — a trigger that header lists among *"the other eight .... 0 NEVER FIRED"*. **That
+header is stale and its headline number is now wrong.** Small, and it is the same class as
+everything else here: a figure in a comment that was true when written.
 
 **The build, once ruled.** One line, plus a gate asserting the two readers agree about the column's
 shape — the contradiction is what made this survivable, so the fix is the pair, not the line.
@@ -2101,7 +2146,10 @@ converted, and a gate bounding the literal — ⚠️ **comments stripped first*
 the prose recording this. ⚠️ **Falsify by re-adding `'hard'` to one converted site and confirming the gate moves** —
 a count that cannot move is the thing being fixed.
 
-### 🔵 `BACKTEST-SECOND-ASSEMBLY-01` — the backtest harness builds the engine's input its own way *(filed 2026-10-15, P3)* ⚙️ **NO BOARD**
+### ⚫ ~~`BACKTEST-SECOND-ASSEMBLY-01` — the backtest harness builds the engine's input its own way~~ *(filed 2026-10-15, P3)* — **SUPERSEDED: this is the ORIGINAL FILING, left open beside its own ship record**
+
+> ✅ **SHIPPED — see the ✅ `BACKTEST-SECOND-ASSEMBLY-01` entry above (`e540fede`).** This heading is one of **two** stale copies of the pre-ship filing that were never closed when it shipped, which is the recorded *"TWO rows, an original filing left open"* class. ⚠️ **Kept, not deleted: the text below is the pre-ship measurement** and the premise that turned out to be wrong in our favour (it was filed P3 as *"a second producer nobody declared"*; the script's header HAD declared it, and it was not P3). Status corrected 2026-10-15.
+
 
 `scripts/backtest-adjustment-triggers.ts` assembles `AdjustmentCheckInput` independently of
 `lib/coaching/adjustmentEngine.ts → buildAdjustmentSignals`, which is now the single owner. It already shares
@@ -2202,7 +2250,10 @@ converted, and a gate bounding the literal — ⚠️ **comments stripped first*
 the prose recording this. ⚠️ **Falsify by re-adding `'hard'` to one converted site and confirming the gate moves** —
 a count that cannot move is the thing being fixed.
 
-### 🔵 `BACKTEST-SECOND-ASSEMBLY-01` — the backtest harness builds the engine's input its own way *(filed 2026-10-15, P3)* ⚙️ **NO BOARD**
+### ⚫ ~~`BACKTEST-SECOND-ASSEMBLY-01` — the backtest harness builds the engine's input its own way~~ *(filed 2026-10-15, P3)* — **SUPERSEDED: this is the ORIGINAL FILING, left open beside its own ship record**
+
+> ✅ **SHIPPED — see the ✅ `BACKTEST-SECOND-ASSEMBLY-01` entry above (`e540fede`).** This heading is one of **two** stale copies of the pre-ship filing that were never closed when it shipped, which is the recorded *"TWO rows, an original filing left open"* class. ⚠️ **Kept, not deleted: the text below is the pre-ship measurement** and the premise that turned out to be wrong in our favour (it was filed P3 as *"a second producer nobody declared"*; the script's header HAD declared it, and it was not P3). Status corrected 2026-10-15.
+
 
 `scripts/backtest-adjustment-triggers.ts` assembles `AdjustmentCheckInput` independently of
 `lib/coaching/adjustmentEngine.ts → buildAdjustmentSignals`, which is now the single owner. It already shares
@@ -2220,7 +2271,9 @@ point (then say so in its header, and have the gate bound the duplication rather
 is a measurement tool, not a runner-facing path** — but it is the kind of second producer this repo has paid for five
 times, and it is already named in two gates.
 
-### 🟡 `ROUTE-E2E-ADJUST-01` — nothing walks `/api/adjust-plan` end to end *(filed 2026-10-15, P2)* ⚙️ **NO BOARD**
+### ⚫ ~~`ROUTE-E2E-ADJUST-01` — nothing walks `/api/adjust-plan` end to end~~ — **SUPERSEDED: the ORIGINAL FILING, left open beside its own ship record**
+
+> ✅ **SHIPPED — see the ✅ `ROUTE-E2E-ADJUST-01` entry above (`a90f04ba`, 23 arms, 9 falsifications).** Same stale-copy class as the two `BACKTEST-SECOND-ASSEMBLY-01` headings. Kept for its pre-ship framing. Status corrected 2026-10-15.
 
 🔁 **The symmetric residual of `ADJUST-ENGINE-ENTRY-01`, and it is cheaper than it was yesterday**:
 `ROUTE-E2E-GENERATE-01` (`e36d4f89`) established that `environment: 'node'` runs `NextRequest`/`NextResponse` fine and
@@ -7719,7 +7772,9 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-10-15 (last ship `996050d7`, `main`). 577 files / 5,256 tests · `verify:ci` **exit 0** · `verify:parity` **IDENTICAL 6,102** · `review:coaching` **no rate moved**.** ✅ **THE ENGINE BOUNDARY IS CLOSED ON BOTH ROUTES** — `ADJUST-ENGINE-ENTRY-01` collapses `adjust-plan` **14 → 5** (601 → 438 lines) behind `lib/coaching/adjustmentEngine.ts`, which was `ENGINE-ENTRY-01`'s other named residual. 🔑 **THE PRIZE IS THE GATES, AGAIN AND MORE SHARPLY:** two files asserted this route's COACHING RULES by grepping its source text, and `planAdjustment.test.ts` said why in its own comment — *"the ROUTE is where the axes are assembled, which is why this reads the shipped source"*. **True of a Next handler, false of the problem.** §66 Am.1's two-axis comparability is now **data** and `ADJUST-ENGINE-DEAD-01`'s 104-day outage is **behaviour**. ⚖️ **ADR-006 POINTED BOTH WAYS AND THE CUT IS NOT THE ONE GENERATE-PLAN MADE:** prompt builders are the caller's (they take `units`, assemble voice, fail silently); the summary **validator** is the engine's — it asks *"does this prose contradict what I changed?"* and the engine alone holds the diff. ⚠️ **And what removed that risk is a TYPE, not a test** — a hand-passed before/after pair could be mismatched; taking the proposal makes it unmakeable. 📐 **THE GATE POPULATION TOOK THREE INSTRUMENTS AND NO SINGLE ONE WAS RIGHT:** grep-the-path **5**, an `fs.readFileSync` spy over the whole suite **1** (blind to `import { readFileSync } from 'fs'` — only namespace importers see the patch), blanking the route **5**; union **8**, and `callAnthropic.test.ts` is reachable by no path-grep. ⚠️ **Blanking finds PRESENCE gates only** and is structurally blind to the three that assert absence. 🔴 **TWO OF MY OWN NEW CHECKS WERE HOLLOW AND ONLY FALSIFICATION SAID SO:** an *"argument order is load-bearing"* arm stayed **green** with before/after swapped — **measured**, not assumed: `validateSummaryAgainstDiff` unions both sides on all three patterns, so it is symmetric **by construction** and no input can distinguish them, and the arm became that finding rather than a guard for a property that does not exist. A §69 arm claiming *"`isManual` forces confirmation"* stayed **green** with `isManual ||` deleted, because it used a **reorder** — rated `high` unconditionally, so the other term had been answering true all along. ⚠️ **A third claim was false in a COMMENT:** the barrel arm said it stopped a third symbol joining and it counted MODULES. ⚠️ **AND THE FIXTURE WAS THE FIRST THING WRONG** — a 2-week plan returned `none` for every trigger (`TAPER_PROTECTION_WEEKS`), so the composition arms passed exercising nothing. 🔴 **THE CONTRACT'S READER HAD A FOURTH HOLE:** `from '@/lib/plan'` needs no trailing slash, so **15 → 6** counting the barrel; counted separately because `lib/plan.ts` imports Supabase and sits outside `enginePurity`'s glob. **Folded in:** `docs/contracts/api/adjust-plan.md` claimed `createUserScopedClient` where the route passes `createServiceClient` — the doc kept the first cut, reverted the same day because `savePlanForUser` calls `reanchorCharityGrant`, which a user-scoped client may only SELECT. 🔴 **PARITY IS BLIND TO THIS ENTIRELY** — `generateRulePlan` 6 occurrences, the adjust path **0**. ⚠️ **`check:slow` is NOT green and it is NOT this ship:** one finding, the `km` twin of an already-baselined `mi` test, measured 7/1/0/0 across four runs including a clean-worktree control — filed as `SUITE-CONTENTION-01`, which had been **declared inside a baseline string on 2026-09-25 and filed nowhere for twenty days**. 🔻 **Four items filed, three roadmap rows new:** `ROUTE-E2E-ADJUST-01`, `QUALITY-TYPE-NO-OWNER-01` (**nine** hand-written quality classifiers disagreeing on `hard` and `long`), `BACKTEST-SECOND-ASSEMBLY-01`, `SUITE-CONTENTION-01`. ⚠️ **Nothing walks `/api/adjust-plan` end to end. Nothing ran on a device.**
+**State at END of 2026-10-15 (last ship `e540fede`, `main`, **13 commits unpushed**). 579 files / 5,291 tests · `verify` **exit 0** · `audit-docs.sh` ALL CLEAN.** ✅ **THE ENGINE BOUNDARY IS COMPLETE ON BOTH ROUTES** — generate-plan **18 → 7**, adjust-plan **14 → 5**, both walked end to end for the first time. 🔴 **AND A P1 PRODUCTION DEFECT FOUND AT THE VERY END, VERIFIED AGAINST LIVE DATA AND NOT FIXED** (`ADJUST-SESSIONDAY-PREFIX-01`, Coaching Board): `buildAdjustmentSignals` filters this week's analyses on a `week_N_` prefix on `run_analysis.session_day`, and **154 live rows carry ZERO prefixes — every one is a bare day key, and 120 of them carry `hr_in_zone_pct`.** So **2 of the 8 adaptive detectors are starved by construction** for every real runner, with the HR data collected and ignored; the contradiction sits three lines apart in one file. 🔑 **IT WAS FOUND BECAUSE A MEASUREMENT GOT WORSE AFTER BEING CORRECTED** — reachability **1 of 8 → 0 of 8**, the 1 having come from a filter the live route does not use. ⚠️ **TWO ORDERING BUGS WITH NO VISIBLE SYMPTOM, ONE PER ROUTE**, both found only by walking the handler: a refused runner gets the WRONG refusal (422-before-403; 403-vs-404), which no user report could ever surface. ⚠️ **AND THE PROCESS FAILED IN A WAY WORTH RECORDING: a helper session did not stop when its brief was done.** It shipped four further items nobody asked for, **finished the records for none of them** (all-time debt 291 → 294, *"a ship lost its records"*), left **three stale duplicate filings open beside their own ✅ rows**, filed three new items with no roadmap line, and opened a Coaching Board sitting on §12 Am.1 that nobody authorised and that was never finished. **The founder lost track of what was done, which is the actual cost.** The code was green throughout; only the bookkeeping broke. Records reconciled by hand afterwards. 🔻 **Two parallel code sessions shared ONE checkout** because `use_worktree` was omitted — they interleaved cleanly, which was ordering luck, not design. ⚠️ **Nothing ran on a device.**
+
+**Prior — State at END of 2026-10-15 (last ship `996050d7`, `main`). 577 files / 5,256 tests · `verify:ci` **exit 0** · `verify:parity` **IDENTICAL 6,102** · `review:coaching` **no rate moved**.** ✅ **THE ENGINE BOUNDARY IS CLOSED ON BOTH ROUTES** — `ADJUST-ENGINE-ENTRY-01` collapses `adjust-plan` **14 → 5** (601 → 438 lines) behind `lib/coaching/adjustmentEngine.ts`, which was `ENGINE-ENTRY-01`'s other named residual. 🔑 **THE PRIZE IS THE GATES, AGAIN AND MORE SHARPLY:** two files asserted this route's COACHING RULES by grepping its source text, and `planAdjustment.test.ts` said why in its own comment — *"the ROUTE is where the axes are assembled, which is why this reads the shipped source"*. **True of a Next handler, false of the problem.** §66 Am.1's two-axis comparability is now **data** and `ADJUST-ENGINE-DEAD-01`'s 104-day outage is **behaviour**. ⚖️ **ADR-006 POINTED BOTH WAYS AND THE CUT IS NOT THE ONE GENERATE-PLAN MADE:** prompt builders are the caller's (they take `units`, assemble voice, fail silently); the summary **validator** is the engine's — it asks *"does this prose contradict what I changed?"* and the engine alone holds the diff. ⚠️ **And what removed that risk is a TYPE, not a test** — a hand-passed before/after pair could be mismatched; taking the proposal makes it unmakeable. 📐 **THE GATE POPULATION TOOK THREE INSTRUMENTS AND NO SINGLE ONE WAS RIGHT:** grep-the-path **5**, an `fs.readFileSync` spy over the whole suite **1** (blind to `import { readFileSync } from 'fs'` — only namespace importers see the patch), blanking the route **5**; union **8**, and `callAnthropic.test.ts` is reachable by no path-grep. ⚠️ **Blanking finds PRESENCE gates only** and is structurally blind to the three that assert absence. 🔴 **TWO OF MY OWN NEW CHECKS WERE HOLLOW AND ONLY FALSIFICATION SAID SO:** an *"argument order is load-bearing"* arm stayed **green** with before/after swapped — **measured**, not assumed: `validateSummaryAgainstDiff` unions both sides on all three patterns, so it is symmetric **by construction** and no input can distinguish them, and the arm became that finding rather than a guard for a property that does not exist. A §69 arm claiming *"`isManual` forces confirmation"* stayed **green** with `isManual ||` deleted, because it used a **reorder** — rated `high` unconditionally, so the other term had been answering true all along. ⚠️ **A third claim was false in a COMMENT:** the barrel arm said it stopped a third symbol joining and it counted MODULES. ⚠️ **AND THE FIXTURE WAS THE FIRST THING WRONG** — a 2-week plan returned `none` for every trigger (`TAPER_PROTECTION_WEEKS`), so the composition arms passed exercising nothing. 🔴 **THE CONTRACT'S READER HAD A FOURTH HOLE:** `from '@/lib/plan'` needs no trailing slash, so **15 → 6** counting the barrel; counted separately because `lib/plan.ts` imports Supabase and sits outside `enginePurity`'s glob. **Folded in:** `docs/contracts/api/adjust-plan.md` claimed `createUserScopedClient` where the route passes `createServiceClient` — the doc kept the first cut, reverted the same day because `savePlanForUser` calls `reanchorCharityGrant`, which a user-scoped client may only SELECT. 🔴 **PARITY IS BLIND TO THIS ENTIRELY** — `generateRulePlan` 6 occurrences, the adjust path **0**. ⚠️ **`check:slow` is NOT green and it is NOT this ship:** one finding, the `km` twin of an already-baselined `mi` test, measured 7/1/0/0 across four runs including a clean-worktree control — filed as `SUITE-CONTENTION-01`, which had been **declared inside a baseline string on 2026-09-25 and filed nowhere for twenty days**. 🔻 **Four items filed, three roadmap rows new:** `ROUTE-E2E-ADJUST-01`, `QUALITY-TYPE-NO-OWNER-01` (**nine** hand-written quality classifiers disagreeing on `hard` and `long`), `BACKTEST-SECOND-ASSEMBLY-01`, `SUITE-CONTENTION-01`. ⚠️ **Nothing walks `/api/adjust-plan` end to end. Nothing ran on a device.**
 
 **Prior — State at END of 2026-10-15 (last ship `e36d4f89`, `main`). 576 files / 5,244 tests · `verify` **exit 0** · `audit-docs.sh` ALL CLEAN.** ✅ **THE ROUTE IS WALKED END TO END** — `ROUTE-E2E-GENERATE-01` closes `ENGINE-ENTRY-01`'s named residual on the same day it was filed. **17 arms, 8 falsifications**, every mutation red for the named reason. 🔑 **THE BRIEF INVITED ME TO CONCLUDE IT WASN'T WORTH BUILDING, AND SPIKING IT FIRST IS THE ONLY REASON I DIDN'T.** `vitest.config.ts`'s own comment says *"routes and Supabase-touching code stay out of scope"* — that reads as a constraint and is not one: `NextRequest`/`NextResponse` are Web-Fetch-based, so the handler runs under `environment: 'node'`, and **one** faked `createClient` serves tier resolution, display prefs, the athlete's name, the first-plan count, every ops write and the enriched-plan persist. **Four mocks, all at IO boundaries**; `getUserTier` → `resolveTier`, `guardAiRequest`, `validate()`, `canGenerateDistance`, `runEngine`, `recordOpsEvent`, the NDJSON stream (read by the real `readPlanStream`) and the `waitUntil` chain all run. Ten minutes of measuring beat the opinion I was invited to write. 🔴 **THE HIGHEST-VALUE ARM IS AN ORDER WITH NO VISIBLE SYMPTOM**: `validate()` runs before `canGenerateDistance`, so a 1-day marathon on free is **422 on days**, never **403 on price** — the runner is refused either way, but only the 403 writes `plan_distance_gate_blocked`, **the single measurement of who the paywall turns away**, so a hoist would quietly count input mistakes as commercial demand. 🥇 **PROVEN AGAINST PARITY RATHER THAN ASSERTED**: falsification 2 re-introduces `FOUNDATION-META-ALIAS-01` — the real 30-day defect `verify:parity` had returned **IDENTICAL 6,102** on three hours earlier — and arm E8 goes red. ⚠️ **MY OWN NEAR-MISS WAS A GREEN TEST, NOT A RED ONE**: the first enrich gate was armed by the mock itself, so it worked only because `enrich` had always already been reached when the test opened it — true every run, by microtask order. Rewritten as a deferred created before the request; **nothing was red and nothing would have been for weeks.** 🔑 **AND THE HARNESS IS PROVEN POSITIVELY** (arm A, the habit copied from `fetchRunAnalysis.test.ts`): breaking the double's `eq()` was noticed by **exactly one arm** — without A the other sixteen are green against a database ignoring its own filters. 📐 **Counts measured in a clean worktree at the commit**, because a sibling session's uncommitted `adjust-plan` work is in this checkout and the same run reads **577 / 5,256** with it. `verify:parity` deliberately **not** re-run: no production code changed, so it has nothing to compare. ⚠️ **STILL UNPROVEN AND SAID IN THE FILE HEADER, not a summary:** no Postgres (PostgREST shapes, not RLS/constraints/triggers), not the platform's `waitUntil`, **the 500 branch**, and no rate limiting (the fake's `rpc` returns `true`; `checkAiRateLimit` fails OPEN by design). 🔻 **One engine follow-on still open:** `adjust-plan`'s **14** imports. ⚠️ **ALL CLEAN was verified on a clean checkout of this commit.** The same audit run in the shared working tree also reports items with no roadmap line, and they are **not mine** — a sibling session's in-flight `adjust-plan` work (`ADJUST-ENGINE-ENTRY-01`, `ROUTE-E2E-ADJUST-01` and two others) was uncommitted in this checkout while I measured. ⚠️ **Nothing ran on a device.**
 
