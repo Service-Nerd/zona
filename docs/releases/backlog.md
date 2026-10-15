@@ -1985,6 +1985,46 @@ fixed.
 > (not just the message), or RevenueCat's integrations list. 🔻 **If something external is
 > half-writing subscription rows, that matters more than the log line does.**
 
+### 🔵 `GENERATE-500-NO-TRACE-01` — a crashed plan generation leaves no record, so "never generated" cannot be told from "tried and failed" *(filed 2026-10-15, P2)* ⚙️ **NO BOARD** *(observability)*
+
+> 📐 **Found reviewing the founder's Supabase WARNINGS export** (94 entries, 2026-10-14 16:12 → 10-15 13:23).
+> 89 were PostgREST 406s from routes reading `plans` with `.single()` for runners who have no plan —
+> **harmless**: every caller reads `.data?.plan_json` and treats null as "no plan" (checked:
+> `daily-coach-note`, `plan-weekly-note`, `phase-summary`, `pre-session-readiness`, `race-readiness`,
+> `push/send-daily`, `lib/plan.ts`). The other 5: 3 expired iPhone sessions, 1 wrong password, 1 my
+> own diagnostic. **No defect in the log.**
+>
+> 🔴 **But the noise pointed at people.** The Make-A-Wish funnel, measured 2026-10-15 over the 21
+> `is_comped` subscriptions: **14 have a plan · 1 generated but never saved (`e5cdd273`, twice on
+> 10-08) · 1 refused by the engine · 5 never generated** — some since 2026-09-28. `0e248726`
+> has 344 `health_sync_swept` events and no plan in 13 days.
+>
+> ⚠️ **THE GAP: "never generated" is not provable.** `/api/generate-plan`'s outer catch only
+> `console.error`s and returns 500 — it writes **no `ops_event`**. So a runner whose generation CRASHED
+> looks exactly like a runner who never tried. The same blind-spot class as `OPS-ANON-USER-ID-01`
+> (fixed the same day): a failure that is handled, answered, and leaves nothing to query.
+>
+> **Fix:** record a `plan_generate_failed` event in that catch (status, error name, first line of the
+> message, tier, race distance). Small. Then the funnel above can be read honestly.
+>
+> 🔻 **Founder's, separately:** the 7 runners without a plan have emails; a personal note is the
+> fastest way to learn whether this is drop-off or stuckness. Not mine to chase.
+
+### 🔵 `PLANS-SINGLE-NOT-MAYBE-01` — ~17 routes read `plans` with `.single()`, which turns "no row" into an error *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(robustness)*
+
+> 89 of 94 Supabase warnings in one day were PostgREST **406** from `.from('plans').select('plan_json')
+> .eq('user_id', …).single()` on runners with no plan. **Harmless today** — every caller treats null
+> data as "no plan".
+>
+> ⚠️ **The real cost is what it would hide.** `.single()` reports "zero rows" as an error, so these
+> routes cannot tell *no plan* from *the database failed* — a real outage on that table would render as
+> "this runner has no plan" across the dashboard, silently. And the warnings log is 95% this noise, so a
+> genuine warning is hard to see.
+>
+> **Fix:** `.maybeSingle()` (null data, no error, on zero rows) and treat a remaining `error` as an error.
+> 📐 Re-measure the population before building: grep found 17 route/lib callers plus 2 in tests, by a
+> 4-line window after `from('plans')` — **a window is not a region**, so count properly first.
+
 ### 🔵 `MARKETING-NOTE-COPY-MATCH-01` — the HOMEPAGE finds an engine coach note by matching the word "ceiling" *(filed 2026-10-15, P2)* 🧭 **DESIGN BOARD** *(marketing surface; the seam rule puts the encoding here)*
 
 > 🔴 **FOUND BY BREAKING IT**, while shipping §12 Amendment 2's note rewording.
