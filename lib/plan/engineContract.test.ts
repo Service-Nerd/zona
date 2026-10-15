@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { generateRulePlan } from './ruleEngine'
 import { isDesignedRefusal, DESIGNED_REFUSAL_ERROR_NAMES } from './designedRefusal'
 import { runEngine } from './engine'
+import { runAdjustmentEngine } from '@/lib/coaching/adjustmentEngine'
 
 /**
  * ENGINE-CONTRACT-01 — `docs/contracts/engine.md` must still describe the engine.
@@ -123,14 +124,34 @@ describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
       // A path inside a comment is prose, not an import.
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n')
-    return new Set(
+    const mods = new Set(
       Array.from(src.matchAll(/from\s+['"]@\/lib\/(plan|coaching)\/([A-Za-z0-9_\-/.]+)['"]/g))
         .map(m => `${m[1]}/${m[2]}`),
     )
+    // 🔴 FOURTH HOLE IN THE SAME REGEX, FOUND BY ADJUST-ENGINE-ENTRY-01: the
+    // pattern requires `@/lib/plan/`, so `from '@/lib/plan'` — the BARREL,
+    // `lib/plan.ts` — was invisible. adjust-plan reached `getCurrentWeekIndex`
+    // and `savePlanForUser` through it the whole time, so the figure this gate
+    // protects was short by one module. Same class as the `@/lib/coaching/` hole
+    // this reader was rewritten to close, one character further along.
+    //
+    // ⚠️ IT IS COUNTED SEPARATELY, NOT FOLDED IN, because the barrel is NOT pure
+    // engine: `lib/plan.ts` imports `@supabase/supabase-js` and sits outside
+    // `enginePurity`'s glob (which covers `lib/plan/**`, not `lib/plan.ts`). It
+    // re-exports engine leaves AND owns persistence, so calling it an engine
+    // module would be as wrong as ignoring it. Both counts are reported.
+    for (const m of Array.from(src.matchAll(/from\s+['"]@\/lib\/(plan|coaching)['"]/g))) {
+      mods.add(`${m[1]} (barrel)`)
+    }
+    return mods
   }
 
+  /** The count the contract quotes: direct engine modules, excluding the barrel. */
+  const directModules = (file: string): Set<string> =>
+    new Set(Array.from(engineModules(file)).filter(m => !m.endsWith('(barrel)')))
+
   it('generate-plan imports SEVEN engine modules, and the contract says so', () => {
-    const mods = engineModules('app/api/generate-plan/route.ts')
+    const mods = directModules('app/api/generate-plan/route.ts')
     expect(
       mods.size,
       `generate-plan imports ${mods.size} engine modules, not 7 — update the contract. ` +
@@ -148,17 +169,62 @@ describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
     }
   })
 
-  it('the contract\'s adjust-plan count is checked at last, and is 14', () => {
-    // 🔴 This claim said TEN and nothing read it. It was wrong by four for as long as
-    // the contract has existed, because 9 of the 14 are `@/lib/coaching/*` and the
-    // old reader could not see that directory.
-    const mods = engineModules('app/api/adjust-plan/route.ts')
+  it('adjust-plan imports FIVE engine modules, and the contract says so', () => {
+    // 🔴 This claim said TEN, then FOURTEEN, and it is FIVE now
+    // (ADJUST-ENGINE-ENTRY-01). It said ten and nothing read it at all: 9 of the
+    // 14 were `@/lib/coaching/*`, invisible to the reader written to protect the
+    // claim beside it.
+    const mods = directModules('app/api/adjust-plan/route.ts')
     expect(
       mods.size,
-      `adjust-plan imports ${mods.size} engine modules, not 14 — update the contract. ` +
+      `adjust-plan imports ${mods.size} engine modules, not 5 — update the contract. ` +
       `Found: ${Array.from(mods).sort().join(', ')}`,
-    ).toBe(14)
-    expect(CONTRACT).toContain('`adjust-plan` fourteen')
+    ).toBe(5)
+    expect(CONTRACT).toContain('`adjust-plan` five')
+
+    // Not just the count — the SHAPE. One door, plus the four the contract
+    // assigns to the caller. A sixth engine module creeping back would hold the
+    // count at 5 only by displacing one of these.
+    expect(mods, 'the entry point itself must be imported').toContain('coaching/adjustmentEngine')
+    for (const m of ['plan/canUseFeature', 'coaching/weeklyActualLoad',
+                     'coaching/prompts/planAdjustment', 'coaching/prompts/athleteContext']) {
+      expect(mods, `${m} is the CALLER's and must stay in the route`).toContain(m)
+    }
+  })
+
+  it('🔴 and the BARREL is counted too, so it cannot grow back invisibly', () => {
+    // The hole this reader had until 2026-10-15. `getCurrentWeekIndex` is engine
+    // and `savePlanForUser` is persistence, and both arrive through one import
+    // the old pattern could not see. Pinned so a THIRD symbol cannot join them
+    // without this going red — which is how `adjust-plan` would quietly reacquire
+    // engine surface while the headline count stayed at five.
+    const all = engineModules('app/api/adjust-plan/route.ts')
+    expect(all.size, `with the barrel: ${Array.from(all).sort().join(', ')}`).toBe(6)
+    expect(all).toContain('plan (barrel)')
+    expect(CONTRACT).toContain('six counting the `@/lib/plan` barrel')
+
+    // ⚠️ AND THE SYMBOLS, NOT JUST THE MODULE — the first cut of this arm counted
+    // modules and its own comment claimed it stopped a third symbol joining. It
+    // did not: a third name added to the SAME import statement leaves the count at
+    // six. That is the `a-plausible-name-is-not-a-running-check` class, caught by
+    // trying to falsify the claim rather than by reading it.
+    const route = readFileSync('app/api/adjust-plan/route.ts', 'utf8')
+    const barrel = /import\s*\{([^}]*)\}\s*from\s*'@\/lib\/plan'/.exec(route)
+    expect(barrel, 'no `from \'@/lib/plan\'` import found — an arm that matches ' +
+      'nothing passes vacuously, which is the hole it replaced').not.toBeNull()
+    const symbols = barrel![1].split(',').map(x => x.trim()).filter(Boolean).sort()
+    expect(
+      symbols,
+      'adjust-plan reaches a new symbol through the `@/lib/plan` barrel. Decide which ' +
+      'it is: `getCurrentWeekIndex` is engine and is here out of NECESSITY (it scopes ' +
+      'the route\'s own queries); `savePlanForUser` is persistence and belongs to the ' +
+      'caller. Anything else is engine surface re-entering the route while the headline ' +
+      'count stays at five.',
+    ).toEqual(['getCurrentWeekIndex', 'savePlanForUser'])
+
+    // generate-plan has none, and that is a FACT about it rather than an
+    // accident: it reaches the engine through `lib/plan/engine.ts` only.
+    expect(engineModules('app/api/generate-plan/route.ts')).not.toContain('plan (barrel)')
   })
 
   it('the entry point is real, callable, and the route does not bypass it', () => {
@@ -167,5 +233,10 @@ describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
     expect(typeof runEngine).toBe('function')
     const route = readFileSync('app/api/generate-plan/route.ts', 'utf8')
     expect(route).toMatch(/runEngine\(\{/)
+
+    // Same for the adaptive engine's door (ADJUST-ENGINE-ENTRY-01).
+    expect(typeof runAdjustmentEngine).toBe('function')
+    const adjust = readFileSync('app/api/adjust-plan/route.ts', 'utf8')
+    expect(adjust).toMatch(/runAdjustmentEngine\(\{/)
   })
 })

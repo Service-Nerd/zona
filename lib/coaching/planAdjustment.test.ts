@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { checkAdjustmentTriggers } from './planAdjustment'
+import { buildAdjustmentSignals } from './adjustmentEngine'
 import {
   LONG_RUN_SHORTFALL_REDUCE_PCT,
   TAPER_PROTECTION_WEEKS,
@@ -411,24 +412,86 @@ describe('§66 Amendment 1 — duration-anchored long runs', () => {
   })
 })
 
-describe('the guard is against the REAL route, not a mirror of it', () => {
-  // planAdjustment is pure and testable; the ROUTE is where the axes are
-  // assembled, and the original defect lived there (`plannedKm:
-  // session.distance_km ?? null`). A regression there is invisible to every
-  // test above, which is why this reads the shipped source.
+describe('the guard is against the REAL assembly, not a mirror of it', () => {
+  // 🔴 THIS BLOCK USED TO READ `app/api/adjust-plan/route.ts` AS TEXT, and its own
+  // comment said why: *"planAdjustment is pure and testable; the ROUTE is where the
+  // axes are assembled, and the original defect lived there."* True of a Next
+  // handler. **False of the problem** — `ADJUST-ENGINE-ENTRY-01` moved the assembly
+  // behind `buildAdjustmentSignals`, which is a function of its arguments, so the
+  // §66 Amendment 1 rule is now asserted as DATA instead of as a substring.
+  //
+  // ⚠️ ONE SOURCE ARM SURVIVES AND IS CORRECT WHERE IT IS: the `.select()` is a
+  // property of the QUERY, which is persistence and stayed in the route (ADR-003).
+  // Nothing but reading the route can check that a column is fetched at all.
   const routeSrc = readFileSync(join(process.cwd(), 'app/api/adjust-plan/route.ts'), 'utf8')
 
   it('the route selects both axes from run_analysis', () => {
     expect(routeSrc).toContain('actual_load_mins, planned_load_mins')
   })
 
-  it('the route no longer re-derives plannedKm from raw distance_km alone', () => {
-    expect(
-      /plannedKm:\s*\(s as any\)\?\.distance_km as number \| null \?\? null,/.test(routeSrc),
-      'the raw-field derivation has come back — duration-anchored plans go blind again',
-    ).toBe(false)
-    expect(routeSrc).toContain('plannedMins:')
-    expect(routeSrc).toContain('actualMins:')
+  /** A duration-anchored long run: `duration_mins` set, `distance_km` ABSENT.
+   *  95.8% of a beginner's sessions are this shape and 0% of an experienced
+   *  runner's, which is why the km-only derivation went unnoticed. */
+  const durationLongRun = (mins: number): Session => ({
+    type: 'long', label: 'Long run', detail: null, duration_mins: mins,
+  } as unknown as Session)
+
+  const planWith = (session: Session) => ({
+    weeks: [
+      { n: 1, date: '2026-09-28', weekly_km: 30, sessions: { sun: session } },
+      { n: 2, date: '2026-10-05', weekly_km: 30, sessions: { sun: session } },
+    ],
+  } as never)
+
+  const signalsFor = (session: Session, row: Record<string, unknown>) =>
+    buildAdjustmentSignals({
+      plan: planWith(session),
+      weekN: 2,
+      isManual: false,
+      adjustmentsThisWeek: 0,
+      analyses: [{
+        week_n: 1, session_day: 'sun',
+        hr_in_zone_pct: null, actual_load_km: null, planned_load_km: null,
+        actual_load_mins: null, planned_load_mins: null, ef_trend_pct: null,
+        pace_score: null, hr_above_ceiling_pct: null, distance_score: null,
+        ...row,
+      }],
+      completions: [],
+      weeklyLoad: new Map(),
+    })
+
+  it('🔴 a TIME-comparable long run survives the assembly — the defect, as data', () => {
+    // The row carries minutes and no kilometres at all. Under the old
+    // `plannedKm: s.distance_km ?? null` derivation this row was dropped
+    // downstream and the trigger was blind to every duration-anchored plan.
+    const signals = signalsFor(durationLongRun(70), {
+      actual_load_mins: 52, planned_load_mins: 70,
+    })
+    expect(signals.recentLongRunAnalyses, 'a time-comparable row was dropped').toHaveLength(1)
+    const [r] = signals.recentLongRunAnalyses!
+    expect(r.plannedMins).toBe(70)
+    expect(r.actualMins).toBe(52)
+    // §66 Am.1: BOTH axes are passed and `shortfallAxis` picks. A km of null is
+    // the honest answer for a session anchored on time, never a zero.
+    expect(r.plannedKm).toBeNull()
+    expect(r.actualKm).toBeNull()
+  })
+
+  it('and the stored analysis wins over the plan, because the plan can be reshaped since', () => {
+    // `planned_load_km` on the row is what the runner was measured against;
+    // `distance_km` on the session is what the plan says TODAY.
+    const signals = signalsFor(
+      { type: 'long', label: 'Long run', detail: null, distance_km: 24 } as Session,
+      { actual_load_km: 18, planned_load_km: 20 },
+    )
+    expect(signals.recentLongRunAnalyses![0].plannedKm).toBe(20)
+  })
+
+  it('a row comparable on NEITHER axis is dropped, which is the other direction', () => {
+    // An arm that only proves rows get through cannot tell a filter from a
+    // pass-through. This is the half that keeps the filter honest.
+    const signals = signalsFor(durationLongRun(70), { pace_score: 100 })
+    expect(signals.recentLongRunAnalyses).toHaveLength(0)
   })
 
   it('analyse-run writes both axes', () => {

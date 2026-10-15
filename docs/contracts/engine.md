@@ -142,6 +142,7 @@ the first thing this signature cannot express.
 |---|---|
 | **1 · `ENGINE-PURITY-GATE-01`** — the engine may not import the app | ✅ `05fa327e`. Parity IDENTICAL, 6,066 cases |
 | **2 · `ENGINE-ENTRY-01`** — one entry point instead of 18 route imports | ✅ `2026-10-15`. **18 → 7**, route 806 → 605 lines. Parity IDENTICAL |
+| **2b · `ADJUST-ENGINE-ENTRY-01`** — the same, for the adaptive engine | ✅ `2026-10-15`. **14 → 5** (`adjust-plan` 601 → 438 lines) |
 | **3 · `ENGINE-CONTRACT-01`** — this document | ✅ `cc1d11b9`, 7 arms, 5 falsified |
 | *(found en route)* **`PARITY-NO-BENCHMARK-01`** | ✅ `58135cf9`. Grid 6,066 → 6,102 |
 
@@ -171,7 +172,7 @@ Named so the work is visible rather than discovered later:
    **eighteen** engine modules and sequenced them itself, so the **route** was the
    orchestrator and extracting would have made all eighteen public API. It now imports
    **seven** engine modules — `lib/plan/engine.ts` plus the six the caller legitimately
-   owns — and `adjust-plan` fourteen, still unconverted.
+   owns — and `adjust-plan` **five**, behind `lib/coaching/adjustmentEngine.ts`.
 
    ⚠️ **IT IS 18 → 7, NOT THE 18 → 1 THE ITEM ASKED FOR, because 1 contradicts this
    document.** Five of the eighteen (`enrich`, `enrichAttribution`, `enrichPartialRevert`,
@@ -186,6 +187,38 @@ Named so the work is visible rather than discovered later:
    `@/lib/plan/` only. **Nine of adjust-plan's fourteen are `@/lib/coaching/*`**, so they were
    invisible to the gate written to protect the claim beside them. Both routes are counted now,
    by one shared reader that sees both directories and nested paths.
+
+6. ~~**`ADJUST-ENGINE-ENTRY-01`**~~ — ✅ **DONE 2026-10-15.** `app/api/adjust-plan` was the
+   last route in the same shape: **fourteen** engine modules, sequenced by the handler.
+   `lib/coaching/adjustmentEngine.ts → runAdjustmentEngine()` now owns the synchronous
+   path — row→signal assembly, the trigger stack, §69 magnitude, the prospective plan and
+   the constitutional re-validation — and returns
+   `{ kind: 'none' } | { kind: 'adjustment', … }`. `acceptAiSummary` is the second export,
+   and the asymmetry it encodes is the one decision in this item that could **not** be
+   copied from generate-plan:
+
+   | | assigned to | why |
+   |---|---|---|
+   | `buildAdjustmentExplanationPrompt`, `buildAthleteContext` | **caller** | they take `units` and assemble runner-facing voice for a model the engine may not call. ADR-006 makes the pass silent, so its failure must not be an engine outcome |
+   | `validateSummaryAgainstDiff` (via `acceptAiSummary`) | **engine** | it asks *"does this prose contradict what I changed?"*, and the engine is the only thing holding the diff. A hosted engine that withheld it would make every consumer re-derive it |
+
+   So: **`adjust-plan` five**, and **six counting the `@/lib/plan` barrel**.
+
+   🔴 **THE COUNT'S READER HAD A FOURTH HOLE AND THIS FOUND IT.** `from '@/lib/plan'` — the
+   barrel, `lib/plan.ts` — needs no trailing slash, so `getCurrentWeekIndex` and
+   `savePlanForUser` had been reaching the route unseen for as long as the gate existed.
+   It is counted **separately**, not folded in, because `lib/plan.ts` imports
+   `@supabase/supabase-js` and sits **outside** `enginePurity`'s glob (`lib/plan/**`, not
+   `lib/plan.ts`): it re-exports engine leaves *and* owns persistence, so calling it an
+   engine module would be as wrong as ignoring it. Both figures are asserted, and the
+   barrel arm pins the symbol set so a third cannot join it silently.
+
+   ⚠️ **`verify:parity` IS BLIND TO THIS PART ENTIRELY — more so than to part 2.** It calls
+   `generateRulePlan` and never `checkAdjustmentTriggers`, `computeReshapeMagnitude` or
+   `runAdjustmentEngine`: **zero occurrences**. IDENTICAL over 6,102 cases says the plan
+   generator was not disturbed and says **nothing** about the adaptive engine. The evidence
+   here is carried by the gates that stopped grepping the route and started calling the
+   function.
 
 ## What this contract does NOT cover
 

@@ -167,7 +167,9 @@ to the model becomes user-facing the moment the model repeats it.
 
 `currentWeekSessions` MUST be **exactly seven non-null `Session` objects, mon=0 … sun=6**,
 produced by `lib/plan/weekSessions.ts → orderedWeekSessions(week)`. Nothing else is a valid
-input, and the route must not build this array itself.
+input. ⚠️ **Since `ADJUST-ENGINE-ENTRY-01` the ROUTE does not build it at all** — it is
+assembled inside `lib/coaching/adjustmentEngine.ts → buildAdjustmentSignals`, and the
+route hands over rows.
 
 🔴 **This is contracted because getting it wrong took the whole engine down for 104 days.**
 `Week.sessions` is `Partial<Record<Day, Session>>` and the generator omits a rest day's key,
@@ -195,7 +197,8 @@ broken engine is indistinguishable from an engine with nothing to suggest.
 ## Supabase client — ADJUST-PLAN-SAVE-CLIENT-01 (2026-10-13)
 
 **This route authenticates off the Bearer token, so every write must go through a client
-that sets `auth.uid()`.** It passes `createUserScopedClient(req)` into `savePlanForUser`.
+that sets `auth.uid()` or deliberately bypasses RLS.** It passes **`createServiceClient`**
+into `savePlanForUser`.
 
 It previously passed the cookie client (`createClient()` from `@/lib/supabase/server`).
 On native there is no cookie session, so `auth.uid()` is NULL, `plans` RLS refuses the
@@ -203,7 +206,92 @@ upsert and `savePlanForUser` throws — **after** the caller has already recorde
 Measured 3× on production, all one account, all
 `new row violates row-level security policy for table "plans"`.
 
-User-scoped rather than service because `plans`, `plan_archive` and `plan_weekly_notes`
-all carry `auth.uid() = user_id` policies, so RLS stays live as defence-in-depth.
-Enforced by `lib/plan/planRouteClient.test.ts`, whose population is derived from every
-`savePlanForUser` call in `app/api`.
+🔴 **THIS SECTION SAID `createUserScopedClient(req)` UNTIL 2026-10-15, AND IT WAS THE
+REVERTED FIRST CUT OF THE FIX.** Written in `bead506a` and falsified by `4c6dfa97`
+**the same day**; the doc kept the argument for the version that was abandoned.
+**Service, not user-scoped, and the reason is a HELPER rather than a table:** the first
+cut reasoned that `plans`, `plan_archive` and `plan_weekly_notes` all carry
+`auth.uid() = user_id` policies so RLS could stay live — which checked what
+`savePlanForUser` *writes* and not what it *calls*. It invokes `reanchorCharityGrant`,
+which UPDATEs `charity_codes`, and a user-scoped client may only SELECT that table: the
+write would have no-opped **silently** and charity grants would have stopped re-anchoring
+to race day for the 500 Make-A-Wish runners. `rlsCoverage.test.ts` caught it.
+
+⚠️ **AND NO GATE COULD SEE THE DIVERGENCE.** `lib/plan/planRouteClient.test.ts` accepts
+**either** `createServiceClient` or `createUserScopedClient` — correctly, since which one
+is right differs per route — so it was green against a contract that named the wrong one.
+A doc claim is only ever as checked as the thing checking it. Found while writing
+`ADJUST-ENGINE-ENTRY-01`; this is the fourth time in this repo that writing or revising a
+contract surfaced something the code already knew.
+
+## The engine entry point — ADJUST-ENGINE-ENTRY-01 (2026-10-15)
+
+This route is no longer the orchestrator. The synchronous adjustment path lives behind
+**`lib/coaching/adjustmentEngine.ts → runAdjustmentEngine()`**, which returns a
+discriminated union and never throws a designed outcome:
+
+```ts
+type AdjustmentOutcome =
+  | { kind: 'none' }
+  | { kind: 'adjustment'; proposed; magnitude; requiresConfirmation;
+      status: 'pending' | 'auto_applied'; updatedPlan; reshapeErrors; ruleEngineVersion }
+```
+
+**Engine imports: 14 → 5** (601 → 438 lines). The five the route keeps, and why each
+one is the caller's, not an oversight:
+
+| import | why it stays |
+|---|---|
+| `lib/coaching/adjustmentEngine` | the door itself |
+| `lib/plan/canUseFeature` | the **403** paywall. A commercial gate at the auth boundary (ADR-003); a second consumer of a hosted engine would not apply Zonna's price list |
+| `lib/coaching/weeklyActualLoad` | `fetchWeeklyLoad` is **I/O**. The fetch is the caller's; `priorWeeks` and the linked/off-plan split moved inside with the triggers that read them |
+| `lib/coaching/prompts/planAdjustment` | the **AI layer** (ADR-006). It takes `units` and assembles runner-facing voice for a model the engine may not call; its failure must be silent, so it cannot be an engine outcome |
+| `lib/coaching/prompts/athleteContext` | same |
+
+⚠️ **Plus one the count's reader could not see: `from '@/lib/plan'` — the barrel.**
+`getCurrentWeekIndex` is engine and is here out of **necessity** (it resolves `weekN`,
+which scopes three of this route's own queries, so it must be known before the engine is
+called); `savePlanForUser` is persistence. So **five on the contract's reader, six
+counting the barrel**, and `engineContract.test.ts` now asserts both plus the exact
+symbol set, so a third cannot join silently.
+
+**What did NOT move, and must not:** auth, `getUserTier`, the paywall, every Supabase
+read and write, `recordAdjustmentCheck`, `recordOpsEvent`, the notification sends, and
+the Anthropic call.
+
+### `acceptAiSummary` — the one assignment that is not generate-plan's
+
+The engine exports a second function, and the asymmetry it encodes was argued rather than
+inherited: the **prompt builders are the caller's**, the **summary validator is the
+engine's**. `acceptAiSummary(proposed, text)` asks *"does this prose contradict what I
+changed?"*, and the engine is the only thing holding the diff. **The fallback is still the
+caller's** — on `ok: false` it keeps the rule-engine summary silently (ADR-006) and logs
+`reason` so prompt drift surfaces.
+
+⚠️ **It replaced a hand-assembled pair, and what removed the risk is a TYPE, not a test.**
+The route used to call `computeSessionDiff` then `validateSummaryAgainstDiff` by name,
+where a *mismatched* pair was expressible and silent. Taking the proposal makes the pair
+unmakeable. ⚠️ **Measured: the validator is symmetric in before/after by construction** —
+all three of its patterns union both sides and the changed-day set is identical under a
+swap — so a swapped composition is **not detectable by any input**. Recorded in
+`adjustmentOutcomeHandled.test.ts` so nobody adds a guard for a property that cannot be
+guarded.
+
+### The constitutional layer — the check moved, the reaction did not
+
+`validateReshapedPlan` runs **inside** the engine, before anything is persisted, and
+error-severity violations come back on the outcome. The route keeps its own dev/test
+`throw new Error('reshape produced invalid plan: …')` and its production
+`reshape_invalid` ops event **verbatim**, because both are observable and a refactor must
+not quietly reword either.
+
+**No request or response shape changes.** `{ adjustment, requires_confirmation }`,
+`{ adjustment: null, message }`, `{ skipped: true, reason }`, 401/403/404/500/503 are all
+byte-identical.
+
+⚠️ **`verify:parity` cannot see any of this.** It calls `generateRulePlan` and never
+`checkAdjustmentTriggers`, `computeReshapeMagnitude` or `runAdjustmentEngine` — zero
+occurrences. The evidence is `adjustmentOutcomeHandled.test.ts` plus two gates that
+stopped grepping this file and started calling the function: `weekSessions.test.ts` (a
+sparse week survives the engine — the 104-day `ADJUST-ENGINE-DEAD-01` outage, as
+behaviour) and `planAdjustment.test.ts` (§66 Am.1's two-axis comparability, as data).

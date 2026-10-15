@@ -5,21 +5,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { checkAdjustmentTriggers } from '@/lib/coaching/planAdjustment'
-import { fetchWeeklyLoad, priorWeeks, EMPTY_LOAD } from '@/lib/coaching/weeklyActualLoad'
-import { isLongRun } from '@/lib/plan/sessionRole'
-import { orderedWeekSessions } from '@/lib/plan/weekSessions'
-import { recordQualityDowngrade } from '@/lib/coaching/qualityDowngrade'
-import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
+// ADJUST-ENGINE-ENTRY-01 — ONE engine door for the synchronous adjustment path.
+// `fetchWeeklyLoad` is the exception and is I/O, not engine: the FETCH is the
+// caller's, what the triggers read off the result is the engine's.
+import { runAdjustmentEngine, acceptAiSummary } from '@/lib/coaching/adjustmentEngine'
+import { fetchWeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
+// The AI layer stays here (ADR-006): these two assemble runner-facing voice for a
+// model the engine may not call, and their failure must be silent.
 import { buildAdjustmentExplanationPrompt } from '@/lib/coaching/prompts/planAdjustment'
-import { computeSessionDiff } from '@/lib/coaching/diff/sessionDiff'
-import { validateSummaryAgainstDiff } from '@/lib/coaching/diff/validateAiSummary'
-import { computeReshapeMagnitude } from '@/lib/coaching/reshapeMagnitude'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
-import { getCurrentWeekIndex } from '@/lib/plan'
-import { savePlanForUser } from '@/lib/plan'
-import { validateReshapedPlan } from '@/lib/plan/invariants'
-import { refreshWeekCopyIfStale } from '@/lib/plan/ruleEngine'
+import { getCurrentWeekIndex, savePlanForUser } from '@/lib/plan'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
@@ -129,16 +124,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No plan found' }, { status: 404 })
   }
 
-  const weekIndex = getCurrentWeekIndex(plan.weeks)
-  const weekN     = weekIndex + 1
-  const week      = plan.weeks[weekIndex]
-
-  // Resolve current training phase from plan.phases (R23+ plans only)
-  const currentPhase = plan.phases
-    ? plan.phases.find(p => p.start_week <= weekN && weekN <= p.end_week)?.name
-    : undefined
-
-  const DAY_ORDER: Record<string, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 }
+  // ⚠️ RESOLVED HERE, NOT IN THE ENGINE, AND THE REASON IS NECESSITY RATHER THAN
+  // DOCTRINE: `weekN` scopes three of the queries below, so it has to be known
+  // before the engine can be called. It is passed in.
+  const weekN = getCurrentWeekIndex(plan.weeks) + 1
 
   const [analysisRes, adjustmentsThisWeekRes, existingPendingRes, completionsRes, lastResolvedAdjustmentRes] = await Promise.all([
     serviceSupabase
@@ -204,27 +193,6 @@ export async function POST(req: NextRequest) {
       .maybeSingle(),
   ])
 
-  const analyses = analysisRes.data ?? []
-
-  // Sort completions chronologically (oldest first) for consecutive-tag detection
-  const recentFatigueTags: string[] = (completionsRes.data ?? [])
-    .slice()
-    .sort((a: any, b: any) => {
-      if (a.week_n !== b.week_n) return a.week_n - b.week_n
-      return (DAY_ORDER[a.session_day] ?? 99) - (DAY_ORDER[b.session_day] ?? 99)
-    })
-    .map((c: any) => c.fatigue_tag as string)
-
-  // §112 — the same window, carrying BOTH columns so a 'Too tired' skip can
-  // count. `recentFatigueTags` above is kept only for callers not yet migrated.
-  const recentFatigueRows = (completionsRes.data ?? [])
-    .slice()
-    .sort((a: any, b: any) => {
-      if (a.week_n !== b.week_n) return a.week_n - b.week_n
-      return (DAY_ORDER[a.session_day] ?? 99) - (DAY_ORDER[b.session_day] ?? 99)
-    })
-    .map((c: any) => ({ fatigue_tag: c.fatigue_tag ?? null, skip_reason: c.skip_reason ?? null }))
-
   // Return existing pending adjustment instead of creating a duplicate
   if (existingPendingRes.data) {
     await recordAdjustmentCheck(serviceSupabase, user.id, true)
@@ -234,24 +202,21 @@ export async function POST(req: NextRequest) {
   // Count of adjustments already made this week — enforces MAX_ADJUSTMENTS_PER_WEEK.
   const adjustmentsThisWeek = (adjustmentsThisWeekRes.data ?? []).length
 
-  // Build aggregates for trigger check
-  const thisWeekAnalyses = analyses.filter((a: any) => a.session_day.startsWith(`week_${weekN}_`))
-  const plannedKm        = week.weekly_km ?? 0
-
-  // 🔴 LOG-OFFPLAN-01 — the week's load now comes from the SINGLE OWNER, which
-  // reads the activity log rather than `run_analysis`. Five routes had hand-rolled
-  // this sum and they agreed only by accident; §68 Am.1 records one of them
-  // querying a table that has neither column, silently, for four months.
+  // 🔴 LOG-OFFPLAN-01 — the week's load comes from the SINGLE OWNER, which reads
+  // the activity log rather than `run_analysis`. Five routes had hand-rolled this
+  // sum and they agreed only by accident; §68 Am.1 records one of them querying a
+  // table that has neither column, silently, for four months.
   //
-  // The owner returns linked and off-plan SEPARATELY and the split is the board's
-  // ruling: the ratio (which auto-trims) reads LINKED, shadow load (which only
-  // flags) reads the total. `priorWeeks` defaults to linked for the same reason.
+  // ⚠️ THE FETCH IS THE CALLER'S; WHAT THE TRIGGERS READ OFF IT IS THE ENGINE'S.
+  // `priorWeeks` and the linked/off-plan split moved behind the entry point with
+  // the triggers that read them, because which figure feeds which trigger is the
+  // board's ruling (ADJUST-ENGINE-ENTRY-01).
   //
   // ⚠️ A FETCH FAILURE MUST NOT READ AS "THE RUNNER DID NOTHING". An empty map
-  // here would mean zero load, a ratio of 1.0 and a shadow of 0 — every load
-  // trigger silently disarmed, which is §68 Am.1's failure exactly (an error
-  // destructured away, a feature applying to nobody for four months). So this
-  // refuses to decide rather than deciding on absent data.
+  // would mean zero load, a ratio of 1.0 and a shadow of 0 — every load trigger
+  // silently disarmed, which is §68 Am.1's failure exactly (an error destructured
+  // away, a feature applying to nobody for four months). So this refuses to decide
+  // rather than deciding on absent data, and the engine is never called at all.
   let weeklyLoad
   try {
     weeklyLoad = await fetchWeeklyLoad(serviceSupabase, user.id, plan)
@@ -262,126 +227,37 @@ export async function POST(req: NextRequest) {
       { status: 503 },
     )
   }
-  const thisWeek   = weeklyLoad.get(weekN) ?? EMPTY_LOAD
-  const priorWeeksKm = priorWeeks(weeklyLoad, weekN, 4)
 
-  const hrInZoneData = thisWeekAnalyses.map((a: any) => ({
-    hrInZonePct:  a.hr_in_zone_pct ?? null,
-    // TRIGGER-AUDIT-01 — the DIRECTIONAL column, already in the select above and
-    // previously unread. §12 prescribes a cap, so only time ABOVE it is drift.
-    aboveCeilingPct: a.hr_above_ceiling_pct ?? null,
-    actualLoadKm: a.actual_load_km ?? null,
-  }))
-
-  const efTrendValues = thisWeekAnalyses.map((a: any) => a.ef_trend_pct).filter((v: any) => v !== null)
-  const efTrendPct    = efTrendValues.length
-    ? efTrendValues.reduce((s: number, v: number) => s + v, 0) / efTrendValues.length
-    : null
-
-  // RESHAPE-FIX-WAVE1 (Defect 1): `Object.values(week.sessions)` returns values
-  // in object-key insertion order, NOT canonical mon→sun order. Plans stored
-  // with shuffled key order (a real artifact in production) caused the engine
-  // to read sessions at the wrong day indices — e.g. interpreting Sunday's
-  // long run as "Thursday's session" because Sun's value happened to sit at
-  // array index 3. Every downstream swap, validate, and apply read the wrong
-  // cells of the week. Replace with explicit DAY_ORDER mapping; the array is
-  // now guaranteed to be 7 entries, indexed mon=0 … sun=6. A null sentinel
-  // preserves the slot when the day genuinely has no session, so the
-  // length-7 invariant in checkAdjustmentTriggers can assert structure.
-  // 🔴 ADJUST-ENGINE-DEAD-01 (2026-10-08) — WAS `DAY_ORDER.map(d => week.sessions[d] ?? null)`,
-  // AND THAT NULL KILLED THE ENGINE FOR THREE AND A HALF MONTHS.
-  // The comment above is right that the slot must be preserved and wrong about what to
-  // preserve it with: `checkAdjustmentTriggers` throws on a null slot (correctly — `{...null}`
-  // is `{}`, which would flow through all eleven of its positional consumers as a typeless
-  // object). Measured: **31 of 31 live plans threw**, because no real plan carries seven days
-  // and `Week.sessions` is `Partial<Record<Day, Session>>`.
-  // §64 (GEN-FIX-09) makes an explicit `{type:'rest'}` entry and an absent day EQUALLY valid
-  // representations of a rest day, so materialising one here is lossless and sanctioned.
-  // ⚠️ Single owner now: never re-roll this mapping inline. There were two copies by the time
-  // it was found.
-  const currentWeekSessions = orderedWeekSessions(week as unknown as { sessions: Record<string, never> }) as any[]
-
-  const skipSignal = skipSignalRaw
-    ? { ...skipSignalRaw, weekSessionsByDay: week.sessions as Record<string, any> }
-    : undefined
-
-  // ENGINE-01 — Fitness signal: quality sessions from recent weeks.
-  // Cross-reference session_day against plan to determine session type.
-  // Only include sessions where pace_score is non-null (VDOT-based plans only).
-  const QUALITY_TYPES = new Set(['quality', 'intervals', 'tempo'])
-  const recentQualityAnalyses = (analysisRes.data ?? [])
-    .filter((a: any) => {
-      if (a.pace_score === null || a.pace_score === undefined) return false
-      // Derive session type from plan week for this analysis row
-      const w = plan.weeks.find((pw: any) => pw.n === a.week_n)
-      const s = (w?.sessions as any)?.[a.session_day as string]
-      return s && QUALITY_TYPES.has((s as any).type)
-    })
-    .slice(0, 10) // last 10 quality sessions at most
-    .map((a: any) => ({
-      paceScore:         a.pace_score as number,
-      hrAboveCeilingPct: a.hr_above_ceiling_pct as number | null,
-      weekN:             a.week_n as number,
-    }))
-
-  // ENGINE-02 — Long run shortfall: long run sessions from recent weeks.
-  // §66 Amendment 1 — BOTH axes are passed and `shortfallAxis` picks the one the
-  // session is anchored on. The filter used to require `actual_load_km`, which a
-  // duration-anchored analysis can legitimately carry; what it could never carry
-  // was a PLANNED km, so the trigger dropped it downstream. Now a row qualifies
-  // if it can be compared on EITHER axis.
-  const recentLongRunAnalyses = (analysisRes.data ?? [])
-    .filter((a: any) => {
-      const comparableOnDistance = a.actual_load_km != null && a.planned_load_km != null
-      const comparableOnTime     = a.actual_load_mins != null && a.planned_load_mins != null
-      if (!comparableOnDistance && !comparableOnTime) return false
-      const w = plan.weeks.find((pw: any) => pw.n === a.week_n)
-      const s = (w?.sessions as any)?.[a.session_day as string]
-      return !!s && isLongRun(s as any)
-    })
-    .slice(0, 4) // last 4 long runs at most
-    .map((a: any) => {
-      const w = plan.weeks.find((pw: any) => pw.n === a.week_n)
-      const s = (w?.sessions as any)?.[a.session_day as string]
-      return {
-        actualKm:    a.actual_load_km as number | null ?? null,
-        // Read from the STORED analysis rather than re-derived from the plan.
-        // The plan can be reshaped after the run; the analysis records what the
-        // session prescribed on the day, which is what the runner was measured
-        // against. Falls back to the plan for rows written before the columns
-        // existed (not backfilled — live-plan policy).
-        plannedKm:   (a.planned_load_km as number | null) ?? ((s as any)?.distance_km as number | null ?? null),
-        actualMins:  a.actual_load_mins as number | null ?? null,
-        plannedMins: (a.planned_load_mins as number | null) ?? ((s as any)?.duration_mins as number | null ?? null),
-        weekN:       a.week_n as number,
-      }
-    })
-
-  const proposed = checkAdjustmentTriggers({
-    currentWeekN:         weekN,
-    totalWeeks:           plan.weeks.length,
-    currentWeekSessions,
-    linkedKm:             thisWeek.linkedKm,
-    offPlanKm:            thisWeek.offPlanKm,
-    plannedKm,
-    priorWeeksKm,
-    hrInZoneData,
-    efTrendPct,
+  // ADJUST-ENGINE-ENTRY-01 — THE ENGINE, in one call. Row→signal assembly, the
+  // trigger stack, §69 magnitude, the prospective plan and the constitutional
+  // re-validation all live behind this door. Everything above and below it is the
+  // caller's: auth, the paywall, persistence, the AI pass and telemetry.
+  const outcome = runAdjustmentEngine({
+    plan,
+    weekN,
+    isManual,
     adjustmentsThisWeek,
-    currentPhase,
-    recentFatigueTags,
-    recentFatigueRows,
+    analyses:    analysisRes.data ?? [],
+    completions: completionsRes.data ?? [],
+    weeklyLoad,
     rpeSignal,
-    skipSignal,
+    skipSignal: skipSignalRaw,
     reorderSignal,
-    recentQualityAnalyses,
-    recentLongRunAnalyses,
   })
 
-  if (!proposed) {
+  // The engine RAN and found nothing. The check is still stamped — that line
+  // reports that the engine ran, not that it changed something, which is why the
+  // early-exit paths above (403 / user_disabled / 404) deliberately do not stamp.
+  if (outcome.kind === 'none') {
     await recordAdjustmentCheck(serviceSupabase, user.id, false)
     return NextResponse.json({ adjustment: null, message: 'No adjustment needed' })
   }
+
+  // ⚠️ DESTRUCTURED, NOT PROPERTY-ACCESSED, AND THAT IS LOAD-BEARING: a new
+  // `AdjustmentOutcome` kind fails to have these fields, so `tsc` flags it here.
+  // That guard is real and incidental, so `adjustmentOutcomeHandled.test.ts`
+  // asserts the property directly as well.
+  const { proposed, status, requiresConfirmation, updatedPlan, reshapeErrors, ruleEngineVersion } = outcome
 
   // AI explanation — silent fallback to rule-based summary
   let explanationText: string = proposed.summary
@@ -421,20 +297,22 @@ export async function POST(req: NextRequest) {
     if (aiRes.ok) {
       const text = aiRes.text.trim()
       if (text) {
-        // RESHAPE-FIX-WAVE2A — Validate AI prose against the structural
-        // diff before publishing. The 2026-06-26 incident shipped an AI
-        // summary ("the 24km run stays intact") that flatly contradicted
-        // the diff (the 24km run moved). Anti-confabulation rules in the
-        // prompt failed to catch it. The validator is the safety net.
-        // On rejection, fall back to the rule-engine summary silently
-        // (ADR-006 hybrid generation pattern). Log the rejection reason
-        // for telemetry so prompt drift surfaces.
-        const diff = computeSessionDiff(proposed.sessionsBefore, proposed.sessionsAfter)
-        const validation = validateSummaryAgainstDiff(text, diff)
-        if (validation.ok) {
+        // RESHAPE-FIX-WAVE2A — validate the AI's prose against the structural
+        // diff before publishing. The 2026-06-26 incident shipped a summary
+        // ("the 24km run stays intact") that flatly contradicted the diff (the
+        // 24km run moved). Anti-confabulation rules in the prompt failed to catch
+        // it; the validator is the safety net.
+        //
+        // ⚠️ THE CHECK IS THE ENGINE'S, THE FALLBACK IS OURS. `acceptAiSummary`
+        // asks "does this prose contradict what I changed?" and the engine is the
+        // only thing holding the diff. What the runner reads on a rejection is the
+        // caller's call: the rule-engine summary, silently (ADR-006), with the
+        // reason logged so prompt drift surfaces.
+        const verdict = acceptAiSummary(proposed, text)
+        if (verdict.ok) {
           explanationText = text
         } else {
-          console.warn('[adjust-plan] AI summary rejected by validator:', validation.reason)
+          console.warn('[adjust-plan] AI summary rejected by validator:', verdict.reason)
         }
       }
     }
@@ -442,32 +320,16 @@ export async function POST(req: NextRequest) {
     // silent fallback to rule-based summary
   }
 
-  // RESHAPE-FIX-WAVE3 — magnitude-calibrated confirmation.
+  // RESHAPE-FIX-WAVE3-PHASE2 (Hutchinson) — the constitutional layer ran on the
+  // reshaped plan INSIDE the engine, BEFORE anything is persisted, and the
+  // prospective plan was built ONCE (reused by the auto-apply save below).
   //
-  // Pre-fix: each builder set `requiresConfirmation` per its own ad-hoc
-  // rule. The 2026-06-26 incident's tue↔thu reorder didn't trigger §7
-  // alternation so the builder shipped it as auto_applied — but the
-  // swap landed the long run on Tuesday, which the runner should have
-  // confirmed. The builder logic was structurally blind to "is this a
-  // structural move."
-  //
-  // Post-fix: `computeReshapeMagnitude(proposed)` is the single source of
-  // truth. Builder's `requiresConfirmation` is no longer consulted.
-  // Manual triggers still force pending — the runner is polling, they
-  // expect a review surface. CoachingPrinciples §69 documents the
-  // magnitude rules; numerics in GENERATION_CONFIG.RESHAPE_AUTOAPPLY_THRESHOLDS.
-  const magnitude = computeReshapeMagnitude(proposed)
-  const requiresConfirmation = isManual || magnitude === 'high'
-  const status = requiresConfirmation ? 'pending' : 'auto_applied'
-
-  // RESHAPE-FIX-WAVE3-PHASE2 (Hutchinson) — run the constitutional layer on the
-  // reshaped plan BEFORE persisting the adjustment. Compute the prospective plan
-  // once here (reused by the auto-apply save below). Dev/test: error-severity
-  // violations throw so property/matrix tests fail loudly. Prod: record to
-  // ops_events + soft-degrade (don't break the runner's flow), mirroring
-  // generateRulePlan's constitutional-review posture.
-  const updatedPlan = applyAdjustmentToPlan(plan, weekN, proposed.sessionsAfter, proposed.trigger?.type)
-  const reshapeErrors = validateReshapedPlan(updatedPlan, weekN).filter(v => v.severity === 'error')
+  // ⚠️ THE CHECK IS THE ENGINE'S; THE REACTION IS DELIBERATELY NOT. Dev/test:
+  // error-severity violations throw so property and matrix tests fail loudly.
+  // Prod: record to `ops_events` and soft-degrade rather than break the runner's
+  // flow, mirroring `generateRulePlan`'s posture. Both stay here, verbatim,
+  // because the message and the ops event are observable and a refactor must not
+  // quietly reword either (ADJUST-ENGINE-ENTRY-01).
   if (reshapeErrors.length > 0) {
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
       throw new Error(`reshape produced invalid plan: ${reshapeErrors.map(v => v.code).join(', ')}`)
@@ -490,7 +352,7 @@ export async function POST(req: NextRequest) {
     sessions_before: proposed.sessionsBefore,
     sessions_after:  proposed.sessionsAfter,
     status,
-    rule_engine_version: COACHING_RULE_ENGINE_VERSION,
+    rule_engine_version: ruleEngineVersion,
     confirmed_at:    status === 'auto_applied' ? new Date().toISOString() : null,
   }
 
@@ -573,29 +435,4 @@ export async function POST(req: NextRequest) {
   // pre-Wave-3 ad-hoc flag (kept on the proposal type for backward
   // compatibility but no longer authoritative).
   return NextResponse.json({ adjustment: inserted, requires_confirmation: requiresConfirmation })
-}
-
-function applyAdjustmentToPlan(plan: Plan, weekN: number, sessionsAfter: any[], triggerType?: string): Plan {
-  const updated = JSON.parse(JSON.stringify(plan)) as Plan
-  const week    = updated.weeks.find(w => w.n === weekN)
-  if (!week) return updated
-
-  const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-  days.forEach((day, idx) => {
-    if (sessionsAfter[idx]) {
-      week.sessions[day] = sessionsAfter[idx]
-    }
-  })
-
-  // GEN-FIX-10 — record an intentional intensity downgrade before validating,
-  // so the invariant can distinguish it from a generator defect.
-  recordQualityDowngrade(week, triggerType, new Date().toISOString())
-
-  // §27 — a reshape can remove the very session the week's copy promises (the
-  // AEF downgrade swaps quality to easy). Re-derive the copy when, and only
-  // when, it has become false; enriched copy is a paid deliverable and must not
-  // be blanket-reverted to rule-engine strings. (analysis open-Q4)
-  refreshWeekCopyIfStale(updated, weekN)
-
-  return updated
 }

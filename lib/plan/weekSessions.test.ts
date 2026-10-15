@@ -14,6 +14,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { orderedWeekSessions, restSession, isRestSlot } from './weekSessions'
 import { checkAdjustmentTriggers } from '@/lib/coaching/planAdjustment'
+import { buildAdjustmentSignals, runAdjustmentEngine } from '@/lib/coaching/adjustmentEngine'
 import { weekHasRestDay } from './invariants'
 import { DAY_ORDER } from './days'
 
@@ -117,12 +118,58 @@ describe('the materialised rest day satisfies §64, which is what makes this los
 describe('no caller hand-rolls the mapping any more', () => {
   const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
 
-  it('🔴 the route uses the owner, and the null sentinel is GONE', () => {
-    const src = read('app/api/adjust-plan/route.ts')
+  it('🔴 the engine uses the owner, and the null sentinel is GONE', () => {
+    // `ADJUST-ENGINE-ENTRY-01` moved the assembly out of the route; the source
+    // arm moves with it. Kept as a source arm because this one asserts an
+    // ABSENCE — the exact expression that killed the engine — and an absence has
+    // no behaviour to call.
+    const src = read('lib/coaching/adjustmentEngine.ts')
     expect(src).toContain('orderedWeekSessions(')
-    // The exact expression that killed the engine.
     expect(src).not.toMatch(/week\.sessions as Record<string, unknown>\)\[d\] \?\? null/)
     expect(src).not.toContain('DAY_ORDER_LOCAL')
+  })
+
+  it('🔴 …and a SPARSE week now survives the whole engine, asserted not grepped', () => {
+    // THE 104-DAY DEFECT, AS BEHAVIOUR. `Week.sessions` is
+    // `Partial<Record<Day, Session>>` and the generator omits a rest day's key, so
+    // across all 31 live plans **no week carried seven days** (max 6, on 46 weeks).
+    // The route passed `DAY_ORDER.map(d => week.sessions[d] ?? null)`,
+    // `checkAdjustmentTriggers` throws on a null slot, and 31 of 31 plans threw on
+    // every check from 2026-06-26 to 2026-10-08.
+    //
+    // ⚠️ IT WAS ONLY EVER GATED BY A SUBSTRING, because the logic was welded to a
+    // handler that needs auth and Supabase to run. `buildAdjustmentSignals` is a
+    // function of its arguments, so the four-day week can simply be handed to it.
+    const sparse = {
+      weeks: [{
+        n: 1, date: '2026-10-05', weekly_km: 30,
+        sessions: {
+          tue: { type: 'easy',    label: 'Easy run', detail: null, distance_km: 6 },
+          thu: { type: 'quality', label: 'Tempo',    detail: null, distance_km: 8 },
+          sat: { type: 'easy',    label: 'Easy run', detail: null, distance_km: 6 },
+          sun: { type: 'long',    label: 'Long run', detail: null, distance_km: 16 },
+        },
+      }],
+    } as never
+
+    const signals = buildAdjustmentSignals({
+      plan: sparse, weekN: 1, isManual: false, adjustmentsThisWeek: 0,
+      analyses: [], completions: [], weeklyLoad: new Map(),
+    })
+
+    // Seven real slots, mon=0 … sun=6, with the three absent days materialised as
+    // explicit rest (§64 / GEN-FIX-09 — the two representations are equally valid).
+    expect(signals.currentWeekSessions).toHaveLength(7)
+    expect(signals.currentWeekSessions.every(x => x != null), 'a null slot is back').toBe(true)
+    expect(signals.currentWeekSessions.map(x => x.type))
+      .toEqual(['rest', 'easy', 'rest', 'quality', 'rest', 'easy', 'long'])
+
+    // And the whole engine runs on it rather than throwing, which is the thing the
+    // runner lost for 104 days.
+    expect(() => runAdjustmentEngine({
+      plan: sparse, weekN: 1, isManual: false, adjustmentsThisWeek: 0,
+      analyses: [], completions: [], weeklyLoad: new Map(), now: '2026-10-05T00:00:00.000Z',
+    })).not.toThrow()
   })
 
   it('the backtest harness uses it too — there were TWO copies by the time this was found', () => {
@@ -150,9 +197,12 @@ describe('no caller hand-rolls the mapping any more', () => {
     .join('\n')
 
   it('⚠️ and nothing new reintroduces the pattern', () => {
-    // Bounded to the two files that legitimately order a week by day. A third would be a
-    // fourth copy, which is the whole class this owner exists to end.
-    for (const f of ['app/api/adjust-plan/route.ts', 'scripts/backtest-adjustment-triggers.ts']) {
+    // Bounded to the files that legitimately order a week by day: the engine entry
+    // point, which owns the assembly now, plus the route it moved out of (so the
+    // pattern cannot come BACK) and the backtest harness. A fourth would be another
+    // copy, which is the whole class this owner exists to end.
+    for (const f of ['lib/coaching/adjustmentEngine.ts', 'app/api/adjust-plan/route.ts',
+                     'scripts/backtest-adjustment-triggers.ts']) {
       expect(stripComments(read(f))).not.toMatch(/\.map\(\s*d\s*=>\s*\(?\s*week\.sessions/)
     }
   })
