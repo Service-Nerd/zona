@@ -2009,6 +2009,28 @@ fixed.
 >
 > 🔻 **Founder's, separately:** the 7 runners without a plan have emails; a personal note is the
 > fastest way to learn whether this is drop-off or stuckness. Not mine to chase.
+>
+> 📐 **THE SEVEN, ANALYSED 2026-10-15** from `user_settings`, `ops_events`, `strava_activities`,
+> `plan_archive` and `push_subscriptions` — read-only. `last_today_open_at` is a direct app-open timestamp;
+> `health_sync_swept` is posted BY THE DEVICE (`lib/health/clientSync.ts`, bearer-authed), so it proves the
+> app is installed and signed in, though it can also fire on a background workout wake.
+>
+> | runner | pattern | evidence |
+> |---|---|---|
+> | `2a78cd26` `d1aff9f5` `e195b12d` `5c4588b0` | **Redeemed and left** — fits "I'll build it later" | opened the app on sign-up day only; no watch, no runs, no profile, 0 sweeps, **never reached the build step** |
+> | `e98c3253` | **Refused, never retried** | 5yr+ runner at **0 km/week**, marathon. Refused by design 2026-10-02 — **8 days BEFORE** `WIZARD-ZERO-VOLUME-REFUSAL-01` (2026-10-10) gave a declared zero the clearer *"build up to one 5 km run, then come back"*. Saw the older message. Still opening the app (last 10-13), 0 runs |
+> | `e5cdd273` | **Built twice, saved neither** | active runner, **33 runs**. Two generations 2 min apart on 10-08 (enrich 39 s and 54 s, both `post_enrich_invalid`). Never saved. Last open 10-14 |
+> | `0e248726` | **Uses the app daily, has NEVER tried to build** | **16 runs, last run 2026-10-15 06:54**, last open 05:22 the same morning, watch connected, HR set. **Zero generation attempts of any kind.** |
+>
+> 🔑 **So 4 of 7 fit the founder's hypothesis, and 3 of 7 are actively in the app without a plan.**
+> `0e248726` is the sharpest: a daily user who has never reached the build step. Either the app does not
+> make it obvious that a plan has to be built (a Design Board question, not ruled here), or something fails
+> before reaching the server — which this item's fix is what would reveal.
+>
+> ⚠️ **I nearly called `e98c3253` a product dead end.** Their refusal carried neither the on-ramp nor
+> the get-running offer, which looked like a breach of §118's *"no refusal leaves without something to do"*.
+> It is not: §113's *"Why a declared zero is REFUSED"* rules it deliberately — from zero, compound growth
+> never reaches the floor — and the next step is the message itself. Checked before saying it.
 
 ### 🔵 `PLANS-SINGLE-NOT-MAYBE-01` — ~17 routes read `plans` with `.single()`, which turns "no row" into an error *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(robustness)*
 
