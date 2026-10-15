@@ -3,6 +3,7 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import { assessLongRunReadiness, minLongestRunKm, weeksToReachFloor, LongRunReadinessError } from './longRunReadiness'
 import { generateRulePlan } from './ruleEngine'
+import { runEngine } from './engine'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput } from '@/types/plan'
 
@@ -258,8 +259,38 @@ describe('§113 — the route holds no coaching number any more', () => {
     expect(code).not.toMatch(/current_weekly_km\s*<\s*\d/)
   })
 
-  it('the refusal renders with the same 422 shape as its siblings', () => {
-    expect(route).toMatch(/LongRunReadinessError/)
-    expect(route).toMatch(/reason: 'long_run_readiness'/)
+  /**
+   * ENGINE-ENTRY-01 (2026-10-15) — THIS ARM WAS A SOURCE GREP AND NO LONGER HAS TO
+   * BE. It asserted the strings `LongRunReadinessError` and `reason:
+   * 'long_run_readiness'` appeared somewhere in the route, which is satisfied by a
+   * comment and says nothing about what a runner receives.
+   *
+   * 🔑 The refusal mapping now lives in `runEngine`, which is a function of its
+   * arguments: no auth, no request, no Supabase. So the shape can be ASSERTED
+   * rather than grepped — and it is asserted against the same refusing input the
+   * §113 arms above use, so the two cannot drift.
+   */
+  it('§113 refuses as a 422 with the same shape as its siblings, asserted not grepped', () => {
+    const outcome = runEngine({
+      input: base({ longest_recent_run_km: 2, race_date: '2026-12-28' }),
+      tier: 'paid', displayUnits: 'km', planStart: '2026-10-05', today: '2026-10-05',
+    })
+    expect(outcome.kind, 'the engine admitted a runner §113 refuses').toBe('refusal')
+    if (outcome.kind !== 'refusal') return
+    expect(outcome.status).toBe(422)
+    expect(outcome.body.reason).toBe('long_run_readiness')
+    expect(outcome.body.readiness, '§113 must carry the readiness detail the screen renders').toBeDefined()
+    expect(outcome.body.error, 'a refusal always carries runner-facing copy').toBeTruthy()
+    // REFUSAL-TELEMETRY-01 — a designed refusal is recorded, and names itself.
+    expect(outcome.telemetry?.event).toBe('plan_refused_by_design')
+    expect(outcome.telemetry?.detail.rule).toBe('LongRunReadinessError')
+  })
+
+  it('and the route still hands that body back untouched, with its status', () => {
+    // The one thing a behavioural assertion cannot reach: that the caller does not
+    // reshape it. Bounded to the refusal branch, comments stripped.
+    const branch = code.slice(code.indexOf("outcome.kind === 'refusal'"))
+      .slice(0, 600)
+    expect(branch).toContain('NextResponse.json(outcome.body, { status: outcome.status })')
   })
 })

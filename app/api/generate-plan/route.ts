@@ -4,10 +4,23 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
+// ── The engine, behind one import (ENGINE-ENTRY-01, 2026-10-15) ──────────────
+//
+// 🔴 THIS FILE USED TO IMPORT EIGHTEEN ENGINE MODULES AND SEQUENCE THEM ITSELF,
+// which meant the ROUTE was the orchestrator and the engine was a bag of parts:
+// extract the engine today and all eighteen become public API surface. The
+// synchronous path now lives behind `runEngine` — see `lib/plan/engine.ts` for
+// what it takes, what it deliberately does NOT take, and why.
+//
+// ⚠️ IT IS 18 → 7, NOT 18 → 1, AND THE ITEM'S OWN CONSTRAINT IS WHY. The five
+// enrichment/AI modules below are the CALLER's by doctrine (ADR-006, and
+// `docs/contracts/engine.md` § What this contract does NOT cover); `freeIntro`
+// calls Anthropic. `canGenerateDistance` is a COMMERCIAL gate at the auth
+// boundary (ADR-003) — it answers 403, not 422, and a second consumer of a hosted
+// engine would not apply Zonna's price list. Collapsing those would drag the AI
+// layer and persistence inside the engine, which `ENGINE-PURITY-GATE-01` forbids.
+import { runEngine, validatePlan, type EngineOutcome } from '@/lib/plan/engine'
 import { canGenerateDistance } from '@/lib/plan/canUseFeature'
-import { generateRulePlan, derivedLevelsFor } from '@/lib/plan/ruleEngine'
-import { validatePlan, enforceViolations } from '@/lib/plan/invariants'
-import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
 import { errorBaseline, violationsIntroducedBy, statusForReason } from '@/lib/plan/enrichAttribution'
 import {
@@ -15,21 +28,10 @@ import {
   attributableSessions, revertSessionsToRuleCopy,
 } from '@/lib/plan/enrichPartialRevert'
 import { shouldServerPersist } from '@/lib/plan/enrichServerSave'
+import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { waitUntil } from '@vercel/functions'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
-import { generateFreeIntro } from '@/lib/plan/freeIntro'
-import { nextMonday, formatDate } from '@/lib/plan/length'
-import { PrepTimeError, DaysAvailableError, InputFieldError } from '@/lib/plan/inputs'
-import { isDesignedRefusal } from '@/lib/plan/designedRefusal'
-import { effectiveStartKm } from '@/lib/plan/startVolume'
-import { BaseVolumeError } from '@/lib/plan/baseVolume'
-import { onRampOfferFor, assessOnRamp } from '@/lib/plan/baseBuildOnRamp'
-import { weeksBetweenLocal } from '@/lib/plan/length'
-import { generateGetRunningPlan, getRunningApplies } from '@/lib/plan/getRunningPlan'
-import { baseBuildOfferLine, baseBuildOfferTitle, baseBuildOfferWhy } from '@/lib/plan/baseBuildCopy'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
-import { formatDistance } from '@/lib/format'
-import { LongRunReadinessError } from '@/lib/plan/longRunReadiness'
 
 // ─── Guard rails ──────────────────────────────────────────────────────────────
 //
@@ -114,7 +116,9 @@ export async function POST(req: NextRequest) {
     const input: GeneratorInput = athleteFirstName
       ? { ...guard.body, athlete_name: athleteFirstName }
       : guard.body
-    const planStart = formatDate(nextMonday())
+    // ENGINE-ENTRY-01 — `planStart` (next Monday) and `today` are derived INSIDE
+    // `runEngine` now. They were read here and threaded through five call sites,
+    // which is the sequencing that made the route the orchestrator.
 
     // P-15 (2026-09-20) — the runner ACCEPTING the §118 base-build offer.
     //
@@ -157,280 +161,53 @@ export async function POST(req: NextRequest) {
       }, { status: 403 })
     }
 
-    // 🔴 `accept_base_build` IS HONOURED BEFORE GENERATION, NOT INSIDE THE REFUSAL
-    // CATCH, AND THE OLD PLACEMENT WAS UNSOUND (`BASEBUILD-ADJUST-REBUILD-01`).
+    // ── THE ENGINE, IN ONE CALL (ENGINE-ENTRY-01) ─────────────────────────
     //
-    // It used to live only inside `catch (err) { if (err instanceof BaseVolumeError) }`,
-    // so "give me the base build" was honoured ONLY IF the race generator happened to
-    // refuse this input. That is fine for P-15's original flow (the runner is accepting
-    // an offer they were just made) and **unsound for a runner who already HAS a
-    // base-build plan and is editing it**, because §111's refusal is not stable under
-    // the edits the Adjust sheet offers.
+    // Everything from inputs to a composed, validated plan is the engine's:
+    // `planStart`, the §118 accept-base-build branch, `generateRulePlan`, the four
+    // designed refusals and their telemetry payloads, the §116/§118 offers, then
+    // `composePlanWithFoundation` and its validation (ADR-020).
     //
-    // ⚠️ MEASURED on the two live base-build plans, walking the editable keys: of 8
-    // edits, **one flips §111 from refusing to admitting** (Tom at `days_available: 3`).
-    // Under the old placement that edit would have silently handed a base-build runner a
-    // RACE PLAN. The cause is the inversion `BASEBUILD-ADJUST-MONOTONIC-01` measured:
-    // fewer days lowers the delivered peak, which lowers the ratio, which admits.
+    // ⚠️ A DESIGNED REFUSAL COMES BACK AS A VALUE, NOT A THROW. §44, §52, §111 and
+    // §113 are the engine WORKING, and the naive HTTP mapping of "threw" is 500.
+    // `runEngine` returns the 422 body plus the event to record. A GENUINE fault
+    // still throws, and still lands in this handler's own 500 below — unchanged.
     //
-    // So the intent is now unconditional, guarded only by whether a base build is a
-    // thing this runner can have at all (`getRunningApplies`). A client asking for a
-    // base build gets a base build, whatever the race generator would have said.
-    if (acceptBaseBuild && getRunningApplies(input)) {
-      const { plan: baseBuildPlan } = generateGetRunningPlan(input, planStart, weeksBetweenLocal(planStart, input.race_date))
-      return NextResponse.json({ plan: baseBuildPlan })
+    // ⚠️ `displayUnits` IS PASSED IN, NEVER LOOKED UP (ADR-015). The engine does
+    // not read a user preference; the §118 offer copy needs the unit, and a
+    // distance string assembled without it is the defect ADR-015 exists to prevent.
+    const outcome: EngineOutcome = runEngine({ input, tier, acceptBaseBuild, displayUnits })
+
+    if (outcome.kind === 'refusal') {
+      // REFUSAL-TELEMETRY-01 — recorded BEFORE the branch-specific response, at ONE
+      // site, so a new refusal type cannot be added without it. The engine computes
+      // the payload (it owns `derivedLevelsFor`, `effectiveStartKm`, `assessOnRamp`);
+      // writing it is the caller's, because `lib/plan/*` must stay free of the
+      // service-role client. ⚠️ `InputFieldError` carries NO telemetry and never
+      // did — `isDesignedRefusal` is false for it, so recording one here would be a
+      // new event rather than a refactor.
+      if (outcome.telemetry) {
+        await recordOpsEvent(outcome.telemetry.event, outcome.telemetry.detail, user.id)
+      }
+      return NextResponse.json(outcome.body, { status: outcome.status })
     }
 
-    // Rule engine runs synchronously and may throw validation errors that
-    // need a 422 status — must run before opening a stream.
-    let rulePlan: Plan
-    try {
-      rulePlan = generateRulePlan(input, tier, planStart)
-    } catch (err) {
-      // CoachingPrinciples §55 — critical input validation. Out-of-range
-      // physiological values are rejected at the entry point; surface field +
-      // range so the client can highlight the offending input.
-      if (err instanceof InputFieldError) {
-        return NextResponse.json(
-          {
-            error: err.message,
-            field: err.field,
-            value: err.value,
-            range: err.range,
-          },
-          { status: 422 },
-        )
-      }
-      // CoachingPrinciples §44 — prep-time refusal surfaces structured data so
-      // the client can render the warning + alternatives and re-submit with
-      // acknowledged_prep_warning: true.
-      // REFUSAL-TELEMETRY-01 — record every designed refusal with the inputs
-      // that caused it, BEFORE the branch-specific response. One call site, so
-      // a new refusal type cannot be added without it.
-      if (isDesignedRefusal(err)) {
-        await recordOpsEvent('plan_refused_by_design', {
-          rule: (err as Error).name,
-          race_distance_km: input.race_distance_km,
-          current_weekly_km: input.current_weekly_km,
-          effective_start_km: Math.round(effectiveStartKm(input) * 10) / 10,
-          longest_recent_run_km: input.longest_recent_run_km,
-          days_available: input.days_available,
-          // REFUSAL-TELEMETRY-LEVEL-01 (2026-10-09) — this line used to be
-          // `fitness_level: input.fitness_level`, which is the API-level
-          // STRUCTURAL override the wizard never sends; `types/plan.ts` says so
-          // in as many words ("do NOT repurpose it for the wizard's user
-          // selection; that is `user_declared_level`"). Measured: 20
-          // plan_refused_by_design events, 0 carrying any level. The field was
-          // inert from the day it shipped, and a refusal we cannot attribute to a
-          // level tells us nothing about WHICH runners the engine turns away.
-          //
-          // Both halves are recorded, because they answer different questions:
-          // what the runner SAID about themselves, and what the engine ASSESSED.
-          // A refusal where those disagree is the interesting one.
-          //
-          // Via `derivedLevelsFor` — the engine's own owner — so this cannot
-          // drift from what generation would have used.
-          ...(() => {
-            const l = derivedLevelsFor(input)
-            return {
-              fitness_level_declared:  l.declared ?? null,
-              fitness_level_assessed:  l.assessedStructural,
-              fitness_level_structural: l.structural,
-              fitness_level_intensity: l.intensity,
-              fitness_level_api_override: input.fitness_level ?? null,
-            }
-          })(),
-          training_age: input.training_age,
-          goal: input.goal,
-          // 🔴 `reason` WAS NOT RECORDED, so a designed refusal could not be told
-          // apart from a warning the runner could have acknowledged. Measured
-          // 2026-10-10: 12 of 20 `plan_refused_by_design` events are PrepTimeError
-          // and the block/warn split was **unmeasurable from telemetry**, which is
-          // exactly the question `PREP-ACK-NO-WRITER-01` needed answering. Same
-          // class as `REFUSAL-TELEMETRY-LEVEL-01`: a refusal we cannot attribute
-          // tells us nothing about which runners the engine turns away.
-          reason: (err as { reason?: unknown }).reason ?? null,
-          weeks_to_race: input.race_date
-            ? Math.round((new Date(input.race_date).getTime() - Date.now()) / 6048e5)
-            : null,
-          // §116 — WOULD an on-ramp have been offered, and how long?
-          //
-          // ⚠️ RECORDED EVEN WHEN THE FLAG IS OFF, deliberately. This is the
-          // only way the 76%-offered figure gets checked against real runners
-          // instead of a synthetic grid, and it has to accrue BEFORE the flag
-          // is flipped or there is nothing to compare the flip against.
-          //
-          // It calls `assessOnRamp` directly rather than `onRampOfferFor`,
-          // because the latter is flag-gated by design — the flag governs what
-          // the RUNNER sees, never what we can measure.
-          ...(err instanceof BaseVolumeError ? {
-            onramp: assessOnRamp(
-              input,
-              err.base.min_base_km,
-              weeksBetweenLocal(planStart, input.race_date),
-            ),
-          } : {}),
-        }, user.id)
-      }
-      if (err instanceof PrepTimeError) {
-        return NextResponse.json(
-          {
-            error: err.message,
-            reason: err.reason,
-            prep: err.prep,
-            requires_acknowledgment: err.reason === 'warn_unacknowledged',
-          },
-          { status: 422 },
-        )
-      }
-      // CoachingPrinciples §52 (low-day) — days-availability refusal. Same
-      // shape as PrepTimeError so the client renders both the same way:
-      // either a hard refusal with alternatives, or a warning the runner
-      // must acknowledge to proceed (resubmit with acknowledged_days_warning).
-      if (err instanceof DaysAvailableError) {
-        return NextResponse.json(
-          {
-            error: err.message,
-            reason: err.reason,
-            days: err.days,
-            requires_acknowledgment: err.reason === 'warn_unacknowledged',
-          },
-          { status: 422 },
-        )
-      }
-      // CoachingPrinciples §111 — base-build ceiling. Same structured shape as
-      // the §44/§52 refusals so the client renders a "not yet" screen with the
-      // base to reach and the alternatives, never a bare error.
-      // §113 — long-run readiness. Same 422 shape as §44/§52/§111 so the
-      // "not yet" screen renders every refusal identically.
-      if (err instanceof LongRunReadinessError) {
-        return NextResponse.json(
-          { error: err.message, reason: 'long_run_readiness', readiness: err.readiness },
-          { status: 422 },
-        )
-      }
-      if (err instanceof BaseVolumeError) {
-        // §116 (P-16) — the refusal may now carry an OFFER instead of only a
-        // door. §111 names a base-building plan as the remedy and §57 made that
-        // remedy structurally impossible; `onRampOfferFor` is the remedy.
-        //
-        // ⚠️ AN OFFER, NEVER A SUBSTITUTION. We do not hand a runner who asked
-        // for a marathon plan an eleven-week base block instead — ADR-012's
-        // model is that a structural change surfaces for confirmation.
-        // Rendering the choice is P-15's job.
-        //
-        // ⚠️ BEHIND A FLAG AND DARK BY DEFAULT. `onRampOfferFor` returns null
-        // unless ENABLE_BASE_BUILD_ONRAMP=1, so with the flag off this payload
-        // is byte-identical to what it was before §116 existed.
-        //
-        // ⚠️ §111 IS NOT CREDITED IN ADVANCE (board amendment 7). The offer
-        // changes nothing about the gate; the runner performs the block,
-        // re-declares, and is gated on OBSERVED volume.
-        const runway = weeksBetweenLocal(planStart, input.race_date)
-        const onramp = onRampOfferFor(input, err.base.min_base_km, runway)
-
-        // §118 / P-15 — NO REFUSAL LEAVES WITHOUT SOMETHING TO DO.
-        //
-        // The founder's directive, after the board twice ruled zero rejection
-        // unreachable by coaching: *"we can't just say no, go away."* A
-        // get-running plan is what the runner no race plan can serve gets
-        // instead — §116's ramp, standalone, with no race and no promise of
-        // one.
-        //
-        // ⚠️ IT IS AN OFFER, NOT A SUBSTITUTION, exactly as the on-ramp is.
-        // The runner asked for a marathon; we do not quietly hand them
-        // something else. ADR-012's model is that a structural change surfaces
-        // for confirmation, and rendering that choice is the client's job.
-        //
-        // ⚠️ AND IT MUST NOT IMPLY A MARATHON FOLLOWS. Most of this cohort
-        // finish above §117's door with weeks to spare and genuinely can come
-        // back; a 2 km/week runner will not. `reaches_race_door` says which,
-        // so the copy can tell the truth per runner rather than in general.
-        // P-15 — THE OFFER IS ACCEPTED: build the plan rather than describe it.
-        //
-        // ⚠️ P-15's filing says the base-build "does not exist yet, so for
-        // October the action is a stated route, not a generated plan." §118
-        // shipped the same day and that premise is now STALE IN OUR FAVOUR:
-        // `generateGetRunningPlan` already returns a full, validated Plan and
-        // this route was throwing it away, keeping only `endsAtKm` and `weeks`
-        // for the offer copy. So the acceptance path is three lines, not a
-        // second generator.
-        //
-        // Returned through the SAME `{ plan }` JSON shape as the free-tier
-        // success path, so the client saves and previews it by the route it
-        // already has. No enrichment and no foundation composition: §118 sets
-        // `plan_kind: 'base_build'`, which is its own plan object, and both of
-        // those passes are shaped for a race block.
-        // ⚠️ THE ACCEPT BRANCH USED TO LIVE HERE AND HAS MOVED ABOVE THE GENERATION
-        // ATTEMPT (`BASEBUILD-ADJUST-REBUILD-01`). Leaving a second copy here would be
-        // two producers of one decision, and the one down here could only fire when
-        // §111 happened to refuse — which is exactly the unsoundness that moved it.
-        // The offer below is unaffected: it DESCRIBES a base build, it does not build one.
-
-        let getRunning: Record<string, unknown> | null = null
-        if (!onramp && getRunningApplies(input)) {
-          const { endsAtKm, weeks } = generateGetRunningPlan(input, planStart, runway)
-          const reachesRaceDoor = endsAtKm >= err.base.min_base_km
-          // ⚠️ ADR-015: the SERVER reads the runner's units. A distance string
-          // assembled without them is the units defect ADR-015 exists to
-          // prevent. The scoped client is created here because the one at the
-          // top of the file is inside a helper and not in this scope; a
-          // failed read falls back to km rather than blocking the offer,
-          // because a refused runner getting NOTHING is the worse outcome and
-          // is the whole point of §118.
-          const label = formatDistance(endsAtKm, displayUnits)
-          if (label) getRunning = {
-            weeks,
-            ends_at_km: Math.round(endsAtKm * 10) / 10,
-            reaches_race_door: reachesRaceDoor,
-            // ⚠️ THE COPY SHIPS WITH THE OFFER, from its single owner, rather
-            // than being assembled client-side. Two variants keyed on
-            // `reaches_race_door` (SLT 2026-09-20) — and the non-clearing one
-            // must say NOTHING about a race, which is a rule a client-side
-            // template would be free to break.
-            title: baseBuildOfferTitle(),
-            line: baseBuildOfferLine({
-              weeks,
-              endsAtKm,
-              reachesRaceDoor,
-              // ADR-015 owns every distance string; this module never formats.
-              // ⚠️ NO FALLBACK STRING. The first cut wrote
-              // `?? \`${Math.round(endsAtKm)} km\`` and PREF-SWEEP-01's guard
-              // caught it immediately: a unit glyph welded to an interpolated
-              // value is the defect ADR-015 exists to prevent, and writing one
-              // as a "safe default" is how it gets in. `formatDistance` returns
-              // null only on a non-finite input, and the offer is not built
-              // unless endsAtKm > 0, so the branch below is the honest way to
-              // say that rather than inventing a string for it.
-              distanceLabel: label,
-            }),
-            why: baseBuildOfferWhy(),
-          }
-        }
-
-        return NextResponse.json(
-          {
-            error: err.message,
-            reason: 'base_volume',
-            base: err.base,
-            ...(onramp ? { onramp } : {}),
-            ...(getRunning ? { get_running: getRunning } : {}),
-          },
-          { status: 422 },
-        )
-      }
-      throw err
+    // §118 / P-15 — the runner accepted the base-build offer. Returned through the
+    // SAME `{ plan }` shape as the free-tier success path, so the client saves and
+    // previews it by the route it already has. No enrichment and no foundation
+    // composition: `plan_kind: 'base_build'` is its own plan object and both passes
+    // are shaped for a race block.
+    if (outcome.kind === 'base_build') {
+      return NextResponse.json({ plan: outcome.plan })
     }
 
-    // ADR-020 Option A — server owns foundation-block construction.
-    // composePlanWithFoundation is the single owner of plan.weeks mutation
-    // post-generation; it re-validates unfiltered, so both tiers' checks below
-    // now see foundation weeks for the first time in the live path.
-    const today = formatDate(new Date())
-    const { plan: composedRule, gapClass, violations: composeViolations } =
-      composePlanWithFoundation(rulePlan, input, today, input.foundation_decision)
-    enforceViolations(composeViolations)
-    composedRule.meta.foundation_gap_class = gapClass
+    // ⚠️ BOTH PLANS, DELIBERATELY. `composedRule` is what the runner gets;
+    // `rulePlan` is the foundation-FREE plan that `enrich()` and `generateFreeIntro()`
+    // must receive, because §57 keeps foundation-week copy away from the model and
+    // ADR-020's blast-radius table confirms that is by design. The revert ladder
+    // needs `composedRule` as its source of rule copy. 🔴 DO NOT MUTATE `rulePlan`
+    // AND READ `composedRule` — that was `FOUNDATION-META-ALIAS-01`.
+    const { plan: composedRule, rulePlan, gapClass, composeViolations } = outcome
 
     // Free tier: no enrichment. CA-01 — on the user's FIRST plan only, add a
     // single short "why this plan" intro line (the one AI surface a free user

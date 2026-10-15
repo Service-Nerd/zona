@@ -150,25 +150,56 @@ describe('FOUNDATION-META-ALIAS-01 — the route stamps the plan it returns', ()
    * stripped before matching — the prose here DESCRIBES `rulePlan.meta`
    * deliberately and must not trip its own check.
    */
-  it('the route never mutates rulePlan.meta after composing', () => {
-    const src = readFileSync('app/api/generate-plan/route.ts', 'utf8')
-    const at = src.indexOf('composePlanWithFoundation(')
-    expect(at, 'the compose call moved — re-anchor this check').toBeGreaterThan(-1)
+  /** Comments are prose. The notes in both files DESCRIBE `rulePlan.meta` on purpose. */
+  const code = (file: string) => readFileSync(file, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n')
 
-    const after = src
-      .slice(at)
-      .split('\n')
-      .map(l => l.replace(/\/\/.*$/, ''))          // line comments
-      .join('\n')
-      .replace(/\/\*[\s\S]*?\*\//g, '')            // block comments
-
-    const offenders = Array.from(after.matchAll(/rulePlan\.meta\.([A-Za-z_]+)\s*=/g))
-      .map(m => m[1])
+  /**
+   * ENGINE-ENTRY-01 re-anchored this (2026-10-15). The compose call moved into
+   * `lib/plan/engine.ts`, so the old "after the compose call in the route" bound no
+   * longer exists — and it failed loudly rather than passing on an empty slice,
+   * which is the failure mode this repo has recorded three times in one file.
+   *
+   * ⚠️ TWO FILES, TWO DIFFERENT BOUNDS, because the hazard is different in each:
+   * the route now holds `rulePlan` ONLY to hand to `enrich()` and
+   * `generateFreeIntro()` (§57 keeps foundation copy from the model), so it must
+   * never stamp it **at all** — a stricter rule than before. The engine composes
+   * internally, so its bound is still "after the compose call".
+   */
+  it('the route never mutates rulePlan.meta AT ALL — it only passes it to the AI', () => {
+    const offenders = Array.from(
+      code('app/api/generate-plan/route.ts').matchAll(/rulePlan\.meta\.([A-Za-z_]+)\s*=/g),
+    ).map(m => m[1])
     expect(
       offenders,
-      `the route writes rulePlan.meta.${offenders.join(', rulePlan.meta.')} after compose — ` +
-      'that is FOUNDATION-META-ALIAS-01 exactly. Stamp the composed plan instead.',
+      `the route writes rulePlan.meta.${offenders.join(', rulePlan.meta.')} — that is ` +
+      'FOUNDATION-META-ALIAS-01 exactly. Stamp the plan the route RETURNS instead.',
     ).toEqual([])
+  })
+
+  it('the engine never mutates rulePlan.meta after composing', () => {
+    const src = code('lib/plan/engine.ts')
+    const at = src.indexOf('composePlanWithFoundation(')
+    expect(at, 'the compose call moved — re-anchor this check').toBeGreaterThan(-1)
+    const offenders = Array.from(
+      src.slice(at).matchAll(/rulePlan\.meta\.([A-Za-z_]+)\s*=/g),
+    ).map(m => m[1])
+    expect(
+      offenders,
+      `lib/plan/engine.ts writes rulePlan.meta.${offenders.join(', rulePlan.meta.')} after ` +
+      'compose. The composed plan is what the caller gets; stamp that.',
+    ).toEqual([])
+  })
+
+  it('and the engine hands BOTH plans back, so the caller need not guess', () => {
+    // The API is what makes the trap unreachable: the two plans have names. If
+    // `rulePlan` ever stops being returned, the caller has to reach for the composed
+    // one for the AI, which §57 forbids — so this is a real guard, not decoration.
+    const { rulePlan, plan } = compose(25)
+    expect(rulePlan).toBeDefined()
+    expect(plan).toBeDefined()
+    expect(plan.meta).not.toBe(rulePlan.meta)
   })
 
   it('the stale shared-meta claim is gone from the route', () => {

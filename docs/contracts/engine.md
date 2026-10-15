@@ -141,7 +141,7 @@ the first thing this signature cannot express.
 | Part | State |
 |---|---|
 | **1 · `ENGINE-PURITY-GATE-01`** — the engine may not import the app | ✅ `05fa327e`. Parity IDENTICAL, 6,066 cases |
-| **2 · `ENGINE-ENTRY-01`** — one entry point instead of 18 route imports | 🔲 **the only piece left, and the only risky one** |
+| **2 · `ENGINE-ENTRY-01`** — one entry point instead of 18 route imports | ✅ `2026-10-15`. **18 → 7**, route 806 → 605 lines. Parity IDENTICAL |
 | **3 · `ENGINE-CONTRACT-01`** — this document | ✅ `cc1d11b9`, 7 arms, 5 falsified |
 | *(found en route)* **`PARITY-NO-BENCHMARK-01`** | ✅ `58135cf9`. Grid 6,066 → 6,102 |
 
@@ -167,9 +167,25 @@ Named so the work is visible rather than discovered later:
 3. **The clock** — either accept a `now` argument or publish the generation date with the plan.
 4. **An outbound dependency**: `freeIntro` and `enrich` call Anthropic. A hosted engine carries
    a model dependency and a per-call cost, which is a commercial fact, not an architectural one.
-5. **`ENGINE-ENTRY-01`** — `app/api/generate-plan` imports **eighteen** engine modules and
-   `adjust-plan` ten, so the **route** is the orchestrator. Extract today and all eighteen
-   become public API.
+5. ~~**`ENGINE-ENTRY-01`**~~ — ✅ **DONE 2026-10-15.** `app/api/generate-plan` imported
+   **eighteen** engine modules and sequenced them itself, so the **route** was the
+   orchestrator and extracting would have made all eighteen public API. It now imports
+   **seven** engine modules — `lib/plan/engine.ts` plus the six the caller legitimately
+   owns — and `adjust-plan` fourteen, still unconverted.
+
+   ⚠️ **IT IS 18 → 7, NOT THE 18 → 1 THE ITEM ASKED FOR, because 1 contradicts this
+   document.** Five of the eighteen (`enrich`, `enrichAttribution`, `enrichPartialRevert`,
+   `enrichServerSave`, `freeIntro`) are assigned to the caller by § *What this contract does
+   NOT cover*, and `freeIntro` calls Anthropic; `canGenerateDistance` is a commercial gate at
+   the auth boundary (403, not 422). Collapsing those would drag the AI layer and persistence
+   inside the engine, which `ENGINE-PURITY-GATE-01` exists to forbid.
+
+   🔴 **AND THIS LINE SAID "`adjust-plan` TEN" WHILE THE REAL FIGURE WAS FOURTEEN**, for as
+   long as this contract has existed. `engineContract.test.ts` had an arm for the eighteen and
+   **none for the ten** — and its reader was `from '@/lib/plan/([a-zA-Z]+)'`, which matches
+   `@/lib/plan/` only. **Nine of adjust-plan's fourteen are `@/lib/coaching/*`**, so they were
+   invisible to the gate written to protect the claim beside them. Both routes are counted now,
+   by one shared reader that sees both directories and nested paths.
 
 ## What this contract does NOT cover
 

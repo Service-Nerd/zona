@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { resolveLevels, assessFitness } from './fitnessAssessment'
 import { generateRulePlan, derivedLevelsFor, vdotFor } from './ruleEngine'
+import { runEngine } from './engine'
 import { GENERATION_CONFIG } from './generationConfig'
 import { PINNED_PLAN_START_1012 as PINNED } from './__fixtures__/pinnedPlanStart'
 import type { GeneratorInput } from '@/types/plan'
@@ -126,27 +127,95 @@ describe('derivedLevelsFor — the refusal path reaches the ENGINE\'s answer', (
 })
 
 describe('the refusal telemetry records the levels it claims to', () => {
-  const ROUTE = readFileSync(join(__dirname, '..', '..', 'app', 'api', 'generate-plan', 'route.ts'), 'utf8')
+  /**
+   * ENGINE-ENTRY-01 (2026-10-15) — THIS WAS A SOURCE ASSERTION AND ITS STATED LIMIT
+   * IS GONE. It read: *"the refusal path needs auth, a request and a Supabase write,
+   * so there is no unit-testable seam."* That was true of the ROUTE. `runEngine`
+   * COMPUTES the telemetry payload and returns it — recording it is the caller's —
+   * so the payload is a value this test inspects directly.
+   *
+   * 🔑 The old arm could only prove the right source text was present. It could not
+   * prove the payload carries usable levels, which is the thing that was broken: 20
+   * production events, **0 carrying any level**.
+   */
+  const refuse = (extra: Record<string, unknown>) => {
+    const input = {
+      race_distance_km: 42.2, race_date: '2026-12-28', goal: 'finish',
+      current_weekly_km: 6, longest_recent_run_km: 3, days_available: 3,
+      training_age: '<6mo', age: 38, injury_history: [],
+      recent_quality_training: 'none', hard_session_relationship: 'neutral',
+      ...extra,
+    } as unknown as GeneratorInput
+    const outcome = runEngine({
+      input, tier: 'paid', displayUnits: 'km',
+      planStart: '2026-10-05', today: '2026-10-05',
+    })
+    expect(outcome.kind, 'this input must be refused for the arm to mean anything').toBe('refusal')
+    if (outcome.kind !== 'refusal') throw new Error('unreachable')
+    expect(outcome.telemetry, 'a designed refusal must be recordable').not.toBeNull()
+    return { input, detail: outcome.telemetry!.detail }
+  }
 
-  // A source assertion, and its limits are stated: the refusal path needs auth, a
-  // request and a Supabase write, so there is no unit-testable seam. What CAN be
-  // asserted is that the event is built from the owner and not from the field that
-  // was always undefined.
-  it('builds the level fields from derivedLevelsFor, not from input.fitness_level', () => {
-    const i = ROUTE.indexOf("recordOpsEvent('plan_refused_by_design'")
-    expect(i, 'the refusal event moved — re-point this check').toBeGreaterThan(0)
-    // ⚠️ COMMENTS STRIPPED BEFORE MATCHING. The first version of this arm matched
-    // the whole slice and failed on the EXPLANATORY COMMENT directly above the
-    // fix, which quotes the defective line verbatim. That is the
-    // "ownership arm matching its own comment" class CLAUDE.md records three
-    // instances of; a check that cannot tell prose from code is not a check.
-    const block = ROUTE.slice(i, i + 3000)
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n')
-    expect(block).toContain('derivedLevelsFor(input)')
-    expect(block).toContain('fitness_level_declared')
-    expect(block).toContain('fitness_level_assessed')
-    // 🔴 The defect, pinned: the bare field must not be the recorded level again.
-    expect(block).not.toMatch(/\bfitness_level:\s*input\.fitness_level\b/)
+  /** What the WIZARD sends. `fitness_level` is the API-level override it never sets. */
+  const WIZARD = { user_declared_level: 'experienced' }
+
+  it('the payload carries all four derived levels, not undefined', () => {
+    const { detail } = refuse(WIZARD)
+    for (const k of ['fitness_level_declared', 'fitness_level_assessed',
+                     'fitness_level_structural', 'fitness_level_intensity']) {
+      expect(detail, `the refusal event lost ${k}`).toHaveProperty(k)
+    }
+    // Present is not enough — undefined is the exact state the 20 events were in.
+    expect(detail.fitness_level_assessed).toBeTruthy()
+    expect(detail.fitness_level_structural).toBeTruthy()
+    expect(detail.fitness_level_intensity).toBeTruthy()
+  })
+
+  it('🔴 the bare `fitness_level` key does not come back — that WAS the defect', () => {
+    expect(refuse(WIZARD).detail, 'REFUSAL-TELEMETRY-LEVEL-01 returning')
+      .not.toHaveProperty('fitness_level')
+  })
+
+  it('records what the runner SAID and what the engine ASSESSED, and they disagree', () => {
+    // The whole value of the event: a refusal where the two differ is the
+    // interesting one. A 6 km/week first-timer who calls themselves experienced.
+    const { detail } = refuse(WIZARD)
+    expect(detail.fitness_level_declared).toBe('experienced')
+    expect(detail.fitness_level_structural, 'a 6 km/week first-timer is not structurally experienced')
+      .toBe('beginner')
+    expect(detail.fitness_level_assessed).toBe('beginner')
+    // The wizard sends no API override, so it is recorded as absent rather than guessed.
+    expect(detail.fitness_level_api_override).toBeNull()
+  })
+
+  it('agrees with derivedLevelsFor itself, so producer and event cannot drift', () => {
+    const { input, detail } = refuse(WIZARD)
+    const l = derivedLevelsFor(input)
+    expect(detail.fitness_level_declared).toBe(l.declared ?? null)
+    expect(detail.fitness_level_assessed).toBe(l.assessedStructural)
+    expect(detail.fitness_level_structural).toBe(l.structural)
+    expect(detail.fitness_level_intensity).toBe(l.intensity)
+  })
+
+  /**
+   * ⚠️ MEASURED, NOT ASSUMED, AND IT CORRECTED AN EARLIER VERSION OF THIS ARM.
+   * I first asserted `assessed` could never equal the API override. It can: with
+   * `fitness_level` set, `derivedLevelsFor` returns the override for **all four**
+   * levels and the engine's genuine read sits in `assessment.structural`, which the
+   * event does not carry. So when the override IS present the telemetry cannot tell
+   * SAID from ASSESSED.
+   *
+   * 🔻 A LATENT GAP, NOT A LIVE DEFECT — the wizard sends `user_declared_level` and
+   * never `fitness_level`, which is the entire finding of REFUSAL-TELEMETRY-LEVEL-01.
+   * Pinned here so it is visible, and so that if a caller ever does set the override
+   * the limitation is already written down rather than rediscovered.
+   */
+  it('pins the API-override case: all four collapse to the override', () => {
+    const { detail } = refuse({ fitness_level: 'experienced' })
+    expect(detail.fitness_level_api_override).toBe('experienced')
+    expect(detail.fitness_level_assessed).toBe('experienced')
+    expect(detail.fitness_level_structural).toBe('experienced')
+    // And the honest consequence: nothing in the event holds the engine's own read.
+    expect(detail.fitness_level_declared).toBeNull()
   })
 })

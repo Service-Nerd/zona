@@ -1,6 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { runEngine } from './engine'
+import type { GeneratorInput } from '@/types/plan'
+
+/** A first-time marathoner below §111's base-volume door — P-15's own cohort, and
+ *  the runner this whole file exists for. `effectiveStartKm > 0`, so
+ *  `getRunningApplies` is true and a base build is a thing they can have. */
+const refusedRunner = (): GeneratorInput => ({
+  race_distance_km: 42.2, race_date: '2027-04-25', goal: 'finish',
+  current_weekly_km: 8, longest_recent_run_km: 5, days_available: 3,
+  training_age: '<6mo', age: 38, injury_history: [],
+  recent_quality_training: 'none', hard_session_relationship: 'neutral',
+} as unknown as GeneratorInput)
 
 /**
  * P-15 — the refusal gains an action.
@@ -57,7 +69,10 @@ describe('P-15 — a refusal never terminates without a named next action', () =
   it('reads the real files, so nothing below can pass vacuously', () => {
     expect(SCREEN).toContain('<RefusalView')
     expect(VIEW).toContain('export default function RefusalView')
-    expect(ROUTE).toMatch(/\bgetRunningApplies\b/)
+    // ENGINE-ENTRY-01 — the server half of this file is no longer a grep. The route
+    // calls the engine; the engine's behaviour is asserted directly below.
+    expect(ROUTE).toMatch(/runEngine\(\{/)
+    expect(typeof runEngine).toBe('function')
   })
 
   it('the client READS the offer the server already computes', () => {
@@ -93,13 +108,70 @@ describe('P-15 — a refusal never terminates without a named next action', () =
     // preview) is forty lines long and a copy would drift from it.
     expect(SCREEN).toContain('handleGenerate({ acceptBaseBuild: true })')
     expect(SCREEN).toContain('accept_base_build: true')
+    // The route still reads the flag off the RAW BODY — deliberately not on
+    // `GeneratorInput`, because it is a client intent about which plan to build, not
+    // an attribute of the runner (it would otherwise leak into every input grid).
     expect(ROUTE).toMatch(/\baccept_base_build\b/)
-    expect(ROUTE).toContain('acceptBaseBuild && getRunningApplies(input)')
+    expect(ROUTE).toMatch(/runEngine\(\{\s*input,\s*tier,\s*acceptBaseBuild/)
   })
 
-  it('the server returns a real plan, not a promise of one', () => {
-    expect(ROUTE).toMatch(/const \{ plan: baseBuildPlan \} = generateGetRunningPlan/)
-    expect(ROUTE).toContain('NextResponse.json({ plan: baseBuildPlan })')
+  /**
+   * ENGINE-ENTRY-01 (2026-10-15) — THE SERVER HALF IS NOW BEHAVIOURAL.
+   *
+   * This file's own header explains why it was ever markup: *"this screen is behind
+   * auth and behind a wizard, so nothing in the suite can drive it."* True of the
+   * SCREEN, and it was also true of the route — which is why the acceptance path was
+   * pinned by `expect(ROUTE).toContain('acceptBaseBuild && getRunningApplies(input)')`,
+   * a string that a comment would satisfy and that says nothing about what comes back.
+   *
+   * 🔑 `runEngine` is a function of its arguments, so the acceptance path can be
+   * CALLED. The markup arms above still earn their place — they cover the client — but
+   * the server no longer needs a grep.
+   */
+  it('🔴 accepting the offer RETURNS A REAL PLAN, asserted not grepped', () => {
+    const outcome = runEngine({
+      input: refusedRunner(), tier: 'paid', displayUnits: 'km',
+      acceptBaseBuild: true, planStart: '2026-10-05', today: '2026-10-05',
+    })
+    expect(outcome.kind, 'accept_base_build was not honoured').toBe('base_build')
+    if (outcome.kind !== 'base_build') return
+    // A real plan, not a promise of one: weeks, and the plan kind §118 defines.
+    expect(outcome.plan.weeks.length).toBeGreaterThan(0)
+    expect(outcome.plan.meta.plan_kind).toBe('base_build')
+  })
+
+  it('🔴 and it is honoured UNCONDITIONALLY, not only when §111 happens to refuse', () => {
+    // `BASEBUILD-ADJUST-REBUILD-01`: the accept branch used to live inside
+    // `catch (BaseVolumeError)`, so "give me the base build" worked only if the race
+    // generator refused this input. Measured on the two live base-build plans, ONE of
+    // 8 editable keys flipped §111 from refusing to admitting — which under the old
+    // placement would have silently handed a base-build runner a RACE PLAN.
+    //
+    // So: an input the race generator ADMITS must still return a base build.
+    const admitted = {
+      race_distance_km: 21.1, race_date: '2027-04-25', goal: 'finish',
+      current_weekly_km: 30, longest_recent_run_km: 14, days_available: 4,
+      training_age: '2y+', age: 38, injury_history: [],
+      recent_quality_training: 'regular', hard_session_relationship: 'neutral',
+    } as unknown as GeneratorInput
+    expect(
+      runEngine({ input: admitted, tier: 'paid', displayUnits: 'km',
+                  planStart: '2026-10-05', today: '2026-10-05' }).kind,
+      'this control input must be ADMITTED for the arm to mean anything',
+    ).toBe('plan')
+    expect(
+      runEngine({ input: admitted, tier: 'paid', displayUnits: 'km',
+                  acceptBaseBuild: true, planStart: '2026-10-05', today: '2026-10-05' }).kind,
+      'the accept branch is back inside the refusal catch — BASEBUILD-ADJUST-REBUILD-01',
+    ).toBe('base_build')
+  })
+
+  it('the route hands that plan back in the shape the client already saves', () => {
+    // The one thing the behavioural arms cannot reach: that the caller does not
+    // reshape it. §118 returns through the SAME `{ plan }` JSON as the free-tier
+    // success path so the client needs no second save path.
+    expect(ROUTE).toContain("outcome.kind === 'base_build'")
+    expect(ROUTE).toContain('NextResponse.json({ plan: outcome.plan })')
   })
 
   it('never a dead end: EVERY CTA branch keeps the adjust path', () => {

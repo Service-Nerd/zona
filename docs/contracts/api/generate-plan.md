@@ -586,9 +586,35 @@ had before this existed.
 
 ## Generation modules
 
+🔴 **THE ROUTE IS NO LONGER THE ORCHESTRATOR (`ENGINE-ENTRY-01`, 2026-10-15).** It imported
+**eighteen** engine modules and sequenced them itself; it now imports **seven**, and the whole
+synchronous path — `planStart`, the §118 accept-base-build branch, `generateRulePlan`, the four
+designed refusals with their telemetry payloads, the §116/§118 offers, and
+`composePlanWithFoundation` — lives behind **`lib/plan/engine.ts → runEngine()`**.
+
+⚠️ **NO REQUEST OR RESPONSE SHAPE CHANGED.** Every status code, JSON key and ops-event payload
+documented on this page is unchanged, and `verify:parity` came back IDENTICAL over 6,102 cases.
+What changed is where the sequencing lives. The route still owns, by doctrine: auth and tier
+(ADR-003), the commercial distance gate (403, `canGenerateDistance`), the AI layer (ADR-006 —
+`enrich` and `freeIntro`), persistence, and **every** `recordOpsEvent` call.
+
+🔑 **A DESIGNED REFUSAL NOW CROSSES THAT SEAM AS A VALUE, NOT A THROW.** `runEngine` returns
+`{ kind: 'refusal', status: 422, body, telemetry }`; the route records the telemetry and returns
+the body. A GENUINE fault still throws and still reaches this route's own 500. The engine computes
+the telemetry payload (it owns `derivedLevelsFor`, `effectiveStartKm`, `assessOnRamp`) and the
+route writes it, which is what keeps `lib/plan/*` free of the service-role client.
+
+⚠️ **AND IT MADE THE REFUSAL MAPPING TESTABLE FOR THE FIRST TIME.** Four test files used to
+gate this route by GREPPING ITS SOURCE — two of them said in as many words that *"the refusal path
+needs auth, a request and a Supabase write, so there is no unit-testable seam."* `runEngine` is a
+function of its arguments, so those arms now assert the 422 body, the telemetry contents and the
+accept-base-build outcome directly. `engineOutcomeHandled.test.ts` holds the composition: every
+`EngineOutcome` kind must have a route branch, with the population parsed from the union itself.
+
 | Module | Responsibility |
 |--------|---------------|
-| `lib/plan/ruleEngine.ts` | Deterministic plan structure — distances, HR, zones, sessions |
+| **`lib/plan/engine.ts`** | **`ENGINE-ENTRY-01` — the engine's single entry point.** `runEngine()` is the whole synchronous path and the only engine door this route opens for generation. Returns a discriminated union; re-exports `validatePlan` so the enrichment chain re-validates through the same door. Documents what it deliberately does NOT take, and why |
+| `lib/plan/ruleEngine.ts` | Deterministic plan structure — distances, HR, zones, sessions. **Called by `engine.ts`, no longer by this route** |
 | `lib/plan/enrich.ts` | AI coaching voice — labels, themes, coach notes, confidence (trial/paid) |
 | `lib/plan/freeIntro.ts` | CA-01 — one-line free first-plan `meta.plan_intro` (Haiku, silent fallback) |
 | `lib/plan/generate.ts` | Orchestrator — calls rule engine then enricher |
