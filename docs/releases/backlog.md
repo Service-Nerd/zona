@@ -2032,6 +2032,32 @@ fixed.
 > It is not: §113's *"Why a declared zero is REFUSED"* rules it deliberately — from zero, compound growth
 > never reaches the floor — and the next step is the message itself. Checked before saying it.
 
+### 🔴 `PLAN-SAVE-SILENT-FAIL-01` — if saving a new plan fails, the runner sees nothing and we record nothing *(filed 2026-10-15, P1)* ⚙️ **NO BOARD** *(record it)* → 🧭 **DESIGN BOARD** *(what the runner is shown)*
+
+> `app/dashboard/GeneratePlanScreen.tsx` → `handleUsePlan`:
+>
+> ```ts
+> } catch {
+>   coordRef.current.saveFailed()
+>   setIsSaving(false)
+> }
+> ```
+>
+> **No message to the runner, no event to us.** The "Saving..." button quietly resets and nothing else
+> happens. `lib/plan.ts`'s `plan_save_invalid` cannot cover it: that module is isomorphic and its own
+> comment says it cannot use the service-role `recordOpsEvent` when called from the browser, which is
+> exactly where this save runs.
+>
+> 📐 **Why it matters now — a real runner.** S H (`e5cdd273`, Make-A-Wish, active: 7 runs since
+> sign-up) built a **marathon plan twice** on 2026-10-08, 15:38 and 15:40, **identical input both times**
+> (8,698 input tokens each), each delivered successfully (`partial_revert` of 2-3 weeks' AI copy; the plan
+> itself valid). **Neither was saved.** Whether S H never tapped save, or tapped it and it failed silently,
+> **cannot be told apart** — both leave exactly the same nothing.
+>
+> **Fix:** (1) record a `plan_save_failed` event from the client via a bearer route, as
+> `/api/ops/onboarding-event` already does for the same reason; (2) show the runner that the save did not
+> happen and let them retry — a Design Board question for the wording and placement.
+
 ### 🔵 `PLANS-SINGLE-NOT-MAYBE-01` — ~17 routes read `plans` with `.single()`, which turns "no row" into an error *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(robustness)*
 
 > 89 of 94 Supabase warnings in one day were PostgREST **406** from `.from('plans').select('plan_json')
