@@ -33,6 +33,7 @@ import PlanScaleCard from '@/components/shared/PlanScaleCard'
 import CharityCohortCard, { type CharityCohortCardProps } from '@/components/shared/CharityCohortCard'
 import { planScale } from '@/lib/plan/planScale'
 import type { DistanceUnits } from '@/lib/format'
+import { reportPlanSaveFailure } from '@/lib/ops/reportPlanSaveFailure'
 import { firstRunOfPlan } from '@/lib/plan/firstRun'
 import Sheet from '@/components/shared/Sheet'
 import { DurationPicker } from '@/components/shared/DurationPicker'
@@ -616,6 +617,10 @@ export default function GeneratePlanScreen({
    */
   const [offerFailed, setOfferFailed] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  // PLAN-SAVE-SILENT-FAIL-01 — a failed save is SHOWN, on the preview, beside the
+  // button the runner just tapped. It used to reset that button and say nothing.
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const saveAttemptsRef = useRef(0)
   // N8b — the preview is reachable as soon as the RULE plan is ready + the reveal
   // has played (fast). Waiting for the full enricher stream stranded the user on
   // "There it is." for 20–30s while the enricher ran — the ceremony is the
@@ -1319,6 +1324,8 @@ export default function GeneratePlanScreen({
   async function handleUsePlan() {
     if (!planRef.current || !onPlanSaved) return
     setIsSaving(true)
+    setSaveError(null)
+    saveAttemptsRef.current += 1
     coordRef.current.beginSave()
     try {
       // ENRICH-SAVE-01 — no wait. Save the plan the runner is looking at and let
@@ -1339,9 +1346,24 @@ export default function GeneratePlanScreen({
       // Enrichment that landed mid-save is safe to write now the save has.
       const queued = coordRef.current.saveCompleted()
       if (queued) void onPlanEnriched?.(queued)
-    } catch {
+    } catch (err) {
       coordRef.current.saveFailed()
       setIsSaving(false)
+      // 🔴 PLAN-SAVE-SILENT-FAIL-01 (2026-10-15). This catch used to end at the line
+      // above: the button reset from "Saving…" and NOTHING ELSE happened — no message
+      // to the runner, no record to us. A Make-A-Wish runner built an identical
+      // marathon plan twice and saved neither, and "never tapped save" could not be
+      // told from "tapped it and it failed".
+      //
+      // Shown FIRST, reported SECOND: the runner must never wait on telemetry, and
+      // `reportPlanSaveFailure` cannot throw, so it cannot replace this failure with
+      // its own. The plan stays on screen, so the button IS the retry.
+      setSaveError("Your plan didn't save. Check your connection and try again.")
+      void reportPlanSaveFailure(err, {
+        raceDistanceKm: planRef.current?.meta?.race_distance_km ?? null,
+        enrichmentPending: planRef.current?.meta?.enrichment === 'pending',
+        attempt: saveAttemptsRef.current,
+      })
     } finally {
       // SAVE-LATENCY-01 — clear the flag on EVERY exit, not only the error one.
       // On success `setIsSaving(false)` was never called, so the button stayed
@@ -1607,7 +1629,18 @@ export default function GeneratePlanScreen({
         </div>
 
         <div style={{ flexShrink: 0, background: 'var(--bg)', borderTop: '1px solid var(--line)', padding: '12px 20px calc(12px + env(safe-area-inset-bottom))' }}>
-          {hasExistingPlan && !isSaving && (
+          {/* PLAN-SAVE-SILENT-FAIL-01 — the existing in-app alert (`RedeemCodeScreen`):
+              role="alert", 14px, `--danger` (4.65:1 on `--bg`, AA). Centred to sit with
+              the save bar's other one-line note. Reuse, not a new pattern. */}
+          {saveError && !isSaving && (
+            <div role="alert" style={{
+              fontFamily: 'var(--font-ui)', fontSize: '14px', lineHeight: 1.5,
+              color: 'var(--danger)', textAlign: 'center', marginBottom: 'var(--space-2)',
+            }}>
+              {saveError}
+            </div>
+          )}
+          {hasExistingPlan && !isSaving && !saveError && (
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center', marginBottom: 'var(--space-2)' }}>
               This replaces your current plan.
             </div>

@@ -61,6 +61,15 @@ export type OpsEventKind =
   | 'plan_refused_by_design'
 
   | 'plan_save_failed'          // savePlanForUser threw on a server reshape/write path
+  // PLAN-SAVE-SILENT-FAIL-01 (2026-10-15) — the runner tapped "Use this plan" on a
+  // freshly generated plan and the save threw IN THE BROWSER. Reported by the client
+  // via /api/ops/plan-save-report, because `GeneratePlanScreen.handleUsePlan`'s catch
+  // used to reset the button and do nothing else: no message to the runner, no
+  // record to us. A Make-A-Wish runner built an identical marathon plan twice and
+  // saved neither, and "never tapped save" could not be told from "tapped it and it
+  // failed". Kept separate from `plan_save_failed` deliberately: that one is a SERVER
+  // reshape path, and conflating the two would hide which side broke.
+  | 'plan_save_failed_client'
   | 'plan_integrity_mismatch'   // an auto_applied adjustment never landed in plan_json (probe)
   | 'reshape_invalid'           // a reshaped plan failed a constitutional invariant (prod soft-degrade)
   | 'plan_enrich_failed'        // AI enrichment silently fell back to rule-engine output (GEN-FIX-02)
