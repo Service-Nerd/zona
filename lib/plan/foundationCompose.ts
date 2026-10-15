@@ -130,6 +130,38 @@ export function composePlanWithFoundation(
     }
   }
 
+  // FOUNDATION-META-ALIAS-01 (2026-10-15) — THE RETURNED `meta` IS ALWAYS A FRESH
+  // OBJECT, AND THE RETURNED PLAN IS NEVER THE CALLER'S.
+  //
+  // 🔴 Until here, this function returned `meta` in three different identity
+  // states depending on its input: the caller's own PLAN when no foundation weeks
+  // were built and nothing was uncovered; a fresh plan sharing the caller's META
+  // when weeks were built; and a fresh plan with fresh meta once the
+  // uncovered-runway spreads above fired. **A caller cannot be correct about
+  // that**, and one was not: `app/api/generate-plan/route.ts` mutated
+  // `rulePlan.meta` and returned `composedRule`, with a comment explaining that
+  // the two were one object. That comment was TRUE when it was written
+  // (`eb1b925b`, 2026-09-03) and FOUNDATION-LONG-RUNWAY-01 falsified it twelve
+  // days later (`65a5dd71`, 2026-09-15) by adding those spreads. Neither commit
+  // referenced the other.
+  //
+  // For 30 days a free runner whose start was DELAYED — any surplus runway, since
+  // §76 delays the start rather than truncating the end — lost `meta.plan_intro`,
+  // which is CA-01 and the only AI surface a free runner gets, and the
+  // `enrich-health` fleet metric lost the `meta.enrichment` it declares as its
+  // denominator. Measured: 76.6% of free-legal plans across a uniform 6-52 week
+  // race-date sweep, 3 of 35 live stored plans.
+  //
+  // ⚠️ MAKING IT UNCONDITIONAL IS THE FIX, not making it shared. A conditional
+  // alias is a trap: it rewards the caller that gets it wrong on short runways and
+  // punishes them on long ones, which is exactly how this survived a full suite.
+  // Now a caller that mutates what it passed IN and reads what came OUT is wrong
+  // in EVERY case, so the tests say so immediately.
+  //
+  // ⚠️ `weeks` is deliberately NOT cloned. This is a meta-identity guarantee, not
+  // a deep copy, and claiming more than it does is how the last assumption rotted.
+  assembled = { ...assembled, meta: { ...assembled.meta } }
+
   // Unfiltered — CB-2 found that filtering by invariant code (or by week)
   // discards real violations (e.g. blocked-day breaches landing on a
   // foundation week under a non-foundation-specific code). validatePlan sees

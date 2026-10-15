@@ -452,8 +452,11 @@ export async function POST(req: NextRequest) {
           .eq('user_id', user.id)
 
         if ((count ?? 0) === 0) {
+          // FOUNDATION-META-ALIAS-01 — generated FROM the foundation-free plan
+          // (unchanged: §57 keeps foundation copy away from the AI, as enrich()
+          // does) and stamped ON the plan this route actually returns.
           const intro = await generateFreeIntro(rulePlan, input, user.id, displayUnits)
-          if (intro) rulePlan.meta.plan_intro = intro
+          if (intro) composedRule.meta.plan_intro = intro
         }
       } catch (e) {
         console.error('[generate-plan] free intro skipped', e)
@@ -461,9 +464,19 @@ export async function POST(req: NextRequest) {
       // GEN-FIX-02 — free plans are never enriched by design (ADR-006 tier split).
       // Stamping 'skipped' rather than leaving the field absent means an absent
       // value is unambiguously "generated before this shipped", not "free tier".
-      // composedRule.meta IS rulePlan.meta (composePlanWithFoundation spreads
-      // the plan, not its meta object) so this stamp lands on both either way.
-      rulePlan.meta.enrichment = 'skipped'
+      //
+      // 🔴 FOUNDATION-META-ALIAS-01 (2026-10-15) — STAMPED ON `composedRule`, THE
+      // PLAN THIS ROUTE RETURNS. This line used to write `rulePlan.meta` under a
+      // comment asserting the two shared one meta object. That was true when
+      // written and `FOUNDATION-LONG-RUNWAY-01` falsified it twelve days later, so
+      // for 30 days every DELAYED-START plan returned with this field absent — the
+      // exact failure `BASEBUILD-ENRICH-VISIBILITY-01` had already recorded five
+      // days earlier in `schema.ts`, where an absent stamp made the digest report
+      // "0 of 23 missing" on a morning a paid runner held a voiceless plan. That
+      // fix swept for plan KINDS; it did not sweep for RETURN PATHS, which is the
+      // shape. `composePlanWithFoundation` now always returns a fresh meta, so
+      // there is no longer an aliased object to stamp by mistake.
+      composedRule.meta.enrichment = 'skipped'
       return NextResponse.json({ plan: composedRule })
     }
 
@@ -475,7 +488,16 @@ export async function POST(req: NextRequest) {
     // status is genuinely unknown at this point. Stamping 'pending' gives
     // the client-side save race (N8) a fingerprint: a *saved* plan reading
     // 'pending' means the user tapped through before final_plan landed.
-    rulePlan.meta.enrichment = 'pending'
+    //
+    // 🔴 FOUNDATION-META-ALIAS-01 — on `composedRule`, which is what the
+    // `rule_plan` frame below actually carries. Writing `rulePlan.meta` here left
+    // the fingerprint off every delayed-start plan, so a runner who tapped through
+    // early saved a plan with NO enrichment field at all — which GEN-FIX-02 says
+    // must mean "generated before this shipped". The saved FINAL plan was never
+    // affected (`finalPlan.meta.enrichment` is stamped directly below), and the two
+    // live paid rows with uncovered weeks confirm it: 'applied' and
+    // 'applied_partial'. It is the interim frame that lost its fingerprint.
+    composedRule.meta.enrichment = 'pending'
 
     // ENRICH-SERVER-SAVE-01 — the enrich→persist chain runs OUTSIDE the stream
     // body, registered with `waitUntil`.

@@ -1638,6 +1638,71 @@ about to BUILD**, and the cost here was his time, not mine.
 > versioning you cannot break, third-party auth, support) — and ⚠️ **the seat that would price it,
 > Traynor's, is stood down**, so nobody at that table asks *"what is the traffic?"* at 48 users.
 
+### 🔴 `FOUNDATION-META-ALIAS-01` — the free plan intro and the enrichment stamp are dropped on any delayed-start plan *(filed 2026-10-15, P1)* ⚙️ **NO BOARD** *(defect fix restoring CA-01 / GEN-FIX-02 intent; RCA done)*
+
+> 🔴 **FOUND DURING `ENGINE-ENTRY-01` ANALYSIS, NOT REPORTED. Broken 30 days** (2026-09-15 → 2026-10-15).
+>
+> `app/api/generate-plan/route.ts:456,466,478` mutate **`rulePlan.meta`** and return/stream
+> **`composedRule`**, relying on the two being one object. The route's own comment asserts it:
+> *"composedRule.meta IS rulePlan.meta (composePlanWithFoundation spreads the plan, not its meta
+> object)"*. ⚠️ **That was TRUE when written** (`eb1b925b`, 2026-09-03) and was falsified twelve
+> days later by `FOUNDATION-LONG-RUNWAY-01` (`65a5dd71`, 2026-09-15), which added two
+> `meta: { ...assembled.meta, ... }` spreads at `foundationCompose.ts:122-134` for the
+> uncovered-runway declaration. **Neither commit referenced the other.**
+>
+> 🔑 **THE ROOT CAUSE IS A FUNCTION THAT ALIASES CONDITIONALLY.** `composePlanWithFoundation`
+> returns a `meta` that is the SAME object when `uncovered_runway_weeks === 0` and a FRESH one
+> when it is above zero. A caller cannot be right about it, and the sibling route
+> (`generate-plan/foundation/route.ts:56`) stamps the **composed** plan — so generate-plan is the
+> outlier, not the pattern.
+>
+> 📐 **Measured, replaying the route's own mutation order:**
+>
+> | case | anchored start | uncov | meta shared | lost |
+> |---|---|---|---|---|
+> | free HM, race 25wk out | 2026-12-21 | 9 | **false** | `plan_intro` + `enrichment` |
+> | free 10K, race 30wk out | 2027-02-08 | 16 | **false** | `plan_intro` + `enrichment` |
+> | paid HM, race 26wk out | 2026-12-28 | 10 | **false** | `rule_plan` frame's `'pending'` |
+> | paid marathon, 20wk out | 2026-10-19 | 0 | true | nothing |
+>
+> **Consumers that actually break:** `PlanIntroCard` via `DashboardClient.tsx:4603` and
+> `GeneratePlanScreen.tsx:1567` (**the free runner's only AI surface, CA-01, never renders**);
+> the `enrich-health` fleet metric, whose declared denominator is
+> `plans.plan_json.meta.enrichment`; `notesProvenance.ts:45`; and `foundationResize.ts:113`,
+> which branches on `incoming.meta.enrichment === 'applied'` to preserve enriched copy.
+>
+> 🔴 **IT IS THE TWIN OF A DEFECT FIXED FIVE DAYS EARLIER AND DOCUMENTED IN `schema.ts:293`.**
+> `BASEBUILD-ENRICH-VISIBILITY-01` (2026-10-10) recorded this exact consequence — an absent
+> `enrichment` made the digest report *"every eligible plan has its AI coaching copy, 0 of 23
+> missing"* on a morning a PAID runner held the only voiceless plan they have, *"a true sentence
+> that excluded the one runner it was about."* **That fix swept for PLAN KINDS. It did not sweep
+> for RETURN PATHS that leave the stamp absent**, which is the shape. Ninth recorded instance of
+> *the remedy was applied to one twin*.
+>
+> ⚠️ **TWO EXPOSURE NUMBERS, MEASURING DIFFERENT THINGS, AND THE BIG ONE IS NOT THE REAL ONE.**
+> A uniform 6–52-week race-date sweep breaks the alias on **76.6%** of free-legal and **74.9%** of
+> paid plans — but that denominator is not the live population. Live it is **3 of 35** stored
+> plans, because 48 users pick near-term races. The sweep figure is what this becomes as runners
+> plan further ahead.
+>
+> ⚠️ **LIVE DAMAGE IS NOT ATTRIBUTABLE AND MUST NOT BE CLAIMED.** `enrichment: ABSENT` is
+> overloaded: **17 of the 32** UNAFFECTED control plans also have it absent, legitimately
+> (generated before GEN-FIX-02 shipped). One affected row is consistent with the defect and not
+> provably caused by it.
+>
+> 🔻 **A SEPARATE FINDING, FILED NOT CHASED: `plan_intro` is on 0 of 35 stored plans**, and only
+> one plan has ever been free tier. CA-01's reach is an open question independent of this bug.
+>
+> ⚠️ **`uncoveredRunway.test.ts` has 12 arms and none asserts meta identity**, because nothing
+> knew the route depended on it.
+>
+> **Fix:** point the three sites at the composed plan, AND make `composePlanWithFoundation`
+> return a fresh `meta` **unconditionally** so the trap cannot be re-entered silently. Regression
+> arm on both halves, each falsified.
+>
+> **Governance:** Coaching Board **exempt** (restores documented intent, changes no prescription);
+> SLT not required (no tier or scope change).
+
 ### 🧱 `ENGINE-ENTRY-01` — the LAST piece of the engine boundary. Everything needed to start is here *(filed 2026-10-14, P2)* ⚙️ **NO BOARD**
 
 > 🎯 **GOAL:** lift the coaching engine out to a hosted service, possibly monetised. **Parts 1
@@ -1688,6 +1753,35 @@ forbids.** Collapse only the synchronous half.
 - All 18 imports are **app-pure** (verified, not assumed): none imports Supabase, Next or the
   app. `enrichServerSave` is a pure predicate; `freeIntro` has no app imports but **does call
   Anthropic**.
+
+#### ⚠️ RE-MEASURED 2026-10-15 AT PICKUP — two of this item's numbers were wrong
+
+**`generate-plan` imports 18 distinct engine modules: CONFIRMED** (19 import statements —
+`@/lib/plan/length` is imported twice, a free tidy).
+
+🔴 **`adjust-plan` imports 14, NOT the 10 this item and `docs/contracts/engine.md` both
+claim.** The contract says *"`adjust-plan` ten"* and **nothing checks it**:
+`engineContract.test.ts`'s last arm counts `from '@/lib/plan/([a-zA-Z]+)'` — so it reads
+generate-plan only, matches `@/lib/plan/` only and not `@/lib/coaching/`, and `[a-zA-Z]+` cannot
+match a nested path like `@/lib/coaching/diff/sessionDiff`. adjust-plan's 14 are **9
+`@/lib/coaching/*` + 5 `@/lib/plan/*`**, so the claim was invisible to its own gate.
+**`DOC-TOKEN-DRIFT-01`'s class again: a number in a doc drifts, a number a script checks does
+not.** Fix both in the entry-point commit, which has to rewrite that section anyway.
+
+🔴 **AND THE ACCEPTANCE CRITERION "the 18 imports become 1" IS NOT ACHIEVABLE — IT CONTRADICTS
+THIS ITEM'S OWN CONSTRAINT.** Mapping every imported symbol to the line that uses it:
+
+| | modules | why |
+|---|---|---|
+| **Synchronous engine** → collapse | 12 | `ruleEngine` `foundationCompose` `length` `inputs` `designedRefusal` `startVolume` `baseVolume` `baseBuildOnRamp` `getRunningPlan` `baseBuildCopy` `longRunReadiness` `canUseFeature` |
+| **Split across both halves** | 1 | `invariants` — `enforceViolations` is synchronous, `validatePlan` is used only by the enrichment chain |
+| **Background / AI — MUST NOT MOVE** | 5 | `enrich` `enrichAttribution` `enrichPartialRevert` `enrichServerSave` `freeIntro`. The contract already says these are **the caller's**, and `freeIntro` calls Anthropic |
+
+12 + 1 + 5 = 18. ⚠️ **So the honest target is 18 → 6**, not 18 → 1: one entry point plus the five
+enrichment/AI modules the contract explicitly assigns to the caller. Claiming 1 would mean
+dragging the AI layer and the persistence predicate inside the engine, which
+`ENGINE-PURITY-GATE-01` exists to forbid. **Restate the acceptance criterion before building
+against it.**
 
 #### 🧪 The guard, and what it can and cannot see
 
