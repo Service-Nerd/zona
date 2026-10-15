@@ -16336,7 +16336,19 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > routes (daily note, run analysis, reframe) and surface a count in the existing daily digest. Do not
 > instrument all twelve.
 
-> 🔲 **OPS-ANTHROPIC-CREDIT-01 — enable auto-reload on the Anthropic account before codes go out.** *(P1, founder, XS, filed 2026-09-18.)*
+> ⚫ ~~**OPS-ANTHROPIC-CREDIT-01 — enable auto-reload on the Anthropic account before codes go out.**~~ *(P1, founder, XS, filed 2026-09-18.)*
+>
+> 🛑 **CLOSED 2026-10-15 — FOUNDER DECISION: NO AUTO-RELOAD. Do not re-propose.** *"I wont turn on auto
+> reload. Ill keep an eye on it from here."* Taken after all 500 Make-A-Wish Apple offer codes went out.
+>
+> 🔑 **WHAT MAKES MANUAL MONITORING WORK, verified rather than assumed:** a credit exhaustion is a
+> non-2xx from Anthropic, so `lib/ai/callAnthropic.ts:112-119` records **`ai_call_failed`** with the HTTP
+> `status` and the first 200 chars of Anthropic's own error text. Baseline on 2026-10-15: **455 `ai_call`,
+> 0 `ai_call_failed`** — so ANY `ai_call_failed` row is a signal, not noise. `/api/ops/ai-spend` reads them.
+>
+> ⚠️ **THE RESIDUAL, STATED ONCE:** nothing PUSHES that signal; it has to be looked at. And by ADR-006 an
+> exhausted balance degrades SILENTLY in the product — paid runners lose their coaching voice with no error
+> on screen. The founder has accepted that trade knowingly. **His item, not mine to chase.**
 >
 > The API runs on a prepaid balance. At zero, Anthropic returns a non-2xx, `aiRes.ok` is false everywhere,
 > and every AI surface silently degrades to rule-engine output for **all 500 runners at once**.
