@@ -1869,6 +1869,238 @@ converted, and a gate bounding the literal — ⚠️ **comments stripped first*
 the prose recording this. ⚠️ **Falsify by re-adding `'hard'` to one converted site and confirming the gate moves** —
 a count that cannot move is the thing being fixed.
 
+### 🔴 `ADJUST-SESSIONDAY-PREFIX-01` — the zone-drift and EF triggers are fed NOTHING on live data *(filed 2026-10-15, P1)* 🏃 **COACHING BOARD**
+
+🔴 **FOUND BY CONVERTING THE BACKTEST HARNESS TO THE ROUTE'S OWN ASSEMBLER, which is the only
+reason anybody looked.** `buildAdjustmentSignals` filters this week's analyses by a **`week_N_`
+prefix** on `run_analysis.session_day`:
+
+```ts
+const thisWeekAnalyses = analyses.filter(a => (a.session_day ?? '').startsWith(`week_${weekN}_`))
+```
+
+📐 **MEASURED IN PRODUCTION (read-only), and it matches nothing:**
+
+| | |
+|---|---|
+| live `run_analysis` rows | **88** |
+| carrying the `week_N_` prefix | **0** |
+| distinct `session_day` shapes | `mon` `tue` `wed` `fri` `sat` `sun` — **bare day keys** |
+| rows carrying `hr_in_zone_pct` | **78**, none of them prefixed |
+
+**So `hrInZoneData` is ALWAYS EMPTY and `efTrendPct` is ALWAYS NULL for every real runner.**
+The HR-based `zone_drift` path and `ef_decline` are starved by construction.
+
+🔑 **THE PROOF IS INSIDE ONE FILE, THREE LINES APART.** `lib/coaching/adjustmentEngine.ts` reads
+`session_day` **both ways**: `DAY_ORDER[a.session_day]` (line 278) and
+`week.sessions[a.session_day]` (line 330) both expect a **bare day**, while line 290 expects a
+prefix. Two of three agree with production; one does not, and it is the one feeding two triggers.
+
+📐 **MEASURED WITH THE HARNESS, by patching the filter to read `week_n` and replaying real
+histories** (experiment, reverted):
+
+| harness state | reachable | note |
+|---|---|---|
+| live route's filter | **0 of 8** | every HR-fed trigger starved |
+| filter reading `week_n` | **1 of 8** | `zone_drift` n=**2**, 2 runners, across 25 replayed weeks |
+
+⚠️ **`ef_decline` STAYS SILENT EVEN WITH THE FIX**, so that zero is genuine and not starvation —
+two different causes that looked identical before the harness was corrected.
+
+⚠️ **WHY THIS IS THE BOARD'S AND NOT A ONE-LINE DEFECT FIX.** The change restores documented
+intent, which `CLAUDE.md` exempts — **but its effect is to un-starve a detector whose only three
+production firings were ALL THREE REVERTED BY THE RUNNER** (`TRIGGER-BACKTEST-01`'s own measurement).
+Shipping the one-liner silently makes a distrusted detector live for every paid runner. The board
+must rule on whether `zone_drift` should fire at all before its input is restored, and
+`POSTRUN-PLAN-FEEDBACK-01` is already blocked pending exactly this question.
+
+🔻 **The 3 production `zone_drift` rows are consistent with the RPE path, not the HR path** —
+`buildRpeDisconnectAdjustment` stamps `trigger.type = 'zone_drift'` with
+`detail.source = 'rpe_disconnect'`. **Not confirmed**: I did not read those three rows' `detail`.
+That check is one query and belongs in the board brief.
+
+**The build, once ruled.** One line, plus a gate asserting the two readers agree about the column's
+shape — the contradiction is what made this survivable, so the fix is the pair, not the line.
+⚠️ **Falsify by replaying the harness**, which is now the instrument for it.
+
+### ✅ `BACKTEST-SECOND-ASSEMBLY-01` — **SHIPPED 2026-10-15**, and the item understated it badly ⚙️ **NO BOARD** *(tooling)*
+
+🔴 **FILED AS P3 TIDINESS. RE-MEASURED AT PICKUP, IT WAS A CONTAMINATED MEASUREMENT FEEDING A
+BLOCKED BOARD DECISION.** `scripts/backtest-adjustment-triggers.ts` answers Hutchinson's
+reachability question — *"would any of the eight detectors ever have fired?"* — and it built
+`AdjustmentCheckInput` itself. Field by field against `buildAdjustmentSignals`, **seven diverged
+and one was missing altogether**:
+
+| field | the harness | the route |
+|---|---|---|
+| `plannedKm` | summed session `distance_km` | the week's own `weekly_km` |
+| `hrInZoneData` | filtered on `week_n` | filtered on the `session_day` prefix |
+| `efTrendPct` | **first** non-null | the **mean** of them |
+| `currentPhase` | `week.phase` | resolved from `plan.phases` |
+| `recentFatigueRows` | unsorted, carried `status` | chronological, two columns |
+| `recentQualityAnalyses` | keyed `a.session_type`, no pace filter, no window cap | plan-join + pace-score filter + a 10-row window |
+| `recentLongRunAnalyses` | 🔴 **NEVER BUILT** | built from both axes (§66 Am.1) |
+
+⚠️ **SO `long_run_shortfall` COULD NOT FIRE NO MATTER WHAT THE DATA SAID**, and it sat in the
+silent column beside seven zeroes that looked identical. The columns it needs were **already being
+selected**; only the field was absent. **A harness that cannot feed a detector reports it as
+unreachable** — `SWEEP-VACUOUS-01`'s class, in the one place where that answer was about to be
+handed to a blocked coaching decision.
+
+⚠️ **THE ITEM'S OTHER PREMISE WAS WRONG IN MY FAVOUR AND I CORRECTED IT:** I filed this as a
+*second producer nobody declared*. The script's header **declared it explicitly** — *"any field it
+builds differently is a field it measures differently. Stated, not hidden."* Honest, and not enough:
+a declaration is not a mechanism, and nobody had done the field-by-field comparison it invited.
+
+✅ **Shipped:** the script calls `buildAdjustmentSignals`. It has no assembler of its own, so no
+field can measure differently. `adjustmentsThisWeek: 0` is the **one** deliberate difference, and it
+is not an assembly divergence: a replay must not be capped by adjustments that never existed.
+
+📐 **BEFORE / AFTER, ON REAL HISTORIES — and the number got WORSE, which is the point:**
+
+| | reachable | |
+|---|---|---|
+| before | **1 of 8** | and `long_run_shortfall`'s zero was a harness artefact, while `zone_drift`'s firing came from a filter the route does not use |
+| after | **0 of 8** | an honest report of what the LIVE ROUTE would do |
+
+🔴 **AND THAT 1 → 0 IS HOW `ADJUST-SESSIONDAY-PREFIX-01` WAS FOUND** (filed above, P1): the route's
+`session_day` prefix filter matches **0 of 88** live rows, so `zone_drift` and `ef_decline` are
+starved in production. ⚠️ **A harness that reports a WORSE number after being corrected is the
+harness working.** Patching the filter in an experiment restores `zone_drift` to n=2 / 2 runners —
+and `long_run_shortfall` stays silent with its field now built, so that zero is finally **genuine**.
+
+🔻 **Also fixed:** the script's header claimed the route *"assembles the input INLINE in
+`app/api/adjust-plan/route.ts`"* — true until `996050d7` this morning, stale by the afternoon.
+🔻 **Not touched:** `--unmasked` is still documented in the header and prints *"not yet
+implemented"* (`TRIGGER-BACKTEST-02`), which is pre-existing and honest.
+
+### 🔵 `GATE-SPAWN-VOLATILITY-01` — `hooksGate` shells out to `npx`, so its duration is a coin flip *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(tooling)*
+
+`lib/hooksGate.test.ts` runs `npx eslint --no-eslintrc --config ./.eslintrc.hooks.json` on one temp
+fixture, twice. 📐 **Measured: 483 / 492 / 602 ms in isolation against 1,094 / 1,108 / 1,196 /
+3,172 ms in the full suite** — a **6.5×** swing on a run whose suite aggregate moved **1.84×**.
+
+`SUITE-CONTENTION-01` declared both arms `volatile: true`, which exempts them from `check:slow`'s
+rule 3. ⚠️ **That is a real loss, stated there and here: rule 3 can no longer catch a genuine step
+change in those two arms.** The declaration is the bound, not the fix.
+
+**The build.** eslint has a Node API (`new ESLint({ overrideConfigFile })` → `lintText`), so the
+spawn is avoidable entirely — which removes the volatility at source and lets the `volatile` flag be
+dropped rather than carried. ⚠️ **Falsify by measuring isolated vs full-suite duration again and
+confirming the spread COLLAPSES** — the justification for the flag is a 6.5× spread, so the fix is
+only real if that number moves. 🔻 **P3: nothing is broken while this waits** — the two arms still
+run and still assert both directions; only rule 3 is blind to them.
+
+### ✅ `SUITE-CONTENTION-01` — **SHIPPED 2026-10-15**. Rule 1 normalises by load; the item's own prescription was backwards ⚙️ **NO BOARD** *(tooling)*
+
+🔴 **DECLARED INSIDE A BASELINE `reason` STRING ON 2026-09-25 AND FILED NOWHERE FOR TWENTY DAYS.**
+`grep -rl SUITE-CONTENTION-01 docs lib scripts` returned **one** hit: the JSON string that named it.
+Its instruction — *"widen the worker pool or split the plan-sweep tests, not add a fourth entry"* —
+sat in a field only `check-test-duration.ts` reads, with nothing scheduling it.
+
+🔴 **AND THE FIX WAS NEITHER OF THOSE. THE REMEDY HAD BEEN APPLIED TO ONE OF TWO RULES IN THE SAME
+FILE.** `CI-SLOW-LOAD-01` made **rule 3** (step-change drift) compare each test's SHARE of the suite
+total, with a header arguing the exact case: *"the same test measured 2,085 ms in the full parallel
+suite and ~700 ms in isolation."* **Rule 1 (NEW SLOW TEST) was left comparing absolute
+milliseconds** — and `LOAD`, the variable that fixes it, was declared **three lines above it**.
+**Eleventh recorded instance of the class, second of the day.**
+
+📐 **MEASURED, four runs on one unchanged commit:**
+
+| run | load | rule-1 findings |
+|---|---|---|
+| `verify`, a sibling session running its own suite | **3.16×** | **7** |
+| `verify`, quiet | **3.32×** | **1** — `sessionReconcile "(distance, km)"` at 1,572 ms |
+| `npm test` + `check:slow`, quiet | **1.61×** | **0** |
+| clean worktree at HEAD | ~1.6× | **0** |
+
+1,572 ms at 3.32× is **473 ms normalised**; the same test measures **965 ms** on a quiet run. Not one
+of the nine distinct tests across those runs belonged to the commit under test.
+
+📐 **THE PRESCRIPTION IS FALSIFIED WITH DATA, AND IT POINTED THE WRONG WAY.** Both pool widths run
+the identical population (1,751 suites / 5,256 tests / 0 failed — checked, because a short
+population is how this comparison would lie):
+
+| pool | suite test-time | LOAD | tests ≥ 1,000 ms |
+|---|---|---|---|
+| default (9 forks on 10 CPUs) | 182,181 ms | **2.15×** | 27 |
+| `--maxWorkers=4` | **81,725 ms** | **0.96×** | **12** |
+
+**Narrowing** the pool halves per-test duration. Widening it — the note's instruction — moves
+per-test time the wrong way, because the suite is CPU-bound plan generation and more parallelism
+means less CPU each. ⚠️ **Not adopted**, deliberately: it would re-baseline all 24 duration entries
+for a reason that is not about the code, and the gate is load-invariant now so it does not need to.
+🔻 **Wall clock was NOT measured** and is the open half — filed as `SUITE-POOL-WALLCLOCK-01`.
+
+✅ **Shipped:** rule 1's decision is now `newSlowVerdict(ms, load)`, a pure exported function.
+⚠️ **The hard wall (rule 2) stays absolute on purpose** — a timeout is an absolute thing — and an
+arm pins that, because "normalise everything" is the obvious over-correction. ⚠️ **An unmeasurable
+load (0, NaN, a baseline with no `suiteMs`) degrades to the OLD absolute rule, never to no rule.**
+
+🔑 **THE SCRIPT HAD NO TESTS AT ALL** — folded in. `lib/ops/testDurationGate.test.ts`, 8 arms, both
+directions, using the four real load figures rather than hypotheticals.
+
+🔴 **AND THE CHANGE CREATED A STALE COMMENT IN ITS OWN COMMIT, WHICH THE TEST NOW GUARDS.** Line 154
+read *"the hard wall and the new-slow-test rule stay in absolute ms"* — **true when written**,
+falsified by this fix. **Third "a comment that was true when it was written" in this repo in one
+day.** Both halves asserted together now.
+
+⚠️ **TWO OF MY OWN TEST ARMS WENT RED FOR MY REASONS, NOT THE CODE'S**, and reading why was the
+point: `2999/2` is `1499.5`, which `Math.round` takes to **1,500**, so my "boundary" case was off by
+one; and a `toContain` on prose went red on a phrase that **is** in the file but **wrapped across two
+comment lines** — the matcher was asserting the line width. Falsified both ways: reverting the
+normalisation turns 4 arms red on the incident case, and normalising the hard wall too turns the
+wall arm red.
+
+### 🔵 `SUITE-POOL-WALLCLOCK-01` — narrowing the worker pool halves per-test time; the wall-clock cost is unmeasured *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(tooling)*
+
+Measured during `SUITE-CONTENTION-01`: `--maxWorkers=4` takes the suite's total test-time from
+**182,181 ms to 81,725 ms** on the identical population, and the count of tests over the 1,000 ms
+reporting line from **27 to 12**. So per-test fidelity improves sharply with *less* parallelism.
+
+⚠️ **I measured per-test duration and NOT wall clock**, which is the number anyone waiting on
+`npm run verify` actually cares about, and the two trade against each other. Fewer workers means
+each test is faster and the suite probably finishes later.
+
+**The build.** Measure wall clock at 4 / 6 / 9 / 10 workers, three runs each because this is exactly
+the band where one run proves nothing. Then decide what the suite is optimising for and write the
+reason into `vitest.config.ts` beside the setting. ⚠️ **If a pool setting is adopted, every duration
+baseline entry moves** — re-baseline with the declared reason, per `cohort:shape`'s rule, and never
+to turn something green. 🔻 **P3: the gate is load-invariant since `SUITE-CONTENTION-01`, so nothing
+is broken while this waits** — it is a speed and fidelity question, not a correctness one.
+
+### 🟡 `QUALITY-TYPE-NO-OWNER-01` — nine hand-written answers to *"is this a quality session"* *(filed 2026-10-15, P2)* 🏃 **COACHING BOARD**
+
+📐 **MEASURED while moving one of them** (`ADJUST-ENGINE-ENTRY-01`), by grepping `lib/` for the set:
+
+| where | set |
+|---|---|
+| `lib/coaching/adjustmentEngine.ts` *(was the route)* | `quality · intervals · tempo` |
+| `scripts/backtest-adjustment-triggers.ts` | `quality · intervals · tempo` — **a second copy of the same line** |
+| `lib/plan/invariants.ts:5741` | `quality · intervals · tempo` |
+| `lib/plan/sessionComposer.ts:114` | `quality · tempo · intervals · hard` |
+| `lib/coaching/planAdjustment.ts:195` | `quality · intervals · tempo · long · hard` |
+| `lib/coaching/planAdjustment.ts:949`, `lib/coaching/coachingFlag.ts:19`, `lib/coaching/manualSessionFeedback.ts:42` and `:93`, `lib/coaching/prompts/postRaceReshape.ts:108` | `quality · intervals · tempo · hard` |
+| `lib/coaching/postRaceReshape.ts:53` | `quality · intervals · tempo · hard · long` |
+| `lib/plan/invariants.ts:2827` | `session.type === 'quality'` **alone** |
+
+🔴 **THEY DISAGREE ON `hard` AND `long`, AND BOTH DISAGREEMENTS ARE PRESCRIPTION-RELEVANT.** `type: 'hard'` is the 5K
+time trial (`SESSION-COLOUR-TT-01`) and `type: 'long'`/`'easy'`+`role: 'long_run'` is the long run — so whether a
+session counts as "quality" decides whether ENGINE-01's fitness signal reads it, whether a post-race blackout
+suppresses it, and what the coach note calls it. **This is the `SESSION-KM-01` shape exactly:** logic written out by
+hand in many places with *two incompatible answers* among them.
+
+⚠️ **NOT A RELOCATION, WHICH IS WHY IT WAS FILED RATHER THAN FOLDED IN.** `sessionRole.ts` already owns `isLongRun`,
+`isTimeTrial`, `isStructuredSession` and `coachingSessionType` — an `isQualitySession` belongs beside them. But
+**unifying the nine changes WHICH ROWS each consumer reads**, and the board owns that: ENGINE-01's threshold was
+calibrated against the three-type set, so widening it silently re-tunes a trigger.
+
+**The build.** Board rules on the canonical set (or on there being more than one, named: a *stimulus* set and a
+*structured-session* set are plausibly different questions). Then one owner in `sessionRole.ts`, every call site
+converted, and a gate bounding the literal — ⚠️ **comments stripped first**, because the arm would otherwise fire on
+the prose recording this. ⚠️ **Falsify by re-adding `'hard'` to one converted site and confirming the gate moves** —
+a count that cannot move is the thing being fixed.
+
 ### 🔵 `BACKTEST-SECOND-ASSEMBLY-01` — the backtest harness builds the engine's input its own way *(filed 2026-10-15, P3)* ⚙️ **NO BOARD**
 
 `scripts/backtest-adjustment-triggers.ts` assembles `AdjustmentCheckInput` independently of

@@ -118,6 +118,11 @@ describe('the materialised rest day satisfies §64, which is what makes this los
 describe('no caller hand-rolls the mapping any more', () => {
   const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
 
+  const stripComments = (src: string) => src
+    .split('\n')
+    .filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l))
+    .join('\n')
+
   it('🔴 the engine uses the owner, and the null sentinel is GONE', () => {
     // `ADJUST-ENGINE-ENTRY-01` moved the assembly out of the route; the source
     // arm moves with it. Kept as a source arm because this one asserts an
@@ -172,10 +177,24 @@ describe('no caller hand-rolls the mapping any more', () => {
     })).not.toThrow()
   })
 
-  it('the backtest harness uses it too — there were TWO copies by the time this was found', () => {
-    const src = read('scripts/backtest-adjustment-triggers.ts')
-    expect(src).toContain('orderedWeekSessions(week)')
-    expect(src).not.toContain("malformed week")
+  it('the backtest harness has NO week mapping of its own — it reaches the owner through the engine', () => {
+    // 🔴 THIS ARM USED TO ASSERT `orderedWeekSessions(week)` IN THE SCRIPT, and it fired
+    // when `BACKTEST-SECOND-ASSEMBLY-01` converted the harness to call
+    // `buildAdjustmentSignals`. The old claim was stale in LETTER and over-satisfied in
+    // SUBSTANCE: the script no longer orders a week at all, because it no longer
+    // assembles the engine's input. Asserting the direct call would now forbid the
+    // stronger arrangement, which is a gate holding a fix back.
+    // ⚠️ COMMENTS STRIPPED, for the reason the sibling arm below already records: the
+    // harness's header now EXPLAINS the seven divergences this conversion removed, and a
+    // guard that fires on prose describing its own fix gets switched off — which this
+    // repo treats as equivalent to having no guard. Falsified both ways: a subscript use
+    // in CODE still fails, a mention in a COMMENT does not.
+    const src = stripComments(read('scripts/backtest-adjustment-triggers.ts'))
+    expect(src, 'the harness must go through the engine\'s assembler')
+      .toContain('buildAdjustmentSignals(')
+    expect(src, 'and must not have re-grown a mapping of its own')
+      .not.toMatch(/orderedWeekSessions|DAY_ORDER\s*\[/)
+    expect(src).not.toContain('malformed week')
   })
 
   it('the engine’s inline rest object is the owner’s — it was the third copy', () => {
@@ -191,10 +210,6 @@ describe('no caller hand-rolls the mapping any more', () => {
   // and CLAUDE.md notes that a guard which fires on ordinary work gets switched off, which
   // it treats as equivalent to having no guard. Line numbers are irrelevant here, so a
   // plain filter is enough; the pre-commit hook does the same thing while preserving them.
-  const stripComments = (src: string) => src
-    .split('\n')
-    .filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l))
-    .join('\n')
 
   it('⚠️ and nothing new reintroduces the pattern', () => {
     // Bounded to the files that legitimately order a week by day: the engine entry

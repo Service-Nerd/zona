@@ -23,11 +23,37 @@
 //
 // ⚠️ WHAT IT PROVES AND WHAT IT DOES NOT.
 //   PROVES   — detector REACHABILITY on real data: which thresholds real runners cross.
-//   DOES NOT — that the route would have fired it. `AdjustmentCheckInput` is assembled
-//              INLINE in `app/api/adjust-plan/route.ts`, so this script is a SECOND
-//              assembler. It reuses the route's own load producers (`fetchWeeklyLoad`,
-//              `priorWeeks`) to keep the overlap as small as possible, but any field it
-//              builds differently is a field it measures differently. Stated, not hidden.
+//   PROVES   — ...using the ROUTE'S OWN ASSEMBLER since 2026-10-15. `buildAdjustmentSignals`
+//              is exported from `lib/coaching/adjustmentEngine.ts`, so this script no longer
+//              has an assembler of its own and no field can measure differently.
+//
+// 🔴 IT DID HAVE ONE, AND IT UNDERSTATED REACHABILITY (`BACKTEST-SECOND-ASSEMBLY-01`).
+// Until `ADJUST-ENGINE-ENTRY-01` the route assembled `AdjustmentCheckInput` INLINE inside a
+// Next handler, so reuse was impossible and this script built its own. The header said so
+// — *"any field it builds differently is a field it measures differently. Stated, not
+// hidden"* — which was honest and was not enough. Measured field by field, SEVEN diverged
+// and ONE WAS MISSING ALTOGETHER:
+//
+//   plannedKm ............ summed session distance_km   vs the week's own `weekly_km`
+//   hrInZoneData ......... filtered on `week_n`         vs `session_day` prefix
+//   efTrendPct ........... FIRST non-null               vs the MEAN of them
+//   currentPhase ......... `week.phase`                 vs resolved from `plan.phases`
+//   recentFatigueRows .... unsorted, carried `status`   vs chronological, two columns
+//   recentQualityAnalyses  keyed `a.session_type`, no   vs plan-join + pace-score filter
+//                          pace filter, no window cap      + a 10-row window
+//   recentLongRunAnalyses  🔴 NEVER BUILT AT ALL        vs built from both axes (§66 Am.1)
+//
+// ⚠️ SO `long_run_shortfall` COULD NOT FIRE HERE NO MATTER WHAT THE DATA SAID, and it was
+// reported in the silent column beside seven genuine zeroes. The columns it needs
+// (`planned_load_km`, `actual_load_mins`, `planned_load_mins`) were already being SELECTED;
+// only the field was absent. **A harness that cannot feed a detector reports it as
+// unreachable** — the `SWEEP-VACUOUS-01` class, in the one place where that answer was
+// about to be handed to a blocked board decision.
+//
+//   DOES NOT — prove the route would fire it END TO END. The assembly is now shared, but
+//              the route's gates (tier, the opt-out, `MAX_ADJUSTMENTS_PER_WEEK`, the pending
+//              dedup) are not replayed, and `adjustmentsThisWeek` is deliberately 0 because
+//              a replay must not be capped by adjustments that never existed.
 //   DOES NOT — a false-POSITIVE rate. Nothing here knows whether a firing was RIGHT.
 //              It answers "is this reachable", which is the prerequisite question.
 //
@@ -48,14 +74,14 @@ import {
   checkAdjustmentTriggers, TRIGGER_TYPES, DETECTED_TRIGGER_TYPES,
   type AdjustmentCheckInput, type TriggerType,
 } from '../lib/coaching/planAdjustment'
-import { fetchWeeklyLoad, priorWeeks, EMPTY_LOAD } from '../lib/coaching/weeklyActualLoad'
-import { orderedWeekSessions } from '../lib/plan/weekSessions'
-import type { Plan, Session } from '../types/plan'
+import { fetchWeeklyLoad } from '../lib/coaching/weeklyActualLoad'
+import {
+  buildAdjustmentSignals, type AnalysisRow, type CompletionRow,
+} from '../lib/coaching/adjustmentEngine'
+import type { Plan } from '../types/plan'
 
 loadEnvConfig(process.cwd())
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-
-const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 
 // 🔴 WAS TWO HAND-WRITTEN COPIES OF THE ENGINE'S OWN VOCABULARY, and the compiler proved it
 // the moment `'manual'` was deleted from the union (`ADJUST-TRIGGER-MANUAL-DEAD-01`): both
@@ -63,7 +89,6 @@ const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 const ALL_TRIGGERS: readonly TriggerType[] = TRIGGER_TYPES
 const DETECTED:     readonly TriggerType[] = DETECTED_TRIGGER_TYPES
 
-const QUALITY_TYPES = new Set(['quality', 'intervals', 'tempo'])
 const arg = (f: string) => { const i = process.argv.indexOf(f); return i > -1 ? process.argv[i + 1] : null }
 const has = (f: string) => process.argv.includes(f)
 
@@ -114,45 +139,23 @@ async function main() {
     for (const week of plan.weeks) {
       const weekN = Number((week as { n?: number }).n)
       if (!weekN || weekN > reached) continue
-      // ADJUST-ENGINE-DEAD-01: was a SECOND hand-rolled copy of the route's broken
-      // mapping, and it discarded every real week as "malformed" — which is how this
-      // harness came to report "0 of 8 reachable" having replayed nothing.
-      const sessions = orderedWeekSessions(week)
-
-      const weekComps    = (comps ?? []).filter(c => Number(c.week_n) === weekN)
-      const weekAnalyses = (analyses ?? []).filter(a => Number(a.week_n) === weekN)
-      const thisWeek     = loads.get(weekN) ?? EMPTY_LOAD
-      const plannedKm    = sessions.reduce((s, x) => s + (Number((x as { distance_km?: number }).distance_km) || 0), 0)
-
-      const input: AdjustmentCheckInput = {
-        currentWeekN:        weekN,
-        totalWeeks:          plan.weeks.length,
-        currentWeekSessions: sessions as Session[],
-        linkedKm:            thisWeek.linkedKm,
-        offPlanKm:           thisWeek.offPlanKm,
-        plannedKm,
-        priorWeeksKm:        priorWeeks(loads, weekN, 4),
-        hrInZoneData: weekAnalyses.map(a => ({
-          hrInZonePct:     a.hr_in_zone_pct       as number | null,
-          aboveCeilingPct: a.hr_above_ceiling_pct as number | null,
-          actualLoadKm:    a.actual_load_km       as number | null,
-        })),
-        efTrendPct:          (weekAnalyses.find(a => a.ef_trend_pct != null)?.ef_trend_pct as number) ?? null,
+      // ADJUST-ENGINE-ENTRY-01 — the ROUTE'S OWN assembler, so every field is the
+      // field the route would read. Was a second inline copy; see the header for the
+      // seven divergences that cost `long_run_shortfall` its reachability.
+      //
+      // ⚠️ `adjustmentsThisWeek: 0` IS THE ONE DELIBERATE DIFFERENCE and it is not a
+      // divergence in assembly: a replay must not be capped by adjustments that never
+      // existed, or every week after the second in any history would be refused by
+      // `MAX_ADJUSTMENTS_PER_WEEK` and report as unreachable.
+      const input: AdjustmentCheckInput = buildAdjustmentSignals({
+        plan,
+        weekN,
+        isManual: false,
         adjustmentsThisWeek: 0,
-        currentPhase:        (week as { phase?: AdjustmentCheckInput['currentPhase'] }).phase,
-        recentFatigueRows:   weekComps.map(c => ({
-          fatigue_tag: c.fatigue_tag as string | null,
-          skip_reason: c.skip_reason as string | null,
-          status:      c.status      as string,
-        })) as AdjustmentCheckInput['recentFatigueRows'],
-        recentQualityAnalyses: weekAnalyses
-          .filter(a => QUALITY_TYPES.has(String(a.session_type)))
-          .map(a => ({
-            paceScore:         a.pace_score           as number | null,
-            hrAboveCeilingPct: a.hr_above_ceiling_pct as number | null,
-            weekN:             Number(a.week_n),
-          })),
-      }
+        analyses:    (analyses ?? []) as unknown as AnalysisRow[],
+        completions: (comps ?? []) as unknown as CompletionRow[],
+        weeklyLoad:  loads,
+      })
 
       checks++
       weeksReplayed++
