@@ -47,8 +47,29 @@ export async function POST(req: NextRequest) {
     // But RECORD it: this branch used to be silent, which is how a comp grant
     // could fail with no trace at all. If a charity runner reports a paywall
     // they should not be seeing, look here first.
+    // 🔴 `OPS-ANON-USER-ID-01` (2026-10-15) — THE ID IS VALIDATED HERE TOO, BECAUSE
+    // THIS BRANCH RUNS BEFORE THE GUARD 20 LINES BELOW.
+    //
+    // This read `rc.app_user_id ?? null`. `ops_events.user_id` is a **UUID**, and an
+    // offer-code runner who has not signed in yet arrives as
+    // `$RCAnonymousID:...` — so the insert fails with `22P02 invalid input syntax for
+    // type uuid`, and `recordOpsEvent` only `console.error`s, so **the trace is lost
+    // silently and the route still answers 200.**
+    //
+    // ⚠️ THAT IS THE EXACT FAILURE THE COMMENT ABOVE SAYS THIS BRANCH EXISTS TO END —
+    // *"this branch used to be silent, which is how a comp grant could fail with no
+    // trace at all"* — reintroduced for the one cohort it names, with 500 charity
+    // codes to go out. Found in a production Postgres log, not by a test.
+    //
+    // 🔑 Same remedy as the anonymous-id guard below, which already passes `null` and
+    // keeps the shape in `detail`. **The fix was applied to one of the two writers**
+    // and this is the other one.
     const t = webhookTrace('revenuecat', { result: 'unhandled', eventType: rc.type }, rc.environment)
-    await recordOpsEvent(t.kind, t.detail, rc.app_user_id ?? null)
+    const unhandledUserId = isSupabaseAppUserId(rc.app_user_id) ? rc.app_user_id : null
+    await recordOpsEvent(t.kind, {
+      ...t.detail,
+      ...(unhandledUserId ? {} : { app_user_id_shape: String(rc.app_user_id).slice(0, 24) }),
+    }, unhandledUserId)
     return NextResponse.json({ received: true })
   }
 
