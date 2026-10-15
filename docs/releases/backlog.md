@@ -1703,6 +1703,178 @@ about to BUILD**, and the cost here was his time, not mine.
 > **Governance:** Coaching Board **exempt** (restores documented intent, changes no prescription);
 > SLT not required (no tier or scope change).
 
+### ✅ `ADJUST-ENGINE-ENTRY-01` — **SHIPPED 2026-10-15**. **14 → 5**, route 601 → 438 lines ⚙️ **NO BOARD**
+
+> 🔁 **`ENGINE-ENTRY-01`'s other named residual, closed.** `app/api/adjust-plan/route.ts` was the last engine route
+> orchestrating itself: fourteen engine modules sequenced by the handler, so extracting the engine would have made all
+> fourteen public API. `lib/coaching/adjustmentEngine.ts → runAdjustmentEngine()` now owns the synchronous path —
+> row→signal assembly, the trigger stack, §69 magnitude, the prospective plan and the constitutional re-validation —
+> and returns `{ kind: 'none' } | { kind: 'adjustment', … }`.
+>
+> 🔑 **THE PRIZE, AGAIN, IS NOT FEWER IMPORTS.** Two gates asserted this route's COACHING RULES by grepping its source
+> text, and one said why in its own comment: *"planAdjustment is pure and testable; the ROUTE is where the axes are
+> assembled, and the original defect lived there, which is why this reads the shipped source."* True of a Next handler,
+> **false of the problem.** §66 Amendment 1's two-axis comparability is now asserted as **data**, and
+> `ADJUST-ENGINE-DEAD-01`'s 104-day outage — a sparse week throwing in `checkAdjustmentTriggers`, 31 of 31 live plans,
+> for three and a half months — is asserted as **behaviour**: hand the engine a four-day week and watch it not throw.
+>
+> 📐 **THE GATE POPULATION TOOK THREE INSTRUMENTS AND NO SINGLE ONE WAS RIGHT.** The task warned that a literal grep
+> had been short by one on generate-plan. Worse here: grep-the-path found **5**, an `fs.readFileSync` spy over the whole
+> suite found **1** (it is blind to `import { readFileSync } from 'fs'` — only namespace importers see the patch), and
+> **blanking the route and collecting the failures** found 5 again. Union **8**, and `callAnthropic.test.ts` is the one
+> no path-grep could reach: it greps for `surface: 'adjust-plan'` and fails if a declared AI surface has no call site.
+> ⚠️ **Blanking finds PRESENCE gates and is structurally blind to ABSENCE gates** — `sessionLabelReach`,
+> `analysisSupersedeReaders` and `planRouteClient` read the route and pass on an empty file.
+>
+> ⚖️ **THE ONE DECISION THAT COULD NOT BE COPIED FROM GENERATE-PLAN**, because ADR-006 points both ways here: the
+> **prompt builders are the caller's** (they take `units` and assemble runner-facing voice for a model the engine may
+> not call; ADR-006 makes the pass silent, so its failure cannot be an engine outcome), and the **summary validator is
+> the engine's** — `acceptAiSummary` asks *"does this prose contradict what I changed?"* and the engine is the only
+> thing holding the diff. ⚠️ **What actually removed the risk there is a TYPE, not a test:** the route handed the
+> validator two arrays by name, where a mismatched pair was expressible and silent; taking the proposal makes it
+> unmakeable.
+>
+> 🔴 **TWO OF MY OWN NEW CHECKS WERE HOLLOW AND FALSIFYING THEM SAID SO.** An *"argument order is load-bearing"* arm
+> stayed green with before/after swapped inside the implementation — **measured**: `validateSummaryAgainstDiff` unions
+> both sides on all three patterns and the changed-day set is identical under a swap, so it is symmetric **by
+> construction** and no input can distinguish them. The arm was replaced with that finding rather than with a guard
+> for a property that cannot be guarded. And a §69 arm claiming *"`isManual` forces confirmation"* stayed green with
+> `isManual ||` deleted, because it used a **reorder** — which `computeReshapeMagnitude` rates `high` unconditionally,
+> so the other half of the conjunction already answered true. Re-pointed at an RPE disconnect on an easy run, the one
+> place the two terms disagree. ⚠️ **A third claim was false in a COMMENT:** the barrel arm's own note said it stopped
+> a third symbol joining, and it counted MODULES, so a third name on the same import statement left the count at six.
+> The check was fixed to match the claim.
+>
+> ⚠️ **AND THE FIXTURE WAS THE FIRST THING WRONG.** A 2-week plan returned `none` for every trigger —
+> `TAPER_PROTECTION_WEEKS` swallows anything within three weeks of the end — so the composition arms passed while
+> exercising nothing. Twelve weeks now, and the length is commented as load-bearing.
+>
+> 🔴 **`verify:parity` IS BLIND TO THIS ENTIRELY, more so than to `ENGINE-ENTRY-01`.** It calls `generateRulePlan` and
+> never `checkAdjustmentTriggers`, `computeReshapeMagnitude` or `runAdjustmentEngine`: **zero occurrences**. IDENTICAL
+> says the plan generator was not disturbed and says **nothing** about the adaptive engine.
+>
+> 🔻 **WHAT THIS DOES NOT PROVE:** nothing walks `/api/adjust-plan` end to end. `ROUTE-E2E-GENERATE-01` (`e36d4f89`)
+> did exactly that for generate-plan the same day, and the pattern now exists — see the open item below. Nothing ran
+> on a device.
+>
+> **Governance:** Coaching Board **exempt** (relocation, no prescription delta); Design Board and SLT not required.
+
+### 🟡 `SUITE-CONTENTION-01` — declared inside a baseline reason, filed nowhere, for twenty days *(filed 2026-10-15, P2)* ⚙️ **NO BOARD** *(tooling)*
+
+🔴 **FOUND BY `check:slow` GOING RED ON A TEST NEITHER OF TODAY'S SHIPS WROTE.** The item was named on
+2026-09-25, inside a `reason` string in `lib/plan/__fixtures__/testDurationBaseline.json`:
+
+> *"a borderline test pushed over the reporting line by the contention from six test files added
+> today, not by anything in the test. ⚠️ **THIS IS THE THIRD BASELINE ENTRY IN ONE DAY FOR THE SAME
+> REASON** — the suite has grown 383 → 390 files and the borderline band is being consumed one test
+> at a time. **Filed as SUITE-CONTENTION-01: the next person should widen the worker pool or split
+> the plan-sweep tests, not add a fourth entry.**"*
+
+📐 **IT WAS NEVER FILED.** `grep -rl SUITE-CONTENTION-01 docs lib scripts` → **one** hit, the baseline
+JSON itself. So the instruction *"do not add a fourth entry"* has been sitting in a field that only
+`check-test-duration.ts` reads, with nothing scheduling the fix. **This repo's own rule: a declared
+reason is not a scheduled fix, and a note you intend to write up later is a note that does not
+exist.** Twenty days, and the suite is now **577 files** against the 390 that prompted it.
+
+📐 **MEASURED TODAY, three runs plus a control:**
+
+| run | `check:slow` | finding |
+|---|---|---|
+| `verify` while a sibling session ran its own full suite | **exit 1** | **7** NEW SLOW TESTs — noteVocabulary ×2, reentryCause, sessionDistanceReach, goalPastCv, sessionReconcile, planSchemaConformance |
+| `verify` quiet | **exit 1** | **1** — `sessionReconcile · "warm-up + main-set + cool-down = session total (distance, km)"` at 1572 ms |
+| `npm test` + `check:slow` quiet | **exit 0** | *"19 slow test(s), all baselined"* |
+| **control: clean worktree at HEAD, no uncommitted work** | **exit 0** | *"18 slow test(s), all baselined"* |
+
+⚠️ **NONE OF THE NINE DISTINCT TESTS BELONGS TO EITHER SHIP.** Every one is a plan-corpus generator
+whose wall-clock sits in the 0.8–1.6 s band, and they cross the 1,000 ms reporting line as a
+function of **machine load**, which is exactly what the 2026-09-25 note said.
+
+🔑 **AND THE ONE QUIET FINDING IS A PARAMETERISED TWIN OF AN ALREADY-BASELINED TEST.**
+`sessionReconcile.test.ts:122` is `it(\`warm-up + main-set + cool-down = session total (${metric}, ${units})\`)`.
+The baseline carries the **`mi`** variant at 1,503 ms. The **`km`** variant — the same test body, the
+other parameter — was left out. **Tenth recorded instance of *the remedy was applied to one twin*,**
+and the first one inside a test-infrastructure baseline rather than product code.
+
+**The build.** The note names the two real options and neither is "add an entry": **widen the worker
+pool** (`poolOptions`/`maxWorkers` — the contention is the cause, and the band is being eaten one
+test at a time) or **split the plan-sweep files** so a corpus generator is not contending with 576
+other files. ⚠️ **Then decide what `check:slow` should do about load at all** — its own header says
+it *"measures the LOCAL machine under full-suite contention"* and that it cannot see CI, so a
+load-sensitive 1,000 ms line will keep producing findings that are true and not about the test.
+⚠️ **Falsify by running the suite twice at different loads and confirming the verdict does NOT
+move** — a gate whose answer depends on what else is running is the `NOISE-GATE-01` shape, and this
+repo records four times that a guard firing on ordinary work gets switched off.
+🔻 **Deliberately NOT baselined by `ADJUST-ENGINE-ENTRY-01`**, on the 2026-09-25 note's own
+instruction. That ship adds **+1 file / +12 tests** and so contributes to the cause; it does not
+cause the finding.
+
+### 🟡 `QUALITY-TYPE-NO-OWNER-01` — nine hand-written answers to *"is this a quality session"* *(filed 2026-10-15, P2)* 🏃 **COACHING BOARD**
+
+📐 **MEASURED while moving one of them** (`ADJUST-ENGINE-ENTRY-01`), by grepping `lib/` for the set:
+
+| where | set |
+|---|---|
+| `lib/coaching/adjustmentEngine.ts` *(was the route)* | `quality · intervals · tempo` |
+| `scripts/backtest-adjustment-triggers.ts` | `quality · intervals · tempo` — **a second copy of the same line** |
+| `lib/plan/invariants.ts:5741` | `quality · intervals · tempo` |
+| `lib/plan/sessionComposer.ts:114` | `quality · tempo · intervals · hard` |
+| `lib/coaching/planAdjustment.ts:195` | `quality · intervals · tempo · long · hard` |
+| `lib/coaching/planAdjustment.ts:949`, `lib/coaching/coachingFlag.ts:19`, `lib/coaching/manualSessionFeedback.ts:42` and `:93`, `lib/coaching/prompts/postRaceReshape.ts:108` | `quality · intervals · tempo · hard` |
+| `lib/coaching/postRaceReshape.ts:53` | `quality · intervals · tempo · hard · long` |
+| `lib/plan/invariants.ts:2827` | `session.type === 'quality'` **alone** |
+
+🔴 **THEY DISAGREE ON `hard` AND `long`, AND BOTH DISAGREEMENTS ARE PRESCRIPTION-RELEVANT.** `type: 'hard'` is the 5K
+time trial (`SESSION-COLOUR-TT-01`) and `type: 'long'`/`'easy'`+`role: 'long_run'` is the long run — so whether a
+session counts as "quality" decides whether ENGINE-01's fitness signal reads it, whether a post-race blackout
+suppresses it, and what the coach note calls it. **This is the `SESSION-KM-01` shape exactly:** logic written out by
+hand in many places with *two incompatible answers* among them.
+
+⚠️ **NOT A RELOCATION, WHICH IS WHY IT WAS FILED RATHER THAN FOLDED IN.** `sessionRole.ts` already owns `isLongRun`,
+`isTimeTrial`, `isStructuredSession` and `coachingSessionType` — an `isQualitySession` belongs beside them. But
+**unifying the nine changes WHICH ROWS each consumer reads**, and the board owns that: ENGINE-01's threshold was
+calibrated against the three-type set, so widening it silently re-tunes a trigger.
+
+**The build.** Board rules on the canonical set (or on there being more than one, named: a *stimulus* set and a
+*structured-session* set are plausibly different questions). Then one owner in `sessionRole.ts`, every call site
+converted, and a gate bounding the literal — ⚠️ **comments stripped first**, because the arm would otherwise fire on
+the prose recording this. ⚠️ **Falsify by re-adding `'hard'` to one converted site and confirming the gate moves** —
+a count that cannot move is the thing being fixed.
+
+### 🔵 `BACKTEST-SECOND-ASSEMBLY-01` — the backtest harness builds the engine's input its own way *(filed 2026-10-15, P3)* ⚙️ **NO BOARD**
+
+`scripts/backtest-adjustment-triggers.ts` assembles `AdjustmentCheckInput` independently of
+`lib/coaching/adjustmentEngine.ts → buildAdjustmentSignals`, which is now the single owner. It already shares
+`orderedWeekSessions` (`weekSessions.test.ts` has an arm for that, added when there were *"TWO copies by the time it
+was found"*), and it carries its own `QUALITY_TYPES`.
+
+⚠️ **IT IS NOT THE SAME ASSEMBLY, AND THAT IS THE WHOLE DIFFICULTY.** The harness reads `a.session_type` straight off
+its own rows; the engine derives the type by joining the analysis back to the plan week. So converting it is **not a
+no-op** — it would change which historical sessions the backtest counts, i.e. the numbers the harness exists to
+report. Deliberately left alone by `ADJUST-ENGINE-ENTRY-01` for that reason (SLC: one job).
+
+**The build.** Decide whether the harness should measure what the ENGINE would read (then convert, re-run, and declare
+the moved figures as a re-baseline with a reason, exactly as `cohort:shape` requires) or whether its own read is the
+point (then say so in its header, and have the gate bound the duplication rather than forbid it). 🔻 **P3 because it
+is a measurement tool, not a runner-facing path** — but it is the kind of second producer this repo has paid for five
+times, and it is already named in two gates.
+
+### 🟡 `ROUTE-E2E-ADJUST-01` — nothing walks `/api/adjust-plan` end to end *(filed 2026-10-15, P2)* ⚙️ **NO BOARD**
+
+🔁 **The symmetric residual of `ADJUST-ENGINE-ENTRY-01`, and it is cheaper than it was yesterday**:
+`ROUTE-E2E-GENERATE-01` (`e36d4f89`) established that `environment: 'node'` runs `NextRequest`/`NextResponse` fine and
+that **one** faked `createClient` serves tier, plan and writes — 17 arms for generate-plan. adjust-plan needs the same
+treatment and has **more** route-side surface to pin than generate-plan did: six Supabase reads, the
+`dynamic_adjustments_enabled` opt-out, the pending-dedup early return, the 503 weekly-load refusal, the
+`plan_adjustments` insert, the auto-apply save with its `plan_save_failed` event, and two notification paths.
+
+⚠️ **The gate ORDER is the part worth pinning, because it is observable.** 401 → 403 (`dynamic_reshape_r20`) →
+`guardAiRequest` → opt-out → 404 → 503 → engine. A refactor that reordered any two of those changes which answer a
+runner receives, exactly as `ENGINE-ENTRY-01` recorded for the route-local `validate()` and the distance paywall.
+
+⚠️ **And one arm this route needs that generate-plan's did not:** `ADJUST-STATUS-WITHOUT-SAVE-01` (filed 2026-10-13)
+is about the save failing after the row is written. An end-to-end harness is what makes that falsifiable — make
+`savePlanForUser` throw and assert what the row says.
+
 ### ✅ `ROUTE-E2E-GENERATE-01` — **SHIPPED 2026-10-15** (`e36d4f89`). The route is walked end to end: **17 arms**, 8 falsifications ⚙️ **NO BOARD**
 
 > 🔁 **`ENGINE-ENTRY-01`'s named residual, closed.** Nothing had ever executed `POST /api/generate-plan`:
@@ -1745,9 +1917,11 @@ about to BUILD**, and the cost here was his time, not mine.
 > `ENGINE-PURITY-GATE-01` (`05fa327e`) · `ENGINE-CONTRACT-01` (`cc1d11b9`) · **`ENGINE-ENTRY-01` (`1c10f90d`)**, plus
 > `PARITY-NO-BENCHMARK-01` (`58135cf9`) and `FOUNDATION-META-ALIAS-01` (`276e89b8`), both found by looking rather than reported.
 >
-> 🔁 **ONE FOLLOW-ON OPEN, ONE CLOSED:**
-> — 🔻 **OPEN: `adjust-plan` still imports 14 engine modules** and has no entry point. It is the same shape of work,
->   smaller, and the contract now states the real figure.
+> 🔁 **BOTH FOLLOW-ONS NOW CLOSED:**
+> — ✅ **CLOSED 2026-10-15 by `ADJUST-ENGINE-ENTRY-01`**: `adjust-plan`'s 14 engine imports are **5** behind
+>   `lib/coaching/adjustmentEngine.ts` (route 601 → 438 lines). The contract's reader had a **fourth** hole and this
+>   found it — `from '@/lib/plan'`, the barrel, needs no trailing slash, so the honest pair is **14 → 5 on that
+>   reader, 15 → 6 counting the barrel**, and both are asserted now along with the exact symbol set.
 > — ✅ **CLOSED 2026-10-15 by `ROUTE-E2E-GENERATE-01`** (`e36d4f89`): the route is walked end to end — 17 arms under
 >   `lib/api/generatePlanRoute.test.ts`, 8 falsifications. The claim *"no test exercises auth → engine → stream"* is
 >   no longer true, and *"`verify:parity` cannot stand in for one"* still is: parity never calls
@@ -7183,7 +7357,9 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-10-15 (last ship `e36d4f89`, `main`). 576 files / 5,244 tests · `verify` **exit 0** · `audit-docs.sh` ALL CLEAN.** ✅ **THE ROUTE IS WALKED END TO END** — `ROUTE-E2E-GENERATE-01` closes `ENGINE-ENTRY-01`'s named residual on the same day it was filed. **17 arms, 8 falsifications**, every mutation red for the named reason. 🔑 **THE BRIEF INVITED ME TO CONCLUDE IT WASN'T WORTH BUILDING, AND SPIKING IT FIRST IS THE ONLY REASON I DIDN'T.** `vitest.config.ts`'s own comment says *"routes and Supabase-touching code stay out of scope"* — that reads as a constraint and is not one: `NextRequest`/`NextResponse` are Web-Fetch-based, so the handler runs under `environment: 'node'`, and **one** faked `createClient` serves tier resolution, display prefs, the athlete's name, the first-plan count, every ops write and the enriched-plan persist. **Four mocks, all at IO boundaries**; `getUserTier` → `resolveTier`, `guardAiRequest`, `validate()`, `canGenerateDistance`, `runEngine`, `recordOpsEvent`, the NDJSON stream (read by the real `readPlanStream`) and the `waitUntil` chain all run. Ten minutes of measuring beat the opinion I was invited to write. 🔴 **THE HIGHEST-VALUE ARM IS AN ORDER WITH NO VISIBLE SYMPTOM**: `validate()` runs before `canGenerateDistance`, so a 1-day marathon on free is **422 on days**, never **403 on price** — the runner is refused either way, but only the 403 writes `plan_distance_gate_blocked`, **the single measurement of who the paywall turns away**, so a hoist would quietly count input mistakes as commercial demand. 🥇 **PROVEN AGAINST PARITY RATHER THAN ASSERTED**: falsification 2 re-introduces `FOUNDATION-META-ALIAS-01` — the real 30-day defect `verify:parity` had returned **IDENTICAL 6,102** on three hours earlier — and arm E8 goes red. ⚠️ **MY OWN NEAR-MISS WAS A GREEN TEST, NOT A RED ONE**: the first enrich gate was armed by the mock itself, so it worked only because `enrich` had always already been reached when the test opened it — true every run, by microtask order. Rewritten as a deferred created before the request; **nothing was red and nothing would have been for weeks.** 🔑 **AND THE HARNESS IS PROVEN POSITIVELY** (arm A, the habit copied from `fetchRunAnalysis.test.ts`): breaking the double's `eq()` was noticed by **exactly one arm** — without A the other sixteen are green against a database ignoring its own filters. 📐 **Counts measured in a clean worktree at the commit**, because a sibling session's uncommitted `adjust-plan` work is in this checkout and the same run reads **577 / 5,256** with it. `verify:parity` deliberately **not** re-run: no production code changed, so it has nothing to compare. ⚠️ **STILL UNPROVEN AND SAID IN THE FILE HEADER, not a summary:** no Postgres (PostgREST shapes, not RLS/constraints/triggers), not the platform's `waitUntil`, **the 500 branch**, and no rate limiting (the fake's `rpc` returns `true`; `checkAiRateLimit` fails OPEN by design). 🔻 **One engine follow-on still open:** `adjust-plan`'s **14** imports. ⚠️ **ALL CLEAN was verified on a clean checkout of this commit.** The same audit run in the shared working tree also reports items with no roadmap line, and they are **not mine** — a sibling session's in-flight `adjust-plan` work (`ADJUST-ENGINE-ENTRY-01`, `ROUTE-E2E-ADJUST-01` and two others) was uncommitted in this checkout while I measured. ⚠️ **Nothing ran on a device.**
+**State at END of 2026-10-15 (last ship `996050d7`, `main`). 577 files / 5,256 tests · `verify:ci` **exit 0** · `verify:parity` **IDENTICAL 6,102** · `review:coaching` **no rate moved**.** ✅ **THE ENGINE BOUNDARY IS CLOSED ON BOTH ROUTES** — `ADJUST-ENGINE-ENTRY-01` collapses `adjust-plan` **14 → 5** (601 → 438 lines) behind `lib/coaching/adjustmentEngine.ts`, which was `ENGINE-ENTRY-01`'s other named residual. 🔑 **THE PRIZE IS THE GATES, AGAIN AND MORE SHARPLY:** two files asserted this route's COACHING RULES by grepping its source text, and `planAdjustment.test.ts` said why in its own comment — *"the ROUTE is where the axes are assembled, which is why this reads the shipped source"*. **True of a Next handler, false of the problem.** §66 Am.1's two-axis comparability is now **data** and `ADJUST-ENGINE-DEAD-01`'s 104-day outage is **behaviour**. ⚖️ **ADR-006 POINTED BOTH WAYS AND THE CUT IS NOT THE ONE GENERATE-PLAN MADE:** prompt builders are the caller's (they take `units`, assemble voice, fail silently); the summary **validator** is the engine's — it asks *"does this prose contradict what I changed?"* and the engine alone holds the diff. ⚠️ **And what removed that risk is a TYPE, not a test** — a hand-passed before/after pair could be mismatched; taking the proposal makes it unmakeable. 📐 **THE GATE POPULATION TOOK THREE INSTRUMENTS AND NO SINGLE ONE WAS RIGHT:** grep-the-path **5**, an `fs.readFileSync` spy over the whole suite **1** (blind to `import { readFileSync } from 'fs'` — only namespace importers see the patch), blanking the route **5**; union **8**, and `callAnthropic.test.ts` is reachable by no path-grep. ⚠️ **Blanking finds PRESENCE gates only** and is structurally blind to the three that assert absence. 🔴 **TWO OF MY OWN NEW CHECKS WERE HOLLOW AND ONLY FALSIFICATION SAID SO:** an *"argument order is load-bearing"* arm stayed **green** with before/after swapped — **measured**, not assumed: `validateSummaryAgainstDiff` unions both sides on all three patterns, so it is symmetric **by construction** and no input can distinguish them, and the arm became that finding rather than a guard for a property that does not exist. A §69 arm claiming *"`isManual` forces confirmation"* stayed **green** with `isManual ||` deleted, because it used a **reorder** — rated `high` unconditionally, so the other term had been answering true all along. ⚠️ **A third claim was false in a COMMENT:** the barrel arm said it stopped a third symbol joining and it counted MODULES. ⚠️ **AND THE FIXTURE WAS THE FIRST THING WRONG** — a 2-week plan returned `none` for every trigger (`TAPER_PROTECTION_WEEKS`), so the composition arms passed exercising nothing. 🔴 **THE CONTRACT'S READER HAD A FOURTH HOLE:** `from '@/lib/plan'` needs no trailing slash, so **15 → 6** counting the barrel; counted separately because `lib/plan.ts` imports Supabase and sits outside `enginePurity`'s glob. **Folded in:** `docs/contracts/api/adjust-plan.md` claimed `createUserScopedClient` where the route passes `createServiceClient` — the doc kept the first cut, reverted the same day because `savePlanForUser` calls `reanchorCharityGrant`, which a user-scoped client may only SELECT. 🔴 **PARITY IS BLIND TO THIS ENTIRELY** — `generateRulePlan` 6 occurrences, the adjust path **0**. ⚠️ **`check:slow` is NOT green and it is NOT this ship:** one finding, the `km` twin of an already-baselined `mi` test, measured 7/1/0/0 across four runs including a clean-worktree control — filed as `SUITE-CONTENTION-01`, which had been **declared inside a baseline string on 2026-09-25 and filed nowhere for twenty days**. 🔻 **Four items filed, three roadmap rows new:** `ROUTE-E2E-ADJUST-01`, `QUALITY-TYPE-NO-OWNER-01` (**nine** hand-written quality classifiers disagreeing on `hard` and `long`), `BACKTEST-SECOND-ASSEMBLY-01`, `SUITE-CONTENTION-01`. ⚠️ **Nothing walks `/api/adjust-plan` end to end. Nothing ran on a device.**
+
+**Prior — State at END of 2026-10-15 (last ship `e36d4f89`, `main`). 576 files / 5,244 tests · `verify` **exit 0** · `audit-docs.sh` ALL CLEAN.** ✅ **THE ROUTE IS WALKED END TO END** — `ROUTE-E2E-GENERATE-01` closes `ENGINE-ENTRY-01`'s named residual on the same day it was filed. **17 arms, 8 falsifications**, every mutation red for the named reason. 🔑 **THE BRIEF INVITED ME TO CONCLUDE IT WASN'T WORTH BUILDING, AND SPIKING IT FIRST IS THE ONLY REASON I DIDN'T.** `vitest.config.ts`'s own comment says *"routes and Supabase-touching code stay out of scope"* — that reads as a constraint and is not one: `NextRequest`/`NextResponse` are Web-Fetch-based, so the handler runs under `environment: 'node'`, and **one** faked `createClient` serves tier resolution, display prefs, the athlete's name, the first-plan count, every ops write and the enriched-plan persist. **Four mocks, all at IO boundaries**; `getUserTier` → `resolveTier`, `guardAiRequest`, `validate()`, `canGenerateDistance`, `runEngine`, `recordOpsEvent`, the NDJSON stream (read by the real `readPlanStream`) and the `waitUntil` chain all run. Ten minutes of measuring beat the opinion I was invited to write. 🔴 **THE HIGHEST-VALUE ARM IS AN ORDER WITH NO VISIBLE SYMPTOM**: `validate()` runs before `canGenerateDistance`, so a 1-day marathon on free is **422 on days**, never **403 on price** — the runner is refused either way, but only the 403 writes `plan_distance_gate_blocked`, **the single measurement of who the paywall turns away**, so a hoist would quietly count input mistakes as commercial demand. 🥇 **PROVEN AGAINST PARITY RATHER THAN ASSERTED**: falsification 2 re-introduces `FOUNDATION-META-ALIAS-01` — the real 30-day defect `verify:parity` had returned **IDENTICAL 6,102** on three hours earlier — and arm E8 goes red. ⚠️ **MY OWN NEAR-MISS WAS A GREEN TEST, NOT A RED ONE**: the first enrich gate was armed by the mock itself, so it worked only because `enrich` had always already been reached when the test opened it — true every run, by microtask order. Rewritten as a deferred created before the request; **nothing was red and nothing would have been for weeks.** 🔑 **AND THE HARNESS IS PROVEN POSITIVELY** (arm A, the habit copied from `fetchRunAnalysis.test.ts`): breaking the double's `eq()` was noticed by **exactly one arm** — without A the other sixteen are green against a database ignoring its own filters. 📐 **Counts measured in a clean worktree at the commit**, because a sibling session's uncommitted `adjust-plan` work is in this checkout and the same run reads **577 / 5,256** with it. `verify:parity` deliberately **not** re-run: no production code changed, so it has nothing to compare. ⚠️ **STILL UNPROVEN AND SAID IN THE FILE HEADER, not a summary:** no Postgres (PostgREST shapes, not RLS/constraints/triggers), not the platform's `waitUntil`, **the 500 branch**, and no rate limiting (the fake's `rpc` returns `true`; `checkAiRateLimit` fails OPEN by design). 🔻 **One engine follow-on still open:** `adjust-plan`'s **14** imports. ⚠️ **ALL CLEAN was verified on a clean checkout of this commit.** The same audit run in the shared working tree also reports items with no roadmap line, and they are **not mine** — a sibling session's in-flight `adjust-plan` work (`ADJUST-ENGINE-ENTRY-01`, `ROUTE-E2E-ADJUST-01` and two others) was uncommitted in this checkout while I measured. ⚠️ **Nothing ran on a device.**
 
 **Prior — State at END of 2026-10-15 (last ship `1c10f90d`, `main`). 575 files / 5,227 tests · `verify` **exit 0** · `verify:parity` **IDENTICAL 6,102** · `review:coaching` **no rate moved** · `audit-docs.sh` ALL CLEAN.** ✅ **THE ENGINE BOUNDARY IS COMPLETE** — `ENGINE-ENTRY-01` lands part 2 of three, **18 → 7** engine imports, route **806 → 605** lines. 🔑 **THE PRIZE WAS NOT FEWER IMPORTS. It is that five test files which could only GREP THE ROUTE can now CALL the engine** — two of them had written their own excuse into a comment, *"the refusal path needs auth, a request and a Supabase write, so there is no unit-testable seam"*, **a true statement about a Next handler and a false one about the problem.** §113's 422 shape, the refusal telemetry's four levels and the §118 acceptance path are now asserted instead of string-matched. 🔴 **AND THE ACCEPTANCE CRITERION WAS IMPOSSIBLE: "the 18 imports become 1" contradicts a constraint written two paragraphs above it** — five of the 18 are the AI/persistence modules the contract assigns to the caller and one calls Anthropic. Mapped symbol by symbol: **18 → 7**. ⚠️ **MY ENUMERATION OF THE RISK WAS SHORT BY ONE FILE** — I found four source-reading gates by grepping for the route's path; `levelResolution.test.ts` builds its path with `join(__dirname, '..', '..', 'app', …)`. **A negative grep is not proof of absence**, and the population was re-derived rather than trusted. ⚠️ **TWICE I ASSERTED INSTEAD OF MEASURING AND BOTH TIMES THE MEASUREMENT CHANGED THE WORK** — the telemetry's `assessed` level CAN equal the API override (all four collapse to it; the engine's real read is in a field the event does not carry — latent, filed, not fixed). ⚠️ **MY FIRST REGRESSION ARM WENT RED FOR THE WRONG REASON** (§44 correctly refusing a 10-week marathon): **a red test is not a passed falsification.** 🔴 **AND PARITY CANNOT SEE THIS REFACTOR AT ALL** — it calls `generateRulePlan` at five sites and never `composePlanWithFoundation` or `runEngine`, so IDENTICAL proves the engine was not disturbed, **not** that the route still behaves the same. 🔻 **TWO FOLLOW-ONS OPEN:** `adjust-plan`'s **14** engine imports (the contract said ten and nothing checked it), and **nothing walks the route end to end.** ⚠️ **Nothing ran on a device.**
 
