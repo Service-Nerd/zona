@@ -15,7 +15,7 @@
 -- app can tell when the run plan (or a move/swap) has changed under it.
 -- strength_completions (per-set logs) lands with Phase 2, when something writes it.
 
-create table if not exists public.strength_plans (
+create table if not exists strength_plans (
   user_id         uuid primary key references auth.users(id) on delete cascade,
   plan_json       jsonb not null,
   profile_json    jsonb not null,
@@ -23,14 +23,14 @@ create table if not exists public.strength_plans (
   generated_at    timestamptz not null default now()
 );
 
-alter table public.strength_plans enable row level security;
-revoke all on public.strength_plans from anon;
+alter table strength_plans enable row level security;
+revoke all on strength_plans from anon;
 
-create policy "strength_plans select own" on public.strength_plans
+create policy "strength_plans select own" on strength_plans
   for select using (auth.uid() = user_id);
-create policy "strength_plans insert own" on public.strength_plans
+create policy "strength_plans insert own" on strength_plans
   for insert with check (auth.uid() = user_id);
-create policy "strength_plans update own" on public.strength_plans
+create policy "strength_plans update own" on strength_plans
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "strength_plans delete own" on public.strength_plans
+create policy "strength_plans delete own" on strength_plans
   for delete using (auth.uid() = user_id);
