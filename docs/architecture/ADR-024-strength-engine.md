@@ -13,13 +13,20 @@ A **separate** strength & conditioning engine that works **with** the coaching e
 can reach, and that drives exercise choice. A **catalogue** of exercises by muscle group, with sets and reps as
 **variables**. **Isolated** enough to become its own app. **Paid.**
 
-## The goal, in the founder's words (2026-10-16)
+## The goals, in the founder's words (2026-10-16)
 
-**Not injury prevention. Helping people achieve their goal and not fail mid-plan.** Strength is there to make the
-runner robust enough to keep turning up: to reach the start line having done the block, not to "prevent injury".
-⚠️ **Copy consequence:** the board's no-injury-claim rule stands, and *"helps you finish your plan"* is itself an
-outcome claim, so any runner-facing or marketing sentence about what strength DOES goes past the Coaching Board
-(W-03). The product's own measure (SLT): share of starters doing ≥1 session a week over 4 weeks.
+**More than one goal** (founder, correcting a misreading of his first message):
+1. **Injury prevention / resilience.** Build what the evidence links to tissue capacity: calf and soleus loading, hip
+   strength, single-leg control, progressive tendon loading, with injury history steering exercise choice.
+2. **Achieving the goal and not failing mid-plan.** Strength that makes the runner robust enough to keep turning up and
+   reach the start line having done the block.
+3. **Performance** (running economy), which is where the evidence is strongest.
+
+⚖️ **A design goal is not a promise.** The Coaching Board's rule stands for **claims**: the only runner-specific
+meta-analysis (2024) found unsupervised programmes did not measurably reduce injury, so no surface says strength
+*"prevents injury"* or that it *"helps you finish your plan"* (both outcome claims, W-03). Truthful descriptions of
+what it DOES are fine, e.g. *"builds strength in the muscles and tendons running loads most"*, and any such sentence
+goes past the Coaching Board. The product's own measure (SLT): share of starters doing ≥1 session a week over 4 weeks.
 
 ## Decision
 

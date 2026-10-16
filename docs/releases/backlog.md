@@ -2062,8 +2062,9 @@ fixed.
 >
 > ✅ **Founder, 2026-10-16 (second message):** **core AND upper body in every session**, both focuses; **general ships
 > in v1** (overrides the SLT's v2); a **deep catalogue** (target 80+) with a **unilateral emphasis** for running focus;
-> and the goal is **not injury prevention but helping runners reach their goal and not fail mid-plan** (any
-> runner-facing sentence about what strength does is an outcome claim → Coaching Board, W-03). Approved the visual
+> and **more than one goal: injury prevention/resilience AND reaching the goal without failing mid-plan** (and
+> performance). ⚖️ A design goal, not a promise: no surface CLAIMS prevention (Coaching Board); truthful descriptions
+> of what it does go past the board (W-03). Approved the visual
 > before build.
 >
 > ✅ **Founder, 2026-10-16:** (1) **S&C seat appointed** to the Coaching Board (Blagrove-modelled, strength domain only);

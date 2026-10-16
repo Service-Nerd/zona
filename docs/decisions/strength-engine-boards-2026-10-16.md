@@ -23,5 +23,5 @@ Design Board first. Licensed animations, no embedded YouTube. Success measure: s
 5. **Core and upper body in every session**, both focuses.
 6. **General ships in v1** (overrides the SLT's "v2").
 7. **A deep catalogue** (target 80+), **unilateral emphasis** for running focus.
-8. **The goal:** not injury prevention, but helping runners achieve their goal and not fail mid-plan. Copy about what
-   strength does is an outcome claim and goes to the Coaching Board.
+8. **The goals (corrected by the founder):** injury prevention/resilience **and** achieving the goal without failing
+   mid-plan, plus performance. Designed for, not promised: the no-claim ruling stands for copy.
