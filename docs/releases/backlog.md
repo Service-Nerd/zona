@@ -1995,8 +1995,12 @@ fixed.
 > 30-min TT box opened the iPhone keypad with **no decimal point**; the in-plan 5K TT recalibration
 > stored `type: 'time_trial'`, a value the schema rejects. Both fixed.
 >
-> 🔻 **NOT done, deliberately:** the two existing plans are unchanged (new-plans-only policy) — **Adrian's
-> contact is still the founder's call**, before 2026-12-07. The optional second net (*"easy pace never
+> ✅ **Adrian's plan remediated 2026-10-16 (founder decision, no contact):** regenerated through
+> `runEngine` + `enrich` with his 5K read as **25:20** (5:04/km × 5; it predicts ~3:56 against his
+> stated 3:55), VDOT 253.7 → **37.7**, easy 1:23 → **6:17–7:29 /km**, same start and 20 weeks, 0 errors,
+> enrichment `applied_partial` (week 6 copy reverted by the route's own ladder). Old plan backed up
+> off-repo; same race so no `plan_archive` row. One push sent, APNs ok: *"We've fixed your pace
+> targets. We read your 5K as 25:20. Not right? Update it in Me."* `df2cc6e6` left as is (race passed). The optional second net (*"easy pace never
 > faster than goal pace"*) was not built: the VDOT invariant catches the same two plans.
 >
 > **Original filing, kept:**
@@ -8038,7 +8042,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-10-16 (last ship `d9657b68`, `main`). 583 files / 5,342 tests · `verify` **exit 0** · `verify:parity` IDENTICAL (6,102) · `audit-docs.sh` ALL CLEAN.** ✅ **An impossible benchmark is refused, and both benchmark screens are one** (`BENCHMARK-IMPOSSIBLE-01` + `BENCHMARK-INPUT-01`, both boards sat). A runner had typed 5:04, a pace, as a 5K finish time: VDOT 253.7. §55 Am. 1 refuses above VDOT 85 or a future date, at generation and recalibration; `BenchmarkFields` reads the value back (`5K in 25:20 · 5:04/km`). Found on the way: the wizard's TT box had **no decimal point on iPhone**, and the in-plan TT recalibration stored a type outside the schema. 🔻 **The two existing impossible plans are unchanged**; Adrian's (Make-A-Wish, starts 2026-12-07) is the founder's to chase. Update Paces not checked in a browser (no preview page). ⚠️ Nothing ran on a device.
+**State at END of 2026-10-16 (last ship `d9657b68`, `main`). 583 files / 5,342 tests · `verify` **exit 0** · `verify:parity` IDENTICAL (6,102) · `audit-docs.sh` ALL CLEAN.** ✅ **An impossible benchmark is refused, and both benchmark screens are one** (`BENCHMARK-IMPOSSIBLE-01` + `BENCHMARK-INPUT-01`, both boards sat). A runner had typed 5:04, a pace, as a 5K finish time: VDOT 253.7. §55 Am. 1 refuses above VDOT 85 or a future date, at generation and recalibration; `BenchmarkFields` reads the value back (`5K in 25:20 · 5:04/km`). Found on the way: the wizard's TT box had **no decimal point on iPhone**, and the in-plan TT recalibration stored a type outside the schema. ✅ **Adrian's plan regenerated at a 25:20 5K and a push sent**; the other impossible plan (race already passed) left as is. Update Paces not checked in a browser (no preview page). ⚠️ Nothing ran on a device.
 
 **Prior — END of 2026-10-15 (last ship `1646bf07`, `main`). 582 files / 5,315 tests · `verify` **exit 0** · `audit-docs.sh` ALL CLEAN.** ✅ **A failed plan save now tells the runner and tells us** (`PLAN-SAVE-SILENT-FAIL-01`) — it used to do neither, so when a Make-A-Wish runner built an identical marathon plan twice and saved neither, *"never tapped save"* and *"tapped it and it failed"* were indistinguishable. 📐 **The evening's investigation, from the founder's Supabase warnings export:** 94 warnings, **no defect** (89 harmless `.single()` 406s); but it pointed at Make-A-Wish runners without plans. Measured and **corrected twice in front of him**: 7 of 21 became **5 of 19** once two `@test.com` accounts were excluded, and 2 Oct proved to be a real launch day (10 sign-ups, 7 with plans) rather than test redemptions. **Three runners have a live issue**: one uses the app and has never attempted a plan, one built twice and saved neither, one was legitimately refused at 0 km/week under the older message. ⚠️ **I said a runner had "logged 16 runs" — 11 were imported from Apple Health before they signed up, and runs import with or without a plan.** ⚠️ **I first put a client network call inside the engine directory**, and the purity regex would have let it through. 🔻 Filed, not built: `GENERATE-500-NO-TRACE-01`, `PLANS-SINGLE-NOT-MAYBE-01`, and the Adjust sheet recording nothing on a failed save. ⚠️ Nothing ran on a device.
 
