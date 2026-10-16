@@ -183,7 +183,7 @@ const EXEMPT = /components\/marketing\//
 // and THREE different trackings (0.12em / 0.08em / 0.04em), plus three on
 // `PlanAdjustmentsScreen` at 11px/0.06em, all collapsed onto MICRO_LABELS.eyebrow.
 // This is the 41-combination drift this file was written for, paid down in situ.
-const NON_CONFORMING_BASELINE = 21
+const NON_CONFORMING_BASELINE = 19  // 21 → 19 BENCHMARK-INPUT-01: two duplicated FieldLabels collapsed into FieldText
 
 const countNonConforming = () => {
   let n = 0
@@ -418,7 +418,10 @@ describe('MICRO-LABEL-FIELDHINT-01 — a field hint is body text, not a fourth r
   it('the hints are real and reachable (an empty population passes the arm above)', () => {
     const n = tracked().reduce((a, f) =>
       a + (readFileSync(f, 'utf8').match(/>\s*optional\s*</g) ?? []).length, 0)
-    expect(n, 'no `optional` hints found — re-anchor this gate').toBeGreaterThanOrEqual(3)
+    // BENCHMARK-INPUT-01 (2026-10-16) — 3 → 1 is DEDUPLICATION, not an empty population:
+    // the wizard's and Update Paces' FieldLabel copies became ONE in `FieldText.tsx`.
+    // The floor still refuses zero, which is the case this arm exists for.
+    expect(n, 'no `optional` hints found — re-anchor this gate').toBeGreaterThanOrEqual(1)
   })
 })
 

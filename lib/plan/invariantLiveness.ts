@@ -421,6 +421,9 @@ export const MUTATIONS: Mutation[] = [
           typeof n === 'string' && /^Final \d+% at /.test(n) ? n.replace(/^Final \d+%/, 'Final 70%') : n)
       }
     }) },
+  // §55 Amendment 1 / INV-PLAN-VDOT-PLAUSIBLE — the live value: a 5K "in 5:04"
+  // (a pace typed as a finish time) gave 253.7 on a real Make-A-Wish plan.
+  { name: 'impossible vdot',           apply: p => { (p.meta as unknown as Record<string, unknown>).vdot = 253.7 } },
   // §66 Amendment 1 / INV-PLAN-LONG-RUN-HAS-AN-AXIS — removes BOTH anchors from
   // every session. 'strip zone' and the distance mutations each remove one; this
   // is the shape that makes a long run comparable on neither axis, which is the

@@ -3738,16 +3738,34 @@ works backwards from here.
 
 ⚠️ **The reason is NOT traded for the readback** (Silvanto's amendment, verbatim): *"we have traded a reason for a readback. Both, or the readback goes somewhere else."* Both render, in that order, and the order is asserted.
 
-**Implementation:** `FieldReadback` in `app/dashboard/GeneratePlanScreen.tsx`, beside `FieldNote`. It is body text carrying a value, **not a fourth micro-label role** — no tracking, no uppercase, so `MICRO_LABELS` stays closed at three (MICRO-LABEL-DRIFT-01). Generalise it to a shared primitive when a second field needs it, not before.
+**Implementation:** `FieldReadback` in `components/shared/FieldText.tsx`, beside `FieldNote` and `FieldLabel`. It is body text carrying a value, **not a fourth micro-label role** — no tracking, no uppercase, so `MICRO_LABELS` stays closed at three (MICRO-LABEL-DRIFT-01). ✅ **Generalised 2026-10-16 on its second use** (`BENCHMARK-INPUT-01`, below), exactly as this line said to: the three were moved out of the wizard unchanged.
+
+### Benchmark entry — one component, and every value read back *(Design Board 2026-10-16, `BENCHMARK-INPUT-01`)*
+
+**`components/shared/BenchmarkFields.tsx` is the only benchmark entry**, on the Generate Plan wizard **and** Update Paces (Me → Set benchmark). Both screens used the same three controls as two copies, and they had drifted: chip label, time-trial instruction, label weight, no run date on Update Paces, and **the wizard's TT box opened the NUMERIC keyboard, which on iPhone has no decimal point, so 7.1 km could not be typed.**
+
+| Field | Control | Read back as |
+|---|---|---|
+| Recent race result / 30-min time trial | `Chip` pair | — |
+| Race distance | `Chip` row, from `BENCHMARK_DISTANCES` (`lib/plan/benchmarkCheck.ts`) | — |
+| Finish time | `DurationPicker` (hrs : min : sec) | **`5K in 25:20 · 5:04/km`**, then *"Your whole race, start to finish. Not your pace."* |
+| Distance in 30 min | `TextField`, **`inputMode="decimal"`**, `unit="km"` | **`5.4 km in 30 min · 5:33/km`**, the runner's own decimals |
+| When did you run this? (optional) | `TextField type="date"` | — |
+
+- 🔴 **Why the pace half of the readback.** A runner typed 5:04, their pace, as a 5K finish time; nothing on the screen disagreed and the plan was priced at VDOT 253.7. Read back, that entry says `5K in 5:04 · 1:01/km`. **A runner knows their own pace on sight.** Composed by `formatBenchmarkReadback` (`lib/format.ts`, ADR-015).
+- **An impossible value replaces the readback in the same slot** — `FieldReadback alert`, `--danger`, `role="alert"` — with the §55 Amendment 1 sentence (*"Bit quick for a human. Enter your finish time."*). **No modal, no confirmation step** (`WIZARD-WEEKDAY-CONFIRM-01 (a)` is a permanent kill). Submit is disabled by `benchmarkProblem`, the **same** function the server runs.
+- ⚖️ **Not a Ruler.** Considered at the founder's suggestion and declined: a Ruler snaps to steps, and at 0.1 km over 3–9 km a stop is ~5.7 px wide on a 375 px phone. The founder's own constraint — *7.1 km is not 7 km* — is the reason. A km + tenths **wheel** stays open, pending a device (Collins).
+- **The host builds nothing by hand.** `benchmarkFromFields` is the one builder; the hand-written copies had drifted (the wizard dropped a seconds-only time its own gate accepted).
+- **Check:** `lib/plan/benchmarkCheck.test.ts` — both screens render `<BenchmarkFields>` and define no distance list, label or benchmark of their own; the TT field is `decimal`; the readback cases including the live typo. Falsified: `inputMode="numeric"`, removing the Update Paces gate, and a hand-built benchmark each go red.
 
 ### DurationPicker (`components/shared/DurationPicker.tsx`)
 
-The canonical time entry — scroll **wheels** (hrs : min : sec), no keyboard, no format-guessing, no zoom. `showSeconds` adds a third wheel (default off): use it for **race finish times**, where a short race is minutes:seconds and the seconds decide a PB. Target/benchmark times stay HH:MM. `showHours={false}` drops the hours column for a **minutes:seconds** picker and runs the minutes wheel `0..maxMins` (default 90) so a slow 10K past 59 min is still reachable — used by the **5K/10K time-trial result** (RecalibrationEntryScreen). Composes `WheelPicker` columns internally; its public API (`hours`/`mins`/`secs` + `on*Change`, `maxHours`, `showSeconds`, `showHours`, `maxMins`) means callers never hand-roll a time control. **Every time/duration control in the app goes through it** (FORMS-PRIM-01): wizard target time, benchmark, race finish (RaceResultSheet), manual run log (DashboardClient), and the time-trial result. There is no bespoke hrs/min/sec stepper left.
+The canonical time entry — scroll **wheels** (hrs : min : sec), no keyboard, no format-guessing, no zoom. **Always hrs : min : sec** — the `showSeconds` prop was **deleted** (`TIME-INPUT-SECONDS-01`, 2026-09-25): every time field collects seconds, benchmark and target times included. This line said *"Target/benchmark times stay HH:MM"* until 2026-10-16, a year after that stopped being true. `showHours={false}` drops the hours column for a **minutes:seconds** picker and runs the minutes wheel `0..maxMins` (default 90) so a slow 10K past 59 min is still reachable — used by the **5K/10K time-trial result** (RecalibrationEntryScreen). Composes `WheelPicker` columns internally; its public API (`hours`/`mins`/`secs` + `on*Change`, `maxHours`, `showHours`, `maxMins`) means callers never hand-roll a time control. **Every time/duration control in the app goes through it** (FORMS-PRIM-01): wizard target time, benchmark, race finish (RaceResultSheet), manual run log (DashboardClient), and the time-trial result. There is no bespoke hrs/min/sec stepper left.
 
 - Anchor it: pre-fill from a known value (e.g. the plan's goal time) so most users *nudge* rather than spin from zero — the power of defaults applied to the highest-emotion input.
 
 ```tsx
-<DurationPicker hours={h} mins={m} secs={s} onHoursChange={setH} onMinsChange={setM} onSecsChange={setS} showSeconds />
+<DurationPicker hours={h} mins={m} secs={s} onHoursChange={setH} onMinsChange={setM} onSecsChange={setS} />
 ```
 
 ### WheelPicker (`components/shared/WheelPicker.tsx`)
@@ -4404,7 +4422,7 @@ ways.
 
 #### RaceResultSheet (`components/training/RaceResultSheet.tsx`)
 
-Slide-up sheet pattern (Pattern 19 keyframes). Fields: outcome picker (pb / on_target / off_target / dnf), finish time (DurationPicker with `showSeconds`, pre-filled from `plan.meta.target_time`), RPE (shared RPEScale, Pattern 13), notes textarea, optional advanced section (what worked / broke / fueling / strategy). All inputs use the § Form Fields & Pickers primitives. No close button at top — drag indicator only. Mirrored nav footer at bottom.
+Slide-up sheet pattern (Pattern 19 keyframes). Fields: outcome picker (pb / on_target / off_target / dnf), finish time (DurationPicker, pre-filled from `plan.meta.target_time`), RPE (shared RPEScale, Pattern 13), notes textarea, optional advanced section (what worked / broke / fueling / strategy). All inputs use the § Form Fields & Pickers primitives. No close button at top — drag indicator only. Mirrored nav footer at bottom.
 
 **Two CTAs:**
 - Primary: "Log result" (moss, full-width) → POST `/api/post-race-reshape` → emits `onReshapeReady` with the proposal

@@ -5,54 +5,16 @@ import type { Plan, BenchmarkInput } from '@/types/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import { convertPaceString, type DistanceUnits } from '@/lib/format'
-import { DurationPicker } from '@/components/shared/DurationPicker'
-import { TextField } from '@/components/shared/TextField'
-import { Chip } from '@/components/shared/Chip'
+import { BenchmarkFields } from '@/components/shared/BenchmarkFields'
+import { FieldLabel } from '@/components/shared/FieldText'
+import { benchmarkFromFields, benchmarkProblem, type BenchmarkFieldValues } from '@/lib/plan/benchmarkCheck'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 import Button from '@/components/ui/Button'
-import { FIELD_HINT } from '@/components/shared/microLabels'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const BENCHMARK_DISTANCES = [
-  { label: '5K',   value: 5    },
-  { label: '10K',  value: 10   },
-  { label: 'Half', value: 21.1 },
-  { label: 'Full', value: 42.2 },
-]
-
-// ─── Primitives ───────────────────────────────────────────────────────────────
-
-function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
-  return (
-    <div style={{
-      fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)',
-      letterSpacing: '0.08em', textTransform: 'uppercase',
-      marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
-    }}>
-      {children}
-      {optional && <span style={{ ...FIELD_HINT, opacity: 0.7 }}>optional</span>}
-    </div>
-  )
-}
-
-// Thin wrapper over the canonical TextField — keeps this screen's call site
-// unchanged while the control is the shared primitive.
-function StepInput({ value, onChange, placeholder, type = 'text', min }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; type?: 'text' | 'number'; min?: number
-}) {
-  return (
-    <TextField
-      value={value}
-      onChange={onChange}
-      type={type}
-      placeholder={placeholder}
-      min={min}
-      inputMode={type === 'number' ? 'decimal' : undefined}
-    />
-  )
-}
+// BENCHMARK-INPUT-01 (2026-10-16) — the benchmark distances, label and inputs live in
+// `components/shared/BenchmarkFields`, shared with the Generate Plan wizard. This screen
+// had its own copies of all of them, and they had drifted.
 
 // ─── Pace band extraction ─────────────────────────────────────────────────────
 
@@ -140,21 +102,19 @@ export default function BenchmarkUpdateScreen({
   onUpdated: (plan: Plan) => void
   units?: DistanceUnits
 }) {
-  const [benchmarkType, setBenchmarkType] = useState<'race' | 'tt_30min' | null>(null)
-  const [benchmarkDistKm, setBenchmarkDistKm] = useState<number | null>(null)
-  const [benchHours, setBenchHours] = useState(0)
-  const [benchMins, setBenchMins] = useState(0)
-  const [benchSecs, setBenchSecs] = useState(0)
-  const [benchmarkTTDist, setBenchmarkTTDist] = useState('')
+  const [values, setValues] = useState<BenchmarkFieldValues>({
+    type: null, distKm: null, hours: 0, mins: 0, secs: 0, ttDistKm: '', date: '',
+  })
+  const onChange = (patch: Partial<BenchmarkFieldValues>) => setValues(v => ({ ...v, ...patch }))
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<{ plan: Plan; weeksUpdated: number } | null>(null)
 
+  // The same gate the server runs (§55 Am. 1): complete AND humanly possible.
+  const built = benchmarkFromFields(values)
   function canSubmit() {
-    if (benchmarkType === 'race') return benchmarkDistKm !== null && (benchHours > 0 || benchMins > 0 || benchSecs > 0)
-    if (benchmarkType === 'tt_30min') return benchmarkTTDist !== ''
-    return false
+    return built !== null && benchmarkProblem(built) === null
   }
 
   async function handleRecalibrate() {
@@ -162,14 +122,11 @@ export default function BenchmarkUpdateScreen({
     setLoading(true)
     setError(null)
 
-    // TIME-INPUT-SECONDS-01 — the runner's OWN seconds. This line read
-    // `...:00`, hardcoding a precision nobody entered: measured 8 of 8 stored
-    // benchmarks ended `:00`, and truncating to the minute makes a runner look
-    // up to 11.8 sec/km FASTER at 5K, which then sets every prescribed pace.
-    const benchTimeStr = `${benchHours}:${String(benchMins).padStart(2, '0')}:${String(benchSecs).padStart(2, '0')}`
-    const benchmark: BenchmarkInput = benchmarkType === 'race'
-      ? { type: 'race', distance_km: benchmarkDistKm!, time: benchTimeStr }
-      : { type: 'tt_30min', distance_km: Number(benchmarkTTDist), time: '30:00' }
+    // TIME-INPUT-SECONDS-01 — the runner's OWN seconds, never a fabricated `:00`
+    // (8 of 8 stored benchmarks ended `:00` before it). Now built by the one shared
+    // builder, which also carries the run date this screen never used to ask for —
+    // §42's staleness ramp reads it (BENCHMARK-INPUT-01).
+    const benchmark = built!
 
     try {
       const res = await authedFetch('/api/recalibrate-zones', {
@@ -232,72 +189,16 @@ export default function BenchmarkUpdateScreen({
         ) : (
           <>
             <RaceTimesCard variant="anchor" stravaConnected={stravaConnected} />
-            {/* Benchmark type selection */}
             <div>
               <FieldLabel>New benchmark</FieldLabel>
-              <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
-                <Chip
-                  label="Recent race result"
-                  active={benchmarkType === 'race'}
-                  onClick={() => setBenchmarkType(benchmarkType === 'race' ? null : 'race')}
-                />
-                <Chip
-                  label="30-min time trial"
-                  active={benchmarkType === 'tt_30min'}
-                  onClick={() => setBenchmarkType(benchmarkType === 'tt_30min' ? null : 'tt_30min')}
-                />
-              </div>
-
-              {benchmarkType === 'race' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                  <div>
-                    <FieldLabel>Race distance</FieldLabel>
-                    <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                      {BENCHMARK_DISTANCES.map(d => (
-                        <Chip
-                          key={d.value}
-                          label={d.label}
-                          active={benchmarkDistKm === d.value}
-                          onClick={() => setBenchmarkDistKm(d.value)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <FieldLabel>Finish time</FieldLabel>
-                    <DurationPicker
-                      hours={benchHours} mins={benchMins} secs={benchSecs}
-                      onHoursChange={setBenchHours} onMinsChange={setBenchMins}
-                      onSecsChange={setBenchSecs}
-                      maxHours={9}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {benchmarkType === 'tt_30min' && (
-                <div>
-                  <FieldLabel>Distance covered in 30 minutes (km)</FieldLabel>
-                  <StepInput
-                    type="number"
-                    value={benchmarkTTDist}
-                    onChange={setBenchmarkTTDist}
-                    placeholder="e.g. 5.4"
-                    min={1}
-                  />
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: 'var(--space-2)' }}>
-                    Run flat, no stops, 30 minutes. Record distance covered.
-                  </div>
-                </div>
-              )}
+              <BenchmarkFields values={values} onChange={onChange} units={units} />
             </div>
 
+            {/* BENCHMARK-INPUT-01 — the app's form-error alert (as the wizard's save
+                bar), not an amber coaching card: this is a refusal, not advice. */}
             {error && (
-              <div style={{
-                background: 'var(--card)', borderRadius: '10px',
-                border: '0.5px solid var(--amber)', padding: '12px 14px',
-              }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--amber)' }}>{error}</div>
+              <div role="alert" style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', lineHeight: 1.5, color: 'var(--danger)' }}>
+                {error}
               </div>
             )}
           </>

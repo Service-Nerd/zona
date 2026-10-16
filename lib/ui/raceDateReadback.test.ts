@@ -131,8 +131,13 @@ describe('WIZARD-WEEKDAY-CONFIRM-01 (b) — the step renders it, and renders not
   })
 
   it('and it introduces no new colour, font or micro-label role', () => {
-    const block = stripped.slice(stripped.indexOf('function FieldReadback'))
-      .slice(0, stripped.slice(stripped.indexOf('function FieldReadback')).indexOf('\n}') + 2)
+    // BENCHMARK-INPUT-01 (2026-10-16) — the primitive moved to the shared FieldText on
+    // its second use. Anchored, so a second move fails loudly instead of slicing at -1.
+    const shared = readFileSync('components/shared/FieldText.tsx', 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '')
+    const at = shared.indexOf('export function FieldReadback')
+    expect(at, 'FieldReadback moved again — re-anchor').toBeGreaterThan(-1)
+    const block = shared.slice(at, at + shared.slice(at).indexOf('\n}') + 2)
     expect(block, 'tokens only — no hardcoded hex').not.toMatch(/#[0-9a-fA-F]{3,8}/)
     expect(block, 'Inter only, via the token').toMatch(/var\(--font-ui\)/)
     expect(block, 'hierarchy by weight and colour, not a fourth micro-label role')

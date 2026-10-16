@@ -1985,7 +1985,22 @@ fixed.
 > (not just the message), or RevenueCat's integrations list. 🔻 **If something external is
 > half-writing subscription rows, that matters more than the log line does.**
 
-### 🔴 `BENCHMARK-IMPOSSIBLE-01` — nothing checks a benchmark time is humanly possible, and two plans carry impossible paces *(filed 2026-10-16, P1)* ⚙️ **NO BOARD** *(§55 conformance: a world record is a fact, not a coaching choice)*
+### ✅ `BENCHMARK-IMPOSSIBLE-01` — **SHIPPED 2026-10-16** with `BENCHMARK-INPUT-01`. An impossible benchmark is now refused, and both benchmark screens are one 🏃 **COACHING BOARD** + 🧭 **DESIGN BOARD** *(re-tagged from NO BOARD: the number needed a ruling, and the fix became a shared component)*
+
+> ✅ **Shipped.** §55 Amendment 1: raw VDOT above **85** (world records 85.3–85.6) or a future run date
+> is refused, by ONE gate at generation and at `/api/recalibrate-zones`, plus `INV-PLAN-VDOT-PLAUSIBLE`.
+> Both screens now use `components/shared/BenchmarkFields`, which reads the value back
+> (`5K in 25:20 · 5:04/km`) and shows *"Bit quick for a human. Enter your finish time."* in place.
+> Update Paces now asks when the race was run (§42 reads it). Found while building: the wizard's
+> 30-min TT box opened the iPhone keypad with **no decimal point**; the in-plan 5K TT recalibration
+> stored `type: 'time_trial'`, a value the schema rejects. Both fixed.
+>
+> 🔻 **NOT done, deliberately:** the two existing plans are unchanged (new-plans-only policy) — **Adrian's
+> contact is still the founder's call**, before 2026-12-07. The optional second net (*"easy pace never
+> faster than goal pace"*) was not built: the VDOT invariant catches the same two plans.
+>
+> **Original filing, kept:**
+
 
 > **Found by the daily ops digest; every claim re-verified against production and the engine before filing.**
 >

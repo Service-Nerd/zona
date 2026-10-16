@@ -11,14 +11,19 @@
   "benchmark": {
     "type": "race",
     "distance_km": 10,
-    "time": "00:48:30"
+    "time": "00:48:30",
+    "benchmark_date": "2026-10-04"
   }
 }
 ```
 
 `benchmark` fields all required (`type`, `distance_km`, `time`). Returns 422 if any are missing.
 
-`type` values: `"race"` | `"time_trial"`
+`type` values: `"race"` | `"tt_30min"`. ⚠️ **This line said `"time_trial"` until 2026-10-16**, and the in-plan 5K time trial (`DashboardClient.handleRecalConfirm`) sent exactly that — a value `BenchmarkInput` and `PlanSchema` do not have, so every in-plan recalibration stored a benchmark the canonical schema rejects. It now sends `"race"`: a timed 5K is a race-shaped benchmark. Nothing reads `.type`.
+
+`benchmark_date` (optional, ISO `YYYY-MM-DD`): when it was run. §42's staleness discount reads it; absent means fresh. Update Paces collects it since `BENCHMARK-INPUT-01` (2026-10-16).
+
+**Plausibility (§55 Amendment 1, `BENCHMARK-IMPOSSIBLE-01`):** the benchmark passes `assertPlausibleBenchmark` **before the plan is read** — the same gate plan generation runs. A raw VDOT above `BENCHMARK_VDOT_MAX` (85; world records 85.3–85.6) or a future `benchmark_date` returns 422 `{ error, field, value, range }`, where `error` is the runner-facing sentence (e.g. *"Bit quick for a human. Enter your finish time."*) and `field` is `benchmark_time` / `benchmark_tt_distance` / `benchmark_date`.
 
 ## Response — 200
 
@@ -38,7 +43,7 @@
 | 401 | No valid session |
 | 403 | Free tier |
 | 404 | No plan found — the runner genuinely has no plan. ⚠️ **Until 2026-09-25 this also fired for runners who DID have one** (`RECALIBRATE-ZONES-COOKIE-CLIENT-01`): the route authenticates off the Bearer token but read the plan with the cookie client, and on native the cookie session is absent, so the read hit RLS with no session and returned nothing. It now uses the service client and passes the gist/legacy fallback, so an un-migrated `plans` row self-heals rather than 404ing. |
-| 422 | Invalid or missing benchmark fields |
+| 422 | Invalid or missing benchmark fields · or a benchmark that is not humanly possible / dated in the future (§55 Am. 1) |
 | 500 | Unexpected server error |
 
 ## Notes

@@ -43,6 +43,9 @@ import type { BenchmarkEstimate } from '@/lib/plan/aerobicEstimate'
 import { Chip } from '@/components/shared/Chip'
 import { type DayKey } from '@/components/shared/DayGridSelector'
 import { Ruler } from '@/components/shared/Ruler'
+import { BenchmarkFields } from '@/components/shared/BenchmarkFields'
+import { FieldLabel, FieldNote, FieldReadback } from '@/components/shared/FieldText'
+import { benchmarkFromFields, benchmarkProblem, type BenchmarkFieldValues } from '@/lib/plan/benchmarkCheck'
 import { CardSelect } from '@/components/shared/CardSelect'
 import { recommendFitnessLevel, FITNESS_RANK, type FitnessLevel } from '@/lib/plan/fitnessAssessment'
 import { WeekGrid } from '@/components/shared/WeekGrid'
@@ -133,12 +136,6 @@ function planLengthRange(distanceKm: number): string | null {
     : `${sig.min_weeks}\u2013${sig.max_weeks} week plan`
 }
 
-const BENCHMARK_DISTANCES = [
-  { label: '5K',   value: 5    },
-  { label: '10K',  value: 10   },
-  { label: 'Half', value: 21.1 },
-  { label: 'Full', value: 42.2 },
-]
 
 // Boundary maps between the wizard's persisted `days_cannot_train` wire format
 // (full words — the form the engine's parsers document as accepted, see §18 and
@@ -333,69 +330,8 @@ function WizardInput({ value, onChange, placeholder, type = 'text', min, max }: 
   )
 }
 
-function FieldNote({ children }: { children: React.ReactNode }) {
-  // ⚠️ `FIELD_HINT` is the documented owner of these values (MICRO-LABEL-FIELDHINT-01,
-  // Design Board 2026-10-02: a hint beside an input is body text — `--font-ui` 400
-  // 12px `--mute`). They were written out by hand here, which is a second copy of a
-  // value that has a named owner; the board's own register says the VALUES need one
-  // owner. Layout stays local, because line height and spacing are this note's, not
-  // the hint role's.
-  return (
-    <div style={{ ...FIELD_HINT, lineHeight: 1.5, marginTop: 'var(--space-2)' }}>
-      {children}
-    </div>
-  )
-}
-
-/**
- * `WIZARD-WEEKDAY-CONFIRM-01` (b) — Design Board 2026-10-09, SHIP WITH AMENDMENT.
- *
- * A date field reads its value back in full, **including the weekday**. A runner
- * typing `2027-06-20` into a native date input is shown their keystrokes, not
- * their decision, and the weekday is the half of a race date that actually
- * shapes the plan: every long run is placed backwards from it.
- *
- * 🔴 WHAT THE BOARD KILLED, PERMANENTLY: a weekday **confirmation** step. It
- * measured a **37.5% fire rate**, and the two most common race weekdays are
- * Saturday (12 live) and Sunday (13) — so a confirm would interrupt a third of
- * runners to tell them something that is almost always right, which is Wood's
- * standing objection in its purest form. **The board ruled on SEEN, not
- * CONFIRMED.** Do not re-propose a prompt, a modal or a step here.
- *
- * ⚠️ AND IT KEEPS THE REASON (Silvanto's amendment, verbatim): *"we have traded
- * a reason for a readback. Both, or the readback goes somewhere else."* So this
- * sits ABOVE the existing `FieldNote` rather than replacing it, and the two are
- * separated by WEIGHT AND COLOUR rather than size — 14px/600/`--ink` against
- * 12px/400/`--mute`. A 13px-against-12px step would be the 1.02x failure this
- * repo has already measured twice: too small to read as hierarchy and too large
- * to be nothing.
- *
- * The value comes from `formatDate` (ADR-015 / INV-FMT-001 — `lib/format.ts` is
- * the sole owner of every date string, and `'weekday-long'` already existed, so
- * no new formatter was written). `formatDate` returns **null** on a missing or
- * unparseable value, which is also this component's empty state: the wizard
- * restores `raceDate` from `zona_wizard_draft` in sessionStorage, so a corrupt
- * draft is a real path and must render nothing rather than "Invalid Date".
- */
-function FieldReadback({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
-      color: 'var(--ink)', lineHeight: 1.4, marginTop: 'var(--space-2)',
-    }}>
-      {children}
-    </div>
-  )
-}
-
-function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
-  return (
-    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-      {children}
-      {optional && <span style={{ ...FIELD_HINT, opacity: 0.7 }}>optional</span>}
-    </div>
-  )
-}
+// `FieldLabel`, `FieldNote` and `FieldReadback` moved to `components/shared/FieldText`
+// (BENCHMARK-INPUT-01, 2026-10-16) — the benchmark fields are their second user.
 
 // Large card-style option (used for goal, hard-sessions, terrain)
 // OptionCard was extracted to the shared CardSelect primitive (row layout) —
@@ -715,6 +651,25 @@ export default function GeneratePlanScreen({
   const [benchSecs,        setBenchSecs]        = useState(0)
   const [benchmarkDate,    setBenchmarkDate]    = useState('')
   const [benchmarkTTDist,  setBenchmarkTTDist]  = useState('')
+  // BENCHMARK-INPUT-01 — the shared `BenchmarkFields` reads one value object and
+  // writes back a patch. The state stays as separate fields because the draft
+  // (`zona_wizard_draft`) persists them by these names.
+  const benchmarkValues: BenchmarkFieldValues = {
+    type: benchmarkType, distKm: benchmarkDistKm, hours: benchHours, mins: benchMins,
+    secs: benchSecs, ttDistKm: benchmarkTTDist, date: benchmarkDate,
+  }
+  const builtBenchmark = benchmarkFromFields(benchmarkValues)
+  /** A started benchmark that the server would refuse (§55 Am. 1). */
+  const benchmarkBlocked = builtBenchmark !== null && benchmarkProblem(builtBenchmark) !== null
+  const onBenchmarkChange = (patch: Partial<BenchmarkFieldValues>) => {
+    if ('type' in patch)     setBenchmarkType(patch.type ?? null)
+    if ('distKm' in patch)   setBenchmarkDistKm(patch.distKm ?? null)
+    if ('hours' in patch)    setBenchHours(patch.hours ?? 0)
+    if ('mins' in patch)     setBenchMins(patch.mins ?? 0)
+    if ('secs' in patch)     setBenchSecs(patch.secs ?? 0)
+    if ('ttDistKm' in patch) setBenchmarkTTDist(patch.ttDistKm ?? '')
+    if ('date' in patch)     setBenchmarkDate(patch.date ?? '')
+  }
 
   // CI-4 — auto-estimated benchmark from recent runs. `benchMode` flips to
   // 'manual' when the user taps "Let me adjust" (or when no estimate is available).
@@ -967,9 +922,10 @@ export default function GeneratePlanScreen({
       case 'your-level':     return true  // pre-selected to the recommendation
       case 'birth-year':     return true
       case 'benchmark':
-        if (benchmarkType === 'race')     return !!(benchmarkDistKm && (benchHours > 0 || benchMins > 0 || benchSecs > 0))
-        if (benchmarkType === 'tt_30min') return benchmarkTTDist !== ''
-        return true
+        // BENCHMARK-INPUT-01 — no benchmark is fine (the step is optional); a started
+        // one must be complete AND possible, the same gate the server runs (§55 Am. 1).
+        if (benchmarkType === null) return true
+        return builtBenchmark !== null && !benchmarkBlocked
       case 'your-week': {
         // Enough training days for the distance. warn (time goal, below the
         // recommended count) still proceeds — only a hard block stops.
@@ -1017,8 +973,6 @@ export default function GeneratePlanScreen({
     const targetTimeStr = goal === 'time_target' && (targetHours > 0 || targetMins > 0)
       // TIME-INPUT-SECONDS-01 — the runner's own seconds, not a fabricated :00.
       ? `${targetHours}:${String(targetMins).padStart(2, '0')}:${String(targetSecs).padStart(2, '0')}` : undefined
-    const benchTimeStr  = benchHours > 0 || benchMins > 0
-      ? `${benchHours}:${String(benchMins).padStart(2, '0')}:${String(benchSecs).padStart(2, '0')}` : undefined
     // The one engine touch: derive the schedule fields from the week grid.
     //
     // UX-WIZARD-01 step 1 — `max_weekday_mins` is now derived HERE too, rather
@@ -1038,14 +992,10 @@ export default function GeneratePlanScreen({
     const week = weekPlanToInputs(weekPlan, weekdayDefaultMins, dayBudgets)
     const maxWeekdayVal = week.maxWeekdayMins
 
-    const benchmark = (() => {
-      const dateField = benchmarkDate ? { benchmark_date: benchmarkDate } : {}
-      if (benchmarkType === 'race' && benchmarkDistKm && benchTimeStr)
-        return { type: 'race' as const, distance_km: benchmarkDistKm, time: benchTimeStr, ...dateField }
-      if (benchmarkType === 'tt_30min' && benchmarkTTDist)
-        return { type: 'tt_30min' as const, distance_km: Number(benchmarkTTDist), time: '30:00', ...dateField }
-      return undefined
-    })()
+    // BENCHMARK-INPUT-01 — the one builder, shared with Update Paces. It also keeps a
+    // seconds-only time, which the hand-written copy here dropped while the step's
+    // own gate accepted it.
+    const benchmark = benchmarkFromFields(benchmarkValues) ?? undefined
 
     // Auto-populate HR from Apple Health when values are missing.
     // Runs on iOS native only; web/PWA falls through silently.
@@ -1823,8 +1773,13 @@ export default function GeneratePlanScreen({
             ⚠️ AND IT IS NOT AN EM DASH. `brand.md` § Punctuation bans them in
             copy SITE-WIDE — the "app-side exception" CLAUDE.md refers to does
             not exist in that section. A comma. */}
+        {/* BENCHMARK-INPUT-01 — this button KEEPS the answer (S4a/b above), so on the
+            benchmark step it would carry an impossible time past the field to a server
+            refusal at the very end. It takes the same gate as Continue there; an
+            incomplete benchmark builds to null and is simply not sent. */}
         {stepMeta.optional && (
-          <Button variant="secondary" fullWidth 
+          <Button variant="secondary" fullWidth
+            disabled={appStep === 'benchmark' && benchmarkBlocked}
             onClick={skipStep} style={{ marginBottom: 'var(--space-2)' }}>
             Not sure, continue
           </Button>
@@ -2168,61 +2123,7 @@ export default function GeneratePlanScreen({
         }
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-              <Chip
-                label="Race result"
-                active={benchmarkType === 'race'}
-                onClick={() => setBenchmarkType(benchmarkType === 'race' ? null : 'race')}
-              />
-              <Chip
-                label="30-min time trial"
-                active={benchmarkType === 'tt_30min'}
-                onClick={() => setBenchmarkType(benchmarkType === 'tt_30min' ? null : 'tt_30min')}
-              />
-            </div>
-
-            {benchmarkType === 'race' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                <div>
-                  <FieldLabel>Race distance</FieldLabel>
-                  <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                    {BENCHMARK_DISTANCES.map(d => (
-                      <Chip
-                        key={d.value}
-                        label={d.label}
-                        active={benchmarkDistKm === d.value}
-                        onClick={() => setBenchmarkDistKm(d.value)}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <FieldLabel>Finish time</FieldLabel>
-                  <DurationPicker
-                    hours={benchHours} mins={benchMins} secs={benchSecs}
-                    onHoursChange={setBenchHours} onMinsChange={setBenchMins}
-                    onSecsChange={setBenchSecs}
-                    maxHours={9}
-                  />
-                </div>
-              </div>
-            )}
-
-            {benchmarkType === 'tt_30min' && (
-              <div>
-                <FieldLabel>Distance covered in 30 minutes (km)</FieldLabel>
-                <WizardInput type="number" value={benchmarkTTDist} onChange={setBenchmarkTTDist} placeholder="e.g. 5.2" min={1} />
-                <FieldNote>Run flat-out for exactly 30 minutes and record the distance.</FieldNote>
-              </div>
-            )}
-
-            {benchmarkType !== null && (
-              <div>
-                <FieldLabel optional>When did you run this?</FieldLabel>
-                <WizardInput type="date" value={benchmarkDate} onChange={setBenchmarkDate} />
-                <FieldNote>Older than 6 months? We'll use slightly more conservative pace targets.</FieldNote>
-              </div>
-            )}
+            <BenchmarkFields values={benchmarkValues} onChange={onBenchmarkChange} units={preferredUnits} />
 
             {benchmarkType === null && (
               <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>

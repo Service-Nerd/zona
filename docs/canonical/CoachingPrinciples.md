@@ -4421,6 +4421,26 @@ The reject-vs-fall-back distinction matters: a runner who entered `0` (defaulted
 
 `InputFieldError` thrown on violation. The API route (`app/api/generate-plan/route.ts`) catches it and returns 422 with the offending field, value, and range. Mirrors the §44 PrepTimeError pattern.
 
+### §55 Amendment 1 — a benchmark must be humanly possible, and already run (Coaching Board 2026-10-16, `BENCHMARK-IMPOSSIBLE-01`)
+
+**Principle.** A benchmark (race result or 30-minute time trial) whose raw VDOT is above **85** is refused, and so is one dated in the future. Above 85 is a typo, not a runner: the men's world records measure **85.3** (5K 12:35), **85.5** (10K 26:11), **85.6** (half 57:30) and **85.5** (marathon 2:00:35).
+
+| Field | Refused when | Runner is told |
+|---|---|---|
+| `benchmark_time` (race) | raw VDOT > 85 | *Bit quick for a human. Enter your finish time.* |
+| `benchmark_tt_distance` (30-min TT) | raw VDOT > 85 | *Bit quick for a human. Check the distance you covered.* |
+| `benchmark_date` | after today | *That date hasn't happened yet.* |
+
+**Why.** Nothing checked it. A runner typed **5:04**, their *pace*, as a 5K finish time; the engine computed VDOT **253.7** and priced every pace in a marathon plan from it. Measured 2026-10-16: **2 of 36** live plans carried an impossible VDOT (253.7, 182.6); the highest real one was **48.4**.
+
+- 🏃 **One VDOT ceiling, not per-distance times** (Hutchinson): VDOT already normalises across distances, which is its whole purpose.
+- ⚕️ **Sex-neutral by construction** (Sims): 85 sits far above every women's record, so it refuses no real woman.
+- 🩹 **A future date is not a benchmark** (Willy). And Update Paces now asks *when* the race was run, as the wizard does: §42's staleness ramp reads `benchmark_date`, and a screen that never collected it priced last spring's race as yesterday's. **Blank still means fresh**, unchanged.
+
+**Where it lives.** `lib/plan/benchmarkCheck.ts → BENCHMARK_VDOT_MAX`, a physiological boundary beside this section's others rather than a `GENERATION_CONFIG` knob. Not in `inputs.ts` only because the **client** runs the same check to disable submit. `assertPlausibleBenchmark` (`inputs.ts`) is the one gate, called by `validateInputFields` **and** `/api/recalibrate-zones`. **Invariant:** `INV-PLAN-VDOT-PLAUSIBLE` catches any path that writes `meta.vdot` without passing it.
+
+**Not settled.** A wrong benchmark that is still *possible* (25:04 typed for a 10K that was 52:04). The field's readback (Design Board, `BENCHMARK-INPUT-01`) makes it visible; nothing blocks it.
+
 ---
 
 ## 57. Foundation Block

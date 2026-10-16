@@ -6,6 +6,7 @@ import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { fetchPlanForUser, savePlanForUser, getCurrentWeek } from '@/lib/plan'
 import { applyRecalibration } from '@/lib/plan/ruleEngine'
+import { assertPlausibleBenchmark, InputFieldError } from '@/lib/plan/inputs'
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,6 +44,19 @@ export async function POST(req: NextRequest) {
     const { benchmark, recalibration_week_n }: { benchmark: BenchmarkInput; recalibration_week_n?: number } = await req.json()
     if (!benchmark?.type || !benchmark?.distance_km || !benchmark?.time) {
       return NextResponse.json({ error: 'Invalid benchmark input.' }, { status: 422 })
+    }
+
+    // BENCHMARK-IMPOSSIBLE-01 (§55, 2026-10-16) — the same gate plan generation runs.
+    // A recalibration rewrites every forward pace, so an impossible benchmark here
+    // does exactly the damage it does at generation. Answered in the shape the
+    // generate route uses for every §55 refusal.
+    try {
+      assertPlausibleBenchmark(benchmark)
+    } catch (e) {
+      if (e instanceof InputFieldError) {
+        return NextResponse.json({ error: e.message, field: e.field, value: e.value, range: e.range }, { status: 422 })
+      }
+      throw e
     }
 
     // Pass the same gist/legacy fallback the client uses, so a missing or

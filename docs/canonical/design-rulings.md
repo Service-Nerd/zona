@@ -9,6 +9,48 @@ not after.
 
 
 
+## 2026-10-16 — BENCHMARK-INPUT-01 · SHIP WITH AMENDMENT. One benchmark entry, every value read back, and the ruler declined on the founder's own constraint
+
+**Brief (founder):** make it obvious what the finish-time input is, make Update Paces and the wizard
+the same, and standardise the time-trial distance box, *"maybe the dial or ruler… but runners like
+our decimals, so 7.1k is NOT the same as 7k."*
+
+**Evidence (source, not device).** Both screens already used the **documented** controls — `Chip`,
+`DurationPicker`, `TextField` — as **two copies that had drifted**: chip label (*Race result* /
+*Recent race result*), the TT instruction, label weight, **no run date on Update Paces**, and the
+wizard's TT box on `inputMode="numeric"`, **which on iPhone has no decimal point**. Live defect: a
+runner typed 5:04, their pace, as a 5K finish time → VDOT 253.7; no surface showed what was entered.
+
+**Ruling: SHIP WITH AMENDMENT.**
+1. **`BenchmarkFields`** (`components/shared/`) is the only benchmark entry. `FieldLabel`,
+   `FieldNote`, `FieldReadback` move to `components/shared/FieldText.tsx` (the readback's second use).
+2. **Every value is read back as the decision:** `5K in 25:20 · 5:04/km`, `5.4 km in 30 min ·
+   5:33/km`. ✋ Silvanto's amendment carries over from `WIZARD-WEEKDAY-CONFIRM-01 (b)`: **the reason
+   line stays beneath the readback** — *"Your whole race, start to finish. Not your pace."*
+3. 📱 **Ruler DECLINED for the TT distance.** At 0.1 km over 3–9 km a stop is ~5.7 px on a 375 px
+   phone; snap it coarser and 7.1 becomes 7.0, which is the founder's own objection. `TextField`,
+   **decimal** keyboard, `km` suffix. **Founder agreed.**
+4. **An impossible value replaces the readback in the same slot** (`FieldReadback alert`), never a
+   modal or a step — `(a)` of `WIZARD-WEEKDAY-CONFIRM-01` is a permanent kill. Copy is the founder's:
+   *"Bit quick for a human. Enter your finish time."* Submit uses the same `benchmarkProblem` the
+   server runs (Coaching Board, §55 Amendment 1).
+5. Update Paces' amber error card becomes the form-error alert: it is a refusal, not coaching.
+
+⚡ **Recorded disagreement — Collins vs Wroblewski on a km + tenths wheel.** Collins would trial it;
+Wroblewski holds `TextField`. **What moves it: a device trial.** Nothing has run on a device.
+
+**Veto:** none. **Artifacts:** pattern `ui-patterns.md` § *Benchmark entry*; constants
+`BENCHMARK_DISTANCES` / `BENCHMARK_PROBLEM_COPY` (`lib/plan/benchmarkCheck.ts`); check
+`lib/plan/benchmarkCheck.test.ts`, falsified six ways. Stale `ui-patterns` text corrected in the same
+commit: § DurationPicker said *"Target/benchmark times stay HH:MM"* and documented a `showSeconds`
+prop that `TIME-INPUT-SECONDS-01` deleted.
+
+**Not settled:** a wrong benchmark that is still possible (25:04 typed for a 52:04 10K) is made
+visible, not blocked. Decision note: `docs/decisions/benchmark-input-2026-10-16.md`.
+
+---
+
+
 ## 2026-09-25 — UI-PATTERNS-REVIEW-01 · SHIP, no amendment. The doctrine was sound; the reading was wrong.
 
 Founder asked the board to review `ui-patterns.md` as a whole against the brand and the

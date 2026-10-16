@@ -17,7 +17,7 @@ import ZoneWeekBlock from '@/components/shared/ZoneWeekBlock'
 import { classifyRun, type RunZoneOutcome } from '@/lib/coaching/zoneWeekStatement'
 import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Plan, Week, Session, GeneratorInput } from '@/types/plan'
+import type { Plan, Week, Session, GeneratorInput, BenchmarkInput } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
@@ -2722,7 +2722,11 @@ export default function DashboardClient() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          benchmark: { type: 'time_trial', distance_km: recalDistanceKm, time: secondsToTime(timeSeconds) },
+          // BENCHMARK-IMPOSSIBLE-01 — `'race'`, not `'time_trial'`. A 5K time trial is
+          // a timed distance, which is exactly the `race` shape; `'time_trial'` is not
+          // in `BenchmarkInput['type']` or `PlanSchema`, so every in-plan recalibration
+          // stored a benchmark the canonical schema rejects. Nothing reads `.type`.
+          benchmark: { type: 'race', distance_km: recalDistanceKm, time: secondsToTime(timeSeconds) } satisfies BenchmarkInput,
           recalibration_week_n: recalDue.week_n,
         }),
       })

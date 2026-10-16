@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-16 — BENCHMARK-IMPOSSIBLE-01 + BENCHMARK-INPUT-01 · a runner typed their pace into a finish-time box and got a VDOT of 253.7
+**Shipped:** A benchmark faster than the world record is refused, on both screens and on the server, with *"Bit quick for a human. Enter your finish time."* Both benchmark screens are now one component, and each value is read back with the pace it implies, so a pace typed as a time reads wrong on sight.
+
+**Dev learning:** "Standardise the two screens" turned out to mean "they already used the same controls, as two copies that had drifted". The drift had a real bug in it: the wizard's 30-minute time-trial box opened the iPhone numeric keypad, which has no decimal point, so the founder's own example (7.1 km) could not be typed at all. Moving the VDOT formula to a tiny pure module was what let the browser and the route run one check rather than two that agree by accident. Five other test suites went red on the move, and none of them were wrong: two were reading the old file location, three were ratchets whose debt had just been paid. One had a 500-character slice that started swallowing an unrelated comment once the code after it moved; it now reads to the end of the function instead.
+
+**Product learning:** The founder suggested a ruler for the distance, with the constraint that decimals matter. The constraint was the argument against the ruler: at 0.1 km a stop is under 6 px on a phone. Repeating someone's reason back to them works better than arguing with their suggestion.
+
+**AI-building learning:** The "skip" button on that step keeps whatever you entered, a deliberate board ruling from September. So my new gate on "Continue" was half a gate until I checked the other button on the same screen.
+
+**The honest bit:** Two real plans still carry impossible paces. This stops the next one; it does not fix those two, and one belongs to a Make-A-Wish runner whose plan starts in December. Update Paces has not been looked at in a browser: it has no preview page, so only the shared component was checked by eye, through the wizard.
+
+---
+
 ## 2026-10-15 — PLAN-SAVE-SILENT-FAIL-01 · a real runner built a plan twice and we had no way to know whether they tried to save it
 **Shipped:** If saving a newly built plan fails, the runner now sees a message above the button and we get a record of it. Before, the button quietly reset and nothing happened on either side.
 

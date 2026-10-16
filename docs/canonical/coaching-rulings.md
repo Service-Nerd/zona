@@ -25,6 +25,28 @@ memory.
 
 
 
+## 2026-10-16 — BENCHMARK-IMPOSSIBLE-01 · CORRECT WITH AMENDMENT. A benchmark must be humanly possible, and already run
+
+**Ruling.** §55 Amendment 1. A benchmark whose **raw VDOT exceeds 85** is refused, and so is one
+dated in the future. One gate (`assertPlausibleBenchmark`) at generation **and** at
+`/api/recalibrate-zones`; `INV-PLAN-VDOT-PLAUSIBLE` is the backstop.
+
+**Measured.** World records: 85.3 / 85.5 / 85.6 / 85.5 (5K / 10K / half / marathon). Live plans
+2026-10-16: **2 of 36** above 85 (**253.7** from a 5K "in 5:04", **182.6** from a 10K "in 14:00");
+highest real one **48.4**.
+
+- 🏃 **One VDOT ceiling, not per-distance times** (Hutchinson): VDOT normalises across distances.
+- ⚕️ **Sex-neutral** (Sims): far above every women's record.
+- 🩹 **Update Paces asks when the race was run** (Willy): §42's ramp reads `benchmark_date` and the
+  screen never collected it, so last spring's race was priced as yesterday's. Blank still = fresh.
+- **No prescription change for any valid input**, so no fitness re-measure; parity must be identical.
+
+**Not settled:** a wrong benchmark that is still possible. **Existing plans are not remediated**
+(new-plans-only policy): the two affected runners are the founder's to contact.
+
+---
+
+
 ## 2026-10-03 — PLAN-PEAK-BELOW-BASE-01 · CORRECT AS IS, and the alarming number was the design
 
 **Ruling: CORRECT AS IS. No engine change.** A plan's peak long run may fall below the runner's

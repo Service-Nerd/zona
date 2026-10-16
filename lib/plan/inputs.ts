@@ -10,6 +10,7 @@ import type { GeneratorInput } from '@/types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
 import { weeksBetweenLocal } from './length'
 import { raceLabelFor } from './raceLabel'
+import { benchmarkProblem, benchmarkVdot, BENCHMARK_VDOT_MAX, BENCHMARK_PROBLEM_COPY, type BenchmarkProblem } from './benchmarkCheck'
 
 /**
  * §22 / GOAL-COHERENCE-01 (2026-09-16) — A TIME GOAL WITH NO TIME IS NOT A TIME
@@ -467,6 +468,34 @@ const FIELD_COPY: Record<string, (value: number, range: InputFieldRange) => stri
     `We could not read how far you run in a week. Put in roughly what you cover now, and zero is fine if you are starting from scratch.`,
   longest_recent_run_km: () =>
     `We could not read your longest recent run. Put in the furthest you have gone in the last six weeks, and zero is fine if you have not run.`,
+  // BENCHMARK-IMPOSSIBLE-01 — the same sentence the field shows before submit.
+  benchmark_time:        () => BENCHMARK_PROBLEM_COPY.too_fast_race,
+  benchmark_tt_distance: () => BENCHMARK_PROBLEM_COPY.too_fast_tt,
+  benchmark_date:        () => BENCHMARK_PROBLEM_COPY.date_in_future,
+}
+
+/** Which field a benchmark problem is reported against. */
+const BENCHMARK_PROBLEM_FIELD: Record<BenchmarkProblem, string> = {
+  too_fast_race:  'benchmark_time',
+  too_fast_tt:    'benchmark_tt_distance',
+  date_in_future: 'benchmark_date',
+}
+
+/**
+ * BENCHMARK-IMPOSSIBLE-01 (§55, Coaching Board 2026-10-16) — throws when a benchmark is
+ * not humanly possible or is dated in the future. ONE owner, called by
+ * `validateInputFields` (plan generation) and by `/api/recalibrate-zones` (every
+ * recalibration), so no route can price a plan off an impossible benchmark.
+ */
+export function assertPlausibleBenchmark(
+  b: Parameters<typeof benchmarkProblem>[0],
+  today: Date = new Date(),
+): void {
+  const problem = benchmarkProblem(b, today)
+  if (!problem) return
+  const field = BENCHMARK_PROBLEM_FIELD[problem]
+  const value = problem === 'date_in_future' ? NaN : Math.round((benchmarkVdot(b) ?? NaN) * 10) / 10
+  throw new InputFieldError(field, value, { min: 0, max: BENCHMARK_VDOT_MAX })
 }
 
 /** Falls back to plain language rather than the field name, always. */
@@ -603,6 +632,10 @@ export function validateInputFields(input: GeneratorInput): void {
       min: RACE_DISTANCE_MIN_KM, max: RACE_DISTANCE_MAX_KM,
     })
   }
+
+  // BENCHMARK-IMPOSSIBLE-01 (2026-10-16) — a benchmark faster than any human, or dated
+  // in the future, is refused rather than priced. See `assertPlausibleBenchmark`.
+  if (input.benchmark) assertPlausibleBenchmark(input.benchmark)
 
   // ENUM FIELDS WERE NEVER VALIDATED (added 2026-09-11) — the same class this
   // function already records for the volume fields, one type away.

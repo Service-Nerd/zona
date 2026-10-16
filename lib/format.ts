@@ -473,6 +473,36 @@ export function formatClockTime(totalSeconds: number | null | undefined): string
 }
 
 /**
+ * BENCHMARK-INPUT-01 (Design Board, 2026-10-16) — a benchmark field reads back the
+ * DECISION, not the keystrokes: `5K in 25:20 · 5:04/km`, `5.4 km in 30 min · 5:33/km`.
+ *
+ * 🔴 WHY THE PACE HALF. A runner typed 5:04, their pace, as a 5K finish time and
+ * nothing on the screen disagreed. Read back, that entry says `5K in 5:04 · 1:01/km`,
+ * and a runner knows their own pace on sight. The TT distance is the runner's own
+ * string, so `7.1` is shown as `7.1`, never rounded.
+ *
+ * Null when there is nothing to read back yet: an empty field renders nothing.
+ */
+export function formatBenchmarkReadback(
+  b:
+    | { kind: 'race'; distanceLabel: string; distanceKm: number; totalSeconds: number }
+    | { kind: 'tt'; distanceKmText: string },
+  units: DistanceUnits = 'km',
+): string | null {
+  if (b.kind === 'race') {
+    if (!(b.distanceKm > 0) || !(b.totalSeconds > 0)) return null
+    const time = formatClockTime(b.totalSeconds)
+    const pace = formatPace(b.totalSeconds / b.distanceKm, units)
+    return time && pace ? `${b.distanceLabel} in ${time} · ${pace}` : null
+  }
+  const text = b.distanceKmText.trim()
+  const km = Number(text)
+  if (text === '' || !Number.isFinite(km) || km <= 0) return null
+  const pace = formatPace(1800 / km, units)
+  return pace ? `${text} km in 30 min · ${pace}` : null
+}
+
+/**
  * A gap between two clock times, as a human phrase: `5m 24s`, `5m`, `24s`.
  *
  * UNSIGNED by design — the caller owns the direction and says it in words or

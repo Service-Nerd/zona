@@ -9,6 +9,7 @@
 // Wired into generateRulePlan: throws on `error` severity in development;
 // logs in production (does not break the user).
 
+import { BENCHMARK_VDOT_MAX } from './benchmarkCheck'
 import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
 import { runWalkPrescriptionApplies } from './runWalkPlan'
 import { strideCarrierDay, isDayAfterLongRun, hasHillRestrictingInjury } from './neuromuscular'
@@ -117,6 +118,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-SPECIFIC-LONG-RUN',
   'INV-PLAN-LR-RACE-SEGMENT-PCT',
   'INV-PLAN-LONG-RUN-HAS-AN-AXIS',
+  'INV-PLAN-VDOT-PLAUSIBLE',
   'INV-PLAN-NO-RACE-EVE-SESSION',
   'INV-PLAN-RACE-NOTE-SCALES',
   'INV-PLAN-PEAK-OVER-BASE',
@@ -2614,6 +2616,28 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           expected: `~${expected.toFixed(1)} km`,
         })
       }
+    }
+  }
+
+  // INV-PLAN-VDOT-PLAUSIBLE — §55 Amendment 1 (BENCHMARK-IMPOSSIBLE-01, 2026-10-16).
+  //
+  // `assertPlausibleBenchmark` refuses an impossible benchmark at BOTH entry points
+  // (generation and `/api/recalibrate-zones`). This is the backstop for the next
+  // one: any path that writes `meta.vdot` without passing that gate. Measured before
+  // it shipped: 2 of 36 live plans carried 253.7 and 182.6, and every pace in them
+  // descends from that number. The highest real one was 48.4.
+  {
+    const vdot = (plan.meta as { vdot?: number }).vdot
+    if (typeof vdot === 'number' && Number.isFinite(vdot) && vdot > BENCHMARK_VDOT_MAX) {
+      violations.push({
+        code: 'INV-PLAN-VDOT-PLAUSIBLE',
+        principle_ref: 'CoachingPrinciples §55 Amendment 1',
+        severity: 'error',
+        week: 0,  // plan-wide — no specific week (convention)
+        message: `meta.vdot ${vdot.toFixed(1)} is above any human's (world records measure 85.3–85.6) — the benchmark it came from was not a real performance, and every pace in the plan is priced off it`,
+        actual: Math.round(vdot * 10) / 10,
+        expected: `<= ${BENCHMARK_VDOT_MAX}`,
+      })
     }
   }
 

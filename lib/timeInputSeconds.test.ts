@@ -89,7 +89,8 @@ describe('no screen fabricates the seconds it did not collect', () => {
   it('the fixed-protocol 30-minute time trial keeps its literal, and that is correct', () => {
     // `'30:00'` is the PROTOCOL, not a runner-entered value — a 30-min TT is 30
     // minutes by definition. Named so the exemption reads as a decision.
-    const src = readFileSync('app/dashboard/BenchmarkUpdateScreen.tsx', 'utf8')
+    // BENCHMARK-INPUT-01 (2026-10-16) — both screens now build through ONE builder.
+    const src = readFileSync('lib/plan/benchmarkCheck.ts', 'utf8')
     expect(src).toContain("time: '30:00'")
   })
 })

@@ -47,7 +47,10 @@ describe('P-05(a) — the range is read from config, never typed', () => {
 
   it('uses an EN dash in the range, never an em dash', () => {
     // BRAND-EMDASH-01 bans em dashes and explicitly keeps en dashes in ranges.
-    const fn = WIZ.slice(WIZ.indexOf('function planLengthRange'), WIZ.indexOf('function planLengthRange') + 500)
+    // Bounded to the FUNCTION, not a 500-character budget: BENCHMARK-INPUT-01 removed the
+    // list that used to follow it, and the budget then swallowed an unrelated comment.
+    const at = WIZ.indexOf('function planLengthRange')
+    const fn = WIZ.slice(at, at + WIZ.slice(at).indexOf('\n}\n') + 2)
     expect(fn).toContain('\\u2013')
     expect(fn).not.toContain('—')
   })
