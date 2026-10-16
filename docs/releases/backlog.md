@@ -10316,7 +10316,9 @@ survived contact was (c), and that one this board had already ruled 20 days earl
 
 ---
 
-### 🔻 FOUNDER ACTION — paste the corrected Q9 into the daily digest routine *(filed 2026-10-09)*
+### ✅ FOUNDER ACTION — paste the corrected Q9 into the daily digest routine *(filed 2026-10-09)* — **DONE by the founder on 2026-10-10**
+
+> ✅ **Verified 2026-10-16 by reading the live routine** (`trig_01P5snwo2k4reDGrX4Z3wkyC`, last updated 2026-10-10): the Q9 SQL **and** the NEUTRAL rendering rule are both in its prompt, verbatim. The repo could not see it, so this sat marked open for six days.
 
 `OPS-SUBS-UNHANDLED-SEEN-01` is shipped on the repo side. The digest's Q9 still selects only
 the four money-critical kinds, so it still cannot see an event we deliberately do not act on.
@@ -10338,7 +10340,9 @@ the old Q9.**
 
 ---
 
-### 🔻 FOUNDER ACTION — paste the corrected Q2 into the daily digest routine *(filed 2026-10-09)*
+### ✅ FOUNDER ACTION — paste the corrected Q2 into the daily digest routine *(filed 2026-10-09)* — **DONE by the founder on 2026-10-10**
+
+> ✅ **Verified 2026-10-16 against the live routine prompt:** the corrected Q2 trial-funnel block and the optional Q2B are both present, matching `docs/runbooks/digest-trial-funnel.md` (the runbook's first block is the OLD predicate, shown for contrast, and correctly absent).
 
 `OPS-DIGEST-TRIAL-COHORT-01` is shipped on the repo side and **has no effect until the cloud
 routine's prompt is updated.** The routine is at claude.ai (trigger `trig_01P5snwo2k4reDGrX4Z3wkyC`),
