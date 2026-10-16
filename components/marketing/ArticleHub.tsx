@@ -183,7 +183,12 @@ export function ArticleHub({
         innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
         <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18 }}>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
-            Every plan {BRAND.name} publishes is free to read before you pay anyone for anything.{' '}
+            Every plan {BRAND.name} publishes is free to read before you pay anyone for anything.
+          </p>
+          {/* HUB-LINKS-STACK-01 (founder, 2026-10-16) — each link on its OWN line. "See the plans →"
+              used to trail the sentence inline and wrap wherever the line ran out, directly above
+              "Read the guides →" on its own line: two links, two treatments, in one block. */}
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '10px 0 0', maxWidth: 620 }}>
             <Link href="/plans" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>See the plans &rarr;</Link>
           </p>
           {siblingHub && (

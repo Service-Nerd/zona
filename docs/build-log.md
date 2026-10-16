@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-16 — HUB-LINKS-STACK-01 · two links in one block, two different treatments
+**Shipped:** On the comparisons and guides hubs, "See the plans →" now sits on its own line like "Read the guides →" below it, instead of trailing the sentence and wrapping wherever it landed.
+
+**Dev learning:** One component draws both hubs, so the fix was one paragraph split in `ArticleHub`. The check is a source assertion because tests run with no DOM; it strips comments first so the note explaining the fix can't satisfy it.
+
+**The honest bit:** The founder found it by looking at the page. No check looks at how a link wraps.
+
+---
+
 ## 2026-10-16 — BENCHMARK-IMPOSSIBLE-01 + BENCHMARK-INPUT-01 · a runner typed their pace into a finish-time box and got a VDOT of 253.7
 **Shipped:** A benchmark faster than the world record is refused, on both screens and on the server, with *"Bit quick for a human. Enter your finish time."* Both benchmark screens are now one component, and each value is read back with the pace it implies, so a pace typed as a time reads wrong on sight.
 
