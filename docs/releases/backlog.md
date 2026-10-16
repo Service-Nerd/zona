@@ -2034,6 +2034,41 @@ fixed.
 > before then; **contact is the founder's call**. `df2cc6e6`'s race was 2026-09-26, last opened 2026-07-29,
 > no subscription — no action.
 
+### 🟡 `STRENGTH-ENGINE-01` — a separate strength & conditioning engine that places sessions AROUND the run plan *(filed 2026-10-16, side project)* 🏃 **COACHING BOARD** (ruled) → 💼 **SLT** (ruled) → 🧭 **DESIGN BOARD** (before any UI) → 👤 **FOUNDER** (seat, session length)
+
+> **Founder's brief:** a separate engine that works WITH the coaching engine, never contradicts it, helps the goal;
+> supplementary sessions; running-focused or general; 45 or 60 min with warm-ups; animated exercises, sets and
+> reps (high-rep sometimes, heavier sometimes); equipment-driven; a catalogue by muscle group with sets/reps as
+> variables; isolated enough for its own app; **PAID**.
+>
+> **Architecture:** `docs/architecture/ADR-024-strength-engine.md` (PROPOSED). **Evidence:**
+> `docs/investigations/strength-conditioning-research-2026-10-16.md`. **Consolidates** `R21`, *Supplementary
+> session slots* and the strength row of the plan-settings sheet (three entries had described parts of one feature).
+>
+> ⚖️ **Coaching Board 2026-10-16: CORRECT WITH AMENDMENT** (architecture + rules) / **INSUFFICIENT EVIDENCE**
+> (exact numbers until the ACSM 2026 resistance-training stand is read). Heavy legs are a **§7 stressor**; stacking
+> after a quality run preferred, else an easy day 48 h from both, else upper/core only (never skip); plyometrics
+> follow **§21**'s injury list and come after strength; general = running legs + upper body; women/masters: heavy is
+> the destination, impact gated by a bone-health flag; RIR not %1RM; retire the run engine's stub; **no
+> injury-prevention claim anywhere**; strength not counted in run fatigue in v1. Guest seat: S&C, modelled on
+> Richard Blagrove's published positions.
+>
+> ⚖️ **SLT 2026-10-16: BUILD DIFFERENTLY.** Wholly **PAID** (amend `FEATURE_GATES`' *"basic strength sessions"*
+> free line when the build lands). **Engine first, no UI** (Phase 0–1) as a side project; **running-focused only in
+> v1** (general → v2 / standalone app); UI when the December cohort is ~3–4 weeks in, Design Board first; licensed
+> animations at Phase 3, **no embedded YouTube** (developer-policy risk in a paid tier). Success measure, named
+> before design (Zhuo): **share of runners who start a strength plan completing ≥1 session/week over 4 weeks.**
+> ⚠️ No commercial seat priced conversion: whether strength lifts trial-to-paid is unanswered.
+>
+> 🔻 **Open for the founder:** (1) appoint a permanent S&C seat to the Coaching Board; (2) session length: brief says
+> 45/60, Wood asks for a 30-minute option to be tested for adherence; (3) confirm v1 is running-focused only.
+>
+> **Phase 1 deliverables (engine only):** `packages/strength` (types, ~40-exercise catalogue across every pattern ×
+> equipment tier, prescription model, 45/60 time-budget packer, RAMP warm-up, placement rules),
+> `docs/canonical/StrengthPrinciples.md`, `STRENGTH_CONFIG`, `validateStrengthPlan()`, the bridge
+> (`lib/strength-bridge`: `Plan → RunContext`), `docs/contracts/strength-engine.md`, and a sweep over the run-plan
+> corpus with zero violations.
+
 ### ✅ `GENERATE-500-NO-TRACE-01` — **SHIPPED 2026-10-16**. A crashed or refused generation now leaves a record ⚙️ **NO BOARD** *(observability)*
 
 > ✅ **Shipped.** The route's outer catch writes `plan_generate_failed` `{ stage, error_name, message (first
@@ -17706,7 +17741,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 | **R22** · **[W5]** | **Blockout days** — user marks days unavailable, plan reshapes around them | PAID | M | Bundle with R20 parked triggers — uses same reshape engine |
 | **R18** · **[W5]** | **Plan confidence score** — derive from session completion + RPE. R17 coaching flags are the per-session atom this aggregates. Logically downstream of R25 — pairs naturally as the next item once the comparison engine ships | PAID | M | Display on dashboard or plan screen |
 | **R24** · **[W5]** | **Multi-race support** (A/B race hierarchy) | PAID | L | Non-breaking additive: `meta.races: Race[]` on top of existing `meta.race_date`/`race_name` |
-| **R21** · **[W5]** | **Strength sessions** — flesh out stubs (currently admin-only/hidden) | FREE display / PAID dynamic | M | |
+| ~~**R21**~~ · **[W5]** | ~~**Strength sessions**~~ — **SUPERSEDED 2026-10-16 by `STRENGTH-ENGINE-01`** (a separate engine; see that entry) | ~~FREE display / PAID dynamic~~ → PAID | M | |
 | **CA-08** · **[W4]** | **Garmin Connect integration** — largest fitness-watch ecosystem in distance running; every Tier-1 competitor (Runna/Coopah/TrainAsONE) has it. Plumbing-grade: OAuth + activity push into the source-agnostic `strava_activities` log (`source='garmin'`), reusing the existing HealthKit/Strava dedupe (`lib/coaching/healthkitConsolidate.ts`, ±5min/±5%). Not a v1 blocker — HealthKit covers the iOS+Apple-Watch user; Garmin widens the addressable runner. Source: competitive analysis 2026-06-03 §4.1. | PAID | M | **SLT: Apply for Garmin Connect Developer Program NOW regardless of build timing. Approval takes 4–8 weeks. Don't let that clock start late.** Pairs with the Strava-secondary-source work — same ingest/dedupe path. |
 | **R19** · **[W5]** | **Coaching tips in Supabase** — move hardcoded copy to a table for dynamic, user-specific messages | PAID | S | **Don't pick up without a product trigger.** Scoped 2026-05-01: current hardcoded copy (`getCompletionCopy`, `getReflectResponse` in `DashboardClient.tsx`; `ZONE_COPY` in `lib/coaching/zoneCopy.ts`) branches on session type + RPE — both already known client-side. No user segmentation exists, so the migration alone doesn't unlock "dynamic per user" — it just adds a DB read + fallback path. Worth building only when there's a real driver: a non-engineer copy editor, an A/B test you actually want to run, or the first cohort that genuinely needs different copy (e.g. beginner vs intermediate). Until then, two switch statements are the right level of abstraction. |
 | **R26** · **[W5]** | **Background load (HealthKit)** — count daily step / non-run active minutes against the chronic side of `acuteChronicRatio`. Fixes the false-negative case where a user with a 15k-step day-job is carrying invisible load the plan can't see | PAID | M | Calibration risk — active job vs recovery walks vs cross-train all look the same in step count. Needs a tunable damping factor before it's safe to act on. New field `nonRunActiveMins` on the load calc; surface separately on weekly report before feeding into the trigger |
@@ -17716,7 +17751,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 - **[W5]** **CO-ONE dismissal sheet** *(Phase 2, ~half-day)* — "Manage what Kit watches →" slide-up sheet on Coach. Per-signal 14-day mute toggles (zone drift, benchmark staleness, future foldable signals). Reuses existing `zone_drift_dismissed_at` / `benchmark_recal_dismissed_at` persistence (left in schema during CO-ONE v1 ship). **Gate (revised 2026-06-19, post-portfolio):** build when ANY of the following silent-churn signals fires: (a) ≥10% of paid users open Coach 3+ times in a week without taking *any* downstream action (no run logged, no benchmark updated, no session marked done) — measurable proxy for "ignoring Kit"; (b) churn-survey responses cite "too repetitive" / "felt nagging" / "wouldn't shut up" verbatim; (c) ≥3 unsolicited user requests for signal mute in support. The original "≥3 user requests" gate was vague — runners rarely ask for a feature they don't know exists; the silent-ignore signal is the real failure mode. SLT call (2026-06-19) and recommendation refresh (2026-06-19): the heat-block / altitude-camp / mid-life-event runner case is real but speculative; ship the read clean first, add the sheet if a measurable silent-churn pattern emerges. Persistence already exists → minimal effort when triggered. Tier: FREE.
 - **[W5]** **Zone method selector** — user picks HR zone calc method, stored in `user_settings` — PAID
 - **[W5]** **GTM-11 Pricing review** — annual discount currently 37% vs category norm 44–49%. Monthly parameterised in `lib/brand.ts`; can raise to £9.99/month (50% annual discount) without a search-replace. Revisit after first 100 paid conversions
-- **[W5]** **Supplementary session slots** — second session per day for strength / cross-train / yoga / mobility. Explicitly NOT AM/PM run-doubling (different audience pattern, counter to brand). Tier: slot FREE, AI placement PAID. Estimate ~3 weeks.
+- ⚫ **SUPERSEDED 2026-10-16 by `STRENGTH-ENGINE-01`** (ADR-024 §7: strength gets its OWN store, not a `secondary_session` inside the run plan, so a standalone app can own it and `session_completions` keeps its primary key). Kept for the record: **[W5]** **Supplementary session slots** — second session per day for strength / cross-train / yoga / mobility. Explicitly NOT AM/PM run-doubling (different audience pattern, counter to brand). Tier: slot FREE, AI placement PAID. Estimate ~3 weeks.
   - **Model (option B — primary + secondary):** primary session stays keyed by `day`. Adds optional `secondary_session: Session | null` on `Week.days[day]`. Adds `slot TEXT NOT NULL DEFAULT 'primary'` column (check `IN ('primary','secondary')`) to `session_completions`, `session_overrides`, `run_analysis`. Replaces unique constraints to include `slot`. Backfill all existing rows to `'primary'`. **Every `onConflict: 'user_id,week_n,session_day'` upsert in the codebase becomes `'user_id,week_n,session_day,slot'`** — grep before merge.
   - **Engine impact:** `validatePlan` invariants (secondary may only exist when primary exists; secondary type ∈ allowed supplementary types; intra-day load cap when primary hard + secondary hard); `buildReorderAdjustment` adjacency check goes 2-D (same-day across slots also counts as back-to-back hard); `autoMatchAndAnalyse` routes by activity type — `Run`/`TrailRun` → primary, `WeightTraining`/`Yoga`/`Ride`/`Swim` → secondary; `/api/adjust-plan` `{fromDay,toDay}` becomes `{from:{day,slot}, to:{day,slot}}`. Coaching call needed in `CoachingPrinciples.md` on whether strength counts toward fatigue load.
   - **UI:** Today renders secondary as a smaller, indented sub-card directly under primary (rule: *one day = one block, with optional sub-row* — secondary is visually subordinate, not a second equal card); Plan-screen `DayRow` gets a `+` affordance ("Add a session") + slot-aware Move; Wizard adds one question ("Do you do strength or cross-training? We'll fit it around your runs"). Cross-slot moves blocked at MVP — only same-slot moves between days.

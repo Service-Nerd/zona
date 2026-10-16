@@ -25,6 +25,28 @@ memory.
 
 
 
+## 2026-10-16 — STRENGTH-ENGINE-01 · CORRECT WITH AMENDMENT (architecture, rules) · INSUFFICIENT EVIDENCE (numbers)
+
+**On:** `docs/architecture/ADR-024-strength-engine.md`. Guest seat: S&C, modelled on Richard Blagrove's published
+positions (founder to decide permanence). **Conflict scan:** §1 already excludes strength from intensity distribution
+(no conflict); **§7 governs** (heavy lower-body / plyometric work is a stressor, 48 h); §21's injury list extends to
+plyometrics; §3 deload and §49/§36 taper consistent; `FEATURE_GATES` lists *"basic strength sessions"* as free →
+SLT.
+
+**Ruling:** (1) §7 governs placement: same day after a quality run (≥3 h, ideally ≥6 h), else an easy day 48 h from
+both quality and long, else upper/core/mobility only, **never skip**. (2) Plyometrics and impact follow §21 and come
+after strength and landing competence. (3) Phase dose per ADR, deload cuts sets, last heavy session ~10–14 days before
+the race, race week mobility only (**provisional, weak evidence**). (4) General = running-focused lower + upper body,
+never extra leg volume. (5) Women and masters: heavy is the destination, impact gated by a bone-health flag,
+conservative progression. (6) RIR, not %1RM; novices 8–12 reps for 2–4 weeks, then heavier. (7) Retire the run
+engine's strength stub. (8) **No injury-prevention claim, any surface.** (9) Strength not counted in run fatigue in v1.
+**Insufficient evidence:** read the 2026 ACSM stand before fixing any constant. **Recorded disagreement:** cycle-phase
+periodisation (Sims vs Hutchinson), standing. **Artifacts:** at Phase 1 (`StrengthPrinciples.md`, `STRENGTH_CONFIG`,
+`validateStrengthPlan()`); nothing built yet. Decision note: `docs/decisions/strength-engine-boards-2026-10-16.md`.
+
+---
+
+
 ## 2026-10-16 — BENCHMARK-IMPOSSIBLE-01 · CORRECT WITH AMENDMENT. A benchmark must be humanly possible, and already run
 
 **Ruling.** §55 Amendment 1. A benchmark whose **raw VDOT exceeds 85** is refused, and so is one
