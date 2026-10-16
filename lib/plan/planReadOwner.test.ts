@@ -104,7 +104,7 @@ describe('PlanLoadFailed renders the §8 Empty State with its one action', () =>
     const React = (await import('react')).default
     const { renderToStaticMarkup } = await import('react-dom/server')
     ;(globalThis as { React?: unknown }).React = React
-    const { PlanLoadFailed } = await import('@/app/dashboard/DashboardClient')
+    const { PlanLoadFailed } = await import('@/components/dashboard/PlanLoadFailed')
     const html = renderToStaticMarkup(React.createElement(PlanLoadFailed, { onRetry: () => {} }))
     expect(html).toContain('t load your plan.')
     expect(html).toContain('Your plan is safe. Check your connection and try again.')

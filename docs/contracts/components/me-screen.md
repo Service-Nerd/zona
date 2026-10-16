@@ -167,3 +167,9 @@ above in prose because nothing enforces it; a real type belongs with the
 
 Plan history reads the live plan through `readPlanJson` (`lib/planRead.ts`) instead of a hand-written query.
 No prop or behaviour change.
+
+
+## Plan history's error state — ME-HISTORY-ERROR-DEADEND-01 (2026-10-16)
+
+The error branch renders `EmptyState` with one **Try again** action that bumps an internal `attempt` counter,
+which re-runs the load effect. No prop change.

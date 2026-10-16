@@ -86,7 +86,7 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // the founder-note pull-line went 18px -> 20px after the board refused 18 as a level
     // (17 -> 18 is 1.059x). The other EIGHT sites of the same headline species keep 18px
     // as declared debt; see the 18px arm below for why they were not swept.
-    const UNDECLARED_USES_BASELINE = 210  // 211 → 210 measured STAGED: EMPTY-STATE-OWNER-01 moved Me → Plan history's hand-typed 16px/14px empty state onto EmptyState
+    const UNDECLARED_USES_BASELINE = 209  // 210 → 209 measured STAGED: ME-HISTORY-ERROR-DEADEND-01 moved Plan history's 13px error line onto EmptyState
     let n = 0
     for (const [size, count] of Array.from(sizes())) if (!DECLARED.has(size)) n += count
     expect(n,
@@ -154,7 +154,7 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // ⚠️ The arm is kept, inverted, rather than deleted: an accusation that was
     // answered still needs a ratchet, or 13px simply grows back.
     // 169 (2026-10-05) -> 137 (2026-10-14). 12px is now the most-used size.
-    const THIRTEEN_BASELINE = 135  // 136 → 135 measured STAGED: the Adjust sheet's 13px --warn error became the 14px --danger-strong error line (PLAN-CHANGE-FAIL-VISIBLE-01)
+    const THIRTEEN_BASELINE = 134  // 135 → 134 measured STAGED: Plan history's 13px error line became EmptyState (ME-HISTORY-ERROR-DEADEND-01)
     const n = sizes().get('13') ?? 0
     expect(n,
       n > THIRTEEN_BASELINE

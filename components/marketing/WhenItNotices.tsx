@@ -44,7 +44,7 @@
 // spotlight, and is a documented-rule regression Silvanto's seat could veto.
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { MARKETING_PLANS, planAnchor } from '@/lib/marketing/plans'
-import { checkAdjustmentTriggers } from '@/lib/coaching/planAdjustment'
+import { checkAdjustmentTriggers, zoneDriftNoteOf } from '@/lib/coaching/planAdjustment'
 import { orderedWeekSessions } from '@/lib/plan/weekSessions'
 import { ZONE_DRIFT_ABOVE_CEILING_PCT } from '@/lib/coaching/constants'
 import { Section } from '@/components/marketing/Section'
@@ -93,10 +93,13 @@ export function WhenItNotices() {
   // printing a stale sentence. Same posture as SameWeekTwice returning null on a missing week.
   if (!proposed) return null
 
-  // The note the engine writes onto the easy run. Read from its own output, never typed.
-  const noted = (proposed.sessionsAfter as Session[])
-    .find(s => s.type === 'easy' && (s.coach_notes?.[0] ?? '').includes('ceiling'))
-  const coachNote = noted?.coach_notes?.[0] ?? null
+  // The note the engine writes onto the easy run. Read from its own output, never typed,
+  // and FOUND by the producer's own predicate rather than a word in the copy
+  // (MARKETING-NOTE-COPY-MATCH-01): rewording the note can no longer empty this section.
+  const coachNote = (proposed.sessionsAfter as Session[])
+    .filter(s => s.type === 'easy')
+    .map(zoneDriftNoteOf)
+    .find((n): n is string => n !== null) ?? null
 
   return (
     <Section width="full" rhythm="none" innerStyle={{ padding: 'var(--sect-y) 24px' }}>

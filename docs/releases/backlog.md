@@ -2118,7 +2118,11 @@ fixed.
 > `/api/ops/onboarding-event` already does for the same reason; (2) show the runner that the save did not
 > happen and let them retry — a Design Board question for the wording and placement.
 
-### 🔵 `ME-HISTORY-ERROR-DEADEND-01` — Me → Plan history's error says "try again" and offers nothing to tap *(filed 2026-10-16, P3)* 🧭 **DESIGN BOARD**
+### ✅ `ME-HISTORY-ERROR-DEADEND-01` — **SHIPPED 2026-10-16**. Plan history's error now has a Try again button 🧭 **DESIGN BOARD** *(SHIP)*
+
+> ✅ `EmptyState` with one action that re-runs the load; "Go back and try again" is gone.
+>
+> **Original filing, kept:**
 
 > Found at `EMPTY-STATE-OWNER-01`. `components/dashboard/MeScreen.tsx`: *"Couldn't load plan history. Go back and
 > try again."*, 13px `--mute`, centred, **no action**. The runner is told to retry and given no control to do it.
@@ -2151,7 +2155,15 @@ fixed.
 > 📐 Re-measure the population before building: grep found 17 route/lib callers plus 2 in tests, by a
 > 4-line window after `from('plans')` — **a window is not a region**, so count properly first.
 
-### 🔵 `MARKETING-NOTE-COPY-MATCH-01` — the HOMEPAGE finds an engine coach note by matching the word "ceiling" *(filed 2026-10-15, P2)* 🧭 **DESIGN BOARD** *(marketing surface; the seam rule puts the encoding here)*
+### ✅ `MARKETING-NOTE-COPY-MATCH-01` — **SHIPPED 2026-10-16**. The homepage finds its coach note by the producer, not by a word 🧭 **DESIGN BOARD** *(recorded, no visible delta)*
+
+> ✅ `zoneDriftNote` is exported and `zoneDriftNoteOf(session)` returns the note iff it is exactly what the
+> producer wrote (or the pre-§12-Am.2 generic form). `WhenItNotices` uses it, so rewording the note, or the note
+> landing second (it is APPENDED, while the old matcher read `coach_notes[0]`), can no longer empty the section.
+> Proven unchanged: the new lookup returns the same note the old one did. The test that pinned the word
+> "ceiling" now pins the predicate instead.
+>
+> **Original filing, kept:**
 
 > 🔴 **FOUND BY BREAKING IT**, while shipping §12 Amendment 2's note rewording.
 > `components/marketing/WhenItNotices.tsx:98`, rendered on **`app/page.tsx`** — the homepage —

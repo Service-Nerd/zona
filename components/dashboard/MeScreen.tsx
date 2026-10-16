@@ -593,6 +593,8 @@ interface ArchivedPlan {
 function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
   const [status, setStatus]   = useState<'loading' | 'loaded' | 'error'>('loading')
   const [plans, setPlans]     = useState<ArchivedPlan[]>([])
+  // ME-HISTORY-ERROR-DEADEND-01 — bumping this re-runs the load (the error state's retry).
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -623,7 +625,7 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
       }
     }
     void load()
-  }, [])
+  }, [attempt])
 
   function formatRaceDate(dateStr: string | null): string {
     if (!dateStr) return ''
@@ -680,10 +682,13 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
           </>
         )}
 
+        {/* ME-HISTORY-ERROR-DEADEND-01 (Design Board, 2026-10-16) — this said "Go back and try
+            again" and offered nothing to tap. The shared § 8 state, with the retry the copy asked for. */}
         {status === 'error' && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', textAlign: 'center', marginTop: 'var(--space-7)' }}>
-            Couldn&apos;t load plan history. Go back and try again.
-          </div>
+          <EmptyState
+            title={<>Couldn&apos;t load plan history.</>}
+            action={<Button variant="primary" fullWidth onClick={() => { setStatus('loading'); setAttempt(a => a + 1) }}>Try again</Button>}
+          />
         )}
 
         {status === 'loaded' && plans.length === 0 && (

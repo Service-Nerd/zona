@@ -401,18 +401,24 @@ function buildReduceVolumeAdjustment(input: AdjustmentCheckInput, ratio: number)
  */
 const ZONE_DRIFT_NOTE_GENERIC = 'Zone 2 only. HR ceiling enforced: if HR climbs, slow down.'
 
-function zoneDriftNote(session: Session): string {
+export function zoneDriftNote(session: Session): string {
   const target = (session as { hr_target?: string }).hr_target?.trim()
-  // 🔴 THE WORD "ceiling" IS LOAD-BEARING AND NOT STYLISTIC. The HOMEPAGE
-  // renders this note live: `components/marketing/WhenItNotices.tsx:98` finds the
-  // session with `(s.coach_notes?.[0] ?? '').includes('ceiling')`. Drop the word and
-  // a live marketing section silently renders nothing. My first cut of Sims's
-  // amendment read "Zone 2 only. Keep HR < 143 bpm" and did exactly that — caught by
-  // `whenItNotices.test.ts`, not by my own consumer check, which had recorded the
-  // website as "none". See `MARKETING-NOTE-COPY-MATCH-01` for the fragile matcher.
   return target
     ? `Zone 2 ceiling: keep HR ${target}. If it climbs, slow down.`
     : ZONE_DRIFT_NOTE_GENERIC
+}
+
+/**
+ * MARKETING-NOTE-COPY-MATCH-01 (2026-10-16) — the zone-drift note this session carries,
+ * or null. Identified by being EXACTLY what `zoneDriftNote` writes (or the pre-§12-Am.2
+ * generic form), never by a word in it: the homepage's `WhenItNotices` used to find the
+ * session with `coach_notes[0].includes('ceiling')`, so rewording the note or appending it
+ * after another one would have emptied a live section silently.
+ */
+export function zoneDriftNoteOf(session: Session): string | null {
+  const notes = (session.coach_notes ?? []).filter(Boolean) as string[]
+  const own = zoneDriftNote(session)
+  return notes.find(n => n === own || n === ZONE_DRIFT_NOTE_GENERIC) ?? null
 }
 
 function buildZoneDriftAdjustment(input: AdjustmentCheckInput, driftPct: number): ProposedAdjustment {

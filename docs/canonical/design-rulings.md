@@ -9,6 +9,19 @@ not after.
 
 
 
+## 2026-10-16 — ME-HISTORY-ERROR-DEADEND-01 · SHIP. The retry the copy asked for
+
+Routed here by `EMPTY-STATE-OWNER-01`. Me → Plan history's error read *"Couldn't load plan history. Go back and
+try again."* in 13px `--mute` with **no control**: three taps and a guess to do what the sentence asked
+(Wroblewski). **Ruling: SHIP.** `EmptyState`, title *"Couldn't load plan history."*, one action **Try again**
+that re-runs the load. "Go back and" is dropped because the button replaces the instruction. § 8 permits the
+button: there is a specific action. **Veto:** none (it moves from a hand-typed 13px onto the documented sizes).
+Check: `emptyState.markup.test.ts` § ME-HISTORY (action present, retry re-runs the effect, sentence gone),
+falsified three ways. Recorded in the same sitting: `MARKETING-NOTE-COPY-MATCH-01`, no visible delta.
+
+---
+
+
 ## 2026-10-16 — EMPTY-STATE-OWNER-01 · SHIP WITH AMENDMENT. § 8 written once, centred
 
 **Founder, twice that day:** invoke frontend-design and use agreed standards and shared components. Building the

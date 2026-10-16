@@ -14,6 +14,7 @@
 // literal must not sit inside the population of a guard that counts that literal.** The
 // other marketing guards (`noEmDash`, `sectionSurfaces`) already live here, so this is the
 // conventional home rather than a dodge.
+import { zoneDriftNoteOf } from '@/lib/coaching/planAdjustment'
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -67,10 +68,25 @@ describe('🏃 the engine really does produce this, on the real published plan',
 
   it('the coach note is read from the engine’s own output too', () => {
     const { proposed } = engine()
-    const note = proposed!.sessionsAfter.find(s => s.type === 'easy' && (s.coach_notes?.[0] ?? '').includes('ceiling'))
-    expect(note?.coach_notes?.[0]).toBeTruthy()
-    expect(CODE).toContain('coach_notes?.[0]')
+    const note = proposed!.sessionsAfter.filter(s => s.type === 'easy').map(zoneDriftNoteOf).find(Boolean)
+    expect(note).toBeTruthy()
     expect(CODE).not.toContain('HR ceiling enforced')
+  })
+
+  it('🔴 MARKETING-NOTE-COPY-MATCH-01 — the note is FOUND by the producer, never by a word in it', () => {
+    // It used to be `.find(s => (s.coach_notes?.[0] ?? '').includes('ceiling'))`: reword the note,
+    // or let it land second, and the section rendered nothing.
+    const code = CODE.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n')
+    expect(code).toMatch(/zoneDriftNoteOf/)
+    expect(code, 'a copy word is classifying the session again').not.toMatch(/\.includes\(\s*['"]/)
+    expect(code, 'the note is being read by POSITION again').not.toMatch(/coach_notes\?\.\[0\]/)
+  })
+
+  it('…and it finds the same note the old matcher did, so the homepage is unchanged', () => {
+    const { proposed } = engine()
+    const old = proposed!.sessionsAfter.find(s => s.type === 'easy' && (s.coach_notes?.[0] ?? '').includes('ceiling'))?.coach_notes?.[0]
+    const now = proposed!.sessionsAfter.filter(s => s.type === 'easy').map(zoneDriftNoteOf).find(Boolean)
+    expect(now).toBe(old)
   })
 
   it('the sessions are REAL — generated at render time, not transcribed', () => {

@@ -48,3 +48,20 @@ describe('🔴 no screen hand-writes § 8 again', () => {
     expect(offenders, 'use <EmptyState> from components/shared/EmptyState').toEqual([])
   })
 })
+
+describe('ME-HISTORY-ERROR-DEADEND-01 — Plan history’s error offers the retry it asks for', () => {
+  const src = readFileSync('components/dashboard/MeScreen.tsx', 'utf8')
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '')
+  it('the error branch is an EmptyState WITH an action that re-runs the load', () => {
+    const at = src.indexOf("status === 'error' && (")
+    expect(at, 're-anchor: the error branch moved').toBeGreaterThan(-1)
+    const branch = src.slice(at, src.indexOf(')}', src.indexOf('/>', at)) + 2)
+    expect(branch).toMatch(/<EmptyState\b/)
+    expect(branch).toMatch(/action=\{<Button\b/)
+    expect(branch).toMatch(/setAttempt\(/)
+    expect(src, 'the retry must actually re-run the effect').toMatch(/\}, \[attempt\]\)/)
+  })
+  it('the dead-end sentence is gone', () => {
+    expect(src).not.toContain('Go back and try again')
+  })
+})

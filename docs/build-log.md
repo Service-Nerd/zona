@@ -6,6 +6,20 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-16 — MARKETING-NOTE-COPY-MATCH-01 · the homepage was reading position one of a list it appended to
+**Shipped:** The homepage's "it notices" section now finds the coach note by asking the code that wrote it, not by looking for the word "ceiling".
+
+**Dev learning:** Fixing the word match turned up a second fragility nobody had filed: the adjustment engine appends the note to the end of a session's notes, while the homepage read the first one. It only worked because the demo session had no other notes. Both go away when the lookup asks the producer "is this your note?" A test proves the homepage shows exactly the same sentence as before.
+
+---
+
+## 2026-10-16 — ME-HISTORY-ERROR-DEADEND-01 · "try again", with nothing to tap
+**Shipped:** If plan history fails to load, the runner now gets a Try again button instead of a sentence telling them to go back and come in again.
+
+**Dev learning:** The shared empty-state component built earlier in the day made this a three-line change. The retry re-runs the screen's own loader rather than reloading the app.
+
+---
+
 ## 2026-10-16 — GTM-SEO-COMPARE-01 page 5 · "I have only quoted figures I could check", about figures nobody could check
 **Shipped:** `/do-i-need-a-running-coach`, the fifth comparison page: what a coach does that an app can't, what each costs in the UK, and when a human is worth paying for.
 

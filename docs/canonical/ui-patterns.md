@@ -1225,7 +1225,8 @@ docking.
 state. **Centred on both axes**, text included: two hand-written copies had already split on alignment, and a
 single message with one action reads as a pause, not a page (Silvanto). The general "never centred-only layouts"
 rule is about content screens and does not apply to this one-message state. Callers: Me → Plan history (no prior
-plans), the dashboard's plan-load failure (`PlanLoadFailed`). **Check:** `components/shared/emptyState.markup.test.ts`
+plans, **and its load error, with a Try again action that re-runs the load** — `ME-HISTORY-ERROR-DEADEND-01`:
+an error that tells the runner to retry must give them the control to do it), the dashboard's plan-load failure (`PlanLoadFailed`). **Check:** `components/shared/emptyState.markup.test.ts`
 renders it, and fails on any hand-written § 8 heading + body outside it.
 
 ---

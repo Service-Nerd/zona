@@ -163,27 +163,18 @@ describe('§12 Am.2 — the drift note carries the ceiling it is asking for', ()
   })
 
   /**
-   * 🔴 THE WORD "ceiling" IS A CONTRACT WITH THE HOMEPAGE, and I learned that by
-   * breaking it. `components/marketing/WhenItNotices.tsx:98` locates this session with
-   * `(s.coach_notes?.[0] ?? '').includes('ceiling')` and renders the note on
-   * `app/page.tsx`. My first cut of Sims's amendment read *"Zone 2 only. Keep HR
-   * < 143 bpm"* — no "ceiling" — which would have silently emptied a live marketing
-   * section. My own consumer check had recorded the website as "none".
-   *
-   * This arm makes the coupling VISIBLE so the next person cannot remove the word by
-   * accident. The matcher itself is fragile (label-based classification on a marketing
-   * surface, a recorded class) and is filed as `MARKETING-NOTE-COPY-MATCH-01`.
+   * MARKETING-NOTE-COPY-MATCH-01 (2026-10-16) — this arm used to assert the note KEPT THE WORD
+   * "ceiling", because the homepage found the session by it. The homepage now finds it with the
+   * producer's own `zoneDriftNoteOf`, so the wording is free to change. What must hold instead:
+   * the predicate recognises exactly what the producer writes, with and without an HR target.
    */
-  it('🔴 keeps the word "ceiling" — the HOMEPAGE finds this note by it', async () => {
-    const { checkAdjustmentTriggers } = await import('./planAdjustment')
+  it('zoneDriftNoteOf recognises exactly what zoneDriftNote writes', async () => {
+    const { checkAdjustmentTriggers, zoneDriftNoteOf, zoneDriftNote } = await import('./planAdjustment')
     for (const sessions of [fullWeek('< 143 bpm'), fullWeek()]) {
       const proposed = checkAdjustmentTriggers(drifting(sessions) as never)
-      const note = (proposed!.sessionsAfter[0].coach_notes ?? []).filter(Boolean).at(-1) as string
-      expect(
-        note.includes('ceiling'),
-        `"${note}" has no "ceiling" — WhenItNotices.tsx:98 will not find this session ` +
-        'and the homepage section renders nothing.',
-      ).toBe(true)
+      const s = proposed!.sessionsAfter[0]
+      expect(zoneDriftNoteOf(s)).toBe(zoneDriftNote(s))
+      expect(zoneDriftNoteOf({ ...s, coach_notes: ['Something else entirely.'] } as never)).toBeNull()
     }
   })
 })
