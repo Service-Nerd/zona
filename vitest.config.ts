@@ -38,7 +38,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['lib/**/*.test.ts', 'components/**/*.test.ts'],
+    include: ['lib/**/*.test.ts', 'components/**/*.test.ts', 'packages/**/*.test.ts'],
     // No globals — explicit imports from 'vitest' so test files document intent.
 
     // ── CI-TIMEOUT-01 (2026-09-15) — vitest's 5,000 ms default is not a

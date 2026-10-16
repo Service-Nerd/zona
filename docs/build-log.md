@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-16 — STRENGTH-ENGINE-01 Phase 1 · a second engine that can only read the first
+**Shipped:** The strength engine exists. Give it a runner's profile and their run plan and it builds a strength plan around the run week: the split, the exercises, the sets, reps and effort, and where each session goes. No screen yet, and only admin accounts can call it.
+
+**Dev learning:** The rule that does all the work is one direction of dependency. The strength package imports nothing from the app, and a test fails the build if it ever does. That is what makes "it could be its own app" true rather than aspirational: with no run plan it builds a standalone programme, and that is just the same function called with nothing.
+
+**Product learning:** The run week decides more than the runner does. A runner who asks for four sessions with one quality day and a long run gets one legal heavy-leg day, because §7 keeps 48 hours between stressors. The engine turns the rest into upper body and core and says so, rather than skipping or breaking the rule.
+
+**AI-building learning:** The validator is deliberately written without calling the placement code it checks. A checker that shares the producer's rule cannot catch the producer being wrong. Every one of its 30 rules has a test that breaks a clean plan and watches it fire, and a final test fails if a rule exists without one.
+
+**The honest bit:** The first sweep failed 46,879 times on one thing: a 60-minute session came out at 29 minutes. The templates were sized for 45. The 99-exercise catalogue was drafted with AI and is marked DRAFT until a person has reviewed every entry, and the migration has not been run yet.
+
 ## 2026-10-16 — MARKETING-NOTE-COPY-MATCH-01 · the homepage was reading position one of a list it appended to
 **Shipped:** The homepage's "it notices" section now finds the coach note by asking the code that wrote it, not by looking for the word "ceiling".
 

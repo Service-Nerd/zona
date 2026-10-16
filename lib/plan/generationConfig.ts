@@ -753,12 +753,8 @@ export const GENERATION_CONFIG = {
     '100K':     { quality_blackout_weeks: 3, volume_curve_pct: [10, 25, 40, 55, 70] },
   } as const,
 
-  // Strength sessions — flagged off until R21 ships full content.
-  // When false: engine skips strength placement entirely (frees up day slots
-  // for easy fillers, preventing "1 run/week" plans for low-volume runners).
-  // When true: engine schedules 1–2 strength sessions per week per phase (legacy
-  // behaviour). See backlog § R21 — Strength Sessions.
-  STRENGTH_ENABLED: false,
+  // STRENGTH_ENABLED retired (STRENGTH-ENGINE-01, ADR-024): strength is its own engine,
+  // `packages/strength`, with its numbers in STRENGTH_CONFIG.
 
   // ── Quality session sizing (CoachingPrinciples §8 — SC-10 / CD-14) ──────────
   //

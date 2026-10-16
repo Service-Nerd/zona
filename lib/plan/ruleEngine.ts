@@ -2043,15 +2043,6 @@ function raceSpecificLongRunSession(
   }
 }
 
-function strengthSession(weekN: number, day: Day): Session {
-  return {
-    id: `w${weekN}-${day}`,
-    type: 'strength', label: 'Strength session', detail: null,
-    duration_mins: 45, primary_metric: 'duration',
-    coach_notes: ['Focus on single-leg stability and glute activation.'],
-  }
-}
-
 function raceSession(
   weekN: number, day: Day, distKm: number, raceName: string | null,
   goal?: string | null, goalPace?: string | null,
@@ -2902,20 +2893,8 @@ function buildWeekSessions(
   const includeQuality = includeQualityCount > 0
   const qualityCountInPeak = includeQualityCount  // legacy variable name for downstream
 
-  // Strength sessions — flagged off until R21 ships full content (CoachingPrinciples
-  // doc + backlog R21). When STRENGTH_ENABLED=false, engine schedules 0 strength
-  // sessions and frees up those day slots for easy runs. Prevents the
-  // "long-run + 2 strength = 3 days used, no easy fillers" failure mode for
-  // low-day-availability plans.
-  const strengthTargetEnabled = GENERATION_CONFIG.STRENGTH_ENABLED
-    ? (isDeload ? 1
-       : phase === 'taper' ? 1
-       : phase === 'peak' ? (fitness === 'experienced' ? 2 : 1)
-       : 2)
-    : 0
-  const adjStrength = input.hard_session_relationship === 'avoid'
-    ? Math.min(strengthTargetEnabled, 1)
-    : strengthTargetEnabled
+  // STRENGTH-ENGINE-01 (ADR-024): the run engine no longer schedules strength.
+  // The separate strength engine reads the plan and places sessions around it.
 
   const sessions: Partial<Record<Day, Session>> = {}
   const used: Day[] = []
@@ -3003,7 +2982,7 @@ function buildWeekSessions(
   const totalQualVol     = includeQualityCount === 0
     ? 0
     : qualKmPrimary + (includeQualityCount > 1 ? qualKmPerSession * secondaryFrac : 0)
-  const easyCount        = Math.max(0, daysAvailable - 1 - includeQualityCount - adjStrength)
+  const easyCount        = Math.max(0, daysAvailable - 1 - includeQualityCount)
 
   let longKm = weeklyKm * (longRunPct / 100)
   let easyKm = easyCount > 0 ? Math.max(0, weeklyKm - longKm - totalQualVol) / easyCount : 0
@@ -3612,18 +3591,6 @@ function buildWeekSessions(
           used.push(qual2Day)
         }
       }
-    }
-  }
-
-  // ── 3. Strength ───────────────────────────────────────────────────────────
-  const strengthPreferred: Day[][] = [['mon', 'fri', 'sat'], ['fri', 'sat', 'mon']]
-  let strengthPlaced = 0
-  for (let s = 0; s < Math.min(adjStrength, 2) && used.length < daysAvailable; s++) {
-    const strDay = firstAvailableDay(strengthPreferred[s] ?? strengthPreferred[0], blocked, used)
-    if (strDay) {
-      sessions[strDay] = strengthSession(weekN, strDay)
-      used.push(strDay)
-      strengthPlaced++
     }
   }
 

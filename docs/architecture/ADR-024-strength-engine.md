@@ -1,6 +1,6 @@
 # ADR-024 — The strength engine: a separate engine that reads the run plan and never writes it
 
-**Status:** PROPOSED (2026-10-16). **Coaching Board: CORRECT WITH AMENDMENT** (architecture, rules) / INSUFFICIENT EVIDENCE (numbers). **SLT: BUILD DIFFERENTLY** (engine first, running-focused v1, wholly paid). See `docs/decisions/strength-engine-boards-2026-10-16.md`. Not built.
+**Status:** PROPOSED (2026-10-16). **Coaching Board: CORRECT WITH AMENDMENT** (architecture, rules) / INSUFFICIENT EVIDENCE (numbers). **SLT: BUILD DIFFERENTLY** (engine first, running-focused v1, wholly paid). See `docs/decisions/strength-engine-boards-2026-10-16.md`. **Phase 0 + 1 built 2026-10-16** (engine, no UI, admin-only): `packages/strength`, `lib/strength-bridge`, `/api/strength/plan`, `docs/canonical/StrengthPrinciples.md`.
 **Item:** `STRENGTH-ENGINE-01` (consolidates `R21`, *Supplementary session slots*, and the strength row of the
 plan-settings sheet). **Evidence:** `docs/investigations/strength-conditioning-research-2026-10-16.md`.
 
@@ -74,7 +74,7 @@ survives the run engine changing.
 |---|---|---|
 | `focus` | `running` \| `general` | Founder brief. Evidence supports the split (load type and fatigue, not exoticism) |
 | `session_minutes` | `30` \| `45` \| `60` | Founder brief; **30 added by the founder 2026-10-16** after the SLT (Wood) flagged adherence after a run |
-| `sessions_per_week` | engine-recommended, runner-adjustable 1–3 | Evidence: 2 in build, 1 in-season |
+| `sessions_per_week` | engine-recommends 2, runner-adjustable **1–4** (the split table, §6a) | Evidence: 2 in build, 1 in-season |
 | `equipment` | tags: `bodyweight`, `bands`, `dumbbells`, `kettlebell`, `bench`, `box`, `pullup_bar`, `barbell`, `rack`, `cable`, `machines` | Drives exercise choice |
 | `experience` | `new` \| `some` \| `regular` | Starts novices on technique (8–12 reps) |
 | `injury_tags` | from the run profile (`knee`, `achilles`, `shin`, `hip`, `itb`, …) | Kinder variants, never rehab |
@@ -142,7 +142,7 @@ exercises, not shorter rests: rest is part of the dose for heavy work.
 
 ### 6a. The split — the engine chooses it from strength days per week
 
-🔶 **PROPOSED, for the Coaching Board (strength seat) to rule at the start of Phase 1.** Founder, 2026-10-16:
+✅ **RULED 2026-10-16 (Phase 0 sitting): CORRECT WITH AMENDMENT** — heavy-leg sessions ≤ 2/week always; see `StrengthPrinciples.md` S1–S3. Founder, 2026-10-16:
 *"the engine should determine best split based on number of days selected for strength... either full body each
 session or an upper and lower split."* Evidence: `docs/investigations/strength-split-research-2026-10-16.md`.
 

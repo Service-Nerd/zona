@@ -67,7 +67,7 @@ export const FEATURE_GATES = {
     // without reading the item first: a server gate would also block a free user
     // regenerating an EXISTING marathon plan, which Option A arguably grants.
     'ultra_plan_generation',
-    'strength_sessions_tailored', // R21 tailored strength (when shipped)
+    'strength_sessions_tailored', // STRENGTH-ENGINE-01 — the strength engine. Wholly PAID (SLT 2026-10-16); admin-only until release (lib/strength-bridge/release.ts)
     'race_time_estimates',        // estimated race times from VDOT / Strava aerobic pace
     'post_run_reframe',           // POST-RUN-REFRAME-01 — text/voice reflection + AI reframe
     'maintenance_coaching',       // MAINT-02 — AI voice on the post-race maintenance block (per-session notes + weekly debrief)
@@ -84,7 +84,6 @@ export const FEATURE_GATES = {
     'rule_engine_regeneration',  // free users may regenerate rule-engine plans (R23-D6 lenient)
     'manual_session_completion', // marking a session done without Strava
     'plan_view',                 // reading the existing plan
-    'basic_strength_sessions',   // placeholder strength stubs
     'plan_difficulty_band',      // ordinal demand label (§44/§31) — honesty signal, extends the FREE prep-time gate. SLT-signed FREE 2026-08-18. The numeric confidence score stays PAID.
   ],
 } as const

@@ -68,6 +68,10 @@ export const USER_DATA_SURFACES: readonly UserDataSurface[] = [
   { table: 'session_metric_overrides', column: 'user_id', mode: 'cascade' },
   { table: 'weekly_reports',           column: 'user_id', mode: 'cascade' },
 
+  // ── Strength (STRENGTH-ENGINE-01, ADR-024 §7) ───────────────────────────
+  { table: 'strength_plans',           column: 'user_id', mode: 'cascade',
+    why: 'The runner\'s strength plan and the profile they gave it (kit, injuries, bone flag). Its own table so the strength engine can stand alone.' },
+
   // ── Health and activity (ADR-011: HealthKit is the SOR) ─────────────────
   { table: 'strava_activities',        column: 'user_id', mode: 'cascade',
     why: 'Source-agnostic run log despite the v1 name. Holds HealthKit-canonical rows, so this is the runner\'s training history, not a third-party mirror.' },

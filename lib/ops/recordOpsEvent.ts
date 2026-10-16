@@ -68,6 +68,11 @@ export type OpsEventKind =
   | 'plan_input_refused'
 
   | 'plan_save_failed'          // savePlanForUser threw on a server reshape/write path
+  // STRENGTH-ENGINE-01 (2026-10-16) — the strength engine failed its own validator
+  // (`_generate_failed`, nothing saved) or the strength_plans write threw.
+  // No PII: violation codes and an error's first line only.
+  | 'strength_generate_failed'
+  | 'strength_save_failed'
   // PLAN-SAVE-SILENT-FAIL-01 (2026-10-15) — the runner tapped "Use this plan" on a
   // freshly generated plan and the save threw IN THE BROWSER. Reported by the client
   // via /api/ops/plan-save-report, because `GeneratePlanScreen.handleUsePlan`'s catch

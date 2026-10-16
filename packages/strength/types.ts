@@ -1,0 +1,160 @@
+// STRENGTH-ENGINE-01 (ADR-024) — the strength engine's public types.
+//
+// 🔴 THIS PACKAGE IMPORTS NOTHING FROM THE APP. Not `@/lib/plan`, not `@/types`,
+// not Supabase, not the AI owner. It meets the run engine only through
+// `RunContext`, built by `lib/strength-bridge`. That boundary is what lets it
+// become its own app (call it with `null`), and `boundary.test.ts` holds it.
+
+export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+export type EquipmentTag =
+  | 'bodyweight' | 'bands' | 'dumbbells' | 'kettlebell' | 'bench' | 'box'
+  | 'pullup_bar' | 'barbell' | 'rack' | 'cable' | 'machines'
+
+export type InjuryTag =
+  | 'knee' | 'itb' | 'achilles' | 'shin' | 'calf' | 'plantar' | 'hip' | 'hamstring' | 'back' | 'shoulder'
+
+export type Focus = 'running' | 'general'
+export type Experience = 'new' | 'some' | 'regular'
+export type SessionMinutes = 30 | 45 | 60
+export type SessionsPerWeek = 1 | 2 | 3 | 4
+
+/** What the runner tells the strength engine (ADR-024 §3). */
+export interface StrengthProfile {
+  focus: Focus
+  session_minutes: SessionMinutes
+  sessions_per_week: SessionsPerWeek
+  equipment: EquipmentTag[]
+  experience: Experience
+  /** Added to the run plan's injury tags, never replacing them. */
+  injury_tags?: InjuryTag[]
+  /** Diagnosed osteoporosis / vertebral fracture: no high impact, no loaded spinal flexion. */
+  bone_health_flag?: boolean
+  /** Days the runner cannot do strength. */
+  unavailable_days?: Day[]
+}
+
+// ── RunContext — the ONLY thing strength knows about running (ADR-024 §2) ──
+
+/** Which days are hard, never how hard. No paces, zones or distances. */
+export type RunRole = 'rest' | 'easy' | 'recovery' | 'long' | 'quality' | 'race' | 'cross'
+export type RunPhase = 'base' | 'build' | 'peak' | 'taper' | 'race_week' | 'deload' | 'maintenance'
+
+export interface RunDay {
+  /** ISO local date, YYYY-MM-DD. */
+  date: string
+  day: Day
+  week_n: number
+  role: RunRole
+}
+
+export interface RunWeek {
+  n: number
+  phase: RunPhase
+}
+
+export interface RunContext {
+  version: 1
+  /** Every calendar day the run plan covers, in order, no gaps. */
+  days: RunDay[]
+  weeks: RunWeek[]
+  race_date: string | null
+  injury_tags: InjuryTag[]
+  /** Age at or over the run engine's masters threshold, decided by the bridge. */
+  masters: boolean
+}
+
+// ── Catalogue ──
+
+export type Pattern =
+  | 'squat' | 'hinge' | 'single_leg' | 'calf' | 'hip_abduction' | 'plyometric'
+  | 'upper_push' | 'upper_pull'
+  | 'anti_rotation' | 'anti_extension' | 'lateral_core'
+  | 'mobility' | 'warmup'
+
+export type Region = 'lower' | 'upper' | 'core' | 'prep'
+
+export type Muscle =
+  | 'quads' | 'glutes' | 'hamstrings' | 'calves' | 'soleus' | 'hip_abductors' | 'adductors'
+  | 'core' | 'obliques' | 'chest' | 'shoulders' | 'triceps' | 'back' | 'biceps' | 'hip_flexors' | 'full_body'
+
+export interface Exercise {
+  id: string
+  name: string
+  pattern: Pattern
+  muscles: Muscle[]
+  /** Any ONE inner list satisfies it. `[['bodyweight']]` needs nothing. */
+  equipment: EquipmentTag[][]
+  level: 1 | 2 | 3
+  unilateral: boolean
+  impact: 'none' | 'low' | 'high'
+  /** Loaded spinal flexion: excluded under the bone-health flag (S9). */
+  spinal_flexion_loaded?: boolean
+  avoid_with: InjuryTag[]
+  /** How the dose is counted. */
+  measure: 'reps' | 'seconds' | 'contacts'
+  regress_to?: string
+  progress_to?: string
+  media: { animation_id: string }
+  cues: string[]
+}
+
+// ── Output ──
+
+export type SessionKind = 'full_body' | 'lower_core' | 'upper_core' | 'mobility'
+export type SplitKind = 'full_body' | 'full_body_plus_upper' | 'upper_lower' | 'standalone'
+export type BlockRole = 'warmup' | 'plyo' | 'main' | 'accessory' | 'core' | 'mobility'
+
+export interface Prescription {
+  exercise_id: string
+  sets: number
+  reps?: number
+  seconds?: number
+  contacts?: number
+  /** Reps in reserve. `null` for timed, mobility and warm-up work. */
+  rir: number | null
+  rest_s: number
+  per_side: boolean
+  /** Items sharing a tag are done as a superset; rest counts once per round. */
+  superset?: string
+}
+
+export interface Block {
+  role: BlockRole
+  items: Prescription[]
+}
+
+export interface StrengthSession {
+  date: string | null
+  day: Day
+  week_n: number
+  kind: SessionKind
+  heavy_legs: boolean
+  /** Stacked after a quality run the same day: carries the gap note (S4). */
+  after_quality_run: boolean
+  estimated_minutes: number
+  blocks: Block[]
+}
+
+export interface StrengthWeek {
+  n: number
+  phase: RunPhase
+  sessions: StrengthSession[]
+}
+
+export type StrengthNote =
+  | 'bodyweight_ceiling'
+  | 'split_is_inference'
+  | 'legs_limited_by_run_week'
+  | 'fewer_sessions_than_asked'
+  | 'pattern_unavailable'
+
+export interface StrengthPlan {
+  version: 1
+  standalone: boolean
+  split: SplitKind
+  profile: StrengthProfile
+  weeks: StrengthWeek[]
+  /** Honest notes for the runner-facing layer to phrase (S11). */
+  notes: StrengthNote[]
+}

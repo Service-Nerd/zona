@@ -63,6 +63,12 @@ DOCTRINE_FILES = [
     # editable with no board review. Same regression class as HealthObserverPlugin
     # missing from the cap-config re-add list: the guard existed, the entry didn't.
     "lib/plan/sessionCatalogueData.ts",
+    # Added 2026-10-16 (STRENGTH-ENGINE-01, ADR-024 §10). The strength engine has
+    # the same three layers; its constitution, statute book and catalogue are
+    # doctrine, ruled by the strength seat.
+    "docs/canonical/StrengthPrinciples.md",
+    "packages/strength/config.ts",
+    "packages/strength/catalogue.ts",
 ]
 
 TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}

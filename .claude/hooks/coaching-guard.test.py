@@ -35,6 +35,10 @@ CASES = [
     # would notice it going missing again.
     ("session catalogue data",   "Edit",  "lib/plan/sessionCatalogueData.ts",            FLAG),
     ("catalogue data, absolute", "Write", REPO + "lib/plan/sessionCatalogueData.ts",     FLAG),
+    ("strength constitution",    "Edit",  "docs/canonical/StrengthPrinciples.md",        FLAG),
+    ("strength config",          "Edit",  "packages/strength/config.ts",                 FLAG),
+    ("strength catalogue",       "Write", "packages/strength/catalogue.ts",              FLAG),
+    ("strength engine, not doctrine", "Edit", "packages/strength/placement.ts",          PASS),
     ("zone rules",               "Edit",  "docs/canonical/zone-rules.md",                FLAG),
     ("coaching rules",           "Edit",  "docs/canonical/coaching-rules.md",            FLAG),
     ("MultiEdit counts",         "MultiEdit", "lib/plan/generationConfig.ts",            FLAG),
