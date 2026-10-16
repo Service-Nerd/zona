@@ -414,7 +414,7 @@ The **Coaching Board** (`/coaching-board`) is the fourth layer. If `validatePlan
 | | Coaching Board | SLT (`/slt-review`) |
 |---|---|---|
 | Rules on | Is it coaching-**correct**? | Should we **build** it, for whom, at what tier? |
-| Seats | Hutchinson (chair), Seiler, McMillan, Willy, Sims | Sutherland, Fried, Hutchinson *(coaching chair)*, Wood, Zhuo *(design chair)* |
+| Seats | Hutchinson (chair), Seiler, McMillan, Willy, Sims, Blagrove *(strength, 2026-10-16)* | Sutherland, Fried, Hutchinson *(coaching chair)*, Wood, Zhuo *(design chair)* |
 | Output | Principle § + config constant + `validatePlan()` invariant | Tier tag + build/don't-build |
 
 - **The board's INCORRECT ruling is a veto.** The SLT cannot overrule it commercially (INV-COACH-003). Hutchinson holds both seats and carries escalations up.
@@ -785,12 +785,13 @@ Backstop: `.claude/hooks/fix-test-check.py` flags a `fix:` commit that changed s
 ### `coaching-board`
 **Fires automatically** via `.claude/hooks/coaching-guard.py` on any edit to a coaching-doctrine file — you should not need to remember it. Can also be invoked directly with `/coaching-board [change]`.
 
-Five domain seats rule on whether a coaching change is **correct** (not whether to build it — that's the SLT):
+Six domain seats rule on whether a coaching change is **correct** (not whether to build it — that's the SLT):
 - **Alex Hutchinson** (chair) — performance science. Is it defensible to an experienced runner?
 - **Stephen Seiler** — intensity distribution. Is the distribution real, and does it hold for a four-hour-a-week runner rather than an elite?
 - **Greg McMillan** — practical coaching. Does it survive contact with a real amateur's week?
 - **Rich Willy** — injury and load. What's the injury vector? Does tissue tolerance keep up with fitness?
 - **Stacy Sims** — female physiology. Does it hold for the women using it, or was it derived from male subjects?
+- **Richard Blagrove** *(appointed 2026-10-16, strength domain only)* — strength & conditioning. Does it follow the endurance-runner evidence, and help the running rather than compete with it? (`STRENGTH-ENGINE-01`, ADR-024)
 
 Output is not prose — every CORRECT ruling produces three artifacts in one commit: principle §, config constant, `validatePlan()` invariant. Includes a mandatory conflict scan naming which of the 80 existing principles a change touches or contradicts. Full authority model: ADR-017.
 

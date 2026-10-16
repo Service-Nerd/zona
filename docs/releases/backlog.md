@@ -2060,8 +2060,10 @@ fixed.
 > before design (Zhuo): **share of runners who start a strength plan completing ≥1 session/week over 4 weeks.**
 > ⚠️ No commercial seat priced conversion: whether strength lifts trial-to-paid is unanswered.
 >
-> 🔻 **Open for the founder:** (1) appoint a permanent S&C seat to the Coaching Board; (2) session length: brief says
-> 45/60, Wood asks for a 30-minute option to be tested for adherence; (3) confirm v1 is running-focused only.
+> ✅ **Founder, 2026-10-16:** (1) **S&C seat appointed** to the Coaching Board (Blagrove-modelled, strength domain only);
+> (2) **30 / 45 / 60 minutes**; (3) **v1 running-focused only**; (4) 🔒 **admin-only at first**, through a separate
+> release switch (`STRENGTH_RELEASE`), because admins already resolve as `paid` and a tier check would admit every
+> paying runner. Enforced server-side.
 >
 > **Phase 1 deliverables (engine only):** `packages/strength` (types, ~40-exercise catalogue across every pattern ×
 > equipment tier, prescription model, 45/60 time-budget packer, RAMP warm-up, placement rules),

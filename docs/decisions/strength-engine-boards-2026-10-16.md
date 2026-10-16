@@ -13,7 +13,8 @@ Wholly PAID. Engine first, no UI, as a side project. Running-focused only in v1.
 Design Board first. Licensed animations, no embedded YouTube. Success measure: share of strength-plan starters completing
 ≥1 session/week over 4 weeks. Unpriced: conversion and churn (commercial seat stood down).
 
-## Founder decisions outstanding
-1. Appoint a permanent S&C seat to the Coaching Board.
-2. Session length: 45/60 (brief) vs a 30-minute option for adherence (Wood).
-3. Confirm v1 is running-focused only.
+## Founder decisions (2026-10-16)
+1. **S&C seat appointed** to the Coaching Board (modelled on Richard Blagrove's published positions; strength only).
+2. **30 / 45 / 60-minute** sessions.
+3. **v1 is running-focused only.**
+4. **Admin-only at first**, via a release switch separate from the tier (admins resolve as `paid`).

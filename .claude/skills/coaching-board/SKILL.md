@@ -1,6 +1,6 @@
 ---
 name: coaching-board
-description: "Coaching Board review of any change to coaching doctrine — the engine's prescription logic, principles, or numerics. Five domain seats chaired by Hutchinson: physiology, intensity distribution, practical coaching, injury/load, female physiology. Mandatory conflict scan against CoachingPrinciples. Triggers: editing CoachingPrinciples.md, generationConfig.ts, planSignatures.ts, sessionFormat.ts, session-catalogue.md, zone-rules.md, coaching-rules.md, adding a coaching principle, changing a training threshold, new session type, changing zone logic, changing what the engine prescribes."
+description: "Coaching Board review of any change to coaching doctrine — the engine's prescription logic, principles, or numerics. Six domain seats chaired by Hutchinson: physiology, intensity distribution, practical coaching, injury/load, female physiology, and strength & conditioning (appointed 2026-10-16, strength domain only). Mandatory conflict scan against CoachingPrinciples. Triggers: editing CoachingPrinciples.md, generationConfig.ts, planSignatures.ts, sessionFormat.ts, session-catalogue.md, zone-rules.md, coaching-rules.md, adding a coaching principle, changing a training threshold, new session type, changing zone logic, changing what the engine prescribes, any strength-engine doctrine (StrengthPrinciples.md, STRENGTH_CONFIG)."
 ---
 
 # Coaching Board — Zonna
@@ -119,9 +119,11 @@ translation failure, not a real finding. Check before recording it as a conflict
 
 ## The Board
 
-Five seats. Each has a distinct lens and no seat duplicates another. Be
+Six seats. Each has a distinct lens and no seat duplicates another. Be
 opinionated — generic feedback is useless here. If a member would object, they
-object clearly.
+object clearly. **The sixth (strength & conditioning) was appointed by the founder on
+2026-10-16** for `STRENGTH-ENGINE-01`; it speaks on strength, and on any run rule that
+touches strength, and is silent otherwise.
 
 ---
 
@@ -249,6 +251,26 @@ type — so her cycle-specific asks are currently unbuildable, not merely unbuil
 
 **Tone:** Direct, evidence-led, impatient with defaults that treat the male athlete
 as the neutral case.
+
+---
+
+### 💪 RICHARD BLAGROVE — Strength & Conditioning *(appointed 2026-10-16)*
+*Lecturer in physiology, Loughborough University; UKSCA-accredited. Author of* Strength and Conditioning for Endurance Running *(2015); lead author of the 2018 systematic review of strength training for distance runners; co-author of the 2024 meta-analysis finding unsupervised exercise programmes did not reduce running injury.*
+
+**Lens:** Does the strength prescription follow the evidence for endurance runners, and is it placed so it helps the running rather than competing with it?
+
+He will challenge:
+- **Load type.** Heavy, low-rep work (and plyometrics, at the slower speeds recreational runners run) is what moves running economy; high-rep circuits and submaximal loads largely do not. A programme that feels hard is not the same as one that works
+- **Honesty about the ceiling.** Bodyweight-only cannot reach the heavy stimulus; say so rather than implying it can
+- **Placement.** Heavy legs are a stressor under §7; plyometrics are impact under §21. Strength should make the hard days harder and leave the easy days easy
+- **Overclaiming injury prevention.** His own meta-analysis found unsupervised runner programmes did not reduce injury. No surface may claim they do
+- **Progression and technique.** Technique before load, load before impact, and RIR rather than invented precision when the app has no 1RM
+
+**Scope note:** strength and conditioning only (`StrengthPrinciples.md`, `STRENGTH_CONFIG`, the strength catalogue), plus any run-engine rule that touches strength. He does not rule on run prescription otherwise.
+
+⚠️ **Modelled on published positions, never an endorsement.** No surface may imply he advises Zonna or approves the app.
+
+**Tone:** Practical, UK-coaching plain, evidence-led. Will say "that's a circuit, not strength training" and be right.
 
 ---
 

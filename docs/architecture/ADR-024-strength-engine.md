@@ -58,7 +58,7 @@ survives the run engine changing.
 | Field | Values | Why |
 |---|---|---|
 | `focus` | `running` \| `general` | Founder brief. Evidence supports the split (load type and fatigue, not exoticism) |
-| `session_minutes` | `45` \| `60` | Founder brief. (Runna offers 30/45/60) |
+| `session_minutes` | `30` \| `45` \| `60` | Founder brief; **30 added by the founder 2026-10-16** after the SLT (Wood) flagged adherence after a run |
 | `sessions_per_week` | engine-recommended, runner-adjustable 1–3 | Evidence: 2 in build, 1 in-season |
 | `equipment` | tags: `bodyweight`, `bands`, `dumbbells`, `kettlebell`, `bench`, `box`, `pullup_bar`, `barbell`, `rack`, `cable`, `machines` | Drives exercise choice |
 | `experience` | `new` \| `some` \| `regular` | Starts novices on technique (8–12 reps) |
@@ -146,7 +146,11 @@ happens.
 
 ### 9. Tier
 
-**PAID**, founder's instruction. ⚠️ **This contradicts the current gate list**: `FEATURE_GATES.FREE_ALWAYS`
+**PAID**, founder's instruction. **🔒 Admin-only first (founder, 2026-10-16), while he tests it.** ⚠️ **A tier check
+alone cannot do this:** `resolveTier` returns `paid` for every admin, so "paid only" would admit every paying runner too.
+The gate is a separate release switch, `STRENGTH_RELEASE: 'admin' | 'paid'` (one constant), read by ONE function
+`canUseStrength({ isAdmin, tier })`: while `'admin'`, only `is_admin` accounts pass; flipped to `'paid'` at launch, paid
+and trial pass. **Enforced server-side on every strength route**, not just hidden in the UI. ⚠️ **This contradicts the current gate list**: `FEATURE_GATES.FREE_ALWAYS`
 names *"basic strength sessions"* and `PAID_ONLY_ONGOING` *"tailored strength sessions"*
 (`CoachingPrinciples.md`). The SLT must rule, and the gate list is amended in the same commit as the ruling.
 

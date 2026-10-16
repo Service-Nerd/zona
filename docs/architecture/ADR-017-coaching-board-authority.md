@@ -64,6 +64,7 @@ Implemented as the `coaching-board` skill (`.claude/skills/coaching-board/SKILL.
 | Practical coaching | **Greg McMillan** | Does it survive contact with a real runner's week? |
 | Injury & load | **Rich Willy** | What is the injury vector? Does tissue tolerance keep up with fitness? |
 | Female physiology | **Stacy Sims** | Does it hold for the women using it, or was it derived from male subjects? |
+| Strength & conditioning *(appointed 2026-10-16)* | **Richard Blagrove** | Does the strength prescription follow the endurance-runner evidence, and help the running rather than compete with it? Strength domain only (`STRENGTH-ENGINE-01`, ADR-024). Modelled on published positions; never an endorsement |
 
 Seats were selected for non-overlap and for direct relevance to the day-job amateur.
 Two deliberate properties:
