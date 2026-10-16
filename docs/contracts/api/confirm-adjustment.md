@@ -29,12 +29,14 @@ The returned plan has the adjustment's `sessions_after` applied to the relevant 
 | 404 | Adjustment not found (or belongs to another user) |
 | 409 | Adjustment status is not `pending` |
 | 422 | `adjustment_id` missing |
+| 500 | `{ error: 'Could not save the plan' }`. The plan save threw. **The adjustment stays `pending` and the Me flag is untouched**, and `plan_save_failed` is recorded with `route: 'confirm-adjustment'` (ADJUST-STATUS-WITHOUT-SAVE-01) |
 
 ## Notes
 
+- **Order (ADJUST-STATUS-WITHOUT-SAVE-01, 2026-10-16): the plan is saved FIRST.** Only after it succeeds are the `plan_adjustments` status and the `user_settings` flag written (those two in parallel). They used to run in one `Promise.all` with the save, so a failed save still flipped the row and the flag, and the change card vanished with nothing to retry.
+
 - Sets `plan_adjustments.status = 'confirmed'` and `confirmed_at = now()`.
 - Saves updated plan via `savePlanForUser` (archives previous plan to `plan_archive`).
-- Both DB operations run in parallel.
 
 ## Data scoping — PLAN-WEEK-COLLISION-01 (2026-09-18)
 
@@ -54,16 +56,14 @@ live schema by `scripts/check-db-drift.ts`.
 
 ## Supabase client — ADJUST-PLAN-SAVE-CLIENT-01 (2026-10-13)
 
-**This route authenticates off the Bearer token, so every write must go through a client
-that sets `auth.uid()`.** It passes `createUserScopedClient(req)` into `savePlanForUser`.
-
-It previously passed the cookie client (`createClient()` from `@/lib/supabase/server`).
-On native there is no cookie session, so `auth.uid()` is NULL, `plans` RLS refuses the
-upsert and `savePlanForUser` throws — **after** the caller has already recorded its work.
-Measured 3× on production, all one account, all
+**This route authenticates off the Bearer token, so the save must not use the cookie client**:
+on native there is no cookie session, `auth.uid()` is NULL, `plans` RLS refuses the upsert and
+`savePlanForUser` throws. Measured 3× on production, all one account, all
 `new row violates row-level security policy for table "plans"`.
 
-User-scoped rather than service because `plans`, `plan_archive` and `plan_weekly_notes`
-all carry `auth.uid() = user_id` policies, so RLS stays live as defence-in-depth.
-Enforced by `lib/plan/planRouteClient.test.ts`, whose population is derived from every
+**It passes the SERVICE client.** ⚠️ This section said `createUserScopedClient(req)` until
+2026-10-16; that was the fix's abandoned first cut. `savePlanForUser` calls
+`reanchorCharityGrant`, which UPDATEs `charity_codes`, and a user-scoped client may only SELECT
+that table, so charity grants would have stopped re-anchoring silently. `adjust-plan` carries
+the reasoning; `lib/plan/planRouteClient.test.ts` enforces the choice across every
 `savePlanForUser` call in `app/api`.

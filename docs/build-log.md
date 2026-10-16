@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-16 — ADJUST-STATUS-WITHOUT-SAVE-01 · "done" written in the same breath as the save it depended on
+**Shipped:** When a runner confirms or undoes a suggested plan change, the change is now only marked done once the plan has actually saved. If the save fails, it stays pending, the card comes back, and we get a record.
+
+**Dev learning:** `Promise.all` was the bug. It reads as "do these together", but by the time the save rejects the other two writes are already on their way, so "together" meant "the status changes whatever happens". The test that matters asserts the row did NOT move on a failed save; a happy-path test would have passed against the broken version too.
+
+**The honest bit:** The code comment and both API contracts claimed these routes used a user-scoped database client. They don't, and mustn't: the earlier fix's first attempt did, and it would have quietly stopped charity grants updating. The comment described the abandoned version for three days.
+
+---
+
 ## 2026-10-16 — GENERATE-500-NO-TRACE-01 · a failure that is handled, answered and leaves nothing to query
 **Shipped:** When plan generation crashes, or refuses an input, we now get a record of it. Before, both showed the runner a message and left us nothing, so "tried and failed" looked the same as "never tried".
 

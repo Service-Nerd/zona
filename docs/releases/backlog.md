@@ -2735,7 +2735,19 @@ repo's record an unenforced boundary is a boundary that does not exist.
 
 ## ⚖️ FILED 2026-10-13 — two residuals from the ops-digest fixes
 
-### 🟡 `ADJUST-STATUS-WITHOUT-SAVE-01` — a failed plan save still flips the adjustment to confirmed *(filed 2026-10-13, P2)* ⚙️ **NO BOARD**
+### ✅ `ADJUST-STATUS-WITHOUT-SAVE-01` — **SHIPPED 2026-10-16**. Confirm/revert save the plan FIRST and mark the change done only after ⚙️ **NO BOARD**
+
+> ✅ **Shipped.** Both routes `await savePlanForUser` alone; on a throw they record `plan_save_failed`
+> (`route:` tagged) and return 500 with the row still `pending` and the Me flag untouched. Only then are
+> the status and flag written, in parallel. Twin sweep: **2 of 12** plan-saving routes saved in
+> parallel, these two; **0** write a status before saving. **Found and fixed with it:** both routes'
+> comments and both contracts said the save used a *user-scoped* client; the code correctly uses the
+> SERVICE client (a user-scoped one silently stops `reanchorCharityGrant`). Test:
+> `lib/api/adjustmentStatusAfterSave.test.ts`, 4 arms red against the old routes.
+> 🔻 **Not covered:** a failed status write AFTER a good save is still unchecked (a retry re-applies the
+> same sessions, so it is idempotent), and the client still shows no message when confirm fails.
+>
+> **Original filing, kept:**
 
 Found while fixing `ADJUST-PLAN-SAVE-CLIENT-01`, and deliberately **not** folded into it.
 

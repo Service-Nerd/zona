@@ -4,6 +4,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { savePlanForUser } from '@/lib/plan'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 
 // POST /api/revert-adjustment
@@ -11,12 +12,14 @@ import type { Plan } from '@/types/plan'
 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
-  // ADJUST-PLAN-SAVE-CLIENT-01 — bearer-authenticated route, so the save must go
-  // through a client that sets `auth.uid()`. The cookie client it used to pass has
-  // no session on native, and `plans` RLS refused the upsert. User-scoped rather
-  // than service: `plans`, `plan_archive` and `plan_weekly_notes` all carry
-  // `auth.uid() = user_id` policies, so RLS stays live. See adjust-plan for the
-  // measured incident and the per-table reasoning.
+  // ADJUST-PLAN-SAVE-CLIENT-01 — bearer-authenticated route, so the save must NOT go
+  // through the cookie client: on native it has no session and `plans` RLS refused the
+  // upsert. It uses the SERVICE client, deliberately. This comment used to say
+  // "user-scoped rather than service", which was the fix's abandoned first cut:
+  // `savePlanForUser` calls `reanchorCharityGrant`, which UPDATEs `charity_codes`, and a
+  // user-scoped client may only SELECT that table, so grants would have stopped
+  // re-anchoring silently. adjust-plan carries the full reasoning (corrected
+  // 2026-10-16, ADJUST-STATUS-WITHOUT-SAVE-01).
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const tier = await getUserTier(user.id)
@@ -77,9 +80,26 @@ export async function POST(req: NextRequest) {
   // Resetting last_adjustment_check_found_change here too (see same comment
   // in confirm-adjustment): reverting is the resolution of a pending change,
   // so the Me-screen flag should reflect "nothing pending" after this runs.
+  // ADJUST-STATUS-WITHOUT-SAVE-01 (2026-10-16) — SAVE FIRST, THEN MARK IT DONE.
+  // These three writes used to run together in one `Promise.all`, so when the save
+  // rejected the row had ALREADY flipped to `reverted` and the Me flag to "nothing
+  // pending": the adjustment claimed to be applied while the plan was unchanged, and
+  // the change card vanished on the next load with nothing to retry. Nothing was
+  // recorded either; only `adjust-plan` emitted `plan_save_failed`. Now a failed save
+  // leaves the row `pending`, which is what the client already assumes (it keeps the
+  // card visible on any non-200).
   const nowIso = new Date().toISOString()
+  try {
+    await savePlanForUser(user.id, updatedPlan, serviceSupabase)
+  } catch (err) {
+    await recordOpsEvent(
+      'plan_save_failed',
+      { route: 'revert-adjustment', week_n: weekN, message: err instanceof Error ? err.message : String(err) },
+      user.id,
+    )
+    return NextResponse.json({ error: 'Could not save the plan' }, { status: 500 })
+  }
   await Promise.all([
-    savePlanForUser(user.id, updatedPlan, serviceSupabase),
     serviceSupabase
       .from('plan_adjustments')
       .update({ status: 'reverted', reverted_at: nowIso })
