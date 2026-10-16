@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-16 — GTM-SEO-COMPARE-01 page 5 · "I have only quoted figures I could check", about figures nobody could check
+**Shipped:** `/do-i-need-a-running-coach`, the fifth comparison page: what a coach does that an app can't, what each costs in the UK, and when a human is worth paying for.
+
+**Dev learning:** The price gate did its job. The draft quoted one coach at £125 to £245 a month, the gate refused every one of those figures, and the founder had no source for them. Rather than add an unsourced price to the checked list, five real coaches' pricing pages were read that day and the page now shows a range calculated from them. The brief's file and function names were also out of date (the catalogue was renamed in September), which is why the brief now says less about where things live.
+
+**Product learning:** The founder chose an unnamed range over naming coaches. The range is honest and checkable from the source list; naming them would have made a marketing page about other people's prices.
+
+**The honest bit:** The sentence that asserted the figures were checked was the sentence that was not true, and it was in copy marked final.
+
+---
+
 ## 2026-10-16 — EMPTY-STATE-OWNER-01 · two empty states, already disagreeing
 **Shipped:** The app's "nothing here" and "couldn't load" messages now come from one shared component, centred, with at most one button.
 
