@@ -44,6 +44,22 @@ const EXEMPT = [
   'lib/marketing/demoSurfaces.ts',
 ]
 
+/**
+ * ⚠️ PHRASE-LEVEL EXEMPTIONS, for a "we" that is not the company speaking. Each is
+ * an exact string, so the same word anywhere else in the same line still fails.
+ * Added 2026-10-16 with `do-i-need-a-running-coach`; the file stays in scope.
+ */
+const EXEMPT_PHRASES = [
+  // A coach's trading name, in the `COACH_MARKET` source data. Never rendered.
+  "coach: 'We Run'",
+  // ...and its pricing page, in the same row's `source`.
+  'we-run.co.uk/',
+  // Runners collectively, the founder included ("an app only knows what you log, and
+  // most of us log pace and distance, not pain"). The collective first person the Kit
+  // exemption above already recognises, not a company voice.
+  'most of us log pace and distance',
+]
+
 function walk(rel: string): string[] {
   const abs = path.join(ROOT, rel)
   if (!fs.existsSync(abs)) return []
@@ -67,7 +83,7 @@ describe('singular voice', () => {
     const hits: string[] = []
     for (const f of files) {
       codeOnly(fs.readFileSync(path.join(ROOT, f), 'utf8')).split('\n').forEach((line, i) => {
-        const m = line.match(/\b(we|our|ours|us)\b/i)
+        const m = EXEMPT_PHRASES.reduce((l, ph) => l.split(ph).join(''), line).match(/\b(we|our|ours|us)\b/i)
         if (m) hits.push(`${f}:${i + 1}  …${line.trim().slice(0, 100)}`)
       })
     }

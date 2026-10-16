@@ -6,7 +6,7 @@
 // cover pages that do not exist yet.
 
 import { describe, it, expect } from 'vitest'
-import { MARKETING_ARTICLES, COMPARISON_HUB, GUIDE_HUB, COMPETITOR_FACTS, comparisonArticles, guideArticles, guidesArePublished, GUIDES_MIN_TO_PUBLISH, marketingArticleJsonLd, twelveMonthsAtMonthly, annualGapToOurs, type ArticleBlock } from './articles'
+import { MARKETING_ARTICLES, COMPARISON_HUB, GUIDE_HUB, COMPETITOR_FACTS, COACH_MARKET, coachMarket, comparisonArticles, guideArticles, guidesArePublished, GUIDES_MIN_TO_PUBLISH, marketingArticleJsonLd, twelveMonthsAtMonthly, annualGapToOurs, type ArticleBlock } from './articles'
 import { PRICING } from '@/lib/brand'
 import { BRAND } from '@/lib/brand'
 
@@ -28,6 +28,27 @@ const allCopy = (): string[] =>
     a.h1, a.lastUpdated, a.signature, a.appStoreLinkText,
     ...a.body.map(copyOf),
   ])
+
+describe('COACH_MARKET — the coach prices page 5 summarises are derived, never typed', () => {
+  it('reads the range, typical and yearly floor from the rows', () => {
+    const xs = COACH_MARKET.map(r => r.monthly)
+    const m = coachMarket()
+    expect(m.low).toBe(`£${Math.min(...xs)}`)
+    expect(m.high).toBe(`£${Math.max(...xs)}`)
+    expect(m.lowYear).toBe(`£${Math.min(...xs) * 12}`)
+    expect(m.coaches).toBe(new Set(COACH_MARKET.map(r => r.coach)).size)
+    // Measured 2026-10-16: ten plans, five coaches, median £108.50 → "about £110".
+    expect([m.low, m.high, m.typical, m.lowYear, m.coaches]).toEqual(['£60', '£197', '£110', '£720', 5])
+  })
+
+  it('the page prints those figures and names no coach', () => {
+    const a = MARKETING_ARTICLES.find(x => x.slug === 'do-i-need-a-running-coach')!
+    const text = a.body.map(copyOf).join(' ')
+    expect(text).toContain('from £60 to £197')
+    expect(text).toContain('about £110 a month')
+    for (const r of COACH_MARKET) expect(text, `${r.coach} is named on the page`).not.toContain(r.coach)
+  })
+})
 
 describe('comparison articles — SEO limits', () => {
   it.each(MARKETING_ARTICLES.map(a => [a.slug, a] as const))(
@@ -114,6 +135,9 @@ describe('comparison articles — house style', () => {
       PRICING.monthly.perWeekDisplay, PRICING.annual.perWeekDisplay,
       ...derivedKeys.filter(k => COMPETITOR_FACTS[k].monthly).map(twelveMonthsAtMonthly),
       ...derivedKeys.filter(k => COMPETITOR_FACTS[k].annual).map(annualGapToOurs),
+      // The coach-market summary (`do-i-need-a-running-coach`): admitted as the catalogue's own
+      // DERIVATION over `COACH_MARKET`, so a typed coach price still fails.
+      coachMarket().low, coachMarket().high, coachMarket().typical, coachMarket().lowYear,
     ])
     const offenders: string[] = []
     for (const a of MARKETING_ARTICLES)

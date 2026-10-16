@@ -315,6 +315,48 @@ export const pricesLastChecked = (): string => {
   return shown
 }
 
+/**
+ * COACH MARKET — the human-coach prices `do-i-need-a-running-coach` summarises.
+ *
+ * ⚠️ WHY A SAMPLE AND NOT ONE COACH. The drafted copy quoted "one UK online coach" at £125 to
+ * £245 a month, and no coach at those prices could be found. The founder chose a market range
+ * instead, unnamed on the page. Every figure the page shows is DERIVED from these rows, so the
+ * same price-ownership rule as `COMPETITOR_FACTS` holds: nothing is typed, and a corrected tier
+ * moves the page. Each row is one plan on the coach's own pricing page, monthly, checked on
+ * `COACH_MARKET_VERIFIED`. RunThrough's £169 is triathlon and ultra coaching, so only its £130
+ * one-to-one RUNNING plan is here.
+ */
+export const COACH_MARKET_VERIFIED = '2026-10-16'
+export const COACH_MARKET: readonly { coach: string; monthly: number; source: string }[] = [
+  { coach: 'JM Coaching',  monthly: 60,  source: 'jmcoaching.co.uk/blog/online-running-coaching-cost (Bronze)' },
+  { coach: 'JM Coaching',  monthly: 75,  source: 'jmcoaching.co.uk/blog/online-running-coaching-cost (Silver)' },
+  { coach: 'JM Coaching',  monthly: 120, source: 'jmcoaching.co.uk/blog/online-running-coaching-cost (Gold)' },
+  { coach: 'We Run',       monthly: 80,  source: 'we-run.co.uk/online-running-coach (from)' },
+  { coach: 'Camino Ultra', monthly: 90,  source: 'caminoultra.com/coaching (Monthly Training)' },
+  { coach: 'Camino Ultra', monthly: 120, source: 'caminoultra.com/coaching (Premium Monthly)' },
+  { coach: 'MaxMile',      monthly: 97,  source: 'maximummileagecoaching.com/personal-running-coach (Plan Review)' },
+  { coach: 'MaxMile',      monthly: 147, source: 'maximummileagecoaching.com/personal-running-coach (1:1)' },
+  { coach: 'MaxMile',      monthly: 197, source: 'maximummileagecoaching.com/personal-running-coach (Running + Strength)' },
+  { coach: 'RunThrough',   monthly: 130, source: 'runthroughcoach.com (1:1 running, from)' },
+]
+
+const coachPrices = (): number[] => COACH_MARKET.map(r => r.monthly).sort((a, b) => a - b)
+/** The figures the page prints. Exported so the price check allows exactly these. */
+export const coachMarket = () => {
+  const xs = coachPrices()
+  const mid = xs.length % 2 ? xs[(xs.length - 1) / 2] : (xs[xs.length / 2 - 1] + xs[xs.length / 2]) / 2
+  return {
+    coaches: new Set(COACH_MARKET.map(r => r.coach)).size,
+    low: gbp(xs[0]),
+    high: gbp(xs[xs.length - 1]),
+    /** The median, to the nearest £10: "about", never a figure that looks measured to the pound. */
+    typical: gbp(Math.round(mid / 10) * 10),
+    lowYear: gbp(xs[0] * 12),
+  }
+}
+
+const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']
+
 const p = (...spans: ArticleSpan[]): ArticleBlock => ({ kind: 'p', spans })
 const h2 = (text: string): ArticleBlock => ({ kind: 'h2', text })
 const table = (caption: string, head: string[], rows: string[][]): ArticleBlock =>
@@ -637,6 +679,71 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
         { text: 'start here', href: '/best-running-app-for-beginners' },
         `.`,
       ),
+    ],
+  },
+  // ── COMPARISON 5 ───────────────────────────────────────────────────────
+  // Founder's final copy, 2026-10-16, with ONE approved replacement: the coach-price paragraph
+  // quoted a coach nobody could find, so it now summarises `COACH_MARKET`, unnamed.
+  {
+    kind: 'comparison',
+    slug: 'do-i-need-a-running-coach',
+    metaTitle: `Do I need a running coach or a training app?`,
+    metaDescription:
+      `What a coach does that an app can't, what each costs in the UK, and when a human is worth paying for. Written by the person who built a running app.`,
+    ogTitle: `Do I need a running coach or a training app?`,
+    ogDescription:
+      `What a coach does that an app can't, what each costs in the UK, and when a human is worth paying for. Written by the person who built a running app.`,
+    h1: `Do I need a running coach or a training app?`,
+    lastUpdated: '16 October 2026',
+    // The 16th, not the brief's 15th: the coach prices were checked on the 16th, and this field
+    // is the page's "facts last revised" date (and its JSON-LD dateModified).
+    lastUpdatedISO: COACH_MARKET_VERIFIED,
+    publishedISO: '2026-10-15',
+    signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
+    appStoreLinkText: `Get ${BRAND.name} on the App Store`,
+    hubSummary: `What a coach gives you that an app can't, what each costs, and when to pay for a human.`,
+    body: [
+      p(`Most people training for a 5K, 10K or half marathon do not need a coach, and a decent app covers a lot of what a coach would give them. You do need a human if you get injured often, have a medical history that affects training, or want someone who will notice when you go quiet. An app is not a coach. It is software that builds a plan and adjusts it.`),
+      p(`I built ${BRAND.name}, so weigh that. I have tried to be fair to coaches here, because I am still working out where software stops.`),
+
+      h2('What a coach does that no app does'),
+      p(`A coach sees you. They hear that your calf has been odd for a week and they change the plan before it turns into a stress injury. An app only knows what you log, and most of us log pace and distance, not pain.`),
+      p(`A coach also holds you to something. Missing a session for an app costs you nothing. Missing one for a person who has put time into your week feels different, and for a lot of runners that is the whole value.`),
+      p(`And a coach can read the situation. A bad week at work or a race that has stopped being fun does not show up in the data. A person picks it up in one conversation.`),
+      p(`I ran 100km in July and walked the last 40 of it. Nothing in my training data warned me the descents would break me. A person watching me run might have.`),
+
+      h2('What an app does better'),
+      p(`It is there at 6am on a Tuesday. It does not need a call booked or an email answered. If your race date or your free days change, you change them and the plan changes with them.`),
+      p(`It is consistent. An app applies the same rules every week. It does not have a bad day or a full diary.`),
+      p(`And it costs a fraction of what a coach does, which matters more than people admit.`),
+
+      h2('What it costs in the UK'),
+      p(`Prices below were checked on ${formatDate(COACH_MARKET_VERIFIED, 'long')} and will change.`),
+      p(`I checked ${NUMBER_WORDS[coachMarket().coaches]} UK online coaches. Their monthly plans run from ${coachMarket().low} to ${coachMarket().high}, and the typical plan is about ${coachMarket().typical} a month. The cheaper plans give you a weekly plan and messaging. The dearer ones add calls, more frequent changes or strength work. Several ask for a three-month minimum. Even the cheapest is ${coachMarket().lowYear} a year. Other coaches will charge more or less. I have only quoted figures I could check.`),
+      p(
+        `Runna is ${price('runna').monthly} a month or ${price('runna').annual} a year. ${BRAND.name} is ${PRICING.monthly.display} a month or ${PRICING.annual.display} a year, with a ${PRICING.trialDays}-day trial. The free ${BRAND.name} tier gives you the 5K, 10K and half marathon plans in full, with nothing hidden. I compare the app prices in more detail on the `,
+        { text: 'cheaper alternatives to Runna', href: '/cheaper-alternatives-to-runna' },
+        ` page.`,
+      ),
+
+      h2('How to choose'),
+      p(`Use a coach if you have a history of injuries, a health condition, a goal well beyond anything you have done before, or you know you only train properly when someone is waiting for the results.`),
+      p(
+        `Use an app if you have a steady week, a clear race date and enough discipline to do the sessions as written. If you are new to running, my page on the `,
+        { text: 'best running app for beginners who go too hard', href: '/best-running-app-for-beginners' },
+        ` covers the mistake most people make first.`,
+      ),
+      p(`You can also use both. A coach for the big decisions and an app for the daily plan is a common setup, and the two do not compete.`),
+      p(`If you can afford a coach and you are not sure, the coach is the safer choice. The money is worth it more often than app companies, me included, like to say.`),
+
+      h2(`Where ${BRAND.name} fits`),
+      p(`${BRAND.name} is built to be honest about being software. It will tell you to slow down. It will not tell you whether your knee is fine, and it will not ring you when you go quiet.`),
+      p(
+        `It is iOS only. It does not export workouts to Garmin. It is built by one developer, me. If you need Android or a bigger platform, `,
+        { text: 'Runna', href: '/runna-alternatives' },
+        ` is the better answer. If you need someone to notice you, a human coach is.`,
+      ),
+      p(`If you want a plan that holds you back on the easy days and you are happy to check in with yourself, the free tier is the place to start.`),
     ],
   },
   // ── GUIDE 1 ────────────────────────────────────────────────────────────

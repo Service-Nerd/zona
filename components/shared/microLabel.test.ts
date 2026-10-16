@@ -183,7 +183,7 @@ const EXEMPT = /components\/marketing\//
 // and THREE different trackings (0.12em / 0.08em / 0.04em), plus three on
 // `PlanAdjustmentsScreen` at 11px/0.06em, all collapsed onto MICRO_LABELS.eyebrow.
 // This is the 41-combination drift this file was written for, paid down in situ.
-const NON_CONFORMING_BASELINE = 19  // 21 → 19 BENCHMARK-INPUT-01: two duplicated FieldLabels collapsed into FieldText
+const NON_CONFORMING_BASELINE = 20  // 21 → 20 BENCHMARK-INPUT-01: two duplicated FieldLabels became ONE in FieldText. First recorded as 19, measured while FieldText.tsx was UNSTAGED: `tracked()` reads `git ls-files`, so the new file was invisible
 
 const countNonConforming = () => {
   let n = 0

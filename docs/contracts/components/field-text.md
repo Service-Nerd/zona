@@ -5,6 +5,18 @@
 The three pieces of text around a form input. Moved unchanged out of `GeneratePlanScreen` on
 2026-10-16 (`BENCHMARK-INPUT-01`), when `BenchmarkFields` became their second user.
 
+## Props
+
+`FieldLabel`, the first export (the contract gate reads one prop block per file). The other two
+are in the table below: `FieldNote` takes `children`; `FieldReadback` takes `children` and `alert?`.
+
+```ts
+interface FieldLabelProps {
+  children: ReactNode
+  optional?: boolean
+}
+```
+
 | Export | Props | |
 |---|---|---|
 | `FieldLabel` | `children`, `optional?` | The label above an input: 11px / 700 / uppercase / `--mute`. `optional` appends the `FIELD_HINT` word. |
