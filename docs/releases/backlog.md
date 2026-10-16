@@ -1985,6 +1985,36 @@ fixed.
 > (not just the message), or RevenueCat's integrations list. 🔻 **If something external is
 > half-writing subscription rows, that matters more than the log line does.**
 
+### 🔴 `BENCHMARK-IMPOSSIBLE-01` — nothing checks a benchmark time is humanly possible, and two plans carry impossible paces *(filed 2026-10-16, P1)* ⚙️ **NO BOARD** *(§55 conformance: a world record is a fact, not a coaching choice)*
+
+> **Found by the daily ops digest; every claim re-verified against production and the engine before filing.**
+>
+> | runner | typed | VDOT | what the plan shows |
+> |---|---|---|---|
+> | Adrian Cassell (`033317fe`, Make-A-Wish, signed up 2026-10-15) | 5K `0:05:04` | **253.7** | easy runs **1:23–1:38 /km**; 29 km long run = **41 min** |
+> | `df2cc6e6` (HM, race 2026-09-26) | 10K `0:14:00` | **182.6** | easy runs 1:47–2:07 /km |
+>
+> 📐 **The ceiling is a fact:** the engine's own `vdotFor` gives **85.3** for the 5K world record and
+> **85.5** for the 10K. The other 34 plans sit at **37.7–48.4**. A ceiling at the world record catches both
+> and flags none of the rest.
+>
+> 🔑 **The typo theory holds, measured:** 5:04/km × 5 = a **25:20** 5K → VDOT **37.7** → Daniels ~**3:56**
+> marathon, against a stated **3:55** target. Almost certainly a pace typed into a time field.
+>
+> 🔴 **WHY NOTHING STOPPED IT:** §55's `InputFieldError` range-checks age, both heart rates, weekly km,
+> longest run and race distance — **the benchmark is the one input it never checks** (0 mentions in
+> `inputs.ts`). No VDOT ceiling in `ruleEngine.ts` or `generationConfig.ts`. The wizard only checks the field
+> is non-empty. And no invariant compares easy pace with goal pace — Adrian's plan says goal **5:34 /km** and
+> easy **1:23 /km** in the same object.
+>
+> **Fix:** reject a benchmark faster than the world record as an `InputFieldError` on `benchmark`, so the
+> wizard highlights the field and asks for it again; mirror the bound in the wizard. **Optional second net:**
+> an invariant that easy pace can never be faster than goal pace.
+>
+> **Remediation:** Adrian's plan starts **2026-12-07** (52 days) — correct the benchmark and regenerate
+> before then; **contact is the founder's call**. `df2cc6e6`'s race was 2026-09-26, last opened 2026-07-29,
+> no subscription — no action.
+
 ### 🔵 `GENERATE-500-NO-TRACE-01` — a crashed plan generation leaves no record, so "never generated" cannot be told from "tried and failed" *(filed 2026-10-15, P2)* ⚙️ **NO BOARD** *(observability)*
 
 > 📐 **Found reviewing the founder's Supabase WARNINGS export** (94 entries, 2026-10-14 16:12 → 10-15 13:23).
