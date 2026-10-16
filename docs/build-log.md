@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-16 — STRENGTH-APP-01 · three screens would have told you to rest on the day you lift
+**Shipped:** Strength now appears across the app, for admin accounts. On a run day it's a quiet second row under the run. On a day without a run it becomes the day. It has its own session screen, a Me door to set it up, and the morning push and daily coach note know about it.
+
+**Dev learning:** The work was mostly about saying nothing new. The plan holds one session per day, and every surface assumed it, so the first job was to list the places a bolt-on would contradict itself: the rest hero, the rest card, the push and the AI daily note would all have said "Do nothing. It helps." on a strength day. Each one now has a test with a control arm that still shows the rest line when there's no strength, so the check can be seen to fail.
+
+**Product learning:** The Design Board cut the effort rating from logging. The argument was simple: nothing reads it yet, and asking a question the app ignores teaches the runner it doesn't listen. So it's done or skipped, one tap, until progression in Phase 4 reads more.
+
+**AI-building learning:** The design-system guards caught 18 inconsistencies in the first full run, every one mine. I had hand-rolled a pinned header where `ScreenHeader` exists, used a full-width ghost button the rules say needs a surface, welded "min" onto a number instead of using the formatter, and used type sizes off the scale. Fixing them properly, rather than raising the baselines, is what makes the new screens look like the rest of the app. One of the 18 was the guard's own gap: it rejected a screen for using the title owner instead of hand-writing its class.
+
+**The honest bit:** Looking at the session screen in a browser found two things the tests didn't: a warm-up that repeated an accessory ("Banded side steps" twice) and an "Upper body" session that carried a hip exercise. Neither is visible to a markup test. Nothing has run on a device, and the two migrations still need applying.
+
 ## 2026-10-16 — STRENGTH-ENGINE-01 Phase 1 · a second engine that can only read the first
 **Shipped:** The strength engine exists. Give it a runner's profile and their run plan and it builds a strength plan around the run week: the split, the exercises, the sets, reps and effort, and where each session goes. No screen yet, and only admin accounts can call it.
 

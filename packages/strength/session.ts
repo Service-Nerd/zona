@@ -36,12 +36,14 @@ export const TEMPLATES: Record<Focus, Record<Exclude<SessionKind, 'mobility'>, S
       { pattern: 'anti_rotation', role: 'core', priority: 2 },
       { pattern: 'lateral_core', role: 'core', priority: 4 },
     ],
+    // No hip work here: a session titled "Upper body" carries what it says (Design Board,
+    // STRENGTH-APP-01). Hip abductors are in every full-body and lower session.
     upper_core: [
       { pattern: 'upper_pull', role: 'main', priority: 1 },
       { pattern: 'upper_push', role: 'main', priority: 1 },
       { pattern: 'anti_rotation', role: 'core', priority: 2 },
       { pattern: 'anti_extension', role: 'core', priority: 2 },
-      { pattern: 'hip_abduction', role: 'accessory', priority: 3 },
+      { pattern: 'upper_pull', role: 'accessory', priority: 3 },
       { pattern: 'lateral_core', role: 'core', priority: 4 },
     ],
   },
@@ -141,9 +143,11 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
   const isHeavy = (c: Chosen[]) => c.some(x => HEAVY_LEG_PATTERNS.includes(x.slot.pattern))
   const warmItems: Prescription[] = []
   const warmCount = minutes === 30 ? 4 : minutes === 45 ? 5 : 6
+  const inSession = new Set(chosen.map(c => c.item.exercise_id))
   for (const id of WARMUP_ORDER) {
     if (warmItems.length >= warmCount) break
     const e = CATALOGUE_BY_ID.get(id)!
+    if (e.same_as && inSession.has(e.same_as)) continue
     if (eligible(e, sel)) warmItems.push(prescribe(e, 'warmup', dose))
   }
   if (isHeavy(chosen)) {

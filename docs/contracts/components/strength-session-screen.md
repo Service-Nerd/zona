@@ -1,0 +1,29 @@
+# Contract — StrengthSessionScreen
+
+**Component:** `components/dashboard/StrengthSessionScreen.tsx`
+
+One strength session's full brief (STRENGTH-ENGINE-01 Phase 2, Design Board `STRENGTH-APP-01` D). Pattern:
+`ui-patterns.md` § Strength session screen. Rendered by `DashboardClient` for `screen === 'strength-session'`.
+
+## Prop Interface
+
+```typescript
+interface StrengthSessionScreenProps {
+  session: StrengthSession          // from the strength plan (packages/strength)
+  dayLabel: string                  // e.g. "Thu" (formatDate weekday-only)
+  weekN: number | null              // the run week the session sits in
+  status: StrengthCompletion | null // 'done' | 'skipped' | null
+  canLog: boolean                   // the day itself or after it, as on a run
+  onBack: () => void                // back to Today or Plan, whichever opened it
+  onSetStatus: (status: StrengthCompletion | null) => Promise<boolean>  // null = undo; false → inline error
+}
+```
+
+## Rendering contract
+
+- `ScreenHeader`: title `STRENGTH_KIND_TITLE[kind]`, sub *"Strength · day · Week N"*, back arrow.
+- Duration · Exercises tiles (Metric medium 17/700). Blocks in `StepSection` (warm-up/cool-down `--moss`,
+  training blocks `--s-strength`). Exercise row: name 14/600, dose 15/800, support 12/700; **cues only when opened**.
+- **No zone, pace, RPE or media placeholder.** Actions at the end of content: Mark complete (primary), Skip
+  (secondary); once logged a `StatusBadge` and Undo. A failed save shows `InlineError`.
+- Every string from `lib/strength-bridge/display.ts`. Check: `components/dashboard/strengthScreens.markup.test.ts`.

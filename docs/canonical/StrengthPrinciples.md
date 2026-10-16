@@ -129,6 +129,11 @@ except in taper and deload weeks, which are short on purpose.
 **Why.** Rest is part of the dose for heavy work **[C]**; supersets roughly halve session time (Iversen 2021)
 **[L]**; "30 minutes must be a real session" (McMillan). **Check:** `S-WARMUP`, `S-TIME-OVER`, `S-TIME-UNDER`.
 
+**Amendment 1 (2026-10-16, Design Board STRENGTH-APP-01).** A warm-up item that is a training exercise in lighter
+form (`same_as`) is left out when that exercise is in the session: a session never says the same thing twice. An
+*Upper body* session carries no hip work; hip abductors stay in every full-body and lower session. **Check:**
+`S-WARMUP-REPEAT`.
+
 ## S11. Core in most sessions
 
 **Principle.** A week with two or more training sessions has at least two core exposures. Upper body is placed by

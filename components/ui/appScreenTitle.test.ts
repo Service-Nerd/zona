@@ -218,7 +218,10 @@ describe('SUBPAGE-TYPE-SCALE-01 — pushed-screen titles come from the owner', (
     // ⚠️ Either role counts: `--compact` is the same owner for a title in a chrome row.
     for (const f of PUSHED) {
       const src = code(readFileSync(f, 'utf8'))
-      expect(src, `${f} renders no screen title at all`).toContain('screen-header__title')
+      // `<ScreenHeader title=…>` IS the owner (it renders `screen-header__title`); the derivation
+      // above admits files by it, so the check must accept it too (STRENGTH-APP-01 found the gap:
+      // a screen that used only the owner failed for not hand-writing the class).
+      expect(src, `${f} renders no screen title at all`).toMatch(/screen-header__title|<ScreenHeader\b[\s\S]{0,300}?\btitle=/)
     }
   })
 

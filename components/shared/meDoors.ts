@@ -1,3 +1,4 @@
+import { formatDuration } from '@/lib/format'
 // ME-DOORS-01 — the door labels, named once.
 //
 // A door's row label and the screen's own title are the same string by definition: the
@@ -118,3 +119,14 @@ export const ME_SECTION_ORDER: string[] = [
 
 /** Every heading must govern at least this many items, or it is not a heading. */
 export const MIN_ITEMS_PER_HEADING = 2
+
+/** STRENGTH-APP-01 (F) — the Strength door (admin-only until release). */
+export const STRENGTH_TITLE = 'Strength'
+export const STRENGTH_SUB_UNSET = 'Sessions placed around your runs'
+export const STRENGTH_SCREEN_SUB = 'Placed around your runs, never on top of them'
+
+/** The door carries the runner's choice as live state, as Heart rate carries bpm. */
+export function strengthSubtitle(p: { sessions_per_week: number; session_minutes: number; focus: 'running' | 'general' } | null): string {
+  if (!p) return STRENGTH_SUB_UNSET
+  return `${p.sessions_per_week} a week · ${formatDuration(p.session_minutes)} · ${p.focus === 'running' ? 'Running-focused' : 'General'}`
+}

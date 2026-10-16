@@ -6,6 +6,10 @@
 
 Introduced: SESSION-STRUCTURE-REDESIGN, 2026-09-04.
 
+**Also exports `StepSection`** (2026-10-16, STRENGTH-APP-01): the section card itself, so the strength session
+screen uses the same section language. Props: `{ name, accent, tintPct, totalStr, zoneStr, paceStr?, info?, children }`.
+No change to `SessionSteps`' own props or rendering.
+
 ---
 
 ## Prop Interface

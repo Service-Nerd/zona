@@ -44,6 +44,15 @@ import { isLongRun } from '@/lib/plan/sessionRole'
 import { parseLocalDate } from '@/lib/plan'
 import { resolveAutoMatch } from '@/lib/coaching/sessionAutoMatch'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { StrengthSession } from '@/packages/strength'
+import { STRENGTH_AFTER_RUN_LINE, STRENGTH_HERO_ADVERB, STRENGTH_KIND_TITLE, isoLocalDate } from '@/lib/strength-bridge/display'
+
+export interface TodayStrength {
+  sessionsByDate: Record<string, StrengthSession>
+  completions: Record<string, 'done' | 'skipped'>
+  onOpen: (s: StrengthSession) => void
+  onSetStatus: (date: string, status: 'done' | 'skipped' | null) => Promise<boolean>
+}
 import { weightOf, zoneDiscipline } from '@/lib/coaching/weeklyZoneAggregate'
 
 // AdjustmentBanner — now wraps PendingAdjustmentBanner with API call logic.
@@ -125,11 +134,14 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted, preferredUnits 
 //
 // The seven day cells stay. They are this week's shape, which is context for
 // today's session, not navigation away from it.
-function DateStrip({ sessions, completions, selectedKey, onSelect }: {
+function DateStrip({ sessions, completions, selectedKey, onSelect, strengthDots = {} }: {
   sessions: SessionEntry[]
   completions: Record<string, any>
   selectedKey: string | null
   onSelect: (key: string) => void
+  /** STRENGTH-APP-01 (B) — strength sessions by calendar day key. The dot stays the RUN's;
+   *  only a day with no run shows the strength dot. Never a second dot. */
+  strengthDots?: Record<string, 'planned' | 'done' | 'skipped'>
 }) {
   const sessionMap = Object.fromEntries(sessions.map(s => [s.displayKey, s]))
   /**
@@ -150,7 +162,10 @@ function DateStrip({ sessions, completions, selectedKey, onSelect }: {
    */
   function getDot(key: string): { colour: string; complete: boolean; skipped: boolean } | null {
     const s = sessionMap[key]
-    if (!s || s.type === 'rest') return null
+    if (!s || s.type === 'rest') {
+      const st = strengthDots[key]
+      return st ? { colour: getSessionColor({ type: 'strength' }), complete: st === 'done', skipped: st === 'skipped' } : null
+    }
     const comp = completions[s.key] // use originalDay for completion lookup
     // DESIGN-DAYDOT-CHANNEL-01 — THE HUE IS THE SESSION'S TYPE, ALWAYS.
     // It used to be overwritten: complete returned --teal and skipped returned
@@ -581,7 +596,14 @@ function getRestCopy(weekType?: string, weekPhase?: string, sessionType?: string
   }
 }
 
-export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, handover, onBuildRacePlan, onDismissHandover, handoverBusy, handoverError = null, handoverAckLabel = null, onHandoverAcknowledge, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow }: {
+/** The hero's greeting line: one owner for every hero variant (was three inline copies). */
+function heroGreeting(firstName?: string | null): string {
+  const h = new Date().getHours()
+  const greeting = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Evening'
+  return firstName ? `${greeting}, ${firstName}` : greeting
+}
+
+export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, handover, onBuildRacePlan, onDismissHandover, handoverBusy, handoverError = null, handoverAckLabel = null, onHandoverAcknowledge, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow, strength = null }: {
   recalTile?: React.ReactNode
   /** OPS-ATTRIB-01 — passed as a NODE, the same shape as `recalTile`, so Today
    *  does not need a Supabase client or the answered-state. Design Board
@@ -597,6 +619,9 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   overridesReady: boolean
   onOpenSession?: (s: any) => void
+  /** STRENGTH-APP-01 — the runner's strength sessions by local date, when strength is on.
+   *  Fetched once in DashboardClient; Today only reads it. */
+  strength?: TodayStrength | null
   allCompletions: Record<number, Record<string, any>>
   preferredUnits: 'km' | 'mi'
   zone2Ceiling: number | null
@@ -914,7 +939,19 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   const RUN_TYPES = ['run', 'easy', 'quality', 'race']
   const isRunDay      = selectedEntry && RUN_TYPES.includes(selectedEntry.type)
   const isStrengthDay = selectedEntry?.type === 'strength'
-  const showSessionHero = isRunDay || isStrengthDay
+  // STRENGTH-APP-01 (A) — the strength engine's session on the selected date. On a run
+  // day it is a second, quieter row; on a no-run day it IS the day, and nothing on
+  // Today may call it a rest day. The legacy run-engine `type:'strength'` row yields
+  // to it rather than rendering twice.
+  const strengthToday = strength && selectedSession ? strength.sessionsByDate[isoLocalDate(selectedSession.rawDate)] ?? null : null
+  const strengthStatus = strengthToday?.date ? strength?.completions[strengthToday.date] ?? null : null
+  const strengthOnly = !!strengthToday && !isRunDay
+  const strengthDots: Record<string, 'planned' | 'done' | 'skipped'> = {}
+  if (strength) for (const e of sessions) {
+    const ss = strength.sessionsByDate[isoLocalDate(e.rawDate)]
+    if (ss?.date) strengthDots[e.displayKey] = strength.completions[ss.date] ?? 'planned'
+  }
+  const showSessionHero = isRunDay || (isStrengthDay && !strengthToday)
 
   // HR-SYNC-02: per-card retry state. Tracks which apple_health_uuid is
   // currently mid-retry so the matching SessionCard renders the "Checking…"
@@ -1193,11 +1230,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               marginBottom: '4px',
               lineHeight: 1,
             }}>
-              {(() => {
-                const h = new Date().getHours()
-                const greeting = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Evening'
-                return firstName ? `${greeting}, ${firstName}` : greeting
-              })()}
+              {heroGreeting(firstName)}
             </div>
             <div style={{ lineHeight: 1, marginBottom: 'var(--space-3)' }}>
               <span style={{
@@ -1253,11 +1286,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               marginBottom: '4px',
               lineHeight: 1,
             }}>
-              {(() => {
-                const h = new Date().getHours()
-                const greeting = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Evening'
-                return firstName ? `${greeting}, ${firstName}` : greeting
-              })()}
+              {heroGreeting(firstName)}
             </div>
             <div style={{ lineHeight: 1, marginBottom: 'var(--space-4)' }}>
               {(heroMetric === 'distance' ? selectedSession.distance != null : selectedSession.duration == null) && selectedSession.distance != null ? (
@@ -1318,6 +1347,21 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               )}
             </div>
           </>
+        ) : strengthOnly && strengthToday ? (
+          <>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--mute)', marginBottom: '4px', lineHeight: 1 }}>
+              {heroGreeting(firstName)}
+            </div>
+            <div style={{ lineHeight: 1, marginBottom: 'var(--space-4)' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '56px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-2.5px', fontVariantNumeric: 'tabular-nums' }}>
+                {fmtDurationMins(strengthToday.estimated_minutes)},{' '}
+              </span>
+              <br />
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '56px', fontWeight: 800, color: 'var(--moss)', letterSpacing: '-2.5px' }}>
+                {STRENGTH_HERO_ADVERB}.
+              </span>
+            </div>
+          </>
         ) : (
           <>
             <div style={{
@@ -1327,11 +1371,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               color: 'var(--mute)',
               marginBottom: '4px',
             }}>
-              {(() => {
-                const h = new Date().getHours()
-                const greeting = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Evening'
-                return firstName ? `${greeting}, ${firstName}` : greeting
-              })()}
+              {heroGreeting(firstName)}
             </div>
             <div style={{ lineHeight: 1, marginBottom: 'var(--space-4)' }}>
               <span style={{
@@ -1801,6 +1841,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
         completions={completions}
         selectedKey={selectedKey}
         onSelect={setSelectedKey}
+        strengthDots={strengthDots}
       />
 
       {/* ── HOLD THE ZONE ──────────────────────────────────────────────
@@ -2115,11 +2156,53 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 Log this run
               </Button>
             )}
+
+            {/* STRENGTH-APP-01 (A) — the second session on a run day: one compact row,
+                the after-run gap said once, here. No zone, no hero, no second CTA. */}
+            {strengthToday && strength && (
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <SessionCard
+                  type="strength"
+                  name={STRENGTH_KIND_TITLE[strengthToday.kind]}
+                  detail={strengthToday.after_quality_run ? STRENGTH_AFTER_RUN_LINE : undefined}
+                  durationMin={strengthToday.estimated_minutes}
+                  metric="duration"
+                  state={strengthStatus === 'done' ? 'done' : strengthStatus === 'skipped' ? 'skipped' : 'future'}
+                  onClick={() => strength.onOpen(strengthToday)}
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        {/* STRENGTH-APP-01 (A) — a no-run day that holds a strength session IS a training
+            day: the strength session takes the session slot and the rest card does not
+            render. Logging sits here exactly as "Log this run" does on a run day. */}
+        {strengthOnly && strengthToday && strength && selectedSession && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)' }}>
+                {selectedSession.today ? "Today's session" : selectedSession.day}
+              </span>
+            </div>
+            <SessionCard
+              type="strength"
+              name={STRENGTH_KIND_TITLE[strengthToday.kind]}
+              durationMin={strengthToday.estimated_minutes}
+              metric="duration"
+              state={strengthStatus === 'done' ? 'done' : strengthStatus === 'skipped' ? 'skipped' : selectedSession.today ? 'current' : 'future'}
+              onClick={() => strength.onOpen(strengthToday)}
+            />
+            {(selectedSession.today || selectedSession.rawDate < now) && !strengthStatus && (
+              <Button variant="primary" fullWidth onClick={() => void strength.onSetStatus(strengthToday.date!, 'done')} style={{ marginTop: 'var(--space-3)' }}>
+                Mark complete
+              </Button>
+            )}
           </>
         )}
 
         {/* Rest day — show RestDayCard */}
-        {!showSessionHero && (
+        {!showSessionHero && !strengthOnly && (
           <RestDayCard
             onLogRun={() => setShowOffPlanLog(true)}
             session={selectedSession}

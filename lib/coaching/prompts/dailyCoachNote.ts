@@ -23,6 +23,10 @@ export interface DailyCoachNoteInput {
   todayZoneLabel: string | null
   /** Today's distance in km if applicable. */
   todayDistanceKm: number | null
+  /** STRENGTH-APP-01 (A′) — a strength session today, when the runner has one. On a no-run
+   *  day it makes the day a training day: the note must never say rest. Optional so every
+   *  existing caller and golden prompt is byte-identical without it. */
+  todayStrength?: { title: string; minutes: number } | null
 
   /** Most recent completed session — what happened last time they ran. */
   lastSession: {
@@ -223,13 +227,16 @@ Output: one or two short sentences in the voice described above. No quotes. No p
   const facts: string[] = []
 
   // Today — surface day name, session label and zone so the model has full context
-  if (input.todaySessionType === 'rest' || !input.todaySessionType) {
+  if ((input.todaySessionType === 'rest' || !input.todaySessionType) && input.todayStrength) {
+    facts.push(`Today (${input.todayDayName}): no run. A ${input.todayStrength.minutes}-minute strength session (${input.todayStrength.title.toLowerCase()}). This is NOT a rest day: never tell them to rest or do nothing`)
+  } else if (input.todaySessionType === 'rest' || !input.todaySessionType) {
     facts.push(`Today (${input.todayDayName}): rest day`)
   } else {
     const dist = input.todayDistanceKm ? `${fmtPlanned(input.todayDistanceKm)} ` : ''
     const zone  = input.todayZoneLabel ? ` (${input.todayZoneLabel})` : ''
     const label = input.todaySessionLabel ? ` — "${input.todaySessionLabel}"` : ''
     facts.push(`Today (${input.todayDayName}): ${dist}${input.todaySessionType}${zone}${label}`)
+    if (input.todayStrength) facts.push('A strength session follows the run later today. The app already shows it; do not repeat it')
   }
 
   // Last session — when daysAgo > 1, anchor on the day name so the model

@@ -8,15 +8,18 @@ While `STRENGTH_RELEASE = 'admin'` only `user_settings.is_admin` accounts pass; 
 
 ## GET
 
-Returns the stored plan and whether the run week has changed under it.
+Returns the plan and its completions. **If the run week has moved under it** (`run_context_sig`, a sha256 of the
+RunContext, differs from the current run plan plus live move/swap overrides) **it is re-placed silently first**
+from the stored profile, validated and saved (Design Board `STRENGTH-APP-01` H).
 
 ```json
-{ "plan": StrengthPlan | null, "profile": StrengthProfile, "generated_at": "ISO", "stale": true | false | null }
+{ "plan": StrengthPlan, "profile": StrengthProfile, "completions": { "YYYY-MM-DD": "done" | "skipped" },
+  "completions_ok": true, "replaced": boolean, "stale": false | null }
 ```
 
-`stale` compares `run_context_sig` (sha256 of the RunContext the plan was placed around) with the current run
-plan plus its live move/swap overrides. **`null` when the run plan could not be read**, never `true`: a failed read
-is not a change. `{ "plan": null }` when nothing is stored.
+A **failed run-plan read never re-places** (that would place strength blind to the runner's hard days): the stored
+plan is returned and `stale` is `null`. `{ "plan": null }` when nothing is stored. Completions: see
+`docs/contracts/api/strength-completion.md`.
 
 ## POST
 

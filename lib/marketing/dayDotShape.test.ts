@@ -40,7 +40,7 @@ const SHELL = strip(dashboardSource())
 
 describe('DESIGN-DAYDOT-CHANNEL-01 — one channel, one fact', () => {
   it('the plan row rail is the session accent, never a completion colour', () => {
-    const i = CAL.indexOf("height: hasSession ? '34px'")
+    const i = CAL.indexOf("height: hasSession || strengthRow ? '34px'")
     expect(i, 'the rail moved; re-point this assertion').toBeGreaterThan(0)
     const rail = CAL.slice(i, i + 320)
     expect(rail, 'the rail must resolve to the session accent').toContain('accent')
@@ -57,7 +57,7 @@ describe('DESIGN-DAYDOT-CHANNEL-01 — one channel, one fact', () => {
 
   it('moss on the rail now means exactly one thing: in flight', () => {
     // It meant "complete" AND "being moved". Only the transient sense remains.
-    const i = CAL.indexOf("height: hasSession ? '34px'")
+    const i = CAL.indexOf("height: hasSession || strengthRow ? '34px'")
     const rail = CAL.slice(i, i + 320)
     const mossBranches = Array.from(rail.matchAll(/var\(--moss\)/g)).length
     expect(mossBranches, 'moss on the rail may carry one meaning only').toBeLessThanOrEqual(1)

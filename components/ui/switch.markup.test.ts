@@ -113,7 +113,7 @@ describe('SWITCH-PRIMITIVE-01', () => {
       .not.toMatch(/checked=\{enabled\}/)
   })
 
-  it('🔴 every live switch is on the primitive, and there are three', () => {
+  it('🔴 every live switch is on the primitive, and there are four', () => {
     // A population arm, because TODAY three separate gates read clean while
     // pointed at incomplete sets (sheetClose's hand-written CONSUMERS, the 44px
     // floor arm, the geometry baseline). A count that silently goes to zero
@@ -121,7 +121,8 @@ describe('SWITCH-PRIMITIVE-01', () => {
     // DASHBOARD-SCREEN-EXTRACT-03 — population from the single owner, not a path.
     const src = dashboardSource()
     const uses = Array.from(src.matchAll(/<Switch\b/g)).length
-    expect(uses, 'the live switch count moved — say which one and why').toBe(3)
+    // 3 → 4 (STRENGTH-APP-01, 2026-10-16): the strength setup's bone-health flag, on the primitive.
+    expect(uses, 'the live switch count moved — say which one and why').toBe(4)
     // And the dead one is gone: SmokeToggle had ZERO call sites, residue of a
     // feature CLAUDE.md records as removed from all UI in Phase 1.
     expect(src, 'SmokeToggle is dead code and was deleted').not.toContain('function SmokeToggle')

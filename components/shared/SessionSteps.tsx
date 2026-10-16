@@ -293,3 +293,4 @@ export default function SessionSteps({
     </div>
   )
 }
+export { SectionCard as StepSection }

@@ -144,6 +144,17 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-16 — STRENGTH-APP-01 (STRENGTH-ENGINE-01 Phase 2) · SHIP WITH AMENDMENT
+
+Strength across the whole app, ruled as one composition. **Run day:** the run stays the hero, strength is one compact
+row beneath it. **Strength-only day:** the hero becomes strength and no rest copy renders anywhere (Today, push,
+daily note). **DateStrip:** one dot, the run's; a strength-only day gets the strength dot. **Plan:** a trailing
+"Strength" mark, no second row; **Collins lost the split rail** (legibility, colour-only). **Session screen:** new,
+SessionScreen anatomy, cues on tap, no media placeholder. **Logging:** done or skipped only; RPE and per-set wait
+for Phase 4 (amended: a question nothing reads is decorative). **Setup:** a Me door, seven questions, three
+defaulted, injuries read-only. **Titles:** Full body · Lower body · Upper body · Mobility. Full sitting:
+`docs/decisions/strength-app-design-board-2026-10-16.md`.
+
 ## 2026-09-25 — TIME-INPUT-SECONDS-01 · SHIP WITH AMENDMENT
 
 **Should every time-entry field take seconds? Yes, and the decision leaves the call site.**

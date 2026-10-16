@@ -40,6 +40,10 @@ interface Props {
   units?: DistanceUnits                             // 'km' | 'mi' — INV-PREF-001
   preferredMetric?: SessionMetric                   // distance vs duration (ADR-015)
   sessionMetricOverrides?: SessionMetricOverrides   // per-session metric override
+  // STRENGTH-APP-01 (C), 2026-10-16. Absent on the marketing phone still, which then renders
+  // exactly as before. A no-run day with strength is a normal row; a run day gets one
+  // quiet "Strength" text mark, never a second row.
+  strength?: PlanStrength | null                    // { sessionsByDate, completions, onOpen }
 }
 ```
 

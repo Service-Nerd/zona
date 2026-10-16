@@ -95,6 +95,9 @@ export interface Exercise {
   measure: 'reps' | 'seconds' | 'contacts'
   regress_to?: string
   progress_to?: string
+  /** A warm-up move that IS a training exercise in lighter form: left out of the warm-up
+   *  when that exercise is in the session, so a session never says the same thing twice. */
+  same_as?: string
   media: { animation_id: string }
   cues: string[]
 }

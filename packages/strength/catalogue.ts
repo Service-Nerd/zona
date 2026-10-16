@@ -44,7 +44,7 @@ export const CATALOGUE: readonly Exercise[] = [
   ex('leg_swings', 'Leg swings', 'warmup', ['hip_flexors', 'hamstrings'], BW, 1, { uni: true }, ['Hold something steady.', 'Swing, do not fling.']),
   ex('hip_circles', 'Standing hip circles', 'warmup', ['glutes', 'hip_flexors'], BW, 1, { uni: true }, ['Slow and wide.', 'Keep the standing knee soft.']),
   ex('glute_bridge_activation', 'Glute bridge hold', 'warmup', ['glutes'], BW, 1, { measure: 'seconds' }, ['Squeeze, then lift.', 'Ribs down, no arching.']),
-  ex('band_walk_warmup', 'Banded side steps', 'warmup', ['hip_abductors'], [['bands'], ['bodyweight']], 1, {}, ['Small steps, constant tension.', 'Toes forward.']),
+  { ...ex('band_walk_warmup', 'Banded side steps', 'warmup', ['hip_abductors'], [['bands'], ['bodyweight']], 1, {}, ['Small steps, constant tension.', 'Toes forward.']), same_as: 'banded_side_step' },
   ex('worlds_greatest_stretch', "World's greatest stretch", 'warmup', ['hip_flexors', 'hamstrings', 'back'], BW, 1, { uni: true }, ['Long lunge, elbow to instep.', 'Rotate up and breathe.']),
   ex('inchworm', 'Inchworm', 'warmup', ['hamstrings', 'core', 'shoulders'], BW, 1, {}, ['Walk the hands out to a plank.', 'Walk the feet in, legs as straight as is comfortable.']),
   ex('ankle_rocks', 'Knee-to-wall ankle rocks', 'warmup', ['calves', 'soleus'], BW, 1, { uni: true }, ['Heel stays down.', 'Knee tracks over the middle toe.']),

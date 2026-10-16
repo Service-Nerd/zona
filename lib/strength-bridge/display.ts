@@ -1,0 +1,105 @@
+// STRENGTH-ENGINE-01 Phase 2 (Design Board STRENGTH-APP-01) — the single owner of
+// every strength string the app shows. Components never compose these.
+//
+// ⚠️ Copy is the founder's. These are drafts in the brand voice; the RIR phrasing in
+// particular ("reps in reserve") was flagged for his call. Client-safe: no Node imports.
+
+import { CATALOGUE_BY_ID, type Experience, type Focus, type SessionMinutes, type BlockRole, type Prescription, type SessionKind, type StrengthPlan, type StrengthSession } from '@/packages/strength'
+import { formatStepDuration } from '@/lib/format'
+
+/** Titles drop "+ core": core is in nearly every session, and saying so on each is saying it four times (Collins). */
+export const STRENGTH_KIND_TITLE: Record<SessionKind, string> = {
+  full_body: 'Full body',
+  lower_core: 'Lower body',
+  upper_core: 'Upper body',
+  mobility: 'Mobility',
+}
+
+export const STRENGTH_BLOCK_TITLE: Record<BlockRole, string> = {
+  warmup: 'Warm-up',
+  plyo: 'Jumps',
+  main: 'Main lifts',
+  accessory: 'Accessories',
+  core: 'Core',
+  mobility: 'Cool-down',
+}
+
+/** The one line a stacked session carries, said once, on the row that needs it (S4). */
+export const STRENGTH_AFTER_RUN_LINE = 'After your run, at least 3 hours later'
+
+/** Hero adverb on a strength-only day: the app's existing word for strength (TodayScreen getHeroAdverb). */
+export const STRENGTH_HERO_ADVERB = 'with weights'
+
+export function exerciseName(id: string): string {
+  return CATALOGUE_BY_ID.get(id)?.name ?? id
+}
+
+export function exerciseCues(id: string): string[] {
+  return CATALOGUE_BY_ID.get(id)?.cues ?? []
+}
+
+/** "3 × 5" · "3 × 30 s" · "3 × 10 contacts" · warm-up "8" / "40 s". */
+export function doseLine(p: Prescription): string {
+  const amount = p.reps != null ? String(p.reps) : p.seconds != null ? `${p.seconds} s` : `${p.contacts ?? 0} contacts`
+  return p.sets > 1 ? `${p.sets} × ${amount}` : amount
+}
+
+/** The supporting line: effort, then rest, then side. Empty pieces are dropped. */
+export function effortLine(p: Prescription): string {
+  return [
+    p.per_side ? 'each side' : null,
+    p.rir != null ? `${p.rir} reps in reserve` : null,
+    p.rest_s > 0 ? `rest ${formatStepDuration(p.rest_s)}` : null,
+  ].filter(Boolean).join(' · ')
+}
+
+export function exerciseCount(s: StrengthSession): number {
+  return s.blocks.filter(b => b.role !== 'warmup').reduce((n, b) => n + b.items.length, 0)
+}
+
+/** The strength session on a calendar date, or null. Dates are ISO YYYY-MM-DD. */
+export function strengthOnDate(plan: StrengthPlan | null, date: string): StrengthSession | null {
+  if (!plan) return null
+  for (const w of plan.weeks) for (const s of w.sessions) if (s.date === date) return s
+  return null
+}
+
+/** Local calendar date of a Date, as the strength plan keys it. */
+export function isoLocalDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// ── Setup (Me → Strength). Drafts; the founder owns the words. ──────────────────
+
+
+
+
+export const STRENGTH_SETUP = {
+  focusLabel: 'What is it for?',
+  focus: {
+    running: { label: 'Running-focused', sub: 'Single-leg strength, calves and hips, built around your runs.' },
+    general: { label: 'General', sub: 'The same leg work, with more upper body.' },
+  } satisfies Record<Focus, { label: string; sub: string }>,
+  perWeekLabel: 'How many a week?',
+  perWeekNote: 'Two is what we would suggest. Your run week decides where they go.',
+  minutesLabel: 'How long?',
+  equipmentLabel: 'What can you use?',
+  bodyweightNote: 'Bodyweight builds the habit and some strength. Heavier work needs weights.',
+  experienceLabel: 'How much have you lifted?',
+  experience: { new: 'New to it', some: 'Some', regular: 'Regularly' } satisfies Record<Experience, string>,
+  daysLabel: 'Days you can’t',
+  boneLabel: 'Osteoporosis or a spinal fracture',
+  boneSub: 'Leaves out jumps and loaded forward bends.',
+  injuriesNote: (tags: string[]) => `Allowing for your ${tags.join(' and ')}, from your plan.`,
+  legsLimitedNote: 'Your run week leaves fewer days for heavy legs than this, so some sessions are upper body.',
+  cta: 'Build my strength plan',
+  ctaUpdate: 'Update',
+  saved: 'Built. It shows on Today and in your plan.',
+  saveFailed: 'Couldn’t build it. Try again.',
+  loadFailed: 'Couldn’t load your strength plan.',
+}
+
+export const EQUIPMENT_LABEL: Record<string, string> = {
+  bodyweight: 'Bodyweight', bands: 'Bands', dumbbells: 'Dumbbells', kettlebell: 'Kettlebell', bench: 'Bench', box: 'Box or step',
+  pullup_bar: 'Pull-up bar', barbell: 'Barbell', rack: 'Rack', cable: 'Cable machine', machines: 'Gym machines',
+}

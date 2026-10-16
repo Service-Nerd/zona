@@ -2041,7 +2041,7 @@ fixed.
 > reps (high-rep sometimes, heavier sometimes); equipment-driven; a catalogue by muscle group with sets/reps as
 > variables; isolated enough for its own app; **PAID**.
 >
-> 🟢 **Phase 0 + 1 BUILT 2026-10-16** (engine, bridge, validator, sweep, admin-only API; see feature-registry). **Open:** founder applies `20261016_strength_plans.sql`; catalogue review (DRAFT); Phase 2 app (Design Board first), Phase 3 media, Phase 4 progression.
+> 🟢 **Phases 0, 1 and 2 BUILT 2026-10-16** (engine + the app, `STRENGTH-APP-01`; see feature-registry). **Open:** founder applies `20261016_strength_plans.sql` + `20261017_strength_completions.sql`; catalogue review (DRAFT); founder copy calls (RIR phrasing, strength-day push line); device check; Phase 3 media, Phase 4 progression; release switch.
 >
 > **Build plan:** `docs/plans/STRENGTH-ENGINE-01.md`. **Architecture:** `docs/architecture/ADR-024-strength-engine.md` (PROPOSED). **Evidence:**
 > `docs/investigations/strength-conditioning-research-2026-10-16.md`. **Consolidates** `R21`, *Supplementary

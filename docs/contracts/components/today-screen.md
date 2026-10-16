@@ -86,6 +86,10 @@ interface TodayScreenProps {
   onLogRaceResult?: () => void
   onReshapeAccepted?: (plan: Plan) => void
   onReshapeDismissed?: () => void
+  // STRENGTH-APP-01 (A, B), 2026-10-16. Run day: one compact strength row under the run.
+  // No-run day: the strength session IS the day (hero, card, Mark complete) and no rest
+  // copy renders. DateStrip: one dot, the run's; a strength-only day gets the strength dot.
+  strength?: TodayStrength | null                   // { sessionsByDate, completions, onOpen, onSetStatus }
 }
 ```
 

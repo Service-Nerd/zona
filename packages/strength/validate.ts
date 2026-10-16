@@ -82,6 +82,12 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
         v.push({ code: 'S-TIME-OVER', week: w.n, day: where, detail: 'mobility session too long' })
       }
 
+      // S10 Am. — a warm-up never repeats a training exercise in lighter form.
+      const trained = new Set(items.filter(x => x.role !== 'warmup').map(x => x.it.exercise_id))
+      for (const { it, role, ex } of items) {
+        if (role === 'warmup' && ex?.same_as && trained.has(ex.same_as)) v.push({ code: 'S-WARMUP-REPEAT', week: w.n, day: where, detail: `${it.exercise_id} repeats ${ex.same_as}` })
+      }
+
       // Every exercise (S7–S9).
       const seen = new Set<string>()
       for (const { it, role, ex } of items) {

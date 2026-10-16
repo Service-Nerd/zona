@@ -51,6 +51,7 @@ The user opens Today to find out what to run and to log it done. Everything on t
 | Post-run analysis for today's run | Race projections |
 | Pending adjustment banner (affects today) | Multi-week coaching insights |
 | Active override for today | Profile or settings |
+| **A strength session today** (STRENGTH-APP-01): second to the run on a run day; the day's session on a no-run day | Strength setup (that's a Me door) |
 
 **One screen, one session, one day.**
 
@@ -151,6 +152,8 @@ The user opens Session Detail from Today or Plan to read the full brief on a sin
 | Completion log | |
 | Post-run reframe (AI, paid) | |
 
+**Strength sessions have their own detail screen** (`strength-session`, STRENGTH-APP-01), with this screen's anatomy and job, one session, and none of the run-only blocks (zone, pace, auto-match).
+
 ---
 
 ### Me
@@ -196,6 +199,7 @@ things — but a list is only tolerable when each row is a door (Silvanto).
 | A **door** to data connections | Zone rings or trend data |
 | A **door** to plan reshaping and overrides | Race projections |
 | A **door** to notifications | Session schedule |
+| A **door** to strength setup (STRENGTH-APP-01, admin-only until release) | |
 
 **The measure is time to the thing you came for** (Sierra). Nobody reads Me; they arrive
 having already decided, and the only question is how fast they can leave.

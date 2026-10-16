@@ -18,6 +18,7 @@ const S = vi.hoisted(() => ({
   events: [] as string[],
   stored: null as Record<string, unknown> | null,
   violate: false,
+  deletes: [] as Record<string, unknown>[],
 }))
 
 vi.mock('@/packages/strength', async () => {
@@ -41,6 +42,7 @@ vi.mock('@supabase/supabase-js', () => ({
           ? { data: { is_admin: S.isAdmin }, error: null }
           : { data: S.stored, error: null },
         upsert: async (row: Record<string, unknown>) => { S.upserts.push({ table, ...row }); return { error: null } },
+        delete: () => { const d: Record<string, unknown> = { table }; S.deletes.push(d); const c = { eq: (k: string, v: unknown) => { d[k] = v; return c }, then: (r: (x: unknown) => void) => r({ error: null }) }; return c },
       })
       return q
     },
@@ -55,7 +57,7 @@ const post = async (body: unknown) => {
 
 beforeEach(() => {
   S.user = { id: 'u1' }; S.isAdmin = true; S.tier = 'paid'; S.planError = null; S.plan = null
-  S.upserts = []; S.events = []; S.stored = null; S.violate = false
+  S.upserts = []; S.events = []; S.stored = null; S.violate = false; S.deletes = []
 })
 
 describe('POST /api/strength/plan', () => {
@@ -109,5 +111,59 @@ describe('GET /api/strength/plan', () => {
     S.stored = { plan_json: { v: 1 }, profile_json: PROFILE, run_context_sig: 'abc', generated_at: 'x' }
     S.planError = 'boom'
     expect((await (await get()).json()).stale).toBeNull()
+  })
+})
+
+describe('GET re-places strength silently when the run week moved under it (STRENGTH-APP-01 H)', () => {
+  const get = async () => {
+    const { GET } = await import('@/app/api/strength/plan/route')
+    return GET(new Request('https://x/api/strength/plan') as never)
+  }
+  it('a stale signature regenerates from the STORED profile and saves it', async () => {
+    S.stored = { plan_json: { weeks: [] }, profile_json: PROFILE, run_context_sig: 'old-signature', generated_at: 'x' }
+    const body = await (await get()).json()
+    expect(body.replaced).toBe(true)
+    expect(S.upserts).toHaveLength(1)
+    expect(body.plan.standalone).toBe(true)
+  })
+  it('🔴 a matching signature saves nothing', async () => {
+    S.stored = { plan_json: { weeks: [] }, profile_json: PROFILE, run_context_sig: null, generated_at: 'x' }
+    const body = await (await get()).json()
+    expect(body.replaced).toBe(false)
+    expect(S.upserts).toEqual([])
+  })
+  it('🔴 a failed run-plan read never re-places blind', async () => {
+    S.stored = { plan_json: { weeks: [] }, profile_json: PROFILE, run_context_sig: 'old-signature', generated_at: 'x' }
+    S.planError = 'boom'
+    await get()
+    expect(S.upserts).toEqual([])
+  })
+})
+
+describe('POST /api/strength/completion — done or skipped only', () => {
+  const post = async (body: unknown) => {
+    const { POST } = await import('@/app/api/strength/completion/route')
+    return POST(new Request('https://x/api/strength/completion', { method: 'POST', body: JSON.stringify(body) }) as never)
+  }
+  const withSession = () => { S.stored = { plan_json: { weeks: [{ sessions: [{ date: '2026-11-03' }] }] } } }
+  it('🔴 401 / 404 behind the same gate', async () => {
+    S.user = null; expect((await post({ date: '2026-11-03', status: 'done' })).status).toBe(401)
+    S.user = { id: 'u1' }; S.isAdmin = false; expect((await post({ date: '2026-11-03', status: 'done' })).status).toBe(404)
+  })
+  it('🔴 refuses a bad date, a bad status, and a date with no strength session', async () => {
+    withSession()
+    expect((await post({ date: '03/11/2026', status: 'done' })).status).toBe(422)
+    expect((await post({ date: '2026-11-03', status: 'great' })).status).toBe(422)
+    expect((await post({ date: '2026-11-03', status: 'done', rpe: 7 })).status).toBe(200)
+    S.upserts = []
+    expect((await post({ date: '2026-11-04', status: 'done' })).status).toBe(404)
+    expect(S.upserts).toEqual([])
+  })
+  it('done saves this user\'s row; null undoes it', async () => {
+    withSession()
+    await post({ date: '2026-11-03', status: 'done' })
+    expect(S.upserts[0]).toMatchObject({ table: 'strength_completions', user_id: 'u1', session_date: '2026-11-03', status: 'done' })
+    await post({ date: '2026-11-03', status: null })
+    expect(S.deletes[0]).toMatchObject({ table: 'strength_completions', user_id: 'u1', session_date: '2026-11-03' })
   })
 })

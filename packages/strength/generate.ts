@@ -64,7 +64,7 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
       built.notes.forEach(n => notes.add(n))
       if (built.heavy_legs) prevHeavy = p.index
       return {
-        date: standalone ? null : d.date,
+        date: d.date,
         day: d.day,
         week_n: wk.n,
         kind: built.kind,

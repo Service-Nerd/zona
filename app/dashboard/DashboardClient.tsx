@@ -166,9 +166,17 @@ import MeScreen from '@/components/dashboard/MeScreen'
 import { getDeviceToken } from '@/components/dashboard/pushDevice'
 import SaveImageButton from '@/components/dashboard/SaveImageButton'
 import TodayScreen from '@/components/dashboard/TodayScreen'
+import StrengthSessionScreen from '@/components/dashboard/StrengthSessionScreen'
+import StrengthSetupScreen from '@/components/dashboard/StrengthSetupScreen'
+import { EmptyState } from '@/components/shared/EmptyState'
+import { useStrengthPlan } from '@/components/dashboard/useStrengthPlan'
+import { canUseStrength } from '@/lib/strength-bridge/release'
+import { STRENGTH_SETUP, isoLocalDate } from '@/lib/strength-bridge/display'
+import { strengthSubtitle } from '@/components/shared/meDoors'
+import type { StrengthSession } from '@/packages/strength'
 import SessionPopupInner from '@/components/dashboard/SessionPopupInner'
 
-type Screen = 'zones' | 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
+type Screen = 'zones' | 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration' | 'strength-session'
 
 
 
@@ -553,6 +561,26 @@ export default function DashboardClient() {
 
   // Paid access — default true to avoid flash of locked state during load
   const [hasPaidAccess, setHasPaidAccess] = useState(true)
+
+  // STRENGTH-APP-01 — the strength plan, fetched once here and passed down so Today,
+  // Plan, Me and the session screen read ONE copy. The client check only decides
+  // whether to ask; the server's gate decides whether to answer.
+  const { strength, reloadStrength, saveStrength, setStrengthCompletion } = useStrengthPlan(
+    canUseStrength({ isAdmin, tier: hasPaidAccess ? 'paid' : 'free' }), plan,
+  )
+  const [activeStrength, setActiveStrength] = useState<StrengthSession | null>(null)
+  const [strengthOrigin, setStrengthOrigin] = useState<'today' | 'plan'>('today')
+  const strengthByDate = useMemo(() => {
+    const m: Record<string, StrengthSession> = {}
+    for (const w of strength.plan?.weeks ?? []) for (const ss of w.sessions) if (ss.date) m[ss.date] = ss
+    return m
+  }, [strength.plan])
+  const strengthFor = (origin: 'today' | 'plan') => strength.status === 'ready' ? {
+    sessionsByDate: strengthByDate,
+    completions: strength.completions,
+    onOpen: (ss: StrengthSession) => { setActiveStrength(ss); setStrengthOrigin(origin); setScreen('strength-session') },
+    onSetStatus: setStrengthCompletion,
+  } : null
   // SUBS-RECONCILE-TRIAL-GATE-01 — `reason` distinguishes a trial from a recorded
   // subscription, which `hasPaidAccess` cannot. Null until the tier resolves.
   const [tierReason, setTierReason] = useState<TierReason | null>(null)
@@ -2796,7 +2824,7 @@ export default function DashboardClient() {
                   }
                   setPendingReshape(null)
                   setReshapeDismissedAt(new Date().toISOString())
-                }} />}
+                }} strength={strengthFor('today')} />}
         {/* P-02 — the confirm step REPLACES the plan view while it is open.
             Not a modal over it: "no popups; all interactions navigate to full
             screens", and a diff the runner is deciding on is the screen's one
@@ -2853,7 +2881,7 @@ export default function DashboardClient() {
             onStartNewPlan={() => { clearModify(); setScreen('generate') }}
           />
         )}
-        {screen === 'plan' && !modifyPreview && <PlanScreen plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('plan'); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} onOpenModify={canModifyPlan(plan) ? () => setModifyOpen(true) : undefined} />}
+        {screen === 'plan' && !modifyPreview && <PlanScreen strength={strengthFor('plan')} plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('plan'); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} onOpenModify={canModifyPlan(plan) ? () => setModifyOpen(true) : undefined} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
               // ADR-013 §22-27: allCompletions and runAnalysisMap are keyed by
@@ -3030,7 +3058,14 @@ export default function DashboardClient() {
             No UI path opens it for non-admins, but the render gate prevents a future commit
             from accidentally exposing admin UI via state mutation or a new entry point. */}
         {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} preferredUnits={preferredUnits} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR ?? undefined} maxHR={effectiveMaxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} tierReason={tierReason} healthkitConnectedAt={healthkitConnectedAt} lastAppleHealthArrival={lastArrivalBySource.apple_health} lastStravaArrival={lastArrivalBySource.strava} stravaConnected={stravaConnected} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
+        {screen === 'me'       && <MeScreen strength={strength.status === 'off' || strength.status === 'loading' ? null : {
+          subtitle: strengthSubtitle(strength.profile),
+          body: strength.status === 'error'
+            ? <div style={{ padding: '0 16px' }}><EmptyState title={STRENGTH_SETUP.loadFailed} action={<Button variant="secondary" onClick={() => void reloadStrength()}>Try again</Button>} /></div>
+            : <StrengthSetupScreen profile={strength.profile} planNotes={strength.plan?.notes ?? []}
+                planInjuries={(plan?.meta?.injury_history ?? []).map(t => t.toLowerCase())}
+                onSave={saveStrength} />,
+        }} openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} tierReason={tierReason} healthkitConnectedAt={healthkitConnectedAt} lastAppleHealthArrival={lastArrivalBySource.apple_health} lastStravaArrival={lastArrivalBySource.strava} stravaConnected={stravaConnected} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
   // §50 (HR-MAX-01) — device reconnect from Settings. Fill only missing values;
   // tag a fresh device max 'observed' (a floor) so the guard rejects it below the
   // age estimate. Never clobber a user_confirmed value. Display refreshes via
@@ -3056,6 +3091,20 @@ export default function DashboardClient() {
 }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onSaveName={async (name: string) => { setFirstName(name); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return false; const { error } = await supabase.from('user_settings').upsert({ id: user.id, first_name: name, updated_at: new Date().toISOString() }); if (error) { setFirstName(firstName); return false } return true } catch { setFirstName(firstName); return false } }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} onActiveSectionChange={setMeActiveSection} onOpenZones={(returnTo?: string, editHr?: boolean) => { setZonesReturnSection(returnTo ?? null); setHrSheetOpen(!!editHr); setScreen('zones') }} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} aiNotes={sessionNotesAreAiAuthored(activeSessionData, plan?.meta, plan?.weeks?.find(w => w.n === activeSessionData.weekN))} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(sessionOrigin)} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} driftContext={buildDriftContext(plan, runAnalysisMap, activeSessionData?.weekN, activeSessionData?.key)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('session')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setPostRunOrigin('session'); setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
+        {screen === 'strength-session' && activeStrength && (() => {
+          const d = activeStrength.date ? new Date(activeStrength.date + 'T00:00:00') : null
+          return (
+            <StrengthSessionScreen
+              session={activeStrength}
+              dayLabel={d ? formatDate(d, 'weekday-only') ?? '' : ''}
+              weekN={activeStrength.week_n}
+              status={activeStrength.date ? strength.completions[activeStrength.date] ?? null : null}
+              canLog={!!activeStrength.date && activeStrength.date <= isoLocalDate(new Date())}
+              onBack={() => setScreen(strengthOrigin)}
+              onSetStatus={(st) => activeStrength.date ? setStrengthCompletion(activeStrength.date, st) : Promise.resolve(false)}
+            />
+          )
+        })()}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} preferredMetric={preferredMetric} driftContext={buildDriftContext(plan, runAnalysisMap, activePostRunData.weekN, activePostRunData.session?.key)} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
@@ -4333,7 +4382,9 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
 // matters is in the two live holes (the web connect prompt, and actually
 // looking at day one), not in reviving this.
 
-function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, runAnalysisMap = {}, onOpenModify, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach }: {
+function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, runAnalysisMap = {}, onOpenModify, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach, strength = null }: {
+  /** STRENGTH-APP-01 (C). */
+  strength?: import('@/components/training/PlanCalendar').PlanStrength | null
   plan: Plan; stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   allCompletions: Record<number, Record<string, any>>
@@ -4604,6 +4655,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           units={preferredUnits}
           preferredMetric={preferredMetric}
           sessionMetricOverrides={sessionMetricOverrides}
+          strength={strength}
           onSessionTap={(session, weekN) => {
             onOpenSession?.({ ...session, weekN })
           }}

@@ -29,7 +29,7 @@ import type { Plan } from '@/types/plan'
 import type { TierReason } from '@/lib/trial'
 import type { Zone } from '@/components/shared/ZoneBar'
 import { BRAND } from '@/lib/brand'
-import { CONNECTIONS_TITLE, ZONES_UNSET_SUB, PLAN_ADJUSTMENTS_PENDING_SUB, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_TITLE, connectionsSubtitle } from '@/components/shared/meDoors'
+import { CONNECTIONS_TITLE, ZONES_UNSET_SUB, PLAN_ADJUSTMENTS_PENDING_SUB, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_TITLE, STRENGTH_SCREEN_SUB, STRENGTH_TITLE, connectionsSubtitle } from '@/components/shared/meDoors'
 import { Capacitor } from '@capacitor/core'
 import { Chevron } from '@/components/shared/Chevron'
 import { FAQ_SUBTITLE, FAQ_TITLE } from '@/components/shared/FaqScreen'
@@ -748,7 +748,9 @@ async function hasServerSubscription(platform: 'ios' | 'web'): Promise<boolean> 
   }
 }
 
-export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, lastAppleHealthArrival, lastStravaArrival, stravaConnected, plan, initials, athlete, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, onActiveSectionChange, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, lastAppleHealthArrival, lastStravaArrival, stravaConnected, plan, initials, athlete, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, onActiveSectionChange, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges, strength = null }: {
+  /** STRENGTH-APP-01 (F) — the Strength door, or null when strength is not available. */
+  strength?: { subtitle: string; body: import('react').ReactNode } | null
   /** ME-DOORS-01 — open Me AT a door instead of at the index. Consumed once, then cleared
    *  by `onOpenSectionConsumed`, so a later visit to Me lands on the index as usual. */
   openSection?: string | null
@@ -836,7 +838,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   const hkRecoveryNote = hkFreshness === 'not_connected'
     ? 'Connect below to feed readiness checks.'
     : connectionStaleCopy(hkFreshness, lastAppleHealthArrival, 'Apple Health')
-  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'plan-adjustments' | 'connections' | 'delete-account' | 'support' | 'faq' | 'plan-history'>('main')
+  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'plan-adjustments' | 'connections' | 'delete-account' | 'support' | 'faq' | 'plan-history' | 'strength'>('main')
 
   // ⚠️ BEFORE THE EARLY RETURNS. `MeScreen` returns early for every door, so a hook placed
   //   below one is a conditional hook — the React error 310 this repo has already shipped once.
@@ -933,6 +935,15 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   )
 
   // ME-ORDER-01 door 4 — Connections. ⚠️ The rows are UNCHANGED; only their home moved.
+  // STRENGTH-APP-01 (F) — the Strength door. The body is the dashboard's (it owns the
+  // strength state); the header is this screen's, so the title is said once.
+  if (activeSection === 'strength' && strength) return (
+    <>
+      <ScreenHeader title={STRENGTH_TITLE} sub={STRENGTH_SCREEN_SUB} onBack={() => setActiveSection('main')} />
+      {strength.body}
+    </>
+  )
+
   if (activeSection === 'connections') return (
     <>
       <ScreenHeader title={CONNECTIONS_TITLE} sub="Where your runs come from"
@@ -1326,6 +1337,14 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
           </div>
         )}
 
+
+        {/* STRENGTH-APP-01 (F) — a door, under Your training, shown only when strength is
+            available to this runner (admin-only until release). */}
+        {strength && (
+          <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+            <ActionRow title={STRENGTH_TITLE} subtitle={strength.subtitle} onClick={() => setActiveSection('strength')} />
+          </div>
+        )}
 
         {/* ── Setup ─────────────────────────────────────
             🔴 I ARGUED FOR NO HEADING HERE AND THE RENDER PROVED ME WRONG. The board ruled

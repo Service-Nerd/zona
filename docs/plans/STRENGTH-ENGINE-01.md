@@ -5,7 +5,9 @@
 **Evidence:** `docs/investigations/strength-conditioning-research-2026-10-16.md`, `strength-split-research-2026-10-16.md`.
 **Rulings:** `docs/decisions/strength-engine-boards-2026-10-16.md`. **Status (2026-10-16):** **Phase 0 and Phase 1 built.** Engine, bridge, validator, sweep, API route all in; 0 violations across 266,688 plans.
 
-🔻 **FOUNDER STEP — the one thing left before Phase 1's exit:** run `supabase/migrations/20261016_strength_plans.sql` in the Supabase SQL editor, then append `20261016_strength_plans.sql` to `.claude/state/applied-migrations.txt`. Until then `POST /api/strength/plan` generates and validates but the save returns 500 (`strength_save_failed`). Check afterwards: `npm run check:db` passes.
+🔻 **FOUNDER STEP:** run **two** migrations in the Supabase SQL editor, in order: `supabase/migrations/20261016_strength_plans.sql` then `20261017_strength_completions.sql`; append both basenames to `.claude/state/applied-migrations.txt`. Until then the strength door builds and validates but cannot save (`strength_save_failed`). Check afterwards: `npm run check:db` passes (today it fails naming both tables).
+
+✅ **Phase 2 built 2026-10-16** (Design Board `STRENGTH-APP-01`): Today, Plan, session screen, Me door, push and daily note. ⚠️ Not seen on a device. Founder copy calls: the RIR phrasing ("2 reps in reserve"), the strength-day push line ("Build the body that holds the zones.", legacy), the setup prompts.
 
 ⚠️ **The catalogue is DRAFT** (AI-drafted, ADR-024 §6b): it needs your and the strength seat's review before any runner sees a cue.
 
@@ -37,7 +39,7 @@
 | **1c. Engine** ✅ | Split chooser · placement (§7 slots) · prescription model (RIR, phase dose, deload/taper) · time packer (supersets) | 1b | Plans generate for every profile |
 | **1d. Validator** ✅ | `validateStrengthPlan()` invariants, each falsified; liveness mutations; sweep over the run-plan corpus | 1c | **Zero violations across the sweep** |
 | **1e. Plumbing** ✅ (migration pending) | Migration (`strength_plans`, cascade; `strength_completions` moved to Phase 2, when set logging writes it) · API routes behind `canUseStrength` · admin-only | 1d | Founder (admin) gets a plan JSON |
-| **2. App** | Design Board first. Wizard questions, Today sub-card under the run, session screen, per-set logging; optional Haiku weekly note | 1e + Design Board ruling | Founder tests on a device |
+| **2. App** ✅ (STRENGTH-APP-01; migrations pending) | Design Board first. Wizard questions, Today sub-card under the run, session screen, per-set logging; optional Haiku weekly note | 1e + Design Board ruling | Founder tests on a device |
 | **3. Media** | Licence animations, wire every entry | Vendor contract (SLT) | Every entry animated |
 | **4. Learn** | Progression from logged sets/RIR; v2 load signal into the run engine (Coaching Board first) | Logged data exists | Board ruling |
 | **Release** | Flip `STRENGTH_RELEASE` to `'paid'` | December cohort mid-plan · SLT | Paid + trial can use it |

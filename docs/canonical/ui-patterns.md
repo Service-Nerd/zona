@@ -4270,6 +4270,43 @@ hand-rolled race arithmetic, and the website imports the owner.
 
 ---
 
+## A second session on a day — strength beside the run (STRENGTH-APP-01, STRENGTH-ENGINE-01 Phase 2, Design Board 2026-10-16)
+
+The plan holds one run per day; the strength engine can add a session to the same day. **One rule across every
+surface: the run is the day; strength never contradicts it and is never said twice.**
+
+| Surface | Run day + strength | No-run day + strength |
+|---|---|---|
+| **Today hero** | The run's hero, unchanged | Duration in ink + *"with weights."* in moss (the app's existing strength adverb) |
+| **Today session slot** | The run card and its CTA, then ONE compact `SessionCard type="strength"` row (no zone, no CTA). The after-run gap is said once, on that row | The strength card takes the slot; **Mark complete** sits where *Log this run* would. The rest card and every rest line do not render |
+| **DateStrip** | The run's dot. Never a second dot | The strength dot (`--s-strength`), filled when done |
+| **Plan day row** | The run row plus a quiet 12px `--s-strength` text mark *"Strength"*. No second row, no split rail | A normal row: strength rail, the session title, duration |
+| **Morning push / daily note** | The run | Strength, never the rest line (`pushSessionFor`, the note's prompt fact) |
+
+**Why:** the founder's brief, *"gel, not contradict, and not say the same thing twice."* The contradictions were real
+before this rule: three surfaces would have said *"Do nothing. It helps."* on a strength day.
+**Owner of the strings:** `lib/strength-bridge/display.ts` (`STRENGTH_KIND_TITLE`, `STRENGTH_AFTER_RUN_LINE`,
+`STRENGTH_HERO_ADVERB`). **Check:** `strengthToday.markup.test.ts`, `planCalendarStrength.markup.test.ts`,
+`serverDay.test.ts`, each with a control arm proving it can fail.
+
+## Strength session screen (STRENGTH-APP-01)
+
+SessionScreen's anatomy, as its own screen (`components/dashboard/StrengthSessionScreen.tsx`): pinned header with
+`BackButton`, eyebrow *day · week*, compact title (**Full body · Lower body · Upper body · Mobility**: never
+"+ core", it is in nearly every session), the strength chip; the 2-up **Duration · Exercises** tiles; blocks in the
+`SessionSteps` section card (`StepSection`): warm-up and cool-down in `--moss`, training blocks in `--s-strength`.
+An exercise row is the step row's type: name 13/700, dose 15/800 tabular (*"3 × 5"*), support line 12/700
+(*each side · N reps in reserve · rest*). **Cues are one tap deep** (`aria-expanded`). **No media placeholder until
+Phase 3.** Actions at the end of content (7a): **Mark complete**, **Skip**; once logged, a status badge and **Undo**.
+Done or skipped only: no RPE, no per-set logging, until something reads them. A warm-up item that is a training
+exercise in lighter form is left out when that exercise is in the session (`S-WARMUP-REPEAT`).
+**Check:** `strengthScreens.markup.test.ts`.
+
+**Setup** is a Me door (`STRENGTH_TITLE`), a sub-page in Me's pattern: seven questions in weight order (focus
+`CardSelect`, sessions `Chip` 1–4, length `SegmentedControl`, equipment `Chip` multi, experience `Chip`, days off
+`DayGridSelector`, bone flag `Switch`), the last three defaulted; injuries read-only from the run plan; honest notes
+once, as `FieldNote`s; one CTA.
+
 ## Cross-Screen Consistency Rules
 
 Every screen must honour these invariants before shipping. Check against this list when auditing.

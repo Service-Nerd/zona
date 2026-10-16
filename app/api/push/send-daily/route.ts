@@ -7,6 +7,7 @@ import { getUserTier } from '@/lib/trial'
 import { getSessionForDate, isDateBeforePlan, isPlanComplete, parseLocalDate, readPlanJson } from '@/lib/plan'
 import { resolveEffectiveSessions, DAY_KEYS, type DayKey, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import { buildDailyPushTitle, buildDailyPushBody, type NextKeySession } from '@/lib/coaching/voiceLines'
+import { pushSessionFor, strengthSessionOn } from '@/lib/strength-bridge/serverDay'
 import { recordNotification } from '@/lib/notifications'
 import { normalizeDisplayPrefs } from '@/lib/userPrefs'
 import { loadSessionMetricOverrides } from '@/lib/sessionMetricOverrides'
@@ -247,12 +248,15 @@ export async function POST(req: NextRequest) {
       const localToday = parseLocalDate(clock.isoDate)
       const allOverrides: SessionOverride[] = (overridesRes.data as SessionOverride[] | null) ?? []
       const resolved = getSessionForDate(plan.weeks, localToday, allOverrides)
+      // STRENGTH-APP-01 (A′) — a no-run day that holds a strength session is a training
+      // day: it gets the strength line, never the rest line, and it is not skipped.
+      const strengthToday = await strengthSessionOn(supabase, userId, clock.isoDate, { isAdmin: settings.is_admin === true, tier })
 
       // No active session for today → don't send. Distinguish the reasons so the
       // skip tally (D-04) reads not-yet-started vs finished vs ordinary empty day.
       // Test mode still falls through to a generic payload so the delivery test
       // works regardless of plan state.
-      if (!resolved && !testMode) {
+      if (!resolved && !strengthToday && !testMode) {
         skip(
           isDateBeforePlan(plan.weeks, localToday) ? 'plan_not_started'
           : isPlanComplete(plan.weeks, localToday) ? 'plan_complete'
@@ -261,7 +265,7 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      const session = (resolved?.session ?? null) as Session | null
+      const session = pushSessionFor(resolved?.session ?? null, strengthToday) as Session | null
 
       // "Next key session later THIS week" for the easy/recovery-day "why" tag —
       // computed from the effective week the resolved session lives in.

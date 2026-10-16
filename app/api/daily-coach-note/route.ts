@@ -4,6 +4,8 @@ import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getUserTier } from '@/lib/trial'
+import { strengthSessionOn } from '@/lib/strength-bridge/serverDay'
+import { STRENGTH_KIND_TITLE } from '@/lib/strength-bridge/display'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildDailyCoachNotePrompt } from '@/lib/coaching/prompts/dailyCoachNote'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
@@ -158,6 +160,9 @@ export async function GET(req: NextRequest) {
   const todaySession = rawTodaySession && !EXCLUDED_SESSION_TYPES.includes(rawTodaySession.type) ? rawTodaySession : null
   const todayDayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dayOfWeek]
   const todayZone = zoneForSessionType(todaySession?.type)
+  // STRENGTH-APP-01 (A′) — the strength session today, so a strength day is never called rest.
+  const { data: adminRow } = await serviceSupabase.from('user_settings').select('is_admin').eq('id', userId).maybeSingle()
+  const strengthToday = await strengthSessionOn(serviceSupabase, userId, noteDate, { isAdmin: adminRow?.is_admin === true, tier })
 
   const completions = completionsRes.data ?? []
 
@@ -286,6 +291,7 @@ export async function GET(req: NextRequest) {
     todaySessionLabel: todaySession?.label ?? null,
     todayZoneLabel:    todayZone?.label ?? null,
     todayDistanceKm:   todaySession?.distance_km ?? null,
+    todayStrength:     strengthToday ? { title: STRENGTH_KIND_TITLE[strengthToday.kind], minutes: strengthToday.estimated_minutes } : null,
     lastSession,
     weekPhase: (week as any).phase as string | null,
     weekN,

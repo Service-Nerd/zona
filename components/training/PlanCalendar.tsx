@@ -11,6 +11,17 @@ import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetri
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
+import { STRENGTH_KIND_TITLE, isoLocalDate } from '@/lib/strength-bridge/display'
+import type { StrengthSession } from '@/packages/strength'
+
+/** STRENGTH-APP-01 (C) — strength on the Plan week. Optional: the marketing phone still passes none. */
+export interface PlanStrength {
+  sessionsByDate: Record<string, StrengthSession>
+  completions: Record<string, 'done' | 'skipped'>
+  onOpen: (s: StrengthSession) => void
+}
+
+type DayStrength = { title: string; minutes: number; status: 'done' | 'skipped' | null; onOpen: () => void }
 
 interface Completion {
   session_day: string
@@ -96,9 +107,10 @@ interface Props {
   preferredMetric?: SessionMetric
   /** Per-session metric overrides from SessionScreen toggle, keyed `${weekN}_${sessionKey}`. */
   sessionMetricOverrides?: SessionMetricOverrides
+  strength?: PlanStrength | null
 }
 
-export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km', preferredMetric = 'distance', sessionMetricOverrides = {} }: Props) {
+export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, strength = null }: Props) {
   const [showPast, setShowPast] = useState(false)
   // PLAN-STRIP-EXPAND: single Later-week may be expanded into a full WeekCard
   // for move/swap. State held here so navigating away resets — option-value,
@@ -230,6 +242,7 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
         completions={Object.values(allCompletions[weekNum] ?? {})}
         overrides={allOverrides.filter(o => o.week_n === weekNum)}
         onSessionTap={onSessionTap}
+        strength={strength}
         onMove={handleMove}
         onSwap={handleSwap}
         units={units}
@@ -396,7 +409,8 @@ function MaintSeam() {
 // This is a convergence the ruling asked for, not an accident.
 
 
-function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides }: {
+function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides, strength = null }: {
+  strength?: PlanStrength | null
   week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string }[]
   onSessionTap: (session: SessionTapPayload, weekN: number) => void
   onMove: (weekN: number, originalDay: string, newDay: string, currentSlot: string) => void
@@ -637,6 +651,11 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         const resolvedMetric: SessionMetric = s
           ? resolveSessionMetric(weekNum, s.originalDay ?? key, s.primary_metric, sessionMetricOverrides, preferredMetric)
           : preferredMetric
+        const ss = strength ? strength.sessionsByDate[isoLocalDate(d)] : undefined
+        const dayStrength: DayStrength | null = ss && ss.date && strength ? {
+          title: STRENGTH_KIND_TITLE[ss.kind], minutes: ss.estimated_minutes,
+          status: strength.completions[ss.date] ?? null, onOpen: () => strength.onOpen(ss),
+        } : null
 
         return (
           <DayRow
@@ -656,10 +675,11 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             isLast={i === DOW_ORDER.length - 1}
             units={units}
             metric={resolvedMetric}
+            strength={dayStrength}
             onTap={() => {
               if (isMoveTarget || isSwapTarget) { handleTargetTap(key); return }
               if (movingDay) { abandonMove(); return }
-              if (!s || s.type === 'rest') return
+              if (!s || s.type === 'rest') { dayStrength?.onOpen(); return }
               onSessionTap({
                 key: s.originalDay ?? key,
                 day: DOW_FULL[key],
@@ -740,7 +760,19 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   )
 }
 
-function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric, }: {
+/** A day row's label, one style for a run row and a strength row so they read as one list. */
+function rowLabelStyle({ color, struck }: { color: string; struck: boolean }): React.CSSProperties {
+  return {
+    fontSize: '15px', fontWeight: 500, color,
+    textDecoration: struck ? 'line-through' : 'none',
+    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    flex: 1, minWidth: 0,
+  }
+}
+
+function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric, strength = null, }: {
+  /** STRENGTH-APP-01 (C) — a strength session on this day, when strength is on. */
+  strength?: DayStrength | null
   dayKey: string; session: EffectiveSession | undefined; date: Date; isToday: boolean; isPast: boolean; isFuture: boolean
   completion?: Completion; isMovable: boolean; isMoving: boolean
   isMoveTarget: boolean; isSwapTarget: boolean
@@ -753,11 +785,13 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
   const isSkipped  = completion?.status === 'skipped'
   const hasSession = !!session && session.type !== 'rest'
   const isRestType = !session || session.type === 'rest'
+  // A no-run day with strength is a training day: a normal row in the strength rail.
+  const strengthRow = isRestType && !!strength
   const isTarget = isMoveTarget || isSwapTarget
   // PLAN-LONGRUN-COLOUR-01 — through the owner, so a long run reads as one
   // here too. This indexed SESSION_COLORS directly while ui-patterns.md already
   // called getSessionColor the sole owner: a documented claim with no mechanism.
-  const accent = session ? getSessionColor(session) : 'transparent'
+  const accent = strengthRow ? getSessionColor({ type: 'strength' }) : session ? getSessionColor(session) : 'transparent'
 
   return (
     <div
@@ -767,10 +801,10 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
         // flight. Setting it up front would kill scrolling on the whole list,
         // which is the objection this prototype exists to test, not to dodge.
         display: 'flex', alignItems: 'center',
-        padding: isRestType && !isTarget ? '6px 14px' : '10px 14px',
+        padding: isRestType && !isTarget && !strengthRow ? '6px 14px' : '10px 14px',
         borderBottom: isLast ? 'none' : '1px solid var(--line)',
         background: isMoving || isTarget ? 'var(--moss-soft)' : 'transparent',
-        cursor: (hasSession || isTarget) ? 'pointer' : 'default',
+        cursor: (hasSession || isTarget || strengthRow) ? 'pointer' : 'default',
         opacity: isMoving ? 0.7 : isMoveMode && !isTarget && !isMoving ? 0.4 : isSkipped ? 0.5 : isPast && !isComplete && hasSession ? 0.45 : 1,
         // dashed = move (empty slot); solid = swap (occupied slot); solid on the source while moving.
         outline: isMoveTarget
@@ -813,7 +847,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
       {isMoveTarget ? (
         <div style={{ width: '3px', height: '34px', borderRadius: '2px', background: 'var(--moss-mid)', marginRight: '12px', flexShrink: 0 }} />
       ) : (
-        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isMoving || isSwapTarget ? 'var(--moss)' : accent, marginRight: '12px', flexShrink: 0 }} />
+        <div style={{ width: '3px', height: hasSession || strengthRow ? '34px' : '16px', borderRadius: '2px', background: isMoving || isSwapTarget ? 'var(--moss)' : accent, marginRight: '12px', flexShrink: 0 }} />
       )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -821,16 +855,30 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)', letterSpacing: '0.04em' }}>
             Move here
           </div>
+        ) : strengthRow && strength ? (
+          <>
+            <div style={rowLabelStyle({
+              color: strength.status ? 'var(--mute)' : isFuture ? 'var(--ink-2)' : 'var(--ink)',
+              struck: strength.status === 'skipped',
+            })}>
+              {strength.title}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
+              {strength.status === 'done' && (
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)' }}>Done</span>
+              )}
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
+                {formatDuration(strength.minutes)}
+              </span>
+            </div>
+          </>
         ) : isRestType ? null : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-              <div style={{
-                fontSize: '15px', fontWeight: 500,
+              <div style={rowLabelStyle({
                 color: isMoving || isSwapTarget ? 'var(--moss)' : isSkipped ? 'var(--mute)' : isComplete ? 'var(--mute)' : isFuture ? 'var(--ink-2)' : 'var(--ink)',
-                textDecoration: isSkipped ? 'line-through' : 'none',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                flex: 1, minWidth: 0,
-              }}>
+                struck: isSkipped,
+              })}>
                 {session.label ?? ''}
                 {isMoving && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>moving...</span>}
                 {isSwapTarget && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>tap to swap</span>}
@@ -893,6 +941,14 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
               })() : session.detail ? (
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.detail}</span>
               ) : null}
+              {/* STRENGTH-APP-01 (C) — a run day that also holds strength keeps ONE row (the
+                  run's); strength is a quiet text mark, never a second row or a split rail
+                  (Collins lost that: a 17px half-rail is not legible, and colour alone fails). */}
+              {strength && !strengthRow && (
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--s-strength)' }}>
+                  Strength
+                </span>
+              )}
               {/* 🔴 ACTIVITY-NAME-WRITER-01 (2026-10-08) — THE LINE IS GATED ON THE
                   DISTANCE AS WELL AS THE NAME, not on the name alone.
                   It used to require `strava_activity_name`, and the writers copied the
