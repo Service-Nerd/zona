@@ -13,6 +13,14 @@ A **separate** strength & conditioning engine that works **with** the coaching e
 can reach, and that drives exercise choice. A **catalogue** of exercises by muscle group, with sets and reps as
 **variables**. **Isolated** enough to become its own app. **Paid.**
 
+## The goal, in the founder's words (2026-10-16)
+
+**Not injury prevention. Helping people achieve their goal and not fail mid-plan.** Strength is there to make the
+runner robust enough to keep turning up: to reach the start line having done the block, not to "prevent injury".
+⚠️ **Copy consequence:** the board's no-injury-claim rule stands, and *"helps you finish your plan"* is itself an
+outcome claim, so any runner-facing or marketing sentence about what strength DOES goes past the Coaching Board
+(W-03). The product's own measure (SLT): share of starters doing ≥1 session a week over 4 weeks.
+
 ## Decision
 
 ### 1. Two engines, one direction of dependency
@@ -111,8 +119,11 @@ exercises, not shorter rests: rest is part of the dose for heavy work.
    only after strength and landing competence.
 3. **Phase-aware dose:** base 2/wk building; build/peak 1–2/wk heavy-and-low-volume; **last heavy session ~10–14 days
    before the race**; race week mobility only; **deload weeks cut sets**.
-4. **Running-focused** (v1): heavy lower body + calf/soleus + single-leg + hip abductors + anti-rotation core +
-   plyometrics. **General** (v2): the same lower body **plus upper body**, never extra leg volume.
+4. **Both focuses ship in v1** (founder, 2026-10-16, overriding the SLT's "general in v2"). **Every session in both
+   includes core and upper body.** **Running-focused:** heavy lower body with a **unilateral emphasis** (founder: the
+   majority of lower-body work single-leg: split squats, single-leg RDL, step-ups, single-leg calf/soleus) +
+   hip abductors + anti-rotation core + plyometrics + upper-body maintenance (rows, presses). **General:** the same
+   lower-body pattern and placement rules **plus more upper-body volume**, never extra leg volume.
 5. **Bodyweight-only runners are told the truth**: it builds the habit and some strength; load is what moves economy.
 6. **Injury tags swap exercises for kinder siblings** (`avoid_with`) and lean the programme (Achilles → calf/soleus
    loading; knee → hip + knee work). Never framed as treatment.
@@ -168,7 +179,7 @@ names *"basic strength sessions"* and `PAID_ONLY_ONGOING` *"tailored strength se
 | Phase | What | Exit |
 |---|---|---|
 | **0** | This ADR ruled by both boards; `StrengthPrinciples.md` v1; founder appoints the seat | Rulings recorded |
-| **1** | `packages/strength`: types, catalogue (~40 exercises covering every pattern × equipment tier), prescription model, packer, placement rules, `validateStrengthPlan`, contract + tests. **No UI** | A sweep over the run-plan corpus with zero violations |
+| **1** | `packages/strength`: types, a **deep** catalogue (target **80+** exercises: every pattern × equipment tier × level, unilateral and bilateral variants of each lower-body pattern, core (anti-rotation, anti-extension, lateral), upper push/pull), prescription model, packer, placement rules, `validateStrengthPlan`, contract + tests. **No UI** | A sweep over the run-plan corpus with zero violations |
 | **2** | App: wizard questions (focus, length, equipment, experience), Today sub-card under the run, strength session screen, per-set logging. Design Board for the new screen | Seen on a device |
 | **3** | Media licensed and wired | Every catalogue entry has an animation |
 | **4** | Progression from logged sets/RIR; v2 load signal into the run engine (board first) | Board ruling |

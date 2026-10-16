@@ -2060,6 +2060,12 @@ fixed.
 > before design (Zhuo): **share of runners who start a strength plan completing ≥1 session/week over 4 weeks.**
 > ⚠️ No commercial seat priced conversion: whether strength lifts trial-to-paid is unanswered.
 >
+> ✅ **Founder, 2026-10-16 (second message):** **core AND upper body in every session**, both focuses; **general ships
+> in v1** (overrides the SLT's v2); a **deep catalogue** (target 80+) with a **unilateral emphasis** for running focus;
+> and the goal is **not injury prevention but helping runners reach their goal and not fail mid-plan** (any
+> runner-facing sentence about what strength does is an outcome claim → Coaching Board, W-03). Approved the visual
+> before build.
+>
 > ✅ **Founder, 2026-10-16:** (1) **S&C seat appointed** to the Coaching Board (Blagrove-modelled, strength domain only);
 > (2) **30 / 45 / 60 minutes**; (3) **v1 running-focused only**; (4) 🔒 **admin-only at first**, through a separate
 > release switch (`STRENGTH_RELEASE`), because admins already resolve as `paid` and a tier check would admit every

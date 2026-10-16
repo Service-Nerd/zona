@@ -18,3 +18,10 @@ Design Board first. Licensed animations, no embedded YouTube. Success measure: s
 2. **30 / 45 / 60-minute** sessions.
 3. **v1 is running-focused only.**
 4. **Admin-only at first**, via a release switch separate from the tier (admins resolve as `paid`).
+
+## Founder, second round (2026-10-16)
+5. **Core and upper body in every session**, both focuses.
+6. **General ships in v1** (overrides the SLT's "v2").
+7. **A deep catalogue** (target 80+), **unilateral emphasis** for running focus.
+8. **The goal:** not injury prevention, but helping runners achieve their goal and not fail mid-plan. Copy about what
+   strength does is an outcome claim and goes to the Coaching Board.
