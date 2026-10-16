@@ -1,7 +1,7 @@
 # STRENGTH-ENGINE-01 — build plan
 
 **What:** a separate, PAID strength & conditioning engine that reads the run plan and never writes it.
-**Architecture:** `docs/architecture/ADR-024-strength-engine.md` · diagram `ADR-024-strength-engine-hld.svg`.
+**Architecture:** `docs/architecture/ADR-024-strength-engine.md` · diagram `ADR-024-strength-engine-hld.svg` · plan diagram `STRENGTH-ENGINE-01-plan.svg`.
 **Evidence:** `docs/investigations/strength-conditioning-research-2026-10-16.md`, `strength-split-research-2026-10-16.md`.
 **Rulings:** `docs/decisions/strength-engine-boards-2026-10-16.md`. **Status (2026-10-16):** Phase 0 nearly done; nothing built.
 
