@@ -93,11 +93,23 @@ async function resolveAthleteFirstName(req: NextRequest, userId: string): Promis
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // GENERATE-500-NO-TRACE-01 (2026-10-16) — what the outer catch reports. A crash used
+  // to be `console.error` + 500 and nothing else, so a runner whose generation FAILED
+  // looked exactly like one who never tried (measured on the Make-A-Wish funnel: 5 of
+  // 19 without a plan, and no way to say which). `stage` names the last step reached.
+  let stage: 'auth' | 'tier' | 'guard' | 'input' | 'engine' | 'respond' = 'auth'
+  let userId: string | null = null
+  let tierSeen: string | null = null
+  let raceKm: number | null = null
   try {
     const user = await getUserFromRequest(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    userId = user.id
+    stage = 'tier'
 
     const tier = await getUserTier(user.id)
+    tierSeen = tier
+    stage = 'guard'
     // UNITS-PROSE-01 — ONE read of the runner's units for the whole route.
     // ADR-015's amendment makes the AI layer a display surface, so the three
     // AI calls below (§118 offer copy, free intro, enrichment) must all be told
@@ -128,9 +140,14 @@ export async function POST(req: NextRequest) {
     // (ADR-003). Putting it on GeneratorInput would leak a UI decision into the
     // engine's input type and into every grid that sweeps those fields.
     const acceptBaseBuild = (guard.body as { accept_base_build?: unknown }).accept_base_build === true
+    stage = 'input'
+    raceKm = typeof input.race_distance_km === 'number' ? input.race_distance_km : null
 
     const guardError = validate(input)
     if (guardError) {
+      // GENERATE-500-NO-TRACE-01 — a refused input is "tried and failed", so it is recorded
+      // under the same kind as the engine's §55 refusals.
+      await recordOpsEvent('plan_input_refused', { field: 'days_available', race_distance_km: raceKm }, user.id)
       return NextResponse.json({ error: guardError }, { status: 422 })
     }
 
@@ -176,7 +193,9 @@ export async function POST(req: NextRequest) {
     // ⚠️ `displayUnits` IS PASSED IN, NEVER LOOKED UP (ADR-015). The engine does
     // not read a user preference; the §118 offer copy needs the unit, and a
     // distance string assembled without it is the defect ADR-015 exists to prevent.
+    stage = 'engine'
     const outcome: EngineOutcome = runEngine({ input, tier, acceptBaseBuild, displayUnits })
+    stage = 'respond'
 
     if (outcome.kind === 'refusal') {
       // REFUSAL-TELEMETRY-01 — recorded BEFORE the branch-specific response, at ONE
@@ -600,6 +619,14 @@ export async function POST(req: NextRequest) {
 
   } catch (e) {
     console.error('generate-plan error:', e)
+    // `recordOpsEvent` never throws, so this cannot turn a 500 into an unhandled rejection.
+    await recordOpsEvent('plan_generate_failed', {
+      stage,
+      error_name: e instanceof Error ? e.name.slice(0, 60) : typeof e,
+      message: (e instanceof Error ? e.message : String(e)).split('\n')[0].slice(0, 200),
+      tier: tierSeen,
+      race_distance_km: raceKm,
+    }, userId)
     return NextResponse.json({ error: 'Unexpected error' }, { status: 500 })
   }
 }

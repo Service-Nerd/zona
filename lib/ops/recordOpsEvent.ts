@@ -59,6 +59,13 @@ export type OpsEventKind =
   // Behavioural only, no PII: the volume, distance and day-count the runner
   // typed, plus which rule fired. Never a name, never free text.
   | 'plan_refused_by_design'
+  // GENERATE-500-NO-TRACE-01 (2026-10-16) — the two generation outcomes that used to
+  // leave NOTHING to query, so a Make-A-Wish runner whose generation failed could not
+  // be told from one who never tried. `_failed` is the route's outer catch (a genuine
+  // crash, answered 500); `_input_refused` is a §55 InputFieldError (answered 422).
+  // No PII: the stage, the error's name and first line, the field name, the distance.
+  | 'plan_generate_failed'
+  | 'plan_input_refused'
 
   | 'plan_save_failed'          // savePlanForUser threw on a server reshape/write path
   // PLAN-SAVE-SILENT-FAIL-01 (2026-10-15) — the runner tapped "Use this plan" on a

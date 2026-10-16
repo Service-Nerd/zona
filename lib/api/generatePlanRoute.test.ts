@@ -44,9 +44,10 @@
  *     credentials does not run in CI, which is the same as not existing.
  *   · **Not the platform.** `waitUntil` has no request context here, so it throws and the
  *     route's guard catches it — which is the degraded path, exercised, not the Vercel one.
- *   · **The 500 branch is unexercised.** A genuine engine fault needs an input that makes
- *     `generateRulePlan` throw something `isDesignedRefusal` rejects, and I have none that
- *     is not itself a fiction. Stated rather than faked.
+ *   · **The 500 branch is reached through the I/O, not the engine.** A genuine engine fault
+ *     needs an input that makes `generateRulePlan` throw something `isDesignedRefusal`
+ *     rejects, and I have none that is not a fiction. So arm H1 makes a TABLE READ throw
+ *     (`S.crashTable`), which reaches the same outer catch from the `tier` stage.
  *   · **Not the rate limiter.** The fake's `rpc` returns `true`; `checkAiRateLimit` fails
  *     OPEN, so a broken double would admit requests for the wrong reason. The 429 path is
  *     `lib/ai/guardAiRequest.test.ts`'s, deliberately.
@@ -75,6 +76,9 @@ const S = vi.hoisted(() => ({
   /** Every plan `enrich()` was handed, so §57 can be asserted on the real argument. */
   enrichSaw: [] as Plan[],
   freeIntroSaw: [] as Plan[],
+  /** GENERATE-500-NO-TRACE-01 — a table whose reads THROW, to drive the route into its
+   *  real outer catch. A fault in the I/O, not a fiction about the engine. */
+  crashTable: null as string | null,
 }))
 
 /**
@@ -87,6 +91,7 @@ const S = vi.hoisted(() => ({
  * callers that never narrow to one row.
  */
 function fakeTable(name: string) {
+  if (S.crashTable === name) throw new Error(`connection reset reading ${name}\nsecond line never stored`)
   const rows = () => (S.store[name] ??= [])
   const filters: [string, unknown][] = []
   let mode: 'select' | 'insert' | 'update' = 'select'
@@ -198,6 +203,7 @@ beforeEach(() => {
   S.store.plans = []
   S.store.ops_events = []
   S.user = { id: UID }
+  S.crashTable = null
   S.freeIntro = null
   S.gate = null
   S.enrichSaw = []
@@ -311,6 +317,8 @@ describe('C — the gate ORDER, which is load-bearing and was unasserted', () =>
     expect(await res.json()).toEqual({ error: 'At least 2 training days per week are required.' })
     // The paywall's own evidence: it must not have recorded a block.
     expect(events()).not.toContain('plan_distance_gate_blocked')
+    // GENERATE-500-NO-TRACE-01 — and the refusal itself is now on the record.
+    expect(eventDetail('plan_input_refused')).toEqual({ field: 'days_available', race_distance_km: 42.2 })
   })
 
   it('C5 — the same marathon with enough days IS the 403, with its ops row', async () => {
@@ -378,6 +386,38 @@ describe('D — a designed refusal crosses the seam and is recorded', () => {
 })
 
 // ═══ E — the free path, and the defect parity could not see ═════════════════════
+// ═══ H — GENERATE-500-NO-TRACE-01: a failure leaves a record ═══════════════════════
+describe('H — a failed or refused generation is on the record, so it cannot look like "never tried"', () => {
+  it('🔴 H1 — a crash is still 500 to the runner, and now writes plan_generate_failed with its stage', async () => {
+    S.crashTable = 'subscriptions'   // getUserTier's first read
+    const res = await post(body())
+    expect(res.status).toBe(500)
+    expect(await res.json()).toEqual({ error: 'Unexpected error' })
+    S.crashTable = null
+    const d = eventDetail('plan_generate_failed')
+    expect(d, 'a crash left no trace again').toBeDefined()
+    expect(d).toMatchObject({ stage: 'tier', error_name: 'Error', message: 'connection reset reading subscriptions', tier: null })
+    // First line only: a stack or a multi-line provider error must not land in the ledger.
+    expect(String(d!.message)).not.toContain('second line')
+    // Attributed to the verified caller, so the funnel can be read per runner.
+    expect((S.store.ops_events ?? []).find(r => r.kind === 'plan_generate_failed')?.user_id).toBe(UID)
+  })
+
+  it('H2 — a §55 refusal (no age) is 422 AND writes plan_input_refused naming the field, never its value', async () => {
+    const res = await post(body({ age: undefined }))
+    expect(res.status).toBe(422)
+    expect(eventDetail('plan_input_refused')).toEqual({ field: 'age', race_distance_km: 21.1 })
+  })
+
+  it('H3 — a plan that builds records neither', async () => {
+    const res = await post(body())
+    expect(res.status).toBe(200)
+    await res.text()
+    expect(events()).not.toContain('plan_generate_failed')
+    expect(events()).not.toContain('plan_input_refused')
+  })
+})
+
 describe('E — the free path: CA-01 and GEN-FIX-02 on the plan the route RETURNS', () => {
   /**
    * 🔴 FOUNDATION-META-ALIAS-01, ASSERTED ON THE RESPONSE. The route stamped

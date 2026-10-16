@@ -73,7 +73,7 @@ type GapClass = ComposePlanWithFoundationResult['gapClass']
  *  lets the engine stay free of the service-role client while still owning the
  *  thing only it can compute. */
 export interface EngineTelemetry {
-  event: 'plan_refused_by_design'
+  event: 'plan_refused_by_design' | 'plan_input_refused'
   detail: Record<string, unknown>
 }
 
@@ -112,9 +112,11 @@ export type EngineOutcome =
       kind: 'refusal'
       status: 422
       body: Record<string, unknown>
-      /** Null for `InputFieldError`, which the route has always answered WITHOUT
-       *  recording an event — `isDesignedRefusal` is false for it, and that
-       *  ordering is preserved rather than tidied. */
+      /** GENERATE-500-NO-TRACE-01 (2026-10-16): `InputFieldError` now records
+       *  `plan_input_refused`. It used to carry null — preserved through ENGINE-ENTRY-01
+       *  "rather than tidied", never ruled — so a runner refused on a §55 field left no
+       *  trace, the same blind spot as a crash. Still answered FIRST, before any
+       *  designed-refusal telemetry is computed. */
       telemetry: EngineTelemetry | null
     }
 
@@ -219,7 +221,10 @@ function mapRefusal(
   // would be a new event, not a refactor.
   if (err instanceof InputFieldError) {
     return {
-      kind: 'refusal', status: 422, telemetry: null,
+      kind: 'refusal', status: 422,
+      // The FIELD, never its value: an age or a heart rate is the runner's data, and
+      // which field refused is what tells "tried and failed" from "never tried".
+      telemetry: { event: 'plan_input_refused', detail: { field: err.field, race_distance_km: input.race_distance_km } },
       body: { error: err.message, field: err.field, value: err.value, range: err.range },
     }
   }

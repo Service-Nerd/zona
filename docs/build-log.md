@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-16 — GENERATE-500-NO-TRACE-01 · a failure that is handled, answered and leaves nothing to query
+**Shipped:** When plan generation crashes, or refuses an input, we now get a record of it. Before, both showed the runner a message and left us nothing, so "tried and failed" looked the same as "never tried".
+
+**Dev learning:** The item named one silent path, the crash. Reading the route found two more: a §55 input refusal and the "at least two days" check both answered 422 and recorded nothing. The engine's `telemetry: null` for §55 had been carried through yesterday's refactor on purpose, "preserved rather than tidied", and nobody had ever decided it should be that way. The 500 branch had never been tested because no honest input makes the engine throw, so the test makes a database read throw instead and reaches the same catch.
+
+**Product learning:** This is the answer to "why don't these Make-A-Wish runners have plans?" for the cases that reach the server. It says nothing about a runner who never taps build, which is the sharper case in the data.
+
+**The honest bit:** It will be days before there's anything to read, and the first useful reading may well be zero crashes.
+
+---
+
 ## 2026-10-16 — HUB-LINKS-STACK-01 · two links in one block, two different treatments
 **Shipped:** On the comparisons and guides hubs, "See the plans →" now sits on its own line like "Read the guides →" below it, instead of trailing the sentence and wrapping wherever it landed.
 

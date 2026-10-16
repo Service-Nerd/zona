@@ -2034,7 +2034,18 @@ fixed.
 > before then; **contact is the founder's call**. `df2cc6e6`'s race was 2026-09-26, last opened 2026-07-29,
 > no subscription — no action.
 
-### 🔵 `GENERATE-500-NO-TRACE-01` — a crashed plan generation leaves no record, so "never generated" cannot be told from "tried and failed" *(filed 2026-10-15, P2)* ⚙️ **NO BOARD** *(observability)*
+### ✅ `GENERATE-500-NO-TRACE-01` — **SHIPPED 2026-10-16**. A crashed or refused generation now leaves a record ⚙️ **NO BOARD** *(observability)*
+
+> ✅ **Shipped.** The route's outer catch writes `plan_generate_failed` `{ stage, error_name, message (first
+> line), tier, race_distance_km }` against the caller. **Widened at build, same blind spot:** a §55
+> `InputFieldError` and the route's "fewer than 2 days" check both answered 422 and recorded NOTHING
+> (the engine's `telemetry: null` was carried through ENGINE-ENTRY-01 "rather than tidied", never ruled).
+> Both now write `plan_input_refused` `{ field, race_distance_km }`, the field name only. Arms H1–H3 + C4
+> in `generatePlanRoute.test.ts`; four mutations each red. 🔻 **What it still cannot see:** a failure
+> BEFORE the request reaches the server (the wizard's own fetch failing, or a runner who never taps
+> build), which is `0e248726`'s shape. That needs a client report, not this.
+>
+> **Original filing, kept:**
 
 > 📐 **Found reviewing the founder's Supabase WARNINGS export** (94 entries, 2026-10-14 16:12 → 10-15 13:23).
 > 89 were PostgREST 406s from routes reading `plans` with `.single()` for runners who have no plan —

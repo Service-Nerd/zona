@@ -277,11 +277,23 @@ Triggered by:
 - **MARATHON-VOLUME-GATE-01 / §111 (2026-09-18): a marathon/ultra plan whose delivered peak would exceed `MAX_BASE_BUILD_RATIO` (4.0) × the runner's `current_weekly_km`** — the governed replacement for the old hardcoded `current_weekly_km < 20` gate. Thrown as `BaseVolumeError` from `generateRulePlan`, carried as `reason: 'base_volume'` with the base to reach and §44-style alternatives. **The `current_weekly_km < 20` line is gone**; the floor is now on the ramp, not stated volume.
 - HM+ distance with longest_recent_run_km < 5 (still a bare guard-rail string in the route's `validate()` — the same ungoverned-number smell as the old volume gate, flagged for a separate Coaching Board sitting, not yet governed)
 
+**Refused INPUTS are recorded too (GENERATE-500-NO-TRACE-01, 2026-10-16).** A §55 `InputFieldError`
+and the route's own "fewer than 2 training days" check both write **`plan_input_refused`**
+`{ field, race_distance_km }`: the field's NAME, never its value (an age or a heart rate is the
+runner's data). Before this, both answered 422 and left nothing, so a runner refused on an input
+looked exactly like one who never tried.
+
 ### 500 — Unexpected error
 
 ```json
 { "error": "Unexpected error" }
 ```
+
+**Recorded (GENERATE-500-NO-TRACE-01, 2026-10-16).** The outer catch writes **`plan_generate_failed`**
+`{ stage, error_name, message, tier, race_distance_km }` against the verified caller (or null before
+auth). `stage` is the last step reached: `auth` · `tier` · `guard` · `input` · `engine` · `respond`.
+`message` is the error's **first line**, capped at 200 characters. It used to `console.error` only, so a
+crashed generation was indistinguishable from no attempt at all. The runner's response is unchanged.
 
 ---
 
@@ -630,7 +642,8 @@ turns away, so a reordering would quietly count input mistakes as commercial dem
 
 ⚠️ **WHAT THAT SUITE STILL DOES NOT COVER**, so nobody reads it as more than it is: there is no
 Postgres (the double speaks PostgREST's shapes, not RLS, constraints or triggers), no platform
-`waitUntil` (the guarded degraded path is what runs under vitest), **no exercise of the 500 branch**,
+`waitUntil` (the guarded degraded path is what runs under vitest), **the 500 branch only via an I/O fault**
+(arm H1 makes a table read throw; no honest input makes the engine itself throw),
 and no rate limiting (the fake's `rpc` returns `true` and `checkAiRateLimit` fails OPEN by design —
 the 429 belongs to `lib/ai/guardAiRequest.test.ts`).
 
