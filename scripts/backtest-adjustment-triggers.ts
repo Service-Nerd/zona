@@ -231,9 +231,14 @@ async function main() {
     if (skipped.length > 15) console.log(`  … and ${skipped.length - 15} more`)
   }
 
-  console.log(`\n⚠️  WHAT THIS DOES NOT PROVE: that the ROUTE would fire these (it assembles the`)
-  console.log(`   input inline; this is a second assembler), and nothing here knows whether a`)
-  console.log(`   firing would have been CORRECT. Reachability only.\n`)
+  // ADJUST-TRIGGER-REACH-02 (2026-10-16) — this disclaimer still said "a second assembler"
+  // a day after BACKTEST-SECOND-ASSEMBLY-01 removed it (the header above was updated, the
+  // printed line was not). It now says what is actually still unproven.
+  console.log(`\n⚠️  WHAT THIS DOES NOT PROVE: the input is built by the route's own`)
+  console.log(`   \`buildAdjustmentSignals\`, but the ROUTE itself (auth, the PAID gate, the writes)`)
+  console.log(`   is not run, and nothing here knows whether a firing would have been CORRECT.`)
+  console.log(`   Reachability only. A detector needing a 4-week window cannot fire on a`)
+  console.log(`   history shorter than that, so "silent" on young plans is not "dead".\n`)
 }
 
 main().catch(e => { console.error(e); process.exit(1) })

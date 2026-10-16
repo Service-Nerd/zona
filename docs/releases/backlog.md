@@ -3666,6 +3666,12 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 
 ### 🟡 `RESHAPE-FIRST-FIRINGS-01` — read the first adjustments the woken engine produces *(filed 2026-10-08, P1)* ⚙️ **NO BOARD**
 
+> 📐 **READ 2026-10-16.** One firing since the engine woke (2026-10-08): a `shadow_load` on 2026-10-11,
+> auto-applied (*"You've been running 18% above the prescribed load…"*). **`reshape_invalid` = 0**, so no
+> runner holds a plan the constitution rejects. One `plan_save_failed` in the same window (the adjust-plan
+> RLS incident, already fixed). Too few firings to judge detection quality; the reason is plan age, see
+> `ADJUST-TRIGGER-REACH-02`. Re-read alongside it in January.
+
 > The engine has been silent for 104 days and is now live. **Something will fire.** Each of
 > the first firings gets read by a human before anything is announced: was the detection
 > right, and was the sentence we wrote defensible?
@@ -3836,6 +3842,17 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > and `ef_decline` a 4-week window — **by construction they cannot fire on a 3-week history.**
 > The only long history is the demo account (25 weeks, 0 fires), which is worth one probe of
 > its own. 🔻 **Open: re-run when real runners have 4+ weeks**, and probe the demo account.
+>
+> 📐 **RE-RUN 2026-10-16: 39 week-checks across 8 runners, 3 fires: `zone_drift` ×2, `shadow_load` ×1.**
+> **2 of the 8 are now proven reachable** (shadow_load joins zone_drift); 6 silent. **The denominator is
+> still the whole story:** **28 of 36** accounts have not reached week 1 (most Make-A-Wish plans start in
+> December), and of the 8 that have, **7 are on 1–3 weeks**, too short for the two 4-week detectors by
+> construction. **The demo account (25 weeks, 0 fires) is CALM, not unseen** — measured: 0 Heavy/Wrecked
+> fatigue tags (fatigue_accumulation cannot fire), EF's worst trend −3.1% (ef_decline needs ~−8%), 1 run
+> >20% over the ceiling, no health samples (readiness cannot fire). Live, the engine fired **once** since
+> 2026-10-08 (a `shadow_load`, auto-applied) and `reshape_invalid` is **0**.
+> 🔻 **Next re-run: early January 2027**, when the December-start cohort has 4+ weeks. Until then
+> "silent" means "too young", and nothing here argues for touching a detector.
 >
 > **Re-run any time** — one command, no new code:
 >
