@@ -1,3 +1,4 @@
+import { readPlanJson } from '@/lib/plan'
 import type { StravaActivity } from '@/types/plan'
 
 const CLIENT_ID     = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID!
@@ -164,10 +165,12 @@ export function bucketHRSamples(hrData: number[], zones: HRZones): HRStreamSumma
 export async function getUserHRZones(supabase: any, userId: string): Promise<HRZones> {
   const [settingsRes, planRes] = await Promise.all([
     supabase.from('user_settings').select('resting_hr, max_hr').eq('id', userId).single(),
-    supabase.from('plans').select('plan_json').eq('user_id', userId).single(),
+    readPlanJson(supabase, userId),
   ])
   const restingHR = settingsRes.data?.resting_hr ?? null
-  const maxHR     = settingsRes.data?.max_hr     ?? planRes.data?.plan_json?.meta?.max_hr ?? null
+  // PLANS-SINGLE-NOT-MAYBE-01 — optional here (max HR fallback); a failure is now logged.
+  if (planRes.error) console.error('[strava] plan read failed:', planRes.error)
+  const maxHR     = settingsRes.data?.max_hr     ?? planRes.plan?.meta?.max_hr ?? null
   if (restingHR && maxHR) {
     return {
       zone2Ceiling: Math.round(restingHR + 0.70 * (maxHR - restingHR)),
@@ -175,7 +178,7 @@ export async function getUserHRZones(supabase: any, userId: string): Promise<HRZ
     }
   }
   return {
-    zone2Ceiling: planRes.data?.plan_json?.meta?.zone2_ceiling ?? null,
+    zone2Ceiling: planRes.plan?.meta?.zone2_ceiling ?? null,
     maxHR,
   }
 }

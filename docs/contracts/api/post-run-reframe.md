@@ -192,3 +192,10 @@ Guarded by `lib/coaching/prompts/exemplarHygiene.test.ts`: no exemplar may conta
 a unit, every call site must supply `units`, and the call-site population is **derived by walking
 `lib/`, `app/` and `components/`** rather than hand-listed — the grep that missed `freeIntro` was
 scoped to one directory.
+
+
+## Plan read — PLANS-SINGLE-NOT-MAYBE-01 (2026-10-16)
+
+The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
+`.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
+of 94 Supabase warnings in a day. **A database error now answers `500 { error: 'Could not load your plan' }`.** It used to be indistinguishable from "no plan" and answered as if the runner had none.

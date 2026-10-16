@@ -10,7 +10,7 @@ import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { achievementLine } from '@/lib/coaching/goalSequencing'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
-import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate } from '@/lib/plan'
+import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate, readPlanJson } from '@/lib/plan'
 import { resolveEffectiveSessions, slotForOriginalDay, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
 
   // Build context: plan + last completions + run_analysis + first_name + last weekly report + swap overrides
   const [planRes, settingsRes, completionsRes, analysisRes, lastWeeklyRes, overridesRes] = await Promise.all([
-    serviceSupabase.from('plans').select('plan_json').eq('user_id', userId).single(),
+    readPlanJson(serviceSupabase, userId),
     serviceSupabase.from('user_settings').select('first_name, resting_hr, max_hr').eq('id', userId).single(),
     serviceSupabase
       .from('session_completions')
@@ -127,7 +127,9 @@ export async function GET(req: NextRequest) {
       .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
   ])
 
-  const plan = planRes.data?.plan_json as Plan | null
+  // PLANS-SINGLE-NOT-MAYBE-01 — a failed READ is not "no plan": answering that would be false.
+  if (planRes.error) return NextResponse.json({ error: 'Could not load your plan' }, { status: 500 })
+  const plan = planRes.plan as Plan | null
   if (!plan || plan.weeks.length === 0) {
     return NextResponse.json({ error: 'No plan found' }, { status: 404 })
   }

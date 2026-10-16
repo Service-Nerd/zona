@@ -51,6 +51,12 @@ export async function fetchPlan(): Promise<Plan> {
   return fetchPlanFromUrl(DEFAULT_GIST_URL)
 }
 
+// PLANS-SINGLE-NOT-MAYBE-01 — the one plan READ and its error type live in `./planRead`,
+// so a caller that must not touch this barrel (generate-plan, engine boundary) can import
+// them directly. Re-exported here so every other caller is unchanged.
+export { readPlanJson, PlanReadError } from './planRead'
+import { readPlanJson, PlanReadError } from './planRead'
+
 // Fetch plan for a user: plans table → gist_url auto-migrate → plan_json auto-migrate → EMPTY_PLAN.
 // Auto-migration is fire-and-forget: existing users' plans move to Supabase on first load.
 export async function fetchPlanForUser(
@@ -58,13 +64,11 @@ export async function fetchPlanForUser(
   supabase: SupabaseClient,
   opts: { gistUrl?: string | null; legacyPlanJson?: Plan | null } = {}
 ): Promise<Plan> {
-  const { data: planRow } = await supabase
-    .from('plans')
-    .select('plan_json')
-    .eq('user_id', userId)
-    .single()
-
-  if (planRow?.plan_json) return planRow.plan_json as Plan
+  const { plan: stored, error } = await readPlanJson(supabase, userId)
+  // 🔴 A FAILED READ IS NOT "NO PLAN". Falling through here would auto-save the runner's
+  // old gist/legacy plan over the one the database could not return.
+  if (error) throw new PlanReadError(error)
+  if (stored) return stored
 
   // OPS-01: these migrate-on-read saves are fire-and-forget, but a throw must
   // not become an unhandled rejection (this module is isomorphic — imported by

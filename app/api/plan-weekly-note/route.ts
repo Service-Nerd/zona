@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
-import { findWeekByN } from '@/lib/plan'
+import { findWeekByN, readPlanJson } from '@/lib/plan'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import {
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
 
   // ── Fetch plan + settings + previous week's note ────────────────────────
   const [planRes, settingsRes, prevNoteRes] = await Promise.all([
-    serviceSupabase.from('plans').select('plan_json').eq('user_id', user.id).single(),
+    readPlanJson(serviceSupabase, user.id),
     serviceSupabase.from('user_settings').select('first_name').eq('id', user.id).single(),
     // AI-DEPTH-10 continuity — most recent prior weekly note (typically week N-1
     // but may skip when invalidation cleared the cache).
@@ -107,7 +107,9 @@ export async function POST(req: NextRequest) {
       .maybeSingle(),
   ])
 
-  const plan = planRes.data?.plan_json as Plan | null
+  // PLANS-SINGLE-NOT-MAYBE-01 — a failed READ is not "no plan": answering that would be false.
+  if (planRes.error) return NextResponse.json({ error: 'Could not load your plan' }, { status: 500 })
+  const plan = planRes.plan as Plan | null
   if (!plan) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
 
   // ADR-013: week_n is the canonical week.n key, NOT an array index. A standalone

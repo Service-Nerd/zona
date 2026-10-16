@@ -203,3 +203,10 @@ This route built a cookie client (`createClient()` from `@/lib/supabase/server`)
 called a method on it. Removed under `ADJUST-PLAN-SAVE-CLIENT-01`: unused, but the next
 edit reaches for the nearest client in scope, and on a bearer-authenticated route that is
 the one whose `auth.uid()` is NULL on native.
+
+
+## Plan read — PLANS-SINGLE-NOT-MAYBE-01 (2026-10-16)
+
+The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
+`.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
+of 94 Supabase warnings in a day. **A database error is now logged and the route carries on as it does with no plan**, because the plan is optional here. It used to be silent.

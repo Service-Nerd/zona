@@ -14,7 +14,7 @@ import { fetchWeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
 // model the engine may not call, and their failure must be silent.
 import { buildAdjustmentExplanationPrompt } from '@/lib/coaching/prompts/planAdjustment'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
-import { getCurrentWeekIndex, savePlanForUser } from '@/lib/plan'
+import { getCurrentWeekIndex, savePlanForUser, readPlanJson } from '@/lib/plan'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
@@ -117,9 +117,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Fetch plan first — weekN is needed to scope the adjustment count query.
-  const planRes = await serviceSupabase.from('plans').select('plan_json').eq('user_id', user.id).single()
+  const planRes = await readPlanJson(serviceSupabase, user.id)
 
-  const plan = planRes.data?.plan_json as Plan | null
+  // PLANS-SINGLE-NOT-MAYBE-01 — a failed READ is not "no plan": answering that would be false.
+  if (planRes.error) return NextResponse.json({ error: 'Could not load your plan' }, { status: 500 })
+  const plan = planRes.plan as Plan | null
   if (!plan || plan.weeks.length === 0) {
     return NextResponse.json({ error: 'No plan found' }, { status: 404 })
   }

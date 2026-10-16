@@ -22,6 +22,7 @@
  * flags fire, the route returns a silenced response without calling the LLM.
  */
 
+import { readPlanJson } from '@/lib/plan'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
@@ -151,7 +152,7 @@ export async function POST(req: NextRequest) {
 
   // Parallel: plan, settings, completion, analysis (if linked), tier
   const [planRes, settingsRes, completionRes, analysisRes, tierResult] = await Promise.all([
-    service.from('plans').select('plan_json').eq('user_id', userId).single(),
+    readPlanJson(service, userId),
     service.from('user_settings').select('first_name, resting_hr, max_hr').eq('id', userId).maybeSingle(),
     service
       .from('session_completions')
@@ -172,7 +173,9 @@ export async function POST(req: NextRequest) {
     detectReframeTier(service, userId),
   ])
 
-  const plan = planRes.data?.plan_json as Plan | null
+  // PLANS-SINGLE-NOT-MAYBE-01 — a failed READ is not "no plan": answering that would be false.
+  if (planRes.error) return NextResponse.json({ error: 'Could not load your plan' }, { status: 500 })
+  const plan = planRes.plan as Plan | null
   if (!plan || !plan.weeks.length) {
     return NextResponse.json({ error: 'No plan found' }, { status: 404 })
   }

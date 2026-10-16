@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readPlanJson } from '@/lib/plan'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { deriveManualVerdict, manualFeedbackText, manualMetricsFeedbackText } from '@/lib/coaching/manualSessionFeedback'
@@ -110,12 +111,10 @@ export async function POST(req: NextRequest) {
   if (hasMetrics) {
     const tier = await getUserTier(user.id)
     if (isFeatureAllowed('activity_intelligence', tier)) {
-      const { data: planRow } = await serviceSupabase
-        .from('plans')
-        .select('plan_json')
-        .eq('user_id', user.id)
-        .single()
-      const plan    = planRow?.plan_json as Plan | null
+      const { plan: planRowPlan, error: planRowError } = await readPlanJson(serviceSupabase, user.id)
+      // PLANS-SINGLE-NOT-MAYBE-01 — this read is optional here, so a failure carries on as it did; it is now logged.
+      if (planRowError) console.error('[analyse-run/manual] plan read failed:', planRowError)
+      const plan    = planRowPlan as Plan | null
       const week    = plan?.weeks.find(w => w.n === week_n)
       const dayKey  = session_day.replace(`week_${week_n}_`, '')
       const session = week?.sessions?.[dayKey as keyof NonNullable<typeof week>['sessions']] as Session | undefined

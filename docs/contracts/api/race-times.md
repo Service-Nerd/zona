@@ -184,3 +184,10 @@ they left it. **One measurement is one point.** Guarded by
 `calendarWeeksBetween` from `lib/dates.ts`, the single owner of whole-day and whole-week
 arithmetic. It was a millisecond quotient, which loses a day across a spring-forward and can read a
 plan as a week younger than it is. **Request and response shapes are unchanged.**
+
+
+## Plan read — PLANS-SINGLE-NOT-MAYBE-01 (2026-10-16)
+
+The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
+`.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
+of 94 Supabase warnings in a day. **A database error now answers `500 { error: 'Could not load your plan' }`.** It used to be indistinguishable from "no plan" and answered as if the runner had none.

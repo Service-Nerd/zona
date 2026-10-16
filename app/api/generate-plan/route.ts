@@ -1,3 +1,4 @@
+import { readPlanJson } from '@/lib/planRead'
 import { NextRequest, NextResponse } from 'next/server'
 import type { GeneratorInput, Plan } from '@/types/plan'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
@@ -535,11 +536,9 @@ export async function POST(req: NextRequest) {
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!,
           )
-          const { data: storedRow } = await svc
-            .from('plans')
-            .select('plan_json')
-            .eq('user_id', user.id)
-            .maybeSingle()
+          // PLANS-SINGLE-NOT-MAYBE-01 — through the shared read; same row shape as before.
+          const stored = await readPlanJson(svc, user.id)
+          const storedRow = stored.plan ? { plan_json: stored.plan } : null
 
           if (shouldServerPersist(storedRow, finalPlan)) {
             const { error: writeErr } = await svc

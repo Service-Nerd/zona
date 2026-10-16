@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readPlanJson } from '@/lib/plan'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
@@ -42,13 +43,11 @@ export async function POST(req: NextRequest) {
   if (!serviceSupabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // ── Fetch plan first — race_date drives idempotency ─────────────────────
-  const planRes = await serviceSupabase
-    .from('plans')
-    .select('plan_json')
-    .eq('user_id', user.id)
-    .single()
+  const planRes = await readPlanJson(serviceSupabase, user.id)
 
-  const plan = planRes.data?.plan_json as Plan | null
+  // PLANS-SINGLE-NOT-MAYBE-01 — a failed READ is not "no plan": answering that would be false.
+  if (planRes.error) return NextResponse.json({ error: 'Could not load your plan' }, { status: 500 })
+  const plan = planRes.plan as Plan | null
   if (!plan) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
 
   const { race_date, race_name, race_distance_km } = plan.meta

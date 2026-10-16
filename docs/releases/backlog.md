@@ -2118,7 +2118,25 @@ fixed.
 > `/api/ops/onboarding-event` already does for the same reason; (2) show the runner that the save did not
 > happen and let them retry — a Design Board question for the wording and placement.
 
-### 🔵 `PLANS-SINGLE-NOT-MAYBE-01` — ~17 routes read `plans` with `.single()`, which turns "no row" into an error *(filed 2026-10-15, P3)* ⚙️ **NO BOARD** *(robustness)*
+### 🔵 `ME-HISTORY-ERROR-DEADEND-01` — Me → Plan history's error says "try again" and offers nothing to tap *(filed 2026-10-16, P3)* 🧭 **DESIGN BOARD**
+
+> Found at `EMPTY-STATE-OWNER-01`. `components/dashboard/MeScreen.tsx`: *"Couldn't load plan history. Go back and
+> try again."*, 13px `--mute`, centred, **no action**. The runner is told to retry and given no control to do it.
+> Probably `EmptyState` with a Try again `action`, but a retry changes what the screen does, so the board rules
+> first. Not urgent: plan history is a read-only archive.
+
+### ✅ `PLANS-SINGLE-NOT-MAYBE-01` — **SHIPPED 2026-10-16**. One plan read, and a failed read is never "no plan" ⚙️ **NO BOARD** + 🧭 **DESIGN BOARD** *(the home-screen state, and EMPTY-STATE-OWNER-01)*
+
+> ✅ **Shipped.** `readPlanJson` (`lib/planRead.ts`, re-exported by `@/lib/plan`) is the one read of the `plans`
+> row, on `.maybeSingle()`. **Population re-measured: 24 hand-written reads, not 18** (18 on `.single()`, 6 already
+> on `.maybeSingle()`); all 24 moved, gated. 🔴 **The finding that mattered was not the noise:** no site read the
+> error, so a REAL DB failure WAS "no plan". On `fetchPlanForUser` that auto-saved an old gist/legacy plan over the
+> current one (**3 live runners exposed**, 2 gist + 1 legacy, measured 2026-10-16); it now throws `PlanReadError`.
+> On the dashboard it sent a runner who HAS a plan to the wizard; it now shows `PlanLoadFailed` (§ 8 via the new
+> shared `EmptyState`, founder decision (a)). Routes that refuse on "no plan" answer **500** on a read error (11);
+> routes where the plan is optional log and carry on (6). Filed alongside: `ME-HISTORY-ERROR-DEADEND-01`.
+>
+> **Original filing, kept:**
 
 > 89 of 94 Supabase warnings in one day were PostgREST **406** from `.from('plans').select('plan_json')
 > .eq('user_id', …).single()` on runners with no plan. **Harmless today** — every caller treats null

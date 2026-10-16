@@ -20,6 +20,7 @@ const S = vi.hoisted(() => ({
   updates: [] as { table: string; row: Record<string, unknown> }[],
   events: [] as { kind: string; detail: Record<string, unknown> }[],
   adjustment: null as Record<string, unknown> | null,
+  readError: null as string | null,
 }))
 
 vi.mock('@/lib/supabase/getUserFromRequest', () => ({ getUserFromRequest: async () => ({ id: 'u1' }) }))
@@ -28,6 +29,10 @@ vi.mock('@/lib/ops/recordOpsEvent', () => ({
   recordOpsEvent: async (kind: string, detail: Record<string, unknown>) => { S.events.push({ kind, detail }) },
 }))
 vi.mock('@/lib/plan', () => ({
+  // PLANS-SINGLE-NOT-MAYBE-01 — the routes now read through the shared owner.
+  readPlanJson: async () => S.readError
+    ? { plan: null, error: S.readError }
+    : { plan: { meta: {}, weeks: [{ n: 3, sessions: {} }] }, error: null },
   savePlanForUser: async () => {
     if (S.saveThrows) throw new Error('new row violates row-level security policy for table "plans"')
     S.saved++
@@ -56,7 +61,7 @@ vi.mock('@supabase/supabase-js', () => ({
 const SESSIONS = [{ type: 'easy', label: 'Easy run' }]
 
 beforeEach(() => {
-  S.saveThrows = false; S.saved = 0; S.updates = []; S.events = []
+  S.saveThrows = false; S.saved = 0; S.updates = []; S.events = []; S.readError = null
   S.adjustment = { id: 'a1', user_id: 'u1', status: 'pending', week_n: 3, sessions_after: SESSIONS, sessions_before: SESSIONS }
 })
 
@@ -84,6 +89,14 @@ for (const [route, status] of [['confirm-adjustment', 'confirmed'], ['revert-adj
       expect(S.events).toHaveLength(1)
       expect(S.events[0].kind).toBe('plan_save_failed')
       expect(S.events[0].detail).toMatchObject({ route, week_n: 3 })
+    })
+
+    it('PLANS-SINGLE-NOT-MAYBE-01 — a failed plan READ is 500, never "No plan found", and nothing is written', async () => {
+      S.readError = 'connection reset'
+      const res = await call(route)
+      expect(res.status).toBe(500)
+      expect(S.saved).toBe(0)
+      expect(S.updates).toEqual([])
     })
 
     it(`a successful save marks it ${status} and clears the flag, and records nothing`, async () => {

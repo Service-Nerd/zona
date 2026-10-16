@@ -6,6 +6,26 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-16 — EMPTY-STATE-OWNER-01 · two empty states, already disagreeing
+**Shipped:** The app's "nothing here" and "couldn't load" messages now come from one shared component, centred, with at most one button.
+
+**Dev learning:** Building the plan-load failure screen, the design skill pointed at the documented empty-state pattern. Looking for its implementation found two hand-written copies, mine and Me → Plan history's, already disagreeing on alignment. The board ruled the documented pattern (centred) over a general note in the skill, and the gate now fails on a third copy.
+
+**The honest bit:** Plan history's own error line tells the runner to try again and gives them nothing to tap. It's filed, not fixed, because adding a retry changes what that screen does.
+
+---
+
+## 2026-10-16 — PLANS-SINGLE-NOT-MAYBE-01 · filed as log noise, and the noise was hiding an overwrite
+**Shipped:** Every read of a runner's plan now goes through one function. A runner with no plan no longer produces a database warning, and a real database error is now treated as an error rather than as "no plan".
+
+**Dev learning:** The item was filed as warnings-log noise: 89 of 94 warnings in a day. Re-measuring found what the noise had been hiding. None of the 24 reads looked at the error, so a failed read meant "no plan", and on the main loader "no plan" meant fall back to an old copy of the plan and save it. Three live runners still carry an old copy. A database blip on their app open would have replaced their plan with it. The count was also wrong: the item said 18, the gate found 24.
+
+**Product learning:** Asked what the home screen should show when the plan won't load, the founder chose a proper "couldn't load your plan" state over keeping the wizard. A runner with a plan should never be sent to build a new one because of a network blip.
+
+**The honest bit:** The founder had to remind me twice in one day to use the design skill and shared components. Both times, looking for the component to reuse found there wasn't one, and both times the copies had already drifted apart.
+
+---
+
 ## 2026-10-16 — INLINE-ERROR-OWNER-01 · the founder asked for components, and there wasn't one
 **Shipped:** Every inline error message in the app now comes from one shared component, in a red that is readable on every background the app uses.
 

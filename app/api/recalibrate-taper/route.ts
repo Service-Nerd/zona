@@ -21,7 +21,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { getCurrentWeekIndex, savePlanForUser } from '@/lib/plan'
+import { getCurrentWeekIndex, savePlanForUser, readPlanJson } from '@/lib/plan'
 import { computeTaperRecalibration } from '@/lib/plan/taperRecalibration'
 import type { Plan } from '@/types/plan'
 
@@ -40,13 +40,11 @@ export async function POST(req: NextRequest) {
   )
 
   // Load plan
-  const planRes = await serviceSupabase
-    .from('plans')
-    .select('plan_json')
-    .eq('user_id', user.id)
-    .single()
+  const planRes = await readPlanJson(serviceSupabase, user.id)
 
-  const plan = planRes.data?.plan_json as Plan | null
+  // PLANS-SINGLE-NOT-MAYBE-01 — a failed READ is not "no plan": answering that would be false.
+  if (planRes.error) return NextResponse.json({ error: 'Could not load your plan' }, { status: 500 })
+  const plan = planRes.plan as Plan | null
   if (!plan || plan.weeks.length === 0) {
     return NextResponse.json({ skipped: true, reason: 'no_plan' })
   }

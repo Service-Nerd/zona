@@ -4,7 +4,7 @@ import { secretMatches } from '@/lib/security/secrets'
 import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
 import { getUserTier } from '@/lib/trial'
-import { getSessionForDate, isDateBeforePlan, isPlanComplete, parseLocalDate } from '@/lib/plan'
+import { getSessionForDate, isDateBeforePlan, isPlanComplete, parseLocalDate, readPlanJson } from '@/lib/plan'
 import { resolveEffectiveSessions, DAY_KEYS, type DayKey, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import { buildDailyPushTitle, buildDailyPushBody, type NextKeySession } from '@/lib/coaching/voiceLines'
 import { recordNotification } from '@/lib/notifications'
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
       if (tier === 'free') { skip('free_tier'); continue }
 
       const [planRes, overridesRes, metricOverrides] = await Promise.all([
-        supabase.from('plans').select('plan_json').eq('user_id', userId).single(),
+        readPlanJson(supabase, userId),
         supabase.from('session_overrides')
           .select('week_n, original_day, new_day')
           .eq('user_id', userId)
@@ -233,7 +233,9 @@ export async function POST(req: NextRequest) {
         loadSessionMetricOverrides(supabase, userId),
       ])
 
-      const plan = planRes.data?.plan_json as Plan | null
+      // PLANS-SINGLE-NOT-MAYBE-01 — this read is optional here, so a failure carries on as it did; it is now logged.
+      if (planRes.error) console.error('[push/send-daily] plan read failed:', planRes.error)
+      const plan = planRes.plan as Plan | null
       if (!plan || plan.weeks.length === 0) { skip('no_plan'); continue }
 
       // Canonical date-aware resolution (ADR-016 / INV-TIME-001): the real

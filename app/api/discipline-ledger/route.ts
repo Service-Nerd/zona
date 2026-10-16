@@ -1,3 +1,4 @@
+import { readPlanJson } from '@/lib/plan'
 import { NextRequest, NextResponse } from 'next/server'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
   const tier = await getUserTier(user.id)
 
   const [planRes, completionsRes, analysesRes] = await Promise.all([
-    db.from('plans').select('plan_json').eq('user_id', user.id).maybeSingle(),
+    readPlanJson(db, user.id),
     db.from('session_completions')
       .select('week_n, session_day, status, fatigue_tag')
       .eq('user_id', user.id)
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
           .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
   ])
 
-  const plan = (planRes.data?.plan_json ?? null) as Plan | null
+  const plan = (planRes.plan ?? null) as Plan | null
 
   const outcome = computeLedger({
     plan,

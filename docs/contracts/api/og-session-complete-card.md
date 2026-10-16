@@ -64,3 +64,10 @@ The `SaveImageButton` component in `DashboardClient.tsx` wraps the call. Rendere
 - **Strava-independent.** State A activates whenever `run_analysis` is populated — either pipeline.
 - **No new dependencies.** `@capacitor/share` + `@capacitor/filesystem` already installed from SHARE-01.
 - **No watermark URL.** Card carries the wordmark + voice anchor + (conditionally) brand statement; deliberately no `zonna.run` URL to keep the design product-y not advertorial.
+
+
+## Plan read — PLANS-SINGLE-NOT-MAYBE-01 (2026-10-16)
+
+The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
+`.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
+of 94 Supabase warnings in a day. It already used `.maybeSingle()`; it now goes through the shared read, with **no change in behaviour**.

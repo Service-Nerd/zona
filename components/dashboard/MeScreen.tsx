@@ -7,6 +7,7 @@
 //
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
+import { EmptyState } from '@/components/shared/EmptyState'
 import AIMark from '@/components/shared/AIMark'
 import { getDeviceToken } from '@/components/dashboard/pushDevice'
 import ActionRow from '@/components/shared/ActionRow'
@@ -43,7 +44,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import { clearWidgetState } from '@/lib/native/sharedStore'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/format'
-import { getCurrentWeekIndex } from '@/lib/plan'
+import { getCurrentWeekIndex, readPlanJson } from '@/lib/plan'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
 import { useDisciplineLedger } from '@/lib/coaching/useDisciplineLedger'
 import { useEffect, useState } from 'react'
@@ -599,18 +600,18 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { setStatus('error'); return }
-        const [{ data, error }, { data: planRow }] = await Promise.all([
+        const [{ data, error }, { plan: planRowPlan }] = await Promise.all([
           supabase
             .from('plan_archive')
             .select('id, race_name, race_date, archived_at')
             .eq('user_id', user.id)
             .order('archived_at', { ascending: false }),
-          supabase.from('plans').select('plan_json').eq('user_id', user.id).maybeSingle(),
+          readPlanJson(supabase, user.id),
         ])
         if (error) { setStatus('error'); return }
         // Prepend the live plan so the user's current/just-finished plan is visible
         // (plan_archive only holds superseded plans).
-        const cur = planRow?.plan_json as any
+        const cur = planRowPlan as any
         const currentEntry: ArchivedPlan | null =
           cur && (cur.weeks?.length ?? 0) > 0
             ? { id: 'current', race_name: cur.meta?.race_name ?? null, race_date: cur.meta?.race_date ?? null, archived_at: '', isCurrent: true }
@@ -686,14 +687,7 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
         )}
 
         {status === 'loaded' && plans.length === 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: '200px', gap: 'var(--space-2)' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 600, color: 'var(--ink)' }}>
-              No prior plans.
-            </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)' }}>
-              This is the first one.
-            </div>
-          </div>
+          <EmptyState title="No prior plans." body="This is the first one." />
         )}
 
         {status === 'loaded' && plans.map(p => {

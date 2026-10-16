@@ -1,3 +1,4 @@
+import { readPlanJson } from '@/lib/plan'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
@@ -130,7 +131,7 @@ export async function GET(req: NextRequest) {
       .gte('updated_at', windowStart.toISOString())
       .order('updated_at', { ascending: false })
       .limit(20),
-    service.from('plans').select('plan_json').eq('user_id', user.id).maybeSingle(),
+    readPlanJson(service, user.id),
   ])
 
   const completions = completionsRes.data ?? []
@@ -166,7 +167,7 @@ export async function GET(req: NextRequest) {
   // the plan JSON. Best-effort — when the plan can't resolve a slot, we
   // still pass the completion through with sessionType='unknown' so the
   // model still sees the RPE/fatigue signal.
-  const plan = (planRes.data?.plan_json ?? null) as { weeks?: any[] } | null
+  const plan = (planRes.plan ?? null) as { weeks?: any[] } | null
   const promptCompletions = withRpe.slice(0, 6).map(c => {
     const week    = plan?.weeks?.find((w: any) => w.n === c.week_n)
     const slot    = (week?.sessions as Record<string, any> | undefined)?.[c.session_day] ?? null

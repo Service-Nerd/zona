@@ -54,3 +54,10 @@ RLS would refuse the upsert (`ADJUST-PLAN-SAVE-CLIENT-01`). Enforced by
 ## Doctrine
 
 CoachingPrinciples §68. ADR-006 — this is the deterministic step only; no AI call.
+
+
+## Plan read — PLANS-SINGLE-NOT-MAYBE-01 (2026-10-16)
+
+The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
+`.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
+of 94 Supabase warnings in a day. **A database error now answers `500 { error: 'Could not load your plan' }`.** It used to be indistinguishable from "no plan" and answered as if the runner had none.

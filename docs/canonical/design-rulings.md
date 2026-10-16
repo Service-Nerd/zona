@@ -9,6 +9,24 @@ not after.
 
 
 
+## 2026-10-16 — EMPTY-STATE-OWNER-01 · SHIP WITH AMENDMENT. § 8 written once, centred
+
+**Founder, twice that day:** invoke frontend-design and use agreed standards and shared components. Building the
+plan-load failure state found **two hand-written § 8 copies already disagreeing on alignment** (Me → Plan history
+centred; the new `PlanLoadFailed` left-aligned, following the skill's general "never centred-only" note).
+
+**Ruling: SHIP WITH AMENDMENT.** `components/shared/EmptyState` implements § 8 exactly, **centred on both axes**.
+The documented pattern governs; the general note is about content screens. ✋ Silvanto: *"a single message with one
+action is a pause, not a page."* 📱 Wroblewski: the action stays full-width. **Amendment:** Me → Plan history's
+ERROR line ("Couldn't load plan history. Go back and try again.", 13px, no action) is a dead end but **out of
+scope**, filed as `ME-HISTORY-ERROR-DEADEND-01`, because adding a retry changes what that screen does.
+
+**Veto:** none. **Artifacts:** § 8 now names the component; the component; `emptyState.markup.test.ts` (render + a
+gate on hand-written § 8 copies), falsified. Decision note: `docs/decisions/empty-state-owner-2026-10-16.md`.
+
+---
+
+
 ## 2026-10-16 — INLINE-ERROR-OWNER-01 · SHIP WITH AMENDMENT. One inline error line, in the colour that passes everywhere
 
 **Founder instruction:** *"use our design standards and components where possible."* Found while building

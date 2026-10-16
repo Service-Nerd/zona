@@ -1,4 +1,5 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { readPlanJson } from '@/lib/plan'
 import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
@@ -131,11 +132,7 @@ export async function POST(req: NextRequest) {
   // priorAnalysisRes count: detects first-ever session so the prompt can frame it appropriately.
   const [activityRes, planRes, completionRes, recentActivitiesRes, settingsRes, priorAnalysisRes, recentAnalysesRes] = await Promise.all([
     activityFiltered.single(),
-    serviceSupabase
-      .from('plans')
-      .select('plan_json')
-      .eq('user_id', userId)
-      .single(),
+    readPlanJson(serviceSupabase, userId),
     // RESHAPE-FIX-WAVE2B-AUDIT: no bare-stub filter needed here — the handler
     // 422s unless a strava_activity_id or apple_health_uuid is supplied (see
     // top of POST), so this route only ever runs for a real linked activity.
@@ -179,7 +176,9 @@ export async function POST(req: NextRequest) {
   ])
 
   const activity        = activityRes.data
-  const plan            = planRes.data?.plan_json as Plan | null
+  // PLANS-SINGLE-NOT-MAYBE-01 — this read is optional here, so a failure carries on as it did; it is now logged.
+  if (planRes.error) console.error('[analyse-run] plan read failed:', planRes.error)
+  const plan            = planRes.plan as Plan | null
   // isFirstAnalysis: true when the user has no prior run_analysis rows (count = 0).
   // The prompt uses this to soften the welcome without hype.
   const isFirstAnalysis = (priorAnalysisRes.count ?? 1) === 0

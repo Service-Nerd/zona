@@ -10,6 +10,7 @@
 
 // The only import in this otherwise dependency-free module, and deliberately a
 // PURE predicate: `runnerAuthoredTitle` reads two strings and returns a string.
+import { readPlanJson } from '@/lib/plan'
 import { runnerAuthoredTitle } from '@/lib/health/activityTitle'
 
 export type ActivitySourceRef =
@@ -45,13 +46,11 @@ export async function autoMatchAndAnalyse(
 ): Promise<void> {
   if (activity.type !== 'Run' && activity.sport_type !== 'Run') return
 
-  const { data: planRow } = await supabase
-    .from('plans')
-    .select('plan_json')
-    .eq('user_id', userId)
-    .single()
+  const { plan: planRowPlan, error: planRowError } = await readPlanJson(supabase, userId)
+  // PLANS-SINGLE-NOT-MAYBE-01 — this read is optional here, so a failure carries on as it did; it is now logged.
+  if (planRowError) console.error('[lib/coaching/autoAnalyse.ts] plan read failed:', planRowError)
 
-  const plan = planRow?.plan_json
+  const plan = planRowPlan
   if (!plan?.weeks?.length) return
 
   const { findMatchCandidates, autoSelectMatch } = await import('@/lib/coaching/sessionMatch')
@@ -188,7 +187,9 @@ export async function autoMatchAndAnalyse(
     // RPE as the runner's half of the read. The body keeps the destination
     // screen's "how did it feel?" header so the tap-through is a continuation,
     // not a new question. Risk-gate reasoning lives in buildLinkPushCopy.
-    const matchedSession = week.sessions?.[bestDay] ?? null
+    // PLANS-SINGLE-NOT-MAYBE-01 — the plan is now TYPED (it was `any`), which surfaced this
+    // string index. Narrowed, not cast away: the day keys are the ones the match produced.
+    const matchedSession = week.sessions?.[bestDay as keyof NonNullable<typeof week.sessions>] ?? null
     const { title, body } = buildLinkPushCopy(matchedSession, activity.average_heartrate ?? null)
     const url = `/dashboard?screen=post-run&weekN=${week.n}&sessionDay=${bestDay}`
     void notifyUser(userId, { title, body, tag: 'run-linked', data: { url } })

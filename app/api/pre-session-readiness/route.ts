@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { getSessionForDate } from '@/lib/plan'
+import { getSessionForDate, readPlanJson } from '@/lib/plan'
 import { computeReadiness, type DailyHealthSample, type SleepStageMinutes } from '@/lib/coaching/readinessBaseline'
 import { checkAdjustmentTriggers, type AdjustmentCheckInput } from '@/lib/coaching/planAdjustment'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
@@ -48,13 +48,11 @@ export async function GET(req: NextRequest) {
   if (!supabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Resolve today's planned session
-  const { data: planRow } = await supabase
-    .from('plans')
-    .select('plan_json')
-    .eq('user_id', userId)
-    .single()
+  const { plan: planRowPlan, error: planRowError } = await readPlanJson(supabase, userId)
+  // PLANS-SINGLE-NOT-MAYBE-01 — this read is optional here, so a failure carries on as it did; it is now logged.
+  if (planRowError) console.error('[pre-session-readiness] plan read failed:', planRowError)
 
-  const plan = planRow?.plan_json as Plan | null
+  const plan = planRowPlan as Plan | null
   if (!plan?.weeks?.length) {
     return NextResponse.json({ adjustment: null, reason: 'no_plan' })
   }

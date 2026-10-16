@@ -161,3 +161,9 @@ above in prose because nothing enforces it; a real type belongs with the
 | Props match this contract, both directions | `lib/contracts/componentContracts.test.ts` |
 | Me is an index — every row a door | `components/dashboard/meIsAnIndex.test.ts` |
 | Door navigation semantics | `docs/contracts/components/me-door-navigation.md` |
+
+
+## Plan read — PLANS-SINGLE-NOT-MAYBE-01 (2026-10-16)
+
+Plan history reads the live plan through `readPlanJson` (`lib/planRead.ts`) instead of a hand-written query.
+No prop or behaviour change.

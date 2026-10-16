@@ -1,3 +1,4 @@
+import { readPlanJson } from '@/lib/plan'
 import { ImageResponse } from 'next/og'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
@@ -106,7 +107,7 @@ export async function GET(req: NextRequest) {
       .eq('week_n', weekN)
       .eq('session_day', sessionDay)
       .maybeSingle(),
-    service.from('plans').select('plan_json').eq('user_id', user.id).maybeSingle(),
+    readPlanJson(service, user.id),
     // Ledger inputs — same shape as /api/discipline-ledger uses.
     service.from('session_completions')
       .select('week_n, session_day, status, fatigue_tag')
@@ -126,7 +127,7 @@ export async function GET(req: NextRequest) {
   // their own card, so worst case is a card with no RPE/fatigue chip.
   const completion = completionRes.data ?? null
 
-  const plan      = (planRes.data?.plan_json ?? null) as Plan | null
+  const plan      = (planRes.plan ?? null) as Plan | null
   const planWeek  = plan?.weeks?.find(w => w.n === weekN) ?? null
   const planSlot  = planWeek?.sessions?.[sessionDay as keyof typeof planWeek.sessions] ?? null
   const sessionType = (planSlot?.type as string) ?? 'easy'

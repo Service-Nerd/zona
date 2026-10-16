@@ -220,7 +220,9 @@ describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
       'the route\'s own queries); `savePlanForUser` is persistence and belongs to the ' +
       'caller. Anything else is engine surface re-entering the route while the headline ' +
       'count stays at five.',
-    ).toEqual(['getCurrentWeekIndex', 'savePlanForUser'])
+      // PLANS-SINGLE-NOT-MAYBE-01 (2026-10-16): `readPlanJson` joins as the READ twin of
+      // `savePlanForUser` — persistence, the caller's, not engine surface.
+    ).toEqual(['getCurrentWeekIndex', 'readPlanJson', 'savePlanForUser'])
 
     // generate-plan has none, and that is a FACT about it rather than an
     // accident: it reaches the engine through `lib/plan/engine.ts` only.

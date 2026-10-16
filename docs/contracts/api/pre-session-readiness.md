@@ -62,3 +62,10 @@ data**. The memo is gone, not repointed.
 
 `plans`, `health_daily_samples` and `plan_adjustments` are policy-covered for the operations
 here; `rlsCoverage.test.ts` enforces that on every build.
+
+
+## Plan read — PLANS-SINGLE-NOT-MAYBE-01 (2026-10-16)
+
+The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
+`.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
+of 94 Supabase warnings in a day. **A database error is now logged and the route carries on as it does with no plan**, because the plan is optional here. It used to be silent.

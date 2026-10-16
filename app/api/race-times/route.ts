@@ -9,6 +9,7 @@
 // Distances: 5K, 10K, HM, Marathon
 // Auth: Supabase session required. Feature gate: race_time_estimates (PAID_ONLY_ONGOING).
 
+import { readPlanJson } from '@/lib/plan'
 import { calendarWeeksBetween } from '@/lib/dates'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
@@ -255,13 +256,11 @@ export async function GET(req: NextRequest) {
   if (!serviceSupabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Load plan
-  const { data: planRow } = await serviceSupabase
-    .from('plans')
-    .select('plan_json')
-    .eq('user_id', user.id)
-    .single()
+  const { plan: planRowPlan, error: planRowError } = await readPlanJson(serviceSupabase, user.id)
+  // PLANS-SINGLE-NOT-MAYBE-01 — a failed READ is not "no plan": answering that would be false.
+  if (planRowError) return NextResponse.json({ error: 'Could not load your plan' }, { status: 500 })
 
-  const plan = planRow?.plan_json as Plan | null
+  const plan = planRowPlan as Plan | null
   if (!plan) return NextResponse.json({ error: 'No plan found' }, { status: 404 })
 
   const meta = plan.meta

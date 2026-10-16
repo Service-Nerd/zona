@@ -1,6 +1,7 @@
 'use client'
 
 import { InlineError } from '@/components/shared/InlineError'
+import { EmptyState } from '@/components/shared/EmptyState'
 import { calendarDaysBetween } from '@/lib/dates'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
@@ -34,7 +35,7 @@ import { trackEvent } from '@/lib/analytics'
 import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import ExternalLink from '@/components/shared/ExternalLink'
 import { authedFetch } from '@/lib/supabase/authedFetch'
-import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate } from '@/lib/plan'
+import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, PlanReadError, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate, readPlanJson } from '@/lib/plan'
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
 import { easyPaceAsCeiling, splitPaceQualifier } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
@@ -244,6 +245,9 @@ export default function DashboardClient() {
   // Capacitor's external-navigation handler, which on iOS opens Safari.
   const router = useRouter()
   const [plan, setPlan] = useState<Plan | null>(null)
+  // PLANS-SINGLE-NOT-MAYBE-01 — the plan READ failed (a database error, not "no plan").
+  // Shows PlanLoadFailed instead of sending a runner who HAS a plan to the wizard.
+  const [planLoadFailed, setPlanLoadFailed] = useState(false)
 
   // ── P-02 — MODIFY-PLAN SHEET ORCHESTRATION ──────────────────────────────
   //
@@ -1405,10 +1409,25 @@ export default function DashboardClient() {
         const data = settingsRes.data
 
         // Load plan — plans table first, auto-migrate from gist_url / plan_json on first load
-        const loadedPlan = await fetchPlanForUser(user.id, supabase, {
-          gistUrl: data?.gist_url,
-          legacyPlanJson: data?.plan_json as Plan | null,
-        })
+        let loadedPlan: Plan
+        try {
+          loadedPlan = await fetchPlanForUser(user.id, supabase, {
+            gistUrl: data?.gist_url,
+            legacyPlanJson: data?.plan_json as Plan | null,
+          })
+        } catch (err) {
+          // PLANS-SINGLE-NOT-MAYBE-01 — a failed READ used to resolve to EMPTY_PLAN, so a
+          // runner with a plan landed in the wizard (and the loader could save an old
+          // gist/legacy plan over theirs). Now it is its own state. Release the splash so
+          // the state can be seen; everything below needs a plan, so stop here.
+          if (err instanceof PlanReadError) {
+            console.error('[dashboard] plan read failed:', err.message)
+            setPlanLoadFailed(true)
+            setAppReady(true)
+            return
+          }
+          throw err
+        }
         if (loadedPlan.weeks.length === 0) {
           setPlan(EMPTY_PLAN)
           setScreen('generate')
@@ -2085,12 +2104,7 @@ export default function DashboardClient() {
       // kind of silent loss this codebase keeps paying for, so it is cheap
       // insurance. Read from the DB, not component state — the closure that
       // fires this captured an earlier render and its `plan` is stale.
-      const { data: currentRow } = await supabase
-        .from('plans')
-        .select('plan_json')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      const current = currentRow?.plan_json as Plan | undefined
+      const current = (await readPlanJson(supabase, user.id)).plan ?? undefined
       const identity = (p?: Plan) =>
         `${p?.meta?.race_name ?? ''}|${p?.meta?.race_date ?? ''}|${p?.meta?.plan_start ?? ''}`
       if (!current || identity(current) !== identity(enrichedPlan)) {
@@ -2584,6 +2598,9 @@ export default function DashboardClient() {
   // (ONBOARDING-FIX Problem A), which is recorded there as the reason the flag never
   // flipped for anyone. **An unreachable branch reads exactly like a live one**, which
   // is `SMOKE-PLUMBING-01` and `QUIT-TAB-DEAD-01` for the third time.
+
+  // PLANS-SINGLE-NOT-MAYBE-01 — the plan exists but could not be read.
+  if (planLoadFailed) return <PlanLoadFailed onRetry={() => window.location.reload()} />
 
   // Plan not loaded yet (shouldn't normally reach here)
   if (!plan) return null
@@ -7511,8 +7528,22 @@ function PostRunScreen({
   )
 }
 
-
-
-
-
-
+/**
+ * PLANS-SINGLE-NOT-MAYBE-01 (2026-10-16) — the plan could not be READ (a database error).
+ * ui-patterns.md § 8 Empty State through the shared `EmptyState` (EMPTY-STATE-OWNER-01),
+ * with its one available action.
+ *
+ * "Your plan is safe" is TRUE, and only since this item: the loader used to auto-save an old
+ * gist/legacy plan over the one it could not read. Retry reloads, which re-runs the whole
+ * load rather than a partial one.
+ */
+export function PlanLoadFailed({ onRetry }: { onRetry: () => void }) {
+  return (
+    <EmptyState
+      fill
+      title={<>Couldn&rsquo;t load your plan.</>}
+      body="Your plan is safe. Check your connection and try again."
+      action={<Button variant="primary" fullWidth onClick={onRetry}>Try again</Button>}
+    />
+  )
+}

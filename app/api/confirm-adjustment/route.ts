@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { savePlanForUser } from '@/lib/plan'
+import { savePlanForUser, readPlanJson } from '@/lib/plan'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 
@@ -52,13 +52,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Adjustment is not pending' }, { status: 409 })
   }
 
-  const { data: planRow } = await serviceSupabase
-    .from('plans')
-    .select('plan_json')
-    .eq('user_id', user.id)
-    .single()
+  const { plan: planRowPlan, error: planRowError } = await readPlanJson(serviceSupabase, user.id)
+  // PLANS-SINGLE-NOT-MAYBE-01 — a failed READ is not "no plan": answering that would be false.
+  if (planRowError) return NextResponse.json({ error: 'Could not load your plan' }, { status: 500 })
 
-  const plan = planRow?.plan_json as Plan | null
+  const plan = planRowPlan as Plan | null
   if (!plan) return NextResponse.json({ error: 'No plan found' }, { status: 404 })
 
   const weekN           = adjustment.week_n

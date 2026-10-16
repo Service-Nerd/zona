@@ -1220,6 +1220,14 @@ docking.
 - Body: Inter 400, `0.875rem`, `--mute`
 - No button unless there's a specific action available
 
+**Implementation: `components/shared/EmptyState.tsx`** *(Design Board 2026-10-16, `EMPTY-STATE-OWNER-01`)* —
+`title`, optional `body`, optional single `action` (an existing `Button`, full-width), `fill` for a whole-screen
+state. **Centred on both axes**, text included: two hand-written copies had already split on alignment, and a
+single message with one action reads as a pause, not a page (Silvanto). The general "never centred-only layouts"
+rule is about content screens and does not apply to this one-message state. Callers: Me → Plan history (no prior
+plans), the dashboard's plan-load failure (`PlanLoadFailed`). **Check:** `components/shared/emptyState.markup.test.ts`
+renders it, and fails on any hand-written § 8 heading + body outside it.
+
 ---
 
 ### 9. CoachNoteBlock

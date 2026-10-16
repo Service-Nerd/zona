@@ -255,6 +255,14 @@
     "height": 47,
     "width": "full"
   },
+  "app/dashboard/DashboardClient.tsx#Button21": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
   "app/dashboard/GeneratePlanScreen.tsx#Button1": {
     "floor": 44,
     "padY": null,
