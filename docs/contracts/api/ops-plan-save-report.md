@@ -1,7 +1,7 @@
 # Contract — POST /api/ops/plan-save-report
 
 **Item:** `PLAN-SAVE-SILENT-FAIL-01` (2026-10-15) · **Route:** `app/api/ops/plan-save-report/route.ts`
-· **Caller:** `lib/ops/reportPlanSaveFailure.ts`, from `GeneratePlanScreen.handleUsePlan`'s catch.
+· **Caller:** `lib/ops/reportPlanSaveFailure.ts`, from `GeneratePlanScreen.handleUsePlan`'s catch (`surface: 'wizard'`) and, since `PLAN-CHANGE-FAIL-VISIBLE-01` (2026-10-16), `DashboardClient.acceptModify`'s (`surface: 'modify'`).
 
 ## Why it exists
 
@@ -20,6 +20,7 @@ records the failure:
 
 | Field | Type | Stored as | Bound |
 |---|---|---|---|
+| `surface` | string | `detail.surface` | `'wizard'` or `'modify'` only; anything else stored as `null` |
 | `message` | string | `detail.message` | truncated to 300 chars |
 | `errorName` | string | `detail.error_name` | truncated to 60 chars |
 | `raceDistanceKm` | number | `detail.race_distance_km` | finite, ≥ 0, capped at 1000; else `null` |
@@ -51,8 +52,7 @@ always clear which side broke.
   rejection there would replace the runner's real failure with a telemetry one.
 - The runner is shown the failure **before** this is called, so a slow report can never delay it.
 
-## Known adjacent gap
+## Known adjacent gap — CLOSED 2026-10-16
 
-The Adjust sheet's save (`DashboardClient.tsx`, `modifyCoordRef`) **does** tell the runner — *"Could
-not save that change. Try again."* — but records nothing for us. Same reporter would cover it; out
-of this item's scope, recorded so it is not rediscovered.
+The Adjust sheet's save (`DashboardClient.acceptModify`) told the runner and recorded nothing. It now
+reports through this route with `surface: 'modify'` (`PLAN-CHANGE-FAIL-VISIBLE-01`).

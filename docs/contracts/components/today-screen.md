@@ -143,3 +143,13 @@ the 422 is acknowledgeable. A SUCCESS navigates to Plan, where the preview lives
 Affects the two live base-build runners when their blocks end (~11 Jan and ~18 Jan);
 Tom's is a time goal and lands in §44's warn band, so his is the refusal path.
 
+
+## A failed confirm or revert is said — PLAN-CHANGE-FAIL-VISIBLE-01 (2026-10-16)
+
+The two cards that act on a `pendingAdjustment` (`AdjustmentBanner` for a plan change, `TdReadyHero` for a
+readiness signal) used to catch a failed `/api/confirm-adjustment` or `/api/revert-adjustment` call with
+nothing said, keeping the card on screen as if the tap had not registered. Each now holds its own
+`saveError`, cleared at the start of every attempt, and renders `PLAN_CHANGE_SAVE_FAILED`
+(*"Could not save that change. Try again."*) through `InlineError`. **No prop interface change:** the state is
+internal, and the routes now leave the adjustment `pending` on a failed save (ADJUST-STATUS-WITHOUT-SAVE-01),
+so a retry is real. Check: `components/shared/planChangeFailVisible.markup.test.ts`.

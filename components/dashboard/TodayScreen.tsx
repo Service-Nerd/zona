@@ -5,6 +5,7 @@
 //
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
+import { InlineError } from '@/components/shared/InlineError'
 import AIMark from '@/components/shared/AIMark'
 import Button from '@/components/ui/Button'
 import CoachByline from '@/components/shared/CoachByline'
@@ -13,6 +14,7 @@ import ConnectRunsBanner from '@/components/dashboard/ConnectRunsBanner'
 import ManualRunModal from '@/components/dashboard/ManualRunModal'
 import NextGoalCard from '@/components/training/NextGoalCard'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
+import { PLAN_CHANGE_SAVE_FAILED } from '@/lib/ui/planChangeCopy'
 import PostRaceReshapeCard from '@/components/training/PostRaceReshapeCard'
 import PreRunBandCard from '@/components/shared/PreRunBandCard'
 import SessionCard from '@/components/shared/SessionCard'
@@ -54,11 +56,13 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted, preferredUnits 
 }) {
   const [loading, setLoading] = useState(false)
   const [dismissed, setDismissed] = useState(false)
+  // PLAN-CHANGE-FAIL-VISIBLE-01 — said nothing on failure; now says so, cleared on retry.
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   if (dismissed) return null
 
   async function confirm() {
-    setLoading(true)
+    setLoading(true); setSaveError(null)
     try {
       const res  = await authedFetch('/api/confirm-adjustment', {
         method: 'POST',
@@ -68,11 +72,11 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted, preferredUnits 
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       onConfirmed?.(data.plan)
-    } catch { /* keep visible on error */ } finally { setLoading(false) }
+    } catch { setSaveError(PLAN_CHANGE_SAVE_FAILED) } finally { setLoading(false) }
   }
 
   async function revert() {
-    setLoading(true)
+    setLoading(true); setSaveError(null)
     try {
       const res  = await authedFetch('/api/revert-adjustment', {
         method: 'POST',
@@ -83,7 +87,7 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted, preferredUnits 
       if (!res.ok) throw new Error(data.error)
       onReverted?.(data.plan)
       setDismissed(true)
-    } catch { /* keep visible on error */ } finally { setLoading(false) }
+    } catch { setSaveError(PLAN_CHANGE_SAVE_FAILED) } finally { setLoading(false) }
   }
 
   // RESHAPE-FIX-WAVE2A — pass the structural diff to the banner so the
@@ -96,6 +100,7 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted, preferredUnits 
         onConfirm={confirm}
         onRevert={revert}
         loading={loading}
+        error={saveError}
         sessionsBefore={adjustment.sessions_before ?? undefined}
         sessionsAfter={adjustment.sessions_after ?? undefined}
         units={preferredUnits}
@@ -387,6 +392,8 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
   onReverted?:  (plan: any) => void
 }) {
   const [loading, setLoading] = useState(false)
+  // PLAN-CHANGE-FAIL-VISIBLE-01 — said nothing on failure; now says so, cleared on retry.
+  const [saveError, setSaveError] = useState<string | null>(null)
   const detail = adjustment.trigger_detail ?? {}
 
   // Compose the reason chips from the boolean signals the engine recorded.
@@ -396,7 +403,7 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
   if (detail.isShortSleep)  reasonChips.push('Short sleep')
 
   async function ease() {
-    setLoading(true)
+    setLoading(true); setSaveError(null)
     try {
       const res  = await authedFetch('/api/confirm-adjustment', {
         method: 'POST',
@@ -406,11 +413,11 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       onConfirmed?.(data.plan)
-    } catch { /* keep visible on error */ } finally { setLoading(false) }
+    } catch { setSaveError(PLAN_CHANGE_SAVE_FAILED) } finally { setLoading(false) }
   }
 
   async function runAnyway() {
-    setLoading(true)
+    setLoading(true); setSaveError(null)
     try {
       const res  = await authedFetch('/api/revert-adjustment', {
         method: 'POST',
@@ -420,7 +427,7 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       onReverted?.(data.plan)
-    } catch { /* keep visible on error */ } finally { setLoading(false) }
+    } catch { setSaveError(PLAN_CHANGE_SAVE_FAILED) } finally { setLoading(false) }
   }
 
   return (
@@ -484,6 +491,10 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
           Run it anyway →
         </Button>
       </div>
+      {/* PLAN-CHANGE-FAIL-VISIBLE-01 — same error line as PendingAdjustmentBanner. */}
+      {saveError && (
+        <InlineError style={{ marginTop: 'var(--space-3)' }}>{saveError}</InlineError>
+      )}
     </div>
   )
 }

@@ -9,6 +9,30 @@ not after.
 
 
 
+## 2026-10-16 — INLINE-ERROR-OWNER-01 · SHIP WITH AMENDMENT. One inline error line, in the colour that passes everywhere
+
+**Founder instruction:** *"use our design standards and components where possible."* Found while building
+`PLAN-CHANGE-FAIL-VISIBLE-01`: no shared error component existed, and **six** hand-written copies of the same
+line did, three added that day.
+
+**Evidence (computed contrast, source grep).** Same 14px / 1.5 / `role="alert"` in all six; split on colour.
+Plain `--danger`: 4.65 `--bg` ✅ · **4.36 `--bg-soft` ❌** · **4.46 `--warn-bg` ❌** · 5.28 `--card` ✅.
+`--danger-strong`: 5.61 · 5.27 · 5.38 · 6.38, all ✅.
+
+**Ruling: SHIP WITH AMENDMENT.** `components/shared/InlineError` owns the line (`--danger-strong`, 400,
+`align` left/center, spacing-only `style`); all six callers moved, so the wizard and redeem-code errors are
+slightly darker and now AA on every ground. ✋ **Silvanto's amendment:** `FieldReadback alert` stays a
+distinct primitive (a value slot at 600, not a message at 400) and takes `--danger-strong` too, so there is one
+error colour. 🎪 Collins: *"six copies of one sentence's styling is the system not being read."*
+
+**Veto:** none. **Artifacts:** pattern `ui-patterns.md` § *Inline error*; the component + `--danger-strong`;
+check `inlineError.markup.test.ts` (render + a gate on hand-written `role="alert"`), falsified twice.
+**Not settled:** boxed error pills, and other plain-`--danger` text (links, buttons). Decision note:
+`docs/decisions/inline-error-owner-2026-10-16.md`.
+
+---
+
+
 ## 2026-10-16 — BENCHMARK-INPUT-01 · SHIP WITH AMENDMENT. One benchmark entry, every value read back, and the ruler declined on the founder's own constraint
 
 **Brief (founder):** make it obvious what the finish-time input is, make Update Paces and the wizard

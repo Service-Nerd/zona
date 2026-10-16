@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-16 — INLINE-ERROR-OWNER-01 · the founder asked for components, and there wasn't one
+**Shipped:** Every inline error message in the app now comes from one shared component, in a red that is readable on every background the app uses.
+
+**Dev learning:** The founder asked mid-build that UI work use the design standards and existing components. Looking for the component to reuse found there wasn't one: six hand-written copies of the same error line, three of them mine from that day. They had already drifted apart on colour, and the plain error red fails the readability bar on two of the four backgrounds it sits on. Measuring first made the choice obvious.
+
+**The honest bit:** I hand-wrote three of the six on the same day the founder asked for this. The gate now fails the build on a seventh.
+
+---
+
+## 2026-10-16 — PLAN-CHANGE-FAIL-VISIBLE-01 · six buttons that failed in silence
+**Shipped:** If a plan change doesn't save, the runner is now told, on the Adjust sheet, both cards on Today, and the Reshape screen. The Adjust sheet's failure is also recorded, tagged so we can tell it from a wizard save.
+
+**Dev learning:** "Show an error on the confirm card" turned out to be six handlers on three surfaces, all with the same `catch { /* keep visible */ }`. The colour was a measurement, not a choice: the standard error red fails the readability bar on the card's amber background (4.46:1), so it uses the stronger error red the design system minted for exactly that case.
+
+**The honest bit:** My first mutation run reported nothing and I nearly read that as fine. zsh doesn't split an unquoted variable into words, so vitest got one bad file filter and ran zero tests. A check that ran nothing looks exactly like a check that passed.
+
+---
+
 ## 2026-10-16 — ADJUST-STATUS-WITHOUT-SAVE-01 · "done" written in the same breath as the save it depended on
 **Shipped:** When a runner confirms or undoes a suggested plan change, the change is now only marked done once the plan has actually saved. If the save fails, it stays pending, the card comes back, and we get a record.
 

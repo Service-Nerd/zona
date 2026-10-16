@@ -20,12 +20,16 @@ import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 // into the ledger `/api/ops/ai-spend` reads.
 
 interface Body {
+  surface?: string
   message?: string
   errorName?: string
   raceDistanceKm?: number
   enrichmentPending?: boolean
   attempt?: number
 }
+
+/** PLAN-CHANGE-FAIL-VISIBLE-01 — a client string is stored only if it is one of these. */
+const SURFACES = new Set(['wizard', 'modify'])
 
 /** A client-supplied number is trusted only as a bounded, finite value. */
 function bounded(v: unknown, max: number): number | null {
@@ -44,6 +48,7 @@ export async function POST(req: NextRequest) {
     {
       // Truncated so a stray long error string cannot bloat the row. No PII: these
       // are an error message, an error name and two plan facts, never plan content.
+      surface: typeof body.surface === 'string' && SURFACES.has(body.surface) ? body.surface : null,
       message: typeof body.message === 'string' ? body.message.slice(0, 300) : null,
       error_name: typeof body.errorName === 'string' ? body.errorName.slice(0, 60) : null,
       race_distance_km: bounded(body.raceDistanceKm, 1000),

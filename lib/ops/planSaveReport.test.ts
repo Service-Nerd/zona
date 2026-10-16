@@ -49,11 +49,11 @@ describe('PLAN-SAVE-SILENT-FAIL-01 — the client reporter', () => {
   it('posts the failure to the report route', async () => {
     const { reportPlanSaveFailure } = await import('./reportPlanSaveFailure')
     await reportPlanSaveFailure(new TypeError('Failed to fetch'),
-      { raceDistanceKm: 42.2, enrichmentPending: true, attempt: 2 })
+      { surface: 'wizard', raceDistanceKm: 42.2, enrichmentPending: true, attempt: 2 })
     expect(posts).toHaveLength(1)
     expect(posts[0].url).toBe('/api/ops/plan-save-report')
     expect(posts[0].body).toMatchObject({
-      message: 'Failed to fetch', errorName: 'TypeError',
+      message: 'Failed to fetch', errorName: 'TypeError', surface: 'wizard',
       raceDistanceKm: 42.2, enrichmentPending: true, attempt: 2,
     })
   })
@@ -113,6 +113,14 @@ describe('PLAN-SAVE-SILENT-FAIL-01 — the route records it', () => {
     expect(recorded[0].detail.attempt).toBeNull()
   })
 
+  it('PLAN-CHANGE-FAIL-VISIBLE-01 — stores which screen failed, from a fixed list only', async () => {
+    await call({ surface: 'modify', message: 'x' })
+    expect(recorded[0].detail.surface).toBe('modify')
+    recorded.length = 0
+    await call({ surface: 'anything-else', message: 'x' })
+    expect(recorded[0].detail.surface, 'a client string reached the ledger unvalidated').toBeNull()
+  })
+
   it('still records the failure from an empty body', async () => {
     const { POST } = await import('@/app/api/ops/plan-save-report/route')
     const res = await POST(new Request('http://x', { method: 'POST' }) as never)
@@ -154,6 +162,7 @@ describe('PLAN-SAVE-SILENT-FAIL-01 — the screen wiring (bounded source; no DOM
   })
 
   it('the message renders as an alert in the save bar', () => {
-    expect(src).toMatch(/saveError\s*&&\s*!isSaving[\s\S]{0,60}role="alert"/)
+    // INLINE-ERROR-OWNER-01 — the shared error line, which carries role="alert".
+    expect(src).toMatch(/saveError\s*&&\s*!isSaving[\s\S]{0,60}<InlineError\b/)
   })
 })

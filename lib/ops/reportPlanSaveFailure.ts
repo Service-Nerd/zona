@@ -13,7 +13,13 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
  * `GeneratePlanScreen`'s job, and is set BEFORE this is called so a slow or failing
  * report can never delay it.
  */
+/** Which screen's save failed. A fixed list, validated server-side. */
+export type PlanSaveSurface = 'wizard' | 'modify'
+
 export interface PlanSaveFailureContext {
+  /** PLAN-CHANGE-FAIL-VISIBLE-01 (2026-10-16) — the wizard was the only caller until the
+   *  Adjust sheet joined; without this the two would be one undifferentiated count. */
+  surface?: PlanSaveSurface
   raceDistanceKm?: number | null
   enrichmentPending?: boolean
   /** 1 for the first failed tap, 2 for the retry, and so on. */
@@ -33,6 +39,7 @@ export async function reportPlanSaveFailure(
       body: JSON.stringify({
         message,
         errorName,
+        surface: context.surface,
         raceDistanceKm: context.raceDistanceKm ?? undefined,
         enrichmentPending: context.enrichmentPending,
         attempt: context.attempt,

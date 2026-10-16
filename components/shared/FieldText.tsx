@@ -69,7 +69,7 @@ export function FieldReadback({ children, alert }: { children: ReactNode; alert?
       role={alert ? 'alert' : undefined}
       style={{
         fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
-        color: alert ? 'var(--danger)' : 'var(--ink)', lineHeight: 1.4, marginTop: 'var(--space-2)',
+        color: alert ? 'var(--danger-strong)' : 'var(--ink)', lineHeight: 1.4, marginTop: 'var(--space-2)',
       }}
     >
       {children}

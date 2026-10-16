@@ -15,6 +15,7 @@
 // lied. Two-layer doctrine: prose handles WHY (AI, with byline), diff
 // handles WHAT (rule-engine, no byline).
 
+import { InlineError } from './InlineError'
 import CoachByline from './CoachByline'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import AdjustmentDiff from './AdjustmentDiff'
@@ -43,6 +44,13 @@ type Props = {
   sessionsAfter?:  ReadonlyArray<SessionLike | null | undefined>
   /** User's preferred distance units, forwarded to the diff strip. Default 'km'. */
   units?: DistanceUnits
+  /**
+   * PLAN-CHANGE-FAIL-VISIBLE-01 (2026-10-16) — the caller's message when Confirm or
+   * Revert failed. Before this every caller caught the failure and kept the banner
+   * visible with NOTHING said, so a failed save looked like a tap that did not register.
+   * Null or absent renders nothing.
+   */
+  error?: string | null
 }
 
 export default function PendingAdjustmentBanner({
@@ -54,6 +62,7 @@ export default function PendingAdjustmentBanner({
   sessionsBefore,
   sessionsAfter,
   units = 'km',
+  error = null,
 }: Props) {
   const verticalPadding   = 14
   const horizontalPadding = 16
@@ -145,6 +154,14 @@ export default function PendingAdjustmentBanner({
           Revert
         </Button>
       </div>
+
+      {/* PLAN-CHANGE-FAIL-VISIBLE-01 — an ERROR, so the error colour (`--danger` is
+          "errors only", and "no red in training UI" carves out exactly this). The
+          STRONG variant because this banner sits on `--warn-bg`: measured --danger
+          4.46:1 (fails AA at 14px), --danger-strong 5.38:1 (DANGER-TEXT-CONTRAST-01). */}
+      {error && (
+        <InlineError style={{ marginTop: 'var(--space-3)' }}>{error}</InlineError>
+      )}
     </div>
   )
 }

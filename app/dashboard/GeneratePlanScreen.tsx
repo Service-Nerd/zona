@@ -3,6 +3,7 @@
 // One decision per screen. Slide transitions between steps.
 'use client'
 
+import { InlineError } from '@/components/shared/InlineError'
 import { ACK_FIELD, ACK_LABEL, warnKindOf, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import PlanHeroMetrics from '@/components/shared/PlanHeroMetrics'
 import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
@@ -1309,7 +1310,7 @@ export default function GeneratePlanScreen({
       // `reportPlanSaveFailure` cannot throw, so it cannot replace this failure with
       // its own. The plan stays on screen, so the button IS the retry.
       setSaveError("Your plan didn't save. Check your connection and try again.")
-      void reportPlanSaveFailure(err, {
+      void reportPlanSaveFailure(err, { surface: 'wizard',
         raceDistanceKm: planRef.current?.meta?.race_distance_km ?? null,
         enrichmentPending: planRef.current?.meta?.enrichment === 'pending',
         attempt: saveAttemptsRef.current,
@@ -1579,16 +1580,11 @@ export default function GeneratePlanScreen({
         </div>
 
         <div style={{ flexShrink: 0, background: 'var(--bg)', borderTop: '1px solid var(--line)', padding: '12px 20px calc(12px + env(safe-area-inset-bottom))' }}>
-          {/* PLAN-SAVE-SILENT-FAIL-01 — the existing in-app alert (`RedeemCodeScreen`):
-              role="alert", 14px, `--danger` (4.65:1 on `--bg`, AA). Centred to sit with
-              the save bar's other one-line note. Reuse, not a new pattern. */}
+          {/* PLAN-SAVE-SILENT-FAIL-01 — the in-app error line, centred to sit with the
+              save bar's other one-line note. Now the shared `InlineError`
+              (INLINE-ERROR-OWNER-01), so `--danger-strong`, not plain `--danger`. */}
           {saveError && !isSaving && (
-            <div role="alert" style={{
-              fontFamily: 'var(--font-ui)', fontSize: '14px', lineHeight: 1.5,
-              color: 'var(--danger)', textAlign: 'center', marginBottom: 'var(--space-2)',
-            }}>
-              {saveError}
-            </div>
+            <InlineError align="center" style={{ marginBottom: 'var(--space-2)' }}>{saveError}</InlineError>
           )}
           {hasExistingPlan && !isSaving && !saveError && (
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center', marginBottom: 'var(--space-2)' }}>

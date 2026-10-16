@@ -17,6 +17,7 @@
 // makes this cohort overtrain, so reflecting it into the app amplifies the
 // thing that hurts them.
 
+import { InlineError } from '@/components/shared/InlineError'
 import { useState } from 'react'
 import { BRAND } from '@/lib/brand'
 import { authedFetch } from '@/lib/supabase/authedFetch'
@@ -217,12 +218,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
             </p>
 
             {error && (
-              <div role="alert" style={{
-                marginTop: 'var(--space-3)', fontFamily: 'var(--font-ui)', fontSize: '14px',
-                lineHeight: 1.5, color: 'var(--danger)',
-              }}>
-                {error}
-              </div>
+              <InlineError style={{ marginTop: 'var(--space-3)' }}>{error}</InlineError>
             )}
 
             <Button variant="primary" fullWidth 

@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineError } from '@/components/shared/InlineError'
 import { calendarDaysBetween } from '@/lib/dates'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
@@ -60,6 +61,8 @@ import { Wordmark } from '@/components/ui/Wordmark'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import { planRationaleNotes } from '@/lib/plan/planRationale'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
+import { PLAN_CHANGE_SAVE_FAILED } from '@/lib/ui/planChangeCopy'
+import { reportPlanSaveFailure } from '@/lib/ops/reportPlanSaveFailure'
 import ZoneRings, { ZoneRingsSkeleton } from '@/components/shared/ZoneRings'
 import { TextField } from '@/components/shared/TextField'
 import { TextArea } from '@/components/shared/TextArea'
@@ -491,9 +494,12 @@ export default function DashboardClient() {
         setPlan(queued)
       }
       clearModify()
-    } catch {
+    } catch (err) {
       modifyCoordRef.current.saveFailed()
-      setModifyError('Could not save that change. Try again.')
+      setModifyError(PLAN_CHANGE_SAVE_FAILED)
+      // PLAN-CHANGE-FAIL-VISIBLE-01 — told the runner and recorded NOTHING. Shown
+      // first, reported second, so a slow report can never delay the message.
+      void reportPlanSaveFailure(err, { surface: 'modify', raceDistanceKm: pending.next.meta?.race_distance_km ?? null })
     } finally {
       setModifyBusy(false)
     }
@@ -2795,10 +2801,10 @@ export default function DashboardClient() {
               /* Discard. Now genuinely destructive and nothing else is. */
               onCancel={clearModify}
             />
+            {/* PLAN-CHANGE-FAIL-VISIBLE-01 — was `--warn` 13px: amber is the COACHING
+                colour, and this is an error. Now the same line as the change cards. */}
             {modifyError && (
-              <div style={{ padding: '0 20px 20px', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn)', lineHeight: 1.55 }}>
-                {modifyError}
-              </div>
+              <InlineError style={{ padding: '0 20px 20px' }}>{modifyError}</InlineError>
             )}
           </div>
         )}
@@ -4140,6 +4146,9 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   const [adjustment, setAdjustment]       = useState<any | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError]                 = useState<string | null>(null)
+  // PLAN-CHANGE-FAIL-VISIBLE-01 — kept apart from `error`, which drives the 'error'
+  // STATUS screen (analysis failed). A failed confirm keeps the adjustment on screen.
+  const [saveError, setSaveError]         = useState<string | null>(null)
 
   useEffect(() => { void analyse() }, [])
 
@@ -4162,7 +4171,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
 
   async function handleConfirm() {
     if (!adjustment) return
-    setActionLoading(true)
+    setActionLoading(true); setSaveError(null)
     try {
       const res  = await authedFetch('/api/confirm-adjustment', {
         method: 'POST',
@@ -4172,12 +4181,12 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       onReshapeApplied(data.plan)
-    } catch { /* keep visible */ } finally { setActionLoading(false) }
+    } catch { setSaveError(PLAN_CHANGE_SAVE_FAILED) } finally { setActionLoading(false) }
   }
 
   async function handleDismiss() {
     if (!adjustment) return
-    setActionLoading(true)
+    setActionLoading(true); setSaveError(null)
     try {
       const res = await authedFetch('/api/revert-adjustment', {
         method: 'POST',
@@ -4185,7 +4194,8 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
         body: JSON.stringify({ adjustment_id: adjustment.id }),
       })
       if (res.ok) onBack()
-    } catch { /* keep visible */ } finally { setActionLoading(false) }
+      else setSaveError(PLAN_CHANGE_SAVE_FAILED)
+    } catch { setSaveError(PLAN_CHANGE_SAVE_FAILED) } finally { setActionLoading(false) }
   }
 
   return (
@@ -4226,6 +4236,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
               onConfirm={adjustment.trigger_type === 'fitness_signal' ? undefined : handleConfirm}
               onRevert={handleDismiss}
               loading={actionLoading}
+              error={saveError}
               sessionsBefore={adjustment.sessions_before ?? undefined}
               sessionsAfter={adjustment.sessions_after ?? undefined}
               units={preferredUnits}

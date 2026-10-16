@@ -1289,6 +1289,13 @@ Inline banner for plan adjustments awaiting user confirmation. Appears above coa
 - Background: `--warn-bg`
 - Radius: `14px`, padding: `14px 16px`
 - Eyebrow: `CoachByline color="warn"` (replaces the pre-AI-VIS-01 "!" alert circle)
+- **Save failure (`error` prop, PLAN-CHANGE-FAIL-VISIBLE-01, 2026-10-16):** one `InlineError` under the
+  actions (§ *Inline error* below), from `PLAN_CHANGE_SAVE_FAILED` (`lib/ui/planChangeCopy.ts`).
+  An ERROR, so the error colour: `--danger` is "errors only" and *no red in training UI* carves out
+  exactly this. **Strong, because the ground is `--warn-bg`:** `--danger` measures **4.46:1** there and
+  fails AA at 14px; `--danger-strong` **5.38:1** (`DANGER-TEXT-CONTRAST-01`). Before this every caller
+  caught the failure and kept the card on screen with nothing said. The readiness card and the Adjust
+  sheet use the same line, so all four surfaces that save a plan change fail the same way.
 - Body prose: `13px 400 --coach-ink`, line-height 1.55
 - Diff strip (new, optional):
   - Separator: `1px solid rgba(61,38,0,0.12)` top border, `12px` padding-top
@@ -3695,6 +3702,27 @@ unlock. No option may be phrased as a reward, a tier, or a thing to qualify for
 (standing SLT framing guardrail; see the `RECENT_QUALITY_CHIPS` note in
 `GeneratePlanScreen.tsx`). The sub-lines describe what the runner has *been doing*,
 past tense, and nothing describes what they get for it.
+
+### Inline error (`components/shared/InlineError.tsx`) *(Design Board 2026-10-16, `INLINE-ERROR-OWNER-01`)*
+
+**The one-line error message under an action** — *"Could not save that change. Try again."* — on every
+surface. `role="alert"`, Inter 14px / 400 / line-height 1.5, **`--danger-strong`**, `align` left by
+default (`'center'` only where the action above it is full-width and centred, e.g. the wizard save
+bar). `style` takes spacing only; type and colour are the component's.
+
+🔴 **Why one owner.** Six hand-written copies existed (change card, readiness card, Adjust sheet, wizard
+save bar, redeem code, Update Paces), three added the same day, and they had split on colour. **Measured
+(computed contrast):** plain `--danger` is **4.36:1 on `--bg-soft` and 4.46:1 on `--warn-bg`**, failing
+AA at 14px; `--danger-strong` passes on all four grounds (5.61 `--bg` · 5.27 `--bg-soft` · 5.38
+`--warn-bg` · 6.38 `--card`). It is the token `DANGER-TEXT-CONTRAST-01` minted for error text.
+
+⚠️ **Not `FieldReadback alert`.** That is a field's VALUE slot showing a refusal, at the readback's weight
+(600). This is a message under the actions (400). Same colour, different job. Boxed error pills (an error
+in a `--bg-soft` pill: `RaceResultSheet`, `PostRaceReshapeCard`) are a different shape and **not** ruled
+here.
+
+**Check:** `components/shared/inlineError.markup.test.ts` renders it, and fails if any tracked `.tsx`
+outside the named owners writes its own `role="alert"`.
 
 ### TextField (`components/shared/TextField.tsx`)
 

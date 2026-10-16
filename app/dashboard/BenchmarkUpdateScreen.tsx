@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineError } from '@/components/shared/InlineError'
 import { useState } from 'react'
 import type { Plan, BenchmarkInput } from '@/types/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
@@ -197,9 +198,7 @@ export default function BenchmarkUpdateScreen({
             {/* BENCHMARK-INPUT-01 — the app's form-error alert (as the wizard's save
                 bar), not an amber coaching card: this is a refusal, not advice. */}
             {error && (
-              <div role="alert" style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', lineHeight: 1.5, color: 'var(--danger)' }}>
-                {error}
-              </div>
+              <InlineError>{error}</InlineError>
             )}
           </>
         )}
