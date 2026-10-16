@@ -2041,7 +2041,7 @@ fixed.
 > reps (high-rep sometimes, heavier sometimes); equipment-driven; a catalogue by muscle group with sets/reps as
 > variables; isolated enough for its own app; **PAID**.
 >
-> **Architecture:** `docs/architecture/ADR-024-strength-engine.md` (PROPOSED). **Evidence:**
+> **Build plan:** `docs/plans/STRENGTH-ENGINE-01.md`. **Architecture:** `docs/architecture/ADR-024-strength-engine.md` (PROPOSED). **Evidence:**
 > `docs/investigations/strength-conditioning-research-2026-10-16.md`. **Consolidates** `R21`, *Supplementary
 > session slots* and the strength row of the plan-settings sheet (three entries had described parts of one feature).
 >

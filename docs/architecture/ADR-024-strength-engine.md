@@ -235,9 +235,11 @@ names *"basic strength sessions"* and `PAID_ONLY_ONGOING` *"tailored strength se
 
 ## Phasing
 
+Diagram: `ADR-024-strength-engine-hld.svg`. Step-by-step build plan with gates: `docs/plans/STRENGTH-ENGINE-01.md`.
+
 | Phase | What | Exit |
 |---|---|---|
-| **0** | This ADR ruled by both boards; `StrengthPrinciples.md` v1; founder appoints the seat | Rulings recorded |
+| **0** | This ADR ruled by both boards ✅; seat appointed ✅; strength seat rules on the §6a split + numbers; `StrengthPrinciples.md` v1 | Rulings recorded |
 | **1** | `packages/strength`: types, a **deep** catalogue (target **80+** exercises: every pattern × equipment tier × level, unilateral and bilateral variants of each lower-body pattern, core (anti-rotation, anti-extension, lateral), upper push/pull), prescription model, packer, placement rules, `validateStrengthPlan`, contract + tests. **No UI** | A sweep over the run-plan corpus with zero violations |
 | **2** | App: wizard questions (focus, length, equipment, experience), Today sub-card under the run, strength session screen, per-set logging. Design Board for the new screen | Seen on a device |
 | **3** | Media licensed and wired | Every catalogue entry has an animation |
