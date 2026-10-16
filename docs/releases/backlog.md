@@ -2060,12 +2060,13 @@ fixed.
 > before design (Zhuo): **share of runners who start a strength plan completing ≥1 session/week over 4 weeks.**
 > ⚠️ No commercial seat priced conversion: whether strength lifts trial-to-paid is unanswered.
 >
-> ✅ **Founder, 2026-10-16 (second message):** **core AND upper body in every session**, both focuses; **general ships
+> ✅ **Founder, 2026-10-16 (second message):** **core in most sessions; the engine chooses full body or an upper/lower split from strength days per week** (corrected by the founder the same day: not upper body in every session; ADR-024 §6a, proposed for the strength seat); **general ships
 > in v1** (overrides the SLT's v2); a **deep catalogue** (target 80+) with a **unilateral emphasis** for running focus;
 > and **more than one goal: injury prevention/resilience AND reaching the goal without failing mid-plan** (and
 > performance). ⚖️ A design goal, not a promise: no surface CLAIMS prevention (Coaching Board); truthful descriptions
 > of what it does go past the board (W-03). Approved the visual
-> before build.
+> before build. **AI:** engine stays deterministic; AI drafts the catalogue for human review (~$1–3 once) and an optional
+> Haiku weekly note (<1¢/runner/month) (ADR-024 §6b).
 >
 > ✅ **Founder, 2026-10-16:** (1) **S&C seat appointed** to the Coaching Board (Blagrove-modelled, strength domain only);
 > (2) **30 / 45 / 60 minutes**; (3) **v1 running-focused only**; (4) 🔒 **admin-only at first**, through a separate

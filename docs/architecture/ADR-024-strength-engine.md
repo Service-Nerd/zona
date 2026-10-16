@@ -126,8 +126,9 @@ exercises, not shorter rests: rest is part of the dose for heavy work.
    only after strength and landing competence.
 3. **Phase-aware dose:** base 2/wk building; build/peak 1–2/wk heavy-and-low-volume; **last heavy session ~10–14 days
    before the race**; race week mobility only; **deload weeks cut sets**.
-4. **Both focuses ship in v1** (founder, 2026-10-16, overriding the SLT's "general in v2"). **Every session in both
-   includes core and upper body.** **Running-focused:** heavy lower body with a **unilateral emphasis** (founder: the
+4. **Both focuses ship in v1** (founder, 2026-10-16, overriding the SLT's "general in v2"). **Core in most
+   sessions** (a weekly dose of ≥2 exposures, delivered as a short block); **upper body is placed by the split
+   (§6a), not put in every session** (founder correction, 2026-10-16). **Running-focused:** heavy lower body with a **unilateral emphasis** (founder: the
    majority of lower-body work single-leg: split squats, single-leg RDL, step-ups, single-leg calf/soleus) +
    hip abductors + anti-rotation core + plyometrics + upper-body maintenance (rows, presses). **General:** the same
    lower-body pattern and placement rules **plus more upper-body volume**, never extra leg volume.
@@ -138,6 +139,57 @@ exercises, not shorter rests: rest is part of the dose for heavy work.
    progression. **RIR, not %1RM**; novices 8–12 reps for 2–4 weeks, then heavier.
 8. **No injury-prevention claim anywhere**, product or marketing.
 9. **Strength does not count toward run fatigue in v1.**
+
+### 6a. The split — the engine chooses it from strength days per week
+
+🔶 **PROPOSED, for the Coaching Board (strength seat) to rule at the start of Phase 1.** Founder, 2026-10-16:
+*"the engine should determine best split based on number of days selected for strength... either full body each
+session or an upper and lower split."* Evidence: `docs/investigations/strength-split-research-2026-10-16.md`.
+
+**The finding underneath it:** with weekly volume matched, full body vs split makes **no meaningful difference** to
+strength or size (Schoenfeld 2019, Ralston 2018, Ramos-Campo 2024, unverified secondary). The ACSM 2026 stand asks only that **every major
+muscle group is trained ≥2×/week**. So the split is chosen for **fit**: hitting each region twice, keeping sessions
+inside 30/45/60 min, and **keeping heavy legs where §7 allows them**. Interference with running is a **lower-body**
+problem (Huiberts 2023; Doma 24–48 h), so upper-body days are free to sit almost anywhere.
+
+| Strength days | Split | Why |
+|---|---|---|
+| **1** | Full body | The only way to touch every region. **Labelled a maintenance dose**, honestly: below the ACSM ≥2×/wk floor |
+| **2** | Full body × 2 | The only structure that hits every region twice. Both carry legs, so both need a §7 slot |
+| **3** | Full body × 2 + one **upper + core** day | Two leg exposures (what §7 can place), the third day goes anywhere. Full body × 3 is the alternative when the run week has three legal leg slots |
+| **4** | Upper / lower × 2 | Each region twice, shorter sessions; only two days need a §7 slot |
+
+**The run week can change the answer.** The engine counts the legal heavy-leg slots §7 gives it (after a quality
+run, or an easy day 48 h clear). If there are fewer than the split needs, it moves leg work out of a session and
+turns that session into **upper + core**, rather than skipping or breaking §7. **Phase-aware:** taper and race week
+drop to the maintenance dose (one session, ~1 set per exercise at kept intensity holds strength; Spiering 2021);
+masters keep 2 sessions in maintenance (older adults lose more).
+
+**Dose floors the packer must meet:** ≥4 hard sets per region per week for gains (Iversen 2021); strength plateaus
+around 2–3 sets per exercise (ACSM 2026), so a 30-minute session protects **intensity**, not set count. Supersets
+(non-competing pairs, e.g. split squat + row) are how 30 minutes fits.
+
+**Focus changes the weighting, not the structure.** Running-focused: lower days carry the unilateral work, upper is
+maintenance. General: more upper volume, never more leg volume (rule 4).
+
+⚠️ **Not tested anywhere:** no study aligns a strength split with a run week. This is inference from the
+interference and fatigue data, and must be declared as such in `StrengthPrinciples.md`.
+
+### 6b. AI — where it helps, and what it costs
+
+**The engine stays deterministic** (ADR-006): split, exercise choice, sets, reps, RIR and placement are rules, so
+they are free to run, testable, and the board can rule on them. Measured cost of our current AI (30 days to
+2026-10-16, `ops_events`): **467 calls, 28 users, $2.72 total**; plan enrichment ~3¢ (Haiku), daily note ~0.2¢.
+
+| Use | Model | Cost | When |
+|---|---|---|---|
+| **Authoring aid:** draft the 80+ catalogue entries (cues, descriptions, siblings, `avoid_with` tags) for **human + strength-seat review**; never shipped unread | Sonnet, offline | ~$1–3 once | Phase 1 |
+| **Coverage check:** a model reads the catalogue against the pattern × equipment × level grid and lists the gaps | Sonnet, offline | <$1 | Phase 1 |
+| **Weekly strength note** in the coach voice, optional, silent on failure, `AIMark` | Haiku, via `callAnthropic` | ~0.2¢ per week → **<1¢ per runner per month** | Phase 2 |
+| **Not AI:** the prescription, the split, per-set feedback, progression | — | — | — |
+
+Runtime AI goes through `lib/ai/callAnthropic.ts` like every other surface (a new `surfaces.ts` entry, logged,
+rate-limited). **The standalone app** would need its own copy of that owner; the package itself imports no AI.
 
 **Help in the other direction (v2, Coaching Board decision first):** a strength completion becomes a **load
 signal** the run adjustment engine may read: a heavy-legs day the runner logged as Wrecked is information about
@@ -195,4 +247,4 @@ names *"basic strength sessions"* and `PAID_ONLY_ONGOING` *"tailored strength se
 
 The exact numbers (Coaching Board, with the new ACSM 2026 stand checked first) · whether strength counts toward
 run fatigue (Coaching Board) · free vs paid boundary (SLT) · the session screen and Today layout (Design Board) ·
-media vendor and cost (SLT) · whether "general" is in v1 at all.
+media vendor and cost (SLT) · the split table in §6a (Coaching Board, strength seat).

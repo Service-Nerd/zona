@@ -20,7 +20,11 @@ Design Board first. Licensed animations, no embedded YouTube. Success measure: s
 4. **Admin-only at first**, via a release switch separate from the tier (admins resolve as `paid`).
 
 ## Founder, second round (2026-10-16)
-5. **Core and upper body in every session**, both focuses.
+5. ~~Core and upper body in every session~~ **Corrected by the founder:** core in most sessions; the **engine chooses
+   the split** (full body vs upper/lower) from strength days per week. Proposed table in ADR-024 §6a, for the strength
+   seat to rule at Phase 1.
+9. **AI, cost-aware:** deterministic engine; AI as an authoring aid for the catalogue (human-reviewed) and an optional
+   Haiku weekly note. ADR-024 §6b.
 6. **General ships in v1** (overrides the SLT's "v2").
 7. **A deep catalogue** (target 80+), **unilateral emphasis** for running focus.
 8. **The goals (corrected by the founder):** injury prevention/resilience **and** achieving the goal without failing
