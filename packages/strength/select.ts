@@ -55,6 +55,10 @@ export function selectExercise(pattern: Pattern, ctx: SelectionContext, exclude:
   // A main lift is where load lives (S6): when the runner owns loaded kit, a
   // loaded exercise beats a harder bodyweight one.
   if (main) {
+    // S9 Am.1 — a main slot is a compound you can load. Never empty: every pattern that fills
+    // a main slot has a main-eligible bodyweight entry (catalogue.test.ts holds that).
+    pool = pool.filter(e => !e.not_main)
+    if (pool.length === 0) return null
     const loaded = pool.filter(isLoaded)
     if (loaded.length) pool = loaded
   }

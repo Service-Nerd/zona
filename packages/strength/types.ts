@@ -98,6 +98,9 @@ export interface Exercise {
   /** A warm-up move that IS a training exercise in lighter form: left out of the warm-up
    *  when that exercise is in the session, so a session never says the same thing twice. */
   same_as?: string
+  /** Never fills a MAIN slot (S9 Am.1): an isolation, ballistic or supramaximal-eccentric move
+   *  is not where heavy load lives. Accessory slots only. */
+  not_main?: boolean
   media: { animation_id: string }
   cues: string[]
 }

@@ -46,7 +46,8 @@ zones or distances.** `runContextSig(ctx)` hashes it.
 ```
 
 `exercise_id` resolves in `CATALOGUE_BY_ID`. Notes are facts for the app to phrase; the engine writes no copy beyond
-catalogue cues (DRAFT until reviewed).
+catalogue cues (reviewed by the strength seat 2026-10-17). An exercise marked `not_main` never fills a main slot
+(`S-MAIN-ELIGIBLE`).
 
 ## Guarantees (checked by `validateStrengthPlan`, each falsified in `validate.test.ts`)
 

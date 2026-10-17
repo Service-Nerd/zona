@@ -95,6 +95,7 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
         if (role !== 'warmup' && seen.has(ex.id)) v.push({ code: 'S-DUPLICATE', week: w.n, day: where, detail: ex.id })
         seen.add(ex.id)
         if (!ex.equipment.some(o => o.every(t => kit.has(t)))) v.push({ code: 'S-EQUIPMENT', week: w.n, day: where, detail: ex.id })
+        if (role === 'main' && ex.not_main) v.push({ code: 'S-MAIN-ELIGIBLE', week: w.n, day: where, detail: ex.id })
         if (ex.avoid_with.some(t => injuries.has(t))) v.push({ code: 'S-INJURY-AVOID', week: w.n, day: where, detail: ex.id })
         if (p.bone_health_flag && (ex.impact === 'high' || ex.spinal_flexion_loaded)) v.push({ code: 'S-BONE', week: w.n, day: where, detail: ex.id })
         if (ex.impact === 'high') {

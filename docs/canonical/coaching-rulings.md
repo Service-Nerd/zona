@@ -25,6 +25,14 @@ memory.
 
 
 
+## 2026-10-17 — STRENGTH-CATALOGUE-01 · CORRECT WITH AMENDMENT
+
+The 99-entry strength catalogue is **reviewed** (strength seat leading). Measured as the engine uses it, the main hinge
+slot was a Nordic curl 25% of the time; the Nordic curl, hamstring curl and kettlebell swing are now `not_main`
+(S9 Am.1, `S-MAIN-ELIGIBLE`). 13 corrections: kit-true names, kinder-sibling shoulder tags, no effort numbers in cues.
+🔴 **Not the catalogue's, and still open:** a runner's first jump is bounding or a drop jump (`STRENGTH-PLYO-BUDGET-01`).
+Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
+
 ## 2026-10-17 — STRENGTH-RECOVERY-01 · CORRECT WITH AMENDMENT · RULED, not built
 
 Recovery signals soften strength using the run engine's readiness check as the one owner. **Subtract only, never

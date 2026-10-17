@@ -114,6 +114,15 @@ flexion. The bone flag does not remove heavy work.
 unless vertebral fracture **[M]**. **Check:** `S-EQUIPMENT`, `S-INJURY-AVOID`, `S-BONE`, `S-UNKNOWN-EXERCISE`,
 `S-DUPLICATE`.
 
+**Amendment 1 (2026-10-17, catalogue review, Blagrove).** A **main** slot is a compound movement you can load. An
+isolation (hamstring curl), a ballistic (kettlebell swing) or a supramaximal eccentric (Nordic curl) never fills
+one; each is `not_main` and stays for accessory slots. Measured before the ruling: across 210,996 main-lift
+prescriptions, the Nordic curl was **25% of all main hinges** (the heavy main lift for most bodyweight-only runners),
+the curl and the swing another 4%. *"That's an accessory, not a main lift."* A kinder sibling (S9) also means the
+**easier** variant keeps a joint tag off and the **harder** one carries it: the incline push-up no longer avoids the
+shoulder, the feet-elevated push-up does. And a name that promises kit needs that kit. **Check:** `S-MAIN-ELIGIBLE`;
+`catalogue.test.ts` (a main-eligible kit-free entry per main pattern; names match kit; no effort number in a cue).
+
 ## S10. The session clock
 
 **Principle.** A session fits 30, 45 or 60 minutes. RAMP warm-up first, `WARMUP_MINUTES` (6 / 8 / 10). Time is

@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — STRENGTH-CATALOGUE-01 · reading a catalogue tells you what it says, not what it does
+**Shipped:** The 99 strength exercises have been reviewed. Three moves that were filling the heavy main lift slot (Nordic curls, hamstring curls, kettlebell swings) are now accessory-only, and thirteen entries were corrected.
+
+**Dev learning:** Read entry by entry, the Nordic curl looked fine: right pattern, right level, right injury tags. Counted across 210,996 real prescriptions, it was a quarter of every main hinge, because for a bodyweight runner it was the highest-level option left. The defect was in how the entries combined, not in any one of them.
+
+**Product learning:** A name is a promise. "Light goblet squat" handed to someone with no weights, or "banded side steps" to someone with no band, is the app telling them it was not listening to the kit question it asked.
+
+**AI-building learning:** The catalogue was drafted with AI help, and nothing in it was wrong in isolation. The review only found the problems by running it through the engine, which is the argument for measuring AI-drafted data instead of proofreading it.
+
+**The honest bit:** The worst finding is not in the catalogue. A runner's first jump session is bounding or a drop jump, the two hardest in the list, and pogo hops are never used. The catalogue is right; the selection that climbs through it is not. That is filed, and it blocks release.
+
 ## 2026-10-17 — STRENGTH-ENTRY-01 · three doors, one screen, and the engine's own numbers
 **Shipped:** Strength is now offered where people decide: one optional question in the plan wizard, a door in "Change your plan", and one line on a rest day. Coach shows how many strength sessions you did this week and what the plan does next. Rows on Me and in the plan sheet got icons. All admin-only for now.
 

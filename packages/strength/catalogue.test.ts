@@ -34,7 +34,20 @@ describe('strength catalogue', () => {
     const bad = CATALOGUE.filter(e => e.cues.length < 1 || e.cues.length > 3 || e.cues.some(c => c.includes('—') || !/[.!?]$/.test(c) || c.length > 80))
     expect(bad.map(e => e.id)).toEqual([])
   })
-  it('🔴 is marked DRAFT until the founder and the strength seat have reviewed it', () => {
-    expect(CATALOGUE_REVIEW_STATUS).toBe('draft')
+  it('reviewed by the strength seat (2026-10-17); any edit after that goes back to the board', () => {
+    expect(CATALOGUE_REVIEW_STATUS).toBe('reviewed')
+  })
+  it('🔴 every pattern that fills a main slot keeps a main-eligible entry with no kit at all', () => {
+    for (const p of ['single_leg', 'hinge', 'upper_push', 'upper_pull'] as Pattern[]) {
+      expect(CATALOGUE.some(e => e.pattern === p && !e.not_main && e.equipment.some(o => o.every(t => t === 'bodyweight'))), p).toBe(true)
+    }
+  })
+  it('🔴 a name that promises kit needs that kit (no "banded" or "goblet" move for bodyweight only)', () => {
+    const bad = CATALOGUE.filter(e => /banded|goblet|weighted|dumbbell|kettlebell|barbell/i.test(e.name)
+      && e.equipment.some(o => o.every(t => t === 'bodyweight')))
+    expect(bad.map(e => e.id)).toEqual([])
+  })
+  it('🔴 a cue never states an effort number: the dose line owns RIR', () => {
+    expect(CATALOGUE.filter(e => e.cues.some(c => /\b(reps? short|in reserve|RIR|to failure)\b/i.test(c))).map(e => e.id)).toEqual([])
   })
 })

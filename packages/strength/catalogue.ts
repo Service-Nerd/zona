@@ -4,14 +4,15 @@
 // prescription model (prescription.ts), which is how "sometimes high reps,
 // sometimes heavy" happens without the catalogue knowing.
 //
-// ⚠️ REVIEW STATUS: DRAFT. Authored with AI assistance (ADR-024 §6b) and awaiting
-// review by the founder and the strength seat before any runner sees it. A cue is
-// runner-facing copy: brand voice, no em dashes (`catalogue.test.ts`).
+// ✅ REVIEW STATUS: REVIEWED by the strength seat, 2026-10-17 (Coaching Board, CORRECT WITH
+// AMENDMENT: `docs/decisions/strength-catalogue-review-2026-10-17.md`). Authored with AI
+// assistance (ADR-024 §6b); 13 corrections landed at the sitting. A cue is runner-facing
+// copy: brand voice, no em dashes, no effort numbers (the dose line owns RIR), no outcome claim.
 // `media.animation_id` is a placeholder until Phase 3 licenses the animations.
 
 import type { EquipmentTag, Exercise, InjuryTag, Muscle, Pattern } from './types'
 
-export const CATALOGUE_REVIEW_STATUS = 'draft' as const
+export const CATALOGUE_REVIEW_STATUS = 'reviewed' as const
 
 const BW: EquipmentTag[][] = [['bodyweight']]
 const LOAD: EquipmentTag[][] = [['dumbbells'], ['kettlebell']]
@@ -21,7 +22,7 @@ function ex(
   id: string, name: string, pattern: Pattern, muscles: Muscle[], equipment: EquipmentTag[][],
   level: 1 | 2 | 3, opts: {
     uni?: boolean; impact?: 'none' | 'low' | 'high'; avoid?: InjuryTag[]; flex?: boolean
-    measure?: 'reps' | 'seconds' | 'contacts'; regress?: string; progress?: string
+    measure?: 'reps' | 'seconds' | 'contacts'; regress?: string; progress?: string; notMain?: boolean
   }, cues: string[],
 ): Exercise {
   return {
@@ -33,6 +34,7 @@ function ex(
     measure: opts.measure ?? 'reps',
     ...(opts.regress ? { regress_to: opts.regress } : {}),
     ...(opts.progress ? { progress_to: opts.progress } : {}),
+    ...(opts.notMain ? { not_main: true } : {}),
     media: { animation_id: id },
     cues,
   }
@@ -44,15 +46,15 @@ export const CATALOGUE: readonly Exercise[] = [
   ex('leg_swings', 'Leg swings', 'warmup', ['hip_flexors', 'hamstrings'], BW, 1, { uni: true }, ['Hold something steady.', 'Swing, do not fling.']),
   ex('hip_circles', 'Standing hip circles', 'warmup', ['glutes', 'hip_flexors'], BW, 1, { uni: true }, ['Slow and wide.', 'Keep the standing knee soft.']),
   ex('glute_bridge_activation', 'Glute bridge hold', 'warmup', ['glutes'], BW, 1, { measure: 'seconds' }, ['Squeeze, then lift.', 'Ribs down, no arching.']),
-  { ...ex('band_walk_warmup', 'Banded side steps', 'warmup', ['hip_abductors'], [['bands'], ['bodyweight']], 1, {}, ['Small steps, constant tension.', 'Toes forward.']), same_as: 'banded_side_step' },
+  { ...ex('band_walk_warmup', 'Banded side steps', 'warmup', ['hip_abductors'], BAND, 1, {}, ['Small steps, constant tension.', 'Toes forward.']), same_as: 'banded_side_step' },
   ex('worlds_greatest_stretch', "World's greatest stretch", 'warmup', ['hip_flexors', 'hamstrings', 'back'], BW, 1, { uni: true }, ['Long lunge, elbow to instep.', 'Rotate up and breathe.']),
   ex('inchworm', 'Inchworm', 'warmup', ['hamstrings', 'core', 'shoulders'], BW, 1, {}, ['Walk the hands out to a plank.', 'Walk the feet in, legs as straight as is comfortable.']),
   ex('ankle_rocks', 'Knee-to-wall ankle rocks', 'warmup', ['calves', 'soleus'], BW, 1, { uni: true }, ['Heel stays down.', 'Knee tracks over the middle toe.']),
   ex('a_skip', 'A-skip', 'warmup', ['hip_flexors', 'calves'], BW, 2, { impact: 'low', avoid: ['achilles', 'plantar'] }, ['Quick, light contacts.', 'Opposite arm, opposite knee.']),
-  ex('goblet_squat_ramp', 'Ramp set: light goblet squat', 'warmup', ['quads', 'glutes'], [['dumbbells'], ['kettlebell'], ['bodyweight']], 1, {}, ['Lighter than your work sets.', 'Find the depth you will use.']),
+  ex('goblet_squat_ramp', 'Ramp set: light goblet squat', 'warmup', ['quads', 'glutes'], LOAD, 1, {}, ['Lighter than your work sets.', 'Find the depth you will use.']),
 
   // ── Squat ──
-  ex('box_squat_bw', 'Box squat (bodyweight)', 'squat', ['quads', 'glutes'], [['box'], ['bench'], ['bodyweight']], 1, { progress: 'goblet_squat' }, ['Sit back to the box, do not crash.', 'Stand up through the whole foot.']),
+  ex('box_squat_bw', 'Box squat (bodyweight)', 'squat', ['quads', 'glutes'], [['box'], ['bench'], ['bodyweight']], 1, { progress: 'goblet_squat' }, ['Sit back to a box or chair, do not crash.', 'Stand up through the whole foot.']),
   ex('tempo_squat_bw', 'Tempo squat (bodyweight)', 'squat', ['quads', 'glutes'], BW, 1, { progress: 'goblet_squat' }, ['Three seconds down.', 'Knees follow the toes.']),
   ex('banded_squat', 'Banded squat', 'squat', ['quads', 'glutes'], BAND, 1, { progress: 'goblet_squat' }, ['Band under the feet, over the shoulders.', 'Push the floor away.']),
   ex('goblet_squat', 'Goblet squat', 'squat', ['quads', 'glutes'], LOAD, 2, { regress: 'tempo_squat_bw', progress: 'front_squat' }, ['Weight at the chest, elbows down.', 'Sit between the heels.']),
@@ -66,12 +68,12 @@ export const CATALOGUE: readonly Exercise[] = [
   ex('single_leg_glute_bridge', 'Single-leg glute bridge', 'hinge', ['glutes', 'hamstrings'], BW, 2, { uni: true, regress: 'glute_bridge' }, ['Hips level.', 'Push through the heel.']),
   ex('band_good_morning', 'Banded good morning', 'hinge', ['hamstrings', 'glutes'], BAND, 1, { avoid: ['back'] }, ['Hips back, soft knees.', 'Flat back the whole way.']),
   ex('dumbbell_rdl', 'Romanian deadlift (dumbbell or kettlebell)', 'hinge', ['hamstrings', 'glutes'], LOAD, 2, { regress: 'band_good_morning', progress: 'trap_bar_deadlift' }, ['Slide the weight down the thighs.', 'Stop when the hips stop moving back.']),
-  ex('kettlebell_swing', 'Kettlebell swing', 'hinge', ['glutes', 'hamstrings'], [['kettlebell']], 2, { avoid: ['back'] }, ['Hike it back, snap the hips.', 'The arms are just ropes.']),
+  ex('kettlebell_swing', 'Kettlebell swing', 'hinge', ['glutes', 'hamstrings'], [['kettlebell']], 2, { avoid: ['back'], notMain: true }, ['Hike it back, snap the hips.', 'The arms are just ropes.']),
   ex('hip_thrust', 'Hip thrust', 'hinge', ['glutes'], [['bench', 'dumbbells'], ['bench', 'barbell'], ['bench']], 2, { regress: 'glute_bridge' }, ['Shoulders on the bench.', 'Chin tucked, ribs down at the top.']),
   ex('trap_bar_deadlift', 'Trap-bar or barbell deadlift', 'hinge', ['glutes', 'hamstrings', 'quads'], [['barbell']], 3, { regress: 'dumbbell_rdl', avoid: ['back'] }, ['Brace, then push the floor away.', 'Bar stays close.']),
   ex('barbell_rdl', 'Barbell Romanian deadlift', 'hinge', ['hamstrings', 'glutes'], [['barbell']], 3, { regress: 'dumbbell_rdl', avoid: ['back'] }, ['Soft knees, long spine.', 'Feel the hamstrings, not the back.']),
-  ex('nordic_hamstring_assisted', 'Assisted Nordic curl', 'hinge', ['hamstrings'], [['bands'], ['bodyweight']], 3, { avoid: ['hamstring', 'knee'] }, ['Lower as slowly as you can.', 'Catch yourself, push back up.']),
-  ex('hamstring_curl_machine', 'Hamstring curl', 'hinge', ['hamstrings'], [['machines'], ['cable']], 2, {}, ['Control the way back.', 'Hips stay down.']),
+  ex('nordic_hamstring_assisted', 'Assisted Nordic curl', 'hinge', ['hamstrings'], [['bands'], ['bodyweight']], 3, { avoid: ['hamstring', 'knee'], notMain: true }, ['Lower as slowly as you can.', 'Catch yourself, push back up.']),
+  ex('hamstring_curl_machine', 'Hamstring curl', 'hinge', ['hamstrings'], [['machines'], ['cable']], 2, { notMain: true }, ['Control the way back.', 'Hips stay down.']),
 
   // ── Single leg (the running-focused default) ──
   ex('step_up_bw', 'Step-up', 'single_leg', ['quads', 'glutes'], [['box'], ['bench']], 1, { uni: true, progress: 'step_up_loaded' }, ['Whole foot on the box.', 'Push through the top leg, not the bottom one.']),
@@ -80,9 +82,9 @@ export const CATALOGUE: readonly Exercise[] = [
   ex('split_squat_bw', 'Split squat', 'single_leg', ['quads', 'glutes'], BW, 1, { uni: true, progress: 'split_squat_loaded' }, ['Long stance, back heel up.', 'Drop straight down.']),
   ex('split_squat_loaded', 'Weighted split squat', 'single_leg', ['quads', 'glutes'], LOAD, 2, { uni: true, regress: 'split_squat_bw', progress: 'bulgarian_split_squat_loaded' }, ['Torso tall.', 'Front knee over the middle of the foot.']),
   ex('bulgarian_split_squat_bw', 'Rear-foot-elevated split squat', 'single_leg', ['quads', 'glutes'], [['bench'], ['box'], ['bodyweight']], 2, { uni: true, regress: 'split_squat_bw', progress: 'bulgarian_split_squat_loaded' }, ['Back foot laces down.', 'Most of the work in the front leg.']),
-  ex('bulgarian_split_squat_loaded', 'Weighted rear-foot-elevated split squat', 'single_leg', ['quads', 'glutes'], [['bench', 'dumbbells'], ['bench', 'kettlebell'], ['box', 'dumbbells']], 3, { uni: true, regress: 'bulgarian_split_squat_bw' }, ['Heavy and controlled.', 'Stop two reps short of a grind.']),
+  ex('bulgarian_split_squat_loaded', 'Weighted rear-foot-elevated split squat', 'single_leg', ['quads', 'glutes'], [['bench', 'dumbbells'], ['bench', 'kettlebell'], ['box', 'dumbbells']], 3, { uni: true, regress: 'bulgarian_split_squat_bw' }, ['Heavy and controlled.', 'Front foot flat the whole rep.']),
   ex('reverse_lunge_bw', 'Reverse lunge', 'single_leg', ['quads', 'glutes'], BW, 1, { uni: true, progress: 'reverse_lunge_loaded' }, ['Step back, drop the knee.', 'Drive up through the front heel.']),
-  ex('reverse_lunge_loaded', 'Weighted reverse lunge', 'single_leg', ['quads', 'glutes'], LOAD, 2, { uni: true, regress: 'reverse_lunge_bw' }, ['Same as bodyweight, just heavier.', 'Pause at the bottom.']),
+  ex('reverse_lunge_loaded', 'Weighted reverse lunge', 'single_leg', ['quads', 'glutes'], LOAD, 2, { uni: true, regress: 'reverse_lunge_bw' }, ['Step back, drop the back knee.', 'Pause at the bottom.']),
   ex('single_leg_rdl_bw', 'Single-leg Romanian deadlift', 'single_leg', ['hamstrings', 'glutes'], BW, 1, { uni: true, progress: 'single_leg_rdl_loaded' }, ['Hips square to the floor.', 'Reach back with the free heel.']),
   ex('single_leg_rdl_loaded', 'Weighted single-leg Romanian deadlift', 'single_leg', ['hamstrings', 'glutes'], LOAD, 2, { uni: true, regress: 'single_leg_rdl_bw', progress: 'b_stance_rdl' }, ['Weight in the opposite hand.', 'Slow down, slow up.']),
   ex('b_stance_rdl', 'Kickstand Romanian deadlift', 'single_leg', ['hamstrings', 'glutes'], [['dumbbells'], ['kettlebell'], ['barbell']], 3, { uni: true, regress: 'single_leg_rdl_loaded' }, ['Back toe for balance only.', 'Load it heavy.']),
@@ -117,9 +119,9 @@ export const CATALOGUE: readonly Exercise[] = [
   ex('drop_jump', 'Drop jump', 'plyometric', ['calves', 'quads'], [['box']], 3, { impact: 'high', measure: 'contacts', regress: 'box_jump' }, ['Step off, rebound fast.', 'Ground contact as short as you can.']),
 
   // ── Upper push ──
-  ex('incline_push_up', 'Incline push-up', 'upper_push', ['chest', 'triceps', 'shoulders'], [['bench'], ['box'], ['bodyweight']], 1, { progress: 'push_up', avoid: ['shoulder'] }, ['Hands on a bench or worktop.', 'Body in one line.']),
+  ex('incline_push_up', 'Incline push-up', 'upper_push', ['chest', 'triceps', 'shoulders'], [['bench'], ['box'], ['bodyweight']], 1, { progress: 'push_up' }, ['Hands on a bench or worktop.', 'Body in one line.']),
   ex('push_up', 'Push-up', 'upper_push', ['chest', 'triceps', 'shoulders'], BW, 2, { regress: 'incline_push_up', progress: 'feet_elevated_push_up' }, ['Elbows at about 45 degrees.', 'Chest to the floor.']),
-  ex('feet_elevated_push_up', 'Feet-elevated push-up', 'upper_push', ['chest', 'shoulders', 'triceps'], [['bench'], ['box']], 3, { regress: 'push_up' }, ['Hips do not sag.', 'Full range.']),
+  ex('feet_elevated_push_up', 'Feet-elevated push-up', 'upper_push', ['chest', 'shoulders', 'triceps'], [['bench'], ['box']], 3, { regress: 'push_up', avoid: ['shoulder'] }, ['Hips do not sag.', 'Full range.']),
   ex('band_chest_press', 'Banded chest press', 'upper_push', ['chest', 'triceps'], BAND, 1, {}, ['Band behind the back.', 'Press out, control back.']),
   ex('dumbbell_floor_press', 'Dumbbell floor press', 'upper_push', ['chest', 'triceps'], [['dumbbells']], 2, {}, ['Elbows touch the floor, then press.', 'Wrists stacked.']),
   ex('dumbbell_bench_press', 'Dumbbell bench press', 'upper_push', ['chest', 'triceps', 'shoulders'], [['dumbbells', 'bench']], 2, { avoid: ['shoulder'] }, ['Feet planted.', 'Lower to the sides of the chest.']),
@@ -132,7 +134,7 @@ export const CATALOGUE: readonly Exercise[] = [
   ex('band_row', 'Banded row', 'upper_pull', ['back', 'biceps'], BAND, 1, { progress: 'single_arm_dumbbell_row' }, ['Anchor the band at chest height.', 'Elbows back, chest tall.']),
   ex('band_pull_apart', 'Band pull-apart', 'upper_pull', ['back', 'shoulders'], BAND, 1, {}, ['Arms straight.', 'Pull to the chest, slow back.']),
   ex('single_arm_dumbbell_row', 'Single-arm dumbbell row', 'upper_pull', ['back', 'biceps'], [['dumbbells', 'bench'], ['kettlebell', 'bench'], ['dumbbells']], 2, { uni: true, regress: 'band_row' }, ['Flat back.', 'Pull the elbow to the hip.']),
-  ex('inverted_row', 'Inverted row', 'upper_pull', ['back', 'biceps'], [['barbell', 'rack'], ['pullup_bar']], 2, { regress: 'table_row', progress: 'pull_up' }, ['Heels down, body straight.', 'Chest to the bar.']),
+  ex('inverted_row', 'Inverted row', 'upper_pull', ['back', 'biceps'], [['barbell', 'rack']], 2, { regress: 'table_row', progress: 'pull_up' }, ['Heels down, body straight.', 'Chest to the bar.']),
   ex('lat_pulldown', 'Lat pulldown', 'upper_pull', ['back', 'biceps'], [['cable'], ['machines']], 2, {}, ['Pull to the top of the chest.', 'No swinging.']),
   ex('pull_up', 'Pull-up (assisted if needed)', 'upper_pull', ['back', 'biceps'], [['pullup_bar']], 3, { regress: 'inverted_row', avoid: ['shoulder'] }, ['A band under the feet counts.', 'Chin over the bar, slow down.']),
 
@@ -141,13 +143,13 @@ export const CATALOGUE: readonly Exercise[] = [
   ex('pallof_press', 'Pallof press', 'anti_rotation', ['core', 'obliques'], [['bands'], ['cable']], 2, { uni: true }, ['Press out and hold.', 'Do not let it turn you.']),
   ex('suitcase_carry', 'Suitcase carry', 'anti_rotation', ['core', 'obliques'], LOAD, 2, { uni: true, measure: 'seconds' }, ['Weight in one hand, walk tall.', 'No leaning.']),
   ex('half_kneeling_cable_chop', 'Half-kneeling chop', 'anti_rotation', ['core', 'obliques'], [['cable'], ['bands']], 3, { uni: true }, ['Hips square.', 'Move the arms, not the trunk.']),
-  ex('plank_shoulder_tap', 'Plank shoulder tap', 'anti_rotation', ['core', 'shoulders'], BW, 2, {}, ['Feet wide.', 'Tap without rocking.']),
+  ex('plank_shoulder_tap', 'Plank shoulder tap', 'anti_rotation', ['core', 'shoulders'], BW, 2, { avoid: ['shoulder'] }, ['Feet wide.', 'Tap without rocking.']),
 
   // ── Core: anti-extension ──
   ex('dead_bug', 'Dead bug', 'anti_extension', ['core'], BW, 1, { progress: 'weighted_dead_bug' }, ['Lower back pressed down.', 'Breathe out as the limbs go long.']),
   ex('front_plank', 'Front plank', 'anti_extension', ['core'], BW, 1, { measure: 'seconds' }, ['Elbows under shoulders.', 'Squeeze glutes, ribs down.']),
   ex('weighted_dead_bug', 'Weighted dead bug', 'anti_extension', ['core'], LOAD, 2, { regress: 'dead_bug' }, ['Weight held over the chest.', 'Slow and controlled.']),
-  ex('ab_rollout_knees', 'Kneeling rollout', 'anti_extension', ['core'], [['bodyweight']], 3, { avoid: ['back', 'shoulder'] }, ['Only as far as the back stays flat.', 'Pull back with the abs.']),
+  ex('kneeling_walkout', 'Kneeling walkout', 'anti_extension', ['core', 'shoulders'], BW, 3, { avoid: ['back', 'shoulder'] }, ['From kneeling, walk the hands out.', 'Only as far as the back stays flat.']),
   ex('hollow_hold', 'Hollow hold', 'anti_extension', ['core'], BW, 2, { measure: 'seconds' }, ['Lower back down.', 'Bend the knees to make it easier.']),
 
   // ── Core: lateral ──

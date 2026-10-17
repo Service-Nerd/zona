@@ -2070,7 +2070,9 @@ starters doing ≥1 strength session a week over 4 weeks; share of wizard runner
 ✅ **Items 1–5 shipped 2026-10-17** (feature registry). **Still open:** item 6 (at release), and three 👤 founder copy
 calls: (a) the wizard step's words (`STRENGTH_WIZARD`); (b) the rest-card line sits directly under rest copy that can
 say *"The rest day is non-negotiable."*, which reads as a contradiction; (c) the Coach progression lines
-(`STRENGTH_COACH`). All strings live in `lib/strength-bridge/display.ts`.
+(`STRENGTH_COACH`). All strings live in `lib/strength-bridge/display.ts`. ✅ **Founder, 2026-10-17: "Use the copy
+calls you have."** All three, and the earlier RIR phrasing, push line and setup prompts, stand as written, including
+the rest-card line under rest copy.
 
 ### `STRENGTH-START-WEEK-01` — the technique block and the jumps gate count from the RUN plan's week 1 *(filed 2026-10-17)*
 
@@ -2091,6 +2093,10 @@ slot and only fits the time budget when deload cuts the sets. S8 asks for plyome
 after the gate opens, so delivered is far below intended, and the one week that has them is the week meant to be
 lighter. Coach's new line reports it faithfully (*"Jumps join in week 8."*) and then goes quiet, which is honest
 about a plan that is wrong. **Needs:** `/zona-debug` RCA, then a sweep measure (share of post-gate weeks with plyo).
+🔴 **Worse, found at the catalogue review (2026-10-17): the FIRST jump is the hardest one.** A `some`/`regular`
+runner's first plyometric is **bounding or a drop jump**; pogo hops, low skips, squat and box jumps are never
+prescribed, because plyo level climbs from the lifting level. **Board direction (not built):** jumps start at level 1
+when the gate opens and climb from there. **Blocks release.**
 **Tags:** 🏃 COACHING BOARD (Blagrove: what gives way when time is short, plyo or accessory volume) → ⚙️ build.
 
 ### Recovery-driven adaptation — make the plan's listening visible, and extend it to strength *(filed 2026-10-17)*
