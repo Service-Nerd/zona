@@ -82,7 +82,9 @@ const CASES: Array<[string, (p: StrengthPlan) => void, StrengthProfile?]> = [
 ]
 
 /** Codes that need a calendar long enough to open the jumps gate; woken in the describe below. */
-const LONG_CASES = ['S-PLYO-MISSING', 'S-NO-STRENGTH-ON-DOUBLE']
+const LONG_CASES = ['S-PLYO-MISSING', 'S-NO-STRENGTH-ON-DOUBLE',
+  // Checked by `recoveryEaseViolations` (session pair, not plan); each arm woken in recovery.test.ts.
+  'S-RECOVERY-SUBTRACT-ONLY']
 
 /** Nine build weeks then three PEAK weeks: long enough for the jumps gate (week 5), and peak is
  *  where a 30-minute session's jumps were dropped then never re-offered (measured, 78 cases). */

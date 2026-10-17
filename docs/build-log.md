@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — STRENGTH-RECOVERY-ENGINE-01 · the ruling was wrong about the run
+**Shipped:** The strength engine can now produce a lighter version of a session for a bad-recovery day, and a check proves it only ever takes away. It is not in the app yet: the runner has to be asked first, and that moment has not been designed.
+
+**Dev learning:** The ruling said strength should ease "silently, as the run version does". The run version is not silent: it asks, and the runner taps Ease or Run it anyway. Writing the code against the real run path is what exposed it. Building to the ruling's words would have made strength the one place the app overrides the runner's own answer.
+
+**Product learning:** "Heavy legs become upper body and core" read as one rule and was two. For a full-body session it is subtraction. For a lower-body day there is no upper work to keep, so "upper and core" meant building a new session on a bad night. The board took the narrower reading: an ease keeps only what you already had.
+
+**AI-building learning:** Three of my checker arms passed when I deleted them, because the producer never produced the failure they look for, so the sweep alone could not see them. Each needed a hand-built bad session. One more of my own tests failed on its first run because I assumed a heavy-legs day keeps a main lift; it does not, they are all lower body.
+
+**The honest bit:** I asked to build this tonight and found it could not be finished tonight. The engine half is done and proven; the half a runner touches needs a design sitting and probably a table.
+
+---
+
 ## 2026-10-17 — READINESS-SURFACE-01 item 3 · the mark that lives on the session
 **Shipped:** When a runner accepts a recovery ease, the session now says "Eased for recovery" on Today's card, the Plan row and the session screen, and the change appears under "Changed this week". Undo the ease and the mark goes with it.
 

@@ -6,9 +6,9 @@
 // producer being wrong (DELOAD-OWNER-01). Each code maps to a StrengthPrinciples
 // section and is falsified in validate.test.ts.
 
-import { CATALOGUE_BY_ID } from './catalogue'
+import { CATALOGUE_BY_ID, PATTERN_REGION } from './catalogue'
 import { STRENGTH_CONFIG as C } from './config'
-import type { InjuryTag, RunContext, StrengthPlan } from './types'
+import type { InjuryTag, Prescription, RunContext, StrengthPlan, StrengthSession } from './types'
 
 export interface StrengthViolation { code: string; week: number; day?: string; detail: string }
 
@@ -152,5 +152,31 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
     if (trainingSessions >= 2 && coreExposures < 2) v.push({ code: 'S-CORE-DOSE', week: w.n, detail: `${coreExposures} core exposures` })
     if (trainingSessions > p.sessions_per_week) v.push({ code: 'S-TOO-MANY', week: w.n, detail: `${trainingSessions} > ${p.sessions_per_week}` })
   })
+  return v
+}
+
+/**
+ * S-RECOVERY-SUBTRACT-ONLY (S13) — an eased session only ever takes away. Re-derived from the two sessions'
+ * fields on its own: it does not call `easeForRecovery`, so it can catch that function being wrong.
+ */
+export function recoveryEaseViolations(original: StrengthSession, eased: StrengthSession): StrengthViolation[] {
+  const v: StrengthViolation[] = []
+  const at = (detail: string) => v.push({ code: 'S-RECOVERY-SUBTRACT-ONLY', week: original.week_n, day: original.date ?? original.day, detail })
+  const before = new Map<string, Prescription>()
+  for (const b of original.blocks) for (const it of b.items) before.set(`${b.role}:${it.exercise_id}`, it)
+  for (const b of eased.blocks) for (const it of b.items) {
+    const was = before.get(`${b.role}:${it.exercise_id}`)
+    const ex = CATALOGUE_BY_ID.get(it.exercise_id)
+    if (!was) { at(`added ${it.exercise_id}`); continue }
+    for (const k of ['sets', 'reps', 'seconds', 'contacts'] as const) if ((it[k] ?? 0) > (was[k] ?? 0)) at(`${it.exercise_id} ${k} rose`)
+    if (b.role === 'plyo' || ex?.pattern === 'plyometric') at(`plyometric ${it.exercise_id}`)
+    if (['main', 'accessory', 'core'].includes(b.role) && it.sets > Math.max(1, Math.round(was.sets * C.RECOVERY_SET_FACTOR))) at(`${it.exercise_id} not cut to the recovery dose`)
+    if (original.heavy_legs && b.role !== 'warmup' && b.role !== 'mobility' && ex && PATTERN_REGION[ex.pattern] === 'lower' && ex.pattern !== 'calf') at(`lower lift kept ${it.exercise_id}`)
+  }
+  const kept = new Set(eased.blocks.flatMap(b => b.items.map(it => it.exercise_id)))
+  for (const b of original.blocks) for (const it of b.items) {
+    if (CATALOGUE_BY_ID.get(it.exercise_id)?.pattern === 'calf' && b.role !== 'warmup' && !kept.has(it.exercise_id)) at(`calf work dropped to zero ${it.exercise_id}`)
+  }
+  if (eased.eased_for !== 'recovery') at('not stamped eased_for')
   return v
 }

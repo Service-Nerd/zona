@@ -61,6 +61,9 @@ export const STRENGTH_CONFIG = {
   PEAK_MAIN_SET_REDUCTION: 1,
   /** Run deload week → strength deload: sets × this, rounded, floor 1 (§3). */
   DELOAD_SET_FACTOR: 0.6,
+  /** A recovery-eased session (S13): the day's sets × this, rounded, floor 1. Equal to the deload factor by
+   *  ruling (STRENGTH-RECOVERY-01); named separately so it can diverge by a later ruling, never by accident. */
+  RECOVERY_SET_FACTOR: 0.6,
   /** Weeks a chosen exercise is kept before the next variant (progression block). */
   BLOCK_WEEKS: 4,
 

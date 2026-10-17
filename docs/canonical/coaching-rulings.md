@@ -49,6 +49,16 @@ slot was a Nordic curl 25% of the time; the Nordic curl, hamstring curl and kett
 🔴 **Not the catalogue's, and still open:** a runner's first jump is bounding or a drop jump (`STRENGTH-PLYO-BUDGET-01`).
 Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 
+## 2026-10-17 (re-sat) — STRENGTH-RECOVERY-01 · CORRECT WITH AMENDMENT · engine side BUILT, not wired
+
+Two premises of the earlier ruling were false at build: the run ease is **confirmed, not silent** (§59, ADR-012), and
+a lower + core day cannot become "upper + core" without **adding** work. Re-sat: **the runner decides**, as for a run;
+on a day with a run ease card, one answer covers both sessions; on a no-run day, the strength session asks itself.
+**Subtract only, literally:** an eased session holds only exercises the original held, never more sets or reps, no
+plyometrics; heavy legs lose the lower lifts except calf/soleus (deload dose); full-body → upper + core + calf, lower +
+core → core + calf. Artifacts: S13, `RECOVERY_SET_FACTOR`, `S-RECOVERY-SUBTRACT-ONLY`. Sitting:
+`docs/decisions/strength-recovery-resitting-2026-10-17.md`.
+
 ## 2026-10-17 — STRENGTH-RECOVERY-01 · CORRECT WITH AMENDMENT · RULED, not built
 
 Recovery signals soften strength using the run engine's readiness check as the one owner. **Subtract only, never

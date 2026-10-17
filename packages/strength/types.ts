@@ -142,6 +142,8 @@ export interface StrengthSession {
   after_quality_run: boolean
   estimated_minutes: number
   blocks: Block[]
+  /** STRENGTH-RECOVERY-01 (S13) — set by `easeForRecovery` when the runner accepted a recovery ease. */
+  eased_for?: 'recovery'
 }
 
 export interface StrengthWeek {

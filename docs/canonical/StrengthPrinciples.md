@@ -182,6 +182,25 @@ analogy. **Check:** `S-CORE-DOSE`.
 
 **Why.** ADR-024 §1: `RunContext | null`. **Check:** the sweep runs the standalone path for every profile.
 
+## S13. Recovery eases strength, and the runner decides
+
+**Principle.** When the run engine's recovery check (`computeReadiness`, §59: the one owner; strength never computes
+its own) says recovery is off, the day's strength session is **proposed** lighter, never changed silently. The runner
+decides, as for a run: on a day with a run ease, one answer covers both sessions; on a day without one, the strength
+session asks itself. An accepted ease **only subtracts**: the session keeps only exercises it already held, never
+more sets or reps on any, and no plyometrics. Heavy legs lose their lower-body lifts except calf and soleus work;
+whatever upper and core work it had stays. So full-body becomes upper + core + calf and lower + core becomes
+core + calf. Every kept training item takes the day's sets × `RECOVERY_SET_FACTOR` (0.6, the deload factor),
+floor 1. Warm-up and mobility are kept as written.
+
+**Why.** Evidence for HRV-guided training supports holding back far better than pushing on **[L]**, so this never
+adds load on a good morning (Hutchinson). Lighter, not gone, keeps the habit (Blagrove). Tendon loading drops, never
+to zero (Willy). The runner decides because a lone signal is a known false positive (§59 noise-hardening) and a wrong
+ease teaches them to ignore it; a woman in her luteal phase can trip it on a normal week (Sims, recorded). Re-sat
+2026-10-17: the first ruling said "silently, as the run does", and the run does not. Sitting:
+`docs/decisions/strength-recovery-resitting-2026-10-17.md`. **Check:** `S-RECOVERY-SUBTRACT-ONLY`
+(`recoveryEaseViolations`, run over every generated session in the sweep).
+
 ## Honesty notes the plan carries
 
 `bodyweight_ceiling` (no load kit: builds the habit and some strength; load is what moves economy) ·

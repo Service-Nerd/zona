@@ -2261,7 +2261,19 @@ beginner's long-run day a warranted ease returns the session unchanged: an adjus
 Found while building READINESS-SURFACE-01 item 3. The fix scales `duration_mins` by the same factor (§59's intent,
 no new prescription). **Tags:** ⚙️ NO BOARD (defect restoring documented intent).
 
-#### `STRENGTH-RECOVERY-01` — recovery softens strength. 🏃 Coaching Board **CORRECT WITH AMENDMENT**, not built
+#### `STRENGTH-RECOVERY-01` — recovery softens strength. 🏃 Coaching Board **CORRECT WITH AMENDMENT** (re-sat 2026-10-17) · engine side ✅ BUILT 2026-10-17, **not wired**
+
+✅ **Re-sat and engine side built 2026-10-17** (recorded as `STRENGTH-RECOVERY-ENGINE-01` in the feature registry; `docs/decisions/strength-recovery-resitting-2026-10-17.md`). Two
+premises were false: the run ease is **confirmed, not silent**, so **the runner decides** (one answer covers a run and
+strength on the same day; on a no-run day the strength session asks itself); and a lower + core day becomes **core +
+calf**, never an upper session built in its place. Built: S13, `RECOVERY_SET_FACTOR`, `easeForRecovery`,
+`S-RECOVERY-SUBTRACT-ONLY` (swept over every generated session). **Still open, in order:** (1) 🧭 Design Board on the
+accept moment for strength (inside `READINESS-SURFACE-01` item 2, the Today card; a no-run day has no run card);
+(2) ⚙️ where the runner's answer is stored on a no-run day (a run-card day can read the confirmed `readiness_signal`
+row for that date; a no-run day has no such row, so it needs a store, likely a migration); (3) ⚙️ wire it: the
+strength route eases the day's session when accepted, and the strength row / screen show `EasedMark`.
+
+**Original ruling (2026-10-17 morning), premises corrected above:**
 The same recovery check (one owner, `computeReadiness`; strength must not compute its own) on a strength day:
 heavy legs → upper body + core; other sessions → the deload set count (`STRENGTH_CONFIG.DELOAD_SET_FACTOR`); no
 plyometrics; tendon loading drops, never to zero (Willy). **Subtract only** (Hutchinson). A run and a strength
@@ -2287,7 +2299,7 @@ extend the guard to runner-facing producer strings. The readiness note was fixed
 > 🏃 **`STRENGTH-RECOVERY-01` — recovery signals soften strength. RULED 2026-10-17, not built.** See the full
 > entry under **Recovery-driven adaptation** below.
 >
-> 🟢 **Phases 0, 1 and 2 BUILT 2026-10-16** (engine + the app, `STRENGTH-APP-01`; see feature-registry). **Open:** founder applies `20261016_strength_plans.sql` + `20261017_strength_completions.sql`; catalogue review (DRAFT); founder copy calls (RIR phrasing, strength-day push line); device check; Phase 3 media, Phase 4 progression; release switch.
+> 🟢 **Phases 0, 1 and 2 BUILT 2026-10-16** (engine + the app, `STRENGTH-APP-01`; see feature-registry). **Open:** ~~founder applies both strength migrations~~ (applied 2026-10-17, ledger); ~~catalogue review~~ (`reviewed` by the strength seat 2026-10-17); STRENGTH-RECOVERY-01 wiring (engine side built); founder copy calls (RIR phrasing, strength-day push line); device check; Phase 3 media, Phase 4 progression; release switch.
 >
 > **Build plan:** `docs/plans/STRENGTH-ENGINE-01.md`. **Architecture:** `docs/architecture/ADR-024-strength-engine.md` (PROPOSED). **Evidence:**
 > `docs/investigations/strength-conditioning-research-2026-10-16.md`. **Consolidates** `R21`, *Supplementary

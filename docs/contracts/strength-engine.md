@@ -57,5 +57,16 @@ catalogue cues (reviewed by the strength seat 2026-10-17). An exercise marked `n
 
 ## Guarantees (checked by `validateStrengthPlan`, each falsified in `validate.test.ts`)
 
-The `S-*` codes in `StrengthPrinciples.md` (39 as of 2026-10-17, after the start-week, jumps, peak and lower-balance fixes; count from `validate.ts`). Gates: `npm run verify:strength` (in `verify:ci`),
+The `S-*` codes in `StrengthPrinciples.md` (40 as of 2026-10-17, after the start-week, jumps, peak and lower-balance fixes and `S-RECOVERY-SUBTRACT-ONLY`; count from `validate.ts`). Gates: `npm run verify:strength` (in `verify:ci`),
 `verify:strength:full` (266,688 plans, 2026-10-17: 0 violations).
+
+## Recovery ease — `easeForRecovery(session): StrengthSession` (S13, STRENGTH-RECOVERY-01, 2026-10-17)
+
+Pure, subtract-only: keeps only exercises the session held, never more sets or reps, no plyometrics; a heavy-legs
+session loses its lower lifts except calf / soleus work; kept training items take sets × `RECOVERY_SET_FACTOR` (0.6),
+floor 1; warm-up and mobility unchanged; `estimated_minutes` never rises; stamps `eased_for: 'recovery'`. It does
+**not** decide whether recovery is off (`computeReadiness`, §59) or whether the runner accepted (the caller).
+Check: `recoveryEaseViolations(original, eased)` → `S-RECOVERY-SUBTRACT-ONLY`, re-derived from the two sessions
+(it does not call the producer). Gate: `packages/strength/recovery.test.ts`, every generated session across a
+288-profile grid eased and checked. ⚠️ **Not wired into the app yet:** the accept flow is READINESS-SURFACE-01
+item 2 (Design Board) and needs a stored answer.
