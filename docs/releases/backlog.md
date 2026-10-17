@@ -2041,6 +2041,12 @@ fixed.
 > reps (high-rep sometimes, heavier sometimes); equipment-driven; a catalogue by muscle group with sets/reps as
 > variables; isolated enough for its own app; **PAID**.
 >
+> 🔴 **`READINESS-WRONG-DAY-01` (P0 defect, filed 2026-10-17) — accepting a recovery ease writes MONDAY.** `pre-session-readiness` sends ONE session; `confirm-adjustment` / `revert-adjustment` write `sessions_after/before` back by array position (`mon` first). Unless today is Monday, the eased session overwrites Monday and today stays hard. Latent: 0 readiness rows ever. Also: pending readiness rows never expire (a stale card can show on later days), and the route computes "today" in UTC while samples are local dates. Fix: write back by the session's own day/id, expire past-day readiness rows, local date. Tag: ⚙️ NO BOARD (restores intent). **Must ship before anything below.**
+>
+> 🧭 **`READINESS-SURFACE-01` filed 2026-10-17 — RULED (Design Board SHIP WITH AMENDMENT, SLT BUILD).** Make recovery changes visible: the reading in large type on the easing card; "Eased for recovery" text mark on card, Plan row and finished session; Changed this week lists them; one Coach line; a post-open push only if the card was not seen. Website section after the Coaching Board rules the words. Tags: 🧭 ruled → 🏃 COACHING BOARD (website/push words) → 👤 FOUNDER (copy). Sitting: `docs/decisions/recovery-adaptation-visibility-2026-10-17.md`.
+>
+> 🏃 **`STRENGTH-RECOVERY-01` filed 2026-10-17 — RULED, not built** (Coaching Board: CORRECT WITH AMENDMENT). Recovery signals soften strength: subtract only, heavy legs → upper + core, others → deload sets, one change per day with the run. Tags: 🏃 COACHING BOARD (ruled) → ⚙️ build.
+>
 > 🟢 **Phases 0, 1 and 2 BUILT 2026-10-16** (engine + the app, `STRENGTH-APP-01`; see feature-registry). **Open:** founder applies `20261016_strength_plans.sql` + `20261017_strength_completions.sql`; catalogue review (DRAFT); founder copy calls (RIR phrasing, strength-day push line); device check; Phase 3 media, Phase 4 progression; release switch.
 >
 > **Build plan:** `docs/plans/STRENGTH-ENGINE-01.md`. **Architecture:** `docs/architecture/ADR-024-strength-engine.md` (PROPOSED). **Evidence:**

@@ -144,6 +144,15 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-17 — READINESS-SURFACE-01 · SHIP WITH AMENDMENT (direction)
+
+Recovery-driven changes get a moment and a record. **Moment:** the easing card leads with the runner's reading in
+large type against their own normal. **Record:** an "Eased for recovery" TEXT mark on the session card, Plan row and
+finished session; confirmed recovery changes in Changed this week; one quiet line in Coach's weekly read. **Collins
+lost the amber tile** (type accent, not flood). **No HRV/sleep dashboard** (Silvanto: data without context breeds
+anxiety). No count, no streak. Precondition: `READINESS-WRONG-DAY-01`. Sitting:
+`docs/decisions/recovery-adaptation-visibility-2026-10-17.md`.
+
 ## 2026-10-17 — STRENGTH-NOTE-01 · SHIP
 
 The weekly strength note sits on the strength session screen, under the tiles, as `CoachNoteBlock aiGenerated`.

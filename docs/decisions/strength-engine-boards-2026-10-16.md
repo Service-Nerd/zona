@@ -101,3 +101,41 @@ with their evidence grade in `StrengthPrinciples.md`.
 
 ### ↗️ SLT escalation
 None.
+
+---
+
+## Coaching Board — STRENGTH-RECOVERY-01: recovery signals soften strength (2026-10-17)
+
+**Founder:** *"Yes take to board."* **Proposed:** when the same recovery check that softens a run (14-day personal
+baseline; HRV ≥1 SD low, RHR +7 bpm two days running, sleep < 5 h, deep sleep < 10%) fires on a strength day, the
+strength session gets lighter.
+
+### 🔍 Conflict scan
+- **The run engine's readiness rule** (`READINESS`, `readinessBaseline.ts`): reused as the ONE owner of "is recovery
+  off today"; strength must not compute its own (two classifiers drift).
+- **S2/S3 (strength placement):** a softened heavy-leg day becomes upper + core, the existing overflow conversion.
+- **S6 deload factor:** reused for a softened session's sets. **§7 / ADR-012:** a same-day lightening is
+  sub-threshold; it applies silently with a visible reason, as the run version does.
+- **No-claim rule:** copy says what changed and why, never what it prevents.
+
+### Seats
+**💪 Blagrove.** Lighter, not gone: a strength session on a bad-recovery day keeps the habit at a lower cost. Heavy
+legs become upper body and core; everything else drops to the deload set count. No plyometrics that day.
+**🏃 Hutchinson.** Evidence for HRV-guided training supports holding back far better than pushing on. So this only
+ever subtracts. **Never add load because recovery looks good.**
+**📊 Seiler.** No objection; strength is outside §1.
+**🎯 McMillan.** If the run and the strength session on the same day both soften, the runner gets ONE change and one
+reason, not two cards saying the same thing.
+**🩹 Willy.** Agree with the ladder. Tendon loading for an Achilles history drops to the deload dose, not to zero.
+**⚕️ Sims.** RHR rises a few bpm in the luteal phase and HRV dips; a woman could trip the signal on a normal cycle
+week. The 14-day baseline absorbs some of that and the RHR arm already needs two days running. Recorded, not blocking:
+the app cannot read cycle data (the plugin has no type for it).
+
+### ⚡ Recorded disagreement
+Sims vs Hutchinson on cycle-aware thresholds: Sims would widen the RHR margin in the luteal phase, Hutchinson wants
+evidence first. Moot until cycle data exists.
+
+### ⚖️ Ruling: CORRECT WITH AMENDMENT — RULED, not built
+Subtract only; one owner of the recovery check; heavy legs → upper + core, others → deload sets, no plyometrics; a
+run and strength softened the same day surface as ONE change. **Artifacts at build:** `StrengthPrinciples.md` S13,
+`STRENGTH_CONFIG.RECOVERY_SET_FACTOR` (= the deload factor), invariant `S-RECOVERY-SUBTRACT-ONLY`.

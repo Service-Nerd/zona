@@ -25,6 +25,14 @@ memory.
 
 
 
+## 2026-10-17 — STRENGTH-RECOVERY-01 · CORRECT WITH AMENDMENT · RULED, not built
+
+Recovery signals soften strength using the run engine's readiness check as the one owner. **Subtract only, never
+add load on good recovery** (Hutchinson). Heavy legs become upper + core, other sessions drop to the deload set
+count, no plyometrics (Blagrove); tendon loading drops, never to zero (Willy); a run and a strength session softened
+the same day surface as ONE change (McMillan). Recorded: Sims on luteal-phase false triggers, moot without cycle data.
+Sitting: `docs/decisions/strength-engine-boards-2026-10-16.md`.
+
 ## 2026-10-17 — STRENGTH-NOTE-01 · CORRECT WITH AMENDMENT
 
 The weekly strength note describes the week and never prescribes. **Amendment:** no claim about what strength does
