@@ -28,7 +28,8 @@ parseStrengthProfile(input: unknown): { ok: true; profile } | { ok: false; field
 ```
 
 One entry per calendar day, contiguous. Roles come from the run engine's own predicates (`isLongRun`, session
-type) after live move/swap overrides (`getSessionsForDate`). A week holding the race is `race_week`; a deload badge
+type) after live move/swap overrides (`getSessionsForDate`). A day holding two runs (a double, §126) carries
+`runs: 2` and takes no strength (S3 Am.1, `S-NO-STRENGTH-ON-DOUBLE`). A week holding the race is `race_week`; a deload badge
 is `deload`. Injury tags are whitelisted. `masters` uses `GENERATION_CONFIG.MASTERS_AGE_THRESHOLD`. **No paces,
 zones or distances.** `runContextSig(ctx)` hashes it.
 
@@ -56,5 +57,5 @@ catalogue cues (reviewed by the strength seat 2026-10-17). An exercise marked `n
 
 ## Guarantees (checked by `validateStrengthPlan`, each falsified in `validate.test.ts`)
 
-The `S-*` codes in `StrengthPrinciples.md` (38 as of 2026-10-17, after the start-week, jumps, peak and lower-balance fixes; count from `validate.ts`). Gates: `npm run verify:strength` (in `verify:ci`),
+The `S-*` codes in `StrengthPrinciples.md` (39 as of 2026-10-17, after the start-week, jumps, peak and lower-balance fixes; count from `validate.ts`). Gates: `npm run verify:strength` (in `verify:ci`),
 `verify:strength:full` (266,688 plans, 2026-10-17: 0 violations).

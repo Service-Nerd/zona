@@ -1,4 +1,5 @@
 import type { Session, Week } from '@/types/plan'
+import { canDouble } from './doubles'
 
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
@@ -29,17 +30,39 @@ export interface EffectiveSession {
  * sessions on it, AM before PM. The original day is preserved on each entry so callers
  * can index into completions (which are keyed by original_day).
  *
- * 🔴 SESSION-SLOTS-01 Phase 1 (ADR-025): a day is a LIST so that no caller can assume one
- * session. **A day holds at most one session until Phase 2**: `new_slot` is ignored here
- * until the Coaching Board's doubles rules are built in, so behaviour is unchanged.
+ * SESSION-SLOTS-01 (ADR-025). A day is a LIST so no caller can assume one session.
+ * **Phase 2:** a move carrying `new_slot` onto an occupied day becomes a DOUBLE only when
+ * §126 allows it (`canDouble`: both runs easy or recovery, never race week). The mover
+ * takes its slot, the occupant the other half, and the mover's own day is left empty.
+ * A slotted move §126 forbids is treated as an ordinary move, so it swaps exactly as an
+ * unslotted one does (EFFSESS-COLLISION-01) and never drops a session.
  */
 export function resolveEffectiveDay(
-  week: Pick<Week, 'sessions'>,
+  week: Pick<Week, 'sessions'> & { type?: string; badge?: string },
   weekOverrides: ReadonlyArray<SessionOverride>,
 ): Partial<Record<DayKey, EffectiveSession[]>> {
-  const one = resolveOnePerDay(week, weekOverrides)
+  const plain = weekOverrides.filter(o => !o.new_slot)
+  const fallback: SessionOverride[] = []
+  const doubles: SessionOverride[] = []
+  for (const o of weekOverrides.filter(x => x.new_slot)) {
+    const base = resolveOnePerDay(week, [...plain, ...fallback])
+    const occupant = base[o.new_day as DayKey]
+    const mover = week.sessions[o.original_day as DayKey]
+    const free = !doubles.some(d => d.new_day === o.new_day)
+    if (occupant && mover && occupant.originalDay !== o.original_day && free && canDouble(occupant.session, mover, week)) doubles.push(o)
+    else fallback.push(o)
+  }
+  const one = resolveOnePerDay(week, [...plain, ...fallback])
   const out: Partial<Record<DayKey, EffectiveSession[]>> = {}
   for (const k of DAY_KEYS) { const e = one[k]; if (e) out[k] = [e] }
+  for (const d of doubles) {
+    const from = d.original_day as DayKey, to = d.new_day as DayKey
+    if (out[from]?.[0]?.originalDay === from) delete out[from]
+    const occupant = out[to]![0]
+    const mover: EffectiveSession = { session: week.sessions[from]!, originalDay: from, isOverride: true, slot: d.new_slot! }
+    const other: EffectiveSession = { ...occupant, slot: d.new_slot === 'am' ? 'pm' : 'am' }
+    out[to] = mover.slot === 'am' ? [mover, other] : [other, mover]
+  }
   return out
 }
 

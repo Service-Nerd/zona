@@ -25,13 +25,13 @@ memory.
 
 
 
-## 2026-10-17 — SESSION-SLOTS-01 (doubles) · CORRECT WITH AMENDMENT · RULED, not built
+## 2026-10-17 — SESSION-SLOTS-01 (doubles) · CORRECT WITH AMENDMENT · BUILT (engine side; no runner can reach it until the move UI)
 
 A same-day double is allowed only when the runner moves a run, and **both runs are easy or recovery**. Never the long
 run, a quality or structured session, a race or the 5K time trial; no double in race week. Advise ≥6 h apart
 (advice only: no time of day). Over the weekday cap: allowed, with a note (§81), never refused. No strength on a
 two-run day (Blagrove). Copy says eat between (Sims); never presented as extra training (Hutchinson). Artifacts
-(§126, `DOUBLE_RUN_MIN_GAP_HOURS`, `INV-EFFECTIVE-NO-HARD-DOUBLE`) land with the build. Sitting:
+landed 2026-10-17: §126, `DOUBLE_RUN_MIN_GAP_HOURS`, `CHECK-EFFECTIVE-NO-HARD-DOUBLE`, S3 Am.1 + `S-NO-STRENGTH-ON-DOUBLE`. Sitting:
 `docs/decisions/same-day-doubles-coaching-2026-10-17.md`.
 
 ## 2026-10-17 — STRENGTH-KNEE-DOMINANT-01 · CORRECT WITH AMENDMENT

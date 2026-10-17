@@ -59,6 +59,8 @@ const SUBJECTS: Record<string, string[]> = {
   'lib/plan/inputRanges.test.ts':                   ['lib/plan/inputs.ts'],
   'lib/plan/taperRecalibration.test.ts':            ['lib/plan/taperRecalibration.ts'],
   'lib/planDateWindow.test.ts':                     ['lib/plan.ts'],
+  // §126 — the doubles rule and its independent check, plus the owner that applies it.
+  'lib/plan/doubles.test.ts':                       ['lib/plan/doubles.ts', 'lib/plan/effectiveSessions.ts'],
 }
 
 // Tests with NO mutable subject, recorded rather than silently absent.

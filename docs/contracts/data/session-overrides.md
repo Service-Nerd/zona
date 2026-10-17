@@ -23,9 +23,14 @@ getSessionsForDate(weeks, date, overrides): ResolvedSession[]   // [] = nothing 
 soleSession(list): T | undefined                                  // the day's one session, for a caller not yet taught about two
 ```
 
-- **A day holds at most one session until Phase 2**: `new_slot` is ignored, `slot` is always null. Gate:
-  `effectiveWeekOwner.test.ts` (a slotted move still yields one session a day).
-- **Every single-session read is a named `soleSession()` call**, counted (9 at Phase 1) and the count may only fall:
+- **Phase 2 (built 2026-10-17):** a move with `new_slot` onto an occupied day becomes a **double** only when §126
+  allows it (`lib/plan/doubles.ts → canDouble`: both runs easy or recovery; never the long run, quality/structured,
+  race or 5K time trial; never race week). The mover takes its slot, the occupant the other half, and the mover's own
+  day is left empty. A forbidden slotted move behaves exactly like an unslotted one (a swap). Never three on a day.
+  Check: `CHECK-EFFECTIVE-NO-HARD-DOUBLE` (`plan-invariants.md` § Effective-week invariants).
+- **No writer yet.** Nothing sets `new_slot` until the Phase 3 move flow, and `doubles.test.ts` fails if anything does
+  before then, because the 8 `soleSession()` readers would drop the second session.
+- **Every single-session read is a named `soleSession()` call**, counted (9 at Phase 1, 8 at Phase 2) and the count may only fall:
   Phase 4 teaches each caller about two sessions. The push's next-key-session scan already walks every session.
 
 - One session per shown day. A move onto an occupied day becomes a **swap** (the occupant takes the vacated day); if

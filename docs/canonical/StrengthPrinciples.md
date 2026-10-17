@@ -49,6 +49,11 @@ other strength days. One strength session per day.
 **Why.** Interference is lower-body specific, so upper work can go almost anywhere **[M]**; the habit matters more
 than the split **[C]**. **Check:** `S-ONE-PER-DAY`, `S-UNAVAILABLE-DAY`.
 
+**Amendment 1 (2026-10-17, SESSION-SLOTS-01, Blagrove).** A day that holds **two runs** (a double the runner made,
+§126) takes **no** strength session: three sessions in one day is not what S4's stacking was written for. The run
+context marks such a day (`RunDay.runs`), placement skips it, and the strength plan re-places when it appears.
+**Check:** `S-NO-STRENGTH-ON-DOUBLE`.
+
 ## S4. Stacked sessions carry the gap
 
 **Principle.** A session on a quality-run day is done after the run, at least `STACK_GAP_HOURS_MIN` (3) hours later

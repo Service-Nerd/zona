@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — SESSION-SLOTS-01 Phases 0–2 · built, and deliberately unreachable
+**Shipped:** The engine side of AM/PM doubles: the data model, the day calculation that returns more than one session, and the coaching rule that decides when two runs may share a day. No runner can make a double yet. That waits until the screens can show one.
+
+**Dev learning:** Changing the day calculation's return type from "a session" to "a list" was the safety mechanism. The compiler listed every caller, all 12, and none could keep assuming one session by accident. The ones not yet updated go through a named helper that a test counts, and the count can only fall.
+
+**Product learning:** The order matters more than the speed. If the move screen could create a double before Today, push and auto-match knew about two sessions, the evening run would silently vanish from them. So the writer is blocked by a test until those readers are done.
+
+**AI-building learning:** The doubles check re-derives the rule from the raw session fields, not from the function that applies it, and it is swept over every possible slotted move on real plans. It has to reach at least one double, or it would pass by never seeing one. Removing the rule from the day calculation turned eight tests red.
+
+**The honest bit:** My first advice line said "6 hours" by gluing the unit onto the number, which the formatting rule forbids; the build's own check caught it.
+
 ## 2026-10-17 — READINESS-OVERRIDES-01 + PLAN-MOVE-DELETE-01 + AUTOMATCH-MOVED-DATE-01 · three ways a moved session got lost
 **Shipped:** Moving a session now holds up in three places it didn't. Recovery easing acts on the session you actually have today. A second move no longer quietly undoes the first. And a moved run is matched against runs from the day it moved to.
 

@@ -202,11 +202,23 @@ Full `validatePlan()` integration into the reshape *output* path
 the row is persisted) is deferred to Wave 3 of the reshape remediation
 work — see backlog.
 
+## Effective-week invariants (SESSION-SLOTS-01, ADR-025, 2026-10-17)
+
+`validatePlan()` checks the STORED plan. A same-day double exists only in the **effective** week (the runner's moves
+applied by `resolveEffectiveDay`), which no plan can show, so its check lives beside the owner, as the reshape check
+above does:
+
+| Code | Location | Severity | What it checks |
+|---|---|---|---|
+| **CHECK-EFFECTIVE-NO-HARD-DOUBLE** | `lib/plan/doubles.ts → effectiveDoubleViolations` | test gate | §126: no day holds more than two sessions; a two-session day holds only easy or recovery runs; never in race week. Re-derives the rule from the session fields and shares no predicate with `canDouble`. Swept in `doubles.test.ts` over every slotted move between every pair of days on real generated weeks (it must reach a double, or it proves nothing), plus hand-built violations. Falsified: removing `canDouble` from the owner turns 8 arms red |
+
+Strength's matching rule is `S-NO-STRENGTH-ON-DOUBLE` (S3 Am.1), in the strength validator.
+
 ## The strength engine's invariants live elsewhere (STRENGTH-ENGINE-01, 2026-10-16)
 
 `validatePlan()` checks RUN plans only. The strength engine (`packages/strength`, ADR-024) has its own three layers:
 **principles** `docs/canonical/StrengthPrinciples.md` (S1–S12, S10 Am.1), **numbers** `STRENGTH_CONFIG`, and
-**checks** `validateStrengthPlan()` (32 `S-*` codes as of 2026-10-17, each named in a principle; count them from the file, not from here). They are deliberately not `INV-*`
+**checks** `validateStrengthPlan()` (39 `S-*` codes as of 2026-10-17, each named in a principle; count them from the file, not from here). They are deliberately not `INV-*`
 rows here: the package must not depend on the run engine. Every `S-*` code is made to fail in
 `packages/strength/validate.test.ts`, which also fails if a code exists with no case; `strengthConfigSync.test.ts`
 fails if a code a principle names is missing from the validator.

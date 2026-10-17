@@ -11321,3 +11321,32 @@ Until then the declared §8 breach below is the **ratified status quo**: 9 sessi
 🔻 **The original statement of the contradiction.** A **distance-anchored rep row** — 6 × 1600 m — run slower takes longer, so a fixed dose (clause 1) and a re-derived pace (clause 2) cannot both hold, and §8's `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` correctly fires: **9 sessions at −12.5%, 24 at +20.8%, zero at ±4–8%.** ⚠️ **Leaving those rows stale was measured and is WORSE** — it trips this section's own `INV-PLAN-STEP-PACE-FROM-GUIDE` at *every* magnitude (24–51 per 36 plans). Both options breach something; the smaller and more honest one ships, the residual is a declared register in `recalibrationComposition.test.ts`, and it is filed as `RECAL-DISTANCE-REPS-01`.
 
 **Board:** `RECAL-SIZING-PROPERTY-01`, 2026-10-09 — **CORRECT WITH AMENDMENT** (3: dose protected · re-derivation only · ships as honesty).
+
+---
+
+## 126. A double is two easy runs the runner chose
+
+**Principle.** A same-day double exists only when the **runner** moves a run onto a day that already has one; the
+engine never prescribes one (ADR-025). It is allowed only when **both** runs are easy or recovery runs. **Never** the
+long run, a quality or structured session, a race or the 5K time trial in a double, and **no double in race week** (§6).
+A move that would make a forbidden double stays a swap, as before. The app advises at least
+`DOUBLE_RUN_MIN_GAP_HOURS` (6) between the two runs and says to eat between them; that is **advice only**, because the
+app has no time of day (ADR-011). Two runs whose total passes `max_weekday_mins` are **allowed, with a note** (§81:
+the plan says when they don't fit), never refused. No strength session is placed on a day with two runs (S3 Am.1).
+
+**Why.** A double here is a **scheduling tool, not a training stimulus** (Hutchinson): it fits the week around a life,
+it adds no session and no distance. Two easy runs stay inside §1's session count and §7's spacing, because neither is
+a stressor. A hard run stacked on a tired one is the injury vector §7 exists to prevent (Willy), and two sessions in a
+day raise low-energy-availability risk, more for women and masters runners (Sims). **§64 holds by construction:** a
+move keeps the week's session count and can only reduce its training days.
+
+**Evidence.** Thin for recreational runners; elites double to add easy volume. Production had 36 plans and 3 runners
+with live moves at the ruling, and no demand data for doubles. **Recorded:** Willy would refuse a weekday-cap breach;
+McMillan carried "warn" on §81's precedent, accepted on condition the forbidden pairs are a hard refusal.
+
+**Check.** `CHECK-EFFECTIVE-NO-HARD-DOUBLE` (`lib/plan/doubles.ts → effectiveDoubleViolations`, re-derived from the
+session fields, sharing no predicate with `canDouble`); strength `S-NO-STRENGTH-ON-DOUBLE`.
+
+**Board:** `SESSION-SLOTS-01`, 2026-10-17, CORRECT WITH AMENDMENT
+(`docs/decisions/same-day-doubles-coaching-2026-10-17.md`).
+

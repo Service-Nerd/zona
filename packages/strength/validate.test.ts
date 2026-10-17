@@ -82,7 +82,7 @@ const CASES: Array<[string, (p: StrengthPlan) => void, StrengthProfile?]> = [
 ]
 
 /** Codes that need a calendar long enough to open the jumps gate; woken in the describe below. */
-const LONG_CASES = ['S-PLYO-MISSING']
+const LONG_CASES = ['S-PLYO-MISSING', 'S-NO-STRENGTH-ON-DOUBLE']
 
 /** Nine build weeks then three PEAK weeks: long enough for the jumps gate (week 5), and peak is
  *  where a 30-minute session's jumps were dropped then never re-offered (measured, 78 cases). */
@@ -124,6 +124,15 @@ describe('🔴 STRENGTH-PLYO-BUDGET-01 + STRENGTH-START-WEEK-01, on a real 12-we
       .map(i => CATALOGUE_BY_ID.get(i.exercise_id)!).filter(e => e.pattern === 'hinge')
     expect(hinges.length).toBeGreaterThan(0)
     expect(hinges.some(e => !e.unilateral && e.equipment.every(o => o.some(t => ['dumbbells', 'kettlebell', 'barbell'].includes(t)))), hinges.map(e => e.id).join(',')).toBe(true)
+  })
+  it('🔴 S3 Am.1: a day holding two runs gets no strength, and the check catches one placed there', () => {
+    const plan = generateStrengthPlan(PROFILE, L)
+    const target = plan.weeks[6].sessions[0].date!
+    const doubled = { ...L, days: L.days.map(d => (d.date === target ? { ...d, runs: 2 } : d)) }
+    expect(validateStrengthPlan(plan, doubled).map(v => v.code)).toContain('S-NO-STRENGTH-ON-DOUBLE')
+    const replaced = generateStrengthPlan(PROFILE, doubled)
+    expect(replaced.weeks.flatMap(w => w.sessions).some(s => s.date === target)).toBe(false)
+    expect(validateStrengthPlan(replaced, doubled)).toEqual([])
   })
   it('S-PLYO-MISSING fires when a due week has its jumps stripped', () => {
     const plan = clone(generateStrengthPlan(PROFILE, L))

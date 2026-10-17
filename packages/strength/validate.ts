@@ -57,6 +57,7 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
       if (days.has(where)) v.push({ code: 'S-ONE-PER-DAY', week: w.n, day: where, detail: 'two strength sessions on one day' })
       days.add(where)
       if (p.unavailable_days?.includes(s.day)) v.push({ code: 'S-UNAVAILABLE-DAY', week: w.n, day: s.day, detail: 'runner cannot train this day' })
+      if (s.date && (byDate.get(s.date)?.runs ?? 0) >= 2) v.push({ code: 'S-NO-STRENGTH-ON-DOUBLE', week: w.n, day: where, detail: 'strength on a day with two runs' })
 
       const items = s.blocks.flatMap(b => b.items.map(it => ({ it, role: b.role, ex: CATALOGUE_BY_ID.get(it.exercise_id) })))
       const hasLegWork = items.some(x => x.ex && LEG_PATTERNS.has(x.ex.pattern) && x.role !== 'warmup')

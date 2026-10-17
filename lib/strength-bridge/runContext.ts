@@ -13,7 +13,6 @@ import { createHash } from 'node:crypto'
 import type { Plan, Session, Week } from '@/types/plan'
 import type { SessionOverride } from '@/lib/plan/effectiveSessions'
 import { getSessionsForDate, parseLocalDate, dayKeyForDate } from '@/lib/plan/weekResolution'
-import { soleSession } from '@/lib/plan/effectiveSessions'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { INJURY_TAGS, type InjuryTag, type RunContext, type RunDay, type RunPhase, type RunRole, type RunWeek } from '@/packages/strength'
@@ -63,8 +62,11 @@ export function planToRunContext(plan: Plan, overrides: ReadonlyArray<SessionOve
       // Each calendar day belongs to the latest week that started on or before it,
       // so a gap between weeks is filled rather than skipped (no index holes).
       while (wi + 1 < weeks.length && parseLocalDate(weeks[wi + 1].date) <= d) wi++
-      const resolved = soleSession(getSessionsForDate(plan.weeks, new Date(d), overrides))
-      days.push({ date: iso(d), day: dayKeyForDate(d), week_n: weeks[wi].n, role: runRoleOf(resolved?.session) })
+      // Every session on the date (a double holds two). A double is two easy runs (§126), so the
+      // day's role is the first one's; `runs` tells strength the day is taken (S3 Am.1).
+      const onDay = getSessionsForDate(plan.weeks, new Date(d), overrides)
+      const runs = onDay.filter(r => runRoleOf(r.session) !== 'rest' && runRoleOf(r.session) !== 'cross').length
+      days.push({ date: iso(d), day: dayKeyForDate(d), week_n: weeks[wi].n, role: runRoleOf(onDay[0]?.session), ...(runs >= 2 ? { runs } : {}) })
     }
   }
   const injury_tags = Array.from(new Set(

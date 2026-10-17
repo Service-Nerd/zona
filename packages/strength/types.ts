@@ -46,6 +46,8 @@ export interface RunDay {
   day: Day
   week_n: number
   role: RunRole
+  /** SESSION-SLOTS-01 — how many runs the day holds (2 = a double the runner made). Absent = one or none. */
+  runs?: number
 }
 
 export interface RunWeek {

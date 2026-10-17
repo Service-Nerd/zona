@@ -2034,6 +2034,14 @@ export const GENERATION_CONFIG = {
   // the day before is the most reliable injury vector. See CoachingPrinciples §7.
   MIN_HOURS_BETWEEN_QUALITY_AND_LONG: 48,
 
+  /**
+   * §126 — a same-day double (two easy runs the runner chose, ADR-025): advise at least this many
+   * hours between them. ADVICE ONLY: the app has no time of day (ADR-011), so it cannot enforce it.
+   * S4's ideal gap for strength after a run, reused because the reasoning is the same.
+   * Coaching Board, SESSION-SLOTS-01, 2026-10-17.
+   */
+  DOUBLE_RUN_MIN_GAP_HOURS: 6,
+
   // CoachingPrinciples §7 (CD-12) — the two LARGEST aerobic sessions of a week
   // (long run + biggest other run) should sit ≥ this far apart. Enforced by
   // placement where days are flexible; where blocked days force them closer,

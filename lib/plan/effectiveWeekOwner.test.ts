@@ -20,19 +20,12 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map(
 const files = execSync('git ls-files app lib components packages', { encoding: 'utf8' }).split('\n')
   .filter(f => /\.(ts|tsx)$/.test(f) && !f.includes('.test.') && f !== 'lib/plan/effectiveSessions.ts')
 
-describe('🔴 SESSION-SLOTS-01 Phase 1 — lists, with at most one session a day until Phase 2', () => {
-  it('a day is never two sessions yet, even when a move carries a slot', () => {
-    // new_slot exists in the table (migration 20261018) but nothing may honour it until the
-    // Coaching Board's doubles rules are built (Phase 2). A move onto a taken day stays a swap.
-    const week = { sessions: { tue: { type: 'easy', label: 'Tue' }, wed: { type: 'easy', label: 'Wed' } } } as never
-    const eff = resolveEffectiveDay(week, [{ week_n: 1, original_day: 'tue', new_day: 'wed', new_slot: 'pm' }])
-    for (const list of Object.values(eff)) expect(list!.length).toBe(1)
-    expect(Object.values(eff).flat().map(e => e!.slot)).toEqual([null, null])
-  })
+describe('🔴 SESSION-SLOTS-01 — every single-session read is counted', () => {
+  // The Phase 1 "never two" arm moved to doubles.test.ts when Phase 2 began making doubles (§126).
   it('🔴 every single-session read is a NAMED soleSession() call, and the count may only fall', () => {
     // Phase 4 teaches each of these callers about two sessions; a new one must not appear.
     // Bare `[0]` on a day's list is invisible to this count, which is why the helper exists.
-    const SOLE_SESSION_CALLERS = 9
+    const SOLE_SESSION_CALLERS = 8   // 9 → 8: the strength run context now reads every session (Phase 2)
     const n = files.reduce((acc, f) => acc + (strip(readFileSync(f, 'utf8')).match(/\bsoleSession\(/g) ?? []).length, 0)
     expect(n, 'a caller added? teach it about two sessions instead. Fewer? lower the number').toBe(SOLE_SESSION_CALLERS)
   })

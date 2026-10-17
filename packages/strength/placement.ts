@@ -34,6 +34,9 @@ export function strengthAllowed(t: Timeline, i: number): boolean {
   const d = t.days[i]
   if (t.unavailable.has(d.day)) return false
   if (d.role === 'race') return false
+  // S3 Am.1 (§126) — a day holding two runs takes no strength: three sessions in a day is not
+  // what S4's stacking was written for (Blagrove).
+  if ((d.runs ?? 0) >= 2) return false
   if (t.raceDate) {
     const until = daysBetween(d.date, t.raceDate)
     if (until >= 0 && until <= C.NO_STRENGTH_DAYS_BEFORE_RACE) return false
