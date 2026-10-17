@@ -5,6 +5,7 @@
 //
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
+import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
 import { InlineError } from '@/components/shared/InlineError'
 import AIMark from '@/components/shared/AIMark'
 import Button from '@/components/ui/Button'
@@ -841,15 +842,14 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
 
   // Apply overrides — memoised so it recomputes when overrides state changes
   // Each entry carries originalDay so completion lookups always use the stable key
+  // 🔴 SESSION-SLOTS-01 Phase 0 — through the ONE owner. This was a hand-rolled copy whose
+  // `result[newDay] = …` overwrote whatever sat on the target day, the collision the owner was
+  // fixed for (EFFSESS-COLLISION-01) and this copy never was. Same flattened shape as before.
   const effectiveWs = useMemo(() => {
     const result: Record<string, any> = {}
-    DOW_ORDER.forEach(key => {
-      if (Object.keys(overrides).includes(key)) return // moved away
-      if (ws[key]) result[key] = { ...ws[key], originalDay: key }
-    })
-    Object.entries(overrides).forEach(([originalDay, newDay]) => {
-      if (ws[originalDay]) result[newDay] = { ...ws[originalDay], originalDay }
-    })
+    const rows = Object.entries(overrides).map(([original_day, new_day]) => ({ week_n: weekNum, original_day, new_day }))
+    const eff = resolveEffectiveSessions({ sessions: ws }, rows)
+    for (const [day, e] of Object.entries(eff)) if (e) result[day] = { ...e.session, originalDay: e.originalDay }
     return result
   }, [overrides, weekIndex])
 

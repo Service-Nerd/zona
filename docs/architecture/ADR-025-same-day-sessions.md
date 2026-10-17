@@ -66,7 +66,12 @@ engine ever prescribes doubles (that is a Coaching Board question, not this ADR)
 | Daily note, widget | one `todaySession` | Two sessions, or the next one |
 | Adjust / reshape | 7-length positional arrays (`planAdjustment`, `applyAdjustmentDays`) | **Untouched**: they edit the stored plan, which has no doubles. The reorder check gains a "not into a double" guard |
 
-## 5. Rules (Coaching Board must rule before any build)
+## 5. Rules — RULED 2026-10-17 (Coaching Board, CORRECT WITH AMENDMENT)
+
+**The ruling** (`docs/decisions/same-day-doubles-coaching-2026-10-17.md`): both runs easy or recovery; never the long
+run, quality/structured, race or 5K TT; no double in race week; advise ≥6 h apart (advice only); over the weekday cap
+allowed with a note; no strength on a two-run day; copy says eat between, never "extra training". The questions as
+first put, kept for the record:
 
 1. **Which doubles are allowed?** Proposed: easy + easy, easy + recovery. **Never** a double containing the long run
    or a quality session (§7's 48 h between stressors cannot hold inside one day).
@@ -80,7 +85,7 @@ engine ever prescribes doubles (that is a Coaching Board question, not this ADR)
 
 | Phase | What | Gate |
 |---|---|---|
-| **0. Prerequisites** | Delete the two hand-rolled effective maps (route through the owner) · fix three pre-existing defects: readiness ignores overrides, `handleMove`'s delete differs from its client filter, auto-match dates a moved session by its original day | `verify:parity` IDENTICAL; each defect gets a fail-before test |
+| **0. Prerequisites** ✅ *done 2026-10-17* | Delete the two hand-rolled effective maps (route through the owner) · fix three pre-existing defects: readiness ignores overrides, `handleMove`'s delete differs from its client filter, auto-match dates a moved session by its original day | `verify:parity` IDENTICAL; each defect gets a fail-before test |
 | **1. Owner + data** | Migration (`new_slot` + unique key), `resolveEffectiveDay` / `getSessionsForDate`, every consumer compiles against arrays with **single-session behaviour** | No visible change; journey test unchanged |
 | **2. Rules** | Coaching Board ruling (§5) → principle + numeric + invariant | Board ruling recorded |
 | **3. UI** | Design Board: Today two-session day, Plan two rows, the Swap / Do both choice, AM/PM labels (including strength) | Pattern + check + register row; 375px |

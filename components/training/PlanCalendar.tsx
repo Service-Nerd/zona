@@ -15,6 +15,7 @@ import { STRENGTH_KIND_TITLE, isoLocalDate } from '@/lib/strength-bridge/display
 import type { StrengthSession } from '@/packages/strength'
 import { Glyph } from '@/components/shared/RowIcon'
 import { planMove } from '@/lib/plan/overrideMoves'
+import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
 
 /** STRENGTH-APP-01 (C) — strength on the Plan week. Optional: the marketing phone still passes none. */
 export interface PlanStrength {
@@ -446,19 +447,12 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     isSwap: boolean
   } | null>(null)
 
+  // 🔴 SESSION-SLOTS-01 Phase 0 — through the ONE owner (was a hand-rolled copy whose bare
+  // `effectiveSessions[o.new_day] = …` dropped a session on a collision). Same flattened shape.
   const effectiveSessions: Record<string, EffectiveSession> = {}
-  DOW_ORDER.forEach(key => {
-    const session = ws[key as keyof typeof ws]
-    if (!overrides.some(o => o.original_day === key) && session) {
-      effectiveSessions[key] = { ...session, originalDay: key }
-    }
-  })
-  overrides.forEach(o => {
-    const session = ws[o.original_day as keyof typeof ws]
-    if (session) {
-      effectiveSessions[o.new_day] = { ...session, originalDay: o.original_day, isOverride: true }
-    }
-  })
+  for (const [day, e] of Object.entries(resolveEffectiveSessions(week, overrides))) {
+    if (e) effectiveSessions[day] = { ...e.session, originalDay: e.originalDay, ...(e.isOverride ? { isOverride: true } : {}) }
+  }
 
   // Intended km = sum of rounded individual session distances, so the week
   // total matches what the user sees on each session row. Plan JSON's

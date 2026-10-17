@@ -2083,6 +2083,12 @@ analysis and a proper architect plan and review."* **Plan:** `docs/architecture/
 only the effective-week resolver (which turns the move into a swap) and its one-session-per-day consumers do.
 Recommended: doubles come from the runner's move only; one additive column on `session_overrides`; the owner returns
 an array per day; the plan JSON is unchanged. Phases 0–4 in the ADR, nothing visible until Phase 3.
+
+**Progress 2026-10-17:** ✅ Phase 0 done (three defects fixed; Today and Plan route through the one owner, gated by
+`effectiveWeekOwner.test.ts`; contracts written: `docs/contracts/data/session-overrides.md`). ✅ Coaching Board ruled
+(`docs/decisions/same-day-doubles-coaching-2026-10-17.md`): both runs easy/recovery; never long, quality, race or TT;
+no double in race week; advise ≥6 h; weekday cap allowed with a note; no strength on a two-run day. **Next:** Phase 1
+(migration: `new_slot` + unique key, founder applies; owner returns arrays), then Design Board, then SLT.
 **Tags (in order):** ⚙️ Phase 0 + 1 (no visible change) → 🏃 COACHING BOARD (which doubles, gap, weekday cap) →
 🧭 DESIGN BOARD (Today, Plan, the move choice) → 💼 SLT (FREE or PAID, roadmap order).
 

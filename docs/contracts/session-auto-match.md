@@ -8,6 +8,11 @@ resolveAutoMatch(session, weekStartDate, dayKey, activities): AutoMatch | null
 sessionDateFor(weekStartDate, dayKey): Date | null
 ```
 
+**The date matched against (AUTOMATCH-MOVED-DATE-01, 2026-10-17):** the session's own `rawDate` when present (Plan
+and Today pass it; it is the day the session SITS on, after the runner's moves). Only a caller without it falls
+back to `sessionDateFor(weekStartDate, dayKey)`, where `dayKey` is the ORIGINAL day (the completion key). Matching on
+the original day missed every moved session.
+
 ## Why it exists
 
 `DashboardClient` computed this inline for the **session screen only**, keyed on
