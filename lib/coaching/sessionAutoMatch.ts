@@ -61,7 +61,16 @@ export function resolveAutoMatch(
   activities: readonly unknown[],
 ): AutoMatch | null {
   if (!session || !weekStartDate || !dayKey || !activities?.length) return null
-  const when = sessionDateFor(weekStartDate, dayKey)
+  // 🔴 AUTOMATCH-MOVED-DATE-01 — match against the day the session SITS on. Callers pass
+  // `session.key`, which is the ORIGINAL day (the completion key), so a run moved from Tuesday
+  // to Wednesday was matched against Tuesday's activities. Plan and Today both hand over
+  // `rawDate`, the date the runner sees; only a path without it (a deep link to a run that is
+  // already linked) falls back to the week start + day key.
+  const raw = (session as { rawDate?: unknown }).rawDate
+  const fromRaw = raw instanceof Date ? new Date(raw) : typeof raw === 'string' ? new Date(raw) : null
+  const when = fromRaw && !Number.isNaN(fromRaw.getTime())
+    ? new Date(fromRaw.getFullYear(), fromRaw.getMonth(), fromRaw.getDate())
+    : sessionDateFor(weekStartDate, dayKey)
   if (!when) return null
   // 🔴 THIS WAS A LAZY `require('@/lib/coaching/sessionMatch')` INSIDE A try/catch, AND
   // IT MADE THIS OWNER UNPROVABLE (found 2026-10-08 while gating

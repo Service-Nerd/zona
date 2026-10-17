@@ -23,7 +23,8 @@ say" with an error status. `reason` names which gate ended the evaluation, in ev
 |---|---|
 | `tier` | Free user. **Silent by design** — the readiness signal is paid value and a free runner is never told it exists here |
 | `no_plan` | No plan, or a plan with no weeks |
-| `no_active_session` | `getSessionForDate()` returned null: before the plan starts, after it ends, a gap, or an empty day (ADR-016) |
+| `overrides_unavailable` | The runner's moves (`session_overrides`) could not be read. READINESS-OVERRIDES-01: today's session includes their moves, so a failed read eases nothing rather than act on a session it cannot place |
+| `no_active_session` | `getSessionForDate()` (with the runner's live overrides) returned null: before the plan starts, after it ends, a gap, or an empty day (ADR-016) |
 | `session_type_not_eligible` | Today is not quality or long. §59 softens hard days only |
 | `baseline_dormant` | Fewer than `READINESS` requires of the 14-day window. ⚠️ **Not an error** — a new runner has no baseline yet |
 | `all_clear` | Baseline exists and today's RHR / HRV / sleep are within it |

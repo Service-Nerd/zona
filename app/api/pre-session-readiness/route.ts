@@ -69,7 +69,14 @@ export async function GET(req: NextRequest) {
   // and on Vercel `new Date()` is UTC, so a runner east or west of it was read a day off.
   const qDate = req.nextUrl.searchParams.get('date')
   const todayDateStr = qDate && /^\d{4}-\d{2}-\d{2}$/.test(qDate) ? qDate : new Date().toISOString().slice(0, 10)
-  const resolved = getSessionForDate(plan.weeks, parseLocalDate(todayDateStr))
+  // 🔴 READINESS-OVERRIDES-01 — the session TODAY is the one the runner sees, which includes
+  // their moves. This call passed no overrides, so a tempo moved onto today was never eased and
+  // the day it left could be. A failed read eases nothing: never act on a session it cannot place.
+  const { data: overrides, error: overridesError } = await supabase
+    .from('session_overrides').select('week_n, original_day, new_day')
+    .eq('user_id', userId).is('superseded_at', null)
+  if (overridesError) return NextResponse.json({ adjustment: null, reason: 'overrides_unavailable' })
+  const resolved = getSessionForDate(plan.weeks, parseLocalDate(todayDateStr), overrides ?? [])
   if (!resolved) return NextResponse.json({ adjustment: null, reason: 'no_active_session' })
 
   const week         = resolved.week

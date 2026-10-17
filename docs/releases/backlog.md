@@ -2086,20 +2086,20 @@ an array per day; the plan JSON is unchanged. Phases 0–4 in the ADR, nothing v
 **Tags (in order):** ⚙️ Phase 0 + 1 (no visible change) → 🏃 COACHING BOARD (which doubles, gap, weekday cap) →
 🧭 DESIGN BOARD (Today, Plan, the move choice) → 💼 SLT (FREE or PAID, roadmap order).
 
-### `READINESS-OVERRIDES-01` — recovery easing ignores a session the runner moved *(filed 2026-10-17)*
+### `READINESS-OVERRIDES-01` — recovery easing ignores a session the runner moved *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 `app/api/pre-session-readiness/route.ts` calls `getSessionForDate(plan.weeks, date)` with **no overrides**, so on a
 day the runner moved a hard session onto, readiness sees the plan's original session (or none) and eases the wrong
 thing or nothing. Found by the slots inventory, in the route fixed this morning (`READINESS-WRONG-DAY-01`): my miss.
 **Tags:** ⚙️ NO BOARD (defect).
 
-### `PLAN-MOVE-DELETE-01` — a move can snap another moved session back *(filed 2026-10-17)*
+### `PLAN-MOVE-DELETE-01` — a move can snap another moved session back *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 `PlanCalendar.handleMove` deletes override rows matching `original_day = newDay` in the database but not in its client
 filter, so if the target day's own session had been moved elsewhere, that move is erased server-side while the screen
 still shows it. **Tags:** ⚙️ NO BOARD (defect).
 
-### `AUTOMATCH-MOVED-DATE-01` — auto-match dates a moved session by its original day *(filed 2026-10-17)*
+### `AUTOMATCH-MOVED-DATE-01` — auto-match dates a moved session by its original day *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 `sessionAutoMatch.sessionDateFor(weekStart, session.key)` uses the original day, so a run moved from Tuesday to
 Wednesday is matched against Tuesday's activities. **Tags:** ⚙️ NO BOARD (defect).

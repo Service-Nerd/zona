@@ -14,6 +14,7 @@ import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { STRENGTH_KIND_TITLE, isoLocalDate } from '@/lib/strength-bridge/display'
 import type { StrengthSession } from '@/packages/strength'
 import { Glyph } from '@/components/shared/RowIcon'
+import { planMove } from '@/lib/plan/overrideMoves'
 
 /** STRENGTH-APP-01 (C) — strength on the Plan week. Optional: the marketing phone still passes none. */
 export interface PlanStrength {
@@ -159,15 +160,12 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
     const { supabase, authedFetch } = await persistence()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    let updated = allOverrides.filter(o => !(o.week_n === weekN && o.original_day === originalDay))
-    updated = updated.filter(o => !(o.week_n === weekN && o.new_day === newDay))
-    if (newDay !== originalDay) {
-      updated = [...updated, { week_n: weekN, original_day: originalDay, new_day: newDay }]
-    }
-    onOverrideChange(updated)
+    // PLAN-MOVE-DELETE-01 — one decision for the screen AND the store (they used to disagree).
+    const { next, removedOriginalDays } = planMove(allOverrides, weekN, originalDay, newDay)
+    onOverrideChange(next)
     await supabase.from('session_overrides')
       .delete().eq('user_id', user.id).eq('week_n', weekN)
-      .or(`original_day.eq.${originalDay},new_day.eq.${newDay},original_day.eq.${newDay}`)
+      .in('original_day', removedOriginalDays)
     if (newDay !== originalDay) {
       await supabase.from('session_overrides').insert({
         user_id: user.id, week_n: weekN, original_day: originalDay, new_day: newDay,

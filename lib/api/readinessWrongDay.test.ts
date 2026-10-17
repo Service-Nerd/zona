@@ -16,6 +16,7 @@ import { applyAdjustmentDays } from '@/lib/coaching/applyAdjustmentDays'
 const S = vi.hoisted(() => ({
   plan: null as unknown, samples: [] as unknown[], pending: [] as unknown[],
   inserts: [] as Record<string, unknown>[], updates: [] as unknown[], events: [] as string[],
+  overrides: [] as unknown[], overridesError: null as null | { message: string },
 }))
 vi.mock('@/lib/supabase/getUserFromRequest', () => ({ getUserFromRequest: async () => ({ id: 'u1' }) }))
 vi.mock('@/lib/trial', () => ({ getUserTier: async () => 'paid' }))
@@ -31,7 +32,9 @@ vi.mock('@/lib/supabase/userScopedClient', () => ({
         single: async () => ({ data: S.inserts[S.inserts.length - 1], error: null }),
         insert: (row: Record<string, unknown>) => { S.inserts.push(row); return q },
         update: (row: unknown) => { S.updates.push(row); return q },
-        then: (r: (x: unknown) => void) => r(table === 'health_daily_samples' ? { data: S.samples, error: null } : { data: S.pending, error: null }),
+        then: (r: (x: unknown) => void) => r(table === 'health_daily_samples' ? { data: S.samples, error: null }
+          : table === 'session_overrides' ? { data: S.overridesError ? null : S.overrides, error: S.overridesError }
+          : { data: S.pending, error: null }),
       })
       return q
     },
@@ -60,7 +63,7 @@ function samples(today: string) {
   return out
 }
 
-beforeEach(() => { S.plan = plan(); S.samples = samples('2026-11-05'); S.pending = []; S.inserts = []; S.updates = []; S.events = [] })
+beforeEach(() => { S.plan = plan(); S.samples = samples('2026-11-05'); S.pending = []; S.inserts = []; S.updates = []; S.events = []; S.overrides = []; S.overridesError = null })
 
 async function check(date = '2026-11-05') {
   const { GET } = await import('@/app/api/pre-session-readiness/route')
@@ -98,6 +101,33 @@ describe('the readiness route', () => {
     const r = await check()
     expect(r.status).toBe(500)
     expect(S.events).toEqual(['readiness_failed'])
+  })
+})
+
+describe('🔴 READINESS-OVERRIDES-01 — a session the runner MOVED', () => {
+  // Week 3: Thursday's tempo moved to Wednesday 2026-11-04.
+  const moved = [{ week_n: 3, original_day: 'thu', new_day: 'wed' }]
+  it('the moved tempo is eased on the day it now sits (Wednesday), edited under its own key (thu)', async () => {
+    S.overrides = moved; S.samples = samples('2026-11-04')
+    const r = await check('2026-11-04')
+    expect(r.status, JSON.stringify(r.body)).toBe(200)
+    expect(S.inserts).toHaveLength(1)
+    const row = S.inserts[0] as { sessions_before: unknown[]; sessions_after: unknown[]; trigger_detail: Record<string, unknown> }
+    const changed = row.sessions_after.map((x, i) => JSON.stringify(x) !== JSON.stringify(row.sessions_before[i]))
+    expect(changed).toEqual([false, false, false, true, false, false, false])
+    expect(row.trigger_detail).toMatchObject({ sessionDay: 'thu', sessionDate: '2026-11-04', displayDay: 'wed' })
+  })
+  it('and nothing is eased on Thursday, the day it left', async () => {
+    S.overrides = moved
+    const r = await check('2026-11-05')
+    expect(S.inserts).toHaveLength(0)
+    expect(r.body.adjustment).toBeNull()
+  })
+  it('a failed overrides read eases nothing (never acts on a session it cannot place)', async () => {
+    S.overridesError = { message: 'boom' }
+    const r = await check()
+    expect(S.inserts).toHaveLength(0)
+    expect(r.body).toMatchObject({ adjustment: null, reason: 'overrides_unavailable' })
   })
 })
 

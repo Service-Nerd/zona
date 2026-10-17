@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — READINESS-OVERRIDES-01 + PLAN-MOVE-DELETE-01 + AUTOMATCH-MOVED-DATE-01 · three ways a moved session got lost
+**Shipped:** Moving a session now holds up in three places it didn't. Recovery easing acts on the session you actually have today. A second move no longer quietly undoes the first. And a moved run is matched against runs from the day it moved to.
+
+**Dev learning:** All three came from the same fact: a session is stored under the day it was planned on but shown on the day it was moved to. Each bug read the wrong one of those two days. Writing that down for the AM/PM plan is what made them visible.
+
+**Product learning:** None of them crashed. A missed ease, a move that reverts on the next load, a picker for a run we already had: each would look to a runner like the app being a bit unreliable, and none would reach us as a bug report.
+
+**AI-building learning:** The move bug was two copies of one decision, one for the screen and one for the database, that had drifted by one clause. The fix wasn't to correct the clause; it was to have one function both sides read.
+
+**The honest bit:** The readiness one is in a route I fixed this morning. I made it ease the right day and didn't check whether it knew about moved sessions.
+
 ## 2026-10-17 — STRENGTH-PLAN-GLYPH-01 · mark the exception, not the rule
 **Shipped:** Strength sessions on the Plan screen now show the dumbbell, the same as on Today. Runs don't get an icon.
 

@@ -197,6 +197,23 @@ describe('resolveAutoMatch — the owner', () => {
     expect(resolveAutoMatch({ type: 'easy', distance_km: 8 }, '2026-10-05', 'wed', [faraway])).toBeNull()
   })
 
+  // 🔴 AUTOMATCH-MOVED-DATE-01 — a session MOVED from Monday to Saturday carries key 'mon' (its
+  // completion key) and rawDate = Saturday. It must be matched against Saturday's run.
+  it('🔴 a moved session is matched on the day it now sits, not the day it came from', () => {
+    const satRun = { id: 'run-S', type: 'Run', sport_type: 'Run', start_date: '2026-10-10T08:30:00.000Z', distance: 9880, moving_time: 3667 }
+    const moved = { type: 'easy', distance_km: 8, label: 'Easy run', key: 'mon', rawDate: new Date(2026, 9, 10).toISOString() }
+    const m = resolveAutoMatch(moved, '2026-10-05', 'mon', [satRun])
+    expect(m, 'matched against Monday, five days away').not.toBeNull()
+    expect((m!.activity as { id: string }).id).toBe('run-S')
+    // And the run on the day it LEFT is not offered for it.
+    const monRun = { ...satRun, id: 'run-M', start_date: '2026-10-05T08:30:00.000Z' }
+    expect(resolveAutoMatch(moved, '2026-10-05', 'mon', [monRun])).toBeNull()
+  })
+  it('a path with no rawDate still falls back to the week start + day key', () => {
+    const run = { id: 'run-A', type: 'Run', sport_type: 'Run', start_date: '2026-10-07T13:45:00.000Z', distance: 9880, moving_time: 3667 }
+    expect(resolveAutoMatch({ type: 'easy', distance_km: 8 }, '2026-10-05', 'wed', [run])).not.toBeNull()
+  })
+
   it('offsets the session date by its day key', () => {
     expect(sessionDateFor('2026-09-21', 'mon')!.getDate()).toBe(21)
     expect(sessionDateFor('2026-09-21', 'sun')!.getDate()).toBe(27)
