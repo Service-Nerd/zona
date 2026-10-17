@@ -131,7 +131,9 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
   for (const slot of TEMPLATES[sel.profile.focus][kind]) {
     if (slot.role === 'plyo' && !plyoAllowed) continue
     const lowerSlot = PATTERN_REGION[slot.pattern] === 'lower'
-    const ex = selectExercise(slot.pattern, { ...sel, preferUnilateral: sel.preferUnilateral && lowerSlot }, used, slot.role === 'main')
+    // STRENGTH-KNEE-DOMINANT-01 — the single-leg slot carries the unilateral work; the hinge slot
+    // is where the heaviest bilateral load lives (S6), so it does not prefer single-leg variants.
+    const ex = selectExercise(slot.pattern, { ...sel, preferUnilateral: sel.preferUnilateral && lowerSlot && slot.pattern !== 'hinge' }, used, slot.role === 'main')
     if (!ex) {
       if (slot.role === 'main') notes.push('pattern_unavailable')
       continue
@@ -210,7 +212,10 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
   // never on main lifts inside the technique block.
   if (dose.phase !== 'taper' && dose.phase !== 'deload') {
     const novice = dose.weekIndex < C.NOVICE_BLOCK_WEEKS[sel.profile.experience]  // strength weeks, not run weeks
-    const caps: Partial<Record<BlockRole, number>> = { main: novice ? 0 : C.MAIN_SETS_MAX, accessory: C.ACCESSORY_SETS_MAX, core: C.CORE_SETS_MAX }
+    // STRENGTH-PEAK-FILL-01 — peak is "heavy and low volume" (S6): the fill step must not add
+    // back the main set the peak cut removed. Accessories and core may still fill.
+    const mainCap = novice ? 0 : dose.phase === 'peak' ? C.MAIN_SETS - C.PEAK_MAIN_SET_REDUCTION : C.MAIN_SETS_MAX
+    const caps: Partial<Record<BlockRole, number>> = { main: mainCap, accessory: C.ACCESSORY_SETS_MAX, core: C.CORE_SETS_MAX }
     // Jumps dropped to fit come back FIRST if they now fit: otherwise the fill step spends the
     // room on another main set and the session ends under budget with no jumps (measured: 30-min
     // peak weeks, 26 of 30 minutes used).

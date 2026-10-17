@@ -56,5 +56,5 @@ catalogue cues (reviewed by the strength seat 2026-10-17). An exercise marked `n
 
 ## Guarantees (checked by `validateStrengthPlan`, each falsified in `validate.test.ts`)
 
-The `S-*` codes in `StrengthPrinciples.md` (32 as of 2026-10-17; count from `validate.ts`). Gates: `npm run verify:strength` (in `verify:ci`),
-`verify:strength:full` (266,688 plans, 2026-10-16: 0 violations).
+The `S-*` codes in `StrengthPrinciples.md` (38 as of 2026-10-17, after the start-week, jumps, peak and lower-balance fixes; count from `validate.ts`). Gates: `npm run verify:strength` (in `verify:ci`),
+`verify:strength:full` (266,688 plans, 2026-10-17: 0 violations).

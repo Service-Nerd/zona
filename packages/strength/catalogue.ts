@@ -85,9 +85,12 @@ export const CATALOGUE: readonly Exercise[] = [
   ex('bulgarian_split_squat_loaded', 'Weighted rear-foot-elevated split squat', 'single_leg', ['quads', 'glutes'], [['bench', 'dumbbells'], ['bench', 'kettlebell'], ['box', 'dumbbells']], 3, { uni: true, regress: 'bulgarian_split_squat_bw' }, ['Heavy and controlled.', 'Front foot flat the whole rep.']),
   ex('reverse_lunge_bw', 'Reverse lunge', 'single_leg', ['quads', 'glutes'], BW, 1, { uni: true, progress: 'reverse_lunge_loaded' }, ['Step back, drop the knee.', 'Drive up through the front heel.']),
   ex('reverse_lunge_loaded', 'Weighted reverse lunge', 'single_leg', ['quads', 'glutes'], LOAD, 2, { uni: true, regress: 'reverse_lunge_bw' }, ['Step back, drop the back knee.', 'Pause at the bottom.']),
-  ex('single_leg_rdl_bw', 'Single-leg Romanian deadlift', 'single_leg', ['hamstrings', 'glutes'], BW, 1, { uni: true, progress: 'single_leg_rdl_loaded' }, ['Hips square to the floor.', 'Reach back with the free heel.']),
-  ex('single_leg_rdl_loaded', 'Weighted single-leg Romanian deadlift', 'single_leg', ['hamstrings', 'glutes'], LOAD, 2, { uni: true, regress: 'single_leg_rdl_bw', progress: 'b_stance_rdl' }, ['Weight in the opposite hand.', 'Slow down, slow up.']),
-  ex('b_stance_rdl', 'Kickstand Romanian deadlift', 'single_leg', ['hamstrings', 'glutes'], [['dumbbells'], ['kettlebell'], ['barbell']], 3, { uni: true, regress: 'single_leg_rdl_loaded' }, ['Back toe for balance only.', 'Load it heavy.']),
+  // STRENGTH-KNEE-DOMINANT-01 — single-leg RDLs are HINGES by movement (hip-dominant). In the
+  // single-leg slot they sat beside the hinge slot's RDL and left 28% of leg sessions with no
+  // knee-dominant lift. The single-leg slot is now knee-dominant only.
+  ex('single_leg_rdl_bw', 'Single-leg Romanian deadlift', 'hinge', ['hamstrings', 'glutes'], BW, 1, { uni: true, progress: 'single_leg_rdl_loaded' }, ['Hips square to the floor.', 'Reach back with the free heel.']),
+  ex('single_leg_rdl_loaded', 'Weighted single-leg Romanian deadlift', 'hinge', ['hamstrings', 'glutes'], LOAD, 2, { uni: true, regress: 'single_leg_rdl_bw', progress: 'b_stance_rdl' }, ['Weight in the opposite hand.', 'Slow down, slow up.']),
+  ex('b_stance_rdl', 'Kickstand Romanian deadlift', 'hinge', ['hamstrings', 'glutes'], [['dumbbells'], ['kettlebell'], ['barbell']], 3, { uni: true, regress: 'single_leg_rdl_loaded' }, ['Back toe for balance only.', 'Load it heavy.']),
   ex('skater_squat', 'Skater squat', 'single_leg', ['quads', 'glutes'], BW, 3, { uni: true, avoid: ['knee'] }, ['Back knee to the floor.', 'Arms forward to balance.']),
   ex('lateral_lunge', 'Lateral lunge', 'single_leg', ['adductors', 'glutes', 'quads'], [['bodyweight'], ['dumbbells'], ['kettlebell']], 2, { uni: true }, ['Sit into one hip.', 'Other leg long.']),
   ex('single_leg_box_squat', 'Single-leg box squat', 'single_leg', ['quads', 'glutes'], [['box'], ['bench']], 3, { uni: true, avoid: ['knee'] }, ['Sit back to the box on one leg.', 'Knee stays over the toes.']),
@@ -129,7 +132,7 @@ export const CATALOGUE: readonly Exercise[] = [
   ex('barbell_bench_press', 'Barbell bench press', 'upper_push', ['chest', 'triceps', 'shoulders'], [['barbell', 'bench', 'rack']], 3, { avoid: ['shoulder'] }, ['Use a spotter or safeties.', 'Bar to the lower chest.']),
 
   // ── Upper pull ──
-  ex('prone_ytw', 'Prone Y-T-W raise', 'upper_pull', ['back', 'shoulders'], BW, 1, {}, ['Face down, thumbs up.', 'Squeeze the shoulder blades.']),
+  ex('prone_ytw', 'Prone Y-T-W raise', 'upper_pull', ['back', 'shoulders'], BW, 1, { notMain: true }, ['Face down, thumbs up.', 'Squeeze the shoulder blades.']),
   ex('table_row', 'Table row', 'upper_pull', ['back', 'biceps'], BW, 1, { progress: 'inverted_row' }, ['Under a sturdy table, grip the edge.', 'Pull your chest to it.']),
   ex('band_row', 'Banded row', 'upper_pull', ['back', 'biceps'], BAND, 1, { progress: 'single_arm_dumbbell_row' }, ['Anchor the band at chest height.', 'Elbows back, chest tall.']),
   ex('band_pull_apart', 'Band pull-apart', 'upper_pull', ['back', 'shoulders'], BAND, 1, {}, ['Arms straight.', 'Pull to the chest, slow back.']),

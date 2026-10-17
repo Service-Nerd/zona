@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { generateStrengthPlan } from './generate'
 import { validateStrengthPlan } from './validate'
+import { CATALOGUE_BY_ID } from './catalogue'
 import type { Day, RunContext, RunDay, RunRole, RunWeek, StrengthPlan, StrengthProfile, StrengthSession } from './types'
 
 /**
@@ -75,6 +76,8 @@ const CASES: Array<[string, (p: StrengthPlan) => void, StrengthProfile?]> = [
   ['S-MAIN-ELIGIBLE', p => { mainItem(heavy(p)).exercise_id = 'kettlebell_swing' }, { ...PROFILE, equipment: [...PROFILE.equipment, 'kettlebell'] }],
   ['S-BEFORE-START', p => { p.start_date = dateOf(1, 'mon') }],
   ['S-PLYO-START-LEVEL', p => { heavy(p, 1).blocks.push({ role: 'plyo', items: [{ exercise_id: 'drop_jump', sets: 3, contacts: 10, rir: null, rest_s: 60, per_side: false }] }) }],
+  ['S-PEAK-SETS', p => { p.weeks[0].phase = 'peak'; mainItem(heavy(p)).sets = 4 }],
+  ['S-LOWER-BALANCE', p => { const m = heavy(p).blocks.find(b => b.role === 'main')!; m.items = m.items.map(i => (CATALOGUE_BY_ID.get(i.exercise_id)!.pattern === 'single_leg' ? { ...i, exercise_id: 'single_leg_rdl_loaded' } : i)) }],
   ['S-WARMUP-REPEAT', p => { const s = heavy(p); s.blocks[0].items.push({ exercise_id: 'band_walk_warmup', sets: 1, reps: 8, rir: null, rest_s: 0, per_side: false }); s.blocks.push({ role: 'accessory', items: [{ exercise_id: 'banded_side_step', sets: 2, reps: 10, rir: 2, rest_s: 60, per_side: false }] }) }],
 ]
 
@@ -112,6 +115,15 @@ describe('🔴 STRENGTH-PLYO-BUDGET-01 + STRENGTH-START-WEEK-01, on a real 12-we
       const first = plan.weeks.flatMap(w => w.sessions).flatMap(s => s.blocks).find(b => b.role === 'plyo')?.items[0]
       expect(first && ['pogo_hops', 'skipping_rope_style'].includes(first.exercise_id), `${experience}: ${first?.exercise_id}`).toBe(true)
     }
+  })
+  // With dumbbells only, a regular lifter's heavy hinge is the kickstand RDL, which is how you load a hinge
+  // heavily without a bar; with a barbell, bilateral work must appear (it used to vanish for running focus).
+  it('🔴 S6 Am.1: running focus with a barbell still gets BILATERAL loaded hinges', () => {
+    const plan = generateStrengthPlan({ ...PROFILE, equipment: [...PROFILE.equipment, 'barbell', 'rack'] }, L)
+    const hinges = plan.weeks.flatMap(w => w.sessions).flatMap(s => s.blocks.filter(b => b.role === 'main').flatMap(b => b.items))
+      .map(i => CATALOGUE_BY_ID.get(i.exercise_id)!).filter(e => e.pattern === 'hinge')
+    expect(hinges.length).toBeGreaterThan(0)
+    expect(hinges.some(e => !e.unilateral && e.equipment.every(o => o.some(t => ['dumbbells', 'kettlebell', 'barbell'].includes(t)))), hinges.map(e => e.id).join(',')).toBe(true)
   })
   it('S-PLYO-MISSING fires when a due week has its jumps stripped', () => {
     const plan = clone(generateStrengthPlan(PROFILE, L))

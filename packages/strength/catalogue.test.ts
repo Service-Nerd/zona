@@ -25,7 +25,8 @@ describe('strength catalogue', () => {
     for (const p of ['single_leg', 'hinge', 'calf', 'hip_abduction', 'plyometric'] as Pattern[]) {
       expect(CATALOGUE.some(e => e.pattern === p && e.unilateral), p).toBe(true)
     }
-    expect(CATALOGUE.filter(e => e.pattern === 'single_leg').length).toBeGreaterThanOrEqual(12)
+    // 13 → 10 at STRENGTH-KNEE-DOMINANT-01: the three single-leg RDLs are hinges by movement.
+    expect(CATALOGUE.filter(e => e.pattern === 'single_leg').length).toBeGreaterThanOrEqual(10)
   })
   it('every plyometric is high impact and counted in contacts', () => {
     expect(CATALOGUE.filter(e => e.pattern === 'plyometric').every(e => e.impact === 'high' && e.measure === 'contacts')).toBe(true)
@@ -33,6 +34,9 @@ describe('strength catalogue', () => {
   it('cues are runner-facing copy: 1–3 short sentences, no em dash', () => {
     const bad = CATALOGUE.filter(e => e.cues.length < 1 || e.cues.length > 3 || e.cues.some(c => c.includes('—') || !/[.!?]$/.test(c) || c.length > 80))
     expect(bad.map(e => e.id)).toEqual([])
+  })
+  it('🔴 every single-leg entry is knee-dominant (it trains the quads); hip-dominant unilateral work is a hinge', () => {
+    expect(CATALOGUE.filter(e => e.pattern === 'single_leg' && !e.muscles.includes('quads')).map(e => e.id)).toEqual([])
   })
   it('reviewed by the strength seat (2026-10-17); any edit after that goes back to the board', () => {
     expect(CATALOGUE_REVIEW_STATUS).toBe('reviewed')

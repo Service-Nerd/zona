@@ -61,3 +61,18 @@ shoulder tag on · `inverted_row` no pull-up bar · `ab_rollout_knees` → `knee
 
 **After:** main hinges are bridges, RDLs and deadlifts only; full sweep 266,688 strength plans around 925 run plans,
 0 violations. **Not reviewed by this sitting:** the animations (placeholders until Phase 3 licenses them).
+
+## Second sitting (2026-10-17, from the founder's own plan) — STRENGTH-KNEE-DOMINANT-01 · CORRECT WITH AMENDMENT
+
+**Found:** the founder's plan paired a Kickstand RDL with a Barbell RDL as its only main leg lifts for four weeks.
+Measured: **13,300 of 46,908 leg sessions (28.4%) had no knee-dominant lift**, because the single-leg slot held the
+single-leg RDL family. **Proposed:** re-pattern them as hinges. **Measured before ruling, and it found a cost:** the
+running hinge slot prefers unilateral, so bilateral RDLs and deadlifts fell to **zero** for running focus.
+**Amendment (Blagrove):** the hinge slot does not prefer unilateral; the single-leg slot already carries that work and
+the hinge is where heavy bilateral load lives. **After:** 0 all-hinge sessions; every running leg session still has
+unilateral work (23,454 of 23,454); running hinges include DB/barbell RDLs and deadlifts. Willy: knee-tagged runners
+keep knee-dominant options (split squats, RFESS, lunges, step-ups). **Also:** the Prone Y-T-W raise is `not_main`
+(*"scapular control, not a row"*); the table row stays the kit-free main pull. With dumbbells only, a regular
+lifter's heavy hinge is the kickstand RDL, which is how you load a hinge heavily without a bar: kept.
+**Artifacts:** S6 Amendment 1 · no numeric · `S-LOWER-BALANCE` + a catalogue arm (every single-leg entry trains the
+quads) + a running-with-barbell bilateral-hinge arm. Seiler, McMillan, Sims: no objection.

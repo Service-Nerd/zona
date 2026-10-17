@@ -2074,7 +2074,7 @@ say *"The rest day is non-negotiable."*, which reads as a contradiction; (c) the
 calls you have."** All three, and the earlier RIR phrasing, push line and setup prompts, stand as written, including
 the rest-card line under rest copy.
 
-### `STRENGTH-KNEE-DOMINANT-01` — 28% of leg sessions have no knee-dominant lift *(filed 2026-10-17)*
+### `STRENGTH-KNEE-DOMINANT-01` — 28% of leg sessions have no knee-dominant lift *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 **Found reviewing the founder's own plan** (general focus, regular, gym kit): weeks 1–4 pair a **Kickstand RDL with a
 Barbell RDL** as the two main lower lifts, so no squat, split squat or step-up for a month. Cause: the single-leg
@@ -2084,7 +2084,7 @@ lift**, spread evenly across focus and experience. Likely fix: re-pattern the si
 so the single-leg slot is always knee-dominant (and the running hinge slot gets its unilateral option).
 **Tags:** 🏃 COACHING BOARD (Blagrove: pattern taxonomy) → ⚙️ build.
 
-### `STRENGTH-PEAK-FILL-01` — the fill step undoes the peak cut *(filed 2026-10-17)*
+### `STRENGTH-PEAK-FILL-01` — the fill step undoes the peak cut *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 S6 cuts one main set in peak weeks ("heavy and low volume"); S10's fill step then adds sets back up to
 `MAIN_SETS_MAX` (4), because it skips only taper and deload. **Measured: 32.0% of peak-week main items sit above the

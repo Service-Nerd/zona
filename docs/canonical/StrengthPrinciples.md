@@ -84,6 +84,15 @@ for `BLOCK_WEEKS` (4) so load can progress, then the next variant.
 strength plateaus near 2–3 sets per exercise (ACSM 2026) **[M]**; one set at kept intensity maintains (Spiering
 2021) **[L]**. **Check:** `S-NOVICE-REPS`, `S-DELOAD-SETS`, `S-NO-MAIN`.
 
+**Amendment 1 (2026-10-17, STRENGTH-KNEE-DOMINANT-01, Blagrove).** A session with two or more main lower lifts has
+one **knee-dominant** (single-leg or squat) and one **hip-dominant** (hinge): never two hinges. Single-leg RDLs are
+hinges by movement and live in the hinge pattern; the single-leg slot is knee-dominant only. The hinge slot does
+**not** prefer unilateral variants for running focus: the single-leg slot already carries that, and the hinge is where
+the heaviest bilateral load lives. Measured before: 13,300 of 46,908 leg sessions (28.4%) were all hinges (the
+founder's own plan paired a Kickstand RDL with a Barbell RDL for four weeks). After: 0, with every running leg session
+still carrying unilateral work. **Check:** `S-LOWER-BALANCE`; `catalogue.test.ts` (every single-leg entry trains the
+quads).
+
 ## S7. Effort is reps in reserve
 
 **Principle.** Load is prescribed as reps in reserve, never %1RM (the app has no 1RM). Never to failure: floor

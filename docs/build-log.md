@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — STRENGTH-KNEE-DOMINANT-01 + STRENGTH-PEAK-FILL-01 · the founder's own plan was the test case
+**Shipped:** Every leg session now pairs a squat-type lift with a hinge, instead of sometimes two hinges. Peak weeks stay lighter on main lifts, as intended.
+
+**Dev learning:** The first version of the fix was right on the number and wrong on the side effect. Moving single-leg RDLs into the hinge group closed the gap to zero, but because running focus prefers single-leg work, it also removed every bilateral deadlift from running plans. Measuring before the board ruled caught it.
+
+**Product learning:** One founder plan read day by day found two problems that every rule and a 266,688-plan sweep had passed: two RDL variants for a month, and peak weeks with more volume than the build. The checks only test the rules someone has written; reading a real plan finds the rules nobody wrote.
+
+**AI-building learning:** I wrote a test that a running plan with dumbbells gets a two-leg hinge, and it failed on correct code. With dumbbells only, the kickstand RDL is how you load a hinge heavily. The assertion was wrong, not the engine, and narrowing it to a barbell owner is what the rule actually says.
+
+**The honest bit:** These two were findable earlier. Nothing asked what a session's main lifts add up to, only whether each one was allowed. And a shell slip while writing these records swallowed every code name in seven docs; I restored those files and rewrote them rather than patch the gaps.
+
 ## 2026-10-17 — STRENGTH-START-WEEK-01 + STRENGTH-PLYO-BUDGET-01 · the check agreed because it counted the same way
 **Shipped:** Strength now starts its own clock. If you add it in week 8 of a running plan you still get the beginner technique weeks first, and nothing appears in the weeks before you set it up. Jumps now show up every week they're due, starting with the easiest ones.
 

@@ -25,6 +25,13 @@ memory.
 
 
 
+## 2026-10-17 — STRENGTH-KNEE-DOMINANT-01 · CORRECT WITH AMENDMENT
+
+Two main lower lifts are one knee-dominant and one hip-dominant, never two hinges: the single-leg RDLs are hinges.
+**Amendment (measured first):** the hinge slot does not prefer unilateral, or running focus lost every bilateral
+RDL and deadlift. 28.4% all-hinge sessions → 0. Prone Y-T-W is accessory-only. S6 Am.1, `S-LOWER-BALANCE`. Sitting:
+`docs/decisions/strength-catalogue-review-2026-10-17.md` § Second sitting.
+
 ## 2026-10-17 — STRENGTH-CATALOGUE-01 · CORRECT WITH AMENDMENT
 
 The 99-entry strength catalogue is **reviewed** (strength seat leading). Measured as the engine uses it, the main hinge

@@ -47,6 +47,12 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
 
     for (const s of w.sessions) {
       const where = s.date ?? s.day
+      // S6 Am.1 — two or more main lower lifts are never all hinges: one knee-dominant, one hip.
+      const lowerMains = s.blocks.filter(b => b.role === 'main').flatMap(b => b.items)
+        .map(i => CATALOGUE_BY_ID.get(i.exercise_id)).filter(e => e && ['squat', 'hinge', 'single_leg'].includes(e.pattern))
+      if (lowerMains.length >= 2 && lowerMains.every(e => e!.pattern === 'hinge')) {
+        v.push({ code: 'S-LOWER-BALANCE', week: w.n, day: where, detail: lowerMains.map(e => e!.id).join(' + ') })
+      }
       if (start && s.date && s.date < start) v.push({ code: 'S-BEFORE-START', week: w.n, day: where, detail: `placed before strength started (${start})` })
       if (days.has(where)) v.push({ code: 'S-ONE-PER-DAY', week: w.n, day: where, detail: 'two strength sessions on one day' })
       days.add(where)
@@ -123,6 +129,9 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
         }
         if ((role === 'main' || role === 'accessory') && it.reps != null && wi < C.NOVICE_BLOCK_WEEKS[p.experience] && it.reps < 8) {
           v.push({ code: 'S-NOVICE-REPS', week: w.n, day: where, detail: `${ex.id} ${it.reps} reps in the technique block` })
+        }
+        if (w.phase === 'peak' && role === 'main' && it.sets > C.MAIN_SETS - C.PEAK_MAIN_SET_REDUCTION) {
+          v.push({ code: 'S-PEAK-SETS', week: w.n, day: where, detail: `${ex.id} ${it.sets} sets in a peak week` })
         }
         if (w.phase === 'deload' && role === 'main' && it.sets > Math.max(1, Math.round(C.MAIN_SETS * C.DELOAD_SET_FACTOR))) {
           v.push({ code: 'S-DELOAD-SETS', week: w.n, day: where, detail: `${ex.id} ${it.sets} sets in a deload week` })
