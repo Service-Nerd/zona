@@ -76,3 +76,5 @@
 20260928_comped_entitlement_not_a_conversion.sql
 20261007_claim_completion_uuid.sql
 20261007_run_analysis_session_type.sql
+20261016_strength_plans.sql
+20261017_strength_completions.sql
