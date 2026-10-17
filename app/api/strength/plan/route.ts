@@ -19,6 +19,21 @@ import { generateStrengthPlan, parseStrengthProfile, validateStrengthPlan, type 
 
 type Supabase = ReturnType<typeof strengthServiceClient>
 
+/** Today, server local date (ISO). */
+function todayIso(now: Date): string {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
+/**
+ * STRENGTH-START-WEEK-01 — when this runner's strength started: the stored plan's own date,
+ * kept across every rebuild (a new profile, a moved run week, a new race plan), so the technique
+ * block is served once, from the day they began. A runner with no plan yet starts today.
+ * A legacy row from before the field existed falls back to the day it was generated.
+ */
+function startDateFor(existing: { plan_json?: { start_date?: string } | null; generated_at?: string | null } | null, now: Date): string {
+  return existing?.plan_json?.start_date ?? (existing?.generated_at ? String(existing.generated_at).slice(0, 10) : todayIso(now))
+}
+
 /** Next Monday on or after today, server local date. */
 function nextMonday(now: Date): string {
   const d = new Date(now); d.setHours(0, 0, 0, 0)
@@ -36,8 +51,8 @@ async function currentRunContext(supabase: Supabase, userId: string): Promise<{ 
 }
 
 /** Generate, validate and save. Returns the plan, or a response to send. */
-async function buildAndSave(supabase: Supabase, userId: string, profile: StrengthProfile, ctx: RunContext | null): Promise<{ ok: true; plan: StrengthPlan } | { ok: false; res: NextResponse }> {
-  const plan = generateStrengthPlan(profile, ctx, ctx ? {} : { standaloneStart: nextMonday(new Date()) })
+async function buildAndSave(supabase: Supabase, userId: string, profile: StrengthProfile, ctx: RunContext | null, startDate: string): Promise<{ ok: true; plan: StrengthPlan } | { ok: false; res: NextResponse }> {
+  const plan = generateStrengthPlan(profile, ctx, ctx ? { startDate } : { standaloneStart: nextMonday(new Date()) })
   const violations = validateStrengthPlan(plan, ctx)
   if (violations.length) {
     await recordOpsEvent('strength_generate_failed', {
@@ -79,7 +94,7 @@ export async function GET(req: NextRequest) {
   if (!ctxErr && runContextSig(ctx) !== data.run_context_sig) {
     const parsed = parseStrengthProfile(data.profile_json)
     if (parsed.ok) {
-      const built = await buildAndSave(supabase, user.id, parsed.profile, ctx)
+      const built = await buildAndSave(supabase, user.id, parsed.profile, ctx, startDateFor(data, new Date()))
       if (built.ok) { plan = built.plan; replaced = true }
     }
   }
@@ -100,7 +115,12 @@ export async function POST(req: NextRequest) {
   // Never fall back to a standalone plan because the run plan could not be READ:
   // that would place strength blind to the runner's hard days.
   if (ctxErr) return NextResponse.json({ error: 'Could not load your run plan' }, { status: 500 })
-  const built = await buildAndSave(supabase, user.id, parsed.profile, ctx)
+  // A failed read of the EXISTING row must not reset the start date: that would hand a
+  // runner eight weeks in a fresh technique block.
+  const { data: existing, error: exErr } = await supabase
+    .from('strength_plans').select('plan_json, generated_at').eq('user_id', user.id).maybeSingle()
+  if (exErr) return NextResponse.json({ error: 'Could not load the strength plan' }, { status: 500 })
+  const built = await buildAndSave(supabase, user.id, parsed.profile, ctx, startDateFor(existing, new Date()))
   if (!built.ok) return built.res
   return NextResponse.json({ plan: built.plan })
 }

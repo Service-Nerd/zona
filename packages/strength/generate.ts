@@ -17,6 +17,16 @@ const LOAD_TAGS: EquipmentTag[] = ['dumbbells', 'kettlebell', 'barbell', 'machin
 export interface GenerateOptions {
   /** Standalone only: ISO date of the first Monday. Required when `ctx` is null. */
   standaloneStart?: string
+  /** STRENGTH-START-WEEK-01 — when this runner's strength started (ISO). Defaults to the first
+   *  day of the calendar, which is right for a plan built at the start of a run plan and wrong
+   *  for one built mid-plan, so the route always passes it. */
+  startDate?: string
+}
+
+/** Index of the run week containing `date` (the first week with a day on or after it). */
+export function strengthStartWeek(run: RunContext, date: string): number {
+  const i = run.weeks.findIndex(wk => run.days.some(d => d.week_n === wk.n && d.date >= date))
+  return i < 0 ? run.weeks.length : i
 }
 
 function addDays(iso: string, n: number): string {
@@ -46,13 +56,21 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
   if (!profile.equipment.some(t => LOAD_TAGS.includes(t))) notes.add('bodyweight_ceiling')
   if (!standalone) notes.add('split_is_inference')
 
+  const startDate = opts.startDate ?? run.days[0]?.date ?? opts.standaloneStart ?? ''
+  const startWeek = strengthStartWeek(run, startDate)
   const weeks: StrengthWeek[] = []
   let prevHeavy: number | null = null
-  run.weeks.forEach((wk, weekIndex) => {
-    const idx = run.days.map((d, i) => (d.week_n === wk.n ? i : -1)).filter(i => i >= 0)
+  run.weeks.forEach((wk, runWeekIndex) => {
+    // Before strength started: the week exists (so week numbers stay aligned with the run
+    // plan) and holds nothing. A session dated before the runner set strength up is one
+    // they never had the chance to do.
+    if (runWeekIndex < startWeek) { weeks.push({ n: wk.n, phase: wk.phase, sessions: [] }); return }
+    const weekIndex = runWeekIndex - startWeek
+    const idx = run.days.map((d, i) => (d.week_n === wk.n && d.date >= startDate ? i : -1)).filter(i => i >= 0)
     const { placed, legsLimited, fewer } = placeWeek(timeline, idx, wk.phase, profile, run.masters, prevHeavy)
     if (legsLimited) notes.add('legs_limited_by_run_week')
-    if (fewer && wk.phase !== 'taper' && wk.phase !== 'race_week') notes.add('fewer_sessions_than_asked')
+    // The start week can be partial; fewer sessions there is the calendar, not the run week.
+    if (fewer && weekIndex > 0 && wk.phase !== 'taper' && wk.phase !== 'race_week') notes.add('fewer_sessions_than_asked')
     const sel = { profile, injuries, weekIndex, preferUnilateral: profile.focus === 'running' }
     const dose = { profile, phase: wk.phase, weekIndex }
     const plyoMin = profile.experience === 'new' ? C.PLYO_MIN_WEEKS_NEW : C.PLYO_MIN_WEEKS
@@ -84,5 +102,6 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
     profile,
     weeks,
     notes: Array.from(notes),
+    start_date: startDate,
   }
 }

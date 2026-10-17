@@ -143,6 +143,16 @@ form (`same_as`) is left out when that exercise is in the session: a session nev
 *Upper body* session carries no hip work; hip abductors stay in every full-body and lower session. **Check:**
 `S-WARMUP-REPEAT`.
 
+**Amendment 2 (2026-10-17, defect restoring intent: STRENGTH-START-WEEK-01, STRENGTH-PLYO-BUDGET-01).** Three
+readings this constitution always meant and the engine did not do. **(a) Strength weeks count from when strength
+started** (`start_date`), never the run plan's week 1: S6's technique block and S8's gate belong to the lifter. Set up
+in week 8, a `new` lifter got heavy 5s and open jumps in their first session. **(b) Jumps are not an accessory**, so
+under S10 they are dropped only after accessories and main-set trims, and come back first, at no less than
+`PLYO_CONTACTS_START`, when the session has room: measured, jumps reached one week in sixteen (a deload). **(c) The
+first jump is level 1** and climbs one rung per two blocks from the gate, never from the lifting level (board
+direction, catalogue review): a `some` lifter's first jump was bounding or a drop jump. No numeric moved. **Check:**
+`S-BEFORE-START`, `S-PLYO-MISSING`, `S-PLYO-START-LEVEL`; the validator counts from `start_date` too.
+
 ## S11. Core in most sessions
 
 **Principle.** A week with two or more training sessions has at least two core exposures. Upper body is placed by

@@ -179,19 +179,28 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
 
   let blocks = assemble(chosen)
   let est = estimateMinutes(blocks, warmupMinutes)
-  // Over budget: drop the lowest-priority slot, but always keep one core item.
+  // Over budget, in S10's order: drop the lowest-priority accessory (always keeping one core
+  // item), then trim main sets to 2. 🔴 STRENGTH-PLYO-BUDGET-01: jumps are NOT an accessory and
+  // used to sit at priority 4, so every build week dropped them and only a deload (cut sets)
+  // left room: one week of jumps in sixteen, and that one the lightest. They go LAST now.
+  let droppedPlyo: Chosen | null = null
   while (est > minutes) {
     const coreCount = chosen.filter(c => c.slot.role === 'core').length
     const droppable = chosen
       .map((c, i) => ({ c, i }))
-      .filter(({ c }) => c.slot.priority > 1 && !(c.slot.role === 'core' && coreCount <= 1))
+      .filter(({ c }) => c.slot.priority > 1 && c.slot.role !== 'plyo' && !(c.slot.role === 'core' && coreCount <= 1))
       .sort((a, b) => b.c.slot.priority - a.c.slot.priority || b.i - a.i)
+    const main = chosen.filter(c => c.slot.role === 'main' && c.item.sets > 2)
+    const plyo = chosen.findIndex(c => c.slot.role === 'plyo')
     if (droppable.length) {
       chosen = chosen.filter((_, i) => i !== droppable[0].i)
-    } else {
-      const main = chosen.filter(c => c.slot.role === 'main' && c.item.sets > 2)
-      if (!main.length) break
+    } else if (main.length) {
       main[main.length - 1].item = { ...main[main.length - 1].item, sets: main[main.length - 1].item.sets - 1 }
+    } else if (plyo >= 0) {
+      droppedPlyo = chosen[plyo]
+      chosen = chosen.filter((_, i) => i !== plyo)
+    } else {
+      break
     }
     blocks = assemble(chosen)
     est = estimateMinutes(blocks, warmupMinutes)
@@ -200,8 +209,20 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
   // cooldown. Never in a taper or deload week, which are short on purpose, and
   // never on main lifts inside the technique block.
   if (dose.phase !== 'taper' && dose.phase !== 'deload') {
-    const novice = dose.weekIndex < C.NOVICE_BLOCK_WEEKS[sel.profile.experience]
+    const novice = dose.weekIndex < C.NOVICE_BLOCK_WEEKS[sel.profile.experience]  // strength weeks, not run weeks
     const caps: Partial<Record<BlockRole, number>> = { main: novice ? 0 : C.MAIN_SETS_MAX, accessory: C.ACCESSORY_SETS_MAX, core: C.CORE_SETS_MAX }
+    // Jumps dropped to fit come back FIRST if they now fit: otherwise the fill step spends the
+    // room on another main set and the session ends under budget with no jumps (measured: 30-min
+    // peak weeks, 26 of 30 minutes used).
+    // A short session takes fewer sets of jumps rather than none, never below the S8 start dose.
+    if (droppedPlyo) {
+      const minSets = Math.ceil(C.PLYO_CONTACTS_START / C.PLYO_CONTACTS_PER_SET)
+      for (let sets = droppedPlyo.item.sets; sets >= minSets; sets--) {
+        const trial = [...chosen, { ...droppedPlyo, item: { ...droppedPlyo.item, sets } }]
+        const t = estimateMinutes(assemble(trial), warmupMinutes)
+        if (t <= minutes) { chosen = trial; blocks = assemble(chosen); est = t; break }
+      }
+    }
     let grew = true
     while (est < minutes * C.FILL_TARGET && grew) {
       grew = false

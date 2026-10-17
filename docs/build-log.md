@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — STRENGTH-START-WEEK-01 + STRENGTH-PLYO-BUDGET-01 · the check agreed because it counted the same way
+**Shipped:** Strength now starts its own clock. If you add it in week 8 of a running plan you still get the beginner technique weeks first, and nothing appears in the weeks before you set it up. Jumps now show up every week they're due, starting with the easiest ones.
+
+**Dev learning:** The validator was written not to reuse the engine's rules, and it didn't. It reused the engine's loop index instead, which was the wrong thing in both files, so the two always agreed. Independence has to cover the inputs a check reads, not only its logic.
+
+**Product learning:** Jumps were promised and almost never delivered, and no check asked. Every jump rule looked at jumps that had been placed: too soon, too many, wrong week. A plan with none passed all of them. The fix was one new question: is this week due jumps, and are there any?
+
+**AI-building learning:** That presence check found a third bug as soon as it ran. After dropping the jumps to fit, the session filled the freed minutes with another main-lift set and finished under budget with no jumps. I'd fixed two layers and called it done; the new check said no.
+
+**The honest bit:** One of my own tests stayed green when I broke the fix it was meant to guard, because the small test calendar never reaches the case. The broader sweep inside verify does catch it. I've left that gap written down rather than pretending the unit test covers it.
+
 ## 2026-10-17 — STRENGTH-CATALOGUE-01 · reading a catalogue tells you what it says, not what it does
 **Shipped:** The 99 strength exercises have been reviewed. Three moves that were filling the heavy main lift slot (Nordic curls, hamstring curls, kettlebell swings) are now accessory-only, and thirteen entries were corrected.
 

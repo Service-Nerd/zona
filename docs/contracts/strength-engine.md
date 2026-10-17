@@ -6,7 +6,7 @@
 ## The call
 
 ```ts
-generateStrengthPlan(profile: StrengthProfile, ctx: RunContext | null, opts?: { standaloneStart?: string }): StrengthPlan
+generateStrengthPlan(profile: StrengthProfile, ctx: RunContext | null, opts?: { standaloneStart?: string; startDate?: string }): StrengthPlan
 validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null): StrengthViolation[]
 parseStrengthProfile(input: unknown): { ok: true; profile } | { ok: false; field }
 ```
@@ -42,8 +42,13 @@ zones or distances.** `runContextSig(ctx)` hashes it.
     blocks: { role: 'warmup'|'plyo'|'main'|'accessory'|'core'|'mobility',
               items: { exercise_id, sets, reps?|seconds?|contacts?, rir: number|null, rest_s, per_side, superset? }[] }[]
   }[] }[],
-  notes: ('bodyweight_ceiling'|'split_is_inference'|'legs_limited_by_run_week'|'fewer_sessions_than_asked'|'pattern_unavailable')[] }
+  notes: ('bodyweight_ceiling'|'split_is_inference'|'legs_limited_by_run_week'|'fewer_sessions_than_asked'|'pattern_unavailable')[],
+  start_date: string }   // STRENGTH-START-WEEK-01: weeks before it hold no sessions; every count starts here
 ```
+
+**`startDate` (STRENGTH-START-WEEK-01):** the technique block, the jumps gate and every level climb count strength
+weeks from the week containing it, never the run plan's week 1, and no session is placed before it. Defaults to the
+calendar's first day, so callers that build at the start of a run plan are unchanged; the route always passes it.
 
 `exercise_id` resolves in `CATALOGUE_BY_ID`. Notes are facts for the app to phrase; the engine writes no copy beyond
 catalogue cues (reviewed by the strength seat 2026-10-17). An exercise marked `not_main` never fills a main slot

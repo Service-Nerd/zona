@@ -29,6 +29,18 @@ export function targetLevel(ctx: SelectionContext): 1 | 2 | 3 {
   return Math.min(3, start + climbed) as 1 | 2 | 3
 }
 
+/**
+ * STRENGTH-PLYO-BUDGET-01 — jumps climb from the JUMPS start, not the lifting level (board
+ * direction, catalogue review 2026-10-17). A runner who lifts at level 2 has never jumped in
+ * this plan, so the first jump is level 1 and it climbs at the same rate lifting does: one
+ * rung per two blocks. Before it, a `some` lifter's first jump was bounding or a drop jump.
+ */
+export function plyoLevel(ctx: SelectionContext): 1 | 2 | 3 {
+  const start = ctx.profile.experience === 'new' ? C.PLYO_MIN_WEEKS_NEW : C.PLYO_MIN_WEEKS
+  const since = Math.max(0, ctx.weekIndex - start)
+  return Math.min(3, 1 + Math.floor(since / (C.BLOCK_WEEKS * 2))) as 1 | 2 | 3
+}
+
 const LOAD_TAGS: readonly EquipmentTag[] = ['dumbbells', 'kettlebell', 'barbell', 'machines', 'cable']
 
 /** Uses external load in every way it can be done (bands do not count). */
@@ -62,7 +74,7 @@ export function selectExercise(pattern: Pattern, ctx: SelectionContext, exclude:
     const loaded = pool.filter(isLoaded)
     if (loaded.length) pool = loaded
   }
-  const level = targetLevel(ctx)
+  const level = pattern === 'plyometric' ? plyoLevel(ctx) : targetLevel(ctx)
   // Highest level at or below target; if nothing that low, the lowest available.
   const atOrBelow = pool.filter(e => e.level <= level)
   const bestLevel = atOrBelow.length ? Math.max(...atOrBelow.map(e => e.level)) : Math.min(...pool.map(e => e.level))

@@ -42,6 +42,10 @@ equipment → `["bodyweight"]`). The run plan is read from the runner's **own st
 
 **200** `{ "plan": StrengthPlan }` — validated clean by `validateStrengthPlan()` and upserted to `strength_plans`.
 
+**Start date (STRENGTH-START-WEEK-01):** a runner with no strength plan starts **today** (server date); any later POST
+or GET re-place keeps the stored `plan_json.start_date` (legacy rows: the date they were generated), so the technique
+block is served once. A failed read of the existing row returns **500**, never a reset start.
+
 ## Errors
 
 | Status | When | Saved? |

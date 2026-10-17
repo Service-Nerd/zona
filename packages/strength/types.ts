@@ -163,4 +163,8 @@ export interface StrengthPlan {
   weeks: StrengthWeek[]
   /** Honest notes for the runner-facing layer to phrase (S11). */
   notes: StrengthNote[]
+  /** STRENGTH-START-WEEK-01 — the date strength started (ISO). The technique block, the jumps
+   *  gate and every level climb count from the week containing it, never from the run plan's
+   *  week 1. No session is placed before it. Kept across regenerations. */
+  start_date: string
 }

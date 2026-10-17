@@ -2074,7 +2074,7 @@ say *"The rest day is non-negotiable."*, which reads as a contradiction; (c) the
 calls you have."** All three, and the earlier RIR phrasing, push line and setup prompts, stand as written, including
 the rest-card line under rest copy.
 
-### `STRENGTH-START-WEEK-01` — the technique block and the jumps gate count from the RUN plan's week 1 *(filed 2026-10-17)*
+### `STRENGTH-START-WEEK-01` — the technique block and the jumps gate count from the RUN plan's week 1 *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 **Found while building STRENGTH-ENTRY-01.** `generate.ts` passes `weekIndex` = the index in the run plan's weeks, and
 `inNoviceBlock` / the plyo gate read it (`weekIndex < NOVICE_BLOCK_WEEKS[experience]`, `weekIndex >= plyoMin`). So a
@@ -2085,7 +2085,7 @@ sheet are both mid-plan doors. **Not live:** strength is admin-only and its migr
 `/zona-debug` RCA first (the fix needs a strength start date the engine does not have today).
 **Tags:** ⚙️ NO BOARD (restores S6/S8 intent) unless the fix changes the block lengths → 🏃 COACHING BOARD (Blagrove).
 
-### `STRENGTH-PLYO-BUDGET-01` — running-focused jumps land in ONE week of 16, and it is a deload *(filed 2026-10-17)*
+### `STRENGTH-PLYO-BUDGET-01` — running-focused jumps land in ONE week of 16, and it is a deload *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 **Measured 2026-10-17** (real 16-week half plan, running focus, `regular`, 2 × 45 min, gym kit): plyometrics appear
 in **week 8 (a deload) and no other week**. Build and peak weeks get none. Likely cause: plyo is the lowest-priority

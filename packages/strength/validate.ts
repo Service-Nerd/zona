@@ -30,8 +30,16 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
     return byDate.get(d.toISOString().slice(0, 10))?.role ?? 'rest'
   }
   let lastHeavy: string | null = null
+  // 🔴 STRENGTH-START-WEEK-01 — the week index this file used to read was the RUN plan's
+  // (`forEach((w, wi)`), the same convention the producer got wrong, so the check could not
+  // see it. Strength weeks count from the week holding `start_date`, derived here from the
+  // calendar, never from the producer's own index.
+  const start = plan.start_date
+  const startIdx = ctx && start ? Math.max(0, plan.weeks.findIndex(w => ctx.days.some(d => d.week_n === w.n && d.date >= start))) : 0
+  let firstPlyoSeen = false
 
-  plan.weeks.forEach((w, wi) => {
+  plan.weeks.forEach((w, runWi) => {
+    const wi = runWi - startIdx
     const heavy = w.sessions.filter(s => s.heavy_legs)
     if (heavy.length > C.MAX_HEAVY_LEG_SESSIONS_PER_WEEK) v.push({ code: 'S-LEGS-MAX', week: w.n, detail: `${heavy.length} heavy-leg sessions` })
     const days = new Set<string>()
@@ -39,6 +47,7 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
 
     for (const s of w.sessions) {
       const where = s.date ?? s.day
+      if (start && s.date && s.date < start) v.push({ code: 'S-BEFORE-START', week: w.n, day: where, detail: `placed before strength started (${start})` })
       if (days.has(where)) v.push({ code: 'S-ONE-PER-DAY', week: w.n, day: where, detail: 'two strength sessions on one day' })
       days.add(where)
       if (p.unavailable_days?.includes(s.day)) v.push({ code: 'S-UNAVAILABLE-DAY', week: w.n, day: s.day, detail: 'runner cannot train this day' })
@@ -104,6 +113,9 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
           if (Array.from(injuries).some(t => C.PLYO_RESTRICTING_INJURIES.includes(t))) v.push({ code: 'S-PLYO-INJURY', week: w.n, day: where, detail: ex.id })
           if (w.phase === 'taper' || w.phase === 'race_week') v.push({ code: 'S-PLYO-TAPER', week: w.n, day: where, detail: ex.id })
           if ((it.contacts ?? 0) * it.sets > C.PLYO_CONTACTS_MAX) v.push({ code: 'S-PLYO-CONTACTS', week: w.n, day: where, detail: `${(it.contacts ?? 0) * it.sets} contacts` })
+          // The board's direction: the FIRST jump a runner meets is the easiest one.
+          if (!firstPlyoSeen && ex.level !== 1) v.push({ code: 'S-PLYO-START-LEVEL', week: w.n, day: where, detail: `${ex.id} is level ${ex.level}` })
+          firstPlyoSeen = true
         }
         if (it.rir != null) {
           if (it.rir < C.RIR_FLOOR) v.push({ code: 'S-RIR-FLOOR', week: w.n, day: where, detail: `${ex.id} RIR ${it.rir}` })
@@ -118,6 +130,15 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
       }
     }
     const trainingSessions = w.sessions.filter(s => s.kind !== 'mobility').length
+    // 🔴 STRENGTH-PLYO-BUDGET-01 — S8 PROMISES jumps once the gate is open and nothing checked
+    // they arrived, so a plan with one week of jumps in sixteen passed clean.
+    const jumpsDue = p.focus === 'running' && wi >= (p.experience === 'new' ? C.PLYO_MIN_WEEKS_NEW : C.PLYO_MIN_WEEKS)
+      && w.phase !== 'taper' && w.phase !== 'race_week' && !p.bone_health_flag
+      && !Array.from(injuries).some(t => C.PLYO_RESTRICTING_INJURIES.includes(t))
+      && w.sessions.some(s => s.heavy_legs)
+    if (jumpsDue && !w.sessions.some(s => s.blocks.some(b => b.role === 'plyo' && b.items.length))) {
+      v.push({ code: 'S-PLYO-MISSING', week: w.n, detail: 'jumps are due this week and none were placed' })
+    }
     if (trainingSessions >= 2 && coreExposures < 2) v.push({ code: 'S-CORE-DOSE', week: w.n, detail: `${coreExposures} core exposures` })
     if (trainingSessions > p.sessions_per_week) v.push({ code: 'S-TOO-MANY', week: w.n, detail: `${trainingSessions} > ${p.sessions_per_week}` })
   })

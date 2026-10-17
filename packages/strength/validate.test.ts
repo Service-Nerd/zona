@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { generateStrengthPlan } from './generate'
 import { validateStrengthPlan } from './validate'
-import type { Day, RunContext, RunDay, RunRole, StrengthPlan, StrengthProfile, StrengthSession } from './types'
+import type { Day, RunContext, RunDay, RunRole, RunWeek, StrengthPlan, StrengthProfile, StrengthSession } from './types'
 
 /**
  * STRENGTH-ENGINE-01 — every validateStrengthPlan() rule, made to FAIL.
@@ -73,8 +73,73 @@ const CASES: Array<[string, (p: StrengthPlan) => void, StrengthProfile?]> = [
   ['S-CORE-DOSE', p => { for (const s of p.weeks[0].sessions) s.blocks = s.blocks.filter(b => b.role !== 'core') }],
   ['S-TOO-MANY', () => {}, { ...PROFILE, sessions_per_week: 1 }],
   ['S-MAIN-ELIGIBLE', p => { mainItem(heavy(p)).exercise_id = 'kettlebell_swing' }, { ...PROFILE, equipment: [...PROFILE.equipment, 'kettlebell'] }],
+  ['S-BEFORE-START', p => { p.start_date = dateOf(1, 'mon') }],
+  ['S-PLYO-START-LEVEL', p => { heavy(p, 1).blocks.push({ role: 'plyo', items: [{ exercise_id: 'drop_jump', sets: 3, contacts: 10, rir: null, rest_s: 60, per_side: false }] }) }],
   ['S-WARMUP-REPEAT', p => { const s = heavy(p); s.blocks[0].items.push({ exercise_id: 'band_walk_warmup', sets: 1, reps: 8, rir: null, rest_s: 0, per_side: false }); s.blocks.push({ role: 'accessory', items: [{ exercise_id: 'banded_side_step', sets: 2, reps: 10, rir: 2, rest_s: 60, per_side: false }] }) }],
 ]
+
+/** Codes that need a calendar long enough to open the jumps gate; woken in the describe below. */
+const LONG_CASES = ['S-PLYO-MISSING']
+
+/** Nine build weeks then three PEAK weeks: long enough for the jumps gate (week 5), and peak is
+ *  where a 30-minute session's jumps were dropped then never re-offered (measured, 78 cases). */
+function longCtx(startWeek = 0): RunContext {
+  const days: RunDay[] = []
+  for (let w = 0; w < 12; w++) for (let k = 0; k < 7; k++) {
+    const d = new Date(Date.UTC(2026, 10, 2 + w * 7 + k)).toISOString().slice(0, 10)
+    days.push({ date: d, day: DAYS[k], week_n: w + 1, role: WEEK[k] })
+  }
+  void startWeek
+  return { version: 1, days, race_date: null, injury_tags: [], masters: false, weeks: Array.from({ length: 12 }, (_, i) => ({ n: i + 1, phase: (i >= 9 ? 'peak' : 'build') as RunWeek['phase'] })) }
+}
+
+describe('🔴 STRENGTH-PLYO-BUDGET-01 + STRENGTH-START-WEEK-01, on a real 12-week plan', () => {
+  const L = longCtx()
+  const hasPlyo = (w: StrengthPlan['weeks'][number]) => w.sessions.some(s => s.blocks.some(b => b.role === 'plyo' && b.items.length))
+  // Bands-only at 30 minutes is the profile the sweep caught: the jump dose had reached its cap
+  // and was dropped, then the fill step spent the freed minutes on a main set instead.
+  for (const [minutes, equipment] of [[30, PROFILE.equipment], [30, ['bands']], [45, PROFILE.equipment], [60, PROFILE.equipment]] as const) {
+    it(`${minutes} min, ${equipment.join('+')}: jumps arrive EVERY week once the gate opens`, () => {
+      const plan = generateStrengthPlan({ ...PROFILE, session_minutes: minutes, equipment: [...equipment] }, L)
+      expect(validateStrengthPlan(plan, L)).toEqual([])
+      const after = plan.weeks.slice(4)
+      expect(after.filter(hasPlyo).length, after.map(w => (hasPlyo(w) ? 'J' : '.')).join('')).toBe(after.length)
+    })
+  }
+  it('the first jump is the easiest one (level 1), whatever the lifting level', () => {
+    for (const experience of ['new', 'some', 'regular'] as const) {
+      const plan = generateStrengthPlan({ ...PROFILE, experience }, L)
+      const first = plan.weeks.flatMap(w => w.sessions).flatMap(s => s.blocks).find(b => b.role === 'plyo')?.items[0]
+      expect(first && ['pogo_hops', 'skipping_rope_style'].includes(first.exercise_id), `${experience}: ${first?.exercise_id}`).toBe(true)
+    }
+  })
+  it('S-PLYO-MISSING fires when a due week has its jumps stripped', () => {
+    const plan = clone(generateStrengthPlan(PROFILE, L))
+    for (const s of plan.weeks[6].sessions) s.blocks = s.blocks.filter(b => b.role !== 'plyo')
+    expect(validateStrengthPlan(plan, L).map(v => v.code)).toContain('S-PLYO-MISSING')
+  })
+  it('🔴 strength set up in week 7 starts its OWN technique block and jumps gate, with nothing placed before it', () => {
+    const start = L.days.find(d => d.week_n === 7 && d.day === 'mon')!.date
+    const fresh = generateStrengthPlan({ ...PROFILE, experience: 'new' }, L, { startDate: start })
+    expect(validateStrengthPlan(fresh, L)).toEqual([])
+    expect(fresh.start_date).toBe(start)
+    expect(fresh.weeks.slice(0, 6).every(w => w.sessions.length === 0)).toBe(true)
+    // Week 7 is strength week 1: technique reps on every main lift, and no jumps.
+    const w7 = fresh.weeks[6]
+    const mainReps = w7.sessions.flatMap(s => s.blocks.filter(b => b.role === 'main').flatMap(b => b.items.map(i => i.reps)))
+    expect(mainReps.length).toBeGreaterThan(0)
+    expect(mainReps.every(r => r === 10), String(mainReps)).toBe(true)
+    expect(fresh.weeks.slice(6).some(hasPlyo)).toBe(false)  // new lifters wait 8 weeks; 6 remain
+  })
+  it('🔴 the validator counts from the start too: the old run-week count is caught', () => {
+    const start = L.days.find(d => d.week_n === 7 && d.day === 'mon')!.date
+    const legacy = clone(generateStrengthPlan({ ...PROFILE, experience: 'new' }, L))  // built from week 1
+    legacy.start_date = start
+    for (let i = 0; i < 6; i++) legacy.weeks[i].sessions = []
+    // Its week 7 still carries week-7 dose (heavy, past the technique block): now a violation.
+    expect(validateStrengthPlan(legacy, L).map(v => v.code)).toContain('S-NOVICE-REPS')
+  })
+})
 
 describe('validateStrengthPlan', () => {
   it('the base plan is clean, so every case below breaks exactly one thing', () => {
@@ -96,6 +161,6 @@ describe('validateStrengthPlan', () => {
     const src = readFileSync('packages/strength/validate.ts', 'utf8')
     const declared = Array.from(new Set(Array.from(src.matchAll(/code: '(S-[A-Z0-9-]+)'/g)).map(m => m[1]))).sort()
     expect(declared.length).toBeGreaterThan(25)
-    expect(CASES.map(c => c[0]).sort()).toEqual(declared)
+    expect([...CASES.map(c => c[0]), ...LONG_CASES].sort()).toEqual(declared)
   })
 })
