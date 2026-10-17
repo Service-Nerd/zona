@@ -50,5 +50,5 @@ catalogue cues (DRAFT until reviewed).
 
 ## Guarantees (checked by `validateStrengthPlan`, each falsified in `validate.test.ts`)
 
-The 30 codes `S-*` in `StrengthPrinciples.md`. Gates: `npm run verify:strength` (in `verify:ci`),
+The `S-*` codes in `StrengthPrinciples.md` (32 as of 2026-10-17; count from `validate.ts`). Gates: `npm run verify:strength` (in `verify:ci`),
 `verify:strength:full` (266,688 plans, 2026-10-16: 0 violations).

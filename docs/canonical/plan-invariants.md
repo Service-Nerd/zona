@@ -202,6 +202,15 @@ Full `validatePlan()` integration into the reshape *output* path
 the row is persisted) is deferred to Wave 3 of the reshape remediation
 work — see backlog.
 
+## The strength engine's invariants live elsewhere (STRENGTH-ENGINE-01, 2026-10-16)
+
+`validatePlan()` checks RUN plans only. The strength engine (`packages/strength`, ADR-024) has its own three layers:
+**principles** `docs/canonical/StrengthPrinciples.md` (S1–S12, S10 Am.1), **numbers** `STRENGTH_CONFIG`, and
+**checks** `validateStrengthPlan()` (32 `S-*` codes as of 2026-10-17, each named in a principle; count them from the file, not from here). They are deliberately not `INV-*`
+rows here: the package must not depend on the run engine. Every `S-*` code is made to fail in
+`packages/strength/validate.test.ts`, which also fails if a code exists with no case; `strengthConfigSync.test.ts`
+fails if a code a principle names is missing from the validator.
+
 ## Out of scope (deliberately)
 
 **Week-on-week volume cap (`MAX_WEEKLY_VOLUME_INCREASE_PCT`).** This is enforced

@@ -46,7 +46,7 @@ legs limited by the run week may be named, never "add them back" (Willy). Enforc
 §7 (placement keeps 48 h), §21 (impact list reused by value, parity-tested), §1 (no effect), §3 (deload cuts sets),
 §6 (race week mobility only), `MASTERS_AGE_THRESHOLD` (reused). **Amendments:** heavy-leg sessions ≤ 2/week always;
 plyometrics gated by weeks of strength and experience; engine recommends 2; RIR floor 1, lower heavy 2.
-**Artifacts:** `StrengthPrinciples.md` v1 (S1–S12) · `STRENGTH_CONFIG` · `validateStrengthPlan()` (30 codes, each
+**Artifacts:** `StrengthPrinciples.md` v1 (S1–S12) · `STRENGTH_CONFIG` · `validateStrengthPlan()` (31 codes at the sitting, 32 since `S-WARMUP-REPEAT`; each
 falsified). **Recorded disagreement:** menopause targeting (Hutchinson vs Sims), moot: no field exists.
 Full sitting: `docs/decisions/strength-engine-boards-2026-10-16.md`.
 
