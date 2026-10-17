@@ -2074,6 +2074,36 @@ say *"The rest day is non-negotiable."*, which reads as a contradiction; (c) the
 calls you have."** All three, and the earlier RIR phrasing, push line and setup prompts, stand as written, including
 the rest-card line under rest copy.
 
+### `SESSION-SLOTS-01` — AM / PM: two sessions on one day *(filed 2026-10-17, PLANNED, not built)*
+
+**Founder, verbatim:** *"we should have an AM and PM slot per day so we can have a run and weight session on the same
+day or actually double runs if someone chose to move a run to double up a day. Realise that one requires full impact
+analysis and a proper architect plan and review."* **Plan:** `docs/architecture/ADR-025-same-day-sessions.md`
+(PROPOSED). **Key finding:** storage keys on a session's ORIGINAL day, so a moved run never collides in the database;
+only the effective-week resolver (which turns the move into a swap) and its one-session-per-day consumers do.
+Recommended: doubles come from the runner's move only; one additive column on `session_overrides`; the owner returns
+an array per day; the plan JSON is unchanged. Phases 0–4 in the ADR, nothing visible until Phase 3.
+**Tags (in order):** ⚙️ Phase 0 + 1 (no visible change) → 🏃 COACHING BOARD (which doubles, gap, weekday cap) →
+🧭 DESIGN BOARD (Today, Plan, the move choice) → 💼 SLT (FREE or PAID, roadmap order).
+
+### `READINESS-OVERRIDES-01` — recovery easing ignores a session the runner moved *(filed 2026-10-17)*
+
+`app/api/pre-session-readiness/route.ts` calls `getSessionForDate(plan.weeks, date)` with **no overrides**, so on a
+day the runner moved a hard session onto, readiness sees the plan's original session (or none) and eases the wrong
+thing or nothing. Found by the slots inventory, in the route fixed this morning (`READINESS-WRONG-DAY-01`): my miss.
+**Tags:** ⚙️ NO BOARD (defect).
+
+### `PLAN-MOVE-DELETE-01` — a move can snap another moved session back *(filed 2026-10-17)*
+
+`PlanCalendar.handleMove` deletes override rows matching `original_day = newDay` in the database but not in its client
+filter, so if the target day's own session had been moved elsewhere, that move is erased server-side while the screen
+still shows it. **Tags:** ⚙️ NO BOARD (defect).
+
+### `AUTOMATCH-MOVED-DATE-01` — auto-match dates a moved session by its original day *(filed 2026-10-17)*
+
+`sessionAutoMatch.sessionDateFor(weekStart, session.key)` uses the original day, so a run moved from Tuesday to
+Wednesday is matched against Tuesday's activities. **Tags:** ⚙️ NO BOARD (defect).
+
 ### `STRENGTH-KNEE-DOMINANT-01` — 28% of leg sessions have no knee-dominant lift *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 
 **Found reviewing the founder's own plan** (general focus, regular, gym kit): weeks 1–4 pair a **Kickstand RDL with a
