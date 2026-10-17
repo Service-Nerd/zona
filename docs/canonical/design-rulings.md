@@ -144,7 +144,7 @@ been answered and misfiled.
 
 ---
 
-## 2026-10-17 — READINESS-SURFACE-01 · SHIP WITH AMENDMENT (direction)
+## 2026-10-17 — READINESS-SURFACE-01 · SHIP WITH AMENDMENT (direction) · NOT BUILT
 
 Recovery-driven changes get a moment and a record. **Moment:** the easing card leads with the runner's reading in
 large type against their own normal. **Record:** an "Eased for recovery" TEXT mark on the session card, Plan row and
