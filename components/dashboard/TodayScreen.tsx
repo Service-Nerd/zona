@@ -45,7 +45,10 @@ import { parseLocalDate } from '@/lib/plan'
 import { resolveAutoMatch } from '@/lib/coaching/sessionAutoMatch'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { StrengthSession } from '@/packages/strength'
-import { STRENGTH_AFTER_RUN_LINE, STRENGTH_HERO_ADVERB, STRENGTH_KIND_TITLE, isoLocalDate } from '@/lib/strength-bridge/display'
+import { STRENGTH_AFTER_RUN_LINE, STRENGTH_HERO_ADVERB, STRENGTH_KIND_TITLE, STRENGTH_REST_INVITE, isoLocalDate } from '@/lib/strength-bridge/display'
+import { showsStrengthInvite } from '@/lib/strength-bridge/restInvite'
+import { Glyph } from '@/components/shared/RowIcon'
+import ActionRow from '@/components/shared/ActionRow'
 
 export interface TodayStrength {
   sessionsByDate: Record<string, StrengthSession>
@@ -315,7 +318,7 @@ function ReadinessSteadyChip({ detail }: {
   )
 }
 
-function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, firstName, onLogRun }: {
+function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, firstName, onLogRun, onStrengthInvite }: {
   session: SessionEntry | null
   nextSession: SessionEntry | null
   weekPhase?: string
@@ -336,6 +339,9 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
    * action on this screen; `:456` keeps a de-emphasised action off moss.
    */
   onLogRun?: () => void
+  /** STRENGTH-ENTRY-01 — the one strength line, for a runner without strength, on the week's
+   *  first rest day only. Absent otherwise. */
+  onStrengthInvite?: () => void
 }) {
   const isRestOrEmpty = !session || session.type === 'rest'
   const copy = getRestCopy(weekType, weekPhase, isRestOrEmpty ? undefined : session?.type, fitnessLevel, firstName)
@@ -373,6 +379,15 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
             )}
           </div>
           <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: getSessionColor(nextSession), flexShrink: 0, marginLeft: 'var(--space-3)' }} />
+        </div>
+      )}
+
+      {/* STRENGTH-ENTRY-01 — quiet, under the rest copy and never above it: the card's job
+          is still "do nothing", and this only says what a day like this can hold. */}
+      {onStrengthInvite && (
+        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', marginTop: 'var(--space-3)', overflow: 'hidden' }}>
+          <ActionRow icon={<span style={{ color: 'var(--mute)', display: 'flex' }}><Glyph name="dumbbell" /></span>}
+            title={STRENGTH_REST_INVITE.title} subtitle={STRENGTH_REST_INVITE.sub} onClick={onStrengthInvite} />
         </div>
       )}
 
@@ -603,7 +618,7 @@ function heroGreeting(firstName?: string | null): string {
   return firstName ? `${greeting}, ${firstName}` : greeting
 }
 
-export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, handover, onBuildRacePlan, onDismissHandover, handoverBusy, handoverError = null, handoverAckLabel = null, onHandoverAcknowledge, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow, strength = null }: {
+export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, handover, onBuildRacePlan, onDismissHandover, handoverBusy, handoverError = null, handoverAckLabel = null, onHandoverAcknowledge, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow, strength = null, onStrengthInvite }: {
   recalTile?: React.ReactNode
   /** OPS-ATTRIB-01 — passed as a NODE, the same shape as `recalTile`, so Today
    *  does not need a Supabase client or the answered-state. Design Board
@@ -622,6 +637,9 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   /** STRENGTH-APP-01 — the runner's strength sessions by local date, when strength is on.
    *  Fetched once in DashboardClient; Today only reads it. */
   strength?: TodayStrength | null
+  /** STRENGTH-ENTRY-01 — opens the strength setup. Passed only when strength is available
+   *  and not set up; the rest card decides the day. */
+  onStrengthInvite?: () => void
   allCompletions: Record<number, Record<string, any>>
   preferredUnits: 'km' | 'mi'
   zone2Ceiling: number | null
@@ -2211,6 +2229,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             weekType={(currentWeek as any).type}
             fitnessLevel={fitnessLevel}
             firstName={firstName}
+            onStrengthInvite={onStrengthInvite && showsStrengthInvite(sessions, selectedKey) ? onStrengthInvite : undefined}
           />
         )}
 

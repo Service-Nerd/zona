@@ -130,6 +130,10 @@ What got in the way?
 
 ## Display Rules
 
+- **STRENGTH-ENTRY-01 (2026-10-17):** `type: 'strength'` leads the name with the dumbbell
+  `Glyph` (`components/shared/RowIcon.tsx`), muted. It carries MEANING (ICON-RULE-01): a lift
+  read from a run without relying on the rail hue. No other type carries a glyph.
+
 | Field | Source | Fallback |
 |---|---|---|
 | HR target | `session.hr_target` → Karvonen → `plan.meta.zone2_ceiling` | Show nothing |

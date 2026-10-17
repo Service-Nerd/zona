@@ -75,7 +75,7 @@ const NOT_THIS_OWNER: Record<string, string> = {
     'The WEBSITE\'s own chrome: wordmark + section nav, not a screen title. A different ' +
     'object, and it stays its own. \u26a0\ufe0f It carries its edge PERMANENTLY where the app now ' +
     'reveals one on scroll — filed as SITE-HEADER-EDGE-01.',
-  'app/wizard-preview/page.tsx:48':
+  'app/wizard-preview/page.tsx:50':
     'Internal dev harness toolbar at /wizard-preview. Not a runner-facing surface.',
   'app/sticky-probe/page.tsx:45':
     'The WebKit sticky probe at /sticky-probe (STICKY-TRANSFORM-01). It is a DIAGNOSTIC ' +

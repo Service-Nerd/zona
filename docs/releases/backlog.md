@@ -2034,7 +2034,7 @@ fixed.
 > before then; **contact is the founder's call**. `df2cc6e6`'s race was 2026-09-26, last opened 2026-07-29,
 > no subscription — no action.
 
-### `STRENGTH-ENTRY-01` — strength entry points, icons, paywall and Coach *(filed 2026-10-17, RULED, not built)*
+### `STRENGTH-ENTRY-01` — strength entry points, icons, paywall and Coach *(filed 2026-10-17; items 1–5 SHIPPED 2026-10-17, item 6 OPEN)*
 
 **Founder, verbatim (in substance):** *"How do I add strength sessions? Is it from the Me menu? Is it obvious? Should
 it be there? … the setup wizard (I think it should definitely be there) … ensure the entry points are clear and we
@@ -2066,6 +2066,32 @@ Build, in order (all behind `canUseStrength` until release):
 **Words:** 👤 founder; any marketing claim about what strength does → 🏃 Coaching Board. **Measure:** share of
 starters doing ≥1 strength session a week over 4 weeks; share of wizard runners who say yes.
 **Tags:** 🧭 DESIGN BOARD (ruled) → 💼 SLT (ruled) → 👤 FOUNDER (copy) → ⚙️ build.
+
+✅ **Items 1–5 shipped 2026-10-17** (feature registry). **Still open:** item 6 (at release), and three 👤 founder copy
+calls: (a) the wizard step's words (`STRENGTH_WIZARD`); (b) the rest-card line sits directly under rest copy that can
+say *"The rest day is non-negotiable."*, which reads as a contradiction; (c) the Coach progression lines
+(`STRENGTH_COACH`). All strings live in `lib/strength-bridge/display.ts`.
+
+### `STRENGTH-START-WEEK-01` — the technique block and the jumps gate count from the RUN plan's week 1 *(filed 2026-10-17)*
+
+**Found while building STRENGTH-ENTRY-01.** `generate.ts` passes `weekIndex` = the index in the run plan's weeks, and
+`inNoviceBlock` / the plyo gate read it (`weekIndex < NOVICE_BLOCK_WEEKS[experience]`, `weekIndex >= plyoMin`). So a
+runner who sets strength up in week 8 of a 16-week plan gets **no technique block** (heavy 5-rep work from session
+one, even as a `new` lifter) and **jumps are already open**. S6/S8's intent is technique first for the LIFTER, which
+starts when strength starts. ⚠️ **The new entry points make this the common path**: the rest-card line and the modify
+sheet are both mid-plan doors. **Not live:** strength is admin-only and its migrations are unapplied. **Needs:**
+`/zona-debug` RCA first (the fix needs a strength start date the engine does not have today).
+**Tags:** ⚙️ NO BOARD (restores S6/S8 intent) unless the fix changes the block lengths → 🏃 COACHING BOARD (Blagrove).
+
+### `STRENGTH-PLYO-BUDGET-01` — running-focused jumps land in ONE week of 16, and it is a deload *(filed 2026-10-17)*
+
+**Measured 2026-10-17** (real 16-week half plan, running focus, `regular`, 2 × 45 min, gym kit): plyometrics appear
+in **week 8 (a deload) and no other week**. Build and peak weeks get none. Likely cause: plyo is the lowest-priority
+slot and only fits the time budget when deload cuts the sets. S8 asks for plyometrics in running-focused sessions
+after the gate opens, so delivered is far below intended, and the one week that has them is the week meant to be
+lighter. Coach's new line reports it faithfully (*"Jumps join in week 8."*) and then goes quiet, which is honest
+about a plan that is wrong. **Needs:** `/zona-debug` RCA, then a sweep measure (share of post-gate weeks with plyo).
+**Tags:** 🏃 COACHING BOARD (Blagrove: what gives way when time is short, plyo or accessory volume) → ⚙️ build.
 
 ### Recovery-driven adaptation — make the plan's listening visible, and extend it to strength *(filed 2026-10-17)*
 

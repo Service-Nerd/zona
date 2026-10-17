@@ -16,6 +16,21 @@ import {
 } from '@/lib/plan/modifyPlan'
 import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from './microLabels'
+import ActionRow from './ActionRow'
+import { RowIcon, type GlyphName } from './RowIcon'
+
+/** ICON-RULE-01 (location) — one glyph per row. Typed against every key, so a ninth row
+ *  cannot ship without one. */
+const ROW_GLYPH: Record<ModifiableKey, GlyphName> = {
+  days_available: 'calendar',
+  days_cannot_train: 'blocked',
+  preferred_long_run_day: 'route',
+  max_weekday_mins: 'clock',
+  injury_history: 'care',
+  hard_session_relationship: 'bolt',
+  terrain: 'terrain',
+  race_date: 'flag',
+}
 
 /**
  * P-02 — the modify-plan sheet.
@@ -56,6 +71,7 @@ export default function ModifyPlanSheet({
   onStartNewPlan,
   edits,
   onEditsChange,
+  strengthDoor = null,
 }: {
   plan: Plan
   onClose: () => void
@@ -107,6 +123,12 @@ export default function ModifyPlanSheet({
    */
   edits: PlanEdits
   onEditsChange: (next: PlanEdits) => void
+  /**
+   * STRENGTH-ENTRY-01 — the Strength door (Design Board: *"Plan's one action is Change your
+   * plan, so strength lives in it as a row"*). A DOOR, not a ninth edit row: strength is its
+   * own plan and is never part of Apply. Null when strength is not available to this runner.
+   */
+  strengthDoor?: { title: string; subtitle: string; onOpen: () => void } | null
 }) {
   const base = plan.meta?.generator_input as GeneratorInput
   // 🧭 `BASEBUILD-ADJUST-REBUILD-01` — the rows this PLAN KIND may offer, derived from
@@ -170,7 +192,8 @@ export default function ModifyPlanSheet({
                         padding: '14px 16px',
                         borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none',
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                          <RowIcon name={ROW_GLYPH[row.key]} />
                           {/* A pending edit reads in MOSS. Not amber: amber is
                               coaching-warning voice and an unapplied edit is
                               not a warning. The dot plus the value darkening
@@ -238,6 +261,19 @@ export default function ModifyPlanSheet({
                 </div>
               </div>
             ))}
+
+            {/* STRENGTH-ENTRY-01 — the Strength door, its own group because it opens its own
+                plan rather than editing this one. Hidden while an edit is pending, for the
+                reason the escape below gives: leaving mid-edit is leaving unapplied work. */}
+            {strengthDoor && pending.length === 0 && (
+              <>
+                {label('Around your runs')}
+                <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+                  <ActionRow icon={<RowIcon name="dumbbell" />} title={strengthDoor.title}
+                    subtitle={strengthDoor.subtitle} onClick={strengthDoor.onOpen} />
+                </div>
+              </>
+            )}
 
             {/* The one edit that costs the runner something they earned. Stated
                 before Apply, not after, and only when it is actually true. */}

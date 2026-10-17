@@ -90,6 +90,10 @@ interface TodayScreenProps {
   // No-run day: the strength session IS the day (hero, card, Mark complete) and no rest
   // copy renders. DateStrip: one dot, the run's; a strength-only day gets the strength dot.
   strength?: TodayStrength | null                   // { sessionsByDate, completions, onOpen, onSetStatus }
+  // STRENGTH-ENTRY-01 (2026-10-17) — opens the strength setup. Passed only when strength is
+  // available and NOT set up. The rest card shows one line ("Strength fits on days like
+  // this") on the week's FIRST rest day only (`showsStrengthInvite`), so at most once a week.
+  onStrengthInvite?: () => void
 }
 ```
 

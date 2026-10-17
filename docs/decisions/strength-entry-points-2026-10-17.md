@@ -84,3 +84,19 @@ step · (3) the modify-sheet row · (4) Coach evidence · (5) the rest-card line
 ## ⚠️ Not settled
 The words (founder) · the icon set's exact glyphs (a frontend-design pass against Silvanto's constraints) · how the
 wizard step behaves when the plan is generated but the strength save fails (it must not block the run plan).
+
+## Build (2026-10-17) — items 1–5
+
+**Is it a MOVE? Yes** (the setup left Me). §5b, answered: (1) nothing navigated into the Me section by anchor; (2)
+nothing was reached only from it, save stays on screen; (3) three doors now share it, so one origin state drives the
+back; (4) no copy names "in Me" for strength; (5) the header is said once, by the new screen; (6) the form initialises
+from the profile on mount, same as before; (7) the screen mounts only when `strength.status !== 'off'`, so the move
+does not cross the release gate. Each is an arm in `lib/ui/strengthEntry.test.ts`.
+
+**Read at build time:** the wizard step sits after the weekday cap (the cap is the second half of "Which days do you
+run?"); the sheet row is a door in its own group, hidden while edits are pending; "at most once a week" is the week's
+first rest day; Me's icons go on the nine door rows, not the Kit status rows.
+
+**Found, filed, not fixed here:** `STRENGTH-START-WEEK-01` (strength set up mid-plan skips its own technique block)
+and `STRENGTH-PLYO-BUDGET-01` (jumps land in one deload week of sixteen). Copy calls for the founder are listed in the
+backlog entry.

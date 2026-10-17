@@ -26,21 +26,27 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
   const [state, setState] = useState<StrengthState>(enabled ? { ...OFF, status: 'loading' } : OFF)
   const live = useRef(true)
   useEffect(() => { live.current = true; return () => { live.current = false } }, [])
+  // STRENGTH-ENTRY-01 — the wizard saves strength straight after the run plan, and the new run
+  // plan re-triggers a load. A load that started BEFORE a save must not land after it and put
+  // the runner back to "not set up", so each request takes a ticket and only the latest counts.
+  const ticket = useRef(0)
 
   const load = useCallback(async () => {
     if (!enabled) { setState(OFF); return }
+    const mine = ++ticket.current
+    const stale = () => !live.current || mine !== ticket.current
     try {
       const res = await authedFetch('/api/strength/plan')
-      if (!live.current) return
+      if (stale()) return
       if (res.status === 404 || res.status === 401) { setState(OFF); return }
       if (!res.ok) { setState(s => ({ ...s, status: 'error' })); return }
       const body = await res.json()
-      if (!live.current) return
+      if (stale()) return
       setState(body.plan
         ? { status: 'ready', plan: body.plan, profile: body.profile ?? null, completions: body.completions ?? {} }
         : { status: 'none', plan: null, profile: null, completions: {} })
     } catch {
-      if (live.current) setState(s => ({ ...s, status: 'error' }))
+      if (!stale()) setState(s => ({ ...s, status: 'error' }))
     }
   }, [enabled])
 
@@ -49,6 +55,7 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
 
   /** Save a profile and build the plan. Resolves to an error message or null. */
   const save = useCallback(async (profile: StrengthProfile): Promise<string | null> => {
+    ++ticket.current
     try {
       const res = await authedFetch('/api/strength/plan', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile }),

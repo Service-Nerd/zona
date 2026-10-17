@@ -4,7 +4,7 @@
 // ⚠️ Copy is the founder's. These are drafts in the brand voice; the RIR phrasing in
 // particular ("reps in reserve") was flagged for his call. Client-safe: no Node imports.
 
-import { CATALOGUE_BY_ID, type Experience, type Focus, type SessionMinutes, type BlockRole, type Prescription, type SessionKind, type StrengthPlan, type StrengthSession } from '@/packages/strength'
+import { CATALOGUE_BY_ID, type Experience, type Focus, type SessionMinutes, type BlockRole, type EquipmentTag, type Prescription, type SessionKind, type StrengthPlan, type StrengthSession } from '@/packages/strength'
 import { formatStepDuration } from '@/lib/format'
 
 /** Titles drop "+ core": core is in nearly every session, and saying so on each is saying it four times (Collins). */
@@ -102,4 +102,39 @@ export const STRENGTH_SETUP = {
 export const EQUIPMENT_LABEL: Record<string, string> = {
   bodyweight: 'Bodyweight', bands: 'Bands', dumbbells: 'Dumbbells', kettlebell: 'Kettlebell', bench: 'Bench', box: 'Box or step',
   pullup_bar: 'Pull-up bar', barbell: 'Barbell', rack: 'Rack', cable: 'Cable machine', machines: 'Gym machines',
+}
+
+// ── STRENGTH-ENTRY-01 — the entry points. Founder owns the final words (copy call). ──
+
+export type StrengthWizardChoice = 'no' | 'home' | 'gym'
+
+/** The wizard's one strength question (Design Board: one step, three answers, not seven). */
+export const STRENGTH_WIZARD = {
+  title: 'Add strength around your runs?',
+  subtitle: 'Placed around your run week, never on top of it. Change it any time.',
+  options: [
+    { value: 'no', label: 'Not now', sub: 'Just the running.' },
+    { value: 'home', label: 'Yes, at home', sub: 'Bodyweight to start. Add kit later.' },
+    { value: 'gym', label: 'Yes, at a gym', sub: 'Weights, machines and a bench.' },
+  ] satisfies { value: StrengthWizardChoice; label: string; sub: string }[],
+}
+
+/** The kit each wizard answer stands for. Everything else is the setup's default, editable later. */
+export const STRENGTH_WIZARD_EQUIPMENT: Record<Exclude<StrengthWizardChoice, 'no'>, EquipmentTag[]> = {
+  home: ['bodyweight'],
+  gym: ['bodyweight', 'bands', 'dumbbells', 'kettlebell', 'bench', 'box', 'pullup_bar', 'barbell', 'rack', 'cable', 'machines'],
+}
+
+/** The rest card's one line, for a runner who has not set strength up (at most once a week). */
+export const STRENGTH_REST_INVITE = {
+  title: 'Strength fits on days like this',
+  sub: 'Set it up around your runs.',
+}
+
+/** Coach: evidence, not a second voice. No streak, no badge, no load chart (no logging yet). */
+export const STRENGTH_COACH = {
+  label: 'Strength',
+  count: (done: number, planned: number) => `${done} of ${planned} this week`,
+  heavier: (week: number) => `Heavier lifts from week ${week}.`,
+  jumps: (week: number) => `Jumps join in week ${week}.`,
 }

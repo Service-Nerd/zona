@@ -4,6 +4,7 @@
 // Session colour always from lib/session-types — never duplicated here.
 // See docs/canonical/ui-patterns.md § SessionCard and docs/alignment/phase-2-decisions.md D-003, D-010.
 
+import { Glyph } from './RowIcon'
 import { getSessionColor } from '@/lib/session-types'
 import type { Session } from '@/types/plan'
 import { formatDistance, formatDuration, type DistanceUnits, type SessionMetric } from '@/lib/format'
@@ -169,8 +170,13 @@ export default function SessionCard({
 
         {/* Name + detail */}
         <div style={{ flex: 1, minWidth: 0 }}>
+          {/* STRENGTH-ENTRY-01 — the dumbbell earns its place by MEANING (ICON-RULE-01): it
+              tells a lift from a run without the rail hue, which not every runner can read. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
+          {type === 'strength' && <span style={{ color: 'var(--mute)', display: 'flex' }}><Glyph name="dumbbell" /></span>}
           <div
             style={{
+              minWidth: 0,
               fontFamily: 'var(--font-ui)',
               fontSize: '15px',
               fontWeight: renderAsDone ? 500 : 600,
@@ -183,6 +189,7 @@ export default function SessionCard({
             }}
           >
             {name}
+          </div>
           </div>
           {detail && !isSkipped && (
             <div

@@ -4192,6 +4192,35 @@ fill: `DESIGN-DAYDOT-CHANNEL-01`, still open.
 
 **Check:** `lib/marketing/iconRule.test.ts` — a row-icon may only appear in a list of ≥8.
 
+### Built — `RowIcon` and `Glyph` (STRENGTH-ENTRY-01, 2026-10-17)
+
+**One owner: `components/shared/RowIcon.tsx`.** Add a glyph to its `GLYPHS`, never inline in a screen.
+
+| | Use | Anatomy |
+|---|---|---|
+| **`RowIcon`** | LOCATION, on Me's door rows and the modify sheet's rows | 16px line glyph (stroke 1.2, round caps, the nav's family) in a 32px `--bg-soft` box, `--radius-sm`, glyph `--ink-2`. Leads the row via `ActionRow`'s `icon` prop |
+| **`Glyph`** | MEANING: the dumbbell on a strength `SessionCard` and on the rest card's strength line | The bare 16px glyph in `currentColor`, muted |
+
+- The modify sheet's glyphs are keyed by row (`ROW_GLYPH: Record<ModifiableKey, GlyphName>`), so a new row cannot ship
+  without one. Me's Kit status rows carry none: they are readouts, not doors.
+- Never a semantic tint, never `--moss`, on any container (Silvanto, binding).
+
+## Strength entry points (STRENGTH-ENTRY-01, Design Board 2026-10-17)
+
+Strength is offered where the runner decides, never pushed where they execute.
+
+| Surface | Pattern |
+|---|---|
+| **Wizard** | One optional `CardSelect` step after the weekday cap: Not now · Yes, at home · Yes, at a gym. Saved after the run plan, never awaited |
+| **Plan → Change your plan** | A door in its own group ("Around your runs"), never an edit row; hidden while an edit is pending |
+| **Today** | One `ActionRow` with the dumbbell `Glyph` inside the rest card, on the week's first rest day only, for a runner without strength |
+| **Me** | The door stays |
+| **Coach** | One card under the two stats tiles, in their treatment: "N of M this week" + the plan's next step. No streak, no chart |
+
+All three doors open one `strength-setup` screen, whose back returns to the door that opened it. Every one renders
+only behind `canUseStrength`. Check: `lib/ui/strengthEntry.test.ts`, `lib/strength-bridge/restInvite.test.ts`,
+`lib/strength-bridge/coachEvidence.test.ts`.
+
 ---
 
 ## PlanArc — reveal scale (DESIGN-REVEAL-SHAPE-01, Design Board 2026-09-22)

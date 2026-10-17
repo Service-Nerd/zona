@@ -29,7 +29,8 @@ import type { Plan } from '@/types/plan'
 import type { TierReason } from '@/lib/trial'
 import type { Zone } from '@/components/shared/ZoneBar'
 import { BRAND } from '@/lib/brand'
-import { CONNECTIONS_TITLE, ZONES_UNSET_SUB, PLAN_ADJUSTMENTS_PENDING_SUB, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_TITLE, STRENGTH_SCREEN_SUB, STRENGTH_TITLE, connectionsSubtitle } from '@/components/shared/meDoors'
+import { CONNECTIONS_TITLE, ZONES_UNSET_SUB, PLAN_ADJUSTMENTS_PENDING_SUB, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_TITLE, STRENGTH_TITLE, connectionsSubtitle } from '@/components/shared/meDoors'
+import { RowIcon } from '@/components/shared/RowIcon'
 import { Capacitor } from '@capacitor/core'
 import { Chevron } from '@/components/shared/Chevron'
 import { FAQ_SUBTITLE, FAQ_TITLE } from '@/components/shared/FaqScreen'
@@ -749,8 +750,10 @@ async function hasServerSubscription(platform: 'ios' | 'web'): Promise<boolean> 
 }
 
 export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, lastAppleHealthArrival, lastStravaArrival, stravaConnected, plan, initials, athlete, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, onActiveSectionChange, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges, strength = null }: {
-  /** STRENGTH-APP-01 (F) — the Strength door, or null when strength is not available. */
-  strength?: { subtitle: string; body: import('react').ReactNode } | null
+  /** STRENGTH-APP-01 (F) — the Strength door, or null when strength is not available.
+   *  STRENGTH-ENTRY-01 — the setup is its own screen now (reached from Me, Plan and Today),
+   *  so the door only names its state and says where to go. */
+  strength?: { subtitle: string; onOpen: () => void } | null
   /** ME-DOORS-01 — open Me AT a door instead of at the index. Consumed once, then cleared
    *  by `onOpenSectionConsumed`, so a later visit to Me lands on the index as usual. */
   openSection?: string | null
@@ -838,7 +841,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   const hkRecoveryNote = hkFreshness === 'not_connected'
     ? 'Connect below to feed readiness checks.'
     : connectionStaleCopy(hkFreshness, lastAppleHealthArrival, 'Apple Health')
-  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'plan-adjustments' | 'connections' | 'delete-account' | 'support' | 'faq' | 'plan-history' | 'strength'>('main')
+  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'plan-adjustments' | 'connections' | 'delete-account' | 'support' | 'faq' | 'plan-history'>('main')
 
   // ⚠️ BEFORE THE EARLY RETURNS. `MeScreen` returns early for every door, so a hook placed
   //   below one is a conditional hook — the React error 310 this repo has already shipped once.
@@ -935,14 +938,9 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   )
 
   // ME-ORDER-01 door 4 — Connections. ⚠️ The rows are UNCHANGED; only their home moved.
-  // STRENGTH-APP-01 (F) — the Strength door. The body is the dashboard's (it owns the
-  // strength state); the header is this screen's, so the title is said once.
-  if (activeSection === 'strength' && strength) return (
-    <>
-      <ScreenHeader title={STRENGTH_TITLE} sub={STRENGTH_SCREEN_SUB} onBack={() => setActiveSection('main')} />
-      {strength.body}
-    </>
-  )
+  // STRENGTH-ENTRY-01 — the Strength setup USED to render here, as a Me section. It moved to
+  // the dashboard's `strength-setup` screen because Plan and Today open it too, and a Me
+  // section can only ever return to Me. Its header and back now live there, said once.
 
   if (activeSection === 'connections') return (
     <>
@@ -1274,6 +1272,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <Button variant="ghost" 
             onClick={onOpenGenerate} style={{ justifyContent: 'flex-start', width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}>
+            <div style={{ marginRight: 'var(--space-3)', display: 'flex' }}><RowIcon name="plus" /></div>
             <div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>
                 {/* PLANVERB-01 — see the Plan screen's row. This one goes to the
@@ -1309,7 +1308,8 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
             onClick={() => setActiveSection('plan-history')}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
           >
-            <div>
+            <div style={{ marginRight: 'var(--space-3)', display: 'flex' }}><RowIcon name="history" /></div>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>Plan history</div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>
                 All the races you&apos;ve trained for.
@@ -1330,6 +1330,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
         {hasPaidAccess && onDynamicAdjustmentsChange && (
           <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
             <ActionRow
+              icon={<RowIcon name="adjust" />}
               title={PLAN_ADJUSTMENTS_TITLE}
               subtitle={hasPendingAdjustment ? PLAN_ADJUSTMENTS_PENDING_SUB : lastCheckedLabel ?? PLAN_ADJUSTMENTS_SUB}
               onClick={() => setActiveSection('plan-adjustments')}
@@ -1342,7 +1343,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
             available to this runner (admin-only until release). */}
         {strength && (
           <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-            <ActionRow title={STRENGTH_TITLE} subtitle={strength.subtitle} onClick={() => setActiveSection('strength')} />
+            <ActionRow icon={<RowIcon name="dumbbell" />} title={STRENGTH_TITLE} subtitle={strength.subtitle} onClick={strength.onOpen} />
           </div>
         )}
 
@@ -1368,6 +1369,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
             itself being created for Me and going unused. */}
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <ActionRow
+            icon={<RowIcon name="settings" />}
             title={PREFERENCES_TITLE}
             subtitle={PREFERENCES_SUBTITLE}
             onClick={() => setActiveSection('preferences')}
@@ -1378,6 +1380,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
               runner wants at a glance, so the status rides the row. It returns NULL while
               the profile is still loading rather than asserting a negative it cannot know. */}
           <ActionRow
+            icon={<RowIcon name="link" />}
             title={CONNECTIONS_TITLE}
             subtitle={connectionsSubtitle(healthkitConnectedAt, !!stravaConnected)}
             onClick={() => setActiveSection('connections')}
@@ -1471,12 +1474,14 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
               contact form. Sierra's condition at the FAQ-01 sitting was that the list
               stays a defect log — see `shouldBeObviousOn` in `lib/faq.ts`. */}
           <ActionRow
+            icon={<RowIcon name="question" />}
             title={FAQ_TITLE}
             subtitle={FAQ_SUBTITLE}
             onClick={() => setActiveSection('faq')}
             divider
           />
           <ActionRow
+            icon={<RowIcon name="mail" />}
             title="Something broken? Tell us."
             subtitle="Email support, and a real person reads it."
             onClick={() => setActiveSection('support')}
@@ -1511,7 +1516,8 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
             href={BRAND.appStore.reviewUrl}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', textDecoration: 'none' }}
           >
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4 }}>
+            <div style={{ marginRight: 'var(--space-3)', display: 'flex' }}><RowIcon name="star" /></div>
+            <div style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4 }}>
               Leave a review
             </div>
             <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>{chevron}</div>

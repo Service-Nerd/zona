@@ -138,10 +138,11 @@ interface MeScreenProps {
   onDailyPushEnabledChange?: (enabled: boolean) => void
 
   // ── Strength (STRENGTH-APP-01 F, 2026-10-16) ──
-  // The Strength door: null hides it (not released to this runner). `body` is the
-  // dashboard's StrengthSetupScreen (it owns the strength state); MeScreen renders the
-  // ScreenHeader, so the title is said once.
-  strength?: { subtitle: string; body: ReactNode } | null
+  // The Strength door: null hides it (not released to this runner).
+  // STRENGTH-ENTRY-01 (2026-10-17): the setup MOVED to the dashboard's `strength-setup`
+  // screen (Me, the modify sheet and the rest card all open it, and a Me section could only
+  // return to Me). The door names its state and calls `onOpen`; it renders no body.
+  strength?: { subtitle: string; onOpen: () => void } | null
 }
 ```
 

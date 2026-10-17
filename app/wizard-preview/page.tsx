@@ -35,6 +35,8 @@ export default function WizardPreview() {
   // hard-sessions, terrain, injuries); onboarding changes the first step's
   // framing; an existing plan changes the exit.
   const [paid, setPaid] = useState(true)
+  // STRENGTH-ENTRY-01 — the optional strength step, offered only when strength is available.
+  const [strength, setStrength] = useState(true)
   const [onboarding, setOnboarding] = useState(false)
   const [existing, setExisting] = useState(false)
   const [units, setUnits] = useState<'km' | 'mi'>('km')
@@ -55,6 +57,7 @@ export default function WizardPreview() {
         <Toggle on={onboarding} label={onboarding ? 'onboarding' : 'returning'} onClick={() => { setOnboarding(o => !o); restart() }} />
         <Toggle on={existing} label={existing ? 'has a plan' : 'no plan'} onClick={() => { setExisting(e => !e); restart() }} />
         <Toggle on={units === 'mi'} label={units} onClick={() => { setUnits(u => (u === 'km' ? 'mi' : 'km')); restart() }} />
+        <Toggle on={strength} label={strength ? 'strength offered' : 'no strength'} onClick={() => { setStrength(x => !x); restart() }} />
         <button onClick={restart} style={{
           marginLeft: 'auto', border: '1px solid var(--line)', background: 'var(--bg-soft)',
           borderRadius: 8, padding: '5px 10px', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: 13,
@@ -70,7 +73,7 @@ export default function WizardPreview() {
         plan here — everything before it is honest.
       </p>
 
-      <div key={`${nonce}-${paid}-${onboarding}-${existing}-${units}`}>
+      <div key={`${nonce}-${paid}-${onboarding}-${existing}-${units}-${strength}`}>
         <GeneratePlanScreen
           onBack={() => { /* harness: no router to go back to */ }}
           hasPaidAccess={paid}
@@ -86,6 +89,8 @@ export default function WizardPreview() {
           onPlanSaved={async () => {}}
           onPlanEnriched={async () => {}}
           onUpgrade={() => {}}
+          strengthOffer={strength}
+          onStrengthChosen={() => {}}
         />
       </div>
     </div>

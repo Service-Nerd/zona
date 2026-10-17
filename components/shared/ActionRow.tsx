@@ -34,11 +34,14 @@ export interface ActionRowProps {
   /** Hairline under the row. Set when stacking rows inside one card (Me). */
   divider?: boolean
   ariaLabel?: string
+  /** STRENGTH-ENTRY-01 — a leading `RowIcon` (location, Me) or `Glyph` (meaning). ICON-RULE-01
+   *  decides whether a row may carry one; this only gives it a place, so no surface draws its own. */
+  icon?: ReactNode
 }
 
 /** 16px chevron. `flexShrink: 0` so a long title never squashes the affordance. */
 
-export default function ActionRow({ title, subtitle, onClick, divider = false, ariaLabel }: ActionRowProps) {
+export default function ActionRow({ title, subtitle, onClick, divider = false, ariaLabel, icon }: ActionRowProps) {
   return (
     <button
       onClick={onClick}
@@ -53,7 +56,8 @@ export default function ActionRow({ title, subtitle, onClick, divider = false, a
         cursor: 'pointer', textAlign: 'left',
       }}
     >
-      <div>
+      {icon && <div style={{ marginRight: 'var(--space-3)', display: 'flex' }}>{icon}</div>}
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4 }}>
           {title}
         </div>

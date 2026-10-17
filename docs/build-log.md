@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — STRENGTH-ENTRY-01 · three doors, one screen, and the engine's own numbers
+**Shipped:** Strength is now offered where people decide: one optional question in the plan wizard, a door in "Change your plan", and one line on a rest day. Coach shows how many strength sessions you did this week and what the plan does next. Rows on Me and in the plan sheet got icons. All admin-only for now.
+
+**Dev learning:** Three doors to one screen meant moving the setup out of Me, because a Me section can only go back to Me. The move had its own risk: the old home kept a branch nobody could reach. The test checks where each door GOES, and that the back arrow returns to whichever door opened it.
+
+**Product learning:** Coach's progression line reads the sessions the engine actually produced, not a rule about weeks. That choice exposed a real problem: for one ordinary profile, jumps appear in a single week of sixteen, and that week is a deload. A line computed from the config would have printed the intended week and hidden it.
+
+**AI-building learning:** The icon gate had an exemption pointing at `app/dashboard/MeScreen.tsx`, a file that has never existed. It passed for weeks because there were no icons to check. The first real icon tripped it. It now checks that every path it names exists.
+
+**The honest bit:** One of my own new checks stayed green when I broke the code it guards, because the real plan never contains the week that check is about. It now builds that week itself. I also found, and filed rather than fixed, that strength set up mid-plan skips its own technique block: the new mid-plan doors make that the common path, so it has to be fixed before release.
+
 ## 2026-10-17 — READINESS-WRONG-DAY-01 · the feature we wanted to shout about had never worked
 **Shipped:** When your resting heart rate, HRV or sleep say you're not recovered, the app now actually eases today's hard session. It hadn't been able to since June.
 

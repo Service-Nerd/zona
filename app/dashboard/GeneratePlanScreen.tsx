@@ -48,6 +48,7 @@ import { BenchmarkFields } from '@/components/shared/BenchmarkFields'
 import { FieldLabel, FieldNote, FieldReadback } from '@/components/shared/FieldText'
 import { benchmarkFromFields, benchmarkProblem, type BenchmarkFieldValues } from '@/lib/plan/benchmarkCheck'
 import { CardSelect } from '@/components/shared/CardSelect'
+import { STRENGTH_WIZARD, type StrengthWizardChoice } from '@/lib/strength-bridge/display'
 import { recommendFitnessLevel, FITNESS_RANK, type FitnessLevel } from '@/lib/plan/fitnessAssessment'
 import { WeekGrid } from '@/components/shared/WeekGrid'
 import { DayBudgetRows } from '@/components/shared/DayBudgetRows'
@@ -70,6 +71,7 @@ type WizardSubStep =
   | 'weekly-volume' | 'longest-run' | 'training-age' | 'recent-quality' | 'your-level' | 'birth-year'
   | 'benchmark' | 'teach-easy-day' | 'your-week' | 'weekday-ceiling'
   | 'hard-sessions' | 'terrain' | 'injuries'
+  | 'strength'
 
 type AppStep = WizardSubStep | 'generating' | 'preview' | 'error'
 
@@ -279,16 +281,22 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
   'hard-sessions':   { title: 'You and hard sessions.', subtitle: 'Intervals, tempo, threshold. Where do you land?' },
   'terrain':         { title: 'Where do you run?',      subtitle: 'Road, trail, or a bit of both. Off-road, we coach by effort, not pace.' },
   'injuries':        { title: 'Anything to flag?',      subtitle: 'Old injuries that still show up. Skip if you\'re clean.', optional: true },
+  'strength':        { title: STRENGTH_WIZARD.title, subtitle: STRENGTH_WIZARD.subtitle, optional: true },
 }
 
 // ─── Step sequence ────────────────────────────────────────────────────────────
 
-function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' | null): WizardSubStep[] {
+export function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' | null, offerStrength = false): WizardSubStep[] {
   const steps: WizardSubStep[] = ['distance', 'race-details', 'goal']
   if (goal === 'time_target') steps.push('target-time')
   // ⓘ teaching seams (CI-7): ⓘA right after the goal is stated (ambition peaks);
   // ⓘB after benchmark, just before they commit their week (pace is known).
   steps.push('teach-easy', 'weekly-volume', 'longest-run', 'training-age', 'recent-quality', 'your-level', 'birth-year', 'benchmark', 'teach-easy-day', 'your-week', 'weekday-ceiling')
+  // STRENGTH-ENTRY-01 — one optional question, while the runner is thinking about their
+  // week. The board placed it after "Which days do you run?"; it sits after the weekday
+  // cap because that is the second half of the same question, and splitting them would
+  // put strength between two answers about the run week.
+  if (offerStrength) steps.push('strength')
   if (hasPaidAccess) steps.push('hard-sessions', 'terrain', 'injuries')
   return steps
 }
@@ -487,6 +495,8 @@ export default function GeneratePlanScreen({
   birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, onPlanEnriched, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade, onRecheckEntitlement,
   preferredUnits = 'km',
   charityCohort,
+  strengthOffer = false,
+  onStrengthChosen,
 }: {
   onBack: () => void
   /** ADR-015 / INV-PREF-001 — the unit preference propagates EVERYWHERE, and
@@ -516,6 +526,12 @@ export default function GeneratePlanScreen({
   /** GTM-CHARITY-04 door 3 of 3. See the distance step. */
   /** CHARITY-CODE-CONTROL-01 — re-checks entitlement after Apple's sheet closes. */
   onRecheckEntitlement?: AfterSheet
+  /** STRENGTH-ENTRY-01 — ask the one strength question. False until strength is released
+   *  to this runner (`canUseStrength`). */
+  strengthOffer?: boolean
+  /** Called AFTER the run plan has saved, never before, and never awaited: a strength
+   *  failure must not cost the runner the plan they just built. */
+  onStrengthChosen?: (choice: 'home' | 'gym') => void
 }) {
   // ── App-level step state ──────────────────────────────────────────────────
   const [appStep, setAppStep]   = useState<AppStep>('distance')
@@ -698,6 +714,8 @@ export default function GeneratePlanScreen({
 
   // ── Step 11 — Injuries (paid) ────────────────────────────────────────────
   const [injuries, setInjuries] = useState<string[]>([])
+  // STRENGTH-ENTRY-01 — null and 'no' both mean no strength.
+  const [strengthChoice, setStrengthChoice] = useState<StrengthWizardChoice | null>(null)
 
   // BACK-ARROW-FLOAT-03 — the wizard step header pins as a group. The hook owns finding
   // the REAL scroller; the naive "nearest ancestor with overflow-y: auto" walk once
@@ -750,8 +768,9 @@ export default function GeneratePlanScreen({
       if (s.hardSessions)    setHardSessions(s.hardSessions)
       if (s.terrain)         setTerrain(s.terrain)
       if (Array.isArray(s.injuries)) setInjuries(s.injuries)
+      if (s.strengthChoice === 'no' || s.strengthChoice === 'home' || s.strengthChoice === 'gym') setStrengthChoice(s.strengthChoice)
       // Restore sub-step if it's a valid wizard step name
-      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','teach-easy','weekly-volume','longest-run','training-age','recent-quality','your-level','birth-year','benchmark','teach-easy-day','your-week','weekday-ceiling','hard-sessions','terrain','injuries']
+      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','teach-easy','weekly-volume','longest-run','training-age','recent-quality','your-level','birth-year','benchmark','teach-easy-day','your-week','weekday-ceiling','hard-sessions','terrain','injuries','strength']
       if (validSubSteps.includes(s.appStep)) setAppStep(s.appStep)
     } catch {}
   }, [])
@@ -766,7 +785,7 @@ export default function GeneratePlanScreen({
         birthYear, weeklyKm, longestRun, restingHR, trainingAge, recentQuality, fitnessLevel,
         benchmarkType, benchmarkDistKm, benchHours, benchMins, benchSecs, benchmarkTTDist, benchmarkDate,
         weekPlan, maxWeekdayChip, dayBudgets,
-        hardSessions, terrain, injuries,
+        hardSessions, terrain, injuries, strengthChoice,
       }))
     } catch {}
   }, [appStep, distanceKm, raceName, raceDate, goal,
@@ -774,7 +793,7 @@ export default function GeneratePlanScreen({
       birthYear, weeklyKm, longestRun, restingHR, trainingAge, recentQuality,
       benchmarkType, benchmarkDistKm, benchHours, benchMins, benchSecs, benchmarkTTDist, benchmarkDate,
       weekPlan, maxWeekdayChip, dayBudgets,
-      hardSessions, terrain, injuries])
+      hardSessions, terrain, injuries, strengthChoice])
 
   // (The old "clear out-of-range days-per-week when distance gets stricter"
   //  effect is gone: the your-week grid derives the day count live and the
@@ -870,7 +889,7 @@ export default function GeneratePlanScreen({
 
   function goNext() {
     if (appStep === 'generating' || appStep === 'preview' || appStep === 'error') return
-    const sequence = getStepSequence(!!hasPaidAccess, goal)
+    const sequence = getStepSequence(!!hasPaidAccess, goal, !!strengthOffer)
     const idx      = sequence.indexOf(appStep as WizardSubStep)
     if (idx === sequence.length - 1) {
       void handleGenerate()
@@ -891,18 +910,18 @@ export default function GeneratePlanScreen({
     // so this is a quick walk-through, not a re-entry. (The error-screen retry
     // still jumps to the last step via its own handler — unchanged.)
     if (appStep === 'preview') {
-      const sequence = getStepSequence(!!hasPaidAccess, goal)
+      const sequence = getStepSequence(!!hasPaidAccess, goal, !!strengthOffer)
       navigateTo(sequence[0], 'back')
       return
     }
     if (appStep === 'generating') { onBack(); return }
-    const sequence = getStepSequence(!!hasPaidAccess, goal)
+    const sequence = getStepSequence(!!hasPaidAccess, goal, !!strengthOffer)
     const idx      = sequence.indexOf(appStep as WizardSubStep)
     if (idx <= 0) { onBack() } else { navigateTo(sequence[idx - 1], 'back') }
   }
 
   function getLastWizardStep(): WizardSubStep {
-    const sequence = getStepSequence(!!hasPaidAccess, goal)
+    const sequence = getStepSequence(!!hasPaidAccess, goal, !!strengthOffer)
     return sequence[sequence.length - 1]
   }
 
@@ -939,6 +958,7 @@ export default function GeneratePlanScreen({
       case 'hard-sessions':  return true
       case 'terrain':        return true
       case 'injuries':       return true
+      case 'strength':       return true   // optional — unanswered = no strength
       default:               return true
     }
   }
@@ -1293,6 +1313,9 @@ export default function GeneratePlanScreen({
       if (birthYear !== null && onBirthYearSave) void onBirthYearSave(birthYear).catch(() => {})
       await onPlanSaved(planRef.current)
       sessionStorage.removeItem(WIZARD_KEY)
+      // STRENGTH-ENTRY-01 — strength is built only once the run plan exists (it is placed
+      // around it), and never awaited: its failure is recoverable from Me or Plan.
+      if (strengthChoice === 'home' || strengthChoice === 'gym') onStrengthChosen?.(strengthChoice)
 
       // Enrichment that landed mid-save is safe to write now the save has.
       const queued = coordRef.current.saveCompleted()
@@ -1645,7 +1668,7 @@ export default function GeneratePlanScreen({
   // ── Wizard ────────────────────────────────────────────────────────────────
 
   const currentSubStep = appStep as WizardSubStep
-  const sequence       = getStepSequence(!!hasPaidAccess, goal)
+  const sequence       = getStepSequence(!!hasPaidAccess, goal, !!strengthOffer)
   const currentIdx     = sequence.indexOf(currentSubStep)
   const isLastStep     = currentIdx === sequence.length - 1
   const stepMeta       = STEP_META[currentSubStep] ?? STEP_META['distance']
@@ -2003,6 +2026,21 @@ export default function GeneratePlanScreen({
                 label={c.label}
                 active={trainingAge === c.value}
                 onClick={() => setTrainingAge(trainingAge === c.value ? null : c.value)}
+              />
+            ))}
+          </div>
+        )
+
+      case 'strength':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            {STRENGTH_WIZARD.options.map(o => (
+              <CardSelect
+                key={o.value}
+                label={o.label}
+                sub={o.sub}
+                active={strengthChoice === o.value}
+                onClick={() => setStrengthChoice(strengthChoice === o.value ? null : o.value)}
               />
             ))}
           </div>

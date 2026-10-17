@@ -144,7 +144,7 @@ been answered and misfiled.
 
 ---
 
-## 2026-10-17 — STRENGTH-ENTRY-01 · SHIP WITH AMENDMENT (direction) · NOT BUILT
+## 2026-10-17 — STRENGTH-ENTRY-01 · SHIP WITH AMENDMENT (direction) · BUILT items 1–5 (item 6 waits for release)
 
 Strength is met where decisions happen, not only behind Me. **Wizard:** one optional step after *"Which days do you
 run?"* (No / Yes, at home / Yes, at a gym). **Plan:** a Strength row in *"Change your plan"*. **Today:** one quiet
@@ -153,6 +153,13 @@ line on the rest card only. **Me:** the door stays. **Icons:** a dumbbell (nav l
 ICON-RULE-01's constraints. 🔁 **Founder reversal recorded:** 2026-09-22 *"not doing"* the Me row icons, reversed
 2026-10-17. **Coach:** "Strength · 2 of 2 this week" + one line of the plan's progression; no streak, no fake load
 chart. Sitting: `docs/decisions/strength-entry-points-2026-10-17.md`.
+
+**Built 2026-10-17, read at build time (no new ruling):** the wizard step sits after the *weekday cap*, not directly
+after "Which days do you run?", because the cap is the second half of that question. The sheet's Strength row is a
+**door in its own group** ("Around your runs"), never a ninth edit row, and hides while an edit is pending (the same
+rule as "Start a new plan"). The rest-card line shows on the **week's first rest day**, which is what "at most once a
+week" means without storing anything. Me's icons are on its **nine door rows**, not on the Kit status rows (readouts,
+not doors). One owner: `components/shared/RowIcon.tsx` (`RowIcon` = location, `Glyph` = meaning).
 
 ## 2026-10-17 — READINESS-SURFACE-01 · SHIP WITH AMENDMENT (direction) · NOT BUILT
 

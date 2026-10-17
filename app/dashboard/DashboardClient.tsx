@@ -167,16 +167,17 @@ import { getDeviceToken } from '@/components/dashboard/pushDevice'
 import SaveImageButton from '@/components/dashboard/SaveImageButton'
 import TodayScreen from '@/components/dashboard/TodayScreen'
 import StrengthSessionScreen from '@/components/dashboard/StrengthSessionScreen'
-import StrengthSetupScreen from '@/components/dashboard/StrengthSetupScreen'
+import StrengthSetupScreen, { STRENGTH_PROFILE_DEFAULT } from '@/components/dashboard/StrengthSetupScreen'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useStrengthPlan, useStrengthWeeklyNote } from '@/components/dashboard/useStrengthPlan'
 import { canUseStrength } from '@/lib/strength-bridge/release'
-import { STRENGTH_SETUP, isoLocalDate } from '@/lib/strength-bridge/display'
-import { strengthSubtitle } from '@/components/shared/meDoors'
+import { STRENGTH_COACH, STRENGTH_REST_INVITE, STRENGTH_SETUP, STRENGTH_WIZARD_EQUIPMENT, isoLocalDate } from '@/lib/strength-bridge/display'
+import { strengthWeekEvidence, type StrengthWeekEvidence } from '@/lib/strength-bridge/coachEvidence'
+import { STRENGTH_SCREEN_SUB, STRENGTH_TITLE, strengthSubtitle } from '@/components/shared/meDoors'
 import type { StrengthSession } from '@/packages/strength'
 import SessionPopupInner from '@/components/dashboard/SessionPopupInner'
 
-type Screen = 'zones' | 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration' | 'strength-session'
+type Screen = 'zones' | 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration' | 'strength-session' | 'strength-setup'
 
 
 
@@ -570,6 +571,10 @@ export default function DashboardClient() {
   )
   const [activeStrength, setActiveStrength] = useState<StrengthSession | null>(null)
   const [strengthOrigin, setStrengthOrigin] = useState<'today' | 'plan'>('today')
+  // STRENGTH-ENTRY-01 — the setup has three doors (Me, the modify sheet, the rest card), so
+  // its back returns to whichever one opened it. One state, never a hardcoded back.
+  const [strengthSetupOrigin, setStrengthSetupOrigin] = useState<'me' | 'plan' | 'today'>('me')
+  const openStrengthSetup = (origin: 'me' | 'plan' | 'today') => { setStrengthSetupOrigin(origin); setScreen('strength-setup') }
   const strengthNote = useStrengthWeeklyNote(screen === 'strength-session' ? activeStrength?.week_n ?? null : null, strength.status === 'ready')
   const strengthByDate = useMemo(() => {
     const m: Record<string, StrengthSession> = {}
@@ -2825,7 +2830,7 @@ export default function DashboardClient() {
                   }
                   setPendingReshape(null)
                   setReshapeDismissedAt(new Date().toISOString())
-                }} strength={strengthFor('today')} />}
+                }} strength={strengthFor('today')} onStrengthInvite={strength.status === 'none' ? () => openStrengthSetup('today') : undefined} />}
         {/* P-02 — the confirm step REPLACES the plan view while it is open.
             Not a modal over it: "no popups; all interactions navigate to full
             screens", and a diff the runner is deciding on is the screen's one
@@ -2880,6 +2885,12 @@ export default function DashboardClient() {
             // Closes the sheet first: leaving it mounted behind the wizard
             // would put two plan-editing surfaces on screen at once.
             onStartNewPlan={() => { clearModify(); setScreen('generate') }}
+            // STRENGTH-ENTRY-01 — the door is only offered with nothing pending, so closing the
+            // sheet here discards nothing.
+            strengthDoor={strength.status === 'none' || strength.status === 'ready' ? {
+              title: STRENGTH_TITLE, subtitle: strengthSubtitle(strength.profile),
+              onOpen: () => { clearModify(); openStrengthSetup('plan') },
+            } : null}
           />
         )}
         {screen === 'plan' && !modifyPreview && <PlanScreen strength={strengthFor('plan')} plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('plan'); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} onOpenModify={canModifyPlan(plan) ? () => setModifyOpen(true) : undefined} />}
@@ -3031,6 +3042,7 @@ export default function DashboardClient() {
                   liveSessionsCompleted={liveSessionsCompleted}
                   liveSessionsPlanned={liveSessionsPlanned}
                   liveSessionsDueToDate={liveSessionsDueToDate}
+                  strengthWeek={strengthWeekEvidence(strength.status === 'ready' ? strength.plan : null, strength.completions, wn)}
                   phaseSummary={phaseSummary}
                   onPhaseSummaryGenerated={setPhaseSummary as any}
                   raceReadinessNote={raceReadinessNote}
@@ -3059,13 +3071,24 @@ export default function DashboardClient() {
             No UI path opens it for non-admins, but the render gate prevents a future commit
             from accidentally exposing admin UI via state mutation or a new entry point. */}
         {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} preferredUnits={preferredUnits} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR ?? undefined} maxHR={effectiveMaxHR ?? undefined} />}
+        {/* STRENGTH-ENTRY-01 — the setup, as its own screen. It was a Me section, which could
+            only ever return to Me; the modify sheet and the rest card open it too. The header
+            is said here once (the body carries none), and the back goes where it came from. */}
+        {screen === 'strength-setup' && strength.status !== 'off' && (
+          <>
+            <ScreenHeader title={STRENGTH_TITLE} sub={STRENGTH_SCREEN_SUB} onBack={() => setScreen(strengthSetupOrigin)} />
+            {strength.status === 'loading'
+              ? null
+              : strength.status === 'error'
+              ? <div style={{ padding: '0 16px' }}><EmptyState title={STRENGTH_SETUP.loadFailed} action={<Button variant="secondary" onClick={() => void reloadStrength()}>Try again</Button>} /></div>
+              : <StrengthSetupScreen profile={strength.profile} planNotes={strength.plan?.notes ?? []}
+                  planInjuries={(plan?.meta?.injury_history ?? []).map(t => t.toLowerCase())}
+                  onSave={saveStrength} />}
+          </>
+        )}
         {screen === 'me'       && <MeScreen strength={strength.status === 'off' || strength.status === 'loading' ? null : {
           subtitle: strengthSubtitle(strength.profile),
-          body: strength.status === 'error'
-            ? <div style={{ padding: '0 16px' }}><EmptyState title={STRENGTH_SETUP.loadFailed} action={<Button variant="secondary" onClick={() => void reloadStrength()}>Try again</Button>} /></div>
-            : <StrengthSetupScreen profile={strength.profile} planNotes={strength.plan?.notes ?? []}
-                planInjuries={(plan?.meta?.injury_history ?? []).map(t => t.toLowerCase())}
-                onSave={saveStrength} />,
+          onOpen: () => openStrengthSetup('me'),
         }} openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} tierReason={tierReason} healthkitConnectedAt={healthkitConnectedAt} lastAppleHealthArrival={lastArrivalBySource.apple_health} lastStravaArrival={lastArrivalBySource.strava} stravaConnected={stravaConnected} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
   // §50 (HR-MAX-01) — device reconnect from Settings. Fill only missing values;
   // tag a fresh device max 'observed' (a floor) so the guard rejects it below the
@@ -3125,7 +3148,12 @@ export default function DashboardClient() {
           if (wN == null) return
           setRunAnalysisMap(prev => ({ ...prev, [wN]: { ...(prev[wN] ?? {}), [sessionDay]: row } }))
         }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={(activePostRunData.weekN != null ? runAnalysisMap[activePostRunData.weekN]?.[activePostRunData.session?.key ?? ''] : null) ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
-        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} charityCohort={charityCohort} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('wizard')} onRecheckEntitlement={runEntitlementRecheck} />}
+        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} charityCohort={charityCohort} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('wizard')} onRecheckEntitlement={runEntitlementRecheck}
+          // STRENGTH-ENTRY-01 — asked only of a runner who can have strength and has none yet.
+          // The save runs after the run plan's and is not awaited; the route records its own
+          // failures, and the doors on Me and Plan stay open to try again.
+          strengthOffer={strength.status === 'none'}
+          onStrengthChosen={(choice) => { void saveStrength({ ...STRENGTH_PROFILE_DEFAULT, equipment: STRENGTH_WIZARD_EQUIPMENT[choice] }) }} />}
         {screen === 'upgrade'  && <UpgradeScreen source={upgradeSource} trialExpired={trialExpired} grantExpired={hadCharityGrant && !hasPaidAccess} onRecheckEntitlement={runEntitlementRecheck} onBack={() => {
           // Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')
@@ -4915,7 +4943,7 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
 
 
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, liveSessionsDueToDate, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, onConnect, restingHR, maxHR, healthkitConnectedAt }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, liveSessionsDueToDate, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, onConnect, restingHR, maxHR, healthkitConnectedAt, strengthWeek = null }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string
@@ -4930,6 +4958,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
    *  Used for the verdict line beneath the headline number so "X behind" only
    *  fires when the runner is genuinely behind. CoachingPrinciples §65. */
   liveSessionsDueToDate?: number
+  /** STRENGTH-ENTRY-01 — this week's strength evidence, or null (none set up, none this week). */
+  strengthWeek?: StrengthWeekEvidence | null
   // R28 phase-end summary + R29 race readiness
   phaseSummary?: { content: string; generated_at: string; phase_ended: string; transition_week_n: number } | null
   onPhaseSummaryGenerated?: (s: { content: string; generated_at: string; phase_ended: string; transition_week_n: number }) => void
@@ -5799,6 +5829,26 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             )
           })}
         </div>
+
+        {/* STRENGTH-ENTRY-01 — strength as evidence, beside the run stats and in their
+            treatment (Sierra: what makes the runner better at the habit, not a vanity number).
+            One count and the plan's own next step. No streak, no badge, no load chart: nothing
+            logs load yet, and a chart of planned numbers would show the plan, not the runner. */}
+        {strengthWeek && (
+          <div className="card-data" style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', marginTop: 'var(--space-2)' }}>
+            <div className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-2)' }}>
+              {STRENGTH_COACH.label}
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.2px', lineHeight: 1.25 }}>
+              {STRENGTH_COACH.count(strengthWeek.done, strengthWeek.planned)}
+            </div>
+            {strengthWeek.next && (
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 400, color: 'var(--mute)', lineHeight: 1.3, marginTop: 'var(--space-2)' }}>
+                {strengthWeek.next.kind === 'heavier' ? STRENGTH_COACH.heavier(strengthWeek.next.week) : STRENGTH_COACH.jumps(strengthWeek.next.week)}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── LOAD RATIO SHEET ────────────────────────────────────────── */}
         {loadSheetOpen && (

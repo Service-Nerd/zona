@@ -2,8 +2,10 @@
 
 **Component:** `components/dashboard/StrengthSetupScreen.tsx`
 
-The Me → Strength door body (STRENGTH-ENGINE-01 Phase 2, Design Board `STRENGTH-APP-01` F). `MeScreen` renders the
-`ScreenHeader` (`STRENGTH_TITLE`, `STRENGTH_SCREEN_SUB`); this renders the form only, so the title is said once.
+The strength setup form (STRENGTH-ENGINE-01 Phase 2, Design Board `STRENGTH-APP-01` F). **Mounted by the dashboard's
+`strength-setup` screen since STRENGTH-ENTRY-01 (2026-10-17)**, which renders the `ScreenHeader` (`STRENGTH_TITLE`,
+`STRENGTH_SCREEN_SUB`) and returns to whichever door opened it (Me, the modify sheet, the rest card). This renders the
+form only, so the title is said once.
 
 ## Prop Interface
 

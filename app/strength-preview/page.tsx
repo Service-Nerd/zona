@@ -16,11 +16,13 @@ import harnessPlanJson from '@/components/dashboard/__fixtures__/harnessPlan.jso
 import { generateStrengthPlan, type StrengthSession } from '@/packages/strength'
 import type { Plan } from '@/types/plan'
 import { isoLocalDate } from '@/lib/strength-bridge/display'
+import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
+import { strengthSubtitle } from '@/components/shared/meDoors'
 
 const plan = harnessPlanJson as unknown as Plan
 // TodayScreen's optional handlers are not needed for a look; fixture props only.
 const Today = TodayScreen as unknown as (p: Record<string, unknown>) => JSX.Element
-const CASES = ['today', 'session', 'plan', 'setup'] as const
+const CASES = ['today', 'session', 'plan', 'setup', 'rest', 'sheet'] as const
 
 /** Shift the harness plan so its current week contains today, as a live runner's would. */
 function livePlan(): Plan {
@@ -59,7 +61,7 @@ export default function StrengthPreviewPage() {
 
   return (
     <main style={{ background: 'var(--bg)', minHeight: '100vh', maxWidth: '390px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', gap: '6px', padding: '8px', borderBottom: '1px solid var(--line)' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '8px', borderBottom: '1px solid var(--line)' }}>
         {CASES.map(k => <Chip key={k} label={k} active={c === k} onClick={() => setC(k)} />)}
       </div>
       {c === 'today' && (
@@ -74,6 +76,17 @@ export default function StrengthPreviewPage() {
       {c === 'plan' && (
         <PlanCalendar weeks={run.weeks} allOverrides={[]} allCompletions={{}} onOverrideChange={() => {}} onSessionTap={() => {}}
           strength={{ sessionsByDate: byDate, completions, onOpen: () => setC('session') }} />
+      )}
+      {/* STRENGTH-ENTRY-01 — a runner WITHOUT strength: the rest card's line shows on the
+          week's first rest day (tap that day in the strip if today is not it). */}
+      {c === 'rest' && (
+        <Today plan={run} weekIndex={Math.max(0, weekIndex)} daysToRace={60} raceName="Brighton Half" preferredMetric="distance"
+          sessionMetricOverrides={{}} stravaRuns={[]} allOverrides={[]} overridesReady allCompletions={{}} preferredUnits="km"
+          zone2Ceiling={148} firstName="Sam" onStrengthInvite={() => setC('setup')} />
+      )}
+      {c === 'sheet' && (
+        <ModifyPlanSheet plan={run} onClose={() => setC('today')} onApply={() => {}} hasPaidAccess edits={{}} onEditsChange={() => {}}
+          onStartNewPlan={() => {}} strengthDoor={{ title: STRENGTH_TITLE, subtitle: strengthSubtitle(null), onOpen: () => setC('setup') }} />
       )}
       {c === 'setup' && (
         <>

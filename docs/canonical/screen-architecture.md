@@ -199,7 +199,7 @@ things — but a list is only tolerable when each row is a door (Silvanto).
 | A **door** to data connections | Zone rings or trend data |
 | A **door** to plan reshaping and overrides | Race projections |
 | A **door** to notifications | Session schedule |
-| A **door** to strength setup (STRENGTH-APP-01, admin-only until release) | |
+| A **door** to strength setup (STRENGTH-APP-01, admin-only until release). The setup is its own `strength-setup` screen since STRENGTH-ENTRY-01: Me, the modify sheet and the rest card all open it, and it returns to whichever did | |
 
 **The measure is time to the thing you came for** (Sierra). Nobody reads Me; they arrive
 having already decided, and the only question is how fast they can leave.

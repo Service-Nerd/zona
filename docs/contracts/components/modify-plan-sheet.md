@@ -32,8 +32,16 @@ interface ModifyPlanSheetProps {
   onStartNewPlan?: () => void  // the wizard exit, which ARCHIVES the current plan
   edits: PlanEdits             // owned by the CALLER, which outlives this sheet
   onEditsChange: (next: PlanEdits) => void
+  // STRENGTH-ENTRY-01 (2026-10-17) — a DOOR, its own group ("Around your runs"), never a
+  // ninth edit row: strength is its own plan and is never part of Apply. Hidden while an edit
+  // is pending (leaving mid-edit is leaving unapplied work). Null = not available.
+  strengthDoor?: { title: string; subtitle: string; onOpen: () => void } | null
 }
 ```
+
+**Row glyphs (ICON-RULE-01, location):** every edit row leads with one `RowIcon`, from
+`ROW_GLYPH`, which is typed `Record<ModifiableKey, GlyphName>` so a new row cannot ship
+without one. Check: `lib/marketing/iconRule.test.ts`.
 
 ⚠️ **I GOT THIS LIST WRONG ON THE FIRST WRITE AND THE GATE CAUGHT IT.** I documented an
 `open` prop that does not exist and omitted `hasPaidAccess` and `onStartNewPlan` — the
