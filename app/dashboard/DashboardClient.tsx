@@ -36,7 +36,7 @@ import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import ExternalLink from '@/components/shared/ExternalLink'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, PlanReadError, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate, readPlanJson } from '@/lib/plan'
-import { resolveEffectiveDay, soleSession } from '@/lib/plan/effectiveSessions'
+import { resolveEffectiveDay, SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
 import { easyPaceAsCeiling, splitPaceQualifier } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { resolveMaxHr } from '@/lib/plan/maxHrGuard'
@@ -938,7 +938,7 @@ export default function DashboardClient() {
   useEffect(() => { if (attributionAnswered()) setAttributionResolved(true) }, [])
 
   // Global overrides — fetched once, shared across all screens
-  const [allOverrides, setAllOverrides] = useState<{ week_n: number; original_day: string; new_day: string }[]>([])
+  const [allOverrides, setAllOverrides] = useState<{ week_n: number; original_day: string; new_day: string; new_slot?: 'am' | 'pm' | null }[]>([])
   const [overridesReady, setOverridesReady] = useState(false)
 
   // All completions — fetched once at top level, refreshed on save
@@ -1397,7 +1397,7 @@ export default function DashboardClient() {
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes, charityGrantRes, guidanceRes, pendingReshapeRes] = await Promise.all([
           supabase.from('user_settings').select('strava_refresh_token, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, max_hr_source, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at').eq('id', user.id).single(),
-          supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id).is('superseded_at', null),
+          supabase.from('session_overrides').select(SESSION_OVERRIDE_COLUMNS).eq('user_id', user.id).is('superseded_at', null),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, skip_reason, avg_hr, coaching_flag').eq('user_id', user.id).is('superseded_at', null),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
           // GTM-CHARITY-04 — readable under RLS by its owner only (the policy is
@@ -1507,9 +1507,10 @@ export default function DashboardClient() {
             for (const dayKey of WEEK_DAYS) {
               const dayDate = computeSessionDate(weekStart, dayKey)
               if (dayDate >= today) break // today or future — not missable
-              const eff = soleSession(effective[dayKey])
-              if (!eff || eff.session.type === 'rest') continue
-              if (!thisWeekCompletions[eff.originalDay]) {
+              // SESSION-SLOTS-01 — the first unlogged session of the day, AM before PM (a double holds two).
+              const eff = (effective[dayKey] ?? []).find(e => e.session.type !== 'rest' && !thisWeekCompletions[e.originalDay])
+              if (!eff) continue
+              {
                 // Build the activeSessionData shape now — same fields the card
                 // path attaches (rawDate, weekN, completion) — so opening the
                 // session via "I actually ran it" yields the same picker
@@ -4416,7 +4417,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   /** STRENGTH-APP-01 (C). */
   strength?: import('@/components/training/PlanCalendar').PlanStrength | null
   plan: Plan; stravaRuns: any[]
-  allOverrides: { week_n: number; original_day: string; new_day: string }[]
+  allOverrides: { week_n: number; original_day: string; new_day: string; new_slot?: 'am' | 'pm' | null }[]
   allCompletions: Record<number, Record<string, any>>
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
   onOpenSession?: (s: any) => void

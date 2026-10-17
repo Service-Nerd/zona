@@ -39,8 +39,17 @@ describe('planMove', () => {
   it('🔴 PlanCalendar uses it for BOTH the screen and the database delete', () => {
     const src = readFileSync('components/training/PlanCalendar.tsx', 'utf8')
     const body = src.slice(src.indexOf('async function handleMove('), src.indexOf('async function handleSwap('))
-    expect(body).toMatch(/planMove\(allOverrides, weekN, originalDay, newDay\)/)
+    expect(body).toMatch(/planMove\(allOverrides, weekN, originalDay, newDay, slot\)/)
     expect(body).toMatch(/\.in\('original_day', removedOriginalDays\)/)
     expect(body).not.toMatch(/original_day\.eq\.\$\{newDay\}/)
+  })
+  it('🔴 a double ("Do both") keeps the occupant\'s own move onto that day', () => {
+    // Fri was moved onto Wed; Mon now joins it. Replacing the Fri row would send Fri home.
+    const all = [{ week_n: 3, original_day: 'fri', new_day: 'wed' }]
+    const r = planMove(all, 3, 'mon', 'wed', 'pm')
+    expect(r.next).toEqual([...all, { week_n: 3, original_day: 'mon', new_day: 'wed', new_slot: 'pm' }])
+    expect(r.removedOriginalDays).toEqual(['mon'])
+    // control: the same target WITHOUT a slot replaces the Fri row, as a plain move always has
+    expect(planMove(all, 3, 'mon', 'wed').removedOriginalDays).toEqual(['mon', 'fri'])
   })
 })

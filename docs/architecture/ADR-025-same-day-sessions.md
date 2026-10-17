@@ -1,6 +1,6 @@
-# ADR-025 — Same-day sessions: AM / PM slots (PROPOSED, not built)
+# ADR-025 — Same-day sessions: AM / PM slots (ACCEPTED, built 2026-10-17)
 
-**Status:** PROPOSED 2026-10-17. Not ratified. **Item:** `SESSION-SLOTS-01`.
+**Status:** PROPOSED 2026-10-17; all four phases built 2026-10-17 (Coaching Board §126, SLT FREE, Design Board SHIP WITH AMENDMENT). Live only once migration `20261018_session_overrides_slot.sql` is applied. **Item:** `SESSION-SLOTS-01`.
 **Founder, verbatim:** *"we should have an AM and PM slot per day so we can have a run and weight session on the same
 day or actually double runs if someone chose to move a run to double up a day. Realise that one requires full impact
 analysis and a proper architect plan and review."*
@@ -88,8 +88,8 @@ first put, kept for the record:
 | **0. Prerequisites** ✅ *done 2026-10-17* | Delete the two hand-rolled effective maps (route through the owner) · fix three pre-existing defects: readiness ignores overrides, `handleMove`'s delete differs from its client filter, auto-match dates a moved session by its original day | `verify:parity` IDENTICAL; each defect gets a fail-before test |
 | **1. Owner + data** ✅ *code done 2026-10-17; migration awaiting the founder* | Migration (`new_slot` + unique key), `resolveEffectiveDay` / `getSessionsForDate`, every consumer compiles against arrays with **single-session behaviour** | No visible change; journey test unchanged |
 | **2. Rules** ✅ *built 2026-10-17 (engine side, unreachable until Phase 3 writes `new_slot`)* | Coaching Board ruling (§5) → principle + numeric + invariant | Board ruling recorded |
-| **3. UI** | Design Board: Today two-session day, Plan two rows, the Swap / Do both choice, AM/PM labels (including strength) | Pattern + check + register row; 375px |
-| **4. Consumers** | Auto-match by start time, push copy, daily note, readiness, widget | Each consumer: a test with a double day |
+| **3. UI** ✅ *built 2026-10-17* | Design Board: Today two-session day, Plan two rows, the Swap / Do both choice, AM/PM labels. Strength's label stays unchanged (no strength on a two-run day) | Pattern + check + register row; 375px |
+| **4. Consumers** ✅ *built 2026-10-17* | Auto-match (both sessions AM first; a done half is skipped, since the server holds UTC start times, not a local time of day), push copy (`doubleAdvice()`), daily note (`todayDouble`), readiness (the hard session, else the first), missed-session prompt (first open session). **Widget keeps `soleSession`** (native struct, one session: shows AM) | Each consumer: a test with a double day (`doubleConsumers.test.ts`, `autoAnalyse.test.ts`) |
 
 ## 7. Architect review (zona-architectural-principles)
 

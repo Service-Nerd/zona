@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
-import { canDouble, doubleAdvice, effectiveDoubleViolations, isRaceWeek } from './doubles'
+import { canDouble, doubleAdvice, effectiveDoubleViolations, isRaceWeek, moveChoices } from './doubles'
 import { resolveEffectiveDay, DAY_KEYS, type SessionOverride } from './effectiveSessions'
 import { GENERATION_CONFIG } from './generationConfig'
 import { formatDuration } from '@/lib/format'
@@ -106,10 +106,36 @@ describe('the advice and the writer', () => {
     expect(a.toLowerCase()).toContain('eat')
     expect(a).not.toMatch(/train|fitter|extra|—/i)
   })
-  it('🔴 nothing WRITES new_slot yet (Phase 3), so no runner can reach a double before Phase 4 teaches every reader', () => {
+  it('🔴 new_slot has exactly TWO writers: the move decision and the Plan move flow ("Do both")', () => {
+    // Phase 3 opened the writer; a third would be a double the confirm row never offered (§126).
     const files = execSync('git ls-files app components lib', { encoding: 'utf8' }).split('\n')
       .filter(f => /\.(ts|tsx)$/.test(f) && !f.includes('.test.') && f !== 'lib/plan/effectiveSessions.ts')
     const writers = files.filter(f => /new_slot\s*:/.test(readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')))
-    expect(writers).toEqual([])
+    expect(writers.sort()).toEqual(['components/training/PlanCalendar.tsx', 'lib/plan/overrideMoves.ts'])
+  })
+})
+
+describe('moveChoices — what the Plan confirm row may offer (Design Board)', () => {
+  const q = { type: 'quality', label: 'Tempo' }
+  const w = week({})
+  it('an empty day is a plain move', () => {
+    expect(moveChoices(easy('a') as never, [], w)).toEqual({ target: true, swap: false, both: false })
+  })
+  it('easy onto easy: swap stays primary, "Do both" is on offer', () => {
+    expect(moveChoices(easy('a') as never, [easy('b') as never], w)).toEqual({ target: true, swap: true, both: true })
+  })
+  it('easy onto quality: swap only', () => {
+    expect(moveChoices(easy('a') as never, [q as never], w)).toEqual({ target: true, swap: true, both: false })
+  })
+  it('🔴 a day already holding two is not a target', () => {
+    expect(moveChoices(easy('a') as never, [easy('b') as never, easy('c') as never], w).target).toBe(false)
+  })
+  it('🔴 from a double: never a swap; joining another easy run is allowed; onto quality, nothing', () => {
+    expect(moveChoices(easy('a') as never, [easy('b') as never], w, true)).toEqual({ target: true, swap: false, both: true })
+    expect(moveChoices(easy('a') as never, [q as never], w, true).target).toBe(false)
+    expect(moveChoices(easy('a') as never, [], w, true)).toEqual({ target: true, swap: false, both: false })
+  })
+  it('🔴 race week: swap, never both', () => {
+    expect(moveChoices(easy('a') as never, [easy('b') as never], week({}, { type: 'race' }))).toEqual({ target: true, swap: true, both: false })
   })
 })

@@ -71,3 +71,26 @@ export function effectiveDoubleViolations(
   }
   return out
 }
+
+/** The runner-facing slot label (Design Board, SESSION-SLOTS-01). Never colour alone: the label carries it. */
+export const SLOT_LABEL: Record<'am' | 'pm', string> = { am: 'AM', pm: 'PM' }
+
+/**
+ * What the move-confirm row may offer (Design Board, Pattern 10b amended). `swap` keeps today's
+ * meaning and stays the primary; `both` (a double, the mover takes PM) appears only when §126 allows
+ * it and the target holds exactly one session; a day already holding two is not a target at all.
+ */
+export function moveChoices(
+  source: Session | undefined, targetSessions: readonly Session[], week: DoubleWeek,
+  /** The source is one half of a double. It may leave (move) or join another easy run (both), never
+   *  swap: the swapped-in session would land beside the half left behind, unslotted, and become a
+   *  third collision the resolver turns back into a swap. */
+  sourceSharesDay = false,
+): { target: boolean; swap: boolean; both: boolean } {
+  if (targetSessions.length >= 2) return { target: false, swap: false, both: false }
+  const occupant = targetSessions[0]
+  const occupied = !!occupant && occupant.type !== 'rest'
+  const swap = occupied && !sourceSharesDay
+  const both = occupied && canDouble(occupant, source, week)
+  return { target: !occupied || swap || both, swap, both }
+}

@@ -1359,6 +1359,7 @@ Inline row appended to a `WeekCard` after the user taps the move icon on a sessi
 - Button row: flex gap `8px`
   - Cancel: `flex: 1`, transparent bg, `1px solid --line`, `--mute` text, `11px 400` uppercase `0.06em`
   - Confirm: `flex: 2`, `--moss` bg, `--card` text, `11px 600` uppercase `0.06em`. Label: "Move it" or "Swap them" depending on `isSwap`
+  - **"Do both"** (SESSION-SLOTS-01, Design Board 2026-10-17): a `secondary` compact button between the two, shown only when `moveChoices().both` (§126 allows the pair). It moves with the PM slot. When it is the only offer (the source is half of a double, so it cannot swap) it becomes the primary label instead. Body gains one `11px --ink-2` line: *"Or do both on Wed, AM and PM."* / *"Both run on Wed, AM and PM."*
 
 **Voice rule:** copy describes the move in concrete terms — *what* moves, *from* where, *to* where. Never abstract ("apply change"). Never invents structure not in the diff. Aligns with brand voice — *honest, slightly sarcastic, self-aware, encouraging without cringe*.
 
@@ -1368,6 +1369,28 @@ Reference: `components/training/PlanCalendar.tsx → WeekCard`
 Integration: `PlanScreen` → `PlanCalendar` (owns the `onMove` / `onSwap` callbacks that write `session_overrides`)
 
 **Future:** when RESHAPE-FIX-WAVE2A ships, the `<AdjustmentDiff />` component will replace the prose body above — same Confirm/Cancel mechanism, richer per-day before/after view. The button row stays. See backlog → RESHAPE-FIX-WAVE2A.
+
+---
+
+### 10d. Same-day double (Plan + Today) — SESSION-SLOTS-01
+
+A double is two easy runs on one day, made only by the runner choosing **"Do both"** in § 10b (§126; the engine
+never prescribes one). Ruling: `design-rulings.md` 2026-10-17, sitting `docs/decisions/same-day-doubles-design-2026-10-17.md`.
+
+```
+WED  │ Easy run — Zone 2              ›  ↕
+ 21  │ AM 10km
+     │ Easy run — Zone 2              ›  ↕
+     │ PM 10km
+```
+
+- **Plan:** two `DayRow`s; the second is a `continuation` (date column blank, no divider between the two). Each keeps its own rail colour (`getSessionColor`). The slot (`SLOT_LABEL`) **leads the metric line** at `12px 600 --ink-2`: a label, never a colour (WCAG 1.4.1). Either half has its own move handle.
+- **Move targets** come from `moveChoices()` only: a day holding two is never a target; from a double a session may move to an empty day or join another easy run, never swap (target hint *"tap to double up"*).
+- **Today:** the hero is the day's first session not yet done. The other is the compact `SessionCard` row (the STRENGTH-APP-01 second-session precedent) under a `MICRO_LABELS.eyebrow` AM / PM, and `doubleAdvice()` once beneath it at `12px --mute`. One CTA (the hero's). DateStrip: one dot, the hero's.
+- **Never:** a "×2" mark, a run glyph, an AM/PM question, a modal.
+
+Reference: `components/training/PlanCalendar.tsx → WeekCard / DayRow`, `components/dashboard/TodayScreen.tsx`
+Checks: `components/training/planCalendarDouble.markup.test.ts`, `components/dashboard/todayDouble.markup.test.ts`
 
 ---
 

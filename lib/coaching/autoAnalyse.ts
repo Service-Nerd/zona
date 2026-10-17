@@ -88,10 +88,10 @@ export async function autoMatchAndAnalyse(
   // calendar, the day picker. Everything that SHOWS the runner their week respected
   // the move; the only thing that ACTS on it did not. The two-writer split
   // (`session_overrides` vs `plan_json`) applied to one side.
-  const { resolveEffectiveDay, soleSession, DAY_KEYS } = await import('@/lib/plan/effectiveSessions')
+  const { resolveEffectiveDay, DAY_KEYS, SESSION_OVERRIDE_COLUMNS } = await import('@/lib/plan/effectiveSessions')
   const { data: overrideRows } = await supabase
     .from('session_overrides')
-    .select('week_n, original_day, new_day')
+    .select(SESSION_OVERRIDE_COLUMNS)
     .eq('user_id', userId)
     .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
   const weekOverrides = (overrideRows ?? []).filter((o: any) => o.week_n === week.n)
@@ -105,15 +105,16 @@ export async function autoMatchAndAnalyse(
   // instead would write a row the UI can never find — a silent phantom completion,
   // worse than the defect being fixed. `resolveEffectiveSessions` preserves
   // `originalDay` for exactly this reason.
-  const plannedSessions = DAY_KEYS
-    .map((slot, idx) => {
-      const entry = soleSession(effective[slot])
-      if (!entry) return null
-      const sessionDate = new Date(weekStartDate)
-      sessionDate.setDate(weekStartDate.getDate() + idx)
-      return { session: entry.session, day: entry.originalDay, sessionDate }
-    })
-    .filter(Boolean) as { session: any; day: string; sessionDate: Date }[]
+  // SESSION-SLOTS-01 — every session on every day, AM before PM. A double holds two sessions on one
+  // date, and the first match used to win and `break`, so the day's second run met the morning's claim
+  // (`'exists'`) and never linked. A session already completed is skipped, so the next run of the day
+  // links to the next session. (The server holds a UTC start, not a local time of day: ORDER is the
+  // signal, and runs arrive in order.)
+  const { data: doneRows } = await supabase
+    .from('session_completions').select('session_day, status')
+    .eq('user_id', userId).eq('week_n', week.n).is('superseded_at', null)
+  const done = new Set<string>((doneRows ?? []).filter((r: any) => r.status === 'complete').map((r: any) => r.session_day))
+  const plannedSessions = plannedSessionsForMatch(effective, weekStartDate, done, DAY_KEYS)
 
   if (!plannedSessions.length) return
 
@@ -327,4 +328,28 @@ export function getInternalBaseUrl(): string {
   // wrongly hit production).
   return process.env.NEXT_PUBLIC_APP_URL
     ?? (process.env.VERCEL ? 'https://www.zonna.run' : 'http://localhost:3000')
+}
+
+/**
+ * SESSION-SLOTS-01 — the sessions an incoming run may link to, in match order: every session of every
+ * day, AM before PM. On a double day a session already completed is left out, so the day's second run
+ * links to the day's second session instead of meeting the first one's claim. Single days are
+ * unchanged (a completed single still goes through `claimAutoLink`, which respects it).
+ */
+export function plannedSessionsForMatch<S>(
+  effective: Partial<Record<string, { session: S; originalDay: string }[]>>,
+  weekStartDate: Date,
+  done: ReadonlySet<string>,
+  dayKeys: readonly string[],
+): { session: S; day: string; sessionDate: Date }[] {
+  return dayKeys.flatMap((slot, idx) => {
+    const list = effective[slot] ?? []
+    return list
+      .filter(entry => !(list.length > 1 && done.has(entry.originalDay)))
+      .map(entry => {
+        const sessionDate = new Date(weekStartDate)
+        sessionDate.setDate(weekStartDate.getDate() + idx)
+        return { session: entry.session, day: entry.originalDay, sessionDate }
+      })
+  })
 }

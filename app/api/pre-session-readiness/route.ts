@@ -3,7 +3,7 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { getSessionsForDate, parseLocalDate, readPlanJson } from '@/lib/plan'
-import { soleSession } from '@/lib/plan/effectiveSessions'
+import { SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
 import { orderedWeekSessions } from '@/lib/plan/weekSessions'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { computeReadiness, type DailyHealthSample, type SleepStageMinutes } from '@/lib/coaching/readinessBaseline'
@@ -74,10 +74,13 @@ export async function GET(req: NextRequest) {
   // their moves. This call passed no overrides, so a tempo moved onto today was never eased and
   // the day it left could be. A failed read eases nothing: never act on a session it cannot place.
   const { data: overrides, error: overridesError } = await supabase
-    .from('session_overrides').select('week_n, original_day, new_day')
+    .from('session_overrides').select(SESSION_OVERRIDE_COLUMNS)
     .eq('user_id', userId).is('superseded_at', null)
   if (overridesError) return NextResponse.json({ adjustment: null, reason: 'overrides_unavailable' })
-  const resolved = soleSession(getSessionsForDate(plan.weeks, parseLocalDate(todayDateStr), overrides ?? [])) ?? null
+  // SESSION-SLOTS-01 — readiness eases the day's HARD session. A double is two easy runs (§126), so
+  // it never has one; on any day the first quality or long session is the one to read.
+  const todayAll = getSessionsForDate(plan.weeks, parseLocalDate(todayDateStr), overrides ?? [])
+  const resolved = todayAll.find(r => isQualityOrLong(coachingSessionType(r.session))) ?? todayAll[0] ?? null
   if (!resolved) return NextResponse.json({ adjustment: null, reason: 'no_active_session' })
 
   const week         = resolved.week

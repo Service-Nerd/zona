@@ -214,6 +214,10 @@ above does:
 
 Strength's matching rule is `S-NO-STRENGTH-ON-DOUBLE` (S3 Am.1), in the strength validator.
 
+**The writer is gated too (Phase 3).** `new_slot` has exactly two writers, `lib/plan/overrideMoves.ts` (the decision)
+and `PlanCalendar` ("Do both"), and `lib/plan/doubles.test.ts` fails on a third. The confirm row's offers come only
+from `moveChoices()` (§126 via `canDouble`), so the UI never offers a double the owner would refuse.
+
 ## The strength engine's invariants live elsewhere (STRENGTH-ENGINE-01, 2026-10-16)
 
 `validatePlan()` checks RUN plans only. The strength engine (`packages/strength`, ADR-024) has its own three layers:

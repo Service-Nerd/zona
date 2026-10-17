@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { claimAutoLink } from './autoAnalyse'
+import { claimAutoLink, plannedSessionsForMatch } from './autoAnalyse'
+import { resolveEffectiveDay, DAY_KEYS } from '@/lib/plan/effectiveSessions'
 
 // Fake Supabase that enforces the session_completions live-row uniqueness on
 // (user_id, week_n, session_day) and models the conditional attach-update.
@@ -99,5 +100,23 @@ describe('claimAutoLink — link-time push fires exactly once', () => {
   it('unexpected DB error → exists (never push on uncertainty)', async () => {
     const sb = makeFakeSupabase([], { rpcError: { code: '42P01', message: 'boom' } })
     expect(await claimAutoLink(sb as any, hkRow())).toBe('exists')
+  })
+})
+
+describe('plannedSessionsForMatch — a double day links its second run (SESSION-SLOTS-01)', () => {
+  const week = { sessions: { mon: { type: 'easy', label: 'Mon' }, wed: { type: 'easy', label: 'Wed' } } } as never
+  const eff = resolveEffectiveDay(week, [{ week_n: 2, original_day: 'mon', new_day: 'wed', new_slot: 'pm' }])
+  const start = new Date('2026-08-24T00:00:00')
+  it('both runs of the double are candidates on the same date, AM first', () => {
+    const p = plannedSessionsForMatch(eff, start, new Set(), DAY_KEYS)
+    expect(p.map(x => x.day)).toEqual(['wed', 'mon'])
+    expect(p[0].sessionDate.toDateString()).toBe(p[1].sessionDate.toDateString())
+  })
+  it('🔴 once the AM run is linked, the next run of the day goes to the PM session', () => {
+    expect(plannedSessionsForMatch(eff, start, new Set(['wed']), DAY_KEYS).map(x => x.day)).toEqual(['mon'])
+  })
+  it('🔴 control: a completed SINGLE day stays a candidate (claimAutoLink respects it, as before)', () => {
+    const single = resolveEffectiveDay(week, [])
+    expect(plannedSessionsForMatch(single, start, new Set(['wed']), DAY_KEYS).map(x => x.day)).toEqual(['mon', 'wed'])
   })
 })

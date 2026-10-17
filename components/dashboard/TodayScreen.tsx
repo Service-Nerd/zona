@@ -5,7 +5,8 @@
 //
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
-import { resolveEffectiveDay, soleSession } from '@/lib/plan/effectiveSessions'
+import { resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
+import { SLOT_LABEL, doubleAdvice } from '@/lib/plan/doubles'
 import { InlineError } from '@/components/shared/InlineError'
 import AIMark from '@/components/shared/AIMark'
 import Button from '@/components/ui/Button'
@@ -632,7 +633,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   sessionMetricOverrides: Record<string, 'distance' | 'duration'>
   stravaRuns: any[]
-  allOverrides: { week_n: number; original_day: string; new_day: string }[]
+  allOverrides: { week_n: number; original_day: string; new_day: string; new_slot?: 'am' | 'pm' | null }[]
   overridesReady: boolean
   onOpenSession?: (s: any) => void
   /** STRENGTH-APP-01 — the runner's strength sessions by local date, when strength is on.
@@ -808,11 +809,12 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   }, [plan, allCompletions])
 
   // Derive this week's overrides from shared prop — no fetch needed
-  const overrides = useMemo(() => {
-    const map: Record<string, string> = {}
-    allOverrides.filter(o => o.week_n === weekNum).forEach(o => { map[o.original_day] = o.new_day })
-    return map
-  }, [allOverrides, weekNum])
+  // SESSION-SLOTS-01 — the rows themselves, not an original→new map: a map has nowhere to keep
+  // `new_slot`, and without it a "Do both" double resolves as a swap on Today while Plan shows two.
+  const overrides = useMemo(
+    () => allOverrides.filter(o => o.week_n === weekNum),
+    [allOverrides, weekNum],
+  )
 
   // Swipe whole screen = week change
   // A1 — the screen-wide swipe-to-change-week is GONE with the strip's arrows.
@@ -845,16 +847,25 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   // 🔴 SESSION-SLOTS-01 Phase 0 — through the ONE owner. This was a hand-rolled copy whose
   // `result[newDay] = …` overwrote whatever sat on the target day, the collision the owner was
   // fixed for (EFFSESS-COLLISION-01) and this copy never was. Same flattened shape as before.
-  const effectiveWs = useMemo(() => {
-    const result: Record<string, any> = {}
-    const rows = Object.entries(overrides).map(([original_day, new_day]) => ({ week_n: weekNum, original_day, new_day }))
-    const eff = resolveEffectiveDay({ sessions: ws }, rows)
-    for (const [day, list] of Object.entries(eff)) { const e = soleSession(list); if (e) result[day] = { ...e.session, originalDay: e.originalDay } }
+  // SESSION-SLOTS-01 Phase 3 — every session of each day. The week's type/badge go in too, so the
+  // owner can refuse a race-week double (§126). `effectiveWs[day]` is the day's HERO: the first
+  // session not yet done (Design Board), so a finished AM run hands the hero to the PM one.
+  const dayLists = useMemo(() => {
+    const result: Record<string, any[]> = {}
+    const eff = resolveEffectiveDay({ sessions: ws, type: (currentWeek as any)?.type, badge: (currentWeek as any)?.badge }, overrides)
+    for (const [day, list] of Object.entries(eff)) result[day] = (list ?? []).map(e => ({ ...e.session, originalDay: e.originalDay, slot: e.slot }))
     return result
   }, [overrides, weekIndex])
+  const effectiveWs = useMemo(() => {
+    const result: Record<string, any> = {}
+    for (const [day, list] of Object.entries(dayLists)) {
+      const open = list.find(e => !completions[e.originalDay]?.status)
+      if (list.length) result[day] = open ?? list[0]
+    }
+    return result
+  }, [dayLists, completions])
 
-  const sessions: SessionEntry[] = useMemo(() => DOW_ORDER.map(key => {
-    const s = effectiveWs[key]
+  const toEntry = (key: string, s: any): SessionEntry => {
     const originalDay = s?.originalDay ?? key
     const d = computeSessionDate(weekStartDate, key)
     // `?? ''` — the owner returns null on an unparseable date; this row's
@@ -888,7 +899,10 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
       rpe_target: s?.rpe_target ?? undefined,
       coach_notes: s?.coach_notes ?? undefined,
     }
-  }), [effectiveWs, weekIndex])
+  }
+  const sessions: SessionEntry[] = useMemo(() => DOW_ORDER.map(key => toEntry(key, effectiveWs[key])),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [effectiveWs, weekIndex])
 
   // Default selected day. selectedKey holds the calendar day (displayKey),
   // not the session's originalDay — otherwise a moved session and the now-empty
@@ -923,6 +937,10 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
     ? resolveSessionMetric(weekNum, selectedSession.key, selectedSession.primary_metric, sessionMetricOverrides, preferredMetric)
     : 'distance'
   const selectedEntry = selectedSession ? effectiveWs[selectedSession.displayKey] : null
+  // SESSION-SLOTS-01 — the other half of a double on the selected day (never more than two, §126).
+  const selectedDay = selectedSession ? dayLists[selectedSession.displayKey] ?? [] : []
+  const companion = selectedDay.length >= 2 ? selectedDay.find(e => e !== selectedEntry) ?? null : null
+  const companionEntry = companion && selectedSession ? toEntry(selectedSession.displayKey, companion) : null
   // Completion lookups must use the session's originalDay (stable id), not the
   // calendar day — completions are keyed by originalDay so they survive moves.
   const selectedCompletionKey = selectedSession?.key ?? ''
@@ -2173,6 +2191,39 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 }} style={{ marginTop: 'var(--space-3)' }}>
                 Log this run
               </Button>
+            )}
+
+            {/* SESSION-SLOTS-01 (Design Board) — the other run of a double: the same compact
+                SessionCard row as strength's second session, under its AM / PM eyebrow, and the
+                spacing advice said ONCE, on the double day only. No second hero, no second CTA. */}
+            {companion && companionEntry && (
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <div data-slot={companion.slot ?? undefined} style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)', marginBottom: 'var(--space-1)' }}>
+                  {SLOT_LABEL[(companion.slot ?? 'pm') as 'am' | 'pm']}
+                </div>
+                <SessionCard
+                  type={companionEntry.type}
+                  role={companionEntry.role}
+                  name={companionEntry.title}
+                  distanceKm={companionEntry.distance}
+                  units={preferredUnits}
+                  metric={resolveSessionMetric(weekNum, companionEntry.key, companionEntry.primary_metric, sessionMetricOverrides, preferredMetric)}
+                  durationMin={companionEntry.duration_mins}
+                  state={completions[companionEntry.key]?.status === 'complete' ? 'done'
+                    : completions[companionEntry.key]?.status === 'skipped' ? 'skipped' : 'future'}
+                  onClick={() => onOpenSession?.({
+                    ...companionEntry,
+                    rawDate: companionEntry.rawDate.toISOString(),
+                    completion: completions[companionEntry.key],
+                    isPast: companionEntry.rawDate < now && !companionEntry.today,
+                    isFuture: !companionEntry.today && companionEntry.rawDate > now,
+                    weekN: weekNum,
+                  })}
+                />
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: 'var(--space-2)', lineHeight: 1.4 }}>
+                  {doubleAdvice()}
+                </div>
+              </div>
             )}
 
             {/* STRENGTH-APP-01 (A) — the second session on a run day: one compact row,

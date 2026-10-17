@@ -2074,7 +2074,7 @@ say *"The rest day is non-negotiable."*, which reads as a contradiction; (c) the
 calls you have."** All three, and the earlier RIR phrasing, push line and setup prompts, stand as written, including
 the rest-card line under rest copy.
 
-### `SESSION-SLOTS-01` — AM / PM: two sessions on one day *(filed 2026-10-17, PLANNED, not built)*
+### `SESSION-SLOTS-01` — AM / PM: two sessions on one day *(filed 2026-10-17 · ✅ BUILT 2026-10-17, all four phases; live once migration `20261018` is applied, feature registry)*
 
 **Founder, verbatim:** *"we should have an AM and PM slot per day so we can have a run and weight session on the same
 day or actually double runs if someone chose to move a run to double up a day. Realise that one requires full impact
@@ -2096,6 +2096,25 @@ return lists, 9 named `soleSession()` reads (counted), no behaviour change. 🔻
 because a writer without them would drop the PM session.
 **Tags (in order):** ⚙️ Phase 0 + 1 (no visible change) → 🏃 COACHING BOARD (which doubles, gap, weekday cap) →
 🧭 DESIGN BOARD (Today, Plan, the move choice) → 💼 SLT (FREE or PAID, roadmap order).
+✅ **Phases 3–4 built 2026-10-17.** SLT: FREE, built small, no promotion. Design Board: SHIP WITH AMENDMENT
+(`docs/decisions/same-day-doubles-design-2026-10-17.md`). "Do both" on Plan, two-session days on Today and Plan,
+push / daily note / readiness / auto-match / missed-session prompt taught; `soleSession()` 8 → 1 (widget).
+🔻 **Not deployable until the founder applies `20261018_session_overrides_slot.sql`**: every override read now selects
+`new_slot` and errors without the column.
+
+### `DOUBLE-STRIDES-01` — may a strides run be half of a double? *(filed 2026-10-17, OPEN)*
+
+§126 allows a double of two easy or recovery runs and forbids quality / structured. An **"Easy run + strides"**
+session is typed `easy` and `isStructuredSession` is false, so the Plan move flow offers "Do both" for it (seen at
+375px on `/strength-preview`, W3 Mon → Wed). The ruling does not mention strides. Strides are short neuromuscular
+efforts (§28), not threshold work, so allowing it is defensible, but it is a coaching decision, not a build one.
+**Tags:** 🏃 COACHING BOARD (rule on strides in a double; if refused, `canDouble` and the check need a strides test).
+
+### `TODAY-DOUBLE-HEADLINE-01` — Today's headline names the hero's distance on a double day *(filed 2026-10-17, OPEN)*
+
+On a double day the Today headline reads the hero session (*"10km, slowly."*) while the day holds two 10 km runs.
+Ruled hero-first by the Design Board; the headline was not part of the sitting. Whether it should name the day's
+total is a design question. **Tags:** 🧭 DESIGN BOARD.
 
 ### `READINESS-OVERRIDES-01` — recovery easing ignores a session the runner moved *(filed 2026-10-17 · ✅ SHIPPED 2026-10-17, feature registry)*
 

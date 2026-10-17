@@ -162,6 +162,14 @@ are WRONG. They now spread `MICRO_LABELS.eyebrow`, and a new arm forbids a canon
   - **Move target** (empty slot — rest day or undefined day): dashed teal outline, body text reads "Move here". On tap, the source session moves into the slot and the rest placeholder disappears.
   - **Swap target** (another non-rest, uncompleted, unskipped session): solid teal outline, source session label tinted teal with "tap to swap" hint and `⇄` glyph on the right. On tap, the two sessions exchange slots in one atomic write.
 - Completed and skipped sessions never become targets in move mode.
+- **Same-day doubles (SESSION-SLOTS-01, ui-patterns § 10d).** Each day renders every session from
+  `resolveEffectiveDay`: a double is two `DayRow`s under one date (the second a `continuation`), each with an AM / PM
+  token (`SLOT_LABEL`) leading its metric line. The move token is the ROW (`day:index`), so either half can move.
+  Target eligibility comes only from `moveChoices(source, targetSessions, week, sourceSharesDay)`: a day holding two
+  is never a target; from a double a session may move or join, never swap (hint *"tap to double up"*). The confirm
+  row (§ 10b) adds a secondary **"Do both"** when `both` is allowed, which calls `onMove(…, 'pm')`.
+- **Writes are checked.** Move and swap each revert the screen and show one `InlineError` (*"Couldn't move it. Check
+  your connection and try again."*) when the delete or insert fails.
 
 ## Supabase Writes
 
@@ -188,8 +196,9 @@ are WRONG. They now spread `MICRO_LABELS.eyebrow`, and a new arm forbids a canon
 **Move** (drop into an empty slot):
 ```
 session_overrides.delete where user_id = userId AND week_n = weekN AND (original_day OR new_day match)
-session_overrides.insert { user_id, week_n, original_day, new_day, updated_at }
+session_overrides.insert { user_id, week_n, original_day, new_day, updated_at, new_slot? }   // new_slot only from "Do both"
 ```
+`onMove(weekN, originalDay, newDay, currentSlot, slot?)` — `slot` is set only by "Do both" (§126).
 
 **Swap** (exchange two non-rest sessions):
 ```

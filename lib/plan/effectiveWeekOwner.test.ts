@@ -25,7 +25,9 @@ describe('🔴 SESSION-SLOTS-01 — every single-session read is counted', () =>
   it('🔴 every single-session read is a NAMED soleSession() call, and the count may only fall', () => {
     // Phase 4 teaches each of these callers about two sessions; a new one must not appear.
     // Bare `[0]` on a day's list is invisible to this count, which is why the helper exists.
-    const SOLE_SESSION_CALLERS = 8   // 9 → 8: the strength run context now reads every session (Phase 2)
+    // 8 → 1 (Phase 3+4): the one left is the iOS widget, whose native Swift struct holds one session;
+    // it shows the AM run of a double and a second widget row is native work, not this change.
+    const SOLE_SESSION_CALLERS = 1
     const n = files.reduce((acc, f) => acc + (strip(readFileSync(f, 'utf8')).match(/\bsoleSession\(/g) ?? []).length, 0)
     expect(n, 'a caller added? teach it about two sessions instead. Fewer? lower the number').toBe(SOLE_SESSION_CALLERS)
   })

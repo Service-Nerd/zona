@@ -13,7 +13,7 @@ import { achievementLine } from '@/lib/coaching/goalSequencing'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate, readPlanJson } from '@/lib/plan'
-import { resolveEffectiveDay, soleSession, slotForOriginalDay, type SessionOverride } from '@/lib/plan/effectiveSessions'
+import { resolveEffectiveDay, slotForOriginalDay, type SessionOverride, SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
       .limit(1)
       .maybeSingle(),
     serviceSupabase.from('session_overrides')
-      .select('week_n, original_day, new_day')
+      .select(SESSION_OVERRIDE_COLUMNS)
       .eq('user_id', userId)
       .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
   ])
@@ -156,7 +156,9 @@ export async function GET(req: NextRequest) {
   const withinWeek    = isDateWithinWeek(week, noteDateLocal)
   const planComplete  = isPlanComplete(plan.weeks, noteDateLocal)
   // Treat strength as a rest day for coaching purposes — feature not yet built out.
-  const rawTodaySession = withinWeek ? (soleSession(effectiveWeek[dowKey])?.session ?? null) : null
+  // SESSION-SLOTS-01 — the day's first session leads; a second one (a double, §126) is named to the prompt.
+  const todayList = withinWeek ? (effectiveWeek[dowKey] ?? []) : []
+  const rawTodaySession = todayList[0]?.session ?? null
   const todaySession = rawTodaySession && !EXCLUDED_SESSION_TYPES.includes(rawTodaySession.type) ? rawTodaySession : null
   const todayDayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dayOfWeek]
   const todayZone = zoneForSessionType(todaySession?.type)
@@ -292,6 +294,7 @@ export async function GET(req: NextRequest) {
     todayZoneLabel:    todayZone?.label ?? null,
     todayDistanceKm:   todaySession?.distance_km ?? null,
     todayStrength:     strengthToday ? { title: STRENGTH_KIND_TITLE[strengthToday.kind], minutes: strengthToday.estimated_minutes } : null,
+    todayDouble:       todayList.length >= 2,
     lastSession,
     weekPhase: (week as any).phase as string | null,
     weekN,

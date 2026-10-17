@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { doubleAdvice } from '@/lib/plan/doubles'
 import { createClient } from '@supabase/supabase-js'
 import { secretMatches } from '@/lib/security/secrets'
 import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
 import { getUserTier } from '@/lib/trial'
 import { getSessionsForDate, isDateBeforePlan, isPlanComplete, parseLocalDate, readPlanJson } from '@/lib/plan'
-import { resolveEffectiveDay, soleSession, DAY_KEYS, type DayKey, type SessionOverride } from '@/lib/plan/effectiveSessions'
+import { resolveEffectiveDay, DAY_KEYS, type DayKey, type SessionOverride, SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
 import { buildDailyPushTitle, buildDailyPushBody, type NextKeySession } from '@/lib/coaching/voiceLines'
 import { pushSessionFor, strengthSessionOn } from '@/lib/strength-bridge/serverDay'
 import { recordNotification } from '@/lib/notifications'
@@ -229,7 +230,7 @@ export async function POST(req: NextRequest) {
       const [planRes, overridesRes, metricOverrides] = await Promise.all([
         readPlanJson(supabase, userId),
         supabase.from('session_overrides')
-          .select('week_n, original_day, new_day')
+          .select(SESSION_OVERRIDE_COLUMNS)
           .eq('user_id', userId)
           .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
         loadSessionMetricOverrides(supabase, userId),
@@ -248,7 +249,9 @@ export async function POST(req: NextRequest) {
       // fired a "today's session" push a week early.
       const localToday = parseLocalDate(clock.isoDate)
       const allOverrides: SessionOverride[] = (overridesRes.data as SessionOverride[] | null) ?? []
-      const resolved = soleSession(getSessionsForDate(plan.weeks, localToday, allOverrides)) ?? null
+      // SESSION-SLOTS-01 — every session today. The first leads the title; a double's body is its advice (§126).
+      const todayAll = getSessionsForDate(plan.weeks, localToday, allOverrides)
+      const resolved = todayAll[0] ?? null
       // STRENGTH-APP-01 (A′) — a no-run day that holds a strength session is a training
       // day: it gets the strength line, never the rest line, and it is not skipped.
       const strengthToday = await strengthSessionOn(supabase, userId, clock.isoDate, { isAdmin: settings.is_admin === true, tier })
@@ -295,7 +298,7 @@ export async function POST(req: NextRequest) {
       const payload = session
         ? {
             title: buildDailyPushTitle(session, nextKey, display),
-            body:  buildDailyPushBody(session.type),
+            body:  todayAll.length >= 2 ? doubleAdvice() : buildDailyPushBody(session.type),
             tag:   `daily-push-${clock.isoDate}`,
             data:  { url: '/dashboard?screen=today' },
           }

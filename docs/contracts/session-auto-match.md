@@ -106,6 +106,10 @@ post-run deep link and the analyse-run payload. `resolveEffectiveDay` (was `reso
 `originalDay` for exactly this reason. **Keying the completion to the slot would write a row
 the UI can never find — a silent phantom completion, worse than the defect.**
 
+**A double day (SESSION-SLOTS-01) offers both sessions, AM first** (`plannedSessionsForMatch`), and a session already
+completed on a double day is left out, so the day's second run links to the second session instead of meeting the
+first one's claim. Single days are unchanged. Gate: `lib/coaching/autoAnalyse.test.ts § plannedSessionsForMatch`.
+
 Overrides are filtered to the matched week and to `superseded_at is null`
 (`PLAN-WEEK-COLLISION-01`), the same filter `daily-coach-note` uses. The 70-point threshold
 and the ±2-day window are **unchanged**: this fix makes the matcher look at the right day, it

@@ -1349,10 +1349,18 @@
     "padY": null,
     "font": null,
     "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/training/PlanCalendar.tsx#Button7": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
     "height": 47,
     "width": "auto"
   },
-  "components/training/PlanCalendar.tsx#Button[move-this-session]7": {
+  "components/training/PlanCalendar.tsx#Button[move-this-session]8": {
     "floor": 44,
     "padY": null,
     "font": 16,
@@ -1360,7 +1368,7 @@
     "height": 49,
     "width": "44px"
   },
-  "components/training/PlanCalendar.tsx#Button8": {
+  "components/training/PlanCalendar.tsx#Button9": {
     "floor": 44,
     "padY": null,
     "font": null,

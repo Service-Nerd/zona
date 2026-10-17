@@ -27,6 +27,9 @@ export interface DailyCoachNoteInput {
    *  day it makes the day a training day: the note must never say rest. Optional so every
    *  existing caller and golden prompt is byte-identical without it. */
   todayStrength?: { title: string; minutes: number } | null
+  /** SESSION-SLOTS-01 (§126) — the runner made today a double: two easy runs. Optional so every
+   *  existing caller and golden prompt is byte-identical without it. */
+  todayDouble?: boolean
 
   /** Most recent completed session — what happened last time they ran. */
   lastSession: {
@@ -237,6 +240,8 @@ Output: one or two short sentences in the voice described above. No quotes. No p
     const label = input.todaySessionLabel ? ` — "${input.todaySessionLabel}"` : ''
     facts.push(`Today (${input.todayDayName}): ${dist}${input.todaySessionType}${zone}${label}`)
     if (input.todayStrength) facts.push('A strength session follows the run later today. The app already shows it; do not repeat it')
+    // §126: a double is a scheduling choice, never extra training (Hutchinson); the app states the gap.
+    if (input.todayDouble) facts.push('The runner moved a run to make today a double: two easy runs, both kept easy. The app already says to space them; do not repeat it, and never call it extra training')
   }
 
   // Last session — when daysAgo > 1, anchor on the day name so the model

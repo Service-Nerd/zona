@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — SESSION-SLOTS-01 Phases 3–4 · "Do both", and the reader that threw the slot away
+**Shipped:** Runners can now make a double: move an easy run onto a day with another easy run and the confirm row offers "Do both" beside "Swap them". Plan shows the day as two rows, AM and PM; Today shows the first run not yet done, the other below it, and the spacing advice once. The push, the daily note, readiness, auto-match and the missed-session prompt all handle two runs on a day. Live once the migration is applied.
+
+**Dev learning:** The compiler found every caller of the day calculation in Phase 1, and it still missed one. Today folded the override rows into an `original → new` map before passing them to the owner. The map typechecks, and it has nowhere to keep the slot, so on Today a double would have quietly become a swap while Plan showed two rows. A type change protects the call; it does not protect a lossy conversion one line before it. The markup test caught it only because its control case (the same move without a slot) had to produce a different page.
+
+**Product learning:** The board's rule was "Swap stays primary, Do both is secondary". Building it turned up a case nobody had sat on: moving one half OUT of a double. A swap there lands the other session beside the half left behind, unslotted, and the resolver turns it back into a swap. So from a double you can move or join, never swap. Small rule, and it came from the code, not the sitting.
+
+**AI-building learning:** One of my new tests passed for the wrong reason. The race-week case returned early because the fixture's race week has one easy run, so it asserted nothing. I caught it by asking what the test would do if the code were wrong, then built a race week with two easy runs and a control outside race week. A test that can return early needs a control that cannot.
+
+**The honest bit:** My production build overwrote `.next` under the running dev server, and the first browser check rendered an unstyled page with broken imports. I nearly read that as a defect in my change. And the move flow happily offers "Do both" for an "Easy run + strides", which the coaching ruling never mentions. Filed for the board rather than decided by me.
+
+---
+
 ## 2026-10-17 — SESSION-SLOTS-01 Phases 0–2 · built, and deliberately unreachable
 **Shipped:** The engine side of AM/PM doubles: the data model, the day calculation that returns more than one session, and the coaching rule that decides when two runs may share a day. No runner can make a double yet. That waits until the screens can show one.
 

@@ -144,6 +144,18 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-17 — SESSION-SLOTS-01 (Phase 3) · SHIP WITH AMENDMENT. A double is two rows under one date, chosen inline
+
+**Plan:** the move-confirm row (§ 10b) keeps **"Swap them"** primary and adds a secondary **"Do both"** only when
+§126 allows the pair; the mover takes **PM**, unasked. A day already holding two is not a target. A double day is
+**two `DayRow`s under one date**, each with its own rail and an **AM / PM token leading the 12px metric line**.
+**Today:** the hero is the first session not yet done; the other is the compact `SessionCard` row under an AM / PM
+eyebrow, and `doubleAdvice()` is said once, on the double day only. **DateStrip** keeps one dot. **Collins lost**
+a "×2" day mark (a count beside two visible rows is decoration). Read at build time: from a double a session may
+move or join, never swap. Checks: `planCalendarDouble.markup.test.ts`, `todayDouble.markup.test.ts`,
+`doubles.test.ts § moveChoices`, the two-writer gate on `new_slot`. Sitting:
+`docs/decisions/same-day-doubles-design-2026-10-17.md`.
+
 ## 2026-10-17 — STRENGTH-PLAN-GLYPH-01 · (a) SHIP WITH AMENDMENT · (b) DON'T SHIP (not permanent)
 
 Founder: *"Do we want to surface the weight icon on the plan view also? … add a running icon to the run sessions

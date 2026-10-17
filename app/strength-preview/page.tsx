@@ -17,12 +17,13 @@ import { generateStrengthPlan, type StrengthSession } from '@/packages/strength'
 import type { Plan } from '@/types/plan'
 import { isoLocalDate } from '@/lib/strength-bridge/display'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
+import { planMove } from '@/lib/plan/overrideMoves'
 import { strengthSubtitle } from '@/components/shared/meDoors'
 
 const plan = harnessPlanJson as unknown as Plan
 // TodayScreen's optional handlers are not needed for a look; fixture props only.
 const Today = TodayScreen as unknown as (p: Record<string, unknown>) => JSX.Element
-const CASES = ['today', 'session', 'plan', 'setup', 'rest', 'sheet'] as const
+const CASES = ['today', 'session', 'plan', 'setup', 'rest', 'sheet', 'double-today', 'double-plan'] as const
 
 /** Shift the harness plan so its current week contains today, as a live runner's would. */
 function livePlan(): Plan {
@@ -58,6 +59,15 @@ export default function StrengthPreviewPage() {
   const todayS = byDate[isoLocalDate(new Date())]
   const strengthProp = { sessionsByDate: byDate, completions, onOpen: () => setC('session'), onSetStatus: setStatus }
   const weekIndex = run.weeks.findIndex(w => { const s = new Date(w.date + 'T00:00:00').getTime(); return Date.now() >= s && Date.now() < s + 7 * 86_400_000 })
+  // SESSION-SLOTS-01 — a "Do both" double this week: Monday's easy run joins Wednesday's, PM (§126).
+  const wi = Math.max(0, weekIndex)
+  // Through planMove, the one decision a real "Do both" makes: no hand-written slot rows (doubles.test.ts gates writers).
+  const doubleRows = planMove([], run.weeks[wi]?.n ?? 1, 'mon', 'wed', 'pm').next
+  // Today's double needs one ON today: today's run made an easy run, and Monday's joins it, PM.
+  const todayKey = (['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const)[new Date().getDay()]
+  const doubleTodayPlan: Plan = { ...run, weeks: run.weeks.map((w, i) => i !== wi ? w : {
+    ...w, sessions: { ...w.sessions, [todayKey]: { ...w.sessions.mon!, label: 'Easy run — Zone 2' } } }) }
+  const doubleTodayRows = todayKey === 'mon' ? [] : planMove([], run.weeks[wi]?.n ?? 1, 'mon', todayKey, 'pm').next
 
   return (
     <main style={{ background: 'var(--bg)', minHeight: '100vh', maxWidth: '390px', margin: '0 auto' }}>
@@ -87,6 +97,14 @@ export default function StrengthPreviewPage() {
       {c === 'sheet' && (
         <ModifyPlanSheet plan={run} onClose={() => setC('today')} onApply={() => {}} hasPaidAccess edits={{}} onEditsChange={() => {}}
           onStartNewPlan={() => {}} strengthDoor={{ title: STRENGTH_TITLE, subtitle: strengthSubtitle(null), onOpen: () => setC('setup') }} />
+      )}
+      {c === 'double-today' && (
+        <Today plan={doubleTodayPlan} weekIndex={Math.max(0, weekIndex)} daysToRace={60} raceName="Brighton Half" preferredMetric="distance"
+          sessionMetricOverrides={{}} stravaRuns={[]} allOverrides={doubleTodayRows} overridesReady allCompletions={{}} preferredUnits="km"
+          zone2Ceiling={148} firstName="Sam" />
+      )}
+      {c === 'double-plan' && (
+        <PlanCalendar weeks={run.weeks} allOverrides={doubleRows} allCompletions={{}} onOverrideChange={() => {}} onSessionTap={() => {}} />
       )}
       {c === 'setup' && (
         <>

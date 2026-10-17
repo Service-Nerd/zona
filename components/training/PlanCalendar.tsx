@@ -14,8 +14,10 @@ import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { STRENGTH_KIND_TITLE, isoLocalDate } from '@/lib/strength-bridge/display'
 import type { StrengthSession } from '@/packages/strength'
 import { Glyph } from '@/components/shared/RowIcon'
-import { planMove } from '@/lib/plan/overrideMoves'
-import { resolveEffectiveDay, soleSession } from '@/lib/plan/effectiveSessions'
+import { planMove, type OverrideRow } from '@/lib/plan/overrideMoves'
+import { SLOT_LABEL, moveChoices } from '@/lib/plan/doubles'
+import { InlineError } from '@/components/shared/InlineError'
+import { resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
 
 /** STRENGTH-APP-01 (C) — strength on the Plan week. Optional: the marketing phone still passes none. */
 export interface PlanStrength {
@@ -26,6 +28,9 @@ export interface PlanStrength {
 
 type DayStrength = { title: string; minutes: number; status: 'done' | 'skipped' | null; onOpen: () => void }
 
+/** SESSION-SLOTS-01 — a move that did not save. The screen reverts; this says why. */
+const MOVE_FAILED = "Couldn't move it. Check your connection and try again."
+
 interface Completion {
   session_day: string
   status: string
@@ -34,7 +39,7 @@ interface Completion {
 }
 
 /** Session as it appears after override resolution — augmented with routing metadata. */
-type EffectiveSession = Session & { originalDay: string; isOverride?: boolean }
+type EffectiveSession = Session & { originalDay: string; isOverride?: boolean; slot?: 'am' | 'pm' | null }
 
 /** Shape passed to onSessionTap — matches docs/contracts/components/plan-calendar.md */
 export interface SessionTapPayload {
@@ -100,9 +105,9 @@ const loadMoreStyle: React.CSSProperties = {
 
 interface Props {
   weeks: Week[]
-  allOverrides: { week_n: number; original_day: string; new_day: string }[]
+  allOverrides: OverrideRow[]
   allCompletions: Record<number, Record<string, Completion>>
-  onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
+  onOverrideChange: (overrides: OverrideRow[]) => void
   onSessionTap: (session: SessionTapPayload, weekN: number) => void
   overridesReady?: boolean
   units?: DistanceUnits
@@ -115,6 +120,8 @@ interface Props {
 
 export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, strength = null }: Props) {
   const [showPast, setShowPast] = useState(false)
+  // SESSION-SLOTS-01 — a move or swap that failed to save, said once, beside the plan (InlineError).
+  const [moveError, setMoveError] = useState<string | null>(null)
   // PLAN-STRIP-EXPAND: single Later-week may be expanded into a full WeekCard
   // for move/swap. State held here so navigating away resets — option-value,
   // not use-value, in the brand sense (the tap-to-reveal IS the friction).
@@ -156,22 +163,29 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
   const pastWeeks = weeks.slice(0, safeIndex).map((week, i) => ({ week, weekNum: (week as any).n ?? (i + 1) }))
   const currentAndFutureWeeks = weeks.slice(safeIndex).map((week, i) => ({ week, weekNum: (week as any).n ?? (safeIndex + i + 1) }))
 
-  async function handleMove(weekN: number, originalDay: string, newDay: string, currentSlot: string) {
+  async function handleMove(weekN: number, originalDay: string, newDay: string, currentSlot: string, slot: 'am' | 'pm' | null = null) {
     if (currentSlot === newDay) return
     const { supabase, authedFetch } = await persistence()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     // PLAN-MOVE-DELETE-01 — one decision for the screen AND the store (they used to disagree).
-    const { next, removedOriginalDays } = planMove(allOverrides, weekN, originalDay, newDay)
+    const { next, removedOriginalDays } = planMove(allOverrides, weekN, originalDay, newDay, slot)
+    const before = allOverrides
     onOverrideChange(next)
-    await supabase.from('session_overrides')
+    setMoveError(null)
+    // SESSION-SLOTS-01 — the writes are CHECKED now (N-015): they were fire-and-forget, so a failed
+    // insert left the screen showing a move the store never held. On failure the screen reverts.
+    const del = await supabase.from('session_overrides')
       .delete().eq('user_id', user.id).eq('week_n', weekN)
       .in('original_day', removedOriginalDays)
+    if (del.error) { onOverrideChange(before); setMoveError(MOVE_FAILED); return }
     if (newDay !== originalDay) {
-      await supabase.from('session_overrides').insert({
+      const ins = await supabase.from('session_overrides').insert({
         user_id: user.id, week_n: weekN, original_day: originalDay, new_day: newDay,
+        ...(slot ? { new_slot: slot } : {}),
         updated_at: new Date().toISOString(),
       })
+      if (ins.error) { onOverrideChange(before); setMoveError(MOVE_FAILED); return }
       // Trigger 1: session_reorder — fires the hard/easy adjacency check in
       // /api/adjust-plan and writes a plan_adjustments row when a violation is
       // detected. Plan-screen Move is the only surface that can produce this
@@ -206,11 +220,15 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
     if (targetOriginal !== sourceSlot) {
       updated = [...updated, { week_n: weekN, original_day: targetOriginal, new_day: sourceSlot }]
     }
+    const before = allOverrides
     onOverrideChange(updated)
+    setMoveError(null)
 
-    await supabase.from('session_overrides')
+    // SESSION-SLOTS-01 — checked, as handleMove's are (they were fire-and-forget).
+    const del = await supabase.from('session_overrides')
       .delete().eq('user_id', user.id).eq('week_n', weekN)
       .in('original_day', [sourceOriginal, targetOriginal])
+    if (del.error) { onOverrideChange(before); setMoveError(MOVE_FAILED); return }
 
     const ts = new Date().toISOString()
     const inserts: Array<{ user_id: string; week_n: number; original_day: string; new_day: string; updated_at: string }> = []
@@ -221,7 +239,8 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
       inserts.push({ user_id: user.id, week_n: weekN, original_day: targetOriginal, new_day: sourceSlot, updated_at: ts })
     }
     if (inserts.length) {
-      await supabase.from('session_overrides').insert(inserts)
+      const ins = await supabase.from('session_overrides').insert(inserts)
+      if (ins.error) { onOverrideChange(before); setMoveError(MOVE_FAILED); return }
     }
 
     // Trigger adjacency check for the source's new slot. The target also moved
@@ -290,6 +309,7 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
 
   return (
     <div style={{ padding: '0 16px 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {moveError && <InlineError>{moveError}</InlineError>}
       {pastWeeks.length > 0 && (
         showPast ? (
           <>
@@ -411,9 +431,10 @@ function MaintSeam() {
 
 function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides, strength = null }: {
   strength?: PlanStrength | null
-  week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string }[]
+  week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string; new_slot?: 'am' | 'pm' | null }[]
   onSessionTap: (session: SessionTapPayload, weekN: number) => void
-  onMove: (weekN: number, originalDay: string, newDay: string, currentSlot: string) => void
+  /** `slot` is set only by "Do both" (§126): the mover's half of the day. */
+  onMove: (weekN: number, originalDay: string, newDay: string, currentSlot: string, slot?: 'am' | 'pm' | null) => void
   onSwap: (weekN: number, sourceOriginal: string, sourceSlot: string, targetOriginal: string, targetSlot: string) => void
   units: DistanceUnits
   preferredMetric: SessionMetric
@@ -433,6 +454,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   const phase = (week as any).phase as string | undefined
   const isMaint = phase === 'maintenance_restoration' || phase === 'maintenance_base'
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()]
+  // SESSION-SLOTS-01 — the ROW being moved, `day:index`, not the day: on a double day either half moves.
   const [movingDay, setMovingDay] = useState<string | null>(null)
   // RESHAPE-FIX-WAVE2C (Defect 11) — pending move staged between target-tap
   // and the actual session_overrides + adjust-plan write. Set by
@@ -445,14 +467,33 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     sourceLabel: string
     targetLabel: string | null
     isSwap: boolean
+    /** §126 allows a double here: "Do both" is offered beside (or, from a double, instead of) the swap. */
+    canBoth: boolean
   } | null>(null)
 
-  // 🔴 SESSION-SLOTS-01 Phase 0 — through the ONE owner (was a hand-rolled copy whose bare
-  // `effectiveSessions[o.new_day] = …` dropped a session on a collision). Same flattened shape.
-  const effectiveSessions: Record<string, EffectiveSession> = {}
+  // 🔴 SESSION-SLOTS-01 — through the ONE owner, and now every session of a day (Phase 3): a double
+  // day is two rows under one date. Flattened to the row shape DayRow already reads.
+  const dayLists: Record<string, EffectiveSession[]> = {}
   for (const [day, list] of Object.entries(resolveEffectiveDay(week, overrides))) {
-    const e = soleSession(list)
-    if (e) effectiveSessions[day] = { ...e.session, originalDay: e.originalDay, ...(e.isOverride ? { isOverride: true } : {}) }
+    dayLists[day] = (list ?? []).map(e => ({ ...e.session, originalDay: e.originalDay, slot: e.slot, ...(e.isOverride ? { isOverride: true } : {}) }))
+  }
+  const rowToken = (day: string, idx: number) => `${day}:${idx}`
+  const parseToken = (t: string) => { const [day, idx] = t.split(':'); return { day, idx: Number(idx) || 0 } }
+  const isLocked = (s: EffectiveSession | undefined) => {
+    const st = s ? completionMap[s.originalDay]?.status : undefined
+    return st === 'complete' || st === 'skipped'
+  }
+  // What the staged source may do on a target day: Swap / Do both / move, or nothing (moveChoices, §126).
+  function choicesFor(source: string, targetKey: string) {
+    const { day, idx } = parseToken(source)
+    if (day === targetKey) return null
+    const sourceList = dayLists[day] ?? []
+    const src = sourceList[idx]
+    const targets = dayLists[targetKey] ?? []
+    const occupied = targets.filter(t => t.type !== 'rest')
+    if (!src || occupied.some(isLocked)) return null
+    const c = moveChoices(src, occupied, week, sourceList.length >= 2)
+    return c.target ? c : null
   }
 
   // Intended km = sum of rounded individual session distances, so the week
@@ -521,32 +562,33 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     // shape stays, because the hazard is the pattern, not that feature.
     //
     // An event handler already has the current state. Read it, then set it.
-    const prev = sourceKey ?? movingDay
-    if (!prev) return
-    const sourceSession = effectiveSessions[prev]
-    if (!sourceSession) { setMovingDay(null); return }
+    const token = sourceKey ?? movingDay
+    if (!token) return
+    const { day: prev, idx } = parseToken(token)
+    const sourceSession = dayLists[prev]?.[idx]
+    const choices = choicesFor(token, targetKey)
+    if (!sourceSession || !choices) { setMovingDay(null); return }
     const sourceOriginal = sourceSession.originalDay ?? prev
-    const targetSession = effectiveSessions[targetKey]
-    const targetCompletion = targetSession ? completionMap[targetSession.originalDay ?? targetKey] : undefined
-    const targetIsSwappable = !!targetSession
-      && targetSession.type !== 'rest'
-      && targetCompletion?.status !== 'complete'
-      && targetCompletion?.status !== 'skipped'
+    const targetSession = (dayLists[targetKey] ?? []).find(t => t.type !== 'rest')
     setMovingDay(null)
     setPendingMove({
       sourceKey: prev,
       targetKey,
       sourceOriginal,
-      targetOriginal: (targetIsSwappable && targetSession) ? (targetSession.originalDay ?? targetKey) : null,
+      targetOriginal: choices.swap && targetSession ? (targetSession.originalDay ?? targetKey) : null,
       sourceLabel: sourceSession.label ?? 'session',
       targetLabel: targetSession?.label ?? null,
-      isSwap: targetIsSwappable && !!targetSession,
+      isSwap: choices.swap,
+      canBoth: choices.both,
     })
   }
 
-  function confirmPendingMove() {
+  function confirmPendingMove(choice: 'primary' | 'both' = 'primary') {
     if (!pendingMove) return
-    if (pendingMove.isSwap && pendingMove.targetOriginal) {
+    if (choice === 'both' || (!pendingMove.isSwap && pendingMove.canBoth)) {
+      // "Do both" (§126) — the mover takes PM; the Design Board ruled out asking which half.
+      onMove(weekNum, pendingMove.sourceOriginal, pendingMove.targetKey, pendingMove.sourceKey, 'pm')
+    } else if (pendingMove.isSwap && pendingMove.targetOriginal) {
       onSwap(weekNum, pendingMove.sourceOriginal, pendingMove.sourceKey, pendingMove.targetOriginal, pendingMove.targetKey)
     } else {
       onMove(weekNum, pendingMove.sourceOriginal, pendingMove.targetKey, pendingMove.sourceKey)
@@ -620,9 +662,14 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         </div>
       </div>
 
-      {DOW_ORDER.map((key, i) => {
-        const s = effectiveSessions[key]
+      {DOW_ORDER.flatMap((key, i) => {
+        const list = dayLists[key] ?? []
+        const rows: (EffectiveSession | undefined)[] = list.length ? list : [undefined]
         const d = weekDates[key]
+        // Day-level: is this day a target for the staged row, and as what (moveChoices, §126).
+        const choices = movingDay ? choicesFor(movingDay, key) : null
+        const occupiedDay = list.some(t => t.type !== 'rest')
+        return rows.map((s, idx) => {
         // `formatDate` returns null on an unparseable date rather than
         // rendering "Invalid Date"; this row needs a string either way.
         const displayDate = formatDate(d, 'short') ?? ''
@@ -633,19 +680,20 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         const isPast = d < now && !isToday
         const isFuture = d > now && !isToday
         const isMovable = !!s && s.type !== 'rest' && !isComplete && !isSkipped
-        const isMoving = movingDay === key
-        // In move mode, every other day is a potential target. Two flavours:
+        const isMoving = movingDay === rowToken(key, idx)
+        // In move mode a day is a target only when moveChoices allows it (a day already holding two
+        // never is, §126). Two flavours:
         //   - move target  → empty slot (no session, or only a rest placeholder)
-        //   - swap target  → another non-rest, uncompleted session, which we'll
-        //                    exchange slots with on tap.
-        const isMoveTarget = !!movingDay && movingDay !== key && (!s || s.type === 'rest')
-        const isSwapTarget = !!movingDay && movingDay !== key && !!s && s.type !== 'rest' && !isComplete && !isSkipped
+        //   - swap target  → an occupied day: Swap, Do both, or both on offer
+        const isMoveTarget = !!choices && !occupiedDay
+        const isSwapTarget = !!choices && occupiedDay && !!s && s.type !== 'rest'
+        const isDouble = list.length >= 2
         // Per-session metric override is keyed by originalDay (where the user
         // tapped the toggle in SessionPopupInner), not by display slot.
         const resolvedMetric: SessionMetric = s
           ? resolveSessionMetric(weekNum, s.originalDay ?? key, s.primary_metric, sessionMetricOverrides, preferredMetric)
           : preferredMetric
-        const ss = strength ? strength.sessionsByDate[isoLocalDate(d)] : undefined
+        const ss = strength && idx === rows.length - 1 ? strength.sessionsByDate[isoLocalDate(d)] : undefined
         const dayStrength: DayStrength | null = ss && ss.date && strength ? {
           title: STRENGTH_KIND_TITLE[ss.kind], minutes: ss.estimated_minutes,
           status: strength.completions[ss.date] ?? null, onOpen: () => strength.onOpen(ss),
@@ -653,9 +701,12 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
 
         return (
           <DayRow
-            key={key}
+            key={rowToken(key, idx)}
             dayKey={key}
             session={s}
+            slot={isDouble ? (s?.slot ?? (idx === 0 ? 'am' : 'pm')) : null}
+            continuation={idx > 0}
+            swapHint={choices && !choices.swap ? 'tap to double up' : 'tap to swap'}
             date={d}
             isToday={isToday}
             isPast={isPast}
@@ -666,7 +717,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             isMoveTarget={isMoveTarget}
             isSwapTarget={isSwapTarget}
             isMoveMode={!!movingDay}
-            isLast={i === DOW_ORDER.length - 1}
+            isLast={(i === DOW_ORDER.length - 1 && idx === rows.length - 1) || idx < rows.length - 1}
             units={units}
             metric={resolvedMetric}
             strength={dayStrength}
@@ -699,9 +750,10 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
                 coach_notes:    s.coach_notes,
               }, weekNum)
             }}
-            onMoveIconTap={() => handleMoveIconTap(key)}
+            onMoveIconTap={() => handleMoveIconTap(rowToken(key, idx))}
           />
         )
+        })
       })}
 
       {movingDay && !pendingMove && (
@@ -737,15 +789,27 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
                 {pendingMove.targetLabel} swaps to {DOW_FULL[pendingMove.sourceKey] ?? pendingMove.sourceKey}.
               </div>
             )}
+            {/* SESSION-SLOTS-01 — "Do both" is a double (§126): both easy runs stay on the target day. */}
+            {pendingMove.canBoth && pendingMove.targetLabel && (
+              <div style={{ marginTop: '4px', color: 'var(--ink-2)', fontSize: '11px' }}>
+                {pendingMove.isSwap ? 'Or do both' : 'Both run'} on {DOW_FULL[pendingMove.targetKey] ?? pendingMove.targetKey}, {SLOT_LABEL.am} and {SLOT_LABEL.pm}.
+              </div>
+            )}
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
             <Button variant="ghost" size="compact" 
               onClick={cancelPendingMove} style={{ flex: 1 }}>
               Cancel
             </Button>
+            {pendingMove.canBoth && pendingMove.isSwap && (
+              <Button variant="secondary" size="compact"
+                onClick={() => confirmPendingMove('both')} style={{ flex: 1 }}>
+                Do both
+              </Button>
+            )}
             <Button variant="primary"
-              onClick={confirmPendingMove} style={{ flex: 2 }}>
-              {pendingMove.isSwap ? 'Swap them' : 'Move it'}
+              onClick={() => confirmPendingMove()} style={{ flex: 2 }}>
+              {pendingMove.isSwap ? 'Swap them' : pendingMove.canBoth ? 'Do both' : 'Move it'}
             </Button>
           </div>
         </div>
@@ -764,9 +828,15 @@ function rowLabelStyle({ color, struck }: { color: string; struck: boolean }): R
   }
 }
 
-function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric, strength = null, }: {
+function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric, strength = null, slot = null, continuation = false, swapHint = 'tap to swap' }: {
   /** STRENGTH-APP-01 (C) — a strength session on this day, when strength is on. */
   strength?: DayStrength | null
+  /** SESSION-SLOTS-01 — AM / PM on a two-session day (the label, never colour alone); null otherwise. */
+  slot?: 'am' | 'pm' | null
+  /** The second row of a double: same date, so the date column is left blank and the rows read as one day. */
+  continuation?: boolean
+  /** What a tap on an occupied target does: swap, or (from a double) join it. */
+  swapHint?: string
   dayKey: string; session: EffectiveSession | undefined; date: Date; isToday: boolean; isPast: boolean; isFuture: boolean
   completion?: Completion; isMovable: boolean; isMoving: boolean
   isMoveTarget: boolean; isSwapTarget: boolean
@@ -813,12 +883,14 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
       } as React.CSSProperties}
     >
       <div style={{ width: '40px', flexShrink: 0 }}>
-        <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: isToday ? 'var(--moss)' : 'var(--mute)' }}>
-          {DOW_FULL[dayKey]}
-        </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isToday ? 'var(--moss)' : 'var(--mute)', fontWeight: isToday ? 600 : 400, marginTop: '1px' }}>
-          {date.getDate()}
-        </div>
+        {!continuation && <>
+          <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: isToday ? 'var(--moss)' : 'var(--mute)' }}>
+            {DOW_FULL[dayKey]}
+          </div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isToday ? 'var(--moss)' : 'var(--mute)', fontWeight: isToday ? 600 : 400, marginTop: '1px' }}>
+            {date.getDate()}
+          </div>
+        </>}
       </div>
 
       {/* DESIGN-DAYDOT-CHANNEL-01 (Design Board § 6q) — HUE CARRIES TYPE,
@@ -881,7 +953,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
               })}>
                 {session.label ?? ''}
                 {isMoving && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>moving...</span>}
-                {isSwapTarget && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>tap to swap</span>}
+                {isSwapTarget && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>{swapHint}</span>}
               </div>
               {/* UX-PLAN-MOVE-01 (2026-09-11) — the type chip is GONE, and the
                   session label has the row back.
@@ -908,6 +980,13 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                   is decoration. A fix that looks applied and does nothing. */}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px', flexWrap: 'wrap' }}>
+              {/* SESSION-SLOTS-01 (Design Board) — the slot LEADS the metric line, in its 12px muted
+                  register, so a two-run day reads AM / PM without a new type size or a colour. */}
+              {slot && (
+                <span data-slot={slot} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>
+                  {SLOT_LABEL[slot]}
+                </span>
+              )}
               {/* DESIGN-DAYDOT-CHANNEL-01 — completion in the LABEL, which is
                   what the WCAG 1.4.1 rule in `ui-patterns.md` has always said
                   and what the rail was doing instead. Skipped already had a

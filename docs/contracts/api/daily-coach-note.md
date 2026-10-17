@@ -13,9 +13,11 @@
 
 ## Today's session
 
-Resolved through `resolveEffectiveDay` with the runner's live `session_overrides` (a list per day since ADR-025
-Phase 1; one entry until Phase 2, read through `soleSession`), so a session moved onto today is the one the note
-describes.
+Resolved through `resolveEffectiveDay` with the runner's live `session_overrides` (selected with
+`SESSION_OVERRIDE_COLUMNS`, which includes `new_slot`), so a session moved onto today is the one the note describes.
+**On a double day (ADR-025 Phase 4)** the note describes the first session (AM) and the prompt is told
+`todayDouble: true`, adding one fact: two easy runs, kept easy; the app already gives the spacing; never "extra
+training" (§126). Gate: `lib/plan/doubleConsumers.test.ts`.
 
 ## Response — 200
 

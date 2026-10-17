@@ -36,7 +36,7 @@ interface TodayScreenProps {
   preferredMetric: 'distance' | 'duration'
   sessionMetricOverrides: Record<string, 'distance' | 'duration'>
   stravaRuns: any[]
-  allOverrides: { week_n: number; original_day: string; new_day: string }[]
+  allOverrides: { week_n: number; original_day: string; new_day: string; new_slot?: 'am' | 'pm' | null }[]
   overridesReady: boolean
   onOpenSession?: (s: any) => void
   allCompletions: Record<number, Record<string, any>>
@@ -125,6 +125,11 @@ interface TodayScreenProps {
    register).
 9. **All five states ship together** — loading skeleton, empty, error, data, edge. *Empty
    means calm, not broken.*
+10. **A double day (SESSION-SLOTS-01, ui-patterns § 10d).** The week is resolved from the override
+    ROWS (never an original→new map, which drops `new_slot`) plus the week's `type`/`badge`, so a
+    race-week double is refused. The hero is the day's first session not yet done; the other is the
+    compact `SessionCard` row under an AM / PM eyebrow with `doubleAdvice()` once beneath. One CTA.
+    Gate: `components/dashboard/todayDouble.markup.test.ts`.
 
 ## Not this component's
 

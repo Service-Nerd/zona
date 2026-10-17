@@ -7,6 +7,14 @@ export const DAY_KEYS: readonly DayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', '
 
 export type Slot = 'am' | 'pm'
 
+/**
+ * SESSION-SLOTS-01 — the ONE column list every read of `session_overrides` selects. It was typed
+ * by hand in six queries; a seventh copy that forgot `new_slot` would show a double as a swap and
+ * nothing would say so. ⚠️ Needs migration 20261018 (the column): the release that reads it must
+ * deploy after that migration. Gate: `effectiveWeekOwner.test.ts`.
+ */
+export const SESSION_OVERRIDE_COLUMNS = 'week_n, original_day, new_day, new_slot'
+
 export interface SessionOverride {
   week_n: number
   original_day: string

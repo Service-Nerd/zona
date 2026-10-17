@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { readPlanJson } from '@/lib/planRead'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
@@ -44,7 +45,7 @@ function nextMonday(now: Date): string {
 async function currentRunContext(supabase: Supabase, userId: string): Promise<{ ctx: RunContext | null; error: string | null }> {
   const [{ plan, error }, { data: overrides, error: oErr }] = await Promise.all([
     readPlanJson(supabase, userId),
-    supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', userId).is('superseded_at', null),
+    supabase.from('session_overrides').select(SESSION_OVERRIDE_COLUMNS).eq('user_id', userId).is('superseded_at', null),
   ])
   if (error || oErr) return { ctx: null, error: error ?? oErr!.message }
   return { ctx: plan ? planToRunContext(plan, overrides ?? []) : null, error: null }

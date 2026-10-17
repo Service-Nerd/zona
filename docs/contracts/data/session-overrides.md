@@ -28,10 +28,15 @@ soleSession(list): T | undefined                                  // the day's o
   race or 5K time trial; never race week). The mover takes its slot, the occupant the other half, and the mover's own
   day is left empty. A forbidden slotted move behaves exactly like an unslotted one (a swap). Never three on a day.
   Check: `CHECK-EFFECTIVE-NO-HARD-DOUBLE` (`plan-invariants.md` § Effective-week invariants).
-- **No writer yet.** Nothing sets `new_slot` until the Phase 3 move flow, and `doubles.test.ts` fails if anything does
-  before then, because the 8 `soleSession()` readers would drop the second session.
-- **Every single-session read is a named `soleSession()` call**, counted (9 at Phase 1, 8 at Phase 2) and the count may only fall:
-  Phase 4 teaches each caller about two sessions. The push's next-key-session scan already walks every session.
+- **Two writers (Phase 3, built 2026-10-17).** `lib/plan/overrideMoves.ts → planMove(…, slot)` decides the rows, and
+  `PlanCalendar.handleMove` inserts `new_slot` only from **"Do both"** (always `'pm'`). A slotted move **keeps** an
+  override that lands the occupant on that day (a plain move replaces it). `doubles.test.ts` fails on a third writer.
+- **Every reader selects `SESSION_OVERRIDE_COLUMNS`** (`week_n, original_day, new_day, new_slot`): a select without
+  `new_slot` resolves a double as a swap. Today used to fold the rows into an original→new map, which has nowhere to
+  keep the slot; it passes the rows now.
+- **One `soleSession()` reader remains, deliberately: the iOS widget** (`lib/widget/widgetState.ts`), whose native
+  Swift struct holds one session and so shows the AM run of a double. Count gate: `effectiveWeekOwner.test.ts`
+  (9 at Phase 1, 8 at Phase 2, **1** at Phase 4), and it may only fall.
 
 - One session per shown day. A move onto an occupied day becomes a **swap** (the occupant takes the vacated day); if
   that is impossible the move is refused. Never drops a session (EFFSESS-COLLISION-01).
