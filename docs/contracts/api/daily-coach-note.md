@@ -11,6 +11,12 @@
 | `date` | No | User's local date `YYYY-MM-DD`. Defaults to UTC date if absent. |
 | `force` | No | `true` to regenerate even if a cached note exists for this date. |
 
+## Today's session
+
+Resolved through `resolveEffectiveDay` with the runner's live `session_overrides` (a list per day since ADR-025
+Phase 1; one entry until Phase 2, read through `soleSession`), so a session moved onto today is the one the note
+describes.
+
 ## Response — 200
 
 ```json
