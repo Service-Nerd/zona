@@ -42,7 +42,8 @@ interface Props {
   sessionMetricOverrides?: SessionMetricOverrides   // per-session metric override
   // STRENGTH-APP-01 (C), 2026-10-16. Absent on the marketing phone still, which then renders
   // exactly as before. A no-run day with strength is a normal row; a run day gets one
-  // quiet "Strength" text mark, never a second row.
+  // quiet "Strength" text mark, never a second row. STRENGTH-PLAN-GLYPH-01 (2026-10-17): both
+  // carry the dumbbell Glyph (the row title "Full body" never says strength). Run rows carry none.
   strength?: PlanStrength | null                    // { sessionsByDate, completions, onOpen }
 }
 ```

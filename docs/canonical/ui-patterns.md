@@ -4199,7 +4199,12 @@ fill: `DESIGN-DAYDOT-CHANNEL-01`, still open.
 | | Use | Anatomy |
 |---|---|---|
 | **`RowIcon`** | LOCATION, on Me's door rows and the modify sheet's rows | 16px line glyph (stroke 1.2, round caps, the nav's family) in a 32px `--bg-soft` box, `--radius-sm`, glyph `--ink-2`. Leads the row via `ActionRow`'s `icon` prop |
-| **`Glyph`** | MEANING: the dumbbell on a strength `SessionCard` and on the rest card's strength line | The bare 16px glyph in `currentColor`, muted |
+| **`Glyph`** | MEANING: the dumbbell on a strength `SessionCard`, on the rest card's strength line, and on Plan's strength rows and run-day "Strength" mark (STRENGTH-PLAN-GLYPH-01) | The bare 16px glyph in `currentColor`, muted |
+
+**Mark the exception, not the rule (STRENGTH-PLAN-GLYPH-01).** A lift carries the dumbbell wherever it appears,
+because its title ("Full body") never says strength and the rail colour alone would carry the type. **A run carries
+no glyph**: its label already names it, every Plan row is a run unless marked, and the 24px a glyph costs comes out
+of the longest labels (UX-PLAN-MOVE-01). Check: `lib/ui/strengthPlanGlyph.test.ts`.
 
 - The modify sheet's glyphs are keyed by row (`ROW_GLYPH: Record<ModifiableKey, GlyphName>`), so a new row cannot ship
   without one. Me's Kit status rows carry none: they are readouts, not doors.

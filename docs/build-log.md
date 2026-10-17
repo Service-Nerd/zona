@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — STRENGTH-PLAN-GLYPH-01 · mark the exception, not the rule
+**Shipped:** Strength sessions on the Plan screen now show the dumbbell, the same as on Today. Runs don't get an icon.
+
+**Product learning:** The case for the dumbbell turned out to be stronger than "it looks nice". A strength day on Plan said "Upper body" and nothing else, so only its colour told you it was a lift. A run already says what it is in words, so a running icon would cost label space and tell you nothing new.
+
+**AI-building learning:** The check asserts what we decided not to build as well as what we did: exactly two glyphs on a Plan row, both dumbbells. Without that, the next person to love the icons adds a shoe and every test stays green.
+
+**The honest bit:** This reverses part of a ruling from the same morning. That earlier sitting said "no icons on Plan rows" without noticing a strength row never says "strength". The reversal is written down with its reason.
+
 ## 2026-10-17 — STRENGTH-KNEE-DOMINANT-01 + STRENGTH-PEAK-FILL-01 · the founder's own plan was the test case
 **Shipped:** Every leg session now pairs a squat-type lift with a hinge, instead of sometimes two hinges. Peak weeks stay lighter on main lifts, as intended.
 

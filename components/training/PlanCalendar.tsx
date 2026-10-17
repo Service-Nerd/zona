@@ -13,6 +13,7 @@ import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { STRENGTH_KIND_TITLE, isoLocalDate } from '@/lib/strength-bridge/display'
 import type { StrengthSession } from '@/packages/strength'
+import { Glyph } from '@/components/shared/RowIcon'
 
 /** STRENGTH-APP-01 (C) — strength on the Plan week. Optional: the marketing phone still passes none. */
 export interface PlanStrength {
@@ -857,11 +858,17 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           </div>
         ) : strengthRow && strength ? (
           <>
-            <div style={rowLabelStyle({
-              color: strength.status ? 'var(--mute)' : isFuture ? 'var(--ink-2)' : 'var(--ink)',
-              struck: strength.status === 'skipped',
-            })}>
-              {strength.title}
+            {/* STRENGTH-PLAN-GLYPH-01 — the title says "Full body", never "strength", so the
+                rail colour was the only thing marking the row as a lift (colour alone, WCAG
+                1.4.1). The dumbbell carries that MEANING, the same glyph as Today's card. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
+              <span style={{ color: 'var(--mute)', display: 'flex' }}><Glyph name="dumbbell" /></span>
+              <div style={rowLabelStyle({
+                color: strength.status ? 'var(--mute)' : isFuture ? 'var(--ink-2)' : 'var(--ink)',
+                struck: strength.status === 'skipped',
+              })}>
+                {strength.title}
+              </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
               {strength.status === 'done' && (
@@ -945,8 +952,8 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                   run's); strength is a quiet text mark, never a second row or a split rail
                   (Collins lost that: a 17px half-rail is not legible, and colour alone fails). */}
               {strength && !strengthRow && (
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--s-strength)' }}>
-                  Strength
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--s-strength)', display: 'inline-flex', alignItems: 'center', gap: 'var(--space-1)' }}>
+                  <Glyph name="dumbbell" />Strength
                 </span>
               )}
               {/* 🔴 ACTIVITY-NAME-WRITER-01 (2026-10-08) — THE LINE IS GATED ON THE

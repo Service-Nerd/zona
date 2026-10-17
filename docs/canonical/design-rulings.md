@@ -144,6 +144,19 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-17 — STRENGTH-PLAN-GLYPH-01 · (a) SHIP WITH AMENDMENT · (b) DON'T SHIP (not permanent)
+
+Founder: *"Do we want to surface the weight icon on the plan view also? … add a running icon to the run sessions
+also."* **(a) The dumbbell on Plan's strength rows and on the run-day "Strength" mark: SHIP.** Measured: a
+strength-only row is titled "Full body" / "Upper body" and never says strength, so the `--s-strength` rail was the
+only cue, type by colour alone (WCAG 1.4.1). 🔁 **Reverses STRENGTH-ENTRY-01's "not on Plan rows" for strength**,
+which missed that. **(b) A running glyph on run rows and cards: DON'T SHIP.** The run label already names the run
+(*"Easy run — Zone 2"*), and 24px off every run label is the width UX-PLAN-MOVE-01 took a chip away for.
+*"Mark the exception, not the rule"* (Silvanto). **Collins lost (b)**, arguing a paired run/lift mark is a clear
+two-kind system; recorded. Reopen (b) only if run labels stop naming the run, or a device test shows confusion.
+Check: `lib/ui/strengthPlanGlyph.test.ts` (asserts the dumbbells AND the absence of a run glyph). Sitting:
+`docs/decisions/strength-plan-glyph-2026-10-17.md`.
+
 ## 2026-10-17 — STRENGTH-ENTRY-01 · SHIP WITH AMENDMENT (direction) · BUILT items 1–5 (item 6 waits for release)
 
 Strength is met where decisions happen, not only behind Me. **Wizard:** one optional step after *"Which days do you
