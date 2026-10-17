@@ -237,4 +237,6 @@ export interface SessionEntry {
   pace_target?: string
   rpe_target?: number
   coach_notes?: [string, string?, string?]
+  /** READINESS-SURFACE-01 — carried so Today and the session screen show "Eased for recovery". */
+  eased_for?: 'recovery'
 }

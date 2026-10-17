@@ -608,6 +608,7 @@ function buildReadinessAdjustment(
       return {
         ...s,
         type: 'easy' as const,
+        eased_for: 'recovery' as const,   // READINESS-SURFACE-01 — the "Eased for recovery" mark
         coach_notes: [`${BRAND.voiceAnchor} Recovery signals are off (${reasonStr}). Easy day instead: the quality is on the bench.`] as [string],
       }
     }
@@ -615,6 +616,7 @@ function buildReadinessAdjustment(
       return {
         ...s,
         distance_km: Math.round(s.distance_km * READINESS.LONG_RUN_SOFTEN_PCT * 10) / 10,
+        eased_for: 'recovery' as const,
         coach_notes: [`${BRAND.voiceAnchor} Trimmed today (${reasonStr}). Body's not ready for the full distance.`] as [string],
       }
     }

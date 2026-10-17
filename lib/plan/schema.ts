@@ -23,6 +23,9 @@ export const SessionSchema = z.object({
   // Asserted by a round-trip test, because "I added it to the type" is exactly the
   // shape of a field that looks wired and is not.
   enrichment_reverted: z.boolean().optional(),
+  // READINESS-SURFACE-01 — same reason: absent here, the stamp is stripped on save and the
+  // "Eased for recovery" mark never renders. Round-trip asserted in easedMark.test.ts.
+  eased_for: z.literal('recovery').optional(),
   // INV-PLAN-009: deterministic IDs on R23+ plans; absent on legacy
   id:             z.string().optional(),
   type:           SessionTypeSchema,

@@ -15,6 +15,8 @@ import { STRENGTH_KIND_TITLE, isoLocalDate } from '@/lib/strength-bridge/display
 import type { StrengthSession } from '@/packages/strength'
 import { Glyph } from '@/components/shared/RowIcon'
 import { planMove, type OverrideRow } from '@/lib/plan/overrideMoves'
+import EasedMark from '@/components/shared/EasedMark'
+import { isEasedForRecovery } from '@/lib/ui/easedMark'
 import { SLOT_LABEL, moveChoices } from '@/lib/plan/doubles'
 import { InlineError } from '@/components/shared/InlineError'
 import { resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
@@ -70,6 +72,8 @@ export interface SessionTapPayload {
   pace_target?: string
   rpe_target?: number
   coach_notes?: [string, string?, string?]
+  /** READINESS-SURFACE-01 — carried so the session screen can show "Eased for recovery". */
+  eased_for?: 'recovery'
 }
 
 const DOW_ORDER = ['mon','tue','wed','thu','fri','sat','sun']
@@ -748,6 +752,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
                 pace_target:    s.pace_target,
                 rpe_target:     s.rpe_target,
                 coach_notes:    s.coach_notes,
+                eased_for:      s.eased_for,
               }, weekNum)
             }}
             onMoveIconTap={() => handleMoveIconTap(rowToken(key, idx))}
@@ -1002,6 +1007,8 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                   Done
                 </span>
               )}
+              {/* READINESS-SURFACE-01 — the record of an ease, in the same register (ui-patterns § 10e). */}
+              {isEasedForRecovery(session) && <EasedMark />}
               {/* Structured metric (R23+ plans). Render only the chosen metric;
                   fall back to the other if the chosen one is missing on this
                   session. Legacy `detail` text remains the fallback for

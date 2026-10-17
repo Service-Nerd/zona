@@ -6,6 +6,8 @@
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
 import AIMark from '@/components/shared/AIMark'
+import EasedMark from '@/components/shared/EasedMark'
+import { isEasedForRecovery } from '@/lib/ui/easedMark'
 import Button from '@/components/ui/Button'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import ManualRunModal from '@/components/dashboard/ManualRunModal'
@@ -955,8 +957,12 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
       <div style={{ padding: '14px 18px 16px 18px', borderBottom: '1px solid var(--line)' }}>
         {/* Date + status */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', letterSpacing: '0.02em' }}>
-            {session.day} · {session.date}
+          <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', letterSpacing: '0.02em' }}>
+              {session.day} · {session.date}
+            </span>
+            {/* READINESS-SURFACE-01 — the record on the session screen, finished or not (§ 10e). */}
+            {isEasedForRecovery(session) && <EasedMark />}
           </span>
           {/* P-01 — THE SEMANTIC PAIR, on the one state it is scoped to.
               Moss no longer means "done"; it means the intensity was right.

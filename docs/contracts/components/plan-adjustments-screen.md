@@ -49,7 +49,8 @@ interface PlanAdjustmentsScreenProps {
    *  defect in code this change never edited, which is the class ME-DOORS-01 shipped five of. */
   lastCheckedLabel: string | null
   lastAdjustmentCheckFoundChange?: boolean | null
-  /** Recent auto_applied adjustments, last 14 days, newest first (§69). Rows:
+  /** Recent auto_applied adjustments AND recovery eases the runner confirmed (READINESS-SURFACE-01;
+   *  filter `RECENT_CHANGES_FILTER` in lib/ui/easedMark.ts), last 14 days, newest first (§69). Rows:
    *  { id, week_n, summary, sessions_before, sessions_after, created_at }. 🔻 Typed `any[]`,
    *  inherited; a real type belongs with the `plan_adjustments` reader, not here. */
   recentChanges?: any[]

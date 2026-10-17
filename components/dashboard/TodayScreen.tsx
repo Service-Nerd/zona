@@ -7,6 +7,7 @@
 
 import { resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
 import { SLOT_LABEL, doubleAdvice } from '@/lib/plan/doubles'
+import { isEasedForRecovery } from '@/lib/ui/easedMark'
 import { InlineError } from '@/components/shared/InlineError'
 import AIMark from '@/components/shared/AIMark'
 import Button from '@/components/ui/Button'
@@ -898,6 +899,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
       pace_target: s?.pace_target ?? undefined,
       rpe_target: s?.rpe_target ?? undefined,
       coach_notes: s?.coach_notes ?? undefined,
+      eased_for: s?.eased_for ?? undefined,
     }
   }
   const sessions: SessionEntry[] = useMemo(() => DOW_ORDER.map(key => toEntry(key, effectiveWs[key])),
@@ -2079,6 +2081,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               units={preferredUnits}
               metric={resolveSessionMetric(weekNum, selectedSession.key, selectedSession.primary_metric, sessionMetricOverrides, preferredMetric)}
               durationMin={selectedSession.duration_mins}
+              eased={isEasedForRecovery(selectedSession)}
               state={
                 completions[selectedCompletionKey]?.status === 'complete' ? 'done'
                 : completions[selectedCompletionKey]?.status === 'skipped' ? 'skipped'

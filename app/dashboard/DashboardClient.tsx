@@ -63,6 +63,7 @@ import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import { planRationaleNotes } from '@/lib/plan/planRationale'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
 import { PLAN_CHANGE_SAVE_FAILED } from '@/lib/ui/planChangeCopy'
+import { RECENT_CHANGES_FILTER } from '@/lib/ui/easedMark'
 import { reportPlanSaveFailure } from '@/lib/ops/reportPlanSaveFailure'
 import ZoneRings, { ZoneRingsSkeleton } from '@/components/shared/ZoneRings'
 import { TextField } from '@/components/shared/TextField'
@@ -1739,7 +1740,9 @@ export default function DashboardClient() {
                 : Promise.resolve({ data: null, error: null }),
               supabase.from('plan_adjustments')
                 .select('id, week_n, summary, sessions_before, sessions_after, created_at')
-                .eq('user_id', user.id).eq('status', 'auto_applied')
+                // READINESS-SURFACE-01 — silent changes, plus the recovery eases the runner CONFIRMED
+                // (Design Board 2026-10-17). Other confirmed changes stay out: the runner saw those.
+                .eq('user_id', user.id).or(RECENT_CHANGES_FILTER)
                 .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
                 .gte('created_at', recentChangesCutoff)
                 .order('created_at', { ascending: false }).limit(10),

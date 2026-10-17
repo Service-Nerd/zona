@@ -5,6 +5,7 @@
 // See docs/canonical/ui-patterns.md § SessionCard and docs/alignment/phase-2-decisions.md D-003, D-010.
 
 import { Glyph } from './RowIcon'
+import EasedMark from '@/components/shared/EasedMark'
 import { getSessionColor } from '@/lib/session-types'
 import type { Session } from '@/types/plan'
 import { formatDistance, formatDuration, type DistanceUnits, type SessionMetric } from '@/lib/format'
@@ -51,6 +52,8 @@ type Props = {
   onHrRetry?:     () => void | Promise<void>
   /** True while a retry is in flight. Drives the "Checking…" copy. */
   isHrRetrying?:  boolean
+  /** READINESS-SURFACE-01 — the session was eased for recovery: shows the text mark (§ 10e). */
+  eased?: boolean
 }
 
 export default function SessionCard({
@@ -67,6 +70,7 @@ export default function SessionCard({
   units = 'km',
   metric = 'distance',
   hrPendingState = null,
+  eased = false,
   onHrRetry,
   isHrRetrying = false,
 }: Props) {
@@ -208,6 +212,7 @@ export default function SessionCard({
               {detail}
             </div>
           )}
+          {eased && !isSkipped && <div style={{ marginTop: '2px', lineHeight: 1.3 }}><EasedMark /></div>}
           {/* Strava activity name if done */}
           {isDone && completion?.viaStrava && completion?.activityName && (
             <div

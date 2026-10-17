@@ -1394,6 +1394,26 @@ Checks: `components/training/planCalendarDouble.markup.test.ts`, `components/das
 
 ---
 
+### 10e. "Eased for recovery" mark — READINESS-SURFACE-01 item 3
+
+The record that recovery eased a session (Design Board 2026-10-17: a TEXT mark on the session card, the Plan row
+and the finished session; Collins lost the amber tile). Placement agreed at build time as architect, because the
+ruling set direction only: **it sits in the 12px metric register beside "Done" and the AM / PM token**, as
+`12px 600 --ink-2`. Not `--warn` (amber text fails contrast at 12px, and a warning colour reads as a fault), not
+`--moss` (moss on a finished row already means the zone was held). A label, never a colour.
+
+- **Owner:** `components/shared/EasedMark.tsx` renders it; `lib/ui/easedMark.ts` owns the words
+  (`EASED_FOR_RECOVERY_LABEL`) and the question (`isEasedForRecovery(session)`).
+- **Data:** `session.eased_for === 'recovery'`, stamped by the readiness producer on the one session it changes.
+  It reaches the plan only when the runner confirms, and a revert removes it.
+- **Surfaces:** Plan `DayRow` metric line · `SessionCard` (`eased` prop, a line under the detail) · the session
+  screen's date row. "Changed this week" lists confirmed recovery eases beside silent changes (`RECENT_CHANGES_FILTER`).
+- **Never:** a count, a streak, a tile, an icon.
+
+Check: `components/shared/easedMark.markup.test.ts`, `lib/ui/easedMark.test.ts`.
+
+---
+
 ### 10c. Applied-change audit row (Me screen)
 
 Read-only variant of the adjustment card, in the Me → **Plan adjustments** card under a **"Changed this week"** sub-label. Lists sub-threshold changes the engine auto-applied *without asking* (§69) over the last 14 days — Wood's honest-absorption surface. No Confirm/Reject (it already happened); a single dry **"Got it"** dismiss per row, persisted in `localStorage` (`zonna_dismissed_changes`, keyed by adjustment id — the MAINT-01 dismissable-card precedent, no migration).

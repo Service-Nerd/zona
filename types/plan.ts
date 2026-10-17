@@ -210,6 +210,11 @@ export interface Session {
    * `coach_notes`. It is written by `revertSessionsToRuleCopy` and nowhere else.
    */
   enrichment_reverted?: boolean
+  /** READINESS-SURFACE-01 — this session was eased because recovery signals were off. Stamped by
+   *  the readiness producer (`buildReadinessAdjustment`) on the one session it changes, so it lands
+   *  in the plan only when the runner confirms, and a revert (which restores `sessions_before`)
+   *  removes it. Read through `isEasedForRecovery` (lib/ui/easedMark.ts), never directly. */
+  eased_for?: 'recovery'
   type: SessionType
   /** Structural classification, generator-stamped. A long run and a race-week
    *  shakeout are both `type: 'easy'`; before `role`, they were told apart by

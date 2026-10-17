@@ -28,6 +28,8 @@ type Props = {
   hrPendingState?: HrPendingState | null   // HR-SYNC-02
   onHrRetry?: () => void | Promise<void>   // required when hrPendingState === 'fallback'
   isHrRetrying?: boolean
+  eased?: boolean                          // READINESS-SURFACE-01 — renders the "Eased for recovery"
+                                           // text mark (ui-patterns § 10e); callers pass isEasedForRecovery(s)
 }
 ```
 

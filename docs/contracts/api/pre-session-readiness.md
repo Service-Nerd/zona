@@ -51,6 +51,9 @@ say" with an error status. `reason` names which gate ended the evaluation, in ev
   `trigger_detail.sessionDay` (the key the session is stored under; `displayDay` is where it shows).
 - `sessions_before` / `sessions_after` are **seven entries, Mon → Sun**, as for every other trigger;
   `confirm-adjustment` / `revert-adjustment` write back only the days that differ.
+- **The eased session carries `eased_for: 'recovery'` in `sessions_after`** (READINESS-SURFACE-01), so the
+  "Eased for recovery" mark reaches the plan only when the runner confirms and leaves with a revert (which
+  writes `sessions_before`, unstamped). `SessionSchema` keeps the field; `lib/ui/easedMark.test.ts` asserts it.
 - `trigger_detail.sessionDate` stamps the day. A pending readiness change from an earlier date is closed as
   `reverted` on the next run (it never applied), so a stale card cannot surface.
 

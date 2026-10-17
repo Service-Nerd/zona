@@ -822,8 +822,8 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
    */
   hasPendingAdjustment?: boolean
   /**
-   * Recent silent (auto_applied) plan adjustments from the last 14 days, newest
-   * first. Feeds the "Changed this week" audit surface (RESHAPE-FIX-WAVE3-PHASE2):
+   * Recent silent (auto_applied) plan adjustments, plus recovery eases the runner confirmed
+   * (READINESS-SURFACE-01, `RECENT_CHANGES_FILTER`), from the last 14 days, newest first. Feeds the "Changed this week" audit surface (RESHAPE-FIX-WAVE3-PHASE2):
    * sub-threshold changes the engine applied without asking (§69), so honest
    * absorption requires a passive place to see them. Rows: { id, week_n, summary,
    * sessions_before, sessions_after, created_at }.

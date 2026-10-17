@@ -2237,8 +2237,8 @@ Build in this order, each against the ruling:
 2. **The moment (Today).** `TdReadyHero` leads with the runner's reading in large type against their own normal
    (*"HRV 38, your normal is 52"*), then the change, then *Ease the session* / *Run it anyway* (equally visible).
    Copy: 👤 founder.
-3. **The record.** An **"Eased for recovery"** TEXT mark on the session card, the Plan row and the finished
-   session; confirmed recovery changes listed in **Changed this week** (today it shows only `auto_applied`).
+3. ✅ **The record** (built 2026-10-17, feature registry). An **"Eased for recovery"** TEXT mark on the session card,
+   the Plan row and the finished session; confirmed recovery changes listed in **Changed this week**.
 4. **Coach.** One quiet line in the weekly read when recovery changed something that week (*"Eased Tuesday: sleep
    was 4h 40"*). Not a card, not a score, **no count, no streak** (Wood).
 5. **Website.** A section on it: *"When your resting heart rate, HRV or sleep are off your normal, it eases the hard
@@ -2253,6 +2253,13 @@ an HRV / sleep dashboard (Silvanto: data without context breeds anxiety) · any 
 (native; `HealthObserverPlugin` runs warm, not killed) · the eased-day push design. ⚠️ No commercial seat: the
 conversion effect is unpriced.
 **Tags:** 🧭 DESIGN BOARD (ruled) → 🏃 COACHING BOARD (website + push words) → 👤 FOUNDER (copy) → ⚙️ build.
+
+#### `READINESS-LONG-DURATION-01` — a recovery ease cannot trim a duration-anchored long run *(filed 2026-10-17, OPEN)*
+`buildReadinessAdjustment` trims a long run with `s.distance_km * LONG_RUN_SOFTEN_PCT` and skips it when
+`distance_km` is absent. Beginner plans are duration-anchored on 95.8% of sessions (SESSION-KM-01), so on a
+beginner's long-run day a warranted ease returns the session unchanged: an adjustment row that changes nothing.
+Found while building READINESS-SURFACE-01 item 3. The fix scales `duration_mins` by the same factor (§59's intent,
+no new prescription). **Tags:** ⚙️ NO BOARD (defect restoring documented intent).
 
 #### `STRENGTH-RECOVERY-01` — recovery softens strength. 🏃 Coaching Board **CORRECT WITH AMENDMENT**, not built
 The same recovery check (one owner, `computeReadiness`; strength must not compute its own) on a strength day:

@@ -90,7 +90,8 @@ export default function PlanAdjustmentsScreen({
   /** ⚠️ DERIVED IN `MeScreen` AND PASSED, because the INDEX row's subtitle reads it too. */
   lastCheckedLabel: string | null
   lastAdjustmentCheckFoundChange?: boolean | null
-  /** Recent auto_applied adjustments, last 14 days, newest first (§69). */
+  /** Recent auto_applied adjustments + confirmed recovery eases (READINESS-SURFACE-01), last 14 days,
+   *  newest first (§69). Filter owned by `RECENT_CHANGES_FILTER` (lib/ui/easedMark.ts). */
   recentChanges?: any[]
   preferredUnits: 'km' | 'mi'
 }) {

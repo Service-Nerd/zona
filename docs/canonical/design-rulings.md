@@ -195,6 +195,11 @@ lost the amber tile** (type accent, not flood). **No HRV/sleep dashboard** (Silv
 anxiety). No count, no streak. Precondition: `READINESS-WRONG-DAY-01`. Sitting:
 `docs/decisions/recovery-adaptation-visibility-2026-10-17.md`.
 
+**Item 3 (the record) BUILT 2026-10-17, read at build time (no new ruling):** the mark sits in the 12px metric
+register beside "Done", `12px 600 --ink-2` (amber text fails contrast at 12px; moss on a finished row already
+means the zone was held). The fact is stamped on the session by the producer, so it appears on confirm and leaves
+on revert. Pattern: `ui-patterns.md` § 10e. Check: `easedMark.markup.test.ts`, `easedMark.test.ts`.
+
 ## 2026-10-17 — STRENGTH-NOTE-01 · SHIP
 
 The weekly strength note sits on the strength session screen, under the tiles, as `CoachNoteBlock aiGenerated`.

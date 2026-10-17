@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — READINESS-SURFACE-01 item 3 · the mark that lives on the session
+**Shipped:** When a runner accepts a recovery ease, the session now says "Eased for recovery" on Today's card, the Plan row and the session screen, and the change appears under "Changed this week". Undo the ease and the mark goes with it.
+
+**Dev learning:** The obvious build was a second query: fetch confirmed recovery rows and map them onto days. Instead the producer stamps the one session it changes, so the fact travels inside the change itself: it reaches the plan only on confirm, and revert (which writes the old sessions back) removes it for free. The catch is that the plan schema strips unknown fields on save, so a stamp added to the type alone would read correctly in memory and be gone by the next load. The test asserts the round-trip and, as a control, that an unknown key really is stripped.
+
+**Product learning:** The ruling said where the mark goes but not how it looks. The 12px metric line already carries "Done" and AM/PM, so the mark joins that register in secondary ink: not amber (fails contrast at that size, and reads as a fault) and not moss (on a finished row moss already means "you held the zone").
+
+**AI-building learning:** Reading the producer to place the stamp turned up a separate defect: the long-run trim multiplies `distance_km`, and beginner long runs are measured in minutes, so a warranted ease on a beginner's long run changes nothing. Filed rather than folded in, because it changes what a beginner is prescribed on the day.
+
+**The honest bit:** Production has never had a recovery ease (they crashed until this morning's fix), so this mark has never rendered for a real runner and won't until someone with a watch has a bad night and taps "Ease the session".
+
+---
+
 ## 2026-10-17 — SESSION-SLOTS-01 Phases 3–4 · "Do both", and the reader that threw the slot away
 **Shipped:** Runners can now make a double: move an easy run onto a day with another easy run and the confirm row offers "Do both" beside "Swap them". Plan shows the day as two rows, AM and PM; Today shows the first run not yet done, the other below it, and the spacing advice once. The push, the daily note, readiness, auto-match and the missed-session prompt all handle two runs on a day. Live once the migration is applied.
 
