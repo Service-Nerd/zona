@@ -23,6 +23,7 @@ export const AI_SURFACES = [
   'post-race-reshape',
   'post-run-reframe',
   'race-readiness',
+  'strength-weekly-note',
   'trend',
   'weekly-free-insight',
   'weekly-report',

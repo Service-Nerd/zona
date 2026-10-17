@@ -16,6 +16,7 @@ interface StrengthSessionScreenProps {
   canLog: boolean                   // the day itself or after it, as on a run
   onBack: () => void                // back to Today or Plan, whichever opened it
   onSetStatus: (status: StrengthCompletion | null) => Promise<boolean>  // null = undo; false → inline error
+  note?: string | null              // STRENGTH-NOTE-01: this week's AI note; null renders nothing
 }
 ```
 

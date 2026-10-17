@@ -144,6 +144,13 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-17 — STRENGTH-NOTE-01 · SHIP
+
+The weekly strength note sits on the strength session screen, under the tiles, as `CoachNoteBlock aiGenerated`.
+**Not on Today** (it already shows the session: a second line says it twice) and **not on Plan** (the run's weekly
+note owns that coach card). Absent, loading or failed renders nothing. Sitting:
+`docs/decisions/strength-weekly-note-2026-10-17.md`.
+
 ## 2026-10-16 — STRENGTH-APP-01 (STRENGTH-ENGINE-01 Phase 2) · SHIP WITH AMENDMENT
 
 Strength across the whole app, ruled as one composition. **Run day:** the run stays the hero, strength is one compact

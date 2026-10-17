@@ -25,7 +25,7 @@
 | Dose | Sets/reps/RIR are variables from a prescription model, never on the exercise |
 | Tier | PAID; **admin-only first** via `STRENGTH_RELEASE`, not a tier check |
 | Media | Licensed animations (e.g. WorkoutLabs ~$1,200/yr). No embedded YouTube |
-| AI | Engine deterministic. AI drafts the catalogue for review (~$1–3 once); optional Haiku weekly note (<1¢/runner/month) |
+| AI | Engine deterministic. AI drafts the catalogue for review (~$1–3 once); **weekly Haiku note built 2026-10-17 (STRENGTH-NOTE-01)** |
 | Storage | Own tables, cascade-deleted with the account |
 | Success | Share of starters completing ≥1 session/week over 4 weeks |
 

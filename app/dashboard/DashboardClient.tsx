@@ -169,7 +169,7 @@ import TodayScreen from '@/components/dashboard/TodayScreen'
 import StrengthSessionScreen from '@/components/dashboard/StrengthSessionScreen'
 import StrengthSetupScreen from '@/components/dashboard/StrengthSetupScreen'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { useStrengthPlan } from '@/components/dashboard/useStrengthPlan'
+import { useStrengthPlan, useStrengthWeeklyNote } from '@/components/dashboard/useStrengthPlan'
 import { canUseStrength } from '@/lib/strength-bridge/release'
 import { STRENGTH_SETUP, isoLocalDate } from '@/lib/strength-bridge/display'
 import { strengthSubtitle } from '@/components/shared/meDoors'
@@ -570,6 +570,7 @@ export default function DashboardClient() {
   )
   const [activeStrength, setActiveStrength] = useState<StrengthSession | null>(null)
   const [strengthOrigin, setStrengthOrigin] = useState<'today' | 'plan'>('today')
+  const strengthNote = useStrengthWeeklyNote(screen === 'strength-session' ? activeStrength?.week_n ?? null : null, strength.status === 'ready')
   const strengthByDate = useMemo(() => {
     const m: Record<string, StrengthSession> = {}
     for (const w of strength.plan?.weeks ?? []) for (const ss of w.sessions) if (ss.date) m[ss.date] = ss
@@ -3102,6 +3103,7 @@ export default function DashboardClient() {
               canLog={!!activeStrength.date && activeStrength.date <= isoLocalDate(new Date())}
               onBack={() => setScreen(strengthOrigin)}
               onSetStatus={(st) => activeStrength.date ? setStrengthCompletion(activeStrength.date, st) : Promise.resolve(false)}
+              note={strengthNote}
             />
           )
         })()}

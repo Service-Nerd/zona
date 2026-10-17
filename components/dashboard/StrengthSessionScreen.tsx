@@ -18,6 +18,7 @@ import Button from '@/components/ui/Button'
 import { InlineError } from '@/components/shared/InlineError'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { StepSection } from '@/components/shared/SessionSteps'
+import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { formatDuration } from '@/lib/format'
 import {
@@ -102,9 +103,11 @@ export interface StrengthSessionScreenProps {
   canLog: boolean
   onBack: () => void
   onSetStatus: (status: StrengthCompletion | null) => Promise<boolean>
+  /** STRENGTH-NOTE-01 — this week's AI note, or null (absent, loading or failed all render nothing). */
+  note?: string | null
 }
 
-export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus }: StrengthSessionScreenProps) {
+export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus, note = null }: StrengthSessionScreenProps) {
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
   const mobility = session.kind === 'mobility'
@@ -137,6 +140,14 @@ export default function StrengthSessionScreen({ session, dayLabel, weekN, status
           <Tile label="Duration" value={formatDuration(session.estimated_minutes) ?? '–'} />
           <Tile label="Exercises" value={String(exerciseCount(session))} />
         </div>
+
+        {/* STRENGTH-NOTE-01 — the week's note, said once, here (Design Board: not on Today, which
+            already shows the session, nor on Plan, whose coach card is the run's). */}
+        {note && (
+          <div style={{ marginTop: 'var(--space-3)' }}>
+            <CoachNoteBlock aiGenerated>{note}</CoachNoteBlock>
+          </div>
+        )}
 
         {session.blocks.map((b, i) => <BlockCard key={`${b.role}-${i}`} block={b} mobilitySession={mobility} />)}
 

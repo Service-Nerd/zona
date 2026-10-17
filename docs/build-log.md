@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — STRENGTH-NOTE-01 · the rule is in the prompt AND after it
+**Shipped:** A short coach note about your strength week, on the strength session screen. Written by Haiku, cached per week, and absent rather than broken when anything fails.
+
+**Dev learning:** The cache key is the week number plus a hash of that week's sessions. A plain week number would have been wrong the first time the run plan moved: strength re-places itself, and the note would still describe last week's arrangement.
+
+**AI-building learning:** A rule in a prompt is a request, not a constraint. The Coaching Board's "no claim about injury or speed" is in the prompt, and a parser checks the reply for the same words and refuses it. A model slip then shows nothing, never a claim. The mutation test turned the filter off and six tests went red.
+
+**The honest bit:** The first version of the client hook marked the week as "asked" in React state. That re-ran its own effect, whose cleanup threw away the reply, so the note would never have appeared. Reading it back caught it before any test did.
+
 ## 2026-10-16 — STRENGTH-APP-01 · three screens would have told you to rest on the day you lift
 **Shipped:** Strength now appears across the app, for admin accounts. On a run day it's a quiet second row under the run. On a day without a run it becomes the day. It has its own session screen, a Me door to set it up, and the morning push and daily coach note know about it.
 

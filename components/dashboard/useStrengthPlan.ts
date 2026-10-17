@@ -85,3 +85,25 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
 
   return { strength: state, reloadStrength: load, saveStrength: save, setStrengthCompletion: setCompletion }
 }
+
+/**
+ * STRENGTH-NOTE-01 — the week's note, fetched once per week and kept for the session.
+ * Silent: any failure leaves it null, and null renders nothing.
+ */
+export function useStrengthWeeklyNote(weekN: number | null, enabled: boolean): string | null {
+  const [notes, setNotes] = useState<Record<number, string>>({})
+  // Asked-for weeks live in a ref, not state: marking a week in state would re-run the
+  // effect, whose cleanup would then throw the reply away.
+  const asked = useRef(new Set<number>())
+  useEffect(() => {
+    if (!enabled || weekN == null || asked.current.has(weekN)) return
+    asked.current.add(weekN)
+    authedFetch('/api/strength/weekly-note', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ week_n: weekN }),
+    })
+      .then(r => (r.ok ? r.json() : null))
+      .then(b => { if (typeof b?.note === 'string') setNotes(n => ({ ...n, [weekN]: b.note })) })
+      .catch(() => {})
+  }, [weekN, enabled])
+  return weekN == null ? null : notes[weekN] ?? null
+}

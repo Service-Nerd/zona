@@ -4298,7 +4298,9 @@ SessionScreen's anatomy, as its own screen (`components/dashboard/StrengthSessio
 An exercise row is the step row's type: name 13/700, dose 15/800 tabular (*"3 × 5"*), support line 12/700
 (*each side · N reps in reserve · rest*). **Cues are one tap deep** (`aria-expanded`). **No media placeholder until
 Phase 3.** Actions at the end of content (7a): **Mark complete**, **Skip**; once logged, a status badge and **Undo**.
-Done or skipped only: no RPE, no per-set logging, until something reads them. A warm-up item that is a training
+Done or skipped only: no RPE, no per-set logging, until something reads them. **The weekly note**
+(`STRENGTH-NOTE-01`) sits under the tiles as a `CoachNoteBlock aiGenerated`, here only (not Today, not Plan); absent,
+loading or failed renders nothing. A warm-up item that is a training
 exercise in lighter form is left out when that exercise is in the session (`S-WARMUP-REPEAT`).
 **Check:** `strengthScreens.markup.test.ts`.
 

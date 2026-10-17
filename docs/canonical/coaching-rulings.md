@@ -25,6 +25,13 @@ memory.
 
 
 
+## 2026-10-17 — STRENGTH-NOTE-01 · CORRECT WITH AMENDMENT
+
+The weekly strength note describes the week and never prescribes. **Amendment:** no claim about what strength does
+for running, speed, economy, injury or finishing, and no instruction to add or cut work (Blagrove, Hutchinson);
+legs limited by the run week may be named, never "add them back" (Willy). Enforced twice: the prompt, and
+`parseStrengthNote` refusing a reply that breaks a rule (falsified in `strengthNoteRules.test.ts`).
+
 ## 2026-10-16 — STRENGTH-ENGINE-01 Phase 0 · the split and the v1 numbers · CORRECT WITH AMENDMENT
 
 **On:** ADR-024 §6a split table + v1 numbers (ACSM 2026 read). Six seats, strength seat sitting. **Conflict scan:**

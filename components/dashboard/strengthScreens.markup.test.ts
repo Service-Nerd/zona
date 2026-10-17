@@ -61,6 +61,17 @@ describe('StrengthSessionScreen', () => {
   })
 })
 
+describe('StrengthSessionScreen — the weekly note (STRENGTH-NOTE-01)', () => {
+  it('renders the note once, with AI provenance', async () => {
+    const html = await screen({ note: 'Legs on Tuesday, after the intervals.' })
+    expect(html.split('Legs on Tuesday, after the intervals.').length - 1).toBe(1)
+    expect(html).toMatch(/Kit/)
+  })
+  it('🔴 no note renders nothing: no placeholder, no byline', async () => {
+    expect(await screen({ note: null })).not.toMatch(/Kit/)
+  })
+})
+
 describe('StrengthSetupScreen', () => {
   async function setup(props: Record<string, unknown> = {}) {
     const { default: S } = await import('@/components/dashboard/StrengthSetupScreen')

@@ -20,6 +20,9 @@ create table if not exists strength_plans (
   plan_json       jsonb not null,
   profile_json    jsonb not null,
   run_context_sig text,
+  -- STRENGTH-NOTE-01: the weekly AI note, keyed "<week_n>:<hash of that week's sessions>" so a
+  -- re-placed week never shows a note about sessions it no longer has.
+  weekly_notes    jsonb not null default '{}'::jsonb,
   generated_at    timestamptz not null default now()
 );
 
