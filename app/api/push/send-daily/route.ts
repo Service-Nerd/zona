@@ -4,8 +4,8 @@ import { secretMatches } from '@/lib/security/secrets'
 import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
 import { getUserTier } from '@/lib/trial'
-import { getSessionForDate, isDateBeforePlan, isPlanComplete, parseLocalDate, readPlanJson } from '@/lib/plan'
-import { resolveEffectiveSessions, DAY_KEYS, type DayKey, type SessionOverride } from '@/lib/plan/effectiveSessions'
+import { getSessionsForDate, isDateBeforePlan, isPlanComplete, parseLocalDate, readPlanJson } from '@/lib/plan'
+import { resolveEffectiveDay, soleSession, DAY_KEYS, type DayKey, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import { buildDailyPushTitle, buildDailyPushBody, type NextKeySession } from '@/lib/coaching/voiceLines'
 import { pushSessionFor, strengthSessionOn } from '@/lib/strength-bridge/serverDay'
 import { recordNotification } from '@/lib/notifications'
@@ -51,16 +51,17 @@ const KEY_SESSION_TYPES = new Set(['quality', 'tempo', 'intervals', 'hard', 'lon
 // week" is a structural boundary (the plan week, Mon→Sun via DAY_KEYS), not a
 // tunable lookahead — so no coaching numeric is introduced.
 function findNextKeyThisWeek(
-  effectiveWeek: ReturnType<typeof resolveEffectiveSessions>,
+  effectiveWeek: ReturnType<typeof resolveEffectiveDay>,
   todayKey: DayKey,
 ): NextKeySession | null {
   const start = DAY_KEYS.indexOf(todayKey)
   if (start < 0) return null
   for (let i = start + 1; i < DAY_KEYS.length; i++) {
-    const s = effectiveWeek[DAY_KEYS[i]]?.session
-    if (!s) continue
-    if (KEY_SESSION_TYPES.has(s.type) || s.key_session) {
-      return { type: s.type, dayName: FULL_DAY_NAMES[DAY_KEYS[i]] }
+    // Every session on the day, AM then PM: already slot-aware, so no sole-session read here.
+    for (const { session: s } of effectiveWeek[DAY_KEYS[i]] ?? []) {
+      if (KEY_SESSION_TYPES.has(s.type) || s.key_session) {
+        return { type: s.type, dayName: FULL_DAY_NAMES[DAY_KEYS[i]] }
+      }
     }
   }
   return null
@@ -247,7 +248,7 @@ export async function POST(req: NextRequest) {
       // fired a "today's session" push a week early.
       const localToday = parseLocalDate(clock.isoDate)
       const allOverrides: SessionOverride[] = (overridesRes.data as SessionOverride[] | null) ?? []
-      const resolved = getSessionForDate(plan.weeks, localToday, allOverrides)
+      const resolved = soleSession(getSessionsForDate(plan.weeks, localToday, allOverrides)) ?? null
       // STRENGTH-APP-01 (A′) — a no-run day that holds a strength session is a training
       // day: it gets the strength line, never the rest line, and it is not skipped.
       const strengthToday = await strengthSessionOn(supabase, userId, clock.isoDate, { isAdmin: settings.is_admin === true, tier })
@@ -272,7 +273,7 @@ export async function POST(req: NextRequest) {
       let nextKey: NextKeySession | null = null
       if (resolved) {
         const weekOverrides = allOverrides.filter(o => o.week_n === resolved.weekN)
-        const effectiveWeek = resolveEffectiveSessions(resolved.week, weekOverrides)
+        const effectiveWeek = resolveEffectiveDay(resolved.week, weekOverrides)
         nextKey = findNextKeyThisWeek(effectiveWeek, resolved.dayKey)
       }
 

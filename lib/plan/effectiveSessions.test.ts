@@ -7,8 +7,13 @@
  * missed-session prompt, which is the pair it was extracted to keep in step.
  */
 import { describe, it, expect } from 'vitest'
-import { resolveEffectiveSessions, slotForOriginalDay, type SessionOverride } from './effectiveSessions'
+import { resolveEffectiveDay, soleSession, type DayKey, type EffectiveSession, slotForOriginalDay, type SessionOverride } from './effectiveSessions'
 import type { Session, Week } from '@/types/plan'
+
+/** Phase 1 adapter: a day holds at most one session, so the old single-entry view is exact. */
+const resolveOne = (w: Parameters<typeof resolveEffectiveDay>[0], o: Parameters<typeof resolveEffectiveDay>[1]) =>
+  Object.fromEntries(Object.entries(resolveEffectiveDay(w, o)).map(([k, l]) => [k, soleSession(l)])) as Partial<Record<DayKey, EffectiveSession>>
+
 
 const s = (id: string): Session => ({ id, type: 'easy', label: id } as unknown as Session)
 const week = (sessions: Record<string, Session>) => ({ sessions } as unknown as Pick<Week, 'sessions'>)
@@ -16,7 +21,7 @@ const week = (sessions: Record<string, Session>) => ({ sessions } as unknown as 
 describe('resolveEffectiveSessions', () => {
   it('no overrides — every session stays on its own day and is not an override', () => {
     const w = week({ mon: s('easy-mon'), wed: s('quality-wed'), sun: s('long-sun') })
-    const out = resolveEffectiveSessions(w, [])
+    const out = resolveOne(w, [])
     expect(Object.keys(out).sort()).toEqual(['mon', 'sun', 'wed'])
     expect(out.wed!.originalDay).toBe('wed')
     expect(out.wed!.isOverride).toBe(false)
@@ -25,7 +30,7 @@ describe('resolveEffectiveSessions', () => {
   it('a move to an EMPTY day relocates the session and remembers its original day', () => {
     // originalDay is the completion key — losing it orphans the runner's log.
     const w = week({ mon: s('easy-mon'), wed: s('quality-wed') })
-    const out = resolveEffectiveSessions(w, [{ week_n: 1, original_day: 'wed', new_day: 'thu' }])
+    const out = resolveOne(w, [{ week_n: 1, original_day: 'wed', new_day: 'thu' }])
     expect(out.wed).toBeUndefined()
     expect(out.thu!.session.id).toBe('quality-wed')
     expect(out.thu!.originalDay).toBe('wed')
@@ -35,7 +40,7 @@ describe('resolveEffectiveSessions', () => {
 
   it('a true SWAP (two override rows) keeps both sessions', () => {
     const w = week({ mon: s('easy-mon'), wed: s('quality-wed') })
-    const out = resolveEffectiveSessions(w, [
+    const out = resolveOne(w, [
       { week_n: 1, original_day: 'mon', new_day: 'wed' },
       { week_n: 1, original_day: 'wed', new_day: 'mon' },
     ])
@@ -46,7 +51,7 @@ describe('resolveEffectiveSessions', () => {
 
   it('an override naming a day with no session is ignored, not crashed', () => {
     const w = week({ mon: s('easy-mon') })
-    const out = resolveEffectiveSessions(w, [{ week_n: 1, original_day: 'fri', new_day: 'sat' }])
+    const out = resolveOne(w, [{ week_n: 1, original_day: 'fri', new_day: 'sat' }])
     expect(out.sat).toBeUndefined()
     expect(Object.keys(out)).toEqual(['mon'])
   })
@@ -62,7 +67,7 @@ describe('resolveEffectiveSessions', () => {
     // moving onto a day whose session is ALREADY COMPLETED took the one-sided
     // Move path with the target occupied.
     const w = week({ mon: s('easy-mon'), wed: s('quality-wed') })
-    const out = resolveEffectiveSessions(w, [{ week_n: 1, original_day: 'mon', new_day: 'wed' }])
+    const out = resolveOne(w, [{ week_n: 1, original_day: 'mon', new_day: 'wed' }])
     expect(out.wed!.session.id).toBe('easy-mon')      // the mover lands
     expect(out.mon!.session.id).toBe('quality-wed')   // the occupant is NOT lost
     expect(out.mon!.originalDay).toBe('wed')          // its completion key survives
@@ -75,7 +80,7 @@ describe('resolveEffectiveSessions', () => {
     // into 'tue' (taken by the first mover's own origin), so it yields. Losing
     // a session is never the answer to a collision.
     const w = week({ mon: s('a'), tue: s('b'), wed: s('c') })
-    const out = resolveEffectiveSessions(w, [
+    const out = resolveOne(w, [
       { week_n: 1, original_day: 'mon', new_day: 'wed' },
       { week_n: 1, original_day: 'tue', new_day: 'wed' },
     ])

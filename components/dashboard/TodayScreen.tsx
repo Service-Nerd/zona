@@ -5,7 +5,7 @@
 //
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
-import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
+import { resolveEffectiveDay, soleSession } from '@/lib/plan/effectiveSessions'
 import { InlineError } from '@/components/shared/InlineError'
 import AIMark from '@/components/shared/AIMark'
 import Button from '@/components/ui/Button'
@@ -848,8 +848,8 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   const effectiveWs = useMemo(() => {
     const result: Record<string, any> = {}
     const rows = Object.entries(overrides).map(([original_day, new_day]) => ({ week_n: weekNum, original_day, new_day }))
-    const eff = resolveEffectiveSessions({ sessions: ws }, rows)
-    for (const [day, e] of Object.entries(eff)) if (e) result[day] = { ...e.session, originalDay: e.originalDay }
+    const eff = resolveEffectiveDay({ sessions: ws }, rows)
+    for (const [day, list] of Object.entries(eff)) { const e = soleSession(list); if (e) result[day] = { ...e.session, originalDay: e.originalDay } }
     return result
   }, [overrides, weekIndex])
 

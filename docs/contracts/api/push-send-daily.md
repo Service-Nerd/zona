@@ -40,7 +40,7 @@ For each `push_subscriptions` row (grouped by `user_id` so multi-device users ar
 4. Skip if `last_today_open_at` is within the last 30 minutes (runner is already in the app).
 5. Resolve tier via `getUserTier()`. Skip free tier.
 6. Load plan + session overrides. Skip if no plan or no current week.
-7. Resolve today's effective session via `resolveEffectiveSessions`. **Every planned session type pushes, rest included** (product decision 2026-05-27). Skip only if the day has no session at all.
+7. Resolve today's effective session via `getSessionsForDate` / `resolveEffectiveDay` (a list per day since ADR-025 Phase 1; one entry until Phase 2, read through `soleSession`; the next-key-session scan already walks every session in a day). **Every planned session type pushes, rest included** (product decision 2026-05-27). Skip only if the day has no session at all.
 
    > ⚠️ **Collision semantics changed 2026-09-19 (EFFSESS-COLLISION-01), and this route is a consumer.**
    > `resolveEffectiveSessions` used to OVERWRITE the occupant when a one-sided move landed on an occupied day, so a

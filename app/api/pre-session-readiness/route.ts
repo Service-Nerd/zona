@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { getSessionForDate, parseLocalDate, readPlanJson } from '@/lib/plan'
+import { getSessionsForDate, parseLocalDate, readPlanJson } from '@/lib/plan'
+import { soleSession } from '@/lib/plan/effectiveSessions'
 import { orderedWeekSessions } from '@/lib/plan/weekSessions'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { computeReadiness, type DailyHealthSample, type SleepStageMinutes } from '@/lib/coaching/readinessBaseline'
@@ -76,7 +77,7 @@ export async function GET(req: NextRequest) {
     .from('session_overrides').select('week_n, original_day, new_day')
     .eq('user_id', userId).is('superseded_at', null)
   if (overridesError) return NextResponse.json({ adjustment: null, reason: 'overrides_unavailable' })
-  const resolved = getSessionForDate(plan.weeks, parseLocalDate(todayDateStr), overrides ?? [])
+  const resolved = soleSession(getSessionsForDate(plan.weeks, parseLocalDate(todayDateStr), overrides ?? [])) ?? null
   if (!resolved) return NextResponse.json({ adjustment: null, reason: 'no_active_session' })
 
   const week         = resolved.week

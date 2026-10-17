@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { planMove } from './overrideMoves'
-import { resolveEffectiveSessions } from './effectiveSessions'
+import { resolveEffectiveDay, soleSession, type DayKey, type EffectiveSession } from './effectiveSessions'
+
+/** Phase 1 adapter: a day holds at most one session, so the old single-entry view is exact. */
+const resolveOne = (w: Parameters<typeof resolveEffectiveDay>[0], o: Parameters<typeof resolveEffectiveDay>[1]) =>
+  Object.fromEntries(Object.entries(resolveEffectiveDay(w, o)).map(([k, l]) => [k, soleSession(l)])) as Partial<Record<DayKey, EffectiveSession>>
+
 
 /** PLAN-MOVE-DELETE-01 — a move replaces only its own row and any row landing on the target day. */
 const week = { sessions: { tue: { type: 'easy', label: 'Tue easy' }, wed: { type: 'easy', label: 'Wed easy' } } } as never
@@ -14,7 +19,7 @@ describe('planMove', () => {
     expect(next).toEqual([{ week_n: 3, original_day: 'wed', new_day: 'fri' }, { week_n: 3, original_day: 'tue', new_day: 'wed' }])
     expect(removedOriginalDays).toEqual(['tue'])   // the old code also deleted 'wed' in the database
     // And the week the runner sees: Tuesday's run on Wednesday, Wednesday's on Friday. No snap-back.
-    const eff = resolveEffectiveSessions(week, next as never)
+    const eff = resolveOne(week, next as never)
     expect((eff.wed?.session as { label: string }).label).toBe('Tue easy')
     expect((eff.fri?.session as { label: string }).label).toBe('Wed easy')
   })

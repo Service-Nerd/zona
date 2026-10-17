@@ -1,6 +1,6 @@
 import type { Plan, Session, Week } from '@/types/plan'
 import {
-  resolveEffectiveSessions,
+  resolveEffectiveDay,
   type DayKey,
   type SessionOverride,
 } from '@/lib/plan/effectiveSessions'
@@ -199,6 +199,8 @@ export interface ResolvedSession {
   dayKey: DayKey
   /** Day the session is defined on in `week.sessions` — the completion key. */
   originalDay: DayKey
+  /** SESSION-SLOTS-01 — AM / PM when the date holds two sessions; null when it holds one. */
+  slot: 'am' | 'pm' | null
 }
 
 /**
@@ -216,25 +218,25 @@ export interface ResolvedSession {
  *
  * `date` must be local midnight of the target calendar day (see dayKeyForDate).
  */
-export function getSessionForDate(
+export function getSessionsForDate(
   weeks: Plan['weeks'],
   date: Date,
   overrides: ReadonlyArray<SessionOverride> = [],
-): ResolvedSession | null {
+): ResolvedSession[] {
+  // SESSION-SLOTS-01 Phase 1 — a LIST (AM then PM): `[]` keeps ADR-016's meaning of null
+  // ("nothing to show / do not send"). At most one entry until Phase 2.
   const idx = weeks.findIndex(w => isDateWithinWeek(w, date))
-  if (idx < 0) return null
+  if (idx < 0) return []
   const week = weeks[idx]
   const weekN = (week as any).n ?? idx + 1
   const dayKey = dayKeyForDate(date)
   const weekOverrides = overrides.filter(o => o.week_n === weekN)
-  const effective = resolveEffectiveSessions(week, weekOverrides)
-  const entry = effective[dayKey]
-  if (!entry) return null
-  return {
+  return (resolveEffectiveDay(week, weekOverrides)[dayKey] ?? []).map(entry => ({
     session: entry.session,
     week,
     weekN,
     dayKey,
     originalDay: entry.originalDay,
-  }
+    slot: entry.slot,
+  }))
 }

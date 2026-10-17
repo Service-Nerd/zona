@@ -1,6 +1,6 @@
 # Contract — `session_overrides` and the effective week
 
-**Owner of the read:** `lib/plan/effectiveSessions.ts → resolveEffectiveSessions(week, weekOverrides)`.
+**Owner of the read:** `lib/plan/effectiveSessions.ts → resolveEffectiveDay(week, weekOverrides)` (was `resolveEffectiveSessions`, removed at ADR-025 Phase 1).
 **Owner of a move:** `lib/plan/overrideMoves.ts → planMove()`. **Writer:** `PlanCalendar` (`handleMove`, `handleSwap`).
 **Written 2026-10-17** (SESSION-SLOTS-01 Phase 0), before any slot code, per GOV-006.
 
@@ -15,23 +15,29 @@
 - **A session keeps its ORIGINAL day as its identity.** Completions, run analysis, reflections and metric overrides key
   on `original_day`. The override changes only where the session is SHOWN.
 
-## The effective week (today)
+## The effective week (Phase 1, built 2026-10-17)
 
 ```ts
-resolveEffectiveSessions(week, weekOverrides): Partial<Record<DayKey, { session; originalDay; isOverride }>>
+resolveEffectiveDay(week, weekOverrides): Partial<Record<DayKey, { session; originalDay; isOverride; slot }[]>>
+getSessionsForDate(weeks, date, overrides): ResolvedSession[]   // [] = nothing to show / do not send (ADR-016)
+soleSession(list): T | undefined                                  // the day's one session, for a caller not yet taught about two
 ```
+
+- **A day holds at most one session until Phase 2**: `new_slot` is ignored, `slot` is always null. Gate:
+  `effectiveWeekOwner.test.ts` (a slotted move still yields one session a day).
+- **Every single-session read is a named `soleSession()` call**, counted (9 at Phase 1) and the count may only fall:
+  Phase 4 teaches each caller about two sessions. The push's next-key-session scan already walks every session.
 
 - One session per shown day. A move onto an occupied day becomes a **swap** (the occupant takes the vacated day); if
   that is impossible the move is refused. Never drops a session (EFFSESS-COLLISION-01).
 - **Every reader goes through it.** Today and Plan used hand-rolled copies that overwrote on a collision; both were
   removed 2026-10-17. Gate: `lib/plan/effectiveWeekOwner.test.ts` (no hand-placed session anywhere in the source).
-- Readers that resolve one DATE use `getSessionForDate(weeks, date, overrides)` (ADR-016), and **must pass the live
+- Readers that resolve one DATE use `getSessionsForDate(weeks, date, overrides)` (ADR-016), and **must pass the live
   overrides** (READINESS-OVERRIDES-01). Callers: push send-daily, pre-session-readiness, the strength run context.
 
-## Phase 1 target (ADR-025, not built)
+## Phase 1 data (migration `20261018_session_overrides_slot.sql`, ⚠️ NOT YET APPLIED)
 
-- `new_slot text null check (new_slot in ('am','pm'))`; null keeps today's meaning. Unique key on
-  `(user_id, week_n, original_day) WHERE superseded_at IS NULL`.
-- `resolveEffectiveDay(...)`: `Record<DayKey, EffectiveSession[]>`, AM then PM; replaces `resolveEffectiveSessions`
-  (removed, not kept beside it). `getSessionsForDate` replaces `getSessionForDate`.
+- `new_slot text null check (new_slot in ('am','pm'))`; null keeps today's meaning. Unique key
+  `session_overrides_live_key (user_id, week_n, original_day) WHERE superseded_at IS NULL` (measured before: 7 live rows,
+  0 duplicate keys). Nothing writes `new_slot` until Phase 3.
 - A slot is offered only for the doubles the Coaching Board allowed (`docs/decisions/same-day-doubles-coaching-2026-10-17.md`).

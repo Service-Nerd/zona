@@ -13,7 +13,7 @@ import { achievementLine } from '@/lib/coaching/goalSequencing'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate, readPlanJson } from '@/lib/plan'
-import { resolveEffectiveSessions, slotForOriginalDay, type SessionOverride } from '@/lib/plan/effectiveSessions'
+import { resolveEffectiveDay, soleSession, slotForOriginalDay, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
@@ -145,7 +145,7 @@ export async function GET(req: NextRequest) {
   // Without this, a session moved into today's slot reads as "nothing today".
   const allOverrides: SessionOverride[] = (overridesRes.data as SessionOverride[] | null) ?? []
   const currentWeekOverrides = allOverrides.filter(o => o.week_n === weekN)
-  const effectiveWeek = resolveEffectiveSessions(week, currentWeekOverrides)
+  const effectiveWeek = resolveEffectiveDay(week, currentWeekOverrides)
   const dayOfWeek = new Date(noteDate + 'T00:00:00Z').getUTCDay()  // 0=Sun..6=Sat
   const dowKey    = DOW_KEYS[dayOfWeek]
   // getCurrentWeekIndex() pins to the last week once today is past the plan, so
@@ -156,7 +156,7 @@ export async function GET(req: NextRequest) {
   const withinWeek    = isDateWithinWeek(week, noteDateLocal)
   const planComplete  = isPlanComplete(plan.weeks, noteDateLocal)
   // Treat strength as a rest day for coaching purposes — feature not yet built out.
-  const rawTodaySession = withinWeek ? (effectiveWeek[dowKey]?.session ?? null) : null
+  const rawTodaySession = withinWeek ? (soleSession(effectiveWeek[dowKey])?.session ?? null) : null
   const todaySession = rawTodaySession && !EXCLUDED_SESSION_TYPES.includes(rawTodaySession.type) ? rawTodaySession : null
   const todayDayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dayOfWeek]
   const todayZone = zoneForSessionType(todaySession?.type)

@@ -86,7 +86,7 @@ first put, kept for the record:
 | Phase | What | Gate |
 |---|---|---|
 | **0. Prerequisites** ✅ *done 2026-10-17* | Delete the two hand-rolled effective maps (route through the owner) · fix three pre-existing defects: readiness ignores overrides, `handleMove`'s delete differs from its client filter, auto-match dates a moved session by its original day | `verify:parity` IDENTICAL; each defect gets a fail-before test |
-| **1. Owner + data** | Migration (`new_slot` + unique key), `resolveEffectiveDay` / `getSessionsForDate`, every consumer compiles against arrays with **single-session behaviour** | No visible change; journey test unchanged |
+| **1. Owner + data** ✅ *code done 2026-10-17; migration awaiting the founder* | Migration (`new_slot` + unique key), `resolveEffectiveDay` / `getSessionsForDate`, every consumer compiles against arrays with **single-session behaviour** | No visible change; journey test unchanged |
 | **2. Rules** | Coaching Board ruling (§5) → principle + numeric + invariant | Board ruling recorded |
 | **3. UI** | Design Board: Today two-session day, Plan two rows, the Swap / Do both choice, AM/PM labels (including strength) | Pattern + check + register row; 375px |
 | **4. Consumers** | Auto-match by start time, push copy, daily note, readiness, widget | Each consumer: a test with a double day |

@@ -4,10 +4,14 @@ export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
 export const DAY_KEYS: readonly DayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
+export type Slot = 'am' | 'pm'
+
 export interface SessionOverride {
   week_n: number
   original_day: string
   new_day: string
+  /** SESSION-SLOTS-01 (ADR-025) — which half of a shared day. Null/absent: the day's only session. */
+  new_slot?: Slot | null
 }
 
 export interface EffectiveSession {
@@ -16,15 +20,39 @@ export interface EffectiveSession {
   originalDay: DayKey
   /** True when the session has been moved/swapped out of its original slot. */
   isOverride: boolean
+  /** SESSION-SLOTS-01 — AM / PM when the day holds two sessions; null when it holds one. */
+  slot: Slot | null
 }
 
 /**
- * Resolve a week's sessions after applying user move/swap overrides.
- * Returns a map keyed by the *slot* (calendar day) the session currently lives on,
- * not the day it was originally defined on. The original day is preserved on each
- * entry so callers can index into completions (which are keyed by original_day).
+ * The week the runner sees, after their moves and swaps: for each calendar day, the
+ * sessions on it, AM before PM. The original day is preserved on each entry so callers
+ * can index into completions (which are keyed by original_day).
+ *
+ * 🔴 SESSION-SLOTS-01 Phase 1 (ADR-025): a day is a LIST so that no caller can assume one
+ * session. **A day holds at most one session until Phase 2**: `new_slot` is ignored here
+ * until the Coaching Board's doubles rules are built in, so behaviour is unchanged.
  */
-export function resolveEffectiveSessions(
+export function resolveEffectiveDay(
+  week: Pick<Week, 'sessions'>,
+  weekOverrides: ReadonlyArray<SessionOverride>,
+): Partial<Record<DayKey, EffectiveSession[]>> {
+  const one = resolveOnePerDay(week, weekOverrides)
+  const out: Partial<Record<DayKey, EffectiveSession[]>> = {}
+  for (const k of DAY_KEYS) { const e = one[k]; if (e) out[k] = [e] }
+  return out
+}
+
+/**
+ * The day's single session, for a caller that has not yet been taught about two
+ * (Phase 4 of ADR-025 teaches each). Named, not `[0]`, so every such caller is countable:
+ * `effectiveWeekOwner.test.ts` holds the number and it may only fall.
+ */
+export function soleSession<T>(list: readonly T[] | undefined): T | undefined {
+  return list?.[0]
+}
+
+function resolveOnePerDay(
   week: Pick<Week, 'sessions'>,
   weekOverrides: ReadonlyArray<SessionOverride>,
 ): Partial<Record<DayKey, EffectiveSession>> {
@@ -33,7 +61,7 @@ export function resolveEffectiveSessions(
   for (const key of DAY_KEYS) {
     if (moved.has(key)) continue
     const s = week.sessions[key]
-    if (s) out[key] = { session: s, originalDay: key, isOverride: false }
+    if (s) out[key] = { session: s, originalDay: key, isOverride: false, slot: null }
   }
   for (const o of weekOverrides) {
     const s = week.sessions[o.original_day as DayKey]
@@ -79,6 +107,7 @@ export function resolveEffectiveSessions(
       session: s,
       originalDay: o.original_day as DayKey,
       isOverride: true,
+      slot: null,
     }
   }
   return out

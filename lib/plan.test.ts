@@ -2,11 +2,16 @@ import { describe, it, expect } from 'vitest'
 import {
   isDateBeforePlan,
   isPlanComplete,
-  getSessionForDate,
+  getSessionsForDate,
   dayKeyForDate,
   parseLocalDate,
 } from './plan'
 import type { Session, Week } from '@/types/plan'
+
+import { soleSession } from './plan/effectiveSessions'
+/** Phase 1 adapter: at most one session per date, so the old single view is exact. */
+const getSessionForDateOne = (...a: Parameters<typeof getSessionsForDate>) => soleSession(getSessionsForDate(...a)) ?? null
+
 
 // Minimal week fixture — only the fields the temporal resolver reads.
 function week(n: number, date: string, sessions: Partial<Record<string, Session>>): Week {
@@ -45,11 +50,11 @@ describe('isDateBeforePlan (ADR-016 — the missing before-start guard)', () => 
 
 describe('getSessionForDate — the canonical active-session resolver', () => {
   it('returns null BEFORE the plan starts (the 78m-push bug)', () => {
-    expect(getSessionForDate(weeks, D('2026-08-10'))).toBeNull()
+    expect(getSessionForDateOne(weeks, D('2026-08-10'))).toBeNull()
   })
 
   it('returns the real session on a planned day, keyed by week.n', () => {
-    const r = getSessionForDate(weeks, D('2026-08-17')) // Mon, week 1
+    const r = getSessionForDateOne(weeks, D('2026-08-17')) // Mon, week 1
     expect(r).not.toBeNull()
     expect(r!.session).toBe(easyMon)
     expect(r!.weekN).toBe(1)
@@ -58,36 +63,36 @@ describe('getSessionForDate — the canonical active-session resolver', () => {
   })
 
   it('resolves the correct week for a later date', () => {
-    const r = getSessionForDate(weeks, D('2026-08-26')) // Wed, week 2
+    const r = getSessionForDateOne(weeks, D('2026-08-26')) // Wed, week 2
     expect(r!.weekN).toBe(2)
     expect(r!.dayKey).toBe('wed')
     expect(r!.session).toBe(easyWed)
   })
 
   it('returns null on a genuinely empty day inside the plan', () => {
-    expect(getSessionForDate(weeks, D('2026-08-18'))).toBeNull() // Tue, no session
+    expect(getSessionForDateOne(weeks, D('2026-08-18'))).toBeNull() // Tue, no session
   })
 
   it('returns null AFTER the plan ends', () => {
-    expect(getSessionForDate(weeks, D('2026-09-01'))).toBeNull()
+    expect(getSessionForDateOne(weeks, D('2026-09-01'))).toBeNull()
     expect(isPlanComplete(weeks, D('2026-09-01'))).toBe(true)
   })
 
   it('honours a move override: session resolves at its new day, gone from the old', () => {
     const overrides = [{ week_n: 1, original_day: 'mon', new_day: 'tue' }]
-    const moved = getSessionForDate(weeks, D('2026-08-18'), overrides) // Tue now holds Mon's session
+    const moved = getSessionForDateOne(weeks, D('2026-08-18'), overrides) // Tue now holds Mon's session
     expect(moved!.session).toBe(easyMon)
     expect(moved!.dayKey).toBe('tue')
     expect(moved!.originalDay).toBe('mon') // completion key preserved
-    expect(getSessionForDate(weeks, D('2026-08-17'), overrides)).toBeNull() // Mon vacated
+    expect(getSessionForDateOne(weeks, D('2026-08-17'), overrides)).toBeNull() // Mon vacated
   })
 
   it('keys by week.n, not array position (maintenance plan restarting at n=26)', () => {
     const maint: Week[] = [week(26, '2026-08-17', { mon: easyMon })]
-    const r = getSessionForDate(maint, D('2026-08-17'))
+    const r = getSessionForDateOne(maint, D('2026-08-17'))
     expect(r!.weekN).toBe(26)
     // an override must match on week.n = 26, not index+1 = 1
-    const withOverride = getSessionForDate(
+    const withOverride = getSessionForDateOne(
       maint, D('2026-08-18'),
       [{ week_n: 26, original_day: 'mon', new_day: 'tue' }],
     )

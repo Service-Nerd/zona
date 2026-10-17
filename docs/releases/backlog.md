@@ -2087,8 +2087,10 @@ an array per day; the plan JSON is unchanged. Phases 0–4 in the ADR, nothing v
 **Progress 2026-10-17:** ✅ Phase 0 done (three defects fixed; Today and Plan route through the one owner, gated by
 `effectiveWeekOwner.test.ts`; contracts written: `docs/contracts/data/session-overrides.md`). ✅ Coaching Board ruled
 (`docs/decisions/same-day-doubles-coaching-2026-10-17.md`): both runs easy/recovery; never long, quality, race or TT;
-no double in race week; advise ≥6 h; weekday cap allowed with a note; no strength on a two-run day. **Next:** Phase 1
-(migration: `new_slot` + unique key, founder applies; owner returns arrays), then Design Board, then SLT.
+no double in race week; advise ≥6 h; weekday cap allowed with a note; no strength on a two-run day. ✅ **Phase 1 code done 2026-10-17**: `resolveEffectiveDay` / `getSessionsForDate`
+return lists, 9 named `soleSession()` reads (counted), no behaviour change. 🔻 **Founder: apply
+`20261018_session_overrides_slot.sql`.** **Next:** Phase 2 (the doubles rules: §126, `DOUBLE_RUN_MIN_GAP_HOURS`,
+`INV-EFFECTIVE-NO-HARD-DOUBLE`, the owner honours `new_slot`), then Design Board, then SLT.
 **Tags (in order):** ⚙️ Phase 0 + 1 (no visible change) → 🏃 COACHING BOARD (which doubles, gap, weekday cap) →
 🧭 DESIGN BOARD (Today, Plan, the move choice) → 💼 SLT (FREE or PAID, roadmap order).
 

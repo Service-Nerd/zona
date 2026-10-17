@@ -102,7 +102,7 @@ side. `autoMatchAndAnalyse` is now the eleventh importer.
 
 🔴 **MATCH ON THE SLOT, WRITE ON THE ORIGINAL DAY.** `session_completions` is keyed
 `(user_id, week_n, session_day)` on the day the session is **defined** on, and so are the
-post-run deep link and the analyse-run payload. `resolveEffectiveSessions` preserves
+post-run deep link and the analyse-run payload. `resolveEffectiveDay` (was `resolveEffectiveSessions`) preserves
 `originalDay` for exactly this reason. **Keying the completion to the slot would write a row
 the UI can never find — a silent phantom completion, worse than the defect.**
 

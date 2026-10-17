@@ -88,7 +88,7 @@ export async function autoMatchAndAnalyse(
   // calendar, the day picker. Everything that SHOWS the runner their week respected
   // the move; the only thing that ACTS on it did not. The two-writer split
   // (`session_overrides` vs `plan_json`) applied to one side.
-  const { resolveEffectiveSessions, DAY_KEYS } = await import('@/lib/plan/effectiveSessions')
+  const { resolveEffectiveDay, soleSession, DAY_KEYS } = await import('@/lib/plan/effectiveSessions')
   const { data: overrideRows } = await supabase
     .from('session_overrides')
     .select('week_n, original_day, new_day')
@@ -97,7 +97,7 @@ export async function autoMatchAndAnalyse(
   const weekOverrides = (overrideRows ?? []).filter((o: any) => o.week_n === week.n)
 
   const weekStartDate = new Date(week.date)
-  const effective = resolveEffectiveSessions(week, weekOverrides)
+  const effective = resolveEffectiveDay(week, weekOverrides)
 
   // 🔴 MATCH ON THE SLOT, WRITE ON THE ORIGINAL DAY. `session_completions` is keyed
   // `(user_id, week_n, session_day)` on the day the session is DEFINED on, and so are
@@ -107,7 +107,7 @@ export async function autoMatchAndAnalyse(
   // `originalDay` for exactly this reason.
   const plannedSessions = DAY_KEYS
     .map((slot, idx) => {
-      const entry = effective[slot]
+      const entry = soleSession(effective[slot])
       if (!entry) return null
       const sessionDate = new Date(weekStartDate)
       sessionDate.setDate(weekStartDate.getDate() + idx)

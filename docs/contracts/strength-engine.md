@@ -28,7 +28,7 @@ parseStrengthProfile(input: unknown): { ok: true; profile } | { ok: false; field
 ```
 
 One entry per calendar day, contiguous. Roles come from the run engine's own predicates (`isLongRun`, session
-type) after live move/swap overrides (`getSessionForDate`). A week holding the race is `race_week`; a deload badge
+type) after live move/swap overrides (`getSessionsForDate`). A week holding the race is `race_week`; a deload badge
 is `deload`. Injury tags are whitelisted. `masters` uses `GENERATION_CONFIG.MASTERS_AGE_THRESHOLD`. **No paces,
 zones or distances.** `runContextSig(ctx)` hashes it.
 

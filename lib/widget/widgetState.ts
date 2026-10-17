@@ -9,7 +9,7 @@
 
 import type { Plan } from '@/types/plan'
 import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
-import { resolveEffectiveSessions, type SessionOverride } from '@/lib/plan/effectiveSessions'
+import { resolveEffectiveDay, soleSession, type SessionOverride } from '@/lib/plan/effectiveSessions'
 
 export interface WidgetState {
   raceName:           string | null
@@ -70,9 +70,9 @@ export function buildWidgetState(input: {
   if (week) {
     const weekN = weekIdx + 1
     const weekOverrides = (input.overrides ?? []).filter(o => o.week_n === weekN)
-    const effective     = resolveEffectiveSessions(week, weekOverrides)
+    const effective     = resolveEffectiveDay(week, weekOverrides)
     const dowKey        = DOW_KEYS[now.getDay()]
-    const eff           = effective[dowKey] ?? null
+    const eff           = soleSession(effective[dowKey]) ?? null
     const session       = eff?.session ?? null
 
     if (session) {

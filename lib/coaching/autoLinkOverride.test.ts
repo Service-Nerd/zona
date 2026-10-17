@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { findMatchCandidates, autoSelectMatch } from './sessionMatch'
-import { resolveEffectiveSessions, DAY_KEYS } from '@/lib/plan/effectiveSessions'
+import { resolveEffectiveDay, soleSession, type DayKey, type EffectiveSession, DAY_KEYS } from '@/lib/plan/effectiveSessions'
+
+/** Phase 1 adapter: a day holds at most one session, so the old single-entry view is exact. */
+const resolveOne = (w: Parameters<typeof resolveEffectiveDay>[0], o: Parameters<typeof resolveEffectiveDay>[1]) =>
+  Object.fromEntries(Object.entries(resolveEffectiveDay(w, o)).map(([k, l]) => [k, soleSession(l)])) as Partial<Record<DayKey, EffectiveSession>>
+
 
 // AUTOLINK-OVERRIDE-BLIND-01 (2026-10-07) — the matcher must see the week the
 // runner sees.

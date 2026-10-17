@@ -36,7 +36,7 @@ import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import ExternalLink from '@/components/shared/ExternalLink'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, PlanReadError, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate, readPlanJson } from '@/lib/plan'
-import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
+import { resolveEffectiveDay, soleSession } from '@/lib/plan/effectiveSessions'
 import { easyPaceAsCeiling, splitPaceQualifier } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { resolveMaxHr } from '@/lib/plan/maxHrGuard'
@@ -1503,11 +1503,11 @@ export default function DashboardClient() {
             // the slot it now sits in, not the day it was originally defined on.
             // Completions are keyed by original_day — see effectiveSessions.ts.
             const weekOverrides = (overridesRes.data ?? []).filter((o: any) => o.week_n === wN)
-            const effective = resolveEffectiveSessions(week, weekOverrides)
+            const effective = resolveEffectiveDay(week, weekOverrides)
             for (const dayKey of WEEK_DAYS) {
               const dayDate = computeSessionDate(weekStart, dayKey)
               if (dayDate >= today) break // today or future — not missable
-              const eff = effective[dayKey]
+              const eff = soleSession(effective[dayKey])
               if (!eff || eff.session.type === 'rest') continue
               if (!thisWeekCompletions[eff.originalDay]) {
                 // Build the activeSessionData shape now — same fields the card

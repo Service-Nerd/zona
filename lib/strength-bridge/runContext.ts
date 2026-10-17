@@ -12,7 +12,8 @@
 import { createHash } from 'node:crypto'
 import type { Plan, Session, Week } from '@/types/plan'
 import type { SessionOverride } from '@/lib/plan/effectiveSessions'
-import { getSessionForDate, parseLocalDate, dayKeyForDate } from '@/lib/plan/weekResolution'
+import { getSessionsForDate, parseLocalDate, dayKeyForDate } from '@/lib/plan/weekResolution'
+import { soleSession } from '@/lib/plan/effectiveSessions'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { INJURY_TAGS, type InjuryTag, type RunContext, type RunDay, type RunPhase, type RunRole, type RunWeek } from '@/packages/strength'
@@ -62,7 +63,7 @@ export function planToRunContext(plan: Plan, overrides: ReadonlyArray<SessionOve
       // Each calendar day belongs to the latest week that started on or before it,
       // so a gap between weeks is filled rather than skipped (no index holes).
       while (wi + 1 < weeks.length && parseLocalDate(weeks[wi + 1].date) <= d) wi++
-      const resolved = getSessionForDate(plan.weeks, new Date(d), overrides)
+      const resolved = soleSession(getSessionsForDate(plan.weeks, new Date(d), overrides))
       days.push({ date: iso(d), day: dayKeyForDate(d), week_n: weeks[wi].n, role: runRoleOf(resolved?.session) })
     }
   }

@@ -6,7 +6,6 @@ import { reanchorCharityGrant } from '@/lib/charity/reanchor'
 import { supersedeWeekKeyedRows, isRaceIdentityChange } from './plan/supersede'
 import type { Plan, Session, Week } from '@/types/plan'
 import {
-  resolveEffectiveSessions,
   type DayKey,
   type SessionOverride,
 } from '@/lib/plan/effectiveSessions'
@@ -333,6 +332,6 @@ export {
   isPlanComplete,
   isDateBeforePlan,
   dayKeyForDate,
-  getSessionForDate,
+  getSessionsForDate,
   type ResolvedSession,
 } from './plan/weekResolution'
