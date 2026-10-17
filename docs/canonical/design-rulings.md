@@ -144,6 +144,16 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-17 — STRENGTH-ENTRY-01 · SHIP WITH AMENDMENT (direction) · NOT BUILT
+
+Strength is met where decisions happen, not only behind Me. **Wizard:** one optional step after *"Which days do you
+run?"* (No / Yes, at home / Yes, at a gym). **Plan:** a Strength row in *"Change your plan"*. **Today:** one quiet
+line on the rest card only. **Me:** the door stays. **Icons:** a dumbbell (nav line family) where it carries meaning
+(strength session card, Today strength row, Strength rows); Me rows and the modify sheet get one glyph each under
+ICON-RULE-01's constraints. 🔁 **Founder reversal recorded:** 2026-09-22 *"not doing"* the Me row icons, reversed
+2026-10-17. **Coach:** "Strength · 2 of 2 this week" + one line of the plan's progression; no streak, no fake load
+chart. Sitting: `docs/decisions/strength-entry-points-2026-10-17.md`.
+
 ## 2026-10-17 — READINESS-SURFACE-01 · SHIP WITH AMENDMENT (direction) · NOT BUILT
 
 Recovery-driven changes get a moment and a record. **Moment:** the easing card leads with the runner's reading in

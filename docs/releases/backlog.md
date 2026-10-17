@@ -2034,6 +2034,39 @@ fixed.
 > before then; **contact is the founder's call**. `df2cc6e6`'s race was 2026-09-26, last opened 2026-07-29,
 > no subscription — no action.
 
+### `STRENGTH-ENTRY-01` — strength entry points, icons, paywall and Coach *(filed 2026-10-17, RULED, not built)*
+
+**Founder, verbatim (in substance):** *"How do I add strength sessions? Is it from the Me menu? Is it obvious? Should
+it be there? … the setup wizard (I think it should definitely be there) … ensure the entry points are clear and we
+are shouting about them. I like the idea of a weight icon. I do want icons … where they work. … how we paywall it
+and feasibility … what it adds to the coach screen, what metrics … will show them progress."*
+
+**Today:** the only way in is Me → Your training → Strength (admin-only). Me's job is configuration, so it is not
+where a runner discovers it. **Sitting:** `docs/decisions/strength-entry-points-2026-10-17.md` (Design Board SHIP
+WITH AMENDMENT · SLT BUILD).
+
+Build, in order (all behind `canUseStrength` until release):
+1. **Icons.** A dumbbell in the nav line family on the strength session card, the Today strength row and the Strength
+   rows. Me rows and the modify sheet each get one glyph per row (ICON-RULE-01: one family, one size, one neutral
+   tinted container, never a semantic tint). 🔁 Founder reversal of 2026-09-22 "not doing" recorded. Not on wizard
+   steps, Plan rows or run session cards. A frontend-design pass picks the glyphs.
+2. **Wizard step.** One optional step after *"Which days do you run?"*: **No · Yes, at home · Yes, at a gym**
+   (equipment presets; sessions = engine default 2). Strength is built after the run plan saves; **a strength failure
+   must never block the run plan.**
+3. **Plan.** A **Strength** row in *"Change your plan"* (`ModifyPlanSheet`), opening the setup.
+4. **Coach.** Evidence, no second Kit voice: **"Strength · 2 of 2 this week"** in the stats, and one plain line of the
+   plan's own progression (*"Technique block ends next week. Heavier from week 5."*), which needs no logging. Real load
+   progress waits for Phase 4 logging; no streak, no badge, no fake chart.
+5. **Today.** One quiet line on the rest card for runners without strength (*"Strength fits on days like this"* →
+   setup), at most once a week.
+6. **At release (SLT):** strength is **included in the subscription, not an add-on** (an add-on needs a second App
+   Store product, RevenueCat entitlement, price and offer-code handling: not feasible now). The reverse trial is the
+   free taste. Free runners see the wizard step and the modify row **locked**, opening Upgrade; add an Upgrade line
+   (*"Strength around your runs"*) and a `/pricing` row (`pricing.test.ts` requires it once it is sold).
+**Words:** 👤 founder; any marketing claim about what strength does → 🏃 Coaching Board. **Measure:** share of
+starters doing ≥1 strength session a week over 4 weeks; share of wizard runners who say yes.
+**Tags:** 🧭 DESIGN BOARD (ruled) → 💼 SLT (ruled) → 👤 FOUNDER (copy) → ⚙️ build.
+
 ### Recovery-driven adaptation — make the plan's listening visible, and extend it to strength *(filed 2026-10-17)*
 
 **Founder, verbatim (2026-10-17):** *"Do we make enough noise about how we adapt the plan due to changing recovery
