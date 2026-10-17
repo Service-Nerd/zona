@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { getSessionForDate, readPlanJson } from '@/lib/plan'
+import { getSessionForDate, parseLocalDate, readPlanJson } from '@/lib/plan'
+import { orderedWeekSessions } from '@/lib/plan/weekSessions'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { computeReadiness, type DailyHealthSample, type SleepStageMinutes } from '@/lib/coaching/readinessBaseline'
 import { checkAdjustmentTriggers, type AdjustmentCheckInput } from '@/lib/coaching/planAdjustment'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
@@ -62,11 +64,19 @@ export async function GET(req: NextRequest) {
   // saturating getCurrentWeekIndex, which would otherwise resolve week 1's
   // weekday session for a plan that hasn't begun and propose a pre-run softening
   // for a session that isn't live yet (INV-TIME-001).
-  const resolved = getSessionForDate(plan.weeks, new Date())
+  // READINESS-WRONG-DAY-01 — the RUNNER'S calendar date, not the server's. The client sends
+  // its local date (as it does for the daily coach note); samples are keyed by local date,
+  // and on Vercel `new Date()` is UTC, so a runner east or west of it was read a day off.
+  const qDate = req.nextUrl.searchParams.get('date')
+  const todayDateStr = qDate && /^\d{4}-\d{2}-\d{2}$/.test(qDate) ? qDate : new Date().toISOString().slice(0, 10)
+  const resolved = getSessionForDate(plan.weeks, parseLocalDate(todayDateStr))
   if (!resolved) return NextResponse.json({ adjustment: null, reason: 'no_active_session' })
 
   const week         = resolved.week
   const todayDay     = resolved.dayKey
+  // The key the session is STORED under in `week.sessions` (a moved session lives on its
+  // original key). The edit and the write-back address this one.
+  const todayKey     = resolved.originalDay
   const todaySession = resolved.session
 
   // Classify via the canonical owner — a long run is `type: 'easy'`, so
@@ -89,7 +99,6 @@ export async function GET(req: NextRequest) {
     .gte('sample_date', since.toISOString().slice(0, 10))
     .order('sample_date', { ascending: false })
 
-  const todayDateStr = new Date().toISOString().slice(0, 10)
   // `sleep_stages: null` was MISSING from this fallback. It went unnoticed
   // because the client used to be typed `any` (a module-scoped
   // `getSupabase(): any`), so nothing checked the shape; on a day with no
@@ -125,7 +134,9 @@ export async function GET(req: NextRequest) {
   const input: AdjustmentCheckInput = {
     currentWeekN:        week.n,
     totalWeeks:          plan.weeks.length,
-    currentWeekSessions: [todaySession],
+    // The engine's contract is the whole week, Mon → Sun (RESHAPE-FIX-WAVE1's guard). A
+    // one-session list THREW here for every softening since 2026-06-26.
+    currentWeekSessions: orderedWeekSessions(week),
     // LOG-OFFPLAN-01 — this route never exercises the load triggers (both zero,
     // `priorWeeksKm` empty); it is here for the readiness path only. Split into
     // the two named figures so it cannot silently acquire the old meaning.
@@ -139,7 +150,7 @@ export async function GET(req: NextRequest) {
     currentPhase:        (week as any).phase,
     readinessSignal: {
       sessionType:        coachingSessionType(todaySession),
-      sessionDay:         todayDay,
+      sessionDay:         todayKey,
       isElevatedRHR:      readiness.isElevatedRHR,
       isLowHRV:           readiness.isLowHRV,
       isShortSleep:       readiness.isShortSleep,
@@ -149,13 +160,31 @@ export async function GET(req: NextRequest) {
     },
   }
 
-  const adjustment = checkAdjustmentTriggers(input)
+  let adjustment: ReturnType<typeof checkAdjustmentTriggers>
+  try {
+    adjustment = checkAdjustmentTriggers(input)
+  } catch (e) {
+    // The client swallows this route's failures (it is a boot-time enrichment), so a crash
+    // here was invisible for four months. It now leaves a trace.
+    await recordOpsEvent('readiness_failed', { message: String((e as Error)?.message ?? e).split('\n')[0].slice(0, 200) }, userId)
+    return NextResponse.json({ adjustment: null, reason: 'engine_error' }, { status: 500 })
+  }
   if (!adjustment) {
     return NextResponse.json({ adjustment: null, reason: 'no_trigger', detail: readiness.detail })
   }
 
   // Idempotent persist: if a pending readiness adjustment already exists for
   // today's session, return it — don't write a duplicate.
+  // READINESS-WRONG-DAY-01 — a readiness ease is for ONE day. A pending one from an earlier
+  // day never applied, so it is closed as `reverted` (the plan is exactly as it was) rather
+  // than left to surface on Today as a stale card.
+  const { data: pendingReadiness } = await supabase
+    .from('plan_adjustments').select('id, trigger_detail')
+    .eq('user_id', userId).is('superseded_at', null)
+    .eq('status', 'pending').eq('trigger_type', 'readiness_signal')
+  const stale = (pendingReadiness ?? []).filter((r: { trigger_detail?: { sessionDate?: string } }) => r.trigger_detail?.sessionDate !== todayDateStr).map((r: { id: string }) => r.id)
+  if (stale.length) await supabase.from('plan_adjustments').update({ status: 'reverted' }).in('id', stale)
+
   const { data: existing } = await supabase
     .from('plan_adjustments')
     .select('*')
@@ -164,7 +193,7 @@ export async function GET(req: NextRequest) {
     .eq('status', 'pending')
     .eq('week_n', week.n)
     .eq('trigger_type', 'readiness_signal')
-    .contains('trigger_detail', { sessionDay: todayDay })
+    .contains('trigger_detail', { sessionDay: todayKey, sessionDate: todayDateStr })
     .maybeSingle()
 
   if (existing) {
@@ -177,7 +206,7 @@ export async function GET(req: NextRequest) {
       user_id:             userId,
       week_n:              week.n,
       trigger_type:        adjustment.trigger.type,
-      trigger_detail:      adjustment.trigger.detail,
+      trigger_detail:      { ...adjustment.trigger.detail, sessionDate: todayDateStr, displayDay: todayDay },
       adjustment_type:     adjustment.adjustmentType,
       summary:             adjustment.summary,
       sessions_before:     adjustment.sessionsBefore,

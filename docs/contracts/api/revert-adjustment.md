@@ -68,3 +68,11 @@ on native there is no cookie session, `auth.uid()` is NULL, `plans` RLS refuses 
 that table, so charity grants would have stopped re-anchoring silently. `adjust-plan` carries
 the reasoning; `lib/plan/planRouteClient.test.ts` enforces the choice across every
 `savePlanForUser` call in `app/api`.
+
+## Write-back — READINESS-WRONG-DAY-01 (2026-10-17)
+
+The stored lists are written back through `applyAdjustmentDays` (`lib/coaching/applyAdjustmentDays.ts`): they must
+be **seven entries, Mon → Sun**, and only the days that **differ** are written. A malformed row (the pre-fix
+one-session readiness shape) is refused with **`409 { error: 'This change can no longer be applied' }`** and nothing
+is saved. Before this, the write was positional, so a one-session row would have landed on Monday, and every day
+of the week was rewritten, undoing changes made since.

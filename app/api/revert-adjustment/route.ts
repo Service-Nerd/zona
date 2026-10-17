@@ -1,5 +1,6 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { NextRequest, NextResponse } from 'next/server'
+import { applyAdjustmentDays } from '@/lib/coaching/applyAdjustmentDays'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
@@ -67,12 +68,9 @@ export async function POST(req: NextRequest) {
   const updatedPlan = JSON.parse(JSON.stringify(plan)) as Plan
   const week        = updatedPlan.weeks.find(w => w.n === weekN)
   if (week) {
-    const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-    days.forEach((day, idx) => {
-      if (sessionsBefore[idx]) {
-        week.sessions[day] = sessionsBefore[idx]
-      }
-    })
+    // READINESS-WRONG-DAY-01 — only the days that changed, and never a malformed row.
+    const applied = applyAdjustmentDays(week, adjustment.sessions_after, sessionsBefore)
+    if (!applied.ok) return NextResponse.json({ error: 'This change can no longer be applied' }, { status: 409 })
   }
 
   // Resetting last_adjustment_check_found_change here too (see same comment

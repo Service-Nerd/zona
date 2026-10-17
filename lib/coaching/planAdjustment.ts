@@ -594,15 +594,21 @@ function buildReadinessAdjustment(
   if (signal.isPoorSleepQuality) reasons.push('deep sleep low')
   const reasonStr = reasons.join(' + ')
 
-  // Caller (/api/pre-session-readiness) passes only today's session in
-  // currentWeekSessions, so this map only modifies the target session by
-  // construction. Type-based filter belt-and-braces.
-  const sessionsAfter = sessions.map(s => {
+  // 🔴 READINESS-WRONG-DAY-01 (2026-10-17) — ONLY the session on `signal.sessionDay` changes.
+  // This used to rely on a COMMENT: "the caller passes only today's session, so this map
+  // only modifies the target by construction". That stopped being true twice over: the
+  // engine's 7-entry guard (RESHAPE-FIX-WAVE1, 2026-06-26) made a one-session input THROW,
+  // which killed every readiness ease for four months, and passing the full week (the
+  // obvious repair) would have eased every quality session AND the long run in the week.
+  // The target is now selected by day, here, where the edit happens.
+  const target = DAY_ORDER.indexOf(signal.sessionDay as (typeof DAY_ORDER)[number])
+  const sessionsAfter = sessions.map((s, i) => {
+    if (i !== target) return { ...s }
     if (s.type === 'quality' || s.type === 'intervals' || s.type === 'tempo') {
       return {
         ...s,
         type: 'easy' as const,
-        coach_notes: [`${BRAND.voiceAnchor} Recovery signals are off (${reasonStr}). Easy day instead — the quality is on the bench.`] as [string],
+        coach_notes: [`${BRAND.voiceAnchor} Recovery signals are off (${reasonStr}). Easy day instead: the quality is on the bench.`] as [string],
       }
     }
     if (isLongRun(s) && s.distance_km) {

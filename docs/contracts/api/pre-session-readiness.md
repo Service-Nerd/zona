@@ -11,9 +11,10 @@ should be softened against the runner's 14-day recovery baseline, and `null` oth
 
 ## Request
 
-`GET`, bearer token. No body, no query parameters.
+`GET`, bearer token. **`?date=YYYY-MM-DD`** (READINESS-WRONG-DAY-01, 2026-10-17): the runner's LOCAL date. The
+dashboard sends it; without it the route falls back to the server's UTC date, which read runners a day off.
 
-## Responses — 200 in every non-auth case, deliberately
+## Responses — 200 in every non-auth case but one
 
 **A `null` adjustment is the normal, healthy answer**, so this route never signals "nothing to
 say" with an error status. `reason` names which gate ended the evaluation, in evaluation order:
@@ -38,6 +39,19 @@ say" with an error status. `reason` names which gate ended the evaluation, in ev
 - An **existing** pending adjustment is returned as-is rather than creating a duplicate, matching
   `/api/adjust-plan`.
 - `401 { error: 'Unauthorized' }` — no bearer token, or no user-scoped client.
+- `500 { adjustment: null, reason: 'engine_error' }` — `checkAdjustmentTriggers` threw. Recorded as a
+  `readiness_failed` ops event, because the only caller swallows this route's failures.
+
+## The stored change — READINESS-WRONG-DAY-01 (2026-10-17)
+
+- 🔴 **Until this date the route handed the engine ONE session and the engine's 7-entry guard threw**, so
+  every softening crashed (0 readiness changes ever reached a runner). It now passes the whole week
+  (`orderedWeekSessions`) and `buildReadinessAdjustment` changes **only** the session on
+  `trigger_detail.sessionDay` (the key the session is stored under; `displayDay` is where it shows).
+- `sessions_before` / `sessions_after` are **seven entries, Mon → Sun**, as for every other trigger;
+  `confirm-adjustment` / `revert-adjustment` write back only the days that differ.
+- `trigger_detail.sessionDate` stamps the day. A pending readiness change from an earlier date is closed as
+  `reverted` on the next run (it never applied), so a stale card cannot surface.
 
 ## What this route does NOT do — LOG-OFFPLAN-01 (2026-09-27)
 

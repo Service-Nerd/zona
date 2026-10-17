@@ -58,11 +58,14 @@ vi.mock('@supabase/supabase-js', () => ({
   }),
 }))
 
-const SESSIONS = [{ type: 'easy', label: 'Easy run' }]
+// READINESS-WRONG-DAY-01 — a stored change is the whole week, Mon → Sun.
+const REST = { type: 'rest', label: 'Rest' }
+const SESSIONS_BEFORE = [REST, REST, REST, { type: 'quality', label: 'Tempo' }, REST, REST, REST]
+const SESSIONS_AFTER  = [REST, REST, REST, { type: 'easy', label: 'Easy run' }, REST, REST, REST]
 
 beforeEach(() => {
   S.saveThrows = false; S.saved = 0; S.updates = []; S.events = []; S.readError = null
-  S.adjustment = { id: 'a1', user_id: 'u1', status: 'pending', week_n: 3, sessions_after: SESSIONS, sessions_before: SESSIONS }
+  S.adjustment = { id: 'a1', user_id: 'u1', status: 'pending', week_n: 3, sessions_after: SESSIONS_AFTER, sessions_before: SESSIONS_BEFORE }
 })
 
 const call = async (route: 'confirm-adjustment' | 'revert-adjustment') => {
@@ -95,6 +98,14 @@ for (const [route, status] of [['confirm-adjustment', 'confirmed'], ['revert-adj
       S.readError = 'connection reset'
       const res = await call(route)
       expect(res.status).toBe(500)
+      expect(S.saved).toBe(0)
+      expect(S.updates).toEqual([])
+    })
+
+    it('🔴 READINESS-WRONG-DAY-01 — a one-session (pre-fix) row is REFUSED, never written to Monday', async () => {
+      S.adjustment = { ...S.adjustment, sessions_after: [{ type: 'easy' }], sessions_before: [{ type: 'quality' }] }
+      const res = await call(route)
+      expect(res.status).toBe(409)
       expect(S.saved).toBe(0)
       expect(S.updates).toEqual([])
     })

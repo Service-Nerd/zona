@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-17 — READINESS-WRONG-DAY-01 · the feature we wanted to shout about had never worked
+**Shipped:** When your resting heart rate, HRV or sleep say you're not recovered, the app now actually eases today's hard session. It hadn't been able to since June.
+
+**Dev learning:** The bug looked like "it writes Monday". The real one was underneath: in June a good fix made the plan-change engine insist on a full seven-day week, and the recovery check, the engine's other caller, still sent one day. Every ease crashed, the dashboard ignored the error, and production showed zero recovery changes. Zero looked like a quiet feature, not a broken one.
+
+**Product learning:** The founder asked whether we make enough noise about this. Measuring first answered a different question: there was nothing to make noise about yet. The boards' plan to make it visible now has something real underneath it.
+
+**AI-building learning:** The code that edited the week trusted a comment: "the caller passes only today's session, so this only changes today." Fixing the caller would have broken that silently and eased the whole week. Moving the rule into the code, and a test that runs the real route on a Thursday, is what holds it. The test fails against the original route, against the all-week edit, and against the write-every-day write-back.
+
+**The honest bit:** I first reported this as a Monday bug. Reading the engine's own guard showed it could never reach Monday, because it crashed before writing anything. Running the function, rather than reading the call, is what turned a guess into the real cause.
+
 ## 2026-10-17 — STRENGTH-NOTE-01 · the rule is in the prompt AND after it
 **Shipped:** A short coach note about your strength week, on the strength session screen. Written by Haiku, cached per week, and absent rather than broken when anything fails.
 

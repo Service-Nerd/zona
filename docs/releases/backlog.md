@@ -2034,6 +2034,99 @@ fixed.
 > before then; **contact is the founder's call**. `df2cc6e6`'s race was 2026-09-26, last opened 2026-07-29,
 > no subscription — no action.
 
+### Recovery-driven adaptation — make the plan's listening visible, and extend it to strength *(filed 2026-10-17)*
+
+**Founder, verbatim (2026-10-17):** *"Do we make enough noise about how we adapt the plan due to changing recovery
+signals? i.e. is this something we promote on our website? When it happens is it providing a real wow moment (as it
+should). Is there narrative in our push notifications. Do we show it somewhere on a metric? Maybe show something on
+the closed session or in the coach screen. I really feel like we should make more of this as it's a real sell. Maybe
+the session tile colour changes etc. I want design board views on this as well as SLT."* And: *"what data points do
+we currently record that can impact a run plan? What could drive a plan re-shape? … do we get sleep data or hrv or
+resting hr and can we interpret those to give ppl less or more? That is more for both strength and running."*
+
+**Sittings:** `docs/decisions/recovery-adaptation-visibility-2026-10-17.md` (Design Board + SLT) ·
+`docs/decisions/strength-engine-boards-2026-10-16.md` § STRENGTH-RECOVERY-01 (Coaching Board) · incident
+`docs/incidents/2026-10-17-readiness-never-fired.md`.
+
+#### What we record that can change a run plan (measured from `lib/coaching/planAdjustment.ts`, 2026-10-17)
+| Signal | Source | Effect |
+|---|---|---|
+| RPE + fatigue tag | runner, after each session | 3+ Heavy/Wrecked in a row → quality to easy; RPE disconnect → drift |
+| Skip + reason | runner | session moved to a free day, or dropped |
+| Move / swap | runner (Plan) | checked against hard/easy rules |
+| HR above the ceiling on easy runs | run HR | zone drift → next sessions eased |
+| Load spike vs norm | logged runs | volume trimmed |
+| Off-plan runs | unmatched runs | counted into load (shadow load) |
+| Efficiency trend | runs with HR | peak-phase quality → easy |
+| **Recovery (RHR, HRV, sleep)** | **Apple Health** | **today's quality → easy, or long run −15%** |
+| Fitness up / long runs short | logged runs | paces / progression |
+| Time trial, benchmark | runner | forward paces (confirmed) |
+| Race result | runner | post-race reshape |
+| Resting / max HR | runner or Apple Health | zones recalculated |
+
+#### External data we receive
+- **Apple Health (SOR):** workouts (HR, calories), **resting HR, HRV, sleep with stages**. No cycle data (plugin
+  has no type), no VO2max, cadence, GPS route or power.
+- **Strava:** enriches existing Apple Health rows only; the Strava app is currently Inactive, so in practice nothing.
+- **Coverage, last 30 days (2026-10-17):** of 36 plans, **20** runners sent RHR, **12** HRV, **15** sleep.
+- **How recovery is read:** a 14-day personal baseline (`readinessBaseline.ts`, `GENERATION_CONFIG.READINESS`).
+  Any of: HRV ≤ baseline − 1 SD · RHR ≥ baseline + 7 bpm two days running · sleep < 5 h · deep sleep < 10%.
+  Only before quality / long days. **Subtract only** by design; nothing adds load on good recovery, and the boards
+  do not want it to (HRV-guided training evidence supports holding back, not pushing on).
+
+#### Findings
+- 🔴 **It had never fired, because it could not.** 0 `readiness_signal` changes of 19 ever. Since 2026-06-26 every
+  softening crashed (one-session input vs the engine's seven-day guard), swallowed by the client; underneath it,
+  accepting would have eased **Monday**; the naive repair would have eased the whole week. **Fixed 2026-10-17
+  (`READINESS-WRONG-DAY-01`, feature-registry).**
+- **Nothing outlives the card.** No push, no notification, no mark on the tile or Plan row, not in Changed this
+  week (it lists only `auto_applied`), nothing on Coach, no recovery number except the steady chip.
+- **Website: silent.** No HRV / sleep / readiness claim anywhere; only "the plan adjusts". App Store copy says
+  "your runs and recovery sync automatically"; the iOS permission text names RHR, HRV and sleep.
+- ⚠️ **Structural limit:** recovery data reaches us from the phone when the app opens (or warm in the
+  background). The 06:30 push fires before that and cannot know today's recovery; it can even announce the hard
+  session the app then eases.
+- **Also found:** 12 more runner-facing change notes in `planAdjustment.ts` carry em dashes (`EMDASH-LIB-COPY-01`).
+
+#### `READINESS-SURFACE-01` — make it visible. 🧭 Design Board **SHIP WITH AMENDMENT (direction)** · 💼 SLT **BUILD**
+Build in this order, each against the ruling:
+1. ✅ **Precondition: `READINESS-WRONG-DAY-01`** (shipped 2026-10-17).
+2. **The moment (Today).** `TdReadyHero` leads with the runner's reading in large type against their own normal
+   (*"HRV 38, your normal is 52"*), then the change, then *Ease the session* / *Run it anyway* (equally visible).
+   Copy: 👤 founder.
+3. **The record.** An **"Eased for recovery"** TEXT mark on the session card, the Plan row and the finished
+   session; confirmed recovery changes listed in **Changed this week** (today it shows only `auto_applied`).
+4. **Coach.** One quiet line in the weekly read when recovery changed something that week (*"Eased Tuesday: sleep
+   was 4h 40"*). Not a card, not a score, **no count, no streak** (Wood).
+5. **Website.** A section on it: *"When your resting heart rate, HRV or sleep are off your normal, it eases the hard
+   session. You decide."* 🏃 **Coaching Board on the words first** (W-03: physiology claim on a public surface);
+   say what it does, never what it prevents, and be honest that it needs a watch.
+6. **Push.** After the app has opened and eased today's session, a push or notification saying so, **only if the
+   card was not seen**; the morning push may never claim recovery it has not read.
+**Ruled OUT:** a full amber tile (Collins lost: type accent, not flood; colour alone fails colour-blind runners) ·
+an HRV / sleep dashboard (Silvanto: data without context breeds anxiety) · any count or streak of eases.
+**Measure (SLT):** share of fired eases accepted; whether runners who saw one keep the plan the next week.
+**Not settled:** the words · whether a closed-app background read can make the morning push recovery-aware
+(native; `HealthObserverPlugin` runs warm, not killed) · the eased-day push design. ⚠️ No commercial seat: the
+conversion effect is unpriced.
+**Tags:** 🧭 DESIGN BOARD (ruled) → 🏃 COACHING BOARD (website + push words) → 👤 FOUNDER (copy) → ⚙️ build.
+
+#### `STRENGTH-RECOVERY-01` — recovery softens strength. 🏃 Coaching Board **CORRECT WITH AMENDMENT**, not built
+The same recovery check (one owner, `computeReadiness`; strength must not compute its own) on a strength day:
+heavy legs → upper body + core; other sessions → the deload set count (`STRENGTH_CONFIG.DELOAD_SET_FACTOR`); no
+plyometrics; tendon loading drops, never to zero (Willy). **Subtract only** (Hutchinson). A run and a strength
+session softened the same day surface as **one** change with one reason (McMillan). Recorded: Sims on luteal-phase
+false triggers (RHR up a few bpm, HRV down), moot without cycle data. **Artifacts at build:** `StrengthPrinciples.md`
+S13, `STRENGTH_CONFIG.RECOVERY_SET_FACTOR`, invariant `S-RECOVERY-SUBTRACT-ONLY`. Depends on
+`READINESS-SURFACE-01` item 3 for the shared "Eased for recovery" mark. **Tags:** 🏃 ruled → ⚙️ build.
+
+#### `EMDASH-LIB-COPY-01` — 12 runner-facing change notes carry em dashes *(filed 2026-10-17)*
+`lib/coaching/planAdjustment.ts` coach notes and summaries (e.g. *"Swapped to easy — aerobic efficiency trending
+down."*) break the founder's no-em-dash rule for sentences. `noEmDashApp.test.ts` scans `components/` and
+`app/dashboard/` only, so producer strings in `lib/` are outside it. Fix the punctuation (colon or full stop) and
+extend the guard to runner-facing producer strings. The readiness note was fixed in `READINESS-WRONG-DAY-01`.
+**Tag:** ⚙️ NO BOARD (restores the founder's rule; no word changes).
+
 ### 🟡 `STRENGTH-ENGINE-01` — a separate strength & conditioning engine that places sessions AROUND the run plan *(filed 2026-10-16, side project)* 🏃 **COACHING BOARD** (ruled) → 💼 **SLT** (ruled) → 🧭 **DESIGN BOARD** (before any UI) → 👤 **FOUNDER** (seat, session length)
 
 > **Founder's brief:** a separate engine that works WITH the coaching engine, never contradicts it, helps the goal;
@@ -2041,11 +2134,8 @@ fixed.
 > reps (high-rep sometimes, heavier sometimes); equipment-driven; a catalogue by muscle group with sets/reps as
 > variables; isolated enough for its own app; **PAID**.
 >
-> 🔴 **`READINESS-WRONG-DAY-01` (P0 defect, filed 2026-10-17) — accepting a recovery ease writes MONDAY.** `pre-session-readiness` sends ONE session; `confirm-adjustment` / `revert-adjustment` write `sessions_after/before` back by array position (`mon` first). Unless today is Monday, the eased session overwrites Monday and today stays hard. Latent: 0 readiness rows ever. Also: pending readiness rows never expire (a stale card can show on later days), and the route computes "today" in UTC while samples are local dates. Fix: write back by the session's own day/id, expire past-day readiness rows, local date. Tag: ⚙️ NO BOARD (restores intent). **Must ship before anything below.**
->
-> 🧭 **`READINESS-SURFACE-01` filed 2026-10-17 — RULED (Design Board SHIP WITH AMENDMENT, SLT BUILD).** Make recovery changes visible: the reading in large type on the easing card; "Eased for recovery" text mark on card, Plan row and finished session; Changed this week lists them; one Coach line; a post-open push only if the card was not seen. Website section after the Coaching Board rules the words. Tags: 🧭 ruled → 🏃 COACHING BOARD (website/push words) → 👤 FOUNDER (copy). Sitting: `docs/decisions/recovery-adaptation-visibility-2026-10-17.md`.
->
-> 🏃 **`STRENGTH-RECOVERY-01` filed 2026-10-17 — RULED, not built** (Coaching Board: CORRECT WITH AMENDMENT). Recovery signals soften strength: subtract only, heavy legs → upper + core, others → deload sets, one change per day with the run. Tags: 🏃 COACHING BOARD (ruled) → ⚙️ build.
+> 🏃 **`STRENGTH-RECOVERY-01` — recovery signals soften strength. RULED 2026-10-17, not built.** See the full
+> entry under **Recovery-driven adaptation** below.
 >
 > 🟢 **Phases 0, 1 and 2 BUILT 2026-10-16** (engine + the app, `STRENGTH-APP-01`; see feature-registry). **Open:** founder applies `20261016_strength_plans.sql` + `20261017_strength_completions.sql`; catalogue review (DRAFT); founder copy calls (RIR phrasing, strength-day push line); device check; Phase 3 media, Phase 4 progression; release switch.
 >

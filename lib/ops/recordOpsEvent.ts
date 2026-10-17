@@ -72,6 +72,9 @@ export type OpsEventKind =
   // (`_generate_failed`, nothing saved) or the strength_plans write threw.
   // No PII: violation codes and an error's first line only.
   | 'strength_generate_failed'
+  // READINESS-WRONG-DAY-01 (2026-10-17) — the pre-session readiness check threw. Its only
+  // caller swallows failures, which is how it stayed dead for four months unseen.
+  | 'readiness_failed'
   | 'strength_save_failed'
   // PLAN-SAVE-SILENT-FAIL-01 (2026-10-15) — the runner tapped "Use this plan" on a
   // freshly generated plan and the save threw IN THE BROWSER. Reported by the client

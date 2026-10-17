@@ -1708,7 +1708,7 @@ export default function DashboardClient() {
             // when baseline exists but no adjustment fired (the fresh/steady half of
             // the SLT TD-READY spec). Cooked path stays driven by `plan_adjustments`.
             try {
-              const readinessRes = await authedFetch('/api/pre-session-readiness')
+              const readinessRes = await authedFetch(`/api/pre-session-readiness?date=${isoLocalDate(new Date())}`)
               if (readinessRes.ok) {
                 const json = await readinessRes.json().catch(() => null)
                 if (json) setReadinessData(json)
