@@ -16,11 +16,8 @@ spec.loader.exec_module(guard)
 
 
 def blocked(command: str) -> bool:
-    for seg in guard.segments(command):
-        for rx, _ in guard.COMPILED:
-            if rx.search(seg):
-                return True
-    return False
+    # The guard's own decision function, so a new rule cannot be skipped by the harness.
+    return guard.reason_for(command) is not None
 
 
 BLOCK = "block"
@@ -66,6 +63,27 @@ CASES = [
      "git reset --hard is blocked too\n"
      "rm -rf / is refused\n"
      "EOF\n)\"",                                                              ALLOW),
+    # 🔴 2026-10-17 — unquoted heredoc + backtick: the exact shape that stripped code names from docs
+    ("unquoted <<PY writing markdown backticks (the incident)",
+     "python3 - <<PY\nedit('d.md', 'x', 'S6 Am.1, `S-LOWER-BALANCE`')\nPY",     BLOCK),
+    ("unquoted <<EOF cat with backticks",
+     "cat > f.md <<EOF\nuse `not_main` here\nEOF",                       BLOCK),
+    ("unquoted <<-EOF with backticks",
+     "cat > f.md <<-EOF\n\tsee `x`\n\tEOF",                              BLOCK),
+    ("quoted <<'PY' with backticks is literal",
+     "python3 - <<'PY'\nedit('d.md', 'x', '`S-LOWER-BALANCE`')\nPY",   ALLOW),
+    ("double-quoted <<\"EOF\" with backticks is literal",
+     "cat > f.md <<\"EOF\"\n`x`\nEOF",                                    ALLOW),
+    ("unquoted heredoc with only $VAR expansion (intended)",
+     "cat > lib/p.test.ts <<EOF\nwriteFileSync('$SP/out', x)\nEOF",          ALLOW),
+    ("unquoted heredoc with an escaped backtick (literal)",
+     "python3 - <<PY\nedit('d.md', 'x', '\\`code\\`')\nPY",              ALLOW),
+    ("🔴 '<<PY' as TEXT inside a quoted heredoc is not an opener (the guard's first false positive)",
+     "python3 - <<'PY'\ns = 'refuses an unquoted heredoc (`<<PY`) with `x`'\nPY",   ALLOW),
+    ("a quoted heredoc then a real unquoted one with backticks",
+     "cat > a <<'EOF'\n`fine`\nEOF\ncat > b <<EOF\n`bad`\nEOF",                 BLOCK),
+    ("backtick AFTER the heredoc closes is not in the body",
+     "cat > f <<EOF\nplain\nEOF\necho done",                                ALLOW),
 ]
 
 

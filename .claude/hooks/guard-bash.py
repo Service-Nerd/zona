@@ -65,6 +65,58 @@ HEREDOC = re.compile(r"(?P<open><<-?\s*['\"]?(?P<tag>\w+)['\"]?).*?\n[ \t]*(?P=t
                      re.DOTALL)
 
 
+# 🔴 2026-10-17 — an UNQUOTED heredoc (`<<PY`, `<<EOF`) is shell-expanded before the program
+# reads it, so every backtick span in the body runs as a COMMAND and is replaced by its output.
+# Markdown wraps every code name in backticks, so a `python3 - <<PY` that wrote docs silently
+# deleted `not_main`, `S-LOWER-BALANCE` and every other inline name from seven files. Nothing
+# errored that mattered ("command not found" scrolled past) and the edit "succeeded".
+# Rule: an unquoted heredoc whose body holds an unescaped backtick is refused. Quote the
+# delimiter (`<<'PY'`) and pass values in as arguments instead. `$VAR` expansion alone is a
+# legitimate reason to leave it unquoted and is allowed; an escaped \` is literal and allowed.
+HEREDOC_OPEN = re.compile(r"<<-?\s*(?P<q>['\"]?)(?P<tag>\w+)(?P=q)")
+UNESCAPED_BACKTICK = re.compile(r"(?<!\\)`")
+
+HEREDOC_BACKTICK_REASON = (
+    "An UNQUOTED heredoc body contains a backtick, which the shell runs as a command before the "
+    "program sees the text (this stripped every `code` name out of seven docs on 2026-10-17). "
+    "Quote the delimiter (<<'PY' / <<'EOF') and pass any values in as arguments.")
+
+
+def unquoted_heredoc_with_backtick(command: str) -> bool:
+    # Walk heredocs IN ORDER and jump past each body before looking for the next opener: the text
+    # "<<PY" written inside a quoted heredoc's body is prose, not an opener (the first cut of this
+    # rule blocked its own CLAUDE.md entry for exactly that reason).
+    pos = 0
+    while True:
+        m = HEREDOC_OPEN.search(command, pos)
+        if not m:
+            return False
+        nl = command.find("\n", m.end())
+        if nl < 0:
+            return False
+        tag = m.group("tag")
+        lines, cursor = [], nl + 1
+        for line in command[nl + 1:].split("\n"):
+            cursor += len(line) + 1
+            if line.strip() == tag:
+                break
+            lines.append(line)
+        if not m.group("q") and UNESCAPED_BACKTICK.search("\n".join(lines)):
+            return True
+        pos = cursor
+
+
+def reason_for(command: str):
+    """The block reason for a command, or None to allow it."""
+    if unquoted_heredoc_with_backtick(command):
+        return HEREDOC_BACKTICK_REASON
+    for seg in segments(command):
+        for rx, reason in COMPILED:
+            if rx.search(seg):
+                return reason
+    return None
+
+
 def strip_heredocs(command: str) -> str:
     return HEREDOC.sub(lambda m: m.group("open"), command)
 
@@ -82,11 +134,10 @@ def main() -> int:
     if payload.get("tool_name") != "Bash":
         return 0
     command = (payload.get("tool_input") or {}).get("command", "") or ""
-    for seg in segments(command):
-        for rx, reason in COMPILED:
-            if rx.search(seg):
-                sys.stderr.write(f"BLOCKED by safety guard: {reason}\n")
-                return 2
+    reason = reason_for(command)
+    if reason:
+        sys.stderr.write(f"BLOCKED by safety guard: {reason}\n")
+        return 2
     return 0
 
 
