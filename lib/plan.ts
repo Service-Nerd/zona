@@ -3,7 +3,7 @@ import { PlanSchema } from './plan/schema'
 import { recordOpsEvent } from './ops/recordOpsEvent'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { reanchorCharityGrant } from '@/lib/charity/reanchor'
-import { supersedeWeekKeyedRows, isRaceIdentityChange } from './plan/supersede'
+import { supersedeWeekKeyedRows, isRaceIdentityChange, calendarChangedWeeks } from './plan/supersede'
 import type { Plan, Session, Week } from '@/types/plan'
 import {
   type DayKey,
@@ -220,7 +220,11 @@ export async function savePlanForUser(
     // returning. Same D-16 class as the tier ladder (three copies) and the
     // deload cadence (five). `priorSig` survives because the archive
     // idempotency check below matches on it.
-    if (isRaceIdentityChange(prior.meta, plan.meta)) {
+    // PLAN-REBUILD-SUPERSEDE-01 — a same-race plan on a NEW CALENDAR is a new plan too (it was treated as an edit,
+    // so its weeks inherited the old plan's completions). Archive it as one; stamp only the weeks that moved.
+    const raceChanged = isRaceIdentityChange(prior.meta, plan.meta)
+    const movedWeeks = raceChanged ? [] : calendarChangedWeeks(prior, plan)
+    if (raceChanged || movedWeeks.length > 0) {
       // Idempotency (ADR-013 follow-on): the race→maintenance handoff fired
       // savePlanForUser 3× near-simultaneously and archived the SAME completed
       // race plan 3× — every concurrent read saw the pre-handoff plan before any
@@ -274,7 +278,7 @@ export async function savePlanForUser(
       // lines below. That one throws because "a cached note narrating sessions
       // that no longer exist is brand-destroying" — these rows ARE the sessions
       // that note was narrating, and a silent failure here is the defect itself.
-      await supersedeWeekKeyedRows(userId, supabase)
+      await supersedeWeekKeyedRows(userId, supabase, new Date(), raceChanged ? undefined : movedWeeks)
     }
   }
 

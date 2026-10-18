@@ -19,6 +19,7 @@ import {
   isRaceIdentityChange,
   WEEK_KEYED_TABLES,
 } from './supersede'
+import { calendarChangedWeeks } from './supersede'
 
 // ── A Supabase stub that records what it was asked to do ────────────────────
 function fakeClient(opts: { failOn?: string } = {}) {
@@ -154,5 +155,25 @@ describe('the Dorney regression — a new plan must arrive empty', () => {
     const stamped = priorRows.map(r => ({ ...r, superseded_at: '2026-09-17T20:12:03Z' }))
     expect(stamped.length).toBe(priorRows.length)
     expect(stamped.every(r => r.superseded_at !== null)).toBe(true)
+  })
+})
+
+
+describe('calendarChangedWeeks (PLAN-REBUILD-SUPERSEDE-01)', () => {
+  const W = (pairs: [number, string][]) => ({ weeks: pairs.map(([n, date]) => ({ n, date })) })
+  it('a new start date moves every shared week', () => {
+    expect(calendarChangedWeeks(W([[1, '2026-09-21'], [2, '2026-09-28']]), W([[1, '2026-10-19'], [2, '2026-10-26']]))).toEqual([1, 2])
+  })
+  it('the same calendar moves nothing', () => {
+    expect(calendarChangedWeeks(W([[1, '2026-09-21'], [2, '2026-09-28']]), W([[1, '2026-09-21'], [2, '2026-09-28']]))).toEqual([])
+  })
+  it('🔴 foundation weeks (n ≤ 0) prepended and a block appended move no existing week', () => {
+    expect(calendarChangedWeeks(W([[1, '2026-09-21'], [2, '2026-09-28']]), W([[-1, '2026-09-07'], [0, '2026-09-14'], [1, '2026-09-21'], [2, '2026-09-28'], [26, '2027-03-01']]))).toEqual([])
+  })
+  it('a longer plan anchored on the same race shifts every week by one', () => {
+    expect(calendarChangedWeeks(W([[1, '2026-09-28'], [2, '2026-10-05']]), W([[1, '2026-09-21'], [2, '2026-09-28'], [3, '2026-10-05']]))).toEqual([1, 2])
+  })
+  it('no prior plan, nothing to move', () => {
+    expect(calendarChangedWeeks(null, W([[1, '2026-09-21']]))).toEqual([])
   })
 })

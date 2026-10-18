@@ -16,8 +16,9 @@ type ArchiveRow = { race_name: string | null; race_date: string | null; archived
 // which tables were stamped, which lets these tests assert the OTHER half of
 // the archive decision: a plan archived without its rows stamped is the
 // 94%-pre-completed defect returning.
-function makeClient(state: { plans: Plan | null; archive: ArchiveRow[]; superseded?: string[] }) {
+function makeClient(state: { plans: Plan | null; archive: ArchiveRow[]; superseded?: string[]; stampedWeeks?: Record<string, number[] | 'all'> }) {
   state.superseded ??= []
+  state.stampedWeeks ??= {}
   return {
     from(table: string) {
       const ctx: { table: string; op: 'select' | 'delete' | 'update'; gte?: { col: string; val: string } } = { table, op: 'select' }
@@ -38,7 +39,9 @@ function makeClient(state: { plans: Plan | null; archive: ArchiveRow[]; supersed
           return Promise.resolve({ error: null })
         },
         delete() { ctx.op = 'delete'; return builder },
-        update() { ctx.op = 'update'; state.superseded!.push(ctx.table); return builder },
+        update() { ctx.op = 'update'; state.superseded!.push(ctx.table); state.stampedWeeks![ctx.table] = 'all'; return builder },
+        // PLAN-REBUILD-SUPERSEDE-01 — a scoped stamp names its weeks.
+        in(col: string, vals: number[]) { if (ctx.op === 'update' && col === 'week_n') state.stampedWeeks![ctx.table] = vals; return builder },
         is() { return builder },
         // Terminal for the awaited recent-archive read + the notes delete.
         then(resolve: (v: unknown) => unknown) {
@@ -160,5 +163,47 @@ describe('savePlanForUser supersedes week-keyed rows with the archive', () => {
     const state = { plans: null, archive: [] as ArchiveRow[], superseded: [] as string[] }
     await savePlanForUser('u', racePlan, makeClient(state))
     expect(state.superseded).toEqual([])
+  })
+})
+
+
+// ── PLAN-REBUILD-SUPERSEDE-01 (2026-10-18) ──────────────────────────────────
+//
+// The twin the race test left open: the founder's plan for the SAME race, rebuilt on a new start date, kept the old
+// plan's completions on its new weeks (week 3, 2–8 Nov, "done" with runs from 7–11 Oct). A plan on a new calendar is
+// a new plan; an edit that keeps the calendar is not.
+describe('savePlanForUser — same race, new calendar', () => {
+  const dorney = (start: string, n = 3) => ({
+    meta: { race_name: 'Dorney Lake', race_date: '2026-12-12' },
+    weeks: Array.from({ length: n }, (_, i) => {
+      const d = new Date(start + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + i * 7)
+      return { n: i + 1, date: d.toISOString().slice(0, 10) }
+    }),
+  }) as unknown as Plan
+
+  it('🔴 a rebuild on a new start date stamps the moved weeks in every week-keyed table, and archives the old plan', async () => {
+    const state = { plans: dorney('2026-09-21'), archive: [] as ArchiveRow[], superseded: [] as string[], stampedWeeks: {} as Record<string, number[] | 'all'> }
+    await savePlanForUser('u', dorney('2026-10-19'), makeClient(state))
+    expect(Array.from(new Set(state.superseded)).sort()).toEqual([...WEEK_KEYED_TABLES].sort())
+    for (const t of WEEK_KEYED_TABLES) expect(state.stampedWeeks[t]).toEqual([1, 2, 3])
+    expect(state.archive).toHaveLength(1)
+  })
+  it('🔴 control: an edit that keeps the calendar stamps nothing and archives nothing', async () => {
+    const state = { plans: dorney('2026-09-21'), archive: [] as ArchiveRow[], superseded: [] as string[], stampedWeeks: {} as Record<string, number[] | 'all'> }
+    const edited = { ...dorney('2026-09-21'), weeks: dorney('2026-09-21').weeks.map(w => ({ ...w, label: 'changed' })) } as unknown as Plan
+    await savePlanForUser('u', edited, makeClient(state))
+    expect(state.superseded).toEqual([])
+    expect(state.archive).toHaveLength(0)
+  })
+  it('appending weeks (a maintenance block) moves no existing week, so nothing is stamped', async () => {
+    const state = { plans: dorney('2026-09-21'), archive: [] as ArchiveRow[], superseded: [] as string[], stampedWeeks: {} as Record<string, number[] | 'all'> }
+    const longer = dorney('2026-09-21', 5)
+    await savePlanForUser('u', longer, makeClient(state))
+    expect(state.superseded).toEqual([])
+  })
+  it('a race change still stamps EVERY live row (no week filter)', async () => {
+    const state = { plans: racePlan, archive: [] as ArchiveRow[], superseded: [] as string[], stampedWeeks: {} as Record<string, number[] | 'all'> }
+    await savePlanForUser('u', maintenancePlan, makeClient(state))
+    for (const t of WEEK_KEYED_TABLES) expect(state.stampedWeeks[t]).toBe('all')
   })
 })

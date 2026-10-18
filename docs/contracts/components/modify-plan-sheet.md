@@ -87,7 +87,10 @@ Design Board's back arrow is only real if the edits survive it.
    something.
 7. **Slide-up sheet rules apply** — mirrored nav at the bottom, never a top-right Cancel;
    it covers the nav (`SHEET-PRESENT-01` as amended, `maxHeightVh = 88`).
-8. **`resetsLoggedWeeks` is INHERITED, never re-implemented.** `editsResetLoggedWeeks`
+8. **`resetsLoggedWeeks` is INHERITED, never re-implemented** — and since PLAN-REBUILD-SUPERSEDE-01 (2026-10-18) it is a
+   PREDICTION the preview corrects: once the rebuilt plan is in hand, `DashboardClient.runModifyPreview` also asks
+   `calendarChangedWeeks(plan, built)`, the same owner `savePlanForUser` stamps by, so an edit that changes the plan's
+   length (every week moves) is warned about rather than promised safe. `editsResetLoggedWeeks`
    asks `isRaceIdentityChange` — the same owner `savePlanForUser` uses — so the warning
    the runner sees and the behaviour they get cannot disagree. `PLAN-WEEK-COLLISION-01`
    put a **94%-pre-completed** plan in front of a real runner by getting this wrong.

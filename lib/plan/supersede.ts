@@ -115,17 +115,24 @@ export async function supersedeWeekKeyedRows(
   userId: string,
   supabase: SupabaseClient,
   now: Date = new Date(),
+  /** PLAN-REBUILD-SUPERSEDE-01 — only these weeks (their calendar moved). Absent: every live row (a new race). */
+  weekNs?: readonly number[],
 ): Promise<SupersedeResult> {
   const at = now.toISOString()
   const stamped = {} as Record<WeekKeyedTable, number>
+  if (weekNs && weekNs.length === 0) {
+    for (const table of WEEK_KEYED_TABLES) stamped[table] = 0
+    return { stamped, at }
+  }
 
   for (const table of WEEK_KEYED_TABLES) {
-    const { data, error } = await supabase
+    let q = supabase
       .from(table)
       .update({ superseded_at: at })
       .eq('user_id', userId)
       .is('superseded_at', null)
-      .select('user_id')
+    if (weekNs) q = q.in('week_n', [...weekNs])
+    const { data, error } = await q.select('user_id')
 
     if (error) {
       throw new Error(
@@ -157,4 +164,29 @@ export function isRaceIdentityChange(
   const sig = (m?: { race_name?: string | null; race_date?: string | null } | null) =>
     `${m?.race_name ?? ''}|${m?.race_date ?? ''}`
   return sig(prior) !== sig(next)
+}
+
+/**
+ * PLAN-REBUILD-SUPERSEDE-01 (2026-10-18) — the weeks whose CALENDAR moved between two plans.
+ *
+ * THE TWIN `isRaceIdentityChange` LEFT OPEN. Week-keyed rows mean "this week of THIS calendar". A plan rebuilt for
+ * the SAME race on a new start date restarts its weeks on other dates, so the race test said "same plan" and the
+ * old completions landed on new weeks: the founder's own new plan (Dorney Lake, rebuilt 2026-10-13) showed week 3
+ * (2–8 Nov) as done with runs from 7–11 Oct. Measured: 12 such rows across 3 runners.
+ *
+ * Returns every week number present in BOTH plans whose `date` differs. Foundation weeks (n ≤ 0) and an appended
+ * maintenance block (new n) never move an existing week, and an edit that keeps the calendar returns [], so their
+ * rows are kept. A week only in one plan has nothing to collide with.
+ */
+export function calendarChangedWeeks(
+  prior: { weeks?: { n: number; date?: string }[] } | null | undefined,
+  next: { weeks?: { n: number; date?: string }[] } | null | undefined,
+): number[] {
+  const before = new Map((prior?.weeks ?? []).map(w => [w.n, w.date]))
+  const out: number[] = []
+  for (const w of next?.weeks ?? []) {
+    const was = before.get(w.n)
+    if (before.has(w.n) && was !== w.date) out.push(w.n)
+  }
+  return out
 }

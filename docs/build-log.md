@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-18 — PLAN-REBUILD-SUPERSEDE-01 · the fix that named the case, not the consequence
+**Shipped:** A plan rebuilt for the same race no longer arrives with the old plan's ticks on it. The founder opened his new plan and found week 3, a fortnight away, already "done" with three runs.
+
+**Dev learning:** A month ago the same symptom was fixed by setting old rows aside "when the race changes". That was the right test for the case in front of it, and wrong for its twin: rebuild a plan for the same race on a new start date and the race hasn't changed, but every week now sits on different dates. The hazard was never "a new race"; it was "the calendar moved". The new check compares each week's date.
+
+**Product learning:** Writing the clean-up exposed a subtlety: a completion can't exist before its week starts, but a move or a distance/duration toggle can be set weeks ahead. One rule for every table would have wiped legitimate future plans, so the clean-up treats them differently and was counted dry before anyone runs it: 24 rows, 3 runners.
+
+**AI-building learning:** One of my source checks sliced from a function's name to the next "async function", which found the function's own first line, read an empty body, and would have passed on anything. I only saw it because the arm failed for a reason I didn't expect.
+
+**The honest bit:** The screen had a second defect underneath: after saving a plan it kept the old ticks in memory until the app restarted, so even the original fix only looked right after a reload. Nobody had looked at a fresh plan without reloading.
+
+---
+
 ## 2026-10-18 — STRENGTH-PROGRESSION-01 · what to lift, and a dev server that kept my mutant
 **Shipped:** Strength now tells you what to lift. On each main lift you can log the weight and tap Easy, About right or Hard; next time the row says "Last time 40 kg, easy. Try 42.5 kg." It never jumps, never rises in a deload, taper or after a bad night, and slows down on a lift that loads an old injury. Logging is optional. Live once the migration is applied.
 

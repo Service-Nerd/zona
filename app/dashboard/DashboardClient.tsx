@@ -65,6 +65,7 @@ import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner
 import { PLAN_CHANGE_SAVE_FAILED } from '@/lib/ui/planChangeCopy'
 import { RECENT_CHANGES_FILTER } from '@/lib/ui/easedMark'
 import { liftSuggestionsFor, logsOn } from '@/lib/strength-bridge/progressionView'
+import { calendarChangedWeeks } from '@/lib/plan/supersede'
 import { reportPlanSaveFailure } from '@/lib/ops/reportPlanSaveFailure'
 import ZoneRings, { ZoneRingsSkeleton } from '@/components/shared/ZoneRings'
 import { TextField } from '@/components/shared/TextField'
@@ -351,6 +352,10 @@ export default function DashboardClient() {
    * RACE PLAN to a base-build runner.
    */
   async function runModifyPreview(nextInput: GeneratorInput, resets: boolean, asBaseBuild = false) {
+    // PLAN-REBUILD-SUPERSEDE-01 — the sheet predicts a reset from the race date alone; once the rebuilt plan is in
+    // hand, ask the SAME owner `savePlanForUser` uses, so "keeps your logged weeks" cannot be a promise the save
+    // then breaks (an edit that changes the plan's length moves every week's date).
+    const resetsFor = (built: Plan) => resets || calendarChangedWeeks(plan, built).length > 0
     setModifyBusy(true); setModifyError(null); setAckKind(null)
     // Held for step two: §44/§52's acknowledgement re-sends THIS input plus a flag.
     lastModifyReqRef.current = { input: nextInput, resets, asBaseBuild }
@@ -414,16 +419,16 @@ export default function DashboardClient() {
           if (value.type === 'rule_plan') { next = value.plan; break }
         }
         if (next) {
-          modifyPreviewRef.current = { next, resets }
+          modifyPreviewRef.current = { next, resets: resetsFor(next) }
           drainModifyEnrichment(it)
         }
       } else {
         next = ((await res.json()).plan as Plan) ?? null
-        if (next) modifyPreviewRef.current = { next, resets }
+        if (next) modifyPreviewRef.current = { next, resets: resetsFor(next) }
       }
       if (!next) { setModifyError('That change could not be built into a plan.'); return }
       setModifyOpen(false)
-      setModifyPreview({ next, resets })
+      setModifyPreview({ next, resets: resetsFor(next) })
     } catch {
       setModifyError('Could not reach the server. Check your connection.')
     } finally {
@@ -508,6 +513,7 @@ export default function DashboardClient() {
         await savePlanForUser(user.id, queued, supabase)
         setPlan(queued)
       }
+      void refreshPlanScopedRows()
       clearModify()
     } catch (err) {
       modifyCoordRef.current.saveFailed()
@@ -1922,6 +1928,21 @@ export default function DashboardClient() {
     return () => subscription.unsubscribe()
   }, [])
 
+  /**
+   * PLAN-REBUILD-SUPERSEDE-01 — after a plan save, re-read the rows the save may have set aside. The screen kept the
+   * old completions and moves in memory until the next reload, so a fresh plan looked inherited even when the
+   * database was right (race changes included).
+   */
+  async function refreshPlanScopedRows() {
+    await refreshCompletions()
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data, error } = await supabase.from('session_overrides').select(SESSION_OVERRIDE_COLUMNS).eq('user_id', user.id).is('superseded_at', null)
+      if (!error && data) setAllOverrides(data as never)
+    } catch {}
+  }
+
   async function refreshCompletions() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -2086,6 +2107,9 @@ export default function DashboardClient() {
       // The plan write keeps its original semantics: it throws, and the wizard's
       // catch surfaces it. Nothing below should run against a failed plan save.
       if (planWrite.status === 'rejected') throw planWrite.reason
+      // PLAN-REBUILD-SUPERSEDE-01 — AFTER the save: it may have set the old plan's rows aside, so drop them from the
+      // screen too (they stayed in memory until the next reload).
+      void refreshPlanScopedRows()
       const onboardErr = onboardWrite.status === 'rejected'
         ? { message: String(onboardWrite.reason) }
         : onboardWrite.value.error

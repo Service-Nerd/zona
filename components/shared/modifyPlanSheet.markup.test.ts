@@ -52,7 +52,7 @@ describe('P-02 — the save path is the single writer', () => {
 
   it('the confirm step is always shown before a change lands', () => {
     // Acceptance criterion, and a brand rule: no silent structural change.
-    expect(DASH).toContain('setModifyPreview({ next, resets })')
+    expect(DASH).toContain('setModifyPreview({ next, resets: resetsFor(next) })')   // PLAN-REBUILD-SUPERSEDE-01: the preview asks the calendar too
     expect(DASH).toContain('<ModifyPlanConfirm')
   })
 })

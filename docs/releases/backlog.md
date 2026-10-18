@@ -2267,6 +2267,20 @@ founder approved copy A–D: one recovery card a day, the reading against their 
 two equal answers. The answer is stored on `strength_plans.recovery_eases` by `/api/strength/ease` and applied on read.
 ✅ Migration applied 2026-10-18. 
 
+#### ✅ `PLAN-REBUILD-SUPERSEDE-01` — a same-race plan rebuilt on a new calendar inherited the old plan's completions *(filed and BUILT 2026-10-18, feature registry)*
+Founder's own plan showed week 3 (2–8 Nov) as done with runs from 7–11 Oct. Old rows were set aside only on a race
+change; a same-race rebuild on a new start date kept them. Fixed by `calendarChangedWeeks` (incident
+`docs/incidents/2026-10-18-plan-rebuild-inherited-completions.md`). 🔻 **Founder: run
+`scripts/sql/2026-10-18-plan-rebuild-remediation.sql` once** (24 rows, 3 runners, dry-run counted). **Tags:** ⚙️ NO BOARD (defect).
+
+#### `PLAN-IDENTITY-01` — every plan gets an identity; several plans per runner, switch between them *(filed 2026-10-18, OPEN)*
+**Founder, verbatim:** *"Eventually I want a user to be able to create multiple plans and in fact possibly be able to
+switch between so we can not over write sessions."* Option 2 of the PLAN-REBUILD-SUPERSEDE-01 RCA: a `plan_id` on
+`plans` and on every week-keyed table (seven), every reader filtering by the active plan; completions can then never
+collide and a runner can keep and switch plans. Reverses ADR-013's rejected follow-on (plan-scoped completions), so it
+needs a new ADR. Large migration. **Tags:** 💼 SLT (is multi-plan a feature, which tier, when) → ⚙️ ADR + architecture →
+🧭 DESIGN BOARD (how a runner sees and switches plans).
+
 #### ✅ `STRENGTH-PROGRESSION-01` — load progresses from what the runner logs (Phase 4) *(filed 2026-10-18 · BUILT 2026-10-18, live once migration `20261018_strength_lift_logs.sql` is applied, feature registry)*
 Coaching Board (`strength-progression-coaching-2026-10-18.md`) and Design Board (`strength-progression-design-2026-10-18.md`)
 both ruled CORRECT / SHIP WITH AMENDMENT the same day. Main lifts log weight + *Easy / About right / Hard*; the next
