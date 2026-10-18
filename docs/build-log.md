@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-18 — PINNED-DAYS-01 · ask which days, and the sweep found what the tests did not
+**Shipped:** You pick the days you can lift and the days you run, and the sessions stay there. Strength used to ask "how many" and "which days can't you", then chose for you, so the founder's two sessions wandered between Mon/Wed and Mon/Tue.
+
+**Dev learning:** The engine already pinned sessions when allowed days equalled the count. The question was the defect, not the placement. Most of the change was making the picks the only input: the count and the "can't" list are now derived from them in one function, so they cannot disagree.
+
+**Product learning:** "Days you run" needs a weekend day. Measured first: every run that landed off the chosen days was the long run, and only when its day was left out, where the engine then put it on a blocked day. So the grid refuses a week with no weekend day and says why, rather than letting the engine break the promise the row makes.
+
+**AI-building learning:** Adding chosen-day profiles to the strength sweep grid found two engine defects no test was written for: strength in the week before a race, and a level-2 first jump. Both had been safe by accident, because placement always took the earliest days. A pinned day removed the accident.
+
+**The honest bit:** One of my mutations stayed green: moving a session off a chosen day also emptied that day, so the other arm of the check fired and hid the one I meant to test. And the merge took the modify sheet from eight rows to seven, which broke the icon rule, so the icons came off a sheet built yesterday.
+
+---
+
 ## 2026-10-18 — PLAN-REBUILD-SUPERSEDE-01 · the fix that named the case, not the consequence
 **Shipped:** A plan rebuilt for the same race no longer arrives with the old plan's ticks on it. The founder opened his new plan and found week 3, a fortnight away, already "done" with three runs.
 

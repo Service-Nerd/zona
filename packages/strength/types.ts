@@ -30,8 +30,12 @@ export interface StrengthProfile {
   injury_tags?: InjuryTag[]
   /** Diagnosed osteoporosis / vertebral fracture: no high impact, no loaded spinal flexion. */
   bone_health_flag?: boolean
-  /** Days the runner cannot do strength. */
+  /** Days the runner cannot do strength. Derived from `available_days` when those are set (PINNED-DAYS-01). */
   unavailable_days?: Day[]
+  /** PINNED-DAYS-01 (S1 Am.2) — the days the runner CHOSE to lift (1–MAX_CHOSEN_DAYS). When set they ARE the
+   *  sessions: `sessions_per_week` is their count and every other day is unavailable, so a session never moves off
+   *  them. Absent: the engine chooses the days (the behaviour before 2026-10-18). */
+  available_days?: Day[]
 }
 
 // ── RunContext — the ONLY thing strength knows about running (ADR-024 §2) ──

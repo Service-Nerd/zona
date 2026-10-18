@@ -24,6 +24,17 @@ describe('parseStrengthProfile', () => {
     ['oversized list', { ...OK, equipment: Array(50).fill('bands') }],
     ['injury', { ...OK, injury_tags: ['<script>'] }], ['days', { ...OK, unavailable_days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] }],
     ['bone flag', { ...OK, bone_health_flag: 'yes' }],
+    ['no chosen days', { ...OK, available_days: [] }], ['five chosen days', { ...OK, available_days: ['mon', 'tue', 'wed', 'thu', 'fri'] }],
+    ['a chosen day that is not a day', { ...OK, available_days: ['funday'] }],
   ]
+  it('PINNED-DAYS-01: chosen days become the count and the complement, whatever the request said', () => {
+    const r = parseStrengthProfile({ ...OK, sessions_per_week: 4, unavailable_days: ['mon'], available_days: ['fri', 'mon', 'mon'] })
+    expect(r.ok && r.profile).toMatchObject({ available_days: ['mon', 'fri'], sessions_per_week: 2, unavailable_days: ['tue', 'wed', 'thu', 'sat', 'sun'] })
+  })
+  it('without chosen days the profile is unchanged (the engine picks, as before)', () => {
+    const r = parseStrengthProfile(OK)
+    expect(r.ok && r.profile.available_days).toBeUndefined()
+    expect(r.ok && r.profile.sessions_per_week).toBe(2)
+  })
   for (const [name, input] of bad) it(`🔴 refuses: ${name}`, () => { expect(parseStrengthProfile(input).ok).toBe(false) })
 })

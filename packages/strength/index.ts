@@ -6,4 +6,4 @@ export { generateStrengthPlan, standaloneContext, type GenerateOptions } from '.
 export { validateStrengthPlan, recoveryEaseViolations, progressionViolations, type StrengthViolation } from './validate'
 export { easeForRecovery } from './recovery'
 export { suggestLoad, isLoadedLift, isNoStepSession, loadsInjury, type LiftFeel, type LiftLog, type LiftSuggestion } from './progression'
-export { parseStrengthProfile, EQUIPMENT_TAGS, INJURY_TAGS, type ProfileParseResult } from './profile'
+export { parseStrengthProfile, withChosenDays, EQUIPMENT_TAGS, INJURY_TAGS, type ProfileParseResult } from './profile'

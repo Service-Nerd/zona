@@ -44,9 +44,15 @@ plan is returned and `stale` is `null`. `{ "plan": null }` when nothing is store
   "experience": "new" | "some" | "regular",
   "injury_tags"?: ["knee" | "itb" | "achilles" | "shin" | "calf" | "plantar" | "hip" | "hamstring" | "back" | "shoulder"],
   "bone_health_flag"?: boolean,
-  "unavailable_days"?: ["mon" … "sun"]   // at most 6
+  "unavailable_days"?: ["mon" … "sun"],  // at most 6
+  "available_days"?: ["mon" … "sun"]     // PINNED-DAYS-01: 1–4 chosen days
 } }
 ```
+
+**Chosen days (PINNED-DAYS-01, S1 Am.2, 2026-10-18).** When `available_days` is present it wins: the parser sets
+`sessions_per_week` to its length and `unavailable_days` to the other days, whatever the request said (`withChosenDays`),
+so sessions stay on those days. Empty or more than 4 → **422** (`field: "available_days"`). Absent → the engine picks
+the days, as before. Checked by `S-PINNED-DAYS`.
 
 Parsed only by `parseStrengthProfile` (whitelist; **unknown keys refused**; lists de-duplicated and bounded; empty
 equipment → `["bodyweight"]`). The run plan is read from the runner's **own stored plan** (`readPlanJson`) plus live

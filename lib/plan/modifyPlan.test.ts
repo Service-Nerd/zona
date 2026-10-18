@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  MODIFIABLE_ROWS, canModifyPlan, applyEdits, pendingKeys, editsResetLoggedWeeks,
+  MODIFIABLE_ROWS, rowKeys, canModifyPlan, applyEdits, pendingKeys, editsResetLoggedWeeks,
   modifiableRowsFor, rebuildsBaseBuild, MODIFIABLE_KEYS_BY_PLAN_KIND,
   type PlanEdits,
 } from './modifyPlan'
@@ -198,7 +198,7 @@ describe('BASEBUILD-ADJUST-DOOR-01 — the INTERIM, now superseded and kept for 
     // All modifiable now; what DIFFERS per kind is the row set, asserted below.
     expect(kinds.map(k => canModifyPlan(kinded(k)))).toEqual([true, true, true])
     expect(kinds.map(k => modifiableRowsFor(kinded(k)).length))
-      .toEqual([MODIFIABLE_ROWS.length, MODIFIABLE_ROWS.length, 2])
+      .toEqual([MODIFIABLE_ROWS.length, MODIFIABLE_ROWS.length, 1])
   })
 })
 
@@ -213,9 +213,11 @@ describe('BASEBUILD-ADJUST-REBUILD-01 — the sheet offers only what moves the p
     expect(canModifyPlan(bb())).toBe(true)
   })
 
-  it('offers exactly the two rows measured to change a base-build plan', () => {
+  it('offers exactly the one row that writes the two keys measured to change a base-build plan', () => {
+    // PINNED-DAYS-01: "Days you run" writes both `days_available` and `days_cannot_train`.
     const keys = modifiableRowsFor(bb()).map(r => r.key)
-    expect(keys).toEqual(['days_available', 'days_cannot_train'])
+    expect(keys).toEqual(['days_available'])
+    expect(rowKeys('days_available')).toEqual(['days_available', 'days_cannot_train'])
   })
 
   it('🔴 withholds the six that do NOT change the output, including race_date', () => {

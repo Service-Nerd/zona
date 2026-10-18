@@ -18,6 +18,7 @@ import { liftSuggestionsFor, logsOn } from '@/lib/strength-bridge/progressionVie
 import type { Plan } from '@/types/plan'
 import { isoLocalDate } from '@/lib/strength-bridge/display'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
+import type { PlanEdits } from '@/lib/plan/modifyPlan'
 import { planMove } from '@/lib/plan/overrideMoves'
 import { strengthSubtitle } from '@/components/shared/meDoors'
 
@@ -38,6 +39,7 @@ function livePlan(): Plan {
 export default function StrengthPreviewPage() {
   if (process.env.NODE_ENV === 'production') notFound()
   const [c, setC] = useState<(typeof CASES)[number]>('today')
+  const [edits, setEdits] = useState<PlanEdits>({})
   const run = useMemo(livePlan, [])
   const strength = useMemo(() => {
     return generateStrengthPlan(
@@ -105,7 +107,7 @@ export default function StrengthPreviewPage() {
           zone2Ceiling={148} firstName="Sam" onStrengthInvite={() => setC('setup')} />
       )}
       {c === 'sheet' && (
-        <ModifyPlanSheet plan={run} onClose={() => setC('today')} onApply={() => {}} hasPaidAccess edits={{}} onEditsChange={() => {}}
+        <ModifyPlanSheet plan={run} onClose={() => setC('today')} onApply={() => {}} hasPaidAccess edits={edits} onEditsChange={setEdits}
           onStartNewPlan={() => {}} strengthDoor={{ title: STRENGTH_TITLE, subtitle: strengthSubtitle(null), onOpen: () => setC('setup') }} />
       )}
       {/* STRENGTH-RECOVERY-01 — recovery is off today and today holds a lift (fixture reading). */}

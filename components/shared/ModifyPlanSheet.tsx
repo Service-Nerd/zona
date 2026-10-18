@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import IconButton from '@/components/ui/IconButton'
 import Sheet from './Sheet'
@@ -10,27 +10,17 @@ import type { GeneratorInput, Plan } from '@/types/plan'
 import { formatDuration } from '@/lib/format'
 import { TextField } from '@/components/shared/TextField'
 import {
-  MODIFIABLE_ROWS, MODIFY_GROUP_LABELS, applyEdits, dayConflict, pendingKeys, editsResetLoggedWeeks,
-  modifiableRowsFor,
+  MODIFIABLE_ROWS, MODIFY_GROUP_LABELS, applyEdits, pendingRows, editsResetLoggedWeeks,
+  modifiableRowsFor, runDaysOf, runDaysEdits, longRunDayEdits, RUN_DAYS_REFUSAL, type RunDaysRefusal,
   type ModifyGroup, type PlanEdits, type ModifiableKey,
 } from '@/lib/plan/modifyPlan'
 import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from './microLabels'
 import ActionRow from './ActionRow'
-import { RowIcon, type GlyphName } from './RowIcon'
 
-/** ICON-RULE-01 (location) — one glyph per row. Typed against every key, so a ninth row
- *  cannot ship without one. */
-const ROW_GLYPH: Record<ModifiableKey, GlyphName> = {
-  days_available: 'calendar',
-  days_cannot_train: 'blocked',
-  preferred_long_run_day: 'route',
-  max_weekday_mins: 'clock',
-  injury_history: 'care',
-  hard_session_relationship: 'bolt',
-  terrain: 'terrain',
-  race_date: 'flag',
-}
+/** 🧭 ICON-RULE-01 × PINNED-DAYS-01 (Design Board 2026-10-18): NO row icons here. Location earns an icon
+ *  on a list of eight or more rows; merging the two day rows left seven, under three labelled groups, so the
+ *  icons came off (the Strength door's with them). They return as a decision, not as drift. */
 
 /**
  * P-02 — the modify-plan sheet.
@@ -136,7 +126,16 @@ export default function ModifyPlanSheet({
   // change a base-build plan's output, measured against the real producer.
   const rows = modifiableRowsFor(plan)
 
-  const pending = useMemo(() => (base ? pendingKeys(base, edits) : []), [base, edits])
+  // Pending ROWS: "Days you run" moves two keys and is one change (PINNED-DAYS-01).
+  const pending = useMemo(() => (base ? pendingRows(base, edits, rows) : []), [base, edits, rows])
+  const current = useMemo(() => (base ? applyEdits(base, edits) : null), [base, edits])
+  const runDays = useMemo(() => (current ? runDaysOf(current, plan) : []), [current, plan])
+  const [refusal, setRefusal] = useState<RunDaysRefusal | null>(null)
+  const applyDayResult = (r: ReturnType<typeof runDaysEdits>) => {
+    if (!r.ok) { setRefusal(r.reason); return }
+    setRefusal(null)
+    onEditsChange({ ...edits, ...r.edits })
+  }
   const resets  = useMemo(() => editsResetLoggedWeeks(plan, edits), [plan, edits])
 
   const set = <K extends ModifiableKey>(k: K, v: PlanEdits[K]) =>
@@ -193,7 +192,6 @@ export default function ModifyPlanSheet({
                         borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none',
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                          <RowIcon name={ROW_GLYPH[row.key]} />
                           {/* A pending edit reads in MOSS. Not amber: amber is
                               coaching-warning voice and an unapplied edit is
                               not a warning. The dot plus the value darkening
@@ -213,48 +211,35 @@ export default function ModifyPlanSheet({
                           fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
                           lineHeight: 1.5, marginTop: '2px', marginBottom: 'var(--space-3)',
                         }}>{row.consequence}</div>
-                        <RowControl
-                          rowKey={row.key}
-                          value={valueOf(row.key)}
-                          onChange={(v) => set(row.key, v as never)}
-                        />
-                        {/* 🔴 SHEET-DAY-QUESTION-01 — the sheet used to say NOTHING here.
-                            `days_available` and `days_cannot_train` are asked as two
-                            independent controls, so two taps state a contradiction: 5
-                            declared with 5 blocked leaves 2 clear and nothing said so.
-                            The wizard cannot do this — one `WeekGrid` derives both.
-
-                            ⚠️ MUTED, NOT AMBER. This sheet's own note rules that amber is
-                            coaching-warning voice, and the runner has not done anything
-                            wrong: they have stated two things that do not fit. It is the
-                            same treatment as `row.consequence` directly above, because it
-                            is the same kind of thing — a derived fact about the control.
-
-                            ⚠️ It says nothing about the PLAN. `DAYS-GATE-CAPACITY-01` is
-                            why: the engine reads the DECLARED number and never looks at
-                            the blocked days, so "the plan will use 2" would be false
-                            today. The arithmetic and that reasoning live in
-                            `lib/plan/modifyPlan.ts → dayConflict`, where a test can see
-                            them — copy in a component is copy no test can read.
-
-                            Rendered on the `days_available` row rather than the grid: the
-                            declared number is the one that turns out not to hold. */}
-                        {row.key === 'days_available' && (() => {
-                          const c = dayConflict(
-                            valueOf('days_available') as number | null,
-                            valueOf('days_cannot_train') as string[] | null,
-                          )
-                          if (!c) return null
-                          return (
-                            <div style={{
-                              fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-                              lineHeight: 1.5, marginTop: 'var(--space-2)',
-                            }}>
-                              You&apos;ve blocked {c.blocked} {c.blocked === 1 ? 'day' : 'days'}, so{' '}
-                              {c.clear} {c.clear === 1 ? 'is' : 'are'} clear.
-                            </div>
-                          )
-                        })()}
+                        {row.key === 'days_available' ? (
+                          <DayGridSelector
+                            ariaLabel={row.label}
+                            multiple
+                            value={runDays}
+                            onChange={(v) => current && applyDayResult(runDaysEdits(current, current.preferred_long_run_day, v))}
+                          />
+                        ) : row.key === 'preferred_long_run_day' ? (
+                          <RowControl
+                            rowKey={row.key}
+                            value={valueOf(row.key)}
+                            onChange={(v) => current && applyDayResult(longRunDayEdits(current, runDays, v as 'sat' | 'sun'))}
+                          />
+                        ) : (
+                          <RowControl
+                            rowKey={row.key}
+                            value={valueOf(row.key)}
+                            onChange={(v) => set(row.key, v as never)}
+                          />
+                        )}
+                        {/* PINNED-DAYS-01 — one control cannot contradict itself, so the old two-control
+                            conflict line (SHEET-DAY-QUESTION-01) is gone. What is left to say is a
+                            refused tap, and why; muted, the same treatment as the consequence. */}
+                        {refusal && (row.key === 'days_available' || row.key === 'preferred_long_run_day') && (
+                          <div style={{
+                            fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+                            lineHeight: 1.5, marginTop: 'var(--space-2)',
+                          }}>{RUN_DAYS_REFUSAL[refusal]}</div>
+                        )}
                       </div>
                     )
                   })}
@@ -269,7 +254,7 @@ export default function ModifyPlanSheet({
               <>
                 {label('Around your runs')}
                 <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-                  <ActionRow icon={<RowIcon name="dumbbell" />} title={strengthDoor.title}
+                  <ActionRow title={strengthDoor.title}
                     subtitle={strengthDoor.subtitle} onClick={strengthDoor.onOpen} />
                 </div>
               </>
@@ -460,27 +445,6 @@ function RowControl({ rowKey, value, onChange }: {
   onChange: (v: unknown) => void
 }) {
   switch (rowKey) {
-    case 'days_available':
-      return (
-        // ⚠️ String values, parsed back on change. `SegmentedControl` is
-        // typed to string options; widening its generic for one caller would
-        // change a shared control to suit this screen.
-        <SegmentedControl
-          ariaLabel="Days a week"
-          options={[2, 3, 4, 5, 6].map(n => ({ value: String(n), label: String(n) }))}
-          value={String(value ?? 4)}
-          onChange={(v) => onChange(Number(v))}
-        />
-      )
-    case 'days_cannot_train':
-      return (
-        <DayGridSelector
-          ariaLabel="Days you cannot run"
-          multiple
-          value={((value as string[]) ?? []) as never}
-          onChange={(v) => onChange(v)}
-        />
-      )
     case 'preferred_long_run_day':
       return (
         <SegmentedControl

@@ -77,9 +77,9 @@ describe('StrengthSetupScreen', () => {
     const { default: S } = await import('@/components/dashboard/StrengthSetupScreen')
     return renderToStaticMarkup(React.createElement(S, { profile: null, planInjuries: [], planNotes: [], onSave: async () => null, ...props } as never))
   }
-  it('asks the seven questions with ONE call to action', async () => {
+  it('asks the six questions with ONE call to action', async () => {
     const html = await setup()
-    for (const q of ['What is it for?', 'How many a week?', 'How long?', 'What can you use?', 'How much have you lifted?']) expect(html).toContain(q)
+    for (const q of ['What is it for?', 'Which days can you lift?', 'How long?', 'What can you use?', 'How much have you lifted?']) expect(html).toContain(q)
     expect(html.split('Build my strength plan').length - 1).toBe(1)
   })
   it('🔴 shows the run plan’s injuries and never asks for them', async () => {

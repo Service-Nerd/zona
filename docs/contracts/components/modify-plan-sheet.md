@@ -39,9 +39,17 @@ interface ModifyPlanSheetProps {
 }
 ```
 
-**Row glyphs (ICON-RULE-01, location):** every edit row leads with one `RowIcon`, from
-`ROW_GLYPH`, which is typed `Record<ModifiableKey, GlyphName>` so a new row cannot ship
-without one. Check: `lib/marketing/iconRule.test.ts`.
+**No row glyphs (ICON-RULE-01 × PINNED-DAYS-01, Design Board 2026-10-18).** Location earns an icon on a list of
+eight or more rows; the sheet now has seven, so the icons came off, the Strength door's with them. Check:
+`lib/marketing/iconRule.test.ts` (no `RowIcon` while `MODIFIABLE_ROWS < 8`).
+
+**Days you run (PINNED-DAYS-01).** One `DayGridSelector` row writes both `days_available` and `days_cannot_train`
+(`runDaysEdits`), in the stored input's own day spelling. A pick outside 2–6 days, or with no weekend day, is refused
+and the reason is said under the grid (`RUN_DAYS_REFUSAL`, muted). Dropping the long-run day moves it to the other
+weekend day as a visible pending edit; choosing a long-run day that is not a run day adds it (`longRunDayEdits`).
+The Apply count is per ROW (`pendingRows`), so one pick is one change. The old two-control conflict line
+(`dayConflict`, SHEET-DAY-QUESTION-01) is gone: one control cannot contradict itself. Check:
+`lib/plan/modifyPlanRunDays.test.ts` (including a composition arm through `generateRulePlan`).
 
 ⚠️ **I GOT THIS LIST WRONG ON THE FIRST WRITE AND THE GATE CAUGHT IT.** I documented an
 `open` prop that does not exist and omitted `hasPaidAccess` and `onStartNewPlan` — the

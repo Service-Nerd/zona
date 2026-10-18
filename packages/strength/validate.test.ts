@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { generateStrengthPlan } from './generate'
 import { validateStrengthPlan } from './validate'
+import { withChosenDays } from './profile'
 import { CATALOGUE_BY_ID } from './catalogue'
 import type { Day, RunContext, RunDay, RunRole, RunWeek, StrengthPlan, StrengthProfile, StrengthSession } from './types'
 
@@ -86,7 +87,9 @@ const LONG_CASES = ['S-PLYO-MISSING', 'S-NO-STRENGTH-ON-DOUBLE',
   // Checked by `recoveryEaseViolations` (session pair, not plan); each arm woken in recovery.test.ts.
   'S-RECOVERY-SUBTRACT-ONLY',
   // Checked by `progressionViolations` (logs + suggestion, not a plan); woken in progression.test.ts.
-  'S-PROGRESSION-BOUNDED']
+  'S-PROGRESSION-BOUNDED',
+  // Needs chosen days on the profile; both arms (off a chosen day, a chosen day left empty) woken below.
+  'S-PINNED-DAYS']
 
 /** Nine build weeks then three PEAK weeks: long enough for the jumps gate (week 5), and peak is
  *  where a 30-minute session's jumps were dropped then never re-offered (measured, 78 cases). */
@@ -187,5 +190,69 @@ describe('validateStrengthPlan', () => {
     const declared = Array.from(new Set(Array.from(src.matchAll(/code: '(S-[A-Z0-9-]+)'/g)).map(m => m[1]))).sort()
     expect(declared.length).toBeGreaterThan(25)
     expect([...CASES.map(c => c[0]), ...LONG_CASES].sort()).toEqual(declared)
+  })
+})
+
+describe('PINNED-DAYS-01 (S1 Am.2) — chosen days are the sessions', () => {
+  const chosen = withChosenDays(PROFILE, ['thu', 'mon'])
+  const plan = generateStrengthPlan(chosen, C)
+  const ordinary = plan.weeks.filter(w => ['base', 'build', 'peak', 'deload'].includes(w.phase))
+
+  it('the profile is normalised: count = sessions, the rest unavailable, week order', () => {
+    expect(chosen.available_days).toEqual(['mon', 'thu'])
+    expect(chosen.sessions_per_week).toBe(2)
+    expect(chosen.unavailable_days).toEqual(['tue', 'wed', 'fri', 'sat', 'sun'])
+  })
+
+  it('every ordinary week lifts on exactly the chosen days, and the plan validates clean', () => {
+    expect(ordinary.length).toBe(3)
+    for (const w of ordinary) expect(w.sessions.map(s => s.day).sort()).toEqual(['mon', 'thu'])
+    expect(validateStrengthPlan(plan, C)).toEqual([])
+  })
+
+  it('a chosen day on a run day still holds a session (lifting after a run is allowed)', () => {
+    // Mon and Thu are both easy-run days in this calendar.
+    expect(C.days.filter(d => d.week_n === 1 && ['mon', 'thu'].includes(d.day)).every(d => d.role === 'easy')).toBe(true)
+  })
+
+  it('a chosen day the runner made a two-run day is left empty, and that is not a violation', () => {
+    const c2 = ctx(); c2.days.find(d => d.week_n === 1 && d.day === 'thu')!.runs = 2
+    const p2 = generateStrengthPlan(chosen, c2)
+    expect(p2.weeks[0].sessions.map(s => s.day)).toEqual(['mon'])
+    expect(validateStrengthPlan(p2, c2).map(v => v.code)).not.toContain('S-PINNED-DAYS')
+  })
+
+  it('🔴 fires on a session moved off a chosen day', () => {
+    const p = clone(plan); const s = p.weeks[0].sessions.find(x => x.day === 'thu')!
+    s.date = dateOf(0, 'sun'); s.day = 'sun'; s.after_quality_run = false
+    // The off-day arm names the session's own day; the presence arm (Thursday now empty) names a date.
+    expect(validateStrengthPlan(p, C).some(v => v.code === 'S-PINNED-DAYS' && v.day === 'sun')).toBe(true)
+  })
+
+  it('🔴 fires on a chosen day left without a session in an ordinary week', () => {
+    const p = clone(plan); p.weeks[1].sessions = p.weeks[1].sessions.filter(x => x.day !== 'mon')
+    expect(codes(p)).toContain('S-PINNED-DAYS')
+  })
+
+  it('a chosen day inside the last week before the race gets no strength, even in a taper week (S5)', () => {
+    // Week 4 is taper; its Sunday is six days before Saturday's race. Earliest-day placement used to keep strength
+    // out of that window by accident; a runner who chose Sunday reached it.
+    const sun = withChosenDays(PROFILE, ['sun'])
+    const p = generateStrengthPlan(sun, C)
+    expect(p.weeks[3].phase).toBe('taper')
+    expect(p.weeks[3].sessions).toEqual([])
+    expect(validateStrengthPlan(p, C)).toEqual([])
+  })
+
+  it('a chosen day in the race window of a week NOT labelled taper is still exempt, not flagged empty', () => {
+    const c3 = ctx(); c3.weeks[3] = { n: 4, phase: 'build' }
+    const p = generateStrengthPlan(withChosenDays(PROFILE, ['sun']), c3)
+    expect(p.weeks[3].sessions).toEqual([])
+    expect(validateStrengthPlan(p, c3)).toEqual([])
+  })
+
+  it('without chosen days nothing changes: the base plan carries no available_days and stays clean', () => {
+    expect(BASE.profile.available_days).toBeUndefined()
+    expect(validateStrengthPlan(BASE, C)).toEqual([])
   })
 })

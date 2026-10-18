@@ -144,6 +144,28 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-18 — PINNED-DAYS-01 · SHIP WITH AMENDMENT. Ask which days, never a count and a "can't" list
+
+Strength setup: *"Which days can you lift?"* (`DayGridSelector`, 1–4) replaces *How many a week?* and *Days you can't*;
+the picks are the count, and *"Your sessions stay on these days."* Change your plan: one row *"Days you run"* (2–6)
+replaces *Days a week* + *Days you cannot run*. **Does not reverse `SHEET-DAY-QUESTION-01`:** it stays one row per
+setting; it removes the two-control contradiction that ruling worked around. **Collins lost** putting the wizard's full
+`WeekGrid` in the sheet (one row carrying two settings). Sitting: `docs/decisions/pinned-training-days-2026-10-18.md`.
+**Build finding, folded in (2026-10-18):** a "Days you run" pick must hold a weekend day. Measured: every off-day run
+across 512 plans was the long run, and only where the picks left out its day (the engine then put it on a BLOCKED
+weekend day). A pick with no weekend day is refused, with the reason said; dropping the long-run day moves it to the
+other weekend day as a visible pending edit.
+
+## 2026-10-18 — ICON-RULE-01 × PINNED-DAYS-01 · SHIP WITH AMENDMENT. The bound stays at eight; the sheet's icons come off
+
+Merging the day rows left the modify sheet at **seven** setting rows (groups of 4/2/1; the *Start a new plan* row is
+not a setting, M-3). **The bound was not moved to fit** (Zhuo: *"the merge made the list shorter, and that is the
+success"*). Icons removed from the setting rows **and the Strength door** (Collins: a lone icon on a list with none is a
+stray). Also closes the base-build sheet, which had shown its one row with an icon. Me keeps its icons. **Silvanto
+dissent, recorded:** Me and the sheet reach each other, so the glyph language now changes at that seam; not a
+regression, so no veto. Re-adding icons at eight rows or on a measured finding problem is a ruling, not a re-add.
+Check: `iconRule.test.ts`. Sitting: `docs/decisions/pinned-training-days-2026-10-18.md` § Icons.
+
 ## 2026-10-18 — STRENGTH-PROGRESSION-01 (Phase 4) · SHIP WITH AMENDMENT. What to lift, before the set
 
 Loaded main lifts only. The **collapsed row** carries one 12px `--ink-2` line under the effort line: *"Last time

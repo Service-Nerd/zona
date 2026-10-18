@@ -1,8 +1,10 @@
 'use client'
 // STRENGTH-ENGINE-01 Phase 2 — the Me → Strength door body (Design Board STRENGTH-APP-01 F).
 //
-// A Me sub-page, not a wizard: seven questions in weight order, the last three
-// defaulted so most runners answer four. The ScreenHeader is MeScreen's (a door body
+// A Me sub-page, not a wizard: six questions in weight order, the last two
+// defaulted. PINNED-DAYS-01 (both boards, 2026-10-18): the runner picks the days
+// they can lift (1–MAX_CHOSEN_DAYS) and the sessions stay on them; the picks ARE
+// the count, so "How many a week?" and "Days you can't" are gone. The ScreenHeader is MeScreen's (a door body
 // never repeats its title). Injuries are READ-ONLY here: the run plan owns injury
 // input, and asking twice is two owners of one answer. Honest notes are said once,
 // here, as field notes, and never on Today. One CTA, at the end (7a).
@@ -16,7 +18,7 @@ import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { DayGridSelector, type DayKey } from '@/components/shared/DayGridSelector'
 import { FieldLabel, FieldNote, FieldReadback } from '@/components/shared/FieldText'
 import { InlineError } from '@/components/shared/InlineError'
-import { EQUIPMENT_TAGS, type EquipmentTag, type Experience, type Focus, type SessionMinutes, type SessionsPerWeek, type StrengthNote, type StrengthProfile } from '@/packages/strength'
+import { EQUIPMENT_TAGS, STRENGTH_CONFIG, withChosenDays, type Day, type EquipmentTag, type Experience, type Focus, type SessionMinutes, type StrengthNote, type StrengthProfile } from '@/packages/strength'
 import { EQUIPMENT_LABEL, STRENGTH_SETUP as T } from '@/lib/strength-bridge/display'
 import { formatDuration } from '@/lib/format'
 
@@ -42,11 +44,19 @@ export interface StrengthSetupScreenProps {
   planInjuries: string[]
   /** The current plan's notes, so the honest ones can be said once. */
   planNotes: StrengthNote[]
+  /** The days shown as chosen on open (`prefillChosenDays`). Empty: the runner picks. */
+  initialDays?: Day[]
   onSave: (profile: StrengthProfile) => Promise<string | null>
 }
 
-export default function StrengthSetupScreen({ profile, planInjuries, planNotes, onSave }: StrengthSetupScreenProps) {
-  const [p, setP] = useState<StrengthProfile>(profile ?? STRENGTH_PROFILE_DEFAULT)
+export default function StrengthSetupScreen({ profile, planInjuries, planNotes, initialDays = [], onSave }: StrengthSetupScreenProps) {
+  const [p, setP] = useState<StrengthProfile>(() => withChosenDays(profile ?? STRENGTH_PROFILE_DEFAULT, initialDays))
+  const chosen = (p.available_days ?? []) as DayKey[]
+  const setDays = (v: DayKey[]) => {
+    if (v.length > STRENGTH_CONFIG.MAX_CHOSEN_DAYS) return
+    setP(x => (v.length ? withChosenDays(x, v as Day[]) : { ...x, available_days: [] }))
+    setResult(null)
+  }
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<'saved' | 'failed' | null>(null)
   const dirty = useMemo(() => JSON.stringify(p) !== JSON.stringify(profile), [p, profile])
@@ -74,13 +84,13 @@ export default function StrengthSetupScreen({ profile, planInjuries, planNotes, 
         </div>
       </Field>
 
-      <Field label={T.perWeekLabel}>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          {([1, 2, 3, 4] as SessionsPerWeek[]).map(n => (
-            <Chip key={n} label={String(n)} active={p.sessions_per_week === n} onClick={() => set('sessions_per_week', n)} />
-          ))}
-        </div>
-        <FieldNote>{planNotes.includes('legs_limited_by_run_week') && !dirty ? T.legsLimitedNote : T.perWeekNote}</FieldNote>
+      <Field label={T.daysLabel}>
+        <DayGridSelector ariaLabel={T.daysLabel} value={chosen} onChange={setDays} />
+        <FieldNote>{
+          chosen.length >= STRENGTH_CONFIG.MAX_CHOSEN_DAYS ? T.daysMaxNote
+            : planNotes.includes('legs_limited_by_run_week') && !dirty ? T.legsLimitedNote
+            : T.daysNote
+        }</FieldNote>
       </Field>
 
       <Field label={T.minutesLabel}>
@@ -109,14 +119,6 @@ export default function StrengthSetupScreen({ profile, planInjuries, planNotes, 
         </div>
       </Field>
 
-      <Field label={T.daysLabel} optional>
-        <DayGridSelector
-          ariaLabel={T.daysLabel}
-          value={(p.unavailable_days ?? []) as DayKey[]}
-          onChange={v => set('unavailable_days', v.slice(0, 6) as StrengthProfile['unavailable_days'])}
-        />
-      </Field>
-
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
         <div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.5 }}>{T.boneLabel}</div>
@@ -128,7 +130,7 @@ export default function StrengthSetupScreen({ profile, planInjuries, planNotes, 
       {planInjuries.length > 0 && <FieldNote>{T.injuriesNote(planInjuries)}</FieldNote>}
 
       <div style={{ marginTop: 'var(--space-5)' }}>
-        <Button variant="primary" fullWidth busy={busy} disabled={busy || (!!profile && !dirty)} onClick={() => void save()}>
+        <Button variant="primary" fullWidth busy={busy} disabled={busy || chosen.length === 0 || (!!profile && !dirty)} onClick={() => void save()}>
           {profile ? T.ctaUpdate : T.cta}
         </Button>
         {result === 'saved' && !dirty && <FieldReadback>{T.saved}</FieldReadback>}

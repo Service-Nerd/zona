@@ -57,6 +57,7 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
       if (days.has(where)) v.push({ code: 'S-ONE-PER-DAY', week: w.n, day: where, detail: 'two strength sessions on one day' })
       days.add(where)
       if (p.unavailable_days?.includes(s.day)) v.push({ code: 'S-UNAVAILABLE-DAY', week: w.n, day: s.day, detail: 'runner cannot train this day' })
+      if (p.available_days?.length && !p.available_days.includes(s.day)) v.push({ code: 'S-PINNED-DAYS', week: w.n, day: s.day, detail: 'a session off the days the runner chose' })
       if (s.date && (byDate.get(s.date)?.runs ?? 0) >= 2) v.push({ code: 'S-NO-STRENGTH-ON-DOUBLE', week: w.n, day: where, detail: 'strength on a day with two runs' })
 
       const items = s.blocks.flatMap(b => b.items.map(it => ({ it, role: b.role, ex: CATALOGUE_BY_ID.get(it.exercise_id) })))
@@ -152,6 +153,25 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
     if (trainingSessions >= 2 && coreExposures < 2) v.push({ code: 'S-CORE-DOSE', week: w.n, detail: `${coreExposures} core exposures` })
     if (trainingSessions > p.sessions_per_week) v.push({ code: 'S-TOO-MANY', week: w.n, detail: `${trainingSessions} > ${p.sessions_per_week}` })
   })
+  // S-PINNED-DAYS (S1 Am.2) — in an ordinary week every chosen day holds a session. Derived from the RunContext and
+  // the runner's own days, never from placement's predicates. The exceptions are the safety ones: race day and the
+  // day(s) before it (S5), a two-run day (S3 Am.1), a day before strength started, and taper / race week, which are
+  // short on purpose.
+  if (ctx && p.available_days?.length) {
+    for (const w of plan.weeks) {
+      if (!['base', 'build', 'peak', 'deload'].includes(w.phase)) continue
+      const placedDates = new Set(w.sessions.map(s => s.date))
+      for (const d of ctx.days.filter(x => x.week_n === w.n && p.available_days!.includes(x.day))) {
+        if (start && d.date < start) continue
+        if (d.role === 'race' || (d.runs ?? 0) >= 2) continue
+        if (ctx.race_date) {
+          const until = Math.round((Date.parse(ctx.race_date + 'T00:00:00Z') - Date.parse(d.date + 'T00:00:00Z')) / 86_400_000)
+          if (until >= 0 && until < C.RACE_WEEK_DAYS) continue
+        }
+        if (!placedDates.has(d.date)) v.push({ code: 'S-PINNED-DAYS', week: w.n, day: d.date, detail: `chosen day ${d.day} left without a session` })
+      }
+    }
+  }
   return v
 }
 

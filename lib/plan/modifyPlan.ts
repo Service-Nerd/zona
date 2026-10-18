@@ -1,5 +1,6 @@
 import type { GeneratorInput, Plan } from '@/types/plan'
 import { isRaceIdentityChange } from './supersede'
+import { DAY_ORDER, normaliseDays, type Day } from './days'
 // ⚠️ THE KIND PREDICATE IS NOT RE-WRITTEN HERE. `isBaseBuildPlan` is its single
 // owner (`validateStoredPlan.ts`), which exists so two policies cannot disagree
 // about what a base-build plan IS — the `deloadCadence` / `TIER-OWNER-01` lesson.
@@ -74,13 +75,14 @@ export const MODIFY_GROUP_LABELS: Record<ModifyGroup, string> = {
  * session will be kept, because the regeneration decides that.
  */
 export const MODIFIABLE_ROWS: readonly ModifiableRow[] = [
+  // 🧭 PINNED-DAYS-01 (Design Board 2026-10-18): ONE row, asked positively. It writes BOTH
+  // `days_available` (the count) and `days_cannot_train` (the complement), as the wizard's
+  // WeekGrid does, so the two can no longer contradict. Measured before the copy was written:
+  // across 512 generated plans, 0 training runs fell off the chosen days once the long-run
+  // day was one of them (the race is a fixed date and §18 exempts it).
   {
-    key: 'days_available', group: 'week', label: 'Days a week',
-    consequence: 'Rebuilds the week around the days you have.',
-  },
-  {
-    key: 'days_cannot_train', group: 'week', label: 'Days you cannot run',
-    consequence: 'Moves sessions off those days for the rest of the plan.',
+    key: 'days_available', group: 'week', label: 'Days you run',
+    consequence: 'Your runs move onto these days for the rest of the plan.',
   },
   {
     key: 'preferred_long_run_day', group: 'week', label: 'Long run day',
@@ -206,7 +208,8 @@ export function canModifyPlan(plan: Plan | null | undefined): boolean {
  * long runs is routed to the Coaching Board, not decided here.
  */
 export const MODIFIABLE_KEYS_BY_PLAN_KIND: Readonly<Record<'base_build', readonly ModifiableKey[]>> = {
-  base_build: ['days_available', 'days_cannot_train'],
+  // `days_available` is the "Days you run" row, which also writes `days_cannot_train` (PINNED-DAYS-01).
+  base_build: ['days_available'],
 }
 
 /** The rows to render for this plan. Every other kind gets the full set. */
@@ -266,43 +269,81 @@ export function editsResetLoggedWeeks(plan: Plan, edits: PlanEdits): boolean {
   )
 }
 
+
+// ── PINNED-DAYS-01 — "Days you run", the one row that writes both day keys ─────────────────────────
+
+/** The engine's own range (2–6 run days), the same as the control this row replaced. */
+export const RUN_DAYS_RANGE = [2, 6] as const
+/** `preferred_long_run_day` is Sat or Sun (`GeneratorInput`), as in the wizard's WeekGrid. */
+const LONG_RUN_DAYS: readonly Day[] = ['sat', 'sun']
+const FULL: Record<Day, string> = { mon: 'monday', tue: 'tuesday', wed: 'wednesday', thu: 'thursday', fri: 'friday', sat: 'saturday', sun: 'sunday' }
+
+/** Which keys a row writes. Every row writes its own; "Days you run" also writes the blocked days. */
+export function rowKeys(key: ModifiableKey): ModifiableKey[] {
+  return key === 'days_available' ? ['days_available', 'days_cannot_train'] : [key]
+}
+
+/** Pending ROWS, not keys: one tap on "Days you run" is one change, though it moves two keys. */
+export function pendingRows(base: GeneratorInput, edits: PlanEdits, rows: readonly ModifiableRow[]): ModifiableKey[] {
+  const keys = pendingKeys(base, edits)
+  return rows.filter(r => rowKeys(r.key).some(k => keys.includes(k))).map(r => r.key)
+}
+
 /**
- * The two day controls, reconciled — or `null` when they agree.
- *
- * 🔴 SHEET-DAY-QUESTION-01 (Design Board, SHIP scoped). `GeneratePlanScreen`
- * derives BOTH `days_available` and `days_cannot_train` from a single `WeekGrid`,
- * so in the wizard **they cannot contradict.** `ModifyPlanSheet` asks them as two
- * independent controls — a `SegmentedControl` (2–6) and an uncapped 7-cell
- * `DayGridSelector` — so **two taps state a contradiction and the sheet says
- * nothing.** 🎪 Collins: *"one question rendered as two controls is the taxonomy
- * defect — the wizard proves it, because there it's one grid."*
- * 📱 Wroblewski: *"the error path wasn't designed, it was inherited."*
- *
- * ⚠️ THE BOARD RULED OUT A CAP, EXPLICITLY. Blocking six days is a legitimate
- * statement — *"I can run once a week"* — so the grid is not clamped. The defect
- * is that the OTHER control then disagrees in silence.
- *
- * 🔴 AND THIS DELIBERATELY SAYS NOTHING ABOUT WHAT THE PLAN WILL DO.
- * `DAYS-GATE-CAPACITY-01` establishes that `validateDaysAvailable` reads
- * `input.days_available` and **never mentions `days_cannot_train`** — so the
- * engine acts on the number the runner TYPED, not the number they can achieve.
- * A line reading *"the plan will use 2 days"* would therefore be **false today**,
- * and hard rule 7 applies: a subtitle describing a consequence the engine does
- * not produce is a claim. This restates the runner's own two inputs and stops
- * there. The engine half is the 🏃 Coaching Board's.
- *
- * Returns `null` when there is nothing to say — the declared count is achievable,
- * so a line would be noise on a sheet whose whole design is restraint.
+ * The days this plan runs on, for the grid.
+ * When the clear days equal the count, they ARE the run days. Otherwise (an older plan, or one whose count was
+ * below its clear days, so the engine chose) they are the days the plan's weeks actually run most, never the race.
  */
-export function dayConflict(
-  daysAvailable: number | null | undefined,
-  daysCannotTrain: readonly string[] | null | undefined,
-): { declared: number; blocked: number; clear: number } | null {
-  const declared = typeof daysAvailable === 'number' ? daysAvailable : null
-  if (declared === null) return null
-  // Deduplicated: a repeated day in the stored array is one blocked day, and
-  // counting it twice would invent a conflict that the runner cannot see.
-  const blocked = new Set((daysCannotTrain ?? []).filter(d => typeof d === 'string')).size
-  const clear = Math.max(0, 7 - blocked)
-  return clear < declared ? { declared, blocked, clear } : null
+export function runDaysOf(input: GeneratorInput, plan: Plan | null | undefined): Day[] {
+  const blocked = normaliseDays(input.days_cannot_train)
+  const clear = DAY_ORDER.filter(d => !blocked.has(d))
+  const n = input.days_available
+  if (clear.length === n) return clear
+  const used = new Map<Day, number>()
+  for (const w of plan?.weeks ?? []) for (const [d, s] of Object.entries(w.sessions ?? {})) {
+    const t = (s as { type?: string } | null)?.type
+    if (s && t !== 'rest' && t !== 'race' && t !== 'strength' && DAY_ORDER.includes(d as Day)) used.set(d as Day, (used.get(d as Day) ?? 0) + 1)
+  }
+  const top = clear.filter(d => used.has(d)).sort((a, b) => (used.get(b)! - used.get(a)!) || DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b)).slice(0, n)
+  return DAY_ORDER.filter(d => top.includes(d))
+}
+
+export type RunDaysRefusal = 'range' | 'weekend'
+
+/** Said under the grid when a tap is refused. Muted, not amber: the runner has not done anything wrong. */
+export const RUN_DAYS_REFUSAL: Record<RunDaysRefusal, string> = {
+  range: 'Between two and six days.',
+  weekend: 'Keep Saturday or Sunday for your long run.',
+}
+
+/**
+ * The edits one pick of "Days you run" makes, or why it cannot.
+ * 🔴 The long-run day must be one of the run days: measured, every off-day run in 512 plans was the long run, and
+ * only where the chosen days left its day out (the engine then put it on a BLOCKED weekend day). So a pick needs a
+ * weekend day, and when it drops the long-run day the long run moves to the other weekend day, as its own pending
+ * edit the runner can see on the Long run day row.
+ * Written in the stored input's own day spelling, so an unchanged pick is not reported as a change.
+ */
+export function runDaysEdits(input: GeneratorInput, longRunDay: 'sat' | 'sun' | undefined, picked: readonly Day[]):
+  { ok: true; edits: PlanEdits } | { ok: false; reason: RunDaysRefusal } {
+  const days = DAY_ORDER.filter(d => picked.includes(d))
+  if (days.length < RUN_DAYS_RANGE[0] || days.length > RUN_DAYS_RANGE[1]) return { ok: false, reason: 'range' }
+  const weekend = days.filter(d => LONG_RUN_DAYS.includes(d))
+  if (weekend.length === 0) return { ok: false, reason: 'weekend' }
+  const short = (input.days_cannot_train ?? []).some(d => typeof d === 'string' && d.length === 3)
+  const edits: PlanEdits = {
+    days_available: days.length,
+    days_cannot_train: DAY_ORDER.filter(d => !days.includes(d)).map(d => (short ? d : FULL[d])),
+  }
+  const lr = longRunDay ?? 'sun'
+  if (!days.includes(lr)) edits.preferred_long_run_day = weekend[0] as 'sat' | 'sun'
+  return { ok: true, edits }
+}
+
+/** The long-run day must be a run day: choosing one that is not adds it, or refuses at six days. */
+export function longRunDayEdits(input: GeneratorInput, runDays: readonly Day[], day: 'sat' | 'sun'):
+  { ok: true; edits: PlanEdits } | { ok: false; reason: RunDaysRefusal } {
+  if (runDays.includes(day)) return { ok: true, edits: { preferred_long_run_day: day } }
+  const r = runDaysEdits(input, day, [...runDays, day])
+  return r.ok ? { ok: true, edits: { ...r.edits, preferred_long_run_day: day } } : r
 }

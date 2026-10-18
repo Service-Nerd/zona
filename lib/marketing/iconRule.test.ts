@@ -31,7 +31,8 @@ import { MODIFIABLE_ROWS } from '@/lib/plan/modifyPlan'
 // written. Me lives in `components/dashboard/`, so the exemption matched nothing and the
 // "only these two surfaces" arm could not tell Me from any other file. Nothing failed because
 // no row icon existed; the first one found it. `existsSync` below keeps it from drifting again.
-const ICON_SURFACES = ['components/dashboard/MeScreen.tsx', 'components/shared/ModifyPlanSheet.tsx']
+// 🧭 2026-10-18 (ICON-RULE-01 × PINNED-DAYS-01): the modify sheet left this list at seven rows.
+const ICON_SURFACES = ['components/dashboard/MeScreen.tsx']
 /** The owner draws the container; it is not a surface. */
 const ICON_OWNER = 'components/shared/RowIcon.tsx'
 
@@ -56,27 +57,19 @@ describe('ICON-RULE-01 — an icon earns its place', () => {
     for (const f of [...ICON_SURFACES, ICON_OWNER]) expect(existsSync(join(process.cwd(), f)), f).toBe(true)
   })
 
-  it('every row on the modify sheet carries exactly one glyph, and Me carries them', () => {
-    const sheet = readFileSync(join(process.cwd(), 'components/shared/ModifyPlanSheet.tsx'), 'utf8')
-    // One RowIcon in the per-row render (keyed by ROW_GLYPH) plus the Strength door.
-    expect(sheet).toMatch(/<RowIcon name=\{ROW_GLYPH\[row\.key\]\} \/>/)
+  it('Me carries its door icons', () => {
     const me = readFileSync(join(process.cwd(), ICON_SURFACES[0]), 'utf8')
     expect((me.match(/<RowIcon\b/g) ?? []).length, 'Me door rows').toBeGreaterThanOrEqual(MIN_ROWS_FOR_ICONS)
   })
 
-  it('the modify sheet still has the row count its icons are justified by', () => {
-    // Live, not a literal copied from the ruling: the board's LOCATION
-    // argument is "eight or more rows, where the job is finding". Trim the
-    // sheet to five and the icons lose the reason they were permitted, which
-    // no reviewer would notice and this will.
-    expect(
-      MODIFIABLE_ROWS.length,
-      `ICON-RULE-01 permits icons on the modify sheet because it has >= ${MIN_ROWS_FOR_ICONS} rows. `
-      + `It now has ${MODIFIABLE_ROWS.length}. Either the icons go, or the board re-rules the bound.`,
-    ).toBeGreaterThanOrEqual(MIN_ROWS_FOR_ICONS)
+  it('🔴 the modify sheet carries no row icon while it has fewer rows than the bound', () => {
+    // The board kept the bound at eight rather than moving it to fit the merge. A sheet back at eight rows
+    // may carry icons again, and that is a ruling, not a re-add.
+    const sheet = readFileSync(join(process.cwd(), 'components/shared/ModifyPlanSheet.tsx'), 'utf8')
+    if (MODIFIABLE_ROWS.length < MIN_ROWS_FOR_ICONS) expect(sheet, 'ICON-RULE-01: seven rows do not earn location icons').not.toMatch(/<RowIcon\b|from '\.\/RowIcon'/)
   })
 
-  it('row icons appear only on the two surfaces the board ruled', () => {
+  it('row icons appear only on the surface the board ruled', () => {
     const offenders: string[] = []
     for (const f of tsxFiles()) {
       if (ICON_SURFACES.some(s => f === s) || f === ICON_OWNER) continue
@@ -85,7 +78,7 @@ describe('ICON-RULE-01 — an icon earns its place', () => {
     }
     expect(
       offenders,
-      'a row icon outside Me and the modify sheet. ICON-RULE-01: wizard steps, Plan rows and '
+      'a row icon outside Me. ICON-RULE-01: wizard steps, Plan rows and '
       + 'session cards are all labelled short lists and do NOT qualify',
     ).toEqual([])
   })

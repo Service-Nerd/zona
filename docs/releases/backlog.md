@@ -28,6 +28,31 @@ already decided what it is.
 ---
 
 
+### ✅ `PINNED-DAYS-01` — **SHIPPED 2026-10-18.** Pick the days; the sessions stay on them 🏃 **COACHING BOARD** then 🧭 **DESIGN BOARD** *(both ruled 2026-10-18)*
+
+Founder: *"I want to be able to select the days and it stays on the days I select."* Strength setup asks *Which days
+can you lift?* (1–4) and Change your plan asks *Days you run* (2–6), one positive pick each. Engine: S1 Am.2,
+`MAX_CHOSEN_DAYS`, `S-PINNED-DAYS`. Folded in: two strength placement defects the widened sweep found (S5 race window,
+S8 first jump level) and the long-run-day rule for the run row. Icons came off the modify sheet (seven rows, ICON-RULE-01).
+Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
+
+### 🔲 `LONGRUN-BLOCKED-DAY-01` — the engine puts the long run on a blocked day when both weekend days are blocked 🏃 **COACHING BOARD** *(filed 2026-10-18)*
+
+Measured 2026-10-18: across 512 generated plans, a long-run day outside the run days put the long run on a BLOCKED
+weekend day in 642 plan-weeks; `INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` logs it in production (dev throws). **No surface
+can reach it now**: the wizard's `WeekGrid` and the new *Days you run* row both require a weekend run day. A stored
+input written before 2026-10-18 (both weekend days blocked on the old sheet) still can. Question for the board: where
+does the long run go when the runner has no weekend run day (a weekday long run, or refuse)? Count stored inputs in
+that state first.
+
+### 🔲 `STRENGTH-CHOSEN-NO-LEGS-01` — chosen days that never allow heavy legs give an upper-body-only block 🏃 **COACHING BOARD** + 🧭 **DESIGN BOARD** *(filed 2026-10-18)*
+
+Found in the widened sweep: a runner choosing Mon/Fri/Sat/Sun around one real run plan got upper body and core in
+every week until week 13, because none of those days was a legal heavy-leg day (S2). That is S3 working (convert,
+never skip) and the setup says *"Your run week leaves fewer of these days for heavy legs"*, but only after a plan
+exists. Questions: should the setup say so as the days are picked (design), and is a block with no leg work still a
+strength plan for a running-focused runner (coaching)? Measure how often chosen-day profiles get zero heavy legs first.
+
 ### 🔲 `A11Y-APP-TEXT-SWEEP-01` — 69 candidate sub-AA text sites, and the scanner that could not see them 🧭 **DESIGN BOARD**
 
 ⚠️ **Re-measure before picking this up.** Derive the number from

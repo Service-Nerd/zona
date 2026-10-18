@@ -49,6 +49,14 @@ slot was a Nordic curl 25% of the time; the Nordic curl, hamstring curl and kett
 🔴 **Not the catalogue's, and still open:** a runner's first jump is bounding or a drop jump (`STRENGTH-PLYO-BUDGET-01`).
 Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 
+## 2026-10-18 — PINNED-DAYS-01 · CORRECT WITH AMENDMENT (strength days)
+
+When the runner picks strength days (1–4), those days ARE the sessions: the engine chooses only what goes on each (S2
+heavy legs where legal, else upper body + core, S3), never which day. A chosen day is left empty only for safety: race
+day and the day before, the taper's fewer sessions, race week's one mobility session, a two-run day (S3 Am.1). Lifting
+on a day with one run is allowed (S4 note). Artifacts: S1 Am.2, `MAX_CHOSEN_DAYS`, `S-PINNED-DAYS`. Sitting:
+`docs/decisions/pinned-training-days-2026-10-18.md`.
+
 ## 2026-10-18 — STRENGTH-PROGRESSION-01 (Phase 4) · CORRECT WITH AMENDMENT
 
 Load progresses from what the runner logs on a loaded main lift: weight + *easy / right / hard* against the RIR

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { generateStrengthPlan, standaloneContext } from './generate'
 import { splitFor } from './placement'
+import { plyoLevel } from './select'
 import { STRENGTH_CONFIG as C } from './config'
 import type { Day, RunContext, RunRole, StrengthProfile } from './types'
 
@@ -104,5 +105,16 @@ describe('honesty and the standalone path', () => {
     const plan = generateStrengthPlan({ ...P, sessions_per_week: 4, unavailable_days: ['mon', 'wed'] }, ctx(OPEN, ['build']))
     expect(plan.weeks[0].sessions.map(s => s.day)).not.toContain('mon')
     expect(plan.weeks[0].sessions.map(s => s.day)).not.toContain('wed')
+  })
+})
+
+describe('S8 — the first jump a runner meets is level 1, however late it arrives', () => {
+  const base = { profile: { focus: 'running', session_minutes: 45, sessions_per_week: 2, equipment: ['bodyweight'], experience: 'regular' } as StrengthProfile, injuries: [], preferUnilateral: true }
+  it('no jump placed yet: level 1 even many weeks after the gate opened', () => {
+    expect(plyoLevel({ ...base, weekIndex: 12 })).toBe(1)
+  })
+  it('climbs one rung per two blocks from the first PLACED jump', () => {
+    expect(plyoLevel({ ...base, weekIndex: 12, plyoFirstWeek: 12 })).toBe(1)
+    expect(plyoLevel({ ...base, weekIndex: 12 + C.BLOCK_WEEKS * 2, plyoFirstWeek: 12 })).toBe(2)
   })
 })

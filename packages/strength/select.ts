@@ -19,6 +19,8 @@ export interface SelectionContext {
   weekIndex: number
   /** Running-focused lower-body slots prefer single-leg variants. */
   preferUnilateral: boolean
+  /** The strength week jumps were first PLACED (S8). Absent: they have not been yet, so this week would be the first. */
+  plyoFirstWeek?: number
 }
 
 /** Target level from experience, climbing one rung per block, capped at 3. */
@@ -36,7 +38,9 @@ export function targetLevel(ctx: SelectionContext): 1 | 2 | 3 {
  * rung per two blocks. Before it, a `some` lifter's first jump was bounding or a drop jump.
  */
 export function plyoLevel(ctx: SelectionContext): 1 | 2 | 3 {
-  const start = ctx.profile.experience === 'new' ? C.PLYO_MIN_WEEKS_NEW : C.PLYO_MIN_WEEKS
+  // From the first jump the runner actually met, not from the week the gate opened: a run week (or chosen days,
+  // PINNED-DAYS-01) can leave no leg day for weeks after the gate, and the first jump then arrived at level 2.
+  const start = ctx.plyoFirstWeek ?? ctx.weekIndex
   const since = Math.max(0, ctx.weekIndex - start)
   return Math.min(3, 1 + Math.floor(since / (C.BLOCK_WEEKS * 2))) as 1 | 2 | 3
 }

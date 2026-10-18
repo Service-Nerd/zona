@@ -176,6 +176,7 @@ import { useStrengthPlan, useStrengthWeeklyNote } from '@/components/dashboard/u
 import { canUseStrength } from '@/lib/strength-bridge/release'
 import { STRENGTH_COACH, STRENGTH_REST_INVITE, STRENGTH_SETUP, STRENGTH_WIZARD_EQUIPMENT, isoLocalDate } from '@/lib/strength-bridge/display'
 import { strengthWeekEvidence, type StrengthWeekEvidence } from '@/lib/strength-bridge/coachEvidence'
+import { prefillChosenDays } from '@/lib/strength-bridge/chosenDays'
 import { STRENGTH_SCREEN_SUB, STRENGTH_TITLE, strengthSubtitle } from '@/components/shared/meDoors'
 import type { StrengthSession } from '@/packages/strength'
 import SessionPopupInner from '@/components/dashboard/SessionPopupInner'
@@ -3117,6 +3118,7 @@ export default function DashboardClient() {
               : strength.status === 'error'
               ? <div style={{ padding: '0 16px' }}><EmptyState title={STRENGTH_SETUP.loadFailed} action={<Button variant="secondary" onClick={() => void reloadStrength()}>Try again</Button>} /></div>
               : <StrengthSetupScreen profile={strength.profile} planNotes={strength.plan?.notes ?? []}
+                  initialDays={prefillChosenDays(strength.profile, strength.plan ?? null)}
                   planInjuries={(plan?.meta?.injury_history ?? []).map(t => t.toLowerCase())}
                   onSave={saveStrength} />}
           </>

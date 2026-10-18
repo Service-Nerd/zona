@@ -13,6 +13,8 @@ import type { InjuryTag, SessionMinutes, SessionsPerWeek } from './types'
 export const STRENGTH_CONFIG = {
   // S1 — frequency and the split
   SESSIONS_PER_WEEK_RANGE: [1, 4] as const,
+  /** PINNED-DAYS-01 (S1 Am.2) — the most days a runner may choose to lift: the top of SESSIONS_PER_WEEK_RANGE. */
+  MAX_CHOSEN_DAYS: 4,
   RECOMMENDED_SESSIONS_PER_WEEK: 2 as SessionsPerWeek,
   /** S1 Am. — never more than two heavy-leg sessions a week, whatever the day count. */
   MAX_HEAVY_LEG_SESSIONS_PER_WEEK: 2,

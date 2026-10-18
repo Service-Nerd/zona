@@ -7,6 +7,7 @@
 import { STRENGTH_CONFIG as C } from './config'
 import { placeWeek, splitFor, type Timeline } from './placement'
 import { buildMobilitySession, buildSession } from './session'
+import { CATALOGUE_BY_ID } from './catalogue'
 import type {
   Day, EquipmentTag, InjuryTag, RunContext, RunDay, RunWeek, StrengthNote, StrengthPlan, StrengthProfile, StrengthWeek,
 } from './types'
@@ -60,6 +61,7 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
   const startWeek = strengthStartWeek(run, startDate)
   const weeks: StrengthWeek[] = []
   let prevHeavy: number | null = null
+  let plyoFirstWeek: number | undefined
   run.weeks.forEach((wk, runWeekIndex) => {
     // Before strength started: the week exists (so week numbers stay aligned with the run
     // plan) and holds nothing. A session dated before the runner set strength up is one
@@ -71,7 +73,7 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
     if (legsLimited) notes.add('legs_limited_by_run_week')
     // The start week can be partial; fewer sessions there is the calendar, not the run week.
     if (fewer && weekIndex > 0 && wk.phase !== 'taper' && wk.phase !== 'race_week') notes.add('fewer_sessions_than_asked')
-    const sel = { profile, injuries, weekIndex, preferUnilateral: profile.focus === 'running' }
+    const sel = { profile, injuries, weekIndex, preferUnilateral: profile.focus === 'running', plyoFirstWeek }
     const dose = { profile, phase: wk.phase, weekIndex }
     const plyoMin = profile.experience === 'new' ? C.PLYO_MIN_WEEKS_NEW : C.PLYO_MIN_WEEKS
     const plyoAllowed = profile.focus === 'running' && weekIndex >= plyoMin
@@ -92,6 +94,7 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
         blocks: built.blocks,
       }
     })
+    if (plyoFirstWeek === undefined && sessions.some(s => s.blocks.some(b => b.items.some(i => CATALOGUE_BY_ID.get(i.exercise_id)?.impact === 'high')))) plyoFirstWeek = weekIndex
     weeks.push({ n: wk.n, phase: wk.phase, sessions })
   })
 

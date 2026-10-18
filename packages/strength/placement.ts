@@ -83,6 +83,15 @@ export function placeWeek(
     return { placed: pick == null ? [] : [{ index: pick, kind: 'mobility', heavy: false }], legsLimited: false, fewer: false }
   }
 
+  // S5 — the last RACE_WEEK_DAYS before the race take mobility only, whatever the run week calls the week. A taper
+  // week that ends inside that window used to be safe only because placement took the earliest days; chosen days
+  // (PINNED-DAYS-01) or a long unavailable list reached the window and put strength in it.
+  const ordinary = allowed.filter(i => {
+    if (!t.raceDate) return true
+    const until = daysBetween(t.days[i].date, t.raceDate)
+    return !(until >= 0 && until < C.RACE_WEEK_DAYS)
+  })
+
   let wanted = profile.sessions_per_week as number
   if (phase === 'taper') wanted = Math.min(wanted, masters ? C.TAPER_SESSIONS_PER_WEEK_MASTERS : C.TAPER_SESSIONS_PER_WEEK)
 
@@ -91,7 +100,7 @@ export function placeWeek(
   const upperKinds = kinds.filter(k => k === 'upper_core')
 
   // Heavy-leg days: quality days first (stacking keeps hard days hard), then easy days.
-  const legCandidates = allowed
+  const legCandidates = ordinary
     .filter(i => heavyLegsLegal(t, i))
     .sort((a, b) => Number(t.days[b].role === 'quality') - Number(t.days[a].role === 'quality') || a - b)
   const legDays: number[] = []
@@ -111,7 +120,7 @@ export function placeWeek(
   const taken = new Set(legDays)
   // Upper days: one strength session per day; prefer a non-hard day spaced from
   // the others, then any non-hard day, and only then a hard-run day.
-  const free = allowed.filter(i => !taken.has(i))
+  const free = ordinary.filter(i => !taken.has(i))
   const easy = free.filter(i => !HARD.includes(t.days[i].role))
   const hard = free.filter(i => HARD.includes(t.days[i].role))
   const upperDays: number[] = []

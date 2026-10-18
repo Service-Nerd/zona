@@ -4,6 +4,7 @@
 // whitelisted, unknown keys are refused (not ignored, so a typo is loud), arrays
 // are de-duplicated and length-bounded, and nothing is echoed back verbatim.
 
+import { STRENGTH_CONFIG as C } from './config'
 import type { Day, EquipmentTag, Experience, Focus, InjuryTag, SessionMinutes, SessionsPerWeek, StrengthProfile } from './types'
 
 const FOCUS: readonly Focus[] = ['running', 'general']
@@ -13,7 +14,7 @@ const EXPERIENCE: readonly Experience[] = ['new', 'some', 'regular']
 export const EQUIPMENT_TAGS: readonly EquipmentTag[] = ['bodyweight', 'bands', 'dumbbells', 'kettlebell', 'bench', 'box', 'pullup_bar', 'barbell', 'rack', 'cable', 'machines']
 export const INJURY_TAGS: readonly InjuryTag[] = ['knee', 'itb', 'achilles', 'shin', 'calf', 'plantar', 'hip', 'hamstring', 'back', 'shoulder']
 const DAYS: readonly Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-const KEYS = new Set(['focus', 'session_minutes', 'sessions_per_week', 'equipment', 'experience', 'injury_tags', 'bone_health_flag', 'unavailable_days'])
+const KEYS = new Set(['focus', 'session_minutes', 'sessions_per_week', 'equipment', 'experience', 'injury_tags', 'bone_health_flag', 'unavailable_days', 'available_days'])
 
 export type ProfileParseResult = { ok: true; profile: StrengthProfile } | { ok: false; field: string }
 
@@ -39,9 +40,11 @@ export function parseStrengthProfile(input: unknown): ProfileParseResult {
   const unavailable_days = enumList(o.unavailable_days, DAYS, 6)
   if (!unavailable_days) return { ok: false, field: 'unavailable_days' }
   if (o.bone_health_flag !== undefined && typeof o.bone_health_flag !== 'boolean') return { ok: false, field: 'bone_health_flag' }
+  const available_days = o.available_days === undefined ? null : enumList(o.available_days, DAYS, C.MAX_CHOSEN_DAYS)
+  if (o.available_days !== undefined && (!available_days || available_days.length === 0)) return { ok: false, field: 'available_days' }
   return {
     ok: true,
-    profile: {
+    profile: withChosenDays({
       focus: o.focus as Focus,
       session_minutes: o.session_minutes as SessionMinutes,
       sessions_per_week: o.sessions_per_week as SessionsPerWeek,
@@ -50,6 +53,17 @@ export function parseStrengthProfile(input: unknown): ProfileParseResult {
       injury_tags,
       bone_health_flag: o.bone_health_flag === true,
       unavailable_days,
-    },
+    }, available_days),
   }
+}
+
+/**
+ * PINNED-DAYS-01 (S1 Am.2) — the one place chosen days become the engine's inputs: the count IS the sessions and
+ * every other day is unavailable, so placement fills exactly the chosen days (it fills every allowed day when
+ * allowed days = sessions). Days come back in week order.
+ */
+export function withChosenDays(profile: StrengthProfile, chosen: readonly Day[] | null | undefined): StrengthProfile {
+  if (!chosen || chosen.length === 0) return profile
+  const days = DAYS.filter(d => chosen.includes(d)).slice(0, C.MAX_CHOSEN_DAYS)
+  return { ...profile, available_days: days, sessions_per_week: days.length as SessionsPerWeek, unavailable_days: DAYS.filter(d => !days.includes(d)) }
 }

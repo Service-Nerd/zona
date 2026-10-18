@@ -4146,8 +4146,21 @@ The canonical Mon–Sun day-of-week selector — one row of seven 44×44 circula
 - For a whole **training week** (run days + the long run in one control) use `<WeekGrid>` — the wizard's "days you can't train" was absorbed there. DayGridSelector remains the canonical control for a plain binary day pick.
 
 ```tsx
-<DayGridSelector value={blockedDays} onChange={setBlockedDays} ariaLabel="Days you can never train" />
+<DayGridSelector value={runDays} onChange={pickRunDays} ariaLabel="Days you run" />
 ```
+
+#### Day selection — ask which days, never a count and a "can't" list (PINNED-DAYS-01, 2026-10-18)
+
+**Ask the runner which days they CAN do, as one positive pick; the picks are the count.** A count plus a "can't" list
+is the engine's shape, not the runner's, and as two controls it can state a contradiction (*"6 declared, 6 blocked"*).
+- **Strength setup:** *"Which days can you lift?"*, 1–`MAX_CHOSEN_DAYS` (4). A tap past the bound is ignored and the
+  note says so; nothing builds with no day picked. The sessions stay on these days (S1 Am.2).
+- **Change your plan:** *"Days you run"*, 2–6, one row writing `days_available` + `days_cannot_train`. A pick with no
+  weekend day is refused, because the long run is Sat or Sun; dropping the long-run day moves it to the other weekend
+  day as a pending edit the runner can see. A refused tap says why, muted, under the grid.
+- **The wizard** already asks this way (`WeekGrid`).
+- **A refusal is stated, never silent.** An ignored tap with no line is a control that looks broken.
+**Check:** `strengthSetupDays.markup.test.ts`, `lib/plan/modifyPlanRunDays.test.ts`.
 
 ### WeekGrid (`components/shared/WeekGrid.tsx`)
 
@@ -4239,7 +4252,9 @@ and one not is a distinction, and the gate asserts it so nobody "makes them cons
 
 **Everything else remains "text labels where space allows."**
 
-**Qualifies today:** Me · the modify sheet. **Does not:** wizard steps, Plan rows, session
+**Qualifies today:** Me. ~~The modify sheet~~ left at **seven rows** when PINNED-DAYS-01 merged the two day rows
+(Design Board 2026-10-18): the bound stayed at eight rather than moving to fit, and the sheet's icons came off.
+**Does not:** wizard steps, Plan rows, session
 cards — all labelled, all short lists.
 
 ⛔ **Silvanto, binding.** One glyph per row · one size · one family · one tinted container.
@@ -4411,9 +4426,9 @@ loading or failed renders nothing. A warm-up item that is a training
 exercise in lighter form is left out when that exercise is in the session (`S-WARMUP-REPEAT`).
 **Check:** `strengthScreens.markup.test.ts`.
 
-**Setup** is a Me door (`STRENGTH_TITLE`), a sub-page in Me's pattern: seven questions in weight order (focus
-`CardSelect`, sessions `Chip` 1–4, length `SegmentedControl`, equipment `Chip` multi, experience `Chip`, days off
-`DayGridSelector`, bone flag `Switch`), the last three defaulted; injuries read-only from the run plan; honest notes
+**Setup** is a Me door (`STRENGTH_TITLE`), a sub-page in Me's pattern: six questions in weight order (focus
+`CardSelect`, **which days can you lift** `DayGridSelector` 1–4 (PINNED-DAYS-01, § Day selection), length
+`SegmentedControl`, equipment `Chip` multi, experience `Chip`, bone flag `Switch`), the last two defaulted; injuries read-only from the run plan; honest notes
 once, as `FieldNote`s; one CTA.
 
 ## Cross-Screen Consistency Rules

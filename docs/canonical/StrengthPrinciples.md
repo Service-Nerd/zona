@@ -28,6 +28,15 @@ Every `STRENGTH_CONFIG` key is named in a section below; `strengthConfigSync.tes
 where §7 allows. A third heavy-leg day buys a runner nothing and costs a §7 slot **[C]**.
 ⚠️ **No study aligns a strength split with a run week [I].** **Check:** `S-LEGS-MAX`, `S-TOO-MANY`.
 
+**Amendment 2 (2026-10-18, PINNED-DAYS-01, founder + both boards).** The runner may **choose the days** (1–
+`MAX_CHOSEN_DAYS`, 4). Chosen days ARE the sessions: the count is the frequency and every other day is unavailable,
+so the engine decides only what goes on each day (heavy legs where S2 allows, else upper body + core, S3), **never
+which day**. A chosen day is left empty only for safety: race day and the day before (S5), the taper's fewer sessions
+and race week's one mobility session (S5), and a day the runner made a two-run day (S3 Am.1). Lifting on a day with one
+run is allowed (S4's after-run gap). Without chosen days the engine picks, as before. Measured on the founder's plan:
+three allowed days for two sessions moved them between Mon/Wed and Mon/Tue; the fix is the question, not the
+placement. **Check:** `S-PINNED-DAYS` (no session off a chosen day; every chosen day filled in an ordinary week).
+
 ## S2. Heavy legs are a §7 stressor
 
 **Principle.** Heavy lower-body and plyometric work goes, in order of preference: **(a)** stacked on a quality-run
@@ -74,6 +83,11 @@ session of at most `MOBILITY_SESSION_MINUTES`. Nothing on race day or the `NO_ST
 opinion **[L/C]**; older adults lose strength faster in reduced training (Spiering 2021) **[L]**.
 **Check:** `S-TAPER-CUTOFF`, `S-RACE-WEEK`, `S-RACE-EVE`.
 
+**Defect fix (2026-10-18, PINNED-DAYS-01, restores this section's intent).** The last week before the race is
+mobility only by DATE, whatever the run week calls it. A taper week ending inside that window was safe only because
+placement took the earliest days; chosen days (or a long unavailable list) reached the window and placed strength
+there. Placement now excludes the window outside race week.
+
 ## S6. Dose
 
 **Principle.** Technique first: for `NOVICE_BLOCK_WEEKS` (new 4, some 2, regular 0) main lifts are
@@ -117,6 +131,10 @@ test holds them equal) or with the bone flag.
 **Why.** Plyometrics improved running economy at the slower speeds recreational runners run **[M]**; the dose is
 convention, not research **[C]**. Technique before load, load before impact (Blagrove). **Check:**
 `S-PLYO-TOO-SOON`, `S-PLYO-INJURY`, `S-PLYO-TAPER`, `S-PLYO-CONTACTS`.
+
+**Defect fix (2026-10-18, PINNED-DAYS-01, restores the board's "first jump is the easiest" direction).** Jump level
+climbed from the week the gate OPENED, so a runner whose days held no leg day for weeks met a level-2 jump first. It
+now climbs from the first jump actually placed. **Check:** `S-PLYO-START-LEVEL`.
 
 ## S9. Injury, bone and equipment steer the choice
 
