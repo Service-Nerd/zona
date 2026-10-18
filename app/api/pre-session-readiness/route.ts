@@ -12,6 +12,8 @@ import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { READINESS, COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import type { Plan } from '@/types/plan'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
+import { strengthSessionOn } from '@/lib/strength-bridge/serverDay'
+import { strengthEaseEligible } from '@/lib/strength-bridge/recoveryEases'
 
 // GET /api/pre-session-readiness
 //
@@ -81,20 +83,20 @@ export async function GET(req: NextRequest) {
   // it never has one; on any day the first quality or long session is the one to read.
   const todayAll = getSessionsForDate(plan.weeks, parseLocalDate(todayDateStr), overrides ?? [])
   const resolved = todayAll.find(r => isQualityOrLong(coachingSessionType(r.session))) ?? todayAll[0] ?? null
-  if (!resolved) return NextResponse.json({ adjustment: null, reason: 'no_active_session' })
-
-  const week         = resolved.week
-  const todayDay     = resolved.dayKey
-  // The key the session is STORED under in `week.sessions` (a moved session lives on its
-  // original key). The edit and the write-back address this one.
-  const todayKey     = resolved.originalDay
-  const todaySession = resolved.session
-
   // Classify via the canonical owner — a long run is `type: 'easy'`, so
   // `todaySession.type` alone would fail this gate and readiness would never
   // fire for long-run days (sessionRole.ts).
-  if (!isQualityOrLong(coachingSessionType(todaySession))) {
-    return NextResponse.json({ adjustment: null, reason: 'session_type_not_eligible' })
+  const runEligible = !!resolved && isQualityOrLong(coachingSessionType(resolved.session))
+  // STRENGTH-RECOVERY-01 (S13; Design Board 2026-10-18) — a day whose only easeable session is
+  // strength (a no-run day, or an easy run plus a lift) still gets the recovery check, so Today can
+  // offer the strength ease. Only the reading is returned: strength's answer is the runner's, stored
+  // by /api/strength/ease, and this route never writes it.
+  const runIneligibleReason = resolved ? 'session_type_not_eligible' : 'no_active_session'
+  let strengthDay = false
+  if (!runEligible) {
+    const { data: settings } = await supabase.from('user_settings').select('is_admin').eq('id', userId).maybeSingle()
+    strengthDay = strengthEaseEligible(await strengthSessionOn(supabase, userId, todayDateStr, { isAdmin: settings?.is_admin === true, tier }))
+    if (!strengthDay) return NextResponse.json({ adjustment: null, reason: runIneligibleReason })
   }
 
   // Pull the last (BASELINE_WINDOW_DAYS + 1) days of samples — window for
@@ -138,8 +140,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ adjustment: null, reason: 'baseline_dormant', detail: readiness.detail })
   }
   if (!readiness.softeningWarranted) {
-    return NextResponse.json({ adjustment: null, reason: 'all_clear', detail: readiness.detail })
+    return NextResponse.json({ adjustment: null, reason: 'all_clear', detail: readiness.detail, warranted: false })
   }
+  // Strength is the only thing to ease today: say recovery is off, and stop. No run row is written.
+  if (!runEligible || !resolved) {
+    const signals = { isElevatedRHR: readiness.isElevatedRHR, isLowHRV: readiness.isLowHRV, isShortSleep: readiness.isShortSleep, isPoorSleepQuality: readiness.isPoorSleepQuality }
+    return NextResponse.json({ adjustment: null, reason: 'strength_only', detail: readiness.detail, signals, warranted: true })
+  }
+
+  const week         = resolved.week
+  const todayDay     = resolved.dayKey
+  // The key the session is STORED under in `week.sessions` (a moved session lives on its
+  // original key). The edit and the write-back address this one.
+  const todayKey     = resolved.originalDay
+  const todaySession = resolved.session
 
   // Run today's session through the engine with only the readiness signal.
   const input: AdjustmentCheckInput = {
@@ -181,7 +195,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ adjustment: null, reason: 'engine_error' }, { status: 500 })
   }
   if (!adjustment) {
-    return NextResponse.json({ adjustment: null, reason: 'no_trigger', detail: readiness.detail })
+    return NextResponse.json({ adjustment: null, reason: 'no_trigger', detail: readiness.detail, warranted: true })
   }
 
   // Idempotent persist: if a pending readiness adjustment already exists for
@@ -208,7 +222,7 @@ export async function GET(req: NextRequest) {
     .maybeSingle()
 
   if (existing) {
-    return NextResponse.json({ adjustment: existing, detail: readiness.detail })
+    return NextResponse.json({ adjustment: existing, detail: readiness.detail, warranted: true })
   }
 
   const { data: inserted, error: insertErr } = await supabase
@@ -230,10 +244,10 @@ export async function GET(req: NextRequest) {
 
   if (insertErr) {
     console.error('[pre-session-readiness] insert failed', insertErr.message)
-    return NextResponse.json({ adjustment, detail: readiness.detail, persisted: false })
+    return NextResponse.json({ adjustment, detail: readiness.detail, persisted: false, warranted: true })
   }
 
-  return NextResponse.json({ adjustment: inserted, detail: readiness.detail, persisted: true })
+  return NextResponse.json({ adjustment: inserted, detail: readiness.detail, persisted: true, warranted: true })
 }
 
 function isQualityOrLong(t: string | undefined): boolean {

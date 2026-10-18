@@ -61,3 +61,21 @@ describe('the mark', () => {
     expect(marks(go())).toBe(0)
   })
 })
+
+describe('the mark on strength (STRENGTH-RECOVERY-01)', () => {
+  it('the strength session screen shows it on an eased lift, and not otherwise', async () => {
+    const { generateStrengthPlan, easeForRecovery } = await import('@/packages/strength')
+    const { default: StrengthSessionScreen } = await import('@/components/dashboard/StrengthSessionScreen')
+    const s = generateStrengthPlan({ focus: 'running', session_minutes: 45, sessions_per_week: 2, equipment: ['dumbbells'], experience: 'some' }, null, { standaloneStart: '2026-11-02' })
+      .weeks.flatMap(w => w.sessions).find(x => x.kind !== 'mobility')!
+    const go = (session: unknown) => renderToStaticMarkup(React.createElement(StrengthSessionScreen as never, {
+      session, dayLabel: 'Today', weekN: 1, status: null, canLog: true, onBack: () => {}, onSetStatus: async () => true } as never))
+    expect(marks(go(easeForRecovery(s)))).toBe(1)
+    expect(marks(go(s))).toBe(0)
+  })
+  it('the Plan strength row and Today\'s strength card pass it through', () => {
+    const { readFileSync } = require('node:fs') as typeof import('node:fs')
+    expect(readFileSync('components/training/PlanCalendar.tsx', 'utf8')).toMatch(/eased: isEasedForRecovery\(ss\)[\s\S]*\{strength\.eased && <EasedMark \/>\}/)
+    expect((readFileSync('components/dashboard/TodayScreen.tsx', 'utf8').match(/eased=\{isEasedForRecovery\(strengthToday\)\}/g) ?? []).length).toBe(2)
+  })
+})

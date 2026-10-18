@@ -23,7 +23,7 @@ import { strengthSubtitle } from '@/components/shared/meDoors'
 const plan = harnessPlanJson as unknown as Plan
 // TodayScreen's optional handlers are not needed for a look; fixture props only.
 const Today = TodayScreen as unknown as (p: Record<string, unknown>) => JSX.Element
-const CASES = ['today', 'session', 'plan', 'setup', 'rest', 'sheet', 'double-today', 'double-plan'] as const
+const CASES = ['today', 'session', 'plan', 'setup', 'rest', 'sheet', 'double-today', 'double-plan', 'recovery'] as const
 
 /** Shift the harness plan so its current week contains today, as a live runner's would. */
 function livePlan(): Plan {
@@ -53,6 +53,7 @@ export default function StrengthPreviewPage() {
     return m
   }, [strength])
   const [completions, setCompletions] = useState<Record<string, 'done' | 'skipped'>>({})
+  const [recoveryEases, setRecoveryEases] = useState<Record<string, 'eased' | 'declined'>>({})
   const setStatus = async (date: string, st: 'done' | 'skipped' | null) => {
     setCompletions(x => { const n = { ...x }; if (st) n[date] = st; else delete n[date]; return n }); return true
   }
@@ -97,6 +98,14 @@ export default function StrengthPreviewPage() {
       {c === 'sheet' && (
         <ModifyPlanSheet plan={run} onClose={() => setC('today')} onApply={() => {}} hasPaidAccess edits={{}} onEditsChange={() => {}}
           onStartNewPlan={() => {}} strengthDoor={{ title: STRENGTH_TITLE, subtitle: strengthSubtitle(null), onOpen: () => setC('setup') }} />
+      )}
+      {/* STRENGTH-RECOVERY-01 — recovery is off today and today holds a lift (fixture reading). */}
+      {c === 'recovery' && (
+        <Today plan={run} weekIndex={Math.max(0, weekIndex)} daysToRace={60} raceName="Brighton Half" preferredMetric="distance"
+          sessionMetricOverrides={{}} stravaRuns={[]} allOverrides={[]} overridesReady allCompletions={{}} preferredUnits="km"
+          zone2Ceiling={148} firstName="Sam" hasPaidAccess
+          readinessData={{ warranted: true, reason: 'strength_only', detail: { hrvToday: 38, hrvBaseline: 52, samplesUsed: 14 }, signals: { isLowHRV: true } }}
+          strength={{ ...strengthProp, recoveryEases, onRecoveryAnswer: async (d: string, a: 'eased' | 'declined') => { setRecoveryEases(x => ({ ...x, [d]: a })); return true } }} />
       )}
       {c === 'double-today' && (
         <Today plan={doubleTodayPlan} weekIndex={Math.max(0, weekIndex)} daysToRace={60} raceName="Brighton Half" preferredMetric="distance"

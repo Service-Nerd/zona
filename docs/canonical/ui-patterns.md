@@ -2229,8 +2229,10 @@ When recovery signals (RHR / HRV / sleep) fire on a quality / long / intervals /
 **Anatomy:**
 - `--card` bg, `1px --line`, `--radius-lg`, **3px `--warn` left rail** at `left: 8px` (coaching-caution rail, never red — INV-DS-005)
 - Eyebrow `Readiness · easing today` + reason chips: `RHR up · HRV down · Short sleep`
-- Permission line: 15px 400 `--ink`, line-height 1.55 — this is the adjustment's `summary`, already in Kit voice from `buildReadinessAdjustment`
-- Two buttons: primary `--moss` "Ease the session" (= confirm API), secondary text "Run it anyway →" (= revert API)
+- **A — the reading** (amended 2026-10-18): `20px 600 --ink`, tabular, against the runner's own normal: *"HRV 38. Your normal is 52."* Absent numbers say nothing (never invented)
+- **B — the run line / C — the lift line**: `15px 400 --ink`, one per session that changes (`lib/ui/recoveryCardCopy.ts`; B falls back to the adjustment's `summary`)
+- **Two EQUAL buttons**, stacked full-width: primary "Ease the session", secondary override. The override is *"Run it anyway →"* when the run changes, *"Lift as planned"* when only strength does. (Was: a full-width primary beside a small ghost link, which broke "equally visible".)
+- **One card, one answer** (STRENGTH-RECOVERY-01): the run's answer covers the lift; a strength-only day (no run row) shows the same card from the route's `strength_only` reading. Answered → the card goes; Ease marks what changed (§ 10e)
 - **No AIMark** — rule-derived (CoachingPrinciples §59), not model output (Pattern 16 provenance honesty)
 
 **Stacking against PreRunBandCard (Decision 2026-06-19):**
@@ -2238,9 +2240,9 @@ PreRunBandCard self-hides when a readiness-signal pending adjustment exists. Sam
 
 **Tier:** PAID (the underlying `/api/pre-session-readiness` route is gated; free users never see a pending readiness row).
 
-**Eligibility:** today's session type ∈ `{quality, long, intervals, tempo}`. Easy / recovery / rest never trigger — an easy day doesn't need easing.
+**Eligibility:** today's session type ∈ `{quality, long, intervals, tempo}`. Easy / recovery / rest never trigger — an easy day doesn't need easing. **Strength (2026-10-18):** any lift except mobility, not done, not yet answered, on a day the route says recovery is off (`warranted`).
 
-Reference: `function TdReadyHero` in `app/dashboard/DashboardClient.tsx`. Engine: `lib/coaching/planAdjustment.ts → buildReadinessAdjustment`. Thresholds: `GENERATION_CONFIG.READINESS`.
+Reference: `function TdReadyHero` in `components/dashboard/TodayScreen.tsx` (this line said DashboardClient, a stale path). Engine: `lib/coaching/planAdjustment.ts → buildReadinessAdjustment`. Thresholds: `GENERATION_CONFIG.READINESS`.
 
 ---
 

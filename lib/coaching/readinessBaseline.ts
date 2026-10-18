@@ -52,6 +52,9 @@ export interface ReadinessSignal {
     hrvSd?:          number
     hrvToday?:       number
     sleepHours?:     number
+    /** READINESS-SURFACE-01 — the runner's usual sleep (window mean), for "You usually get 7h 30".
+     *  Display only: sleep fires on an absolute threshold, never against this. */
+    sleepBaseline?:  number
     deepSleepPct?:   number
     samplesUsed:     number
   }
@@ -154,6 +157,7 @@ export function computeReadiness(
       hrvSd:        round(hrvSd, 2),
       hrvToday:     today.hrvMs ?? undefined,
       sleepHours:   today.sleepHours ?? undefined,
+      sleepBaseline: (() => { const h = samplesWindow.map(s => s.sleepHours).filter((x): x is number => x != null); return h.length ? round(mean(h), 2) : undefined })(),
       deepSleepPct: deepSleepPct != null ? round(deepSleepPct, 3) : undefined,
       samplesUsed,
     },

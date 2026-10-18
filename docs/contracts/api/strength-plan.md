@@ -14,8 +14,15 @@ from the stored profile, validated and saved (Design Board `STRENGTH-APP-01` H).
 
 ```json
 { "plan": StrengthPlan, "profile": StrengthProfile, "completions": { "YYYY-MM-DD": "done" | "skipped" },
-  "completions_ok": true, "replaced": boolean, "stale": false | null }
+  "completions_ok": true, "replaced": boolean, "stale": false | null,
+  "recovery_eases": { "YYYY-MM-DD": "eased" | "declined" } }
 ```
+
+**Recovery eases (STRENGTH-RECOVERY-01, 2026-10-18).** The stored plan stays as generated; each session on an
+`"eased"` date is served through `easeForRecovery` on the way out (`applyRecoveryEases`). The answers are read on
+their own select and a failed read is `{}`, so the plan still loads before `20261018_strength_recovery_eases.sql`
+is applied. POST returns `recovery_eases` too and applies them the same way. Written by
+`docs/contracts/api/strength-ease.md`.
 
 A **failed run-plan read never re-places** (that would place strength blind to the runner's hard days): the stored
 plan is returned and `stale` is `null`. `{ "plan": null }` when nothing is stored. Completions: see

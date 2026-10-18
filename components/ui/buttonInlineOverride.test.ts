@@ -105,7 +105,7 @@ const BASELINE: Record<string, number> = {
   // overrides were invisible, every one of them behind an inline arrow handler.
   'components/dashboard/SessionPopupInner.tsx': 12,
   // 3 -> 4 (reader fix).
-  'components/dashboard/TodayScreen.tsx': 4,
+  'components/dashboard/TodayScreen.tsx': 3,   // 4 → 3: the recovery card's override is a plain secondary now (2026-10-18)
   // ME-BENCHMARK-DUP-01 (2026-09-29): 3 → 2. DEBT PAID, not a re-key — the duplicate
   // `Race benchmark` ghost Button was one of the three, so removing the door removed an
   // inline override with it. The stale arm is what demanded this number come down.

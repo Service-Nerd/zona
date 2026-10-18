@@ -7,6 +7,12 @@ The "Eased for recovery" text mark: the record that a recovery ease changed this
 
 ## Props
 
+```ts
+type EasedMarkProps = {
+  // no props: the words are owned by EASED_FOR_RECOVERY_LABEL
+}
+```
+
 None. The words come from `EASED_FOR_RECOVERY_LABEL` (`lib/ui/easedMark.ts`); a caller never passes text.
 
 ## Render

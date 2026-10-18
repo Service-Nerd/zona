@@ -5,6 +5,7 @@ import { readPlanJson } from '@/lib/planRead'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { planToRunContext, runContextSig } from '@/lib/strength-bridge/runContext'
 import { strengthGate, readSmallJson, strengthServiceClient } from '@/lib/strength-bridge/routeGate'
+import { applyRecoveryEases, parseRecoveryEases, type RecoveryEases } from '@/lib/strength-bridge/recoveryEases'
 import { generateStrengthPlan, parseStrengthProfile, validateStrengthPlan, type RunContext, type StrengthPlan, type StrengthProfile } from '@/packages/strength'
 
 // /api/strength/plan — STRENGTH-ENGINE-01 (ADR-024). Contract: docs/contracts/api/strength-plan.md.
@@ -49,6 +50,15 @@ async function currentRunContext(supabase: Supabase, userId: string): Promise<{ 
   ])
   if (error || oErr) return { ctx: null, error: error ?? oErr!.message }
   return { ctx: plan ? planToRunContext(plan, overrides ?? []) : null, error: null }
+}
+
+/**
+ * STRENGTH-RECOVERY-01 — the runner's recovery answers. Read on their own, and a failed read is
+ * "no answers", so the plan still loads before `20261018_strength_recovery_eases.sql` is applied.
+ */
+async function recoveryEasesFor(supabase: Supabase, userId: string): Promise<RecoveryEases> {
+  const { data, error } = await supabase.from('strength_plans').select('recovery_eases').eq('user_id', userId).maybeSingle()
+  return error ? {} : parseRecoveryEases(data?.recovery_eases)
 }
 
 /** Generate, validate and save. Returns the plan, or a response to send. */
@@ -99,8 +109,9 @@ export async function GET(req: NextRequest) {
       if (built.ok) { plan = built.plan; replaced = true }
     }
   }
-  const completions = await completionsFor(supabase, user.id)
-  return NextResponse.json({ plan, profile: data.profile_json, completions: completions ?? {}, completions_ok: completions != null, replaced, stale: ctxErr ? null : false })
+  const [completions, recoveryEases] = await Promise.all([completionsFor(supabase, user.id), recoveryEasesFor(supabase, user.id)])
+  // The stored plan stays as generated; an accepted recovery ease is applied on the way out (S13).
+  return NextResponse.json({ plan: applyRecoveryEases(plan, recoveryEases), recovery_eases: recoveryEases, profile: data.profile_json, completions: completions ?? {}, completions_ok: completions != null, replaced, stale: ctxErr ? null : false })
 }
 
 export async function POST(req: NextRequest) {
@@ -123,5 +134,6 @@ export async function POST(req: NextRequest) {
   if (exErr) return NextResponse.json({ error: 'Could not load the strength plan' }, { status: 500 })
   const built = await buildAndSave(supabase, user.id, parsed.profile, ctx, startDateFor(existing, new Date()))
   if (!built.ok) return built.res
-  return NextResponse.json({ plan: built.plan })
+  const recoveryEases = await recoveryEasesFor(supabase, user.id)
+  return NextResponse.json({ plan: applyRecoveryEases(built.plan, recoveryEases), recovery_eases: recoveryEases })
 }

@@ -909,10 +909,10 @@
   "components/dashboard/TodayScreen.tsx#Button5": {
     "floor": 44,
     "padY": null,
-    "font": 14,
+    "font": null,
     "radius": null,
     "height": 47,
-    "width": "auto"
+    "width": "full"
   },
   "components/dashboard/TodayScreen.tsx#Button6": {
     "floor": 44,

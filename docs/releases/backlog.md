@@ -2234,7 +2234,7 @@ resting hr and can we interpret those to give ppl less or more? That is more for
 #### `READINESS-SURFACE-01` — make it visible. 🧭 Design Board **SHIP WITH AMENDMENT (direction)** · 💼 SLT **BUILD**
 Build in this order, each against the ruling:
 1. ✅ **Precondition: `READINESS-WRONG-DAY-01`** (shipped 2026-10-17).
-2. **The moment (Today).** `TdReadyHero` leads with the runner's reading in large type against their own normal
+2. ✅ **The moment (Today)** (built 2026-10-18 with STRENGTH-RECOVERY-01, Design Board ruling + founder copy A–D). `TdReadyHero` leads with the runner's reading in large type against their own normal
    (*"HRV 38, your normal is 52"*), then the change, then *Ease the session* / *Run it anyway* (equally visible).
    Copy: 👤 founder.
 3. ✅ **The record** (built 2026-10-17, feature registry). An **"Eased for recovery"** TEXT mark on the session card,
@@ -2261,7 +2261,23 @@ beginner's long-run day a warranted ease returns the session unchanged: an adjus
 Found while building READINESS-SURFACE-01 item 3. The fix scales `duration_mins` by the same factor (§59's intent,
 no new prescription). **Tags:** ⚙️ NO BOARD (defect restoring documented intent).
 
-#### `STRENGTH-RECOVERY-01` — recovery softens strength. 🏃 Coaching Board **CORRECT WITH AMENDMENT** (re-sat 2026-10-17) · engine side ✅ BUILT 2026-10-17, **not wired**
+#### `STRENGTH-RECOVERY-01` — recovery softens strength. 🏃 Coaching Board **CORRECT WITH AMENDMENT** (re-sat 2026-10-17) · ✅ BUILT 2026-10-18, live once migration `20261018_strength_recovery_eases.sql` is applied
+
+✅ **Built 2026-10-18** (feature registry). Design Board sat on the moment (`recovery-card-strength-2026-10-18.md`),
+founder approved copy A–D: one recovery card a day, the reading against their normal, a line per session that changes,
+two equal answers. The answer is stored on `strength_plans.recovery_eases` by `/api/strength/ease` and applied on read.
+🔻 **Founder: apply `20261018_strength_recovery_eases.sql`.** Until then the card's answer fails to save (said on
+screen) and the plan still loads.
+
+#### `STRENGTH-FULLBODY-NO-UPPER-01` — "Full body" sessions with no upper-body work *(filed 2026-10-18, OPEN)*
+Measured on the standalone grid (no run plan): **running-focus "Full body" sessions hold no upper-body work in 100% of
+30-minute and 75% of 45-minute plans** (0% at 60 minutes, 0% for general focus). The session clock (S10) drops the
+upper slots first for running focus, and the title still says "Full body". Found while writing the recovery card's
+strength line, which reads what the session holds and so says "core and calf work" for these. Either the session
+should keep one upper movement (a prescription question) or the title should say what it is (an encoding question).
+**Tags:** 🏃 COACHING BOARD (does a short running-focus session keep upper work?) → 🧭 DESIGN BOARD (the title).
+
+**Engine side (2026-10-17), premises corrected below:**
 
 ✅ **Re-sat and engine side built 2026-10-17** (recorded as `STRENGTH-RECOVERY-ENGINE-01` in the feature registry; `docs/decisions/strength-recovery-resitting-2026-10-17.md`). Two
 premises were false: the run ease is **confirmed, not silent**, so **the runner decides** (one answer covers a run and

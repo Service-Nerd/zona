@@ -168,6 +168,7 @@ are WRONG. They now spread `MICRO_LABELS.eyebrow`, and a new arm forbids a canon
   Target eligibility comes only from `moveChoices(source, targetSessions, week, sourceSharesDay)`: a day holding two
   is never a target; from a double a session may move or join, never swap (hint *"tap to double up"*). The confirm
   row (§ 10b) adds a secondary **"Do both"** when `both` is allowed, which calls `onMove(…, 'pm')`.
+- **"Eased for recovery" on a strength row (STRENGTH-RECOVERY-01, 2026-10-18).** `DayStrength.eased` (from `isEasedForRecovery(ss)`) renders `EasedMark` in the strength row's metric line, as the run row does (ui-patterns § 10e).
 - **Writes are checked.** Move and swap each revert the screen and show one `InlineError` (*"Couldn't move it. Check
   your connection and try again."*) when the delete or insert fails.
 

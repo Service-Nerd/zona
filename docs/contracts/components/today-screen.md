@@ -89,7 +89,7 @@ interface TodayScreenProps {
   // STRENGTH-APP-01 (A, B), 2026-10-16. Run day: one compact strength row under the run.
   // No-run day: the strength session IS the day (hero, card, Mark complete) and no rest
   // copy renders. DateStrip: one dot, the run's; a strength-only day gets the strength dot.
-  strength?: TodayStrength | null                   // { sessionsByDate, completions, onOpen, onSetStatus }
+  strength?: TodayStrength | null                   // { sessionsByDate, completions, onOpen, onSetStatus, recoveryEases?, onRecoveryAnswer? }
   // STRENGTH-ENTRY-01 (2026-10-17) — opens the strength setup. Passed only when strength is
   // available and NOT set up. The rest card shows one line ("Strength fits on days like
   // this") on the week's FIRST rest day only (`showsStrengthInvite`), so at most once a week.
@@ -130,6 +130,12 @@ interface TodayScreenProps {
     race-week double is refused. The hero is the day's first session not yet done; the other is the
     compact `SessionCard` row under an AM / PM eyebrow with `doubleAdvice()` once beneath. One CTA.
     Gate: `components/dashboard/todayDouble.markup.test.ts`.
+11. **One recovery card a day (STRENGTH-RECOVERY-01 × READINESS-SURFACE-01 item 2, Design Board 2026-10-18).**
+    `TdReadyHero` shows for a pending readiness row, or for TODAY's lift (never the selected day's) when
+    `readinessData.warranted` and the lift is easeable, not done and unanswered (`strength.recoveryEases`). One
+    `answer(kind)` covers both sessions; equal stacked buttons; copy from `lib/ui/recoveryCardCopy.ts`.
+    `TodayStrength` gains `recoveryEases` and `onRecoveryAnswer`; `readinessData` gains `warranted`, `signals` and
+    `detail.sleepBaseline`. Gate: `components/dashboard/recoveryCard.markup.test.ts`.
 
 ## Not this component's
 

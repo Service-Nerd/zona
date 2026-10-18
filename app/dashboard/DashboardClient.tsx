@@ -567,7 +567,7 @@ export default function DashboardClient() {
   // STRENGTH-APP-01 — the strength plan, fetched once here and passed down so Today,
   // Plan, Me and the session screen read ONE copy. The client check only decides
   // whether to ask; the server's gate decides whether to answer.
-  const { strength, reloadStrength, saveStrength, setStrengthCompletion } = useStrengthPlan(
+  const { strength, reloadStrength, saveStrength, setStrengthCompletion, setStrengthRecoveryAnswer } = useStrengthPlan(
     canUseStrength({ isAdmin, tier: hasPaidAccess ? 'paid' : 'free' }), plan,
   )
   const [activeStrength, setActiveStrength] = useState<StrengthSession | null>(null)
@@ -587,6 +587,8 @@ export default function DashboardClient() {
     completions: strength.completions,
     onOpen: (ss: StrengthSession) => { setActiveStrength(ss); setStrengthOrigin(origin); setScreen('strength-session') },
     onSetStatus: setStrengthCompletion,
+    recoveryEases: strength.recoveryEases,
+    onRecoveryAnswer: setStrengthRecoveryAnswer,
   } : null
   // SUBS-RECONCILE-TRIAL-GATE-01 — `reason` distinguishes a trial from a recorded
   // subscription, which `hasPaidAccess` cannot. Null until the tier resolves.
@@ -732,9 +734,13 @@ export default function DashboardClient() {
     detail?: {
       rhrBaseline?: number; rhrToday?: number
       hrvBaseline?: number; hrvToday?: number; hrvSd?: number
-      sleepHours?: number
+      sleepHours?: number; sleepBaseline?: number
       samplesUsed?: number
     }
+    /** STRENGTH-RECOVERY-01 — recovery is off today (the route computed it), whether or not a run row exists. */
+    warranted?: boolean
+    /** Which signals fired, on a strength-only day (no run row carries them). */
+    signals?: { isElevatedRHR?: boolean; isLowHRV?: boolean; isShortSleep?: boolean; isPoorSleepQuality?: boolean }
   } | null>(null)
   // NOTIF-01 — unread notification count drives the Today-screen bell dot.
   // Fetched once at load (paid only) and refreshed on app-resume. Auto-applied

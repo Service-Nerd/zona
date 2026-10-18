@@ -68,5 +68,4 @@ floor 1; warm-up and mobility unchanged; `estimated_minutes` never rises; stamps
 **not** decide whether recovery is off (`computeReadiness`, §59) or whether the runner accepted (the caller).
 Check: `recoveryEaseViolations(original, eased)` → `S-RECOVERY-SUBTRACT-ONLY`, re-derived from the two sessions
 (it does not call the producer). Gate: `packages/strength/recovery.test.ts`, every generated session across a
-288-profile grid eased and checked. ⚠️ **Not wired into the app yet:** the accept flow is READINESS-SURFACE-01
-item 2 (Design Board) and needs a stored answer.
+288-profile grid eased and checked. **Wired 2026-10-18:** the runner answers on Today's recovery card; the answer is stored by `/api/strength/ease` and applied on read by `applyRecoveryEases` (`lib/strength-bridge/recoveryEases.ts`).

@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-18 — STRENGTH-RECOVERY-01 · one card, one answer, and a "full body" with no upper body
+**Shipped:** On a bad-recovery morning Today now shows one card: your number against your normal ("HRV 38. Your normal is 52."), what happens to the run, what happens to the lift, and two equal buttons. Answer once and it covers both. On a day with only a lift, the same card asks about the lift. It goes live once the migration is applied.
+
+**Dev learning:** The answer had to survive the strength plan regenerating itself whenever the run plan moves, and I nearly put it inside the plan JSON, which that regeneration rewrites. A column beside it does not get touched, because the upsert names only its own columns. The read is separate and tolerant, so the plan still loads before the column exists.
+
+**Product learning:** Writing the lift's sentence from what the eased session actually holds, rather than from its label, found something nobody had looked at: most short running-focus "Full body" sessions contain no upper-body work at all. The card says "core and calf work" for those, which is true. The title is the part that lies, and that is now its own item.
+
+**AI-building learning:** The board said "half-width buttons" and at 375 points "Ease the session" wrapped onto two lines. I only saw it because I opened the page at phone width rather than trusting the markup test, which passed. Stacking them keeps what the board actually wanted: same size, same tap target.
+
+**The honest bit:** I had told the founder five copy decisions were still his to make. He had made them on the 17th. I listed them from an old note without checking, and caught it only because he said the request was unclear.
+
+---
+
 ## 2026-10-17 — STRENGTH-RECOVERY-ENGINE-01 · the ruling was wrong about the run
 **Shipped:** The strength engine can now produce a lighter version of a session for a bad-recovery day, and a check proves it only ever takes away. It is not in the app yet: the runner has to be asked first, and that moment has not been designed.
 

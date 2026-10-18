@@ -25,6 +25,7 @@ say" with an error status. `reason` names which gate ended the evaluation, in ev
 | `no_plan` | No plan, or a plan with no weeks |
 | `overrides_unavailable` | The runner's moves (`session_overrides`) could not be read. READINESS-OVERRIDES-01: today's session includes their moves, so a failed read eases nothing rather than act on a session it cannot place |
 | `no_active_session` | `getSessionsForDate()` (with the runner's live overrides) returned no session: before the plan starts, after it ends, a gap, or an empty day (ADR-016) |
+| `strength_only` | **STRENGTH-RECOVERY-01 (2026-10-18).** No run to ease today, but an easeable strength session (`strengthSessionOn`, not mobility) and recovery is off. Returns `{ adjustment: null, detail, signals: { isElevatedRHR, isLowHRV, isShortSleep, isPoorSleepQuality }, warranted: true }`. No row is written; the runner's answer goes to `/api/strength/ease`. Without a lift the day keeps its old reason (`no_active_session` / `session_type_not_eligible`) |
 | `session_type_not_eligible` | Today is not quality or long. §59 softens hard days only. On a day holding two sessions the quality or long one is the target, else the first; a §126 double is two easy runs, so it lands here |
 | `baseline_dormant` | Fewer than `READINESS` requires of the 14-day window. ⚠️ **Not an error** — a new runner has no baseline yet |
 | `all_clear` | Baseline exists and today's RHR / HRV / sleep are within it |
@@ -42,6 +43,11 @@ say" with an error status. `reason` names which gate ended the evaluation, in ev
 - `401 { error: 'Unauthorized' }` — no bearer token, or no user-scoped client.
 - `500 { adjustment: null, reason: 'engine_error' }` — `checkAdjustmentTriggers` threw. Recorded as a
   `readiness_failed` ops event, because the only caller swallows this route's failures.
+
+**`warranted` (2026-10-18):** every response after the reading is computed says whether recovery is off
+(`all_clear` → `false`; `strength_only`, `no_trigger` and the adjustment paths → `true`), so Today can offer the
+lift beside or without a run row. `detail.sleepBaseline` (window mean) feeds the card's *"You usually get 7h 30."*,
+display only: sleep fires on an absolute threshold.
 
 ## The stored change — READINESS-WRONG-DAY-01 (2026-10-17)
 

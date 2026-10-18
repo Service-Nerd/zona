@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import type { StrengthPlan, StrengthProfile } from '@/packages/strength'
+import { applyRecoveryEases, parseRecoveryEases, type RecoveryAnswer, type RecoveryEases } from '@/lib/strength-bridge/recoveryEases'
 
 export type StrengthCompletion = 'done' | 'skipped'
 
@@ -18,9 +19,11 @@ export interface StrengthState {
   plan: StrengthPlan | null
   profile: StrengthProfile | null
   completions: Record<string, StrengthCompletion>
+  /** STRENGTH-RECOVERY-01 — the runner's recovery answers by date ("eased" / "declined"). */
+  recoveryEases: RecoveryEases
 }
 
-const OFF: StrengthState = { status: 'off', plan: null, profile: null, completions: {} }
+const OFF: StrengthState = { status: 'off', plan: null, profile: null, completions: {}, recoveryEases: {} }
 
 export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
   const [state, setState] = useState<StrengthState>(enabled ? { ...OFF, status: 'loading' } : OFF)
@@ -43,8 +46,8 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
       const body = await res.json()
       if (stale()) return
       setState(body.plan
-        ? { status: 'ready', plan: body.plan, profile: body.profile ?? null, completions: body.completions ?? {} }
-        : { status: 'none', plan: null, profile: null, completions: {} })
+        ? { status: 'ready', plan: body.plan, profile: body.profile ?? null, completions: body.completions ?? {}, recoveryEases: parseRecoveryEases(body.recovery_eases) }
+        : { status: 'none', plan: null, profile: null, completions: {}, recoveryEases: {} })
     } catch {
       if (!stale()) setState(s => ({ ...s, status: 'error' }))
     }
@@ -62,7 +65,7 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
       })
       if (!res.ok) return 'save'
       const body = await res.json()
-      setState(s => ({ status: 'ready', plan: body.plan, profile, completions: s.completions }))
+      setState(s => ({ status: 'ready', plan: body.plan, profile, completions: s.completions, recoveryEases: parseRecoveryEases(body.recovery_eases ?? s.recoveryEases) }))
       return null
     } catch { return 'save' }
   }, [])
@@ -90,7 +93,26 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
     return false
   }, [])
 
-  return { strength: state, reloadStrength: load, saveStrength: save, setStrengthCompletion: setCompletion }
+  /**
+   * STRENGTH-RECOVERY-01 — the runner's answer on Today's recovery card. NOT optimistic: the card
+   * stays until the server has the answer, so a failed save is said (InlineError) and can be retried.
+   * On "eased" the day's session is served lighter at once, through the same owner the server uses.
+   */
+  const setRecoveryAnswer = useCallback(async (date: string, answer: RecoveryAnswer): Promise<boolean> => {
+    try {
+      const res = await authedFetch('/api/strength/ease', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, answer }),
+      })
+      if (!res.ok) return false
+    } catch { return false }
+    setState(s => {
+      const recoveryEases = { ...s.recoveryEases, [date]: answer }
+      return { ...s, recoveryEases, plan: s.plan ? applyRecoveryEases(s.plan, recoveryEases) : s.plan }
+    })
+    return true
+  }, [])
+
+  return { strength: state, reloadStrength: load, saveStrength: save, setStrengthCompletion: setCompletion, setStrengthRecoveryAnswer: setRecoveryAnswer }
 }
 
 /**

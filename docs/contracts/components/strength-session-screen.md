@@ -28,3 +28,7 @@ interface StrengthSessionScreenProps {
 - **No zone, pace, RPE or media placeholder.** Actions at the end of content: Mark complete (primary), Skip
   (secondary); once logged a `StatusBadge` and Undo. A failed save shows `InlineError`.
 - Every string from `lib/strength-bridge/display.ts`. Check: `components/dashboard/strengthScreens.markup.test.ts`.
+
+## Recovery ease (STRENGTH-RECOVERY-01, 2026-10-18)
+
+An eased session (`session.eased_for === 'recovery'`, applied on read by `applyRecoveryEases`) shows `EasedMark` above the tiles, the record the run's session screen carries (ui-patterns § 10e). The blocks shown are the eased ones: nothing to toggle back. Gate: `components/shared/easedMark.markup.test.ts`.

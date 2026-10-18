@@ -55,7 +55,7 @@ describe('TAP-TARGET-DECISIONS-01 — the floor has one owner', () => {
   // 17, and the difference is the whole reason the number is derived in the test
   // rather than typed into it.
   it('inline 44 literals do not grow', () => {
-    const INLINE_BASELINE = 17
+    const INLINE_BASELINE = 16   // 17 → 16: the recovery card's hand-sized 44px ghost became a Button secondary (2026-10-18)
     let n = 0
     for (const f of FILES) {
       n += (readFileSync(f, 'utf8').match(/minHeight:\s*'?44(?:px)?'?/g) ?? []).length

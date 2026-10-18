@@ -144,6 +144,16 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-18 — STRENGTH-RECOVERY-01 × READINESS-SURFACE-01 item 2 · SHIP WITH AMENDMENT. One recovery card, one answer
+
+**One card a day**, shown when recovery would ease the run, the lift, or both: the runner's reading against their
+normal (A, 20px), one line per session that changes (B run, C lift, 15px), two **equal** answers. *Ease the session*
+primary; the override reads *Run it anyway →* when the run changes and *Lift as planned* when it does not. After
+answering the card goes; Ease marks what changed. **Fixed the live card's unequal buttons.** **Collins lost** one
+combined line. Read at build time: the buttons stack full-width (half-width wrapped at 375pt); the lift line is read
+from what the ease keeps. Copy A–D approved by the founder. Checks: `recoveryCard.markup.test.ts`,
+`recoveryCardCopy.test.ts`. Sitting: `docs/decisions/recovery-card-strength-2026-10-18.md`.
+
 ## 2026-10-17 — SESSION-SLOTS-01 (Phase 3) · SHIP WITH AMENDMENT. A double is two rows under one date, chosen inline
 
 **Plan:** the move-confirm row (§ 10b) keeps **"Swap them"** primary and adds a secondary **"Do both"** only when

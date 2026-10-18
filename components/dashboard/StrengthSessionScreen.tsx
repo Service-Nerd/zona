@@ -11,6 +11,8 @@
 // actions at the end of content (7a), done or skipped only (no RPE until Phase 4).
 // Every string comes from `lib/strength-bridge/display.ts`.
 
+import EasedMark from '@/components/shared/EasedMark'
+import { isEasedForRecovery } from '@/lib/ui/easedMark'
 import { useState } from 'react'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
@@ -130,6 +132,8 @@ export default function StrengthSessionScreen({ session, dayLabel, weekN, status
       />
 
       <div style={{ padding: '0 16px var(--space-6)' }}>
+        {/* STRENGTH-RECOVERY-01 — the record, as on the run's session screen (ui-patterns § 10e). */}
+        {isEasedForRecovery(session) && <p style={{ margin: '0 0 var(--space-3)' }}><EasedMark /></p>}
         {session.after_quality_run && (
           <p style={{ fontFamily: FONT, fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.5, margin: '0 0 var(--space-3)' }}>
             {STRENGTH_AFTER_RUN_LINE}.

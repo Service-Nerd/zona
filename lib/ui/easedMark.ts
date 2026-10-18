@@ -10,7 +10,7 @@ import type { Session } from '@/types/plan'
 /** The mark's words (Design Board ruling). A TEXT mark: never a colour, a tile or a count. */
 export const EASED_FOR_RECOVERY_LABEL = 'Eased for recovery'
 
-export function isEasedForRecovery(s: Pick<Session, 'eased_for'> | null | undefined): boolean {
+export function isEasedForRecovery(s: Pick<Session, 'eased_for'> | { eased_for?: 'recovery' } | null | undefined): boolean {
   return s?.eased_for === 'recovery'
 }
 

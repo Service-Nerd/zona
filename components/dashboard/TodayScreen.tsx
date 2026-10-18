@@ -8,6 +8,8 @@
 import { resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
 import { SLOT_LABEL, doubleAdvice } from '@/lib/plan/doubles'
 import { isEasedForRecovery } from '@/lib/ui/easedMark'
+import { readingLine, runLine, strengthLine, overrideLabel, EASE_LABEL, type ReadingDetail, type ReadingFlags } from '@/lib/ui/recoveryCardCopy'
+import { strengthEaseEligible } from '@/lib/strength-bridge/recoveryEases'
 import { InlineError } from '@/components/shared/InlineError'
 import AIMark from '@/components/shared/AIMark'
 import Button from '@/components/ui/Button'
@@ -58,6 +60,9 @@ export interface TodayStrength {
   completions: Record<string, 'done' | 'skipped'>
   onOpen: (s: StrengthSession) => void
   onSetStatus: (date: string, status: 'done' | 'skipped' | null) => Promise<boolean>
+  /** STRENGTH-RECOVERY-01 — answers by date; a date with an answer is never offered again. */
+  recoveryEases?: Record<string, 'eased' | 'declined'>
+  onRecoveryAnswer?: (date: string, answer: 'eased' | 'declined') => Promise<boolean>
 }
 import { weightOf, zoneDiscipline } from '@/lib/coaching/weeklyZoneAggregate'
 
@@ -419,52 +424,64 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
 //
 // CoachingPrinciples §59. PAID gated upstream — the readiness signal route
 // returns null for free users, so no pending row is ever written.
-function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
-  adjustment: any
+function TdReadyHero({ adjustment, detail: reading, signals = null, strengthSession = null, strengthDate = null, onStrengthAnswer, units = 'km', onConfirmed, onReverted }: {
+  /** The pending readiness ease for today's run, or null on a day only strength can ease. */
+  adjustment: any | null
+  /** The reading behind it (`/api/pre-session-readiness` detail) for line A. */
+  detail?: ReadingDetail | null
+  /** Which signals fired, when there is no run row to read them from (a strength-only day). */
+  signals?: ReadingFlags | null
+  /** STRENGTH-RECOVERY-01 — today's strength session when it is offered too (one card, one answer). */
+  strengthSession?: StrengthSession | null
+  strengthDate?: string | null
+  onStrengthAnswer?: (date: string, answer: 'eased' | 'declined') => Promise<boolean>
+  units?: 'km' | 'mi'
   onConfirmed?: (plan: any) => void
   onReverted?:  (plan: any) => void
 }) {
   const [loading, setLoading] = useState(false)
   // PLAN-CHANGE-FAIL-VISIBLE-01 — said nothing on failure; now says so, cleared on retry.
   const [saveError, setSaveError] = useState<string | null>(null)
-  const detail = adjustment.trigger_detail ?? {}
+  const flags = adjustment?.trigger_detail ?? {}
+  const reasonFlags = { isLowHRV: !!flags.isLowHRV, isElevatedRHR: !!flags.isElevatedRHR, isShortSleep: !!flags.isShortSleep, isPoorSleepQuality: !!flags.isPoorSleepQuality }
+  // On a strength-only day there is no run row: the flags come from the route's `signals`.
+  const reasons: ReadingFlags = adjustment ? reasonFlags : (signals ?? {})
 
   // Compose the reason chips from the boolean signals the engine recorded.
   const reasonChips: string[] = []
-  if (detail.isElevatedRHR) reasonChips.push('RHR up')
-  if (detail.isLowHRV)      reasonChips.push('HRV down')
-  if (detail.isShortSleep)  reasonChips.push('Short sleep')
+  if (reasons.isElevatedRHR) reasonChips.push('RHR up')
+  if (reasons.isLowHRV)      reasonChips.push('HRV down')
+  if (reasons.isShortSleep)  reasonChips.push('Short sleep')
 
-  async function ease() {
+  // Design Board 2026-10-18 — the reading first, then each session that changes, then one answer.
+  const lineA = readingLine(reading, reasons)
+  const lineB = runLine(adjustment, units)
+  const lineC = strengthSession ? strengthLine(strengthSession) : null
+
+  async function answer(kind: 'ease' | 'keep') {
     setLoading(true); setSaveError(null)
     try {
-      const res  = await authedFetch('/api/confirm-adjustment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adjustment_id: adjustment.id }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      onConfirmed?.(data.plan)
-    } catch { setSaveError(PLAN_CHANGE_SAVE_FAILED) } finally { setLoading(false) }
-  }
-
-  async function runAnyway() {
-    setLoading(true); setSaveError(null)
-    try {
-      const res  = await authedFetch('/api/revert-adjustment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adjustment_id: adjustment.id }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      onReverted?.(data.plan)
+      if (adjustment) {
+        const res  = await authedFetch(kind === 'ease' ? '/api/confirm-adjustment' : '/api/revert-adjustment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adjustment_id: adjustment.id }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error)
+        ;(kind === 'ease' ? onConfirmed : onReverted)?.(data.plan)
+      }
+      // The run's answer covers the lift (Coaching Board re-sitting). If this save fails the run is
+      // already answered, so the card comes back strength-only and can be retried: never a silent half.
+      if (strengthSession && strengthDate && onStrengthAnswer) {
+        const ok = await onStrengthAnswer(strengthDate, kind === 'ease' ? 'eased' : 'declined')
+        if (!ok) throw new Error('strength')
+      }
     } catch { setSaveError(PLAN_CHANGE_SAVE_FAILED) } finally { setLoading(false) }
   }
 
   return (
-    <div style={{
+    <div data-recovery-card style={{
       background:   'var(--card)',
       borderRadius: 'var(--radius-lg)',
       border:       '1px solid var(--line)',
@@ -501,27 +518,28 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
         )}
       </div>
 
-      {/* Permission line — the summary IS Kit-voice already (see
-          buildReadinessAdjustment in lib/coaching/planAdjustment.ts). */}
-      <p style={{
-        fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400,
-        color: 'var(--ink)', lineHeight: 1.55, margin: '0 0 14px',
-      }}>
-        {adjustment.summary}
-      </p>
+      {/* A — the reading, against the runner's own normal (READINESS-SURFACE-01 item 2). */}
+      {lineA && (
+        <p style={{ fontFamily: 'var(--font-ui)', fontSize: '20px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3, margin: '0 0 var(--space-2)', fontVariantNumeric: 'tabular-nums' }}>
+          {lineA}
+        </p>
+      )}
+      {/* B / C — one line per session that changes, in the card's body register. */}
+      {[lineB, lineC].filter(Boolean).map(line => (
+        <p key={line!} style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.55, margin: '0 0 var(--space-2)' }}>
+          {line}
+        </p>
+      ))}
 
-      {/* Two actions: ease (primary) + run-anyway (secondary).
-          Override stays equally visible — restraint isn't enforced. */}
-      <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
-        <Button variant="primary" fullWidth
-          onClick={ease}
-          disabled={loading}>
-          Ease the session
+      {/* Two EQUAL answers (Design Board 2026-10-18). The override used to be a small ghost link beside
+          a full-width primary, against "equally visible". Ruled half-width each; at 375pt "Ease the
+          session" wrapped to two lines, so they stack full-width instead: same size, same tap target. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+        <Button variant="primary" fullWidth onClick={() => answer('ease')} disabled={loading}>
+          {EASE_LABEL}
         </Button>
-        <Button variant="ghost" 
-          onClick={runAnyway}
-          disabled={loading} style={{ background:   'transparent', color:        'var(--ink-2)', padding:      '0 12px', minHeight:    '44px', fontSize: '14px', fontWeight: 600, cursor:       loading ? 'default' : 'pointer', opacity:      loading ? 0.5 : 1 }}>
-          Run it anyway →
+        <Button variant="secondary" fullWidth onClick={() => answer('keep')} disabled={loading}>
+          {overrideLabel(!!adjustment)}
         </Button>
       </div>
       {/* PLAN-CHANGE-FAIL-VISIBLE-01 — same error line as PendingAdjustmentBanner. */}
@@ -660,9 +678,13 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
     detail?: {
       rhrBaseline?: number; rhrToday?: number
       hrvBaseline?: number; hrvToday?: number; hrvSd?: number
-      sleepHours?: number
+      sleepHours?: number; sleepBaseline?: number
       samplesUsed?: number
     }
+    /** STRENGTH-RECOVERY-01 — recovery is off today (the route computed it), whether or not a run row exists. */
+    warranted?: boolean
+    /** Which signals fired, on a strength-only day (no run row carries them). */
+    signals?: { isElevatedRHR?: boolean; isLowHRV?: boolean; isShortSleep?: boolean; isPoorSleepQuality?: boolean }
   } | null
   onAdjustmentConfirmed?: (plan: any) => void
   onAdjustmentReverted?: (plan: any) => void
@@ -982,6 +1004,14 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   // Today may call it a rest day. The legacy run-engine `type:'strength'` row yields
   // to it rather than rendering twice.
   const strengthToday = strength && selectedSession ? strength.sessionsByDate[isoLocalDate(selectedSession.rawDate)] ?? null : null
+  // STRENGTH-RECOVERY-01 — TODAY's lift (never the selected day's), offered on the recovery card only
+  // while recovery is off, it is easeable, not yet done, and the runner has not answered.
+  const todayIso = isoLocalDate(new Date())
+  const todayLift = strength?.sessionsByDate[todayIso] ?? null
+  const recoveryStrength = strength && strengthEaseEligible(todayLift) && !todayLift.eased_for
+    && !strength.recoveryEases?.[todayIso] && !strength.completions[todayIso]
+    && (readinessData?.warranted === true || pendingAdjustment?.trigger_type === 'readiness_signal')
+    ? todayLift : null
   const strengthStatus = strengthToday?.date ? strength?.completions[strengthToday.date] ?? null : null
   const strengthOnly = !!strengthToday && !isRunDay
   const strengthDots: Record<string, 'planned' | 'done' | 'skipped'> = {}
@@ -1803,10 +1833,21 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             session" reads as permission, not as system-please-confirm.
             Other adjustment triggers (load_spike, fatigue, etc.) keep the
             existing banner. */}
+        {/* STRENGTH-RECOVERY-01 (Design Board 2026-10-18) — ONE card a day: the run's ease, the lift's,
+            or both. A strength-only day has no pending row, so it shows on the route's reading. */}
+        {recoveryStrength && pendingAdjustment?.trigger_type !== 'readiness_signal' && (
+          <TdReadyHero adjustment={null} detail={readinessData?.detail ?? null} signals={readinessData?.signals ?? null}
+            strengthSession={recoveryStrength} strengthDate={todayIso} onStrengthAnswer={strength?.onRecoveryAnswer} units={preferredUnits} />
+        )}
         {pendingAdjustment && (
           pendingAdjustment.trigger_type === 'readiness_signal' ? (
             <TdReadyHero
               adjustment={pendingAdjustment}
+              detail={readinessData?.detail ?? null}
+              strengthSession={recoveryStrength}
+              strengthDate={todayIso}
+              onStrengthAnswer={strength?.onRecoveryAnswer}
+              units={preferredUnits}
               onConfirmed={onAdjustmentConfirmed}
               onReverted={onAdjustmentReverted}
             />
@@ -2236,6 +2277,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 <SessionCard
                   type="strength"
                   name={STRENGTH_KIND_TITLE[strengthToday.kind]}
+                  eased={isEasedForRecovery(strengthToday)}
                   detail={strengthToday.after_quality_run ? STRENGTH_AFTER_RUN_LINE : undefined}
                   durationMin={strengthToday.estimated_minutes}
                   metric="duration"
@@ -2260,6 +2302,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             <SessionCard
               type="strength"
               name={STRENGTH_KIND_TITLE[strengthToday.kind]}
+              eased={isEasedForRecovery(strengthToday)}
               durationMin={strengthToday.estimated_minutes}
               metric="duration"
               state={strengthStatus === 'done' ? 'done' : strengthStatus === 'skipped' ? 'skipped' : selectedSession.today ? 'current' : 'future'}

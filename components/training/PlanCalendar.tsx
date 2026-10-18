@@ -28,7 +28,7 @@ export interface PlanStrength {
   onOpen: (s: StrengthSession) => void
 }
 
-type DayStrength = { title: string; minutes: number; status: 'done' | 'skipped' | null; onOpen: () => void }
+type DayStrength = { title: string; minutes: number; status: 'done' | 'skipped' | null; onOpen: () => void; /** STRENGTH-RECOVERY-01 */ eased?: boolean }
 
 /** SESSION-SLOTS-01 — a move that did not save. The screen reverts; this says why. */
 const MOVE_FAILED = "Couldn't move it. Check your connection and try again."
@@ -699,7 +699,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
           : preferredMetric
         const ss = strength && idx === rows.length - 1 ? strength.sessionsByDate[isoLocalDate(d)] : undefined
         const dayStrength: DayStrength | null = ss && ss.date && strength ? {
-          title: STRENGTH_KIND_TITLE[ss.kind], minutes: ss.estimated_minutes,
+          title: STRENGTH_KIND_TITLE[ss.kind], minutes: ss.estimated_minutes, eased: isEasedForRecovery(ss),
           status: strength.completions[ss.date] ?? null, onOpen: () => strength.onOpen(ss),
         } : null
 
@@ -944,6 +944,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
               {strength.status === 'done' && (
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)' }}>Done</span>
               )}
+              {strength.eased && <EasedMark />}
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
                 {formatDuration(strength.minutes)}
               </span>

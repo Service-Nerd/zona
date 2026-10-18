@@ -60,8 +60,9 @@ describe('every confirm/revert handler says so when it fails', () => {
   const handlers: [string, string, string, number][] = [
     ['TodayScreen', today, 'confirm', 0],
     ['TodayScreen', today, 'revert', 0],
-    ['TodayScreen', today, 'ease', 0],
-    ['TodayScreen', today, 'runAnyway', 0],
+    // STRENGTH-RECOVERY-01 — the recovery card's two handlers became ONE `answer(kind)` (the run's answer
+    // covers the lift), so one anchor holds both buttons.
+    ['TodayScreen', today, 'answer', 0],
     ['DashboardClient', dash, 'handleConfirm', 0],
     ['DashboardClient', dash, 'handleDismiss', 0],
   ]
