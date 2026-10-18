@@ -2,7 +2,7 @@
 
 **Date found:** 2026-10-18 (founder, on his own phone) · **Live since:** 2026-09-18 (the PLAN-WEEK-COLLISION-01 fix,
 which covered race changes only) · **Triage:** Systemic
-**Fix:** `PLAN-REBUILD-SUPERSEDE-01` · **Catalogue class:** *Hazard solved for one transition, named but not solved
+**Fix:** `PLAN-REBUILD-SUPERSEDE-01` (`5708d7c0`, deployed 2026-10-18; clean-up run the same day, re-count 0) · **Catalogue class:** *Hazard solved for one transition, named but not solved
 for its twin* (existing; second precedent).
 
 ## Symptom

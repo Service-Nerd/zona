@@ -21,12 +21,12 @@ from the stored profile, validated and saved (Design Board `STRENGTH-APP-01` H).
 **Recovery eases (STRENGTH-RECOVERY-01, 2026-10-18).** The stored plan stays as generated; each session on an
 `"eased"` date is served through `easeForRecovery` on the way out (`applyRecoveryEases`). The answers are read on
 their own select and a failed read is `{}`, so the plan still loads before `20261018_strength_recovery_eases.sql`
-is applied. POST returns `recovery_eases` too and applies them the same way. Written by
+is applied (applied 2026-10-18; the tolerance stays as a guard). POST returns `recovery_eases` too and applies them the same way. Written by
 `docs/contracts/api/strength-ease.md`.
 
 **Lift logs (STRENGTH-PROGRESSION-01, 2026-10-18).** GET also returns `lift_logs: [{ date, exercise_id, load_kg,
 feel, counts }]`, the last 120 days oldest first, read on their own select; a failed read is `[]` (suggestions then
-say "start light"), so the plan loads before `20261018_strength_lift_logs.sql` is applied. Written by
+say "start light"), so the plan loads before `20261018_strength_lift_logs.sql` is applied (applied 2026-10-18; the tolerance stays as a guard). Written by
 `docs/contracts/api/strength-log.md`; read by `liftSuggestionsFor` (`lib/strength-bridge/progressionView.ts`).
 
 A **failed run-plan read never re-places** (that would place strength blind to the runner's hard days): the stored
