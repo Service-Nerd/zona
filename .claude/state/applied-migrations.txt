@@ -78,3 +78,6 @@
 20261007_run_analysis_session_type.sql
 20261016_strength_plans.sql
 20261017_strength_completions.sql
+20261018_session_overrides_slot.sql
+20261018_strength_recovery_eases.sql
+20261018_strength_lift_logs.sql
