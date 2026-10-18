@@ -6062,6 +6062,23 @@ afterwards; `watchedSignals.test.ts` fails if any figure stops being interpolate
 ⚠️ **`−` is U+2212, not a hyphen.** At 20px display weight a hyphen-minus reads as
 punctuation.
 
+## Changing a plan, one journey (Design Board `SAVE-PATTERN-01`, 2026-10-18)
+
+**Run or strength, a plan change has one shape:** full-screen edit (back arrow top-left) → *Here is what changes*
+(consent, below; strength only when an existing plan changes, since a first build has nothing to compare) → accept →
+**land on Plan with one readback line naming the change.** Before this the run edit was a bottom sheet, the save
+ended in silence, and strength said its line on the setup screen, away from the change.
+
+- **The readback** names the change in the runner's terms, from the same owner as the diff
+  (`lib/plan/planChangeReadback.ts`): *"Plan updated. Tuesday's run is now on Wednesday."*, never a bare "Saved".
+  FieldReadback weight, top of Plan, until the runner leaves the screen. No toast, no icon, no auto-dismiss.
+- **While saving** the primary button carries the state and nothing else moves. **A failure** is an `InlineError` in
+  the same place, naming what was not saved. The progress animation `MODIFY-CONFIRM-DIFF-01` declined stays declined;
+  the wait is cured by a faster save, not decorated.
+- **The run edit is a screen, not a sheet** (reverses P-02's sheet by name). R-5's logic survives: the Apply bar
+  arrives at the bottom when an edit is pending. ZONES-HR-SHEET-01 still governs one-field input sheets.
+- **Not built yet** (2026-10-18). **Check (to ship with the build):** `planChangeJourney.markup.test.ts`.
+
 ## Confirmation diff — consent, not reveal (Design Board `MODIFY-CONFIRM-DIFF-01`, 2026-10-13)
 
 **The pattern.** A screen that asks the runner to accept a change the engine has already
