@@ -144,6 +144,16 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-18 — SAVE-PATTERN-01 · SHIP WITH AMENDMENT. Changing a plan is one journey, and a save never ends in silence
+
+Run or strength: full-screen edit (back arrow top-left) → *Here is what changes* (strength only when an existing plan
+changes) → accept → land on **Plan** with one readback line naming the change, at FieldReadback weight, until the runner
+leaves (no toast, no auto-dismiss). The run sheet becomes a screen keeping R-5's pending Apply bar: **reverses P-02's
+sheet, by name**; ZONES-HR-SHEET-01 stands for one-field input sheets. Saving: the primary button carries the state;
+failure is an `InlineError` in place. Faster save in the same build; the progress animation stays declined
+(MODIFY-CONFIRM-DIFF-01). **Collins lost** marking changed rows on Plan (recorded, not killed). Sitting:
+`docs/decisions/save-pattern-2026-10-18.md`.
+
 ## 2026-10-18 — PINNED-DAYS-01 · SHIP WITH AMENDMENT. Ask which days, never a count and a "can't" list
 
 Strength setup: *"Which days can you lift?"* (`DayGridSelector`, 1–4) replaces *How many a week?* and *Days you can't*;

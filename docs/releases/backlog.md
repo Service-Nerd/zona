@@ -28,6 +28,14 @@ already decided what it is.
 ---
 
 
+### 🔲 `SAVE-PATTERN-01` — one journey for changing a plan; a save never ends in silence 🧭 **DESIGN BOARD RULED 2026-10-18 (SHIP WITH AMENDMENT), not built**
+
+Founder: *"It's not clear it's doing anything... the experience of adjustment should be the same."* Ruling:
+`docs/decisions/save-pattern-2026-10-18.md`. Build: (A) parallelise `savePlanForUser`'s independent writes (~14
+sequential calls today); (B) `planChangeReadback.ts` + the readback on Plan after every run or strength save; (C) the run
+"Adjust your plan" sheet becomes a full screen (keeps R-5's Apply bar); strength gains *Here is what changes* when an
+existing plan changes. Check: `planChangeJourney.markup.test.ts`.
+
 ### ✅ `PINNED-DAYS-01` — **SHIPPED 2026-10-18.** Pick the days; the sessions stay on them 🏃 **COACHING BOARD** then 🧭 **DESIGN BOARD** *(both ruled 2026-10-18)*
 
 Founder: *"I want to be able to select the days and it stays on the days I select."* Strength setup asks *Which days
