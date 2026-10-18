@@ -17,6 +17,7 @@ interface StrengthSessionScreenProps {
   onBack: () => void                // back to Today or Plan, whichever opened it
   onSetStatus: (status: StrengthCompletion | null) => Promise<boolean>  // null = undo; false → inline error
   note?: string | null              // STRENGTH-NOTE-01: this week's AI note; null renders nothing
+  lifts?: { suggestions, today, units, onLog? }   // STRENGTH-PROGRESSION-01: per main lift; absent = no logging
 }
 ```
 
@@ -32,3 +33,11 @@ interface StrengthSessionScreenProps {
 ## Recovery ease (STRENGTH-RECOVERY-01, 2026-10-18)
 
 An eased session (`session.eased_for === 'recovery'`, applied on read by `applyRecoveryEases`) shows `EasedMark` above the tiles, the record the run's session screen carries (ui-patterns § 10e). The blocks shown are the eased ones: nothing to toggle back. Gate: `components/shared/easedMark.markup.test.ts`.
+
+## Lift log (STRENGTH-PROGRESSION-01, Design Board 2026-10-18)
+
+Main lifts only. The collapsed row adds one 12px `--ink-2` suggestion line (`liftSuggestionLine`); the opened row adds a
+weight `TextField` (decimal keypad, kg / lb from `weightUnit`) on a loaded lift and three `Chip`s *Easy / About right /
+Hard*; the chip tap saves through `lifts.onLog`, which is passed only when `canLog`. *Logged* after a save; a failed
+save is one `InlineError`. The row is a container whose header button toggles it (a field cannot sit inside a
+button). Gate: `components/dashboard/strengthLiftLog.markup.test.ts`.

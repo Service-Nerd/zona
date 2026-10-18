@@ -49,6 +49,16 @@ slot was a Nordic curl 25% of the time; the Nordic curl, hamstring curl and kett
 🔴 **Not the catalogue's, and still open:** a runner's first jump is bounding or a drop jump (`STRENGTH-PLYO-BUDGET-01`).
 Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 
+## 2026-10-18 — STRENGTH-PROGRESSION-01 (Phase 4) · CORRECT WITH AMENDMENT
+
+Load progresses from what the runner logs on a loaded main lift: weight + *easy / right / hard* against the RIR
+target. Step after *easy*, or *right* twice at the same weight; *hard* holds, *hard* twice comes down a tenth. Steps:
+2.5 kg lower, 1 kg upper; if a step is over a tenth of the load, add a rep (up to two) first (Sims). At most one step
+per lift per week; an injury that the lift loads makes *easy* count as *right* (Willy). No step in deload, taper,
+race week or an eased session, and those logs do not count (Hutchinson). Optional; no log, no change (McMillan).
+Artifacts: S14, seven `STRENGTH_CONFIG` numerics, `S-PROGRESSION-BOUNDED`. Sitting:
+`docs/decisions/strength-progression-coaching-2026-10-18.md`.
+
 ## 2026-10-17 (re-sat) — STRENGTH-RECOVERY-01 · CORRECT WITH AMENDMENT · engine side BUILT, not wired
 
 Two premises of the earlier ruling were false at build: the run ease is **confirmed, not silent** (§59, ADR-012), and

@@ -144,6 +144,16 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-18 — STRENGTH-PROGRESSION-01 (Phase 4) · SHIP WITH AMENDMENT. What to lift, before the set
+
+Loaded main lifts only. The **collapsed row** carries one 12px `--ink-2` line under the effort line: *"Last time
+20 kg, about right. Try 22.5 kg."* The **opened row** holds the cues, a weight field (decimal keypad, kg/lb by the
+runner's units) and three chips *Easy / About right / Hard*; the feel tap saves; *Logged* in text after. Bodyweight
+lifts log the feel only. The row stops being a single button. **Collins lost** making the suggestion the row's
+headline number (the dose is the prescription; the weight is the runner's). Never a PR badge, streak, chart or
+required field. Satisfies STRENGTH-APP-01 E's condition (*"until Phase 4 reads them"*) for main lifts only. Sitting:
+`docs/decisions/strength-progression-design-2026-10-18.md`.
+
 ## 2026-10-18 — STRENGTH-RECOVERY-01 × READINESS-SURFACE-01 item 2 · SHIP WITH AMENDMENT. One recovery card, one answer
 
 **One card a day**, shown when recovery would ease the run, the lift, or both: the runner's reading against their

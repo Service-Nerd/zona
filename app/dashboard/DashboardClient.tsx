@@ -64,6 +64,7 @@ import { planRationaleNotes } from '@/lib/plan/planRationale'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
 import { PLAN_CHANGE_SAVE_FAILED } from '@/lib/ui/planChangeCopy'
 import { RECENT_CHANGES_FILTER } from '@/lib/ui/easedMark'
+import { liftSuggestionsFor, logsOn } from '@/lib/strength-bridge/progressionView'
 import { reportPlanSaveFailure } from '@/lib/ops/reportPlanSaveFailure'
 import ZoneRings, { ZoneRingsSkeleton } from '@/components/shared/ZoneRings'
 import { TextField } from '@/components/shared/TextField'
@@ -567,7 +568,7 @@ export default function DashboardClient() {
   // STRENGTH-APP-01 — the strength plan, fetched once here and passed down so Today,
   // Plan, Me and the session screen read ONE copy. The client check only decides
   // whether to ask; the server's gate decides whether to answer.
-  const { strength, reloadStrength, saveStrength, setStrengthCompletion, setStrengthRecoveryAnswer } = useStrengthPlan(
+  const { strength, reloadStrength, saveStrength, setStrengthCompletion, setStrengthRecoveryAnswer, setStrengthLiftLog } = useStrengthPlan(
     canUseStrength({ isAdmin, tier: hasPaidAccess ? 'paid' : 'free' }), plan,
   )
   const [activeStrength, setActiveStrength] = useState<StrengthSession | null>(null)
@@ -3134,6 +3135,12 @@ export default function DashboardClient() {
               weekN={activeStrength.week_n}
               status={activeStrength.date ? strength.completions[activeStrength.date] ?? null : null}
               canLog={!!activeStrength.date && activeStrength.date <= isoLocalDate(new Date())}
+              lifts={strength.plan ? {
+                suggestions: liftSuggestionsFor(strength.plan, activeStrength, strength.liftLogs, strength.recoveryEases),
+                today: logsOn(strength.liftLogs, activeStrength.date),
+                units: preferredUnits,
+                onLog: (id: string, kg: number | null, feel: 'easy' | 'right' | 'hard') => activeStrength.date ? setStrengthLiftLog(activeStrength.date, id, kg, feel) : Promise.resolve(false),
+              } : undefined}
               onBack={() => setScreen(strengthOrigin)}
               onSetStatus={(st) => activeStrength.date ? setStrengthCompletion(activeStrength.date, st) : Promise.resolve(false)}
               note={strengthNote}

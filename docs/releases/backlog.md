@@ -2269,6 +2269,21 @@ two equal answers. The answer is stored on `strength_plans.recovery_eases` by `/
 🔻 **Founder: apply `20261018_strength_recovery_eases.sql`.** Until then the card's answer fails to save (said on
 screen) and the plan still loads.
 
+#### ✅ `STRENGTH-PROGRESSION-01` — load progresses from what the runner logs (Phase 4) *(filed 2026-10-18 · BUILT 2026-10-18, live once migration `20261018_strength_lift_logs.sql` is applied, feature registry)*
+Coaching Board (`strength-progression-coaching-2026-10-18.md`) and Design Board (`strength-progression-design-2026-10-18.md`)
+both ruled CORRECT / SHIP WITH AMENDMENT the same day. Main lifts log weight + *Easy / About right / Hard*; the next
+session suggests a load (S14). 🔻 **Founder: apply `20261018_strength_lift_logs.sql`.** Until then a log fails to save
+(said on screen) and every suggestion reads "New lift. Start light." **Follow-up, not built:** Coach's strength line
+could now state real load progress (Sierra's "do not fake it before Phase 4" is now satisfiable); a Design Board
+question, not filed as a build.
+**Tags:** 🏃 ruled → 🧭 ruled → ⚙️ built.
+
+#### `STRENGTH-MEDIA-01` — exercise demo media (Phase 3): supplier decision *(filed 2026-10-18, OPEN, 👤 FOUNDER)*
+Researched 2026-10-18 (`docs/decisions/strength-media-suppliers-2026-10-18.md`): **no free source is shippable** as the
+main one (provenance or coverage); best value paid is RepDB Standard ($499 one-time, ~60% of our list). Nothing built:
+the player and slots wait on the decision so no unused plumbing ships. **Tags:** 👤 FOUNDER (supplier, spend) → 💼 SLT
+(price) → 🧭 DESIGN BOARD (how media sits on the row).
+
 #### `STRENGTH-FULLBODY-NO-UPPER-01` — "Full body" sessions with no upper-body work *(filed 2026-10-18, OPEN)*
 Measured on the standalone grid (no run plan): **running-focus "Full body" sessions hold no upper-body work in 100% of
 30-minute and 75% of 45-minute plans** (0% at 60 minutes, 0% for general focus). The session clock (S10) drops the
@@ -2315,7 +2330,7 @@ extend the guard to runner-facing producer strings. The readiness note was fixed
 > 🏃 **`STRENGTH-RECOVERY-01` — recovery signals soften strength. RULED 2026-10-17, not built.** See the full
 > entry under **Recovery-driven adaptation** below.
 >
-> 🟢 **Phases 0, 1 and 2 BUILT 2026-10-16** (engine + the app, `STRENGTH-APP-01`; see feature-registry). **Open:** ~~founder applies both strength migrations~~ (applied 2026-10-17, ledger); ~~catalogue review~~ (`reviewed` by the strength seat 2026-10-17); STRENGTH-RECOVERY-01 wiring (engine side built); founder copy calls (RIR phrasing, strength-day push line); device check; Phase 3 media, Phase 4 progression; release switch.
+> 🟢 **Phases 0, 1 and 2 BUILT 2026-10-16** (engine + the app, `STRENGTH-APP-01`; see feature-registry). **Open:** ~~founder applies both strength migrations~~ (applied 2026-10-17, ledger); ~~catalogue review~~ (`reviewed` by the strength seat 2026-10-17); STRENGTH-RECOVERY-01 wiring (built 10-18); Phase 4 progression (built 10-18, `STRENGTH-PROGRESSION-01`); Phase 3 media (`STRENGTH-MEDIA-01`, founder decision, suppliers researched); founder copy calls (RIR phrasing, strength-day push line); device check; Phase 3 media, Phase 4 progression; release switch.
 >
 > **Build plan:** `docs/plans/STRENGTH-ENGINE-01.md`. **Architecture:** `docs/architecture/ADR-024-strength-engine.md` (PROPOSED). **Evidence:**
 > `docs/investigations/strength-conditioning-research-2026-10-16.md`. **Consolidates** `R21`, *Supplementary

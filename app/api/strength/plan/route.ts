@@ -61,6 +61,21 @@ async function recoveryEasesFor(supabase: Supabase, userId: string): Promise<Rec
   return error ? {} : parseRecoveryEases(data?.recovery_eases)
 }
 
+/**
+ * STRENGTH-PROGRESSION-01 — the runner's lift logs for the last LIFT_LOG_DAYS, oldest first. A failed read is
+ * "no logs" (suggestions then say "start light"), so the plan still loads before the table exists.
+ */
+const LIFT_LOG_DAYS = 120
+async function liftLogsFor(supabase: Supabase, userId: string): Promise<unknown[]> {
+  const since = new Date(Date.now() - LIFT_LOG_DAYS * 86_400_000).toISOString().slice(0, 10)
+  const { data, error } = await supabase.from('strength_lift_logs')
+    .select('session_date, exercise_id, load_kg, feel, counts').eq('user_id', userId).gte('session_date', since)
+    .order('session_date', { ascending: true })
+  return error ? [] : (data ?? []).map((r: { session_date: string; exercise_id: string; load_kg: number | string | null; feel: string; counts: boolean }) => ({
+    date: r.session_date, exercise_id: r.exercise_id, load_kg: r.load_kg == null ? null : Number(r.load_kg), feel: r.feel, counts: r.counts,
+  }))
+}
+
 /** Generate, validate and save. Returns the plan, or a response to send. */
 async function buildAndSave(supabase: Supabase, userId: string, profile: StrengthProfile, ctx: RunContext | null, startDate: string): Promise<{ ok: true; plan: StrengthPlan } | { ok: false; res: NextResponse }> {
   const plan = generateStrengthPlan(profile, ctx, ctx ? { startDate } : { standaloneStart: nextMonday(new Date()) })
@@ -109,9 +124,9 @@ export async function GET(req: NextRequest) {
       if (built.ok) { plan = built.plan; replaced = true }
     }
   }
-  const [completions, recoveryEases] = await Promise.all([completionsFor(supabase, user.id), recoveryEasesFor(supabase, user.id)])
+  const [completions, recoveryEases, liftLogs] = await Promise.all([completionsFor(supabase, user.id), recoveryEasesFor(supabase, user.id), liftLogsFor(supabase, user.id)])
   // The stored plan stays as generated; an accepted recovery ease is applied on the way out (S13).
-  return NextResponse.json({ plan: applyRecoveryEases(plan, recoveryEases), recovery_eases: recoveryEases, profile: data.profile_json, completions: completions ?? {}, completions_ok: completions != null, replaced, stale: ctxErr ? null : false })
+  return NextResponse.json({ plan: applyRecoveryEases(plan, recoveryEases), recovery_eases: recoveryEases, lift_logs: liftLogs, profile: data.profile_json, completions: completions ?? {}, completions_ok: completions != null, replaced, stale: ctxErr ? null : false })
 }
 
 export async function POST(req: NextRequest) {

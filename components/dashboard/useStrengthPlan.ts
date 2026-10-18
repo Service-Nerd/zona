@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { authedFetch } from '@/lib/supabase/authedFetch'
-import type { StrengthPlan, StrengthProfile } from '@/packages/strength'
+import type { LiftFeel, LiftLog, StrengthPlan, StrengthProfile } from '@/packages/strength'
 import { applyRecoveryEases, parseRecoveryEases, type RecoveryAnswer, type RecoveryEases } from '@/lib/strength-bridge/recoveryEases'
 
 export type StrengthCompletion = 'done' | 'skipped'
@@ -21,9 +21,11 @@ export interface StrengthState {
   completions: Record<string, StrengthCompletion>
   /** STRENGTH-RECOVERY-01 — the runner's recovery answers by date ("eased" / "declined"). */
   recoveryEases: RecoveryEases
+  /** STRENGTH-PROGRESSION-01 — the runner's lift logs, oldest first (last 120 days). */
+  liftLogs: LiftLog[]
 }
 
-const OFF: StrengthState = { status: 'off', plan: null, profile: null, completions: {}, recoveryEases: {} }
+const OFF: StrengthState = { status: 'off', plan: null, profile: null, completions: {}, recoveryEases: {}, liftLogs: [] }
 
 export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
   const [state, setState] = useState<StrengthState>(enabled ? { ...OFF, status: 'loading' } : OFF)
@@ -46,8 +48,8 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
       const body = await res.json()
       if (stale()) return
       setState(body.plan
-        ? { status: 'ready', plan: body.plan, profile: body.profile ?? null, completions: body.completions ?? {}, recoveryEases: parseRecoveryEases(body.recovery_eases) }
-        : { status: 'none', plan: null, profile: null, completions: {}, recoveryEases: {} })
+        ? { status: 'ready', plan: body.plan, profile: body.profile ?? null, completions: body.completions ?? {}, recoveryEases: parseRecoveryEases(body.recovery_eases), liftLogs: Array.isArray(body.lift_logs) ? body.lift_logs : [] }
+        : { status: 'none', plan: null, profile: null, completions: {}, recoveryEases: {}, liftLogs: [] })
     } catch {
       if (!stale()) setState(s => ({ ...s, status: 'error' }))
     }
@@ -65,7 +67,7 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
       })
       if (!res.ok) return 'save'
       const body = await res.json()
-      setState(s => ({ status: 'ready', plan: body.plan, profile, completions: s.completions, recoveryEases: parseRecoveryEases(body.recovery_eases ?? s.recoveryEases) }))
+      setState(s => ({ status: 'ready', plan: body.plan, profile, completions: s.completions, recoveryEases: parseRecoveryEases(body.recovery_eases ?? s.recoveryEases), liftLogs: s.liftLogs }))
       return null
     } catch { return 'save' }
   }, [])
@@ -112,7 +114,20 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
     return true
   }, [])
 
-  return { strength: state, reloadStrength: load, saveStrength: save, setStrengthCompletion: setCompletion, setStrengthRecoveryAnswer: setRecoveryAnswer }
+  /** STRENGTH-PROGRESSION-01 — one lift's log for one session. Not optimistic: the row says Logged only once saved. */
+  const setLiftLog = useCallback(async (date: string, exerciseId: string, loadKg: number | null, feel: LiftFeel): Promise<boolean> => {
+    try {
+      const res = await authedFetch('/api/strength/log', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, exercise_id: exerciseId, load_kg: loadKg, feel }),
+      })
+      if (!res.ok) return false
+      const saved = await res.json()
+      setState(s => ({ ...s, liftLogs: [...s.liftLogs.filter(l => !(l.date === date && l.exercise_id === exerciseId)), { date, exercise_id: exerciseId, load_kg: saved.load_kg ?? null, feel, counts: saved.counts !== false }] }))
+      return true
+    } catch { return false }
+  }, [])
+
+  return { strength: state, reloadStrength: load, saveStrength: save, setStrengthCompletion: setCompletion, setStrengthRecoveryAnswer: setRecoveryAnswer, setStrengthLiftLog: setLiftLog }
 }
 
 /**

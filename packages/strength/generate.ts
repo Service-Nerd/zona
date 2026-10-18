@@ -103,5 +103,6 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
     weeks,
     notes: Array.from(notes),
     start_date: startDate,
+    injury_tags: injuries,
   }
 }

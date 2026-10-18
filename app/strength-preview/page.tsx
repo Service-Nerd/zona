@@ -13,7 +13,8 @@ import ScreenHeader from '@/components/ui/ScreenHeader'
 import { Chip } from '@/components/shared/Chip'
 import { STRENGTH_SCREEN_SUB, STRENGTH_TITLE } from '@/components/shared/meDoors'
 import harnessPlanJson from '@/components/dashboard/__fixtures__/harnessPlan.json'
-import { generateStrengthPlan, type StrengthSession } from '@/packages/strength'
+import { generateStrengthPlan, type LiftLog, type StrengthSession } from '@/packages/strength'
+import { liftSuggestionsFor, logsOn } from '@/lib/strength-bridge/progressionView'
 import type { Plan } from '@/types/plan'
 import { isoLocalDate } from '@/lib/strength-bridge/display'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
@@ -54,6 +55,12 @@ export default function StrengthPreviewPage() {
   }, [strength])
   const [completions, setCompletions] = useState<Record<string, 'done' | 'skipped'>>({})
   const [recoveryEases, setRecoveryEases] = useState<Record<string, 'eased' | 'declined'>>({})
+  // STRENGTH-PROGRESSION-01 — a week-old log for each of today's main lifts, so the row shows a real suggestion.
+  const [liftLogs, setLiftLogs] = useState<LiftLog[]>(() => {
+    const t = byDate[isoLocalDate(new Date())]; if (!t?.date) return []
+    const wk = new Date(Date.parse(t.date + 'T00:00:00Z') - 7 * 86_400_000).toISOString().slice(0, 10)
+    return t.blocks.filter(b => b.role === 'main').flatMap(b => b.items).map((it, i) => ({ date: wk, exercise_id: it.exercise_id, load_kg: [40, 16, 8][i % 3], feel: (['easy', 'right', 'right'] as const)[i % 3], counts: true }))
+  })
   const setStatus = async (date: string, st: 'done' | 'skipped' | null) => {
     setCompletions(x => { const n = { ...x }; if (st) n[date] = st; else delete n[date]; return n }); return true
   }
@@ -82,7 +89,9 @@ export default function StrengthPreviewPage() {
       )}
       {c === 'session' && todayS && (
         <StrengthSessionScreen session={todayS} dayLabel="Today" weekN={todayS.week_n} status={completions[todayS.date!] ?? null}
-          canLog onBack={() => setC('today')} onSetStatus={st => setStatus(todayS.date!, st)} />
+          canLog onBack={() => setC('today')} onSetStatus={st => setStatus(todayS.date!, st)}
+          lifts={{ suggestions: liftSuggestionsFor(strength, todayS, liftLogs, {}), today: logsOn(liftLogs, todayS.date), units: 'km',
+            onLog: async (id, kg, feel) => { setLiftLogs(x => [...x.filter(l => !(l.date === todayS.date && l.exercise_id === id)), { date: todayS.date!, exercise_id: id, load_kg: kg, feel, counts: true }]); return true } }} />
       )}
       {c === 'plan' && (
         <PlanCalendar weeks={run.weeks} allOverrides={[]} allCompletions={{}} onOverrideChange={() => {}} onSessionTap={() => {}}

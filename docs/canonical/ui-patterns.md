@@ -1414,6 +1414,34 @@ Check: `components/shared/easedMark.markup.test.ts`, `lib/ui/easedMark.test.ts`.
 
 ---
 
+### 10f. Strength lift log — STRENGTH-PROGRESSION-01 (Phase 4)
+
+What to lift, before the set; the log, one tap deep. Design Board 2026-10-18
+(`docs/decisions/strength-progression-design-2026-10-18.md`), rule from S14.
+
+```
+1  Weighted rear-foot-elevated split squat      3 × 5
+   each side · 2 reps in reserve · rest 2:30 min
+   Last time 40 kg, easy. Try 42.5 kg.          ← 12px 400 --ink-2, main lifts only
+   ── opened ──
+   cues
+   [ 42.5                              kg ]     ← TextField, decimal keypad
+   ( Easy ) ( About right ) ( Hard )            ← Chip ×3; the tap saves
+   Logged                                       ← 12px --mute
+```
+
+- **Main lifts only.** Accessories, core, warm-up and mobility keep done/skipped (STRENGTH-APP-01 E).
+- The dose stays the loudest thing on the row (Collins lost making the weight the headline).
+- Plain words, never "RIR" (Sierra). kg or lb through `formatWeight` / `weightUnit` (ADR-015).
+- The row is a container whose header is the toggle: a field cannot sit inside a button.
+- Not optimistic: *Logged* only once saved; a failed save is one `InlineError`.
+- Never: a PR badge, a streak, a chart, a celebration, a required field. Mark complete never waits.
+
+Reference: `components/dashboard/StrengthSessionScreen.tsx → ExerciseRow / LiftLogPanel`. Copy: `lib/strength-bridge/display.ts`
+(`LIFT_FEEL_LABEL`, `liftSuggestionLine`). Check: `components/dashboard/strengthLiftLog.markup.test.ts`.
+
+---
+
 ### 10c. Applied-change audit row (Me screen)
 
 Read-only variant of the adjustment card, in the Me → **Plan adjustments** card under a **"Changed this week"** sub-label. Lists sub-threshold changes the engine auto-applied *without asking* (§69) over the last 14 days — Wood's honest-absorption surface. No Confirm/Reject (it already happened); a single dry **"Got it"** dismiss per row, persisted in `localStorage` (`zonna_dismissed_changes`, keyed by adjustment id — the MAINT-01 dismissable-card precedent, no migration).

@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
  * read; a failed run-plan READ → 500 and NOTHING saved (never a standalone plan
  * placed blind to the runner's hard days); a validator failure → nothing saved.
  */
-const S = vi.hoisted(() => ({
+const S = vi.hoisted(() => ({ liftLogs: [] as unknown[],
   user: { id: 'u1' } as { id: string } | null,
   isAdmin: true,
   tier: 'paid' as 'free' | 'trial' | 'paid',
@@ -36,7 +36,9 @@ vi.mock('@supabase/supabase-js', () => ({
       const q: Record<string, unknown> = {}
       const chain = () => q
       Object.assign(q, {
-        select: chain, eq: chain,
+        select: chain, eq: chain, gte: chain,
+        // STRENGTH-PROGRESSION-01 — the lift-log read ends in .order(); S.liftLogs is what the table holds.
+        order: async () => ({ data: table === 'strength_lift_logs' ? S.liftLogs : [], error: null }),
         is: async () => ({ data: [], error: null }),
         maybeSingle: async () => table === 'user_settings'
           ? { data: { is_admin: S.isAdmin }, error: null }
@@ -57,7 +59,7 @@ const post = async (body: unknown) => {
 
 beforeEach(() => {
   S.user = { id: 'u1' }; S.isAdmin = true; S.tier = 'paid'; S.planError = null; S.plan = null
-  S.upserts = []; S.events = []; S.stored = null; S.violate = false; S.deletes = []
+  S.upserts = []; S.events = []; S.stored = null; S.violate = false; S.deletes = []; S.liftLogs = []
 })
 
 describe('POST /api/strength/plan', () => {
@@ -165,5 +167,17 @@ describe('POST /api/strength/completion — done or skipped only', () => {
     expect(S.upserts[0]).toMatchObject({ table: 'strength_completions', user_id: 'u1', session_date: '2026-11-03', status: 'done' })
     await post({ date: '2026-11-03', status: null })
     expect(S.deletes[0]).toMatchObject({ table: 'strength_completions', user_id: 'u1', session_date: '2026-11-03' })
+  })
+})
+
+describe('STRENGTH-PROGRESSION-01 — the plan carries the runner\'s lift logs', () => {
+  it('GET returns lift_logs, mapped to the engine\'s shape (numeric load, date)', async () => {
+    const { generateStrengthPlan } = await import('@/packages/strength')
+    S.stored = { plan_json: generateStrengthPlan(PROFILE as never, null, { standaloneStart: '2026-11-02' }), profile_json: PROFILE, run_context_sig: 'x', generated_at: '2026-11-01' }
+    S.planError = 'boom'   // keep the stored plan; this arm is about the logs
+    S.liftLogs = [{ session_date: '2026-11-03', exercise_id: 'goblet_squat', load_kg: '20.00', feel: 'right', counts: true }]
+    const { GET } = await import('@/app/api/strength/plan/route')
+    const body = await (await GET(new Request('https://x/api/strength/plan') as never)).json()
+    expect(body.lift_logs).toEqual([{ date: '2026-11-03', exercise_id: 'goblet_squat', load_kg: 20, feel: 'right', counts: true }])
   })
 })

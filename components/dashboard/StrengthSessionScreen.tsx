@@ -26,61 +26,118 @@ import { formatDuration } from '@/lib/format'
 import {
   STRENGTH_AFTER_RUN_LINE, STRENGTH_BLOCK_TITLE, STRENGTH_KIND_TITLE,
   doseLine, effortLine, exerciseCount, exerciseCues, exerciseName,
+  LIFT_FEEL_LABEL, LIFT_LOGGED, LIFT_WEIGHT_LABEL, liftSuggestionLine,
 } from '@/lib/strength-bridge/display'
-import type { Block, Prescription, StrengthSession } from '@/packages/strength'
+import { isLoadedLift, type Block, type LiftFeel, type LiftLog, type LiftSuggestion, type Prescription, type StrengthSession } from '@/packages/strength'
+import { TextField } from '@/components/shared/TextField'
+import { Chip } from '@/components/shared/Chip'
+import { formatWeight, weightToKg, weightUnit } from '@/lib/format'
+import { PLAN_CHANGE_SAVE_FAILED } from '@/lib/ui/planChangeCopy'
 import type { StrengthCompletion } from './useStrengthPlan'
 
 const FONT = 'var(--font-ui)'
 const ACCENT = 'var(--s-strength)'
 
-function ExerciseRow({ num, item }: { num: number; item: Prescription }) {
+/** STRENGTH-PROGRESSION-01 — what a main lift's row needs to show and log (absent on every other row). */
+export interface LiftLogging {
+  suggestion?: LiftSuggestion
+  today?: LiftLog
+  units: 'km' | 'mi'
+  /** Resolves false when the save failed. Absent: logging is not offered (a future session, or strength off). */
+  onLog?: (exerciseId: string, loadKg: number | null, feel: LiftFeel) => Promise<boolean>
+}
+
+function ExerciseRow({ num, item, logging }: { num: number; item: Prescription; logging?: LiftLogging }) {
   const [open, setOpen] = useState(false)
   const cues = exerciseCues(item.exercise_id)
   const support = effortLine(item)
+  // Design Board 2026-10-18 — the suggestion sits on the collapsed row, before the set.
+  const suggestion = logging ? liftSuggestionLine(logging.suggestion, item.reps, logging.units) : null
   return (
-    <button
-      type="button"
-      onClick={() => setOpen(o => !o)}
-      aria-expanded={open}
-      style={{
-        position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
-        width: '100%', minHeight: TAP_TARGET_MIN_PX, padding: '11px 13px', border: 0, borderTop: '1px solid var(--line)',
-        background: 'var(--card)', textAlign: 'left', cursor: 'pointer',
-        fontFamily: FONT,
-      }}
-    >
-      <span style={{ flex: 'none', width: '20px', textAlign: 'center', fontSize: '14px', fontWeight: 800, fontStyle: 'italic', color: 'var(--mute-2)', fontVariantNumeric: 'tabular-nums' }}>
-        {num}
-      </span>
-      <span style={{ flex: 1, minWidth: 0, display: 'block' }}>
-        <span style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)', paddingTop: '1px' }}>{exerciseName(item.exercise_id)}</span>
-          <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1, flex: 'none', whiteSpace: 'nowrap' }}>
-            {doseLine(item)}
-          </span>
+    <div style={{ position: 'relative', zIndex: 1, borderTop: '1px solid var(--line)', background: 'var(--card)' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        style={{
+          display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
+          width: '100%', minHeight: TAP_TARGET_MIN_PX, padding: '11px 13px', border: 0,
+          background: 'transparent', textAlign: 'left', cursor: 'pointer',
+          fontFamily: FONT,
+        }}
+      >
+        <span style={{ flex: 'none', width: '20px', textAlign: 'center', fontSize: '14px', fontWeight: 800, fontStyle: 'italic', color: 'var(--mute-2)', fontVariantNumeric: 'tabular-nums' }}>
+          {num}
         </span>
-        {support && (
-          <span style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ink-2)', marginTop: '5px', lineHeight: 1.4 }}>{support}</span>
-        )}
-        {open && cues.length > 0 && (
-          <span style={{ display: 'block', marginTop: 'var(--space-2)' }}>
-            {cues.map(c => (
-              <span key={c} style={{ display: 'block', fontSize: '12px', color: 'var(--ink-2)', lineHeight: 1.5 }}>{c}</span>
-            ))}
+        <span style={{ flex: 1, minWidth: 0, display: 'block' }}>
+          <span style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)', paddingTop: '1px' }}>{exerciseName(item.exercise_id)}</span>
+            <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1, flex: 'none', whiteSpace: 'nowrap' }}>
+              {doseLine(item)}
+            </span>
           </span>
-        )}
-      </span>
-    </button>
+          {support && (
+            <span style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ink-2)', marginTop: '5px', lineHeight: 1.4 }}>{support}</span>
+          )}
+          {suggestion && (
+            <span data-lift-suggestion style={{ display: 'block', fontSize: '12px', fontWeight: 400, color: 'var(--ink-2)', marginTop: '3px', lineHeight: 1.4, fontVariantNumeric: 'tabular-nums' }}>{suggestion}</span>
+          )}
+          {open && cues.length > 0 && (
+            <span style={{ display: 'block', marginTop: 'var(--space-2)' }}>
+              {cues.map(c => (
+                <span key={c} style={{ display: 'block', fontSize: '12px', color: 'var(--ink-2)', lineHeight: 1.5 }}>{c}</span>
+              ))}
+            </span>
+          )}
+        </span>
+      </button>
+      {open && logging?.onLog && <LiftLogPanel item={item} logging={logging} />}
+    </div>
   )
 }
 
-function BlockCard({ block, mobilitySession }: { block: Block; mobilitySession: boolean }) {
+/** The opened main-lift row's log: the weight (loaded lifts), then a feel. The feel tap is the save. */
+export function LiftLogPanel({ item, logging }: { item: Prescription; logging: LiftLogging }) {
+  const loaded = isLoadedLift(item.exercise_id)
+  const prefill = logging.today?.load_kg ?? logging.suggestion?.load_kg ?? null
+  const [weight, setWeight] = useState(prefill != null ? String(Number(formatWeight(prefill, logging.units)?.split(' ')[0])) : '')
+  const [feel, setFeel] = useState<LiftFeel | null>(logging.today?.feel ?? null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(false)
+  const value = Number(weight.replace(',', '.'))
+  const weightOk = !loaded || (Number.isFinite(value) && value > 0)
+
+  async function log(next: LiftFeel) {
+    if (!weightOk || busy) return
+    setBusy(true); setError(false)
+    const ok = await logging.onLog!(item.exercise_id, loaded ? weightToKg(value, logging.units) : null, next)
+    setBusy(false)
+    if (ok) setFeel(next); else setError(true)
+  }
+
+  return (
+    <div data-lift-log style={{ padding: '0 13px 12px 45px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+      {loaded && (
+        <TextField value={weight} onChange={setWeight} inputMode="decimal" unit={weightUnit(logging.units)} ariaLabel={LIFT_WEIGHT_LABEL} placeholder={LIFT_WEIGHT_LABEL} />
+      )}
+      <div role="group" aria-label="How it felt" style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+        {(['easy', 'right', 'hard'] as const).map(f => (
+          <Chip key={f} label={LIFT_FEEL_LABEL[f]} active={feel === f} onClick={() => void log(f)} />
+        ))}
+      </div>
+      {feel && !error && <span style={{ fontFamily: FONT, fontSize: '12px', color: 'var(--mute)' }}>{LIFT_LOGGED}</span>}
+      {error && <InlineError>{PLAN_CHANGE_SAVE_FAILED}</InlineError>}
+    </div>
+  )
+}
+
+function BlockCard({ block, mobilitySession, logging }: { block: Block; mobilitySession: boolean; logging?: (exerciseId: string) => LiftLogging | undefined }) {
   const prep = block.role === 'warmup' || block.role === 'mobility'
   const name = mobilitySession && block.role === 'mobility' ? STRENGTH_KIND_TITLE.mobility : STRENGTH_BLOCK_TITLE[block.role]
   const n = block.items.length
   return (
     <StepSection name={name} accent={prep ? 'var(--moss)' : ACCENT} tintPct={8} totalStr={`${n} ${n === 1 ? 'exercise' : 'exercises'}`} zoneStr="">
-      {block.items.map((item, i) => <ExerciseRow key={`${item.exercise_id}-${i}`} num={i + 1} item={item} />)}
+      {block.items.map((item, i) => <ExerciseRow key={`${item.exercise_id}-${i}`} num={i + 1} item={item} logging={block.role === 'main' ? logging?.(item.exercise_id) : undefined} />)}
     </StepSection>
   )
 }
@@ -107,9 +164,11 @@ export interface StrengthSessionScreenProps {
   onSetStatus: (status: StrengthCompletion | null) => Promise<boolean>
   /** STRENGTH-NOTE-01 — this week's AI note, or null (absent, loading or failed all render nothing). */
   note?: string | null
+  /** STRENGTH-PROGRESSION-01 — suggestions + today's logs per main lift, and the save. Absent: no logging. */
+  lifts?: { suggestions: Record<string, LiftSuggestion>; today: Record<string, LiftLog>; units: 'km' | 'mi'; onLog?: LiftLogging['onLog'] }
 }
 
-export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus, note = null }: StrengthSessionScreenProps) {
+export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus, note = null, lifts }: StrengthSessionScreenProps) {
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
   const mobility = session.kind === 'mobility'
@@ -153,7 +212,8 @@ export default function StrengthSessionScreen({ session, dayLabel, weekN, status
           </div>
         )}
 
-        {session.blocks.map((b, i) => <BlockCard key={`${b.role}-${i}`} block={b} mobilitySession={mobility} />)}
+        {session.blocks.map((b, i) => <BlockCard key={`${b.role}-${i}`} block={b} mobilitySession={mobility}
+          logging={lifts ? id => ({ suggestion: lifts.suggestions[id], today: lifts.today[id], units: lifts.units, onLog: canLog ? lifts.onLog : undefined }) : undefined} />)}
 
         {canLog && (
           <div style={{ marginTop: 'var(--space-5)' }}>

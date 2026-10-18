@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-18 — STRENGTH-PROGRESSION-01 · what to lift, and a dev server that kept my mutant
+**Shipped:** Strength now tells you what to lift. On each main lift you can log the weight and tap Easy, About right or Hard; next time the row says "Last time 40 kg, easy. Try 42.5 kg." It never jumps, never rises in a deload, taper or after a bad night, and slows down on a lift that loads an old injury. Logging is optional. Live once the migration is applied.
+
+**Dev learning:** The browser showed "Try 45 kg" where the rule says 42.5. The rule was right; the dev server was serving a mutation. My mutation script restores the original file by moving a backup into place, which gives it an OLDER timestamp than the mutant, so the watcher never rebuilt it. Every check passed while the page I was looking at ran broken code. The script now bumps the timestamp on restore.
+
+**Product learning:** The board's "reps before load when a step is over a tenth" applies to legs too: on anything under 25 kg a 2.5 kg jump is too big, so a lighter lifter adds reps first. That was the board's intent for lighter lifters; it reaches further than the sitting said out loud, and the tests now say it.
+
+**AI-building learning:** The same mutation script reported a check as "red" when the test file it ran did not exist yet, because vitest exits non-zero on no tests. A falsification that cannot fail for the right reason is not a falsification; the script now refuses to run without the file.
+
+**The honest bit:** The founder asked for free exercise media. There isn't any I would ship: the free sources either cannot prove they own the pictures or cover a quarter of our list. I wrote that down rather than picking the least bad one.
+
+---
+
 ## 2026-10-18 — STRENGTH-RECOVERY-01 · one card, one answer, and a "full body" with no upper body
 **Shipped:** On a bad-recovery morning Today now shows one card: your number against your normal ("HRV 38. Your normal is 52."), what happens to the run, what happens to the lift, and two equal buttons. Answer once and it covers both. On a day with only a lift, the same card asks about the lift. It goes live once the migration is applied.
 

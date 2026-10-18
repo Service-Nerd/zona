@@ -171,4 +171,7 @@ export interface StrengthPlan {
    *  gate and every level climb count from the week containing it, never from the run plan's
    *  week 1. No session is placed before it. Kept across regenerations. */
   start_date: string
+  /** STRENGTH-PROGRESSION-01 — the run plan's injury tags plus the profile's, as generation used them, so S14 can slow
+   *  progression on a lift that loads one. Absent on plans generated before 2026-10-18 (fall back to the profile's). */
+  injury_tags?: InjuryTag[]
 }

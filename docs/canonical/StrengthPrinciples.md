@@ -201,6 +201,27 @@ ease teaches them to ignore it; a woman in her luteal phase can trip it on a nor
 `docs/decisions/strength-recovery-resitting-2026-10-17.md`. **Check:** `S-RECOVERY-SUBTRACT-ONLY`
 (`recoveryEaseViolations`, run over every generated session in the sweep).
 
+## S14. Load progresses from what the runner logs
+
+**Principle.** On a loaded main lift the runner may log the weight and one of three feels against the session's RIR
+target (*easy*: two or more reps to spare beyond it; *right*; *hard*: at or near failure, or form went). The next
+session of that lift **suggests** a load; it never requires one, and no log means no change. The rule, over the
+runner's logs for one lift: *easy* steps up; *right* twice at the same weight steps up; *hard* holds; *hard* twice at
+one weight comes down `LOAD_REDUCE_PCT` (0.1). A step is `LOAD_STEP_KG_LOWER` (2.5 kg) on a lower-body lift and
+`LOAD_STEP_KG_UPPER` (1 kg) on an upper one, rounded to `LOAD_ROUND_KG` (0.5); when that is more than
+`LOAD_STEP_MAX_PCT` (0.1) of the load, a rep is added instead, up to `REP_PROGRESSION_MAX` (2), then the load. At most
+one rise per lift in `LOAD_STEP_MIN_DAYS` (7), counting a rise the runner made themselves. If the runner's injury tags
+load the lift's muscles (`INJURY_LOADED_MUSCLES`), *easy* counts as *right*. Nothing rises in a deload, taper, race
+week or recovery-eased session, and logs from those sessions do not count. Reps, sets, RIR and the variant cadence stay
+the engine's (S6, S7); bodyweight lifts log the feel only.
+
+**Why.** No 1RM, so autoregulation from reps in reserve is the only honest way to set load, and it performs at least
+as well as fixed percentages **[M]**. It may hold or come down; it never jumps (Hutchinson). One rise a week keeps
+tissue ahead of load (Willy). Adding reps before a large relative jump protects lighter lifters, more often women
+(Sims). Optional because the plan must never wait on a form (McMillan). Sitting:
+`docs/decisions/strength-progression-coaching-2026-10-18.md`. **Check:** `S-PROGRESSION-BOUNDED`
+(`progressionViolations`, swept over generated histories).
+
 ## Honesty notes the plan carries
 
 `bodyweight_ceiling` (no load kit: builds the habit and some strength; load is what moves economy) ·

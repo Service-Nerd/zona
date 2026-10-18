@@ -180,3 +180,39 @@ export function recoveryEaseViolations(original: StrengthSession, eased: Strengt
   if (eased.eased_for !== 'recovery') at('not stamped eased_for')
   return v
 }
+
+/**
+ * S-PROGRESSION-BOUNDED (S14) — a load suggestion never jumps. Re-derived from the logs on its own: it does not
+ * call `suggestLoad`. Never more than one step above the last logged load; never up in a no-step session or after
+ * "hard"; extra reps within REP_PROGRESSION_MAX; never up twice inside LOAD_STEP_MIN_DAYS.
+ */
+export function progressionViolations(
+  history: readonly { date: string; exercise_id: string; load_kg: number | null; feel: string; counts: boolean }[],
+  exerciseId: string, today: string, noStep: boolean,
+  s: { kind: string; load_kg: number | null; extra_reps: number },
+): StrengthViolation[] {
+  const v: StrengthViolation[] = []
+  const at = (detail: string) => v.push({ code: 'S-PROGRESSION-BOUNDED', week: 0, day: today, detail })
+  const logs = history.filter(l => l.exercise_id === exerciseId && l.counts && l.date < today && (l.load_kg ?? 0) > 0)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  if (s.extra_reps > C.REP_PROGRESSION_MAX) at('extra reps over the cap')
+  if (!logs.length || s.load_kg == null) return v
+  const last = logs[logs.length - 1]
+  const ex = CATALOGUE_BY_ID.get(exerciseId)
+  const step = ex && PATTERN_REGION[ex.pattern] === 'lower' ? C.LOAD_STEP_KG_LOWER : C.LOAD_STEP_KG_UPPER
+  const up = s.load_kg > last.load_kg! + 1e-9
+  if (s.load_kg > last.load_kg! + step + C.LOAD_ROUND_KG / 2 + 1e-9) at('more than one step')
+  if (up && noStep) at('up in a no-step session')
+  if (up && last.feel === 'hard') at('up after hard')
+  if (noStep && s.extra_reps > 0) at('extra reps in a no-step session')
+  // Never two rises inside the window: the current load, if it was itself a rise, must be old enough to step again.
+  if (up) {
+    let i = logs.length - 1
+    while (i > 0 && logs[i - 1].load_kg === last.load_kg) i--
+    if (i > 0 && logs[i - 1].load_kg! < last.load_kg!) {
+      const d = Math.round((Date.parse(last.date + 'T00:00:00Z') - Date.parse(logs[i].date + 'T00:00:00Z')) / 86_400_000)
+      if (d < C.LOAD_STEP_MIN_DAYS) at('two rises inside the step window')
+    }
+  }
+  return v
+}

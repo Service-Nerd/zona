@@ -72,7 +72,9 @@ export const USER_DATA_SURFACES: readonly UserDataSurface[] = [
   { table: 'strength_plans',           column: 'user_id', mode: 'cascade',
     why: 'The runner\'s strength plan and the profile they gave it (kit, injuries, bone flag). Its own table so the strength engine can stand alone.' },
   { table: 'strength_completions',     column: 'user_id', mode: 'cascade',
-    why: 'Done or skipped per strength session date. Nothing else is logged until Phase 4 reads it.' },
+    why: 'Done or skipped per strength session date.' },
+  { table: 'strength_lift_logs',       column: 'user_id', mode: 'cascade',
+    why: 'STRENGTH-PROGRESSION-01 (S14): weight and feel per loaded lift per session, read to suggest the next load.' },
 
   // ── Health and activity (ADR-011: HealthKit is the SOR) ─────────────────
   { table: 'strava_activities',        column: 'user_id', mode: 'cascade',

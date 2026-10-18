@@ -69,3 +69,15 @@ floor 1; warm-up and mobility unchanged; `estimated_minutes` never rises; stamps
 Check: `recoveryEaseViolations(original, eased)` → `S-RECOVERY-SUBTRACT-ONLY`, re-derived from the two sessions
 (it does not call the producer). Gate: `packages/strength/recovery.test.ts`, every generated session across a
 288-profile grid eased and checked. **Wired 2026-10-18:** the runner answers on Today's recovery card; the answer is stored by `/api/strength/ease` and applied on read by `applyRecoveryEases` (`lib/strength-bridge/recoveryEases.ts`).
+
+## Load progression — `suggestLoad(logs, ctx): LiftSuggestion` (S14, STRENGTH-PROGRESSION-01, 2026-10-18)
+
+Pure. Replays the runner's logs for one lift (only those that `counts`, dated before `ctx.today`, with a weight):
+*easy* steps; *right* twice at one load steps; *hard* holds; *hard* twice comes down `LOAD_REDUCE_PCT`. Step 2.5 kg lower
+/ 1 kg upper, rounded to 0.5; over `LOAD_STEP_MAX_PCT` of the load a rep is added instead (up to 2). At most one rise per
+lift in `LOAD_STEP_MIN_DAYS`, counting a rise the runner made. An injury the lift loads (`INJURY_LOADED_MUSCLES`) makes
+*easy* count as *right*. `ctx.noStep` (deload, taper, race week, eased) → `hold_week`. Bodyweight lifts →
+`bodyweight` (no load). Kinds: `start · hold · step · reps · reduce · hold_week · bodyweight`. Check:
+`progressionViolations` → `S-PROGRESSION-BOUNDED`, re-derived (never calls the producer). Gate:
+`packages/strength/progression.test.ts` (clause cases + 4,000 seeded histories). `StrengthPlan.injury_tags` (new,
+additive) carries the merged run + profile tags generation used.

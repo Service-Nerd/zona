@@ -100,6 +100,28 @@ export const STRENGTH_CONFIG = {
   // S12 — standalone (no run plan)
   STANDALONE_WEEKS: 8,
   STANDALONE_BASE_WEEKS: 4,
+
+  // ── S14 progression from the runner's log (STRENGTH-PROGRESSION-01, Coaching Board 2026-10-18) ──
+  /** The smallest sensible jump on a lower-body lift. */
+  LOAD_STEP_KG_LOWER: 2.5,
+  /** The smallest sensible jump on an upper-body lift. */
+  LOAD_STEP_KG_UPPER: 1,
+  /** A step bigger than this share of the load is too big: add a rep instead (Sims). */
+  LOAD_STEP_MAX_PCT: 0.1,
+  /** Reps added before the load goes up, when the step is too big. */
+  REP_PROGRESSION_MAX: 2,
+  /** "Hard" twice at one load: come down by this share. */
+  LOAD_REDUCE_PCT: 0.1,
+  /** At most one step per lift in this many days (Willy). */
+  LOAD_STEP_MIN_DAYS: 7,
+  /** Suggested loads round to this. */
+  LOAD_ROUND_KG: 0.5,
+  /** Which muscles an injury tag makes a lift "load the injury" (S14, Willy): "easy" then counts as "right". */
+  INJURY_LOADED_MUSCLES: {
+    knee: ['quads'], itb: ['hip_abductors', 'quads'], achilles: ['calves', 'soleus'], shin: ['calves', 'soleus'],
+    calf: ['calves', 'soleus'], plantar: ['calves', 'soleus'], hip: ['glutes', 'hip_abductors', 'adductors', 'hip_flexors'],
+    hamstring: ['hamstrings'], back: ['back'], shoulder: ['shoulders', 'chest'],
+  } as const,
 } as const
 
 export type StrengthConfig = typeof STRENGTH_CONFIG

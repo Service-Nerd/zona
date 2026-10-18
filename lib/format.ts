@@ -708,3 +708,27 @@ export function formatRaceCountdown(days: number, opts?: { suffix?: string }): s
   if (rem === 0) return `${wPart}${suffix}`
   return `${wPart}, ${rem} ${rem === 1 ? 'day' : 'days'}${suffix}`
 }
+
+// ── Weight (STRENGTH-PROGRESSION-01, ADR-015) ────────────────────────────────
+/** Pounds in a kilogram. A fact, not a choice. */
+export const LB_PER_KG = 2.20462
+
+/**
+ * The one owner of a lifted weight on screen. Stored in kg; shown in lb when the runner's units are miles
+ * (the app's single unit preference). kg keeps a half (22.5 kg); lb rounds to a whole pound (50 lb).
+ */
+export function formatWeight(kg: number | null | undefined, units: DistanceUnits = 'km'): string | null {
+  if (kg == null || !Number.isFinite(kg)) return null
+  if (units === 'mi') return `${Math.round(kg * LB_PER_KG)} lb`
+  return `${Math.round(kg * 2) / 2} kg`
+}
+
+/** The runner typed a weight in their own unit; store it in kg. */
+export function weightToKg(value: number, units: DistanceUnits = 'km'): number {
+  return units === 'mi' ? Math.round((value / LB_PER_KG) * 100) / 100 : value
+}
+
+/** The weight unit's label for an input suffix. */
+export function weightUnit(units: DistanceUnits = 'km'): 'kg' | 'lb' {
+  return units === 'mi' ? 'lb' : 'kg'
+}

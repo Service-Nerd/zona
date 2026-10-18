@@ -5,7 +5,8 @@
 // particular ("reps in reserve") was flagged for his call. Client-safe: no Node imports.
 
 import { CATALOGUE_BY_ID, type Experience, type Focus, type SessionMinutes, type BlockRole, type EquipmentTag, type Prescription, type SessionKind, type StrengthPlan, type StrengthSession } from '@/packages/strength'
-import { formatStepDuration } from '@/lib/format'
+import { formatStepDuration, formatWeight } from '@/lib/format'
+import type { LiftFeel, LiftSuggestion } from '@/packages/strength'
 
 /** Titles drop "+ core": core is in nearly every session, and saying so on each is saying it four times (Collins). */
 export const STRENGTH_KIND_TITLE: Record<SessionKind, string> = {
@@ -137,4 +138,22 @@ export const STRENGTH_COACH = {
   count: (done: number, planned: number) => `${done} of ${planned} this week`,
   heavier: (week: number) => `Heavier lifts from week ${week}.`,
   jumps: (week: number) => `Jumps join in week ${week}.`,
+}
+
+// ── STRENGTH-PROGRESSION-01 (Design Board 2026-10-18) — plain words, never "RIR" (Sierra) ──
+
+export const LIFT_FEEL_LABEL: Record<LiftFeel, string> = { easy: 'Easy', right: 'About right', hard: 'Hard' }
+const FEEL_WORD: Record<LiftFeel, string> = { easy: 'easy', right: 'about right', hard: 'hard' }
+export const LIFT_WEIGHT_LABEL = 'What you lifted'
+export const LIFT_LOGGED = 'Logged'
+
+/** The row's line before the set: last time, then what to try. Null on a bodyweight lift. */
+export function liftSuggestionLine(s: LiftSuggestion | undefined, prescribedReps: number | undefined, units: 'km' | 'mi'): string | null {
+  if (!s || s.kind === 'bodyweight') return null
+  if (s.kind === 'start' || !s.last || s.load_kg == null) return 'New lift. Start light.'
+  const last = `Last time ${formatWeight(s.last.load_kg, units)}, ${FEEL_WORD[s.last.feel]}.`
+  const load = formatWeight(s.load_kg, units)
+  if (s.kind === 'hold_week') return `${last} Keep ${load} this week.`
+  if (s.kind === 'reps' && prescribedReps != null) return `${last} Try ${load} for ${prescribedReps + s.extra_reps}.`
+  return `${last} Try ${load}.`
 }
