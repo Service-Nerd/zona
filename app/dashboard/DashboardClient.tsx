@@ -1,6 +1,8 @@
 'use client'
 
 import { InlineError } from '@/components/shared/InlineError'
+import { FieldReadback } from '@/components/shared/FieldText'
+import { runPlanReadback, strengthPlanReadback } from '@/lib/ui/planChangeReadback'
 import { PlanLoadFailed } from '@/components/dashboard/PlanLoadFailed'
 import { calendarDaysBetween } from '@/lib/dates'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
@@ -171,6 +173,7 @@ import SaveImageButton from '@/components/dashboard/SaveImageButton'
 import TodayScreen from '@/components/dashboard/TodayScreen'
 import StrengthSessionScreen from '@/components/dashboard/StrengthSessionScreen'
 import StrengthSetupScreen, { STRENGTH_PROFILE_DEFAULT } from '@/components/dashboard/StrengthSetupScreen'
+import StrengthChangeConfirm from '@/components/dashboard/StrengthChangeConfirm'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useStrengthPlan, useStrengthWeeklyNote } from '@/components/dashboard/useStrengthPlan'
 import { canUseStrength } from '@/lib/strength-bridge/release'
@@ -178,7 +181,7 @@ import { STRENGTH_COACH, STRENGTH_REST_INVITE, STRENGTH_SETUP, STRENGTH_WIZARD_E
 import { strengthWeekEvidence, type StrengthWeekEvidence } from '@/lib/strength-bridge/coachEvidence'
 import { prefillChosenDays } from '@/lib/strength-bridge/chosenDays'
 import { STRENGTH_SCREEN_SUB, STRENGTH_TITLE, strengthSubtitle } from '@/components/shared/meDoors'
-import type { StrengthSession } from '@/packages/strength'
+import type { StrengthPlan, StrengthProfile, StrengthSession } from '@/packages/strength'
 import SessionPopupInner from '@/components/dashboard/SessionPopupInner'
 
 type Screen = 'zones' | 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration' | 'strength-session' | 'strength-setup'
@@ -501,13 +504,16 @@ export default function DashboardClient() {
     // not landed. That ordering is the whole point of the coordinator.
     modifyCoordRef.current.beginSave()
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      // SAVE-PATTERN-01 — the signed-in id is already known; `auth.getUser()` is a network call the runner waits on.
+      const user = userId ? { id: userId } : (await supabase.auth.getUser()).data.user
       if (!user) {
         modifyCoordRef.current.saveFailed()
         setModifyError('You are signed out. Sign in and try again.'); return
       }
+      const before = plan
       await savePlanForUser(user.id, pending.next, supabase)
       setPlan(pending.next)
+      if (before) setPlanReadback(runPlanReadback(before, pending.next, getCurrentWeekIndex(before.weeks), preferredUnits))
       // Anything that arrived mid-save is now safe to write.
       const queued = modifyCoordRef.current.saveCompleted()
       if (queued) {
@@ -527,6 +533,10 @@ export default function DashboardClient() {
     }
   }
   const [screen, setScreen] = useState<Screen>('today')
+  // SAVE-PATTERN-01 — the line Plan shows after a plan change saves. Lives until the runner leaves Plan
+  // (no toast, no auto-dismiss).
+  const [planReadback, setPlanReadback] = useState<string | null>(null)
+  useEffect(() => { if (screen !== 'plan') setPlanReadback(null) }, [screen])
   /** ME-DOORS-01 — a request to open Me AT a door rather than at the index. Consumed once
    *  by `MeScreen` and cleared, so returning to Me later lands on the index as usual. */
   const [meOpenSection, setMeOpenSection] = useState<string | null>(null)
@@ -575,7 +585,7 @@ export default function DashboardClient() {
   // STRENGTH-APP-01 — the strength plan, fetched once here and passed down so Today,
   // Plan, Me and the session screen read ONE copy. The client check only decides
   // whether to ask; the server's gate decides whether to answer.
-  const { strength, reloadStrength, saveStrength, setStrengthCompletion, setStrengthRecoveryAnswer, setStrengthLiftLog } = useStrengthPlan(
+  const { strength, reloadStrength, saveStrength, previewStrength, setStrengthCompletion, setStrengthRecoveryAnswer, setStrengthLiftLog } = useStrengthPlan(
     canUseStrength({ isAdmin, tier: hasPaidAccess ? 'paid' : 'free' }), plan,
   )
   const [activeStrength, setActiveStrength] = useState<StrengthSession | null>(null)
@@ -583,7 +593,38 @@ export default function DashboardClient() {
   // STRENGTH-ENTRY-01 — the setup has three doors (Me, the modify sheet, the rest card), so
   // its back returns to whichever one opened it. One state, never a hardcoded back.
   const [strengthSetupOrigin, setStrengthSetupOrigin] = useState<'me' | 'plan' | 'today'>('me')
-  const openStrengthSetup = (origin: 'me' | 'plan' | 'today') => { setStrengthSetupOrigin(origin); setScreen('strength-setup') }
+  const openStrengthSetup = (origin: 'me' | 'plan' | 'today') => { setStrengthSetupOrigin(origin); setStrengthPreview(null); setStrengthDraft(null); setScreen('strength-setup') }
+  // SAVE-PATTERN-01 — changing strength is the run plan's journey: answers → what changes (only when a plan exists) →
+  // accept → Plan with a readback. The draft survives the round trip to the consent screen and back.
+  const [strengthPreview, setStrengthPreview] = useState<{ profile: StrengthProfile; before: StrengthPlan; after: StrengthPlan } | null>(null)
+  const [strengthDraft, setStrengthDraft] = useState<StrengthProfile | null>(null)
+  const [strengthBusy, setStrengthBusy] = useState(false)
+  const [strengthError, setStrengthError] = useState<string | null>(null)
+  /** Save, then land on Plan saying what changed. Returns the setup screen's error key, or null. */
+  async function commitStrength(profile: StrengthProfile, before: StrengthPlan | null): Promise<string | null> {
+    const saved = await saveStrength(profile)
+    if (saved.error) return saved.error
+    if (saved.plan) setPlanReadback(strengthPlanReadback(before, saved.plan))
+    setStrengthPreview(null); setStrengthDraft(null)
+    setScreen('plan')
+    return null
+  }
+  async function handleStrengthSetupSave(profile: StrengthProfile): Promise<string | null> {
+    const before = strength.plan ?? null
+    if (!before) return commitStrength(profile, null)
+    const after = await previewStrength(profile)
+    if (!after) return 'save'
+    setStrengthDraft(profile); setStrengthError(null)
+    setStrengthPreview({ profile, before, after })
+    return null
+  }
+  async function acceptStrengthPreview() {
+    if (!strengthPreview) return
+    setStrengthBusy(true); setStrengthError(null)
+    const err = await commitStrength(strengthPreview.profile, strengthPreview.before)
+    setStrengthBusy(false)
+    if (err) setStrengthError(STRENGTH_SETUP.saveFailed)
+  }
   const strengthNote = useStrengthWeeklyNote(screen === 'strength-session' ? activeStrength?.week_n ?? null : null, strength.status === 'ready')
   const strengthByDate = useMemo(() => {
     const m: Record<string, StrengthSession> = {}
@@ -1002,6 +1043,11 @@ export default function DashboardClient() {
   // on: POST-RUN-01 uses 'post-run', HOOK-02 ("Kit noticed") uses 'session'.
   const pendingDeepLinkRef = useRef<{ target: 'post-run' | 'session'; weekN: number; sessionDay: string } | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  // SAVE-PATTERN-01 — each step of changing a plan is a screen, so each opens at its top: the edit, the consent, and the
+  // landing whose first line is the readback. Scrolled down the Plan list, the runner would otherwise land mid-page.
+  useEffect(() => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+  }, [modifyOpen, !!modifyPreview, !!planReadback])
 
   // The bottom nav is position:fixed, so the scroll container has to reserve
   // exactly its rendered height as paddingBottom or last-row content scrolls
@@ -2887,12 +2933,9 @@ export default function DashboardClient() {
               onBack={() => { setModifyPreview(null); setModifyError(null); setModifyOpen(true) }}
               /* Discard. Now genuinely destructive and nothing else is. */
               onCancel={clearModify}
+              error={modifyError}
             />
-            {/* PLAN-CHANGE-FAIL-VISIBLE-01 — was `--warn` 13px: amber is the COACHING
-                colour, and this is an error. Now the same line as the change cards. */}
-            {modifyError && (
-              <InlineError style={{ padding: '0 20px 20px' }}>{modifyError}</InlineError>
-            )}
+            {/* PLAN-CHANGE-FAIL-VISIBLE-01 → SAVE-PATTERN-01: the failure line is the shared frame's, under Accept. */}
           </div>
         )}
         {screen === 'plan' && modifyOpen && plan && (
@@ -2929,7 +2972,8 @@ export default function DashboardClient() {
             } : null}
           />
         )}
-        {screen === 'plan' && !modifyPreview && <PlanScreen strength={strengthFor('plan')} plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('plan'); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} onOpenModify={canModifyPlan(plan) ? () => setModifyOpen(true) : undefined} />}
+        {/* SAVE-PATTERN-01 — the edit is a screen now: it REPLACES Plan, as the consent screen does. */}
+        {screen === 'plan' && !modifyPreview && !(modifyOpen && plan) && <PlanScreen strength={strengthFor('plan')} plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('plan'); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} onOpenModify={canModifyPlan(plan) ? () => { setPlanReadback(null); setModifyOpen(true) } : undefined} readback={planReadback} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
               // ADR-013 §22-27: allCompletions and runAnalysisMap are keyed by
@@ -3112,6 +3156,16 @@ export default function DashboardClient() {
             is said here once (the body carries none), and the back goes where it came from. */}
         {screen === 'strength-setup' && strength.status !== 'off' && (
           <>
+            {strengthPreview ? (
+              <div style={{ padding: '16px 0 0' }}>
+                <StrengthChangeConfirm before={strengthPreview.before} after={strengthPreview.after}
+                  weekN={(plan?.weeks[getCurrentWeekIndex(plan.weeks)] as { n?: number } | undefined)?.n ?? 1}
+                  applying={strengthBusy} error={strengthError}
+                  onAccept={() => void acceptStrengthPreview()}
+                  onBack={() => { setStrengthPreview(null); setStrengthError(null) }}
+                  onCancel={() => { setStrengthPreview(null); setStrengthDraft(null); setStrengthError(null); setScreen(strengthSetupOrigin) }} />
+              </div>
+            ) : <>
             <ScreenHeader title={STRENGTH_TITLE} sub={STRENGTH_SCREEN_SUB} onBack={() => setScreen(strengthSetupOrigin)} />
             {strength.status === 'loading'
               ? null
@@ -3119,8 +3173,10 @@ export default function DashboardClient() {
               ? <div style={{ padding: '0 16px' }}><EmptyState title={STRENGTH_SETUP.loadFailed} action={<Button variant="secondary" onClick={() => void reloadStrength()}>Try again</Button>} /></div>
               : <StrengthSetupScreen profile={strength.profile} planNotes={strength.plan?.notes ?? []}
                   initialDays={prefillChosenDays(strength.profile, strength.plan ?? null)}
+                  draft={strengthDraft}
                   planInjuries={(plan?.meta?.injury_history ?? []).map(t => t.toLowerCase())}
-                  onSave={saveStrength} />}
+                  onSave={handleStrengthSetupSave} />}
+            </>}
           </>
         )}
         {screen === 'me'       && <MeScreen strength={strength.status === 'off' || strength.status === 'loading' ? null : {
@@ -4455,7 +4511,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
 // matters is in the two live holes (the web connect prompt, and actually
 // looking at day one), not in reviving this.
 
-function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, runAnalysisMap = {}, onOpenModify, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach, strength = null }: {
+function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, runAnalysisMap = {}, onOpenModify, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach, strength = null, readback = null }: {
   /** STRENGTH-APP-01 (C). */
   strength?: import('@/components/training/PlanCalendar').PlanStrength | null
   plan: Plan; stravaRuns: any[]
@@ -4474,6 +4530,8 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
    *  is withheld rather than offering an edit the engine cannot honour from
    *  guessed inputs. */
   onOpenModify?: () => void
+  /** SAVE-PATTERN-01 — what the last plan change did, said once at the top (`planChangeReadback.ts`). */
+  readback?: string | null
   /** P-04 — nested runAnalysisMap[week_n][session_day]. Already fetched on this
    *  client for the Coach screen; the Plan screen never received it, which is
    *  why the one question this product is built on was answerable only there. */
@@ -4607,6 +4665,11 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           ⚠️ The countdown lives HERE and not under the arc on purpose. The arc
           is the shape of the training; the countdown is a property of the
           RACE, and attaching it to the arc is what made the race read twice. */}
+      {/* SAVE-PATTERN-01 — a save never ends in silence. Above the race, so it is the first thing read on landing;
+          role="status" so a screen reader hears it too. */}
+      {readback && (
+        <div role="status" style={{ padding: '0 16px 12px' }}><FieldReadback>{readback}</FieldReadback></div>
+      )}
       {(raceName || raceDateStr) && (
         <div style={{ padding: inMaintenance ? '0 16px 2px' : '0 16px 12px' }}>
           {raceName && (

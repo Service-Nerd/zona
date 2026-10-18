@@ -49,6 +49,10 @@ plan is returned and `stale` is `null`. `{ "plan": null }` when nothing is store
 } }
 ```
 
+**Preview (SAVE-PATTERN-01, 2026-10-18).** `{ "profile": …, "preview": true }` builds and validates the plan exactly as a
+save does and **writes nothing**; **200** `{ "plan" }`. `preview` must be the literal `true`; anything else saves. A
+validator failure is refused (**500**) in a preview too, so the runner is never shown a plan that would not save.
+
 **Chosen days (PINNED-DAYS-01, S1 Am.2, 2026-10-18).** When `available_days` is present it wins: the parser sets
 `sessions_per_week` to its length and `unavailable_days` to the other days, whatever the request said (`withChosenDays`),
 so sessions stay on those days. Empty or more than 4 → **422** (`field: "available_days"`). Absent → the engine picks

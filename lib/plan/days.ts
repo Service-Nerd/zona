@@ -21,6 +21,11 @@ export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
 export const DAY_ORDER: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
+/** The day as a runner reads it in a sentence. One owner, so copy cannot spell a day two ways. */
+export const DAY_FULL_NAME: Record<Day, string> = {
+  mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
+}
+
 const SHORT_DAY_SET: Set<string> = new Set(DAY_ORDER)
 
 const FULL_TO_SHORT: Record<string, Day> = {

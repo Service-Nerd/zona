@@ -97,10 +97,11 @@ describe('the Adjust sheet is recorded, and in the error colour', () => {
   })
 
   it('its message is no longer the coaching colour', () => {
-    const at = dash.indexOf('{modifyError && (')
-    expect(at).toBeGreaterThan(-1)
-    const block = dash.slice(at, dash.indexOf('</InlineError>', at))
-    expect(block).not.toContain('var(--warn)')
-    expect(block, 'the Adjust sheet hand-styles its error again').toMatch(/<InlineError\b/)
+    // SAVE-PATTERN-01 — the confirm screen's failure line moved into the shared frame, under Accept.
+    expect(dash).toContain('error={modifyError}')
+    const frame = readFileSync('components/shared/ChangeConfirm.tsx', 'utf8')
+    const at = frame.indexOf('{error && <InlineError')
+    expect(at, 'the frame hand-styles its error again').toBeGreaterThan(-1)
+    expect(frame.slice(at, frame.indexOf('</InlineError>', at))).not.toContain('var(--warn)')
   })
 })

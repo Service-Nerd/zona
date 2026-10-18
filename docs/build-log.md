@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-18 — SAVE-PATTERN-01 · the save was silent, and slower than it needed to be
+**Shipped:** Changing your run or strength plan is now one journey: edit on a full screen, see what changes, accept, and land on your plan with one line saying what moved ("Plan updated. Wednesday's easy 9km is now on Tuesday."). The founder had sat on "Saving…" not knowing if anything was happening.
+
+**Dev learning:** I told the founder the save made about 14 calls. That was the worst case, a new calendar. His screenshot was a day swap, which makes 4, plus an auth call the app did not need. The validator I suspected cost about 1 ms and the plan is only 24 KB. The fix was boring: run independent writes together. A test now counts the waits in series (4 → 3, 13 → 5).
+
+**Product learning:** The real defect was silence. The save worked; the screen closed and said nothing. A save that ends in silence is indistinguishable from one that failed.
+
+**AI-building learning:** The strength "what changes" screen passed its first test and was wrong on screen: it labelled sessions by length, so a session that changed type read "strength 40 min → strength 40 min". I only saw it by opening the fixture. Then my test for it failed against the fixed code, because I had assumed which session type the engine would pick.
+
+**The honest bit:** Nothing here has been timed on a phone. The waits are counted, not felt.
+
+---
+
 ## 2026-10-18 — PINNED-DAYS-01 · ask which days, and the sweep found what the tests did not
 **Shipped:** You pick the days you can lift and the days you run, and the sessions stay there. Strength used to ask "how many" and "which days can't you", then chose for you, so the founder's two sessions wandered between Mon/Wed and Mon/Tue.
 

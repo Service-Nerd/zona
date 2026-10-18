@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
-import IconButton from '@/components/ui/IconButton'
-import Sheet from './Sheet'
+import FloatingBackButton from './FloatingBackButton'
+import { useNavHeight } from './Sheet'
 import { DayGridSelector } from './DayGridSelector'
 import { SegmentedControl } from './SegmentedControl'
 import type { GeneratorInput, Plan } from '@/types/plan'
@@ -152,11 +152,17 @@ export default function ModifyPlanSheet({
     }}>{t}</div>
   )
 
+  // 🧭 SAVE-PATTERN-01 (Design Board 2026-10-18) — A SCREEN, NOT A SHEET. At 88vh with seven controls and a date
+  // field it was a screen in all but name, without the back arrow every other screen has, and changing a plan had
+  // two grammars (a sheet here, a full screen for strength). R-5's logic survives: nothing pending, nothing to press;
+  // an edit pending, the Apply bar arrives at the bottom, lifted clear of the floating nav.
+  const navH = useNavHeight() ?? 0
   return (
-    <Sheet onClose={onClose} ariaLabel="Adjust your plan" maxHeightVh={88}>
-      {(close) => (
+    <div role="region" aria-label="Adjust your plan" style={{ paddingTop: 'var(--space-4)' }}>
         <>
-          <div style={{ padding: '4px 20px 0' }}>
+          {/* A pushed screen that scrolls: the floating arrow owner (BACK-ARROW-FLOAT-01). */}
+          <FloatingBackButton onClick={onClose} ariaLabel="Back to your plan" />
+          <div style={{ padding: '0 20px' }}>
             {/* R-5 (Design Board, five-screen review) — A SHEET YOU BROWSE
                 TAKES A TOP-RIGHT DISMISS; A SHEET YOU ACT IN KEEPS THE BOTTOM
                 BAR. Wroblewski conceded his own rule ("slide-up sheets carry a
@@ -171,12 +177,9 @@ export default function ModifyPlanSheet({
                 Apply, and the dismiss goes with it. */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 700, color: 'var(--ink)' }}>
-                  Adjust your plan
-                </div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '4px' }}>
-                  Nothing changes until you apply.
-                </div>
+                {/* The same title treatment as the consent screen that follows: one journey, one voice. */}
+                <div className="screen-header__title">Adjust your plan</div>
+                <div className="screen-header__sub">Nothing changes until you apply.</div>
               </div>
             </div>
 
@@ -335,7 +338,7 @@ export default function ModifyPlanSheet({
               all until there is something to press. */}
           {pending.length > 0 && (
           <div style={{
-            position: 'sticky', bottom: 0, background: 'var(--bg)',
+            position: 'sticky', bottom: navH, background: 'var(--bg)',
             borderTop: '1px solid var(--line)', padding: '12px 20px',
             marginTop: 'var(--space-5)',
           }}>
@@ -427,8 +430,7 @@ export default function ModifyPlanSheet({
           </div>
           )}
         </>
-      )}
-    </Sheet>
+    </div>
   )
 }
 

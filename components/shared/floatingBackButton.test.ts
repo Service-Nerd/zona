@@ -52,7 +52,7 @@ const BARE_BACK_BUTTON: Record<string, string> = {
   'app/dashboard/RecalibrationTile.tsx':
     'a TILE, not a screen. Its arrow sits inline with `marginLeft: -10px` against the ' +
     'tile edge and owns no scroll container.',
-  'components/shared/ModifyPlanConfirm.tsx':
+  'components/shared/ChangeConfirm.tsx':
     'a confirm surface, not a pushed screen. It is short by construction - if it ever ' +
     'scrolls, that is the defect, not the arrow.',
 

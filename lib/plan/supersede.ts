@@ -125,7 +125,9 @@ export async function supersedeWeekKeyedRows(
     return { stamped, at }
   }
 
-  for (const table of WEEK_KEYED_TABLES) {
+  // SAVE-PATTERN-01 — the seven tables are independent, so they are stamped together (they were one at a time, seven
+  // sequential waits on a phone). Any failure still throws, and the stamp stays idempotent, so a retry is safe.
+  const results = await Promise.all(WEEK_KEYED_TABLES.map(async table => {
     let q = supabase
       .from(table)
       .update({ superseded_at: at })
@@ -133,7 +135,9 @@ export async function supersedeWeekKeyedRows(
       .is('superseded_at', null)
     if (weekNs) q = q.in('week_n', [...weekNs])
     const { data, error } = await q.select('user_id')
-
+    return { table, data, error }
+  }))
+  for (const { table, data, error } of results) {
     if (error) {
       throw new Error(
         `supersedeWeekKeyedRows: ${table} stamp failed — ${error.message}. ` +

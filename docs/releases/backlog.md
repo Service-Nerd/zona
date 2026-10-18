@@ -28,7 +28,7 @@ already decided what it is.
 ---
 
 
-### 🔲 `SAVE-PATTERN-01` — one journey for changing a plan; a save never ends in silence 🧭 **DESIGN BOARD RULED 2026-10-18 (SHIP WITH AMENDMENT), not built**
+### ✅ `SAVE-PATTERN-01` — **SHIPPED 2026-10-18.** One journey for changing a plan; a save never ends in silence 🧭 **DESIGN BOARD RULED 2026-10-18 (SHIP WITH AMENDMENT)**
 
 Founder: *"It's not clear it's doing anything... the experience of adjustment should be the same."* Ruling:
 `docs/decisions/save-pattern-2026-10-18.md`. Build: (A) parallelise `savePlanForUser`'s independent writes (~14

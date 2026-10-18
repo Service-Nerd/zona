@@ -95,11 +95,18 @@ describe('CONFIRM-STAGGER-01 — the board attached four conditions', () => {
     const staggerOnButton = /<Button[^>]*className=["'][^"']*zonna-stagger/.test(CONFIRM)
     expect(staggerOnButton, 'a Button carries a stagger class').toBe(false)
 
-    // ...and nothing wraps the buttons in a staggered container either.
-    const i = CONFIRM.indexOf('zonna-stagger')
-    const buttonAt = CONFIRM.search(/<Button[\s\S]{0,400}?Accept and save/)
+    // ...and nothing wraps the buttons in a staggered container either. SAVE-PATTERN-01 moved the CTA into the
+    // shared frame: the frame animates nothing, and renders the caller's (staggered) body BEFORE the buttons.
+    const FRAME = readFileSync('components/shared/ChangeConfirm.tsx', 'utf8')
+    expect(CONFIRM, 'the confirm screen re-grew its own buttons').not.toMatch(/<Button\b/)
+    expect(FRAME).not.toContain('zonna-stagger')
+    // Bounded to the frame's own function: ScaleLabel, above it, renders {children} too.
+    const own = FRAME.slice(FRAME.indexOf('export default function ChangeConfirm'))
+    const bodyAt = own.indexOf('{children}')
+    const buttonAt = own.search(/<Button[\s\S]{0,400}?Accept and save/)
+    expect(bodyAt, 'the frame renders the body').toBeGreaterThan(-1)
     expect(buttonAt, 'the primary CTA moved or was renamed — re-check this arm').toBeGreaterThan(-1)
-    expect(buttonAt).toBeGreaterThan(i) // the CTA renders after, outside, the animated card
+    expect(buttonAt).toBeGreaterThan(bodyAt) // the CTA renders after, outside, the animated body
   })
 
   it('4 · BOTH tokens collapse under prefers-reduced-motion', () => {

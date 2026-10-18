@@ -38,6 +38,6 @@ runner acts in is permitted), MODIFY-CONFIRM-DIFF-01 (consent screen; a progress
 3. While saving, the primary button carries the state. A failure is an `InlineError` in place, naming what was not saved.
 4. The save gets faster in the same build (parallel writes). The declined progress animation stays declined.
 
-**Artifacts:** ui-patterns § Changing a plan, one journey · `lib/plan/planChangeReadback.ts` (owner of the line) ·
+**Artifacts:** ui-patterns § Changing a plan, one journey · `lib/ui/planChangeReadback.ts` (owner of the line) ·
 `planChangeJourney.markup.test.ts` · register row. **Not settled:** how the wait feels on a device; Collins's row
 marking. **Routing:** none (the readback restates the engine's diff; no training claim).

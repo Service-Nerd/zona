@@ -96,7 +96,7 @@ export const STRENGTH_SETUP = {
   legsLimitedNote: 'Your run week leaves fewer of these days for heavy legs, so some sessions are upper body.',
   cta: 'Build my strength plan',
   ctaUpdate: 'Update',
-  saved: 'Built. It shows on Today and in your plan.',
+  // SAVE-PATTERN-01: the "Built" line moved to Plan, where the change is (`strengthPlanReadback`).
   saveFailed: 'Couldn’t build it. Try again.',
   loadFailed: 'Couldn’t load your strength plan.',
 }

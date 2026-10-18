@@ -236,27 +236,31 @@ export async function savePlanForUser(
       // migration; the recency window closed the observed 140–350ms burst.)
       const RECENT_ARCHIVE_WINDOW_MS = 10 * 60_000
       const since = new Date(Date.now() - RECENT_ARCHIVE_WINDOW_MS).toISOString()
-      const { data: recent } = await supabase
-        .from('plan_archive')
-        .select('race_name, race_date')
-        .eq('user_id', userId)
-        .gte('archived_at', since)
-      const alreadyArchived = (recent ?? []).some(
-        (r: any) => `${r.race_name ?? ''}|${r.race_date ?? ''}` === priorSig
-      )
-      if (!alreadyArchived) {
-        // N-015: don't silently swallow a SOR-adjacent write. Archiving is
-        // best-effort relative to the primary upsert below (it must never block a
-        // plan save), so log — don't throw — but make failure visible, never an
-        // unhandled rejection.
-        const archiveRes = await supabase.from('plan_archive').insert({
-          user_id: userId,
-          plan_json: prior,
-          race_name: prior.meta?.race_name ?? null,
-          race_date: prior.meta?.race_date ?? null,
-        })
-        if (archiveRes.error) {
-          console.error(`[savePlanForUser] plan_archive insert failed — ${archiveRes.error.message}`)
+      // SAVE-PATTERN-01 — the archive and the stamp are independent, so they run together. The runner waits on a
+      // phone for every sequential call here; the stamp alone was seven of them, one table at a time.
+      const archiveStep = async () => {
+        const { data: recent } = await supabase
+          .from('plan_archive')
+          .select('race_name, race_date')
+          .eq('user_id', userId)
+          .gte('archived_at', since)
+        const alreadyArchived = (recent ?? []).some(
+          (r: any) => `${r.race_name ?? ''}|${r.race_date ?? ''}` === priorSig
+        )
+        if (!alreadyArchived) {
+          // N-015: don't silently swallow a SOR-adjacent write. Archiving is
+          // best-effort relative to the primary upsert below (it must never block a
+          // plan save), so log — don't throw — but make failure visible, never an
+          // unhandled rejection.
+          const archiveRes = await supabase.from('plan_archive').insert({
+            user_id: userId,
+            plan_json: prior,
+            race_name: prior.meta?.race_name ?? null,
+            race_date: prior.meta?.race_date ?? null,
+          })
+          if (archiveRes.error) {
+            console.error(`[savePlanForUser] plan_archive insert failed — ${archiveRes.error.message}`)
+          }
         }
       }
 
@@ -278,7 +282,10 @@ export async function savePlanForUser(
       // lines below. That one throws because "a cached note narrating sessions
       // that no longer exist is brand-destroying" — these rows ARE the sessions
       // that note was narrating, and a silent failure here is the defect itself.
-      await supersedeWeekKeyedRows(userId, supabase, new Date(), raceChanged ? undefined : movedWeeks)
+      await Promise.all([
+        archiveStep(),
+        supersedeWeekKeyedRows(userId, supabase, new Date(), raceChanged ? undefined : movedWeeks),
+      ])
     }
   }
 
@@ -303,7 +310,11 @@ export async function savePlanForUser(
   // regenerations all flow through here — a cached note narrating sessions
   // that no longer exist is brand-destroying, so invalidation is en bloc and
   // the route regenerates lazily on next Plan-screen view.
-  const deleteRes = await supabase.from('plan_weekly_notes').delete().eq('user_id', userId)
+  // SAVE-PATTERN-01 — the notes clear and the grant re-anchor (below) are independent; run together.
+  const [deleteRes] = await Promise.all([
+    supabase.from('plan_weekly_notes').delete().eq('user_id', userId),
+    reanchorCharityGrant(userId, plan.meta?.race_date, supabase),
+  ])
   if (deleteRes.error) {
     throw new Error(`savePlanForUser: weekly-notes invalidation failed — ${deleteRes.error.message}`)
   }
@@ -314,8 +325,7 @@ export async function savePlanForUser(
   // reshape, recalibration, maintenance handoff) and the next new route cannot
   // silently miss it. No-op and one indexed read for everyone without a grant,
   // which is almost everyone. Never throws: a grant date is not worth failing a
-  // plan save over.
-  await reanchorCharityGrant(userId, plan.meta?.race_date, supabase)
+  // plan save over. (Awaited above, beside the notes clear.)
 }
 
 // ─── ADR-016 date-aware resolution ──────────────────────────────────────────

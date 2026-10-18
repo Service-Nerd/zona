@@ -9,12 +9,10 @@
 import type { Week, Session } from '@/types/plan'
 import { formatDistance, formatDuration } from '@/lib/format'
 import type { DistanceUnits } from '@/lib/format'
+import { DAY_FULL_NAME } from './days'
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-const DAY_LABEL: Record<string, string> = {
-  mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
-  fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
-}
+const DAY_LABEL: Record<string, string> = DAY_FULL_NAME
 
 /** A gentle-first-week session is almost always easy; map the rest honestly so
  *  the card never calls a hard session easy. */

@@ -1,5 +1,11 @@
 # `ModifyPlanSheet` — contract
 
+🧭 **SAVE-PATTERN-01 (2026-10-18): a SCREEN, not a sheet**, despite the file name (kept so the dozen tests and
+registers that name it stay true). It replaces Plan while open, as the consent screen does: `FloatingBackButton`
+top-left (*"Back to your plan"*), `screen-header__title` / `__sub`, and R-5's Apply bar arriving at the bottom when an
+edit is pending, lifted by `useNavHeight()` so it sits above the floating nav. Accepting lands on Plan with the line
+from `runPlanReadback` (`lib/ui/planChangeReadback.ts`).
+
 **Component:** `components/shared/ModifyPlanSheet.tsx`
 
 P-02 (SLT) · `SHEET-DAY-QUESTION-01`, `BASEBUILD-ADJUST-DOOR-01`,

@@ -15,7 +15,6 @@ const strip = (s: string) => s
   .split('\n').filter(l => !l.trim().startsWith('//')).join('\n')
 
 const SHEET   = strip(readFileSync(join(process.cwd(), 'components/shared/ModifyPlanSheet.tsx'), 'utf8'))
-const SHEET_PRIMITIVE = readFileSync(join(process.cwd(), 'components/shared/Sheet.tsx'), 'utf8')
 const CONFIRM = strip(readFileSync(join(process.cwd(), 'components/shared/ModifyPlanConfirm.tsx'), 'utf8'))
 const DASH_RAW = readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8')
 const DASH = strip(DASH_RAW)
@@ -61,22 +60,25 @@ describe('P-02 — gated on the stored input', () => {
   it('the entry point is withheld when the plan has none', () => {
     // 45% of live plans on 2026-09-20. Regenerating from guessed inputs would
     // silently change what the runner never asked to change.
-    expect(DASH).toContain('canModifyPlan(plan) ? () => setModifyOpen(true) : undefined')
+    expect(DASH).toContain('canModifyPlan(plan) ? () => { setPlanReadback(null); setModifyOpen(true) } : undefined')
     expect(DASH).toContain('{onOpenModify && (')
   })
 })
 
 describe('P-02 — presentation and copy live where they belong', () => {
-  it('uses the Sheet primitive, and does not hand-roll one', () => {
-    // SHEET-PRESENT-01: seven surfaces once invented their own z-index and
-    // five sat BELOW the nav, so the runner could not see what mattered.
-    expect(SHEET).toContain('<Sheet ')
+  it('🔴 SAVE-PATTERN-01: a SCREEN, not a sheet, and it REPLACES Plan', () => {
+    // Design Board 2026-10-18 reversed P-02's sheet by name: changing a plan is one journey of screens.
+    // SHEET-PRESENT-01's lesson still holds: no hand-rolled overlay, no z-index of its own.
+    expect(SHEET).not.toMatch(/<Sheet\b|import Sheet\b/)
+    expect(SHEET).toContain('<FloatingBackButton onClick={onClose}')
     expect(SHEET).not.toMatch(/position: 'fixed'|zIndex/)
+    expect(DASH, 'Plan is hidden while the edit screen is up').toContain("!modifyPreview && !(modifyOpen && plan) && <PlanScreen")
   })
 
-  it('no Cancel top-right: the bar is at the bottom', () => {
-    // ux-principles: "slide-up sheets: mirrored nav bar at bottom, not top".
-    expect(SHEET).toContain("position: 'sticky', bottom: 0")
+  it('the act-in bar sits at the bottom, lifted clear of the floating nav', () => {
+    // A sticky bar at bottom: 0 would sit UNDER the floating nav on a screen (the sheet covered the nav; a screen does not).
+    expect(SHEET).toContain("position: 'sticky', bottom: navH")
+    expect(SHEET).toContain('const navH = useNavHeight() ?? 0')
   })
 
   it('never renders a disabled primary as the resting state', () => {
@@ -99,10 +101,9 @@ describe('P-02 — presentation and copy live where they belong', () => {
     // follow the rule to its new home, not to delete the assertion. The
     // behaviour asserted — a browse state with a dismiss and no bottom bar —
     // is unchanged and is now guaranteed for EVERY sheet rather than this one.
-    expect(SHEET_PRIMITIVE, 'the dismiss must exist for the browse state')
-      .toMatch(/<IconButton[\s\S]{0,200}ariaLabel="Close"/)
-    expect(SHEET, 'this sheet must not re-grow its own close')
-      .not.toContain('ariaLabel="Close"')
+    // SAVE-PATTERN-01: the browse-state dismiss is now the screen's back arrow (top-left), not a sheet's cross.
+    expect(SHEET, 'the browse state still has a way out').toContain('ariaLabel="Back to your plan"')
+    expect(SHEET, 'and no cross of its own').not.toContain('ariaLabel="Close"')
     // CTA-COMPACT-SCOPE-01 (2026-10-14) renamed this. The GUARANTEE is unchanged --
     // a pending state can still be cleared -- but "Discard changes" named the X's
     // outcome, not its own: it clears the selections and LEAVES YOU ON THE SHEET.
@@ -222,7 +223,10 @@ describe('MODIFY-CONFIRM-01 — the diff is reversible and names its own scale',
   it('🔴 the back arrow is the OWNER, not a second hand-rolled one', () => {
     // UI-BACKARROW-01. `backArrowOwner.test.ts` pins the import form; this pins
     // that the control exists on this screen at all.
-    expect(CONFIRM).toMatch(/<BackButton\b/)
-    expect(CONFIRM).toMatch(/import BackButton from '@\/components\/shared\/BackButton'/)
+    // SAVE-PATTERN-01 — the frame moved to the shared ChangeConfirm; the confirm screen must use it.
+    const FRAME = readFileSync(join(process.cwd(), 'components/shared/ChangeConfirm.tsx'), 'utf8')
+    expect(CONFIRM).toMatch(/<ChangeConfirm\b[\s\S]{0,80}onBack=\{onBack\}/)
+    expect(FRAME).toMatch(/<BackButton\b/)
+    expect(FRAME).toMatch(/import BackButton from '@\/components\/shared\/BackButton'/)
   })
 })

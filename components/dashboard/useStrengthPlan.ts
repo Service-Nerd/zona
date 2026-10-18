@@ -59,17 +59,29 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
   useEffect(() => { void load() }, [load, runPlanKey])
 
   /** Save a profile and build the plan. Resolves to an error message or null. */
-  const save = useCallback(async (profile: StrengthProfile): Promise<string | null> => {
+  /** SAVE-PATTERN-01 — returns the saved plan too, so the caller can say what changed. */
+  const save = useCallback(async (profile: StrengthProfile): Promise<{ error: string | null; plan: StrengthPlan | null }> => {
     ++ticket.current
     try {
       const res = await authedFetch('/api/strength/plan', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile }),
       })
-      if (!res.ok) return 'save'
+      if (!res.ok) return { error: 'save', plan: null }
       const body = await res.json()
       setState(s => ({ status: 'ready', plan: body.plan, profile, completions: s.completions, recoveryEases: parseRecoveryEases(body.recovery_eases ?? s.recoveryEases), liftLogs: s.liftLogs }))
-      return null
-    } catch { return 'save' }
+      return { error: null, plan: body.plan ?? null }
+    } catch { return { error: 'save', plan: null } }
+  }, [])
+
+  /** SAVE-PATTERN-01 — the plan this profile WOULD build, validated, written nowhere. Null on any failure. */
+  const preview = useCallback(async (profile: StrengthProfile): Promise<StrengthPlan | null> => {
+    try {
+      const res = await authedFetch('/api/strength/plan', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile, preview: true }),
+      })
+      if (!res.ok) return null
+      return ((await res.json()).plan as StrengthPlan) ?? null
+    } catch { return null }
   }, [])
 
   /** Optimistic; rolls back and resolves false when the server refuses. */
@@ -127,7 +139,7 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
     } catch { return false }
   }, [])
 
-  return { strength: state, reloadStrength: load, saveStrength: save, setStrengthCompletion: setCompletion, setStrengthRecoveryAnswer: setRecoveryAnswer, setStrengthLiftLog: setLiftLog }
+  return { strength: state, reloadStrength: load, saveStrength: save, previewStrength: preview, setStrengthCompletion: setCompletion, setStrengthRecoveryAnswer: setRecoveryAnswer, setStrengthLiftLog: setLiftLog }
 }
 
 /**

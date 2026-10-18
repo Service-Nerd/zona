@@ -15,6 +15,7 @@ interface StrengthSetupScreenProps {
   planInjuries: string[]                 // from the run plan; SHOWN, never asked (one owner of injury input)
   planNotes: StrengthNote[]              // the plan's honest notes, said once here
   initialDays?: Day[]                    // PINNED-DAYS-01: shown chosen on open (`prefillChosenDays`); [] = runner picks
+  draft?: StrengthProfile | null         // SAVE-PATTERN-01: the answers held while the consent screen was open
   onSave: (profile: StrengthProfile) => Promise<string | null>   // null = saved; a string = failed
 }
 ```
@@ -26,5 +27,7 @@ Six questions in weight order on shared controls: focus `CardSelect`; **which da
 `withChosenDays`, so a fifth tap is ignored and the note says four is the most; nothing builds with no day picked);
 length `SegmentedControl` (`formatDuration`); equipment `Chip` multi (bodyweight-ceiling `FieldNote` only without
 load kit); experience `Chip`; bone flag `Switch`. "How many a week?" and "Days you can't" are gone. One primary CTA at the end;
-saved → `FieldReadback`, failed → `InlineError`. Strings from `STRENGTH_SETUP` (`lib/strength-bridge/display.ts`).
+failed → `InlineError`. **SAVE-PATTERN-01:** the caller decides what a save means; a runner with a plan sees *Here is
+what changes* (`StrengthChangeConfirm`) first, and every save lands on Plan with the readback, so this screen no longer
+says *"Built."* itself. Strings from `STRENGTH_SETUP` (`lib/strength-bridge/display.ts`).
 Check: `components/dashboard/strengthScreens.markup.test.ts`, `components/dashboard/strengthSetupDays.markup.test.ts`.

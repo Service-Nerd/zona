@@ -16,7 +16,7 @@ import { Chip } from '@/components/shared/Chip'
 import { CardSelect } from '@/components/shared/CardSelect'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { DayGridSelector, type DayKey } from '@/components/shared/DayGridSelector'
-import { FieldLabel, FieldNote, FieldReadback } from '@/components/shared/FieldText'
+import { FieldLabel, FieldNote } from '@/components/shared/FieldText'
 import { InlineError } from '@/components/shared/InlineError'
 import { EQUIPMENT_TAGS, STRENGTH_CONFIG, withChosenDays, type Day, type EquipmentTag, type Experience, type Focus, type SessionMinutes, type StrengthNote, type StrengthProfile } from '@/packages/strength'
 import { EQUIPMENT_LABEL, STRENGTH_SETUP as T } from '@/lib/strength-bridge/display'
@@ -46,11 +46,13 @@ export interface StrengthSetupScreenProps {
   planNotes: StrengthNote[]
   /** The days shown as chosen on open (`prefillChosenDays`). Empty: the runner picks. */
   initialDays?: Day[]
+  /** SAVE-PATTERN-01 — back from the consent screen, the answers the runner had (edits intact). */
+  draft?: StrengthProfile | null
   onSave: (profile: StrengthProfile) => Promise<string | null>
 }
 
-export default function StrengthSetupScreen({ profile, planInjuries, planNotes, initialDays = [], onSave }: StrengthSetupScreenProps) {
-  const [p, setP] = useState<StrengthProfile>(() => withChosenDays(profile ?? STRENGTH_PROFILE_DEFAULT, initialDays))
+export default function StrengthSetupScreen({ profile, planInjuries, planNotes, initialDays = [], draft = null, onSave }: StrengthSetupScreenProps) {
+  const [p, setP] = useState<StrengthProfile>(() => draft ?? withChosenDays(profile ?? STRENGTH_PROFILE_DEFAULT, initialDays))
   const chosen = (p.available_days ?? []) as DayKey[]
   const setDays = (v: DayKey[]) => {
     if (v.length > STRENGTH_CONFIG.MAX_CHOSEN_DAYS) return
@@ -133,7 +135,6 @@ export default function StrengthSetupScreen({ profile, planInjuries, planNotes, 
         <Button variant="primary" fullWidth busy={busy} disabled={busy || chosen.length === 0 || (!!profile && !dirty)} onClick={() => void save()}>
           {profile ? T.ctaUpdate : T.cta}
         </Button>
-        {result === 'saved' && !dirty && <FieldReadback>{T.saved}</FieldReadback>}
         {result === 'failed' && <InlineError style={{ marginTop: 'var(--space-2)' }}>{T.saveFailed}</InlineError>}
       </div>
     </div>

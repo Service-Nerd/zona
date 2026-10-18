@@ -8,12 +8,13 @@ import { notFound } from 'next/navigation'
 import TodayScreen from '@/components/dashboard/TodayScreen'
 import StrengthSessionScreen from '@/components/dashboard/StrengthSessionScreen'
 import StrengthSetupScreen from '@/components/dashboard/StrengthSetupScreen'
+import StrengthChangeConfirm from '@/components/dashboard/StrengthChangeConfirm'
 import PlanCalendar from '@/components/training/PlanCalendar'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import { Chip } from '@/components/shared/Chip'
 import { STRENGTH_SCREEN_SUB, STRENGTH_TITLE } from '@/components/shared/meDoors'
 import harnessPlanJson from '@/components/dashboard/__fixtures__/harnessPlan.json'
-import { generateStrengthPlan, type LiftLog, type StrengthSession } from '@/packages/strength'
+import { generateStrengthPlan, withChosenDays, type LiftLog, type StrengthSession } from '@/packages/strength'
 import { liftSuggestionsFor, logsOn } from '@/lib/strength-bridge/progressionView'
 import type { Plan } from '@/types/plan'
 import { isoLocalDate } from '@/lib/strength-bridge/display'
@@ -25,7 +26,7 @@ import { strengthSubtitle } from '@/components/shared/meDoors'
 const plan = harnessPlanJson as unknown as Plan
 // TodayScreen's optional handlers are not needed for a look; fixture props only.
 const Today = TodayScreen as unknown as (p: Record<string, unknown>) => JSX.Element
-const CASES = ['today', 'session', 'plan', 'setup', 'rest', 'sheet', 'double-today', 'double-plan', 'recovery'] as const
+const CASES = ['today', 'session', 'plan', 'setup', 'rest', 'sheet', 'double-today', 'double-plan', 'recovery', 'strength-change'] as const
 
 /** Shift the harness plan so its current week contains today, as a live runner's would. */
 function livePlan(): Plan {
@@ -125,6 +126,14 @@ export default function StrengthPreviewPage() {
       )}
       {c === 'double-plan' && (
         <PlanCalendar weeks={run.weeks} allOverrides={doubleRows} allCompletions={{}} onOverrideChange={() => {}} onSessionTap={() => {}} />
+      )}
+      {/* SAVE-PATTERN-01 — the strength consent step: the fixture plan moved to chosen days Tue / Fri. */}
+      {c === 'strength-change' && (
+        <div style={{ paddingTop: '16px' }}>
+          <StrengthChangeConfirm before={strength}
+            after={generateStrengthPlan(withChosenDays(strength.profile, ['tue', 'fri']), null, { standaloneStart: run.weeks[0].date })}
+            weekN={3} applying={false} onAccept={() => {}} onBack={() => setC('setup')} onCancel={() => setC('today')} />
+        </div>
       )}
       {c === 'setup' && (
         <>

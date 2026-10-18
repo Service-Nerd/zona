@@ -96,6 +96,21 @@ describe('POST /api/strength/plan', () => {
     expect(S.upserts).toHaveLength(1)
     expect(S.upserts[0]).toMatchObject({ table: 'strength_plans', user_id: 'u1', run_context_sig: null })
   })
+  it('🔴 SAVE-PATTERN-01: a preview returns the built plan and writes NOTHING', async () => {
+    const res = await post({ profile: PROFILE, preview: true })
+    expect(res.status).toBe(200)
+    expect((await res.json()).plan.weeks.length).toBeGreaterThan(0)
+    expect(S.upserts).toEqual([])
+  })
+  it('a preview is held to the same validator: a failing plan is refused, not shown', async () => {
+    S.violate = true
+    expect((await post({ profile: PROFILE, preview: true })).status).toBe(500)
+    expect(S.upserts).toEqual([])
+  })
+  it('preview must be literally true: anything else saves', async () => {
+    await post({ profile: PROFILE, preview: 'yes' })
+    expect(S.upserts.filter(u => u.table === 'strength_plans')).toHaveLength(1)
+  })
   it('the stored profile is the PARSED one, never the raw request', async () => {
     await post({ profile: { ...PROFILE, equipment: ['bench', 'bench'] } })
     expect((S.upserts[0].profile_json as { equipment: string[] }).equipment).toEqual(['bench'])

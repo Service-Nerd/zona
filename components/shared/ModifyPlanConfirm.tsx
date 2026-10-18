@@ -5,9 +5,7 @@ import { explainPlanDelta } from '@/lib/plan/planDeltaExplain'
 import { DIFF_DAY_ORDER } from '@/lib/coaching/diff/sessionDiff'
 import type { Plan } from '@/types/plan'
 import { formatDistance, type DistanceUnits } from '@/lib/format'
-import Button from '@/components/ui/Button'
-import BackButton from '@/components/shared/BackButton'
-import { MICRO_LABELS } from './microLabels'
+import ChangeConfirm, { ScaleLabel } from './ChangeConfirm'
 
 /**
  * P-02 — the diff a runner accepts before a parameter edit lands.
@@ -25,18 +23,6 @@ import { MICRO_LABELS } from './microLabels'
  * render — nothing is stored, because a total written once goes stale the
  * moment the plan is reshaped again.
  */
-/** A section label naming WHICH SCALE the block below reports on. */
-function ScaleLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      fontFamily: 'var(--font-ui)',
-      ...MICRO_LABELS.eyebrow,
-      color: 'var(--mute)',
-      marginBottom: 'var(--space-2)',
-    }}>{children}</div>
-  )
-}
-
 export default function ModifyPlanConfirm({
   before,
   after,
@@ -47,6 +33,7 @@ export default function ModifyPlanConfirm({
   onBack,
   onCancel,
   applying,
+  error = null,
 }: {
   before: Plan
   after: Plan
@@ -60,6 +47,8 @@ export default function ModifyPlanConfirm({
   /** Discard. Genuinely destructive, and since clause 3 nothing else is. */
   onCancel: () => void
   applying: boolean
+  /** SAVE-PATTERN-01 — what was not saved, shown under Accept by the shared frame. */
+  error?: string | null
 }) {
   const shape = (p: Plan) => {
     const kms = p.weeks.map(w => w.weekly_km ?? 0)
@@ -123,18 +112,10 @@ export default function ModifyPlanConfirm({
   )
 
   return (
-    <div style={{ padding: '0 20px 24px' }}>
-      {/* 🔴 CLAUSE 1 — `ux-principles.md:105`, "back arrow top-left; navigation
-          is always predictable and reversible". This screen had none, and its
-          only exit DISCARDED every edit. */}
-      <BackButton onClick={onBack} ariaLabel="Back to your changes" style={{ marginBottom: 'var(--space-4)' }} />
-      <div style={{ fontFamily: 'var(--font-brand)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)' }}>
-        Here is what changes
-      </div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '4px', marginBottom: 'var(--space-4)' }}>
-        Nothing is saved until you accept.
-      </div>
-
+    // SAVE-PATTERN-01 — the frame (back arrow, title, Accept / Keep, the failure line) is the shared ChangeConfirm,
+    // so the run and strength consent screens cannot drift. MODIFY-CONFIRM-01 clause 1's back arrow lives there now.
+    <ChangeConfirm onBack={onBack} backLabel="Back to your changes" onAccept={onAccept} onCancel={onCancel}
+      applying={applying} error={error}>
       {/* 🔴 CLAUSE 2 — NAME THE SCALE. These two blocks are different objects:
           the card is the WHOLE PLAN, the day rows below are ONE WEEK. Nothing
           said so, and the founder read them as one list: "is that across the
@@ -200,15 +181,6 @@ export default function ModifyPlanConfirm({
         </div>
       )}
 
-      <Button variant="primary" fullWidth
-        onClick={onAccept} busy={applying} style={{ marginTop: 'var(--space-5)' }}>
-        {applying ? 'Saving…' : 'Accept and save'}
-      </Button>
-      <Button variant="secondary" fullWidth 
-        onClick={onCancel}
-        disabled={applying} style={{ marginTop: '4px' }}>
-        Keep my current plan
-      </Button>
-    </div>
+    </ChangeConfirm>
   )
 }

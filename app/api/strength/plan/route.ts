@@ -77,7 +77,7 @@ async function liftLogsFor(supabase: Supabase, userId: string): Promise<unknown[
 }
 
 /** Generate, validate and save. Returns the plan, or a response to send. */
-async function buildAndSave(supabase: Supabase, userId: string, profile: StrengthProfile, ctx: RunContext | null, startDate: string): Promise<{ ok: true; plan: StrengthPlan } | { ok: false; res: NextResponse }> {
+async function buildAndSave(supabase: Supabase, userId: string, profile: StrengthProfile, ctx: RunContext | null, startDate: string, preview = false): Promise<{ ok: true; plan: StrengthPlan } | { ok: false; res: NextResponse }> {
   const plan = generateStrengthPlan(profile, ctx, ctx ? { startDate } : { standaloneStart: nextMonday(new Date()) })
   const violations = validateStrengthPlan(plan, ctx)
   if (violations.length) {
@@ -86,6 +86,9 @@ async function buildAndSave(supabase: Supabase, userId: string, profile: Strengt
     }, userId)
     return { ok: false, res: NextResponse.json({ error: 'Could not build a strength plan' }, { status: 500 }) }
   }
+  // SAVE-PATTERN-01 — a preview is built and validated exactly as a save is, and written nowhere, so the runner can
+  // see what changes before accepting. Generation is deterministic, so the accepted save builds the same plan.
+  if (preview) return { ok: true, plan }
   const { error } = await supabase.from('strength_plans').upsert({
     user_id: userId, plan_json: plan, profile_json: profile,
     run_context_sig: runContextSig(ctx), generated_at: new Date().toISOString(),
@@ -135,7 +138,9 @@ export async function POST(req: NextRequest) {
   const { user, supabase } = g
   const r = await readSmallJson(req)
   if (!r.ok) return r.res
-  const parsed = parseStrengthProfile((r.body as { profile?: unknown } | null)?.profile)
+  const body = r.body as { profile?: unknown; preview?: unknown } | null
+  const preview = body?.preview === true
+  const parsed = parseStrengthProfile(body?.profile)
   if (!parsed.ok) return NextResponse.json({ error: 'Invalid profile', field: parsed.field }, { status: 422 })
 
   const { ctx, error: ctxErr } = await currentRunContext(supabase, user.id)
@@ -147,7 +152,7 @@ export async function POST(req: NextRequest) {
   const { data: existing, error: exErr } = await supabase
     .from('strength_plans').select('plan_json, generated_at').eq('user_id', user.id).maybeSingle()
   if (exErr) return NextResponse.json({ error: 'Could not load the strength plan' }, { status: 500 })
-  const built = await buildAndSave(supabase, user.id, parsed.profile, ctx, startDateFor(existing, new Date()))
+  const built = await buildAndSave(supabase, user.id, parsed.profile, ctx, startDateFor(existing, new Date()), preview)
   if (!built.ok) return built.res
   const recoveryEases = await recoveryEasesFor(supabase, user.id)
   return NextResponse.json({ plan: applyRecoveryEases(built.plan, recoveryEases), recovery_eases: recoveryEases })
