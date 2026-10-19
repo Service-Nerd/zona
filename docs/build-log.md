@@ -6,6 +6,32 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-19 — STRENGTH-SESSION-TITLE-01 · a title from the type became a lie the moment content could change
+**Shipped:** Strength sessions are named by what they hold: "Lower body" when the clock leaves a full body without upper work, "Upper body and light legs" on a converted day.
+
+**Dev learning:** Seven places named a session from its type, and two of them were AI prompts, so the model was being told "Full body" about a legs session. One function that reads the session, and a test that refuses the old pattern anywhere else.
+
+**Product learning:** The board had called the title question moot that morning. The re-sitting at 30 minutes made it live again; a ruling's consequences move when its premise does.
+
+**AI-building learning:** The first fixture to break was a test "full body" holding a single goblet squat. The new owner was right; the fixture had never been a full body.
+
+**The honest bit:** Both titles are new copy the founder has not yet approved.
+
+---
+
+## 2026-10-19 — STRENGTH-CHOSEN-NO-LEGS-01 · "no heavy legs" had been read as "no legs"
+**Shipped:** A runner who lifts only at the weekend, beside a Sunday long run, now gets light leg work (calves and hips, kept easy) instead of an upper-body-only block.
+
+**Dev learning:** Calf raises were already classed as heavy legs, so adding them would have turned an upper day into a heavy-leg day next to a long run. The exemption lives on the item, and the validator re-derives it rather than trusting the flag.
+
+**Product learning:** It was 6.5% of chosen-day plans and every one was a weekend pick, which is the pick a day-job runner is most likely to make.
+
+**AI-building learning:** The new week-level check found the 30-minute clock dropping the light items too, five weeks in the sampled sweep, before any real runner could.
+
+**The honest bit:** No live runner has picked days yet; strength is admin-only.
+
+---
+
 ## 2026-10-19 — STRENGTH-FULLBODY-NO-UPPER-01 · a ruling the clock could not honour
 **Shipped:** A 45-minute "Full body" now always has upper-body work (it had none in most sessions), a weekend pick beside the long run gets light leg work instead of none, and every strength session is named by what it actually holds.
 
