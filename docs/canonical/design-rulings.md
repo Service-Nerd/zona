@@ -144,6 +144,12 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-19 — STRENGTH-LEGS-DAY-01 · SHIP WITH AMENDMENT. Name the day that would let legs in; never move one
+
+The engine stamps `legs_day_suggestion` (the unchosen day whose swap gives heavy legs in the most weeks; every one of
+255 measured cases is fixed by one swap) and the setup screen and *Here is what changes* say it in one line. Never an
+auto-swap (Collins). Copy to the founder. Not built. Sitting: `docs/decisions/strength-general-legs-2026-10-19.md`.
+
 ## 2026-10-19 — STRENGTH-SESSION-TITLE-01 · SHIP WITH AMENDMENT. A strength session is named by what it holds
 
 `strengthSessionTitle(session)` is the one owner: a full body with no upper work is *Lower body*; an upper session with

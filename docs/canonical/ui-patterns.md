@@ -4164,6 +4164,9 @@ is the engine's shape, not the runner's, and as two controls it can state a cont
   2026-10-19). The client cannot know which days are legal for heavy legs without the run week, so the engine's
   `legs_limited_by_run_week` note is shown on the strength *Here is what changes* screen and beneath the days for an
   existing plan, saying what they get (lighter leg work), not what they lose. Built 2026-10-19.
+- **Name the day that would let legs in; never move one** (`STRENGTH-LEGS-DAY-01`, Design Board 2026-10-19). When
+  the chosen days leave weeks without heavy legs, one line beneath the days (and on *Here is what changes*) names the
+  single unchosen day the engine computed (`legs_day_suggestion`). Never an auto-swap. Not built yet.
 - **A strength session is named by what it holds** (`STRENGTH-SESSION-TITLE-01`): `strengthSessionTitle(session)` is the
   one owner (*Lower body* for a full body the clock left without upper work, *Upper body and light legs* for a
   converted day). Never `STRENGTH_KIND_TITLE[kind]` at a call site. **Check:** `lib/strength-bridge/sessionTitle.test.ts`.

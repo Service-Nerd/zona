@@ -49,6 +49,12 @@ slot was a Nordic curl 25% of the time; the Nordic curl, hamstring curl and kett
 🔴 **Not the catalogue's, and still open:** a runner's first jump is bounding or a drop jump (`STRENGTH-PLYO-BUDGET-01`).
 Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 
+## 2026-10-19 — STRENGTH-GENERAL-LEGS-01 · CORRECT WITH AMENDMENT (General focus keeps leg work)
+
+S3 Am.2's light leg work and `S-LEGS-EVERY-WEEK` apply to General focus too. Measured: 255 of 448 General chosen-day
+plans held a week with no leg work (worst 14 weeks), Running 0; the setup copy promises General "the same leg work".
+Not built. Sitting: `docs/decisions/strength-general-legs-2026-10-19.md`.
+
 ## 2026-10-19 — INTENSITY-RUNWAY-01 · CORRECT WITH AMENDMENT (§1 yield for every build plan)
 
 §1 Amendment 3: the producer's §1 yield (§90 Am.1's converter) applies to every build-profile plan; injured runners keep

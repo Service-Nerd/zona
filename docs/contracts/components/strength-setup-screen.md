@@ -31,3 +31,5 @@ failed → `InlineError`. **SAVE-PATTERN-01:** the caller decides what a save me
 what changes* (`StrengthChangeConfirm`) first, and every save lands on Plan with the readback, so this screen no longer
 says *"Built."* itself. Strings from `STRENGTH_SETUP` (`lib/strength-bridge/display.ts`).
 Check: `components/dashboard/strengthScreens.markup.test.ts`, `components/dashboard/strengthSetupDays.markup.test.ts`.
+
+**Legs note (STRENGTH-LEGS-NOTE-FOCUS-01, 2026-10-19).** Under the days, when the plan carries `legs_limited_by_run_week`, `STRENGTH_SETUP.legsLimitedNote(focus)`: running focus says *lighter leg work*; General says *some sessions are upper body*, because S3 Am.2's light leg work is running-only until `STRENGTH-GENERAL-LEGS-01` ships.
