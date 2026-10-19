@@ -111,6 +111,15 @@ describe('StrengthChangeConfirm, on real engine plans', () => {
     expect(html).toContain('Your run week keeps heavy legs off these days, so they get lighter leg work.')
     expect(await render(withChosenDays(base, ['mon', 'wed']), withChosenDays(base, ['tue', 'fri']))).not.toContain('lighter leg work')
   })
+  it('🔴 a General runner is never promised leg work they do not get (founder\'s plan, 2026-10-19)', async () => {
+    const { default: S } = await import('@/components/dashboard/StrengthChangeConfirm')
+    const general = { ...base, focus: 'general' as const }
+    const before = generateStrengthPlan(withChosenDays(general, ['mon', 'wed']), ctx)
+    const after = { ...generateStrengthPlan(withChosenDays(general, ['tue', 'fri']), ctx), notes: ['legs_limited_by_run_week' as const] }
+    const html = renderToStaticMarkup(React.createElement(S, { before, after, weekN: 3, onAccept: () => {}, onBack: () => {}, onCancel: () => {}, applying: false }))
+    expect(html).not.toContain('lighter leg work')
+    expect(html).toContain('some sessions are upper body')
+  })
   it('an unchanged plan says so instead of showing an empty screen', async () => {
     const html = await render(withChosenDays(base, ['mon', 'wed']), withChosenDays(base, ['mon', 'wed']))
     expect(html).toContain('Your sessions stay as they are.')

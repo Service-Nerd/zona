@@ -90,7 +90,7 @@ export default function StrengthSetupScreen({ profile, planInjuries, planNotes, 
         <DayGridSelector ariaLabel={T.daysLabel} value={chosen} onChange={setDays} />
         <FieldNote>{
           chosen.length >= STRENGTH_CONFIG.MAX_CHOSEN_DAYS ? T.daysMaxNote
-            : planNotes.includes('legs_limited_by_run_week') && !dirty ? T.legsLimitedNote
+            : planNotes.includes('legs_limited_by_run_week') && !dirty ? T.legsLimitedNote(p.focus)
             : T.daysNote
         }</FieldNote>
       </Field>
