@@ -25,7 +25,9 @@ type StrengthChangeConfirmProps = {
 
 Two named scales: *Your strength plan* (Days, Sessions a week, Session length; changed rows only) and *What changes this
 week* through `AdjustmentDiff`, each session labelled by **kind**, never length (two sessions of one length otherwise
-read as no change). Nothing changed: *"Your sessions stay as they are."*
+read as no change), named by `strengthSessionTitle`. When the built plan carries `legs_limited_by_run_week`, the line
+*"Your run week keeps heavy legs off these days, so they get lighter leg work."* (STRENGTH-CHOSEN-NO-LEGS-01).
+Nothing changed: *"Your sessions stay as they are."*
 
 ## Gates
 

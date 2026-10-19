@@ -20,3 +20,5 @@
   `{ "note": null }` with 200, and nothing is stored. The screen renders nothing.
 
 **422** a non-integer `week_n`. **401 / 404** the gate.
+
+**Strength session title (STRENGTH-SESSION-TITLE-01, 2026-10-19).** Any strength session's name comes from `strengthSessionTitle(session)` (`lib/strength-bridge/display.ts`), read from what it holds (*Lower body*, *Upper body and light legs*, else the kind title), never `STRENGTH_KIND_TITLE[kind]`. Gate: `lib/strength-bridge/sessionTitle.test.ts`.

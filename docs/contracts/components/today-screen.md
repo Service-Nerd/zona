@@ -172,3 +172,5 @@ nothing said, keeping the card on screen as if the tap had not registered. Each 
 (*"Could not save that change. Try again."*) through `InlineError`. **No prop interface change:** the state is
 internal, and the routes now leave the adjustment `pending` on a failed save (ADJUST-STATUS-WITHOUT-SAVE-01),
 so a retry is real. Check: `components/shared/planChangeFailVisible.markup.test.ts`.
+
+**Strength session title (STRENGTH-SESSION-TITLE-01, 2026-10-19).** Any strength session's name comes from `strengthSessionTitle(session)` (`lib/strength-bridge/display.ts`), read from what it holds (*Lower body*, *Upper body and light legs*, else the kind title), never `STRENGTH_KIND_TITLE[kind]`. Gate: `lib/strength-bridge/sessionTitle.test.ts`.

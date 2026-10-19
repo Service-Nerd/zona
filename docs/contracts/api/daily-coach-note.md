@@ -134,3 +134,5 @@ the one whose `auth.uid()` is NULL on native.
 The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
 `.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
 of 94 Supabase warnings in a day. **A database error now answers `500 { error: 'Could not load your plan' }`.** It used to be indistinguishable from "no plan" and answered as if the runner had none.
+
+**Strength session title (STRENGTH-SESSION-TITLE-01, 2026-10-19).** Any strength session's name comes from `strengthSessionTitle(session)` (`lib/strength-bridge/display.ts`), read from what it holds (*Lower body*, *Upper body and light legs*, else the kind title), never `STRENGTH_KIND_TITLE[kind]`. Gate: `lib/strength-bridge/sessionTitle.test.ts`.
