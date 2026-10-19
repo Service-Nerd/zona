@@ -53,14 +53,34 @@ input written before 2026-10-18 (both weekend days blocked on the old sheet) sti
 does the long run go when the runner has no weekend run day (a weekday long run, or refuse)? Count stored inputs in
 that state first.
 
-### 🔲 `ENVELOPE-CLOCK-01` — the use-case envelope fails on 2026-10-19 and passed on 2026-10-18, with its plan start pinned 🏃 **COACHING BOARD** (if the RCA finds a prescription change) · otherwise ⚙️ **NO BOARD** *(filed 2026-10-19)*
+### 🔲 `ENVELOPE-CLOCK-01` — the use-case envelope generated against the wall clock, and it found a real §1 hole ⚙️ **NO BOARD** *(filed 2026-10-19; RCA done 2026-10-19, `/zona-debug`)*
 
-`lib/plan/useCaseEnvelope.test.ts`: *"100 km: 3 plan(s) fail the engine's own constitution"* and *"Fit-for-purpose
-moved"*. Reproduced on the unchanged tree (stash), so not the strength build. `marathonEnvelope` pins
-`planStart = '2026-11-02'`, so the engine reads the real date somewhere on the 100 km path: a clock dependency in a
-check this repo calls clock-independent, and 3 plans that break the engine's own invariants on a given day. Needs
-`/zona-debug` first: which invariant, which code path reads `new Date()`, and whether live runners on that date get
-an invalid plan.
+**Root cause.** `measureEnvelope` (`lib/plan/envelopeMeasure.ts:115`) calls `generateRulePlan(c.input, 'paid')` with no
+`planStart`, so the engine starts every envelope plan on the REAL `nextMonday()` (`ruleEngine.ts:6556`); the input's own
+`plan_start: '2026-11-02'` is never read by the engine (only `meta` carries one). On Sunday 2026-10-18 next Monday was the
+19th; on Monday the 19th it became the 26th, so overnight every envelope plan lost a week of runway. Proven by faking the
+whole clock: 10-18 → 0 invalid plans, 10-19 → 3; pinning only `todayOverride` did NOT fix it (the first hypothesis,
+disproved). **Why it survived:** it is the missed twin of `TEST-CLOCK-PREPTIME-01` (2026-09-28), whose gate
+`testClockIndependence.test.ts` walks `*.test.ts` only, and `envelopeMeasure.ts` is a helper a test calls (population
+excludes the case). **Twin sweep:** 1 unpinned non-test call in `lib/` (this one); 9 in `scripts/`, none in CI except
+`r2-coverage-check` (`verify:invariants`), which pins race date and start relative to `nextMonday()` together (window
+fixed, calendar drifts: a declared-valid choice in `pinnedPlanStart.ts`); `scripts/_tmp-catch.ts` is a leftover temp file.
+**Fix (for `/build`):** pin `planStart` and `todayOverride` in `measureEnvelope`, and widen the clock gate to non-test files
+under `lib/` that generate plans. The engine defect it exposed is `INTENSITY-RUNWAY-01` and must not be hidden by this fix.
+
+### 🔲 `INTENSITY-RUNWAY-01` — at some runway lengths the delivered plan breaches §1's plan-wide quality ceiling ⚙️ **NO BOARD** if the fix uses §98's yield ladder (restoring §1); 🏃 **COACHING BOARD** if it needs a new yield rule *(filed 2026-10-19)*
+
+Found by `ENVELOPE-CLOCK-01`. With every date pinned and only the runway varied (envelope sample, stride 23):
+**100 km at exactly 16 and 21 weeks** (17 and 13 of 201 plans; 54 and 39 of 659 at stride 7), **half marathon at 8–11
+weeks** (9, 10, 4, 4 of 201), **marathon at 11 weeks** (2 of 320); 5K, 10K, 50K none, and every neighbouring length clean.
+Mechanism (100 km): at 16 and 21 weeks the phase split gives one more peak week relative to plan length (17 wk: 3 peak vs
+2; 22 wk: 4 vs 3), and peak weeks carry quality, so the plan-wide share lands at 16.0% and 15.1% against the 15%
+ceiling. `INV-PLAN-INTENSITY-DISTRIBUTION` is error-severity, so in production it is LOGGED and the runner gets the plan.
+**Live impact measured: 0 of 29 checkable plans** (7 legacy plans carry no `generator_input`). **Why nothing caught it:**
+the property sweep covers one or two runways per distance (HM 13/15, marathon 17/18, 100 km 26) and none of the failing
+ones. Fix: make the delivered plan honour the ceiling (yield a quality session per §98 when the plan-wide share would
+exceed it), and widen the sweep's runway axis so every length 8–26 is reached per distance. Check first whether the HM
+8–11 week cases are low-day plans §1 CD-21 Am.1 already exempts in doctrine but not in the validator.
 
 ### ✅ `STRENGTH-CHOSEN-NO-LEGS-01` — **SHIPPED 2026-10-19.** Chosen days that never allow heavy legs give an upper-body-only block 🏃 **COACHING BOARD** + 🧭 **DESIGN BOARD** *(both ruled 2026-10-19: `docs/decisions/strength-upper-and-light-legs-2026-10-19.md`)*
 
