@@ -15,7 +15,7 @@ it specific, no polish. The content system adds the voice.
 
 **AI-building learning:** The first fixture to break was a test "full body" holding a single goblet squat. The new owner was right; the fixture had never been a full body.
 
-**The honest bit:** Both titles are new copy the founder has not yet approved.
+**The honest bit:** Both titles were new copy; the founder approved them the same day.
 
 ---
 

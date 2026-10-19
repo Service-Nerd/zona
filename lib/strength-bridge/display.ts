@@ -20,7 +20,7 @@ export const STRENGTH_KIND_TITLE: Record<SessionKind, string> = {
  * The title a runner reads for one session (Design Board 2026-10-19). One owner, read from what the session HOLDS,
  * because the kind no longer settles it: a 30-min full body can lose its upper work to the clock (S10 Am.3, re-sat),
  * and an upper session that replaces a leg session carries light leg work (S3 Am.2). Seven sites, two of them AI
- * prompts, read `STRENGTH_KIND_TITLE[kind]` before this. Founder to approve the two new titles.
+ * prompts, read `STRENGTH_KIND_TITLE[kind]` before this. Both titles approved by the founder, 2026-10-19.
  */
 export const STRENGTH_TITLE_BY_CONTENT = { lowerOnly: 'Lower body', upperLightLegs: 'Upper body and light legs' }
 export function strengthSessionTitle(s: Pick<StrengthSession, 'kind' | 'blocks'>): string {

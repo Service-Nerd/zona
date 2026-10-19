@@ -149,7 +149,7 @@ been answered and misfiled.
 `strengthSessionTitle(session)` is the one owner: a full body with no upper work is *Lower body*; an upper session with
 light leg work is *Upper body and light legs*; otherwise the kind title. Seven sites (two AI prompts among them) named
 sessions by kind; a gate now refuses `STRENGTH_KIND_TITLE[…kind]` outside the owner. Vacates this morning's "the title
-question is moot", because the Coaching Board re-sat item 1 at 30 min. Collins: no new kinds. Titles to the founder.
+question is moot", because the Coaching Board re-sat item 1 at 30 min. Collins: no new kinds. Titles approved by the founder 2026-10-19.
 Sitting: `docs/decisions/strength-upper-and-light-legs-2026-10-19.md`.
 
 ## 2026-10-19 — STRENGTH-CHOSEN-NO-LEGS-01 · SHIP WITH AMENDMENT. Say lighter leg work where the plan is in hand
