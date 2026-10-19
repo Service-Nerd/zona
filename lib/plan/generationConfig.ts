@@ -118,6 +118,12 @@ export const GENERATION_CONFIG = {
   // ceiling is the §25 `race_pace_pct` failure — a ratified value sitting beside
   // a duplicate nobody reads.
   INJURY_QUALITY_YIELD_TO_INTENSITY_CEILING: true,
+  // §1 Amendment 3 (INTENSITY-RUNWAY-01, Coaching Board 2026-10-19) — the same yield for every BUILD-profile plan,
+  // and which end of the plan gives way. Injured runners keep the ruled latest-first walk (the early exposures are
+  // the ones §79's re-entry window vetted). Everyone else gives up the EARLIEST quality first, never race week, a
+  // race-specific session or a time trial: for a runner chasing a time the late sharpening is what they need most
+  // (McMillan). Measured: 100 km at 16 / 21 weeks, HM at 8–11, marathon at 11 breached by exactly one session.
+  QUALITY_YIELD_ORDER: { injury: 'latest', default: 'earliest' } as const,
 
   // ── 10% rule + recovery cadence (CoachingPrinciples §2, §3) ─────────────────
   MAX_WEEKLY_VOLUME_INCREASE_PCT: 10,

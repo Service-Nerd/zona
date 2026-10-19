@@ -1,6 +1,6 @@
 {
  "stride": 29,
- "productFitPct": 96,
+ "productFitPct": 96.2,
  "byDistance": {
   "5": {
    "fitPct": 100,
@@ -13,7 +13,7 @@
    "invalidPlans": 0,
    "objections": {},
    "watched": {
-    "DAYS-SHORT-SILENCED": 49.4
+    "DAYS-SHORT-SILENCED": 49.8
    }
   },
   "10": {
@@ -27,7 +27,7 @@
    "invalidPlans": 0,
    "objections": {},
    "watched": {
-    "DAYS-SHORT-SILENCED": 29.2
+    "DAYS-SHORT-SILENCED": 28.8
    }
   },
   "50": {
@@ -68,12 +68,12 @@
     "WEEK1-LEAP": 1.5
    },
    "watched": {
-    "DAYS-SHORT-SILENCED": 21.5
+    "DAYS-SHORT-SILENCED": 20.4
    }
   },
   "42.2": {
-   "fitPct": 89.9,
-   "fitPctPreCorrection": 79.3,
+   "fitPct": 90.7,
+   "fitPctPreCorrection": 80,
    "servedRefusedPct": 11.8,
    "doorPct": 90.6,
    "unservedRefusedPct": 0,
@@ -83,10 +83,10 @@
    "objections": {
     "LONG-RUN-SHORT": 5.9,
     "WEEK1-LEAP": 4.4,
-    "BINGE-WEEK": 1.3
+    "BINGE-WEEK": 0.6
    },
    "watched": {
-    "DAYS-SHORT-SILENCED": 12.7,
+    "DAYS-SHORT-SILENCED": 12.8,
     "LONG-RUN-SHORT-RUNWALK": 2.8
    }
   }

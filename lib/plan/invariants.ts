@@ -934,6 +934,24 @@ export function labelImplications(label?: string | null): LabelImplications {
   }
 }
 
+/** §1 — the plan-wide quality count, the ONE definition: read by INV-PLAN-INTENSITY-DISTRIBUTION and by
+ *  ruleEngine's §1 yield. Until INTENSITY-RUNWAY-01 the yield carried its own copy that counted time trials as quality
+ *  and left race sessions out of the denominator, so it saw a higher share than the check and converted sessions the
+ *  check never asked for (5 in one 36-week 100 km plan that did not breach at all). */
+export const QUALITY_SESSION_TYPES: ReadonlySet<string> = new Set(['quality', 'intervals', 'tempo'])
+export function isRunningSession(sn: { type?: string } | null | undefined): boolean {
+  return !!sn && sn.type !== 'rest' && sn.type !== 'strength' && sn.type !== 'cross-train'
+}
+export function planQualityCounts(weeks: readonly { sessions: Record<string, unknown> }[]): { running: number; hard: number } {
+  let running = 0, hard = 0
+  for (const w of weeks) for (const sn of Object.values(w.sessions) as ({ type?: string } | null | undefined)[]) {
+    if (!isRunningSession(sn)) continue
+    running++
+    if (QUALITY_SESSION_TYPES.has(sn!.type ?? '')) hard++
+  }
+  return { running, hard }
+}
+
 /** Does this week's copy promise intensity the week must actually contain? */
 export function copyClaimsIntensity(label?: string | null, theme?: string | null): boolean {
   // ⚠️ THE SAME STRIPPING AS THE CHECKER, DELIBERATELY. This predicate is read by
@@ -5762,16 +5780,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       //     definition not part of the prescribed distribution.
       // `intervals` / `tempo` are retained for legacy and gist-authored plans;
       // the R23+ engine emits `quality`.
-      const HARD_TYPES = new Set(['quality', 'intervals', 'tempo'])
-      let running = 0
-      let hard = 0
-      for (const w of mainPlanWeeks) {
-        for (const sn of Object.values(w.sessions)) {
-          if (!sn || sn.type === 'rest' || sn.type === 'strength' || sn.type === 'cross-train') continue
-          running++
-          if (HARD_TYPES.has(sn.type)) hard++
-        }
-      }
+      const { running, hard } = planQualityCounts(mainPlanWeeks)
       // MAINTENANCE-PROFILE PLANS ARE EXEMPT — Coaching Board CD-21 (2026-08-20).
       //
       // Not a day-count exemption. A PROFILE exemption, keyed to the state §52

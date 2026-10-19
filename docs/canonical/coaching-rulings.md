@@ -49,6 +49,14 @@ slot was a Nordic curl 25% of the time; the Nordic curl, hamstring curl and kett
 🔴 **Not the catalogue's, and still open:** a runner's first jump is bounding or a drop jump (`STRENGTH-PLYO-BUDGET-01`).
 Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 
+## 2026-10-19 — INTENSITY-RUNWAY-01 · CORRECT WITH AMENDMENT (§1 yield for every build plan)
+
+§1 Amendment 3: the producer's §1 yield (§90 Am.1's converter) applies to every build-profile plan; injured runners keep
+latest-first, everyone else gives up the earliest quality first, never race week, a time trial or a race-specific
+session (`QUALITY_YIELD_ORDER`). Found via ENVELOPE-CLOCK-01: 100K at 16/21 wk, HM 8–11 wk, marathon 11 wk breached by
+one session. Build findings: one shared quality count (the injured yield had its own); the yield waits for §98 on gated
+plans. Sitting: `docs/decisions/intensity-runway-2026-10-19.md`.
+
 ## 2026-10-19 — STRENGTH-FULLBODY-NO-UPPER-01 · CORRECT WITH AMENDMENT (full body keeps upper work)
 
 Measured: running-focus full body held no upper work in 95% of 30-min and 58% of 45-min sessions (S10 dropped the upper

@@ -135,12 +135,6 @@
       "reason": "2026-09-25, INJURY-DELIVERED-COVERAGE-01. Re-baselined as CONTENTION, and the causal story I first wrote was WRONG and measured out. \u00a794's delivered arm now runs for injury plans too, and `useCaseEnvelope` (this file's corpus) is ~50% injured, so 'validatePlan got twice as expensive here' was the obvious explanation for the 2.1x step. Measured standalone, twice each way: 8.25 s with the amendment, 8.05 s without \u2014 **~2%, not 2x.** The amendment is not the cause. What is: six test files were added to the suite today and these two are CPU-bound plan sweeps that lose more than linearly under worker contention (the gate itself reported a 1.34x run load against a 2.1x move). Recorded this way rather than as a confident attribution, because a baseline reason nobody can check is how a real regression gets waved through later."
     },
     {
-      "file": "lib/plan/sessionReconcile.test.ts",
-      "title": "warm-up + main-set + cool-down = session total (distance, mi)",
-      "ms": 1503,
-      "reason": "2026-09-25. Same cause as the refusalCoherence pair above: a borderline test pushed over the reporting line by the contention from six test files added today, not by anything in the test. \u26a0\ufe0f THIS IS THE THIRD BASELINE ENTRY IN ONE DAY FOR THE SAME REASON \u2014 the suite has grown 383 -> 390 files and the borderline band is being consumed one test at a time. Filed as SUITE-CONTENTION-01: the next person should widen the worker pool or split the plan-sweep tests, not add a fourth entry. \u2705 RESOLVED 2026-10-15 (SUITE-CONTENTION-01), AND THIS NOTE'S OWN PRESCRIPTION WAS BACKWARDS. The fix was neither widening the pool nor splitting the sweeps: rule 1 was the only un-normalised rule in the file, three lines below the LOAD variable that rule 3 already used (CI-SLOW-LOAD-01). Measured: --maxWorkers=4 takes suite test-time 182,181 -> 81,725 ms on the identical population, so NARROWING helps and widening would have made it worse. This entry stays as the record of how a borderline test gets consumed; it is no longer the instruction."
-    },
-    {
       "file": "lib/plan/cohortReviewPinned.test.ts",
       "title": "\ud83d\udd34 THE DEFECT, REPRODUCED: with NO plan_start, Sunday and Monday generate different plans",
       "ms": 2898,
@@ -151,6 +145,12 @@
       "title": "\u2705 THE FIX: passing the envelope's own plan_start makes the two days identical",
       "ms": 1527,
       "reason": "COHORT-REVIEW-CLOCK-01, the other half. Same double generation under two faked clocks, proving the pinned plan_start removes the dependence. Cheaper than its sibling only because fewer cases refuse. 5.1% of budget."
+    },
+    {
+      "file": "lib/plan/intensityRunway.test.ts",
+      "title": "\ud83d\udd34 no build-profile plan over its distance ceiling, 8\u201326 weeks out, any distance",
+      "ms": 5193,
+      "reason": "INTENSITY-RUNWAY-01 (2026-10-19). The runway axis is the point: \u00a71 broke at single runway lengths (100K 16/21 wk, HM 8\u201311, marathon 11) and no sweep varied runway one week at a time. ~1,330 plans (every runway 8\u201326 \u00d7 every distance \u00d7 strided envelope profiles). Cut from 27 s to ~5 s (stride 131 -> 401); falsified at this stride (the healthy yield off -> the engine throws on a 20.5% HM plan). Going wider again would trade the population for seconds; going narrower stops it reaching the yielded plans (5 at this stride)."
     }
   ]
 }

@@ -1342,7 +1342,11 @@ const BASELINE: Record<string, number> = {
   // 26 -> 21 (2026-10-03): the `slowHM` benchmark widened the population and five
   // of these stopped firing. Lowered as the sweep instructs, same cause as
   // RACE-NOT-VOLUME's rise, opposite sign. Not a fix — a different sample.
-  'INV-PLAN-MAIN-SET-ORDERING': 21,
+  // 21 -> 22 (2026-10-19, INTENSITY-RUNWAY-01): UNMASKED, not caused. The injured §1 yield counted quality its own
+  // way and over-converted, and on one 5K injured plan the session it took happened to be the VO2max that breaks §8.
+  // On the check's count it no longer yields there (none of the 22 carries a yield adjustment), so the §8 defect it
+  // was hiding shows. Measured: the unchanged engine reports 21 with this seed. The defect is §8's own debt.
+  'INV-PLAN-MAIN-SET-ORDERING': 22,
   // 13 -> 0 on 2026-09-22. §120 anchored `hm_pace_intervals` to goal pace, so a
   // time-target plan that previously prescribed ZERO goal-pace quality now
   // prescribes some. Lowered to lock the fix in, per the rule above: "every

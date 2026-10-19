@@ -6,6 +6,32 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-19 — INTENSITY-RUNWAY-01 · the remedy had its own idea of the rule
+**Shipped:** A plan no longer goes over its quality limit just because of how many weeks you have until race day. At 16 or 21 weeks to a 100 km, 8 to 11 to a half, or 11 to a marathon, the engine used to hand over a plan with one hard session too many.
+
+**Dev learning:** The engine already had the fix, for injured runners only, and its comment said it measured the share "the same way the check does". It did not: it counted time trials as hard and left race sessions out. So it converted sessions the check never asked for, five in one plan that was fine. One shared count fixed both.
+
+**Product learning:** A one-week change in runway flipped a plan from valid to invalid, and no sweep varied the runway one week at a time. The new gate does, at every distance.
+
+**AI-building learning:** I wrote two guards for problems the first cut caused, then found nothing could trigger them once the count was right, and removed them. My first falsification of the new gate was hollow too: the test was already red on my own threshold.
+
+**The honest bit:** One injured runner in the cohort review now gets a base-building plan before the marathon plan; the old over-conversion had been keeping them under the ceiling by accident.
+
+---
+
+## 2026-10-19 — ENVELOPE-CLOCK-01 · a test went red because it was Monday
+**Shipped:** The use-case envelope test generates against a fixed date again. It failed on Monday and passed on Sunday because "next Monday" moved a week overnight.
+
+**Dev learning:** My first theory was the engine's "today" setting; pinning it changed nothing. Faking the whole clock proved it was the clock; reading the call showed it was the plan start.
+
+**Product learning:** The same mistake was fixed in four test files a month ago, and the gate written for it only looked at test files. The helper those tests call sat outside it.
+
+**AI-building learning:** The red test was the most useful thing that happened today: drifting onto a 21-week runway found a real engine defect that no deliberate test had reached.
+
+**The honest bit:** Some measured rates moved slightly with the pin, because plans now start on a fixed calendar; the commit names them.
+
+---
+
 ## 2026-10-19 — STRENGTH-SESSION-TITLE-01 · a title from the type became a lie the moment content could change
 **Shipped:** Strength sessions are named by what they hold: "Lower body" when the clock leaves a full body without upper work, "Upper body and light legs" on a converted day.
 

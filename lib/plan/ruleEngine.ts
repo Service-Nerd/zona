@@ -31,7 +31,7 @@ import { formatDuration, raceDistanceDisplayName } from '@/lib/format'
 const durationText = (mins: number): string => formatDuration(mins) ?? `${Math.round(mins)} min`
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, resolveLevels, type FitnessLevel, type ResolvedLevels } from './fitnessAssessment'
-import { validatePlan, copyClaimsIntensity, enforceViolations } from './invariants'
+import { validatePlan, copyClaimsIntensity, enforceViolations, planQualityCounts, QUALITY_SESSION_TYPES } from './invariants'
 import { hasInjuryKeyword, hasVolumeCappedInjuryHistory } from './injuryScope'
 import { assessBaseBuild, baseVolumeRefusal, runWalkInadequateRefusal, BaseVolumeError } from './baseVolume'
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
@@ -665,6 +665,11 @@ function dur(distKm: number, minsPerKm: number): number {
   return Math.round(distKm * minsPerKm)
 }
 
+
+/** §1 Am.3 — the note on a quality session that became easy so the plan keeps its hard-easy balance. Founder copy. */
+export const INTENSITY_YIELD_NOTE = 'Easy today. Keeping this one easy holds the plan to the share of hard running it can absorb.'
+/** …and the week's theme when that was its only hard session. Founder copy. */
+export const INTENSITY_YIELD_WEEK_THEME = 'All easy this week. The plan already has its share of hard running, so this one stays easy.'
 
 function easySession(
   weekN: number, day: Day,
@@ -8566,23 +8571,34 @@ function buildRulePlanOnce(
   // construction. The rule the board drew: a carve-out granted because a quantity
   // is UNDEFINED may not be applied where the quantity is defined and out of
   // range.
-  if (GENERATION_CONFIG.INJURY_QUALITY_YIELD_TO_INTENSITY_CEILING
-      && hasVolumeCappedInjury(input)) {
+  // §1 Amendment 3 (INTENSITY-RUNWAY-01) — the yield is no longer injury-only. A build-profile plan that lands over
+  // the ceiling yields too (it is the engine obeying a check it was failing); a healthy MAINTENANCE plan stays
+  // exempt, because CD-21 Am.1 exempts it from the check itself and the board extended the remedy, not the check.
+  // ⚠️ `finalVolumeProfile` is decided BELOW this pass, for LOPSIDED-ORDER-01's measured reason, so the healthy gate
+  // reads every maintenance signal already known here. The one decided later is §52's lopsided week, which this pass
+  // can itself create; such a plan becomes maintenance afterwards and the check exempts it.
+  const injuredYield = hasVolumeCappedInjury(input)
+  const maintenanceKnownHere = peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance
+    || structuralPeakInversion || !!longRunOverrun || easyFloorProtectionOverrun
+  // ⚠️ AND NOT ON A §89-GATED PLAN. §98 rules that an early-onset plan gives back ON-RAMP first; this yield running
+  // inside every build made the gated candidate compliant before the ladder looked, so the ladder never acted (4
+  // onsetYieldLadder arms red). The ladder's terminal rung regenerates ungated, and THAT plan still reaches here.
+  if (injuredYield
+      ? GENERATION_CONFIG.INJURY_QUALITY_YIELD_TO_INTENSITY_CEILING
+      : !maintenanceKnownHere && !earlyQualityOnset) {
+    const yieldOrder = injuredYield ? GENERATION_CONFIG.QUALITY_YIELD_ORDER.injury : GENERATION_CONFIG.QUALITY_YIELD_ORDER.default
     const yieldDistKey = raceDistanceKey(input.race_distance_km)
     const ceilingPct = GENERATION_CONFIG.INTENSITY_DISTRIBUTION[yieldDistKey]?.max_quality_session_pct
     if (ceilingPct != null) {
       // Same denominator INV-PLAN-INTENSITY-DISTRIBUTION uses, or the fix would
       // be measured against a different population than the check (the
       // denominator lesson, one more time).
-      const countable = (w: Week) => w.n >= 1
-      const runningOf = (w: Week) => (Object.values(w.sessions).filter(Boolean) as Session[])
-        .filter(sn => sn.type !== 'rest' && sn.type !== 'race'
-          && sn.type !== 'strength' && sn.type !== 'cross-train')
-      const isQual = (sn: Session) => sn.type === 'quality' || sn.type === 'intervals'
-        || sn.type === 'tempo' || sn.type === 'hard'
+      // INTENSITY-RUNWAY-01 — the check's own count, not a copy of it (the copy had drifted: see planQualityCounts).
+      const countable = (w: Week) => GENERATION_CONFIG.INTENSITY_DISTRIBUTION_COUNTS_FOUNDATION_WEEKS || w.n >= 1
+      const isQual = (sn: Session) => QUALITY_SESSION_TYPES.has(sn.type)
       const share = () => {
-        const runs = weeks.filter(countable).flatMap(runningOf)
-        return runs.length === 0 ? 0 : (runs.filter(isQual).length / runs.length) * 100
+        const { running, hard } = planQualityCounts(weeks.filter(countable))
+        return running === 0 ? 0 : (hard / running) * 100
       }
       // Latest-first list of convertible quality sessions. The race week's own
       // sharpening is excluded: §26 owns race week, and taking its sharpener is
@@ -8592,11 +8608,15 @@ function buildRulePlanOnce(
       for (const w of weeks.filter(countable)) {
         if (w.n === raceWeekN) continue
         for (const [d, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
-          if (sn && isQual(sn)) candidates.push({ w, d, sn })
+          if (!sn || !isQual(sn)) continue
+          // §1 Am.3 — the healthy order never gives up a time trial (§4), a race-pace session (§22/§25) or a
+          // race-specific catalogue row. The injured walk keeps exactly what was ruled for it.
+          if (yieldOrder === 'earliest' && (sn.type === 'hard' || sn.stimulus === 'race_pace'
+            || catalogueRowFor(sn, catalogue)?.category === 'race_specific')) continue
+          candidates.push({ w, d, sn })
         }
       }
-      candidates.sort((a, b) => b.w.n - a.w.n)
-
+      candidates.sort((a, b) => (yieldOrder === 'latest' ? b.w.n - a.w.n : a.w.n - b.w.n))
       let yielded = 0
       const yieldedWeeks: number[] = []
       for (const c of candidates) {
@@ -8661,10 +8681,12 @@ function buildRulePlanOnce(
         c.w.sessions[c.d] = easySession(
           c.w.n, c.d, km, c.sn.primary_metric ?? 'distance', zones, pace,
           'Easy run — Zone 2', 4,
-          ['Easy today. Your injury history caps how fast this week can climb, and that cap has '
-           + 'already taken volume out of it. A hard session on top of a shorter week concentrates '
-           + 'the stress on tissue that is still rebuilding, and the easy running is what builds '
-           + 'its tolerance.'],
+          injuredYield
+            ? ['Easy today. Your injury history caps how fast this week can climb, and that cap has '
+               + 'already taken volume out of it. A hard session on top of a shorter week concentrates '
+               + 'the stress on tissue that is still rebuilding, and the easy running is what builds '
+               + 'its tolerance.']
+            : [INTENSITY_YIELD_NOTE],
         )
 
         // §102 — AN INTENTIONAL DOWNGRADE IS NOT A MISSING SESSION.
@@ -8681,7 +8703,7 @@ function buildRulePlanOnce(
         // had no deliberate-downgrade path; it now has one, and the contract is
         // amended in `types/plan.ts` in this commit rather than quietly violated.
         c.w.quality_downgraded = {
-          trigger: 'injury_intensity_ceiling',
+          trigger: injuredYield ? 'injury_intensity_ceiling' : 'intensity_ceiling',
           // THE WEEK'S OWN DATE, NEVER `new Date()`.
           //
           // Caught by `verify:parity` the day after this shipped: a wall-clock
@@ -8738,8 +8760,10 @@ function buildRulePlanOnce(
         // session was converted away. 84 plans on the sweep.
         if (copyClaimsIntensity(c.w.label, c.w.theme)) {
           c.w.label = 'Easy week'
-          c.w.theme = 'All easy this week. Your injury cap has already taken volume out, '
-            + 'so the hard session comes out too rather than landing on a shorter week.'
+          c.w.theme = injuredYield
+            ? 'All easy this week. Your injury cap has already taken volume out, '
+              + 'so the hard session comes out too rather than landing on a shorter week.'
+            : INTENSITY_YIELD_WEEK_THEME
         }
 
         // "Life-first, plan-second" — `applyWeekdayMinsCap` runs inside
@@ -8760,12 +8784,18 @@ function buildRulePlanOnce(
         for (const w of weeks) {
           if (yieldedWeeks.includes(w.n)) w.weekly_km = sumWeeklyKm(w.sessions, pace)
         }
-        ruleAdjustments.push({
+        ruleAdjustments.push(injuredYield ? {
           rule: '§90 Amendment 1 — injury trim yields quality to §1',
           violation: `§2's injury cap removed enough easy running that the plan's quality `
             + `share passed §1's ${ceilingPct}% ${yieldDistKey} ceiling without any intensity being added.`,
           resolution: `${yielded} quality session(s) converted to easy at the same distance, `
             + `latest first, bringing the plan to ${share().toFixed(1)}%.`,
+          weeks_affected: yieldedWeeks.slice().sort((a, b) => a - b),
+        } : {
+          rule: '§1 Amendment 3 — the plan yields quality to its intensity ceiling',
+          violation: `The plan's length put its quality share over §1's ${ceilingPct}% ${yieldDistKey} ceiling.`,
+          resolution: `${yielded} quality session(s) converted to easy, earliest first and never race-specific, `
+            + `bringing the plan to ${share().toFixed(1)}%.`,
           weeks_affected: yieldedWeeks.slice().sort((a, b) => a - b),
         })
       }

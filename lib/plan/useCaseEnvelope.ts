@@ -234,12 +234,16 @@ export function levelBandsFor(weeklyKm: number): EnvelopeBand<'beginner' | 'inte
 
 export interface WeightedCase { input: GeneratorInput; weight: number; label: string }
 
+/** ENVELOPE-CLOCK-01 — the envelope's one plan start. A runway is measured from HERE; callers must pass it to the
+ *  engine (`generateRulePlan`'s `planStart`), which otherwise starts on the real next Monday. */
+export const ENVELOPE_PLAN_START = '2026-11-02'
+
 /**
  * The weighted marathon population. Cartesian product of the bands with the
  * product of their weights — so the numbers this produces are SHARE OF RUNNERS,
  * not share of grid cells, which is the whole point.
  */
-export function marathonEnvelope(planStart = '2026-11-02'): WeightedCase[] {
+export function marathonEnvelope(planStart = ENVELOPE_PLAN_START): WeightedCase[] {
   return distanceEnvelope(42.2, planStart)
 }
 
@@ -248,7 +252,7 @@ export function marathonEnvelope(planStart = '2026-11-02'): WeightedCase[] {
  * distance's entrants, so they sum to 1 within the distance — the distance's
  * own share of the whole product is applied by `fullEnvelope`.
  */
-export function distanceEnvelope(distanceKm: number, planStart = '2026-11-02'): WeightedCase[] {
+export function distanceEnvelope(distanceKm: number, planStart = ENVELOPE_PLAN_START): WeightedCase[] {
   const volumes = VOLUME_BANDS_BY_DISTANCE[distanceKm] ?? MARATHON_VOLUME_BANDS
   const runways = RUNWAY_BANDS_BY_DISTANCE[distanceKm] ?? RUNWAY_BANDS
   const out: WeightedCase[] = []
@@ -303,7 +307,7 @@ export function distanceEnvelope(distanceKm: number, planStart = '2026-11-02'): 
 
 /** Every distance, each case weighted by BOTH its within-distance share and the
  *  distance's share of the product. Sums to 1 across the whole population. */
-export function fullEnvelope(planStart = '2026-11-02'): WeightedCase[] {
+export function fullEnvelope(planStart = ENVELOPE_PLAN_START): WeightedCase[] {
   return DISTANCE_BANDS.flatMap(d =>
     distanceEnvelope(d.value, planStart).map(c => ({ ...c, weight: c.weight * d.weight })))
 }

@@ -19,7 +19,7 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { isDesignedRefusal } from './designedRefusal'
 import { auditPlanQuality, objectionsOnly, watchedOnly } from './planQuality'
-import { distanceEnvelope, DISTANCE_BANDS } from './useCaseEnvelope'
+import { distanceEnvelope, DISTANCE_BANDS, ENVELOPE_PLAN_START } from './useCaseEnvelope'
 import { getRunningApplies, generateGetRunningPlan } from './getRunningPlan'
 import { weeksBetweenLocal } from './length'
 
@@ -98,6 +98,8 @@ const pc = (n: number, d: number) => d > 0 ? +(n / d * 100).toFixed(1) : 0
  *   script can pass 1 for the exhaustive run. Sampling was validated against
  *   the full population when the envelope shipped (75.5% vs 75.4%).
  */
+const dayBefore = (iso: string) => new Date(Date.parse(iso + 'T00:00:00Z') - 864e5).toISOString().slice(0, 10)
+
 export function measureEnvelope(stride = 29): EnvelopeMeasure {
   const byDistance: Record<string, DistanceMeasure> = {}
   let prodFit = 0, prodTot = 0
@@ -112,7 +114,12 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
     for (const c of distanceEnvelope(band.value).filter((_, i) => i % stride === 0)) {
       total += c.weight
       let plan
-      try { plan = generateRulePlan(c.input, 'paid') }
+      // 🔴 ENVELOPE-CLOCK-01 — PINNED. This passed no `planStart`, so the engine started every envelope plan on the
+      // REAL next Monday and ignored the input's own `plan_start`; on 2026-10-19 that moved every plan a week and the
+      // suite went red overnight. The missed twin of TEST-CLOCK-PREPTIME-01, whose gate only walked *.test.ts.
+      // `today` is the day before the start: exactly the conditions the baseline was recorded under (a Sunday,
+      // next Monday's plan), so the pin reproduces the measurement rather than inventing a new one.
+      try { plan = generateRulePlan(c.input, 'paid', ENVELOPE_PLAN_START, undefined, dayBefore(ENVELOPE_PLAN_START)) }
       catch (e) {
         if (!isDesignedRefusal(e)) { invalid++; continue }
         refused += c.weight

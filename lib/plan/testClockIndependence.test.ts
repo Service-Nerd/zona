@@ -206,3 +206,35 @@ describe('TEST-CLOCK-PREPTIME-01 — no NEW wall-clock-dependent engine test', (
       .toEqual([])
   })
 })
+
+/**
+ * 🔴 ENVELOPE-CLOCK-01 (2026-10-19) — the arm above walks `*.test.ts` only, and keys on an ABSOLUTE race-date
+ * literal. `lib/plan/envelopeMeasure.ts` is a helper a test CALLS, and it computes its race dates from a constant, so
+ * it was invisible on both counts while generating against the real `nextMonday()`: the use-case envelope went red
+ * overnight on 2026-10-19 (and found INTENSITY-RUNWAY-01 by accident). So for every NON-test file under `lib/`: every
+ * `generateRulePlan(` call passes a plan start. Production callers already do (they thread the route's own start);
+ * the engine's definition and its pass-through wrapper pass a parameter. Comments are stripped: several quote the
+ * old two-argument shape on purpose.
+ */
+function nonTestLibFiles(dir: string, out: string[] = []): string[] {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name)
+    if (e.isDirectory()) { if (!p.includes('node_modules') && !p.includes('__fixtures__')) nonTestLibFiles(p, out) }
+    else if (/\.ts$/.test(e.name) && !/\.test\.ts$/.test(e.name)) out.push(p)
+  }
+  return out
+}
+const stripComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1')
+
+describe('ENVELOPE-CLOCK-01 — no non-test engine caller generates against the wall clock', () => {
+  const files = nonTestLibFiles('lib')
+  it('discovers the callers at all', () => {
+    const callers = files.filter(f => /generateRulePlan\s*\(/.test(stripComments(readFileSync(f, 'utf8'))))
+    expect(callers.length).toBeGreaterThan(4)
+    expect(callers.some(f => f.endsWith('envelopeMeasure.ts'))).toBe(true)
+  })
+  it('every generateRulePlan call under lib/ (outside tests) passes a planStart', () => {
+    const offenders = files.filter(f => callsWithoutPlanStart(stripComments(readFileSync(f, 'utf8'))) > 0)
+    expect(offenders, "pass the start as the 3rd argument; a measurement helper also pins `todayOverride` (5th)").toEqual([])
+  })
+})

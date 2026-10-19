@@ -170,6 +170,33 @@ The failing evidence — a 24-week, 6-day 100K build plan:
 
 ---
 
+### Amendment 3 — the producer yields to the ceiling for every build plan (Coaching Board 2026-10-19, INTENSITY-RUNWAY-01)
+
+**Found by accident.** The use-case envelope generated against the wall clock (ENVELOPE-CLOCK-01) and walked onto a
+runway where the engine was wrong. With every date pinned and only the runway varied, delivered plans breached this
+ceiling at exactly **16 and 21 weeks (100K), 8–11 weeks (HM, almost all 3-day plans) and 11 weeks (marathon)**, never
+at a neighbouring length, and always by **one** session: at those lengths the phase split gives one more peak week
+relative to the plan. Production logs `INV-PLAN-INTENSITY-DISTRIBUTION` rather than refusing, so the runner got the
+plan (0 of 29 live plans affected when found).
+
+**Principle.** The engine's §1 yield (§90 Amendment 1, which converts a quality session to an easy run of the same
+duration and records `quality_downgraded`) applies to **every build-profile plan**, not only injured runners. The order
+is `QUALITY_YIELD_ORDER`: injured runners keep the ruled **latest-first** walk; everyone else gives up the **earliest**
+quality first, and never race week, a time trial (§4), a race-pace session (§22/§25) or a race-specific catalogue row.
+A maintenance-profile plan stays exempt, as Amendment 1 rules.
+
+**Why.** The ceiling binds and the breach is one session (Seiler): use the converter that exists. For a runner chasing a
+time the late sharpening is what they need most, so it is the early, least specific session that gives way (McMillan,
+Hutchinson). Removing load is never the risky direction (Willy). The 3-day HM cohort keeps its race-specific work (Sims).
+
+**Build finding, folded in.** The yield counted quality its own way (time trials as quality, race sessions out of the
+denominator) while saying it used the check's, so it converted sessions the check never asked for: 5 in one 36-week
+100K plan that did not breach. One count now serves both (`planQualityCounts`, `invariants.ts`). For injured runners
+this also stopped some over-conversion: 6 of 371 sampled marathon cases changed, 5 with fewer violations.
+
+**Check:** `INV-PLAN-INTENSITY-DISTRIBUTION`, now met by construction; held over every runway 8–26 weeks at every
+distance by `lib/plan/intensityRunway.test.ts`, which also requires a plan the yield touched to carry no error.
+
 ## 2. The 10% rule — injury prevention through gradual load
 
 **Principle.** Weekly volume increases by no more than 10%. Returning runners with a deep training history get a temporary 15% allowance for the first three weeks.

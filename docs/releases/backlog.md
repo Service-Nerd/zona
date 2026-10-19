@@ -53,7 +53,7 @@ input written before 2026-10-18 (both weekend days blocked on the old sheet) sti
 does the long run go when the runner has no weekend run day (a weekday long run, or refuse)? Count stored inputs in
 that state first.
 
-### 🔲 `ENVELOPE-CLOCK-01` — the use-case envelope generated against the wall clock, and it found a real §1 hole ⚙️ **NO BOARD** *(filed 2026-10-19; RCA done 2026-10-19, `/zona-debug`)*
+### ✅ `ENVELOPE-CLOCK-01` — **SHIPPED 2026-10-19.** The use-case envelope generated against the wall clock, and it found a real §1 hole ⚙️ **NO BOARD** *(RCA `/zona-debug` 2026-10-19)*
 
 **Root cause.** `measureEnvelope` (`lib/plan/envelopeMeasure.ts:115`) calls `generateRulePlan(c.input, 'paid')` with no
 `planStart`, so the engine starts every envelope plan on the REAL `nextMonday()` (`ruleEngine.ts:6556`); the input's own
@@ -68,7 +68,7 @@ fixed, calendar drifts: a declared-valid choice in `pinnedPlanStart.ts`); `scrip
 **Fix (for `/build`):** pin `planStart` and `todayOverride` in `measureEnvelope`, and widen the clock gate to non-test files
 under `lib/` that generate plans. The engine defect it exposed is `INTENSITY-RUNWAY-01` and must not be hidden by this fix.
 
-### 🔲 `INTENSITY-RUNWAY-01` — at some runway lengths the delivered plan breaches §1's plan-wide quality ceiling ⚙️ **NO BOARD** if the fix uses §98's yield ladder (restoring §1); 🏃 **COACHING BOARD** if it needs a new yield rule *(filed 2026-10-19)*
+### ✅ `INTENSITY-RUNWAY-01` — **SHIPPED 2026-10-19.** At some runway lengths the delivered plan breached §1's plan-wide quality ceiling 🏃 **COACHING BOARD RULED 2026-10-19** (`docs/decisions/intensity-runway-2026-10-19.md`)
 
 Found by `ENVELOPE-CLOCK-01`. With every date pinned and only the runway varied (envelope sample, stride 23):
 **100 km at exactly 16 and 21 weeks** (17 and 13 of 201 plans; 54 and 39 of 659 at stride 7), **half marathon at 8–11
