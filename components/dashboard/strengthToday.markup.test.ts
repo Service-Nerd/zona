@@ -38,7 +38,11 @@ function findDay(want: 'rest' | 'run'): { date: Date; weekIndex: number } {
 function session(date: Date, after_quality_run: boolean): StrengthSession {
   return {
     date: isoLocalDate(date), day: 'mon', week_n: 1, kind: 'full_body', heavy_legs: true, after_quality_run, estimated_minutes: 40,
-    blocks: [{ role: 'main', items: [{ exercise_id: 'goblet_squat', sets: 3, reps: 8, rir: 2, rest_s: 90, per_side: false }] }],
+    // A real full body holds upper work (S10 Am.3): the title is read from the content (strengthSessionTitle).
+    blocks: [
+      { role: 'main', items: [{ exercise_id: 'goblet_squat', sets: 3, reps: 8, rir: 2, rest_s: 90, per_side: false }] },
+      { role: 'accessory', items: [{ exercise_id: 'single_arm_dumbbell_row', sets: 2, reps: 10, rir: 2, rest_s: 60, per_side: true }] },
+    ],
   }
 }
 

@@ -4,7 +4,7 @@
 // ⚠️ Copy is the founder's. These are drafts in the brand voice; the RIR phrasing in
 // particular ("reps in reserve") was flagged for his call. Client-safe: no Node imports.
 
-import { CATALOGUE_BY_ID, type Experience, type Focus, type SessionMinutes, type BlockRole, type EquipmentTag, type Prescription, type SessionKind, type StrengthPlan, type StrengthSession } from '@/packages/strength'
+import { CATALOGUE_BY_ID, PATTERN_REGION, type Experience, type Focus, type SessionMinutes, type BlockRole, type EquipmentTag, type Prescription, type SessionKind, type StrengthPlan, type StrengthSession } from '@/packages/strength'
 import { formatStepDuration, formatWeight } from '@/lib/format'
 import type { LiftFeel, LiftSuggestion } from '@/packages/strength'
 
@@ -14,6 +14,22 @@ export const STRENGTH_KIND_TITLE: Record<SessionKind, string> = {
   lower_core: 'Lower body',
   upper_core: 'Upper body',
   mobility: 'Mobility',
+}
+
+/**
+ * The title a runner reads for one session (Design Board 2026-10-19). One owner, read from what the session HOLDS,
+ * because the kind no longer settles it: a 30-min full body can lose its upper work to the clock (S10 Am.3, re-sat),
+ * and an upper session that replaces a leg session carries light leg work (S3 Am.2). Seven sites, two of them AI
+ * prompts, read `STRENGTH_KIND_TITLE[kind]` before this. Founder to approve the two new titles.
+ */
+export const STRENGTH_TITLE_BY_CONTENT = { lowerOnly: 'Lower body', upperLightLegs: 'Upper body and light legs' }
+export function strengthSessionTitle(s: Pick<StrengthSession, 'kind' | 'blocks'>): string {
+  const work = s.blocks.filter(b => b.role === 'main' || b.role === 'accessory').flatMap(b => b.items)
+  if (s.kind === 'full_body' && !work.some(i => { const e = CATALOGUE_BY_ID.get(i.exercise_id); return !!e && PATTERN_REGION[e.pattern] === 'upper' })) {
+    return STRENGTH_TITLE_BY_CONTENT.lowerOnly
+  }
+  if (s.kind === 'upper_core' && work.some(i => i.light)) return STRENGTH_TITLE_BY_CONTENT.upperLightLegs
+  return STRENGTH_KIND_TITLE[s.kind]
 }
 
 export const STRENGTH_BLOCK_TITLE: Record<BlockRole, string> = {
@@ -93,7 +109,8 @@ export const STRENGTH_SETUP = {
   boneLabel: 'Osteoporosis or a spinal fracture',
   boneSub: 'Leaves out jumps and loaded forward bends.',
   injuriesNote: (tags: string[]) => `Allowing for your ${tags.join(' and ')}, from your plan.`,
-  legsLimitedNote: 'Your run week leaves fewer of these days for heavy legs, so some sessions are upper body.',
+  // STRENGTH-CHOSEN-NO-LEGS-01 (Design Board 2026-10-19; founder approved): what they get, not what they lose.
+  legsLimitedNote: 'Your run week keeps heavy legs off these days, so they get lighter leg work.',
   cta: 'Build my strength plan',
   ctaUpdate: 'Update',
   // SAVE-PATTERN-01: the "Built" line moved to Plan, where the change is (`strengthPlanReadback`).

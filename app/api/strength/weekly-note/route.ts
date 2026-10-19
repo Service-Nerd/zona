@@ -5,7 +5,7 @@ import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { strengthGate } from '@/lib/strength-bridge/routeGate'
 import { weekNoteKey } from '@/lib/strength-bridge/weekNoteKey'
-import { STRENGTH_KIND_TITLE } from '@/lib/strength-bridge/display'
+import { strengthSessionTitle } from '@/lib/strength-bridge/display'
 import { buildStrengthWeeklyNotePrompt, parseStrengthNote } from '@/lib/coaching/prompts/strengthWeeklyNote'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import type { StrengthPlan } from '@/packages/strength'
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     units, firstName: settings?.first_name ?? null, weekN, phase: week.phase,
     focus: plan.profile.focus, experience: plan.profile.experience,
     sessions: week.sessions.map(s => ({
-      day: s.day, title: STRENGTH_KIND_TITLE[s.kind], minutes: s.estimated_minutes,
+      day: s.day, title: strengthSessionTitle(s), minutes: s.estimated_minutes,
       afterQualityRun: s.after_quality_run, heavyLegs: s.heavy_legs,
     })),
     notes: plan.notes.map(n => NOTE_TEXT[n]).filter(Boolean),

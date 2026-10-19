@@ -58,6 +58,16 @@ other strength days. One strength session per day.
 **Why.** Interference is lower-body specific, so upper work can go almost anywhere **[M]**; the habit matters more
 than the split **[C]**. **Check:** `S-ONE-PER-DAY`, `S-UNAVAILABLE-DAY`.
 
+**Amendment 2 (2026-10-19, STRENGTH-CHOSEN-NO-LEGS-01, both boards).** For running focus, a session converted here
+(a leg session S2 had no legal day for) is upper body + core + **light leg work**: `LIGHT_LOWER_PATTERNS` (calf, hip
+abduction) at RIR at least `LIGHT_LOWER_RIR` (3), never jumps, squat, hinge or single-leg. It is not a heavy-leg
+session (S2) and may sit beside a long run. Its first light item is the last accessory the clock drops. **Why.**
+Measured: 29 of 448 chosen-day plans (6.5%, every one a weekend pick beside a Sunday long run) held no leg work at all;
+S2 bans heavy legs there, not leg work, and S13 already treats calf and soleus as the low-cost lower work (Blagrove,
+Willy). No evidence either way on calf work the day before a long run **[I]**; small muscle mass, low risk; claim
+nothing (Hutchinson). **Check:** `S-LIGHT-LOWER-ONLY` (a light item is a light pattern at the light RIR on a non-heavy
+session), `S-LEGS-EVERY-WEEK` (a running-focused ordinary week with sessions has leg work).
+
 **Amendment 1 (2026-10-17, SESSION-SLOTS-01, Blagrove).** A day that holds **two runs** (a double the runner made,
 §126) takes **no** strength session: three sessions in one day is not what S4's stacking was written for. The run
 context marks such a day (`RunDay.runs`), placement skips it, and the strength plan re-places when it appears.
@@ -174,6 +184,18 @@ except in taper and deload weeks, which are short on purpose.
 form (`same_as`) is left out when that exercise is in the session: a session never says the same thing twice. An
 *Upper body* session carries no hip work; hip abductors stay in every full-body and lower session. **Check:**
 `S-WARMUP-REPEAT`.
+
+**Amendment 3 (2026-10-19, STRENGTH-FULLBODY-NO-UPPER-01, re-sat the same day).** A full-body session holds at least
+`FULL_BODY_MIN_UPPER_ITEMS` (1) upper movement, pull first, supersetted with core so it rides in rest already spent.
+Over budget it trims to 2 sets after the main lifts do, and it is the last accessory dropped, **before the jumps**. The
+check applies from `FULL_BODY_UPPER_MIN_MINUTES` (45) up; at 30 minutes the session is named by what it holds.
+**Why.** Measured: running-focus full body held no upper work in 92% of 30-min and 59% of 45-min sessions, because
+the clock dropped the upper items first; S1 asks twice a week per region. Keeping it at 30 min cost the jumps in 326
+of 376 sessions and ran 277 over the clock (rest is never shortened), so the board re-sat: jumps beat an upper
+accessory at 30 min for running economy **[M]** (Blagrove, McMillan, Hutchinson). **Dissent, Sims:** half of 30-min
+sessions still have no upper work; whole-body loading matters for bone in peri- and post-menopausal women, so 45
+minutes is where it fits and the app should not call a legs session full body. **Check:** `S-FULLBODY-UPPER`.
+Sitting: `docs/decisions/strength-upper-and-light-legs-2026-10-19.md`.
 
 **Amendment 2 (2026-10-17, defect restoring intent: STRENGTH-START-WEEK-01, STRENGTH-PLYO-BUDGET-01).** Three
 readings this constitution always meant and the engine did not do. **(a) Strength weeks count from when strength

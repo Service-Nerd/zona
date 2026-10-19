@@ -65,7 +65,11 @@ export function heavyLegsLegal(t: Timeline, i: number): boolean {
   return true
 }
 
-export interface Placed { index: number; kind: SessionKind; heavy: boolean }
+export interface Placed {
+  index: number; kind: SessionKind; heavy: boolean
+  /** S3 Am.2 — an upper session that REPLACES a leg session (no legal heavy-leg day): it keeps light leg work. */
+  lightLower?: boolean
+}
 
 /**
  * Place one week's sessions. `weekIdx` are the timeline indices of this week's
@@ -139,7 +143,8 @@ export function placeWeek(
 
   const placed: Placed[] = [
     ...legDays.map((index, k) => ({ index, kind: legKinds[k], heavy: true })),
-    ...upperDays.map(index => ({ index, kind: 'upper_core' as SessionKind, heavy: false })),
+    // The overflow (leg sessions S2 had no legal day for) is the last of the upper days; those keep light leg work.
+    ...upperDays.map((index, k) => ({ index, kind: 'upper_core' as SessionKind, heavy: false, lightLower: k >= upperDays.length - (legKinds.length - legDays.length) })),
   ].sort((a, b) => a.index - b.index)
   return { placed, legsLimited, fewer: placed.length < wanted }
 }

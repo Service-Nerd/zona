@@ -10,7 +10,10 @@ import { prescribe, type DoseContext } from './prescription'
 import { eligible, selectExercise, type SelectionContext } from './select'
 import type { Block, BlockRole, Focus, Pattern, Prescription, SessionKind, StrengthNote } from './types'
 
-interface Slot { pattern: Pattern; role: BlockRole; priority: number }
+interface Slot { pattern: Pattern; role: BlockRole; priority: number; light?: true }
+
+/** S3 Am.2 (STRENGTH-CHOSEN-NO-LEGS-01) — an upper session that replaces a leg session keeps light leg work, running focus. */
+const LIGHT_LOWER: Slot[] = C.LIGHT_LOWER_PATTERNS.map((pattern, i) => ({ pattern, role: 'accessory', priority: 2 + i, light: true }))
 
 const LOWER_RUNNING: Slot[] = [
   { pattern: 'plyometric', role: 'plyo', priority: 4 },
@@ -120,7 +123,7 @@ export function buildMobilitySession(sel: SelectionContext): BuiltSession {
   return { kind: 'mobility', heavy_legs: false, blocks, estimated_minutes: estimateMinutes(blocks, 0), notes: [] }
 }
 
-export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: SelectionContext, dose: DoseContext, plyoAllowed: boolean): BuiltSession {
+export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: SelectionContext, dose: DoseContext, plyoAllowed: boolean, opts: { lightLower?: boolean } = {}): BuiltSession {
   const minutes = sel.profile.session_minutes
   const warmupMinutes = C.WARMUP_MINUTES[minutes]
   const notes: StrengthNote[] = []
@@ -128,7 +131,9 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
 
   type Chosen = { slot: Slot; item: Prescription }
   let chosen: Chosen[] = []
-  for (const slot of TEMPLATES[sel.profile.focus][kind]) {
+  const template = TEMPLATES[sel.profile.focus][kind]
+  const slots = opts.lightLower && kind === 'upper_core' && sel.profile.focus === 'running' ? [...template, ...LIGHT_LOWER] : template
+  for (const slot of slots) {
     if (slot.role === 'plyo' && !plyoAllowed) continue
     const lowerSlot = PATTERN_REGION[slot.pattern] === 'lower'
     // STRENGTH-KNEE-DOMINANT-01 — the single-leg slot carries the unilateral work; the hinge slot
@@ -139,10 +144,21 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
       continue
     }
     used.add(ex.id)
-    chosen.push({ slot, item: prescribe(ex, slot.role, dose) })
+    const item = prescribe(ex, slot.role, dose)
+    chosen.push({ slot, item: slot.light ? { ...item, rir: Math.max(item.rir ?? 0, C.LIGHT_LOWER_RIR), light: true } : item })
   }
 
-  const isHeavy = (c: Chosen[]) => c.some(x => HEAVY_LEG_PATTERNS.includes(x.slot.pattern))
+  // Light leg work is not heavy legs (S3 Am.2): a calf raise at RIR 3 beside a long run is what the board allowed.
+  const isHeavy = (c: Chosen[]) => c.some(x => !x.slot.light && HEAVY_LEG_PATTERNS.includes(x.slot.pattern))
+  // S10 Am.3 (STRENGTH-FULLBODY-NO-UPPER-01) — a full-body session's first upper movement is protected: it rides in
+  // the core item's rest as a superset, trims to 2 sets after the main lifts do, and is the last accessory dropped.
+  const protectedUpper = kind === 'full_body'
+    ? chosen.find(c => c.slot.role !== 'main' && PATTERN_REGION[c.slot.pattern] === 'upper')?.slot ?? null
+    : null
+  // S3 Am.2 — likewise the first light leg item of a converted session: it is the week's only leg work on a
+  // weekend pick beside a Sunday long run, so it is the last accessory dropped (S-LEGS-EVERY-WEEK).
+  const protectedLight = chosen.find(c => c.slot.light)?.slot ?? null
+  const isProtected = (s: Slot) => s === protectedUpper || s === protectedLight
   const warmItems: Prescription[] = []
   const warmCount = minutes === 30 ? 4 : minutes === 45 ? 5 : 6
   const inSession = new Set(chosen.map(c => c.item.exercise_id))
@@ -190,14 +206,22 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
     const coreCount = chosen.filter(c => c.slot.role === 'core').length
     const droppable = chosen
       .map((c, i) => ({ c, i }))
-      .filter(({ c }) => c.slot.priority > 1 && c.slot.role !== 'plyo' && !(c.slot.role === 'core' && coreCount <= 1))
+      .filter(({ c }) => c.slot.priority > 1 && c.slot.role !== 'plyo' && !isProtected(c.slot) && !(c.slot.role === 'core' && coreCount <= 1))
       .sort((a, b) => b.c.slot.priority - a.c.slot.priority || b.i - a.i)
     const main = chosen.filter(c => c.slot.role === 'main' && c.item.sets > 2)
     const plyo = chosen.findIndex(c => c.slot.role === 'plyo')
+    const upper = chosen.find(c => isProtected(c.slot) && c.item.sets > 2)
     if (droppable.length) {
       chosen = chosen.filter((_, i) => i !== droppable[0].i)
     } else if (main.length) {
       main[main.length - 1].item = { ...main[main.length - 1].item, sets: main[main.length - 1].item.sets - 1 }
+    } else if (upper) {
+      upper.item = { ...upper.item, sets: upper.item.sets - 1 }
+    } else if (chosen.some(c => c.slot === protectedUpper)) {
+      // (the light leg item is never dropped this way: an upper session has no jumps to protect, and it is the leg work)
+      // Re-sat 2026-10-19: last accessory out, but BEFORE the jumps. Measured at 30 min: keeping it cost the jumps in
+      // 326 of 376 sessions and ran 277 sessions over the clock. The title then says what the session holds.
+      chosen = chosen.filter(c => c.slot !== protectedUpper)
     } else if (plyo >= 0) {
       droppedPlyo = chosen[plyo]
       chosen = chosen.filter((_, i) => i !== plyo)

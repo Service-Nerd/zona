@@ -54,7 +54,9 @@ Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 Measured: running-focus full body held no upper work in 95% of 30-min and 58% of 45-min sessions (S10 dropped the upper
 items first). S10 Am.3: at least `FULL_BODY_MIN_UPPER_ITEMS` (1) upper movement, pull first, supersetted with core,
 trimmed to 2 sets before any drop, last accessory dropped. Invariant `S-FULLBODY-UPPER`. Blagrove vs Sims recorded,
-settled by the superset. Sitting: `docs/decisions/strength-upper-and-light-legs-2026-10-19.md`.
+settled by the superset. **Re-sat the same day on the build's measurement:** at 30 min keeping it cost the jumps in 326
+of 376 sessions and ran 277 over the clock, so it is dropped last but BEFORE the jumps, and the check applies from
+`FULL_BODY_UPPER_MIN_MINUTES` (45). Sims dissents. Sitting: `docs/decisions/strength-upper-and-light-legs-2026-10-19.md`.
 
 ## 2026-10-19 — STRENGTH-CHOSEN-NO-LEGS-01 · CORRECT WITH AMENDMENT (light lower on a no-heavy-legs day)
 

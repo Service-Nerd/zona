@@ -50,7 +50,7 @@ import { parseLocalDate } from '@/lib/plan'
 import { resolveAutoMatch } from '@/lib/coaching/sessionAutoMatch'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { StrengthSession } from '@/packages/strength'
-import { STRENGTH_AFTER_RUN_LINE, STRENGTH_HERO_ADVERB, STRENGTH_KIND_TITLE, STRENGTH_REST_INVITE, isoLocalDate } from '@/lib/strength-bridge/display'
+import { STRENGTH_AFTER_RUN_LINE, STRENGTH_HERO_ADVERB, strengthSessionTitle, STRENGTH_REST_INVITE, isoLocalDate } from '@/lib/strength-bridge/display'
 import { showsStrengthInvite } from '@/lib/strength-bridge/restInvite'
 import { Glyph } from '@/components/shared/RowIcon'
 import ActionRow from '@/components/shared/ActionRow'
@@ -2276,7 +2276,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               <div style={{ marginTop: 'var(--space-3)' }}>
                 <SessionCard
                   type="strength"
-                  name={STRENGTH_KIND_TITLE[strengthToday.kind]}
+                  name={strengthSessionTitle(strengthToday)}
                   eased={isEasedForRecovery(strengthToday)}
                   detail={strengthToday.after_quality_run ? STRENGTH_AFTER_RUN_LINE : undefined}
                   durationMin={strengthToday.estimated_minutes}
@@ -2301,7 +2301,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             </div>
             <SessionCard
               type="strength"
-              name={STRENGTH_KIND_TITLE[strengthToday.kind]}
+              name={strengthSessionTitle(strengthToday)}
               eased={isEasedForRecovery(strengthToday)}
               durationMin={strengthToday.estimated_minutes}
               metric="duration"

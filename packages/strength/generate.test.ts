@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { generateStrengthPlan, standaloneContext } from './generate'
 import { splitFor } from './placement'
 import { plyoLevel } from './select'
+import { CATALOGUE_BY_ID } from './catalogue'
 import { STRENGTH_CONFIG as C } from './config'
 import type { Day, RunContext, RunRole, StrengthProfile } from './types'
 
@@ -116,5 +117,23 @@ describe('S8 — the first jump a runner meets is level 1, however late it arriv
   it('climbs one rung per two blocks from the first PLACED jump', () => {
     expect(plyoLevel({ ...base, weekIndex: 12, plyoFirstWeek: 12 })).toBe(1)
     expect(plyoLevel({ ...base, weekIndex: 12 + C.BLOCK_WEEKS * 2, plyoFirstWeek: 12 })).toBe(2)
+  })
+})
+
+describe('S10 Am.3 — a full body keeps upper work where the session length allows', () => {
+  const up = (s: { blocks: { role: string; items: { exercise_id: string }[] }[] }) =>
+    s.blocks.some(b => (b.role === 'main' || b.role === 'accessory') && b.items.some(i => CATALOGUE_BY_ID.get(i.exercise_id)!.pattern.startsWith('upper')))
+  const plan = (m: 30 | 45) => generateStrengthPlan({ focus: 'running', session_minutes: m, sessions_per_week: 2, equipment: ['dumbbells', 'bench', 'bands', 'box'], experience: 'some' } as StrengthProfile, standaloneContext('2026-11-02'))
+  it('🔴 45 min: every running full body holds an upper movement (it held none in 75% before)', () => {
+    const fb = plan(45).weeks.flatMap(w => w.sessions).filter(s => s.kind === 'full_body')
+    expect(fb.length).toBeGreaterThan(5)
+    expect(fb.filter(s => !up(s))).toEqual([])
+  })
+  it('30 min: the upper movement never costs the jumps or the clock (re-sat)', () => {
+    for (const w of plan(30).weeks) for (const s of w.sessions) {
+      expect(s.estimated_minutes).toBeLessThanOrEqual(30)
+    }
+    const withJumps = plan(30).weeks.filter(w => w.sessions.some(s => s.blocks.some(b => b.role === 'plyo'))).length
+    expect(withJumps).toBeGreaterThan(0)
   })
 })

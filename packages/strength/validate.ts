@@ -61,8 +61,20 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
       if (s.date && (byDate.get(s.date)?.runs ?? 0) >= 2) v.push({ code: 'S-NO-STRENGTH-ON-DOUBLE', week: w.n, day: where, detail: 'strength on a day with two runs' })
 
       const items = s.blocks.flatMap(b => b.items.map(it => ({ it, role: b.role, ex: CATALOGUE_BY_ID.get(it.exercise_id) })))
-      const hasLegWork = items.some(x => x.ex && LEG_PATTERNS.has(x.ex.pattern) && x.role !== 'warmup')
+      // S3 Am.2 — light leg work is the item the board allowed beside a long run, re-derived here rather than trusted:
+      // a light pattern, at the light RIR, on a session that is not a heavy-leg session.
+      const isLight = (x: (typeof items)[number]) => x.it.light === true && !!x.ex
+        && (C.LIGHT_LOWER_PATTERNS as readonly string[]).includes(x.ex.pattern) && (x.it.rir ?? 0) >= C.LIGHT_LOWER_RIR
+      for (const x of items) if (x.it.light && (!isLight(x) || s.heavy_legs)) {
+        v.push({ code: 'S-LIGHT-LOWER-ONLY', week: w.n, day: where, detail: `${x.it.exercise_id} is not light leg work here` })
+      }
+      const hasLegWork = items.some(x => x.ex && LEG_PATTERNS.has(x.ex.pattern) && x.role !== 'warmup' && !isLight(x))
       if (hasLegWork !== s.heavy_legs) v.push({ code: 'S-HEAVY-FLAG', week: w.n, day: where, detail: 'heavy_legs does not match the exercises' })
+      // S10 Am.3 — a full-body session holds upper work.
+      if (s.kind === 'full_body' && p.session_minutes >= C.FULL_BODY_UPPER_MIN_MINUTES) {
+        const upper = items.filter(x => x.ex && (x.role === 'main' || x.role === 'accessory') && PATTERN_REGION[x.ex.pattern] === 'upper').length
+        if (upper < C.FULL_BODY_MIN_UPPER_ITEMS) v.push({ code: 'S-FULLBODY-UPPER', week: w.n, day: where, detail: `full body with ${upper} upper movements` })
+      }
       if (s.blocks.some(b => b.role === 'core')) coreExposures++
 
       // Run-week placement (S2, S5) — re-derived from the RunContext.
@@ -170,6 +182,19 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
         }
         if (!placedDates.has(d.date)) v.push({ code: 'S-PINNED-DAYS', week: w.n, day: d.date, detail: `chosen day ${d.day} left without a session` })
       }
+    }
+  }
+
+  // S3 Am.2 — a running-focused ordinary week with a training session has leg work, light or heavy. An upper-only
+  // week was 6.5% of chosen-day plans (all weekend picks beside a Sunday long run) before the amendment.
+  if (p.focus === 'running') {
+    for (const w of plan.weeks) {
+      if (!['base', 'build', 'peak', 'deload'].includes(w.phase)) continue
+      const training = w.sessions.filter(s => s.kind !== 'mobility')
+      if (!training.length) continue
+      const legs = training.some(s => s.blocks.some(b => (b.role === 'main' || b.role === 'accessory' || b.role === 'plyo')
+        && b.items.some(it => { const e = CATALOGUE_BY_ID.get(it.exercise_id); return !!e && PATTERN_REGION[e.pattern] === 'lower' })))
+      if (!legs) v.push({ code: 'S-LEGS-EVERY-WEEK', week: w.n, detail: 'a running-focused week with no leg work' })
     }
   }
   return v

@@ -4163,7 +4163,10 @@ is the engine's shape, not the runner's, and as two controls it can state a cont
 - **What the days cost is said where the plan is in hand, never guessed** (`STRENGTH-CHOSEN-NO-LEGS-01`, Design Board
   2026-10-19). The client cannot know which days are legal for heavy legs without the run week, so the engine's
   `legs_limited_by_run_week` note is shown on the strength *Here is what changes* screen and beneath the days for an
-  existing plan, saying what they get (lighter leg work), not what they lose. Not built yet.
+  existing plan, saying what they get (lighter leg work), not what they lose. Built 2026-10-19.
+- **A strength session is named by what it holds** (`STRENGTH-SESSION-TITLE-01`): `strengthSessionTitle(session)` is the
+  one owner (*Lower body* for a full body the clock left without upper work, *Upper body and light legs* for a
+  converted day). Never `STRENGTH_KIND_TITLE[kind]` at a call site. **Check:** `lib/strength-bridge/sessionTitle.test.ts`.
 **Check:** `strengthSetupDays.markup.test.ts`, `lib/plan/modifyPlanRunDays.test.ts`.
 
 ### WeekGrid (`components/shared/WeekGrid.tsx`)

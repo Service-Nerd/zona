@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-19 — STRENGTH-FULLBODY-NO-UPPER-01 · a ruling the clock could not honour
+**Shipped:** A 45-minute "Full body" now always has upper-body work (it had none in most sessions), a weekend pick beside the long run gets light leg work instead of none, and every strength session is named by what it actually holds.
+
+**Dev learning:** The board ruled "keep one upper movement, never drop it". Built literally, a 30-minute session lost its jumps in 326 of 376 cases and 277 ran over the clock, because two heavy lifts at 150-second rest already fill it. The ruling had said "measure the cost in the build", and the measurement sent it back.
+
+**Product learning:** Once content can change, a title from the session TYPE becomes a lie. Seven places, two of them AI prompts, named sessions by type. One function that reads the session fixed all of them, and a test now refuses the old pattern.
+
+**AI-building learning:** A calf raise was already classed as heavy legs, so the "light legs" the board allowed would have quietly turned an upper day into a heavy-leg day next to a long run. The exemption had to live on the item, and the checker re-derives it rather than trusting the flag.
+
+**The honest bit:** Half of 30-minute "full body" sessions still have no upper work; they are now called "Lower body". Sims's dissent stands.
+
+---
+
 ## 2026-10-18 — SAVE-PATTERN-01 · the save was silent, and slower than it needed to be
 **Shipped:** Changing your run or strength plan is now one journey: edit on a full screen, see what changes, accept, and land on your plan with one line saying what moved ("Plan updated. Wednesday's easy 9km is now on Tuesday."). The founder had sat on "Saving…" not knowing if anything was happening.
 

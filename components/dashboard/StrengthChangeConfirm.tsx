@@ -11,7 +11,7 @@ import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import ChangeConfirm, { ScaleLabel } from '@/components/shared/ChangeConfirm'
 import { DIFF_DAY_ORDER } from '@/lib/coaching/diff/sessionDiff'
 import { formatDuration } from '@/lib/format'
-import { STRENGTH_KIND_TITLE } from '@/lib/strength-bridge/display'
+import { STRENGTH_SETUP, strengthSessionTitle } from '@/lib/strength-bridge/display'
 import type { StrengthPlan } from '@/packages/strength'
 
 const SHORT: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' }
@@ -31,7 +31,7 @@ function weekSlots(p: StrengthPlan, weekN: number) {
     const s = w?.sessions.find(x => x.day === d)
     // By KIND, not length: \`labelSession\` prefers a duration, and two different sessions of the same length then read
     // as no change at all ("strength 40 min → strength 40 min", seen on the fixture before this line was changed).
-    return s ? { type: 'strength', label: STRENGTH_KIND_TITLE[s.kind] } : null
+    return s ? { type: 'strength', label: strengthSessionTitle(s) } : null
   })
 }
 
@@ -76,6 +76,12 @@ export default function StrengthChangeConfirm({ before, after, weekN, onAccept, 
       )}
       {weekChanged && <ScaleLabel>What changes this week</ScaleLabel>}
       <AdjustmentDiff sessionsBefore={a} sessionsAfter={b} scopeLabel="Strength changes this week" />
+      {/* STRENGTH-CHOSEN-NO-LEGS-01 — said where the plan is in hand, from the engine's own note, never guessed. */}
+      {after.notes.includes('legs_limited_by_run_week') && (
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.5, marginTop: 'var(--space-3)' }}>
+          {STRENGTH_SETUP.legsLimitedNote}
+        </div>
+      )}
       {rows.length === 0 && !weekChanged && (
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.5 }}>
           Your sessions stay as they are.

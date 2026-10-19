@@ -129,6 +129,9 @@ export interface Prescription {
   per_side: boolean
   /** Items sharing a tag are done as a superset; rest counts once per round. */
   superset?: string
+  /** S3 Am.2 — light leg work on a session that is not a heavy-leg session: calf or hip, submaximal. Never counts
+   *  as heavy legs (S2), so it may sit beside a long run. */
+  light?: true
 }
 
 export interface Block {

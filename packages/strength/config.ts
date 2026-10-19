@@ -15,6 +15,14 @@ export const STRENGTH_CONFIG = {
   SESSIONS_PER_WEEK_RANGE: [1, 4] as const,
   /** PINNED-DAYS-01 (S1 Am.2) — the most days a runner may choose to lift: the top of SESSIONS_PER_WEEK_RANGE. */
   MAX_CHOSEN_DAYS: 4,
+  /** STRENGTH-FULLBODY-NO-UPPER-01 (S10 Am.3) — a full-body session keeps at least this many upper movements. */
+  FULL_BODY_MIN_UPPER_ITEMS: 1,
+  /** …from this session length up; at 30 min the clock and the jumps come first (re-sat 2026-10-19). */
+  FULL_BODY_UPPER_MIN_MINUTES: 45,
+  /** STRENGTH-CHOSEN-NO-LEGS-01 (S3 Am.2) — what a converted session may give the legs: never heavy, never jumps. */
+  LIGHT_LOWER_PATTERNS: ['calf', 'hip_abduction'] as const,
+  /** …and how hard: submaximal the day before a long run (Willy). */
+  LIGHT_LOWER_RIR: 3,
   RECOMMENDED_SESSIONS_PER_WEEK: 2 as SessionsPerWeek,
   /** S1 Am. — never more than two heavy-leg sessions a week, whatever the day count. */
   MAX_HEAVY_LEG_SESSIONS_PER_WEEK: 2,

@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getUserTier } from '@/lib/trial'
 import { strengthSessionOn } from '@/lib/strength-bridge/serverDay'
-import { STRENGTH_KIND_TITLE } from '@/lib/strength-bridge/display'
+import { strengthSessionTitle } from '@/lib/strength-bridge/display'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildDailyCoachNotePrompt } from '@/lib/coaching/prompts/dailyCoachNote'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
@@ -293,7 +293,7 @@ export async function GET(req: NextRequest) {
     todaySessionLabel: todaySession?.label ?? null,
     todayZoneLabel:    todayZone?.label ?? null,
     todayDistanceKm:   todaySession?.distance_km ?? null,
-    todayStrength:     strengthToday ? { title: STRENGTH_KIND_TITLE[strengthToday.kind], minutes: strengthToday.estimated_minutes } : null,
+    todayStrength:     strengthToday ? { title: strengthSessionTitle(strengthToday), minutes: strengthToday.estimated_minutes } : null,
     todayDouble:       todayList.length >= 2,
     lastSession,
     weekPhase: (week as any).phase as string | null,

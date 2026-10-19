@@ -11,7 +11,7 @@ import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetri
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
-import { STRENGTH_KIND_TITLE, isoLocalDate } from '@/lib/strength-bridge/display'
+import { strengthSessionTitle, isoLocalDate } from '@/lib/strength-bridge/display'
 import type { StrengthSession } from '@/packages/strength'
 import { Glyph } from '@/components/shared/RowIcon'
 import { planMove, type OverrideRow } from '@/lib/plan/overrideMoves'
@@ -699,7 +699,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
           : preferredMetric
         const ss = strength && idx === rows.length - 1 ? strength.sessionsByDate[isoLocalDate(d)] : undefined
         const dayStrength: DayStrength | null = ss && ss.date && strength ? {
-          title: STRENGTH_KIND_TITLE[ss.kind], minutes: ss.estimated_minutes, eased: isEasedForRecovery(ss),
+          title: strengthSessionTitle(ss), minutes: ss.estimated_minutes, eased: isEasedForRecovery(ss),
           status: strength.completions[ss.date] ?? null, onOpen: () => strength.onOpen(ss),
         } : null
 

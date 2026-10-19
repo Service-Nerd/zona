@@ -48,3 +48,26 @@ the founder; it replaces *"…so some sessions are upper body"*, which item 2 ma
 
 **Not settled:** whether 6.5% is the real-world share (strength is admin-only; no live picks exist); the S10 cost of the
 upper superset at 30 min is to be measured in the build, not assumed.
+
+## Re-sat the same day, on the build's measurement (item 1 at 30 minutes)
+The ruling asked for the 30-min cost to be measured in the build. Across 888 running full-body sessions at 30 min
+(standalone + 8 real run plans × 2 kits × 3 experience levels): today 814 had no upper work; keeping it always (as
+ruled) left 0 without upper but cut jumps from 376 sessions to 50 and ran 277 sessions over the clock (rest is never
+shortened); dropping it last but **before the jumps** left 440 without upper, jumps 376, none over. At 45 min the ruling
+holds cleanly (522 → 0 without upper; jumps and clock unchanged).
+Blagrove: at 30 min jumps beat an upper accessory for economy [M]; losing them in 326 of 376 is the wrong price.
+McMillan: a 30-min runner who loses the jumps loses the part that feels like running training. Hutchinson: keeping it
+breaks S10's clock for an [L]-evidence item, which is backwards. **Sims dissents:** half of 30-min sessions still have
+no upper work; 45 minutes is where it fits, and the app must not call a legs session full body.
+**Ruling: CORRECT WITH AMENDMENT (re-sat).** The upper movement is the last accessory dropped, before the jumps;
+`S-FULLBODY-UPPER` applies from `FULL_BODY_UPPER_MIN_MINUTES` (45); at 30 min the session is named by what it holds.
+Building item 2 found the same clock dropped the light leg items at 30 min (5 weeks in the sampled sweep with no leg
+work); the first light item is now protected the same way.
+
+## Design Board — the title follows the content
+Settled ground: S10 Am.1 ("a session titled Upper body carries what it says"), STRENGTH-APP-01's kind titles, and this
+morning's "the title question is moot" (vacated by the re-sitting). Zhuo: one owner, read from the session; seven
+sites and two AI prompts named sessions by kind. Collins: no new session kinds; say what it holds. Sierra: "Lower body"
+for a full body with no upper work, "Upper body and light legs" for the converted day. Silvanto, Wroblewski: no
+objection. **Ruling: SHIP WITH AMENDMENT.** `strengthSessionTitle(session)` (`lib/strength-bridge/display.ts`) is the
+one owner; no site reads `STRENGTH_KIND_TITLE[kind]` (gated). The two titles go to the founder.

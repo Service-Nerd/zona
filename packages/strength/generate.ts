@@ -80,7 +80,7 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
       && wk.phase !== 'taper' && wk.phase !== 'race_week' && !profile.bone_health_flag
     const sessions = placed.map(p => {
       const d = run.days[p.index]
-      const built = p.kind === 'mobility' ? buildMobilitySession(sel) : buildSession(p.kind, sel, dose, plyoAllowed)
+      const built = p.kind === 'mobility' ? buildMobilitySession(sel) : buildSession(p.kind, sel, dose, plyoAllowed, { lightLower: !!p.lightLower })
       built.notes.forEach(n => notes.add(n))
       if (built.heavy_legs) prevHeavy = p.index
       return {

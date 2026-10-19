@@ -24,7 +24,7 @@ import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { formatDuration } from '@/lib/format'
 import {
-  STRENGTH_AFTER_RUN_LINE, STRENGTH_BLOCK_TITLE, STRENGTH_KIND_TITLE,
+  STRENGTH_AFTER_RUN_LINE, STRENGTH_BLOCK_TITLE, STRENGTH_KIND_TITLE, strengthSessionTitle,
   doseLine, effortLine, exerciseCount, exerciseCues, exerciseName,
   LIFT_FEEL_LABEL, LIFT_LOGGED, LIFT_WEIGHT_LABEL, liftSuggestionLine,
 } from '@/lib/strength-bridge/display'
@@ -185,7 +185,7 @@ export default function StrengthSessionScreen({ session, dayLabel, weekN, status
       {/* The app's pushed-screen header owner: arrow, title and sub pin as one group. The
           type is said in the sub, not in a separate chip: one less thing on the line. */}
       <ScreenHeader
-        title={STRENGTH_KIND_TITLE[session.kind]}
+        title={strengthSessionTitle(session)}
         sub={['Strength', dayLabel, weekN ? `Week ${weekN}` : ''].filter(Boolean).join(' · ')}
         onBack={onBack}
       />

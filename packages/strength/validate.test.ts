@@ -79,6 +79,11 @@ const CASES: Array<[string, (p: StrengthPlan) => void, StrengthProfile?]> = [
   ['S-PLYO-START-LEVEL', p => { heavy(p, 1).blocks.push({ role: 'plyo', items: [{ exercise_id: 'drop_jump', sets: 3, contacts: 10, rir: null, rest_s: 60, per_side: false }] }) }],
   ['S-PEAK-SETS', p => { p.weeks[0].phase = 'peak'; mainItem(heavy(p)).sets = 4 }],
   ['S-LOWER-BALANCE', p => { const m = heavy(p).blocks.find(b => b.role === 'main')!; m.items = m.items.map(i => (CATALOGUE_BY_ID.get(i.exercise_id)!.pattern === 'single_leg' ? { ...i, exercise_id: 'single_leg_rdl_loaded' } : i)) }],
+  // STRENGTH-FULLBODY-NO-UPPER-01 — a 45-min full body with its upper work removed.
+  ['S-FULLBODY-UPPER', p => { for (const s of p.weeks[0].sessions.filter(x => x.kind === 'full_body')) for (const b of s.blocks) if (b.role !== 'warmup') b.items = b.items.filter(i => !CATALOGUE_BY_ID.get(i.exercise_id)!.pattern.startsWith('upper')) }],
+  // STRENGTH-CHOSEN-NO-LEGS-01 — a heavy lift marked "light", and a week with every leg item removed.
+  ['S-LIGHT-LOWER-ONLY', p => { mainItem(heavy(p)).light = true }],
+  ['S-LEGS-EVERY-WEEK', p => { for (const s of p.weeks[0].sessions) { s.blocks = s.blocks.filter(b => b.role !== 'plyo').map(b => b.role === 'warmup' ? b : { ...b, items: b.items.filter(i => { const e = CATALOGUE_BY_ID.get(i.exercise_id)!; return !['squat', 'hinge', 'single_leg', 'calf', 'plyometric', 'hip_abduction'].includes(e.pattern) }) }).filter(b => b.items.length); s.heavy_legs = false } }],
   ['S-WARMUP-REPEAT', p => { const s = heavy(p); s.blocks[0].items.push({ exercise_id: 'band_walk_warmup', sets: 1, reps: 8, rir: null, rest_s: 0, per_side: false }); s.blocks.push({ role: 'accessory', items: [{ exercise_id: 'banded_side_step', sets: 2, reps: 10, rir: 2, rest_s: 60, per_side: false }] }) }],
 ]
 
@@ -249,6 +254,20 @@ describe('PINNED-DAYS-01 (S1 Am.2) — chosen days are the sessions', () => {
     const p = generateStrengthPlan(withChosenDays(PROFILE, ['sun']), c3)
     expect(p.weeks[3].sessions).toEqual([])
     expect(validateStrengthPlan(p, c3)).toEqual([])
+  })
+
+  it('🔴 S3 Am.2: days that can never take heavy legs still get LIGHT leg work, every ordinary week', () => {
+    // In this calendar Saturday is the long run: Friday is the day before it and Sunday the day after, so S2 bans
+    // heavy legs on both. Before the amendment this plan held no leg work at all.
+    const p = generateStrengthPlan(withChosenDays(PROFILE, ['fri', 'sun']), C)
+    const ord = p.weeks.filter(w => ['base', 'build', 'peak', 'deload'].includes(w.phase))
+    for (const w of ord) {
+      expect(w.sessions.every(s => !s.heavy_legs)).toBe(true)
+      const light = w.sessions.flatMap(s => s.blocks.flatMap(b => b.items)).filter(i => i.light)
+      expect(light.length, `week ${w.n} has light leg work`).toBeGreaterThan(0)
+      for (const i of light) expect(i.rir).toBeGreaterThanOrEqual(3)
+    }
+    expect(validateStrengthPlan(p, C)).toEqual([])
   })
 
   it('without chosen days nothing changes: the base plan carries no available_days and stays clean', () => {
