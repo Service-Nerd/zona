@@ -666,9 +666,9 @@ function dur(distKm: number, minsPerKm: number): number {
 }
 
 
-/** §1 Am.3 — the note on a quality session that became easy so the plan keeps its hard-easy balance. Founder copy. */
+/** §1 Am.3 — the note on a quality session that became easy so the plan keeps its hard-easy balance. Founder approved 2026-10-19. */
 export const INTENSITY_YIELD_NOTE = 'Easy today. Keeping this one easy holds the plan to the share of hard running it can absorb.'
-/** …and the week's theme when that was its only hard session. Founder copy. */
+/** …and the week's theme when that was its only hard session. Founder approved 2026-10-19. */
 export const INTENSITY_YIELD_WEEK_THEME = 'All easy this week. The plan already has its share of hard running, so this one stays easy.'
 
 function easySession(
