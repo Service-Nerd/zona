@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-19 — STRENGTH-LEGS-NOTE-FOCUS-01 · the approved line was false for the founder
+**Shipped:** The setup screen stops telling General-focus runners they get lighter leg work on blocked days. They do not; that rule is running-focus only.
+
+**Dev learning:** This morning's light-leg rule was scoped to running focus because every case measured was running focus. Nobody measured General, and General was 57% of chosen-day plans with a week of no leg work.
+
+**Product learning:** The founder found it by looking at his own plan: Monday and Wednesday either side of a Tuesday quality run, five weeks of upper body only, under a note promising leg work.
+
+**AI-building learning:** A copy line approved in the morning became false by the afternoon, not because the words changed but because the population they described was narrower than the screen that showed them.
+
+**The honest bit:** The real fix (leg work for General, and naming the day that would let legs in) is ruled but not built.
+
+---
+
 ## 2026-10-19 — INTENSITY-RUNWAY-01 · the remedy had its own idea of the rule
 **Shipped:** A plan no longer goes over its quality limit just because of how many weeks you have until race day. At 16 or 21 weeks to a 100 km, 8 to 11 to a half, or 11 to a marathon, the engine used to hand over a plan with one hard session too many.
 
