@@ -110,12 +110,17 @@ export const STRENGTH_SETUP = {
   boneSub: 'Leaves out jumps and loaded forward bends.',
   injuriesNote: (tags: string[]) => `Allowing for your ${tags.join(' and ')}, from your plan.`,
   // STRENGTH-CHOSEN-NO-LEGS-01 (Design Board 2026-10-19; founder approved): what they get, not what they lose.
-  // 🔴 FOCUS-AWARE (2026-10-19, founder's own plan). Light leg work on these days is S3 Am.2, RUNNING focus only, so
-  // the approved line was false for a General runner, who got no leg work at all for five weeks. General keeps the
-  // line that was live before S3 Am.2, which is true for them, until the boards rule on General.
-  legsLimitedNote: (focus: Focus): string => focus === 'running'
-    ? 'Your run week keeps heavy legs off these days, so they get lighter leg work.'
-    : 'Your run week leaves fewer of these days for heavy legs, so some sessions are upper body.',
+  // STRENGTH-CHOSEN-NO-LEGS-01 (Design Board 2026-10-19; founder approved): what they get, not what they lose.
+  // ⚠️ True for BOTH foci only since STRENGTH-GENERAL-LEGS-01; for a few hours on 2026-10-19 it was false for General
+  // (no leg work at all) and was focus-aware. If light leg work is ever scoped again, this line must be too.
+  legsLimitedNote: (_focus: Focus): string => 'Your run week keeps heavy legs off these days, so they get lighter leg work.',
+  /** STRENGTH-LEGS-DAY-01 (Design Board 2026-10-19; founder approved the shape): name the day, never move one. */
+  legsDayLine: (s: { day: string; run: string | null }): string => {
+    const day = ({ mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' } as Record<string, string>)[s.day] ?? s.day
+    return s.run === 'quality' || s.run === 'easy'
+      ? `Lift on ${day} after your ${s.run} run and your legs get a proper session.`
+      : `Lift on ${day} and your legs get a proper session.`
+  },
   cta: 'Build my strength plan',
   ctaUpdate: 'Update',
   // SAVE-PATTERN-01: the "Built" line moved to Plan, where the change is (`strengthPlanReadback`).

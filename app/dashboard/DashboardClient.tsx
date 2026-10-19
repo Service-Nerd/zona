@@ -3174,6 +3174,7 @@ export default function DashboardClient() {
               : <StrengthSetupScreen profile={strength.profile} planNotes={strength.plan?.notes ?? []}
                   initialDays={prefillChosenDays(strength.profile, strength.plan ?? null)}
                   draft={strengthDraft}
+                  legsDay={strength.plan?.legs_day_suggestion ?? null}
                   planInjuries={(plan?.meta?.injury_history ?? []).map(t => t.toLowerCase())}
                   onSave={handleStrengthSetupSave} />}
             </>}

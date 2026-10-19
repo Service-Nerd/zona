@@ -187,7 +187,8 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
 
   // S3 Am.2 — a running-focused ordinary week with a training session has leg work, light or heavy. An upper-only
   // week was 6.5% of chosen-day plans (all weekend picks beside a Sunday long run) before the amendment.
-  if (p.focus === 'running') {
+  // STRENGTH-GENERAL-LEGS-01 — both foci (was running only: 255 of 448 General chosen-day plans held a no-leg week).
+  {
     for (const w of plan.weeks) {
       if (!['base', 'build', 'peak', 'deload'].includes(w.phase)) continue
       const training = w.sessions.filter(s => s.kind !== 'mobility')

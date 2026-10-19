@@ -6,6 +6,32 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-19 — STRENGTH-LEGS-DAY-01 · name the day, never move it
+**Shipped:** When your lifting days can't take heavy legs, the plan now says which day would: "Lift on Tuesday after your quality run and your legs get a proper session."
+
+**Dev learning:** The engine already had the rule for where heavy legs are legal. Counting it per day on an unrestricted week answers "if you lifted here instead" without generating twenty plans.
+
+**Product learning:** Every one of the 255 affected General plans was fixed by swapping one day, which is why the answer is one sentence and not a screen.
+
+**AI-building learning:** Two of my falsifications were hollow again, once because a test was already failing and once because the gate never decides in any calendar I could build. The second is now written down as unproven rather than claimed.
+
+**The honest bit:** The suggestion only appears once a plan exists; a first build still has no consent screen to show it on.
+
+---
+
+## 2026-10-19 — STRENGTH-GENERAL-LEGS-01 · "the same leg work" now holds
+**Shipped:** A General-focus lifter whose days sit beside hard runs now gets light leg work instead of weeks of upper body only.
+
+**Dev learning:** It was one condition in the session template and one in the validator, both written "running focus only" this morning.
+
+**Product learning:** The founder's own plan had five weeks without leg work; across real run plans it was more than half of General chosen-day plans.
+
+**AI-building learning:** My first test for it passed for the wrong reason: with no run plan every day is a rest day, so nothing was blocked. The test now builds a week with a Saturday long run.
+
+**The honest bit:** Light leg work is calves and hips; a General lifter still gets proper legs only on a day S2 allows, which is what the day suggestion is for.
+
+---
+
 ## 2026-10-19 — STRENGTH-LEGS-NOTE-FOCUS-01 · the approved line was false for the founder
 **Shipped:** The setup screen stops telling General-focus runners they get lighter leg work on blocked days. They do not; that rule is running-focus only.
 

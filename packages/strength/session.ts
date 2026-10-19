@@ -12,7 +12,7 @@ import type { Block, BlockRole, Focus, Pattern, Prescription, SessionKind, Stren
 
 interface Slot { pattern: Pattern; role: BlockRole; priority: number; light?: true }
 
-/** S3 Am.2 (STRENGTH-CHOSEN-NO-LEGS-01) — an upper session that replaces a leg session keeps light leg work, running focus. */
+/** S3 Am.2 (STRENGTH-CHOSEN-NO-LEGS-01, widened by STRENGTH-GENERAL-LEGS-01) — an upper session that replaces a leg session keeps light leg work, either focus. */
 const LIGHT_LOWER: Slot[] = C.LIGHT_LOWER_PATTERNS.map((pattern, i) => ({ pattern, role: 'accessory', priority: 2 + i, light: true }))
 
 const LOWER_RUNNING: Slot[] = [
@@ -132,7 +132,8 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
   type Chosen = { slot: Slot; item: Prescription }
   let chosen: Chosen[] = []
   const template = TEMPLATES[sel.profile.focus][kind]
-  const slots = opts.lightLower && kind === 'upper_core' && sel.profile.focus === 'running' ? [...template, ...LIGHT_LOWER] : template
+  // STRENGTH-GENERAL-LEGS-01 (Coaching Board 2026-10-19): both foci. General is "the same leg work, with more upper body".
+  const slots = opts.lightLower && kind === 'upper_core' ? [...template, ...LIGHT_LOWER] : template
   for (const slot of slots) {
     if (slot.role === 'plyo' && !plyoAllowed) continue
     const lowerSlot = PATTERN_REGION[slot.pattern] === 'lower'

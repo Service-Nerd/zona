@@ -111,14 +111,25 @@ describe('StrengthChangeConfirm, on real engine plans', () => {
     expect(html).toContain('Your run week keeps heavy legs off these days, so they get lighter leg work.')
     expect(await render(withChosenDays(base, ['mon', 'wed']), withChosenDays(base, ['tue', 'fri']))).not.toContain('lighter leg work')
   })
-  it('🔴 a General runner is never promised leg work they do not get (founder\'s plan, 2026-10-19)', async () => {
-    const { default: S } = await import('@/components/dashboard/StrengthChangeConfirm')
+  it('🔴 STRENGTH-GENERAL-LEGS-01: a General runner on blocked days now GETS the light leg work the line promises', async () => {
     const general = { ...base, focus: 'general' as const }
-    const before = generateStrengthPlan(withChosenDays(general, ['mon', 'wed']), ctx)
-    const after = { ...generateStrengthPlan(withChosenDays(general, ['tue', 'fri']), ctx), notes: ['legs_limited_by_run_week' as const] }
+    // A Saturday long run blocks heavy legs on Friday (the day before) and Sunday (the day after); with no run plan
+    // every day is rest and nothing would be blocked, which is how the first cut of this arm tested nothing.
+    const longSat = { ...ctx, days: ctx.days.map(d => (d.day === 'sat' ? { ...d, role: 'long' as const } : d)) }
+    const p = generateStrengthPlan(withChosenDays(general, ['fri', 'sun']), longSat)
+    expect(p.notes).toContain('legs_limited_by_run_week')
+    const ordinary = p.weeks.filter(w => ['base', 'build', 'peak', 'deload'].includes(w.phase) && w.sessions.length)
+    expect(ordinary.every(w => w.sessions.some(s => s.blocks.some(b => b.items.some(i => i.light))))).toBe(true)
+  })
+  it('🔴 STRENGTH-LEGS-DAY-01: the plan names the day, in the approved shape, and never moves one', async () => {
+    const { STRENGTH_SETUP: T } = await import('@/lib/strength-bridge/display')
+    expect(T.legsDayLine({ day: 'tue', run: 'quality' })).toBe('Lift on Tuesday after your quality run and your legs get a proper session.')
+    expect(T.legsDayLine({ day: 'thu', run: null })).toBe('Lift on Thursday and your legs get a proper session.')
+    const { default: S } = await import('@/components/dashboard/StrengthChangeConfirm')
+    const before = generateStrengthPlan(withChosenDays(base, ['mon', 'wed']), ctx)
+    const after = { ...generateStrengthPlan(withChosenDays(base, ['tue', 'fri']), ctx), notes: ['legs_limited_by_run_week' as const], legs_day_suggestion: { day: 'tue' as const, replaces: 'mon' as const, run: 'quality' as const, weeks: 6 } }
     const html = renderToStaticMarkup(React.createElement(S, { before, after, weekN: 3, onAccept: () => {}, onBack: () => {}, onCancel: () => {}, applying: false }))
-    expect(html).not.toContain('lighter leg work')
-    expect(html).toContain('some sessions are upper body')
+    expect(html).toContain('Lift on Tuesday after your quality run')
   })
   it('an unchanged plan says so instead of showing an empty screen', async () => {
     const html = await render(withChosenDays(base, ['mon', 'wed']), withChosenDays(base, ['mon', 'wed']))

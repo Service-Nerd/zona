@@ -18,7 +18,7 @@ import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { DayGridSelector, type DayKey } from '@/components/shared/DayGridSelector'
 import { FieldLabel, FieldNote } from '@/components/shared/FieldText'
 import { InlineError } from '@/components/shared/InlineError'
-import { EQUIPMENT_TAGS, STRENGTH_CONFIG, withChosenDays, type Day, type EquipmentTag, type Experience, type Focus, type SessionMinutes, type StrengthNote, type StrengthProfile } from '@/packages/strength'
+import { EQUIPMENT_TAGS, STRENGTH_CONFIG, withChosenDays, type StrengthPlan, type Day, type EquipmentTag, type Experience, type Focus, type SessionMinutes, type StrengthNote, type StrengthProfile } from '@/packages/strength'
 import { EQUIPMENT_LABEL, STRENGTH_SETUP as T } from '@/lib/strength-bridge/display'
 import { formatDuration } from '@/lib/format'
 
@@ -48,10 +48,12 @@ export interface StrengthSetupScreenProps {
   initialDays?: Day[]
   /** SAVE-PATTERN-01 — back from the consent screen, the answers the runner had (edits intact). */
   draft?: StrengthProfile | null
+  /** STRENGTH-LEGS-DAY-01 — the stored plan's suggested legs day, said beneath the days while they are unchanged. */
+  legsDay?: StrengthPlan['legs_day_suggestion'] | null
   onSave: (profile: StrengthProfile) => Promise<string | null>
 }
 
-export default function StrengthSetupScreen({ profile, planInjuries, planNotes, initialDays = [], draft = null, onSave }: StrengthSetupScreenProps) {
+export default function StrengthSetupScreen({ profile, planInjuries, planNotes, initialDays = [], draft = null, legsDay = null, onSave }: StrengthSetupScreenProps) {
   const [p, setP] = useState<StrengthProfile>(() => draft ?? withChosenDays(profile ?? STRENGTH_PROFILE_DEFAULT, initialDays))
   const chosen = (p.available_days ?? []) as DayKey[]
   const setDays = (v: DayKey[]) => {
@@ -90,7 +92,8 @@ export default function StrengthSetupScreen({ profile, planInjuries, planNotes, 
         <DayGridSelector ariaLabel={T.daysLabel} value={chosen} onChange={setDays} />
         <FieldNote>{
           chosen.length >= STRENGTH_CONFIG.MAX_CHOSEN_DAYS ? T.daysMaxNote
-            : planNotes.includes('legs_limited_by_run_week') && !dirty ? T.legsLimitedNote(p.focus)
+            : planNotes.includes('legs_limited_by_run_week') && !dirty
+              ? `${T.legsLimitedNote(p.focus)}${legsDay ? ` ${T.legsDayLine(legsDay)}` : ''}`
             : T.daysNote
         }</FieldNote>
       </Field>

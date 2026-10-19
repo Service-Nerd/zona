@@ -181,4 +181,8 @@ export interface StrengthPlan {
   /** STRENGTH-PROGRESSION-01 — the run plan's injury tags plus the profile's, as generation used them, so S14 can slow
    *  progression on a lift that loads one. Absent on plans generated before 2026-10-18 (fall back to the profile's). */
   injury_tags?: InjuryTag[]
+  /** STRENGTH-LEGS-DAY-01 — when the runner's chosen days leave ordinary weeks without a legal heavy-leg day, the one
+   *  unchosen day whose swap would let heavy legs in most often, and the run it holds. Never acted on by the engine:
+   *  the runner chose their days (PINNED-DAYS-01). Absent when nothing would improve. */
+  legs_day_suggestion?: { day: Day; replaces: Day; run: RunRole | null; weeks: number }
 }

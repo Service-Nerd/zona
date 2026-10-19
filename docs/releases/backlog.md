@@ -36,13 +36,13 @@ sequential calls today); (B) `planChangeReadback.ts` + the readback on Plan afte
 "Adjust your plan" sheet becomes a full screen (keeps R-5's Apply bar); strength gains *Here is what changes* when an
 existing plan changes. Check: `planChangeJourney.markup.test.ts`.
 
-### 🔲 `STRENGTH-GENERAL-LEGS-01` — General focus gets weeks with no leg work 🏃 **COACHING BOARD RULED 2026-10-19 (CORRECT WITH AMENDMENT), not built**
+### ✅ `STRENGTH-GENERAL-LEGS-01` — **SHIPPED 2026-10-19.** General focus got weeks with no leg work 🏃 **COACHING BOARD RULED 2026-10-19 (CORRECT WITH AMENDMENT)**
 
 Founder's own plan: Mon/Wed around a Tuesday quality run → weeks 3–7 upper body only. 255 of 448 General chosen-day
 plans hold a no-leg week (worst 14). Extend S3 Am.2 + `S-LEGS-EVERY-WEEK` to General.
 `docs/decisions/strength-general-legs-2026-10-19.md`.
 
-### 🔲 `STRENGTH-LEGS-DAY-01` — name the day that would let legs in 🧭 **DESIGN BOARD RULED 2026-10-19 (SHIP WITH AMENDMENT), not built; copy to the founder**
+### ✅ `STRENGTH-LEGS-DAY-01` — **SHIPPED 2026-10-19.** Name the day that would let legs in 🧭 **DESIGN BOARD RULED 2026-10-19 (SHIP WITH AMENDMENT); founder approved the copy**
 
 Engine stamps `legs_day_suggestion`; one line on setup and the consent screen. Draft: *"Lift on Tuesday after your
 quality run and your legs get a proper session."*

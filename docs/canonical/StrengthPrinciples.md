@@ -61,12 +61,17 @@ than the split **[C]**. **Check:** `S-ONE-PER-DAY`, `S-UNAVAILABLE-DAY`.
 **Amendment 2 (2026-10-19, STRENGTH-CHOSEN-NO-LEGS-01, both boards).** For running focus, a session converted here
 (a leg session S2 had no legal day for) is upper body + core + **light leg work**: `LIGHT_LOWER_PATTERNS` (calf, hip
 abduction) at RIR at least `LIGHT_LOWER_RIR` (3), never jumps, squat, hinge or single-leg. It is not a heavy-leg
-session (S2) and may sit beside a long run. Its first light item is the last accessory the clock drops. **Why.**
+session (S2) and may sit beside a long run. Its first light item is the last accessory the clock drops. **Widened 2026-10-19
+(STRENGTH-GENERAL-LEGS-01, both boards) to General focus**, which the setup promises "the same leg work, with more upper
+body": measured, 255 of 448 General chosen-day plans held a week with no leg work (worst 14 weeks), Running 0 after the
+first ruling. The founder's own plan (Mon/Wed around a Tuesday quality run) had five such weeks. **And the plan names the
+day** (STRENGTH-LEGS-DAY-01): `legs_day_suggestion`, the unchosen day whose swap would let heavy legs in most often,
+counted with S2's own predicate; never acted on by the engine (S1 Am.2). **Why.**
 Measured: 29 of 448 chosen-day plans (6.5%, every one a weekend pick beside a Sunday long run) held no leg work at all;
 S2 bans heavy legs there, not leg work, and S13 already treats calf and soleus as the low-cost lower work (Blagrove,
 Willy). No evidence either way on calf work the day before a long run **[I]**; small muscle mass, low risk; claim
 nothing (Hutchinson). **Check:** `S-LIGHT-LOWER-ONLY` (a light item is a light pattern at the light RIR on a non-heavy
-session), `S-LEGS-EVERY-WEEK` (a running-focused ordinary week with sessions has leg work).
+session), `S-LEGS-EVERY-WEEK` (an ordinary week with sessions has leg work, either focus since STRENGTH-GENERAL-LEGS-01).
 
 **Amendment 1 (2026-10-17, SESSION-SLOTS-01, Blagrove).** A day that holds **two runs** (a double the runner made,
 §126) takes **no** strength session: three sessions in one day is not what S4's stacking was written for. The run

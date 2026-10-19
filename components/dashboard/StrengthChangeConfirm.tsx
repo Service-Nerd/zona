@@ -80,6 +80,7 @@ export default function StrengthChangeConfirm({ before, after, weekN, onAccept, 
       {after.notes.includes('legs_limited_by_run_week') && (
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.5, marginTop: 'var(--space-3)' }}>
           {STRENGTH_SETUP.legsLimitedNote(after.profile.focus)}
+          {after.legs_day_suggestion && <> {STRENGTH_SETUP.legsDayLine(after.legs_day_suggestion)}</>}
         </div>
       )}
       {rows.length === 0 && !weekChanged && (

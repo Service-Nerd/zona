@@ -270,6 +270,39 @@ describe('PINNED-DAYS-01 (S1 Am.2) — chosen days are the sessions', () => {
     expect(validateStrengthPlan(p, C)).toEqual([])
   })
 
+  it('🔴 STRENGTH-LEGS-DAY-01: blocked days come with a day that WOULD take heavy legs, and swapping it in delivers them', () => {
+    const p = generateStrengthPlan(withChosenDays(PROFILE, ['fri', 'sun']), C)
+    const s = p.legs_day_suggestion!
+    expect(s, 'a suggestion when the chosen days block heavy legs').toBeTruthy()
+    expect(['fri', 'sun']).not.toContain(s.day)
+    expect(['fri', 'sun']).toContain(s.replaces)
+    const swapped = generateStrengthPlan(withChosenDays(PROFILE, ['fri', 'sun'].map(d => (d === s.replaces ? s.day : d)) as never), C)
+    const heavyWeeks = swapped.weeks.filter(w => ['base', 'build', 'peak', 'deload'].includes(w.phase) && w.sessions.some(x => x.heavy_legs)).length
+    expect(heavyWeeks).toBeGreaterThanOrEqual(1)
+    expect(validateStrengthPlan(p, C)).toEqual([])
+  })
+  it('no suggestion when nothing blocks heavy legs, or the runner did not choose days', () => {
+    // Tuesday is the quality day and Wednesday is easy, so heavy legs stack after the run: nothing is blocked.
+    const tue = generateStrengthPlan(withChosenDays(PROFILE, ['tue']), C)
+    expect(tue.notes).not.toContain('legs_limited_by_run_week')
+    expect(tue.legs_day_suggestion).toBeUndefined()
+    expect(BASE.legs_day_suggestion).toBeUndefined()
+  })
+  it('🔴 no suggestion when the legs are already served, even if one chosen day could never take them', () => {
+    // Quality on Tuesday AND Thursday (both stack heavy legs after the run), long run Saturday. Three days chosen:
+    // two leg sessions land on Tue/Thu, Saturday is the split's planned upper day. Nothing is short, so naming
+    // another day would be noise.
+    const c2 = ctx(); for (const d of c2.days) if (d.week_n <= 3 && d.day === 'thu') d.role = 'quality'
+    const p = generateStrengthPlan(withChosenDays({ ...PROFILE, sessions_per_week: 3 }, ['tue', 'thu', 'sat']), c2)
+    expect(p.notes).not.toContain('legs_limited_by_run_week')
+    expect(p.legs_day_suggestion).toBeUndefined()
+  })
+  it('🔴 STRENGTH-GENERAL-LEGS-01: S-LEGS-EVERY-WEEK covers General focus too', () => {
+    const p = clone(generateStrengthPlan(withChosenDays({ ...PROFILE, focus: 'general' }, ['fri', 'sun']), C))
+    for (const s of p.weeks[0].sessions) { s.blocks = s.blocks.map(b => b.role === 'warmup' ? b : { ...b, items: b.items.filter(i => !['squat', 'hinge', 'single_leg', 'calf', 'plyometric', 'hip_abduction'].includes(CATALOGUE_BY_ID.get(i.exercise_id)!.pattern)) }).filter(b => b.items.length); s.heavy_legs = false }
+    expect(codes(p)).toContain('S-LEGS-EVERY-WEEK')
+  })
+
   it('without chosen days nothing changes: the base plan carries no available_days and stays clean', () => {
     expect(BASE.profile.available_days).toBeUndefined()
     expect(validateStrengthPlan(BASE, C)).toEqual([])

@@ -1301,8 +1301,8 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Three move/readiness defects found by the slots inventory** (READINESS-OVERRIDES-01, PLAN-MOVE-DELETE-01, AUTOMATCH-MOVED-DATE-01) | — | S | 🟢 Shipped 2026-10-17 (Phase 0 defects of SESSION-SLOTS-01; the hand-rolled effective maps remain). |
 | **The fill step undoes the peak cut** (STRENGTH-PEAK-FILL-01) | PAID | S | 🟢 Shipped 2026-10-17: peak main sets stay cut. |
 | **Recovery-driven adaptation, made visible** (READINESS-SURFACE-01 + STRENGTH-RECOVERY-01) | PAID | M | 🟡 Item 3 (the "Eased for recovery" mark) built 2026-10-17; STRENGTH-RECOVERY-01 built and live 2026-10-18 with item 2 (the Today card). Ruled 2026-10-17 (Design Board SHIP WITH AMENDMENT, SLT BUILD, Coaching Board on strength). The defect that kept it from ever firing is fixed (READINESS-WRONG-DAY-01). Next: the reading on the card, the "Eased for recovery" record, Changed this week, a Coach line; website words to the Coaching Board first. Backlog § Recovery-driven adaptation. |
-| **General focus keeps leg work** (STRENGTH-GENERAL-LEGS-01) | PAID (admin-only) | S | 🧭 Coaching Board ruled 2026-10-19; not built. |
-| **Name the day that would let legs in** (STRENGTH-LEGS-DAY-01) | PAID (admin-only) | S | 🧭 Design Board ruled 2026-10-19; not built; copy to founder. |
+| **General focus keeps leg work** (STRENGTH-GENERAL-LEGS-01) | ✅ PAID (admin-only) | S | 🟢 Shipped 2026-10-19. |
+| **Name the day that would let legs in** (STRENGTH-LEGS-DAY-01) | ✅ PAID (admin-only) | S | 🟢 Shipped 2026-10-19; copy approved. |
 | **One save journey for plan changes** (SAVE-PATTERN-01) | ✅ FREE run · PAID strength (admin-only) | M | 🟢 Shipped 2026-10-18. |
 | **Pick your training days; sessions stay on them** (PINNED-DAYS-01) | ✅ FREE run row · PAID strength | M | 🟢 Shipped and live 2026-10-18. Both boards ruled. Follow-ons: `LONGRUN-BLOCKED-DAY-01`, `STRENGTH-CHOSEN-NO-LEGS-01`. |
 | **A rebuilt plan inherited old completions** (PLAN-REBUILD-SUPERSEDE-01) | ✅ FREE | S | 🟢 Shipped and live 2026-10-18; clean-up run (24 rows, 3 runners, 0 remaining). |

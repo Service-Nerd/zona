@@ -5,11 +5,11 @@
 // which is the standalone-app path (ADR-024 §1). Pure: no clock, no I/O, no AI.
 
 import { STRENGTH_CONFIG as C } from './config'
-import { placeWeek, splitFor, type Timeline } from './placement'
+import { heavyLegsLegal, placeWeek, splitFor, type Timeline } from './placement'
 import { buildMobilitySession, buildSession } from './session'
 import { CATALOGUE_BY_ID } from './catalogue'
 import type {
-  Day, EquipmentTag, InjuryTag, RunContext, RunDay, RunWeek, StrengthNote, StrengthPlan, StrengthProfile, StrengthWeek,
+  Day, EquipmentTag, InjuryTag, RunContext, RunDay, RunRole, RunWeek, StrengthNote, StrengthPlan, StrengthProfile, StrengthWeek,
 } from './types'
 
 const DAYS: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -98,6 +98,25 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
     weeks.push({ n: wk.n, phase: wk.phase, sessions })
   })
 
+  // STRENGTH-LEGS-DAY-01 (Design Board 2026-10-19) — name the day, never move one. Counted with placement's own S2
+  // predicate on a timeline without the chosen-days restriction, so it answers "if you lifted here instead".
+  const legsDay = (() => {
+    const chosen = profile.available_days
+    // ⚠️ The legs-limited gate is the RULING's scope ("when the chosen days leave weeks without heavy legs"), not a
+    // safety check, and no constructed calendar has yet made it the deciding condition (the day comparison below
+    // agreed on every case tried, 2026-10-19). Unproven, kept as the scope the board wrote.
+    if (standalone || !chosen?.length || !notes.has('legs_limited_by_run_week')) return undefined
+    const open: Timeline = { ...timeline, unavailable: new Set() }
+    const ordinary = run.weeks.filter(w => ['base', 'build', 'peak', 'deload'].includes(w.phase)).map(w => w.n)
+    const legalWeeks = (day: Day) => ordinary.filter(n => run.days.some((d, i) => d.week_n === n && d.day === day && d.date >= startDate && heavyLegsLegal(open, i))).length
+    const best = DAYS.filter(d => !chosen.includes(d)).map(d => ({ d, n: legalWeeks(d) })).sort((a, b) => b.n - a.n)[0]
+    const worst = chosen.map(d => ({ d, n: legalWeeks(d) })).sort((a, b) => a.n - b.n)[0]
+    if (!best || !worst || best.n <= worst.n) return undefined
+    const roles = run.days.filter(x => x.day === best.d && ordinary.includes(x.week_n)).map(x => x.role)
+    const usual = (['quality', 'easy', 'long'] as RunRole[]).map(r => ({ r, n: roles.filter(x => x === r).length })).sort((a, b) => b.n - a.n)[0]
+    return { day: best.d, replaces: worst.d, run: usual && usual.n > 0 ? usual.r : null, weeks: best.n }
+  })()
+
   return {
     version: 1,
     standalone,
@@ -107,5 +126,6 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
     notes: Array.from(notes),
     start_date: startDate,
     injury_tags: injuries,
+    ...(legsDay ? { legs_day_suggestion: legsDay } : {}),
   }
 }

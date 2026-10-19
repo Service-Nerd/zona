@@ -16,6 +16,7 @@ interface StrengthSetupScreenProps {
   planNotes: StrengthNote[]              // the plan's honest notes, said once here
   initialDays?: Day[]                    // PINNED-DAYS-01: shown chosen on open (`prefillChosenDays`); [] = runner picks
   draft?: StrengthProfile | null         // SAVE-PATTERN-01: the answers held while the consent screen was open
+  legsDay?: StrengthPlan['legs_day_suggestion'] | null   // STRENGTH-LEGS-DAY-01: said beneath the days while unchanged
   onSave: (profile: StrengthProfile) => Promise<string | null>   // null = saved; a string = failed
 }
 ```
@@ -32,4 +33,4 @@ what changes* (`StrengthChangeConfirm`) first, and every save lands on Plan with
 says *"Built."* itself. Strings from `STRENGTH_SETUP` (`lib/strength-bridge/display.ts`).
 Check: `components/dashboard/strengthScreens.markup.test.ts`, `components/dashboard/strengthSetupDays.markup.test.ts`.
 
-**Legs note (STRENGTH-LEGS-NOTE-FOCUS-01, 2026-10-19).** Under the days, when the plan carries `legs_limited_by_run_week`, `STRENGTH_SETUP.legsLimitedNote(focus)`: running focus says *lighter leg work*; General says *some sessions are upper body*, because S3 Am.2's light leg work is running-only until `STRENGTH-GENERAL-LEGS-01` ships.
+**Legs note (STRENGTH-LEGS-NOTE-FOCUS-01, 2026-10-19).** Under the days, when the plan carries `legs_limited_by_run_week`, `STRENGTH_SETUP.legsLimitedNote(focus)`: running focus says *lighter leg work*; since `STRENGTH-GENERAL-LEGS-01` both foci get light leg work, so the note is one line again, followed by `legsDayLine(legsDay)` when the plan names a day (*"Lift on Tuesday after your quality run and your legs get a proper session."*).
