@@ -4160,6 +4160,10 @@ is the engine's shape, not the runner's, and as two controls it can state a cont
   day as a pending edit the runner can see. A refused tap says why, muted, under the grid.
 - **The wizard** already asks this way (`WeekGrid`).
 - **A refusal is stated, never silent.** An ignored tap with no line is a control that looks broken.
+- **What the days cost is said where the plan is in hand, never guessed** (`STRENGTH-CHOSEN-NO-LEGS-01`, Design Board
+  2026-10-19). The client cannot know which days are legal for heavy legs without the run week, so the engine's
+  `legs_limited_by_run_week` note is shown on the strength *Here is what changes* screen and beneath the days for an
+  existing plan, saying what they get (lighter leg work), not what they lose. Not built yet.
 **Check:** `strengthSetupDays.markup.test.ts`, `lib/plan/modifyPlanRunDays.test.ts`.
 
 ### WeekGrid (`components/shared/WeekGrid.tsx`)

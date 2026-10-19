@@ -144,6 +144,14 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-19 — STRENGTH-CHOSEN-NO-LEGS-01 · SHIP WITH AMENDMENT. Say lighter leg work where the plan is in hand
+
+The engine's `legs_limited_by_run_week` note is said on the strength *Here is what changes* screen and beneath the days
+for an existing plan, never guessed in the client. Copy (founder to approve): *"Your run week keeps heavy legs off these
+days, so they get lighter leg work."*, replacing *"…so some sessions are upper body"*. The full-body title question is
+moot: the Coaching Board kept upper work in every full body (`STRENGTH-FULLBODY-NO-UPPER-01`). Check: a markup arm.
+Sitting: `docs/decisions/strength-upper-and-light-legs-2026-10-19.md`.
+
 ## 2026-10-18 — SAVE-PATTERN-01 · SHIP WITH AMENDMENT. Changing a plan is one journey, and a save never ends in silence
 
 Run or strength: full-screen edit (back arrow top-left) → *Here is what changes* (strength only when an existing plan

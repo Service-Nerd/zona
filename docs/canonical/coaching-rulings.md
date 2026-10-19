@@ -49,6 +49,20 @@ slot was a Nordic curl 25% of the time; the Nordic curl, hamstring curl and kett
 🔴 **Not the catalogue's, and still open:** a runner's first jump is bounding or a drop jump (`STRENGTH-PLYO-BUDGET-01`).
 Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 
+## 2026-10-19 — STRENGTH-FULLBODY-NO-UPPER-01 · CORRECT WITH AMENDMENT (full body keeps upper work)
+
+Measured: running-focus full body held no upper work in 95% of 30-min and 58% of 45-min sessions (S10 dropped the upper
+items first). S10 Am.3: at least `FULL_BODY_MIN_UPPER_ITEMS` (1) upper movement, pull first, supersetted with core,
+trimmed to 2 sets before any drop, last accessory dropped. Invariant `S-FULLBODY-UPPER`. Blagrove vs Sims recorded,
+settled by the superset. Sitting: `docs/decisions/strength-upper-and-light-legs-2026-10-19.md`.
+
+## 2026-10-19 — STRENGTH-CHOSEN-NO-LEGS-01 · CORRECT WITH AMENDMENT (light lower on a no-heavy-legs day)
+
+Measured: 29 of 448 chosen-day plans (6.5%, all weekend picks beside a Sunday long run) held no lower work at all. S3
+Am.2: for running focus a chosen day that cannot take heavy legs is upper + core + light lower (`LIGHT_LOWER_PATTERNS`
+calf, hip abduction; `LIGHT_LOWER_RIR` 3; no plyos, squat, hinge or single-leg). Invariants `S-LIGHT-LOWER-ONLY`,
+`S-LEGS-EVERY-WEEK`. Sitting: `docs/decisions/strength-upper-and-light-legs-2026-10-19.md`.
+
 ## 2026-10-18 — PINNED-DAYS-01 · CORRECT WITH AMENDMENT (strength days)
 
 When the runner picks strength days (1–4), those days ARE the sessions: the engine chooses only what goes on each (S2

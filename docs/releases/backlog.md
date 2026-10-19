@@ -53,7 +53,7 @@ input written before 2026-10-18 (both weekend days blocked on the old sheet) sti
 does the long run go when the runner has no weekend run day (a weekday long run, or refuse)? Count stored inputs in
 that state first.
 
-### 🔲 `STRENGTH-CHOSEN-NO-LEGS-01` — chosen days that never allow heavy legs give an upper-body-only block 🏃 **COACHING BOARD** + 🧭 **DESIGN BOARD** *(filed 2026-10-18)*
+### 🔲 `STRENGTH-CHOSEN-NO-LEGS-01` — chosen days that never allow heavy legs give an upper-body-only block 🏃 **COACHING BOARD** + 🧭 **DESIGN BOARD** *(filed 2026-10-18; BOTH RULED 2026-10-19, not built: `docs/decisions/strength-upper-and-light-legs-2026-10-19.md`)*
 
 Found in the widened sweep: a runner choosing Mon/Fri/Sat/Sun around one real run plan got upper body and core in
 every week until week 13, because none of those days was a legal heavy-leg day (S2). That is S3 working (convert,
@@ -2327,7 +2327,7 @@ main one (provenance or coverage); best value paid is RepDB Standard ($499 one-t
 the player and slots wait on the decision so no unused plumbing ships. **Tags:** 👤 FOUNDER (supplier, spend) → 💼 SLT
 (price) → 🧭 DESIGN BOARD (how media sits on the row).
 
-#### `STRENGTH-FULLBODY-NO-UPPER-01` — "Full body" sessions with no upper-body work *(filed 2026-10-18, OPEN)*
+#### `STRENGTH-FULLBODY-NO-UPPER-01` — "Full body" sessions with no upper-body work *(filed 2026-10-18; Coaching Board RULED 2026-10-19, CORRECT WITH AMENDMENT, not built)*
 Measured on the standalone grid (no run plan): **running-focus "Full body" sessions hold no upper-body work in 100% of
 30-minute and 75% of 45-minute plans** (0% at 60 minutes, 0% for general focus). The session clock (S10) drops the
 upper slots first for running focus, and the title still says "Full body". Found while writing the recovery card's
