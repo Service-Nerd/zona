@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { generateStrengthPlan, parseStrengthProfile } from '@/packages/strength'
 
 /**
  * 🔒 STRENGTH-ENGINE-01 — /api/strength/plan, run for real with only I/O faked.
@@ -143,11 +144,23 @@ describe('GET re-places strength silently when the run week moved under it (STRE
     expect(S.upserts).toHaveLength(1)
     expect(body.plan.standalone).toBe(true)
   })
-  it('🔴 a matching signature saves nothing', async () => {
-    S.stored = { plan_json: { weeks: [] }, profile_json: PROFILE, run_context_sig: null, generated_at: 'x' }
+  // The route stores the PARSED profile (defaults filled), so a fixture of "what it stored" must be built from it too.
+  const parsedProfile = () => { const r = parseStrengthProfile(PROFILE); if (!r.ok) throw new Error('profile'); return r.profile }
+  it('🔴 a matching signature and the plan the engine builds today saves nothing', async () => {
+    S.stored = { plan_json: generateStrengthPlan(parsedProfile(), null, { standaloneStart: '2026-11-02' }), profile_json: PROFILE, run_context_sig: null, generated_at: 'x' }
     const body = await (await get()).json()
     expect(body.replaced).toBe(false)
     expect(S.upserts).toEqual([])
+  })
+  it('🔴 STRENGTH-ENGINE-REACH-01: a matching signature on an older engine\'s plan is rebuilt, keeping its start', async () => {
+    const old = generateStrengthPlan(parsedProfile(), null, { standaloneStart: '2026-11-02' })
+    old.weeks = old.weeks.slice(0, 1)
+    S.stored = { plan_json: old, profile_json: PROFILE, run_context_sig: null, generated_at: 'x' }
+    const body = await (await get()).json()
+    expect(body.replaced).toBe(true)
+    expect(S.upserts).toHaveLength(1)
+    expect(body.plan.start_date).toBe('2026-11-02')
+    expect(S.events).toContain('strength_plan_engine_rebuilt')
   })
   it('🔴 a failed run-plan read never re-places blind', async () => {
     S.stored = { plan_json: { weeks: [] }, profile_json: PROFILE, run_context_sig: 'old-signature', generated_at: 'x' }

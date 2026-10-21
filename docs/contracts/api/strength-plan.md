@@ -12,6 +12,12 @@ Returns the plan and its completions. **If the run week has moved under it** (`r
 RunContext, differs from the current run plan plus live move/swap overrides) **it is re-placed silently first**
 from the stored profile, validated and saved (Design Board `STRENGTH-APP-01` H).
 
+**It is also rebuilt when the engine changed** (`STRENGTH-ENGINE-REACH-01`, 2026-10-21): the plan is regenerated from
+the stored profile, run context and `start_date` and compared with the stored one (`storedPlanReach`,
+`lib/strength-bridge/planReach.ts`, key-order-independent); a difference rebuilds and saves it, keeping its start, and
+records `strength_plan_engine_rebuilt`. Before this an engine fix never reached a stored plan. `replaced` is true for
+either reason.
+
 ```json
 { "plan": StrengthPlan, "profile": StrengthProfile, "completions": { "YYYY-MM-DD": "done" | "skipped" },
   "completions_ok": true, "replaced": boolean, "stale": false | null,

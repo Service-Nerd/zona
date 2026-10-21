@@ -4,6 +4,7 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { readPlanJson } from '@/lib/planRead'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { planToRunContext, runContextSig } from '@/lib/strength-bridge/runContext'
+import { regenerateStored, storedPlanReach } from '@/lib/strength-bridge/planReach'
 import { strengthGate, readSmallJson, strengthServiceClient } from '@/lib/strength-bridge/routeGate'
 import { applyRecoveryEases, parseRecoveryEases, type RecoveryEases } from '@/lib/strength-bridge/recoveryEases'
 import { generateStrengthPlan, parseStrengthProfile, validateStrengthPlan, type RunContext, type StrengthPlan, type StrengthProfile } from '@/packages/strength'
@@ -77,8 +78,9 @@ async function liftLogsFor(supabase: Supabase, userId: string): Promise<unknown[
 }
 
 /** Generate, validate and save. Returns the plan, or a response to send. */
-async function buildAndSave(supabase: Supabase, userId: string, profile: StrengthProfile, ctx: RunContext | null, startDate: string, preview = false): Promise<{ ok: true; plan: StrengthPlan } | { ok: false; res: NextResponse }> {
-  const plan = generateStrengthPlan(profile, ctx, ctx ? { startDate } : { standaloneStart: nextMonday(new Date()) })
+async function buildAndSave(supabase: Supabase, userId: string, profile: StrengthProfile, ctx: RunContext | null, startDate: string, preview = false, standaloneStart?: string): Promise<{ ok: true; plan: StrengthPlan } | { ok: false; res: NextResponse }> {
+  // A standalone plan rebuilt for an engine change keeps its own start (`regenerateStored`); a new one starts next Monday.
+  const plan = standaloneStart ? regenerateStored(profile, ctx, standaloneStart) : generateStrengthPlan(profile, ctx, ctx ? { startDate } : { standaloneStart: nextMonday(new Date()) })
   const violations = validateStrengthPlan(plan, ctx)
   if (violations.length) {
     await recordOpsEvent('strength_generate_failed', {
@@ -120,11 +122,18 @@ export async function GET(req: NextRequest) {
   let replaced = false
   const { ctx, error: ctxErr } = await currentRunContext(supabase, user.id)
   // A failed run-plan read is not "the run plan changed": keep the stored plan, never re-place blind.
-  if (!ctxErr && runContextSig(ctx) !== data.run_context_sig) {
+  // STRENGTH-ENGINE-REACH-01: rebuild when the run week changed OR the engine now builds something else from the same
+  // inputs; before, an engine fix never reached a stored plan.
+  if (!ctxErr) {
     const parsed = parseStrengthProfile(data.profile_json)
-    if (parsed.ok) {
-      const built = await buildAndSave(supabase, user.id, parsed.profile, ctx, startDateFor(data, new Date()))
-      if (built.ok) { plan = built.plan; replaced = true }
+    const startDate = startDateFor(data, new Date())
+    const reach = parsed.ok ? storedPlanReach({ plan, sig: data.run_context_sig }, parsed.profile, ctx, startDate) : null
+    if (parsed.ok && reach) {
+      const built = await buildAndSave(supabase, user.id, parsed.profile, ctx, startDate, false, reach === 'engine_changed' ? startDate : undefined)
+      if (built.ok) {
+        plan = built.plan; replaced = true
+        if (reach === 'engine_changed') await recordOpsEvent('strength_plan_engine_rebuilt', {}, user.id)
+      }
     }
   }
   const [completions, recoveryEases, liftLogs] = await Promise.all([completionsFor(supabase, user.id), recoveryEasesFor(supabase, user.id), liftLogsFor(supabase, user.id)])
