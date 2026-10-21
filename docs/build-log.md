@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-21 — STRENGTH-ROW-OPEN-01 · count before you buy
+**Shipped:** The app now notes, without showing anything, when a runner opens an exercise row on a strength session.
+
+**Dev learning:** The event carries a catalogue id and nothing else; anything not in the catalogue is refused, so the table cannot fill with free text.
+
+**Product learning:** The SLT would not spend $499 on exercise demos with £0 revenue and one strength user. This is the number that decides it: if nobody opens a row for the cues, nobody will open it for an animation.
+
+**AI-building learning:** Two of the screen-side checks read the source rather than click a button, because the test runner has no browser. They can be fooled by a matching comment; the route arms cannot.
+
+**The honest bit:** It counts nothing until strength is released; today the only person who can open a row is the founder.
+
+---
+
 ## 2026-10-21 — STRENGTH-LEGS-DAY-GATE-01 · the gate earns its place
 **Shipped:** Nothing a runner sees changes. A check in the strength engine that looked redundant is now proven to stop a false suggestion.
 

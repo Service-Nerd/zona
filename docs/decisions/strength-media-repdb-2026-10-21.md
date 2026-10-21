@@ -54,3 +54,9 @@ never in the repo. Its licence is CC BY-NC 4.0 and says evaluation inside a comm
 - Files: masters 1.6–4.3 MB (960 px). Re-encoded animated WebP at 512 px: **757 KB–1.1 MB**, too heavy per open.
   Stills at 512 px: **19–24 KB**. MP4 not measured (no ffmpeg here); RepDB's figure is ~71 KB at 512 px on a solid
   background, which our fixed `--bg-soft` inset allows.
+
+**Local prototype of placement B (2026-10-21).** Throwaway worktree `proto/strength-media-local` in the session
+scratchpad (never pushed), `/strength-preview` case `media`, the four lifts recoloured at 512 px. At 375 × 667: the media
+box at the 200 px cap; an opened main-lift row is 455 px with the log panel, which fits beneath the pinned header when
+the row is scrolled to the top. The figure fills about 60% of the box. The widened match removed the orange fringe.
+Fixture artefact: rows inherit another exercise's dose line (e.g. "each side" on the front squat).
