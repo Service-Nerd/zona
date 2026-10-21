@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-21 — SESSION-SCREENS-WOW-01 (1a) · the run, drawn back to the runner
+**Shipped:** After you say how a run felt, the card now shows your heart rate against your ceiling and one sentence: "You held the zone.", or exactly when it got away from you. The same picture is the share image.
+
+**Dev learning:** The board ruled the trace into a paid card. Reading the code, the free card that already appears after you rate the run, on both logging paths, and is already the share image, was the right home. One placement satisfied four rulings.
+
+**Product learning:** Nothing on the trace is invented: the thresholds are the ones the coaching board set for praise and warnings in September, and an easy run is drawn as a ceiling, not a band, because that is what it is.
+
+**AI-building learning:** Two of the repo's own gates caught me: a substring check that would pass on a misspelled name, and a new pattern section that named no test. And a hooks-order check exists because a hook added after an early return once crashed this app.
+
+**The honest bit:** The only runner active this week logs by hand, so he would not see it. It is built for where the product is going, and nobody has seen it on a phone yet.
+
+---
+
 ## 2026-10-21 — STRENGTH-ROW-OPEN-01 · count before you buy
 **Shipped:** The app now notes, without showing anything, when a runner opens an exercise row on a strength session.
 
