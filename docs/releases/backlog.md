@@ -2410,6 +2410,20 @@ Release strength without media; the strength seat checks the free preview's form
 opens; buy RepDB Standard (+ female) once strength is on sale and row opens show demand. The 17 gaps are a separate
 decision. `docs/decisions/strength-media-slt-2026-10-21.md`.
 ✅ Demand measure built 2026-10-21 (`STRENGTH-ROW-OPEN-01`). Free preview evaluated the same day (form check, recolour, sizes, a local prototype of placement B): `docs/decisions/strength-media-repdb-2026-10-21.md`.
+
+**⏸️ PARKED 2026-10-21. Pick up here:**
+- **Founder, on seeing placement B on his phone (Safari, local prototype):** *"hmmmm i like that"*. No buy decision.
+- **The decision waiting:** follow the SLT (release strength without media, buy once `strength_exercise_opened`
+  shows runners opening rows), or overrule it and buy before launch. Founder's call either way.
+- **If buying:** RepDB Standard $499 + female $99, licensee in the company's name (email support after checkout).
+  Then: strength seat checks every clip we use in motion (the reverse lunge's sideways step first); MP4 export at
+  512 px (needs ffmpeg; RepDB quotes ~71 KB); recolour (`scripts/strength-media/recolour.py`); build placement B for
+  real (Design Board ruling: height-cap constant, still under reduced motion, load on open, the markup check); decide
+  what the 17 uncovered exercises get (none, or Custom from $999).
+- **Rebuild the evaluation from scratch:** `scripts/strength-media/README.md` (the preview files and the running
+  prototype lived in a session scratchpad and are gone with it).
+- **Records:** suppliers `strength-media-suppliers-2026-10-18.md` · RepDB in full `strength-media-repdb-2026-10-21.md` ·
+  placement `strength-media-placement-2026-10-21.md` · SLT `strength-media-slt-2026-10-21.md`.
 Researched 2026-10-18 (`docs/decisions/strength-media-suppliers-2026-10-18.md`): **no free source is shippable** as the
 main one (provenance or coverage); best value paid is RepDB Standard ($499 one-time, ~60% of our list). Nothing built:
 the player and slots wait on the decision so no unused plumbing ships. **Tags:** 👤 FOUNDER (supplier, spend) → 💼 SLT
