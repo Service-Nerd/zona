@@ -29,3 +29,28 @@ Read on repdb.co on 2026-10-21: pricing, FAQ, Standard License v1.2, and the pub
   database right. Movement accuracy needs a coaching check before shipping.
 - Sole operator (Berlin), German law, "as is".
 - Size: WebP masters ~3 MB each; their measured MP4 export ~71 KB at 512 px, ~175 KB at 960 px.
+
+## Free preview evaluated (2026-10-21)
+Preview bundle downloaded (171 MB, 181 files, `cdn.repdb.co/.../repdb-preview.zip`), kept in the session scratchpad,
+never in the repo. Its licence is CC BY-NC 4.0 and says evaluation inside a commercial organisation is fine; credit:
+"Exercise data & images: RepDB (https://repdb.co)". 22 exercises, male and female, 960 px animations.
+
+**Form check (six frames per loop, the strength seat's lens), on the four that match our lifts:**
+- Front squat: front rack, upright torso, depth to about parallel, heels down. **Pass.** Elbows sit near shoulder
+  height, a little lower than our cue ("Elbows high").
+- Single-arm row (theirs: one-arm kettlebell row, hand on bench): hinge with a neutral back, elbow drives to the hip.
+  **Pass** for our dumbbell row.
+- Pull-up: dead hang to chin over bar, legs still. **Pass.**
+- Reverse lunge (theirs: barbell): the bottom is good (back knee near the floor, front shin near vertical), but in the
+  transition frames the stepping leg swings **out to the side** rather than straight back. **Caveat:** check in motion
+  before using; and theirs is barbell-loaded where ours is bodyweight or dumbbells.
+- Sample of the rest: bent-over dumbbell row has the head craned up (a minor neck cue we would not teach).
+- ⚠️ A frame check by the modelled seat, not a coach watching the clips in motion on a phone.
+
+**Cost measured:**
+- Recolour of the orange highlight to `--s-strength` with a 40-line Pillow script: **2.8–4.7 s per clip** at 512 px.
+  The muscles still read on the grey figure. A thin orange fringe survives on anti-aliased edges: the threshold needs
+  tuning (or RepDB's own script).
+- Files: masters 1.6–4.3 MB (960 px). Re-encoded animated WebP at 512 px: **757 KB–1.1 MB**, too heavy per open.
+  Stills at 512 px: **19–24 KB**. MP4 not measured (no ffmpeg here); RepDB's figure is ~71 KB at 512 px on a solid
+  background, which our fixed `--bg-soft` inset allows.
