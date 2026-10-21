@@ -47,6 +47,23 @@ plans hold a no-leg week (worst 14). Extend S3 Am.2 + `S-LEGS-EVERY-WEEK` to Gen
 Engine stamps `legs_day_suggestion`; one line on setup and the consent screen. Draft: *"Lift on Tuesday after your
 quality run and your legs get a proper session."*
 
+### 🔲 `STRENGTH-LEGS-DAY-FIRST-BUILD-01` — a first strength build never shows the legs-day line 🧭 **DESIGN BOARD** *(filed 2026-10-21)*
+
+The line shows in two places: the setup note, which needs a stored plan's notes (`planNotes` and `legsDay` both come
+from `strength.plan`), and the consent screen, which is skipped when there is no plan
+(`handleStrengthSetupSave`: `if (!before) return commitStrength(profile, null)`). So a runner who picks legs-limited
+days on a first build lands on Plan without hearing that another day would get them a proper leg session. They only
+see the line if they reopen setup. Measured in code 2026-10-21, not on a device. Question for the board: does the line
+belong on the first-build landing (the Plan readback), or is reopening setup enough?
+
+### 🔲 `STRENGTH-LEGS-DAY-GATE-01` — the legs-limited gate on the legs-day suggestion has never been the deciding condition ⚙️ **NO BOARD** (🧭 Design Board only if the gate is dropped) *(filed 2026-10-21)*
+
+`packages/strength/generate.ts` returns no suggestion unless `notes.has('legs_limited_by_run_week')`. That is the
+scope the board ruled, but no constructed calendar has yet made it the deciding condition: the day comparison agreed on
+every case tried on 2026-10-19 (the code comment says so). No test turns the gate off and fails. Build a case where the
+gate decides and test both directions, or show that none exists; if none does, the board decides whether to keep the
+gate as scope or drop it.
+
 ### ✅ `STRENGTH-SESSION-TITLE-01` — **SHIPPED 2026-10-19.** A strength session is named by what it holds ⚙️ **NO BOARD** (titles approved by the founder)
 
 A full body with no upper work read "Full body"; one with light leg work read "Upper body". `strengthSessionTitle()` in
