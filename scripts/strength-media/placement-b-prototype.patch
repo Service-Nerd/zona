@@ -1,0 +1,105 @@
+diff --git a/app/strength-preview/page.tsx b/app/strength-preview/page.tsx
+index 50102055..0a3dfd39 100644
+--- a/app/strength-preview/page.tsx
++++ b/app/strength-preview/page.tsx
+@@ -26,7 +26,7 @@ import { strengthSubtitle } from '@/components/shared/meDoors'
+ const plan = harnessPlanJson as unknown as Plan
+ // TodayScreen's optional handlers are not needed for a look; fixture props only.
+ const Today = TodayScreen as unknown as (p: Record<string, unknown>) => JSX.Element
+-const CASES = ['today', 'session', 'plan', 'setup', 'rest', 'sheet', 'double-today', 'double-plan', 'recovery', 'strength-change'] as const
++const CASES = ['today', 'session', 'plan', 'setup', 'rest', 'sheet', 'double-today', 'double-plan', 'recovery', 'strength-change', 'media'] as const
+ 
+ /** Shift the harness plan so its current week contains today, as a live runner's would. */
+ function livePlan(): Plan {
+@@ -96,6 +96,23 @@ export default function StrengthPreviewPage() {
+           lifts={{ suggestions: liftSuggestionsFor(strength, todayS, liftLogs, {}), today: logsOn(liftLogs, todayS.date), units: 'km',
+             onLog: async (id, kg, feel) => { setLiftLogs(x => [...x.filter(l => !(l.date === todayS.date && l.exercise_id === id)), { date: todayS.date!, exercise_id: id, load_kg: kg, feel, counts: true }]); return true } }} />
+       )}
++      {c === 'media' && todayS && (() => {
++        // PROTOTYPE ONLY: the four catalogue lifts in RepDB's free preview, recoloured to --s-strength, CC BY-NC
++        // (evaluation). Exercise data & images: RepDB (https://repdb.co).
++        const MAP: Record<string, string> = { front_squat: 'front-squat', reverse_lunge_loaded: 'barbell-reverse-lunge', single_arm_dumbbell_row: 'one-arm-kettlebell-row', pull_up: 'pull-up' }
++        const main = todayS.blocks.find(b => b.role === 'main')!
++        const template = main.items[0]
++        const items = Object.keys(MAP).map((id, i) => ({ ...(main.items[i] ?? template), exercise_id: id }))
++        const s = { ...todayS, kind: 'full_body' as const, blocks: todayS.blocks.map(b => b.role === 'main' ? { ...b, items } : b) }
++        const media = Object.fromEntries(Object.entries(MAP).map(([id, slug]) => [id, { still: `/proto-repdb/${slug}-start-512.webp`, anim: `/proto-repdb/${slug}-512.webp` }]))
++        return (
++          <>
++            <StrengthSessionScreen session={s} dayLabel="Today" weekN={s.week_n} status={null} canLog onBack={() => setC('today')} onSetStatus={async () => true}
++              lifts={{ suggestions: liftSuggestionsFor(strength, s, liftLogs, {}), today: logsOn(liftLogs, s.date), units: 'km', onLog: async () => true }} media={media} />
++            <p style={{ fontSize: '11px', color: 'var(--mute)', padding: '0 16px 24px' }}>Prototype. Exercise data &amp; images: RepDB (https://repdb.co), preview licence CC BY-NC 4.0.</p>
++          </>
++        )
++      })()}
+       {c === 'plan' && (
+         <PlanCalendar weeks={run.weeks} allOverrides={[]} allCompletions={{}} onOverrideChange={() => {}} onSessionTap={() => {}}
+           strength={{ sessionsByDate: byDate, completions, onOpen: () => setC('session') }} />
+diff --git a/components/dashboard/StrengthSessionScreen.tsx b/components/dashboard/StrengthSessionScreen.tsx
+index 9a55af1a..394d210d 100644
+--- a/components/dashboard/StrengthSessionScreen.tsx
++++ b/components/dashboard/StrengthSessionScreen.tsx
+@@ -47,7 +47,11 @@ export interface LiftLogging {
+   onLog?: (exerciseId: string, loadKg: number | null, feel: LiftFeel) => Promise<boolean>
+ }
+ 
+-function ExerciseRow({ num, item, logging, onOpen }: { num: number; item: Prescription; logging?: LiftLogging; onOpen?: () => void }) {
++// PROTOTYPE ONLY (STRENGTH-MEDIA-01 placement B, local branch, never pushed): RepDB preview media in an opened row.
++export type ExerciseMedia = { still: string; anim: string }
++const MEDIA_MAX_HEIGHT_PX = 200
++
++function ExerciseRow({ num, item, logging, onOpen, media }: { num: number; item: Prescription; logging?: LiftLogging; onOpen?: () => void; media?: ExerciseMedia }) {
+   const [open, setOpen] = useState(false)
+   const cues = exerciseCues(item.exercise_id)
+   const support = effortLine(item)
+@@ -82,6 +86,12 @@ function ExerciseRow({ num, item, logging, onOpen }: { num: number; item: Prescr
+           {suggestion && (
+             <span data-lift-suggestion style={{ display: 'block', fontSize: '12px', fontWeight: 400, color: 'var(--ink-2)', marginTop: '3px', lineHeight: 1.4, fontVariantNumeric: 'tabular-nums' }}>{suggestion}</span>
+           )}
++          {open && media && (
++            <picture style={{ display: 'block', marginTop: 'var(--space-2)' }}>
++              <source srcSet={media.still} media="(prefers-reduced-motion: reduce)" />
++              <img src={media.anim} alt={`${exerciseName(item.exercise_id)} demonstration`} style={{ display: 'block', width: '100%', height: `${MEDIA_MAX_HEIGHT_PX}px`, objectFit: 'contain', background: 'var(--bg-soft)', borderRadius: '10px' }} />
++            </picture>
++          )}
+           {open && cues.length > 0 && (
+             <span style={{ display: 'block', marginTop: 'var(--space-2)' }}>
+               {cues.map(c => (
+@@ -131,13 +141,13 @@ export function LiftLogPanel({ item, logging }: { item: Prescription; logging: L
+   )
+ }
+ 
+-function BlockCard({ block, mobilitySession, logging, onOpen }: { block: Block; mobilitySession: boolean; logging?: (exerciseId: string) => LiftLogging | undefined; onOpen?: (exerciseId: string) => void }) {
++function BlockCard({ block, mobilitySession, logging, onOpen, media }: { block: Block; mobilitySession: boolean; logging?: (exerciseId: string) => LiftLogging | undefined; onOpen?: (exerciseId: string) => void; media?: Record<string, ExerciseMedia> }) {
+   const prep = block.role === 'warmup' || block.role === 'mobility'
+   const name = mobilitySession && block.role === 'mobility' ? STRENGTH_KIND_TITLE.mobility : STRENGTH_BLOCK_TITLE[block.role]
+   const n = block.items.length
+   return (
+     <StepSection name={name} accent={prep ? 'var(--moss)' : ACCENT} tintPct={8} totalStr={`${n} ${n === 1 ? 'exercise' : 'exercises'}`} zoneStr="">
+-      {block.items.map((item, i) => <ExerciseRow key={`${item.exercise_id}-${i}`} num={i + 1} item={item} logging={block.role === 'main' ? logging?.(item.exercise_id) : undefined} onOpen={onOpen && (() => onOpen(item.exercise_id))} />)}
++      {block.items.map((item, i) => <ExerciseRow key={`${item.exercise_id}-${i}`} num={i + 1} item={item} logging={block.role === 'main' ? logging?.(item.exercise_id) : undefined} onOpen={onOpen && (() => onOpen(item.exercise_id))} media={media?.[item.exercise_id]} />)}
+     </StepSection>
+   )
+ }
+@@ -168,9 +178,11 @@ export interface StrengthSessionScreenProps {
+   lifts?: { suggestions: Record<string, LiftSuggestion>; today: Record<string, LiftLog>; units: 'km' | 'mi'; onLog?: LiftLogging['onLog'] }
+   /** STRENGTH-ROW-OPEN-01 — called the first time each exercise row is opened on this visit (the demand measure). */
+   onExerciseOpen?: (exerciseId: string) => void
++  /** PROTOTYPE ONLY. */
++  media?: Record<string, ExerciseMedia>
+ }
+ 
+-export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus, note = null, lifts, onExerciseOpen }: StrengthSessionScreenProps) {
++export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus, note = null, lifts, onExerciseOpen, media }: StrengthSessionScreenProps) {
+   // Once per exercise per visit: reopening a row to re-read a cue is not a second look-up.
+   const opened = useRef(new Set<string>())
+   const onOpen = onExerciseOpen && ((id: string) => { if (opened.current.has(id)) return; opened.current.add(id); onExerciseOpen(id) })
+@@ -217,7 +229,7 @@ export default function StrengthSessionScreen({ session, dayLabel, weekN, status
+           </div>
+         )}
+ 
+-        {session.blocks.map((b, i) => <BlockCard key={`${b.role}-${i}`} block={b} mobilitySession={mobility} onOpen={onOpen}
++        {session.blocks.map((b, i) => <BlockCard key={`${b.role}-${i}`} block={b} mobilitySession={mobility} onOpen={onOpen} media={media}
+           logging={lifts ? id => ({ suggestion: lifts.suggestions[id], today: lifts.today[id], units: lifts.units, onLog: canLog ? lifts.onLog : undefined }) : undefined} />)}
+ 
+         {canLog && (
