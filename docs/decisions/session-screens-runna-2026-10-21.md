@@ -380,3 +380,81 @@ one new piece of copy.
 the card and the log action (*gate richness, never access*). **Risks:** the free trace removes one paid-only visual
 from the post-run screen; with no conversion data there is no way to know whether that matters (Traynor's absence,
 stated rather than guessed).
+
+---
+
+## Part 7 — Coaching Board: when each trace sentence applies (2026-10-21)
+
+**Founder, on the three sentences:** *"1 = yes"* (approved) and *"yes run the board"*.
+**Trigger:** soft, qualifies. The sentences make claims about a runner's effort, and their thresholds are coaching
+numerics (Configuration Singularity), so they are this board's even though no doctrine file has been touched yet.
+**Proposed:** pick the sentence from the run's time above its ceiling, plus, for the late-drift line, when the first
+sustained excursion began.
+
+### 🔍 Conflict scan (amendments read, not just headings)
+- **§12 Am.1 (`ZONE_DRIFT_ABOVE_CEILING_PCT` = 20):** drift is **directional**, time *above the ceiling*, never a band.
+  The accusation sentence must use this, unchanged.
+- **§12 Am.2 (`ZONE_HELD_MAX_ABOVE_CEILING_PCT` = 10):** *"a one-sided rule does not invert into one-sided praise"*.
+  Praise is stricter than the absence of a warning. **"You held the zone." is praise**, so it takes 10, not 20.
+- **§12 (the easy cap):** easy, long and recovery runs are a ceiling; the prototype's band-with-a-floor was wrong and
+  is already fixed (Part 3).
+- **P-04 (Hutchinson, 2026-09-20):** *"we cannot tell 'ran too hard' from 'ran up a hill in August'"*. A sentence may
+  state **what happened**, never **why**.
+- **SLT 2026-09-20 (`zoneVerdictLabel` returns null):** the *pill* lost its words. These sentences are not the pill;
+  they carry the run's own numbers. No conflict, but the pill stays wordless.
+- **§108:** no composite score. None proposed.
+- **Instrument:** the trace's own above-ceiling share matches the stored analysis closely (131 rich traces, 13 runners:
+  median |difference| **0.8 points**, p90 **4.8**), but p90 is enough to flip a run across 10 or 20.
+
+### 📐 Measured
+- Live analyses with HR: **76, from 2 runners**: 70 at ≤10% above (praise), 3 between 10 and 20 (neither), 3 over 20
+  (drifted). Thin, and declared as thin.
+- Rich traces treated as easy runs (131, 13 runners; overstated, since some are quality sessions): of those over 20%,
+  **11 had the first sustained (3-minute) excursion after 40% of the run**; most drift starts early.
+
+### Seats
+- **🏃 Hutchinson (chair).** Use the thresholds this board already ratified; inventing a third pair for a new surface
+  is how two screens end up disagreeing about the same run. **The pill and the sentence must never disagree**, so
+  when the run has an analysis, its `hr_above_ceiling_pct` decides, and the trace supplies only *timing*. "Then it got
+  away from you" states what happened. It does not say why, and it must not grow a cause.
+- **📊 Seiler.** Directional, yes. On the late line: cardiac drift on a long easy run is real physiology, and on most
+  runs over about 90 minutes heart rate will creep at the same pace. That is exactly what this product asks the runner
+  to answer by slowing down, so the sentence is right to name it. The onset rule should be a fraction of the run, not
+  a clock time, so a 40-minute run and a 2-hour run are read alike.
+- **🎯 McMillan.** This is how a coach talks. Keep the in-between band silent on judgement: a runner at 14% above has
+  done nothing wrong and nothing remarkable, so state the minutes and stop. And if a run has no analysis (a free runner,
+  since the trace is free), compute from the trace, the same way, from one function.
+- **🩹 Willy.** No load claim here. One note: a three-minute sustained excursion as the onset test keeps a hill from
+  being called a drift, which is the injury-free version of Hutchinson's August hill.
+- **⚕️ Sims.** Heat, illness and the luteal phase all lift heart rate a few beats with no change in effort, and we
+  cannot see any of them. That is why the sentences must say what happened and never imply fault; "got away from
+  you" passes, "you pushed too hard" would not.
+- **💪 Blagrove.** No objection from this seat.
+
+**Recorded disagreement:** none on the rule. Seiler would add a heat note one day; there is no temperature-aware
+copy and none is proposed.
+
+### ⚖️ Ruling: CORRECT WITH AMENDMENT
+| Time above the ceiling | Sentence | Rule |
+|---|---|---|
+| **≤ 10%** (`ZONE_HELD_MAX_ABOVE_CEILING_PCT`) | **"You held the zone."** | §12 Am.2 praise ceiling, reused |
+| **> 10% and ≤ 20%** | **"Over your ceiling for {m} of {n} minutes."** (the factual first half of the approved line, no judgement) | Neither praise nor warning |
+| **> 20%** (`ZONE_DRIFT_ABOVE_CEILING_PCT`), the first sustained excursion **≥ `TRACE_SUSTAINED_ABOVE_S` (180 s)** starting **at or after `TRACE_LATE_ONSET_FRACTION` (0.4)** of the run, and ≤ 10% above before it | **"You held it for {m} minutes, then it got away from you."** | Timing from the trace |
+| **> 20%**, any other shape | **"Above your ceiling for {m} of {n} minutes. Easy days need to feel easy."** on easy, long and recovery runs; the first sentence only on quality | §12 Am.1, reused |
+
+- **One owner of the share:** the run's analysis (`hr_above_ceiling_pct`) when it exists, so the pill colour and the
+  sentence always agree; otherwise computed from the trace by the same smoothing (`TRACE_SMOOTHING_S` = 30 s, the
+  prototype's window, now named). The trace is always the source of the *minutes* in the late line.
+- **Words never state a cause.** No "too hard", no "pushed", no "ran too fast".
+- ⚠️ The in-between sentence is the first half of an approved sentence; flagged to the founder rather than assumed.
+
+### 📦 Artifacts (with phase 1, in one commit)
+1. **Principle:** §12 Amendment 3, *the trace sentence*: the table above, the one-owner rule, the no-cause rule.
+2. **Numerics:** `TRACE_SUSTAINED_ABOVE_S`, `TRACE_LATE_ONSET_FRACTION`, `TRACE_SMOOTHING_S` in `lib/coaching/constants.ts`,
+   reusing the two ratified thresholds rather than copying them.
+3. **Check:** not a `validatePlan()` invariant (it reads a run, not a plan). A unit test that every sentence comes from
+   the selector, that each row of the table is reachable, that a run at exactly 10 and 20 lands where §12 says, and that
+   with an analysis present the sentence and `zoneVerdict` never disagree; plus a check that no trace sentence names a
+   cause. Falsified by moving a threshold.
+
+**SLT escalation:** none.

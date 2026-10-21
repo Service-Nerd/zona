@@ -49,6 +49,14 @@ slot was a Nordic curl 25% of the time; the Nordic curl, hamstring curl and kett
 🔴 **Not the catalogue's, and still open:** a runner's first jump is bounding or a drop jump (`STRENGTH-PLYO-BUDGET-01`).
 Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 
+## 2026-10-21 — SESSION-SCREENS-WOW-01 (trace sentences) · CORRECT WITH AMENDMENT (reuse §12's two thresholds)
+
+*"You held the zone."* only at ≤10% above the ceiling (§12 Am.2 praise); >10–20% states the minutes with no
+judgement; >20% (§12 Am.1) is the late-drift line when a 3-minute excursion starts after 40% of the run, else *"Above your
+ceiling … Easy days need to feel easy."* (second half on easy, long and recovery only). The run's analysis decides the
+share when present, so the pill and the sentence never disagree; the trace supplies timing. No sentence names a cause
+(P-04). Not built; artifacts land with phase 1. Sitting: `docs/decisions/session-screens-runna-2026-10-21.md` Part 7.
+
 ## 2026-10-19 — STRENGTH-GENERAL-LEGS-01 · CORRECT WITH AMENDMENT (General focus keeps leg work)
 
 S3 Am.2's light leg work and `S-LEGS-EVERY-WEEK` apply to General focus too. Measured: 255 of 448 General chosen-day
