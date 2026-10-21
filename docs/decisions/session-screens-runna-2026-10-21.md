@@ -446,7 +446,7 @@ copy and none is proposed.
   sentence always agree; otherwise computed from the trace by the same smoothing (`TRACE_SMOOTHING_S` = 30 s, the
   prototype's window, now named). The trace is always the source of the *minutes* in the late line.
 - **Words never state a cause.** No "too hard", no "pushed", no "ran too fast".
-- ⚠️ The in-between sentence is the first half of an approved sentence; flagged to the founder rather than assumed.
+- ✅ The in-between sentence: founder approved 2026-10-21 (*"1. Yes."*).
 
 ### 📦 Artifacts (with phase 1, in one commit)
 1. **Principle:** §12 Amendment 3, *the trace sentence*: the table above, the one-owner rule, the no-cause rule.
