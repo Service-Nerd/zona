@@ -13,7 +13,7 @@
 
 import EasedMark from '@/components/shared/EasedMark'
 import { isEasedForRecovery } from '@/lib/ui/easedMark'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import Button from '@/components/ui/Button'
@@ -47,7 +47,7 @@ export interface LiftLogging {
   onLog?: (exerciseId: string, loadKg: number | null, feel: LiftFeel) => Promise<boolean>
 }
 
-function ExerciseRow({ num, item, logging }: { num: number; item: Prescription; logging?: LiftLogging }) {
+function ExerciseRow({ num, item, logging, onOpen }: { num: number; item: Prescription; logging?: LiftLogging; onOpen?: () => void }) {
   const [open, setOpen] = useState(false)
   const cues = exerciseCues(item.exercise_id)
   const support = effortLine(item)
@@ -57,7 +57,7 @@ function ExerciseRow({ num, item, logging }: { num: number; item: Prescription; 
     <div style={{ position: 'relative', zIndex: 1, borderTop: '1px solid var(--line)', background: 'var(--card)' }}>
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={() => { if (!open) onOpen?.(); setOpen(o => !o) }}
         aria-expanded={open}
         style={{
           display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
@@ -131,13 +131,13 @@ export function LiftLogPanel({ item, logging }: { item: Prescription; logging: L
   )
 }
 
-function BlockCard({ block, mobilitySession, logging }: { block: Block; mobilitySession: boolean; logging?: (exerciseId: string) => LiftLogging | undefined }) {
+function BlockCard({ block, mobilitySession, logging, onOpen }: { block: Block; mobilitySession: boolean; logging?: (exerciseId: string) => LiftLogging | undefined; onOpen?: (exerciseId: string) => void }) {
   const prep = block.role === 'warmup' || block.role === 'mobility'
   const name = mobilitySession && block.role === 'mobility' ? STRENGTH_KIND_TITLE.mobility : STRENGTH_BLOCK_TITLE[block.role]
   const n = block.items.length
   return (
     <StepSection name={name} accent={prep ? 'var(--moss)' : ACCENT} tintPct={8} totalStr={`${n} ${n === 1 ? 'exercise' : 'exercises'}`} zoneStr="">
-      {block.items.map((item, i) => <ExerciseRow key={`${item.exercise_id}-${i}`} num={i + 1} item={item} logging={block.role === 'main' ? logging?.(item.exercise_id) : undefined} />)}
+      {block.items.map((item, i) => <ExerciseRow key={`${item.exercise_id}-${i}`} num={i + 1} item={item} logging={block.role === 'main' ? logging?.(item.exercise_id) : undefined} onOpen={onOpen && (() => onOpen(item.exercise_id))} />)}
     </StepSection>
   )
 }
@@ -166,9 +166,14 @@ export interface StrengthSessionScreenProps {
   note?: string | null
   /** STRENGTH-PROGRESSION-01 — suggestions + today's logs per main lift, and the save. Absent: no logging. */
   lifts?: { suggestions: Record<string, LiftSuggestion>; today: Record<string, LiftLog>; units: 'km' | 'mi'; onLog?: LiftLogging['onLog'] }
+  /** STRENGTH-ROW-OPEN-01 — called the first time each exercise row is opened on this visit (the demand measure). */
+  onExerciseOpen?: (exerciseId: string) => void
 }
 
-export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus, note = null, lifts }: StrengthSessionScreenProps) {
+export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus, note = null, lifts, onExerciseOpen }: StrengthSessionScreenProps) {
+  // Once per exercise per visit: reopening a row to re-read a cue is not a second look-up.
+  const opened = useRef(new Set<string>())
+  const onOpen = onExerciseOpen && ((id: string) => { if (opened.current.has(id)) return; opened.current.add(id); onExerciseOpen(id) })
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
   const mobility = session.kind === 'mobility'
@@ -212,7 +217,7 @@ export default function StrengthSessionScreen({ session, dayLabel, weekN, status
           </div>
         )}
 
-        {session.blocks.map((b, i) => <BlockCard key={`${b.role}-${i}`} block={b} mobilitySession={mobility}
+        {session.blocks.map((b, i) => <BlockCard key={`${b.role}-${i}`} block={b} mobilitySession={mobility} onOpen={onOpen}
           logging={lifts ? id => ({ suggestion: lifts.suggestions[id], today: lifts.today[id], units: lifts.units, onLog: canLog ? lifts.onLog : undefined }) : undefined} />)}
 
         {canLog && (

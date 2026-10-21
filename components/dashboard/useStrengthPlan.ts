@@ -139,7 +139,14 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
     } catch { return false }
   }, [])
 
-  return { strength: state, reloadStrength: load, saveStrength: save, previewStrength: preview, setStrengthCompletion: setCompletion, setStrengthRecoveryAnswer: setRecoveryAnswer, setStrengthLiftLog: setLiftLog }
+  // STRENGTH-ROW-OPEN-01 — fire and forget: a lost count must never cost the runner anything.
+  const recordExerciseOpened = useCallback((exerciseId: string) => {
+    authedFetch('/api/strength/opened', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ exercise_id: exerciseId }),
+    }).catch(() => {})
+  }, [])
+
+  return { strength: state, reloadStrength: load, saveStrength: save, previewStrength: preview, setStrengthCompletion: setCompletion, setStrengthRecoveryAnswer: setRecoveryAnswer, setStrengthLiftLog: setLiftLog, recordStrengthExerciseOpened: recordExerciseOpened }
 }
 
 /**

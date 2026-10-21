@@ -79,6 +79,9 @@ export type OpsEventKind =
   // STRENGTH-ENGINE-REACH-01 (2026-10-21) — a stored strength plan was rebuilt on read because the engine now builds
   // something else from the same inputs. No payload: the user id is the row.
   | 'strength_plan_engine_rebuilt'
+  // STRENGTH-ROW-OPEN-01 (2026-10-21) — a runner opened an exercise row on the strength session screen, once per
+  // exercise per visit: the SLT's demand measure for demo media. Payload: the catalogue id only.
+  | 'strength_exercise_opened'
   // PLAN-SAVE-SILENT-FAIL-01 (2026-10-15) — the runner tapped "Use this plan" on a
   // freshly generated plan and the save threw IN THE BROWSER. Reported by the client
   // via /api/ops/plan-save-report, because `GeneratePlanScreen.handleUsePlan`'s catch

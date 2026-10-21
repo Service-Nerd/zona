@@ -585,7 +585,7 @@ export default function DashboardClient() {
   // STRENGTH-APP-01 — the strength plan, fetched once here and passed down so Today,
   // Plan, Me and the session screen read ONE copy. The client check only decides
   // whether to ask; the server's gate decides whether to answer.
-  const { strength, reloadStrength, saveStrength, previewStrength, setStrengthCompletion, setStrengthRecoveryAnswer, setStrengthLiftLog } = useStrengthPlan(
+  const { strength, reloadStrength, saveStrength, previewStrength, setStrengthCompletion, setStrengthRecoveryAnswer, setStrengthLiftLog, recordStrengthExerciseOpened } = useStrengthPlan(
     canUseStrength({ isAdmin, tier: hasPaidAccess ? 'paid' : 'free' }), plan,
   )
   const [activeStrength, setActiveStrength] = useState<StrengthSession | null>(null)
@@ -3227,6 +3227,7 @@ export default function DashboardClient() {
               onBack={() => setScreen(strengthOrigin)}
               onSetStatus={(st) => activeStrength.date ? setStrengthCompletion(activeStrength.date, st) : Promise.resolve(false)}
               note={strengthNote}
+              onExerciseOpen={recordStrengthExerciseOpened}
             />
           )
         })()}
