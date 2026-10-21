@@ -1,0 +1,270 @@
+'use client'
+// PROTOTYPE ONLY — SESSION-SCREENS-WOW-01 (Design Board 2026-10-21, "prototype first"). Local throwaway branch,
+// never pushed. Four real heart-rate traces, de-identified (seconds from start + bpm only), and the harness plan's
+// real sessions. Nothing here is wired to the app.
+
+import { useMemo, useState } from 'react'
+import { notFound } from 'next/navigation'
+import harnessPlanJson from '@/components/dashboard/__fixtures__/harnessPlan.json'
+import runsJson from './runs.json'
+
+type Run = {
+  session_type: string; zone: string; band: { lo: number; hi: number }; distance_km: number; moving_time_s: number
+  avg_hr: number | null; verdict: string; hr_in_zone_pct: number; hr_above_ceiling_pct: number; samples: [number, number][]
+}
+type Step = { role: string; modality: string; length: string; pace: string | null; zone?: string; note?: string }
+type Block = { repeat: number; label?: string; steps: Step[] }
+type Session = { label?: string; type: string; zone?: string; distance_km?: number; duration_mins?: number; derived_set?: { blocks: Block[] }; coach_notes?: string[] }
+
+const runs = (runsJson as { runs: Run[] }).runs
+const plan = harnessPlanJson as unknown as { weeks: { n: number; sessions: Record<string, Session | null> }[] }
+const FONT = 'var(--font-ui)'
+const COLOUR: Record<string, string> = { easy: 'var(--s-easy)', long: 'var(--s-long)', quality: 'var(--s-quality)', intervals: 'var(--s-inter)', recovery: 'var(--s-recov)' }
+const RAIL_PX = 6
+
+// ── Zone Trace ──────────────────────────────────────────────────────────────────────────────────────────────────
+function smooth(samples: [number, number][], win = 30): [number, number][] {
+  const out: [number, number][] = []
+  let j = 0, sum = 0
+  for (let i = 0; i < samples.length; i++) {
+    sum += samples[i][1]
+    while (samples[i][0] - samples[j][0] > win) { sum -= samples[j][1]; j++ }
+    out.push([samples[i][0], sum / (i - j + 1)])
+  }
+  return out
+}
+
+function traceRead(s: [number, number][], band: { lo: number; hi: number }) {
+  const total = s[s.length - 1][0] - s[0][0]
+  let inBand = 0, above = 0, firstLongExit: number | null = null, runAbove = 0
+  for (let i = 1; i < s.length; i++) {
+    const dt = s[i][0] - s[i - 1][0], v = s[i][1]
+    if (v > band.hi) { above += dt; runAbove += dt; if (runAbove > 180 && firstLongExit == null) firstLongExit = s[i][0] - runAbove } else { runAbove = 0 }
+    if (v >= band.lo && v <= band.hi) inBand += dt
+  }
+  const m = (x: number) => Math.round(x / 60)
+  const sentence = above / total < 0.1
+    ? `You held it. ${m(inBand + (total - inBand - above))} of ${m(total)} minutes at or under your ceiling.`
+    : firstLongExit != null && firstLongExit / total > 0.4
+      ? `You held it for ${m(firstLongExit)} minutes, then it got away from you.`
+      : `Above your ceiling for ${m(above)} of ${m(total)} minutes. Easy days need to feel easy.`
+  return { sentence, totalMin: m(total) }
+}
+
+function ZoneTrace({ run, colour, height = 132 }: { run: Run; colour: string; height?: number }) {
+  const W = 343, H = height, PAD = 6
+  const s = useMemo(() => smooth(run.samples), [run])
+  const t0 = s[0][0], t1 = s[s.length - 1][0]
+  const vMin = Math.min(run.band.lo - 18, ...s.map(x => x[1])), vMax = Math.max(run.band.hi + 14, ...s.map(x => x[1]))
+  // An easy, long or recovery run is prescribed as a CEILING (§12): everything under it is held. Only quality has a floor.
+  const lo = ['easy', 'long', 'recovery'].includes(run.session_type) ? vMin : run.band.lo
+  const x = (t: number) => PAD + ((t - t0) / (t1 - t0)) * (W - 2 * PAD)
+  const y = (v: number) => PAD + (1 - (v - vMin) / (vMax - vMin)) * (H - 2 * PAD)
+  // Split the line into runs of the same state so off-band stretches change colour.
+  const segs: { state: 'in' | 'above' | 'below'; pts: string }[] = []
+  for (let i = 0; i < s.length; i++) {
+    const v = s[i][1], st = v > run.band.hi ? 'above' : v < lo ? 'below' : 'in'
+    const p = `${x(s[i][0]).toFixed(1)},${y(v).toFixed(1)}`
+    const last = segs[segs.length - 1]
+    if (!last || last.state !== st) { if (last) last.pts += ` ${p}`; segs.push({ state: st, pts: p }) } else last.pts += ` ${p}`
+  }
+  const stroke = { in: colour, above: 'var(--warn)', below: 'var(--mute)' }
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Your heart rate against the zone you were set" style={{ display: 'block' }}>
+      <rect x={PAD} y={y(run.band.hi)} width={W - 2 * PAD} height={y(lo) - y(run.band.hi)} rx={6} fill={colour} fillOpacity={0.14} />
+      <line x1={PAD} x2={W - PAD} y1={y(run.band.hi)} y2={y(run.band.hi)} stroke={colour} strokeOpacity={0.5} strokeDasharray="3 4" />
+      {segs.map((g, i) => <polyline key={i} points={g.pts} fill="none" stroke={stroke[g.state]} strokeWidth={2.25} strokeLinejoin="round" strokeLinecap="round" />)}
+      <text x={PAD + 2} y={y(run.band.hi) - 5} textAnchor="start" fontSize="10" fontFamily="Inter, sans-serif" fill="var(--mute)">ceiling {run.band.hi}</text>
+    </svg>
+  )
+}
+
+// ── Silhouette: width = time, height = effort ───────────────────────────────────────────────────────────────────
+const paceSecs = (p: string | null) => { const m = p?.match(/(\d+):(\d+)/); return m ? +m[1] * 60 + +m[2] : null }
+function stepMinutes(st: Step): number {
+  const t = st.length.match(/^(\d+)(?::(\d+))?\s*(min)?$/)
+  if (t && st.length.includes(':')) return +t[1] + +(t[2] ?? 0) / 60
+  const mins = st.length.match(/^(\d+(?:\.\d+)?)\s*min/); if (mins) return +mins[1]
+  const secs = st.length.match(/^(\d+)\s*s$/); if (secs) return +secs[1] / 60
+  const metres = st.length.match(/^(\d+)\s*m$/); const km = st.length.match(/^(\d+(?:\.\d+)?)\s*km$/)
+  const dist = metres ? +metres[1] / 1000 : km ? +km[1] : null
+  const pace = paceSecs(st.pace) ?? 420
+  return dist ? (dist * pace) / 60 : 5
+}
+function timeline(sess: Session): { min: number; effort: number; label: string }[] {
+  const out = [{ min: 10, effort: 0.32, label: 'Warm-up' }]
+  for (const b of sess.derived_set?.blocks ?? []) for (let r = 0; r < b.repeat; r++) for (const st of b.steps) {
+    const p = paceSecs(st.pace)
+    const effort = st.role === 'recovery' || st.modality !== 'run' ? 0.25 : p ? Math.max(0.35, Math.min(1, (480 - p) / 120)) : 0.6
+    out.push({ min: stepMinutes(st), effort, label: st.role })
+  }
+  out.push({ min: 8, effort: 0.25, label: 'Cool-down' })
+  return out
+}
+function Silhouette({ sess, colour, height = 44 }: { sess: Session; colour: string; height?: number }) {
+  const tl = timeline(sess), total = tl.reduce((a, b) => a + b.min, 0), W = 343
+  let acc = 0
+  return (
+    <svg viewBox={`0 0 ${W} ${height}`} width="100%" height={height} aria-label="The shape of this session" role="img" style={{ display: 'block' }}>
+      {tl.map((t, i) => {
+        const w = (t.min / total) * W, h = Math.max(4, t.effort * height), xx = acc; acc += w
+        return <rect key={i} x={xx + 0.75} y={height - h} width={Math.max(1, w - 1.5)} height={h} rx={2} fill={colour} fillOpacity={t.label === 'work' ? 0.9 : 0.35} />
+      })}
+    </svg>
+  )
+}
+
+// ── Modality glyphs (prototype; the real set would join RowIcon's family) ──────────────────────────────────────
+function Modality({ m }: { m: string }) {
+  const common = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  if (m === 'walk' || m === 'stand') return <svg {...common}><circle cx="13" cy="4.5" r="1.8" /><path d="M11 9l-2 5 3 2 1 5M11 9l3 1 2 3M12 16l-3 5" /></svg>
+  if (m === 'jog') return <svg {...common}><circle cx="14" cy="4.5" r="1.8" /><path d="M10 10l3-1 2 3 3 1M12 9l-2 5 3 2-1 5M10 14l-4 2" /></svg>
+  return <svg {...common}><circle cx="15" cy="4" r="1.8" /><path d="M9 9l4-1 2 4 4 1M12 8l-3 6 4 2-2 6M9 14l-5 1" /></svg>
+}
+
+function StepRow({ n, st }: { n: number; st: Step }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '11px 13px', borderTop: '1px solid var(--line)', fontFamily: FONT }}>
+      <span style={{ width: '18px', fontSize: '14px', fontWeight: 800, fontStyle: 'italic', color: 'var(--mute)', textAlign: 'center' }}>{n}</span>
+      <span style={{ color: 'var(--ink-2)', paddingTop: '1px' }}><Modality m={st.modality} /></span>
+      <span style={{ flex: 1 }}>
+        <span style={{ fontSize: '15px', color: 'var(--ink)' }}><b style={{ fontWeight: 800 }}>{st.length}</b>{st.pace ? <> at <b style={{ fontWeight: 700 }}>{st.pace}</b></> : null}</span>
+        <span style={{ display: 'block', fontSize: '12px', color: 'var(--mute)', marginTop: '3px' }}>{st.note ?? (st.role === 'recovery' ? 'Easy jog. Let the breathing settle.' : 'Comfortably hard. Not all-out.')}</span>
+      </span>
+      <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--mute)', paddingTop: '4px' }}>{st.modality.toUpperCase()}</span>
+    </div>
+  )
+}
+
+function Group({ title, colour, extra, children }: { title: string; colour: string; extra?: string; children: React.ReactNode }) {
+  return (
+    <div style={{ background: 'var(--card)', borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--line)', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 13px', borderTop: `2px solid ${colour}`, fontFamily: FONT }}>
+        <span style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: colour }}>{title}</span>
+        {extra && <span style={{ fontSize: '12px', color: 'var(--mute)' }}>{extra}</span>}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function Numeral({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--mute)' }}>{label}</div>
+      <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', marginTop: '2px' }}>{value}</div>
+    </div>
+  )
+}
+
+const pace = (km: number, s: number) => { const p = s / km; return `${Math.floor(p / 60)}:${String(Math.round(p % 60)).padStart(2, '0')}` }
+const hm = (s: number) => { const m = Math.round(s / 60); return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}` : `${m} min` }
+
+function Mark({ label, on }: { label: string; on: boolean }) {
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: on ? 'var(--ink)' : 'var(--mute)' }}>
+      <span style={{ width: '18px', height: '18px', borderRadius: '50%', display: 'grid', placeItems: 'center', background: on ? 'var(--moss)' : 'transparent', border: on ? 'none' : '1.5px solid var(--mute)', color: 'var(--card)' }}>
+        {on && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10" /></svg>}
+      </span>{label}
+    </span>
+  )
+}
+
+function Logged({ run }: { run: Run }) {
+  const colour = COLOUR[run.session_type] ?? 'var(--s-easy)'
+  const read = traceRead(smooth(run.samples), run.band)
+  const easy = plan.weeks[4].sessions.mon ?? Object.values(plan.weeks[4].sessions).find(s => s?.type === 'easy')!
+  return (
+    <div style={{ fontFamily: FONT, background: 'var(--bg)', padding: '16px' }}>
+      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Logged · Easy run</div>
+      <h2 style={{ fontSize: '26px', fontWeight: 800, margin: '4px 0 14px', color: 'var(--ink)' }}>{run.distance_km.toFixed(1)}km easy</h2>
+      <div style={{ background: 'var(--card)', borderRadius: '16px', border: '1px solid var(--line)', borderLeft: `${RAIL_PX}px solid ${colour}`, padding: '14px 14px 12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, auto)', justifyContent: 'space-between' }}>
+          <Numeral label="Distance" value={`${run.distance_km.toFixed(1)}km`} />
+          <Numeral label="Time" value={hm(run.moving_time_s)} />
+          <Numeral label="Pace" value={pace(run.distance_km, run.moving_time_s)} />
+          <Numeral label="Avg HR" value={`${Math.round(run.avg_hr ?? 0)}`} />
+        </div>
+        <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)', margin: '16px 0 8px', lineHeight: 1.35 }}>{read.sentence}</p>
+        <ZoneTrace run={run} colour={colour} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--mute)', marginTop: '4px' }}><span>0</span><span>{read.totalMin} min</span></div>
+      </div>
+      <div style={{ display: 'flex', gap: '16px', margin: '14px 2px' }}>
+        <Mark label="Logged" on /><Mark label="Linked" on /><Mark label="Zone read" on />
+      </div>
+      <details style={{ marginTop: '8px' }}>
+        <summary style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink-2)', cursor: 'pointer', padding: '8px 2px' }}>What was planned</summary>
+        <Group title="Session" colour={colour} extra={`${easy?.distance_km ?? 8}km · Zone 2`}>
+          <StepRow n={1} st={{ role: 'work', modality: 'run', length: `${easy?.distance_km ?? 8}km`, pace: 'conversational', note: `Under ${run.band.hi} bpm the whole way.` }} />
+        </Group>
+      </details>
+    </div>
+  )
+}
+
+function Open({ sess }: { sess: Session }) {
+  const colour = COLOUR[sess.type] ?? 'var(--s-quality)'
+  const tl = timeline(sess), total = Math.round(tl.reduce((a, b) => a + b.min, 0))
+  let n = 0
+  return (
+    <div style={{ fontFamily: FONT, background: 'var(--bg)', padding: '16px' }}>
+      <div style={{ fontSize: '12px', fontWeight: 700, color: colour, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Wednesday · Quality</div>
+      <h2 style={{ fontSize: '26px', fontWeight: 800, margin: '4px 0 4px', color: 'var(--ink)' }}>{sess.label}</h2>
+      <div style={{ fontSize: '14px', color: 'var(--ink-2)', marginBottom: '12px' }}>{sess.zone} · {sess.distance_km}km · {total - 3}–{total + 3} min</div>
+      <div style={{ background: 'var(--card)', borderRadius: '14px', border: '1px solid var(--line)', padding: '12px 12px 8px', marginBottom: '12px' }}>
+        <Silhouette sess={sess} colour={colour} height={52} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--mute)', marginTop: '6px' }}><span>Warm-up</span><span>Main set</span><span>Cool-down</span></div>
+      </div>
+      <Group title="Warm-up" colour="var(--moss)" extra="10 min · Zone 1→2"><StepRow n={++n} st={{ role: 'work', modality: 'jog', length: '10 min', pace: null, note: 'Conversational. Finish in Zone 2.' }} /></Group>
+      {sess.derived_set!.blocks.map((b, i) => (
+        <Group key={i} title={b.repeat > 1 ? `Repeat ×${b.repeat}` : 'Main set'} colour={colour} extra={sess.zone}>
+          {b.steps.map((st, j) => <StepRow key={j} n={++n} st={st} />)}
+        </Group>
+      ))}
+      <Group title="Cool-down" colour="var(--mute)" extra="8 min · Zone 1"><StepRow n={++n} st={{ role: 'recovery', modality: 'walk', length: '8 min', pace: null, note: 'Walk or jog. Or slower.' }} /></Group>
+    </div>
+  )
+}
+
+function Closed({ sess }: { sess: Session }) {
+  const colour = COLOUR[sess.type] ?? 'var(--s-quality)'
+  const total = Math.round(timeline(sess).reduce((a, b) => a + b.min, 0))
+  return (
+    <div style={{ fontFamily: FONT, background: 'var(--bg)', padding: '16px' }}>
+      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '8px' }}>Today&apos;s session</div>
+      <div style={{ background: 'var(--card)', borderRadius: '16px', border: '1px solid var(--line)', borderLeft: `${RAIL_PX}px solid ${colour}`, padding: '13px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <span style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ink)' }}>{sess.label}</span>
+          <span style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ink)' }}>{sess.distance_km}km</span>
+        </div>
+        <div style={{ fontSize: '13px', color: 'var(--ink-2)', margin: '3px 0 10px' }}>{sess.zone} · {total - 3}–{total + 3} min</div>
+        <Silhouette sess={sess} colour={colour} height={30} />
+      </div>
+    </div>
+  )
+}
+
+const SESSIONS = plan.weeks.flatMap(w => Object.values(w.sessions)).filter((s): s is Session => !!s && s.type === 'quality' && !!s.derived_set)
+const UNIQUE = Array.from(new Map(SESSIONS.map(s => [s.label, s])).values())
+
+export default function SessionWowPreview() {
+  if (process.env.NODE_ENV === 'production') notFound()
+  const [ri, setRi] = useState(0)
+  const [si, setSi] = useState(0)
+  const [view, setView] = useState<'closed' | 'open' | 'logged'>('logged')
+  const btn = (on: boolean) => ({ fontFamily: FONT, fontSize: '12px', padding: '6px 10px', borderRadius: '20px', border: '1px solid var(--line)', background: on ? 'var(--ink)' : 'var(--card)', color: on ? 'var(--card)' : 'var(--ink)' })
+  return (
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', maxWidth: '430px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', padding: '10px 16px', borderBottom: '1px solid var(--line)' }}>
+        {(['closed', 'open', 'logged'] as const).map(v => <button key={v} style={btn(view === v)} onClick={() => setView(v)}>{v}</button>)}
+        <span style={{ width: '100%' }} />
+        {view === 'logged' ? runs.map((r, i) => <button key={i} style={btn(ri === i)} onClick={() => setRi(i)}>{Math.round(r.hr_in_zone_pct)}% in zone</button>)
+          : UNIQUE.map((s, i) => <button key={s.label} style={btn(si === i)} onClick={() => setSi(i)}>{s.label}</button>)}
+      </div>
+      {view === 'logged' && <Logged run={runs[ri]} />}
+      {view === 'open' && <Open sess={UNIQUE[si]} />}
+      {view === 'closed' && <Closed sess={UNIQUE[si]} />}
+      <p style={{ fontFamily: FONT, fontSize: '11px', color: 'var(--mute)', padding: '0 16px 24px' }}>Prototype. Heart-rate traces are real runs, de-identified. Not wired to the app.</p>
+    </div>
+  )
+}

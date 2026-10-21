@@ -187,3 +187,36 @@ challenged and did not override. The amended W4 above is not vetoed.
 How any of it feels on a phone; whether the trace stays legible on a long run at 375 px; whether the stronger colour
 use satisfies the founder; the closed **Plan row** (deliberately untouched); the website, which renders `SessionCard`
 and must be checked when the closed card changes.
+
+---
+
+## Part 3 — The prototype (2026-10-21, local throwaway branch, never pushed)
+
+Built as ruled: `/session-wow-preview` with closed · open · logged views, at 375 × 812, on the harness plan's real
+quality sessions and **four real heart-rate traces, de-identified** (two held at 93% and 96% in zone, two drifted at 67%
+and 71%; all easy runs, 55–79 min, 659–947 samples). Code kept as `scripts/session-wow/prototype-page.tsx.txt`, no data.
+
+**The chair's success condition, checked on the four:** *can a runner say whether they held the zone without reading a
+word?* **Yes on all four.** Held runs stay blue under the ceiling with at most one short amber spike (a hill); drifted
+runs go amber above the ceiling in the second half and stay there. At 343 px a 79-minute run is ~4.3 px a minute: a
+drift is obvious, a minute is not readable, so Wroblewski's tap-to-expand stands.
+
+**Findings the prototype made, which no document had:**
+1. **The band must draw what the prescription means.** The first version drew Zone 2 as a band with a floor, so the
+   96% "held" run showed long grey stretches *below* the band and looked like a failure. An easy, long or recovery run
+   is a **ceiling** (§12: easy runs are capped at the top of Z2); under it is held. Only quality has a floor. Fixed in
+   the prototype; it must be in the pattern and tested.
+2. **Collins' CD-1 check came back positive.** On the harness plan's quality sessions, 5 names produce distinct shapes
+   **except Cruise intervals and Mile repeats, which draw the same silhouette** (two ~10-minute reps at the same pace
+   with a ~2-minute jog). Two names, one session. Routed to the Coaching Board as evidence for CD-1; not a reason to
+   stop drawing.
+3. **The silhouette needs the step model, not string parsing.** A progressive step (*"7:18 → 6:22 /km"*) drew as easy;
+   the real build should read effort from the resolved step (zone or pace anchor), not from text.
+4. **Reach per runner varies more than the population figure says.** 59% of Apple Health runs carry a trace, but the
+   founder's own account has 3 of 62 runs with 100+ samples. The zone-bar fallback is not an edge case; it is how
+   some runners will always see it.
+5. **Catalogue step notes carry em dashes** (*"The over — a notch past comfortably hard"*), runner-facing, in
+   `sessionCatalogueData.ts` (a doctrine file). Same class as `EMDASH-LIB-COPY-01`.
+
+**Not yet tested:** a drifted *quality* session (no real quality trace was available with a matching analysis), a
+long run over two hours, the share image, and any of it on the founder's phone.
