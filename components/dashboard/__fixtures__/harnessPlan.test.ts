@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
@@ -65,7 +65,14 @@ describe('DASHBOARD-HARNESS-01 — the harness plan is real engine output', () =
 
   it('regenerating from that input reproduces the committed fixture exactly', () => {
     const c = corpus.cases.find(x => x.id === CASE_ID)!
-    const fresh = generateRulePlan(c.input, c.tier as Tier, c.plan_start)
+    // ⚠️ A THIRD CLOCK, AND IT IS NOT IN META (HARNESS-FIXTURE-CLOCK-02, 2026-10-21). §10's staleness discount
+    // deliberately reads the wall clock (`vdotFor`: how long ago the runner actually ran), so on 2026-10-21 this case's
+    // benchmark aged a step (6% -> 7%) and every easy pace moved, 84 fields, nothing in the engine changed. Stripping
+    // more fields would hide real drift; regenerate at the moment the fixture was generated instead.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(committed.meta.generated_at as string))
+    let fresh: Plan
+    try { fresh = generateRulePlan(c.input, c.tier as Tier, c.plan_start) } finally { vi.useRealTimers() }
     expect(
       withoutClock(fresh),
       'the engine no longer produces this plan. Regenerate:\n' +
