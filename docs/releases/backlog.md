@@ -47,6 +47,17 @@ plans hold a no-leg week (worst 14). Extend S3 Am.2 + `S-LEGS-EVERY-WEEK` to Gen
 Engine stamps `legs_day_suggestion`; one line on setup and the consent screen. Draft: *"Lift on Tuesday after your
 quality run and your legs get a proper session."*
 
+### ✅ `STRENGTH-SESSION-TITLE-01` — **SHIPPED 2026-10-19.** A strength session is named by what it holds ⚙️ **NO BOARD** (titles approved by the founder)
+
+A full body with no upper work read "Full body"; one with light leg work read "Upper body". `strengthSessionTitle()` in
+`lib/strength-bridge/display.ts` is the one owner: *Lower body*, *Upper body and light legs*, else the kind title. Seven
+sites moved to it, including the daily-coach-note and weekly-note prompts. See feature-registry.
+
+### ✅ `STRENGTH-LEGS-NOTE-FOCUS-01` — **SHIPPED 2026-10-19.** The legs note is never false for a General runner ⚙️ **NO BOARD**
+
+Found on the founder's own plan: the note promised lighter leg work that General focus did not get. Fixed by focus, then
+made one line again when `STRENGTH-GENERAL-LEGS-01` gave General the light leg work. See feature-registry.
+
 ### ✅ `PINNED-DAYS-01` — **SHIPPED 2026-10-18.** Pick the days; the sessions stay on them 🏃 **COACHING BOARD** then 🧭 **DESIGN BOARD** *(both ruled 2026-10-18)*
 
 Founder: *"I want to be able to select the days and it stays on the days I select."* Strength setup asks *Which days
