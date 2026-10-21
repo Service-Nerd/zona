@@ -4434,7 +4434,10 @@ SessionScreen's anatomy, as its own screen (`components/dashboard/StrengthSessio
 `SessionSteps` section card (`StepSection`): warm-up and cool-down in `--moss`, training blocks in `--s-strength`.
 An exercise row is the step row's type: name 13/700, dose 15/800 tabular (*"3 × 5"*), support line 12/700
 (*each side · N reps in reserve · rest*). **Cues are one tap deep** (`aria-expanded`). **No media placeholder until
-Phase 3.** Actions at the end of content (7a): **Mark complete**, **Skip**; once logged, a status badge and **Undo**.
+Phase 3.** **Phase 3 media** (`STRENGTH-MEDIA-01`, Design Board 2026-10-21, conditional on the supplier): only inside an
+opened row, above the cues; the closed row is unchanged and an exercise without media opens as today; full width, a
+named height cap keeping a main lift's log panel on screen at 375 × 667; still pose under reduced motion; loaded on
+open; any highlight recoloured to `--s-strength` or removed. Ruled, not built. Actions at the end of content (7a): **Mark complete**, **Skip**; once logged, a status badge and **Undo**.
 Done or skipped only: no RPE, no per-set logging, until something reads them. **The weekly note**
 (`STRENGTH-NOTE-01`) sits under the tiles as a `CoachNoteBlock aiGenerated`, here only (not Today, not Plan); absent,
 loading or failed renders nothing. A warm-up item that is a training

@@ -2402,6 +2402,9 @@ question, not filed as a build.
 **Tags:** 🏃 ruled → 🧭 ruled → ⚙️ built.
 
 #### `STRENGTH-MEDIA-01` — exercise demo media (Phase 3): supplier decision *(filed 2026-10-18, OPEN, 👤 FOUNDER)*
+🧭 **Design Board ruled placement 2026-10-21 (SHIP WITH AMENDMENT, conditional):** media only in an opened row, height
+capped, loaded on open, highlight recoloured to a token (Silvanto's veto on the supplied orange). A supplier must
+allow recolouring. `docs/decisions/strength-media-placement-2026-10-21.md`. Still open: the supplier and spend (👤), then price (💼).
 Researched 2026-10-18 (`docs/decisions/strength-media-suppliers-2026-10-18.md`): **no free source is shippable** as the
 main one (provenance or coverage); best value paid is RepDB Standard ($499 one-time, ~60% of our list). Nothing built:
 the player and slots wait on the decision so no unused plumbing ships. **Tags:** 👤 FOUNDER (supplier, spend) → 💼 SLT

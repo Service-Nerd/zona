@@ -144,6 +144,14 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-21 — STRENGTH-MEDIA-01 · SHIP WITH AMENDMENT (conditional on the supplier). Demo media only inside an opened exercise row
+
+Placement B: media above the cues in an opened row; closed rows unchanged; no placeholder for an exercise without
+media; full width, height capped so a main lift's log panel stays on screen at 375 × 667; still pose under reduced
+motion; loaded on open only. **Silvanto's veto sustained** on the supplied orange muscle highlight (≈ #EE5500–#FF6600;
+rule: all colour from tokens, ember orange banned): recolour to `--s-strength` or remove. **Collins lost** on height.
+Not built. Sitting: `docs/decisions/strength-media-placement-2026-10-21.md`.
+
 ## 2026-10-21 — STRENGTH-LEGS-DAY-FIRST-BUILD-01 · SHIP WITH AMENDMENT. A first build says the legs day in its readback
 
 A first strength build skips *Here is what changes*, so the day line never reached the runner choosing days for the first
