@@ -458,3 +458,87 @@ copy and none is proposed.
    cause. Falsified by moving a threshold.
 
 **SLT escalation:** none.
+
+---
+
+## Part 8 — Build analysis, phase 1 (the logged journey), 2026-10-21
+
+**Input:** Design Board build ruling (Part 5) · SLT (Part 6: trace FREE, reuse) · Coaching Board (Part 7: sentences) ·
+founder approvals (four sentences; *"Yes"* to start).
+**Change:** the run's own heart-rate trace, with its sentence, appears on the logged journey, and the logged session
+detail leads with the run.
+
+**Settled ground:** Part 2/5 rows · *RPE asked before the read* · *empty means calm* · `getSessionColor` the only colour
+source · *Type accent, not flood* (Silvanto's veto) · §12 Am.1/Am.2 thresholds · SLT 2026-09-20 (the pill stays
+wordless) · COMPLETE-01 (`SessionCompleteCard` is the peak-end artefact, rendered **after RPE** on both paths) ·
+SAVE-IMG-01 (`/api/og/session-complete-card` renders the same card at 1080 × 1920).
+
+### 🔴 The finding that changes the plan
+The ruling put the trace in **`RunFeedbackCard`'s zone-bar slot**. That card is **paid-only**
+(`hasPaidAccess && analysis`), and the SLT has since made the trace **free**. Read from the code, the free, after-RPE
+slot already exists: **`SessionCompleteCard`**, which shows *TIME IN ZONE % + ZoneBar* (state A) or *RPE / 10*
+(state B), renders **after the runner answers how it felt** on **both** the hand-logged path (`SessionPopupInner`'s
+reflect view) and the linked path (`PostRunScreen`), and **is the share image** (`SaveImageButton` → the OG route).
+So the trace belongs there: one change satisfies *free*, *revealed after RPE*, *on both paths* and *the trace is the
+share image*, with no new card.
+
+**Design Board, convened on the location only (Zhuo chair):** Zhuo: the ruling's intent was "where the zone bar is,
+after RPE"; this is that place, and the one we named was wrong about the tier. Silvanto: one card, not two; agreed.
+Wroblewski: it also reaches the hand-logged path, which the named slot never did. Sierra: the reveal is better here,
+because the card is the moment. Collins: the share image comes for free. **Ruling: SHIP WITH AMENDMENT.** The trace
+replaces `SessionCompleteCard`'s ZoneBar when a rich trace exists; the state B (RPE) and the ZoneBar remain for the
+other states. `RunFeedbackCard` is unchanged in phase 1.
+⚠️ **Issue found and filed, not fixed:** a paid post-run already shows time-in-zone **twice** (`RunFeedbackCard`'s
+*"32% in your prescribed zone"* bar and `SessionCompleteCard` state A). Adding the trace makes the repeat louder.
+Filed as `POSTRUN-ZONE-TWICE-01` (🧭 Design Board).
+
+### Reuse
+| Need | Reused | Blast radius |
+|---|---|---|
+| Thresholds | `ZONE_HELD_MAX_ABOVE_CEILING_PCT`, `ZONE_DRIFT_ABOVE_CEILING_PCT`, `zoneVerdict` | Read only |
+| Ceiling | `hrBandForZoneString`, the session's prescribed zone (§84, `displayZonesForSession`) | Read only |
+| Colour | `getSessionColor(session)` | Read only |
+| Trace read | The dashboard's existing direct, RLS-scoped read of `strava_activities` (the pattern at `DashboardClient.tsx:1358`), extended by **one column** (`raw_payload->hrSamples`) for **one** activity, on open | No new route; the same client that already works on native |
+| Smoothing / onset maths | New pure owner `lib/coaching/zoneTrace.ts` (the prototype's, named) beside `streamAnalysis.ts` | New |
+| Card and share | `SessionCompleteCard` (state A gains the trace), `/api/og/session-complete-card` (draws it; resolved hex, as that route already does for every colour) | Both callers of the card, the OG route, `SaveImageButton` unchanged |
+| No HR yet | `HrPendingStatusRow`, `PendingHrCard`, `classifyHrPending` | Unchanged |
+| Logged numbers | The execution summary (planned vs actual) | Moved (below) |
+
+### Consumers (app and website)
+`SessionCompleteCard`: `SessionPopupInner` (reflect view), `PostRunScreen`, the OG route. `SessionPopupInner`:
+`DashboardClient`, `/copy-preview`. **Website: none** (no marketing page renders either; checked `app/` page routes).
+`FounderNoteScreen` references the card's voice anchor in a comment only.
+
+### Is it a MOVE? **Yes, for 1b** (the logged detail's order). The six asks:
+1. **Navigates in by anchor:** none (`getElementById` / `scrollIntoView`: 0 in `SessionPopupInner`).
+2. **Reached only from it:** `ZoneInfoSheet` opens from the zone card's tap. Folding the card under *What was planned*
+   must keep that tap working when the fold is open. Check added.
+3. **Reached from both:** none.
+4. **Copy naming a location:** none found (*"above"*, *"below"* searched in the screen's strings).
+5. **Own header:** the zone card carries *HOLD THE ZONE*; inside the fold it must not repeat the fold's title.
+6. **Ran on mount:** four `useEffect`s, all keyed on `session` / `completion`, none on the zone card. Unchanged.
+7. **Who may mount it:** the fold is ungated; the zone card stays visible to every tier.
+
+### Routing
+Coaching: done (Part 7). Design: the location amendment above. SLT: done. Founder: done (copy).
+`zona-architectural-principles`: the read stays client-side under RLS like its siblings; no AI call (ADR-006 n/a).
+
+### Split: two builds, each committed and verified on its own
+- **1a. The trace.** `zoneTrace.ts` (sentence selector, smoothing, onset) + its §12 Am.3 + constants + tests in one
+  commit · `ZoneTrace` component · `SessionCompleteCard` state A shows it when the run has 100+ samples · the OG route
+  draws it · the one-column read on both paths.
+- **1b. The logged detail.** The execution summary leads; zone card + structure fold under *What was planned*; closing
+  marks; the five states.
+
+### Risks → mitigation
+- `SessionPopupInner` is ~2,000 lines: 1b moves blocks, never rewrites them; the move hook fires and the six asks
+  above are re-checked on the diff.
+- `raw_payload` is large on some rows: the select names the one key (`raw_payload->hrSamples`), not the column.
+- Satori (the OG renderer) and SVG: verified by rendering the PNG, not assumed.
+- Free tier: no analysis exists, so the share is computed from the trace by the same owner; the pill stays as it is.
+- A trace that disagrees with the analysis near 10 or 20: the analysis decides when present (Part 7).
+
+### Acceptance
+Every sentence comes from one selector (tested at 10, 20, the late rule, quality vs easy) · the trace appears only
+with 100+ samples and only after RPE · states L2–L5 render exactly as today · no must-not-lose element disappears
+(markup arms, falsified) · the OG PNG shows the trace · full suite green · seen at 375 px on real traces.

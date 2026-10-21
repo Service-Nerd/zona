@@ -86,6 +86,12 @@ the trace as the share image (Collins). **Next:** a local prototype at 375 px on
 carry an HR stream), then a build ruling. Routed: Outdoor/Treadmill to 🏃 Coaching Board. `docs/decisions/session-screens-runna-2026-10-21.md`.
 🧪 **Prototype built 2026-10-21** (local, `scripts/session-wow/`): the success condition passed on four real traces. Findings: easy-run zones must draw as a ceiling (§12), Cruise intervals and Mile repeats share one shape (CD-1 evidence → 🏃), the silhouette must read the step model, the fallback is common for some runners, catalogue notes carry em dashes. **Founder: "I absolutely love this!!!"**, with two conditions (missing data; screen and journey scope). 🧭 **Build ruled 2026-10-21, phased:** 1 logged journey (L1–L5, trace after RPE, share image), 2 pre-run detail, 3 Today card. 💼 **SLT 2026-10-21:** items 1–3 already exist (HR-SYNC-02 pending/retry copy, the summary's amber avg HR, auto-match at log time): reuse. **The Zone Trace is FREE**; Kit's read on why stays PAID. 👤 **Founder approved the three sentences.** 🏃 **Coaching Board 2026-10-21: CORRECT WITH AMENDMENT**, reuse §12's 10/20 thresholds; a fourth, factual line for 10–20% (*"Over your ceiling for {m} of {n} minutes."*), founder approved. **Phase 1 is ready to build.**
 
+### 🔲 `POSTRUN-ZONE-TWICE-01` — a paid post-run shows time in zone twice 🧭 **DESIGN BOARD** *(filed 2026-10-21)*
+
+`RunFeedbackCard` (*"32% in your prescribed zone"* + bar) and `SessionCompleteCard` state A (*TIME IN ZONE* % + ZoneBar) both
+render on a paid, analysed post-run, one above the other. Found while placing the Zone Trace (SESSION-SCREENS-WOW-01
+Part 8), which will make the repeat louder. Question: which one owns the number.
+
 ### 🔲 `HR-LATE-STAMP-01` — late heart rate is not stamped ⚙️ **NO BOARD** *(filed 2026-10-21)*
 
 Of 83 Apple Health runs with no HR at the first read, 32 now carry an average HR, but `hr_arrived_late_at` is set on

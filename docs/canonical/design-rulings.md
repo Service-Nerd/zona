@@ -144,6 +144,12 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-21 — SESSION-SCREENS-WOW-01 (location) · SHIP WITH AMENDMENT. The trace goes in `SessionCompleteCard`, not `RunFeedbackCard`
+
+The named slot was paid-only and the SLT made the trace free. `SessionCompleteCard` is the free, after-RPE peak-end card
+on both paths and the share image, so the trace replaces its ZoneBar when 100+ samples exist; other states unchanged.
+Filed `POSTRUN-ZONE-TWICE-01`. Sitting: `docs/decisions/session-screens-runna-2026-10-21.md` Part 8.
+
 ## 2026-10-21 — SESSION-SCREENS-WOW-01 (build) · SHIP WITH AMENDMENT, phased. Excellent without the data; nothing lost, nothing taller
 
 Founder approved the prototype with two conditions: design for missing data, and judge each change in its screen and
