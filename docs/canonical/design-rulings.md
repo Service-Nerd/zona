@@ -144,6 +144,13 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-21 — STRENGTH-LEGS-DAY-FIRST-BUILD-01 · SHIP WITH AMENDMENT. A first build says the legs day in its readback
+
+A first strength build skips *Here is what changes*, so the day line never reached the runner choosing days for the first
+time. On a first build whose plan carries `legs_day_suggestion`, the Plan readback adds `legsDayLine` as a second sentence
+in the same `FieldReadback`; never on an update. Consent screen for first builds and a live preview declined on cost.
+Not built. Sitting: `docs/decisions/strength-legs-day-first-build-2026-10-21.md`.
+
 ## 2026-10-19 — STRENGTH-LEGS-DAY-01 · SHIP WITH AMENDMENT. Name the day that would let legs in; never move one
 
 The engine stamps `legs_day_suggestion` (the unchosen day whose swap gives heavy legs in the most weeks; every one of

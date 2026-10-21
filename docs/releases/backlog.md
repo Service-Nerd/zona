@@ -47,7 +47,10 @@ plans hold a no-leg week (worst 14). Extend S3 Am.2 + `S-LEGS-EVERY-WEEK` to Gen
 Engine stamps `legs_day_suggestion`; one line on setup and the consent screen. Draft: *"Lift on Tuesday after your
 quality run and your legs get a proper session."*
 
-### 🔲 `STRENGTH-LEGS-DAY-FIRST-BUILD-01` — a first strength build never shows the legs-day line 🧭 **DESIGN BOARD** *(filed 2026-10-21)*
+### 🔲 `STRENGTH-LEGS-DAY-FIRST-BUILD-01` — a first strength build never shows the legs-day line 🧭 **DESIGN BOARD RULED 2026-10-21 (SHIP WITH AMENDMENT); not built** *(filed 2026-10-21)*
+
+**Ruling:** the first-build Plan readback adds `legsDayLine` when the plan carries a suggestion; never on an update.
+`docs/decisions/strength-legs-day-first-build-2026-10-21.md`.
 
 The line shows in two places: the setup note, which needs a stored plan's notes (`planNotes` and `legsDay` both come
 from `strength.plan`), and the consent screen, which is skipped when there is no plan
@@ -55,6 +58,15 @@ from `strength.plan`), and the consent screen, which is skipped when there is no
 days on a first build lands on Plan without hearing that another day would get them a proper leg session. They only
 see the line if they reopen setup. Measured in code 2026-10-21, not on a device. Question for the board: does the line
 belong on the first-build landing (the Plan readback), or is reopening setup enough?
+
+### 🔲 `STRENGTH-ENGINE-REACH-01` — a strength engine change never reaches a stored strength plan ⚙️ **NO BOARD** (🧭 Design Board if the rebuild is to be announced) *(filed 2026-10-21)*
+
+`GET /api/strength/plan` rebuilds only when `runContextSig` changes, so every strength-engine ship since a plan was
+stored is invisible to it until the runner edits setup or their run week changes. Measured 2026-10-21: the one live
+strength plan (the founder's, generated 2026-10-18 20:14) still has weeks 3 to 6 as two upper-body sessions with no leg
+work, the exact complaint `STRENGTH-GENERAL-LEGS-01` fixed, and no `legs_day_suggestion`. Same class as
+"a fix to the engine reaches no existing plan". Options: stamp an engine version into the signature, or rebuild on read
+when the stored plan fails today's `validateStrengthPlan`. Strength is admin-only, so one runner is affected.
 
 ### 🔲 `STRENGTH-LEGS-DAY-GATE-01` — the legs-limited gate on the legs-day suggestion has never been the deciding condition ⚙️ **NO BOARD** (🧭 Design Board only if the gate is dropped) *(filed 2026-10-21)*
 
