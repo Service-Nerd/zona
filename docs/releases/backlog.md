@@ -76,6 +76,15 @@ every case tried on 2026-10-19 (the code comment says so). No test turns the gat
 gate decides and test both directions, or show that none exists; if none does, the board decides whether to keep the
 gate as scope or drop it.
 
+### 🔲 `SESSION-SCREENS-WOW-01` — closed, open and logged session screens, with a wow moment 🧭 **DESIGN BOARD RULED 2026-10-21 (SHIP WITH AMENDMENT, prototype first)** *(filed 2026-10-21)*
+
+From the founder's Runna screenshots and his ask to be an industry disrupter. Ruled: the Zone Trace (planned zones over
+time with the runner's HR line), the logged hero leads with the run, the session silhouette (not on Plan rows), step
+rows led by the bold quantity plus a modality glyph, closing marks, an honest duration range; colour into the data, not
+as a fill (Silvanto's veto). Board ideas for the prototype: last time's trace (Sierra), a next-step pin (Wroblewski),
+the trace as the share image (Collins). **Next:** a local prototype at 375 px on real runs (207 of 353 Apple Health runs
+carry an HR stream), then a build ruling. Routed: Outdoor/Treadmill to 🏃 Coaching Board. `docs/decisions/session-screens-runna-2026-10-21.md`.
+
 ### ✅ `STRENGTH-SESSION-TITLE-01` — **SHIPPED 2026-10-19.** A strength session is named by what it holds ⚙️ **NO BOARD** (titles approved by the founder)
 
 A full body with no upper work read "Full body"; one with light leg work read "Upper body". `strengthSessionTitle()` in

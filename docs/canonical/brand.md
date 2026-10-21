@@ -20,6 +20,21 @@ If this doc and `lib/brand.ts` ever disagree on a string, `lib/brand.ts` wins â€
 
 ## Brand Positioning
 
+### Ambition: an industry disrupter (founder, 2026-10-21)
+
+> *"I want us to be an industry disrupter."*
+
+Zonna does not set out to be a better version of the running apps that exist. It sets out to change what a running
+app is for: from motivating more effort to governing the right effort. In practice:
+- **Product:** every surface is judged on whether it shows the runner something only Zonna can honestly say (their
+  zone discipline, the opinion on their effort), not on whether it matches the category. Parity is the floor, never the
+  goal.
+- **Design:** the wow moment comes from that truth, made visible with craft, not from decoration borrowed from a
+  competitor.
+- **Marketing:** say what the category will not: "You're trying hard. That's the problem."
+
+This is an internal brief, not a locked string: it is never rendered in the product UI.
+
 ### The three-line tagline system (locked strings â€” never rephrase, never mix two on one surface)
 
 | Line | Job | `BRAND` constant | Where it appears |

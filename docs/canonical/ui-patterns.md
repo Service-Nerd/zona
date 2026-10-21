@@ -6138,3 +6138,14 @@ falsified by breaking the thing it guards.
 (Silvanto) and the title's type weight (Collins). Prototypes exist; neither has been felt
 in the hand. They are recorded in `design-rulings.md`, not killed.
 
+
+
+## Session screens: closed · open · logged (`SESSION-SCREENS-WOW-01`, Design Board 2026-10-21, ruled, not built)
+
+The logged session leads with **the run** (Distance · Time · Avg pace · Avg HR, the verdict, the Zone Trace); the plan
+follows under *What was planned*. **Zone Trace:** one band of the planned zones over time in the session colour, one HR
+line, off-band segments in `--warn`, one sentence about the runner; no HR stream, the zone bar. **Session silhouette**
+(time × zone) on the open screen and the Today card only, never Plan rows (UX-SESSION-GLYPH-01). Step rows: bold
+quantity first, one line plus an optional why, a modality glyph at the left (S6). Closing marks *Logged · Linked · Zone
+read*. **Colour:** into the trace and silhouette, a 6 px rail, section headers as session-colour text with a 2 px top
+rule; never a fill, band, wash or gradient (*Type accent, not flood*, veto sustained). Prototype first.

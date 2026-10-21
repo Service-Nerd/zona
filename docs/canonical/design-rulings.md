@@ -144,6 +144,17 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-21 — SESSION-SCREENS-WOW-01 · SHIP WITH AMENDMENT, to a prototype first. The logged session leads with the run; the Zone Trace is the wow
+
+From the founder's Runna screenshots. **W1 Zone Trace** (planned zones over time with the runner's HR line; off-band in
+`--warn`; one sentence about the runner; zone-bar fallback) and **W3 session silhouette** (open screen and Today card,
+**not Plan rows**, after a distinct-shape count) go to a prototype. **W2** the logged hero is the run, the plan follows;
+**W5** step rows lead with the bold quantity plus a modality glyph (within S6); **W6** closing marks *Logged · Linked ·
+Zone read*; **W7** duration range via `lib/format.ts`. **Silvanto's veto sustained on W4 as written** (a session-colour
+header band breaks *Type accent, not flood*): colour goes into the trace and silhouette, a 6 px rail, header text and a
+2 px top rule. **Collins lost**, challenge recorded. Declined: medals, route art, the carousel. Treadmill toggle routed to
+the Coaching Board. Not built. Sitting: `docs/decisions/session-screens-runna-2026-10-21.md`.
+
 ## 2026-10-21 — STRENGTH-MEDIA-01 · SHIP WITH AMENDMENT (conditional on the supplier). Demo media only inside an opened exercise row
 
 Placement B: media above the cues in an opened row; closed rows unchanged; no placeholder for an exercise without
