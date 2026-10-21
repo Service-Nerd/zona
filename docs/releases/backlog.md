@@ -2405,6 +2405,10 @@ question, not filed as a build.
 🧭 **Design Board ruled placement 2026-10-21 (SHIP WITH AMENDMENT, conditional):** media only in an opened row, height
 capped, loaded on open, highlight recoloured to a token (Silvanto's veto on the supplied orange). A supplier must
 allow recolouring. `docs/decisions/strength-media-placement-2026-10-21.md`. Still open: the supplier and spend (👤), then price (💼).
+💼 **SLT 2026-10-21: NOT YET.** £0 revenue, 0 paying subscribers, 1 strength user; break-even ~70 paid subscriber-months.
+Release strength without media; the strength seat checks the free preview's form now; at release, record exercise-row
+opens; buy RepDB Standard (+ female) once strength is on sale and row opens show demand. The 17 gaps are a separate
+decision. `docs/decisions/strength-media-slt-2026-10-21.md`.
 Researched 2026-10-18 (`docs/decisions/strength-media-suppliers-2026-10-18.md`): **no free source is shippable** as the
 main one (provenance or coverage); best value paid is RepDB Standard ($499 one-time, ~60% of our list). Nothing built:
 the player and slots wait on the decision so no unused plumbing ships. **Tags:** 👤 FOUNDER (supplier, spend) → 💼 SLT

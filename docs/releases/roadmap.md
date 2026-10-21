@@ -1310,7 +1310,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **A rebuilt plan inherited old completions** (PLAN-REBUILD-SUPERSEDE-01) | ✅ FREE | S | 🟢 Shipped and live 2026-10-18; clean-up run (24 rows, 3 runners, 0 remaining). |
 | **Several plans per runner, switch between them** (PLAN-IDENTITY-01) | TBD (SLT) | L | 🔵 Filed 2026-10-18 from the founder's ask; SLT, then an ADR, then Design Board. |
 | **Strength load progression from the runner's log** (STRENGTH-PROGRESSION-01, Phase 4) | PAID | M | 🟢 Built and live 2026-10-18 (admin-only until release). |
-| **Exercise demo media** (STRENGTH-MEDIA-01, Phase 3) | PAID | M | 👤 Founder decision: suppliers researched 2026-10-18; RepDB $499 best value. Placement ruled 2026-10-21 (Design Board: inside the opened row; a supplier must allow recolouring). |
+| **Exercise demo media** (STRENGTH-MEDIA-01, Phase 3) | PAID | M | 👤 Founder decision: suppliers researched 2026-10-18; RepDB $499 best value. Placement ruled 2026-10-21 (Design Board). SLT 2026-10-21: not yet; buy once strength is on sale and row opens show demand. |
 | **The use-case envelope reads the real date** (ENVELOPE-CLOCK-01) | ✅ n/a (test) | S | 🟢 Shipped 2026-10-19: pinned, and the clock gate now covers non-test callers. |
 | **Some runway lengths breach §1's quality ceiling** (INTENSITY-RUNWAY-01) | ✅ FREE (engine) | M | 🟢 Shipped 2026-10-19: §1 Am.3, the yield for every build plan; gated at every runway 8–26 wk. |
 | **"Full body" strength sessions with no upper-body work** (STRENGTH-FULLBODY-NO-UPPER-01) | ✅ PAID (admin-only) | S | 🟢 Shipped 2026-10-19 (not pushed): upper kept from 45 min, 30 min named by content; with `STRENGTH-CHOSEN-NO-LEGS-01` (light leg work) and `STRENGTH-SESSION-TITLE-01`. |
