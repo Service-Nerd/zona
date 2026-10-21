@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { generateStrengthPlan } from './generate'
+import { generateStrengthPlan, standaloneContext } from './generate'
+import { heavyLegsLegal } from './placement'
 import { validateStrengthPlan } from './validate'
 import { withChosenDays } from './profile'
 import { CATALOGUE_BY_ID } from './catalogue'
@@ -295,6 +296,23 @@ describe('PINNED-DAYS-01 (S1 Am.2) — chosen days are the sessions', () => {
     const c2 = ctx(); for (const d of c2.days) if (d.week_n <= 3 && d.day === 'thu') d.role = 'quality'
     const p = generateStrengthPlan(withChosenDays({ ...PROFILE, sessions_per_week: 3 }, ['tue', 'thu', 'sat']), c2)
     expect(p.notes).not.toContain('legs_limited_by_run_week')
+    expect(p.legs_day_suggestion).toBeUndefined()
+  })
+  it('🔴 STRENGTH-LEGS-DAY-GATE-01: the legs-limited gate is what stops a suggestion when legs are already served', () => {
+    // The arm above stays green with the gate removed: no unchosen day there beats the worst chosen one. Here one
+    // does. Sunday long run only: Tue and Thu take the two leg sessions, Saturday (the day before the long run) never
+    // can and carries the upper day, and Wednesday COULD take heavy legs. Without the gate the plan would say "Lift on
+    // Wednesday … and your legs get a proper session" to a runner whose legs already get two. Measured with the gate
+    // removed, 2026-10-21: 8 of 350 three-day picks on real run plans.
+    const sunLong = standaloneContext('2026-11-02')
+    for (const d of sunLong.days) if (d.day === 'sun') d.role = 'long'
+    const three = { ...PROFILE, sessions_per_week: 3 as const }
+    const p = generateStrengthPlan(withChosenDays(three, ['tue', 'thu', 'sat']), sunLong)
+    const ord = p.weeks.filter(w => ['base', 'build', 'peak', 'deload'].includes(w.phase) && w.sessions.length)
+    expect(p.notes).not.toContain('legs_limited_by_run_week')
+    expect(ord.every(w => w.sessions.find(s => s.day === 'sat')?.kind === 'upper_core'), 'Saturday never takes legs').toBe(true)
+    const open = { days: sunLong.days, raceDate: null, unavailable: new Set<Day>() }
+    expect(sunLong.days.some((d, i) => d.day === 'wed' && heavyLegsLegal(open, i)), 'Wednesday could (S2, placement\'s own predicate)').toBe(true)
     expect(p.legs_day_suggestion).toBeUndefined()
   })
   it('🔴 STRENGTH-GENERAL-LEGS-01: S-LEGS-EVERY-WEEK covers General focus too', () => {

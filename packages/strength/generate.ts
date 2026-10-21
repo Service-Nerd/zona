@@ -102,9 +102,9 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
   // predicate on a timeline without the chosen-days restriction, so it answers "if you lifted here instead".
   const legsDay = (() => {
     const chosen = profile.available_days
-    // ⚠️ The legs-limited gate is the RULING's scope ("when the chosen days leave weeks without heavy legs"), not a
-    // safety check, and no constructed calendar has yet made it the deciding condition (the day comparison below
-    // agreed on every case tried, 2026-10-19). Unproven, kept as the scope the board wrote.
+    // The legs-limited gate is the ruling's scope AND it decides (STRENGTH-LEGS-DAY-GATE-01, 2026-10-21): when the legs
+    // are already served, a chosen day can still be one that never takes them (the split's upper day), and the day
+    // comparison below would then name a swap that gains nothing. Without it: 8 of 350 three-day picks on real run plans.
     if (standalone || !chosen?.length || !notes.has('legs_limited_by_run_week')) return undefined
     const open: Timeline = { ...timeline, unavailable: new Set() }
     const ordinary = run.weeks.filter(w => ['base', 'build', 'peak', 'deload'].includes(w.phase)).map(w => w.n)
