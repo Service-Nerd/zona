@@ -6,6 +6,45 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-21 — HARNESS-FIXTURE-CLOCK-02 · the third clock
+**Shipped:** The dashboard harness fixture test regenerates the plan at the moment the fixture was made, so it stops failing when the calendar turns.
+
+**Dev learning:** The engine discounts a stale race result by how long ago it was actually run, deliberately from the real date. Today the fixture's benchmark crossed a step and 84 fields moved.
+
+**Product learning:** None for runners; the engine was right.
+
+**AI-building learning:** Stripping more fields from the comparison would have hidden real drift. Pinning the clock keeps the fixture honest.
+
+**The honest bit:** This test has now failed on a clock three times. Other tests that regenerate plans from a dated benchmark may share it.
+
+---
+
+## 2026-10-21 — STRENGTH-ENGINE-REACH-01 · a fix that never reached the plan it was for
+**Shipped:** A stored strength plan now rebuilds when the engine would build it differently, not only when the run week moves.
+
+**Dev learning:** Generation is deterministic in its inputs, so "is this plan current?" is regenerate-and-compare. No version number to remember to bump. The compare has to ignore key order, because jsonb reorders keys.
+
+**Product learning:** The founder reported five weeks of upper body only, it was fixed the next day, and his own plan still showed five weeks of upper body only. The fix was right; it just never reached the one runner who asked.
+
+**AI-building learning:** I found it while gathering evidence for a different board sitting, by reading the live row instead of assuming it matched the engine.
+
+**The honest bit:** The rebuild is silent, the same as a run-week rebuild. If an engine change ever moves a session a runner has already planned around, nothing tells them.
+
+---
+
+## 2026-10-21 — STRENGTH-LEGS-DAY-FIRST-BUILD-01 · the line goes where the runner already is
+**Shipped:** A first strength build now says the day that would give your legs a proper session, in the line you read on Plan.
+
+**Dev learning:** One branch in the readback's single owner, reusing an approved string.
+
+**Product learning:** The runner who most needs the suggestion is the one picking days for the first time, and that was the one journey without a screen to show it on.
+
+**AI-building learning:** The full suite went red on a test I had not touched: the engine discounts a stale benchmark by the real date, and today the fixture's benchmark aged a step. Pinned the clock in the test (HARNESS-FIXTURE-CLOCK-02).
+
+**The honest bit:** Not seen on a phone, and the "lighter leg work" line still only shows if you reopen setup.
+
+---
+
 ## 2026-10-19 — STRENGTH-LEGS-DAY-01 · name the day, never move it
 **Shipped:** When your lifting days can't take heavy legs, the plan now says which day would: "Lift on Tuesday after your quality run and your legs get a proper session."
 
