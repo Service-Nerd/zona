@@ -16,6 +16,27 @@
 
 import { notFound } from 'next/navigation'
 import { RunFeedbackCard } from '../dashboard/DashboardClient'
+import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
+import { buildRunTrace } from '@/lib/coaching/zoneTrace'
+
+// SESSION-SCREENS-WOW-01 — the completion card with a Zone Trace, on SYNTHETIC traces (no runner's data is committed).
+// Shapes copied from what the prototype saw on real runs: held with one hill, a late drift, early-and-often.
+const T0 = Date.UTC(2026, 9, 21, 7, 0, 0)
+const synth = (min: number, bpm: (m: number) => number) =>
+  Array.from({ length: (min * 60) / 5 }, (_, i) => {
+    const m = (i * 5) / 60
+    return { valueBpm: Math.round(bpm(m) + 3 * Math.sin(i / 3) + 2 * Math.sin(i / 17)), timestamp: new Date(T0 + i * 5000).toISOString() }
+  })
+const warm = (m: number, to: number) => Math.min(to, 110 + m * 6)
+const EASY = { type: 'easy', zone: 'Zone 2', label: 'Easy run' }
+const TEMPO = { type: 'quality', zone: 'Zone 3', label: 'Continuous tempo' }
+const TRACE_CASES = [
+  { title: 'Held, with one hill', s: EASY, a: 4, tr: synth(55, m => (m > 14 && m < 16.5 ? 151 : warm(m, 134 + 4 * Math.sin(m / 6)))) },
+  { title: 'Late drift: held 40 minutes, then got away', s: EASY, a: 30, tr: synth(62, m => (m < 40 ? warm(m, 136) : 136 + Math.min(18, (m - 40) * 2))) },
+  { title: 'Over most of it', s: EASY, a: 48, tr: synth(48, m => warm(m, 150 + 3 * Math.sin(m / 4))) },
+  { title: 'In between (14% over)', s: EASY, a: 14, tr: synth(50, m => (m > 30 && m < 37 ? 149 : warm(m, 137))) },
+  { title: 'Quality: tempo, a band with a floor', s: TEMPO, a: 12, tr: synth(45, m => (m < 12 ? warm(m, 135) : m > 33 ? 128 : 152 + 2 * Math.sin(m))) },
+]
 
 type Case = { title: string; note: string; analysis: Record<string, unknown>; paceTarget?: string | null; driftContext?: { show: boolean; drifted: number; total: number } | null; preferredMetric?: 'distance' | 'duration' }
 
@@ -160,6 +181,21 @@ export default function PostRunPreviewPage() {
         UX-POSTRUN-01 states. Fixture data, real component. Kit leads; the
         four-column score dashboard is replaced by one zone signal.
       </p>
+
+      <h1 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px' }}>Completion card + Zone Trace</h1>
+      <p style={{ fontSize: '13px', color: 'var(--mute)', margin: '0 0 24px', lineHeight: 1.5 }}>
+        SESSION-SCREENS-WOW-01. Synthetic traces, real component, real owner (`buildRunTrace`). RHR 51, max 185.
+      </p>
+      {TRACE_CASES.map(c => {
+        const trace = buildRunTrace(c.tr, c.s, 51, 185, c.a)
+        return (
+          <section key={c.title} data-trace-case={c.title} style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 10px' }}>{c.title}</h2>
+            <SessionCompleteCard sessionType={c.s.type} date="2026-10-21" completionCopy={{ headline: 'Logged.', body: 'That one counts.' }}
+              zonePct={100 - c.a} rpe={4} fatigueTag="Fine" trace={trace} />
+          </section>
+        )
+      })}
 
       {CASES.map(c => (
         <section key={c.title} style={{ marginBottom: '36px' }}>

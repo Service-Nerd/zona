@@ -29,6 +29,8 @@ import { getSessionLabel } from '@/lib/session-types'
 import { BRAND } from '@/lib/brand'
 import { formatDate } from '@/lib/format'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
+import ZoneTrace from './ZoneTrace'
+import type { TraceBand, TracePoint } from '@/lib/coaching/zoneTrace'
 
 export interface SessionCompleteCardProps {
   /** Session type — drives the chip label, zone bar, and completion copy. */
@@ -50,6 +52,10 @@ export interface SessionCompleteCardProps {
    *  surfaces `BRAND.brandStatement` quietly below the voice anchor. False
    *  / undefined → only the voice anchor renders. */
   ledgerAdvancedThisWeek?: boolean
+  /** SESSION-SCREENS-WOW-01 — the run's own heart-rate trace (100+ samples), its sentence and its in-zone share.
+   *  When present it REPLACES the ZoneBar (Design Board 2026-10-21) and supplies the % when there is no analysis
+   *  (the trace is FREE). Absent: the card is exactly as before. */
+  trace?: { points: TracePoint[]; band: TraceBand; ceilingOnly: boolean; colour: string; sentence: string; inZonePct: number } | null
 }
 
 // Three-letter weekday + day + three-letter month — "Wed · 22 May". Short
@@ -90,12 +96,15 @@ export default function SessionCompleteCard({
   rpe,
   fatigueTag,
   ledgerAdvancedThisWeek = false,
+  trace = null,
 }: SessionCompleteCardProps) {
   const dateLabel = completedOnLabel(date)
   const chipLabel = getSessionLabel(sessionType)
   const zone      = zoneNumberForType(sessionType)
-  const showZone  = zonePct != null && zone != null
-  const pctDisplay = zonePct != null ? Math.round(zonePct) : null
+  // The analysis's % when there is one; the trace's own when there is not (a free run has no analysis).
+  const shownPct  = zonePct ?? trace?.inZonePct ?? null
+  const showZone  = shownPct != null && (zone != null || trace != null)
+  const pctDisplay = shownPct != null ? Math.round(shownPct) : null
 
   return (
     <div style={{
@@ -159,7 +168,16 @@ export default function SessionCompleteCard({
               %
             </span>
           </div>
-          <ZoneBar activeZone={zone!} height={5} showLabels />
+          {trace ? (
+            <>
+              <ZoneTrace points={trace.points} band={trace.band} ceilingOnly={trace.ceilingOnly} colour={trace.colour} />
+              <div data-trace-sentence style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1.35, marginTop: 'var(--space-3)' }}>
+                {trace.sentence}
+              </div>
+            </>
+          ) : (
+            <ZoneBar activeZone={zone!} height={5} showLabels />
+          )}
         </div>
       ) : (
         <div style={{ marginBottom: 'var(--space-5)' }}>

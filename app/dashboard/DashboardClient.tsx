@@ -170,6 +170,7 @@ import ManualRunModal from '@/components/dashboard/ManualRunModal'
 import MeScreen from '@/components/dashboard/MeScreen'
 import { getDeviceToken } from '@/components/dashboard/pushDevice'
 import SaveImageButton from '@/components/dashboard/SaveImageButton'
+import { useRunTrace } from '@/components/dashboard/useRunTrace'
 import TodayScreen from '@/components/dashboard/TodayScreen'
 import StrengthSessionScreen from '@/components/dashboard/StrengthSessionScreen'
 import StrengthSetupScreen, { STRENGTH_PROFILE_DEFAULT } from '@/components/dashboard/StrengthSetupScreen'
@@ -3231,7 +3232,7 @@ export default function DashboardClient() {
             />
           )
         })()}
-        {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} preferredMetric={preferredMetric} driftContext={buildDriftContext(plan, runAnalysisMap, activePostRunData.weekN, activePostRunData.session?.key)} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
+        {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} restingHR={restingHR} maxHR={effectiveMaxHR} preferredMetric={preferredMetric} driftContext={buildDriftContext(plan, runAnalysisMap, activePostRunData.weekN, activePostRunData.session?.key)} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
           // SessionScreen renders inline) is the resting state — not Today.
@@ -7115,8 +7116,13 @@ function PostRunScreen({
   aerobicPace,
   goalPace,
   driftContext = null,
+  restingHR = null,
+  maxHR = null,
 }: {
   data: PostRunData
+  /** SESSION-SCREENS-WOW-01 — the runner's HR inputs, so the Zone Trace draws the ceiling they were shown. */
+  restingHR?: number | null
+  maxHR?: number | null
   /** Back arrow — returns to Today. */
   onBack: () => void
   /** POST-RUN-02: terminus action. Routes to SessionScreen for this session
@@ -7166,6 +7172,8 @@ function PostRunScreen({
    *  can say what was actually run rather than only what was targeted. */
   const [avgSpeedMs, setAvgSpeedMs] = useState<number | null>(null)
   const [isHKCompletion, setIsHKCompletion] = useState(false)
+  // SESSION-SCREENS-WOW-01 — the linked Apple Health run, for its Zone Trace.
+  const [hkUuid, setHkUuid] = useState<string | null>(pendingAppleHealthUuid ?? null)
   // HR-SYNC-02: fields needed to classify HR-pending for the linked HK
   // activity. Fetched alongside the completion when this is an HK-linked run.
   const [hrPendingActivity, setHrPendingActivity] = useState<{
@@ -7206,7 +7214,7 @@ function PostRunScreen({
           if (row.rpe != null) setRpe(row.rpe as number)
           if (isFatigueTag(row.fatigue_tag)) setFatigueTag(row.fatigue_tag)
           const isHK = row.apple_health_uuid != null
-          if (isHK) setIsHKCompletion(true)
+          if (isHK) { setIsHKCompletion(true); setHkUuid(row.apple_health_uuid as string) }
           if (!linkedActivity && (row.strava_activity_name || row.strava_activity_km)) {
             setHydratedActivity({
               name: (row.strava_activity_name as string | null) ?? (isHK ? 'Apple Health run' : 'Strava run'),
@@ -7259,6 +7267,7 @@ function PostRunScreen({
   // Display source for the linked-activity row — prop wins when present.
   const displayActivity = linkedActivity ?? hydratedActivity
   const isHKSource = !!pendingAppleHealthUuid || isHKCompletion
+  const runTrace = useRunTrace(hkUuid, session ?? null, restingHR, maxHR, analysis?.hr_above_ceiling_pct != null ? Number(analysis.hr_above_ceiling_pct) : null)
 
   // HR-SYNC-02: HR-pending classification for the morph chain. Null when
   // not HK-linked, when the activity row hasn't loaded yet, or when HR has
@@ -7703,6 +7712,7 @@ function PostRunScreen({
                 date={new Date()}
                 completionCopy={getCompletionCopy(session.type)}
                 zonePct={analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null}
+                trace={runTrace}
                 rpe={rpe}
                 fatigueTag={fatigueTag}
                 ledgerAdvancedThisWeek={ledgerSnapshot?.advancedThisWeek ?? false}

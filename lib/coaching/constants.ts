@@ -91,6 +91,20 @@ export const ZONE_DRIFT_WINDOW   = 8
 export const ZONE_HELD_MAX_ABOVE_CEILING_PCT = 10
 
 /**
+ * §12 Amendment 3 (Coaching Board, 2026-10-21, SESSION-SCREENS-WOW-01) — the Zone Trace's sentence.
+ *
+ * The sentence REUSES the two thresholds above (praise at ≤10, accusation over 20); these three only govern how the
+ * trace is read. `TRACE_SMOOTHING_S` is the rolling window that stops a single noisy sample counting as time above the
+ * ceiling. A late drift is the first excursion of at least `TRACE_SUSTAINED_ABOVE_S` above the ceiling (so a hill is
+ * not a drift, Willy) beginning at or after `TRACE_LATE_ONSET_FRACTION` of the run (a fraction, not a clock time, so a
+ * 40-minute and a 2-hour run read alike, Seiler). Measured on 131 rich traces (13 runners): 11 of 109 runs over 20%
+ * started late by this rule; most drift starts early. Thin, and declared as thin.
+ */
+export const TRACE_SMOOTHING_S = 30
+export const TRACE_SUSTAINED_ABOVE_S = 180
+export const TRACE_LATE_ONSET_FRACTION = 0.4
+
+/**
  * §12 Am.2 — the floor under any claim that a runner IMPROVED across their trial.
  *
  * McMillan: *"A three-run trial cannot support 'when you started'."* A comparison

@@ -1831,6 +1831,39 @@ that too is a decision rather than an omission.
 ---
 
 
+### Amendment 3 — the Zone Trace's sentence reads the run with the thresholds above — added 2026-10-21 (Coaching Board, SESSION-SCREENS-WOW-01)
+
+*(Numbered 3 because §12 already carries three headings labelled "Amendment 2": the drift detector's input, praise
+vs accusation, and the public claim. They are left as they are; this is the next one.)*
+
+**Principle.** The Zone Trace draws a runner's heart rate against their ceiling, and one sentence reads it. That
+sentence **reuses** Amendment 2's two thresholds rather than inventing a third pair for a new surface, and it states
+**what happened, never why** (P-04: we cannot tell "ran too hard" from "ran up a hill in August"; Sims: heat, illness
+and the luteal phase lift heart rate without a change in effort).
+
+| Time above the ceiling | Sentence |
+|---|---|
+| ≤ `ZONE_HELD_MAX_ABOVE_CEILING_PCT` (10) | *"You held the zone."* (praise, Amendment 2) |
+| > 10 and ≤ `ZONE_DRIFT_ABOVE_CEILING_PCT` (20) | *"Over your ceiling for {m} of {n} minutes."* (neither praise nor warning, McMillan) |
+| > 20, first excursion of ≥ `TRACE_SUSTAINED_ABOVE_S` (180 s) starting at ≥ `TRACE_LATE_ONSET_FRACTION` (0.4) of the run, ≤ 10% above before it | *"You held it for {m} minutes, then it got away from you."* |
+| > 20, otherwise | *"Above your ceiling for {m} of {n} minutes."*, plus *"Easy days need to feel easy."* on easy, long and recovery runs |
+
+**One owner of the share.** When the run has an analysis, its `hr_above_ceiling_pct` decides, so the verdict pill and
+the sentence can never disagree; the trace supplies only the timing. Without one (the trace is FREE, SLT 2026-10-21)
+the trace's own share is used, smoothed over `TRACE_SMOOTHING_S` (30 s). Measured: the trace's share matches the
+stored analysis to a median of 0.8 points (p90 4.8) across 131 rich traces.
+
+**A ceiling-only run is a ceiling (this section).** A session whose prescribed zone tops out at Z2 has no floor:
+everything under the ceiling is held. Only a quality session has a band.
+
+**Measured, and thin.** Live analyses with HR: 76, from 2 runners: 70 at ≤10%, 3 between, 3 over 20. Of 109 rich
+traces over 20% (read as easy runs), 11 started late by the rule above. Re-measure as the cohort grows.
+
+**Not mechanically checkable by `validatePlan()`** — it reads a run, not a plan. Enforced by
+`lib/coaching/zoneTrace.test.ts`: every table row reachable, the exact thresholds tested, the analysis deciding, a hill
+never setting the onset, the ceiling-only rule, no cause words; falsified by moving the praise threshold, by disabling
+the late rule and by giving easy runs a floor.
+
 ## 13. Fitness classification — VDOT first, volume fallback
 
 > **Superseded for the classifier logic by §79 (dual-signal), SLT-approved 2026-08-06 (GEN-FIX-07/D2).** VDOT-first with a volume fallback misclassified a 30 km/week runner as a beginner on one slow 5K. §79 now requires VDOT *and* volume to agree before applying the beginner intensity ceiling. This section is retained for the definition of the three levels and their thresholds; the *derivation* rule is §79's.

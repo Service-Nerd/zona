@@ -6149,6 +6149,12 @@ line, off-band segments in `--warn`, one sentence about the runner; no HR stream
 quantity first, one line plus an optional why, a modality glyph at the left (S6). Closing marks *Logged · Linked · Zone
 read*. **Colour:** into the trace and silhouette, a 6 px rail, section headers as session-colour text with a 2 px top
 rule; never a fill, band, wash or gradient (*Type accent, not flood*, veto sustained). Prototype first.
+
+**Built 2026-10-21 (phase 1a): the Zone Trace.** `components/shared/ZoneTrace.tsx`, drawn inside
+`SessionCompleteCard` (in place of its ZoneBar) on both logged paths and in the share image; the read and the sentence
+are `lib/coaching/zoneTrace.ts` (`buildRunTrace`, one owner). Draws only at `TRACE_MIN_SAMPLES` (100) samples; below
+that the card is unchanged. **Check:** `components/shared/sessionCompleteTrace.markup.test.ts` (replaces the bar, free
+runs reach it, unchanged without a trace, token colours) and `lib/coaching/zoneTrace.test.ts` (the sentence table).
 **Build ruling (same day):** five logged states, L1 rich trace · L2 sparse (zone bar) · L3 no HR (reuse HR-SYNC-02's
 *"Watch HR hasn't landed yet."* / retry) · L4 hand-logged avg HR (reuse the summary's amber ↑) · L5 hand-logged, no zone element. The
 trace is revealed after RPE. Easy, long and recovery draw as a ceiling, not a band. Every change replaces or folds,

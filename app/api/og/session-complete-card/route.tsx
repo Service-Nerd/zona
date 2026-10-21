@@ -1,4 +1,5 @@
 import { readPlanJson } from '@/lib/plan'
+import { buildRunTrace, thinTrace, type RunTrace } from '@/lib/coaching/zoneTrace'
 import { ImageResponse } from 'next/og'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
@@ -34,6 +35,33 @@ import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 // variant — narrows scope to "screenshot sharing".
 
 export const runtime = 'nodejs'
+
+/** The Zone Trace at story scale. Mirrors `components/shared/ZoneTrace.tsx`; resolved hex, as every colour here is. */
+const OG_DRIFTED = '#B8853A' // --zone-drifted (--warn)
+const OG_UNDER = '#8A857D'   // --zone-unknown (--mute), BRAND.og.mute
+function OgZoneTrace({ trace, colour }: { trace: RunTrace; colour: string }) {
+  const W = 920, H = 300, PAD = 8
+  const pts = thinTrace(trace.points, 240)
+  const t0 = pts[0][0], t1 = pts[pts.length - 1][0]
+  const vs = pts.map(p => p[1])
+  const vMin = Math.min(trace.band.lo - 18, ...vs), vMax = Math.max(trace.band.hi + 12, ...vs)
+  const x = (t: number) => PAD + ((t - t0) / Math.max(1, t1 - t0)) * (W - 2 * PAD)
+  const y = (v: number) => PAD + (1 - (v - vMin) / (vMax - vMin)) * (H - 2 * PAD)
+  const floor = trace.ceilingOnly ? vMin : trace.band.lo
+  const segs: { c: string; d: string }[] = []
+  for (const [t, v] of pts) {
+    const c = v > trace.band.hi ? OG_DRIFTED : v < floor ? OG_UNDER : colour
+    const p = `${x(t).toFixed(1)},${y(v).toFixed(1)}`
+    const last = segs[segs.length - 1]
+    if (!last || last.c !== c) { if (last) last.d += ` ${p}`; segs.push({ c, d: p }) } else last.d += ` ${p}`
+  }
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+      <rect x={PAD} y={y(trace.band.hi)} width={W - 2 * PAD} height={Math.max(4, y(floor) - y(trace.band.hi))} rx={10} fill={colour} fillOpacity={0.14} />
+      {segs.map((g, i) => <polyline key={i} points={g.d} fill="none" stroke={g.c} strokeWidth={7} strokeLinejoin="round" strokeLinecap="round" />)}
+    </svg>
+  )
+}
 
 const STORY_W = 1080
 const STORY_H = 1920
@@ -94,14 +122,14 @@ export async function GET(req: NextRequest) {
   // Pull the three inputs we need in parallel.
   const [completionRes, analysisRes, planRes, allCompletionsRes, allAnalysesRes] = await Promise.all([
     service.from('session_completions')
-      .select('week_n, session_day, status, rpe, fatigue_tag, updated_at')
+      .select('week_n, session_day, status, rpe, fatigue_tag, updated_at, apple_health_uuid')
       .eq('user_id', user.id)
       .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', weekN)
       .eq('session_day', sessionDay)
       .maybeSingle(),
     service.from('run_analysis')
-      .select('week_n, session_day, hr_in_zone_pct')
+      .select('week_n, session_day, hr_in_zone_pct, hr_above_ceiling_pct')
       .eq('user_id', user.id)
       .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', weekN)
@@ -140,11 +168,28 @@ export async function GET(req: NextRequest) {
     asOfDate:    new Date(),
   })
 
+  // SESSION-SCREENS-WOW-01 — the Zone Trace is the share image too (Collins; Design Board 2026-10-21). Same owner
+  // (`buildRunTrace`), same samples, same band as the in-app card; resolved hex because next/og has no CSS variables.
+  const hkUuid = (completion?.apple_health_uuid as string | null) ?? null
+  const [samplesRes, settingsRes] = hkUuid && planSlot
+    ? await Promise.all([
+        service.from('strava_activities').select('hrSamples:raw_payload->hrSamples').eq('user_id', user.id).eq('apple_health_uuid', hkUuid).maybeSingle(),
+        service.from('user_settings').select('resting_hr, max_hr').eq('id', user.id).maybeSingle(),
+      ])
+    : [null, null]
+  const abovePctRaw = analysisRes.data?.hr_above_ceiling_pct
+  const trace = planSlot && samplesRes && !samplesRes.error
+    ? buildRunTrace((samplesRes.data as { hrSamples?: unknown } | null)?.hrSamples, planSlot as never,
+        (settingsRes?.data as { resting_hr?: number | null } | null)?.resting_hr ?? null,
+        (settingsRes?.data as { max_hr?: number | null } | null)?.max_hr ?? null,
+        abovePctRaw != null ? Number(abovePctRaw) : null)
+    : null
+
   const completionCopy = getCompletionCopy(sessionType)
   const zonePctRaw     = analysisRes.data?.hr_in_zone_pct
-  const zonePct        = zonePctRaw != null ? Math.round(Number(zonePctRaw)) : null
+  const zonePct        = zonePctRaw != null ? Math.round(Number(zonePctRaw)) : trace ? Math.round(trace.inZonePct) : null
   const zone           = zoneNumberForType(sessionType)
-  const showZone       = zonePct != null && zone != null
+  const showZone       = zonePct != null && (zone != null || trace != null)
   const rpe            = (completion?.rpe as number | null) ?? null
   const fatigueTag     = (completion?.fatigue_tag as string | null) ?? null
   const completedAt    = completion?.updated_at as string | undefined
@@ -262,9 +307,15 @@ export async function GET(req: NextRequest) {
                   %
                 </span>
               </div>
+              {trace && <OgZoneTrace trace={trace} colour={ZONE_COLOURS[(zone ?? 2) - 1]} />}
+              {trace && (
+                <div style={{ display: 'flex', fontFamily: 'Inter', fontSize: 52, fontWeight: 700, color: BRAND.og.ink, lineHeight: 1.25, maxWidth: 920 }}>
+                  {trace.sentence}
+                </div>
+              )}
               {/* ZoneBar 5-segment row. Each segment scaled 3x from the in-app
-                  height (5 → 15) and the gap (3 → 9). */}
-              <div style={{ display: 'flex', width: 720, gap: 9 }}>
+                  height (5 → 15) and the gap (3 → 9). Replaced by the trace when there is one. */}
+              {!trace && <div style={{ display: 'flex', width: 720, gap: 9 }}>
                 {[1, 2, 3, 4, 5].map(z => (
                   <div
                     key={z}
@@ -276,7 +327,7 @@ export async function GET(req: NextRequest) {
                     }}
                   />
                 ))}
-              </div>
+              </div>}
             </>
           ) : (
             <div

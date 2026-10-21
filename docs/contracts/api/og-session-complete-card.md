@@ -2,7 +2,7 @@
 
 **Method:** GET
 **Auth:** Supabase session cookie (`getUserFromRequest`). Returns 401 otherwise.
-**Tier:** All tiers (the card itself is FREE structure / PAID detail — paid users render State A with zone bar, free users render State B with RPE only).
+**Tier:** All tiers (the card itself is FREE structure / PAID detail — paid users render State A with zone bar, free users render State B with RPE only). **The Zone Trace is FREE** (SLT 2026-10-21): any tier with a rich Apple Health trace renders *A + trace*.
 **Runtime:** `nodejs` (auth-admin reads aren't edge-safe; matches the sibling SHARE-01 route).
 
 ## Query params
@@ -27,6 +27,7 @@
 | Date stamp | `session_completions.updated_at` |
 | Zone % (State A) | `run_analysis.hr_in_zone_pct` for the same slot; rounded to integer |
 | RPE / fatigue chip | `session_completions.{rpe, fatigue_tag}` |
+| **Zone Trace** (SESSION-SCREENS-WOW-01, 2026-10-21) | `session_completions.apple_health_uuid` → `strava_activities.raw_payload->hrSamples` (that one key, never the column) for the same user; band from the session's prescribed `zone` and `user_settings.{resting_hr, max_hr}`; sentence and share from `lib/coaching/zoneTrace.ts → buildRunTrace`, with `run_analysis.hr_above_ceiling_pct` deciding when present (§12 Am.3) |
 | Completion copy | `lib/coaching/completionCopy.ts → getCompletionCopy(sessionType)` — shared with the in-app card |
 | Voice anchor stamp | `BRAND.voiceAnchor` |
 | Brand statement (conditional) | `BRAND.brandStatement`, rendered only when `computeLedger().advancedThisWeek === true` (mirrors DOCTRINE-01's in-app conditional) |
@@ -43,6 +44,7 @@ unfiltered read serves the previous plan's rows for the same `week_n`.
 | State | Trigger | Anatomy |
 |---|---|---|
 | **A** | `run_analysis.hr_in_zone_pct` is non-null | `TIME IN ZONE` eyebrow + big % digit + 5-segment ZoneBar (one segment filled in the prescribed zone colour) + fatigue chip + completion copy |
+| **A + trace** | the run has 100+ HR samples (`TRACE_MIN_SAMPLES`), a prescribed zone and a max HR | As A, with the **Zone Trace and its sentence in place of the ZoneBar**; the % is the analysis's, else the trace's own (the trace is FREE, so a free run reaches this state too) |
 | **B** | no analysis row, or `hr_in_zone_pct` is null | `EFFORT` eyebrow + `RPE / 10` digit + fatigue chip + completion copy |
 
 Both states render the same completion copy + voice-anchor stamp. The brand-statement footer is independent of state — gated only on the ledger.

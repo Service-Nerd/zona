@@ -14,6 +14,7 @@ import ManualRunModal from '@/components/dashboard/ManualRunModal'
 import RPEScale from '@/components/shared/RPEScale'
 import ReflectionInput from '@/components/training/ReflectionInput'
 import SaveImageButton from '@/components/dashboard/SaveImageButton'
+import { useRunTrace } from '@/components/dashboard/useRunTrace'
 import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import SessionSteps from '@/components/shared/SessionSteps'
@@ -424,6 +425,13 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
   // pool that does not contain the row yields null — which `linkPickerCopy` handles
   // as a complete sentence rather than a gap.
   const linkedActivityId = completion?.apple_health_uuid ?? completion?.strava_activity_id ?? null
+  // SESSION-SCREENS-WOW-01 — the Apple Health run behind this log, for the Zone Trace on the completion card. Only an
+  // HK run carries samples; a hand log, or a Strava link, has none and keeps the card exactly as before.
+  const traceUuid: string | null = completion?.apple_health_uuid
+    ?? (selectedActivity && (selectedActivity.source === 'apple_health' || selectedActivity.apple_health_uuid)
+      ? (selectedActivity.apple_health_uuid ?? selectedActivity.id ?? null) : null)
+  const runTrace = useRunTrace(traceUuid, session, restingHR, maxHR,
+    runAnalysis?.hr_above_ceiling_pct != null ? Number(runAnalysis.hr_above_ceiling_pct) : null)
   const linkedRunName = linkedActivityId != null
     ? (pooledRuns.find((r: any) => r.id === linkedActivityId)?.name ?? null)
     : null
@@ -777,6 +785,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                 completionCopy={copy}
                 zonePct={null}
                 rpe={rpe}
+                trace={runTrace}
                 fatigueTag={fatigueTag}
                 ledgerAdvancedThisWeek={ledgerSnapshot?.advancedThisWeek ?? false}
               />
