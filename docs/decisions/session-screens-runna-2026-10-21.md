@@ -241,7 +241,7 @@ long run over two hours, the share image, and any of it on the founder's phone.
 | …sparse trace (1–99 samples) | 145 (41%) | Enough for zone percentages, not a line |
 | …no samples | 72 (20%) | |
 | HK runs with **no HR at the first read** | **83 of 336 known (25%)** | The founder's case |
-| …of which HR arrived later | **4**, median **~4 days** later | "Syncing" must not promise it will come |
+| …of which HR arrived later | **32 (39%)** now carry an average HR; **only 1** gained a rich trace; 51 never did | ⚠️ *Corrected the same day:* the first count read `hr_arrived_late_at`, which is stamped on only 3 of the 32 (a telemetry gap, filed as `HR-LATE-STAMP-01`). Late HR is common; a late **trace** is rare |
 
 **The logged states, therefore (all five must be designed, not inherited):**
 
@@ -249,8 +249,8 @@ long run over two hours, the share image, and any of it on the founder's phone.
 |---|---|
 | **L1** linked, rich trace | Numbers · the Zone Trace · its sentence |
 | **L2** linked, sparse trace | Numbers · today's zone bar from the bucketed percentages · the same sentence family |
-| **L3** linked, **no HR yet** | Numbers · one quiet line: *"No heart rate from your watch for this run."* Nothing reserved for a trace that may never come; if HR arrives later, the next open shows L1/L2 |
-| **L4** hand-logged with average HR | Numbers · average HR against the ceiling as one value (*"Avg 141 · ceiling 145"*); an average cannot show a drift, so no line is drawn |
+| **L3** linked, **no HR yet** | **Already built (HR-SYNC-02), reuse it:** *"Watch HR hasn't landed yet."* for 24 h, then *"HR didn't land. Tap to retry."*; Post-run's `PendingHrCard`. Numbers above it; if HR lands, the next open shows L2 (or L1, rarely) |
+| **L4** hand-logged with average HR | **Already built:** the execution summary shows *"141 bpm avg"* in `--warn` with ↑ above the Zone 2 ceiling. Reuse it in the hero; no line is drawn (an average cannot show a drift) |
 | **L5** hand-logged, no HR | Numbers · how it felt · Kit. No zone element at all (empty means calm, not broken) |
 | *any* | The Kit read in flight uses `AIMark`'s working state, never a spinner |
 
@@ -290,8 +290,9 @@ Two journey findings:
   same weight as a caption.
 - **Sierra.** The reveal after RPE is the best idea in this round, and it was already ruled; we just had not noticed
   it was a wow. L4's *"Avg 141 · ceiling 145"* is honest and still teaches the ceiling. For L5, Kit carries it.
-- **Wroblewski.** L3's copy must not say "syncing": four of 83 ever arrived. On the link nudge: once, on the hand-logged
-  hero, only when a matching run exists, and dismissing it is permanent for that session.
+- **Wroblewski.** L3 and L4 reuse the copy that exists (corrected count: 39% of late HR does land, so *"hasn't landed
+  yet"* is honest). The link nudge **already exists** at the moment of logging (auto-match: *Log this run* / *Looks like
+  this one?* with the run named, *Wrong one?*), and *Update log* links one afterwards: no new nudge.
 - **Collins.** Ship the trace as the share image in the same build as the hero: the moment someone sees L1 is the
   moment they want to send it. And since L1 is rare, make the rest of the hero as confident as the trace; three big
   numerals in ink are not decoration.
@@ -302,16 +303,80 @@ Two journey findings:
 1. **Phase 1, the logged journey.** Session detail (logged) hero with **all five states L1–L5**, the trace with
    ceiling-only bands for easy, long and recovery (Part 3 finding), *What was planned* fold, closing marks; Post-run
    trace in the zone bar's slot, **revealed after RPE**; one sentence owner shared by both; share image via
-   `SaveImageButton`. The link nudge as Wroblewski ruled.
+   `SaveImageButton`. No new link nudge (it exists).
 2. **Phase 2, pre-run detail.** Step rows (W5), silhouette inside the structure header (from the step model, not
    text), duration range in the existing tile.
 3. **Phase 3, Today card.** 6 px rail, duration range, silhouette replacing the zone ruler. **Check the website**,
    which renders `SessionCard`.
 4. **Every phase ships with an inventory check**: a markup arm per screen asserting each *must not lose* element still
    renders, and a height measure at 375 px in the common state, falsified by removing one element.
-5. Coaching routes from Part 3 stand (CD-1 evidence; Outdoor/Treadmill). Copy for L3, L4 and the link nudge goes to the
-   founder before build.
+5. Coaching routes from Part 3 stand (CD-1 evidence; Outdoor/Treadmill). L3/L4 copy is reused; only the trace
+   sentences are new copy, for the founder. The trace's sentence thresholds go to the Coaching Board (Part 6).
 
 ### ⚠️ What this does not settle
 Copy (founder); the tier of the trace (the post-run read is PAID via `activity_intelligence`; whether the trace itself
 is free is an SLT question under *gate richness, never access*); how a two-hour run reads at 375 px; the device.
+
+---
+
+## Part 6 — SLT (Sutherland, Fried, Hutchinson, Wood, Zhuo), 2026-10-21
+
+**Asked by the founder:** *"Take these to the SLT but we do have to remain on brand … be very clear on what is there
+already."* Traynor's commercial seat stays stood down (£0 revenue, 0 paying subscribers): nobody here prices conversion.
+
+### What is already there (read from the code, not assumed)
+| Founder's question | Exists? | Where | Copy today |
+|---|---|---|---|
+| 1. No-HR line (L3) | ✅ **Yes** (HR-SYNC-02) | `HrPendingStatusRow` on the Today card; `PendingHrCard` on Post-run (paid) | *"Watch HR hasn't landed yet."* (24 h, `PENDING_HR_WINDOW_HOURS`) → *"HR didn't land. Tap to retry."* |
+| 2. Hand-logged average HR (L4) | ✅ **Yes**, as a column | Execution summary, *Planned / Actual* | *"141 bpm avg"*, `--warn` with ↑ over the Zone 2 ceiling |
+| 3. Link nudge | ✅ **Yes**, at the moment of logging | Auto-match (`resolveAutoMatch`) on Today's *Log this run* and the session CTA; `linkPickerCopy` | *"Log this run"* (high) / *"Looks like this one?"* (medium) + run name · distance · when + *"Wrong one?"*; *"Update log"* links later |
+| 4. Trace tier | ❌ New | — | — |
+| The trace's sentence | ❌ New copy | — | Draft below |
+
+**So items 1–3 need no new copy and no new UI decision: reuse.** The SLT sat on item 4 and on the brand fit of the
+one new piece of copy.
+
+### Facts for item 4
+- The trace is **rule-based** (the runner's own heart rate against their own zone ceiling); no model call, no cost per
+  view. Kit's read, the reframe and plan reshaping are the AI and stay where they are.
+- Today the post-run AI surfaces are PAID (`activity_intelligence`); the execution summary (planned vs actual) is shown
+  to every tier. CLAUDE.md: *"Gate richness, never access."* FREE includes *"session display and tracking"*.
+
+### Seats
+- **🧠 Sutherland.** The trace is the costly signal: it shows a runner something no encouraging app can, that they went
+  over. Paywall it and the proof of the brand sits behind a till. Give the picture away and charge for the
+  explanation: *why* you drifted is what Kit is for. On brand: *"Hold the zone."* belongs in exactly this moment.
+- **📦 Fried.** Free, and stop building what exists: items 1–3 are done, and the honest work is to reuse them. The trace
+  is their data drawn back to them; charging for that is charging for their own heartbeat. One quiet locked line under
+  it for free runners (*Kit's read on why*, the existing locked pattern) and no more.
+- **🏃 Hutchinson.** No physiology claim in a line drawn against a ceiling, so no objection to free. **But the sentence
+  makes claims** ("you held it", "it got away from you") on thresholds the prototype invented (under 10% above, a
+  three-minute run above). Those are coaching numerics: they go to the Coaching Board and into named config, as the
+  Configuration Singularity requires. The ceiling-only rule for easy runs is §12 and already settled.
+- **🔬 Wood.** This is the habit loop: run, see, adjust next time. Feedback that arrives only for payers cuts the loop
+  for the runners we are trying to change. Free. And keep it the same picture every time: a familiar cue is what
+  becomes automatic.
+- **🧭 Zhuo.** On brand by construction: the reused strings already passed the voice rules, and the new sentences are
+  short, honest and specific. Brand checks for the founder: no tagline used in the app sentence; *"Hold the zone."* is
+  `BRAND.voiceAnchor` and is used only as itself, never rephrased; no em dashes.
+
+**Conflicts:** none on the tier. Hutchinson's condition (thresholds to the Coaching Board) is accepted by all.
+
+### ✅ Recommendation
+1. **Items 1–3: reuse what exists.** No new nudge, no new no-HR copy, no new average-HR treatment.
+2. **The Zone Trace is FREE** (`SESSION-SCREENS-WOW-01`, tier: FREE). Kit's read on *why* stays PAID; free runners see
+   the existing locked line under the trace.
+3. **The trace's sentence thresholds go to the Coaching Board** before build, as named config.
+4. **New copy for the founder** (the only new words in phase 1), checked against `brand.md`'s voice:
+
+| State | Draft |
+|---|---|
+| Held | *"Hold the zone."* is the voice anchor; the held line: **"You held the zone."** |
+| Drifted late | **"You held it for 38 minutes, then it got away from you."** |
+| Over most of it (easy) | **"Above your ceiling for 32 of 55 minutes. Easy days need to feel easy."** |
+| No trace, has % (L2) | Reuse the post-run verdict sentence family that exists |
+
+**MUST/NEVER:** no gamification; no locked brand string rephrased; tokens only; no modal; free users keep the plan,
+the card and the log action (*gate richness, never access*). **Risks:** the free trace removes one paid-only visual
+from the post-run screen; with no conversion data there is no way to know whether that matters (Traynor's absence,
+stated rather than guessed).

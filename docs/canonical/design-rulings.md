@@ -148,7 +148,7 @@ been answered and misfiled.
 
 Founder approved the prototype with two conditions: design for missing data, and judge each change in its screen and
 journey. Measured: 121 of 129 logged sessions are hand-logged (5 runners), 39% of Apple Health runs have a rich trace,
-25% have no HR at first read and 4 of 83 ever gained it. **Five logged states L1–L5** are all designed. Phase 1 the
+25% have no HR at first read (39% of those gain it later, 1 a trace). **Five logged states L1–L5** are all designed. Phase 1 the
 logged journey (hero, trace revealed **after RPE**, the settled order, share image); phase 2 pre-run detail; phase 3 the
 Today card (silhouette **replaces** the zone ruler; check the website). Each phase carries a must-not-lose markup check
 and a 375 px height measure. Not built. Sitting: `docs/decisions/session-screens-runna-2026-10-21.md` Parts 4–5.

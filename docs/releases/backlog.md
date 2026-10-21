@@ -84,7 +84,13 @@ rows led by the bold quantity plus a modality glyph, closing marks, an honest du
 as a fill (Silvanto's veto). Board ideas for the prototype: last time's trace (Sierra), a next-step pin (Wroblewski),
 the trace as the share image (Collins). **Next:** a local prototype at 375 px on real runs (207 of 353 Apple Health runs
 carry an HR stream), then a build ruling. Routed: Outdoor/Treadmill to 🏃 Coaching Board. `docs/decisions/session-screens-runna-2026-10-21.md`.
-🧪 **Prototype built 2026-10-21** (local, `scripts/session-wow/`): the success condition passed on four real traces. Findings: easy-run zones must draw as a ceiling (§12), Cruise intervals and Mile repeats share one shape (CD-1 evidence → 🏃), the silhouette must read the step model, the fallback is common for some runners, catalogue notes carry em dashes. **Founder: "I absolutely love this!!!"**, with two conditions (missing data; screen and journey scope). 🧭 **Build ruled 2026-10-21, phased:** 1 logged journey (L1–L5, trace after RPE, share image), 2 pre-run detail, 3 Today card. **Before phase 1:** founder copy for L3, L4 and the link nudge; SLT on the trace's tier.
+🧪 **Prototype built 2026-10-21** (local, `scripts/session-wow/`): the success condition passed on four real traces. Findings: easy-run zones must draw as a ceiling (§12), Cruise intervals and Mile repeats share one shape (CD-1 evidence → 🏃), the silhouette must read the step model, the fallback is common for some runners, catalogue notes carry em dashes. **Founder: "I absolutely love this!!!"**, with two conditions (missing data; screen and journey scope). 🧭 **Build ruled 2026-10-21, phased:** 1 logged journey (L1–L5, trace after RPE, share image), 2 pre-run detail, 3 Today card. 💼 **SLT 2026-10-21:** items 1–3 already exist (HR-SYNC-02 pending/retry copy, the summary's amber avg HR, auto-match at log time): reuse. **The Zone Trace is FREE**; Kit's read on why stays PAID. **Before phase 1:** 🏃 Coaching Board on the trace's sentence thresholds; 👤 founder on the three new sentences.
+
+### 🔲 `HR-LATE-STAMP-01` — late heart rate is not stamped ⚙️ **NO BOARD** *(filed 2026-10-21)*
+
+Of 83 Apple Health runs with no HR at the first read, 32 now carry an average HR, but `hr_arrived_late_at` is set on
+only 3. Any measure of late HR read from that column undercounts by 10×, as this session's first count did. Find the
+write paths that fill `avg_hr` after ingest and stamp the column there; add a check that a row gaining HR is stamped.
 
 ### ✅ `STRENGTH-SESSION-TITLE-01` — **SHIPPED 2026-10-19.** A strength session is named by what it holds ⚙️ **NO BOARD** (titles approved by the founder)
 

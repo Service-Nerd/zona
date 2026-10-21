@@ -6149,7 +6149,7 @@ line, off-band segments in `--warn`, one sentence about the runner; no HR stream
 quantity first, one line plus an optional why, a modality glyph at the left (S6). Closing marks *Logged · Linked · Zone
 read*. **Colour:** into the trace and silhouette, a 6 px rail, section headers as session-colour text with a 2 px top
 rule; never a fill, band, wash or gradient (*Type accent, not flood*, veto sustained). Prototype first.
-**Build ruling (same day):** five logged states, L1 rich trace · L2 sparse (zone bar) · L3 no HR (*one line, no
-reserved space, never "syncing"*) · L4 hand-logged avg HR against the ceiling · L5 hand-logged, no zone element. The
+**Build ruling (same day):** five logged states, L1 rich trace · L2 sparse (zone bar) · L3 no HR (reuse HR-SYNC-02's
+*"Watch HR hasn't landed yet."* / retry) · L4 hand-logged avg HR (reuse the summary's amber ↑) · L5 hand-logged, no zone element. The
 trace is revealed after RPE. Easy, long and recovery draw as a ceiling, not a band. Every change replaces or folds,
 never adds height in the common state; each phase checks its screen's must-not-lose list.
