@@ -13,6 +13,7 @@ import { DAY_FULL_NAME, DAY_ORDER, type Day } from '@/lib/plan/days'
 import type { DistanceUnits } from '@/lib/format'
 import type { Plan } from '@/types/plan'
 import type { StrengthPlan } from '@/packages/strength'
+import { STRENGTH_SETUP } from '@/lib/strength-bridge/display'
 
 const ORDINARY = new Set(['base', 'build', 'peak', 'deload'])
 const list = (days: Day[]) => {
@@ -51,7 +52,13 @@ function liftDays(p: StrengthPlan): Day[] {
 /** The strength plan: built for the first time, moved to new days, or kept on the same ones. */
 export function strengthPlanReadback(before: StrengthPlan | null, after: StrengthPlan): string {
   const now = liftDays(after)
-  if (!before) return now.length ? `Strength plan built. You lift on ${list(now)}.` : 'Strength plan built.'
+  if (!before) {
+    const built = now.length ? `Strength plan built. You lift on ${list(now)}.` : 'Strength plan built.'
+    // STRENGTH-LEGS-DAY-FIRST-BUILD-01 (Design Board 2026-10-21): a first build skips *Here is what changes*, so this is
+    // the only place the runner choosing days for the first time hears the day that would give legs a proper session.
+    // An update never carries it: the consent screen already said it.
+    return after.legs_day_suggestion ? `${built} ${STRENGTH_SETUP.legsDayLine(after.legs_day_suggestion)}` : built
+  }
   const was = liftDays(before)
   if (now.join() !== was.join() && now.length) return `Strength plan updated. You now lift on ${list(now)}.`
   return 'Strength plan updated. Same days as before.'

@@ -45,6 +45,13 @@ describe('strengthPlanReadback (SAVE-PATTERN-01)', () => {
   it('new days name the new days', () => {
     expect(strengthPlanReadback(sp(['mon', 'wed']), sp(['tue', 'fri'], ['tue', 'fri']))).toBe('Strength plan updated. You now lift on Tuesday and Friday.')
   })
+  it('🔴 STRENGTH-LEGS-DAY-FIRST-BUILD-01: a first build with a suggestion names the day; an update never does', () => {
+    const legs = { legs_day_suggestion: { day: 'tue', replaces: 'mon', run: 'quality', weeks: 6 } }
+    const after = { ...sp(['mon', 'wed'], ['mon', 'wed']), ...legs } as unknown as StrengthPlan
+    expect(strengthPlanReadback(null, after)).toBe('Strength plan built. You lift on Monday and Wednesday. Lift on Tuesday after your quality run and your legs get a proper session.')
+    expect(strengthPlanReadback(sp(['mon', 'wed']), after)).toBe('Strength plan updated. Same days as before.')
+    expect(strengthPlanReadback(sp(['tue', 'fri']), after)).toBe('Strength plan updated. You now lift on Monday and Wednesday.')
+  })
   it('the same days say so', () => {
     expect(strengthPlanReadback(sp(['mon', 'wed']), sp(['mon', 'wed']))).toBe('Strength plan updated. Same days as before.')
   })

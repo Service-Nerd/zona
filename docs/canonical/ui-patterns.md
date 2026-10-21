@@ -4170,7 +4170,8 @@ is the engine's shape, not the runner's, and as two controls it can state a cont
   Tuesday after your quality run and your legs get a proper session."* (`STRENGTH_SETUP.legsDayLine`).
   **A first build says it too** (`STRENGTH-LEGS-DAY-FIRST-BUILD-01`, Design Board 2026-10-21): a first build skips
   *Here is what changes*, so its Plan readback adds the line as a second sentence in the same `FieldReadback`, only
-  when the plan carries a suggestion, never on an update. Ruled, not built.
+  when the plan carries a suggestion, never on an update. Built 2026-10-21 in `strengthPlanReadback`;
+  gate: `lib/ui/planChangeReadback.test.ts`.
 - **A strength session is named by what it holds** (`STRENGTH-SESSION-TITLE-01`): `strengthSessionTitle(session)` is the
   one owner (*Lower body* for a full body the clock left without upper work, *Upper body and light legs* for a
   converted day). Never `STRENGTH_KIND_TITLE[kind]` at a call site. **Check:** `lib/strength-bridge/sessionTitle.test.ts`.
