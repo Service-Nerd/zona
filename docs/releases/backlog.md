@@ -84,7 +84,7 @@ rows led by the bold quantity plus a modality glyph, closing marks, an honest du
 as a fill (Silvanto's veto). Board ideas for the prototype: last time's trace (Sierra), a next-step pin (Wroblewski),
 the trace as the share image (Collins). **Next:** a local prototype at 375 px on real runs (207 of 353 Apple Health runs
 carry an HR stream), then a build ruling. Routed: Outdoor/Treadmill to 🏃 Coaching Board. `docs/decisions/session-screens-runna-2026-10-21.md`.
-🧪 **Prototype built 2026-10-21** (local, `scripts/session-wow/`): the success condition passed on four real traces. Findings: easy-run zones must draw as a ceiling (§12), Cruise intervals and Mile repeats share one shape (CD-1 evidence → 🏃), the silhouette must read the step model, the fallback is common for some runners, catalogue notes carry em dashes. **Next:** founder looks on his phone, then the board rules on the build.
+🧪 **Prototype built 2026-10-21** (local, `scripts/session-wow/`): the success condition passed on four real traces. Findings: easy-run zones must draw as a ceiling (§12), Cruise intervals and Mile repeats share one shape (CD-1 evidence → 🏃), the silhouette must read the step model, the fallback is common for some runners, catalogue notes carry em dashes. **Founder: "I absolutely love this!!!"**, with two conditions (missing data; screen and journey scope). 🧭 **Build ruled 2026-10-21, phased:** 1 logged journey (L1–L5, trace after RPE, share image), 2 pre-run detail, 3 Today card. **Before phase 1:** founder copy for L3, L4 and the link nudge; SLT on the trace's tier.
 
 ### ✅ `STRENGTH-SESSION-TITLE-01` — **SHIPPED 2026-10-19.** A strength session is named by what it holds ⚙️ **NO BOARD** (titles approved by the founder)
 

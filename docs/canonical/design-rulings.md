@@ -144,6 +144,15 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-21 — SESSION-SCREENS-WOW-01 (build) · SHIP WITH AMENDMENT, phased. Excellent without the data; nothing lost, nothing taller
+
+Founder approved the prototype with two conditions: design for missing data, and judge each change in its screen and
+journey. Measured: 121 of 129 logged sessions are hand-logged (5 runners), 39% of Apple Health runs have a rich trace,
+25% have no HR at first read and 4 of 83 ever gained it. **Five logged states L1–L5** are all designed. Phase 1 the
+logged journey (hero, trace revealed **after RPE**, the settled order, share image); phase 2 pre-run detail; phase 3 the
+Today card (silhouette **replaces** the zone ruler; check the website). Each phase carries a must-not-lose markup check
+and a 375 px height measure. Not built. Sitting: `docs/decisions/session-screens-runna-2026-10-21.md` Parts 4–5.
+
 ## 2026-10-21 — SESSION-SCREENS-WOW-01 · SHIP WITH AMENDMENT, to a prototype first. The logged session leads with the run; the Zone Trace is the wow
 
 From the founder's Runna screenshots. **W1 Zone Trace** (planned zones over time with the runner's HR line; off-band in

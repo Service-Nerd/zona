@@ -220,3 +220,98 @@ drift is obvious, a minute is not readable, so Wroblewski's tap-to-expand stands
 
 **Not yet tested:** a drifted *quality* session (no real quality trace was available with a matching analysis), a
 long run over two hours, the share image, and any of it on the founder's phone.
+
+---
+
+## Part 4 — The founder's verdict and his two conditions (2026-10-21)
+
+> *"I absolutely love this!!! We do have to be mindful of what things look like when we don't have the data points.
+> I.e when we log a run we don't immediately have the hr data. We also need to be mindful what we currently have on
+> those screens and that we don't lose or clutter the screen and so each screen we change or update needs to be looked
+> at in scope of the screen it's on and also the journey it takes the user on."*
+
+**Condition 1 — data states, measured (production, read-only, 2026-10-21):**
+
+| What | Count | So |
+|---|---|---|
+| Logged sessions (live, complete) | **129, from only 5 runners** | Every rate below is a small population |
+| …linked to a watch run | 8 (all Apple Health; 0 Strava) | **121 are hand-logged** (72 with a typed average HR, 49 without) |
+| …in the last 30 days | 15, of which **8 linked** | Linking is now about half, and rising |
+| Apple Health runs with a rich trace (100+ samples) | **137 of 354 (39%)** | The earlier "59%" counted 20+ samples; 100+ is what draws well |
+| …sparse trace (1–99 samples) | 145 (41%) | Enough for zone percentages, not a line |
+| …no samples | 72 (20%) | |
+| HK runs with **no HR at the first read** | **83 of 336 known (25%)** | The founder's case |
+| …of which HR arrived later | **4**, median **~4 days** later | "Syncing" must not promise it will come |
+
+**The logged states, therefore (all five must be designed, not inherited):**
+
+| State | What the logged hero shows |
+|---|---|
+| **L1** linked, rich trace | Numbers · the Zone Trace · its sentence |
+| **L2** linked, sparse trace | Numbers · today's zone bar from the bucketed percentages · the same sentence family |
+| **L3** linked, **no HR yet** | Numbers · one quiet line: *"No heart rate from your watch for this run."* Nothing reserved for a trace that may never come; if HR arrives later, the next open shows L1/L2 |
+| **L4** hand-logged with average HR | Numbers · average HR against the ceiling as one value (*"Avg 141 · ceiling 145"*); an average cannot show a drift, so no line is drawn |
+| **L5** hand-logged, no HR | Numbers · how it felt · Kit. No zone element at all (empty means calm, not broken) |
+| *any* | The Kit read in flight uses `AIMark`'s working state, never a spinner |
+
+**Condition 2 — each screen in its own scope, and the journey.** The journey today:
+**Today card** (closed) → **Session detail** (open) → *Log this run* → **Log sheet** (manual) or **link picker** →
+**Reflect** (RPE, fatigue, reflection) → **Post-run** screen (linked runs; also the *"Run linked"* push) → back.
+
+What each screen carries now (from the code), and what the ruling may do there:
+
+| Screen | Carries today | Change | Must not lose |
+|---|---|---|---|
+| **Today card** | Hero line · date strip · Hold-the-zone strip · the session card (rail, name, zone · HR · pace, distance) · the 5-step zone ruler under it · Log this run · voice line | Rail to 6 px; duration range into the existing meta line; the silhouette **replaces the zone ruler** under the card (both say intensity), so nothing is added | Zone · HR · pace on the card; the CTA position |
+| **Session detail, pre-run** | Title + pill · Hold-the-zone card with ruler · voice line · metric tiles (distance/duration toggle, est. pace) · structure · description fallback · why this session · how to run it (run-walk) · Kit note · CTA | Silhouette **inside the structure header**, not a new card; step rows restyled in place; duration range in the existing tile | The zone card (our edge), the km/min toggle, run-walk, why-this-session |
+| **Session detail, logged** | Title + verdict pill · zone card · execution summary (planned vs actual) · structure · how did it feel · CTA | Execution summary becomes the **hero** (L1–L5); zone card + structure fold under *What was planned*; closing marks | RPE / fatigue / reflection, the link affordance, Undo |
+| **Post-run** | Score chip · verdict sentence · zone bar · Kit read | The trace **takes the zone bar's slot** in L1; L2 keeps the bar. One owner for the sentence, shared with the session hero | **The settled order: RPE is asked before the read** (design-rulings, *RPE asked BEFORE the read*). The trace is part of the read, so it is revealed after the runner says how it felt |
+
+Two journey findings:
+- **The reveal is the wow, and the ruling already gives it a moment:** say how it felt, *then* see the trace. A
+  reveal the runner earned, not a chart on arrival.
+- **The trace is a reason to link.** Half of recent logs are still by hand. Where a matching Apple Health run exists,
+  the log sheet already offers the link; the board should decide whether the hand-logged hero says what linking would
+  show, once, without nagging.
+
+---
+
+## Part 5 — Design Board: the build ruling (Zhuo chair; Silvanto, Sierra, Wroblewski, Collins)
+
+**Settled ground added to Part 2's scan:** *RPE asked before the read* (post-run) · *empty means calm, not broken*
+(ux-principles) · AIMark working state replaces spinners · *Gate richness, never access* · the ICON-RULE-01 bound.
+
+- **Zhuo.** The founder's conditions are the right ones, and the measurements make them sharper than he said: the
+  trace is the minority state today (L1 is rare: 8 linked logs), so **the screen must be excellent without it.** Build
+  in the order the states occur, not the order we like them. Success condition per screen: nothing on the inventory's
+  *must not lose* column disappears, and no screen grows in height in its common state.
+- **Silvanto.** Replacing the zone ruler with the silhouette on Today is the right trade, one intensity encoding for
+  another, and it keeps Today's height. On the logged hero, L3 must not leave a hole the size of a chart: one line,
+  same weight as a caption.
+- **Sierra.** The reveal after RPE is the best idea in this round, and it was already ruled; we just had not noticed
+  it was a wow. L4's *"Avg 141 · ceiling 145"* is honest and still teaches the ceiling. For L5, Kit carries it.
+- **Wroblewski.** L3's copy must not say "syncing": four of 83 ever arrived. On the link nudge: once, on the hand-logged
+  hero, only when a matching run exists, and dismissing it is permanent for that session.
+- **Collins.** Ship the trace as the share image in the same build as the hero: the moment someone sees L1 is the
+  moment they want to send it. And since L1 is rare, make the rest of the hero as confident as the trace; three big
+  numerals in ink are not decoration.
+
+**Recorded:** no disagreement on scope. Collins' share image is accepted for phase 1 if it reuses `SaveImageButton`.
+
+### ⚖️ Ruling: SHIP WITH AMENDMENT, phased, each phase its own build and check
+1. **Phase 1, the logged journey.** Session detail (logged) hero with **all five states L1–L5**, the trace with
+   ceiling-only bands for easy, long and recovery (Part 3 finding), *What was planned* fold, closing marks; Post-run
+   trace in the zone bar's slot, **revealed after RPE**; one sentence owner shared by both; share image via
+   `SaveImageButton`. The link nudge as Wroblewski ruled.
+2. **Phase 2, pre-run detail.** Step rows (W5), silhouette inside the structure header (from the step model, not
+   text), duration range in the existing tile.
+3. **Phase 3, Today card.** 6 px rail, duration range, silhouette replacing the zone ruler. **Check the website**,
+   which renders `SessionCard`.
+4. **Every phase ships with an inventory check**: a markup arm per screen asserting each *must not lose* element still
+   renders, and a height measure at 375 px in the common state, falsified by removing one element.
+5. Coaching routes from Part 3 stand (CD-1 evidence; Outdoor/Treadmill). Copy for L3, L4 and the link nudge goes to the
+   founder before build.
+
+### ⚠️ What this does not settle
+Copy (founder); the tier of the trace (the post-run read is PAID via `activity_intelligence`; whether the trace itself
+is free is an SLT question under *gate richness, never access*); how a two-hour run reads at 375 px; the device.
