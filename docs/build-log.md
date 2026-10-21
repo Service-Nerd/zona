@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-21 — STRENGTH-LEGS-DAY-GATE-01 · the gate earns its place
+**Shipped:** Nothing a runner sees changes. A check in the strength engine that looked redundant is now proven to stop a false suggestion.
+
+**Dev learning:** The test written for this exact case passed with the gate deleted, because in its calendar no other day was better anyway. A test only proves a condition if removing the condition breaks it.
+
+**Product learning:** Without the gate, a runner whose legs already get two sessions would be told to move a day to get "a proper session". About 2% of three-day picks on real run plans.
+
+**AI-building learning:** I found the case by deleting the gate and sweeping real plans for the difference, after two hand-built scans over invented calendars found nothing.
+
+**The honest bit:** This only proves the gate for three-day picks; two and four days were swept on invented calendars only.
+
+---
+
 ## 2026-10-21 — HARNESS-FIXTURE-CLOCK-02 · the third clock
 **Shipped:** The dashboard harness fixture test regenerates the plan at the moment the fixture was made, so it stops failing when the calendar turns.
 
