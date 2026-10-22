@@ -10520,6 +10520,24 @@ has yet measured what that shape delivers.
 
 ---
 
+### §117 Amendment 6 — the run-walk prescription is drawn as steps *(Coaching Board 2026-10-22, RUNWALK-STEPS-01)*
+
+**Principle.** A session carrying `run_walk_strategy` is drawn as **one repeat block**:
+`n × (Run FINISH_GOAL_RUNWALK_RUN_MINS / Walk FINISH_GOAL_RUNWALK_WALK_MINS)`, `n = floor(running minutes / (run + walk))`,
+starting on a run (Amendment 3: the walk break from the first rep). The **remainder** is one final easy run, never dropped
+and never rounded up. The session's total minutes are the authority and do not change, so load does not change (§2,
+Willy). Strides and hill strides stay after the block (§28, Sims); a cool-down stays as written. **The race is included**:
+race day is where the walk break protects the last 10 km (Willy, Sims).
+
+**Why.** Measured on 3,524 cohort plans: 2,271 run-walk sessions (easy 1,222, long 578, with strides 393, shakeout and
+race-week 78, race 34), 23–204 minutes (median 35), **0 drawn as steps**; 1,982 do not divide evenly into run + walk.
+McMillan: *"'run 6, walk 1, ten times' is a session; 'repeat' is a dare"*, which is Amendment 3's own argument.
+Hutchinson: precision, not new physiology.
+
+**Numeric.** None new. **Invariant (lands with the build):** `INV-PLAN-RUNWALK-STEPS-SUM`: the steps sum to the
+session's minutes, start on a run, and alternate. `measure:fitness` not run: load is unchanged by construction.
+**Not built.** Design Board next (steps, silhouette, run/walk glyphs; design-rulings 6t-d).
+
 ## 118. The get-running plan — what we offer the runner no race plan can serve
 
 *(Coaching Board 2026-09-20, CORRECT WITH AMENDMENT, three amendments. Founder directive after the board twice ruled zero rejection unreachable by coaching.)*

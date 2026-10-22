@@ -149,7 +149,7 @@ Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
 running session of a finish-goal run-walk plan: 614 sessions in a 748-plan cohort sample, and **zero walk steps**. The
 runner reads one continuous run in the step rows and the silhouette, and the alternation only as text under "How to
 run it". Coaching Board first: may the engine draw it as alternating Run/Walk steps (repeat count from the session's
-minutes; what happens to the remainder; warm-up and cool-down)? Then Design: steps, silhouette and the run/walk glyph
+minutes; what happens to the remainder; warm-up and cool-down)? 🏃 **RULED 2026-10-22, CORRECT WITH AMENDMENT (§117 Am.6):** one repeat block `n × (Run 6 / Walk 1)`, starting on a run, the remainder as a final easy run, total minutes unchanged, strides after, race included; invariant `INV-PLAN-RUNWALK-STEPS-SUM` with the build. Then Design: steps, silhouette and the run/walk glyph
 pair (ruled in direction, design-rulings 6t-d), prototyped at 375px. Run icons on rows stay out (STRENGTH-PLAN-GLYPH-01 b).
 
 ### 🔲 `UNMEASURED-DISTANCE-01` — a linked run with no distance cannot be given one 🧭 **DESIGN BOARD** (prototype) + ⚙️ **ARCHITECTURE** (INV-DATA-008 / ADR-011) *(filed 2026-10-22, from TREADMILL-TOGGLE-01)*

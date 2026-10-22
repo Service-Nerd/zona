@@ -56,6 +56,13 @@ incline adjustment (the 1% rule's evidence starts at 2.92 m/s and every prescrib
 rate or RPE and time; pace and distance are guides. A toggle that changes the prescription is INCORRECT. Whether to build
 a toggle or guidance line goes back to the Design Board and SLT. No numeric, no invariant.
 
+## 2026-10-22 — RUNWALK-STEPS-01 · CORRECT WITH AMENDMENT (draw run-walk as one repeat block; minutes unchanged)
+
+§117 Am.6: a run-walk session becomes `n × (Run 6 / Walk 1)` from the existing constants, starting on a run; the remainder
+is one final easy run; total minutes unchanged; strides after the block; the race included. 2,271 sessions in 3,524 cohort
+plans, 0 drawn as steps today. No numeric. Invariant `INV-PLAN-RUNWALK-STEPS-SUM` lands with the build. Not built; Design
+Board next.
+
 ## 2026-10-22 — REP-UNITS-KM-01 · CORRECT WITH AMENDMENT (rename to "1600m repeats"; prescription unit-blind)
 
 "Mile repeats" reached km runners (46 of 49 live). Prescribing by the runner's unit is rejected: a display setting must
