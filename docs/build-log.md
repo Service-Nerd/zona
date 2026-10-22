@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — LONGRUN-BLOCKED-DAY-01 · a fix nobody could reach found a defect people could
+**Shipped:** When a runner's whole weekend (and Friday) is blocked, the long run now goes on the latest free weekday instead of a blocked Sunday, and hard sessions are spaced from wherever the long run actually sits.
+
+**Dev learning:** The long-run day was chosen in two places, and the foundation block's copy said it "mirrors" the engine. It didn't: one fell back to the latest free day, the other to Sunday whether blocked or not. One function now answers it, proven identical to the old foundation rule on all 128 week shapes. The real find was underneath: the quality day came from lists shaped for a weekend long run, and the spacing check ran after the choice, so a too-close day was picked and then quietly dropped, taking the week's only hard session with it.
+
+**Product/creator learning:** I counted before building and the answer was zero live runners. The build still mattered, because moving the long run exposed the quality bug, and that one IS reachable: a runner who blocks Tuesday, Wednesday and Thursday got a plan with no hard sessions at all, served silently in production.
+
+**AI-building learning:** The board ruling said spacing "already follows the long-run day". That was my claim, stated at the sitting, and it was wrong. The first test run went red on it within minutes. A premise I wrote into a ruling is still a premise to test.
+
+**The honest bit:** Parity came back IDENTICAL across 6,102 cases, and every other grid was green too, while 36 reachable plans changed. None of the standard grids block Tuesday to Thursday together. I only saw it because I wrote a throwaway before/after over every blocked-day pattern.
+
+**Hook material:** "Parity: IDENTICAL, 6,102 cases." Meanwhile 11 runner shapes went from zero hard sessions to a full plan of them: 52 to 345 sessions.
+
+**Postable?:** yes
+
 ## 2026-10-22 — UNMEASURED-DISTANCE-01 · "0km" was a lie, and now the runner can fix it
 **Shipped:** A run that arrived without a distance (Peloton, some Garmin and WHOOP syncs) now says "Distance not recorded" instead of "0km", and offers "Add the distance". The runner taps it, sees "How far did you run?" with the plan's distance already filled in, and saves. It then reads "8km · you added this".
 
