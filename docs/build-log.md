@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — A11Y-APP-TEXT-SWEEP-01 · 69 faint-text sites were really 19, and the gate found a 20th
+**Shipped:** The last pale grey and orange small text in the app now meets the readable-contrast bar, white text sits on the darker moss and amber fills, and the check that guards it covers every screen instead of one.
+
+**Dev learning:** The original scanner caught `color: cond ? 'var(--a)' : 'var(--b)'` by its FIRST branch only. Reading every `var()` in the expression found a Redeem button that overrode the primary button's dark fill back to light moss under white text. The helper written this morning, `hueText()`, also waved `--mute-2` through as "neutral", which was a back door for exactly the colour this item removes.
+
+**Product/creator learning:** The ruler numbers and the effort scale were the faintest text in the app, and they are the numbers a runner learns their effort from. Also: the Plan calendar's orange dot was never really about Strava. It shows for every logged run, almost all of them Apple Health.
+
+**AI-building learning:** I carried `--danger` into the board sitting as a faint colour because the October list said so. It measures 5.28:1. The gate's first run went red on six `--danger` sites, and the honest fix was to take `--danger` out of the ban, not change the six. A list I inherited is a list I have to re-measure, even mid-sitting.
+
+**The honest bit:** The board ruled the calendar dot "stays orange as Strava's mark" on my description. My description was wrong about what the line is. Filed rather than quietly re-ruled.
+
+**Hook material:** "69 sites" in the backlog; 19 in the code; 20 once the check could read the other side of a question mark.
+
+**Postable?:** maybe
+
 ## 2026-10-22 — LONGRUN-BLOCKED-DAY-01 · a fix nobody could reach found a defect people could
 **Shipped:** When a runner's whole weekend (and Friday) is blocked, the long run now goes on the latest free weekday instead of a blocked Sunday, and hard sessions are spaced from wherever the long run actually sits.
 
