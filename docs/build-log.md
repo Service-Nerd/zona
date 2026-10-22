@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — CD-1-MILE-CRUISE-01 · the drawing was right, the sentence was wrong
+**Shipped:** Mile repeats no longer calls itself "long threshold reps". It now says what makes it different from cruise intervals: you get a split to compare.
+
+**Dev learning:** The session drawing built yesterday showed two differently named sessions as the same shape. That looked like a bug in the drawing. It was the catalogue telling the truth: 10 minutes at threshold with a 2-minute jog, and a mile at threshold with a 90-second jog, are the same work. A quarter of all plans, and over half of half-marathon plans, get both.
+
+**Product learning:** The board kept both, for the reason it gave three weeks ago: fewer sessions means the same session every week. The honest fix was to say why there are two. A mile has a time on it you can beat.
+
+**AI-building learning:** The measurement found the real defect. "Long" sounded fine until the numbers showed the mile was the shorter rep in every plan that had both.
+
+**The honest bit:** The new sentence is my wording and needs the founder's sign-off.
+
+---
+
 ## 2026-10-22 — COMPLETION-COPY-CLAIM-01 · the card stopped praising runs it knew nothing about
 **Shipped:** After an easy run the card says "Kept it easy." only if your heart rate or your own effort score backs it up. Otherwise it says the run was done and nothing more.
 
