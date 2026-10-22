@@ -77,3 +77,5 @@ leaves its margin behind and reads as a layout bug.
 Card secondary **12/400 `--mute`** for the day rows. ⚠️ It was 11px until 2026-10-14;
 `MICRO-LABEL-DRIFT-01` ruled 11px is not a level, and the residue here survived the first
 migration pass because that reading was taken while a falsification mutation was applied.
+
+- **Text colour (ACCENT-TEXT-VARIABLE-01, Design Board 6t-h, 2026-10-22):** small text never takes a hue: a hue with a ratified text shade uses it (`--moss-strong`, `--s-race-strong`, `--s-recov-strong`, `--warn-strong`), otherwise `--ink-2`; a computed colour goes through `hueText()` (`lib/ui/hueText.ts`). The hue stays on marks. Held by `lib/ui/accentText.test.ts`.

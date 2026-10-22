@@ -119,3 +119,5 @@ Internal gaps use `var(--space-1…7)` = `4 · 8 · 12 · 16 · 24 · 32 · 48`,
 shifted by at most 4px. ⚠️ **Horizontal page padding is the SCREEN's, not this component's**, and was
 not swept — the shorthand `padding: '0 16px'` is outside the sweep's property list. Gated by
 `lib/appSpacingScale.test.ts`.
+
+- **Text colour (ACCENT-TEXT-VARIABLE-01, Design Board 6t-h, 2026-10-22):** small text never takes a hue: a hue with a ratified text shade uses it (`--moss-strong`, `--s-race-strong`, `--s-recov-strong`, `--warn-strong`), otherwise `--ink-2`; a computed colour goes through `hueText()` (`lib/ui/hueText.ts`). The hue stays on marks. Held by `lib/ui/accentText.test.ts`.

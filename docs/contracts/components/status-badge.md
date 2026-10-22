@@ -56,3 +56,5 @@ again.
 ## Governance
 
 Design Board `TIER-BADGE-01` (2026-09-29). Gated by `statusBadge.markup.test.ts`.
+
+- **Text colour (ACCENT-TEXT-VARIABLE-01, Design Board 6t-h, 2026-10-22):** small text never takes a hue: a hue with a ratified text shade uses it (`--moss-strong`, `--s-race-strong`, `--s-recov-strong`, `--warn-strong`), otherwise `--ink-2`; a computed colour goes through `hueText()` (`lib/ui/hueText.ts`). The hue stays on marks. Held by `lib/ui/accentText.test.ts`.
