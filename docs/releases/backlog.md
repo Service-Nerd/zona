@@ -143,6 +143,15 @@ can you lift?* (1–4) and Change your plan asks *Days you run* (2–6), one pos
 S8 first jump level) and the long-run-day rule for the run row. Icons came off the modify sheet (seven rows, ICON-RULE-01).
 Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
 
+### 🔲 `RUNWALK-STEPS-01` — a run-walk session is a sentence, not steps 🏃 **COACHING BOARD** then 🧭 **DESIGN BOARD** *(filed 2026-10-22, from RUN-ICONS-REOPEN)*
+
+§117 stamps `run_walk_strategy` (*"Run {FINISH_GOAL_RUNWALK_RUN_MINS} minutes, walk {…WALK_MINS}. Repeat."*) on every
+running session of a finish-goal run-walk plan: 614 sessions in a 748-plan cohort sample, and **zero walk steps**. The
+runner reads one continuous run in the step rows and the silhouette, and the alternation only as text under "How to
+run it". Coaching Board first: may the engine draw it as alternating Run/Walk steps (repeat count from the session's
+minutes; what happens to the remainder; warm-up and cool-down)? Then Design: steps, silhouette and the run/walk glyph
+pair (ruled in direction, design-rulings 6t-d), prototyped at 375px. Run icons on rows stay out (STRENGTH-PLAN-GLYPH-01 b).
+
 ### 🔲 `UNMEASURED-DISTANCE-01` — a linked run with no distance cannot be given one 🧭 **DESIGN BOARD** (prototype) + ⚙️ **ARCHITECTURE** (INV-DATA-008 / ADR-011) *(filed 2026-10-22, from TREADMILL-TOGGLE-01)*
 
 47 of 354 Apple Health runs carry no distance, from 4 runners (three almost entirely: 26/36, 15/15, 9/10). Sources:

@@ -1031,6 +1031,15 @@ answers in a line what three rounds of reasoning did not.
 ---
 
 
+## 6t-d. RUN-ICONS-REOPEN — run icons on rows stay out; run/walk icons belong on run-walk steps (2026-10-22)
+
+| Decision | Status | Why |
+|---|---|---|
+| **A run glyph on Plan and Today run rows** (founder's second ask) | 🔴 **DON'T SHIP: STRENGTH-PLAN-GLYPH-01 (b) stands** | Neither reopen condition is met: run labels name the run, and no device test exists. Measured: 18.4% of 42,054 run sessions carry a label of 24+ characters (longest 41), so the 24px is real width. **Collins lost again**, paired run/lift marks; recorded |
+| **Run/walk glyphs on the steps of a run-walk session** (the Runna screenshots) | 🟢 **SHIP THE DIRECTION, blocked on a prerequisite** | Measured: 614 sessions carry §117's run-walk prescription and **zero walk steps exist**; it renders only as a "How to run it" sentence while the steps and silhouette show one continuous run. On alternating steps the glyph says *which part you are in* at a mid-run glance (Wroblewski), which the label does not do at speed: ICON-RULE-01's MEANING test. Prerequisite: run-walk drawn as steps (`RUNWALK-STEPS-01`, Coaching Board first), then a prototype at 375px |
+
+⛔ Veto: none (one family, one size, no new hue). ⚠️ Not measured: on a device.
+
 ## 6t-c. TREADMILL-TOGGLE-01 — no Outdoor/Treadmill control; the gap is a missing distance (2026-10-22)
 
 | Decision | Status | Why |
