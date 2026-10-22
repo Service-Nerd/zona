@@ -3328,7 +3328,7 @@ prototype of the real `SessionSteps` at 390px:
    Run icons on Plan and Today rows stay out (STRENGTH-PLAN-GLYPH-01 b).
 2. **The remainder run is its own row AFTER the repeat block**, under a "then" line; inside the bar it reads as part
    of every round.
-3. **The walk row carries an instruction**, never "rest" (words: founder).
+3. **The walk row carries an instruction**, never "rest": target *"Brisk walk"*, note *"Take it even if you feel fine."* (founder, 2026-10-22).
 4. **A structured main set takes the session's hue**, not `--s-quality`: an easy run-walk drawn amber is a claim the
    session does not make.
 **Check (with the build):** a markup test asserting the glyph pair appears only on run-walk steps, the remainder
