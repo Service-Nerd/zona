@@ -100,12 +100,6 @@ amber average), the zone card and structure fold under *What was planned* (keep 
 closing marks *Logged · Linked · Zone read*. A move inside `SessionPopupInner`: the six move asks are answered in the
 decision note Part 8. Must-not-lose check + 375 px height. `docs/decisions/session-screens-runna-2026-10-21.md`.
 
-### 🔲 `SESSION-COMPLETE-LONG-LABEL-01` — the completion card calls a long run "Easy run" ⚙️ **NO BOARD** *(filed 2026-10-22)*
-
-`SessionCompleteCard` labels by `getSessionLabel(sessionType)`, and a long run is `type: 'easy'`, so its chip reads *"EASY RUN —
-ZONE 2"* under a header that says LONG. Same class as PLAN-LONGRUN-COLOUR-01: classify by the session (`isLongRun`), not
-its type. Seen on `/post-run-preview` while building SESSION-LOGGED-HERO-01. Also the share image route.
-
 ### 🔲 `COMPLETION-COPY-CLAIM-01` — *"Kept it easy."* is claimed on a run with no heart rate 🏃 **COACHING BOARD** *(filed 2026-10-22)*
 
 `getCompletionCopy(type)` is chosen by session type alone, so an easy run logged by hand, with no HR, still reads *"Kept it

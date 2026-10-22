@@ -1323,7 +1323,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **The long run on a blocked day when no weekend day is a run day** (LONGRUN-BLOCKED-DAY-01) | FREE (engine) | S | 🔲 Open, filed 2026-10-18, Coaching Board: no surface reaches it now; stored pre-10-18 inputs still can. |
 | **Session screens that make the runner feel something: the Zone Trace** (SESSION-SCREENS-WOW-01) | ✅ FREE | M | 🟢 Shipped 2026-10-21: the Zone Trace on the completion card and share image. |
 | **The logged session detail leads with the run** (SESSION-LOGGED-HERO-01) | ✅ FREE | M | 🟢 Shipped 2026-10-22. |
-| **The completion card calls a long run "Easy run"** (SESSION-COMPLETE-LONG-LABEL-01) | — | S | 🔲 Open, filed 2026-10-22. |
+| **The completion card calls a long run "Easy run"** (SESSION-COMPLETE-LONG-LABEL-01) | — | S | ✅ Shipped 2026-10-22 (`92e085bf`). |
 | **"Kept it easy." claimed with no heart rate** (COMPLETION-COPY-CLAIM-01) | FREE | S | 🔲 Open, filed 2026-10-22, Coaching Board. |
 | **Step rows and the session silhouette before the run** (SESSION-PRERUN-DETAIL-01) | ✅ FREE | S | 🟢 Shipped 2026-10-22: the silhouette (step rows vacated on settled ground). |
 | **The Today card: rail, time range, silhouette** (SESSION-TODAY-CARD-01) | ✅ FREE | S | 🟢 Shipped 2026-10-22: the 6 px rail (app and website); silhouette and time range withdrawn. |

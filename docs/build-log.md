@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — SESSION-COMPLETE-LONG-LABEL-01 · a long run is a long run on the card too
+**Shipped:** The card you see after a run, and the image you share, now say "Long run" on a long run. They said "Easy run".
+
+**Dev learning:** A long run is stored as an easy run, on purpose, so the volume rules count it as aerobic. Anything that labels by type gets it wrong. The colour had the same bug in September and was fixed by passing the whole session; this card had been left on the old path. My first test fixture used `role: 'long'` where the code uses `long_run`, and it failed for the wrong reason before it failed for the right one.
+
+**Product learning:** The header said LONG and the chip under it said EASY. Two labels on one card that disagree make the runner wonder which one the app believes.
+
+**AI-building learning:** Falsified both ways: reverting the label line turns the test red, and dropping the prop at one call site turns the call-site check red.
+
+**The honest bit:** Found by eye on a preview page while building something else. No check looked for it.
+
+---
+
 ## 2026-10-22 — SESSION-LOGGED-HERO-01 · the free runner finally sees their own run
 **Shipped:** Reopen a logged run and your run comes first, for every tier: the completion card with your trace or your zone figure, then Kit's read. Straight after a run it reads how did it feel, then how you did, then why.
 
