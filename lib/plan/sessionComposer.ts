@@ -12,6 +12,7 @@ import { z } from 'zod'
 // falling back to whatever data is available; never throws.
 
 import { SESSION_FORMAT, sessionSplit } from './sessionFormat'
+import { GENERATION_CONFIG } from './generationConfig'
 import { parsePaceMidpoint } from './paceParse'
 import { isLongRun, isShakeout, isTimeTrial } from './sessionRole'
 import type { Session } from '@/types/plan'
@@ -20,6 +21,8 @@ import type { SessionCatalogueRow } from './sessionCatalogueData'
 export interface SessionPart {
   duration_mins:  number
   zone:           string
+  /** RUNWALK-STEPS-01: this part is walked (a §117 run-walk warm-up), not run. */
+  walk?:          boolean
   description:    string
   /** Estimated distance for this part, in km. Derived from the SESSION's own
    *  overall pace (distance_km / duration_mins) — the same one-representative
@@ -130,13 +133,13 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
 
   // Shakeout: short Z1 with brief warm-up only.
   if (isShake) {
-    return withDistances({
+    return withDistances(asRunWalk(session, {
       warmup:   part(2, 'Z1', 'Walk-jog opener.'),
       main:     part(Math.max(total - 4, 1), 'Z1', 'Easy through. Loose, not committed.'),
       cooldown: part(2, 'Z1', 'Easy walk-jog finish.'),
       total_duration_mins: total,
       shape: 'shakeout',
-    }, kmPerMin)
+    }), kmPerMin)
   }
 
   // ── Easy / long runs ────────────────────────────────────────────────────────
@@ -181,13 +184,13 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
       }, kmPerMin, session.distance_km ?? null)
     }
 
-    return withDistances({
+    return withDistances(asRunWalk(session, {
       warmup:   part(warmupMins, 'Z1→Z2', 'Easy through warm-up. Build to Z2 over the first third.'),
       main:     part(mainMins, session.zone ?? 'Z2', 'Steady aerobic.' ),
       cooldown: part(cooldownMins, 'Z1', SESSION_FORMAT.COOLDOWN.include_walk_for_long_runs && isLong ? 'Easy walk-jog finish.' : 'Easy finish.'),
       total_duration_mins: total,
       shape: isLong ? 'long_run' : 'easy_run',
-    }, kmPerMin)
+    }), kmPerMin)
   }
 
   // ── 5K time trial (§78) ─────────────────────────────────────────────────────
@@ -262,6 +265,21 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * RUNWALK-STEPS-01 (§117 Am.6 addendum, Coaching Board 2026-10-22). A §117 run-walk session walks its warm-up for
+ * `RUNWALK_WARMUP_WALK_MINS`, then the main set (drawn by `runWalkSet`) starts on a run. The cool-down is unchanged and
+ * the main set absorbs the difference, so the parts still sum to the session. Any other session passes through.
+ */
+function asRunWalk(session: Session, s: SessionStructure): SessionStructure {
+  if (!session.run_walk_strategy) return s
+  const wu = Math.min(GENERATION_CONFIG.RUNWALK_WARMUP_WALK_MINS, Math.max(0, s.total_duration_mins - s.cooldown.duration_mins))
+  return {
+    ...s,
+    warmup: { ...part(wu, 'Z1', 'Brisk walk.'), walk: true },
+    main: { ...s.main, duration_mins: Math.max(0, s.total_duration_mins - wu - s.cooldown.duration_mins) },
+  }
+}
 
 function part(duration_mins: number, zone: string, description: string): SessionPart {
   return { duration_mins, zone, description }

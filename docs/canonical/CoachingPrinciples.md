@@ -10536,9 +10536,12 @@ race-week 78, race 34), 23–204 minutes (median 35), **0 drawn as steps**; 1,98
 McMillan: *"'run 6, walk 1, ten times' is a session; 'repeat' is a dare"*, which is Amendment 3's own argument.
 Hutchinson: precision, not new physiology.
 
-**Numeric.** None new. **Invariant (lands with the build):** `INV-PLAN-RUNWALK-STEPS-SUM`: the steps sum to the
-session's minutes, start on a run, and alternate. `measure:fitness` not run: load is unchanged by construction.
-**Not built.** Design Board next (steps, silhouette, run/walk glyphs; design-rulings 6t-d).
+**Numeric.** None new. **Enforced by** `lib/plan/runWalkSteps.test.ts`, not a `validatePlan()` invariant: the steps are
+derived at READ time (`runWalkSet`, like `backfillLegacyRamp`) so they reach existing plans, and a plan-level check would
+have to call the same producer. It asserts, over every drawable cohort run-walk session, that the steps sum to the main
+set, start on a run and alternate, with the remainder outside the repeat. `measure:fitness` not run: load is unchanged by
+construction. **Built 2026-10-22.** ⚠️ Race day is not drawn: the composer gives the race no step structure, so its
+"How to run it" line carries the prescription as before.
 
 **Addendum — the warm-up is a walk (Coaching Board 2026-10-22, RUNWALK-WARMUP-01).** §16 says every run has a warm-up; it
 does not say the warm-up is running, and `composeSession` read it that way: every easy run opens with a 10 min continuous
@@ -10546,8 +10549,8 @@ run (`warmup_min_duration_mins`), against Amendment 3's *walk from the first rep
 found by the Design Board's prototype. On a run-walk session the warm-up is a **brisk walk of
 `RUNWALK_WARMUP_WALK_MINS` (5)**, then the block starts on a run; the cool-down is unchanged. Total minutes unchanged.
 Hutchinson: a warm-up's job is a gradual rise, and walking does it. Recorded: Hutchinson asked whether §16's 10 could stand
-to avoid a new number; settled at 5 because a 10 min walk leaves one round on a 23 min session (McMillan). The constant
-and the invariant arm land with the build (a constant nothing reads fails `configConsumer.test.ts`).
+to avoid a new number; settled at 5 because a 10 min walk leaves one round on a 23 min session (McMillan). Built 2026-10-22:
+`GENERATION_CONFIG.RUNWALK_WARMUP_WALK_MINS`, read by `composeSession`.
 
 ## 118. The get-running plan — what we offer the runner no race plan can serve
 

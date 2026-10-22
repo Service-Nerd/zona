@@ -3319,7 +3319,7 @@ Owner: `formatPrescribedDistance` in `lib/format.ts`. Gate: `lib/plan/repUnits.t
 the catalogue, both units, both metrics. ⚠️ Wroblewski would convert reps of 2000 m and up for miles runners; the chair
 ruled one rule, since `1.2mi` and `2.5mi` are not round road distances either.
 
-#### Amendment 4c — run-walk steps (RUNWALK-STEPS-01, Design Board 2026-10-22) · RULED, NOT BUILT
+#### Amendment 4c — run-walk steps (RUNWALK-STEPS-01, Design Board 2026-10-22) · BUILT 2026-10-22
 
 A §117 run-walk session (§117 Am.6) draws as **one repeat bar** over a Run row and a Walk row. Four rules, from a
 prototype of the real `SessionSteps` at 390px:
@@ -3329,10 +3329,14 @@ prototype of the real `SessionSteps` at 390px:
 2. **The remainder run is its own row AFTER the repeat block**, under a "then" line; inside the bar it reads as part
    of every round.
 3. **The walk row carries an instruction**, never "rest": target *"Brisk walk"*, note *"Take it even if you feel fine."* (founder, 2026-10-22).
-4. **A structured main set takes the session's hue**, not `--s-quality`: an easy run-walk drawn amber is a claim the
-   session does not make.
-**Check (with the build):** a markup test asserting the glyph pair appears only on run-walk steps, the remainder
-renders outside the bar, and the main-set accent equals `getSessionColor(session)`.
+4. **A run-walk main set takes the session's hue**, not `--s-quality`: an easy run-walk drawn amber is a claim the
+   session does not make. ⚠️ **Scoped to run-walk on measurement:** applied to every structured set it turned 340 of
+   2,746 (hill reps and VO2 intervals) from `--s-inter` to amber, because `getSessionColor` and the zone accent disagree
+   for those sessions (`SESSION-INTERVALS-HUE-01`). A walked warm-up's header carries no running pace.
+**Check:** `lib/plan/runWalkSteps.test.ts`, the cohort (every drawable run-walk session: walk warm-up, parts sum to the
+session, steps to the main set, start on a run), the rows (founder's words, glyphs on run/walk only, "then"), the
+render, and a VO2 set that keeps `--s-inter` with no glyph. Owner: `runWalkSet` / `displayDerivedSet` in
+`lib/plan/runWalkPlan.ts`, derived at read time so existing plans are reached.
 
 ⚠️ **The same-unit rule is still dead and is not being revived.** `UNITS-SUBUNIT-01`
 struck it down and the shipped time-trial diagram above renders `WARM-UP 10 min` beside a

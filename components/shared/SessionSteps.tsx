@@ -23,6 +23,7 @@ import { buildSessionRows, type SessionRow, buildStepGroups, resolveDisplayFigur
 import { convertPaceString, formatDistance, formatDuration, formatZone } from '@/lib/format'
 import type { Zone } from '@/components/shared/ZoneBar'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
+import { Glyph } from '@/components/shared/RowIcon'
 
 export interface SessionStepsProps {
   structure: SessionStructure
@@ -103,7 +104,11 @@ function StepRowView({ num, dotColor, row }: { num: number | null; dotColor: str
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
           <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', paddingTop: '1px' }}>
-            <span style={{ width: '9px', height: '9px', borderRadius: '50%', flex: 'none', background: isRest ? 'transparent' : dotColor, border: isRest ? '1.5px solid var(--mute-2)' : 'none' }} />
+            {/* RUNWALK-STEPS-01 (§21b Am.4c): on a run-walk step the glyph replaces the dot, run in the session hue,
+                walk in --mute, so a glancing runner sees which part they are in. */}
+            {row.glyph
+              ? <span data-step-glyph={row.glyph} style={{ display: 'inline-flex', flex: 'none', color: row.glyph === 'walk' ? 'var(--mute)' : dotColor }}><Glyph name={row.glyph} /></span>
+              : <span style={{ width: '9px', height: '9px', borderRadius: '50%', flex: 'none', background: isRest ? 'transparent' : dotColor, border: isRest ? '1.5px solid var(--mute-2)' : 'none' }} />}
             <span style={{ fontSize: '13px', fontWeight: isRest ? 600 : 700, color: isRest ? 'var(--ink-2)' : 'var(--ink)' }}>{row.role}</span>
           </div>
           {/* ✋ The NUMBER carries the weight, the UNIT sits in the lighter one, so
@@ -207,7 +212,12 @@ export default function SessionSteps({
 }: SessionStepsProps) {
   const silhouette = silhouetteColour ? sessionSilhouette(structure, derivedSet ?? null) : null
   const peak = displayZones.length ? displayZones[displayZones.length - 1] : 3
-  const mainAccent = peak >= 5 ? 'var(--s-inter)' : peak >= 4 ? 'var(--s-quality)' : 'var(--s-quality)'
+  // §21b Am.4c (Design Board 2026-10-22): a RUN-WALK main set takes the session's hue, so an easy run-walk is not drawn
+  // amber. ⚠️ Scoped to run-walk on measurement: applied to every structured set it turned 340 of 2,746 (hill reps and
+  // VO2 intervals) from --s-inter to amber, because `getSessionColor` and this zone rule disagree for those sessions.
+  // That disagreement is its own item (SESSION-INTERVALS-HUE-01), not this build's.
+  const isRunWalk = (derivedSet as { kind?: string } | null | undefined)?.kind === 'run_walk'
+  const mainAccent = isRunWalk && silhouetteColour ? silhouetteColour : (peak >= 5 ? 'var(--s-inter)' : 'var(--s-quality)')
   const workDot = mainAccent
 
   // Global numbering across the whole session; first row of each main-set block
@@ -268,7 +278,7 @@ export default function SessionSteps({
       )}
 
       {/* Warm-up */}
-      <SectionCard name="Warm-up" accent="var(--moss)" tintPct={13} totalStr={wuTotal} zoneStr={formatZone(structure.warmup.zone)} paceStr={easyPaceStr}>
+      <SectionCard name="Warm-up" accent="var(--moss)" tintPct={13} totalStr={wuTotal} zoneStr={formatZone(structure.warmup.zone)} paceStr={structure.warmup.walk ? null : easyPaceStr}>
         {section('warmup').map((r, i) => (
           <StepRowView key={i} num={nextNum()} dotColor="var(--moss)" row={r.row} />
         ))}
@@ -278,6 +288,9 @@ export default function SessionSteps({
       <SectionCard name="Main set" accent={mainAccent} tintPct={peak >= 5 ? 13 : 15} totalStr={mainTotal} zoneStr={formatZone(zoneRangeLabel)} info={onInfo}>
         {section('main').map((r, i) => (
           <React.Fragment key={i}>
+            {r.startsGroup && r.repeatLabel === 'then' && (
+              <div data-then style={{ position: 'relative', zIndex: 1, padding: '8px 13px 8px 44px', background: 'var(--bg-soft)', fontFamily: FONT, fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--ink-2)' }}>Then</div>
+            )}
             {r.startsGroup && r.repeat && r.repeat > 1 && (
               <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', padding: '8px 13px 8px 44px', background: 'var(--bg-soft)' }}>
                 <span style={{ fontFamily: FONT, fontSize: '15px', fontWeight: 800, fontStyle: 'italic', color: mainAccent, fontVariantNumeric: 'tabular-nums' }}>{r.repeat}×</span>

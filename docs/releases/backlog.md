@@ -143,14 +143,13 @@ can you lift?* (1–4) and Change your plan asks *Days you run* (2–6), one pos
 S8 first jump level) and the long-run-day rule for the run row. Icons came off the modify sheet (seven rows, ICON-RULE-01).
 Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
 
-### 🔲 `RUNWALK-STEPS-01` — a run-walk session is a sentence, not steps 🏃 **COACHING BOARD** then 🧭 **DESIGN BOARD** *(filed 2026-10-22, from RUN-ICONS-REOPEN)*
+### 🔲 `SESSION-INTERVALS-HUE-01` — two colour answers for a VO2 or hill session 🧭 **DESIGN BOARD** *(filed 2026-10-22, from RUNWALK-STEPS-01)*
 
-§117 stamps `run_walk_strategy` (*"Run {FINISH_GOAL_RUNWALK_RUN_MINS} minutes, walk {…WALK_MINS}. Repeat."*) on every
-running session of a finish-goal run-walk plan: 614 sessions in a 748-plan cohort sample, and **zero walk steps**. The
-runner reads one continuous run in the step rows and the silhouette, and the alternation only as text under "How to
-run it". Coaching Board first: may the engine draw it as alternating Run/Walk steps (repeat count from the session's
-minutes; what happens to the remainder; warm-up and cool-down)? 🏃 **RULED 2026-10-22, CORRECT WITH AMENDMENT (§117 Am.6):** one repeat block `n × (Run 6 / Walk 1)`, starting on a run, the remainder as a final easy run, total minutes unchanged, strides after, race included; invariant `INV-PLAN-RUNWALK-STEPS-SUM` with the build. Then Design: steps, silhouette and the run/walk glyph
-pair (ruled in direction, design-rulings 6t-d), prototyped at 375px. 🧭 **PROTOTYPED AND RULED 2026-10-22 (6t-e), SHIP WITH AMENDMENT:** glyph pair on run-walk steps; remainder outside the repeat block after "then"; the walk step carries an instruction (words: founder); a structured main set takes the session's hue. 🏃 **Warm-up ruled 2026-10-22 (RUNWALK-WARMUP-01):** on a run-walk session the warm-up is a 5 min brisk walk (`RUNWALK_WARMUP_WALK_MINS`), then the block on a run. 👤 **Walk-step wording given 2026-10-22:** target *"Brisk walk"*, note *"Take it even if you feel fine."* **Ready to build.** Run icons on rows stay out (STRENGTH-PLAN-GLYPH-01 b).
+`SessionSteps` paints a main set by its peak zone (`--s-inter` at Z5), while `getSessionColor(session)`, the owner the
+card rail and silhouette use, returns `--s-quality` for the same sessions. Measured on the cohort grid: **340 of 2,746
+structured sets** disagree (hill reps 117, `intervals_long` 74, `intervals_classic` 68, `intervals_short` 65, 30/30 9,
+rolling 7). CLAUDE.md's colour map says intervals are `--s-inter`, so the likelier defect is in `getSessionColor`'s
+classification of these rows. Found while scoping §21b Am.4c rule 4 to run-walk.
 
 ### 🔲 `UNMEASURED-DISTANCE-01` — a linked run with no distance cannot be given one 🧭 **DESIGN BOARD** (prototype) + ⚙️ **ARCHITECTURE** (INV-DATA-008 / ADR-011) *(filed 2026-10-22, from TREADMILL-TOGGLE-01)*
 

@@ -49,6 +49,8 @@ export interface DerivedStep {
   rpe?: number
   advance: 'auto' | 'manual'
   note?: string
+  /** The step's target in words, for a step that has no pace, zone or RPE to state (RUNWALK-STEPS-01: "Brisk walk"). */
+  cue?: string
 }
 
 export interface DerivedBlock {
@@ -60,6 +62,8 @@ export interface DerivedBlock {
 export interface DerivedSet {
   version: 2
   blocks: DerivedBlock[]
+  /** RUNWALK-STEPS-01: a §117 run-walk set, derived at read time. Its steps carry the run/walk glyph pair (§21b Am.4c). */
+  kind?: 'run_walk'
 }
 
 const LANDMARK_TEXT: Record<string, string> = {
@@ -68,7 +72,8 @@ const LANDMARK_TEXT: Record<string, string> = {
   start: 'back to the start',
 }
 
-function formatSecs(secs: number): string {
+/** The one writer of a step's `length` string from seconds ("6 min", "45s", "1:30"); `parseLength` reads it back. */
+export function formatSecs(secs: number): string {
   if (secs % 60 === 0) return `${secs / 60} min`
   if (secs < 60) return `${secs}s`
   return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`

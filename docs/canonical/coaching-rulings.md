@@ -61,14 +61,14 @@ a toggle or guidance line goes back to the Design Board and SLT. No numeric, no 
 §16 requires a warm-up, not a running one; `composeSession` gives every easy run a 10 min continuous run, against §117
 Am.3, live today. On a run-walk session the warm-up becomes a brisk walk of `RUNWALK_WARMUP_WALK_MINS` (5), then the block
 on a run; cool-down and total minutes unchanged. Hutchinson's "keep §16's 10" recorded and declined (a 23 min session
-would keep one round). Constant and invariant arm land with the build. §117 Am.6 addendum.
+would keep one round). Built 2026-10-22. §117 Am.6 addendum.
 
 ## 2026-10-22 — RUNWALK-STEPS-01 · CORRECT WITH AMENDMENT (draw run-walk as one repeat block; minutes unchanged)
 
 §117 Am.6: a run-walk session becomes `n × (Run 6 / Walk 1)` from the existing constants, starting on a run; the remainder
 is one final easy run; total minutes unchanged; strides after the block; the race included. 2,271 sessions in 3,524 cohort
-plans, 0 drawn as steps today. No numeric. Invariant `INV-PLAN-RUNWALK-STEPS-SUM` lands with the build. Not built; Design
-Board next.
+plans, 0 drawn as steps today. No numeric. Enforced by `lib/plan/runWalkSteps.test.ts` (read-time derivation, so not a
+`validatePlan()` invariant). Built 2026-10-22.
 
 ## 2026-10-22 — REP-UNITS-KM-01 · CORRECT WITH AMENDMENT (rename to "1600m repeats"; prescription unit-blind)
 

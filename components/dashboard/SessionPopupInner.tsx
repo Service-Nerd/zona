@@ -39,6 +39,7 @@ import { calendarDaysBetween } from '@/lib/dates'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
 import { coachingSessionType, isLongRun } from '@/lib/plan/sessionRole'
 import { composeSession } from '@/lib/plan/sessionComposer'
+import { displayDerivedSet } from '@/lib/plan/runWalkPlan'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { convertDistanceString, convertPaceString, formatDate, formatDistance, resolveSessionMetric } from '@/lib/format'
 import { createClient } from '@/lib/supabase/client'
@@ -1383,7 +1384,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
             return (
               <SessionSteps
                 structure={structure}
-                derivedSet={(session.derived_set as DerivedSet | undefined) ?? null}
+                derivedSet={(displayDerivedSet(session, structure) as DerivedSet | null) ?? null}
                 sessionType={session.type}
                 displayZones={dz?.zones ?? []}
                 zoneRangeLabel={dz?.rangeLabel ?? structure.main.zone}

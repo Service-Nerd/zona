@@ -23,6 +23,8 @@ export type StepKind = 'work' | 'rest'
 
 export interface StepRow {
   kind: StepKind
+  /** RUNWALK-STEPS-01 (§21b Am.4c): the run/walk glyph pair, on a run-walk session's steps only. */
+  glyph?: 'run' | 'walk'
   /** Plain-language action: "Hard", "Jog", "Uphill", "Stand", "Jog down", "Run to base". */
   role: string
   /** Primary metric — leads with the user's chosen unit. e.g. "~1.1 km", "1:30", "until ready". */
@@ -247,6 +249,7 @@ export const NO_PACE_QUALIFIER = 'effort, not pace'
  * it divides. Convert at the point of DISPLAY only.
  */
 export function targetClause(step: DerivedStep, units: 'km' | 'mi'): string {
+  if (step.cue) return step.cue
   if (step.pace) {
     const converted = convertPaceString(step.pace, units) ?? step.pace
     // 🔴 `≤` AND `≥` READ BACKWARDS FOR PACE, AND THE BOARD HAD ALREADY RULED IT.
@@ -322,7 +325,7 @@ export function targetClause(step: DerivedStep, units: 'km' | 'mi'): string {
  */
 const formatSecsShort = formatStepDuration
 
-function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
+function buildRow(step: DerivedStep, opts: BuildStepOpts, runWalk = false): StepRow {
   const parsed = parseLength(step.length)
   const kind: StepKind = step.role === 'work' ? 'work' : 'rest'
   const target = targetClause(step, opts.units)
@@ -392,6 +395,7 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
   return {
     kind, role,
     amount: lead, amountValue: value, amountUnit: unit,
+    ...(runWalk && (step.modality === 'run' || step.modality === 'walk') ? { glyph: step.modality } : {}),
     amountIsEstimate: isEstimate,
     // 🔴 THE `parsed.kind === 'text'` CONDITION WAS AN ACCIDENT, NOT A RULE, and
     // it broke §21b Am. 3's guarantee that EVERY row carries a target. Two
@@ -651,7 +655,10 @@ export function buildSessionRows(
       detail: [r.target, r.secondary].filter(Boolean).join(' · ') }
   }
 
-  out.push({ section: 'warmup', row: row({ kind: 'work', role: 'Easy run', amount: figures.warmup, amountIsEstimate: true, target: 'Final third in Zone 2', secondary: '' }) })
+  // RUNWALK-STEPS-01 (§117 Am.6 addendum): a run-walk warm-up is walked, so it says so and carries the walk glyph.
+  out.push({ section: 'warmup', row: structure.warmup.walk
+    ? { ...row({ kind: 'rest', role: 'Walk', amount: figures.warmup, amountIsEstimate: true, target: 'Brisk walk', secondary: '' }), glyph: 'walk' as const }
+    : row({ kind: 'work', role: 'Easy run', amount: figures.warmup, amountIsEstimate: true, target: 'Final third in Zone 2', secondary: '' }) })
   if (structure.strides) {
     out.push({ section: 'warmup', row: row({ kind: 'work', role: 'Strides', amount: `${structure.strides.count} × ${structure.strides.duration_secs}s`, amountIsEstimate: false, target: 'Fast and relaxed', secondary: '', note: 'Full recovery between each.' }) })
   }
@@ -666,7 +673,7 @@ export function buildSessionRows(
     for (const g of groups) {
       g.rows.forEach((row, ri) => out.push({
         section: 'main', row,
-        ...(g.repeat > 1 ? { repeat: g.repeat, repeatLabel: g.repeatLabel } : {}),
+        ...(g.repeat > 1 || g.repeatLabel === 'then' ? { repeat: g.repeat, repeatLabel: g.repeatLabel } : {}),
         ...(ri === 0 ? { startsGroup: true } : {}),
       }))
     }
@@ -732,12 +739,16 @@ export function backfillLegacyRamp(steps: DerivedStep[], opts: BuildStepOpts): D
 
 /** Turn a resolved derived set into display-ready step groups. */
 export function buildStepGroups(set: DerivedSet, opts: BuildStepOpts): StepGroup[] {
-  return set.blocks.map(block => {
-    const rows = backfillLegacyRamp(block.steps, opts).map(step => buildRow(step, opts))
+  const runWalk = set.kind === 'run_walk'
+  return set.blocks.map((block, bi) => {
+    const rows = backfillLegacyRamp(block.steps, opts).map(step => buildRow(step, opts, runWalk))
     const isHills = block.steps.some(s => s.terrain === 'uphill' || s.terrain === 'downhill')
+    // RUNWALK-STEPS-01 (§21b Am.4c): a run-walk remainder sits OUTSIDE the repeat, under "then". Inside the bar it read
+    // as part of every round. Scoped to run-walk sets so no existing session gains a bar.
+    const then = runWalk && block.repeat === 1 && bi > 0 && set.blocks[bi - 1].repeat > 1
     return {
       repeat: block.repeat,
-      ...(block.repeat > 1 ? { repeatLabel: isHills ? 'hill reps' : 'rounds of' } : {}),
+      ...(block.repeat > 1 ? { repeatLabel: isHills ? 'hill reps' : 'rounds of' } : then ? { repeatLabel: 'then' } : {}),
       rows,
     }
   })

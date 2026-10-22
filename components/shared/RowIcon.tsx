@@ -28,6 +28,10 @@ const S = { stroke: 'currentColor', strokeWidth: 1.2, strokeLinecap: 'round' as 
 
 /** Drawn on a 16×16 grid. Add a glyph here, never in a screen. */
 const GLYPHS = {
+  // RUNWALK-STEPS-01 (§21b Am.4c): the run/walk pair, on a run-walk session's steps only (never on Plan or Today rows,
+  // STRENGTH-PLAN-GLYPH-01 b). Same family: line glyphs, stroke 1.2, round caps, 16×16.
+  run:      <><circle cx="10" cy="2.8" r="1.3" {...S} /><path d="M6.5 6.2l2.6-1 2 1.8 2 .6" {...S} /><path d="M9.1 5.2l-1.3 3.6 2.4 1.8-.8 3.4" {...S} /><path d="M7.8 8.8l-2.3 1.4-2.3-.4" {...S} /></>,
+  walk:     <><circle cx="8.5" cy="2.8" r="1.3" {...S} /><path d="M8.2 5.2v4.4l1.8 4.2" {...S} /><path d="M8.2 9.6l-1.6 4.2" {...S} /><path d="M8.2 6.4l2.2 1.6M8.2 6.4L6.2 8.2" {...S} /></>,
   dumbbell: <><path d="M1.5 8h13" {...S} /><rect x="3" y="4.5" width="2" height="7" rx="0.6" {...S} /><rect x="11" y="4.5" width="2" height="7" rx="0.6" {...S} /><path d="M1.5 6.5v3M14.5 6.5v3" {...S} /></>,
   plus:     <><circle cx="8" cy="8" r="6" {...S} /><path d="M8 5v6M5 8h6" {...S} /></>,
   history:  <><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9" {...S} /><path d="M2.5 2.5v2.2h2.2" {...S} /><path d="M8 5.2V8l2 1.3" {...S} /></>,

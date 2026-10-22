@@ -1479,6 +1479,11 @@ export const GENERATION_CONFIG = {
 
   FINISH_GOAL_RUNWALK_RUN_MINS: 6,
   FINISH_GOAL_RUNWALK_WALK_MINS: 1,
+  // §117 Am.6 addendum (RUNWALK-WARMUP-01, Coaching Board 2026-10-22): on a run-walk session the warm-up is a brisk
+  // walk of this many minutes, then the block starts on a run. §16 requires a warm-up, not a running one; the composer's
+  // 10 min continuous run contradicted Am.3's walk from the first rep. 5, not §16's 10: a 10 min walk would leave a
+  // 23 min session one round (McMillan; Hutchinson's keep-10 recorded and declined).
+  RUNWALK_WARMUP_WALK_MINS: 5,
 
   // ── §116 — the base-build on-ramp (P-16, Coaching Board 2026-09-20) ────────
   //

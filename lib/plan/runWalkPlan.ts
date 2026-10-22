@@ -1,5 +1,6 @@
 import type { GeneratorInput, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
+import { formatSecs, type DerivedSet, type DerivedStep } from './resolveMainSet'
 import { effectiveStartKm } from './startVolume'
 import { raceDistanceKey } from './generationConfig'
 // ⚠️ REUSED, not re-derived. It already answers 'how many 10%-capped weeks,
@@ -167,3 +168,47 @@ export function applyRunWalk(session: Session): Session {
   if (session.type === 'rest' || session.type === 'cross-train' || session.type === 'strength') return session
   return { ...session, run_walk_strategy: runWalkStrategy() }
 }
+
+/**
+ * RUNWALK-STEPS-01 (§117 Am.6, Coaching Board 2026-10-22; §21b Am.4c, Design Board) — the one owner of a run-walk
+ * session's steps: `n × (Run / Walk)` from the first rep, the remainder as one final easy run, never dropped and never
+ * rounded up. The minutes are the main set's, so the parts still sum to the session.
+ *
+ * DERIVED AT READ TIME, like `backfillLegacyRamp`: a stamp at generation would reach no existing plan (live-plan policy:
+ * new plans only), and this reaches every run-walk runner now. Null when there is nothing to draw.
+ */
+export function runWalkSet(mainMins: number, runPace: string | null): DerivedSet | null {
+  if (!(mainMins > 0)) return null
+  const run = GENERATION_CONFIG.FINISH_GOAL_RUNWALK_RUN_MINS
+  const walk = GENERATION_CONFIG.FINISH_GOAL_RUNWALK_WALK_MINS
+  const n = Math.floor(mainMins / (run + walk))
+  const rem = mainMins - n * (run + walk)
+  const runStep = (mins: number): DerivedStep => ({
+    role: 'transition', modality: 'run', length: formatSecs(mins * 60), pace: runPace, pace_mode: 'ceiling', zone: 'Z2', advance: 'auto',
+  })
+  const walkStep: DerivedStep = {
+    role: 'recovery', modality: 'walk', length: formatSecs(walk * 60), pace: null, advance: 'auto',
+    // Founder's words, 2026-10-22.
+    cue: 'Brisk walk', note: 'Take it even if you feel fine.',
+  }
+  const blocks: DerivedSet['blocks'] = []
+  if (n > 0) blocks.push({ repeat: n, label: 'rounds of', steps: [runStep(run), walkStep] })
+  if (rem > 0) blocks.push({ repeat: 1, steps: [runStep(rem)] })
+  return { version: 2, kind: 'run_walk', blocks }
+}
+
+/**
+ * The set a session's step rows draw from: its stored `derived_set`, or, for a §117 run-walk session that has none, the
+ * run-walk set over the composed main set. Shapes the composer gives a run-walk warm-up to (easy, long, shakeout) only.
+ */
+export function displayDerivedSet(
+  session: Pick<Session, 'run_walk_strategy' | 'pace_target'> & { derived_set?: unknown },
+  structure: { shape: string; main: { duration_mins: number } } | null,
+): unknown {
+  if (session.derived_set) return session.derived_set
+  if (!session.run_walk_strategy || !structure || !RUN_WALK_SHAPES.has(structure.shape)) return null
+  return runWalkSet(structure.main.duration_mins, session.pace_target ?? null)
+}
+
+/** The composer shapes a run-walk session can take; the race and quality shapes are not drawn as run-walk. */
+export const RUN_WALK_SHAPES = new Set(['easy_run', 'long_run', 'shakeout'])

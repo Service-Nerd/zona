@@ -50,7 +50,10 @@ export function sessionSilhouette(structure: SessionStructure | null, derivedSet
       const mins = stepMinutes(st)
       if (mins == null || mins <= 0) continue
       const work = st.role === 'work'
-      main.push({ part: 'main', mins, level: work ? topZone(st.zone, mainZone) : 1, work })
+      // RUNWALK-STEPS-01: a run-walk run step (a `transition` run carrying a zone) draws at its zone, so the alternation
+      // with the walk shows. The catalogue's only other transitions run "to the hill", have no minutes and are skipped.
+      const level = work ? topZone(st.zone, mainZone) : st.role === 'transition' && st.modality === 'run' && st.zone ? topZone(st.zone, 1) : 1
+      main.push({ part: 'main', mins, level, work })
     }
     // Within one zone, the faster of the work paces sits a half-level up, so an over-under reads as one.
     const workPaces = derivedSet.blocks.flatMap(b => b.steps).filter(s => s.role === 'work').map(s => paceMeanSecPerKm(s.pace))
