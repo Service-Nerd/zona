@@ -44,3 +44,5 @@ save is one `InlineError`. The row is a container whose header button toggles it
 button). Gate: `components/dashboard/strengthLiftLog.markup.test.ts`.
 
 **Strength session title (STRENGTH-SESSION-TITLE-01, 2026-10-19).** Any strength session's name comes from `strengthSessionTitle(session)` (`lib/strength-bridge/display.ts`), read from what it holds (*Lower body*, *Upper body and light legs*, else the kind title), never `STRENGTH_KIND_TITLE[kind]`. Gate: `lib/strength-bridge/sessionTitle.test.ts`.
+
+**Step numerals (A11Y-APP-TEXT-SWEEP-01, Design Board 6t-j, 2026-10-22).** The italic 14px exercise numeral is `--mute` (5.45:1), never `--mute-2` (2.16): `--mute-2` is never text. Held by `lib/a11yContrast.test.ts`.
