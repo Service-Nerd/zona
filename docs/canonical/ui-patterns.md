@@ -3319,6 +3319,21 @@ Owner: `formatPrescribedDistance` in `lib/format.ts`. Gate: `lib/plan/repUnits.t
 the catalogue, both units, both metrics. ⚠️ Wroblewski would convert reps of 2000 m and up for miles runners; the chair
 ruled one rule, since `1.2mi` and `2.5mi` are not round road distances either.
 
+#### Amendment 4c — run-walk steps (RUNWALK-STEPS-01, Design Board 2026-10-22) · RULED, NOT BUILT
+
+A §117 run-walk session (§117 Am.6) draws as **one repeat bar** over a Run row and a Walk row. Four rules, from a
+prototype of the real `SessionSteps` at 390px:
+1. **The run/walk glyph pair, on these steps only.** It replaces the dot on the Run and Walk rows: run in the session
+   hue, walk in `--mute`, 16px, drawn in `RowIcon.tsx` (ICON-RULE-01's MEANING test: which part you are in, mid-run).
+   Run icons on Plan and Today rows stay out (STRENGTH-PLAN-GLYPH-01 b).
+2. **The remainder run is its own row AFTER the repeat block**, under a "then" line; inside the bar it reads as part
+   of every round.
+3. **The walk row carries an instruction**, never "rest" (words: founder).
+4. **A structured main set takes the session's hue**, not `--s-quality`: an easy run-walk drawn amber is a claim the
+   session does not make.
+**Check (with the build):** a markup test asserting the glyph pair appears only on run-walk steps, the remainder
+renders outside the bar, and the main-set accent equals `getSessionColor(session)`.
+
 ⚠️ **The same-unit rule is still dead and is not being revived.** `UNITS-SUBUNIT-01`
 struck it down and the shipped time-trial diagram above renders `WARM-UP 10 min` beside a
 distance main set. **A card may mix kinds**; what it may not do is answer the same
