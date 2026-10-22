@@ -4694,7 +4694,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           under the race title names the chapter; the per-week accents + seam
           in PlanCalendar carry it through the week list. Rule-engine → no AIMark. */}
       {inMaintenance && (
-        <div style={{ ...MICRO_LABELS.eyebrow, padding: '0 16px 12px', fontFamily: 'var(--font-ui)', color: 'var(--s-recov)' }}>
+        <div style={{ ...MICRO_LABELS.eyebrow, padding: '0 16px 12px', fontFamily: 'var(--font-ui)', color: 'var(--ink-2)' }}>
           Maintenance
         </div>
       )}
@@ -4933,7 +4933,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
                       marginLeft: 'auto',
                       fontFamily: 'var(--font-ui)',
                       ...MICRO_LABELS.eyebrow,
-                      color: 'var(--moss)',
+                      color: 'var(--moss-strong)',
                     }}>{phaseCap}</span>
                   )}
                 </div>
@@ -4972,7 +4972,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
                   {doneKm ? (
                     <>
                       <span style={{ color: 'var(--line-strong)', fontSize: '12px' }}>·</span>
-                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', fontWeight: 500 }}>
+                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss-strong)', fontWeight: 500 }}>
                         {formatDistance(doneKm, preferredUnits, { exact: true })} done
                       </span>
                     </>
@@ -5264,7 +5264,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
     if (ratio === null) return { label: '—', color: 'var(--mute)' }
     if (ratio >= LOAD_RATIO.watch) return { label: 'above your recent normal', color: 'var(--danger)' }
     if (ratio < LOAD_RATIO.under) return { label: 'under your recent normal', color: 'var(--warn)' }
-    return { label: 'right on your normal', color: 'var(--moss)' }
+    return { label: 'right on your normal', color: 'var(--moss-strong)' }
   }
 
   // ── Sessions context ────────────────────────────────────────────────────
@@ -5276,12 +5276,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   // done — that's an end-of-week verdict, not a mid-week one.
   function sessionsContext(done: number | null, planned: number | null, dueToDate: number | null): { label: string; color: string } {
     if (done === null || planned === null) return { label: '—', color: 'var(--mute)' }
-    if (done >= planned) return { label: 'complete', color: 'var(--moss)' }
+    if (done >= planned) return { label: 'complete', color: 'var(--moss-strong)' }
     const dueRef = dueToDate ?? planned
-    if (dueRef === 0)            return { label: 'on track', color: 'var(--moss)' }
+    if (dueRef === 0)            return { label: 'on track', color: 'var(--moss-strong)' }
     const behind = dueRef - done
-    if (behind <= 0)             return { label: 'on track', color: 'var(--moss)' }
-    if (done / dueRef >= 0.7)    return { label: 'on track', color: 'var(--moss)' }
+    if (behind <= 0)             return { label: 'on track', color: 'var(--moss-strong)' }
+    if (done / dueRef >= 0.7)    return { label: 'on track', color: 'var(--moss-strong)' }
     // COACH-BEHIND-DAY-TWO-01 / §65 Amendment (Coaching Board 2026-09-22) —
     // A SINGLE OUTSTANDING SESSION IS NEVER A JUDGEMENT.
     //
@@ -5910,7 +5910,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               <>
                 <div className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   {m.label}
-                  {m.onTap && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)' }}>ⓘ</span>}
+                  {m.onTap && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss-strong)' }}>ⓘ</span>}
                 </div>
                 {/* A5 — a tile whose value is a VERDICT is set in words, not in
                     the 28px tabular-numeral treatment, which exists for digits

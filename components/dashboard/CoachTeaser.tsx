@@ -235,7 +235,7 @@ export default function CoachTeaser({ plan, firstName, onUpgrade }: {
               Zone score and weekly coaching. Needs Strava.
             </div>
           </div>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss-strong)', whiteSpace: 'nowrap', flexShrink: 0 }}>
             Upgrade →
           </span>
         </Button>
@@ -253,7 +253,7 @@ export default function CoachTeaser({ plan, firstName, onUpgrade }: {
               The card you can drop in a story.
             </div>
           </div>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss-strong)', whiteSpace: 'nowrap', flexShrink: 0 }}>
             Upgrade →
           </span>
         </Button>

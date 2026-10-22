@@ -154,7 +154,7 @@ export default function ResetPasswordPage() {
               </div>
 
               {resendState === 'sent' ? (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)', lineHeight: 1.6, marginBottom: '16px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss-strong)', lineHeight: 1.6, marginBottom: '16px' }}>
                   {RESET_SENT_MESSAGE}
                 </div>
               ) : (
@@ -193,7 +193,7 @@ export default function ResetPasswordPage() {
           )}
 
           {phase === 'done' && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', textAlign: 'center', padding: '12px 0', lineHeight: 1.6 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss-strong)', textAlign: 'center', padding: '12px 0', lineHeight: 1.6 }}>
               Password updated. Taking you in…
             </div>
           )}

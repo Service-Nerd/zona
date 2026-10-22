@@ -363,7 +363,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
             }}>
               <span style={{
                 fontFamily: 'var(--font-ui)', fontWeight: 600, fontSize: '0.75rem',
-                color: 'var(--moss)', minWidth: '52px', flexShrink: 0,
+                color: 'var(--moss-strong)', minWidth: '52px', flexShrink: 0,
               }}>{row.label}</span>
               <span style={{
                 fontFamily: 'var(--font-ui)', fontWeight: 400, fontSize: '0.8125rem',

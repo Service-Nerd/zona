@@ -153,7 +153,8 @@ export default function CoachByline({
         </span>
         <span
           style={{ ...MICRO_LABELS.eyebrow, fontFamily:    'var(--font-ui)',
-            color:         accent,
+            // ACCENT-TEXT-CONTRAST-01: moss as small text takes its ratified text shade.
+            color:         isMoss ? 'var(--moss-strong)' : accent,
             opacity:       isWorking ? 0.85 : 1 }}
         >
           {roleLabel}

@@ -715,7 +715,7 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
               padding: '14px 16px',
             }}>
               {p.isCurrent && (
-                <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--moss)', marginBottom: '4px' }}>
+                <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--moss-strong)', marginBottom: '4px' }}>
                   Current
                 </div>
               )}

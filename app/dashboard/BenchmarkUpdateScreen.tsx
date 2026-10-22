@@ -55,7 +55,7 @@ function UpdatedPaceResult({ plan, weeksUpdated, stravaConnected, units }: { pla
         border: '0.5px solid var(--moss)', borderLeft: '3px solid var(--moss)',
         padding: '16px',
       }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 'var(--space-3)' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss-strong)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 'var(--space-3)' }}>
           Pace updated
         </div>
         {meta.vdot !== undefined && (

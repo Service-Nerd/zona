@@ -139,6 +139,12 @@ function StepRowView({ num, dotColor, row }: { num: number | null; dotColor: str
   )
 }
 
+/**
+ * ACCENT-TEXT-CONTRAST-01 (Design Board 2026-10-22, 6t-g). A section's hue is the TINT and the dot, never its text: on its
+ * own 15% tint, amber measured 2.80:1, the coral 2.86, moss 3.13, against 4.5 for this 11px label. Ink-2 is 9.72:1.
+ */
+const SECTION_TEXT = 'var(--ink-2)'
+
 function SectionCard({
   name, accent, tintPct, totalStr, zoneStr, paceStr, info, children,
 }: {
@@ -148,7 +154,7 @@ function SectionCard({
   return (
     <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', marginTop: 'var(--space-3)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)', padding: '8px 13px', background: tint(accent, tintPct) }}>
-        <span style={{ ...MICRO_LABELS.sectionLabel, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: FONT, color: accent }}>
+        <span style={{ ...MICRO_LABELS.sectionLabel, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: FONT, color: SECTION_TEXT }}>
           {name}
           {info && (
             <IconButton
@@ -186,7 +192,7 @@ function SectionCard({
             />
           )}
         </span>
-        <span style={{ fontFamily: FONT, fontSize: '11px', fontWeight: 700, color: accent, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+        <span style={{ fontFamily: FONT, fontSize: '11px', fontWeight: 700, color: SECTION_TEXT, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
           {totalStr}{zoneStr ? ` · ${zoneStr}` : ''}
         </span>
       </div>
@@ -293,7 +299,7 @@ export default function SessionSteps({
             )}
             {r.startsGroup && r.repeat && r.repeat > 1 && (
               <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', padding: '8px 13px 8px 44px', background: 'var(--bg-soft)' }}>
-                <span style={{ fontFamily: FONT, fontSize: '15px', fontWeight: 800, fontStyle: 'italic', color: mainAccent, fontVariantNumeric: 'tabular-nums' }}>{r.repeat}×</span>
+                <span style={{ fontFamily: FONT, fontSize: '15px', fontWeight: 800, fontStyle: 'italic', color: SECTION_TEXT, fontVariantNumeric: 'tabular-nums' }}>{r.repeat}×</span>
                 <span style={{ fontFamily: FONT, fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--ink-2)' }}>{r.repeatLabel}</span>
               </div>
             )}

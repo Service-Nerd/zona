@@ -158,7 +158,7 @@ export default function PlanAdjustmentsScreen({
             }}
           >
             <div>
-              <div style={{ fontFamily: 'var(--font-ui)', color: 'var(--moss)', marginBottom: '3px', ...MICRO_LABELS.eyebrow }}>
+              <div style={{ fontFamily: 'var(--font-ui)', color: 'var(--moss-strong)', marginBottom: '3px', ...MICRO_LABELS.eyebrow }}>
                 1 change pending
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.4 }}>

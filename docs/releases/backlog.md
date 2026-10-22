@@ -143,17 +143,15 @@ can you lift?* (1–4) and Change your plan asks *Days you run* (2–6), one pos
 S8 first jump level) and the long-run-day rule for the run row. Icons came off the modify sheet (seven rows, ICON-RULE-01).
 Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
 
-### 🔲 `ACCENT-TEXT-CONTRAST-01` — session accents used as small text fall below AA 🧭 **DESIGN BOARD** *(filed 2026-10-22, from SESSION-INTERVALS-HUE-01)*
+### 🔲 `ACCENT-TEXT-VARIABLE-01` — session and zone hues still reach small text through variables 🧭 **DESIGN BOARD** (applies 6t-g) *(filed 2026-10-22, from ACCENT-TEXT-CONTRAST-01)*
 
-The session hue is also TEXT: the main-set section header ("MAIN SET · 25 min · Zone 5") and the repeat count ("5×") in
-`SessionSteps`. On `--card`: `--s-quality` 3.25:1, `--s-race` 3.78:1, the ruled coral `#D4705A` 3.35:1, all under 4.5:1
-for 11–15px text; `--s-easy` 5.12 and `--s-long` 6.52 pass. Pre-existing for amber on every quality session. Question:
-text in `--ink-2` with the hue kept for graphics, a darker text variant per hue, or a measured exemption.
-
-🧭 **RULED 2026-10-22 (design-rulings 6t-g), SHIP:** a session hue (and `--moss`) is never small text; that text is
-`--ink` / `--ink-2`, the hue stays on graphics. Re-measured on the real backgrounds: 7 of 9 hues fail on their own 15%
-header tint (quality 2.80, coral 2.86). Per-hue text variants declined (Collins lost). Scope: 66 literal sites in 23 files
-plus 7 via a variable. Ready to build, with a shrink-only debt gate.
+6t-g was built for every LITERAL `color: 'var(--hue)'` site and the seven named variable sites. Found at build, ~15 more
+take a hue through a variable and `accentText.test.ts` cannot see them: `z.colour` (TrainingZonesScreen, OrientationScreen,
+ZoneRings), `fatigueChipColour()` (SessionCompleteCard), `rpeColour()` and the zone verdict chip (SessionPopupInner),
+`phaseColour` (GeneratingCeremony), `railColor` (NotificationRow), `captionColour()` (RaceProgressArcRow), `lrc.color`
+(DashboardClient), StravaPanel, and ZoneBar's active zone number. Each needs the same call: small text to `--ink-2` /
+`--moss-strong`, the hue to the mark beside it. A zone NAME coloured by its zone (Z5 in coral) may be a meaning the board
+wants to keep at large sizes; measure each first.
 
 ### 🔲 `UNMEASURED-DISTANCE-01` — a linked run with no distance cannot be given one 🧭 **DESIGN BOARD** (prototype) + ⚙️ **ARCHITECTURE** (INV-DATA-008 / ADR-011) *(filed 2026-10-22, from TREADMILL-TOGGLE-01)*
 

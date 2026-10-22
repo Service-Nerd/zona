@@ -56,7 +56,7 @@ export default function NextGoalCard({ achievement, options, onPick, onDismiss }
                   {opt.label}
                 </span>
                 {opt.targetTime && (
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--s-race)' }}>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>
                     {opt.targetTime}
                   </span>
                 )}

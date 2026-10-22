@@ -1040,7 +1040,15 @@ answers in a line what three rounds of reasoning did not.
 | **A darker text variant per hue** (Collins) | 🔴 **NOT GRANTED** | Nine new tokens, a second colour language in all but name, to rescue decoration. **Collins lost**; reopen on a device test showing headers lose their identity. `--danger-strong` stays the one text variant, for errors |
 | **Large text** | 🟢 keeps its hue only where it measures ≥ 3:1 on its real background |
 
-Scope measured: **66 literal sites in 23 files + 7 via a variable** (`accent`, `mainAccent`, `sessionColour`). Check (with the build): a test that fails on a session hue as small text, contrast computed on the real backgrounds, the 73 existing sites as a debt list that may only shrink. ⛔ Veto: none. ⚠️ Not measured: outdoors or on a device.
+🔁 **AMENDED AT BUILD, same day: small `--moss` text takes `--moss-strong` (`#557055`), not ink.** The sitting scanned the
+pattern layer and not the token layer (this board's own first trap): `--moss-strong` is moss's ratified text shade, used
+62 times, measuring 5.48 on `--card`, 4.82 on `--bg`, 4.52 on `--bg-soft`, 4.76 on the moss tint. Ink would have stripped
+the brand green from ~55 eyebrows and voice lines for no gain. **Session hues** still go to `--ink-2` (no ratified text
+shade exists; Collins' per-hue variants stay declined). Graphics keep their hue, and so do glyph-like text marks used as
+icons (→, ⇄, chevrons: WCAG non-text, 3:1, moss 3.68). Large text keeps its hue (moss 56px, 32px, 28px). The wordmark
+is exempt (a logo).
+
+Scope measured: **66 literal sites in 23 files + 7 via a variable** (`accent`, `mainAccent`, `sessionColour`). 🔴 **The variable count was wrong, found at build:** text also takes a hue through `config.color`, `z.colour`, `fatigueChipColour()`, `rpeColour()`, `phaseColour`, `railColor`, `lrc.color` and ZoneBar's active label, ~15 more sites. **BUILT 2026-10-22:** all literal sites (70, incl. four on `app/auth` the first sweep missed), the seven named variable sites, and the session-detail tile; the rest filed as `ACCENT-TEXT-VARIABLE-01`. Gate: `lib/ui/accentText.test.ts`. Check (with the build): a test that fails on a session hue as small text, contrast computed on the real backgrounds, the 73 existing sites as a debt list that may only shrink. ⛔ Veto: none. ⚠️ Not measured: outdoors or on a device.
 
 ## 6t-f. SESSION-INTERVALS-HUE-01 — one owner for a session's hue; the intervals colour is the error red (2026-10-22)
 

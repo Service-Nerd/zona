@@ -432,7 +432,7 @@ export default function ManualRunModal({ weekN, sessionKey, preferredUnits, onCl
                 border: `0.5px solid color-mix(in srgb, ${sessionColour} 30%, transparent)`,
                 borderRadius: '10px', padding: '10px 14px', marginBottom: 'var(--space-5)',
               }}>
-                <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: sessionColour, marginBottom: '3px' }}>
+                <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--ink-2)', marginBottom: '3px' }}>
                   Planned
                 </div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>

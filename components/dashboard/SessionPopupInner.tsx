@@ -1045,12 +1045,12 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                   flexShrink: 0,
                 }} />
                 <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
-                  color: 'var(--moss)' }}>Hold the zone</span>
+                  color: 'var(--moss-strong)' }}>Hold the zone</span>
                 {isInteractive && (
                   <span style={{
                     marginLeft: 'auto',
                     fontFamily: 'var(--font-ui)', fontSize: '11px',
-                    color: 'var(--moss)', opacity: 0.7,
+                    color: 'var(--moss-strong)', opacity: 0.7,
                     lineHeight: 1,
                   }}>ⓘ</span>
                 )}
@@ -1115,15 +1115,15 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                two broken sites. Two ways to tint a token lived side by side and
                only one worked. */
             <div style={{ background: `color-mix(in srgb, ${config.color} 6%, transparent)`, borderRadius: '10px', padding: '10px 12px', border: `1px solid color-mix(in srgb, ${config.color} 19%, transparent)` }}>
-              <div style={{ ...MICRO_LABELS.dataLabel, fontFamily: 'var(--font-ui)', color: config.color, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <div style={{ ...MICRO_LABELS.dataLabel, fontFamily: 'var(--font-ui)', color: 'var(--ink-2)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 {effectiveMetric === 'distance' ? 'Distance' : 'Duration'}
                 {isMetricCustom && (
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', background: 'var(--warn-bg)', color: 'var(--warn)', border: '1px solid var(--line)', borderRadius: '4px', padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>custom</span>
                 )}
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: config.color, lineHeight: 1, marginBottom: 'var(--space-2)' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1, marginBottom: 'var(--space-2)' }}>
                 {effectiveMetric === 'distance'
-                  ? <>{distanceIsEstimated ? '~' : ''}{formatDistance(estimatedDistance, preferredUnits, { noSuffix: true, exact: session.type === 'race' }) ?? '—'}<span style={{ fontSize: '11px', fontWeight: 400, color: config.color, opacity: 0.7 }}> {preferredUnits}</span></>
+                  ? <>{distanceIsEstimated ? '~' : ''}{formatDistance(estimatedDistance, preferredUnits, { noSuffix: true, exact: session.type === 'race' }) ?? '—'}<span style={{ fontSize: '11px', fontWeight: 400, color: 'var(--mute)' }}> {preferredUnits}</span></>
                   : <span style={{ fontSize: '18px' }}>{estimatedDuration ?? '—'}</span>
                 }
               </div>

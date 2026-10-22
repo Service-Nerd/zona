@@ -94,7 +94,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
           <>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
-              color: 'var(--moss)', letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: 'var(--moss-strong)', letterSpacing: '0.1em', textTransform: 'uppercase',
               marginBottom: 'var(--space-3)',
             }}>
               You&rsquo;re in
@@ -131,7 +131,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
           <>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
-              color: 'var(--moss)', letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: 'var(--moss-strong)', letterSpacing: '0.1em', textTransform: 'uppercase',
               marginBottom: 'var(--space-3)',
             }}>
               Charity access

@@ -50,7 +50,7 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
             {hrBand && (
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
-                color: 'var(--moss)', marginTop: '4px',
+                color: 'var(--moss-strong)', marginTop: '4px',
                 fontVariantNumeric: 'tabular-nums',
               }}>
                 {hrBand.lo}–{hrBand.hi} bpm

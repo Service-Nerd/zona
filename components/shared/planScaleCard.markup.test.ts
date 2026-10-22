@@ -71,7 +71,7 @@ describe('PlanScaleCard markup', () => {
 
   it('uses design tokens, never a hardcoded colour', () => {
     const out = html(FULL)
-    expect(out).toMatch(/var\(--moss\)/)
+    expect(out).toMatch(/var\(--moss(-strong)?\)/)
     expect(out).toMatch(/var\(--ink\)/)
     // The pre-commit hook blocks hex in components; this fails the build too.
     expect(out).not.toMatch(/#[0-9a-fA-F]{3,8}/)

@@ -3339,6 +3339,14 @@ session, steps to the main set, start on a run), the rows (founder's words, glyp
 render, and a VO2 set that keeps `--s-inter` with no glyph. Owner: `runWalkSet` / `displayDerivedSet` in
 `lib/plan/runWalkPlan.ts`, derived at read time so existing plans are reached.
 
+#### Amendment 4d — a section's hue is its tint, never its text (ACCENT-TEXT-CONTRAST-01, Design Board 2026-10-22, 6t-g)
+
+Section names, the total/zone line and the repeat count are `--ink-2` (`SECTION_TEXT`); the hue stays on the tint, the dot,
+the silhouette and the glyphs. On its own 15% tint, amber measured 2.80:1 and the coral 2.86 against 4.5 for this 11px label.
+App-wide: small `--moss` text takes `--moss-strong`, small session-hue text `--ink-2`; large text (≥ 18.7px bold / 24px)
+and icon-like glyphs keep the hue. Gate: `lib/ui/accentText.test.ts` (literal sites, a named exception list that may only
+shrink); text reached through a variable is `ACCENT-TEXT-VARIABLE-01`.
+
 ⚠️ **The same-unit rule is still dead and is not being revived.** `UNITS-SUBUNIT-01`
 struck it down and the shipped time-trial diagram above renders `WARM-UP 10 min` beside a
 distance main set. **A card may mix kinds**; what it may not do is answer the same

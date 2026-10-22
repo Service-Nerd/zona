@@ -35,7 +35,7 @@ export default function RunwayRevealCard({ weeks, note }: RunwayRevealCardProps)
       {/* Eyebrow — calm, positive; --moss because this is good news, not a warning. */}
       <div
         style={{ ...MICRO_LABELS.eyebrow, fontFamily:     'var(--font-ui)',
-          color:          'var(--moss)',
+          color:          'var(--moss-strong)',
           marginBottom:   '6px' }}
       >
         You&rsquo;re early

@@ -415,7 +415,7 @@ function MaintSeam() {
     }}>
       <span style={{
         fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
-        color: 'var(--s-recov)', letterSpacing: '0.12em', textTransform: 'uppercase',
+        color: 'var(--ink-2)', letterSpacing: '0.12em', textTransform: 'uppercase',
       }}>After the race</span>
       <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
         color: 'var(--mute)' }}>maintenance</span>
@@ -644,7 +644,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             {isMaint
               ? <>{phase === 'maintenance_restoration' ? 'Restoration' : 'Base'} · {formatDateRange(weekStartDate)}</>
               : <>{isRace ? 'Race week · ' : ''}W{weekNum} · {formatDateRange(weekStartDate)}</>}
-            {movingDay && <span style={{ color: 'var(--moss)', marginLeft: '8px', textTransform: 'none', letterSpacing: 'normal', fontWeight: 500 }}>· Tap where you want it.</span>}
+            {movingDay && <span style={{ color: 'var(--moss-strong)', marginLeft: '8px', textTransform: 'none', letterSpacing: 'normal', fontWeight: 500 }}>· Tap where you want it.</span>}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: isCompleted ? 'var(--mute)' : 'var(--ink)', letterSpacing: '-0.005em' }}>
             {week.label ?? ''}
@@ -653,7 +653,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         <div style={{ textAlign: 'right' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px', justifyContent: 'flex-end' }}>
             {actualKm > 0
-              ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: `${metricSize}px`, color: 'var(--moss)', fontWeight: isCurrent ? 800 : 600, lineHeight: 1, letterSpacing: isCurrent ? '-0.02em' : 'normal', fontVariantNumeric: 'tabular-nums' }}>{formatDistance(actualKm, units, { exact: true, noSuffix: true })}</span>
+              ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: `${metricSize}px`, color: 'var(--moss-strong)', fontWeight: isCurrent ? 800 : 600, lineHeight: 1, letterSpacing: isCurrent ? '-0.02em' : 'normal', fontVariantNumeric: 'tabular-nums' }}>{formatDistance(actualKm, units, { exact: true, noSuffix: true })}</span>
               : intendedKm > 0
               ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: `${metricSize}px`, color: isCurrent ? 'var(--ink)' : 'var(--mute)', fontWeight: isCurrent ? 800 : 600, lineHeight: 1, letterSpacing: isCurrent ? '-0.02em' : 'normal', fontVariantNumeric: 'tabular-nums' }}>{intendedKm}</span>
               : null
@@ -923,7 +923,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
 
       <div style={{ flex: 1, minWidth: 0 }}>
         {isMoveTarget ? (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)', letterSpacing: '0.04em' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss-strong)', letterSpacing: '0.04em' }}>
             Move here
           </div>
         ) : strengthRow && strength ? (
@@ -942,7 +942,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
               {strength.status === 'done' && (
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)' }}>Done</span>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss-strong)' }}>Done</span>
               )}
               {strength.eased && <EasedMark />}
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
@@ -1004,7 +1004,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                   finished row is a reward, which is the illusion-of-progress
                   class Wood's binding conditions exist to keep out. */}
               {isComplete && (
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)' }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss-strong)' }}>
                   Done
                 </span>
               )}
@@ -1032,7 +1032,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                   run's); strength is a quiet text mark, never a second row or a split rail
                   (Collins lost that: a 17px half-rail is not legible, and colour alone fails). */}
               {strength && !strengthRow && (
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--s-strength)', display: 'inline-flex', alignItems: 'center', gap: 'var(--space-1)' }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', display: 'inline-flex', alignItems: 'center', gap: 'var(--space-1)' }}>
                   <Glyph name="dumbbell" />Strength
                 </span>
               )}
@@ -1069,7 +1069,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
             width: '16px', height: '16px', borderRadius: '50%',
             background: 'var(--moss-soft)',
             border: '1.5px solid var(--moss)',
-            color: 'var(--moss)', fontSize: '9px', fontWeight: 800,
+            color: 'var(--moss-strong)', fontSize: '9px', fontWeight: 800,
             lineHeight: 1,
           }}>✓</span>
         )}
@@ -1247,7 +1247,7 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
           marginTop: '10px',
           fontFamily: 'var(--font-ui)',
           ...MICRO_LABELS.eyebrow,
-          color: 'var(--s-race)',
+          color: 'var(--ink-2)',
         }}>
           {(() => {
             // Race day = last non-rest session in the week (typically Sun)

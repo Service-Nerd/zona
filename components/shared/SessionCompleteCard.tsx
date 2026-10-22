@@ -171,7 +171,7 @@ export default function SessionCompleteCard({
               {pctDisplay}
             </span>
             <span style={{
-              fontSize: '22px', fontWeight: 600, color: 'var(--moss)',
+              fontSize: '22px', fontWeight: 600, color: 'var(--moss-strong)',
             }}>
               %
             </span>

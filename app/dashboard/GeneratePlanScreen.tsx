@@ -419,7 +419,7 @@ function ConfidenceBadge({ score, risks }: { score: number; risks?: string[] }) 
     <div style={{ paddingTop: 'var(--space-4)' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', marginBottom: '4px' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: colour }}>{score}</span>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: colour }}>{label}</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)' }}>{label}</span>
       </div>
       {risks?.length ? (
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.55 }}>
@@ -1731,7 +1731,7 @@ export default function GeneratePlanScreen({
         <ProgressLine total={realSteps.length} current={Math.max(0, realDone - 1)} />
         <div style={{ marginBottom: stepMeta.interstitial ? '20px' : '28px', marginTop: stepMeta.interstitial ? '28px' : 0 }}>
           {stepMeta.eyebrow && (
-            <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--moss)', marginBottom: 'var(--space-3)' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--moss-strong)', marginBottom: 'var(--space-3)' }}>
               {stepMeta.eyebrow}
             </div>
           )}
@@ -1869,7 +1869,7 @@ export default function GeneratePlanScreen({
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>
               Most runners push their easy days and coast their hard ones, so every run lands in the same tiring middle. Even elites spend about 80% of their time truly easy. Your easy runs build the engine. Let them.
             </p>
-            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: 'var(--moss)', margin: 0 }}>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: 'var(--moss-strong)', margin: 0 }}>
               {BRAND.voiceAnchor}
             </p>
           </div>

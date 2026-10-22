@@ -54,7 +54,7 @@ describe('CharityCohortCard markup', () => {
 
   it('uses tokens, never a hardcoded colour', () => {
     const out = html(MAW)
-    expect(out).toMatch(/var\(--moss\)/)
+    expect(out).toMatch(/var\(--moss(-strong)?\)/)
     expect(out).not.toMatch(/#[0-9a-fA-F]{3,8}/)
   })
 

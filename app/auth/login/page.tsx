@@ -300,7 +300,7 @@ export default function LoginPage() {
             <div style={{
               marginTop: '12px',
               fontFamily: 'var(--font-ui)',
-              fontSize: '11px', color: 'var(--moss)',
+              fontSize: '11px', color: 'var(--moss-strong)',
               padding: '8px 12px',
               background: 'var(--moss-soft)',
               borderRadius: '8px',
@@ -483,7 +483,7 @@ export default function LoginPage() {
             <div style={{
               marginTop: '12px',
               fontFamily: 'var(--font-ui)',
-              fontSize: '11px', color: 'var(--moss)',
+              fontSize: '11px', color: 'var(--moss-strong)',
               padding: '8px 12px',
               background: 'var(--moss-soft)',
               borderRadius: '8px',

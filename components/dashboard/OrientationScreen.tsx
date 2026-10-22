@@ -107,7 +107,7 @@ export default function OrientationScreen({ plan, firstName, zone2Ceiling, resti
         {/* First session card */}
         {firstSession && (
           <div style={{ background: 'var(--card-bg)', borderRadius: '14px', border: `0.5px solid var(--border-col)`, borderLeft: `4px solid ${accent}`, padding: '14px 16px', marginBottom: 'var(--space-3)' }}>
-            <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: accent, marginBottom: '4px' }}>First session</div>
+            <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--ink-2)', marginBottom: '4px' }}>First session</div>
             <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>{firstSession.label}</div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px' }}>{firstSession.day}</div>
           </div>
@@ -136,7 +136,7 @@ export default function OrientationScreen({ plan, firstName, zone2Ceiling, resti
                 }} />
                 <span style={{
                   fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
-                  color: 'var(--moss)',
+                  color: 'var(--moss-strong)',
                   letterSpacing: '0.14em', textTransform: 'uppercase',
                 }}>Hold the zone</span>
               </div>
@@ -147,7 +147,7 @@ export default function OrientationScreen({ plan, firstName, zone2Ceiling, resti
                 color: 'var(--ink)', letterSpacing: '-0.025em', lineHeight: 1.1,
                 marginBottom: 'var(--space-2)',
               }}>
-                These are <span style={{ color: 'var(--moss)' }}>your zones.</span>
+                These are <span style={{ color: 'var(--moss-strong)' }}>your zones.</span>
               </div>
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '13px',
@@ -198,7 +198,7 @@ export default function OrientationScreen({ plan, firstName, zone2Ceiling, resti
                           {isHome && (
                             <span style={{
                               fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-                              color: 'var(--moss)', background: 'var(--moss-soft)',
+                              color: 'var(--moss-strong)', background: 'var(--moss-soft)',
                               padding: '2px 6px', borderRadius: '3px',
                               letterSpacing: '0.08em', textTransform: 'uppercase',
                             }}>Your home</span>
@@ -232,7 +232,7 @@ export default function OrientationScreen({ plan, firstName, zone2Ceiling, resti
                 marginBottom: 'var(--space-5)',
               }}>
                 <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
-                  color: 'var(--moss)',
+                  color: 'var(--moss-strong)',
                   marginBottom: '4px' }}>The whole job</div>
                 <div style={{
                   fontFamily: 'var(--font-ui)', fontSize: '13px',

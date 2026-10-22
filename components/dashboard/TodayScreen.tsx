@@ -304,7 +304,7 @@ function ReadinessSteadyChip({ detail }: {
       }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', justifyContent: 'space-between' }}>
         <span style={{
-          fontFamily: 'var(--font-ui)', color: 'var(--moss)', ...MICRO_LABELS.eyebrow,
+          fontFamily: 'var(--font-ui)', color: 'var(--moss-strong)', ...MICRO_LABELS.eyebrow,
         }}>
           Readiness · steady
         </span>
@@ -1276,7 +1276,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               fontFamily: 'var(--font-ui)',
               fontSize: '11px',
               fontWeight: 600,
-              color: 'var(--moss)',
+              color: 'var(--moss-strong)',
               letterSpacing: '0.04em',
               background: 'var(--moss-soft)',
               borderRadius: '20px',
@@ -1488,7 +1488,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                     {msg.sub}
                   </div>
                 </div>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)', whiteSpace: 'nowrap' }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss-strong)', whiteSpace: 'nowrap' }}>
                   See plans →
                 </span>
               </Button>
@@ -1547,7 +1547,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               <Button variant="secondary" fullWidth 
                 onClick={() => onLogRaceResult?.()}>
                 <div>
-                  <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--moss)', marginBottom: '3px' }}>
+                  <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--moss-strong)', marginBottom: '3px' }}>
                     Race done
                   </div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>
@@ -1614,7 +1614,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 width: '3px', borderRadius: '2px', background: 'var(--s-easy)',
               }} />
               <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
-                color: 'var(--s-easy)', marginBottom: 'var(--space-2)' }}>
+                color: 'var(--ink-2)', marginBottom: 'var(--space-2)' }}>
                 {handover.eyebrow}
               </div>
               <div style={{
@@ -1692,7 +1692,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 width: '3px', borderRadius: '2px', background: 'var(--s-recov)',
               }} />
               <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
-                color: 'var(--s-recov)',
+                color: 'var(--ink-2)',
                 marginBottom: 'var(--space-2)' }}>
                 After the race
               </div>
@@ -1773,7 +1773,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                         width: '3px', borderRadius: '2px', background: 'var(--s-recov)',
                       }} />
                       <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
-                        color: 'var(--s-recov)',
+                        color: 'var(--ink-2)',
                         marginBottom: 'var(--space-2)' }}>
                         After the race
                       </div>
@@ -1944,7 +1944,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
               flexShrink: 0,
             }} />
             <span style={{
-              fontFamily: 'var(--font-ui)', color: 'var(--moss)', ...MICRO_LABELS.eyebrow,
+              fontFamily: 'var(--font-ui)', color: 'var(--moss-strong)', ...MICRO_LABELS.eyebrow,
             }}>
               Hold the zone · {dz.rangeLabel} today
             </span>
@@ -2027,7 +2027,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                     background:   'var(--moss)',
                     borderRadius: '2px',
                   }} />
-                  <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--moss)', marginBottom: '4px' }}>
+                  <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--moss-strong)', marginBottom: '4px' }}>
                     {isRest ? 'Rest day' : isSkipped ? 'Benched' : "Today's done"}
                   </div>
                   <p style={{
@@ -2370,7 +2370,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 </span>
                 <span aria-hidden="true" style={{
                   fontFamily: 'var(--font-ui)', fontSize: '14px',
-                  color: 'var(--moss)', fontWeight: 600, flexShrink: 0,
+                  color: 'var(--moss-strong)', fontWeight: 600, flexShrink: 0,
                 }}>
                   →
                 </span>
@@ -2392,7 +2392,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             fontFamily: 'var(--font-ui)',
             fontSize: '14px',
             fontWeight: 600,
-            color: 'var(--moss)',
+            color: 'var(--moss-strong)',
             letterSpacing: '-0.005em',
             lineHeight: 1.3,
           }}
