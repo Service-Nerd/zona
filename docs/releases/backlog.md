@@ -187,6 +187,12 @@ on a blocked Sunday (the only remaining `'sun'` fallback in `ruleEngine.ts`, kep
 or edit path can send it (both need a run day). Fix at the input boundary as a designed refusal, never by matching a
 message. Count stored inputs first.
 
+### 🔲 `PLAN-CHANGE-HEADER-01` — the plan-change journey's screens pin their header like Strength setup does 🧭 **DESIGN BOARD RULED 2026-10-22 (6t-l), ready to build** *(filed 2026-10-22)*
+
+*Adjust your plan* (floating arrow, title scrolls) and *Here is what changes* (`ChangeConfirm`: inline back and title,
+both scroll) take `ScreenHeader`, pinned with the arrow inside, as Strength setup already does. Conformance with
+BACK-ARROW-TITLE-COLLIDE-01 / BACK-ARROW-FLOAT-03; gate + falsify at build.
+
 ### 🔲 `CALENDAR-DONE-DOT-SOURCE-01` — the Plan calendar's completion ● is Strava orange for Apple Health runs too 🧭 **DESIGN BOARD** *(filed 2026-10-22)*
 
 Found building `A11Y-APP-TEXT-SWEEP-01`. 6t-j ruled "the orange stays on the ● mark" reading the line as Strava

@@ -1031,6 +1031,25 @@ answers in a line what three rounds of reasoning did not.
 ---
 
 
+## 6t-l. PLAN-CHANGE-HEADER-01 — one header behaviour across the plan-change journey (2026-10-22)
+
+Founder: Strength setup holds its header on scroll; *Adjust your plan* holds only the back arrow. **Settled ground
+answers it, so this is a conformance ruling, not a new one:** `BACK-ARROW-TITLE-COLLIDE-01` (a pushed screen pins its
+header; the arrow travels inside it) and `BACK-ARROW-FLOAT-03` (only a LONE arrow floats). Measured in code: the journey
+has **three** behaviours on three screens. Strength setup uses `ScreenHeader` (pinned, arrow inside); *Adjust your plan*
+floats `FloatingBackButton` over a hand-rolled `screen-header__title` that scrolls away; *Here is what changes*
+(`ChangeConfirm`, run and strength) puts an inline `BackButton` and a 26px title in the flow, so both scroll away. The
+two off-pattern screens became pushed screens in `SAVE-PATTERN-01` (2026-10-18), after the header rulings, and nobody
+applied them. Swept: 2 files float an arrow; the wizard's refusal view has no title, so its float is the ruled lone
+arrow; the 7 other hand-rolled titles all pin.
+
+**SHIP (conformance).** Both screens take `ScreenHeader` (title, sub, back inside the band, pinned), the same as
+Strength setup; titles and subs unchanged. 🧭 Zhuo: one journey (SAVE-PATTERN-01) is three screens that behave alike. ✋
+Silvanto: no veto; the pinned band is the ruled object. 📱 Wroblewski: on the confirm screen the way back is the one
+thing a runner reading a long diff needs, and it currently scrolls off. 🎓 Sierra, 🎪 Collins: no objection. **Check:** a
+gate that no file renders `FloatingBackButton` beside a screen title, and that `ChangeConfirm` and the Adjust screen use
+`ScreenHeader`; falsified at build. **Ruled, not built.**
+
 ## 6t-k. PLAN-DOORS-01 — two plans, one door each, the same face everywhere (2026-10-22)
 
 Founder finding: Plan's *Adjust your plan* has no icon, the Strength door inside it has none while Me's has a dumbbell,
