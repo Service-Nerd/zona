@@ -1041,9 +1041,9 @@ met on more than one surface wears its destination's glyph on each; bounded to t
 row carries it. (4) The Adjust screen's Strength door regains the dumbbell (restores STRENGTH-ENTRY-01; reverses the
 2026-10-18 removal for that door only; setting rows stay bare). (5) Back from Strength returns to its origin, including
 Adjust (today it lands on Plan). (6) *Plan adjustments* (auto-adjust) is renamed so it cannot read as the manual edit,
-keeping the sliders glyph. (7) Plan's Adjust subtitle names strength when it is available. 👤 Words in 6 and 7 are the
+keeping the sliders glyph. **Built as *Plan checks*** (founder, 2026-10-22): *Auto-adjust* was approved first, then found to be the screen's own toggle label, so the door would have said its name twice (ME-DOORS-01). (7) Plan's Adjust subtitle names strength when it is available. 👤 Words in 6 and 7 are the
 founder's. ✋ Silvanto: his 2026-10-18 seam dissent, now the ruling; no veto. 🎪 **Collins lost** a "Your plans" hub
-screen (a fourth place; R-4 gives Plan one action row); won the name collision. Sitting:
+screen (a fourth place; R-4 gives Plan one action row); won the name collision. **BUILT 2026-10-22.** Sitting:
 `docs/decisions/plan-doors-2026-10-22.md`.
 
 ## 6t-j. A11Y-APP-TEXT-SWEEP-01 — the last 19 faint-text sites, and the gate goes app-wide (2026-10-22)

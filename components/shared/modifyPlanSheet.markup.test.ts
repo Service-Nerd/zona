@@ -60,7 +60,9 @@ describe('P-02 — gated on the stored input', () => {
   it('the entry point is withheld when the plan has none', () => {
     // 45% of live plans on 2026-09-20. Regenerating from guessed inputs would
     // silently change what the runner never asked to change.
-    expect(DASH).toContain('canModifyPlan(plan) ? () => { setPlanReadback(null); setModifyOpen(true) } : undefined')
+    expect(DASH).toContain("canModifyPlan(plan) ? () => { setPlanReadback(null); setModifyOrigin('plan'); setModifyOpen(true) } : undefined")
+    // PLAN-DOORS-01 — Me's door has the same condition.
+    expect(DASH).toContain("onOpenModify={plan && canModifyPlan(plan) ? () =>")
     expect(DASH).toContain('{onOpenModify && (')
   })
 })

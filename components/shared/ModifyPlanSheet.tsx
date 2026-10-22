@@ -16,6 +16,8 @@ import {
 } from '@/lib/plan/modifyPlan'
 import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from './microLabels'
+import { StrengthDoor } from './PlanDoors'
+import { ADJUST_PLAN_TITLE } from './meDoors'
 import ActionRow from './ActionRow'
 
 /** 🧭 ICON-RULE-01 × PINNED-DAYS-01 (Design Board 2026-10-18): NO row icons here. Location earns an icon
@@ -158,7 +160,7 @@ export default function ModifyPlanSheet({
   // an edit pending, the Apply bar arrives at the bottom, lifted clear of the floating nav.
   const navH = useNavHeight() ?? 0
   return (
-    <div role="region" aria-label="Adjust your plan" style={{ paddingTop: 'var(--space-4)' }}>
+    <div role="region" aria-label={ADJUST_PLAN_TITLE} style={{ paddingTop: 'var(--space-4)' }}>
         <>
           {/* A pushed screen that scrolls: the floating arrow owner (BACK-ARROW-FLOAT-01). */}
           <FloatingBackButton onClick={onClose} ariaLabel="Back to your plan" />
@@ -178,7 +180,7 @@ export default function ModifyPlanSheet({
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
               <div style={{ minWidth: 0 }}>
                 {/* The same title treatment as the consent screen that follows: one journey, one voice. */}
-                <div className="screen-header__title">Adjust your plan</div>
+                <div className="screen-header__title">{ADJUST_PLAN_TITLE}</div>
                 <div className="screen-header__sub">Nothing changes until you apply.</div>
               </div>
             </div>
@@ -257,8 +259,8 @@ export default function ModifyPlanSheet({
               <>
                 {label('Around your runs')}
                 <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-                  <ActionRow title={strengthDoor.title}
-                    subtitle={strengthDoor.subtitle} onClick={strengthDoor.onOpen} />
+                  {/* PLAN-DOORS-01 — the Strength door's own face, the same as on Me (dumbbell; ICON-RULE-01 IDENTITY). */}
+                  <StrengthDoor subtitle={strengthDoor.subtitle} onOpen={strengthDoor.onOpen} />
                 </div>
               </>
             )}

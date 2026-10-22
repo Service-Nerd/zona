@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 // `components/dashboard/`. A single-file read is a vacuous green after a move: no hits,
 // because the code left. Population from the single owner, which throws on an empty set.
 import { dashboardSource } from '@/lib/testing/dashboardSources'
+import { ADJUST_PLAN_TITLE } from '@/components/shared/meDoors'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -47,7 +48,9 @@ describe('PLANVERB-01 — the two plan doors', () => {
 
   it('the two verbs exist, and they are different words', () => {
     const code = strip(SHELL)
-    expect(code, 'the Plan row keeps the plan').toContain('Adjust your plan')
+    // PLAN-DOORS-01: the keeping verb lives in one owner, rendered on Plan (and Me) by `AdjustPlanDoor`.
+    expect(ADJUST_PLAN_TITLE, 'the Plan row keeps the plan').toBe('Adjust your plan')
+    expect(code, 'Plan renders the shared run-plan door').toContain('<AdjustPlanDoor')
     expect(code, 'the Me row replaces it').toContain('Start a new plan')
   })
 

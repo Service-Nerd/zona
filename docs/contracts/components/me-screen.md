@@ -143,6 +143,8 @@ interface MeScreenProps {
   // screen (Me, the modify sheet and the rest card all open it, and a Me section could only
   // return to Me). The door names its state and calls `onOpen`; it renders no body.
   strength?: { subtitle: string; onOpen: () => void } | null
+  onOpenModify?: () => void        // PLAN-DOORS-01: Me's run-plan door; absent when the plan has no stored inputs
+  strengthAvailable?: boolean      // PLAN-DOORS-01: names strength in that door's subtitle
 }
 ```
 
@@ -182,3 +184,5 @@ The error branch renders `EmptyState` with one **Try again** action that bumps a
 which re-runs the load effect. No prop change.
 
 - **Delete account (SESSION-INTERVALS-HUE-01, 2026-10-22):** the confirmation checkbox and the error message use `--danger` / `--danger-bg`, never a session colour. They used `--coral` and `--session-intervals-soft`, which would have turned coral when the intervals hue moved. Held by `lib/ui/intervalsHue.test.ts`.
+
+**Your training doors (PLAN-DOORS-01, 6t-k, 2026-10-22).** Adds `onOpenModify?` and `strengthAvailable?` props. *Adjust your plan* (`AdjustPlanDoor`, `run` glyph) sits above *Start a new plan* when `onOpenModify` is given (same `canModifyPlan` condition as Plan) and opens the Adjust screen, which closes back to Me. The Strength door is the shared `StrengthDoor`. *Plan adjustments* is now titled **Plan checks** (`PLAN_ADJUSTMENTS_TITLE`), subtitle *What the engine watches*; its toggle keeps the label *Auto-adjust*.

@@ -36,8 +36,21 @@ export const HEART_RATE_SUB = 'How hard. Training zones set from your resting an
  */
 export const ZONES_UNSET_SUB = 'Set your resting and max HR. Your zones lock in.'
 
-export const PLAN_ADJUSTMENTS_TITLE = 'Plan adjustments'
-export const PLAN_ADJUSTMENTS_SUB = 'Auto-adjust, and what the engine watches'
+/** PLAN-DOORS-01 (6t-k; founder 2026-10-22): was "Plan adjustments", which read as the manual edit ("Adjust your
+ *  plan") while being the automatic one. "Auto-adjust" was approved first and then could not be the title: the screen's
+ *  own toggle is labelled "Auto-adjust", so the door would say its name twice (ME-DOORS-01, `meDoorTitles.test.ts`).
+ *  "Plan checks" names the whole screen (last checked, check now, what it watches) and drops the word "adjust". */
+export const PLAN_ADJUSTMENTS_TITLE = 'Plan checks'
+export const PLAN_ADJUSTMENTS_SUB = 'What the engine watches'
+
+/** PLAN-DOORS-01 — the run-plan door, met on Plan and on Me (PLANVERB-01: this verb KEEPS the plan). */
+export const ADJUST_PLAN_TITLE = 'Adjust your plan'
+/** Founder words 2026-10-22. Names strength only when the runner can reach it from inside. */
+export function adjustPlanSubtitle(strengthAvailable: boolean): string {
+  return strengthAvailable
+    ? 'Days, time limits, injuries, the race date or your strength. Without starting again.'
+    : 'Days, time limits, injuries or the race date. Without starting again.'
+}
 
 /** ⚠️ A pending change is the one state the runner must not have to go looking for.
  *  It is the only subtitle that names an action waiting on them. */

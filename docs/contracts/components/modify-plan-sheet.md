@@ -141,3 +141,4 @@ apart, both `DaysAvailableError / warn_unacknowledged`.
 
 - **Text colour (ACCENT-TEXT-VARIABLE-01, Design Board 6t-h, 2026-10-22):** small text never takes a hue: a hue with a ratified text shade uses it (`--moss-strong`, `--s-race-strong`, `--s-recov-strong`, `--warn-strong`), otherwise `--ink-2`; a computed colour goes through `hueText()` (`lib/ui/hueText.ts`). The hue stays on marks. Held by `lib/ui/accentText.test.ts`.
 - **Selected injury chip (A11Y-APP-TEXT-SWEEP-01, 6t-j):** the fill is `--moss-strong` (white text 5.48:1), not `--moss` (3.68). Held by `lib/a11yContrast.test.ts`.
+- **Strength door (PLAN-DOORS-01, 6t-k):** rendered as the shared `StrengthDoor` (dumbbell), the same face as Me's; opening it uses the `'modify'` origin so Back returns here. The header title is `ADJUST_PLAN_TITLE`.

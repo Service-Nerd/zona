@@ -107,7 +107,8 @@ describe('A2 — Plan leads with the plan', () => {
     // claim is about ORDER and PRESENCE, not about which verb the row uses —
     // anchoring on incidental copy is the class recorded as "never match a
     // designed refusal by its MESSAGE", and this is its third appearance.
-    for (const marker of ['<ZoneWeekBlock', '<PlanIntroCard', 'Adjust your plan', 'Why this plan']) {
+    // PLAN-DOORS-01: the row is now the shared `AdjustPlanDoor`; its title lives in `meDoors.ts`.
+    for (const marker of ['<ZoneWeekBlock', '<PlanIntroCard', '<AdjustPlanDoor', 'Why this plan']) {
       expect(SHELL, `missing after the reorder: ${marker}`).toContain(marker)
     }
   })
@@ -122,7 +123,7 @@ describe('A2 — Plan leads with the plan', () => {
     // Anchored on the row's HANDLER, which is what makes it the action —
     // its LABEL has already changed once under PLANVERB-01.
     const arc = SHELL.indexOf('<PlanArc')
-    const change = SHELL.indexOf('onClick={onOpenModify}')
+    const change = SHELL.indexOf('<AdjustPlanDoor onOpen={onOpenModify}')
     const cal = SHELL.indexOf('<PlanCalendar')
     expect(change, 'the adjust row is missing').toBeGreaterThan(-1)
     expect(arc, 'the arc still leads').toBeLessThan(change)

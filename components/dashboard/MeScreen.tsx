@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import AIMark from '@/components/shared/AIMark'
 import { getDeviceToken } from '@/components/dashboard/pushDevice'
 import ActionRow from '@/components/shared/ActionRow'
+import { AdjustPlanDoor, StrengthDoor } from '@/components/shared/PlanDoors'
 import PlanAdjustmentsScreen from '@/components/dashboard/PlanAdjustmentsScreen'
 import AppleHealthConnectionRow from '@/components/dashboard/AppleHealthConnectionRow'
 import { connectionFreshness, connectionStaleCopy, connectionToneVar } from '@/lib/ui/connectionFreshness'
@@ -750,11 +751,14 @@ async function hasServerSubscription(platform: 'ios' | 'web'): Promise<boolean> 
   }
 }
 
-export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, lastAppleHealthArrival, lastStravaArrival, stravaConnected, plan, initials, athlete, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, onActiveSectionChange, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges, strength = null }: {
+export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, lastAppleHealthArrival, lastStravaArrival, stravaConnected, plan, initials, athlete, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, onActiveSectionChange, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges, strength = null, onOpenModify, strengthAvailable = false }: {
   /** STRENGTH-APP-01 (F) — the Strength door, or null when strength is not available.
    *  STRENGTH-ENTRY-01 — the setup is its own screen now (reached from Me, Plan and Today),
    *  so the door only names its state and says where to go. */
   strength?: { subtitle: string; onOpen: () => void } | null
+  /** PLAN-DOORS-01 — Me's run-plan door (ME-PURPOSE-01: Me is the index). Absent when the plan has no stored inputs. */
+  onOpenModify?: () => void
+  strengthAvailable?: boolean
   /** ME-DOORS-01 — open Me AT a door instead of at the index. Consumed once, then cleared
    *  by `onOpenSectionConsumed`, so a later visit to Me lands on the index as usual. */
   openSection?: string | null
@@ -1269,6 +1273,13 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
             ⚠️ MEASURED: this leaves `Your training` with 3 items, above `MIN_ITEMS_PER_HEADING`
             (2) — but a FREE runner sees 2, exactly at the floor, because `Plan adjustments`
             is paid-gated. `meOrder.test.ts` holds that line. */}
+        {/* PLAN-DOORS-01 — the run-plan door, the same face as Plan's. It KEEPS the plan; the row below replaces it
+            (PLANVERB-01: two doors, two verbs). */}
+        {onOpenModify && (
+          <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+            <AdjustPlanDoor onOpen={onOpenModify} strengthAvailable={strengthAvailable} />
+          </div>
+        )}
         {/* Plan + benchmark actions — moved below zones */}
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <Button variant="ghost" 
@@ -1344,7 +1355,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
             available to this runner (admin-only until release). */}
         {strength && (
           <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-            <ActionRow icon={<RowIcon name="dumbbell" />} title={STRENGTH_TITLE} subtitle={strength.subtitle} onClick={strength.onOpen} />
+            <StrengthDoor subtitle={strength.subtitle} onOpen={strength.onOpen} />
           </div>
         )}
 

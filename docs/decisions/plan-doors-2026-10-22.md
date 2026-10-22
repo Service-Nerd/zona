@@ -75,3 +75,7 @@ same glyph on every surface, plus a back-origin arm; each falsified.
 
 ## Does not settle
 How it feels on a phone (nothing run on a device); whether the 45% figure still holds; the words in 6 and 7.
+
+## At build (2026-10-22)
+Founder approved *Auto-adjust* and the subtitle. Build found *Auto-adjust* is already the screen's toggle label, so the door would repeat its own name (the ME-DOORS-01 gate went red). Founder chose **Plan checks**; the toggle keeps *Auto-adjust*.
+

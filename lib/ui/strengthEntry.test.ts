@@ -23,7 +23,8 @@ describe('the setup moved out of Me, and nothing still points at the old home', 
     expect(me).not.toMatch(/StrengthSetupScreen/)
   })
   it('Me\'s door calls out to the dashboard', () => {
-    expect(me).toMatch(/onClick=\{strength\.onOpen\}/)
+    // PLAN-DOORS-01: Me renders the shared StrengthDoor.
+    expect(me).toMatch(/<StrengthDoor subtitle=\{strength\.subtitle\} onOpen=\{strength\.onOpen\}/)
     expect(dash).toMatch(/onOpen: \(\) => openStrengthSetup\('me'\)/)
   })
   it('the screen says its title ONCE and backs out to whichever door opened it', () => {
@@ -31,17 +32,20 @@ describe('the setup moved out of Me, and nothing still points at the old home', 
     expect(at).toBeGreaterThan(-1)
     const block = dash.slice(at, dash.indexOf("screen === 'me'", at))
     expect(block.match(/<ScreenHeader/g) ?? []).toHaveLength(1)
-    expect(block).toMatch(/onBack=\{\(\) => setScreen\(strengthSetupOrigin\)\}/)
+    // PLAN-DOORS-01: one exit function, which reopens Adjust for the 'modify' origin.
+    expect(block).toMatch(/onBack=\{leaveStrengthSetup\}/)
     expect(block).toMatch(/<StrengthSetupScreen/)
   })
   it('🔴 it is mounted only where strength is available (a move must not cross the release gate)', () => {
     expect(dash).toMatch(/screen === 'strength-setup' && strength\.status !== 'off'/)
   })
   it('all three doors open it, each naming itself as the origin', () => {
-    for (const origin of ['me', 'plan', 'today']) expect(dash, origin).toMatch(new RegExp(`openStrengthSetup\\('${origin}'\\)`))
+    // PLAN-DOORS-01: the Adjust screen's door is the 'modify' origin, so Back can reopen Adjust.
+    for (const origin of ['me', 'modify', 'today']) expect(dash, origin).toMatch(new RegExp(`openStrengthSetup\\('${origin}'\\)`))
   })
   it('the modify-sheet door is offered only to a runner who can have strength', () => {
-    expect(dash).toMatch(/strengthDoor=\{strength\.status === 'none' \|\| strength\.status === 'ready' \? \{/)
+    expect(dash).toMatch(/const strengthDoorAvailable = strength\.status === 'none' \|\| strength\.status === 'ready'/)
+    expect(dash).toMatch(/strengthDoor=\{strengthDoorAvailable \? \{/)
   })
 })
 

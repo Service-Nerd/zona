@@ -3357,6 +3357,15 @@ and icon-like glyphs keep the hue. **Amended by 6t-h:** a hue with a ratified te
 zone-coloured dot; chips are ink text on the hue's tint. Gate: `lib/ui/accentText.test.ts` (hue set derived from
 `globals.css` incl. legacy aliases; literal and computed sites; exception lists that may only shrink).
 
+**The two plan doors (PLAN-DOORS-01, 6t-k).** A runner has two plans, run and strength, and meets each door on more
+than one surface: *Adjust your plan* on Plan and Me, *Strength* on Me and inside Adjust. Each door is drawn once, in
+`components/shared/PlanDoors.tsx` (`AdjustPlanDoor`, `StrengthDoor`), so its title, subtitle and glyph are identical
+wherever it is met: `run` for the run plan, `dumbbell` for strength. **ICON-RULE-01 gains a third qualification,
+IDENTITY:** a door met on more than one surface wears its destination's glyph on each, bounded to these two doors, so
+Plan's single action row carries one while its other rows stay bare. Leaving a door returns to where it was opened
+(Strength from Adjust reopens Adjust; Adjust from Me closes to Me); a save still lands on Plan (SAVE-PATTERN-01). Held by
+the IDENTITY arms in `lib/marketing/iconRule.test.ts` and by `lib/ui/planDoorsReturn.test.ts`.
+
 **Text ON a hue fill (6t-j).** White text sits on `--moss-strong` / `--warn-strong`, never on `--moss` / `--warn` (3.68 / 3.25), as `.btn--primary` already does. Where the fill must stay a session or zone hue (a zone badge), the numeral's colour comes from `onHue()` in `lib/ui/hueText.ts`: white or ink, whichever measures higher on that hue (white on Z1–Z2, ink on Z3–Z5). `--s-cross` clears neither, so it carries large text only. Held by `A11Y-APP-TEXT-SWEEP-01` in `lib/a11yContrast.test.ts` and the `onHue` arm in `lib/ui/accentText.test.ts`.
 
 ⚠️ **The same-unit rule is still dead and is not being revived.** `UNITS-SUBUNIT-01`

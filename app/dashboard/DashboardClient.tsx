@@ -146,6 +146,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SectionLabel } from '@/components/shared/SectionLabel'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { PreferencesScreen, PREFERENCES_TITLE, PREFERENCES_SUBTITLE } from '@/components/shared/PreferencesScreen'
+import { AdjustPlanDoor } from '@/components/shared/PlanDoors'
 import { CONNECTIONS_TITLE, connectionsSubtitle, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB } from '@/components/shared/meDoors'
 import { Chevron } from '@/components/shared/Chevron'
 import { TrainingZonesScreen, ZonesTabs, ZONES_TAB_HR } from '@/components/shared/TrainingZonesScreen'
@@ -279,6 +280,8 @@ export default function DashboardClient() {
   // supersedes week-keyed rows on a race-identity change. Writing `plan_json`
   // from the sheet would skip BOTH.
   const [modifyOpen, setModifyOpen] = useState(false)
+  /** PLAN-DOORS-01 — where the Adjust screen was opened from, so closing it returns there (Plan or Me). */
+  const [modifyOrigin, setModifyOrigin] = useState<'plan' | 'me'>('plan')
   /** The regenerated plan awaiting the runner's accept. Never auto-applied. */
   const [modifyPreview, setModifyPreview] = useState<{ next: Plan; resets: boolean } | null>(null)
   /** MODIFY-CONFIRM-01 — owned HERE, not in the sheet. The sheet unmounts when
@@ -597,8 +600,14 @@ export default function DashboardClient() {
   const [strengthOrigin, setStrengthOrigin] = useState<'today' | 'plan'>('today')
   // STRENGTH-ENTRY-01 — the setup has three doors (Me, the modify sheet, the rest card), so
   // its back returns to whichever one opened it. One state, never a hardcoded back.
-  const [strengthSetupOrigin, setStrengthSetupOrigin] = useState<'me' | 'plan' | 'today'>('me')
-  const openStrengthSetup = (origin: 'me' | 'plan' | 'today') => { setStrengthSetupOrigin(origin); setStrengthPreview(null); setStrengthDraft(null); setScreen('strength-setup') }
+  const [strengthSetupOrigin, setStrengthSetupOrigin] = useState<'me' | 'plan' | 'today' | 'modify'>('me')
+  /** PLAN-DOORS-01 — Back from strength returns to where it was opened, INCLUDING the Adjust screen (which opening it
+   *  closes, so 'modify' reopens it rather than naming a screen). Before this, Plan → Adjust → Strength → Back landed on Plan. */
+  const leaveStrengthSetup = () => {
+    if (strengthSetupOrigin === 'modify') { setScreen('plan'); setModifyOpen(true) }
+    else setScreen(strengthSetupOrigin)
+  }
+  const openStrengthSetup = (origin: 'me' | 'plan' | 'today' | 'modify') => { setStrengthSetupOrigin(origin); setStrengthPreview(null); setStrengthDraft(null); setScreen('strength-setup') }
   // SAVE-PATTERN-01 — changing strength is the run plan's journey: answers → what changes (only when a plan exists) →
   // accept → Plan with a readback. The draft survives the round trip to the consent screen and back.
   const [strengthPreview, setStrengthPreview] = useState<{ profile: StrengthProfile; before: StrengthPlan; after: StrengthPlan } | null>(null)
@@ -636,6 +645,8 @@ export default function DashboardClient() {
     for (const w of strength.plan?.weeks ?? []) for (const ss of w.sessions) if (ss.date) m[ss.date] = ss
     return m
   }, [strength.plan])
+  /** PLAN-DOORS-01 — the Adjust screen shows a Strength door exactly when this is true (the same condition). */
+  const strengthDoorAvailable = strength.status === 'none' || strength.status === 'ready'
   const strengthFor = (origin: 'today' | 'plan') => strength.status === 'ready' ? {
     sessionsByDate: strengthByDate,
     completions: strength.completions,
@@ -2965,7 +2976,7 @@ export default function DashboardClient() {
             onAcknowledge={ackKind ? () => void acknowledgeModify() : undefined}
             edits={modifyEdits}
             onEditsChange={setModifyEdits}
-            onClose={clearModify}
+            onClose={() => { clearModify(); if (modifyOrigin === 'me') setScreen('me') }}
             onApply={(next, resets) => void runModifyPreview(next, resets, rebuildsBaseBuild(plan))}
             // PLANVERB-01 — the escape out of "adjust" into "start again".
             // Closes the sheet first: leaving it mounted behind the wizard
@@ -2973,14 +2984,14 @@ export default function DashboardClient() {
             onStartNewPlan={() => { clearModify(); setScreen('generate') }}
             // STRENGTH-ENTRY-01 — the door is only offered with nothing pending, so closing the
             // sheet here discards nothing.
-            strengthDoor={strength.status === 'none' || strength.status === 'ready' ? {
+            strengthDoor={strengthDoorAvailable ? {
               title: STRENGTH_TITLE, subtitle: strengthSubtitle(strength.profile),
-              onOpen: () => { clearModify(); openStrengthSetup('plan') },
+              onOpen: () => { clearModify(); openStrengthSetup('modify') },
             } : null}
           />
         )}
         {/* SAVE-PATTERN-01 — the edit is a screen now: it REPLACES Plan, as the consent screen does. */}
-        {screen === 'plan' && !modifyPreview && !(modifyOpen && plan) && <PlanScreen strength={strengthFor('plan')} plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('plan'); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} onOpenModify={canModifyPlan(plan) ? () => { setPlanReadback(null); setModifyOpen(true) } : undefined} readback={planReadback} />}
+        {screen === 'plan' && !modifyPreview && !(modifyOpen && plan) && <PlanScreen strength={strengthFor('plan')} plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('plan'); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} onOpenModify={canModifyPlan(plan) ? () => { setPlanReadback(null); setModifyOrigin('plan'); setModifyOpen(true) } : undefined} strengthAvailable={strengthDoorAvailable} readback={planReadback} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
               // ADR-013 §22-27: allCompletions and runAnalysisMap are keyed by
@@ -3170,10 +3181,10 @@ export default function DashboardClient() {
                   applying={strengthBusy} error={strengthError}
                   onAccept={() => void acceptStrengthPreview()}
                   onBack={() => { setStrengthPreview(null); setStrengthError(null) }}
-                  onCancel={() => { setStrengthPreview(null); setStrengthDraft(null); setStrengthError(null); setScreen(strengthSetupOrigin) }} />
+                  onCancel={() => { setStrengthPreview(null); setStrengthDraft(null); setStrengthError(null); leaveStrengthSetup() }} />
               </div>
             ) : <>
-            <ScreenHeader title={STRENGTH_TITLE} sub={STRENGTH_SCREEN_SUB} onBack={() => setScreen(strengthSetupOrigin)} />
+            <ScreenHeader title={STRENGTH_TITLE} sub={STRENGTH_SCREEN_SUB} onBack={leaveStrengthSetup} />
             {strength.status === 'loading'
               ? null
               : strength.status === 'error'
@@ -3187,7 +3198,7 @@ export default function DashboardClient() {
             </>}
           </>
         )}
-        {screen === 'me'       && <MeScreen strength={strength.status === 'off' || strength.status === 'loading' ? null : {
+        {screen === 'me'       && <MeScreen onOpenModify={plan && canModifyPlan(plan) ? () => { setPlanReadback(null); setModifyOrigin('me'); setModifyOpen(true); setScreen('plan') } : undefined} strengthAvailable={strengthDoorAvailable} strength={strength.status === 'off' || strength.status === 'loading' ? null : {
           subtitle: strengthSubtitle(strength.profile),
           onOpen: () => openStrengthSetup('me'),
         }} openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} tierReason={tierReason} healthkitConnectedAt={healthkitConnectedAt} lastAppleHealthArrival={lastArrivalBySource.apple_health} lastStravaArrival={lastArrivalBySource.strava} stravaConnected={stravaConnected} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
@@ -4520,7 +4531,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
 // matters is in the two live holes (the web connect prompt, and actually
 // looking at day one), not in reviving this.
 
-function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, runAnalysisMap = {}, onOpenModify, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach, strength = null, readback = null }: {
+function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, runAnalysisMap = {}, onOpenModify, strengthAvailable = false, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach, strength = null, readback = null }: {
   /** STRENGTH-APP-01 (C). */
   strength?: import('@/components/training/PlanCalendar').PlanStrength | null
   plan: Plan; stravaRuns: any[]
@@ -4539,6 +4550,8 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
    *  is withheld rather than offering an edit the engine cannot honour from
    *  guessed inputs. */
   onOpenModify?: () => void
+  /** PLAN-DOORS-01 — the Adjust screen offers a Strength door, so its subtitle names it. */
+  strengthAvailable?: boolean
   /** SAVE-PATTERN-01 — what the last plan change did, said once at the top (`planChangeReadback.ts`). */
   readback?: string | null
   /** P-04 — nested runAnalysisMap[week_n][session_day]. Already fetched on this
@@ -4781,11 +4794,8 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
               hand-rolled card with NO chevron, on a screen where every session
               row beside it has one. The cause was structural: the chevron was a
               local `const` inside the Me screen, so it could not travel here. */}
-          <ActionRow
-            onClick={onOpenModify}
-            title="Adjust your plan"
-            subtitle="Days, time limits, injuries or the race date. Without starting again."
-          />
+          {/* PLAN-DOORS-01 — the run-plan door, the same face as Me's (PlanDoors owns it). */}
+          <AdjustPlanDoor onOpen={onOpenModify} strengthAvailable={strengthAvailable} />
           </div>
         </div>
       )}

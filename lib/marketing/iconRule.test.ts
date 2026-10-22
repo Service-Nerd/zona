@@ -35,6 +35,8 @@ import { MODIFIABLE_ROWS } from '@/lib/plan/modifyPlan'
 const ICON_SURFACES = ['components/dashboard/MeScreen.tsx']
 /** The owner draws the container; it is not a surface. */
 const ICON_OWNER = 'components/shared/RowIcon.tsx'
+/** PLAN-DOORS-01 (6t-k) — IDENTITY: the two plan doors wear their glyph on every surface, drawn by this one owner. */
+const DOOR_OWNER = 'components/shared/PlanDoors.tsx'
 
 /** The ruling's own threshold. */
 const MIN_ROWS_FOR_ICONS = 8
@@ -72,7 +74,7 @@ describe('ICON-RULE-01 — an icon earns its place', () => {
   it('row icons appear only on the surface the board ruled', () => {
     const offenders: string[] = []
     for (const f of tsxFiles()) {
-      if (ICON_SURFACES.some(s => f === s) || f === ICON_OWNER) continue
+      if (ICON_SURFACES.some(s => f === s) || f === ICON_OWNER || f === DOOR_OWNER) continue
       const src = readFileSync(join(process.cwd(), f), 'utf8')
       if (/<RowIcon\b/.test(src)) offenders.push(f)
     }
@@ -97,3 +99,34 @@ describe('ICON-RULE-01 — an icon earns its place', () => {
     }
   })
 })
+
+// 🔴 PLAN-DOORS-01 (Design Board 2026-10-22, 6t-k) — ICON-RULE-01's third qualification, IDENTITY. A door met on more
+// than one surface wears its destination's glyph on each, so the face is drawn ONCE (`PlanDoors.tsx`) and every
+// surface renders it. Before this the Strength door wore a dumbbell on Me and nothing inside Adjust.
+describe('ICON-RULE-01 IDENTITY — the two plan doors look the same wherever they are met', () => {
+  const read = (f: string) => readFileSync(join(process.cwd(), f), 'utf8').replace(/\/\/.*$/gm, '')
+  const doors = read(DOOR_OWNER)
+  it('the owner gives each door its glyph', () => {
+    expect(doors).toMatch(/run:\s*'run'/)
+    expect(doors).toMatch(/strength:\s*'dumbbell'/)
+    expect((doors.match(/<RowIcon name=\{PLAN_DOOR_GLYPH\.(run|strength)\} \/>/g) ?? []).length).toBe(2)
+  })
+  it('every surface that offers a door renders the shared one', () => {
+    const where: Record<string, string[]> = {
+      'app/dashboard/DashboardClient.tsx': ['<AdjustPlanDoor'],
+      'components/dashboard/MeScreen.tsx': ['<AdjustPlanDoor', '<StrengthDoor'],
+      'components/shared/ModifyPlanSheet.tsx': ['<StrengthDoor'],
+    }
+    for (const [f, tags] of Object.entries(where)) for (const t of tags) expect(read(f), `${f} must render ${t}`).toContain(t)
+  })
+  it('no surface hand-draws a plan door (an ActionRow titled with a door title outside the owner)', () => {
+    const offenders: string[] = []
+    for (const f of tsxFiles()) {
+      if (f === DOOR_OWNER || f.includes('-preview/')) continue
+      const src = read(f)
+      if (/<ActionRow\b[^>]*title=\{(STRENGTH_TITLE|ADJUST_PLAN_TITLE)\}/.test(src) || /<ActionRow\b[^>]*title="Adjust your plan"/.test(src)) offenders.push(f)
+    }
+    expect(offenders).toEqual([])
+  })
+})
+
