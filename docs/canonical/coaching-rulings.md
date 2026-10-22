@@ -72,6 +72,11 @@ weekend assumption). Artifacts at build: §18 Amendment 2; `LONG_RUN_FALLBACK_DA
 `INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` (error) is the check, falsified by restoring the `'sun'` fallback. Found at the
 sitting, fold into the build: `volumeShortfallPct` counts a weekday long run as a capped weekday easy run
 (`ruleEngine.ts:8144` tests `type`, not `isLongRun`).
+🔴 **BUILT 2026-10-22, and one premise above was wrong.** "§7 spacing follows the moved day" was not true: the quality
+lists assume a weekend long run and the spacing check ran after the choice, so with a Thursday long run every quality
+session was dropped. Fixed in the build (a too-close day is excluded before choosing), which also reaches live runners:
+blocking Tue, Wed and Thu with a Sunday long run got Monday picked and dropped (11 of 36 reachable cases had no quality;
+52 → 345 sessions; no reachable case lost one). Restores `INV-PLAN-QUALITY-EXPECTED`'s intent. §18 Am.2.
 
 ## 2026-10-22 — UNMEASURED-DISTANCE-01 (consumers) · CORRECT WITH AMENDMENT (volume yes, fitness never)
 

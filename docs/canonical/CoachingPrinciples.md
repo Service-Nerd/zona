@@ -2195,6 +2195,37 @@ the objection returns, so the predicate is conditional and not switched off.
 
 ---
 
+### §18 Amendment 2 — the long run has a weekday home, and quality is spaced from wherever it lands (Coaching Board 2026-10-22, `LONGRUN-BLOCKED-DAY-01`)
+
+**Principle.** The long run goes on the runner's preferred weekend day, then the other weekend day, then the latest
+unblocked weekday, walking back from Friday (`LONG_RUN_FALLBACK_DAYS`). It is never placed on a blocked day, and a plan is
+never refused for it. A long run on a weekday is §81's case: the cap exemption, the note and the maintenance remedy apply
+unchanged. Quality is chosen only from days at least `MIN_HOURS_BETWEEN_QUALITY_AND_LONG` from the long run, wherever the
+long run sits.
+
+**Why.** The engine tried Sun, Sat, Fri and then put the long run on Sunday anyway, blocked or not, against §18's first
+sentence. Refusing instead would turn away the shift workers and carers whose free days fall midweek, which is the
+day-job runner. Counted before ruling: 0 of 29 stored inputs reached it and no wizard path can.
+
+**Found at the build, and the ruling's premise was wrong about it.** The sitting said quality "is already placed by its
+distance from the long run". It is not: the quality preference lists (`wed, thu, tue`, then `mon, fri`) assume a weekend
+long run, and the spacing check ran AFTER the choice, so a day too close was chosen and then dropped with the week's only
+quality. Measured over every blocked-day pattern × 5K/10K/HM/marathon × 3–5 days × both preferences (2,880 cases): with a
+Thursday long run every quality session vanished; and, reachable today, **a runner blocking Tue, Wed and Thu with a Sunday
+long run got Monday picked and dropped, so 11 of the 36 reachable changed cases had no quality at all** (52 quality
+sessions → 345). No reachable case lost a session. The only cases with fewer are two-day weeks with Fri–Sun blocked,
+where the long run now takes one of the two free days instead of a blocked one. A defect restoring §1/§6/§8 intent
+(`INV-PLAN-QUALITY-EXPECTED`), recorded here because it moves live prescription.
+
+**McMillan dissent, recorded.** He wanted the weekday with the largest declared time budget first. Declined while
+`day_budgets` is not consumed for placement and no input reaches the path; revisit with the weekday-long-run UI.
+
+**Config.** `LONG_RUN_FALLBACK_DAYS`. Owner: `lib/plan/days.ts → longRunDayFor()`, used by the engine and the foundation
+block (whose own copy fell back to the latest free day: the same walk, proven on all 128 week shapes). **Check.**
+`INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` (error), falsified by shrinking the fallback list; `lib/plan/longRunDay.test.ts`.
+
+---
+
 ## 19. Session label integrity — name matches prescribed physiology
 
 **Principle.** A session's name carries physiological meaning. If a session is named "VO2max" the prescription MUST land in Z4–Z5 at I-pace (95–100% vVO2max). If it is named "Threshold" / "Tempo" / "Cruise" the prescription MUST land in Z3 at T-pace (83–88% vVO2max). If a session is named after a race distance ("10K-pace intervals", "HM-pace intervals") the prescription MUST land within ±2% of derived goal pace. If the engine cannot satisfy the label given the runner's VDOT, it MUST rename the session to one the prescription does satisfy.

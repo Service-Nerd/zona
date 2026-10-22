@@ -2635,6 +2635,15 @@ export const GENERATION_CONFIG = {
   // ~78% are told plainly that these constraints support maintenance.
   LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT: 50,
 
+  // §18 Amendment 2 (Coaching Board, LONGRUN-BLOCKED-DAY-01, 2026-10-22) — where the
+  // long run goes when the runner's preferred weekend day and the other weekend day
+  // are both blocked: walk back through the week from Friday. The latest free day,
+  // so the long run stays as close to the weekend as the runner's life allows.
+  // Never a blocked day (§18), never a refusal: a weekday long run is §81's case,
+  // and §81's exemption, note and maintenance obligations apply unchanged.
+  // The engine used to try Fri and then put it on Sunday anyway, blocked or not.
+  LONG_RUN_FALLBACK_DAYS: ['fri', 'thu', 'wed', 'tue', 'mon'] as const,
+
   // §82 (Coaching Board, 2026-09-03) — EASY-RUN FLOOR PROTECTION.
   //
   // applyWeekdayMinsCap can scale an easy run's distance below

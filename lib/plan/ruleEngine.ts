@@ -42,7 +42,7 @@ import { buildHRZonesWithFallback } from './hrZones'
 import { effectiveStartKm } from './startVolume'
 import { weeksBetweenLocal } from './length'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
-import { normaliseDays } from './days'
+import { normaliseDays, longRunDayFor } from './days'
 import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 import { isLongRun, isShakeout, classifyStimulus, isStructuredSession, isVo2maxSession } from './sessionRole'
@@ -3192,11 +3192,10 @@ function buildWeekSessions(
   // (e.g. qual2 with no eligible day) flows to the easy slots that fill them.
 
   // ── 1. Long run ───────────────────────────────────────────────────────────
-  // Long-run day preference: Sun by default; user can choose Sat. Falls back to Fri.
-  const longDayPref: Day[] = input.preferred_long_run_day === 'sat'
-    ? ['sat', 'sun', 'fri']
-    : ['sun', 'sat', 'fri']
-  const longDay = firstAvailableDay(longDayPref, blocked) ?? 'sun'
+  // §18 Am.2 — Sun by default, Sat if chosen, then the other weekend day, then Fri back to Mon.
+  // Never a blocked day. The `'sun'` remains only for a week with every day blocked
+  // (ALL-DAYS-BLOCKED-01), where there is no unblocked day to choose.
+  const longDay = longRunDayFor(input.preferred_long_run_day, blocked) ?? 'sun'
 
   // Marathon / HM peak: swap the standard long run for a race-specific long
   // run from the catalogue (CoachingPrinciples §25, ADR-009 spec 3.7) — only
@@ -3429,8 +3428,13 @@ function buildWeekSessions(
       }
     }
 
-    let qualDay = firstAvailableDay(['wed', 'thu', 'tue'], blocked, used.filter(d => dayGap(d, 'wed') < 2))
-      ?? firstAvailableDay(['wed', 'thu', 'tue', 'mon', 'fri'], blocked, used)
+    // §18 Am.2 — the preference lists assume a weekend long run, so a day too close to
+    // the long run is excluded HERE rather than chosen and then dropped by the spacing
+    // check below (which removed the week's only quality when the long run sat on a
+    // weekday: with a Thursday long run, Wednesday was picked and rejected).
+    const tooCloseToLong = DAY_ORDER.filter(d => dayGap(d, longDay) < minDaysBetweenQualLong)
+    let qualDay = firstAvailableDay(['wed', 'thu', 'tue'], blocked, [...used.filter(d => dayGap(d, 'wed') < 2), ...tooCloseToLong])
+      ?? firstAvailableDay(['wed', 'thu', 'tue', 'mon', 'fri'], blocked, [...used, ...tooCloseToLong])
 
     // UX-WIZARD-01 Stage B — DAY-IDENTITY-AWARE PLACEMENT. With per-day budgets,
     // the structured session belongs on the weekday with the most room, so it
@@ -8141,7 +8145,8 @@ function buildRulePlanOnce(
     let pinned = 0
     for (const w of weeks) {
       for (const [d, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
-        if (!sn || sn.type !== 'easy' || d === 'sat' || d === 'sun') continue
+        // §18 Am.2: a long run forced onto a weekday is exempt from the cap (§81), not a pinned easy run.
+        if (!sn || sn.type !== 'easy' || isLongRun(sn) || d === 'sat' || d === 'sun') continue
         weekdayEasy++
         if ((sn.duration_mins ?? 0) >= input.max_weekday_mins - 1) pinned++
       }

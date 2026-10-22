@@ -196,6 +196,13 @@ never skip) and the setup says *"Your run week leaves fewer of these days for he
 exists. Questions: should the setup say so as the days are picked (design), and is a block with no leg work still a
 strength plan for a running-focused runner (coaching)? Measure how often chosen-day profiles get zero heavy legs first.
 
+### 🔲 `ALL-DAYS-BLOCKED-01` — an input with every day blocked still generates a plan ⚙️ **NO BOARD** *(filed 2026-10-22, P3)*
+
+Found building `LONGRUN-BLOCKED-DAY-01`: `days_cannot_train` naming all seven days generates a plan whose long run sits
+on a blocked Sunday (the only remaining `'sun'` fallback in `ruleEngine.ts`, kept deliberately with a comment). No wizard
+or edit path can send it (both need a run day). Fix at the input boundary as a designed refusal, never by matching a
+message. Count stored inputs first.
+
 ### 🔲 `A11Y-APP-TEXT-SWEEP-01` — 69 candidate sub-AA text sites, and the scanner that could not see them 🧭 **DESIGN BOARD**
 
 ⚠️ **Re-measure before picking this up.** Derive the number from

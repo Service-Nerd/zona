@@ -10,7 +10,7 @@ import { calendarDaysBetween } from '@/lib/dates'
 import { GENERATION_CONFIG } from './generationConfig'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
 import { waterFillEasyKm } from './easyDistribution'
-import { normaliseDays, DAY_ORDER, type Day } from './days'
+import { normaliseDays, longRunDayFor, DAY_ORDER, type Day } from './days'
 import type { GeneratorInput } from '@/types/plan'
 import type { Week } from '@/types/plan'
 
@@ -311,13 +311,11 @@ function buildFoundationSessions(
 
   const canCarryLongRun = plan.longKm > 0
 
-  // Long-run day: honour the user's chosen day. Mirrors ruleEngine's
-  // `longDayPref` — Sun by default, Sat if chosen, then Fri, then the last
-  // available day. §18: never a blocked day.
-  const longDayPref: Array<(typeof DEFAULT_DAYS)[number]> =
-    preferredLongRunDay === 'sat' ? ['sat', 'sun', 'fri'] : ['sun', 'sat', 'fri']
+  // Long-run day: the engine's own owner (§18 Am.2), so the two cannot drift again.
+  // This copy used to "mirror" the engine and did not: it fell back to the latest
+  // free day while the engine fell back to a blocked Sunday.
   const longDay = canCarryLongRun
-    ? (longDayPref.find(d => !blocked.has(d)) ?? available[available.length - 1])
+    ? (longRunDayFor(preferredLongRunDay, blocked) ?? undefined)
     : undefined
 
   const longRunFinalKm = plan.longKm

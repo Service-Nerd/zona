@@ -17,6 +17,8 @@
 // leaves the server, so `validatePlan()` never sees those weeks and no invariant
 // caught it. Hence one shared normaliser rather than two correct-looking copies.
 
+import { GENERATION_CONFIG } from './generationConfig'
+
 export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
 export const DAY_ORDER: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -49,4 +51,15 @@ export function normaliseDays(days: readonly string[] | undefined): Set<Day> {
     if (short) out.add(short)
   }
   return out
+}
+
+/**
+ * §18 Amendment 2 (LONGRUN-BLOCKED-DAY-01) — the single owner of "which day carries the long run".
+ * The preferred weekend day, then the other weekend day, then `LONG_RUN_FALLBACK_DAYS` (Fri back to
+ * Mon). Never a blocked day. `null` only when every day is blocked (ALL-DAYS-BLOCKED-01).
+ * The engine and the foundation block each had their own copy; the engine's ended in a blocked Sunday.
+ */
+export function longRunDayFor(preferred: 'sat' | 'sun' | undefined, blocked: ReadonlySet<Day>): Day | null {
+  const weekend: Day[] = preferred === 'sat' ? ['sat', 'sun'] : ['sun', 'sat']
+  return [...weekend, ...GENERATION_CONFIG.LONG_RUN_FALLBACK_DAYS].find(d => !blocked.has(d)) ?? null
 }
