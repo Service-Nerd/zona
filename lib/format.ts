@@ -371,6 +371,17 @@ export function formatZone(zone: string | null | undefined): string {
  * Returns the whole string as `value` with an empty `unit` when there is no
  * trailing unit to split (a landmark, "until ready", a rep count).
  */
+/**
+ * REP-UNITS-01 (Design Board 2026-10-22, ui-patterns §21b Am.4b): a step whose PRESCRIPTION is a distance reads in the
+ * unit it was prescribed in, for every runner: metres, or kilometres when it is a whole kilometre. `400m`, `1600m`,
+ * `1km`. Converting it to the runner's unit printed `0.2mi` for both 300 m and 400 m (0.2 mi is 322 m) and `0.4km` for
+ * a track 400. A derived ESTIMATE still converts: it is a measurement, not an instruction.
+ */
+export function formatPrescribedDistance(km: number): string {
+  const m = Math.round(km * 1000)
+  return m >= 1000 && m % 1000 === 0 ? `${m / 1000}km` : `${m}m`
+}
+
 export function splitAmount(amount: string): { value: string; unit: string } {
   const m = amount.match(/^(.*?)\s*([A-Za-z]+)$/)
   if (!m || !m[1]) return { value: amount, unit: '' }

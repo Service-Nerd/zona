@@ -14,7 +14,7 @@
 
 import type { DerivedSet, DerivedStep } from './resolveMainSet'
 import type { SessionStructure } from './sessionComposer'
-import { apportionRoundedDistance, convertPaceString, formatDuration, formatStepDuration, splitAmount, formatZone } from '@/lib/format'
+import { apportionRoundedDistance, convertPaceString, formatDuration, formatPrescribedDistance, formatStepDuration, splitAmount, formatZone } from '@/lib/format'
 import { easyPaceAsCeiling, paceAsFloor } from './easyPaceCeiling'
 import { transitionBand } from './progressionTransition'
 import { currentNote } from './supersededNotes'
@@ -362,7 +362,8 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
   let isEstimate = false
 
   if (parsed.kind === 'distance') {
-    const distStr = opts.formatDist(parsed.km)
+    // REP-UNITS-01: the prescription reads as written, never converted (ui-patterns §21b Am.4b).
+    const distStr = formatPrescribedDistance(parsed.km)
     const derivedSecs = paceSec ? Math.round(parsed.km * paceSec) : null
     if (wantsDistance || derivedSecs == null) {
       lead = distStr

@@ -3309,6 +3309,16 @@ apportion to `undefined` rather than to exactly 0.
 ⚠️ **A step's own prescription is never suppressed.** A `400 m` rep still reads `400 m`:
 that is the prescription, not a derivation. Only an estimate is withheld.
 
+🔴 **And it reads in the unit it was PRESCRIBED in, for every runner (REP-UNITS-01, Design Board 2026-10-22).**
+The sentence above was written and the code did not honour it: the prescription went through the runner's unit
+converter, so a 400 m rep read `0.4km` / `0.2mi`, and 300 m and 400 m both printed `0.2mi` (which is 322 m). A rep is
+an instruction, keyed into a watch or run on a track, and the track is metric in every market we sell in. So a
+distance prescription reads in metres, or in km when it is a whole kilometre: `400m`, `1600m`, `1km`. The pace beside
+it stays in the runner's unit; a derived ESTIMATE on a duration step still converts, because it is a measurement.
+Owner: `formatPrescribedDistance` in `lib/format.ts`. Gate: `lib/plan/repUnits.test.ts`, over every distance rep in
+the catalogue, both units, both metrics. ⚠️ Wroblewski would convert reps of 2000 m and up for miles runners; the chair
+ruled one rule, since `1.2mi` and `2.5mi` are not round road distances either.
+
 ⚠️ **The same-unit rule is still dead and is not being revived.** `UNITS-SUBUNIT-01`
 struck it down and the shipped time-trial diagram above renders `WARM-UP 10 min` beside a
 distance main set. **A card may mix kinds**; what it may not do is answer the same

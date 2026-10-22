@@ -143,6 +143,13 @@ can you lift?* (1–4) and Change your plan asks *Days you run* (2–6), one pos
 S8 first jump level) and the long-run-day rule for the run row. Icons came off the modify sheet (seven rows, ICON-RULE-01).
 Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
 
+### 🔲 `REP-UNITS-KM-01` — a km runner is prescribed "Mile repeats" 🏃 **COACHING BOARD** *(filed 2026-10-22; the display half shipped as `REP-UNITS-01`)*
+
+`threshold_mile_repeats` (1600 m at T / 90 s jog) is named in miles and reaches km runners by default (46 of 49 live
+runners are on km). Question: what a km runner is prescribed in its place (a km-native benchmark such as 1 km or 2 km
+reps, or the same row under a unit-neutral name), and the row's name and purpose. The 2026-10-22 purpose wording
+(*"by the mile"*) is on hold for this.
+
 ### 🔲 `TREADMILL-TOGGLE-01` — is an Outdoor / Treadmill control worth building? 🧭 **DESIGN BOARD** then 💼 **SLT** *(filed 2026-10-22)*
 
 The coaching half is ruled (§127, `TREADMILL-EQUIVALENCE-01`): on a treadmill the prescription does **not** change. No

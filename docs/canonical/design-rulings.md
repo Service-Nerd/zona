@@ -1031,6 +1031,17 @@ answers in a line what three rounds of reasoning did not.
 ---
 
 
+## 6t-b. REP-UNITS-01 — a prescribed rep reads as prescribed, in either unit (2026-10-22)
+
+| Decision | Status | Why |
+|---|---|---|
+| **A distance prescription on a step reads in metres, or km when whole, for every runner** | 🟢 **SHIP WITH AMENDMENT** | Measured in `buildStepGroups`: 400 m read `0.4km` / `0.2mi`; 300 m and 400 m both `0.2mi`; 1000 m `0.6mi`. ui-patterns §21b Am.4b already said *"a 400 m rep still reads 400 m"*. One rule, no threshold |
+| **Convert reps ≥ 2000 m for miles runners** | 🔴 **NOT GRANTED** | Wroblewski's position, recorded. `1.2mi` / `2.5mi` are not round road distances either; 3 live miles runners give no preference evidence |
+| **Estimates still convert** | 🟢 **UNCHANGED** | A duration step's derived distance is a measurement. 6t stands |
+
+⛔ Veto: none. ⚠️ Not measured: AI notes and pushes that name a rep; nobody has seen it on a device. Routed: what a km
+runner is prescribed in place of "Mile repeats" → Coaching Board.
+
 ## 6t. UNITS-SUBUNIT-01 — the card told 39.7% of mile runners they covered zero (2026-09-23)
 
 | Decision | Status | Why |
