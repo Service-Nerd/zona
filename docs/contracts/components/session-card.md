@@ -14,6 +14,7 @@ type Props = {
   type: string
   role?: Session['role']          // PLAN-LONGRUN-COLOUR-01 — a long run is type:'easy',
                                   // so type alone cannot pick the accent
+  catalogueId?: string           // SESSION-INTERVALS-HUE-01 — VO2 is typed `quality`; the catalogue row picks --s-inter
   name: string
   detail?: string                 // e.g. "Zone 2 · ≤145bpm"
   distanceKm?: number

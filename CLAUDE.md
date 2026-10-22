@@ -194,7 +194,7 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 | easy | `--s-easy` | `#3D6FB0` |
 | long | `--s-long` | `#5E4FB0` | ← resolved by `isLongRun(session)`, **not** by `session.type` |
 | quality/tempo | `--s-quality` | `#B8853A` |
-| intervals | `--s-inter` | `#B84545` |
+| intervals | `--s-inter` | `#D4705A` | ← a coral, distinct from `--danger` (6t-f, 2026-10-22); VO2 sessions reach it by catalogue row, since the engine types them `quality` |
 | race | `--s-race` | `#C86A2A` | ← also the **5K time trial** (`type: 'hard'`): a maximal *continuous* effort, not reps (SESSION-COLOUR-TT-01) |
 | recovery | `--s-recov` | `#4E8068` |
 | strength | `--s-strength` | `#5A6578` |

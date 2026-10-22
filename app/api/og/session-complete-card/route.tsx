@@ -76,7 +76,7 @@ function formatDate(d: Date): string {
 
 // Zone colour at the OG hex layer — paralleled from components/shared/ZoneBar.tsx.
 // Five segments, one filled. Resolved hex (no CSS vars in next/og).
-const ZONE_COLOURS = ['#4E8068', '#3D6FB0', '#B8853A', '#C86A2A', '#B84545'] as const
+const ZONE_COLOURS = ['#4E8068', '#3D6FB0', '#B8853A', '#C86A2A', '#D4705A'] as const  // Z5 = --s-inter (6t-f)
 type Zone = 1 | 2 | 3 | 4 | 5
 function zoneNumberForType(type: string): Zone | null {
   switch (type) {
@@ -95,7 +95,7 @@ const FATIGUE_COLOURS: Record<string, string> = {
   Fresh:   '#4E8068',  // --s-recov
   Fine:    '#3D6FB0',  // --s-easy
   Heavy:   '#B8853A',  // --warn
-  Wrecked: '#B84545',  // --s-inter
+  Wrecked: '#D4705A',  // --s-inter (6t-f)
 }
 
 export async function GET(req: NextRequest) {

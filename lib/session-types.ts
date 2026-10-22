@@ -1,8 +1,9 @@
 import { isLongRun } from '@/lib/plan/sessionRole'
+import { VO2_CATALOGUE_IDS } from '@/lib/plan/vo2CatalogueIds'
 import type { Session, SessionType } from '@/types/plan'
 
 /** The shape `isLongRun` needs: a real classification signal, not a bare string. */
-export type ClassifiableSession = { type?: SessionType | string; role?: Session['role']; label?: string | null }
+export type ClassifiableSession = { type?: SessionType | string; role?: Session['role']; label?: string | null; catalogue_id?: string | null }
 
 /**
  * Canonical session type → colour and label resolution.
@@ -69,9 +70,22 @@ export const SESSION_LABELS: Record<string, string> = {
  * (D-17). A bare string is still accepted for the handful of call sites that
  * genuinely hold only a type; those cannot detect a long run, by construction.
  */
+// The twin of `sessionRole.isVo2maxSession` (which takes the catalogue as an argument); `vo2CatalogueIds.test.ts` proves
+// the two agree on every catalogue row.
+function isVo2Work(s: ClassifiableSession): boolean {
+  if (s.catalogue_id) return VO2_CATALOGUE_IDS.has(s.catalogue_id)
+  const label = (s.label ?? '').toLowerCase()
+  return label.includes('vo2max') || label.includes('vo2 max')
+}
+
 export function getSessionColor(session: ClassifiableSession | string): string {
   if (typeof session === 'string') return SESSION_COLORS[session] ?? 'var(--session-easy)'
   if (isLongRun(session)) return SESSION_COLORS.long
+  // SESSION-INTERVALS-HUE-01 step 2 (Design Board 2026-10-22, 6t-f). The engine types every quality session `quality`,
+  // so `SESSION_COLORS.intervals` was unreachable (0 of 557 VO2 sessions typed `intervals`), PLAN-LONGRUN-COLOUR-01's
+  // class. VO2 work is identified by its catalogue row, with the label as the legacy fallback (`isVo2maxSession`'s rule).
+  // `hard` is the 5K time trial and keeps the race hue (SESSION-COLOUR-TT-01).
+  if (session.type !== 'hard' && isVo2Work(session)) return SESSION_COLORS.intervals
   return SESSION_COLORS[session.type ?? ''] ?? 'var(--session-easy)'
 }
 

@@ -2839,7 +2839,7 @@ The canonical visual for "which zone is this session in." 5 segments in a row, o
 | 2 | `--s-easy` | easy, run, long |
 | 3 | `--s-quality` | quality, tempo |
 | 4 | `--s-race` | race |
-| 5 | `--s-inter` | intervals, hard |
+| 5 | `--s-inter` (`#D4705A`, a coral, never `--danger`; 6t-f) | intervals and VO2 work (by catalogue row) |
 
 **Helpers** (from `components/shared/ZoneBar.tsx`):
 - `zoneNumberForType(type): Zone | null` — maps session.type → 1–5. Returns null for rest / strength / cross-train. Distinct from `zoneForSessionType` in `lib/coaching/zoneRules.ts` which returns a `ZoneBand` object grouping 4+5 — the visual bar wants 5 distinct segments.

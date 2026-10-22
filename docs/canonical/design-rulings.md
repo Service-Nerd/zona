@@ -1048,7 +1048,9 @@ race's 3.78), so no regression. **Silvanto lifts the veto**: the token is no lon
 (VO2 category, hill reps included, the catalogue files them as VO2). Everything aliasing the token follows: ZoneBar Z5,
 ZoneRings z45, the Wrecked tag, the zone guide, `--session-intervals-soft`, and on the WEBSITE the PhoneFrame dot and
 PlanPage's `hard`. Filed: `ACCENT-TEXT-CONTRAST-01` (accent-as-text below 4.5:1 for amber, race and coral alike).
-Not built.
+**BUILT 2026-10-22** with steps 2 and 3 together. Found at build: the delete-account screen painted its checkbox and
+error message with `--coral` / `--session-intervals-soft`, a destructive context on a session colour; moved to
+`--danger` / `--danger-bg`. Checks: `lib/ui/intervalsHue.test.ts`, `lib/plan/vo2CatalogueIds.test.ts`.
 
 ## 6t-e. RUNWALK-STEPS-01 — the prototype (390px, real SessionSteps) · SHIP WITH AMENDMENT when built (2026-10-22)
 

@@ -27,6 +27,8 @@ type Props = {
    *  `isLongRun` reads; absent it, the owner falls back to the label, which is
    *  correct for legacy plans and for the marketing demo data. */
   role?: Session['role']
+  /** SESSION-INTERVALS-HUE-01: the catalogue row id, so a VO2 session (typed `quality`) takes the intervals hue. */
+  catalogueId?: string
   name: string
   /** Supporting detail — e.g. "Zone 2 · ≤145bpm" */
   detail?: string
@@ -63,6 +65,7 @@ export const SESSION_CARD_RAIL_PX = 6
 export default function SessionCard({
   type,
   role,
+  catalogueId,
   name,
   detail,
   distanceKm,
@@ -78,7 +81,7 @@ export default function SessionCard({
   onHrRetry,
   isHrRetrying = false,
 }: Props) {
-  const accentColor = getSessionColor({ type, role, label: name })
+  const accentColor = getSessionColor({ type, role, label: name, catalogue_id: catalogueId })
   const isDone = state === 'done'
   const isSkipped = state === 'skipped'
   const isCurrent = state === 'current'

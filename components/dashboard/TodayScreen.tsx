@@ -2112,6 +2112,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             <SessionCard
               type={selectedSession.type}
               role={selectedSession.role}
+              catalogueId={selectedSession.catalogue_id}
               name={selectedSession.title}
               detail={[
                 selectedSession.zone,
@@ -2248,6 +2249,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 <SessionCard
                   type={companionEntry.type}
                   role={companionEntry.role}
+                  catalogueId={companionEntry.catalogue_id}
                   name={companionEntry.title}
                   distanceKm={companionEntry.distance}
                   units={preferredUnits}

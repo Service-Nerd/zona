@@ -536,11 +536,11 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
         <label style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', cursor: 'pointer' }}>
           <div
             onClick={() => setChecked(c => !c)}
-            style={{ width: '20px', height: '20px', borderRadius: '5px', border: `1.5px solid ${checked ? 'var(--coral)' : 'var(--border-col)'}`, background: checked ? 'var(--session-intervals-soft)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px', cursor: 'pointer' }}
+            style={{ width: '20px', height: '20px', borderRadius: '5px', border: `1.5px solid ${checked ? 'var(--danger)' : 'var(--border-col)'}`, background: checked ? 'var(--danger-bg)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px', cursor: 'pointer' }}
           >
             {checked && (
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2 6L5 9L10 3" stroke="var(--coral)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 6L5 9L10 3" stroke="var(--danger)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             )}
           </div>
@@ -553,7 +553,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
         </label>
 
         {error && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coral)', background: 'var(--session-intervals-soft)', borderRadius: '8px', padding: '10px 14px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--danger)', background: 'var(--danger-bg)', borderRadius: '8px', padding: '10px 14px' }}>
             {error}
           </div>
         )}

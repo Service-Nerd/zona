@@ -1333,7 +1333,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Outdoor / Treadmill: is a control worth building?** (TREADMILL-TOGGLE-01) | — | S | ⛔ Ruled 2026-10-22: no toggle (permanent DON'T SHIP). |
 | **A linked run with no distance cannot be given one** (UNMEASURED-DISTANCE-01) | FREE | S | 🔲 Open, filed 2026-10-22. Data ruling, then a prototype. |
 | **A run-walk session is a sentence, not steps** (RUNWALK-STEPS-01) | FREE | M | ✅ Shipped 2026-10-22: walk warm-up, n × (Run 6 / Walk 1), run/walk icons. |
-| **Two colour answers for a VO2 or hill session** (SESSION-INTERVALS-HUE-01) | — | S | 🟡 Ruled 6t-f; step 1 shipped as SESSION-HUE-OWNER-01; coral `#D4705A` ruled, steps 2–3 ready to build. |
+| **Two colour answers for a VO2 or hill session** (SESSION-INTERVALS-HUE-01) | — | S | ✅ Shipped 2026-10-22: one hue owner, `--s-inter` = `#D4705A`, VO2 reaches it by catalogue row. |
 | **The session detail takes the session hue** (SESSION-HUE-OWNER-01) | FREE | S | ✅ Shipped 2026-10-22. |
 | **Session accents as small text fall below AA** (ACCENT-TEXT-CONTRAST-01) | — | S | 🔲 Open, filed 2026-10-22, Design Board. |
 | **Rep distances read as prescribed** (REP-UNITS-01) | FREE | S | ✅ Shipped 2026-10-22 (`c7de7de3`). |
