@@ -52,7 +52,8 @@ Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 ## 2026-10-22 — SESSION-TODAY-CARD-01 (time range) · CORRECT WITH AMENDMENT (an estimate, marked `~`)
 
 An easy run's pace is a ceiling (*"or slower"*, CD-11 / §12), so a range from the band's two ends may not read as a limit.
-Shown as `~35–41 min`, the app's estimate mark, easy, recovery and long runs only. Adds no prescription. Sitting: decision
+Shown as `~35–41 min`, the app's estimate mark, easy, recovery and long runs only. Adds no prescription. **Not built:** the
+Design Board withdrew the range on a width measurement (Part 11b); this ruling stands for any later layout. Sitting: decision
 note Part 12.
 
 ## 2026-10-21 — SESSION-SCREENS-WOW-01 (trace sentences) · CORRECT WITH AMENDMENT (reuse §12's two thresholds)

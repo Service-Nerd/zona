@@ -729,3 +729,15 @@ not touched), P-04 (what happened vs why, not touched). No conflict with the zon
 marks estimated distances (`~2km`). It is an estimate of how long the run takes at the band's two ends, not a limit; no
 other wording. Not a principle, numeric or invariant: it reads the stored band and adds no prescription (recorded as
 not mechanically checkable by `validatePlan()`; the format is tested).
+
+### Part 11b — the time range, built, measured and withdrawn (2026-10-22)
+
+Built as ruled (Parts 11 and 12) and measured on the real `SessionCard` at Today's 343 px content width. **Height: no
+cost** (65.6 px with and without). **Width: the cost that decides it.** The right column widens, and on the longest
+realistic meta line (*"Zone 1–2 · 118–145 bpm · 11:30 /mi or slower"*, range *"~1h 43–1h 54"*) the meta line truncates:
+**247 px of text in 223 px**, cutting the pace target, which is on Today's must-not-lose list and is what
+`SESSION-STEP-SLOTS-01` puts first. A typical easy card fitted (235 of 235). A rule on character counts would be the
+*"arithmetic on character counts is not a layout"* error the register already records.
+
+**Ruling (chair, on the measurement): DON'T SHIP** (not permanent). The code was removed, not left unused. Reopen only
+with a layout that costs neither the pace target nor a line, measured at 320 and 375 px in miles.

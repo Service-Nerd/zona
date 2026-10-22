@@ -19,6 +19,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — SESSION-TODAY-CARD-01 · a wider stripe, and a feature measured out of existence
+**Shipped:** Session cards carry a 6 px colour stripe instead of 3, in the app and on the website. That is the whole of phase 3.
+
+**Dev learning:** The time range was built, and it cost no height. It cost width: on the longest real line, in miles, it cut off the pace target. Measuring the worst case, not the typical one, is what found it, and the code came out rather than staying as unused plumbing.
+
+**Product learning:** The Today shape strip would have replaced the five-zone bar that a May ruling put there to make the zones visible, and it would have made Today taller. Keeping the bar was right.
+
+**AI-building learning:** A race-pace check of mine tested nothing, because the fixture plan had no such runs. Generating one from the real grid made it bite.
+
+**The honest bit:** Of the seven ideas the board took from Runna on 21 October, three shipped as ruled, two shipped smaller, and three were withdrawn on settled ground or measurement. Each one was re-measured before it was built.
+
+---
+
 ## 2026-10-22 — SESSION-PRERUN-DETAIL-01 · the session, drawn before you run it
 **Shipped:** Open a session and its shape sits under the heading: a long low warm-up, the reps standing up, the jogs between them, the cool-down. An over-under looks like one.
 

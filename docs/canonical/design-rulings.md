@@ -144,6 +144,12 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-22 — SESSION-TODAY-CARD-01 (time range) · DON'T SHIP on the measurement (not permanent)
+
+Built and measured on the real card at 343 px: no height cost, but the worst real meta line in miles truncated the pace
+target (247 px into 223). The target wins. Code removed. Reopen only with a layout that costs neither the target nor a
+line, measured at 320 and 375 px in miles. Decision note Part 11b.
+
 ## 2026-10-22 — SESSION-TODAY-CARD-01 · Today silhouette DON'T SHIP; 6 px rail and a time range SHIP
 
 Re-sat: HOLD-THE-ZONE-01 put the 5-zone `ZoneBar` under the Today card, and it is 4 px against a ~30–40 px legible

@@ -6163,6 +6163,9 @@ card sits above. Closing marks were not built. **Check:** `lib/ui/loggedHero.tes
 *Session structure* heading in `SessionSteps` (prop `silhouetteColour`), shape from `lib/plan/sessionSilhouette.ts`;
 `SILHOUETTE_HEIGHT_PX` 40, no labels (the section cards name the parts). **Step rows stay Option E** (`SESSION-STEP-SLOTS-01`).
 **Check:** `lib/plan/sessionSilhouette.test.ts`.
+**Built 2026-10-22 (SESSION-TODAY-CARD-01): the 6 px rail.** `SESSION_CARD_RAIL_PX` in `SessionCard`, app and website.
+The Today `ZoneBar` stays (HOLD-THE-ZONE-01). **No time range on the card** (it truncated the pace target, measured).
+**Check:** `components/shared/sessionCardRail.markup.test.ts`.
 **Build ruling (same day):** five logged states, L1 rich trace · L2 sparse (zone bar) · L3 no HR (reuse HR-SYNC-02's
 *"Watch HR hasn't landed yet."* / retry) · L4 hand-logged avg HR (reuse the summary's amber ↑) · L5 hand-logged, no zone element. The
 trace is revealed after RPE. Easy, long and recovery draw as a ceiling, not a band. Every change replaces or folds,

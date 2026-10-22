@@ -232,3 +232,10 @@ Internal gaps use `var(--space-1…7)` = `4 · 8 · 12 · 16 · 24 · 32 · 48`,
 shifted by at most 4px. ⚠️ **Horizontal page padding is the SCREEN's, not this component's**, and was
 not swept — the shorthand `padding: '0 16px'` is outside the sweep's property list. Gated by
 `lib/appSpacingScale.test.ts`.
+
+
+## Rail (SESSION-TODAY-CARD-01, 2026-10-22)
+
+The left accent rail is `SESSION_CARD_RAIL_PX` (6 px, exported from `SessionCard.tsx`; was 3), in the session's colour from
+`getSessionColor`. It applies wherever the card renders: the app's Today card and the website homepage's sample cards. Held by
+`components/shared/sessionCardRail.markup.test.ts`. No new prop.
