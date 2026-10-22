@@ -1866,6 +1866,30 @@ traces over 20% (read as easy runs), 11 started late by the rule above. Re-measu
 never setting the onset, the ceiling-only rule, no cause words; falsified by moving the praise threshold, by disabling
 the late rule and by giving easy runs a floor.
 
+### Amendment 4 — the completion headline claims an easy effort only on evidence — added 2026-10-22 (Coaching Board, COMPLETION-COPY-CLAIM-01)
+
+**Principle.** *"Kept it easy."* is the one completion line that says how the run **went**, so it is praise, and
+Amendment 2 governs it: **every evidence source present must agree, and none may disagree.** The sources are heart rate
+(at or under `ZONE_HELD_MAX_ABOVE_CEILING_PCT` above the ceiling) and the runner's logged RPE (at or under the session's
+own `rpe_target`). With no evidence, or with any source disagreeing, the headline says the run was done and claims
+nothing about effort or cause (P-04). A body line that names a zone needs heart rate. A long run is chosen by role
+(`isLongRun`), not by its `type: 'easy'`.
+
+**Why.** The headline was chosen by session type alone. 121 of 129 logged sessions were hand-logged, so most runners read
+praise with nothing behind it. 34 of 158 analyses ran more than 10% above the ceiling, and those cards printed
+*"Kept it easy."* directly above Amendment 3's *"Above your ceiling for 22 min of 55 min."* Sims: heat, illness and the
+luteal phase lift heart rate at an unchanged effort, so when heart rate and RPE disagree neither one wins and the card
+makes no claim. McMillan: RPE is real evidence and the runner gave it; the neutral line is not a downgrade.
+
+**Recorded disagreement.** McMillan would accept any low RPE. Hutchinson accepts it only against the session's own
+`rpe_target`, because a fixed number is a third threshold for one question. Adopted as Hutchinson states it.
+
+**Numeric.** None new: `ZONE_HELD_MAX_ABOVE_CEILING_PCT` (10) and the prescribed `rpe_target`.
+
+**Not mechanically checkable by `validatePlan()`**: it reads a run, not a plan. Enforced by
+`lib/coaching/completionCopy.test.ts`, falsified by dropping the heart-rate condition, the RPE condition, the
+no-evidence rule, the long-run role, and by reverting one caller to the bare type.
+
 ## 13. Fitness classification — VDOT first, volume fallback
 
 > **Superseded for the classifier logic by §79 (dual-signal), SLT-approved 2026-08-06 (GEN-FIX-07/D2).** VDOT-first with a volume fallback misclassified a 30 km/week runner as a beginner on one slow 5K. §79 now requires VDOT *and* volume to agree before applying the beginner intensity ceiling. This section is retained for the definition of the three levels and their thresholds; the *derivation* rule is §79's.

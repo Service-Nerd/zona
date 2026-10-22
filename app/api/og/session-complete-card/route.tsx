@@ -185,12 +185,12 @@ export async function GET(req: NextRequest) {
         abovePctRaw != null ? Number(abovePctRaw) : null)
     : null
 
-  const completionCopy = getCompletionCopy(sessionType)
   const zonePctRaw     = analysisRes.data?.hr_in_zone_pct
   const zonePct        = zonePctRaw != null ? Math.round(Number(zonePctRaw)) : trace ? Math.round(trace.inZonePct) : null
   const zone           = zoneNumberForType(sessionType)
   const showZone       = zonePct != null && (zone != null || trace != null)
   const rpe            = (completion?.rpe as number | null) ?? null
+  const completionCopy = getCompletionCopy((planSlot as never) ?? sessionType, { abovePct: abovePctRaw != null ? Number(abovePctRaw) : trace?.abovePct ?? null, rpe })
   const fatigueTag     = (completion?.fatigue_tag as string | null) ?? null
   const completedAt    = completion?.updated_at as string | undefined
   const dateLabel      = formatDate(completedAt ? new Date(completedAt) : new Date())

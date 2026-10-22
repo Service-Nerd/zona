@@ -145,7 +145,9 @@ export function thinTrace(points: TracePoint[], max = 300): TracePoint[] {
   return out
 }
 
-export interface RunTrace { points: TracePoint[]; band: TraceBand; ceilingOnly: boolean; colour: string; sentence: string; inZonePct: number }
+export interface RunTrace { points: TracePoint[]; band: TraceBand; ceilingOnly: boolean; colour: string; sentence: string; inZonePct: number
+  /** The share that decided the sentence: the analysis's when there is one, else the trace's own. */
+  abovePct: number }
 
 /**
  * Everything a surface needs to draw one run's trace, or null when it cannot be drawn honestly: too few samples, no
@@ -172,5 +174,6 @@ export function buildRunTrace(
     colour: getSessionColor(session as never),
     sentence: traceSentence(read, ceilingOnly, analysisAbovePct),
     inZonePct: read.inZonePct,
+    abovePct: analysisAbovePct != null && Number.isFinite(analysisAbovePct) ? analysisAbovePct : read.abovePct,
   }
 }

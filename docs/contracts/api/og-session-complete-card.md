@@ -24,6 +24,7 @@
 | Field | Source |
 |---|---|
 | Session type, ZoneBar zone | `plans.plan_json` → week `n` → `sessions[session_day].type` |
+| Completion headline + body | `getCompletionCopy(planSlot ?? sessionType, { abovePct, rpe })`: *"Kept it easy."* only on evidence (§12 Am.4, COMPLETION-COPY-CLAIM-01) |
 | Chip label | `getSessionLabel(planSlot ?? sessionType)`: the whole slot, so `isLongRun` names a long run (`type: 'easy'`) "Long run" (SESSION-COMPLETE-LONG-LABEL-01) |
 | Date stamp | `session_completions.updated_at` |
 | Zone % (State A) | `run_analysis.hr_in_zone_pct` for the same slot; rounded to integer |

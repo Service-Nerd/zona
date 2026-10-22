@@ -6923,7 +6923,7 @@ export function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved
               session={session}
               sessionType={session.type}
               date={session.rawDate ?? null}
-              completionCopy={getCompletionCopy(session.type)}
+              completionCopy={getCompletionCopy(session, { abovePct: analysis?.hr_above_ceiling_pct != null ? Number(analysis.hr_above_ceiling_pct) : heroTrace?.abovePct ?? null, rpe: session.completion?.rpe ?? null })}
               zonePct={analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null}
               rpe={session.completion?.rpe ?? null}
               fatigueTag={session.completion?.fatigue_tag ?? null}
@@ -7731,7 +7731,7 @@ function PostRunScreen({
                 session={session}
                 sessionType={session.type}
                 date={new Date()}
-                completionCopy={getCompletionCopy(session.type)}
+                completionCopy={getCompletionCopy(session, { abovePct: analysis?.hr_above_ceiling_pct != null ? Number(analysis.hr_above_ceiling_pct) : runTrace?.abovePct ?? null, rpe })}
                 zonePct={analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null}
                 trace={runTrace}
                 zoneSentence={analysisSentence(analysis?.hr_above_ceiling_pct != null ? Number(analysis.hr_above_ceiling_pct) : null, movingMin, isCeilingOnly(session ?? {}) === true)}

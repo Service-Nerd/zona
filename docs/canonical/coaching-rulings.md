@@ -49,6 +49,12 @@ slot was a Nordic curl 25% of the time; the Nordic curl, hamstring curl and kett
 🔴 **Not the catalogue's, and still open:** a runner's first jump is bounding or a drop jump (`STRENGTH-PLYO-BUDGET-01`).
 Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 
+## 2026-10-22 — COMPLETION-COPY-CLAIM-01 · CORRECT WITH AMENDMENT (praise needs every source to agree)
+
+§12 Amendment 4: *"Kept it easy."* only when heart rate is at or under 10% above the ceiling and/or RPE is at or under the
+session's `rpe_target`, with no source disagreeing; otherwise a neutral line with no effort claim. A zone in the body needs
+heart rate. Long runs by role. No new numeric. Built the same day; the neutral words await the founder.
+
 ## 2026-10-22 — SESSION-TODAY-CARD-01 (time range) · CORRECT WITH AMENDMENT (an estimate, marked `~`)
 
 An easy run's pace is a ceiling (*"or slower"*, CD-11 / §12), so a range from the band's two ends may not read as a limit.
