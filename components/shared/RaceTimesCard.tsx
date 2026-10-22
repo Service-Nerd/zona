@@ -144,7 +144,7 @@ export function RaceTimesCard({
     const isHigh = c === 'high'
     return {
       fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 600 as const,
-      color:      isHigh ? 'var(--moss)' : 'var(--mute)',
+      color:      isHigh ? 'var(--moss-strong)' : 'var(--mute)',
       textTransform: 'uppercase' as const, letterSpacing: '0.06em',
       background: isHigh ? 'var(--moss-soft)' : 'var(--line)',
       borderRadius: '10px', padding: '2px 8px',

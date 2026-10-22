@@ -18,6 +18,7 @@
 //   - When onClick is provided the byline becomes a tappable button (navigates
 //     to Coach). Omit onClick on the Coach screen itself (already there).
 
+import { hueText } from '@/lib/ui/hueText'
 import AIMark from './AIMark'
 import { BRAND } from '@/lib/brand'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
@@ -154,7 +155,7 @@ export default function CoachByline({
         <span
           style={{ ...MICRO_LABELS.eyebrow, fontFamily:    'var(--font-ui)',
             // ACCENT-TEXT-CONTRAST-01: moss as small text takes its ratified text shade.
-            color:         isMoss ? 'var(--moss-strong)' : accent,
+            color:         hueText(accent),
             opacity:       isWorking ? 0.85 : 1 }}
         >
           {roleLabel}

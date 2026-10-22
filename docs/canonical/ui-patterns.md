@@ -3344,8 +3344,10 @@ render, and a VO2 set that keeps `--s-inter` with no glyph. Owner: `runWalkSet` 
 Section names, the total/zone line and the repeat count are `--ink-2` (`SECTION_TEXT`); the hue stays on the tint, the dot,
 the silhouette and the glyphs. On its own 15% tint, amber measured 2.80:1 and the coral 2.86 against 4.5 for this 11px label.
 App-wide: small `--moss` text takes `--moss-strong`, small session-hue text `--ink-2`; large text (≥ 18.7px bold / 24px)
-and icon-like glyphs keep the hue. Gate: `lib/ui/accentText.test.ts` (literal sites, a named exception list that may only
-shrink); text reached through a variable is `ACCENT-TEXT-VARIABLE-01`.
+and icon-like glyphs keep the hue. **Amended by 6t-h:** a hue with a ratified text shade uses it (`--moss-strong`, `--s-race-strong`, `--s-recov-strong`,
+`--warn-strong`), else `--ink-2`; a COMPUTED colour goes through `hueText()` (`lib/ui/hueText.ts`). Zone names are ink with a
+zone-coloured dot; chips are ink text on the hue's tint. Gate: `lib/ui/accentText.test.ts` (hue set derived from
+`globals.css` incl. legacy aliases; literal and computed sites; exception lists that may only shrink).
 
 ⚠️ **The same-unit rule is still dead and is not being revived.** `UNITS-SUBUNIT-01`
 struck it down and the shipped time-trial diagram above renders `WARM-UP 10 min` beside a

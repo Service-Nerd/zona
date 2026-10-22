@@ -85,7 +85,7 @@ export default function RefusalView({
           this IS coach voice. No alarm colour, no raw diagnostic string: the
           message arrives already brand-voiced from the route. */}
       <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '20px', marginBottom: 'var(--space-4)' }}>
-        <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn)', marginBottom: 'var(--space-3)' }}>
+        <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn-strong)', marginBottom: 'var(--space-3)' }}>
           {isRefusal ? 'Not yet' : 'Something went wrong'}
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>
@@ -93,7 +93,7 @@ export default function RefusalView({
         </div>
         {isRefusal && alternatives.length > 0 && (
           <div style={{ marginTop: 'var(--space-4)', borderTop: '1px solid var(--line)', paddingTop: 'var(--space-4)' }}>
-            <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn)', marginBottom: 'var(--space-3)' }}>
+            <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn-strong)', marginBottom: 'var(--space-3)' }}>
               What would get you there
             </div>
             {alternatives.map((alt, i) => (
@@ -139,7 +139,7 @@ export default function RefusalView({
           runner said yes and the network did not; losing the card would make
           the failure read as a second refusal. */}
       {offerFailed && (
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--warn)', lineHeight: 1.55, marginBottom: 'var(--space-3)' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--warn-strong)', lineHeight: 1.55, marginBottom: 'var(--space-3)' }}>
           That did not go through. Try again.
         </div>
       )}

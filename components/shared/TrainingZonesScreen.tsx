@@ -300,7 +300,7 @@ export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr, ta
               >
                 <div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--ink)', fontWeight: 500 }}>
-                    <span style={{ color: z.colour, fontWeight: 700 }}>Z{z.zone}</span> {z.name}
+                    <span aria-hidden style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: z.colour, marginRight: 'var(--space-1)', verticalAlign: 'middle' }} /><span style={{ color: 'var(--ink)', fontWeight: 700 }}>Z{z.zone}</span> {z.name}
                   </div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-caption)', color: 'var(--mute)', marginTop: '2px' }}>{z.desc}</div>
                 </div>

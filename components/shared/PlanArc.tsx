@@ -305,7 +305,7 @@ export default function PlanArc({
                 <div
                   style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
                     // The phase you are IN is the one worth reading.
-                    color: isNow ? 'var(--moss)' : 'var(--mute)',
+                    color: isNow ? 'var(--moss-strong)' : 'var(--mute)',
                     marginTop: '4px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',

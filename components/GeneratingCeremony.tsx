@@ -8,6 +8,7 @@
 // See docs/canonical/ui-patterns.md §10 for the canonical pattern.
 'use client'
 
+import { hueText } from '@/lib/ui/hueText'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { weekVolumeLabel } from '@/lib/plan/weekVolume'
 import type { Plan, GeneratorInput } from '@/types/plan'
@@ -140,7 +141,7 @@ function RevealCard({ week, phaseLabel, phaseColour, visible, units }: {
         {phaseColour && phaseLabel && (
           <span style={{
             fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em',
-            textTransform: 'uppercase', color: phaseColour,
+            textTransform: 'uppercase', color: hueText(phaseColour),
             border: `0.5px solid ${phaseColour}`, borderRadius: '20px',
             padding: '2px 8px', flexShrink: 0,
           }}>
@@ -170,7 +171,7 @@ function RevealCard({ week, phaseLabel, phaseColour, visible, units }: {
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>{weekVolumeLabel(week as never, units) ?? (formatDistance(week.weekly_km, units) ?? '')}</span>
         )}
         {week.badge && (
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--amber)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{week.badge}</span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn-strong)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{week.badge}</span>
         )}
       </div>
     </div>
@@ -311,7 +312,7 @@ export default function GeneratingCeremony({
               }}>
                 <AIMark size={12} color="var(--teal)" working />
                 <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
-                  color: 'var(--teal)' }}>Generating</span>
+                  color: 'var(--moss-strong)' }}>Generating</span>
               </div>
               <p key={lineIdx} style={{
                 fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 500,
@@ -330,7 +331,7 @@ export default function GeneratingCeremony({
             // top padding left a large dead gap above the phase cards.
             <p style={{
               fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 500,
-              color: 'var(--teal)', lineHeight: 1.45, margin: 0,
+              color: 'var(--moss-strong)', lineHeight: 1.45, margin: 0,
               animation: 'gc-copy-in 0.45s ease-out',
             }}>
               {COPY_REVEAL}

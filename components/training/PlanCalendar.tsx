@@ -415,7 +415,7 @@ function MaintSeam() {
     }}>
       <span style={{
         fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
-        color: 'var(--ink-2)', letterSpacing: '0.12em', textTransform: 'uppercase',
+        color: 'var(--s-recov-strong)', letterSpacing: '0.12em', textTransform: 'uppercase',
       }}>After the race</span>
       <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
         color: 'var(--mute)' }}>maintenance</span>
@@ -638,7 +638,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
           <div style={{
             fontFamily: 'var(--font-ui)',
             ...MICRO_LABELS.eyebrow,
-            color: isRace ? 'var(--s-race)' : isCurrent ? 'var(--moss)' : isMaint ? 'var(--s-recov)' : 'var(--mute)',
+            color: isRace ? 'var(--s-race-strong)' : isCurrent ? 'var(--moss-strong)' : isMaint ? 'var(--s-recov-strong)' : 'var(--mute)',
             marginBottom: '2px',
           }}>
             {isMaint
@@ -889,10 +889,10 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
     >
       <div style={{ width: '40px', flexShrink: 0 }}>
         {!continuation && <>
-          <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: isToday ? 'var(--moss)' : 'var(--mute)' }}>
+          <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: isToday ? 'var(--moss-strong)' : 'var(--mute)' }}>
             {DOW_FULL[dayKey]}
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isToday ? 'var(--moss)' : 'var(--mute)', fontWeight: isToday ? 600 : 400, marginTop: '1px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isToday ? 'var(--moss-strong)' : 'var(--mute)', fontWeight: isToday ? 600 : 400, marginTop: '1px' }}>
             {date.getDate()}
           </div>
         </>}
@@ -954,7 +954,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           <>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
               <div style={rowLabelStyle({
-                color: isMoving || isSwapTarget ? 'var(--moss)' : isSkipped ? 'var(--mute)' : isComplete ? 'var(--mute)' : isFuture ? 'var(--ink-2)' : 'var(--ink)',
+                color: isMoving || isSwapTarget ? 'var(--moss-strong)' : isSkipped ? 'var(--mute)' : isComplete ? 'var(--mute)' : isFuture ? 'var(--ink-2)' : 'var(--ink)',
                 struck: isSkipped,
               })}>
                 {session.label ?? ''}
@@ -1176,7 +1176,7 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
       {/* Header row: week label + total km */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
         <div style={{ ...MICRO_LABELS.sectionLabel, fontFamily: 'var(--font-ui)',
-          color: isRace ? 'var(--s-race)' : isMaint ? 'var(--s-recov)' : isPast ? 'var(--mute)' : 'var(--ink-2)' }}>
+          color: isRace ? 'var(--s-race-strong)' : isMaint ? 'var(--s-recov-strong)' : isPast ? 'var(--mute)' : 'var(--ink-2)' }}>
           {isRace
             ? 'Race week'
             : isMaint
@@ -1190,7 +1190,7 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
           {headerKm > 0 && (
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
-              color: isRace ? 'var(--s-race)' : 'var(--ink-2)',
+              color: isRace ? 'var(--s-race-strong)' : 'var(--ink-2)',
               fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em',
             }}>
               {formatDistance(headerKm, units, { exact: isRace })}
@@ -1247,7 +1247,7 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
           marginTop: '10px',
           fontFamily: 'var(--font-ui)',
           ...MICRO_LABELS.eyebrow,
-          color: 'var(--ink-2)',
+          color: 'var(--s-race-strong)',
         }}>
           {(() => {
             // Race day = last non-rest session in the week (typically Sun)

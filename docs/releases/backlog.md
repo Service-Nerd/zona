@@ -143,27 +143,6 @@ can you lift?* (1–4) and Change your plan asks *Days you run* (2–6), one pos
 S8 first jump level) and the long-run-day rule for the run row. Icons came off the modify sheet (seven rows, ICON-RULE-01).
 Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
 
-### 🔲 `WARN-TEXT-CONTRAST-01` — `--warn` as small text is 3.25:1 🧭 **DESIGN BOARD** (applies 6t-h) *(filed 2026-10-22)*
-
-25 literal `color: 'var(--warn)'` text sites (coaching notes, warnings) measure 3.25:1 on `--card`, 2.86 on `--bg`.
-`--warn-strong` (`#88622B`, 5.48 on `--card`) is the ratified text shade and is already used on the website. Apply 6t-h
-rule 1; graphics (rails, borders, AIMark) keep `--warn`.
-
-### 🔲 `ACCENT-TEXT-VARIABLE-01` — session and zone hues still reach small text through variables 🧭 **DESIGN BOARD** (applies 6t-g) *(filed 2026-10-22, from ACCENT-TEXT-CONTRAST-01)*
-
-6t-g was built for every LITERAL `color: 'var(--hue)'` site and the seven named variable sites. Found at build, ~15 more
-take a hue through a variable and `accentText.test.ts` cannot see them: `z.colour` (TrainingZonesScreen, OrientationScreen,
-ZoneRings), `fatigueChipColour()` (SessionCompleteCard), `rpeColour()` and the zone verdict chip (SessionPopupInner),
-`phaseColour` (GeneratingCeremony), `railColor` (NotificationRow), `captionColour()` (RaceProgressArcRow), `lrc.color`
-(DashboardClient), StravaPanel, and ZoneBar's active zone number. Each needs the same call: small text to `--ink-2` /
-`--moss-strong`, the hue to the mark beside it. A zone NAME coloured by its zone (Z5 in coral) may be a meaning the board
-wants to keep at large sizes; measure each first.
-
-🧭 **RULED 2026-10-22 (design-rulings 6t-h, amends 6t-g), SHIP:** small text in a hue takes its ratified `-strong`
-shade where one exists (moss, race, recovery, warn; four already in `globals.css`), otherwise `--ink-2`; zone names →
-ink with a zone dot; chips → ink text on the hue's tint; StravaPanel exempt; the gate widens to variable-coloured text.
-The six race/recovery sites 6t-g sent to ink move to their `-strong`. Ready to build.
-
 ### 🔲 `UNMEASURED-DISTANCE-01` — a linked run with no distance cannot be given one 🧭 **DESIGN BOARD** (prototype) + ⚙️ **ARCHITECTURE** (INV-DATA-008 / ADR-011) *(filed 2026-10-22, from TREADMILL-TOGGLE-01)*
 
 47 of 354 Apple Health runs carry no distance, from 4 runners (three almost entirely: 26/36, 15/15, 9/10). Sources:

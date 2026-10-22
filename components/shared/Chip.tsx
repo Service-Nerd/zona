@@ -38,7 +38,7 @@ export function Chip({
         borderRadius: 'var(--radius-md)',
         border: `1px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
         background: active ? 'var(--moss-soft)' : 'var(--card)',
-        color: active ? 'var(--moss)' : 'var(--ink-2)',
+        color: active ? 'var(--moss-strong)' : 'var(--ink-2)',
         fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: active ? 600 : 400,
         cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
       }}

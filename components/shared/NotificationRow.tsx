@@ -1,5 +1,6 @@
 'use client'
 
+import { hueText } from '@/lib/ui/hueText'
 import { MICRO_LABELS } from './microLabels'
 
 // NOTIF-01 — one row in the notification inbox. Read-only delivery record.
@@ -73,7 +74,7 @@ export function NotificationRow({ item, relativeTime, onClick }: {
         <span style={{
           fontFamily: 'var(--font-ui)',
           ...MICRO_LABELS.eyebrow,
-          color: railColor,
+          color: hueText(railColor),
         }}>{eyebrow}</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute-2)' }}>{relativeTime}</span>

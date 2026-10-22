@@ -8,6 +8,7 @@
 //
 // ⚠️ The body is UNCHANGED. Edit it in a separate commit so the move stays a move.
 
+import { hueText } from '@/lib/ui/hueText'
 import { fmtDurationMins, getReflectResponse, rpeColour } from '@/components/dashboard/dashboardHelpers'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import Sheet from '@/components/shared/Sheet'
@@ -369,7 +370,7 @@ export default function ManualRunModal({ weekN, sessionKey, preferredUnits, onCl
                       borderRadius: '20px',
                       border: `0.5px solid ${active ? tagColor : 'var(--border-col)'}`,
                       background: active ? `color-mix(in srgb, ${tagColor} 12%, transparent)` : 'transparent',
-                      color: active ? tagColor : 'var(--text-muted)',
+                      color: active ? hueText(tagColor) : 'var(--text-muted)',
                       cursor: 'pointer', fontWeight: active ? 500 : 400, transition: 'all 0.12s',
                     }}>{tag}</button>
                   )

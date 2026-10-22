@@ -89,7 +89,7 @@ export default function ZoneBar({
               key={z}
               style={{ ...MICRO_LABELS.dataLabel, flex: 1,
                 fontFamily: 'var(--font-ui)',
-                color: active.has(z) ? ZONE_COLOURS[z] : 'var(--mute)',
+                color: active.has(z) ? 'var(--ink)' : 'var(--mute)',
                 textAlign: 'center' }}
             >
               {z}

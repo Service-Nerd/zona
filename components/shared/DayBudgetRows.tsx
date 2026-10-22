@@ -99,7 +99,7 @@ export function DayBudgetRows({
               <span style={{
                 fontSize: '14px',
                 fontWeight: isOverride ? 600 : 400,
-                color: isOverride ? 'var(--moss)' : 'var(--mute)',
+                color: isOverride ? 'var(--moss-strong)' : 'var(--mute)',
               }}>
                 {isOverride ? labelFor(v) : defaultLabel}
               </span>

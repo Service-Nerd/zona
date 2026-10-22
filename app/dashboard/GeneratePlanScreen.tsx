@@ -466,7 +466,7 @@ function DifficultyCard({ band, note, alternatives }: {
 function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
   return (
     <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '16px 18px', marginTop: 'var(--space-5)' }}>
-      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn)', marginBottom: 'var(--space-2)' }}>
+      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn-strong)', marginBottom: 'var(--space-2)' }}>
         Unlock more personalisation
       </div>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: 'var(--space-4)' }}>
@@ -1644,7 +1644,7 @@ export default function GeneratePlanScreen({
               </div>
 
               {foundationAddStatus === 'error' && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn)', marginBottom: 'var(--space-3)' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn-strong)', marginBottom: 'var(--space-3)' }}>
                   Couldn't add that. Try again.
                 </div>
               )}
@@ -2097,7 +2097,7 @@ export default function GeneratePlanScreen({
               />
             ))}
             {overrodeUp && (
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.5, marginTop: '4px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn-strong)', lineHeight: 1.5, marginTop: '4px' }}>
                 Harder than your recent numbers suggest. You&rsquo;ll get the sessions, and we still build your mileage up gently so you don&rsquo;t get hurt getting fit.
               </div>
             )}
@@ -2187,7 +2187,7 @@ export default function GeneratePlanScreen({
             {verdict.hint && (
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '13px', lineHeight: 1.5,
-                color: verdict.state === 'blocked' ? 'var(--danger)' : 'var(--warn)',
+                color: verdict.state === 'blocked' ? 'var(--danger)' : 'var(--warn-strong)',
               }}>
                 {verdict.hint}
               </div>

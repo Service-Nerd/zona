@@ -225,7 +225,7 @@ export default function SessionCompleteCard({
             <span style={{
               display: 'inline-block',
               fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
-              color: fatigueChipColour(fatigueTag),
+              color: 'var(--ink-2)',
               background: `color-mix(in srgb, ${fatigueChipColour(fatigueTag)} 12%, transparent)`,
               border: `1px solid ${fatigueChipColour(fatigueTag)}`,
               padding: '5px 12px', borderRadius: '999px',

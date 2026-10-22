@@ -77,7 +77,7 @@ export default function PlanChart({ weeks }: Props) {
               <div style={{
                 fontFamily: "var(--font-ui)",
                 fontSize: '0.46rem',
-                color: isCurr ? 'var(--teal)' : 'var(--text-muted)',
+                color: isCurr ? 'var(--moss-strong)' : 'var(--text-muted)',
                 fontWeight: isCurr ? 600 : 400,
                 writingMode: 'vertical-rl',
                 whiteSpace: 'nowrap',

@@ -209,7 +209,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, strengthDots 
               onClick={() => onSelect(key)} style={{ flexDirection: 'column', gap: '3px', padding: '4px 2px', background: 'none', borderRadius: '12px' }}>
               {/* Day letter */}
               <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
-                color: isSelected ? 'var(--accent)' : isToday ? 'var(--accent)' : 'var(--text-secondary)' }}>
+                color: isSelected ? 'var(--moss-strong)' : isToday ? 'var(--moss-strong)' : 'var(--text-secondary)' }}>
                 {DOW_LETTER[key]}
               </span>
 
@@ -217,13 +217,13 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, strengthDots 
               <div style={{
                 width: '28px', height: '28px', borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: isSelected ? 'var(--accent)' : isToday && !isSelected ? 'var(--accent-soft)' : 'transparent',
+                background: isSelected ? 'var(--moss-strong)' : isToday && !isSelected ? 'var(--accent-soft)' : 'transparent',
                 border: isToday && !isSelected ? '1px solid var(--accent-mid)' : 'none',
                 transition: 'background 0.15s',
               }}>
                 <span style={{
                   fontFamily: 'var(--font-ui)', fontSize: '14px',
-                  color: isSelected ? 'var(--card)' : isToday ? 'var(--accent)' : dateNum ? 'var(--text-muted)' : 'var(--text-primary)',
+                  color: isSelected ? 'var(--card)' : isToday ? 'var(--moss-strong)' : dateNum ? 'var(--text-muted)' : 'var(--text-primary)',
                   fontWeight: isToday || isSelected ? 600 : 400,
                 }}>
                   {dateNum}
@@ -505,7 +505,7 @@ function TdReadyHero({ adjustment, detail: reading, signals = null, strengthSess
       {/* Eyebrow + reason chips */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)', flexWrap: 'wrap' }}>
         <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
-          color: 'var(--warn)' }}>
+          color: 'var(--warn-strong)' }}>
           Readiness · easing today
         </span>
         {reasonChips.length > 0 && (
@@ -1511,7 +1511,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                   Plan still runs. Coaching needs a sub.
                 </div>
               </div>
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--warn)', whiteSpace: 'nowrap' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--warn-strong)', whiteSpace: 'nowrap' }}>
                 Bring Kit back →
               </span>
             </Button>
@@ -1657,7 +1657,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                   // (TYPESCALE-APP-GATE-01), and a new undeclared size is a new
                   // size whatever it looks like.
                   marginTop: 'var(--space-2)', fontFamily: 'var(--font-ui)',
-                  fontSize: '14px', lineHeight: 1.5, color: 'var(--warn)',
+                  fontSize: '14px', lineHeight: 1.5, color: 'var(--warn-strong)',
                 }}>
                   {handoverError}
                 </div>
@@ -1692,7 +1692,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 width: '3px', borderRadius: '2px', background: 'var(--s-recov)',
               }} />
               <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
-                color: 'var(--ink-2)',
+                color: 'var(--s-recov-strong)',
                 marginBottom: 'var(--space-2)' }}>
                 After the race
               </div>
@@ -1773,7 +1773,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                         width: '3px', borderRadius: '2px', background: 'var(--s-recov)',
                       }} />
                       <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
-                        color: 'var(--ink-2)',
+                        color: 'var(--s-recov-strong)',
                         marginBottom: 'var(--space-2)' }}>
                         After the race
                       </div>

@@ -1048,7 +1048,8 @@ evidence.**
 | **StravaPanel** | ⚪ **EXEMPT, named** | admin-only, reached by URL |
 | **The gate widens** to `color:` set through any variable or helper ending in colour/color/accent | 🟢 **SHIP** | 6t-g's gate saw literals only, which is how ~15 sites were missed |
 
-Filed: `WARN-TEXT-CONTRAST-01` (25 literal `--warn` texts, 3.25:1, → `--warn-strong`). ⛔ Veto: none. Not built.
+Filed: `WARN-TEXT-CONTRAST-01` (25 literal `--warn` texts, 3.25:1, → `--warn-strong`). ⛔ Veto: none.
+**BUILT 2026-10-22, with WARN-TEXT-CONTRAST-01.** Owner `lib/ui/hueText.ts` (a hue → its `-strong` shade, else `--ink-2`). Found at build: **22 legacy aliases** resolve to a hue (`--accent`, `--teal`, `--amber`…) and were invisible to the 6t-g gate (18 text sites moved), and **~23 ternaries** (`selected ? 'var(--moss)' : …` in chips, pickers, Plan labels) that no earlier sweep reached. The Today week strip's selected date was white on `--moss` (3.68): it takes `--moss-strong` (5.48), the CTA's own answer. Gate `lib/ui/accentText.test.ts` now derives the hue set from `globals.css`, covers literal and computed colours, and proves every `hueText` shade ≥ 4.5:1.
 
 ## 6t-g. ACCENT-TEXT-CONTRAST-01 — a session hue is never small text (2026-10-22)
 

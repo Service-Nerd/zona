@@ -35,7 +35,7 @@ export default function TermsPage() {
           <div style={{
             fontFamily: 'var(--font-ui)',
             fontSize: 'var(--fs-micro)',
-            color: 'var(--accent)',
+            color: 'var(--moss-strong)',
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
             marginBottom: '12px',
@@ -218,7 +218,7 @@ export default function TermsPage() {
             fontSize: 'var(--fs-lead)',
             fontWeight: 500,
             letterSpacing: '0.08em',
-            color: 'var(--accent)',
+            color: 'var(--moss-strong)',
           }}>{BRAND.name}</span>
           <span style={{
             fontFamily: 'var(--font-ui)',
@@ -302,7 +302,7 @@ function A({ href, children }: { href: string; children: React.ReactNode }) {
     <a
       href={href}
       style={{
-        color: 'var(--accent)',
+        color: 'var(--moss-strong)',
         textDecoration: 'underline',
         textUnderlineOffset: '2px',
         fontFamily: 'var(--font-ui)',

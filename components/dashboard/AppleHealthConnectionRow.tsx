@@ -8,6 +8,7 @@
 //
 // ⚠️ The body is UNCHANGED. Edit it in a separate commit so the move stays a move.
 
+import { hueText } from '@/lib/ui/hueText'
 import Button from '@/components/ui/Button'
 import { BRAND } from '@/lib/brand'
 import { syncOnAppOpen } from '@/lib/health/clientSync'
@@ -138,7 +139,7 @@ export default function AppleHealthConnectionRow({ onHRFound, lastArrival }: {
             {/* ⚠️ `--teal` was a System-B legacy alias (it resolves to `var(--moss)`
                 at globals.css:404, so there is no visual delta) and the tone now
                 comes from the ruled §17c state scale via `connectionToneVar`. */}
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', marginTop: '1px', color: isLoading ? 'var(--text-muted)' : connectionToneVar(freshness) }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', marginTop: '1px', color: isLoading ? 'var(--text-muted)' : hueText(connectionToneVar(freshness)) }}>
               {isLoading ? 'checking...' : connected ? 'Connected' : 'Not connected'}
             </div>
           </div>
@@ -191,7 +192,7 @@ export default function AppleHealthConnectionRow({ onHRFound, lastArrival }: {
           `null` for a working connection and this block does not render. If it
           ever renders for 'fresh', the ruling has been reversed. */}
       {!isLoading && connected && staleCopy && (
-        <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', lineHeight: 1.55 }}>
+        <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn-strong)', lineHeight: 1.55 }}>
           {staleCopy}
         </div>
       )}

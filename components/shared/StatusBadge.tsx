@@ -19,6 +19,7 @@
 // not at all, because **a component that codifies a 37th variant is the version that
 // spreads.** `MICRO-LABEL-DRIFT-01` carries the rest.
 
+import { hueText } from '@/lib/ui/hueText'
 import type { CSSProperties } from 'react'
 import { MICRO_LABELS } from './microLabels'
 
@@ -62,7 +63,7 @@ export function StatusBadge({ label, tone = 'none', style }: {
         fontWeight: MICRO_LABEL.fontWeight,
         letterSpacing: MICRO_LABEL.letterSpacing,
         textTransform: MICRO_LABEL.textTransform,
-        color: TONE_COLOUR[tone],
+        color: hueText(TONE_COLOUR[tone]),
         whiteSpace: 'nowrap',
         ...style,
       }}

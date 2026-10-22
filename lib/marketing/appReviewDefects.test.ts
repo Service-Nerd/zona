@@ -96,6 +96,6 @@ describe('D1 — the modify sheet shows its own failure and in-flight states', (
     expect(src).toMatch(/disabled=\{busy\}/)
     // `--warn`, never `--danger`: a designed 422 refusal is not an error state.
     const i = src.indexOf('{error && (')
-    expect(src.slice(i, i + 320)).toContain('var(--warn)')
+    expect(src.slice(i, i + 320)).toMatch(/var\(--warn(-strong)?\)/)  // 6t-h: warn text takes --warn-strong
   })
 })

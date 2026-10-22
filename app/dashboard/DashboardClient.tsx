@@ -1,5 +1,6 @@
 'use client'
 
+import { hueText } from '@/lib/ui/hueText'
 import { InlineError } from '@/components/shared/InlineError'
 import { FieldReadback } from '@/components/shared/FieldText'
 import { runPlanReadback, strengthPlanReadback } from '@/lib/ui/planChangeReadback'
@@ -3657,7 +3658,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
         </Button>
 
         {error && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.55, marginTop: 'var(--space-3)' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn-strong)', lineHeight: 1.55, marginTop: 'var(--space-3)' }}>
             {error}
           </div>
         )}
@@ -3840,7 +3841,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
         )}
 
         {error && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.55, marginTop: 'var(--space-3)' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn-strong)', lineHeight: 1.55, marginTop: 'var(--space-3)' }}>
             {error}
           </div>
         )}
@@ -4470,7 +4471,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
 
         {status === 'error' && (
           <div style={{ background: 'var(--warn-bg)', borderRadius: '14px', padding: '20px' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--warn)', marginBottom: 'var(--space-2)' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--warn-strong)', marginBottom: 'var(--space-2)' }}>
               Something went wrong.
             </div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: 'var(--space-4)' }}>
@@ -4694,7 +4695,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           under the race title names the chapter; the per-week accents + seam
           in PlanCalendar carry it through the week list. Rule-engine → no AIMark. */}
       {inMaintenance && (
-        <div style={{ ...MICRO_LABELS.eyebrow, padding: '0 16px 12px', fontFamily: 'var(--font-ui)', color: 'var(--ink-2)' }}>
+        <div style={{ ...MICRO_LABELS.eyebrow, padding: '0 16px 12px', fontFamily: 'var(--font-ui)', color: 'var(--s-recov-strong)' }}>
           Maintenance
         </div>
       )}
@@ -5918,13 +5919,13 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 <div
                   className={m.shape ? undefined : 'num-data'}
                   style={m.shape
-                    ? { fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: m.valueColor, letterSpacing: '-0.2px', lineHeight: 1.25 }
+                    ? { fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: hueText(m.valueColor), letterSpacing: '-0.2px', lineHeight: 1.25 }
                     : { fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: m.valueColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1, marginBottom: 'var(--space-2)' }}
                 >
                   {m.value}
                 </div>
                 {m.shape}
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 500, color: m.subColor, lineHeight: 1.3, marginTop: m.shape ? '8px' : 0 }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 500, color: hueText(m.subColor), lineHeight: 1.3, marginTop: m.shape ? '8px' : 0 }}>
                   {m.sub}
                 </div>
               </>
@@ -5973,7 +5974,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                   Your training load balance
                 </div>
                 {loadRatio !== null && (
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: lrc.color, marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: hueText(lrc.color), marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
                     {loadRatio.toFixed(2)}x — {lrc.label}
                   </div>
                 )}
@@ -6007,7 +6008,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                   Hitting the prescribed zone
                 </div>
                 {currentScore !== null && (
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: currentScore >= 80 ? 'var(--moss)' : currentScore >= 60 ? 'var(--ink-2)' : 'var(--warn)', marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: currentScore >= 80 ? 'var(--moss-strong)' : currentScore >= 60 ? 'var(--ink-2)' : 'var(--warn-strong)', marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
                     {currentScore}% this week
                   </div>
                 )}
@@ -7702,7 +7703,7 @@ function PostRunScreen({
                       borderRadius: '20px',
                       border: `1px solid ${isActive ? tagColor : 'var(--line)'}`,
                       background: isActive ? `color-mix(in srgb, ${tagColor} 12%, transparent)` : 'transparent',
-                      color: isActive ? tagColor : 'var(--mute)',
+                      color: isActive ? hueText(tagColor) : 'var(--mute)',
                       cursor: 'pointer',
                       fontWeight: isActive ? 600 : 400,
                       transition: 'all 0.12s',

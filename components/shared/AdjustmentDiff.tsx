@@ -121,7 +121,7 @@ export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 
             </span>
             <span
               style={{
-                color:      'var(--warn)',
+                color:      'var(--warn-strong)',
                 fontWeight: 600,
                 flex:       '1 1 auto',
               }}

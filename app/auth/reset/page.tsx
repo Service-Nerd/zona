@@ -173,7 +173,7 @@ export default function ResetPasswordPage() {
               )}
 
               {resendError && (
-                <div style={{ marginBottom: '16px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--amber)', padding: '8px 12px', background: 'var(--amber-soft)', borderRadius: '8px' }}>
+                <div style={{ marginBottom: '16px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn-strong)', padding: '8px 12px', background: 'var(--amber-soft)', borderRadius: '8px' }}>
                   {resendError}
                 </div>
               )}
@@ -226,7 +226,7 @@ export default function ResetPasswordPage() {
               </form>
 
               {error && (
-                <div style={{ marginTop: '12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--amber)', padding: '8px 12px', background: 'var(--amber-soft)', borderRadius: '8px' }}>
+                <div style={{ marginTop: '12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn-strong)', padding: '8px 12px', background: 'var(--amber-soft)', borderRadius: '8px' }}>
                   {error}
                 </div>
               )}

@@ -5,6 +5,7 @@
 //
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
+import { hueText } from '@/lib/ui/hueText'
 import AIMark from '@/components/shared/AIMark'
 import EasedMark from '@/components/shared/EasedMark'
 import { isEasedForRecovery } from '@/lib/ui/easedMark'
@@ -763,7 +764,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                   borderRadius: '20px',
                   border: `0.5px solid ${isActive ? tagColor : 'var(--border-col)'}`,
                   background: isActive ? `color-mix(in srgb, ${tagColor} 12%, transparent)` : 'transparent',
-                  color: isActive ? tagColor : 'var(--text-muted)',
+                  color: isActive ? hueText(tagColor) : 'var(--text-muted)',
                   cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s',
                 }}>{tag}</button>
               )
@@ -918,7 +919,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                 padding: '12px 10px', borderRadius: '10px',
                 border: `0.5px solid ${isActive ? 'var(--accent)' : 'var(--border-col)'}`,
                 background: isActive ? 'var(--accent-soft)' : 'var(--bg)',
-                color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                color: isActive ? 'var(--moss-strong)' : 'var(--text-secondary)',
                 fontFamily: 'var(--font-ui)', fontSize: '12px',
                 cursor: 'pointer', transition: 'all 0.12s', textAlign: 'center',
               }}>{reason}</button>
@@ -988,7 +989,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
             const verdict = zoneVerdict(runAnalysis?.hr_above_ceiling_pct)
             const tint = verdict === 'held' ? 'var(--moss-soft)' : verdict === 'drifted' ? 'var(--warn-bg)' : 'var(--bg-soft)'
             return (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: tint, color: zoneVerdictColour(verdict), border: `1px solid ${zoneVerdictColour(verdict)}`, borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: tint, color: 'var(--ink-2)', border: `1px solid ${zoneVerdictColour(verdict)}`, borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {zoneVerdictLabel(verdict) ?? 'Done'}
               </span>
             )
@@ -1118,7 +1119,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
               <div style={{ ...MICRO_LABELS.dataLabel, fontFamily: 'var(--font-ui)', color: 'var(--ink-2)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 {effectiveMetric === 'distance' ? 'Distance' : 'Duration'}
                 {isMetricCustom && (
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', background: 'var(--warn-bg)', color: 'var(--warn)', border: '1px solid var(--line)', borderRadius: '4px', padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>custom</span>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', background: 'var(--warn-bg)', color: 'var(--warn-strong)', border: '1px solid var(--line)', borderRadius: '4px', padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>custom</span>
                 )}
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1, marginBottom: 'var(--space-2)' }}>
@@ -1321,7 +1322,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                         <span style={{
                           fontFamily: 'var(--font-ui)', fontSize: '9px', letterSpacing: '0.05em',
                           textTransform: 'uppercase', borderRadius: '4px', padding: '2px 6px',
-                          color: flag === 'ok' ? 'var(--moss)' : 'var(--warn)',
+                          color: flag === 'ok' ? 'var(--moss-strong)' : 'var(--warn-strong)',
                           background: flag === 'ok' ? 'var(--moss-soft)' : 'var(--warn-bg)',
                         }}>
                           {flag === 'ok' ? 'On target' : 'Check this'}
@@ -1347,13 +1348,13 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                         </span>
                       )}
                       {actualAvgHr != null && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isZoneBreach ? 'var(--warn)' : 'var(--ink)' }}>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isZoneBreach ? 'var(--warn-strong)' : 'var(--ink)' }}>
                           {actualAvgHr} bpm avg
                           {isZoneBreach && <span style={{ fontSize: '10px', marginLeft: '4px', opacity: 0.8 }}>↑</span>}
                         </span>
                       )}
                       {completion?.rpe != null && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: rpeColour(completion.rpe) }}>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: hueText(rpeColour(completion.rpe)) }}>
                           RPE {completion.rpe}
                         </span>
                       )}
@@ -1556,7 +1557,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                     const tagColor = tag === 'Fresh' ? 'var(--moss)' : tag === 'Fine' ? 'var(--moss)' : tag === 'Heavy' ? 'var(--warn)' : 'var(--danger)'
                     return (
                       <button key={tag} onClick={() => { const next = isActive ? null : tag; setFatigueTag(next); saveRPEFatigue(rpe, next) }}
-                        style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 18px', minHeight: '44px', borderRadius: '20px', border: `1px solid ${isActive ? tagColor : 'var(--line)'}`, background: isActive ? `color-mix(in srgb, ${tagColor} 9%, transparent)` : 'transparent', color: isActive ? tagColor : 'var(--mute)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s' }}>
+                        style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 18px', minHeight: '44px', borderRadius: '20px', border: `1px solid ${isActive ? tagColor : 'var(--line)'}`, background: isActive ? `color-mix(in srgb, ${tagColor} 9%, transparent)` : 'transparent', color: isActive ? hueText(tagColor) : 'var(--mute)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s' }}>
                         {tag}
                       </button>
                     )
@@ -1768,7 +1769,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
               states what the session ALREADY HAS before offering to change it. One
               heading served two opposite states and was written for the empty one.
               The DECISION lives in `linkPickerCopy`; this renders it. */}
-          <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--teal)', marginBottom: 'var(--space-4)' }}>{pickerCopy.eyebrow}</div>
+          <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--moss-strong)', marginBottom: 'var(--space-4)' }}>{pickerCopy.eyebrow}</div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>{pickerCopy.subtitle}</div>
           {/* 🎪 The reveal. Reuses the "Wrong one?" affordance already live on the
               auto-match suggestion rather than inventing a second way to say it. */}
@@ -1787,7 +1788,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
             // for a real load error as for "no matches" — silent breakage was
             // unrecoverable by sight. Honest one-line says what happened and
             // points to the only meaningful next action (retry by reopening).
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', padding: '12px 0', marginBottom: 'var(--space-2)', lineHeight: 1.5 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn-strong)', padding: '12px 0', marginBottom: 'var(--space-2)', lineHeight: 1.5 }}>
               Couldn&apos;t load activities. Tap Back, then try again.
             </div>
           ) : stravaRuns.length > 0 ? (

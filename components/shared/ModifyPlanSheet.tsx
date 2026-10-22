@@ -360,7 +360,7 @@ export default function ModifyPlanSheet({
                 {error && (
                   <div style={{
                     marginBottom: 'var(--space-3)', fontFamily: 'var(--font-ui)', fontSize: '14px',
-                    lineHeight: 1.5, color: 'var(--warn)',
+                    lineHeight: 1.5, color: 'var(--warn-strong)',
                   }}>
                     {error}
                   </div>

@@ -83,7 +83,7 @@ export default function CoachNoteBlock({
           : (
             <span
               style={{ ...MICRO_LABELS.eyebrow, fontFamily:    'var(--font-ui)',
-                color:         'var(--warn)',
+                color:         'var(--warn-strong)',
                 lineHeight:    1 }}
             >
               {label}
@@ -96,7 +96,7 @@ export default function CoachNoteBlock({
               fontFamily: 'var(--font-ui)',
               fontSize:   '10px',
               fontWeight: 400,
-              color:      'var(--warn)',
+              color:      'var(--warn-strong)',
               opacity:    0.65,
               lineHeight: 1,
             }}

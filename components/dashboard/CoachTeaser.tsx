@@ -126,7 +126,7 @@ export default function CoachTeaser({ plan, firstName, onUpgrade }: {
               position: 'absolute', left: '8px', top: '16px', bottom: '16px',
               width: '3px', background: 'var(--warn)', borderRadius: '2px',
             }} />
-            <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn)', marginBottom: 'var(--space-2)' }}>
+            <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn-strong)', marginBottom: 'var(--space-2)' }}>
               Worth a look
             </div>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.55, margin: 0 }}>

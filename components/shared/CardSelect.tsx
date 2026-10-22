@@ -63,7 +63,7 @@ export function CardSelect({
           display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative',
         }}
       >
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: active ? 700 : 500, color: active ? 'var(--moss)' : 'var(--ink)' }}>{label}</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: active ? 700 : 500, color: active ? 'var(--moss-strong)' : 'var(--ink)' }}>{label}</span>
         {sub && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>{sub}</span>}
         {/* TIER-BADGE-01 — was a hand-rolled 9px/700/0.08em span. One of the two
             divergent copies `StatusBadge` was created to absorb. */}
@@ -86,7 +86,7 @@ export function CardSelect({
       }}
     >
       <div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: active ? 700 : 500, color: active ? 'var(--moss)' : 'var(--ink)', marginBottom: sub ? '4px' : 0 }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: active ? 700 : 500, color: active ? 'var(--moss-strong)' : 'var(--ink)', marginBottom: sub ? '4px' : 0 }}>
           {label}
         </div>
         {sub && (

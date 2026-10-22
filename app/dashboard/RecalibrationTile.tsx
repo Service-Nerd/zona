@@ -112,7 +112,7 @@ export function RecalibrationEntryScreen({
               The rest of your plan just moved with you.
             </p>
           </div>
-          <p style={{ margin: 0, font: '400 15px/1.5 var(--font-ui)', color: 'var(--warn)' }}>
+          <p style={{ margin: 0, font: '400 15px/1.5 var(--font-ui)', color: 'var(--warn-strong)' }}>
             There it is. Don&rsquo;t ruin it.
           </p>
           <div style={{ marginTop: 'auto' }}>

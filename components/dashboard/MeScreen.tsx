@@ -7,6 +7,7 @@
 //
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
+import { hueText } from '@/lib/ui/hueText'
 import { EmptyState } from '@/components/shared/EmptyState'
 import AIMark from '@/components/shared/AIMark'
 import { getDeviceToken } from '@/components/dashboard/pushDevice'
@@ -403,7 +404,7 @@ function StravaConnectionRow({ lastArrival }: {
           </div>
           <div>
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Strava</div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', marginTop: '1px', color: isLoading ? 'var(--text-muted)' : connectionToneVar(stravaFreshness) }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', marginTop: '1px', color: isLoading ? 'var(--text-muted)' : hueText(connectionToneVar(stravaFreshness)) }}>
               {isLoading ? 'checking...' : connected ? 'Connected' : 'Not connected'}
             </div>
           </div>
@@ -467,7 +468,7 @@ function StravaConnectionRow({ lastArrival }: {
       )}
       {/* The twin of the Apple Health stale line, same slot, same silence-when-fresh. */}
       {!isLoading && connected && stravaStaleCopy && (
-        <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', lineHeight: 1.55 }}>
+        <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn-strong)', lineHeight: 1.55 }}>
           {stravaStaleCopy}
         </div>
       )}
@@ -1067,7 +1068,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
                   </span>
                 </div>
                 {sub && (
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: state === 'stale' ? 'var(--warn)' : 'var(--mute)', marginTop: '4px', lineHeight: 1.4 }}>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: state === 'stale' ? 'var(--warn-strong)' : 'var(--mute)', marginTop: '4px', lineHeight: 1.4 }}>
                     {sub}
                   </div>
                 )}
@@ -1171,7 +1172,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
                     means calm, not broken", and a row that ALWAYS carries a status
                     line has taught the runner to stop reading it. */}
                 {hkRecoveryNote && (
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: hkFreshness === 'not_connected' ? 'var(--mute)' : 'var(--warn)', marginTop: '4px', lineHeight: 1.4 }}>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: hkFreshness === 'not_connected' ? 'var(--mute)' : 'var(--warn-strong)', marginTop: '4px', lineHeight: 1.4 }}>
                     {hkRecoveryNote}
                   </div>
                 )}
@@ -1199,7 +1200,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
                       </span>
                     </div>
                     {hasInjuries && (
-                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', marginTop: '4px', lineHeight: 1.4 }}>
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn-strong)', marginTop: '4px', lineHeight: 1.4 }}>
                         Engine eases hill and long-run prescriptions.
                       </div>
                     )}

@@ -44,7 +44,7 @@ export function WeekGrid({
                 flex: 1, minWidth: 0, height: '60px', borderRadius: 'var(--radius-md)',
                 border: on ? '1.5px solid var(--moss)' : '1px solid var(--line)',
                 background: isLong ? 'var(--moss-soft)' : on ? 'var(--card)' : 'var(--bg-soft)',
-                color: on ? 'var(--moss)' : 'var(--mute)',
+                color: on ? 'var(--moss-strong)' : 'var(--mute)',
                 cursor: 'pointer', transition: 'all 0.15s',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px',
                 fontFamily: 'var(--font-ui)',
@@ -53,7 +53,7 @@ export function WeekGrid({
               <span style={{ fontSize: '11px', fontWeight: on ? 700 : 500 }}>{LABEL[d]}</span>
               <span style={{
                 fontSize: '8px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-                color: isLong ? 'var(--s-long)' : on ? 'var(--moss)' : 'var(--mute)',
+                color: isLong ? 'var(--ink-2)' : on ? 'var(--moss-strong)' : 'var(--mute)',
                 opacity: on ? 1 : 0.65,
               }}>
                 {isLong ? 'Long' : on ? 'Run' : 'Rest'}

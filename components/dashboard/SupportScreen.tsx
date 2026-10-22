@@ -128,7 +128,7 @@ export default function SupportScreen({ onBack, email, hasPaidAccess, trialDaysL
               // the product. NOT converted: its border goes `--moss` on `copied`, a
               // transient confirmation `Button` has no vocabulary for, and flattening
               // it would delete the only feedback this control gives.
-              style={{ flexShrink: 0, minHeight: TAP_TARGET_MIN_PX, display: 'inline-flex', alignItems: 'center', padding: '5px 12px', borderRadius: '10px', border: `1px solid ${copied ? 'var(--moss)' : 'var(--line)'}`, background: copied ? 'var(--moss-soft)' : 'transparent', color: copied ? 'var(--moss)' : 'var(--mute)', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s, background 0.15s, border-color 0.15s' }}
+              style={{ flexShrink: 0, minHeight: TAP_TARGET_MIN_PX, display: 'inline-flex', alignItems: 'center', padding: '5px 12px', borderRadius: '10px', border: `1px solid ${copied ? 'var(--moss)' : 'var(--line)'}`, background: copied ? 'var(--moss-soft)' : 'transparent', color: copied ? 'var(--moss-strong)' : 'var(--mute)', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s, background 0.15s, border-color 0.15s' }}
               aria-label="Copy support email address"
             >
               {copied ? 'Copied' : 'Copy'}

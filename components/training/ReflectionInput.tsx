@@ -207,7 +207,7 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
         <div style={{
           display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px',
         }}>
-          <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn)' }}>
+          <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn-strong)' }}>
             Worth a check
           </span>
         </div>

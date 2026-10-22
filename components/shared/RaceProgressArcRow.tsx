@@ -12,6 +12,7 @@
 // `lib/coaching/raceProgressArc.ts` and are unit-tested there. This file only
 // decides how the shape LOOKS. Strings come from `raceProjectionsCopy.ts`.
 
+import { hueText } from '@/lib/ui/hueText'
 import { Fragment } from 'react'
 import { formatClockTime, formatElapsedDelta } from '@/lib/format'
 import type { ArcPointKey, RaceProgressArc } from '@/lib/coaching/raceProgressArc'
@@ -98,7 +99,7 @@ export function RaceProgressArcRow({ arc, copy }: { arc: RaceProgressArc; copy: 
                   with nothing to say pulls its neighbours out of alignment. */}
               <span style={{
                 fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
-                color: captionColour(arc, point.key), minHeight: '14px', lineHeight: 1.25,
+                color: hueText(captionColour(arc, point.key)), minHeight: '14px', lineHeight: 1.25,
               }}>
                 {captionFor(arc, copy, point.key)}
               </span>

@@ -239,8 +239,9 @@ function NumericStrip({ pct }: { pct: ZoneSlice }) {
         >
           <span
             style={{ ...MICRO_LABELS.dataLabel, fontFamily: 'var(--font-ui)',
-              color: item.colour }}
+              color: 'var(--ink-2)' }}
           >
+            <span aria-hidden style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: item.colour, marginRight: 'var(--space-1)', verticalAlign: 'middle' }} />
             {item.label}
           </span>
           <span

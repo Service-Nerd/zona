@@ -203,11 +203,11 @@ export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYea
           </div>
         )}
         {maxIsFloored && !showEstHint && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', lineHeight: 1.5, marginBottom: 'var(--space-3)' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn-strong)', lineHeight: 1.5, marginBottom: 'var(--space-3)' }}>
             {mhrNum} bpm is below the age estimate ({guardedMax} bpm), usually the highest your device happened to record, not your true max. Zones use {guardedMax}. If {mhrNum} really is your max, tap Save to confirm it.
           </div>
         )}
-        <Button variant="secondary" fullWidth  onClick={handleSave} disabled={!valid} style={{ padding: '11px', background: saved ? 'var(--teal-dim)' : valid ? 'var(--accent-soft)' : 'var(--bg)', border: `0.5px solid ${saved ? 'var(--moss-mid)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`, borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: saved ? 'var(--teal)' : valid ? 'var(--accent)' : 'var(--text-muted)' }}>
+        <Button variant="secondary" fullWidth  onClick={handleSave} disabled={!valid} style={{ padding: '11px', background: saved ? 'var(--teal-dim)' : valid ? 'var(--accent-soft)' : 'var(--bg)', border: `0.5px solid ${saved ? 'var(--moss-mid)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`, borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: saved ? 'var(--moss-strong)' : valid ? 'var(--moss-strong)' : 'var(--text-muted)' }}>
           {saved ? 'Saved' : 'Save HR data'}
         </Button>
       </div>

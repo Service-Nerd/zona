@@ -213,7 +213,7 @@ export default function OrientationScreen({ plan, firstName, zone2Ceiling, resti
                       {/* HR range or em-dash if no HR data */}
                       <div style={{
                         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                        color: z.colour, fontVariantNumeric: 'tabular-nums',
+                        color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums',
                         textAlign: 'right', whiteSpace: 'nowrap',
                       }}>
                         {hr ? `${hr.minHR}–${hr.maxHR}` : '—'}

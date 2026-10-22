@@ -477,7 +477,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         {error && (
           <p style={{
             fontFamily: 'var(--font-ui)', fontSize: '0.875rem',
-            color: 'var(--amber)', margin: '12px 0 0', textAlign: 'center',
+            color: 'var(--warn-strong)', margin: '12px 0 0', textAlign: 'center',
           }}>{error}</p>
         )}
 
