@@ -1031,6 +1031,21 @@ answers in a line what three rounds of reasoning did not.
 ---
 
 
+## 6t-k. PLAN-DOORS-01 — two plans, one door each, the same face everywhere (2026-10-22)
+
+Founder finding: Plan's *Adjust your plan* has no icon, the Strength door inside it has none while Me's has a dumbbell,
+and Me cannot adjust the current plan. **SHIP WITH AMENDMENT, ruled not built.** (1) Two doors, identical wherever met:
+run plan = *Adjust your plan* + `run` glyph; strength = *Strength* + `dumbbell`. (2) Me gains the run-plan door beside
+*Start a new plan* (PLANVERB-01 stands). (3) **Amends ICON-RULE-01 by name:** IDENTITY is a third qualification, a door
+met on more than one surface wears its destination's glyph on each; bounded to the two plan doors, so Plan's one action
+row carries it. (4) The Adjust screen's Strength door regains the dumbbell (restores STRENGTH-ENTRY-01; reverses the
+2026-10-18 removal for that door only; setting rows stay bare). (5) Back from Strength returns to its origin, including
+Adjust (today it lands on Plan). (6) *Plan adjustments* (auto-adjust) is renamed so it cannot read as the manual edit,
+keeping the sliders glyph. (7) Plan's Adjust subtitle names strength when it is available. 👤 Words in 6 and 7 are the
+founder's. ✋ Silvanto: his 2026-10-18 seam dissent, now the ruling; no veto. 🎪 **Collins lost** a "Your plans" hub
+screen (a fourth place; R-4 gives Plan one action row); won the name collision. Sitting:
+`docs/decisions/plan-doors-2026-10-22.md`.
+
 ## 6t-j. A11Y-APP-TEXT-SWEEP-01 — the last 19 faint-text sites, and the gate goes app-wide (2026-10-22)
 
 **Re-measured before sitting:** the item said **69**; the code says **19**. Today's 6t-g/6t-h gate

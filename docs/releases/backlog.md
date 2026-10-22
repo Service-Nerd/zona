@@ -195,6 +195,13 @@ attribution, but `PlanCalendar`'s confirmation line (`● <name?> · <distance>`
 a source the run did not come from, before and after 6t-j. Question: is the ● a source mark (then by `source`) or a
 done mark (then a palette colour)? `SessionCard`'s line is correctly gated on `viaStrava`.
 
+### 🔲 `PLAN-DOORS-01` — two plans, one door each, the same face everywhere 🧭 **DESIGN BOARD RULED 2026-10-22 (6t-k), ready to build** → 👤 **FOUNDER** (two strings) *(filed 2026-10-22)*
+
+Me gains *Adjust your plan*; both plan doors wear their glyph on every surface (`run`, `dumbbell`; ICON-RULE-01 amended
+with IDENTITY); the Adjust screen's Strength door regains its dumbbell; Back from Strength returns to its origin; *Plan
+adjustments* renamed; Plan's Adjust subtitle names strength. Founder words needed: the auto-adjust title and the
+subtitle. Sitting: `docs/decisions/plan-doors-2026-10-22.md`.
+
 ### 🔲 `TYPE-18PX-CONVERGE-01` — the 8 remaining headline-species sites ⚙️ **NO BOARD** *(the ruling exists; this is conformance)*
 
 `FOUNDER-TYPE-18PX-01` refused 18px permanently and created `.section-headline` (20/700) for the

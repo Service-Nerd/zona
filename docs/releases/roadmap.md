@@ -958,6 +958,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   One sitting, three arms, and the honest answer may be no for two. All four now clear the
   44px floor, so nothing is broken. From `TAP-TARGET-DECISIONS-01` batch 8a. `backlog.md`.
 - 🧭 `A11Y-APP-TEXT-SWEEP-01` — ✅ **SHIPPED 2026-10-22** (`3df77396`, Design Board 6t-j): re-measured 69 → 19, all fixed; the faint-text gate now covers the whole app.
+- 🧭 `PLAN-DOORS-01` — 🔲 ruled 2026-10-22 (6t-k): one door per plan (run, strength) with the same glyph on Plan, Me and Adjust; Me gains Adjust your plan.
 - 🧭 `CALENDAR-DONE-DOT-SOURCE-01` — 🔲 open, filed 2026-10-22: the Plan calendar's completion ● is Strava orange for Apple Health runs too.
   From `FOUNDER-TYPE-18PX-01`. `backlog.md`.
 - ⚙️ `TYPE-18PX-CONVERGE-01` — **LATER, low.** The 8 remaining 18px headline-species sites adopt
