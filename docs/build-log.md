@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — ACCENT-TEXT-CONTRAST-01 · colour on the marks, ink on the words
+**Shipped:** Small labels that used a session colour or the brand green now read in a darker shade. Session headers, eyebrows and the distance tile are easier to read; the colour stays on the dots, tints, rails and shapes.
+
+**Dev learning:** The board ruled "ink", and building it found a better answer the board hadn't seen: the brand green already has a darker text shade that passes everywhere, used 62 times. The sitting checked the design rules and not the colour tokens, the first trap on its own list. Moss text kept its colour; only the session hues went to ink.
+
+**Product learning:** On its own tinted header, the amber label measured 2.8 to 1. That's the "MAIN SET" a runner reads in morning glare on every quality session, and it's been like that since the start.
+
+**AI-building learning:** I said seven sites used a colour through a variable. There are about twenty-two. The test only sees colours written out in full, so the rest are filed, and the test says plainly what it can't see.
+
+**The honest bit:** I also claimed "70 changed" in a commit message when it was 58 of 70. Caught before pushing.
+
+---
+
 ## 2026-10-22 — SESSION-INTERVALS-HUE-01 · VO2 has its own colour, and it isn't the error colour
 **Shipped:** VO2 and hill sessions now show in coral everywhere: the card, Plan, Today, the session screen, the shape bar and the trace. The old interval colour was the exact hex of our error red; it's gone from training screens.
 
