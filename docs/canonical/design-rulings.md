@@ -1043,7 +1043,7 @@ answers in a line what three rounds of reasoning did not.
 
 👤 **Words to the founder:** "Distance not recorded", "Add the distance", "you added this", the input's title. Check (with the
 build): unmeasured never renders `0km`; the action is absent when measured; the provenance label shows when reported.
-⛔ Veto: none. ⚠️ Prototype was local and deleted. **BUILT 2026-10-22**, title "How far did you run?" (founder). Found at build: a full-width COMPACT button may not grow (CTA-COMPACT-SCOPE-01), so the row uses the default size. Checks: `lib/health/reportDistance.test.ts`.
+⛔ Veto: none. ⚠️ Prototype was local and deleted. **BUILT 2026-10-22**, title "How far did you run?" (founder). The build-time strings "Change the distance", "Save", "This run already has a distance from your device." and "Couldn't save that. Try again." **approved by the founder 2026-10-22.** Found at build: a full-width COMPACT button may not grow (CTA-COMPACT-SCOPE-01), so the row uses the default size. Checks: `lib/health/reportDistance.test.ts`.
 
 ## 6t-h. ACCENT-TEXT-VARIABLE-01 — use the ratified text shade where one exists; amends 6t-g (2026-10-22)
 
