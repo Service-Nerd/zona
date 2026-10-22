@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — SESSION-HUE-OWNER-01 · the error red was the interval colour
+**Shipped:** VO2 and hill sessions no longer show their main set in red on the session screen. They're amber, the same as everywhere else in the app.
+
+**Dev learning:** Two parts of the app answered "what colour is this session?" differently. The session screen went by heart-rate zone and reached the interval red; everything else went by session type, and the engine never labels a session "intervals", so it never did. One owner now.
+
+**Product learning:** The interval red is literally the error colour, the same hex. Our rule says no red in training screens and coral for hard efforts. The token and the rule were written in different files and never checked against each other.
+
+**AI-building learning:** The quick fix, making VO2 reachable everywhere, would have spread the error red across Plan and Today. The board ruled the order: one owner now, a real coral next, then VO2 gets its own colour back.
+
+**The honest bit:** For now VO2 and threshold look the same colour. That's deliberate and temporary.
+
+---
+
 ## 2026-10-22 — RUNWALK-STEPS-01 · run 6, walk 1, and you can see where you are
 **Shipped:** A run-walk session now shows as steps: a 5-minute brisk walk, then rounds of run 6 minutes and walk 1, any leftover as a short final run, then the cool-down. Run and walk icons mark which part you're in. The walk says "Brisk walk. Take it even if you feel fine."
 
