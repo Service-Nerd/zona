@@ -27,6 +27,7 @@ interface SessionStepsProps {
   easyPaceStr?: string | null         // Strava-derived easy band for warm-up/cool-down; null → zone only
   catalogueId?: string                // the session's catalogue row id — drives the LEGACY ramp backfill (§8 Am.); absent is safe
   onInfo?: () => void                 // opens the zone-education sheet from the main-set ⓘ
+  silhouetteColour?: string           // SESSION-PRERUN-DETAIL-01: getSessionColor(session); draws the session silhouette under the heading. Absent: none
 }
 ```
 

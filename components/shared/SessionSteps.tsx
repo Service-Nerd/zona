@@ -13,6 +13,8 @@
 // Runna-informed (chunked cards, numbered steps, conversational cues) but on
 // Zonna terms: zones over pace-only targets, block totals, Warm Slate restraint.
 
+import SessionSilhouette from './SessionSilhouette'
+import { sessionSilhouette } from '@/lib/plan/sessionSilhouette'
 import React from 'react'
 import IconButton from '@/components/ui/IconButton'
 import type { SessionStructure } from '@/lib/plan/sessionComposer'
@@ -43,6 +45,8 @@ export interface SessionStepsProps {
   catalogueId?: string
   /** Opens the zone-education sheet from the main-set ⓘ. */
   onInfo?: () => void
+  /** SESSION-PRERUN-DETAIL-01 — `getSessionColor(session)`, so a long run draws in `--s-long`. Absent: no silhouette. */
+  silhouetteColour?: string
 }
 
 // ── small style helpers (tokens only — no hex, per the pre-commit hook) ──────
@@ -199,8 +203,9 @@ function SectionCard({
 
 export default function SessionSteps({
   structure, derivedSet, sessionType, displayZones, zoneRangeLabel,
-  metric, preferredUnits, sessionDistanceKm, easyPaceStr, catalogueId, onInfo,
+  metric, preferredUnits, sessionDistanceKm, easyPaceStr, catalogueId, onInfo, silhouetteColour,
 }: SessionStepsProps) {
+  const silhouette = silhouetteColour ? sessionSilhouette(structure, derivedSet ?? null) : null
   const peak = displayZones.length ? displayZones[displayZones.length - 1] : 3
   const mainAccent = peak >= 5 ? 'var(--s-inter)' : peak >= 4 ? 'var(--s-quality)' : 'var(--s-quality)'
   const workDot = mainAccent
@@ -256,6 +261,11 @@ export default function SessionSteps({
   return (
     <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
       <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: FONT, color: 'var(--mute)', marginBottom: 'var(--space-3)' }}>Session structure</div>
+      {silhouette && silhouetteColour && (
+        <div style={{ marginBottom: 'var(--space-3)' }}>
+          <SessionSilhouette segments={silhouette} colour={silhouetteColour} />
+        </div>
+      )}
 
       {/* Warm-up */}
       <SectionCard name="Warm-up" accent="var(--moss)" tintPct={13} totalStr={wuTotal} zoneStr={formatZone(structure.warmup.zone)} paceStr={easyPaceStr}>

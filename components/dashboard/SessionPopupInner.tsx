@@ -1392,6 +1392,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                 easyPaceStr={aerobicPace ?? null}
                 catalogueId={(session as { catalogue_id?: string }).catalogue_id}
                 onInfo={() => setZoneSheetOpen(true)}
+                silhouetteColour={getSessionColor(session)}
               />
             )
           })()}
