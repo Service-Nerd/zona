@@ -125,3 +125,4 @@ and `watchedSignals.test.ts` fails the build when a new detector has no descript
 ⚠️ **`adjustmentsDisclosureOpen` no longer exists.** It was local state with one reader, and
 the reader went with the chevron.
 
+- **Text colour (ACCENT-TEXT-CONTRAST-01, Design Board 6t-g, 2026-10-22):** small text in this component never takes a session hue or `--moss`: moss text uses `--moss-strong`, session-hue text `--ink-2`; the hue stays on marks (rails, dots, tints, glyphs). Held by `lib/ui/accentText.test.ts`.

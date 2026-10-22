@@ -79,3 +79,5 @@ steps of the same two hues. Do not reintroduce a literal.
 
 Where each surface places the byline, and the `MICRO_LABELS.eyebrow` role-line treatment, which
 `microLabel.test.ts` owns. Nothing here has run on a device.
+
+- **Text colour (ACCENT-TEXT-CONTRAST-01, Design Board 6t-g, 2026-10-22):** small text in this component never takes a session hue or `--moss`: moss text uses `--moss-strong`, session-hue text `--ink-2`; the hue stays on marks (rails, dots, tints, glyphs). Held by `lib/ui/accentText.test.ts`.

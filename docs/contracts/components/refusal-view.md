@@ -77,3 +77,5 @@ interface RefusalViewProps {
 the 44px floor at 44 and 47px).
 
 > 📐 **`ADJUST-JOURNEY-TYPE-01` (2026-10-14) — type only, contract unchanged.** 13px converged to **Body 14/400** and weight 500 → 600. **No prop, no state, no behaviour**, and the 44px tap floor is untouched. Recorded because the docs audit flags any component change and an unanswered flag is indistinguishable from a missed one.
+
+- **Text colour (ACCENT-TEXT-CONTRAST-01, Design Board 6t-g, 2026-10-22):** small text in this component never takes a session hue or `--moss`: moss text uses `--moss-strong`, session-hue text `--ink-2`; the hue stays on marks (rails, dots, tints, glyphs). Held by `lib/ui/accentText.test.ts`.

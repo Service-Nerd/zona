@@ -249,3 +249,5 @@ gate** — `lib/health/activityTitle.test.ts` asserts the condition's source for
 to `isComplete && completion?.strava_activity_name &&` fails that arm.
 
 **Strength session title (STRENGTH-SESSION-TITLE-01, 2026-10-19).** Any strength session's name comes from `strengthSessionTitle(session)` (`lib/strength-bridge/display.ts`), read from what it holds (*Lower body*, *Upper body and light legs*, else the kind title), never `STRENGTH_KIND_TITLE[kind]`. Gate: `lib/strength-bridge/sessionTitle.test.ts`.
+
+- **Text colour (ACCENT-TEXT-CONTRAST-01, Design Board 6t-g, 2026-10-22):** small text in this component never takes a session hue or `--moss`: moss text uses `--moss-strong`, session-hue text `--ink-2`; the hue stays on marks (rails, dots, tints, glyphs). Held by `lib/ui/accentText.test.ts`.
