@@ -12,7 +12,15 @@ const VIEW_W = 300
 export const SILHOUETTE_HEIGHT_PX = 40
 const GAP = 1.5
 
-export default function SessionSilhouette({ segments, colour, height = SILHOUETTE_HEIGHT_PX }: { segments: SilhouetteSegment[]; colour: string; height?: number }) {
+export interface SessionSilhouetteProps {
+  /** `sessionSilhouette(structure, derivedSet)`: minutes and zone level per segment. */
+  segments: SilhouetteSegment[]
+  /** `getSessionColor(session)`: a `var(--s-…)` token. */
+  colour: string
+  height?: number
+}
+
+export default function SessionSilhouette({ segments, colour, height = SILHOUETTE_HEIGHT_PX }: SessionSilhouetteProps) {
   const total = segments.reduce((a, s) => a + s.mins, 0)
   if (total <= 0) return null
   let x = 0
