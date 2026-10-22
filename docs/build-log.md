@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — WARN-TEXT-CONTRAST-01 · the coaching amber, a shade darker for words
+**Shipped:** Coaching notes and warnings written in amber now use the darker amber. Same colour family, readable on white.
+
+**Dev learning:** 25 places wrote the warning colour as text at 3.25 to 1. The darker shade already existed and the website already used it; the app had never been switched. Shipped inside ACCENT-TEXT-VARIABLE-01 and held by the same test.
+
+**Product learning:** Amber is how the app says "worth knowing", so it's the colour most often read in a hurry.
+
+**AI-building learning:** The amber used as decoration (borders, the AI mark) keeps the lighter shade; only words moved.
+
+**The honest bit:** No one had flagged this. It was found by measuring the board's rule, not by looking.
+
+---
+
 ## 2026-10-22 — ACCENT-TEXT-VARIABLE-01 · the colours were hiding under other names
 **Shipped:** Small coloured labels now use each colour's darker text shade where it has one, or dark text where it doesn't. Zone names show a coloured dot with the name in dark text. The warning amber in coaching notes is a shade darker and easier to read.
 
