@@ -1031,6 +1031,20 @@ answers in a line what three rounds of reasoning did not.
 ---
 
 
+## 6t-i. UNMEASURED-DISTANCE-01 — name the gap, then let the runner fill it (2026-10-22)
+
+| Decision | Status | Why |
+|---|---|---|
+| **An unmeasured distance never renders `0km`; it reads "Distance not recorded" in `--mute`** | 🟢 **SHIP** (defect fix, HK-ZERO-DISTANCE-RUN-01's intent) | Live today: a 48 min Peloton run shows *Actual: 0km* in the logged session (`SessionPopupInner`: `Number.isFinite(0)` passes, so 0 m formats as a distance) |
+| **"Add the distance" on its own full-width row under the planned/actual block** | 🟢 **SHIP WITH AMENDMENT** | Prototyped inside the half-width Actual column at 375px it wrapped into a two-line uppercase label that read as a heading (Wroblewski). Existing inline text-action style (LOG-ONE-INTENTION-01) |
+| **The input reuses `ManualRunModal`'s whole/decimal stepper, prefilled with the planned distance** | 🟢 **SHIP** | The ratified distance control (STEPPER-CONTROL-01); one or two taps for a runner who read the belt |
+| **After entry: "8km · you added this" (muted); changeable; never offered when the device measured one** | 🟢 **SHIP** | Provenance without a badge (Collins, Silvanto); fill-only per the architecture ruling |
+| **The same row on the post-run screen** when the run arrives with no distance | 🟢 **SHIP** | The runner knows the number at the end of the run, not tomorrow (Sierra) |
+
+👤 **Words to the founder:** "Distance not recorded", "Add the distance", "you added this", the input's title. Check (with the
+build): unmeasured never renders `0km`; the action is absent when measured; the provenance label shows when reported.
+⛔ Veto: none. ⚠️ Prototype was local and deleted; the entry overlay itself was not captured. Not built.
+
 ## 6t-h. ACCENT-TEXT-VARIABLE-01 — use the ratified text shade where one exists; amends 6t-g (2026-10-22)
 
 🔴 **Second token-layer miss of the day, recorded so it is not a third.** 6t-g declined "a darker text variant per hue"

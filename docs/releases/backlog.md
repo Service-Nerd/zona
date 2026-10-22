@@ -158,8 +158,9 @@ auditability) and not only on `session_completions` (off-plan Peloton runs have 
 **fill-only** action (refused when the device measured one); one resolver `runDistance(row)` → measured, else reported
 (marked), else null; ADR-011 §3 amended in the build commit. FREE. Measured: 16 files read `distance_m`.
 🏃 **COACHING BOARD RULED 2026-10-22, CORRECT WITH AMENDMENT:** reported distance counts for volume, load, display (labelled)
-and auto-match; NEVER for VDOT, race-time or wizard estimates, or any pace-based score (coaching-rulings). **Next: Design
-Board prototype of the field** (on the logged session when the run has no distance), then build.
+and auto-match; NEVER for VDOT, race-time or wizard estimates, or any pace-based score (coaching-rulings). 🧭 **DESIGN BOARD RULED 2026-10-22 (6t-i), SHIP WITH AMENDMENT:** "0km" → "Distance not recorded" (a live defect);
+a full-width "Add the distance" row; the existing ManualRunModal stepper prefilled with the planned distance; "8km · you
+added this" after; the same row on the post-run screen. 👤 **Founder to approve the four wordings, then build.**
 
 ### 🔲 `LONGRUN-BLOCKED-DAY-01` — the engine puts the long run on a blocked day when both weekend days are blocked 🏃 **COACHING BOARD** *(filed 2026-10-18)*
 
