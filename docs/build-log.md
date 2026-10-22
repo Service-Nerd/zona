@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — REP-UNITS-01 · a 400 is a 400
+**Shipped:** Interval reps now read the way they were written: 400m, 1600m, 1km. A miles runner saw a 400 as "0.2mi", and a 300 as "0.2mi" too.
+
+**Dev learning:** The design doc already said a 400 m rep reads 400 m. The code converted it anyway, and no test asserted the rule, so nothing went red. The new test reads every distance rep from the catalogue and checks both units, and its first run failed on an empty list because I imported the wrong name. That arm is there for exactly that.
+
+**Product learning:** The founder asked whether the app picks km or mile repeats for the runner. It doesn't: every rep is fixed metres and only the display changed. That's right for track reps, which are metric everywhere, and wrong for a session called "Mile repeats" handed to a km runner. That half is the Coaching Board's next.
+
+**AI-building learning:** One rule, no threshold. Wroblewski wanted long reps converted for miles runners; 1.2mi isn't a round road distance either, so converting buys nothing.
+
+**The honest bit:** Three of our 49 runners use miles. The fix matters more for the 46 who saw "0.4km" for a track 400.
+
+---
+
 ## 2026-10-22 — CD-1-MILE-CRUISE-01 · the drawing was right, the sentence was wrong
 **Shipped:** Mile repeats no longer calls itself "long threshold reps". It now says what makes it different from cruise intervals: you get a split to compare.
 
