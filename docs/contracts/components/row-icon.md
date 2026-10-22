@@ -5,7 +5,7 @@
 ## Prop Interface
 
 ```typescript
-type GlyphName = 'dumbbell' | 'plus' | 'history' | 'adjust' | 'settings' | 'link' | 'question' | 'mail'
+type GlyphName = 'run' | 'walk' | 'dumbbell' | 'plus' | 'history' | 'adjust' | 'settings' | 'link' | 'question' | 'mail' | …  // keys of GLYPHS
   | 'calendar' | 'blocked' | 'route' | 'clock' | 'care' | 'bolt' | 'terrain' | 'star' | 'flag'
 // Both `Glyph` (bare, GLYPH_PX 16, currentColor, aria-hidden) and `RowIcon` (the Glyph in a
 // ROW_ICON_BOX_PX 32 box, --bg-soft ground, --ink-2 glyph) take the same one prop.
@@ -21,6 +21,7 @@ interface RowIconProps {
 - One family (line, stroke 1.2, round caps, the nav's), one size, one container. **The container is never semantic**:
   no session or phase hue, no `--moss`.
 - Add a glyph in `GLYPHS`, never inline in a screen.
+- **`run` / `walk`** (RUNWALK-STEPS-01, §21b Am.4c): only on a run-walk session's steps, via `StepRow.glyph` in `SessionSteps`. Never on Plan or Today rows (STRENGTH-PLAN-GLYPH-01 b, guarded by `strengthPlanGlyph.test.ts`).
 - Decorative: `aria-hidden`. The row's label is its name.
 
 Check: `lib/marketing/iconRule.test.ts`.
