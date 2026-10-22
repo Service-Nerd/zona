@@ -25,7 +25,7 @@
 import React from 'react'
 import type { FatigueTag } from '@/lib/coaching/completionVocab'
 import ZoneBar, { zoneNumberForType } from './ZoneBar'
-import { getSessionLabel } from '@/lib/session-types'
+import { getSessionLabel, type ClassifiableSession } from '@/lib/session-types'
 import { BRAND } from '@/lib/brand'
 import { formatDate } from '@/lib/format'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
@@ -59,6 +59,9 @@ export interface SessionCompleteCardProps {
   /** SESSION-LOGGED-HERO-01 — the sentence for state A when there is no trace (`analysisSentence`), so the card stays
    *  the one zone signal on every logged surface (Design Board 2026-10-22). */
   zoneSentence?: string | null
+  /** SESSION-COMPLETE-LONG-LABEL-01 — the whole session, so the chip names a long run "Long run" (it is `type: 'easy'`;
+   *  `getSessionLabel` classifies by `isLongRun`, never by type). Absent: labelled by `sessionType`, as before. */
+  session?: ClassifiableSession | null
 }
 
 // Three-letter weekday + day + three-letter month — "Wed · 22 May". Short
@@ -101,9 +104,10 @@ export default function SessionCompleteCard({
   ledgerAdvancedThisWeek = false,
   trace = null,
   zoneSentence = null,
+  session = null,
 }: SessionCompleteCardProps) {
   const dateLabel = completedOnLabel(date)
-  const chipLabel = getSessionLabel(sessionType)
+  const chipLabel = getSessionLabel(session ?? sessionType)
   const zone      = zoneNumberForType(sessionType)
   // The analysis's % when there is one; the trace's own when there is not (a free run has no analysis).
   const shownPct  = zonePct ?? trace?.inZonePct ?? null

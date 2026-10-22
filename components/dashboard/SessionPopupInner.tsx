@@ -780,6 +780,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
           <>
             <div style={{ marginBottom: 'var(--space-3)' }}>
               <SessionCompleteCard
+                session={session}
                 sessionType={session.type}
                 date={new Date()}
                 completionCopy={copy}

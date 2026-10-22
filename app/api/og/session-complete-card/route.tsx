@@ -194,7 +194,8 @@ export async function GET(req: NextRequest) {
   const fatigueTag     = (completion?.fatigue_tag as string | null) ?? null
   const completedAt    = completion?.updated_at as string | undefined
   const dateLabel      = formatDate(completedAt ? new Date(completedAt) : new Date())
-  const chipLabel      = getSessionLabel(sessionType)
+  // SESSION-COMPLETE-LONG-LABEL-01 — the whole slot, so a long run (`type: 'easy'`) is labelled "Long run".
+  const chipLabel      = getSessionLabel((planSlot as never) ?? sessionType)
 
   const [interBlack, interBold, interSemi, interRegular] = await Promise.all([
     loadFont('Inter', 800),

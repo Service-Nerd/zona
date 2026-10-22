@@ -6920,6 +6920,7 @@ export function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved
         {showRunHero && (hasFelt ? (
           <div data-run-hero style={{ marginBottom: 'var(--space-3)' }}>
             <SessionCompleteCard
+              session={session}
               sessionType={session.type}
               date={session.rawDate ?? null}
               completionCopy={getCompletionCopy(session.type)}
@@ -7727,6 +7728,7 @@ function PostRunScreen({
           <>
             <div style={{ padding: '0 24px', marginBottom: 'var(--space-3)' }}>
               <SessionCompleteCard
+                session={session}
                 sessionType={session.type}
                 date={new Date()}
                 completionCopy={getCompletionCopy(session.type)}

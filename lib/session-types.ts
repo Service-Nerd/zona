@@ -2,7 +2,7 @@ import { isLongRun } from '@/lib/plan/sessionRole'
 import type { Session, SessionType } from '@/types/plan'
 
 /** The shape `isLongRun` needs: a real classification signal, not a bare string. */
-type ClassifiableSession = { type?: SessionType | string; role?: Session['role']; label?: string | null }
+export type ClassifiableSession = { type?: SessionType | string; role?: Session['role']; label?: string | null }
 
 /**
  * Canonical session type → colour and label resolution.
