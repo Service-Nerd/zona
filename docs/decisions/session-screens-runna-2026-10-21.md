@@ -626,3 +626,45 @@ the condition he set on 2026-10-07 (Kit above the fold), on UX grounds only.
 **Ruling: A, unanimous on UX grounds.** How did it feel → completion card → Kit's read → reflection → Done. Kit below the
 fold is accepted; Wroblewski's condition binds (normal section gap, no extra spacing, Done last). Traynor's commercial
 argument for Kit above the fold is recorded as not answered here: it is a commercial question and his seat is stood down.
+
+---
+
+## Part 10 — Design Board: phase 2 re-sat on settled ground the 10-21 scan missed (2026-10-22)
+
+**Trigger:** building `SESSION-PRERUN-DETAIL-01` (W5 step rows, W3 silhouette, W7 duration range) surfaced rulings the
+Part 2 scan did not read.
+
+### 🔍 Settled ground (missed on 10-21, read now)
+- **`SESSION-STEP-SLOTS-01` (2026-10-06), Option E:** lead = the runner's chosen metric; **line 2 = the target, first,
+  always, on every row**; line 3 = the other metric, then the instruction. **Option C, a sentence in the lead slot, was
+  pre-killed** (`:723`). Runna's *"0.62mi at 13:00/mi"* **is** Option C.
+- **`SESSION-STEP-LEGIBILITY-01` (2026-10-06, re-sat):** a recovery step **always** keeps its role word as the
+  **modality signal**; the `n×` repeat bar is unchanged.
+- **UX-SESSION-GLYPH-01 / `ui-patterns.md`:** *"a second non-verbal encoding of something the colour and the label
+  already carry"* is forbidden.
+- 🔴 **Scan failure, recorded:** Part 2's scan read the register's summary rows and not §21b's amendments, the same class
+  as 6ai. W5 was ruled against ground it did not know it was standing on.
+
+### 📐 Measured (199 v2 sessions from the cohort grid)
+Every non-running step already names its modality in the role word: **jog 232 of 232, stand 12 of 12** (no walk steps
+in the sample). Run steps are the default and say *"Hard"* or the coaching note. The pre-run tiles already show both
+distance and duration through the km / min toggle.
+
+### Seats
+- **Zhuo.** W5 was a preference borrowed from a screenshot, ruled without the rulings. Vacate it rather than defend it.
+- **Silvanto.** The modality glyph is a second encoding of a word that is already there on 100% of the steps it would
+  mark. That is the forbidden pattern, by name.
+- **Sierra.** Option E put the target where the runner's eyes go mid-run, and nothing here is new evidence against it.
+- **Wroblewski.** W7 in the detail is already one tap away (the toggle). Its real value is on the Today card, where the
+  runner plans the morning: keep it for phase 3.
+- **Collins.** I lose W5 and say so: it was the most Runna-like thing in the report, which is exactly why it should not
+  have survived. The silhouette is the one piece that is ours: draw it.
+
+### ⚖️ Ruling
+1. **W5 step rows: DON'T SHIP — vacated** (not permanent). Option E stands. The modality glyph is a duplicate encoding.
+2. **W7 in the pre-run detail: DON'T SHIP** (exists: the toggle). Moves to phase 3, the Today card.
+3. **W3 silhouette: SHIP.** In the *Session structure* header of the pre-run detail, read from the session model
+   (`composeSession` parts + `derived_set` steps), height by prescribed zone, width by minutes. Not on Plan rows. Hidden
+   when the session has no structure. CD-1 evidence (Cruise intervals = Mile repeats) already routed to the Coaching
+   Board.
+4. **So phase 2 is the silhouette alone.**

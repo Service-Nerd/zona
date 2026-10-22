@@ -144,6 +144,14 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-22 — SESSION-PRERUN-DETAIL-01 · W5 step rows VACATED (DON'T SHIP); W7 in the detail DON'T SHIP; W3 silhouette SHIP
+
+Re-sat on ground the 10-21 scan missed: `SESSION-STEP-SLOTS-01` Option E (target first on line 2; a lead-slot sentence
+pre-killed) and `SESSION-STEP-LEGIBILITY-01` (recovery keeps its modality word). Measured: the role word names the modality
+on 232 of 232 jog and 12 of 12 stand steps, so a glyph would duplicate it. Duration is already one tap away in the detail;
+W7 moves to the Today card. Phase 2 = the silhouette in the *Session structure* header. **Collins lost.** Scan failure
+recorded (6ai class). Sitting: `docs/decisions/session-screens-runna-2026-10-21.md` Part 10.
+
 ## 2026-10-22 — SESSION-LOGGED-HERO-01 + POSTRUN-ZONE-TWICE-01 · SHIP WITH AMENDMENT. One home for the zone signal; closing marks DON'T SHIP
 
 Premise re-measured: `POST-LOG-01` already folds a logged session's body. `SessionCompleteCard` becomes the only zone signal

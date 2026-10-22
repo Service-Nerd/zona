@@ -114,10 +114,16 @@ is silence, never a verdict). Question: what the completion copy says when there
 
 ### 🔲 `SESSION-PRERUN-DETAIL-01` — step rows and the session silhouette on the pre-run detail (phase 2) 🧭 **DESIGN BOARD RULED** *(filed 2026-10-21)*
 
+**Re-sat 2026-10-22 (Part 10):** step rows VACATED (Option E stands; the modality glyph duplicates the role word on 100%
+of non-run steps); the duration range moves to the Today card. **Scope now: the silhouette in the *Session structure*
+header only.**
+
 Step rows lead with the bold quantity plus a modality glyph (S6); the silhouette inside the structure header, read from the
 step model, not text; the duration range in the existing tile. Same decision note.
 
 ### 🔲 `SESSION-TODAY-CARD-01` — the Today card: 6 px rail, duration range, silhouette in place of the zone ruler (phase 3) 🧭 **DESIGN BOARD RULED** *(filed 2026-10-21)*
+
+*(2026-10-22: the duration range lands here, moved from phase 2.)*
 
 Nothing added in height; check the website, which renders `SessionCard`. Same decision note.
 
