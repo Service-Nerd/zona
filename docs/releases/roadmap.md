@@ -1329,7 +1329,8 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **The Today card: rail, time range, silhouette** (SESSION-TODAY-CARD-01) | ✅ FREE | S | 🟢 Shipped 2026-10-22: the 6 px rail (app and website); silhouette and time range withdrawn. |
 | **A paid post-run shows time in zone twice** (POSTRUN-ZONE-TWICE-01) | ✅ PAID | S | 🟢 Shipped 2026-10-22 inside SESSION-LOGGED-HERO-01. |
 | **Late heart rate is not stamped** (HR-LATE-STAMP-01) | — | S | ✅ Shipped 2026-10-22 (`97b42f20`): every late arrival stamped; existing rows not backfilled. |
-| **Outdoor / Treadmill: is a control worth building?** (TREADMILL-TOGGLE-01) | — | S | 🔲 Open, filed 2026-10-22. Coaching half ruled (§127): the prescription does not change. Design Board, then SLT. |
+| **Outdoor / Treadmill: is a control worth building?** (TREADMILL-TOGGLE-01) | — | S | ⛔ Ruled 2026-10-22: no toggle (permanent DON'T SHIP). |
+| **A linked run with no distance cannot be given one** (UNMEASURED-DISTANCE-01) | FREE | S | 🔲 Open, filed 2026-10-22. Data ruling, then a prototype. |
 | **Rep distances read as prescribed** (REP-UNITS-01) | FREE | S | ✅ Shipped 2026-10-22 (`c7de7de3`). |
 | **A km runner is given "Mile repeats"** (REP-UNITS-KM-01) | FREE | S | ✅ Shipped 2026-10-22: renamed "1600m repeats". |
 | **A recovery ease cannot trim a minutes-based long run** (READINESS-LONG-DURATION-01) | PAID | S | 🔴 Open, filed 2026-10-17: beginner long runs are timed, the trim reads distance, so the ease changes nothing. |

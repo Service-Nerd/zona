@@ -143,13 +143,14 @@ can you lift?* (1–4) and Change your plan asks *Days you run* (2–6), one pos
 S8 first jump level) and the long-run-day rule for the run row. Icons came off the modify sheet (seven rows, ICON-RULE-01).
 Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
 
-### 🔲 `TREADMILL-TOGGLE-01` — is an Outdoor / Treadmill control worth building? 🧭 **DESIGN BOARD** then 💼 **SLT** *(filed 2026-10-22)*
+### 🔲 `UNMEASURED-DISTANCE-01` — a linked run with no distance cannot be given one 🧭 **DESIGN BOARD** (prototype) + ⚙️ **ARCHITECTURE** (INV-DATA-008 / ADR-011) *(filed 2026-10-22, from TREADMILL-TOGGLE-01)*
 
-The coaching half is ruled (§127, `TREADMILL-EQUIVALENCE-01`): on a treadmill the prescription does **not** change. No
-pace or incline adjustment; the session runs by heart rate or RPE and time, and pace and distance are guides. So a toggle
-can carry only that guidance and a label; it may not alter the session. Measured: 52 of 354 Apple Health runs (15%, 4
-runners) carry no distance, and the health payload has no indoor flag, so only the runner can say. Design rules first (is
-a control or a line of guidance right, and where), then the SLT (is it worth the surface).
+47 of 354 Apple Health runs carry no distance, from 4 runners (three almost entirely: 26/36, 15/15, 9/10). Sources:
+Peloton 26 (no HR, no distance), Garmin Connect 15 and WHOOP 11 (HR, no distance). "Enter it manually" appears only when
+no run is linked, so once a run links the runner cannot add the distance their treadmill or watch showed. First: is a
+runner-entered distance a fill for an absent value, never an override of a measured one, and which gateway writes it
+(INV-DATA-008 allows only `/api/health/ingest` and `healthkitConsolidate`)? Then a prototype of where the field sits.
+The Outdoor/Treadmill toggle itself is a permanent DON'T SHIP (design-rulings 6t-c).
 
 ### 🔲 `LONGRUN-BLOCKED-DAY-01` — the engine puts the long run on a blocked day when both weekend days are blocked 🏃 **COACHING BOARD** *(filed 2026-10-18)*
 

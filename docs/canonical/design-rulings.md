@@ -1031,6 +1031,16 @@ answers in a line what three rounds of reasoning did not.
 ---
 
 
+## 6t-c. TREADMILL-TOGGLE-01 — no Outdoor/Treadmill control; the gap is a missing distance (2026-10-22)
+
+| Decision | Status | Why |
+|---|---|---|
+| **A per-session Outdoor/Treadmill toggle (Runna R1/R2)** | 🔴 **DON'T SHIP, PERMANENT** | It has nothing to switch: §127 (Coaching Board) rules the session does not change indoors. Runna is pace-led; we are heart-rate-led. Wroblewski: a tap on every run for three runners who are nearly always indoors. Reopen only with evidence the prescription should differ indoors |
+| **A profile setting "I mostly run indoors"** | 🔴 **DON'T SHIP** | It could change only guidance, and no need for guidance is shown |
+| **The real gap: a linked run with no distance cannot be given one** | ➡️ **FILED, `UNMEASURED-DISTANCE-01`** | 47 of 354 Apple Health runs carry no distance; Peloton (26) writes neither HR nor distance. "Enter it manually" appears only when no run is linked (`SessionPopupInner`). Needs the INV-DATA-008 / ADR-011 ruling (a runner-entered fill, never an override) and a prototype first |
+
+⛔ Veto: none. ⚠️ Not measured: whether these runners are on a treadmill (sources prove Peloton only); no device.
+
 ## 6t-b. REP-UNITS-01 — a prescribed rep reads as prescribed, in either unit (2026-10-22)
 
 | Decision | Status | Why |
