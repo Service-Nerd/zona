@@ -180,3 +180,5 @@ No prop or behaviour change.
 
 The error branch renders `EmptyState` with one **Try again** action that bumps an internal `attempt` counter,
 which re-runs the load effect. No prop change.
+
+- **Delete account (SESSION-INTERVALS-HUE-01, 2026-10-22):** the confirmation checkbox and the error message use `--danger` / `--danger-bg`, never a session colour. They used `--coral` and `--session-intervals-soft`, which would have turned coral when the intervals hue moved. Held by `lib/ui/intervalsHue.test.ts`.
