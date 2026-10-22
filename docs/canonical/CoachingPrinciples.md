@@ -2243,6 +2243,19 @@ stated rather than invented — `THRESHOLD_WORK_TARGET_MINS` already bounds both
 already enforced. **What would reopen it:** evidence that T-pace should differ between continuous and
 intervallic delivery, which would amend THIS section, not the catalogue.
 
+### §19 Amendment — Cruise intervals and Mile repeats are one stimulus, separated by the anchor *(Coaching Board 2026-10-22, CD-1-MILE-CRUISE-01)*
+
+`tempo_cruise` (10 min at T / 2 min jog) and `threshold_mile_repeats` (1600 m at T / 90 s jog) are **the same stimulus
+by design**, and both stay. Measured (`scripts/board-evidence-cruise-mile.ts`, cohort grid, stride 17): 451 of 2,334
+plans carry both, every one a half or full marathon (54% of HM plans); a mile at T runs 7.6–9.8 min, median 8.8. What
+separates them is the **anchor**: a mile has a split the runner can compare week to week, a 10-minute rep does not
+(McMillan). Merging them is CD-1's depth veto again. Hutchinson: *"call it one adaptation and be honest about why there
+are two rows."* So the Mile repeats purpose names the split, and no longer calls the reps "long": beside Cruise in the
+same plan they are the shorter of the two. The session silhouette drawing them alike is correct.
+
+No numeric and no invariant: `THRESHOLD_WORK_TARGET_MINS` bounds both, and a purpose sentence is copy, not a plan
+property. ⚠️ The purpose wording awaits the founder.
+
 **Known limitation (SC-08).** The invariant's easy-direction check is *label*-based, unlike the engine's, because the plan session carries no reference to the catalogue row that produced it — the reps and the category are re-joined at display time by matching the session's name. When SC-08 puts the row's identity on the session, re-key this check on the structural category. Until then, a hand-written or AI-rewritten label that avoids the four watched words can still evade it.
 
 ---
