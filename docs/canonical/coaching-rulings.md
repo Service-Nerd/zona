@@ -56,6 +56,15 @@ incline adjustment (the 1% rule's evidence starts at 2.92 m/s and every prescrib
 rate or RPE and time; pace and distance are guides. A toggle that changes the prescription is INCORRECT. Whether to build
 a toggle or guidance line goes back to the Design Board and SLT. No numeric, no invariant.
 
+## 2026-10-22 — UNMEASURED-DISTANCE-01 (consumers) · CORRECT WITH AMENDMENT (volume yes, fitness never)
+
+A runner-reported distance (a run whose device wrote none: 47 of 354 Apple Health runs; Peloton 26, Garmin Connect 15,
+WHOOP 11) may feed weekly volume and load, the session's displayed distance and pace (labelled runner-reported) and
+auto-match. It must NEVER feed VDOT or any fitness estimate (`aerobicEstimate`, `race-times`, the wizard benchmark), or
+any pace-based score or zone claim: a home treadmill's belt distance can be 5–10% out (Hutchinson). Counting it as volume
+is safer than counting zero for load (Willy). No numeric. Check with the build: the fitness estimators read only
+measured distance. Not built; architecture ruled the storage (backlog), Design Board next.
+
 ## 2026-10-22 — RUNWALK-WARMUP-01 · CORRECT WITH AMENDMENT (the run-walk warm-up is a 5 min walk)
 
 §16 requires a warm-up, not a running one; `composeSession` gives every easy run a 10 min continuous run, against §117
