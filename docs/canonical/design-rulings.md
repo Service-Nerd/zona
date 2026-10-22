@@ -144,6 +144,14 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-22 — SESSION-LOGGED-HERO-01 + POSTRUN-ZONE-TWICE-01 · SHIP WITH AMENDMENT. One home for the zone signal; closing marks DON'T SHIP
+
+Premise re-measured: `POST-LOG-01` already folds a logged session's body. `SessionCompleteCard` becomes the only zone signal
+on every logged surface; `RunFeedbackCard` drops its zone row (score chip and Kit stay). Post-run: How did it feel → card →
+Kit. Reopened session, every tier: the card first when RPE exists (else *"How did it feel?"* opening the fold) → Kit /
+locked preview → Up next → Unlink → the fold. **Closing marks: DON'T SHIP** (not permanent; the card is the ritual). Kit
+below the fold on post-run is a **founder decision**. Sitting: `docs/decisions/session-screens-runna-2026-10-21.md` Part 9.
+
 ## 2026-10-21 — SESSION-SCREENS-WOW-01 (location) · SHIP WITH AMENDMENT. The trace goes in `SessionCompleteCard`, not `RunFeedbackCard`
 
 The named slot was paid-only and the SLT made the trace free. `SessionCompleteCard` is the free, after-RPE peak-end card

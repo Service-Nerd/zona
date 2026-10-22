@@ -542,3 +542,67 @@ Coaching: done (Part 7). Design: the location amendment above. SLT: done. Founde
 Every sentence comes from one selector (tested at 10, 20, the late rule, quality vs easy) · the trace appears only
 with 100+ samples and only after RPE · states L2–L5 render exactly as today · no must-not-lose element disappears
 (markup arms, falsified) · the OG PNG shows the trace · full suite green · seen at 375 px on real traces.
+
+---
+
+## Part 9 — Design Board: the smaller 1b and POSTRUN-ZONE-TWICE-01 (2026-10-22)
+
+**Asked:** the founder approved taking the re-scoped 1b and the duplicated time-in-zone to the board.
+**Premise re-measured before the sitting** (the item was a snapshot): `POST-LOG-01` (2026-05-16) already folds the whole
+session body on a logged session behind *"Session details · tweak how it felt"*, closed by default. So the
+*"What was planned"* fold the board ruled in Part 5 **already exists**. What does not:
+1. **A free runner reopening a logged session sees none of their own run**: `LockedCoachingPreview` leads and the
+   planned-vs-actual summary is inside the closed fold.
+2. **The trace never appears on a reopened session**; it lives on `SessionCompleteCard`, shown only straight after RPE.
+3. **Time in zone is shown twice** on a paid post-run: `RunFeedbackCard`'s zone row (verdict line + % + bar) and
+   `SessionCompleteCard` state A (% + ZoneBar, now the trace) directly below it.
+
+### 🔍 Settled ground
+- **POSTRUN-JOURNEY-01 part 1 (founder's overturn, 2026-10-07):** on post-run *the zone signal leads, Kit immediately
+  below, above the fold at 390 pt*; the score stays a collapsed chip. Traynor's argument (the paid read is what they pay
+  for) is recorded as not withdrawn; Kit-above-the-fold was its mitigation.
+- **RPE asked before the read** (post-run).
+- **COMPLETE-01:** `SessionCompleteCard` is the peak-end artefact and the closing moment (*"Logged."* + the voice anchor).
+- **UX-POSTRUN-01:** no dashboards; *Up next* before *Unlink* (Wood).
+- **Gate richness, never access.**
+- Guarded by `lib/ui/postRunOrder.test.ts` (order and absence, source-shaped).
+
+### Seats
+- **🧭 Zhuo (chair).** The board ruled 1b on a premise that was half false, and the honest response is a smaller ruling,
+  not a defence of the old one. The decision underneath both questions is the same: **one zone signal, in one place, on
+  every logged surface**, and the place that is free, shared and closing is the completion card.
+- **✋ Silvanto.** Two zone signals stacked is the "hierarchy of horizon" failure in its plainest form: the same fact,
+  twice, a centimetre apart. Make the card the only home of it, and Kit's read carries words only.
+- **🎓 Sierra.** On a reopened session the free runner should meet their own run, not a sales card. And the closing
+  marks: the card already closes the session (*"Logged."*, *"Hold the zone."*). Three marks on top of that are a
+  checklist; for a hand-logged runner two would never tick. Drop them.
+- **📱 Wroblewski.** Measured: the card with a trace is ~450 px at 375. Put it under *How did it feel* on post-run and
+  Kit's read starts below the fold on every phone. That **breaks the mitigation the founder accepted on 10-07**. It is
+  his call, not ours, and he should see it as a choice. On reopen, respect RPE-before-read: if no RPE was given, show one
+  line, *"How did it feel?"*, opening the fold, and no card.
+- **🎪 Collins.** The card is the moment and the share; putting it first is right. I would also say Kit below the fold is
+  fine because the number is what they came for, but that is the founder's overturn to revisit, not mine to wave away.
+
+### ⚡ Recorded disagreement
+Collins would accept Kit below the fold; Wroblewski and Silvanto would not decide it for the founder. **Unresolved here
+by design: routed to the founder.**
+
+### ⚖️ Ruling: SHIP WITH AMENDMENT
+1. **One home for the zone signal:** `SessionCompleteCard` (trace when rich; % + bar when sparse; RPE / 10 when no HR) on
+   every logged surface. **`RunFeedbackCard` loses its zone row** (verdict line, %, bar) wherever the card sits above it;
+   the score chip and Kit's read stay. The card's sentence comes from `traceSentence` for every state with a %, so the
+   verdict line's job is not lost. Resolves `POSTRUN-ZONE-TWICE-01`.
+2. **Post-run order:** How did it feel → **the completion card** → Kit's read → reflection → Done. Keeps *number before
+   words* and *RPE before the read*. ⚠️ **Kit moves below the fold** (estimate from the measured 450 px card): a
+   **founder decision**, presented as one.
+3. **Reopened logged session, every tier:** the completion card first **when RPE exists**, else one line *"How did it
+   feel?"* that opens the existing fold → Kit's read (paid) / `LockedCoachingPreview` (free) → Up next → Unlink → the
+   existing *Session details* fold, unchanged.
+4. **Closing marks: DON'T SHIP** (not permanent). The completion card is the closing ritual; marks that cannot all tick
+   for every tier are a checklist.
+5. **Checks:** `postRunOrder.test.ts` amended to the new order; a check that no logged surface renders two zone signals;
+   a check that a free reopened session renders the card before the locked preview; each falsified.
+
+**Founder decision needed before build:** on post-run, the card under *How did it feel* puts Kit's read below the fold
+(it is above today, by his 10-07 condition). **A:** accept it (the number leads, Kit follows). **B:** keep Kit above the
+fold by putting Kit's read first and the card after it, which keeps today's order but leaves the number second.
