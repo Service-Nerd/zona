@@ -1031,6 +1031,17 @@ answers in a line what three rounds of reasoning did not.
 ---
 
 
+## 6t-g. ACCENT-TEXT-CONTRAST-01 — a session hue is never small text (2026-10-22)
+
+| Decision | Status | Why |
+|---|---|---|
+| **Session hues and `--moss` never colour text under 18.7px bold / 24px regular; that text is `--ink` / `--ink-2`** | 🟢 **SHIP (not built)** | Measured on the REAL backgrounds: on its own 15% header tint, easy 4.19, quality 2.80, coral 2.86, race 3.18, recovery 3.79, cross 3.39, moss 3.13 (only long 5.25 and strength 4.80 pass 4.5). The header label is 11px bold. The tint, dot and word already carry the section; colour in the text costs legibility, outdoors most of all (Wroblewski) |
+| **Hue stays on graphics** (rail, dot, header tint, bars, silhouette, glyphs, the Z5 segment) | 🟢 **SHIP** | "Type accent, not flood" (Silvanto): colour is data on marks, ink on words |
+| **A darker text variant per hue** (Collins) | 🔴 **NOT GRANTED** | Nine new tokens, a second colour language in all but name, to rescue decoration. **Collins lost**; reopen on a device test showing headers lose their identity. `--danger-strong` stays the one text variant, for errors |
+| **Large text** | 🟢 keeps its hue only where it measures ≥ 3:1 on its real background |
+
+Scope measured: **66 literal sites in 23 files + 7 via a variable** (`accent`, `mainAccent`, `sessionColour`). Check (with the build): a test that fails on a session hue as small text, contrast computed on the real backgrounds, the 73 existing sites as a debt list that may only shrink. ⛔ Veto: none. ⚠️ Not measured: outdoors or on a device.
+
 ## 6t-f. SESSION-INTERVALS-HUE-01 — one owner for a session's hue; the intervals colour is the error red (2026-10-22)
 
 | Decision | Status | Why |

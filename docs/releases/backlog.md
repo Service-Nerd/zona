@@ -150,6 +150,11 @@ The session hue is also TEXT: the main-set section header ("MAIN SET · 25 min �
 for 11–15px text; `--s-easy` 5.12 and `--s-long` 6.52 pass. Pre-existing for amber on every quality session. Question:
 text in `--ink-2` with the hue kept for graphics, a darker text variant per hue, or a measured exemption.
 
+🧭 **RULED 2026-10-22 (design-rulings 6t-g), SHIP:** a session hue (and `--moss`) is never small text; that text is
+`--ink` / `--ink-2`, the hue stays on graphics. Re-measured on the real backgrounds: 7 of 9 hues fail on their own 15%
+header tint (quality 2.80, coral 2.86). Per-hue text variants declined (Collins lost). Scope: 66 literal sites in 23 files
+plus 7 via a variable. Ready to build, with a shrink-only debt gate.
+
 ### 🔲 `UNMEASURED-DISTANCE-01` — a linked run with no distance cannot be given one 🧭 **DESIGN BOARD** (prototype) + ⚙️ **ARCHITECTURE** (INV-DATA-008 / ADR-011) *(filed 2026-10-22, from TREADMILL-TOGGLE-01)*
 
 47 of 354 Apple Health runs carry no distance, from 4 runners (three almost entirely: 26/36, 15/15, 9/10). Sources:

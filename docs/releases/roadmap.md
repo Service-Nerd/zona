@@ -1335,7 +1335,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **A run-walk session is a sentence, not steps** (RUNWALK-STEPS-01) | FREE | M | ✅ Shipped 2026-10-22: walk warm-up, n × (Run 6 / Walk 1), run/walk icons. |
 | **Two colour answers for a VO2 or hill session** (SESSION-INTERVALS-HUE-01) | — | S | ✅ Shipped 2026-10-22: one hue owner, `--s-inter` = `#D4705A`, VO2 reaches it by catalogue row. |
 | **The session detail takes the session hue** (SESSION-HUE-OWNER-01) | FREE | S | ✅ Shipped 2026-10-22. |
-| **Session accents as small text fall below AA** (ACCENT-TEXT-CONTRAST-01) | — | S | 🔲 Open, filed 2026-10-22, Design Board. |
+| **Session accents as small text fall below AA** (ACCENT-TEXT-CONTRAST-01) | FREE | M | 🧭 Ruled 2026-10-22 (6t-g): hue never small text; 73 sites; ready to build. |
 | **Rep distances read as prescribed** (REP-UNITS-01) | FREE | S | ✅ Shipped 2026-10-22 (`c7de7de3`). |
 | **A km runner is given "Mile repeats"** (REP-UNITS-KM-01) | FREE | S | ✅ Shipped 2026-10-22: renamed "1600m repeats". |
 | **A recovery ease cannot trim a minutes-based long run** (READINESS-LONG-DURATION-01) | PAID | S | 🔴 Open, filed 2026-10-17: beginner long runs are timed, the trim reads distance, so the ease changes nothing. |
