@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — PLAN-CHANGE-HEADER-01 · three screens, one journey, three ways to scroll
+**Shipped:** Adjust your plan and the "Here is what changes" screen now keep their title and back arrow pinned when you scroll, the same as Strength setup.
+
+**Dev learning:** The rule already existed (a pushed screen pins its header; only a lone arrow floats). Both screens became pushed screens AFTER it was written, and the floating-arrow test had them on an exemption list that said the confirm screen was "short by construction". A long diff is not short. An exemption carries its own expiry condition, and nobody re-reads it.
+
+**Product/creator learning:** The founder spotted it in seconds from two screens in a row. The fix was a conformance, not a decision: the board's answer was already in the register.
+
+**AI-building learning:** I quoted a commit id in my last reply that I had not looked up, and it was wrong. Caught on the next turn. A number in a sentence to the founder needs the same check as a number in a doc.
+
+**The honest bit:** The preview page is too short to scroll, so I verified the pin by its CSS, not by watching it hold.
+
+**Hook material:** "Short by construction. If it ever scrolls, that is the defect." It scrolled.
+
+**Postable?:** maybe
+
 ## 2026-10-22 — PLAN-DOORS-01 · the same door, wearing the same face
 **Shipped:** The run-plan and strength doors are each drawn once and used on Plan, Me and the Adjust screen, so they look identical wherever you meet them; Me can now adjust the current plan, and Back from Strength returns to where you were.
 
