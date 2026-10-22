@@ -49,6 +49,12 @@ slot was a Nordic curl 25% of the time; the Nordic curl, hamstring curl and kett
 🔴 **Not the catalogue's, and still open:** a runner's first jump is bounding or a drop jump (`STRENGTH-PLYO-BUDGET-01`).
 Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 
+## 2026-10-22 — SESSION-TODAY-CARD-01 (time range) · CORRECT WITH AMENDMENT (an estimate, marked `~`)
+
+An easy run's pace is a ceiling (*"or slower"*, CD-11 / §12), so a range from the band's two ends may not read as a limit.
+Shown as `~35–41 min`, the app's estimate mark, easy, recovery and long runs only. Adds no prescription. Sitting: decision
+note Part 12.
+
 ## 2026-10-21 — SESSION-SCREENS-WOW-01 (trace sentences) · CORRECT WITH AMENDMENT (reuse §12's two thresholds)
 
 *"You held the zone."* only at ≤10% above the ceiling (§12 Am.2 praise); >10–20% states the minutes with no

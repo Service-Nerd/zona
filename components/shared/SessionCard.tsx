@@ -56,6 +56,10 @@ type Props = {
   eased?: boolean
 }
 
+/** SESSION-TODAY-CARD-01 (Design Board 2026-10-22, Silvanto's amended W4) — the type rail, widened from 3 px. Colour
+ *  is the session's identity at a glance; this is the one place it is allowed to be a stripe. App and website alike. */
+export const SESSION_CARD_RAIL_PX = 6
+
 export default function SessionCard({
   type,
   role,
@@ -127,7 +131,7 @@ export default function SessionCard({
       {/* Left accent bar */}
       <div
         style={{
-          width: '3px',
+          width: `${SESSION_CARD_RAIL_PX}px`,
           flexShrink: 0,
           background: accentColor,
           opacity: renderAsDone ? 0.3 : isSkipped ? 0.2 : 1,

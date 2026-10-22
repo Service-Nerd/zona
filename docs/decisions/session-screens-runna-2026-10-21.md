@@ -704,3 +704,28 @@ reads at 375 px is ~30–40 px (the detail's is 40). Swapping them adds ~26–36
    runs with a pace band, only when the card leads with distance. From one owner, through `formatDuration`.
 4. **Check:** the card's height unchanged at 375 px with the range; the range absent on quality runs and in duration
    mode; the rail width from the constant.
+
+---
+
+## Part 12 — Coaching Board: may the Today card show a time range on an easy run? (2026-10-22)
+
+**Trigger:** soft, qualifies: a number the runner reads as guidance about effort. **Question:** easy, recovery and long
+runs display their pace as a ceiling (*"6:45 /km or slower"*, `easyPaceAsCeiling`; CD-11 / §12: *"'or slower' is ratified
+doctrine"*). A time range from both ends of the stored band (*"35–41 min"*) states a slow end the doctrine does not impose.
+
+**Conflict scan:** §12 (easy is a ceiling, not a band), CD-11 (*or slower*, never a ≤), §12 Am.2 (praise vs accusation,
+not touched), P-04 (what happened vs why, not touched). No conflict with the zone model.
+
+- **🏃 Hutchinson (chair).** The slow end of the band is the engine's own estimate of an easy pace, not a limit. Read as a
+  bound, *"35–41 min"* tells a runner who jogs at 8:00 that they overran. Read as an estimate, it is true and useful.
+  So it must be marked as an estimate, which this app already has a mark for.
+- **📊 Seiler.** Easy has no slow limit; nothing here may suggest one.
+- **🎯 McMillan.** A day-job runner plans the morning by the longer number, so give both ends; just do not make the
+  longer one sound like a deadline.
+- **🩹 Willy.** No load claim. No objection.
+- **⚕️ Sims.** No objection. **💪 Blagrove.** Not this seat's domain.
+
+**Ruling: CORRECT WITH AMENDMENT.** The range shows with the app's estimate mark, **`~35–41 min`**, as the card already
+marks estimated distances (`~2km`). It is an estimate of how long the run takes at the band's two ends, not a limit; no
+other wording. Not a principle, numeric or invariant: it reads the stored band and adds no prescription (recorded as
+not mechanically checkable by `validatePlan()`; the format is tested).
