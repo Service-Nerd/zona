@@ -143,6 +143,14 @@ can you lift?* (1–4) and Change your plan asks *Days you run* (2–6), one pos
 S8 first jump level) and the long-run-day rule for the run row. Icons came off the modify sheet (seven rows, ICON-RULE-01).
 Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
 
+### 🔲 `TREADMILL-TOGGLE-01` — is an Outdoor / Treadmill control worth building? 🧭 **DESIGN BOARD** then 💼 **SLT** *(filed 2026-10-22)*
+
+The coaching half is ruled (§127, `TREADMILL-EQUIVALENCE-01`): on a treadmill the prescription does **not** change. No
+pace or incline adjustment; the session runs by heart rate or RPE and time, and pace and distance are guides. So a toggle
+can carry only that guidance and a label; it may not alter the session. Measured: 52 of 354 Apple Health runs (15%, 4
+runners) carry no distance, and the health payload has no indoor flag, so only the runner can say. Design rules first (is
+a control or a line of guidance right, and where), then the SLT (is it worth the surface).
+
 ### 🔲 `LONGRUN-BLOCKED-DAY-01` — the engine puts the long run on a blocked day when both weekend days are blocked 🏃 **COACHING BOARD** *(filed 2026-10-18)*
 
 Measured 2026-10-18: across 512 generated plans, a long-run day outside the run days put the long run on a BLOCKED

@@ -49,6 +49,13 @@ slot was a Nordic curl 25% of the time; the Nordic curl, hamstring curl and kett
 🔴 **Not the catalogue's, and still open:** a runner's first jump is bounding or a drop jump (`STRENGTH-PLYO-BUDGET-01`).
 Sitting: `docs/decisions/strength-catalogue-review-2026-10-17.md`.
 
+## 2026-10-22 — TREADMILL-EQUIVALENCE-01 · CORRECT WITH AMENDMENT (the prescription does not change)
+
+Routed by the Design Board (Outdoor/Treadmill toggle). §127: on a treadmill the same zones and session; no pace or
+incline adjustment (the 1% rule's evidence starts at 2.92 m/s and every prescribed easy pace is slower); run by heart
+rate or RPE and time; pace and distance are guides. A toggle that changes the prescription is INCORRECT. Whether to build
+a toggle or guidance line goes back to the Design Board and SLT. No numeric, no invariant.
+
 ## 2026-10-22 — CD-1-MILE-CRUISE-01 · CORRECT WITH AMENDMENT (keep both; the anchor is the difference)
 
 `tempo_cruise` and `threshold_mile_repeats` are one T-pace stimulus by design (mile median 8.8 min vs 10; jog 90 s vs 2

@@ -11449,3 +11449,24 @@ session fields, sharing no predicate with `canDouble`); strength `S-NO-STRENGTH-
 **Board:** `SESSION-SLOTS-01`, 2026-10-17, CORRECT WITH AMENDMENT
 (`docs/decisions/same-day-doubles-coaching-2026-10-17.md`).
 
+## 127. A treadmill changes how a session is measured, not what it prescribes *(Coaching Board 2026-10-22, TREADMILL-EQUIVALENCE-01)*
+
+**Principle.** On a treadmill the prescription is unchanged: the same zones, the same session, no pace adjustment and no
+incline prescribed. What changes is measurement. Watch distance and pace on a belt are estimates, so the session is run
+by heart rate or RPE and by time; pace and distance are guides, and a distance never measured stays unmeasured
+(`HK-ZERO-DISTANCE-RUN-01`). A control that alters the prescription for a treadmill is outside this principle. Whether a
+toggle or a line of guidance is worth building is the Design Board's and the SLT's.
+
+**Why no incline.** The 1% rule comes from Jones & Doust (1996): trained men, 2.92–5.0 m/s, correcting for air
+resistance, which grows with speed. Measured on the cohort grid (413 plans, stride 97): the fast end of every prescribed
+easy pace is slower than 2.92 m/s (median 7:00/km, fastest 5:45/km). The correction is outside its evidence for every
+easy run this product prescribes, and the cohort was male (Sims). The heart-rate ceiling needs no surface term (§12,
+§14); indoor heat raises heart rate at the same pace, and the ceiling handles that by asking the runner to slow down.
+
+**Practical, not prescriptive (McMillan).** Short reps and strides fight the belt's acceleration lag; a fan matters more
+than a gradient (Sims). No surface may claim a treadmill is safer or riskier for injury (Willy).
+
+**Measured, and why it matters.** 52 of 354 live Apple Health runs (15%, 4 runners) carry no distance; the health payload
+carries no indoor flag, so the app cannot tell a treadmill run from an outdoor one without the runner saying so.
+
+**No numeric, no invariant**: nothing new is prescribed, so there is nothing new to check, stated rather than invented.
