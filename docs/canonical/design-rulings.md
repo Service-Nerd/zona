@@ -1031,6 +1031,18 @@ answers in a line what three rounds of reasoning did not.
 ---
 
 
+## 6t-e. RUNWALK-STEPS-01 — the prototype (390px, real SessionSteps) · SHIP WITH AMENDMENT when built (2026-10-22)
+
+| Decision | Status | Why |
+|---|---|---|
+| **Run/walk glyph pair on run-walk steps only** | 🟢 **SHIP** | Read at 16px in the existing family; run in the session hue, walk in `--mute`. Tells a runner which part they are in mid-run (Wroblewski). Drawn in `RowIcon.tsx`, never in a screen |
+| **The remainder run sits OUTSIDE the repeat block, after a "then" line** | 🟢 **SHIP** | In the prototype the 5 min remainder rendered inside "5× rounds of" and read as a sixth part of every round |
+| **The walk step carries an instruction, never "rest"** | 🟢 **SHIP**, words to the founder | The prototype's walk row read "rest"; the walk is part of the session (Sierra) |
+| **A structured main set takes the SESSION's hue** | 🟢 **SHIP** | `SessionSteps` paints any derived main set `--s-quality`, so an easy run-walk drew amber: a colour claim the session does not make (Silvanto) |
+| **The warm-up** | ➡️ **ROUTED, Coaching Board** | `composeSession` gives every easy run a 10 min continuous warm-up (`warmup_min_duration_mins`) while §117 Am.3 says walk *"from the first rep"*: live today for every run-walk runner |
+
+⛔ Veto: none. ⚠️ Not measured: on a device. Prototype screenshots: decision note; the page was local and deleted.
+
 ## 6t-d. RUN-ICONS-REOPEN — run icons on rows stay out; run/walk icons belong on run-walk steps (2026-10-22)
 
 | Decision | Status | Why |
