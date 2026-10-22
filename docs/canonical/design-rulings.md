@@ -1031,6 +1031,25 @@ answers in a line what three rounds of reasoning did not.
 ---
 
 
+## 6t-h. ACCENT-TEXT-VARIABLE-01 — use the ratified text shade where one exists; amends 6t-g (2026-10-22)
+
+🔴 **Second token-layer miss of the day, recorded so it is not a third.** 6t-g declined "a darker text variant per hue"
+as nine new tokens; **four already exist and are ratified**: `--moss-strong`, `--s-race-strong` / `--s-recov-strong`
+(A11Y-CONTRAST-01) and `--warn-strong` (`#88622B`, 5.48 on `--card`, 4.67 on its 12% tint). The 6t-g build sent six
+race/recovery labels to `--ink-2` when their own text shade existed. **Collins' 6t-g loss is partly reversed by the
+evidence.**
+
+| Decision | Status | Why |
+|---|---|---|
+| **Small text in a hue takes that hue's ratified `-strong` shade where one exists (moss, race, recovery, warn); otherwise `--ink-2`** | 🟢 **SHIP** | One rule the tokens already support; meaning kept where it was already paid for (Zhuo). No new token (Silvanto). The six race/recovery sites from 6t-g move to their `-strong` |
+| **Zone names** (training-zones, orientation, zone-rings legend, ZoneBar's active number) → ink, with a zone-coloured dot beside | 🟢 **SHIP** | Zone colour is a learned meaning (Sierra): it moves to the mark, the word stays legible |
+| **Chips** (fatigue, RPE, zone verdict) → ink text; hue on tint, border, dot | 🟢 **SHIP** | Measured on the 12% chip tint: Fresh 3.94, Fine 4.39, Heavy 2.87, Wrecked 2.95. One reading for every chip (Silvanto); read outdoors straight after a run (Wroblewski) |
+| **Captions / eyebrows** (phase, notification, race arc, long-run card) | 🟢 **SHIP**, rule 1 | |
+| **StravaPanel** | ⚪ **EXEMPT, named** | admin-only, reached by URL |
+| **The gate widens** to `color:` set through any variable or helper ending in colour/color/accent | 🟢 **SHIP** | 6t-g's gate saw literals only, which is how ~15 sites were missed |
+
+Filed: `WARN-TEXT-CONTRAST-01` (25 literal `--warn` texts, 3.25:1, → `--warn-strong`). ⛔ Veto: none. Not built.
+
 ## 6t-g. ACCENT-TEXT-CONTRAST-01 — a session hue is never small text (2026-10-22)
 
 | Decision | Status | Why |
