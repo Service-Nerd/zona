@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — PLAN-DOORS-01 · the same door, wearing the same face
+**Shipped:** The run-plan and strength doors are each drawn once and used on Plan, Me and the Adjust screen, so they look identical wherever you meet them; Me can now adjust the current plan, and Back from Strength returns to where you were.
+
+**Dev learning:** "Back to origin" broke because opening Strength CLOSED the Adjust screen, so its origin was a screen that no longer existed. A `'modify'` origin that reopens Adjust fixed it without a second navigation mechanism.
+
+**Product/creator learning:** The founder saw a missing icon. The board saw two plans with no consistent way in, a name collision ("Adjust your plan" vs "Plan adjustments") and an index screen that could not reach the thing people most want to change. The icon was the visible tip.
+
+**AI-building learning:** The founder approved "Auto-adjust" from my suggestion, and the existing ME-DOORS-01 gate went red within one test run: the screen's own toggle already said "Auto-adjust". A gate written for an old incident caught my new copy before it shipped.
+
+**The honest bit:** Five older tests pinned the literal wiring (strings like `setScreen(strengthSetupOrigin)`), so the build spent as long re-pointing them as writing the feature. They were right to fail; each now reads the owner instead of a copy.
+
+**Hook material:** One door, three screens, and until today three different faces.
+
+**Postable?:** maybe
+
 ## 2026-10-22 — TODAY-DAY-TAP-01 · a tap that worked for a single frame
 **Shipped:** Tapping a day in Today's week strip shows that day again; it had been snapping straight back to today since 17 October.
 
