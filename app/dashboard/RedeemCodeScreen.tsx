@@ -223,7 +223,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
 
             <Button variant="primary" fullWidth 
               onClick={handleRedeem}
-              disabled={!code.trim() || loading} style={{ marginTop: 'var(--space-5)', padding: '16px', background: !code.trim() || loading ? 'var(--bg-soft)' : 'var(--moss)', color: !code.trim() || loading ? 'var(--mute)' : 'var(--card)', borderRadius: 'var(--radius-md)', fontSize: '15px', fontWeight: 600, cursor: !code.trim() || loading ? 'default' : 'pointer' }}>
+              disabled={!code.trim() || loading} style={{ marginTop: 'var(--space-5)', padding: '16px', background: !code.trim() || loading ? 'var(--bg-soft)' : 'var(--moss-strong)', color: !code.trim() || loading ? 'var(--mute)' : 'var(--card)', borderRadius: 'var(--radius-md)', fontSize: '15px', fontWeight: 600, cursor: !code.trim() || loading ? 'default' : 'pointer' }}>
               {loading ? 'Checking…' : 'Redeem'}
             </Button>
 

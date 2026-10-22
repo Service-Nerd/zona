@@ -223,7 +223,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
                 <div style={{
                   width: '26px', height: '26px', borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: d.today ? 'var(--moss)' : 'transparent',
+                  background: d.today ? 'var(--moss-strong)' : 'transparent',
                 }}>
                   <span style={{
                     fontSize: '13px', fontWeight: d.today ? 700 : 500,

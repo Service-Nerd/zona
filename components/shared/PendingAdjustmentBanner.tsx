@@ -131,7 +131,7 @@ export default function PendingAdjustmentBanner({
               minHeight:    TAP_TARGET_MIN_PX,
               flex:         1,
               padding:      '10px 0',
-              background:   loading ? 'var(--warn-bg)' : 'var(--warn)',
+              background:   loading ? 'var(--warn-bg)' : 'var(--warn-strong)',
               border:       'none',
               borderRadius: '100px',
               fontFamily:   'var(--font-ui)',

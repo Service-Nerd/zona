@@ -228,7 +228,8 @@ and sort keys, not display strings. Gated by `lib/format.dates.test.ts`.
 
 ## Completion confirmation line — `● <name?> · <distance>` (ACTIVITY-NAME-WRITER-01, 2026-10-08)
 
-A complete session renders one 10px `var(--strava)` line confirming what was logged. It is
+A complete session renders one 10px line confirming what was logged: the words in `var(--mute)` and the ● alone in
+`var(--strava)` (A11Y-APP-TEXT-SWEEP-01, Design Board 6t-j: `--strava` text is 2.99:1 on `--bg`). It is
 gated on **`strava_activity_name` OR `strava_activity_km`**, and the distance is the part that
 must survive.
 

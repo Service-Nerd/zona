@@ -98,7 +98,7 @@ function StepRowView({ num, dotColor, row }: { num: number | null; dotColor: str
   const rest = [row.secondary, row.note].filter(Boolean).join(' · ')
   return (
     <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', padding: '11px 13px', borderTop: '1px solid var(--line)' }}>
-      <span style={{ flex: 'none', width: '20px', textAlign: 'center', fontSize: '14px', fontWeight: 800, fontStyle: 'italic', color: 'var(--mute-2)', fontVariantNumeric: 'tabular-nums', background: 'var(--card)' }}>
+      <span style={{ flex: 'none', width: '20px', textAlign: 'center', fontSize: '14px', fontWeight: 800, fontStyle: 'italic', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums', background: 'var(--card)' }}>
         {num ?? ''}
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>

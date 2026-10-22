@@ -1976,7 +1976,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 <span style={{
                   fontFamily: 'var(--font-ui)',
                   fontSize: '10px',
-                  color: 'var(--mute-2)',
+                  color: 'var(--mute)',
                 }}>
                   {selectedSession.zone ?? getSessionLabel(selectedSession)}
                 </span>

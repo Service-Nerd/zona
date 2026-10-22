@@ -66,7 +66,7 @@ function ExerciseRow({ num, item, logging, onOpen }: { num: number; item: Prescr
           fontFamily: FONT,
         }}
       >
-        <span style={{ flex: 'none', width: '20px', textAlign: 'center', fontSize: '14px', fontWeight: 800, fontStyle: 'italic', color: 'var(--mute-2)', fontVariantNumeric: 'tabular-nums' }}>
+        <span style={{ flex: 'none', width: '20px', textAlign: 'center', fontSize: '14px', fontWeight: 800, fontStyle: 'italic', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
           {num}
         </span>
         <span style={{ flex: 1, minWidth: 0, display: 'block' }}>

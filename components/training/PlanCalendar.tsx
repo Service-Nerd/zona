@@ -1049,8 +1049,8 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                   logged runs — the confirmation this line exists to give. The name is
                   now an optional prefix to the fact, which is the right way round. */}
               {isComplete && (completion?.strava_activity_name || completion?.strava_activity_km) && (
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--strava)' }}>
-                  ● {completion.strava_activity_name ? `${completion.strava_activity_name}${completion.strava_activity_km ? ' · ' : ''}` : ''}{completion.strava_activity_km ? formatDistance(completion.strava_activity_km, units, { exact: true }) : ''}
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)' }}>
+                  <span aria-hidden="true" style={{ color: 'var(--strava)' }}>●</span> {completion.strava_activity_name ? `${completion.strava_activity_name}${completion.strava_activity_km ? ' · ' : ''}` : ''}{completion.strava_activity_km ? formatDistance(completion.strava_activity_km, units, { exact: true }) : ''}
                 </span>
               )}
               {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)' }}>skipped</span>}

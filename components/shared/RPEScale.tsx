@@ -51,7 +51,7 @@ export default function RPEScale({ value, onChange, hint }: Props) {
                 fontFamily: 'var(--font-ui)',
                 fontSize: '13px',
                 fontWeight: 500,
-                color: 'var(--mute-2)',
+                color: 'var(--mute)',
               }}
             >
               / 10
@@ -63,7 +63,7 @@ export default function RPEScale({ value, onChange, hint }: Props) {
               fontFamily: 'var(--font-ui)',
               fontSize: '13px',
               fontWeight: 400,
-              color: 'var(--mute-2)',
+              color: 'var(--mute)',
             }}
           >
             — / 10
@@ -107,7 +107,7 @@ export default function RPEScale({ value, onChange, hint }: Props) {
                 // Filled: ink bg, bg text
                 // Default: bg-soft bg, mute text
                 background: isSelected
-                  ? 'var(--moss)'
+                  ? 'var(--moss-strong)'
                   : isFilled
                   ? 'var(--ink)'
                   : 'var(--bg-soft)',

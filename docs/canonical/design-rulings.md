@@ -1058,7 +1058,16 @@ kept, as he asked, because the initials are decoration.
 
 **Artifacts:** `ui-patterns.md` rows for `--mute-2` (non-text only) and the Strava done-state line amended; `onHue()` in
 `lib/ui/hueText.ts`; `A11Y-APP-TEXT-CONTRAST-01` widened from one audited file to the whole app, with named exceptions,
-plus a white-on-fill arm, each falsified. **RULED, not built.**
+plus a white-on-fill arm, each falsified. **BUILT 2026-10-22.**
+
+🔴 **Two corrections found at the build.** (1) The gate reads BOTH branches of a ternary, which the count did not, and
+found one more real site: `RedeemCodeScreen`'s Redeem button overrode `.btn--primary` back to `--moss` under white text
+(3.68), now `--moss-strong`. (2) **`--danger` is not sub-AA** (5.28 on `--card`, 4.65 on `--bg`); the 2026-10-14 list
+counted it and this sitting carried that forward, so it is not banned. Also: `hueText()` passed `--mute-2` through as
+"neutral", a back door for computed faint text, now mapped to `--mute`; and `onHue()` cannot make `--s-cross` pass
+(white 4.05, ink 4.30), named in the owner. ⚠️ **The calendar's ● is not only Strava** (it confirms every logged run,
+~98% Apple Health), so the orange there claims a source: filed `CALENDAR-DONE-DOT-SOURCE-01`. Falsified: a `--mute-2`
+meta line, a `--moss` initials fill, `--strava` words and a wrong `onHue` pick each turn the gates red.
 
 ## 6t-i. UNMEASURED-DISTANCE-01 — name the gap, then let the runner fill it (2026-10-22)
 

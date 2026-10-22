@@ -18,6 +18,7 @@ import { BRAND } from '@/lib/brand'
 import { daysUntilRace, formatDate, formatRaceCountdown } from '@/lib/format'
 import { parseLocalDate } from '@/lib/plan'
 import { getSessionColor, getSessionLabel } from '@/lib/session-types'
+import { onHue } from '@/lib/ui/hueText'
 import type { Plan } from '@/types/plan'
 
 export default function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, onDismiss }: {
@@ -186,7 +187,7 @@ export default function OrientationScreen({ plan, firstName, zone2Ceiling, resti
                         background: z.colour,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 800,
-                        color: 'var(--card)', flexShrink: 0,
+                        color: onHue(z.colour), flexShrink: 0,
                       }}>{z.zone}</div>
                       {/* Name + description */}
                       <div style={{ minWidth: 0 }}>

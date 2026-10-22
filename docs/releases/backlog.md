@@ -212,6 +212,14 @@ looks like tidying.**
 ground, convert what is genuinely text, and add the file to `SURFACES`. A file on that list has
 been looked at.
 
+### 🔲 `CALENDAR-DONE-DOT-SOURCE-01` — the Plan calendar's completion ● is Strava orange for Apple Health runs too 🧭 **DESIGN BOARD** *(filed 2026-10-22)*
+
+Found building `A11Y-APP-TEXT-SWEEP-01`. 6t-j ruled "the orange stays on the ● mark" reading the line as Strava
+attribution, but `PlanCalendar`'s confirmation line (`● <name?> · <distance>`) renders for EVERY logged run, gated on
+`strava_activity_name OR strava_activity_km`, and ~98% are Apple Health (ACTIVITY-NAME-WRITER-01). So the orange claims
+a source the run did not come from, before and after 6t-j. Question: is the ● a source mark (then by `source`) or a
+done mark (then a palette colour)? `SessionCard`'s line is correctly gated on `viaStrava`.
+
 ### 🔲 `TYPE-18PX-CONVERGE-01` — the 8 remaining headline-species sites ⚙️ **NO BOARD** *(the ruling exists; this is conformance)*
 
 `FOUNDER-TYPE-18PX-01` refused 18px permanently and created `.section-headline` (20/700) for the

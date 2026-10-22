@@ -77,7 +77,7 @@ export function NotificationRow({ item, relativeTime, onClick }: {
           color: hueText(railColor),
         }}>{eyebrow}</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute-2)' }}>{relativeTime}</span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>{relativeTime}</span>
           {unread && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--moss)' }} />}
         </span>
       </div>

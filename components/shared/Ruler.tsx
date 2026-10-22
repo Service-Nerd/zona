@@ -161,7 +161,7 @@ export function Ruler({
           {labels.map((n, i) => (
             <span key={i} style={{
               fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 600,
-              color: 'var(--mute-2)', fontVariantNumeric: 'tabular-nums',
+              color: 'var(--mute)', fontVariantNumeric: 'tabular-nums',
             }}>
               {n}
             </span>

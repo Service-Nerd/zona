@@ -148,7 +148,7 @@ export function IdentityCard({ initials, firstName, tierLabel, tierReason, onSav
 
   return (
     <div style={cardStyle}>
-      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--moss)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-brand)', fontSize: '16px', fontWeight: 600, color: 'var(--card)', flexShrink: 0 }}>
+      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--moss-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-brand)', fontSize: '16px', fontWeight: 600, color: 'var(--card)', flexShrink: 0 }}>
         {initials}
       </div>
 

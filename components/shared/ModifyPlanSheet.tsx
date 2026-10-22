@@ -515,7 +515,7 @@ function RowControl({ rowKey, value, onChange }: {
                   // forbids sweeping into `Button`. It takes the floor instead.
                   minHeight: TAP_TARGET_MIN_PX, display: 'inline-flex', alignItems: 'center',
                   padding: '7px 12px', borderRadius: '999px', cursor: 'pointer',
-                  background: on ? 'var(--moss)' : 'var(--bg-soft)',
+                  background: on ? 'var(--moss-strong)' : 'var(--bg-soft)',
                   border: '1px solid var(--line)',
                   fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
                   color: on ? 'var(--card)' : 'var(--ink-2)', textTransform: 'capitalize',

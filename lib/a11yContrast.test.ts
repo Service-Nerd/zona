@@ -439,3 +439,91 @@ describe('A11Y-APP-TEXT-CONTRAST-01 — audited app surfaces use AA-capable text
     expect(fails, fails.join('\n')).toEqual([])
   })
 })
+
+// 🔴 A11Y-APP-TEXT-SWEEP-01 (Design Board 2026-10-22, 6t-j) — the rest of the app, not one audited file.
+// Re-measured before the sitting: 69 candidates had become 19, because ACCENT-TEXT-CONTRAST/VARIABLE (6t-g/6t-h,
+// `lib/ui/accentText.test.ts`) already hold every moss, warn and session-hue small-text site. This holds the
+// rest: `--mute-2` (1.90:1) is never text, the Strava orange is a mark and never words, and white text never sits on a hue fill white cannot clear (it takes `--moss-strong` /
+// `--warn-strong`, or `onHue()` picks ink).
+// ⚠️ WHAT IT CANNOT SEE: text styled by className or a CSS module, and a colour passed through a variable other
+// than the hue owners (`hueText`, `onHue`), which carry their own arms.
+describe('A11Y-APP-TEXT-SWEEP-01 — no faint small text anywhere in the app (6t-j)', () => {
+  const ROOT = path.resolve(__dirname, '..')
+  const decl = new Map(Array.from(CSS.matchAll(/\n\s*(--[a-z0-9-]+):\s*([^;]+);/g), m => [m[1]!, m[2]!.trim()] as [string, string]))
+  const resolve = (n: string, d = 0): string => {
+    const v = decl.get(n) ?? ''
+    const r = /^var\((--[a-z0-9-]+)\)$/.exec(v)
+    return r && d < 8 ? resolve(r[1]!, d + 1) : v.toUpperCase()
+  }
+  const WHITE = resolve('--card')
+  // `--danger` is NOT here: it measures 5.28 on --card and 4.65 on --bg, so it clears AA as text (the 2026-10-14
+  // candidate list counted it, and the 6t-j sitting carried that forward without re-measuring).
+  const BANNED_TEXT = new Set(['--mute-2', '--strava'].map(resolve))
+  const HUE_BASE = ['--s-easy', '--s-long', '--s-quality', '--s-inter', '--s-race', '--s-recov', '--s-strength', '--s-cross', '--moss', '--warn']
+  /** Hue fills white cannot clear at 4.5:1, derived from globals.css so a new alias is seen. */
+  const WHITE_FAILS = new Set(HUE_BASE.map(resolve).filter(v => /^#[0-9A-F]{6}$/.test(v) && ratio(WHITE, v) < 4.5))
+
+  function files(dir: string, out: string[] = []): string[] {
+    for (const f of fs.readdirSync(dir)) {
+      const p = path.join(dir, f)
+      if (fs.statSync(p).isDirectory()) { if (!/-preview$/.test(f)) files(p, out) }
+      else if (/\.tsx$/.test(f) && !/\.test\./.test(f)) out.push(p)
+    }
+    return out
+  }
+  /** Every var() token in one property's expression, so BOTH branches of a ternary are read. */
+  const tokensOf = (obj: string, prop: string): string[] => {
+    const m = new RegExp(`(?:^|[\\s,{])${prop}:\\s*([^\\n]*?)(?:,\\s*\\n|,\\s*[a-zA-Z]+:|$)`, 'm').exec(obj)
+    return m ? Array.from(m[1]!.matchAll(/var\((--[a-z0-9-]+)\)/g), x => x[1]!) : []
+  }
+  /** ⚠️ Bounded by brace depth, never a proximity window (the sibling scanner's seven wrong findings). */
+  function styleObjects(src: string): { obj: string; line: number }[] {
+    const out: { obj: string; line: number }[] = []
+    for (const m of Array.from(src.matchAll(/style=\{\{/g))) {
+      let i = m.index! + 'style={{'.length, depth = 1
+      while (i < src.length && depth > 0) { const c = src[i]; if (c === '{') depth++; else if (c === '}') depth--; i++ }
+      out.push({ obj: src.slice(m.index! + 'style={{'.length, i - 1), line: src.slice(0, m.index!).split('\n').length })
+    }
+    return out
+  }
+  function findings(src: string): string[] {
+    const out: string[] = []
+    for (const { obj, line } of styleObjects(src)) {
+      const size = /(?:^|[\s,])fontSize:\s*'(\d+)px'/.exec(obj)
+      if (!size || Number(size[1]) >= 24) continue
+      const colours = tokensOf(obj, 'color')
+      for (const t of colours) if (BANNED_TEXT.has(resolve(t))) out.push(`${line}: ${t} as ${size[1]}px text`)
+      if (colours.some(t => resolve(t) === WHITE)) {
+        for (const t of tokensOf(obj, 'background')) {
+          if (WHITE_FAILS.has(resolve(t))) out.push(`${line}: white ${size[1]}px text on ${t} (${ratio(WHITE, resolve(t)).toFixed(2)}:1)`)
+        }
+      }
+    }
+    return out
+  }
+  const SOURCES = [...files(path.join(ROOT, 'components')), ...files(path.join(ROOT, 'app'))]
+    .map(f => [path.relative(ROOT, f), fs.readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '')] as const)
+
+  it('the detector fires on each ruled defect and on a ternary\'s second branch, and ignores what it should', () => {
+    expect(findings(`<span style={{ fontSize: '11px', color: 'var(--mute-2)' }}>x</span>`)).toHaveLength(1)
+    expect(findings(`<span style={{ fontSize: '11px', color: on ? 'var(--ink)' : 'var(--mute-2)' }}>x</span>`)).toHaveLength(1)
+    expect(findings(`<span style={{ fontSize: '10px', color: 'var(--strava)' }}>x</span>`)).toHaveLength(1)
+    expect(findings(`<b style={{ fontSize: '14px', background: 'var(--warn)', color: 'var(--card)' }}>x</b>`)).toHaveLength(1)
+    expect(findings(`<b style={{ fontSize: '14px', background: 'var(--accent)', color: 'var(--card)' }}>x</b>`)).toHaveLength(1)
+    expect(findings(`<b style={{ fontSize: '14px', background: 'var(--moss-strong)', color: 'var(--card)' }}>x</b>`)).toHaveLength(0)
+    expect(findings(`<b style={{ fontSize: '14px', background: 'var(--s-easy)', color: 'var(--card)' }}>x</b>`)).toHaveLength(0)
+    expect(findings(`<b style={{ fontSize: '52px', color: 'var(--mute-2)' }}>–</b>`)).toHaveLength(0)
+    expect(findings(`<i style={{ width: '8px', background: 'var(--mute-2)' }} />`)).toHaveLength(0)
+  })
+
+  it('reaches the app: hundreds of sized style objects across both trees, so a green is not an empty population', () => {
+    const sized = SOURCES.reduce((n, [, s]) => n + styleObjects(s).filter(o => /fontSize:\s*'\d+px'/.test(o.obj)).length, 0)
+    expect(sized).toBeGreaterThan(500)
+    expect(SOURCES.some(([f]) => f.startsWith('app/'))).toBe(true)
+  })
+
+  it('no file in the app carries faint small text', () => {
+    const hits = SOURCES.flatMap(([f, s]) => findings(s).map(h => `${f}:${h}`))
+    expect(hits, `6t-j: use --mute for meta text, --mute on Strava words (orange on the mark only), the -strong fill under white text, or onHue() on a hue fill.\n${hits.join('\n')}`).toEqual([])
+  })
+})

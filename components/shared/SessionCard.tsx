@@ -226,15 +226,14 @@ export default function SessionCard({
               style={{
                 fontFamily: 'var(--font-ui)',
                 fontSize: '11px',
-                color: 'var(--strava)',
+                color: 'var(--mute)',
                 marginTop: '2px',
-                opacity: 0.75,
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
               }}
             >
-              via Strava · {completion.activityName}
+              <span aria-hidden="true" style={{ color: 'var(--strava)' }}>●</span> via Strava · {completion.activityName}
             </div>
           )}
           {/* HR-SYNC-02: pending-HR status row beneath provenance. Sits in
@@ -294,7 +293,7 @@ export default function SessionCard({
           <div
             style={{
               flexShrink: 0,
-              color: 'var(--mute-2)',
+              color: 'var(--mute)',
               fontSize: '14px',
               paddingLeft: '4px',
               cursor: 'grab',

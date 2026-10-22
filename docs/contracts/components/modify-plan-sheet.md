@@ -140,3 +140,4 @@ apart, both `DaysAvailableError / warn_unacknowledged`.
 > 📐 **`ADJUST-JOURNEY-TYPE-01` (2026-10-14) — type only, contract unchanged.** 13px converged to **Body 14/400** and weight 500 → 600. **No prop, no state, no behaviour**, and the 44px tap floor is untouched. Recorded because the docs audit flags any component change and an unanswered flag is indistinguishable from a missed one.
 
 - **Text colour (ACCENT-TEXT-VARIABLE-01, Design Board 6t-h, 2026-10-22):** small text never takes a hue: a hue with a ratified text shade uses it (`--moss-strong`, `--s-race-strong`, `--s-recov-strong`, `--warn-strong`), otherwise `--ink-2`; a computed colour goes through `hueText()` (`lib/ui/hueText.ts`). The hue stays on marks. Held by `lib/ui/accentText.test.ts`.
+- **Selected injury chip (A11Y-APP-TEXT-SWEEP-01, 6t-j):** the fill is `--moss-strong` (white text 5.48:1), not `--moss` (3.68). Held by `lib/a11yContrast.test.ts`.

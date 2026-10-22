@@ -225,7 +225,7 @@ All type uses **Inter** only. `var(--font-ui)` and `var(--font-brand)` both reso
 > consistency would be a regression. **Consistency stops where the role changes.**
 | Metric large | `--font-ui` | 800 | 44px | RestraintCard percent, big stats |
 | Metric medium | `--font-ui` | 700 | 17px | Session card distance |
-| Metric small | `--font-ui` | 400 | 11px | Session card duration — `--mute-2` |
+| Metric small | `--font-ui` | 400 | 11px | Session card duration — `--mute` (6t-j: `--mute-2` is never text) |
 | Muted / hint | `--font-ui` | 400 | 12px | `--mute` — timestamps, metadata |
 | Wordmark | `--font-ui` | 800 | 14px | ZONNA nav wordmark |
 
@@ -428,7 +428,7 @@ Always use these CSS custom property names. Never hardcode hex values.
 | `--ink` | Primary text (`#1A1A1A`) |
 | `--ink-2` | Secondary text (`#3D3A36`) |
 | `--mute` | Muted / supporting text (`#8A857D`) |
-| `--mute-2` | Lighter muted — durations, meta |
+| `--mute-2` | Placeholder, disabled and decorative marks only (1.90:1 on `--bg`): **never text**, so durations and meta are `--mute` (6t-j) |
 | `--moss` | Primary accent — CTA, active, completion (`#6B8E6B`) |
 | `--moss-soft` | Moss tint — completion dot background |
 | `--moss-mid` | Moss mid — active borders |
@@ -764,7 +764,7 @@ Four states: `future` (default), `current`, `done`, `skipped`.
 | `done` | `transparent` | none | 0.3 opacity | `--mute` + moss check circle |
 | `skipped` | `transparent` | `1px dashed --line-strong` | 0.2 opacity | `--danger` strikethrough |
 
-Done state: 16px moss check circle (--moss-soft bg, --moss stroke), name in `--mute`, "via Strava · {activityName}" in 11px `--strava` at 0.75 opacity.
+Done state: 16px moss check circle (--moss-soft bg, --moss stroke), name in `--mute`, "● via Strava · {activityName}" in 11px `--mute` with the ● alone in `--strava` (6t-j: the orange is a mark, never words; `--strava` text is 2.99:1 on `--bg`).
 
 Skipped state: "Skipped" label 11px 500 `--danger` right side, name struck through.
 
@@ -3356,6 +3356,8 @@ and icon-like glyphs keep the hue. **Amended by 6t-h:** a hue with a ratified te
 `--warn-strong`), else `--ink-2`; a COMPUTED colour goes through `hueText()` (`lib/ui/hueText.ts`). Zone names are ink with a
 zone-coloured dot; chips are ink text on the hue's tint. Gate: `lib/ui/accentText.test.ts` (hue set derived from
 `globals.css` incl. legacy aliases; literal and computed sites; exception lists that may only shrink).
+
+**Text ON a hue fill (6t-j).** White text sits on `--moss-strong` / `--warn-strong`, never on `--moss` / `--warn` (3.68 / 3.25), as `.btn--primary` already does. Where the fill must stay a session or zone hue (a zone badge), the numeral's colour comes from `onHue()` in `lib/ui/hueText.ts`: white or ink, whichever measures higher on that hue (white on Z1–Z2, ink on Z3–Z5). `--s-cross` clears neither, so it carries large text only. Held by `A11Y-APP-TEXT-SWEEP-01` in `lib/a11yContrast.test.ts` and the `onHue` arm in `lib/ui/accentText.test.ts`.
 
 ⚠️ **The same-unit rule is still dead and is not being revived.** `UNITS-SUBUNIT-01`
 struck it down and the shipped time-trial diagram above renders `WARM-UP 10 min` beside a

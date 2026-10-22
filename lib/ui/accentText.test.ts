@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { hueText } from './hueText'
+import { hueText, onHue } from './hueText'
 
 /**
  * 🔴 ACCENT-TEXT-CONTRAST-01 + ACCENT-TEXT-VARIABLE-01 + WARN-TEXT-CONTRAST-01 (Design Board 2026-10-22, 6t-g/6t-h).
@@ -75,8 +75,9 @@ const literal = count(/(?<![A-Za-z-])color:\s*'var\((--[a-z0-9-]+)\)'/g, m => HU
 // in a quoted var(), and no identifier containing colour/color/accent/hue/tint/tone.
 function namesAHue(expr: string): boolean {
   // The capture stops at the first comma, so a hueText(...) call with arguments arrives truncated; it is safe as written.
-  if (/^\s*hueText\(/.test(expr)) return false
-  let e = expr.replace(/hueText\((?:[^()]|\([^()]*\))*\)/g, '')
+  // `onHue()` (6t-j) is the owner of text ON a hue fill, as `hueText()` is of text IN a hue.
+  if (/^\s*(?:hueText|onHue)\(/.test(expr)) return false
+  let e = expr.replace(/(?:hueText|onHue)\((?:[^()]|\([^()]*\))*\)/g, '')
   for (const m of Array.from(e.matchAll(/'var\((--[a-z0-9-]+)\)'/g))) if (HUE_TOKENS.has(m[1])) return true
   e = e.replace(/'[^']*'/g, '')
   return /colou?r|accent|hue|tint|tone/i.test(e)
@@ -113,3 +114,21 @@ describe('a hue is never small text', () => {
     expect(src).toMatch(/const SECTION_TEXT = 'var\(--ink-2\)'/)
   })
 })
+
+// 6t-j — `onHue()` picks white or ink for text ON a hue fill. Every hue token (aliases included) is measured here, and
+// the pick must be the better of the two and clear 4.5:1, except `--s-cross`, which clears neither (named in the owner).
+describe('onHue — text on a hue fill', () => {
+  const INK = resolve('--ink'), WHITE = resolve('--card')
+  const CROSS = resolve('--s-cross')
+  it('every hue token gets the better of white and ink, and that clears AA', () => {
+    const wrong: string[] = []
+    for (const t of Array.from(HUE_TOKENS)) {
+      const v = resolve(t), w = ratio(WHITE, v), k = ratio(INK, v)
+      const picked = onHue(`var(${t})`) === 'var(--ink)' ? k : w
+      if (picked < Math.max(w, k)) wrong.push(`${t}: picked ${picked.toFixed(2)}, better ${Math.max(w, k).toFixed(2)}`)
+      else if (picked < 4.5 && v !== CROSS) wrong.push(`${t}: ${picked.toFixed(2)} < 4.5`)
+    }
+    expect(wrong).toEqual([])
+  })
+})
+
