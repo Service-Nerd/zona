@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — TODAY-DAY-TAP-01 · a tap that worked for a single frame
+**Shipped:** Tapping a day in Today's week strip shows that day again; it had been snapping straight back to today since 17 October.
+
+**Dev learning:** An effect commented "reset on week change" was actually keyed on an array of session objects. It was fine from April until the two-runs-a-day work made that array read completions, which is `?? {}`, a new object every render. So the tap DID set the day, and the reset put it back before anything painted. A DOM observer showed it in one line: selected 0, then 3.
+
+**Product/creator learning:** The founder noticed in five days with nothing but "it does nothing now". No test, no error, no log would ever have surfaced it, because the app was doing what its code said.
+
+**AI-building learning:** My first diagnosis gave the founder an RCA with three debug steps skipped, and he asked. The skipped twin sweep and doctrine check took ten minutes and confirmed the cause rather than changing it, but the "for your account it's probably the refresh" part is still an inference I could not run.
+
+**The honest bit:** The first browser repro "proved" the bug for the wrong reason: the dev server was serving 404s for its JS, so nothing on the page was interactive. I nearly read a dead page as the defect.
+
+**Hook material:** The tap worked. For about one frame.
+
+**Postable?:** yes
+
 ## 2026-10-22 — A11Y-APP-TEXT-SWEEP-01 · 69 faint-text sites were really 19, and the gate found a 20th
 **Shipped:** The last pale grey and orange small text in the app now meets the readable-contrast bar, white text sits on the darker moss and amber fills, and the check that guards it covers every screen instead of one.
 
