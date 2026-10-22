@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — RUNWALK-STEPS-01 · run 6, walk 1, and you can see where you are
+**Shipped:** A run-walk session now shows as steps: a 5-minute brisk walk, then rounds of run 6 minutes and walk 1, any leftover as a short final run, then the cool-down. Run and walk icons mark which part you're in. The walk says "Brisk walk. Take it even if you feel fine."
+
+**Dev learning:** The prescription had existed for a month as one sentence. The steps are worked out when the screen draws, the way an older fix already handles a stale field, so every existing run-walk plan gets them today with nothing rewritten in the database.
+
+**Product learning:** The founder's Runna screenshots asked for run and walk icons. The board said no on every row and yes here, because on a run-walk session the icon tells you which part you're in at a glance, which the word doesn't do while you're moving.
+
+**AI-building learning:** One design rule, "the main set takes the session's colour", would have recoloured 340 VO2 and hill sessions from red to amber if applied everywhere. Measuring before shipping caught it; the rule is scoped to run-walk and the colour disagreement it exposed is its own item.
+
+**The honest bit:** The prototype found a live contradiction nobody had asked about: every easy run opened with 10 minutes of continuous running, while the run-walk rule says walk from the first rep. That's fixed now. Race day still shows the sentence, not steps.
+
+---
+
 ## 2026-10-22 — REP-UNITS-KM-01 · the session is named for what it is
 **Shipped:** "Mile repeats" is now "1600m repeats" in new plans. Same session, same reps.
 
