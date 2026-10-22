@@ -10,7 +10,7 @@
 
 import type { ReactNode } from 'react'
 import Button from '@/components/ui/Button'
-import BackButton from '@/components/shared/BackButton'
+import ScreenHeader from '@/components/ui/ScreenHeader'
 import { InlineError } from './InlineError'
 import { MICRO_LABELS } from './microLabels'
 
@@ -39,14 +39,11 @@ export default function ChangeConfirm({ onBack, backLabel, onAccept, onCancel, a
   children: ReactNode
 }) {
   return (
+    <>
+    {/* PLAN-CHANGE-HEADER-01 (6t-l) — the pinned header, arrow inside, as Strength setup has. The back control and
+        title used to sit in the flow, so on a long list of changes the way back scrolled away. */}
+    <ScreenHeader title="Here is what changes" sub="Nothing is saved until you accept." onBack={onBack} backLabel={backLabel} />
     <div style={{ padding: '0 20px 24px' }}>
-      <BackButton onClick={onBack} ariaLabel={backLabel} style={{ marginBottom: 'var(--space-4)' }} />
-      <div style={{ fontFamily: 'var(--font-brand)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)' }}>
-        Here is what changes
-      </div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '4px', marginBottom: 'var(--space-4)' }}>
-        Nothing is saved until you accept.
-      </div>
       {children}
       <Button variant="primary" fullWidth
         onClick={onAccept} busy={applying} busyLabel="Saving your plan…" style={{ marginTop: 'var(--space-5)' }}>
@@ -59,5 +56,6 @@ export default function ChangeConfirm({ onBack, backLabel, onAccept, onCancel, a
         Keep my current plan
       </Button>
     </div>
+    </>
   )
 }

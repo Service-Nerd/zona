@@ -70,6 +70,7 @@ export default function ScreenHeader({
   title,
   sub,
   onBack,
+  backLabel,
   sticky = true,
   children,
 }: {
@@ -89,6 +90,8 @@ export default function ScreenHeader({
    * too"* — reached by a different route, which is the second time that has happened.
    */
   onBack?: () => void
+  /** PLAN-CHANGE-HEADER-01 — the back arrow's spoken label, where "Back" alone would not say where it goes. */
+  backLabel?: string
   /** Secondary line. On Coach this names the week the whole screen reports on. */
   sub?: string
   /**
@@ -148,7 +151,7 @@ export default function ScreenHeader({
     >
       {onBack && (
         <div style={{ marginBottom: 'var(--space-3)' }}>
-          <BackButton onClick={onBack} />
+          <BackButton onClick={onBack} ariaLabel={backLabel} />
         </div>
       )}
       <div className="screen-header__title">{title}</div>

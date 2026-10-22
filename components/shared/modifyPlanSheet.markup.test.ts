@@ -72,7 +72,9 @@ describe('P-02 — presentation and copy live where they belong', () => {
     // Design Board 2026-10-18 reversed P-02's sheet by name: changing a plan is one journey of screens.
     // SHEET-PRESENT-01's lesson still holds: no hand-rolled overlay, no z-index of its own.
     expect(SHEET).not.toMatch(/<Sheet\b|import Sheet\b/)
-    expect(SHEET).toContain('<FloatingBackButton onClick={onClose}')
+    // PLAN-CHANGE-HEADER-01 (6t-l): the pinned ScreenHeader, arrow inside, as Strength setup.
+    expect(SHEET).toContain('<ScreenHeader title={ADJUST_PLAN_TITLE} sub="Nothing changes until you apply." onBack={onClose}')
+    expect(SHEET).not.toMatch(/<FloatingBackButton\b/)
     expect(SHEET).not.toMatch(/position: 'fixed'|zIndex/)
     expect(DASH, 'Plan is hidden while the edit screen is up').toContain("!modifyPreview && !(modifyOpen && plan) && <PlanScreen")
   })
@@ -104,7 +106,7 @@ describe('P-02 — presentation and copy live where they belong', () => {
     // behaviour asserted — a browse state with a dismiss and no bottom bar —
     // is unchanged and is now guaranteed for EVERY sheet rather than this one.
     // SAVE-PATTERN-01: the browse-state dismiss is now the screen's back arrow (top-left), not a sheet's cross.
-    expect(SHEET, 'the browse state still has a way out').toContain('ariaLabel="Back to your plan"')
+    expect(SHEET, 'the browse state still has a way out').toContain('backLabel="Back to your plan"')
     expect(SHEET, 'and no cross of its own').not.toContain('ariaLabel="Close"')
     // CTA-COMPACT-SCOPE-01 (2026-10-14) renamed this. The GUARANTEE is unchanged --
     // a pending state can still be cleared -- but "Discard changes" named the X's
@@ -228,7 +230,8 @@ describe('MODIFY-CONFIRM-01 — the diff is reversible and names its own scale',
     // SAVE-PATTERN-01 — the frame moved to the shared ChangeConfirm; the confirm screen must use it.
     const FRAME = readFileSync(join(process.cwd(), 'components/shared/ChangeConfirm.tsx'), 'utf8')
     expect(CONFIRM).toMatch(/<ChangeConfirm\b[\s\S]{0,80}onBack=\{onBack\}/)
-    expect(FRAME).toMatch(/<BackButton\b/)
-    expect(FRAME).toMatch(/import BackButton from '@\/components\/shared\/BackButton'/)
+    // PLAN-CHANGE-HEADER-01 (6t-l): the back arrow is ScreenHeader's, pinned, so a long diff cannot scroll it away.
+    expect(FRAME).toMatch(/<ScreenHeader title="Here is what changes"[^>]*onBack=\{onBack\} backLabel=\{backLabel\}/)
+    expect(FRAME).not.toMatch(/<BackButton\b/)
   })
 })

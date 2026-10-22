@@ -166,3 +166,25 @@ describe('BACK-ARROW-TITLE-COLLIDE-01 — pushed screens pin their header', () =
       .toBe(2)
   })
 })
+
+// 🔴 PLAN-CHANGE-HEADER-01 (Design Board 2026-10-22, 6t-l). BACK-ARROW-FLOAT-03: "a header GROUP pins; only a LONE
+// arrow floats". The Adjust screen floated an arrow over a title that scrolled away, and the confirm screen had both in
+// the flow; both became pushed screens in SAVE-PATTERN-01, after the header rulings, and nothing stopped it. So a file
+// may import FloatingBackButton only when it is declared here as a lone-arrow surface (no screen title of its own).
+describe('PLAN-CHANGE-HEADER-01 — a floating arrow is only ever a LONE arrow', () => {
+  const LONE_ARROW: Record<string, string> = {
+    'app/dashboard/GeneratePlanScreen.tsx': 'the refusal view has no title; its arrow is the only chrome (BACK-ARROW-FLOAT-03)',
+  }
+  const files = execSync('git ls-files components app', { encoding: 'utf8' }).split('\n')
+    .filter(f => /\.tsx$/.test(f) && !/\.test\./.test(f) && !/-preview\//.test(f) && !/FloatingBackButton\.tsx$/.test(f))
+  const users = files.filter(f => /<FloatingBackButton\b/.test(code(readFileSync(f, 'utf8'))))
+  it('every FloatingBackButton user is a declared lone-arrow surface, and every declaration is still used', () => {
+    expect(users.filter(f => !LONE_ARROW[f]), 'a floating arrow beside a title: use ScreenHeader (pinned, arrow inside)').toEqual([])
+    expect(Object.keys(LONE_ARROW).filter(f => !users.includes(f)), 'declared but no longer floats: delete the row').toEqual([])
+  })
+  it('the plan-change journey pins its headers, as Strength setup does', () => {
+    for (const f of ['components/shared/ModifyPlanSheet.tsx', 'components/shared/ChangeConfirm.tsx']) {
+      expect(code(readFileSync(f, 'utf8')), f).toMatch(/<ScreenHeader\b[^>]*onBack=/)
+    }
+  })
+})

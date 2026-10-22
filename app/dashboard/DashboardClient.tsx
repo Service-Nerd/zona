@@ -2936,7 +2936,7 @@ export default function DashboardClient() {
             screens", and a diff the runner is deciding on is the screen's one
             job while it is up. */}
         {screen === 'plan' && modifyPreview && plan && (
-          <div style={{ padding: '16px 0 0' }}>
+          <div>{/* PLAN-CHANGE-HEADER-01: no top padding; ChangeConfirm's pinned ScreenHeader carries its own, as Strength setup does */}
             <ModifyPlanConfirm
               before={plan}
               after={modifyPreview.next}
@@ -3175,7 +3175,7 @@ export default function DashboardClient() {
         {screen === 'strength-setup' && strength.status !== 'off' && (
           <>
             {strengthPreview ? (
-              <div style={{ padding: '16px 0 0' }}>
+              <div>{/* PLAN-CHANGE-HEADER-01: no top padding; ChangeConfirm's pinned ScreenHeader carries its own, as Strength setup does */}
                 <StrengthChangeConfirm before={strengthPreview.before} after={strengthPreview.after}
                   weekN={(plan?.weeks[getCurrentWeekIndex(plan.weeks)] as { n?: number } | undefined)?.n ?? 1}
                   applying={strengthBusy} error={strengthError}

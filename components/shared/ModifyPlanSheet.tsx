@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
-import FloatingBackButton from './FloatingBackButton'
+import ScreenHeader from '@/components/ui/ScreenHeader'
 import { useNavHeight } from './Sheet'
 import { DayGridSelector } from './DayGridSelector'
 import { SegmentedControl } from './SegmentedControl'
@@ -160,10 +160,11 @@ export default function ModifyPlanSheet({
   // an edit pending, the Apply bar arrives at the bottom, lifted clear of the floating nav.
   const navH = useNavHeight() ?? 0
   return (
-    <div role="region" aria-label={ADJUST_PLAN_TITLE} style={{ paddingTop: 'var(--space-4)' }}>
+    <div role="region" aria-label={ADJUST_PLAN_TITLE}>
         <>
-          {/* A pushed screen that scrolls: the floating arrow owner (BACK-ARROW-FLOAT-01). */}
-          <FloatingBackButton onClick={onClose} ariaLabel="Back to your plan" />
+          {/* PLAN-CHANGE-HEADER-01 (6t-l) — the pinned header with the arrow inside (BACK-ARROW-TITLE-COLLIDE-01), as
+              Strength setup has. It was a floating arrow over a title that scrolled away. */}
+          <ScreenHeader title={ADJUST_PLAN_TITLE} sub="Nothing changes until you apply." onBack={onClose} backLabel="Back to your plan" />
           <div style={{ padding: '0 20px' }}>
             {/* R-5 (Design Board, five-screen review) — A SHEET YOU BROWSE
                 TAKES A TOP-RIGHT DISMISS; A SHEET YOU ACT IN KEEPS THE BOTTOM
@@ -177,13 +178,6 @@ export default function ModifyPlanSheet({
                 modal and the scroll. I don't like it."*
                 The moment an edit is pending the bottom bar arrives with
                 Apply, and the dismiss goes with it. */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-              <div style={{ minWidth: 0 }}>
-                {/* The same title treatment as the consent screen that follows: one journey, one voice. */}
-                <div className="screen-header__title">{ADJUST_PLAN_TITLE}</div>
-                <div className="screen-header__sub">Nothing changes until you apply.</div>
-              </div>
-            </div>
 
             {(['week', 'body', 'race'] as ModifyGroup[]).map(group => (
               <div key={group}>

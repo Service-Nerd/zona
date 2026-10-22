@@ -58,8 +58,6 @@ const NOT_PUSHED: Record<string, string> = {
     'the tab-root header primitive, and the owner of the title role it renders.',
   'app/dashboard/RecalibrationTile.tsx':
     'a TILE, not a pushed screen: it owns no scroller and has no screen title.',
-  'components/shared/ChangeConfirm.tsx':
-    'a confirm surface, not a pushed screen. Named in FloatingBackButton\'s own doc.',
 }
 
 /** ⚠️ A LINE UNDER A TITLE THAT IS NOT A SUBTITLE. The same declared-by-name discipline as

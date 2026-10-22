@@ -29,3 +29,5 @@ and save* (primary) and *Keep my current plan* (secondary). No progress animatio
 ## Gates
 
 `components/shared/planChangeJourney.markup.test.ts` (busy state, error placement, both callers use the frame).
+
+**Header (PLAN-CHANGE-HEADER-01, Design Board 6t-l, 2026-10-22).** The title *Here is what changes*, its sub and the back arrow are a pinned `ScreenHeader` (`backLabel` carries the spoken label), so a long diff cannot scroll the way back off screen. Was an inline `BackButton` and title in the flow.

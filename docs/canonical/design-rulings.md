@@ -1048,7 +1048,7 @@ Strength setup; titles and subs unchanged. 🧭 Zhuo: one journey (SAVE-PATTERN-
 Silvanto: no veto; the pinned band is the ruled object. 📱 Wroblewski: on the confirm screen the way back is the one
 thing a runner reading a long diff needs, and it currently scrolls off. 🎓 Sierra, 🎪 Collins: no objection. **Check:** a
 gate that no file renders `FloatingBackButton` beside a screen title, and that `ChangeConfirm` and the Adjust screen use
-`ScreenHeader`; falsified at build. **Ruled, not built.**
+`ScreenHeader`; falsified at build. **BUILT 2026-10-22.** `ScreenHeader` gained `backLabel` (the confirm screens' spoken labels). Found at build: two exemption rows had declared `ChangeConfirm` *"short by construction - if it ever scrolls, that is the defect"*; a long diff does scroll, so both rows went. Gate: `screenHeaderPinned.test.ts` § PLAN-CHANGE-HEADER-01, red when the floating arrow is restored.
 
 ## 6t-k. PLAN-DOORS-01 — two plans, one door each, the same face everywhere (2026-10-22)
 
