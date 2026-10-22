@@ -187,7 +187,7 @@ on a blocked Sunday (the only remaining `'sun'` fallback in `ruleEngine.ts`, kep
 or edit path can send it (both need a run day). Fix at the input boundary as a designed refusal, never by matching a
 message. Count stored inputs first.
 
-### 🔲 `A11Y-APP-TEXT-SWEEP-01` — 69 candidate sub-AA text sites, and the scanner that could not see them 🧭 **DESIGN BOARD**
+### 🔲 `A11Y-APP-TEXT-SWEEP-01` — **re-measured 2026-10-22: 19 sites, not 69; Design Board RULED (6t-j), ready to build** 🧭 **DESIGN BOARD**
 
 ⚠️ **Re-measure before picking this up.** Derive the number from
 `lib/a11yContrast.test.ts → A11Y-APP-TEXT-CONTRAST-01` and its `SURFACES` list, never from this line.

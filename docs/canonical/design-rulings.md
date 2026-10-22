@@ -1031,6 +1031,35 @@ answers in a line what three rounds of reasoning did not.
 ---
 
 
+## 6t-j. A11Y-APP-TEXT-SWEEP-01 — the last 19 faint-text sites, and the gate goes app-wide (2026-10-22)
+
+**Re-measured before sitting:** the item said **69**; the code says **19**. Today's 6t-g/6t-h gate
+(`accentText.test.ts`) already holds every moss, warn and hue small-text site, and `--danger` has none. Method: every
+`style={{…}}` bounded by brace depth in `components/` and `app/` (no tests, no `-preview`), a literal `color: var(--x)` with
+`fontSize` < 24px, against every token resolving below 4.5:1 on `--card` or `--bg`; then each site's real ground read by
+hand. ⚠️ Not seen: className or CSS-module text, and colour passed through a variable other than the hue owner.
+
+| Ruling | Sites | Measured |
+|---|---|---|
+| **`--mute-2` is never text; meta text takes `--mute`** | 8: step numerals (SessionSteps, StrengthSessionScreen), Ruler ticks, RPEScale labels ×2, Today 10px meta, NotificationRow time, SessionCard drag glyph | `--mute-2` 2.16 card / 1.90 bg (fails 3:1 for a glyph too); `--mute` 5.45 / 4.80 |
+| **"via Strava" words take `--mute`; the orange stays on the ● mark only** | 2: SessionCard, PlanCalendar | `--strava` text 3.40 / 2.99; the mark is a graphic (3:1). Partner exception stays scoped to the connect affordance |
+| **White text sits on `--moss-strong` / `--warn-strong`, never on `--moss` / `--warn`** | 5: IdentityCard initials, ModifyPlanSheet selected chip, RPEScale selected cell, PhoneFrame today date (marketing, fidelity), PendingAdjustmentBanner confirm | white on moss 3.68, warn 3.25 → on the strong shades 5.48. Same as `.btn--primary` |
+| **A zone badge's numeral is chosen by measurement: white or ink, whichever passes on that hue** (one owner, `onHue()` beside `hueText()`) | 1 site, 5 badges (Orientation) | white passes on Z1 recovery 4.55, Z2 easy 5.12; fails on Z3–Z5 (3.25 / 3.78 / 3.35), where ink passes (5.35 / 4.60 / 5.19). The fills stay the zone hues |
+| **Exempt, named:** CoachByline avatar initials | 1 | `aria-hidden`, beside the coach's name: decoration under WCAG 1.4.3 |
+| Already passing | 2: login (ink fill), PhoneFrame CTA (`--moss-strong`) | 5.48+ |
+
+🧭 Zhuo: a decision, not a preference, and every row has a number. ✋ Silvanto: **no veto**. Darker fills are the ratified
+text shades, not a new ground, and the zone fills do not move. He would have vetoed recolouring the badges; nobody
+proposed it. 🎓 Sierra: the Ruler ticks and RPE labels are the numbers a runner learns their effort by, so they are the
+last place to be faint. 📱 Wroblewski: 10px `--mute-2` outdoors is unreadable; the 44px chip floor is untouched.
+🎪 **Collins dissent, recorded:** keep `--strava` on the words, since the attribution is their brand. **Lost**: the exception
+was ruled for the connect affordance, and the mark keeps the colour where it is a graphic. The gradient on the avatar is
+kept, as he asked, because the initials are decoration.
+
+**Artifacts:** `ui-patterns.md` rows for `--mute-2` (non-text only) and the Strava done-state line amended; `onHue()` in
+`lib/ui/hueText.ts`; `A11Y-APP-TEXT-CONTRAST-01` widened from one audited file to the whole app, with named exceptions,
+plus a white-on-fill arm, each falsified. **RULED, not built.**
+
 ## 6t-i. UNMEASURED-DISTANCE-01 — name the gap, then let the runner fill it (2026-10-22)
 
 | Decision | Status | Why |
