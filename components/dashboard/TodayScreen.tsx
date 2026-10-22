@@ -44,6 +44,7 @@ import { convertDistanceString, convertPaceString, formatDate, formatDistance, f
 import { renderPlanProse, planProseContext } from '@/lib/plan/renderGuidance'
 import { easyPaceAsCeiling } from '@/lib/plan/easyPaceCeiling'
 import { getSessionColor, getSessionLabel } from '@/lib/session-types'
+import { defaultSelectedKey, selectionResetKey } from '@/lib/ui/todaySelection'
 import { isFatigueTag } from '@/lib/coaching/completionVocab'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import { parseLocalDate } from '@/lib/plan'
@@ -931,24 +932,18 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   // Default selected day. selectedKey holds the calendar day (displayKey),
   // not the session's originalDay — otherwise a moved session and the now-empty
   // origin day collide on the same key and the lookup picks the wrong entry.
-  const [selectedKey, setSelectedKey] = useState<string>(() => {
-    const t = sessions.find(s => s.today)
-    if (t) return t.displayKey
-    const next = sessions.find(s => s.rawDate >= now && effectiveWs[s.displayKey] && effectiveWs[s.displayKey].type !== 'rest')
-    if (next) return next.displayKey
-    const last = [...sessions].reverse().find(s => effectiveWs[s.displayKey])
-    return last?.displayKey ?? 'mon'
-  })
+  // TODAY-DAY-TAP-01 — one owner of the default (`lib/ui/todaySelection.ts`), and the reset keyed on CONTENT. It was keyed
+  // on `sessions`, which became a new array on every render (completions `?? {}`), so every tap snapped back to today.
+  const typeOf = (k: string) => effectiveWs[k]?.type as string | undefined
+  const [selectedKey, setSelectedKey] = useState<string>(() => defaultSelectedKey(sessions, typeOf, now) ?? 'mon')
+  const selectionKey = selectionResetKey(weekIndex, overridesReady, dayLists)
 
-  // Reset selected key on week change
+  // Reset the selected day when the week, readiness or the planned days change. Never on a completions refresh.
   useEffect(() => {
-    const t = sessions.find(s => s.today)
-    if (t) { setSelectedKey(t.displayKey); return }
-    const next = sessions.find(s => s.rawDate >= now && effectiveWs[s.displayKey] && effectiveWs[s.displayKey].type !== 'rest')
-    if (next) { setSelectedKey(next.displayKey); return }
-    const last = [...sessions].reverse().find(s => effectiveWs[s.displayKey])
-    if (last) setSelectedKey(last.displayKey)
-  }, [weekIndex, overridesReady, sessions])
+    const d = defaultSelectedKey(sessions, typeOf, now)
+    if (d) setSelectedKey(d)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionKey])
 
   const selectedSession = sessions.find(s => s.displayKey === selectedKey) ?? null
   // ADR-015 / INV-FMT-001 — single-owner metric resolution. The Today-screen

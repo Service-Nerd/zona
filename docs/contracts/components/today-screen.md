@@ -176,3 +176,5 @@ so a retry is real. Check: `components/shared/planChangeFailVisible.markup.test.
 **Strength session title (STRENGTH-SESSION-TITLE-01, 2026-10-19).** Any strength session's name comes from `strengthSessionTitle(session)` (`lib/strength-bridge/display.ts`), read from what it holds (*Lower body*, *Upper body and light legs*, else the kind title), never `STRENGTH_KIND_TITLE[kind]`. Gate: `lib/strength-bridge/sessionTitle.test.ts`.
 
 - **Session card hue (SESSION-INTERVALS-HUE-01, 2026-10-22):** both run `SessionCard`s pass `catalogueId={…catalogue_id}`, so a VO2 session (typed `quality`) takes the intervals coral on Today. The strength cards pass none.
+
+**Selected day (TODAY-DAY-TAP-01, 2026-10-22).** The strip's selection defaults via `defaultSelectedKey` and resets only when `selectionResetKey(weekIndex, overridesReady, dayLists)` changes (`lib/ui/todaySelection.ts`): a new week, overrides becoming ready, or a session moving. A completions refresh never resets it, so a tapped day stays selected. Held by `lib/ui/todaySelection.test.ts`.
