@@ -17,7 +17,7 @@
 // type stay consistent.
 
 import type { HRStreamSummary } from '@/lib/strava'
-import { decideLateArrival } from './lateArrivalGate'
+import { decideLateArrival, hrArrivalStamp } from './lateArrivalGate'
 
 interface MatchableStravaActivity {
   id:           number
@@ -313,17 +313,15 @@ export async function consolidateIncomingHealthKitRow(
     patch.hr_pct_z3            = row.hr_pct_z3
     patch.hr_pct_z4_5          = row.hr_pct_z4_5
 
-    // HR-SYNC-01: stamp arrival timestamp on late-window patches so the
-    // daily coach note can reference "yesterday's HR just landed" without
-    // re-firing analyse-run now (Hutchinson). The decision flows back to
-    // the caller via the return value.
+    // HR-SYNC-01: the fresh-window decision flows back to the caller, which
+    // withholds a stale reframe (Hutchinson). HR-LATE-STAMP-01: the stamp marks
+    // every late arrival, inside the window or not, as its migration defines.
+    const now = new Date()
     lateArrival = decideLateArrival(
       { workoutStartIso: row.start_date, durationSeconds: row.moving_time_s },
-      new Date(),
+      now,
     )
-    if (!lateArrival.withinFreshWindow) {
-      patch.hr_arrived_late_at = new Date().toISOString()
-    }
+    Object.assign(patch, hrArrivalStamp(now))
   }
   if (Object.keys(patch).length > 0) {
     patch.processed_at = new Date().toISOString()

@@ -8,7 +8,7 @@ import { getUserHRZones } from '@/lib/strava'
 import { adaptHealthKitWorkout, adaptManualRun, type HealthKitWorkoutPayload, type ManualRunPayload } from '@/lib/health/adapter'
 import { autoMatchAndAnalyse, getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
 import { consolidateIncomingHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
-import { decideLateArrival } from '@/lib/coaching/lateArrivalGate'
+import { decideLateArrival, hrArrivalStamp } from '@/lib/coaching/lateArrivalGate'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 
 // POST /api/health/ingest
@@ -214,15 +214,16 @@ export async function POST(req: NextRequest) {
 
   // HR-SYNC-01: late-arrival stamp on the same-uuid resync path.
   // (Cross-source consolidate path stamps via consolidate helper above.)
+  // HR-LATE-STAMP-01: every late arrival is stamped; the window decides only
+  // whether a fresh reframe fires.
   let lateArrival: ReturnType<typeof decideLateArrival> | null = null
   if (wasHrAbsent) {
+    const now = new Date()
     lateArrival = decideLateArrival(
       { workoutStartIso: payload.startDate, durationSeconds: payload.durationSeconds },
-      new Date(),
+      now,
     )
-    if (!lateArrival.withinFreshWindow) {
-      (rowToWrite as any).hr_arrived_late_at = new Date().toISOString()
-    }
+    Object.assign(rowToWrite, hrArrivalStamp(now))
   }
 
   const { error } = await supabase

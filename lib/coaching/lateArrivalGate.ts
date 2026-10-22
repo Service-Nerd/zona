@@ -28,7 +28,7 @@ export interface LateArrivalInput {
 export interface LateArrivalDecision {
   /** True when the workout ended within `PENDING_HR_WINDOW_HOURS` of `now`. */
   withinFreshWindow: boolean
-  /** Workout-end ms since epoch. Exposed so callers can stamp `hr_arrived_late_at`. */
+  /** Workout-end ms since epoch. */
   workoutEndMs: number
   /** How late HR landed, in seconds since workout end. Useful for instrumentation. */
   secondsSinceEnd: number
@@ -49,4 +49,15 @@ export function decideLateArrival(input: LateArrivalInput, now: Date): LateArriv
   const secondsSinceEnd = Math.max(0, Math.floor((now.getTime() - workoutEndMs) / 1000))
   const withinFreshWindow = secondsSinceEnd <= PENDING_HR_WINDOW_HOURS * 60 * 60
   return { withinFreshWindow, workoutEndMs, secondsSinceEnd }
+}
+
+/**
+ * HR-LATE-STAMP-01 — the one writer of `hr_arrived_late_at`. Its migration defines it as *"timestamp when HR was patched
+ * onto a previously HR-null row"*: EVERY late arrival, not only the ones past the fresh window. Both ingest paths
+ * stamped only past 24 h, so 29 of the 32 runs that gained HR carried no stamp (measured 2026-10-22, lags 0.1–23.9 h)
+ * and any count read from the column undercounted ten-fold. Whether to coach is still `decideLateArrival`'s call; the
+ * column only records that HR came late, and when.
+ */
+export function hrArrivalStamp(now: Date): { hr_arrived_late_at: string } {
+  return { hr_arrived_late_at: now.toISOString() }
 }
