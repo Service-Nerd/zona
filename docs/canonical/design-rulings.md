@@ -1031,6 +1031,16 @@ answers in a line what three rounds of reasoning did not.
 ---
 
 
+## 6t-f. SESSION-INTERVALS-HUE-01 — one owner for a session's hue; the intervals colour is the error red (2026-10-22)
+
+| Decision | Status | Why |
+|---|---|---|
+| **`SessionSteps` takes the main-set hue from `getSessionColor(session)`, for every session** | 🟢 **SHIP (not built)** | Two owners answered one question: 340 of 2,746 structured sets (VO2, hills) drew their main set in `--s-inter` by zone while the rail, Plan, Today, silhouette and trace drew them `--s-quality`. One owner; VO2 detail turns amber, consistent with the rail |
+| **`getSessionColor` reaches `--s-inter` for VO2 by catalogue category, not `type`** | 🟡 **SHIP, GATED on the next row** | Measured: 751 plans, 557 VO2 sessions, **0 typed `intervals`**: the key is unreachable, PLAN-LONGRUN-COLOUR-01's class. ⛔ **Silvanto's veto, named rule `ux-principles.md:107`:** while `--s-inter` is `--danger` this would spread the error red onto every VO2 row |
+| **A new `--s-inter`: a coral distinct from `--danger`** | ⚠️ **INSUFFICIENT EVIDENCE** | 🔴 `--s-inter` = `--danger` = `#B84545`, and `--coral` aliases it, against *"No red in the training UI… coral for high-intensity"*: the token and the rule had never met. Candidates measured: `#C95F4A` (ΔE 12.0 to danger, 20.0 to race, 4.02:1 on `--card`), `#D4705A` (16.7, 21.2, 3.35:1); race↔quality is 21.6 today. Needs a prototype on the real card (rail, header, repeat count, silhouette) at 320/375px and a contrast call for the text uses; hill reps decided there |
+
+**Collins** wanted the coral now; the chair sequenced it behind a prototype. Recorded. ⚠️ Not measured: on a device.
+
 ## 6t-e. RUNWALK-STEPS-01 — the prototype (390px, real SessionSteps) · SHIP WITH AMENDMENT when built (2026-10-22)
 
 | Decision | Status | Why |

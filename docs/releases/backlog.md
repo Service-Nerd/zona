@@ -151,6 +151,12 @@ structured sets** disagree (hill reps 117, `intervals_long` 74, `intervals_class
 rolling 7). CLAUDE.md's colour map says intervals are `--s-inter`, so the likelier defect is in `getSessionColor`'s
 classification of these rows. Found while scoping §21b Am.4c rule 4 to run-walk.
 
+🧭 **RULED 2026-10-22 (design-rulings 6t-f).** (1) **SHIP:** one owner, `SessionSteps` uses `getSessionColor` for the main
+set. (2) **SHIP, gated:** `getSessionColor` reaches `--s-inter` for VO2 by catalogue category (0 of 557 VO2 sessions are
+typed `intervals`). (3) **INSUFFICIENT EVIDENCE:** `--s-inter` is `#B84545`, the `--danger` value, against ux-principles'
+no-red rule; a coral (`#C95F4A` / `#D4705A` measured) needs a phone-width prototype first. Order: (1) now, then the
+prototype, then (3) and (2) together.
+
 ### 🔲 `UNMEASURED-DISTANCE-01` — a linked run with no distance cannot be given one 🧭 **DESIGN BOARD** (prototype) + ⚙️ **ARCHITECTURE** (INV-DATA-008 / ADR-011) *(filed 2026-10-22, from TREADMILL-TOGGLE-01)*
 
 47 of 354 Apple Health runs carry no distance, from 4 runners (three almost entirely: 26/36, 15/15, 9/10). Sources:
