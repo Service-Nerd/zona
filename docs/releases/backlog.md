@@ -100,12 +100,6 @@ amber average), the zone card and structure fold under *What was planned* (keep 
 closing marks *Logged · Linked · Zone read*. A move inside `SessionPopupInner`: the six move asks are answered in the
 decision note Part 8. Must-not-lose check + 375 px height. `docs/decisions/session-screens-runna-2026-10-21.md`.
 
-### 🔲 `COMPLETION-COPY-CLAIM-01` — *"Kept it easy."* is claimed on a run with no heart rate 🏃 **COACHING BOARD** *(filed 2026-10-22)*
-
-`getCompletionCopy(type)` is chosen by session type alone, so an easy run logged by hand, with no HR, still reads *"Kept it
-easy. That's where the fitness is built."* That is a claim about effort the app cannot support (P-04; §12 Am.2: missing HR
-is silence, never a verdict). Question: what the completion copy says when there is no zone evidence.
-
 ### ✅ `SESSION-PRERUN-DETAIL-01` — **SHIPPED 2026-10-22 (the silhouette).** Step rows and the session silhouette on the pre-run detail (phase 2) 🧭 **DESIGN BOARD RE-RULED 2026-10-22** *(filed 2026-10-21)*
 
 **Re-sat 2026-10-22 (Part 10):** step rows VACATED (Option E stands; the modality glyph duplicates the role word on 100%

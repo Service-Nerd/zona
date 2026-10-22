@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — COMPLETION-COPY-CLAIM-01 · the card stopped praising runs it knew nothing about
+**Shipped:** After an easy run the card says "Kept it easy." only if your heart rate or your own effort score backs it up. Otherwise it says the run was done and nothing more.
+
+**Dev learning:** The item was filed as "no heart rate". Measuring it found a worse case: one in five analysed runs went well over the ceiling, and on those cards the praise sat directly above the sentence saying so. The same function also hid the long-run copy, because a long run is stored as easy. Three defects, one function, one selector.
+
+**Product learning:** Most runners log by hand, so "say nothing without heart rate" would have gone quiet for nearly everyone. The runner's own effort score, against the target the plan gave them, is honest evidence. Using the session's target, not a new fixed number, kept it to one threshold per question.
+
+**AI-building learning:** The board's sharpest point was Sims's: heat and illness raise heart rate at the same effort, so when heart rate and feel disagree, neither wins. That became the rule, and a test fails if either condition is dropped.
+
+**The honest bit:** The neutral words, "Easy run done." and "Next one when you're ready.", are mine. They need the founder's sign-off.
+
+---
+
 ## 2026-10-22 — HR-LATE-STAMP-01 · the column said one thing and the code another
 **Shipped:** When a watch's heart rate lands after the run has already synced, we now record when it landed, every time. Before, we only recorded it when it was more than a day late.
 
