@@ -6,7 +6,7 @@
 //
 // Why it is not UX-SESSION-GLYPH-01 again: that glyph subdivided one colour on Plan rows and duplicated the label. This
 // encodes DURATION and ZONE PER STEP, which neither the colour nor the label carries, and it is not drawn on Plan rows.
-// ⚠️ CD-1: Cruise intervals and Mile repeats draw the same shape on the harness plan (two ~10-minute reps, ~2-minute jog).
+// ⚠️ CD-1: Cruise intervals and 1600m repeats (was "Mile repeats") draw the same shape on the harness plan (two ~10-minute reps, ~2-minute jog).
 // That is the engine's taxonomy showing through, routed to the Coaching Board; the drawing is not wrong for showing it.
 
 import type { SessionStructure } from './sessionComposer'

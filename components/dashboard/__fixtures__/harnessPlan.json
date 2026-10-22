@@ -856,7 +856,7 @@
         "wed": {
           "id": "w11-wed",
           "type": "quality",
-          "label": "Mile repeats",
+          "label": "1600m repeats",
           "detail": null,
           "distance_km": 6,
           "duration_mins": 43,

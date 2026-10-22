@@ -2243,7 +2243,7 @@ stated rather than invented — `THRESHOLD_WORK_TARGET_MINS` already bounds both
 already enforced. **What would reopen it:** evidence that T-pace should differ between continuous and
 intervallic delivery, which would amend THIS section, not the catalogue.
 
-### §19 Amendment — Cruise intervals and Mile repeats are one stimulus, separated by the anchor *(Coaching Board 2026-10-22, CD-1-MILE-CRUISE-01)*
+### §19 Amendment — Cruise intervals and 1600m repeats are one stimulus, separated by the anchor *(Coaching Board 2026-10-22, CD-1-MILE-CRUISE-01; renamed under REP-UNITS-KM-01)*
 
 `tempo_cruise` (10 min at T / 2 min jog) and `threshold_mile_repeats` (1600 m at T / 90 s jog) are **the same stimulus
 by design**, and both stay. Measured (`scripts/board-evidence-cruise-mile.ts`, cohort grid, stride 17): 451 of 2,334
@@ -2253,8 +2253,15 @@ separates them is the **anchor**: a mile has a split the runner can compare week
 are two rows."* So the Mile repeats purpose names the split, and no longer calls the reps "long": beside Cruise in the
 same plan they are the shorter of the two. The session silhouette drawing them alike is correct.
 
-No numeric and no invariant: `THRESHOLD_WORK_TARGET_MINS` bounds both, and a purpose sentence is copy, not a plan
-property. ⚠️ The purpose wording awaits the founder.
+No numeric: `THRESHOLD_WORK_TARGET_MINS` bounds both.
+
+**Renamed the same day (REP-UNITS-KM-01).** "Mile repeats" named a unit the engine does not prescribe in and most
+runners do not use: the engine is unit-blind, the rep is 1600 m, and 46 of 49 live runners are on km. Prescribing by
+the runner's unit was rejected (Hutchinson): a display setting must never change what a runner trains (ADR-003,
+ADR-015). A per-unit display name was rejected for now (McMillan, recorded): it must survive enrichment rewriting the
+label, and it serves 3 runners; a measured miles cohort reopens it. So the row is **"1600m repeats"**, its purpose
+names no unit the runner may not use, and existing plans keep their stamped label. **Check:**
+`lib/plan/catalogueUnitNeutral.test.ts`: no catalogue row's name or purpose names an imperial unit.
 
 **Known limitation (SC-08).** The invariant's easy-direction check is *label*-based, unlike the engine's, because the plan session carries no reference to the catalogue row that produced it — the reps and the category are re-joined at display time by matching the session's name. When SC-08 puts the row's identity on the session, re-key this check on the structural category. Until then, a hand-written or AI-rewritten label that avoids the four watched words can still evade it.
 

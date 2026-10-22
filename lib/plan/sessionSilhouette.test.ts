@@ -34,7 +34,7 @@ describe('sessionSilhouette on real sessions', () => {
     expect(main.filter(x => !x.work).length).toBe(3)
   })
   it('🔴 the main set is as long as the composer says, so the strip agrees with the headers beneath it', () => {
-    for (const label of ['Cruise intervals', 'Over-unders', 'Mile repeats', 'Progressive tempo']) {
+    for (const label of ['Cruise intervals', 'Over-unders', '1600m repeats', 'Progressive tempo']) {
       const s = byLabel(label)
       const structure = composeSession({ session: s, catalogueRow: catalogueRowFor(s), goalPace: null })!
       const main = shape(s)!.filter(x => x.part === 'main').reduce((a, x) => a + x.mins, 0)

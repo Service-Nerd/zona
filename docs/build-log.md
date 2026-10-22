@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — REP-UNITS-KM-01 · the session is named for what it is
+**Shipped:** "Mile repeats" is now "1600m repeats" in new plans. Same session, same reps.
+
+**Dev learning:** The engine has no idea which units a runner uses, and that's correct: the board would not let a settings toggle change what someone trains. So the name had to change instead. The new check scans every catalogue name and purpose for miles or yards, and its first draft failed on "Quick feet" and "Time on feet". Feet are a body part here.
+
+**Product learning:** The founder asked whether the app is clever enough to give km runners km repeats. Honest answer: it gives everyone 1600 m, and now it says so. A miles runner reading "1600m" is reading what any track coach would write.
+
+**AI-building learning:** Regenerating the test fixture rewrote 170 lines because the build script reads today's date. I reverted it and changed the one word; the fixture test, which runs on a pinned clock, confirmed that was the only difference.
+
+**The honest bit:** Plans already generated still say "Mile repeats". New plans only, by policy.
+
+---
+
 ## 2026-10-22 — REP-UNITS-01 · a 400 is a 400
 **Shipped:** Interval reps now read the way they were written: 400m, 1600m, 1km. A miles runner saw a 400 as "0.2mi", and a 300 as "0.2mi" too.
 

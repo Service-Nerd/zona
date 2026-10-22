@@ -426,10 +426,12 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     coach_voice_notes: 'The under is not the rest. That is the whole point of it.',
   },
   {
-    id: 'threshold_mile_repeats', name: 'Mile repeats', category: 'threshold',
-    // CD-1-MILE-CRUISE-01 (§19 Am., Coaching Board 2026-10-22): the same stimulus as `tempo_cruise` by design; what
-    // separates them is the anchor. "Long" was false: at T a mile is 7.6–9.8 min, shorter than Cruise's 10.
-    purpose: 'Threshold reps by the mile. The split tells you honestly whether the block has worked.',
+    // REP-UNITS-KM-01 (§19 Am., Coaching Board 2026-10-22): named for the prescription, "1600m", not "Mile". The engine
+    // is unit-blind and 46 of 49 live runners are on km; the step row reads "1600m" for everyone (REP-UNITS-01). The id
+    // keeps its old spelling: it is stamped on every existing plan and is never shown.
+    // CD-1-MILE-CRUISE-01: the same stimulus as `tempo_cruise` by design; what separates them is the anchor.
+    id: 'threshold_mile_repeats', name: '1600m repeats', category: 'threshold',
+    purpose: 'Threshold reps over 1600m. The split tells you honestly whether the block has worked.',
     phase_eligibility: ['build', 'peak'],
     // Not 5K: a 1600 m rep is most of a 5K runner's race. They have
     // tempo_cruise_short for the same stimulus at a length that fits.

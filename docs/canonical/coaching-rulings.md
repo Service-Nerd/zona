@@ -56,6 +56,14 @@ incline adjustment (the 1% rule's evidence starts at 2.92 m/s and every prescrib
 rate or RPE and time; pace and distance are guides. A toggle that changes the prescription is INCORRECT. Whether to build
 a toggle or guidance line goes back to the Design Board and SLT. No numeric, no invariant.
 
+## 2026-10-22 — REP-UNITS-KM-01 · CORRECT WITH AMENDMENT (rename to "1600m repeats"; prescription unit-blind)
+
+"Mile repeats" reached km runners (46 of 49 live). Prescribing by the runner's unit is rejected: a display setting must
+never change what a runner trains (ADR-003/015). A per-unit display name is rejected for now (McMillan recorded; a
+measured miles cohort reopens it). Row renamed "1600m repeats"; purpose *"Threshold reps over 1600m. The split tells you
+honestly whether the block has worked."*, superseding the "by the mile" wording; existing plans keep their stamped
+label. No numeric. Check: `lib/plan/catalogueUnitNeutral.test.ts`. §19 Am. updated.
+
 ## 2026-10-22 — CD-1-MILE-CRUISE-01 · CORRECT WITH AMENDMENT (keep both; the anchor is the difference)
 
 `tempo_cruise` and `threshold_mile_repeats` are one T-pace stimulus by design (mile median 8.8 min vs 10; jog 90 s vs 2
