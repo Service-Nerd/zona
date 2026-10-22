@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — UNMEASURED-DISTANCE-01 · "0km" was a lie, and now the runner can fix it
+**Shipped:** A run that arrived without a distance (Peloton, some Garmin and WHOOP syncs) now says "Distance not recorded" instead of "0km", and offers "Add the distance". The runner taps it, sees "How far did you run?" with the plan's distance already filled in, and saves. It then reads "8km · you added this".
+
+**Dev learning:** The number is stored next to the device's measurement, not over it. One small function decides which to use, so the week's volume counts it and the fitness estimates provably don't. Moving the distance stepper into a shared component made three checks report "debt paid" that wasn't: they only scan files git knows about, and the new file wasn't staged yet.
+
+**Product learning:** 47 of our 354 Apple Health runs had no distance, most of them one Peloton runner. Their weeks looked empty, so their load looked lighter than it was. Counting a typed distance is safer than counting nothing.
+
+**AI-building learning:** Three boards for one field: where the number lives, what may trust it, where the button goes. Each found something the next needed: the "0km" bug came out of the design prototype.
+
+**The honest bit:** It can't go live until the database migration is run, and that has to be done by hand in Supabase.
+
+---
+
 ## 2026-10-22 — WARN-TEXT-CONTRAST-01 · the coaching amber, a shade darker for words
 **Shipped:** Coaching notes and warnings written in amber now use the darker amber. Same colour family, readable on white.
 
