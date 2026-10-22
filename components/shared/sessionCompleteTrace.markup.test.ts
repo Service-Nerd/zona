@@ -30,7 +30,7 @@ describe('SessionCompleteCard with a trace', () => {
   it('🔴 a free run (no analysis) still reaches it, with the trace\'s own %', () => {
     const html = render({ trace: late })
     expect(html).toContain('Time in zone')
-    expect(html).toContain('You held it for 40 minutes, then it got away from you.')
+    expect(html).toContain('You held it for 40 min, then it got away from you.')
   })
   it('must not lose: without a trace the card is exactly as before (zone bar in A, RPE in B)', () => {
     const a = render({ zonePct: 80 })

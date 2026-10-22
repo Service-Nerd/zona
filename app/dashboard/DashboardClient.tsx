@@ -171,6 +171,7 @@ import MeScreen from '@/components/dashboard/MeScreen'
 import { getDeviceToken } from '@/components/dashboard/pushDevice'
 import SaveImageButton from '@/components/dashboard/SaveImageButton'
 import { useRunTrace } from '@/components/dashboard/useRunTrace'
+import { analysisSentence, isCeilingOnly } from '@/lib/coaching/zoneTrace'
 import TodayScreen from '@/components/dashboard/TodayScreen'
 import StrengthSessionScreen from '@/components/dashboard/StrengthSessionScreen'
 import StrengthSetupScreen, { STRENGTH_PROFILE_DEFAULT } from '@/components/dashboard/StrengthSetupScreen'
@@ -6430,9 +6431,13 @@ export function RunFeedbackCard({
   preferredUnits = 'km',
   preferredMetric = 'distance',
   driftContext = null,
+  hideZoneSignal = false,
 }: {
   analysis: any
   paceTarget?: string | null
+  /** SESSION-LOGGED-HERO-01 (Design Board 2026-10-22) — true where `SessionCompleteCard` sits ABOVE this card, so the
+   *  zone signal is not shown twice: the verdict line and the zone row go, the score chip and Kit's read stay. */
+  hideZoneSignal?: boolean
   actualAvgSpeedMs?: number | null
   onOpenCoach?: () => void
   preferredUnits?: 'km' | 'mi'
@@ -6506,12 +6511,16 @@ export function RunFeedbackCard({
        * ⚠️ Kit has NOT been demoted to the bottom of the screen — the read sits
        * immediately below, above the fold on a 390pt phone. The grade did not move
        * back up; it is still behind the toggle. */}
-      {/* Verdict card — rule-derived zone signal + headline. No AI mark. */}
-      <div style={{
+      {/* Verdict card — rule-derived zone signal + headline. No AI mark.
+          With the zone signal hidden it still carries the score chip, the withheld-score note and the block count;
+          with none of those it does not render at all, rather than as an empty tinted box. */}
+      {(!hideZoneSignal || (!isManual && score !== null) || hrNotAvailable || !!driftContext?.show) && <div style={{
         marginTop: 'var(--space-2)',
-        background: pal.bg,
-        borderRadius: '14px',
-        padding: '16px 18px',
+        // With the zone row hidden, a box holding only the score chip read as an empty card (seen at 375 px,
+        // 2026-10-22). The chip then sits on the page; the box returns only for what still needs one.
+        ...(hideZoneSignal && !hrNotAvailable && !driftContext?.show && !expanded
+          ? { background: 'transparent', padding: 0 }
+          : { background: pal.bg, borderRadius: '14px', padding: '16px 18px' }),
       }}>
         {/* Top row — score toggle (right-aligned), only when !isManual && score !== null */}
         {!isManual && score !== null && (
@@ -6533,13 +6542,13 @@ export function RunFeedbackCard({
         )}
 
         {/* Zonna-voice headline */}
-        <div style={{
+        {!hideZoneSignal && <div style={{
           fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
           color: pal.ink, letterSpacing: '-0.1px', lineHeight: 1.4,
           marginBottom: !isManual ? '14px' : 0,
         }}>
           {voice.headline}
-        </div>
+        </div>}
 
         {/* UX-POSTRUN-01 (SLT 2026-09-13) — ONE zone signal, not a four-column dashboard.
          *
@@ -6561,7 +6570,7 @@ export function RunFeedbackCard({
          * Reuses `scoreBandLabel` and the existing ≥80 moss threshold, so no new
          * coaching numeric enters through a display change.
          */}
-        {!isManual && zoneSignal != null && (
+        {!hideZoneSignal && !isManual && zoneSignal != null && (
           <div>
             <div style={{
               display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
@@ -6690,7 +6699,7 @@ export function RunFeedbackCard({
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* AI card — LLM-generated read of your run. Only renders when feedback exists.
        *  White card + moss rail + CoachByline = the canonical "this is from Kit" treatment. */}
@@ -6722,7 +6731,7 @@ export function RunFeedbackCard({
   )
 }
 
-function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, savedMetricOverride = null, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession, onLinkedComplete, autoMatch, driftContext = null }: {
+export function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, savedMetricOverride = null, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession, onLinkedComplete, autoMatch, driftContext = null }: {
   /** AI-PROVENANCE-01 — see SessionPopupInner. Resolved once where the plan is
    *  in scope and passed down; never re-derived in the view. */
   aiNotes: boolean
@@ -6772,6 +6781,17 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
   const [unlinkConfirm, setUnlinkConfirm] = useState(false)
   const [unlinking, setUnlinking] = useState(false)
   const isComplete = session.completion?.status === 'complete'
+  // SESSION-LOGGED-HERO-01 (Design Board 2026-10-22) — a reopened logged session leads with the run, for EVERY tier:
+  // the completion card (the one zone signal: trace, % + bar, or RPE) once the runner has said how it felt; before that,
+  // one line that opens the details fold, so the read never comes before their own verdict.
+  const hasFelt = session.completion?.rpe != null
+  const linkedRunForHero: any = linkedActivityId != null && Array.isArray(preloadedRuns)
+    ? preloadedRuns.find((r: any) => r.id === linkedActivityId) : null
+  const heroTrace = useRunTrace(session.completion?.apple_health_uuid ?? null, session, restingHR, maxHR,
+    analysis?.hr_above_ceiling_pct != null ? Number(analysis.hr_above_ceiling_pct) : null)
+  const heroSentence = analysisSentence(analysis?.hr_above_ceiling_pct != null ? Number(analysis.hr_above_ceiling_pct) : null,
+    linkedRunForHero?.moving_time != null ? Number(linkedRunForHero.moving_time) / 60 : null, isCeilingOnly(session) === true)
+  const showRunHero = isComplete && session.type !== 'rest' && session.type !== 'strength'
 
   // POST-LOG-01: when a session is logged the prescription brief is reference
   // material, not the headline — RunFeedbackCard above is. Collapse the
@@ -6897,6 +6917,29 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
 
       {/* ── CONTENT ───────────────────────────────────────────────── */}
       <div style={{ padding: '0 16px' }}>
+        {showRunHero && (hasFelt ? (
+          <div data-run-hero style={{ marginBottom: 'var(--space-3)' }}>
+            <SessionCompleteCard
+              sessionType={session.type}
+              date={session.rawDate ?? null}
+              completionCopy={getCompletionCopy(session.type)}
+              zonePct={analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null}
+              rpe={session.completion?.rpe ?? null}
+              fatigueTag={session.completion?.fatigue_tag ?? null}
+              trace={heroTrace}
+              zoneSentence={heroSentence}
+            />
+            {session.weekN != null && sessionDay && (
+              <div style={{ marginTop: 'var(--space-2)', display: 'flex', justifyContent: 'flex-end' }}>
+                <SaveImageButton weekN={session.weekN} sessionDay={sessionDay} />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div data-run-hero-ask style={{ marginBottom: 'var(--space-3)' }}>
+            <Button variant="secondary" fullWidth onClick={() => setBriefOpen(true)}>How did it feel?</Button>
+          </div>
+        ))}
         {/* Run analysis sits at the top for completed sessions — the headline
             content. Pending state shows AIMark working pulse while analyse-run
             is in flight; real card replaces it when run_analysis lands. */}
@@ -6932,6 +6975,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
               )}
               <RunFeedbackCard
                 analysis={analysis}
+                hideZoneSignal={showRunHero && hasFelt}
                 paceTarget={convertPaceString(session.pace_target, preferredUnits) ?? null}
                 actualAvgSpeedMs={linkedAct?.average_speed ?? null}
                 onOpenCoach={onOpenCoach}
@@ -7174,6 +7218,8 @@ function PostRunScreen({
   const [isHKCompletion, setIsHKCompletion] = useState(false)
   // SESSION-SCREENS-WOW-01 — the linked Apple Health run, for its Zone Trace.
   const [hkUuid, setHkUuid] = useState<string | null>(pendingAppleHealthUuid ?? null)
+  // SESSION-LOGGED-HERO-01 — the run's duration, so the card's sentence can quote minutes without a trace.
+  const [movingMin, setMovingMin] = useState<number | null>(null)
   // HR-SYNC-02: fields needed to classify HR-pending for the linked HK
   // activity. Fetched alongside the completion when this is an HK-linked run.
   const [hrPendingActivity, setHrPendingActivity] = useState<{
@@ -7248,6 +7294,7 @@ function PostRunScreen({
             ).maybeSingle()
             if (!cancelled && act) {
               setAvgSpeedMs((act.avg_speed as number | null) ?? null)
+              setMovingMin(act.moving_time_s != null ? Number(act.moving_time_s) / 60 : null)
               if (isHK) {
                 setHrPendingActivity({
                   avg_hr:        (act.avg_hr as number | null) ?? null,
@@ -7668,6 +7715,39 @@ function PostRunScreen({
           </div>
         </div>
 
+        {/* SESSION-LOGGED-HERO-01 (Design Board 2026-10-22, order chosen on UX grounds): the card is the ONE zone
+            signal and comes BEFORE Kit's read: how did I do, then why. Kit's card hides its own zone row below it.
+            COMPLETE-01 — peak-end artefact. Mounts once RPE is set. Renders
+            State A (zone bar + % in zone) when the run_analysis row has
+            arrived from the analyse-run pipeline; falls back to State B
+            (RPE / 10 + fatigue chip) while the analysis is still polling.
+            Same component as the manual-completion reflect view; data
+            sources differ. */}
+        {rpe !== null && (
+          <>
+            <div style={{ padding: '0 24px', marginBottom: 'var(--space-3)' }}>
+              <SessionCompleteCard
+                sessionType={session.type}
+                date={new Date()}
+                completionCopy={getCompletionCopy(session.type)}
+                zonePct={analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null}
+                trace={runTrace}
+                zoneSentence={analysisSentence(analysis?.hr_above_ceiling_pct != null ? Number(analysis.hr_above_ceiling_pct) : null, movingMin, isCeilingOnly(session ?? {}) === true)}
+                rpe={rpe}
+                fatigueTag={fatigueTag}
+                ledgerAdvancedThisWeek={ledgerSnapshot?.advancedThisWeek ?? false}
+              />
+            </div>
+            {/* SAVE-IMG-01 — Save image affordance lives outside the card
+                so a user-initiated screenshot doesn't include the button. */}
+            {weekN != null && sessionDay && (
+              <div style={{ padding: '0 24px', marginBottom: '4px', display: 'flex', justifyContent: 'flex-end' }}>
+                <SaveImageButton weekN={weekN} sessionDay={sessionDay} />
+              </div>
+            )}
+          </>
+        )}
+
         {/* ── AI CARD — pending or done ───────────────────────────── */}
         {/* HR-SYNC-02 morph chain: PendingHrCard (waiting on HK sync) →
             PendingAnalysisCard (analyse-run in flight) → RunFeedbackCard.
@@ -7683,6 +7763,7 @@ function PostRunScreen({
         {hasPaidAccess && !hrPendingState && analysis && (
           <RunFeedbackCard
             analysis={analysis}
+            hideZoneSignal={rpe !== null}
             paceTarget={paceTarget}
             actualAvgSpeedMs={avgSpeedMs}
             onOpenCoach={onOpenCoach}
@@ -7698,35 +7779,6 @@ function PostRunScreen({
           <GaveUpCard onOpenCoach={onOpenCoach} />
         )}
 
-        {/* COMPLETE-01 — peak-end artefact. Mounts once RPE is set. Renders
-            State A (zone bar + % in zone) when the run_analysis row has
-            arrived from the analyse-run pipeline; falls back to State B
-            (RPE / 10 + fatigue chip) while the analysis is still polling.
-            Same component as the manual-completion reflect view; data
-            sources differ. */}
-        {rpe !== null && (
-          <>
-            <div style={{ padding: '0 24px', marginBottom: 'var(--space-3)' }}>
-              <SessionCompleteCard
-                sessionType={session.type}
-                date={new Date()}
-                completionCopy={getCompletionCopy(session.type)}
-                zonePct={analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null}
-                trace={runTrace}
-                rpe={rpe}
-                fatigueTag={fatigueTag}
-                ledgerAdvancedThisWeek={ledgerSnapshot?.advancedThisWeek ?? false}
-              />
-            </div>
-            {/* SAVE-IMG-01 — Save image affordance lives outside the card
-                so a user-initiated screenshot doesn't include the button. */}
-            {weekN != null && sessionDay && (
-              <div style={{ padding: '0 24px', marginBottom: '4px', display: 'flex', justifyContent: 'flex-end' }}>
-                <SaveImageButton weekN={weekN} sessionDay={sessionDay} />
-              </div>
-            )}
-          </>
-        )}
 
         {/* POST-RUN-REFRAME-01 — optional reflection + AI reframe.
             Paid-only. Mounts after RPE is set so the reflection moment comes

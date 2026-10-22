@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { readTrace, smoothTrace, thinTrace, traceFromSamples, traceSentence, TRACE_MIN_SAMPLES, type TracePoint } from './zoneTrace'
+import { analysisSentence, isCeilingOnly, readTrace, smoothTrace, thinTrace, traceFromSamples, traceSentence, TRACE_MIN_SAMPLES, type TracePoint } from './zoneTrace'
 import { ZONE_DRIFT_ABOVE_CEILING_PCT, ZONE_HELD_MAX_ABOVE_CEILING_PCT, TRACE_SUSTAINED_ABOVE_S } from './constants'
 
 /**
@@ -24,16 +24,16 @@ describe('the board\'s table', () => {
     expect(say(run([50, 138]), true, ZONE_HELD_MAX_ABOVE_CEILING_PCT)).toBe('You held the zone.') // exactly 10
   })
   it('between 10 and 20 states the minutes and judges nothing', () => {
-    expect(say(run([44, 138], [6, 150]))).toBe('Over your ceiling for 6 of 50 minutes.')
-    expect(say(run([50, 138]), true, ZONE_DRIFT_ABOVE_CEILING_PCT)).toBe('Over your ceiling for 10 of 50 minutes.') // exactly 20
+    expect(say(run([44, 138], [6, 150]))).toBe('Over your ceiling for 6 min of 50 min.')
+    expect(say(run([50, 138]), true, ZONE_DRIFT_ABOVE_CEILING_PCT)).toBe('Over your ceiling for 10 min of 50 min.') // exactly 20
     expect(say(run([50, 138]), true, ZONE_DRIFT_ABOVE_CEILING_PCT + 0.1)).toMatch(/^Above your ceiling/)
   })
   it('🔴 a late, sustained drift after a held start gets the late line, with the minutes it was held', () => {
-    expect(say(run([40, 138], [20, 152]))).toBe('You held it for 40 minutes, then it got away from you.')
+    expect(say(run([40, 138], [20, 152]))).toBe('You held it for 40 min, then it got away from you.')
   })
   it('an early drift gets the plain line; the easy-day clause only on a ceiling-only run', () => {
-    expect(say(run([5, 138], [30, 152], [15, 138]))).toBe('Above your ceiling for 30 of 50 minutes. Easy days need to feel easy.')
-    expect(say(run([5, 138], [30, 152], [15, 138]), false)).toBe('Above your ceiling for 30 of 50 minutes.')
+    expect(say(run([5, 138], [30, 152], [15, 138]))).toBe('Above your ceiling for 30 min of 50 min. Easy days need to feel easy.')
+    expect(say(run([5, 138], [30, 152], [15, 138]), false)).toBe('Above your ceiling for 30 min of 50 min.')
   })
   it('🔴 a hill is not a drift: excursions shorter than the sustained rule never set the onset', () => {
     const hills = run(...Array.from({ length: 8 }, () => [[4, 138], [2.5, 152]] as [number, number][]).flat())
@@ -46,8 +46,8 @@ describe('the board\'s table', () => {
 describe('one owner of the share', () => {
   it('🔴 with an analysis, the analysis decides, and the minutes follow it', () => {
     const held = run([50, 138])
-    expect(say(held, true, 25)).toBe('Above your ceiling for 13 of 50 minutes. Easy days need to feel easy.')
-    expect(say(held, true, 15)).toBe('Over your ceiling for 8 of 50 minutes.')
+    expect(say(held, true, 25)).toBe('Above your ceiling for 13 min of 50 min. Easy days need to feel easy.')
+    expect(say(held, true, 15)).toBe('Over your ceiling for 8 min of 50 min.')
   })
   it('agrees with zoneVerdict at its threshold (held at ≤20 is not praise above 10)', () => {
     expect(say(run([50, 138]), true, ZONE_DRIFT_ABOVE_CEILING_PCT)).toMatch(/^Over your ceiling/)
@@ -94,5 +94,31 @@ describe('input', () => {
     const long = run([120, 138]); const thin = thinTrace(long)
     expect(thin.length).toBeLessThanOrEqual(301)
     expect(thin[thin.length - 1]).toEqual(long[long.length - 1])
+  })
+})
+
+describe('analysisSentence: the card\'s sentence without a trace (Design Board 2026-10-22)', () => {
+  it('praise needs no minutes; the other lines need a duration or say nothing', () => {
+    expect(analysisSentence(6, null, true)).toBe('You held the zone.')
+    expect(analysisSentence(14, null, true)).toBeNull()
+    expect(analysisSentence(14, 50, true)).toBe('Over your ceiling for 7 min of 50 min.')
+    expect(analysisSentence(40, 50, true)).toBe('Above your ceiling for 20 min of 50 min. Easy days need to feel easy.')
+    expect(analysisSentence(40, 50, false)).toBe('Above your ceiling for 20 min of 50 min.')
+    expect(analysisSentence(null, 50, true)).toBeNull()
+  })
+  it('🔴 never the late-drift line: there is no timing without a trace', () => {
+    for (const p of [21, 35, 60, 90]) expect(analysisSentence(p, 60, true)).not.toMatch(/got away/)
+  })
+  it('a session tops out at Z2 → ceiling only; no zone → unknown', () => {
+    expect(isCeilingOnly({ zone: 'Zone 2' })).toBe(true)
+    expect(isCeilingOnly({ zone: 'Zone 3' })).toBe(false)
+    expect(isCeilingOnly({})).toBeNull()
+  })
+})
+
+describe('ADR-015: the sentence formats its durations like every other number', () => {
+  it('a run over an hour reads in hours, through formatDuration', () => {
+    expect(analysisSentence(70, 94, true)).toBe('Above your ceiling for 1h 06 of 1h 34. Easy days need to feel easy.')
+    expect(analysisSentence(15, 40, false)).toBe('Over your ceiling for 6 min of 40 min.')
   })
 })

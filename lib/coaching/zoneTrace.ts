@@ -13,6 +13,7 @@
 
 import { hrBandForZoneString, zonesFromZoneString } from './zoneRules'
 import { getSessionColor } from '@/lib/session-types'
+import { formatDuration } from '@/lib/format'
 import {
   ZONE_DRIFT_ABOVE_CEILING_PCT, ZONE_HELD_MAX_ABOVE_CEILING_PCT,
   TRACE_SMOOTHING_S, TRACE_SUSTAINED_ABOVE_S, TRACE_LATE_ONSET_FRACTION,
@@ -103,12 +104,35 @@ export function traceSentence(read: TraceRead, ceilingOnly: boolean, analysisAbo
   // Minutes follow the share that decided the sentence, so the numbers never contradict the verdict.
   const aboveMin = Math.min(totalMin, Math.max(1, Math.round((abovePct / 100) * totalMin)))
   if (abovePct <= ZONE_HELD_MAX_ABOVE_CEILING_PCT) return 'You held the zone.'
-  if (abovePct <= ZONE_DRIFT_ABOVE_CEILING_PCT) return `Over your ceiling for ${aboveMin} of ${totalMin} minutes.`
+  // ADR-015: every duration goes through `formatDuration` ("55 min", "1h 34"), so the sentence agrees with every other
+  // number on the screen. The founder approved the words; the number format is the app's, not the sentence's.
+  const d = (m: number) => formatDuration(m) as string // always a finite, positive count here, so never null
+  if (abovePct <= ZONE_DRIFT_ABOVE_CEILING_PCT) return `Over your ceiling for ${d(aboveMin)} of ${d(totalMin)}.`
   const late = read.onsetS != null && read.totalS > 0
     && read.onsetS / read.totalS >= TRACE_LATE_ONSET_FRACTION
     && (read.aboveBeforeOnsetPct ?? 100) <= ZONE_HELD_MAX_ABOVE_CEILING_PCT
-  if (late) return `You held it for ${Math.round(read.onsetS! / 60)} minutes, then it got away from you.`
-  return `Above your ceiling for ${aboveMin} of ${totalMin} minutes.${ceilingOnly ? ' Easy days need to feel easy.' : ''}`
+  if (late) return `You held it for ${d(Math.round(read.onsetS! / 60))}, then it got away from you.`
+  return `Above your ceiling for ${d(aboveMin)} of ${d(totalMin)}.${ceilingOnly ? ' Easy days need to feel easy.' : ''}`
+}
+
+/**
+ * The same sentence when there is an analysis but no drawable trace (a sparse trace, or a Strava-linked run): the card
+ * still says one thing about the run, from the one owner (Design Board 2026-10-22: the card is the only zone signal).
+ * No timing exists without a trace, so the late-drift line is never chosen here. Null without a usable duration.
+ */
+export function analysisSentence(abovePct: number | null | undefined, totalMinutes: number | null | undefined, ceilingOnly: boolean): string | null {
+  if (abovePct == null || !Number.isFinite(abovePct)) return null
+  // Praise needs no minutes; every other line quotes them, so without a duration the card keeps the % and the bar.
+  if (abovePct <= ZONE_HELD_MAX_ABOVE_CEILING_PCT) return 'You held the zone.'
+  if (!totalMinutes || totalMinutes <= 0) return null
+  const totalS = totalMinutes * 60
+  return traceSentence({ totalS, aboveS: (abovePct / 100) * totalS, abovePct, inZonePct: 100 - abovePct, onsetS: null, aboveBeforeOnsetPct: null }, ceilingOnly, abovePct)
+}
+
+/** A session whose prescribed zone tops out at Z2 is a ceiling, not a band (§12). Null without a zone. */
+export function isCeilingOnly(session: { zone?: string }): boolean | null {
+  const zones = zonesFromZoneString(session.zone)
+  return zones.length ? Math.max(...zones) <= 2 : null
 }
 
 /** At most `max` points for drawing; the read always uses every point. */
@@ -140,8 +164,7 @@ export function buildRunTrace(
   if (!raw || zones.length === 0) return null
   const band = hrBandForZoneString(session.zone, restingHR, maxHR)
   if (!band) return null
-  // §12: a session that tops out at Z2 is a ceiling, not a band.
-  const ceilingOnly = Math.max(...zones) <= 2
+  const ceilingOnly = isCeilingOnly(session) === true
   const points = smoothTrace(raw)
   const read = readTrace(points, band, ceilingOnly)
   return {

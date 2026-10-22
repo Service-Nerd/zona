@@ -226,10 +226,10 @@
   "app/dashboard/DashboardClient.tsx#Button17": {
     "floor": 44,
     "padY": null,
-    "font": 11,
+    "font": null,
     "radius": null,
-    "height": 44,
-    "width": "auto"
+    "height": 47,
+    "width": "full"
   },
   "app/dashboard/DashboardClient.tsx#Button18": {
     "floor": 44,
@@ -242,12 +242,20 @@
   "app/dashboard/DashboardClient.tsx#Button19": {
     "floor": 44,
     "padY": null,
-    "font": null,
+    "font": 11,
     "radius": null,
     "height": 44,
     "width": "auto"
   },
   "app/dashboard/DashboardClient.tsx#Button20": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "app/dashboard/DashboardClient.tsx#Button21": {
     "floor": 44,
     "padY": 14,
     "font": null,
@@ -255,7 +263,7 @@
     "height": 45,
     "width": "100%"
   },
-  "app/dashboard/DashboardClient.tsx#Button21": {
+  "app/dashboard/DashboardClient.tsx#Button22": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -1061,6 +1069,22 @@
     "height": 44,
     "width": "auto"
   },
+  "components/shared/ChangeConfirm.tsx#Button1": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/shared/ChangeConfirm.tsx#Button2": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
   "components/shared/DayBudgetRows.tsx#Button1": {
     "floor": 44,
     "padY": 12,
@@ -1086,22 +1110,6 @@
     "width": "auto"
   },
   "components/shared/MePlanCard.tsx#Button1": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "full"
-  },
-  "components/shared/ModifyPlanConfirm.tsx#Button1": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "full"
-  },
-  "components/shared/ModifyPlanConfirm.tsx#Button2": {
     "floor": 44,
     "padY": null,
     "font": null,

@@ -56,6 +56,9 @@ export interface SessionCompleteCardProps {
    *  When present it REPLACES the ZoneBar (Design Board 2026-10-21) and supplies the % when there is no analysis
    *  (the trace is FREE). Absent: the card is exactly as before. */
   trace?: { points: TracePoint[]; band: TraceBand; ceilingOnly: boolean; colour: string; sentence: string; inZonePct: number } | null
+  /** SESSION-LOGGED-HERO-01 — the sentence for state A when there is no trace (`analysisSentence`), so the card stays
+   *  the one zone signal on every logged surface (Design Board 2026-10-22). */
+  zoneSentence?: string | null
 }
 
 // Three-letter weekday + day + three-letter month — "Wed · 22 May". Short
@@ -97,6 +100,7 @@ export default function SessionCompleteCard({
   fatigueTag,
   ledgerAdvancedThisWeek = false,
   trace = null,
+  zoneSentence = null,
 }: SessionCompleteCardProps) {
   const dateLabel = completedOnLabel(date)
   const chipLabel = getSessionLabel(sessionType)
@@ -176,7 +180,14 @@ export default function SessionCompleteCard({
               </div>
             </>
           ) : (
-            <ZoneBar activeZone={zone!} height={5} showLabels />
+            <>
+              <ZoneBar activeZone={zone!} height={5} showLabels />
+              {zoneSentence && (
+                <div data-trace-sentence style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1.35, marginTop: 'var(--space-3)' }}>
+                  {zoneSentence}
+                </div>
+              )}
+            </>
           )}
         </div>
       ) : (

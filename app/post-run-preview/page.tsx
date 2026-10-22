@@ -15,7 +15,8 @@
 'use client'
 
 import { notFound } from 'next/navigation'
-import { RunFeedbackCard } from '../dashboard/DashboardClient'
+import { RunFeedbackCard, SessionScreen } from '../dashboard/DashboardClient'
+import harnessPlanJson from '@/components/dashboard/__fixtures__/harnessPlan.json'
 import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
 import { buildRunTrace } from '@/lib/coaching/zoneTrace'
 
@@ -30,6 +31,19 @@ const synth = (min: number, bpm: (m: number) => number) =>
 const warm = (m: number, to: number) => Math.min(to, 110 + m * 6)
 const EASY = { type: 'easy', zone: 'Zone 2', label: 'Easy run' }
 const TEMPO = { type: 'quality', zone: 'Zone 3', label: 'Continuous tempo' }
+const HP = harnessPlanJson as unknown as { weeks: { n: number; sessions: Record<string, Record<string, unknown> | null> }[] }
+const easyEntry = HP.weeks.flatMap(w => Object.entries(w.sessions ?? {}).map(([k, v]) => ({ k, v, n: w.n }))).find(e => e.v?.type === 'easy')!
+const reopened = (completion: Record<string, unknown>) => ({
+  ...(easyEntry.v as Record<string, unknown>), key: easyEntry.k, day: 'Mon', date: '20 Oct', rawDate: '2026-10-20', weekN: easyEntry.n, isPast: true, isFuture: false,
+  completion: { status: 'complete', strava_activity_id: null, apple_health_uuid: null, ...completion },
+})
+const REOPEN_BASE = { aiNotes: false, preloadedRuns: [], onBack: () => {}, onSaved: () => {}, preferredUnits: 'km', preferredMetric: 'distance', onSessionMetricChange: () => {}, restingHR: 51, maxHR: 185, stravaLoading: false, onUpgrade: () => {}, onOpenCoach: () => {}, nextSession: null, onLinkedComplete: () => {}, autoMatch: null }
+const ANALYSED = { source: 'apple_health', verdict: 'close', total_score: 78, hr_discipline_score: 86, hr_in_zone_pct: 86, hr_above_ceiling_pct: 14, hr_below_floor_pct: 0, feedback_text: 'Steady for most of it. The last climb pushed you over; walk the next one.' }
+const REOPEN_CASES = [
+  { title: 'Paid, said how it felt: the card first, Kit below without its own zone row', props: { ...REOPEN_BASE, hasPaidAccess: true, runAnalysis: ANALYSED, session: reopened({ rpe: 4, fatigue_tag: 'Fine', apple_health_uuid: 'preview-run' }) } },
+  { title: 'Free, said how it felt: the card first, then the locked preview', props: { ...REOPEN_BASE, hasPaidAccess: false, runAnalysis: null, session: reopened({ rpe: 3, fatigue_tag: 'Fresh' }) } },
+  { title: 'Not rated yet: one line asks, the read does not lead', props: { ...REOPEN_BASE, hasPaidAccess: false, runAnalysis: null, session: reopened({ rpe: null }) } },
+]
 const TRACE_CASES = [
   { title: 'Held, with one hill', s: EASY, a: 4, tr: synth(55, m => (m > 14 && m < 16.5 ? 151 : warm(m, 134 + 4 * Math.sin(m / 6)))) },
   { title: 'Late drift: held 40 minutes, then got away', s: EASY, a: 30, tr: synth(62, m => (m < 40 ? warm(m, 136) : 136 + Math.min(18, (m - 40) * 2))) },
@@ -181,6 +195,18 @@ export default function PostRunPreviewPage() {
         UX-POSTRUN-01 states. Fixture data, real component. Kit leads; the
         four-column score dashboard is replaced by one zone signal.
       </p>
+
+      <h1 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px' }}>Reopened logged session</h1>
+      <p style={{ fontSize: '13px', color: 'var(--mute)', margin: '0 0 16px', lineHeight: 1.5 }}>
+        SESSION-LOGGED-HERO-01. The REAL SessionScreen, a harness-plan session marked logged. No trace here (the preview has no
+        database), so the card shows its % + bar state; the trace states are shown further down.
+      </p>
+      {REOPEN_CASES.map(c => (
+        <section key={c.title} data-reopen-case={c.title} style={{ marginBottom: '28px', border: '1px dashed var(--line)', borderRadius: '12px', overflow: 'hidden' }}>
+          <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)', margin: '8px 12px' }}>{c.title}</h2>
+          <SessionScreen {...(c.props as unknown as React.ComponentProps<typeof SessionScreen>)} />
+        </section>
+      ))}
 
       <h1 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px' }}>Completion card + Zone Trace</h1>
       <p style={{ fontSize: '13px', color: 'var(--mute)', margin: '0 0 24px', lineHeight: 1.5 }}>

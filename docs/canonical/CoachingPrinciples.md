@@ -1844,9 +1844,11 @@ and the luteal phase lift heart rate without a change in effort).
 | Time above the ceiling | Sentence |
 |---|---|
 | ≤ `ZONE_HELD_MAX_ABOVE_CEILING_PCT` (10) | *"You held the zone."* (praise, Amendment 2) |
-| > 10 and ≤ `ZONE_DRIFT_ABOVE_CEILING_PCT` (20) | *"Over your ceiling for {m} of {n} minutes."* (neither praise nor warning, McMillan) |
-| > 20, first excursion of ≥ `TRACE_SUSTAINED_ABOVE_S` (180 s) starting at ≥ `TRACE_LATE_ONSET_FRACTION` (0.4) of the run, ≤ 10% above before it | *"You held it for {m} minutes, then it got away from you."* |
-| > 20, otherwise | *"Above your ceiling for {m} of {n} minutes."*, plus *"Easy days need to feel easy."* on easy, long and recovery runs |
+| > 10 and ≤ `ZONE_DRIFT_ABOVE_CEILING_PCT` (20) | *"Over your ceiling for {m} of {n}."* (neither praise nor warning, McMillan) |
+| > 20, first excursion of ≥ `TRACE_SUSTAINED_ABOVE_S` (180 s) starting at ≥ `TRACE_LATE_ONSET_FRACTION` (0.4) of the run, ≤ 10% above before it | *"You held it for {m}, then it got away from you."* |
+| > 20, otherwise | *"Above your ceiling for {m} of {n}."*, plus *"Easy days need to feel easy."* on easy, long and recovery runs |
+
+{m} and {n} are durations through `formatDuration` (ADR-015: *"7 min"*, *"1h 34"*); a formatting correction to the founder-approved words, not a change to them.
 
 **One owner of the share.** When the run has an analysis, its `hr_above_ceiling_pct` decides, so the verdict pill and
 the sentence can never disagree; the trace supplies only the timing. Without one (the trace is FREE, SLT 2026-10-21)
