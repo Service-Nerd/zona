@@ -1041,6 +1041,15 @@ answers in a line what three rounds of reasoning did not.
 
 **Collins** wanted the coral now; the chair sequenced it behind a prototype. Recorded. ⚠️ Not measured: on a device.
 
+**Step 3 sat on the prototype (real `SessionCard`, `ZoneBar`, `SessionSteps` + silhouette, 375 and 320px, same day):
+SHIP WITH AMENDMENT, `--s-inter` = `#D4705A`.** `#C95F4A` still read red in the swatch row and on Zone 5 (Silvanto);
+`#D4705A` reads coral and matches existing practice on contrast (3.35:1 on `--card`, against amber's shipped 3.25 and
+race's 3.78), so no regression. **Silvanto lifts the veto**: the token is no longer the error red. Step 2 ships with it
+(VO2 category, hill reps included, the catalogue files them as VO2). Everything aliasing the token follows: ZoneBar Z5,
+ZoneRings z45, the Wrecked tag, the zone guide, `--session-intervals-soft`, and on the WEBSITE the PhoneFrame dot and
+PlanPage's `hard`. Filed: `ACCENT-TEXT-CONTRAST-01` (accent-as-text below 4.5:1 for amber, race and coral alike).
+Not built.
+
 ## 6t-e. RUNWALK-STEPS-01 — the prototype (390px, real SessionSteps) · SHIP WITH AMENDMENT when built (2026-10-22)
 
 | Decision | Status | Why |

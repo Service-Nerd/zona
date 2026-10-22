@@ -143,6 +143,13 @@ can you lift?* (1–4) and Change your plan asks *Days you run* (2–6), one pos
 S8 first jump level) and the long-run-day rule for the run row. Icons came off the modify sheet (seven rows, ICON-RULE-01).
 Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
 
+### 🔲 `ACCENT-TEXT-CONTRAST-01` — session accents used as small text fall below AA 🧭 **DESIGN BOARD** *(filed 2026-10-22, from SESSION-INTERVALS-HUE-01)*
+
+The session hue is also TEXT: the main-set section header ("MAIN SET · 25 min · Zone 5") and the repeat count ("5×") in
+`SessionSteps`. On `--card`: `--s-quality` 3.25:1, `--s-race` 3.78:1, the ruled coral `#D4705A` 3.35:1, all under 4.5:1
+for 11–15px text; `--s-easy` 5.12 and `--s-long` 6.52 pass. Pre-existing for amber on every quality session. Question:
+text in `--ink-2` with the hue kept for graphics, a darker text variant per hue, or a measured exemption.
+
 ### 🔲 `SESSION-INTERVALS-HUE-01` — two colour answers for a VO2 or hill session 🧭 **DESIGN BOARD** *(filed 2026-10-22, from RUNWALK-STEPS-01)*
 
 `SessionSteps` paints a main set by its peak zone (`--s-inter` at Z5), while `getSessionColor(session)`, the owner the
@@ -155,7 +162,7 @@ classification of these rows. Found while scoping §21b Am.4c rule 4 to run-walk
 set. (2) **SHIP, gated:** `getSessionColor` reaches `--s-inter` for VO2 by catalogue category (0 of 557 VO2 sessions are
 typed `intervals`). (3) **INSUFFICIENT EVIDENCE:** `--s-inter` is `#B84545`, the `--danger` value, against ux-principles'
 no-red rule; a coral (`#C95F4A` / `#D4705A` measured) needs a phone-width prototype first. Order: (1) now, then the
-prototype, then (3) and (2) together.
+prototype, then (3) and (2) together. ✅ (1) shipped as `SESSION-HUE-OWNER-01`. 🧭 **Prototype ruled 2026-10-22: `--s-inter` = `#D4705A`**, veto lifted; (2) and (3) ready to build together, including the website's two uses.
 
 ### 🔲 `UNMEASURED-DISTANCE-01` — a linked run with no distance cannot be given one 🧭 **DESIGN BOARD** (prototype) + ⚙️ **ARCHITECTURE** (INV-DATA-008 / ADR-011) *(filed 2026-10-22, from TREADMILL-TOGGLE-01)*
 
