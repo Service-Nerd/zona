@@ -2048,6 +2048,8 @@ The error is recorded rather than quietly fixed because the cause is procedural 
 
 **Single owner (Phase 3, Coaching Board 2026-09-03 sitting — D-08/INV-CFG-001 defect fix).** `sessionFormat.sessionSplit()` is the one formula for a quality session's warm-up/main/cool-down split; `mainSetMinutes()` and `durationForMainSet()` are thin wrappers over it. Before this, `sessionComposer.ts`'s quality branch independently re-derived the same split and added its own undocumented 5-minute cool-down floor `sessionSplit` never had — for a 25-minute session this disagreed with the invariant layer's own number (5 min main vs 7.5 min). No principle named that floor (INV-CFG-002), so the drift was accidental duplication, not two deliberate designs; fixing it required no new board ruling, only naming the owner this document had already implied.
 
+**Cross-reference (RUNWALK-WARMUP-01, 2026-10-22).** On a §117 run-walk session the warm-up is a brisk walk (§117 Am.6 addendum): a warm-up is a gradual rise, not necessarily a run.
+
 ---
 
 ## 17. Plan signatures — distance shapes the plan
