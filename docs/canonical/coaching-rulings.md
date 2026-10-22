@@ -56,6 +56,13 @@ incline adjustment (the 1% rule's evidence starts at 2.92 m/s and every prescrib
 rate or RPE and time; pace and distance are guides. A toggle that changes the prescription is INCORRECT. Whether to build
 a toggle or guidance line goes back to the Design Board and SLT. No numeric, no invariant.
 
+## 2026-10-22 — RUNWALK-WARMUP-01 · CORRECT WITH AMENDMENT (the run-walk warm-up is a 5 min walk)
+
+§16 requires a warm-up, not a running one; `composeSession` gives every easy run a 10 min continuous run, against §117
+Am.3, live today. On a run-walk session the warm-up becomes a brisk walk of `RUNWALK_WARMUP_WALK_MINS` (5), then the block
+on a run; cool-down and total minutes unchanged. Hutchinson's "keep §16's 10" recorded and declined (a 23 min session
+would keep one round). Constant and invariant arm land with the build. §117 Am.6 addendum.
+
 ## 2026-10-22 — RUNWALK-STEPS-01 · CORRECT WITH AMENDMENT (draw run-walk as one repeat block; minutes unchanged)
 
 §117 Am.6: a run-walk session becomes `n × (Run 6 / Walk 1)` from the existing constants, starting on a run; the remainder

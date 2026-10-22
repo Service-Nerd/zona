@@ -10538,6 +10538,15 @@ Hutchinson: precision, not new physiology.
 session's minutes, start on a run, and alternate. `measure:fitness` not run: load is unchanged by construction.
 **Not built.** Design Board next (steps, silhouette, run/walk glyphs; design-rulings 6t-d).
 
+**Addendum — the warm-up is a walk (Coaching Board 2026-10-22, RUNWALK-WARMUP-01).** §16 says every run has a warm-up; it
+does not say the warm-up is running, and `composeSession` read it that way: every easy run opens with a 10 min continuous
+run (`warmup_min_duration_mins`), against Amendment 3's *walk from the first rep*. Live today for every run-walk runner;
+found by the Design Board's prototype. On a run-walk session the warm-up is a **brisk walk of
+`RUNWALK_WARMUP_WALK_MINS` (5)**, then the block starts on a run; the cool-down is unchanged. Total minutes unchanged.
+Hutchinson: a warm-up's job is a gradual rise, and walking does it. Recorded: Hutchinson asked whether §16's 10 could stand
+to avoid a new number; settled at 5 because a 10 min walk leaves one round on a 23 min session (McMillan). The constant
+and the invariant arm land with the build (a constant nothing reads fails `configConsumer.test.ts`).
+
 ## 118. The get-running plan — what we offer the runner no race plan can serve
 
 *(Coaching Board 2026-09-20, CORRECT WITH AMENDMENT, three amendments. Founder directive after the board twice ruled zero rejection unreachable by coaching.)*
