@@ -1,5 +1,7 @@
 'use client'
 
+import AddDistanceRow, { DISTANCE_NOT_RECORDED, DISTANCE_REPORTED_LABEL } from '@/components/shared/AddDistanceRow'
+import { runDistance } from '@/lib/health/runDistance'
 import { hueText } from '@/lib/ui/hueText'
 import { InlineError } from '@/components/shared/InlineError'
 import { FieldReadback } from '@/components/shared/FieldText'
@@ -1359,7 +1361,7 @@ export default function DashboardClient() {
       // Postgres errors in a log nobody reads.
       const { data: hkRows, error: hkErr } = await supabase
         .from('strava_activities')
-        .select('apple_health_uuid, strava_activity_id, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, elevation_gain')
+        .select('apple_health_uuid, strava_activity_id, name, start_date, distance_m, reported_distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, elevation_gain')
         .eq('user_id', user.id)
         .eq('source', 'apple_health')
         .order('start_date', { ascending: false })
@@ -1375,6 +1377,7 @@ export default function DashboardClient() {
         name:                 r.name ?? 'Apple Health run',
         start_date:           r.start_date,
         distance:             r.distance_m ?? 0,
+                reported_distance:    r.reported_distance_m ?? null,
         moving_time:          r.moving_time_s ?? 0,
         elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
         total_elevation_gain: r.elevation_gain ?? 0,
@@ -1874,7 +1877,7 @@ export default function DashboardClient() {
           // INITIAL load. See refreshHealthKitRuns above.
           const { data: hkRows, error: hkErr } = await supabase
             .from('strava_activities')
-            .select('apple_health_uuid, strava_activity_id, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, elevation_gain')
+            .select('apple_health_uuid, strava_activity_id, name, start_date, distance_m, reported_distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, elevation_gain')
             .eq('user_id', user.id)
             .eq('source', 'apple_health')
             .order('start_date', { ascending: false })
@@ -1892,6 +1895,7 @@ export default function DashboardClient() {
             name:                 r.name ?? 'Apple Health run',
             start_date:           r.start_date,
             distance:             r.distance_m ?? 0,
+                reported_distance:    r.reported_distance_m ?? null,
             moving_time:          r.moving_time_s ?? 0,
             elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
             total_elevation_gain: r.elevation_gain ?? 0,
@@ -7220,6 +7224,9 @@ function PostRunScreen({
   const [isHKCompletion, setIsHKCompletion] = useState(false)
   // SESSION-SCREENS-WOW-01 — the linked Apple Health run, for its Zone Trace.
   const [hkUuid, setHkUuid] = useState<string | null>(pendingAppleHealthUuid ?? null)
+  // UNMEASURED-DISTANCE-01: the linked run's measured and runner-reported distance (metres), and a just-saved entry (km).
+  const [actDistance, setActDistance] = useState<{ measured: number | null; reported: number | null } | null>(null)
+  const [reportedKmSaved, setReportedKmSaved] = useState<number | null>(null)
   // SESSION-LOGGED-HERO-01 — the run's duration, so the card's sentence can quote minutes without a trace.
   const [movingMin, setMovingMin] = useState<number | null>(null)
   // HR-SYNC-02: fields needed to classify HR-pending for the linked HK
@@ -7288,7 +7295,7 @@ function PostRunScreen({
           {
             const q = supabase
               .from('strava_activities')
-              .select('avg_hr, start_date, moving_time_s, avg_speed')
+              .select('avg_hr, start_date, moving_time_s, avg_speed, distance_m, reported_distance_m')
               .eq('user_id', user.id)
             const { data: act } = await (isHK
               ? q.eq('apple_health_uuid', row.apple_health_uuid)
@@ -7297,6 +7304,7 @@ function PostRunScreen({
             if (!cancelled && act) {
               setAvgSpeedMs((act.avg_speed as number | null) ?? null)
               setMovingMin(act.moving_time_s != null ? Number(act.moving_time_s) / 60 : null)
+              setActDistance({ measured: (act.distance_m as number | null) ?? null, reported: (act.reported_distance_m as number | null) ?? null })
               if (isHK) {
                 setHrPendingActivity({
                   avg_hr:        (act.avg_hr as number | null) ?? null,
@@ -7502,9 +7510,15 @@ function PostRunScreen({
   // reason. Rounding 7.11 to "7mi" would be a smaller version of the same
   // complaint. `promptFormat.ts` draws the same distinction for the AI layer:
   // `fmtPlanned` rounds, `fmtDist` keeps the decimal.
-  const distLabel = displayActivity?.km != null
-    ? (formatDistance(displayActivity.km, preferredUnits, { exact: true }) ?? '')
-    : ''
+  // UNMEASURED-DISTANCE-01 (6t-i): one owner, `runDistance`. A run the device left at 0 m reads "Distance not recorded",
+  // never "0km"; a runner-reported distance is labelled.
+  const postRunDist = actDistance
+    ? runDistance({ distance_m: actDistance.measured, reported_distance_m: reportedKmSaved != null ? reportedKmSaved * 1000 : actDistance.reported })
+    : (displayActivity?.km != null && displayActivity.km > 0 ? { km: displayActivity.km, reported: false } : null)
+  const distLabel = postRunDist
+    ? (formatDistance(postRunDist.km, preferredUnits, { exact: true }) ?? '') + (postRunDist.reported ? ` · ${DISTANCE_REPORTED_LABEL}` : '')
+    : (displayActivity ? DISTANCE_NOT_RECORDED : '')
+  const canAddPostRunDistance = isHKSource && !!hkUuid && !(Number(actDistance?.measured) > 0) && !!displayActivity
   const sessionLabel = getSessionLabel(session ?? 'easy')
   const dayLabel     = session.day ?? ''
   const weekLabel    = session.weekN ?? weekN
@@ -7610,6 +7624,10 @@ function PostRunScreen({
               </div>
             </div>
           </div>
+        )}
+        {canAddPostRunDistance && (
+          <AddDistanceRow appleHealthUuid={hkUuid as string} reportedKm={postRunDist?.reported ? postRunDist.km : null}
+            plannedKm={(session?.distance_km ?? null) as number | null} units={preferredUnits} onSaved={setReportedKmSaved} />
         )}
 
         {/* ── HOW DID IT FEEL? ────────────────────────────────────── */}

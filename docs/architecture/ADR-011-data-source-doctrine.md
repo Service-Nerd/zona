@@ -68,6 +68,7 @@ A future rename to `run_activities` or `activity_log` is a backlog item. Until t
 | Data Type | System of Record | Source Priority | Notes |
 |---|---|---|---|
 | **Run session (distance, pace, duration)** | Activity log (`strava_activities`) | 1: HealthKit · 2: Manual entry · (Strava — supplement only) | A Strava webhook that finds no matching HK row is **discarded**, not stored |
+| **Run distance when the device recorded none** *(amended 2026-10-22, UNMEASURED-DISTANCE-01)* | Activity log, a separate column (`reported_distance_m`) | 1: the device's `distance_m` when > 0 · 2: the runner's entry, fill-only | Never written into `distance_m`. Read only through `lib/health/runDistance.ts`. Counts for volume, load and display (labelled "you added this"); **never** for VDOT, race-time or wizard estimates (Coaching Board 2026-10-22) |
 | **HR stream (per-second or per-sample)** | Activity log | 1: HealthKit HR samples · 2: Absent · (Strava — supplement only when HK row exists and has no HR) | Strava does **not** push HR into HealthKit — iPhone-only runners (no Apple Watch / chest strap) have no HR stream available |
 | **Average HR per run** | Activity log | 1: HealthKit average of HR samples · 2: Absent (75 neutral) · (Strava — supplement only) | |
 | **HR-in-zone %** | `run_analysis` (computed) | Single path: `bucketHRSamples()` on HealthKit HR stream | Source-blind algorithm |

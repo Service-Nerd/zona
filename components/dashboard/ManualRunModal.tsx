@@ -16,7 +16,7 @@ import { TextArea } from '@/components/shared/TextArea'
 import { TextField } from '@/components/shared/TextField'
 import { MICRO_LABELS, FIELD_HINT } from '@/components/shared/microLabels'
 import Button from '@/components/ui/Button'
-import IconButton from '@/components/ui/IconButton'
+import DistanceStepper from '@/components/shared/DistanceStepper'
 import { getCoachingFlag } from '@/lib/coaching/coachingFlag'
 import { FATIGUE_TAGS } from '@/lib/coaching/completionVocab'
 import { formatDistance } from '@/lib/format'
@@ -454,42 +454,7 @@ export default function ManualRunModal({ weekN, sessionKey, preferredUnits, onCl
             {/* Distance */}
             <div style={{ marginBottom: 'var(--space-5)' }}>
               <div style={labelStyle}>Distance ({preferredUnits})</div>
-              <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '0.5px solid var(--line)', overflow: 'hidden' }}>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', padding: '14px 8px' }}>
-                  {/* 🔴 THESE FOUR PASSED `border: '0.5px solid var(--line)'` INLINE,
-                      and an inline style beats a class — so `ICON-EDGE-01`'s
-                      `1px var(--chrome-edge)`, ruled and shipped the same day,
-                      never landed on them. It also broke § 20 ("always 1px, not
-                      0.5px"). NAV-PILL-FLUSH-01's lesson exactly: the gates
-                      assert a rule exists with the right values and never that
-                      those values WIN. Only the 18px glyph is the call site's. */}
-                  <IconButton onClick={() => setDistWhole(Math.max(0, distWhole - 1))} ariaLabel="Decrease whole distance" shape="square" style={{ fontSize: '18px' }} icon={<span aria-hidden>−</span>} />
-                  <span
-                    role="spinbutton"
-                    aria-label="Whole distance"
-                    aria-valuenow={distWhole}
-                    aria-valuemin={0}
-                    aria-valuetext={`${distWhole} ${preferredUnits}`}
-                    style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--ink)', minWidth: '32px', textAlign: 'center' }}
-                  >{distWhole}</span>
-                  <IconButton onClick={() => setDistWhole(distWhole + 1)} ariaLabel="Increase whole distance" shape="square" style={{ fontSize: '18px' }} icon={<span aria-hidden>+</span>} />
-                </div>
-                <div aria-hidden style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--mute)', padding: '0 4px' }}>.</div>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', padding: '14px 8px' }}>
-                  <IconButton onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} ariaLabel="Decrease distance decimal" shape="square" style={{ fontSize: '18px' }} icon={<span aria-hidden>−</span>} />
-                  <span
-                    role="spinbutton"
-                    aria-label="Distance decimal"
-                    aria-valuenow={distDecimal}
-                    aria-valuemin={0}
-                    aria-valuemax={9}
-                    aria-valuetext={`point ${distDecimal}`}
-                    style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--ink)', minWidth: '16px', textAlign: 'center' }}
-                  >{distDecimal}</span>
-                  <IconButton onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} ariaLabel="Increase distance decimal" shape="square" style={{ fontSize: '18px' }} icon={<span aria-hidden>+</span>} />
-                </div>
-              </div>
-              <div aria-live="polite" style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>
+              <DistanceStepper whole={distWhole} decimal={distDecimal} onWhole={setDistWhole} onDecimal={setDistDecimal} units={preferredUnits} />
             </div>
 
             {/* Duration — shared wheel primitive (FORMS-PRIM-01), no keyboard,

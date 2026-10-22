@@ -519,38 +519,6 @@
     "height": 49,
     "width": "full"
   },
-  "components/dashboard/ManualRunModal.tsx#IconButton1": {
-    "floor": 44,
-    "padY": null,
-    "font": 18,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "components/dashboard/ManualRunModal.tsx#IconButton2": {
-    "floor": 44,
-    "padY": null,
-    "font": 18,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "components/dashboard/ManualRunModal.tsx#IconButton3": {
-    "floor": 44,
-    "padY": null,
-    "font": 18,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "components/dashboard/ManualRunModal.tsx#IconButton4": {
-    "floor": 44,
-    "padY": null,
-    "font": 18,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
   "components/dashboard/MeScreen.tsx#Button[btn-inline-target]1": {
     "floor": 0,
     "padY": null,
@@ -1034,6 +1002,22 @@
     "height": null,
     "width": "auto"
   },
+  "components/shared/AddDistanceRow.tsx#Button[btn-inline-target]1": {
+    "floor": 0,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "full"
+  },
+  "components/shared/AddDistanceSheet.tsx#Button1": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
   "components/shared/BackButton.tsx#button[btn]1": {
     "floor": null,
     "padY": null,
@@ -1092,6 +1076,38 @@
     "radius": null,
     "height": 48,
     "width": "100%"
+  },
+  "components/shared/DistanceStepper.tsx#IconButton1": {
+    "floor": 44,
+    "padY": null,
+    "font": 18,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/shared/DistanceStepper.tsx#IconButton2": {
+    "floor": 44,
+    "padY": null,
+    "font": 18,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/shared/DistanceStepper.tsx#IconButton3": {
+    "floor": 44,
+    "padY": null,
+    "font": 18,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/shared/DistanceStepper.tsx#IconButton4": {
+    "floor": 44,
+    "padY": null,
+    "font": 18,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
   },
   "components/shared/FaqScreen.tsx#Button1": {
     "floor": 44,

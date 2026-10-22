@@ -3339,6 +3339,14 @@ session, steps to the main set, start on a run), the rows (founder's words, glyp
 render, and a VO2 set that keeps `--s-inter` with no glyph. Owner: `runWalkSet` / `displayDerivedSet` in
 `lib/plan/runWalkPlan.ts`, derived at read time so existing plans are reached.
 
+#### Amendment 4e — an unmeasured distance is named, and the runner can fill it (UNMEASURED-DISTANCE-01, Design Board 2026-10-22, 6t-i)
+
+A run whose device recorded no distance reads **"Distance not recorded"** (`--mute`), never `0km`. Under the planned/actual
+block, full width, `AddDistanceRow` offers **"Add the distance"**, opening `AddDistanceSheet` (**"How far did you run?"**,
+the shared `DistanceStepper` prefilled with the planned distance). After an entry the value reads **"8km · you added
+this"** and the row offers **"Change the distance"**. Never offered when the device measured one. The same row sits on the
+post-run screen. All distance reads go through `lib/health/runDistance.ts`. Check: `lib/health/reportDistance.test.ts`.
+
 #### Amendment 4d — a section's hue is its tint, never its text (ACCENT-TEXT-CONTRAST-01, Design Board 2026-10-22, 6t-g)
 
 Section names, the total/zone line and the repeat count are `--ink-2` (`SECTION_TEXT`); the hue stays on the tint, the dot,

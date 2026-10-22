@@ -10,6 +10,7 @@ import { autoMatchAndAnalyse, getInternalBaseUrl } from '@/lib/coaching/autoAnal
 import { consolidateIncomingHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 import { decideLateArrival, hrArrivalStamp } from '@/lib/coaching/lateArrivalGate'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
+import { REPORTED_DISTANCE_M } from '@/lib/health/runDistance'
 
 // POST /api/health/ingest
 //
@@ -58,6 +59,9 @@ export async function POST(req: NextRequest) {
   // from the HealthKit machinery below.
   if ((body as { source?: string } | null)?.source === 'manual') {
     return handleManualIngest(user.id, body as Partial<ManualRunPayload>)
+  }
+  if ((body as { source?: string } | null)?.source === 'report_distance') {
+    return handleReportDistance(user.id, body as { appleHealthUuid?: unknown; distanceMeters?: unknown })
   }
 
   // 🔴 HK-FREE-INGEST-LINE-01 (SLT, 2026-10-07) — THE ROW LANDS FOR EVERYONE. THE
@@ -378,4 +382,44 @@ function triggerHrRefreshAnalysis(
   })
     .then(() => undefined)
     .catch(err => { console.error('[health-ingest] hr-refresh analyse failed', err) })
+}
+
+/**
+ * UNMEASURED-DISTANCE-01 — the runner fills in a distance their device did not record (architecture ruling 2026-10-22).
+ * A sanctioned INV-DATA-008 path: it patches only the runner's own row, only `reported_distance_m` / `reported_at`, and
+ * only while the device's `distance_m` is absent or zero. A measured distance is never overwritten (409).
+ */
+async function handleReportDistance(
+  userId: string,
+  body: { appleHealthUuid?: unknown; distanceMeters?: unknown },
+): Promise<NextResponse> {
+  const uuid = typeof body.appleHealthUuid === 'string' ? body.appleHealthUuid : ''
+  const metres = Number(body.distanceMeters)
+  if (!uuid || !Number.isFinite(metres) || metres < REPORTED_DISTANCE_M.min || metres > REPORTED_DISTANCE_M.max) {
+    return NextResponse.json({ error: `appleHealthUuid and a distanceMeters between ${REPORTED_DISTANCE_M.min} and ${REPORTED_DISTANCE_M.max} required` }, { status: 422 })
+  }
+  const supabase = getSupabase()
+  const { data: row, error: readErr } = await supabase
+    .from('strava_activities')
+    .select('id, distance_m')
+    .eq('user_id', userId)
+    .eq('apple_health_uuid', uuid)
+    .maybeSingle()
+  if (readErr) {
+    await recordOpsEvent('health_ingest_failed', { stage: 'report_distance_read', message: readErr.message.slice(0, 500), uuid }, userId)
+    return NextResponse.json({ error: 'Read failed' }, { status: 500 })
+  }
+  if (!row) return NextResponse.json({ error: 'Run not found' }, { status: 404 })
+  if (Number(row.distance_m) > 0) return NextResponse.json({ error: 'This run already has a measured distance' }, { status: 409 })
+
+  const { error } = await supabase
+    .from('strava_activities')
+    .update({ reported_distance_m: Math.round(metres), reported_at: new Date().toISOString() })
+    .eq('id', row.id)
+    .eq('user_id', userId)
+  if (error) {
+    await recordOpsEvent('health_ingest_failed', { stage: 'report_distance_write', message: error.message.slice(0, 500), uuid }, userId)
+    return NextResponse.json({ error: 'Persist failed' }, { status: 500 })
+  }
+  return NextResponse.json({ status: 'ok', reported_distance_m: Math.round(metres) })
 }

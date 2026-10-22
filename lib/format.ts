@@ -10,7 +10,7 @@
 
 import type { Session } from '@/types/plan'
 
-const KM_PER_MI = 1.609344
+export const KM_PER_MI = 1.609344
 
 export type DistanceUnits = 'km' | 'mi'
 

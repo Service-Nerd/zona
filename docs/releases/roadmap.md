@@ -1331,7 +1331,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **A paid post-run shows time in zone twice** (POSTRUN-ZONE-TWICE-01) | ✅ PAID | S | 🟢 Shipped 2026-10-22 inside SESSION-LOGGED-HERO-01. |
 | **Late heart rate is not stamped** (HR-LATE-STAMP-01) | — | S | ✅ Shipped 2026-10-22 (`97b42f20`): every late arrival stamped; existing rows not backfilled. |
 | **Outdoor / Treadmill: is a control worth building?** (TREADMILL-TOGGLE-01) | — | S | ⛔ Ruled 2026-10-22: no toggle (permanent DON'T SHIP). |
-| **A linked run with no distance cannot be given one** (UNMEASURED-DISTANCE-01) | FREE | S | 🔲 Open, filed 2026-10-22. Data ruling, then a prototype. |
+| **A linked run with no distance cannot be given one** (UNMEASURED-DISTANCE-01) | FREE | M | ✅ Built 2026-10-22; needs the migration applied before push. |
 | **A run-walk session is a sentence, not steps** (RUNWALK-STEPS-01) | FREE | M | ✅ Shipped 2026-10-22: walk warm-up, n × (Run 6 / Walk 1), run/walk icons. |
 | **Two colour answers for a VO2 or hill session** (SESSION-INTERVALS-HUE-01) | — | S | ✅ Shipped 2026-10-22: one hue owner, `--s-inter` = `#D4705A`, VO2 reaches it by catalogue row. |
 | **The session detail takes the session hue** (SESSION-HUE-OWNER-01) | FREE | S | ✅ Shipped 2026-10-22. |

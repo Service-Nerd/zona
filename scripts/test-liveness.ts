@@ -65,6 +65,11 @@ const SUBJECTS: Record<string, string[]> = {
 
 // Tests with NO mutable subject, recorded rather than silently absent.
 const NO_SUBJECT: Record<string, string> = {
+  'lib/health/reportDistance.test.ts':
+    '§128 (Coaching Board 2026-10-22, UNMEASURED-DISTANCE-01). A route + source-boundary test: the numeric harness has no '
+    + 'subject to perturb (the bounds are data validation, the rule is which modules may READ a column). FALSIFIED BY '
+    + 'HAND, 4 ways, each red: the fill-only 409 guard removed, `runHistory` made to read `reported_distance_m`, '
+    + '`runDistance` counting a device 0 as measured, and the user scope dropped from the read.',
   'lib/coaching/reshapeLimits.test.ts':
     '§124 + §2 Am.5 + §109 Am.1 (Coaching Board 2026-10-08). Registered as a SUBJECT first and '
     + 'the harness reported UNPROVEN, correctly: `lib/coaching/constants.ts` holds 41 exported '

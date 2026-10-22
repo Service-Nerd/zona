@@ -62,8 +62,8 @@ A runner-reported distance (a run whose device wrote none: 47 of 354 Apple Healt
 WHOOP 11) may feed weekly volume and load, the session's displayed distance and pace (labelled runner-reported) and
 auto-match. It must NEVER feed VDOT or any fitness estimate (`aerobicEstimate`, `race-times`, the wizard benchmark), or
 any pace-based score or zone claim: a home treadmill's belt distance can be 5–10% out (Hutchinson). Counting it as volume
-is safer than counting zero for load (Willy). No numeric. Check with the build: the fitness estimators read only
-measured distance. Not built; architecture ruled the storage (backlog), Design Board next.
+is safer than counting zero for load (Willy). No numeric. §128. Built 2026-10-22: `lib/health/reportDistance.test.ts` holds the fitness estimators off the
+reported column.
 
 ## 2026-10-22 — RUNWALK-WARMUP-01 · CORRECT WITH AMENDMENT (the run-walk warm-up is a 5 min walk)
 

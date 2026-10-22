@@ -48,11 +48,14 @@
 import type { Plan } from '@/types/plan'
 import { getWeekIndexForDate } from '@/lib/plan/weekResolution'
 import { DUPLICATE_ACTIVITY } from './constants'
+import { runDistance } from '@/lib/health/runDistance'
 
 /** One physical run, as the activity log stores it. Source-agnostic (ADR-011). */
 export interface ActivityLogRow {
   start_date:          string
   distance_m:          number | null
+  /** UNMEASURED-DISTANCE-01: what the runner typed for a run the device left at nothing. Read via `runDistance`. */
+  reported_distance_m?: number | null
   activity_type:       string | null
   sport_type:          string | null
   strava_activity_id:  number | string | null
@@ -168,7 +171,9 @@ export function bucketLoadByPlanWeek(
     if (!isInsidePlanWeek(week, row.start_date)) continue
 
     const n   = (week as { n?: number }).n ?? idx + 1
-    const km  = (row.distance_m ?? 0) / 1000
+    // UNMEASURED-DISTANCE-01 (Coaching Board 2026-10-22): a runner-reported distance counts for VOLUME; counting it is
+    // safer for load than counting zero (Willy). Unknown stays 0 here, as before.
+    const km  = runDistance(row)?.km ?? 0
     const key = activityKey(row)
     const cur = out.get(n) ?? { ...EMPTY_LOAD }
     if (key != null && linkedKeys.has(key)) cur.linkedKm += km
@@ -232,7 +237,7 @@ export async function fetchWeeklyLoad(
 
   const [actsRes, raRes, compRes] = await Promise.all([
     supabase.from('strava_activities')
-      .select('start_date, distance_m, activity_type, sport_type, strava_activity_id, apple_health_uuid, manual_uuid')
+      .select('start_date, distance_m, reported_distance_m, activity_type, sport_type, strava_activity_id, apple_health_uuid, manual_uuid')
       .eq('user_id', userId)
       .gte('start_date', from.toISOString())
       .lt('start_date', to.toISOString()),

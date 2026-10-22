@@ -5,6 +5,8 @@
 //
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
+import AddDistanceRow, { DISTANCE_NOT_RECORDED, DISTANCE_REPORTED_LABEL } from '@/components/shared/AddDistanceRow'
+import { runDistance } from '@/lib/health/runDistance'
 import { hueText } from '@/lib/ui/hueText'
 import AIMark from '@/components/shared/AIMark'
 import EasedMark from '@/components/shared/EasedMark'
@@ -145,6 +147,8 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
 }) {
   const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'success' | 'reflect' | 'skip-reflect'>('detail')
   const [showManualModal, setShowManualModal] = useState(false)
+  // UNMEASURED-DISTANCE-01: a distance the runner just entered, shown before the next refetch.
+  const [reportedKmSaved, setReportedKmSaved] = useState<number | null>(null)
   // DS-07 Part B — "Add another effort" opens the manual modal in accumulate mode
   // (the entered distance is added on top of the logged total, not a replacement).
   const [manualAccumulate, setManualAccumulate] = useState(false)
@@ -270,7 +274,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
           // No explicit user_id filter — RLS (auth.uid() = user_id) handles scoping.
           supabase
             .from('strava_activities')
-            .select('apple_health_uuid, strava_activity_id, source, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, elevation_gain')
+            .select('apple_health_uuid, strava_activity_id, source, name, start_date, distance_m, reported_distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, elevation_gain')
             .order('start_date', { ascending: false })
             .limit(100),
         ])
@@ -312,6 +316,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                 name:                 r.name ?? 'Apple Health run',
                 start_date:           r.start_date,
                 distance:             r.distance_m ?? 0,
+                reported_distance:    r.reported_distance_m ?? null,
                 moving_time:          r.moving_time_s ?? 0,
                 elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
                 total_elevation_gain: r.elevation_gain ?? 0,
@@ -327,6 +332,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                 name:                 r.name ?? 'Run',
                 start_date:           r.start_date,
                 distance:             r.distance_m ?? 0,
+                reported_distance:    r.reported_distance_m ?? null,
                 moving_time:          r.moving_time_s ?? 0,
                 elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
                 total_elevation_gain: r.elevation_gain ?? 0,
@@ -1264,8 +1270,17 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
             // `linkedRun` was always undefined and the correct fallback ran.
             // **Fixing that column woke a dead consumer.**
             const actualDistM    = linkedRun ? (linkedRun.distance as number | undefined) : undefined
-            const actualDistKm   = Number.isFinite(actualDistM) ? (actualDistM as number) / 1000
-                                 : (completion?.strava_activity_km ?? null)
+            // UNMEASURED-DISTANCE-01 (6t-i): through `runDistance`, the one owner. A linked run the device left at 0 m is
+            // UNRECORDED, never "0km" (`Number.isFinite(0)` passed, so it rendered as a distance); a runner-reported
+            // value fills it and is labelled. Without a linked run, the completion's copy, if it is a real distance.
+            const linkedDist     = linkedRun
+              ? runDistance({ distance_m: actualDistM ?? null, reported_distance_m: reportedKmSaved != null ? reportedKmSaved * 1000 : (linkedRun.reported_distance as number | null | undefined) ?? null })
+              : null
+            const completionKm   = Number(completion?.strava_activity_km)
+            const actualDist     = linkedRun ? linkedDist : (completionKm > 0 ? { km: completionKm, reported: false } : null)
+            const actualDistKm   = actualDist?.km ?? null
+            const distUnrecorded = !!linkedRun && actualDist == null
+            const canAddDistance = linkedRun?.source === 'apple_health' && !!linkedRun.apple_health_uuid && !(Number(actualDistM) > 0)
             const actualAvgHr    = completion?.avg_hr ?? (linkedRun?.average_heartrate as number | null | undefined) ?? null
             const actualMovingS  = linkedRun?.moving_time as number | undefined
             const actualDuration = Number.isFinite(actualMovingS) && (actualMovingS as number) > 0
@@ -1338,13 +1353,17 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                           run**; the truth is 5.0 mi. A 61% overstatement, silently, on
                           every completed session. The NaN was the visible half of
                           this; the wrong number was the half nobody could see. */}
-                      {(effectiveMetric === 'distance'
+                      {((effectiveMetric === 'distance'
                         ? (actualDistKm != null ? formatDistance(actualDistKm, preferredUnits) : null)
-                        : actualDuration) != null && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)' }}>
+                        : actualDuration) != null || (effectiveMetric === 'distance' && distUnrecorded)) && (
+                        <span data-distance-unrecorded={effectiveMetric === 'distance' && distUnrecorded ? '' : undefined}
+                          style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: effectiveMetric === 'distance' && distUnrecorded ? 'var(--mute)' : 'var(--ink)' }}>
                           {effectiveMetric === 'distance'
-                            ? formatDistance(actualDistKm as number, preferredUnits)
+                            ? (actualDistKm != null ? formatDistance(actualDistKm, preferredUnits) : DISTANCE_NOT_RECORDED)
                             : actualDuration}
+                          {effectiveMetric === 'distance' && actualDist?.reported && (
+                            <span data-distance-reported style={{ fontSize: '11px', color: 'var(--mute)' }}>{' · '}{DISTANCE_REPORTED_LABEL}</span>
+                          )}
                         </span>
                       )}
                       {actualAvgHr != null && (
@@ -1362,6 +1381,10 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
                   </div>
 
                 </div>
+                {canAddDistance && (
+                  <AddDistanceRow appleHealthUuid={linkedRun.apple_health_uuid as string} reportedKm={actualDist?.reported ? actualDist.km : null}
+                    plannedKm={(session.distance_km ?? session.distance ?? null) as number | null} units={preferredUnits} onSaved={setReportedKmSaved} />
+                )}
               </div>
             )
           })()}

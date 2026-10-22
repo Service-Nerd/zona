@@ -39,7 +39,7 @@ describe('POSTRUN-PACE-NULL-01 — the post-run card gets the real pace', () => 
   it('and that value is read from the activity, not invented', () => {
     expect(SRC).toContain("setAvgSpeedMs((act.avg_speed as number | null) ?? null)")
     // The column must actually be selected, or avg_speed is undefined forever.
-    expect(SRC).toContain("'avg_hr, start_date, moving_time_s, avg_speed'")
+    expect(SRC).toContain("'avg_hr, start_date, moving_time_s, avg_speed")  // UNMEASURED-DISTANCE-01 appended the distance columns
   })
 
   it('the speed read covers a STRAVA-linked completion too, not only HealthKit', () => {

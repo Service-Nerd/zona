@@ -143,25 +143,6 @@ can you lift?* (1–4) and Change your plan asks *Days you run* (2–6), one pos
 S8 first jump level) and the long-run-day rule for the run row. Icons came off the modify sheet (seven rows, ICON-RULE-01).
 Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
 
-### 🔲 `UNMEASURED-DISTANCE-01` — a linked run with no distance cannot be given one 🧭 **DESIGN BOARD** (prototype) + ⚙️ **ARCHITECTURE** (INV-DATA-008 / ADR-011) *(filed 2026-10-22, from TREADMILL-TOGGLE-01)*
-
-47 of 354 Apple Health runs carry no distance, from 4 runners (three almost entirely: 26/36, 15/15, 9/10). Sources:
-Peloton 26 (no HR, no distance), Garmin Connect 15 and WHOOP 11 (HR, no distance). "Enter it manually" appears only when
-no run is linked, so once a run links the runner cannot add the distance their treadmill or watch showed. First: is a
-runner-entered distance a fill for an absent value, never an override of a measured one, and which gateway writes it
-(INV-DATA-008 allows only `/api/health/ingest` and `healthkitConsolidate`)? Then a prototype of where the field sits.
-The Outdoor/Treadmill toggle itself is a permanent DON'T SHIP (design-rulings 6t-c).
-
-⚙️ **ARCHITECTURE RULED 2026-10-22:** not into `distance_m` (it would mix measured and typed values; ADR-011 SOR and
-auditability) and not only on `session_completions` (off-plan Peloton runs have none). New nullable
-`strava_activities.reported_distance_m` + `reported_at`, written only through `/api/health/ingest` as a user-scoped,
-**fill-only** action (refused when the device measured one); one resolver `runDistance(row)` → measured, else reported
-(marked), else null; ADR-011 §3 amended in the build commit. FREE. Measured: 16 files read `distance_m`.
-🏃 **COACHING BOARD RULED 2026-10-22, CORRECT WITH AMENDMENT:** reported distance counts for volume, load, display (labelled)
-and auto-match; NEVER for VDOT, race-time or wizard estimates, or any pace-based score (coaching-rulings). 🧭 **DESIGN BOARD RULED 2026-10-22 (6t-i), SHIP WITH AMENDMENT:** "0km" → "Distance not recorded" (a live defect);
-a full-width "Add the distance" row; the existing ManualRunModal stepper prefilled with the planned distance; "8km · you
-added this" after; the same row on the post-run screen. 👤 **Founder to approve the four wordings, then build.**
-
 ### 🔲 `LONGRUN-BLOCKED-DAY-01` — the engine puts the long run on a blocked day when both weekend days are blocked 🏃 **COACHING BOARD** *(filed 2026-10-18)*
 
 Measured 2026-10-18: across 512 generated plans, a long-run day outside the run days put the long run on a BLOCKED

@@ -127,7 +127,7 @@ describe('SESSION-ACTUAL-SHAPE-01', () => {
     expect(i, 'the ACTUAL block has moved — re-anchor this test').toBeGreaterThan(-1)
     const block = SRC.slice(i, i + 7000)  // measured: declaration -> render is 5688 chars
     expect(block, 'the actual distance must be formatted by the owner')
-      .toMatch(/formatDistance\(actualDistKm as number, preferredUnits\)/)
+      .toMatch(/formatDistance\(actualDistKm(?: as number)?, preferredUnits\)/)
     expect(block, 'a raw value next to a unit label is the ADR-015 violation')
       .not.toMatch(/\$\{actualDistKm\}\$\{preferredUnits\}/)
   })

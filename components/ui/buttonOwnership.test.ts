@@ -370,13 +370,15 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
     // it unusable." The role belongs on the value readout, not the buttons.
     // 🔴 The distance stepper left with `ManualRunModal` (DASHBOARD-SCREEN-EXTRACT-02).
     // Reading only the hub would have asserted about a control that is no longer there.
-    const src = execSync("git ls-files 'app/dashboard/DashboardClient.tsx' 'components/dashboard/*.tsx'",
+    // UNMEASURED-DISTANCE-01: the stepper moved again, into its own shared component, so the "How far did you run?"
+    // sheet could use the same control; it is read where it now lives.
+    const src = execSync("git ls-files 'app/dashboard/DashboardClient.tsx' 'components/dashboard/*.tsx' 'components/shared/DistanceStepper.tsx'",
       { encoding: 'utf8' }).trim().split('\n').filter(f => f && !f.includes('.test.'))
       .map(f => strip(fs.readFileSync(path.join(ROOT, f), 'utf8'))).join('\n')
     const spins = Array.from(src.matchAll(/role="spinbutton"/g))
     expect(spins.length, 'the distance readouts lost their spinbutton role').toBe(2)
     // A role with no value is a role that announces nothing.
-    expect((src.match(/aria-valuenow=\{dist(Whole|Decimal)\}/g) ?? []).length,
+    expect((src.match(/aria-valuenow=\{(?:dist)?(?:Whole|Decimal|whole|decimal)\}/g) ?? []).length,
       'a spinbutton with no aria-valuenow announces nothing').toBe(2)
   })
 

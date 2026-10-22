@@ -11509,3 +11509,19 @@ than a gradient (Sims). No surface may claim a treadmill is safer or riskier for
 carries no indoor flag, so the app cannot tell a treadmill run from an outdoor one without the runner saying so.
 
 **No numeric, no invariant**: nothing new is prescribed, so there is nothing new to check, stated rather than invented.
+
+## 128. A runner-reported distance counts as volume, never as fitness *(Coaching Board 2026-10-22, UNMEASURED-DISTANCE-01)*
+
+**Principle.** When a run's device recorded no distance (a Peloton or a treadmill app, some Garmin Connect and WHOOP
+syncs), the runner may add one. It counts toward weekly volume and load, it is shown (labelled "you added this"), and it
+can match a session. It never feeds a fitness estimate: VDOT, race-time predictions, the wizard benchmark, or any
+pace-based score or zone claim.
+
+**Why.** Measured: 47 of 354 Apple Health runs carried no distance (Peloton 26, Garmin Connect 15, WHOOP 11), so those
+runners' weeks read as nothing and the load picture under-counted. Willy: counting a reported distance is safer for load
+than counting zero, because zero makes the next week look safer than it is. Hutchinson: a home treadmill's belt distance
+can be 5–10% out, so a typed pace must never tell anyone how fit they are.
+
+**No numeric.** **Enforced by** `lib/health/reportDistance.test.ts`: the fitness estimators (`aerobicEstimate`,
+`race-times`, `wizard-benchmark-estimate`, `runHistory`) must not read the reported column, and the load model must.
+Not a `validatePlan()` invariant: it governs run data, not a plan.
