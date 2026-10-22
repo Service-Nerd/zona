@@ -1884,7 +1884,7 @@ makes no claim. McMillan: RPE is real evidence and the runner gave it; the neutr
 **Recorded disagreement.** McMillan would accept any low RPE. Hutchinson accepts it only against the session's own
 `rpe_target`, because a fixed number is a third threshold for one question. Adopted as Hutchinson states it.
 
-**Numeric.** None new: `ZONE_HELD_MAX_ABOVE_CEILING_PCT` (10) and the prescribed `rpe_target`.
+**Numeric.** None new: `ZONE_HELD_MAX_ABOVE_CEILING_PCT` (10) and the prescribed `rpe_target`. The neutral words (*"Easy run done."*, *"Next one when you're ready."*) were approved by the founder the same day.
 
 **Not mechanically checkable by `validatePlan()`**: it reads a run, not a plan. Enforced by
 `lib/coaching/completionCopy.test.ts`, falsified by dropping the heart-rate condition, the RPE condition, the

@@ -15,7 +15,7 @@ import type { ClassifiableSession } from '@/lib/session-types'
 // `rpe_target`) and none may disagree. No evidence, or any disagreement, gets the neutral line: it was done, no effort
 // claim, no cause (P-04). A body naming a zone needs heart rate. Every other line only says the session happened.
 //
-// ⚠️ The neutral words are pending founder approval (2026-10-22).
+// The neutral words were approved by the founder on 2026-10-22.
 export interface CompletionEvidence {
   /** `run_analysis.hr_above_ceiling_pct`, or the trace's own share. Null when the run has no heart rate. */
   abovePct?: number | null

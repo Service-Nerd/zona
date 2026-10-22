@@ -69,13 +69,13 @@ label. No numeric. Check: `lib/plan/catalogueUnitNeutral.test.ts`. §19 Am. upda
 `tempo_cruise` and `threshold_mile_repeats` are one T-pace stimulus by design (mile median 8.8 min vs 10; jog 90 s vs 2
 min). Both stay (CD-1 depth veto, 2026-10-02). 451 of 2,334 cohort plans carry both, all HM/marathon. Mile repeats'
 purpose stops claiming "long" and names the split as the benchmark. No numeric, no invariant. §19 amendment. Wording
-awaits the founder. Evidence: `scripts/board-evidence-cruise-mile.ts`.
+superseded by REP-UNITS-KM-01. Evidence: `scripts/board-evidence-cruise-mile.ts`.
 
 ## 2026-10-22 — COMPLETION-COPY-CLAIM-01 · CORRECT WITH AMENDMENT (praise needs every source to agree)
 
 §12 Amendment 4: *"Kept it easy."* only when heart rate is at or under 10% above the ceiling and/or RPE is at or under the
 session's `rpe_target`, with no source disagreeing; otherwise a neutral line with no effort claim. A zone in the body needs
-heart rate. Long runs by role. No new numeric. Built the same day; the neutral words await the founder.
+heart rate. Long runs by role. No new numeric. Built the same day; the neutral words approved by the founder the same day.
 
 ## 2026-10-22 — SESSION-TODAY-CARD-01 (time range) · CORRECT WITH AMENDMENT (an estimate, marked `~`)
 
