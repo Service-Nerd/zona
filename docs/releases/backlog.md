@@ -143,7 +143,7 @@ can you lift?* (1–4) and Change your plan asks *Days you run* (2–6), one pos
 S8 first jump level) and the long-run-day rule for the run row. Icons came off the modify sheet (seven rows, ICON-RULE-01).
 Decision note: `docs/decisions/pinned-training-days-2026-10-18.md`.
 
-### 🔲 `LONGRUN-BLOCKED-DAY-01` — the engine puts the long run on a blocked day when both weekend days are blocked 🏃 **COACHING BOARD** *(filed 2026-10-18)*
+### 🔲 `LONGRUN-BLOCKED-DAY-01` — the engine puts the long run on a blocked day when Fri, Sat and Sun are all blocked 🏃 **COACHING BOARD RULED 2026-10-22: CORRECT WITH AMENDMENT, ready to build** (see `coaching-rulings.md`) *(filed 2026-10-18)*
 
 Measured 2026-10-18: across 512 generated plans, a long-run day outside the run days put the long run on a BLOCKED
 weekend day in 642 plan-weeks; `INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` logs it in production (dev throws). **No surface

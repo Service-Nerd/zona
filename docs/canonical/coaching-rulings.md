@@ -56,6 +56,23 @@ incline adjustment (the 1% rule's evidence starts at 2.92 m/s and every prescrib
 rate or RPE and time; pace and distance are guides. A toggle that changes the prescription is INCORRECT. Whether to build
 a toggle or guidance line goes back to the Design Board and SLT. No numeric, no invariant.
 
+## 2026-10-22 — LONGRUN-BLOCKED-DAY-01 · CORRECT WITH AMENDMENT (a weekday long run, never a blocked day, never a refusal)
+
+The engine tries `sun, sat, fri` (or `sat, sun, fri`) and then falls back to `'sun'` **even when Sunday is blocked**
+(`ruleEngine.ts:3199`), against §18, which already says no session on a blocked day. So the trigger is Fri, Sat and Sun
+all blocked, not only the weekend. **Counted 2026-10-22: 0 of 29 stored inputs reach it; no wizard path can.**
+Ruling: the long run goes on the latest available day, walking back `fri, thu, wed, tue, mon`; it is never placed on a
+blocked day and the plan is never refused for it (life-first, §18; a weekday long run is already §81's case, and §81's
+cap exemption, note and maintenance obligations apply unchanged). §7 spacing follows the moved day (quality is already
+placed by `dayGap` from the long-run day). **McMillan dissent recorded:** he wanted the day with the largest declared
+time budget first; declined because `day_budgets` is not yet consumed by the engine and no input reaches this path;
+revisit with the weekday-long-run UI widening (`WeekGrid.logic.ts` `LONG_ELIGIBLE`). Seiler, Sims, Blagrove: no
+objection (session counts unchanged; carers and shift workers kept rather than refused; strength reads placement, no
+weekend assumption). Artifacts at build: §18 Amendment 2; `LONG_RUN_FALLBACK_DAYS` in `GENERATION_CONFIG`; the existing
+`INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` (error) is the check, falsified by restoring the `'sun'` fallback. Found at the
+sitting, fold into the build: `volumeShortfallPct` counts a weekday long run as a capped weekday easy run
+(`ruleEngine.ts:8144` tests `type`, not `isLongRun`).
+
 ## 2026-10-22 — UNMEASURED-DISTANCE-01 (consumers) · CORRECT WITH AMENDMENT (volume yes, fitness never)
 
 A runner-reported distance (a run whose device wrote none: 47 of 354 Apple Health runs; Peloton 26, Garmin Connect 15,
