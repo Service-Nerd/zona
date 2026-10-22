@@ -1321,6 +1321,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **A strength engine change never reaches a stored strength plan** (STRENGTH-ENGINE-REACH-01) | ✅ PAID (admin-only) | S | 🟢 Shipped 2026-10-21: regenerate and compare on read; the founder's plan rebuilds on next open. |
 | **The legs-day suggestion's legs-limited gate is unproven** (STRENGTH-LEGS-DAY-GATE-01) | ✅ PAID (admin-only) | S | 🟢 Shipped 2026-10-21: proven to decide (8 of 350 real three-day picks); kept as ruled. |
 | **The long run on a blocked day when no weekend day is a run day** (LONGRUN-BLOCKED-DAY-01) | FREE (engine) | S | ✅ Shipped 2026-10-22 (`08a68ffb`): walks back from Friday, never a blocked day; quality spaces from it (feature-registry) |
+| **An input with every day blocked still generates a plan** (ALL-DAYS-BLOCKED-01) | FREE (engine) | S | 🔲 Open, filed 2026-10-22: unreachable from the app; a designed refusal at the input boundary |
 | **Session screens that make the runner feel something: the Zone Trace** (SESSION-SCREENS-WOW-01) | ✅ FREE | M | 🟢 Shipped 2026-10-21: the Zone Trace on the completion card and share image. |
 | **The logged session detail leads with the run** (SESSION-LOGGED-HERO-01) | ✅ FREE | M | 🟢 Shipped 2026-10-22. |
 | **The completion card calls a long run "Easy run"** (SESSION-COMPLETE-LONG-LABEL-01) | — | S | ✅ Shipped 2026-10-22 (`92e085bf`). |
