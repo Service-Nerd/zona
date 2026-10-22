@@ -6,6 +6,32 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — SESSION-LOGGED-HERO-01 · the free runner finally sees their own run
+**Shipped:** Reopen a logged run and your run comes first, for every tier: the completion card with your trace or your zone figure, then Kit's read. Straight after a run it reads how did it feel, then how you did, then why.
+
+**Dev learning:** Half the item already existed. A fold built in May did the "what was planned" job, and the build would have duplicated it. Checking the code before planning turned a move-heavy rewrite into a reorder plus one switch.
+
+**Product learning:** A free runner reopening a run met a locked sales card and none of their own numbers. That broke our own rule, "gate richness, never access", for months, and nobody saw it because the paid path looked fine.
+
+**AI-building learning:** The repo's gates caught three things in one build: hand-written "minutes" against the one formatter, a button-geometry move that needed declaring, and my own test regions matching nested returns. Each was a real defect or a real ambiguity, not noise.
+
+**The honest bit:** Kit's read now sits one scroll down on the post-run screen. The board chose that on UX grounds; the commercial case for keeping it higher was never answered, because that seat is stood down.
+
+---
+
+## 2026-10-22 — POSTRUN-ZONE-TWICE-01 · one number, said once
+**Shipped:** A paid post-run no longer shows time in zone twice. The completion card carries it; Kit's card keeps its score chip and its words.
+
+**Dev learning:** Shipped inside SESSION-LOGGED-HERO-01 by one switch on Kit's card, `hideZoneSignal`, set only where the completion card sits above it, so screens without the card are unchanged.
+
+**Product learning:** The same fact twice, a centimetre apart, is noise even when both copies are correct.
+
+**AI-building learning:** Hiding the row left an empty tinted box around the lone score chip. Only looking at it at phone size showed that; no test could have.
+
+**The honest bit:** It was found while placing the trace, not by anyone looking for it.
+
+---
+
 ## 2026-10-21 — SESSION-SCREENS-WOW-01 (1a) · the run, drawn back to the runner
 **Shipped:** After you say how a run felt, the card now shows your heart rate against your ceiling and one sentence: "You held the zone.", or exactly when it got away from you. The same picture is the share image.
 

@@ -6155,6 +6155,10 @@ rule; never a fill, band, wash or gradient (*Type accent, not flood*, veto susta
 are `lib/coaching/zoneTrace.ts` (`buildRunTrace`, one owner). Draws only at `TRACE_MIN_SAMPLES` (100) samples; below
 that the card is unchanged. **Check:** `components/shared/sessionCompleteTrace.markup.test.ts` (replaces the bar, free
 runs reach it, unchanged without a trace, token colours) and `lib/coaching/zoneTrace.test.ts` (the sentence table).
+**Built 2026-10-22 (SESSION-LOGGED-HERO-01): one zone signal.** The completion card is the only zone signal on every
+logged surface. Post-run: How did it feel → card → Kit. A reopened logged session, every tier: the card first once RPE
+exists, else *"How did it feel?"* opening the existing *Session details* fold. `RunFeedbackCard hideZoneSignal` where the
+card sits above. Closing marks were not built. **Check:** `lib/ui/loggedHero.test.ts`.
 **Build ruling (same day):** five logged states, L1 rich trace · L2 sparse (zone bar) · L3 no HR (reuse HR-SYNC-02's
 *"Watch HR hasn't landed yet."* / retry) · L4 hand-logged avg HR (reuse the summary's amber ↑) · L5 hand-logged, no zone element. The
 trace is revealed after RPE. Easy, long and recovery draw as a ceiling, not a band. Every change replaces or folds,
