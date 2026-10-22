@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — SESSION-INTERVALS-HUE-01 · VO2 has its own colour, and it isn't the error colour
+**Shipped:** VO2 and hill sessions now show in coral everywhere: the card, Plan, Today, the session screen, the shape bar and the trace. The old interval colour was the exact hex of our error red; it's gone from training screens.
+
+**Dev learning:** The interval colour was unreachable because the engine labels every hard session "quality". The fix reads the session's catalogue row instead. To keep the website light, the six VO2 row ids live in a tiny module, and a test rebuilds the list from the catalogue and checks the colour agrees with the engine's own VO2 test on every row.
+
+**Product learning:** Changing one colour value reached places nobody had listed. The share image hard-codes the hex because it can't read CSS, and the delete-account screen was painting its warning with the interval colour. The second one was a real bug: deleting your account should look like danger, not like a hard session.
+
+**AI-building learning:** Prototyping two corals on the real components settled it fast. One still read as red next to the error swatch; the other read as coral and matched the contrast of the amber we already ship.
+
+**The honest bit:** Coral, amber and race orange are all a bit faint as small text. That's older than this change and filed separately.
+
+---
+
 ## 2026-10-22 — SESSION-HUE-OWNER-01 · the error red was the interval colour
 **Shipped:** VO2 and hill sessions no longer show their main set in red on the session screen. They're amber, the same as everywhere else in the app.
 
