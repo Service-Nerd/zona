@@ -6159,6 +6159,10 @@ runs reach it, unchanged without a trace, token colours) and `lib/coaching/zoneT
 logged surface. Post-run: How did it feel → card → Kit. A reopened logged session, every tier: the card first once RPE
 exists, else *"How did it feel?"* opening the existing *Session details* fold. `RunFeedbackCard hideZoneSignal` where the
 card sits above. Closing marks were not built. **Check:** `lib/ui/loggedHero.test.ts`.
+**Built 2026-10-22 (SESSION-PRERUN-DETAIL-01): the session silhouette.** `components/shared/SessionSilhouette.tsx` under the
+*Session structure* heading in `SessionSteps` (prop `silhouetteColour`), shape from `lib/plan/sessionSilhouette.ts`;
+`SILHOUETTE_HEIGHT_PX` 40, no labels (the section cards name the parts). **Step rows stay Option E** (`SESSION-STEP-SLOTS-01`).
+**Check:** `lib/plan/sessionSilhouette.test.ts`.
 **Build ruling (same day):** five logged states, L1 rich trace · L2 sparse (zone bar) · L3 no HR (reuse HR-SYNC-02's
 *"Watch HR hasn't landed yet."* / retry) · L4 hand-logged avg HR (reuse the summary's amber ↑) · L5 hand-logged, no zone element. The
 trace is revealed after RPE. Easy, long and recovery draw as a ceiling, not a band. Every change replaces or folds,

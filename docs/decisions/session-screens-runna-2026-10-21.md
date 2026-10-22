@@ -215,8 +215,9 @@ drift is obvious, a minute is not readable, so Wroblewski's tap-to-expand stands
 4. **Reach per runner varies more than the population figure says.** 59% of Apple Health runs carry a trace, but the
    founder's own account has 3 of 62 runs with 100+ samples. The zone-bar fallback is not an edge case; it is how
    some runners will always see it.
-5. **Catalogue step notes carry em dashes** (*"The over — a notch past comfortably hard"*), runner-facing, in
-   `sessionCatalogueData.ts` (a doctrine file). Same class as `EMDASH-LIB-COPY-01`.
+5. ~~Catalogue step notes carry em dashes~~ **Corrected 2026-10-22: not a defect.** 14 of ~172 catalogue notes carry one,
+   and the founder's ruling (2026-09-22) allows em dashes in session descriptions; these notes are the session's
+   description. Nothing filed.
 
 **Not yet tested:** a drifted *quality* session (no real quality trace was available with a matching analysis), a
 long run over two hours, the share image, and any of it on the founder's phone.

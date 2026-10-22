@@ -19,6 +19,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — SESSION-PRERUN-DETAIL-01 · the session, drawn before you run it
+**Shipped:** Open a session and its shape sits under the heading: a long low warm-up, the reps standing up, the jogs between them, the cool-down. An over-under looks like one.
+
+**Dev learning:** The shape reads the engine's own model, not the words on the card, and it is scaled to the composer's minutes so it always agrees with the section headers beneath it.
+
+**Product learning:** Two thirds of this phase was cut before a line was written. The step-row redesign copied the exact row the board had rejected in October, for a reason that still holds: mid-run you need the target, not the distance your watch already shows.
+
+**AI-building learning:** My own settled-ground scan the day before had read the summary rows and not the amendments, the failure this repo has recorded before. Re-reading before building caught it.
+
+**The honest bit:** It shows that Cruise intervals and Mile repeats are the same session with two names. That is now the Coaching Board's question.
+
+---
+
 ## 2026-10-22 — POSTRUN-ZONE-TWICE-01 · one number, said once
 **Shipped:** A paid post-run no longer shows time in zone twice. The completion card carries it; Kit's card keeps its score chip and its words.
 

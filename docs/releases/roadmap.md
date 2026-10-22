@@ -1325,7 +1325,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **The logged session detail leads with the run** (SESSION-LOGGED-HERO-01) | ✅ FREE | M | 🟢 Shipped 2026-10-22. |
 | **The completion card calls a long run "Easy run"** (SESSION-COMPLETE-LONG-LABEL-01) | — | S | 🔲 Open, filed 2026-10-22. |
 | **"Kept it easy." claimed with no heart rate** (COMPLETION-COPY-CLAIM-01) | FREE | S | 🔲 Open, filed 2026-10-22, Coaching Board. |
-| **Step rows and the session silhouette before the run** (SESSION-PRERUN-DETAIL-01) | FREE | M | 🔲 Phase 2, Design Board ruled. |
+| **Step rows and the session silhouette before the run** (SESSION-PRERUN-DETAIL-01) | ✅ FREE | S | 🟢 Shipped 2026-10-22: the silhouette (step rows vacated on settled ground). |
 | **The Today card: rail, time range, silhouette** (SESSION-TODAY-CARD-01) | FREE | S | 🔲 Phase 3, Design Board ruled; check the website. |
 | **A paid post-run shows time in zone twice** (POSTRUN-ZONE-TWICE-01) | ✅ PAID | S | 🟢 Shipped 2026-10-22 inside SESSION-LOGGED-HERO-01. |
 | **Late heart rate is not stamped** (HR-LATE-STAMP-01) | — | S | 🔲 Open, filed 2026-10-21: 3 of 32 late arrivals carry the stamp. |

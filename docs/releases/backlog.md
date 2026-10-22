@@ -112,7 +112,7 @@ its type. Seen on `/post-run-preview` while building SESSION-LOGGED-HERO-01. Als
 easy. That's where the fitness is built."* That is a claim about effort the app cannot support (P-04; §12 Am.2: missing HR
 is silence, never a verdict). Question: what the completion copy says when there is no zone evidence.
 
-### 🔲 `SESSION-PRERUN-DETAIL-01` — step rows and the session silhouette on the pre-run detail (phase 2) 🧭 **DESIGN BOARD RULED** *(filed 2026-10-21)*
+### ✅ `SESSION-PRERUN-DETAIL-01` — **SHIPPED 2026-10-22 (the silhouette).** Step rows and the session silhouette on the pre-run detail (phase 2) 🧭 **DESIGN BOARD RE-RULED 2026-10-22** *(filed 2026-10-21)*
 
 **Re-sat 2026-10-22 (Part 10):** step rows VACATED (Option E stands; the modality glyph duplicates the role word on 100%
 of non-run steps); the duration range moves to the Today card. **Scope now: the silhouette in the *Session structure*
