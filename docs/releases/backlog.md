@@ -152,6 +152,13 @@ input written before 2026-10-18 (both weekend days blocked on the old sheet) sti
 does the long run go when the runner has no weekend run day (a weekday long run, or refuse)? Count stored inputs in
 that state first.
 
+📐 **Counted 2026-10-22 (read-only, production):** 36 plan rows, 29 carry `meta.generator_input` (the input a
+rebuild or adjustment reuses; the other 7 are legacy and have none). **0 have both weekend days blocked, and 0 long runs
+sit on a blocked day.** 6 plans (5 real, 1 test) have exactly one session on a blocked day and every one is the **race
+itself**, fixed by its date (a Saturday or weekday race on a day the runner marked unavailable): not this defect, and
+correct. So the defect is unreachable today from the app and from every stored input. What remains is the rule question
+for the board, now with no live runner waiting on it. Not counted: a wizard draft in `sessionStorage` (client only).
+
 ### ✅ `ENVELOPE-CLOCK-01` — **SHIPPED 2026-10-19.** The use-case envelope generated against the wall clock, and it found a real §1 hole ⚙️ **NO BOARD** *(RCA `/zona-debug` 2026-10-19)*
 
 **Root cause.** `measureEnvelope` (`lib/plan/envelopeMeasure.ts:115`) calls `generateRulePlan(c.input, 'paid')` with no
