@@ -125,6 +125,9 @@ step model, not text; the duration range in the existing tile. Same decision not
 
 *(2026-10-22: the duration range lands here, moved from phase 2.)*
 
+**Re-sat 2026-10-22 (Part 11):** the Today silhouette DON'T SHIP (the 4 px `ZoneBar` stays, HOLD-THE-ZONE-01); build the
+6 px rail (app and website) and a time range under the distance on easy, long and recovery runs.
+
 Nothing added in height; check the website, which renders `SessionCard`. Same decision note.
 
 ### ✅ `POSTRUN-ZONE-TWICE-01` — **SHIPPED 2026-10-22** (inside `SESSION-LOGGED-HERO-01`). A paid post-run showed time in zone twice 🧭 **DESIGN BOARD RULED 2026-10-22** *(filed 2026-10-21)*

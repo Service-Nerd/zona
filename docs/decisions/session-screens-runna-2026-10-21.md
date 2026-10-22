@@ -669,3 +669,38 @@ distance and duration through the km / min toggle.
    when the session has no structure. CD-1 evidence (Cruise intervals = Mile repeats) already routed to the Coaching
    Board.
 4. **So phase 2 is the silhouette alone.**
+
+---
+
+## Part 11 — Design Board: phase 3, the Today card, re-sat on two rulings and one measurement (2026-10-22)
+
+**Settled ground found while re-measuring:**
+- **HOLD-THE-ZONE-01 (2026-05-14):** the 5-segment `ZoneBar` under the Today card exists because *"zones were a chip
+  everywhere and a headline nowhere"*; it is the brand's "you are here" in the five zones.
+- **TODAY-V2 preconditions:** 22 conditional blocks can render on Today with no priority order; the fold is contested.
+- `SessionCard` renders on the **website homepage** too (`app/page.tsx`, two places).
+
+**Measured:** the Today `ZoneBar` is **4 px** tall (`ZoneBar` default, no labels) plus a 12 px gap. A silhouette that
+reads at 375 px is ~30–40 px (the detail's is 40). Swapping them adds ~26–36 px to Today's common state. The meta line
+(*"Zone 3 · 146–157 bpm · 6:16–6:31 /km"*) already fills its width at 375 px; a time range appended to it would wrap.
+
+- **Zhuo.** The Part 5 ruling (silhouette replaces the ruler, nothing taller) cannot be built as written: the two
+  conditions contradict each other at the measured sizes. Pick the one that matters.
+- **Silvanto.** Keep the ruler. It is the five-zone scale, and a shape without the scale says less, not more. The shape
+  is one tap away on the detail, which is where depth belongs.
+- **Sierra.** Agreed. On the time range: *how long do I need?* is the planning question, so give it, but not in a line
+  that wraps.
+- **Wroblewski.** Under the distance on the right: the card's left column already has two lines, so a small second line
+  on the right costs no height. Only on easy and long runs (one pace band governs the whole run), only when the lead
+  is distance.
+- **Collins.** The 6 px rail is the one piece of colour left from W4 as amended; ship it, and say plainly that the
+  homepage cards change too. I lose the Today silhouette, recorded.
+
+### ⚖️ Ruling: SHIP WITH AMENDMENT
+1. **The silhouette on Today: DON'T SHIP** (not permanent). The `ZoneBar` stays (HOLD-THE-ZONE-01); the shape is on the
+   detail.
+2. **The rail: 3 → 6 px** on `SessionCard`, app **and** website homepage, as a named constant.
+3. **The time range:** a small second line under the distance on the right (*"35–41 min"*), easy, long and recovery
+   runs with a pace band, only when the card leads with distance. From one owner, through `formatDuration`.
+4. **Check:** the card's height unchanged at 375 px with the range; the range absent on quality runs and in duration
+   mode; the rail width from the constant.

@@ -144,6 +144,13 @@ been answered and misfiled.
 
 ---
 
+## 2026-10-22 — SESSION-TODAY-CARD-01 · Today silhouette DON'T SHIP; 6 px rail and a time range SHIP
+
+Re-sat: HOLD-THE-ZONE-01 put the 5-zone `ZoneBar` under the Today card, and it is 4 px against a ~30–40 px legible
+silhouette, so the swap would make Today taller (the Part 5 conditions contradicted each other). The bar stays. The rail
+goes 3 → 6 px on `SessionCard`, app and website. A muted time range under the distance on easy, long and recovery runs
+in distance mode costs no height. **Collins lost** the Today silhouette. Sitting: decision note Part 11.
+
 ## 2026-10-22 — SESSION-PRERUN-DETAIL-01 · W5 step rows VACATED (DON'T SHIP); W7 in the detail DON'T SHIP; W3 silhouette SHIP
 
 Re-sat on ground the 10-21 scan missed: `SESSION-STEP-SLOTS-01` Option E (target first on line 2; a lead-slot sentence
