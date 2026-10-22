@@ -212,12 +212,12 @@ export default function SessionSteps({
 }: SessionStepsProps) {
   const silhouette = silhouetteColour ? sessionSilhouette(structure, derivedSet ?? null) : null
   const peak = displayZones.length ? displayZones[displayZones.length - 1] : 3
-  // §21b Am.4c (Design Board 2026-10-22): a RUN-WALK main set takes the session's hue, so an easy run-walk is not drawn
-  // amber. ⚠️ Scoped to run-walk on measurement: applied to every structured set it turned 340 of 2,746 (hill reps and
-  // VO2 intervals) from --s-inter to amber, because `getSessionColor` and this zone rule disagree for those sessions.
-  // That disagreement is its own item (SESSION-INTERVALS-HUE-01), not this build's.
-  const isRunWalk = (derivedSet as { kind?: string } | null | undefined)?.kind === 'run_walk'
-  const mainAccent = isRunWalk && silhouetteColour ? silhouetteColour : (peak >= 5 ? 'var(--s-inter)' : 'var(--s-quality)')
+  // SESSION-INTERVALS-HUE-01 (Design Board 2026-10-22, 6t-f): ONE owner of a session's hue. The main set takes
+  // `getSessionColor(session)` (the caller passes it as `silhouetteColour`), the same answer as the rail, Plan, Today,
+  // the silhouette and the trace. Before, this painted by peak zone, so 340 of 2,746 VO2/hill main sets drew in
+  // `--s-inter`, which is `#B84545`, the `--danger` value, against ux-principles' no-red rule, while every other
+  // surface drew them amber. The zone fallback remains only for a caller that passes no hue.
+  const mainAccent = silhouetteColour ?? (peak >= 5 ? 'var(--s-inter)' : 'var(--s-quality)')
   const workDot = mainAccent
 
   // Global numbering across the whole session; first row of each main-set block

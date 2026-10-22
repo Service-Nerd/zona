@@ -106,16 +106,4 @@ describe('run-walk is drawn as steps', () => {
     expect(html.split('7:00 /km').length - 1, 'easy band shown in headers').toBeLessThanOrEqual(1)
   })
 
-  it('🔴 a structured set that is NOT run-walk keeps its zone accent (VO2 stays --s-inter)', () => {
-    const set: DerivedSet = { version: 2, blocks: [{ repeat: 5, steps: [
-      { role: 'work', modality: 'run', length: '3 min', pace: '4:10 /km', zone: 'Z5', advance: 'auto' },
-      { role: 'recovery', modality: 'jog', length: '2 min', pace: '7:00 /km', advance: 'auto' }] }] }
-    const st = { warmup: { duration_mins: 15, zone: 'Z1' }, main: { duration_mins: 25, zone: 'Z5' }, cooldown: { duration_mins: 10, zone: 'Z1' }, total_duration_mins: 50, shape: 'intervals' }
-    const html = renderToStaticMarkup(React.createElement(SessionSteps, {
-      structure: st as never, derivedSet: set, sessionType: 'intervals', displayZones: [5], zoneRangeLabel: 'Zone 5',
-      metric: 'duration', preferredUnits: 'km', sessionDistanceKm: null, easyPaceStr: null, silhouetteColour: 'var(--session-quality)',
-    }))
-    expect(html).toContain('var(--s-inter)')
-    expect(html).not.toContain('data-step-glyph')
-  })
 })

@@ -3330,9 +3330,10 @@ prototype of the real `SessionSteps` at 390px:
    of every round.
 3. **The walk row carries an instruction**, never "rest": target *"Brisk walk"*, note *"Take it even if you feel fine."* (founder, 2026-10-22).
 4. **A run-walk main set takes the session's hue**, not `--s-quality`: an easy run-walk drawn amber is a claim the
-   session does not make. ⚠️ **Scoped to run-walk on measurement:** applied to every structured set it turned 340 of
-   2,746 (hill reps and VO2 intervals) from `--s-inter` to amber, because `getSessionColor` and the zone accent disagree
-   for those sessions (`SESSION-INTERVALS-HUE-01`). A walked warm-up's header carries no running pace.
+   session does not make. **Widened to every session by SESSION-INTERVALS-HUE-01 step 1 (6t-f):** `getSessionColor` is
+   the one owner of a session's hue on every surface, so VO2 and hill main sets now draw amber like their rail. A distinct
+   VO2 hue returns with a coral `--s-inter` (6t-f step 3), never with the `--danger` red. Check:
+   `components/shared/sessionHueOwner.markup.test.ts`. A walked warm-up's header carries no running pace.
 **Check:** `lib/plan/runWalkSteps.test.ts`, the cohort (every drawable run-walk session: walk warm-up, parts sum to the
 session, steps to the main set, start on a run), the rows (founder's words, glyphs on run/walk only, "then"), the
 render, and a VO2 set that keeps `--s-inter` with no glyph. Owner: `runWalkSet` / `displayDerivedSet` in
