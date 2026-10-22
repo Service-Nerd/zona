@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — ACCENT-TEXT-VARIABLE-01 · the colours were hiding under other names
+**Shipped:** Small coloured labels now use each colour's darker text shade where it has one, or dark text where it doesn't. Zone names show a coloured dot with the name in dark text. The warning amber in coaching notes is a shade darker and easier to read.
+
+**Dev learning:** The last fix only caught colours written out by their main name. The same colours also appear under 22 old names, and as "if selected, green" switches in chips and pickers. A wider test found about 40 more spots. The test now works out which names are colours by reading the colour file itself, so a new alias can't slip past.
+
+**Product learning:** The selected day on Today was white on light green, which is too faint to read easily. The buttons had already solved that with the darker green, so the day circle uses it too.
+
+**AI-building learning:** Four darker text shades already existed, and an earlier ruling had turned down "making text shades" without knowing. Reading the colour file before the meeting, not after, is now a saved rule.
+
+**The honest bit:** Every count I gave on this today was low the first time: 7 sites became 22, then ~40 more. The test is what found them, not me.
+
+---
+
 ## 2026-10-22 — ACCENT-TEXT-CONTRAST-01 · colour on the marks, ink on the words
 **Shipped:** Small labels that used a session colour or the brand green now read in a darker shade. Session headers, eyebrows and the distance tile are easier to read; the colour stays on the dots, tints, rails and shapes.
 
