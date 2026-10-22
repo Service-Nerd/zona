@@ -606,3 +606,23 @@ by design: routed to the founder.**
 **Founder decision needed before build:** on post-run, the card under *How did it feel* puts Kit's read below the fold
 (it is above today, by his 10-07 condition). **A:** accept it (the number leads, Kit follows). **B:** keep Kit above the
 fold by putting Kit's read first and the card after it, which keeps today's order but leaves the number second.
+
+### Part 9b — the board decides the post-run order from a UX point of view (2026-10-22)
+
+**Founder:** *"I want them to make the call from a ux point of view."* Recorded as a delegation: the board may now rule on
+the condition he set on 2026-10-07 (Kit above the fold), on UX grounds only.
+
+- **Zhuo.** The question is the runner's, not ours: straight after a run they ask *"how did I do?"*, then *"why?"*. The
+  screen should answer in that order.
+- **Silvanto.** Number first, explanation second is the hierarchy of horizon done right. The card's sentence is already a
+  one-line read, so the first screen is not empty of meaning without Kit.
+- **Sierra.** The card is the moment the runner recognises themselves: their own line, their own sentence. Kit's read is
+  worth a scroll once they know what it is explaining.
+- **Wroblewski.** One condition: nothing may suggest the screen ends at the card. The card must not sit flush with the
+  bottom of the viewport with nothing peeking; the space before Kit stays at the normal section gap so Kit's byline
+  starts within the first scroll, and the *Done* button stays last.
+- **Collins.** A, as before.
+
+**Ruling: A, unanimous on UX grounds.** How did it feel → completion card → Kit's read → reflection → Done. Kit below the
+fold is accepted; Wroblewski's condition binds (normal section gap, no extra spacing, Done last). Traynor's commercial
+argument for Kit above the fold is recorded as not answered here: it is a commercial question and his seat is stood down.

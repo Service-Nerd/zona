@@ -86,12 +86,12 @@ the trace as the share image (Collins). **Next:** a local prototype at 375 px on
 carry an HR stream), then a build ruling. Routed: Outdoor/Treadmill to 🏃 Coaching Board. `docs/decisions/session-screens-runna-2026-10-21.md`.
 🧪 **Prototype built 2026-10-21** (local, `scripts/session-wow/`): the success condition passed on four real traces. Findings: easy-run zones must draw as a ceiling (§12), Cruise intervals and Mile repeats share one shape (CD-1 evidence → 🏃), the silhouette must read the step model, the fallback is common for some runners, catalogue notes carry em dashes. **Founder: "I absolutely love this!!!"**, with two conditions (missing data; screen and journey scope). 🧭 **Build ruled 2026-10-21, phased:** 1 logged journey (L1–L5, trace after RPE, share image), 2 pre-run detail, 3 Today card. 💼 **SLT 2026-10-21:** items 1–3 already exist (HR-SYNC-02 pending/retry copy, the summary's amber avg HR, auto-match at log time): reuse. **The Zone Trace is FREE**; Kit's read on why stays PAID. 👤 **Founder approved the three sentences.** 🏃 **Coaching Board 2026-10-21: CORRECT WITH AMENDMENT**, reuse §12's 10/20 thresholds; a fourth, factual line for 10–20% (*"Over your ceiling for {m} of {n} minutes."*), founder approved. ✅ **Phase 1a SHIPPED 2026-10-21** (`0b615560`): the Zone Trace on the completion card and the share image. The remaining phases are their own items: `SESSION-LOGGED-HERO-01` (1b), `SESSION-PRERUN-DETAIL-01` (2), `SESSION-TODAY-CARD-01` (3).
 
-### 🔲 `SESSION-LOGGED-HERO-01` — the logged session detail leads with the run (SESSION-SCREENS-WOW-01 phase 1b) 🧭 **DESIGN BOARD RE-RULED 2026-10-22 (smaller); 👤 founder decision pending** *(filed 2026-10-21)*
+### 🔲 `SESSION-LOGGED-HERO-01` — the logged session detail leads with the run (SESSION-SCREENS-WOW-01 phase 1b) 🧭 **DESIGN BOARD RE-RULED 2026-10-22 (smaller), ready to build** *(filed 2026-10-21)*
 
 **Re-scoped 2026-10-22 (Part 9):** the fold exists already (`POST-LOG-01`). Build: the completion card as the one zone
 signal on every logged surface, first on a reopened session for every tier (RPE-gated), `RunFeedbackCard` without its zone
-row, post-run order How did it feel → card → Kit. Closing marks dropped. **Waiting on the founder:** Kit below the fold on
-post-run (A) or Kit first and the card second (B). Absorbs `POSTRUN-ZONE-TWICE-01`.
+row, post-run order How did it feel → card → Kit. Closing marks dropped. **Post-run order decided (board, delegated by the founder):** A,
+the card then Kit, with Wroblewski's spacing condition. Absorbs `POSTRUN-ZONE-TWICE-01`.
 
 ~~Original scope:~~
 

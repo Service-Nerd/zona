@@ -150,7 +150,7 @@ Premise re-measured: `POST-LOG-01` already folds a logged session's body. `Sessi
 on every logged surface; `RunFeedbackCard` drops its zone row (score chip and Kit stay). Post-run: How did it feel → card →
 Kit. Reopened session, every tier: the card first when RPE exists (else *"How did it feel?"* opening the fold) → Kit /
 locked preview → Up next → Unlink → the fold. **Closing marks: DON'T SHIP** (not permanent; the card is the ritual). Kit
-below the fold on post-run is a **founder decision**. Sitting: `docs/decisions/session-screens-runna-2026-10-21.md` Part 9.
+below the fold on post-run: **the founder delegated it; the board chose A on UX grounds** (how did I do, then why). Sitting: `docs/decisions/session-screens-runna-2026-10-21.md` Part 9.
 
 ## 2026-10-21 — SESSION-SCREENS-WOW-01 (location) · SHIP WITH AMENDMENT. The trace goes in `SessionCompleteCard`, not `RunFeedbackCard`
 
