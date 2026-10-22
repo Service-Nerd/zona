@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-22 — HR-LATE-STAMP-01 · the column said one thing and the code another
+**Shipped:** When a watch's heart rate lands after the run has already synced, we now record when it landed, every time. Before, we only recorded it when it was more than a day late.
+
+**Dev learning:** The migration defined the column as every late arrival. The code, written the same day, stamped only arrivals past the 24-hour coaching window, because that was the case the author was designing for. Both comments were honest. Measured in production: 32 runs gained heart rate late, 3 had the stamp, and all 29 others arrived within a day. Nothing broke because nothing read the column. The first person to count from it, me last session, got a number ten times too small.
+
+**Product learning:** No runner sees this. It matters because "how long does Apple take to deliver heart rate?" is a question we will need to answer for anyone without a fresh score, and the only column that could answer it was wrong.
+
+**AI-building learning:** I nearly filed this as a bug in the ingest code. Reading the two lag distributions first showed the code was doing exactly what it said; the fault was two definitions of one column. One function now writes it, and a test fails if anything else does.
+
+**The honest bit:** Old rows can't be fixed. Their arrival time was never kept, so the history stays undercounted.
+
+---
+
 ## 2026-10-22 — SESSION-COMPLETE-LONG-LABEL-01 · a long run is a long run on the card too
 **Shipped:** The card you see after a run, and the image you share, now say "Long run" on a long run. They said "Easy run".
 

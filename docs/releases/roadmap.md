@@ -1328,7 +1328,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Step rows and the session silhouette before the run** (SESSION-PRERUN-DETAIL-01) | ✅ FREE | S | 🟢 Shipped 2026-10-22: the silhouette (step rows vacated on settled ground). |
 | **The Today card: rail, time range, silhouette** (SESSION-TODAY-CARD-01) | ✅ FREE | S | 🟢 Shipped 2026-10-22: the 6 px rail (app and website); silhouette and time range withdrawn. |
 | **A paid post-run shows time in zone twice** (POSTRUN-ZONE-TWICE-01) | ✅ PAID | S | 🟢 Shipped 2026-10-22 inside SESSION-LOGGED-HERO-01. |
-| **Late heart rate is not stamped** (HR-LATE-STAMP-01) | — | S | 🔲 Open, filed 2026-10-21: 3 of 32 late arrivals carry the stamp. |
+| **Late heart rate is not stamped** (HR-LATE-STAMP-01) | — | S | ✅ Shipped 2026-10-22 (`97b42f20`): every late arrival stamped; existing rows not backfilled. |
 | **A recovery ease cannot trim a minutes-based long run** (READINESS-LONG-DURATION-01) | PAID | S | 🔴 Open, filed 2026-10-17: beginner long runs are timed, the trim reads distance, so the ease changes nothing. |
 | **Strength engine** (STRENGTH-ENGINE-01, supersedes R21) | PAID | L | 🟢 **Engine + app built 2026-10-16** (Phases 0–2, admin-only; two migrations pending; not seen on a device). Both boards ruled 2026-10-16 (ADR-024): engine first, no UI; running-focused **and** general in v1 (founder); engine chooses the split; UI when the December cohort is mid-plan; admin-only first. Plan: `docs/plans/STRENGTH-ENGINE-01.md`. |
 | **CA-05 / R27** — Cycle-aware coaching | FREE | M | ⛔ **DEFERRED behind gates (SLT 2026-06-22).** Precursor ENGINE-03-pre shipped (no-data RHR hardening). Cycle bridge gated on usage evidence + incorporation/insurance; moat kept visible. |

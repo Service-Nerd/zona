@@ -130,12 +130,6 @@ Nothing added in height; check the website, which renders `SessionCard`. Same de
 render on a paid, analysed post-run, one above the other. Found while placing the Zone Trace (SESSION-SCREENS-WOW-01
 Part 8), which will make the repeat louder. Question: which one owns the number.
 
-### 🔲 `HR-LATE-STAMP-01` — late heart rate is not stamped ⚙️ **NO BOARD** *(filed 2026-10-21)*
-
-Of 83 Apple Health runs with no HR at the first read, 32 now carry an average HR, but `hr_arrived_late_at` is set on
-only 3. Any measure of late HR read from that column undercounts by 10×, as this session's first count did. Find the
-write paths that fill `avg_hr` after ingest and stamp the column there; add a check that a row gaining HR is stamped.
-
 ### ✅ `STRENGTH-SESSION-TITLE-01` — **SHIPPED 2026-10-19.** A strength session is named by what it holds ⚙️ **NO BOARD** (titles approved by the founder)
 
 A full body with no upper work read "Full body"; one with light leg work read "Upper body". `strengthSessionTitle()` in
