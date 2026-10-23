@@ -25,6 +25,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
+import { withProfileHr, type ProfileHr } from '../lib/plan/rebuildInput'
 import { validatePlan } from '../lib/plan/invariants'
 import { easyPaceFromPlan } from '../lib/plan/easyPace'
 import { isLongRun } from '../lib/plan/sessionRole'
@@ -163,7 +164,9 @@ async function main() {
     // Recompose: strip the existing foundation weeks, then let the SINGLE OWNER rebuild
     // them with the fixed engine. Not a hand-splice — the same function the route calls.
     const stripped: Plan = { ...plan, weeks: plan.weeks.filter(w => w.n > 0) }
-    const res = composePlanWithFoundation(stripped, input, new Date().toISOString().slice(0, 10), 'add')
+    // REBUILD-HR-FROM-PROFILE-01 — rebuilt foundation weeks take heart rate from the profile, not the stored snapshot.
+    const { data: hrRow } = await db.from('user_settings').select('max_hr, resting_hr, max_hr_source').eq('id', row.user_id).maybeSingle()
+    const res = composePlanWithFoundation(stripped, withProfileHr(input, hrRow as ProfileHr | null), new Date().toISOString().slice(0, 10), 'add')
     const after = overBudget(res.plan, input)
 
     // ── GUARDS. Every one of these must hold or this plan is skipped. ──────────

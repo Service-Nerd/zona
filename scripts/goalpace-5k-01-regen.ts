@@ -30,6 +30,7 @@ import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import { validateReshapedPlan } from '../lib/plan/invariants'
 import { regenRefusalReason } from '../lib/ops/regenEligibility'
+import { withProfileHr } from '../lib/plan/rebuildInput'
 import type { Plan, GeneratorInput, Session } from '../types/plan'
 
 const TARGETS: Record<string, 'rebuild' | 'patch'> = { c8aef8f9: 'rebuild', e49ea589: 'patch' }
@@ -113,14 +114,8 @@ async function main() {
   // Profile after the plan was built updates the plan's meta and user_settings but
   // never meta.generator_input, so regenerating from the stored answers alone would
   // quietly put the runner back on the old max (e49ea589: 203 confirmed vs 198 stored).
-  const hr = {
-    ...(settings?.max_hr ? { max_hr: settings.max_hr as number } : {}),
-    ...(settings?.resting_hr ? { resting_hr: settings.resting_hr as number } : {}),
-    ...(settings?.max_hr_source ? { max_hr_source: settings.max_hr_source as GeneratorInput['max_hr_source'] } : {}),
-  }
-  const input = { ...gi, ...hr, plan_start: planStart } as GeneratorInput
-  const hrMoved = ['max_hr', 'resting_hr', 'max_hr_source'].filter(k =>
-    (hr as Record<string, unknown>)[k] !== undefined && (hr as Record<string, unknown>)[k] !== (gi as unknown as Record<string, unknown>)[k])
+  const input = { ...withProfileHr(gi, settings), plan_start: planStart } as GeneratorInput
+  const hrMoved = (['max_hr', 'resting_hr', 'max_hr_source'] as const).filter(k => input[k] !== gi[k])
   console.log(`Heart rate  from profile: max ${input.max_hr} (${input.max_hr_source ?? 'unstated'}), resting ${input.resting_hr}${hrMoved.length ? `  · differs from the stored answers on ${hrMoved.join(', ')}` : ''}`)
   const tier = (meta.tier === 'paid' ? 'paid' : meta.tier === 'free' ? 'free' : 'trial') as 'free' | 'trial' | 'paid'
   const fresh = composePlanWithFoundation(generateRulePlan(input, tier, planStart, undefined, planStart), input, planStart, 'add').plan

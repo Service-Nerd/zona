@@ -22,6 +22,7 @@ import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import { validateReshapedPlan } from '../lib/plan/invariants'
 import type { Plan, GeneratorInput } from '../types/plan'
 import { regenRefusalReason } from '../lib/ops/regenEligibility'
+import { withProfileHr, type ProfileHr } from '../lib/plan/rebuildInput'
 
 const APPLY = process.argv.includes('--apply')
 // ⚠️ DERIVED, NOT PINNED. This was hardcoded `'2026-09-17'` — the day the script was
@@ -60,11 +61,13 @@ async function main() {
     // runner who syncs runs and never taps "done" was reading as dormant. One did, and
     // their live block was rewritten in week 8 of 14.
     usersWithData('strava_activities'),
-    sb.from('user_settings').select('id, is_admin, email').then(r => r.data ?? []),
+    sb.from('user_settings').select('id, is_admin, email, max_hr, resting_hr, max_hr_source').then(r => r.data ?? []),
   ])
   if (error) { console.error(error.message); process.exit(1) }
   const adminIds = new Set(admins.filter(a => a.is_admin).map(a => a.id as string))
   const emailById = new Map(admins.map(a => [a.id as string, (a.email as string) || '']))
+  // REBUILD-HR-FROM-PROFILE-01 — this script's own 2026-09-17 run put a runner's confirmed 143 bpm back to 178.
+  const profileById = new Map(admins.map(a => [a.id as string, a as ProfileHr]))
 
   let regenerated = 0
   const skips: Record<string, number> = {}
@@ -108,7 +111,7 @@ async function main() {
     // no new foundation prefix; validated clean before it counts.
     let candidate: Plan
     try {
-      const input = { ...gi, plan_start: planStart } as GeneratorInput
+      const input = { ...withProfileHr(gi!, profileById.get(user)), plan_start: planStart } as GeneratorInput
       const tier = ((meta.tier as string) === 'free' ? 'free' : (meta.tier as string) === 'paid' ? 'paid' : 'trial') as 'free' | 'trial' | 'paid'
       const rule = generateRulePlan(input, tier, planStart, undefined, planStart)
       candidate = composePlanWithFoundation(rule, input, planStart, 'add').plan

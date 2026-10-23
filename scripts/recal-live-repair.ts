@@ -44,6 +44,7 @@ import {
   generateRulePlan,
 } from '../lib/plan/ruleEngine'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
+import { withProfileHr, type ProfileHr } from '../lib/plan/rebuildInput'
 import { fitnessAnchorMap } from '../lib/plan/fitnessAnchorMap'
 import { alignDerivedToStructure } from '../lib/plan/derivedSetAnchors'
 import { repairPlan, REPAIRABLE_CODES } from '../lib/plan/planRepairs'
@@ -223,7 +224,9 @@ async function regenerate() {
     // holds it), and regenerating from the input alone then prices them off the
     // fallback LEVEL TABLE again — which is the original fault, reproduced.
     const bm = meta.benchmark as BenchmarkInput | undefined
-    const input = { ...storedInput } as GeneratorInput & { benchmark?: BenchmarkInput }
+    // REBUILD-HR-FROM-PROFILE-01 — heart rate from the profile, never the stored snapshot.
+    const { data: hrRow } = await sb.from('user_settings').select('max_hr, resting_hr, max_hr_source').eq('id', r.user_id).maybeSingle()
+    const input = { ...withProfileHr(storedInput, hrRow as ProfileHr | null) } as GeneratorInput & { benchmark?: BenchmarkInput }
     if (!input.benchmark && bm?.time && bm?.distance_km) {
       input.benchmark = bm
       console.log(`  benchmark injected from meta: ${bm.distance_km}km in ${bm.time}`)

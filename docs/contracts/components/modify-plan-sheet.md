@@ -90,6 +90,12 @@ Design Board's back arrow is only real if the edits survive it.
    `accept_base_build` used to be honoured only inside the route's `BaseVolumeError`
    catch, and of 8 edits across the two live plans **one flips §111 from refusing to
    admitting**, which silently returned a **race plan** to a base-build runner.
+4b. 🔴 **The sheet's `next` is the STORED answers plus the edits; heart rate is laid over it by the caller.**
+   `meta.generator_input` is a snapshot, and a Profile max-HR confirmation never updates it, so a rebuild from it
+   alone put a runner's confirmed 203 bpm back to 198 (`REBUILD-HR-FROM-PROFILE-01`). `runModifyPreview` applies
+   `withProfileHr` (`lib/plan/rebuildInput.ts`) to every input before it is held or sent, which covers this sheet,
+   the base-build handover and the acknowledgement re-send. Do not post a stored input to `/api/generate-plan` from
+   anywhere else: `rebuildInput.test.ts` fails on a second client caller.
 5. **Two day controls, one question, and the sheet must say so.** `GeneratePlanScreen`
    derives both `days_available` and `days_cannot_train` from a single `WeekGrid`, so
    there they *cannot* contradict; here they are independent controls.

@@ -18,6 +18,7 @@ import { rebuildsBaseBuild } from '@/lib/plan/modifyPlan'
 import { handoverCopy } from '@/lib/ui/handoverCopy'
 import { resolveAutoMatch } from '@/lib/coaching/sessionAutoMatch'
 import { applyHrToPlan } from '@/lib/plan/zones'
+import { withProfileHr } from '@/lib/plan/rebuildInput'
 import MePlanCard from '@/components/shared/MePlanCard'
 import { useIsNative } from '@/lib/useIsNative'
 import ZoneWeekBlock from '@/components/shared/ZoneWeekBlock'
@@ -363,7 +364,11 @@ export default function DashboardClient() {
    * refusing to admitting**, and under the old placement that edit silently returned a
    * RACE PLAN to a base-build runner.
    */
-  async function runModifyPreview(nextInput: GeneratorInput, resets: boolean, asBaseBuild = false) {
+  async function runModifyPreview(storedInput: GeneratorInput, resets: boolean, asBaseBuild = false) {
+    // REBUILD-HR-FROM-PROFILE-01 — every in-app rebuild (Modify, the base-build handover, the acknowledgement
+    // re-send) starts from `meta.generator_input`, which a Profile max-HR confirmation never updates. Lay the
+    // profile's heart rate over it here, the one door all three use, before anything is held for a re-send.
+    const nextInput = withProfileHr(storedInput, { resting_hr: restingHR, max_hr: maxHR, max_hr_source: maxHRSource })
     // PLAN-REBUILD-SUPERSEDE-01 — the sheet predicts a reset from the race date alone; once the rebuilt plan is in
     // hand, ask the SAME owner `savePlanForUser` uses, so "keeps your logged weeks" cannot be a promise the save
     // then breaks (an edit that changes the plan's length moves every week's date).
