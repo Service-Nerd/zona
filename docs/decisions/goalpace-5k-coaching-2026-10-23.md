@@ -88,3 +88,7 @@ count above re-run, and §22's exposure ratio on the changed cohort.
 ## Not settled
 S2's projection constant; S4's copy and placement; e49ea589 (live, race 28 Nov) is the founder's decision under the
 live-plan policy.
+
+## Founder sign-off (2026-10-23)
+S1–S4 agreed as ruled. Regenerate c8aef8f9 and e49ea589 after the fix, each shown as a dry-run diff before it is applied.
+
