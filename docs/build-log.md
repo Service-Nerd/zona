@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-23 — REBUILD-HR-FROM-PROFILE-01 · the runner confirmed 143 and a clean-up script set it back to 178
+**Shipped:** Any rebuild of a plan (Modify plan, the base-build handover, the regeneration scripts) now uses the heart rate in the runner's profile, so a max they confirmed can no longer be quietly undone.
+**Dev learning:** A plan stores the answers it was built from, and heart rate is the one answer that changes after the plan exists. Confirming in Profile updated the profile and the plan's zones and left the stored answers alone, so the next rebuild read the old number. The fix is one pure function at the one door all in-app rebuilds share (`runModifyPreview`), and a test that derives every plan-writing script from the repo, so a fifth one cannot skip it.
+**Product/creator learning:** Of 17 accounts whose profile and stored answers disagreed, only the 4 with a CONFIRMED max were at risk: the engine's own max-HR guard rebuilds every observed or missing value to the same zones. Measuring what a rebuild would produce, rather than counting mismatches, turned 17 into 4, and 2 of the 4 had already happened.
+**AI-building learning:** The first population check flagged ModifyPlanSheet because it mentions the route in a comment. Match the call, not the string. And the one revert that hit a real runner was done by a clean-up script written on 17 Sep, which skipped "accounts with real data" and had no idea heart rate was data.
+**The honest bit:** I found this by accident while patching one runner's plan, and it had been live for five weeks on another.
+**Hook material:** A runner typed 143 bpm as their max. A database clean-up five weeks later rebuilt their plan and set it to 178. Their easy-run ceiling went from 121 to 146.
+**Postable?:** yes
+
 ## 2026-10-23 — CRUISE-STEP-NOTE-GOALPACE-01 · the card said 5K pace and the rep said "not a race pace"
 **Shipped:** When a plan turns a threshold session into goal-pace work, the step the runner reads during each rep now says goal pace instead of "Threshold effort — comfortably hard, not a race pace."
 **Dev learning:** The rule already existed. §33 says the voice must be replaced when a session is relabelled, and its check did that faithfully, for `coach_notes`. Step notes arrived months later with the v2 structure, copied from the row, and nothing ever read them. The fix is a second note on the step, chosen in one place (`resolveMainSet`) by the same flag that swaps the pace, so the note and the pace cannot disagree. Generating plans at test collection hid which arm went red; moving it into `beforeAll` made each falsification attributable.
