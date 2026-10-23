@@ -196,6 +196,19 @@ notes prescribe marathon and HM-pace segments, so the HR cap and the segments ca
 brief's W7). Beginners no longer reach §24b; intermediates and marathon runners still do. Needs a ruling on how a
 segmented session states its HR, and a measurement of how many sessions it moves.
 
+### 🔲 `REBUILD-HR-FROM-PROFILE-01` — rebuilding a plan from its stored answers puts the runner back on an old max heart rate ⚙️ **NO BOARD** *(filed 2026-10-23, P2)*
+
+Found writing the GOALPACE-5K-01 patch for e49ea589. Confirming max HR in Profile (`DashboardClient.tsx` ~715–732)
+writes `user_settings` and the plan's `meta` and sessions through `applyHrToPlan`, and never `meta.generator_input`.
+**Modify plan** builds its request from `applyEdits(meta.generator_input, edits)` (`ModifyPlanSheet.tsx:125`, then
+`runModifyPreview`), and `/api/generate-plan` reads no HR from the profile, so a runner who confirmed 203 bpm and then
+changes a run day gets zones built on the 198 they replaced, silently. The same holds for every script that regenerates
+from `generator_input` (`fleet-invalid-debt-01-regen.ts` confirmed; `goalpace-5k-01-regen.ts` now overlays the profile).
+Measured 2026-10-23, read-only: **17 of 29** plans with stored answers have a profile max or resting HR that differs from
+them, 4 of those `user_confirmed` (one is a founder/test account); the other 13 are device-observed or unlabelled, so
+which value SHOULD win for them is part of the fix, not assumed here. Fix at one owner: the input a rebuild uses takes HR
+from the profile (or the profile write also updates `generator_input`), with a test that walks confirm-then-modify.
+
 ### 🔲 `SESSION-KM-STRUCTURED-PACE-01` — a duration-anchored structured session is sized at its headline pace ⚙️ **NO BOARD** *(filed 2026-10-23, P3)*
 
 Found building GOALPACE-5K-01. `sessionKmSelfPaced` converts a duration-anchored session's WHOLE duration at its
