@@ -85,6 +85,15 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-23 — GTM-SEO-COMPARE-01 page 6 claims · CORRECT WITH AMENDMENT · RULED, not built
+
+Page `/why-your-easy-runs-arent-easy` reviewed claim by claim. Zones, talk test first (§14 Am.4), max-HR error (§50),
+drift (§61) and the no-ratio distribution line (§1) stand. Two contradictions: "one or two hard sessions a week"
+against §8 / §110 Am.2 (9% of plans have none), and "you still need harder work… keep one run a week properly hard"
+with no beginner qualifier against §110 Am.2 (Willy, binding). The ceiling is interpolated from
+`QUALITY_SESSIONS_PER_WEEK_MAX`. Sims's sex caveat on the max-HR formulas recorded, not required. Sitting:
+`docs/decisions/coaching-2026-10-23-page6-claims.md`.
+
 ## 2026-10-23 — CRUISE-STEP-NOTE-GOALPACE-01 · CORRECT WITH AMENDMENT · BUILT `311fcb7a`
 
 §33 extends to STEP notes. A session §22 goal-paces kept its row's work-step note, so the runner read "Threshold
