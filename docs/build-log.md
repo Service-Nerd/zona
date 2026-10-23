@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-23 — CRUISE-STEP-NOTE-GOALPACE-01 · the card said 5K pace and the rep said "not a race pace"
+**Shipped:** When a plan turns a threshold session into goal-pace work, the step the runner reads during each rep now says goal pace instead of "Threshold effort — comfortably hard, not a race pace."
+**Dev learning:** The rule already existed. §33 says the voice must be replaced when a session is relabelled, and its check did that faithfully, for `coach_notes`. Step notes arrived months later with the v2 structure, copied from the row, and nothing ever read them. The fix is a second note on the step, chosen in one place (`resolveMainSet`) by the same flag that swaps the pace, so the note and the pace cannot disagree. Generating plans at test collection hid which arm went red; moving it into `beforeAll` made each falsification attributable.
+**Product/creator learning:** One sentence carried two opposite errors. At 5K, goal pace is faster than threshold, so "comfortably hard" tells the runner to hold back; at marathon pace it is slower, so "Threshold now" tells them to push into the grey zone the whole product exists to keep them out of. The line read mid-rep is the most-read sentence in the session.
+**AI-building learning:** The item I filed said two rows and 1,843 sessions, from grepping the one phrase I had seen. Measuring every step note on every goal-paced session found four rows and 3,466. The grep found the example; only the population found the problem. And the sweep: I had reported GOALPACE-5K-01's sweep as clean when it had gone 22 to 23 hard failures, because I baselined a violation that, at error severity, throws instead and is counted somewhere the baseline does not look.
+**The honest bit:** The property sweep has not passed since at least 19 Oct. This ship did not move it (23 before, 23 after, checked on a clean checkout of HEAD), but finding that out meant running it at four commits, and it means "sweep clean" has been a claim nobody checked for days.
+**Hook material:** 3,466 sessions told the runner "not a race pace" on a session whose whole job was race pace. The rule that forbids it had a check. The check read the wrong field.
+**Postable?:** yes
+
 ## 2026-10-23 — GOALPACE-5K-01 · the engine obeyed every rule and still asked for a time trial every Thursday
 **Shipped:** A 5K beginner's goal-pace weeks are now short reps with a jog between (at most 12 minutes at goal pace), the heart-rate zone of goal-pace work follows its pace, beginners no longer get a "marathon pace" long run, and the load, step-back and race-week notes say what is true.
 

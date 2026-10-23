@@ -85,7 +85,7 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 pending.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
-## 2026-10-23 — CRUISE-STEP-NOTE-GOALPACE-01 · CORRECT WITH AMENDMENT · RULED, not built
+## 2026-10-23 — CRUISE-STEP-NOTE-GOALPACE-01 · CORRECT WITH AMENDMENT · BUILT `311fcb7a`
 
 §33 extends to STEP notes. A session §22 goal-paces kept its row's work-step note, so the runner read "Threshold
 effort — comfortably hard, not a race pace" under "5K-pace reps", and "Threshold now" on a marathon-pace progression.
@@ -93,7 +93,7 @@ effort — comfortably hard, not a race pace" under "5K-pace reps", and "Thresho
 **3,466** goal-paced sessions across four rows (`tempo_cruise`, `tempo_cruise_short`, `progressive_tempo`,
 `threshold_mile_repeats`), against the item's 1,843. Seiler: the error runs both ways (5K invites holding back, HM/MP
 invites pushing into Z3). Per-row goal-pace notes, not one synthesised line, so structural notes survive (McMillan).
-No numeric. Words pending the founder. Sitting: `docs/decisions/cruise-step-note-goalpace-coaching-2026-10-23.md`.
+No numeric. Words approved by the founder 2026-10-23; built the same day (3,466 → 0). Sitting: `docs/decisions/cruise-step-note-goalpace-coaching-2026-10-23.md`.
 
 ## 2026-10-22 — LONGRUN-BLOCKED-DAY-01 · CORRECT WITH AMENDMENT (a weekday long run, never a blocked day, never a refusal)
 

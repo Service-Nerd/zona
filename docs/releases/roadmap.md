@@ -963,7 +963,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 - 🏃 `GOALPACE-5K-01` — ✅ **SHIPPED 2026-10-23** (`6e419e84`): rep-shaped goal pace for 5K + 10K beginners, zone/HR follow pace, no §24b for beginners.
 - 🏃 `BEGINNER-TAPER-RACE-ROW-01` — 🔲 open: HM/marathon beginners have no fitting taper race row.
 - 🏃 `SEGMENTED-LR-HR-01` — 🔲 open: segmented long runs carry the easy HR cap.
-- 🏃 `CRUISE-STEP-NOTE-GOALPACE-01` — 🔲 open: cruise reps used as goal-pace work still say "threshold, not a race pace" (47% of cruise sessions).
+- 🏃 `CRUISE-STEP-NOTE-GOALPACE-01` — ✅ **SHIPPED 2026-10-23** (`311fcb7a`): a goal-paced rep's step note stops saying threshold (3,466 sessions → 0); §33 Am.
 - ⚙️ `REBUILD-HR-FROM-PROFILE-01` — 🔲 open: Modify plan and regen scripts rebuild from stored answers, so a confirmed max HR is silently reverted.
 - ⚙️ `SESSION-KM-STRUCTURED-PACE-01` — 🔲 open: structured duration sessions sized at their headline pace.
 - 🧭 `CALENDAR-DONE-DOT-SOURCE-01` — 🔲 open, filed 2026-10-22: the Plan calendar's completion ● is Strava orange for Apple Health runs too.
