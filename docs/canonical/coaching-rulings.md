@@ -83,7 +83,7 @@ threshold label. **S2** amends CD-16 in direction; the projection constant is un
 for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-paced step's zone and HR follow its pace.
 §79 unchanged (no VO2 rows for beginners). New: `INV-PLAN-GOAL-PACE-SHAPE`, `INV-PLAN-PACE-ZONE-COHERENT`,
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
-CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 pending.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
+CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
 ## 2026-10-23 — CRUISE-STEP-NOTE-GOALPACE-01 · CORRECT WITH AMENDMENT · BUILT `311fcb7a`
 

@@ -94,6 +94,8 @@ S1–S4 agreed as ruled. Regenerate c8aef8f9 and e49ea589 after the fix, each sh
 
 **Regeneration (2026-10-23).** c8aef8f9 rebuilt with `scripts/goalpace-5k-01-regen.ts` after the founder read its dry run: same start, race and calendar (9 weeks, same dates), 8 session days changed in weeks 5–8 (four goal-pace sessions now `beginner_goal_pace_reps`, both peak long runs the negative-split finish, week 6 24→27 km instead of the old 22-then-26 dip and jump), the load note and race-week copy corrected. Before: GOAL-PACE-SHAPE, PACE-ZONE-COHERENT, CATALOGUE-ELIGIBLE; after: clean. The prior plan is in `plan_archive` (2026-10-23 09:13), and a read-back of `plans` confirmed 0 errors. The script differs from `fleet-invalid-debt-01-regen.ts` in one guard: a synced run refuses only if it falls on or after the plan start (her 15 were all before it). e49ea589 is still to do; it has started and carries AI copy, so it needs a session swap rather than a rebuild.
 
+**e49ea589 patched (2026-10-23 12:56).** `goalpace-5k-01-regen.ts --plan e49ea589`, dry run read by the founder, applied by him. Only weeks 5–9 open (weeks 1–4 byte-identical to the archived plan on read-back); 5 session days changed, all four goal-pace Wednesdays now Zone 4–5 at 175–203 bpm with the §33 Am. step note; race-week and load notes corrected. Heart rate taken from the profile (203 bpm, `user_confirmed`): the stored answers said 198, which a rebuild would have restored (`REBUILD-HR-FROM-PROFILE-01`). 7 completions and 4 moved sessions untouched, AI week labels and themes kept, 0 errors. Prior plan in `plan_archive`.
+
 ---
 
 # Amendment sitting — S1's fallback, measured before build (2026-10-23)
