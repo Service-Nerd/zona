@@ -196,6 +196,22 @@ notes prescribe marathon and HM-pace segments, so the HR cap and the segments ca
 brief's W7). Beginners no longer reach §24b; intermediates and marathon runners still do. Needs a ruling on how a
 segmented session states its HR, and a measurement of how many sessions it moves.
 
+### 🔲 `CRUISE-STEP-NOTE-GOALPACE-01` — a cruise-interval rep served as goal-pace work tells the runner "not a race pace" 🏃 **COACHING BOARD** → 👤 **FOUNDER** for the words *(filed 2026-10-23, P2)*
+
+Found writing the GOALPACE-5K-01 patch for e49ea589. `tempo_cruise` and `tempo_cruise_short` carry one fixed work-step
+note, *"Threshold effort — comfortably hard, not a race pace."* (`sessionCatalogueData.ts:219` and `:267`). When §22
+renames the session for goal-pace work (label *"5K-pace reps"*, stimulus `race_pace`, and since §83 Am. the interval
+zone and HR), the note still says threshold and still says not race pace, on the same card. Measured 2026-10-23 on a
+1-in-7 sample of the cohort grid (5,664 plans): **1,843 of 3,933** cruise-interval sessions (47%) are served as goal-pace
+work, in **1,149 plans (20%)**, at every distance (5K 1,158 · 10K 122 · HM 408 · marathon 155). On e49ea589 it is on
+4 Nov now, and the patch adds 28 Oct and 11 Nov.
+
+**For the board:** what the work step should say when the row is used at goal pace (a second note on the row selected
+by stimulus, or the note dropped for goal-pace use), and whether any other row's fixed note makes the same claim; the
+two lines above are the only literal matches. The words are the founder's. Doctrine file, so this ships with the
+board's three artifacts: catalogue + `session-catalogue.md`, and a check that no goal-pace session's step note
+claims threshold or "not a race pace".
+
 ### 🔲 `REBUILD-HR-FROM-PROFILE-01` — rebuilding a plan from its stored answers puts the runner back on an old max heart rate ⚙️ **NO BOARD** *(filed 2026-10-23, P2)*
 
 Found writing the GOALPACE-5K-01 patch for e49ea589. Confirming max HR in Profile (`DashboardClient.tsx` ~715–732)
