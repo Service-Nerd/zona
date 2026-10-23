@@ -37,6 +37,7 @@
 // root catch-all would swallow every other route in the app.
 
 import { BRAND, PRICING } from '@/lib/brand'
+import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { articleJsonLd } from '@/lib/marketing/articleJsonLd'
 import { formatDate } from '@/lib/format'
 
@@ -356,6 +357,11 @@ export const coachMarket = () => {
 }
 
 const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']
+
+// Coaching Board 2026-10-23 (page 6): the most quality sessions any plan puts in one week, read from §8's own ceiling so
+// the copy cannot state a number the engine does not hold. A per-week count typed into an article is how page 6 first
+// said "one hard session a week" while 11% of plans had weeks with two.
+export const MAX_HARD_SESSIONS_PER_WEEK = Math.max(...Object.values(GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX))
 
 const p = (...spans: ArticleSpan[]): ArticleBlock => ({ kind: 'p', spans })
 const h2 = (text: string): ArticleBlock => ({ kind: 'h2', text })
@@ -753,9 +759,10 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
     ],
   },
   // ── COMPARISON 6 ───────────────────────────────────────────────────────
-  // Founder's final copy, 2026-10-22, with ONE approved change (2026-10-23): "one hard session a week" became "one or
-  // two", because measured on 5,664 cohort plans 11% have weeks with two quality sessions. The hub summary is drafted
-  // from the copy (the brief supplied none) and is the founder's to edit.
+  // Founder's final copy, 2026-10-22, with approved changes (2026-10-23). "One hard session a week" was untrue for 21%
+  // of plans (5,664 cohort: 11% have weeks with two, 9% none); the Coaching Board (CORRECT WITH AMENDMENT) had it
+  // state §8's ceiling instead, interpolated, and added a beginner qualifier to the "harder work" advice (§110 Am.2,
+  // Willy binding). Sitting: docs/decisions/coaching-2026-10-23-page6-claims.md. Hub summary kept by the founder.
   {
     kind: 'comparison',
     slug: 'why-your-easy-runs-arent-easy',
@@ -803,7 +810,7 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       p(`If you chase the number by slowing right down in those conditions, you can end up training easier than you meant to. I trust heart rate for the first 45 to 60 minutes of a run and lean on feel after that.`),
 
       h2('What zone 2 is not'),
-      p(`Some of what gets posted online makes zone 2 sound like the whole of training. It is not. Easy running is the base, and you still need harder work to get faster. A ${BRAND.name} plan has one or two hard sessions a week and makes the rest easy.`),
+      p(`Some of what gets posted online makes zone 2 sound like the whole of training. It is not. Easy running is the base, and you still need harder work to get faster. If you are new to running, easy running alone will make you faster for a while, and a ${BRAND.name} plan for a beginner aiming to finish gives you no hard sessions at all. A ${BRAND.name} plan never has more than ${NUMBER_WORDS[MAX_HARD_SESSIONS_PER_WEEK]} hard sessions in a week, usually one, and makes the rest easy.`),
       p(`Heart rate zones are also not a verdict on your effort. They are an estimate, and you are the one running.`),
 
       h2('What it cost me'),
@@ -816,11 +823,11 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
         { text: 'how slow easy runs should feel', href: '/guides/should-easy-runs-feel-this-slow' },
         ` has the numbers I use.`,
       ),
-      p(`Keep one run a week properly hard and let the rest be easy.`),
+      p(`If you have been running a while, keep one run a week properly hard and let the rest be easy.`),
       p(`Give it a month before you judge it. The pull to speed up again is strongest around week three, so expect it.`),
 
       h2(`Where ${BRAND.name} fits`),
-      p(`${BRAND.name} is built around this problem. Most sessions in a plan are easy, with one or two hard ones a week. It is iOS only, there is no Garmin workout export, and I am the only developer.`),
+      p(`${BRAND.name} is built around this problem. Most sessions in a plan are easy, and no week has more than ${NUMBER_WORDS[MAX_HARD_SESSIONS_PER_WEEK]} hard ones. It is iOS only, there is no Garmin workout export, and I am the only developer.`),
       p(`The free tier has the 5K, 10K and half marathon plans in full, with no end date. Paid access is ${PRICING.monthly.display} a month or ${PRICING.annual.display} a year, with a two-week trial.`),
       p(
         `You do not need it to fix this, because the talk test costs nothing. If you would rather have someone notice when you drift, that is what a coach is for, and I have written about when `,
