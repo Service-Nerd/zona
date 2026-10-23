@@ -148,6 +148,10 @@ are WRONG. They now spread `MICRO_LABELS.eyebrow`, and a new arm forbids a canon
 - Sessions are rendered in `mon–sun` order regardless of plan JSON key order.
 - Overrides are applied before render: `original_day` sessions appear at `new_day` slots. Overridden slots show the moved session.
 - Rest sessions and empty days render a rest label — they are not tappable.
+- **Both week-header sites pass the week's easy pace: `sessionKmSelfPaced(s, weekEasyMinPerKm(week))`**
+  (SESSION-KM-STRUCTURED-PACE-01, 2026-10-23). A duration-anchored structured session is sized from its steps, with
+  its warm-up and cool-down at easy pace; a continuous tempo has no easy step of its own and needs the week's. Before,
+  a 34-minute goal-pace reps session added ~6.8 km to the total instead of ~4.8.
 - **The week-header total resolves through `sessionKmSelfPaced()`** (`lib/plan/sessionDistance.ts`),
   never `session.distance_km` directly, at **both** week-header sites. A session is anchored
   EITHER by distance OR by duration, and a beginner's plan is duration-anchored on 95.8% of

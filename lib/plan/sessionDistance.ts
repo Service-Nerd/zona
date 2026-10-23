@@ -96,11 +96,78 @@ export function paceBandMidpointMinPerKm(band: string | null | undefined): numbe
  * Never silently zero.
  */
 export function sessionKmSelfPaced(
-  session: (Pick<Session, 'type' | 'distance_km' | 'duration_mins'> & { pace_target?: string | null }) | null | undefined,
+  session: (Pick<Session, 'type' | 'distance_km' | 'duration_mins'> & { pace_target?: string | null; derived_set?: Session['derived_set'] }) | null | undefined,
+  easyMinPerKm?: number | null,
 ): number | null {
   if (!session) return 0
   if (session.distance_km != null) return session.distance_km
+  const stepped = structuredKm(session, easyMinPerKm)
+  if (stepped != null) return stepped
   return sessionKm(session, paceBandMidpointMinPerKm(session.pace_target))
+}
+
+/**
+ * SESSION-KM-STRUCTURED-PACE-01 (2026-10-23) — a duration-anchored session with a structured main set, priced from
+ * its steps. Converting the WHOLE duration at the headline `pace_target` priced the warm-up, cool-down and every jog
+ * at work pace: a 34-minute goal-pace reps session read ~7 km. Measured on 5,664 cohort plans: 6,407 such quality
+ * sessions, read a median 41% (max 65%) longer than at easy pace, every one on a duration-anchored plan. The engine
+ * itself sizes them at easy pace (`sumWeeklyKm`), which is short the other way; this is the figure between them.
+ *
+ * Each step at its own pace; distance steps at their distance; the rest of the session (warm-up and cool-down) at
+ * easy pace, taken from the caller or else from the session's own easy-anchored step (a jog ceiling, or the easy
+ * ramp of a progression). Returns null, and the caller keeps the headline-pace answer, when any step cannot be sized
+ * (a landmark or open length) or no easy pace is available: a continuous tempo called without one.
+ */
+function structuredKm(
+  session: { duration_mins?: number | null; derived_set?: Session['derived_set'] },
+  easyMinPerKm: number | null | undefined,
+): number | null {
+  const set = session.derived_set
+  const mins = session.duration_mins
+  if (!set?.blocks?.length || mins == null || !(mins > 0)) return null
+  const steps = set.blocks.flatMap(b => b.steps)
+  const easy = (easyMinPerKm != null && easyMinPerKm > 0 ? easyMinPerKm : null)
+    ?? paceBandMidpointMinPerKm(steps.find(st => st.pace_mode === 'ceiling' && st.pace)?.pace ?? null)
+  if (easy == null) return null
+  let km = 0, secs = 0
+  for (const block of set.blocks) {
+    const reps = typeof block.repeat === 'number' && block.repeat > 0 ? block.repeat : 1
+    for (const st of block.steps) {
+      const pace = paceBandMidpointMinPerKm(st.pace) ?? easy
+      const len = stepLength(st.length)
+      if (!len) return null
+      const stepKm = len.km ?? len.secs! / 60 / pace
+      const stepSecs = len.secs ?? len.km! * pace * 60
+      km += stepKm * reps
+      secs += stepSecs * reps
+    }
+  }
+  const restSecs = mins * 60 - secs
+  // A main set longer than the session it sits in is a data fault, not a sizing question; keep the old answer.
+  if (restSecs < -60) return null
+  return km + Math.max(0, restSecs) / 60 / easy
+}
+
+/** The easy pace of a set of sessions (a week), from its first easy run that states one, for a caller that holds the
+ *  week and wants a structured session's warm-up priced at easy pace. Null when the week has no easy run with a pace. */
+export function weekEasyMinPerKm(sessions: ReadonlyArray<{ type?: string; pace_target?: string | null; derived_set?: unknown } | null | undefined>): number | null {
+  const easy = sessions.find(s => s?.type === 'easy' && s.pace_target && !s.derived_set)
+  return paceBandMidpointMinPerKm(easy?.pace_target ?? null)
+}
+
+/** A derived step's length in seconds or kilometres, or null for a length that is not a size ("to the top"). */
+function stepLength(len: string): { secs?: number; km?: number } | null {
+  let m = /^(\d+(?:\.\d+)?)\s*min\b/.exec(len)
+  if (m) return { secs: Number(m[1]) * 60 }
+  m = /^(\d+):(\d{2})$/.exec(len)
+  if (m) return { secs: Number(m[1]) * 60 + Number(m[2]) }
+  m = /^(\d+(?:\.\d+)?)\s*s(ec)?\b/.exec(len)
+  if (m) return { secs: Number(m[1]) }
+  m = /^(\d+(?:\.\d+)?)\s*km\b/.exec(len)
+  if (m) return { km: Number(m[1]) }
+  m = /^(\d+(?:\.\d+)?)\s*m\b/.exec(len)
+  if (m) return { km: Number(m[1]) / 1000 }
+  return null
 }
 
 /**

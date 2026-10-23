@@ -6,7 +6,7 @@ import type { Week, Session } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { getSessionColor } from '@/lib/session-types'
 import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan/weekResolution'
-import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
+import { sessionKmSelfPaced, weekEasyMinPerKm } from '@/lib/plan/sessionDistance'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, type DistanceUnits, type SessionMetric, type SessionMetricOverrides } from '@/lib/format'
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
@@ -519,7 +519,8 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   // session's own prescribed pace when it is not. It returns `null`, never 0,
   // when neither is resolvable — `?? 0` is not a safe default, it asserts "this
   // session covered no ground", which is what produced SESSION-KM-01/02.
-  const sessionDistances = Object.values(ws).map((s: any) => sessionKmSelfPaced(s))
+  const weekEasy = weekEasyMinPerKm(Object.values(ws) as any[])
+  const sessionDistances = Object.values(ws).map((s: any) => sessionKmSelfPaced(s, weekEasy))
   const intendedKm = sumRoundedDistance(sessionDistances, units)
   const completionMap: Record<string, Completion> = {}
   completions.forEach(c => { completionMap[c.session_day] = c })
@@ -1151,7 +1152,8 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
   // SESSION-KM-03 — the second of the two sites. Both read `distance_km` raw;
   // fixing one and not the other is how five copies of the pace formatter
   // happened. See the note on the first.
-  const sessionDistances = Object.values(ws).map((s: any) => sessionKmSelfPaced(s))
+  const weekEasy = weekEasyMinPerKm(Object.values(ws) as any[])
+  const sessionDistances = Object.values(ws).map((s: any) => sessionKmSelfPaced(s, weekEasy))
   const intendedKm = sumRoundedDistance(sessionDistances, units)
   const completionMap: Record<string, string> = {}
   completions.forEach(c => { completionMap[c.session_day] = c.status })
