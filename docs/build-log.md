@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-23 — GOALPACE-5K-01 · the engine obeyed every rule and still asked for a time trial every Thursday
+**Shipped:** A 5K beginner's goal-pace weeks are now short reps with a jog between (at most 12 minutes at goal pace), the heart-rate zone of goal-pace work follows its pace, beginners no longer get a "marathon pace" long run, and the load, step-back and race-week notes say what is true.
+
+**Dev learning:** The goal-pace rule prices whatever session it is handed, and a beginner's catalogue only held continuous tempos, so "21 minutes at goal pace" came out of two correct rules meeting. Every fix after that was a measurement turning up the next layer: the board's fallback would have removed all goal-pace work (beginners have no rep sessions at all); the new session was then picked as the plan's first quality session; the selector counts every pick, so swapping one afterwards skews rotation; the taper's direct pick never told §53 how small its pool was; and a heart-rate helper would have quietly undone the zone fix on the next recalculation.
+
+**Product/creator learning:** The founder's brief was right about the runner and wrong about three causes: the "HM-only rows" were eligible, "Threshold now" no longer appears, and the §47 step-back on a 5K was the principle working. The board needed the measurements, not the brief's reading, to rule well.
+
+**AI-building learning:** Twice I nearly took a ruling as buildable when it was not: the fallback that left beginners with nothing, and the eligibility fix that stranded half-marathon beginners in the taper. Each time the sweep, not reading, found it. I also wrote an invented commit id into a message to the founder, and had to correct it next turn.
+
+**The honest bit:** One sweep failure is the checker overestimating distance (a 43-minute reps session read as 9.8 km). I baselined it with the reason and filed the fix instead of changing a shared distance function under pressure. A 5K intermediate's rep session adds about 2 km in one week, and I raised that baseline openly.
+
+**Hook material:** 12 of 12 beginner 5K plans asked for 20 minutes continuous at goal pace. Now 0, and the most any session asks for is 12, in 2-minute pieces.
+
+**Postable?:** yes
+
 ## 2026-10-22 — PLAN-CHANGE-HEADER-01 · three screens, one journey, three ways to scroll
 **Shipped:** Adjust your plan and the "Here is what changes" screen now keep their title and back arrow pinned when you scroll, the same as Strength setup.
 
