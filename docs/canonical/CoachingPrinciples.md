@@ -2468,6 +2468,33 @@ nothing about why their goal pace never appears. `GOAL-PAST-CV-SILENT-01`.
 **Config.** None new — the gate reads the producer's `hm_goal_anchor_withheld` stamp.
 **Enforced by** the exemption inside `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` itself.
 
+### §22 Amendment 3 — at 5K, and for a 10K beginner, goal pace comes in REPS (Coaching Board 2026-10-23, GOALPACE-5K-01)
+
+**Principle.** On a §22 goal-paced week, a 5K plan at every level and a 10K **beginner** take rep-structured work: no
+single continuous goal-pace step longer than `GOAL_PACE_CONTINUOUS_MAX_MINS` (8). The slot draws from the rep rows that
+can carry goal pace (VO2max rows stay, being exempt; mixed-anchor and CV-anchored rows cannot be goal-paced and are not
+offered). For a 5K/10K beginner, who has no rep row otherwise, that row is **`beginner_goal_pace_reps`**: 2-minute reps
+at goal pace, an easy jog of the same length (never a standing rest), sized 4/6/4 by phase and never more than
+`BEGINNER_GOAL_PACE_MAX_SESSION_MINS` (12) at goal pace (Willy, binding). It serves the taper too. 10K intermediate and
+HM/marathon are unchanged.
+
+**Why.** The override is shape-blind: it prices whatever row was selected at goal pace. A 5K or 10K beginner's only
+quality rows were the two continuous tempos, so the second half became 20–21 minutes CONTINUOUS at goal pace, weekly,
+at every goal gap (measured: 5K beginner 12 of 12 grid plans, 10K beginner 6 of 6, 5K intermediate 6 of 12, up to 22
+min). This section's own 5K premise (SC-05) is that 5K race pace IS VO2 physiology, and VO2 work is reps. A real
+runner (benchmark 32:42, target 28:00) was given 21 min at 5:36/km having raced 6:32/km. CB-BEGINNER-CATALOGUE-01 had
+kept goal-pace BLOCKS off 5K/10K as too much for a beginner while accepting the continuous version; that tension is
+what this resolves. The first quality session is still at threshold, before the half-way line.
+
+**Found at build, and recorded.** The ruling's first fallback ("no rep row → price at T") would have left 5K/10K
+beginners with NO goal-pace work: measured, they had no rep row in any phase. The board amended S1 to the new row.
+§53's pigeonhole arm covers its repetition (the taper's direct pick now records its pool size, which it never did).
+
+**Config.** `GOAL_PACE_CONTINUOUS_MAX_MINS`, `BEGINNER_GOAL_PACE_MAX_SESSION_MINS`,
+`SESSION_WORK_OVERRIDE_MINS.beginner_goal_pace_reps`. **Check.** `INV-PLAN-GOAL-PACE-SHAPE`;
+`lib/plan/goalPace5k.test.ts`. **Not settled:** S2 (pricing sustained work at a projected pace when the goal is beyond
+fitness), whose projection constant is unmeasured; McMillan's dissent that 10K reps should be 3–4 minutes.
+
 ## 23. Peak overload requirement
 
 **Principle.** A plan presented as a "build" must produce overload. For plans of `PEAK_OVERLOAD_MIN_PLAN_WEEKS` weeks or longer, peak weekly volume MUST be at least `PEAK_OVER_BASE_RATIO` times week 1 volume. If the engine cannot achieve this overload given the runner's constraints (`days_available`, `max_weekday_mins`, `current_weekly_km` already near peak target, injury caps), it MUST surface `volume_profile = 'maintenance'` with a `volume_constraint_note` explaining why. The plan still runs; the runner is informed of what it is and isn't.
@@ -2664,6 +2691,19 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 > explanatory string).
 
 ---
+
+### §24b Amendment — not for beginners (Coaching Board 2026-10-23, GOALPACE-5K-01)
+
+**Principle.** The segmented MP + HM-finish long run is for intermediate and above. A 5K/10K **beginner** on a time
+target takes §24d's negative-split finish in the final two peak weeks, which has no pace targets.
+
+**Why.** ZONES-BEGINNER-BANDS-01 stated that beginners have no marathon/HM pace fields and that un-nulling them "starts
+prescribing §24b segments to beginners". The fields are null only on the FALLBACK pace guide; a beginner with a
+benchmark derives them from VDOT, so the gate (`canPaceSegments`) let them through. A 5K parkrun beginner was told to
+run "marathon pace" segments with an easy-run HR cap. The gate now reads the intensity level as well.
+
+**Check.** `lib/plan/goalPace5k.test.ts`. Not a `validatePlan()` invariant because §24d is the ruled replacement, not a
+forbidden state; the test pins it.
 
 ## 24c. Long-run structure — build-phase Z2 ceiling (5K/10K, time-targeted)
 
@@ -6412,6 +6452,23 @@ So the incoherence is not "two ladders disagree with each other" — it is **one
 
 ---
 ---
+
+### §83 Amendment — goal-paced work carries the zone its PACE sits in (Coaching Board 2026-10-23, GOALPACE-5K-01)
+
+**Principle.** A goal-paced session's zone and HR band follow where its pace sits in the runner's own ladder, not the
+row's category: closer to interval pace than to threshold pace is interval effort (Zone 4–5, `intervalsHR`); otherwise
+threshold (Zone 3, `qualityHR`). Goal-paced work is stamped `stimulus: 'race_pace'` at construction, so a Zone 4–5 zone
+cannot make the label heuristic read it as VO2max.
+
+**Why.** This section said HR follows the zone label "by construction", which is true, and the zone came from the row's
+CATEGORY. So a 5K goal pace faster than the runner's interval pace was labelled Zone 3 with a 148–162 bpm band, for a
+runner whose all-out 5K, slower than the goal, averaged 163. Pace and HR could not both be met. Reconciling the zone
+with the pace is what "reconcile the two prescriptions" asks for; the declaration (`goal_beyond_measured_fitness`) still
+stands.
+
+**Check.** `INV-PLAN-PACE-ZONE-COHERENT` (a 1% margin either side of the T/I midpoint, so a goal on the boundary is not
+decided by rounding). Not changed: §79 (no VO2 rows for beginners); the HR on segmented LONG RUNS (§24b, §25), filed
+separately as `SEGMENTED-LR-HR-01`.
 
 ## 81. Structured sessions are exempt from the weekday cap — and the plan says when they don't fit
 

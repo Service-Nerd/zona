@@ -150,7 +150,11 @@ const TRIMABLE_BASELINE: Record<Segment, { p99: number; max: number }> = {
   //   healthy_masters   577 plans, 170 firings — p50 22 p90 40 p99  59 max  79
   //   injury            600 plans,  51 firings — p50 12 p90 18 p99  18 max  18
   healthy_standard: { p99: 105, max: 105 },
-  healthy_masters:  { p99: 59,  max: 79 },
+  // GOALPACE-5K-01 (2026-10-23), raised 59 → 78 with the measurement, not to go green: on a goal-paced week a
+  // 5K intermediate's continuous tempo (6 km) becomes a rep row sized by the existing threshold work band
+  // (`tempo_cruise_short`, 8 km), in the same week a fourth run day is added. 2 of 1,200 masters plans
+  // (cohort k=482, 770), W8, +78% non-long-run; the beginners' tail FELL (59 → 52). Reported to the founder.
+  healthy_masters:  { p99: 78,  max: 79 },
   injury:           { p99: 18,  max: 18 },
 }
 

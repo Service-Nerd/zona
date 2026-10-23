@@ -260,6 +260,7 @@ describe('SC-08b — migration posture (D-03)', () => {
       'intervals_rolling',       // §88 — first continuous VO2max fast-float
       'cv_intervals',            // §88 Tier A — critical-velocity reps, threshold-domain (A5)
       'beginner_goal_pace_blocks', // §110b (CB-BEGINNER-CATALOGUE-01, 2026-09-19) — born v2; the beginner ladder's rung 6, scoped beginner-only.
+      'beginner_goal_pace_reps',   // §22 Am.3 (GOALPACE-5K-01, 2026-10-23) — born v2; 5K/10K beginner goal-pace reps.
     ])
     for (const row of V1_SESSION_CATALOGUE) {
       expect(

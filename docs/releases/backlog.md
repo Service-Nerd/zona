@@ -189,6 +189,30 @@ tapered), D8 (race_notes "Start at Zone 2" for every distance), W7 long run HR c
 fitness check. Plans: c8aef8f9 starts 26 Oct (regenerate after the fix); e49ea589 live, race 28 Nov (founder).
 Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+### 🔲 `BEGINNER-TAPER-RACE-ROW-01` — HM and marathon beginners have no race-specific taper row 🏃 **COACHING BOARD** *(filed 2026-10-23)*
+
+Found building GOALPACE-5K-01: the taper sharpener path skipped the fitness check, so beginners at every distance reached
+the intermediate-only `goal_pace_sharpener`. Fixing it for 5K/10K (where `beginner_goal_pace_reps` now exists) and
+applying it at HM/marathon made the taper repeat a tempo (§36: 6 + 6 probe cases, 295 sweep hits). Shipped behaviour:
+the sharpener still stands where no fitting row exists, and `INV-PLAN-CATALOGUE-ELIGIBLE` allows exactly that, derived
+from the catalogue. Question for the board: a beginner taper race row for HM/MARATHON, or open the sharpener (or
+`beginner_goal_pace_blocks`) to beginners in the taper.
+
+### 🔲 `SEGMENTED-LR-HR-01` — a long run with race-pace segments carries the easy-run HR cap 🏃 **COACHING BOARD** *(filed 2026-10-23)*
+
+§24b (5K/10K MP + HM-pace finish) and §25 (marathon race-pace long run) both set `hr_target` to the easy cap while their
+notes prescribe marathon and HM-pace segments, so the HR cap and the segments cannot both be met (the GOALPACE-5K-01
+brief's W7). Beginners no longer reach §24b; intermediates and marathon runners still do. Needs a ruling on how a
+segmented session states its HR, and a measurement of how many sessions it moves.
+
+### 🔲 `SESSION-KM-STRUCTURED-PACE-01` — a duration-anchored structured session is sized at its headline pace ⚙️ **NO BOARD** *(filed 2026-10-23, P3)*
+
+Found building GOALPACE-5K-01. `sessionKmSelfPaced` converts a duration-anchored session's WHOLE duration at its
+`pace_target` midpoint, and for structured work that is the work pace, so a 43-minute goal-pace reps session (12
+minutes at goal pace) reads as 9.8 km instead of ~6. `INV-PLAN-LR-MAX-WEEKLY-PCT` then fired on one sweep plan (now
+baselined with this reason). Fix at the owner: size a structured session from its `derived_set` steps. Measure every
+consumer first (it is the single owner for the validator, `cohortShape` and `reshapeMagnitude`).
+
 ### 🔲 `ALL-DAYS-BLOCKED-01` — an input with every day blocked still generates a plan ⚙️ **NO BOARD** *(filed 2026-10-22, P3)*
 
 Found building `LONGRUN-BLOCKED-DAY-01`: `days_cannot_train` naming all seven days generates a plan whose long run sits

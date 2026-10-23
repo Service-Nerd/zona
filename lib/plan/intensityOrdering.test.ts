@@ -37,6 +37,14 @@ const PLAN_START = '2026-09-07'
 
 // The audit's Task B profile: 10K PB 48:30, target 44:59 — 21 sec/km beyond
 // measured fitness, which is what drives goal pace past interval pace.
+/** The pre-§83-Amendment shape: goal-paced (race_pace) work carried the threshold zone whatever its pace. */
+function asShipped<P extends { weeks: { sessions: Record<string, unknown> }[] }>(plan: P): P {
+  for (const w of plan.weeks) for (const v of Object.values(w.sessions)) for (const s of (Array.isArray(v) ? v : [v]) as Array<{ stimulus?: string; zone?: string } | undefined>) {
+    if (s && s.stimulus === 'race_pace') s.zone = 'Zone 3'
+  }
+  return plan
+}
+
 const STRETCH: GeneratorInput = {
   race_date: '2026-11-29', race_distance_km: 10, goal: 'time_target', target_time: '0:44:59',
   days_available: 4, age: 43, current_weekly_km: 40, longest_recent_run_km: 18,
@@ -85,7 +93,10 @@ describe('SC-06 — cross-session intensity ordering', () => {
   it('an UNDECLARED inversion is rejected', () => {
     // The real assertion. Strip the honesty signal and keep the paces — this is
     // precisely the plan that shipped, and it must not validate.
-    const plan = generateRulePlan(STRETCH, 'paid', PLAN_START)
+    // GOALPACE-5K-01 (§83 Am., 2026-10-23): the engine now RECONCILES this inversion at the source, giving
+    // goal-paced work the zone its pace sits in, so a goal faster than interval pace reads Zone 4–5. The shipped
+    // shape (goal-paced work labelled Zone 3) is rebuilt here so the check is still proven against it.
+    const plan = asShipped(generateRulePlan(STRETCH, 'paid', PLAN_START))
     const silent = structuredClone(plan)
     delete silent.meta.goal_beyond_measured_fitness
     silent.meta.difficulty_band = 'comfortable'
@@ -100,7 +111,7 @@ describe('SC-06 — cross-session intensity ordering', () => {
     // Guard the premise that makes this invariant a new class: the two sessions
     // it compares are in DIFFERENT weeks. A per-session validator cannot see
     // this defect however carefully it inspects any single session.
-    const plan = generateRulePlan(STRETCH, 'paid', PLAN_START)
+    const plan = asShipped(generateRulePlan(STRETCH, 'paid', PLAN_START))
     const quality = plan.weeks.flatMap(w =>
       Object.values(w.sessions)
         .filter(s => s?.type === 'quality' && s.pace_target)

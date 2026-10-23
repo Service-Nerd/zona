@@ -63,7 +63,15 @@ removed all their goal-pace work and the eligibility check would then remove the
 against §22. New row `beginner_goal_pace_reps` (5K/10K, beginner only, build/peak/taper, free): 2-min reps at goal pace,
 easy jog of the same length (Willy binding), 4/6/4 reps by phase, ≤ 12 goal-pace minutes. Replaces the sharpener for
 beginners. Gate from RACE-ANCHOR-CV-OVERRIDE-01 sitting 3 binds the build. McMillan's dissent (10K reps should be 3–4
-min) recorded. **Founder signed off 2026-10-23.**
+min) recorded. **Founder signed off 2026-10-23.** **BUILT 2026-10-23.** Found at build, each fixed and measured: the row must be `goal_week_only` (it was taking
+the plan's FIRST quality session, which stays at T); the rep pool must exclude mixed-anchor and CV rows (they refuse goal
+pace: 18 sweep plans fell to 0% race-pace share); the taper's direct pick never recorded its §53 pool size; HM/MARATHON
+beginners have no fitting taper race row, so the sharpener stands there (derived exception, BEGINNER-TAPER-RACE-ROW-01);
+`hrBandFor` would have re-banded goal-paced work to threshold on any HR recalculation. §47 was NOT changed: its principle
+covers any race-pace-segment long run at any distance; only its step-back note was false after a build week. D7's long-run
+taper is §6 Am.1's ruled behaviour. Measured: 5K/10K beginner ramp tail fell 59 → 52; a 5K intermediate rep row adds ~2 km
+in one week (2 of 1,200 masters plans, ramp-tail baseline 59 → 78, declared); cohort 10K maintenance −0.9pp; fitness
+unchanged; no new refusals.
 
 ## 2026-10-23 — GOALPACE-5K-01 · S1 CORRECT WITH AMENDMENT · S2 direction CORRECT, projection INSUFFICIENT EVIDENCE · S3 CORRECT · D2 CORRECT WITH AMENDMENT · RULED, not built
 

@@ -151,7 +151,8 @@ describe('§110b — the rows are real, reachable, and scoped', () => {
 
   it('`fitness_level_max` is absent on every pre-existing row, which is why adding it was inert', () => {
     const scoped = V1_SESSION_CATALOGUE.filter(r => r.fitness_level_max != null).map(r => r.id)
-    expect(scoped).toEqual(['beginner_goal_pace_blocks'])
+    // GOALPACE-5K-01 (2026-10-23) added the second deliberately beginner-scoped row; no pre-existing row gained one.
+    expect(scoped).toEqual(['beginner_goal_pace_blocks', 'beginner_goal_pace_reps'])
   })
 
   it('every fitness-keyed dose table a beginner can now reach HAS a beginner entry', () => {

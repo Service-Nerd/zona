@@ -936,6 +936,16 @@ export const GENERATION_CONFIG = {
   // session once half the work moves above T, which is the equivalence the band
   // is supposed to express.
   SESSION_WORK_OVERRIDE_MINS: {
+    // GOALPACE-5K-01 (Coaching Board 2026-10-23, Willy binding) — goal-pace minutes for the beginner
+    // 5K/10K reps: 2-min reps give 4 in build, 6 at peak, 4 in taper, never over 12 (under half a
+    // beginner 5K). `BEGINNER_GOAL_PACE_MAX_SESSION_MINS` is the cap the invariant holds.
+    beginner_goal_pace_reps: {
+      min: 8,
+      max: 12,
+      target: {
+        beginner: { build: 8, peak: 12, taper: 8 },
+      },
+    },
     tempo_over_under: {
       min: 12,
       max: 24,
@@ -2643,6 +2653,14 @@ export const GENERATION_CONFIG = {
   // and §81's exemption, note and maintenance obligations apply unchanged.
   // The engine used to try Fri and then put it on Sunday anyway, blocked or not.
   LONG_RUN_FALLBACK_DAYS: ['fri', 'thu', 'wed', 'tue', 'mon'] as const,
+
+  // §22 Amendment 3 (Coaching Board GOALPACE-5K-01, 2026-10-23) — on a goal-paced week, 5K plans at
+  // every level and 10K beginners take REP-shaped work: no single continuous goal-pace step longer
+  // than this. The brief's figure; the beginner reps row is 2 min and the intermediate rep rows are
+  // all shorter. `INV-PLAN-GOAL-PACE-SHAPE` holds it.
+  GOAL_PACE_CONTINUOUS_MAX_MINS: 8,
+  // Willy's binding cap for the beginner reps row: goal-pace minutes in one session.
+  BEGINNER_GOAL_PACE_MAX_SESSION_MINS: 12,
 
   // §82 (Coaching Board, 2026-09-03) — EASY-RUN FLOOR PROTECTION.
   //

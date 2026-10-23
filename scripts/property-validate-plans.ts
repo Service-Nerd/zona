@@ -1653,7 +1653,13 @@ const BASELINE: Record<string, number> = {
   // correctly classified maintenance and reporting §52 Amendment 1's declared
   // residual instead of reading as defective. Held at 0 deliberately: this
   // class is now ordered correctly and a new one is a regression, not debt.
-  'INV-PLAN-LR-MAX-WEEKLY-PCT':          0,
+  // ── GOALPACE-5K-01 (2026-10-23) — a CHECKER overestimate, not load, recorded rather than hidden ──
+  // One 12 km/week 5K beginner with a 22:00 target against a 2:30 HM benchmark (a goal ~50% beyond measured
+  // fitness) now gets `beginner_goal_pace_reps`, 43 minutes, duration-anchored. `sessionKmSelfPaced` sizes the
+  // WHOLE duration at the headline pace, which for goal-pace work is the fastest pace in it: 43 min at 4:24/km =
+  // 9.8 km, "61% of the week". Measured by its steps it is ~6 km (12 goal-pace minutes, the rest jog and
+  // warm-up), ~37%. Filed: SESSION-KM-STRUCTURED-PACE-01.
+  'INV-PLAN-LR-MAX-WEEKLY-PCT':          1,
   // 0 -> 1 (2026-09-10, INTENSITY-FOUNDATION-BLIND-02). NOT a regression from
   // this change and NOT a false positive: it is the first DELIVERED-plan §1
   // breach this sweep has ever been able to see.

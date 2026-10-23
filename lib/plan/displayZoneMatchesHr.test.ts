@@ -36,13 +36,16 @@ const TENK: GeneratorInput = {
   fitness_level: 'experienced', training_age: '2-5yr',
 } as GeneratorInput
 
+// GOALPACE-5K-01 (§83 Am.): TENK's goal-paced work now carries the zone its pace sits in (Zone 4–5), so the
+// Zone 3 pairing is checked on the same runner with a finish goal, whose threshold sessions are not goal-paced.
+const TENK_FINISH: GeneratorInput = { ...TENK, goal: 'finish', target_time: undefined } as GeneratorInput
 const codes = (p: Plan, i: GeneratorInput) => validatePlan(p, i).map(v => v.code)
 const sessionsOf = (p: Plan): Session[] =>
   p.weeks.flatMap(w => Object.values(w.sessions).filter((s): s is Session => !!s))
 
 describe('§84 — zone string and hr_target describe one band', () => {
   it('a threshold session reads Zone 3, matching its own Zone 3 HR target', () => {
-    const plan = generateRulePlan(TENK, 'paid', PLAN_START)
+    const plan = generateRulePlan(TENK_FINISH, 'paid', PLAN_START)
     const threshold = sessionsOf(plan).filter(s => s.hr_target && /^\d+–\d+ bpm$/.test(s.hr_target)
       && s.zone === 'Zone 3')
     expect(threshold.length, 'no Zone 3 session — test reaches nothing').toBeGreaterThan(0)
@@ -57,12 +60,12 @@ describe('§84 — zone string and hr_target describe one band', () => {
 
   it('fires when the two are made to disagree — the exact shipped defect', () => {
     // FALSIFICATION. Recreate what the founder photographed.
-    const plan = generateRulePlan(TENK, 'paid', PLAN_START)
+    const plan = generateRulePlan(TENK_FINISH, 'paid', PLAN_START)
     const broken: Plan = JSON.parse(JSON.stringify(plan))
     const victim = sessionsOf(broken).find(s => s.zone === 'Zone 3' && /^\d+–\d+ bpm$/.test(s.hr_target ?? ''))
     expect(victim, 'no Zone 3 session to break').toBeTruthy()
     victim!.zone = 'Zone 3–4'          // label widens, target does not follow
-    const v = validatePlan(broken, TENK).filter(x => x.code === 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK')
+    const v = validatePlan(broken, TENK_FINISH).filter(x => x.code === 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK')
     expect(v.length).toBeGreaterThan(0)
     expect(v[0].severity).toBe('error')
   })

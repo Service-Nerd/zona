@@ -62,6 +62,10 @@ export interface SessionCatalogueRow {
    * is only for a row that would otherwise leak upward.
    */
   fitness_level_max?:   CatalogueFitness
+  /** GOALPACE-5K-01 (§22 Am.3) — offered ONLY on a §22 goal-paced week or in the taper. A row that exists to
+   *  carry goal pace must not be picked as the plan's first structured session, which stays at threshold
+   *  before the half-way line (CB-BEGINNER-CATALOGUE-01). Read by `buildWeekSessions`. */
+  goal_week_only?:      true
   // §53 (CAT-ULTRA-THIN-01) — optional per-row weekly-volume floor. A row is
   // ineligible in a week carrying less than this many km. Used by threshold_ladder
   // to gate its ~24 min of threshold work on volume rather than a fitness label.
@@ -944,6 +948,43 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     coach_voice_notes: 'This is the pace you are aiming for. Learn what it feels like when it is easy.',
   },
   {
+    id: 'beginner_goal_pace_reps', name: 'Goal-pace reps', category: 'race_specific',
+    purpose: 'Short reps at goal pace with an easy jog between. Feel the pace in doses you can hold.',
+    // GOALPACE-5K-01 (Coaching Board 2026-10-23, S1 amendment; founder signed off). A 5K or 10K
+    // BEGINNER had no rep-structured row in any phase: their only quality rows were the two
+    // continuous ones, so §22's goal-pace override turned them into 20-21 MINUTES CONTINUOUS at goal
+    // pace, weekly (5K beginner: 12 of 12 grid plans; a real runner's W6 was 21 min at 5:36/km against
+    // a measured 6:32). §22's own 5K premise (SC-05) is that 5K race pace is VO2 physiology, i.e. reps.
+    // Willy's binding conditions: the recovery is an easy JOG of the rep's length, never a standing
+    // rest, and goal-pace work in one session stays at or under 12 minutes (sized by
+    // `SESSION_WORK_OVERRIDE_MINS.beginner_goal_pace_reps`: 4 reps build, 6 peak, 4 taper).
+    // BEGINNER ONLY (min = max), the CB-BEGINNER-CATALOGUE-01 scoping, so no intermediate plan
+    // changes. It also serves the taper, so beginners stop reaching the intermediate-only sharpener.
+    phase_eligibility: ['build', 'peak', 'taper'],
+    distance_eligibility: ['5K', '10K'],
+    fitness_level_min: 'beginner', fitness_level_max: 'beginner', difficulty_tier: 2,
+    goal_week_only: true,
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'duration', secs: 120 },
+            target: { kind: 'pace', anchor: 'goal', mode: 'target' }, advance: 'auto',
+            note: 'Two minutes at goal pace. Controlled, not flat out.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 120 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Easy jog. Keep moving.' },
+        ],
+      }],
+    },
+    intensity_zones: ['Z4'],
+    typical_duration_min: 30, typical_duration_max: 45, is_free_tier: true,
+    coach_voice_notes: 'This is the pace you are aiming for, in pieces you can hold. Even reps.',
+  },
+  {
     id: 'goal_pace_sharpener', name: 'Goal-pace sharpener', category: 'race_specific',
     purpose: 'Short reps at race pace with full recovery. Sharpens neuromuscular pace memory for race day.',
     phase_eligibility: ['taper'],
@@ -1535,19 +1576,33 @@ export function requiredPaceAnchors(row: SessionCatalogueRow): string[] {
  * Determinism: weekN + slotIndex → modulo eligible-row count. Same plan
  * regenerated produces same selection.
  */
+/** The ONE owner of "is this row inside its fitness bounds for this runner". `fitness_level_max` is
+ *  CB-BEGINNER-CATALOGUE-01's upper bound, vacuous for rows that predate it. The selector uses it, and
+ *  so does the taper sharpener path, which picked rows directly and skipped the fitness test
+ *  (GOALPACE-5K-01: a beginner reached the intermediate-only `goal_pace_sharpener` that way). */
+export function rowFitsLevel(row: SessionCatalogueRow, fitness: CatalogueFitness): boolean {
+  const userRank = FITNESS_RANK[fitness]
+  return FITNESS_RANK[row.fitness_level_min] <= userRank
+    && (row.fitness_level_max == null || userRank <= FITNESS_RANK[row.fitness_level_max])
+}
+
+/** GOALPACE-5K-01 (§22 Am.3) — a row whose main set REPEATS (reps with recovery), as opposed to one
+ *  continuous or progressing block. Read from the structure, never the name. */
+export function isRepStructured(row: SessionCatalogueRow | null | undefined): boolean {
+  const blocks = (row?.main_set_structure as { version?: number; blocks?: { repeat?: unknown }[] } | undefined)?.blocks ?? []
+  return blocks.some(b => (typeof b.repeat === 'number' && b.repeat > 1)
+    || (typeof b.repeat === 'object' && b.repeat !== null))
+}
+
 export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCatalogueRow | null {
   const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, weeklyKm, preferredCategory, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes, recentThresholdEligible, resolvableAnchors } = args
 
-  const userRank = FITNESS_RANK[fitness]
   const tierFilter = (row: SessionCatalogueRow) => tier === 'free' ? row.is_free_tier : true
 
   const baseEligible = catalogue.filter(row =>
     row.phase_eligibility.includes(phase) &&
     row.distance_eligibility.includes(distanceKey) &&
-    FITNESS_RANK[row.fitness_level_min] <= userRank &&
-    // CB-BEGINNER-CATALOGUE-01 — the upper bound. Vacuous for every row that
-    // does not set it, which is every row that predates the field.
-    (row.fitness_level_max == null || userRank <= FITNESS_RANK[row.fitness_level_max]) &&
+    rowFitsLevel(row, fitness) &&
     // §53 (CAT-ULTRA-THIN-01) — a volume-gated row (threshold_ladder) is eligible
     // when the week's own volume supports its load, OR (Coaching Board
     // 2026-09-03) the runner has sustained threshold-category work across

@@ -112,7 +112,7 @@ Phase 1 specifies the full schema for `main_set_structure` and freezes it before
 
 ---
 
-## V1 catalogue (30 sessions)
+## V1 catalogue (31 sessions)
 
 **These are the rows the engine actually ships**, generated from `lib/plan/sessionCatalogueData.ts` — the runtime source of truth (SC-00; the Supabase table is retired).
 
@@ -123,7 +123,8 @@ Phase 1 specifies the full schema for `main_set_structure` and freezes it before
 | 1 | `aerobic_steady` | Steady aerobic | aerobic | base, build | all | beginner | T1 | Z2 block |
 | 2 | `aerobic_hills` | Aerobic with hills | aerobic | base, build | all | intermediate | T2 | Z2 (hills) block |
 | 3 | `fartlek_unstructured` | Unstructured fartlek | aerobic | base | all | intermediate | T2 | fartlek |
-| 30 | `beginner_goal_pace_blocks` | Goal-pace blocks | race_specific | build, peak | 5K, 10K, HM, MARATHON | **beginner ONLY** (`fitness_level_max`) | T2 | blocks |
+| 30 | `beginner_goal_pace_blocks` | Goal-pace blocks | race_specific | build, peak | HM, MARATHON | **beginner ONLY** (`fitness_level_max`) | T2 | blocks · *distances corrected 2026-10-23: the code has been HM/MARATHON only since CB-BEGINNER-CATALOGUE-01; this row said 5K/10K too* |
+| 31 | `beginner_goal_pace_reps` | Goal-pace reps | race_specific | build, peak, taper | 5K, 10K | **beginner ONLY** (`fitness_level_max`) | T2 | **v2** · reps × (2 min at goal pace / 2 min easy jog) · `scaling: 'reps'` via `SESSION_WORK_OVERRIDE_MINS` (8/12/8 min → 4/6/4 reps; the 5 km floor can add one) · ≤ 12 goal-pace min (Willy). GOALPACE-5K-01, §22 Am.3, 2026-10-23 |
 | 4 | `tempo_continuous` | Continuous tempo | threshold | build, peak, taper | all | **beginner** (CB-BEGINNER-CATALOGUE-01) | T3 | **v2** · continuous, single T-pace effort · `scaling: 'fixed'`, sized by fitness×phase (`THRESHOLD_WORK_TARGET_MINS`) — not a fixed 30 min block. Migrated 2026-09-03. |
 | 5 | `tempo_cruise` | Cruise intervals | threshold | build | all | intermediate | T3 | **v2** · reps × (10 min at T / 2 min jog) · `scaling: 'reps'` — rep length is the fixed stimulus identity, rep COUNT scales by fitness×phase (`THRESHOLD_WORK_TARGET_MINS`). Migrated 2026-09-03. |
 | 6 | `tempo_cruise_short` | Cruise intervals — short | threshold | build, peak | 5K, 10K | intermediate | T3 | **v2** · reps × (5 min at T / 90s jog) · `scaling: 'reps'` — rep count scales by fitness×phase. Migrated 2026-09-03. |

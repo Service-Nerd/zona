@@ -56,7 +56,7 @@ import { catalogueRowFor } from './catalogueLink'
 import { plannedFoundationWeeks } from './foundationBlock'
 import type { GeneratorPhase } from '@/types/plan'
 import {
-  V1_SESSION_CATALOGUE, selectCatalogueSession, requiredPaceAnchors, ultraFuellingCadenceMins,
+  V1_SESSION_CATALOGUE, selectCatalogueSession, requiredPaceAnchors, ultraFuellingCadenceMins, rowFitsLevel, isRepStructured,
   type SessionCatalogueRow, type CatalogueCategory,
 } from './sessionCatalogueData'
 
@@ -1699,8 +1699,13 @@ function makeQualitySession(args: {
       : overrideLabel
     minPerKm = goalCenterMins
     paceTarget = paceBandStr(goalCenterMins, 2)
-    zone = zones.qualityZone
-    hrTarget = zones.qualityHR
+    // §83 Amendment (GOALPACE-5K-01, Coaching Board 2026-10-23) — the zone and HR of goal-paced work
+    // follow where its PACE sits in this runner's ladder, not the row's category. A 5K goal pace
+    // closer to interval pace than to threshold pace is interval effort; it used to carry the
+    // threshold band (148-162 bpm for a runner whose all-out 5K, slower than her goal, averaged 163).
+    const goalIsIntervalEffort = goalCenterMins < (pace.minPerKmQuality + pace.minPerKmInterval) / 2
+    zone = goalIsIntervalEffort ? zones.intervalsZone : zones.qualityZone
+    hrTarget = goalIsIntervalEffort ? zones.intervalsHR : zones.qualityHR
   } else if (isEffortGoverned) {
     // SC-09 / CD-17a — NO PACE, deliberately. Placed before the vo2max branch
     // because `hill_reps` is categorised vo2max and would otherwise inherit
@@ -1923,7 +1928,10 @@ function makeQualitySession(args: {
   // correct at this instant — it is only UNtrustworthy post-enrich, which is
   // exactly what the stamp defends against. classifyStimulus with no stamp on the
   // input runs its label heuristic; we freeze that answer onto the session.
-  const stimulus = classifyStimulus({ label, zone })
+  // §83 Amendment (GOALPACE-5K-01): goal-paced work is race-pace by CONSTRUCTION. Its zone now follows
+  // its pace, and a 5K goal pace reads as an interval zone, which the label heuristic would call
+  // vo2max; the prescription decision is the authority, not the label or the zone.
+  const stimulus = (useGoalPace && goalCenterMins != null) ? 'race_pace' as const : classifyStimulus({ label, zone })
   return {
     id: `w${weekN}-${day}`,
     type: 'quality', label, detail: null,
@@ -3290,10 +3298,15 @@ function buildWeekSessions(
     // cohort; 0 of 108 intermediate/experienced. A defect fix restoring
     // documented intent, so ADR-017-exempt from the Coaching Board.
     const canPaceSegments = !!pace.marathonPaceStr && !!pace.hmPaceStr
-    if (is5K10K && input.goal === 'time_target' && isFinalTwoPeak && canPaceSegments) {
+    // §24b Amendment (GOALPACE-5K-01, Coaching Board 2026-10-23) — NOT for beginners. A beginner
+    // WITH a benchmark derives marathon and HM paces from VDOT, so `canPaceSegments` let them
+    // through, against ZONES-BEGINNER-BANDS-01's stated intent ("un-nulling starts prescribing §24b
+    // segments to beginners"). They take §24d's negative-split finish, which has no pace targets.
+    const segmentedLrForThisRunner = canPaceSegments && intensityFitness !== 'beginner'
+    if (is5K10K && input.goal === 'time_target' && isFinalTwoPeak && segmentedLrForThisRunner) {
       // §24b — final two peak weeks: marathon pace + HM-pace finish
       sessions[longDay] = fiveKTenKPeakLongRunSession(weekN, longDay, longKm, metric, zones, pace)
-    } else if (is5K10K && input.goal === 'finish' && isFinalTwoPeak) {
+    } else if (is5K10K && isFinalTwoPeak && (input.goal === 'finish' || intensityFitness === 'beginner')) {
       // §24d — final two peak weeks: negative-split finish
       sessions[longDay] = finishGoalPeakLongRunSession(weekN, longDay, longKm, metric, zones, pace)
     } else {
@@ -3477,6 +3490,27 @@ function buildWeekSessions(
       && input.goal === 'time_target'
       && isSecondHalf
       && (phase === 'build' || phase === 'peak')
+    // §22 Amendment 3 (GOALPACE-5K-01, Coaching Board 2026-10-23) — on a goal-paced week, 5K plans
+    // at every level and 10K BEGINNERS take rep-shaped work. The override is shape-blind: it prices
+    // whatever row was picked at goal pace, so a continuous tempo became 20-21 minutes continuous at
+    // 5K goal pace (a time trial, weekly). VO2max rows are exempt from the override and already reps.
+    const goalPaceRepsOnly = goalPaceWeek
+      && (distKey === '5K' || (distKey === '10K' && intensityFitness === 'beginner'))
+    // The rep-only pool is offered FIRST rather than swapped in afterwards: the selector records each
+    // pick in `rowUsage`, `rowLast` and §53's `poolSizes`, so a discarded first pick would skew the
+    // rotation and the pigeonhole arm. Falls back to the full pool only if no rep row is eligible.
+    // Only rep rows that CAN carry goal pace: `makeQualitySession` refuses the override on a mixed-anchor
+    // (§85) or CV-anchored row, so offering one here lost the week's race-pace work (measured: 18 sweep
+    // plans fell to 0% race-pace share). VO2max rows stay: they are exempt from §22 by design.
+    // `goal_week_only` rows (the beginner reps) are offered only on a goal-paced week or in the taper.
+    const weekCatalogue = (goalPaceWeek || phase === 'taper') ? catalogue : catalogue.filter(r => !r.goal_week_only)
+    const repCatalogue = weekCatalogue.filter(r => isRepStructured(r)
+      && (r.category === 'vo2max' || (!hasMixedWorkAnchors(r) && !hasCvAnchoredWork(r))))
+    const qualityPool = (eligibleIn: SessionCatalogueRow[]) => goalPaceRepsOnly
+      && eligibleIn.some(r => isRepStructured(r) && r.phase_eligibility.includes(phase)
+        && r.distance_eligibility.includes(distKey) && rowFitsLevel(r, intensityFitness)
+        && (tier !== 'free' || r.is_free_tier) && requiredPaceAnchors(r).every(a => resolvableAnchors.has(a)))
+      ? repCatalogue : weekCatalogue
 
     if (qualDay && dayGap(qualDay, longDay) >= minDaysBetweenQualLong) {
       // Taper alternation: prefer goal_pace_sharpener directly on odd taper
@@ -3490,7 +3524,7 @@ function buildWeekSessions(
         // more specific prescription and should be preferred. Ranking by the
         // size of `distance_eligibility` rather than by id keeps this true for
         // any future distance-specific row without another special case.
-        const raceSpecificTaperRows = catalogue
+        const taperRaceRows = catalogue
           .filter(r => r.category === 'race_specific'
             && r.phase_eligibility.includes('taper')
             && r.distance_eligibility.includes(distKey)
@@ -3500,7 +3534,18 @@ function buildWeekSessions(
             // explicitly or it re-opens the hole one line below the fix.
             && requiredPaceAnchors(r).every(a => resolvableAnchors.has(a)))
           .sort((a, b) => a.distance_eligibility.length - b.distance_eligibility.length)
+        // GOALPACE-5K-01 — this path skipped the fitness test, so a 5K/10K beginner reached the
+        // intermediate-only `goal_pace_sharpener`. A row that FITS the runner wins; only where the catalogue
+        // has none at this distance (HM and above for a beginner, measured) does the old pick stand, so a
+        // beginner there keeps goal-pace work in the taper rather than repeating a tempo (§36). That gap is
+        // filed for the board (BEGINNER-TAPER-RACE-ROW-01); INV-PLAN-CATALOGUE-ELIGIBLE derives the same
+        // condition from the catalogue and allows exactly it.
+        const fittingTaperRows = taperRaceRows.filter(r => rowFitsLevel(r, intensityFitness))
+        const raceSpecificTaperRows = fittingTaperRows.length > 0 ? fittingTaperRows : taperRaceRows
 
+        // §53 reads `quality_pool_sizes` per pick; this direct pick recorded none, so a one-row
+        // taper pool looked like free choice (GOALPACE-5K-01: the beginner reps row's 4th use).
+        if (raceSpecificTaperRows.length > 0) poolSink?.push(raceSpecificTaperRows.length)
         cat1 = raceSpecificTaperRows[0] ?? selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
           weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink, recentThresholdEligible,
@@ -3508,7 +3553,7 @@ function buildWeekSessions(
         })
       } else {
         cat1 = selectCatalogueSession({
-          catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
+          catalogue: qualityPool(catalogue), phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
           weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink, recentThresholdEligible,
           resolvableAnchors,
         })
@@ -3582,7 +3627,7 @@ function buildWeekSessions(
           // QUALITY_SESSIONS_PER_WEEK_MAX allowing 2. The allowance and the
           // catalogue filter disagreed; the allowance is right.
           const cat2 = selectCatalogueSession({
-            catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
+            catalogue: qualityPool(catalogue), phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
             weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink, recentThresholdEligible,
             resolvableAnchors,
           })
@@ -4535,7 +4580,12 @@ function applyPeakLongRunAlternation(
       lr.session.duration_mins = dur(flooredKm!, pace.minPerKmEasy)
     }
     lr.session.rpe_target = 4
-    lr.session.coach_notes = ['Step-back week. Easy aerobic — let the legs absorb last week\'s peak before the next push.']
+    // GOALPACE-5K-01 (D5) — the note names "last week's peak", which is false when the week before was
+    // BUILD: the first peak week can be the step-back, ahead of the peak (a permitted §47 pattern).
+    const prevWeek = weeks[weeks.indexOf(w) - 1]
+    lr.session.coach_notes = prevWeek?.phase === 'peak'
+      ? ['Step-back week. Easy aerobic — let the legs absorb last week\'s peak before the next push.']
+      : ['Step-back week. Easy aerobic, so the legs arrive fresh for next week\'s peak.']
     delete (lr.session as any).lr_segment_pace
     // §47's own contract, one field late: "drop race-pace catalogue
     // specificity". It dropped the label, the zone, the notes and the segment
@@ -5406,7 +5456,8 @@ function flattenIntroducingWeek(
   adjustments.push({
     rule:           'V1-volume-quality-split',
     violation:      `Week ${curr.n} introduced ${introduced} AND stepped volume up from ${prev.weekly_km} to ${preCorrectionWeeklyKm} km (>${GENERATION_CONFIG.V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT}% bump).`,
-    resolution:     `Held weekly volume at ${newWeekly} km (target ${prev.weekly_km}) by trimming easy runs; long run + quality preserved.`,
+    // GOALPACE-5K-01 (D6) — say what happened. "Held at 24 km (target 21)" claimed a hold that did not happen.
+    resolution:     newWeekly <= prev.weekly_km ? `Held weekly volume at ${newWeekly} km (target ${prev.weekly_km}) by trimming easy runs; long run + quality preserved.` : `Trimmed easy runs to ${newWeekly} km against a target of ${prev.weekly_km}; the long run and quality were kept, so the week stays above target.`,
     weeks_affected: [curr.n],
   })
 
@@ -7303,9 +7354,12 @@ function buildRulePlanOnce(
       ...(isRaceWeek ? {
         // §77 / INV-PLAN-NO-PLACEHOLDER-COPY (F6) — never interpolate an invented
         // race name into user-facing copy.
-        race_notes: input.race_name
-          ? `Race day: ${input.race_name}. Start at Zone 2. The second half is where the race begins.`
-          : 'Race day. Start at Zone 2. The second half is where the race begins.',
+        // GOALPACE-5K-01 (D8) — "Start at Zone 2" is long-race pacing; at 5K/10K it contradicted the race
+        // session's own note ("first 0.6 km at goal pace"). Distance-aware; copy pending founder approval.
+        race_notes: `${input.race_name ? `Race day: ${input.race_name}.` : 'Race day.'} `
+          + (input.race_distance_km <= 10
+            ? 'Start slower than feels right, then settle into goal pace.'
+            : 'Start at Zone 2. The second half is where the race begins.'),
       } : {}),
       ...(weekN === tuneUpWeekN ? {
         tune_up_callout: 'Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort.',
@@ -9048,7 +9102,12 @@ function buildRulePlanOnce(
       && !Object.values(w.sessions ?? {}).some(sn => sn?.type === 'race'))
     let worstPct = 0, worstWeek = 0
     for (let i = 1; i < training.length; i++) {
-      const prev = training[i - 1].weekly_km ?? 0
+      // GOALPACE-5K-01 (D6) — measured from the last NON-deload week. Against a deload the rise is the
+      // planned return, not a spike (`buildVolumeSequence` and V1 already exempt that bounceback);
+      // read from the deload, a 21 → 17 → 24 plan reported "rises about 41%" where the true rise is 14%.
+      let j = i - 1
+      while (j > 0 && training[j].type === 'deload') j--
+      const prev = training[j].weekly_km ?? 0
       const cur = training[i].weekly_km ?? 0
       if (prev <= 0 || cur <= prev) continue
       const rise = (cur - prev) / prev * 100
@@ -9058,9 +9117,13 @@ function buildRulePlanOnce(
     const who = hasVolumeCappedInjury(input)
       ? `Your injury history sets a ${capPct}% weekly ceiling`
       : `We hold weekly volume to about ${capPct}% growth`
+    // D6 — "set by your race distance" is §24's floor, which exists only above 10K; for a 5K/10K plan the
+    // long run grew by ordinary progression, so the reason is not given there.
+    const reason = input.race_distance_km > 10
+      ? 'The long run is set by your race distance and cannot be cut to make the arithmetic work, so that week'
+      : 'That week'
     return `${who}, and week ${worstWeek} rises about ${Math.round(worstPct)}%. `
-      + 'The long run is set by your race distance and cannot be cut to make the arithmetic work, '
-      + `so that week lands heavier than the rule wants. Treat week ${worstWeek} as the one to be careful with: `
+      + `${reason} lands heavier than the rule wants. Treat week ${worstWeek} as the one to be careful with: `
       + 'hold the easy days genuinely easy, and move the long run rather than shorten it if the week is not going well.'
   })()
 

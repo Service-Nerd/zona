@@ -133,6 +133,9 @@ export const INVARIANT_CODES = [
   'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE',
   'INV-PLAN-LONG-SESSION-FUELLING-NOTE',
   'INV-PLAN-INTENSITY-ORDERING',
+  'INV-PLAN-GOAL-PACE-SHAPE',
+  'INV-PLAN-PACE-ZONE-COHERENT',
+  'INV-PLAN-CATALOGUE-ELIGIBLE',
   'INV-PLAN-PHASE-FOCUS-REACHABLE',
   'INV-PLAN-PHASE-STRUCTURE',
   'INV-PLAN-EASY-RUN-ZONE-CAP',
@@ -8946,6 +8949,111 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             actual: `type '${s.type}'`,
             expected: "type 'easy'",
           })
+        }
+      }
+    }
+  }
+
+  // ── GOALPACE-5K-01 (Coaching Board 2026-10-23) ─────────────────────────────────────────────────────
+  // A 5K beginner was prescribed 21 minutes CONTINUOUS at goal pace with a threshold HR band, and every
+  // check passed: each one compared a session against itself, none against the runner's fitness or the
+  // shape the work came in. Three checks, each re-deriving its facts rather than reading the producer's
+  // decisions (the checker-shares-the-producer class).
+  {
+    const intensityLevel = (plan.meta.fitness_intensity_level ?? plan.meta.fitness_level ?? 'beginner') as 'beginner' | 'intermediate' | 'experienced'
+    const RANK = { beginner: 0, intermediate: 1, experienced: 2 } as const
+    const distKey = raceDistanceKey(rawInput.race_distance_km)
+    const half = Math.ceil(plan.weeks.filter(w => w.n >= 1).length / 2)
+    const stepMins = (len: unknown): number => {
+      const t = String(len ?? '')
+      const m = /^(\d+(?:\.\d+)?)\s*min/.exec(t)
+      if (m) return Number(m[1])
+      const c = /^(\d+):(\d{2})$/.exec(t)
+      return c ? Number(c[1]) + Number(c[2]) / 60 : 0
+    }
+    const guide = plan.meta.vdot != null && plan.meta.vdot_training_anchor != null
+      ? buildPaceFromVDOT(plan.meta.vdot_training_anchor, plan.meta.vdot) : null
+    // §22 Am.3 scope: 5K at every level, 10K beginners.
+    const shapeScope = rawInput.goal === 'time_target' && (distKey === '5K' || (distKey === '10K' && intensityLevel === 'beginner'))
+    for (const w of plan.weeks) {
+      if (w.n < 1) continue
+      for (const [day, v] of Object.entries(w.sessions ?? {})) for (const sess of (Array.isArray(v) ? v : [v]) as (Session | undefined)[]) {
+        if (!sess || sess.type !== 'quality') continue
+        const row = sess.catalogue_id ? V1_SESSION_CATALOGUE.find(r => r.id === sess.catalogue_id) : undefined
+
+        // INV-PLAN-CATALOGUE-ELIGIBLE — every placed row inside its distance and fitness bounds, by any path.
+        if (row) {
+          const fitsDistance = row.distance_eligibility.includes(distKey)
+          const fitsLevel = RANK[row.fitness_level_min as keyof typeof RANK] <= RANK[intensityLevel]
+            && (row.fitness_level_max == null || RANK[intensityLevel] <= RANK[row.fitness_level_max as keyof typeof RANK])
+          // The ONE allowed exception, derived from the catalogue rather than listed: a taper race-specific
+          // row below its level where NO race-specific taper row at this distance fits this runner (HM and
+          // above for a beginner). The engine keeps goal-pace taper work there; BEGINNER-TAPER-RACE-ROW-01.
+          const noFittingTaperRow = w.phase === 'taper' && row.category === 'race_specific' && fitsDistance
+            && !V1_SESSION_CATALOGUE.some(r => r.category === 'race_specific' && r.phase_eligibility.includes('taper')
+              && r.distance_eligibility.includes(distKey)
+              && RANK[r.fitness_level_min as keyof typeof RANK] <= RANK[intensityLevel]
+              && (r.fitness_level_max == null || RANK[intensityLevel] <= RANK[r.fitness_level_max as keyof typeof RANK]))
+          if ((!fitsDistance || !fitsLevel) && !noFittingTaperRow) {
+            violations.push({
+              code: 'INV-PLAN-CATALOGUE-ELIGIBLE', principle_ref: 'session catalogue eligibility (GOALPACE-5K-01)', severity: 'error',
+              week: w.n, day,
+              message: `Session row "${row.id}" placed outside its eligibility for this runner`,
+              actual: `${distKey} / ${intensityLevel}`,
+              expected: `distance ${row.distance_eligibility.join('/')}, level ${row.fitness_level_min}${row.fitness_level_max ? `–${row.fitness_level_max}` : '+'}`,
+            })
+          }
+        }
+
+        if (classifyStimulus(sess) !== 'race_pace') continue
+        const steps = (sess.derived_set?.blocks ?? []).flatMap(b => (b.steps ?? []).map(st => ({ st, repeat: typeof b.repeat === 'number' ? b.repeat : 1 })))
+        const work = steps.filter(x => x.st.role === 'work' && x.st.pace_mode === 'target')
+
+        // INV-PLAN-GOAL-PACE-SHAPE — in scope, second-half build/peak goal-pace work comes in reps: no single
+        // continuous goal-pace step over the cap; and the beginner reps row stays under Willy's session cap.
+        if (shapeScope && w.n > half && (w.phase === 'build' || w.phase === 'peak')) {
+          const longest = Math.max(0, ...work.filter(x => x.repeat <= 1).map(x => stepMins(x.st.length)))
+          if (longest > GENERATION_CONFIG.GOAL_PACE_CONTINUOUS_MAX_MINS) {
+            violations.push({
+              code: 'INV-PLAN-GOAL-PACE-SHAPE', principle_ref: 'CoachingPrinciples §22 Amendment 3', severity: 'error',
+              week: w.n, day,
+              message: `Goal-pace work comes as one continuous ${longest}-minute step; at ${distKey}${distKey === '10K' ? ' for a beginner' : ''} it must be reps`,
+              actual: `${longest} min continuous`,
+              expected: `<= ${GENERATION_CONFIG.GOAL_PACE_CONTINUOUS_MAX_MINS} min per goal-pace step`,
+            })
+          }
+        }
+        if (sess.catalogue_id === 'beginner_goal_pace_reps') {
+          const goalMins = work.reduce((n, x) => n + stepMins(x.st.length) * x.repeat, 0)
+          if (goalMins > GENERATION_CONFIG.BEGINNER_GOAL_PACE_MAX_SESSION_MINS) {
+            violations.push({
+              code: 'INV-PLAN-GOAL-PACE-SHAPE', principle_ref: 'CoachingPrinciples §22 Amendment 3 (Willy)', severity: 'error',
+              week: w.n, day,
+              message: `Beginner goal-pace reps total ${goalMins} minutes at goal pace`,
+              actual: `${goalMins} min`, expected: `<= ${GENERATION_CONFIG.BEGINNER_GOAL_PACE_MAX_SESSION_MINS} min`,
+            })
+          }
+        }
+
+        // INV-PLAN-PACE-ZONE-COHERENT — §83 Am.: goal-paced work carries the zone its pace sits in. Closer to
+        // interval pace than to threshold pace is interval effort. A 1% margin either side of the midpoint
+        // so a goal sitting on the boundary is not a coin flip between two rounding paths.
+        if (guide && sess.pace_target) {
+          const goal = parsePaceMidpoint(sess.pace_target)
+          const mid = (guide.minPerKmQuality + guide.minPerKmInterval) / 2
+          if (goal != null && Math.abs(goal - mid) / mid > 0.01) {
+            const intervalEffort = goal < mid
+            const zone = String(sess.zone ?? '')
+            const zoneSaysInterval = zone.includes('4') || zone.includes('5')
+            if (intervalEffort !== zoneSaysInterval) {
+              violations.push({
+                code: 'INV-PLAN-PACE-ZONE-COHERENT', principle_ref: 'CoachingPrinciples §83 Amendment (GOALPACE-5K-01)', severity: 'error',
+                week: w.n, day,
+                message: `Goal-paced work at ${sess.pace_target} is ${intervalEffort ? 'interval' : 'threshold'} effort for this runner but carries ${zone || 'no zone'}`,
+                actual: zone || 'none', expected: intervalEffort ? 'interval zone (Z4–5)' : 'threshold zone (Z3)',
+              })
+            }
+          }
         }
       }
     }

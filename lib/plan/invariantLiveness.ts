@@ -661,6 +661,20 @@ export const MUTATIONS: Mutation[] = [
     }
   } },
 
+  // §22 Am.3 / INV-PLAN-GOAL-PACE-SHAPE — the shape GOALPACE-5K-01 found: second-half goal-paced work as ONE
+  // continuous 21-minute block. Only bites a 5K (or 10K beginner) time-target plan, which the corpus holds.
+  { name: 'goal-pace work as one long continuous block', apply: p => {
+    const half = Math.ceil(realWeeks(p).length / 2)
+    for (const w of realWeeks(p)) {
+      if (w.n <= half || (w.phase !== 'build' && w.phase !== 'peak')) continue
+      for (const s of Object.values(w.sessions ?? {}).flat()) {
+        const sn = s as unknown as Poke & { type?: string; stimulus?: string; pace_target?: string }
+        if (!sn || sn.type !== 'quality' || sn.stimulus !== 'race_pace') continue
+        sn.derived_set = { version: 2, blocks: [{ repeat: 1, label: 'sustained', steps: [{ role: 'work', modality: 'run', length: '21 min', pace: sn.pace_target ?? '5:30 /km', pace_mode: 'target', advance: 'auto' }] }] }
+      }
+    }
+  } },
+
   // §82 / INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED — the floor fired and the
   // plan absorbed it silently. Needs BOTH gates: enough protected weeks, and a
   // profile that does not declare the suppression.

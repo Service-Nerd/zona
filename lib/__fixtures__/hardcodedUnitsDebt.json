@@ -139,7 +139,7 @@
   },
   {
    "file": "lib/plan/ruleEngine.ts",
-   "code": "resolution:     `Held weekly volume at ${newWeekly} km (target ${prev.weekly_km}) by trimming easy runs; long run + quality preserved.`,"
+   "code": "resolution:     newWeekly <= prev.weekly_km ? `Held weekly volume at ${newWeekly} km (target ${prev.weekly_km}) by trimming easy runs; long run + quality preserved.` : `Trimmed easy runs to ${newWeekly} km against a target of ${prev.weekly_km}; the long run and quality were kept, so the week stays above target.`,"
   },
   {
    "file": "lib/plan/ruleEngine.ts",

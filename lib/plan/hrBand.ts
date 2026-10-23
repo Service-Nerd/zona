@@ -53,6 +53,8 @@ interface BandableSession {
   label?: string | null
   catalogue_id?: string
   hr_target?: string
+  zone?: string | null
+  stimulus?: string
 }
 
 /**
@@ -88,6 +90,10 @@ export function hrBandFor(session: BandableSession | null | undefined): HrBand {
     // keep whatever the generator gave them.
     if (!row) return null
     if (row.category === 'vo2max' || isEffortGovernedRow(row)) return 'intervals'
+    // §83 Amendment (GOALPACE-5K-01) — goal-paced work takes the band its PACE sits in, which the generator
+    // decided and wrote as the zone; the row's category no longer decides it. Read here from the generator's
+    // two stamps, so an HR recalculation cannot put a 5K goal-pace session back on the threshold band.
+    if (session.stimulus === 'race_pace' && /Zone 4/.test(session.zone ?? '')) return 'intervals'
     return 'quality'
   }
 
