@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-23 — SESSION-KM-STRUCTURED-PACE-01 · a 34-minute reps session was 6.8 km, because the jogs ran at rep pace
+**Shipped:** A beginner's structured quality sessions are now measured rep by rep, so the plan calendar's weekly total and every load check stop overstating them by about 40%.
+**Dev learning:** One function answered "how far is this session" for ten callers by dividing the whole duration by the headline pace, and for structured work the headline is the fastest pace in it. The engine answered the same question at easy pace. Two owners of one number, wrong in opposite directions, and the checks sided with the wrong one. Pricing from the steps lands between them on every one of 6,407 sessions, measured, and moves nothing else.
+**Product/creator learning:** The two scariest-looking ramps in the healthy corpus, +94% in a week, were not ramps. They were this: a week whose reps session was counted as if the runner sprinted the warm-up.
+**AI-building learning:** The guard test that broke was asserting that the maximum repeats, which was true only because of the artefact this fixed. Re-reading what the arm was for, rather than nudging its number, is what showed the 94% pair was the bug.
+**The honest bit:** The first measurement printed nothing for the baseline, and I nearly read silence as "no change"; this vitest config hides console output from passing tests.
+**Hook material:** +94% in one week, twice, in the healthy corpus. Neither week existed.
+**Postable?:** maybe
+
 ## 2026-10-23 — REBUILD-HR-FROM-PROFILE-01 · the runner confirmed 143 and a clean-up script set it back to 178
 **Shipped:** Any rebuild of a plan (Modify plan, the base-build handover, the regeneration scripts) now uses the heart rate in the runner's profile, so a max they confirmed can no longer be quietly undone.
 **Dev learning:** A plan stores the answers it was built from, and heart rate is the one answer that changes after the plan exists. Confirming in Profile updated the profile and the plan's zones and left the stored answers alone, so the next rebuild read the old number. The fix is one pure function at the one door all in-app rebuilds share (`runModifyPreview`), and a test that derives every plan-writing script from the repo, so a fifth one cannot skip it.
