@@ -45,7 +45,7 @@ import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoa
 import { normaliseDays, longRunDayFor } from './days'
 import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
-import { isLongRun, isShakeout, classifyStimulus, isStructuredSession, isVo2maxSession } from './sessionRole'
+import { isLongRun, isShakeout, classifyStimulus, STIMULUS_OF_CATEGORY, isStructuredSession, isVo2maxSession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
 import { durationForMainSet, segmentPricedDistance } from './sessionFormat'
@@ -1931,7 +1931,9 @@ function makeQualitySession(args: {
   // §83 Amendment (GOALPACE-5K-01): goal-paced work is race-pace by CONSTRUCTION. Its zone now follows
   // its pace, and a 5K goal pace reads as an interval zone, which the label heuristic would call
   // vo2max; the prescription decision is the authority, not the label or the zone.
-  const stimulus = (useGoalPace && goalCenterMins != null) ? 'race_pace' as const : classifyStimulus({ label, zone })
+  // STIMULUS-FROM-CATALOGUE-01 — the row's category only when the label says nothing (four threshold rows).
+  const stimulus = (useGoalPace && goalCenterMins != null) ? 'race_pace' as const
+    : classifyStimulus({ label, zone }) ?? (catalogueRow ? STIMULUS_OF_CATEGORY[catalogueRow.category] ?? null : null)
   return {
     id: `w${weekN}-${day}`,
     type: 'quality', label, detail: null,

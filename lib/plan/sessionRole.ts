@@ -79,7 +79,8 @@ export function coachingSessionType(s: ClassifiableSession): string {
  * session name can no longer reclassify a stamped session. The stamp is taken
  * from the trusted generator label (never `catalogue_id` → row.category, which
  * would mis-map a threshold row re-prescribed at goal pace as `tempo` rather than
- * `race_pace` — §22 makes those two things different on purpose).
+ * `race_pace` — §22 makes those two things different on purpose). The category is used only as the FALLBACK when
+ * the label reads as nothing (`STIMULUS_OF_CATEGORY`, STIMULUS-FROM-CATALOGUE-01), never ahead of it.
  */
 export function classifyStimulus(
   session: { label?: string | null; zone?: string | null; stimulus?: keyof typeof GENERATION_CONFIG.STIMULUS_RANK },
@@ -97,6 +98,22 @@ export function classifyStimulus(
   if (label.includes('strid')) return 'strides'
   if (label.includes('aerobic') || label.includes('steady')) return 'steady_aerobic'
   return null
+}
+
+/**
+ * STIMULUS-FROM-CATALOGUE-01 (2026-10-23) — the stimulus a catalogue CATEGORY implies, for the generator to stamp
+ * when the label says nothing. Used ONLY as the fallback: CLASSIFY-STIMULUS-01 keeps the label first, because a
+ * threshold row prescribed at goal pace is `race_pace` and an aerobic-repurposed one is aerobic, and the label is
+ * what records those decisions. The fallback exists because four threshold rows carry labels the heuristic cannot
+ * read ("CV intervals", "Over-unders", "1600m repeats", "Threshold pyramid"): 6,213 of their sessions on 5,664 cohort
+ * plans were stamped with NO stimulus, invisible to every rule that reads one, including §8's ordering (22 sweep
+ * plans compared an 18-minute VO2max set with a taper tempo while their 24-minute CV set did not count).
+ */
+export const STIMULUS_OF_CATEGORY: Readonly<Record<string, keyof typeof GENERATION_CONFIG.STIMULUS_RANK>> = {
+  threshold: 'tempo',
+  race_specific: 'race_pace',
+  vo2max: 'vo2max',
+  aerobic: 'steady_aerobic',
 }
 
 /**

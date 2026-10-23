@@ -17898,6 +17898,10 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 >   the same class as the liveness debt and the S111 sitting's *"the debt was the SAMPLE, not the rules."*
 >   ⚠️ **Candidate fixes, all prescription changes, none chosen:** scale the VO2max dose with build
 >   length · exempt compressed plans from §8's ordering · protect a build week for masters against §3.
+>   ✅ **RESOLVED 2026-10-23 by none of them (`STIMULUS-FROM-CATALOGUE-01`).** Re-measured: all 22 had a 24-minute CV
+>   intervals set the engine stamped with NO stimulus (its label holds no keyword), so §8 compared VO2max with a taper
+>   tempo. Stamped from the row's category it counts, and 22 → 0 with parity identical (stimulus ignored). The third
+>   option had already been vetoed (DELOAD-PLAN-OPENING-01).
 >   ⚠️ **`INV-PLAN-MAIN-SET-ORDERING` is ERROR severity**, so these THROW in dev and test. They are
 >   baselined so `verify` stays green while the board sits — **baselining makes debt visible and stops
 >   it growing; it does not make it shrink.**

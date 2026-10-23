@@ -17,7 +17,7 @@
  *   · check   — `validatePlan()` runs before anything is written. A fixture the engine's
  *               own constitution would reject is worse than no fixture.
  *
- * Regenerate with:  npx tsx scripts/build-harness-fixture.ts
+ * Regenerate with:  npx tsx scripts/build-harness-fixture.ts  (add --at-committed to land an engine change without clock drift)
  * Guarded by:       components/dashboard/__fixtures__/harnessPlan.test.ts
  */
 import { writeFileSync, readFileSync } from 'node:fs'
@@ -38,6 +38,21 @@ const corpus = JSON.parse(
 const c = corpus.cases.find(x => x.id === CASE_ID)
 if (!c) throw new Error(`build-harness-fixture: case ${CASE_ID} is not in real-inputs.json`)
 
+const out = join(process.cwd(), 'components/dashboard/__fixtures__/harnessPlan.json')
+
+// --at-committed: build at the committed fixture's own `generated_at`, the instant its test regenerates at. §10's
+// staleness discount reads the wall clock, so a rebuild "now" moves every pace (84 fields on 2026-10-21) and buries
+// an engine change under clock drift. Use this flag to land an engine change; build without it to refresh the clock.
+const AT = process.argv.includes('--at-committed')
+  ? (JSON.parse(readFileSync(out, 'utf8')) as { meta: { generated_at: string } }).meta.generated_at : null
+if (AT) {
+  const RealDate = Date, t = RealDate.parse(AT)
+  ;(globalThis as { Date: DateConstructor }).Date = class extends RealDate {
+    constructor(...a: unknown[]) { super(...((a.length ? a : [t]) as [number])) }
+    static now() { return t }
+  } as DateConstructor
+}
+
 const plan = generateRulePlan(c.input, c.tier as Tier, c.plan_start)
 
 // ⚠️ Validate BEFORE writing. `validatePlan` throws on error-severity violations under
@@ -51,7 +66,6 @@ if (errors.length) {
   process.exit(1)
 }
 
-const out = join(process.cwd(), 'components/dashboard/__fixtures__/harnessPlan.json')
 writeFileSync(out, JSON.stringify(plan, null, 2) + '\n')
 console.log(
   `harness plan written: case ${CASE_ID}, ${plan.weeks.length} weeks, ` +

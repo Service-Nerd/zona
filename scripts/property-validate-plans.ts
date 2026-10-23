@@ -1346,7 +1346,10 @@ const BASELINE: Record<string, number> = {
   // way and over-converted, and on one 5K injured plan the session it took happened to be the VO2max that breaks §8.
   // On the check's count it no longer yields there (none of the 22 carries a yield adjustment), so the §8 defect it
   // was hiding shows. Measured: the unchanged engine reports 21 with this seed. The defect is §8's own debt.
-  'INV-PLAN-MAIN-SET-ORDERING': 22,
+  // 22 -> 0 on 2026-10-23 (STIMULUS-FROM-CATALOGUE-01). Not §8's debt after all: every one of the 22 (5K, masters,
+  // 11 weeks) had a 24-minute CV intervals set that carried NO stimulus, so §8 compared an 18-minute VO2max set with
+  // a taper tempo. Stamped from the row's category, CV counts as tempo and outranks it. No prescription moved
+  // (parity with stimulus ignored: 6,102 cases identical). Entry removed rather than set to 0.
   // 13 -> 0 on 2026-09-22. §120 anchored `hm_pace_intervals` to goal pace, so a
   // time-target plan that previously prescribed ZERO goal-pace quality now
   // prescribes some. Lowered to lock the fix in, per the rule above: "every
