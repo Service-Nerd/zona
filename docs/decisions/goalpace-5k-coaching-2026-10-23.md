@@ -131,3 +131,4 @@ remains the fallback only where no row (including this one) is eligible. **Gate 
 `measure:fitness` and `cohort:shape` before/after, refusal count, and the per-session goal-pace measurement re-run.
 McMillan's 10K dissent recorded. Founder sign-off required (it changes the signed-off S1).
 
+**Founder signed off the amendment, 2026-10-23.**

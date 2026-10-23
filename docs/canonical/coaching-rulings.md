@@ -63,7 +63,7 @@ removed all their goal-pace work and the eligibility check would then remove the
 against §22. New row `beginner_goal_pace_reps` (5K/10K, beginner only, build/peak/taper, free): 2-min reps at goal pace,
 easy jog of the same length (Willy binding), 4/6/4 reps by phase, ≤ 12 goal-pace minutes. Replaces the sharpener for
 beginners. Gate from RACE-ANCHOR-CV-OVERRIDE-01 sitting 3 binds the build. McMillan's dissent (10K reps should be 3–4
-min) recorded. Founder sign-off required.
+min) recorded. **Founder signed off 2026-10-23.**
 
 ## 2026-10-23 — GOALPACE-5K-01 · S1 CORRECT WITH AMENDMENT · S2 direction CORRECT, projection INSUFFICIENT EVIDENCE · S3 CORRECT · D2 CORRECT WITH AMENDMENT · RULED, not built
 
