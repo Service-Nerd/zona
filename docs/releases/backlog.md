@@ -196,14 +196,6 @@ notes prescribe marathon and HM-pace segments, so the HR cap and the segments ca
 brief's W7). Beginners no longer reach §24b; intermediates and marathon runners still do. Needs a ruling on how a
 segmented session states its HR, and a measurement of how many sessions it moves.
 
-### 🔲 `SESSION-KM-STRUCTURED-PACE-01` — a duration-anchored structured session is sized at its headline pace ⚙️ **NO BOARD** *(filed 2026-10-23, P3)*
-
-Found building GOALPACE-5K-01. `sessionKmSelfPaced` converts a duration-anchored session's WHOLE duration at its
-`pace_target` midpoint, and for structured work that is the work pace, so a 43-minute goal-pace reps session (12
-minutes at goal pace) reads as 9.8 km instead of ~6. `INV-PLAN-LR-MAX-WEEKLY-PCT` then fired on one sweep plan (now
-baselined with this reason). (A same-day "correction" claiming the baseline did not cover it was itself wrong: it came from running the sweep with `NODE_ENV=test`, which throws on every error; `npm run verify:sweep` runs with the engine collecting, and it is green with this plan inside the baseline.) Fix at the owner: size a structured session from its `derived_set` steps. Measure every
-consumer first (it is the single owner for the validator, `cohortShape` and `reshapeMagnitude`).
-
 ### 🔲 `ALL-DAYS-BLOCKED-01` — an input with every day blocked still generates a plan ⚙️ **NO BOARD** *(filed 2026-10-22, P3)*
 
 Found building `LONGRUN-BLOCKED-DAY-01`: `days_cannot_train` naming all seven days generates a plan whose long run sits
