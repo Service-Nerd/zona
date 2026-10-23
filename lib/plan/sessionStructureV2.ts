@@ -102,6 +102,11 @@ export const StepSchema = z.object({
   target: TargetSchema,
   advance: z.enum(['auto', 'manual']).default('auto'),
   note: z.string().optional(),
+  // §33 Am. (CRUISE-STEP-NOTE-GOALPACE-01) — what a T-anchored step says when §22
+  // goal-paces the session. `note` names the row's own intensity ("Threshold
+  // now"), which is false once the pace is the race's. Only the resolver chooses
+  // between them; a step with no intensity claim needs neither.
+  goal_pace_note: z.string().optional(),
 })
 export type Step = z.infer<typeof StepSchema>
 

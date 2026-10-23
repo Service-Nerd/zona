@@ -232,7 +232,7 @@ from the profile (or the profile write also updates `generator_input`), with a t
 Found building GOALPACE-5K-01. `sessionKmSelfPaced` converts a duration-anchored session's WHOLE duration at its
 `pace_target` midpoint, and for structured work that is the work pace, so a 43-minute goal-pace reps session (12
 minutes at goal pace) reads as 9.8 km instead of ~6. `INV-PLAN-LR-MAX-WEEKLY-PCT` then fired on one sweep plan (now
-baselined with this reason). Fix at the owner: size a structured session from its `derived_set` steps. Measure every
+baselined with this reason). 🔴 **Correction 2026-10-23: the baseline does not cover it.** The check is error severity, so in the sweep the plan THROWS and is counted as a hard failure, not a violation; the sweep went 22 → 23 hard failures with GOALPACE-5K-01 and was reported clean. Measured by printing every hard failure at `6e419e84~1` and `6e419e84`: this is the one added. The sweep exits 1 on any hard failure and has not passed since at least 2026-10-19 (21 then; the rest are the baselined `INV-PLAN-MAIN-SET-ORDERING` debt and its kin, which also throw). Fix at the owner: size a structured session from its `derived_set` steps. Measure every
 consumer first (it is the single owner for the validator, `cohortShape` and `reshapeMagnitude`).
 
 ### 🔲 `ALL-DAYS-BLOCKED-01` — an input with every day blocked still generates a plan ⚙️ **NO BOARD** *(filed 2026-10-22, P3)*

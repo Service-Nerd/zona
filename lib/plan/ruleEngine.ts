@@ -1589,7 +1589,7 @@ function makeQualitySession(args: {
       ...(progTempoPlan ? { third_secs: progTempoPlan.thirdSecs } : {}),
       ...(contTempoPlan ? { work_secs: contTempoPlan.workSecs } : {}),
     }
-    return resolveMainSet(parsed.data, { anchors, easyPaceStr: pace.easyPaceStr, params })
+    return resolveMainSet(parsed.data, { anchors, easyPaceStr: pace.easyPaceStr, params, goalPaced: substituteThresholdWithGoal })
   })()
 
   // Fallback label if no catalogue row matched (e.g. 5K/10K taper week).

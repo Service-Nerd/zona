@@ -32,6 +32,12 @@ export interface ResolveContext {
    * than no session at all.
    */
   params?: Record<string, number>
+  /**
+   * §22 has replaced the T anchor with goal pace (`substituteThresholdWithGoal`).
+   * A T-anchored step then reads its `goal_pace_note` where it has one (§33 Am.),
+   * so the step under "5K-pace reps" stops saying "not a race pace".
+   */
+  goalPaced?: boolean
 }
 
 /** One step, with everything the runner needs to execute it. No anchors remain. */
@@ -181,6 +187,9 @@ export function resolveMainSet(structure: StructureV2, ctx: ResolveContext): Der
         }
 
         const pace = resolvePace(step.target, ctx)
+        const note = ctx.goalPaced && step.goal_pace_note
+          && step.target.kind === 'pace' && step.target.anchor === 'T'
+          ? step.goal_pace_note : step.note
         steps.push({
           role: step.role,
           modality: step.modality,
@@ -191,7 +200,7 @@ export function resolveMainSet(structure: StructureV2, ctx: ResolveContext): Der
           ...(step.target.kind === 'zone' ? { zone: step.target.zone } : {}),
           ...(step.target.kind === 'effort' ? { rpe: step.target.rpe } : {}),
           advance: step.advance,
-          ...(step.note ? { note: step.note } : {}),
+          ...(note ? { note } : {}),
         })
 
         if (step.role === 'work') lastWorkLength = length

@@ -48,8 +48,17 @@ main_set_structure (v2)
         │            | { kind: "zone",   zone }
         │            | { kind: "effort", rpe }
         │            | { kind: "none" }
-        └── advance    "auto" | "manual"                             (default "auto")
+        ├── advance    "auto" | "manual"                             (default "auto")
+        ├── note       string                                        (optional)
+        └── goal_pace_note  string                                   (optional, §33 Am.)
 ```
+
+**`goal_pace_note` (CRUISE-STEP-NOTE-GOALPACE-01, 2026-10-23).** On a T-anchored work step, the note the runner reads
+when §22 has replaced T with goal pace (`ResolveContext.goalPaced`, set from `substituteThresholdWithGoal`). It never
+reaches `DerivedStep`: the resolver picks one string and stamps it as `note`, so every consumer is unchanged. Required
+on any T-anchored work step whose `note` names an intensity (`stepNoteGoalPace.test.ts`). Like any catalogue note it
+reaches new plans only; `supersededNotes.ts` cannot repair it at read, because the old note is still correct on the
+same row at threshold.
 
 ## Two rules that make it safe
 

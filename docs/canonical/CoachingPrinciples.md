@@ -3294,6 +3294,25 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` i
 
 **Config.** Implemented in `makeQualitySession()` (`lib/plan/ruleEngine.ts`): when `useGoalPace` is true, the engine synthesises a goal-pace voice rather than appending the catalogue's voice. VO2max sessions keep their catalogue voice (the catalogue's vo2max entries are correct). Enforced by `INV-PLAN-COACH-NOTES-MATCH-INTENT` in `lib/plan/invariants.ts`.
 
+### §33 Amendment — the STEP notes are voice too (Coaching Board 2026-10-23, CRUISE-STEP-NOTE-GOALPACE-01)
+
+**Principle.** "The voice MUST be replaced" covers the notes on each step of the main set, not only `coach_notes`. A
+T-anchored work step whose note names the row's own intensity carries a `goal_pace_note`, and the resolver reads it
+whenever §22 has put goal pace on that step. Steps with no intensity claim ("Rep three should look like rep one", "Same
+pace at the end as at the start") keep their note at any pace.
+
+**Why.** Step notes arrived with the v2 structure (ADR-019), after this section, and were copied from the row unchanged.
+The session-level voice was replaced correctly, so one card read "5K-pace work. Target 4:24 /km" above a rep reading
+"Threshold effort — comfortably hard, not a race pace". Measured on 5,664 plans: **3,466 of 13,139** goal-paced
+sessions, four rows (`tempo_cruise`, `tempo_cruise_short`, `progressive_tempo`, `threshold_mile_repeats`), every
+distance. Seiler: the error runs both ways. At 5K, goal pace sits above threshold and "comfortably hard" invites holding
+back; at HM and marathon it sits below, and "Threshold now" invites pushing into Z3. Per-row notes rather than one
+synthesised line, so the structural notes survive (McMillan). Words approved by the founder 2026-10-23.
+
+**Config.** No numeric: a copy field. `Step.goal_pace_note` (`sessionStructureV2.ts`), chosen in `resolveMainSet` when
+`ctx.goalPaced` (`substituteThresholdWithGoal`). **Check.** `INV-PLAN-COACH-NOTES-MATCH-INTENT`'s step-note arm; the
+catalogue arm of `lib/plan/stepNoteGoalPace.test.ts`, whose population is every T-anchored work step in the catalogue.
+
 ---
 
 ## 34. Invariant registry — declared and exercised

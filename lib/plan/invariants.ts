@@ -1575,6 +1575,28 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       }
     }
 
+    // §33 Am. (CRUISE-STEP-NOTE-GOALPACE-01) — the STEP notes are voice too. This
+    // check read `coach_notes` only, and step notes arrived later (ADR-019), so a
+    // goal-paced session's card said "5K-pace work. Target 4:24 /km" above a rep
+    // reading "Threshold effort — comfortably hard, not a race pace" (3,466 of
+    // 13,139 goal-paced sessions on 5,664 plans). Selected by the stamped stimulus,
+    // never the label, so the AI voice pass cannot hide a session from it.
+    for (const { day, session } of placedRunning) {
+      if (classifyStimulus(session) !== 'race_pace' || !session.derived_set) continue
+      const wrong = session.derived_set.blocks.flatMap(b => b.steps)
+        .filter(st => st.role === 'work' && st.note && /threshold|not a race pace/i.test(st.note))
+      if (!wrong.length) continue
+      violations.push({
+        code: 'INV-PLAN-COACH-NOTES-MATCH-INTENT',
+        principle_ref: 'CoachingPrinciples §33 Am.',
+        severity: 'error',
+        week: w.n, day,
+        message: `Goal-paced "${session.label}" has a work step telling the runner it is threshold work ("${wrong[0].note}") — the row needs a goal_pace_note on that step`,
+        actual: wrong.map(st => st.note).join(' | '),
+        expected: 'step notes describing goal-pace work',
+      })
+    }
+
     // INV-PLAN-DISPLAY-ZONE-MATCHES-WORK — the zone a runner SEES derives from
     // the prescribed work (session.zone), and no coach note may state a literal
     // zone that contradicts it. Every quality session is typed `quality`, so a
