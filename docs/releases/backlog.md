@@ -198,6 +198,8 @@ segmented session states its HR, and a measurement of how many sessions it moves
 
 ### 🔲 `CRUISE-STEP-NOTE-GOALPACE-01` — a cruise-interval rep served as goal-pace work tells the runner "not a race pace" 🏃 **COACHING BOARD** → 👤 **FOUNDER** for the words *(filed 2026-10-23, P2)*
 
+🟡 **RULED 2026-10-23, CORRECT WITH AMENDMENT; words pending the founder.** Four rows, not two: **3,466** goal-paced sessions (the cruise pair 1,843, `progressive_tempo` 1,113, `threshold_mile_repeats` 510). Build: a per-step goal-pace note on those rows, a step-note arm on `INV-PLAN-COACH-NOTES-MATCH-INTENT`, and a catalogue test derived from the override's reach. Sitting: `docs/decisions/cruise-step-note-goalpace-coaching-2026-10-23.md`.
+
 Found writing the GOALPACE-5K-01 patch for e49ea589. `tempo_cruise` and `tempo_cruise_short` carry one fixed work-step
 note, *"Threshold effort — comfortably hard, not a race pace."* (`sessionCatalogueData.ts:219` and `:267`). When §22
 renames the session for goal-pace work (label *"5K-pace reps"*, stimulus `race_pace`, and since §83 Am. the interval
