@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-23 — STIMULUS-FROM-CATALOGUE-01 · 34 days of "coaching debt" was a session the engine could not name
+**Shipped:** Four threshold sessions (CV intervals, over-unders, 1600m repeats, the pyramid) now carry a stimulus like every other quality session, so the rule that keeps VO2max from being a plan's biggest session can see them.
+**Dev learning:** The engine stamps a session's stimulus by reading its label, on purpose, so a threshold row run at goal pace reads as race pace. Four labels held no keyword the reader knows, and 6,213 sessions came out stamped with nothing. The catalogue already said what they were. The fix keeps the label first and falls back to the catalogue category only when the label says nothing, which is the one way to fix this without reversing the ruling that chose labels.
+**Product/creator learning:** The 22 plans had been carried as "§8 debt" since 20 Sep with three candidate fixes, all of which would have changed what 5K runners over 45 are prescribed: cut their VO2max, exempt them from the rule, or take a recovery week away (already vetoed). None of the 22 needed any of that. Each one had a 24-minute CV session the rule could not count.
+**AI-building learning:** I had briefed this for the Coaching Board twice. Walking one failing plan week by week, before the board sat, is what showed the comparison was a peak VO2max set against a taper tempo. Read one real case before you convene anyone.
+**The honest bit:** Parity first said 1,937 plans changed. The hash includes the field I changed. Stripping it said 6,102 identical, and it took a temporary copy of the parity script to say so.
+**Hook material:** Three proposed fixes for 22 runners over 45. The real fix was a word the engine did not know.
+**Postable?:** yes
+
 ## 2026-10-23 — SESSION-KM-STRUCTURED-PACE-01 · a 34-minute reps session was 6.8 km, because the jogs ran at rep pace
 **Shipped:** A beginner's structured quality sessions are now measured rep by rep, so the plan calendar's weekly total and every load check stop overstating them by about 40%.
 **Dev learning:** One function answered "how far is this session" for ten callers by dividing the whole duration by the headline pace, and for structured work the headline is the fastest pace in it. The engine answered the same question at easy pace. Two owners of one number, wrong in opposite directions, and the checks sided with the wrong one. Pricing from the steps lands between them on every one of 6,407 sessions, measured, and moves nothing else.
