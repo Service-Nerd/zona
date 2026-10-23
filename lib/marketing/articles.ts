@@ -518,8 +518,9 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
     ogDescription:
       `Most beginner runners run every session too hard. Here's why that stalls progress, what to do without an app, and which one actually helps.`,
     h1: `Best running app for beginners who go too hard`,
-    lastUpdated: '24 September 2026',
-    lastUpdatedISO: '2026-09-24',
+    // Revised 2026-10-22: one backlink to page 6 added; nothing else changed.
+    lastUpdated: '22 October 2026',
+    lastUpdatedISO: '2026-10-22',
     publishedISO: '2026-09-24',
     // §1 (intensity distribution, counted in SESSIONS per CD-19), §12 (the easy
     // ceiling — "a ceiling, not a band"), §30/INV-PLAN-EFFORT-OR-PACE (effort is
@@ -563,6 +564,11 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       // how long adaptation takes.
       p(`Give it a month before you decide it isn't working, and judge it on whether the hard days feel genuinely hard again rather than on a single PB attempt. The instinct that moderate effort equals real progress takes a while to unlearn, mostly because slowing down doesn't feel like doing anything.`),
       p(`None of that requires software. It requires being honest with yourself about effort on a run-by-run basis, which is harder than it sounds and is the actual reason apps exist in this category at all.`),
+      p(
+        `If you want the detail on zones, the talk test and where heart rate misleads you, I wrote it up in `,
+        { text: `why your easy runs aren't easy, and what it costs you`, href: '/why-your-easy-runs-arent-easy' },
+        `.`,
+      ),
 
       h2(`Where an app genuinely helps, and which ones`),
       p(`If you're starting from zero, `,
@@ -744,6 +750,84 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
         ` is the better answer. If you need someone to notice you, a human coach is.`,
       ),
       p(`If you want a plan that holds you back on the easy days and you are happy to check in with yourself, the free tier is the place to start.`),
+    ],
+  },
+  // ── COMPARISON 6 ───────────────────────────────────────────────────────
+  // Founder's final copy, 2026-10-22, with ONE approved change (2026-10-23): "one hard session a week" became "one or
+  // two", because measured on 5,664 cohort plans 11% have weeks with two quality sessions. The hub summary is drafted
+  // from the copy (the brief supplied none) and is the founder's to edit.
+  {
+    kind: 'comparison',
+    slug: 'why-your-easy-runs-arent-easy',
+    metaTitle: `Why your easy runs aren't easy, and what it costs you`,
+    metaDescription:
+      `Why most runners' easy runs are too fast, how to check yours with the talk test, and where heart rate zones mislead you.`,
+    ogTitle: `Why your easy runs aren't easy, and what it costs you`,
+    ogDescription:
+      `Why most runners' easy runs are too fast, how to check yours with the talk test, and where heart rate zones mislead you.`,
+    h1: `Why your easy runs aren't easy, and what it costs you`,
+    lastUpdated: '22 October 2026',
+    lastUpdatedISO: '2026-10-22',
+    publishedISO: '2026-10-22',
+    signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
+    appStoreLinkText: `Get ${BRAND.name} on the App Store`,
+    hubSummary: `Whether your easy runs are really easy, the free test that tells you, and where heart rate zones get it wrong.`,
+    body: [
+      p(`Your easy runs are probably too fast, and the quickest check is whether you can speak in full sentences while you run. If you can't, you are in what I call the grey zone: hard enough to tire you out, not hard enough to build much speed. Most non-elite runners spend most of their runs there, because slow feels like wasted effort. I did it for two years and my 10km best stayed at 48:30 the whole time. Heart rate zones help, but they are less precise than social media makes out, and below I show where they mislead you.`),
+
+      h2('One word, two numbering systems'),
+      p(`Most arguments about zone 2 are two people using different maps, so I will define my terms once.`),
+      p(`Sports science papers usually use three zones. Zone 1 is below your first threshold, where you can keep going for hours. Zone 2 is the middle band between your two thresholds. Zone 3 is above the second one.`),
+      p(`${BRAND.name} uses five zones, and in that system zone 2 is easy and zone 3 is the grey zone. I use that numbering on this page. The grey zone covers roughly the same ground as the middle band in the three-zone papers. When someone online says zone 2 is the secret, check which map they mean.`),
+
+      h2('What easy is for'),
+      p(`Easy running builds your aerobic base while leaving you able to run again tomorrow. Studies of well-trained and elite endurance athletes vary by sport and by athlete, but low intensity tends to take the largest share of their training time. I am not a lab athlete and I am not claiming a magic ratio.`),
+      p(
+        `I wrote about why running everything at the middle effort stalls progress on my page about the `,
+        { text: 'best running app for beginners who go too hard', href: '/best-running-app-for-beginners' },
+        `. This page is about how to tell whether you are doing it, and where the usual tools mislead you.`,
+      ),
+
+      h2('Why it feels wrong'),
+      p(`You finish an easy run with energy left over and your brain files it as a wasted session. So the next run gets a little more effort, then the next, and soon every run sits at the same moderate pace.`),
+      p(`Nothing tells you at the time that this is a mistake. Moderate running feels like work done.`),
+
+      h2('How to tell if you are in the grey zone'),
+      p(`Start with the talk test. Run at your usual easy pace and say a few full sentences out loud. If you have to break them into gasps, it is not easy.`),
+      p(`A 2014 study in the Journal of Sports Science and Medicine looked at 20 well-trained athletes. At a pace below their ventilatory threshold, 18 could speak comfortably throughout the run. At a much harder pace, only six could speak comfortably after 10 minutes, and none could by the end. That is a small sample of trained athletes, so treat it as a sign the test is sound, not proof it works for you.`),
+      p(`Use heart rate as a cross-check. If the talk test and your watch disagree, trust the talk test and look for the reason.`),
+
+      h2('Where heart rate zones mislead'),
+      p(`Percentage-of-max zones start from a maximum heart rate you probably have not measured. The popular 220 minus age has an error of about 12 beats per minute, and one person in twenty is out by 24 or more. The better-known alternative, 208 minus 0.7 times your age, is only a little tighter at about 10. That gap is the difference between an easy run and a grey one.`),
+      p(`Heart rate also moves for reasons that have nothing to do with how hard you are working. On a long run it keeps climbing at a steady pace, and heat and dehydration make it climb sooner and further. A target set on a cool morning will read too high on a hot afternoon.`),
+      p(`If you chase the number by slowing right down in those conditions, you can end up training easier than you meant to. I trust heart rate for the first 45 to 60 minutes of a run and lean on feel after that.`),
+
+      h2('What zone 2 is not'),
+      p(`Some of what gets posted online makes zone 2 sound like the whole of training. It is not. Easy running is the base, and you still need harder work to get faster. A ${BRAND.name} plan has one or two hard sessions a week and makes the rest easy.`),
+      p(`Heart rate zones are also not a verdict on your effort. They are an estimate, and you are the one running.`),
+
+      h2('What it cost me'),
+      p(`My 10km best is 48:30, set in autumn 2024, and it has not moved in two years. For much of that time most of my runs sat in the moderate band, and my aerobic base got stronger while the hard sessions that would have used it were not hard enough.`),
+      p(`That is my reading, not a controlled experiment, and other things were going on too. It is still the clearest explanation I have.`),
+
+      h2('How to fix it without an app'),
+      p(
+        `Slow down until you can talk in full sentences. It will be slower than you want. My guide to `,
+        { text: 'how slow easy runs should feel', href: '/guides/should-easy-runs-feel-this-slow' },
+        ` has the numbers I use.`,
+      ),
+      p(`Keep one run a week properly hard and let the rest be easy.`),
+      p(`Give it a month before you judge it. The pull to speed up again is strongest around week three, so expect it.`),
+
+      h2(`Where ${BRAND.name} fits`),
+      p(`${BRAND.name} is built around this problem. Most sessions in a plan are easy, with one or two hard ones a week. It is iOS only, there is no Garmin workout export, and I am the only developer.`),
+      p(`The free tier has the 5K, 10K and half marathon plans in full, with no end date. Paid access is ${PRICING.monthly.display} a month or ${PRICING.annual.display} a year, with a two-week trial.`),
+      p(
+        `You do not need it to fix this, because the talk test costs nothing. If you would rather have someone notice when you drift, that is what a coach is for, and I have written about when `,
+        { text: 'a coach is worth paying for', href: '/do-i-need-a-running-coach' },
+        `.`,
+      ),
+      p(`My recommendation: slow your easy runs down by feel for a month and see what happens. Try an app only if you find you cannot hold yourself back.`),
     ],
   },
   // ── GUIDE 1 ────────────────────────────────────────────────────────────

@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-23 — GTM-SEO-COMPARE-01 page 6 · the copy said one hard session a week and 21% of plans disagreed
+**Shipped:** `/why-your-easy-runs-arent-easy`: the zone-numbering, talk-test and heart-rate-error page, linked from page 3.
+**Dev learning:** The brief described a file (`comparisons.ts`) and field names (`headline`) that do not exist, and told me not to look. Matching the real entry shape took one read. It also said to derive nothing, and the type's own comment forbids the one shortcut the brief implied for the hub card.
+**Product/creator learning:** "A plan has one hard session a week" reads like a description of the product and was not one: 11% of plans have weeks with two and 9% have none. A product claim in marketing copy is a number, and it gets measured like one.
+**AI-building learning:** I proposed "one or two" as the fix and it was accepted. It is still not true of the 9% of finish-goal beginners with no hard session at all. I wrote the gentler half of the correction and stopped.
+**The honest bit:** The page's physiology claims went out without the Coaching Board, which the filing rule routes them to.
+**Hook material:** One sentence of marketing copy, measured against 5,664 generated plans: true for 79%.
+**Postable?:** maybe
+
 ## 2026-10-23 — STIMULUS-FROM-CATALOGUE-01 · 34 days of "coaching debt" was a session the engine could not name
 **Shipped:** Four threshold sessions (CV intervals, over-unders, 1600m repeats, the pyramid) now carry a stimulus like every other quality session, so the rule that keeps VO2max from being a plan's biggest session can see them.
 **Dev learning:** The engine stamps a session's stimulus by reading its label, on purpose, so a threshold row run at goal pace reads as race pace. Four labels held no keyword the reader knows, and 6,213 sessions came out stamped with nothing. The catalogue already said what they were. The fix keeps the label first and falls back to the catalogue category only when the label says nothing, which is the one way to fix this without reversing the ruling that chose labels.
