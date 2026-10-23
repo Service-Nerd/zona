@@ -965,6 +965,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 - 🏃 `SEGMENTED-LR-HR-01` — 🔲 open: segmented long runs carry the easy HR cap.
 - 🏃 `CRUISE-STEP-NOTE-GOALPACE-01` — ✅ **SHIPPED 2026-10-23** (`311fcb7a`): a goal-paced rep's step note stops saying threshold (3,466 sessions → 0); §33 Am.
 - ⚙️ `REBUILD-HR-FROM-PROFILE-01` — ✅ **SHIPPED 2026-10-23** (`920faf6d`): every rebuild takes heart rate from the profile; 2 already-reverted plans await the founder's repair call.
+- ⚙️ `STIMULUS-FROM-CATALOGUE-01` — ✅ **SHIPPED 2026-10-23** (`ff8a6ca4`): four threshold rows stamped from their catalogue category; §8 sweep debt 22 → 0, no prescription moved (parity identical with stimulus ignored).
 - ⚙️ `SESSION-KM-STRUCTURED-PACE-01` — ✅ **SHIPPED 2026-10-23**: structured duration sessions sized from their steps (6,407 re-sized, nothing else moved; sweep LR debt 1 → 0).
 - 🧭 `CALENDAR-DONE-DOT-SOURCE-01` — 🔲 open, filed 2026-10-22: the Plan calendar's completion ● is Strava orange for Apple Health runs too.
   From `FOUNDER-TYPE-18PX-01`. `backlog.md`.
