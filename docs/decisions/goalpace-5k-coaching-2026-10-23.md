@@ -92,3 +92,42 @@ live-plan policy.
 ## Founder sign-off (2026-10-23)
 S1–S4 agreed as ruled. Regenerate c8aef8f9 and e49ea589 after the fix, each shown as a dry-run diff before it is applied.
 
+---
+
+# Amendment sitting — S1's fallback, measured before build (2026-10-23)
+
+**Why the board re-sat.** Measured from `V1_SESSION_CATALOGUE`: a 5K or 10K **beginner** is eligible for exactly two
+non-aerobic rows, `tempo_continuous` and `progressive_tempo`, both continuous, and **no rep-structured row in any phase**
+(every rep row, including `goal_pace_sharpener`, is `fitness_level_min: intermediate`; the sharpener is also taper-only).
+So S1's fallback ("no eligible rep row → price at T") would remove ALL build/peak goal-pace work from S1's own core
+cohort, and `INV-PLAN-CATALOGUE-ELIGIBLE` would then remove the taper sharpener they reach only through the unchecked
+taper path. **Zero goal-pace exposure before race day, against §22's MUST.** The ruling's fallback was unsatisfiable for
+the population it was written for; founder chose option A.
+
+**Proposal (A):** a new row, `beginner_goal_pace_reps` ("Goal-pace reps"), `race_specific`, **5K and 10K, beginner only**
+(`fitness_level_min` = `fitness_level_max` = beginner, the CB-BEGINNER-CATALOGUE-01 scoping that kept a new row out of
+2,324 non-beginner parity cases), build/peak/taper, free tier: short reps at goal pace with an **easy jog** between.
+
+**Conflict scan.** CB-BEGINNER-CATALOGUE-01 excluded `beginner_goal_pace_blocks` from 5K/10K ("not a first structured
+session"): **not contradicted** — the first quality session is W4 at T, before §22's half-way line; goal-pace weeks come
+after it. RACE-ANCHOR-CV-OVERRIDE-01 sitting 3 deferred "a new build-eligible goal-paced row" as INSUFFICIENT EVIDENCE
+**with its own gate** (`measure:fitness` before/after, refusal count, selection MEASURED not inferred): that gate binds
+this build. Widening `beginner_goal_pace_blocks` was VETOED there: this is a separate row, not a widening. §53: the
+pigeonhole arm covers a one-row pool; measured at build. §79: no VO2 rows opened to beginners.
+
+🏃 **Hutchinson:** two-minute reps at 5K goal pace is the standard first race-pace session; the runner feels the pace in
+doses they can hold, which is §22's reason to exist. 📊 **Seiler:** no §1 effect. 🎯 **McMillan:** right shape for 5K;
+**dissent recorded** that at 10K, where goal pace sits near threshold, two minutes is short and three to four would be
+the coaching norm; not settled without a measured second row. 🩹 **Willy, binding:** the recovery is an easy JOG of at
+least the rep's length, never a standing rest, and total goal-pace time in one session stays **at or under 12 min**
+(under half the 5K race), scaling from 4 reps in build to 6 at peak, 4 in taper. ⚕️ **Sims:** no objection. 💪
+**Blagrove:** no objection.
+
+**Ruling: CORRECT WITH AMENDMENT (amends S1).** S1's fallback for 5K/10K beginners becomes `beginner_goal_pace_reps`:
+reps of `BEGINNER_GOAL_PACE_REP_MINS` (2) at goal pace, easy jog of the same length, `BEGINNER_GOAL_PACE_REPS_BY_PHASE`
+{build 4, peak 6, taper 4}, goal-pace minutes ≤ `BEGINNER_GOAL_PACE_MAX_SESSION_MINS` (12). It serves the taper too, so
+beginners no longer need the ineligible sharpener and `INV-PLAN-CATALOGUE-ELIGIBLE` can hold everywhere. "Price at T"
+remains the fallback only where no row (including this one) is eligible. **Gate at build (from sitting 3, binding):**
+`measure:fitness` and `cohort:shape` before/after, refusal count, and the per-session goal-pace measurement re-run.
+McMillan's 10K dissent recorded. Founder sign-off required (it changes the signed-off S1).
+

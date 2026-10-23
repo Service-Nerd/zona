@@ -56,6 +56,15 @@ incline adjustment (the 1% rule's evidence starts at 2.92 m/s and every prescrib
 rate or RPE and time; pace and distance are guides. A toggle that changes the prescription is INCORRECT. Whether to build
 a toggle or guidance line goes back to the Design Board and SLT. No numeric, no invariant.
 
+## 2026-10-23 — GOALPACE-5K-01 (amendment) · S1 fallback → a new beginner goal-pace reps row · CORRECT WITH AMENDMENT
+
+Measured before build: 5K/10K beginners have NO rep-structured row in any phase, so S1's "price at T" fallback would have
+removed all their goal-pace work and the eligibility check would then remove their taper sharpener: zero exposure,
+against §22. New row `beginner_goal_pace_reps` (5K/10K, beginner only, build/peak/taper, free): 2-min reps at goal pace,
+easy jog of the same length (Willy binding), 4/6/4 reps by phase, ≤ 12 goal-pace minutes. Replaces the sharpener for
+beginners. Gate from RACE-ANCHOR-CV-OVERRIDE-01 sitting 3 binds the build. McMillan's dissent (10K reps should be 3–4
+min) recorded. Founder sign-off required.
+
 ## 2026-10-23 — GOALPACE-5K-01 · S1 CORRECT WITH AMENDMENT · S2 direction CORRECT, projection INSUFFICIENT EVIDENCE · S3 CORRECT · D2 CORRECT WITH AMENDMENT · RULED, not built
 
 A 5K beginner (c8aef8f9) got 20–21 minutes CONTINUOUS at goal pace, weekly; measured across a 5K/10K grid the shape is
