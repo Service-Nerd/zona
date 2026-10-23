@@ -71,7 +71,7 @@ beginners have no fitting taper race row, so the sharpener stands there (derived
 covers any race-pace-segment long run at any distance; only its step-back note was false after a build week. D7's long-run
 taper is §6 Am.1's ruled behaviour. Measured: 5K/10K beginner ramp tail fell 59 → 52; a 5K intermediate rep row adds ~2 km
 in one week (2 of 1,200 masters plans, ramp-tail baseline 59 → 78, declared); cohort 10K maintenance −0.9pp; fitness
-unchanged; no new refusals.
+unchanged; no new refusals. Founder approved the two new lines (5K/10K race week; step-back after a build week) 2026-10-23.
 
 ## 2026-10-23 — GOALPACE-5K-01 · S1 CORRECT WITH AMENDMENT · S2 direction CORRECT, projection INSUFFICIENT EVIDENCE · S3 CORRECT · D2 CORRECT WITH AMENDMENT · RULED, not built
 

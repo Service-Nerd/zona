@@ -7355,7 +7355,7 @@ function buildRulePlanOnce(
         // §77 / INV-PLAN-NO-PLACEHOLDER-COPY (F6) — never interpolate an invented
         // race name into user-facing copy.
         // GOALPACE-5K-01 (D8) — "Start at Zone 2" is long-race pacing; at 5K/10K it contradicted the race
-        // session's own note ("first 0.6 km at goal pace"). Distance-aware; copy pending founder approval.
+        // session's own note ("first 0.6 km at goal pace"). Distance-aware; copy approved by the founder 2026-10-23.
         race_notes: `${input.race_name ? `Race day: ${input.race_name}.` : 'Race day.'} `
           + (input.race_distance_km <= 10
             ? 'Start slower than feels right, then settle into goal pace.'
