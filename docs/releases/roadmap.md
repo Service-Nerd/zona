@@ -960,6 +960,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 - 🧭 `A11Y-APP-TEXT-SWEEP-01` — ✅ **SHIPPED 2026-10-22** (`3df77396`, Design Board 6t-j): re-measured 69 → 19, all fixed; the faint-text gate now covers the whole app.
 - 🧭 `PLAN-DOORS-01` — ✅ **SHIPPED 2026-10-22** (`5e3c5205`, 6t-k): one door per plan, the same face on Plan, Me and Adjust; Me can adjust the plan; Plan checks.
 - 🧭 `PLAN-CHANGE-HEADER-01` — ✅ **SHIPPED 2026-10-22** (6t-l): Adjust and the confirm screen pin their header like Strength setup.
+- 🏃 `GOALPACE-5K-01` — 🔲 Coaching Board ruled 2026-10-23: rep-shaped goal pace for 5K + 10K beginners, no §24b for beginners; founder sign-off pending.
 - 🧭 `CALENDAR-DONE-DOT-SOURCE-01` — 🔲 open, filed 2026-10-22: the Plan calendar's completion ● is Strava orange for Apple Health runs too.
   From `FOUNDER-TYPE-18PX-01`. `backlog.md`.
 - ⚙️ `TYPE-18PX-CONVERGE-01` — **LATER, low.** The 8 remaining 18px headline-species sites adopt

@@ -56,6 +56,19 @@ incline adjustment (the 1% rule's evidence starts at 2.92 m/s and every prescrib
 rate or RPE and time; pace and distance are guides. A toggle that changes the prescription is INCORRECT. Whether to build
 a toggle or guidance line goes back to the Design Board and SLT. No numeric, no invariant.
 
+## 2026-10-23 — GOALPACE-5K-01 · S1 CORRECT WITH AMENDMENT · S2 direction CORRECT, projection INSUFFICIENT EVIDENCE · S3 CORRECT · D2 CORRECT WITH AMENDMENT · RULED, not built
+
+A 5K beginner (c8aef8f9) got 20–21 minutes CONTINUOUS at goal pace, weekly; measured across a 5K/10K grid the shape is
+gap-blind (5K beginner 12/12 plans, 10K beginner 6/6, 5K intermediate 6/12, up to 22 min). §22's own 5K premise (SC-05)
+is that 5K race pace is VO2 physiology, i.e. reps. **S1:** on a goal-paced week, 5K (all levels) and 10K beginners take
+rep-structured work, no goal-pace step over `GOAL_PACE_CONTINUOUS_MAX_MINS` (8); no eligible rep row → priced at T with a
+threshold label. **S2** amends CD-16 in direction; the projection constant is unmeasured. **S3:** §24b MP/HM long run not
+for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-paced step's zone and HR follow its pace.
+§79 unchanged (no VO2 rows for beginners). New: `INV-PLAN-GOAL-PACE-SHAPE`, `INV-PLAN-PACE-ZONE-COHERENT`,
+`INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
+CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. Founder sign-off needed
+on S1–S4 (brief). Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
+
 ## 2026-10-22 — LONGRUN-BLOCKED-DAY-01 · CORRECT WITH AMENDMENT (a weekday long run, never a blocked day, never a refusal)
 
 The engine tries `sun, sat, fri` (or `sat, sun, fri`) and then falls back to `'sun'` **even when Sunday is blocked**

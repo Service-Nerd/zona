@@ -180,6 +180,15 @@ never skip) and the setup says *"Your run week leaves fewer of these days for he
 exists. Questions: should the setup say so as the days are picked (design), and is a block with no leg work still a
 strength plan for a running-focused runner (coaching)? Measure how often chosen-day profiles get zero heavy legs first.
 
+### 🔲 `GOALPACE-5K-01` — goal-pace work a 5K beginner cannot run 🏃 **COACHING BOARD RULED 2026-10-23** → 👤 **FOUNDER sign-off on S1–S4** *(filed 2026-10-23)*
+
+Founder brief + RCA (reproduced on HEAD). Board: S1 rep shapes for 5K + 10K beginners (cap 8 min); S2 direction only
+(projection unmeasured); S3 no §24b for beginners; D2 zone/HR follow pace; three new invariants. Defects with no board:
+D5 (§47 fires on 5K via label), D6 (load note from deload baseline; V1 "held"), D7 ("Two week taper"; long run not
+tapered), D8 (race_notes "Start at Zone 2" for every distance), W7 long run HR cap, taper sharpener path skips the
+fitness check. Plans: c8aef8f9 starts 26 Oct (regenerate after the fix); e49ea589 live, race 28 Nov (founder).
+Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
+
 ### 🔲 `ALL-DAYS-BLOCKED-01` — an input with every day blocked still generates a plan ⚙️ **NO BOARD** *(filed 2026-10-22, P3)*
 
 Found building `LONGRUN-BLOCKED-DAY-01`: `days_cannot_train` naming all seven days generates a plan whose long run sits
