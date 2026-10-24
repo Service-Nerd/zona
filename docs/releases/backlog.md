@@ -3028,6 +3028,12 @@ flagged by the reorder guard, which is correct, and is the only runner-visible e
 
 ### 🟡 `NO-RUNNER-TURNED-AWAY-01` — every runner who asks for a race gets a plan for that race *(filed 2026-10-24, P0, founder; RULED 2026-10-24)* 🏃 **COACHING BOARD** (ruled) → 🧭 **DESIGN BOARD** (ruled) → 👤 **FOUNDER** (words)
 
+📐 **FOUNDER 2026-10-24: built with `/build` AND the coaching measurement protocol (`npm run review:coaching`), with
+fit-for-purpose measured before and after.** BEFORE taken at `fd53cc94`:
+`docs/decisions/no-runner-turned-away-before-2026-10-24.md` (marathon 90.7% excluding served refusals, **80% under the
+founder's bar**; refused 100% / 67.9% / 35.3% at 4 / 8 / 15 km/week). Its six acceptance criteria are this item's
+definition of done.
+
 🧭 **DESIGN BOARD 2026-10-24 — SHIP WITH AMENDMENT (10)** (`docs/decisions/design-2026-10-24-no-runner-turned-away.md`):
 race-plan preview instead of the refusal view; Base building as the first phase card naming the checkpoint; the race
 block an outline until it passes; Today mentions the checkpoint only in the last build week; observed figure, no meter;

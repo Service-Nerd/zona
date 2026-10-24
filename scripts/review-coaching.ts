@@ -145,7 +145,8 @@ console.log(`
     · Coach objections are measured on plans WITHOUT a foundation block
       (HARNESS-COMPOSE-GAP-01) — the error-severity half is covered, this is not.
     · The population weights are ASSUMPTIONS with written reasons, not
-      observations. Production has a handful of plans and zero recorded refusals.
+      observations. Real refusals are recorded in production (`plan_refused_by_design`)
+      and NONE of these steps reads them: the population here is synthetic.
     · A green run means no measured rate moved. It does not mean the engine
       improved, and a rate that moves because a DEFINITION moved is a correction,
       never an improvement (ZERO-REJECTION-SERVED-01).`)
