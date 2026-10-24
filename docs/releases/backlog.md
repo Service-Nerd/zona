@@ -4204,6 +4204,10 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 
 ### 🟡 `RESHAPE-FIRST-FIRINGS-01` — read the first adjustments the woken engine produces *(filed 2026-10-08, P1)* ⚙️ **NO BOARD**
 
+> 📐 **RE-READ 2026-10-24: no new firing.** Still the one `shadow_load` (founder, 2026-10-11, auto-applied, not
+> reverted). `reshape_invalid` 0, `adjust_plan_failed` 0, `adjustment_check_failed` 0 since 2026-10-08. The two
+> runners the backtest would fire for are on the free tier (see `ADJUST-TRIGGER-REACH-02`). Still January.
+>
 > 📐 **READ 2026-10-16.** One firing since the engine woke (2026-10-08): a `shadow_load` on 2026-10-11,
 > auto-applied (*"You've been running 18% above the prescribed load…"*). **`reshape_invalid` = 0**, so no
 > runner holds a plan the constitution rejects. One `plan_save_failed` in the same window (the adjust-plan
@@ -4391,6 +4395,12 @@ data**, and announcing a reshape engine whose firings get reverted is worse than
 > 2026-10-08 (a `shadow_load`, auto-applied) and `reshape_invalid` is **0**.
 > 🔻 **Next re-run: early January 2027**, when the December-start cohort has 4+ weeks. Until then
 > "silent" means "too young", and nothing here argues for touching a detector.
+>
+> 📐 **RE-RUN 2026-10-24: unchanged in substance.** 6 runners have reached week 1 (36 accounts; 30 have not), **2 of
+> 8 reachable** (`zone_drift` Duncan, `shadow_load` Harvey), 6 silent; 4 of the 6 runners are on 1–2 weeks. ⚠️ **Both
+> backtest fires are on FREE accounts and correctly never reach the live engine:** their trials ended 2026-10-01 and
+> 10-07, `dynamic_reshape_r20` is PAID, and `last_adjustment_check_at` is null for both (the engine woke 10-08, after
+> both trials). Reachability is a property of the runner's data, not of who may receive the change. Still January.
 >
 > **Re-run any time** — one command, no new code:
 >
