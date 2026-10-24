@@ -85,6 +85,17 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-24 — NO-RUNNER-TURNED-AWAY-01 (second sitting: the four numbers) · CORRECT WITH AMENDMENT · RULED, not built
+
+Q1 checkpoint at the week the ramp reaches the door, with at least §44's block threshold (10 wks) left for the race,
+else at `runway − block`. Q2 observed = mean `totalKm` (linked + off-plan) of the final two non-deload weeks, **pass ≥
+door, no tolerance** (Willy over McMillan; near-miss → recommended two-week extension). Q3 below 6 km/week: a walk-run
+start, 3 × 30 min, run/walk 1/2 → §117's 6/1, then §116's ramp; **§116's "run-walk not scoped" note amended by name**.
+Q4 staged plans scored as the composed plan at the door, both figures reported, the best-case assumption printed.
+🔴 Evidence: the two live base-build runners recorded 3.1 km of a planned 21 and 0 of 16.5, and
+`baseBuildHandover.ts` credits PLANNED volume: ruled a defect against §116 Am. 7, fixed in the build. Sitting:
+`docs/decisions/coaching-2026-10-24-no-runner-turned-away-numbers.md`.
+
 ## 2026-10-24 — NO-RUNNER-TURNED-AWAY-01 · CORRECT WITH AMENDMENT · RULED, not built
 
 A runner §111 refuses on base volume gets a plan for the race they asked for: §116's ramp first, a checkpoint named

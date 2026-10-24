@@ -3028,6 +3028,13 @@ flagged by the reorder guard, which is correct, and is the only runner-visible e
 
 ### 🟡 `NO-RUNNER-TURNED-AWAY-01` — every runner who asks for a race gets a plan for that race *(filed 2026-10-24, P0, founder; RULED 2026-10-24)* 🏃 **COACHING BOARD** (ruled) → 🧭 **DESIGN BOARD** (ruled) → 👤 **FOUNDER** (words)
 
+🏃 **SECOND SITTING 2026-10-24 — the four numbers ruled** (`coaching-2026-10-24-no-runner-turned-away-numbers.md`):
+checkpoint placement, observed volume (no tolerance), the walk-run start below 6 km/week, and the scoring definition.
+🔴 **And a live defect inside it:** `baseBuildHandover.ts` hands the race plan over on PLANNED volume. Tom
+(tom0508richards@icloud.com) has recorded 3.1 of a planned 21 km; Sheena (sheenameek84@icloud.com) 0 of 16.5. Their
+blocks end 2027-01-25 and 2027-01-18, so the fix lands before either would fire. **Founder: words approved
+2026-10-24.**
+
 📐 **FOUNDER 2026-10-24: built with `/build` AND the coaching measurement protocol (`npm run review:coaching`), with
 fit-for-purpose measured before and after.** BEFORE taken at `fd53cc94`:
 `docs/decisions/no-runner-turned-away-before-2026-10-24.md` (marathon 90.7% excluding served refusals, **80% under the
