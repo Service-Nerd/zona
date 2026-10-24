@@ -84,6 +84,12 @@ The founder looked at `/sheet-preview` on his phone and said yes; `SHEET_FROM_PI
 downstream check before release found the nav registration in an effect (missed a nav mounted later, kept a detached
 one after a remount); it moved to the ref callback, with a test arm, falsified.
 
+## Switched off again (2026-10-24)
+
+The same day, on the founder's phone in the iOS app, a Coach sheet appeared mid-screen and then dropped onto the pill.
+`SHEET_FROM_PILL` is back to `false`; the ruling stands, the release does not. The approval was given on
+`/sheet-preview` in a browser, not in the app, and that is the gap: `SHEET-ORIGIN-DEVICE-01`.
+
 ## What this ruling does not settle
 
 How it feels on a phone, and whether the founder approves it. The app keeps S1 until he does.

@@ -3018,6 +3018,20 @@ rules first:** does §7's spacing bind the §78 benchmark? If yes, it is an engi
 `isHardDay`, and a remediation question for that plan. ⚠️ Since this ship, a session MOVE in either of those weeks is
 flagged by the reorder guard, which is correct, and is the only runner-visible effect today.
 
+### 🔲 `SHEET-ORIGIN-DEVICE-01` — on the phone, a sheet from the pill appears mid-screen and then drops onto it *(filed 2026-10-24, P1)* ⚙️ **NO BOARD** *(defect)*, then 👤 **FOUNDER** to re-approve
+
+`SHEET-ORIGIN-01` went on in the app on 2026-10-24 and was **switched off the same day** (`SHEET_FROM_PILL = false`)
+after the founder opened a Coach sheet in the iOS app: it appeared from the middle of the screen, then dropped down to
+attach to the nav pill. **Not reproduced in a browser:** the real `Sheet` at 375×812 on `/sheet-preview`, sampled
+every 16 ms, rises from the pill (clip bottom 764 = pill top 738 + 26), overshoots ~20 px and settles by ~0.5 s,
+never mid-screen. **Ruled out:** the nav's scroll recede (colour only, no geometry) and the scroll lock
+(`overflow: hidden` only). **Candidates, unmeasured:** `100vh` versus the measured pill box inside WKWebView; the pill
+being measured once at mount, before the dashboard nav has settled; a Coach sheet (tall content) clipped by the
+mouth's `overflow: hidden` during the overshoot. **The preview was approved in a browser, not in the app**, which is
+the gap. **Next:** a screen recording from the founder, or instrument the measurement on device; fix; founder looks
+at the iOS app itself before it is switched back on. Separately: the pill's icons vanishing is the ruled design
+(2026-10-02, option b); keeping them would be a Design Board reversal, not this defect.
+
 ### 🔲 `TT-BEFORE-LONG-PATCH-01` — patch one live plan: two Friday time trials the day before the long run *(filed 2026-10-24, P2)* ⚙️ **NO BOARD** *(founder decided: patch)*
 
 Remediation for `TT-BEFORE-LONG-01`, which fixed new plans only. **cate.stacey@icloud.com**, London Marathon, plan

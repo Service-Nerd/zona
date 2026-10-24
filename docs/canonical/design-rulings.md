@@ -2753,7 +2753,10 @@ MOTION goes bare at a scroll-stop mid-page. It is opaque, and keyed to **scrolle
 - **`SITE-HEADER-EDGE-01`** — `SiteHeader.tsx:91` carries its edge **permanently** where the app
   header now reveals one on scroll. The two surfaces now disagree about what a pinned header does.
 
-### SHEET-ORIGIN-01 — S1 Amendment 1 · SHIP WITH AMENDMENT · ✅ LIVE 2026-10-24 (founder approved on his phone)
+### SHEET-ORIGIN-01 — S1 Amendment 1 · SHIP WITH AMENDMENT · ⏸️ SWITCHED OFF 2026-10-24 (live for hours; approved on the preview, wrong in the iOS app)
+
+⏸️ **Off again the same day** (`SHEET_FROM_PILL = false`): in the iOS app a Coach sheet appeared mid-screen and dropped onto the pill, which the browser preview never does. The ruling stands; the release waits on `SHEET-ORIGIN-DEVICE-01` and a founder look at the app itself, not the preview.
+
 
 ✅ **Released the same day:** `SHEET_FROM_PILL = true`. The downstream check before release found the nav registered from an
 effect, which missed a nav mounted after the dashboard (onboarding, redeem) and would have left every sheet silently on

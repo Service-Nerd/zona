@@ -87,9 +87,11 @@ const EXIT_MS = 280
 //   • the panel's width is the pill's, so nothing scales horizontally;
 //   • a declarative style prop and an imperative style write cannot both own a property. This is declarative only.
 //
-// ✅ ON IN THE APP since 2026-10-24: the founder looked at `/sheet-preview` on his phone and said yes. Setting this
-// false returns every sheet to S1's bottom presentation in one line; `/sheet-preview` keeps a toggle for both.
-export const SHEET_FROM_PILL = true
+// ⏸️ OFF AGAIN, 2026-10-24 (SHEET-ORIGIN-DEVICE-01). On the same day it went on, the founder opened a Coach sheet in
+// the iOS app and it appeared mid-screen, then dropped onto the pill. The real component in a browser at 375×812 rises
+// from the pill and settles in ~0.5 s, so the app on a device differs from the preview, and the cause is not yet
+// known. `/sheet-preview` keeps the toggle, so the presentation can still be inspected while it is found.
+export const SHEET_FROM_PILL = false
 /** How far the panel's foot tucks BEHIND the pill, so the two read as one object with no seam (round 3, measured). */
 export const PILL_OVERLAP_PX = 26
 /** Enter: travels, overshoots once to ~112%, settles (round 6). */

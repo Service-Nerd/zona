@@ -11,9 +11,11 @@ import { SHEET_FROM_PILL, PILL_OVERLAP_PX } from './Sheet'
 const ROOT = path.resolve(__dirname, '../..')
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8')
 
-describe('the release — on in the app since the founder approved it (2026-10-24)', () => {
-  it('SHEET_FROM_PILL is on; setting it false is the one-line rollback to S1', () => {
-    expect(SHEET_FROM_PILL).toBe(true)
+describe('the release — OFF in the app again (SHEET-ORIGIN-DEVICE-01, 2026-10-24)', () => {
+  it('SHEET_FROM_PILL is off until the on-device defect is found; turning it on again is a decision, not a refactor', () => {
+    // Approved on the preview page, switched on, and then seen on the founder's phone appearing mid-screen and dropping
+    // onto the pill. Flip this back only with the device cause found and the founder's look at the iOS app itself.
+    expect(SHEET_FROM_PILL).toBe(false)
   })
   it('the preview turns it on through the provider, so what he sees is the real component', () => {
     const src = read('app/sheet-preview/page.tsx')
