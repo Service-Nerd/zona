@@ -97,7 +97,15 @@ function fakeTable(name: string) {
   let mode: 'select' | 'insert' | 'update' = 'select'
   let head = false
   let payload: Record<string, unknown> | null = null
-  const matching = () => rows().filter(r => filters.every(([c, v]) => r[c] === v))
+  // NO-RUNNER-TURNED-AWAY-01 — `fetchWeeklyLoad` (the checkpoint's read) narrows with `gte`/`lt` on an ISO date and
+  // `is(col, null)` on `superseded_at`. Ranges compare as strings, which is correct for ISO-8601 at one offset; `is`
+  // treats an absent column as null, as PostgREST would for a nullable one.
+  const ranges: [string, 'gte' | 'lt', string][] = []
+  const nulls: string[] = []
+  const matching = () => rows().filter(r =>
+    filters.every(([c, v]) => r[c] === v)
+    && ranges.every(([c, op, v]) => op === 'gte' ? String(r[c]) >= v : String(r[c]) < v)
+    && nulls.every(c => r[c] == null))
   const result = () => {
     if (mode === 'insert') { rows().push(payload!); return { data: null, error: null, count: 1 } }
     if (mode === 'update') {
@@ -114,6 +122,9 @@ function fakeTable(name: string) {
     insert: (row: Record<string, unknown>) => { mode = 'insert'; payload = row; return api },
     update: (row: Record<string, unknown>) => { mode = 'update'; payload = row; return api },
     eq: (c: string, v: unknown) => { filters.push([c, v]); return api },
+    gte: (c: string, v: string) => { ranges.push([c, 'gte', v]); return api },
+    lt: (c: string, v: string) => { ranges.push([c, 'lt', v]); return api },
+    is: (c: string, v: unknown) => { if (v === null) nulls.push(c); return api },
     maybeSingle: () => {
       const r = result()
       const d = r.data as Record<string, unknown>[] | null
@@ -382,6 +393,62 @@ describe('D — a designed refusal crosses the seam and is recorded', () => {
     // REFUSAL-TELEMETRY-LEVEL-01 — the five level fields, through the route.
     expect(Object.keys(detail)).toContain('fitness_level_assessed')
     expect(Object.keys(detail)).toContain('fitness_level_structural')
+  })
+})
+
+// ═══ I — NO-RUNNER-TURNED-AWAY-01: the checkpoint is measured HERE ════════════════
+describe('I — the base-build checkpoint gates on what was RUN, measured by the server', () => {
+  // A staged plan that finished last week: 3 weeks of base building, 10 → 12 km, race 21 weeks after next Monday.
+  const DAY = 86_400_000
+  const start = formatDate(new Date(nextMonday().getTime() - 5 * 7 * DAY))
+  const RACE = {
+    race_distance_km: 42.2, race_name: 'London Marathon', goal: 'finish', current_weekly_km: 10,
+    longest_recent_run_km: 8, days_available: 4, training_age: '<6mo', age: 30, injury_history: [],
+    recent_quality_training: 'none', hard_session_relationship: 'neutral', race_date: raceIn(21),
+  }
+  const stage = async () => {
+    const { generateStagedRacePlan } = await import('@/lib/plan/stagedRacePlan')
+    const plan = generateStagedRacePlan(RACE as never, start, 12)!
+    S.store.plans = [{ user_id: UID, plan_json: plan }]
+    return plan
+  }
+  const ran = (plan: Plan, kmPerWeek: number) => {
+    S.store.strava_activities = plan.weeks.flatMap(w => [0, 2].map(d => ({
+      user_id: UID, start_date: new Date(Date.parse(`${w.date}T07:00:00Z`) + d * DAY).toISOString(),
+      distance_m: (kmPerWeek / 2) * 1000, sport_type: 'Run', activity_type: 'Run', apple_health_uuid: `${w.n}-${d}`,
+    })))
+  }
+  const handover = async (plan: Plan, claimKm: number) => {
+    const { handoverInput } = await import('@/lib/plan/baseBuildHandover')
+    const gi = (plan.meta as unknown as { generator_input: Record<string, unknown> }).generator_input
+    return post({ ...handoverInput(plan, gi as never), current_weekly_km: claimKm, checkpoint: true })
+  }
+
+  it('I1 — ran the door: the race plan builds, and the observed figure is on the record beside the planned one', async () => {
+    subscribe(); const plan = await stage(); ran(plan, 13)
+    const res = await handover(plan, 13)
+    expect(res.status).toBe(200)
+    expect(eventDetail('plan_checkpoint_evaluated')).toMatchObject({ observed_km: 13, door_km: 12, staged: true })
+  })
+  it('🔴 I2 — the CLIENT\'s volume is ignored: it claims 40, the runner ran 4, §111 refuses', async () => {
+    subscribe(); const plan = await stage(); ran(plan, 4)
+    const res = await handover(plan, 40)
+    expect(res.status).toBe(422)
+    expect(((await res.json()) as { reason?: string }).reason).toBe('base_volume')
+    expect(eventDetail('plan_checkpoint_evaluated')?.observed_km).toBe(4)
+  })
+  it('I3 — no runs recorded is its own answer, never a pass and never a refusal on zero', async () => {
+    subscribe(); const plan = await stage()
+    const res = await handover(plan, 12)
+    expect(res.status).toBe(422)
+    expect(((await res.json()) as { reason?: string }).reason).toBe('checkpoint_no_runs')
+    expect(eventDetail('plan_checkpoint_evaluated')?.observed_km).toBeNull()
+  })
+  it('I4 — no base-build plan stored: 409, and nothing is generated', async () => {
+    subscribe()
+    const res = await post({ ...RACE, checkpoint: true })
+    expect(res.status).toBe(409)
+    expect(events()).not.toContain('plan_checkpoint_evaluated')
   })
 })
 

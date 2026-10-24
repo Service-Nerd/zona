@@ -193,6 +193,16 @@ function alternativesFor(
   return alts
 }
 
+/**
+ * §44's BLOCK line for this runner, in weeks: the distance's threshold plus the returning-runner shift.
+ * The single owner of that sum (NO-RUNNER-TURNED-AWAY-01): it was written out by hand in `validatePrepTime` and
+ * `runwayNote`, and the staged race plan needs it a third time for its minimum race block (Q1).
+ */
+export function prepBlockWeeks(input: GeneratorInput): number {
+  const shift = isReturningForPrepTime(input) ? GENERATION_CONFIG.PREP_TIME_RETURNING_RUNNER_SHIFT_WEEKS : 0
+  return GENERATION_CONFIG.PREP_TIME_THRESHOLDS[thresholdsKey(input.race_distance_km)].block + shift
+}
+
 /** Pre-generation check. See CoachingPrinciples §44.
  *  `planStart` is the ISO date the plan would start (Monday after today by
  *  default). It must be passed in so the result is deterministic in tests. */
@@ -202,7 +212,7 @@ export function validatePrepTime(input: GeneratorInput, planStart: string): Prep
   const thresholds = GENERATION_CONFIG.PREP_TIME_THRESHOLDS[distKey]
   const isReturning = isReturningForPrepTime(input)
   const shift = isReturning ? GENERATION_CONFIG.PREP_TIME_RETURNING_RUNNER_SHIFT_WEEKS : 0
-  const blockAt = thresholds.block + shift
+  const blockAt = prepBlockWeeks(input)
   const warnAt  = thresholds.warn  + shift
 
   if (weeks < blockAt) {
@@ -319,8 +329,7 @@ function runwayNote(
 ): string {
   if (!planStart || !input.race_date) return ''
   const weeks = weeksBetweenLocal(planStart, input.race_date)
-  const prepBlockAt = GENERATION_CONFIG.PREP_TIME_THRESHOLDS[distKey].block
-    + (isReturningForPrepTime(input) ? GENERATION_CONFIG.PREP_TIME_RETURNING_RUNNER_SHIFT_WEEKS : 0)
+  const prepBlockAt = prepBlockWeeks(input)
   // Short on weeks AND short on days: say nothing about time. §44 refuses this
   // input on the next attempt and the runner would be told twice, once wrongly.
   if (weeks < prepBlockAt) return ''

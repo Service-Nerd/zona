@@ -40,6 +40,7 @@ import { isBaseBuildPlan } from './validateStoredPlan'
 import { isDatePastWeek } from './weekResolution'
 import { raceLabelFor } from './raceLabel'
 import { raceDistanceKey } from './generationConfig'
+import { stagedRaceOf } from './stagedRacePlan'
 
 /** The seen-flag, mirroring `maintenance_transition_seen`. ⚠️ A meta key and nothing
  *  else: it must not touch `race_name` or `race_date` or the save archives the plan. */
@@ -134,12 +135,16 @@ export function weeksBetween(now: Date, raceDate: string): number | null {
  * long runs. The stated value is stale and honest; an assumed one is fresh and invented.
  */
 export function handoverInput(plan: Plan, input: GeneratorInput): GeneratorInput {
-  const meta = plan.meta as unknown as Record<string, unknown>
-  const delivered = Number(meta.base_build_target_km ?? 0)
+  // 🔴 NO-RUNNER-TURNED-AWAY-01 (Coaching Board 2026-10-24, second sitting): THIS USED TO SET `current_weekly_km` TO
+  // `meta.base_build_target_km`, the block's PLANNED end volume, and that was ruled a defect against §116 Am. 7. It
+  // credited the runner with work they may not have done: the two live base-build runners had recorded 3.1 km of a
+  // planned 21, and 0 of 16.5. The volume is now the server's to measure (`checkpoint: true` on the request), so this
+  // sends nothing that could pass for it.
+  const staged = stagedRaceOf(plan)
   return {
     ...input,
-    race_name: handoverRaceName(input),
-    ...(delivered > 0 ? { current_weekly_km: delivered } : {}),
+    race_name: staged?.race_name || handoverRaceName(input),
+    ...(staged ? { race_date: staged.race_date } : {}),
   }
 }
 

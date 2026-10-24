@@ -10411,6 +10411,40 @@ Recorded as a known enforcement gap rather than left to be discovered.
 
 ---
 
+### Amendment 9 — the staged race plan (NO-RUNNER-TURNED-AWAY-01, Coaching Board 2026-10-24, two sittings)
+
+**A runner §111 refuses on base volume is given a plan for the race they asked for**: this section's ramp first, a
+**checkpoint** named from day one, and the race block generated only once the checkpoint passes on volume they
+actually ran. The staged plan is a base-build plan (`plan_kind: 'base_build'`) carrying the race in
+`meta.staged_race`; **it contains no race-block week** (`INV-PLAN-STAGED-NO-RACE-BLOCK`), which is the mechanical
+line from the vetoed `S111-FOUNDATION-CREDIT-01`. Amendment 7 is kept exactly: §111 is never credited in advance.
+
+**Q1, where the checkpoint goes.** At the week the ramp reaches §111's door, provided at least §44's **block**
+threshold is left for the race block (`prepBlockWeeks`, reused); otherwise at `runway − block`. McMillan over the
+16-week warn line: a warn is a warning the runner can accept, not a wall. Starts below
+`BASE_BUILD_ONRAMP_MIN_START_KM` are not staged yet (the walk-run start, ruled, is not built).
+
+**Q2, what "observed" is.** The mean `totalKm` (linked + off-plan, §2 Am. 4) of the final
+`BASE_BUILD_CHECKPOINT_OBSERVED_WEEKS` (2) non-deload weeks, floored to one decimal. **Pass at or above the door, no
+tolerance** (Willy: *"a tolerance on the door is a credit by another name"*). No runs recorded is its own state, never
+a pass. The figure is computed by the server (`evaluateCheckpoint`) and **replaces** any volume the client sends.
+
+**Q4, how it is scored.** As the composed plan: the base-building weeks plus the race plan generated from the
+checkpoint with `current_weekly_km` at the door (`lib/plan/stagedScore.ts`, the one definition both harnesses use).
+The best case, and printed as such.
+
+**The handover defect, fixed.** `baseBuildHandover.ts` regenerated the race plan from the block's PLANNED end volume:
+ruled a defect against Amendment 7 (the two live base-build runners had recorded 3.1 km of a planned 21, and 0 of
+16.5). It now sends nothing that could pass for volume, and the server measures.
+
+🔴 **NOT SWITCHED ON, AND WHY (measured 2026-10-24, full marathon population, staging scored).** Of **880** staged
+cases (6.3% of weighted marathoners), **5.7% are clean**. **76.5% are refused AGAIN at the checkpoint by §111,
+because §29's fresh-return discount is applied to the volume they ran**: §29's heuristic (experienced training age,
+under 25 km/week, longest run under 10 km) scales a declared volume by 0.7, and at the checkpoint the volume is not
+declared, it is measured on a plan we prescribed. A runner who runs exactly the door is treated as running 70% of it.
+A further 8.8% are refused by §113 on the long run they typed at signup. **The two interact with this amendment in a
+way neither sitting saw; they are returned to the board before §116's flag may turn on.**
+
 ## 117. The finish-goal run-walk marathon — a lower target, not a looser rule
 
 *(Coaching Board 2026-09-20, ZERO-REJECTION-01. CORRECT WITH AMENDMENT, four binding amendments. Founder directive: "we cannot be rejecting nearly 50% of beginner runners" and "we just need to help them get to the end.")*

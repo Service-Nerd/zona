@@ -150,21 +150,24 @@ describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
   const directModules = (file: string): Set<string> =>
     new Set(Array.from(engineModules(file)).filter(m => !m.endsWith('(barrel)')))
 
-  it('generate-plan imports SEVEN engine modules, and the contract says so', () => {
+  it('generate-plan imports EIGHT engine modules, and the contract says so', () => {
     const mods = directModules('app/api/generate-plan/route.ts')
     expect(
       mods.size,
-      `generate-plan imports ${mods.size} engine modules, not 7 — update the contract. ` +
+      `generate-plan imports ${mods.size} engine modules, not 8 — update the contract. ` +
       `Found: ${Array.from(mods).sort().join(', ')}`,
-    ).toBe(7)
-    expect(CONTRACT).toContain('**seven** engine modules')
+    ).toBe(8)
+    expect(CONTRACT).toContain('**eight** engine modules')
 
     // Not just the count — the SHAPE. One entry point, and the six the contract
     // assigns to the caller. A seventh engine module sneaking back in would keep
     // the count at 7 only by displacing one of these.
     expect(mods, 'the entry point itself must be imported').toContain('plan/engine')
+    // NO-RUNNER-TURNED-AWAY-01 (2026-10-24): the eighth is `fetchWeeklyLoad`, the activity-log READ the base-build
+    // checkpoint needs. It is IO, so it is the caller's under ADR-003; the decision it feeds (`evaluateCheckpoint`) is
+    // behind the engine's door with everything else.
     for (const m of ['plan/enrich', 'plan/enrichAttribution', 'plan/enrichPartialRevert',
-                     'plan/enrichServerSave', 'plan/freeIntro', 'plan/canUseFeature']) {
+                     'plan/enrichServerSave', 'plan/freeIntro', 'plan/canUseFeature', 'coaching/weeklyActualLoad']) {
       expect(mods, `${m} is the CALLER's and must stay in the route`).toContain(m)
     }
   })

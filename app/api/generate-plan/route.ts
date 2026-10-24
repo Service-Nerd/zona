@@ -20,7 +20,7 @@ import { getUserTier } from '@/lib/trial'
 // boundary (ADR-003) — it answers 403, not 422, and a second consumer of a hosted
 // engine would not apply Zonna's price list. Collapsing those would drag the AI
 // layer and persistence inside the engine, which `ENGINE-PURITY-GATE-01` forbids.
-import { runEngine, validatePlan, type EngineOutcome } from '@/lib/plan/engine'
+import { runEngine, validatePlan, evaluateCheckpoint, isBaseBuildPlan, type EngineOutcome } from '@/lib/plan/engine'
 import { canGenerateDistance } from '@/lib/plan/canUseFeature'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
 import { errorBaseline, violationsIntroducedBy, statusForReason } from '@/lib/plan/enrichAttribution'
@@ -32,6 +32,7 @@ import { shouldServerPersist } from '@/lib/plan/enrichServerSave'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { waitUntil } from '@vercel/functions'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
+import { fetchWeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 // ─── Guard rails ──────────────────────────────────────────────────────────────
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest) {
     // Name comes from the profile, not the request body — see
     // resolveAthleteFirstName. Anything the client sent is only a fallback.
     const athleteFirstName = await resolveAthleteFirstName(req, user.id)
-    const input: GeneratorInput = athleteFirstName
+    let input: GeneratorInput = athleteFirstName
       ? { ...guard.body, athlete_name: athleteFirstName }
       : guard.body
     // ENGINE-ENTRY-01 — `planStart` (next Monday) and `today` are derived INSIDE
@@ -141,6 +142,25 @@ export async function POST(req: NextRequest) {
     // (ADR-003). Putting it on GeneratorInput would leak a UI decision into the
     // engine's input type and into every grid that sweeps those fields.
     const acceptBaseBuild = (guard.body as { accept_base_build?: unknown }).accept_base_build === true
+
+    // NO-RUNNER-TURNED-AWAY-01 (§116 Am. 9, Q2) — THE CHECKPOINT, computed HERE and never trusted from the client.
+    //
+    // The base-build handover used to send the block's PLANNED end volume as `current_weekly_km`, which is the
+    // credit-in-advance the September veto forbade (measured 2026-10-24: the two live base-build runners had recorded
+    // 3.1 of a planned 21 km, and 0 of 16.5). So the route reads the runner's stored base-build plan and what they
+    // ACTUALLY ran, and that figure replaces whatever the body carried. §111 then decides, in its one place.
+    //
+    // ⚠️ A failed read is a 500, never "ran nothing": `fetchWeeklyLoad` throws on a query error by design.
+    if ((guard.body as { checkpoint?: unknown }).checkpoint === true) {
+      const { createClient } = await import('@supabase/supabase-js')
+      const svc = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      const stored = (await readPlanJson(svc, user.id)).plan as Plan | null
+      const loads = stored && isBaseBuildPlan(stored) ? await fetchWeeklyLoad(svc, user.id, stored) : null
+      const cp = evaluateCheckpoint(input, stored, loads)
+      if (cp.telemetry) await recordOpsEvent(cp.telemetry.event, cp.telemetry.detail, user.id)
+      if (!cp.ok) return NextResponse.json(cp.body, { status: cp.status })
+      input = cp.input
+    }
     stage = 'input'
     raceKm = typeof input.race_distance_km === 'number' ? input.race_distance_km : null
 
@@ -218,6 +238,7 @@ export async function POST(req: NextRequest) {
     // composition: `plan_kind: 'base_build'` is its own plan object and both passes
     // are shaped for a race block.
     if (outcome.kind === 'base_build') {
+      if (outcome.telemetry) await recordOpsEvent(outcome.telemetry.event, outcome.telemetry.detail, user.id)
       return NextResponse.json({ plan: outcome.plan })
     }
 

@@ -1533,6 +1533,11 @@ export const GENERATION_CONFIG = {
    *  specific preparation the race actually needs. */
   BASE_BUILD_ONRAMP_MIN_REMAINING_WEEKS: 16,
 
+  /** §116 Am. 9 / Q2 (Coaching Board 2026-10-24, NO-RUNNER-TURNED-AWAY-01): the staged plan's checkpoint averages
+   *  the runner's OBSERVED `totalKm` over this many final non-deload weeks. Two, not one: a single week is one bad
+   *  Tuesday away from a wrong answer in either direction. Pass is at or above §111's door with NO tolerance (Willy). */
+  BASE_BUILD_CHECKPOINT_OBSERVED_WEEKS: 2,
+
   MAX_BASE_BUILD_RATIO: 4.0,              // delivered peak weekly_km / current_weekly_km
   BASE_BUILD_RATIO_MIN_DISTANCE_KM: 42,  // §111 governs marathon and ultra only
 

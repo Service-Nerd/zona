@@ -107,6 +107,16 @@ diffed. Plan-level change detection is `npm run verify:parity`, which hashes
 
 ---
 
+### Staged race plans (NO-RUNNER-TURNED-AWAY-01, Q4, ruled before the build)
+
+A §111 refusal that the engine can stage is scored as its **composed plan**: the base-building weeks plus the race
+plan generated from the checkpoint with `current_weekly_km` at the door. One definition, `lib/plan/stagedScore.ts`,
+called by `envelopeMeasure.ts` (and, when it gains staging, `cohort-review.ts`). Staged cases leave `refusedPct` and
+enter `fitPct`, fit only if clean; `fitPctPreCorrection` remains the founder's bar (every refusal and every unclean
+staged plan a fail). `stagedPct`, `stagedCleanPct` and `stagedObjections` are recorded and gated.
+**Shipped behaviour is the default** (`onRampEnabled()`); `measure:envelope -- --staging` scores staging explicitly and
+refuses `--write`. ⚠️ **The pass-at-the-door assumption is the best case and is printed beside the number.**
+
 ## 4. 🔴 What none of these can see
 
 **Printed at the end of every run, deliberately.** A scorecard that shows only

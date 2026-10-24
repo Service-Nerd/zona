@@ -22,6 +22,10 @@ import { auditPlanQuality, objectionsOnly, watchedOnly } from './planQuality'
 import { distanceEnvelope, DISTANCE_BANDS, ENVELOPE_PLAN_START } from './useCaseEnvelope'
 import { getRunningApplies, generateGetRunningPlan } from './getRunningPlan'
 import { weeksBetweenLocal } from './length'
+import { BaseVolumeError } from './baseVolume'
+import { stagingApplies } from './stagedRacePlan'
+import { scoreStagedCase } from './stagedScore'
+import { onRampEnabled } from './baseBuildOnRamp'
 
 /** §44's standard: a refusal must say what to do NEXT, never just "no". */
 export const REFUSAL_NAMES_NEXT_STEP = /get to|come back|build to|at least|first|instead|about \d/i
@@ -84,6 +88,17 @@ export interface DistanceMeasure {
    * the fit rate so the two can never drift apart unobserved.
    */
   watched: Record<string, number>
+  /**
+   * NO-RUNNER-TURNED-AWAY-01 (Q4) — share of the population that §111 would refuse and that is given a STAGED race
+   * plan instead. Zero unless staging is on. A staged case is not a refusal: it is scored in `fitPct` as fit only if
+   * its composed plan is clean (`stagedScore.ts`), at the door, the best case.
+   */
+  stagedPct: number
+  /** Of the population, the share whose staged composed plan is clean. */
+  stagedCleanPct: number
+  /** Coach objections and refusals on the staged composed plans, by code. Kept apart from `objections`, so a staged
+   *  plan's problems are seen as the staged plan's, not diluted into the race-plan population. */
+  stagedObjections: Record<string, number>
 }
 export interface EnvelopeMeasure {
   stride: number
@@ -100,7 +115,14 @@ const pc = (n: number, d: number) => d > 0 ? +(n / d * 100).toFixed(1) : 0
  */
 const dayBefore = (iso: string) => new Date(Date.parse(iso + 'T00:00:00Z') - 864e5).toISOString().slice(0, 10)
 
-export function measureEnvelope(stride = 29): EnvelopeMeasure {
+/**
+ * @param opts.staging score §111 refusals as STAGED race plans (NO-RUNNER-TURNED-AWAY-01). Defaults to what the
+ *   product does: `onRampEnabled()`, the flag the engine reads. ⚠️ The CI baseline is therefore SHIPPED behaviour;
+ *   the staged numbers are produced by passing `staging: true` explicitly (`measure:envelope -- --staging`), and the
+ *   baseline moves only when the flag does, with a declared re-baseline.
+ */
+export function measureEnvelope(stride = 29, opts: { staging?: boolean } = {}): EnvelopeMeasure {
+  const staging = opts.staging ?? onRampEnabled()
   const byDistance: Record<string, DistanceMeasure> = {}
   let prodFit = 0, prodTot = 0
 
@@ -108,6 +130,8 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
     let total = 0, fit = 0, refused = 0, noNextStep = 0, invalid = 0
     // ZERO-REJECTION-SERVED-01 — refused AND handed a §118 plan.
     let servedRefused = 0, doorEligible = 0, doorReached = 0
+    let staged = 0, stagedClean = 0
+    const stagedObjections: Record<string, number> = {}
     const objections: Record<string, number> = {}
     const watched: Record<string, number> = {}
 
@@ -122,6 +146,22 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
       try { plan = generateRulePlan(c.input, 'paid', ENVELOPE_PLAN_START, undefined, dayBefore(ENVELOPE_PLAN_START)) }
       catch (e) {
         if (!isDesignedRefusal(e)) { invalid++; continue }
+        // NO-RUNNER-TURNED-AWAY-01 (Q4) — with staging on, a §111 refusal that can be staged is NOT a refusal: the
+        // runner gets a plan for the race, scored as its composed plan. Answered before the refusal is counted.
+        if (staging && e instanceof BaseVolumeError) {
+          const ci = c.input as unknown as Record<string, string>
+          const ps = ci.plan_start ?? ENVELOPE_PLAN_START
+          if (stagingApplies(c.input, e.base.min_base_km, weeksBetweenLocal(ps, ci.race_date))) {
+            const sc = scoreStagedCase(c.input, ps, e.base.min_base_km)
+            if (sc) {
+              staged += c.weight
+              if (sc.clean) { stagedClean += c.weight; fit += c.weight }
+              for (const code of [...sc.objectionCodes, ...sc.errorCodes, ...(sc.refusedAtCheckpoint ? [`REFUSED-AT-CHECKPOINT:${sc.refusedAtCheckpoint}`] : [])])
+                stagedObjections[code] = +(((stagedObjections[code] ?? 0) + c.weight)).toFixed(6)
+              continue
+            }
+          }
+        }
         refused += c.weight
         // ⚠️ THE BAR MOVED ON 2026-09-20 AND THIS IS THE LINE THAT MOVED.
         //
@@ -209,6 +249,10 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
         Object.entries(objections).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, pc(v, total)])),
       watched: Object.fromEntries(
         Object.entries(watched).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, pc(v, total)])),
+      stagedPct: pc(staged, total),
+      stagedCleanPct: pc(stagedClean, total),
+      stagedObjections: Object.fromEntries(
+        Object.entries(stagedObjections).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, pc(v, total)])),
     }
     // The product rate uses the SAME corrected denominator as the per-distance
     // rate. Mixing the two would produce a whole-product figure that no distance
@@ -242,6 +286,9 @@ export const ENVELOPE_TOLERANCE: Readonly<Record<keyof DistanceMeasure, number>>
   invalidPlans: 0,              // a count of plans failing the constitution
   objections: 0.5,              // per objection code; a code appearing or vanishing counts from 0
   watched: 0.5,                 // per watched code, likewise
+  stagedPct: 0.3,               // NO-RUNNER-TURNED-AWAY-01: a share of the population, like the refusal shares
+  stagedCleanPct: 0.3,
+  stagedObjections: 0.5,        // per code, counted from 0, like objections
 }
 export const ENVELOPE_PRODUCT_TOLERANCE = 0.6
 
@@ -262,7 +309,7 @@ export function envelopeMoves(now: EnvelopeMeasure, was: EnvelopeMeasure, { exac
     if (!a || !b) { moves.push(`distance ${d}: ${b ? 'present' : 'absent'} -> ${a ? 'present' : 'absent'}`); continue }
     for (const f of Object.keys(ENVELOPE_TOLERANCE) as (keyof DistanceMeasure)[]) {
       const tol = ENVELOPE_TOLERANCE[f]
-      if (f === 'objections' || f === 'watched') {
+      if (f === 'objections' || f === 'watched' || f === 'stagedObjections') {
         const am = a[f] ?? {}, bm = b[f] ?? {}
         for (const k of Array.from(new Set(Object.keys(am).concat(Object.keys(bm))))) num(`distance ${d} ${f}.${k}`, am[k] ?? 0, bm[k] ?? 0, tol)
       } else {

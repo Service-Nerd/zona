@@ -53,7 +53,11 @@ import { PrepTimeError, DaysAvailableError, InputFieldError } from './inputs'
 import { isDesignedRefusal } from './designedRefusal'
 import { effectiveStartKm } from './startVolume'
 import { BaseVolumeError } from './baseVolume'
-import { onRampOfferFor, assessOnRamp } from './baseBuildOnRamp'
+import { assessOnRamp, onRampEnabled } from './baseBuildOnRamp'
+import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm } from './stagedRacePlan'
+import { isBaseBuildPlan } from './validateStoredPlan'
+import type { WeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
+import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
 import { generateGetRunningPlan, getRunningApplies } from './getRunningPlan'
 import { baseBuildOfferLine, baseBuildOfferTitle, baseBuildOfferWhy } from './baseBuildCopy'
 import { LongRunReadinessError } from './longRunReadiness'
@@ -64,6 +68,42 @@ import type { GeneratorInput, Plan } from '@/types/plan'
  *  enrichment chain legitimately re-validates a plan it modified (PV2-A), and a
  *  hosted engine would publish validation as part of its surface. */
 export { validatePlan } from './invariants'
+/** Re-exported for the checkpoint: the route decides whether to read the activity log from it. */
+export { isBaseBuildPlan } from './validateStoredPlan'
+
+/**
+ * NO-RUNNER-TURNED-AWAY-01 (§116 Am. 9, Q2) — THE BASE-BUILD CHECKPOINT, as an engine decision.
+ *
+ * The route reads the stored plan and the activity log (both IO, both the caller's under ADR-003) and hands them in;
+ * everything else is here, behind the one door `ENGINE-ENTRY-01` built. The observed figure REPLACES whatever volume
+ * the request carried, so a client cannot state its own checkpoint, and §111 then decides in `runEngine` as for any
+ * other input.
+ */
+export type CheckpointOutcome =
+  | { ok: true; input: GeneratorInput; telemetry: EngineTelemetry }
+  | { ok: false; status: 409 | 422; body: Record<string, unknown>; telemetry: EngineTelemetry | null }
+
+export function evaluateCheckpoint(
+  input: GeneratorInput,
+  stored: Plan | null,
+  loads: ReadonlyMap<number, WeeklyLoad> | null,
+): CheckpointOutcome {
+  if (!stored || !isBaseBuildPlan(stored) || !loads) {
+    return { ok: false, status: 409, telemetry: null,
+      body: { error: 'There is no base-building plan to check.', reason: 'checkpoint_no_base_build' } }
+  }
+  const staged = stagedRaceOf(stored)
+  const observed = observedCheckpointKm(stored, loads, staged?.checkpoint_week ?? stored.weeks.length)
+  const telemetry: EngineTelemetry = { event: 'plan_checkpoint_evaluated', detail: {
+    observed_km: observed,
+    planned_km: Number((stored.meta as unknown as Record<string, unknown>).base_build_target_km ?? 0),
+    door_km: staged?.door_km ?? null, staged: !!staged, race_distance_km: input.race_distance_km,
+  } }
+  if (observed === null) {
+    return { ok: false, status: 422, telemetry, body: { error: "We haven't seen any runs yet.", reason: 'checkpoint_no_runs' } }
+  }
+  return { ok: true, telemetry, input: { ...input, current_weekly_km: observed } }
+}
 
 type GapClass = ComposePlanWithFoundationResult['gapClass']
 
@@ -73,7 +113,7 @@ type GapClass = ComposePlanWithFoundationResult['gapClass']
  *  lets the engine stay free of the service-role client while still owning the
  *  thing only it can compute. */
 export interface EngineTelemetry {
-  event: 'plan_refused_by_design' | 'plan_input_refused'
+  event: 'plan_refused_by_design' | 'plan_input_refused' | 'plan_staged_for_race' | 'plan_checkpoint_evaluated'
   detail: Record<string, unknown>
 }
 
@@ -106,7 +146,10 @@ export type EngineOutcome =
     }
   /** §118 / P-15 — the runner asked for a base build and gets one. Its own plan
    *  object: no enrichment, no foundation composition, both shaped for a race block. */
-  | { kind: 'base_build'; plan: Plan }
+  | { kind: 'base_build'; plan: Plan
+      /** NO-RUNNER-TURNED-AWAY-01: set when the base build is a STAGED race plan the engine chose instead of a §111
+       *  refusal, so the runner who would have been refused is countable. Null for a runner-accepted base build. */
+      telemetry?: EngineTelemetry | null }
   /** A designed refusal, or an out-of-range input field. Always 422, never 500. */
   | {
       kind: 'refusal'
@@ -182,6 +225,26 @@ export function runEngine(req: EngineRequest): EngineOutcome {
   try {
     rulePlan = generateRulePlan(input, tier, planStart)
   } catch (err) {
+    // NO-RUNNER-TURNED-AWAY-01 (§116 Am. 9) — a §111 refusal becomes a plan FOR THE RACE: base building to a checkpoint,
+    // the race block built only once the checkpoint passes on observed volume. Behind §116's flag, dark by default,
+    // so with the flag off this branch is never entered and the refusal below is byte-identical to before.
+    if (err instanceof BaseVolumeError && onRampEnabled()) {
+      const staged = generateStagedRacePlan(input, planStart, err.base.min_base_km)
+      if (staged) {
+        const startKm = Number((staged.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0)
+        enforceViolations([...validateBaseBuildBlock(staged.weeks, startKm), ...validateStagedRace(staged)])
+        const s = stagedRaceOf(staged)!
+        return {
+          kind: 'base_build', plan: staged,
+          telemetry: { event: 'plan_staged_for_race', detail: {
+            race_distance_km: input.race_distance_km, current_weekly_km: input.current_weekly_km,
+            effective_start_km: Math.round(effectiveStartKm(input) * 10) / 10, door_km: s.door_km,
+            ramp_weeks: s.checkpoint_week, race_weeks: s.race_weeks, reaches_door: s.reaches_door,
+            days_available: input.days_available, goal: input.goal, training_age: input.training_age,
+          } },
+        }
+      }
+    }
     const refusal = mapRefusal(err, input, planStart, displayUnits)
     if (refusal) return refusal
     // Not a refusal: a genuine engine fault. The caller owns the 500.
@@ -273,7 +336,7 @@ function mapRefusal(
       // 76%-offered figure gets checked against real runners instead of a synthetic
       // grid, and it must accrue BEFORE the flag flips or there is nothing to compare
       // against. Calls `assessOnRamp` directly rather than the flag-gated
-      // `onRampOfferFor`, because the flag governs what the RUNNER sees, never what we
+      // any flag-gated path, because the flag governs what the RUNNER sees, never what we
       // can measure.
       ...(err instanceof BaseVolumeError ? {
         onramp: assessOnRamp(input, err.base.min_base_km, weeksBetweenLocal(planStart, input.race_date)),
@@ -318,18 +381,11 @@ function mapRefusal(
   if (err instanceof BaseVolumeError) {
     const runway = weeksBetweenLocal(planStart, input.race_date)
 
-    // §116 (P-16) — §111 names a base-building plan as the remedy and §57 made that
-    // remedy structurally impossible; `onRampOfferFor` is the remedy.
-    //
-    // ⚠️ AN OFFER, NEVER A SUBSTITUTION. We do not hand a runner who asked for a
-    // marathon an eleven-week base block instead — ADR-012's model is that a
-    // structural change surfaces for confirmation, and rendering the choice is the
-    // client's job. ⚠️ BEHIND A FLAG AND DARK BY DEFAULT: `onRampOfferFor` returns
-    // null unless ENABLE_BASE_BUILD_ONRAMP=1, so with the flag off this payload is
-    // byte-identical to what it was before §116 existed. ⚠️ §111 IS NOT CREDITED IN
-    // ADVANCE (board amendment 7) — the runner performs the block, re-declares, and
-    // is gated on OBSERVED volume.
-    const onramp = onRampOfferFor(input, err.base.min_base_km, runway)
+    // §116's offer USED to be attached here as `onramp`, behind the flag, and nothing ever rendered it; worse, its
+    // presence suppressed the base-building offer below, so switching the flag on would have left a refused runner
+    // with the message alone (found 2026-10-24, before anything changed in production). With the flag on, a
+    // stageable runner never reaches this branch (NO-RUNNER-TURNED-AWAY-01 returns the staged plan above), so the
+    // offer could only ever have been null: deleted, not left as a second, unrendered answer.
 
     // §118 / P-15 — NO REFUSAL LEAVES WITHOUT SOMETHING TO DO. The founder's
     // directive after the board twice ruled zero rejection unreachable by coaching:
@@ -345,7 +401,7 @@ function mapRefusal(
     // copy here would be two producers of one decision — the exact unsoundness that
     // moved it (`BASEBUILD-ADJUST-REBUILD-01`).
     let getRunning: Record<string, unknown> | null = null
-    if (!onramp && getRunningApplies(input)) {
+    if (getRunningApplies(input)) {
       const { endsAtKm, weeks } = generateGetRunningPlan(input, planStart, runway)
       const reachesRaceDoor = endsAtKm >= err.base.min_base_km
       // ADR-015 owns every distance string; this module never formats one itself.
@@ -374,7 +430,6 @@ function mapRefusal(
         error: err.message,
         reason: 'base_volume',
         base: err.base,
-        ...(onramp ? { onramp } : {}),
         ...(getRunning ? { get_running: getRunning } : {}),
       },
     }

@@ -338,7 +338,7 @@ export default function DashboardClient() {
    * the runner's edits live in the sheet's own state, not in a form we can re-read.
    */
   const [ackKind, setAckKind] = useState<WarnKind | null>(null)
-  const lastModifyReqRef = useRef<{ input: GeneratorInput; resets: boolean; asBaseBuild: boolean } | null>(null)
+  const lastModifyReqRef = useRef<{ input: GeneratorInput; resets: boolean; asBaseBuild: boolean; checkpoint: boolean } | null>(null)
 
   /** Regenerate from the overlaid input. Nothing is saved at this point. */
   /**
@@ -352,7 +352,7 @@ export default function DashboardClient() {
   async function acknowledgeModify() {
     const req = lastModifyReqRef.current
     if (!req || !ackKind) return
-    await runModifyPreview(withAcknowledgement(req.input, ackKind), req.resets, req.asBaseBuild)
+    await runModifyPreview(withAcknowledgement(req.input, ackKind), req.resets, req.asBaseBuild, req.checkpoint)
   }
 
   /**
@@ -365,7 +365,12 @@ export default function DashboardClient() {
    * refusing to admitting**, and under the old placement that edit silently returned a
    * RACE PLAN to a base-build runner.
    */
-  async function runModifyPreview(storedInput: GeneratorInput, resets: boolean, asBaseBuild = false) {
+  /**
+   * @param checkpoint NO-RUNNER-TURNED-AWAY-01 — this is the base-build handover, so the SERVER measures the runner's
+   * observed volume and overrides `current_weekly_km`. Carried through the §44/§52 re-send, or an acknowledged
+   * handover would quietly fall back to the volume in the body.
+   */
+  async function runModifyPreview(storedInput: GeneratorInput, resets: boolean, asBaseBuild = false, checkpoint = false) {
     // REBUILD-HR-FROM-PROFILE-01 — every in-app rebuild (Modify, the base-build handover, the acknowledgement
     // re-send) starts from `meta.generator_input`, which a Profile max-HR confirmation never updates. Lay the
     // profile's heart rate over it here, the one door all three use, before anything is held for a re-send.
@@ -376,13 +381,13 @@ export default function DashboardClient() {
     const resetsFor = (built: Plan) => resets || calendarChangedWeeks(plan, built).length > 0
     setModifyBusy(true); setModifyError(null); setAckKind(null)
     // Held for step two: §44/§52's acknowledgement re-sends THIS input plus a flag.
-    lastModifyReqRef.current = { input: nextInput, resets, asBaseBuild }
+    lastModifyReqRef.current = { input: nextInput, resets, asBaseBuild, checkpoint }
     try {
       const res = await authedFetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // The plan KIND the runner already has, carried explicitly.
-        body: JSON.stringify(asBaseBuild ? { ...nextInput, accept_base_build: true } : nextInput),
+        body: JSON.stringify({ ...nextInput, ...(asBaseBuild ? { accept_base_build: true } : {}), ...(checkpoint ? { checkpoint: true } : {}) }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -2406,7 +2411,7 @@ export default function DashboardClient() {
     if (!handover.show || !plan) return
     setHandoverBusy(true)
     try {
-      await runModifyPreview(handoverInput(plan, handover.input), true, false)
+      await runModifyPreview(handoverInput(plan, handover.input), true, false, true)
       // 🔴 THE PREVIEW RENDERS UNDER `screen === 'plan'` AND THIS CARD IS ON TODAY.
       // Without this the runner tapped "Build the marathon plan", the request
       // succeeded, and the screen did not change — indistinguishable from the

@@ -178,40 +178,6 @@ export function onRampEnabled(): boolean {
   return process.env.ENABLE_BASE_BUILD_ONRAMP === '1'
 }
 
-/**
- * The offer attached to a §111 refusal, or `null`.
- *
- * ⚠️ IT IS AN OFFER, NOT A SUBSTITUTION. The engine does not quietly hand a
- * runner who asked for a marathon plan an eleven-week base block instead —
- * ADR-012's whole model is that a structural change surfaces for confirmation.
- * The runner chooses. Rendering that choice is `P-15`'s job, not this module's.
- */
-export interface OnRampOffer {
-  weeks: number
-  /** Weeks of race plan that remain after it. */
-  remaining_weeks: number
-  /** Where the ramp starts and ends, km/week. */
-  start_km: number
-  target_km: number
-}
-
-export function onRampOfferFor(
-  input: GeneratorInput,
-  minBaseKm: number,
-  runwayWeeks: number,
-): OnRampOffer | null {
-  if (!onRampEnabled()) return null
-  const a = assessOnRamp(input, minBaseKm, runwayWeeks)
-  if (a.outcome !== 'offered') return null
-  return {
-    weeks: a.rampWeeks,
-    remaining_weeks: a.remainingWeeks,
-    start_km: a.startKm,
-    target_km: a.targetKm,
-  }
-}
-
-
 // ─── The plan itself ──────────────────────────────────────────────────────────
 
 /**

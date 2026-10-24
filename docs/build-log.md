@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-24 — NO-RUNNER-TURNED-AWAY-01 (Phase B) · the measurement said no before any runner could
+**Shipped:** The engine half of "every runner gets a plan for their race", built dark, and one live fix: the base-build handover now measures what the runner ran instead of crediting what was planned.
+**Dev learning:** The checkpoint looked like one line: feed the observed volume to the engine and let §111 decide. §111 doesn't read the volume you feed it; it reads an *effective* start that §29 scales by 0.7 for anyone who looks like a returner. So a runner who ran exactly the door would be refused at it. Nothing in the code was wrong; two correct rules met at a point neither was written for.
+**Product/creator learning:** Scored before switching on, the staged plans were 5.7% clean. Switching on would have turned "come back in two weeks" into "come back in two weeks, again, at the checkpoint". The before/after rule the founder set this morning is the only reason this was found on a spreadsheet rather than on a charity runner.
+**AI-building learning:** Three of my own checks would have lied without falsification: a liveness probe that stayed green with an invariant arm disabled, a route test that passed whether or not the handover still credited planned volume (the server override hid it), and a prototype whose four runs printed identical numbers because a second trigger path ignored my override. Each looked like evidence.
+**The honest bit:** I also broke the coaching protocol script earlier in the day with backticks inside a template string, in a docs commit, and only tsc caught it hours later.
+**Hook material:** 880 staged runners, 5.7% clean, and the cause was a 0.7 written for a different question.
+**Postable?:** yes
+
 ## 2026-10-24 — SHEET-ORIGIN-01 · switched on in the morning, switched off by the evening
 **Shipped:** Sheets from the nav pill went back off in the app (`SHEET_FROM_PILL = false`) the same day they went on.
 **Dev learning:** The founder approved the real component on `/sheet-preview`, in a browser. In the iOS app a Coach sheet appeared mid-screen and dropped onto the pill. I sampled the same component every 16 ms in a 375×812 browser: it rose from the pill and settled in half a second, never mid-screen. So the preview proved the component and said nothing about the app around it. Ruled out two causes by reading them (the nav's scroll recede changes colour only; the scroll lock is `overflow: hidden` only); the real one is still unknown.

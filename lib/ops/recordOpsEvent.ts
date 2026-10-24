@@ -59,6 +59,14 @@ export type OpsEventKind =
   // Behavioural only, no PII: the volume, distance and day-count the runner
   // typed, plus which rule fired. Never a name, never free text.
   | 'plan_refused_by_design'
+  // NO-RUNNER-TURNED-AWAY-01 (2026-10-24) — a runner §111 would have refused was given a STAGED race plan instead:
+  // base building to a checkpoint, the race block built only once observed volume passes. The twin of the refusal
+  // event, so "how many would we have turned away" stays answerable after we stop turning them away.
+  // No PII: volumes, distance, door, ramp/race weeks, days, goal, training age.
+  | 'plan_staged_for_race'
+  // NO-RUNNER-TURNED-AWAY-01 — the base-build checkpoint ran on the server: the observed figure (null = no runs
+  // recorded), the block's planned figure beside it so the gap is visible, and the door. No PII.
+  | 'plan_checkpoint_evaluated'
   // GENERATE-500-NO-TRACE-01 (2026-10-16) — the two generation outcomes that used to
   // leave NOTHING to query, so a Make-A-Wish runner whose generation failed could not
   // be told from one who never tried. `_failed` is the route's outer catch (a genuine

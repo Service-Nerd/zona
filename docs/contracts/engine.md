@@ -171,8 +171,11 @@ Named so the work is visible rather than discovered later:
 5. ~~**`ENGINE-ENTRY-01`**~~ — ✅ **DONE 2026-10-15.** `app/api/generate-plan` imported
    **eighteen** engine modules and sequenced them itself, so the **route** was the
    orchestrator and extracting would have made all eighteen public API. It now imports
-   **seven** engine modules — `lib/plan/engine.ts` plus the six the caller legitimately
-   owns — and `adjust-plan` **five**, behind `lib/coaching/adjustmentEngine.ts`.
+   **eight** engine modules — `lib/plan/engine.ts` plus the seven the caller legitimately
+   owns — and `adjust-plan` **five**, behind `lib/coaching/adjustmentEngine.ts`. The eighth
+   (2026-10-24, `NO-RUNNER-TURNED-AWAY-01`) is `fetchWeeklyLoad`, the activity-log **read** the
+   base-build checkpoint needs: IO, so the caller's; the decision it feeds,
+   `evaluateCheckpoint`, is behind the engine's door.
 
    ⚠️ **IT IS 18 → 7, NOT THE 18 → 1 THE ITEM ASKED FOR, because 1 contradicts this
    document.** Five of the eighteen (`enrich`, `enrichAttribution`, `enrichPartialRevert`,

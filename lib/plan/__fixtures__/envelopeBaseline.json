@@ -14,7 +14,10 @@
    "objections": {},
    "watched": {
     "DAYS-SHORT-SILENCED": 49.8
-   }
+   },
+   "stagedPct": 0,
+   "stagedCleanPct": 0,
+   "stagedObjections": {}
   },
   "10": {
    "fitPct": 100,
@@ -28,7 +31,10 @@
    "objections": {},
    "watched": {
     "DAYS-SHORT-SILENCED": 28.8
-   }
+   },
+   "stagedPct": 0,
+   "stagedCleanPct": 0,
+   "stagedObjections": {}
   },
   "50": {
    "fitPct": 100,
@@ -40,7 +46,10 @@
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
    "objections": {},
-   "watched": {}
+   "watched": {},
+   "stagedPct": 0,
+   "stagedCleanPct": 0,
+   "stagedObjections": {}
   },
   "100": {
    "fitPct": 100,
@@ -52,7 +61,10 @@
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
    "objections": {},
-   "watched": {}
+   "watched": {},
+   "stagedPct": 0,
+   "stagedCleanPct": 0,
+   "stagedObjections": {}
   },
   "21.1": {
    "fitPct": 96.2,
@@ -69,7 +81,10 @@
    },
    "watched": {
     "DAYS-SHORT-SILENCED": 20.4
-   }
+   },
+   "stagedPct": 0,
+   "stagedCleanPct": 0,
+   "stagedObjections": {}
   },
   "42.2": {
    "fitPct": 90.7,
@@ -88,7 +103,10 @@
    "watched": {
     "DAYS-SHORT-SILENCED": 12.8,
     "LONG-RUN-SHORT-RUNWALK": 2.8
-   }
+   },
+   "stagedPct": 0,
+   "stagedCleanPct": 0,
+   "stagedObjections": {}
   }
  }
 }

@@ -6265,5 +6265,8 @@ never the refusal view (`REFUSAL-SCREEN-01` still serves §44 and §52).
 | **Passing** | One line on Today; the plan fills in. **No ceremony** (`MODIFY-CONFIRM-DIFF-01`'s decline stands) |
 | **Not passing** | A **consent screen** in `MODIFY-CONFIRM-DIFF-01`'s shape: at most three options, the recommended one first, each saying what it changes, one factual sentence of why with the observed figure, never a training-effect claim |
 | **No runs recorded** | Its own state; the first option is to log runs or connect Apple Health. **Never a typed number** (the coaching ruling is observed volume) |
-| **Copy** | One owner, `lib/plan/checkpointCopy.ts`, in the shape of `baseBuildCopy.ts`. The words are the founder's |
+| **Copy** | One owner, created with the screens, in the shape of `lib/plan/baseBuildCopy.ts`. The words are the founder's (approved 2026-10-24) |
+
+**Held by** `INV-PLAN-STAGED-NO-RACE-BLOCK` for the engine half (built 2026-10-24: a staged plan carries no race-block
+week and ends at its checkpoint). The screen checks named in the ruling land with the screens.
 

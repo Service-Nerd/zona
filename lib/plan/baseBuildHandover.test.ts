@@ -113,17 +113,21 @@ describe('BASEBUILD-HANDOVER-01 — the race name the runner lost', () => {
 })
 
 describe('BASEBUILD-HANDOVER-01 — the input the race plan is built from', () => {
-  it('🔴 carries the volume the BLOCK DELIVERED, not what the runner typed 15 weeks ago', () => {
-    // Tom typed 10 and finishes at 37.9. Regenerating from 10 would refuse him under
-    // §111 for a base he no longer has: the engine ignoring work it prescribed.
+  it('🔴 does NOT carry the block\'s PLANNED volume: that was ruled a defect against §116 Am. 7 (2026-10-24)', () => {
+    // This test used to assert the opposite ("carries the volume the BLOCK DELIVERED", 37.9), and that was the defect:
+    // it credited Tom with a base he had not run. Measured 2026-10-24, Tom had recorded 3.1 km of a planned 21. The
+    // handover now asks the SERVER to measure (`checkpoint: true`), so nothing here may pass for the observed figure.
     const out = handoverInput(basePlan(), input())
-    expect(input().current_weekly_km).toBe(10)
-    expect(out.current_weekly_km).toBe(37.9)
+    expect((basePlan().meta as unknown as Record<string, unknown>).base_build_target_km).toBe(37.9)
+    expect(out.current_weekly_km).toBe(input().current_weekly_km)
   })
 
-  it('leaves the stated volume alone when the block recorded no target', () => {
-    const out = handoverInput(basePlan({ base_build_target_km: 0 }), input())
-    expect(out.current_weekly_km).toBe(10)
+  it('a STAGED plan hands over the race it was for, by name and date (NO-RUNNER-TURNED-AWAY-01)', () => {
+    const staged = basePlan({ staged_race: { race_name: 'London Marathon', race_date: '2027-04-25', race_distance_km: 42.2,
+      door_km: 12, checkpoint_week: 3, race_weeks: 22, reaches_door: true } })
+    const out = handoverInput(staged, input({ race_name: 'Base building' }))
+    expect(out.race_name).toBe('London Marathon')
+    expect(out.race_date).toBe('2027-04-25')
   })
 
   it('⚠️ does NOT freshen longest_recent_run_km — compliance is not knowable here', () => {

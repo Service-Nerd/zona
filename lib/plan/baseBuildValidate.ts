@@ -3,6 +3,9 @@ import type { Week, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { sessionKmSelfPaced } from './sessionDistance'
 import type { Violation } from './invariants'
+import type { Plan, GeneratorInput } from '@/types/plan'
+import { stagedRaceOf } from './stagedRacePlan'
+import { prepBlockWeeks } from './inputs'
 
 /**
  * §116 — the base-build on-ramp's own validator.
@@ -155,3 +158,35 @@ export function validateBaseBuildBlock(weeks: Week[], startKm: number): Violatio
 
   return v
 }
+
+/**
+ * `INV-PLAN-STAGED-NO-RACE-BLOCK` — NO-RUNNER-TURNED-AWAY-01 (§116 Am. 9). The mechanical line from the vetoed
+ * `S111-FOUNDATION-CREDIT-01`: a staged race plan carries the race it is for and **no week of it**. Every week is base
+ * building, the plan ends at its checkpoint, and the race block it leaves has at least §44's block weeks (Q1).
+ *
+ * ⚠️ Reads the plan, not the producer's placement function, so a producer that skipped the rule is still caught.
+ */
+export function validateStagedRace(plan: Plan): Violation[] {
+  const staged = stagedRaceOf(plan)
+  if (!staged) return []
+  const v: Violation[] = []
+  const push = (week: number, message: string, actual: string, expected: string) => v.push({
+    code: 'INV-PLAN-STAGED-NO-RACE-BLOCK', principle_ref: 'CoachingPrinciples §116 Am. 9', severity: 'error',
+    week, message, actual, expected,
+  })
+  for (const w of plan.weeks ?? []) {
+    if (w.phase !== 'base_build') {
+      push(w.n, `Staged plan week W${w.n} is phase "${w.phase}". A staged plan holds base building only; the race block is built after the checkpoint passes on observed volume.`, String(w.phase), 'base_build')
+    }
+  }
+  const len = plan.weeks?.length ?? 0
+  if (len !== staged.checkpoint_week) {
+    push(staged.checkpoint_week, `Staged plan has ${len} weeks but its checkpoint is week ${staged.checkpoint_week}. The plan must end at the checkpoint.`, `${len} weeks`, `${staged.checkpoint_week} weeks`)
+  }
+  const input = (plan.meta as unknown as { generator_input?: GeneratorInput }).generator_input
+  if (input && staged.race_weeks < prepBlockWeeks(input)) {
+    push(staged.checkpoint_week, `Staged plan leaves ${staged.race_weeks} weeks for the race block, under §44's block of ${prepBlockWeeks(input)}.`, `${staged.race_weeks}`, `>= ${prepBlockWeeks(input)}`)
+  }
+  return v
+}
+

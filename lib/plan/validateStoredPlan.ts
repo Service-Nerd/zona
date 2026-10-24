@@ -1,6 +1,6 @@
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { validatePlan, validateReshapedPlan, validateMaintenanceBlock, type Violation } from './invariants'
-import { validateBaseBuildBlock } from './baseBuildValidate'
+import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
 
 /**
  * THE SINGLE OWNER of "validate a plan we have already stored", and the only
@@ -60,7 +60,7 @@ export function isBaseBuildPlan(plan: Plan | null | undefined): boolean {
  *  against a guess. */
 function baseBuildErrors(plan: Plan): Violation[] {
   const startKm = Number((plan.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0)
-  return validateBaseBuildBlock(plan.weeks ?? [], startKm)
+  return [...validateBaseBuildBlock(plan.weeks ?? [], startKm), ...validateStagedRace(plan)]
 }
 
 /** THE predicate for the maintenance kind. Same reason as `isBaseBuildPlan`:

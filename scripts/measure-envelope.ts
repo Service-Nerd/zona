@@ -14,9 +14,13 @@ import { measureEnvelope, envelopeMoves, type EnvelopeMeasure } from '../lib/pla
 
 const BASELINE = join(__dirname, '..', 'lib', 'plan', '__fixtures__', 'envelopeBaseline.json')
 const WRITE = process.argv.includes('--write')
+// NO-RUNNER-TURNED-AWAY-01 — score §111 refusals as STAGED race plans (Q4). Never with --write: the CI gate runs with
+// §116's flag off, so a staged baseline would fail every build until the flag flips, and then it would be re-written.
+const STAGING = process.argv.includes('--staging')
+if (STAGING && WRITE) { console.error('--staging and --write together would baseline unshipped behaviour. Refused.'); process.exit(2) }
 
-const now = measureEnvelope()
-console.log(`\nFIT FOR PURPOSE — weighted population, stride ${now.stride}\n`)
+const now = measureEnvelope(undefined, { staging: STAGING || undefined })
+console.log(`\nFIT FOR PURPOSE — weighted population, stride ${now.stride}${STAGING ? '   ⚠️ STAGING ON (not shipped behaviour)' : ''}\n`)
 for (const [d, m] of Object.entries(now.byDistance)) {
   const top = Object.entries(m.objections).slice(0, 2).map(([k, v]) => `${k} ${v}%`).join(', ')
   // ⚠️ AMENDMENTS 1, 2 AND 4 ARE ALL IN THIS LINE, and none of them is cosmetic.
@@ -42,6 +46,14 @@ for (const [d, m] of Object.entries(now.byDistance)) {
     : ''
   const was = m.fitPctPreCorrection !== m.fitPct ? `  [was ${m.fitPctPreCorrection}%]` : ''
   console.log(`  ${d.padStart(5)}km  ${String(m.fitPct).padStart(5)}%${was}   refused ${m.refusedPct}% (unserved ${m.unservedRefusedPct}%)${served}   ${top}`)
+  if (m.stagedPct > 0) {
+    const so = Object.entries(m.stagedObjections).slice(0, 3).map(([k, v]) => `${k} ${v}%`).join(', ') || 'none'
+    console.log(`           staged ${m.stagedPct}% (clean ${m.stagedCleanPct}%)   staged objections: ${so}`)
+  }
+}
+if (Object.values(now.byDistance).some(m => m.stagedPct > 0)) {
+  console.log(`\n  ⚠️ STAGED plans are scored at the door, the PASS case exactly at the line: the BEST case (Q4, chair).`)
+  console.log(`     \`[was N%]\` is the founder's bar: every refusal and every unclean staged plan a fail.`)
 }
 console.log(`\n  WHOLE PRODUCT  ${now.productFitPct}%   (target 90-95%)`)
 

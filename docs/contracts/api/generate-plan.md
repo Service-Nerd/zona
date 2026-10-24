@@ -151,6 +151,7 @@ P-15 and two the UI could not send at all. Added when `PREP-ACK-NO-WRITER-01` an
 | `accept_base_build?: true` | Build the §118 **base-build** plan rather than a race plan. 🔴 **Behaviour CHANGED 2026-10-10 (`BASEBUILD-ADJUST-REBUILD-01`): it is now honoured BEFORE generation is attempted, guarded only by `getRunningApplies(input)`.** It used to live inside the `BaseVolumeError` catch, so it worked only while §111 happened to refuse the input — fine for P-15's flow (the runner is accepting an offer just made) and **unsound for a runner editing a base-build plan they already have**, because §111's refusal is not stable under the edits the Adjust sheet offers. Measured: of 8 edits across the two live base-build plans, **one flips §111 from refusing to admitting**, and under the old placement that edit silently returned a **race plan**. Returns `{ plan }` with `plan_kind: 'base_build'`. |
 | `acknowledged_prep_warning?: true` | §44 step two. The runner has seen a prep-time **warn** and consents to a compressed block. Without it a `warn` is refused (422, `reason: 'warn_unacknowledged'`). |
 | `acknowledged_days_warning?: true` | §52's twin of the same two-step pattern, for days-available. |
+| `checkpoint?: true` | **NO-RUNNER-TURNED-AWAY-01 (2026-10-24) — the base-build checkpoint.** Sent by the handover (`runModifyPreview(…, checkpoint = true)`, carried through the §44/§52 re-send). The route reads the runner's **stored** plan and activity log and `evaluateCheckpoint` (engine) **replaces `current_weekly_km` with the observed figure**: the mean `totalKm` of the final two non-deload base-build weeks. **Any volume the body carries is ignored** (route test I2). Then generation runs as normal, so §111 decides. **409** `reason: 'checkpoint_no_base_build'` when the stored plan is not a base build; **422** `reason: 'checkpoint_no_runs'` (`error: "We haven't seen any runs yet."`) when no run is recorded in the window. Records `plan_checkpoint_evaluated` (`observed_km`, `planned_km`, `door_km`, `staged`, `race_distance_km`). A failed activity read is a **500**, never "ran nothing". |
 
 🔴 **`PREP-ACK-NO-WRITER-01` (2026-10-10): the two acknowledgment flags had NO UI WRITER,
 ever.** The route returned `requires_acknowledgment: true` and `GeneratePlanScreen` read it
@@ -599,7 +600,7 @@ had before this existed.
 ## Generation modules
 
 🔴 **THE ROUTE IS NO LONGER THE ORCHESTRATOR (`ENGINE-ENTRY-01`, 2026-10-15).** It imported
-**eighteen** engine modules and sequenced them itself; it now imports **seven**, and the whole
+**eighteen** engine modules and sequenced them itself; it now imports **eight** (the eighth is the checkpoint's activity-log read, `fetchWeeklyLoad`, 2026-10-24), and the whole
 synchronous path — `planStart`, the §118 accept-base-build branch, `generateRulePlan`, the four
 designed refusals with their telemetry payloads, the §116/§118 offers, and
 `composePlanWithFoundation` — lives behind **`lib/plan/engine.ts → runEngine()`**.
@@ -688,33 +689,18 @@ This route no longer calls Anthropic directly. It goes through
 - `noRawAnthropicCalls.test.ts` fails the build if this file names
   `api.anthropic.com` again. Full contract: `docs/contracts/api/ops-ai-spend.md`.
 
-## §116 — the `onramp` field on a `base_volume` refusal (P-16, 2026-09-20)
+## §116 — the `onramp` field: REMOVED 2026-10-24; the staged race plan replaces it
 
-A **422** with `reason: 'base_volume'` may now carry an additional `onramp` object:
+🔴 **The `onramp` object documented here from 2026-09-20 is gone.** Nothing ever rendered it, and its presence
+suppressed `get_running`, so switching `ENABLE_BASE_BUILD_ONRAMP` on would have left a refused runner with the message
+alone. Clients never read it; **a `base_volume` 422 now carries `base` and (where §118 applies) `get_running` only.**
 
-```jsonc
-{
-  "error":  "…",
-  "reason": "base_volume",
-  "base":   { "...": "unchanged" },
-  "onramp": {                    // OPTIONAL — absent unless the flag is on AND a ramp is offered
-    "weeks": 6,
-    "remaining_weeks": 23,
-    "start_km": 10,
-    "target_km": 18
-  }
-}
-```
-
-- **Absent by default.** `ENABLE_BASE_BUILD_ONRAMP` is off, so this payload is byte-identical to
-  what it was before §116 existed. **Clients must treat `onramp` as optional, forever** — it is
-  also absent when the runner is below the start floor or the ramp would leave under 16 weeks.
-- ⚠️ **AN OFFER, NEVER A SUBSTITUTION.** The engine does not hand a runner who asked for a marathon
-  plan a base block instead; ADR-012's model is that a structural change surfaces for confirmation.
-- ⚠️ **§111 IS NOT CREDITED IN ADVANCE.** The offer changes nothing about the gate. The runner
-  performs the block, re-declares volume, and is re-gated on **observed** data
-  (§116 amendment 7; `S111-FOUNDATION-CREDIT-01` — crediting unperformed training — was VETOED).
-- **Nothing renders this yet.** That is `P-15`.
+**With the flag on (it is OFF in production)**, a §111 refusal the engine can stage is **not a 422**: the route
+returns **200 `{ plan }`** with `plan_kind: 'base_build'` and `meta.staged_race`
+(`race_name`, `race_date`, `race_distance_km`, `door_km`, `checkpoint_week`, `race_weeks`, `reaches_door`), and records
+`plan_staged_for_race`. The staged plan contains no race-block week (`INV-PLAN-STAGED-NO-RACE-BLOCK`); the race plan is
+generated at the checkpoint (`checkpoint: true`, above) on observed volume. ⚠️ **Not switched on** until the board
+resolves §29's discount and §113's stale long run at the checkpoint (§116 Am. 9).
 
 ## Display units — read once, used by all three AI calls (UNITS-PROSE-01, 2026-09-23)
 

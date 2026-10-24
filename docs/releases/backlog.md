@@ -3028,6 +3028,23 @@ flagged by the reorder guard, which is correct, and is the only runner-visible e
 
 ### 🟡 `NO-RUNNER-TURNED-AWAY-01` — every runner who asks for a race gets a plan for that race *(filed 2026-10-24, P0, founder; RULED 2026-10-24)* 🏃 **COACHING BOARD** (ruled) → 🧭 **DESIGN BOARD** (ruled) → 👤 **FOUNDER** (words)
 
+🔧 **PHASE B BUILT 2026-10-24 (engine + checkpoint), DARK.** `lib/plan/stagedRacePlan.ts` (placement Q1, staged plan,
+observed figure Q2), `lib/plan/stagedScore.ts` (Q4, one definition for both harnesses), `evaluateCheckpoint` in the
+engine, `checkpoint: true` on `/api/generate-plan` (server measures; client volume ignored), `INV-PLAN-STAGED-NO-RACE-BLOCK`,
+`prepBlockWeeks` (one owner of §44's block line), the never-rendered `onramp` offer removed. **Live now: the handover no
+longer credits planned volume** (ruled defect). Staging stays OFF.
+🔴 **AND THE AFTER-MEASUREMENT FOUND THE RULING DOES NOT YET SERVE ANYONE** (`measure:envelope -- --staging`, full marathon
+population): **880 staged cases, 5.7% clean.** **76.5% are refused AGAIN at the checkpoint by §111 because §29's
+fresh-return HEURISTIC** (experienced training age + under 25 km/week + longest run under 10 km → ×0.7) **discounts the
+volume they actually ran**, so a runner exactly at the door is treated as 70% of it; overriding `weeks_at_current_volume`
+does not help, the heuristic fires regardless. **8.8% refused by §113** on the long run typed at signup (the block's own
+longest session is often shorter). **Back to the Coaching Board before the flag may turn on**: does §29 apply to observed
+volume, and what is the checkpoint's long run? Then Phase C (screens, founder's words), D (walk-run start), E (after-round).
+⚠️ **Also open:** `cohort-review.ts` does not score staging yet (the envelope does; the per-band after needs it); the
+handover card's copy still states the PLANNED distance as achieved ("That's the base done", "5 km to 18.9 km") and is
+replaced by the approved checkpoint words in Phase C; `longRunReadiness.ts` reads §44's block without the returning
+shift (`prepBlockWeeks` is the owner now; whether that read is deliberate is unexamined).
+
 🏃 **SECOND SITTING 2026-10-24 — the four numbers ruled** (`coaching-2026-10-24-no-runner-turned-away-numbers.md`):
 checkpoint placement, observed volume (no tolerance), the walk-run start below 6 km/week, and the scoring definition.
 🔴 **And a live defect inside it:** `baseBuildHandover.ts` hands the race plan over on PLANNED volume. Tom

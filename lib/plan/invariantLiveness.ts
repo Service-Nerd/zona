@@ -1,7 +1,8 @@
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan, validateMaintenanceBlock, INVARIANT_CODES, type Violation } from '@/lib/plan/invariants'
-import { validateBaseBuildBlock } from '@/lib/plan/baseBuildValidate'
+import { validateBaseBuildBlock, validateStagedRace } from '@/lib/plan/baseBuildValidate'
+import { generateStagedRacePlan } from '@/lib/plan/stagedRacePlan'
 import { assessOnRamp, generateBaseBuildPlan } from '@/lib/plan/baseBuildOnRamp'
 import { generateGetRunningPlan } from '@/lib/plan/getRunningPlan'
 import { generateMaintenanceBlock } from '@/lib/plan/maintenance'
@@ -1182,6 +1183,35 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
         const w = JSON.parse(JSON.stringify(base)) as Week[]
         try { m.apply(w) } catch { continue }
         checkBB(w, m.name)
+      }
+
+      // ── NO-RUNNER-TURNED-AWAY-01 — the STAGED race plan ────────────────────
+      // Constructed for the same reason as the block above: it exists only behind §116's flag, so no corpus can
+      // contain one. One mutation per arm of INV-PLAN-STAGED-NO-RACE-BLOCK.
+      {
+        const staged = generateStagedRacePlan({ ...input, race_date: '2027-04-25' } as GeneratorInput, '2026-10-05', 12)
+        if (staged) {
+          const checkStaged = (pl: Plan, why: string) => {
+            for (const v of validateStagedRace(pl)) if (!woken.has(v.code)) woken.set(v.code, why)
+          }
+          checkStaged(staged, 'fires on a valid staged plan')
+          const STAGED_MUTATIONS: { name: string; apply: (pl: Plan) => void }[] = [
+            { name: 'staged: a race-block week inside the staged plan', apply: pl => {
+                (pl.weeks[pl.weeks.length - 1] as unknown as Poke).phase = 'build'
+              } },
+            { name: 'staged: the plan runs past its checkpoint', apply: pl => {
+                pl.weeks.push(JSON.parse(JSON.stringify(pl.weeks[pl.weeks.length - 1])))
+              } },
+            { name: 'staged: too few weeks left for the race', apply: pl => {
+                ((pl.meta as unknown as Poke).staged_race as Poke).race_weeks = 3
+              } },
+          ]
+          for (const m of STAGED_MUTATIONS) {
+            const pl = JSON.parse(JSON.stringify(staged)) as Plan
+            try { m.apply(pl) } catch { continue }
+            checkStaged(pl, m.name)
+          }
+        }
       }
 
       // ── A WHOLE base-build PLAN through validatePlan ───────────────────────
