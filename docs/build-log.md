@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-24 — SHEET-ORIGIN-01 · the seventh try at "come out of the pill", and the two bugs that would have hidden it
+**Shipped:** Every sheet in the app now comes out of the bottom nav pill and goes back into it; while it is open the pill becomes the sheet's plain white base instead of a row of tabs.
+**Dev learning:** Two invisible failures, both measured rather than seen. Raising the nav's z-index above the scrim did nothing, because its ancestor is `position: fixed` and that makes a stacking context, so the scrim still dimmed it into the grey pill the founder rejected a month ago; the sheet now draws the foot itself, in its own layer. And registering the nav from an effect meant a nav that mounted after the dashboard (onboarding, redeem) was never registered, so every sheet would have quietly stayed the old way. Ref callbacks run on every mount; effects run when their deps say.
+**Product/creator learning:** The founder asked for the same thing six times in September and the board kept giving him the more defensible animation instead. Building exactly what he said, behind a switch, and letting him look on his phone took one round.
+**AI-building learning:** The preview could never have caught the second bug: its pill never unmounts. A preview that uses the real component is still a different program if its surroundings are kinder than the app's. The downstream check found it, not the tests.
+**The honest bit:** React 18.3 silently drops the `inert` prop even though the type definitions accept it, so my first version left the "disabled" nav reachable by keyboard under a modal.
+**Hook material:** z-index 4001 over a scrim at 4000, measured underneath it.
+**Postable?:** yes
+
 ## 2026-10-23 — GTM-SEO-COMPARE-01 page 6 · the copy said one hard session a week and 21% of plans disagreed
 **Shipped:** `/why-your-easy-runs-arent-easy`: the zone-numbering, talk-test and heart-rate-error page, linked from page 3.
 **Dev learning:** The brief described a file (`comparisons.ts`) and field names (`headline`) that do not exist, and told me not to look. Matching the real entry shape took one read. It also said to derive nothing, and the type's own comment forbids the one shortcut the brief implied for the hub card.
