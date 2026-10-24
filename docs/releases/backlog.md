@@ -3028,6 +3028,11 @@ flagged by the reorder guard, which is correct, and is the only runner-visible e
 
 ### 🟡 `NO-RUNNER-TURNED-AWAY-01` — every runner who asks for a race gets a plan for that race *(filed 2026-10-24, P0, founder; RULED 2026-10-24)* 🏃 **COACHING BOARD** (ruled) → 🧭 **DESIGN BOARD** (ruled) → 👤 **FOUNDER** (words)
 
+🏃 **THIRD SITTING 2026-10-24 — the checkpoint's inputs ruled** (`coaching-2026-10-24-no-runner-turned-away-checkpoint.md`):
+C1 §29 does not apply to observed volume · C2 observed longest run · C3 target = lowest volume ≥ door from which the
+race block's week 1 is a step · C4 no-fit runners still staged · C5 re-measure. **Prototype: 5.7% → 68.7% clean**
+(31.4% no target fits the runway; they get run-walk or a later race at the checkpoint). **Next: build C1–C3 (Phase B2).**
+
 🔧 **PHASE B BUILT 2026-10-24 (engine + checkpoint), DARK.** `lib/plan/stagedRacePlan.ts` (placement Q1, staged plan,
 observed figure Q2), `lib/plan/stagedScore.ts` (Q4, one definition for both harnesses), `evaluateCheckpoint` in the
 engine, `checkpoint: true` on `/api/generate-plan` (server measures; client volume ignored), `INV-PLAN-STAGED-NO-RACE-BLOCK`,
