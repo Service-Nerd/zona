@@ -93,3 +93,9 @@ here; `rlsCoverage.test.ts` enforces that on every build.
 The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
 `.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
 of 94 Supabase warnings in a day. **A database error is now logged and the route carries on as it does with no plan**, because the plan is optional here. It used to be silent.
+
+## Session classification — QUALITY-TYPE-NO-OWNER-01 (2026-10-24)
+
+`isQualityOrLong` now reads `isQualityType` from `lib/plan/sessionRole.ts` instead of a hand-written list. The answer
+is identical for every label this route sees (it reads a `coachingSessionType` label, which already names the long run
+`'long'`). No shape change.

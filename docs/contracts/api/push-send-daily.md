@@ -88,3 +88,10 @@ Enforced by `lib/plan/supersedeCoverage.test.ts`.
 The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
 `.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
 of 94 Supabase warnings in a day. **A database error is now logged and the route carries on as it does with no plan**, because the plan is optional here. It used to be silent.
+
+## Key session — QUALITY-TYPE-NO-OWNER-01 (2026-10-24)
+
+The morning push's "key session" comes from `keySessionLabel` (`lib/coaching/voiceLines.ts`), which asks `isHardDay`
+(`lib/plan/sessionRole.ts`). **The long run now counts**: it is typed `easy` with `role: 'long_run'`, so the old local
+set's `'long'` never found it. Measured 2026-10-24: 348 future days across 28 of 36 live plans now name it. Request and
+response shapes are unchanged.
