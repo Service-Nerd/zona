@@ -1,3 +1,4 @@
+import { isHardEffort } from './sessionRole'
 import type { Week, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { sessionKmSelfPaced } from './sessionDistance'
@@ -27,10 +28,9 @@ export function validateBaseBuildBlock(weeks: Week[], startKm: number): Violatio
       .filter((s): s is Session => !!s && s.type !== 'rest' && s.type !== 'cross-train')
 
   // ── Amendment 6 (Seiler) — all easy, no quality ────────────────────────────
-  const QUALITY = new Set(['quality', 'tempo', 'intervals', 'hard', 'threshold', 'vo2max', 'cruise', 'race'])
-  for (const w of ramp) {
+    for (const w of ramp) {
     for (const s of runsOf(w)) {
-      if (QUALITY.has(s.type)) {
+      if (isHardEffort(s) || s.type === 'race') {
         v.push({
           code: 'INV-PLAN-ONRAMP-ALL-EASY',
           principle_ref: 'CoachingPrinciples §116',

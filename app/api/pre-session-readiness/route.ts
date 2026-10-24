@@ -8,7 +8,7 @@ import { orderedWeekSessions } from '@/lib/plan/weekSessions'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { computeReadiness, type DailyHealthSample, type SleepStageMinutes } from '@/lib/coaching/readinessBaseline'
 import { checkAdjustmentTriggers, type AdjustmentCheckInput } from '@/lib/coaching/planAdjustment'
-import { coachingSessionType } from '@/lib/plan/sessionRole'
+import { coachingSessionType, isQualityType } from '@/lib/plan/sessionRole'
 import { READINESS, COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import type { Plan } from '@/types/plan'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
@@ -251,7 +251,7 @@ export async function GET(req: NextRequest) {
 }
 
 function isQualityOrLong(t: string | undefined): boolean {
-  return t === 'quality' || t === 'long' || t === 'intervals' || t === 'tempo'
+  return t === 'long' || isQualityType(t)
 }
 
 /** Coerce the sleep_stages JSONB into a typed shape, or null if absent/malformed. */

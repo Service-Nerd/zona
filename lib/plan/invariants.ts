@@ -28,7 +28,7 @@ import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { requiredPaceAnchors } from './sessionCatalogueData'
 import { catalogueRowFor } from './catalogueLink'
-import { isLongRun, isShakeout, isTimeTrial, classifyStimulus, isVo2maxSession, isStructuredSession } from './sessionRole'
+import { isLongRun, isShakeout, isTimeTrial, classifyStimulus, isVo2maxSession, isStructuredSession, isQualitySession, isHardEffort } from './sessionRole'
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord } from './sessionStructureV2'
 import { hrBandForZoneString } from '@/lib/coaching/zoneRules'
@@ -941,7 +941,6 @@ export function labelImplications(label?: string | null): LabelImplications {
  *  ruleEngine's §1 yield. Until INTENSITY-RUNWAY-01 the yield carried its own copy that counted time trials as quality
  *  and left race sessions out of the denominator, so it saw a higher share than the check and converted sessions the
  *  check never asked for (5 in one 36-week 100 km plan that did not breach at all). */
-export const QUALITY_SESSION_TYPES: ReadonlySet<string> = new Set(['quality', 'intervals', 'tempo'])
 export function isRunningSession(sn: { type?: string } | null | undefined): boolean {
   return !!sn && sn.type !== 'rest' && sn.type !== 'strength' && sn.type !== 'cross-train'
 }
@@ -950,7 +949,7 @@ export function planQualityCounts(weeks: readonly { sessions: Record<string, unk
   for (const w of weeks) for (const sn of Object.values(w.sessions) as ({ type?: string } | null | undefined)[]) {
     if (!isRunningSession(sn)) continue
     running++
-    if (QUALITY_SESSION_TYPES.has(sn!.type ?? '')) hard++
+    if (isQualitySession(sn)) hard++
   }
   return { running, hard }
 }
@@ -5127,7 +5126,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // Not-running, so there is no pace to prescribe.
       if (sn.type === 'rest' || sn.type === 'strength' || sn.type === 'cross-train') continue
       // Prescribed work — the sibling check below owns these (pace OR effort).
-      if (sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo') continue
+      if (isQualitySession(sn)) continue
       // §78's recalibration time trial: maximal by design, no band to hold.
       if (sn.type === 'hard') continue
       // §121 — THE RACE IS THE TEST, NOT THE TRAINING, so it carries no pace and
@@ -5176,7 +5175,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   for (const w of plan.weeks) {
     for (const [day, sn] of Object.entries(w.sessions)) {
       if (!sn) continue
-      if (!(sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo')) continue
+      if (!(isQualitySession(sn))) continue
       const hasPace = typeof sn.pace_target === 'string' && sn.pace_target.trim().length > 0
       const hasEffort = typeof sn.rpe_target === 'number' && sn.rpe_target > 0
       if (!hasPace && !hasEffort) {
@@ -5419,7 +5418,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   for (const w of plan.weeks) {
     for (const [day, sn] of Object.entries(w.sessions)) {
       if (!sn) continue
-      if (!(sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo')) continue
+      if (!(isQualitySession(sn))) continue
       if (sn.catalogue_id) continue
       const nameMatch = V1_SESSION_CATALOGUE.find(r => r.name === sn.label)
       if (nameMatch) {
@@ -5459,7 +5458,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     const maxMain: Record<string, { mins: number, week: number, label: string }> = {}
     for (const w of plan.weeks) {
       for (const sn of Object.values(w.sessions)) {
-        if (!sn || !(sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo')) continue
+        if (!sn || !(isQualitySession(sn))) continue
         const stim = classifyStimulus(sn)
         if (!stim) continue
         // SC-10 — EFFORT-GOVERNED work (hill reps, ultra hikes: no pace_target) is
@@ -5534,7 +5533,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     const ceil = GENERATION_CONFIG.VO2MAX_WORK_MAX_MINS
     for (const w of plan.weeks) {
       for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
-        if (!sn || !(sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo')) continue
+        if (!sn || !(isQualitySession(sn))) continue
         if (classifyStimulus(sn) !== 'vo2max' || !sn.pace_target) continue
         const work = vo2maxWorkMinutes(sn)
         if (work == null) {
@@ -7024,11 +7023,10 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   {
     const foundationWeeks = plan.weeks.filter(w => w.phase === 'foundation')
     if (foundationWeeks.length > 0) {
-      const forbiddenTypes = new Set(['quality', 'tempo', 'intervals', 'hard', 'long', 'race'])
-      for (const fw of foundationWeeks) {
+            for (const fw of foundationWeeks) {
         for (const [day, session] of Object.entries(fw.sessions)) {
           if (!session) continue
-          if (forbiddenTypes.has(session.type)) {
+          if (isHardEffort(session) || session.type === 'race') {
             violations.push({
               code: 'INV-PLAN-FOUNDATION-BLOCK',
               principle_ref: 'CoachingPrinciples §57',
@@ -9198,8 +9196,7 @@ export function validateMaintenanceBlock(
   sourceRunDays: number | null = null,
 ): Violation[] {
   const violations: Violation[] = []
-  const qualityTypes = new Set(['tempo', 'threshold', 'intervals', 'quality', 'vo2max', 'cruise'])
-  // Maintenance is a tick-over: it must never schedule MORE run days than the
+    // Maintenance is a tick-over: it must never schedule MORE run days than the
   // athlete's real cadence (§75). Rest and cross-train aren't runs.
   const nonRunTypes = new Set(['rest', 'cross-train', 'cross_train'])
   // §75 rev — maintenance anchors to BASE; no week (Phase 1 or 2) may exceed it.
@@ -9243,7 +9240,7 @@ export function validateMaintenanceBlock(
 
     // INV-MAINT-QUALITY-CAP — Phase 2 allows at most PHASE2_QUALITY_PER_WEEK quality sessions
     if (!isPhase1) {
-      const qualityCount = placed.filter(([, s]) => s && qualityTypes.has(s.type)).length
+      const qualityCount = placed.filter(([, s]) => isQualitySession(s)).length
       const cap = GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK.PHASE2_QUALITY_PER_WEEK
       if (qualityCount > cap) {
         violations.push({

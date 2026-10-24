@@ -1,3 +1,4 @@
+import { isHardEffortType, isHardDay, coachingSessionType } from '@/lib/plan/sessionRole'
 import type { Session } from '@/types/plan'
 import { BRAND } from '@/lib/brand'
 import { formatSessionMetric, type DistanceUnits, type SessionMetric } from '@/lib/format'
@@ -42,6 +43,15 @@ const DEFAULT_PUSH_DISPLAY: PushDisplay = { units: 'km', metric: 'distance' }
 export interface NextKeySession {
   type: string
   dayName: string
+}
+
+/** The key-session label for a session (its `keySessionNoun` key), or null if it is not one. Used by the morning
+ *  push to find "the next key session this week". */
+export function keySessionLabel(s: Pick<Session, 'type' | 'role'> & { key_session?: boolean | null }): string | null {
+  // QUALITY-TYPE-NO-OWNER-01: a hard DAY. The long run is `easy` + `role: long_run`, so the old set's 'long' never
+  // found it; `coachingSessionType` names it 'long', which `keySessionNoun` already words as "Long run".
+  if (isHardDay(s)) return coachingSessionType(s)
+  return s.type === 'race' || s.key_session ? s.type : null
 }
 
 // Short noun for an upcoming key session — the "why" tag on an easy/recovery day.
@@ -125,7 +135,6 @@ function parseHrCeiling(hrTarget: string | null | undefined): number | null {
 // Session types where staying *under* the HR ceiling is the whole point.
 const CONTROLLED_ZONE_TYPES = new Set(['easy', 'long', 'recovery', 'run'])
 // Hard days — high HR is expected, so we acknowledge the effort, never an HR verdict.
-const EFFORT_TYPES = new Set(['quality', 'tempo', 'intervals', 'hard'])
 
 /**
  * Copy for the confident auto-link push that fires the instant a run matches a
@@ -163,7 +172,7 @@ export function buildLinkPushCopy(
   }
 
   // Hard session — credit the effort, leave the HR read for inside.
-  if (type && EFFORT_TYPES.has(type)) {
+  if (isHardEffortType(type)) {
     return { title: "That's the hard one done.", body: "Kit's reading it — how did it feel?" }
   }
 

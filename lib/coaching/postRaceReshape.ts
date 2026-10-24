@@ -14,6 +14,7 @@
 // Taper protection: weeks within TAPER_PROTECTION_WEEKS of a future race are
 // never touched — the runner may still have a Race B.
 
+import { isHardDay } from '@/lib/plan/sessionRole'
 import type { Plan, Session, Week, RaceResult } from '@/types/plan'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { TAPER_PROTECTION_WEEKS } from '@/lib/coaching/constants'
@@ -49,12 +50,9 @@ export function getDistanceBucket(km: number): DistanceBucket {
 }
 
 // ── Session classification ────────────────────────────────────────────────────
+// `isHardDay` (sessionRole.ts, QUALITY-TYPE-NO-OWNER-01): §62 converts quality AND the long run. The local set this
+// replaced named `'long'`, which no session is ever typed, so long runs were never converted.
 
-const QUALITY_TYPES = new Set<Session['type']>(['quality', 'intervals', 'tempo', 'hard', 'long'])
-
-function isQualitySession(type: Session['type']): boolean {
-  return QUALITY_TYPES.has(type)
-}
 
 // ── Session transformers ──────────────────────────────────────────────────────
 
@@ -64,6 +62,9 @@ function toRecoveryRun(session: Session, targetKm: number): Session {
   return {
     ...session,
     type: 'recovery',
+    // QUALITY-TYPE-NO-OWNER-01: the spread above carries `role: 'long_run'` onto a converted long run. It is a
+    // recovery run now, and every surface that reads the role (colour, §52, isLongRun) must see that.
+    role: undefined,
     label: 'Easy recovery',
     detail: null,
     distance_km:   km,
@@ -167,7 +168,7 @@ export function computePostRaceReshape(
       if (!session) { newSessions[d] = session; continue }
       if (session.type === 'rest') { newSessions[d] = session; continue }
 
-      if (isQualityBlackout && isQualitySession(session.type)) {
+      if (isQualityBlackout && isHardDay(session)) {
         newSessions[d] = toRecoveryRun(session, sessionBudgetKm)
         sessionsModified++
       } else {

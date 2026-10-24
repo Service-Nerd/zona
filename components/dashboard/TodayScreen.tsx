@@ -46,7 +46,7 @@ import { easyPaceAsCeiling } from '@/lib/plan/easyPaceCeiling'
 import { getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { defaultSelectedKey, selectionResetKey } from '@/lib/ui/todaySelection'
 import { isFatigueTag } from '@/lib/coaching/completionVocab'
-import { isLongRun } from '@/lib/plan/sessionRole'
+import { isLongRun, isHardEffort } from '@/lib/plan/sessionRole'
 import { parseLocalDate } from '@/lib/plan'
 import { resolveAutoMatch } from '@/lib/coaching/sessionAutoMatch'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -1142,7 +1142,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
     const phase = (currentWeek as any).phase as string | undefined
     const ws = (currentWeek as any).sessions ?? {}
     const sessionList = Object.values(ws) as any[]
-    const hasQuality = sessionList.some(s => s && ['quality','tempo','intervals','hard'].includes(s.type))
+    const hasQuality = sessionList.some(s => isHardEffort(s))
     const hasLong    = sessionList.some(s => s && isLongRun(s))
     const injuries   = (plan.meta as any)?.injury_history as string[] | undefined
 

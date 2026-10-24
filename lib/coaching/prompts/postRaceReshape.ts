@@ -19,6 +19,7 @@
  * Output format: strict JSON — the route parses this directly.
  */
 
+import { isHardEffort } from '@/lib/plan/sessionRole'
 import type { Plan, RaceResult, Week } from '@/types/plan'
 import type { DistanceBucket } from '@/lib/coaching/postRaceReshape'
 import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
@@ -105,7 +106,7 @@ export function buildPostRaceReshapePrompt(ctx: PostRaceReshapePromptContext): s
       const w = reshapedWeeks[wn - 1]
       if (!w) continue
       const hasQuality = Object.values(w.sessions).some(
-        s => s && ['quality', 'intervals', 'tempo', 'hard'].includes(s.type)
+        s => isHardEffort(s)
       )
       if (hasQuality) return wn
     }

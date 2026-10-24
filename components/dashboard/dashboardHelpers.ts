@@ -19,7 +19,7 @@ import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import type { Session } from '@/types/plan'
 import type { Zone } from '@/components/shared/ZoneBar'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
-import { isLongRun } from '@/lib/plan/sessionRole'
+import { isLongRun, isHardEffortType } from '@/lib/plan/sessionRole'
 import { sessionHRBand, zonesFromZoneString } from '@/lib/coaching/zoneRules'
 import { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
 
@@ -68,7 +68,7 @@ export function getReflectResponse(sessionType: string, rpe: number | null, fati
   }
   if (rpe === null) return ''
   const isEasy = ['easy', 'recovery', 'run'].includes(sessionType)
-  const isHard = ['quality', 'intervals', 'tempo', 'hard'].includes(sessionType)
+  const isHard = isHardEffortType(sessionType)
   const isLong = sessionType === 'long'
   const isRace = sessionType === 'race'
   if (isEasy) {

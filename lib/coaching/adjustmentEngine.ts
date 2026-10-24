@@ -75,7 +75,7 @@ import { COACHING_RULE_ENGINE_VERSION } from './constants'
 import { priorWeeks, EMPTY_LOAD, type WeeklyLoad } from './weeklyActualLoad'
 import { computeSessionDiff } from './diff/sessionDiff'
 import { validateSummaryAgainstDiff } from './diff/validateAiSummary'
-import { isLongRun } from '@/lib/plan/sessionRole'
+import { isLongRun, isQualitySession } from '@/lib/plan/sessionRole'
 import { orderedWeekSessions } from '@/lib/plan/weekSessions'
 import { validateReshapedPlan, type Violation } from '@/lib/plan/invariants'
 import { refreshWeekCopyIfStale } from '@/lib/plan/ruleEngine'
@@ -120,13 +120,10 @@ const DAY_ORDER: Record<string, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri:
 /**
  * ENGINE-01 — which analysed sessions count as quality for the fitness signal.
  *
- * ⚠️ MOVED VERBATIM from the route and deliberately NOT harmonised. Measured
- * 2026-10-15: there are nine hand-written variants of "is this a quality session"
- * across `lib/`, disagreeing on whether `'hard'` and `'long'` belong. Unifying them
- * changes WHICH rows this trigger reads, which is a Coaching Board question and not
- * a relocation. Filed, not folded.
+ * QUALITY-TYPE-NO-OWNER-01 (Coaching Board 2026-10-24): `isQualitySession`, the training-
+ * stimulus question. The time trial is excluded, as it always was here, so the calibration
+ * does not move (amendment 2: recalibration owns the time trial, ADR-014).
  */
-const QUALITY_TYPES = new Set(['quality', 'intervals', 'tempo'])
 
 /** §112 / ENGINE-01 / ENGINE-02 window sizes, moved verbatim with the code that
  *  used them. Pre-existing values; this relocation changes none of them. */
@@ -359,7 +356,7 @@ export function buildAdjustmentSignals(req: AdjustmentRequest): AdjustmentCheckI
     .filter(a => {
       if (a.pace_score === null || a.pace_score === undefined) return false
       const s = sessionFor(a)
-      return !!s && QUALITY_TYPES.has(s.type)
+      return isQualitySession(s)
     })
     .slice(0, RECENT_QUALITY_MAX)
     .map(a => ({

@@ -23,6 +23,7 @@
 // So both callers derive the flags HERE. If the invariant's claim table changes,
 // this file changes, and the prompt follows automatically.
 
+import { isQualityType } from './sessionRole'
 import type { Week } from '@/types/plan'
 
 export interface WeekIntensityFlags {
@@ -45,7 +46,7 @@ export function weekIntensityFlags(
 ): WeekIntensityFlags {
   const types = Object.values(week.sessions ?? {}).map(s => s?.type)
   return {
-    hasQuality: types.some(t => t === 'quality' || t === 'intervals' || t === 'tempo'),
+    hasQuality: types.some(t => isQualityType(t)),
     hasBenchmark: types.some(t => t === 'hard'),
     isOverloadWeek: isOverloadWeek(week, allWeeks),
   }

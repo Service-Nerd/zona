@@ -4,7 +4,7 @@ import { InlineError } from '@/components/shared/InlineError'
 import { useState } from 'react'
 import type { Plan, BenchmarkInput } from '@/types/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
-import { isLongRun } from '@/lib/plan/sessionRole'
+import { isLongRun, isQualitySession } from '@/lib/plan/sessionRole'
 import { convertPaceString, type DistanceUnits } from '@/lib/format'
 import { BenchmarkFields } from '@/components/shared/BenchmarkFields'
 import { FieldLabel } from '@/components/shared/FieldText'
@@ -34,7 +34,7 @@ function getPaceBands(plan: Plan, units: DistanceUnits): { easy: string | null; 
       if (!easy && (session.type === 'easy' || isLongRun(session) || session.type === 'recovery')) {
         if (session.pace_target) easy = session.pace_target
       }
-      if (!quality && (session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals')) {
+      if (!quality && isQualitySession(session)) {
         if (session.pace_target) quality = session.pace_target
       }
       if (easy && quality) return { easy: convertPaceString(easy, units) ?? null, quality: convertPaceString(quality, units) ?? null }

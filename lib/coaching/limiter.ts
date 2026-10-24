@@ -19,6 +19,7 @@
  * Configuration Singularity doctrine (no magic numbers in coaching code).
  */
 
+import { isHardEffortType } from '@/lib/plan/sessionRole'
 import { LIMITER, FATIGUE_HIGH_TAGS } from './constants'
 import type { HrStreamSummary } from './streamAnalysis'
 import type { PaceFadeSummary } from './paceAnalysis'
@@ -80,9 +81,8 @@ export interface LimiterInputs {
 }
 
 const EASY_TYPES = new Set(['easy', 'recovery', 'long', 'run'])
-// 'hard' added GEN-FIX-04: the §78 recalibration time trial is a maximal
-// effort and must be read as one by the limiter.
-const HARD_TYPES = new Set(['quality', 'tempo', 'intervals', 'threshold', 'hard'])
+// A hard day is `isHardEffortType` (sessionRole.ts): it includes the §78 time trial, a maximal
+// effort the limiter must read as one (GEN-FIX-04).
 
 /**
  * Picks the single most-defensible limiter hypothesis, or null.
@@ -215,7 +215,7 @@ export function inferLimiter(inputs: LimiterInputs): LimiterHypothesis | null {
   if (
     inputs.hrBelowFloorPct != null
     && inputs.hrBelowFloorPct >= LIMITER.EXECUTION_COLD_PCT_THRESHOLD
-    && HARD_TYPES.has(inputs.sessionType)
+    && isHardEffortType(inputs.sessionType)
   ) {
     return {
       category:   'execution',

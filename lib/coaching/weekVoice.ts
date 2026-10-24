@@ -1,4 +1,4 @@
-import { isLongRun } from '@/lib/plan/sessionRole'
+import { isLongRun, isHardEffort } from '@/lib/plan/sessionRole'
 import type { Plan, Week } from '@/types/plan'
 
 // ── PLAN-BASED COACHING ───────────────────────────────────────────────────
@@ -31,7 +31,7 @@ export function buildWeekVoiceContext(currentWeek: Week, plan: Plan): WeekVoiceC
   const sessions = Object.values((currentWeek as any).sessions ?? {}) as any[]
   return {
     phase: (currentWeek as any).phase as string | undefined,
-    hasQuality: sessions.some(s => s && ['quality','tempo','intervals','hard'].includes(s.type)),
+    hasQuality: sessions.some(s => isHardEffort(s)),
     hasLong: sessions.some(s => s && isLongRun(s)),
     weeksToRace: Math.max(
       0,

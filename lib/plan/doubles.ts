@@ -12,7 +12,7 @@
 import type { Session, Week } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { formatDuration } from '@/lib/format'
-import { coachingSessionType, isLongRun, isStructuredSession, isTimeTrial } from './sessionRole'
+import { coachingSessionType, isLongRun, isStructuredSession, isTimeTrial, isHardDay } from './sessionRole'
 
 type DoubleWeek = Pick<Week, 'sessions'> & { type?: string; badge?: string }
 
@@ -58,9 +58,7 @@ export function effectiveDoubleViolations(
   const out: DoubleViolation[] = []
   const raceWeek = week.type === 'race' || week.badge === 'race'
   const hard = (s: Session) =>
-    s.role === 'long_run' || s.type === 'long' || s.type === 'race' || s.type === 'hard'
-    || s.type === 'quality' || s.type === 'tempo' || s.type === 'intervals'
-    || !(s.type === 'easy' || s.type === 'recovery')
+    s.type === 'race' || isHardDay(s) || !(s.type === 'easy' || s.type === 'recovery')
   for (const [day, list] of Object.entries(effective)) {
     if (!list || list.length < 2) continue
     if (list.length > 2) out.push({ code: 'CHECK-EFFECTIVE-NO-HARD-DOUBLE', day, detail: `${list.length} sessions on one day` })

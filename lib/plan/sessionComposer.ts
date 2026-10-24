@@ -14,7 +14,7 @@ import { z } from 'zod'
 import { SESSION_FORMAT, sessionSplit } from './sessionFormat'
 import { GENERATION_CONFIG } from './generationConfig'
 import { parsePaceMidpoint } from './paceParse'
-import { isLongRun, isShakeout, isTimeTrial } from './sessionRole'
+import { isLongRun, isShakeout, isTimeTrial, isHardEffort } from './sessionRole'
 import type { Session } from '@/types/plan'
 import type { SessionCatalogueRow } from './sessionCatalogueData'
 
@@ -114,7 +114,7 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
     ? session.distance_km / total
     : null
 
-  const isQuality = session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals' || session.type === 'hard'
+  const isQuality = isHardEffort(session)
   const isLong    = isLongRun(session)
   // RACE-PACE-OVERLAY-REACH-01 (Coaching Board 2026-09-14). This gate used to be
   // `label.includes('marathon-pace')` — a LABEL substring, the D-17 class ADR-018

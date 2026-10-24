@@ -16,7 +16,7 @@
 
 import type { Plan, Week, Session, Phase } from '@/types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
-import { isLongRun } from '@/lib/plan/sessionRole'
+import { isLongRun, isHardEffort } from '@/lib/plan/sessionRole'
 import { sessionFloorsFor, type SessionFloors } from '@/lib/plan/sessionFloors'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ function scaleSession(session: Session, scaleFactor: number, floors: SessionFloo
   if (!session.distance_km) return session
   const minFloor =
     isLongRun(session)          ? floors.long
-    : session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals' || session.type === 'hard'
+    : isHardEffort(session)
       ? floors.quality
       : floors.easy
   const scaled = Math.round(session.distance_km * scaleFactor * 2) / 2  // 0.5 km precision

@@ -1995,7 +1995,7 @@ baseline entry moves** — re-baseline with the declared reason, per `cohort:sha
 to turn something green. 🔻 **P3: the gate is load-invariant since `SUITE-CONTENTION-01`, so nothing
 is broken while this waits** — it is a speed and fidelity question, not a correctness one.
 
-### 🔴 `QUALITY-TYPE-NO-OWNER-01` — **RE-MEASURED 2026-10-15 AND RE-FILED: it is eleven questions, not nine copies** *(P2)* 🏃 **COACHING BOARD**
+### ✅ `QUALITY-TYPE-NO-OWNER-01` — **SHIPPED 2026-10-24** (see the entry below). *Was: RE-MEASURED 2026-10-15 AND RE-FILED: it is eleven questions, not nine copies* *(P2)* 🏃 **COACHING BOARD**
 
 🔴 **I FILED THIS THIS MORNING OFF A GREP AND EVERY HEADLINE NUMBER WAS WRONG.** Re-derived
 before planning against it, which is the rule that exists for exactly this:
@@ -2951,7 +2951,15 @@ baseline entry moves** — re-baseline with the declared reason, per `cohort:sha
 to turn something green. 🔻 **P3: the gate is load-invariant since `SUITE-CONTENTION-01`, so nothing
 is broken while this waits** — it is a speed and fidelity question, not a correctness one.
 
-### 🟡 `QUALITY-TYPE-NO-OWNER-01` — 42 hand-written answers to *"is this a quality session"* *(filed 2026-10-15, P2; RULED 2026-10-24)* 🏃 **COACHING BOARD**
+### ✅ `QUALITY-TYPE-NO-OWNER-01` — **SHIPPED 2026-10-24.** 42 hand-written answers to *"is this a quality session"*, now three owners *(filed 2026-10-15, P2)* 🏃 **COACHING BOARD**
+
+✅ **BUILT 2026-10-24.** `isQualitySession` / `isHardEffort` / `isHardDay` in `sessionRole.ts`; every site mapped to the
+question it asks. **Three answers changed, measured on production (36 plans):** the §7 spacing guard now sees the long
+run (0 of 14 past reorders would have been flagged differently; 2 stored weeks already sit a time trial the day before a
+long run, filed as `TT-BEFORE-LONG-01`); §62 converts long runs too (1 post-race reshape ever, dismissed, so 0 runners);
+the morning push now names the long run as the key session (**348 future days across 28 plans**). Everything else is
+identical for every type that occurs. Gate: `lib/plan/qualityTypeOwner.test.ts`, falsified. ⚠️ **The ruling's §59
+readiness defect was not real:** that route reads a `coachingSessionType` label, which already says `'long'`.
 
 📐 **RE-MEASURED AND RULED 2026-10-24 — CORRECT WITH AMENDMENT.** 42 sets, not nine; `intervals`/`tempo`/`long` occur in no plan. Three owners (`isQualitySession` / `isHardEffort` / `isHardDay`); three dead-`long` sets are defects against §7, §62 and §59. Sitting: `docs/decisions/coaching-2026-10-24-quality-type-owner.md`. **Next: build, with every changed answer measured.**
 
@@ -2985,6 +2993,21 @@ calibrated against the three-type set, so widening it silently re-tunes a trigge
 converted, and a gate bounding the literal — ⚠️ **comments stripped first**, because the arm would otherwise fire on
 the prose recording this. ⚠️ **Falsify by re-adding `'hard'` to one converted site and confirming the gate moves** —
 a count that cannot move is the thing being fixed.
+
+### 🔲 `TT-BEFORE-LONG-01` — the engine puts the 5K time trial the day before the long run *(filed 2026-10-24, P2)* 🏃 **COACHING BOARD**
+
+Found measuring `QUALITY-TYPE-NO-OWNER-01`. §7 Amendment 1 rules the time trial a hard DAY, and §7 asks 48 h between
+any two stressors. One live plan breaks that twice: **cate.stacey@icloud.com**, London Marathon, plan `799c49e8`
+(generated 2026-10-10), weeks 7 and 11, Friday time trial then Saturday long run. So the engine's §7 placement does
+not count the time trial (`type: 'hard'`, deliberately outside §8's count), and no invariant caught it. **The board
+rules first:** does §7's spacing bind the §78 benchmark? If yes, it is an engine fix plus a §7 invariant reading
+`isHardDay`, and a remediation question for that plan. ⚠️ Since this ship, a session MOVE in either of those weeks is
+flagged by the reorder guard, which is correct, and is the only runner-visible effect today.
+
+### 🔲 `PUSH-TT-NOUN-01` — the morning push calls the 5K time trial "Intervals" *(filed 2026-10-24, P3)* 👤 **FOUNDER**
+
+`keySessionNoun('hard')` in `lib/coaching/voiceLines.ts` returns `'Intervals'`. The time trial is a continuous maximal
+effort, not reps (`SESSION-COLOUR-TT-01`). The word is copy, so it is the founder's.
 
 ### ⚫ ~~`BACKTEST-SECOND-ASSEMBLY-01` — the backtest harness builds the engine's input its own way~~ *(filed 2026-10-15, P3)* — **SUPERSEDED: this is the ORIGINAL FILING, left open beside its own ship record**
 

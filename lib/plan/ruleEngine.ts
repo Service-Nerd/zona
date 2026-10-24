@@ -31,7 +31,7 @@ import { formatDuration, raceDistanceDisplayName } from '@/lib/format'
 const durationText = (mins: number): string => formatDuration(mins) ?? `${Math.round(mins)} min`
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, resolveLevels, type FitnessLevel, type ResolvedLevels } from './fitnessAssessment'
-import { validatePlan, copyClaimsIntensity, enforceViolations, planQualityCounts, QUALITY_SESSION_TYPES } from './invariants'
+import { validatePlan, copyClaimsIntensity, enforceViolations, planQualityCounts } from './invariants'
 import { hasInjuryKeyword, hasVolumeCappedInjuryHistory } from './injuryScope'
 import { assessBaseBuild, baseVolumeRefusal, runWalkInadequateRefusal, BaseVolumeError } from './baseVolume'
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
@@ -45,7 +45,7 @@ import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoa
 import { normaliseDays, longRunDayFor } from './days'
 import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
-import { isLongRun, isShakeout, classifyStimulus, STIMULUS_OF_CATEGORY, isStructuredSession, isVo2maxSession } from './sessionRole'
+import { isLongRun, isShakeout, classifyStimulus, STIMULUS_OF_CATEGORY, isStructuredSession, isVo2maxSession, isQualitySession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
 import { durationForMainSet, segmentPricedDistance } from './sessionFormat'
@@ -3996,7 +3996,7 @@ function summariseWeek(
   const values = Object.values(sessions)
   return {
     phase, phaseWeekN, isDeload, isRaceWeek, isVolumePeak,
-    hasQuality:   values.some(s => s?.type === 'quality' || s?.type === 'intervals' || s?.type === 'tempo'),
+    hasQuality:   values.some(s => isQualitySession(s)),
     hasBenchmark: values.some(s => s?.type === 'hard'),
   }
 }
@@ -4089,7 +4089,7 @@ export function refreshWeekCopyIfStale(plan: Plan, weekN: number): boolean {
   }
 
   const hasIntensity = Object.values(w.sessions).some(
-    x => x?.type === 'quality' || x?.type === 'intervals' || x?.type === 'tempo')
+    x => isQualitySession(x))
   const hasBenchmark = Object.values(w.sessions).some(x => x?.type === 'hard')
   const copy = `${w.label ?? ''} | ${w.theme ?? ''}`.toLowerCase()
 
@@ -6081,7 +6081,7 @@ function applyV7TaperRationale(
   const taperHasQuality = weeks
     .filter(w => w.phase === 'taper')
     .some(w => Object.values(w.sessions).some(
-      s => s?.type === 'quality' || s?.type === 'intervals' || s?.type === 'tempo',
+      s => isQualitySession(s),
     ))
 
   let rationale: string
@@ -6240,7 +6240,7 @@ export function repriceWeeksFrom(
         // submission the board measured (quality-session sizing). Extending a
         // ruling to a population it never saw is how this repo has shipped
         // defects before. Filed as RECAL-EASY-DURATION-01.
-      } else if (session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals') {
+      } else if (isQualitySession(session)) {
         repriceStructuredSession(session, { oldAnchors, newAnchors, pace })
       }
     }
@@ -8656,7 +8656,7 @@ function buildRulePlanOnce(
       // denominator lesson, one more time).
       // INTENSITY-RUNWAY-01 — the check's own count, not a copy of it (the copy had drifted: see planQualityCounts).
       const countable = (w: Week) => GENERATION_CONFIG.INTENSITY_DISTRIBUTION_COUNTS_FOUNDATION_WEEKS || w.n >= 1
-      const isQual = (sn: Session) => QUALITY_SESSION_TYPES.has(sn.type)
+      const isQual = (sn: Session) => isQualitySession(sn)
       const share = () => {
         const { running, hard } = planQualityCounts(weeks.filter(countable))
         return running === 0 ? 0 : (hard / running) * 100

@@ -22,7 +22,7 @@ import {
 } from './constants'
 import { acuteChronicRatio, shadowLoadPct, zoneDisciplineScore, zoneDriftScore } from './loadCalc'
 import { weekHasRestDay, findQualityLongSpacingViolations } from '@/lib/plan/invariants'
-import { isLongRun } from '@/lib/plan/sessionRole'
+import { isLongRun, isHardDay, isHardDayLabel, isQualitySession, isHardEffort } from '@/lib/plan/sessionRole'
 import { restSession } from '@/lib/plan/weekSessions'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { BRAND } from '@/lib/brand'
@@ -190,9 +190,6 @@ export interface AdjustmentCheckInput {
 }
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-// 'hard' added GEN-FIX-04 — see §78. A time trial next to another hard
-// session is exactly what this guard exists to catch.
-const HARD_TYPES = new Set(['quality', 'intervals', 'tempo', 'long', 'hard'])
 const RPE_DISCONNECT_THRESHOLD = 8
 const SKIP_INJURY_VOLUME_REDUCTION = 0.85  // 15% cut per session
 const HILL_TYPES = new Set(['hills', 'hill_repeats'])
@@ -282,7 +279,7 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
     input.readinessSignal
     && input.readinessSignal.hasBaseline
     && input.readinessSignal.softeningWarranted
-    && HARD_TYPES.has(input.readinessSignal.sessionType)
+    && isHardDayLabel(input.readinessSignal.sessionType)
   ) {
     return buildReadinessAdjustment(input, input.readinessSignal)
   }
@@ -482,7 +479,7 @@ function buildEFDeclineAdjustment(input: AdjustmentCheckInput, efTrend: number):
 
   if (input.currentPhase === 'peak') {
     const sessionsAfter = sessions.map(s => {
-      if (s.type === 'quality' || s.type === 'intervals') {
+      if (isQualitySession(s)) {
         return { ...s, coach_notes: [`EF trending down ${Math.abs(Math.round(efTrend))}%. Stay disciplined — peak phase.`] as [string] }
       }
       return { ...s }
@@ -499,7 +496,7 @@ function buildEFDeclineAdjustment(input: AdjustmentCheckInput, efTrend: number):
   }
 
   const sessionsAfter = sessions.map(s => {
-    if (s.type === 'quality' || s.type === 'intervals') {
+    if (isQualitySession(s)) {
       return { ...s, type: 'easy' as const, coach_notes: ['Swapped to easy — aerobic efficiency trending down.'] as [string] }
     }
     return { ...s }
@@ -519,7 +516,7 @@ function buildFatigueAdjustment(input: AdjustmentCheckInput, consecutiveCount: n
   const sessions       = input.currentWeekSessions
   const sessionsBefore = sessions.map(s => ({ ...s }))
   const sessionsAfter  = sessions.map(s => {
-    if (s.type === 'quality' || s.type === 'intervals' || s.type === 'tempo') {
+    if (isQualitySession(s)) {
       return {
         ...s,
         type: 'easy' as const,
@@ -604,7 +601,7 @@ function buildReadinessAdjustment(
   const target = DAY_ORDER.indexOf(signal.sessionDay as (typeof DAY_ORDER)[number])
   const sessionsAfter = sessions.map((s, i) => {
     if (i !== target) return { ...s }
-    if (s.type === 'quality' || s.type === 'intervals' || s.type === 'tempo') {
+    if (isQualitySession(s)) {
       return {
         ...s,
         type: 'easy' as const,
@@ -708,7 +705,7 @@ function buildSkipAdjustment(
   if (reason === 'Injury / illness') {
     const sessionsAfter = sessions.map(s => {
       // Quality/interval sessions: add injury caution note (§21 content filter)
-      if (s.type === 'quality' || s.type === 'intervals') {
+      if (isQualitySession(s)) {
         return {
           ...s,
           coach_notes: ['Injury concern flagged. Keep effort controlled — no pushing through discomfort.'] as [string],
@@ -736,6 +733,18 @@ function buildSkipAdjustment(
   }
 
   return null
+}
+
+/**
+ * §7: any two consecutive days that are both stressors (QUALITY-TYPE-NO-OWNER-01). `isHardDay` counts the long run
+ * by ROLE and the §78 time trial; the set this replaced named `'long'`, which no session is ever typed, so the guard
+ * never saw a long run. Exported so the rule is testable on its own.
+ */
+export function hasBackToBackHardDays(days: ReadonlyArray<Session | null | undefined>): boolean {
+  for (let i = 1; i < days.length; i++) {
+    if (isHardDay(days[i - 1]) && isHardDay(days[i])) return true
+  }
+  return false
 }
 
 /**
@@ -768,15 +777,7 @@ function buildReorderAdjustment(
   sessionsAfter[toIdx]   = fromSession
 
   // §7 check: detect back-to-back hard sessions after the move
-  let hardAdjacentViolation = false
-  for (let i = 1; i < sessionsAfter.length; i++) {
-    const prev = sessionsAfter[i - 1]
-    const curr = sessionsAfter[i]
-    if (prev && curr && HARD_TYPES.has(prev.type) && HARD_TYPES.has(curr.type)) {
-      hardAdjacentViolation = true
-      break
-    }
-  }
+  const hardAdjacentViolation = hasBackToBackHardDays(sessionsAfter)
 
   // §64 check (PL-MOVE, Decision #4): the move must not eliminate the week's
   // only rest day. Reuses the shared `weekHasRestDay` helper that validatePlan
@@ -1002,7 +1003,7 @@ export function validateVolumeIncrease(beforeKm: number, afterKm: number): boole
 /** Validates quality session spacing (min 48hr gap between quality sessions). */
 export function validateQualitySpacing(sessions: { type: string; scheduledDate: Date }[]): boolean {
   const qualitySessions = sessions
-    .filter(s => ['quality', 'intervals', 'tempo', 'hard'].includes(s.type))
+    .filter(s => isHardEffort(s))
     .sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime())
 
   for (let i = 1; i < qualitySessions.length; i++) {

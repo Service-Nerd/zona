@@ -28,6 +28,7 @@
  *   no RPE → 'close' (something was logged; we just don't have effort data)
  */
 
+import { isHardEffortType } from '@/lib/plan/sessionRole'
 import { formatDistance, type DistanceUnits } from '@/lib/format'
 
 export type ManualVerdict = 'nailed' | 'close' | 'off_target' | 'concerning'
@@ -39,7 +40,7 @@ export function deriveManualVerdict(
   if (rpe === null) return 'close'
 
   const isEasy     = ['easy', 'recovery', 'run'].includes(sessionType)
-  const isHard     = ['quality', 'intervals', 'tempo', 'hard'].includes(sessionType)
+  const isHard     = isHardEffortType(sessionType)
   const isLong     = sessionType === 'long'
   const isRace     = sessionType === 'race'
 
@@ -90,7 +91,7 @@ export function manualFeedbackText(
   }
 
   const isEasy = ['easy', 'recovery', 'run'].includes(sessionType)
-  const isHard = ['quality', 'intervals', 'tempo', 'hard'].includes(sessionType)
+  const isHard = isHardEffortType(sessionType)
   const isLong = sessionType === 'long'
   const isRace = sessionType === 'race'
 

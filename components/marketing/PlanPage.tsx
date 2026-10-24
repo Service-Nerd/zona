@@ -5,6 +5,7 @@
 // FAQPage + BreadcrumbList JSON-LD, and internal links to sibling plans. Voice +
 // Warm Slate tokens only (no hardcoded brand string / colour).
 
+import { isHardEffort } from '@/lib/plan/sessionRole'
 import Link from 'next/link'
 import { Section } from '@/components/marketing/Section'
 import { BRAND } from '@/lib/brand'
@@ -24,8 +25,7 @@ const SECTION_MAX = 760
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 const DAY_LABEL: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' }
 
-const QUALITY_TYPES = new Set(['quality', 'intervals', 'tempo', 'hard'])
-const isQualitySession = (s: Session) => QUALITY_TYPES.has(s.type)
+const isQualitySession = (s: Session) => isHardEffort(s)
 
 /**
  * The hard session, as something a runner can actually follow.

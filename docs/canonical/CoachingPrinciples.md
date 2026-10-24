@@ -1196,6 +1196,29 @@ Enforced by `INV-PLAN-TAPER-DELIVERED-DEPTH` (`warn`).
 
 Note: the rebuild spec proposed 24 h for the second value. Overridden to 48 h on coaching grounds — for the target audience, 24 h is the typo, not the rule.
 
+### Amendment 1 — three questions, three owners (QUALITY-TYPE-NO-OWNER-01, Coaching Board 2026-10-24)
+
+"Hard" was being asked three different ways under one word, by 42 hand-written type sets. Each question now has one
+answer, in `lib/plan/sessionRole.ts`:
+
+| Owner | Question | Counts |
+|---|---|---|
+| `isQualitySession` | Is this a training stimulus? (§1 and §8 counts, ENGINE-01) | `quality` (+ legacy `intervals`, `tempo`) |
+| `isHardEffort` | Was this effortful? (RPE, fatigue, coaching flag, copy) | the above + `hard`, the §78 time trial |
+| `isHardDay` | Is this a stressor for spacing? (this section, §62, a key session) | hard effort + the long run, **by role** |
+
+**Why.** The long run is typed `easy` with `role: 'long_run'`. The sets that named `'long'` to catch it never did: this
+section's own spacing guard in `planAdjustment.ts`, §62's post-race conversion and the morning push's key session were
+all blind to the long run. A time trial is a measurement, not a training stimulus (§78), so it stays out of the
+quality count; it is still a maximal effort and still a stressor, so it counts for this section.
+
+**Not this owner:** §57's foundation-week check forbids hard effort and the race, not hard days, so an easy long run
+stays legal there. A per-type zone or wording map is a different question and keeps its own table.
+
+**Enforced by** `lib/plan/qualityTypeOwner.test.ts`: the three questions, the restored §7 and §62 behaviour, and a gate
+that no hand-written set naming two quality types survives outside `sessionRole.ts` (named exemptions only, each
+checked still to match a real line).
+
 ---
 
 ## 8. Quality session frequency — fitness ceiling

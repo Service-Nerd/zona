@@ -58,6 +58,38 @@ export function isTimeTrial(s: ClassifiableSession): boolean {
  * silently misses it. Always derive the signal through here, never from a raw
  * `session.type`.
  */
+/**
+ * QUALITY-TYPE-NO-OWNER-01 (Coaching Board 2026-10-24) — three questions, three owners.
+ *
+ * There were 42 hand-written type sets answering "is this a quality session", in at least eight shapes, and they
+ * disagreed on `hard` and `long`. Measured, they were three different questions sharing one word:
+ *
+ *   isQualitySession  a training STIMULUS: what §1 and §8 count, what ENGINE-01 was calibrated on. Not the time trial:
+ *                     §78 types it `hard` so a benchmark never consumes a quality slot ("a measurement, not a
+ *                     training stimulus").
+ *   isHardEffort      was it EFFORTFUL: RPE checks, fatigue flags, the coaching flag, the copy. Includes the time trial.
+ *   isHardDay         is it a STRESSOR for spacing (§7: "a quality session and a long run ... cannot be back-to-back"),
+ *                     the post-race blackout (§62) and the morning push's key session. Includes the long run, by ROLE.
+ *
+ * ⚠️ THE LONG RUN IS NEVER `type: 'long'`. It is `easy` + `role: 'long_run'`, and `intervals`, `tempo` and `long` occur in
+ * no generated or stored plan (measured: 5,664 cohort plans, 36 production plans). Five sets named `long` to catch the
+ * long run and never did; three of them were defects against written doctrine. The legacy `intervals`/`tempo` stay in
+ * the sets so a stored plan that ever carried them still classifies.
+ */
+const QUALITY_TYPE_SET: ReadonlySet<string> = new Set(['quality', 'intervals', 'tempo'])
+const HARD_EFFORT_TYPE_SET: ReadonlySet<string> = new Set([...Array.from(QUALITY_TYPE_SET), 'hard'])
+
+/** For a caller holding only a type string. */
+export function isQualityType(t: string | null | undefined): boolean { return t != null && QUALITY_TYPE_SET.has(t) }
+/** For a caller holding only a type string. */
+export function isHardEffortType(t: string | null | undefined): boolean { return t != null && HARD_EFFORT_TYPE_SET.has(t) }
+
+export function isQualitySession(s: ClassifiableSession | null | undefined): boolean { return !!s && isQualityType(s.type) }
+export function isHardEffort(s: ClassifiableSession | null | undefined): boolean { return !!s && isHardEffortType(s.type) }
+export function isHardDay(s: ClassifiableSession | null | undefined): boolean { return !!s && (isHardEffort(s) || isLongRun(s)) }
+/** `isHardDay` for a caller holding a `coachingSessionType` label ('long' for the long run) rather than the session. */
+export function isHardDayLabel(label: string | null | undefined): boolean { return label === 'long' || isHardEffortType(label) }
+
 export function coachingSessionType(s: ClassifiableSession): string {
   if (isLongRun(s)) return 'long'
   return (s.type as string) ?? 'easy'

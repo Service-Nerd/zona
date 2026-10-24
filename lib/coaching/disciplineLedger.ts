@@ -40,6 +40,7 @@
 // computed a real answer that no free runner could ever see. If you move the card again,
 // this comment and `feature-registry.md` are the two records that go stale silently.
 
+import { isHardEffort } from '@/lib/plan/sessionRole'
 import type { Plan, Week } from '@/types/plan'
 import { FATIGUE_HIGH_TAGS } from './constants'
 
@@ -84,7 +85,6 @@ export interface LedgerOutcome {
 export const LEDGER_FREE_MIN_COMPLETION_PCT = 0.75
 export const LEDGER_PAID_MIN_ZONE_DISCIPLINE_PCT = 75 // run_analysis.hr_in_zone_pct is 0–100, not 0–1
 
-const QUALITY_FAMILY = new Set(['quality', 'tempo', 'intervals', 'hard'])
 const DOW_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 
 // Determine the week_n that contains `asOfDate`. Plan weeks carry a `date`
@@ -121,7 +121,7 @@ function qualitySessionDays(week: Week): string[] {
   const days: string[] = []
   for (const key of DOW_KEYS) {
     const s = week.sessions?.[key]
-    if (s && QUALITY_FAMILY.has(s.type)) days.push(key)
+    if (isHardEffort(s)) days.push(key)
   }
   return days
 }

@@ -7,7 +7,7 @@ import { sendApnsPush } from '@/lib/apnpush'
 import { getUserTier } from '@/lib/trial'
 import { getSessionsForDate, isDateBeforePlan, isPlanComplete, parseLocalDate, readPlanJson } from '@/lib/plan'
 import { resolveEffectiveDay, DAY_KEYS, type DayKey, type SessionOverride, SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
-import { buildDailyPushTitle, buildDailyPushBody, type NextKeySession } from '@/lib/coaching/voiceLines'
+import { buildDailyPushTitle, buildDailyPushBody, keySessionLabel, type NextKeySession } from '@/lib/coaching/voiceLines'
 import { pushSessionFor, strengthSessionOn } from '@/lib/strength-bridge/serverDay'
 import { recordNotification } from '@/lib/notifications'
 import { normalizeDisplayPrefs } from '@/lib/userPrefs'
@@ -43,9 +43,7 @@ const FULL_DAY_NAMES: Record<DayKey, string> = {
   mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
   fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
 }
-// Demanding sessions an easy/recovery day exists to protect. key_session=true
-// (long runs, race-pace tempos, tune-ups) also qualifies.
-const KEY_SESSION_TYPES = new Set(['quality', 'tempo', 'intervals', 'hard', 'long', 'race'])
+// Demanding sessions an easy/recovery day exists to protect: `keySessionLabel` (lib/coaching/voiceLines.ts).
 
 // The next key session later in THIS training week — gives the morning push a
 // "why" on easy/recovery days ("Easy 45m today. Intervals Thursday."). "This
@@ -60,9 +58,8 @@ function findNextKeyThisWeek(
   for (let i = start + 1; i < DAY_KEYS.length; i++) {
     // Every session on the day, AM then PM: already slot-aware, so no sole-session read here.
     for (const { session: s } of effectiveWeek[DAY_KEYS[i]] ?? []) {
-      if (KEY_SESSION_TYPES.has(s.type) || s.key_session) {
-        return { type: s.type, dayName: FULL_DAY_NAMES[DAY_KEYS[i]] }
-      }
+      const key = keySessionLabel(s)
+      if (key) return { type: key, dayName: FULL_DAY_NAMES[DAY_KEYS[i]] }
     }
   }
   return null

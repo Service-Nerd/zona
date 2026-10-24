@@ -1,5 +1,6 @@
 // Extracted from DashboardClient.tsx — canonical location going forward.
 // DashboardClient imports from here; do not duplicate.
+import { isHardEffortType } from '@/lib/plan/sessionRole'
 
 export type CoachingFlag = 'ok' | 'watch' | 'flag'
 
@@ -16,7 +17,7 @@ export function getCoachingFlag({
   zone2Ceiling: number | undefined
 }): CoachingFlag | null {
   const isEasy  = ['easy', 'run', 'long', 'recovery'].includes(sessionType)
-  const isHard  = ['quality', 'intervals', 'tempo', 'hard'].includes(sessionType)
+  const isHard  = isHardEffortType(sessionType)
   const isRace  = sessionType === 'race'
 
   if (!isEasy && !isHard && !isRace) return null

@@ -13,18 +13,17 @@ import { createHash } from 'node:crypto'
 import type { Plan, Session, Week } from '@/types/plan'
 import type { SessionOverride } from '@/lib/plan/effectiveSessions'
 import { getSessionsForDate, parseLocalDate, dayKeyForDate } from '@/lib/plan/weekResolution'
-import { isLongRun } from '@/lib/plan/sessionRole'
+import { isLongRun, isHardEffort } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { INJURY_TAGS, type InjuryTag, type RunContext, type RunDay, type RunPhase, type RunRole, type RunWeek } from '@/packages/strength'
 
-const QUALITY_TYPES = new Set(['quality', 'tempo', 'intervals', 'hard'])
 
 export function runRoleOf(s: Session | null | undefined): RunRole {
   if (!s || s.type === 'rest') return 'rest'
   if (s.type === 'race') return 'race'
   if (s.type === 'strength' || s.type === 'cross-train') return 'cross'
   if (isLongRun(s)) return 'long'
-  if (QUALITY_TYPES.has(s.type)) return 'quality'
+  if (isHardEffort(s)) return 'quality'
   if (s.type === 'recovery') return 'recovery'
   return 'easy'
 }

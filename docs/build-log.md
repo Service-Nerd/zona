@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-24 — QUALITY-TYPE-NO-OWNER-01 · the long run was never a hard day
+**Shipped:** One place now answers "is this session hard?", three ways, and the three guards that never saw a long run see it.
+**Dev learning:** The long run is typed `easy` with `role: 'long_run'`. Five sets named `'long'` to catch it, and no session has ever been typed `'long'`, so each looked right and caught nothing. The other lesson was the gate: my hand list of sites was 38, the gate found 46 on its first run. Seven were real copies or a different question that needed naming, and only the gate knew.
+**Product/creator learning:** The biggest change a runner sees is the smallest edit. The morning push now calls the long run the key session, on 348 days across 28 of 36 plans. The two guards that mattered for safety (spacing, post-race) had fired on a long run zero times between them, and §62 has fired once in the app's life.
+**AI-building learning:** The board ruled on three defects. One wasn't real: the readiness route reads a label that already says `'long'`. I'd have "fixed" it into the same answer. Reading the code after the ruling, not just before, caught it. And a 22-file edit script failed half-way through the first time and wrote one file; the second version built every file in memory and wrote nothing until all of them passed.
+**The honest bit:** Measuring the change found a live marathon plan with a 5K time trial the day before the long run, twice. The engine's own spacing check doesn't count the time trial. That's a new item, not this one.
+**Hook material:** 42 copies of one question, 3 different answers, and the word they all used for the long run was one no session has ever carried.
+**Postable?:** yes
+
 ## 2026-10-24 — AUDIT-REVERT-RESHIP-01 · the audit remembered the revert and forgot the re-ship
 **Shipped:** The docs audit no longer flags an item as "reverted but live" when it was reverted once and shipped again later.
 **Dev learning:** The check collected every scope that ever had a `revert()` commit and never asked what came after. A history check has to read the LATEST relevant event per item, not any event.

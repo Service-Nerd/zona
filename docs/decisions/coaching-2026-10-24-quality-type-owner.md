@@ -84,6 +84,16 @@ legal; (2) ENGINE-01 stays on `isQualitySession`, so its calibration does not mo
 
 None.
 
+## Built (2026-10-24)
+
+Every site mapped; gate `lib/plan/qualityTypeOwner.test.ts`, falsified (re-adding a set at `weekVoice.ts` turns it red;
+dropping the long run from the §7 helper turns the §7 arm red). Measured on production, 36 plans: §7 guard 0 of 14
+past reorders changed, 2 stored weeks newly visible (`TT-BEFORE-LONG-01`); §62 one reshape ever, dismissed; push 348
+future days in 28 plans now name the long run. **Correction to the conflict scan:** the §59 readiness site was not a
+defect. `pre-session-readiness` reads a `coachingSessionType` label, which already names the long run `'long'`; it
+now reads `isQualityType` with an identical answer. Eight further sites answer a different question (a zone, band or
+word per type) and are exempt from the gate by name.
+
 ## What this does not settle
 
 Whether the long-run trim on a bad-readiness day (§59) and the long-run conversion in the post-race blackout (§62)

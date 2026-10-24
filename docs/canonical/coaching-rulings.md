@@ -85,7 +85,7 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
-## 2026-10-24 — QUALITY-TYPE-NO-OWNER-01 · CORRECT WITH AMENDMENT · RULED, not built
+## 2026-10-24 — QUALITY-TYPE-NO-OWNER-01 · CORRECT WITH AMENDMENT · BUILT 2026-10-24
 
 Re-measured: 42 hand-written session-type sets (not nine); `intervals`, `tempo` and `long` occur in no generated or
 stored plan. Three questions, three owners in `sessionRole.ts`: `isQualitySession` (stimulus/§8 count, NOT the time
@@ -93,6 +93,8 @@ trial, §78), `isHardEffort` (+ time trial), `isHardDay` (+ long run by role, §
 are defects against written doctrine (§7 spacing guard, §62 post-race blackout, §59 readiness long-run trim); §57's
 foundation invariant is harmless and must not widen. ENGINE-01 stays on `isQualitySession`. Every changed answer
 measured before shipping. Sitting: `docs/decisions/coaching-2026-10-24-quality-type-owner.md`.
+**Built:** principle as §7 Amendment 1. The §59 site turned out not to be a defect (it reads a `coachingSessionType`
+label); §7, §62 and the push key session changed. Follow-on: `TT-BEFORE-LONG-01`.
 
 ## 2026-10-23 — GTM-SEO-COMPARE-01 page 6 claims · CORRECT WITH AMENDMENT · BUILT (founder approved the words)
 
