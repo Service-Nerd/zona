@@ -6245,3 +6245,25 @@ The Today `ZoneBar` stays (HOLD-THE-ZONE-01). **No time range on the card** (it 
 *"Watch HR hasn't landed yet."* / retry) · L4 hand-logged avg HR (reuse the summary's amber ↑) · L5 hand-logged, no zone element. The
 trace is revealed after RPE. Easy, long and recovery draw as a ceiling, not a band. Every change replaces or folds,
 never adds height in the common state; each phase checks its screen's must-not-lose list.
+
+---
+
+## Staged race plan — base building, a checkpoint, then the race (NO-RUNNER-TURNED-AWAY-01)
+
+*(Design Board 2026-10-24, SHIP WITH AMENDMENT (10). 🔲 **Ruled, not built**: the components below are the ones the
+build must use; nothing renders this state yet. Coaching meaning: `CoachingPrinciples.md` §116 Am. 9.)*
+
+**When.** A runner asks for a race their weekly volume cannot yet build to (§111). They get the race plan, staged,
+never the refusal view (`REFUSAL-SCREEN-01` still serves §44 and §52).
+
+| Element | Pattern |
+|---|---|
+| **First phase** | The existing `PhaseSummaryCard`, titled **"Base building"** (the SLT's name; "on-ramp", "get-running", "pre-plan" never reach a runner). It names the **checkpoint**: its week and the weekly volume it asks. A 0 km/week runner's first phase is **"Walk-run start"** |
+| **The race block before the checkpoint** | An **outline**: an additive `PlanArc` prop for not-yet-built weeks, drawn from `--line`, no fill, no session rows; and a phase card saying it is built after the checkpoint. **Never a second bar row beside `PlanArc`** (`PreviewPhaseStrip` DON'T SHIP). Marketing renders of `PlanArc` are unchanged |
+| **Today** | Mentions the checkpoint **only in the last week of base building**, in the existing coach-note slot |
+| **The checkpoint** | The **observed** weekly figure, said plainly. **No progress meter** toward the target (Sierra: a filling bar turns a coaching threshold into a game) |
+| **Passing** | One line on Today; the plan fills in. **No ceremony** (`MODIFY-CONFIRM-DIFF-01`'s decline stands) |
+| **Not passing** | A **consent screen** in `MODIFY-CONFIRM-DIFF-01`'s shape: at most three options, the recommended one first, each saying what it changes, one factual sentence of why with the observed figure, never a training-effect claim |
+| **No runs recorded** | Its own state; the first option is to log runs or connect Apple Health. **Never a typed number** (the coaching ruling is observed volume) |
+| **Copy** | One owner, `lib/plan/checkpointCopy.ts`, in the shape of `baseBuildCopy.ts`. The words are the founder's |
+
