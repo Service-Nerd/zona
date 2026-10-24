@@ -5,15 +5,15 @@
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
-import { claimSheetFoot, isSheetFootActive, getNavNode } from '@/lib/ui/sheetFoot'
+import { claimSheetFoot, isSheetFootActive, getNavNode, registerNavNode } from '@/lib/ui/sheetFoot'
 import { SHEET_FROM_PILL, PILL_OVERLAP_PX } from './Sheet'
 
 const ROOT = path.resolve(__dirname, '../..')
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8')
 
-describe('the release gate — the app keeps S1 until the founder has seen it', () => {
-  it('SHEET_FROM_PILL is off (flip it only on the founder\'s approval, in the same commit as the register row)', () => {
-    expect(SHEET_FROM_PILL).toBe(false)
+describe('the release — on in the app since the founder approved it (2026-10-24)', () => {
+  it('SHEET_FROM_PILL is on; setting it false is the one-line rollback to S1', () => {
+    expect(SHEET_FROM_PILL).toBe(true)
   })
   it('the preview turns it on through the provider, so what he sees is the real component', () => {
     const src = read('app/sheet-preview/page.tsx')
@@ -31,7 +31,12 @@ describe('the foot store', () => {
     b()
     expect(isSheetFootActive()).toBe(false)
   })
-  it('has no nav node until a nav registers one (no nav → the sheet keeps S1)', () => {
+  it('has no nav node until a nav registers one (no nav → the sheet keeps S1), and an unmount clears it', () => {
+    expect(getNavNode()).toBeNull()
+    const el = {} as HTMLElement
+    registerNavNode(el)
+    expect(getNavNode()).toBe(el)
+    registerNavNode(null)
     expect(getNavNode()).toBeNull()
   })
 })
@@ -74,6 +79,10 @@ describe('the nav — it is not a nav while it is the foot', () => {
     const src = read('app/dashboard/DashboardClient.tsx')
     expect(src).toContain('useSheetFootNav(bottomNavNodeRef, sheetFoot)')
     expect(src).toContain('bottomNavNodeRef.current = node')
+    // 🔴 Registered from the REF CALLBACK, which runs on every mount/unmount. An effect registered once at dashboard
+    // mount, when the nav may be unmounted (onboarding, redeem), so every sheet silently fell back to S1.
+    const cb = src.slice(src.indexOf('const bottomNavRef = useCallback('), src.indexOf('const bottomNavRef = useCallback(') + 400)
+    expect(cb).toContain('registerNavNode(node)')
     const i = src.indexOf("className={`nav-bar nav-bar--floating${navReceded ? ' nav-bar--receded' : ''}")
     const nav = i >= 0 ? src.slice(i, src.indexOf('}}>', i)) : ''
     expect(nav).toContain("${sheetFoot ? ' nav-bar--sheet-foot' : ''}")

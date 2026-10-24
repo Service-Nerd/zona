@@ -16,14 +16,14 @@
 import { useEffect, useRef, useState } from 'react'
 import HrCalibrationSheet from '@/components/shared/HrCalibrationSheet'
 import Sheet, { NavHeightProvider, SheetPresentationProvider, type SheetPresentation } from '@/components/shared/Sheet'
-import { useSheetFootActive, useSheetFootNav } from '@/lib/ui/sheetFoot'
+import { useSheetFootActive, useSheetFootNav, registerNavNode } from '@/lib/ui/sheetFoot'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 export default function SheetPreview() {
   const [open, setOpen] = useState<string | null>(null)
-  // S1 Am.1 (SHEET-ORIGIN-01) — the founder compares the two here before the app changes. The app is 'bottom'
-  // until `SHEET_FROM_PILL` flips.
+  // S1 Am.1 (SHEET-ORIGIN-01) — 'pill' is the app's presentation since 2026-10-24; 'bottom' is S1, kept for comparison
+  // and as the rollback.
   const [presentation, setPresentation] = useState<SheetPresentation>('pill')
   const sheetFoot = useSheetFootActive()
 
@@ -34,7 +34,7 @@ export default function SheetPreview() {
    * by a magic fallback is the same trap as a harness that draws its own panel:
    * it verifies a program nobody ships. `DashboardClient` measures the real
    * pill with a ResizeObserver; this does the same. */
-  const pillRef = useRef<HTMLDivElement>(null)
+  const pillRef = useRef<HTMLDivElement | null>(null)
   useSheetFootNav(pillRef, sheetFoot)
   const [navH, setNavH] = useState<number | null>(null)
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function SheetPreview() {
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', marginTop: 3, lineHeight: 1.5 }}>
           This page imports `components/shared/Sheet`. Tap a card: the sheet comes out of the <strong>nav pill</strong>,
-          which becomes its base while it is open, and goes back into it. The app still shows today&apos;s version.
+          which becomes its base while it is open, and goes back into it. This is what the app does; Today&apos;s is the old version.
         </div>
         <div role="group" aria-label="Which version" style={{ display: 'flex', gap: 8, marginTop: 10 }}>
           {([['pill', 'From the pill (new)'], ['bottom', 'Today\u2019s']] as const).map(([v, l]) => (
@@ -84,7 +84,7 @@ export default function SheetPreview() {
       </div>
 
       {/* The real pill, so the sheet\u2019s foot has something to tuck behind. */}
-      <div ref={pillRef} className={`nav-bar nav-bar--floating${sheetFoot ? ' nav-bar--sheet-foot' : ''}`}
+      <div ref={node => { pillRef.current = node; registerNavNode(node) }} className={`nav-bar nav-bar--floating${sheetFoot ? ' nav-bar--sheet-foot' : ''}`}
         {...(sheetFoot ? { 'aria-hidden': true } : {})}
         style={{ position: 'fixed', zIndex: Z_LAYERS.nav }}>
         {['Today', 'Plan', 'Coach', 'Me'].map((l, i) => (

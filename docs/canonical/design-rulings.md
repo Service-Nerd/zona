@@ -2753,7 +2753,12 @@ MOTION goes bare at a scroll-stop mid-page. It is opaque, and keyed to **scrolle
 - **`SITE-HEADER-EDGE-01`** — `SiteHeader.tsx:91` carries its edge **permanently** where the app
   header now reveals one on scroll. The two surfaces now disagree about what a pinned header does.
 
-### SHEET-ORIGIN-01 — S1 Amendment 1 · SHIP WITH AMENDMENT, behind a switch, awaiting the founder (2026-10-24)
+### SHEET-ORIGIN-01 — S1 Amendment 1 · SHIP WITH AMENDMENT · ✅ LIVE 2026-10-24 (founder approved on his phone)
+
+✅ **Released the same day:** `SHEET_FROM_PILL = true`. The downstream check before release found the nav registered from an
+effect, which missed a nav mounted after the dashboard (onboarding, redeem) and would have left every sheet silently on
+S1; it registers from its ref callback now.
+
 
 The founder's option (b) of 2026-10-02, built into the real `Sheet` and **off in the app** (`SHEET_FROM_PILL = false`),
 on in `/sheet-preview`. S1's principle kept (no nav that offers four destinations and delivers one); its

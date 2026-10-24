@@ -54,20 +54,24 @@ export function useSheetFootActive(): boolean {
 }
 
 /**
- * Register the nav as the foot's source, and make it `inert` while it is a sheet's foot.
+ * Make the nav `inert` while it is a sheet's foot. (Registration is `registerNavNode`, from the ref callback.)
  *
  * ⚠️ IMPERATIVE ON PURPOSE. React 18.3 (this app) does not support `inert` as a prop: `inert={true}` is dropped and
  * the pill stays keyboard-reachable under a modal dialog, which is the S1 lie by another route. React 19 does support
  * it, as a BOOLEAN, so the `inert=""` string workaround would silently stop working on upgrade. The DOM property works
  * on both, and WKWebView has supported it since iOS 15.5.
  */
+/**
+ * Register (or clear) the nav element. Call it from the nav's REF CALLBACK, which React runs on every mount and
+ * unmount. ⚠️ Not from an effect: the nav is unmounted on onboarding and redeem, so an effect that ran once at the
+ * dashboard's mount either never saw a node (and every sheet silently fell back to S1) or kept a detached one after a
+ * remount. Found in the downstream check before release; the preview could not show it, because its pill never unmounts.
+ */
+export function registerNavNode(node: HTMLElement | null): void {
+  navNode = node
+}
+
 export function useSheetFootNav(ref: RefObject<HTMLElement | null>, active: boolean): void {
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    navNode = el
-    return () => { if (navNode === el) navNode = null }
-  }, [ref])
   useEffect(() => {
     const el = ref.current
     if (!el) return

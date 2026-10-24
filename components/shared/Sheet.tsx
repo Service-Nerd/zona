@@ -87,9 +87,9 @@ const EXIT_MS = 280
 //   • the panel's width is the pill's, so nothing scales horizontally;
 //   • a declarative style prop and an imperative style write cannot both own a property. This is declarative only.
 //
-// 🔒 OFF IN THE APP until the founder has seen it (`SHEET_FROM_PILL`); `/sheet-preview` turns it on through
-// `SheetPresentationProvider`. Flipping the constant is the whole release.
-export const SHEET_FROM_PILL = false
+// ✅ ON IN THE APP since 2026-10-24: the founder looked at `/sheet-preview` on his phone and said yes. Setting this
+// false returns every sheet to S1's bottom presentation in one line; `/sheet-preview` keeps a toggle for both.
+export const SHEET_FROM_PILL = true
 /** How far the panel's foot tucks BEHIND the pill, so the two read as one object with no seam (round 3, measured). */
 export const PILL_OVERLAP_PX = 26
 /** Enter: travels, overshoots once to ~112%, settles (round 6). */

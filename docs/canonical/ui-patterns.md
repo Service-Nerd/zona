@@ -2406,11 +2406,11 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 
 > ### Slide-up Sheet — the presentation contract (SHEET-PRESENT-01, shipped 2026-09-13)
 >
-> #### 🟡 `SHEET-ORIGIN-01` — S1 Amendment 1, the sheet comes out of the pill (Design Board 2026-10-24) · BUILT, OFF IN THE APP
+> #### ✅ `SHEET-ORIGIN-01` — S1 Amendment 1, the sheet comes out of the pill (Design Board 2026-10-24) · LIVE
 >
-> ⚠️ **The app still behaves as the contract above** until the founder approves the preview:
-> `SHEET_FROM_PILL = false` in `Sheet.tsx`, on in `/sheet-preview` through `SheetPresentationProvider`. Flipping the
-> constant is the whole release. The founder's decision of 2026-10-02 (option b) answers the block below.
+> **This is what the app does since 2026-10-24**: the founder looked at `/sheet-preview` on his phone and approved it.
+> `SHEET_FROM_PILL = true` in `Sheet.tsx`; setting it false is the one-line rollback to the contract above, which
+> remains the fallback when no nav is mounted. The founder's decision of 2026-10-02 (option b) answered the block below.
 >
 > | | |
 > |---|---|
@@ -2418,7 +2418,7 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 > | **Drawn, not raised** | 🔴 The foot is an empty pill the `Sheet` draws **in its own layer** over the real nav's measured box. Raising the nav's z-index was built first and measured dimmed: the nav's ancestor is `position: fixed`, a stacking context, so its z only counted inside it |
 > | **Rest** | Panel at the pill's width and x; its bottom `PILL_OVERLAP_PX` (26) below the pill's top, squared and unbordered there |
 > | **Motion** | A clip whose bottom edge is the pill's mouth; the panel **slides** (`translateY`), never scales; enter `cubic-bezier(0.65, 0, 0.35, 1.55)` 420ms, exit without overshoot |
-> | **Fallback** | No measured nav (onboarding, first frame) → the S1 bottom sheet |
+> | **Fallback** | No measured nav (onboarding, redeem, first frame) → the S1 bottom sheet. The nav registers from its **ref callback** (`registerNavNode`), not an effect: an effect missed a nav that mounted after the dashboard and kept a detached one after a remount |
 >
 > Checks: `components/shared/sheetFromPill.test.ts`. Sitting: `docs/decisions/design-2026-10-24-sheet-origin-s1-amendment.md`.
 >

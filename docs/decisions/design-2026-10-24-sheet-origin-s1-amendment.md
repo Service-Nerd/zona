@@ -78,6 +78,12 @@ nav's measured box, and the real nav stays at its layer, `inert` and hidden unde
 
 None. No coaching claim, no tier change.
 
+## Released (2026-10-24)
+
+The founder looked at `/sheet-preview` on his phone and said yes; `SHEET_FROM_PILL` flipped the same day. The
+downstream check before release found the nav registration in an effect (missed a nav mounted later, kept a detached
+one after a remount); it moved to the ref callback, with a test arm, falsified.
+
 ## What this ruling does not settle
 
 How it feels on a phone, and whether the founder approves it. The app keeps S1 until he does.

@@ -88,7 +88,7 @@ import AttributionRow from '@/components/shared/AttributionRow'
 import { attributionAnswered, currentUserId, type UpgradeSource } from '@/lib/analytics'
 import { useTrackOnce } from '@/components/shared/useTrackOnce'
 import { useNavRecede } from '@/components/shared/useNavRecede'
-import { useSheetFootActive, useSheetFootNav } from '@/lib/ui/sheetFoot'
+import { useSheetFootActive, useSheetFootNav, registerNavNode } from '@/lib/ui/sheetFoot'
 import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
@@ -1086,6 +1086,7 @@ export default function DashboardClient() {
   const bottomNavObserverRef = useRef<ResizeObserver | null>(null)
   const bottomNavRef = useCallback((node: HTMLDivElement | null) => {
     bottomNavNodeRef.current = node
+    registerNavNode(node)
     bottomNavObserverRef.current?.disconnect()
     bottomNavObserverRef.current = null
     if (!node) { setBottomNavH(null); return }
