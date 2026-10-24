@@ -353,8 +353,12 @@ sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`? *(\([^)]*\) *)?[—/|].*/\1/p'
 #   `lib/plan/paceBands.ts` and the screen reads the `PaceGuide` the engine built rather
 #   than recomputing it. Nobody came back to the exemption, so for days the arm was
 #   silenced on an ID that was simply stale-open. Entry removed 2026-10-02.
-# Empty, and its emptiness is checked below in BOTH directions.
-_SHIPPED_AND_OPEN_OK=''
+#   NO-RUNNER-TURNED-AWAY-01 (2026-10-24): Phase B SHIPPED (staged plan built dark; the base-build checkpoint
+#   measured on the server, live) with its registry row, and the ITEM stays open: staged plans measured 5.7% clean
+#   (§29's discount, §113's long run), so the Coaching Board rules again before the flag may turn on, then phases
+#   C (screens), D (walk-run start) and E (the after-round). Remove this entry when the item closes.
+# Checked below in BOTH directions.
+_SHIPPED_AND_OPEN_OK='NO-RUNNER-TURNED-AWAY-01'
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1
