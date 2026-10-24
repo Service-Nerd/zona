@@ -3026,6 +3026,28 @@ rules first:** does §7's spacing bind the §78 benchmark? If yes, it is an engi
 `isHardDay`, and a remediation question for that plan. ⚠️ Since this ship, a session MOVE in either of those weeks is
 flagged by the reorder guard, which is correct, and is the only runner-visible effect today.
 
+### 🟡 `NO-RUNNER-TURNED-AWAY-01` — every runner who asks for a race gets a plan for that race *(filed 2026-10-24, P0, founder; RULED 2026-10-24)* 🏃 **COACHING BOARD** (ruled) → 🧭 **DESIGN BOARD** → 👤 **FOUNDER** (words)
+
+Founder, 2026-10-24: *"We should absolutely not be turning anyone away!"* **Ruled CORRECT WITH AMENDMENT** the same day
+(`docs/decisions/coaching-2026-10-24-no-runner-turned-away.md`). **Measured:** 26 refusals from 13 runners since
+2026-09-23. The 8 refused on race date or days all reached a race plan. **The 6 refused on base volume are all comped
+charity marathoners (0–10 km/week, 26–29 weeks out):** alwhiteleather@gmail.com has **no plan** (0 km/week: §118's
+`getRunningApplies` needs more than zero); sheenameek84@icloud.com and tom0508richards@icloud.com hold **base building
+with no marathon**; floehenderson@icloud.com switched to a half; emilyjcgibbs@outlook.com got a marathon after changing
+answers; one deleted their account today (Leicester), 47 s after accepting base building.
+
+**To build (the half §116 never got):** the ramp composed INTO a race plan with the race on it; the checkpoint named
+from day one; §111 at the checkpoint on observed volume; the race block generated only after it passes (§116 Am. 7,
+and the line from vetoed `S111-FOUNDATION-CREDIT-01`); the not-passing outcome screen (ADR-012 choice: §117 run-walk,
+extension, shorter or later race); §116 Am. 5's missed-weeks path; a walk-run start for 0 km/week; render it all
+(Design Board). Artifacts: §116 Am. 9, §118 Am. 4, `BASE_BUILD_CHECKPOINT_OBSERVED_WEEKS`,
+`INV-PLAN-ONRAMP-NO-RACE-BLOCK-BEFORE-CHECKPOINT`; `measure:fitness` and `measure:envelope` before and after.
+
+🔴 **DO NOT switch on `ENABLE_BASE_BUILD_ONRAMP` as it stands.** Verified 2026-10-24: no screen reads the on-ramp
+offer, no generator composes a ramp-then-race plan, and the engine attaches the base-building offer only when the
+on-ramp offer is absent, so the flag on today removes the one thing these runners currently get.
+**Then:** whether the five living runners above are offered the new plan is the founder's remediation call.
+
 ### 🔲 `SHEET-ORIGIN-DEVICE-01` — on the phone, a sheet from the pill appears mid-screen and then drops onto it *(filed 2026-10-24, P1)* ⚙️ **NO BOARD** *(defect)*, then 👤 **FOUNDER** to re-approve
 
 `SHEET-ORIGIN-01` went on in the app on 2026-10-24 and was **switched off the same day** (`SHEET_FROM_PILL = false`)
