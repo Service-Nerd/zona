@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-24 — AUDIT-REVERT-RESHIP-01 · the audit remembered the revert and forgot the re-ship
+**Shipped:** The docs audit no longer flags an item as "reverted but live" when it was reverted once and shipped again later.
+**Dev learning:** The check collected every scope that ever had a `revert()` commit and never asked what came after. A history check has to read the LATEST relevant event per item, not any event.
+**Product/creator learning:** No runner-facing change.
+**AI-building learning:** I then committed the fix as `fix(...)` and pushed without its own registry row, so the next audit flagged the fix for exactly the record-keeping it exists to enforce.
+**The honest bit:** It surfaced only because the re-shipped item gained a registry row for the first time today.
+**Hook material:** An audit that could not tell "reverted" from "reverted, then shipped".
+**Postable?:** no
+
 ## 2026-10-24 — SHEET-ORIGIN-01 · the seventh try at "come out of the pill", and the two bugs that would have hidden it
 **Shipped:** Every sheet in the app now comes out of the bottom nav pill and goes back into it; while it is open the pill becomes the sheet's plain white base instead of a row of tabs.
 **Dev learning:** Two invisible failures, both measured rather than seen. Raising the nav's z-index above the scrim did nothing, because its ancestor is `position: fixed` and that makes a stacking context, so the scrim still dimmed it into the grey pill the founder rejected a month ago; the sheet now draws the foot itself, in its own layer. And registering the nav from an effect meant a nav that mounted after the dashboard (onboarding, redeem) was never registered, so every sheet would have quietly stayed the old way. Ref callbacks run on every mount; effects run when their deps say.
