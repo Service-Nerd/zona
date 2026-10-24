@@ -3018,6 +3018,18 @@ rules first:** does §7's spacing bind the §78 benchmark? If yes, it is an engi
 `isHardDay`, and a remediation question for that plan. ⚠️ Since this ship, a session MOVE in either of those weeks is
 flagged by the reorder guard, which is correct, and is the only runner-visible effect today.
 
+### 🔲 `TT-BEFORE-LONG-PATCH-01` — patch one live plan: two Friday time trials the day before the long run *(filed 2026-10-24, P2)* ⚙️ **NO BOARD** *(founder decided: patch)*
+
+Remediation for `TT-BEFORE-LONG-01`, which fixed new plans only. **cate.stacey@icloud.com**, London Marathon, plan
+`799c49e8`: weeks **7** (w/c 2027-01-18) and **11** (w/c 2027-02-15) carry the 5K time trial on **Friday**, the day
+before the Saturday long run. **Founder's call (2026-10-24): patch those two weeks only**, not a rebuild. Turn each
+Friday time trial back into the easy run it replaced (same duration as the slot: 63 and 72 min, re-read from the
+plan at the time), drop both weeks from `meta.recalibration_weeks`, leave every other week untouched. Same pattern as
+Harvey's patch: script with a dry run shown first, `plan_archive` before the write, founder runs `--apply`,
+read-back after; validate with `validateReshapedPlan` (it must now pass `INV-PLAN-TT-LONG-RUN-SPACING` and
+`INV-PLAN-RECALIBRATION-HAS-SESSION`). **Deadline:** before week 7 (w/c 2027-01-18). Re-measure the plan first; it
+may have been edited or rebuilt since.
+
 ### 🔲 `TT-SKIPPED-VISIBILITY-01` — a runner whose block loses every benchmark is never told *(filed 2026-10-24, P3)* 🧭 **DESIGN BOARD** → 👤 **FOUNDER**
 
 From the `TT-BEFORE-LONG-01` ruling (McMillan's condition). §78's fallback drops a recalibration week silently when no
