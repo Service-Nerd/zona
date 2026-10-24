@@ -2951,7 +2951,10 @@ baseline entry moves** — re-baseline with the declared reason, per `cohort:sha
 to turn something green. 🔻 **P3: the gate is load-invariant since `SUITE-CONTENTION-01`, so nothing
 is broken while this waits** — it is a speed and fidelity question, not a correctness one.
 
-### 🟡 `QUALITY-TYPE-NO-OWNER-01` — nine hand-written answers to *"is this a quality session"* *(filed 2026-10-15, P2)* 🏃 **COACHING BOARD**
+### 🟡 `QUALITY-TYPE-NO-OWNER-01` — 42 hand-written answers to *"is this a quality session"* *(filed 2026-10-15, P2; RULED 2026-10-24)* 🏃 **COACHING BOARD**
+
+📐 **RE-MEASURED AND RULED 2026-10-24 — CORRECT WITH AMENDMENT.** 42 sets, not nine; `intervals`/`tempo`/`long` occur in no plan. Three owners (`isQualitySession` / `isHardEffort` / `isHardDay`); three dead-`long` sets are defects against §7, §62 and §59. Sitting: `docs/decisions/coaching-2026-10-24-quality-type-owner.md`. **Next: build, with every changed answer measured.**
+
 
 📐 **MEASURED while moving one of them** (`ADJUST-ENGINE-ENTRY-01`), by grepping `lib/` for the set:
 
@@ -3054,38 +3057,6 @@ route passes. `ADJUST-STATUS-WITHOUT-SAVE-01` lives in `confirm-adjustment` / `r
 **different routes, still open**. The 500 branch is exercised for an insert failure only. Not the
 rate limiter (the fake's `rpc` returns `true`; `checkAiRateLimit` fails OPEN by design). Not the push
 transport. ⚠️ **Nothing ran on a device.**
-
-### 🟡 `QUALITY-TYPE-NO-OWNER-01` — nine hand-written answers to *"is this a quality session"* *(filed 2026-10-15, P2)* 🏃 **COACHING BOARD**
-
-📐 **MEASURED while moving one of them** (`ADJUST-ENGINE-ENTRY-01`), by grepping `lib/` for the set:
-
-| where | set |
-|---|---|
-| `lib/coaching/adjustmentEngine.ts` *(was the route)* | `quality · intervals · tempo` |
-| `scripts/backtest-adjustment-triggers.ts` | `quality · intervals · tempo` — **a second copy of the same line** |
-| `lib/plan/invariants.ts:5741` | `quality · intervals · tempo` |
-| `lib/plan/sessionComposer.ts:114` | `quality · tempo · intervals · hard` |
-| `lib/coaching/planAdjustment.ts:195` | `quality · intervals · tempo · long · hard` |
-| `lib/coaching/planAdjustment.ts:949`, `lib/coaching/coachingFlag.ts:19`, `lib/coaching/manualSessionFeedback.ts:42` and `:93`, `lib/coaching/prompts/postRaceReshape.ts:108` | `quality · intervals · tempo · hard` |
-| `lib/coaching/postRaceReshape.ts:53` | `quality · intervals · tempo · hard · long` |
-| `lib/plan/invariants.ts:2827` | `session.type === 'quality'` **alone** |
-
-🔴 **THEY DISAGREE ON `hard` AND `long`, AND BOTH DISAGREEMENTS ARE PRESCRIPTION-RELEVANT.** `type: 'hard'` is the 5K
-time trial (`SESSION-COLOUR-TT-01`) and `type: 'long'`/`'easy'`+`role: 'long_run'` is the long run — so whether a
-session counts as "quality" decides whether ENGINE-01's fitness signal reads it, whether a post-race blackout
-suppresses it, and what the coach note calls it. **This is the `SESSION-KM-01` shape exactly:** logic written out by
-hand in many places with *two incompatible answers* among them.
-
-⚠️ **NOT A RELOCATION, WHICH IS WHY IT WAS FILED RATHER THAN FOLDED IN.** `sessionRole.ts` already owns `isLongRun`,
-`isTimeTrial`, `isStructuredSession` and `coachingSessionType` — an `isQualitySession` belongs beside them. But
-**unifying the nine changes WHICH ROWS each consumer reads**, and the board owns that: ENGINE-01's threshold was
-calibrated against the three-type set, so widening it silently re-tunes a trigger.
-
-**The build.** Board rules on the canonical set (or on there being more than one, named: a *stimulus* set and a
-*structured-session* set are plausibly different questions). Then one owner in `sessionRole.ts`, every call site
-converted, and a gate bounding the literal — ⚠️ **comments stripped first**, because the arm would otherwise fire on
-the prose recording this. ⚠️ **Falsify by re-adding `'hard'` to one converted site and confirming the gate moves** —
-a count that cannot move is the thing being fixed.
 
 ### ⚫ ~~`BACKTEST-SECOND-ASSEMBLY-01` — the backtest harness builds the engine's input its own way~~ *(filed 2026-10-15, P3)* — **SUPERSEDED: this is the ORIGINAL FILING, left open beside its own ship record**
 
