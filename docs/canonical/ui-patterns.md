@@ -2406,7 +2406,7 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 
 > ### Slide-up Sheet — the presentation contract (SHEET-PRESENT-01, shipped 2026-09-13)
 >
-> #### 🟡 S1 Amendment 1 — the sheet comes out of the pill (Design Board 2026-10-24) · BUILT, OFF IN THE APP
+> #### 🟡 `SHEET-ORIGIN-01` — S1 Amendment 1, the sheet comes out of the pill (Design Board 2026-10-24) · BUILT, OFF IN THE APP
 >
 > ⚠️ **The app still behaves as the contract above** until the founder approves the preview:
 > `SHEET_FROM_PILL = false` in `Sheet.tsx`, on in `/sheet-preview` through `SheetPresentationProvider`. Flipping the
