@@ -48,6 +48,8 @@ interface SheetProps {
 | **z-index** | From the `Z_LAYERS` ladder, never a literal. This is the defect the primitive was created for |
 | **Nav occlusion** | The backdrop reserves nothing at the bottom and the panel covers the nav; the measured nav height is still consumed by the height bound |
 | **Home-indicator clearance** | The panel clears it itself, now that the nav does not |
+| **Presentation (S1 Am.1, 2026-10-24)** | `SheetPresentationProvider value="pill" | "bottom"`; default from `SHEET_FROM_PILL` (**false**, so the app is S1). `pill` needs the real nav registered through `useSheetFootNav` (`lib/ui/sheetFoot.ts`); it reads that node's box at mount and draws the panel at its width with the foot `PILL_OVERLAP_PX` behind it, plus an empty pill in the sheet's own layer. No registered nav → S1. A caller never chooses the presentation; the provider does |
+| **The nav as the foot** | While a `pill` sheet is open it claims the foot (`claimSheetFoot`); the nav reads `useSheetFootActive()` and renders `.nav-bar--sheet-foot`, `aria-hidden`, and (via `useSheetFootNav`, imperatively, because React 18.3 drops the `inert` prop) `inert`. The nav is NOT raised above the scrim |
 | **Body-scroll lock, Escape, focus trap + restore** | One effect, so teardown is symmetric |
 | **Swipe down to close** | Founder, 2026-09-25. ⚠️ **The drag pill was drawn and dragged nothing** — a false affordance in the primitive that every sheet inherited. The gesture only starts at `scrollTop <= 0`, so a half-scrolled body scrolls rather than dismissing |
 | **Enter transition** | `SHEET-RAF-FALLBACK-01`: released through `releaseOnNextFrame`, because `requestAnimationFrame` does not fire while `document.hidden` and a sheet mounting in that window left the panel off-screen behind a live scrim |
@@ -68,6 +70,7 @@ interface SheetProps {
 - `components/shared/sheetPresentation.test.ts` — portal, z-index ladder, nav occlusion, the 88vh rule, and that every sheet file imports the primitive rather than hand-rolling one
 - `components/shared/sheetClose.test.ts` — the dismissal path
 - `lib/ui/rafRelease.test.ts` — the enter-transition backstop, behaviourally
+- `components/shared/sheetFromPill.test.ts` — S1 Am.1: the release switch, the foot store, the pill branch's geometry and drawn foot, slide not scale, and the nav's foot wiring
 - `lib/contracts/componentContracts.test.ts` — **this file against the component**, both directions
 
 ✅ **CLOSED 2026-10-01 (`SHEET-ARIA-LABEL-01`).** `ariaLabel` is **required**, and

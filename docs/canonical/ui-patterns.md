@@ -2406,6 +2406,22 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 
 > ### Slide-up Sheet — the presentation contract (SHEET-PRESENT-01, shipped 2026-09-13)
 >
+> #### 🟡 S1 Amendment 1 — the sheet comes out of the pill (Design Board 2026-10-24) · BUILT, OFF IN THE APP
+>
+> ⚠️ **The app still behaves as the contract above** until the founder approves the preview:
+> `SHEET_FROM_PILL = false` in `Sheet.tsx`, on in `/sheet-preview` through `SheetPresentationProvider`. Flipping the
+> constant is the whole release. The founder's decision of 2026-10-02 (option b) answers the block below.
+>
+> | | |
+> |---|---|
+> | **The foot** | While a sheet is open the pill is its **foot**: tabs fade to **nothing** (`.nav-bar--sheet-foot`, not grey), and the real nav is `inert` + `aria-hidden`, so the dialog stays modal (S1's principle, kept) |
+> | **Drawn, not raised** | 🔴 The foot is an empty pill the `Sheet` draws **in its own layer** over the real nav's measured box. Raising the nav's z-index was built first and measured dimmed: the nav's ancestor is `position: fixed`, a stacking context, so its z only counted inside it |
+> | **Rest** | Panel at the pill's width and x; its bottom `PILL_OVERLAP_PX` (26) below the pill's top, squared and unbordered there |
+> | **Motion** | A clip whose bottom edge is the pill's mouth; the panel **slides** (`translateY`), never scales; enter `cubic-bezier(0.65, 0, 0.35, 1.55)` 420ms, exit without overshoot |
+> | **Fallback** | No measured nav (onboarding, first frame) → the S1 bottom sheet |
+>
+> Checks: `components/shared/sheetFromPill.test.ts`. Sitting: `docs/decisions/design-2026-10-24-sheet-origin-s1-amendment.md`.
+>
 > #### 🔴 SHEET-ORIGIN-01 — REVERTED, NOT CURRENT BEHAVIOUR (2026-09-26)
 >
 > ⚠️ **EVERYTHING IN THIS SUB-SECTION IS DESCRIBED FOR THE NEXT ATTEMPT. IT IS NOT WHAT THE APP

@@ -2753,6 +2753,17 @@ MOTION goes bare at a scroll-stop mid-page. It is opaque, and keyed to **scrolle
 - **`SITE-HEADER-EDGE-01`** — `SiteHeader.tsx:91` carries its edge **permanently** where the app
   header now reveals one on scroll. The two surfaces now disagree about what a pinned header does.
 
+### SHEET-ORIGIN-01 — S1 Amendment 1 · SHIP WITH AMENDMENT, behind a switch, awaiting the founder (2026-10-24)
+
+The founder's option (b) of 2026-10-02, built into the real `Sheet` and **off in the app** (`SHEET_FROM_PILL = false`),
+on in `/sheet-preview`. S1's principle kept (no nav that offers four destinations and delivers one); its
+implementation amended (the panel ends 26px behind the pill, not at the viewport). The pill is the foot: tabs to
+nothing, `inert`, `aria-hidden`. 🔴 **Found building it:** raising the nav's z-index above the scrim does not work,
+measured: its ancestor is `position: fixed`, a stacking context, and the scrim dimmed it into the reverted build's grey
+pill. So the `Sheet` draws the foot in its own layer over the nav's measured box. Measured at 375×812: foot = pill
+343×62 at 16,738; panel bottom 764; tall HR sheet 417px within 88vh. Not felt on a device. Sitting:
+`docs/decisions/design-2026-10-24-sheet-origin-s1-amendment.md`. Check: `sheetFromPill.test.ts`.
+
 ### SHEET-ORIGIN-01 — ⚠️ INSUFFICIENT EVIDENCE · preview built, nothing shipped (2026-09-26)
 
 **Founder:** *"I'd absolutely love it if all our pop-ups loaded as if they came out of the nav pill,

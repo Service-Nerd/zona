@@ -1638,6 +1638,21 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   }
 }
 
+/* S1 Amendment 1 (SHEET-ORIGIN-01, Design Board 2026-10-24) — the pill as a SHEET'S FOOT.
+ *
+ * While a sheet comes out of the pill, the pill stays visible above the scrim and stops being a nav: its tabs fade
+ * to NOTHING, not to grey. Grey is the "switched-off object" in the founder's revert screenshot (aa0dbb9d); an empty
+ * pill reads as the sheet's base. `inert` and `aria-hidden` are set on the element by the component, because CSS
+ * cannot make a control unreachable; this owns only the look. Reduced motion: `--motion-ui` is already 0s there. */
+.nav-bar--floating .nav-tab {
+  transition: opacity var(--motion-ui);
+}
+.nav-bar--floating.nav-bar--sheet-foot {
+  pointer-events: none;
+}
+.nav-bar--floating.nav-bar--sheet-foot .nav-tab {
+  opacity: 0;
+}
 :root {
   /* NAV-ACTIVE-LOZENGE-01 (Design Board 2026-09-28) — the selected tab's wash.
    *

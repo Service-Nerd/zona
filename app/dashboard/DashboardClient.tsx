@@ -88,6 +88,7 @@ import AttributionRow from '@/components/shared/AttributionRow'
 import { attributionAnswered, currentUserId, type UpgradeSource } from '@/lib/analytics'
 import { useTrackOnce } from '@/components/shared/useTrackOnce'
 import { useNavRecede } from '@/components/shared/useNavRecede'
+import { useSheetFootActive, useSheetFootNav } from '@/lib/ui/sheetFoot'
 import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
@@ -926,6 +927,10 @@ export default function DashboardClient() {
   // The LOOK lives in `.nav-bar--receded`; reduced motion disables it in CSS, in
   // one place, rather than being decided here as well.
   const navReceded = useNavRecede()
+  // S1 Am.1 (SHEET-ORIGIN-01) — while a sheet comes out of the pill, the pill is its foot and not a nav.
+  const sheetFoot = useSheetFootActive()
+  const bottomNavNodeRef = useRef<HTMLDivElement | null>(null)
+  useSheetFootNav(bottomNavNodeRef, sheetFoot)
 
   // CHARITY-OFFER-CODE-01 — "I may hold an entitlement you never recorded."
   //
@@ -1080,6 +1085,7 @@ export default function DashboardClient() {
   const [bottomNavH, setBottomNavH] = useState<number | null>(null)
   const bottomNavObserverRef = useRef<ResizeObserver | null>(null)
   const bottomNavRef = useCallback((node: HTMLDivElement | null) => {
+    bottomNavNodeRef.current = node
     bottomNavObserverRef.current?.disconnect()
     bottomNavObserverRef.current = null
     if (!node) { setBottomNavH(null); return }
@@ -3494,7 +3500,10 @@ export default function DashboardClient() {
         // decoration.
         return (
           <div ref={bottomNavRef}
-            className={`nav-bar nav-bar--floating${navReceded ? ' nav-bar--receded' : ''}`}
+            className={`nav-bar nav-bar--floating${navReceded ? ' nav-bar--receded' : ''}${sheetFoot ? ' nav-bar--sheet-foot' : ''}`}
+            // S1 Am.1 — as a sheet's foot the pill sits above the scrim and is NOT a nav: unreachable to touch
+            // (CSS), keyboard (`useInertWhile`) and screen reader (aria-hidden), so the dialog stays modal.
+            {...(sheetFoot ? { 'aria-hidden': true } : {})}
             style={{
             position: 'fixed',
             zIndex: Z_LAYERS.nav,

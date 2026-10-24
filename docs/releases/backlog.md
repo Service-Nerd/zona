@@ -4809,7 +4809,16 @@ why four verification attempts on it reported a sheet that had not opened.
 
 4,099 tests / 458 files, `tsc` clean, `next build` exit 0.
 
-### 🟡 `SHEET-ORIGIN-01` — UNBLOCKED 2026-10-02: the decision is made, half the item is CLOSED by measurement, and the build is specified and NOT started *(P1, filed 2026-09-26)* 🧭 DESIGN BOARD · 👤 FOUNDER
+### 🟡 `SHEET-ORIGIN-01` — BUILT 2026-10-24 behind a switch; waiting on the founder to look at `/sheet-preview` *(P1, filed 2026-09-26)* 🧭 DESIGN BOARD · 👤 FOUNDER
+
+📐 **2026-10-24 — Design Board ruled S1 Amendment 1 (SHIP WITH AMENDMENT) and it is built into the real `Sheet`, OFF in
+the app** (`SHEET_FROM_PILL = false`), on in `/sheet-preview` with a "From the pill (new) / Today's" toggle. Measured at
+375×812: the drawn foot = the real pill (343×62 at 16,738), panel bottom 764 = pill top + 26, tall HR sheet 417px within
+88vh, real nav `inert` + `aria-hidden` with tabs at opacity 0. 🔴 Raising the nav above the scrim was built first and
+measured dimmed (a `position: fixed` ancestor is a stacking context), so the `Sheet` draws the foot in its own layer.
+**What is left:** the founder looks at the preview; on yes, flip `SHEET_FROM_PILL` (one line) and ship. Not felt on a
+device. Sitting: `docs/decisions/design-2026-10-24-sheet-origin-s1-amendment.md`.
+
 
 🔴 **Shipped and reverted the same day** (`aa0dbb9d`). Founder: *“No that looks bad. It’s still
 not popping up from the pill.”* Sheets are back to full width, from the bottom, covering the nav.

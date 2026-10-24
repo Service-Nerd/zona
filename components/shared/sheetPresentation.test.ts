@@ -42,7 +42,9 @@ describe('Sheet primitive is the single owner of sheet presentation', () => {
     const i = src.indexOf("position: 'fixed', inset: 0, zIndex: Z_LAYERS.sheet")
     expect(i, 'the backdrop style block').toBeGreaterThan(-1)
     const backdrop = src.slice(i, i + 600)
-    expect(backdrop).toMatch(/paddingBottom:\s*0\b/)
+    // S1 Am.1 (2026-10-24): two presentations. The S1 branch (`: 0`) is the one asserted here; the pill branch
+    // rests on the measured pill and is asserted in `sheetFromPill.test.ts`.
+    expect(backdrop).toMatch(/paddingBottom:\s*fromPill \? [^\n]*: 0,/)
     // The specific thing that is gone: reserving the measured nav height, which
     // left the nav visible, scrimmed at 40% ink, and wired to dismiss.
     expect(backdrop).not.toMatch(/paddingBottom:\s*`\$\{navH\}px`/)
@@ -52,16 +54,15 @@ describe('Sheet primitive is the single owner of sheet presentation', () => {
     // It no longer positions anything. It keeps a tall sheet's own content out
     // of the home-indicator strip, which is why the context still exists.
     expect(src).toContain('useNavHeight')
-    expect(src).toMatch(/maxHeight:[^\n]*\$\{navH\}px/)
+    expect(src).toMatch(/: `min\(\$\{maxHeightVh\}vh, calc\(100vh - \$\{navH\}px - 24px\)\)`/)
   })
 
   it('the panel clears the home indicator itself, now that the nav does not', () => {
     // Same doctrine as A4: the safe-area inset is a reserved strip, ADDED, never
     // spent as content padding. Without this the close bar the standing rule
     // puts at the panel's bottom sits under the home bar.
-    const i = src.indexOf("borderRadius: '20px 20px 0 0'")
-    expect(i).toBeGreaterThan(-1)
-    expect(src.slice(i, i + 700)).toContain("paddingBottom: 'env(safe-area-inset-bottom, 0px)'")
+    // The S1 branch of each ternary (the pill branch reserves PILL_OVERLAP_PX instead, behind the pill).
+    expect(src).toContain("paddingBottom: fromPill ? `${PILL_OVERLAP_PX}px` : 'env(safe-area-inset-bottom, 0px)',")
   })
 
   it('a sheet covers the nav; it does NOT become a screen (Silvanto, binding)', () => {

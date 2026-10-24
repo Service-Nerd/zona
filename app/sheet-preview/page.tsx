@@ -15,10 +15,17 @@
 
 import { useEffect, useRef, useState } from 'react'
 import HrCalibrationSheet from '@/components/shared/HrCalibrationSheet'
-import Sheet, { NavHeightProvider } from '@/components/shared/Sheet'
+import Sheet, { NavHeightProvider, SheetPresentationProvider, type SheetPresentation } from '@/components/shared/Sheet'
+import { useSheetFootActive, useSheetFootNav } from '@/lib/ui/sheetFoot'
+import { Z_LAYERS } from '@/lib/ui/zLayers'
+import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 
 export default function SheetPreview() {
   const [open, setOpen] = useState<string | null>(null)
+  // S1 Am.1 (SHEET-ORIGIN-01) — the founder compares the two here before the app changes. The app is 'bottom'
+  // until `SHEET_FROM_PILL` flips.
+  const [presentation, setPresentation] = useState<SheetPresentation>('pill')
+  const sheetFoot = useSheetFootActive()
 
   /* 🔴 THE PREVIEW MUST PUBLISH THE NAV HEIGHT, OR IT IS NOT FAITHFUL.
    * `Sheet` reads the nav's measured OCCLUSION from context to decide where it
@@ -28,6 +35,7 @@ export default function SheetPreview() {
    * it verifies a program nobody ships. `DashboardClient` measures the real
    * pill with a ResizeObserver; this does the same. */
   const pillRef = useRef<HTMLDivElement>(null)
+  useSheetFootNav(pillRef, sheetFoot)
   const [navH, setNavH] = useState<number | null>(null)
   useEffect(() => {
     const el = pillRef.current
@@ -48,8 +56,17 @@ export default function SheetPreview() {
           Sheet — the real one
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', marginTop: 3, lineHeight: 1.5 }}>
-          This page imports `components/shared/Sheet`. What happens here is what happens in the app.
-          Tap a card: the sheet grows out of <strong>that card</strong> and retracts into it.
+          This page imports `components/shared/Sheet`. Tap a card: the sheet comes out of the <strong>nav pill</strong>,
+          which becomes its base while it is open, and goes back into it. The app still shows today&apos;s version.
+        </div>
+        <div role="group" aria-label="Which version" style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          {([['pill', 'From the pill (new)'], ['bottom', 'Today\u2019s']] as const).map(([v, l]) => (
+            <button key={v} onClick={() => setPresentation(v)} aria-pressed={presentation === v}
+              style={{ flex: 1, minHeight: TAP_TARGET_MIN_PX, font: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                       borderRadius: 999, border: '1px solid var(--line-strong)',
+                       background: presentation === v ? 'var(--ink)' : 'var(--card)',
+                       color: presentation === v ? 'var(--card)' : 'var(--ink)' }}>{l}</button>
+          ))}
         </div>
       </div>
 
@@ -67,7 +84,9 @@ export default function SheetPreview() {
       </div>
 
       {/* The real pill, so the sheet\u2019s foot has something to tuck behind. */}
-      <div ref={pillRef} className="nav-bar nav-bar--floating" style={{ position: 'fixed', zIndex: 3000 }}>
+      <div ref={pillRef} className={`nav-bar nav-bar--floating${sheetFoot ? ' nav-bar--sheet-foot' : ''}`}
+        {...(sheetFoot ? { 'aria-hidden': true } : {})}
+        style={{ position: 'fixed', zIndex: Z_LAYERS.nav }}>
         {['Today', 'Plan', 'Coach', 'Me'].map((l, i) => (
           <button key={l} className="nav-tab" style={{ color: i === 0 ? 'var(--moss-strong)' : undefined }}>
             <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
@@ -81,6 +100,7 @@ export default function SheetPreview() {
       </div>
 
       {open && (
+        <SheetPresentationProvider value={presentation}>
         <NavHeightProvider value={navH}>
         {open === 'Heart rate' ? (
           /* ZONES-HR-SHEET-01 — the real component in the real primitive, on the harness
@@ -104,6 +124,7 @@ export default function SheetPreview() {
         </Sheet>
         )}
         </NavHeightProvider>
+        </SheetPresentationProvider>
       )}
     </div>
   )

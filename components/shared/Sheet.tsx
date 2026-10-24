@@ -45,11 +45,12 @@
 
 'use client'
 
-import { createContext, useContext, useCallback, useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import IconButton from '@/components/ui/IconButton'
 import { createPortal } from 'react-dom'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
 import { releaseOnNextFrame } from '@/lib/ui/rafRelease'
+import { claimSheetFoot, getNavNode } from '@/lib/ui/sheetFoot'
 
 // ── Nav height ─────────────────────────────────────────────────────────────
 // The bottom nav measures itself (ResizeObserver in DashboardClient) and
@@ -71,6 +72,37 @@ export function useNavHeight(): number | null {
 
 const NAV_FALLBACK_PX = 64
 const EXIT_MS = 280
+
+// ── S1 Amendment 1 — the sheet comes out of the pill (SHEET-ORIGIN-01, Design Board 2026-10-24) ──────────────────
+//
+// The founder asked six times for sheets to come out of the nav pill and decided the one structural question himself
+// (2026-10-02, option b): while a sheet is open the pill stays visible as the sheet's FOOT and visibly stops being tabs.
+// That answers S1's reason for covering the nav (a visible nav that offers four destinations is lying) instead of
+// ignoring it, which is what the reverted attempt (`aa0dbb9d`) did.
+//
+// What the reverted rounds taught, kept here so they are not re-learned:
+//   • the origin is the PILL, the founder's word in every message;
+//   • SLIDE, never scaleY: a scale collapses the panel to a line on the way out (round 4);
+//   • the curve must TRAVEL, not front-load: 90% at 56% of the duration (round 6);
+//   • the panel's width is the pill's, so nothing scales horizontally;
+//   • a declarative style prop and an imperative style write cannot both own a property. This is declarative only.
+//
+// 🔒 OFF IN THE APP until the founder has seen it (`SHEET_FROM_PILL`); `/sheet-preview` turns it on through
+// `SheetPresentationProvider`. Flipping the constant is the whole release.
+export const SHEET_FROM_PILL = false
+/** How far the panel's foot tucks BEHIND the pill, so the two read as one object with no seam (round 3, measured). */
+export const PILL_OVERLAP_PX = 26
+/** Enter: travels, overshoots once to ~112%, settles (round 6). */
+export const SHEET_PILL_CURVE = 'cubic-bezier(0.65, 0, 0.35, 1.55)'
+export const SHEET_PILL_MS = 420
+/** Exit: back into the pill, no overshoot. */
+const SHEET_PILL_EXIT = `transform ${EXIT_MS}ms cubic-bezier(0.65, 0, 0.35, 1)`
+
+export type SheetPresentation = 'bottom' | 'pill'
+const SheetPresentationContext = createContext<SheetPresentation>(SHEET_FROM_PILL ? 'pill' : 'bottom')
+export function SheetPresentationProvider({ value, children }: { value: SheetPresentation; children: React.ReactNode }) {
+  return <SheetPresentationContext.Provider value={value}>{children}</SheetPresentationContext.Provider>
+}
 
 
 const prefersReducedMotion = () =>
@@ -107,6 +139,22 @@ interface SheetProps {
 export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh = 88, ariaLabel }: SheetProps) {
   const navHeight = useNavHeight()
   const navH = navHeight ?? NAV_FALLBACK_PX
+  // The pill presentation needs a MEASURED pill to come out of: the real nav's box, read once at mount. No nav
+  // (onboarding) or no measure → S1's bottom sheet, which needs neither.
+  const wantsPill = useContext(SheetPresentationContext) === 'pill'
+  const [pill, setPill] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
+  useLayoutEffect(() => {
+    if (!wantsPill) return
+    const read = () => {
+      const r = getNavNode()?.getBoundingClientRect()
+      setPill(r && r.width > 0 && r.height > 0 ? { left: r.left, top: r.top, width: r.width, height: r.height } : null)
+    }
+    read()
+    window.addEventListener('resize', read)
+    return () => window.removeEventListener('resize', read)
+  }, [wantsPill])
+  const fromPill = wantsPill && pill != null
+  const releaseFootRef = useRef<(() => void) | null>(null)
 
   const [mounted, setMounted] = useState(false)
   const [shown, setShown] = useState(false)
@@ -168,6 +216,8 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
   const close = useCallback(() => {
     if (closingRef.current) return
     closingRef.current = true
+    // The pill becomes tabs again as the panel retracts into it, not after.
+    releaseFootRef.current?.()
     if (reduce.current) { onCloseRef.current(); return }
     setShown(false)
     window.setTimeout(() => onCloseRef.current(), EXIT_MS)
@@ -239,6 +289,14 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
     }
   }, [mounted, close])
 
+  // S1 Am.1 — claim the pill as this sheet's foot for as long as it is open. Released on close (above) and on unmount.
+  useEffect(() => {
+    if (!mounted || !fromPill) return
+    const release = claimSheetFoot()
+    releaseFootRef.current = release
+    return release
+  }, [mounted, fromPill])
+
   // Move focus into the panel once it is on screen.
   useEffect(() => {
     if (shown) panelRef.current?.focus()
@@ -260,12 +318,14 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         // S1 — the panel's bottom edge is the VIEWPORT's, so the sheet covers
         // the nav rather than resting on a dimmed, dead copy of it.
-        paddingBottom: 0,
+        // S1 Am.1 — or, from the pill, it ends PILL_OVERLAP_PX below the pill's top edge, tucked behind it.
+        paddingBottom: fromPill ? `calc(100vh - ${pill!.top + PILL_OVERLAP_PX}px)` : 0,
         boxSizing: 'border-box',
         opacity: shown ? 1 : 0,
         transition: transition ?? 'opacity 0.2s ease-out',
       }}
     >
+      {(() => { const panel = (
       <div
         ref={panelRef}
         tabIndex={-1}
@@ -275,9 +335,12 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
         onTouchEnd={onTouchEnd}
         onTouchCancel={onTouchEnd}
         style={{
-          width: '100%', maxWidth: `${maxWidth}px`,
+          width: '100%', maxWidth: fromPill ? undefined : `${maxWidth}px`,
           background: 'var(--card)',
-          borderRadius: '20px 20px 0 0',
+          // S1 Am.1 — from the pill the foot is SQUARED and unbordered, tucked behind the pill: two borders meeting
+          // would draw a seam through what is meant to be one object (Silvanto).
+          borderRadius: fromPill ? '22px 22px 0 0' : '20px 20px 0 0',
+          ...(fromPill ? { border: '1px solid var(--chrome-edge)', borderBottom: 'none', boxSizing: 'border-box' as const } : {}),
           position: 'relative',
           boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
           paddingTop: 'var(--space-2)',
@@ -286,10 +349,13 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           // otherwise sit under the home indicator. The nav used to absorb this
           // for us. Same doctrine as A4: the inset is a reserved strip, not
           // content padding, so it is added rather than spent.
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          // S1 Am.1 — from the pill, the last PILL_OVERLAP_PX of the panel sits behind the pill, so it is reserved.
+          paddingBottom: fromPill ? `${PILL_OVERLAP_PX}px` : 'env(safe-area-inset-bottom, 0px)',
           // navH is still consumed HERE even though the panel covers the nav:
           // it keeps a tall sheet's own content out of the home-indicator strip.
-          maxHeight: `min(${maxHeightVh}vh, calc(100vh - ${navH}px - 24px))`,
+          maxHeight: fromPill
+            ? `min(${maxHeightVh}vh, ${pill!.top + PILL_OVERLAP_PX - 24}px)`
+            : `min(${maxHeightVh}vh, calc(100vh - ${navH}px - 24px))`,
           // 🔴 THE PANEL NO LONGER SCROLLS — ITS BODY DOES (SHEET-CLOSE-PIN-01).
           // The close was `position: absolute` inside the scrolling panel, and
           // an absolutely-positioned child of a scroll container scrolls WITH
@@ -310,7 +376,9 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)',
           // No transition WHILE dragging: the panel must track the finger, then
           // spring back or dismiss when it is released.
-          transition: dragY > 0 ? 'none' : (transition ?? 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)'),
+          transition: dragY > 0 ? 'none' : (transition ?? (fromPill
+            ? (shown ? `transform ${SHEET_PILL_MS}ms ${SHEET_PILL_CURVE}` : SHEET_PILL_EXIT)
+            : 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)')),
         }}
       >
         {/* Drag pill — and as of 2026-09-25 it actually drags.
@@ -352,6 +420,25 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           {typeof children === 'function' ? children(close) : children}
         </div>
       </div>
+      )
+      // S1 Am.1 — the clip IS the pill's mouth. Its bottom edge sits PILL_OVERLAP_PX below the pill's top, so a panel
+      // translated down by its own height is hidden behind the pill, and the slide in and out reads as the panel
+      // coming out of it. The width is the pill's own, from the pill's own variables, so nothing is measured twice.
+      // The top padding is room for the shadow, which the clip would otherwise cut.
+      return fromPill ? (
+        <>
+          <div style={{
+            position: 'absolute', left: pill!.left, width: pill!.width, bottom: `calc(100vh - ${pill!.top + PILL_OVERLAP_PX}px)`,
+            overflow: 'hidden', paddingTop: 'var(--space-5)',
+            display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+          }}>{panel}</div>
+          {/* THE FOOT — an empty pill drawn over the real nav's exact box, in THIS layer, so it is above the scrim
+              whatever stacking context the nav lives in (lib/ui/sheetFoot.ts). The real nav is underneath, inert. */}
+          <div aria-hidden="true" className="nav-bar nav-bar--floating nav-bar--sheet-foot"
+            style={{ position: 'fixed', left: pill!.left, top: pill!.top, width: pill!.width, height: pill!.height,
+                     bottom: 'auto', transform: 'none', maxWidth: 'none', margin: 0 }} />
+        </>
+      ) : panel })()}
     </div>,
     document.body,
   )
