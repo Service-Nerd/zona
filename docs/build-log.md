@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-24 — SHEET-ORIGIN-01 · switched on in the morning, switched off by the evening
+**Shipped:** Sheets from the nav pill went back off in the app (`SHEET_FROM_PILL = false`) the same day they went on.
+**Dev learning:** The founder approved the real component on `/sheet-preview`, in a browser. In the iOS app a Coach sheet appeared mid-screen and dropped onto the pill. I sampled the same component every 16 ms in a 375×812 browser: it rose from the pill and settled in half a second, never mid-screen. So the preview proved the component and said nothing about the app around it. Ruled out two causes by reading them (the nav's scroll recede changes colour only; the scroll lock is `overflow: hidden` only); the real one is still unknown.
+**Product/creator learning:** The icons vanishing was the design he chose on 2 October; seeing it in the app is a different thing from choosing it on a description. That's a separate question from the drop, and it's kept separate.
+**AI-building learning:** "Approved on the preview" was treated as "approved", and the release commit said so. The release condition should have been "looked right in the iOS app", which nothing could check from here. It is now: the release test asserts off, and its comment says what turning it back on requires.
+**The honest bit:** A one-line flag made the rollback cheap, which is the only reason this cost minutes rather than a day.
+**Hook material:** It looked perfect in the browser, frame by frame, and wrong on the one phone that mattered.
+**Postable?:** yes
+
 ## 2026-10-24 — TYPE-18PX-CONVERGE-01 · eight sites on the list, seven were the thing
 **Shipped:** The login, password-reset and Coach-teaser headlines, and the manual-run sheet title, now use the ruled 20px/700 type instead of a retired 18px.
 **Dev learning:** Converting through the class meant deleting five style properties per site and keeping only the margin. The ratchets did the bookkeeping: three baselines fell at once (19 → 12, 209 → 202, 84 → 80), and each refuses to pass until it's lowered and the reason written.
