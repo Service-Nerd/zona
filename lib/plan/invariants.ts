@@ -195,6 +195,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-COVERS-RACE-DATE',
   'INV-PLAN-RACE-ON-RACE-DAY',
   'INV-PLAN-RECALIBRATION-HAS-SESSION',
+  'INV-PLAN-TT-LONG-RUN-SPACING',
   'INV-PLAN-PEAK-IN-PEAK-PHASE',
   'INV-PLAN-NO-PLACEHOLDER-COPY',
   'INV-PLAN-TAPER-COPY-MATCHES-DURATION',
@@ -6479,6 +6480,33 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           actual: 'no benchmark session',
           expected: 'one session of type "hard"',
         })
+      }
+    }
+  }
+
+  // INV-PLAN-TT-LONG-RUN-SPACING — the §78 benchmark is never on the day either side of the long run.
+  // (CoachingPrinciples §78 Am.2, §7 Am.1; TT-BEFORE-LONG-01.) Reads the circular gap itself rather than the
+  // producer's candidate filter, so a placement that skipped the filter is still caught.
+  {
+    const minGap = GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL.min_gap_days_from_long_run
+    for (const week of plan.weeks) {
+      const entries = Object.entries(week.sessions ?? {}) as [Day, Session | undefined][]
+      const long = entries.find(([, s]) => !!s && isLongRun(s))
+      if (!long) continue
+      for (const [day, s] of entries) {
+        if (!s || !isTimeTrial(s)) continue
+        const gap = dayGap(day, long[0])
+        if (gap < minGap) {
+          violations.push({
+            code: 'INV-PLAN-TT-LONG-RUN-SPACING',
+            principle_ref: 'CoachingPrinciples §78 Am.2, §7',
+            severity: 'error',
+            week: week.n,
+            message: `Week ${week.n} puts the time trial (${day}) ${gap} day(s) from the long run (${long[0]}): a maximal effort beside the week's longest run`,
+            actual: `${gap} day(s)`,
+            expected: `>= ${minGap} days`,
+          })
+        }
       }
     }
   }

@@ -209,6 +209,9 @@ export const GENERATION_CONFIG = {
   RECALIBRATION_TIME_TRIAL: {
     distance_km: 5,
     min_slot_km: 7,   // 5K + ~1km warm-up + ~1km cool-down
+    // §78 Am.2 (TT-BEFORE-LONG-01): a maximal 5K is a hard day (§7 Am.1), so it may not sit on the day either side
+    // of the long run. No day this far clear → no benchmark that week (§78's own fallback).
+    min_gap_days_from_long_run: 2,
   },
 
   // CoachingPrinciples §125 — "a recalibration re-derives; it never re-selects."

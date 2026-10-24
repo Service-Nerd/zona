@@ -228,6 +228,20 @@ export const MUTATIONS: Mutation[] = [
       if (sn.stimulus === 'race_pace' && !isLongRun(s)) { sn.stimulus = 'tempo' }
     })
   } },
+  // INV-PLAN-TT-LONG-RUN-SPACING: the corpus never builds the adjacent shape (it needs a day budget under a weekday
+  // cap and a Saturday long run), so it is constructed: swap the time trial onto the day before the long run.
+  { name: 'time trial the day before the long run', apply: p => {
+    for (const w of p.weeks) {
+      const ss = w.sessions as Record<string, Session | undefined>
+      const tt = DAYS.find(d => ss[d]?.type === 'hard')
+      const lr = DAYS.find(d => ss[d] && isLongRun(ss[d]!))
+      if (!tt || !lr) continue
+      const before = DAYS[(DAYS.indexOf(lr) + 6) % 7]
+      if (before === tt) continue
+      const moved = ss[before]
+      ss[before] = ss[tt]; ss[tt] = moved
+    }
+  } },
   { name: 'phases run out of order', apply: p => {
     const ws = p.weeks.filter(w => w.n >= 1)
     if (ws.length < 4) return

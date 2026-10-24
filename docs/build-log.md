@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-24 — TT-BEFORE-LONG-01 · the time trial was already trying to avoid the long run
+**Shipped:** The 5K time trial is never placed on the day either side of the long run; if no other day fits, that week has no benchmark.
+**Dev learning:** I filed this as "the engine doesn't count the time trial". The placement code already sorted candidates by distance from the long run, with a comment saying so. The defect was the case where the only slot big enough was the adjacent one. Removing input fields one at a time found it in a single run: a 90-minute Friday budget under a 45-minute weekday cap, with a Saturday long run.
+**Product/creator learning:** The fix makes one runner's plan worse on one axis: she loses both benchmarks in her marathon block. The board chose that over a maximal 5K the day before her long run. That cost is real and now has its own item, so it isn't hidden.
+**AI-building learning:** Three grids of 8,000 to 11,000 time trials said zero. Every one was true and none could see it, because none combined a day budget with a Saturday long run. My Saturday variant came back with identical counts to Sunday, and that sameness was the clue that I wasn't reaching the case.
+**The honest bit:** I was most of the way to briefing the board on the wrong cause. Reading the 15 lines of placement code before the sitting changed the question from "does §7 apply" to "which rule yields when both can't be met".
+**Hook material:** 0 of 8,118 in the test grid, 1 of 36 in production, and the trigger was one field a runner filled in to give herself more time on Fridays.
+**Postable?:** maybe
+
 ## 2026-10-24 — QUALITY-TYPE-NO-OWNER-01 · the long run was never a hard day
 **Shipped:** One place now answers "is this session hard?", three ways, and the three guards that never saw a long run see it.
 **Dev learning:** The long run is typed `easy` with `role: 'long_run'`. Five sets named `'long'` to catch it, and no session has ever been typed `'long'`, so each looked right and caught nothing. The other lesson was the gate: my hand list of sites was 38, the gate found 46 on its first run. Seven were real copies or a different question that needed naming, and only the gate knew.

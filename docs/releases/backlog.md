@@ -2994,7 +2994,13 @@ converted, and a gate bounding the literal — ⚠️ **comments stripped first*
 the prose recording this. ⚠️ **Falsify by re-adding `'hard'` to one converted site and confirming the gate moves** —
 a count that cannot move is the thing being fixed.
 
-### 🟡 `TT-BEFORE-LONG-01` — the engine puts the 5K time trial the day before the long run *(filed 2026-10-24, P2; RULED 2026-10-24)* 🏃 **COACHING BOARD**
+### ✅ `TT-BEFORE-LONG-01` — **SHIPPED 2026-10-24.** The engine put the 5K time trial the day before the long run *(filed 2026-10-24, P2)* 🏃 **COACHING BOARD**
+
+✅ **BUILT 2026-10-24.** §78 Am.2; `RECALIBRATION_TIME_TRIAL.min_gap_days_from_long_run = 2` filters the placement;
+`INV-PLAN-TT-LONG-RUN-SPACING` (error) reads the gap itself; liveness constructs the shape (*time trial the day before
+the long run*). `lib/plan/ttLongRunSpacing.test.ts` uses the live input shape. **Rebuilt every live input (27 of 36
+regenerate): one plan changes, `799c49e8`, and it loses both benchmarks, as ruled.** The stored plan is unchanged
+until it is rebuilt. Follow-on: `TT-SKIPPED-VISIBILITY-01`.
 
 📐 **RULED 2026-10-24 — CORRECT WITH AMENDMENT** (`docs/decisions/coaching-2026-10-24-tt-before-long.md`). The filed
 cause was wrong: placement already picks the day furthest from the long run. The trigger is a **day budget** under a
@@ -3011,6 +3017,14 @@ not count the time trial (`type: 'hard'`, deliberately outside §8's count), and
 rules first:** does §7's spacing bind the §78 benchmark? If yes, it is an engine fix plus a §7 invariant reading
 `isHardDay`, and a remediation question for that plan. ⚠️ Since this ship, a session MOVE in either of those weeks is
 flagged by the reorder guard, which is correct, and is the only runner-visible effect today.
+
+### 🔲 `TT-SKIPPED-VISIBILITY-01` — a runner whose block loses every benchmark is never told *(filed 2026-10-24, P3)* 🧭 **DESIGN BOARD** → 👤 **FOUNDER**
+
+From the `TT-BEFORE-LONG-01` ruling (McMillan's condition). §78's fallback drops a recalibration week silently when no
+slot fits, and since §78 Am.2 a slot beside the long run does not fit either. A runner can then finish a block with
+paces from day one and nothing on any surface saying why. Measured 2026-10-24: 1 of 27 rebuildable live plans would
+lose every benchmark. **Design rules first** (whether, and where, e.g. a plan note or the Today benchmark tile);
+**the words are the founder's.** Not a coaching question: the board has ruled the skip.
 
 ### 🔲 `PUSH-TT-NOUN-01` — the morning push calls the 5K time trial "Intervals" *(filed 2026-10-24, P3)* 👤 **FOUNDER**
 

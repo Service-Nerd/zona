@@ -2145,6 +2145,10 @@ function applyRecalibrationTimeTrial(
   const cfg = GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL
   const candidates = (Object.keys(sessions) as Day[])
     .filter(d => d !== longDay)
+    // §78 Am.2 / §7 (TT-BEFORE-LONG-01): never the day either side of the long run. The sort below already prefers
+    // the furthest day; this is for when the only slot big enough is the adjacent one (a day budget under a weekday
+    // cap with a Saturday long run did exactly that). Its runner's limits and long-run day are never moved instead.
+    .filter(d => dayGap(d, longDay) >= cfg.min_gap_days_from_long_run)
     .filter(d => {
       const s = sessions[d]
       if (!s || s.type !== 'easy') return false

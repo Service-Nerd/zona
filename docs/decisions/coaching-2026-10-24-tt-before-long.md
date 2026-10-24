@@ -82,6 +82,14 @@ loses every benchmark in a block to this rule is filed as a visibility follow-on
 
 None.
 
+## Built (2026-10-24)
+
+All three artifacts landed. Falsified: removing the placement filter makes the new invariant stop generation of
+weeks 7 and 11 of the live shape; neutering the invariant's comparison turns the forged-plan arm red; disabling the
+liveness mutation fails `invariantLiveness.test.ts` naming this invariant. Rebuilding all 27 regenerable live inputs:
+one plan changes (`799c49e8`, both benchmarks dropped), zero trials beside a long run. Follow-on filed:
+`TT-SKIPPED-VISIBILITY-01`.
+
 ## What this does not settle
 
 What the runner is told when her block has no benchmark (copy and design), and whether the existing plan `799c49e8`

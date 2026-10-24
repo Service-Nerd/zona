@@ -85,7 +85,7 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
-## 2026-10-24 — TT-BEFORE-LONG-01 · CORRECT WITH AMENDMENT · RULED, not built
+## 2026-10-24 — TT-BEFORE-LONG-01 · CORRECT WITH AMENDMENT · BUILT 2026-10-24
 
 The §78 time trial may not sit on a day either side of the long run (§7). Re-measured: the placement already prefers
 the day furthest from the long run; it lands adjacent only when that day is the only one big enough, which a day

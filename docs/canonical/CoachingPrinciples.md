@@ -5774,6 +5774,26 @@ Fluent, on-voice, and **states the opposite of this principle** — while deleti
 
 ---
 
+### Amendment 2 — the benchmark obeys §7 (TT-BEFORE-LONG-01, Coaching Board 2026-10-24)
+
+**The time trial is never placed on the day either side of the long run.** It is a maximal effort and a hard day
+(§7 Am.1), and the long run the next day is the stressor §7 exists to protect. The placement already preferred the
+easy day furthest from the long run; what it lacked was a rule for when the only slot big enough was the adjacent one.
+Measured: a **day budget** under a **weekday cap**, with a **Saturday long run**, left Friday as the only slot of
+`min_slot_km` (1 of 36 live plans; 0 in every grid, none of which combined those inputs).
+
+**If no eligible day is that far clear, there is no benchmark that week**, and the week is not listed in
+`meta.recalibration_weeks`, exactly as for a slot that is too short. The runner's weekday cap and day budgets are
+never exceeded to make room, and the long-run day is never moved. A missed benchmark costs a stale pace; a long run
+on legs a maximal 5K has just emptied costs tissue (Willy).
+
+**Recorded:** McMillan would accept the skip only if a runner whose block loses every benchmark is told; that is a
+copy and design question and is filed, not decided here.
+
+**Config:** `GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL.min_gap_days_from_long_run = 2` (the circular day gap the
+placement already uses). **Invariant:** `INV-PLAN-TT-LONG-RUN-SPACING`, error, woken by the liveness mutation
+*"time trial the day before the long run"*.
+
 ## 79. Fitness level — VDOT and volume answer different questions
 
 **Principle.** Fitness level is assessed from **both** the benchmark (VDOT) and current training volume. VDOT measures what a runner can currently *race*; volume measures what they can currently *absorb*. Where the two disagree, the plan takes the **lower** level for structure — weekly volume, peak km, long-run caps — and the **higher** level for the intensity allowance. The disagreement is surfaced in `meta`, never resolved silently.
