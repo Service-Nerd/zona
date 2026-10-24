@@ -9,6 +9,18 @@ not after.
 
 
 
+
+## 2026-10-24 — NO-RUNNER-TURNED-AWAY-01 · SHIP WITH AMENDMENT (10). The race plan, staged; never the refusal view
+
+Coaching ruled the meaning; this rules the encoding. A base-volume refusal lands on the **race plan's preview**, with
+**Base building** as the first phase (existing `PhaseSummaryCard`) naming the **checkpoint**. The race block before
+the checkpoint is an **outline** (additive `PlanArc` prop, marketing unchanged, no second bar row per
+`PreviewPhaseStrip`). Today names the checkpoint only in the last build week. The checkpoint shows the observed figure
+with **no meter** (Sierra). Passing: one line, no ceremony. Not passing: a `MODIFY-CONFIRM-DIFF-01` consent screen, ≤3
+options, recommended first. **No runs recorded** is its own state (Wroblewski). One runner-facing name, "Base building"
+(Collins); renaming foundation weeks filed as `FOUNDATION-NAME-COLLAPSE-01`. Words are the founder's. Sitting:
+`docs/decisions/design-2026-10-24-no-runner-turned-away.md`.
+
 ## 2026-10-16 — ME-HISTORY-ERROR-DEADEND-01 · SHIP. The retry the copy asked for
 
 Routed here by `EMPTY-STATE-OWNER-01`. Me → Plan history's error read *"Couldn't load plan history. Go back and

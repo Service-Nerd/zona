@@ -3026,7 +3026,13 @@ rules first:** does §7's spacing bind the §78 benchmark? If yes, it is an engi
 `isHardDay`, and a remediation question for that plan. ⚠️ Since this ship, a session MOVE in either of those weeks is
 flagged by the reorder guard, which is correct, and is the only runner-visible effect today.
 
-### 🟡 `NO-RUNNER-TURNED-AWAY-01` — every runner who asks for a race gets a plan for that race *(filed 2026-10-24, P0, founder; RULED 2026-10-24)* 🏃 **COACHING BOARD** (ruled) → 🧭 **DESIGN BOARD** → 👤 **FOUNDER** (words)
+### 🟡 `NO-RUNNER-TURNED-AWAY-01` — every runner who asks for a race gets a plan for that race *(filed 2026-10-24, P0, founder; RULED 2026-10-24)* 🏃 **COACHING BOARD** (ruled) → 🧭 **DESIGN BOARD** (ruled) → 👤 **FOUNDER** (words)
+
+🧭 **DESIGN BOARD 2026-10-24 — SHIP WITH AMENDMENT (10)** (`docs/decisions/design-2026-10-24-no-runner-turned-away.md`):
+race-plan preview instead of the refusal view; Base building as the first phase card naming the checkpoint; the race
+block an outline until it passes; Today mentions the checkpoint only in the last build week; observed figure, no meter;
+pass = one line, no ceremony; not passing = consent screen (≤3 options); a no-runs-recorded state; one name,
+"Base building". **Next: the founder's words**, then build.
 
 Founder, 2026-10-24: *"We should absolutely not be turning anyone away!"* **Ruled CORRECT WITH AMENDMENT** the same day
 (`docs/decisions/coaching-2026-10-24-no-runner-turned-away.md`). **Measured:** 26 refusals from 13 runners since
@@ -3047,6 +3053,12 @@ extension, shorter or later race); §116 Am. 5's missed-weeks path; a walk-run s
 offer, no generator composes a ramp-then-race plan, and the engine attaches the base-building offer only when the
 on-ramp offer is absent, so the flag on today removes the one thing these runners currently get.
 **Then:** whether the five living runners above are offered the new plan is the founder's remediation call.
+
+### 🔲 `FOUNDATION-NAME-COLLAPSE-01` — should foundation weeks also be called "Base building"? *(filed 2026-10-24, P3)* 🧭 **DESIGN BOARD** → 👤 **FOUNDER**
+
+Recorded disagreement from the `NO-RUNNER-TURNED-AWAY-01` sitting. Collins: one runner-facing name everywhere.
+Zhuo: foundation fills a long runway for a runner who already has a base, a different job; renaming it needs its own
+sitting with its own surfaces (Plan phase card, preview, coach notes, marketing).
 
 ### 🔲 `SHEET-ORIGIN-DEVICE-01` — on the phone, a sheet from the pill appears mid-screen and then drops onto it *(filed 2026-10-24, P1)* ⚙️ **NO BOARD** *(defect)*, then 👤 **FOUNDER** to re-approve
 
