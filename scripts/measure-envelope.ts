@@ -10,7 +10,7 @@
  */
 import { writeFileSync, existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { measureEnvelope, type EnvelopeMeasure } from '../lib/plan/envelopeMeasure'
+import { measureEnvelope, envelopeMoves, type EnvelopeMeasure } from '../lib/plan/envelopeMeasure'
 
 const BASELINE = join(__dirname, '..', 'lib', 'plan', '__fixtures__', 'envelopeBaseline.json')
 const WRITE = process.argv.includes('--write')
@@ -79,29 +79,12 @@ if (!existsSync(BASELINE)) {
   process.exit(0)
 }
 const base = JSON.parse(readFileSync(BASELINE, 'utf8')) as EnvelopeMeasure
-console.log(`\nversus baseline:`)
-let moved = false
-const cmp = (label: string, a: number, b: number) => {
-  const d = +(a - b).toFixed(1)
-  if (Math.abs(d) < 0.05) return
-  moved = true
-  console.log(`   ${label.padEnd(22)} ${b}% -> ${a}%  (${d > 0 ? '+' : ''}${d}pp)`)
-}
-cmp('WHOLE PRODUCT', now.productFitPct, base.productFitPct)
-// RUBRIC-GAPS-01(a) — the WATCHED rates are diffed too, both directions.
-// A fit rate that holds while an exemption's rate climbs is the exemption
-// absorbing a regression, which is precisely the failure this metric exists
-// to catch and precisely the one a fit-rate-only diff cannot see.
-for (const d of Object.keys(now.byDistance)) {
-  const nw = now.byDistance[d].watched ?? {}
-  const bw = base.byDistance[d]?.watched ?? {}
-  // ⚠️ Array.from, not spread — iterating a Set fails this tsconfig (CLAUDE.md).
-  for (const k of Array.from(new Set(Object.keys(nw).concat(Object.keys(bw))))) {
-    cmp(`${d}km ${k}`, nw[k] ?? 0, bw[k] ?? 0)
-  }
-}
-for (const d of Object.keys(now.byDistance)) {
-  cmp(`${d}km`, now.byDistance[d].fitPct, base.byDistance[d]?.fitPct ?? 0)
-}
+console.log(`\nversus baseline (every recorded field, at its declared tolerance — ENVELOPE-BASELINE-UNGATED-01):`)
+// The same comparator the build runs, so this diff and the test's verdict cannot disagree.
+// Every change is printed; the ones the build FAILS on are marked, so a sub-tolerance drift is still seen.
+const gated = new Set(envelopeMoves(now, base).map(m => m.split(':')[0]))
+const moves = envelopeMoves(now, base, { exact: true })
+for (const m of moves) console.log(`   ${gated.has(m.split(':')[0]) ? '✗ FAILS THE BUILD' : '· under tolerance '}  ${m}`)
+const moved = moves.length > 0
 if (!moved) console.log('   unchanged on every distance.')
 else console.log(`\n   A MOVE IS NOT AUTOMATICALLY WRONG — it is automatically something to DECLARE.\n   Re-baseline with --write and say in the commit which number moved and why.`)

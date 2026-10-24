@@ -4664,7 +4664,15 @@ would lie in the opposite direction. **It is inert because it is the wrong sourc
 because nobody got round to it.** Either delete the reader and keep the setter, or leave
 it with that reason recorded. The decision is which, not whether to wire it.
 
-### 🟡 `ENVELOPE-BASELINE-UNGATED-01` — the envelope baseline RECORDS six quantities and GATES one *(filed 2026-10-06, P2)* ⚙️ **NO BOARD**
+### ✅ `ENVELOPE-BASELINE-UNGATED-01` — **SHIPPED 2026-10-24.** The envelope baseline RECORDED every quantity and GATED one *(filed 2026-10-06, P2)* ⚙️ **NO BOARD**
+
+✅ **BUILT 2026-10-24.** Re-measured first: **60 recorded numbers, 7 compared** (10 fields per distance now, not the
+six filed), and **0 drifting today**, so no re-baseline. `envelopeMoves()` beside `measureEnvelope` in
+`lib/plan/envelopeMeasure.ts` compares every field at its own tolerance (`ENVELOPE_TOLERANCE`, typed
+`Record<keyof DistanceMeasure>` so a new field does not compile without one; `fitPct` keeps its 0.6pp). Test and
+`measure:envelope` share it; the script prints every change and marks the ones that fail the build. A new arm derives
+the field list from the fixture. Falsified: `doorPct` hand-edited (red), an objection code appearing (red), an
+undeclared field (red), a sub-tolerance `doorPct` move (green, and printed by the script).
 
 > **Found while shipping `MARATHON-BEGINNER-FLOOR-01`, by comparing the committed baseline against
 > what HEAD actually produces before re-baselining.**

@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-24 — ENVELOPE-BASELINE-UNGATED-01 · 60 numbers written down, 7 checked
+**Shipped:** The fit-for-purpose regression check now compares every number its baseline records, each with its own tolerance, instead of one.
+**Dev learning:** Typing the tolerance table as `Record<keyof DistanceMeasure, number>` makes the compiler refuse a new measured field until someone says how far it may move. I added a second arm that reads the field list from the fixture file too, because the type and the file `--write` produces are different things.
+**Product/creator learning:** No runner-facing change. The number most likely to be quoted at a board sitting (`doorPct`, how many refused runners get a route back) was the one with no check behind it.
+**AI-building learning:** My first cut made the script's report less sensitive than before: it used to print any 0.05pp move and mine only printed moves past tolerance. Caught by reading my own diff, not a test. The script now prints everything and marks what fails the build.
+**The honest bit:** The item said six ungated fields; there were ten per distance by now. And there was no drift to absorb this time, so the build is purely a gate.
+**Hook material:** A JSON fixture with 60 numbers in it, and the test read 7.
+**Postable?:** maybe
+
 ## 2026-10-24 — TT-BEFORE-LONG-01 · the time trial was already trying to avoid the long run
 **Shipped:** The 5K time trial is never placed on the day either side of the long run; if no other day fits, that week has no benchmark.
 **Dev learning:** I filed this as "the engine doesn't count the time trial". The placement code already sorted candidates by distance from the long run, with a comment saying so. The defect was the case where the only slot big enough was the adjacent one. Removing input fields one at a time found it in a single run: a 90-minute Friday budget under a 45-minute weekday cap, with a Saturday long run.

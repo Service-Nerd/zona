@@ -219,3 +219,56 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
 
   return { stride, productFitPct: pc(prodFit, prodTot), byDistance }
 }
+
+// ── ENVELOPE-BASELINE-UNGATED-01 — every recorded field is compared ───────────────────────────────────────────────────
+// The baseline recorded 60 numbers and the gate compared 7 (`fitPct` per distance and the whole-product rate), so a
+// number in the fixture READ as measured and gated when it was merely written down: `doorPct`, the figure §117 Am.4
+// requires per band, had no gate at all. One comparator, shared by the test and `measure-envelope.ts`, so the
+// script's diff and the build's verdict cannot disagree.
+//
+// Typed `Record<keyof DistanceMeasure, …>`, so a new field does not compile until it declares a tolerance. The
+// measurement is deterministic (clock pinned, ENVELOPE-CLOCK-01), so a tolerance is not noise allowance: it is how far
+// a field may move before the move must be DECLARED with `--write`.
+
+/** pp a field may move before it counts as a move. 0 = any change. */
+export const ENVELOPE_TOLERANCE: Readonly<Record<keyof DistanceMeasure, number>> = {
+  fitPct: 0.6,                  // unchanged from the original gate
+  fitPctPreCorrection: 0.6,     // the same rate under the old bar; moves with fitPct
+  servedRefusedPct: 0.3,        // a share of runners refused: refusals are designed, so a move is a rule changing
+  unservedRefusedPct: 0.3,
+  refusedPct: 0.3,
+  doorPct: 0.5,                 // §117 Am.4's figure; null <-> a number is always a move
+  refusedWithoutNextStepPct: 0, // also hard-gated at 0 by the floors test
+  invalidPlans: 0,              // a count of plans failing the constitution
+  objections: 0.5,              // per objection code; a code appearing or vanishing counts from 0
+  watched: 0.5,                 // per watched code, likewise
+}
+export const ENVELOPE_PRODUCT_TOLERANCE = 0.6
+
+/** Every field that moved beyond its tolerance, as readable lines. Empty means unchanged. */
+/** `exact` reports every change, however small (the script's view); the default applies the tolerances (the gate's). */
+export function envelopeMoves(now: EnvelopeMeasure, was: EnvelopeMeasure, { exact = false }: { exact?: boolean } = {}): string[] {
+  const moves: string[] = []
+  const num = (label: string, a: number | null | undefined, b: number | null | undefined, tolerance: number) => {
+    const tol = exact ? 0 : tolerance
+    if (a == null || b == null) { if ((a == null) !== (b == null)) moves.push(`${label}: ${b ?? 'null'} -> ${a ?? 'null'}`); return }
+    const d = +(a - b).toFixed(1)
+    if (Math.abs(d) > tol) moves.push(`${label}: ${b} -> ${a} (${d > 0 ? '+' : ''}${d}, tolerance ${tolerance})`)
+  }
+  if (now.stride !== was.stride) moves.push(`stride: ${was.stride} -> ${now.stride} (a different sample, not a move)`)
+  num('WHOLE PRODUCT fitPct', now.productFitPct, was.productFitPct, ENVELOPE_PRODUCT_TOLERANCE)
+  for (const d of Array.from(new Set(Object.keys(now.byDistance).concat(Object.keys(was.byDistance))))) {
+    const a = now.byDistance[d], b = was.byDistance[d]
+    if (!a || !b) { moves.push(`distance ${d}: ${b ? 'present' : 'absent'} -> ${a ? 'present' : 'absent'}`); continue }
+    for (const f of Object.keys(ENVELOPE_TOLERANCE) as (keyof DistanceMeasure)[]) {
+      const tol = ENVELOPE_TOLERANCE[f]
+      if (f === 'objections' || f === 'watched') {
+        const am = a[f] ?? {}, bm = b[f] ?? {}
+        for (const k of Array.from(new Set(Object.keys(am).concat(Object.keys(bm))))) num(`distance ${d} ${f}.${k}`, am[k] ?? 0, bm[k] ?? 0, tol)
+      } else {
+        num(`distance ${d} ${f}`, a[f] as number | null, b[f] as number | null, tol)
+      }
+    }
+  }
+  return moves
+}

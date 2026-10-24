@@ -3,7 +3,7 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { isDesignedRefusal } from './designedRefusal'
 import { sessionKmSelfPaced } from './sessionDistance'
-import { measureEnvelope } from './envelopeMeasure'
+import { measureEnvelope, envelopeMoves, ENVELOPE_TOLERANCE } from './envelopeMeasure'
 import baselineJson from './__fixtures__/envelopeBaseline.json'
 import type { EnvelopeMeasure } from './envelopeMeasure'
 // The JSON's inferred literal type has no index signature; the measure's
@@ -230,14 +230,9 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   it('no distance has MOVED against the recorded baseline, in either direction', () => {
     // The two-sided half. A RISE is good and still has to be declared, because
     // an undeclared rise is an unexplained change in what runners receive.
-    const moves: string[] = []
-    const check = (label: string, now: number, was: number) => {
-      if (Math.abs(now - was) > 0.6) moves.push(`${label}: ${was}% -> ${now}% (${(now - was).toFixed(1)}pp)`)
-    }
-    check('WHOLE PRODUCT', measured.productFitPct, baseline.productFitPct)
-    for (const d of Object.keys(measured.byDistance)) {
-      check(`${d}km`, measured.byDistance[d].fitPct, baseline.byDistance[d]?.fitPct ?? -1)
-    }
+    // ENVELOPE-BASELINE-UNGATED-01: EVERY recorded field, each at its own tolerance. This compared `fitPct` and the
+    // whole-product rate only, so 53 of the baseline's 60 numbers were written by `--write` and read by nothing.
+    const moves = envelopeMoves(measured, baseline)
     expect(
       moves,
       `Fit-for-purpose moved:\n  ${moves.join('\n  ')}\n` +
@@ -245,6 +240,15 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
       `  Re-baseline with \`npm run measure:envelope -- --write\` and say in the commit\n` +
       `  which number moved and why. Never to turn a test green.`,
     ).toEqual([])
+  })
+
+  it('every field the baseline records has a declared tolerance — a recorded number nothing compares reads as gated', () => {
+    // Derived from the FIXTURE, not from the type: the type is held by the compiler, this holds the file `--write`
+    // actually produces, so a field added to the measure but not to the tolerance table fails here as well.
+    const recorded = new Set(Object.values(baseline.byDistance).flatMap(m => Object.keys(m)))
+    const declared = new Set(Object.keys(ENVELOPE_TOLERANCE))
+    expect(Array.from(recorded).filter(f => !declared.has(f))).toEqual([])
+    expect(recorded.size, 'an empty baseline passes the line above').toBeGreaterThan(5)
   })
 
   it('every distance has a floor — a distance with no floor is a distance nobody is watching', () => {
