@@ -256,12 +256,8 @@ export default function LoginPage() {
         }}>
           {forgot ? (
           <>
-          <div style={{
-            fontFamily: 'var(--font-brand)',
-            fontSize: '18px', fontWeight: 500,
-            color: 'var(--ink)', marginBottom: '6px',
-            letterSpacing: '-0.3px',
-          }}>Reset password</div>
+          {/* TYPE-18PX-CONVERGE-01: an auth screen's lead is the section-headline role (ui-patterns.md). */}
+          <div className="section-headline" style={{ marginBottom: '6px' }}>Reset password</div>
           <div style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '11px', color: 'var(--mute)',
@@ -309,12 +305,7 @@ export default function LoginPage() {
           </>
           ) : (
           <>
-          <div style={{
-            fontFamily: 'var(--font-brand)',
-            fontSize: '18px', fontWeight: 500,
-            color: 'var(--ink)', marginBottom: '6px',
-            letterSpacing: '-0.3px',
-          }}>{mode === 'signin' ? 'Sign in' : 'Create account'}</div>
+          <div className="section-headline" style={{ marginBottom: '6px' }}>{mode === 'signin' ? 'Sign in' : 'Create account'}</div>
           <div style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '11px', color: 'var(--mute)',

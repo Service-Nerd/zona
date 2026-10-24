@@ -211,7 +211,15 @@ attribution, but `PlanCalendar`'s confirmation line (`● <name?> · <distance>`
 a source the run did not come from, before and after 6t-j. Question: is the ● a source mark (then by `source`) or a
 done mark (then a palette colour)? `SessionCard`'s line is correctly gated on `viaStrava`.
 
-### 🔲 `TYPE-18PX-CONVERGE-01` — the 8 remaining headline-species sites ⚙️ **NO BOARD** *(the ruling exists; this is conformance)*
+### ✅ `TYPE-18PX-CONVERGE-01` — **SHIPPED 2026-10-24.** The remaining headline-species sites ⚙️ **NO BOARD** *(the ruling exists; this is conformance)*
+
+✅ **BUILT 2026-10-24. Seven of the eight converged, one was not a headline.** login ×2, reset ×2 and CoachTeaser ×2
+onto `.section-headline` (the row names *"a Coach card headline, an auth screen's lead"*); `ManualRunModal`'s title
+is a SHEET'S NAME, which that row excludes, so it took its sibling sheets' 20/700 (`HrCalibrationSheet`,
+`AddDistanceSheet`). ⚠️ **`StravaPanel:232` was mis-listed:** a stat value in a metric grid on an admin-only screen,
+not a headline; left, and named in the gate. Ratchets: 18px **19 → 12**, undeclared-size uses **209 → 202**, weights
+**84 → 80**. Measured in a browser at 375×812: "Sign in" 20/700/−0.3px, 6px gap kept; the Coach teaser line wraps to
+three lines at 20px. Falsified: 18px put back on one CoachTeaser line → `18px grew (13 vs 12)`.
 
 `FOUNDER-TYPE-18PX-01` refused 18px permanently and created `.section-headline` (20/700) for the
 role. **One of the nine sites converged; eight did not**, and they keep 18px as declared debt in

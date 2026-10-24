@@ -104,7 +104,7 @@ export default function CoachTeaser({ plan, firstName, onUpgrade }: {
                 W{weekNum} of {totalWeeks}
               </span>
             </div>
-            <p style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: '0 0 8px' }}>
+            <p className="section-headline" style={{ margin: '0 0 8px' }}>
               {insight.headline}
             </p>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13.5px', color: 'var(--ink-2)', lineHeight: 1.55, margin: 0 }}>
@@ -193,7 +193,7 @@ export default function CoachTeaser({ plan, firstName, onUpgrade }: {
               W{weekNum} of {totalWeeks}
             </span>
           </div>
-          <p style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: 0 }}>
+          <p className="section-headline">
             Kit reads your sessions and surfaces what&apos;s worth knowing.
           </p>
         </div>

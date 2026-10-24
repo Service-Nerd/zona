@@ -146,7 +146,7 @@ export default function ResetPasswordPage() {
 
           {isDeadEnd(phase) && (
             <>
-              <div style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 500, color: 'var(--ink)', marginBottom: '6px', letterSpacing: '-0.3px' }}>
+              <div className="section-headline" style={{ marginBottom: '6px' }}>
                 {DEAD_END_COPY[phase].heading}
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '20px', lineHeight: 1.6 }}>
@@ -200,7 +200,7 @@ export default function ResetPasswordPage() {
 
           {(phase === 'ready' || phase === 'saving') && (
             <>
-              <div style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 500, color: 'var(--ink)', marginBottom: '6px', letterSpacing: '-0.3px' }}>
+              <div className="section-headline" style={{ marginBottom: '6px' }}>
                 Set a new password
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '24px', lineHeight: 1.6 }}>

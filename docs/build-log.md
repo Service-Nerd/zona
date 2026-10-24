@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-24 — TYPE-18PX-CONVERGE-01 · eight sites on the list, seven were the thing
+**Shipped:** The login, password-reset and Coach-teaser headlines, and the manual-run sheet title, now use the ruled 20px/700 type instead of a retired 18px.
+**Dev learning:** Converting through the class meant deleting five style properties per site and keeping only the margin. The ratchets did the bookkeeping: three baselines fell at once (19 → 12, 209 → 202, 84 → 80), and each refuses to pass until it's lowered and the reason written.
+**Product/creator learning:** "Sign in" goes from 18/500 to 20/700, a visible weight change on the first screen anyone sees. The Coach teaser line now wraps to three lines on a 375px phone. Both are the ruled role; the founder will see whether it reads right.
+**AI-building learning:** The item listed eight sites and one was wrong: StravaPanel's 18px is a stat value in a grid, not a headline. Another ("Log a run") was a sheet title, which the headline row excludes by its own wording. Reading each site before converting it changed two of the eight answers.
+**The honest bit:** Small and mechanical. The only judgement was refusing to force two sites into a class whose definition doesn't fit them.
+**Hook material:** A list of eight "identical" headlines, and two of them weren't headlines.
+**Postable?:** no
+
 ## 2026-10-24 — ENVELOPE-BASELINE-UNGATED-01 · 60 numbers written down, 7 checked
 **Shipped:** The fit-for-purpose regression check now compares every number its baseline records, each with its own tolerance, instead of one.
 **Dev learning:** Typing the tolerance table as `Record<keyof DistanceMeasure, number>` makes the compiler refuse a new measured field until someone says how far it may move. I added a second arm that reads the field list from the fixture file too, because the type and the file `--write` produces are different things.

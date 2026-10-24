@@ -84,9 +84,9 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // level. Six of the seven journey files are now fully on-scale.
     // 214 -> 213 on 2026-10-14 (FOUNDER-TYPE-18PX-01). ONE use converted, not deleted:
     // the founder-note pull-line went 18px -> 20px after the board refused 18 as a level
-    // (17 -> 18 is 1.059x). The other EIGHT sites of the same headline species keep 18px
-    // as declared debt; see the 18px arm below for why they were not swept.
-    const UNDECLARED_USES_BASELINE = 209  // 210 → 209 measured STAGED: ME-HISTORY-ERROR-DEADEND-01 moved Plan history's 13px error line onto EmptyState
+    // (17 -> 18 is 1.059x). The other sites of the same headline species converged on
+    // 2026-10-24 (TYPE-18PX-CONVERGE-01); see the 18px arm below for what is left and why.
+    const UNDECLARED_USES_BASELINE = 202  // 209 → 202 TYPE-18PX-CONVERGE-01: seven 18px headline/title sites converged (2026-10-24); 210 → 209 measured STAGED: ME-HISTORY-ERROR-DEADEND-01 moved Plan history's 13px error line onto EmptyState
     let n = 0
     for (const [size, count] of Array.from(sizes())) if (!DECLARED.has(size)) n += count
     expect(n,
@@ -112,8 +112,12 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // what an element IS, which it cannot. The ratchet is still correct — the number may
     // only fall — but do not read it as "20 type violations".
     //
-    // 20 (2026-10-14, before) -> 19 (after the founder-note pull-line converged).
-    const EIGHTEEN_BASELINE = 19
+    // 20 (2026-10-14, before) -> 19 (after the founder-note pull-line converged) -> 12 (2026-10-24,
+    // TYPE-18PX-CONVERGE-01: login x2, reset x2, CoachTeaser x2 onto `.section-headline`; ManualRunModal's sheet
+    // title onto its siblings' 20/700). ⚠️ StravaPanel:232 stays: the item listed it, but it is a STAT VALUE in a
+    // metric grid, not a headline, on an admin-only screen. The 12 left: 5 IconButton glyphs, that stat value, and
+    // six odd uses (arrows, dashes, an RPE number, a duration, a wizard heading).
+    const EIGHTEEN_BASELINE = 12
     const n = sizes().get('18') ?? 0
     expect(n,
       n > EIGHTEEN_BASELINE
@@ -178,7 +182,7 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // 86 -> 84 on 2026-10-14 (FOUNDER-TYPE-18PX-01). TWO uses converted: the founder
     // note's caption and mailto went 12/500 -> 12/400. The table declares 12px at weight
     // 400 only, and no 500 was authored at that size.
-    const WEIGHT_BASELINE = 84
+    const WEIGHT_BASELINE = 80 // 84 → 80 TYPE-18PX-CONVERGE-01 (the converged sites' 500/600 weights)
     let n = 0
     for (const f of FILES) {
       const re = /fontWeight:\s*'?(\d+)'?/g
