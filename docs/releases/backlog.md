@@ -2994,7 +2994,15 @@ converted, and a gate bounding the literal — ⚠️ **comments stripped first*
 the prose recording this. ⚠️ **Falsify by re-adding `'hard'` to one converted site and confirming the gate moves** —
 a count that cannot move is the thing being fixed.
 
-### 🔲 `TT-BEFORE-LONG-01` — the engine puts the 5K time trial the day before the long run *(filed 2026-10-24, P2)* 🏃 **COACHING BOARD**
+### 🟡 `TT-BEFORE-LONG-01` — the engine puts the 5K time trial the day before the long run *(filed 2026-10-24, P2; RULED 2026-10-24)* 🏃 **COACHING BOARD**
+
+📐 **RULED 2026-10-24 — CORRECT WITH AMENDMENT** (`docs/decisions/coaching-2026-10-24-tt-before-long.md`). The filed
+cause was wrong: placement already picks the day furthest from the long run. The trigger is a **day budget** under a
+**weekday cap** with a **Saturday long run**: the budget leaves Friday the only slot ≥ 7 km. Ruling: never within one
+day of the long run; no safe day → no benchmark that week (§78's fallback). **To build:** §78 Am.2,
+`RECALIBRATION_TIME_TRIAL.min_gap_days_from_long_run = 2`, `INV-PLAN-TT-LONG-RUN-SPACING`, and a grid cell (day
+budget + Saturday long run) so the invariant can be woken. Follow-on to file at build: what a runner is told when
+her block loses every benchmark (this runner loses both).
 
 Found measuring `QUALITY-TYPE-NO-OWNER-01`. §7 Amendment 1 rules the time trial a hard DAY, and §7 asks 48 h between
 any two stressors. One live plan breaks that twice: **cate.stacey@icloud.com**, London Marathon, plan `799c49e8`
