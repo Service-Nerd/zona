@@ -908,10 +908,15 @@ vfail=0
 python3 - <<'PYEOF' || vfail=1
 import re, subprocess, sys, pathlib
 log = subprocess.run(['git','log','--pretty=format:%s'],capture_output=True,text=True).stdout.split('\n')
-ids = []
+# ⚠️ ONLY WHERE THE REVERT IS THE ITEM'S LATEST SHIP-SHAPED COMMIT. The log is newest first, so the first
+# feat/fix/revert seen for a scope decides. Before this, an item reverted once and re-shipped later
+# (SHEET-ORIGIN-01: reverted 2026-09-26, re-shipped 2026-10-24) was flagged forever as reverted-but-live.
+ids, seen = [], set()
 for line in log:
-    m = re.match(r'revert\(([^)]+)\)', line)
-    if m and m.group(1) not in ids: ids.append(m.group(1))
+    m = re.match(r'(revert|feat|fix)\(([^)]+)\)', line)
+    if not m or m.group(2) in seen: continue
+    seen.add(m.group(2))
+    if m.group(1) == 'revert': ids.append(m.group(2))
 reg = pathlib.Path('docs/canonical/feature-registry.md').read_text(encoding='utf-8')
 bl  = pathlib.Path('docs/releases/backlog.md').read_text(encoding='utf-8')
 bad = []
