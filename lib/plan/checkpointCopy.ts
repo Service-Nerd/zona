@@ -1,0 +1,69 @@
+/**
+ * NO-RUNNER-TURNED-AWAY-01 — every runner-facing string of the staged race plan, from ONE owner (the shape of
+ * `baseBuildCopy.ts`). The words are the founder's, approved 2026-10-24; this file only fills them in.
+ *
+ * ⚠️ The approved table used example figures ("12 km", "16 Nov", "Two more weeks"). They are interpolated here, never
+ * hard-typed, so the copy says this runner's numbers. Distances go through ADR-015's `formatDistance`, dates through
+ * `formatDate`, and the race's noun through `raceLabelFor`, so no string here assembles a unit or a race by hand.
+ */
+
+import { formatDistance, formatDate, type DistanceUnits } from '@/lib/format'
+import { raceLabelFor } from './raceLabel'
+import { raceDistanceKey } from './generationConfig'
+import type { StagedRace } from './stagedRacePlan'
+
+const raceNoun = (raceKm: number) => {
+  const l = raceLabelFor(raceDistanceKey(raceKm))
+  return l.charAt(0).toUpperCase() + l.slice(1)
+}
+const km = (v: number, units: DistanceUnits) => formatDistance(v, units, { exact: true }) ?? ''
+const day = (iso: string) => formatDate(iso, 'short') ?? ''
+
+/** The base-building phase card's title. */
+export const BASE_BUILDING_TITLE = 'Base building'
+/** The walk-run start's title (a 0 km/week start, phase D). */
+export const WALK_RUN_START_TITLE = 'Walk-run start'
+
+/** "Base building · 3 weeks" card body: "Easy running up to about 12 km a week. Checkpoint w/c 16 Nov." */
+export function basePhaseLine(staged: StagedRace, checkpointWeekStart: string, units: DistanceUnits): string {
+  return `Easy running up to about ${km(staged.door_km, units)} a week. Checkpoint w/c ${day(checkpointWeekStart)}.`
+}
+
+/** The race block before it exists: title "Marathon training", line "from 23 Nov. Built after your checkpoint." */
+export function raceBlockTitle(staged: StagedRace): string {
+  return `${raceNoun(staged.race_distance_km)} training`
+}
+export function raceBlockLine(raceBlockStart: string): string {
+  return `from ${day(raceBlockStart)}. Built after your checkpoint.`
+}
+
+/** Today, in the last week of base building only (Design Board amendment 4). */
+export const CHECKPOINT_THIS_WEEK_LINE = "Checkpoint on Sunday. Easy miles count; the pace doesn't."
+
+/** Today, once the checkpoint has passed: "12.4 km a week. Marathon training starts Monday." */
+export function checkpointPassedLine(observedKm: number, raceKm: number, units: DistanceUnits): string {
+  return `${km(observedKm, units)} a week. ${raceNoun(raceKm)} training starts Monday.`
+}
+
+/** Not passed: heading and why. */
+export function notPassedHeading(observedKm: number, units: DistanceUnits): string {
+  return `You ran ${km(observedKm, units)} a week.`
+}
+export function notPassedWhy(targetKm: number, raceKm: number, units: DistanceUnits): string {
+  return `${raceNoun(raceKm)} training needs about ${km(targetKm, units)} to start safely.`
+}
+
+/** Not passed: the options, recommended first (Design Board amendment 7). The approved "Two more weeks" is the
+ *  engine's own number of weeks. */
+export function extendOptionLabel(weeks: number): string {
+  return `${weeks === 1 ? 'One more week' : `${weeks} more weeks`} of base building`
+}
+export function runWalkOptionLabel(raceKm: number): string {
+  return `Run-walk the ${raceLabelFor(raceDistanceKey(raceKm))}`
+}
+export const LATER_RACE_OPTION_LABEL = 'Pick a later race'
+
+/** No runs recorded (Design Board amendment 8). */
+export const NO_RUNS_HEADING = "We haven't seen any runs yet."
+export const CONNECT_HEALTH_OPTION_LABEL = 'Connect Apple Health'
+export const LOG_RUN_OPTION_LABEL = 'Log a run'

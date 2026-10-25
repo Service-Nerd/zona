@@ -57,6 +57,7 @@ interface TodayScreenProps {
   hasPaidAccess?: boolean
   dailyCoachNote?: string | null
   coachNoteSettled?: boolean
+  checkpointLine?: string | null // NO-RUNNER-TURNED-AWAY-01 — the staged plan's checkpoint week only; EVERY tier
   runAnalysisMap?: Record<number, Record<string, any>>
   runAnalysisReady?: boolean
   onOpenCoach?: () => void
@@ -182,3 +183,12 @@ so a retry is real. Check: `components/shared/planChangeFailVisible.markup.test.
 - **Hard-effort week check (QUALITY-TYPE-NO-OWNER-01, 2026-10-24):** "does this week carry a hard session" reads
   `isHardEffort` from `lib/plan/sessionRole.ts` instead of a hand-written type list. Identical answer for every type that
   occurs; no prop change.
+
+## The checkpoint line — NO-RUNNER-TURNED-AWAY-01 (2026-10-25)
+
+`checkpointLine` is set by `DashboardClient` only while `isCheckpointWeek(plan, now)` is true: the last week of a
+**staged** base build (`lib/plan/stagedRacePlan.ts`). It takes the coach-note slot as a rule-engine
+`<CoachNoteBlock label="CHECKPOINT">`, with no AI provenance, and **for every tier**: it tells the runner how their plan
+works, which is access, not richness (CLAUDE.md, free users are never abandoned). While it is set, the paid daily coach
+note does not render beside it (one note per slot). The words are `CHECKPOINT_THIS_WEEK_LINE` in
+`lib/plan/checkpointCopy.ts`, founder-approved 2026-10-24. Guarded by `components/shared/stagedRaceScreens.markup.test.ts`.

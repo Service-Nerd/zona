@@ -5,6 +5,9 @@
 
 import { InlineError } from '@/components/shared/InlineError'
 import { ACK_FIELD, ACK_LABEL, warnKindOf, type WarnKind } from '@/lib/plan/warnAcknowledgement'
+import { stagedDisplay, stagedRaceOf } from '@/lib/plan/stagedRacePlan'
+import StagedRaceBlockCard from '@/components/shared/StagedRaceBlockCard'
+import { BASE_BUILDING_TITLE, basePhaseLine, raceBlockTitle, raceBlockLine } from '@/lib/plan/checkpointCopy'
 import PlanHeroMetrics from '@/components/shared/PlanHeroMetrics'
 import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
@@ -351,9 +354,12 @@ function WizardInput({ value, onChange, placeholder, type = 'text', min, max }: 
 // "+N more weeks" footer. Every week is represented in the strip; every
 // phase has a card.
 
-const PHASES = ['foundation', 'base', 'build', 'peak', 'taper'] as const
+// `base_build` first: a §116/§118 base-build plan is ALL `base_build` weeks, and without it here the preview's
+// "Plan shape" rendered nothing for one (found building NO-RUNNER-TURNED-AWAY-01 Phase C).
+const PHASES = ['base_build', 'foundation', 'base', 'build', 'peak', 'taper'] as const
 
 const PHASE_COLOUR: Record<string, string> = {
+  base_build: 'var(--s-easy)',
   foundation: 'var(--mute)',
   base:       'var(--s-easy)',
   build:      'var(--s-quality)',
@@ -364,6 +370,9 @@ const PHASE_COLOUR: Record<string, string> = {
 const PHASE_DESCRIPTION: Record<string, string> = {
   foundation: 'Pre-plan easy running. Easy sessions only: no quality, no strides.',
   base:       'Aerobic foundation. Easy runs, nothing fancy.',
+  // The same words as `base`, not new ones: a plain base build is exactly that. A STAGED one says its checkpoint
+  // instead (`basePhaseLine`, the founder's words).
+  base_build: 'Aerobic foundation. Easy runs, nothing fancy.',
   build:      'One quality session a week. Everything else stays easy.',
   peak:       'Race-specific sharpening. Volume holds; the work gets specific.',
   taper:      'Volume drops. Race week is shakeouts only.',
@@ -371,18 +380,18 @@ const PHASE_DESCRIPTION: Record<string, string> = {
 
 // Full-width strip — every week as a coloured bar. No scrolling.
 // Per-phase summary card — left accent in phase colour, key stats, character line.
-function PhaseSummaryCard({ phase, weeks, units }: { phase: string; weeks: Plan['weeks']; units: DistanceUnits }) {
+function PhaseSummaryCard({ phase, weeks, units, title, line }: { phase: string; weeks: Plan['weeks']; units: DistanceUnits; title?: string; line?: string }) {
   if (!weeks.length) return null
   const startW = weeks[0].n
   const endW   = weeks[weeks.length - 1].n
   const peakKm = Math.max(...weeks.map(w => w.weekly_km ?? 0))
   const colour = PHASE_COLOUR[phase] ?? 'var(--mute)'
-  const description = PHASE_DESCRIPTION[phase] ?? ''
+  const description = line ?? PHASE_DESCRIPTION[phase] ?? ''
   // §57 — foundation weeks count DOWN to 0 (n <= 0); that's an internal
   // construction index, never a number to show a runner. Mirrors
   // PreviewPhaseStrip's own "N weeks before your plan" phrasing above
   // rather than a week-number range, which only ever makes sense from n=1.
-  const weekRange = phase === 'foundation'
+  const weekRange = phase === 'foundation' || phase === 'base_build'
     ? `${weeks.length} ${weeks.length === 1 ? 'week' : 'weeks'}`
     : startW === endW ? `Week ${startW}` : `Weeks ${startW}–${endW}`
   return (
@@ -397,8 +406,8 @@ function PhaseSummaryCard({ phase, weeks, units }: { phase: string; weeks: Plan[
     }}>
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: 'var(--ink)', textTransform: 'capitalize' }}>
-            {phase}
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: 'var(--ink)', textTransform: title ? 'none' : 'capitalize' }}>
+            {title ?? phase}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
             {weekRange} · peak {formatDistance(peakKm, units)}
@@ -1412,6 +1421,10 @@ export default function GeneratePlanScreen({
 
   if (appStep === 'preview' && plan) {
     const { meta, weeks } = plan
+    // NO-RUNNER-TURNED-AWAY-01 — a staged plan is the runner's RACE plan, staged: its race name, its race timeline,
+    // base building with the checkpoint, and the race block as an outline. Display only (`stagedDisplay`).
+    const staged = stagedDisplay(plan)
+    const stagedRace = stagedRaceOf(plan)
     // COACH-INTRO-TOKEN-01 — plan-level prose goes through ONE owner, which
     // substitutes plan-level tokens and then applies the unit preference. This
     // screen rendered `meta.coach_intro` through `convertDistanceString` alone,
@@ -1439,7 +1452,7 @@ export default function GeneratePlanScreen({
                 converted on five screens; this one was invisible to that gate because its
                 population was a hardcoded six-file list. */}
             <div className="screen-header__title">
-              {meta.race_name || 'Your plan'}
+              {staged?.raceName || meta.race_name || 'Your plan'}
             </div>
             {/* BACK-HEADER-OWNER-01 — the documented screen-SUBTITLE role. Metadata under
                 a title at 13px `--mute`, which is the sub role doing its job one pixel
@@ -1475,13 +1488,14 @@ export default function GeneratePlanScreen({
               hero numbers are derived here too). */}
           <div style={{ marginTop: 'var(--space-5)' }}>
             <PlanArc
-              totalWeeks={plan.weeks.length}
+              totalWeeks={staged?.totalWeeks ?? plan.weeks.length}
               currentWeek={1}
               doneWeeks={0}
               weekKm={planArcSeries(plan.weeks).km}
               weekPhase={planArcSeries(plan.weeks).phase.map(phaseDisplayLabel)}
               raceWeek={plan.weeks.find(w => w.type === 'race')?.n}
               reveal
+              outline={staged && stagedRace ? { weeks: staged.raceWeeks, label: raceBlockTitle(stagedRace) } : undefined}
             />
           </div>
         </div>
@@ -1597,8 +1611,15 @@ export default function GeneratePlanScreen({
             {PHASES.map(phase => {
               const phaseWeeks = weeks.filter(w => w.phase === phase)
               if (!phaseWeeks.length) return null
-              return <PhaseSummaryCard key={phase} phase={phase} weeks={phaseWeeks} units={preferredUnits} />
+              // A STAGED base build names its checkpoint (Design Board amendment 2), in the founder's words.
+              const stagedLine = phase === 'base_build' && staged && stagedRace
+                ? basePhaseLine(stagedRace, staged.checkpointWeekStart, preferredUnits) : undefined
+              return <PhaseSummaryCard key={phase} phase={phase} weeks={phaseWeeks} units={preferredUnits}
+                title={phase === 'base_build' ? BASE_BUILDING_TITLE : undefined} line={stagedLine} />
             })}
+            {staged && stagedRace && (
+              <StagedRaceBlockCard title={raceBlockTitle(stagedRace)} line={raceBlockLine(staged.raceBlockStart)} />
+            )}
           </div>
         </div>
 

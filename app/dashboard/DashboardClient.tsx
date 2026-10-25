@@ -14,7 +14,9 @@ import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
 import { ACK_LABEL, warnKindOf, withAcknowledgement, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import { handoverState, handoverInput, handoverSeenPatch } from '@/lib/plan/baseBuildHandover'
-import { declaredVolumeEdit } from '@/lib/plan/stagedRacePlan'
+import { declaredVolumeEdit, stagedDisplay, stagedRaceOf, isCheckpointWeek } from '@/lib/plan/stagedRacePlan'
+import { raceBlockTitle, raceBlockLine, CHECKPOINT_THIS_WEEK_LINE } from '@/lib/plan/checkpointCopy'
+import StagedRaceBlockCard from '@/components/shared/StagedRaceBlockCard'
 import { rebuildsBaseBuild } from '@/lib/plan/modifyPlan'
 import { handoverCopy } from '@/lib/ui/handoverCopy'
 import { resolveAutoMatch } from '@/lib/coaching/sessionAutoMatch'
@@ -2699,8 +2701,11 @@ export default function DashboardClient() {
   const aerobicPace = liveAerobicPace ?? cachedAerobicPace
 
   const now = new Date()
-  const raceDate = plan?.meta?.race_date ? new Date(plan.meta.race_date) : null
-  const raceName = plan?.meta?.race_name ?? ''
+  // NO-RUNNER-TURNED-AWAY-01 — a STAGED base build is the runner's race plan, so Today counts down to THEIR race and
+  // names it. Display only (`stagedDisplay`): `meta.race_name` / `race_date` stay as every base build has them.
+  const stagedView = stagedDisplay(plan)
+  const raceDate = (stagedView?.raceDate || plan?.meta?.race_date) ? new Date(stagedView?.raceDate || plan!.meta.race_date) : null
+  const raceName = stagedView?.raceName || plan?.meta?.race_name || ''
   const daysToRace = daysUntilRace(raceDate, now) ?? 0
 
   const s: React.CSSProperties = {
@@ -2936,7 +2941,7 @@ export default function DashboardClient() {
             ? <AttributionRow supabase={supabase} userId={userId}
                 onResolved={() => setAttributionResolved(true)} />
             : null
-        } recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); hasPaidAccess ? setScreen('recalibration') : openUpgrade('recal_tile') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} handover={handoverCopyData} onBuildRacePlan={handleBuildRacePlan} onDismissHandover={handleDismissHandover} handoverBusy={handoverBusy} handoverError={modifyError} handoverAckLabel={ackKind ? ACK_LABEL[ackKind] : null} onHandoverAcknowledge={ackKind ? () => void acknowledgeModify() : undefined} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        } recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); hasPaidAccess ? setScreen('recalibration') : openUpgrade('recal_tile') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} checkpointLine={isCheckpointWeek(plan, now) ? CHECKPOINT_THIS_WEEK_LINE : null} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} handover={handoverCopyData} onBuildRacePlan={handleBuildRacePlan} onDismissHandover={handleDismissHandover} handoverBusy={handoverBusy} handoverError={modifyError} handoverAckLabel={ackKind ? ACK_LABEL[ackKind] : null} onHandoverAcknowledge={ackKind ? () => void acknowledgeModify() : undefined} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
@@ -4614,8 +4619,11 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
       .filter(([, c]: [string, any]) => c?.status === 'complete')
       .map(([day]) => classifyRun(analysed[day]?.hr_above_ceiling_pct))
   }, [allCompletions, runAnalysisMap, weekNum])
-  const raceName = (plan as any)?.meta?.race_name ?? ''
-  const raceDate = (plan as any)?.meta?.race_date ? new Date((plan as any).meta.race_date) : null
+  // NO-RUNNER-TURNED-AWAY-01 — the same display-only race identity as Today (`stagedDisplay`).
+  const staged = stagedDisplay(plan)
+  const stagedRace = stagedRaceOf(plan)
+  const raceName = staged?.raceName || (plan as any)?.meta?.race_name || ''
+  const raceDate = (staged?.raceDate || (plan as any)?.meta?.race_date) ? new Date(staged?.raceDate || (plan as any).meta.race_date) : null
   const raceDateStr = raceDate ? formatDate(raceDate, 'medium') : null
   const daysToRace = daysUntilRace(raceDate)
 
@@ -4755,12 +4763,13 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           misaligned under the (inset) race title. */}
       <div style={{ padding: '0 16px' }}>
         <PlanArc
-          totalWeeks={totalWeeks}
+          totalWeeks={staged?.totalWeeks ?? totalWeeks}
           currentWeek={weekOrdinal}
           doneWeeks={doneWeeksCount}
           weekKm={arcSeries.km}
           weekPhase={arcSeries.phase.map(phaseDisplayLabel)}
           raceWeek={raceWeekNumber}
+          outline={staged && stagedRace ? { weeks: staged.raceWeeks, label: raceBlockTitle(stagedRace) } : undefined}
         />
       </div>
 
@@ -4840,6 +4849,13 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
             onOpenSession?.({ ...session, weekN })
           }}
         />
+        {/* NO-RUNNER-TURNED-AWAY-01 (Design Board amendment 3) — where the race weeks would be, the race block as it is:
+            not built until the checkpoint passes. */}
+        {staged && stagedRace && (
+          <div style={{ padding: '0 16px' }}>
+            <StagedRaceBlockCard title={raceBlockTitle(stagedRace)} line={raceBlockLine(staged.raceBlockStart)} />
+          </div>
+        )}
       </div>
 
       {/* ── P-04: ZONE COMPLIANCE, THE ONE INTENSITY METRIC ON THIS SCREEN ──

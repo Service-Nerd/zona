@@ -37,8 +37,20 @@ type Props = {
   weekPhase: (string | null)[]  // REQUIRED — DISPLAY labels, plan order
   raceWeek?: number             // 1-indexed
   reveal?: boolean              // DESIGN-REVEAL-SHAPE-01 — reveal scale + one annotation
+  outline?: { weeks: number; label: string }  // NO-RUNNER-TURNED-AWAY-01 — unbuilt weeks, dashed
 }
 ```
+
+### `outline` — weeks the plan is for but has not built yet
+
+A staged race plan (`plan_kind: 'base_build'` + `meta.staged_race`) builds its race block only when the checkpoint
+passes. `outline` draws those weeks as **one dashed block**, `flex: weeks`, full plot height, **no fill**, labelled on
+the rail (Design Board 2026-10-24, amendment 3). No bar heights, because height here means volume and those weeks have
+none to show (Silvanto). Pass `totalWeeks` as base + race weeks so the outline sits at its true width.
+
+**Absent (the default): the markup is byte-identical to before**, so every existing caller, marketing included, is
+unchanged; `components/shared/stagedRaceScreens.markup.test.ts` asserts that. A zero-week outline draws nothing.
+Callers: the Plan screen and the wizard preview, both only for a staged plan (`stagedDisplay(plan)`).
 
 ### `reveal` — the plan-arrival scale, and the only surface that annotates
 

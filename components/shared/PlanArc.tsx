@@ -73,6 +73,14 @@ type Props = {
    * sentence is wallpaper (Sierra).
    */
   reveal?: boolean
+  /**
+   * NO-RUNNER-TURNED-AWAY-01 (Design Board 2026-10-24, amendment 3) — weeks the plan is FOR but has not built yet:
+   * a staged plan's race block, which does not exist until the checkpoint passes. Drawn as ONE dashed outline the
+   * width of those weeks and the full height of the plot, with no fill: height on this ridge means volume, and these
+   * weeks have none to show, so any bar height would be a claim (Silvanto). The rail names it.
+   * Additive and absent by default: every existing caller, marketing included, renders exactly as before.
+   */
+  outline?: { weeks: number; label: string }
 }
 
 /** Plot height. Tall enough that a deload at ~60% of peak reads as a notch
@@ -136,7 +144,9 @@ export default function PlanArc({
   raceWeek,
   weekPhase,
   reveal = false,
+  outline,
 }: Props) {
+  const outlineWeeks = outline && outline.weeks > 0 ? outline.weeks : 0
   const peak = Math.max(...weekKm, 1)
   const plot = reveal ? PLOT_REVEAL : PLOT
 
@@ -222,6 +232,12 @@ export default function PlanArc({
             />
           )
         })}
+        {outlineWeeks > 0 && (
+          <div data-arc-outline="" aria-hidden="true" style={{
+            flex: outlineWeeks, height: '100%', boxSizing: 'border-box',
+            border: '1px dashed var(--line-strong)', borderBottom: 'none', borderRadius: '2px 2px 0 0',
+          }} />
+        )}
       </div>
 
       {/* The axis. Continuous, so the ridge stands on something. */}
@@ -280,13 +296,14 @@ export default function PlanArc({
             }}
           />
         ))}
+        {outlineWeeks > 0 && <div style={{ flex: outlineWeeks }} />}
       </div>
 
       {/* PHASE RAIL. The blocks the plan is made of, at the widths they
           actually occupy — which is itself information the chain could never
           carry: a reader can see that base is five weeks and taper is three.
           Segments flex by week count, so they line up with the ridge above. */}
-      {segments.some(s => s.label) && (
+      {(segments.some(s => s.label) || outlineWeeks > 0) && (
         <div style={{ display: 'flex', gap: '2px', marginTop: 'var(--space-2)' }}>
           {segments.map(seg => {
             const lastWeek = seg.firstWeek + seg.weeks - 1
@@ -316,6 +333,15 @@ export default function PlanArc({
               </div>
             )
           })}
+          {outlineWeeks > 0 && (
+            <div style={{ flex: outlineWeeks, minWidth: 0 }}>
+              <div style={{ height: '3px', borderRadius: '2px', border: '1px dashed var(--line-strong)', boxSizing: 'border-box' }} />
+              <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)', marginTop: '4px',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {outline!.label}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

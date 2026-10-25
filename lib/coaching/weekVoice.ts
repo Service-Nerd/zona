@@ -73,6 +73,9 @@ export const PHASE_LABELS: Record<string, string> = {
   // ADR-013 maintenance-plan phases — without these the raw lowercase phase leaks
   // through and the uppercase CSS renders "MAINTENANCE_RESTORATION" on the Plan card.
   maintenance_restoration: 'Restoration', maintenance_base: 'Base',
+  // NO-RUNNER-TURNED-AWAY-01 — §116/§118 base-build weeks. Missing until 2026-10-25, so the Plan arc's rail showed the
+  // raw key (uppercased by the eyebrow style: "BASE_BUILD") for every base-build runner. The SLT's name (§118).
+  base_build: 'Base building',
 }
 
 

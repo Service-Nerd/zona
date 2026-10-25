@@ -640,7 +640,7 @@ function heroGreeting(firstName?: string | null): string {
   return firstName ? `${greeting}, ${firstName}` : greeting
 }
 
-export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, handover, onBuildRacePlan, onDismissHandover, handoverBusy, handoverError = null, handoverAckLabel = null, onHandoverAcknowledge, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow, strength = null, onStrengthInvite }: {
+export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, handover, onBuildRacePlan, onDismissHandover, handoverBusy, handoverError = null, handoverAckLabel = null, onHandoverAcknowledge, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow, strength = null, onStrengthInvite, checkpointLine = null }: {
   recalTile?: React.ReactNode
   /** OPS-ATTRIB-01 — passed as a NODE, the same shape as `recalTile`, so Today
    *  does not need a Supabase client or the answered-state. Design Board
@@ -693,6 +693,9 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   onUpgrade?: () => void
   hasPaidAccess?: boolean
   dailyCoachNote?: string | null
+  /** NO-RUNNER-TURNED-AWAY-01 (Design Board amendment 4) — set only in the last week of a STAGED base build. It takes
+   *  the coach-note slot for EVERY tier: it says how the plan works, which is access, not richness. */
+  checkpointLine?: string | null
   coachNoteSettled?: boolean
   runAnalysisMap?: Record<number, Record<string, any>>
   runAnalysisReady?: boolean
@@ -1863,7 +1866,13 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
             unavailable so paid users always see something.
             While the fetch is in flight (coachNoteSettled = false) we show a
             skeleton so the rule-based copy never flashes before the AI note. */}
-        {hasPaidAccess && (() => {
+        {checkpointLine && (
+          <div style={{ marginBottom: 'var(--space-5)' }}>
+            {/* Rule-engine copy, the founder's words (`checkpointCopy.ts`): no AIMark. */}
+            <CoachNoteBlock label="CHECKPOINT">{checkpointLine}</CoachNoteBlock>
+          </div>
+        )}
+        {!checkpointLine && hasPaidAccess && (() => {
           if (!coachNoteSettled) {
             return (
               <div style={{ marginBottom: 'var(--space-5)' }}>

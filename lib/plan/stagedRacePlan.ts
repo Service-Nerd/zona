@@ -261,3 +261,47 @@ export function declaredVolumeEdit(stored: GeneratorInput | undefined, next: Gen
   const { volume_observed: _drop, ...rest } = next
   return rest as GeneratorInput
 }
+
+/**
+ * What a screen shows for a staged plan, derived once (NO-RUNNER-TURNED-AWAY-01, Phase C). DISPLAY ONLY: the plan's
+ * own `race_name` / `race_date` stay "Base building" / "" (see this file's header), so nothing that archives or
+ * counts down from them moves. `null` for any plan that is not staged.
+ */
+export interface StagedDisplay {
+  raceName: string
+  raceDate: string
+  /** Monday of the checkpoint week (the base build's last week). */
+  checkpointWeekStart: string
+  /** Monday the race block would start, the week after the checkpoint. */
+  raceBlockStart: string
+  baseWeeks: number
+  raceWeeks: number
+  /** Base building plus the race block: the race timeline the runner sees. */
+  totalWeeks: number
+}
+
+export function stagedDisplay(plan: Plan | null | undefined): StagedDisplay | null {
+  const s = stagedRaceOf(plan)
+  if (!plan || !s) return null
+  const last = plan.weeks.find(w => w.n === s.checkpoint_week) ?? plan.weeks[plan.weeks.length - 1]
+  const cpStart = String(last?.date ?? '').slice(0, 10)
+  if (!cpStart) return null
+  return {
+    raceName: s.race_name,
+    raceDate: s.race_date,
+    checkpointWeekStart: cpStart,
+    raceBlockStart: addWeeks(cpStart, 1),
+    baseWeeks: s.checkpoint_week,
+    raceWeeks: s.race_weeks,
+    totalWeeks: s.checkpoint_week + s.race_weeks,
+  }
+}
+
+/** Is `now` inside the checkpoint week (the base build's last week)? Today names the checkpoint only then. */
+export function isCheckpointWeek(plan: Plan | null | undefined, now: Date): boolean {
+  const d = stagedDisplay(plan)
+  if (!d) return false
+  const start = Date.parse(`${d.checkpointWeekStart}T00:00:00`)
+  const t = now.getTime()
+  return t >= start && t < start + 7 * 864e5
+}
