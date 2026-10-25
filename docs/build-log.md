@@ -270,6 +270,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** It can't go live until the database migration is run, and that has to be done by hand in Supabase.
 
 ---
+## 2026-10-25 — ACCOUNT-DELETED-TRACE-01 · A deleted runner looked like nobody
+**Shipped:** deleting an account now leaves one anonymous ops row.
+**Dev learning:** `ops_events` SET NULL on delete is right (it keeps the AI spend ledger), and it also erases the meaning of every earlier row. Three `plan_refused_by_design` events with NULL user ids after a comped reconcile looked like a ghost. The new row has a NULL user id on purpose so the cascade cannot touch it.
+**Product/creator learning:** with a charity partner, "they signed up and left" and "they never signed up" are very different conversations.
+**AI-building learning:** answered the question from the data first (the events were there, unattributed), then built the trace. The other way round would have been guessing.
+**The honest bit:** no way to recover who it was, by design.
+**Hook material:** "Three events, no user, eight minutes after a redeemed code."
+**Postable?:** no
+
 
 ## 2026-10-22 — WARN-TEXT-CONTRAST-01 · the coaching amber, a shade darker for words
 **Shipped:** Coaching notes and warnings written in amber now use the darker amber. Same colour family, readable on white.

@@ -100,7 +100,11 @@ export type OpsEventKind =
   // reshape path, and conflating the two would hide which side broke.
   | 'plan_save_failed_client'
   | 'plan_integrity_mismatch'   // an auto_applied adjustment never landed in plan_json (probe)
-  | 'reshape_invalid'           // a reshaped plan failed a constitutional invariant (prod soft-degrade)
+  | 'reshape_invalid'           // a reshaped plan failed a constitutional invariant; since 2026-10-25 it is not offered
+  // ACCOUNT-DELETED-TRACE-01 (2026-10-25) — an account was deleted. Recorded with NO user id, AFTER deleteUser, so it
+  // survives; without it the ops digest read a deleted runner's anonymised rows (ops_events SET NULL) as "never signed
+  // up". `detail`: `{ account_age_days }`. No PII.
+  | 'account_deleted'
   | 'plan_enrich_failed'        // AI enrichment silently fell back to rule-engine output (GEN-FIX-02)
   | 'plan_rule_invalid'         // a GENERATED rule plan violated its own constitution (ENRICH-ATTRIB-01)
   // ENRICH-SERVER-SAVE-01 (2026-09-04) — the server's own persist of the enriched

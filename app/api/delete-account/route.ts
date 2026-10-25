@@ -1,6 +1,7 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 
 /**
  * DELETE ACCOUNT — DB-USER-PURGE-01.
@@ -43,6 +44,13 @@ export async function POST(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // ACCOUNT-DELETED-TRACE-01 — after the delete, with no user id, so the row is not itself erased and carries nothing
+  // personal: only how old the account was. It lets the ops digest tell "deleted" from "never signed up".
+  const createdAt = (user as unknown as { created_at?: string }).created_at
+  await recordOpsEvent('account_deleted', {
+    account_age_days: createdAt ? Math.round((Date.now() - Date.parse(createdAt)) / 864e5) : null,
+  }, null)
 
   return NextResponse.json({ ok: true })
 }

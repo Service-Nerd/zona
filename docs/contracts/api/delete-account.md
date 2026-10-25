@@ -41,6 +41,7 @@ Empty body accepted.
   Two more are cleared by the `on_auth_user_deleted` trigger because no FK can reach them:
   `ai_rate_limits` and `waitlist`. **Not `charity_codes` — see the migration's own comment
   before you add it back.**
+- **ACCOUNT-DELETED-TRACE-01 (2026-10-25):** after a successful delete the route records one `account_deleted` ops event with `user_id` NULL and `detail: { account_age_days }`, nothing else. A failed `recordOpsEvent` never fails the request. Response unchanged.
 - Apple App Store requirement — must be reachable from Me screen without authentication friction.
 
 ## History
