@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { checkRateLimit } from '@/lib/ai/rateLimit'
-import { BOOT_STALL_GATES, type BootStallGate } from '@/lib/ui/bootWatchdog'
+import { BOOT_STALL_GATES, BOOT_REPORT_LIMIT, BOOT_REPORT_WINDOW_SECONDS, type BootStallGate } from '@/lib/ui/bootWatchdog'
 
 // POST /api/ops/boot-report — BOOT-HANG-01 (2026-10-25).
 //
@@ -12,9 +12,6 @@ import { BOOT_STALL_GATES, type BootStallGate } from '@/lib/ui/bootWatchdog'
 // verified bearer would be blind to the failure it exists for. A valid bearer attributes the row; without one the row
 // is anonymous. The body is enum-only (no free text), and the route is rate-limited per IP, so an unauthenticated
 // caller can write nothing but a bounded number of `boot_stalled` rows.
-
-export const BOOT_REPORT_LIMIT = 10
-export const BOOT_REPORT_WINDOW_SECONDS = 3600
 
 interface Body { gate?: unknown; elapsed_ms?: unknown; native?: unknown }
 

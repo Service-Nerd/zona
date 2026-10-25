@@ -33,3 +33,8 @@ export function stalledGate(s: {
 /** Founder-approved 2026-10-25. */
 export const BOOT_STALLED_TITLE = 'Taking longer than usual.'
 export const BOOT_STALLED_ACTION = 'Try again'
+
+/** `/api/ops/boot-report`'s per-IP limit. Here, not in the route: a Next.js route file may export only handlers
+ *  and route config, and exporting these from it failed the production build on 2026-10-25. */
+export const BOOT_REPORT_LIMIT = 10
+export const BOOT_REPORT_WINDOW_SECONDS = 3600
