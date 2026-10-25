@@ -341,8 +341,17 @@ export function buildAdjustmentSignals(req: AdjustmentRequest): AdjustmentCheckI
     week as unknown as { sessions: Record<string, never> },
   ) as unknown as Session[]
 
+  // SKIP-MAKEUP-DAY-01 — what the make-up may not ignore: the runner's blocked days, and which of this week's days
+  // have already passed (from the week's own Monday and the request's clock, the date part only).
+  const weekStart = String((week as unknown as { date?: string } | undefined)?.date ?? '').slice(0, 10)
+  const todayIso = (req.now ?? new Date().toISOString()).slice(0, 10)
+  const earliestDayIdx = weekStart
+    ? Math.max(0, Math.round((Date.parse(`${todayIso}T00:00:00Z`) - Date.parse(`${weekStart}T00:00:00Z`)) / 864e5))
+    : 0
+  const blockedDays = ((plan.meta as unknown as { generator_input?: { days_cannot_train?: string[] } } | undefined)?.generator_input?.days_cannot_train ?? [])
   const skipSignal = req.skipSignal
-    ? { ...req.skipSignal, weekSessionsByDay: (week?.sessions ?? {}) as Record<string, Session | undefined | null> }
+    ? { ...req.skipSignal, weekSessionsByDay: (week?.sessions ?? {}) as Record<string, Session | undefined | null>,
+        blockedDays, earliestDayIdx }
     : undefined
 
   const sessionFor = (a: AnalysisRow): Session | undefined => {

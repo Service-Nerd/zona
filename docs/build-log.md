@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-25 — SKIP-MAKEUP-DAY-01 · The check fired, logged, and the change was offered anyway
+**Shipped:** a skipped run's make-up now goes on a day you can train, not in the past, and is the actual run; a change that breaks the plan is never offered.
+**Dev learning:** the make-up was built as `{ type, label, detail }`: a session with no distance, time or pace, so it was "a run" to the type system and nothing to the runner. And it searched days after the skipped one, ignoring both today and the runner's blocked days. Underneath that, `reshape_invalid` was a production soft-degrade that logged and then wrote the pending row regardless. My own first fix crashed on a plan with no `meta`, which three existing tests caught. One mutation stayed green because its `sed` never matched: I nearly called the copy test proven.
+**Product/creator learning:** the ops digest found it on the founder's own account, not a user. The daily report earning its keep.
+**AI-building learning:** a falsification that "passes" must be checked for whether it ran at all. A non-matching substitution looks exactly like a hollow test.
+**The honest bit:** the bug is old. Nobody had skipped with a reason on a plan with blocked days and looked at what came back.
+**Hook material:** "Skip Tuesday, get an empty run on Wednesday, the day you said you can't train, which was four days ago."
+**Postable?:** maybe
+
 
 ## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 · Switched on, and made the default so the gates measure what ships
 **Shipped:** the staged race plan is live. On by default in code; an env var of `0` is the off-switch.

@@ -338,10 +338,15 @@ export async function POST(req: NextRequest) {
     }
     await recordOpsEvent(
       'reshape_invalid',
-      { route: 'adjust-plan', week_n: weekN, violations: reshapeErrors.map(v => ({ code: v.code, week: v.week, message: v.message })) },
+      { route: 'adjust-plan', week_n: weekN, trigger: proposed.trigger.type,
+        violations: reshapeErrors.map(v => ({ code: v.code, week: v.week, message: v.message })) },
       user.id,
     )
     console.error('[adjust-plan] reshape validation failed', reshapeErrors)
+    // 🔴 SKIP-MAKEUP-DAY-01: a change that breaks the plan's rules is NEVER offered. It used to be written as a pending
+    // adjustment anyway, so the runner could confirm it and `savePlanForUser` (which logs, never refuses, in
+    // production) would have saved it. The runner's own action (the skip) is already recorded; the plan stays as it is.
+    return NextResponse.json({ adjustment: null, message: 'No adjustment needed' })
   }
 
   const adjustmentRow = {

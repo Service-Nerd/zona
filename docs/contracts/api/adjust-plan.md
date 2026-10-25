@@ -361,3 +361,27 @@ has been measured in this repo, after `ROUTE-E2E-GENERATE-01`.
 The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
 `.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
 of 94 Supabase warnings in a day. **A database error now answers `500 { error: 'Could not load your plan' }`.** It used to be indistinguishable from "no plan" and answered as if the runner had none.
+
+## A change that breaks the plan is never offered — SKIP-MAKEUP-DAY-01 (2026-10-25)
+
+🔴 **Found on the founder's own plan by the daily ops digest.** A Tuesday easy run skipped with
+*"Life got busy"*, logged on the Sunday, produced a pending adjustment that **kept Tuesday's run
+and added an empty "Make-up easy run" on Wednesday**, which was (a) a day he had said he cannot
+train, (b) already past, and (c) no distance, time or pace. `reshape_invalid` fired, and the route
+**wrote the pending row anyway**, because in production the check only logged.
+
+**Two changes, one response shape that already existed:**
+
+- **The route.** On error-severity violations in production it records `reshape_invalid` (now with
+  `trigger` in `detail`) and returns `{ adjustment: null, message: 'No adjustment needed' }`. **No
+  `plan_adjustments` row is written.** Dev/test still throws. This reverses "the reaction did not
+  move" above for production only: offering a runner a change we have just measured as breaking
+  their plan is not a soft degrade.
+- **The make-up (`buildSkipAdjustment`).** The free day must be after the skipped day, **not
+  before today** (`earliestDayIdx`, from the week's own date and `req.now`), and **not in
+  `generator_input.days_cannot_train`** (`blockedDays`). The make-up **is the skipped session**
+  (distance, time, pace, HR, zone) minus its `id`, relabelled. No such day → no make-up.
+
+`session_reorder` is not the same defect: the runner chooses `toDay`.
+
+Tests: `lib/coaching/planAdjustment.test.ts` § SKIP-MAKEUP-DAY-01, six arms, each falsified.

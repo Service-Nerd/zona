@@ -135,6 +135,12 @@ export interface AdjustmentCheckInput {
     sessionType: string
     sessionDay: string
     weekSessionsByDay: Record<string, Session | undefined | null>
+    /** SKIP-MAKEUP-DAY-01 — the days the runner cannot train (`days_cannot_train`, short form). A make-up never lands
+     *  on one. */
+    blockedDays?: string[]
+    /** SKIP-MAKEUP-DAY-01 — the first day of this week that has not passed (0 = Monday … 7 = the week is over). A
+     *  make-up is never proposed into the past. */
+    earliestDayIdx?: number
   }
   /**
    * Reorder signal: user wants to move a session from one day to another.
@@ -662,8 +668,13 @@ function buildSkipAdjustment(
 
   // "Life got busy" / "Bad weather" — find first free slot after the skipped day
   if (reason === 'Life got busy' || reason === 'Bad weather') {
+    // 🔴 SKIP-MAKEUP-DAY-01 (found 2026-10-25 on the founder's plan): the first rest day after the skipped one was taken
+    // whatever it was. It was a day he cannot train, and it had already passed (a Tuesday skip logged on the Sunday got
+    // Wednesday). The make-up goes on a day the runner can train, that has not passed, or nowhere.
     const skippedIdx  = DAY_ORDER.indexOf(sessionDay as typeof DAY_ORDER[number])
-    const remainingDays = DAY_ORDER.slice(skippedIdx + 1)
+    const blocked = new Set((signal.blockedDays ?? []).map(d => String(d).slice(0, 3).toLowerCase()))
+    const from = Math.max(skippedIdx + 1, signal.earliestDayIdx ?? 0)
+    const remainingDays = DAY_ORDER.slice(from).filter(d => !blocked.has(d))
     const freeDay = remainingDays.find(day => {
       const s = weekSessionsByDay[day]
       return !s || s.type === 'rest'
@@ -674,9 +685,14 @@ function buildSkipAdjustment(
       return null
     }
 
-    // Add make-up session to the free slot — same type as skipped session
+    // SKIP-MAKEUP-DAY-01 — the make-up IS the skipped session, moved: its distance, time, pace and heart rate. It was
+    // built from nothing (no distance, no duration, no pace), so the plan prescribed an empty run. No skipped session
+    // to copy means no make-up.
+    const skipped = weekSessionsByDay[sessionDay]
+    if (!skipped || skipped.type === 'rest') return null
+    const { id: _id, ...skippedRest } = skipped as Session & { id?: string }
     const makeUpSession: Session = {
-      type: sessionType as Session['type'],
+      ...skippedRest,
       label: `Make-up ${sessionType} run`,
       detail: 'Rescheduled from earlier this week. Keep the effort easy — this is a catch-up, not extra load.',
       coach_notes: ['Make-up session. Same effort as the original — no extra load.'] as [string],

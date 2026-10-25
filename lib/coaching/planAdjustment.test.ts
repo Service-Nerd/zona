@@ -502,3 +502,52 @@ describe('the guard is against the REAL assembly, not a mirror of it', () => {
     expect(analyseSrc).toContain('activity.moving_time_s')
   })
 })
+
+// ─── SKIP-MAKEUP-DAY-01 (2026-10-25, the founder's own plan) ──────────────────────────────────────────────────────
+// A Tuesday easy run skipped ("Life got busy") was given a make-up on Wednesday: a day he cannot train, already past
+// (it was Sunday), and an empty session (no distance, time or pace). The route then offered it as pending.
+describe('SKIP-MAKEUP-DAY-01 — a make-up lands on a day you can train, not in the past, and is the run you skipped', () => {
+  const tue: Session = { type: 'easy', label: 'Easy run — Zone 2', detail: null, distance_km: 9, duration_mins: 60,
+    pace_target: '5:53–7:02 /km', hr_target: '< 145 bpm', zone: 'Zone 2' } as Session
+  const fri: Session = { ...tue }
+  const sun: Session = { type: 'easy', label: 'Long run — Zone 2', detail: null, distance_km: 12.5, duration_mins: 81 } as Session
+  const week: Session[] = [restSession(), tue, restSession(), restSession(), fri, restSession(), sun]
+  const byDay = { mon: week[0], tue: week[1], wed: week[2], thu: week[3], fri: week[4], sat: week[5], sun: week[6] }
+  const skip = (over: Record<string, unknown> = {}) => checkAdjustmentTriggers({
+    ...baseInput(), currentWeekSessions: week,
+    skipSignal: { reason: 'Life got busy', sessionType: 'easy', sessionDay: 'tue', weekSessionsByDay: byDay, ...over },
+  } as never)
+
+  it('🔴 the founder\'s case: Mon/Wed/Thu/Sat blocked, logged on Sunday → no make-up is proposed at all', () => {
+    expect(skip({ blockedDays: ['monday', 'wednesday', 'thursday', 'saturday'], earliestDayIdx: 6 })).toBeNull()
+  })
+  it('🔴 never a blocked day: Wednesday blocked, Thursday open → Thursday', () => {
+    const r = skip({ blockedDays: ['wednesday'], earliestDayIdx: 1 })!
+    expect(r.trigger.detail.freeDay).toBe('thu')
+  })
+  it('🔴 never a day that has passed: logged on Thursday, Wednesday open → Saturday, not Wednesday', () => {
+    const r = skip({ blockedDays: [], earliestDayIdx: 3 })!
+    expect(r.trigger.detail.freeDay).toBe('thu')
+    const r2 = skip({ blockedDays: ['thursday'], earliestDayIdx: 3 })!
+    expect(r2.trigger.detail.freeDay).toBe('sat')
+  })
+  it('🔴 the make-up is the skipped run: same distance, time, pace and heart rate', () => {
+    const r = skip({ blockedDays: [], earliestDayIdx: 1 })!
+    const m = r.sessionsAfter[2]
+    expect(m.label).toMatch(/Make-up/)
+    expect([m.distance_km, m.duration_mins, m.pace_target, m.hr_target]).toEqual([9, 60, '5:53–7:02 /km', '< 145 bpm'])
+  })
+  it('no skipped run on that day → no make-up', () => {
+    expect(skip({ sessionDay: 'wed', blockedDays: [], earliestDayIdx: 1 })).toBeNull()
+  })
+})
+
+describe('SKIP-MAKEUP-DAY-01 — the route never offers a change that breaks the plan\'s rules', () => {
+  it('a reshape with error violations returns no adjustment, after recording it', () => {
+    const src = readFileSync(join(process.cwd(), 'app/api/adjust-plan/route.ts'), 'utf8')
+    const at = src.indexOf("'reshape_invalid',")
+    expect(at).toBeGreaterThan(-1)
+    const after = src.slice(at, src.indexOf('const adjustmentRow', at))
+    expect(after).toContain("return NextResponse.json({ adjustment: null, message: 'No adjustment needed' })")
+  })
+})
