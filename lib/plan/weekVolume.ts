@@ -81,7 +81,9 @@ export function trainingKm(w: WeekLike): number {
  */
 export function planArcSeries(weeks: WeekLike[]): { km: number[]; phase: (string | null)[] } {
   return {
-    km: weeks.map(trainingKm),
+    // A walk-run start week is time on feet with no distance (§116 floor note): the arc draws its minimum stub, never a
+    // NaN bar and never a figure we do not have. The week is still there, so the current-week marker stays aligned.
+    km: weeks.map(w => ((w as unknown as { phase?: string }).phase === 'walk_run_start' ? 0 : trainingKm(w))),
     phase: weeks.map(w => (w as unknown as { phase?: string }).phase ?? null),
   }
 }

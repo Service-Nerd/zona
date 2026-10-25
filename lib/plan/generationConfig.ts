@@ -1528,6 +1528,21 @@ export const GENERATION_CONFIG = {
    *  competitor. */
   BASE_BUILD_ONRAMP_MIN_START_KM: 6,
 
+  /** §116 floor note, amended by name (Coaching Board 2026-10-24 Q3, 2026-10-25 L1–L5): below
+   *  `BASE_BUILD_ONRAMP_MIN_START_KM`, including 0, the runner starts with a WALK-RUN start. Three sessions a week
+   *  (Sims: recovery between impact days matters more than frequency here), never on consecutive days where the days
+   *  allow. */
+  WALK_RUN_START_SESSIONS: 3,
+  /** Each walk-run session in total, time on feet: a `RUNWALK_WARMUP_WALK_MINS` walk, then the repeats, no cool-down
+   *  (L3). At 6/1 that is 66 running minutes a week, 6.0 km at 11 min/km, which is where §116's ramp then starts. */
+  WALK_RUN_START_MINS: 30,
+  /** The ladder's first level: run 1, walk 2 (Q3). The run minute steps by one a week to
+   *  `FINISH_GOAL_RUNWALK_RUN_MINS`; the walk holds at `WALK_RUN_START_WALK_MINS` until the last step, which is §117's
+   *  6/1 (L1, ladder A: the walk is the recovery between impacts, so it shortens once, last). §3's deload every
+   *  `BASE_BUILD_ONRAMP_DELOAD_FREQUENCY` weeks holds the previous level. */
+  WALK_RUN_START_RUN_MINS: 1,
+  WALK_RUN_START_WALK_MINS: 2,
+
   /** §44's ratified 16-week threshold, reused rather than re-chosen. McMillan:
    *  a ramp that leaves less than this has bought base at the cost of the
    *  specific preparation the race actually needs. */

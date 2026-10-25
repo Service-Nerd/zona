@@ -326,6 +326,9 @@ export interface Session {
   /** Embedded run-walk strategy for the session, e.g. "9:1 from km 10" or
    *  "5:1 throughout". Free-form; displayed verbatim. Marathon / ultra primarily. */
   run_walk_strategy?: string
+  /** §116 floor note (walk-run start, Coaching Board 2026-10-25): this session's run/walk level on the ladder from 1/2
+   *  to §117's 6/1. Set only on walk-run start sessions; the step drawing and the composer read it. */
+  walk_run_level?: { run_mins: number; walk_mins: number }
   /**
    * §81's own obligation, finally built (SESSION-ACHIEVABLE-01, Coaching Board
    * 2026-10-06). A structured weekday session is EXEMPT from the runner's stated
@@ -375,7 +378,7 @@ export interface Week {
   // has broken server-side invariants THREE times; a fourth block class sharing
   // its phase would be the fourth. Maintenance already set the precedent: a
   // different plan kind gets its own phase and its own validator.
-  phase?: 'base' | 'build' | 'peak' | 'taper' | 'foundation' | 'base_build' | 'maintenance_restoration' | 'maintenance_base'
+  phase?: 'base' | 'build' | 'peak' | 'taper' | 'foundation' | 'base_build' | 'walk_run_start' | 'maintenance_restoration' | 'maintenance_base'
   badge?: 'deload' | 'holiday' | 'race'
   sessions: Partial<Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', Session>>
   long_run_hrs: number | null

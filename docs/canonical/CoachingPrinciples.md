@@ -10386,6 +10386,29 @@ the same self-report we already accept at the wizard, taken later, after eleven 
 running 2 km at a time, and run-walk is for someone who cannot — who is below
 `BASE_BUILD_ONRAMP_MIN_START_KM` anyway. **Do not build it to copy a competitor.**
 
+**Floor note, AMENDED BY NAME — the walk-run start (Coaching Board 2026-10-24 Q3, 2026-10-25 L1–L5,
+`docs/decisions/coaching-2026-10-25-walk-run-start.md`).** The floor stands: below
+`BASE_BUILD_ONRAMP_MIN_START_KM`, a RUNNING ramp does not serve the runner. What changed is that the founder asked, so
+the runner below it (including 0 km/week) now starts with a **walk-run start** instead of nothing. Willy amended his
+own note. It is not built to copy a competitor; it is built because the alternative was turning these runners away.
+
+| | Ruling | Seat |
+|---|---|---|
+| **Shape** | `WALK_RUN_START_SESSIONS` (3) sessions a week of `WALK_RUN_START_MINS` (30) in total: a `RUNWALK_WARMUP_WALK_MINS` walk, then run/walk repeats starting on a run, **no cool-down**; a remainder runs up to the level's run minutes, then walks. Never on consecutive days where the runner's days allow. All easy, §12's cap and the talk test. Fuelling note carried (Am. 4) | Sims (L3) |
+| **Ladder** | From `WALK_RUN_START_RUN_MINS`/`WALK_RUN_START_WALK_MINS` (1/2), the run minute steps by one a week; the walk holds at 2 until the last step, which is §117's `FINISH_GOAL_RUNWALK_RUN_MINS`/`WALK_MINS` (6/1). The walk is the recovery between impacts, so it shortens once, last. §3's deload every `BASE_BUILD_ONRAMP_DELOAD_FREQUENCY` weeks holds the previous level. Running minutes a week: 27, 39, 45, (45), 51, 57, 66 | Willy (L1, ladder A over a mid-ladder +33% step) |
+| **Entry** | Every runner below the floor enters at 1/2. ⚠️ **McMillan dissents:** a 1–5 km/week runner's first weeks are below what they already run; the matching rule would need a pace these runners do not have. Phase E measures the cost | Sims (L2) |
+| **Placement** | Walk-run start, then this section's ramp from `BASE_BUILD_ONRAMP_MIN_START_KM`, then Am. 9's checkpoint. **The walk-run start is never shortened**: the ramp is cut first; where the runway cannot hold even a ramp week plus §44's block, the plan is the walk-run start alone with the race on it (`reaches_door: false`) and the checkpoint offers what builds (C4) | McMillan (L4) |
+| **Handover** | Not a credit: §111 is not asked until the checkpoint, and 6 km is at or below what 6/1 delivers at 11 min/km or faster (6.0–8.2 km). **The ramp after a walk-run start carries §117's 6/1 pattern on every session until the checkpoint**, so the continuous bout does not near-triple in one week (6 minutes to ~17) | Willy (L5) |
+
+⚠️ **§113 refuses these runners before §111 is reached** (no one below 6 km/week has a 5 km long run), so the engine
+finds §111's door with §113's floor as the long run (`walkRunDoorKm`) and stages them; §113 is asked at the
+checkpoint on the long run they ran (C2). **Sessions carry no distance**: time on feet, because there is no pace for
+these runners and a distance from an assumed one would be invented.
+
+**Owner.** `lib/plan/walkRunStart.ts`; composed by `generateStagedRacePlan`. **Enforced by**
+`INV-PLAN-WALKRUN-START-PROGRESSION`. ⚠️ `measure:fitness` and the envelope grid contain no start below 6 km/week
+that stages, so neither measures this cohort; Phase E is its first measurement.
+
 ⚠️ **Why the §52 blocking chain does not apply.** Candidate A's 884 violations came from shrinking
 **main-plan** weeks. A pre-plan block does not — verified at four sites in `invariants.ts`: §2's
 ramp skips foundation (`:3393`), week 1 is the first non-foundation week (`:2511–2513`), delivered
@@ -10422,7 +10445,7 @@ line from the vetoed `S111-FOUNDATION-CREDIT-01`. Amendment 7 is kept exactly: �
 **Q1, where the checkpoint goes.** At the week the ramp reaches §111's door, provided at least §44's **block**
 threshold is left for the race block (`prepBlockWeeks`, reused); otherwise at `runway − block`. McMillan over the
 16-week warn line: a warn is a warning the runner can accept, not a wall. Starts below
-`BASE_BUILD_ONRAMP_MIN_START_KM` are not staged yet (the walk-run start, ruled, is not built).
+`BASE_BUILD_ONRAMP_MIN_START_KM` begin with the walk-run start (floor note above, built 2026-10-25).
 
 **Q2, what "observed" is.** The mean `totalKm` (linked + off-plan, §2 Am. 4) of the final
 `BASE_BUILD_CHECKPOINT_OBSERVED_WEEKS` (2) non-deload weeks, floored to one decimal. **Pass at or above the door, no
@@ -10817,6 +10840,14 @@ it."* Owner: `lib/plan/baseBuildCopy.ts`, single owner, 8 tests including the ru
 
 **Config.** `GET_RUNNING_MIN_WEEKS = 8`, `GET_RUNNING_MAX_WEEKS = 15`.
 **Owner.** `lib/plan/getRunningPlan.ts`. **Enforced by** `INV-PLAN-GET-RUNNING-BUILD-RATIO`.
+
+### §118 Amendment 4 — a 0 km/week runner is given the walk-run start (Coaching Board 2026-10-24 Q3, 2026-10-25)
+
+`getRunningApplies` requires an effective start above zero, so **a runner at 0 km/week got nothing at all** (one of the
+six refused charity marathoners). With §116's staging on, a runner below `BASE_BUILD_ONRAMP_MIN_START_KM` who asks for a
+race is given the **walk-run start** with that race on the plan (§116's floor note, amended): Willy and McMillan settled
+on the race date and name shipping with it, and no running block generated until running exists. The get-running plan
+is unchanged for the runner who accepts a base build instead of a race.
 
 ## 119. A loading block is never one week — including the plan's first
 

@@ -3127,6 +3127,14 @@ card shows. So the option would log a run and return the same screen. **Question
 (a design change to a shared modal), or does the no-runs state offer more base building instead? Until then the state
 offers Apple Health and a later race.
 
+### 🔲 `NO-RUNNER-CHECKPOINT-BELOW-FLOOR-01` — a staged runner still under 6 km/week at the checkpoint *(filed 2026-10-25)* 🏃 **COACHING BOARD** (Phase E round)
+
+Found building Phase D. "More base building" from an observed figure below `BASE_BUILD_ONRAMP_MIN_START_KM` would be a
+**second walk-run start from 1/2** (measured: a 0 km marathoner 46 weeks out, observing 4 km, was offered "17 more weeks
+of base building"). Not ruled, so withheld: `extendedStagedPlan` returns null below the floor, and these runners are
+offered a later race. **Question:** resume the ladder where they are (6/1 held), restart it, or extend the running ramp
+from the observed figure? Also measured: a 0 km marathoner 26 weeks out observing 4 km gets a later race only.
+
 ### 🔲 `FOUNDATION-NAME-COLLAPSE-01` — should foundation weeks also be called "Base building"? *(filed 2026-10-24, P3)* 🧭 **DESIGN BOARD** → 👤 **FOUNDER**
 
 Recorded disagreement from the `NO-RUNNER-TURNED-AWAY-01` sitting. Collins: one runner-facing name everywhere.

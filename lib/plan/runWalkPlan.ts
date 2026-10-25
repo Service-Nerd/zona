@@ -177,12 +177,19 @@ export function applyRunWalk(session: Session): Session {
  * DERIVED AT READ TIME, like `backfillLegacyRamp`: a stamp at generation would reach no existing plan (live-plan policy:
  * new plans only), and this reaches every run-walk runner now. Null when there is nothing to draw.
  */
-export function runWalkSet(mainMins: number, runPace: string | null): DerivedSet | null {
+export function runWalkSet(mainMins: number, runPace: string | null,
+  level: { run_mins: number; walk_mins: number } = {
+    run_mins: GENERATION_CONFIG.FINISH_GOAL_RUNWALK_RUN_MINS, walk_mins: GENERATION_CONFIG.FINISH_GOAL_RUNWALK_WALK_MINS,
+  }): DerivedSet | null {
   if (!(mainMins > 0)) return null
-  const run = GENERATION_CONFIG.FINISH_GOAL_RUNWALK_RUN_MINS
-  const walk = GENERATION_CONFIG.FINISH_GOAL_RUNWALK_WALK_MINS
+  const run = level.run_mins
+  const walk = level.walk_mins
   const n = Math.floor(mainMins / (run + walk))
   const rem = mainMins - n * (run + walk)
+  // §116 floor note, L3: a remainder RUNS up to the level's run minutes, then walks, so no run is longer than the level
+  // prescribes. At §117's 6/1 the remainder is at most 6, so §117's sessions draw exactly as before.
+  const remRun = Math.min(rem, run)
+  const remWalk = rem - remRun
   const runStep = (mins: number): DerivedStep => ({
     role: 'transition', modality: 'run', length: formatSecs(mins * 60), pace: runPace, pace_mode: 'ceiling', zone: 'Z2', advance: 'auto',
   })
@@ -193,7 +200,7 @@ export function runWalkSet(mainMins: number, runPace: string | null): DerivedSet
   }
   const blocks: DerivedSet['blocks'] = []
   if (n > 0) blocks.push({ repeat: n, label: 'rounds of', steps: [runStep(run), walkStep] })
-  if (rem > 0) blocks.push({ repeat: 1, steps: [runStep(rem)] })
+  if (remRun > 0) blocks.push({ repeat: 1, steps: remWalk > 0 ? [runStep(remRun), { ...walkStep, length: formatSecs(remWalk * 60) }] : [runStep(remRun)] })
   return { version: 2, kind: 'run_walk', blocks }
 }
 
@@ -202,12 +209,12 @@ export function runWalkSet(mainMins: number, runPace: string | null): DerivedSet
  * run-walk set over the composed main set. Shapes the composer gives a run-walk warm-up to (easy, long, shakeout) only.
  */
 export function displayDerivedSet(
-  session: Pick<Session, 'run_walk_strategy' | 'pace_target'> & { derived_set?: unknown },
+  session: Pick<Session, 'run_walk_strategy' | 'pace_target' | 'walk_run_level'> & { derived_set?: unknown },
   structure: { shape: string; main: { duration_mins: number } } | null,
 ): unknown {
   if (session.derived_set) return session.derived_set
   if (!session.run_walk_strategy || !structure || !RUN_WALK_SHAPES.has(structure.shape)) return null
-  return runWalkSet(structure.main.duration_mins, session.pace_target ?? null)
+  return runWalkSet(structure.main.duration_mins, session.pace_target ?? null, session.walk_run_level)
 }
 
 /** The composer shapes a run-walk session can take; the race and quality shapes are not drawn as run-walk. */

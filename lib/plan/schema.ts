@@ -62,6 +62,7 @@ export const SessionSchema = z.object({
   // AI-DEPTH-07 — additive depth fields (schema-only; engine doesn't populate yet)
   key_session:        z.boolean().optional(),
   run_walk_strategy:  z.string().optional(),
+  walk_run_level:     z.object({ run_mins: z.number().positive(), walk_mins: z.number().positive() }).optional(),
   weekday_overrun_note: z.string().optional(),
   fueling_protocol:   z.string().optional(),
 })
@@ -120,7 +121,7 @@ export const WeekSchema = z.object({
   // `SCHEMA:+2-more`, and the meta fields filled the list — so neither the daily
   // digest nor the first pass of this RCA ever saw `weeks.N.phase`. It surfaced
   // only when a test parsed a generated plan and printed every failing path.
-  phase:                z.enum(['base', 'build', 'peak', 'taper', 'foundation', 'base_build', 'maintenance_restoration', 'maintenance_base']).optional(),
+  phase:                z.enum(['base', 'build', 'peak', 'taper', 'foundation', 'base_build', 'walk_run_start', 'maintenance_restoration', 'maintenance_base']).optional(),
   badge:                z.enum(['deload', 'holiday', 'race']).optional(),
   // partialRecord (Zod v4): the plan populates only the days that have sessions.
   // Plain z.record(enum, …) requires ALL seven day keys — see enrichMaintenance.ts.

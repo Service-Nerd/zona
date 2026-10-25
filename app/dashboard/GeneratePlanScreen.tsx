@@ -7,7 +7,7 @@ import { InlineError } from '@/components/shared/InlineError'
 import { ACK_FIELD, ACK_LABEL, warnKindOf, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import { stagedDisplay, stagedRaceOf } from '@/lib/plan/stagedRacePlan'
 import StagedRaceBlockCard from '@/components/shared/StagedRaceBlockCard'
-import { BASE_BUILDING_TITLE, basePhaseLine, raceBlockTitle, raceBlockLine } from '@/lib/plan/checkpointCopy'
+import { BASE_BUILDING_TITLE, WALK_RUN_START_TITLE, basePhaseLine, raceBlockTitle, raceBlockLine } from '@/lib/plan/checkpointCopy'
 import PlanHeroMetrics from '@/components/shared/PlanHeroMetrics'
 import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
@@ -356,9 +356,11 @@ function WizardInput({ value, onChange, placeholder, type = 'text', min, max }: 
 
 // `base_build` first: a §116/§118 base-build plan is ALL `base_build` weeks, and without it here the preview's
 // "Plan shape" rendered nothing for one (found building NO-RUNNER-TURNED-AWAY-01 Phase C).
-const PHASES = ['base_build', 'foundation', 'base', 'build', 'peak', 'taper'] as const
+// `walk_run_start` before it: a runner below 6 km/week starts there (Design Board amendment 9, Phase D).
+const PHASES = ['walk_run_start', 'base_build', 'foundation', 'base', 'build', 'peak', 'taper'] as const
 
 const PHASE_COLOUR: Record<string, string> = {
+  walk_run_start: 'var(--s-easy)',
   base_build: 'var(--s-easy)',
   foundation: 'var(--mute)',
   base:       'var(--s-easy)',
@@ -391,7 +393,7 @@ function PhaseSummaryCard({ phase, weeks, units, title, line }: { phase: string;
   // construction index, never a number to show a runner. Mirrors
   // PreviewPhaseStrip's own "N weeks before your plan" phrasing above
   // rather than a week-number range, which only ever makes sense from n=1.
-  const weekRange = phase === 'foundation' || phase === 'base_build'
+  const weekRange = phase === 'foundation' || phase === 'base_build' || phase === 'walk_run_start'
     ? `${weeks.length} ${weeks.length === 1 ? 'week' : 'weeks'}`
     : startW === endW ? `Week ${startW}` : `Weeks ${startW}–${endW}`
   return (
@@ -410,12 +412,15 @@ function PhaseSummaryCard({ phase, weeks, units, title, line }: { phase: string;
             {title ?? phase}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
-            {weekRange} · peak {formatDistance(peakKm, units)}
+            {/* A walk-run start is time on feet and carries no distance: no "peak 0 km", which would be false. */}
+            {weekRange}{peakKm > 0 ? ` · peak ${formatDistance(peakKm, units)}` : ''}
           </div>
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.5 }}>
-          {description}
-        </div>
+        {description && (
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.5 }}>
+            {description}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1615,7 +1620,7 @@ export default function GeneratePlanScreen({
               const stagedLine = phase === 'base_build' && staged && stagedRace
                 ? basePhaseLine(stagedRace, staged.checkpointWeekStart, preferredUnits) : undefined
               return <PhaseSummaryCard key={phase} phase={phase} weeks={phaseWeeks} units={preferredUnits}
-                title={phase === 'base_build' ? BASE_BUILDING_TITLE : undefined} line={stagedLine} />
+                title={phase === 'base_build' ? BASE_BUILDING_TITLE : phase === 'walk_run_start' ? WALK_RUN_START_TITLE : undefined} line={stagedLine} />
             })}
             {staged && stagedRace && (
               <StagedRaceBlockCard title={raceBlockTitle(stagedRace)} line={raceBlockLine(staged.raceBlockStart)} />

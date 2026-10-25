@@ -41,8 +41,9 @@ describe('Q1 — where the checkpoint goes', () => {
   it('no week to stage: null, so §44 refuses that runner on its own grounds', () => {
     expect(checkpointPlacement(input(), 12, prepBlockWeeks(input()))).toBeNull()
   })
-  it('below §116\'s running floor it does not stage (the walk-run start is phase D)', () => {
-    expect(stagingApplies(input({ current_weekly_km: C.BASE_BUILD_ONRAMP_MIN_START_KM - 1 }), 12, 26)).toBe(false)
+  it('below §116\'s running floor it stages through the walk-run start, whenever that ends before the race (Phase D)', () => {
+    expect(stagingApplies(input({ current_weekly_km: C.BASE_BUILD_ONRAMP_MIN_START_KM - 1 }), 12, 26)).toBe(true)
+    expect(stagingApplies(input({ current_weekly_km: 0 }), 12, 7)).toBe(false)
     expect(stagingApplies(input({ current_weekly_km: C.BASE_BUILD_ONRAMP_MIN_START_KM }), 12, 26)).toBe(true)
   })
 })
@@ -244,11 +245,11 @@ describe('the engine — behind §116\'s flag', () => {
     expect(stagedRaceOf(out.plan)?.race_name).toBe('London Marathon')
     expect(out.telemetry?.event).toBe('plan_staged_for_race')
   })
-  it('flag ON, below the running floor: still refused with the base-building offer (phase D is not built)', () => {
+  it('flag ON, below the running floor: a staged plan that starts with the walk-run start (Phase D)', () => {
     process.env.ENABLE_BASE_BUILD_ONRAMP = '1'
     const out = run({ current_weekly_km: 5 })
-    expect(out.kind).toBe('refusal')
-    if (out.kind === 'refusal') expect(out.body.get_running).toBeTruthy()
+    expect(out.kind).toBe('base_build')
+    if (out.kind === 'base_build') expect(out.plan.weeks[0].phase).toBe('walk_run_start')
   })
 })
 

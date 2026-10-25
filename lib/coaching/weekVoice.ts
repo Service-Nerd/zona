@@ -76,6 +76,7 @@ export const PHASE_LABELS: Record<string, string> = {
   // NO-RUNNER-TURNED-AWAY-01 — §116/§118 base-build weeks. Missing until 2026-10-25, so the Plan arc's rail showed the
   // raw key (uppercased by the eyebrow style: "BASE_BUILD") for every base-build runner. The SLT's name (§118).
   base_build: 'Base building',
+  walk_run_start: 'Walk-run start',
 }
 
 

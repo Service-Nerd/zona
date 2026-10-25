@@ -54,7 +54,8 @@ import { isDesignedRefusal } from './designedRefusal'
 import { effectiveStartKm } from './startVolume'
 import { BaseVolumeError } from './baseVolume'
 import { assessOnRamp, onRampEnabled } from './baseBuildOnRamp'
-import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, extendedStagedPlan, runWalkFinishInput, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
+import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, extendedStagedPlan, runWalkFinishInput, walkRunDoorKm, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
+import { walkRunStartApplies } from './walkRunStart'
 import { notPassedHeading, notPassedWhy, NO_RUNS_HEADING, CHOOSE_HEADING } from './checkpointCopy'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import type { WeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
@@ -285,8 +286,15 @@ export function runEngine(req: EngineRequest): EngineOutcome {
     // NO-RUNNER-TURNED-AWAY-01 (§116 Am. 9) — a §111 refusal becomes a plan FOR THE RACE: base building to a checkpoint,
     // the race block built only once the checkpoint passes on observed volume. Behind §116's flag, dark by default,
     // so with the flag off this branch is never entered and the refusal below is byte-identical to before.
-    if (err instanceof BaseVolumeError && onRampEnabled()) {
-      const staged = generateStagedRacePlan(input, planStart, err.base.min_base_km)
+    // Phase D: below §116's running floor nobody has §113's long run, so §113 refuses first and §111 is never reached.
+    // The walk-run start is their staging (Q3); §111's door is found with §113's floor as the long run, and §113 itself
+    // is asked at the checkpoint on the long run they ran (C2).
+    const doorKm = !onRampEnabled() ? null
+      : err instanceof BaseVolumeError ? err.base.min_base_km
+      : err instanceof LongRunReadinessError && walkRunStartApplies(effectiveStartKm(input)) ? walkRunDoorKm(input, planStart)
+      : null
+    if (doorKm !== null) {
+      const staged = generateStagedRacePlan(input, planStart, doorKm)
       if (staged) {
         const startKm = Number((staged.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0)
         enforceViolations([...validateBaseBuildBlock(staged.weeks, startKm), ...validateStagedRace(staged)])

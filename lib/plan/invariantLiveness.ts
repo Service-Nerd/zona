@@ -1212,6 +1212,29 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
             checkStaged(pl, m.name)
           }
         }
+        // Phase D — the walk-run start (a 0 km/week runner). One mutation per arm of INV-PLAN-WALKRUN-START-PROGRESSION.
+        const wr = generateStagedRacePlan({ ...input, current_weekly_km: 0, longest_recent_run_km: 0, race_date: '2027-04-25' } as GeneratorInput, '2026-10-05', 12)
+        if (wr) {
+          const checkWr = (pl: Plan, why: string) => {
+            for (const v of validateStagedRace(pl)) if (!woken.has(v.code)) woken.set(v.code, why)
+          }
+          checkWr(wr, 'fires on a valid walk-run staged plan')
+          const runsOf = (w: Week) => Object.values(w.sessions ?? {}).filter(s => s && s.type !== 'rest') as unknown as Poke[]
+          const WR_MUTATIONS: { name: string; apply: (pl: Plan) => void }[] = [
+            { name: 'walk-run: skip a level', apply: pl => { for (const s of runsOf(pl.weeks[1])) s.walk_run_level = { run_mins: 4, walk_mins: 2 } } },
+            { name: 'walk-run: a deload that steps up', apply: pl => { for (const s of runsOf(pl.weeks[3])) s.walk_run_level = { run_mins: 4, walk_mins: 2 } } },
+            { name: 'walk-run: a missing session', apply: pl => { const k = Object.keys(pl.weeks[0].sessions)[0]; delete (pl.weeks[0].sessions as unknown as Poke)[k] } },
+            { name: 'walk-run: a ramp week without the run-walk pattern', apply: pl => {
+                const ramp = pl.weeks.find(w => w.phase === 'base_build')
+                if (ramp) for (const s of runsOf(ramp)) delete s.run_walk_strategy
+              } },
+          ]
+          for (const m of WR_MUTATIONS) {
+            const pl = JSON.parse(JSON.stringify(wr)) as Plan
+            try { m.apply(pl) } catch { continue }
+            checkWr(pl, m.name)
+          }
+        }
       }
 
       // ── A WHOLE base-build PLAN through validatePlan ───────────────────────

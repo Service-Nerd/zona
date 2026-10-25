@@ -23,7 +23,7 @@
  * at once. The race lives in `meta.staged_race`, which only this feature reads.
  */
 
-import type { Plan, GeneratorInput, Week } from '@/types/plan'
+import type { Plan, GeneratorInput, Week, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { generateBaseBuildPlan, onRampWeeksNeeded, onRampCurve, type OnRampAssessment } from './baseBuildOnRamp'
 import { effectiveStartKm } from './startVolume'
@@ -36,6 +36,9 @@ import { auditPlanQuality, objectionsOnly } from './planQuality'
 import { validatePlan } from './invariants'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import { isDateBeforePlan } from './weekResolution'
+import { walkRunStartApplies, walkRunStartWeeks, generateWalkRunWeeks } from './walkRunStart'
+import { BaseVolumeError } from './baseVolume'
+import { applyRunWalk } from './runWalkPlan'
 
 /** What a staged plan remembers about the race it is for. Read by the checkpoint and the UI, nothing else. */
 export interface StagedRace {
@@ -74,8 +77,8 @@ export interface CheckpointPlacement {
  * ruled for McMillan: a warn is a warning the runner can accept, not a wall. A staged plan landing between the two
  * carries §44's existing warning at the wizard like any other plan.
  */
-export function checkpointPlacement(input: GeneratorInput, doorKm: number, runwayWeeks: number): CheckpointPlacement | null {
-  const startKm = effectiveStartKm(input)
+export function checkpointPlacement(input: GeneratorInput, doorKm: number, runwayWeeks: number,
+  startKm: number = effectiveStartKm(input)): CheckpointPlacement | null {
   if (!(startKm > 0) || !(doorKm > startKm)) return null
   const block = prepBlockWeeks(input)
   const maxRamp = runwayWeeks - block
@@ -90,7 +93,9 @@ export function checkpointPlacement(input: GeneratorInput, doorKm: number, runwa
  * start, phase D, not built yet), and a checkpoint that can be placed.
  */
 export function stagingApplies(input: GeneratorInput, doorKm: number, runwayWeeks: number): boolean {
-  if (effectiveStartKm(input) < GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM) return false
+  // Phase D (L4): below the running floor the walk-run start comes first, is never shortened, and is given whenever it
+  // ends before the race. Where the runway cannot also hold the ramp and §44's block, the checkpoint offers what builds.
+  if (walkRunStartApplies(effectiveStartKm(input))) return runwayWeeks > walkRunStartWeeks()
   return checkpointPlacement(input, doorKm, runwayWeeks) !== null
 }
 
@@ -155,11 +160,11 @@ const TARGET_MAX_MULTIPLE = 2.5
  * ⚠️ A SEARCH, BECAUSE THE RULE IS THE ENGINE'S OWN. "Clean" is the validator plus the coach objections over a plan
  * the engine builds; a closed form for it would be a second, drifting copy of all of them.
  */
-export function checkpointTarget(input: GeneratorInput, planStart: string, minBaseKm: number, runwayWeeks: number): number | null {
+export function checkpointTarget(input: GeneratorInput, planStart: string, minBaseKm: number, runwayWeeks: number,
+  startKm: number = effectiveStartKm(input)): number | null {
   for (let t = minBaseKm; t <= minBaseKm * TARGET_MAX_MULTIPLE; t = Math.round((t + TARGET_STEP_KM) * 10) / 10) {
-    const placed = checkpointPlacement(input, t, runwayWeeks)
+    const placed = checkpointPlacement(input, t, runwayWeeks, startKm)
     if (!placed || !placed.reachesDoor) return null
-    const startKm = effectiveStartKm(input)
     const curve = onRampCurve(startKm, placed.rampWeeks)
     const ramp = generateBaseBuildPlan(input, planStart, {
       outcome: 'offered', rampWeeks: placed.rampWeeks, remainingWeeks: placed.raceWeeks, targetKm: curve[curve.length - 1], startKm,
@@ -174,6 +179,7 @@ export function checkpointTarget(input: GeneratorInput, planStart: string, minBa
 export function generateStagedRacePlan(input: GeneratorInput, planStart: string, minBaseKm: number): Plan | null {
   const runway = weeksBetweenLocal(planStart, input.race_date)
   if (!stagingApplies(input, minBaseKm, runway)) return null
+  if (walkRunStartApplies(effectiveStartKm(input))) return generateWalkRunStagedPlan(input, planStart, minBaseKm, runway)
   // C3, else C4: no target fits the runway, so the runner is still staged at §111's door with `reaches_door: false`
   // where Q1 had to move the checkpoint, and the checkpoint's consent screen offers run-walk or a later race.
   const target = checkpointTarget(input, planStart, minBaseKm, runway)
@@ -332,6 +338,9 @@ export type CheckpointOption =
  *  be back at the same screen in a few weeks, which is not an option, it is a delay. */
 export function extendedStagedPlan(input: GeneratorInput, observedKm: number, longestKm: number, staged: StagedRace,
   planStart: string): Plan | null {
+  // ⚠️ Not below the running floor: that would restart a runner who has just done the walk-run start at 1/2. What they
+  // need instead is not ruled (`NO-RUNNER-CHECKPOINT-BELOW-FLOOR-01`), so the option is withheld rather than guessed.
+  if (walkRunStartApplies(observedKm)) return null
   const p = generateStagedRacePlan(checkpointRaceInput(input, observedKm, longestKm), planStart, staged.door_km)
   const s = stagedRaceOf(p)
   return p && s && s.target_found && s.reaches_door ? p : null
@@ -357,4 +366,75 @@ export function checkpointPassed(plan: Plan | null | undefined, now: Date): { ob
   const gi = (plan.meta as unknown as { generator_input?: GeneratorInput }).generator_input
   if (!gi?.volume_observed || typeof gi.current_weekly_km !== 'number' || !gi.race_distance_km) return null
   return { observedKm: gi.current_weekly_km, raceKm: gi.race_distance_km }
+}
+
+/**
+ * Phase D — a staged plan that starts with the walk-run start (§116 floor note; Coaching Board 2026-10-25, L1–L5).
+ *
+ * The walk-run weeks, then §116's ramp from `BASE_BUILD_ONRAMP_MIN_START_KM`, each session carrying §117's 6/1 pattern
+ * (L5), to the checkpoint, which is placed for the ramp by Q1 and C3 exactly as for any staged plan. L4: the walk-run
+ * start is never shortened; where the runway cannot also hold a ramp week and §44's block, the plan is the walk-run
+ * start alone, `reaches_door: false`, and the checkpoint offers what builds.
+ */
+function generateWalkRunStagedPlan(input: GeneratorInput, planStart: string, minBaseKm: number, runway: number): Plan {
+  const wrWeeks = walkRunStartWeeks()
+  const rampStart = addWeeks(planStart, wrWeeks)
+  const rampRunway = runway - wrWeeks
+  const startKm = GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM
+  const target = checkpointTarget(input, rampStart, minBaseKm, rampRunway, startKm)
+  const doorKm = target ?? minBaseKm
+  const placed = checkpointPlacement(input, doorKm, rampRunway, startKm)
+
+  let rampWeeks: Week[] = []
+  let base: Plan
+  if (placed) {
+    const curve = onRampCurve(startKm, placed.rampWeeks)
+    base = generateBaseBuildPlan(input, rampStart, {
+      outcome: 'offered', rampWeeks: placed.rampWeeks, remainingWeeks: placed.raceWeeks, targetKm: curve[curve.length - 1], startKm,
+    })
+    // L5 (Willy): the ramp keeps the 6/1 pattern, so the continuous bout does not near-triple in one week.
+    rampWeeks = base.weeks.map((w, i) => ({
+      ...w, n: wrWeeks + i + 1,
+      sessions: Object.fromEntries(Object.entries(w.sessions ?? {}).map(([d, s]) => [d, s ? applyRunWalk(s as Session) : s])),
+    })) as Week[]
+  } else {
+    // No ramp fits: build the meta from a one-week ramp and keep none of its weeks.
+    base = generateBaseBuildPlan(input, rampStart, { outcome: 'offered', rampWeeks: 1, remainingWeeks: rampRunway - 1, targetKm: startKm, startKm })
+  }
+  const hr = (Object.values(base.weeks[0]?.sessions ?? {})[0] as Session | undefined)?.hr_target ?? null
+  const weeks = [...generateWalkRunWeeks(input, planStart, typeof hr === 'string' ? hr : null), ...rampWeeks]
+  const meta = base.meta as unknown as Record<string, unknown>
+  delete meta.base_build_onramp
+  meta.enrichment = 'skipped_plan_kind'
+  meta.plan_start = planStart
+  meta.walk_run_start_weeks = wrWeeks
+  meta.base_build_start_km = startKm
+  if (!placed) meta.base_build_target_km = startKm
+  const staged: StagedRace = {
+    race_name: input.race_name || '',
+    race_date: input.race_date,
+    race_distance_km: input.race_distance_km,
+    door_km: doorKm,
+    min_base_km: minBaseKm,
+    target_found: target !== null,
+    checkpoint_week: weeks.length,
+    race_weeks: runway - weeks.length,
+    reaches_door: !!placed?.reachesDoor,
+  }
+  meta.staged_race = staged
+  return { ...base, weeks }
+}
+
+/**
+ * Phase D — §111's door for a walk-run runner, whom §113 refuses before §111 is reached. Asked with §113's own floor
+ * (`MIN_SESSION_DISTANCE_KM.long`) as the long run: the door is a property of the race block's peak, not of the long
+ * run. Null when §111 is not what refuses them (e.g. §44 on the runway), so that refusal stands.
+ */
+export function walkRunDoorKm(input: GeneratorInput, planStart: string): number | null {
+  try {
+    generateRulePlan({ ...input, longest_recent_run_km: GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long } as GeneratorInput, 'paid', planStart)
+    return null
+  } catch (e) {
+    return e instanceof BaseVolumeError ? e.base.min_base_km : null
+  }
 }

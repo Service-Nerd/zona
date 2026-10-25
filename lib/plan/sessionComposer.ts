@@ -273,11 +273,15 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
  */
 function asRunWalk(session: Session, s: SessionStructure): SessionStructure {
   if (!session.run_walk_strategy) return s
-  const wu = Math.min(GENERATION_CONFIG.RUNWALK_WARMUP_WALK_MINS, Math.max(0, s.total_duration_mins - s.cooldown.duration_mins))
+  // §116 floor note, L3 (Coaching Board 2026-10-25): a walk-run START session is its walk warm-up and its repeats, no
+  // cool-down. The 30 minutes are time on feet, and the walk breaks are already the recovery.
+  const cooldown = session.walk_run_level ? { ...s.cooldown, duration_mins: 0 } : s.cooldown
+  const wu = Math.min(GENERATION_CONFIG.RUNWALK_WARMUP_WALK_MINS, Math.max(0, s.total_duration_mins - cooldown.duration_mins))
   return {
     ...s,
     warmup: { ...part(wu, 'Z1', 'Brisk walk.'), walk: true },
-    main: { ...s.main, duration_mins: Math.max(0, s.total_duration_mins - wu - s.cooldown.duration_mins) },
+    main: { ...s.main, duration_mins: Math.max(0, s.total_duration_mins - wu - cooldown.duration_mins) },
+    cooldown,
   }
 }
 

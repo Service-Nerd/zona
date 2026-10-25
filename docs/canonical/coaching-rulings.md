@@ -85,6 +85,17 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 (fourth sitting: the walk-run start's details) · CORRECT WITH AMENDMENT · BUILT 2026-10-25 (dark)
+
+Q3 (2026-10-24) ruled the walk-run start's endpoints; this ruled what was needed to build it. **L1** ladder A: run
+minute +1 a week, walk 2 until §117's 6/1 (no mid-ladder +33% step); deload holds. **L2** everyone below 6 km/week enters
+at 1/2 (**McMillan dissents**: a 1–5 km runner's first weeks are below what they run; Phase E measures it). **L3** 30 min
+total = 5-min walk + repeats, no cool-down; a remainder runs up to the level, then walks; 3 days, never consecutive where
+allowed. **L4** never shortened; the ramp is cut first, else the walk-run start alone with the race on it. **L5** not a
+credit; **amendment (Willy)**: the ramp after a walk-run start keeps 6/1 on every session. Found at build: §113 refuses
+these runners before §111 is reached, so the engine finds §111's door with §113's floor as the long run
+(`walkRunDoorKm`). Sitting: `docs/decisions/coaching-2026-10-25-walk-run-start.md`.
+
 ## 2026-10-24 — NO-RUNNER-TURNED-AWAY-01 (third sitting: the checkpoint's inputs) · CORRECT WITH AMENDMENT · BUILT 2026-10-25 (dark; C5 measured 71.0%; C3 built to the measured rule, correction recorded)
 
 Phase B's after-measurement: staged plans 5.7% clean (§29's heuristic re-discounting observed volume; §113 on the

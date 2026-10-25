@@ -175,7 +175,7 @@ export function validateStagedRace(plan: Plan): Violation[] {
     week, message, actual, expected,
   })
   for (const w of plan.weeks ?? []) {
-    if (w.phase !== 'base_build') {
+    if (w.phase !== 'base_build' && w.phase !== 'walk_run_start') {
       push(w.n, `Staged plan week W${w.n} is phase "${w.phase}". A staged plan holds base building only; the race block is built after the checkpoint passes on observed volume.`, String(w.phase), 'base_build')
     }
   }
@@ -184,9 +184,83 @@ export function validateStagedRace(plan: Plan): Violation[] {
     push(staged.checkpoint_week, `Staged plan has ${len} weeks but its checkpoint is week ${staged.checkpoint_week}. The plan must end at the checkpoint.`, `${len} weeks`, `${staged.checkpoint_week} weeks`)
   }
   const input = (plan.meta as unknown as { generator_input?: GeneratorInput }).generator_input
-  if (input && staged.race_weeks < prepBlockWeeks(input)) {
+  // L4 (2026-10-25): a walk-run start is never shortened, so a plan that is ONLY the walk-run start may leave less than
+  // the block; its checkpoint then offers what builds. Any plan with a running ramp keeps the block.
+  const hasRamp = (plan.weeks ?? []).some(w => w.phase === 'base_build')
+  if (input && hasRamp && staged.race_weeks < prepBlockWeeks(input)) {
     push(staged.checkpoint_week, `Staged plan leaves ${staged.race_weeks} weeks for the race block, under §44's block of ${prepBlockWeeks(input)}.`, `${staged.race_weeks}`, `>= ${prepBlockWeeks(input)}`)
+  }
+  return [...v, ...validateWalkRunStart(plan)]
+}
+
+
+/**
+ * `INV-PLAN-WALKRUN-START-PROGRESSION` — the walk-run start (§116 floor note; Coaching Board 2026-10-25, L1–L5).
+ *
+ * The level steps at most one a week up the ladder and never down; §3's deload holds the previous level; every week has
+ * `WALK_RUN_START_SESSIONS` sessions (fewer only where the runner has fewer open days) of `WALK_RUN_START_MINS`; it ends
+ * on §117's 6/1 before any running week; and every running week after it carries the run-walk pattern (L5).
+ *
+ * ⚠️ READS THE PLAN, never `walkRunSchedule`: a checker that shares the producer's schedule cannot catch it being wrong.
+ * Only the ladder's ENDPOINTS come from config, which is what the board ruled.
+ */
+export function validateWalkRunStart(plan: Plan): Violation[] {
+  const weeks = plan.weeks ?? []
+  const wr = weeks.filter(w => w.phase === 'walk_run_start')
+  if (wr.length === 0) return []
+  const v: Violation[] = []
+  const C = GENERATION_CONFIG
+  const push = (week: number, message: string, actual: string, expected: string) => v.push({
+    code: 'INV-PLAN-WALKRUN-START-PROGRESSION', principle_ref: 'CoachingPrinciples §116 (floor note), §118 Am. 4',
+    severity: 'error', week, message, actual, expected,
+  })
+  const isDeload = (w: Week) => w.type === 'deload' || w.badge === 'deload'
+  const runs = (w: Week) => (Object.values(w.sessions ?? {}) as (Session | undefined)[])
+    .filter((s): s is Session => !!s && s.type !== 'rest' && s.type !== 'cross-train' && s.type !== 'strength')
+  // A level's position: run minutes, then a shorter walk ranks higher (5/2 below 6/1).
+  const rank = (l: { run_mins: number; walk_mins: number }) => l.run_mins * 10 - l.walk_mins
+  const input = (plan.meta as unknown as { generator_input?: GeneratorInput }).generator_input
+  const openDays = 7 - new Set((input?.days_cannot_train ?? []).map(d => String(d).slice(0, 3).toLowerCase())).size
+  const wantSessions = Math.min(C.WALK_RUN_START_SESSIONS, openDays)
+
+  const firstRun = weeks.findIndex(w => w.phase === 'base_build')
+  const lastWr = weeks.reduce((at, w, i) => (w.phase === 'walk_run_start' ? i : at), -1)
+  if (firstRun >= 0 && firstRun < lastWr) push(weeks[firstRun].n, `A running week (W${weeks[firstRun].n}) comes before the walk-run start ends.`, `W${weeks[firstRun].n}`, 'after the walk-run start')
+
+  let prev: number | null = null
+  let prevRun = 0
+  for (const w of wr) {
+    const ss = runs(w)
+    if (ss.length !== wantSessions) push(w.n, `Walk-run week W${w.n} has ${ss.length} sessions; the walk-run start is ${wantSessions} a week.`, `${ss.length}`, `${wantSessions}`)
+    const levels = ss.map(s => s.walk_run_level)
+    if (levels.some(l => !l) || ss.some(s => s.duration_mins !== C.WALK_RUN_START_MINS)) {
+      push(w.n, `Walk-run week W${w.n} has a session without its level or not ${C.WALK_RUN_START_MINS} minutes.`, 'missing level / duration', `${C.WALK_RUN_START_MINS} min with a level`)
+      continue
+    }
+    const r = Math.max(...levels.map(l => rank(l!)))
+    if (Math.min(...levels.map(l => rank(l!))) !== r) push(w.n, `Walk-run week W${w.n} mixes levels.`, 'mixed', 'one level a week')
+    if (prev === null) {
+      const first = { run_mins: C.WALK_RUN_START_RUN_MINS, walk_mins: C.WALK_RUN_START_WALK_MINS }
+      if (r !== rank(first)) push(w.n, `The walk-run start begins at ${levels[0]!.run_mins}/${levels[0]!.walk_mins}, not ${first.run_mins}/${first.walk_mins} (L2).`, `${levels[0]!.run_mins}/${levels[0]!.walk_mins}`, `${first.run_mins}/${first.walk_mins}`)
+    } else if (isDeload(w)) {
+      if (r !== prev) push(w.n, `Deload week W${w.n} does not hold the previous level (§3, Q3).`, 'changed', 'held')
+    } else if (r < prev) {
+      push(w.n, `Walk-run week W${w.n} steps DOWN the ladder.`, 'down', 'up one level or held')
+    } else if (r > prev) {
+      // Up exactly one level: one more run minute at the same walk, or the last step onto §117's 6/1.
+      const l = levels[0]!
+      const last = l.run_mins === C.FINISH_GOAL_RUNWALK_RUN_MINS && l.walk_mins === C.FINISH_GOAL_RUNWALK_WALK_MINS
+      if (l.run_mins - prevRun !== 1 || (!last && l.walk_mins !== C.WALK_RUN_START_WALK_MINS)) {
+        push(w.n, `Walk-run week W${w.n} steps more than one level (to ${l.run_mins}/${l.walk_mins}).`, `${l.run_mins}/${l.walk_mins}`, 'one level up')
+      }
+    }
+    prev = r
+    prevRun = levels[0]!.run_mins
+  }
+  const end = { run_mins: C.FINISH_GOAL_RUNWALK_RUN_MINS, walk_mins: C.FINISH_GOAL_RUNWALK_WALK_MINS }
+  if (prev !== null && prev !== rank(end)) push(wr[wr.length - 1].n, `The walk-run start ends below §117's ${end.run_mins}/${end.walk_mins}.`, 'below', `${end.run_mins}/${end.walk_mins}`)
+  for (const w of weeks.filter(x => x.phase === 'base_build')) {
+    if (runs(w).some(s => !s.run_walk_strategy)) push(w.n, `Running week W${w.n} after a walk-run start drops the run-walk pattern (L5, Willy).`, 'continuous', 'run-walk')
   }
   return v
 }
-

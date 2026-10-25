@@ -50,6 +50,7 @@ export interface Session {
   // related depth work. All optional; consumers must tolerate undefined.
   key_session?: boolean                    // pivotal session marker — long runs, race-pace tempos, tune-ups
   run_walk_strategy?: string               // e.g. "9:1 from km 10"
+  walk_run_level?: { run_mins: number; walk_mins: number }  // §116 floor note — walk-run start sessions only
   fueling_protocol?: string                // e.g. "gel every 25 min from km 10"
 }
 ```
@@ -75,6 +76,7 @@ export interface Week {
   phase?: 'base' | 'build' | 'peak' | 'taper'
          | 'foundation'                  // ADR-020 — pre-plan runway weeks
          | 'base_build'                  // §118 — the standalone base-build plan
+         | 'walk_run_start'              // §116 floor note — a staged plan's walk-run start (below 6 km/week)
          | 'maintenance_restoration'     // ADR-013 — post-race
          | 'maintenance_base'
   badge?: 'deload' | 'holiday' | 'race'
