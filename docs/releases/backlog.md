@@ -3140,6 +3140,18 @@ of base building"). Not ruled, so withheld: `extendedStagedPlan` returns null be
 offered a later race. **Question:** resume the ladder where they are (6/1 held), restart it, or extend the running ramp
 from the observed figure? Also measured: a 0 km marathoner 26 weeks out observing 4 km gets a later race only.
 
+### 🔲 `ONRAMP-SPACING-01` — base-building runs land on consecutive days, and a deload can hold the block's longest run *(filed 2026-10-25, P0 with NO-RUNNER-TURNED-AWAY-01)* 🏃 **COACHING BOARD** (ruled R1, R2)
+
+Found by reading real plans (sixth sitting). Every §116/§118/staged ramp takes the first open days (Mon, Tue, Wed), and
+a deload can collapse to one run longer than any before it (persona D: 7.4 km after 4.8). Both pass every check today.
+Ruled: never consecutive where open days allow (`INV-PLAN-ONRAMP-SPACED`); a deload's longest run ≤ the prior build
+week's (deload arm on `INV-PLAN-ONRAMP-PER-RUN-STEP`). New plans only.
+
+### 🔲 `WALKRUN-RACE-BLOCK-RUNWALK-01` — a race block after a walk-run start drops the run-walk pattern (the half) *(filed 2026-10-25, P0 with NO-RUNNER-TURNED-AWAY-01)* 🏃 **COACHING BOARD** (ruled R5)
+
+The marathon block carries §117's run-walk; the half option does not, so the continuous bout near-triples in week 1.
+Ruled: any race block built from a walk-run start carries the run-walk prescription (§117 Am. 4).
+
 ### 🔲 `FOUNDATION-NAME-COLLAPSE-01` — should foundation weeks also be called "Base building"? *(filed 2026-10-24, P3)* 🧭 **DESIGN BOARD** → 👤 **FOUNDER**
 
 Recorded disagreement from the `NO-RUNNER-TURNED-AWAY-01` sitting. Collins: one runner-facing name everywhere.

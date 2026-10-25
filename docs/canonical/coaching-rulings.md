@@ -85,6 +85,14 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 (sixth sitting: real plans read week by week) · CORRECT WITH AMENDMENT · RULED, not built
+
+Four personas read week by week. **R1** ramp runs never on consecutive days where open days allow (live in every
+§116/§118 ramp today; new plans only). **R2** a deload's longest run never exceeds the prior build week's. **R3** the
+13 → 18 km race-block opening is not a defect (§2 Am. per-run load). **R4** no change. **R5** any race block built from a
+walk-run start carries §117's run-walk prescription, the half included. Switch-on still gated on R1, R2, R5. Sitting:
+`docs/decisions/coaching-2026-10-25-real-plans.md`.
+
 ## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 (fifth sitting: the Phase E after-round) · CORRECT WITH AMENDMENT · BUILT 2026-10-25 (E0a, E1, E3; dark; race on their date 33.2% → 61.5%)
 
 After-measurement: marathon refused 5.6% → **0%**; but at the checkpoint, on the best case, **33.2%** of staged runners
