@@ -292,6 +292,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** No one had flagged this. It was found by measuring the board's rule, not by looking.
 
 ---
+## 2026-10-25 — BOOT-HANG-01 · The splash that wasn't the splash
+**Shipped:** the app's loading screen gives up after 12 seconds and offers Try again, and tells us which step stalled.
+**Dev learning:** the native splash auto-hides at 10s, so "stuck on the splash" could not be the splash. It was the app's own loading screen, which looks almost the same, held by a one-shot boot wrapped end to end in `} catch {}`. Every throw before `setAppReady(true)` produced a screen that never moved and not one log line. The report route had to accept anonymous posts: requiring a session would make it blind to the one stall that is a session problem. Same reason it uses plain `fetch`, not `authedFetch`.
+**Product/creator learning:** "force close fixes it" is the symptom of a one-shot with no retry. Try again does what the force-close did, without the runner having to know the trick.
+**AI-building learning:** my first wrapper added a catch around a function whose own catch already ate everything, so it would never have fired. Reading the end of the function, not just the top, found it. Then my records script failed on an encoding error and the commit went in without the registry row: the post-commit check caught that too.
+**The honest bit:** I still do not know which of the three dead ends hit the founder tonight. The fix makes the next one visible rather than proving the last one.
+**Hook material:** "One `catch {}` wrapped 500 lines of app start-up. Any error, anywhere, and the app just sat there looking pretty."
+**Postable?:** yes
+
 
 ## 2026-10-22 — ACCENT-TEXT-VARIABLE-01 · the colours were hiding under other names
 **Shipped:** Small coloured labels now use each colour's darker text shade where it has one, or dark text where it doesn't. Zone names show a coloured dot with the name in dark text. The warning amber in coaching notes is a shade darker and easier to read.
