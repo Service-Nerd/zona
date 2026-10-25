@@ -332,3 +332,15 @@ describe('C4 + Design Board amendment 7 — the checkpoint offers only what will
     if (!r.ok) expect(r.body.error).toMatch(/^You ran .+ a week\. Marathon training needs about .+ to start safely\.$/)
   })
 })
+
+describe('a runner already AT the door (§117 Am.2 reuses BaseVolumeError) is staged, not refused', () => {
+  it('8 km/week, 4 days, 18 weeks out: the target search starts above where they are', () => {
+    const D = input({ current_weekly_km: 8, longest_recent_run_km: 5, days_available: 4, age: 34, fitness_level: 'beginner',
+      race_date: new Date(Date.parse('2026-11-02T00:00:00Z') + 18 * 7 * 864e5).toISOString().slice(0, 10) } as Partial<GeneratorInput>)
+    expect(stagingApplies(D, 8, 18)).toBe(true)
+    const p = generateStagedRacePlan(D, '2026-11-02', 8)!
+    expect(p).not.toBeNull()
+    expect(stagedRaceOf(p)!.door_km).toBeGreaterThan(8)
+    expect(validateStagedRace(p)).toEqual([])
+  })
+})

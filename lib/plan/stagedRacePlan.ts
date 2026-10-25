@@ -94,11 +94,22 @@ export function checkpointPlacement(input: GeneratorInput, doorKm: number, runwa
  * Does this refused runner get a staged race plan? Start at or above §116's running floor (below it is the walk-run
  * start, phase D, not built yet), and a checkpoint that can be placed.
  */
+/**
+ * The lowest volume a ramp can target: the door, or one search step above where the runner already is.
+ * 🔴 Found walking real plans (2026-10-25): §117 Am.2's refusal reuses `BaseVolumeError` with a door AT the runner's own
+ * volume (their run-walk long run cannot reach adequacy in time, not their weekly volume), so `door > start` failed and a
+ * runner the board ruled staged was refused. C3's rule is "the lowest volume at or above the door from which the race
+ * block is clean", and a volume the runner already has cannot be that, so the search starts above it.
+ */
+function rampDoorFloor(doorKm: number, startKm: number): number {
+  return doorKm > startKm ? doorKm : Math.round((startKm + TARGET_STEP_KM) * 10) / 10
+}
+
 export function stagingApplies(input: GeneratorInput, doorKm: number, runwayWeeks: number): boolean {
   // Phase D (L4): below the running floor the walk-run start comes first, is never shortened, and is given whenever it
   // ends before the race. Where the runway cannot also hold the ramp and §44's block, the checkpoint offers what builds.
   if (walkRunStartApplies(effectiveStartKm(input))) return runwayWeeks > walkRunStartWeeks()
-  return checkpointPlacement(input, doorKm, runwayWeeks) !== null
+  return checkpointPlacement(input, rampDoorFloor(doorKm, effectiveStartKm(input)), runwayWeeks) !== null
 }
 
 const addWeeks = (iso: string, n: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + n * 7 * 864e5).toISOString().slice(0, 10)
@@ -172,7 +183,8 @@ const TARGET_MAX_MULTIPLE = 2.5
  */
 export function checkpointTarget(input: GeneratorInput, planStart: string, minBaseKm: number, runwayWeeks: number,
   startKm: number = effectiveStartKm(input)): number | null {
-  for (let t = minBaseKm; t <= minBaseKm * TARGET_MAX_MULTIPLE; t = Math.round((t + TARGET_STEP_KM) * 10) / 10) {
+  const from = rampDoorFloor(minBaseKm, startKm)
+  for (let t = from; t <= from * TARGET_MAX_MULTIPLE; t = Math.round((t + TARGET_STEP_KM) * 10) / 10) {
     const placed = checkpointPlacement(input, t, runwayWeeks, startKm)
     if (!placed || !placed.reachesDoor) return null
     const curve = onRampCurve(startKm, placed.rampWeeks)
@@ -193,7 +205,7 @@ export function generateStagedRacePlan(input: GeneratorInput, planStart: string,
   // C3, else C4: no target fits the runway, so the runner is still staged at §111's door with `reaches_door: false`
   // where Q1 had to move the checkpoint, and the checkpoint's consent screen offers run-walk or a later race.
   const target = checkpointTarget(input, planStart, minBaseKm, runway)
-  const doorKm = target ?? minBaseKm
+  const doorKm = target ?? rampDoorFloor(minBaseKm, effectiveStartKm(input))
   const placed = checkpointPlacement(input, doorKm, runway)!
   const startKm = effectiveStartKm(input)
   const curve = onRampCurve(startKm, placed.rampWeeks)
