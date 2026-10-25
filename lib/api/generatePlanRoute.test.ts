@@ -207,6 +207,8 @@ const eventDetail = (kind: string) =>
   (S.store.ops_events ?? []).find(r => r.kind === kind)?.detail as Record<string, unknown> | undefined
 
 beforeEach(() => {
+  // The off-switch is set per test; never let one test's '0' leak into the next.
+  delete process.env.ENABLE_BASE_BUILD_ONRAMP
   for (const k of Object.keys(S.store)) delete S.store[k]
   S.store.user_settings = [{ id: UID, first_name: 'Sam', preferred_units: 'km', trial_started_at: null, is_admin: false }]
   S.store.subscriptions = []
@@ -372,7 +374,9 @@ describe('D — a designed refusal crosses the seam and is recorded', () => {
    * **Nothing asserted the route actually performs the write** — which is the half that
    * `REFUSAL-TELEMETRY-01` exists for and the half a refactor can drop silently.
    */
-  it('D7 — §111 refuses, 422 carries base_volume, and the ops row lands', async () => {
+  it('D7 — §111 refuses, 422 carries base_volume, and the ops row lands (the =0 off-switch)', async () => {
+    // Since 2026-10-25 a §111 refusal is STAGED by default; the refusal path is what the off-switch restores.
+    process.env.ENABLE_BASE_BUILD_ONRAMP = '0'
     subscribe()  // paid, so the distance gate is not what answers
     const res = await post(body({
       race_distance_km: 42.2, current_weekly_km: 8, longest_recent_run_km: 6,
@@ -393,6 +397,7 @@ describe('D — a designed refusal crosses the seam and is recorded', () => {
     // REFUSAL-TELEMETRY-LEVEL-01 — the five level fields, through the route.
     expect(Object.keys(detail)).toContain('fitness_level_assessed')
     expect(Object.keys(detail)).toContain('fitness_level_structural')
+    delete process.env.ENABLE_BASE_BUILD_ONRAMP
   })
 })
 
@@ -439,15 +444,30 @@ describe('I — the base-build checkpoint gates on what was RUN, measured by the
     expect(json.observed_km).toBe(4)
     expect(eventDetail('plan_checkpoint_evaluated')?.observed_km).toBe(4)
   })
-  it('I5 — a plain (un-staged) base build has no target, so §111 itself decides on the observed volume', async () => {
+  it('I5 — a plain (un-staged) base build has no target, so §111 decides on the observed volume, and its refusal is staged', async () => {
     subscribe(); const plan = await stage()
     delete (plan.meta as unknown as Record<string, unknown>).staged_race
     ran(plan, 4)
     const res = await handover(plan, 40)
-    expect(res.status).toBe(422)
-    expect(((await res.json()) as { reason?: string }).reason).toBe('base_volume')
+    // On by default since 2026-10-25: §111 refuses 4 km/week, and the engine stages that refusal (a walk-run start).
+    expect(res.status).toBe(200)
+    const out = (await res.json()) as { plan?: { meta?: { staged_race?: unknown } } }
+    expect(out.plan?.meta?.staged_race).toBeTruthy()
   })
-  it('I6 — a client cannot switch §29 off by sending volume_observed itself', async () => {
+  it('D8 — on by default: the same §111 runner gets a staged plan for their race, and plan_staged_for_race lands', async () => {
+    delete process.env.ENABLE_BASE_BUILD_ONRAMP
+    subscribe()
+    const res = await post(body({
+      race_distance_km: 42.2, current_weekly_km: 8, longest_recent_run_km: 6,
+      days_available: 4, training_age: '<6mo', recent_quality_training: 'none',
+      race_date: raceIn(26),
+    }))
+    expect(res.status).toBe(200)
+    expect(((await res.json()) as { plan?: { meta?: { staged_race?: unknown } } }).plan?.meta?.staged_race).toBeTruthy()
+    expect(events()).toContain('plan_staged_for_race')
+  })
+  it('I6 — a client cannot switch §29 off by sending volume_observed itself (the =0 off-switch, so §111 answers)', async () => {
+    process.env.ENABLE_BASE_BUILD_ONRAMP = '0'
     subscribe()
     const res = await post({ ...RACE, current_weekly_km: 12, training_age: '2-5yr', longest_recent_run_km: 6, volume_observed: true })
     const res2 = await post({ ...RACE, current_weekly_km: 12, training_age: '2-5yr', longest_recent_run_km: 6 })
@@ -457,6 +477,7 @@ describe('I — the base-build checkpoint gates on what was RUN, measured by the
     expect(((await res2.json()) as { reason?: string }).reason).toBe('base_volume')
     expect(res.status).toBe(422)
     expect(((await res.json()) as { reason?: string }).reason).toBe('base_volume')
+    delete process.env.ENABLE_BASE_BUILD_ONRAMP
   })
   it('I3 — no runs recorded is its own answer, never a pass and never a refusal on zero', async () => {
     subscribe(); const plan = await stage()

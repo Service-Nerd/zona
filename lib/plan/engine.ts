@@ -327,7 +327,7 @@ export function runEngine(req: EngineRequest): EngineOutcome {
     rulePlan = generateRulePlan(input, tier, planStart)
   } catch (err) {
     // NO-RUNNER-TURNED-AWAY-01 (§116 Am. 9) — a §111 refusal becomes a plan FOR THE RACE: base building to a checkpoint,
-    // the race block built only once the checkpoint passes on observed volume. Behind §116's flag, dark by default,
+    // the race block built only once the checkpoint passes on observed volume. On by default since 2026-10-25; `=0` is the off-switch,
     // so with the flag off this branch is never entered and the refusal below is byte-identical to before.
     // Phase D: below §116's running floor nobody has §113's long run, so §113 refuses first and §111 is never reached.
     // The walk-run start is their staging (Q3); §111's door is found with §113's floor as the long run, and §113 itself

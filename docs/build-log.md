@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 · Switched on, and made the default so the gates measure what ships
+**Shipped:** the staged race plan is live. On by default in code; an env var of `0` is the off-switch.
+**Dev learning:** a production-only env var would have left CI, the envelope gate and every harness measuring the old behaviour while production ran the new one. Flipping the code default made eight tests fail, every one an honest "this assumed off" (each now pins the off-switch or asserts the new answer), and the envelope baseline was re-written with that reason.
+**Product/creator learning:** "never turn anyone away" ended as: refused 5.6% → 0%, and 64% race on their chosen date. The other third get a real plan and an honest later-race offer.
+**AI-building learning:** the founder asked "have you validated the screens?" The honest answer was no, and the fix was a local harness rendering real components with real engine output, which found five defects in ten minutes.
+**The honest bit:** none of it has run on a phone.
+**Hook material:** "Refused: 5.6% → 0%."
+**Postable?:** yes
+
 ## 2026-10-25 — ONRAMP-SPACING-01 · Reading four real plans found three defects no measurement had
 **Shipped:** base-building runs spread across the week (Mon/Wed/Fri, not Mon/Tue/Wed), deload weeks that never hold the block's longest run, and run-walk kept in any race block after a walk-run start.
 **Dev learning:** every check passed on all three. The spacing defect was in every live base-build plan; a checker that reads the producer's own day-picker would have agreed with it, so the checker brute-forces the fewest possible adjacent pairs itself. New rules on stored plans need a producer stamp, or the save gate refuses the live plans built before the rule.

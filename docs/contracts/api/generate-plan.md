@@ -700,12 +700,12 @@ This route no longer calls Anthropic directly. It goes through
 suppressed `get_running`, so switching `ENABLE_BASE_BUILD_ONRAMP` on would have left a refused runner with the message
 alone. Clients never read it; **a `base_volume` 422 now carries `base` and (where §118 applies) `get_running` only.**
 
-**With the flag on (it is OFF in production)**, a §111 refusal the engine can stage is **not a 422**: the route
+**On by default since 2026-10-25** (`ENABLE_BASE_BUILD_ONRAMP=0` switches it off), a §111 refusal the engine can stage is **not a 422**: the route
 returns **200 `{ plan }`** with `plan_kind: 'base_build'` and `meta.staged_race`
 (`race_name`, `race_date`, `race_distance_km`, `door_km`, `checkpoint_week`, `race_weeks`, `reaches_door`), and records
 `plan_staged_for_race`. The staged plan contains no race-block week (`INV-PLAN-STAGED-NO-RACE-BLOCK`); the race plan is
-generated at the checkpoint (`checkpoint: true`, above) on observed volume. ⚠️ **Not switched on** until the board
-resolves §29's discount and §113's stale long run at the checkpoint (§116 Am. 9).
+generated at the checkpoint (`checkpoint: true`, above) on observed volume. Since Phase D a §113 refusal below 6 km/week is staged too (`stagingDoorKm`, the one decision `runEngine` and the
+envelope share): a walk-run start with the race on the plan.
 
 ## Display units — read once, used by all three AI calls (UNITS-PROSE-01, 2026-09-23)
 

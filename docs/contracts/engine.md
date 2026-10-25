@@ -175,7 +175,10 @@ Named so the work is visible rather than discovered later:
    owns — and `adjust-plan` **five**, behind `lib/coaching/adjustmentEngine.ts`. The eighth
    (2026-10-24, `NO-RUNNER-TURNED-AWAY-01`) is `fetchWeeklyLoad`, the activity-log **read** the
    base-build checkpoint needs: IO, so the caller's; the decision it feeds,
-   `evaluateCheckpoint`, is behind the engine's door.
+   `evaluateCheckpoint(input, stored, loads, units, planStart?, choice?)`, is behind the engine's door. It returns the
+   race-block input, an `extend` plan, or a 422 consent body with engine-verified `options`; `choice`
+   (`extend` | `run_walk` | `half`) is honoured only when it was on offer. Which refusals are staged is one decision,
+   `stagingDoorKm(err, input, planStart)` in `stagedRacePlan.ts`, shared with `measure:envelope`.
 
    ⚠️ **IT IS 18 → 7, NOT THE 18 → 1 THE ITEM ASKED FOR, because 1 contradicts this
    document.** Five of the eighteen (`enrich`, `enrichAttribution`, `enrichPartialRevert`,

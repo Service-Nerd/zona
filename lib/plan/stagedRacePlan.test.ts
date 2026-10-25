@@ -229,7 +229,8 @@ describe('C3 — the checkpoint target: the race block begins as a step, never a
 describe('the engine — behind §116\'s flag', () => {
   afterEach(() => { delete process.env.ENABLE_BASE_BUILD_ONRAMP })
   const run = (over: Partial<GeneratorInput> = {}) => runEngine({ input: input(over), tier: 'paid', displayUnits: 'km', planStart: START, today: '2026-10-25' })
-  it('flag OFF: a 10 km/week marathoner is refused exactly as before, and the dead on-ramp offer is gone', () => {
+  it('flag OFF (the =0 off-switch): a 10 km/week marathoner is refused exactly as before, and the dead on-ramp offer is gone', () => {
+    process.env.ENABLE_BASE_BUILD_ONRAMP = '0'
     const out = run()
     expect(out.kind).toBe('refusal')
     if (out.kind !== 'refusal') return
@@ -342,5 +343,17 @@ describe('a runner already AT the door (§117 Am.2 reuses BaseVolumeError) is st
     expect(p).not.toBeNull()
     expect(stagedRaceOf(p)!.door_km).toBeGreaterThan(8)
     expect(validateStagedRace(p)).toEqual([])
+  })
+})
+
+describe('ON BY DEFAULT (switched on 2026-10-25): no env var means staged', () => {
+  it('an absent ENABLE_BASE_BUILD_ONRAMP is on; only "0" switches it off', async () => {
+    const { onRampEnabled } = await import('./baseBuildOnRamp')
+    const was = process.env.ENABLE_BASE_BUILD_ONRAMP
+    delete process.env.ENABLE_BASE_BUILD_ONRAMP
+    expect(onRampEnabled()).toBe(true)
+    process.env.ENABLE_BASE_BUILD_ONRAMP = '0'
+    expect(onRampEnabled()).toBe(false)
+    if (was === undefined) delete process.env.ENABLE_BASE_BUILD_ONRAMP; else process.env.ENABLE_BASE_BUILD_ONRAMP = was
   })
 })

@@ -14,8 +14,9 @@ import { measureEnvelope, envelopeMoves, type EnvelopeMeasure } from '../lib/pla
 
 const BASELINE = join(__dirname, '..', 'lib', 'plan', '__fixtures__', 'envelopeBaseline.json')
 const WRITE = process.argv.includes('--write')
-// NO-RUNNER-TURNED-AWAY-01 — score §111 refusals as STAGED race plans (Q4). Never with --write: the CI gate runs with
-// §116's flag off, so a staged baseline would fail every build until the flag flips, and then it would be re-written.
+// NO-RUNNER-TURNED-AWAY-01 — score refusals the engine stages as their composed plans (Q4). Since 2026-10-25 staging is
+// ON BY DEFAULT (shipped), so a plain run already measures it and `--staging` is redundant; the baseline was re-written
+// that day to the shipped behaviour. `--staging --write` stays refused so a flag-off checkout cannot baseline it.
 const STAGING = process.argv.includes('--staging')
 if (STAGING && WRITE) { console.error('--staging and --write together would baseline unshipped behaviour. Refused.'); process.exit(2) }
 

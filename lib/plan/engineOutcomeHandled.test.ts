@@ -116,8 +116,10 @@ describe('ENGINE-ENTRY-01 — every engine outcome has a route branch', () => {
                   planStart: '2026-10-05', today: '2026-10-05' }).kind
 
     const reached = new Set<string>([
-      // §111 turns this runner away at the base-volume door.
+      // §111's base-volume refusal is now STAGED (NO-RUNNER-TURNED-AWAY-01, on 2026-10-25): a base build, not a refusal.
       call(mk({})),
+      // A refusal staging cannot serve: §44, a marathon six weeks away.
+      call(mk({ race_date: '2026-11-16' })),
       // The same runner accepting the §118 offer.
       call(mk({}), true),
       // A runner the engine builds for.

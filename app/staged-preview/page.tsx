@@ -109,7 +109,7 @@ export default function StagedPreview() {
       {view === 'checkpoint' && <Case title="Today, checkpoint week" note="the checkpoint line, every tier">
         <TodayScreen {...(today as any)} weekIndex={lastIdx} checkpointLine={CHECKPOINT_THIS_WEEK_LINE} />
       </Case>}
-      {view === 'consent' && <Case title="Today, after the checkpoint" note={`ran ${short} km/wk against ${s.door_km}`}>
+      {view === 'consent' && <Case title="Today, after the checkpoint" note={`ran ${short} against a ${s.door_km} target`}>
         <TodayScreen {...(today as any)} weekIndex={lastIdx} handover={stagedHandoverCopy(s, d)} checkpointConsent={consent}
           onBuildRacePlan={noop} onDismissHandover={noop} onCheckpointOption={noop} />
       </Case>}

@@ -99,7 +99,8 @@ describe('L4 + L5 — placement and the handover to running', () => {
 describe('the engine — a runner §113 refuses below the running floor is staged, behind the flag', () => {
   afterEach(() => { delete process.env.ENABLE_BASE_BUILD_ONRAMP })
   const run = (over: Partial<GeneratorInput> = {}) => runEngine({ input: input(over), tier: 'paid', displayUnits: 'km', planStart: START, today: '2026-10-25' })
-  it('flag OFF: the 0 km/week runner is refused exactly as before', () => {
+  it('flag OFF (the =0 off-switch): the 0 km/week runner is refused exactly as before', () => {
+    process.env.ENABLE_BASE_BUILD_ONRAMP = '0'
     expect(run().kind).toBe('refusal')
   })
   it('flag ON: they get the walk-run start with their race on it, and are countable', () => {

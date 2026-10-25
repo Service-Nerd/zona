@@ -10480,7 +10480,9 @@ The best case, and printed as such.
 ruled a defect against Amendment 7 (the two live base-build runners had recorded 3.1 km of a planned 21, and 0 of
 16.5). It now sends nothing that could pass for volume, and the server measures.
 
-🔴 **NOT SWITCHED ON, AND WHY (measured 2026-10-24, full marathon population, staging scored).** Of **880** staged
+🟢 **SWITCHED ON 2026-10-25 by the founder**, after C1–C5, the walk-run start, the Phase E after-round (E0a/E1/E3), a coach reading of real plans (R1/R2/R5), a code review and the Design Board's render pass (S1–S4). On by default in code; `ENABLE_BASE_BUILD_ONRAMP=0` is the off-switch. Live measure (weighted marathon, best case): refused 5.6% → 0%; at the checkpoint 64.3% race on their date (37.2% the marathon, 27.1% the half). **The paragraph below is the 2026-10-24 measurement that sent it back to the board, kept as the record.**
+
+🔴 **WAS NOT SWITCHED ON, AND WHY (measured 2026-10-24, full marathon population, staging scored).** Of **880** staged
 cases (6.3% of weighted marathoners), **5.7% are clean**. **76.5% are refused AGAIN at the checkpoint by §111,
 because §29's fresh-return discount is applied to the volume they ran**: §29's heuristic (experienced training age,
 under 25 km/week, longest run under 10 km) scales a declared volume by 0.7, and at the checkpoint the volume is not

@@ -171,11 +171,13 @@ function floor1dp(km: number): number {
 // bring the numbers back. The 2026-09-19 record is the standing reminder — a
 // hand-rolled grid showed 0 violations where the sweep showed 884.
 //
-// ⚠️ DEFAULT OFF, and off means the refusal payload is byte-identical to what
-// it was before §116 existed. A flag whose "off" state still changes behaviour
-// is not a flag.
+// 🟢 SWITCHED ON 2026-10-25 by the founder (NO-RUNNER-TURNED-AWAY-01, after Phases B–E, the coach review of real
+// plans, the code review and the Design Board's render pass). **ON BY DEFAULT IN CODE**, not by a production-only
+// env var, because a gate must measure what ships: with an env var, CI and every harness would have kept measuring the
+// old off-state while production ran the new one. `ENABLE_BASE_BUILD_ONRAMP=0` is the off-switch, and off still means
+// the refusal payload is byte-identical to what it was before §116 existed.
 export function onRampEnabled(): boolean {
-  return process.env.ENABLE_BASE_BUILD_ONRAMP === '1'
+  return process.env.ENABLE_BASE_BUILD_ONRAMP !== '0'
 }
 
 // ─── The plan itself ──────────────────────────────────────────────────────────
