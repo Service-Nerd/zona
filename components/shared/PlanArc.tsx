@@ -262,7 +262,7 @@ export default function PlanArc({
           <div
             style={{
               position: 'absolute',
-              left: `${((annotatedWeek - 0.5) / weekKm.length) * 100}%`,
+              left: `${((annotatedWeek - 0.5) / (weekKm.length + outlineWeeks)) * 100}%`,
               top: 0, width: '1px', height: '12px',
               background: 'var(--line-strong)',
             }}
@@ -272,7 +272,7 @@ export default function PlanArc({
             position: 'absolute', top: '14px', left: 0, right: 0,
             fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 500,
             color: 'var(--mute)', lineHeight: 1.4,
-            textAlign: annotatedWeek / weekKm.length > 0.6 ? 'right' : 'left',
+            textAlign: annotatedWeek / (weekKm.length + outlineWeeks) > 0.6 ? 'right' : 'left',
           }}>
             Week {annotatedWeek} is easier on purpose.
           </div>

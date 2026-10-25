@@ -125,30 +125,41 @@ export function evaluateCheckpoint(
   const noFit = !!staged && !staged.target_found
   if (staged && (short || noFit)) {
     // Each option exists only where its producer builds a plan we would hand over (`stagedRacePlan.ts`).
+    // ⚠️ LAZY, AND IN THE SCREEN'S ORDER (code review 2026-10-25): each producer is a full generate-validate-audit, and
+    // extend runs the target search, so they are tried in order and only until two are found. A re-send stops at its
+    // choice. A choice is honoured ONLY if it is one of the options the screen showed, never because its producer
+    // happens to build.
     const afterWalkRun = !!(stored.meta as unknown as Record<string, unknown>).walk_run_start_weeks
-    const extend = short ? extendedStagedPlan(input, observed, longest, staged, planStart, afterWalkRun) : null
-    const runWalk = runWalkFinishInput(input, observed, longest, planStart)
-    // E1: the half on the same date, where its block is clean from what they ran.
-    const half = halfSameDayInput(input, observed, longest, planStart)
-    if (choice === 'half' && half) {
-      telemetry.detail.choice = 'half'
-      return { ok: true, telemetry, input: half }
+    type Built = { kind: 'extend'; plan: Plan } | { kind: 'half' | 'run_walk'; input: GeneratorInput }
+    const producers: (() => Built | null)[] = [
+      () => { const p = short ? extendedStagedPlan(input, observed, longest, staged, planStart, afterWalkRun) : null; return p ? { kind: 'extend', plan: p } : null },
+      () => { const i = halfSameDayInput(input, observed, longest, planStart); return i ? { kind: 'half', input: i } : null },
+      () => { const i = runWalkFinishInput(input, observed, longest, planStart); return i ? { kind: 'run_walk', input: i } : null },
+    ]
+    const offered: Built[] = []
+    for (const make of producers) {
+      if (offered.length >= 2) break
+      const b = make()
+      if (!b) continue
+      offered.push(b)
+      if (b.kind === choice) break
     }
-    if (choice === 'extend' && extend) {
-      telemetry.detail.choice = 'extend'
-      return { ok: true, telemetry, plan: extend }
-    }
-    if (choice === 'run_walk' && runWalk) {
-      telemetry.detail.choice = 'run_walk'
-      return { ok: true, telemetry, input: runWalk }
+    const chosen = choice ? offered.find(b => b.kind === choice) : undefined
+    if (chosen) {
+      telemetry.detail.choice = chosen.kind
+      if (chosen.kind === 'extend') {
+        // The same gate `runEngine` puts on every staged plan it produces (code review: this path returned unchecked).
+        const startKm = Number((chosen.plan.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0)
+        enforceViolations([...validateBaseBuildBlock(chosen.plan.weeks, startKm), ...validateStagedRace(chosen.plan)])
+        return { ok: true, telemetry, plan: chosen.plan }
+      }
+      return { ok: true, telemetry, input: ownAck(chosen.input, input) }
     }
     // Recommended first; at most three (Design Board amendment 7), and a later race always kept as the last (E1).
     const options: CheckpointOption[] = [
-      ...[
-        ...(extend ? [{ kind: 'extend' as const, weeks: stagedRaceOf(extend)!.checkpoint_week }] : []),
-        ...(half ? [{ kind: 'half' as const }] : []),
-        ...(runWalk ? [{ kind: 'run_walk' as const }] : []),
-      ].slice(0, 2),
+      ...offered.map(b => b.kind === 'extend'
+        ? { kind: 'extend' as const, weeks: stagedRaceOf(b.plan)!.checkpoint_week }
+        : { kind: b.kind }),
       { kind: 'later_race' },
     ]
     telemetry.detail.options = options.map(o => o.kind)
@@ -170,7 +181,18 @@ export function evaluateCheckpoint(
     } }
   }
   // C1 + C2 — what they RAN, marked observed so §29 does not discount it, and the long run they recorded.
-  return { ok: true, telemetry, input: checkpointRaceInput(input, observed, longest) }
+  return { ok: true, telemetry, input: ownAck(checkpointRaceInput(input, observed, longest), input) }
+}
+
+/**
+ * §44's acknowledgement is the RUNNER's, not ours (code review 2026-10-25). `checkpointRaceInput` sets it so the producer
+ * tests can measure a block at all; the block the runner actually gets carries what the request carried, so a runway
+ * that shrank into §44's warn band since signup shows the warning and its acknowledge step (MODIFY-WARN-ACK-01).
+ */
+function ownAck(built: GeneratorInput, request: GeneratorInput): GeneratorInput {
+  const { acknowledged_prep_warning: _set, ...rest } = built as GeneratorInput & { acknowledged_prep_warning?: boolean }
+  const own = (request as GeneratorInput & { acknowledged_prep_warning?: boolean }).acknowledged_prep_warning
+  return (own ? { ...rest, acknowledged_prep_warning: own } : rest) as GeneratorInput
 }
 
 type GapClass = ComposePlanWithFoundationResult['gapClass']

@@ -20,12 +20,8 @@
  */
 
 import type { GeneratorInput } from '@/types/plan'
-import { generateStagedRacePlan, stagedRaceOf, checkpointRaceInput, longestSessionKm } from './stagedRacePlan'
+import { generateStagedRacePlan, stagedRaceOf, checkpointRaceInput, longestSessionKm, raceBlockVerdict } from './stagedRacePlan'
 import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
-import { generateRulePlan } from './ruleEngine'
-import { validatePlan } from './invariants'
-import { isDesignedRefusal } from './designedRefusal'
-import { auditPlanQuality, objectionsOnly } from './planQuality'
 
 export interface StagedScore {
   clean: boolean
@@ -37,7 +33,6 @@ export interface StagedScore {
   refusedAtCheckpoint: string | null
 }
 
-const dayBefore = (iso: string) => new Date(Date.parse(`${iso}T00:00:00Z`) - 864e5).toISOString().slice(0, 10)
 const addWeeks = (iso: string, n: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + n * 7 * 864e5).toISOString().slice(0, 10)
 
 /** `null` when this case is not staged at all (the caller scores it as before). */
@@ -53,19 +48,9 @@ export function scoreStagedCase(input: GeneratorInput, planStart: string, doorKm
   // The PASS case, built exactly as `evaluateCheckpoint` builds it: they ran the target (`door_km`, C3) and the
   // ramp's own longest session (C2), marked observed (C1). `checkpointRaceInput` is the one owner of that input.
   const raceInput = checkpointRaceInput(input, s.door_km, longestSessionKm(staged.weeks))
-  let race
-  try {
-    race = generateRulePlan(raceInput, 'paid', checkpoint, undefined, dayBefore(checkpoint))
-  } catch (e) {
-    if (!isDesignedRefusal(e)) throw e
-    return { clean: false, errorCodes: baseErrs, objectionCodes: [], refusedAtCheckpoint: (e as Error).name }
-  }
-  const errs = validatePlan(race, raceInput).filter(v => v.severity === 'error').map(v => v.code)
-  const m = race.meta as unknown as Record<string, unknown>
-  const maintDeclared = m.volume_profile === 'maintenance' && !!m.volume_constraint_note
-  // The SAME §23 reconciliation the envelope applies to every other plan: a declared maintenance plan may not build.
-  const objs = objectionsOnly(auditPlanQuality(race, raceInput).filter(o => !(o.code === 'NEVER-BUILDS' && maintDeclared)))
-    .map(o => o.code)
-  const errorCodes = [...baseErrs, ...errs]
-  return { clean: errorCodes.length === 0 && objs.length === 0, errorCodes, objectionCodes: objs, refusedAtCheckpoint: null }
+  // The engine's own verdict (`raceBlockVerdict`), so the harness and the engine cannot disagree about "clean".
+  const v = raceBlockVerdict(raceInput, checkpoint)
+  if (v.refusal) return { clean: false, errorCodes: baseErrs, objectionCodes: [], refusedAtCheckpoint: v.refusal }
+  const errorCodes = [...baseErrs, ...v.errorCodes]
+  return { clean: errorCodes.length === 0 && v.objectionCodes.length === 0, errorCodes, objectionCodes: v.objectionCodes, refusedAtCheckpoint: null }
 }

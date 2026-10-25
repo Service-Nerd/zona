@@ -136,17 +136,25 @@ export function checkpointRaceInput(input: GeneratorInput, weeklyKm: number, lon
  * first target without a leap even where that plan's long run never approached the race. The leap is one of the
  * objections, so this is the measured rule and includes the written one.
  */
-function cleanRaceBlock(input: GeneratorInput, checkpoint: string): Plan | null {
+/** THE ONE "is this race block one we would hand over" test, shared by the engine's option producers and target search
+ *  and by `stagedScore` (code review 2026-10-25: the harness had its own copy). `refusal` is the designed refusal's name. */
+export interface RaceBlockVerdict { race: Plan | null; refusal: string | null; errorCodes: string[]; objectionCodes: string[] }
+export function raceBlockVerdict(input: GeneratorInput, checkpoint: string): RaceBlockVerdict {
   let race: Plan
   try { race = generateRulePlan(input, 'paid', checkpoint, undefined, dayBefore(checkpoint)) } catch (e) {
-    if (isDesignedRefusal(e)) return null
+    if (isDesignedRefusal(e)) return { race: null, refusal: (e as Error).name, errorCodes: [], objectionCodes: [] }
     throw e
   }
-  if (validatePlan(race, input).some(v => v.severity === 'error')) return null
+  const errorCodes = validatePlan(race, input).filter(v => v.severity === 'error').map(v => v.code)
   const m = race.meta as unknown as Record<string, unknown>
   const maintDeclared = m.volume_profile === 'maintenance' && !!m.volume_constraint_note
-  return objectionsOnly(auditPlanQuality(race, input).filter(o => !(o.code === 'NEVER-BUILDS' && maintDeclared))).length === 0
-    ? race : null
+  // The same §23 reconciliation every harness applies: a declared maintenance plan may not build.
+  const objectionCodes = objectionsOnly(auditPlanQuality(race, input).filter(o => !(o.code === 'NEVER-BUILDS' && maintDeclared))).map(o => o.code)
+  return { race, refusal: null, errorCodes, objectionCodes }
+}
+function cleanRaceBlock(input: GeneratorInput, checkpoint: string): Plan | null {
+  const v = raceBlockVerdict(input, checkpoint)
+  return v.race && v.errorCodes.length === 0 && v.objectionCodes.length === 0 ? v.race : null
 }
 const raceBlockClean = (input: GeneratorInput, checkpoint: string): boolean => cleanRaceBlock(input, checkpoint) !== null
 
@@ -350,6 +358,13 @@ export function extendedStagedPlan(input: GeneratorInput, observedKm: number, lo
     p = generateWalkRunStagedPlan(ci, planStart, staged.door_km, weeksBetweenLocal(planStart, ci.race_date), true)
   } else {
     p = generateStagedRacePlan(checkpointRaceInput(input, observedKm, longestKm), planStart, staged.door_km)
+    // L5 (code review 2026-10-25): after a walk-run start the ramp keeps the 6/1 pattern until the checkpoint, so more
+    // base building at 6 km+ keeps it too; the continuous bout must not near-triple because the plan was extended.
+    if (p && afterWalkRun) {
+      p = { ...p, weeks: p.weeks.map(w => ({ ...w,
+        sessions: Object.fromEntries(Object.entries(w.sessions ?? {}).map(([d, s]) => [d, s ? applyRunWalk(s as Session) : s])) })) as Week[] }
+      ;(p.meta as unknown as Record<string, unknown>).walk_run_carried = true
+    }
   }
   const s = stagedRaceOf(p)
   return p && s && s.target_found && s.reaches_door ? p : null

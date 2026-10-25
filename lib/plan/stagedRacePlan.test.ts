@@ -313,10 +313,12 @@ describe('C4 + Design Board amendment 7 — the checkpoint offers only what will
       expect(validateStagedRace(r.plan)).toEqual([])
     }
   })
-  it('the run-walk choice skips the target and asks the race block for a finish goal at what they ran', () => {
-    const r = evaluateCheckpoint(BEG, plan, ran(s.door_km * 0.95), 'km', cpStart, 'run_walk')
-    expect(r.ok && 'input' in r).toBe(true)
-    if (r.ok && 'input' in r) expect(r.input).toMatchObject({ goal: 'finish', volume_observed: true })
+  it('🔴 a choice not on the screen is never honoured (code review): run-walk here is cut by the three-option cap', () => {
+    const shown = evaluateCheckpoint(BEG, plan, ran(s.door_km * 0.95), 'km', cpStart)
+    expect(kinds(shown)).not.toContain('run_walk')
+    expect(evaluateCheckpoint(BEG, plan, ran(s.door_km * 0.95), 'km', cpStart, 'run_walk').ok).toBe(false)
+    const half = evaluateCheckpoint(BEG, plan, ran(s.door_km * 0.95), 'km', cpStart, 'half')
+    expect(half.ok && 'input' in half).toBe(true)
   })
   it('a choice that is not on offer gives the screen again, never a plan', () => {
     const INT = input({ fitness_level: 'intermediate', user_declared_level: 'intermediate' } as Partial<GeneratorInput>)

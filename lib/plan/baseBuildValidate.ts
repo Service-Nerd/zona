@@ -207,7 +207,8 @@ export function validateStagedRace(plan: Plan): Violation[] {
 export function validateWalkRunStart(plan: Plan): Violation[] {
   const weeks = plan.weeks ?? []
   const wr = weeks.filter(w => w.phase === 'walk_run_start')
-  if (wr.length === 0) return []
+  const carried = (plan.meta as unknown as Record<string, unknown>).walk_run_carried === true
+  if (wr.length === 0 && !carried) return []
   const v: Violation[] = []
   const C = GENERATION_CONFIG
   const push = (week: number, message: string, actual: string, expected: string) => v.push({
@@ -262,7 +263,7 @@ export function validateWalkRunStart(plan: Plan): Violation[] {
     prevRun = levels[0]!.run_mins
   }
   const end = { run_mins: C.FINISH_GOAL_RUNWALK_RUN_MINS, walk_mins: C.FINISH_GOAL_RUNWALK_WALK_MINS }
-  if (prev !== null && prev !== rank(end)) push(wr[wr.length - 1].n, `The walk-run start ends below §117's ${end.run_mins}/${end.walk_mins}.`, 'below', `${end.run_mins}/${end.walk_mins}`)
+  if (wr.length > 0 && prev !== null && prev !== rank(end)) push(wr[wr.length - 1].n, `The walk-run start ends below §117's ${end.run_mins}/${end.walk_mins}.`, 'below', `${end.run_mins}/${end.walk_mins}`)
   for (const w of weeks.filter(x => x.phase === 'base_build')) {
     if (runs(w).some(s => !s.run_walk_strategy)) push(w.n, `Running week W${w.n} after a walk-run start drops the run-walk pattern (L5, Willy).`, 'continuous', 'run-walk')
   }

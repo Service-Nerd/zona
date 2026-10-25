@@ -256,3 +256,38 @@ describe('E0a — day one never promises a block the engine knows does not fit',
     expect(offenders).toEqual([])
   })
 })
+
+describe('code review fixes (2026-10-25)', () => {
+  it('🔴 Modify on a staged plan rebuilds from its race, never as a plain base build', async () => {
+    const { rebuildsBaseBuild } = await import('./modifyPlan')
+    const staged = generateStagedRacePlan(input(), START, 12)!
+    expect(rebuildsBaseBuild(staged)).toBe(false)
+    const plain = { ...staged, meta: { ...staged.meta, staged_race: undefined } } as Plan
+    expect(rebuildsBaseBuild(plain)).toBe(true)
+  })
+  it('🔴 the route turns a failed stored-plan read into a 500, never "no plan"', () => {
+    const route = readFileSync('app/api/generate-plan/route.ts', 'utf8')
+    expect(route).toContain("if (r.error) throw new Error(`stored plan read failed: ${r.error}`)")
+    expect(route).not.toMatch(/\(await readPlanJson\(svc, user\.id\)\)\.plan/)
+  })
+  it('🔴 an extended plan after a walk-run start keeps 6/1 on every ramp session (L5)', () => {
+    const far = input({ race_date: raceIn(46) })
+    const fp = generateStagedRacePlan(far, START, 12)!
+    const st = stagedRaceOf(fp)!
+    const fcp = new Date(Date.parse(`${START}T00:00:00Z`) + st.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+    const km = Math.max(7, st.door_km * 0.8)
+    const ex = evaluateCheckpoint(far, fp, new Map(fp.weeks.map(w => [w.n, { linkedKm: km, offPlanKm: 0, totalKm: km, longestKm: km / 3 }])), 'km', fcp, 'extend')
+    if (!(ex.ok && 'plan' in ex)) return
+    for (const w of ex.plan.weeks.filter(x => x.phase === 'base_build')) for (const r of runs(w)) expect(r.run_walk_strategy).toBeTruthy()
+    const bad = JSON.parse(JSON.stringify(ex.plan)) as Plan
+    for (const w of bad.weeks) for (const r of runs(w)) delete r.run_walk_strategy
+    expect(codes(bad)).not.toEqual([])
+  })
+  it("the runner's own §44 acknowledgement is what the race block carries, not ours", () => {
+    const p = generateStagedRacePlan(input({ current_weekly_km: 10, longest_recent_run_km: 6 }), START, 12)!
+    const s = stagedRaceOf(p)!
+    const cp = new Date(Date.parse(`${START}T00:00:00Z`) + s.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+    const r = evaluateCheckpoint(input({ current_weekly_km: 10 }), p, new Map(p.weeks.map(w => [w.n, { linkedKm: s.door_km, offPlanKm: 0, totalKm: s.door_km, longestKm: 6 }])), 'km', cp)
+    if (r.ok && 'input' in r) expect((r.input as unknown as Record<string, unknown>).acknowledged_prep_warning).toBeUndefined()
+  })
+})

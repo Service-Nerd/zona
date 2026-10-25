@@ -6,6 +6,7 @@ import { DAY_ORDER, normaliseDays, type Day } from './days'
 // about what a base-build plan IS — the `deloadCadence` / `TIER-OWNER-01` lesson.
 // Costs nothing: `lib/plan.ts` already pulls that module into the dashboard graph.
 import { isBaseBuildPlan } from './validateStoredPlan'
+import { stagedRaceOf } from './stagedRacePlan'
 
 /**
  * P-02 — what a runner may change about a live plan, and what changing it does.
@@ -222,7 +223,10 @@ export function modifiableRowsFor(plan: Plan | null | undefined): readonly Modif
 /** Does this plan rebuild its OWN kind rather than a race plan?
  *  One predicate, so the sheet and the request body cannot disagree. */
 export function rebuildsBaseBuild(plan: Plan | null | undefined): boolean {
-  return isBaseBuildPlan(plan)
+  // NO-RUNNER-TURNED-AWAY-01 (code review 2026-10-25): a STAGED plan is a base build carrying a race. Rebuilding it as a
+  // plain base build (`accept_base_build`) silently dropped the race, the checkpoint and the countdown; it rebuilds from
+  // its race input instead, so the engine stages it again.
+  return isBaseBuildPlan(plan) && !stagedRaceOf(plan)
 }
 
 /** Apply the overlay. Returns a new input; never mutates the stored one. */

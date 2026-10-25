@@ -153,16 +153,37 @@ export async function POST(req: NextRequest) {
     // ⚠️ A failed read is a 500, never "ran nothing": `fetchWeeklyLoad` throws on a query error by design.
     // C1 — `volume_observed` is the server's to set. A client that sent it would switch §29 off for a declared
     // volume, so it is removed from every request before anything reads the input.
+    // The stored plan, read at most once. 🔴 A failed read THROWS (a 500), never "no plan": `readPlanJson` returns its
+    // error for the caller to decide, and treating it as null told a staged runner they had no plan (code review).
+    let storedRead: { plan: Plan | null } | null = null
+    const readStored = async (): Promise<Plan | null> => {
+      if (storedRead) return storedRead.plan
+      const { createClient } = await import('@supabase/supabase-js')
+      const svc = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      const r = await readPlanJson(svc, user.id)
+      if (r.error) throw new Error(`stored plan read failed: ${r.error}`)
+      storedRead = { plan: r.plan as Plan | null }
+      return storedRead.plan
+    }
+    const isCheckpoint = (guard.body as { checkpoint?: unknown }).checkpoint === true
     if ('volume_observed' in input) {
-      const { volume_observed: _drop, ...rest } = input
-      input = rest as GeneratorInput
+      // Kept ONLY for a faithful replay of the runner's own stored plan: the checkpoint measured it, the plan stores it,
+      // and a Modify that leaves the volume alone re-sends it (code review: stripping it let §29 re-discount observed
+      // volume). Server-verified against the stored input; a client cannot mint it.
+      const stored = isCheckpoint ? null : await readStored()
+      const gi = (stored?.meta as unknown as { generator_input?: GeneratorInput } | undefined)?.generator_input
+      const faithful = !!gi?.volume_observed && gi.current_weekly_km === input.current_weekly_km
+      if (!faithful) {
+        const { volume_observed: _drop, ...rest } = input
+        input = rest as GeneratorInput
+      }
     }
     // `extend` returns more base building, already built; it is answered after the paywall, like any other plan.
     let checkpointPlan: Plan | null = null
-    if ((guard.body as { checkpoint?: unknown }).checkpoint === true) {
+    if (isCheckpoint) {
       const { createClient } = await import('@supabase/supabase-js')
       const svc = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-      const stored = (await readPlanJson(svc, user.id)).plan as Plan | null
+      const stored = await readStored()
       const loads = stored && isBaseBuildPlan(stored) ? await fetchWeeklyLoad(svc, user.id, stored) : null
       // The consent screen's re-send (Design Board amendment 7). Anything else is no choice at all, so an unknown value
       // can only ever produce the screen again, never a plan.
