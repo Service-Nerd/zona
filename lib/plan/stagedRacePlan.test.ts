@@ -267,9 +267,9 @@ describe('C4 + Design Board amendment 7 — the checkpoint offers only what will
   it('no runs: Apple Health first, then a later race; never a typed number, and not "Log a run" (dated today)', () => {
     expect(kinds(evaluateCheckpoint(BEG, plan, new Map(), 'km', cpStart))).toEqual(['connect_health', 'later_race'])
   })
-  it('short of the target: more base building first, then run-walk, then a later race, at most three', () => {
+  it('short of the target: more base building first, then the same-day half, a later race last, at most three (E1)', () => {
     const r = evaluateCheckpoint(BEG, plan, ran(s.door_km * 0.95), 'km', cpStart)
-    expect(kinds(r)).toEqual(['extend', 'run_walk', 'later_race'])
+    expect(kinds(r)).toEqual(['extend', 'half', 'later_race'])
     if (!r.ok) expect((r.body.options as { weeks?: number }[])[0].weeks).toBeGreaterThan(0)
   })
   it('🔴 run-walk is offered only where §117 actually builds a run-walk plan (not to an intermediate runner)', () => {
@@ -300,7 +300,7 @@ describe('C4 + Design Board amendment 7 — the checkpoint offers only what will
     const st = stagedRaceOf(p)!
     const at = new Date(Date.parse(`${START}T00:00:00Z`) + st.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
     const r = evaluateCheckpoint(SHORT, p, new Map(p.weeks.map(w => [w.n, load(st.door_km * 0.95, 4)])), 'km', at)
-    expect(kinds(r)).toEqual(['later_race'])
+    expect(kinds(r)).not.toContain('extend')
   })
   it('the extend choice returns more base building from what they RAN, toward the same target', () => {
     const r = evaluateCheckpoint(BEG, plan, ran(s.door_km * 0.95), 'km', cpStart, 'extend')

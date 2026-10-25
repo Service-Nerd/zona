@@ -221,8 +221,8 @@ describe('the consent screen on the card, wired', () => {
     expect(fn).toContain("setScreen('generate')")
     expect(fn).toContain("setMeOpenSection('connections'); setScreen('me')")
   })
-  it('the route honours only the two engine choices', () => {
+  it('the route honours only the three engine choices', () => {
     const route = readFileSync('app/api/generate-plan/route.ts', 'utf8')
-    expect(route).toContain("const choice = rawChoice === 'extend' || rawChoice === 'run_walk' ? rawChoice : undefined")
+    expect(route).toContain("const choice = rawChoice === 'extend' || rawChoice === 'run_walk' || rawChoice === 'half' ? rawChoice : undefined")
   })
 })

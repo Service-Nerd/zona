@@ -54,7 +54,7 @@ import { isDesignedRefusal } from './designedRefusal'
 import { effectiveStartKm } from './startVolume'
 import { BaseVolumeError } from './baseVolume'
 import { assessOnRamp, onRampEnabled } from './baseBuildOnRamp'
-import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, extendedStagedPlan, runWalkFinishInput, stagingDoorKm, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
+import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, extendedStagedPlan, runWalkFinishInput, halfSameDayInput, stagingDoorKm, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
 import { notPassedHeading, notPassedWhy, NO_RUNS_HEADING, CHOOSE_HEADING } from './checkpointCopy'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import type { WeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
@@ -125,8 +125,15 @@ export function evaluateCheckpoint(
   const noFit = !!staged && !staged.target_found
   if (staged && (short || noFit)) {
     // Each option exists only where its producer builds a plan we would hand over (`stagedRacePlan.ts`).
-    const extend = short ? extendedStagedPlan(input, observed, longest, staged, planStart) : null
+    const afterWalkRun = !!(stored.meta as unknown as Record<string, unknown>).walk_run_start_weeks
+    const extend = short ? extendedStagedPlan(input, observed, longest, staged, planStart, afterWalkRun) : null
     const runWalk = runWalkFinishInput(input, observed, longest, planStart)
+    // E1: the half on the same date, where its block is clean from what they ran.
+    const half = halfSameDayInput(input, observed, longest, planStart)
+    if (choice === 'half' && half) {
+      telemetry.detail.choice = 'half'
+      return { ok: true, telemetry, input: half }
+    }
     if (choice === 'extend' && extend) {
       telemetry.detail.choice = 'extend'
       return { ok: true, telemetry, plan: extend }
@@ -135,9 +142,13 @@ export function evaluateCheckpoint(
       telemetry.detail.choice = 'run_walk'
       return { ok: true, telemetry, input: runWalk }
     }
+    // Recommended first; at most three (Design Board amendment 7), and a later race always kept as the last (E1).
     const options: CheckpointOption[] = [
-      ...(extend ? [{ kind: 'extend' as const, weeks: stagedRaceOf(extend)!.checkpoint_week }] : []),
-      ...(runWalk ? [{ kind: 'run_walk' as const }] : []),
+      ...[
+        ...(extend ? [{ kind: 'extend' as const, weeks: stagedRaceOf(extend)!.checkpoint_week }] : []),
+        ...(half ? [{ kind: 'half' as const }] : []),
+        ...(runWalk ? [{ kind: 'run_walk' as const }] : []),
+      ].slice(0, 2),
       { kind: 'later_race' },
     ]
     telemetry.detail.options = options.map(o => o.kind)

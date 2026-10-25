@@ -10405,6 +10405,17 @@ finds §111's door with §113's floor as the long run (`walkRunDoorKm`) and stag
 checkpoint on the long run they ran (C2). **Sessions carry no distance**: time on feet, because there is no pace for
 these runners and a distance from an assumed one would be invented.
 
+**The after-round (NO-RUNNER-TURNED-AWAY-01, Coaching Board 2026-10-25 fifth sitting,
+`docs/decisions/coaching-2026-10-25-phase-e-after-round.md`).** Measured: refusals 5.6% → 0%, but at the checkpoint, on
+the best case, 33.2% of staged marathoners reach their race block. **E0a:** a plan whose target was not found never
+presents the race block as a certainty (`raceBlockLineFor`; founder's words *"…, if your checkpoint allows."*).
+**E1:** where the marathon does not fit, the checkpoint offers **the half marathon on the same date** wherever its block
+is clean from what they ran (`halfSameDayInput`, the same producer test as every option); offered, never substituted;
+more base building, the half, run-walk, a later race last, at most three. **E2:** no change (a 5 km long run in a 12 km
+week is 42% against the ramp's 35%, Willy). **E3:** below the floor at the checkpoint after a walk-run start, **resume,
+never restart**: `WALK_RUN_RESUME_WEEKS` (2) at 6/1, then the ramp, only where the block still fits. **Switch-on is
+gated** on these and a re-measurement, and is the founder's decision.
+
 **Owner.** `lib/plan/walkRunStart.ts`; composed by `generateStagedRacePlan`. **Enforced by**
 `INV-PLAN-WALKRUN-START-PROGRESSION`. ⚠️ `measure:fitness` and the envelope grid contain no start below 6 km/week
 that stages, so neither measures this cohort; Phase E is its first measurement.

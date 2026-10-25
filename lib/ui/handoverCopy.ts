@@ -49,7 +49,7 @@ import { formatDistance } from '@/lib/format'
 import type { DistanceUnits } from '@/lib/format'
 import { raceLabelFor } from '@/lib/plan/raceLabel'
 import { raceDistanceKey } from '@/lib/plan/generationConfig'
-import { raceBlockTitle, raceBlockLine } from '@/lib/plan/checkpointCopy'
+import { raceBlockTitle, raceBlockLineFor } from '@/lib/plan/checkpointCopy'
 import type { StagedRace, StagedDisplay } from '@/lib/plan/stagedRacePlan'
 
 export interface HandoverCopy {
@@ -108,7 +108,7 @@ export function stagedHandoverCopy(staged: StagedRace, view: StagedDisplay): Han
   return {
     eyebrow: 'Checkpoint',
     title: raceBlockTitle(staged),
-    line: raceBlockLine(view.raceBlockStart),
+    line: raceBlockLineFor(staged, view.raceBlockStart),
     metric: null,
     primary: `Build the ${label} plan`,
     secondary: 'Not yet',

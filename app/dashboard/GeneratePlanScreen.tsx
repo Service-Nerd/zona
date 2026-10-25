@@ -7,7 +7,7 @@ import { InlineError } from '@/components/shared/InlineError'
 import { ACK_FIELD, ACK_LABEL, warnKindOf, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import { stagedDisplay, stagedRaceOf } from '@/lib/plan/stagedRacePlan'
 import StagedRaceBlockCard from '@/components/shared/StagedRaceBlockCard'
-import { BASE_BUILDING_TITLE, WALK_RUN_START_TITLE, basePhaseLine, raceBlockTitle, raceBlockLine } from '@/lib/plan/checkpointCopy'
+import { BASE_BUILDING_TITLE, WALK_RUN_START_TITLE, basePhaseLine, raceBlockTitle, raceBlockLineFor } from '@/lib/plan/checkpointCopy'
 import PlanHeroMetrics from '@/components/shared/PlanHeroMetrics'
 import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
@@ -1623,7 +1623,7 @@ export default function GeneratePlanScreen({
                 title={phase === 'base_build' ? BASE_BUILDING_TITLE : phase === 'walk_run_start' ? WALK_RUN_START_TITLE : undefined} line={stagedLine} />
             })}
             {staged && stagedRace && (
-              <StagedRaceBlockCard title={raceBlockTitle(stagedRace)} line={raceBlockLine(staged.raceBlockStart)} />
+              <StagedRaceBlockCard title={raceBlockTitle(stagedRace)} line={raceBlockLineFor(stagedRace, staged.raceBlockStart)} />
             )}
           </div>
         </div>

@@ -35,8 +35,8 @@ Both strings come from `lib/plan/checkpointCopy.ts`, the single owner of the sta
 The wizard preview (`GeneratePlanScreen`) and the Plan screen (`DashboardClient`'s `PlanScreen`), both only when
 `stagedDisplay(plan)` is non-null. One component so the two screens cannot describe the same weeks differently.
 
-## Open
+## Day one (E0a, built 2026-10-25)
 
-⚠️ **E0a (Coaching Board 2026-10-25):** for a plan whose target was not found (`target_found: false`), the line must not
-present the race block as a certainty. The words are the founder's (`NO-RUNNER-DAY-ONE-HONESTY-01`); until then this
-card renders the same line for every staged plan, which is why the flag stays off.
+Callers pass `raceBlockLineFor(staged, start)`, never `raceBlockLine` directly: a plan whose target was not found reads
+*"from 23 Nov, if your checkpoint allows."* (founder-approved). A gate in `walkRunStart.test.ts` fails if any file under
+`app/`, `components/` or `lib/ui/` calls `raceBlockLine(` itself.

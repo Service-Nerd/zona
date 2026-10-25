@@ -36,6 +36,15 @@ export function raceBlockTitle(staged: StagedRace): string {
 export function raceBlockLine(raceBlockStart: string): string {
   return `from ${day(raceBlockStart)}. Built after your checkpoint.`
 }
+/** E0a (Coaching Board 2026-10-25; founder-approved words 2026-10-25): a staged plan whose target was not found at
+ *  signup never presents the race block as a certainty. */
+export function raceBlockLineIfAllowed(raceBlockStart: string): string {
+  return `from ${day(raceBlockStart)}, if your checkpoint allows.`
+}
+/** The ONE choice between the two lines, so no screen can promise a block the engine already knows does not fit. */
+export function raceBlockLineFor(staged: Pick<StagedRace, 'target_found'>, raceBlockStart: string): string {
+  return staged.target_found ? raceBlockLine(raceBlockStart) : raceBlockLineIfAllowed(raceBlockStart)
+}
 
 /** Today, in the last week of base building only (Design Board amendment 4). */
 export const CHECKPOINT_THIS_WEEK_LINE = "Checkpoint on Sunday. Easy miles count; the pace doesn't."
@@ -62,6 +71,8 @@ export function runWalkOptionLabel(raceKm: number): string {
   return `Run-walk the ${raceLabelFor(raceDistanceKey(raceKm))}`
 }
 export const LATER_RACE_OPTION_LABEL = 'Pick a later race'
+/** E1 (Coaching Board 2026-10-25; founder-approved 2026-10-25): the half marathon on the same date. */
+export const HALF_SAME_DAY_OPTION_LABEL = 'Run the half marathon on the same day'
 
 /** C4, no target fits the runway (founder-approved 2026-10-25). Only where both of its two ways are on offer. */
 export const CHOOSE_HEADING = 'Two ways to get to the start line from here.'
@@ -91,6 +102,7 @@ export function checkpointConsent(body: Record<string, unknown> | null | undefin
     switch (o.kind) {
       case 'extend':         return o.weeks > 0 ? extendOptionLabel(o.weeks) : null
       case 'run_walk':       return raceKm ? runWalkOptionLabel(raceKm) : null
+      case 'half':           return HALF_SAME_DAY_OPTION_LABEL
       case 'later_race':     return LATER_RACE_OPTION_LABEL
       case 'connect_health': return CONNECT_HEALTH_OPTION_LABEL
       case 'log_run':        return LOG_RUN_OPTION_LABEL

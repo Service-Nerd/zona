@@ -152,13 +152,37 @@ describe('the checkpoint on a walk-run plan', () => {
   it('is asked like any staged plan: at the target it passes', () => {
     expect(evaluateCheckpoint(input(), p, ran(s.door_km), 'km', cp).ok).toBe(s.target_found)
   })
-  it('🔴 below the running floor, "more base building" is withheld, never a restart at 1/2', () => {
+  it('🔴 below the running floor after a walk-run start, "more base building" RESUMES at 6/1, never restarts (E3)', () => {
     // 46 weeks out: without the guard this offered "17 more weeks of base building", a second walk-run start (measured).
     const far = input({ race_date: raceIn(46) })
     const fp = generateStagedRacePlan(far, START, 12)!
     const fcp = new Date(Date.parse(`${START}T00:00:00Z`) + stagedRaceOf(fp)!.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
     const r = evaluateCheckpoint(far, fp, new Map(fp.weeks.map(w => [w.n, { linkedKm: 4, offPlanKm: 0, totalKm: 4, longestKm: 1.5 }])), 'km', fcp)
     expect(r.ok).toBe(false)
+    if (!r.ok) expect((r.body.options as { kind: string }[]).map(o => o.kind)).toContain('extend')
+    const ex = evaluateCheckpoint(far, fp, new Map(fp.weeks.map(w => [w.n, { linkedKm: 4, offPlanKm: 0, totalKm: 4, longestKm: 1.5 }])), 'km', fcp, 'extend')
+    expect(ex.ok && 'plan' in ex).toBe(true)
+    if (ex.ok && 'plan' in ex) {
+      const wr = ex.plan.weeks.filter(w => w.phase === 'walk_run_start')
+      expect(wr).toHaveLength(2)
+      for (const w of wr) for (const s2 of runs(w)) expect(s2.walk_run_level).toEqual({ run_mins: 6, walk_mins: 1 })
+      expect(validateStagedRace(ex.plan)).toEqual([])
+    }
+  })
+  it('a resumed plan that starts at 1/2 fails the invariant (E3)', () => {
+    const far = input({ race_date: raceIn(46) })
+    const fp = generateStagedRacePlan(far, START, 12)!
+    const fcp = new Date(Date.parse(`${START}T00:00:00Z`) + stagedRaceOf(fp)!.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+    const ex = evaluateCheckpoint(far, fp, new Map(fp.weeks.map(w => [w.n, { linkedKm: 4, offPlanKm: 0, totalKm: 4, longestKm: 1.5 }])), 'km', fcp, 'extend')
+    if (!(ex.ok && 'plan' in ex)) throw new Error('no resume plan')
+    const bad = JSON.parse(JSON.stringify(ex.plan)) as Plan
+    for (const s2 of runs(bad.weeks[0])) s2.walk_run_level = { run_mins: 1, walk_mins: 2 }
+    expect(codes(bad)).not.toEqual([])
+  })
+  it('a ramp runner (no walk-run start) observing below the floor is still not offered a restart', () => {
+    const ramp = generateStagedRacePlan(input({ current_weekly_km: 8, longest_recent_run_km: 6, race_date: raceIn(46) }), START, 12)!
+    const rcp = new Date(Date.parse(`${START}T00:00:00Z`) + stagedRaceOf(ramp)!.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+    const r = evaluateCheckpoint(input({ current_weekly_km: 8 }), ramp, new Map(ramp.weeks.map(w => [w.n, { linkedKm: 4, offPlanKm: 0, totalKm: 4, longestKm: 1.5 }])), 'km', rcp)
     if (!r.ok) expect((r.body.options as { kind: string }[]).map(o => o.kind)).not.toContain('extend')
   })
 })
@@ -177,5 +201,58 @@ describe('on screen', () => {
     expect(src).toContain("{weekRange}{peakKm > 0 ? ` · peak ${formatDistance(peakKm, units)}` : ''}")
     expect(src).toContain("phase === 'walk_run_start' ? WALK_RUN_START_TITLE")
     expect(src).toMatch(/const PHASES = \['walk_run_start', 'base_build'/)
+  })
+})
+
+import { halfSameDayInput, checkpointRaceInput } from './stagedRacePlan'
+import { raceBlockLineFor, checkpointConsent } from './checkpointCopy'
+import { stagedHandoverCopy } from '@/lib/ui/handoverCopy'
+import { execSync } from 'node:child_process'
+
+describe('E1 — the half marathon on the same day', () => {
+  const BEG = input({ current_weekly_km: 10, longest_recent_run_km: 6 })
+  const p = generateStagedRacePlan(BEG, START, 12)!
+  const s = stagedRaceOf(p)!
+  const cp = new Date(Date.parse(`${START}T00:00:00Z`) + s.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+  const ran = (km: number) => new Map(p.weeks.map(w => [w.n, { linkedKm: km, offPlanKm: 0, totalKm: km, longestKm: km / 3 }]))
+  it('offered when the marathon does not fit and the half is clean, labelled in the approved words', () => {
+    const r = evaluateCheckpoint(BEG, p, ran(s.door_km * 0.95), 'km', cp)
+    if (r.ok) throw new Error('expected the consent screen')
+    expect((r.body.options as { kind: string }[]).map(o => o.kind)).toContain('half')
+    expect(checkpointConsent(r.body, 'km')!.options.map(o => o.label)).toContain('Run the half marathon on the same day')
+  })
+  it('choosing it builds a half marathon from what they ran, on the same date', () => {
+    const r = evaluateCheckpoint(BEG, p, ran(s.door_km * 0.95), 'km', cp, 'half')
+    expect(r.ok && 'input' in r).toBe(true)
+    if (r.ok && 'input' in r) expect(r.input).toMatchObject({ race_distance_km: 21.1, race_name: 'Half marathon', race_date: BEG.race_date, volume_observed: true })
+  })
+  it('🔴 never for a race that is not a marathon', () => {
+    expect(halfSameDayInput(input({ race_distance_km: 21.1 }), 10, 4, cp)).toBeNull()
+  })
+  it('🔴 never where the half is not clean: a 0 km walk-run runner whose ramp built no 5 km run is refused by §113 on the half too', () => {
+    const z = generateStagedRacePlan(input(), START, 12)!
+    const zs = stagedRaceOf(z)!
+    const zcp = new Date(Date.parse(`${START}T00:00:00Z`) + zs.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+    expect(halfSameDayInput(input(), zs.door_km * 0.9, 3, zcp)).toBeNull()
+    const r = evaluateCheckpoint(input(), z, new Map(z.weeks.map(w => [w.n, { linkedKm: zs.door_km * 0.9, offPlanKm: 0, totalKm: zs.door_km * 0.9, longestKm: 3 }])), 'km', zcp)
+    if (!r.ok) expect((r.body.options as { kind: string }[]).map(o => o.kind)).not.toContain('half')
+  })
+})
+
+describe('E0a — day one never promises a block the engine knows does not fit', () => {
+  it('the line follows target_found, and the approved words', () => {
+    expect(raceBlockLineFor({ target_found: true }, '2026-11-23')).toMatch(/\. Built after your checkpoint\.$/)
+    expect(raceBlockLineFor({ target_found: false }, '2026-11-23')).toMatch(/^from \d{1,2} \w{3}, if your checkpoint allows\.$/)
+  })
+  it('the handover card follows it too', () => {
+    const nf = generateStagedRacePlan(input({ current_weekly_km: 6, longest_recent_run_km: 4, days_available: 3, race_date: raceIn(12) }), START, 12)
+    if (!nf) return
+    const st = stagedRaceOf(nf)!
+    expect(stagedHandoverCopy(st, { raceBlockStart: '2026-11-23' } as never).line.endsWith(st.target_found ? 'Built after your checkpoint.' : 'if your checkpoint allows.')).toBe(true)
+  })
+  it('🔴 no screen calls the certain line directly: every caller goes through raceBlockLineFor', () => {
+    const files = execSync('git ls-files app components lib/ui', { encoding: 'utf8' }).split('\n').filter(f => /\.tsx?$/.test(f) && !f.includes('.test.'))
+    const offenders = files.filter(f => /\braceBlockLine\(/.test(readFileSync(f, 'utf8')))
+    expect(offenders).toEqual([])
   })
 })

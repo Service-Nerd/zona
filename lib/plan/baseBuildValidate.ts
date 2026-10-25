@@ -240,8 +240,12 @@ export function validateWalkRunStart(plan: Plan): Violation[] {
     const r = Math.max(...levels.map(l => rank(l!)))
     if (Math.min(...levels.map(l => rank(l!))) !== r) push(w.n, `Walk-run week W${w.n} mixes levels.`, 'mixed', 'one level a week')
     if (prev === null) {
-      const first = { run_mins: C.WALK_RUN_START_RUN_MINS, walk_mins: C.WALK_RUN_START_WALK_MINS }
-      if (r !== rank(first)) push(w.n, `The walk-run start begins at ${levels[0]!.run_mins}/${levels[0]!.walk_mins}, not ${first.run_mins}/${first.walk_mins} (L2).`, `${levels[0]!.run_mins}/${levels[0]!.walk_mins}`, `${first.run_mins}/${first.walk_mins}`)
+      // E3: a RESUMED walk-run start begins (and holds) at §117's 6/1, never at 1/2.
+      const resumed = (plan.meta as unknown as Record<string, unknown>).walk_run_resumed === true
+      const first = resumed
+        ? { run_mins: C.FINISH_GOAL_RUNWALK_RUN_MINS, walk_mins: C.FINISH_GOAL_RUNWALK_WALK_MINS }
+        : { run_mins: C.WALK_RUN_START_RUN_MINS, walk_mins: C.WALK_RUN_START_WALK_MINS }
+      if (r !== rank(first)) push(w.n, `The walk-run start begins at ${levels[0]!.run_mins}/${levels[0]!.walk_mins}, not ${first.run_mins}/${first.walk_mins} (${resumed ? 'E3, resumed' : 'L2'}).`, `${levels[0]!.run_mins}/${levels[0]!.walk_mins}`, `${first.run_mins}/${first.walk_mins}`)
     } else if (isDeload(w)) {
       if (r !== prev) push(w.n, `Deload week W${w.n} does not hold the previous level (§3, Q3).`, 'changed', 'held')
     } else if (r < prev) {

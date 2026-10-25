@@ -1542,6 +1542,10 @@ export const GENERATION_CONFIG = {
    *  `BASE_BUILD_ONRAMP_DELOAD_FREQUENCY` weeks holds the previous level. */
   WALK_RUN_START_RUN_MINS: 1,
   WALK_RUN_START_WALK_MINS: 2,
+  /** E3 (Coaching Board 2026-10-25): a runner who finished the walk-run start and is still below the running floor at
+   *  the checkpoint RESUMES, never restarts: this many weeks held at §117's 6/1, then §116's ramp from 6 km (McMillan,
+   *  Willy: "never make someone who finished the walk-run start do it again"). */
+  WALK_RUN_RESUME_WEEKS: 2,
 
   /** §44's ratified 16-week threshold, reused rather than re-chosen. McMillan:
    *  a ramp that leaves less than this has bought base at the cost of the

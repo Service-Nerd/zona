@@ -53,7 +53,8 @@ export function walkRunStartApplies(startKm: number): boolean {
 
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`
 
-/** The interval as the runner reads it, in §117's own sentence (`runWalkStrategy`), at this level. */
+/** The interval as the runner reads it, in §117's own sentence (`runWalkStrategy`), at this level. The walk-run words in
+ *  this file (label, note, week lines) were approved by the founder on 2026-10-25. */
 export function walkRunStrategy(level: WalkRunLevel): string {
   return `Run ${plural(level.run_mins, 'minute')}, walk ${level.walk_mins}. Repeat. Take the walk break before you need it, from the first rep.`
 }
@@ -106,11 +107,12 @@ export function generateWalkRunWeeks(
   input: Pick<GeneratorInput, 'days_cannot_train' | 'preferred_long_run_day'>,
   planStart: string,
   hrTarget: string | null,
+  schedule: { level: number; deload: boolean }[] = walkRunSchedule(),
 ): Week[] {
   const ladder = walkRunLadder()
   const days = walkRunDays(input)
   const t0 = Date.parse(`${planStart}T00:00:00Z`)
-  return walkRunSchedule().map((wk, i) => {
+  return schedule.map((wk, i) => {
     const level = ladder[wk.level]
     const sessions: Record<string, Session> = {}
     for (const d of days) sessions[d] = walkRunSession(level, hrTarget)
@@ -124,4 +126,10 @@ export function generateWalkRunWeeks(
       sessions,
     } as unknown as Week
   })
+}
+
+/** E3 — the resumed walk-run weeks: `WALK_RUN_RESUME_WEEKS` held at the ladder's last level (§117's 6/1), no deload. */
+export function walkRunResumeSchedule(): { level: number; deload: boolean }[] {
+  const last = walkRunLadder().length - 1
+  return Array.from({ length: GENERATION_CONFIG.WALK_RUN_RESUME_WEEKS }, () => ({ level: last, deload: false }))
 }

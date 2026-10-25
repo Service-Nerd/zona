@@ -15,7 +15,7 @@ import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
 import { ACK_LABEL, warnKindOf, withAcknowledgement, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import { handoverState, handoverInput, handoverSeenPatch } from '@/lib/plan/baseBuildHandover'
 import { declaredVolumeEdit, stagedDisplay, stagedRaceOf, isCheckpointWeek, checkpointPassed, type CheckpointChoice } from '@/lib/plan/stagedRacePlan'
-import { raceBlockTitle, raceBlockLine, CHECKPOINT_THIS_WEEK_LINE, checkpointPassedLine, checkpointConsent, type CheckpointConsent } from '@/lib/plan/checkpointCopy'
+import { raceBlockTitle, raceBlockLineFor, CHECKPOINT_THIS_WEEK_LINE, checkpointPassedLine, checkpointConsent, type CheckpointConsent } from '@/lib/plan/checkpointCopy'
 import StagedRaceBlockCard from '@/components/shared/StagedRaceBlockCard'
 import { rebuildsBaseBuild } from '@/lib/plan/modifyPlan'
 import { handoverCopy, stagedHandoverCopy } from '@/lib/ui/handoverCopy'
@@ -2460,7 +2460,7 @@ export default function DashboardClient() {
    */
   /** The consent screen's options (Design Board amendment 7). Each acts through a path that already exists. */
   function handleCheckpointOption(kind: CheckpointConsent['options'][number]['kind']) {
-    if (kind === 'extend' || kind === 'run_walk') { void handleBuildRacePlan(kind); return }
+    if (kind === 'extend' || kind === 'run_walk' || kind === 'half') { void handleBuildRacePlan(kind); return }
     if (kind === 'later_race') { clearModify(); setCheckpointConsentData(null); setScreen('generate'); return }
     if (kind === 'connect_health') { setMeOpenSection('connections'); setScreen('me'); return }
   }
@@ -4879,7 +4879,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
             not built until the checkpoint passes. */}
         {staged && stagedRace && (
           <div style={{ padding: '0 16px' }}>
-            <StagedRaceBlockCard title={raceBlockTitle(stagedRace)} line={raceBlockLine(staged.raceBlockStart)} />
+            <StagedRaceBlockCard title={raceBlockTitle(stagedRace)} line={raceBlockLineFor(stagedRace, staged.raceBlockStart)} />
           </div>
         )}
       </div>

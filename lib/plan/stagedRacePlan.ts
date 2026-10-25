@@ -24,7 +24,8 @@
  */
 
 import type { Plan, GeneratorInput, Week, Session } from '@/types/plan'
-import { GENERATION_CONFIG } from './generationConfig'
+import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
+import { raceLabelFor } from './raceLabel'
 import { generateBaseBuildPlan, onRampWeeksNeeded, onRampCurve, type OnRampAssessment } from './baseBuildOnRamp'
 import { effectiveStartKm } from './startVolume'
 import { prepBlockWeeks } from './inputs'
@@ -36,7 +37,7 @@ import { auditPlanQuality, objectionsOnly } from './planQuality'
 import { validatePlan } from './invariants'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import { isDateBeforePlan } from './weekResolution'
-import { walkRunStartApplies, walkRunStartWeeks, generateWalkRunWeeks } from './walkRunStart'
+import { walkRunStartApplies, walkRunStartWeeks, generateWalkRunWeeks, walkRunSchedule, walkRunResumeSchedule } from './walkRunStart'
 import { BaseVolumeError } from './baseVolume'
 import { LongRunReadinessError } from './longRunReadiness'
 import { applyRunWalk } from './runWalkPlan'
@@ -325,11 +326,12 @@ export function isCheckpointWeek(plan: Plan | null | undefined, now: Date): bool
  */
 /** The runner's choice on the consent screen, re-sent with `checkpoint: true`. `later_race` and `connect_health` are
  *  the client's to act on (the wizard, Me → Connections); only these two need the engine. */
-export type CheckpointChoice = 'extend' | 'run_walk'
+export type CheckpointChoice = 'extend' | 'run_walk' | 'half'
 
 export type CheckpointOption =
   | { kind: 'extend'; weeks: number }
   | { kind: 'run_walk' }
+  | { kind: 'half' }
   | { kind: 'later_race' }
   | { kind: 'connect_health' }
   | { kind: 'log_run' }
@@ -338,11 +340,17 @@ export type CheckpointOption =
  *  when that ramp cannot reach it before §44's block, or no clean race block exists from it: then the runner would
  *  be back at the same screen in a few weeks, which is not an option, it is a delay. */
 export function extendedStagedPlan(input: GeneratorInput, observedKm: number, longestKm: number, staged: StagedRace,
-  planStart: string): Plan | null {
-  // ⚠️ Not below the running floor: that would restart a runner who has just done the walk-run start at 1/2. What they
-  // need instead is not ruled (`NO-RUNNER-CHECKPOINT-BELOW-FLOOR-01`), so the option is withheld rather than guessed.
-  if (walkRunStartApplies(observedKm)) return null
-  const p = generateStagedRacePlan(checkpointRaceInput(input, observedKm, longestKm), planStart, staged.door_km)
+  planStart: string, afterWalkRun = false): Plan | null {
+  // ⚠️ Below the running floor this would restart a runner at 1/2. E3 (Coaching Board 2026-10-25): after a walk-run
+  // start they RESUME at 6/1 then the ramp; without one, nothing is ruled, so the option is withheld.
+  let p: Plan | null
+  if (walkRunStartApplies(observedKm)) {
+    if (!afterWalkRun) return null
+    const ci = checkpointRaceInput(input, observedKm, longestKm)
+    p = generateWalkRunStagedPlan(ci, planStart, staged.door_km, weeksBetweenLocal(planStart, ci.race_date), true)
+  } else {
+    p = generateStagedRacePlan(checkpointRaceInput(input, observedKm, longestKm), planStart, staged.door_km)
+  }
   const s = stagedRaceOf(p)
   return p && s && s.target_found && s.reaches_door ? p : null
 }
@@ -377,8 +385,10 @@ export function checkpointPassed(plan: Plan | null | undefined, now: Date): { ob
  * start is never shortened; where the runway cannot also hold a ramp week and §44's block, the plan is the walk-run
  * start alone, `reaches_door: false`, and the checkpoint offers what builds.
  */
-function generateWalkRunStagedPlan(input: GeneratorInput, planStart: string, minBaseKm: number, runway: number): Plan {
-  const wrWeeks = walkRunStartWeeks()
+function generateWalkRunStagedPlan(input: GeneratorInput, planStart: string, minBaseKm: number, runway: number,
+  resume = false): Plan {
+  const schedule = resume ? walkRunResumeSchedule() : walkRunSchedule()
+  const wrWeeks = schedule.length
   const rampStart = addWeeks(planStart, wrWeeks)
   const rampRunway = runway - wrWeeks
   const startKm = GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM
@@ -403,12 +413,13 @@ function generateWalkRunStagedPlan(input: GeneratorInput, planStart: string, min
     base = generateBaseBuildPlan(input, rampStart, { outcome: 'offered', rampWeeks: 1, remainingWeeks: rampRunway - 1, targetKm: startKm, startKm })
   }
   const hr = (Object.values(base.weeks[0]?.sessions ?? {})[0] as Session | undefined)?.hr_target ?? null
-  const weeks = [...generateWalkRunWeeks(input, planStart, typeof hr === 'string' ? hr : null), ...rampWeeks]
+  const weeks = [...generateWalkRunWeeks(input, planStart, typeof hr === 'string' ? hr : null, schedule), ...rampWeeks]
   const meta = base.meta as unknown as Record<string, unknown>
   delete meta.base_build_onramp
   meta.enrichment = 'skipped_plan_kind'
   meta.plan_start = planStart
   meta.walk_run_start_weeks = wrWeeks
+  if (resume) meta.walk_run_resumed = true
   meta.base_build_start_km = startKm
   if (!placed) meta.base_build_target_km = startKm
   const staged: StagedRace = {
@@ -449,4 +460,16 @@ export function stagingDoorKm(err: unknown, input: GeneratorInput, planStart: st
   if (err instanceof BaseVolumeError) return err.base.min_base_km
   if (err instanceof LongRunReadinessError && walkRunStartApplies(effectiveStartKm(input))) return walkRunDoorKm(input, planStart)
   return null
+}
+
+/** E1 (Coaching Board 2026-10-25) — the half marathon on the same date, from what they ran. Only for a marathon, and
+ *  only where the half's block is clean (the same producer test as every option). Offered, never substituted. */
+export function halfSameDayInput(input: GeneratorInput, observedKm: number, longestKm: number,
+  planStart: string): GeneratorInput | null {
+  if (raceDistanceKey(input.race_distance_km) !== 'MARATHON') return null
+  // 21.1 is the distance, a fact (CLAUDE.md: facts stay inline). The race is named by its noun's owner.
+  const label = raceLabelFor('HM')
+  const half = { ...checkpointRaceInput(input, observedKm, longestKm),
+    race_distance_km: 21.1, race_name: label.charAt(0).toUpperCase() + label.slice(1) } as GeneratorInput
+  return cleanRaceBlock(half, planStart) ? half : null
 }

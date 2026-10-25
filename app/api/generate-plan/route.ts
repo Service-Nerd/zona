@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
       // The consent screen's re-send (Design Board amendment 7). Anything else is no choice at all, so an unknown value
       // can only ever produce the screen again, never a plan.
       const rawChoice = (guard.body as { checkpoint_choice?: unknown }).checkpoint_choice
-      const choice = rawChoice === 'extend' || rawChoice === 'run_walk' ? rawChoice : undefined
+      const choice = rawChoice === 'extend' || rawChoice === 'run_walk' || rawChoice === 'half' ? rawChoice : undefined
       const cp = evaluateCheckpoint(input, stored, loads, displayUnits, undefined, choice)
       if (cp.telemetry) await recordOpsEvent(cp.telemetry.event, cp.telemetry.detail, user.id)
       if (!cp.ok) return NextResponse.json(cp.body, { status: cp.status })
