@@ -32,10 +32,10 @@ export function basePhaseLine(staged: StagedRace, checkpointWeekStart: string, u
   return `Easy running up to about ${km(Math.max(rampEndKm, staged.door_km), units)} a week. Checkpoint w/c ${day(checkpointWeekStart)}.`
 }
 
-/** Design Board 2026-10-25 (S3): the walk-run start's phase card line. PROPOSED, awaiting the founder's approval. */
+/** Design Board 2026-10-25 (S3): the walk-run start's phase card line (founder-approved 2026-10-25). */
 export const WALK_RUN_START_LINE = 'Run 1 minute, walk 2. A minute more running each week.'
 
-/** Design Board 2026-10-25 (S2): the hero's labels on a staged plan. PROPOSED, awaiting the founder's approval. */
+/** Design Board 2026-10-25 (S2): the hero's labels on a staged plan (founder-approved 2026-10-25). */
 export const STAGED_HERO_TARGET_LABEL = 'a week by the checkpoint'
 export const STAGED_HERO_CHECKPOINT_LABEL = 'checkpoint'
 
