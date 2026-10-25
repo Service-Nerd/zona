@@ -42,9 +42,9 @@ const REPORT_URL = '/api/ops/health-sync-report'
 const reports = () => posts.filter(p => p.url === REPORT_URL)
 const ingests = () => posts.filter(p => p.url === '/api/health/ingest')
 
-async function sweep() {
+async function sweep(trigger: import('./syncTrigger').SyncTrigger = 'open') {
   const { syncOnAppOpen } = await import('./clientSync')
-  await syncOnAppOpen()
+  await syncOnAppOpen(trigger)
 }
 
 const workout = (id: string) => ({
@@ -82,5 +82,45 @@ describe('HEALTH-SYNC-OBS-01 — the sweep reports even when it finds nothing', 
     expect(reports()).toHaveLength(1)
     expect(reports()[0].body.workoutsFound).toBe(0)
     expect(reports()[0].body.error).toContain('authorization denied')
+  })
+})
+
+// HK-SYNC-TRIGGER-01 (2026-10-25). "Why don't runs link with the app closed?" could not be answered: no sweep said what
+// started it, so a background (observer) wake was indistinguishable from opening the app.
+describe('HK-SYNC-TRIGGER-01 — every sweep says what started it', () => {
+  it('🔴 the trigger reaches the report', async () => {
+    health = fakeHealth([{ workouts: [] }])
+    await sweep('observer_workout')
+    expect(reports()[0].body.trigger).toBe('observer_workout')
+  })
+  it('🔴 and whether the page was hidden when it started (node has no document → null, never a guess)', async () => {
+    health = fakeHealth([{ workouts: [] }])
+    ;(globalThis as { document?: unknown }).document = { visibilityState: 'hidden' }
+    try { await sweep('observer_hr') } finally { delete (globalThis as { document?: unknown }).document }
+    expect(reports()[0].body.appState).toBe('hidden')
+    health = fakeHealth([{ workouts: [] }])
+    await sweep('open')
+    expect(reports()[1].body.appState).toBeNull()
+  })
+  it('🔴 each observer event names its own trigger, never a shared one', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync('lib/health/observer.ts', 'utf8')
+    expect(src).toContain("addListener('workoutDataArrived', onData('observer_workout'))")
+    expect(src).toContain("addListener('hrDataArrived', onData('observer_hr'))")
+    expect(src).toContain("addListener('recoveryDataArrived', onData('observer_recovery'))")
+  })
+})
+
+describe('HK-SYNC-TRIGGER-01 — the route stores only known values', () => {
+  const R = { events: [] as unknown[][] }
+  it('a known trigger and app state are stored; anything else is null', async () => {
+    vi.doMock('@/lib/supabase/getUserFromRequest', () => ({ getUserFromRequest: async () => ({ id: 'u1' }) }))
+    vi.doMock('@/lib/ops/recordOpsEvent', () => ({ recordOpsEvent: async (...a: unknown[]) => { R.events.push(a) } }))
+    const { POST } = await import('@/app/api/ops/health-sync-report/route')
+    const send = (b: unknown) => POST(new Request('https://x', { method: 'POST', body: JSON.stringify(b) }) as never)
+    await send({ trigger: 'observer_workout', appState: 'hidden', workoutsFound: 1 })
+    await send({ trigger: 'nonsense', appState: 'sideways' })
+    expect((R.events[0][1] as Record<string, unknown>)).toMatchObject({ trigger: 'observer_workout', app_state: 'hidden' })
+    expect((R.events[1][1] as Record<string, unknown>)).toMatchObject({ trigger: null, app_state: null })
   })
 })

@@ -2926,7 +2926,7 @@ export default function DashboardClient() {
       throw new Error('offline')
     }
     if (Capacitor.isNativePlatform()) {
-      try { await syncOnAppOpen() } catch { /* ingest best-effort; still re-fetch below */ }
+      try { await syncOnAppOpen('refresh') } catch { /* ingest best-effort; still re-fetch below */ }
     }
     await Promise.all([
       refreshHealthKitRuns(),   // also calls refreshCompletions() when HK rows exist
@@ -3685,7 +3685,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
         connect_runs_seen:      true,
         updated_at:             nowIso,
       })
-      void syncOnAppOpen().catch((e) => {
+      void syncOnAppOpen('connect').catch((e) => {
         console.warn('[HealthKit] first sync after connect failed:', e)
       })
       // Auto-populate HR zones from HealthKit if we can — fire-and-forget so it

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
+import { SYNC_TRIGGERS, type SyncTrigger } from '@/lib/health/syncTrigger'
 
 // POST /api/ops/health-sync-report — HEALTH-SYNC-OBS-01.
 //
@@ -18,6 +19,9 @@ import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 // its own kind could write anything into the ledger `/api/ops/ai-spend` reads.
 
 interface Body {
+  /** HK-SYNC-TRIGGER-01 — what started the sweep, and whether the page was hidden (a background wake). */
+  trigger?: unknown
+  appState?: unknown
   workoutsFound?: number
   posted?: number
   failed?: number
@@ -42,6 +46,8 @@ export async function POST(req: NextRequest) {
   await recordOpsEvent(
     'health_sync_swept',
     {
+      trigger:        SYNC_TRIGGERS.includes(body.trigger as SyncTrigger) ? body.trigger : null,
+      app_state:      body.appState === 'visible' || body.appState === 'hidden' ? body.appState : null,
       workouts_found: count(body.workoutsFound),
       posted:         count(body.posted),
       failed:         count(body.failed),

@@ -21,6 +21,7 @@
  */
 
 import { authedFetch } from '@/lib/supabase/authedFetch'
+import type { SyncTrigger } from '@/lib/health/syncTrigger'
 import { createClient } from '@/lib/supabase/client'
 import type { HealthKitWorkoutPayload } from './adapter'
 
@@ -162,6 +163,8 @@ export async function postSamples(samples: Array<{
  * bookkeeping did.
  */
 async function reportSweep(report: {
+  trigger:       SyncTrigger
+  appState:      string | null
   workoutsFound: number
   posted:        number
   failed:        number
@@ -306,13 +309,14 @@ export async function fetchAppleHealthHRSnapshot(): Promise<AppleHealthHRSnapsho
  * Silent failure end-to-end. Errors logged via console.warn so they're visible
  * in remote-debug Safari but never bubble up to UI.
  */
-export async function syncOnAppOpen(): Promise<void> {
+// HK-SYNC-TRIGGER-01 — `trigger` is required; see `lib/health/syncTrigger.ts`.
+export async function syncOnAppOpen(trigger: SyncTrigger): Promise<void> {
   const { Health } = await import('@capgo/capacitor-health')
   const availability = await Health.isAvailable()
   if (!availability.available) return
 
   await Promise.allSettled([
-    syncRecentWorkouts(Health),
+    syncRecentWorkouts(Health, trigger),
     syncRecoverySamples(Health),
     retryPendingHrRows(Health),
   ])
@@ -336,7 +340,7 @@ export async function retryHrFromUi(): Promise<{ ran: boolean }> {
     return { ran: false }
   }
   _lastUiRetryAt = now
-  try { await syncOnAppOpen() } catch {}
+  try { await syncOnAppOpen('hr_retry') } catch {}
   return { ran: true }
 }
 
@@ -344,7 +348,9 @@ export async function retryHrFromUi(): Promise<{ ran: boolean }> {
 
 type HealthModule = typeof import('@capgo/capacitor-health')['Health']
 
-async function syncRecentWorkouts(Health: HealthModule): Promise<void> {
+async function syncRecentWorkouts(Health: HealthModule, trigger: SyncTrigger): Promise<void> {
+  // Read at the START: by the time the sweep reports, a background wake may have been foregrounded.
+  const appState = typeof document !== 'undefined' ? document.visibilityState : null
   const lastSyncIso = getLastSyncIso()
   // Always look back at least 24 h even when a recent watermark exists.
   // The ingest dedup makes re-posting safe (existing rows are patched/skipped).
@@ -483,6 +489,8 @@ async function syncRecentWorkouts(Health: HealthModule): Promise<void> {
   // HEARTBEAT: "no events at all" has to mean "the sync did not run", and a
   // dropped POST from a backgrounding webview would look exactly like that.
   await reportSweep({
+    trigger,
+    appState,
     workoutsFound: totalFound,
     posted:        totalSynced,
     failed:        totalFailed,

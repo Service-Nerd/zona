@@ -52,10 +52,10 @@ export async function initHealthObserver(): Promise<void> {
     // is deduped atomically (claimAutoLink in lib/coaching/autoAnalyse).
     const { syncOnAppOpen } = await import('@/lib/health/clientSync')
 
-    const onData = () => {
+    const onData = (trigger: 'observer_workout' | 'observer_hr' | 'observer_recovery') => () => {
       void (async () => {
         try {
-          await syncOnAppOpen()
+          await syncOnAppOpen(trigger)
         } catch (err) {
           // eslint-disable-next-line no-console
           console.warn('[health-observer] sync failed', err instanceof Error ? err.message : err)
@@ -63,9 +63,9 @@ export async function initHealthObserver(): Promise<void> {
       })()
     }
 
-    await HealthObserver.addListener('workoutDataArrived', onData)
-    await HealthObserver.addListener('hrDataArrived', onData)
-    await HealthObserver.addListener('recoveryDataArrived', onData)
+    await HealthObserver.addListener('workoutDataArrived', onData('observer_workout'))
+    await HealthObserver.addListener('hrDataArrived', onData('observer_hr'))
+    await HealthObserver.addListener('recoveryDataArrived', onData('observer_recovery'))
   } catch (err) {
     // Reset so the next cold start can retry (e.g. HealthKit auth denied,
     // user grants it, then re-opens the app).

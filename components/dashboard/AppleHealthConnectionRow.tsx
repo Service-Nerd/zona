@@ -82,7 +82,7 @@ export default function AppleHealthConnectionRow({ onHRFound, lastArrival }: {
       })
       setConnectedAt(nowIso)
       // First sync — best-effort, don't block UI
-      void syncOnAppOpen().catch((e) => {
+      void syncOnAppOpen('connect').catch((e) => {
         console.warn('[HealthKit] first sync after connect failed:', e)
       })
       // Auto-populate HR zones — same pattern as ConnectRunsScreen

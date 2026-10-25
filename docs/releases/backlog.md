@@ -27,6 +27,12 @@ already decided what it is.
 
 ---
 
+### 🔲 `HK-NATIVE-BG-INGEST-01` — ingest a run from native code when iOS wakes the app ⚙️ **NO BOARD** (💼 **SLT** if it needs prioritising against launch work)
+
+Filed 2026-10-25. The only remaining route to *link without opening the app*: `HealthObserverPlugin` would read the new workout and POST `/api/health/ingest` itself, with a token held natively, instead of handing off to a web page that is not loaded during a background wake. A user force-quit still blocks it (iOS rule). New binary. **Decide on the numbers from `HK-SYNC-TRIGGER-01`**: how many `observer_*` + `hidden` sweeps ingest a run.
+
+---
+
 ### 🔲 `NATIVE-CONFIG-DRIFT-01` — the iOS app's bundled config is behind `capacitor.config.ts` ⚙️ **NO BOARD**
 
 Found 2026-10-25 while debugging BOOT-HANG-01. `ios/App/App/capacitor.config.json` (what the binary actually reads)

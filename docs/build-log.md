@@ -314,6 +314,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** Every count I gave on this today was low the first time: 7 sites became 22, then ~40 more. The test is what found them, not me.
 
 ---
+## 2026-10-25 — HK-SYNC-TRIGGER-01 · "It used to link on its own" was Strava, and we could not see the rest
+**Shipped:** every Apple Health sync now records what started it and whether the app was in the background.
+**Dev learning:** the founder's memory was right and the cause was months old: the no-open auto-link was Strava's webhook (2–14 minutes after a run in June), and Strava has been off since September. Apple Health's observer can wake the app, but its JS only runs while the page is alive, and the sweep event had no field saying whether a wake or an app-open caused it. 391 sweeps in a week, and not one could answer the question. Making `trigger` a required parameter meant the compiler listed the 8 call sites for me.
+**Product/creator learning:** "it used to work" can be true and still not be a regression: a product decision three months earlier removed the mechanism.
+**AI-building learning:** I measured lag from run start the first time, because the duration column was `elapsed_time_s`, not `elapsed_time`; every lag was overstated by the run's own length. Check the column names before trusting the numbers.
+**The honest bit:** this ships a measurement, not a fix. The fix (native background ingest) is a new binary and waits for the numbers.
+**Hook material:** "391 heartbeats in a week, and none of them said why they beat."
+**Postable?:** maybe
+
 
 ## 2026-10-22 — ACCENT-TEXT-CONTRAST-01 · colour on the marks, ink on the words
 **Shipped:** Small labels that used a session colour or the brand green now read in a darker shade. Session headers, eyebrows and the distance tile are easier to read; the colour stays on the dots, tints, rails and shapes.

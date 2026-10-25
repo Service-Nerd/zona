@@ -57,7 +57,7 @@ export default function CapacitorBoot() {
     void (async () => {
       try {
         const { syncOnAppOpen } = await import('@/lib/health/clientSync')
-        await syncOnAppOpen()
+        await syncOnAppOpen('open')
       } catch (err) {
         // eslint-disable-next-line no-console
         console.warn('[capacitor-boot] HealthKit sync skipped', err instanceof Error ? err.message : err)
@@ -101,7 +101,7 @@ export default function CapacitorBoot() {
       void (async () => {
         try {
           const { syncOnAppOpen } = await import('@/lib/health/clientSync')
-          await syncOnAppOpen()
+          await syncOnAppOpen('resume')
         } catch (err) {
           // eslint-disable-next-line no-console
           console.warn('[capacitor-boot] HealthKit resume sync skipped', err instanceof Error ? err.message : err)
