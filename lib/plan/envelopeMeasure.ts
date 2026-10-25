@@ -23,7 +23,7 @@ import { distanceEnvelope, DISTANCE_BANDS, ENVELOPE_PLAN_START } from './useCase
 import { getRunningApplies, generateGetRunningPlan } from './getRunningPlan'
 import { weeksBetweenLocal } from './length'
 import { BaseVolumeError } from './baseVolume'
-import { stagingApplies } from './stagedRacePlan'
+import { stagingApplies, stagingDoorKm } from './stagedRacePlan'
 import { scoreStagedCase } from './stagedScore'
 import { onRampEnabled } from './baseBuildOnRamp'
 
@@ -148,11 +148,14 @@ export function measureEnvelope(stride = 29, opts: { staging?: boolean } = {}): 
         if (!isDesignedRefusal(e)) { invalid++; continue }
         // NO-RUNNER-TURNED-AWAY-01 (Q4) — with staging on, a §111 refusal that can be staged is NOT a refusal: the
         // runner gets a plan for the race, scored as its composed plan. Answered before the refusal is counted.
-        if (staging && e instanceof BaseVolumeError) {
-          const ci = c.input as unknown as Record<string, string>
-          const ps = ci.plan_start ?? ENVELOPE_PLAN_START
-          if (stagingApplies(c.input, e.base.min_base_km, weeksBetweenLocal(ps, ci.race_date))) {
-            const sc = scoreStagedCase(c.input, ps, e.base.min_base_km)
+        // ⚠️ The engine's own decision (`stagingDoorKm`), so a refusal the engine stages is one this scores: §111's,
+        // and since Phase D §113's below the running floor.
+        const ci = c.input as unknown as Record<string, string>
+        const ps = ci.plan_start ?? ENVELOPE_PLAN_START
+        const door = staging ? stagingDoorKm(e, c.input, ps) : null
+        if (door !== null) {
+          if (stagingApplies(c.input, door, weeksBetweenLocal(ps, ci.race_date))) {
+            const sc = scoreStagedCase(c.input, ps, door)
             if (sc) {
               staged += c.weight
               if (sc.clean) { stagedClean += c.weight; fit += c.weight }

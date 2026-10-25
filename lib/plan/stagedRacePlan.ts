@@ -38,6 +38,7 @@ import { isBaseBuildPlan } from './validateStoredPlan'
 import { isDateBeforePlan } from './weekResolution'
 import { walkRunStartApplies, walkRunStartWeeks, generateWalkRunWeeks } from './walkRunStart'
 import { BaseVolumeError } from './baseVolume'
+import { LongRunReadinessError } from './longRunReadiness'
 import { applyRunWalk } from './runWalkPlan'
 
 /** What a staged plan remembers about the race it is for. Read by the checkpoint and the UI, nothing else. */
@@ -437,4 +438,15 @@ export function walkRunDoorKm(input: GeneratorInput, planStart: string): number 
   } catch (e) {
     return e instanceof BaseVolumeError ? e.base.min_base_km : null
   }
+}
+
+/**
+ * THE ONE ANSWER to "is this designed refusal one we stage, and at what door?". `runEngine` and `measure:envelope` both
+ * ask it, because the measurement drifted from the engine the day Phase D shipped: the envelope staged only §111's
+ * refusals and could not see a walk-run runner, whom §113 refuses first. Null: the refusal stands.
+ */
+export function stagingDoorKm(err: unknown, input: GeneratorInput, planStart: string): number | null {
+  if (err instanceof BaseVolumeError) return err.base.min_base_km
+  if (err instanceof LongRunReadinessError && walkRunStartApplies(effectiveStartKm(input))) return walkRunDoorKm(input, planStart)
+  return null
 }

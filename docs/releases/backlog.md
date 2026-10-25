@@ -3099,26 +3099,29 @@ offer, no generator composes a ramp-then-race plan, and the engine attaches the 
 on-ramp offer is absent, so the flag on today removes the one thing these runners currently get.
 **Then:** whether the five living runners above are offered the new plan is the founder's remediation call.
 
-### 🔲 `NO-RUNNER-CHECKPOINT-NOFIT-01` — a no-fit staged runner is offered only "Pick a later race" at the checkpoint *(filed 2026-10-25, P0 with its parent)* 🏃 **COACHING BOARD** (for the Phase E round)
+### ⛔ `NO-RUNNER-CHECKPOINT-NOFIT-01` — WITHDRAWN 2026-10-25 (Coaching Board E5) 🏃 **COACHING BOARD**
 
-Found while building Phase C-2 (the consent screen). C4 ruled that a staged runner with no fitting target is offered
-**§117's run-walk finish or a later race** at the checkpoint. **Measured 2026-10-25** at each runner's REAL checkpoint
-date (432-input marathon grid, beginner + intermediate, 3–6 days, 6–11 km/wk, 12–24-week runways): of **231** no-fit
-staged plans, **0** get a run-walk plan, so all 231 are offered a later race alone. That is a turn-away, three to ten
-weeks late.
+Re-asking the race block's cleanliness on observed facts serves **1.5%** of staged runners on the weighted population.
+⚠️ **The figure this item was filed on (84 of 117 beginner cases clean) is withdrawn**: it came from an unweighted grid
+with an assumed 6 km long run instead of the ramp's own, and I reported it to the founder before measuring it properly.
+Replaced by `NO-RUNNER-CHECKPOINT-HALF-01` (E1), which serves 28.3%.
 
-⚠️ **The prediction is the cause, not §117.** Asked at the checkpoint with what they ran (door volume, longest 6 km),
-**84 of 117** beginner no-fit cases build a **clean** race plan (validator + objections), but it is not a run-walk
-plan (§117 does not apply), so the run-walk option is rightly withheld, and C4 refuses to build it because
-`target_found` was decided at signup. Hutchinson's own framing for C1–C3 (*"asking the existing rules with current
-facts"*) points at asking cleanliness again at the checkpoint. **That changes prescription for this cohort, so it is
-the board's, not a build fix.** My first count (227 of 231) used the wrong date and is withdrawn.
+### 🔲 `NO-RUNNER-CHECKPOINT-HALF-01` — offer the half marathon on the same date at the checkpoint *(filed 2026-10-25, P0 with its parent)* 🏃 **COACHING BOARD** (ruled E1) → 👤 **FOUNDER** (the option's words) → 🧭 **DESIGN BOARD** (if the label needs more than a button)
 
-**Question for the board:** at the checkpoint, does a no-fit runner whose race block is clean on observed facts get it
-(as a pass), and with which long run (stated, the ramp's, or observed)? Re-measure on the weighted population
-(`measure:envelope --staging`) before ruling.
+Ruled E1 (fifth sitting). Where the marathon block does not fit, offer the half on the same date wherever
+`runWalkFinishInput`'s pattern (generate, validate, objections) finds it clean from what they ran. Offered, never
+substituted. Order: more base building, the half, run-walk, a later race last; at most three. Measured: clean for
+28.3% of staged runners at 100% compliance, 21.2% at 90%.
+
+### 🔲 `NO-RUNNER-DAY-ONE-HONESTY-01` — a no-fit staged plan must not promise its race block on day one *(filed 2026-10-25, P0 with its parent)* 🏃 **COACHING BOARD** (ruled E0a) → 👤 **FOUNDER** (words) → 🧭 **DESIGN BOARD** (encoding)
+
+`target_found: false` is known at signup for **66.8%** of staged marathoners, and today the preview says "Marathon
+training from 23 Nov. Built after your checkpoint." to all of them. Sims: no surprise at the checkpoint. Needs the
+founder's words for this case, then a markup arm that the certain line never renders for it.
 
 ### 🔲 `NO-RUNNER-CHECKPOINT-LOG-DATE-01` — "Log a run" cannot change a checkpoint that has already passed *(filed 2026-10-25)* 🧭 **DESIGN BOARD** → 👤 **FOUNDER** (words)
+
+**Coaching side settled (E4, 2026-10-25):** a run logged with a date inside the base-building weeks counts toward the checkpoint exactly as Q2 counts any run.
 
 Design Board amendment 8 put "Log a run" beside "Connect Apple Health" on the no-runs state, and the founder approved
 the words. Built 2026-10-25 and **withheld**: `ManualRunModal`'s off-plan log is dated **now** (it takes a
@@ -3127,7 +3130,9 @@ card shows. So the option would log a run and return the same screen. **Question
 (a design change to a shared modal), or does the no-runs state offer more base building instead? Until then the state
 offers Apple Health and a later race.
 
-### 🔲 `NO-RUNNER-CHECKPOINT-BELOW-FLOOR-01` — a staged runner still under 6 km/week at the checkpoint *(filed 2026-10-25)* 🏃 **COACHING BOARD** (Phase E round)
+### 🔲 `NO-RUNNER-CHECKPOINT-BELOW-FLOOR-01` — a staged runner still under 6 km/week at the checkpoint *(filed 2026-10-25; RULED E3, not built)* 🏃 **COACHING BOARD** (ruled)
+
+**Ruled E3:** resume, never restart: hold 6/1 for `WALK_RUN_RESUME_WEEKS` (2), then §116's ramp from 6 km, only where the runway still leaves §44's block; else a later race. Extend `INV-PLAN-WALKRUN-START-PROGRESSION` so a resumed plan starts at 6/1.
 
 Found building Phase D. "More base building" from an observed figure below `BASE_BUILD_ONRAMP_MIN_START_KM` would be a
 **second walk-run start from 1/2** (measured: a 0 km marathoner 46 weeks out, observing 4 km, was offered "17 more weeks

@@ -32,11 +32,19 @@ import { isDesignedRefusal } from '../lib/plan/designedRefusal'
 import { auditPlanQuality } from '../lib/plan/planQuality'
 import { getRunningApplies, generateGetRunningPlan } from '../lib/plan/getRunningPlan'
 import { weeksBetweenLocal } from '../lib/plan/length'
+import { stagingApplies, stagingDoorKm } from '../lib/plan/stagedRacePlan'
+import { scoreStagedCase } from '../lib/plan/stagedScore'
 
 const BASELINE = join(__dirname, '..', 'lib', 'plan', '__fixtures__', 'cohortReviewBaseline.json')
 
 const argv = process.argv.slice(2)
 const WRITE = argv.includes('--write')
+// NO-RUNNER-TURNED-AWAY-01 Q4 — score a refusal the engine would STAGE as its composed plan (`stagedScore`, the one
+// definition), through the engine's own decision (`stagingDoorKm`). A report, never a baseline: refuses --write.
+const STAGING = argv.includes('--staging')
+if (STAGING && WRITE) { console.error('✗ --staging is a report and cannot be written as the baseline.'); process.exit(2) }
+/** Per distance and start band, the staged outcome (weights), printed by --staging. */
+const stagedTally: Record<string, Record<string, { w: number; staged: number; clean: number; codes: Record<string, number> }>> = {}
 const STRIDE = (() => {
   const i = argv.indexOf('--stride')
   return i >= 0 && argv[i + 1] ? Math.max(1, parseInt(argv[i + 1], 10)) : 7
@@ -137,6 +145,21 @@ function measure(): Report {
         // A non-designed throw is a crash, not a refusal, and must not be
         // silently folded into the refusal rate.
         if (!isDesignedRefusal(e)) continue
+        if (STAGING) {
+          const ps = (i as unknown as Record<string, string>).plan_start ?? REVIEW_TODAY
+          const t = ((stagedTally[String(dist)] ??= {})[key] ??= { w: 0, staged: 0, clean: 0, codes: {} })
+          t.w += c.weight
+          const door = stagingDoorKm(e, c.input, ps)
+          if (door !== null && stagingApplies(c.input, door, weeksBetweenLocal(ps, (i as unknown as Record<string, string>).race_date))) {
+            const sc = scoreStagedCase(c.input, ps, door)
+            if (sc) {
+              t.staged += c.weight
+              if (sc.clean) t.clean += c.weight
+              for (const code of [...sc.objectionCodes, ...sc.errorCodes, ...(sc.refusedAtCheckpoint ? [`REFUSED-AT-CHECKPOINT:${sc.refusedAtCheckpoint}`] : [])])
+                t.codes[code] = (t.codes[code] ?? 0) + c.weight
+            }
+          }
+        }
         b.refused += c.weight
         // ── WHAT THE RUNNER ACTUALLY GETS ────────────────────────────────
         // The route's §118 path, reproduced. Not a copy of its RULE — it calls
@@ -234,6 +257,18 @@ function render(now: Report, was: Report | null): boolean {
 
 // ── main ────────────────────────────────────────────────────────────────────
 const now = measure()
+if (STAGING) {
+  console.log('\nSTAGED (NO-RUNNER-TURNED-AWAY-01, Q4): refusals the engine stages, scored as the composed plan at the')
+  console.log('checkpoint target (the pass case, the best case). Shares are of each band\'s REFUSED weight.\n')
+  for (const [dist, bands] of Object.entries(stagedTally)) {
+    console.log(dist === '42.2' ? 'MARATHON' : 'HALF MARATHON')
+    for (const [km, t] of Object.entries(bands).sort((x, y) => +x[0] - +y[0])) {
+      const top = Object.entries(t.codes).sort((x, y) => y[1] - x[1]).slice(0, 3).map(([c2, w]) => `${c2} ${pc(w, t.w)}%`).join(', ')
+      console.log(`  ${km.padStart(3)} km/wk  staged ${String(pc(t.staged, t.w)).padStart(5)}%  clean ${String(pc(t.clean, t.w)).padStart(5)}%  ${top}`)
+    }
+  }
+  process.exit(0)
+}
 const was: Report | null = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : null
 
 // ⚠️ THE COMPATIBILITY GUARDS MUST NOT BLOCK `--write`.

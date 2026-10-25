@@ -54,8 +54,7 @@ import { isDesignedRefusal } from './designedRefusal'
 import { effectiveStartKm } from './startVolume'
 import { BaseVolumeError } from './baseVolume'
 import { assessOnRamp, onRampEnabled } from './baseBuildOnRamp'
-import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, extendedStagedPlan, runWalkFinishInput, walkRunDoorKm, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
-import { walkRunStartApplies } from './walkRunStart'
+import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, extendedStagedPlan, runWalkFinishInput, stagingDoorKm, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
 import { notPassedHeading, notPassedWhy, NO_RUNS_HEADING, CHOOSE_HEADING } from './checkpointCopy'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import type { WeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
@@ -289,10 +288,7 @@ export function runEngine(req: EngineRequest): EngineOutcome {
     // Phase D: below §116's running floor nobody has §113's long run, so §113 refuses first and §111 is never reached.
     // The walk-run start is their staging (Q3); §111's door is found with §113's floor as the long run, and §113 itself
     // is asked at the checkpoint on the long run they ran (C2).
-    const doorKm = !onRampEnabled() ? null
-      : err instanceof BaseVolumeError ? err.base.min_base_km
-      : err instanceof LongRunReadinessError && walkRunStartApplies(effectiveStartKm(input)) ? walkRunDoorKm(input, planStart)
-      : null
+    const doorKm = onRampEnabled() ? stagingDoorKm(err, input, planStart) : null
     if (doorKm !== null) {
       const staged = generateStagedRacePlan(input, planStart, doorKm)
       if (staged) {
