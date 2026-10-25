@@ -112,13 +112,20 @@ describe('bucketLoadByPlanWeek', () => {
   it('splits linked from off-plan and totals them', () => {
     const rows = [run('2026-09-08', 10), run('2026-09-10', 6)]
     const load = bucketLoadByPlanWeek(plan, rows, new Set(['h:hk-2026-09-08-10']))
-    expect(load.get(1)).toEqual({ linkedKm: 10, offPlanKm: 6, totalKm: 16 })
+    expect(load.get(1)).toEqual({ linkedKm: 10, offPlanKm: 6, totalKm: 16, longestKm: 10 })
+  })
+
+  it('longestKm is the longest SINGLE run, linked or off-plan (NO-RUNNER-TURNED-AWAY-01, C2)', () => {
+    const rows = [run('2026-09-08', 6), run('2026-09-10', 9), run('2026-09-12', 4)]
+    const load = bucketLoadByPlanWeek(plan, rows, new Set(['h:hk-2026-09-08-6']))
+    expect(load.get(1)?.longestKm).toBe(9)
+    expect(load.get(1)?.totalKm).toBe(19)
   })
 
   it('🔴 a run with NO ids counts as off-plan, never as linked', () => {
     const rows = [run('2026-09-08', 8, { apple_health_uuid: null, strava_activity_id: null })]
     expect(bucketLoadByPlanWeek(plan, rows, new Set()).get(1)).toEqual(
-      { linkedKm: 0, offPlanKm: 8, totalKm: 8 })
+      { linkedKm: 0, offPlanKm: 8, totalKm: 8, longestKm: 8 })
   })
 
   it('🔴 DROPS runs that predate the plan — 79% of the raw production figure', () => {

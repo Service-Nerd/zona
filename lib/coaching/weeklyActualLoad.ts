@@ -79,9 +79,13 @@ export interface WeeklyLoad {
   offPlanKm: number
   /** What the runner actually ran. `linkedKm + offPlanKm`. */
   totalKm:   number
+  /** NO-RUNNER-TURNED-AWAY-01, C2 — the longest single run that week, linked or not. The base-build checkpoint's
+   *  long run is the longest of these, never the figure typed at signup. Optional so the many hand-built loads in
+   *  tests and fixtures stay valid; `bucketLoadByPlanWeek` always sets it. */
+  longestKm?: number
 }
 
-export const EMPTY_LOAD: WeeklyLoad = { linkedKm: 0, offPlanKm: 0, totalKm: 0 }
+export const EMPTY_LOAD: WeeklyLoad = { linkedKm: 0, offPlanKm: 0, totalKm: 0, longestKm: 0 }
 
 /**
  * The activity-log identity of a run, for the linked-set lookup. Mirrors the
@@ -179,6 +183,7 @@ export function bucketLoadByPlanWeek(
     if (key != null && linkedKeys.has(key)) cur.linkedKm += km
     else cur.offPlanKm += km
     cur.totalKm = cur.linkedKm + cur.offPlanKm
+    cur.longestKm = Math.max(cur.longestKm ?? 0, km)
     out.set(n, cur)
   }
   return out

@@ -10445,6 +10445,21 @@ declared, it is measured on a plan we prescribed. A runner who runs exactly the 
 A further 8.8% are refused by §113 on the long run they typed at signup. **The two interact with this amendment in a
 way neither sitting saw; they are returned to the board before §116's flag may turn on.**
 
+**The checkpoint asks with what the runner RAN (third sitting, C1–C5; built 2026-10-25).**
+- **C1** — §29 does not apply to OBSERVED volume. The checkpoint marks its input `volume_observed` and
+  `effectiveStartKm` takes it as consolidated; §29 governs a declaration and is unchanged for every declared input. The
+  route strips the flag from any client body; an edit to either volume field clears it (`declaredVolumeEdit`).
+- **C2** — the checkpoint's long run is the longest single run recorded in the base-build weeks (`WeeklyLoad.longestKm`).
+- **C3** — the checkpoint target (`staged_race.door_km`) is the lowest weekly volume at or above §111's door
+  (`staged_race.min_base_km`) from which the race block, built as the checkpoint would build it, **is clean**: it
+  generates, passes `validatePlan`, and draws no coach objection. Fixed on the plan from day one. ⚠️ The sitting's text
+  said "the first week is a step"; the prototype the board ruled on searched for CLEAN, and C5 binds to the
+  measurement. Built to the text it measured 64.5%; to the measured rule, **71.0%** against the prototype's 68.7%.
+- **C4** — where no target fits, the runner is still staged at §111's door (`target_found: false`), and the checkpoint
+  answers `checkpoint_choose` (run-walk finish or a later race) rather than building a block we know is not clean.
+- **C5** — measured: of 880 staged cases, **71.0% clean**; the rest are C4 (WEEK1-LEAP 10.0%, LONG-RUN-SHORT 9.8%, both
+  6.2%) and §113 on the recorded long run (3.1%).
+
 ## 117. The finish-goal run-walk marathon — a lower target, not a looser rule
 
 *(Coaching Board 2026-09-20, ZERO-REJECTION-01. CORRECT WITH AMENDMENT, four binding amendments. Founder directive: "we cannot be rejecting nearly 50% of beginner runners" and "we just need to help them get to the end.")*

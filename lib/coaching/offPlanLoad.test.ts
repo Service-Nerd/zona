@@ -134,7 +134,7 @@ describe('COMPOSED — real activity rows through the owner into the triggers', 
     ]
     const load = bucketLoadByPlanWeek(plan, rows, new Set(['h:linked-1']))
     const w6 = load.get(6)!
-    expect(w6).toEqual({ linkedKm: 40, offPlanKm: 24, totalKm: 64 })
+    expect(w6).toEqual({ linkedKm: 40, offPlanKm: 24, totalKm: 64, longestKm: 40 })
 
     const r = checkAdjustmentTriggers({
       ...base(), linkedKm: w6.linkedKm, offPlanKm: w6.offPlanKm,
@@ -150,7 +150,7 @@ describe('COMPOSED — real activity rows through the owner into the triggers', 
     // run_analysis alone this run would read as off-plan and inflate shadow load.
     const rows = [act('2026-09-15', 40, 'manual-1')]
     const load = bucketLoadByPlanWeek(plan, rows, new Set(['h:manual-1']))
-    expect(load.get(6)).toEqual({ linkedKm: 40, offPlanKm: 0, totalKm: 40 })
+    expect(load.get(6)).toEqual({ linkedKm: 40, offPlanKm: 0, totalKm: 40, longestKm: 40 })
     expect(checkAdjustmentTriggers({ ...base(), linkedKm: 40, offPlanKm: 0 })).toBeNull()
   })
 
@@ -163,7 +163,7 @@ describe('COMPOSED — real activity rows through the owner into the triggers', 
       { ...act('2026-09-15', 40, 'dup-b'), start_date: '2026-09-15T09:05:00.000Z' },
     ]
     const load = bucketLoadByPlanWeek(plan, rows, new Set(['h:dup-a']))
-    expect(load.get(6)).toEqual({ linkedKm: 40, offPlanKm: 0, totalKm: 40 })
+    expect(load.get(6)).toEqual({ linkedKm: 40, offPlanKm: 0, totalKm: 40, longestKm: 40 })
     expect(load.has(5)).toBe(false)
     expect(checkAdjustmentTriggers({ ...base(), linkedKm: 40, offPlanKm: 0 })).toBeNull()
   })

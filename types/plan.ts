@@ -97,6 +97,12 @@ export interface GeneratorInput {
   // engine treats current_weekly_km as aspirational and starts the plan at
   // FRESH_RETURN_START_FRACTION × current_weekly_km. (CoachingPrinciples §29)
   weeks_at_current_volume?: number
+  // NO-RUNNER-TURNED-AWAY-01, C1 (Coaching Board 2026-10-24, third sitting) — `current_weekly_km` and
+  // `longest_recent_run_km` were MEASURED at a base-build checkpoint, not declared. §29 discounts a DECLARATION
+  // ("the volume they aspire to"); a measurement on a plan we prescribed is consolidated, so §29 does not apply.
+  // Set ONLY by the server (`evaluateCheckpoint`); the route strips it from a client body, and an edit to either
+  // volume field clears it (`declaredVolumeEdit`), because an edited volume is a declaration again.
+  volume_observed?: boolean
 
   // 2026-04-28 / H-01 — two-step prep-time UX (CoachingPrinciples §44). When
   // validatePrepTime returns 'warn' and this flag is absent or false, the

@@ -693,9 +693,16 @@ const explained: string[] = []
 const samples: { input: any, violation: Violation }[] = []
 const hardFailureSamples: { input: any, message: string }[] = []
 
+const randomInputs = Array.from({ length: SWEEP_N }, () => randomInput())
+// NO-RUNNER-TURNED-AWAY-01, C1 — `volume_observed` (a checkpoint's MEASURED volume, which §29 does not discount) is
+// read by the engine, so the coverage gate requires it varied. CLONES, not a new random pick: a pick would shift the
+// RNG sequence and change every input after it, so the sample would move for a reason that is not the engine. Every
+// 11th random input is repeated with the flag set: deterministic, and the existing sample is byte-identical.
+const observedClones = randomInputs.filter((_, i) => i % 11 === 0).map(inp => ({ ...inp, volume_observed: true }))
 const inputs = [
   ...CORNERS,
-  ...Array.from({ length: SWEEP_N }, () => randomInput()),
+  ...randomInputs,
+  ...observedClones,
 ]
 
 // ── INPUT COVERAGE GATE (proposal #4, 2026-09-04) ───────────────────────────

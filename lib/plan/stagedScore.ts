@@ -11,16 +11,16 @@
  * case** (chair: printed beside the number wherever it is reported). It is clean only if the base-building weeks pass
  * their validators AND the race plan generates, passes `validatePlan` at error severity, and draws no coach objection.
  *
- * ⚠️ `longest_recent_run_km` is left as the runner stated it, exactly as the handover leaves it: what they actually
- * ran as a long run is not knowable from a plan. If that makes §113 refuse the race block, the staged case is NOT
- * clean, and that is a finding about the product, not about the measure.
+ * ⚠️ AMENDED BY THE THIRD SITTING (C1–C3): the race block is generated from `checkpointRaceInput` at the plan's own
+ * target with the ramp's longest session, marked observed. The first version used the stated long run and §111's
+ * door, and measured 5.7% clean for reasons the board then ruled were the checkpoint asking with signup facts.
  *
  * ⚠️ §44's warning is ACKNOWLEDGED for the race block, as the product does: at the wizard §44 is answered before §111
  * is ever reached, and at the checkpoint the handover card carries the acknowledge step (`MODIFY-WARN-ACK-01`).
  */
 
 import type { GeneratorInput } from '@/types/plan'
-import { generateStagedRacePlan, stagedRaceOf } from './stagedRacePlan'
+import { generateStagedRacePlan, stagedRaceOf, checkpointRaceInput, longestSessionKm } from './stagedRacePlan'
 import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
@@ -50,7 +50,9 @@ export function scoreStagedCase(input: GeneratorInput, planStart: string, doorKm
     .filter(v => v.severity === 'error').map(v => v.code)
 
   const checkpoint = addWeeks(planStart, s.checkpoint_week)
-  const raceInput = { ...input, current_weekly_km: doorKm, acknowledged_prep_warning: true } as GeneratorInput
+  // The PASS case, built exactly as `evaluateCheckpoint` builds it: they ran the target (`door_km`, C3) and the
+  // ramp's own longest session (C2), marked observed (C1). `checkpointRaceInput` is the one owner of that input.
+  const raceInput = checkpointRaceInput(input, s.door_km, longestSessionKm(staged.weeks))
   let race
   try {
     race = generateRulePlan(raceInput, 'paid', checkpoint, undefined, dayBefore(checkpoint))

@@ -68,6 +68,65 @@ function week1PerRunStep(weeks: Week[], startKm: number, week1Km: number): numbe
   return runs > 0 ? (week1Km - startKm) / runs : Number.POSITIVE_INFINITY
 }
 
+/**
+ * WEEK1-LEAP, as a function: the one owner of "is this plan's first week a step or a leap?" (§2 and its week-1 arms).
+ * Extracted 2026-10-24 (NO-RUNNER-TURNED-AWAY-01, C3) so the staged plan's checkpoint target is chosen by the SAME
+ * rule the audit scores it by; a second copy for the search would be two definitions of a leap. Returns the finding's
+ * detail, or null. `weeks` are the plan's training weeks; `w1` is week 1's `weekly_km`.
+ */
+export function week1Leap(weeks: Week[], input: GeneratorInput, w1: number): string | null {
+  const declaredKm = input.current_weekly_km ?? 0
+  const start = declaredKm > 0 ? declaredKm : effectiveStartKm(input)
+  // WEEK1-LEAP-ABS-01 (2026-09-19) — A PERCENTAGE NEEDS AN ABSOLUTE FLOOR.
+  //
+  // ⚠️ MEASURED: 17% of everything this predicate flagged was a week-1 increase
+  // of 2 km or less. The worst offenders read "start 4 km, week 1 = 5 km" —
+  // one extra short run, scored as a 43% leap. A ratio on a small base is
+  // noise, and this fired on 58% of runners under 20 km/week and 0% of runners
+  // over 40, which is the signature of an artefact rather than a hazard.
+  //
+  // ⚠️ SAME CLASS AS `LONG-RUN-SHORT` ON ULTRAS, found the same day: a
+  // proportional rule applied where the absolute magnitude makes it
+  // meaningless. Two of the seven predicates had it.
+  //
+  // ⚠️ THE RESIDUAL IS REAL AND IS NOT BEING SUPPRESSED. After this floor,
+  // 9.1% still flag, and their jumps run to 15 km (a runner at 7 km/week
+  // effective handed an 18 km week 1). That is a live coaching question, filed
+  // separately — this line removes the noise around it, it does not answer it.
+  // §2 Amendment — TWO ARMS. Weekly ratio OR per-session load, whichever fires.
+  //
+  // ⚠️ THE SESSION ARM IS THE ONE WILLY ASKED FOR AND IT IS INERT TODAY.
+  // Measured across all 3,880 flagged plans: the worst case of a week-1 session
+  // exceeding the runner's longest recent run is **+0.5 km**, so this arm
+  // currently fires on nothing. That is stated rather than hidden — an arm that
+  // cannot fire on the present corpus is exactly the decorative check this repo
+  // gates against, and it is kept only because it is the arm that describes the
+  // actual HAZARD (tissue load per session) rather than an accounting ratio.
+  // Its liveness is proved by mutation, not by the corpus.
+  //
+  // Margin reuses §45's long-run progression cap rather than inventing a
+  // number: the same board already ratified that as the step a single run may
+  // grow by, and a second constant for the same idea is how they drift.
+  const longestW1 = Math.max(0, ...(weeks.find(w => w.n === 1)
+    ? kmsIn(weeks.find(w => w.n === 1)!) : [0]))
+  const longestEver = input.longest_recent_run_km ?? 0
+  const sessionStepTooBig = longestEver > 0
+    && longestW1 - longestEver > G.LONG_RUN_PROGRESSION_CAP_ABS_KM
+  if (sessionStepTooBig) {
+    return `week 1's longest session is ${longestW1.toFixed(1)}km against a longest-ever run of ${longestEver}km`
+  } else if (start > 0 && w1 - start >= G.WEEK1_ABSOLUTE_STEP_MAX_KM
+             && w1 / start > G.WEEK1_ABSOLUTE_STEP_MIN_RATIO) {
+    // Willy's binding condition: a large ABSOLUTE step stays visible even when
+    // the ratio hides it. Measured at the sitting: the ratio arm alone caught
+    // only 47 of 75 weekly jumps >= 10 km, because at 40 km/week a +10 km step
+    // is just 1.25x. A condition the board made binding, verified by test.
+    return `week 1 adds ${(w1 - start).toFixed(1)}km over a declared ${start}km base`
+  } else if (start > 0 && w1 / start > 1.30 && w1 - start > 2
+             && week1PerRunStep(weeks, start, w1) > G.WEEK1_PER_RUN_STEP_MAX_KM)
+    return `week 1 is ${Math.round(w1)}km against a ${start}km base (+${((w1 / start - 1) * 100).toFixed(0)}%)`
+  return null
+}
+
 export function auditPlanQuality(plan: Plan, input: GeneratorInput): Finding[] {
   const f: Finding[] = []
   const weeks = plan.weeks.filter(isTrainingWeek)
@@ -151,55 +210,8 @@ export function auditPlanQuality(plan: Plan, input: GeneratorInput): Finding[] {
   // protection, then scored against the reduction. Beginners, who are not
   // scaled, were 0% unfit while intermediates were 48%. The inversion was the
   // tell. Against declared volume the median flagged ratio is 1.33x, not 1.79x.
-  const declaredKm = input.current_weekly_km ?? 0
-  const start = declaredKm > 0 ? declaredKm : effectiveStartKm(input)
-  // WEEK1-LEAP-ABS-01 (2026-09-19) — A PERCENTAGE NEEDS AN ABSOLUTE FLOOR.
-  //
-  // ⚠️ MEASURED: 17% of everything this predicate flagged was a week-1 increase
-  // of 2 km or less. The worst offenders read "start 4 km, week 1 = 5 km" —
-  // one extra short run, scored as a 43% leap. A ratio on a small base is
-  // noise, and this fired on 58% of runners under 20 km/week and 0% of runners
-  // over 40, which is the signature of an artefact rather than a hazard.
-  //
-  // ⚠️ SAME CLASS AS `LONG-RUN-SHORT` ON ULTRAS, found the same day: a
-  // proportional rule applied where the absolute magnitude makes it
-  // meaningless. Two of the seven predicates had it.
-  //
-  // ⚠️ THE RESIDUAL IS REAL AND IS NOT BEING SUPPRESSED. After this floor,
-  // 9.1% still flag, and their jumps run to 15 km (a runner at 7 km/week
-  // effective handed an 18 km week 1). That is a live coaching question, filed
-  // separately — this line removes the noise around it, it does not answer it.
-  // §2 Amendment — TWO ARMS. Weekly ratio OR per-session load, whichever fires.
-  //
-  // ⚠️ THE SESSION ARM IS THE ONE WILLY ASKED FOR AND IT IS INERT TODAY.
-  // Measured across all 3,880 flagged plans: the worst case of a week-1 session
-  // exceeding the runner's longest recent run is **+0.5 km**, so this arm
-  // currently fires on nothing. That is stated rather than hidden — an arm that
-  // cannot fire on the present corpus is exactly the decorative check this repo
-  // gates against, and it is kept only because it is the arm that describes the
-  // actual HAZARD (tissue load per session) rather than an accounting ratio.
-  // Its liveness is proved by mutation, not by the corpus.
-  //
-  // Margin reuses §45's long-run progression cap rather than inventing a
-  // number: the same board already ratified that as the step a single run may
-  // grow by, and a second constant for the same idea is how they drift.
-  const longestW1 = Math.max(0, ...(weeks.find(w => w.n === 1)
-    ? kmsIn(weeks.find(w => w.n === 1)!) : [0]))
-  const longestEver = input.longest_recent_run_km ?? 0
-  const sessionStepTooBig = longestEver > 0
-    && longestW1 - longestEver > G.LONG_RUN_PROGRESSION_CAP_ABS_KM
-  if (sessionStepTooBig) {
-    f.push({ code: 'WEEK1-LEAP', detail: `week 1's longest session is ${longestW1.toFixed(1)}km against a longest-ever run of ${longestEver}km` })
-  } else if (start > 0 && w1 - start >= G.WEEK1_ABSOLUTE_STEP_MAX_KM
-             && w1 / start > G.WEEK1_ABSOLUTE_STEP_MIN_RATIO) {
-    // Willy's binding condition: a large ABSOLUTE step stays visible even when
-    // the ratio hides it. Measured at the sitting: the ratio arm alone caught
-    // only 47 of 75 weekly jumps >= 10 km, because at 40 km/week a +10 km step
-    // is just 1.25x. A condition the board made binding, verified by test.
-    f.push({ code: 'WEEK1-LEAP', detail: `week 1 adds ${(w1 - start).toFixed(1)}km over a declared ${start}km base` })
-  } else if (start > 0 && w1 / start > 1.30 && w1 - start > 2
-             && week1PerRunStep(weeks, start, w1) > G.WEEK1_PER_RUN_STEP_MAX_KM)
-    f.push({ code: 'WEEK1-LEAP', detail: `week 1 is ${Math.round(w1)}km against a ${start}km base (+${((w1 / start - 1) * 100).toFixed(0)}%)` })
+  const leap = week1Leap(weeks, input, w1)
+  if (leap) f.push({ code: 'WEEK1-LEAP', detail: leap })
 
   // P6 — a marathon plan whose longest run never approaches the race.
   //

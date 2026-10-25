@@ -14,6 +14,7 @@ import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
 import { ACK_LABEL, warnKindOf, withAcknowledgement, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import { handoverState, handoverInput, handoverSeenPatch } from '@/lib/plan/baseBuildHandover'
+import { declaredVolumeEdit } from '@/lib/plan/stagedRacePlan'
 import { rebuildsBaseBuild } from '@/lib/plan/modifyPlan'
 import { handoverCopy } from '@/lib/ui/handoverCopy'
 import { resolveAutoMatch } from '@/lib/coaching/sessionAutoMatch'
@@ -374,7 +375,11 @@ export default function DashboardClient() {
     // REBUILD-HR-FROM-PROFILE-01 — every in-app rebuild (Modify, the base-build handover, the acknowledgement
     // re-send) starts from `meta.generator_input`, which a Profile max-HR confirmation never updates. Lay the
     // profile's heart rate over it here, the one door all three use, before anything is held for a re-send.
-    const nextInput = withProfileHr(storedInput, { resting_hr: restingHR, max_hr: maxHR, max_hr_source: maxHRSource })
+    // NO-RUNNER-TURNED-AWAY-01, C1 — an edited volume is a declaration again; drop the observed flag if so.
+    const nextInput = declaredVolumeEdit(
+      (plan?.meta as unknown as { generator_input?: GeneratorInput } | undefined)?.generator_input,
+      withProfileHr(storedInput, { resting_hr: restingHR, max_hr: maxHR, max_hr_source: maxHRSource }),
+    )
     // PLAN-REBUILD-SUPERSEDE-01 — the sheet predicts a reset from the race date alone; once the rebuilt plan is in
     // hand, ask the SAME owner `savePlanForUser` uses, so "keeps your logged weeks" cannot be a promise the save
     // then breaks (an edit that changes the plan's length moves every week's date).

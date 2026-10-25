@@ -72,6 +72,15 @@ out in the first sitting.
 
 None.
 
+## Built (2026-10-25), with one correction stated
+
+**C3 was built to its text first and measured 64.5% clean**, short of C5's 68.7%. The cause was the gap between the
+words and the measurement: the text said the race block's first week must be a step; the prototype the board ruled on
+searched for the lowest target from which the race block is CLEAN (validator plus every coach objection). C5 binds the
+build to the measurement, so the code implements the measured rule, which contains the written one (the leap is one of
+the objections). **Re-measured: 71.0% clean.** C4 is now explicit: a staged plan records `target_found`, and where it is
+false the checkpoint answers `checkpoint_choose` instead of building an unclean block. Every arm falsified.
+
 ## What this does not settle
 
 The 31.4% no-fit cohort's experience at the checkpoint (design, then founder words); the walk-run start (Phase D).

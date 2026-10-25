@@ -1,6 +1,9 @@
 // NO-RUNNER-TURNED-AWAY-01 — the staged race plan (§116 Am. 9; Coaching Board 2026-10-24, two sittings).
 import { describe, it, expect, afterEach } from 'vitest'
-import { checkpointPlacement, stagingApplies, generateStagedRacePlan, stagedRaceOf, observedCheckpointKm } from './stagedRacePlan'
+import { checkpointPlacement, stagingApplies, generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, declaredVolumeEdit, longestSessionKm } from './stagedRacePlan'
+import { isFreshReturn } from './startVolume'
+import { week1Leap } from './planQuality'
+import { evaluateCheckpoint } from './engine'
 import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
 import { validateStoredPlan } from './validateStoredPlan'
 import { generateRulePlan } from './ruleEngine'
@@ -21,7 +24,7 @@ const input = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
   ...over,
 } as unknown as GeneratorInput)
 
-const load = (km: number): WeeklyLoad => ({ linkedKm: km, offPlanKm: 0, totalKm: km })
+const load = (km: number, longestKm = km / 2): WeeklyLoad => ({ linkedKm: km, offPlanKm: 0, totalKm: km, longestKm })
 
 describe('Q1 — where the checkpoint goes', () => {
   it('at the week the ramp reaches the door, the board\'s evidence table (26-week runway)', () => {
@@ -51,7 +54,8 @@ describe('the staged plan', () => {
     expect(plan.meta.plan_kind).toBe('base_build')
     expect(plan.meta.race_name).toBe('Base building')
     expect(plan.meta.race_date).toBe('')
-    expect(staged).toMatchObject({ race_name: 'London Marathon', race_date: RACE_26, race_distance_km: 42.2, door_km: 12, checkpoint_week: 3, race_weeks: 22, reaches_door: true })
+    expect(staged).toMatchObject({ race_name: 'London Marathon', race_date: RACE_26, race_distance_km: 42.2, min_base_km: 12, target_found: true, reaches_door: true })
+    expect(staged.door_km).toBeGreaterThanOrEqual(staged.min_base_km)
   })
   it('holds base building only, ending at its checkpoint, and passes both validators', () => {
     expect(plan.weeks.length).toBe(staged.checkpoint_week)
@@ -116,6 +120,96 @@ describe('the checkpoint gates on what was RUN, through §111 itself', () => {
     const plannedEnd = 12.1, observed = 1.5
     expect(() => generateRulePlan(input({ current_weekly_km: plannedEnd }), 'paid', START)).not.toThrow()
     expect(() => generateRulePlan(input({ current_weekly_km: observed }), 'paid', START)).toThrow(BaseVolumeError)
+  })
+})
+
+// ── the third sitting: the checkpoint asks with what the runner RAN (C1–C3) ──────────────────────────────────────────
+describe('C4 — no clean target: the checkpoint offers a choice, never a block we know is not clean', () => {
+  // A real envelope case: finish goal, 8 km/week, 6 days, 20 weeks. No target leaves a clean race block.
+  const NOFIT = input({ race_date: '2027-03-22', goal: 'finish', days_available: 6, current_weekly_km: 8,
+    longest_recent_run_km: 4, training_age: '6-18mo', age: 28, recent_quality_training: 'occasional' })
+  it('is still staged, at §111\'s door, and says no target was found', () => {
+    const s = stagedRaceOf(generateStagedRacePlan(NOFIT, '2026-11-02', 9)!)!
+    expect(s).toMatchObject({ door_km: 9, min_base_km: 9, target_found: false })
+  })
+  it('a staged plan whose target was not found answers checkpoint_choose even at the door', () => {
+    const plan = generateStagedRacePlan(NOFIT, '2026-11-02', 9)!
+    const at = new Map(plan.weeks.map(w => [w.n, load(stagedRaceOf(plan)!.door_km + 2, 6)]))
+    const out = evaluateCheckpoint(NOFIT, plan, at, 'km')
+    expect(out.ok).toBe(false)
+    if (!out.ok) expect(out.body).toMatchObject({ reason: 'checkpoint_choose', options: ['run_walk', 'later_race'] })
+  })
+})
+
+describe('C1 — §29 does not discount OBSERVED volume', () => {
+  const returner = input({ current_weekly_km: 12, longest_recent_run_km: 6, training_age: '2-5yr' })
+  it('the heuristic fires on the declaration and not on the measurement', () => {
+    expect(isFreshReturn(returner)).toBe(true)
+    expect(isFreshReturn({ ...returner, volume_observed: true })).toBe(false)
+  })
+  it('composed: a returner who RAN the door gets the race block; the same figure DECLARED is refused', () => {
+    expect(() => generateRulePlan(returner, 'paid', START)).toThrow(BaseVolumeError)
+    expect(() => generateRulePlan(checkpointRaceInput(returner, 12, 6), 'paid', START)).not.toThrow()
+  })
+  it('an edit to either volume field is a declaration again, so the flag goes', () => {
+    const stored = checkpointRaceInput(returner, 12, 6)
+    expect(declaredVolumeEdit(stored, { ...stored }).volume_observed).toBe(true)
+    expect(declaredVolumeEdit(stored, { ...stored, current_weekly_km: 20 }).volume_observed).toBeUndefined()
+    expect(declaredVolumeEdit(stored, { ...stored, longest_recent_run_km: 9 }).volume_observed).toBeUndefined()
+  })
+})
+
+describe('C2 — the checkpoint long run is the one they recorded', () => {
+  const plan = generateStagedRacePlan(input({ current_weekly_km: 6 }), START, 12)!
+  const cp = stagedRaceOf(plan)!.checkpoint_week
+  it('the longest single run across the base-build weeks, deloads included', () => {
+    const loads = new Map(plan.weeks.map(w => [w.n, load(8, w.n === 4 ? 7.25 : 3)]))
+    expect(observedLongestRunKm(plan, loads, cp)).toBe(7.2)
+  })
+  it('nothing recorded is null', () => {
+    expect(observedLongestRunKm(plan, new Map(), cp)).toBeNull()
+  })
+})
+
+describe('C3 — the checkpoint target: the race block begins as a step, never a leap', () => {
+  // A real envelope case (2026-10-25): §111's door is 10 km, and the lowest target from which the race block is clean
+  // is 19. From 10 it is not a clean start.
+  // ⚠️ The envelope's input VERBATIM: a hand-copied subset of its fields staged differently (no target found), because
+  // `fitness_level`, the heart rates and the acknowledgement flags all reach generation.
+  const LEAP = { athlete_name: 'Envelope', age: 48, race_name: 'Target race', primary_metric: 'distance',
+    race_distance_km: 42.2, race_date: '2027-05-31', plan_start: '2026-11-02', goal: 'time_target',
+    fitness_level: 'beginner', training_age: '6-18mo', resting_hr: 55, max_hr: 185, current_weekly_km: 8,
+    longest_recent_run_km: 4, days_available: 3, injury_history: [], hard_session_relationship: 'neutral',
+    recent_quality_training: 'occasional', acknowledged_days_warning: true, acknowledged_prep_warning: true,
+    target_time: '4:15:00' } as unknown as GeneratorInput
+  const START_LEAP = '2026-11-02'
+  const plan = generateStagedRacePlan(LEAP, START_LEAP, 10)!
+  const s = stagedRaceOf(plan)!
+  const raceFrom = (km: number) => {
+    const cp = new Date(Date.parse(`${START_LEAP}T00:00:00Z`) + s.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+    const ri = checkpointRaceInput(LEAP, km, longestSessionKm(plan.weeks))
+    let race
+    // ⚠️ §111's door at the CHECKPOINT can differ from the one named at signup (the race block is shorter by then),
+    // so from the signup door the race block may be refused outright. Either way it is not a clean start.
+    try { race = generateRulePlan(ri, 'paid', cp) } catch (e) { return `refused: ${(e as Error).name}` }
+    return week1Leap(race.weeks.filter(w => w.n >= 1), ri, race.weeks.find(w => w.n === 1)?.weekly_km ?? 0)
+  }
+  it('the target sits above §111\'s door and is fixed on the plan from day one', () => {
+    expect(s).toMatchObject({ min_base_km: 10, door_km: 19, target_found: true })
+  })
+  it('from the target the first race week is a step; from §111\'s signup door it was not a clean start', () => {
+    expect(raceFrom(s.door_km)).toBeNull()
+    expect(raceFrom(s.min_base_km)).not.toBeNull()
+  })
+  it('the checkpoint refuses below the target, and builds at it with the observed input', () => {
+    const below = new Map(plan.weeks.map(w => [w.n, load(s.door_km - 1)]))
+    const at = new Map(plan.weeks.map(w => [w.n, load(s.door_km, 5)]))
+    const no = evaluateCheckpoint(LEAP, plan, below, 'km')
+    expect(no.ok).toBe(false)
+    if (!no.ok) expect(no.body.reason).toBe('checkpoint_not_reached')
+    const yes = evaluateCheckpoint(LEAP, plan, at, 'km')
+    expect(yes.ok).toBe(true)
+    if (yes.ok) expect(yes.input).toMatchObject({ current_weekly_km: s.door_km, longest_recent_run_km: 5, volume_observed: true })
   })
 })
 

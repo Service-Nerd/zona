@@ -114,7 +114,7 @@ plan generated from the checkpoint with `current_weekly_km` at the door. One def
 called by `envelopeMeasure.ts` (and, when it gains staging, `cohort-review.ts`). Staged cases leave `refusedPct` and
 enter `fitPct`, fit only if clean; `fitPctPreCorrection` remains the founder's bar (every refusal and every unclean
 staged plan a fail). `stagedPct`, `stagedCleanPct` and `stagedObjections` are recorded and gated.
-**Shipped behaviour is the default** (`onRampEnabled()`); `measure:envelope -- --staging` scores staging explicitly and
+The race block is built by `checkpointRaceInput` (the same owner the checkpoint uses) at the plan's own target (C3) with the ramp's longest session, marked observed (C1, C2). **Shipped behaviour is the default** (`onRampEnabled()`); `measure:envelope -- --staging` scores staging explicitly and
 refuses `--write`. ⚠️ **The pass-at-the-door assumption is the best case and is printed beside the number.**
 
 ## 4. 🔴 What none of these can see

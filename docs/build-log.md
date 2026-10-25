@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 (Phase B2) · 5.7% to 71.0%, and the words were not the rule
+**Shipped:** The base-build checkpoint now asks the engine with what the runner actually ran (observed volume, recorded long run, no layoff discount), and the staged plan's target is set where the marathon block starts clean. Still dark.
+**Dev learning:** I built C3 to the sentence the board wrote ("the first week is a step") and measured 64.5%. The board had ruled on a prototype that searched for a race block passing *every* check, which reached 68.7%. The sentence was a summary of the measurement, and a summary is not a spec. Built to the measured rule, 71.0%.
+**Product/creator learning:** About 29% of staged runners still have no clean marathon block inside their race date. They now get a choice at the checkpoint (run-walk or a later race) instead of a plan we'd have known was flawed.
+**AI-building learning:** Two fixtures lied. A test fixture built from a helper with defaults staged a different plan from the real input it imitated, because fields I thought didn't matter (fitness level, heart rates, acknowledgement flags) reach generation. Copy the real input whole.
+**The honest bit:** The input field this needs (`volume_observed`) would have let any client switch off an injury-protection rule by sending it. The route strips it, and the test for that was too weak to fail until I rewrote it.
+**Hook material:** One rule written as a sentence and measured as a search: 64.5% vs 71.0%.
+**Postable?:** maybe
+
 ## 2026-10-24 — NO-RUNNER-TURNED-AWAY-01 (Phase B) · the measurement said no before any runner could
 **Shipped:** The engine half of "every runner gets a plan for their race", built dark, and one live fix: the base-build handover now measures what the runner ran instead of crediting what was planned.
 **Dev learning:** The checkpoint looked like one line: feed the observed volume to the engine and let §111 decide. §111 doesn't read the volume you feed it; it reads an *effective* start that §29 scales by 0.7 for anyone who looks like a returner. So a runner who ran exactly the door would be refused at it. Nothing in the code was wrong; two correct rules met at a point neither was written for.

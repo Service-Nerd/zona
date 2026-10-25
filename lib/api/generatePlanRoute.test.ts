@@ -430,12 +430,33 @@ describe('I — the base-build checkpoint gates on what was RUN, measured by the
     expect(res.status).toBe(200)
     expect(eventDetail('plan_checkpoint_evaluated')).toMatchObject({ observed_km: 13, door_km: 12, staged: true })
   })
-  it('🔴 I2 — the CLIENT\'s volume is ignored: it claims 40, the runner ran 4, §111 refuses', async () => {
+  it('🔴 I2 — the CLIENT\'s volume is ignored: it claims 40, the runner ran 4, and the plan\'s own target is not reached', async () => {
     subscribe(); const plan = await stage(); ran(plan, 4)
     const res = await handover(plan, 40)
     expect(res.status).toBe(422)
-    expect(((await res.json()) as { reason?: string }).reason).toBe('base_volume')
+    const json = await res.json() as { reason?: string; observed_km?: number; target_km?: number }
+    expect(json.reason).toBe('checkpoint_not_reached')
+    expect(json.observed_km).toBe(4)
     expect(eventDetail('plan_checkpoint_evaluated')?.observed_km).toBe(4)
+  })
+  it('I5 — a plain (un-staged) base build has no target, so §111 itself decides on the observed volume', async () => {
+    subscribe(); const plan = await stage()
+    delete (plan.meta as unknown as Record<string, unknown>).staged_race
+    ran(plan, 4)
+    const res = await handover(plan, 40)
+    expect(res.status).toBe(422)
+    expect(((await res.json()) as { reason?: string }).reason).toBe('base_volume')
+  })
+  it('I6 — a client cannot switch §29 off by sending volume_observed itself', async () => {
+    subscribe()
+    const res = await post({ ...RACE, current_weekly_km: 12, training_age: '2-5yr', longest_recent_run_km: 6, volume_observed: true })
+    const res2 = await post({ ...RACE, current_weekly_km: 12, training_age: '2-5yr', longest_recent_run_km: 6 })
+    // §29's heuristic fires (2-5yr, under 25 km, long run under 10), so the engine starts this runner at 70% of 12
+    // and §111 refuses. Honouring a client's volume_observed would start them at 12 and change the answer.
+    expect(res2.status).toBe(422)
+    expect(((await res2.json()) as { reason?: string }).reason).toBe('base_volume')
+    expect(res.status).toBe(422)
+    expect(((await res.json()) as { reason?: string }).reason).toBe('base_volume')
   })
   it('I3 — no runs recorded is its own answer, never a pass and never a refusal on zero', async () => {
     subscribe(); const plan = await stage()

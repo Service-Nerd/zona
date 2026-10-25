@@ -32,6 +32,8 @@ import { GENERATION_CONFIG } from './generationConfig'
 
 /** §29 — fresh from a layoff, by either the explicit or heuristic path. */
 export function isFreshReturn(input: GeneratorInput): boolean {
+  // NO-RUNNER-TURNED-AWAY-01, C1 — §29 governs a DECLARED volume. An observed one is consolidated by definition.
+  if (input.volume_observed) return false
   const explicit = input.weeks_at_current_volume !== undefined
     && input.weeks_at_current_volume < GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD
   const trainingAgeIsExperienced =

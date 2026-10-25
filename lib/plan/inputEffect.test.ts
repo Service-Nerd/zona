@@ -174,6 +174,10 @@ const SPECS: Record<string, Spec> = {
   recent_quality_training: { values: ['none', 'occasional', 'regular'],
                              note: '§89 — needs experienced intensity + 5yr+ + no injury, all in BASE' },
   weeks_at_current_volume: { values: [2, 20], note: '§29 fresh-return threshold is 8 weeks' },
+  // NO-RUNNER-TURNED-AWAY-01, C1: observed volume is consolidated, so §29 must stop discounting it. The baseline is
+  // a §29 fresh return (2 weeks at volume), or the flag would read inert for the wrong reason (this file's own trap).
+  volume_observed:         { values: [undefined, true], baseline: { weeks_at_current_volume: 2 },
+                             note: '§29 off for a MEASURED volume (C1); needs a fresh-return baseline to bite' },
   acknowledged_prep_warning: {
     values: [undefined, true],
     baseline: { race_distance_km: 42.2, race_date: raceDate(13), current_weekly_km: 30,

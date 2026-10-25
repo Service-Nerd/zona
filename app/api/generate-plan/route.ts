@@ -151,12 +151,18 @@ export async function POST(req: NextRequest) {
     // ACTUALLY ran, and that figure replaces whatever the body carried. §111 then decides, in its one place.
     //
     // ⚠️ A failed read is a 500, never "ran nothing": `fetchWeeklyLoad` throws on a query error by design.
+    // C1 — `volume_observed` is the server's to set. A client that sent it would switch §29 off for a declared
+    // volume, so it is removed from every request before anything reads the input.
+    if ('volume_observed' in input) {
+      const { volume_observed: _drop, ...rest } = input
+      input = rest as GeneratorInput
+    }
     if ((guard.body as { checkpoint?: unknown }).checkpoint === true) {
       const { createClient } = await import('@supabase/supabase-js')
       const svc = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
       const stored = (await readPlanJson(svc, user.id)).plan as Plan | null
       const loads = stored && isBaseBuildPlan(stored) ? await fetchWeeklyLoad(svc, user.id, stored) : null
-      const cp = evaluateCheckpoint(input, stored, loads)
+      const cp = evaluateCheckpoint(input, stored, loads, displayUnits)
       if (cp.telemetry) await recordOpsEvent(cp.telemetry.event, cp.telemetry.detail, user.id)
       if (!cp.ok) return NextResponse.json(cp.body, { status: cp.status })
       input = cp.input

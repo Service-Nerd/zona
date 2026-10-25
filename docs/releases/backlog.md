@@ -3028,6 +3028,16 @@ flagged by the reorder guard, which is correct, and is the only runner-visible e
 
 ### 🟡 `NO-RUNNER-TURNED-AWAY-01` — every runner who asks for a race gets a plan for that race *(filed 2026-10-24, P0, founder; RULED 2026-10-24)* 🏃 **COACHING BOARD** (ruled) → 🧭 **DESIGN BOARD** (ruled) → 👤 **FOUNDER** (words)
 
+🔧 **PHASE B2 BUILT 2026-10-25 (C1–C5), still DARK.** `volume_observed` (server-only; stripped from client bodies;
+cleared by a volume edit) switches §29 off for measured volume; `WeeklyLoad.longestKm` gives the checkpoint the
+recorded long run; the target search picks the lowest volume ≥ §111's door from which the race block is CLEAN
+(`week1Leap` extracted from `planQuality` as the one owner of the leap rule); `checkpoint_not_reached` below the target,
+`checkpoint_choose` where no clean target existed (C4). ⚠️ **C3 corrected and stated:** built to its TEXT ("week 1 is a
+step") it measured 64.5%; the prototype the board ruled on searched for CLEAN, so C5 binds the code to that. **C5
+measured: 71.0% clean** of 880 staged cases (prototype 68.7%). The sweep varies the new field by deterministic clones
+(15,586 plans, no new violations). **Next: Phase C (screens + the approved words), D (walk-run start), E (after-round
+to the board).**
+
 🏃 **THIRD SITTING 2026-10-24 — the checkpoint's inputs ruled** (`coaching-2026-10-24-no-runner-turned-away-checkpoint.md`):
 C1 §29 does not apply to observed volume · C2 observed longest run · C3 target = lowest volume ≥ door from which the
 race block's week 1 is a step · C4 no-fit runners still staged · C5 re-measure. **Prototype: 5.7% → 68.7% clean**
