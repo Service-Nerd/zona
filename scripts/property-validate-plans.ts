@@ -699,10 +699,13 @@ const randomInputs = Array.from({ length: SWEEP_N }, () => randomInput())
 // RNG sequence and change every input after it, so the sample would move for a reason that is not the engine. Every
 // 11th random input is repeated with the flag set: deterministic, and the existing sample is byte-identical.
 const observedClones = randomInputs.filter((_, i) => i % 11 === 0).map(inp => ({ ...inp, volume_observed: true }))
+// R5 — `after_walk_run_start`, the same clone pattern: every 13th input repeated with the flag set.
+const walkRunClones = randomInputs.filter((_, i) => i % 13 === 0).map(inp => ({ ...inp, after_walk_run_start: true }))
 const inputs = [
   ...CORNERS,
   ...randomInputs,
   ...observedClones,
+  ...walkRunClones,
 ]
 
 // ── INPUT COVERAGE GATE (proposal #4, 2026-09-04) ───────────────────────────

@@ -13,7 +13,7 @@
 
 import type { GeneratorInput, Session, Week } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
-import { DAY_ORDER, normaliseDays, type Day } from './days'
+import { DAY_ORDER, normaliseDays, spreadDays, type Day } from './days'
 
 export interface WalkRunLevel { run_mins: number; walk_mins: number }
 
@@ -66,25 +66,8 @@ export function walkRunStrategy(level: WalkRunLevel): string {
 export function walkRunDays(input: Pick<GeneratorInput, 'days_cannot_train' | 'preferred_long_run_day'>): Day[] {
   const blocked = normaliseDays(input.days_cannot_train ?? [])
   const open = DAY_ORDER.filter(d => !blocked.has(d))
-  const want = Math.min(GENERATION_CONFIG.WALK_RUN_START_SESSIONS, open.length)
   const ideal: Day[] = ['tue', 'thu', input.preferred_long_run_day === 'sun' ? 'sun' : 'sat']
-  const idx = (d: Day) => DAY_ORDER.indexOf(d)
-  const adjacent = (a: Day, b: Day) => { const g = Math.abs(idx(a) - idx(b)); return g === 1 || g === 6 }
-  let best: Day[] = open.slice(0, want)
-  let bestScore = Infinity
-  const pick = (from: number, chosen: Day[]) => {
-    if (chosen.length === want) {
-      let pairs = 0
-      for (let i = 0; i < chosen.length; i++) for (let j = i + 1; j < chosen.length; j++) if (adjacent(chosen[i], chosen[j])) pairs++
-      const miss = chosen.filter(d => !ideal.includes(d)).length
-      const score = pairs * 10 + miss
-      if (score < bestScore) { bestScore = score; best = [...chosen] }
-      return
-    }
-    for (let i = from; i < open.length; i++) pick(i + 1, [...chosen, open[i]])
-  }
-  pick(0, [])
-  return best
+  return spreadDays(open, GENERATION_CONFIG.WALK_RUN_START_SESSIONS, [], ideal)
 }
 
 /** One walk-run session at a level. `hrTarget` is §12's easy ceiling where derivable (BASEBUILD-ZONE-CEILING-01). */

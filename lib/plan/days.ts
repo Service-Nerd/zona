@@ -63,3 +63,32 @@ export function longRunDayFor(preferred: 'sat' | 'sun' | undefined, blocked: Rea
   const weekend: Day[] = preferred === 'sat' ? ['sat', 'sun'] : ['sun', 'sat']
   return [...weekend, ...GENERATION_CONFIG.LONG_RUN_FALLBACK_DAYS].find(d => !blocked.has(d)) ?? null
 }
+
+/**
+ * ONRAMP-SPACING-01 (Coaching Board 2026-10-25, R1) — `count` days from `open`, placed so that no two of them, and none
+ * of them and a `fixed` day (the long run), fall on consecutive days where that is possible (the week wraps: Sunday to
+ * Monday is consecutive). Ties go to the set nearest `prefer`, then to the earliest days, so a Monday-first schedule stays
+ * Monday-first. The one owner of spacing, used by the walk-run start and every base-building ramp.
+ */
+export function spreadDays(open: readonly Day[], count: number, fixed: readonly Day[] = [], prefer: readonly Day[] = []): Day[] {
+  const want = Math.min(count, open.length)
+  const idx = (d: Day) => DAY_ORDER.indexOf(d)
+  const adjacent = (a: Day, b: Day) => { const g = Math.abs(idx(a) - idx(b)); return g === 1 || g === 6 }
+  let best: Day[] = open.slice(0, want)
+  let bestScore = Infinity
+  const pick = (from: number, chosen: Day[]) => {
+    if (chosen.length === want) {
+      const all = [...chosen, ...fixed]
+      let pairs = 0
+      for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) if (adjacent(all[i], all[j])) pairs++
+      const miss = prefer.length ? chosen.filter(d => !prefer.includes(d)).length : 0
+      const early = chosen.reduce((a, d) => a + idx(d), 0) / 100
+      const score = pairs * 10 + miss + early
+      if (score < bestScore) { bestScore = score; best = [...chosen] }
+      return
+    }
+    for (let i = from; i < open.length; i++) pick(i + 1, [...chosen, open[i]])
+  }
+  pick(0, [])
+  return best.sort((a, b) => idx(a) - idx(b))
+}

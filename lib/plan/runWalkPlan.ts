@@ -77,6 +77,8 @@ export function runWalkDistanceApplies(distanceKm: number): boolean {
  * runners, both of which carry their own stated reasons.
  */
 export function runWalkPrescriptionApplies(input: GeneratorInput): boolean {
+  // R5 (2026-10-25): after a walk-run start the instruction carries, whatever the distance. Instruction only, never peak.
+  if (input.after_walk_run_start === true) return true
   if (!runWalkDistanceApplies(input.race_distance_km)) return false
   if (input.goal !== 'finish') return false
   if (input.fitness_level !== 'beginner') return false

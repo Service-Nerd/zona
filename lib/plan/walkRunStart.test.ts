@@ -291,3 +291,76 @@ describe('code review fixes (2026-10-25)', () => {
     if (r.ok && 'input' in r) expect((r.input as unknown as Record<string, unknown>).acknowledged_prep_warning).toBeUndefined()
   })
 })
+
+import { generateGetRunningPlan } from './getRunningPlan'
+import { spreadDays } from './days'
+import { generateRulePlan as genRace } from './ruleEngine'
+
+describe('ONRAMP-SPACING-01 — R1 spacing, R2 deloads (Coaching Board sixth sitting)', () => {
+  const ramp = (over: Partial<GeneratorInput>, weeks = 12) =>
+    generateGetRunningPlan(input({ current_weekly_km: 10, longest_recent_run_km: 6, ...over }), START, weeks).plan
+  const days = (w: Week) => Object.entries(w.sessions ?? {}).filter(([, s]) => s && s.type !== 'rest').map(([d]) => d)
+  it('spreadDays: three runs on an open week never touch; Monday-first is kept', () => {
+    expect(spreadDays(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], 3)).toEqual(['mon', 'wed', 'fri'])
+    expect(spreadDays(['mon', 'tue', 'wed'], 2)).toEqual(['mon', 'wed'])
+    expect(spreadDays(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], 2, ['sun'])).toEqual(['tue', 'thu'])
+  })
+  it('🔴 every ramp week puts no two runs on consecutive days when 3 runs fit an open week', () => {
+    const p = ramp({ days_available: 3 })
+    const idx = (d: string) => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].indexOf(d)
+    for (const w of p.weeks) {
+      const ds = days(w)
+      for (let a = 0; a < ds.length; a++) for (let b = a + 1; b < ds.length; b++) expect([1, 6]).not.toContain(Math.abs(idx(ds[a]) - idx(ds[b])))
+    }
+    expect(validateBaseBuildBlock(p.weeks, 10, { spaced: true }).filter(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toEqual([])
+  })
+  it('🔴 the spacing check fires on Mon/Tue/Wed, and not on a week the blocked days force', () => {
+    const p = JSON.parse(JSON.stringify(ramp({ days_available: 3 }))) as Plan
+    const w = p.weeks[2]
+    const [a, b, c] = Object.values(w.sessions).filter(s => s && s.type !== 'rest')
+    w.sessions = { mon: a, tue: b, wed: c } as never
+    expect(validateBaseBuildBlock(p.weeks, 10, { spaced: true }).some(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toBe(true)
+    expect(validateBaseBuildBlock(p.weeks, 10, { spaced: true, blocked: ['thu', 'fri', 'sat', 'sun'] }).some(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toBe(false)
+    expect(validateBaseBuildBlock(p.weeks, 10, {}).some(v => v.code === 'INV-PLAN-ONRAMP-SPACED')).toBe(false)
+  })
+  it('🔴 a deload never holds the block\'s longest run (persona D shape: 8 km/wk, 4 days)', () => {
+    const p = ramp({ current_weekly_km: 8, longest_recent_run_km: 5, days_available: 4 }, 10)
+    let prev: number | null = null
+    for (const w of p.weeks) {
+      const longest = Math.max(0, ...runs(w).map(s => Number(s.distance_km ?? 0)))
+      if (w.type === 'deload' && prev != null) expect(longest).toBeLessThanOrEqual(prev + 0.05)
+      if (w.type !== 'deload') prev = longest
+    }
+    expect(validateBaseBuildBlock(p.weeks, 8, { spaced: true }).filter(v => v.severity === 'error')).toEqual([])
+  })
+  it('🔴 the deload arm fires on a deload holding the longest run', () => {
+    const p = JSON.parse(JSON.stringify(ramp({ current_weekly_km: 8, longest_recent_run_km: 5, days_available: 4 }, 10))) as Plan
+    const d = p.weeks.find(w => w.type === 'deload')!
+    runs(d)[0].distance_km = 20
+    expect(validateBaseBuildBlock(p.weeks, 8, { spaced: true }).some(v => v.code === 'INV-PLAN-ONRAMP-PER-RUN-STEP')).toBe(true)
+  })
+  it('new base-build plans carry the stamp, so the stored-plan validator holds them to R1 and R2', () => {
+    expect((ramp({}).meta as unknown as Record<string, unknown>).onramp_spaced).toBe(true)
+  })
+})
+
+describe('R5 — a race block after a walk-run start keeps the run-walk prescription, the half included', () => {
+  const p = generateStagedRacePlan(input({ current_weekly_km: 5, longest_recent_run_km: 3, days_available: 3 }), START, 12)!
+  const s = stagedRaceOf(p)!
+  const cp = new Date(Date.parse(`${START}T00:00:00Z`) + s.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+  const ran = (km: number) => new Map(p.weeks.map(w => [w.n, { linkedKm: km, offPlanKm: 0, totalKm: km, longestKm: km / 3 }]))
+  it('the half option carries it', () => {
+    const r = evaluateCheckpoint(input({ current_weekly_km: 5 }), p, ran(s.door_km * 0.9), 'km', cp, 'half')
+    if (!(r.ok && 'input' in r)) return
+    expect(r.input.after_walk_run_start).toBe(true)
+    const half = genRace({ ...r.input, acknowledged_prep_warning: true } as GeneratorInput, 'paid', cp)
+    expect(half.weeks.flatMap(w => runs(w)).filter(x => x.type !== 'race').every(x => !!x.run_walk_strategy)).toBe(true)
+  })
+  it('a ramp runner (no walk-run start) gets no such flag', () => {
+    const q = generateStagedRacePlan(input({ current_weekly_km: 10, longest_recent_run_km: 6 }), START, 12)!
+    const qs = stagedRaceOf(q)!
+    const qcp = new Date(Date.parse(`${START}T00:00:00Z`) + qs.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+    const r = evaluateCheckpoint(input({ current_weekly_km: 10 }), q, new Map(q.weeks.map(w => [w.n, { linkedKm: qs.door_km, offPlanKm: 0, totalKm: qs.door_km, longestKm: 6 }])), 'km', qcp)
+    if (r.ok && 'input' in r) expect(r.input.after_walk_run_start).toBeUndefined()
+  })
+})

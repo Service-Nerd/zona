@@ -166,15 +166,16 @@ export async function POST(req: NextRequest) {
       return storedRead.plan
     }
     const isCheckpoint = (guard.body as { checkpoint?: unknown }).checkpoint === true
-    if ('volume_observed' in input) {
+    for (const flag of ['volume_observed', 'after_walk_run_start'] as const) {
+      if (!(flag in input)) continue
       // Kept ONLY for a faithful replay of the runner's own stored plan: the checkpoint measured it, the plan stores it,
       // and a Modify that leaves the volume alone re-sends it (code review: stripping it let §29 re-discount observed
       // volume). Server-verified against the stored input; a client cannot mint it.
       const stored = isCheckpoint ? null : await readStored()
       const gi = (stored?.meta as unknown as { generator_input?: GeneratorInput } | undefined)?.generator_input
-      const faithful = !!gi?.volume_observed && gi.current_weekly_km === input.current_weekly_km
+      const faithful = !!gi?.[flag] && gi.current_weekly_km === input.current_weekly_km
       if (!faithful) {
-        const { volume_observed: _drop, ...rest } = input
+        const { [flag]: _drop, ...rest } = input
         input = rest as GeneratorInput
       }
     }

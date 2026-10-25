@@ -296,6 +296,8 @@ export function generateBaseBuildPlan(
       athlete: input.athlete_name ?? '',
       plan_kind: 'base_build',
       base_build_onramp: true,
+      // ONRAMP-SPACING-01 — built under R1 and R2, so the stored-plan validator holds it to them (new plans only).
+      onramp_spaced: true,
       race_name: 'Base building',
       // No race date: this plan has no start line, and a countdown against one
       // would be the plan claiming something it does not deliver.

@@ -29,10 +29,10 @@ const weekLine = (w: Plan['weeks'][number]) => {
   return `  W${String(w.n).padStart(2)} ${String(w.phase).padEnd(15)} ${w.type === 'deload' ? 'deload ' : '       '}${w.weekly_km != null ? String(w.weekly_km).padStart(5) + 'km' : '    —  '}  ${ss.map(([d, s]) => `${d} ${sess(s)}`).join(' · ')}`
 }
 const raceSummary = (p: Plan) => {
-  const lrs = p.weeks.map(w => Math.max(0, ...Object.values(w.sessions ?? {}).filter(s => s && s.type !== 'rest').map(s => Number((s as Session).distance_km ?? 0))))
+  const lrs = p.weeks.map(w => Math.max(0, ...Object.values(w.sessions ?? {}).filter(s => s && s.type !== 'rest' && s.type !== 'race').map(s => Number((s as Session).distance_km ?? 0))))
   const kms = p.weeks.map(w => w.weekly_km ?? 0)
   const q = p.weeks.reduce((a, w) => a + Object.values(w.sessions ?? {}).filter(s => s && ['quality', 'intervals', 'tempo', 'hard'].includes((s as Session).type)).length, 0)
-  return `  ${p.weeks.length} weeks · week 1 ${kms[0]}km → peak ${Math.max(...kms)}km · longest run ${Math.max(...lrs)}km · ${q} quality sessions · run-walk ${(p.meta as unknown as Record<string, unknown>).run_walk_prescribed ? 'yes' : 'no'}`
+  return `  ${p.weeks.length} weeks · week 1 ${kms[0]}km → peak ${Math.max(...kms)}km · longest training run ${Math.max(...lrs)}km · ${q} quality sessions · run-walk ${(p.meta as unknown as Record<string, unknown>).run_walk_prescribed ? 'yes' : 'no'}`
 }
 for (const persona of PERSONAS) {
   const input = { ...base, ...persona.input } as unknown as GeneratorInput

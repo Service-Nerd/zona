@@ -20,7 +20,10 @@ import { prepBlockWeeks } from './inputs'
  *
  * Four checks, one per binding board amendment that is mechanically checkable.
  */
-export function validateBaseBuildBlock(weeks: Week[], startKm: number): Violation[] {
+export function validateBaseBuildBlock(weeks: Week[], startKm: number,
+  /** ONRAMP-SPACING-01 (R1, R2): `spaced` is the producer's stamp that the plan was built under those rules, so the two
+   *  live plans built before them are not refused on save (new plans only). `blocked` is the runner's blocked days. */
+  opts: { spaced?: boolean; blocked?: readonly string[] } = {}): Violation[] {
   const v: Violation[] = []
   const ramp = weeks.filter(w => w.phase === 'base_build')
   if (ramp.length === 0) return v
@@ -119,6 +122,54 @@ export function validateBaseBuildBlock(weeks: Week[], startKm: number): Violatio
       }
     }
     prevLongest = longest
+  }
+
+  if (opts.spaced) {
+    // ── R2 (Willy): a DELOAD never holds the block's longest run ─────────────
+    let prevBuildLongest: number | null = null
+    for (const w of ramp) {
+      const longest = longestOf(w)
+      if (isDeload(w) && prevBuildLongest != null && longest > prevBuildLongest + 0.05) {
+        v.push({
+          code: 'INV-PLAN-ONRAMP-PER-RUN-STEP', principle_ref: 'CoachingPrinciples §116 Am. 2 (R2)', severity: 'error', week: w.n,
+          message: `Base-build deload W${w.n}'s longest run (${longest.toFixed(1)}km) is longer than the build week before it (${prevBuildLongest.toFixed(1)}km). A deload that holds the block's longest run is not a deload.`,
+          actual: `${longest.toFixed(1)}km`, expected: `<= ${prevBuildLongest.toFixed(1)}km`,
+        })
+      }
+      if (!isDeload(w)) prevBuildLongest = longest
+    }
+    // ── R1 (Sims, Willy): never on consecutive days where the open days allow ──
+    // Read against the fewest consecutive pairs ANY placement of that many runs on the runner's open days could have,
+    // computed here and never by the producer's `spreadDays`, so a producer that stopped spreading is still caught.
+    const idx = (d: string) => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].indexOf(d)
+    const blocked = new Set((opts.blocked ?? []).map(d => String(d).slice(0, 3).toLowerCase()))
+    const open = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].filter(d => !blocked.has(d))
+    const pairs = (days: string[]) => {
+      let n = 0
+      for (let a = 0; a < days.length; a++) for (let b = a + 1; b < days.length; b++) { const g = Math.abs(idx(days[a]) - idx(days[b])); if (g === 1 || g === 6) n++ }
+      return n
+    }
+    const fewest = (k: number) => {
+      let best = Infinity
+      const go = (from: number, chosen: string[]) => {
+        if (chosen.length === k) { best = Math.min(best, pairs(chosen)); return }
+        for (let a = from; a < open.length; a++) go(a + 1, [...chosen, open[a]])
+      }
+      go(0, [])
+      return best
+    }
+    for (const w of ramp) {
+      const days = Object.entries(w.sessions ?? {})
+        .filter(([, s]) => s && s.type !== 'rest' && s.type !== 'cross-train').map(([d]) => d)
+      const have = pairs(days), can = fewest(days.length)
+      if (Number.isFinite(can) && have > can) {
+        v.push({
+          code: 'INV-PLAN-ONRAMP-SPACED', principle_ref: 'CoachingPrinciples §116 (R1)', severity: 'error', week: w.n,
+          message: `Base-build W${w.n} puts runs on consecutive days (${days.join(', ')}) when the runner's open days allow ${can} such pair${can === 1 ? '' : 's'}.`,
+          actual: `${have} consecutive pairs`, expected: `<= ${can}`,
+        })
+      }
+    }
   }
 
   // ── §118 amendment 2 — THE TOTAL BUILD IS BOUNDED ────────────────────────

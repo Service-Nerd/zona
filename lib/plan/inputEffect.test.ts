@@ -127,7 +127,9 @@ function prescription(p: Plan): string {
         const sess = s as unknown as Record<string, unknown> | undefined
         return [day, sess?.type, sess?.label, sess?.detail, sess?.zone, sess?.hr_target,
           sess?.pace_target, sess?.distance_km, sess?.duration_mins, sess?.rpe_target,
-          sess?.role, sess?.catalogue_id, sess?.coach_notes]
+          sess?.role, sess?.catalogue_id, sess?.coach_notes,
+          // R5 (2026-10-25): the run-walk instruction IS prescription; this fingerprint could not see it.
+          sess?.run_walk_strategy]
       }),
     })),
     meta: Object.fromEntries(DERIVED_META.map(k => [k, meta[k]])),
@@ -176,6 +178,8 @@ const SPECS: Record<string, Spec> = {
   weeks_at_current_volume: { values: [2, 20], note: '§29 fresh-return threshold is 8 weeks' },
   // NO-RUNNER-TURNED-AWAY-01, C1: observed volume is consolidated, so §29 must stop discounting it. The baseline is
   // a §29 fresh return (2 weeks at volume), or the flag would read inert for the wrong reason (this file's own trap).
+  after_walk_run_start:    { values: [undefined, true], baseline: { race_distance_km: 21.1, goal: 'finish', fitness_level: 'beginner', longest_recent_run_km: 6 },
+    note: 'R5: a race block after a walk-run start carries the run-walk prescription at any distance, the half included' },
   volume_observed:         { values: [undefined, true], baseline: { weeks_at_current_volume: 2 },
                              note: '§29 off for a MEASURED volume (C1); needs a fresh-return baseline to bite' },
   acknowledged_prep_warning: {

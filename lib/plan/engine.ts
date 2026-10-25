@@ -121,6 +121,7 @@ export function evaluateCheckpoint(
     const options: CheckpointOption[] = [{ kind: 'connect_health' }, { kind: 'later_race' }]
     return { ok: false, status: 422, telemetry, body: { error: NO_RUNS_HEADING, reason: 'checkpoint_no_runs', options } }
   }
+  const afterWalkRunStart = !!(stored.meta as unknown as Record<string, unknown>).walk_run_start_weeks
   const short = !!staged && observed < staged.door_km
   const noFit = !!staged && !staged.target_found
   if (staged && (short || noFit)) {
@@ -129,7 +130,7 @@ export function evaluateCheckpoint(
     // extend runs the target search, so they are tried in order and only until two are found. A re-send stops at its
     // choice. A choice is honoured ONLY if it is one of the options the screen showed, never because its producer
     // happens to build.
-    const afterWalkRun = !!(stored.meta as unknown as Record<string, unknown>).walk_run_start_weeks
+    const afterWalkRun = afterWalkRunStart
     type Built = { kind: 'extend'; plan: Plan } | { kind: 'half' | 'run_walk'; input: GeneratorInput }
     const producers: (() => Built | null)[] = [
       () => { const p = short ? extendedStagedPlan(input, observed, longest, staged, planStart, afterWalkRun) : null; return p ? { kind: 'extend', plan: p } : null },
@@ -150,10 +151,10 @@ export function evaluateCheckpoint(
       if (chosen.kind === 'extend') {
         // The same gate `runEngine` puts on every staged plan it produces (code review: this path returned unchecked).
         const startKm = Number((chosen.plan.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0)
-        enforceViolations([...validateBaseBuildBlock(chosen.plan.weeks, startKm), ...validateStagedRace(chosen.plan)])
+        enforceViolations([...validateBaseBuildBlock(chosen.plan.weeks, startKm, spacingOpts(chosen.plan, input)), ...validateStagedRace(chosen.plan)])
         return { ok: true, telemetry, plan: chosen.plan }
       }
-      return { ok: true, telemetry, input: ownAck(chosen.input, input) }
+      return { ok: true, telemetry, input: carryWalkRun(ownAck(chosen.input, input), afterWalkRunStart) }
     }
     // Recommended first; at most three (Design Board amendment 7), and a later race always kept as the last (E1).
     const options: CheckpointOption[] = [
@@ -181,7 +182,12 @@ export function evaluateCheckpoint(
     } }
   }
   // C1 + C2 — what they RAN, marked observed so §29 does not discount it, and the long run they recorded.
-  return { ok: true, telemetry, input: ownAck(checkpointRaceInput(input, observed, longest), input) }
+  return { ok: true, telemetry, input: carryWalkRun(ownAck(checkpointRaceInput(input, observed, longest), input), afterWalkRunStart) }
+}
+
+/** R5 — a race block built from a plan that began with a walk-run start keeps the run-walk prescription. */
+function carryWalkRun(i: GeneratorInput, after: boolean): GeneratorInput {
+  return after ? { ...i, after_walk_run_start: true } as GeneratorInput : i
 }
 
 /**
@@ -189,6 +195,11 @@ export function evaluateCheckpoint(
  * tests can measure a block at all; the block the runner actually gets carries what the request carried, so a runway
  * that shrank into §44's warn band since signup shows the warning and its acknowledge step (MODIFY-WARN-ACK-01).
  */
+/** ONRAMP-SPACING-01 — the spacing rules apply to a plan its producer stamped as built under them. */
+function spacingOpts(plan: Plan, input: GeneratorInput) {
+  return { spaced: (plan.meta as unknown as Record<string, unknown>).onramp_spaced === true, blocked: input.days_cannot_train ?? [] }
+}
+
 function ownAck(built: GeneratorInput, request: GeneratorInput): GeneratorInput {
   const { acknowledged_prep_warning: _set, ...rest } = built as GeneratorInput & { acknowledged_prep_warning?: boolean }
   const own = (request as GeneratorInput & { acknowledged_prep_warning?: boolean }).acknowledged_prep_warning
@@ -326,7 +337,7 @@ export function runEngine(req: EngineRequest): EngineOutcome {
       const staged = generateStagedRacePlan(input, planStart, doorKm)
       if (staged) {
         const startKm = Number((staged.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0)
-        enforceViolations([...validateBaseBuildBlock(staged.weeks, startKm), ...validateStagedRace(staged)])
+        enforceViolations([...validateBaseBuildBlock(staged.weeks, startKm, spacingOpts(staged, input)), ...validateStagedRace(staged)])
         const s = stagedRaceOf(staged)!
         return {
           kind: 'base_build', plan: staged,

@@ -10,9 +10,9 @@ import { calendarDaysBetween } from '@/lib/dates'
 import { GENERATION_CONFIG } from './generationConfig'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
 import { waterFillEasyKm } from './easyDistribution'
-import { normaliseDays, longRunDayFor, DAY_ORDER, type Day } from './days'
+import { normaliseDays, longRunDayFor, DAY_ORDER, spreadDays, type Day } from './days'
 import type { GeneratorInput } from '@/types/plan'
-import type { Week } from '@/types/plan'
+import type { Week, Session } from '@/types/plan'
 
 // ── Gap classification ─────────────────────────────────────────────────────
 
@@ -224,6 +224,8 @@ function buildFoundationSessions(
    * one showing none, which is the `?? 0` class in display clothing.
    */
   easyTargets?: { paceTarget: string | null; hrTarget: string | null },
+  /** ONRAMP-SPACING-01 — true for a §116/§118/staged ramp (`curve: 'ramp'`). */
+  spread = false,
 ): Week['sessions'] {
   // Normalise before comparing. The wizard sends full day names ('monday') and
   // DEFAULT_DAYS is short form ('mon'), so a raw `new Set(blockedDays)` matched
@@ -321,7 +323,11 @@ function buildFoundationSessions(
   const longRunFinalKm = plan.longKm
   const eachKm = plan.eachKm
 
-  const easyDays = available.filter(d => d !== longDay).slice(0, plan.easyCount)
+  // ONRAMP-SPACING-01 (R1): a base-building RAMP never puts runs on consecutive days where the open days allow (Sims,
+  // Willy: a novice's tissue needs the day between). Race-plan foundation blocks keep their placement: not ruled.
+  const easyDays = spread
+    ? spreadDays(available.filter(d => d !== longDay), plan.easyCount, longDay ? [longDay] : [])
+    : available.filter(d => d !== longDay).slice(0, plan.easyCount)
 
   // §122 Amendment 1 (Coaching Board 2026-10-03, FOUNDATION-LR-S9-01) — THE FOUNDATION
   // LONG RUN CARRIES A DURATION AND IS **NOT** CAPPED BY §9.
@@ -700,7 +706,32 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
       input.max_weekday_mins,
       // FOUNDATION-PACE-STRIPPED-01 — the targets the card reads.
       easyTargets,
+      curve === 'ramp',
     )
+
+    // ONRAMP-SPACING-01 (R2, Willy): a ramp DELOAD never holds the block's longest run. Day-fitting can collapse a deload
+    // to one run (persona D: 7.4 km after weeks of 4.8), and the per-run step check exempts deloads, so this is the only
+    // place it can be stopped. Each run is capped at the previous week's longest; the week is simply lighter, which is
+    // what a deload is, and `weekly_km` then states what the sessions hold.
+    let deloadCappedKm: number | null = null
+    if (curve === 'ramp' && i > 0 && weeklyKm < (rampWeeklyKm as number[])[i - 1] && prevLongestRunKm != null && prevLongestRunKm > 0) {
+      const cap = floor1dp(prevLongestRunKm)
+      let capped = false
+      for (const [d, s] of Object.entries(sessions)) {
+        if (!s || s.type === 'rest' || s.type === 'cross-train' || (s.distance_km ?? 0) <= cap) continue
+        const f = cap / (s.distance_km as number)
+        ;(sessions as Record<string, Session>)[d] = {
+          ...s, distance_km: cap,
+          ...(s.duration_mins ? { duration_mins: Math.round(s.duration_mins * f) } : {}),
+          // Only the leading number changes; the unit stays as the producer wrote it (no glyph assembled here).
+          ...(s.detail ? { detail: s.detail.replace(/^\d+(\.\d+)?(?=km)/, cap.toFixed(1)) } : {}),
+        } as Session
+        capped = true
+      }
+      if (capped) {
+        deloadCappedKm = floor1dp(Object.values(sessions).reduce((a, x) => a + (x && x.type !== 'rest' ? Number(x.distance_km ?? 0) : 0), 0))
+      }
+    }
 
     weeks.push({
       n: weekN,
@@ -739,10 +770,10 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
       // The condition mirrors the sizing branch exactly: `Math.max` there binds
       // if and only if `weeklyKm < minEasyKm`, because for any larger week the
       // day-fitting picks n such that weeklyKm/n >= minEasyKm by construction.
-      weekly_km: Object.keys(sessions).length > 0
+      weekly_km: deloadCappedKm ?? (Object.keys(sessions).length > 0
         && weeklyKm < sessionFloorsFor(input.longest_recent_run_km).easy
         ? sessionFloorsFor(input.longest_recent_run_km).easy
-        : weeklyKm,
+        : weeklyKm),
     })
 
     // §116 — what the NEXT week's §45 cap measures against. Read off the built

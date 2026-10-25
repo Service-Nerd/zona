@@ -103,6 +103,11 @@ export interface GeneratorInput {
   // Set ONLY by the server (`evaluateCheckpoint`); the route strips it from a client body, and an edit to either
   // volume field clears it (`declaredVolumeEdit`), because an edited volume is a declaration again.
   volume_observed?: boolean
+  // NO-RUNNER-TURNED-AWAY-01, R5 (Coaching Board 2026-10-25, sixth sitting) — this race block is built from a plan that
+  // began with a walk-run start, so it carries §117's run-walk PRESCRIPTION (never its peak reduction, §117 Am. 4) at any
+  // distance, the half included: the continuous bout must not near-triple at the handover. Set ONLY by the server
+  // (`evaluateCheckpoint`); the route strips it unless it faithfully replays the runner's own stored plan.
+  after_walk_run_start?: boolean
 
   // 2026-04-28 / H-01 — two-step prep-time UX (CoachingPrinciples §44). When
   // validatePrepTime returns 'warn' and this flag is absent or false, the

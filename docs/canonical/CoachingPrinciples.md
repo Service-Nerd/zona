@@ -10416,6 +10416,15 @@ week is 42% against the ramp's 35%, Willy). **E3:** below the floor at the check
 never restart**: `WALK_RUN_RESUME_WEEKS` (2) at 6/1, then the ramp, only where the block still fits. **Switch-on is
 gated** on these and a re-measurement, and is the founder's decision.
 
+**Real plans read week by week (sixth sitting, 2026-10-25, `docs/decisions/coaching-2026-10-25-real-plans.md`).**
+**R1:** every base-building ramp (§116, §118, staged) places its runs **never on consecutive days** where the runner's
+open days allow (`spreadDays`; Sims, Willy: a novice's tissue needs the day between). **R2:** a ramp deload's longest
+run never exceeds the previous build week's (day-fitting had collapsed one to a single run longer than any before it).
+Both enforced on plans stamped `meta.onramp_spaced` (new plans only): `INV-PLAN-ONRAMP-SPACED` and the deload arm of
+`INV-PLAN-ONRAMP-PER-RUN-STEP`. **R5:** a race block built from a plan with a walk-run start carries §117's run-walk
+prescription at any distance, the half included (`after_walk_run_start`, server-set; §117 Am. 4: the instruction, never
+the peak). R3 (the race block's opening step is per-run small) and R4 (the easier first running week): no change.
+
 **Owner.** `lib/plan/walkRunStart.ts`; composed by `generateStagedRacePlan`. **Enforced by**
 `INV-PLAN-WALKRUN-START-PROGRESSION`. ⚠️ `measure:fitness` and the envelope grid contain no start below 6 km/week
 that stages, so neither measures this cohort; Phase E is its first measurement.

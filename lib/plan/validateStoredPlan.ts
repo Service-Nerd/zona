@@ -60,7 +60,9 @@ export function isBaseBuildPlan(plan: Plan | null | undefined): boolean {
  *  against a guess. */
 function baseBuildErrors(plan: Plan): Violation[] {
   const startKm = Number((plan.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0)
-  return [...validateBaseBuildBlock(plan.weeks ?? [], startKm), ...validateStagedRace(plan)]
+  const meta = plan.meta as unknown as { onramp_spaced?: boolean; generator_input?: GeneratorInput }
+  return [...validateBaseBuildBlock(plan.weeks ?? [], startKm,
+    { spaced: meta.onramp_spaced === true, blocked: meta.generator_input?.days_cannot_train ?? [] }), ...validateStagedRace(plan)]
 }
 
 /** THE predicate for the maintenance kind. Same reason as `isBaseBuildPlan`:

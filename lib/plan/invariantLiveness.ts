@@ -1212,6 +1212,16 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
             checkStaged(pl, m.name)
           }
         }
+        // ONRAMP-SPACING-01 (R1) — a stamped ramp week moved onto Mon/Tue/Wed.
+        {
+          const sp = generateGetRunningPlan({ ...input, current_weekly_km: 10, longest_recent_run_km: 6, days_available: 3 } as GeneratorInput, '2026-10-05', 12).plan
+          const w = sp.weeks[2]
+          const ss = Object.values(w.sessions ?? {}).filter(x => x && x.type !== 'rest')
+          if (ss.length === 3) {
+            w.sessions = { mon: ss[0], tue: ss[1], wed: ss[2] } as never
+            for (const v of validateBaseBuildBlock(sp.weeks, 10, { spaced: true })) if (!woken.has(v.code)) woken.set(v.code, 'ramp: three runs on consecutive days')
+          }
+        }
         // Phase D — the walk-run start (a 0 km/week runner). One mutation per arm of INV-PLAN-WALKRUN-START-PROGRESSION.
         const wr = generateStagedRacePlan({ ...input, current_weekly_km: 0, longest_recent_run_km: 0, race_date: '2027-04-25' } as GeneratorInput, '2026-10-05', 12)
         if (wr) {
