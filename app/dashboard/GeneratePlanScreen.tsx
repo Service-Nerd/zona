@@ -7,7 +7,7 @@ import { InlineError } from '@/components/shared/InlineError'
 import { ACK_FIELD, ACK_LABEL, warnKindOf, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import { stagedDisplay, stagedRaceOf } from '@/lib/plan/stagedRacePlan'
 import StagedRaceBlockCard from '@/components/shared/StagedRaceBlockCard'
-import { BASE_BUILDING_TITLE, WALK_RUN_START_TITLE, basePhaseLine, raceBlockTitle, raceBlockLineFor } from '@/lib/plan/checkpointCopy'
+import { BASE_BUILDING_TITLE, WALK_RUN_START_TITLE, WALK_RUN_START_LINE, basePhaseLine, raceBlockTitle, raceBlockLineFor } from '@/lib/plan/checkpointCopy'
 import PlanHeroMetrics from '@/components/shared/PlanHeroMetrics'
 import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
@@ -1618,7 +1618,8 @@ export default function GeneratePlanScreen({
               if (!phaseWeeks.length) return null
               // A STAGED base build names its checkpoint (Design Board amendment 2), in the founder's words.
               const stagedLine = phase === 'base_build' && staged && stagedRace
-                ? basePhaseLine(stagedRace, staged.checkpointWeekStart, preferredUnits) : undefined
+                ? basePhaseLine(stagedRace, staged.checkpointWeekStart, preferredUnits, Math.max(0, ...phaseWeeks.map(w => w.weekly_km ?? 0)))
+                : phase === 'walk_run_start' ? WALK_RUN_START_LINE : undefined
               return <PhaseSummaryCard key={phase} phase={phase} weeks={phaseWeeks} units={preferredUnits}
                 title={phase === 'base_build' ? BASE_BUILDING_TITLE : phase === 'walk_run_start' ? WALK_RUN_START_TITLE : undefined} line={stagedLine} />
             })}

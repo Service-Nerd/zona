@@ -83,6 +83,16 @@ type Props = {
   outline?: { weeks: number; label: string }
 }
 
+/**
+ * Design Board 2026-10-25 (S1): a rail label WRAPS to two lines before it ellipsises. Measured at 375px on a staged
+ * plan: "Walk-run start" needed 102px in 93, "Base building" 87 in 66, and amendment 10 chose those names, so shortening
+ * them was ruled out (Collins). Ellipsis survives only for a single word that cannot fit (the one-week known limit).
+ */
+const RAIL_LABEL_WRAP = {
+  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal', lineHeight: 1.25,
+  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+} as const
+
 /** Plot height. Tall enough that a deload at ~60% of peak reads as a notch
  *  (22px against 36px), short enough not to dominate a dense screen. */
 const PLOT = 36
@@ -324,9 +334,7 @@ export default function PlanArc({
                     // The phase you are IN is the one worth reading.
                     color: isNow ? 'var(--moss-strong)' : 'var(--mute)',
                     marginTop: '4px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap' }}
+                    ...RAIL_LABEL_WRAP }}
                 >
                   {seg.label ?? ''}
                 </div>
@@ -337,7 +345,7 @@ export default function PlanArc({
             <div style={{ flex: outlineWeeks, minWidth: 0 }}>
               <div style={{ height: '3px', borderRadius: '2px', border: '1px dashed var(--line-strong)', boxSizing: 'border-box' }} />
               <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)', marginTop: '4px',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                ...RAIL_LABEL_WRAP }}>
                 {outline!.label}
               </div>
             </div>

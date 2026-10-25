@@ -17,6 +17,8 @@ const DAY_LABEL: Record<string, string> = DAY_FULL_NAME
 /** A gentle-first-week session is almost always easy; map the rest honestly so
  *  the card never calls a hard session easy. */
 function effortWord(s: Session): string {
+  // Design Board 2026-10-25 (S4): a walk-run session is named by its own label, never "Easy".
+  if (s.walk_run_level) return 'Walk-run'
   switch (s.type) {
     case 'tempo':
     case 'quality':

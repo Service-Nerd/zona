@@ -25,9 +25,19 @@ export const BASE_BUILDING_TITLE = 'Base building'
 export const WALK_RUN_START_TITLE = 'Walk-run start'
 
 /** "Base building · 3 weeks" card body: "Easy running up to about 12 km a week. Checkpoint w/c 16 Nov." */
-export function basePhaseLine(staged: StagedRace, checkpointWeekStart: string, units: DistanceUnits): string {
-  return `Easy running up to about ${km(staged.door_km, units)} a week. Checkpoint w/c ${day(checkpointWeekStart)}.`
+export function basePhaseLine(staged: StagedRace, checkpointWeekStart: string, units: DistanceUnits,
+  /** Where the ramp actually reaches. The card beside it states the peak week, and "up to about 8 km" over "peak 9 km"
+   *  contradicted it (seen rendering, 2026-10-25), so the line quotes the ramp's own end, never below the target. */
+  rampEndKm: number = staged.door_km): string {
+  return `Easy running up to about ${km(Math.max(rampEndKm, staged.door_km), units)} a week. Checkpoint w/c ${day(checkpointWeekStart)}.`
 }
+
+/** Design Board 2026-10-25 (S3): the walk-run start's phase card line. PROPOSED, awaiting the founder's approval. */
+export const WALK_RUN_START_LINE = 'Run 1 minute, walk 2. A minute more running each week.'
+
+/** Design Board 2026-10-25 (S2): the hero's labels on a staged plan. PROPOSED, awaiting the founder's approval. */
+export const STAGED_HERO_TARGET_LABEL = 'a week by the checkpoint'
+export const STAGED_HERO_CHECKPOINT_LABEL = 'checkpoint'
 
 /** The race block before it exists: title "Marathon training", line "from 23 Nov. Built after your checkpoint." */
 export function raceBlockTitle(staged: StagedRace): string {

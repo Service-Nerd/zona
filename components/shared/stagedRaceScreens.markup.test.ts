@@ -226,3 +226,47 @@ describe('the consent screen on the card, wired', () => {
     expect(route).toContain("const choice = rawChoice === 'extend' || rawChoice === 'run_walk' || rawChoice === 'half' ? rawChoice : undefined")
   })
 })
+
+// ── Design Board 2026-10-25: the screens as rendered (S1–S4) ──────────────────────────────────────────────────────
+import PlanHeroMetrics from './PlanHeroMetrics'
+import { firstRunOfPlan } from '@/lib/plan/firstRun'
+import { WALK_RUN_START_LINE } from '@/lib/plan/checkpointCopy'
+
+describe('S1 — rail labels wrap before they ellipsise', () => {
+  it('no rail label is nowrap; it clamps at two lines', () => {
+    const html = arc({ weekPhase: ['Walk-run start', 'Walk-run start', 'Base building', 'Base building'], outline: { weeks: 6, label: 'Marathon training' } })
+    expect(html).not.toContain('white-space:nowrap')
+    expect(html).toContain('-webkit-line-clamp:2')
+  })
+})
+
+describe('S2 — a staged plan\'s hero states the weeks to the race, the target and the checkpoint', () => {
+  const html = renderToStaticMarkup(React.createElement(PlanHeroMetrics, { plan, units: 'km', canReshape: false }))
+  it('weeks match the arc\'s denominator, never the built weeks alone', () => {
+    expect(html).toContain(`>${view.totalWeeks}<`)
+    expect(html).not.toContain(`>${plan.weeks.length}<`)
+    expect(html).not.toContain('in total')
+    expect(html).toContain('a week by the checkpoint')
+  })
+  it('a race plan keeps its three figures', () => {
+    const plain = { ...plan, meta: { ...plan.meta, staged_race: undefined } } as never
+    expect(renderToStaticMarkup(React.createElement(PlanHeroMetrics, { plan: plain, units: 'km', canReshape: false }))).toContain('in total')
+  })
+})
+
+describe('S3, S4 and the ramp line', () => {
+  const wr = generateStagedRacePlan({ ...input, current_weekly_km: 5, longest_recent_run_km: 3, days_available: 3 } as GeneratorInput, START, 12)!
+  it('S4: the first-run card names a walk-run session "Walk-run"', () => {
+    expect(firstRunOfPlan(wr.weeks)?.effort).toBe('Walk-run')
+    expect(firstRunOfPlan(plan.weeks)?.effort).toBe('Easy')
+  })
+  it('S3: the walk-run phase card has its line', () => {
+    const src = readFileSync('app/dashboard/GeneratePlanScreen.tsx', 'utf8')
+    expect(src).toContain(": phase === 'walk_run_start' ? WALK_RUN_START_LINE : undefined")
+    expect(WALK_RUN_START_LINE.length).toBeGreaterThan(0)
+  })
+  it('the base line quotes where the ramp reaches, never below the target', () => {
+    expect(basePhaseLine(staged, view.checkpointWeekStart, 'km', 13.6)).toMatch(/about 13.6\s?km/)
+    expect(basePhaseLine(staged, view.checkpointWeekStart, 'km', 1)).toContain(`about ${staged.door_km}`)
+  })
+})

@@ -1594,7 +1594,7 @@ BASE  BUILD  PEAK TAPER
 - Each bar: `flex: 1`, `height = max(6px, km / peak × 36px)`, radius `2px 2px 0 0` — **top corners only**, because a ridge stands on its axis and rounding the bottom makes the bars float off it.
 - Axis: continuous `1px --line`.
 - Current-week tick: a `2px` row below the axis, `--moss` under the current week only, transparent elsewhere.
-- Phase rail: `3px` bars, radius `2px`, `2px` gap, `6px` above; each segment `flex: <week count>` so it lines up with the ridge. Labels `10px 700 uppercase 0.06em`, `4px` below, ellipsised.
+- Phase rail: `3px` bars, radius `2px`, `2px` gap, `6px` above; each segment `flex: <week count>` so it lines up with the ridge. Labels `10px 700 uppercase 0.06em`, `4px` below, **wrapping to two lines before they ellipsise** (Design Board 2026-10-25, S1: measured at 375px, "Walk-run start" needed 102px in 93 and "Base building" 87 in 66; shortening the names amendment 10 chose was ruled out).
 
 **Why the floor is 6px and ABSOLUTE, not a percentage:** at a 2px radius a bar needs roughly that much height to read as a bar rather than a dash, and the strip doubles as a week counter — a bar that vanishes breaks the reader's ability to count along to "where am I".
 
@@ -6266,6 +6266,14 @@ never the refusal view (`REFUSAL-SCREEN-01` still serves §44 and §52).
 | **Not passing** | A **consent screen** in `MODIFY-CONFIRM-DIFF-01`'s shape: at most three options, the recommended one first, each saying what it changes, one factual sentence of why with the observed figure, never a training-effect claim |
 | **No runs recorded** | Its own state; the first option is to log runs or connect Apple Health. **Never a typed number** (the coaching ruling is observed volume) |
 | **Copy** | One owner, created with the screens, in the shape of `lib/plan/baseBuildCopy.ts`. The words are the founder's (approved 2026-10-24) |
+
+**As rendered (Design Board 2026-10-25, `docs/decisions/design-2026-10-25-staged-screens.md`).** The first render of
+these screens found four defects, ruled: **S1** rail labels wrap before they ellipsise (§12). **S2** a staged plan's
+`PlanHeroMetrics` states the **weeks to the race** (the arc's denominator), the **checkpoint target** and the
+**checkpoint date**, never the built weeks' "in total". **S3** the walk-run phase card carries a line
+(`WALK_RUN_START_LINE`). **S4** the first-run card names a walk-run session "Walk-run", never "Easy". The base card's
+line quotes where the ramp actually reaches (it said "about 8 km" beside "peak 9 km"). Local harness:
+`/staged-preview`. Checks: `components/shared/stagedRaceScreens.markup.test.ts`.
 
 **Held by** `INV-PLAN-STAGED-NO-RACE-BLOCK` for the engine half (built 2026-10-24: a staged plan carries no race-block
 week and ends at its checkpoint). The screen checks named in the ruling land with the screens.

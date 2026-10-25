@@ -1,7 +1,9 @@
 'use client'
 
+import { stagedRaceOf, stagedDisplay } from '@/lib/plan/stagedRacePlan'
+import { STAGED_HERO_TARGET_LABEL, STAGED_HERO_CHECKPOINT_LABEL } from '@/lib/plan/checkpointCopy'
 import type { Plan } from '@/types/plan'
-import { formatDistance } from '@/lib/format'
+import { formatDistance, formatDate } from '@/lib/format'
 import { PAID_FEATURES } from '@/lib/marketing/pricing'
 
 /**
@@ -51,6 +53,11 @@ export default function PlanHeroMetrics({
   const weeklyKms = plan.weeks.map(w => w.weekly_km ?? 0)
   const peakKm    = weeklyKms.length ? Math.max(...weeklyKms) : 0
   const totalKm   = weeklyKms.reduce((a, b) => a + b, 0)
+  // Design Board 2026-10-25 (S2): a STAGED plan's built weeks are not the plan. Its hero states the weeks to the race
+  // (the arc's own denominator: two week counts on one scroll is a ruled defect), the checkpoint target, and the
+  // checkpoint's date, never "33 km in total" for a marathon.
+  const staged = stagedRaceOf(plan)
+  const view = stagedDisplay(plan)
 
   const metric = (value: string, label: string) => (
     <div key={label} style={{ flex: 1, minWidth: 0 }}>
@@ -71,9 +78,15 @@ export default function PlanHeroMetrics({
       border: '1px solid var(--line)', padding: '16px 18px',
     }}>
       <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
-        {metric(String(plan.weeks.length), 'weeks')}
-        {metric(formatDistance(peakKm, units) ?? '—', 'biggest week')}
-        {metric(formatDistance(totalKm, units) ?? '—', 'in total')}
+        {staged && view ? (<>
+          {metric(String(view.totalWeeks), 'weeks')}
+          {metric(formatDistance(staged.door_km, units, { exact: true }) ?? '—', STAGED_HERO_TARGET_LABEL)}
+          {metric(formatDate(view.checkpointWeekStart, 'short') ?? '—', STAGED_HERO_CHECKPOINT_LABEL)}
+        </>) : (<>
+          {metric(String(plan.weeks.length), 'weeks')}
+          {metric(formatDistance(peakKm, units) ?? '—', 'biggest week')}
+          {metric(formatDistance(totalKm, units) ?? '—', 'in total')}
+        </>)}
       </div>
 
       {/* The adaptation promise. ⚠️ The SENTENCE is the `/pricing` row's own,

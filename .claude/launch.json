@@ -4,14 +4,30 @@
     {
       "name": "marketing",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "MARKETING_SITE_ENABLED=true ./node_modules/.bin/next dev"],
+      "runtimeArgs": [
+        "-c",
+        "MARKETING_SITE_ENABLED=true ./node_modules/.bin/next dev"
+      ],
       "port": 3000
     },
     {
       "name": "screenshots",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "4599"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4599"
+      ],
       "port": 4599
+    },
+    {
+      "name": "app",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "./node_modules/.bin/next dev -p 3001"
+      ],
+      "port": 3001
     }
   ]
 }

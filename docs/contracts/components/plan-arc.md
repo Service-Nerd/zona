@@ -41,6 +41,10 @@ type Props = {
 }
 ```
 
+### Rail labels wrap (Design Board 2026-10-25, S1)
+
+Rail labels wrap to two lines (`-webkit-line-clamp: 2`) before they ellipsise. A short label renders exactly as before.
+
 ### `outline` — weeks the plan is for but has not built yet
 
 A staged race plan (`plan_kind: 'base_build'` + `meta.staged_race`) builds its race block only when the checkpoint
