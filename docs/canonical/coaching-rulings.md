@@ -85,7 +85,7 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
-## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 (fifth sitting: the Phase E after-round) · CORRECT WITH AMENDMENT · RULED, not built
+## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 (fifth sitting: the Phase E after-round) · CORRECT WITH AMENDMENT · BUILT 2026-10-25 (E0a, E1, E3; dark; race on their date 33.2% → 61.5%)
 
 After-measurement: marathon refused 5.6% → **0%**; but at the checkpoint, on the best case, **33.2%** of staged runners
 get their race block and **66.8%** only a later race (80% at 90% compliance). **E0** not fit to switch on as built;
