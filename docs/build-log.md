@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 · Phases C, D, E: the screens, the walk-run start, and the number that stopped the switch-on
+**Shipped:** (dark) the staged plan on screen, the checkpoint's consent screen, a walk-run start for runners below 6 km/week, one owner for "is this refusal staged", and the after-round measurement that the Coaching Board ruled on.
+**Dev learning:** the measurement drifted from the engine the same day the engine changed: the envelope only staged §111 refusals, and the walk-run runner is refused by §113 first, so the harness could not see the cohort the build was for. Fixed by making both call `stagingDoorKm`. Also: a zsh loop over an unquoted file list does not split, so my mutation run took no backups and stacked six mutations into uncommitted work; reversed by exact inverse replacement, then re-run one at a time.
+**Product/creator learning:** "nobody refused" and "everybody served" are different claims. Refusals went to zero; at the checkpoint, on the best case, two-thirds of staged marathoners would still be told their race does not fit. The plan delays the no unless day one says it and the checkpoint has a better offer (the same-day half, 28.3%).
+**AI-building learning:** I reported a finding (84 of 117 would build clean) from a quick unweighted probe with an assumed long run, before measuring it on the real population. Weighted and with the ramp's own long run it was 1.5%. A probe is a hypothesis, and I said it as a result.
+**The honest bit:** three of my own checks were hollow first time (run-walk offered without checking it was run-walk; an extend guard tested on a case where it could not matter; a "Two ways" heading with no reachable case).
+**Hook material:** "Refused: 5.6% → 0%. Actually reaching their race: 33%."
+**Postable?:** yes
+
 ## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 (Phase B2) · 5.7% to 71.0%, and the words were not the rule
 **Shipped:** The base-build checkpoint now asks the engine with what the runner actually ran (observed volume, recorded long run, no layoff discount), and the staged plan's target is set where the marathon block starts clean. Still dark.
 **Dev learning:** I built C3 to the sentence the board wrote ("the first week is a step") and measured 64.5%. The board had ruled on a prototype that searched for a race block passing *every* check, which reached 68.7%. The sentence was a summary of the measurement, and a summary is not a spec. Built to the measured rule, 71.0%.

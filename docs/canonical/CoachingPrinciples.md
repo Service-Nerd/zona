@@ -10841,7 +10841,7 @@ it."* Owner: `lib/plan/baseBuildCopy.ts`, single owner, 8 tests including the ru
 **Config.** `GET_RUNNING_MIN_WEEKS = 8`, `GET_RUNNING_MAX_WEEKS = 15`.
 **Owner.** `lib/plan/getRunningPlan.ts`. **Enforced by** `INV-PLAN-GET-RUNNING-BUILD-RATIO`.
 
-### §118 Amendment 4 — a 0 km/week runner is given the walk-run start (Coaching Board 2026-10-24 Q3, 2026-10-25)
+### §118 Amendment 4 — a 0 km/week runner is given the walk-run start (NO-RUNNER-TURNED-AWAY-01, Coaching Board 2026-10-24 Q3, 2026-10-25)
 
 `getRunningApplies` requires an effective start above zero, so **a runner at 0 km/week got nothing at all** (one of the
 six refused charity marathoners). With §116's staging on, a runner below `BASE_BUILD_ONRAMP_MIN_START_KM` who asks for a
