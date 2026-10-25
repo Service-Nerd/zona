@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-10-25 — ONRAMP-SPACING-01 · Reading four real plans found three defects no measurement had
+**Shipped:** base-building runs spread across the week (Mon/Wed/Fri, not Mon/Tue/Wed), deload weeks that never hold the block's longest run, and run-walk kept in any race block after a walk-run start.
+**Dev learning:** every check passed on all three. The spacing defect was in every live base-build plan; a checker that reads the producer's own day-picker would have agreed with it, so the checker brute-forces the fewest possible adjacent pairs itself. New rules on stored plans need a producer stamp, or the save gate refuses the live plans built before the rule.
+**Product/creator learning:** the founder asked "have we generated a plan and passed it by the coach board?" and the honest answer was no: six sittings had ruled on aggregate numbers and none had read a week.
+**AI-building learning:** the input-effect check said the new flag changed nothing, which was the check's fingerprint not including the run-walk instruction. Suspect the instrument first, as this repo keeps recording.
+**The honest bit:** two of these were live for weeks on the two real base-building runners.
+**Hook material:** "Every check green. Then we read the plan: three runs on Monday, Tuesday, Wednesday."
+**Postable?:** yes
+
 ## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 · Phases C, D, E: the screens, the walk-run start, and the number that stopped the switch-on
 **Shipped:** (dark) the staged plan on screen, the checkpoint's consent screen, a walk-run start for runners below 6 km/week, one owner for "is this refusal staged", and the after-round measurement that the Coaching Board ruled on.
 **Dev learning:** the measurement drifted from the engine the same day the engine changed: the envelope only staged §111 refusals, and the walk-run runner is refused by §113 first, so the harness could not see the cohort the build was for. Fixed by making both call `stagingDoorKm`. Also: a zsh loop over an unquoted file list does not split, so my mutation run took no backups and stacked six mutations into uncommitted work; reversed by exact inverse replacement, then re-run one at a time.
