@@ -455,6 +455,14 @@
     "height": 44,
     "width": "auto"
   },
+  "components/dashboard/BootStalled.tsx#Button1": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
   "components/dashboard/CoachTeaser.tsx#Button1": {
     "floor": 44,
     "padY": 14,

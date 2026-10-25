@@ -7,6 +7,9 @@ import { InlineError } from '@/components/shared/InlineError'
 import { FieldReadback } from '@/components/shared/FieldText'
 import { runPlanReadback, strengthPlanReadback } from '@/lib/ui/planChangeReadback'
 import { PlanLoadFailed } from '@/components/dashboard/PlanLoadFailed'
+import { BootStalled } from '@/components/dashboard/BootStalled'
+import { BOOT_STALL_MS, stalledGate, type BootStallGate } from '@/lib/ui/bootWatchdog'
+import { reportBootStall } from '@/lib/ops/reportBootStall'
 import { calendarDaysBetween } from '@/lib/dates'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
@@ -283,6 +286,14 @@ export default function DashboardClient() {
   // PLANS-SINGLE-NOT-MAYBE-01 — the plan READ failed (a database error, not "no plan").
   // Shows PlanLoadFailed instead of sending a runner who HAS a plan to the wizard.
   const [planLoadFailed, setPlanLoadFailed] = useState(false)
+  // BOOT-HANG-01 — the loading screen used to hold forever when the one-shot boot dead-ended. `authResolved`
+  // is the first gate (onAuthStateChange fired); `bootStall` replaces the loading screen with Try again.
+  const [authResolved, setAuthResolved] = useState(false)
+  const [bootStall, setBootStall] = useState<BootStallGate | null>(null)
+  const bootAccessTokenRef = useRef<string | null>(null)
+  /** Set beside every setAppReady(true): a throw AFTER the app opened (Strava, readiness) is not a boot failure. */
+  const appReleasedRef = useRef(false)
+  const bootGatesRef = useRef({ authResolved: false, appReady: false, runAnalysisReady: false, stravaGateOpen: false })
 
   // ── P-02 — MODIFY-PLAN SHEET ORCHESTRATION ──────────────────────────────
   //
@@ -1284,6 +1295,18 @@ export default function DashboardClient() {
     return () => clearTimeout(t)
   }, [])
 
+  // BOOT-HANG-01 — the watchdog. Reads the gates through a ref written on every render, so the timer sees the
+  // CURRENT state rather than the mount-time closure. Fires once; a boot that completes later still renders.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const gate = stalledGate(bootGatesRef.current)
+      if (!gate) return
+      setBootStall(prev => prev ?? gate)
+      void reportBootStall(gate, BOOT_STALL_MS, bootAccessTokenRef.current)
+    }, BOOT_STALL_MS)
+    return () => clearTimeout(t)
+  }, [])
+
   // Resolve a week_n + session_day deep link to a session object and route to
   // the right screen. Shared by the push cold-start effect below and by
   // in-app notification-row taps (NOTIF-01). Needs `plan` loaded to resolve.
@@ -1503,10 +1526,23 @@ export default function DashboardClient() {
   }, [hasPaidAccess, appReady])
 
   useEffect(() => {
+    // BOOT-HANG-01 — the boot's three dead ends. A throw anywhere used to leave the loading screen up for good;
+    // now it becomes the Try again screen at once, and is recorded.
     async function fetchSettings() {
       try {
+        await fetchSettingsOnce()
+      } catch (err) {
+        console.error('[dashboard] boot failed:', err)
+        if (appReleasedRef.current) return   // the app already opened; this was post-boot work, which stays silent
+        setBootStall(prev => prev ?? 'error')
+        void reportBootStall('error', 0, bootAccessTokenRef.current)
+      }
+    }
+    async function fetchSettingsOnce() {
+      try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        // BOOT-HANG-01 — this was a bare `return`: a session that would not verify left the loading screen up.
+        if (!user) { router.replace('/auth/login'); return }
         setUserId(user.id)
 
         // Fetch overrides + user settings + completions in parallel
@@ -1572,7 +1608,7 @@ export default function DashboardClient() {
           if (err instanceof PlanReadError) {
             console.error('[dashboard] plan read failed:', err.message)
             setPlanLoadFailed(true)
-            setAppReady(true)
+            { appReleasedRef.current = true; setAppReady(true) }
             return
           }
           throw err
@@ -1911,7 +1947,7 @@ export default function DashboardClient() {
         }
 
         setOverridesReady(true)
-        setAppReady(true)
+        { appReleasedRef.current = true; setAppReady(true) }
 
         // ADR-011: HealthKit activities are a co-equal match source to Strava.
         // They already live in strava_activities (source='apple_health', written
@@ -2003,7 +2039,9 @@ export default function DashboardClient() {
         const runs = getRuns(activities).filter((r: any) => !hkStravaIds.has(r.id))
         setStravaRuns([...healthKitRuns, ...runs])
         setStravaConnected(true)
-      } catch {}
+      // BOOT-HANG-01 — this was `} catch {}` around the WHOLE boot: any throw before setAppReady left the loading
+      // screen up forever, with no log. Errors now reach fetchSettings(), which decides by `appReleasedRef`.
+      }
       finally { setStravaLoading(false) }
     }
     // Use onAuthStateChange rather than calling fetchSettings() directly.
@@ -2015,6 +2053,8 @@ export default function DashboardClient() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && !loaded) {
         loaded = true
+        setAuthResolved(true)
+        bootAccessTokenRef.current = session?.access_token ?? null
         if (!session) {
           router.replace('/auth/login')
           return
@@ -2752,7 +2792,10 @@ export default function DashboardClient() {
   // Strava gate so an unreachable Strava can't hang the splash.
   const stravaGateOpen = !stravaLoading || stravaSafetyExpired
   const bootReady = appReady && runAnalysisReady && stravaGateOpen
+  bootGatesRef.current = { authResolved, appReady, runAnalysisReady, stravaGateOpen }
   if (!bootReady) {
+    // BOOT-HANG-01 — past BOOT_STALL_MS, or the boot threw: Try again, which is what force-closing used to do.
+    if (bootStall) return <BootStalled onRetry={() => window.location.reload()} />
     return (
       <div style={{
         minHeight: '100dvh', display: 'flex', flexDirection: 'column',

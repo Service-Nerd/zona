@@ -22,6 +22,6 @@ interface EmptyStateProps {
 | `action` | no | **At most one**, an existing `Button` (full-width). § 8: no button unless there is a specific action. |
 | `fill` | no | Whole-screen state: `100dvh`, `--bg`, the 16px gutter. Without it, it centres in its parent (min 200px). |
 
-**Centred on both axes**, text included (the board's ruling). Callers (2026-10-16): Me → Plan history, `PlanLoadFailed`.
+**Centred on both axes**, text included (the board's ruling). Callers (2026-10-16): Me → Plan history, `PlanLoadFailed`. Since 2026-10-25 also `BootStalled` (BOOT-HANG-01): title + one action, no body.
 
 **Check:** `components/shared/emptyState.markup.test.ts`.

@@ -105,6 +105,9 @@ export type OpsEventKind =
   // survives; without it the ops digest read a deleted runner's anonymised rows (ops_events SET NULL) as "never signed
   // up". `detail`: `{ account_age_days }`. No PII.
   | 'account_deleted'
+  // BOOT-HANG-01 (2026-10-25) — the dashboard's loading screen held for BOOT_STALL_MS, or the boot threw. Posted by the
+  // client to /api/ops/boot-report, attributed only when a valid bearer came with it. `detail`: `{ gate, elapsed_ms, native }`.
+  | 'boot_stalled'
   | 'plan_enrich_failed'        // AI enrichment silently fell back to rule-engine output (GEN-FIX-02)
   | 'plan_rule_invalid'         // a GENERATED rule plan violated its own constitution (ENRICH-ATTRIB-01)
   // ENRICH-SERVER-SAVE-01 (2026-09-04) — the server's own persist of the enriched

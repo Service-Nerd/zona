@@ -27,6 +27,17 @@ already decided what it is.
 
 ---
 
+### 🔲 `NATIVE-CONFIG-DRIFT-01` — the iOS app's bundled config is behind `capacitor.config.ts` ⚙️ **NO BOARD**
+
+Found 2026-10-25 while debugging BOOT-HANG-01. `ios/App/App/capacitor.config.json` (what the binary actually reads)
+has **no `www.zonna.run` in `allowNavigation`** and no `PushNotifications.presentationOptions`, both present in
+`capacitor.config.ts`. The first is the ONBOARD-EXIT-01 fix (sign-out opening Safari); the second is foreground push
+banners. **Not measured:** whether the TestFlight binary was built from a later, uncommitted sync, which would make this
+the committed copy only. **Fix:** `npm run sync:ios` (never raw `npx cap sync ios`), commit, and a new binary
+(founder: native change, needs a build). Worth a gate: compare the two configs in CI.
+
+---
+
 
 ### ✅ `SAVE-PATTERN-01` — **SHIPPED 2026-10-18.** One journey for changing a plan; a save never ends in silence 🧭 **DESIGN BOARD RULED 2026-10-18 (SHIP WITH AMENDMENT)**
 
