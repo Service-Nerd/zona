@@ -111,7 +111,7 @@ diffed. Plan-level change detection is `npm run verify:parity`, which hashes
 
 A §111 refusal that the engine can stage is scored as its **composed plan**: the base-building weeks plus the race
 plan generated from the checkpoint with `current_weekly_km` at the door. One definition, `lib/plan/stagedScore.ts`,
-called by `envelopeMeasure.ts` and `cohort-review.ts --staging` (a report; the cohort step's own band accounting does not stage yet, `COHORT-REVIEW-STAGED-01`). Staged cases leave `refusedPct` and
+called by `envelopeMeasure.ts` and `cohort-review.ts` (since 2026-10-25 the cohort step counts a staged runner as served, scored clean only if the composed plan is; `STAGED:` marks their objections; refused means only what staging cannot serve). Staged cases leave `refusedPct` and
 enter `fitPct`, fit only if clean; `fitPctPreCorrection` remains the founder's bar (every refusal and every unclean
 staged plan a fail). `stagedPct`, `stagedCleanPct` and `stagedObjections` are recorded and gated.
 The race block is built by `checkpointRaceInput` (the same owner the checkpoint uses) at the plan's own target (C3) with the ramp's longest session, marked observed (C1, C2). **Shipped behaviour is the default** (`onRampEnabled()`, ON since 2026-10-25, and the envelope baseline was re-written to it that day); `--staging` is now redundant and still

@@ -3153,7 +3153,7 @@ week's (deload arm on `INV-PLAN-ONRAMP-PER-RUN-STEP`). New plans only.
 The marathon block carries §117's run-walk; the half option does not, so the continuous bout near-triples in week 1.
 Ruled: any race block built from a walk-run start carries the run-walk prescription (§117 Am. 4).
 
-### 🔲 `COHORT-REVIEW-STAGED-01` — the cohort report still describes a refused runner as getting the get-running plan *(filed 2026-10-25)* ⚙️ **NO BOARD**
+### ✅ `COHORT-REVIEW-STAGED-01` — **FIXED 2026-10-25** — the cohort report still describes a refused runner as getting the get-running plan *(filed 2026-10-25)* ⚙️ **NO BOARD**
 
 Since staging is on by default, a §111/§113-refused marathoner receives a staged race plan, but `scripts/cohort-review.ts`
 (the `review:coaching` cohort step) still counts them refused and "served" by §118's get-running plan; `--staging`

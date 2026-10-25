@@ -5,31 +5,42 @@
   "42.2": {
    "4": {
     "n": 220,
-    "refusedPct": 100,
-    "cleanPct": 0,
+    "refusedPct": 0,
+    "cleanPct": 7,
     "servedPct": 100,
-    "doorPct": 81.7,
-    "objections": {}
+    "doorPct": null,
+    "objections": {
+     "STAGED:CHECKPOINT-REFUSAL:PrepTimeError": 42.5,
+     "STAGED:CHECKPOINT-REFUSAL:LongRunReadinessError": 31.9,
+     "STAGED:LONG-RUN-SHORT": 18.7,
+     "STAGED:WEEK1-LEAP": 0.1
+    }
    },
    "8": {
     "n": 219,
-    "refusedPct": 67.9,
-    "cleanPct": 10.2,
+    "refusedPct": 0,
+    "cleanPct": 34.5,
     "servedPct": 100,
-    "doorPct": 100,
+    "doorPct": null,
     "objections": {
-     "LONG-RUN-SHORT": 21.9
+     "LONG-RUN-SHORT": 21.9,
+     "STAGED:CHECKPOINT-REFUSAL:LongRunReadinessError": 16,
+     "STAGED:LONG-RUN-SHORT": 15.4,
+     "STAGED:CHECKPOINT-REFUSAL:PrepTimeError": 12.3,
+     "STAGED:WEEK1-LEAP": 1
     }
    },
    "15": {
     "n": 220,
-    "refusedPct": 35.3,
-    "cleanPct": 23.4,
+    "refusedPct": 0,
+    "cleanPct": 47.5,
     "servedPct": 100,
-    "doorPct": 100,
+    "doorPct": null,
     "objections": {
      "LONG-RUN-SHORT": 35.3,
-     "WEEK1-LEAP": 27.2
+     "WEEK1-LEAP": 27.2,
+     "STAGED:WEEK1-LEAP": 11,
+     "STAGED:LONG-RUN-SHORT": 4.5
     }
    },
    "25": {

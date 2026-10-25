@@ -34,6 +34,7 @@ import { getRunningApplies, generateGetRunningPlan } from '../lib/plan/getRunnin
 import { weeksBetweenLocal } from '../lib/plan/length'
 import { stagingApplies, stagingDoorKm } from '../lib/plan/stagedRacePlan'
 import { scoreStagedCase } from '../lib/plan/stagedScore'
+import { onRampEnabled } from '../lib/plan/baseBuildOnRamp'
 
 const BASELINE = join(__dirname, '..', 'lib', 'plan', '__fixtures__', 'cohortReviewBaseline.json')
 
@@ -145,6 +146,22 @@ function measure(): Report {
         // A non-designed throw is a crash, not a refusal, and must not be
         // silently folded into the refusal rate.
         if (!isDesignedRefusal(e)) continue
+        // COHORT-REVIEW-STAGED-01 (2026-10-25): what the runner ACTUALLY gets. Since staging is on by default, a refusal
+        // the engine stages is a plan for their race, not a refusal: scored as its composed plan (`stagedScore`, the one
+        // definition), clean only if it is. "Refused" now means only what staging cannot serve.
+        if (onRampEnabled()) {
+          const ps0 = (i as unknown as Record<string, string>).plan_start ?? REVIEW_TODAY
+          const door0 = stagingDoorKm(e, c.input, ps0)
+          if (door0 !== null && stagingApplies(c.input, door0, weeksBetweenLocal(ps0, (i as unknown as Record<string, string>).race_date))) {
+            const sc0 = scoreStagedCase(c.input, ps0, door0)
+            if (sc0) {
+              if (sc0.clean) b.clean += c.weight
+              for (const code of [...sc0.objectionCodes, ...sc0.errorCodes, ...(sc0.refusedAtCheckpoint ? [`CHECKPOINT-REFUSAL:${sc0.refusedAtCheckpoint}`] : [])])
+                b.obj[`STAGED:${code}`] = (b.obj[`STAGED:${code}`] ?? 0) + c.weight
+              if (!STAGING) continue
+            }
+          }
+        }
         if (STAGING) {
           const ps = (i as unknown as Record<string, string>).plan_start ?? REVIEW_TODAY
           const t = ((stagedTally[String(dist)] ??= {})[key] ??= { w: 0, staged: 0, clean: 0, codes: {} })
