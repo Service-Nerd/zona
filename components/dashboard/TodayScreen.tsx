@@ -17,6 +17,7 @@ import CoachByline from '@/components/shared/CoachByline'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import ConnectRunsBanner from '@/components/dashboard/ConnectRunsBanner'
 import ManualRunModal from '@/components/dashboard/ManualRunModal'
+import type { CheckpointConsent } from '@/lib/plan/checkpointCopy'
 import NextGoalCard from '@/components/training/NextGoalCard'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
 import { PLAN_CHANGE_SAVE_FAILED } from '@/lib/ui/planChangeCopy'
@@ -640,7 +641,7 @@ function heroGreeting(firstName?: string | null): string {
   return firstName ? `${greeting}, ${firstName}` : greeting
 }
 
-export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, handover, onBuildRacePlan, onDismissHandover, handoverBusy, handoverError = null, handoverAckLabel = null, onHandoverAcknowledge, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow, strength = null, onStrengthInvite, checkpointLine = null }: {
+export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, handover, onBuildRacePlan, onDismissHandover, handoverBusy, handoverError = null, handoverAckLabel = null, onHandoverAcknowledge, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow, strength = null, onStrengthInvite, checkpointLine = null, checkpointConsent = null, onCheckpointOption }: {
   recalTile?: React.ReactNode
   /** OPS-ATTRIB-01 — passed as a NODE, the same shape as `recalTile`, so Today
    *  does not need a Supabase client or the answered-state. Design Board
@@ -696,6 +697,11 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   /** NO-RUNNER-TURNED-AWAY-01 (Design Board amendment 4) — set only in the last week of a STAGED base build. It takes
    *  the coach-note slot for EVERY tier: it says how the plan works, which is access, not richness. */
   checkpointLine?: string | null
+  /** NO-RUNNER-TURNED-AWAY-01 (Design Board amendments 5, 7, 8) — the checkpoint did not pass, or saw no runs. The
+   *  handover card becomes its consent screen: what they ran, why, and only the options the engine will build,
+   *  recommended first. Built by `checkpointConsent()`; no meter, ever. */
+  checkpointConsent?: CheckpointConsent | null
+  onCheckpointOption?: (kind: CheckpointConsent['options'][number]['kind']) => void
   coachNoteSettled?: boolean
   runAnalysisMap?: Record<number, Record<string, any>>
   runAnalysisReady?: boolean
@@ -1619,7 +1625,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                 fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 800,
                 color: 'var(--ink)', letterSpacing: '-0.01em', marginBottom: 'var(--space-2)',
               }}>
-                {handover.title}
+                {checkpointConsent ? checkpointConsent.heading : handover.title}
               </div>
               {/* ⚠️ 14px, NOT the 13px this card's sibling uses. `appTypeScale.test.ts`
                   declares {10,11,12,14,15,17,20,26,44,56} and **13 is undeclared** — I
@@ -1628,25 +1634,38 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
                   may not add to it. One pixel from its sibling, and nobody has seen
                   either on a device, so that difference is arithmetic and not an
                   observation. */}
-              <p style={{
-                fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)',
-                lineHeight: '1.45', margin: '0 0 10px',
-              }}>
-                {handover.line}
-              </p>
+              {(checkpointConsent ? checkpointConsent.why : handover.line) && (
+                <p style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)',
+                  lineHeight: '1.45', margin: '0 0 10px',
+                }}>
+                  {checkpointConsent ? checkpointConsent.why : handover.line}
+                </p>
+              )}
               {/* The achievement, stated as fact. Absent rather than half-stated when the
                   block recorded no volumes. */}
-              {handover.metric && (
+              {!checkpointConsent && handover.metric && (
                 <div style={{ ...MICRO_LABELS.sectionLabel, fontFamily: 'var(--font-ui)',
                   color: 'var(--mute)', marginBottom: 'var(--space-4)' }}>
                   {handover.metric}
                 </div>
               )}
-              <Button variant="primary" fullWidth
-                onClick={onBuildRacePlan} disabled={handoverBusy}
-                style={{ marginBottom: '4px' }}>
-                {handoverBusy ? 'Building…' : handover.primary}
-              </Button>
+              {/* The consent screen's options, recommended first: the first is the primary action, the rest are
+                  secondary, each its own label (`MODIFY-CONFIRM-DIFF-01`'s shape, Design Board amendment 7). */}
+              {checkpointConsent ? checkpointConsent.options.map((o, i) => (
+                <Button key={o.kind} variant={i === 0 ? 'primary' : 'secondary'} fullWidth
+                  data-checkpoint-option={o.kind}
+                  onClick={() => onCheckpointOption?.(o.kind)} disabled={handoverBusy}
+                  style={{ marginBottom: '4px' }}>
+                  {handoverBusy && i === 0 ? 'Building…' : o.label}
+                </Button>
+              )) : (
+                <Button variant="primary" fullWidth
+                  onClick={onBuildRacePlan} disabled={handoverBusy}
+                  style={{ marginBottom: '4px' }}>
+                  {handoverBusy ? 'Building…' : handover.primary}
+                </Button>
+              )}
               {/* The outcome, where the action was. `--warn`, never `--danger`:
                   a designed refusal is not an error state (§INV-DS-005). */}
               {handoverError && (

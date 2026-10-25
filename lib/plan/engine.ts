@@ -54,7 +54,8 @@ import { isDesignedRefusal } from './designedRefusal'
 import { effectiveStartKm } from './startVolume'
 import { BaseVolumeError } from './baseVolume'
 import { assessOnRamp, onRampEnabled } from './baseBuildOnRamp'
-import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput } from './stagedRacePlan'
+import { generateStagedRacePlan, stagedRaceOf, observedCheckpointKm, observedLongestRunKm, checkpointRaceInput, extendedStagedPlan, runWalkFinishInput, type CheckpointOption, type CheckpointChoice } from './stagedRacePlan'
+import { notPassedHeading, notPassedWhy, NO_RUNS_HEADING, CHOOSE_HEADING } from './checkpointCopy'
 import { isBaseBuildPlan } from './validateStoredPlan'
 import type { WeeklyLoad } from '@/lib/coaching/weeklyActualLoad'
 import { validateBaseBuildBlock, validateStagedRace } from './baseBuildValidate'
@@ -62,8 +63,6 @@ import { generateGetRunningPlan, getRunningApplies } from './getRunningPlan'
 import { baseBuildOfferLine, baseBuildOfferTitle, baseBuildOfferWhy } from './baseBuildCopy'
 import { LongRunReadinessError } from './longRunReadiness'
 import { formatDistance, type DistanceUnits } from '@/lib/format'
-import { raceLabelFor } from './raceLabel'
-import { raceDistanceKey } from './generationConfig'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
 /** Re-exported so the caller has ONE engine import for generate + validate. The
@@ -81,25 +80,26 @@ export { isBaseBuildPlan } from './validateStoredPlan'
  * the request carried, so a client cannot state its own checkpoint, and §111 then decides in `runEngine` as for any
  * other input.
  */
-function notReachedCopy(observedKm: number, targetKm: number, raceKm: number, units: DistanceUnits): string {
-  const ran = formatDistance(observedKm, units, { exact: true })
-  const need = formatDistance(targetKm, units, { exact: true })
-  const label = raceLabelFor(raceDistanceKey(raceKm))
-  const Label = label.charAt(0).toUpperCase() + label.slice(1)
-  return ran && need
-    ? `You ran ${ran} a week. ${Label} training needs about ${need} to start safely.`
-    : `${Label} training needs a bit more weekly running to start safely.`
-}
+export type { CheckpointChoice } from './stagedRacePlan'
 
 export type CheckpointOutcome =
+  /** The race block is built from this input, through `runEngine`, like any other race plan. */
   | { ok: true; input: GeneratorInput; telemetry: EngineTelemetry }
+  /** `extend`: more base building, already generated (a staged plan is its own plan object, like `base_build`). */
+  | { ok: true; plan: Plan; telemetry: EngineTelemetry }
   | { ok: false; status: 409 | 422; body: Record<string, unknown>; telemetry: EngineTelemetry | null }
 
+/**
+ * @param planStart the Monday any plan built here starts, the one `runEngine` will use for the race block.
+ * @param choice set only on the re-send from the consent screen; each is honoured only if it is still on offer.
+ */
 export function evaluateCheckpoint(
   input: GeneratorInput,
   stored: Plan | null,
   loads: ReadonlyMap<number, WeeklyLoad> | null,
   displayUnits: DistanceUnits,
+  planStart: string = formatDate(nextMonday()),
+  choice?: CheckpointChoice,
 ): CheckpointOutcome {
   if (!stored || !isBaseBuildPlan(stored) || !loads) {
     return { ok: false, status: 409, telemetry: null,
@@ -115,23 +115,47 @@ export function evaluateCheckpoint(
     door_km: staged?.door_km ?? null, staged: !!staged, race_distance_km: input.race_distance_km,
   } }
   if (observed === null || longest === null) {
-    return { ok: false, status: 422, telemetry, body: { error: "We haven't seen any runs yet.", reason: 'checkpoint_no_runs' } }
+    // Design Board amendment 8: never a typed number. The first option is a way to get the runs in front of us.
+    // ⚠️ NOT "Log a run" (approved words, withheld): a manual log is dated today, after the weeks the checkpoint reads,
+    // so it could never change this answer (`NO-RUNNER-CHECKPOINT-LOG-DATE-01`). A later race keeps it from a dead end.
+    const options: CheckpointOption[] = [{ kind: 'connect_health' }, { kind: 'later_race' }]
+    return { ok: false, status: 422, telemetry, body: { error: NO_RUNS_HEADING, reason: 'checkpoint_no_runs', options } }
   }
-  // C3 — a staged plan carries its target from day one, and the race block is only built at or above it. Below it
-  // §111 might still admit the runner, but into a first week that is a leap; the consent screen offers the choices.
-  if (staged && observed < staged.door_km) {
+  const short = !!staged && observed < staged.door_km
+  const noFit = !!staged && !staged.target_found
+  if (staged && (short || noFit)) {
+    // Each option exists only where its producer builds a plan we would hand over (`stagedRacePlan.ts`).
+    const extend = short ? extendedStagedPlan(input, observed, longest, staged, planStart) : null
+    const runWalk = runWalkFinishInput(input, observed, longest, planStart)
+    if (choice === 'extend' && extend) {
+      telemetry.detail.choice = 'extend'
+      return { ok: true, telemetry, plan: extend }
+    }
+    if (choice === 'run_walk' && runWalk) {
+      telemetry.detail.choice = 'run_walk'
+      return { ok: true, telemetry, input: runWalk }
+    }
+    const options: CheckpointOption[] = [
+      ...(extend ? [{ kind: 'extend' as const, weeks: stagedRaceOf(extend)!.checkpoint_week }] : []),
+      ...(runWalk ? [{ kind: 'run_walk' as const }] : []),
+      { kind: 'later_race' },
+    ]
+    telemetry.detail.options = options.map(o => o.kind)
+    // C3 — the race block is only built at or above the plan's target: below it §111 might still admit the runner,
+    // but into a first week that is a leap. The founder's approved words (2026-10-24), via `checkpointCopy.ts`.
+    if (short) {
+      return { ok: false, status: 422, telemetry, body: {
+        error: `${notPassedHeading(observed, displayUnits)} ${notPassedWhy(staged.door_km, staged.race_distance_km, displayUnits)}`,
+        reason: 'checkpoint_not_reached', observed_km: observed, target_km: staged.door_km,
+        race_distance_km: staged.race_distance_km, options,
+      } }
+    }
+    // C4 — no clean target existed for this runner's race date, so even at the door the race block would not be one
+    // we would hand over. The runner chooses (ADR-012); the engine does not build it silently. "Two ways" only where
+    // there are two; otherwise the observed figure, said plainly (Design Board amendment 5).
     return { ok: false, status: 422, telemetry, body: {
-      // The founder's approved words (2026-10-24), units through ADR-015's owner and the race through its noun's.
-      error: notReachedCopy(observed, staged.door_km, staged.race_distance_km, displayUnits),
-      reason: 'checkpoint_not_reached', observed_km: observed, target_km: staged.door_km,
-    } }
-  }
-  // C4 — no clean target existed for this runner's race date, so even at the door the race block would not be one we
-  // would hand over. The runner chooses (ADR-012), on the consent screen; the engine does not build it silently.
-  if (staged && !staged.target_found) {
-    return { ok: false, status: 422, telemetry, body: {
-      error: 'Two ways to get to the start line from here.',
-      reason: 'checkpoint_choose', observed_km: observed, options: ['run_walk', 'later_race'],
+      error: options.length === 2 ? CHOOSE_HEADING : notPassedHeading(observed, displayUnits),
+      reason: 'checkpoint_choose', observed_km: observed, race_distance_km: staged.race_distance_km, options,
     } }
   }
   // C1 + C2 — what they RAN, marked observed so §29 does not discount it, and the long run they recorded.

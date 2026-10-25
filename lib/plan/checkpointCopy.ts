@@ -10,7 +10,7 @@
 import { formatDistance, formatDate, type DistanceUnits } from '@/lib/format'
 import { raceLabelFor } from './raceLabel'
 import { raceDistanceKey } from './generationConfig'
-import type { StagedRace } from './stagedRacePlan'
+import type { StagedRace, CheckpointOption } from './stagedRacePlan'
 
 const raceNoun = (raceKm: number) => {
   const l = raceLabelFor(raceDistanceKey(raceKm))
@@ -54,7 +54,7 @@ export function notPassedWhy(targetKm: number, raceKm: number, units: DistanceUn
 }
 
 /** Not passed: the options, recommended first (Design Board amendment 7). The approved "Two more weeks" is the
- *  engine's own number of weeks. */
+ *  engine's own number of weeks (founder-approved 2026-10-25). */
 export function extendOptionLabel(weeks: number): string {
   return `${weeks === 1 ? 'One more week' : `${weeks} more weeks`} of base building`
 }
@@ -63,7 +63,46 @@ export function runWalkOptionLabel(raceKm: number): string {
 }
 export const LATER_RACE_OPTION_LABEL = 'Pick a later race'
 
+/** C4, no target fits the runway (founder-approved 2026-10-25). Only where both of its two ways are on offer. */
+export const CHOOSE_HEADING = 'Two ways to get to the start line from here.'
+
 /** No runs recorded (Design Board amendment 8). */
 export const NO_RUNS_HEADING = "We haven't seen any runs yet."
 export const CONNECT_HEALTH_OPTION_LABEL = 'Connect Apple Health'
 export const LOG_RUN_OPTION_LABEL = 'Log a run'
+
+/** The consent screen (Design Board amendments 5, 7, 8), from the checkpoint's 422 body. Null for any other body. */
+export interface CheckpointConsent {
+  heading: string
+  /** One factual sentence of why, with the observed figure. Never a training-effect claim. */
+  why: string | null
+  /** Recommended first; at most three (the engine offers only what will build). */
+  options: { kind: CheckpointOption['kind']; label: string }[]
+}
+
+export function checkpointConsent(body: Record<string, unknown> | null | undefined, units: DistanceUnits): CheckpointConsent | null {
+  const reason = body?.reason
+  const options = Array.isArray(body?.options) ? (body!.options as CheckpointOption[]) : null
+  if (!options || (reason !== 'checkpoint_no_runs' && reason !== 'checkpoint_not_reached' && reason !== 'checkpoint_choose')) return null
+  const observed = typeof body!.observed_km === 'number' ? body!.observed_km : null
+  const raceKm = typeof body!.race_distance_km === 'number' ? body!.race_distance_km : null
+  const target = typeof body!.target_km === 'number' ? body!.target_km : null
+  const label = (o: CheckpointOption): string | null => {
+    switch (o.kind) {
+      case 'extend':         return o.weeks > 0 ? extendOptionLabel(o.weeks) : null
+      case 'run_walk':       return raceKm ? runWalkOptionLabel(raceKm) : null
+      case 'later_race':     return LATER_RACE_OPTION_LABEL
+      case 'connect_health': return CONNECT_HEALTH_OPTION_LABEL
+      case 'log_run':        return LOG_RUN_OPTION_LABEL
+      default:               return null
+    }
+  }
+  const shown = options.slice(0, 3).map(o => ({ kind: o.kind, label: label(o) }))
+    .filter((o): o is { kind: CheckpointOption['kind']; label: string } => !!o.label)
+  if (reason === 'checkpoint_no_runs') return { heading: NO_RUNS_HEADING, why: null, options: shown }
+  if (observed === null) return null
+  if (reason === 'checkpoint_not_reached') {
+    return { heading: notPassedHeading(observed, units), why: target && raceKm ? notPassedWhy(target, raceKm, units) : null, options: shown }
+  }
+  return { heading: shown.length === 2 ? CHOOSE_HEADING : notPassedHeading(observed, units), why: null, options: shown }
+}

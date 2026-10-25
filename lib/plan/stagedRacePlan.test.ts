@@ -137,9 +137,21 @@ describe('C4 — no clean target: the checkpoint offers a choice, never a block 
     const at = new Map(plan.weeks.map(w => [w.n, load(stagedRaceOf(plan)!.door_km + 2, 6)]))
     const out = evaluateCheckpoint(NOFIT, plan, at, 'km')
     expect(out.ok).toBe(false)
-    if (!out.ok) expect(out.body).toMatchObject({ reason: 'checkpoint_choose', options: ['run_walk', 'later_race'] })
+    // Never "more base building": the target does not exist to build toward (C4).
+    if (!out.ok) {
+      expect(out.body.reason).toBe('checkpoint_choose')
+      const kinds = (out.body.options as { kind: string }[]).map(o => o.kind)
+      expect(kinds).not.toContain('extend')
+      expect(kinds[kinds.length - 1]).toBe('later_race')
+      // "Two ways" only where two are on offer; otherwise the observed figure, plainly.
+      expect(out.body.error).toEqual(kinds.length === 2 ? 'Two ways to get to the start line from here.' : expect.stringMatching(/^You ran .+ a week\.$/))
+    }
   })
 })
+
+// ⚠️ C4's "Two ways" heading has NO reachable case on the measured grid (2026-10-25): at each no-fit runner's real
+// checkpoint §117 built a run-walk plan for 0 of 231, so they are offered a later race alone. Filed for the Phase E
+// board round as NO-RUNNER-CHECKPOINT-NOFIT-01; the branch is kept because the board ruled it, not because it fires.
 
 describe('C1 — §29 does not discount OBSERVED volume', () => {
   const returner = input({ current_weekly_km: 12, longest_recent_run_km: 6, training_age: '2-5yr' })
@@ -209,7 +221,7 @@ describe('C3 — the checkpoint target: the race block begins as a step, never a
     if (!no.ok) expect(no.body.reason).toBe('checkpoint_not_reached')
     const yes = evaluateCheckpoint(LEAP, plan, at, 'km')
     expect(yes.ok).toBe(true)
-    if (yes.ok) expect(yes.input).toMatchObject({ current_weekly_km: s.door_km, longest_recent_run_km: 5, volume_observed: true })
+    if (yes.ok && 'input' in yes) expect(yes.input).toMatchObject({ current_weekly_km: s.door_km, longest_recent_run_km: 5, volume_observed: true })
   })
 })
 
@@ -242,3 +254,78 @@ describe('the engine — behind §116\'s flag', () => {
 
 // Typed so a test file edit cannot silently widen what a staged plan is.
 export type _Plan = Plan
+
+describe('C4 + Design Board amendment 7 — the checkpoint offers only what will build', () => {
+  const BEG = input({ fitness_level: 'beginner' } as Partial<GeneratorInput>)
+  const plan = generateStagedRacePlan(BEG, START, 12)!
+  const s = stagedRaceOf(plan)!
+  const cpStart = new Date(Date.parse(`${START}T00:00:00Z`) + s.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+  const ran = (km: number) => new Map(plan.weeks.map(w => [w.n, load(km, km / 3)]))
+  const kinds = (r: ReturnType<typeof evaluateCheckpoint>) => r.ok ? 'PASS' : ((r.body.options as { kind: string }[]) ?? []).map(o => o.kind)
+
+  it('no runs: Apple Health first, then a later race; never a typed number, and not "Log a run" (dated today)', () => {
+    expect(kinds(evaluateCheckpoint(BEG, plan, new Map(), 'km', cpStart))).toEqual(['connect_health', 'later_race'])
+  })
+  it('short of the target: more base building first, then run-walk, then a later race, at most three', () => {
+    const r = evaluateCheckpoint(BEG, plan, ran(s.door_km * 0.95), 'km', cpStart)
+    expect(kinds(r)).toEqual(['extend', 'run_walk', 'later_race'])
+    if (!r.ok) expect((r.body.options as { weeks?: number }[])[0].weeks).toBeGreaterThan(0)
+  })
+  it('🔴 run-walk is offered only where §117 actually builds a run-walk plan (not to an intermediate runner)', () => {
+    const INT = input({ fitness_level: 'intermediate', user_declared_level: 'intermediate' } as Partial<GeneratorInput>)
+    const p = generateStagedRacePlan(INT, START, 12)!
+    const st = stagedRaceOf(p)!
+    const r = evaluateCheckpoint(INT, p, new Map(p.weeks.map(w => [w.n, load(st.door_km * 0.95, 4)])), 'km', cpStart)
+    expect(kinds(r)).not.toContain('run_walk')
+  })
+  it('🔴 a clean race block that is NOT run-walk never earns the "Run-walk" label (measured no-fit case, 2026-10-25)', () => {
+    const NF = input({ race_date: '2027-01-25', days_available: 4, current_weekly_km: 6, longest_recent_run_km: 4,
+      fitness_level: 'beginner' } as Partial<GeneratorInput>)
+    const p = generateStagedRacePlan(NF, '2026-11-02', 12)!
+    const st = stagedRaceOf(p)!
+    expect(st.target_found).toBe(false)
+    const at = new Date(Date.parse('2026-11-02T00:00:00Z') + st.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+    // The race block from what they ran IS clean here; it is simply not a run-walk plan (§117 does not apply).
+    const raceIn = { ...checkpointRaceInput(NF, st.door_km, 6), goal: 'finish' } as GeneratorInput
+    const dayBefore = new Date(Date.parse(`${at}T00:00:00Z`) - 864e5).toISOString().slice(0, 10)
+    const race = generateRulePlan(raceIn, 'paid', at, undefined, dayBefore)
+    expect((race.meta as unknown as Record<string, unknown>).finish_goal_run_walk).not.toBe(true)
+    const r = evaluateCheckpoint(NF, p, new Map(p.weeks.map(w => [w.n, load(st.door_km, 6)])), 'km', at)
+    expect(kinds(r)).not.toContain('run_walk')
+  })
+  it('🔴 "N more weeks" is offered only where that ramp still reaches the target before §44\'s block', () => {
+    const SHORT = input({ fitness_level: 'beginner', race_date: '2027-02-21' } as Partial<GeneratorInput>)
+    const p = generateStagedRacePlan(SHORT, START, 12)!
+    const st = stagedRaceOf(p)!
+    const at = new Date(Date.parse(`${START}T00:00:00Z`) + st.checkpoint_week * 7 * 864e5).toISOString().slice(0, 10)
+    const r = evaluateCheckpoint(SHORT, p, new Map(p.weeks.map(w => [w.n, load(st.door_km * 0.95, 4)])), 'km', at)
+    expect(kinds(r)).toEqual(['later_race'])
+  })
+  it('the extend choice returns more base building from what they RAN, toward the same target', () => {
+    const r = evaluateCheckpoint(BEG, plan, ran(s.door_km * 0.95), 'km', cpStart, 'extend')
+    expect(r.ok && 'plan' in r).toBe(true)
+    if (r.ok && 'plan' in r) {
+      const next = stagedRaceOf(r.plan)!
+      expect(next.door_km).toBeGreaterThanOrEqual(s.door_km)
+      expect(next.race_date).toBe(s.race_date)
+      expect(Number((r.plan.meta as unknown as Record<string, unknown>).base_build_start_km)).toBeCloseTo(s.door_km * 0.95, 0)
+      expect(validateStagedRace(r.plan)).toEqual([])
+    }
+  })
+  it('the run-walk choice skips the target and asks the race block for a finish goal at what they ran', () => {
+    const r = evaluateCheckpoint(BEG, plan, ran(s.door_km * 0.95), 'km', cpStart, 'run_walk')
+    expect(r.ok && 'input' in r).toBe(true)
+    if (r.ok && 'input' in r) expect(r.input).toMatchObject({ goal: 'finish', volume_observed: true })
+  })
+  it('a choice that is not on offer gives the screen again, never a plan', () => {
+    const INT = input({ fitness_level: 'intermediate', user_declared_level: 'intermediate' } as Partial<GeneratorInput>)
+    const p = generateStagedRacePlan(INT, START, 12)!
+    const st = stagedRaceOf(p)!
+    const r = evaluateCheckpoint(INT, p, new Map(p.weeks.map(w => [w.n, load(st.door_km * 0.95, 4)])), 'km', cpStart, 'run_walk')
+    expect(r.ok).toBe(false)
+  })
+  it('the words are the approved ones, from the copy owner', () => {
+    const r = evaluateCheckpoint(BEG, plan, ran(s.door_km * 0.95), 'km', cpStart)
+    if (!r.ok) expect(r.body.error).toMatch(/^You ran .+ a week\. Marathon training needs about .+ to start safely\.$/)
+  })
+})

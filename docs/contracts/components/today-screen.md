@@ -57,7 +57,9 @@ interface TodayScreenProps {
   hasPaidAccess?: boolean
   dailyCoachNote?: string | null
   coachNoteSettled?: boolean
-  checkpointLine?: string | null // NO-RUNNER-TURNED-AWAY-01 — the staged plan's checkpoint week only; EVERY tier
+  checkpointLine?: string | null // NO-RUNNER-TURNED-AWAY-01 — checkpoint week, or passed-and-not-started; EVERY tier
+  checkpointConsent?: CheckpointConsent | null // NO-RUNNER-TURNED-AWAY-01 C-2 — the checkpoint's consent screen
+  onCheckpointOption?: (kind: CheckpointOption['kind']) => void
   runAnalysisMap?: Record<number, Record<string, any>>
   runAnalysisReady?: boolean
   onOpenCoach?: () => void
@@ -186,9 +188,21 @@ so a retry is real. Check: `components/shared/planChangeFailVisible.markup.test.
 
 ## The checkpoint line — NO-RUNNER-TURNED-AWAY-01 (2026-10-25)
 
-`checkpointLine` is set by `DashboardClient` only while `isCheckpointWeek(plan, now)` is true: the last week of a
-**staged** base build (`lib/plan/stagedRacePlan.ts`). It takes the coach-note slot as a rule-engine
+`checkpointLine` is set by `DashboardClient` (`todayCheckpointLine`) while `isCheckpointWeek(plan, now)` is true, the
+last week of a **staged** base build, and, after the checkpoint passes, from accepting the race plan until it starts
+(`checkpointPassed`: `checkpointPassedLine`, the measured figure; amendment 6). It takes the coach-note slot as a rule-engine
 `<CoachNoteBlock label="CHECKPOINT">`, with no AI provenance, and **for every tier**: it tells the runner how their plan
 works, which is access, not richness (CLAUDE.md, free users are never abandoned). While it is set, the paid daily coach
 note does not render beside it (one note per slot). The words are `CHECKPOINT_THIS_WEEK_LINE` in
 `lib/plan/checkpointCopy.ts`, founder-approved 2026-10-24. Guarded by `components/shared/stagedRaceScreens.markup.test.ts`.
+
+### The checkpoint's consent screen (Phase C-2, 2026-10-25)
+
+When the base build of a staged plan ends, the handover card's copy is `stagedHandoverCopy` (the race block's title and
+line; **no metric and never "That's the base done"**, which stated PLANNED volume). Tapping it sends `checkpoint: true`.
+A checkpoint 422 arrives as `checkpointConsent` and the **same card** becomes the consent screen: the heading (the
+observed figure, plainly, or *"We haven't seen any runs yet."*), one sentence of why, and the engine's options in its
+order, first as the primary button (amendments 5, 7, 8). No meter or progress element. `onCheckpointOption`:
+`extend` / `run_walk` re-send with `checkpoint_choice`; `later_race` opens the wizard; `connect_health` opens Me →
+Connections. On a staged plan **"Not yet" hides the card for the session only** and writes no seen-flag, because the
+race is still waiting. ⚠️ The ruling said "a consent screen"; it is built on the card, not as its own screen.

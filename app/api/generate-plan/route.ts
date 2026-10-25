@@ -157,15 +157,22 @@ export async function POST(req: NextRequest) {
       const { volume_observed: _drop, ...rest } = input
       input = rest as GeneratorInput
     }
+    // `extend` returns more base building, already built; it is answered after the paywall, like any other plan.
+    let checkpointPlan: Plan | null = null
     if ((guard.body as { checkpoint?: unknown }).checkpoint === true) {
       const { createClient } = await import('@supabase/supabase-js')
       const svc = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
       const stored = (await readPlanJson(svc, user.id)).plan as Plan | null
       const loads = stored && isBaseBuildPlan(stored) ? await fetchWeeklyLoad(svc, user.id, stored) : null
-      const cp = evaluateCheckpoint(input, stored, loads, displayUnits)
+      // The consent screen's re-send (Design Board amendment 7). Anything else is no choice at all, so an unknown value
+      // can only ever produce the screen again, never a plan.
+      const rawChoice = (guard.body as { checkpoint_choice?: unknown }).checkpoint_choice
+      const choice = rawChoice === 'extend' || rawChoice === 'run_walk' ? rawChoice : undefined
+      const cp = evaluateCheckpoint(input, stored, loads, displayUnits, undefined, choice)
       if (cp.telemetry) await recordOpsEvent(cp.telemetry.event, cp.telemetry.detail, user.id)
       if (!cp.ok) return NextResponse.json(cp.body, { status: cp.status })
-      input = cp.input
+      if ('plan' in cp) checkpointPlan = cp.plan
+      else input = cp.input
     }
     stage = 'input'
     raceKm = typeof input.race_distance_km === 'number' ? input.race_distance_km : null
@@ -204,6 +211,8 @@ export async function POST(req: NextRequest) {
         race_distance_km: input.race_distance_km,
       }, { status: 403 })
     }
+
+    if (checkpointPlan) return NextResponse.json({ plan: checkpointPlan })
 
     // ── THE ENGINE, IN ONE CALL (ENGINE-ENTRY-01) ─────────────────────────
     //

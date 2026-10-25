@@ -49,6 +49,8 @@ import { formatDistance } from '@/lib/format'
 import type { DistanceUnits } from '@/lib/format'
 import { raceLabelFor } from '@/lib/plan/raceLabel'
 import { raceDistanceKey } from '@/lib/plan/generationConfig'
+import { raceBlockTitle, raceBlockLine } from '@/lib/plan/checkpointCopy'
+import type { StagedRace, StagedDisplay } from '@/lib/plan/stagedRacePlan'
 
 export interface HandoverCopy {
   eyebrow: string
@@ -88,6 +90,27 @@ export function handoverCopy(opts: {
     primary: `Build the ${label} plan`,
     // The runner's own refusal voice, and it keeps control with them. `ux-principles`
     // bars dead ends, so the secondary path is always present.
+    secondary: 'Not yet',
+  }
+}
+
+/**
+ * NO-RUNNER-TURNED-AWAY-01 — the same card for a STAGED plan, whose base building ends at a checkpoint.
+ *
+ * 🔴 NOT "That's the base done", AND NO METRIC. Both state what was PLANNED (`base_build_target_km`), and the second
+ * Coaching Board sitting ruled crediting planned volume a defect: the two live base-build runners had recorded 3.1 of a
+ * planned 21 km, and 0 of 16.5. The checkpoint says what they RAN, after the tap, on the server's measurement
+ * (Design Board amendment 5). Before the tap the card says only what is true already: the race block, and that it is
+ * built now. The founder's words (`checkpointCopy.ts`).
+ */
+export function stagedHandoverCopy(staged: StagedRace, view: StagedDisplay): HandoverCopy {
+  const label = raceLabelFor(raceDistanceKey(staged.race_distance_km))
+  return {
+    eyebrow: 'Checkpoint',
+    title: raceBlockTitle(staged),
+    line: raceBlockLine(view.raceBlockStart),
+    metric: null,
+    primary: `Build the ${label} plan`,
     secondary: 'Not yet',
   }
 }

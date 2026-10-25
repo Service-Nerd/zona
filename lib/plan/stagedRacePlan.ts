@@ -34,6 +34,8 @@ import { generateRulePlan } from './ruleEngine'
 import { isDesignedRefusal } from './designedRefusal'
 import { auditPlanQuality, objectionsOnly } from './planQuality'
 import { validatePlan } from './invariants'
+import { isBaseBuildPlan } from './validateStoredPlan'
+import { isDateBeforePlan } from './weekResolution'
 
 /** What a staged plan remembers about the race it is for. Read by the checkpoint and the UI, nothing else. */
 export interface StagedRace {
@@ -127,17 +129,19 @@ export function checkpointRaceInput(input: GeneratorInput, weeklyKm: number, lon
  * first target without a leap even where that plan's long run never approached the race. The leap is one of the
  * objections, so this is the measured rule and includes the written one.
  */
-function raceBlockClean(input: GeneratorInput, checkpoint: string): boolean {
+function cleanRaceBlock(input: GeneratorInput, checkpoint: string): Plan | null {
   let race: Plan
   try { race = generateRulePlan(input, 'paid', checkpoint, undefined, dayBefore(checkpoint)) } catch (e) {
-    if (isDesignedRefusal(e)) return false
+    if (isDesignedRefusal(e)) return null
     throw e
   }
-  if (validatePlan(race, input).some(v => v.severity === 'error')) return false
+  if (validatePlan(race, input).some(v => v.severity === 'error')) return null
   const m = race.meta as unknown as Record<string, unknown>
   const maintDeclared = m.volume_profile === 'maintenance' && !!m.volume_constraint_note
   return objectionsOnly(auditPlanQuality(race, input).filter(o => !(o.code === 'NEVER-BUILDS' && maintDeclared))).length === 0
+    ? race : null
 }
+const raceBlockClean = (input: GeneratorInput, checkpoint: string): boolean => cleanRaceBlock(input, checkpoint) !== null
 
 /** C3's search step, and its ceiling: a target this far above the door is not a door any more. */
 const TARGET_STEP_KM = 0.5
@@ -304,4 +308,53 @@ export function isCheckpointWeek(plan: Plan | null | undefined, now: Date): bool
   const start = Date.parse(`${d.checkpointWeekStart}T00:00:00`)
   const t = now.getTime()
   return t >= start && t < start + 7 * 864e5
+}
+
+/**
+ * NO-RUNNER-TURNED-AWAY-01, C4 + Design Board amendment 7 — WHAT THE CHECKPOINT MAY OFFER A RUNNER WHO DID NOT PASS.
+ *
+ * ⚠️ AN OPTION IS OFFERED ONLY WHERE ITS ACTION WILL SUCCEED (`BASEBUILD-ADJUST-DOOR-01`, settled ground). Each is
+ * decided by running the producer that would serve it, never by a predicate that could drift from it.
+ */
+/** The runner's choice on the consent screen, re-sent with `checkpoint: true`. `later_race` and `connect_health` are
+ *  the client's to act on (the wizard, Me → Connections); only these two need the engine. */
+export type CheckpointChoice = 'extend' | 'run_walk'
+
+export type CheckpointOption =
+  | { kind: 'extend'; weeks: number }
+  | { kind: 'run_walk' }
+  | { kind: 'later_race' }
+  | { kind: 'connect_health' }
+  | { kind: 'log_run' }
+
+/** More base building, from what they RAN, toward the race block's measured floor (the plan's own C3 target). Null
+ *  when that ramp cannot reach it before §44's block, or no clean race block exists from it: then the runner would
+ *  be back at the same screen in a few weeks, which is not an option, it is a delay. */
+export function extendedStagedPlan(input: GeneratorInput, observedKm: number, longestKm: number, staged: StagedRace,
+  planStart: string): Plan | null {
+  const p = generateStagedRacePlan(checkpointRaceInput(input, observedKm, longestKm), planStart, staged.door_km)
+  const s = stagedRaceOf(p)
+  return p && s && s.target_found && s.reaches_door ? p : null
+}
+
+/** §117's run-walk finish from what they ran, skipping the C3 target. Null unless the race block is clean AND is in
+ *  fact a run-walk plan: §117 applies only to a beginner's finish goal, and "run-walk the marathon" on a plan that is
+ *  not one would be the copy promising what the engine will not produce. */
+export function runWalkFinishInput(input: GeneratorInput, observedKm: number, longestKm: number,
+  planStart: string): GeneratorInput | null {
+  const rw = { ...checkpointRaceInput(input, observedKm, longestKm), goal: 'finish' } as GeneratorInput
+  const race = cleanRaceBlock(rw, planStart)
+  return race && (race.meta as unknown as Record<string, unknown>).finish_goal_run_walk === true ? rw : null
+}
+
+/**
+ * Design Board amendment 6 — PASSING: one line on Today, no ceremony. True from accepting the race plan the checkpoint
+ * built until it starts. `volume_observed` is set only by the server at the checkpoint (the route strips a client's), and
+ * the plan keeps it in `generator_input`, so the line quotes the figure the checkpoint measured, not a planned one.
+ */
+export function checkpointPassed(plan: Plan | null | undefined, now: Date): { observedKm: number; raceKm: number } | null {
+  if (!plan || isBaseBuildPlan(plan) || !isDateBeforePlan(plan.weeks, now)) return null
+  const gi = (plan.meta as unknown as { generator_input?: GeneratorInput }).generator_input
+  if (!gi?.volume_observed || typeof gi.current_weekly_km !== 'number' || !gi.race_distance_km) return null
+  return { observedKm: gi.current_weekly_km, raceKm: gi.race_distance_km }
 }

@@ -14,11 +14,11 @@ import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
 import { ACK_LABEL, warnKindOf, withAcknowledgement, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import { handoverState, handoverInput, handoverSeenPatch } from '@/lib/plan/baseBuildHandover'
-import { declaredVolumeEdit, stagedDisplay, stagedRaceOf, isCheckpointWeek } from '@/lib/plan/stagedRacePlan'
-import { raceBlockTitle, raceBlockLine, CHECKPOINT_THIS_WEEK_LINE } from '@/lib/plan/checkpointCopy'
+import { declaredVolumeEdit, stagedDisplay, stagedRaceOf, isCheckpointWeek, checkpointPassed, type CheckpointChoice } from '@/lib/plan/stagedRacePlan'
+import { raceBlockTitle, raceBlockLine, CHECKPOINT_THIS_WEEK_LINE, checkpointPassedLine, checkpointConsent, type CheckpointConsent } from '@/lib/plan/checkpointCopy'
 import StagedRaceBlockCard from '@/components/shared/StagedRaceBlockCard'
 import { rebuildsBaseBuild } from '@/lib/plan/modifyPlan'
-import { handoverCopy } from '@/lib/ui/handoverCopy'
+import { handoverCopy, stagedHandoverCopy } from '@/lib/ui/handoverCopy'
 import { resolveAutoMatch } from '@/lib/coaching/sessionAutoMatch'
 import { applyHrToPlan } from '@/lib/plan/zones'
 import { withProfileHr } from '@/lib/plan/rebuildInput'
@@ -267,6 +267,14 @@ function IconCoach({ active }: { active: boolean }) {
 
 // ── Layout shell ──────────────────────────────────────────────────────────
 
+/** NO-RUNNER-TURNED-AWAY-01 — Today's checkpoint line: the checkpoint week (amendment 4), or passed and not yet started
+ *  (amendment 6). Never both; null otherwise. */
+function todayCheckpointLine(plan: Plan | null, now: Date, units: 'km' | 'mi'): string | null {
+  if (isCheckpointWeek(plan, now)) return CHECKPOINT_THIS_WEEK_LINE
+  const passed = checkpointPassed(plan, now)
+  return passed ? checkpointPassedLine(passed.observedKm, passed.raceKm, units) : null
+}
+
 export default function DashboardClient() {
   // router.replace stays inside the WKWebView — window.location.href triggers
   // Capacitor's external-navigation handler, which on iOS opens Safari.
@@ -341,7 +349,9 @@ export default function DashboardClient() {
    * the runner's edits live in the sheet's own state, not in a form we can re-read.
    */
   const [ackKind, setAckKind] = useState<WarnKind | null>(null)
-  const lastModifyReqRef = useRef<{ input: GeneratorInput; resets: boolean; asBaseBuild: boolean; checkpoint: boolean } | null>(null)
+  const lastModifyReqRef = useRef<{ input: GeneratorInput; resets: boolean; asBaseBuild: boolean; checkpoint: boolean; choice?: CheckpointChoice } | null>(null)
+  // NO-RUNNER-TURNED-AWAY-01 — the checkpoint's 422 as its consent screen (Design Board amendments 5, 7, 8).
+  const [checkpointConsentData, setCheckpointConsentData] = useState<CheckpointConsent | null>(null)
 
   /** Regenerate from the overlaid input. Nothing is saved at this point. */
   /**
@@ -355,7 +365,7 @@ export default function DashboardClient() {
   async function acknowledgeModify() {
     const req = lastModifyReqRef.current
     if (!req || !ackKind) return
-    await runModifyPreview(withAcknowledgement(req.input, ackKind), req.resets, req.asBaseBuild, req.checkpoint)
+    await runModifyPreview(withAcknowledgement(req.input, ackKind), req.resets, req.asBaseBuild, req.checkpoint, req.choice)
   }
 
   /**
@@ -373,7 +383,7 @@ export default function DashboardClient() {
    * observed volume and overrides `current_weekly_km`. Carried through the §44/§52 re-send, or an acknowledged
    * handover would quietly fall back to the volume in the body.
    */
-  async function runModifyPreview(storedInput: GeneratorInput, resets: boolean, asBaseBuild = false, checkpoint = false) {
+  async function runModifyPreview(storedInput: GeneratorInput, resets: boolean, asBaseBuild = false, checkpoint = false, choice?: CheckpointChoice) {
     // REBUILD-HR-FROM-PROFILE-01 — every in-app rebuild (Modify, the base-build handover, the acknowledgement
     // re-send) starts from `meta.generator_input`, which a Profile max-HR confirmation never updates. Lay the
     // profile's heart rate over it here, the one door all three use, before anything is held for a re-send.
@@ -386,18 +396,21 @@ export default function DashboardClient() {
     // hand, ask the SAME owner `savePlanForUser` uses, so "keeps your logged weeks" cannot be a promise the save
     // then breaks (an edit that changes the plan's length moves every week's date).
     const resetsFor = (built: Plan) => resets || calendarChangedWeeks(plan, built).length > 0
-    setModifyBusy(true); setModifyError(null); setAckKind(null)
+    setModifyBusy(true); setModifyError(null); setAckKind(null); setCheckpointConsentData(null)
     // Held for step two: §44/§52's acknowledgement re-sends THIS input plus a flag.
-    lastModifyReqRef.current = { input: nextInput, resets, asBaseBuild, checkpoint }
+    lastModifyReqRef.current = { input: nextInput, resets, asBaseBuild, checkpoint, choice }
     try {
       const res = await authedFetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // The plan KIND the runner already has, carried explicitly.
-        body: JSON.stringify({ ...nextInput, ...(asBaseBuild ? { accept_base_build: true } : {}), ...(checkpoint ? { checkpoint: true } : {}) }),
+        body: JSON.stringify({ ...nextInput, ...(asBaseBuild ? { accept_base_build: true } : {}), ...(checkpoint ? { checkpoint: true } : {}), ...(checkpoint && choice ? { checkpoint_choice: choice } : {}) }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        // The checkpoint's outcome is a consent screen, not a message: what they ran, why, and the options.
+        const consent = checkpoint ? checkpointConsent(data as Record<string, unknown>, preferredUnits) : null
+        if (consent) { setCheckpointConsentData(consent); return }
         // A 422 here is a DESIGNED refusal: the runner's edit produced inputs
         // the engine will not build (too few weeks, below the base door). It
         // is not an error and must not read as one.
@@ -2387,15 +2400,20 @@ export default function DashboardClient() {
    */
   const handover = handoverState(plan, new Date())
   const [handoverBusy, setHandoverBusy] = useState(false)
-  const handoverCopyData = handover.show
-    ? handoverCopy({
+  // A staged plan's "Not yet" hides the card for this session only: its race is still waiting, and a seen-flag would
+  // leave the runner with an ended plan and no way back to the checkpoint.
+  const [handoverHidden, setHandoverHidden] = useState(false)
+  const handoverStaged = stagedRaceOf(plan)
+  const handoverView = stagedDisplay(plan)
+  const handoverCopyData = !handover.show || handoverHidden ? null
+    : handoverStaged && handoverView ? stagedHandoverCopy(handoverStaged, handoverView)
+    : handoverCopy({
         raceDistanceKm: handover.input.race_distance_km,
         blockWeeks: plan?.weeks.length ?? 0,
         startKm: Number((plan?.meta as unknown as Record<string, unknown>)?.base_build_start_km ?? 0),
         deliveredKm: Number((plan?.meta as unknown as Record<string, unknown>)?.base_build_target_km ?? 0),
         units: preferredUnits,
       })
-    : null
 
   /**
    * Build the race plan the block was building toward.
@@ -2414,11 +2432,11 @@ export default function DashboardClient() {
    * asserting the protection it lacks is worse than no comment: it is what a reader
    * checks instead of the code. Fixed under `MODIFY-WARN-ACK-01` (2026-10-13).
    */
-  async function handleBuildRacePlan() {
+  async function handleBuildRacePlan(choice?: CheckpointChoice) {
     if (!handover.show || !plan) return
     setHandoverBusy(true)
     try {
-      await runModifyPreview(handoverInput(plan, handover.input), true, false, true)
+      await runModifyPreview(handoverInput(plan, handover.input), true, false, true, choice)
       // 🔴 THE PREVIEW RENDERS UNDER `screen === 'plan'` AND THIS CARD IS ON TODAY.
       // Without this the runner tapped "Build the marathon plan", the request
       // succeeded, and the screen did not change — indistinguishable from the
@@ -2440,8 +2458,16 @@ export default function DashboardClient() {
    * would **archive the runner's block while announcing it.** The patch comes from the
    * owner precisely so that cannot be written by hand here.
    */
+  /** The consent screen's options (Design Board amendment 7). Each acts through a path that already exists. */
+  function handleCheckpointOption(kind: CheckpointConsent['options'][number]['kind']) {
+    if (kind === 'extend' || kind === 'run_walk') { void handleBuildRacePlan(kind); return }
+    if (kind === 'later_race') { clearModify(); setCheckpointConsentData(null); setScreen('generate'); return }
+    if (kind === 'connect_health') { setMeOpenSection('connections'); setScreen('me'); return }
+  }
+
   async function handleDismissHandover() {
     if (!plan) return
+    if (stagedRaceOf(plan)) { setHandoverHidden(true); setCheckpointConsentData(null); return }
     const next = { ...plan, meta: { ...plan.meta, ...handoverSeenPatch() } } as Plan
     setPlan(next)
     try {
@@ -2941,7 +2967,7 @@ export default function DashboardClient() {
             ? <AttributionRow supabase={supabase} userId={userId}
                 onResolved={() => setAttributionResolved(true)} />
             : null
-        } recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); hasPaidAccess ? setScreen('recalibration') : openUpgrade('recal_tile') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} checkpointLine={isCheckpointWeek(plan, now) ? CHECKPOINT_THIS_WEEK_LINE : null} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} handover={handoverCopyData} onBuildRacePlan={handleBuildRacePlan} onDismissHandover={handleDismissHandover} handoverBusy={handoverBusy} handoverError={modifyError} handoverAckLabel={ackKind ? ACK_LABEL[ackKind] : null} onHandoverAcknowledge={ackKind ? () => void acknowledgeModify() : undefined} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        } recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); hasPaidAccess ? setScreen('recalibration') : openUpgrade('recal_tile') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} checkpointLine={todayCheckpointLine(plan, now, preferredUnits)} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} handover={handoverCopyData} onBuildRacePlan={() => void handleBuildRacePlan()} checkpointConsent={handoverCopyData ? checkpointConsentData : null} onCheckpointOption={handleCheckpointOption} onDismissHandover={handleDismissHandover} handoverBusy={handoverBusy} handoverError={modifyError} handoverAckLabel={ackKind ? ACK_LABEL[ackKind] : null} onHandoverAcknowledge={ackKind ? () => void acknowledgeModify() : undefined} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
