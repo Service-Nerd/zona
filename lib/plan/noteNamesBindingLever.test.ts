@@ -31,7 +31,9 @@ const gen = (o: Record<string, unknown>, weeks = 16) => {
     injury_history: [], race_date: raceIn(weeks), plan_start: TODAY,
     acknowledged_prep_warning: true, ...o,
   } as unknown as GeneratorInput
-  const r = generateRulePlan(input, 'paid') as unknown as Record<string, unknown>
+  // Pinned through the engine's own planStart argument: `input.plan_start` alone did not pin it, so the test read
+  // the wall clock and began failing on 2026-10-26, when the fixed race date fell inside the 10-week marathon floor.
+  const r = generateRulePlan(input, 'paid', TODAY) as unknown as Record<string, unknown>
   const plan = (r.plan ?? r) as { weeks: Array<{ n: number; type?: string; sessions?: Record<string, Session | undefined> }>; meta: Record<string, unknown> }
   const peakLrMins = Math.max(0, ...plan.weeks
     .filter(w => w.n >= 1 && w.type !== 'race')

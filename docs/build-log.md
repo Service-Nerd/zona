@@ -358,6 +358,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** Coral, amber and race orange are all a bit faint as small text. That's older than this change and filed separately.
 
 ---
+## 2026-10-26 — PINNED-CLOCK-01 · Three tests failed because it was Monday
+**Shipped:** every test that fixes a date now hands that date to the engine, and a gate keeps it that way.
+**Dev learning:** `plan_start` in the input does not pin the engine; the third argument does. A test that set one and not the other worked for five weeks and then failed on a date, with no code change. Three other files were the same shape, with fixed races that would have fallen inside the prep floors within a few weeks.
+**Product/creator learning:** nothing a runner sees. CI on main would simply have gone red this morning for no reason anyone could find in the diff.
+**AI-building learning:** I found it because an unrelated change ran the suite on a new day. Looking for the twin turned one fix into four and a gate.
+**The honest bit:** the gate only knows two names for a pinned date. A test calling it `PLAN_START` would slip past.
+**Hook material:** "The diff was a test file and a doc. Three plan tests failed. The cause was the calendar."
+**Postable?:** maybe
+
 
 ## 2026-10-22 — SESSION-HUE-OWNER-01 · the error red was the interval colour
 **Shipped:** VO2 and hill sessions no longer show their main set in red on the session screen. They're amber, the same as everywhere else in the app.

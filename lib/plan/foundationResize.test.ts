@@ -80,11 +80,11 @@ describe('FOUNDATION-CHOICE-RESIZE-01 — deferred add === decided at generation
     // Reference: the runner decided 'add' up front.
     const refInput = ready10k({ foundation_decision: 'add' })
     const refComposed = composePlanWithFoundation(
-      generateRulePlan(refInput, 'paid'), refInput, TODAY, 'add')
+      generateRulePlan(refInput, 'paid', TODAY), refInput, TODAY, 'add')
 
     // Deferred: generated undecided, then resized when the answer lands.
     const defInput = ready10k()
-    const defGen = generateRulePlan(defInput, 'paid')
+    const defGen = generateRulePlan(defInput, 'paid', TODAY)
     const resized = resizeForDeferredFoundationAdd(defGen, defInput, 'paid', TODAY)
     const defComposed = composePlanWithFoundation(resized, defInput, TODAY, 'add')
 
@@ -95,7 +95,7 @@ describe('FOUNDATION-CHOICE-RESIZE-01 — deferred add === decided at generation
   it('actually moves the onset earlier — the fix is not a no-op', () => {
     // Without the resize (compose only), the deferred runner's onset is LATER.
     const defInput = ready10k()
-    const defGen = generateRulePlan(defInput, 'paid')
+    const defGen = generateRulePlan(defInput, 'paid', TODAY)
 
     const withoutFix = composePlanWithFoundation(defGen, defInput, TODAY, 'add')
     const resized = resizeForDeferredFoundationAdd(defGen, defInput, 'paid', TODAY)
@@ -117,7 +117,7 @@ describe('FOUNDATION-CHOICE-RESIZE-01 — surgical: untouched where it must be',
     // §91 credit is consumed only inside `if (earlyOnset)`, so re-running would
     // change nothing — the function must not even try.
     const input = ready10k({ injury_history: ['Left knee, recurring'] }) // vetoes the gate
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', TODAY)
     expect(plan.meta.early_quality_onset).toBeFalsy()
     const out = resizeForDeferredFoundationAdd(plan, input, 'paid', TODAY)
     expect(out).toBe(plan) // same reference — provably untouched
@@ -135,7 +135,7 @@ describe('FOUNDATION-CHOICE-RESIZE-01 — enrichment is preserved, never stale',
 
   it('grafts enriched copy only onto weeks the re-size left unchanged', () => {
     const input = ready10k()
-    const enriched = enrich(generateRulePlan(input, 'paid'))
+    const enriched = enrich(generateRulePlan(input, 'paid', TODAY))
     const resized = resizeForDeferredFoundationAdd(enriched, input, 'paid', TODAY)
 
     // Enrichment status stays honest — never silently dropped.
@@ -158,7 +158,7 @@ describe('FOUNDATION-CHOICE-RESIZE-01 — enrichment is preserved, never stale',
 
   it('does not graft when the incoming plan was never enriched', () => {
     const input = ready10k()
-    const gen = generateRulePlan(input, 'paid') // meta.enrichment unset / rule copy
+    const gen = generateRulePlan(input, 'paid', TODAY) // meta.enrichment unset / rule copy
     const resized = resizeForDeferredFoundationAdd(gen, input, 'paid', TODAY)
     // Rule copy in, rule copy out — no fabricated 'applied' status.
     expect(resized.meta.enrichment).not.toBe('applied')

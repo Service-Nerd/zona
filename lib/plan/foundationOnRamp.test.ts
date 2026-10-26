@@ -61,7 +61,7 @@ describe('§91 — foundation weeks are credited against the on-ramp floor', () 
     const onsets: number[] = []
     for (const weeksToRace of [12, 13, 14, 15, 16, 18, 20]) {
       const input = ready10k({ race_date: race(weeksToRace) })
-      const plan = generateRulePlan(input, 'paid')
+      const plan = generateRulePlan(input, 'paid', TODAY)
       const composed = composePlanWithFoundation(plan, input, TODAY)
       expect(plan.meta.early_quality_onset, `gate should fire at ${weeksToRace}w`).toBe(true)
       const onset = calendarOnset(composed.plan)
@@ -82,13 +82,13 @@ describe('§91 — foundation weeks are credited against the on-ramp floor', () 
     // the plan extends to `max_weeks` and absorbs them, so the block is 1 week
     // and the surplus is trained inside the periodisation arc.
     const input = ready10k({ race_date: race(14) })
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', TODAY)
     expect(plan.meta.foundation_weeks_planned).toBe(1)
     expect(plan.weeks.length).toBeGreaterThan(12)
 
     // No block at all → the GATED floor binds (1, §97), not the general one (2).
     const far = ready10k({ race_date: race(20) })
-    const farPlan = generateRulePlan(far, 'paid')
+    const farPlan = generateRulePlan(far, 'paid', TODAY)
     expect(farPlan.meta.foundation_weeks_planned).toBe(0)
     expect(baseWeeks(farPlan)).toBe(GENERATION_CONFIG.MIN_ONRAMP_WEEKS_GATED)
   })
@@ -114,7 +114,7 @@ describe('§91 — foundation weeks are credited against the on-ramp floor', () 
     // Break the plan the way the engine could break it (base credited against a
     // block that is not actually coming) and prove the invariant fires.
     const input = ready10k({ race_date: race(14) })
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', TODAY)
     expect(validatePlan(plan, input).filter(v => v.code === 'INV-PLAN-ONRAMP-FLOOR')).toHaveLength(0)
 
     const sabotaged: Plan = { ...plan, meta: { ...plan.meta, foundation_weeks_planned: 0 } }
@@ -127,7 +127,7 @@ describe('§91 — foundation weeks are credited against the on-ramp floor', () 
     // The arm §91 replaced read `baseWeeks === 1` exactly. Prove the new one
     // covers the case that used to slip through, which is the more dangerous one.
     const input = ready10k({ race_date: race(20) })   // no block → floor binds
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', TODAY)
     const zeroBase: Plan = {
       ...plan,
       weeks: plan.weeks.map(w => w.phase === 'base' ? { ...w, phase: 'build' as const } : w),
@@ -146,7 +146,7 @@ describe('§92 — strides in the foundation block, gated runners only', () => {
 
   it('a §89-gated runner gets strides — one run per foundation week', () => {
     const input = ready10k()
-    const composed = composePlanWithFoundation(generateRulePlan(input, 'paid'), input, TODAY)
+    const composed = composePlanWithFoundation(generateRulePlan(input, 'paid', TODAY), input, TODAY)
     expect(hasStrides(composed.plan), 'gated runner should get strides').toBe(true)
     for (const w of composed.plan.weeks.filter(w => w.n <= 0)) {
       const withStrides = Object.values(w.sessions)
@@ -159,7 +159,7 @@ describe('§92 — strides in the foundation block, gated runners only', () => {
 
   it('an injury history vetoes strides — Willy condition of approval', () => {
     const input = ready10k({ injury_history: ['Left knee, posterior, recurring'] })
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', TODAY)
     expect(plan.meta.early_quality_onset).toBeFalsy()
     const composed = composePlanWithFoundation(plan, input, TODAY)
     expect(foundationSessions(composed.plan).length, 'fixture must have foundation weeks')
@@ -169,7 +169,7 @@ describe('§92 — strides in the foundation block, gated runners only', () => {
 
   it('strides do not turn a foundation week into a quality week (§57 still holds)', () => {
     const input = ready10k()
-    const composed = composePlanWithFoundation(generateRulePlan(input, 'paid'), input, TODAY)
+    const composed = composePlanWithFoundation(generateRulePlan(input, 'paid', TODAY), input, TODAY)
     for (const w of composed.plan.weeks.filter(w => w.n <= 0)) {
       for (const s of Object.values(w.sessions)) {
         expect(['easy', 'rest', 'cross_train']).toContain(s!.type)
@@ -185,7 +185,7 @@ describe('FOUND-ROUND-01 — a foundation session states the distance it ships',
     // used floor1dp, so a 6.66 km run shipped `6.6` under the text "6.7km" — on
     // the first screen a new runner ever sees. Same class as §40b/§78.
     const input = ready10k()
-    const composed = composePlanWithFoundation(generateRulePlan(input, 'paid'), input, TODAY)
+    const composed = composePlanWithFoundation(generateRulePlan(input, 'paid', TODAY), input, TODAY)
     const foundation = composed.plan.weeks.filter(w => w.n <= 0)
     expect(foundation.length).toBeGreaterThan(0)
     for (const w of foundation) {
@@ -207,7 +207,7 @@ describe('§91 — plannedFoundationWeeks is the single owner', () => {
     // other from the real `today`.
     for (const weeksToRace of [12, 13, 14, 15, 16, 20]) {
       const input = ready10k({ race_date: race(weeksToRace) })
-      const plan = generateRulePlan(input, 'paid')
+      const plan = generateRulePlan(input, 'paid', TODAY)
       const composed = composePlanWithFoundation(plan, input, TODAY)
       const built = composed.plan.weeks.filter(w => w.phase === 'foundation').length
       const planned = plannedFoundationWeeks(TODAY, plan.meta.plan_start, input.foundation_decision)

@@ -36,7 +36,7 @@ const hasQuality = (w: Plan['weeks'][number]) =>
   Object.values(w.sessions).some(s => s?.type === 'quality')
 const calendarOnset = (p: Plan) => p.weeks.findIndex(hasQuality) + 1
 const composed = (i: GeneratorInput) =>
-  composePlanWithFoundation(generateRulePlan(i, 'paid'), i, TODAY).plan
+  composePlanWithFoundation(generateRulePlan(i, 'paid', TODAY), i, TODAY).plan
 
 beforeAll(() => { vi.useFakeTimers(); vi.setSystemTime(FROZEN_NOW) })
 afterAll(() => { vi.useRealTimers() })
@@ -89,7 +89,7 @@ describe('§97 — quality in calendar week 2', () => {
       race_distance_km: 42.2, race_date: race(20), target_time: '3:30:00',
       current_weekly_km: 60, longest_recent_run_km: 25, days_available: 5,
     })
-    const plan = generateRulePlan(marathon, 'paid')
+    const plan = generateRulePlan(marathon, 'paid', TODAY)
     // Asserted on the ON-RAMP (base + foundation), not on base alone — §91's
     // whole point. A first draft of this test checked base only and failed on a
     // correct plan whose two-week on-ramp was 1 base + 1 foundation week.

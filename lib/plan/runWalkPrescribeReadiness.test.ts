@@ -40,7 +40,7 @@ function marathonBeginner(longestKm: number, weeklyKm: number): GeneratorInput {
 function planOf(input: GeneratorInput) {
   // 'paid' is what `envelopeMeasure` passes, so this test and the benchmark
   // measure the same thing. A missing tier is not a neutral default.
-  const r = generateRulePlan(input, 'paid')
+  const r = generateRulePlan(input, 'paid', START)
   return (r as unknown) as {
     weeks: { n: number; sessions: Record<string, unknown> }[]
     meta: Record<string, unknown>
