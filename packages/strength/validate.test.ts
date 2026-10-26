@@ -5,6 +5,7 @@ import { heavyLegsLegal } from './placement'
 import { validateStrengthPlan } from './validate'
 import { withChosenDays } from './profile'
 import { CATALOGUE_BY_ID } from './catalogue'
+import { STRENGTH_CONFIG } from './config'
 import type { Day, RunContext, RunDay, RunRole, RunWeek, StrengthPlan, StrengthProfile, StrengthSession } from './types'
 
 /**
@@ -60,6 +61,8 @@ const CASES: Array<[string, (p: StrengthPlan) => void, StrengthProfile?]> = [
   ['S-WARMUP', p => { p.weeks[0].sessions[0].blocks.shift() }],
   ['S-TIME-OVER', p => { p.weeks[0].sessions[0].estimated_minutes = 99 }],
   ['S-TIME-UNDER', p => { p.weeks[0].sessions[0].estimated_minutes = 5 }],
+  // S10 Am.4 — under the floor with an accessory set still under its cap. Week 0 is a training week in BASE.
+  ['S-TIME-FILL', p => { const s = p.weeks[0].sessions[0]; s.estimated_minutes = 30; const acc = s.blocks.find(b => b.role === 'accessory' || b.role === 'core')!; acc.items[0].sets = 1 }],
   ['S-NO-MAIN', p => { const s = p.weeks[0].sessions[0]; s.blocks = s.blocks.filter(b => b.role !== 'main') }],
   ['S-UNKNOWN-EXERCISE', p => { mainItem(p.weeks[0].sessions[0]).exercise_id = 'not_an_exercise' }],
   ['S-DUPLICATE', p => { const s = p.weeks[0].sessions[0]; const m = s.blocks.find(b => b.role === 'main')!; m.items.push({ ...m.items[0] }) }],
@@ -324,5 +327,28 @@ describe('PINNED-DAYS-01 (S1 Am.2) — chosen days are the sessions', () => {
   it('without chosen days nothing changes: the base plan carries no available_days and stays clean', () => {
     expect(BASE.profile.available_days).toBeUndefined()
     expect(validateStrengthPlan(BASE, C)).toEqual([])
+  })
+})
+
+// STRENGTH-FILL-01 (Coaching Board 2026-10-26) — S10 Am.4. The extra time goes to accessory and core work before a 4th
+// main set: strength plateaus near 2–3 sets per exercise (S6) and a 4th heavy leg set adds to the §7 stress (S2).
+describe('S10 Am.4 — the fill order', () => {
+  it('🔴 a main lift reaches a 4th set only once every accessory and core item is at its cap', () => {
+    for (const m of [30, 45, 60] as const) for (const experience of ['new', 'some', 'regular'] as const) for (const focus of ['running', 'general'] as const) {
+      const plan = generateStrengthPlan({ ...PROFILE, focus, experience, session_minutes: m, equipment: ['barbell', 'rack', 'bench', 'dumbbells', 'cable', 'machines', 'bands', 'box', 'pullup_bar', 'kettlebell'] }, C)
+      for (const w of plan.weeks) for (const s of w.sessions) {
+        const main4 = s.blocks.some(b => b.role === 'main' && b.items.some(i => i.sets > STRENGTH_CONFIG.MAIN_SETS))
+        if (!main4) continue
+        const capped = s.blocks.every(b => b.role === 'accessory' ? b.items.every(i => i.sets >= STRENGTH_CONFIG.ACCESSORY_SETS_MAX)
+          : b.role === 'core' ? b.items.every(i => i.sets >= STRENGTH_CONFIG.CORE_SETS_MAX) : true)
+        expect(capped, `${m} min ${experience} ${focus} w${w.n} ${s.date}`).toBe(true)
+      }
+    }
+  })
+  it('an hour is close to an hour in a training week (the founder\'s case)', () => {
+    const plan = generateStrengthPlan({ ...PROFILE, focus: 'general', experience: 'regular', session_minutes: 60, equipment: ['barbell', 'rack', 'bench', 'dumbbells', 'cable', 'machines', 'bands', 'box', 'pullup_bar', 'kettlebell'] }, C)
+    const training = plan.weeks.filter(w => !['taper', 'deload', 'race_week'].includes(w.phase)).flatMap(w => w.sessions).filter(s => s.kind !== 'mobility')
+    expect(training.length).toBeGreaterThan(0)
+    for (const s of training) expect(s.estimated_minutes).toBeGreaterThanOrEqual(60 * STRENGTH_CONFIG.FILL_FLOOR)
   })
 })

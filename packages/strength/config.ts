@@ -59,8 +59,15 @@ export const STRENGTH_CONFIG = {
   MAIN_SETS_MAX: 4,
   ACCESSORY_SETS_MAX: 3,
   CORE_SETS_MAX: 3,
-  /** Fill until the session uses this share of its budget. */
-  FILL_TARGET: 0.8,
+  /** Fill until the session uses this share of its budget. 0.8 until STRENGTH-FILL-01 (Coaching Board 2026-10-26):
+   *  a 60-minute session delivered 48–56 min, and the runner who chose an hour read it as ignored. */
+  FILL_TARGET: 0.95,
+  /** S10 Am.4 — the fill step adds sets in this order: accessory and core before a 4th main set, because strength
+   *  plateaus near 2–3 sets per exercise (S6) and a 4th heavy leg set adds to the §7 stress (S2). */
+  FILL_ORDER: ['accessory', 'core', 'main'] as const,
+  /** S-TIME-FILL — a training week's session using less than this share of its budget, while a set could still
+   *  be added under the caps, is the fill step not doing its job. */
+  FILL_FLOOR: 0.9,
   ACCESSORY_SETS: 2,
   CORE_SETS: 2,
   CORE_SECONDS: 30,

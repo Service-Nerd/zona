@@ -179,7 +179,7 @@ contacts × `SECONDS_PER_CONTACT` (1), or the hold; warm-up items `WARMUP_ITEM_S
 and core pair into supersets across regions (rest counted once per round). Over budget: drop the lowest-priority
 accessory first, keep one core item, then trim main sets to 2; **never shorten rest**. Under budget: add sets up to
 `MAIN_SETS_MAX` (4, not in the technique block), `ACCESSORY_SETS_MAX` (3), `CORE_SETS_MAX` (3), then a mobility
-cooldown, until `FILL_TARGET` (0.8) of the budget. A training session uses at least `MIN_BUDGET_USE` (0.5) of it,
+cooldown, until `FILL_TARGET` (0.95; 0.8 until Amendment 4) of the budget. A training session uses at least `MIN_BUDGET_USE` (0.5) of it,
 except in taper and deload weeks, which are short on purpose.
 
 **Why.** Rest is part of the dose for heavy work **[C]**; supersets roughly halve session time (Iversen 2021)
@@ -211,6 +211,8 @@ under S10 they are dropped only after accessories and main-set trims, and come b
 first jump is level 1** and climbs one rung per two blocks from the gate, never from the lifting level (board
 direction, catalogue review): a `some` lifter's first jump was bounding or a drop jump. No numeric moved. **Check:**
 `S-BEFORE-START`, `S-PLYO-MISSING`, `S-PLYO-START-LEVEL`; the validator counts from `start_date` too.
+
+**Amendment 4 (2026-10-26, STRENGTH-FILL-01, Coaching Board).** The clock the runner chose is the clock they get. `FILL_TARGET` rises from 0.8 to **0.95**, and the fill step adds sets in `FILL_ORDER` (**accessory, core, then main**): a 4th main set comes only once accessory and core work is at its caps. Caps, rest and the short weeks (deload, taper, race week, the technique block, an accepted recovery ease) are unchanged. **Why.** The founder chose 60 minutes and got 48–56 (measured, all foci and levels); at 0.95 a 60-minute session runs 57–59. Spent main-first, the extra time went into a 4th set of every main lift, where strength has plateaued near 2–3 sets (S6) and a 4th heavy leg set adds to the §7 stress (S2); calf, hip and pulling work is where a runner is usually short (Blagrove, Willy). McMillan: an hour that delivers 51 minutes reads as the app ignoring you. **Check:** `S-TIME-FILL`, a training-week session under `FILL_FLOOR` (0.9) of its clock while an accessory or core set is still under its cap; and the fill-order arm in `validate.test.ts`.
 
 ## S11. Core in most sessions
 

@@ -380,6 +380,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** For now VO2 and threshold look the same colour. That's deliberate and temporary.
 
 ---
+## 2026-10-26 — PHASE-ON-TODAY-01 + STRENGTH-FILL-01 · "I set an hour and got 33 minutes"
+**Shipped:** Today names the week and marks a deload; the strength session says why it is short; and an hour of strength is now 57 minutes, not 51.
+**Dev learning:** the founder's report was two true things stacked: a deload week (sets × 0.6, on purpose) and a fill target of 0.8 that made "60" mean 48–56. Neither was a bug, and both looked like one. Today had its own four-name phase map beside the real owner, so half the phases the engine emits showed nothing. The coach note is paid-only by an older gate, which the render test found when the deload line would not appear.
+**Product/creator learning:** a lighter week the runner is not told about reads as the app ignoring them. One in seven weeks is a deload.
+**AI-building learning:** I first measured the fill at 0.95 and it added a 4th heavy set to every main lift. The board moved the extra time to calf, hip and core work instead; the number alone would have shipped the wrong dose.
+**The honest bit:** the "mark" is a 1px hairline in the recovery colour. Collins wanted the whole screen to change by phase and lost to the spent-colours rule. Nobody has seen it on a phone.
+**Hook material:** "He changed 30 to 60. The app said 33. Both numbers were right."
+**Postable?:** yes
+
 
 ## 2026-10-22 — RUNWALK-STEPS-01 · run 6, walk 1, and you can see where you are
 **Shipped:** A run-walk session now shows as steps: a 5-minute brisk walk, then rounds of run 6 minutes and walk 1, any leftover as a short final run, then the cool-down. Run and walk icons mark which part you're in. The walk says "Brisk walk. Take it even if you feel fine."

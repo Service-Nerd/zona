@@ -256,7 +256,7 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
     let grew = true
     while (est < minutes * C.FILL_TARGET && grew) {
       grew = false
-      for (const role of ['main', 'accessory', 'core'] as BlockRole[]) {
+      for (const role of C.FILL_ORDER as readonly BlockRole[]) {
         const c = chosen.find(x => x.slot.role === role && x.item.sets < (caps[role] ?? 0))
         if (!c) continue
         const trial = chosen.map(x => (x === c ? { ...x, item: { ...x.item, sets: x.item.sets + 1 } } : x))

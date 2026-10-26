@@ -107,6 +107,15 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
         if (s.estimated_minutes > p.session_minutes) v.push({ code: 'S-TIME-OVER', week: w.n, day: where, detail: `${s.estimated_minutes} > ${p.session_minutes} min` })
         if (w.phase !== 'taper' && w.phase !== 'deload' && s.estimated_minutes < p.session_minutes * C.MIN_BUDGET_USE) v.push({ code: 'S-TIME-UNDER', week: w.n, day: where, detail: `${s.estimated_minutes} min of ${p.session_minutes}` })
         if (!s.blocks.some(b => b.role === 'main')) v.push({ code: 'S-NO-MAIN', week: w.n, day: where, detail: 'no main lift' })
+        // S10 Am.4 (STRENGTH-FILL-01) — a training week's session well under its clock while an accessory or core set
+        // could still be added is the fill step not doing its job. Deload, taper, race week and an accepted recovery ease
+        // are short on purpose.
+        const fillCap: Partial<Record<string, number>> = { accessory: C.ACCESSORY_SETS_MAX, core: C.CORE_SETS_MAX }
+        const roomLeft = s.blocks.some(b => b.items.some(i => fillCap[b.role] !== undefined && i.sets < fillCap[b.role]!))
+        if (!['taper', 'deload', 'race_week'].includes(w.phase) && !s.eased_for && roomLeft
+          && s.estimated_minutes < p.session_minutes * C.FILL_FLOOR) {
+          v.push({ code: 'S-TIME-FILL', week: w.n, day: where, detail: `${s.estimated_minutes} of ${p.session_minutes} min, sets still under the caps` })
+        }
       } else if (s.estimated_minutes > C.MOBILITY_SESSION_MINUTES) {
         v.push({ code: 'S-TIME-OVER', week: w.n, day: where, detail: 'mobility session too long' })
       }
