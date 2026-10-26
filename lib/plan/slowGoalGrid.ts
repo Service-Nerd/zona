@@ -30,7 +30,7 @@ export const GOAL_GAPS = [0, 0.05, 0.15, 0.3] as const
 /** The time target for `distanceKm` that is `gap` faster than `benchmark` predicts. */
 export function targetForGap(benchmark: { distance_km: number; time: string }, distanceKm: number, gap: number): string {
   const vdot = benchmarkVdot(benchmark)
-  if (vdot == null) throw new Error(`unreadable benchmark ${benchmark.distance_km} km ${benchmark.time}`)
+  if (vdot == null) throw new Error(`unreadable benchmark ${JSON.stringify(benchmark)}`)
   // Rounded first: `formatRaceTime` rounds the seconds remainder on its own, so 59.5 s would print ':60'.
   return formatRaceTime(Math.round(estimateRaceSeconds(vdot, distanceKm) * (1 - gap)))
 }

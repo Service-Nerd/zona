@@ -9,6 +9,7 @@
 import { calendarDaysBetween } from '@/lib/dates'
 import { GENERATION_CONFIG } from './generationConfig'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
+import { weekdayBudgetFor } from './weekdayOverrunNote'
 import { waterFillEasyKm } from './easyDistribution'
 import { normaliseDays, longRunDayFor, DAY_ORDER, spreadDays, type Day } from './days'
 import type { GeneratorInput } from '@/types/plan'
@@ -416,7 +417,7 @@ function buildFoundationSessions(
   // nothing. That case is stamped so it stays visible and declarable.
   const WEEKDAY_SET = new Set(['mon', 'tue', 'wed', 'thu', 'fri'])
   const budgetFor = (d: string): number | null =>
-    WEEKDAY_SET.has(d) ? (dayBudgets?.[d as 'mon'] ?? maxWeekdayMins ?? null) : null
+    WEEKDAY_SET.has(d) ? (weekdayBudgetFor({ day_budgets: dayBudgets, max_weekday_mins: maxWeekdayMins }, d)?.cap ?? null) : null
 
   const perDayKm: number[] = (() => {
     if (!paceOk) return easyDays.map(() => eachKm)   // no pace => decline to resize, never guess
@@ -470,7 +471,8 @@ function buildFoundationSessions(
       zone: 'Zone 2',
       ...easyDisplay,
       coach_notes: ['Zone 2 only. If you can\'t hold a conversation, slow down.'],
-      // §82 — held at the floor and therefore over the stated budget, on purpose.
+      // §82 — held at the floor and therefore over the stated budget, on purpose. Its note is written when the plan is
+      // composed (`reconcileWeekdayOverrunNotes`, OVERRUN-NOTE-ALL-01): this was the third place it was owed.
       ...(mins != null && budget != null && mins > budget ? { floor_protected: true } : {}),
     }
   })

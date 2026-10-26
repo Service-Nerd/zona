@@ -1,4 +1,5 @@
 import { validateSavedPlan } from './plan/validateStoredPlan'
+import { reconcileWeekdayOverrunNotes } from './plan/weekdayOverrunNote'
 import { PlanSchema } from './plan/schema'
 import { recordOpsEvent } from './ops/recordOpsEvent'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -145,6 +146,12 @@ export async function savePlanForUser(
   // skips two race-week invariants and would quietly weaken this gate.
   const generatorInput = plan?.meta?.generator_input
   if (generatorInput && plan.weeks?.length) {
+    // OVERRUN-NOTE-ALL-01 — the overrun note is DERIVED from each session's minutes, and eleven routes rewrite sessions
+    // after generation (adjust-plan trims, post-race reshape, recalibration, the deferred foundation). Reconciled here,
+    // at the one save boundary, so a stored note always matches the session it sits on. On a COPY: client callers pass
+    // weeks shared with React state, and a refused save must leave the caller's plan untouched (code review 3).
+    plan = { ...plan, weeks: structuredClone(plan.weeks) }
+    reconcileWeekdayOverrunNotes(plan.weeks, generatorInput)
     const errors = validateSavedPlan(plan, generatorInput).filter(v => v.severity === 'error')
     if (errors.length) {
       const detail = {

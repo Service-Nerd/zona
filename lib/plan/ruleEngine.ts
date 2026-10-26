@@ -7,6 +7,7 @@
 // falls back to fitness-level brackets. HR from Karvonen when resting HR known; otherwise
 // uses HRmax percentages (Tanaka max HR from age).
 
+import { reconcileWeekdayOverrunNotes, weekdayBudgetFor } from './weekdayOverrunNote'
 import type { GeneratorInput, Plan, Week, Session, BenchmarkInput } from '@/types/plan'
 import type { Phase } from '@/types/plan'
 import {
@@ -3852,11 +3853,12 @@ function applyWeekdayMinsCap(
   // single-cap behaviour — byte-identical (verify:parity). Placement (below, at
   // the quality-day selection) puts the un-trimmable structured session on the
   // day whose budget can hold it, so this per-day trim mostly touches easy runs.
-  const budgets = input.day_budgets
-  if (input.max_weekday_mins == null && budgets == null) return
+  if (input.max_weekday_mins == null && input.day_budgets == null) return
   const weekdays: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri']
   for (const day of weekdays) {
-    const cap = budgets?.[day as 'mon' | 'tue' | 'wed' | 'thu' | 'fri'] ?? input.max_weekday_mins
+    // OVERRUN-NOTE-ALL-01 — the day's limit through the one producer-side owner, so the cap trimmed here and the cap
+    // the note quotes cannot drift (the checker derives its own, deliberately).
+    const cap = weekdayBudgetFor(input, day)?.cap
     if (cap == null) continue
     const s = sessions[day]
     if (!s || !s.duration_mins || s.duration_mins <= cap) continue
@@ -3907,17 +3909,8 @@ function applyWeekdayMinsCap(
        * with room (which is also what §81's placement obligation does
        * automatically), or raise the weekday budget.
        */
-      if (!isRaceWeek && s.duration_mins > cap) {
-        // ⚠️ BOTH DURATIONS THROUGH `formatDuration`, ADR-015's owner. Welding
-        // ` min` to an interpolated value is what `hardcodedUnits.test.ts` exists
-        // to stop, and it caught this on its first run — correctly: the owner
-        // also gives `1h 18` rather than a bare `78 min` once a session passes
-        // the hour, which several of these do (worst measured: 86 min).
-        s.weekday_overrun_note =
-          `About ${durationText(s.duration_mins)} against the ${durationText(cap)} you set for weekdays. ` +
-          `Quality work is not shrunk to fit the clock, so take this one on a day with more room, ` +
-          `or raise your weekday time in Profile.`
-      }
+      // OVERRUN-NOTE-ALL-01 — this branch used to write the overrun note. It is written once, from the FINAL minutes,
+      // by `reconcileWeekdayOverrunNotes` at the tail of generation, because later passes resize sessions after this one.
       continue
     }
     const originalDurationMins = s.duration_mins
@@ -3952,6 +3945,7 @@ function applyWeekdayMinsCap(
       s.distance_km = floorKm
       s.duration_mins = Math.round(floorKm * paceMinPerKm)
       s.floor_protected = true
+      // OVERRUN-NOTE-ALL-01 — its note is written by `reconcileWeekdayOverrunNotes` at the tail of generation.
     } else {
       s.duration_mins = cap
       if (cappedDistance != null) s.distance_km = cappedDistance
@@ -9835,7 +9829,9 @@ function buildRulePlanOnce(
   // weeks/phases/meta) per spec. Informational only; no session data.
   const prePlan = buildV6PrePlanGuidance(prepTime, anchoredStartIso, today)
 
-  // §18/§81 — the weekday cap runs LAST, after every re-sizing post-pass.
+  // §18/§81 — the weekday cap runs after the re-sizing post-passes listed below.
+  // ⚠️ NOT LAST (OVERRUN-NOTE-ALL-01, 2026-10-26): the adequacy block and the run-walk stamp run after it, so anything
+  // derived from a session's final minutes (the overrun note) is written at the tail, by reconcileWeekdayOverrunNotes.
   //
   // `applyWeekdayMinsCap` also runs inside buildWeekSessions, but at least eight
   // later passes re-size sessions (long-run floors §45/§47, easy redistribution
@@ -9928,6 +9924,10 @@ function buildRulePlanOnce(
       }
     }
   }
+
+  // OVERRUN-NOTE-ALL-01 — §81's "the plan says when they don't fit", from the FINAL minutes. After every resizing
+  // pass (the adequacy block above runs after the "last" weekday-cap pass) and before the constitution is checked.
+  reconcileWeekdayOverrunNotes(plan.weeks, input)
 
   // Constitutional review — verify the plan honours its own coaching principles.
   // In dev, throw on errors so the matrix / property tests fail loudly.

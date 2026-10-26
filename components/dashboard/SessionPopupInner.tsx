@@ -5,6 +5,7 @@
 //
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
+import { overrunNoteApplies } from '@/lib/plan/weekdayOverrunNote'
 import AddDistanceRow, { DISTANCE_NOT_RECORDED, DISTANCE_REPORTED_LABEL } from '@/components/shared/AddDistanceRow'
 import { runDistance } from '@/lib/health/runDistance'
 import { hueText } from '@/lib/ui/hueText'
@@ -366,6 +367,7 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
   // session on Saturday and must still be able to link it — and `rankLinkCandidates`
   // puts the likely run first using the SAME owner the auto-linker uses.
   const sessionDate = session.rawDate ? new Date(session.rawDate) : null
+  const shownOnPlannedDay = overrunNoteApplies(session.key, session.rawDate)
 
   // 🔴 MATCH-EMPTY-CAUSE-01 (2026-10-07). The same two filters as before, in two
   // named steps, because an empty list had ONE message and THREE causes.
@@ -1509,7 +1511,10 @@ export default function SessionPopupInner({ session, weekN, aiNotes, preloadedRu
               above the why.
 
               ⚠️ NO AIMark. Rule-engine copy from §81, not model output. */}
-          {session.weekday_overrun_note && (
+          {/* OVERRUN-NOTE-ALL-01 — only on the day it was planned for. The note names that day's limit, and a moved
+              session (`key` is the planned day, `rawDate` the shown date) would quote the wrong one, or call a
+              Saturday "your weekday". */}
+          {session.weekday_overrun_note && shownOnPlannedDay && (
             <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
               <CoachNoteBlock label="LONGER THAN YOUR WEEKDAY">
                 {session.weekday_overrun_note}

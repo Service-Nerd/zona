@@ -424,6 +424,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** Plans already generated still say "Mile repeats". New plans only, by policy.
 
 ---
+## 2026-10-26 — OVERRUN-NOTE-ALL-01 · A note derived from minutes must be written after the minutes stop moving
+**Shipped:** every weekday session over its day's limit now says so, in words that are true, and the engine's prescription is provably unchanged.
+**Dev learning:** the obvious fix (stamp the note in the floor branch) left 792 silent foundation-week runs, then 46 plans with a note quoting 32 minutes on a 30-minute run, because the "weekday cap runs LAST" comment was false: two passes run after it. The fix was a single reconcile at the points where a plan is finished, including the save boundary, since eleven routes rewrite sessions after generation. The proof it touched nothing else: hash 6,885 plans with the note removed on both sides (0 differ), and with it left in (2,207 differ), so the instrument is shown able to see a change.
+**Product/creator learning:** the approved words pointed at "Profile", where no such setting exists; the real one is in Adjust your plan, and for runners with per-day limits it does nothing at all. A lever in a sentence has to be a lever in the app.
+**AI-building learning:** three code reviews on one small change each found something real: a stale-note composition, a long-run note I had dropped, and in-place mutation of React state. The founder was right to ask for analysis before each fix rather than after.
+**The honest bit:** I proposed fixes before analysing them, twice, and was told to stop. Each time the analysis changed the fix.
+**Hook material:** "The comment said this pass runs last. Two passes ran after it."
+**Postable?:** yes
+
 
 ## 2026-10-22 — REP-UNITS-01 · a 400 is a 400
 **Shipped:** Interval reps now read the way they were written: 400m, 1600m, 1km. A miles runner saw a 400 as "0.2mi", and a 300 as "0.2mi" too.

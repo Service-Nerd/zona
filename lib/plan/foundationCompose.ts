@@ -12,6 +12,7 @@
 // case). Pure — no throw, no console.error; callers decide policy via
 // enforceViolations() (lib/plan/invariants.ts).
 
+import { reconcileWeekdayOverrunNotes } from './weekdayOverrunNote'
 import {
   generateFoundationBlock, classifyGap, gapDays, plannedFoundationWeeks, type GapClass,
 } from './foundationBlock'
@@ -166,6 +167,10 @@ export function composePlanWithFoundation(
   // discards real violations (e.g. blocked-day breaches landing on a
   // foundation week under a non-foundation-specific code). validatePlan sees
   // the WHOLE assembled plan, same as generateRulePlan's own tail.
+  // OVERRUN-NOTE-ALL-01 — the foundation weeks this composes on get their notes here, from final minutes. ONLY those:
+  // the race weeks were reconciled at generateRulePlan's tail, and re-wording them here would mutate the caller's plan
+  // against whatever input this call was handed (the deferred route's comes from the request body).
+  reconcileWeekdayOverrunNotes(assembled.weeks.filter(w => w.n <= 0), input)
   const violations = validatePlan(assembled, input)
 
   return { plan: assembled, gapClass, violations }

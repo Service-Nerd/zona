@@ -65,6 +65,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-DELOAD-IS-A-REDUCTION',
   'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
   'INV-PLAN-STRUCTURED-OVERRUN-DECLARED',
+  'INV-PLAN-WEEKDAY-OVERRUN-DECLARED',
   'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
   'INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED',
   'INV-PLAN-EFFORT-OR-PACE',
@@ -4948,11 +4949,17 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   //
   // Same shape as INV-PLAN-VOLUME-SHORTFALL-DECLARED below: it verifies the
   // honesty obligation, not the arithmetic behind it.
-  if (input.max_weekday_mins) {
-    const limit = input.max_weekday_mins *
-      (1 + GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT / 100)
+  if (input.max_weekday_mins || input.day_budgets) {
+    // OVERRUN-NOTE-ALL-01 — the DAY's own limit. This read `max_weekday_mins`, which the wizard sets to the MIN of the
+    // per-day budgets, so a 45-minute Wednesday was judged against a 30-minute Friday.
+    const capFor = (d: string) => input.day_budgets?.[d as 'mon'] ?? input.max_weekday_mins
+    const limitFor = (d: string) => {
+      const cap = capFor(d)
+      return cap != null ? cap * (1 + GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT / 100) : Infinity
+    }
     let worstMins = 0
     let worstWeek = 0
+    let worstCap = 0
     for (const w of plan.weeks) {
       if (w.type === 'race') continue
       for (const [d, sn] of Object.entries(w.sessions)) {
@@ -4973,8 +4980,8 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         //
         // §81's obligation is per-SESSION, so the check is per-session too: the
         // session that overruns is the one that must say so.
-        if (mins > limit && !sn.weekday_overrun_note && mins > worstMins) {
-          worstMins = mins; worstWeek = w.n
+        if (mins > limitFor(d) && !sn.weekday_overrun_note && mins > worstMins) {
+          worstMins = mins; worstWeek = w.n; worstCap = capFor(d) ?? 0
         }
       }
     }
@@ -4984,7 +4991,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         principle_ref: 'CoachingPrinciples §81 (§40c)',
         severity: 'warn',
         week: worstWeek,
-        message: `A weekday structured session runs ${Math.round(worstMins)} min against a stated ${input.max_weekday_mins}-min ceiling (past the ${GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT}% overrun limit) and SAYS NOTHING ON THE SESSION. §81 exempts the session from the cap; the exemption obliges the plan to tell the runner it does not fit, about that session — not via a note about volume (MWM-FLOOR-VALIDATOR-01, 2026-10-03).`,
+        message: `A weekday structured session runs ${Math.round(worstMins)} min against its day's stated ${worstCap}-min limit (past the ${GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT}% overrun limit) and SAYS NOTHING ON THE SESSION. §81 exempts the session from the cap; the exemption obliges the plan to tell the runner it does not fit, about that session — not via a note about volume (MWM-FLOOR-VALIDATOR-01, 2026-10-03).`,
         actual: `${Math.round(worstMins)} min, no session weekday_overrun_note`,
         expected: "the SESSION carries its own note naming the trade and the lever (§81's obligation is per-session)",
       })
@@ -5035,6 +5042,47 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         message: `${pinned} of ${weekdayEasy} weekday easy runs are pinned at the ${input.max_weekday_mins}-minute limit, so the cap is materially shaping this plan — but no volume_shortfall_note was set. A suppressed target is stated, never absorbed silently.`,
         actual: 'no volume_shortfall_note',
         expected: 'a note stating the cost and naming the lever',
+      })
+    }
+  }
+
+  // INV-PLAN-WEEKDAY-OVERRUN-DECLARED (§81 "the plan says when they don't fit", OVERRUN-NOTE-ALL-01, 2026-10-26)
+  //
+  // Keyed on the CONDITION, not the session kind: any weekday session longer than ITS DAY's limit carries its own
+  // `weekday_overrun_note`, and a note never sits on a session that fits (a later pass that shortens a stamped session
+  // would otherwise leave it claiming an overrun that is not there). The structured check above keeps §81 Am. 2's
+  // 50% tolerance; this one is the presence the engine owes on ANY overrun, which is what its own comment says it
+  // stamps. Plan-level §82 declaration is the check below; a note about volume does not discharge one about a session.
+  //
+  // Measured before: 7,627 floor-protected easy runs over their day with no note on the slow-goal grid.
+  // Exempt, mirroring the engine: strength, rest, race sessions, race week, and a session with no duration (the engine
+  // cannot cap what it cannot measure). The weekday LONG RUN is included: §81 exempts it from the cap and it was always
+  // stamped; INV-PLAN-LONG-RUN-FIT-STATED is its plan-level twin.
+  for (const w of plan.weeks) {
+    if (w.type === 'race' || w.badge === 'race') continue
+    for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
+      const sn = w.sessions?.[d]
+      // Derived HERE, not through the producer's `weekdayBudgetFor`: a checker sharing the producer's helper agrees
+      // with it on the wrong answer.
+      const own = input.day_budgets?.[d]
+      const budget = own != null ? { cap: own } : input.max_weekday_mins != null ? { cap: input.max_weekday_mins } : null
+      if (!sn || !budget || !sn.duration_mins) continue
+      if (sn.type === 'strength' || sn.type === 'rest' || sn.type === 'race') continue
+      const over = sn.duration_mins > budget.cap
+      if (over === !!sn.weekday_overrun_note) continue
+      // A structured session over its day with no note is INV-PLAN-STRUCTURED-OVERRUN-DECLARED's (§81 Am. 2, with its
+      // tolerance): reported once, not twice. The stale-note direction is this check's for every kind.
+      if (over && isStructuredSession(sn) && !isLongRun(sn)) continue
+      violations.push({
+        code: 'INV-PLAN-WEEKDAY-OVERRUN-DECLARED',
+        principle_ref: 'CoachingPrinciples §81 (§40c, §82)',
+        severity: 'warn',
+        week: w.n, day: d,
+        message: over
+          ? `${sn.label} is ${sn.duration_mins} min against the ${budget.cap} min set for ${d} and says nothing on the session.`
+          : `${sn.label} carries an overrun note but is ${sn.duration_mins} min against ${budget.cap}: the note claims an overrun that is not there.`,
+        actual: over ? 'over the day, no weekday_overrun_note' : 'weekday_overrun_note on a session that fits',
+        expected: 'a note exactly when the session is longer than its day',
       })
     }
   }

@@ -27,6 +27,18 @@ already decided what it is.
 
 ---
 
+### 🔲 `MODIFY-WEEKDAY-INERT-01` — "Weekday time limit" in Adjust your plan does nothing for a runner with per-day limits ⚙️ **NO BOARD** for the defect; 👤 **FOUNDER** for which way it resolves
+
+Found 2026-10-26 by the code review of OVERRUN-NOTE-ALL-01. `applyEdits` spreads the edit over the stored input (`{ ...base, ...edits }`), so `day_budgets` survives an edit to `max_weekday_mins`, and both the engine (`applyWeekdayMinsCap`) and the note read the day's own budget first. A runner who set Mon 60 / Wed 45 / Fri 30 in the wizard and later raises the weekday limit to 60 gets the same plan back. **No other control edits per-day limits after onboarding.** Two honest resolutions: (a) a new weekday limit replaces the per-day ones; (b) Adjust shows the per-day limits and edits them. **Population not yet measured** (live plans with `day_budgets`). Until fixed, the overrun note cannot offer this control as a lever to those runners.
+
+---
+
+### 🔲 `BASEBUILD-DURATION-01` — base-building weeks carry no duration, so weekday limits never apply ⚙️ **NO BOARD** (restores §122's own condition)
+
+Found 2026-10-26 in OVERRUN-NOTE-ALL-01's fixture. `generateBaseBuildOnRamp` calls `generateFoundationBlock` with `paceTarget: null` ("no finished plan to read a pace from"), so every ramp session has `distance_km` and **no `duration_mins`**. §122 permits that only where no pace is derivable, but a runner with a **benchmark** has one. Measured on a 7:40 marathoner with Mon 60 / Wed 45 / Fri 30: base-building easy runs of 5 km (~65 min at her pace) with no duration, so `applyWeekdayMinsCap`, `INV-PLAN-MAX-WEEKDAY-MINS` and the overrun note all skip them. **Population not yet measured** (finish-goal, low-volume runners with a benchmark and budgets; the slow-goal grid never reaches `base_build`). Fix: derive the easy pace from the benchmark when present, so duration exists and the cap and note apply.
+
+---
+
 ### 🔲 `HK-NATIVE-BG-INGEST-01` — ingest a run from native code when iOS wakes the app ⚙️ **NO BOARD** (💼 **SLT** if it needs prioritising against launch work)
 
 Filed 2026-10-25. The only remaining route to *link without opening the app*: `HealthObserverPlugin` would read the new workout and POST `/api/health/ingest` itself, with a token held natively, instead of handing off to a web page that is not loaded during a background wake. A user force-quit still blocks it (iOS rule). New binary. **Decide on the numbers from `HK-SYNC-TRIGGER-01`**: how many `observer_*` + `hidden` sweeps ingest a run.
