@@ -282,6 +282,12 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 - **New user-scoped table? `npm run check:db` fails until it is declared in `lib/supabase/userDataSurfaces.ts` AND wired.** ✅ **Both halves live since 2026-09-23** — `user_fk_delete_rules()` compares each declared `mode` against the LIVE `ON DELETE` rule, falsified by declaring `ops_events` as cascade against its real SET NULL. Discovery is schema-driven in both directions. ⚠️ **A new VIEW exposing `user_id` also fails until declared in `DERIVED_VIEWS`** — `information_schema.columns` cannot tell a view from a table, and of the two possible errors only "declare this harmless view" is safe to get wrong.
 - **Purging test data: `npm run purge:users -- --test-only`** (dry-run default, admin-safe, re-counts every user-keyed table from the LIVE SCHEMA after deleting — `deleteUser()` returning ok is what the old route believed too). ⚠️ **`--test-only` deliberately does NOT match `@demo.com`**: it swept up `zonna.demo@demo.com`, which holds more coaching history than any real account. Delete that one with `--ids` and intent.
 
+### New tables need explicit grants (MIGRATION-GRANTS-01, from 2026-10-30)
+- Supabase stops auto-granting Data API access to **new** `public` tables on 2026-10-30. Existing tables keep theirs.
+- **A migration that creates a table grants it in the same file**, at least to `authenticated` and `service_role` (`grant select, insert, update, delete on public.<t> to authenticated;` and the same to `service_role`). `anon` only if the table is read signed-out. RLS still governs rows.
+- Without it supabase-js returns `permission denied` as an error **object**, which most call sites here do not read, so a new feature looks empty rather than broken.
+- Enforced by `lib/supabase/migrationGrants.test.ts` for every migration dated `20261030` or later. Before this, 0 of 28 table-creating migrations carried a GRANT.
+
 ### Strava OAuth
 - Multi-line curl in Mac Terminal consistently fails
 - Use Hoppscotch (hoppscotch.io)

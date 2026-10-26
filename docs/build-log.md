@@ -336,6 +336,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** I also claimed "70 changed" in a commit message when it was 58 of 70. Caught before pushing.
 
 ---
+## 2026-10-26 — MIGRATION-GRANTS-01 · A vendor email, turned into a failing test
+**Shipped:** any migration from 30 October that creates a table must grant it, or the build fails.
+**Dev learning:** 0 of our 28 table-creating migrations had a GRANT; the platform did it for us. The failure after the change would be an error object from supabase-js, and this codebase has a long record of not reading those, so the symptom would be an empty screen, not an error.
+**Product/creator learning:** most vendor notices are "nothing to do". This one was "nothing to do today, and a silent outage the next time we add a table".
+**AI-building learning:** a regex detector needs its own cases, including a grant hidden in a comment, or it passes on the thing it exists to catch.
+**The honest bit:** ten minutes of work; the value is that nobody has to remember the email in March.
+**Hook material:** "0 of 28 migrations granted access. The platform was doing it for us, until 30 October."
+**Postable?:** no
+
 
 ## 2026-10-22 — SESSION-INTERVALS-HUE-01 · VO2 has its own colour, and it isn't the error colour
 **Shipped:** VO2 and hill sessions now show in coral everywhere: the card, Plan, Today, the session screen, the shape bar and the trace. The old interval colour was the exact hex of our error red; it's gone from training screens.
