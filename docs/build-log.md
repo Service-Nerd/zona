@@ -402,6 +402,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** The prototype found a live contradiction nobody had asked about: every easy run opened with 10 minutes of continuous running, while the run-walk rule says walk from the first rep. That's fixed now. Race day still shows the sentence, not steps.
 
 ---
+## 2026-10-26 — GRID-SLOW-GOALGAP-01 · Measure the runners the tests never had
+**Shipped:** slow runners with goals beyond their fitness are now in the sweep and in a measurement script; no engine change.
+**Dev learning:** my first measurement said a half-marathon goal at current fitness was "100% faster than threshold". It was the fast end of the pace band crossing T by four seconds, because for a slow runner HM pace and T are nearly the same pace. Centre plus a tolerance fixed it. The code review then found the real hole in my sweep change: the clones' debt went into the same per-code tolerance as everyone else, so 113 new floor breaches anywhere would have passed green. Separate tally, and the sweep goes red if they are merged again.
+**Product/creator learning:** at 15% past fitness every distance prescribes work faster than threshold, mostly faster than interval pace. Aspirational first-timers are the charity cohort.
+**AI-building learning:** two of my own instruments were wrong before the engine was: the band edge, and a list of "goal rows" that missed the tempo sessions §22 reprices at goal pace. Classify by what was prescribed, not by what it is called.
+**The honest bit:** I widened one grid, not both. The cohort grid is a 135-second test under twelve others, and I said so instead of doing it quietly.
+**Hook material:** "The slowest runner in our tests was VDOT 29. The slowest runner using the app is 16.2."
+**Postable?:** maybe
+
 
 ## 2026-10-22 — REP-UNITS-KM-01 · the session is named for what it is
 **Shipped:** "Mile repeats" is now "1600m repeats" in new plans. Same session, same reps.

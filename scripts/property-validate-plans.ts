@@ -6,6 +6,7 @@
 // Exit: 0 if all plans pass invariants; 1 if any violations.
 // (NODE_ENV=production prevents the engine from throwing — we want to collect.)
 
+import { SLOW_BENCHMARKS, GOAL_GAPS, targetForGap } from '../lib/plan/slowGoalGrid'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { isDesignedRefusal } from '../lib/plan/designedRefusal'
 import { validatePlan, type Violation } from '../lib/plan/invariants'
@@ -701,11 +702,26 @@ const randomInputs = Array.from({ length: SWEEP_N }, () => randomInput())
 const observedClones = randomInputs.filter((_, i) => i % 11 === 0).map(inp => ({ ...inp, volume_observed: true }))
 // R5 — `after_walk_run_start`, the same clone pattern: every 13th input repeated with the flag set.
 const walkRunClones = randomInputs.filter((_, i) => i % 13 === 0).map(inp => ({ ...inp, after_walk_run_start: true }))
+// GRID-SLOW-GOALGAP-01 (2026-10-26) — every 17th input repeated as a SLOW runner whose goal outruns current fitness
+// (`lib/plan/slowGoalGrid.ts`). The clone pattern, so the seeded sample stays byte-identical. The 26 Oct RCA's three
+// defects all lived here: no swept runner was slower than an HM of 2:30, and the goal never moved against fitness.
+// ⚠️ Undated benchmarks, like every other set here: the sweep pins PLAN_START, and a dated benchmark would be judged
+// against the wall clock and expire (PINNED-CLOCK-01). The dated path is `measure:goal-gap`'s, which derives its dates.
+const slowGoalClones = randomInputs.filter((_, i) => i % 17 === 0).map((inp, j) => {
+  const benchmark = SLOW_BENCHMARKS[j % SLOW_BENCHMARKS.length]
+  const gap = GOAL_GAPS[Math.floor(j / SLOW_BENCHMARKS.length) % GOAL_GAPS.length]
+  return { ...inp, benchmark: { ...benchmark }, goal: 'time_target', target_time: targetForGap(benchmark, inp.race_distance_km, gap) }
+})
+/** Their violations are tallied under `<code>@slow-goal`, so their debt never raises the main population's tolerance
+ *  (code review 2026-10-26: one shared count let 113 new §9 breaches anywhere pass green). */
+const SLOW_GOAL_INPUTS = new Set<object>(slowGoalClones)
+const SLOW_GOAL_SUFFIX = '@slow-goal'
 const inputs = [
   ...CORNERS,
   ...randomInputs,
   ...observedClones,
   ...walkRunClones,
+  ...slowGoalClones,
 ]
 
 // ── INPUT COVERAGE GATE (proposal #4, 2026-09-04) ───────────────────────────
@@ -1254,7 +1270,8 @@ for (const input of inputs) {
       }
     }
     for (const v of errors) {
-      violationsByCode.set(v.code, (violationsByCode.get(v.code) ?? 0) + 1)
+      const tally = SLOW_GOAL_INPUTS.has(input) ? `${v.code}${SLOW_GOAL_SUFFIX}` : v.code
+      violationsByCode.set(tally, (violationsByCode.get(tally) ?? 0) + 1)
       if (samples.length < SAMPLE_CAP) samples.push({ input, violation: v })
     }
   }
@@ -1613,7 +1630,21 @@ const BASELINE: Record<string, number> = {
   // The entry is kept rather than deleted: it records that the input-coverage
   // gate paid for itself on its first run, surfacing 1,426 real violations that
   // had been unreachable since M-02 declared `weeks_at_current_volume`.
+  //
+  // @slow-goal 113 (GRID-SLOW-GOALGAP-01, 2026-10-26), the main population held at 0. NOT A REGRESSION: the slow-goal clones reached runners the grid
+  // never had. `progressiveTempoPlan` and `fixedShapePlan` carry no §9 floor (the remedy in 7aad6740 reached two of
+  // four shape builders), and at a slow runner's pace fixed minutes price under 5 km. Debt for the 26 Oct RCA item 2;
+  // the Coaching Board rules the unit (km, or minutes at the runner's own pace) before it is paid.
   'INV-PLAN-MIN-SESSION-SIZE':             0,
+  'INV-PLAN-MIN-SESSION-SIZE@slow-goal':   113,
+  //
+  // 0 -> 73 / 0 -> 122 / 0 -> 1 (GRID-SLOW-GOALGAP-01, same clones, same item). The other face of the same floor:
+  // where a builder DOES carry the 5 km floor, a slow runner's reps grow until the distance is met, past the dose
+  // the row is ruled for. Measured on the slow grid: VO2max-cap violations 24 -> 0 with the floor off. The goal-pace
+  // reps (12-minute cap) and the ordering check share the mechanism by reading and are proven when item 2 lands.
+  'INV-PLAN-VO2MAX-MAIN-SET-CAP@slow-goal': 73,
+  'INV-PLAN-GOAL-PACE-SHAPE@slow-goal':     122,
+  'INV-PLAN-MAIN-SET-ORDERING@slow-goal':   1,
 
   // 87 -> 75 -> 0 (LABEL-VARIETY-01, 2026-08-21). The LABEL count is now zero:
   // the peak goal-pace override takes the row's shape word ("…-pace ladder",
