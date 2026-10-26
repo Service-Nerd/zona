@@ -206,3 +206,11 @@ order, first as the primary button (amendments 5, 7, 8). No meter or progress el
 `extend` / `run_walk` re-send with `checkpoint_choice`; `later_race` opens the wizard; `connect_health` opens Me →
 Connections. On a staged plan **"Not yet" hides the card for the session only** and writes no seen-flag, because the
 race is still waiting. ⚠️ The ruling said "a consent screen"; it is built on the card, not as its own screen.
+
+## Week identity — PHASE-ON-TODAY-01 (2026-10-26)
+
+No prop change. The context row's label comes from `weekIdentity(currentWeek)` (`lib/coaching/weekVoice.ts`), not a
+local map. `data-week-identity` carries the kind (`race` | `deload` | `taper` | `phase` | `none`); a deload adds
+`data-week-mark="deload"` to the hairline (`--s-recov`) and inks the label. In a deload week the rule coach note is
+`DELOAD_WEEK_NOTE_WITH_STRENGTH` when `strength.sessionsByDate` has a date inside the current week, else
+`DELOAD_WEEK_NOTE`. The coach card stays paid/trial (`hasPaidAccess`), so a free runner sees the name and the mark only.

@@ -92,3 +92,30 @@ export function phaseDisplayLabel(raw: string | null | undefined): string | null
   if (!raw) return null
   return PHASE_LABELS[raw] ?? raw
 }
+
+// ─── PHASE-ON-TODAY-01 (Design Board + Coaching Board 2026-10-26) ──────────────────────────────────────────────────
+// The founder changed strength to an hour and saw 33 minutes: a deload week, and nothing on Today said so. 13.3% of
+// plan weeks are deloads. Words founder-approved 2026-10-26; the strength clause only for a runner who has strength
+// that week (Coaching Board: "fewer sets" is untrue for everyone else).
+
+export const DELOAD_LABEL = 'Deload'
+export const RACE_WEEK_LABEL = 'Race week'
+export const DELOAD_WEEK_NOTE = 'Deload week. Less running. This is where the work lands.'
+export const DELOAD_WEEK_NOTE_WITH_STRENGTH = 'Deload week. Less running, fewer sets. This is where the work lands.'
+export const STRENGTH_DELOAD_LINE = 'Lighter week. Fewer sets, on purpose.'
+
+export type WeekIdentity = { label: string | null; kind: 'race' | 'deload' | 'taper' | 'phase' | 'none' }
+
+/**
+ * What kind of week this is, as the runner should read it. The single owner: race week, then deload, then taper,
+ * then the phase name through `PHASE_LABELS`. A week's badge outranks its phase because it changes what today means;
+ * `phase` alone said "Build" through a deload week.
+ */
+export function weekIdentity(week: { badge?: string | null; phase?: string | null } | null | undefined): WeekIdentity {
+  if (!week) return { label: null, kind: 'none' }
+  if (week.badge === 'race') return { label: RACE_WEEK_LABEL, kind: 'race' }
+  if (week.badge === 'deload') return { label: DELOAD_LABEL, kind: 'deload' }
+  if (week.phase === 'taper') return { label: phaseDisplayLabel('taper'), kind: 'taper' }
+  const label = phaseDisplayLabel(week.phase ?? null)
+  return label ? { label, kind: 'phase' } : { label: null, kind: 'none' }
+}

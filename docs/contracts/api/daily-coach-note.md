@@ -136,3 +136,9 @@ The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owne
 of 94 Supabase warnings in a day. **A database error now answers `500 { error: 'Could not load your plan' }`.** It used to be indistinguishable from "no plan" and answered as if the runner had none.
 
 **Strength session title (STRENGTH-SESSION-TITLE-01, 2026-10-19).** Any strength session's name comes from `strengthSessionTitle(session)` (`lib/strength-bridge/display.ts`), read from what it holds (*Lower body*, *Upper body and light legs*, else the kind title), never `STRENGTH_KIND_TITLE[kind]`. Gate: `lib/strength-bridge/sessionTitle.test.ts`.
+
+## 2026-10-26 — PHASE-ON-TODAY-01: the prompt is told about a deload week
+
+Request and response unchanged. `promptInput.deloadWeek = week.badge === 'deload'`, and `buildDailyCoachNotePrompt`
+adds one fact: a planned deload week, volume and any strength sets cut on purpose, say so, never suggest adding work.
+Before this, a deload week reached the model as its phase only (e.g. "build").

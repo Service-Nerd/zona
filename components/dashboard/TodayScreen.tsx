@@ -5,6 +5,7 @@
 //
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
+import { weekIdentity, DELOAD_WEEK_NOTE, DELOAD_WEEK_NOTE_WITH_STRENGTH } from '@/lib/coaching/weekVoice'
 import { resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
 import { SLOT_LABEL, doubleAdvice } from '@/lib/plan/doubles'
 import { isEasedForRecovery } from '@/lib/ui/easedMark'
@@ -1079,10 +1080,15 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
     s.type !== 'rest' && (completions[s.key]?.status === 'complete' || completions[s.key]?.status === 'skipped')
   ).length
   const weeklyKm = (currentWeek as any).weekly_km as number | undefined
-  const weekPhaseLabel = (() => {
-    const p = (currentWeek as any).phase as string | undefined
-    return p ? ({ base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' }[p] ?? null) : null
-  })()
+  // PHASE-ON-TODAY-01 — through the one owner. This was a local four-name map (base/build/peak/taper), so base
+  // building, walk-run start, foundation and maintenance read just "Week N", and a deload week read as its phase.
+  const weekId = weekIdentity(currentWeek as any)
+  const weekPhaseLabel = weekId.label
+  const isDeloadWeek = weekId.kind === 'deload'
+  // "Fewer sets" only for a runner with strength in THIS calendar week (strength weeks count from their own start).
+  const weekStartIso = String((currentWeek as any).date ?? '').slice(0, 10)
+  const weekEndIso = weekStartIso ? new Date(Date.parse(`${weekStartIso}T00:00:00Z`) + 6 * 864e5).toISOString().slice(0, 10) : ''
+  const strengthThisWeek = !!strength && !!weekStartIso && Object.keys(strength.sessionsByDate).some(d => d >= weekStartIso && d <= weekEndIso)
 
   // Fatigue trend — last 5 tagged completions sorted chronologically
   const fatigueHistory = (() => {
@@ -1168,7 +1174,8 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
     })()
 
     let base: string
-    if (phase === 'taper') base = "Taper week. Back off and trust the work."
+    if (isDeloadWeek) base = strengthThisWeek ? DELOAD_WEEK_NOTE_WITH_STRENGTH : DELOAD_WEEK_NOTE
+    else if (phase === 'taper') base = "Taper week. Back off and trust the work."
     else if (phase === 'peak')  base = "Peak week. You're sharp. Don't add more."
     else if (hasQuality && hasLong) base = "Quality and long run this week. Hard stuff first, long stuff rested."
     else if (hasQuality) base = "Quality session this week. Everything else is recovery."
@@ -1267,14 +1274,16 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
           gap: 'var(--space-2)',
           marginBottom: 'var(--space-3)',
         }}>
-          <span style={{
+          {/* PHASE-ON-TODAY-01 — an exceptional week (deload) is named in ink and marks the hairline with the
+              recovery hue: colour on the mark, ink on the words. Ordinary phases keep --mute and --line. */}
+          <span data-week-identity={weekId.kind} style={{
             fontFamily: 'var(--font-ui)',
-            color: 'var(--mute)',
+            color: isDeloadWeek ? 'var(--ink)' : 'var(--mute)',
              ...MICRO_LABELS.eyebrow,
           }}>
             {weekPhaseLabel ? `${weekPhaseLabel} · ` : ''}Week {weekOrdinal}
           </span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
+          <div data-week-mark={isDeloadWeek ? 'deload' : undefined} style={{ flex: 1, height: '1px', background: isDeloadWeek ? 'var(--s-recov)' : 'var(--line)' }} />
           {daysToRace > 0 && (
             <span style={{
               fontFamily: 'var(--font-ui)',

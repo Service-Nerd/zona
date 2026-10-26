@@ -11,6 +11,7 @@
 // actions at the end of content (7a), done or skipped only (no RPE until Phase 4).
 // Every string comes from `lib/strength-bridge/display.ts`.
 
+import { STRENGTH_DELOAD_LINE } from '@/lib/coaching/weekVoice'
 import EasedMark from '@/components/shared/EasedMark'
 import { isEasedForRecovery } from '@/lib/ui/easedMark'
 import { useRef, useState } from 'react'
@@ -168,9 +169,11 @@ export interface StrengthSessionScreenProps {
   lifts?: { suggestions: Record<string, LiftSuggestion>; today: Record<string, LiftLog>; units: 'km' | 'mi'; onLog?: LiftLogging['onLog'] }
   /** STRENGTH-ROW-OPEN-01 — called the first time each exercise row is opened on this visit (the demand measure). */
   onExerciseOpen?: (exerciseId: string) => void
+  /** PHASE-ON-TODAY-01 — the strength week is a deload: say the short session is on purpose. */
+  deloadWeek?: boolean
 }
 
-export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus, note = null, lifts, onExerciseOpen }: StrengthSessionScreenProps) {
+export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus, note = null, lifts, onExerciseOpen, deloadWeek = false }: StrengthSessionScreenProps) {
   // Once per exercise per visit: reopening a row to re-read a cue is not a second look-up.
   const opened = useRef(new Set<string>())
   const onOpen = onExerciseOpen && ((id: string) => { if (opened.current.has(id)) return; opened.current.add(id); onExerciseOpen(id) })
@@ -208,6 +211,12 @@ export default function StrengthSessionScreen({ session, dayLabel, weekN, status
           <Tile label="Duration" value={formatDuration(session.estimated_minutes) ?? '–'} />
           <Tile label="Exercises" value={String(exerciseCount(session))} />
         </div>
+        {/* PHASE-ON-TODAY-01 — the founder read a deload's 33 minutes as his 60-minute setting ignored. */}
+        {deloadWeek && (
+          <p data-strength-deload style={{ fontFamily: FONT, fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.5, margin: 'var(--space-2) 0 0' }}>
+            {STRENGTH_DELOAD_LINE}
+          </p>
+        )}
 
         {/* STRENGTH-NOTE-01 — the week's note, said once, here (Design Board: not on Today, which
             already shows the session, nor on Plan, whose coach card is the run's). */}

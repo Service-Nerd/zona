@@ -10,6 +10,21 @@ not after.
 
 
 
+## 2026-10-26 — PHASE-ON-TODAY-01 · SHIP WITH AMENDMENT. Today says what kind of week this is; a deload is marked and explained
+
+The founder set strength to an hour and saw 33 minutes: a deload week, named on Today only by the rest-day card. Measured:
+Today's phase came from a **local four-name map** (base building, walk-run start, foundation, maintenance read just
+"Week N"), the rule coach note had **no deload case**, the AI note was never told, and **13.3% of plan weeks are
+deloads** (168 of 1,262). **P1** one owner, `weekIdentity` (race week › deload › taper › phase via `PHASE_LABELS`).
+**P2** the mark, exceptional weeks only: a deload's context row is named in **ink** and its hairline takes
+**`--s-recov`** (hue on the mark, ink on the words; no new hue). **P3** the week's job in the coach note, and the AI
+note is told. **P4** the strength session says why it is short. **Collins lost** a per-phase colour across Today:
+Silvanto would have vetoed it under *"six session hues and four phase hues are already spent"*. To reopen: a device
+test where the hairline goes unseen, or an amendment to that rule. ⚠️ The coach card is paid/trial by an existing gate,
+so a **free** runner gets the name and the mark, not the line. Words founder-approved; the strength clause shown only
+with strength that week (Coaching Board). Check: `components/dashboard/phaseOnToday.markup.test.ts` (12 arms, five
+mutations falsified). Note: `docs/decisions/design-2026-10-26-phase-on-today.md`. Not felt on a device.
+
 ## 2026-10-24 — NO-RUNNER-TURNED-AWAY-01 · SHIP WITH AMENDMENT (10). The race plan, staged; never the refusal view
 
 Coaching ruled the meaning; this rules the encoding. A base-volume refusal lands on the **race plan's preview**, with

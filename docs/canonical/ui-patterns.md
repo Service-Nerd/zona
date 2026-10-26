@@ -4555,10 +4555,12 @@ Every screen must honour these invariants before shipping. Check against this li
 
 ### Today Screen
 
+> **Week identity (PHASE-ON-TODAY-01, 2026-10-26).** The context row names the week through `weekIdentity()` (`lib/coaching/weekVoice.ts`): race week › deload › taper › the phase via `PHASE_LABELS`. Never a local map. **Only an exceptional week is marked:** a deload's label is `--ink` and its hairline `--s-recov`; every other week keeps `--mute` and `--line`. No phase hue, no tint, no fill (colour on the mark, ink on the words). The coach note leads with the week's job in a deload week, and the strength session says why it is short. Check: `phaseOnToday.markup.test.ts`.
+
 ```
 [ZONNA wordmark · moss dot]
 
-[Context row: phase · week · Xd out]
+[Context row: phase · week · Xd out]   ← PHASE-ON-TODAY-01: the name from weekIdentity(); a deload is ink + an --s-recov hairline
 [Today, you run]
 [56px hero: "10km," ink + "slowly." moss]
 

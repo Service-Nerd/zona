@@ -297,6 +297,7 @@ export async function GET(req: NextRequest) {
     todayDouble:       todayList.length >= 2,
     lastSession,
     weekPhase: (week as any).phase as string | null,
+    deloadWeek: (week as any).badge === 'deload',
     weekN,
     totalWeeks: plan.weeks.length,
     planComplete,

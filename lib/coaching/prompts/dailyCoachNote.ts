@@ -44,6 +44,8 @@ export interface DailyCoachNoteInput {
 
   /** Plan context. */
   weekPhase: string | null          // 'base' / 'build' / 'peak' / 'taper'
+  /** PHASE-ON-TODAY-01 — the week is a planned deload (badge). The note must not read it as a normal week. */
+  deloadWeek?: boolean
   weekN: number
   totalWeeks: number
   /** True when today is past the end of the plan's final week — the plan is over. */
@@ -266,6 +268,7 @@ Output: one or two short sentences in the voice described above. No quotes. No p
 
   // Plan context
   if (input.weekPhase) facts.push(`Phase: ${input.weekPhase} (week ${input.weekN}/${input.totalWeeks})`)
+  if (input.deloadWeek) facts.push('This is a planned deload week: running volume (and strength sets, if any) are cut on purpose so the training settles. Say so plainly; never suggest adding work')
   if (input.weeksToRace !== null && input.weeksToRace >= 0) {
     facts.push(`Race: ${input.raceName ?? 'target race'}${input.raceDistanceKm ? ` (${fmtRace(input.raceDistanceKm)})` : ''}, ${input.weeksToRace} weeks away`)
   }

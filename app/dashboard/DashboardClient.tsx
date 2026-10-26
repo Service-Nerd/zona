@@ -3330,6 +3330,7 @@ export default function DashboardClient() {
               session={activeStrength}
               dayLabel={d ? formatDate(d, 'weekday-only') ?? '' : ''}
               weekN={activeStrength.week_n}
+              deloadWeek={strength.plan?.weeks.find(w => w.n === activeStrength.week_n)?.phase === 'deload'}
               status={activeStrength.date ? strength.completions[activeStrength.date] ?? null : null}
               canLog={!!activeStrength.date && activeStrength.date <= isoLocalDate(new Date())}
               lifts={strength.plan ? {
