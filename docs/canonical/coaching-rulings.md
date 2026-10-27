@@ -87,7 +87,16 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
-## 2026-10-27 — EASY-RUN-ABSORBS-QUALITY-01 · Q1 INCORRECT (no easy-run cap) · Q2 CORRECT WITH AMENDMENT (§9 ratio in minutes) · Q2 BUILT 2026-10-27 (S9-RATIO-MINUTES-01; reached 244 ultras the evidence never sampled)
+## 2026-10-27 — S9-RESIDUAL-STATED-01 · Q1 INCORRECT (no note for a §9 cut) · Q2 leave the dips (label INCORRECT, smooth INCORRECT) · RULED, nothing to build
+
+A §9 cut drops the easy-run minutes silently. Measured on the main parity grid against §40c's own bar (10% of the
+intended peak week): no plan crosses it (worst 9.6% km clamps, 6.0% minutes clamp). §40c is also scoped to a life-first
+constraint with a runner-owned lever, and this has neither. 51 weeks in 2,092 plans dip below the week before mid-build
+(all from the older km clamps) and the build resumes: left alone. Labelling them would call a clamp a planned recovery;
+smoothing re-breaks §9 or grows the long run against S9-RATIO-MINUTES-01. Sitting:
+`docs/decisions/coaching-2026-10-27-s9-residual-stated-sitting.md`.
+
+## 2026-10-27 — EASY-RUN-ABSORBS-QUALITY-01 · Q1 INCORRECT (no easy-run cap) · Q2 CORRECT WITH AMENDMENT (§9 ratio in minutes) · Q2 BUILT 2026-10-27 (S9-RATIO-MINUTES-01; reached 244 ultras the evidence never sampled, founder accepted that reach 2026-10-27)
 
 **Q1:** the item said volume freed from a short quality session piles into one easy run. Measured, it does not: in 72%
 of flagged weeks every easy run is that size, and the overshoot of §9's line averages 0.5 min/week. A 75-100-minute

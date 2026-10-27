@@ -27,16 +27,6 @@ already decided what it is.
 
 ---
 
-### 🔲 `S9-RESIDUAL-STATED-01` — a week cut to keep §9's ratio says nothing about the minutes it lost 🏃 **COACHING BOARD** (§40c reach)
-
-Found building S9-RATIO-MINUTES-01. When a pass shortens the long run, §9 holds the easy runs at long ÷ 1.25 and the
-difference is dropped silently, in km plans as it always was and now in minutes plans too. Measured on the parity grid:
-0.2–0.7% of a changed plan's minutes, worst week −36% (a 100K week that had spiked +136%). §40c says a suppressed target
-is stated; whether a per-week shortfall of this size is a "target" the runner was shown is the question. Measure how
-many weeks lose more than §40c's own materiality before a sitting.
-
----
-
 ### 🔲 `RACE-NOTES-INERT-01` — the race-week note is written into every plan and shown nowhere 🧭 **DESIGN BOARD** (render it) or ⚙️ **NO BOARD** (retire it)
 
 Found 2026-10-27 preparing RACE-DAY-PACE-WITHHELD-01. `week.race_notes` (*"Start at Zone 2. The second half is where the

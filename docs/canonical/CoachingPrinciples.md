@@ -1488,9 +1488,10 @@ property sweep (17,415 plans) has no new violation. Live: 2 of 29 plans carried 
 the tolerance is the rounding bound of two whole-minute values (`0.5 × ratio + 0.5`), not a margin; a minutes long run
 beside a km easy run is not compared (the checker has no pace; measured 0 such weeks), while a km long run beside a
 minutes easy run is (1,755 of 38,350 cohort weeks carry that pairing); on a reshape it is enforced on the week touched only,
-because a stored plan can carry a breach the reshape did not cause. `lib/plan/s9RatioMinutes.test.ts`. **Not
-settled:** the residual is cut silently, as the km clamps already were. No note says a week came in shorter than its
-volume target, and none did before for distance-anchored plans (§40c reach, unmeasured).
+because a stored plan can carry a breach the reshape did not cause. `lib/plan/s9RatioMinutes.test.ts`. **The
+residual is cut silently, by ruling** (S9-RESIDUAL-STATED-01, same day): no plan loses §40c's 10% of its peak week
+(worst 9.6% km, 6.0% minutes), and a §9 cut has no runner-owned lever. 51 mid-build dips from the km clamps are left
+alone: labelling them calls a clamp a planned recovery, and smoothing re-breaks §9.
 
 ### §9 — RECORDED STRUCTURAL FINDING: three principles size the long run and the engine obeys the loosest (2026-09-19, PLAN-QUALITY-AUDIT-01)
 
