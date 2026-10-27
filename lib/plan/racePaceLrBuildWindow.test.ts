@@ -119,6 +119,9 @@ describe('§25 Am. 2 — the race-pace long run in the final build week', () => 
       // A designed refusal (e.g. DaysAvailableError) is not this gate's subject.
       let plan: Plan
       try { plan = generateRulePlan(g, 'paid', COHORT_PLAN_START, undefined, COHORT_PLAN_START) } catch { continue }
+      // §120 Am. 2 — a goal past the 5% line gets no race-pace long run at all; this arm is about WHERE it lands when
+      // it is prescribed. (Every benchmarked cohort marathon goal sits ~10% past fitness, so those are all withheld.)
+      if (plan.meta.goal_pace_withheld) continue
       const build = plan.weeks.filter(w => w.n >= 1 && w.phase === 'build')
       const last = build[build.length - 1]
       if (!last || (last.type !== 'deload' && last.badge !== 'deload')) continue

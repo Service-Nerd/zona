@@ -132,23 +132,21 @@ describe('§93 Am.1 — the marathon peak takes race-specific quality', () => {
     // anchored `goal` not `HM` and survives the withholding. Exempting them would
     // have dropped 20% of the examined population for a reason that does not apply
     // to them. This arm is why the exemption counts SURVIVING ROWS per fitness band.
+    //
+    // §120 Am. 2 (2026-10-27): the engine now withholds the `goal` anchor too, past the 5% line, so a benchmarked
+    // beginner past CV has NO surviving row and is exempt. The fitness-aware count still matters for every STORED plan
+    // that carries only the HM stamp, so it is proven on this plan with the new stamp removed.
     const input = hmPastCv('beginner')
     const p = generateRulePlan(input, 'paid', TODAY, undefined, TODAY)
     expect(p.meta.hm_goal_anchor_withheld).toBe(true)
-    // A beginner keeps an eligible row, so they are still REQUIRED to have one…
-    expect(raceSpecific(peakQuality(p)).length).toBeGreaterThan(0)
-    // …and removing it must still be caught. If this goes green with the row
-    // stripped, the exemption has widened back to "any stamped plan".
-    for (const w of p.weeks) {
-      if (w.n < 1 || w.phase !== 'peak' || w.type === 'deload') continue
-      for (const s of Object.values(w.sessions)) {
-        if (s?.type !== 'quality') continue
-        ;(s as { catalogue_id?: unknown }).catalogue_id = 'threshold_ladder'
-        ;(s as { label?: unknown }).label = 'Threshold ladder'
-      }
-    }
-    expect(validatePlan(p, input).map(v => v.code))
-      .toContain('INV-PLAN-PEAK-RACE-SPECIFIC-REACHED')
+    expect(p.meta.goal_pace_withheld).toBeDefined()
+    expect(raceSpecific(peakQuality(p)).length).toBe(0)
+    expect(validatePlan(p, input).map(v => v.code)).not.toContain('INV-PLAN-PEAK-RACE-SPECIFIC-REACHED')
+    // A legacy plan: HM stamp only. The beginner's goal-anchored row "survives", so the plan is still REQUIRED to
+    // have race-specific peak work, and it has none. If this goes green the exemption has widened to "any stamp".
+    const legacy = JSON.parse(JSON.stringify(p))
+    delete legacy.meta.goal_pace_withheld
+    expect(validatePlan(legacy, input).map(v => v.code)).toContain('INV-PLAN-PEAK-RACE-SPECIFIC-REACHED')
   })
 
   it('the invariant fires when the category is absent', () => {

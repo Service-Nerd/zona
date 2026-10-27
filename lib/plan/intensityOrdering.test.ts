@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
+import { hasGoalGapSentence } from './goalPaceReach'
 import type { GeneratorInput } from '@/types/plan'
 
 /**
@@ -45,11 +46,19 @@ function asShipped<P extends { weeks: { sessions: Record<string, unknown> }[] }>
   return plan
 }
 
+// ⚠️ MOVED TO 5K ON 2026-10-27 (§120 Amendment 2). The original 10K fixture (48:30 → 44:59) is 7% past fitness, so goal
+// pace is now WITHHELD and there is no inversion left to declare. The inversion needs a goal faster than interval pace
+// that is still INSIDE the 5% line: interval pace sits +1.1% past race fitness at 5K (+4.3% at 10K, a window too narrow
+// to rely on), so a 5K goal ~3% past fitness inverts and is still prescribed. The past-the-line case is asserted below.
 const STRETCH: GeneratorInput = {
-  race_date: '2026-11-29', race_distance_km: 10, goal: 'time_target', target_time: '0:44:59',
+  race_date: '2026-11-29', race_distance_km: 5, goal: 'time_target', target_time: '0:23:06',
   days_available: 4, age: 43, current_weekly_km: 40, longest_recent_run_km: 18,
   resting_hr: 48, max_hr: 188, preferred_long_run_day: 'sun',
-  benchmark: { type: 'race', distance_km: 10, time: '0:48:30' },
+  // ⚠️ THE INVERSION NOW LIVES IN A SECONDS-WIDE WINDOW, measured: interval pace is priced from the RAW VDOT and race
+  // fitness from the discounted one (3% here, whatever the date), so interval pace sits ~4.6% past race fitness and the
+  // §83 inversion appears only between ~4.6% and the 5% line. For this runner that is 23:04–23:10; 23:06 is its centre.
+  // §120 Am. 2 made most inversions impossible by withholding the goal pace that caused them.
+  benchmark: { type: 'race', distance_km: 5, time: '0:24:00', benchmark_date: '2026-08-10' },
   injury_history: ['Left knee, posterior, recurring'],
 }
 
@@ -58,7 +67,18 @@ const STRETCH: GeneratorInput = {
 // noise and stops meaning anything.
 const REALISTIC: GeneratorInput = { ...STRETCH, target_time: '0:48:00' }
 
-beforeAll(() => { vi.useFakeTimers(); vi.setSystemTime(FROZEN_NOW) })
+beforeAll(() => {
+  vi.useFakeTimers(); vi.setSystemTime(FROZEN_NOW)
+  // FOUND, NOT HAND-PICKED (code review): the window moves with the VDOT discount, pace rounding and the 5% line, so
+  // the target is searched for at run time. If no target inverts and is still prescribed, the window has closed and
+  // that is the finding, not a fixture to retune.
+  for (let secs = 23 * 60 + 30; secs >= 21 * 60; secs--) {
+    const t = `0:${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`
+    const p = generateRulePlan({ ...STRETCH, injury_history: undefined, target_time: t }, 'paid', PLAN_START)
+    if (p.meta.goal_beyond_measured_fitness && !p.meta.goal_pace_withheld) { STRETCH.target_time = t; return }
+  }
+  throw new Error('No 5K goal both inverts against interval pace and sits inside the §120 Am. 2 line: the SC-06 window has closed')
+})
 afterAll(() => { vi.useRealTimers() })
 
 describe('SC-06 — cross-session intensity ordering', () => {
@@ -77,6 +97,13 @@ describe('SC-06 — cross-session intensity ordering', () => {
     const healthy = generateRulePlan({ ...STRETCH, injury_history: undefined }, 'paid', PLAN_START)
     expect(healthy.meta.goal_beyond_measured_fitness).toBe(true)
     expect(healthy.meta.difficulty_note!.toLowerCase()).toContain('race-pace')
+  })
+
+  it('§120 Am. 2 — past the 5% line there is no goal-pace work to invert, and the declaration is the gap itself', () => {
+    const past = generateRulePlan({ ...STRETCH, injury_history: undefined, target_time: '0:21:00' }, 'paid', PLAN_START)
+    expect(past.meta.goal_pace_withheld).toBeDefined()
+    expect(hasGoalGapSentence(past.meta.difficulty_note), past.meta.difficulty_note).toBe(true)
+    expect(validatePlan(past, STRETCH).filter(v => v.code === 'INV-PLAN-INTENSITY-ORDERING')).toEqual([])
   })
 
   it('a realistic target is not flagged (no false positive)', () => {

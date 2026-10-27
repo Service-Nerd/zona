@@ -22,7 +22,10 @@ const FROZEN_NOW = new Date('2026-08-20T09:00:00Z')
 const PLAN_START = '2026-09-07'
 
 const INPUT: GeneratorInput = {
-  race_date: '2026-11-29', race_distance_km: 10, goal: 'time_target', target_time: '0:44:59',
+  race_date: '2026-11-29', race_distance_km: 10, goal: 'time_target',
+  // 0:44:59 until 2026-10-27: 7% past this runner's 48:30, so §120 Am. 2 now withholds goal pace and there is no §22
+  // session left to test. 0:47:00 (~3%) keeps the fixture on the side of the line this test is about.
+  target_time: '0:47:00',
   days_available: 4, age: 43, current_weekly_km: 40, longest_recent_run_km: 18,
   resting_hr: 48, max_hr: 188, preferred_long_run_day: 'sun',
   benchmark: { type: 'race', distance_km: 10, time: '0:48:30' },

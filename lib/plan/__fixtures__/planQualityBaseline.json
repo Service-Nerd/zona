@@ -3,16 +3,15 @@
     "generated": 3035,
     "refused": 3445,
     "LONG-RUN-SHORT": 1764,
-    "WEEK1-LEAP": 284,
-    "BINGE-WEEK": 7
+    "WEEK1-LEAP": 284
   },
   "cohortGrid": {
     "generated": 2872,
     "refused": 128,
-    "NEVER-BUILDS": 1089,
-    "BINGE-WEEK": 285,
+    "NEVER-BUILDS": 1090,
+    "BINGE-WEEK": 289,
     "WEEK1-LEAP": 22,
-    "LONG-RUN-SHORT": 20,
+    "LONG-RUN-SHORT": 21,
     "BINGE-SEVERE-75": 19,
     "FLAT-CURVE": 3
   },

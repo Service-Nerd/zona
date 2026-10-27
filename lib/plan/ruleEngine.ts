@@ -88,6 +88,7 @@ import {
   velocityAtFraction, paceAtFraction, formatPace, paceBandStr, buildPaceFromVDOT, bandCeiling,
 } from './paceBands'
 import type { PaceGuide } from './paceBands'
+import { goalPaceReach, goalGapSentence, hasGoalGapSentence } from './goalPaceReach'
 import { qualityHeaderPace } from './qualityHeaderPace'
 import { fitnessAnchorMap } from './fitnessAnchorMap'
 import { alignDerivedToStructure } from './derivedSetAnchors'
@@ -810,7 +811,8 @@ function resolveAnchorPace(
     case 'T':    return pace.minPerKmQuality
     case 'CV':   return pace.minPerKmCV
     case 'I':    return pace.minPerKmInterval
-    case 'goal': return goalPaceMinPerKm
+    // §120 Amendment 2 — past the reachability line the goal is not a pace this plan prescribes.
+    case 'goal': return pace.goalWithheld ? null : goalPaceMinPerKm
     // §24b — null for a structurally-beginner runner, who is prescribed no pace
     // segments. That is a legitimate "this runner has no such pace", not a gap:
     // the selector's anchor gate keeps rows needing them out of their pool.
@@ -825,7 +827,17 @@ function resolveAnchorPace(
       // pace that is NOT the runner's HM goal is the header defect this whole
       // item exists to fix, and renaming it honestly stops it being
       // race-specific, which is withholding with extra steps.
-      if (pace.minPerKmCV != null) {
+      //
+      // §120 Amendment 2 (2026-10-27) — for a BENCHMARKED runner the bound is the one reachability line for every
+      // distance (`goalPaceReach`, carried as `pace.goalWithheld`): CV sits a fixed +5.1% of HM race pace, and on 2,832
+      // benchmarked HM time-target inputs the two disagreed on 0.
+      if (pace.goalWithheld) return null
+      // 🔴 THE CV COMPARISON STAYS FOR A RUNNER WITH NO BENCHMARK, and the first cut of Am. 2 removed it. §120 Am. 1 also
+      // withheld the row for unbenchmarked runners, against their fitness-level (`buildFallbackPace`) CV, and the new
+      // line deliberately does not gate an estimate (chair, binding: unbenchmarked plans unchanged). Removing this
+      // gave 125 of 5,925 sampled unbenchmarked HM plans goal-pace reps back. The gate measured before the swap
+      // counted benchmarked inputs only, which is why it did not see them.
+      if (pace.source === 'fitness_level' && pace.minPerKmCV != null) {
         const cvFloor = pace.minPerKmCV * (1 - GENERATION_CONFIG.RACE_PACE_ANCHOR_MAX_OVER_CV_PCT / 100)
         if (goalPaceMinPerKm < cvFloor) return null
       }
@@ -1481,8 +1493,10 @@ function makeQualitySession(args: {
   // point; repainting it at goal pace is the §19 header-vs-work defect that
   // `INV-PLAN-HEADER-PACE-MATCHES-WORK` fired 3,232 times on, every one a CV row.
   const isCvAnchoredRow = hasCvAnchoredWork(catalogueRow)
+  // §120 Amendment 2 — the override does not reprice past the reachability line. With it, §22's MUST would price a
+  // threshold row at a pace the runner cannot run (measured: at 15% past fitness, 100% of such sessions faster than T).
   const useGoalPace = (goalPaceWeek === true || catalogueRowGoalPace)
-    && !isVo2max && !isEffortGoverned && !isMixedPaceRow && !isCvAnchoredRow && !!goalPace
+    && !isVo2max && !isEffortGoverned && !isMixedPaceRow && !isCvAnchoredRow && !!goalPace && !pace.goalWithheld
   const goalCenterMins = useGoalPace ? paceStrToMins(goalPace!) : null
   // A threshold row's work step is authored at 'T' because that's what it
   // means on an ordinary week; race_specific rows are already intrinsically
@@ -1590,7 +1604,9 @@ function makeQualitySession(args: {
         if (hm == null) return {}
         return { HM: goalPaceMinPerKmForSizing != null ? paceBandStr(hm, 2) : pace.hmPaceStr! }
       })(),
-      ...(goalPace ? { goal: goalPace } : {}),
+      // §120 Am. 2 — not offered past the line, matching `resolveAnchorPace('goal')`, or a non-work step anchored 'goal'
+      // would render the withheld pace while sizing treated it as absent.
+      ...(goalPace && !pace.goalWithheld ? { goal: goalPace } : {}),
     }
     const params = {
       ...(variant?.values ?? {}),
@@ -1823,7 +1839,7 @@ function makeQualitySession(args: {
     notes.push('Threshold work — the pace you could hold for about an hour. Not a race.')
   } else if (catalogueRow?.coach_voice_notes) {
     notes.push(catalogueRow.coach_voice_notes)
-    if (phase === 'peak' && goalPace && !catalogueRow.coach_voice_notes.toLowerCase().includes('pace')) {
+    if (phase === 'peak' && goalPace && !pace.goalWithheld && !catalogueRow.coach_voice_notes.toLowerCase().includes('pace')) {
       notes.push(`Race-pace work. Target: ${goalPace}. Controlled — not all-out.`)
     }
   }
@@ -3272,7 +3288,8 @@ function buildWeekSessions(
       if (placed >= GENERATION_CONFIG.RACE_PACE_LR_BUILD_WEEKS) break
     }
   }
-  const useRaceSpecificLR = (phase === 'peak' || inRacePaceBuildWindow) && !isDeload && goalPace
+  // §120 Amendment 2 — §25's race-pace finish is goal-paced work too, and is not prescribed past the line.
+  const useRaceSpecificLR = (phase === 'peak' || inRacePaceBuildWindow) && !isDeload && goalPace && !pace.goalWithheld
   if (useRaceSpecificLR && distKey === 'MARATHON') {
     const mpRow = catalogue.find(r => r.id === 'mp_long_run')
     if (mpRow && (tier !== 'free' || mpRow.is_free_tier)) {
@@ -3422,15 +3439,20 @@ function buildWeekSessions(
       PACE_ANCHORS.filter(a => resolveAnchorPace(a, pace, goalPaceMins) != null),
     )
 
+    // §120 Amendment 2 — a withheld goal leaves no race_specific row to prefer; selecting as a finish-goal plan avoids
+    // a fall-through on every peak slot.
     let preferredCategory = preferredQualityCategory(
-      phase, distKey, isTimeTarget, buildRotationIndex, vo2MustOpenBuild, peakRotationIndex,
+      phase, distKey, isTimeTarget && !pace.goalWithheld, buildRotationIndex, vo2MustOpenBuild, peakRotationIndex,
       peakWeeksTotal, vo2BuildSlotIndex, intensityReentryActive)
     let taperForceSharpener = false
     // CD-2 / §36 — goal-pace sharpening in the taper is a time-target tool; a
     // finish-goal taper stays on threshold (§80). Without the goal-gate, a
     // finish runner's odd taper weeks were named "Goal-pace sharpener" over
     // generic threshold pace (§19 violation).
-    if (phase === 'taper' && isTimeTarget) {
+    // §120 Amendment 2 — past the reachability line the sharpener is goal-paced work the plan does not prescribe, so the
+    // taper is a finish-goal taper (§80: threshold, rotated). Forcing `race_specific` here with every goal row withheld
+    // fell back to the SAME threshold row each odd week: INV-PLAN-TAPER-VARIETY +348 on the cohort sample.
+    if (phase === 'taper' && isTimeTarget && !pace.goalWithheld) {
       const taperPhase2 = phases.find(p => p.name === 'taper')!
       const taperIdx2 = weekN - taperPhase2.start_week
 
@@ -3501,7 +3523,7 @@ function buildWeekSessions(
     // goal pace and rename to "{distKey}-pace intervals". VO2max sessions are
     // exempt — true I-pace physiology is preserved at the top of peak.
     const isSecondHalf = weekN >= Math.ceil(totalWeeks / 2)
-    const goalPaceWeek = !!goalPace
+    const goalPaceWeek = !!goalPace && !pace.goalWithheld
       && input.goal === 'time_target'
       && isSecondHalf
       && (phase === 'build' || phase === 'peak')
@@ -6692,13 +6714,21 @@ function buildRulePlanOnce(
   const intensityFitness: FitnessLevel = levels.intensity
 
   const rhr = input.resting_hr && input.resting_hr > 0 ? input.resting_hr : undefined
-  const pace: PaceGuide = (vdot !== undefined && vdotRaw !== undefined)
+  const paceFromFitness: PaceGuide = (vdot !== undefined && vdotRaw !== undefined)
     ? buildPaceFromVDOT(vdot, vdotRaw)
     : buildFallbackPace(fitness)
 
   const goalPace = input.goal === 'time_target' && input.target_time
     ? calcGoalPace(input.race_distance_km, input.target_time)
     : null
+
+  // §120 Amendment 2 (GOAL-PACE-REACHABLE-01) — decided ONCE, here, by the single owner, and carried on the pace guide
+  // so every place that prices goal pace (the `goal`/`HM` anchors, §22's override, §25's finish, the peak note) reads
+  // the same fact. Benchmarked runners only: `vdot` is undefined otherwise and the owner returns null.
+  const goalReach = goalPaceReach({
+    vdot, raceDistanceKm: input.race_distance_km, goalPaceMinPerKm: goalPace ? paceStrToMins(goalPace) : null,
+  })
+  const pace: PaceGuide = goalReach?.withheld ? { ...paceFromFitness, goalWithheld: true } : paceFromFitness
 
   const config = getDistanceConfig(input.race_distance_km)
   // CoachingPrinciples §76 — `planStartIso` is the EARLIEST the plan could begin;
@@ -9254,6 +9284,11 @@ function buildRulePlanOnce(
   const difficultyBand: 'comfortable' | 'demanding' | 'very_demanding' =
     prepTime.status === 'warn' ? 'very_demanding'
     : compressionClassification === 'constrained_by_inputs' ? 'demanding'
+    // §120 Amendment 2 — the goal is past the reachability line, so the plan prescribes no goal-pace work. Ahead of
+    // `goalBeyondMeasuredFitness` because that arm's sentence ("race-pace sessions will bite harder") describes sessions
+    // this plan no longer contains (McMillan's 10-06 condition). A LOUDER arm keeps its note and its lever (§38/§40c),
+    // and the gap sentence is appended to it below, so the gap is named on every withheld plan (Sims, binding).
+    : goalReach?.withheld ? 'demanding'
     : goalBeyondMeasuredFitness ? 'demanding'
     : (input.goal === 'time_target' && prepMargin < GENERATION_CONFIG.DIFFICULTY_COMFORTABLE_MARGIN_WEEKS) ? 'demanding'
     // Placed LAST deliberately: a plan already demanding for a louder reason
@@ -9296,6 +9331,9 @@ function buildRulePlanOnce(
      * the pre-generation boundary. Placed after `declaresShortfall` for the same
      * reason that arm is last: a louder reason keeps its note.
      */
+    // §44 Am. 2 — still needed for the UNBENCHMARKED HM runner, whose HM anchor §120 Am. 1 still withholds against
+    // their fitness-level CV (a benchmarked one is caught by the `goalReach` arm above first). Removing it read those
+    // plans 'comfortable' (`frequencyNoteCause.test.ts`, INV-PLAN-GOAL-PAST-CV-DECLARED).
     : hmAnchorWithheld ? 'demanding'
     // §44 Am. 3 — the mirror. Placed last for the same reason the arms above are
     // ordered as they are: a plan already demanding for a louder reason keeps
@@ -9307,12 +9345,16 @@ function buildRulePlanOnce(
   // volume_constraint_note). 'comfortable' needs no explanation. Voice: honest,
   // dry, names the constraint and the lever — never motivational, never a verdict
   // on the runner (§44 amendment: the demand is on the timeline, not the athlete).
-  const difficultyNote: string | undefined =
+  const difficultyNoteBase: string | undefined =
     difficultyBand === 'comfortable' ? undefined
     : prepTime.status === 'warn'
       ? `Very demanding on ${prepTime.weeks_available} weeks — below the ${prepTime.weeks_required_ok}-week mark for this race. It can be run; the timeline is the constraint, not your effort.`
     : compressionClassification === 'constrained_by_inputs'
       ? `Demanding: your inputs (days available, weekday time, or starting volume) cap how far the plan can build. Freeing one of those lifts the ceiling.`
+    // §120 Amendment 2 — founder's words, 2026-10-27. In the interval arm's place, because that arm's sentence ("race-pace
+    // sessions will bite harder") describes sessions a withheld plan no longer contains (McMillan's 10-06 condition).
+    : goalReach?.withheld
+      ? goalGapSentence(goalReach.gapPct)
     : goalBeyondMeasuredFitness
       // §44 voice: the demand is on the target, not the athlete. Says the thing
       // the runner would otherwise discover mid-plan — that their race-pace
@@ -9345,6 +9387,12 @@ function buildRulePlanOnce(
       // (PLAN-NOTE-BUDGET-INERT-01, filed two days before I built one). The
       // sentence is its own meta note, surfaced by `planRationaleNotes`.
       : `Demanding: the pace you're chasing is quicker than your current fitness supports, so the plan trains you at threshold rather than rehearsing a pace you cannot hold yet. Get fitter and it comes to you; or set a target you could race today.`
+  // §120 Amendment 2 — the gap is NAMED on every withheld plan (Sims, binding). Where a louder arm wins (the prep
+  // warning, inputs that cap the build, a shortfall) it keeps its own sentence and lever (§38/§40c), and the gap
+  // sentence follows it.
+  const difficultyNote: string | undefined = goalReach?.withheld && !hasGoalGapSentence(difficultyNoteBase)
+    ? `${difficultyNoteBase ? `${difficultyNoteBase} ` : ''}${goalGapSentence(goalReach.gapPct)}`
+    : difficultyNoteBase
 
   // §18 Amendment (FREQ-SILENCE-01, 2026-09-19) — WHEN VOLUME, NOT LIFE, SETS
   // THE NUMBER OF RUNNING DAYS, SAY SO.
@@ -9524,6 +9572,13 @@ function buildRulePlanOnce(
     // ⚠️ Stamped only when true, so its absence means "the anchor resolved" and
     // never "nobody asked".
     ...(hmAnchorWithheld ? { hm_goal_anchor_withheld: true } : {}),
+    // §120 Amendment 2 — the producer's record that goal pace was withheld, and by how much. The validator recomputes
+    // the gap from the inputs on its own (`INV-PLAN-GOAL-PACE-REACHABLE`); this is what it compares against.
+    ...(goalReach?.withheld ? { goal_pace_withheld: { gap_pct: Math.round(goalReach.gapPct * 10) / 10 } } : {}),
+    // The DECISION record, on every benchmarked time-target plan, withheld or not, with the VDOT it was made at. Its
+    // absence is how the validator tells a plan built before §120 Am. 2 from a wrong one, and its VDOT is why a later
+    // recalibration (which rewrites `vdot_training_anchor`) does not make a correct decision read as wrong.
+    ...(goalReach && vdot !== undefined ? { goal_pace_reach: { gap_pct: Math.round(goalReach.gapPct * 10) / 10, vdot: Math.round(vdot * 100) / 100 } } : {}),
     ...(goalBelowEasyCeiling ? {
       goal_below_easy_ceiling: true,
       // §40c — name the lever, never only the loss. §38 — diagnosis plus

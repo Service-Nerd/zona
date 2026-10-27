@@ -49,7 +49,9 @@ const PLAN_START = '2026-09-07'
 
 const TENK: GeneratorInput = {
   race_date: '2026-11-30', race_distance_km: 10, goal: 'time_target',
-  target_time: '0:44:59', days_available: 4, age: 43,
+  // 0:44:59 until 2026-10-27: 7% past this runner's 48:30, so §120 Am. 2 withholds goal pace and the traced plan
+  // has no race-pace work to order. 0:47:00 (~3%) keeps the measured ordering on a plan that still has both stimuli.
+  target_time: '0:47:00', days_available: 4, age: 43,
   current_weekly_km: 40, longest_recent_run_km: 18,
   resting_hr: 48, max_hr: 188, preferred_long_run_day: 'sun',
   benchmark: { type: 'race', distance_km: 10, time: '0:48:30' },

@@ -690,9 +690,17 @@ export interface WeekCopyRejection {
    * happens again, so meta carries no week number at all.
    */
   weekN: number | null
-  field: 'label' | 'theme' | 'coach_intro' | 'notes'
+  field: 'label' | 'theme' | 'coach_intro' | 'notes' | 'coach_notes'
   /** The offending placeholder, for the ops event. Never the whole sentence. */
   token: string
+}
+
+/** Does this note quote the runner's goal pace, as the `{{goal_pace}}` token (any spacing, any case) or as the literal
+ *  "m:ss" the plan stores? §120 Am. 2's merge guard. */
+export function quotesGoalPace(note: string, goalPacePerKm: string | null | undefined): boolean {
+  if (/\{\{\s*goal_pace\s*\}\}/i.test(note)) return true
+  const literal = goalPacePerKm?.match(/\d+:\d{2}/)?.[0]
+  return !!literal && new RegExp(`(^|[^\\d])${literal}([^\\d]|$)`).test(note)
 }
 
 export function mergePlan(
@@ -858,7 +866,17 @@ export function mergePlan(
       if (es.label) session.label = preserveLabelClass(session.label, es.label)
       // §28 — keep the engine's stride line if the enricher's rewrite dropped it
       // (session.coach_notes still holds the engine notes at this point).
-      if (es.coach_notes) {
+      // §120 Amendment 2 (GOAL-PACE-REACHABLE-01) — on a plan whose goal pace was WITHHELD, a note that quotes
+      // `{{goal_pace}}` tells the runner to run a pace the plan deliberately does not prescribe. A rule in the prompt is
+      // not a constraint, so the merge refuses it: the engine's notes stay for that session and the rejection is
+      // recorded. The rest of the session's voice (its label) is unaffected.
+      //
+      // ⚠️ THE TOKEN IN ANY SPACING OR CASE, AND THE LITERAL PACE TOO (code review): the prompt discourages literals and
+      // does not prevent them, and `{{ goal_pace }}` is the same instruction to the renderer.
+      const quotesWithheldGoal = !!plan.meta.goal_pace_withheld
+        && (es.coach_notes ?? []).some(n => typeof n === 'string' && quotesGoalPace(n, plan.meta.goal_pace_per_km))
+      if (quotesWithheldGoal) onRejectWeekCopy?.({ weekN: week.n, field: 'coach_notes', token: '{{goal_pace}}' })
+      if (es.coach_notes && !quotesWithheldGoal) {
         let notes = preserveStrideNote(session.coach_notes, es.coach_notes)
         // §24e — the fuelling note is engine-authored PRESCRIPTION, exactly like
         // the stride line, and had no preservation for a year. Dropped in 20 of

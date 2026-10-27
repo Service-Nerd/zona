@@ -615,6 +615,12 @@ export interface PlanMeta {
    *  because it previously left no trace, which is why
    *  `INV-PLAN-PEAK-RACE-SPECIFIC-REACHED` had to park 20.1% of HM plans as debt. */
   hm_goal_anchor_withheld?: boolean
+  /** §120 Amendment 2 (GOAL-PACE-REACHABLE-01) — present when the stated goal is past `GOAL_PACE_MAX_STRETCH_PCT` beyond
+   *  current race fitness, so no goal-pace work is prescribed. `gap_pct` is the gap, one decimal. */
+  goal_pace_withheld?: { gap_pct: number }
+  /** §120 Amendment 2 — the withholding DECISION, recorded on every benchmarked time-target plan built since 2026-10-27,
+   *  with the VDOT it was made at. Absent on older plans, which is how the validator tells them apart. */
+  goal_pace_reach?: { gap_pct: number; vdot: number }
   recalibration_weeks?: number[]          // week numbers where a benchmark re-test is scheduled
   recalibrations_applied?: number[]       // PV2-H — recalibration weeks whose TT result has been applied (so the prompt fires once)
   benchmark?: BenchmarkInput              // stored so recalibration can reference original

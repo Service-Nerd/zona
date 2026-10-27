@@ -247,11 +247,15 @@ describe('§94 Am.4 — the delivered-ramp TAIL is measured, segmented, and may 
     // Within one point of the top, because these are rounded percentages: after SESSION-KM-STRUCTURED-PACE-01 the top
     // is `79 78 78` (the earlier `94 94` pair was a sizing artefact and is gone). Re-checked against Seiler's question:
     // the 79 and the two 78s are one masters week shape, not a clamp, so the reasoning still holds.
+    // §120 Am. 2 (GOAL-PACE-REACHABLE-01, 2026-10-27) — RE-CHECKED, AND THE MAXIMUM NO LONGER REPEATS. Top was
+    // `79 78 78 61 58 53`; it is now `79 61 52 51 51 50`. The two 78s were 5K masters goal-paced weeks (GOALPACE-5K-01's
+    // rep row arriving with a fourth run day), and withholding goal pace past the line removed them: the tail FELL.
+    // Seiler's question answered again: nothing in the engine clamps at 79 (no constant, no cap reaches it), and the 79
+    // is one masters week, 18 points clear of the next, so it is a corpus property, not a ceiling. Held at the old
+    // maximum so a NEW top cannot slip in under this reasoning.
+    expect(top, 'a new maximum: re-check Seiler\'s question before raising anything').toBeLessThanOrEqual(79)
     const dupes = all.filter(v => v >= top - 1).length
-    // Trimable arm, this corpus: the maximum repeats. If it ever stops
-    // repeating, the "corpus property, not a ceiling" reasoning needs revisiting.
-    expect(dupes, 'the maximum is no longer a repeated week shape — re-check Seiler\'s question')
-      .toBeGreaterThan(1)
+    expect(dupes, 'the top is one week; if it repeats again, say why').toBeGreaterThanOrEqual(1)
     // eslint-disable-next-line no-console
     console.log(`\n  §94 Am.4 delivered-ramp tail (TRIMABLE arm, the governed one):`)
     for (const seg of Object.keys(TRIMABLE_BASELINE) as Segment[]) {
@@ -259,6 +263,6 @@ describe('§94 Am.4 — the delivered-ramp TAIL is measured, segmented, and may 
       console.log(`    ${seg.padEnd(18)} plans ${String(measured.bySeg[seg]).padStart(4)}  firings ${String(xs.length).padStart(4)}`
         + (xs.length ? `  p50 ${q(xs,.5)}%  p90 ${q(xs,.9)}%  p99 ${q(xs,.99)}%  max ${Math.max(...xs)}%` : '  (no firings in this sample)'))
     }
-    console.log(`    maximum ${top}% occurs ${dupes}x — a recurring week shape, NOT the engine's ceiling\n`)
+    console.log(`    maximum ${top}% occurs ${dupes}x — a corpus week, NOT the engine's ceiling (nothing clamps there)\n`)
   })
 })

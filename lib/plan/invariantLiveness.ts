@@ -488,6 +488,18 @@ export const MUTATIONS: Mutation[] = [
       delete (s as unknown as Poke).duration_mins
     }) },
   { name: 'strip stimulus',            apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).stimulus }) },
+  // §83 Am. (INV-PLAN-PACE-ZONE-COHERENT) — goal-paced work carrying the OTHER zone from the one its pace sits in. It
+  // was woken only by corpus plans whose goal ran faster than interval pace; §120 Am. 2 withholds goal pace past the 5%
+  // line, which removed nearly all of them (2026-10-27), so the rule is woken by its own mismatch instead.
+  // SYNTHESISED, because the probe corpora cannot supply the case: every BENCHMARKED time-target goal in cohortGrid and
+  // targetedGrid sits 10–14% past fitness, so all of them are now withheld, and the check needs a pace guide (a
+  // benchmark). A paced quality session is restamped as goal-paced work carrying the zone its pace does NOT sit in.
+  { name: 'goal-paced work in the wrong zone', apply: p => sessionsOf(p).forEach(s => {
+      const sn = s as unknown as Poke & { type?: string; stimulus?: string; zone?: string; pace_target?: string }
+      if (sn.type !== 'quality' || !sn.pace_target) return
+      sn.stimulus = 'race_pace'
+      sn.zone = /[45]/.test(String(sn.zone ?? '')) ? 'Zone 3' : 'Zone 4–5'
+    }) },
   { name: 'placeholder copy',          apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).coach_notes = ['TODO', 'TBD']; (s as unknown as Poke).label = 'TBD' }) },
   { name: 'all sessions quality',      apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).type = 'quality' }) },
   { name: 'all sessions easy',         apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).type = 'easy' }) },

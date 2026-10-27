@@ -2238,6 +2238,10 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
     "generator_version": "2.0",
     "goal": "time_target",
     "goal_pace_per_km": "4:30 /km",
+    "goal_pace_reach": {
+      "gap_pct": 0.2,
+      "vdot": 44.39,
+    },
     "handle": "",
     "hr_derived_max": 185,
     "hr_estimated_max": 184,
@@ -3556,6 +3560,10 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
     "generator_version": "2.0",
     "goal": "time_target",
     "goal_pace_per_km": "4:59 /km",
+    "goal_pace_reach": {
+      "gap_pct": 3.1,
+      "vdot": 41.3,
+    },
     "handle": "",
     "hr_derived_max": 180,
     "hr_estimated_max": 180,
@@ -5180,6 +5188,10 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
     "generator_version": "2.0",
     "goal": "time_target",
     "goal_pace_per_km": "4:37 /km",
+    "goal_pace_reach": {
+      "gap_pct": 3.2,
+      "vdot": 48.21,
+    },
     "handle": "",
     "hr_derived_max": 190,
     "hr_estimated_max": 181,

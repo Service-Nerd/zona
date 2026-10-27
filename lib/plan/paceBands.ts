@@ -44,6 +44,11 @@ export interface PaceGuide {
   minPerKmMarathon: number | null
   minPerKmHM:       number | null
   source: 'vdot' | 'fitness_level'
+  /** §120 Amendment 2 (GOAL-PACE-REACHABLE-01) — set ONLY by `generateRulePlan`, from `goalPaceReach`, when the stated
+   *  goal is past `GOAL_PACE_MAX_STRETCH_PCT` beyond current race fitness. Carried on the pace guide because it IS a
+   *  fact about this runner's paces ("goal pace is not one they can train at yet") and every place that prices goal
+   *  pace already holds the guide; threading a second argument through 79 goal-pace sites would be the drift. */
+  goalWithheld?: true
 }
 
 // Velocity (m/min) at a given fraction of VDOT — quadratic solve

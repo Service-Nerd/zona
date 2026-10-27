@@ -32,7 +32,10 @@ const PLAN_START = '2026-09-07'
 // The audit's Task B profile, injury included — the injured case is the one
 // that was reduced to a single eligible session for the whole build phase.
 const INPUT: GeneratorInput = {
-  race_date: '2026-11-29', race_distance_km: 10, goal: 'time_target', target_time: '0:44:59',
+  race_date: '2026-11-29', race_distance_km: 10, goal: 'time_target',
+  // 0:44:59 until 2026-10-27: 7% past this runner's 48:30, so §120 Am. 2 now withholds goal pace and the race-specific
+  // session this test is about is not prescribed. 0:47:00 (~3%) keeps the fixture inside the line.
+  target_time: '0:47:00',
   days_available: 4, age: 43, current_weekly_km: 40, longest_recent_run_km: 18,
   resting_hr: 48, max_hr: 188, preferred_long_run_day: 'sun',
   benchmark: { type: 'race', distance_km: 10, time: '0:48:30' },

@@ -11275,6 +11275,75 @@ prescription.
 
 ---
 
+## §120 Amendment 2 — the reachability line, at every distance (Coaching Board 2026-10-27, GOAL-PACE-REACHABLE-01)
+
+**Principle.** On a **benchmarked** time-target plan, goal-paced work is prescribed only while the stated goal is within
+`GOAL_PACE_MAX_STRETCH_PCT` (5%) of the runner's current race-fitness pace at the race distance. Past it: `goal`-anchored
+rows are withheld, §22's goal-week override does not reprice, §25's race-pace long-run finish is not prescribed, the
+taper is a finish-goal taper, and the plan names the gap in the founder's words: *"Your target is about N% quicker than
+your recent run suggests, so sessions are set to what you can run now."* A runner with no benchmark is unchanged.
+
+**Why.** Two paths priced goal pace and neither asked whether it was runnable; only the HM anchor was bounded (Am. 1).
+Measured on the slow-goal grid: at 15% past fitness, 100% of goal-paced sessions at every distance were faster than
+the runner's own threshold, most faster than their interval pace. Live: 10 of 13 benchmarked runners with a future time
+goal sit past the line (median gap ~10%). Production holds no usable improvement case, so this is a **boundary of what a
+plan may ask**, not a forecast; the projection form (GOALPACE-5K-01 S2) stays INSUFFICIENT EVIDENCE. 5 is the published
+9–10-week mean (3.5–7.3%).
+
+**Why a percentage, when Am. 1 rejected one.** Am. 1 refused a percentage as a duplicate of a rounding tolerance. The
+bands turned out to be **fixed percentages of race pace** (VDOT-invariant within 0.4pp: HM CV +5.1%, marathon T +5.8%,
+10K I +4.3%, 5K I +1.1%), so the percentage and the band are the same rule wherever a band exists, and only the
+percentage reaches 5K. Superseding gate, measured before the swap: of 2,832 benchmarked HM time-target inputs the CV rule
+and the 5% line disagree on **0**. ⚠️ **Am. 1's CV comparison still governs an UNBENCHMARKED HM runner** (against their
+fitness-level CV): the first cut removed it and gave 125 sampled unbenchmarked HM plans goal-pace reps back.
+
+**§22 and §25, both halves (§22 Am.'s rule).** A plan past the line expects no goal-pace work, so §22's per-week check, its
+ratio (the denominator is "quality §22 expects goal-paced": none) and §25's long-run check do not demand it, and §104's
+peak race-specific check counts no `goal`/`HM` row as surviving. Measured on the cohort sample, the bare withholding added
++4,854 / +1,102 / +616 / +366 / +348 firings; with both halves, **0 new violations** on the cohort sample (5,925) and the
+slow-goal grid (960).
+
+**The ordering of the note.** The gap sentence takes the interval arm's place, because that arm's sentence ("race-pace
+sessions will bite harder") describes sessions this plan no longer contains (McMillan's 10-06 condition). A LOUDER arm
+(the prep warning, inputs that cap the build, a shortfall) keeps its own sentence and lever (§38/§40c), and the gap
+sentence follows it, so the gap is named on every withheld plan (Sims, binding). Measured: 2,017 withheld plans across
+both grids, **2,017 name the gap**.
+
+**The decision is recorded.** Every benchmarked time-target plan carries `goal_pace_reach` (the gap and the VDOT it was
+decided at). The check verifies a withholding against THAT VDOT, so a later recalibration does not make a correct
+decision read as wrong, and a plan with no record (built before this amendment) is not called a defect.
+
+**What it does to load, measured, because the board did not see it.** No session gets harder. Withheld plans train the
+fitness the runner has and, past the line, match their finish-goal twin session for session in the long runs. Two
+consequences, declared: (1) **§47's step-back alternation applies only to race-paced peak long runs**, so a withheld
+marathon plan loses its step-back week and carries consecutive full peak long runs, as §47 already prescribes for
+flat Zone 2 long runs (up to +6 km in one peak week on the cohort sample); (2) the same minutes at threshold cover fewer
+km than at a faster goal pace, so km-based classifiers move: `maintenance` +0.5pp overall (10K +1.0, HM +0.8),
+`neverBuildsPct` masters 18.6 → 19.1 and standard 12.8 → 13.1 (52 of 6,399 time-target plans, every one with identical
+training minutes, each within 1 km of the 2% line), and the plan-shape audit's cohort sample +1 never-builds, +4 binge
+weeks (4 of the 5 identical to their finish-goal twin; the fifth is the same long run at easy pace, 9 minutes longer).
+The delivered-ramp tail FELL (top `79 78 78 61 58 53` → `79 61 52 51`).
+
+**Not changed, and filed:** race-day copy still opens at goal pace (founder-approved; no ruling covers a withheld
+runner's race day, `RACE-DAY-PACE-WITHHELD-01`); recalibration does not re-decide the withholding
+(`RECAL-GOAL-REACH-01`); the cohort and targeted grids carry no benchmarked goal inside the line
+(`GRID-GOAL-INSIDE-LINE-01`).
+
+**The AI layer.** A coach note quoting `{{goal_pace}}` on a withheld plan is refused at the merge and recorded; a rule in
+the prompt is not a constraint.
+
+**§25's current-pace finish (McMillan's arm), measured, not shipped.** A finish at the runner's CURRENT marathon / HM pace
+adds 0 violations on both grids and leaves `measure:fitness` identical, so it passes the ruling's test. Both rows' voice
+says "goal pace", which would be false; it waits on the founder's words (`GOAL-PACE-LR-CURRENT-01`).
+
+**Config.** `GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT = 5`; `RACE_PACE_ANCHOR_MAX_OVER_CV_PCT` narrowed to
+unbenchmarked HM; `GOAL_PACE_REHEARSAL_TOLERANCE_PCT = 3`, how close to the goal a step must be priced to count as
+rehearsing it (the width `INV-PLAN-RACE-ANCHOR-MATCHES-GOAL` already uses), so §24b's fitness-paced MP/HM segments on
+5K/10K long runs are not read as goal-pace work. **Owner.** `lib/plan/goalPaceReach.ts` (decided once in `generateRulePlan`, carried as
+`PaceGuide.goalWithheld`). **Check.** `INV-PLAN-GOAL-PACE-REACHABLE`; `lib/plan/goalPaceReach.test.ts`.
+
+---
+
 ## §121 — The race is the test, not the training (Coaching Board, 2026-09-22)
 
 **Principle.** A week's `weekly_km`, and a plan's total distance, count what the runner

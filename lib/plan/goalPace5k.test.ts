@@ -9,8 +9,25 @@ import { GENERATION_CONFIG } from './generationConfig'
 import { V1_SESSION_CATALOGUE, isRepStructured } from './sessionCatalogueData'
 import { classifyStimulus } from './sessionRole'
 import { validatePlan } from './invariants'
+import { hasGoalGapSentence } from './goalPaceReach'
 
 const FIXTURE: any = {"age":24,"goal":"time_target","max_hr":191,"benchmark":{"time":"0:32:42","type":"race","distance_km":5,"benchmark_date":"2026-10-10"},"race_date":"2026-12-25","race_name":"Christmas parkrun","resting_hr":47,"target_time":"0:28:00","training_age":"6-18mo","max_hr_source":"observed","days_available":4,"race_distance_km":5,"current_weekly_km":20,"days_cannot_train":["monday","wednesday","friday"],"user_declared_level":"beginner","longest_recent_run_km":6,"preferred_long_run_day":"sun","recent_quality_training":"occasional"}
+
+// ⚠️ §120 Amendment 2 (2026-10-27) SUPERSEDES THIS RUNNER'S GOAL-PACE WORK. 28:00 off a 32:42 is 13.9% past current
+// fitness, so goal pace is now WITHHELD for her (asserted below): that is the 26 Oct RCA's own first example. The S1 shape
+// rule still governs every runner INSIDE the line, so its tests use her inputs at 31:00 (inside the 5% line, still faster
+// than her interval pace, goal reps in week 6), keeping each check pointed at the shape it was written for.
+const INSIDE: any = { ...FIXTURE, target_time: '0:31:00' }
+
+describe('§120 Am. 2 — the stored runner, as she is now prescribed', () => {
+  const plan: any = generateRulePlan(FIXTURE, 'free', '2026-10-26')
+  it('🔴 no goal-pace work for a goal 14% past her fitness, and the gap is named', () => {
+    expect(plan.meta.goal_pace_withheld?.gap_pct).toBeGreaterThan(13)
+    expect(plan.weeks.flatMap((w: any) => Object.values(w.sessions)).filter((s: any) => s?.stimulus === 'race_pace')).toEqual([])
+    // The figure moves with §10's benchmark-age discount (the wall clock), so the sentence is matched by its shape.
+    expect(hasGoalGapSentence(plan.meta.difficulty_note), plan.meta.difficulty_note).toBe(true)
+  })
+})
 
 const sessionsOf = (p: any) => p.weeks.flatMap((w: any) => Object.entries(w.sessions).flatMap(([d, v]: any) =>
   (Array.isArray(v) ? v : [v]).filter(Boolean).map((s: any) => ({ w, d, s }))))
@@ -19,8 +36,8 @@ const longestContinuousGoalStep = (s: any) => Math.max(0, ...(s.derived_set?.blo
   .filter((b: any) => (typeof b.repeat === 'number' ? b.repeat : 1) <= 1)
   .flatMap((b: any) => b.steps).filter((st: any) => st.role === 'work' && st.pace_mode === 'target').map((st: any) => mins(st.length)))
 
-describe('GOALPACE-5K-01 — the stored 5K beginner plan', () => {
-  const plan: any = generateRulePlan(FIXTURE, 'free', '2026-10-26')
+describe('GOALPACE-5K-01 — the stored 5K beginner, inside the line', () => {
+  const plan: any = generateRulePlan(INSIDE, 'free', '2026-10-26')
   const quality = sessionsOf(plan).filter((x: any) => x.s.type === 'quality')
 
   it('goal-pace weeks come as the beginner reps row, never a continuous block (S1 as amended)', () => {
@@ -102,10 +119,10 @@ describe('GOALPACE-5K-01 — controls', () => {
 // shape that shipped (not an invented one). Pure validator calls: the engine cannot be talked into the old output
 // any more, which is the point.
 describe('GOALPACE-5K-01 — the three new checks fire on the shapes that shipped', () => {
-  const fresh = () => JSON.parse(JSON.stringify(generateRulePlan(FIXTURE, 'free', '2026-10-26')))
+  const fresh = () => JSON.parse(JSON.stringify(generateRulePlan(INSIDE, 'free', '2026-10-26')))
   const goalSession = (p: any, n: number) => Object.values(p.weeks.find((w: any) => w.n === n).sessions)
     .flat().find((s: any) => s && s.type === 'quality') as any
-  const codes = (p: any) => validatePlan(p, FIXTURE).map(v => v.code)
+  const codes = (p: any) => validatePlan(p, INSIDE).map(v => v.code)
 
   it('INV-PLAN-GOAL-PACE-SHAPE: W6 as shipped, 21 min continuous at goal pace', () => {
     const p = fresh(); const s = goalSession(p, 6)

@@ -9,6 +9,7 @@
 // race-pace session, because §120 Am. 1 withheld it) is asserted here only as
 // "does not mention race-pace work", which is a necessary and not a sufficient
 // test of it.
+import { hasGoalGapSentence } from './goalPaceReach'
 import { describe, it, expect } from 'vitest'
 import { validatePlan } from './invariants'
 import { generateRulePlan } from './ruleEngine'
@@ -126,11 +127,16 @@ describe('§44 Am. 2 on real generated plans', () => {
       const note = String(m.difficulty_note ?? '')
       // Only the plans whose note is THIS amendment's sentence — a plan with a
       // louder reason keeps that reason's note, including the interval one.
-      if (!note.includes("the pace you're chasing")) continue
+      // §120 Am. 2 (2026-10-27): a BENCHMARKED runner past the line now carries the founder's gap sentence; only an
+      // UNBENCHMARKED runner (fitness-level CV) can still carry this amendment's CV sentence. McMillan's condition
+      // binds both: neither may promise race-pace work.
+      const gapSentence = hasGoalGapSentence(note)
+      if (!note.includes("the pace you're chasing") && !gapSentence) continue
       seen++
-      expect(note, 'the CV sentence must not promise race-pace work').not.toMatch(/race-pace/i)
-      expect(note, '§38/§40c: the note must name a lever').toMatch(/set a target|Get fitter/)
+      expect(note, 'the sentence must not promise race-pace work').not.toMatch(/race-pace/i)
+      if (gapSentence) expect(note, '§38: diagnosis AND what the plan does about it').toMatch(/quicker than .* so sessions are set to/)
+      else expect(note, '§38/§40c: the note must name a lever').toMatch(/set a target|Get fitter/)
     }
-    expect(seen, "the amendment's own sentence must appear in the sample").toBeGreaterThan(0)
+    expect(seen, "a withholding sentence must appear in the sample").toBeGreaterThan(0)
   })
 })

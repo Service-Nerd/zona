@@ -39,6 +39,8 @@ import { calendarWeeksBetween } from '@/lib/dates'
 import { parseDateLocal, formatDate, getDistanceConfig, planWeekCap } from './length'
 import { FITNESS_RANK } from './fitnessAssessment'
 import { parsePaceMidpoint } from './paceParse'
+import { estimateRaceSeconds } from './aerobicEstimate'
+import { hasGoalGapSentence } from './goalPaceReach'
 import { sessionKmSelfPaced } from './sessionDistance'
 import { coherentGoal } from './inputs'
 
@@ -151,6 +153,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-UNCOVERED-RUNWAY-DECLARED',
   'INV-PLAN-SHORT-OPENING-BLOCK-DECLARED',
   'INV-PLAN-GOAL-PAST-CV-DECLARED',
+  'INV-PLAN-GOAL-PACE-REACHABLE',
   'INV-PLAN-GOAL-BELOW-EASY-DECLARED',
   'INV-PLAN-STRIDES-PRESENT',
   'INV-PLAN-STRIDES-NO-CARRIER',
@@ -1072,6 +1075,12 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   const totalWeeks = mainWeeks.length || plan.weeks.length
   const halfWeek = Math.ceil(totalWeeks / 2)
   const isTimeTarget = input.goal === 'time_target'
+  // §120 Amendment 2 (GOAL-PACE-REACHABLE-01) — past the reachability line §22 and §25 EXPECT no goal-pace work, so
+  // the checks that demand it (per-week exposure, the ratio, the race-pace long run, peak race-specific) read this.
+  // ⚠️ It is the producer's stamp, and a stamp is only as good as its justification: `INV-PLAN-GOAL-PACE-REACHABLE`
+  // recomputes the gap from the INPUTS and fails if the stamp is present without one, or absent with one.
+  const goalPaceWithheld = plan.meta.goal_pace_withheld != null
+  const expectsGoalPace = isTimeTarget && !goalPaceWithheld
 
   // INV-INPUT-LONGEST-LE-WEEKLY — a self-reported longest run cannot exceed the
   // whole week's volume (one run can't be more than everything you ran that
@@ -1333,7 +1342,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // Per-week catch: any non-VO2max quality without "pace" in the label
     // (CoachingPrinciples §22). The plan-level ratio check below catches the
     // looseness this guard misses (R2/H-02).
-    if (isTimeTarget && w.n >= halfWeek && (w.phase === 'build' || w.phase === 'peak') && w.type !== 'deload') {
+    if (expectsGoalPace && w.n >= halfWeek && (w.phase === 'build' || w.phase === 'peak') && w.type !== 'deload') {
       for (const { day, session } of placedRunning) {
         if (session.type !== 'quality') continue
         // SC-09 — STRUCTURAL, not by name. The label test held while every
@@ -2538,7 +2547,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // INV-PLAN-RACE-SPECIFIC-LONG-RUN — time-targeted HM/marathon plans need
   // at least one peak-phase long run with race-pace finish.
   // (CoachingPrinciples §25)
-  if (isTimeTarget && (distKey === 'HM' || distKey === 'MARATHON')) {
+  if (expectsGoalPace && (distKey === 'HM' || distKey === 'MARATHON')) {
     const peakLongRuns = plan.weeks
       .filter(w => w.phase === 'peak' && w.type !== 'deload')
       .flatMap(w => Object.values(w.sessions).filter((s): s is Session =>
@@ -3090,7 +3099,9 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // it, and shipping it would have weakened §22 for 496 of 5,664 plans for nothing.
   // The collision is real; the remedy is ARITHMETIC, not an exemption. I reached
   // for the shape of the last fix instead of reading the numerator and denominator.
-  if (isTimeTarget && plan.meta.goal_pace_per_km) {
+  // §120 Amendment 2 — the same ARITHMETIC as the CV-row fix below, not a plan exemption by another name: the
+  // denominator is "the quality §22 expects to be goal-paced", and past the reachability line it expects none.
+  if (expectsGoalPace && plan.meta.goal_pace_per_km) {
     const goalMid = parsePaceMidpoint(plan.meta.goal_pace_per_km)
     if (goalMid != null) {
       let nonVo2Quality = 0
@@ -7403,7 +7414,9 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // race-specific peak row survives for its own fitness band once the withheld
     // anchor is taken out. Long-run-shaped rows are excluded for the same reason
     // §104's arm excludes them — they are not candidates for a QUALITY slot.
-    const anchorWithheld = plan.meta.hm_goal_anchor_withheld === true
+    // §120 Amendment 2 — the general line withholds the `goal` anchor too, at every distance. A row survives only if it
+    // needs neither withheld anchor; with both gone none do, so the plan is exempt by the same computed test.
+    const anchorWithheld = plan.meta.hm_goal_anchor_withheld === true || goalPaceWithheld
     const userRankPeak = fitness ? FITNESS_RANK[fitness] : undefined
     const survivingRows = !anchorWithheld ? 1 : V1_SESSION_CATALOGUE.filter(r =>
       r.category === 'race_specific'
@@ -7411,6 +7424,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       && (r.phase_eligibility as readonly string[]).includes('peak')
       && r.main_set_structure?.type !== 'long_run_with_segment'
       && !requiredPaceAnchors(r).includes('HM')
+      && !(goalPaceWithheld && requiredPaceAnchors(r).includes('goal'))
       && (userRankPeak === undefined || (
         FITNESS_RANK[r.fitness_level_min] <= userRankPeak
         && (r.fitness_level_max == null || userRankPeak <= FITNESS_RANK[r.fitness_level_max])
@@ -8775,6 +8789,74 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           actual: `difficulty_band '${band}', no difficulty_note`,
           expected: 'difficulty_note present',
         })
+      }
+    }
+  }
+
+  // INV-PLAN-GOAL-PACE-REACHABLE (§120 Amendment 2, Coaching Board 2026-10-27, GOAL-PACE-REACHABLE-01)
+  //
+  // A check of the PRESCRIPTION, not the label: the 26 Oct RCA's root cause was that every goal-pace check asked
+  // whether a session was CALLED race pace, and none asked whether the pace was runnable.
+  //
+  // ⚠️ THE DECISION IS CHECKED AGAINST THE VDOT IT WAS MADE AT (`meta.goal_pace_reach.vdot`), NOT `vdot_training_anchor`.
+  // A recalibration rewrites the anchor and leaves the sessions, so checking against it would call a correct
+  // decision wrong the day after a time trial (code review). ⚠️ AND A PLAN WITH NO RECORD IS NOT CHECKED: every plan
+  // built before §120 Am. 2 is past the line with no stamp, and calling that a defect would flood the save boundary
+  // and the nightly audit with a "violation" that is just a plan older than the rule (code review).
+  //
+  // The gap is recomputed here with Daniels' race estimate (a formula, not a coaching choice) against the config line,
+  // with `INTENSITY_ORDERING_TOLERANCE_PCT` either side (two independent derivations within a rounding width are noise).
+  // Three arms, both directions:
+  //   1. the withholding agrees with the recorded decision; a withholding with no record, or no benchmark, is wrong;
+  //   2. a withheld plan prescribes NO goal-pace work: no `race_pace` stimulus, no long-run segment priced within
+  //      `GOAL_PACE_REHEARSAL_TOLERANCE_PCT` of the goal;
+  //   3. a withheld plan NAMES the gap (Sims, binding), matched through the sentence's own owner.
+  {
+    const withheld = plan.meta.goal_pace_withheld
+    const reach = plan.meta.goal_pace_reach
+    const goalMid = plan.meta.goal_pace_per_km ? parsePaceMidpoint(plan.meta.goal_pace_per_km) : null
+    const push = (actual: string, expected: string, message: string, week = 0) => violations.push({
+      code: 'INV-PLAN-GOAL-PACE-REACHABLE', principle_ref: 'CoachingPrinciples §120 Am. 2, §22, §25', severity: 'error',
+      week, message, actual, expected,
+    })
+    const line = GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT
+    const tol = GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT
+    if (reach && isTimeTarget && goalMid != null && input.race_distance_km > 0) {
+      if (!input.benchmark) {
+        push('goal_pace_reach on a plan with no benchmark', 'no decision without a benchmark',
+          'A goal-pace withholding decision was recorded for a runner with no benchmark. An estimate may not decide a runner\'s race pace (§120 Am. 2).')
+      }
+      const fitness = estimateRaceSeconds(reach.vdot, input.race_distance_km) / input.race_distance_km / 60
+      const gap = (1 - goalMid / fitness) * 100
+      if (!withheld && gap > line + tol) {
+        push(`goal ${gap.toFixed(1)}% past current race fitness, goal_pace_withheld absent`, `withheld past ${line}%`,
+          `The goal pace is ${gap.toFixed(1)}% faster than this runner's race fitness at ${input.race_distance_km} km, past the ${line}% line, and the plan did not withhold goal-pace work.`)
+      } else if (withheld && gap < line - tol) {
+        push(`goal_pace_withheld at a ${gap.toFixed(1)}% gap`, `no withholding inside ${line}%`,
+          `The plan withheld goal pace, but the goal is only ${gap.toFixed(1)}% past race fitness, inside the ${line}% line: race-pace rehearsal was removed without cause.`)
+      }
+    } else if (withheld && !reach) {
+      push('goal_pace_withheld with no recorded decision', 'a withholding carries its decision record',
+        'Goal pace was withheld but the plan records no decision (gap and VDOT), so the withholding cannot be checked against the runner\'s fitness.')
+    }
+    if (withheld) {
+      const rehearses = (paceStr: string | null | undefined) => {
+        const m = paceStr ? parsePaceMidpoint(paceStr) : null
+        return m != null && goalMid != null && m <= goalMid * (1 + GENERATION_CONFIG.GOAL_PACE_REHEARSAL_TOLERANCE_PCT / 100)
+      }
+      for (const w of plan.weeks) for (const [day, sn] of Object.entries(w.sessions)) {
+        if (!sn) continue
+        // The STAMPED stimulus, never `classifyStimulus`: its legacy label fallback reads "marathon pace + HM-pace
+        // finish" on a fitness-paced long run as race pace (493 false firings on the cohort sample). And a segment only
+        // counts if it is priced at the goal: §24b's 5K/10K variants carry segments at the runner's CURRENT paces.
+        if (sn.stimulus === 'race_pace' || rehearses(sn.lr_segment_pace)) {
+          push(`${sn.label ?? day}: goal-pace work`, 'no goal-pace work past the line',
+            `Goal pace was withheld (${withheld.gap_pct}% past fitness) and ${sn.label ?? 'a session'} still prescribes it.`, w.n)
+        }
+      }
+      if (!hasGoalGapSentence(plan.meta.difficulty_note)) {
+        push(`difficulty_note: ${plan.meta.difficulty_note ?? '(none)'}`, 'the gap named',
+          'Goal pace was withheld and the plan does not tell the runner why. The gap must be named (§120 Am. 2, Sims).')
       }
     }
   }

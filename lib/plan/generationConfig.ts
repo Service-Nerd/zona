@@ -2525,6 +2525,28 @@ export const GENERATION_CONFIG = {
   // at 5.4-6.2% of current HM pace across benchmarks from 57:00 to 34:00 for a
   // 10K, a spread of 0.8pp -- which is WHY one constant can serve every runner.
   RACE_PACE_ANCHOR_MAX_OVER_CV_PCT: 0.5,
+  // 🔻 NARROWED 2026-10-27 by §120 Amendment 2: for a BENCHMARKED runner GOAL_PACE_MAX_STRETCH_PCT below governs (on
+  // 2,832 benchmarked HM time-target inputs the two disagree on 0). This constant still governs the HM anchor for a
+  // runner with NO benchmark, against their fitness-level CV, because the new line does not gate an estimate.
+
+  // ── §120 Amendment 2 (Coaching Board 2026-10-27, GOAL-PACE-REACHABLE-01) — the reachability line ──────────────
+  // On a BENCHMARKED time-target plan, goal-paced work is prescribed only while the goal is within this percentage
+  // of the runner's current race-fitness pace at the race distance (`goalPaceReach`, `estimateRaceSeconds` at the
+  // engine's own VDOT). Past it: goal-anchored rows are withheld, §22's goal-week override does not reprice, §25's
+  // race-pace finish is not prescribed, and the plan says so.
+  //
+  // WHY 5. The published 9–10-week gain for recreational runners is 3.5–7.3% (Muñoz 2014: 5.0% polarised, 3.5%
+  // threshold; a systematic review: 7.3% over 9 weeks). The bands sit at fixed offsets from race pace — HM CV +5.1%,
+  // marathon T +5.8%, 10K I +4.3% — so 5 reproduces §120 Am. 1's CV line at HM (0 of 2,832 inputs disagree) and
+  // lands on each distance's natural band within a point. A boundary of what a plan may ASK, not a forecast: the
+  // projection form stays INSUFFICIENT EVIDENCE.
+  GOAL_PACE_MAX_STRETCH_PCT: 5,
+
+  // §120 Amendment 2 — how close to goal pace a step must be priced to count as REHEARSING the goal, for
+  // `INV-PLAN-GOAL-PACE-REACHABLE`'s "no goal-pace work past the line" arm. 3%, the same width
+  // `INV-PLAN-RACE-ANCHOR-MATCHES-GOAL` already uses for "a race-specific session rehearses the race": §24b's 5K/10K long
+  // runs carry MP and HM segments at the runner's CURRENT paces, which sit well outside it.
+  GOAL_PACE_REHEARSAL_TOLERANCE_PCT: 3,
 
   // ── Race-specific ownership (CoachingPrinciples §22, CD-18/SC-05) ───────────
   // Distances whose race pace is physiologically DISTINCT from interval pace,

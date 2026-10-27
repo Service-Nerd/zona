@@ -468,6 +468,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** The new sentence is my wording and needs the founder's sign-off.
 
 ---
+## 2026-10-27 — GOAL-PACE-REACHABLE-01 · Stop prescribing a pace the runner cannot run
+**Shipped:** a benchmarked runner whose goal is more than 5% past their current fitness now trains the fitness they have, and is told the gap in one sentence.
+**Dev learning:** the gate I measured before removing the half-marathon CV rule counted benchmarked inputs only, and the old rule also covered runners with no benchmark. 125 of them got goal-pace reps back until the cohort comparison asked "who moved?" and the answer included people the ruling said must not. Measure the population a rule actually reaches, not the one you are thinking about.
+**Product/creator learning:** the board never saw two consequences: a withheld marathoner loses the step-back week §47 gives only to race-paced long runs, and every km-based gate moves because the same minutes at threshold cover less ground. Both are true and declared, and the session-by-session twin check (time goal past the line versus the same runner's finish goal) is what made them explainable rather than alarming.
+**AI-building learning:** the code review found that my new check would have flagged every plan built before the rule as broken, and that a recalibration would make a correct decision read as wrong. Recording the decision, with the VDOT it was made at, fixed both. Three of my own single-guard mutations stayed green because the guards overlap; breaking them in pairs proved each one.
+**The honest bit:** I paused this build halfway to ship the 35-minute floor first, because withholding goal pace pushed slow runners into exactly the sessions that floor fixes.
+**Hook material:** "Ten of thirteen runners with a time goal were being given a pace they could not run."
+**Postable?:** yes
+
 
 ## 2026-10-22 — COMPLETION-COPY-CLAIM-01 · the card stopped praising runs it knew nothing about
 **Shipped:** After an easy run the card says "Kept it easy." only if your heart rate or your own effort score backs it up. Otherwise it says the run was done and nothing more.

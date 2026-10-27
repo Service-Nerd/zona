@@ -27,17 +27,39 @@ already decided what it is.
 
 ---
 
-### 🔲 `GOAL-PACE-REACHABLE-01` — goal-pace work only while the goal is within 5% of current race fitness, at every distance 🏃 **COACHING BOARD** (ruled 2026-10-27) → 🧭 **DESIGN BOARD** (note placement); 👤 founder words APPROVED 2026-10-27
+### 🔲 `GOAL-PACE-LR-CURRENT-01` — §25's long-run finish at the runner's CURRENT race pace, past the line 👤 **FOUNDER** (words), then build
 
-Step 4 of the 26 Oct RCA, item 1. Ruled CORRECT WITH AMENDMENT (`docs/decisions/coaching-2026-10-27-goal-gap-floor-unit-sitting.md`):
-on a benchmarked time-target plan, goal-anchored rows are withheld and §22's goal-week override does not reprice past
-`GOAL_PACE_MAX_STRETCH_PCT` (5) beyond current race-fitness pace; §22's ratio and per-week arms exempt those sessions (both
-halves); §25's finish at current race-fitness pace if it measures clean, else withheld; supersedes §120 Am.1's CV comparison
-(gated on HM moving by rounding only); unbenchmarked plans unchanged. **The gap is named to the runner** (Sims, binding):
-founder-approved words *"Your target is about {N}% quicker than your recent run suggests, so sessions are set to what you
-can run now."* Placement to the Design Board. Artifacts: §120 Am.2, the constant, `INV-PLAN-GOAL-PACE-REACHABLE`. Measure:
-slow grid by gap (the cohort grid cannot see the constant), sweep, `cohort:shape`, `measure:fitness`, parity on finish-goal
-and unbenchmarked plans. Live reach: 10 of 13 benchmarked runners with a future time goal.
+The 10-27 ruling's measured arm (McMillan). Past the 5% line the race-pace long-run finish is withheld today. Prototyped
+2026-10-27: a finish at current marathon / HM pace adds **0 violations** on the cohort sample and the slow-goal grid and
+leaves `measure:fitness` identical, so it passes the ruling's test, and it would restore §47's step-back alternation for
+those marathoners. Blocked only on copy: both rows' voice says "goal pace" (*"Hit goal pace on tired legs"*, *"Final third
+at HM goal pace"*), which would be false. Needs the founder's words for a current-pace finish.
+
+---
+
+### 🔲 `RACE-DAY-PACE-WITHHELD-01` — what race day tells a runner whose goal pace was withheld 🏃 **COACHING BOARD** → 👤 **FOUNDER** (words)
+
+Found by the code review of GOAL-PACE-REACHABLE-01. The race session still says *"First X km at goal pace: m:ss"* and
+5K/10K race notes *"settle into goal pace"* on a plan that says sessions are set to what the runner can run now. Both are
+founder-approved copy and no ruling covers a withheld runner's race day, so this build left them. The board decides the
+advice (open at current race pace? at goal?), the founder the words.
+
+---
+
+### 🔲 `RECAL-GOAL-REACH-01` — a recalibration does not re-decide the goal-pace withholding 🏃 **COACHING BOARD**
+
+A time trial rewrites forward paces (ADR-014) and leaves sessions, so a runner withheld at 7% who now sits 3% past fitness
+keeps a plan with no goal-pace work (and the reverse). The validator checks the decision against the VDOT it was made at,
+so this is not an error; it is a stale prescription. Rebuild-on-recalibration is the board's question.
+
+---
+
+### 🔲 `GRID-GOAL-INSIDE-LINE-01` — the cohort and targeted grids carry no benchmarked goal inside the 5% line ⚙️ **NO BOARD**
+
+Every benchmarked time-target case in `cohortGrid` sits 10–14% past fitness, so since §120 Am. 2 the main regression grids
+exercise §22 goal-pace work only for UNBENCHMARKED runners. The sweep's random inputs and the slow-goal grid still reach
+it. Found while making `INV-PLAN-PACE-ZONE-COHERENT` wakeable (the liveness mutation now synthesises the case). Cost of
+widening `cohortGrid` is the 135 s test and its 12 consumers.
 
 ---
 
