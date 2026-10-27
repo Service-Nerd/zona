@@ -108,7 +108,9 @@ async function one(row: { id: string; user_id: string; plan_json: unknown }, qui
   const { data: runs } = await sb.from('strava_activities').select('start_date').eq('user_id', user)
   const runsInBlock = (runs ?? []).filter(r => String(r.start_date).slice(0, 10) >= planStart).length
   const weeksOf = async (table: string, col: string) => {
-    const { data, error: e } = await sb.from(table).select(col).eq('user_id', user)
+    // ⚠️ LIVE ROWS ONLY. A superseded row belongs to a plan the runner no longer has (PLAN-REBUILD-SUPERSEDE-01), and
+    // counting it refused the founder's own plan over 12 completions from his April plan sharing week numbers 6–7.
+    const { data, error: e } = await sb.from(table).select(col).eq('user_id', user).is('superseded_at', null)
     if (e) throw new Error(`${table}: ${e.message}`)
     return (data ?? []).map(r => Number((r as unknown as Record<string, unknown>)[col]))
   }
