@@ -2050,7 +2050,12 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // beginner easy run has always been unchecked); §110 Am.2 widens the
       // population it applies to, it does not create it.
       const dist = session.distance_km ?? 0
-      if (dist > 0 && dist < expected) {
+      // §9 Amendment (S9-QUALITY-MINUTES-01, Coaching Board 2026-10-27) — a quality or secondary-quality session also
+      // meets the floor at QUALITY_FLOOR_MINS in total. Read from config, not from the producer's loop: the producer
+      // stops growing reps at this length and this asks the question again from the session's own duration.
+      const meetsByMinutes = session.type === 'quality'
+        && (session.duration_mins ?? 0) >= GENERATION_CONFIG.QUALITY_FLOOR_MINS
+      if (dist > 0 && dist < expected && !meetsByMinutes) {
         violations.push({
           code: 'INV-PLAN-MIN-SESSION-SIZE',
           principle_ref: 'CoachingPrinciples §9',

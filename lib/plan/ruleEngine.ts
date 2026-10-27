@@ -49,7 +49,7 @@ import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 import { isLongRun, isShakeout, classifyStimulus, STIMULUS_OF_CATEGORY, isStructuredSession, isVo2maxSession, isQualitySession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
-import { durationForMainSet, segmentPricedDistance } from './sessionFormat'
+import { durationForMainSet, segmentPricedDistance, meetsQualityFloor } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import { isDeloadWeek, computeDeloadWeeks, deloadVolumeFraction, shortOpeningBlockWeeks } from './deloadCadence'
 import { computeIntensityReentry } from './intensityReentry'
@@ -1043,7 +1043,9 @@ function pacedRepPlan(
   // session as clearing 5 km that the caller then produced at 4.5 —
   // INV-PLAN-MIN-SESSION-SIZE, caught by `userDeclaredLevel.test.ts`. A floor
   // measured in different units from the thing it guards is not a floor.
-  while (segmentPricedDistance(reps * (workMins + recoveryMins), workPaceMinPerKm, pace.minPerKmEasy) < minKm
+  // §9 Amendment (S9-QUALITY-MINUTES-01, 2026-10-27) — the floor is ALSO met at QUALITY_FLOOR_MINS in total, so
+  // growth stops there and the dose band governs: a slow runner's 2 x 1 km at 9:00/km is a real session at 35 min.
+  while (!meetsQualityFloor(reps * (workMins + recoveryMins), workPaceMinPerKm, pace.minPerKmEasy, minKm)
          && reps < floorReps + 20) {
     reps++
   }
@@ -1143,6 +1145,11 @@ function progressiveTempoPlan(
   const cfg = GENERATION_CONFIG
   const mainMins = cfg.PROGRESSIVE_TEMPO_MAIN_MINS[fitness]?.[phase] ?? cfg.PROGRESSIVE_TEMPO_MAIN_MINS[fitness]?.build
   if (mainMins == null) return null
+  // ⚠️ NO §9 GROWTH HERE, TRIED AND REVERTED (S9-QUALITY-MINUTES-01, 2026-10-27). Growing this dose to
+  // `meetsQualityFloor` changed 177 more served plans than the board measured: duration-anchored beginners whose
+  // smallest dose (15 min) is a 33-minute session, which §9's km check never reads. That is a prescription change for
+  // beginners the sitting did not see; filed as S9-PROGRESSIVE-FLOOR-01. Distance-anchored output is held by
+  // INV-PLAN-MIN-SESSION-SIZE (sweep 0, slow-goal clones 0).
   const thirdSecs = Math.round((mainMins * 60) / 3)
   return { mainMins, thirdSecs }
 }
@@ -1314,7 +1321,8 @@ function continuousThresholdPlan(
   // the other makes the session's own structure disagree with its duration.
   if (floor) {
     let guard = 0
-    while (segmentPricedDistance(mainMins, floor.workPace, floor.easyPace) < floor.minKm && guard++ < 60) {
+    // §9 Amendment (S9-QUALITY-MINUTES-01) — met at QUALITY_FLOOR_MINS too; see pacedRepPlan.
+    while (!meetsQualityFloor(mainMins, floor.workPace, floor.easyPace, floor.minKm) && guard++ < 60) {
       mainMins += 1
     }
   }

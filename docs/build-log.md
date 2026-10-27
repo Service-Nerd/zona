@@ -446,6 +446,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** Three of our 49 runners use miles. The fix matters more for the 46 who saw "0.4km" for a track 400.
 
 ---
+## 2026-10-27 — S9-QUALITY-MINUTES-01 · A floor in kilometres is the wrong question for a slow runner
+**Shipped:** a quality session now meets §9 at 5 km or 35 minutes, so slow runners stop getting reps grown past their dose to reach a distance.
+**Dev learning:** the review asked me to give the floor to every builder, and I did, and it changed 177 more plans than the board had seen: beginners whose sessions are prescribed in minutes, which the km check never reads. Reverted and filed. A change that looks like completing a ruling can be a new ruling. My comparison script also lied to me once: I edited what it stripped between two runs, and every hash moved.
+**Product/creator learning:** the slow-runner sessions the old rule called "too short" were 39 to 50 minutes long.
+**AI-building learning:** the code review earned its place twice: a test that only checked sessions under 4 km while claiming 5, and a fixture regenerated on today's date that buried a one-line change under 170 lines of clock drift.
+**The honest bit:** I paused the goal-pace build halfway because withholding goal pace pushed slow runners into exactly these sessions. The order of two ruled fixes mattered.
+**Hook material:** "The engine said a 43-minute session was too short to count."
+**Postable?:** maybe
+
 
 ## 2026-10-22 — CD-1-MILE-CRUISE-01 · the drawing was right, the sentence was wrong
 **Shipped:** Mile repeats no longer calls itself "long threshold reps". It now says what makes it different from cruise intervals: you get a split to compare.

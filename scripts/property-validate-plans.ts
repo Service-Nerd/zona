@@ -1636,15 +1636,18 @@ const BASELINE: Record<string, number> = {
   // four shape builders), and at a slow runner's pace fixed minutes price under 5 km. Debt for the 26 Oct RCA item 2;
   // the Coaching Board rules the unit (km, or minutes at the runner's own pace) before it is paid.
   'INV-PLAN-MIN-SESSION-SIZE':             0,
-  'INV-PLAN-MIN-SESSION-SIZE@slow-goal':   113,
+  // 113 -> 0 (S9-QUALITY-MINUTES-01, 2026-10-27): §9 is met at 5 km OR 35 minutes; the under-5 km sessions were 39-50 min.
+  'INV-PLAN-MIN-SESSION-SIZE@slow-goal':   0,
   //
   // 0 -> 73 / 0 -> 122 / 0 -> 1 (GRID-SLOW-GOALGAP-01, same clones, same item). The other face of the same floor:
   // where a builder DOES carry the 5 km floor, a slow runner's reps grow until the distance is met, past the dose
   // the row is ruled for. Measured on the slow grid: VO2max-cap violations 24 -> 0 with the floor off. The goal-pace
   // reps (12-minute cap) and the ordering check share the mechanism by reading and are proven when item 2 lands.
-  'INV-PLAN-VO2MAX-MAIN-SET-CAP@slow-goal': 73,
-  'INV-PLAN-GOAL-PACE-SHAPE@slow-goal':     122,
-  'INV-PLAN-MAIN-SET-ORDERING@slow-goal':   1,
+  // 73 / 122 / 1 -> 0 (S9-QUALITY-MINUTES-01, 2026-10-27): rep growth stops at 35 minutes, so the dose governs. All three
+  // proven by measurement on this sweep, not by reading.
+  'INV-PLAN-VO2MAX-MAIN-SET-CAP@slow-goal': 0,
+  'INV-PLAN-GOAL-PACE-SHAPE@slow-goal':     0,
+  'INV-PLAN-MAIN-SET-ORDERING@slow-goal':   0,
 
   // 87 -> 75 -> 0 (LABEL-VARIETY-01, 2026-08-21). The LABEL count is now zero:
   // the peak goal-pace override takes the row's shape word ("…-pace ladder",

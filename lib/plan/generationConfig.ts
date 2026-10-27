@@ -1273,6 +1273,18 @@ export const GENERATION_CONFIG = {
     secondary_quality:  4,
   },
 
+  // §9 Amendment (Coaching Board 2026-10-27, S9-QUALITY-MINUTES-01) — a quality or secondary-quality session meets
+  // §9's floor at its km floor OR at this many minutes in total (warm-up, main set, cool-down). §9 says the floor is
+  // where a session stops being "coaching-meaningful", and for a slow runner a km floor asks the wrong question: the
+  // slow-goal grid's under-5 km quality sessions were 39–50 minutes long, and growing reps to reach 5 km pushed VO2
+  // work to 26 min against an 18-min dose ceiling. Amends §8/D-21's "the floor beats the ceiling": once a session is
+  // this long the dose band governs.
+  //
+  // WHY 35, measured on prototypes: 30 cleared the slow grid and changed 1,576 of 5,925 sampled served plans; 35
+  // cleared it and changed 221 (HM/marathon beginners' continuous tempo, 38 -> 36 min); 40 changed 14 but left 80
+  // breaches (progressive tempo at 39 min). `measure:fitness` identical at 35.
+  QUALITY_FLOOR_MINS: 35,
+
   // §113 Amendment 1 (Coaching Board 2026-09-18, CB-SUBFLOOR-ADMIT-01) — the
   // hard bottom of `sessionFloorsFor()`.
   //

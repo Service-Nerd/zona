@@ -41,12 +41,15 @@ and unbenchmarked plans. Live reach: 10 of 13 benchmarked runners with a future 
 
 ---
 
-### 🔲 `S9-QUALITY-MINUTES-01` — a quality session meets §9 at 5 km or 35 minutes 🏃 **COACHING BOARD** (ruled 2026-10-27)
+### 🔲 `S9-QUALITY-FLOOR-REACH-01` — three paths the 35-minute floor does not reach yet 🏃 **COACHING BOARD** (each changes served plans the 10-27 sitting did not measure)
 
-Step 4 of the 26 Oct RCA, item 2. Ruled CORRECT WITH AMENDMENT: one owner read by every quality shape builder and
-`INV-PLAN-MIN-SESSION-SIZE`; amends §8/D-21's "floor beats ceiling"; §52b stays in km (named). Prototype: slow-grid floor,
-VO2-cap and goal-pace-shape breaches → 0; 221 of 5,925 sampled served plans change (HM/marathon beginner continuous tempo
-38 → 36 min); `measure:fitness` identical. Artifacts: §9 Am., `QUALITY_FLOOR_MINS`, the check plus a builder-population gate.
+Found by the code review of S9-QUALITY-MINUTES-01, 2026-10-27. (1) **Progressive tempo never grows to the floor.** Its
+smallest dose (15 min) is a 33-minute session; growing it through `meetsQualityFloor` was built and REVERTED because it
+changed **177 more served plans** than the board measured, all duration-anchored beginners (whose sessions §9's km check
+never reads). (2) **The quality distance budget** (`Math.max(qualKmPrimary, minDist.quality)`) still lifts v1 and
+unstructured quality sessions to 5 km even when they already run 35+ minutes. (3) **Secondary quality grows toward 5 km**,
+not its own 4 km floor (pre-existing). Each needs a measurement and a ruling; distance-anchored output is held meanwhile by
+`INV-PLAN-MIN-SESSION-SIZE` (sweep 0, slow-goal clones 0).
 
 ---
 

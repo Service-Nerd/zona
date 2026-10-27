@@ -950,7 +950,7 @@
           "detail": null,
           "stimulus": "tempo",
           "distance_km": 5,
-          "duration_mins": 37,
+          "duration_mins": 36,
           "primary_metric": "distance",
           "zone": "Zone 3",
           "hr_target": "146–157 bpm",
@@ -970,7 +970,7 @@
                   {
                     "role": "work",
                     "modality": "run",
-                    "length": "18 min",
+                    "length": "17 min",
                     "pace": "6:22–6:40 /km",
                     "pace_mode": "target",
                     "advance": "auto",

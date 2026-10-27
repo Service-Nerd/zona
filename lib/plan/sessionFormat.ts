@@ -1,4 +1,5 @@
 // FREE — infrastructure
+import { GENERATION_CONFIG } from './generationConfig'
 // Universal run format. Every run prescribed by the engine has a structured
 // warm-up / main set / cool-down. Quality sessions add strides. HM and Marathon
 // peak-phase long runs add a race-pace segment.
@@ -136,4 +137,22 @@ export function segmentPricedDistance(
 ): number {
   const total = durationForMainSet(mainMins)
   return (total - mainMins) / easyPaceMinPerKm + mainMins / workPaceMinPerKm
+}
+
+/**
+ * §9 Amendment (Coaching Board 2026-10-27, S9-QUALITY-MINUTES-01) — does a quality session of this main set meet §9's
+ * floor? At its km floor (segment-priced, as above) OR at `QUALITY_FLOOR_MINS` in total.
+ *
+ * ⚠️ THE ONE OWNER FOR EVERY BUILDER THAT GROWS A SESSION TO ITS FLOOR (`pacedRepPlan`, `continuousThresholdPlan`).
+ * `progressiveTempoPlan` does not grow (its reverted attempt is recorded there: S9-PROGRESSIVE-FLOOR-01). The rule was first written out by hand in two loops; the next amendment (the easy floor,
+ * §52b's unit) would have had to find both. Fixed-dose shapes (pyramid, ladder, HM reps, effort-governed hills) cannot
+ * grow — the variant IS the dose (§85, §40b Am. 2) — and are held to the same rule by `INV-PLAN-MIN-SESSION-SIZE`.
+ * The checker reads `QUALITY_FLOOR_MINS` itself rather than calling this, so the two are not one predicate agreeing
+ * with itself.
+ */
+export function meetsQualityFloor(
+  mainMins: number, workPaceMinPerKm: number, easyPaceMinPerKm: number, floorKm: number,
+): boolean {
+  return segmentPricedDistance(mainMins, workPaceMinPerKm, easyPaceMinPerKm) >= floorKm
+    || durationForMainSet(mainMins) >= GENERATION_CONFIG.QUALITY_FLOOR_MINS
 }

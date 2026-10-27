@@ -1279,7 +1279,7 @@ target and needs to have run at it — is the case that got built.
 >
 > **Second attempt, same day, after that migration.** `tempo_cruise`, `tempo_continuous`, and `goal_pace_sharpener` moved to structure-driven sizing (reusing `THRESHOLD_WORK_TARGET_MINS`, no new config for two of the three) — every threshold/race-pace catalogue row now sizes off an absolute band, closing the exact asymmetry that caused the first revert. Re-promoted to `error`; confirmed clean against the full test suite (841 tests) AND the full property sweep (18,059 plans, 0 hard failures, 0 violations) before shipping — not the smaller samples that missed the gap the first time. SIZING-REALLOC-01 is closed. Willy's CD-14 amendment 2 (a rep-count ceiling per category, with the budget overflowing into rep *length*) is **blocked on SC-08** — reps do not reach the plan at all today, so a ceiling on them cannot be expressed or checked.
 >
-> **The named remaining task, done, same day.** `tempo_cruise` and `goal_pace_sharpener` are the identical shape to `tempo_cruise_short`/`tenk_pace_intervals` (reps-scaled, jog recovery) — same mechanism, no new config. `tempo_continuous` is genuinely new (one continuous block, single sustained pace, not reps, not a progression) but the DOSE is the same threshold-work band already ruled correct, so it reuses `THRESHOLD_WORK_TARGET_MINS` rather than a new constant; its v2 block carries `label: 'sustained'` so the §22 goal-pace shape word survives migration (found via golden-snapshot review — without the label it silently fell back to the generic `'intervals'`, which is wrong for a continuous effort with no reps in it at all). **A genuine defect surfaced migrating `goal_pace_sharpener` specifically:** a very slow runner's *minimum* rep count (2 × 1 km at a 9:00/km goal pace) converted to 4.5 km — under `MIN_SESSION_DISTANCE_KM.quality` (5 km, §52b/INPUT-FLOOR-01) — even though the work-*minute* dose this section protects was satisfied. `pacedRepPlan` now grows reps past its own dose ceiling rather than ship a session under an already-established distance floor (D-21: the floor is the harder constraint, not the ceiling — "the day has to be sized for its worst case" is §52b's own reasoning, reapplied here). This affects every reps-scaled row, not just the three migrated today, but only binds for a runner slow enough that the ceiling and the floor would otherwise conflict.
+> **The named remaining task, done, same day.** `tempo_cruise` and `goal_pace_sharpener` are the identical shape to `tempo_cruise_short`/`tenk_pace_intervals` (reps-scaled, jog recovery) — same mechanism, no new config. `tempo_continuous` is genuinely new (one continuous block, single sustained pace, not reps, not a progression) but the DOSE is the same threshold-work band already ruled correct, so it reuses `THRESHOLD_WORK_TARGET_MINS` rather than a new constant; its v2 block carries `label: 'sustained'` so the §22 goal-pace shape word survives migration (found via golden-snapshot review — without the label it silently fell back to the generic `'intervals'`, which is wrong for a continuous effort with no reps in it at all). **A genuine defect surfaced migrating `goal_pace_sharpener` specifically:** a very slow runner's *minimum* rep count (2 × 1 km at a 9:00/km goal pace) converted to 4.5 km — under `MIN_SESSION_DISTANCE_KM.quality` (5 km, §52b/INPUT-FLOOR-01) — even though the work-*minute* dose this section protects was satisfied. `pacedRepPlan` now grows reps past its own dose ceiling rather than ship a session under an already-established distance floor (D-21: the floor is the harder constraint, not the ceiling — "the day has to be sized for its worst case" is §52b's own reasoning, reapplied here). This affects every reps-scaled row, not just the three migrated today, but only binds for a runner slow enough that the ceiling and the floor would otherwise conflict. **Amended 2026-10-27 (§9 Amendment, S9-QUALITY-MINUTES-01): growth stops at 35 minutes in total, where the dose band governs again.**
 
 > **Extended to threshold and race-pace paced reps — Coaching Board, 2026-09-03, unanimous.** The VO2max fix above was scoped "applies to paced flat intervals only." A real generated plan measured the same defect class in a different category: `tenk_pace_intervals` (4 × 1200 m @ goal pace, 2 min jog) was sized at `duration_mins: 25` by the flat `QUALITY_SESSION_PCT_OF_WEEKLY` path — but its own documented structure needs roughly 27.6 minutes. The session's stated length did not fit its own prescription, the same incoherence CD-14 already found and fixed for VO2max, simply never carried past it.
 >
@@ -1430,6 +1430,31 @@ It is also **3 of 4 sessions hard — 50% by session count**, against §1's 25% 
 - `GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER = 1.1` — first two weeks may not exceed `longest_recent_run_km × 1.1`
 - `GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY = 1.25` — long run must always be ≥ 1.25× the easy session distance. Engine redistributes weekly volume when the natural phase-fraction would invert this (low-volume / low-day-count plans).
 - `GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM` — floor distances per session type (long: 5, easy: 4, quality: 5, secondary_quality: 4). Below these, the session is too short to be coaching-meaningful.
+
+### §9 Amendment — a quality session meets the floor at 5 km OR 35 minutes *(Coaching Board 2026-10-27, S9-QUALITY-MINUTES-01)*
+
+**Principle.** A quality or secondary-quality session meets §9's floor at its km floor **or** at
+`QUALITY_FLOOR_MINS` (35) in total, warm-up and cool-down included. Easy and long-run floors are unchanged.
+
+**Why.** §9 defines the floor as where a session stops being "coaching-meaningful", which is a question about time on
+feet, not ground covered. For a slow runner the km form failed both ways (26 Oct RCA item 2, measured on the slow-goal
+grid): two shape builders had no floor and placed 204 sessions under 5 km, **every one 39–50 minutes long**; the
+builders that had one grew reps until the session priced at 5 km, pushing VO2max work to **26 minutes against its
+12–18-minute dose band**. Beginners are duration-anchored and already had no km floor (S9-DURATION-FLOOR-01; shortest
+quality 25 min), so this aligns slow distance-anchored runners with them.
+
+**Amends §8's D-21 note by name.** *"The distance floor is the harder constraint, not the ceiling"* (2026-09-03) holds
+only until the session is 35 minutes long; from there the dose band governs. 🩹 Willy: fewer reps is less load.
+📊 Seiler: no §1 effect (session counts). ⚠️ **§52b stays in km** (`MIN_KM_PER_TRAINING_DAY = 5` was set equal to the
+quality floor so a day can carry it): an open inconsistency, named, not resolved here.
+
+**Why 35, measured.** 30 cleared the slow grid and changed 1,576 of 5,925 sampled served plans; **35 cleared it and
+changed 221**, all HM/marathon beginners whose continuous tempo shortens 38 → 36 minutes; 40 changed 14 but left 80
+breaches (progressive tempo at 39 min). `measure:fitness` identical. Sweep: `@slow-goal` debts MIN-SESSION-SIZE 113,
+VO2MAX-MAIN-SET-CAP 73, GOAL-PACE-SHAPE 122, MAIN-SET-ORDERING 1 → **all 0**; main population unchanged at 0.
+
+**Config.** `GENERATION_CONFIG.QUALITY_FLOOR_MINS = 35`. **Check.** `INV-PLAN-MIN-SESSION-SIZE` accepts either form;
+`lib/plan/qualityFloorMinutes.test.ts`; one owner, `meetsQualityFloor` (`sessionFormat.ts`), for the two builders that grow a session to its floor. **Not settled:** the easy floor (`S9-EASY-MINUTES-01`), §52b's unit, and three paths the floor does not yet reach (`S9-QUALITY-FLOOR-REACH-01`: progressive tempo, the v1 distance budget, the secondary target).
 
 ### §9 — RECORDED STRUCTURAL FINDING: three principles size the long run and the engine obeys the loosest (2026-09-19, PLAN-QUALITY-AUDIT-01)
 
