@@ -87,6 +87,16 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-27 — RACE-DAY-PACE-WITHHELD-01 · A INCORRECT past the line · B CORRECT WITH AMENDMENT · RULED, not built
+
+Past the §120 Am. 2 line the race session's opening (`RACE_OPENING_FRACTION`, §80 Am.1) is run at the runner's **current
+race-fitness pace**, held even, with the goal offered as a second-half option; §80 Am.1's premise ("the pace the plan has
+been rehearsing") is false for that cohort. **McMillan, binding:** the pace is carried as data at the plan's latest VDOT,
+so a confirmed time trial moves it. Chair: no claim of more precision than a benchmark estimate. Inside the line §80
+Am.1 stands; Zone 2 stays for finish goals. Evidence: ~76% of recreational marathoners positive-split; live, 10 runners,
+gaps 6–36% (799c49e8 would open a marathon 2:48/km faster than predicted). `race_notes` renders nowhere: filed for the
+build. Founder's words needed. Sitting: `docs/decisions/coaching-2026-10-27-race-day-withheld-sitting.md`.
+
 ## 2026-10-27 — GOAL-PACE-REACHABLE-01 + S9-QUALITY-MINUTES-01 (26 Oct RCA items 1–3) · Q1 CORRECT WITH AMENDMENT · Q2 CORRECT WITH AMENDMENT · Q3 direction CORRECT, INSUFFICIENT EVIDENCE · Q2 BUILT 2026-10-27 (S9-QUALITY-MINUTES-01); Q1 BUILT 2026-10-27 (GOAL-PACE-REACHABLE-01; §25 current-pace finish GOAL-PACE-LR-CURRENT-01 built, founder's words)
 
 **Q1:** on a benchmarked time-target plan, goal-paced work only while the goal is within `GOAL_PACE_MAX_STRETCH_PCT` (5)

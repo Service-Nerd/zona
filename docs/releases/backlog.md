@@ -39,7 +39,10 @@ rules whether freed volume may concentrate in one easy run, and the cap if not.
 
 ---
 
-### 🔲 `RACE-DAY-PACE-WITHHELD-01` — what race day tells a runner whose goal pace was withheld 🏃 **COACHING BOARD** → 👤 **FOUNDER** (words)
+### 🔲 `RACE-DAY-PACE-WITHHELD-01` — what race day tells a runner whose goal pace was withheld 🏃 **COACHING BOARD RULED 2026-10-27** (B, with amendment) → 👤 **FOUNDER** (words) → build
+
+**Ruled:** open the first 12% at current race-fitness pace (latest VDOT, carried as data), held even; the goal is a second-half option. Also resolve the inert `race_notes` field (render or retire). Sitting: `docs/decisions/coaching-2026-10-27-race-day-withheld-sitting.md`.
+
 
 Found by the code review of GOAL-PACE-REACHABLE-01. The race session still says *"First X km at goal pace: m:ss"* and
 5K/10K race notes *"settle into goal pace"* on a plan that says sessions are set to what the runner can run now. Both are
