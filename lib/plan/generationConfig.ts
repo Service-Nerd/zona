@@ -1289,6 +1289,14 @@ export const GENERATION_CONFIG = {
   // breaches (progressive tempo at 39 min). `measure:fitness` identical at 35.
   QUALITY_FLOOR_MINS: 35,
 
+  // §82 Amendment 2 (Coaching Board re-sitting 2026-10-27, S9-EASY-MINUTES-01) — on a weekday the runner limited, an
+  // easy run §82 would hold at its km floor is held at the runner's limit, or this many minutes if the limit is shorter,
+  // and never longer than the km floor. Only that path: construction's easy floor is unchanged. For a slow runner the
+  // km floor overruled the stated limit without bound (52 min against 30 at 13:05/km), and 30 minutes is already what a
+  // duration-anchored beginner easy run is. WHY 30, measured: 35 left every overrun at a 30-min limit (8,480 -> 8,480),
+  // 30 took the slow grid's weekday overruns 8,480 -> 1,660, with 0 cohort or targeted plans and 0 day counts changed.
+  EASY_FLOOR_HELD_MINS: 30,
+
   // §113 Amendment 1 (Coaching Board 2026-09-18, CB-SUBFLOOR-ADMIT-01) — the
   // hard bottom of `sessionFloorsFor()`.
   //

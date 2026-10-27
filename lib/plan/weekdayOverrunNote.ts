@@ -10,6 +10,7 @@ import { formatDuration } from '@/lib/format'
 import { DAY_FULL_NAME, type Day } from './days'
 import { isLongRun, isStructuredSession } from './sessionRole'
 import { sessionFloorsFor } from './sessionFloors'
+import { GENERATION_CONFIG } from './generationConfig'
 import type { Week } from '@/types/plan'
 
 type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri'
@@ -84,10 +85,10 @@ export function reconcileWeekdayOverrunNotes(
       const owed = !raceWeek && budget != null && !!s.duration_mins && s.duration_mins > budget.cap
         && s.type !== 'strength' && s.type !== 'rest' && s.type !== 'race'
       // The words follow WHY it is long, and say nothing when no reason fits: a false sentence is worse than the
-      // check flagging a missing one. §82's floor (only when the run is AT OR ABOVE the floor: below it, "any shorter
-      // and it stops being a training run" is false, it already is),
+      // check flagging a missing one. §82's floor (only when the run is AT OR ABOVE the floor, or §82 Am. 2's held run
+      // at exactly EASY_FLOOR_HELD_MINS, which IS the floor below 4 km; any other run below the floor gets no sentence),
       // the long run, or §81's structured exemption. Measured on 9,255 cases: 22,974 structured, 7,627 at-floor, 0 else.
-      const kind = s.floor_protected && (s.distance_km ?? 0) >= easyFloor ? 'easy'
+      const kind = s.floor_protected && ((s.distance_km ?? 0) >= easyFloor || (s.distance_km != null && s.duration_mins === GENERATION_CONFIG.EASY_FLOOR_HELD_MINS)) ? 'easy'
         : isLongRun(s) ? 'long' : isStructuredSession(s) ? 'quality' : null
       const note = owed && kind ? weekdayOverrunNote({ minutes: s.duration_mins, cap: budget!.cap, day: d, perDay: budget!.perDay, kind }) : null
       if (note) s.weekday_overrun_note = note

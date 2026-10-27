@@ -1139,7 +1139,9 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Grids carry no benchmarked goal inside the line** (GRID-GOAL-INSIDE-LINE-01) | 🔲 | S | No board. |
 | ~~**A quality session counts at 5 km or 35 minutes**~~ (S9-QUALITY-MINUTES-01) | ✅ | S | **SHIPPED 2026-10-27.** Slow-goal debts 113/73/122/1 → 0; 221 of 5,925 sampled served plans change (beginner continuous tempo 38 → 36 min). |
 | **Three paths the 35-minute floor does not reach** (S9-QUALITY-FLOOR-REACH-01) | 🔲 | S | Filed 2026-10-27 by code review; each changes unmeasured served plans. |
-| **A weekday-held easy run lasts the runner's limit, at least 30 min** (S9-EASY-MINUTES-01) | 🔲 | M | Re-sat: C vacated (rounding defect), D (§82 only, 30) CORRECT WITH AMENDMENT. |
+| ~~**A weekday-held easy run lasts the runner's limit, at least 30 min**~~ (S9-EASY-MINUTES-01) | ✅ | M | **SHIPPED 2026-10-27**, §82 Am. 2. |
+| **A held plan can stop building undeclared** (S9-HELD-PEAK-CLASSIFY-01) | 🔲 | S | 1 sweep clone, recorded debt. |
+| **`weekly_km` not restated after every session change** (WEEKLY-KM-AFTER-CAP-01) | 🔲 | S | 17 cohort plans already stale; foundation budget stays. |
 | **Rebuild the 11 live plans the 26 Oct RCA found** (LIVE-PLAN-REBUILD-RCA-01) | 🔲 | S | Dry runs re-run on `4cfd397e`: 11 clean, 0 refused. Founder to apply. |
 | **Adjust's weekday time limit is inert for runners with per-day limits** (MODIFY-WEEKDAY-INERT-01) | 🔲 | S | Filed 2026-10-26. `applyEdits` keeps `day_budgets`, which win. Founder picks the resolution. |
 | **Base-building weeks have no duration, so weekday limits never apply** (BASEBUILD-DURATION-01) | 🔲 | S | Filed 2026-10-26. A benchmarked runner's pace is derivable; §122's condition is not met. |

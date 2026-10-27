@@ -4,6 +4,7 @@ import { composePlanWithFoundation } from './foundationCompose'
 import { validatePlan } from './invariants'
 import { isLongRun, isStructuredSession } from './sessionRole'
 import { sessionFloorsFor } from './sessionFloors'
+import { GENERATION_CONFIG } from './generationConfig'
 import { longRunTimeCapMins } from './longRunTimeCap'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
@@ -80,7 +81,9 @@ function population(): Array<{ label: string; input: GeneratorInput; plan: Plan 
   ]
   for (const [bl, benchmark] of benches)
     for (const [budl, day_budgets] of budgets)
-      for (const cap of [30, 60])
+      // 20 is not a wizard chip (its smallest is 30). It is here because §82 Am. 2 holds an easy run at the limit or
+      // 30 minutes, so below 30 is the only place the floor still overruns, and the exemption arm must stay reachable.
+      for (const cap of [20, 30, 60])
         for (const [vol, lrKm] of [[15, 8], [30, 12], [45, 20], [50, 20]] as const)
           for (const dist of [10, 21.1, 42.2]) {
             const input = {
@@ -129,7 +132,9 @@ function kinds() {
         const cap = (input as any).day_budgets?.[d] ?? (input as any).max_weekday_mins
         if (!s || s.duration_mins == null || cap == null || s.duration_mins <= cap) continue
         if (isLongRun(s) || isStructuredSession(s)) { structuredOverCap++; continue }
-        if (s.floor_protected === true && s.distance_km === floor) floorProtectedOverCap++
+        // §82 Am. 2: AT the km floor, or below it at EASY_FLOOR_HELD_MINS.
+        if (s.floor_protected === true && (s.distance_km === floor
+          || (s.distance_km != null && s.distance_km < floor && s.duration_mins <= GENERATION_CONFIG.EASY_FLOOR_HELD_MINS))) floorProtectedOverCap++
         else plainOverCap++
       }
       const lr = Object.values(w.sessions).find(x => x && isLongRun(x))
@@ -215,7 +220,8 @@ describe('producer and checker agree about the weekday cap (PRODUCER-CHECKER-AGR
           if (!s || s.duration_mins == null || cap == null || s.duration_mins <= cap) continue
           const deliberate =
             isLongRun(s) || isStructuredSession(s)
-            || (s.floor_protected === true && s.distance_km === floor)
+            || (s.floor_protected === true && (s.distance_km === floor
+              || (s.distance_km != null && s.distance_km < floor && s.duration_mins <= GENERATION_CONFIG.EASY_FLOOR_HELD_MINS)))
           if (!deliberate && !flagged.has(`${w.n}:${d}`)) {
             silent.push(`${label} w${w.n}:${d} — ${s.duration_mins}min vs ${cap}, no exemption, validator silent`)
           }

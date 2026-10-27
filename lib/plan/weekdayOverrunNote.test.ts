@@ -36,7 +36,7 @@ describe('the owner', () => {
   })
 })
 
-// The live case's shape (a 7:40 marathoner aiming at 6:00 on 10 km/week, Mon 60 / Wed 45 / Fri 30). ⚠️ A FINISH goal here
+// The live case's shape (a 7:40 marathoner aiming at 6:00 on 10 km/week, Mon 60 / Wed 45 / Fri 30; Wed is 20 here, below). ⚠️ A FINISH goal here
 // stages to base building, whose sessions carry no duration at all: BASEBUILD-DURATION-01, filed, not this item.
 const { planStart, benchmarkDate } = slowGoalDates()
 // The engine measures the runway from `today` to `planStart`, and `slowGoalDates` puts the start on NEXT Monday, so the
@@ -48,7 +48,10 @@ const SLOW: GeneratorInput = {
   race_distance_km: 42.2, race_date: new Date(Date.parse(`${planStart}T00:00:00Z`) + (20 * 7 - 1) * 864e5).toISOString().slice(0, 10),
   goal: 'time_target', target_time: '6:00:00', age: 30, injury_history: [], fitness_level: 'beginner', training_age: '1-2yr', recent_quality_training: 'occasional',
   current_weekly_km: 10, longest_recent_run_km: 6, days_available: 4, days_cannot_train: ['tuesday', 'thursday', 'saturday'],
-  day_budgets: { mon: 60, wed: 45, fri: 30 }, max_weekday_mins: 30,
+  // Wed 20 is not a wizard chip (its smallest is 30); it was 45. §82 Am. 2 holds an easy run at its day's limit or 30
+  // minutes, so a limit under 30 is the one place a floor-held run still overruns, and this file must reach that case
+  // (the foundation Wednesday run was 46 min against 45, which the amendment now holds at 45).
+  day_budgets: { mon: 60, wed: 20, fri: 30 }, max_weekday_mins: 20,
   benchmark: { type: 'race', distance_km: 42.2, time: '7:40:47', benchmark_date: benchmarkDate }, acknowledged_prep_warning: true,
 } as unknown as GeneratorInput
 const plan = (() => { const o = runEngine({ input: SLOW, tier: 'paid', displayUnits: 'km', planStart, today }); if (o.kind === 'refusal') throw new Error('refused'); return o.plan })()
@@ -73,12 +76,14 @@ describe('the engine says so on every session that does not fit', () => {
     const hits: any[] = []
     for (const c of slowGoalGrid(planStart, benchmarkDate)) {
       if (!c.max_weekday_mins) continue
-      const { gap, ...input } = c
+      // Below the wizard's 30-minute chip on purpose: the only limit a held run can still exceed (§82 Am. 2).
+      const { gap, ...rest } = c
+      const input = { ...rest, max_weekday_mins: 20 }
       const o = runEngine({ input: input as unknown as GeneratorInput, tier: 'paid', displayUnits: 'km', planStart, today })
       if (o.kind === 'refusal') continue
       for (const w of o.plan.weeks) if (w.n >= 1) for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
         const s: any = (w.sessions as any)[d]
-        if (s?.floor_protected && s.duration_mins > c.max_weekday_mins) hits.push(s)
+        if (s?.floor_protected && s.duration_mins > input.max_weekday_mins) hits.push(s)
       }
       if (hits.length >= 5) break
     }
@@ -100,9 +105,25 @@ describe('the engine says so on every session that does not fit', () => {
   })
 })
 
+describe('§82 Amendment 2 at the LIVE shape (Mon 60 / Wed 45 / Fri 30, every limit a wizard chip; code review)', () => {
+  const LIVE: GeneratorInput = { ...SLOW, day_budgets: { mon: 60, wed: 45, fri: 30 }, max_weekday_mins: 30 } as GeneratorInput
+  const live = (() => { const o = runEngine({ input: LIVE, tier: 'paid', displayUnits: 'km', planStart, today }); if (o.kind === 'refusal') throw new Error('refused'); return o.plan })()
+  it('the foundation Wednesday is held at its 45-minute limit, says nothing, and is the only change to its week', () => {
+    const weds = live.weeks.filter(w => w.n <= 0).map(w => (w.sessions as any).wed).filter((s: any) => s?.type === 'easy')
+    expect(weds.length, 'the live shape must carry a foundation Wednesday easy run').toBeGreaterThan(0)
+    for (const s of weds) {
+      expect(s.duration_mins).toBeLessThanOrEqual(45)
+      expect(s.weekday_overrun_note).toBeUndefined()
+    }
+  })
+  it('validates clean', () => {
+    expect(validatePlan(live, LIVE).filter(v => v.severity === 'error')).toEqual([])
+  })
+})
+
 describe('the STRUCTURED check reads the day\'s own limit (OVERRUN-NOTE-ALL-01 changed it; this proves the change)', () => {
-  // SLOW has Mon 60 / Wed 45 / Fri 30 and max_weekday_mins 30 (the wizard writes the MIN). Tolerance is §81 Am. 2's 50%:
-  // Monday's limit is 90, Friday's 45. The old check read max_weekday_mins, so a 70-minute Monday fired against 45.
+  // SLOW has Mon 60 / Wed 20 / Fri 30 and max_weekday_mins 20 (the wizard writes the MIN). Tolerance is §81 Am. 2's 50%:
+  // Monday's limit is 90, Friday's 45. The old check read max_weekday_mins, so a 70-minute Monday fired against 30.
   const withStructured = (day: 'mon' | 'fri', mins: number): Plan => {
     const p: Plan = JSON.parse(JSON.stringify(plan))
     const q = p.weeks.flatMap(w => Object.values(w.sessions)).find((s: any) => s?.type === 'quality' && s.catalogue_id) as any

@@ -6561,6 +6561,43 @@ sign-off quoted at **+201%**.
 — re-enter the day-count remedy), **not by a percentage**. Where the floor is genuinely the
 last resort, §82's existing disclosure obligation applies.
 
+### §82 Amendment 2 — the held run is the runner's limit, at least 30 minutes, at most 4 km *(Coaching Board re-sitting 2026-10-27, S9-EASY-MINUTES-01)*
+
+**Principle.** On a weekday the runner limited, an easy run §82 would hold at its km floor is held at **the day's
+limit**, or at `EASY_FLOOR_HELD_MINS` (30) if the limit is shorter, and **never longer than the km floor itself**.
+Distance follows from the minutes at the session's own pace. Construction's easy floor (4 km) is unchanged. The same
+rule holds in foundation weeks, whose water-fill held a day at the km floor over its limit in the same way.
+
+**Why.** Am. 1 found the overrun unbounded for slow runners and bounded it with §52b, which counts km per day and cannot
+see time: a live runner at about 13:05/km was handed 4 km easy runs of 52 minutes against a 30-minute limit, 48 times.
+30 minutes of easy running is a real session; the engine already prescribes exactly that to every duration-anchored
+beginner, capped to the limit with no floor at all. This brings distance-anchored slow runners to the same treatment.
+
+**What was refused, and why, measured.** A 4 km-or-35-minute floor everywhere (the first sitting's C) was **vacated**:
+its prototype rounded the floor down and breached it; rounded up as worded, it removed no overrun (6,784 → 6,784).
+A 30-minute floor everywhere rewrote most beginner plans (1,300 of 3,000 cohort) and added a run day to 339 injury weeks
+through §52b's easy count. 35 minutes on this path left every overrun at a 30-minute limit.
+
+**Measured (slow-goal grid, this build).** 220 of 960 plans change; weekday overruns 8,480 → 1,660 (the rest are long runs
+and structured sessions, which §81 exempts); 0 cohort or targeted plans change; **0 day-count changes** (Willy, binding).
+Every plan losing more than 10% of its peak has a limit and already carries §40c's note (83 of 83). The wizard's smallest
+limit is 30 minutes, so a held run now overruns only a limit set below that.
+
+**Config.** `GENERATION_CONFIG.EASY_FLOOR_HELD_MINS = 30`; one producer, `heldEasyMins` (`sessionFloors.ts`), used by
+`applyWeekdayMinsCap` and the foundation block. **Checks.** `INV-PLAN-MIN-SESSION-SIZE` accepts a weekday easy run at
+`min(30, the day's limit)` minutes; `INV-PLAN-MAX-WEEKDAY-MINS` and `INV-PLAN-FOUNDATION-WEEKDAY-WITHIN-BUDGET` exempt a
+floor-protected run only AT the km floor or, below it, at no more than 30 minutes; each reads the limit from the input,
+not the producer's helper. `lib/plan/easyRunFloorProtection.test.ts` (§82 Amendment 2 suite, falsified).
+
+**What the build found.** (1) The foundation block's water-fill held a day at the km floor over its limit through its own
+path, and the sweep caught it (127 plans undeclared): fixed in the same commit. (2) The engine's final cap pass can make a
+held run without restating the week: 317 of 5,560 slow-grid weeks then stated more than their sessions held (worst
+5.3 km). That pass now restates a week it cuts below the floor, and re-derives the copy only where "highest volume" became
+false. (3) Restated honestly, one sweep clone peaks at 108% of week 1, under §23's 110%, and is not declared maintenance,
+because the classification runs before that pass: recorded debt, `S9-HELD-PEAK-CLASSIFY-01`. **Not done:** a foundation
+week's `weekly_km` stays its budget when a held run shortens a day (subtracting it tripped the +10% step check), and the
+final pass still leaves weeks it changes for other reasons unrestated: both `WEEKLY-KM-AFTER-CAP-01`.
+
 ---
 
 ## 83. Sessions must be coherent with each other, not only with themselves

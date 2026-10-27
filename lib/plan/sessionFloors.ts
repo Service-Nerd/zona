@@ -41,6 +41,16 @@ export interface SessionFloors {
 }
 
 /**
+ * §82 Amendment 2 (S9-EASY-MINUTES-01) — the length, in minutes, of an easy run §82 holds against a weekday limit.
+ * The runner's limit, or `EASY_FLOOR_HELD_MINS` if the limit is shorter, never longer than the km floor itself
+ * (`floorKmMins`, the floor priced at the session's pace). The one producer of that length; the checkers re-derive the
+ * rule from config and the session, not by calling this.
+ */
+export function heldEasyMins(capMins: number, floorKmMins: number): number {
+  return Math.max(capMins, Math.min(floorKmMins, GENERATION_CONFIG.EASY_FLOOR_HELD_MINS))
+}
+
+/**
  * Floors for this runner.
  *
  * `longestRecentRunKm` is the anchor because it is the quantity §45's cap is

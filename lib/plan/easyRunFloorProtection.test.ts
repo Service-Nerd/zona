@@ -39,21 +39,26 @@ const LOW_VOLUME_MARATHON: GeneratorInput = {
   resting_hr: 55, max_hr: 184, preferred_long_run_day: 'sun',
 }
 
+// §82 Amendment 2 (S9-EASY-MINUTES-01): a held run lasts the day's limit, or EASY_FLOOR_HELD_MINS if the limit is
+// shorter, so a held run can only exceed a limit UNDER 30 minutes. The wizard's smallest chip is 30, so this fixture
+// uses 20 to keep the branch reachable; at 30 see the §82 Amendment 2 suite below.
+const LOW_VOLUME_SUB30: GeneratorInput = { ...LOW_VOLUME_MARATHON, max_weekday_mins: 20 }
+
 describe('CoachingPrinciples §82 — easy-run floor protection', () => {
   it('holds a cap-shrunk easy run at the floor instead of below it, and declares the trade', () => {
-    const plan = generateRulePlan(LOW_VOLUME_MARATHON, 'trial', PINNED_PLAN_START_0907)
-    const errors = validatePlan(plan, LOW_VOLUME_MARATHON).filter(v => v.severity === 'error')
+    const plan = generateRulePlan(LOW_VOLUME_SUB30, 'trial', PINNED_PLAN_START_0907)
+    const errors = validatePlan(plan, LOW_VOLUME_SUB30).filter(v => v.severity === 'error')
     expect(errors).toEqual([])
 
     const floorProtected = plan.weeks.flatMap(w => Object.values(w.sessions))
       .filter((s): s is NonNullable<typeof s> => !!s?.floor_protected)
     expect(floorProtected.length).toBeGreaterThan(0)
     for (const s of floorProtected) {
-      // Held exactly at the floor, never below it.
-      expect(s.distance_km).toBe(GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy)
-      // The cap is exceeded (rounding can occasionally land exactly on it) —
-      // floor protection is not free.
-      expect(s.duration_mins).toBeGreaterThanOrEqual(LOW_VOLUME_MARATHON.max_weekday_mins!)
+      // Held AT the km floor, or (§82 Am. 2) below it at exactly EASY_FLOOR_HELD_MINS. Never shorter than either.
+      const atKm = s.distance_km === GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+      expect(atKm || s.duration_mins === GENERATION_CONFIG.EASY_FLOOR_HELD_MINS).toBe(true)
+      // The cap is exceeded: floor protection is not free.
+      expect(s.duration_mins).toBeGreaterThan(LOW_VOLUME_SUB30.max_weekday_mins!)
     }
 
     // Recurs across enough weeks in this shape to trip the disclosure obligation.
@@ -112,6 +117,8 @@ const SLOW_RUNNER: GeneratorInput = {
   // HM 2:30 => easy pace well slower than 7:30/km, which is what makes the floor bind.
   benchmark: { type: 'race', distance_km: 21.1, time: '2:30:00' },
   current_weekly_km: 15, longest_recent_run_km: 9,
+  // Under the wizard's 30-minute chip on purpose: §82 Am. 2 means a held run can only overrun a limit below 30.
+  max_weekday_mins: 20,
 } as GeneratorInput
 
 describe('§82 floor protection is an exemption the VALIDATOR shares (MWM-FLOOR-VALIDATOR-01)', () => {
@@ -145,6 +152,26 @@ describe('§82 floor protection is an exemption the VALIDATOR shares (MWM-FLOOR-
     expect(mwm.length).toBeGreaterThan(0)
   })
 
+  it('the held run is the LONGER of the limit and 30 minutes: cut to 25 on a 20-minute day, it fails (code review)', () => {
+    const plan = generateRulePlan(SLOW_RUNNER, 'paid', PINNED_PLAN_START_0907)
+    const target = plan.weeks.flatMap(w => Object.values(w.sessions))
+      .find((s): s is NonNullable<typeof s> => !!s?.floor_protected
+        && (s.distance_km ?? 9) < GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy)
+    expect(target).toBeTruthy()
+    target!.duration_mins = 25   // over the 20-minute day, under the 30 the rule holds it at
+    expect(validatePlan(plan, SLOW_RUNNER).some(v => v.code === 'INV-PLAN-MIN-SESSION-SIZE')).toBe(true)
+  })
+
+  it('§82 Am. 2 is not a blanket licence: a below-floor held run longer than 30 minutes still fires', () => {
+    const plan = generateRulePlan(SLOW_RUNNER, 'paid', PINNED_PLAN_START_0907)
+    const target = plan.weeks.flatMap(w => Object.values(w.sessions))
+      .find((s): s is NonNullable<typeof s> => !!s?.floor_protected
+        && (s.distance_km ?? 9) < GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy)
+    expect(target, 'the fixture must hold a run below the km floor').toBeTruthy()
+    target!.duration_mins = GENERATION_CONFIG.EASY_FLOOR_HELD_MINS + 1
+    expect(validatePlan(plan, SLOW_RUNNER).some(v => v.code === 'INV-PLAN-MAX-WEEKDAY-MINS')).toBe(true)
+  })
+
   it('stays narrow — an UNSTAMPED easy run over the cap still fires', () => {
     const plan = generateRulePlan(SLOW_RUNNER, 'paid', PINNED_PLAN_START_0907)
     const target = plan.weeks.flatMap(w => Object.values(w.sessions))
@@ -154,5 +181,52 @@ describe('§82 floor protection is an exemption the VALIDATOR shares (MWM-FLOOR-
     const mwm = validatePlan(plan, SLOW_RUNNER)
       .filter(v => v.code === 'INV-PLAN-MAX-WEEKDAY-MINS')
     expect(mwm.length).toBeGreaterThan(0)
+  })
+})
+
+/**
+ * §82 Amendment 2 (S9-EASY-MINUTES-01, Coaching Board re-sitting 2026-10-27) — at the wizard's real 30-minute limit a
+ * slow runner's held easy run lasts the limit and no longer, below 4 km. Before, `SLOW_RUNNER` at 30 minutes was held at
+ * 4 km, over the limit, every week the floor bound.
+ */
+const SLOW_RUNNER_30: GeneratorInput = { ...SLOW_RUNNER, max_weekday_mins: 30 } as GeneratorInput
+const WEEKDAYS_ = ['mon', 'tue', 'wed', 'thu', 'fri'] as const
+
+describe('§82 Amendment 2 — at a 30-minute limit the held easy run is the limit', () => {
+  const plan = generateRulePlan(SLOW_RUNNER_30, 'paid', PINNED_PLAN_START_0907)
+  const weekdayEasy = plan.weeks.filter(w => w.type !== 'race').flatMap(w => WEEKDAYS_.map(d => w.sessions[d]))
+    .filter((s): s is NonNullable<typeof s> => !!s && s.type === 'easy' && !/long/i.test(s.label))
+  const held = weekdayEasy.filter(s => (s.distance_km ?? Infinity) < GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy)
+
+  it('reaches the case: easy runs below the km floor exist, each exactly at the limit', () => {
+    expect(held.length).toBeGreaterThan(0)
+    for (const s of held) expect(s.duration_mins).toBe(30)
+  })
+  it('no weekday easy run exceeds the limit, and none is stamped floor-protected', () => {
+    for (const s of weekdayEasy) expect(s.duration_mins ?? 0).toBeLessThanOrEqual(30)
+    expect(weekdayEasy.some(s => s.floor_protected)).toBe(false)
+  })
+  it('each week with a held run states the volume its sessions hold (the final cap pass restates it)', () => {
+    let checked = 0
+    for (const w of plan.weeks.filter(w => w.n > 0 && w.type !== 'race')) {
+      const running = Object.values(w.sessions).filter((s): s is NonNullable<typeof s> =>
+        !!s && s.type !== 'rest' && s.type !== 'strength' && s.type !== 'cross-train')
+      if (!running.length || running.some(s => s.distance_km == null)) continue
+      if (!running.some(s => s.type === 'easy' && (s.distance_km as number) < GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy)) continue
+      // `weekly_km` is a whole number by design (at a 60-minute limit this plan states 18 for 17.5), so within 0.5.
+      expect(Math.abs(w.weekly_km - running.reduce((a, s) => a + (s.distance_km as number), 0)), `week ${w.n}`).toBeLessThanOrEqual(0.5)
+      checked++
+    }
+    expect(checked).toBeGreaterThan(0)
+  })
+  it('the plan validates clean', () => {
+    expect(validatePlan(plan, SLOW_RUNNER_30).filter(v => v.severity === 'error')).toEqual([])
+  })
+  it('🔴 falsified: a held run cut below the limit fails INV-PLAN-MIN-SESSION-SIZE', () => {
+    const broken = JSON.parse(JSON.stringify(plan))
+    const target = broken.weeks.flatMap((w: any) => WEEKDAYS_.map(d => w.sessions[d]))
+      .find((s: any) => s?.type === 'easy' && (s.distance_km ?? 9) < GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy)
+    target.duration_mins = 25
+    expect(validatePlan(broken, SLOW_RUNNER_30).some(v => v.code === 'INV-PLAN-MIN-SESSION-SIZE')).toBe(true)
   })
 })

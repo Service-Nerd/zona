@@ -531,6 +531,15 @@ it specific, no polish. The content system adds the voice.
 **Hook material:** a beginner marathon plan with a 157-minute long run and two 156-minute "easy" runs in the same week, and no rule in the engine that noticed.
 **Postable?:** yes
 
+## 2026-10-27 — S9-EASY-MINUTES-01 · A board ruled on my rounding error, then re-sat
+**Shipped:** on a weekday a runner limited, an easy run the 4 km floor would hold over the limit now lasts the limit, or 30 minutes if the limit is shorter. A runner at 13 min/km goes from 52 minutes against 30 to 30.
+**Dev learning:** the prototype that produced the first ruling's evidence rounded the minutes floor DOWN to the 0.5 km grid, so it delivered runs shorter than the floor it was meant to honour. The headline ("77% of overruns gone") came from that. Rounded the way the ruling was worded, it removed none. Then the narrower option needed three passes of its own: the foundation block's water-fill was a twin path (the sweep caught 127 undeclared plans), the final cap pass cut weeks without restating them (317 stale totals), and restating them broke copy that claimed "highest volume". Two code-review "fixes" made things worse and were reverted before the right scope was found.
+**Product/creator learning:** the wizard's smallest weekday limit is 30 minutes. So the 30-minute hold means, for anything the product can produce, a held easy run never overruns. The overrun branch survives only for a limit set below 30, and the tests now say so instead of pretending a 30-minute fixture reaches it.
+**AI-building learning:** I caught my own prototype's rounding only because the build had to satisfy the ruling's literal words. A prototype is a measurement instrument; its rounding is part of what it measured. Stop and re-sit rather than build what was ruled.
+**The honest bit:** one sweep clone now peaks under §23's line without the maintenance declaration, and I recorded it as debt instead of changing the classifier at the end of a long day.
+**Hook material:** "keeps 77% of the overrun relief" became "removes none" when the floor was rounded the right way.
+**Postable?:** yes
+
 ## 2026-10-22 — SESSION-COMPLETE-LONG-LABEL-01 · a long run is a long run on the card too
 **Shipped:** The card you see after a run, and the image you share, now say "Long run" on a long run. They said "Easy run".
 

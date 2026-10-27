@@ -976,6 +976,17 @@ export function copyClaimsIntensity(label?: string | null, theme?: string | null
     || COPY_CLAIMS_HARD.test(text)
 }
 
+/**
+ * §82 (+ Amendment 2, S9-EASY-MINUTES-01) — the one licensed easy-run overrun of a weekday limit: a run stamped
+ * `floor_protected` that sits AT the km floor, or below it at no more than EASY_FLOOR_HELD_MINS. The stamp is never
+ * taken on trust. The checker's own definition, re-derived from config: it does not call the producer's `heldEasyMins`.
+ */
+function isLicensedFloorHold(s: { floor_protected?: boolean; distance_km?: number | null; duration_mins?: number | null }, floorKm: number): boolean {
+  if (s.floor_protected !== true) return false
+  if (s.distance_km === floorKm) return true
+  return s.distance_km != null && s.distance_km < floorKm && (s.duration_mins ?? Infinity) <= GENERATION_CONFIG.EASY_FLOOR_HELD_MINS
+}
+
 export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] {
   // §22 / GOAL-COHERENCE-01 — the checker MUST normalise the same way the
   // producer does, or it fails plans the producer already corrected. Fixing
@@ -2063,8 +2074,15 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // §9 Amendment (S9-QUALITY-MINUTES-01, Coaching Board 2026-10-27) — a quality or secondary-quality session also
       // meets the floor at QUALITY_FLOOR_MINS in total. Read from config, not from the producer's loop: the producer
       // stops growing reps at this length and this asks the question again from the session's own duration.
-      const meetsByMinutes = session.type === 'quality'
-        && (session.duration_mins ?? 0) >= GENERATION_CONFIG.QUALITY_FLOOR_MINS
+      // §82 Amendment 2 (S9-EASY-MINUTES-01) — on a weekday the runner limited, an easy run below the km floor meets it
+      // only when it lasts the day's limit, or EASY_FLOOR_HELD_MINS if the limit is shorter: the LONGER of the two. The limit is read from the input here, not through
+      // the producer's `weekdayBudgetFor` (a checker sharing the producer's helper agrees with it on the wrong answer).
+      const dayLimit = input.day_budgets?.[day as 'mon' | 'tue' | 'wed' | 'thu' | 'fri']
+        ?? (['mon', 'tue', 'wed', 'thu', 'fri'].includes(day) ? input.max_weekday_mins : undefined)
+      const meetsByMinutes = (session.type === 'quality'
+        && (session.duration_mins ?? 0) >= GENERATION_CONFIG.QUALITY_FLOOR_MINS)
+        || (session.type === 'easy' && !isLong && dayLimit != null
+          && (session.duration_mins ?? 0) >= Math.max(GENERATION_CONFIG.EASY_FLOOR_HELD_MINS, dayLimit))
       if (dist > 0 && dist < expected && !meetsByMinutes) {
         violations.push({
           code: 'INV-PLAN-MIN-SESSION-SIZE',
@@ -2385,8 +2403,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         // arm would be a hole the width of one boolean — anything that stamped
         // `floor_protected` could overrun without limit, which is not what was
         // ratified. The floor is recomputed from the same owner the engine uses.
-        if (s.floor_protected === true
-            && s.distance_km === sessionFloorsFor(input.longest_recent_run_km).easy) continue
+        if (isLicensedFloorHold(s, sessionFloorsFor(input.longest_recent_run_km).easy)) continue
         if (s.duration_mins > cap) {
           violations.push({
             code: 'INV-PLAN-MAX-WEEKDAY-MINS',
@@ -2459,8 +2476,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         const cap = budgets?.[d as 'mon' | 'tue' | 'wed' | 'thu' | 'fri'] ?? input.max_weekday_mins
         if (cap == null || s.duration_mins == null) continue
         if (isLongRun(s) || isStructuredSession(s)) continue
-        if (s.floor_protected === true
-            && s.distance_km === sessionFloorsFor(input.longest_recent_run_km).easy) continue
+        if (isLicensedFloorHold(s, sessionFloorsFor(input.longest_recent_run_km).easy)) continue
         if (s.duration_mins > cap) {
           violations.push({
             code: 'INV-PLAN-FOUNDATION-WEEKDAY-WITHIN-BUDGET',

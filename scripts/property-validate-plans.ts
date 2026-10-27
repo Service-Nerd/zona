@@ -1648,6 +1648,13 @@ const BASELINE: Record<string, number> = {
   'INV-PLAN-VO2MAX-MAIN-SET-CAP@slow-goal': 0,
   'INV-PLAN-GOAL-PACE-SHAPE@slow-goal':     0,
   'INV-PLAN-MAIN-SET-ORDERING@slow-goal':   0,
+  //
+  // 0 -> 1 (S9-EASY-MINUTES-01, 2026-10-27). NOT a new defect, an UNMASKED one: §82 Am. 2 holds a slow runner's weekday
+  // easy runs at a 30-minute limit, and the final cap pass now restates those weeks' `weekly_km` (before, 317 of 5,560
+  // slow-grid weeks stated more than their sessions held). One clone (10K, 7 days, 40 km/week, 30-min weekdays) then
+  // peaks at 108% of week 1, under §23's 110%, and is not flagged maintenance: the classification is decided before
+  // that pass and read the stale, higher total. Filed as `S9-HELD-PEAK-CLASSIFY-01`; the classifier is not changed here.
+  'INV-PLAN-PEAK-OVER-BASE@slow-goal':       1,
 
   // 87 -> 75 -> 0 (LABEL-VARIETY-01, 2026-08-21). The LABEL count is now zero:
   // the peak goal-pace override takes the row's shape word ("…-pace ladder",

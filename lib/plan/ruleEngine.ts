@@ -36,7 +36,7 @@ import { validatePlan, copyClaimsIntensity, enforceViolations, planQualityCounts
 import { hasInjuryKeyword, hasVolumeCappedInjuryHistory } from './injuryScope'
 import { assessBaseBuild, baseVolumeRefusal, runWalkInadequateRefusal, BaseVolumeError } from './baseVolume'
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
-import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
+import { sessionFloorsFor, heldEasyMins, type SessionFloors } from './sessionFloors'
 import { strideCarrierDay, isDayAfterLongRun, neuromuscularNote, neuromuscularLabel, hasHillRestrictingInjury, weekHasNeuromuscular } from './neuromuscular'
 import { computeZones, type ZoneTargets } from './zones'
 import { buildHRZonesWithFallback } from './hrZones'
@@ -4024,9 +4024,23 @@ function applyWeekdayMinsCap(
     const floorKm = sessionFloorsFor(input.longest_recent_run_km).easy
     if (!isRaceWeek && s.type === 'easy' && cappedDistance != null && cappedDistance < floorKm && s.distance_km) {
       const paceMinPerKm = originalDurationMins / s.distance_km
-      s.distance_km = floorKm
-      s.duration_mins = Math.round(floorKm * paceMinPerKm)
-      s.floor_protected = true
+      // §82 Amendment 2 (S9-EASY-MINUTES-01) — held at the runner's limit, or 30 minutes if the limit is shorter,
+      // never past the km floor. Where the km floor is no longer than that, nothing changes from §82 as ruled.
+      const floorKmMins = Math.round(floorKm * paceMinPerKm)
+      const held = heldEasyMins(cap, floorKmMins)
+      if (held >= floorKmMins) {
+        s.distance_km = floorKm
+        s.duration_mins = floorKmMins
+        s.floor_protected = true
+      } else {
+        // Below the km floor the minutes are the prescription; the distance follows at the session's own pace, rounded
+        // DOWN to 0.1 km as the foundation block rounds (FOUND-ROUND-01): off the 0.5 km grid on purpose, because the
+        // grid would put a 30-minute run at 2.5 km = 33 min for a 13:05/km runner, over the limit it exists to honour.
+        s.duration_mins = held
+        s.distance_km = Math.floor((held / paceMinPerKm) * 10 + 1e-9) / 10
+        // Over the day only when the limit is under 30 minutes: that is the one licensed overrun left.
+        if (held > cap) s.floor_protected = true
+      }
       // OVERRUN-NOTE-ALL-01 — its note is written by `reconcileWeekdayOverrunNotes` at the tail of generation.
     } else {
       s.duration_mins = cap
@@ -10040,7 +10054,28 @@ function buildRulePlanOnce(
   //      303 violations without this pass, 0 with it.
   // The lesson is not "always add a final pass" — it is that the answer changed
   // when the conditions did, and only re-measuring caught it.
-  for (const w of weeks) if (w.sessions) applyWeekdayMinsCap(w.sessions, input, w.type === 'race')
+  // §82 Amendment 2 (S9-EASY-MINUTES-01) — this pass can cut a held easy run below the km floor, so a week it does that
+  // to restates its volume, and re-derives its copy only if the copy's overload claim ("highest volume", "fitness is
+  // built") has become false. Measured without it: 317 of 5,560 slow-grid weeks stated a total more than 0.5 km over
+  // their own sessions (worst 5.3). Scoped to that cut on purpose: restating every week this pass touches moved 17
+  // cohort plans it already left stale, and is WEEKLY-KM-AFTER-CAP-01's to rule on.
+  const heldFloorKm = sessionFloorsFor(input.longest_recent_run_km).easy
+  weeks.forEach((w, idx) => {
+    if (!w.sessions) return
+    const kmBefore = Object.fromEntries(Object.entries(w.sessions).map(([d, x]) => [d, x?.distance_km ?? null]))
+    applyWeekdayMinsCap(w.sessions, input, w.type === 'race')
+    const cutBelowFloor = Object.entries(w.sessions).some(([d, x]) => x?.type === 'easy' && x.distance_km != null
+      && x.distance_km < heldFloorKm && (kmBefore[d] == null || x.distance_km < (kmBefore[d] as number)))
+    if (!cutBelowFloor) return
+    w.weekly_km = sumWeeklyKm(w.sessions, pace)
+    const prevNonDeload = weeks.slice(0, idx).reverse().find(p => p.type !== 'deload')
+    const claimsOverload = /highest volume|fitness is built/.test(`${w.label ?? ''} | ${w.theme ?? ''}`.toLowerCase())
+    if (!claimsOverload || !w.phase || (prevNonDeload && w.weekly_km > prevNonDeload.weekly_km)) return
+    const phaseWeekN = weeks.slice(0, idx + 1).filter(p => p.phase === w.phase).length
+    const content = summariseWeek(w.sessions, w.phase as PhaseType, phaseWeekN, w.type === 'deload', w.type === 'race', false)
+    w.label = weekLabel(content)
+    w.theme = weekTheme(content)
+  })
 
   const plan: Plan = {
     meta,

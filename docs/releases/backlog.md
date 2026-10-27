@@ -67,17 +67,27 @@ not its own 4 km floor (pre-existing). Each needs a measurement and a ruling; di
 
 ---
 
-### 🔲 `S9-EASY-MINUTES-01` — a §82 floor-held easy run lasts the runner's weekday limit, at least 30 minutes 🏃 **COACHING BOARD** (re-sat 2026-10-27, D CORRECT WITH AMENDMENT; build next)
+### 🔲 `S9-HELD-PEAK-CLASSIFY-01` — a plan held to its weekday limit can stop building and not be declared maintenance ⚙️ **NO BOARD** (defect: §23's declaration, documented intent)
 
-The 35-minute ruling (C) was **vacated**: its prototype rounded the floor down and breached its own floor; as worded it
-removes no overrun. Build D (`docs/decisions/coaching-2026-10-27-easy-floor-minutes-resitting.md`): `EASY_FLOOR_HELD_MINS
-= 30`; in `applyWeekdayMinsCap`'s §82 branch the held easy run lasts `max(cap, min(4 km at pace, 30))` minutes, distance
-from the minutes (0.1 km), `floor_protected` stamped. Construction's easy floor unchanged. **Binding:** 0 day-count changes;
-`INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED` and `reconcileWeekdayOverrunNotes` recognise the held run (the prototype lost the
-declaration on 127 sweep plans); `INV-PLAN-MIN-SESSION-SIZE` and `INV-PLAN-MAX-WEEKDAY-MINS` accept it, re-derived from the
-session. Artifacts: §82 Am. 2, the constant, the checks falsified on a slow capped plan. Gates: parity, `cohort:shape`,
-`measure:fitness`, envelope, sweep clean. Live: dry-run 799c49e8, c848fd4c, 4b037d2c, a91d8fde (154 overruns).
+Found building S9-EASY-MINUTES-01. The final cap pass now restates a week whose easy run it holds below 4 km, and one sweep
+clone (10K, 7 days, 40 km/week, 30-min weekdays) then peaks at 108% of week 1, under §23's 110%, without the maintenance
+declaration. The classification (`planIsMaintenance` / `volume_profile`) is decided from the volume curve before that pass
+and read the stale, higher total. Recorded as sweep debt `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`. Fix: re-run the
+peak-over-base classification on delivered `weekly_km` after the last pass that moves volume; measure how many plans flip.
+
 ---
+
+### 🔲 `WEEKLY-KM-AFTER-CAP-01` — `weekly_km` is not restated after every pass that changes a week's sessions ⚙️ **NO BOARD** (honesty of a stated number)
+
+Found building S9-EASY-MINUTES-01. (1) The engine's final `applyWeekdayMinsCap` pass changes sessions without restating
+`weekly_km` for any reason other than a §82 Am. 2 held run (that case is now restated): restating every changed week moved
+**17 of 3,000** cohort plans, which were already stating a stale total, and broke week copy that claims "highest volume".
+(2) A foundation week's `weekly_km` is its budget by design (FRESH-FLOOR-01), and stays so when a held run shortens a day;
+subtracting the held km tripped `INV-PLAN-FOUNDATION-BLOCK`'s +10% step into the next week (sweep, real plan 731f2878).
+Measure the stale population first; then restate with the copy re-derivation the held-run case uses.
+
+---
+
 
 ### 🔲 `LIVE-PLAN-REBUILD-RCA-01` — rebuild the 11 live plans the 26 Oct RCA found 👤 **FOUNDER** (approved 2026-10-27; dry runs ready, founder to apply)
 

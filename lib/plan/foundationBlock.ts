@@ -8,7 +8,7 @@
 
 import { calendarDaysBetween } from '@/lib/dates'
 import { GENERATION_CONFIG } from './generationConfig'
-import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
+import { sessionFloorsFor, heldEasyMins, type SessionFloors } from './sessionFloors'
 import { weekdayBudgetFor } from './weekdayOverrunNote'
 import { waterFillEasyKm } from './easyDistribution'
 import { normaliseDays, longRunDayFor, DAY_ORDER, spreadDays, type Day } from './days'
@@ -456,9 +456,19 @@ function buildFoundationSessions(
   })()
 
   easyDays.forEach((day, i) => {
-    const km = floor1dp(perDayKm[i] ?? eachKm)
-    const mins = paceOk ? Math.round(km * (easyPaceMinPerKm as number)) : undefined
     const budget = budgetFor(day)
+    let km = floor1dp(perDayKm[i] ?? eachKm)
+    let mins = paceOk ? Math.round(km * (easyPaceMinPerKm as number)) : undefined
+    // §82 Amendment 2 (S9-EASY-MINUTES-01), the foundation twin of `applyWeekdayMinsCap`'s held run. The water-fill only
+    // leaves a day over its limit when it held that day at its floor (`ceilRounded` caps every other day), so this is
+    // that floor-held day: held at the limit, or 30 minutes if the limit is shorter, never past the floor itself.
+    if (mins != null && budget != null && mins > budget) {
+      const heldMins = heldEasyMins(budget, mins)
+      if (heldMins < mins) {
+        const heldKm = floor1dp(heldMins / (easyPaceMinPerKm as number))
+        mins = heldMins; km = heldKm
+      }
+    }
     sessions[day] = {
       type: 'easy',
       label: 'Easy run',
@@ -772,6 +782,8 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
       // The condition mirrors the sizing branch exactly: `Math.max` there binds
       // if and only if `weeklyKm < minEasyKm`, because for any larger week the
       // day-fitting picks n such that weeklyKm/n >= minEasyKm by construction.
+      // ⚠️ A §82 Am. 2 held run (above) is not subtracted here: doing so tripped the +10% step check into the next week
+      // (WEEKLY-KM-AFTER-CAP-01, filed).
       weekly_km: deloadCappedKm ?? (Object.keys(sessions).length > 0
         && weeklyKm < sessionFloorsFor(input.longest_recent_run_km).easy
         ? sessionFloorsFor(input.longest_recent_run_km).easy
