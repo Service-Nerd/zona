@@ -27,6 +27,58 @@ already decided what it is.
 
 ---
 
+### 🔲 `S9-ONE-REP-01` — a "repeats" session with one rep, for the slowest runners 🏃 **COACHING BOARD** (dose vs the session's name)
+
+Found by the 27 Oct board read of the live dry runs. Since S9-QUALITY-MINUTES-01, rep growth stops at 35 minutes in total, and
+at a very slow pace one 1,600 m rep plus warm-up and cool-down fills it: "1600m repeats" with a single rep and the note "Rep
+three should look like rep one." **18 slow-grid sessions (`threshold_mile_repeats`), 0 before the change; live: a91d8fde
+week 13 (held from the dry-run apply).** `mp_blocks` single blocks are separate and pre-existing (160 → 40 slow, 163 → 79
+cohort). The board rules: a minimum rep count, a shorter rep for a slow runner, or a different row.
+
+---
+
+### 🔲 `PEAK-RACEPACE-NOTE-01` — "Race-pace work. Target: {goal}" on sessions not run at race pace ⚙️ **NO BOARD** (§33/§41, documented intent)
+
+`ruleEngine.ts` ~1843 appends it in peak to any catalogue session whose voice note lacks the word "pace", so a CV session at
+4:39–4:51 says "Target: 4:30" (charity persona e4, w8). Key it on the session's stamped stimulus, not a word in its copy.
+
+---
+
+### 🔲 `ULTRA-ROWS-PRICED-AS-QUALITY-01` — the ultra-specific rows come out as threshold sessions ⚙️ **NO BOARD** (restores the catalogue)
+
+50K persona e6: "Back-to-back long" (catalogue Z2, 90 then 120–180 min, consecutive days) and "Ultra race simulation" (Z2_plus,
+120–180 min) are delivered as 78-minute Zone 3 sessions at 4:45–5:20 /km, on a Friday two days from the long run. §19, §24e.
+Measure across ultra plans first; likely the quality-slot builder treating `ultra_specific` rows as threshold work.
+
+---
+
+### 🔲 `STRUCTURAL-NOTE-DAY-BUDGET-01` — the plan note quotes the weekday cap, not the day the session sits on ⚙️ **NO BOARD**
+
+Persona 06 (Tue 90, others 35): "You've capped weekdays at 35 min ... runs about 54 min", while the 54-minute session is on
+Tuesday. OVERRUN-NOTE-ALL-01 fixed the per-session note to read the day's own limit; the plan-level structural note still
+reads `max_weekday_mins`.
+
+---
+
+### 🔲 `ONRAMP-W8-SPACING-01` — the staged plan's first ramp week runs back to back and drops to 1.5 km ⚙️ **NO BOARD** (R1, ONRAMP-SPACING-01)
+
+M7 through `runEngine` (the plan a refused marathoner actually receives): weeks 1–7 are three 30-minute run-walks; week 8 is
+four 1.5 km runs on Mon, Tue, Thu, Sat (Wed, Fri, Sun open) with no duration (`BASEBUILD-DURATION-01`). R1 says ramp runs are
+never consecutive where open days allow. The review round cannot see it: it calls `generateRulePlan`, not the live entry.
+
+---
+
+### 🔲 `COACH-READ-1027-FOLLOWUPS-01` — claims from the 27 Oct board read still to measure 🏃 **COACHING BOARD** (after measurement)
+
+Raised by the read of 28 plans, not yet verified: deloads that do not reduce (t3 w6, m3 w10; t1/t1d are ruled ground);
+delivered ramps past §2 on injury and masters plans (declared warn debt: how long has it sat?); a long run cut harder than its
+recovery week (e1 w11, §3 Am.); "highest volume" and "step-back" copy on weeks that are neither; "not to chase a time" on
+plans still prescribing marathon-pace work (04, m4, e2); easy runs growing inside the taper; five loading weeks in a row
+through peak for masters and beginners. **Re-measure each on the grids before it reaches a sitting.** Sitting record:
+`coaching-review/2026-10-27/review.md`.
+
+---
+
 ### 🔲 `RACE-NOTES-INERT-01` — the race-week note is written into every plan and shown nowhere 🧭 **DESIGN BOARD** (render it) or ⚙️ **NO BOARD** (retire it)
 
 Found 2026-10-27 preparing RACE-DAY-PACE-WITHHELD-01. `week.race_notes` (*"Start at Zone 2. The second half is where the
@@ -99,7 +151,7 @@ Measure the stale population first; then restate with the copy re-derivation the
 
 Was 9; the regeneration script's `--list` found 11 (Tasha's, the founder's Dorney plan, and 9 others). Every prerequisite
 has shipped (GOAL-PACE-REACHABLE-01, S9-QUALITY-MINUTES-01, GOAL-PACE-LR-CURRENT-01, RACE-DAY-PACE-WITHHELD-01,
-S9-RATIO-MINUTES-01). All 11 dry runs were re-run on `6b3028a1`: **11 validate clean, 0 refused**; the founder's own plan
+S9-RATIO-MINUTES-01). All 11 dry runs were re-run on `6b3028a1`: **11 validate clean, 0 refused**. **Board read 27 Oct: apply 10, hold a91d8fde for `S9-ONE-REP-01`**; the founder's own plan
 needs `--allow-admin`. Applied by the founder with each plan's APPLY line (`scripts/rca-1026-regen.ts --plan <id>
 --apply`); future weeks only, completions and confirmed HR kept. Closes when the founder confirms all 11 are applied.
 

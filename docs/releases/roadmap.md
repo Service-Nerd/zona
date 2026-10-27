@@ -1140,9 +1140,15 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | ~~**A quality session counts at 5 km or 35 minutes**~~ (S9-QUALITY-MINUTES-01) | ✅ | S | **SHIPPED 2026-10-27.** Slow-goal debts 113/73/122/1 → 0; 221 of 5,925 sampled served plans change (beginner continuous tempo 38 → 36 min). |
 | **Three paths the 35-minute floor does not reach** (S9-QUALITY-FLOOR-REACH-01) | 🔲 | S | Filed 2026-10-27 by code review; each changes unmeasured served plans. |
 | ~~**A weekday-held easy run lasts the runner's limit, at least 30 min**~~ (S9-EASY-MINUTES-01) | ✅ | M | **SHIPPED 2026-10-27**, §82 Am. 2. |
+| **"Repeats" with one rep for the slowest runners** (S9-ONE-REP-01) | 🔲 | S | Board. Today's floor; holds Tasha's rebuild. |
+| **Race-pace note on non-race-pace sessions** (PEAK-RACEPACE-NOTE-01) | 🔲 | S | Defect, §33. |
+| **Ultra rows priced as threshold** (ULTRA-ROWS-PRICED-AS-QUALITY-01) | 🔲 | S | Defect, measure ultras first. |
+| **Plan note quotes the weekday cap, not the day** (STRUCTURAL-NOTE-DAY-BUDGET-01) | 🔲 | S | Defect. |
+| **Staged plan week 8 back to back** (ONRAMP-W8-SPACING-01) | 🔲 | S | Defect, R1. |
+| **27 Oct board-read follow-ups** (COACH-READ-1027-FOLLOWUPS-01) | 🔲 | M | Measure, then board. |
 | **A held plan can stop building undeclared** (S9-HELD-PEAK-CLASSIFY-01) | 🔲 | S | 1 sweep clone, recorded debt. |
 | **`weekly_km` not restated after every session change** (WEEKLY-KM-AFTER-CAP-01) | 🔲 | S | 17 cohort plans already stale; foundation budget stays. |
-| **Rebuild the 11 live plans the 26 Oct RCA found** (LIVE-PLAN-REBUILD-RCA-01) | 🔲 | S | Dry runs re-run on `6b3028a1`: 11 clean, 0 refused. Founder to apply. |
+| **Rebuild the 11 live plans the 26 Oct RCA found** (LIVE-PLAN-REBUILD-RCA-01) | 🔲 | S | Dry runs on `6b3028a1`: board read says apply 10, hold a91d8fde (S9-ONE-REP-01). |
 | **Adjust's weekday time limit is inert for runners with per-day limits** (MODIFY-WEEKDAY-INERT-01) | 🔲 | S | Filed 2026-10-26. `applyEdits` keeps `day_budgets`, which win. Founder picks the resolution. |
 | **Base-building weeks have no duration, so weekday limits never apply** (BASEBUILD-DURATION-01) | 🔲 | S | Filed 2026-10-26. A benchmarked runner's pace is derivable; §122's condition is not met. |
 | **Link a run without opening the app, natively** (HK-NATIVE-BG-INGEST-01) | 🔲 | M (native + binary) | Filed 2026-10-25. Waits on HK-SYNC-TRIGGER-01's numbers. |
