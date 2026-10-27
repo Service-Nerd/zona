@@ -39,8 +39,8 @@ import { calendarWeeksBetween } from '@/lib/dates'
 import { parseDateLocal, formatDate, getDistanceConfig, planWeekCap } from './length'
 import { FITNESS_RANK } from './fitnessAssessment'
 import { parsePaceMidpoint } from './paceParse'
-import { estimateRaceSeconds } from './aerobicEstimate'
-import { hasGoalGapSentence } from './goalPaceReach'
+import { racePaceMinPerKm } from './aerobicEstimate'
+import { hasGoalGapSentence, quotesGoalPace } from './goalPaceReach'
 import { sessionKmSelfPaced } from './sessionDistance'
 import { coherentGoal } from './inputs'
 
@@ -8826,7 +8826,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         push('goal_pace_reach on a plan with no benchmark', 'no decision without a benchmark',
           'A goal-pace withholding decision was recorded for a runner with no benchmark. An estimate may not decide a runner\'s race pace (§120 Am. 2).')
       }
-      const fitness = estimateRaceSeconds(reach.vdot, input.race_distance_km) / input.race_distance_km / 60
+      const fitness = racePaceMinPerKm(reach.vdot, input.race_distance_km)
       const gap = (1 - goalMid / fitness) * 100
       if (!withheld && gap > line + tol) {
         push(`goal ${gap.toFixed(1)}% past current race fitness, goal_pace_withheld absent`, `withheld past ${line}%`,
@@ -8863,15 +8863,37 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // this distance: within REHEARSAL tolerance of Daniels' race estimate at the decision's VDOT. Catches the segment
       // being priced at threshold, at easy, or at the other distance's race pace.
       if (reach && goalMid != null) {
-        const racePace = estimateRaceSeconds(reach.vdot, input.race_distance_km) / input.race_distance_km / 60
-        const tolR = GENERATION_CONFIG.GOAL_PACE_REHEARSAL_TOLERANCE_PCT / 100
+        const racePace = racePaceMinPerKm(reach.vdot, input.race_distance_km)
+        const tolR4 = GENERATION_CONFIG.GOAL_PACE_REHEARSAL_TOLERANCE_PCT / 100
         for (const w of plan.weeks) for (const sn of Object.values(w.sessions)) {
           if (!sn || w.n < fromWeek || kept.has(w.n) || (sn.catalogue_id !== 'mp_long_run' && sn.catalogue_id !== 'hm_pace_long_run')) continue
           const seg = sn.lr_segment_pace ? parsePaceMidpoint(sn.lr_segment_pace) : null
-          if (seg == null || Math.abs(seg - racePace) / racePace > tolR) {
+          if (seg == null || Math.abs(seg - racePace) / racePace > tolR4) {
             push(`${sn.label}: segment ${sn.lr_segment_pace ?? 'none'}`, 'the finish at current race pace',
               `Goal pace was withheld, so this long run's finish must be the runner's current race pace for ${input.race_distance_km} km, and ${sn.lr_segment_pace ?? 'no segment'} is not.`, w.n)
           }
+        }
+      }
+      // RACE-DAY-PACE-WITHHELD-01 (§80 Am. 2) — race day says the same thing as the plan: the race session opens at
+      // CURRENT race fitness (recorded as `race_opening_pace`, within REHEARSAL tolerance of Daniels at the plan's
+      // latest VDOT, which a recalibration moves), and never tells the runner to open at goal pace.
+      // Only on a plan BUILT with the race-day opening (`goal_pace_reach.race_day`): a withheld plan from before §80 Am. 2
+      // keeps its race session, and calling it a defect would flood the audit with a plan older than the rule.
+      // ⚠️ When the latest VDOT puts race fitness past the goal, recalibration deliberately leaves the opening (never
+      // faster than the goal), so the opening is then held only to "not faster than the goal".
+      const latestVdot = typeof plan.meta.vdot_training_anchor === 'number' ? plan.meta.vdot_training_anchor : reach?.vdot
+      const tolR = GENERATION_CONFIG.GOAL_PACE_REHEARSAL_TOLERANCE_PCT / 100
+      for (const w of plan.weeks) for (const sn of Object.values(w.sessions)) {
+        if (!sn || sn.type !== 'race' || !reach?.race_day || w.n < fromWeek || kept.has(w.n)) continue
+        const notes = (sn.coach_notes ?? []).filter((n): n is string => !!n)
+        const opening = sn.race_opening_pace ? parsePaceMidpoint(sn.race_opening_pace) : null
+        const racePace = latestVdot != null && sn.distance_km ? racePaceMinPerKm(latestVdot, sn.distance_km) : null
+        const beatsGoal = racePace != null && goalMid != null && racePace <= goalMid
+        const wrong = notes.some(n => !!n && quotesGoalPace(n, plan.meta.goal_pace_per_km)) || opening == null || racePace == null
+          || (beatsGoal ? opening < goalMid! * (1 - tolR) : Math.abs(opening - racePace) / racePace > tolR)
+        if (wrong) {
+          push(`race session: opening ${sn.race_opening_pace ?? 'none'}`, 'race day opens at current race fitness',
+            `Goal pace was withheld, so race day must open at the runner's current race-fitness pace and not cite goal pace (§80 Am. 2).`, w.n)
         }
       }
       if (!hasGoalGapSentence(plan.meta.difficulty_note)) {

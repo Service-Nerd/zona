@@ -22,7 +22,7 @@
 // forecast of what this runner will become.
 
 import { GENERATION_CONFIG } from './generationConfig'
-import { estimateRaceSeconds } from './aerobicEstimate'
+import { racePaceMinPerKm } from './aerobicEstimate'
 
 export interface GoalPaceReach {
   /** How much faster the goal is than current race fitness at the race distance, in percent (negative = slower). */
@@ -38,7 +38,7 @@ export function goalPaceReach(args: {
 }): GoalPaceReach | null {
   const { vdot, raceDistanceKm, goalPaceMinPerKm } = args
   if (vdot === undefined || goalPaceMinPerKm == null || !(raceDistanceKm > 0)) return null
-  const fitnessMinPerKm = estimateRaceSeconds(vdot, raceDistanceKm) / raceDistanceKm / 60
+  const fitnessMinPerKm = racePaceMinPerKm(vdot, raceDistanceKm)
   if (!(fitnessMinPerKm > 0)) return null
   const gapPct = (1 - goalPaceMinPerKm / fitnessMinPerKm) * 100
   return { gapPct, withheld: gapPct > GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT }
@@ -58,3 +58,16 @@ export function hasGoalGapSentence(text: string | null | undefined): boolean {
   return new RegExp(`${escapeRe(head)}\\d+%${escapeRe(tail)}`).test(text)
 }
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/** Does this note quote the runner's goal pace, as the `{{goal_pace}}` token (any spacing, any case), the words "goal /
+ *  target / race pace", or the literal "m:ss" the plan stores? One detector for §120 Am. 2's merge guard and the
+ *  race-day check, so the two cannot drift (code review). */
+export function quotesGoalPace(note: string, goalPacePerKm: string | null | undefined): boolean {
+  if (/\{\{\s*goal_pace\s*\}\}/i.test(note)) return true
+  if (/\b(goal|target|race)[ -]pace\b/i.test(note)) return true
+  const literal = goalPacePerKm?.match(/\d+:\d{2}/)?.[0]
+  return !!literal && new RegExp(`(^|[^\\d])${literal}([^\\d]|$)`).test(note)
+}
+
+/** The race-day opening sentence's fixed start, shared by its writer and every reader that has to find it. */
+export const RACE_OPENING_PREFIX = 'Start slower than feels right.'

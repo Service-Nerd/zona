@@ -2240,6 +2240,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
     "goal_pace_per_km": "4:30 /km",
     "goal_pace_reach": {
       "gap_pct": 0.2,
+      "race_day": true,
       "vdot": 44.39,
     },
     "handle": "",
@@ -3562,6 +3563,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
     "goal_pace_per_km": "4:59 /km",
     "goal_pace_reach": {
       "gap_pct": 3.1,
+      "race_day": true,
       "vdot": 41.3,
     },
     "handle": "",
@@ -5190,6 +5192,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
     "goal_pace_per_km": "4:37 /km",
     "goal_pace_reach": {
       "gap_pct": 3.2,
+      "race_day": true,
       "vdot": 48.21,
     },
     "handle": "",

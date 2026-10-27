@@ -1131,7 +1131,8 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | ~~**Goal-pace work only while the goal is within 5% of fitness**~~ (GOAL-PACE-REACHABLE-01) | ✅ | M | **SHIPPED 2026-10-27.** 2,017 of 2,017 withheld grid plans name the gap; 0 new violations; finish-goal and unbenchmarked plans unchanged. |
 | ~~**§25 finish at current race pace, past the line**~~ (GOAL-PACE-LR-CURRENT-01) | ✅ | S | **SHIPPED 2026-10-27**, founder's words; restores §47's step-back for withheld marathoners. |
 | **An easy run that becomes a second long run** (EASY-RUN-ABSORBS-QUALITY-01) | 🔲 | M | Board (Willy). Pre-existing: 235 of 1,377 time-target plans. |
-| **Race day for a runner whose goal pace was withheld** (RACE-DAY-PACE-WITHHELD-01) | 🔲 | S | Board, then founder words. |
+| ~~**Race day for a runner whose goal pace was withheld**~~ (RACE-DAY-PACE-WITHHELD-01) | ✅ | S | **SHIPPED 2026-10-27**, §80 Am. 2, founder's words. |
+| **Race-week note shown nowhere** (RACE-NOTES-INERT-01) | 🔲 | S | Design Board (render) or retire. |
 | **Recalibration does not re-decide the withholding** (RECAL-GOAL-REACH-01) | 🔲 | S | Board. |
 | **Grids carry no benchmarked goal inside the line** (GRID-GOAL-INSIDE-LINE-01) | 🔲 | S | No board. |
 | ~~**A quality session counts at 5 km or 35 minutes**~~ (S9-QUALITY-MINUTES-01) | ✅ | S | **SHIPPED 2026-10-27.** Slow-goal debts 113/73/122/1 → 0; 221 of 5,925 sampled served plans change (beginner continuous tempo 38 → 36 min). |

@@ -5,6 +5,7 @@
 // Tier-divergent: trial/paid → enriched labels + voice; paid-only → confidence_score + coach_intro.
 // See ADR-006 for the hybrid generation architecture.
 
+import { quotesGoalPace as quotesGoalPaceOwner, RACE_OPENING_PREFIX } from './goalPaceReach'
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { isTimeTrial } from './sessionRole'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
@@ -695,16 +696,7 @@ export interface WeekCopyRejection {
   token: string
 }
 
-/** Does this note quote the runner's goal pace, as the `{{goal_pace}}` token (any spacing, any case) or as the literal
- *  "m:ss" the plan stores? §120 Am. 2's merge guard. */
-export function quotesGoalPace(note: string, goalPacePerKm: string | null | undefined): boolean {
-  if (/\{\{\s*goal_pace\s*\}\}/i.test(note)) return true
-  // The words, too: on a withheld plan the engine prescribes no goal-pace work, so "hit goal pace" in AI copy is an
-  // instruction the plan contradicts (code review: the current-pace long run is exactly where the model writes it).
-  if (/\b(goal|target|race)[ -]pace\b/i.test(note)) return true
-  const literal = goalPacePerKm?.match(/\d+:\d{2}/)?.[0]
-  return !!literal && new RegExp(`(^|[^\\d])${literal}([^\\d]|$)`).test(note)
-}
+export { quotesGoalPace } from './goalPaceReach'
 
 export function mergePlan(
   original: Plan,
@@ -877,7 +869,7 @@ export function mergePlan(
       // ⚠️ THE TOKEN IN ANY SPACING OR CASE, AND THE LITERAL PACE TOO (code review): the prompt discourages literals and
       // does not prevent them, and `{{ goal_pace }}` is the same instruction to the renderer.
       const quotesWithheldGoal = !!plan.meta.goal_pace_withheld
-        && (es.coach_notes ?? []).some(n => typeof n === 'string' && quotesGoalPace(n, plan.meta.goal_pace_per_km))
+        && (es.coach_notes ?? []).some(n => typeof n === 'string' && quotesGoalPaceOwner(n, plan.meta.goal_pace_per_km))
       if (quotesWithheldGoal) onRejectWeekCopy?.({ weekN: week.n, field: 'coach_notes', token: '{{goal_pace}}' })
       if (es.coach_notes && !quotesWithheldGoal) {
         let notes = preserveStrideNote(session.coach_notes, es.coach_notes)
@@ -886,6 +878,11 @@ export function mergePlan(
         // 33 measured enrichment failures.
         notes = preserveEngineNote(session.coach_notes, notes,
           n => n === FUELLING_PRACTICE_NOTE || n.startsWith(ULTRA_FUELLING_PREFIX))
+        // §80 Am. 2 — the race opening that quotes CURRENT race fitness is engine prescription: AI voice may sit
+        // beside it, never replace it (code review), and recalibration finds it by its prefix.
+        if (session.type === 'race' && session.race_opening_pace) {
+          notes = preserveEngineNote(session.coach_notes, notes, n => n.startsWith(RACE_OPENING_PREFIX))
+        }
         session.coach_notes = notes
       }
     }

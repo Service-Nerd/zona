@@ -66,7 +66,10 @@ const daySessions = (w: Week, d: string) => {
 // What the engine prescribes, ignoring copy: a session whose signature is unchanged
 // keeps its stored object (and any AI-written words on it) untouched.
 const prescription = (w: Week, d: string) => canon(daySessions(w, d).map(s =>
-  [s.type, s.catalogue_id ?? '', s.role ?? '', s.duration_mins ?? '', s.distance_km ?? '', s.zone ?? '', s.hr_target ?? '', s.derived_set ?? null]))
+  [s.type, s.catalogue_id ?? '', s.role ?? '', s.duration_mins ?? '', s.distance_km ?? '', s.zone ?? '', s.hr_target ?? '', s.derived_set ?? null,
+   // §80 Am. 2 — the race session's prescription IS its opening (pace + sentence); without these a started plan could
+   // never receive it and the check then refused the patch (code review).
+   s.race_opening_pace ?? '', s.type === 'race' ? (s.coach_notes ?? []) : '']))
 const addDays = (iso: string, n: number) => {
   const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10)
 }

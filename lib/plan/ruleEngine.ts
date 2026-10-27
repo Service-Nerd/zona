@@ -88,7 +88,8 @@ import {
   velocityAtFraction, paceAtFraction, formatPace, paceBandStr, buildPaceFromVDOT, bandCeiling,
 } from './paceBands'
 import type { PaceGuide } from './paceBands'
-import { goalPaceReach, goalGapSentence, hasGoalGapSentence } from './goalPaceReach'
+import { racePaceMinPerKm } from './aerobicEstimate'
+import { goalPaceReach, goalGapSentence, hasGoalGapSentence, RACE_OPENING_PREFIX } from './goalPaceReach'
 import { qualityHeaderPace } from './qualityHeaderPace'
 import { fitnessAnchorMap } from './fitnessAnchorMap'
 import { alignDerivedToStructure } from './derivedSetAnchors'
@@ -2096,10 +2097,23 @@ function raceSpecificLongRunSession(
   }
 }
 
-function raceSession(
-  weekN: number, day: Day, distKm: number, raceName: string | null,
-  goal?: string | null, goalPace?: string | null,
-): Session {
+/** §80 Amendment 2 — the runner's current race-fitness pace at a distance, from Daniels at this VDOT ("m:ss /km"). */
+export function currentRacePaceStr(vdot: number, distKm: number): string {
+  // Through the SAME formatter as the goal pace, not a second `/km` bake: both are the UNITS-PROSE-01 debt (a pace
+  // written into prose at generation, where the reader's units are not in scope), and one owner keeps it one site.
+  return kmPaceString(racePaceMinPerKm(vdot, distKm))
+}
+
+/**
+ * §80 Amendments 1 and 2 — THE ONE OWNER of the race-day opening sentence. `raceSession` writes it and
+ * `applyRecalibration` rewrites it, so a confirmed time trial moves the pace it quotes (McMillan, binding).
+ *   past the §120 Am. 2 line → the CURRENT race-fitness pace (founder's words)
+ *   time target              → goal pace, the pace the plan rehearsed (§80 Am. 1)
+ *   finish goal              → Zone 2
+ */
+export function raceOpeningNote(
+  distKm: number, goal: string | null | undefined, goalPace: string | null | undefined, currentRacePace?: string | null,
+): string {
   // §80 Amendment 1 (Coaching Board 2026-09-14) — the opening instruction scales
   // with the race, and its effort follows the runner's GOAL.
   //
@@ -2119,9 +2133,22 @@ function raceSession(
   // rehearsed. Opening a sub-50 10K in Zone 2 loses the race in the first
   // kilometre and it cannot be got back. A finish-goal runner opens in Zone 2,
   // because completing the distance is the goal.
-  const opening = goal === 'time_target' && goalPace
+  if (goal === 'time_target' && currentRacePace) {
+    // §80 Amendment 2 — FIRST, because Amendment 1's reason (below) does not hold for this runner. (RACE-DAY-PACE-WITHHELD-01, Coaching Board 2026-10-27; founder's words). Past the §120 Am. 2
+    // line the plan rehearsed no goal pace, so the premise above is false: open at the pace the training supports,
+    // held even, and the goal becomes a second-half option. ~76% of recreational marathoners positive-split.
+    return `${RACE_OPENING_PREFIX} First ${openingStr} at ${currentRacePace}, the pace your training says you can hold today. If halfway feels controlled, that's where you go after your goal.`
+  }
+  return goal === 'time_target' && goalPace
     ? `Start slower than feels right. First ${openingStr} at goal pace: ${goalPace}.`
     : `Start slower than feels right. First ${openingStr} at Zone 2.`
+}
+
+function raceSession(
+  weekN: number, day: Day, distKm: number, raceName: string | null,
+  goal?: string | null, goalPace?: string | null, currentRacePace?: string | null,
+): Session {
+  const opening = raceOpeningNote(distKm, goal, goalPace, currentRacePace)
   return {
     id: `w${weekN}-${day}`,
     // F6 — "Race — Target Race" is a placeholder leaking into the plan. When no
@@ -2129,6 +2156,7 @@ function raceSession(
     type: 'race', label: raceName ? `Race — ${raceName}` : `Race day — ${distKm} km`, detail: null,
     distance_km: distKm, primary_metric: 'distance',
     coach_notes: [opening, 'No new shoes, no new food.'],
+    ...(goal === 'time_target' && currentRacePace ? { race_opening_pace: currentRacePace } : {}),
   }
 }
 
@@ -2732,7 +2760,7 @@ function buildWeekSessions(
     // Same vocabulary §77 uses for shakeout spacing, so the protected window
     // generalises to any race weekday rather than naming Saturday.
     const daysBeforeRace = (d: Day): number => raceDayIdx - DAY_INDEX[d]
-    sessions[raceDay] = raceSession(weekN, raceDay, input.race_distance_km, raceName, input.goal, goalPace)
+    sessions[raceDay] = raceSession(weekN, raceDay, input.race_distance_km, raceName, input.goal, goalPace, pace.currentRacePaceStr)
 
     // CoachingPrinciples §30 — race-week shakeouts capped at
     // RACE_WEEK_SHAKEOUT_MAX_MINS. The first shakeout carries a stride note
@@ -6178,7 +6206,11 @@ export type Tier = 'free' | 'trial' | 'paid'
 function calcGoalPace(distanceKm: number, targetTime: string): string | null {
   const mins = parseBenchmarkTime(targetTime)
   if (!Number.isFinite(mins) || mins <= 0) return null
-  const paceMinPerKm = mins / distanceKm
+  return kmPaceString(mins / distanceKm)
+}
+
+/** A pace written into generation-time prose ("m:ss /km"). The one site of the UNITS-PROSE-01 pace bake. */
+function kmPaceString(paceMinPerKm: number): string {
   return `${formatPace(paceMinPerKm)} /km`
 }
 
@@ -6249,6 +6281,30 @@ export function applyRecalibration(
     : null
 
   repriceWeeksFrom(updated, oldPace, pace, fromWeekN)
+
+  // §80 Amendment 2 (McMillan, binding) — a race opening that quotes CURRENT race fitness follows the time trial. Only
+  // a session that already carries `race_opening_pace` is rewritten: whether goal pace is withheld at all is a
+  // separate, open question (RECAL-GOAL-REACH-01), so this never switches a plan between the two openings.
+  //
+  // ⚠️ Priced from `storedVdot`, the value stamped on the plan, so the checker can reproduce it from the plan's own meta
+  // (the one-second drift class this function's header records). ⚠️ NEVER FASTER THAN THE GOAL: a time trial that puts
+  // current fitness past the goal leaves the opening as it was, because "open at X, then go after your goal" with X
+  // quicker than the goal is incoherent. Whether that runner should now be given goal-pace work is RECAL-GOAL-REACH-01.
+  const goalMins = plan.meta.goal_pace_per_km ? paceStrToMins(plan.meta.goal_pace_per_km) : null
+  for (const week of updated.weeks) {
+    if (week.n < fromWeekN) continue
+    for (const session of Object.values(week.sessions)) {
+      if (!session || session.type !== 'race' || !session.race_opening_pace || session.distance_km == null) continue
+      const freshMins = racePaceMinPerKm(storedVdot, session.distance_km)
+      if (goalMins != null && freshMins <= goalMins) continue
+      const fresh = currentRacePaceStr(storedVdot, session.distance_km)
+      const notes = session.coach_notes ?? []
+      const at = notes.findIndex(n => !!n && n.startsWith(RACE_OPENING_PREFIX))
+      const opening = raceOpeningNote(session.distance_km, 'time_target', null, fresh)
+      writeScoped(session, 'race_opening', 'race_opening_pace', fresh)
+      writeScoped(session, 'race_opening', 'coach_notes', at >= 0 ? notes.map((n, k) => k === at ? opening : n) : [opening, ...notes.slice(0, 2)])
+    }
+  }
 
   return updated
 }
@@ -6752,7 +6808,9 @@ function buildRulePlanOnce(
   const goalReach = goalPaceReach({
     vdot, raceDistanceKm: input.race_distance_km, goalPaceMinPerKm: goalPace ? paceStrToMins(goalPace) : null,
   })
-  const pace: PaceGuide = goalReach?.withheld ? { ...paceFromFitness, goalWithheld: true } : paceFromFitness
+  const pace: PaceGuide = goalReach?.withheld
+    ? { ...paceFromFitness, goalWithheld: true, currentRacePaceStr: currentRacePaceStr(vdot!, input.race_distance_km) }
+    : paceFromFitness
 
   const config = getDistanceConfig(input.race_distance_km)
   // CoachingPrinciples §76 — `planStartIso` is the EARLIEST the plan could begin;
@@ -9602,7 +9660,9 @@ function buildRulePlanOnce(
     // The DECISION record, on every benchmarked time-target plan, withheld or not, with the VDOT it was made at. Its
     // absence is how the validator tells a plan built before §120 Am. 2 from a wrong one, and its VDOT is why a later
     // recalibration (which rewrites `vdot_training_anchor`) does not make a correct decision read as wrong.
-    ...(goalReach && vdot !== undefined ? { goal_pace_reach: { gap_pct: Math.round(goalReach.gapPct * 10) / 10, vdot: Math.round(vdot * 100) / 100 } } : {}),
+    // `race_day: true` marks a plan built with §80 Am. 2's race opening, so the check never holds an older plan's race
+    // session to a rule it predates (code review).
+    ...(goalReach && vdot !== undefined ? { goal_pace_reach: { gap_pct: Math.round(goalReach.gapPct * 10) / 10, vdot: Math.round(vdot * 100) / 100, race_day: true } } : {}),
     ...(goalBelowEasyCeiling ? {
       goal_below_easy_ceiling: true,
       // §40c — name the lever, never only the loss. §38 — diagnosis plus

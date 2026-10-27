@@ -21,7 +21,7 @@ import { GENERATION_CONFIG } from './generationConfig'
  */
 const SCOPE = GENERATION_CONFIG.RECALIBRATION_SCOPE
 
-export type ScopeKind = 'session' | 'structured' | 'derived_step' | 'meta'
+export type ScopeKind = 'session' | 'structured' | 'derived_step' | 'meta' | 'race_opening'
 
 const allowed: Record<ScopeKind, readonly string[]> = {
   session:      SCOPE.session_fields,
@@ -29,6 +29,7 @@ const allowed: Record<ScopeKind, readonly string[]> = {
   structured:   [...SCOPE.session_fields, ...SCOPE.structured_only_fields],
   derived_step: SCOPE.derived_step_fields,
   meta:         SCOPE.meta_fields,
+  race_opening: SCOPE.race_opening_fields,
 }
 
 /** Is `field` inside the declared scope for this kind of target? */

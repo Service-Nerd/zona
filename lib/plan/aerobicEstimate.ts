@@ -78,6 +78,12 @@ function closestFraction(distanceKm: number): number {
 }
 
 /** Project a race time (seconds) for `distanceKm` from a VDOT. */
+/** Race-fitness PACE (min/km) at a distance from a VDOT. The one owner of "estimate seconds ÷ km ÷ 60" (§120 Am. 2,
+ *  §80 Am. 2): the producer, its checker and the race-day opening all read it here. */
+export function racePaceMinPerKm(vdot: number, distanceKm: number): number {
+  return estimateRaceSeconds(vdot, distanceKm) / distanceKm / 60
+}
+
 export function estimateRaceSeconds(vdot: number, distanceKm: number): number {
   const velocityMperMin = velocityAtFraction(vdot, closestFraction(distanceKm))
   const timeMinutes = (distanceKm * 1000) / velocityMperMin

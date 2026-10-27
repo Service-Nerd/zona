@@ -6113,6 +6113,19 @@ proven wakeable by two mutations in `invariantLiveness.ts`.
 
 **Config.** `GENERATION_CONFIG.RACE_OPENING_FRACTION = 0.12`. Enforced by `INV-PLAN-RACE-NOTE-SCALES`.
 
+**Amendment 2 — past the goal-pace line, race day opens at the pace the training supports (Coaching Board 2026-10-27,
+RACE-DAY-PACE-WITHHELD-01).** Amendment 1's reason for opening at goal pace is *"the pace the entire plan has been
+rehearsing"*; past the §120 Am. 2 line the plan rehearses no goal pace, so for that runner the opening
+`RACE_OPENING_FRACTION` is run at their **current race-fitness pace** (Daniels at the plan's latest VDOT), held even, with
+the goal as a second-half option. Founder's words: *"Start slower than feels right. First {distance} at {pace}, the pace
+your training says you can hold today. If halfway feels controlled, that's where you go after your goal."* **Why:** about
+three in four recreational marathoners positive-split, and a strong positive split costs about an hour; under-pacing the
+opening costs seconds (Seiler). Live, 10 runners past the line, gaps 6–36%: one would have opened a marathon 2:48/km
+faster than predicted. **McMillan, binding:** the pace is recorded (`race_opening_pace`) and a confirmed time trial
+rewrites it and the sentence (`raceOpeningNote`, the one owner; `RECALIBRATION_SCOPE.race_opening_fields`, race sessions
+only). Inside the line Amendment 1 stands; finish goals still open in Zone 2. **Check:** `INV-PLAN-GOAL-PACE-REACHABLE`'s
+race-day arm. **Not this ruling:** the race-week `race_notes` field renders nowhere (`RACE-NOTES-INERT-01`).
+
 ### Duration-anchored display — amended 2026-08-31 (Coaching Board, CORRECT WITH AMENDMENT — HR-MAX-01 part 3)
 
 **§79 keyed the metric recommendation to experience, so a finish-goal HM/marathon runner with an intermediate-or-higher intensity now sees distance by default. §80 must survive that.**

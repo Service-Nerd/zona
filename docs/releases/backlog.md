@@ -39,18 +39,15 @@ rules whether freed volume may concentrate in one easy run, and the cap if not.
 
 ---
 
-### 🔲 `RACE-DAY-PACE-WITHHELD-01` — what race day tells a runner whose goal pace was withheld 🏃 **COACHING BOARD RULED 2026-10-27** (B, with amendment) → 👤 **FOUNDER** (words) → build
+### 🔲 `RACE-NOTES-INERT-01` — the race-week note is written into every plan and shown nowhere 🧭 **DESIGN BOARD** (render it) or ⚙️ **NO BOARD** (retire it)
 
-**Ruled:** open the first 12% at current race-fitness pace (latest VDOT, carried as data), held even; the goal is a second-half option. Also resolve the inert `race_notes` field (render or retire). Sitting: `docs/decisions/coaching-2026-10-27-race-day-withheld-sitting.md`.
-
-
-Found by the code review of GOAL-PACE-REACHABLE-01. The race session still says *"First X km at goal pace: m:ss"* and
-5K/10K race notes *"settle into goal pace"* on a plan that says sessions are set to what the runner can run now. Both are
-founder-approved copy and no ruling covers a withheld runner's race day, so this build left them. The board decides the
-advice (open at current race pace? at goal?), the founder the words.
+Found 2026-10-27 preparing RACE-DAY-PACE-WITHHELD-01. `week.race_notes` (*"Start at Zone 2. The second half is where the
+race begins."* / *"… settle into goal pace."*) has 0 readers in `app/` and `components/`. Its only consumers are the
+schema, an invariant and the regeneration script. Founder-approved copy that no runner sees: either the Design Board
+places it, or it is retired with its check. On a withheld plan its ≤10K line says "goal pace", so if it is ever rendered
+it needs §80 Am. 2's treatment first.
 
 ---
-
 ### 🔲 `RECAL-GOAL-REACH-01` — a recalibration does not re-decide the goal-pace withholding 🏃 **COACHING BOARD**
 
 A time trial rewrites forward paces (ADR-014) and leaves sessions, so a runner withheld at 7% who now sits 3% past fitness

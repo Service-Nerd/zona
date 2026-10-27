@@ -318,6 +318,10 @@ export interface Session {
   /** Pace string for an embedded long-run pace segment (e.g. "5:45–6:05 /km"). Present only
    *  on long runs that carry a structural pace segment per §24b/§24d. Used by invariant checks. */
   lr_segment_pace?: string
+  /** §80 Amendment 2 (RACE-DAY-PACE-WITHHELD-01) — on a race session whose plan withheld goal pace, the CURRENT
+   *  race-fitness pace the opening line quotes. Recorded so a recalibration can rewrite the sentence and the check can
+   *  read the prescription rather than parse prose. */
+  race_opening_pace?: string
 
   // ─── AI-DEPTH-07 additive fields (2026-05-12) ──────────────────────────────
   // Schema-only — engine does not populate these yet. Reserved for AI-DEPTH-08
@@ -620,7 +624,7 @@ export interface PlanMeta {
   goal_pace_withheld?: { gap_pct: number }
   /** §120 Amendment 2 — the withholding DECISION, recorded on every benchmarked time-target plan built since 2026-10-27,
    *  with the VDOT it was made at. Absent on older plans, which is how the validator tells them apart. */
-  goal_pace_reach?: { gap_pct: number; vdot: number; /** set only when a STARTED plan is patched: the decision applies from this week, and earlier weeks keep what the runner was given */ from_week?: number; /** future weeks the runner kept as they were (moved sessions), treated like history */ kept_weeks?: number[] }
+  goal_pace_reach?: { gap_pct: number; vdot: number; /** set only when a STARTED plan is patched: the decision applies from this week, and earlier weeks keep what the runner was given */ from_week?: number; /** future weeks the runner kept as they were (moved sessions), treated like history */ kept_weeks?: number[]; /** built with §80 Am. 2's race-day opening; absent on older plans */ race_day?: boolean }
   recalibration_weeks?: number[]          // week numbers where a benchmark re-test is scheduled
   recalibrations_applied?: number[]       // PV2-H — recalibration weeks whose TT result has been applied (so the prompt fires once)
   benchmark?: BenchmarkInput              // stored so recalibration can reference original

@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import { goalPaceReach, goalGapSentence, hasGoalGapSentence } from './goalPaceReach'
 import { runEngine } from './engine'
+import { applyRecalibration } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { mergePlan, quotesGoalPace, type WeekCopyRejection } from './enrich'
 import { GENERATION_CONFIG } from './generationConfig'
@@ -120,6 +121,79 @@ describe('GOAL-PACE-LR-CURRENT-01 — past the line §25\'s finish is run at CUR
   })
 })
 
+describe('RACE-DAY-PACE-WITHHELD-01 — race day opens at the pace the training supports (§80 Am. 2)', () => {
+  const raceOf = (p: Plan) => sessions(p).find(s => s.type === 'race')!
+  const pastRace = sample.filter(x => x.gap >= 0.15)
+  it('🔴 past the line: the founder\'s words, the current race pace, never goal pace', () => {
+    expect(pastRace.length).toBeGreaterThan(0)
+    for (const { plan } of pastRace) {
+      const r = raceOf(plan)
+      expect(r.race_opening_pace, r.label).toMatch(/^\d+:\d{2} \/km$/)
+      expect(r.coach_notes?.[0]).toMatch(/^Start slower than feels right\. First [\d.]+ km at \d+:\d{2} \/km, the pace your training says you can hold today\. If halfway feels controlled, that's where you go after your goal\.$/)
+      expect((r.coach_notes ?? []).join(' ')).not.toMatch(/goal pace/i)
+      expect(r.coach_notes?.[0]).not.toMatch(/—/)
+    }
+  })
+  it('inside the line race day still opens at goal pace (§80 Am. 1), with nothing recorded', () => {
+    for (const { plan } of sample.filter(x => x.gap === 0)) {
+      const r = raceOf(plan)
+      expect(r.race_opening_pace).toBeUndefined()
+      expect(r.coach_notes?.[0]).toMatch(/at goal pace: /)
+    }
+  })
+  it('🔴 the check catches a withheld plan that opens at goal pace again', () => {
+    const c = pastRace[0]!
+    const p: Plan = JSON.parse(JSON.stringify(c.plan)); const r = raceOf(p)
+    r.coach_notes = ['Start slower than feels right. First 1.2 km at goal pace: 4:30 /km.', r.coach_notes?.[1]]
+    expect(validatePlan(p, c.input).filter(v => v.code === 'INV-PLAN-GOAL-PACE-REACHABLE').map(v => v.expected)).toContain('race day opens at current race fitness')
+  })
+  it('🔴 a confirmed time trial moves the opening pace and the sentence with it (McMillan, binding)', () => {
+    const c = pastRace.find(x => x.input.race_distance_km === 10) ?? pastRace[0]!
+    const before = raceOf(c.plan)
+    // A faster benchmark at the same distance as the original, dated today.
+    const b = (c.input as any).benchmark
+    const [h, m, sec] = String(b.time).split(':').map(Number); const faster = Math.round((h * 3600 + m * 60 + sec) * 0.95)
+    const t = `${Math.floor(faster / 3600)}:${String(Math.floor(faster % 3600 / 60)).padStart(2, '0')}:${String(faster % 60).padStart(2, '0')}`
+    const after = raceOf(applyRecalibration(c.plan, { ...b, time: t, benchmark_date: today }, 1))
+    expect(after.race_opening_pace).not.toBe(before.race_opening_pace)
+    expect(parsePaceMidpoint(after.race_opening_pace!)!).toBeLessThan(parsePaceMidpoint(before.race_opening_pace!)!)
+    expect(after.coach_notes?.[0]).toContain(after.race_opening_pace!)
+    expect(after.coach_notes?.slice(1)).toEqual(before.coach_notes?.slice(1))
+  })
+  it('🔴 a plan built BEFORE §80 Am. 2 (no race_day mark) is not held to it', () => {
+    const c = pastRace[0]!
+    const p: Plan = JSON.parse(JSON.stringify(c.plan)); const r = raceOf(p)
+    delete p.meta.goal_pace_reach!.race_day; delete r.race_opening_pace
+    r.coach_notes = ['Start slower than feels right. First 1.2 km at goal pace: 4:30 /km.', r.coach_notes?.[1]]
+    expect(validatePlan(p, c.input).filter(v => v.code === 'INV-PLAN-GOAL-PACE-REACHABLE').map(v => v.expected)).not.toContain('race day opens at current race fitness')
+  })
+  it('🔴 a time trial that puts fitness past the goal never makes the opening faster than the goal', () => {
+    const c = pastRace.find(x => x.gap >= 0.15)!
+    const b = (c.input as any).benchmark
+    const [h, m, sec] = String(b.time).split(':').map(Number); const much = Math.round((h * 3600 + m * 60 + sec) * 0.6)
+    const t = `${Math.floor(much / 3600)}:${String(Math.floor(much % 3600 / 60)).padStart(2, '0')}:${String(much % 60).padStart(2, '0')}`
+    const after = applyRecalibration(c.plan, { ...b, time: t, benchmark_date: today }, 1)
+    expect(raceOf(after).race_opening_pace).toBe(raceOf(c.plan).race_opening_pace)
+    expect(raceOf(after).coach_notes).toEqual(raceOf(c.plan).coach_notes)
+    expect(validatePlan(after, c.input).filter(v => v.code === 'INV-PLAN-GOAL-PACE-REACHABLE')).toEqual([])
+  })
+  it('🔴 AI copy on the race session sits beside the opening, never replaces it', () => {
+    const c = pastRace[0]!
+    const w = c.plan.weeks.find(x => Object.values(x.sessions).some(s => s?.type === 'race'))!
+    const [day] = Object.entries(w.sessions).find(([, s]) => s?.type === 'race')!
+    const out = mergePlan(c.plan, { meta: {}, weeks: [{ n: w.n, label: w.label, theme: w.theme, sessions: { [day]: { coach_notes: ['Big day. Trust the work.'] } } }] } as never, 'paid')
+    const notes = (out.weeks.find(x => x.n === w.n)!.sessions as Record<string, { coach_notes?: string[] }>)[day]!.coach_notes!
+    expect(notes).toContain(raceOf(c.plan).coach_notes![0])
+    expect(notes).toContain('Big day. Trust the work.')
+  })
+  it('a recalibration never touches an inside-the-line race opening', () => {
+    const c = sample.find(x => x.gap === 0)!
+    const b = (c.input as any).benchmark
+    const after = raceOf(applyRecalibration(c.plan, { ...b, benchmark_date: today }, 1))
+    expect(after.coach_notes).toEqual(raceOf(c.plan).coach_notes)
+  })
+})
+
 describe('a runner with NO benchmark is unchanged', () => {
   it('🔴 never stamped, whatever the goal', () => {
     const c = sample.find(x => x.gap >= 0.3 && x.input.race_distance_km === 21.1)!
@@ -183,8 +257,13 @@ describe('INV-PLAN-GOAL-PACE-REACHABLE fires in every direction', () => {
     const p = copy(pastCase.plan); delete p.meta.goal_pace_reach; delete p.meta.goal_pace_withheld
     expect(hits(p, pastCase.input)).toEqual([])
   })
-  it('a recalibration that moves the plan\'s VDOT does not make the recorded decision read as wrong', () => {
-    const p = copy(pastCase.plan); (p.meta as { vdot_training_anchor?: number }).vdot_training_anchor = 80
+  it('a REAL recalibration that moves the plan\'s VDOT does not make the recorded decision read as wrong', () => {
+    // A real one, not a poked anchor: it rewrites the race opening too, which a fake would leave inconsistent.
+    const b = (pastCase.input as any).benchmark
+    const [h, m, sec] = String(b.time).split(':').map(Number); const faster = Math.round((h * 3600 + m * 60 + sec) * 0.9)
+    const t = `${Math.floor(faster / 3600)}:${String(Math.floor(faster % 3600 / 60)).padStart(2, '0')}:${String(faster % 60).padStart(2, '0')}`
+    const p = applyRecalibration(copy(pastCase.plan), { ...b, time: t, benchmark_date: today }, 1)
+    expect(p.meta.vdot_training_anchor).not.toBe(pastCase.plan.meta.vdot_training_anchor)
     expect(hits(p, pastCase.input)).toEqual([])
   })
 })

@@ -49,6 +49,9 @@ export interface PaceGuide {
    *  fact about this runner's paces ("goal pace is not one they can train at yet") and every place that prices goal
    *  pace already holds the guide; threading a second argument through 79 goal-pace sites would be the drift. */
   goalWithheld?: true
+  /** §80 Amendment 2 — set beside `goalWithheld`: the runner's current race-fitness pace at the race distance
+   *  ("m:ss /km"), which the race-day opening quotes instead of the goal. */
+  currentRacePaceStr?: string
 }
 
 // Velocity (m/min) at a given fraction of VDOT — quadratic solve

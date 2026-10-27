@@ -247,6 +247,10 @@ export const GENERATION_CONFIG = {
     derived_step_fields: ['pace'],
     // Plan-level, so the plan records what it was priced at.
     meta_fields: ['vdot', 'vdot_training_anchor', 'benchmark', 'vdot_discount_applied_pct'],
+    // §80 Amendment 2 (RACE-DAY-PACE-WITHHELD-01, Coaching Board 2026-10-27, McMillan binding) — on the RACE session
+    // only, and only one that already quotes current race fitness: the pace and the opening sentence that quotes it.
+    // A separate kind so recalibration still cannot rewrite any other session's coach notes.
+    race_opening_fields: ['race_opening_pace', 'coach_notes'],
   },
 
   // CoachingPrinciples §64 — "six-on / one-off is the upper limit for non-elite

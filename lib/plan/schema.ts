@@ -59,6 +59,8 @@ export const SessionSchema = z.object({
   rpe_target:     z.number().int().min(1).max(10).optional(),
   coach_notes:    z.tuple([z.string(), z.string().optional(), z.string().optional()]).optional(),
   lr_segment_pace: z.string().optional(),
+  // §80 Am. 2 — the current race-fitness pace a withheld plan's race opening quotes.
+  race_opening_pace: z.string().optional(),
   // AI-DEPTH-07 — additive depth fields (schema-only; engine doesn't populate yet)
   key_session:        z.boolean().optional(),
   run_walk_strategy:  z.string().optional(),
@@ -319,6 +321,10 @@ export const PlanMetaSchema = z.object({
   age:                z.number().int().positive().optional(),
   vdot:               z.number().positive().optional(),
   goal_pace_per_km:   z.string().optional(),
+  // §120 Am. 1/2 — the goal-pace withholding and the decision behind it (declared so the schema matches the plans).
+  hm_goal_anchor_withheld: z.boolean().optional(),
+  goal_pace_withheld: z.object({ gap_pct: z.number() }).optional(),
+  goal_pace_reach: z.object({ gap_pct: z.number(), vdot: z.number(), from_week: z.number().optional(), kept_weeks: z.array(z.number()).optional(), race_day: z.boolean().optional() }).optional(),
   recalibration_weeks: z.array(z.number().int().positive()).optional(),
   benchmark:          z.object({
                         type: z.enum(['race', 'tt_30min']),

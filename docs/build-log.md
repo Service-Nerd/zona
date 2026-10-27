@@ -512,6 +512,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** Old rows can't be fixed. Their arrival time was never kept, so the history stays undercounted.
 
 ---
+## 2026-10-27 — RACE-DAY-PACE-WITHHELD-01 · Race day has to say what the plan said
+**Shipped:** a runner whose goal is past their fitness is told to open their race at the pace their training supports, and to go after the goal in the second half if it feels controlled.
+**Dev learning:** the race-week note that contradicted the plan turned out to be shown nowhere; the sentence that mattered was the race session's own. And a pace written inside a sentence cannot follow a time trial, so the sentence got one owner that recalibration calls, through a scope that lets it touch race sessions and nothing else.
+**Product/creator learning:** one live marathoner would have been told to open 2:48/km faster than their benchmark says they can run.
+**AI-building learning:** an older test faked a recalibration by poking the VDOT. Once recalibration also rewrote the race line, the fake became inconsistent and failed; using the real function was the fix, and the more honest test.
+**The honest bit:** I nearly asked the founder to approve wording for a note no runner ever sees.
+**Hook material:** "The plan said run what you can run. Race day said run your dream pace."
+**Postable?:** maybe
+
 
 ## 2026-10-22 — SESSION-COMPLETE-LONG-LABEL-01 · a long run is a long run on the card too
 **Shipped:** The card you see after a run, and the image you share, now say "Long run" on a long run. They said "Easy run".
