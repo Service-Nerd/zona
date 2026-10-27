@@ -31,15 +31,16 @@ each step is for**, and neither restates the other.
 
 ---
 
-## 1. The six questions, and which tool answers which
+## 1. The seven questions, and which tool answers which
 
-**Each step answers a question no other step can.** That is why there are six and
+**Each step answers a question no other step can.** That is why there are seven and
 not one, and why three of them being green tells you almost nothing on its own.
 
 | # | Step | The question it answers | Fails when |
 |---|---|---|---|
 | 1 | `coaching-review-round` | Does every canonical case and persona still **generate a valid plan**? | a plan breaks its own constitution, or an honesty guard weakened |
 | 2 | `foundation-review-round` | And do they still generate valid plans **with a foundation block composed on** — the path a real runner with a runway takes? | a composed plan violates an invariant, or leaves uncovered runway with no note |
+| 2b | `measure:goal-gap --gate` | Do **slow runners with an ambitious goal** get paces they can run, sessions big enough, and every weekday overrun said? *(RCA-1026, added 2026-10-27: every defect in the 26 Oct ops report lived on these runners, and no step above reaches them; the cohort grid's slowest benchmark is a 27:30 5K)* | any goal-paced session faster than the runner's interval pace, any goal-paced work 15%+ past fitness, any §9 floor breach, any silent weekday overrun, or any error violation on the 880 slow-grid plans |
 | 3 | `measure:envelope` | What share of the **weighted population** gets a plan we would hand over? | any distance moves against the committed baseline, **in either direction** |
 | 4 | `review:cohort` | **Which runners** are failing, and what does a refused one **actually receive**? | any volume band's rate moves, an objection appears or disappears |
 | 5 | `audit:plans` | Would a **coach object** to these plans, and at what rate? | a new objection class appears above the baseline |

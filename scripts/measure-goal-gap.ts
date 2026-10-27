@@ -42,6 +42,11 @@ const faster = (p: number, ref: number) => p < ref * (1 - TOL)
 type Cell = { plans: number; refused: number; withGoalWork: number; goalSessions: number; fasterT: number; fasterCV: number; fasterI: number }
 const cells = new Map<string, Cell>()
 let floorViolations = 0, floorPlans = 0, overrunSilent = 0, overrunSilentFloor = 0, overrunMax = 0, overrunPlans = 0, plans = 0
+// RCA-1026 prevention — what the gate reads. `errorViolations` counts every error-severity violation on the grid, so a
+// new invariant breach on slow runners is caught here too; `farPastLineGoalSessions` is goal-paced work at a goal 15%+
+// beyond fitness, well clear of §120 Am. 2's 5% line so a rounding move at the line cannot trip it.
+let errorViolations = 0, farPastLineGoalSessions = 0, fasterThanIntervalTotal = 0
+const errorCodes = new Map<string, number>()
 
 const GRID = slowGoalGrid(PLAN_START, BENCHMARK_DATE)
 for (const c of GRID) {
@@ -65,11 +70,15 @@ for (const c of GRID) {
     cell.goalSessions++
     if (faster(p, g.minPerKmQuality)) cell.fasterT++
     if (faster(p, g.minPerKmCV)) cell.fasterCV++
-    if (faster(p, g.minPerKmInterval)) cell.fasterI++
+    if (faster(p, g.minPerKmInterval)) { cell.fasterI++; fasterThanIntervalTotal++ }
   }
 
-  // 2. §9 floor
-  const fv = validatePlan(plan, input as unknown as GeneratorInput).filter(x => x.code === 'INV-PLAN-MIN-SESSION-SIZE').length
+  if (gap >= 0.15) farPastLineGoalSessions += goalSessions.length
+
+  // 2. §9 floor (and, for the gate, every error-severity violation)
+  const all = validatePlan(plan, input as unknown as GeneratorInput)
+  for (const x of all) if (x.severity === 'error') { errorViolations++; errorCodes.set(x.code, (errorCodes.get(x.code) ?? 0) + 1) }
+  const fv = all.filter(x => x.code === 'INV-PLAN-MIN-SESSION-SIZE').length
   floorViolations += fv; if (fv) floorPlans++
 
   // 3. weekday overrun with no note
@@ -92,6 +101,19 @@ const rows = Array.from(cells.entries()).map(([k, c]) => ({
   faster_than_T: pct(c.fasterT, c.goalSessions), faster_than_CV: pct(c.fasterCV, c.goalSessions), faster_than_I: pct(c.fasterI, c.goalSessions),
 }))
 if (process.argv.includes('--json')) { console.log(JSON.stringify({ rows, floorViolations, floorPlans, overrunSilent, overrunSilentFloor, overrunMax, overrunPlans, plans }, null, 2)); process.exit(0) }
+
+// `--gate` (review:coaching's slow-runner step, RCA-1026 prevention): exit 1 if any of the 26 Oct report's defects is
+// back on the slow-runner grid. Every number is 0 at 6b3028a1; each condition is one the report found live.
+if (process.argv.includes('--gate')) {
+  const fails: string[] = []
+  if (fasterThanIntervalTotal) fails.push(`${fasterThanIntervalTotal} goal-paced sessions faster than the runner's interval pace (item 1)`)
+  if (farPastLineGoalSessions) fails.push(`${farPastLineGoalSessions} goal-paced sessions on plans 15%+ past fitness (item 1, §120 Am. 2)`)
+  if (floorViolations) fails.push(`${floorViolations} §9 floor violations (item 2)`)
+  if (overrunSilent) fails.push(`${overrunSilent} weekday sessions over their limit with no note (item 3)`)
+  if (errorViolations) fails.push(`${errorViolations} error violations: ${Array.from(errorCodes).map(([c, n]) => `${c} ${n}`).join(', ')}`)
+  console.log(fails.length ? `GATE: FAIL on ${plans} slow-runner plans:\n  ${fails.join('\n  ')}` : `GATE: ok, ${plans} slow-runner plans: 0 unrunnable goal pace, 0 floor breaches, 0 silent overruns, 0 errors`)
+  process.exit(fails.length ? 1 : 0)
+}
 
 console.log(`GOAL-GAP measurement — ${plans} plans from ${GRID.length} slow-runner inputs (goal rows: ${Array.from(GOAL_ROWS).join(', ')})\n`)
 console.log('1. Goal-anchored work priced faster than the runner can run (share of goal-paced sessions)')

@@ -61,6 +61,14 @@ const STEPS: Step[] = [
     },
   },
   {
+    // RCA-1026 prevention (2026-10-27). Every defect in the 26 Oct ops report lived on slow runners whose goal outruns
+    // their fitness, a population none of the steps above reaches: the cohort grid's slowest benchmark is a 27:30 5K.
+    id: 'slow',
+    question: 'Do slow runners with an ambitious goal get paces they can run, sessions big enough, and every overrun said?',
+    cmd: 'NODE_ENV=production npx tsx scripts/measure-goal-gap.ts --gate',
+    headline: o => (o.match(/^GATE: .*$/m)?.[0] ?? '').replace(/^GATE: /, ''),
+  },
+  {
     id: 'envelope',
     question: 'What share of the weighted population gets a plan we would hand over?',
     cmd: 'npm run --silent measure:envelope',

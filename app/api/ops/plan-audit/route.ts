@@ -12,6 +12,7 @@ import {
 } from '@/lib/ops/regressionVsNewRule'
 import { summarisePlanAges, type PlanAgeRow } from '@/lib/ops/planAuditAges'
 import { summariseCodeStep } from '@/lib/ops/planAuditCodeStep'
+import { summariseGoalGap } from '@/lib/ops/planAuditGoalGap'
 import type { Plan } from '@/types/plan'
 
 // GET/POST /api/ops/plan-audit — PLAN-AUDIT-01 daily constitutional audit.
@@ -123,6 +124,8 @@ export async function POST(req: NextRequest) {
 
   let checked = 0, invalid = 0, skipped = 0, unchanged = 0, changed = 0
   const flagged: Array<{ user_id: string; codes: string[]; state: 'new' | 'changed' | 'resolved' }> = []
+  // RCA-1026 monitoring: the plans the goal-gap count reads (every plan that was checked).
+  const checkedPlans: Plan[] = []
   // AGE OF EVERY BREACHING PLAN, newest first. See the summary block at the end
   // for why this is the number that makes the audit readable.
   // BOTH timestamps per breaching plan; `summarisePlanAges` decides what each means.
@@ -173,6 +176,7 @@ export async function POST(req: NextRequest) {
       continue
     }
     checked++
+    checkedPlans.push(plan)
     // PLAN-STORED-SCHEMA-DRIFT-01 — two questions this audit never asked, joined
     // to the SAME per-user code set so PLAN-AUDIT-01's alert-on-transition rule
     // covers them: a known-bad legacy plan reports once, a new break alerts the
@@ -342,6 +346,8 @@ export async function POST(req: NextRequest) {
     // rule. Absent when empty or when there is no baseline; see the module.
     ...summariseCodeStep({ codesThisRun, prevCodesSeen }),
     ...(repairable ? { repairable } : {}),
+    // RCA-1026 monitoring — runners told their goal is past their fitness (§120 Am. 2). Present every run.
+    ...summariseGoalGap(checkedPlans),
   }
 
   // A SUMMARY EVENT, so a digest has one row to read instead of N per-user rows.

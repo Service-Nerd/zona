@@ -540,6 +540,15 @@ it specific, no polish. The content system adds the voice.
 **Hook material:** "keeps 77% of the overrun relief" became "removes none" when the floor was rounded the right way.
 **Postable?:** yes
 
+## 2026-10-27 — RCA1026-PREVENT-01 · The prevention list I wrote and then did not build
+**Shipped:** the 26 Oct report's "so it doesn't happen again" list: a slow-runner step in the coaching review, two family gates, a debug catalogue class, and a daily goal-gap count.
+**Dev learning:** the shape-builder gate found a builder nobody had listed: the pyramid (`fixedShapePlan`) skips the §9 floor owner exactly as progressive tempo does, and passes only because the checker accepts 35 minutes. The goal-row gate found two of seven goal-anchored rows that no grid ever generates, so "none past the line" had been vacuously true for them.
+**Product/creator learning:** the founder asked "have we improved the coach review?" and the answer was no: the review had six green steps and none could see the population every defect in the report lived on.
+**AI-building learning:** I wrote the prevention plan, the founder approved it, and I shipped every fix and none of the prevention. Fixes have a visible finish line; a guard against recurrence does not, so it slid. Then I asked permission for work he had already approved.
+**The honest bit:** the founder had to ask twice.
+**Hook material:** six green steps, zero runners like the ones the bugs hit.
+**Postable?:** maybe
+
 ## 2026-10-22 — SESSION-COMPLETE-LONG-LABEL-01 · a long run is a long run on the card too
 **Shipped:** The card you see after a run, and the image you share, now say "Long run" on a long run. They said "Easy run".
 

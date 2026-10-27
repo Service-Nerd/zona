@@ -113,6 +113,11 @@ a code already present was already triaged.
   // the history rows this route already fetches, so there is no second query.
   codes_seen: string[],            // every distinct violation code this run, sorted, @suffix stripped
   codes_new_since_last_run?: string[],  // present ONLY when a code is genuinely new — see below
+  // RCA-1026 monitoring (2026-10-27) — runners told their goal is past their current fitness (§120 Am. 2), read from
+  // the decision each plan RECORDED (`meta.goal_pace_reach` / `meta.goal_pace_withheld`), never re-derived.
+  // `lib/ops/planAuditGoalGap.ts` is the owner. PRESENT EVERY RUN, zeros included (unlike `repairable`): a count that
+  // is 0 today and 40 tomorrow is the signal. Plans built before 2026-10-27 carry neither field and count in neither.
+  goal_gap: { decided: number; withheld: number; median_gap_pct: number | null },
   unchanged: number,               // breaching, same code set as last time — not re-reported
   changed:   number,
   flagged:   Array<{ user_id: string; codes: string[]; state: 'new' | 'changed' | 'resolved' }>,

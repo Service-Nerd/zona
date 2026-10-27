@@ -52,7 +52,10 @@ Every benchmarked time-target case in `cohortGrid` sits 10–14% past fitness, s
 exercise §22 goal-pace work only for UNBENCHMARKED runners. The sweep's random inputs and the slow-goal grid still reach
 it. Found while making `INV-PLAN-PACE-ZONE-COHERENT` wakeable (the liveness mutation now synthesises the case). Cost of
 widening `cohortGrid` is the 135 s test and its 12 consumers.
-
+ **Measured 2026-10-27 (RCA1026-PREVENT-01):** two of the seven goal-anchored rows, `beginner_goal_pace_reps` and
+`tenk_race_simulation`, are never generated on the slow-goal grid either, so no grid proves they are withheld past the
+line. Named in `rca1026Gates.test.ts`'s `UNREACHED`; reaching them clears the entry (the gate then fails until it is
+removed).
 ---
 
 ### 🔲 `S9-QUALITY-FLOOR-REACH-01` — three paths the 35-minute floor does not reach yet 🏃 **COACHING BOARD** (each changes served plans the 10-27 sitting did not measure)
@@ -64,7 +67,10 @@ never reads). (2) **The quality distance budget** (`Math.max(qualKmPrimary, minD
 unstructured quality sessions to 5 km even when they already run 35+ minutes. (3) **Secondary quality grows toward 5 km**,
 not its own 4 km floor (pre-existing). Each needs a measurement and a ruling; distance-anchored output is held meanwhile by
 `INV-PLAN-MIN-SESSION-SIZE` (sweep 0, slow-goal clones 0).
-
+ **Gated 2026-10-27 (RCA1026-PREVENT-01):** `rca1026Gates.test.ts` enumerates every shape builder; three skip
+`meetsQualityFloor`: `progressiveTempoPlan`, `fixedShapePlan` (the pyramid the 26 Oct report named, not listed here
+before) and `effortGovernedPlan` (hills, no pace to price a km floor). Each is named as debt; fixing one fails the gate
+until its entry is removed, and a sixth builder that skips it fails at once.
 ---
 
 ### 🔲 `S9-HELD-PEAK-CLASSIFY-01` — a plan held to its weekday limit can stop building and not be declared maintenance ⚙️ **NO BOARD** (defect: §23's declaration, documented intent)

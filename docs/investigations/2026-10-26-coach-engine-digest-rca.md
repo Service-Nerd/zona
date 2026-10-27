@@ -52,6 +52,18 @@ measured the symptom it was fixing, not the property the runner needs.
 4. **Twin sweep made mechanical in review.** The `zona-debug` exit criterion exists and was skipped three times here;
    gates 1 and 2 are its mechanical form. Add catalogue class **"a check of the label, not the prescription"**.
 
+### Status of this list, 2026-10-27 (RCA1026-PREVENT-01)
+
+| # | Promised | Status |
+|---|---|---|
+| 1 | Reachability invariants | ✅ `INV-PLAN-GOAL-PACE-REACHABLE` (GOAL-PACE-REACHABLE-01), `INV-PLAN-WEEKDAY-OVERRUN-DECLARED` (OVERRUN-NOTE-ALL-01); since, `INV-PLAN-LONG-IS-LONGEST-MINS` and the §82 Am. 2 held-run arms |
+| 2a | Goal-anchored row population gate | ✅ `lib/plan/rca1026Gates.test.ts`: all 7 rows enumerated from the catalogue; 2 never generated on the slow grid, named under `GRID-GOAL-INSIDE-LINE-01` |
+| 2b | Shape-builder population gate | ✅ same file: all 5 builders enumerated from the engine; 3 do not size through `meetsQualityFloor` (progressive tempo, pyramid, hills), named under `S9-QUALITY-FLOOR-REACH-01` |
+| 3 | Grids carry the axes | ⚠️ the sweep (slow-goal clones) and `npm run review:coaching` (new `slow` step, `measure:goal-gap --gate`) do; `cohortGrid` still does not (`GRID-GOAL-INSIDE-LINE-01`) |
+| 4 | Debug catalogue class | ✅ "A check of the LABEL, not the PRESCRIPTION" in the `zona-debug` skill |
+| M | Daily goal-gap count | ✅ `/api/ops/plan-audit` summary `goal_gap` (`lib/ops/planAuditGoalGap.ts`); 0 on 39 live plans today, because none has been rebuilt since the rule shipped |
+| M | Digest compares with yesterday | ✅ founder, 2026-10-27 |
+
 ## Monitoring
 
 - **Live plans:** `/api/ops/plan-audit` already runs `validatePlan()` daily on every stored plan, so the two new
