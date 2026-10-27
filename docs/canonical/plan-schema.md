@@ -35,6 +35,8 @@ export interface Session {
   rpe_target?: number                      // 1–10
   coach_notes?: [string, string?, string?] // max 3 bullet points — plain coaching language (INV-PLAN-008)
   lr_segment_pace?: string                 // long-run embedded pace segment, e.g. "5:45–6:05 /km" (§24b/§24d)
+  race_opening_pace?: string               // race session only, past the §120 Am. 2 goal-pace line: the CURRENT race-fitness
+                                           // pace the opening line quotes (§80 Am. 2). Rewritten by recalibration, never faster than goal
 
   // SC-08a/b (ADR-018/019, 2026-08-21) — stamped at construction, single-owner
   // joined by catalogueRowFor() / mainSetDescription() (lib/plan/catalogueLink.ts,
@@ -240,6 +242,20 @@ export interface PlanMeta {
   // INV-PLAN-INTENSITY-ORDERING, which requires a plan containing the inversion
   // to declare it rather than ship silently.
   goal_beyond_measured_fitness?: boolean
+
+  // §120 Amendment 2 (GOAL-PACE-REACHABLE-01, 2026-10-27) — the goal-pace line.
+  // Recorded on every benchmarked time-target plan built since that date; absent
+  // on older plans, which is how INV-PLAN-GOAL-PACE-REACHABLE tells them apart.
+  goal_pace_reach?: {
+    gap_pct: number          // goal vs current race-fitness pace, one decimal
+    vdot: number             // the VDOT the decision was made at
+    from_week?: number       // a STARTED plan patched: the decision applies from this week
+    kept_weeks?: number[]    // future weeks the runner kept as they were (moved sessions)
+    race_day?: boolean       // built with §80 Am. 2's race-day opening
+  }
+  // Present only when the goal is past GOAL_PACE_MAX_STRETCH_PCT (5) beyond
+  // current fitness: no goal-paced work is prescribed and the gap is named.
+  goal_pace_withheld?: { gap_pct: number }
 }
 
 > **Doc-drift note (2026-08-20).** `difficulty_band` / `difficulty_note` shipped

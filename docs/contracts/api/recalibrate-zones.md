@@ -65,6 +65,7 @@ undeclared field. This section is the prose mirror; the constant is the contract
 | quality / tempo / intervals | `pace_target`, `distance_km` *(declared; clause 3 deferred, see below)* |
 | each `derived_set` step | `pace` |
 | `plan.meta` | `vdot`, `vdot_training_anchor`, `benchmark`, `vdot_discount_applied_pct` |
+| a race session past the §120 Am. 2 line (`race_opening_pace` set) | `race_opening_pace`, and the opening sentence in `coach_notes` *(RACE-DAY-PACE-WITHHELD-01, 2026-10-27; §80 Am. 2)* |
 
 🔴 **IT NO LONGER WRITES `hr_target`, AND THIS LINE USED TO SAY IT DID.** The old writer put
 `zones.qualityHR` on every quality, tempo and intervals session, so a VO2max row kept
@@ -81,6 +82,11 @@ owner of applying HR to a plan.
    `catalogue_id` and every step LENGTH are stable across a recalibration.
 3. **A no-op is a no-op.** Re-pricing scales the stored band rather than recomputing it, so
    recalibrating to the benchmark the runner already holds returns a **byte-identical** `weeks`.
+
+⚠️ **The race opening is rewritten from the NEW VDOT and never made faster than goal pace.** Only a race
+session that already carries `race_opening_pace` is touched (a plan inside the line opens at goal pace and keeps it).
+The goal-pace withholding decision itself (`meta.goal_pace_reach`) is **not** re-decided by a recalibration: the
+sessions keep what was prescribed, which is `RECAL-GOAL-REACH-01`, open.
 
 ⚠️ **A step is re-priced only when it reads what its anchor meant at the OLD fitness.** Anything
 else was set by a writer this route does not own — §22's goal substitution is the live case — and is
