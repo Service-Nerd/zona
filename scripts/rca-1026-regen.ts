@@ -224,6 +224,9 @@ async function one(row: { id: string; user_id: string; plan_json: unknown }, qui
       if (canon(a) === canon(b)) continue
       changed++
       log(`  W${w.n} ${d} ${addDays(w.date, DAYS.indexOf(d))}  ${a.map(describe).join(' + ') || '—'}\n                      → ${b.map(describe).join(' + ') || '—'}`)
+      // The race session's change IS its opening sentence, which `describe` does not show.
+      const ra = a.find(x => x.type === 'race'), rb = b.find(x => x.type === 'race')
+      if (ra || rb) log(`                      opening: ${ra?.coach_notes?.[0] ?? '—'}\n                            → ${rb?.coach_notes?.[0] ?? '—'}`)
     }
   }
   const noteOf = (p: Plan) => (p.meta as unknown as Record<string, unknown>).load_residual_note ?? '—'
