@@ -74,3 +74,44 @@ both with a weekday limit: a91d8fde (48 weekday easy overruns) and 799c49e8 (15)
 A prototype, not a build: the pace came from a module-level global, and parity on the main grid was not run (it carries no
 pace axis slow enough to reach N = 35). The slow-goal grid has 2 weekday limits (none, 30). No device. The 35 was chosen to
 match `QUALITY_FLOOR_MINS`, then measured; 25 and 40 were not.
+
+---
+
+## 🔴 Correction (same day, found at build): the 35-minute evidence was wrong, and a narrower option
+
+**The prototype rounded the minutes floor DOWN to the 0.5 km grid**, so a floor-held easy run could come out shorter than
+the floor it was meant to honour: at 8:56/km, 3.5 km is 31 minutes, which meets neither 4 km nor 35 minutes. The ruling's
+headline, "keeps 77% of the overrun relief", came from those runs. Rounded UP, as the ruling's words require:
+
+| Slow grid | Evidence the board saw (35, rounded down) | 35, rounded up (the ruling as worded) |
+|---|---|---|
+| Plans changed | 393 / 960 | 301 / 960 |
+| Weekday overruns | 8,525 → 1,932 | **6,784 → 6,784, no change** |
+| Overrun minutes | 108,850 → 27,701 | 93,707 → 55,549 (−41%) |
+| Worst peak loss | 21.7% | 14.1% |
+| Cohort / targeted changed, day-count changes | 0 / 0, 0 | 0 / 0, 0 |
+
+A 35-minute run is always over a 30-minute limit, so the count cannot fall. On the 0.5 km grid the floor drops below 4 km
+only at easy paces of 10:00/km or slower, so live reach falls from 2 plans to 1 (a91d8fde).
+
+**Option D, measured: change §82 only.** The floor binds against the runner's limit in one place, §82's floor
+protection. D leaves construction alone and changes only that step: on a capped weekday, a floor-held easy run lasts
+the runner's limit, or N minutes if the limit is below N, and never more than 4 km. Distance follows from the minutes
+(0.1 km), as §82's held run already does.
+
+| Slow grid | D, N = 30 | D, N = 35 |
+|---|---|---|
+| Plans changed | 220 / 960 | 220 / 960 |
+| Weekday overruns | 8,480 → **1,660** (−80%; the rest are long runs and structured sessions §81 exempts) | 8,480 → 8,480 |
+| Overrun minutes | 108,481 → 26,651 (−75%) | 108,481 → 63,889 (−41%) |
+| Weekly minutes, changed plans | −13.3% | −7.2% |
+| Worst peak loss | 21.7% | 15.5% |
+| Cohort / targeted changed | **0 / 0** | 0 / 0 |
+| Day-count changes | **0** | 0 |
+| Plans losing > 10% of peak, all with a limit, all carrying §40c's note | 83 of 83 | — |
+
+D reaches only runners with a weekday limit whose 4 km takes longer than it. Live: 4 plans (799c49e8 15 overruns,
+c848fd4c 45, 4b037d2c 46, a91d8fde 48: 154 in all). **The sweep found one gap at N = 30:** `INV-PLAN-EASY-FLOOR-PROTECTION-
+DECLARED` (127 plans) does not recognise a held run below 4 km, so the declaration must be taught the new shape at build.
+**Already true of the engine:** a duration-anchored beginner easy run is capped to the limit with no floor at all, and
+`invariants.ts` records that "30 minutes is a real session whatever it converts to".

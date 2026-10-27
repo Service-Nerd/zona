@@ -67,15 +67,16 @@ not its own 4 km floor (pre-existing). Each needs a measurement and a ruling; di
 
 ---
 
-### 🔲 `S9-EASY-MINUTES-01` — an easy run meets the floor at 4 km or 35 minutes 🏃 **COACHING BOARD** (ruled 2026-10-27, C CORRECT WITH AMENDMENT; build next)
+### 🔲 `S9-EASY-MINUTES-01` — a §82 floor-held easy run lasts the runner's weekday limit, at least 30 minutes 🏃 **COACHING BOARD** (re-sat 2026-10-27, D CORRECT WITH AMENDMENT; build next)
 
-Ruled on the prototype's evidence (`docs/decisions/coaching-2026-10-27-easy-floor-minutes.md`). Build: `EASY_FLOOR_MINS = 35`;
-`sessionFloorsFor` takes the runner's easy pace and returns `min(4 km, 35 min at easy pace)` for the easy floor, the one
-owner for every consumer (construction, §82's floor protection, §90's trim floor, `INV-PLAN-MIN-SESSION-SIZE`); ~38 easy
-call sites to thread the pace through. **Binding: 0 day-count changes on every grid** (Willy), §52b stays in km. Artifacts:
-§9 Am. 3, the constant, the invariant's either-form check falsified on a slow plan. Gates: parity, `cohort:shape`,
-`measure:fitness`, envelope moves declared, sweep clean. Live: dry-run a91d8fde and 799c49e8. 30 minutes was refused
-(1,300 cohort plans, 339 injury weeks gain a run day).
+The 35-minute ruling (C) was **vacated**: its prototype rounded the floor down and breached its own floor; as worded it
+removes no overrun. Build D (`docs/decisions/coaching-2026-10-27-easy-floor-minutes-resitting.md`): `EASY_FLOOR_HELD_MINS
+= 30`; in `applyWeekdayMinsCap`'s §82 branch the held easy run lasts `max(cap, min(4 km at pace, 30))` minutes, distance
+from the minutes (0.1 km), `floor_protected` stamped. Construction's easy floor unchanged. **Binding:** 0 day-count changes;
+`INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED` and `reconcileWeekdayOverrunNotes` recognise the held run (the prototype lost the
+declaration on 127 sweep plans); `INV-PLAN-MIN-SESSION-SIZE` and `INV-PLAN-MAX-WEEKDAY-MINS` accept it, re-derived from the
+session. Artifacts: §82 Am. 2, the constant, the checks falsified on a slow capped plan. Gates: parity, `cohort:shape`,
+`measure:fitness`, envelope, sweep clean. Live: dry-run 799c49e8, c848fd4c, 4b037d2c, a91d8fde (154 overruns).
 ---
 
 ### 🔲 `LIVE-PLAN-REBUILD-RCA-01` — rebuild the 11 live plans the 26 Oct RCA found 👤 **FOUNDER** (approved 2026-10-27; dry runs ready, founder to apply)

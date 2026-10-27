@@ -87,7 +87,18 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
-## 2026-10-27 — S9-EASY-MINUTES-01 · A INCORRECT · B (4 km or 30 min) INCORRECT as measured · C (4 km or 35 min) CORRECT WITH AMENDMENT · RULED, not built
+## 2026-10-27 — S9-EASY-MINUTES-01 RE-SITTING · C VACATED (evidence was a rounding defect) · D (§82 only, 30 min) CORRECT WITH AMENDMENT · RULED, not built
+
+At build, the prototype behind C was found to round the floor DOWN, breaching its own floor; rounded up as worded, C
+removes no weekday overrun (6,784 → 6,784) and cuts overrun minutes 41%. Re-sat on corrected evidence. **D:** change only
+§82's floor protection: on a capped weekday a floor-held easy run lasts the runner's limit, or `EASY_FLOOR_HELD_MINS` (30)
+if the limit is below 30, never more than 4 km. Slow grid: overruns 8,480 → 1,660 (the rest are §81-exempt long runs and
+structured sessions), 0 cohort / targeted plans changed, 0 day-count changes, 83 of 83 big peak losses capped and noted.
+D at 35 refused (no overrun removed). **Binding:** construction floor unchanged; 0 day-count changes; the floor-protection
+declaration must recognise the held run (127 sweep plans lost it in the prototype). Live: 4 plans, 154 overruns. Sitting:
+`docs/decisions/coaching-2026-10-27-easy-floor-minutes-resitting.md`.
+
+## 2026-10-27 — S9-EASY-MINUTES-01 · A INCORRECT · B (4 km or 30 min) INCORRECT as measured · C (4 km or 35 min) CORRECT WITH AMENDMENT · **VACATED same day (re-sitting above)**
 
 The evidence the 26 Oct RCA sitting asked for, from a prototype on three grids. 30 minutes rewrites most beginner plans
 (the default beginner easy pace makes 4 km a 33-minute run: 1,300 of 3,000 cohort and 882 of 1,500 targeted plans change)
