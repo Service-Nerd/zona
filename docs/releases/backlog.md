@@ -67,12 +67,15 @@ not its own 4 km floor (pre-existing). Each needs a measurement and a ruling; di
 
 ---
 
-### 🔲 `S9-EASY-MINUTES-01` — should the easy floor be 4 km or 30 minutes? 🏃 **COACHING BOARD** (direction ruled; INSUFFICIENT EVIDENCE to build)
+### 🔲 `S9-EASY-MINUTES-01` — an easy run meets the floor at 4 km or 35 minutes 🏃 **COACHING BOARD** (ruled 2026-10-27, C CORRECT WITH AMENDMENT; build next)
 
-26 Oct RCA item 3. §82 Am.1 bounds a floor-protected overrun by §52b, which counts km per day and cannot see a weekday time
-limit, so for a slow runner nothing bounds it (a live Friday: 52 min against 30). Prototype "≥ 4 km or ≥ 30 min" (~27 call
-sites), measure weekly volume, `measure:fitness`, §52b and §82, then a sitting.
-
+Ruled on the prototype's evidence (`docs/decisions/coaching-2026-10-27-easy-floor-minutes.md`). Build: `EASY_FLOOR_MINS = 35`;
+`sessionFloorsFor` takes the runner's easy pace and returns `min(4 km, 35 min at easy pace)` for the easy floor, the one
+owner for every consumer (construction, §82's floor protection, §90's trim floor, `INV-PLAN-MIN-SESSION-SIZE`); ~38 easy
+call sites to thread the pace through. **Binding: 0 day-count changes on every grid** (Willy), §52b stays in km. Artifacts:
+§9 Am. 3, the constant, the invariant's either-form check falsified on a slow plan. Gates: parity, `cohort:shape`,
+`measure:fitness`, envelope moves declared, sweep clean. Live: dry-run a91d8fde and 799c49e8. 30 minutes was refused
+(1,300 cohort plans, 339 injury weeks gain a run day).
 ---
 
 ### 🔲 `LIVE-PLAN-REBUILD-RCA-01` — rebuild the 11 live plans the 26 Oct RCA found 👤 **FOUNDER** (approved 2026-10-27; dry runs ready, founder to apply)

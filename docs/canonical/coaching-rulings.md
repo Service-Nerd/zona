@@ -87,6 +87,17 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-27 — S9-EASY-MINUTES-01 · A INCORRECT · B (4 km or 30 min) INCORRECT as measured · C (4 km or 35 min) CORRECT WITH AMENDMENT · RULED, not built
+
+The evidence the 26 Oct RCA sitting asked for, from a prototype on three grids. 30 minutes rewrites most beginner plans
+(the default beginner easy pace makes 4 km a 33-minute run: 1,300 of 3,000 cohort and 882 of 1,500 targeted plans change)
+and, through §52b's easy-run count, adds a run day to 339 injury weeks: a frequency change nobody measured (Willy).
+35 minutes reaches only easy paces slower than 8:45/km, keeps 77% of the weekday-overrun relief (slow grid 8,525 → 1,932),
+changes no cohort or targeted plan and no day count. Every plan losing more than 10% of its peak has a weekday limit and
+already carries §40c's note. **Amendments:** computed once by `sessionFloorsFor` from the easy pace; **0 day-count
+changes, binding**; §52b stays in km. New constant `EASY_FLOOR_MINS = 35`. Live: 2 plans reached (a91d8fde, 799c49e8).
+Sitting: `docs/decisions/coaching-2026-10-27-easy-floor-minutes-sitting.md`.
+
 ## 2026-10-27 — S9-RESIDUAL-STATED-01 · Q1 INCORRECT (no note for a §9 cut) · Q2 leave the dips (label INCORRECT, smooth INCORRECT) · RULED, nothing to build
 
 A §9 cut drops the easy-run minutes silently. Measured on the main parity grid against §40c's own bar (10% of the
