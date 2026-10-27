@@ -27,15 +27,17 @@ already decided what it is.
 
 ---
 
-### 🔲 `EASY-RUN-ABSORBS-QUALITY-01` — an easy run that becomes a second long run 🏃 **COACHING BOARD** (Willy's seat: load shape)
+### 🔲 `S9-RATIO-MINUTES-01` — §9's long-vs-easy ratio is never checked on a duration-anchored plan 🏃 **COACHING BOARD** (ruled 2026-10-27, CORRECT WITH AMENDMENT; build next)
 
-Found 2026-10-27 while measuring GOAL-PACE-LR-CURRENT-01's ramp tail. When a week's quality session is shorter than its
-share (a 50-minute goal-pace session becoming a 36-minute threshold one), the week's volume target holds and §8 Am.'s
-rule sends the difference to the easy runs: one HM beginner at 20 km/week on 3 days gets a **92-minute Friday easy run
-beside a 134-minute long run**. ⚠️ **Not new and not small:** on the cohort sample, **235 of 1,377 time-target plans**
-(4,020 weeks) already had an easy run of 75+ minutes that is at least 60% of that week's long run before 2026-10-27;
-today's changes moved it by 0.5% (4,042 weeks). No invariant asks whether the residual makes a second long run. The board
-rules whether freed volume may concentrate in one easy run, and the cap if not.
+From the `EASY-RUN-ABSORBS-QUALITY-01` sitting (Q1, an easy-run cap: INCORRECT, closed; the item's "piles into one run"
+mechanism measured false). `LONG_RUN_MIN_RATIO_VS_EASY` (1.25) runs in km only, in the producer and in
+`INV-PLAN-LONG-IS-LONGEST`, so beginners (duration-anchored) are never checked: **116 of 2,874** cohort plans breach,
+worst 0.99 (k602: a 157-min long run and two 156-min easy runs); 66 of 1,500 targeted; **2 of 29 live**. Build: the
+ratio binds in minutes on duration-anchored sessions; redistribute in minutes; the long run grows only within §45, §9's
+cap and §52 (Willy, binding), else hold easy at long ÷ 1.25 and drop and state the residual (§40c). Artifacts: §9 Am. 2,
+no new numeric, a minutes arm on `INV-PLAN-LONG-IS-LONGEST` falsified on k602. Gates: `measure:fitness` `neverBuildsPct`
+0; beginner weekly minutes before/after declared; `cohort:shape`; `verify:parity` moves duration-anchored plans only.
+Not traced yet: why k602's long run stops at 157 of 210 minutes.
 
 ---
 

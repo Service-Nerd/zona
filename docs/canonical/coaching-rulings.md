@@ -87,6 +87,18 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-27 — EASY-RUN-ABSORBS-QUALITY-01 · Q1 INCORRECT (no easy-run cap) · Q2 CORRECT WITH AMENDMENT (§9 ratio in minutes) · RULED, not built (S9-RATIO-MINUTES-01)
+
+**Q1:** the item said volume freed from a short quality session piles into one easy run. Measured, it does not: in 72%
+of flagged weeks every easy run is that size, and the overshoot of §9's line averages 0.5 min/week. A 75-100-minute
+midweek run beside a long run at its minute cap is a medium-long run, correct for a runner short of days. No cap.
+**Q2:** `LONG_RUN_MIN_RATIO_VS_EASY` was enforced in km only, so duration-anchored (beginner) plans were never checked:
+116 of 2,874 cohort plans breach, worst ratio 0.99 (k602: two 156-min easy runs beside a 157-min long run); 2 of 29 live
+plans. On a duration-anchored session the ratio binds in minutes. **Willy, binding:** the long run grows only as far as
+§45, §9's cap and §52 allow; past that, easy runs are held at long ÷ 1.25 and the residual is dropped and stated (§40c).
+Build gates: `neverBuildsPct` 0, beginner weekly minutes before/after declared. Sitting:
+`docs/decisions/coaching-2026-10-27-easy-run-second-long-run-sitting.md`.
+
 ## 2026-10-27 — RACE-DAY-PACE-WITHHELD-01 · A INCORRECT past the line · B CORRECT WITH AMENDMENT · BUILT 2026-10-27 (founder's words)
 
 Past the §120 Am. 2 line the race session's opening (`RACE_OPENING_FRACTION`, §80 Am.1) is run at the runner's **current
