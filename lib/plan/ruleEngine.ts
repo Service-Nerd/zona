@@ -4790,7 +4790,7 @@ function reclampPeakStepBacks(
       // ratio: measured 165 min against a 133-min easy run, 1.24. This only RAISES
       // the bound, so the long run is trimmed less and never grown.
       const easyMins = Object.values(w.sessions ?? {})
-        .filter((x): x is Session => !!x && x !== s && x.type === 'easy' && !isLongRun(x) && x.distance_km == null)
+        .filter((x): x is Session => !!x && x.type === 'easy' && !isLongRun(x) && !isShakeout(x) && x.distance_km == null)
         .map(x => x.duration_mins)
         .filter((m): m is number => m != null)
       const ratioFloorMins = easyMins.length ? Math.ceil(Math.max(...easyMins) * minRatio) : 0
@@ -5118,7 +5118,9 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide, floors: Sess
       // twin. Floored, so the ratio holds after rounding, and never below the
       // runner's easy floor. The minutes removed are not moved anywhere: the long
       // run may not grow past §45 to absorb them (Willy, binding).
-      const lrMins = currLR.session.distance_km == null ? currLR.session.duration_mins : null
+      // The long run's minutes, whatever its anchor: a km long run beside minutes
+      // easy runs is common, and both branches above wrote `duration_mins`.
+      const lrMins = currLR.session.duration_mins
       const easyCeilingMins = lrMins != null ? Math.floor(lrMins / minRatio) : null
       const minEasyMins = dur(minEasy, pace.minPerKmEasy)
       for (const [d, s] of Object.entries(curr.sessions) as [Day, Session | undefined][]) {
@@ -5127,12 +5129,14 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide, floors: Sess
         if (s.type !== 'easy') continue
         if (s.distance_km == null) {
           if (easyCeilingMins != null && s.duration_mins != null && s.duration_mins > easyCeilingMins) {
-            s.duration_mins = Math.max(easyCeilingMins, minEasyMins)
+            // A clamp only shortens: the easy floor can hold the run, never lengthen it.
+            s.duration_mins = Math.min(s.duration_mins, Math.max(easyCeilingMins, minEasyMins))
           }
           continue
         }
         if (s.distance_km > easyCeilingFloored) {
-          const newEasy = Math.max(easyCeilingFloored, minEasy)
+          // The km twin of the minutes guard above: a clamp only shortens.
+          const newEasy = Math.min(s.distance_km, Math.max(easyCeilingFloored, minEasy))
           s.distance_km = newEasy
           s.duration_mins = dur(newEasy, pace.minPerKmEasy)
         }

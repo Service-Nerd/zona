@@ -1478,15 +1478,16 @@ round trip and landed under 1.25 (165 vs 133). (3) V4's repeat "increment" and (
 came out **shorter** on the minutes axis (420 → 416, 312 → 308 min). Each now acts on the axis the session uses, and
 an increment or raise that would shorten is a no-op.
 
-**Measured (parity grid, `HEAD` → this build).** 281 of 6,102 cases change, all duration-anchored: 244 ultras and 37
-beginner road plans (5K 12, 10K 13, marathon 12); no intermediate or experienced road plan moves (main grid, by level). Minutes removed per changed plan 7–50
+**Measured (parity grid, `HEAD` → this build).** 285 of 6,102 cases change, all with duration-anchored easy runs: 244
+ultras and 41 beginner road plans (5K 12, 10K 13, HM 2, marathon 14); no intermediate or experienced road plan moves (main grid, by level). Minutes removed per changed plan 7–50
 (**0.2–0.7%** of the plan). The worst single week loses 36% (a 100K week 3 going 95 → 144 min where it had gone
 95 → 224, a +136% spike). `measure:fitness`, `cohort:shape` and the use-case envelope pass on their baselines; the
 property sweep (17,415 plans) has no new violation. Live: 2 of 29 plans carried the breach, one of them a test account.
 
 **Config.** No new numeric: `LONG_RUN_MIN_RATIO_VS_EASY` (1.25). **Check.** `INV-PLAN-LONG-IS-LONGEST-MINS` (error):
 the tolerance is the rounding bound of two whole-minute values (`0.5 × ratio + 0.5`), not a margin; a minutes long run
-beside a km easy run is not compared (the checker has no pace); on a reshape it is enforced on the week touched only,
+beside a km easy run is not compared (the checker has no pace; measured 0 such weeks), while a km long run beside a
+minutes easy run is (1,755 of 38,350 cohort weeks carry that pairing); on a reshape it is enforced on the week touched only,
 because a stored plan can carry a breach the reshape did not cause. `lib/plan/s9RatioMinutes.test.ts`. **Not
 settled:** the residual is cut silently, as the km clamps already were. No note says a week came in shorter than its
 volume target, and none did before for distance-anchored plans (§40c reach, unmeasured).

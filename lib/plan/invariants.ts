@@ -2120,9 +2120,12 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // scope it to the week it touched (`validateReshapedPlan`).
       // Tolerance is the rounding bound of two whole-minute values, not a margin:
       // the easy run's half-minute scaled by the ratio, plus the long run's.
-      // A long run in minutes beside an easy run in km is not compared: the two
-      // axes need a pace, and the checker has none (negative space, stated).
-      if (long?.session.distance_km == null && long?.session.duration_mins != null) {
+      // Compared whenever the EASY run is duration-anchored, whatever the long
+      // run's anchor: every long run carries minutes, and a km long run beside
+      // minutes easy runs is common (1,755 of 38,350 cohort weeks, 4 inverted).
+      // Not compared: a minutes long run beside a km easy run (measured 0 weeks
+      // in both grids), which would need a pace the checker does not have.
+      if (long?.session.duration_mins != null) {
         const roundingMins = 0.5 * minRatio + 0.5
         for (const { day, session } of easies) {
           if (session.distance_km != null || session.duration_mins == null) continue

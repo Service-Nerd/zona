@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan, validateReshapedPlan } from './invariants'
-import { isLongRun } from './sessionRole'
+import { isLongRun, isShakeout } from './sessionRole'
 import { COHORT_PLAN_START } from './cohortGrid'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput, Plan, Session, Week } from '@/types/plan'
@@ -35,7 +35,8 @@ const ULTRA_100K = (age: number, race_date: string, injury: string) => ({
 }) as unknown as GeneratorInput
 
 const longRun = (w: Week) => Object.values(w.sessions).find(s => s && isLongRun(s)) as Session | undefined
-const easies = (w: Week) => (Object.values(w.sessions).filter(s => s && s.type === 'easy' && !isLongRun(s)) as Session[])
+// The checker's own population: easy, not the long run, not a shakeout.
+const easies = (w: Week) => (Object.values(w.sessions).filter(s => s && s.type === 'easy' && !isLongRun(s) && !isShakeout(s)) as Session[])
 
 describe('§9 Amendment 2 — the long-vs-easy ratio binds in minutes', () => {
   it('k602 generates clean, and every duration-anchored easy run sits under the long run ÷ 1.25', () => {
@@ -43,7 +44,7 @@ describe('§9 Amendment 2 — the long-vs-easy ratio binds in minutes', () => {
     let checked = 0
     for (const w of plan.weeks.filter(w => w.n > 0 && w.type !== 'race')) {
       const lr = longRun(w)
-      if (!lr || lr.distance_km != null || lr.duration_mins == null) continue
+      if (!lr || lr.duration_mins == null) continue
       for (const e of easies(w)) {
         if (e.distance_km != null || e.duration_mins == null) continue
         expect(e.duration_mins * RATIO, `week ${w.n}`).toBeLessThanOrEqual(lr.duration_mins + 0.5 * RATIO + 0.5)
@@ -52,7 +53,8 @@ describe('§9 Amendment 2 — the long-vs-easy ratio binds in minutes', () => {
     }
     expect(checked).toBeGreaterThan(20) // the population is real, not vacuous
     const w10 = plan.weeks.find(w => w.n === 10)!
-    expect(Math.max(...easies(w10).map(e => e.duration_mins ?? 0))).toBeLessThan(longRun(w10)!.duration_mins! / 1.2)
+    // The before-state was 156 beside 157; after, the easy runs sit at the ratio's ceiling.
+    expect(Math.max(...easies(w10).map(e => e.duration_mins ?? 0))).toBeLessThanOrEqual(Math.floor(longRun(w10)!.duration_mins! / RATIO))
   })
 
   it.each([[38, '2027-05-17', 'achilles'], [28, '2027-07-12', 'shin_splints']])(
@@ -91,6 +93,15 @@ describe('§9 Amendment 2 — the long-vs-easy ratio binds in minutes', () => {
     e.duration_mins = longRun(w)!.duration_mins
     e.distance_km = 20
     expect(validatePlan(plan, K602).some(v => v.code === CODE && v.week === 10)).toBe(false)
+  })
+
+  it('a km long run beside a minutes easy run IS compared (code review: 1,755 such cohort weeks)', () => {
+    const plan = generateRulePlan(K602, 'paid', COHORT_PLAN_START)
+    const w = plan.weeks.find(w => w.n === 10)!
+    const lr = longRun(w)!
+    lr.distance_km = 20
+    easies(w)[0].duration_mins = lr.duration_mins
+    expect(validatePlan(plan, K602).some(v => v.code === CODE && v.week === 10)).toBe(true)
   })
 
   it('a reshape is held to it on the week it touched, not on a stored breach elsewhere', () => {
