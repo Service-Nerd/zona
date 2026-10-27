@@ -39,6 +39,11 @@ describe('the owner', () => {
 // The live case's shape (a 7:40 marathoner aiming at 6:00 on 10 km/week, Mon 60 / Wed 45 / Fri 30). ⚠️ A FINISH goal here
 // stages to base building, whose sessions carry no duration at all: BASEBUILD-DURATION-01, filed, not this item.
 const { planStart, benchmarkDate } = slowGoalDates()
+// The engine measures the runway from `today` to `planStart`, and `slowGoalDates` puts the start on NEXT Monday, so the
+// runway is 1–7 days depending on the weekday the suite runs. On a Tuesday the foundation week this file asserts on did
+// not exist and two tests went red with no code change (PINNED-CLOCK-01's class). Pin the runway, not the date: today is
+// always a week before the start. The benchmark stays 14 days before the real clock, which `applyVdotDiscount` reads.
+const today = new Date(Date.parse(`${planStart}T00:00:00Z`) - 7 * 864e5).toISOString().slice(0, 10)
 const SLOW: GeneratorInput = {
   race_distance_km: 42.2, race_date: new Date(Date.parse(`${planStart}T00:00:00Z`) + (20 * 7 - 1) * 864e5).toISOString().slice(0, 10),
   goal: 'time_target', target_time: '6:00:00', age: 30, injury_history: [], fitness_level: 'beginner', training_age: '1-2yr', recent_quality_training: 'occasional',
@@ -46,7 +51,7 @@ const SLOW: GeneratorInput = {
   day_budgets: { mon: 60, wed: 45, fri: 30 }, max_weekday_mins: 30,
   benchmark: { type: 'race', distance_km: 42.2, time: '7:40:47', benchmark_date: benchmarkDate }, acknowledged_prep_warning: true,
 } as unknown as GeneratorInput
-const plan = (() => { const o = runEngine({ input: SLOW, tier: 'paid', displayUnits: 'km', planStart }); if (o.kind === 'refusal') throw new Error('refused'); return o.plan })()
+const plan = (() => { const o = runEngine({ input: SLOW, tier: 'paid', displayUnits: 'km', planStart, today }); if (o.kind === 'refusal') throw new Error('refused'); return o.plan })()
 const weekdaySessions = plan.weeks.flatMap(w => (['mon', 'wed', 'fri'] as const).map(d => ({ w, d, s: (w.sessions as any)[d] }))).filter(x => x.s && x.s.duration_mins)
 
 describe('the engine says so on every session that does not fit', () => {
@@ -69,7 +74,7 @@ describe('the engine says so on every session that does not fit', () => {
     for (const c of slowGoalGrid(planStart, benchmarkDate)) {
       if (!c.max_weekday_mins) continue
       const { gap, ...input } = c
-      const o = runEngine({ input: input as unknown as GeneratorInput, tier: 'paid', displayUnits: 'km', planStart })
+      const o = runEngine({ input: input as unknown as GeneratorInput, tier: 'paid', displayUnits: 'km', planStart, today })
       if (o.kind === 'refusal') continue
       for (const w of o.plan.weeks) if (w.n >= 1) for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) {
         const s: any = (w.sessions as any)[d]
@@ -92,6 +97,28 @@ describe('the engine says so on every session that does not fit', () => {
     fits.weekday_overrun_note = 'About 99 min against the 60 min you set for Mondays.'
     const v = validatePlan(broken, SLOW).filter(x => x.code === 'INV-PLAN-WEEKDAY-OVERRUN-DECLARED')
     expect(v.map(x => x.actual).sort()).toEqual(['over the day, no weekday_overrun_note', 'weekday_overrun_note on a session that fits'])
+  })
+})
+
+describe('the STRUCTURED check reads the day\'s own limit (OVERRUN-NOTE-ALL-01 changed it; this proves the change)', () => {
+  // SLOW has Mon 60 / Wed 45 / Fri 30 and max_weekday_mins 30 (the wizard writes the MIN). Tolerance is §81 Am. 2's 50%:
+  // Monday's limit is 90, Friday's 45. The old check read max_weekday_mins, so a 70-minute Monday fired against 45.
+  const withStructured = (day: 'mon' | 'fri', mins: number): Plan => {
+    const p: Plan = JSON.parse(JSON.stringify(plan))
+    const q = p.weeks.flatMap(w => Object.values(w.sessions)).find((s: any) => s?.type === 'quality' && s.catalogue_id) as any
+    if (!q) throw new Error('fixture has no structured session')
+    const w = p.weeks.find(x => x.type !== 'race')!
+    ;(w.sessions as any)[day] = { ...q, duration_mins: mins, weekday_overrun_note: undefined }
+    return p
+  }
+  const fires = (p: Plan) => validatePlan(p, SLOW).filter(v => v.code === 'INV-PLAN-STRUCTURED-OVERRUN-DECLARED')
+  it('a 70-minute Monday is inside Monday\'s own limit: silent', () => {
+    expect(fires(withStructured('mon', 70))).toEqual([])
+  })
+  it('🔴 the same 70 minutes on Friday fires, and the message names Friday\'s 30', () => {
+    const v = fires(withStructured('fri', 70))
+    expect(v).toHaveLength(1)
+    expect(v[0].message).toContain('stated 30-min limit')
   })
 })
 
@@ -130,7 +157,7 @@ describe('a note is written from the FINAL minutes', () => {
   it('🔴 a WEEKDAY long run over its day keeps its note (it always had one; the first cut of the owner dropped it)', () => {
     const input = { ...SLOW, goal: 'finish', target_time: undefined, current_weekly_km: 25, longest_recent_run_km: 12,
       days_cannot_train: ['saturday', 'sunday'], day_budgets: undefined, max_weekday_mins: 30, benchmark: undefined } as unknown as GeneratorInput
-    const o = runEngine({ input, tier: 'paid', displayUnits: 'km', planStart })
+    const o = runEngine({ input, tier: 'paid', displayUnits: 'km', planStart, today })
     if (o.kind === 'refusal') throw new Error('refused')
     const lrs = o.plan.weeks.filter(w => w.n >= 1 && w.type !== 'race').flatMap(w => (['mon', 'tue', 'wed', 'thu', 'fri'] as const).map(d => (w.sessions as any)[d]))
       .filter((s: any) => s && /long/i.test(s.label) && s.duration_mins > 30)

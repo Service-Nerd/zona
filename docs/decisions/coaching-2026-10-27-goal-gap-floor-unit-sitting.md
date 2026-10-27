@@ -115,3 +115,7 @@ None. Correctness only.
 
 ## Not settled
 Projection (P); plan-length scaling; Q3; §52b's unit; the note's words (founder) and placement (Design Board).
+
+## Founder sign-off (2026-10-27)
+Rulings stand. Note words approved: *"Your target is about {N}% quicker than your recent run suggests, so sessions are set
+to what you can run now."* The 9 live plans to be rebuilt after the build, each as a dry-run diff first.

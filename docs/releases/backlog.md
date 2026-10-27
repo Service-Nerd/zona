@@ -27,6 +27,45 @@ already decided what it is.
 
 ---
 
+### 🔲 `GOAL-PACE-REACHABLE-01` — goal-pace work only while the goal is within 5% of current race fitness, at every distance 🏃 **COACHING BOARD** (ruled 2026-10-27) → 🧭 **DESIGN BOARD** (note placement); 👤 founder words APPROVED 2026-10-27
+
+Step 4 of the 26 Oct RCA, item 1. Ruled CORRECT WITH AMENDMENT (`docs/decisions/coaching-2026-10-27-goal-gap-floor-unit-sitting.md`):
+on a benchmarked time-target plan, goal-anchored rows are withheld and §22's goal-week override does not reprice past
+`GOAL_PACE_MAX_STRETCH_PCT` (5) beyond current race-fitness pace; §22's ratio and per-week arms exempt those sessions (both
+halves); §25's finish at current race-fitness pace if it measures clean, else withheld; supersedes §120 Am.1's CV comparison
+(gated on HM moving by rounding only); unbenchmarked plans unchanged. **The gap is named to the runner** (Sims, binding):
+founder-approved words *"Your target is about {N}% quicker than your recent run suggests, so sessions are set to what you
+can run now."* Placement to the Design Board. Artifacts: §120 Am.2, the constant, `INV-PLAN-GOAL-PACE-REACHABLE`. Measure:
+slow grid by gap (the cohort grid cannot see the constant), sweep, `cohort:shape`, `measure:fitness`, parity on finish-goal
+and unbenchmarked plans. Live reach: 10 of 13 benchmarked runners with a future time goal.
+
+---
+
+### 🔲 `S9-QUALITY-MINUTES-01` — a quality session meets §9 at 5 km or 35 minutes 🏃 **COACHING BOARD** (ruled 2026-10-27)
+
+Step 4 of the 26 Oct RCA, item 2. Ruled CORRECT WITH AMENDMENT: one owner read by every quality shape builder and
+`INV-PLAN-MIN-SESSION-SIZE`; amends §8/D-21's "floor beats ceiling"; §52b stays in km (named). Prototype: slow-grid floor,
+VO2-cap and goal-pace-shape breaches → 0; 221 of 5,925 sampled served plans change (HM/marathon beginner continuous tempo
+38 → 36 min); `measure:fitness` identical. Artifacts: §9 Am., `QUALITY_FLOOR_MINS`, the check plus a builder-population gate.
+
+---
+
+### 🔲 `S9-EASY-MINUTES-01` — should the easy floor be 4 km or 30 minutes? 🏃 **COACHING BOARD** (direction ruled; INSUFFICIENT EVIDENCE to build)
+
+26 Oct RCA item 3. §82 Am.1 bounds a floor-protected overrun by §52b, which counts km per day and cannot see a weekday time
+limit, so for a slow runner nothing bounds it (a live Friday: 52 min against 30). Prototype "≥ 4 km or ≥ 30 min" (~27 call
+sites), measure weekly volume, `measure:fitness`, §52b and §82, then a sitting.
+
+---
+
+### 🔲 `LIVE-PLAN-REBUILD-RCA-01` — rebuild the 9 live plans the 26 Oct RCA found 👤 **FOUNDER** (approved 2026-10-27, after the build)
+
+Tasha's (starts 7 Dec), the founder's Dorney plan and the other 7. Only after GOAL-PACE-REACHABLE-01 and
+S9-QUALITY-MINUTES-01 ship. Each a dry-run diff first, applied by the founder; future weeks only, completions and confirmed
+HR kept.
+
+---
+
 ### 🔲 `MODIFY-WEEKDAY-INERT-01` — "Weekday time limit" in Adjust your plan does nothing for a runner with per-day limits ⚙️ **NO BOARD** for the defect; 👤 **FOUNDER** for which way it resolves
 
 Found 2026-10-26 by the code review of OVERRUN-NOTE-ALL-01. `applyEdits` spreads the edit over the stored input (`{ ...base, ...edits }`), so `day_budgets` survives an edit to `max_weekday_mins`, and both the engine (`applyWeekdayMinsCap`) and the note read the day's own budget first. A runner who set Mon 60 / Wed 45 / Fri 30 in the wizard and later raises the weekday limit to 60 gets the same plan back. **No other control edits per-day limits after onboarding.** Two honest resolutions: (a) a new weekday limit replaces the per-day ones; (b) Adjust shows the per-day limits and edits them. **Population not yet measured** (live plans with `day_budgets`). Until fixed, the overrun note cannot offer this control as a lever to those runners.

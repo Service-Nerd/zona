@@ -24,6 +24,9 @@ import { slowGoalGrid, slowGoalDates } from '../lib/plan/slowGoalGrid'
 import type { GeneratorInput } from '../types/plan'
 
 const { planStart: PLAN_START, benchmarkDate: BENCHMARK_DATE } = slowGoalDates()
+// The runway from today to the start is 1–7 days by weekday, and foundation weeks depend on it: pin it at a week so
+// a reading does not move with the day it is taken (weekdayOverrunNote.test.ts went red on a Tuesday for this).
+const TODAY = new Date(Date.parse(`${PLAN_START}T00:00:00Z`) - 7 * 864e5).toISOString().slice(0, 10)
 const GOAL_ROWS = new Set(V1_SESSION_CATALOGUE.filter(r => requiredPaceAnchors(r).includes('goal')).map(r => r.id))
 const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri'] as const
 /** The CENTRE of a pace band ("7:21–7:39 /km" → 7.5). The fast end over-counts: for a slow runner HM pace sits
@@ -46,7 +49,7 @@ for (const c of GRID) {
   const key = `${c.race_distance_km} km · goal +${Math.round(gap * 100)}%`
   const cell = cells.get(key) ?? { plans: 0, refused: 0, withGoalWork: 0, goalSessions: 0, fasterT: 0, fasterCV: 0, fasterI: 0 }
   cells.set(key, cell)
-  const out = runEngine({ input: input as unknown as GeneratorInput, tier: 'paid', displayUnits: 'km', planStart: PLAN_START })
+  const out = runEngine({ input: input as unknown as GeneratorInput, tier: 'paid', displayUnits: 'km', planStart: PLAN_START, today: TODAY })
   if (out.kind === 'refusal') { cell.refused++; continue }
   const plan: any = out.plan
   plans++; cell.plans++
