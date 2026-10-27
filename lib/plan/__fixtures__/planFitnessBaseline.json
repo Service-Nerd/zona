@@ -21,21 +21,21 @@
     },
     "healthy masters ": {
       "n": 6712,
-      "medianBuildPct": 18.2,
+      "medianBuildPct": 17.9,
       "neverBuildsPct": 19.1,
-      "medianMarathonLrPctOfRace": 64,
+      "medianMarathonLrPctOfRace": 62.8,
       "grids": {
         "cohort": 6709,
         "constructed": 3
       }
     },
     "healthy standard": {
-      "n": 9671,
+      "n": 9673,
       "medianBuildPct": 28.6,
       "neverBuildsPct": 13.1,
       "medianMarathonLrPctOfRace": 61.6,
       "grids": {
-        "cohort": 6668,
+        "cohort": 6670,
         "targeted": 3000,
         "constructed": 3
       }

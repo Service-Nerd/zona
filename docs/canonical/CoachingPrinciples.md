@@ -11279,8 +11279,8 @@ prescription.
 
 **Principle.** On a **benchmarked** time-target plan, goal-paced work is prescribed only while the stated goal is within
 `GOAL_PACE_MAX_STRETCH_PCT` (5%) of the runner's current race-fitness pace at the race distance. Past it: `goal`-anchored
-rows are withheld, §22's goal-week override does not reprice, §25's race-pace long-run finish is not prescribed, the
-taper is a finish-goal taper, and the plan names the gap in the founder's words: *"Your target is about N% quicker than
+rows are withheld, §22's goal-week override does not reprice, §25's race-pace long-run finish is run at the runner's
+CURRENT marathon / HM pace (GOAL-PACE-LR-CURRENT-01, below), the taper is a finish-goal taper, and the plan names the gap in the founder's words: *"Your target is about N% quicker than
 your recent run suggests, so sessions are set to what you can run now."* A runner with no benchmark is unchanged.
 
 **Why.** Two paths priced goal pace and neither asked whether it was runnable; only the HM anchor was bounded (Am. 1).
@@ -11314,10 +11314,9 @@ decided at). The check verifies a withholding against THAT VDOT, so a later reca
 decision read as wrong, and a plan with no record (built before this amendment) is not called a defect.
 
 **What it does to load, measured, because the board did not see it.** No session gets harder. Withheld plans train the
-fitness the runner has and, past the line, match their finish-goal twin session for session in the long runs. Two
-consequences, declared: (1) **§47's step-back alternation applies only to race-paced peak long runs**, so a withheld
-marathon plan loses its step-back week and carries consecutive full peak long runs, as §47 already prescribes for
-flat Zone 2 long runs (up to +6 km in one peak week on the cohort sample); (2) the same minutes at threshold cover fewer
+fitness the runner has. Two consequences, declared: (1) **§47's step-back alternation applies only to race-paced peak
+long runs**; with the finish withheld (the first cut of this amendment) a marathoner lost the step-back week (up to +6
+km in one peak week), and the current-pace finish below restores it; (2) the same minutes at threshold cover fewer
 km than at a faster goal pace, so km-based classifiers move: `maintenance` +0.5pp overall (10K +1.0, HM +0.8),
 `neverBuildsPct` masters 18.6 → 19.1 and standard 12.8 → 13.1 (52 of 6,399 time-target plans, every one with identical
 training minutes, each within 1 km of the 2% line), and the plan-shape audit's cohort sample +1 never-builds, +4 binge
@@ -11332,9 +11331,18 @@ runner's race day, `RACE-DAY-PACE-WITHHELD-01`); recalibration does not re-decid
 **The AI layer.** A coach note quoting `{{goal_pace}}` on a withheld plan is refused at the merge and recorded; a rule in
 the prompt is not a constraint.
 
-**§25's current-pace finish (McMillan's arm), measured, not shipped.** A finish at the runner's CURRENT marathon / HM pace
-adds 0 violations on both grids and leaves `measure:fitness` identical, so it passes the ruling's test. Both rows' voice
-says "goal pace", which would be false; it waits on the founder's words (`GOAL-PACE-LR-CURRENT-01`).
+**§25's current-pace finish (McMillan's arm, GOAL-PACE-LR-CURRENT-01), measured and shipped the same day.** Past the
+line the race-pace long run keeps its place and its §47 alternation, with the segment at the runner's CURRENT marathon
+/ HM pace (`lr_segment_pace`), in the founder's words: *"Easy first. Finish at the marathon pace you could run today, on
+tired legs."* / *"Easy first. Final third at the half pace you could run today."* A withheld plan is always benchmarked,
+so its pace guide always carries MP/HM: every benchmarked HM/MAR runner, declared beginners included, had this session at
+GOAL pace before this amendment (100% on the slow-goal grid), and keeps it at the pace they could run today. Checked by
+`INV-PLAN-GOAL-PACE-REACHABLE` (the finish must sit within `GOAL_PACE_REHEARSAL_TOLERANCE_PCT` of Daniels' race estimate
+at the decision's VDOT). AI copy saying "goal pace" on a withheld plan is refused at the merge. Measured: 0 new violations on the cohort sample and the slow-goal grid; `measure:fitness` and cohort
+shape within tolerance; on the plan-shape audit's cohort sample, binge weeks −2 and short long runs −1, never-builds +3,
+and two marathoners at 20 km/week previously refused by §111 now build, because the restored step-back takes their peak
+week from 59 to 56 km, exactly at §111's 4.0× ceiling; their week 1 is the same shape as the audit's existing
+week-1-leap debt.
 
 **Config.** `GENERATION_CONFIG.GOAL_PACE_MAX_STRETCH_PCT = 5`; `RACE_PACE_ANCHOR_MAX_OVER_CV_PCT` narrowed to
 unbenchmarked HM; `GOAL_PACE_REHEARSAL_TOLERANCE_PCT = 3`, how close to the goal a step must be priced to count as

@@ -10,6 +10,7 @@ import { mergePlan, quotesGoalPace, type WeekCopyRejection } from './enrich'
 import { GENERATION_CONFIG } from './generationConfig'
 import { V1_SESSION_CATALOGUE, requiredPaceAnchors } from './sessionCatalogueData'
 import { slowGoalDates, slowGoalGrid } from './slowGoalGrid'
+import { parsePaceMidpoint } from './paceParse'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
 const { planStart, benchmarkDate } = slowGoalDates()
@@ -83,6 +84,39 @@ describe('past the line the plan trains the fitness the runner has', () => {
   it('the check is clean on every plan the engine built', () => {
     const v = sample.flatMap(({ input, plan }) => validatePlan(plan, input).filter(x => x.code === 'INV-PLAN-GOAL-PACE-REACHABLE'))
     expect(v).toEqual([])
+  })
+})
+
+describe('GOAL-PACE-LR-CURRENT-01 — past the line §25\'s finish is run at CURRENT race pace, in the founder\'s words', () => {
+  const VOICE = { 42.2: 'Easy first. Finish at the marathon pace you could run today, on tired legs.', 21.1: 'Easy first. Final third at the half pace you could run today.' } as const
+  const lrsOf = (p: Plan) => sessions(p).filter(s => s.catalogue_id === 'mp_long_run' || s.catalogue_id === 'hm_pace_long_run')
+  const pastLong = sample.filter(x => x.gap >= 0.15 && (x.input.race_distance_km === 42.2 || x.input.race_distance_km === 21.1))
+  it('🔴 a non-beginner past the line still gets the race-pace long run, priced at their current pace, never the goal', () => {
+    const withLr = pastLong.filter(({ plan }) => lrsOf(plan).length > 0)
+    expect(withLr.length, 'the sample must reach past-the-line HM/MAR plans with the finish').toBeGreaterThan(0)
+    for (const { input, plan } of withLr) for (const s of lrsOf(plan)) {
+      expect(s.lr_segment_pace, s.label).toBeTruthy()
+      // Compared as PACES, not strings: the segment is a band and the goal a single pace. Past the line the finish
+      // must sit well slower than the goal (more than the rehearsal tolerance).
+      const seg = parsePaceMidpoint(s.lr_segment_pace!)!, goal = parsePaceMidpoint(plan.meta.goal_pace_per_km!)!
+      expect(seg, `${s.lr_segment_pace} vs goal ${plan.meta.goal_pace_per_km}`).toBeGreaterThan(goal * (1 + GENERATION_CONFIG.GOAL_PACE_REHEARSAL_TOLERANCE_PCT / 100))
+      expect(s.coach_notes?.[0]).toBe(VOICE[input.race_distance_km as 42.2 | 21.1])
+      expect((s.coach_notes ?? []).join(' ')).not.toMatch(/goal/i)
+    }
+  })
+  it('inside the line the finish is still at goal pace, in each row\'s own voice', () => {
+    for (const [d, voice] of [[42.2, 'Easy first. Hit goal pace on tired legs.'], [21.1, 'Easy first. Final third at HM goal pace.']] as const) {
+      const inLong = sample.filter(x => x.gap === 0 && x.input.race_distance_km === d).flatMap(({ plan }) => lrsOf(plan))
+      expect(inLong.length, `${d} km`).toBeGreaterThan(0)
+      for (const s of inLong) expect(s.coach_notes?.[0]).toBe(voice)
+    }
+  })
+  it('🔴 the check: a withheld plan\'s finish priced at anything but current race pace is caught', () => {
+    const c = pastLong.find(({ plan }) => lrsOf(plan).length > 0)!
+    const p: Plan = JSON.parse(JSON.stringify(c.plan))
+    const lr = lrsOf(p)[0]!; lr.lr_segment_pace = p.meta.goal_pace_per_km   // priced at the goal again
+    const codes = validatePlan(p, c.input).filter(v => v.code === 'INV-PLAN-GOAL-PACE-REACHABLE').map(v => v.expected)
+    expect(codes).toContain('the finish at current race pace')
   })
 })
 
@@ -161,7 +195,7 @@ describe('the AI layer cannot put the withheld goal pace back', () => {
   })
   it('🔴 the token in other spacing, and the literal pace, are refused too', () => {
     const lit = plan.meta.goal_pace_per_km!.match(/\d+:\d{2}/)![0]
-    for (const note of ['Hold {{ goal_pace }}.', `Hold ${lit} per km for each rep.`]) {
+    for (const note of ['Hold {{ goal_pace }}.', `Hold ${lit} per km for each rep.`, 'Hit goal pace over the last stretch.']) {
       const out = mergePlan(plan, enriched([note]), 'paid')
       expect(notesOf(out), note).toEqual(s!.coach_notes)
     }

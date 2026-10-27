@@ -27,13 +27,15 @@ already decided what it is.
 
 ---
 
-### 🔲 `GOAL-PACE-LR-CURRENT-01` — §25's long-run finish at the runner's CURRENT race pace, past the line 👤 **FOUNDER** (words), then build
+### 🔲 `EASY-RUN-ABSORBS-QUALITY-01` — an easy run that becomes a second long run 🏃 **COACHING BOARD** (Willy's seat: load shape)
 
-The 10-27 ruling's measured arm (McMillan). Past the 5% line the race-pace long-run finish is withheld today. Prototyped
-2026-10-27: a finish at current marathon / HM pace adds **0 violations** on the cohort sample and the slow-goal grid and
-leaves `measure:fitness` identical, so it passes the ruling's test, and it would restore §47's step-back alternation for
-those marathoners. Blocked only on copy: both rows' voice says "goal pace" (*"Hit goal pace on tired legs"*, *"Final third
-at HM goal pace"*), which would be false. Needs the founder's words for a current-pace finish.
+Found 2026-10-27 while measuring GOAL-PACE-LR-CURRENT-01's ramp tail. When a week's quality session is shorter than its
+share (a 50-minute goal-pace session becoming a 36-minute threshold one), the week's volume target holds and §8 Am.'s
+rule sends the difference to the easy runs: one HM beginner at 20 km/week on 3 days gets a **92-minute Friday easy run
+beside a 134-minute long run**. ⚠️ **Not new and not small:** on the cohort sample, **235 of 1,377 time-target plans**
+(4,020 weeks) already had an easy run of 75+ minutes that is at least 60% of that week's long run before 2026-10-27;
+today's changes moved it by 0.5% (4,042 weeks). No invariant asks whether the residual makes a second long run. The board
+rules whether freed volume may concentrate in one easy run, and the cap if not.
 
 ---
 

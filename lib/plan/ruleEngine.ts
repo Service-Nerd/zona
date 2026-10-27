@@ -2006,14 +2006,27 @@ function makeQualitySession(args: {
 // Race-specific long run (CoachingPrinciples §5, §25). Easy-first, then
 // race-pace segment. Used for HM and marathon peak. Catalogue row carries
 // label, voice, and segment ratios; goalPace is appended to the coach note.
+// GOAL-PACE-LR-CURRENT-01 — founder's words, 2026-10-27. The §25 finish run at the pace the runner could race today.
+const CURRENT_PACE_LR_VOICE = {
+  MARATHON: 'Easy first. Finish at the marathon pace you could run today, on tired legs.',
+  HM: 'Easy first. Final third at the half pace you could run today.',
+} as const
+
 function raceSpecificLongRunSession(
   weekN: number, day: Day, distKm: number,
   metric: 'distance' | 'duration',
   zones: ZoneTargets, pace: PaceGuide,
   catalogueRow: SessionCatalogueRow,
   goalPace: string,
+  // GOAL-PACE-LR-CURRENT-01 — set (to the race distance) when the segment is the runner's CURRENT race pace because the
+  // goal is past the §120 Am. 2 line, so the row's own voice ("goal pace") would be false. `goalPace` above then holds
+  // that current pace. Keyed by the distance the CALLER already knows, never inferred, so a half can never get the
+  // marathon line by default.
+  currentPaceFor?: 'MARATHON' | 'HM',
 ): Session {
-  const voice = catalogueRow.coach_voice_notes ?? 'Easy first. Hit goal pace on tired legs.'
+  const voice = currentPaceFor
+    ? CURRENT_PACE_LR_VOICE[currentPaceFor]
+    : catalogueRow.coach_voice_notes ?? 'Easy first. Hit goal pace on tired legs.'
   // §25 AMENDMENT 1 — the segment size comes from the ROW, not from a string
   // typed at the call site. It used to be a literal argument: 'Final 30–50% at
   // MP' for marathon and 'Final third at HM pace' for HM. Three consequences,
@@ -3288,13 +3301,24 @@ function buildWeekSessions(
       if (placed >= GENERATION_CONFIG.RACE_PACE_LR_BUILD_WEEKS) break
     }
   }
-  // §120 Amendment 2 — §25's race-pace finish is goal-paced work too, and is not prescribed past the line.
-  const useRaceSpecificLR = (phase === 'peak' || inRacePaceBuildWindow) && !isDeload && goalPace && !pace.goalWithheld
+  // §120 Amendment 2 + GOAL-PACE-LR-CURRENT-01 (Coaching Board 2026-10-27, McMillan's arm; founder's words) — past the
+  // reachability line §25's finish is run at the runner's CURRENT marathon / HM pace, never the goal. Measured: 0 new
+  // violations on the cohort sample and the slow-goal grid; it keeps §47's step-back alternation, which applies only to
+  // race-paced long runs; `measure:fitness` and cohort shape re-baselined with the declared movement (masters marathon
+  // peak long run 64 -> 62.8% of race, its value before §120 Am. 2). A withheld plan is always benchmarked, so its pace
+  // guide always carries MP/HM: every benchmarked HM/MAR runner, declared beginners included, got this session at GOAL
+  // pace before 2026-10-27 (100% on the slow-goal grid), and now gets it at the pace they could run today.
+  const lrSegPace: string | null = !goalPace ? null
+    : !pace.goalWithheld ? goalPace
+    : distKey === 'MARATHON' ? pace.marathonPaceStr
+    : distKey === 'HM' ? pace.hmPaceStr
+    : null
+  const useRaceSpecificLR = (phase === 'peak' || inRacePaceBuildWindow) && !isDeload && lrSegPace
   if (useRaceSpecificLR && distKey === 'MARATHON') {
     const mpRow = catalogue.find(r => r.id === 'mp_long_run')
     if (mpRow && (tier !== 'free' || mpRow.is_free_tier)) {
       sessions[longDay] = raceSpecificLongRunSession(
-        weekN, longDay, longKm, metric, zones, pace, mpRow, goalPace
+        weekN, longDay, longKm, metric, zones, pace, mpRow, lrSegPace!, pace.goalWithheld ? 'MARATHON' : undefined
       )
     } else {
       sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)
@@ -3303,7 +3327,7 @@ function buildWeekSessions(
     const hmRow = catalogue.find(r => r.id === 'hm_pace_long_run')
     if (hmRow && (tier !== 'free' || hmRow.is_free_tier)) {
       sessions[longDay] = raceSpecificLongRunSession(
-        weekN, longDay, longKm, metric, zones, pace, hmRow, goalPace
+        weekN, longDay, longKm, metric, zones, pace, hmRow, lrSegPace!, pace.goalWithheld ? 'HM' : undefined
       )
     } else {
       sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)

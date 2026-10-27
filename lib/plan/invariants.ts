@@ -8857,6 +8857,21 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             `Goal pace was withheld (${withheld.gap_pct}% past fitness) and ${sn.label ?? 'a session'} still prescribes it.`, w.n)
         }
       }
+      // GOAL-PACE-LR-CURRENT-01 — and a §25 race-pace long run that IS there runs at the runner's CURRENT race pace for
+      // this distance: within REHEARSAL tolerance of Daniels' race estimate at the decision's VDOT. Catches the segment
+      // being priced at threshold, at easy, or at the other distance's race pace.
+      if (reach && goalMid != null) {
+        const racePace = estimateRaceSeconds(reach.vdot, input.race_distance_km) / input.race_distance_km / 60
+        const tolR = GENERATION_CONFIG.GOAL_PACE_REHEARSAL_TOLERANCE_PCT / 100
+        for (const w of plan.weeks) for (const sn of Object.values(w.sessions)) {
+          if (!sn || w.n < fromWeek || (sn.catalogue_id !== 'mp_long_run' && sn.catalogue_id !== 'hm_pace_long_run')) continue
+          const seg = sn.lr_segment_pace ? parsePaceMidpoint(sn.lr_segment_pace) : null
+          if (seg == null || Math.abs(seg - racePace) / racePace > tolR) {
+            push(`${sn.label}: segment ${sn.lr_segment_pace ?? 'none'}`, 'the finish at current race pace',
+              `Goal pace was withheld, so this long run's finish must be the runner's current race pace for ${input.race_distance_km} km, and ${sn.lr_segment_pace ?? 'no segment'} is not.`, w.n)
+          }
+        }
+      }
       if (!hasGoalGapSentence(plan.meta.difficulty_note)) {
         push(`difficulty_note: ${plan.meta.difficulty_note ?? '(none)'}`, 'the gap named',
           'Goal pace was withheld and the plan does not tell the runner why. The gap must be named (§120 Am. 2, Sims).')

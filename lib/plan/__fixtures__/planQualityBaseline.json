@@ -6,12 +6,12 @@
     "WEEK1-LEAP": 284
   },
   "cohortGrid": {
-    "generated": 2872,
-    "refused": 128,
-    "NEVER-BUILDS": 1090,
-    "BINGE-WEEK": 289,
-    "WEEK1-LEAP": 22,
-    "LONG-RUN-SHORT": 21,
+    "generated": 2874,
+    "refused": 126,
+    "NEVER-BUILDS": 1093,
+    "BINGE-WEEK": 287,
+    "WEEK1-LEAP": 24,
+    "LONG-RUN-SHORT": 20,
     "BINGE-SEVERE-75": 19,
     "FLAT-CURVE": 3
   },

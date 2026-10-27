@@ -699,6 +699,9 @@ export interface WeekCopyRejection {
  *  "m:ss" the plan stores? §120 Am. 2's merge guard. */
 export function quotesGoalPace(note: string, goalPacePerKm: string | null | undefined): boolean {
   if (/\{\{\s*goal_pace\s*\}\}/i.test(note)) return true
+  // The words, too: on a withheld plan the engine prescribes no goal-pace work, so "hit goal pace" in AI copy is an
+  // instruction the plan contradicts (code review: the current-pace long run is exactly where the model writes it).
+  if (/\b(goal|target|race)[ -]pace\b/i.test(note)) return true
   const literal = goalPacePerKm?.match(/\d+:\d{2}/)?.[0]
   return !!literal && new RegExp(`(^|[^\\d])${literal}([^\\d]|$)`).test(note)
 }

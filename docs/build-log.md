@@ -490,6 +490,15 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** The neutral words, "Easy run done." and "Next one when you're ready.", are mine. They need the founder's sign-off.
 
 ---
+## 2026-10-27 — GOAL-PACE-LR-CURRENT-01 · The long run keeps its finish, at a pace the runner has
+**Shipped:** a marathoner or half-marathoner whose goal is past the line still finishes their peak long runs at race pace, the race pace they could run today.
+**Dev learning:** withholding the finish had quietly switched off §47's step-back weeks, because that rule only alternates race-paced long runs. Putting the finish back at current pace restored them, and also moved two refused runners onto §111's ceiling exactly. A change to a peak session can move who gets a plan at all.
+**Product/creator learning:** the founder's words carry the whole idea: "the marathon pace you could run today".
+**AI-building learning:** my per-plan probe compared which findings each plan had, not how many, and could not see two plans that had not existed before. The audit's totals showed it; the probe agreed once it counted built plans.
+**The honest bit:** I wrote a test claiming beginners get no finish; the engine decides from benchmark and volume, not the declared level. I deleted the arm instead of encoding a wrong rule.
+**Hook material:** "Two runners went from 'not yet' to a plan because their peak week dropped 3 km."
+**Postable?:** maybe
+
 
 ## 2026-10-22 — HR-LATE-STAMP-01 · the column said one thing and the code another
 **Shipped:** When a watch's heart rate lands after the run has already synced, we now record when it landed, every time. Before, we only recorded it when it was more than a day late.

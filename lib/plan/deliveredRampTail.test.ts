@@ -153,7 +153,12 @@ const TRIMABLE_BASELINE: Record<Segment, { p99: number; max: number }> = {
   // HEAD were weeks whose structured quality session was priced at WORK pace for its whole duration (warm-up and jogs
   // included). Sized from its steps they are not ramps at all. healthy_standard 142 → 138 firings, p99 94 → 53,
   // max 94 → 61; masters 174 → 168 firings, p99 78, max 79 (unchanged); injury unchanged.
-  healthy_standard: { p99: 53, max: 61 },
+  // GOAL-PACE-LR-CURRENT-01 (2026-10-27), raised p99 53 -> 58 with the measurement, told to the founder as Willy asked:
+  // restoring §47's step-back for withheld marathon/HM plans puts a 25 km step-back week before a 34 km peak week, so the
+  // week AFTER the step-back carries the rise (one HM runner at 20 km/week, 3 days: +58% non-long-run in W13). Weekly
+  // volume is unchanged against the commit before §120 Am. 2; the absorbing session is an easy run, a pattern that
+  // already existed in 235 of 1,377 time-target plans before today (filed: EASY-RUN-ABSORBS-QUALITY-01). Max unchanged.
+  healthy_standard: { p99: 58, max: 61 },
   // GOALPACE-5K-01 (2026-10-23), raised 59 → 78 with the measurement, not to go green: on a goal-paced week a
   // 5K intermediate's continuous tempo (6 km) becomes a rep row sized by the existing threshold work band
   // (`tempo_cruise_short`, 8 km), in the same week a fourth run day is added. 2 of 1,200 masters plans

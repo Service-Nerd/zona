@@ -1,23 +1,23 @@
 {
   "attempted": 41472,
-  "generated": 39632,
-  "refused": 1840,
+  "generated": 39640,
+  "refused": 1832,
   "failed": 0,
   "maintenancePct": 57.4,
-  "constrainedByInputsPct": 20.5,
+  "constrainedByInputsPct": 20.6,
   "volumeConstrainedPct": 23.8,
   "timeCompressedPct": 0,
-  "constraintNotePct": 72.1,
+  "constraintNotePct": 72.2,
   "meanQualityPerBuildWeek": 0.62,
   "plansWithNoQualityPct": 17.4,
-  "meanDeliveredPeakKm": 40.18,
+  "meanDeliveredPeakKm": 40.14,
   "meanPlanWeeks": 14.34,
-  "earlyQualityOnsetPct": 7.8,
+  "earlyQualityOnsetPct": 7.7,
   "difficultyComfortablePct": 20.5,
   "maintenanceByDistance": {
     "5": 56.2,
     "10": 54.3,
-    "21.1": 49,
+    "21.1": 49.1,
     "42.2": 72.7
   }
 }
