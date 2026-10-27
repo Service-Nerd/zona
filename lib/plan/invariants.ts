@@ -8847,8 +8847,10 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // A STARTED plan brought onto the rule is patched from a week onward (`from_week`); the weeks before it are the
       // runner's history and keep what they were given.
       const fromWeek = reach?.from_week ?? -Infinity
+      // …and so are any future weeks the runner chose to keep (they had moved sessions there; `kept_weeks`).
+      const kept = new Set(reach?.kept_weeks ?? [])
       for (const w of plan.weeks) for (const [day, sn] of Object.entries(w.sessions)) {
-        if (!sn || w.n < fromWeek) continue
+        if (!sn || w.n < fromWeek || kept.has(w.n)) continue
         // The STAMPED stimulus, never `classifyStimulus`: its legacy label fallback reads "marathon pace + HM-pace
         // finish" on a fitness-paced long run as race pace (493 false firings on the cohort sample). And a segment only
         // counts if it is priced at the goal: §24b's 5K/10K variants carry segments at the runner's CURRENT paces.
@@ -8864,7 +8866,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         const racePace = estimateRaceSeconds(reach.vdot, input.race_distance_km) / input.race_distance_km / 60
         const tolR = GENERATION_CONFIG.GOAL_PACE_REHEARSAL_TOLERANCE_PCT / 100
         for (const w of plan.weeks) for (const sn of Object.values(w.sessions)) {
-          if (!sn || w.n < fromWeek || (sn.catalogue_id !== 'mp_long_run' && sn.catalogue_id !== 'hm_pace_long_run')) continue
+          if (!sn || w.n < fromWeek || kept.has(w.n) || (sn.catalogue_id !== 'mp_long_run' && sn.catalogue_id !== 'hm_pace_long_run')) continue
           const seg = sn.lr_segment_pace ? parsePaceMidpoint(sn.lr_segment_pace) : null
           if (seg == null || Math.abs(seg - racePace) / racePace > tolR) {
             push(`${sn.label}: segment ${sn.lr_segment_pace ?? 'none'}`, 'the finish at current race pace',

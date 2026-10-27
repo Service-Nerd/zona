@@ -620,7 +620,7 @@ export interface PlanMeta {
   goal_pace_withheld?: { gap_pct: number }
   /** §120 Amendment 2 — the withholding DECISION, recorded on every benchmarked time-target plan built since 2026-10-27,
    *  with the VDOT it was made at. Absent on older plans, which is how the validator tells them apart. */
-  goal_pace_reach?: { gap_pct: number; vdot: number; /** set only when a STARTED plan is patched: the decision applies from this week, and earlier weeks keep what the runner was given */ from_week?: number }
+  goal_pace_reach?: { gap_pct: number; vdot: number; /** set only when a STARTED plan is patched: the decision applies from this week, and earlier weeks keep what the runner was given */ from_week?: number; /** future weeks the runner kept as they were (moved sessions), treated like history */ kept_weeks?: number[] }
   recalibration_weeks?: number[]          // week numbers where a benchmark re-test is scheduled
   recalibrations_applied?: number[]       // PV2-H — recalibration weeks whose TT result has been applied (so the prompt fires once)
   benchmark?: BenchmarkInput              // stored so recalibration can reference original

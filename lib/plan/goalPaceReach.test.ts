@@ -170,6 +170,15 @@ describe('INV-PLAN-GOAL-PACE-REACHABLE fires in every direction', () => {
     Object.values(late.sessions).find(s => s?.type === 'quality')!.stimulus = 'race_pace'
     expect(hits(p, pastCase.input)).toContain('no goal-pace work past the line')
   })
+  it('🔴 a week the runner KEPT (kept_weeks) keeps its goal-pace work; the same week not kept is caught', () => {
+    const p = copy(pastCase.plan)
+    const qw = p.weeks.filter(w => Object.values(w.sessions).some(s => s?.type === 'quality'))
+    const mid = qw[Math.floor(qw.length / 2)]!
+    Object.values(mid.sessions).find(s => s?.type === 'quality')!.stimulus = 'race_pace'
+    expect(hits(p, pastCase.input)).toContain('no goal-pace work past the line')
+    p.meta.goal_pace_reach = { ...p.meta.goal_pace_reach!, kept_weeks: [mid.n] }
+    expect(hits(p, pastCase.input)).not.toContain('no goal-pace work past the line')
+  })
   it('a plan built BEFORE the rule (no record, no stamp, past the line) is not called a defect', () => {
     const p = copy(pastCase.plan); delete p.meta.goal_pace_reach; delete p.meta.goal_pace_withheld
     expect(hits(p, pastCase.input)).toEqual([])

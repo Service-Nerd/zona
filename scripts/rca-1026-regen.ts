@@ -27,6 +27,12 @@ import type { Plan, GeneratorInput, Session } from '../types/plan'
 const APPLY = process.argv.includes('--apply')
 const LIST = process.argv.includes('--list')
 const ALLOW_ADMIN = process.argv.includes('--allow-admin')
+// --allow-calendar-move: a NOT-STARTED rebuild may take the engine's new calendar (founder, 2026-10-27). Never a patch.
+const ALLOW_CAL = process.argv.includes('--allow-calendar-move')
+// --keep-weeks 6,7: future weeks left exactly as they are (the runner moved sessions there). Recorded on the decision
+// so INV-PLAN-GOAL-PACE-REACHABLE treats them as the runner's own, like the weeks before `from_week`.
+const KEEP_WEEKS = process.argv.includes('--keep-weeks')
+  ? process.argv[process.argv.indexOf('--keep-weeks') + 1].split(',').map(Number).filter(Number.isFinite) : []
 const PLAN_ID_PREFIX = process.argv.includes('--plan') ? process.argv[process.argv.indexOf('--plan') + 1] : undefined
 const TODAY = new Date().toISOString().slice(0, 10)
 
@@ -122,14 +128,27 @@ async function one(row: { id: string; user_id: string; plan_json: unknown }, qui
   const hrMoved = (['max_hr', 'resting_hr', 'max_hr_source'] as const).filter(k => input[k] !== gi[k])
   log(`Heart rate  from profile: max ${input.max_hr} (${input.max_hr_source ?? 'unstated'}), resting ${input.resting_hr}${hrMoved.length ? `  · differs from the stored answers on ${hrMoved.join(', ')}` : ''}`)
   const tier = (meta.tier === 'paid' ? 'paid' : meta.tier === 'free' ? 'free' : 'trial') as 'free' | 'trial' | 'paid'
-  const fresh = composePlanWithFoundation(generateRulePlan(input, tier, planStart, undefined, planStart), input, planStart, 'add').plan
-  const sameCalendar = JSON.stringify(fresh.weeks.map(w => [w.n, w.date])) === JSON.stringify(plan.weeks.map(w => [w.n, w.date]))
-  if (!sameCalendar) throw new Error('refused: the fixed engine moves the calendar')
-
+  // ⚠️ THE FOUNDATION BLOCK IS COMPOSED FROM THE DAY IT STARTS, not from the plan start. `composePlanWithFoundation`
+  // sizes the runway from (today -> plan start); passing the plan start as "today" gave a 0-day gap and NO foundation
+  // weeks, so every plan with a runway read as "the engine moves the calendar" (2026-10-27: a91d8fde and 3cc7c3a9 were
+  // refused for exactly this, and the founder was asked to approve a move that was the script's own artefact). The
+  // stored block's first week is the "today" it was built for, so composing from it reproduces the same runway.
+  const storedFoundation = plan.weeks.filter(w => w.n <= 0)
+  const composeToday = storedFoundation.length ? String(storedFoundation[0].date) : planStart
+  const fresh = composePlanWithFoundation(generateRulePlan(input, tier, planStart, undefined, planStart), input, composeToday, 'add').plan
   const notStarted = planStart > TODAY && !completionWeeks.length && !analysisWeeks.length && !overrideWeeks.length
     && runsInBlock === 0 && meta.enrichment !== 'applied'
   const MODE: 'rebuild' | 'patch' = notStarted ? 'rebuild' : 'patch'
   log(`Mode        ${MODE}`)
+  const sameCalendar = JSON.stringify(fresh.weeks.map(w => [w.n, w.date])) === JSON.stringify(plan.weeks.map(w => [w.n, w.date]))
+  if (!sameCalendar) {
+    if (MODE !== 'rebuild' || !ALLOW_CAL) throw new Error('refused: the fixed engine moves the calendar' + (MODE === 'rebuild' ? ' (pass --allow-calendar-move for a not-started plan)' : ''))
+    const span = (p: Plan) => { const ws = p.weeks; return `${ws.length} weeks, ${ws[0]?.date} → ${ws[ws.length - 1]?.date}` }
+    const fm0 = fresh.meta as unknown as Record<string, unknown>
+    if (String(fm0.race_date) !== String(raceDate)) throw new Error('refused: the rebuild changes the race date')
+    if (String(fresh.weeks[0]?.date) < TODAY) throw new Error('refused: the rebuilt plan would start in the past')
+    log(`Calendar    MOVES (allowed): ${span(plan)}  →  ${span(fresh)}`)
+  }
   let candidate: Plan
   if (MODE === 'rebuild') {
     const refusal = regenRefusalReason({
@@ -142,7 +161,8 @@ async function one(row: { id: string; user_id: string; plan_json: unknown }, qui
     candidate = fresh
   } else {
     // A week is open to change only if it has not begun.
-    const future = new Set(plan.weeks.filter(w => w.date > TODAY).map(w => w.n))
+    const future = new Set(plan.weeks.filter(w => w.date > TODAY && !KEEP_WEEKS.includes(w.n)).map(w => w.n))
+    if (KEEP_WEEKS.length) log(`Kept        weeks ${KEEP_WEEKS.join(', ')} left exactly as they are`)
     candidate = JSON.parse(JSON.stringify(plan)) as Plan
     for (const w of candidate.weeks) {
       if (!future.has(w.n)) continue
@@ -170,7 +190,7 @@ async function one(row: { id: string; user_id: string; plan_json: unknown }, qui
       if (fm[k] === undefined) delete cm[k]; else cm[k] = fm[k]
     }
     const firstFuture = Math.min(...Array.from(future))
-    if (fm.goal_pace_reach) cm.goal_pace_reach = { ...(fm.goal_pace_reach as object), ...(Number.isFinite(firstFuture) ? { from_week: firstFuture } : {}) }
+    if (fm.goal_pace_reach) cm.goal_pace_reach = { ...(fm.goal_pace_reach as object), ...(Number.isFinite(firstFuture) ? { from_week: firstFuture } : {}), ...(KEEP_WEEKS.length ? { kept_weeks: KEEP_WEEKS } : {}) }
     else delete cm.goal_pace_reach
     const touched = candidate.weeks.filter(w => canon(w.sessions) !== canon(plan.weeks.find(o => o.n === w.n)!.sessions)).map(w => w.n)
     const clash = [...completionWeeks, ...analysisWeeks, ...overrideWeeks].filter(n => touched.includes(n))
@@ -181,9 +201,14 @@ async function one(row: { id: string; user_id: string; plan_json: unknown }, qui
   const before = errCodes(plan), after = errCodes(candidate)
   log(`Checks      before: ${before.length ? before.join(', ') : 'clean'}`)
   log(`            after:  ${after.length ? after.join(', ') : 'clean'}`)
-  log(`Calendar    ${plan.weeks.length} → ${candidate.weeks.length} weeks, same dates: yes`)
+  log(`Calendar    ${plan.weeks.length} → ${candidate.weeks.length} weeks, same dates: ${sameCalendar ? 'yes' : 'NO (allowed)'}`)
   if (after.length && process.env.GP_DEBUG) for (const v of validateReshapedPlan(candidate).filter(v => v.severity === "error")) log("   ", v.code, "W" + v.week, String(v.message).slice(0, 400))
-  if (after.length) throw new Error('refused: result does not validate clean')
+  // The only errors allowed through are ones that live ENTIRELY in weeks the founder chose to keep (--keep-weeks): those
+  // weeks are left as they were, defects included, by decision. Anything else, or anything plan-wide, still refuses.
+  const afterErrs = validateReshapedPlan(candidate).filter(v => v.severity === 'error')
+  const outsideKept = afterErrs.filter(v => !KEEP_WEEKS.includes(Number(v.week)))
+  if (outsideKept.length) throw new Error('refused: result does not validate clean')
+  if (afterErrs.length) log(`Carried     ${afterErrs.length} error(s) in kept weeks only: ${afterErrs.map(v => `${v.code} W${v.week}`).join(', ')}`)
 
   log(`\nChanged sessions (before → after):`)
   let changed = 0
