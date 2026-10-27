@@ -27,17 +27,13 @@ already decided what it is.
 
 ---
 
-### 🔲 `S9-RATIO-MINUTES-01` — §9's long-vs-easy ratio is never checked on a duration-anchored plan 🏃 **COACHING BOARD** (ruled 2026-10-27, CORRECT WITH AMENDMENT; build next)
+### 🔲 `S9-RESIDUAL-STATED-01` — a week cut to keep §9's ratio says nothing about the minutes it lost 🏃 **COACHING BOARD** (§40c reach)
 
-From the `EASY-RUN-ABSORBS-QUALITY-01` sitting (Q1, an easy-run cap: INCORRECT, closed; the item's "piles into one run"
-mechanism measured false). `LONG_RUN_MIN_RATIO_VS_EASY` (1.25) runs in km only, in the producer and in
-`INV-PLAN-LONG-IS-LONGEST`, so beginners (duration-anchored) are never checked: **116 of 2,874** cohort plans breach,
-worst 0.99 (k602: a 157-min long run and two 156-min easy runs); 66 of 1,500 targeted; **2 of 29 live**. Build: the
-ratio binds in minutes on duration-anchored sessions; redistribute in minutes; the long run grows only within §45, §9's
-cap and §52 (Willy, binding), else hold easy at long ÷ 1.25 and drop and state the residual (§40c). Artifacts: §9 Am. 2,
-no new numeric, a minutes arm on `INV-PLAN-LONG-IS-LONGEST` falsified on k602. Gates: `measure:fitness` `neverBuildsPct`
-0; beginner weekly minutes before/after declared; `cohort:shape`; `verify:parity` moves duration-anchored plans only.
-Not traced yet: why k602's long run stops at 157 of 210 minutes.
+Found building S9-RATIO-MINUTES-01. When a pass shortens the long run, §9 holds the easy runs at long ÷ 1.25 and the
+difference is dropped silently, in km plans as it always was and now in minutes plans too. Measured on the parity grid:
+0.2–0.7% of a changed plan's minutes, worst week −36% (a 100K week that had spiked +136%). §40c says a suppressed target
+is stated; whether a per-week shortfall of this size is a "target" the runner was shown is the question. Measure how
+many weeks lose more than §40c's own materiality before a sitting.
 
 ---
 

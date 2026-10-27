@@ -1456,6 +1456,41 @@ VO2MAX-MAIN-SET-CAP 73, GOAL-PACE-SHAPE 122, MAIN-SET-ORDERING 1 → **all 0**; 
 **Config.** `GENERATION_CONFIG.QUALITY_FLOOR_MINS = 35`. **Check.** `INV-PLAN-MIN-SESSION-SIZE` accepts either form;
 `lib/plan/qualityFloorMinutes.test.ts`; one owner, `meetsQualityFloor` (`sessionFormat.ts`), for the two builders that grow a session to its floor. **Not settled:** the easy floor (`S9-EASY-MINUTES-01`), §52b's unit, and three paths the floor does not yet reach (`S9-QUALITY-FLOOR-REACH-01`: progressive tempo, the v1 distance budget, the secondary target).
 
+### §9 Amendment 2 — the long-vs-easy ratio binds in the plan's own unit *(Coaching Board 2026-10-27, S9-RATIO-MINUTES-01)*
+
+**Principle.** On a duration-anchored session, `LONG_RUN_MIN_RATIO_VS_EASY` binds in **minutes**: the long run is at
+least 1.25× every easy run's minutes. Where a pass shortens the long run, the easy runs beside it are held at
+long ÷ 1.25 and the minutes removed are **not** moved into the long run: it grows only as far as §45, §9's minute cap
+and §52 already allow (Willy, binding). An easy run longer than its §9 ceiling is cut; it is never the long run's job
+to absorb it.
+
+**Why.** §9 was written in distance because it predates duration-anchored plans, and every check and clamp of it read
+`distance_km`. Beginners (95.8% of their sessions) and every ultra (§79/§80) carry minutes and no km, so for them the
+rule never ran: 116 of 2,874 cohort plans breached, worst a marathon beginner with a 157-min long run beside two
+156-min "easy" runs; ultras on the parity grid had easy runs up to **1.5×** the long run. §9 Amendment 1 already ruled
+that a session's size is a question about time on feet; this applies the same reading to the ratio.
+
+**What the build found, and fixed in the same commit.** Four producers, one class: a long-run pass that reads a
+duration-anchored session's km at its **own** pace band (`sessionKmSelfPaced`) and writes minutes back at the
+**plan's** easy pace. (1) §45's progression cap clamped easy runs in km only and skipped every minutes easy run (the
+§47 step-back pass had already fixed its own copy). (2) The peak step-back re-clamp built its ratio floor through that
+round trip and landed under 1.25 (165 vs 133). (3) V4's repeat "increment" and (4) the deload long-run "raise" each
+came out **shorter** on the minutes axis (420 → 416, 312 → 308 min). Each now acts on the axis the session uses, and
+an increment or raise that would shorten is a no-op.
+
+**Measured (parity grid, `HEAD` → this build).** 281 of 6,102 cases change, all duration-anchored: 244 ultras and 37
+beginner road plans (5K 12, 10K 13, marathon 12); no intermediate or experienced road plan moves (main grid, by level). Minutes removed per changed plan 7–50
+(**0.2–0.7%** of the plan). The worst single week loses 36% (a 100K week 3 going 95 → 144 min where it had gone
+95 → 224, a +136% spike). `measure:fitness`, `cohort:shape` and the use-case envelope pass on their baselines; the
+property sweep (17,415 plans) has no new violation. Live: 2 of 29 plans carried the breach, one of them a test account.
+
+**Config.** No new numeric: `LONG_RUN_MIN_RATIO_VS_EASY` (1.25). **Check.** `INV-PLAN-LONG-IS-LONGEST-MINS` (error):
+the tolerance is the rounding bound of two whole-minute values (`0.5 × ratio + 0.5`), not a margin; a minutes long run
+beside a km easy run is not compared (the checker has no pace); on a reshape it is enforced on the week touched only,
+because a stored plan can carry a breach the reshape did not cause. `lib/plan/s9RatioMinutes.test.ts`. **Not
+settled:** the residual is cut silently, as the km clamps already were. No note says a week came in shorter than its
+volume target, and none did before for distance-anchored plans (§40c reach, unmeasured).
+
 ### §9 — RECORDED STRUCTURAL FINDING: three principles size the long run and the engine obeys the loosest (2026-09-19, PLAN-QUALITY-AUDIT-01)
 
 **This is not a rule change. It is a contradiction in the constitution, measured, written down so it is not rediscovered.**

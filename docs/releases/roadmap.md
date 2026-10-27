@@ -1131,7 +1131,8 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | ~~**Goal-pace work only while the goal is within 5% of fitness**~~ (GOAL-PACE-REACHABLE-01) | ✅ | M | **SHIPPED 2026-10-27.** 2,017 of 2,017 withheld grid plans name the gap; 0 new violations; finish-goal and unbenchmarked plans unchanged. |
 | ~~**§25 finish at current race pace, past the line**~~ (GOAL-PACE-LR-CURRENT-01) | ✅ | S | **SHIPPED 2026-10-27**, founder's words; restores §47's step-back for withheld marathoners. |
 | ~~**An easy run that becomes a second long run**~~ (EASY-RUN-ABSORBS-QUALITY-01) | ✅ | S | **RULED 2026-10-27: no cap** (mechanism measured false). |
-| **§9 ratio unchecked on beginner plans** (S9-RATIO-MINUTES-01) | 🔲 | M | Board ruled CORRECT WITH AMENDMENT; 116 of 2,874 plans, 2 live. |
+| **A §9 cut says nothing about the minutes it lost** (S9-RESIDUAL-STATED-01) | 🔲 | S | Board (§40c). Measure first. |
+| ~~**§9 ratio unchecked on beginner plans**~~ (S9-RATIO-MINUTES-01) | ✅ | M | **SHIPPED 2026-10-27**, §9 Am. 2; beginners and ultras. |
 | ~~**Race day for a runner whose goal pace was withheld**~~ (RACE-DAY-PACE-WITHHELD-01) | ✅ | S | **SHIPPED 2026-10-27**, §80 Am. 2, founder's words. |
 | **Race-week note shown nowhere** (RACE-NOTES-INERT-01) | 🔲 | S | Design Board (render) or retire. |
 | **Recalibration does not re-decide the withholding** (RECAL-GOAL-REACH-01) | 🔲 | S | Board. |

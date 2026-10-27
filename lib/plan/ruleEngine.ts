@@ -4785,8 +4785,17 @@ function reclampPeakStepBacks(
       if (s.distance_km > bound) { s.distance_km = bound; s.duration_mins = dur(bound, pace.minPerKmEasy) }
     } else if (s.duration_mins != null) {
       if (peakMinsFinal <= 0) continue
+      // S9-RATIO-MINUTES-01 — the ratio floor read on the axis the easy runs use.
+      // Converting them to km (self-paced) and back (plan pace) rounded under the
+      // ratio: measured 165 min against a 133-min easy run, 1.24. This only RAISES
+      // the bound, so the long run is trimmed less and never grown.
+      const easyMins = Object.values(w.sessions ?? {})
+        .filter((x): x is Session => !!x && x !== s && x.type === 'easy' && !isLongRun(x) && x.distance_km == null)
+        .map(x => x.duration_mins)
+        .filter((m): m is number => m != null)
+      const ratioFloorMins = easyMins.length ? Math.ceil(Math.max(...easyMins) * minRatio) : 0
       const bound = Math.max(Math.round(peakMinsFinal * pct), Math.round(dur(minLong, pace.minPerKmEasy)),
-        Math.round(dur(ratioFloorKm, pace.minPerKmEasy)))
+        Math.round(dur(ratioFloorKm, pace.minPerKmEasy)), ratioFloorMins)
       if (s.duration_mins > bound) s.duration_mins = bound
     }
     w.weekly_km = sumWeeklyKm(w.sessions, pace)
@@ -5100,11 +5109,28 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide, floors: Sess
       const minEasy = floors.easy
       const easyCeiling = newKm / minRatio
       const easyCeilingFloored = Math.floor(easyCeiling / precision) * precision
+      // S9-RATIO-MINUTES-01 (§9 Amendment 2) — a duration-anchored easy run is
+      // clamped in MINUTES from the capped long run's minutes. This loop used to
+      // `continue` past every one of them, so the cap shortened a beginner's long
+      // run after a deload and left the easy runs beside it untouched: measured
+      // 157 min against two 156-min "easy" runs, 116 of 2,874 cohort plans. The
+      // §47 step-back pass already did this (its "fourth gate" note); this is the
+      // twin. Floored, so the ratio holds after rounding, and never below the
+      // runner's easy floor. The minutes removed are not moved anywhere: the long
+      // run may not grow past §45 to absorb them (Willy, binding).
+      const lrMins = currLR.session.distance_km == null ? currLR.session.duration_mins : null
+      const easyCeilingMins = lrMins != null ? Math.floor(lrMins / minRatio) : null
+      const minEasyMins = dur(minEasy, pace.minPerKmEasy)
       for (const [d, s] of Object.entries(curr.sessions) as [Day, Session | undefined][]) {
         if (!s) continue
         if (d === currLR.day) continue
         if (s.type !== 'easy') continue
-        if (s.distance_km == null) continue
+        if (s.distance_km == null) {
+          if (easyCeilingMins != null && s.duration_mins != null && s.duration_mins > easyCeilingMins) {
+            s.duration_mins = Math.max(easyCeilingMins, minEasyMins)
+          }
+          continue
+        }
         if (s.distance_km > easyCeilingFloored) {
           const newEasy = Math.max(easyCeilingFloored, minEasy)
           s.distance_km = newEasy
@@ -6015,6 +6041,13 @@ function applyV4LongRunRepeatCeiling(
         const newLrMins = newKm * pace.minPerKmEasy
         if (newLrMins > timeCapMins) continue                      // §40/§9 absolute time cap
         if (newKm / newWeekly > lrMaxPctOfWeekly + 0.005) continue // §52 LR/weekly cap (0.005 tolerance for rounding)
+        // S9-RATIO-MINUTES-01 — an increment must lengthen the run ON THE AXIS IT
+        // USES. `dist` is self-paced (the session's own pace band) and the new
+        // minutes are priced at the plan's easy pace, so on a duration-anchored
+        // long run the "increment" could come out SHORTER: measured 420 → 416 min
+        // on a 100K plan, which then sat under §9's ratio beside a 336-min easy run.
+        if (lr.session.distance_km == null && lr.session.duration_mins != null
+            && dur(newKm, pace.minPerKmEasy) <= lr.session.duration_mins) continue
 
         // WRITE BACK TO THE ANCHOR THE SESSION ACTUALLY USES — the same
         // correction, and the same wording, as §45's cap at
@@ -7608,6 +7641,11 @@ function buildRulePlanOnce(
     // nothing caught it. A session is anchored by distance OR duration; when
     // both are set they must agree.
     const newDur = Math.round(dur(set, pace.minPerKmEasy))
+    // S9-RATIO-MINUTES-01 — this pass only RAISES, so it must raise on the axis the
+    // session uses. `currKm` is self-paced and `newDur` is priced at the plan's easy
+    // pace, so a duration-anchored "raise" could land shorter (measured 312 → 308
+    // min, under §9's ratio beside a 248-min easy run). The twin of V4's guard.
+    if (currLr.distance_km == null && currLr.duration_mins != null && newDur <= currLr.duration_mins) continue
     if (currLr.distance_km != null) { currLr.distance_km = set; currLr.duration_mins = newDur }
     else currLr.duration_mins = newDur
     curr.weekly_km = sumWeeklyKm(curr.sessions, pace)

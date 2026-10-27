@@ -87,7 +87,7 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
-## 2026-10-27 — EASY-RUN-ABSORBS-QUALITY-01 · Q1 INCORRECT (no easy-run cap) · Q2 CORRECT WITH AMENDMENT (§9 ratio in minutes) · RULED, not built (S9-RATIO-MINUTES-01)
+## 2026-10-27 — EASY-RUN-ABSORBS-QUALITY-01 · Q1 INCORRECT (no easy-run cap) · Q2 CORRECT WITH AMENDMENT (§9 ratio in minutes) · Q2 BUILT 2026-10-27 (S9-RATIO-MINUTES-01; reached 244 ultras the evidence never sampled)
 
 **Q1:** the item said volume freed from a short quality session piles into one easy run. Measured, it does not: in 72%
 of flagged weeks every easy run is that size, and the overshoot of §9's line averages 0.5 min/week. A 75-100-minute

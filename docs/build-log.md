@@ -522,6 +522,15 @@ it specific, no polish. The content system adds the voice.
 **Postable?:** maybe
 
 
+## 2026-10-27 — S9-RATIO-MINUTES-01 · The long run is the longest run, in minutes too
+**Shipped:** on a plan set in minutes (beginners, every ultra), an easy run can no longer be as long as the long run; the check that says so now exists.
+**Dev learning:** §9's 1.25 ratio was read and enforced through `distance_km` everywhere, so a duration-anchored plan was simply never asked. The first fix (the §45 cap's easy clamp) was the obvious one and the check it came with immediately found three more producers of the same class: a pass reads the long run's km at the session's own pace band (`sessionKmSelfPaced`) and writes minutes back at the plan's easy pace. Two of them were an "increment" and a "raise" that came out SHORTER (420 → 416, 312 → 308). The cohort grid could not see those: they only fired in the use-case envelope's 100K plans.
+**Product/creator learning:** the board's evidence was all beginners, because the cohort grid has no ultras. Parity said 244 of the 281 changed cases were ultras, with easy runs up to 1.5× the long run. Same rule, a population nobody had looked at.
+**AI-building learning:** I wrote the parity counts into the principle before the last two producer fixes, then re-ran parity and they had moved (271 → 281). A number in a doc is a measurement with a timestamp.
+**The honest bit:** the minutes cut are dropped, not stated: no note tells a runner a week came in under its volume target. The km clamps have always done the same.
+**Hook material:** a beginner marathon plan with a 157-minute long run and two 156-minute "easy" runs in the same week, and no rule in the engine that noticed.
+**Postable?:** yes
+
 ## 2026-10-22 — SESSION-COMPLETE-LONG-LABEL-01 · a long run is a long run on the card too
 **Shipped:** The card you see after a run, and the image you share, now say "Long run" on a long run. They said "Easy run".
 

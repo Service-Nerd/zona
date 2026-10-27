@@ -107,6 +107,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-MIN-SESSION-SIZE',
   'INV-PLAN-EMPTY-SESSION',
   'INV-PLAN-LONG-IS-LONGEST',
+  'INV-PLAN-LONG-IS-LONGEST-MINS',
   'INV-PLAN-LONG-CAP-MINS',
   'INV-PLAN-WEEK-1-2-LONG-CAP',
   'INV-INPUT-LONGEST-LE-WEEKLY',
@@ -2105,6 +2106,34 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
               week: w.n, day,
               message: `Easy run inverts long-vs-easy ratio (long ${long.session.distance_km} km vs easy ${session.distance_km} km, min ratio ${minRatio})`,
               actual: long.session.distance_km / session.distance_km,
+              expected: `≥ ${minRatio}`,
+            })
+          }
+        }
+      }
+      // INV-PLAN-LONG-IS-LONGEST-MINS — the same rule in MINUTES, for a week whose
+      // long run and easy run are both duration-anchored (§9 Amendment 2,
+      // S9-RATIO-MINUTES-01). The km arm above skips any session without
+      // `distance_km`, which is every beginner session (95.8%), so §9 was never
+      // checked for them: measured 116 of 2,874 cohort plans, worst a 157-min
+      // long run beside two 156-min easy runs. Its own code so a reshape can
+      // scope it to the week it touched (`validateReshapedPlan`).
+      // Tolerance is the rounding bound of two whole-minute values, not a margin:
+      // the easy run's half-minute scaled by the ratio, plus the long run's.
+      // A long run in minutes beside an easy run in km is not compared: the two
+      // axes need a pace, and the checker has none (negative space, stated).
+      if (long?.session.distance_km == null && long?.session.duration_mins != null) {
+        const roundingMins = 0.5 * minRatio + 0.5
+        for (const { day, session } of easies) {
+          if (session.distance_km != null || session.duration_mins == null) continue
+          if (session.duration_mins * minRatio > long.session.duration_mins + roundingMins) {
+            violations.push({
+              code: 'INV-PLAN-LONG-IS-LONGEST-MINS',
+              principle_ref: 'CoachingPrinciples §9 Amendment 2',
+              severity: 'error',
+              week: w.n, day,
+              message: `Easy run inverts long-vs-easy ratio in minutes (long ${long.session.duration_mins} min vs easy ${session.duration_mins} min, min ratio ${minRatio})`,
+              actual: long.session.duration_mins / session.duration_mins,
               expected: `≥ ${minRatio}`,
             })
           }
@@ -9386,6 +9415,14 @@ export function validateReshapedPlan(plan: Plan, reshapedWeekN?: number): Violat
     if (RESHAPE_SKIP_INVARIANTS.has(v.code)) return false
     // Copy-match is the reshaper's concern only for the week it touched.
     if (v.code === 'INV-PLAN-COPY-MATCHES-SESSIONS' && reshapedWeekN != null && v.week !== reshapedWeekN) {
+      return false
+    }
+    // S9-RATIO-MINUTES-01 — the minutes arm is new, so every plan stored before it
+    // can carry a breach a reshape neither caused nor can fix. Enforced on the week
+    // the reshape touched; an untouched week's breach is a generation defect, and
+    // failing on it would refuse every adjustment for that runner (adjust-plan
+    // returns "No adjustment needed" on any error).
+    if (v.code === 'INV-PLAN-LONG-IS-LONGEST-MINS' && reshapedWeekN != null && v.week !== reshapedWeekN) {
       return false
     }
     return true
