@@ -126,6 +126,16 @@ describe('INV-PLAN-GOAL-PACE-REACHABLE fires in every direction', () => {
     const { benchmark, ...noBench } = pastCase.input as GeneratorInput & { benchmark?: unknown }
     expect(hits(copy(pastCase.plan), noBench as GeneratorInput)).toContain('no decision without a benchmark')
   })
+  it('🔴 a patched plan keeps its history: goal-pace work before `from_week` is not a violation, at or after it is', () => {
+    const p = copy(pastCase.plan)
+    const qw = p.weeks.filter(w => Object.values(w.sessions).some(s => s?.type === 'quality'))
+    const early = qw[0]!, late = qw[qw.length - 1]!
+    Object.values(early.sessions).find(s => s?.type === 'quality')!.stimulus = 'race_pace'
+    p.meta.goal_pace_reach = { ...p.meta.goal_pace_reach!, from_week: early.n + 1 }
+    expect(hits(p, pastCase.input)).not.toContain('no goal-pace work past the line')
+    Object.values(late.sessions).find(s => s?.type === 'quality')!.stimulus = 'race_pace'
+    expect(hits(p, pastCase.input)).toContain('no goal-pace work past the line')
+  })
   it('a plan built BEFORE the rule (no record, no stamp, past the line) is not called a defect', () => {
     const p = copy(pastCase.plan); delete p.meta.goal_pace_reach; delete p.meta.goal_pace_withheld
     expect(hits(p, pastCase.input)).toEqual([])

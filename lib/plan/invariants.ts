@@ -8844,8 +8844,11 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         const m = paceStr ? parsePaceMidpoint(paceStr) : null
         return m != null && goalMid != null && m <= goalMid * (1 + GENERATION_CONFIG.GOAL_PACE_REHEARSAL_TOLERANCE_PCT / 100)
       }
+      // A STARTED plan brought onto the rule is patched from a week onward (`from_week`); the weeks before it are the
+      // runner's history and keep what they were given.
+      const fromWeek = reach?.from_week ?? -Infinity
       for (const w of plan.weeks) for (const [day, sn] of Object.entries(w.sessions)) {
-        if (!sn) continue
+        if (!sn || w.n < fromWeek) continue
         // The STAMPED stimulus, never `classifyStimulus`: its legacy label fallback reads "marathon pace + HM-pace
         // finish" on a fitness-paced long run as race pace (493 false firings on the cohort sample). And a segment only
         // counts if it is priced at the goal: §24b's 5K/10K variants carry segments at the runner's CURRENT paces.
