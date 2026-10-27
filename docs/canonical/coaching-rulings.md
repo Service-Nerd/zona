@@ -87,6 +87,20 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-27 — GOAL-PACE-REACHABLE-01 + S9-QUALITY-MINUTES-01 (26 Oct RCA items 1–3) · Q1 CORRECT WITH AMENDMENT · Q2 CORRECT WITH AMENDMENT · Q3 direction CORRECT, INSUFFICIENT EVIDENCE · RULED, not built
+
+**Q1:** on a benchmarked time-target plan, goal-paced work only while the goal is within `GOAL_PACE_MAX_STRETCH_PCT` (5)
+of current race-fitness pace at the race distance; past it goal rows withheld and §22's override yields (one owner), §22
+ratio and per-week arms exempt (both halves), §25's finish at current race-fitness pace if measured clean, else withheld;
+the gap named (Sims, binding). **Supersedes §120 Am.1's CV comparison** (measured: the bands are fixed % of race pace,
+CV = +5.1% at HM; 5K has no band past I at +1.1%), gated on HM moving by rounding only. Projection (GOALPACE-5K S2) and
+plan-length scaling stay INSUFFICIENT EVIDENCE (production has zero usable improvement cases). Unbenchmarked: not gated.
+**Q2:** a quality session meets §9 at ≥ 5 km or ≥ `QUALITY_FLOOR_MINS` (35); **amends §8/D-21's "floor beats ceiling"**;
+§52b stays km (named). Prototype: slow-grid floor/VO2/shape breaches → 0, 221 of 5,925 served plans change (HM/MAR
+beginner continuous tempo 38 → 36 min), `measure:fitness` identical. **Q3:** easy floor "≥ 4 km or ≥ 30 min" to be
+prototyped first (§82 Am.1's §52b bound cannot see a time limit). Disagreements: Seiler (band map) vs chair (one %);
+McMillan (projection; current-pace §25 finish). Sitting: `docs/decisions/coaching-2026-10-27-goal-gap-floor-unit-sitting.md`.
+
 ## 2026-10-25 — NO-RUNNER-TURNED-AWAY-01 (sixth sitting: real plans read week by week) · CORRECT WITH AMENDMENT · BUILT 2026-10-25 (R1, R2, R5)
 
 Four personas read week by week. **R1** ramp runs never on consecutive days where open days allow (live in every
