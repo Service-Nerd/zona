@@ -1148,6 +1148,10 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **A held plan can stop building undeclared** (S9-HELD-PEAK-CLASSIFY-01) | 🔲 | S | 1 sweep clone, recorded debt. |
 | **`weekly_km` not restated after every session change** (WEEKLY-KM-AFTER-CAP-01) | 🔲 | S | 17 cohort plans already stale; foundation budget stays. |
 | **Rebuild scripts should stamp an enrichment state** (REBUILD-STAMP-ENRICHMENT-01) | 🔲 | S | Retires the reader-side inference. |
+| **Voice restore skipped the copy repair; 4 plans contradict their sessions** (ENRICH-RESTORE-REPAIR-01) | 🔲 | S | Fix the script, repair 4. |
+| **Longest run below what the runner already runs** (LONG-RUN-BELOW-LONGEST-01) | 🔲 | S | Board. |
+| **Achilles runner jumps 24% into peak, unannounced** (INJURY-PEAK-JUMP-01) | 🔲 | S | Board. |
+| **Two plans still carry the pre-23 Oct "Threshold now" note** (PLAN-STALE-GOALPACE-NOTE-01) | 🔲 | S | Founder; after the repair. |
 | **A `{{token}}` can reach confidence risks** (ENRICH-RISK-TOKEN-01) | 🔲 | S | Latent; 1 of 9 restored plans. |
 | **Race week showing 0 km** (RACE-WEEK-ZERO-KM-01) | 🔲 | S | Measure surfaces first. |
 | **"Get you round" note on a time-goal plan** (ROUND-NOTE-TIME-GOAL-01) | 🔲 | S | Measure, then board. |

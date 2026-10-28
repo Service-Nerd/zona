@@ -144,6 +144,34 @@ SQL copy). Stamping the state at the writer would retire the inference for new r
 are measured at 0 today: a staged plan rebuilt without its `skipped_plan_kind`, and a plan from the few hours on
 2026-08-06 between PV2-A (`generator_input`) and GEN-FIX-02 (`enrichment`).
 
+### 🔲 `ENRICH-RESTORE-REPAIR-01` — the voice restore wrote AI copy the live generator would have rejected ⚙️ **NO BOARD** (restores documented intent)
+
+Found 2026-10-28 reviewing the manual digest. `scripts/reenrich-plans.ts` checks that no prescription field moved and that
+`PlanSchema` is no worse, but it does **not** run `validatePlan()` or the session → week repair ladder that
+`app/api/generate-plan/route.ts` runs on every enrichment (ENRICH-PARTIAL-01/02). **4 of the 9 restored plans now fail an
+error-level check they passed that morning:** 3a83ea55, 3cc7c3a9, a91d8fde, c848fd4c — `INV-PLAN-COPY-MATCHES-SESSIONS`
+(e.g. *"The 5K time trial on Tuesday is measurement"* in a week with no time trial) and, on 3cc7c3a9,
+`INV-PLAN-DISPLAY-ZONE-MATCHES-WORK`. Fix: one owner for the ladder, called by the route and the script; repair the 4.
+
+### 🔲 `LONG-RUN-BELOW-LONGEST-01` — a marathon plan whose longest run is shorter than the runner already runs 🏃 **COACHING BOARD**, then 👤 **FOUNDER** (note words)
+
+graceemilyhill (c848fd4c, London 4:45, 30 km/week, longest recent run **21 km**, knee/hip/back/shin history, 4 days): the
+plan holds 24–30 km/week for 20 weeks and its longest run is **13.5 km**, 7.5 km shorter than what she runs now. No
+invariant compares the plan's peak long run with `longest_recent_run_km`. Her `volume_constraint_note` says *"the long run
+can only grow so much week to week, and it ran out of weeks"*, which is not the cause. Current engine (rebuilt 28 Oct).
+
+### 🔲 `INJURY-PEAK-JUMP-01` — an Achilles-history runner jumps 24% into peak, unannounced 🏃 **COACHING BOARD**
+
+emilyjcgibbs (d4c4db1e, marathon 5:00, achilles): weeks 15 → 16 go 38 → 47 km (+24%), long run 206 min. Today's engine
+produces the same jump. `INV-PLAN-INJURY-CAP-DELIVERED` ×2 and `INV-PLAN-DELIVERED-RAMP` ×3 are **warn** by design (§34,
+ADR-022) and the plan carries no load note. Achilles is in `DELIVERED_CAP_INJURIES`.
+
+### 🔲 `PLAN-STALE-GOALPACE-NOTE-01` — two plans still tell a goal-paced rep "Threshold now" 👤 **FOUNDER** (live-plan regeneration)
+
+ac566309 and d4c4db1e (built 10 Oct) fail `INV-PLAN-COACH-NOTES-MATCH-INTENT`; fixed in the engine 23 Oct
+(CRUISE-STEP-NOTE-GOALPACE-01), which reaches no existing plan. A patch dry run of d4c4db1e is clean (15 session days).
+⚠️ A patch replaces those sessions' AI notes with engine copy; do it after ENRICH-RESTORE-REPAIR-01.
+
 ### 🔲 `ENRICH-RISK-TOKEN-01` — the enricher can leave a `{{token}}` in `confidence_risks`, which nothing fills ⚙️ **NO BOARD**
 
 Found validating the 28 Oct voice restore: 3cc7c3a9's third risk reads *"Zone 3 discipline ({{session_hr}}) is
@@ -156,7 +184,9 @@ restored plans.
 ### 🔲 `RACE-WEEK-ZERO-KM-01` — a race week holding only the race reads "0 km" ⚙️ **NO BOARD** to measure; 🧭 **DESIGN BOARD** if the display changes
 
 Raised by the 28 Oct digest on claymanwaterman (3cc7c3a9): race on a Monday, so week 20 holds the race alone, and
-`weekly_km` excludes race km by convention, giving 0. Present in every archived version since 3 Oct, so not caused by the
+`weekly_km` excludes race km by convention, giving 0. **Measured 2026-10-28: the app does not show 0.** `PlanCalendar` sums the week's sessions
+through `sessionKmSelfPaced`, race included, and ignores `weekly_km`; Today never renders `weekly_km`. The 0 is in the
+data only. Present in every archived version since 3 Oct, so not caused by the
 rebuild. Measure which surfaces render `weekly_km` for a race week before deciding anything.
 
 ### 🔲 `ROUND-NOTE-TIME-GOAL-01` — "built to get you round, not to chase a time" on a time-goal plan 🏃 **COACHING BOARD** (an outcome claim), 👤 **FOUNDER** (words)
