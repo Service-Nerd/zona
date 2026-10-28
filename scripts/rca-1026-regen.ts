@@ -18,11 +18,9 @@
 import { hasAiCopy } from '../lib/plan/enrichmentState'
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
-import { generateRulePlan } from '../lib/plan/ruleEngine'
-import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import { validateReshapedPlan } from '../lib/plan/invariants'
 import { regenRefusalReason } from '../lib/ops/regenEligibility'
-import { withProfileHr } from '../lib/plan/rebuildInput'
+import { regenerateFromStored } from '../lib/plan/storedPlanRegen'
 import type { Plan, GeneratorInput, Session } from '../types/plan'
 
 const APPLY = process.argv.includes('--apply')
@@ -130,18 +128,9 @@ async function one(row: { id: string; user_id: string; plan_json: unknown }, qui
   // Profile after the plan was built updates the plan's meta and user_settings but
   // never meta.generator_input, so regenerating from the stored answers alone would
   // quietly put the runner back on the old max (e49ea589: 203 confirmed vs 198 stored).
-  const input = { ...withProfileHr(gi, settings), plan_start: planStart } as GeneratorInput
+  const { input, fresh } = regenerateFromStored(plan, settings)
   const hrMoved = (['max_hr', 'resting_hr', 'max_hr_source'] as const).filter(k => input[k] !== gi[k])
   log(`Heart rate  from profile: max ${input.max_hr} (${input.max_hr_source ?? 'unstated'}), resting ${input.resting_hr}${hrMoved.length ? `  · differs from the stored answers on ${hrMoved.join(', ')}` : ''}`)
-  const tier = (meta.tier === 'paid' ? 'paid' : meta.tier === 'free' ? 'free' : 'trial') as 'free' | 'trial' | 'paid'
-  // ⚠️ THE FOUNDATION BLOCK IS COMPOSED FROM THE DAY IT STARTS, not from the plan start. `composePlanWithFoundation`
-  // sizes the runway from (today -> plan start); passing the plan start as "today" gave a 0-day gap and NO foundation
-  // weeks, so every plan with a runway read as "the engine moves the calendar" (2026-10-27: a91d8fde and 3cc7c3a9 were
-  // refused for exactly this, and the founder was asked to approve a move that was the script's own artefact). The
-  // stored block's first week is the "today" it was built for, so composing from it reproduces the same runway.
-  const storedFoundation = plan.weeks.filter(w => w.n <= 0)
-  const composeToday = storedFoundation.length ? String(storedFoundation[0].date) : planStart
-  const fresh = composePlanWithFoundation(generateRulePlan(input, tier, planStart, undefined, planStart), input, composeToday, 'add').plan
   const notStarted = planStart > TODAY && !completionWeeks.length && !analysisWeeks.length && !overrideWeeks.length
     && runsInBlock === 0 && !hasAiCopy(meta)
   const MODE: 'rebuild' | 'patch' = notStarted ? 'rebuild' : 'patch'

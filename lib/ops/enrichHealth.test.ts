@@ -143,7 +143,7 @@ describe('OPS-ENRICH-HEALTH-01', () => {
     const writers = readdirSync(dir).filter(n => /\.tsx?$/.test(n)).map(n => join(dir, n))
       .filter(f => {
         const s = readFileSync(f, 'utf8')
-        return /generateRulePlan\(/.test(s)
+        return /generateRulePlan\(|regenerateFromStored\(/.test(s)
           && (/savePlanForUser\(/.test(s) || /from\('plans'\)\s*\.\s*(upsert|update)\(/.test(s))
       })
     expect(writers.length, 'population: the five known rebuild scripts').toBeGreaterThanOrEqual(5)

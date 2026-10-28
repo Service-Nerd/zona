@@ -144,14 +144,13 @@ SQL copy). Stamping the state at the writer would retire the inference for new r
 are measured at 0 today: a staged plan rebuilt without its `skipped_plan_kind`, and a plan from the few hours on
 2026-08-06 between PV2-A (`generator_input`) and GEN-FIX-02 (`enrichment`).
 
-### 🔲 `ENRICH-RESTORE-REPAIR-01` — the voice restore wrote AI copy the live generator would have rejected ⚙️ **NO BOARD** (restores documented intent)
+### 🔲 `MAINT-ENRICH-VALIDATE-01` — maintenance enrichment has no copy-repair step ⚙️ **NO BOARD**
 
-Found 2026-10-28 reviewing the manual digest. `scripts/reenrich-plans.ts` checks that no prescription field moved and that
-`PlanSchema` is no worse, but it does **not** run `validatePlan()` or the session → week repair ladder that
-`app/api/generate-plan/route.ts` runs on every enrichment (ENRICH-PARTIAL-01/02). **4 of the 9 restored plans now fail an
-error-level check they passed that morning:** 3a83ea55, 3cc7c3a9, a91d8fde, c848fd4c — `INV-PLAN-COPY-MATCHES-SESSIONS`
-(e.g. *"The 5K time trial on Tuesday is measurement"* in a week with no time trial) and, on 3cc7c3a9,
-`INV-PLAN-DISPLAY-ZONE-MATCHES-WORK`. Fix: one owner for the ladder, called by the route and the script; repair the 4.
+Found building ENRICH-RESTORE-REPAIR-01. `app/api/maintenance-block/route.ts` runs `enrichMaintenanceBlock` and saves
+through `savePlanForUser`, which validates but only LOGS in production; nothing reverts maintenance copy that breaks an
+invariant, unlike the race-plan path (`repairEnrichedCopy`). Measure live maintenance plans for error violations first;
+the maintenance enricher writes session `coach_notes` and a weekly debrief only.
+
 
 ### 🔲 `LONG-RUN-BELOW-LONGEST-01` — a marathon plan whose longest run is shorter than the runner already runs 🏃 **COACHING BOARD**, then 👤 **FOUNDER** (note words)
 

@@ -30,9 +30,18 @@ import { judgeEnrichHealth, enrichmentStateOf, type EnrichStateRow } from '../li
 import { getUserTier } from '../lib/trial'
 import { PlanSchema } from '../lib/plan/schema'
 import type { Plan, Session } from '../types/plan'
+import { validatePlan } from '../lib/plan/invariants'
+import { errorBaseline } from '../lib/plan/enrichAttribution'
+import { repairEnrichedCopy } from '../lib/plan/enrichRepair'
+import { hasAiCopy } from '../lib/plan/enrichmentState'
+import { regenerateFromStored } from '../lib/plan/storedPlanRegen'
 
 const WRITE = process.argv.includes('--write')
 const AUTHORISED = process.argv.includes('--i-have-authorisation')
+/** `--repair-copy --only <user-prefix>` — ENRICH-RESTORE-REPAIR-01: repair a plan that already
+ *  carries AI copy breaking an invariant, by reverting only the offending sessions/weeks to rule
+ *  copy (the generator's own ladder). Needs today's engine to rebuild the SAME sessions. */
+const REPAIR_COPY = process.argv.includes('--repair-copy')
 /** `--only <id-prefix>` — remediate ONE runner. The first write of anything that
  *  edits live plans should touch one row, be read back, and stop; a flag makes
  *  that the easy path rather than a thing to remember. */
@@ -107,6 +116,7 @@ async function main() {
   console.log(`\nmode: ${WRITE ? (AUTHORISED ? 'WRITE (authorised)' : 'WRITE REFUSED — missing --i-have-authorisation') : 'DRY RUN (writes nothing)'}`)
   console.log(`eligible plans ${verdict.eligible} · with voice ${verdict.withVoice} · WITHOUT ${verdict.withoutVoice} (${verdict.withoutVoicePct}%)\n`)
   if (WRITE && !AUTHORISED) { console.error('refusing: --write needs --i-have-authorisation'); process.exit(2) }
+  if (REPAIR_COPY) return repairCopy(db, data ?? [])
   if (!verdict.affected.length) { console.log('nothing to remediate.'); return }
 
   const targets = ONLY
@@ -168,7 +178,23 @@ async function main() {
     //     state it is judged by is not finished.
     // `'applied'` is the route's own value for a clean full merge, which is what
     // `outcome.status === 'applied'` above has already established.
-    res.plan.meta.enrichment = 'applied'
+    // 🔴 ENRICH-RESTORE-REPAIR-01 (2026-10-28): THE ROUTE'S REPAIR LADDER, WHICH THIS SCRIPT
+    // NEVER HAD. The first restore wrote model copy straight onto 9 live plans and 4 then failed
+    // `INV-PLAN-COPY-MATCHES-SESSIONS` (a week promising a time trial it did not hold). The
+    // generator reverts offending sessions, then weeks, to rule copy and re-validates; so does
+    // this now, against the stored plan, which IS the rule copy the enricher was given.
+    const rule = JSON.parse(before) as Plan
+    const repair = repairEnrichedCopy(res.plan, rule, errorBaseline(validatePlan(rule, input as never)), input as never)
+    if (repair.outcome === 'full_revert') {
+      console.log(`   STILL FAILS: the copy breaks ${repair.introduced.map(v => v.code).join(', ')} and no partial revert clears it`)
+      continue
+    }
+    if (repair.outcome !== 'clean') {
+      console.log(`   repaired (${repair.outcome}): ${repair.introduced.map(v => `${v.code}@W${v.week}`).join(', ')}`)
+    }
+    ;(res as { plan: Plan }).plan = repair.plan
+    // `'applied'` is the route's value for a clean full merge, `'applied_partial'` for a repaired one.
+    res.plan.meta.enrichment = repair.outcome === 'clean' ? 'applied' : 'applied_partial'
 
     // 🔴 A FULL DEEP DIFF, NOT A FINGERPRINT. The first version hashed a
     // hand-listed set of prescription fields — which is a WHITELIST, and anything
@@ -233,4 +259,54 @@ async function main() {
   }
   if (!WRITE) console.log('\nDRY RUN — nothing was written.')
 }
+type PlanRow = { user_id: unknown; updated_at?: unknown; plan_json: unknown }
+
+/** ENRICH-RESTORE-REPAIR-01 — see `REPAIR_COPY`. One runner per run, by design. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the script's client is untyped (no generated DB types)
+async function repairCopy(db: any, rows: PlanRow[]) {
+  if (!ONLY) { console.error('refusing: --repair-copy needs --only <user-prefix>'); process.exit(2) }
+  const row = rows.find(r => String(r.user_id).startsWith(ONLY))
+  const plan = row?.plan_json as Plan | undefined
+  if (!row || !plan) { console.log(`no plan for ${ONLY}`); return }
+  console.log(`── ${String(row.user_id).slice(0, 8)}  repair-copy`)
+  if (!hasAiCopy(plan.meta)) { console.log('   SKIP: the plan carries no AI copy; nothing to repair'); return }
+  if (!plan.meta.generator_input) { console.log('   SKIP: no meta.generator_input'); return }
+  const { data: settings } = await db.from('user_settings').select('max_hr, resting_hr, max_hr_source').eq('id', String(row.user_id)).maybeSingle()
+  const { input, fresh } = regenerateFromStored(plan, settings as never)
+  // The rule copy must belong to THE SAME SESSIONS. If today's engine builds anything different,
+  // reverting to its copy would describe sessions the runner does not have.
+  const drift = diffPaths({ weeks: plan.weeks } as unknown as Json, { weeks: fresh.weeks } as unknown as Json).filter(p => !isCopyPath(p))
+  if (drift.length) {
+    console.log(`   🔴 REFUSED: today's engine builds different sessions (${drift.length} path(s)); its copy cannot stand in. First few:`)
+    for (const p of drift.slice(0, 6)) console.log(`        ${p}`)
+    return
+  }
+  const repair = repairEnrichedCopy(plan, fresh, errorBaseline(validatePlan(fresh, input)), input)
+  if (repair.outcome === 'clean') { console.log('   clean: no AI copy breaks an invariant'); return }
+  if (repair.outcome === 'full_revert') {
+    console.log(`   🔴 REFUSED: no partial revert clears ${repair.introduced.map(v => v.code).join(', ')}; a full revert would delete the voice`)
+    return
+  }
+  const out = repair.plan
+  out.meta.enrichment = 'applied_partial'
+  const changed = diffPaths(plan as unknown as Json, out as unknown as Json)
+  const illegal = changed.filter(p => !isCopyPath(p))
+  if (illegal.length) { console.log(`   🔴 REFUSED: ${illegal.length} non-copy path(s) would change`); return }
+  const left = validatePlan(out, input).filter(v => v.severity === 'error').map(v => v.code)
+  console.log(`   ✅ ${repair.outcome}: reverts ${repair.outcome === 'partial_revert_session' ? `${repair.badSessions.size} session(s) [${Array.from(repair.badSessions).join(', ')}]` : `${repair.badWeeks.size} week(s) [${Array.from(repair.badWeeks).join(', ')}]`} to rule copy`)
+  console.log(`        fixes ${repair.introduced.map(v => `${v.code}@W${v.week}`).join(', ')} · ${changed.length} copy path(s) · errors after: ${left.length ? left.join(', ') : 'none'}`)
+  if (!WRITE || !AUTHORISED) { console.log('\nDRY RUN — nothing was written.'); return }
+  const arch = await db.from('plan_archive').insert({
+    user_id: String(row.user_id), plan_json: plan,
+    race_name: (plan.meta as { race_name?: string }).race_name ?? '', race_date: (plan.meta as { race_date?: string }).race_date ?? null,
+  } as never)
+  if (arch.error) { console.log(`   ARCHIVE FAILED, NOT writing: ${arch.error.message}`); return }
+  const { data: wrote, error: wErr } = await db.from('plans')
+    .update({ plan_json: out, updated_at: new Date().toISOString() } as never)
+    .eq('user_id', String(row.user_id)).eq('updated_at', String(row.updated_at)).select('user_id')
+  if (wErr) console.log(`   WRITE FAILED: ${wErr.message}`)
+  else if (!wrote?.length) console.log('   ABORTED: the plan changed since it was read (CAS miss); re-run')
+  else console.log('   WRITTEN (prior plan archived first)')
+}
+
 main()

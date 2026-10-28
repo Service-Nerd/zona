@@ -166,7 +166,9 @@ describe('ENGINE-CONTRACT-01 — the contract matches the engine', () => {
     // NO-RUNNER-TURNED-AWAY-01 (2026-10-24): the eighth is `fetchWeeklyLoad`, the activity-log READ the base-build
     // checkpoint needs. It is IO, so it is the caller's under ADR-003; the decision it feeds (`evaluateCheckpoint`) is
     // behind the engine's door with everything else.
-    for (const m of ['plan/enrich', 'plan/enrichAttribution', 'plan/enrichPartialRevert',
+    // ENRICH-RESTORE-REPAIR-01 (2026-10-28): the repair ladder moved from the route into `plan/enrichRepair`,
+    // which replaces `plan/enrichPartialRevert` here; still the caller's (it repairs AI copy).
+    for (const m of ['plan/enrich', 'plan/enrichAttribution', 'plan/enrichRepair',
                      'plan/enrichServerSave', 'plan/freeIntro', 'plan/canUseFeature', 'coaching/weeklyActualLoad']) {
       expect(mods, `${m} is the CALLER's and must stay in the route`).toContain(m)
     }

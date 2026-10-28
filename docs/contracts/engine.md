@@ -181,7 +181,8 @@ Named so the work is visible rather than discovered later:
    `stagingDoorKm(err, input, planStart)` in `stagedRacePlan.ts`, shared with `measure:envelope`.
 
    ⚠️ **IT IS 18 → 7, NOT THE 18 → 1 THE ITEM ASKED FOR, because 1 contradicts this
-   document.** Five of the eighteen (`enrich`, `enrichAttribution`, `enrichPartialRevert`,
+   document.** Five of the eighteen (`enrich`, `enrichAttribution`, `enrichPartialRevert` (since 2026-10-28 reached through
+   `enrichRepair`, the one owner of the copy-repair ladder, ENRICH-RESTORE-REPAIR-01),
    `enrichServerSave`, `freeIntro`) are assigned to the caller by § *What this contract does
    NOT cover*, and `freeIntro` calls Anthropic; `canGenerateDistance` is a commercial gate at
    the auth boundary (403, not 422). Collapsing those would drag the AI layer and persistence

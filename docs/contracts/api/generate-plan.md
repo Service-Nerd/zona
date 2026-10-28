@@ -349,6 +349,12 @@ A post-enrich violation no longer discards more copy than it has to:
 
 **Every rung is re-validated, never assumed** — the rule `ENRICH-PARTIAL-01` already set.
 
+**Owner since ENRICH-RESTORE-REPAIR-01 (2026-10-28):** the ladder lives in `lib/plan/enrichRepair.ts →
+`repairEnrichedCopy(enriched, composedRule, baseline, input)`, returning `outcome` (`clean` / `partial_revert_session` /
+`partial_revert` / `full_revert`) with the introduced violations and the reverted sessions/weeks. The route maps it to
+the same `meta.enrichment` states and `ops_events` fields as before; **no response or stored-shape change.**
+`scripts/reenrich-plans.ts` calls the same owner, which it previously did not.
+
 **Added by `WEEK-THEME-TOKEN-ENRICH-01` (2026-10-10): a FIELD-level refusal at the MERGE, before the ladder exists.**
 
 The ladder above reacts to a post-enrich **violation**. This is earlier and narrower: at merge time, a model-authored `week.label` or `week.theme` containing a `{{placeholder}}` is **refused outright** and that one field keeps rule-engine copy. The rest of the week — the other field, and every session — stays enriched.

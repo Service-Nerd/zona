@@ -24,10 +24,7 @@ import { runEngine, validatePlan, evaluateCheckpoint, isBaseBuildPlan, type Engi
 import { canGenerateDistance } from '@/lib/plan/canUseFeature'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
 import { errorBaseline, violationsIntroducedBy, statusForReason } from '@/lib/plan/enrichAttribution'
-import {
-  attributableWeeks, revertWeeksToRuleCopy,
-  attributableSessions, revertSessionsToRuleCopy,
-} from '@/lib/plan/enrichPartialRevert'
+import { repairEnrichedCopy } from '@/lib/plan/enrichRepair'
 import { shouldServerPersist } from '@/lib/plan/enrichServerSave'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { waitUntil } from '@vercel/functions'
@@ -479,40 +476,16 @@ export async function POST(req: NextRequest) {
             //
             // Ladder: session -> week -> full, and EVERY rung is re-validated
             // rather than assumed, which is the rule ENRICH-PARTIAL-01 already set.
-            let repaired: Plan | null = null
-            const { sessions: badSessions, allAttributable: allSessionAttributable } =
-              attributableSessions(introduced, finalPlan)
-            let repairedAtSessionLevel = false
-            if (allSessionAttributable && badSessions.size > 0) {
-              const candidate = revertSessionsToRuleCopy(finalPlan, composedRule, badSessions)
-              if (violationsIntroducedBy(baseline, validatePlan(candidate, input)).length === 0) {
-                repaired = candidate
-                repairedAtSessionLevel = true
-              }
-            }
-
-            const { weeks: badWeeks, allAttributable } =
-              attributableWeeks(introduced, finalPlan)
-            if (!repaired && allAttributable && badWeeks.size > 0) {
-              // ADR-020 Option A — composedRule, not rulePlan: the latter has no
-              // foundation weeks, so rule copy for a foundation week is only
-              // found on the composed plan.
-              const candidate = revertWeeksToRuleCopy(finalPlan, composedRule, badWeeks)
-              const remaining = violationsIntroducedBy(baseline, validatePlan(candidate, input))
-              if (remaining.length === 0) repaired = candidate
-            }
-
-            if (repaired) {
-              finalPlan = repaired
-              finalPlan.meta.enrichment = 'applied_partial'
-            } else {
-              // ADR-020 Option A — composedRule, not rulePlan: the latter has no
-              // foundation weeks. A revert here used to silently drop a runner's
-              // foundation block every time enrichment introduced a violation —
-              // found by validation before it could ship, not observed in prod.
-              finalPlan = composedRule
-              finalPlan.meta.enrichment = 'failed_invalid_copy'
-            }
+            // ENRICH-RESTORE-REPAIR-01 — the ladder lives in one owner so the voice-restore
+            // script runs the same repair. ADR-020 Option A: composedRule, not rulePlan,
+            // because rule copy for a foundation week is only on the composed plan, and a
+            // full revert to rulePlan used to drop the runner's foundation block.
+            const repair = repairEnrichedCopy(finalPlan, composedRule, baseline, input)
+            const repaired = repair.outcome !== 'full_revert'
+            const repairedAtSessionLevel = repair.outcome === 'partial_revert_session'
+            const { badSessions, badWeeks } = repair
+            finalPlan = repair.plan
+            finalPlan.meta.enrichment = repaired ? 'applied_partial' : 'failed_invalid_copy'
 
             // Recorded AFTER the decision so the event says what actually
             // happened. Reporting it before meant every partial repair still

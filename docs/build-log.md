@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — ENRICH-RESTORE-REPAIR-01 · The fix for the AI voice had its own missing guard
+**Shipped:** the voice-restore script now runs the same copy-repair ladder as the plan generator, and can repair the four plans its first run damaged.
+**Dev learning:** the generator's repair ladder (session, then week, then full revert, each re-validated) was inline in a 600-line route, so the restore script, written months later to do the same job, never knew it existed. It checked that no prescription field moved and that the schema was no worse, which are the wrong two questions for copy: copy can be schema-valid and still promise a time trial the week does not hold. One owner now, called by both, and a test that the ladder runs between every `enrich(` and the first write. The first version of that test grepped for the call and stayed green with the restore path's call removed, because the file had a second call in another mode.
+**Product/creator learning:** the founder's manual digest, read line by line, found nothing about this. Checking each line against the data found it. The digest is a reader of the plans, not a validator of them.
+**AI-building learning:** three fixes in one day for one incident, and each one's safety check missed the next: the rebuild guard named one state of two, the health check read a missing field as legacy, the restore checked schema not invariants. Every time the check was real, and every time it was checking the thing the last incident was about.
+**The honest bit:** I told the founder "AI coaching is back for all 9" an hour before finding that 4 of them now contradict their own sessions. I had verified presence (themes, notes, confidence) and not correctness.
+**Hook material:** "The 5K time trial on Tuesday is measurement, not training." The week had no time trial.
+**Postable?:** yes
+
 ## 2026-10-28 — REBUILD-VOICE-LOSS-01 · The guard said "applied" and the plans said "applied_partial"
 **Shipped:** rebuild scripts now refuse any plan carrying AI copy, and the health check, the digest query and the restore script now see plans whose copy a rebuild deleted.
 **Dev learning:** the refusal compared `meta.enrichment === 'applied'`, one of the two enriched states, so three partly-enriched paid plans were rebuilt and lost their copy. Then the rebuilt plan carried no `enrichment` field, and every reader treated a missing field as "legacy": the probe, the digest SQL, and the restore script, which reads the same function, so it could not find the runners it exists to restore. The archive showed four more lost it the same way on 9–10 Oct. The discriminator was already in the plan: `generator_input` cannot exist on a plan older than the field.
