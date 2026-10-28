@@ -1092,24 +1092,26 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     // load, so the two may not share a week. Enforced by
     // INV-PLAN-RACE-PACE-WEEK-CONCENTRATION, because eligibility cannot see what
     // else got placed.
-    id: 'mp_blocks', name: 'Marathon-pace blocks', category: 'race_specific',
+    // MP-BLOCKS-ONE-BLOCK-01 (§19 Am.2, Coaching Board 2026-10-28): named for what it always was. As "reps x 4 km /
+    // 3 min jog" it sized to ONE block for every runner measured (332 of 332), so the runner read "blocks" over one
+    // continuous run and a jog that led to the cool-down. Now one continuous 4 km at marathon pace; the marathon-pace
+    // work is unchanged. The id keeps its old spelling: it is stamped on live plans and never shown.
+    id: 'mp_blocks', name: 'Marathon-pace run', category: 'race_specific',
     purpose: 'Marathon pace away from the long run. Goal pace on fresh legs, so it survives a week the long run does not.',
     phase_eligibility: ['peak'],
     distance_eligibility: ['MARATHON'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
     main_set_structure: {
       version: 2,
-      sizing: { scaling: 'reps' },
+      // Fixed: one continuous effort, priced from its own literal length by `fixedShapePlan` (its allowlist).
+      sizing: { scaling: 'fixed' },
       blocks: [{
-        repeat: { kind: 'parameter', param: 'reps' },
-        label: 'blocks',
+        repeat: 1,
+        label: 'sustained',
         steps: [
           { role: 'work', modality: 'run', length: { kind: 'distance', m: 4000 },
             target: { kind: 'pace', anchor: 'goal', mode: 'target' }, advance: 'auto',
             note: 'Marathon pace, and it should feel comfortable. If it does not, it is not marathon pace.' },
-          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 180 },
-            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
-            note: 'Three minutes easy. Enough to reset, not enough to forget the pace.' },
         ],
       }],
     },

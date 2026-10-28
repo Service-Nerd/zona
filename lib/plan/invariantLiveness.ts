@@ -1,5 +1,6 @@
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
+import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { validatePlan, validateMaintenanceBlock, INVARIANT_CODES, type Violation } from '@/lib/plan/invariants'
 import { validateBaseBuildBlock, validateStagedRace } from '@/lib/plan/baseBuildValidate'
 import { generateStagedRacePlan } from '@/lib/plan/stagedRacePlan'
@@ -160,11 +161,23 @@ export const MUTATIONS: Mutation[] = [
   // block will do; the check reads the delivered set, so this is the shape the sibling swap exists to prevent.
   { name: 'cut a repeats session to one rep', apply: p => {
     for (const s of sessionsOf(p)) {
-      // Not the rows the check exempts as registered debt, or this mutation wakes nothing on that plan.
-      if (['mp_blocks', 'tenk_race_simulation'].includes((s as unknown as { catalogue_id?: string }).catalogue_id ?? '')) continue
-      const blocks = (s as unknown as { derived_set?: { blocks?: Array<{ label?: string; repeat?: number }> } }).derived_set?.blocks
-      const rep = blocks?.find(b => b.label === 'reps' && (b.repeat ?? 1) >= 2)
+      const sn = s as unknown as { catalogue_id?: string; derived_set?: { blocks?: Array<{ label?: string; repeat?: number }> } }
+      // A REP-SCALED row only: a fixed row (hm_pace_intervals) also labels its block 'reps' and the rule ignores it.
+      const row = V1_SESSION_CATALOGUE.find(r => r.id === sn.catalogue_id)
+      if ((row?.main_set_structure as { sizing?: { scaling?: string } } | undefined)?.sizing?.scaling !== 'reps') continue
+      const rep = sn.derived_set?.blocks?.find(b => b.label === 'reps' && (b.repeat ?? 1) >= 2)
       if (rep) { rep.repeat = 1; return }
+    }
+  } },
+  // §19 Am.2 (TENK-SIM-ONE-REP-01) — a 2-rep race simulation in a race too short for it (5K: 4 km of 5, 80%).
+  { name: 'stamp a two-rep 10K race simulation into a shorter race', apply: p => {
+    for (const s of sessionsOf(p)) {
+      const sn = s as unknown as { catalogue_id?: string; derived_set?: { blocks?: Array<{ label?: string; repeat?: number }> } }
+      const rep = sn.derived_set?.blocks?.find(b => b.label === 'reps')
+      if (!rep) continue
+      sn.catalogue_id = 'tenk_race_simulation'
+      rep.repeat = 2
+      return
     }
   } },
   // §122 (FOUNDATION-BUDGET-01, 2026-10-03) — both arms of "foundation weeks are

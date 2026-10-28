@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — MP-BLOCKS-ONE-BLOCK-01 + TENK-SIM-ONE-REP-01 · A session called "blocks" that never had more than one
+**Shipped:** the marathon session is now called what it always was, a 4 km marathon-pace run; slow 10K runners get two race-pace reps in their race simulation, not one.
+**Dev learning:** I built a new shape predicate threaded through the rep sizer and the code review pointed at `fixedShapePlan`, an existing owner I had not found. Then it found the real cost of changing a catalogue row: six stored plans were re-judged against the new row and 12 sessions went to error overnight. A check must judge a session by the structure it was built with.
+**Product/creator learning:** the 332-of-332 number turned a "slow runner" item into a naming defect for everybody, which changed the fix entirely.
+**AI-building learning:** I misstated the prototype's warn delta in the board summary ("net −1" when it was +3) and the cohort review caught the cost the next day. The number a board rules on has to be pasted from the output, not paraphrased. And my first 10K test passed with the fix switched off: its population never drew the row.
+**The honest bit:** three mistakes of mine caught by machinery: a hollow test, a missed owner, a misreported delta. And a race-share cap I first wrote plan-wide fired on a perfectly standard 5K session.
+**Hook material:** "Marathon-pace blocks": one block, for 332 runners out of 332.
+**Postable?:** yes
+
 ## 2026-10-28 — S9-ONE-REP-01 · "Rep three should look like rep one", on a session with one rep
 **Shipped:** the slowest runners no longer get "1600m repeats" with a single rep; they get Cruise intervals, 2 x 10 minutes, in that slot.
 **Dev learning:** yesterday's 35-minute floor was right and it made this reachable: the dose band always allowed one 17-minute mile rep, and the old 5 km floor had been the only thing growing it to two. The fix sits in the one sizer so every caller shares it; the code review then found the one caller (a latent swap pass) that copied only the dose back, which would have put Cruise's set under the mile's name.

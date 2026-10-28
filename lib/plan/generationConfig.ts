@@ -1296,6 +1296,13 @@ export const GENERATION_CONFIG = {
   // on the row itself was refused (35 min of threshold against §85's 30-minute band).
   REP_ROW_MIN_REPS: 2,
 
+  // §19 Amendment 2 (Coaching Board 2026-10-28, TENK-SIM-ONE-REP-01) — a race-specific rep row sized below
+  // REP_ROW_MIN_REPS gets that many reps, but only while they stay within this share of the race distance. 0.6 is
+  // the share `tenk_race_simulation` was designed to give an average runner (~6 km of 10 km, CAT-10K-RACE-SPECIFIC-01).
+  // A floor, not a dose band: any band minimum that adds a slow runner's second rep adds a fast runner's third
+  // (measured: 19 cohort sessions 2 -> 3). Willy's condition binds: fitness and the 10K beginner/masters cohorts read.
+  RACE_SPECIFIC_MAX_RACE_SHARE: 0.6,
+
   // §82 Amendment 2 (Coaching Board re-sitting 2026-10-27, S9-EASY-MINUTES-01) — on a weekday the runner limited, an
   // easy run §82 would hold at its km floor is held at the runner's limit, or this many minutes if the limit is shorter,
   // and never longer than the km floor. Only that path: construction's easy floor is unchanged. For a slow runner the

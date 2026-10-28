@@ -975,6 +975,9 @@ function pacedRepPlan(
   // anchored 'goal' intrinsically) don't need this — callers should pass
   // false for them.
   substituteThresholdWithGoal = false,
+  // TENK-SIM-ONE-REP-01 (§19 Am.2) — the race distance, for the race-specific rep floor's race-share cap. Absent =
+  // no floor (a caller that cannot say how long the race is gets today's sizing, never a guessed one).
+  raceDistanceKm: number | null = null,
 ): { reps: number; mainMins: number; workPaceMinPerKm: number } | null {
   if (!row || !isV2Structure(row.main_set_structure)) return null
   const cfg = GENERATION_CONFIG
@@ -1049,6 +1052,19 @@ function pacedRepPlan(
   // ceiling rather than ship an under-floor session. D-21: a floor a valid
   // input can't satisfy is a defect in the code enforcing it, not an
   // acceptable session. Capped defensively — should never bind in practice.
+  // §19 Amendment 2 (Coaching Board 2026-10-28, TENK-SIM-ONE-REP-01) — a race-specific REHEARSAL repeats. For a slow
+  // 10K runner one 2 km rep at goal pace fills the dose band, so the race simulation was one rep. A rep-count floor of
+  // REP_ROW_MIN_REPS, capped at RACE_SPECIFIC_MAX_RACE_SHARE of the race, past the band's ceiling by ruling: a
+  // threshold-derived minutes band is the wrong yardstick for race-pace work, which is a share of the race. A floor,
+  // so no session already at two reps moves. Only rows whose work is all distance can be priced against the race.
+  if (row.category === 'race_specific' && reps < cfg.REP_ROW_MIN_REPS && raceDistanceKm != null && raceDistanceKm > 0) {
+    const repKm = pacedWork.every(s => s.length.kind === 'distance')
+      ? pacedWork.reduce((sum, s) => sum + (s.length.kind === 'distance' ? s.length.m : 0), 0) / 1000
+      : null
+    if (repKm != null && cfg.REP_ROW_MIN_REPS * repKm <= cfg.RACE_SPECIFIC_MAX_RACE_SHARE * raceDistanceKm + 1e-9) {
+      reps = cfg.REP_ROW_MIN_REPS
+    }
+  }
   const minKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.quality
   // §8 Amendment (2026-09-04) — the floor check must price the session the SAME
   // way the session is priced. It divided total duration by WORK pace while the
@@ -1252,7 +1268,10 @@ function fixedShapePlan(
   // derived set to compare a stated duration against: the migration EXPOSED this,
   // it did not cause it. Dose is untouched — 4 x 2 km at HM pace, exactly as
   // before (Willy's condition: the stated number yields, never the session).
-  const FIXED_SHAPE_SIZED = new Set(['threshold_pyramid', 'threshold_ladder', 'hm_pace_intervals'])
+  // MP-BLOCKS-ONE-BLOCK-01 (§19 Am.2, Coaching Board 2026-10-28) — `mp_blocks` joins them: it is now one continuous
+  // 4 km at goal pace, a fixed shape priced from its own literal step. Dose unchanged (it sized to one 4 km block for
+  // every runner as a reps row); the 3-minute jog after it is gone.
+  const FIXED_SHAPE_SIZED = new Set(['threshold_pyramid', 'threshold_ladder', 'hm_pace_intervals', 'mp_blocks'])
   if (!row || !FIXED_SHAPE_SIZED.has(row.id) || !isV2Structure(row.main_set_structure)) return null
   const parsed = StructureV2Schema.safeParse(row.main_set_structure)
   if (!parsed.success) return null
@@ -1361,6 +1380,8 @@ function makeQualitySession(args: {
   // classification logic is duplicated at the call site; it flips the flag when it
   // actually places the cue. Absent → cue never placed (safe degradation).
   cueCtx?: { thresholdCuePlaced: boolean }
+  // TENK-SIM-ONE-REP-01 — the race distance, for the race-specific rep floor (see pacedRepPlan).
+  raceDistanceKm?: number
 }): Session {
   const { weekN, day, distKm, metric, zones, pace, catalogueRow, phase, fitness, isDeload, goalPace, goalPaceWeek, distLabel, cueCtx } = args
 
@@ -1517,7 +1538,7 @@ function makeQualitySession(args: {
   const goalPaceMinPerKmForSizing = goalPace ? paceStrToMins(goalPace) : null
   const repPlan = pacedRepPlan(
     catalogueRow, fitness, phase, pace, goalPaceMinPerKmForSizing,
-    substituteThresholdWithGoal,
+    substituteThresholdWithGoal, args.raceDistanceKm ?? null,
   )
 
   // §19 Amendment 2 (Coaching Board 2026-10-28, S9-ONE-REP-01) — a "repeats" session must repeat. For a slow runner a
@@ -1546,9 +1567,13 @@ function makeQualitySession(args: {
 
   // §85 / CB-CAT-02 — fixed-shape rows sized by summing their own steps.
   // Null for every other row.
+  // MP-BLOCKS-ONE-BLOCK-01 — a row whose work is anchored to goal pace needs the goal pace to be priced at all;
+  // without it `resolveAnchorPace('goal', …)` is null and the row falls to the generic share (54–100 min measured).
+  // Only goal-anchored rows: `hm_pace_intervals` is HM-anchored and is unchanged (verify:parity).
   const fixedShape = fixedShapePlan(
     catalogueRow, variant, pace,
-    substituteThresholdWithGoal ? goalPaceMinPerKmForSizing : null,
+    substituteThresholdWithGoal || (catalogueRow != null && requiredPaceAnchors(catalogueRow).includes('goal'))
+      ? goalPaceMinPerKmForSizing : null,
   )
 
   // Coaching Board 2026-09-03 — tempo_continuous's single-block continuous
@@ -3665,7 +3690,7 @@ function buildWeekSessions(
       sessions[qualDay] = makeQualitySession({
         weekN, day: qualDay, distKm: qualKm, metric, zones, pace,
         catalogueRow: cat1, phase, fitness: intensityFitness, isDeload, goalPace,
-        goalPaceWeek, distLabel: distKey, cueCtx,
+        goalPaceWeek, distLabel: distKey, cueCtx, raceDistanceKm: input.race_distance_km,
       })
       used.push(qualDay)
 
@@ -3743,7 +3768,7 @@ function buildWeekSessions(
             distKm: Math.max(roundDist(qualKmPerSession * secondaryFraction), minDist.secondary_quality),
             metric, zones, pace,
             catalogueRow: cat2, phase, fitness: intensityFitness, isDeload, goalPace,
-            goalPaceWeek, distLabel: distKey, cueCtx,
+            goalPaceWeek, distLabel: distKey, cueCtx, raceDistanceKm: input.race_distance_km,
           })
           used.push(qual2Day)
         }
@@ -7756,6 +7781,7 @@ function buildRulePlanOnce(
         isDeload: week.type === 'deload',
         goalPace,
         distLabel: onsetDistKey,
+        raceDistanceKm: input.race_distance_km,
         // No cueCtx: the §1/Q2 threshold cue was already placed (or not) during
         // construction. Re-running that decision here could duplicate it.
       })

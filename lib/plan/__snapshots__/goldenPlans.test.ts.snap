@@ -6337,8 +6337,8 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       "sessions": {
         "fri": {
           "detail": null,
-          "distance_km": 7.5,
-          "duration_mins": 42,
+          "distance_km": 8,
+          "duration_mins": 44,
           "hr_target": "< 147 bpm",
           "id": "w11-fri",
           "label": "Easy run — Zone 2",
@@ -6350,8 +6350,8 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         },
         "mon": {
           "detail": null,
-          "distance_km": 7.5,
-          "duration_mins": 42,
+          "distance_km": 8,
+          "duration_mins": 44,
           "hr_target": "< 147 bpm",
           "id": "w11-mon",
           "label": "Easy run — Zone 2",
@@ -6384,8 +6384,8 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
             "4×20s strides at 5K effort, full recovery between.",
           ],
           "detail": null,
-          "distance_km": 7.5,
-          "duration_mins": 42,
+          "distance_km": 8,
+          "duration_mins": 44,
           "hr_target": "< 147 bpm",
           "id": "w11-tue",
           "label": "Easy run + strides — Zone 2",
@@ -6403,7 +6403,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "derived_set": {
             "blocks": [
               {
-                "label": "blocks",
+                "label": "sustained",
                 "repeat": 1,
                 "steps": [
                   {
@@ -6415,26 +6415,17 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
                     "pace_mode": "target",
                     "role": "work",
                   },
-                  {
-                    "advance": "auto",
-                    "length": "3 min",
-                    "modality": "jog",
-                    "note": "Three minutes easy. Enough to reset, not enough to forget the pace.",
-                    "pace": "5:02–6:02 /km",
-                    "pace_mode": "ceiling",
-                    "role": "recovery",
-                  },
                 ],
               },
             ],
             "version": 2,
           },
           "detail": null,
-          "distance_km": 8,
-          "duration_mins": 41,
+          "distance_km": 7.5,
+          "duration_mins": 37,
           "hr_target": "147–161 bpm",
           "id": "w11-wed",
-          "label": "Marathon-pace blocks",
+          "label": "Marathon-pace run",
           "pace_target": "4:31–4:43 /km",
           "primary_metric": "distance",
           "rpe_target": 7,
@@ -6445,7 +6436,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       },
       "theme": "Consistency. The work is the volume.",
       "type": "normal",
-      "weekly_km": 55,
+      "weekly_km": 56,
     },
     {
       "date": "2026-10-19",
@@ -6525,7 +6516,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "derived_set": {
             "blocks": [
               {
-                "label": "blocks",
+                "label": "sustained",
                 "repeat": 1,
                 "steps": [
                   {
@@ -6537,26 +6528,17 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
                     "pace_mode": "target",
                     "role": "work",
                   },
-                  {
-                    "advance": "auto",
-                    "length": "3 min",
-                    "modality": "jog",
-                    "note": "Three minutes easy. Enough to reset, not enough to forget the pace.",
-                    "pace": "5:02–6:02 /km",
-                    "pace_mode": "ceiling",
-                    "role": "recovery",
-                  },
                 ],
               },
             ],
             "version": 2,
           },
           "detail": null,
-          "distance_km": 8,
-          "duration_mins": 41,
+          "distance_km": 7.5,
+          "duration_mins": 37,
           "hr_target": "147–161 bpm",
           "id": "w12-wed",
-          "label": "Marathon-pace blocks",
+          "label": "Marathon-pace run",
           "pace_target": "4:31–4:43 /km",
           "primary_metric": "distance",
           "rpe_target": 7,
@@ -6567,7 +6549,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       },
       "theme": "Consistency. The work is the volume.",
       "type": "normal",
-      "weekly_km": 63,
+      "weekly_km": 62,
     },
     {
       "date": "2026-10-26",

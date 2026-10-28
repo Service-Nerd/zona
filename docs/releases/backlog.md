@@ -27,31 +27,6 @@ already decided what it is.
 
 ---
 
-### 🔲 `MP-BLOCKS-ONE-BLOCK-01` — "Marathon-pace blocks" is one block for every runner measured 🏃 **COACHING BOARD: RULED 2026-10-28 (M2), build next**
-
-Found measuring S9-ONE-REP-01 (2026-10-28): `mp_blocks` (4 km at goal pace, 3 min jog, rep-scaled) sizes to ONE block in
-**170 of 170** cohort-sample sessions and 40 of 40 slow-grid sessions. Pre-existing, not from the 26 Oct changes. The board
-split: McMillan, one 4 km MP block is a legitimate session and the name is wrong; Seiler, MP work away from the long run
-should repeat to earn the slot. Registered debt in `INV-PLAN-REPEATS-REPEAT` until ruled.
-
----
-
-### 🔲 `TENK-SIM-ONE-REP-01` — "10K-pace race simulation" with one rep for slow 10K runners 🏃 **COACHING BOARD: RULED 2026-10-28 (T2), build next**
-
-Found by the property sweep while building S9-ONE-REP-01 (2026-10-28): `INV-PLAN-REPEATS-REPEAT` fires 19 times on the
-sweep's slow-goal clones (10K, beginner and experienced, ages 35–62): `tenk_race_simulation` (reps x 2000 m at goal pace /
-90 s) sizes to ONE rep. The slow grid never draws the row (rca1026Gates 2a lists it UNREACHED), so the board's count of 18
-could not see it. Exists at HEAD (parity identical); registered debt in the check. **Not measured:** whether it predates
-S9-QUALITY-MINUTES-01. The board picks: a ruled sibling (`tenk_pace_intervals`? the 11 Sep ruling calls them distinct), a
-shorter rep, or eligibility.
-
-**Ruled 2026-10-28 (both items):** M2, "Marathon-pace run" (one continuous 4 km at MP, no trailing jog, dose unchanged);
-T2, a two-rep floor on race-specific rep rows capped at `RACE_SPECIFIC_MAX_RACE_SHARE` (0.6), Willy's fitness-and-cohort
-condition binding; the 11 dry runs re-run before any is applied. Sitting:
-`docs/decisions/coaching-2026-10-28-mp-blocks-tenk-sim-sitting.md`.
-
----
-
 ### 🔲 `MP-WORK-DOSE-01` — is 4 km enough marathon-pace work away from the long run? 🏃 **COACHING BOARD**
 
 Seiler's open question from the 28 Oct sitting. A 20–50 min MP band (prototype) moves 132 of 234 cohort sessions to

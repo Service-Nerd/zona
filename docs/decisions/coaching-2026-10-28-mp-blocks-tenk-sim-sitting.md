@@ -21,7 +21,7 @@ the 11-plan dry-run batch.
 | Option | What changes | Measured |
 |---|---|---|
 | M1: a marathon-pace work band (20–50 min) | 132 of 234 cohort sessions → 2 x 4 km (8 km at MP) | slow unchanged (still one); 57 cohort plans change; warns only |
-| M2: call it what it is: "Marathon-pace run", one 4 km at MP, no trailing jog, sizing unchanged | every session 47 → 44 min, MP work unchanged | 108 cohort / 49 slow plans change (easy runs absorb 3 min); warns only, net −1 |
+| M2: call it what it is: "Marathon-pace run", one 4 km at MP, no trailing jog, sizing unchanged | every session 47 → 44 min, MP work unchanged | 108 cohort / 49 slow plans change (easy runs absorb 3 min); warns only. ⚠️ **Corrected at build:** this said "net −1"; the prototype's output was **+3 cohort** (`INV-PLAN-LR-MAX-WEEKLY-PCT` +4, `PEAK-NOT-BELOW-START` +1, `LARGEST-SESSIONS-SPACED` −2) and **+1 slow**. The board ruled on the misstated figure; see the build's cohort-review finding |
 | M3: 2 km blocks | cohort 2 x 2 km (same 4 km + a jog); **slow 1 x 2 km (half their MP, still one block)** | 108 cohort / 49 slow plans change |
 
 **`tenk_race_simulation` ("10K-pace race simulation": reps x 2 km at goal pace / 90 s, 10K peak).** Cohort: 2 reps

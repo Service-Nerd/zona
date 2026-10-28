@@ -80,6 +80,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-MAIN-SET-ORDERING',
   'INV-PLAN-VO2MAX-MAIN-SET-CAP',
   'INV-PLAN-REPEATS-REPEAT',
+  'INV-PLAN-RACE-SPECIFIC-RACE-SHARE',
   'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT',
   'INV-PLAN-VO2MAX-ONSET',
   'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
@@ -5359,7 +5360,12 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         if (!m) continue
         const claimed = m[1].toLowerCase()
         if (claimed === GENERIC || PURPOSE_WORDS.has(claimed)) continue
-        const actual = goalPaceShapeWord(row)
+        // The shape the session ACTUALLY has: its own delivered set first, the row only when it has none. A stored
+        // session built from an earlier version of its row (MP-BLOCKS-ONE-BLOCK-01 renamed mp_blocks's block from
+        // 'blocks' to 'sustained' under six live plans) is judged by the structure it was built with, not by today's row.
+        // A newly generated session's set carries the row's own block label, so this changes nothing for it.
+        const delivered = sn.derived_set?.blocks?.length ? goalPaceShapeWord({ main_set_structure: { version: 2, blocks: sn.derived_set.blocks } }) : null
+        const actual = delivered ?? goalPaceShapeWord(row)
         // No resolvable shape on the row, or the claim is not a word this
         // codebase produces → not this invariant's business.
         if (!actual || !KNOWN_SHAPE_WORDS.has(claimed)) continue
@@ -5688,10 +5694,9 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // row's rep block is found by its own label. Every rep-scaled row is in scope, so a new row that can reach one rep
   // fails here; REPEATS_ONE_REP_DEBT names the measured exception.
   {
-    const REPEATS_ONE_REP_DEBT: Record<string, string> = {
-      mp_blocks: 'MP-BLOCKS-ONE-BLOCK-01: one 4 km block for every runner measured (170 of 170); board split, unruled',
-      tenk_race_simulation: 'TENK-SIM-ONE-REP-01: 1 x 2000 m at goal pace for slow 10K runners (19 sweep sessions); no ruled sibling',
-    }
+    // Empty since 2026-10-28: mp_blocks became a continuous run (no longer rep-scaled) and tenk_race_simulation took
+    // the race-specific rep floor. A new entry needs a ruling and an item id.
+    const REPEATS_ONE_REP_DEBT: Record<string, string> = {}
     const minReps = GENERATION_CONFIG.REP_ROW_MIN_REPS
     for (const w of plan.weeks) {
       for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
@@ -5717,6 +5722,45 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             })
           }
         }
+      }
+    }
+  }
+
+  // INV-PLAN-RACE-SPECIFIC-RACE-SHARE (CoachingPrinciples §19 Amendment 2, Coaching Board 2026-10-28,
+  // TENK-SIM-ONE-REP-01) — the cap the race-specific rep floor was ruled under: a race-specific session at the floor
+  // (REP_ROW_MIN_REPS reps, all-distance work) runs no more than RACE_SPECIFIC_MAX_RACE_SHARE of the race at race pace.
+  // ⚠️ SCOPED TO THE FLOOR, NOT PLAN-WIDE, measured: plan-wide it fired on 4 x 1 km at 5K pace (80% of a 5K), a
+  // standard session sized by its dose band and accepted by the board. The cap was ruled for the floor's output only.
+  // (A first measurement said the largest share was 0.6; its sample held no 4-rep 5K sharpener. Corrected.)
+  {
+    const cap = GENERATION_CONFIG.RACE_SPECIFIC_MAX_RACE_SHARE
+    const raceKm = input.race_distance_km
+    if (raceKm > 0) for (const w of plan.weeks) {
+      for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+        if (!sn?.derived_set) continue
+        const row = catalogueRowFor(sn)
+        if (!row || row.category !== 'race_specific') continue
+        const shape = row.main_set_structure as { version?: number; blocks?: { label?: string; steps?: { role?: string; length?: { kind?: string; m?: number } }[] }[] }
+        if (shape.version !== 2) continue
+        let km = 0, priced = true
+        for (const rb of shape.blocks ?? []) {
+          const work = (rb.steps ?? []).filter(st => st.role === 'work')
+          if (work.length === 0) continue
+          if (!work.every(st => st.length?.kind === 'distance')) { priced = false; break }
+          const delivered = (sn.derived_set.blocks ?? []).find(b => b.label === rb.label)
+          if (!delivered || typeof delivered.repeat !== 'number') { priced = false; break }
+          if (delivered.repeat !== GENERATION_CONFIG.REP_ROW_MIN_REPS) { priced = false; break }   // band-sized, not the floor's
+          km += delivered.repeat * work.reduce((a, st) => a + (st.length?.m ?? 0), 0) / 1000
+        }
+        if (!priced || km <= cap * raceKm + 1e-9) continue
+        violations.push({
+          code: 'INV-PLAN-RACE-SPECIFIC-RACE-SHARE',
+          principle_ref: 'CoachingPrinciples §19 Amendment 2',
+          severity: 'error', week: w.n, day,
+          message: `"${sn.label}" runs ${km.toFixed(1)} km at race pace, ${Math.round(100 * km / raceKm)}% of a ${raceKm} km race, over the ${Math.round(cap * 100)}% cap.`,
+          actual: `${km.toFixed(1)} km`,
+          expected: `<= ${(cap * raceKm).toFixed(1)} km`,
+        })
       }
     }
   }

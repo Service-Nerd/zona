@@ -87,7 +87,7 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
-## 2026-10-28 — MP-BLOCKS-ONE-BLOCK-01 + TENK-SIM-ONE-REP-01 · M2 (continuous MP run) CORRECT WITH AMENDMENT · M1 INSUFFICIENT EVIDENCE · M3 INCORRECT · T1 (sibling) INCORRECT · T2 (two-rep floor, race-share cap) CORRECT WITH AMENDMENT · RULED, not built
+## 2026-10-28 — MP-BLOCKS-ONE-BLOCK-01 + TENK-SIM-ONE-REP-01 · M2 (continuous MP run) CORRECT WITH AMENDMENT · M1 INSUFFICIENT EVIDENCE · M3 INCORRECT · T1 (sibling) INCORRECT · T2 (two-rep floor, race-share cap) CORRECT WITH AMENDMENT · BUILT 2026-10-28 (Willy's condition read; cohort cost declared, see build-log)
 
 Measured in memory (no file touched) on 4,000 cohort + 1,200 slow inputs. **`mp_blocks`** is one 4 km block for 234 of
 234 cohort and 98 of 98 slow sessions (a naming defect, not a slow-runner one); live in 6 plans, five in the dry-run

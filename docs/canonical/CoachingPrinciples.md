@@ -2399,8 +2399,7 @@ the rotation to CV work, Seiler).
 
 **Measured at build.** Slow grid: 18 sessions change, all to 2 x 10 min at T (16.7 → 20 min of threshold, 37 → 43 min);
 `verify:parity` 6,102 cases byte-identical; cohort unchanged. `rowUsage` keeps the row the selector picked; §53's
-variety checks do not move. **Not ruled:** `mp_blocks` is one 4 km block for every runner measured (170 of 170), and is
-registered debt in the check (`MP-BLOCKS-ONE-BLOCK-01`, McMillan and Seiler disagree). **Found by the sweep at build:** `tenk_race_simulation` sizes to one 2,000 m rep at goal pace for slow 10K runners (19 sweep sessions; the slow grid never draws the row), also registered debt (`TENK-SIM-ONE-REP-01`): it has no ruled sibling, and naming one is the board's.
+variety checks do not move. At build two more one-rep rows were found and went back to the board (third sitting, below).
 
 **Which eligibility the stand-in answers to** *(second sitting, 2026-10-28)*. `tempo_cruise` is build-only and every
 measured swap lands in peak. That tag is a rotation rule from §19's CD-1 ruling ("separated by fitness floor and
@@ -2412,7 +2411,22 @@ sessions, 0 validator codes; but 22 min continuous at goal pace for the slowest 
 not pick; Seiler, Willy, Sims). McMillan's observation that HM peak may lack continuous goal-pace work in general is
 recorded, not ruled.
 
-**Config.** `GENERATION_CONFIG.REP_ROW_MIN_REPS = 2`; catalogue field `one_rep_sibling`. **Check.**
+**The marathon-pace run, and the race-specific rep floor** *(third sitting, 2026-10-28, MP-BLOCKS-ONE-BLOCK-01 +
+TENK-SIM-ONE-REP-01)*. `mp_blocks` ("reps x 4 km / 3 min jog") sized to one block for **every** runner measured (332
+of 332): 4 km at any marathon pace slower than 3:45 /km is past the band's minimum. A naming defect, not a slow-runner
+one. It is now **"Marathon-pace run": one continuous 4 km at marathon pace, no trailing jog**, its marathon-pace work
+unchanged. It is a fixed shape sized by `fixedShapePlan` from its own literal step (it joins that sizer's board-gated allowlist, beside `hm_pace_intervals`; the caller now passes goal pace to a goal-anchored row, which it never needed before). Like `hm_pace_intervals`, its distance step is not summed by the duration-coherence check. Refused: a marathon-pace band of
+20–50 min (doubles MP work for 132 of 234 with no fitness evidence, `MP-WORK-DOSE-01`, Seiler); 2 km blocks (halves
+slow runners' MP work and still leaves one block). `tenk_race_simulation` ("reps x 2 km at goal pace / 90 s") was one
+rep for slow 10K runners. **A race-specific rep row sized below `REP_ROW_MIN_REPS` is given that many reps, while they
+stay within `RACE_SPECIFIC_MAX_RACE_SHARE` (0.6) of the race**, the share the row was designed to give (~6 km of 10).
+Past the threshold band's ceiling by ruling: race-pace work is a share of the race, not a threshold minute count. A
+rep-count floor, never a band: any band minimum that adds a slow runner's second rep adds a fast runner's third.
+Refused: the sibling `tenk_pace_intervals` (re-creates the 11 Sep repetition, CAT-10K-RACE-SPECIFIC-01). **Willy's
+condition (binding):** `measure:fitness` and the 10K beginner and masters cohorts read at build. ⚠️ The cap binds the
+floor's output only: a band-sized 4 x 1 km at 5K pace is 80% of a 5K, a standard session, and is not this rule's.
+
+**Config.** `GENERATION_CONFIG.REP_ROW_MIN_REPS = 2`, `GENERATION_CONFIG.RACE_SPECIFIC_MAX_RACE_SHARE = 0.6`; catalogue field `one_rep_sibling`. **Check.** `INV-PLAN-RACE-SPECIFIC-RACE-SHARE` (the floor's cap);
 `INV-PLAN-REPEATS-REPEAT` reads the DELIVERED derived set of every rep-scaled row; `lib/plan/repeatsRepeat.test.ts`.
 
 ---

@@ -33,35 +33,36 @@
    "15": {
     "n": 220,
     "refusedPct": 0,
-    "cleanPct": 47.5,
+    "cleanPct": 47.2,
     "servedPct": 100,
     "doorPct": null,
     "objections": {
      "LONG-RUN-SHORT": 35.3,
      "WEEK1-LEAP": 27.2,
-     "STAGED:WEEK1-LEAP": 11,
-     "STAGED:LONG-RUN-SHORT": 4.5
+     "STAGED:WEEK1-LEAP": 11.3,
+     "STAGED:LONG-RUN-SHORT": 6.3
     }
    },
    "25": {
     "n": 219,
     "refusedPct": 0,
-    "cleanPct": 92,
+    "cleanPct": 91,
     "servedPct": 100,
     "doorPct": null,
     "objections": {
      "LONG-RUN-SHORT": 4.7,
-     "WEEK1-LEAP": 3.4
+     "WEEK1-LEAP": 3.4,
+     "BINGE-WEEK": 0.9
     }
    },
    "35": {
     "n": 220,
     "refusedPct": 0,
-    "cleanPct": 99.6,
+    "cleanPct": 99,
     "servedPct": 100,
     "doorPct": null,
     "objections": {
-     "BINGE-WEEK": 0.4
+     "BINGE-WEEK": 1
     }
    },
    "50": {
