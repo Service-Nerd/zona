@@ -87,6 +87,15 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-28 — Strength session shape · A: S2 unchanged (P1/P2 INCORRECT), say it on the session · A2 A/B sessions CORRECT · C rep blocks CORRECT WITH AMENDMENT · D main pairs + warm-up rounds CORRECT WITH AMENDMENT
+
+From the founder's two sessions. Measured on 1,605 strength plans: 52.0% of chosen-day training weeks have no heavy-leg
+session, 34.0% of weeks hold two identical sessions. Loosening S2 (legs the day after / before a hard run) cuts no-leg weeks
+to 10.9% / 1.6% and is **INCORRECT** (§7). S3 Am.2 (light legs, swap day) stands and is now said on the session. A/B
+sessions in a week; general-focus rep cycle by block (running keeps heavy 5s; no toning claim); a lower and an upper main lift
+pair with the longer rest; warm-up as rounds at 45/60 min. Knee-dominant light item INSUFFICIENT EVIDENCE (Willy).
+Sitting: `docs/decisions/coaching-2026-10-28-strength-session-shape-sitting.md`.
+
 ## 2026-10-28 — LONG-RUN-BELOW-LONGEST-01 (2nd sitting) · the 120-min back/plantar long-run cap RATIFIED AS IS and made doctrine · value INSUFFICIENT EVIDENCE · runner told · SLT: injury recency
 
 The cause of graceemilyhill's 13.5 km long run: `applyLongRunCap`'s literal 120 minutes for any back or plantar history,

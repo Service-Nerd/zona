@@ -4525,6 +4525,27 @@ exercise in lighter form is left out when that exercise is in the session (`S-WA
 `SegmentedControl`, equipment `Chip` multi, experience `Chip`, bone flag `Switch`), the last two defaulted; injuries read-only from the run plan; honest notes
 once, as `FieldNote`s; one CTA.
 
+### Strength session in parts, and the guided session (STRENGTH-SESSION-PARTS-01, STRENGTH-GUIDED-SESSION-01, Design Board 2026-10-28) — RULED, NOT BUILT
+
+**Overview (amends the section above when built).** SessionScreen anatomy kept. Training work is grouped into **parts**:
+*Warm-up · Part 1 … Part N · Cool-down*. A part is one lift or a **superset pair** shown as two rows joined by a link glyph
+and *"then straight into"*. The part header (eyebrow type, `--s-strength` rail; warm-up `--moss`) says once: rounds, rest
+after the round. Rows carry exercise and dose only (*"10"*, *"10 each side"*, *"30 s"*); main lifts keep the 10f
+*"Last time … Try …"* line. *"New lifts this block. Start light and build from there."* once, under the tiles. Effort in
+plain words, on reps-based work only (*"Stop with 2 in the tank"*), never "reps in reserve" on timed core. A converted
+session carries the no-legs line with the plan's swap day. Actions: **Start session** (primary), **Mark complete without
+starting**, **Skip**.
+
+**Guided session (new screen).** Full screen, one part per page: a progress strip (one segment per part), the part
+eyebrow, *"Round N of M"* as the headline, the part's moves, a **weight stepper** per loaded main lift (− / number / +,
+prefilled from the suggestion, steps from `LOAD_STEP_KG_*`, keyboard only on tapping the number), a tap-to-start timer on
+timed moves, a **rest countdown** from the prescription's `rest_s` with *+30 s* and *Skip rest*, **Back** and the primary
+action at the bottom (reachable one-handed), **End session** always visible, elapsed time top right. Ending shows minutes,
+parts and rounds, then the feel chips per main lift (optional) and **Done**. Stored: session start and end, and the existing
+lift logs; rounds live for the session only. No streak, badge, chart or celebration (10f).
+
+Mockups: the canvas *Strength session redesign*. Sitting: `docs/decisions/design-2026-10-28-strength-session-screen-sitting.md`.
+
 ## Cross-Screen Consistency Rules
 
 Every screen must honour these invariants before shipping. Check against this list when auditing.

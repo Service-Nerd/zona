@@ -213,6 +213,15 @@ Found building INJURY-PEAK-JUMP-01: `peak_shortfall_note` (§106/§40c), `freque
 `planRationale.test.ts` (NOTE-SURFACE), which fails on a fourth. Measure how many plans carry each, then place them.
 
 
+### 🔲 `STRENGTH-SESSION-REDESIGN-01` — the strength session, redesigned: six builds, all boards ruled 2026-10-28 🏃 **COACHING BOARD** + 🧭 **DESIGN BOARD** ruled; 👤 **FOUNDER** approves screens and words first
+
+Plan: `docs/plans/STRENGTH-SESSION-REDESIGN-01.md`. Canvas: *Strength session redesign*. In order: `STRENGTH-BW-LOG-01`
+(bodyweight lifts log feel only; the founder logged 90 kg on an inverted row), `STRENGTH-AB-SESSIONS-01` (34% of weeks hold
+two identical sessions), `STRENGTH-SUPERSET-MAINS-01` (lower + upper main pairs, warm-up rounds), `STRENGTH-REP-BLOCKS-01`
+(general-focus rep cycle), `STRENGTH-SESSION-PARTS-01` (overview in parts, new wording, the no-legs line), and
+`STRENGTH-GUIDED-SESSION-01` (start / end, one part per page, stepper, timers). S2 unchanged: loosening it was ruled
+INCORRECT (52% of chosen-day weeks have no heavy legs; P1/P2 put legs beside a hard run).
+
 ### 🔲 `ENRICH-RISK-TOKEN-01` — the enricher can leave a `{{token}}` in `confidence_risks`, which nothing fills ⚙️ **NO BOARD**
 
 Found validating the 28 Oct voice restore: 3cc7c3a9's third risk reads *"Zone 3 discipline ({{session_hr}}) is

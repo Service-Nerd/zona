@@ -226,6 +226,17 @@ header band breaks *Type accent, not flood*): colour goes into the trace and sil
 2 px top rule. **Collins lost**, challenge recorded. Declined: medals, route art, the carousel. Treadmill toggle routed to
 the Coaching Board. Not built. Sitting: `docs/decisions/session-screens-runna-2026-10-21.md`.
 
+## 2026-10-28 — STRENGTH-SESSION-PARTS-01 + STRENGTH-GUIDED-SESSION-01 · SHIP WITH AMENDMENT. The overview in parts; a guided session, one part per page
+
+From the founder's own *Full body* session (three screenshots): the same two support lines on every main-lift row, the
+engine's supersets invisible, "reps in reserve" on core moves, keyboard-only weight entry, no start or end. **Overview:**
+SessionScreen anatomy kept; training work grouped into parts (one lift or a linked pair), rounds / rest / effort said once
+per part, rows carry exercise and dose only, "New lift. Start light." once, a **Start session** button. **Guided:** one part
+per page, round counter, weight stepper prefilled from the suggestion, rest countdown, timers on timed moves, End session;
+stores session times and the existing lift logs. **Amends STRENGTH-APP-01's "done or skipped only".** Collins lost on the
+overview headline. Bodyweight lifts log feel only (`STRENGTH-BW-LOG-01`). Sitting:
+`docs/decisions/design-2026-10-28-strength-session-screen-sitting.md`.
+
 ## 2026-10-21 — STRENGTH-MEDIA-01 · SHIP WITH AMENDMENT (conditional on the supplier). Demo media only inside an opened exercise row
 
 Placement B: media above the cues in an opened row; closed rows unchanged; no placeholder for an exercise without
