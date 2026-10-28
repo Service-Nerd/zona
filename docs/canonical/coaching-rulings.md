@@ -87,6 +87,17 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-28 — MP-WORK-DOSE-01 · 6 km / 8 km / 2 x 4 km INCORRECT as prototyped · the underlying question INSUFFICIENT EVIDENCE · 4 km stands · CLOSED
+
+Seiler's question from the M2 sitting. Prototyped in memory (no file touched) on 1,140 cohort, 396 slow and 515
+envelope marathon time-goal plans. Every larger dose **adds** weekly load: MP weeks +2 km (6 km), +4–5 km (8 km,
+2 x 4 km), because the easy runs do not give it back. Weekday overruns 268 → 520 of ~785 cohort sessions at 8 km (slow
+58 → 96, up to 119 min); `INV-PLAN-INJURY-CAP-DELIVERED` +11/+16 on the envelope (§90's delivered ceiling crossed);
+2–4 new refusals. Long-run-share warns fall only because the week is bigger. ⚠️ `measure:fitness` cannot see race-pace
+exposure at all. **Reopens on:** a prototype that redistributes MP work inside the week's budget, scaled by experience
+(Seiler, McMillan), plus a measure of race-pace exposure. No artifact changes. Sitting:
+`docs/decisions/coaching-2026-10-28-mp-work-dose-sitting.md`.
+
 ## 2026-10-28 — MP-BLOCKS-ONE-BLOCK-01 + TENK-SIM-ONE-REP-01 · M2 (continuous MP run) CORRECT WITH AMENDMENT · M1 INSUFFICIENT EVIDENCE · M3 INCORRECT · T1 (sibling) INCORRECT · T2 (two-rep floor, race-share cap) CORRECT WITH AMENDMENT · BUILT 2026-10-28 (Willy's condition read; cohort cost declared, see build-log)
 
 Measured in memory (no file touched) on 4,000 cohort + 1,200 slow inputs. **`mp_blocks`** is one 4 km block for 234 of
