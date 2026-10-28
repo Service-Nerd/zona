@@ -127,8 +127,27 @@ describe('OPS-ENRICH-HEALTH-01', () => {
     }
     for (const d of ['app', 'lib', 'scripts', 'components']) walk(join(root, d))
     expect(files.length, 'population').toBeGreaterThan(200)
-    const bad = files.filter(f => /enrichment\s*[!=]==\s*'applied'(?!_)/.test(readFileSync(f, 'utf8')))
+    // Both orders, strict and loose equality. A renamed variable (`s === 'applied'`) is
+    // not caught here; test 11 holds the scripts that actually rewrite plans.
+    const bare = /enrichment\s*[!=]==?\s*'applied'(?!_)|'applied'\s*[!=]==?\s*\S*enrichment/
+    const bad = files.filter(f => bare.test(readFileSync(f, 'utf8')))
       .map(f => f.slice(root.length + 1))
     expect(bad).toEqual([])
+  })
+
+  // The four scripts the 28 Oct review found unguarded. Any script that REGENERATES a
+  // plan and WRITES it to `plans` must consult `hasAiCopy`, directly or through
+  // `regenRefusalReason` (whose `hasAiCopy` field is required).
+  it('11. every script that regenerates and writes a live plan consults hasAiCopy', () => {
+    const dir = join(__dirname, '..', '..', 'scripts')
+    const writers = readdirSync(dir).filter(n => /\.tsx?$/.test(n)).map(n => join(dir, n))
+      .filter(f => {
+        const s = readFileSync(f, 'utf8')
+        return /generateRulePlan\(/.test(s)
+          && (/savePlanForUser\(/.test(s) || /from\('plans'\)\s*\.\s*(upsert|update)\(/.test(s))
+      })
+    expect(writers.length, 'population: the five known rebuild scripts').toBeGreaterThanOrEqual(5)
+    const unguarded = writers.filter(f => !/hasAiCopy\(/.test(readFileSync(f, 'utf8'))).map(f => f.split('/').pop())
+    expect(unguarded).toEqual([])
   })
 })

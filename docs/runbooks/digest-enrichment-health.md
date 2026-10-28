@@ -52,9 +52,9 @@ with s as (
          to_char(p.created_at,'YYYY-MM-DD') as created_utc,
          -- REBUILD-VOICE-LOSS-01: a plan with generator_input and no state is not legacy
          coalesce(p.plan_json->'meta'->>'enrichment',
-                  case when p.plan_json->'meta'->'generator_input' is not null
+                  case when jsonb_typeof(p.plan_json->'meta'->'generator_input') = 'object'
                         and coalesce(p.plan_json->'meta'->>'tier','') <> 'free'
-                        and coalesce(p.plan_json->'meta'->>'plan_kind','race') = 'race'
+                        and coalesce(nullif(p.plan_json->'meta'->>'plan_kind',''),'race') = 'race'
                        then 'not_recorded' end) as enrichment,
          (select u.email from auth.users u where u.id = p.user_id) as email
   from plans p

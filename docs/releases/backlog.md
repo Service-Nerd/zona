@@ -147,6 +147,14 @@ second instrument whose baseline was never re-baselined, so `npm run verify` (an
 commit. **The NEVER-BUILDS +1 was not in the declared cost.** Decide: re-baseline with `--write` and this reason, or send
 the one never-builds plan to the board. ⚠️ I reported "full suite passing" for that ship having run `vitest`, not `verify`.
 
+### 🔲 `REBUILD-STAMP-ENRICHMENT-01` — a script rebuild should write an explicit enrichment state ⚙️ **NO BOARD**
+
+From the REBUILD-VOICE-LOSS-01 code review. Rebuild scripts save a plan with no `meta.enrichment`, and the health check,
+digest and restore script now infer `not_recorded` from `generator_input` + tier + `plan_kind` (TS, and a hand-mirrored
+SQL copy). Stamping the state at the writer would retire the inference for new rebuilds. Two inference edges remain and
+are measured at 0 today: a staged plan rebuilt without its `skipped_plan_kind`, and a plan from the few hours on
+2026-08-06 between PV2-A (`generator_input`) and GEN-FIX-02 (`enrichment`).
+
 ### 🔲 `DIGEST-Q5B-LIVE-01` — apply the amended enrichment query to the live digest routine 👤 **FOUNDER** (external change)
 
 REBUILD-VOICE-LOSS-01 amended `docs/runbooks/digest-enrichment-health.md` Q5B so the digest counts a rebuilt plan with no

@@ -45,7 +45,7 @@
 
 import { generateRulePlan, type Tier } from './ruleEngine'
 import { revertWeeksToRuleCopy } from './enrichPartialRevert'
-import { hasAiCopy } from '@/lib/ops/enrichHealth'
+import { hasAiCopy } from './enrichmentState'
 import type { Plan, Session, Week } from '@/types/plan'
 
 /** True when two sessions are the same PRESCRIPTION — the fields the enricher
@@ -110,9 +110,7 @@ export function resizeForDeferredFoundationAdd(
   if (resized.weeks.length !== incoming.weeks.length) return incoming
 
   // Was the incoming plan carrying enrichment worth preserving?
-  const wasEnriched =
-    hasAiCopy(incoming.meta)
-  if (!wasEnriched) return resized
+  if (!hasAiCopy(incoming.meta)) return resized
 
   // Graft the incoming ENRICHED copy onto every main-plan week whose prescription
   // survived the re-size unchanged; the rest keep the re-run's rule copy.

@@ -37,6 +37,7 @@
  *   npx tsx scripts/recal-live-repair.ts --apply              # write
  *   npx tsx scripts/recal-live-repair.ts --verify             # read back; see § VERIFY
  */
+import { hasAiCopy } from '../lib/plan/enrichmentState'
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import {
@@ -232,6 +233,8 @@ async function regenerate() {
       console.log(`  benchmark injected from meta: ${bm.distance_km}km in ${bm.time}`)
     }
 
+    // REBUILD-VOICE-LOSS-01: regenerating deletes model-written copy.
+    if (hasAiCopy(before.meta)) { console.log('  SKIP — plan carries AI-written copy a regeneration would drop'); continue }
     const tier = ((meta.tier as string) === 'free' ? 'free'
       : (meta.tier as string) === 'paid' ? 'paid' : 'trial') as 'free' | 'trial' | 'paid'
     let candidate: Plan

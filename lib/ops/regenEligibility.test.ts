@@ -13,7 +13,7 @@ const TODAY = '2026-10-10'
 /** The safe case: a future race AND a future start, no activity of any kind. */
 const safe = (over: Partial<RegenCandidate> = {}): RegenCandidate => ({
   planStart: '2026-12-07', raceDate: '2027-04-24', hasGeneratorInput: true,
-  isAdmin: false, hasCompletions: false, hasRunAnalysis: false, hasActivities: false,
+  isAdmin: false, hasCompletions: false, hasRunAnalysis: false, hasActivities: false, hasAiCopy: false,
   ...over,
 })
 
@@ -66,6 +66,8 @@ describe('REGEN-LIVE-PLAN-GUARD-01', () => {
     expect(regenRefusalReason(safe({ raceDate: '2026-09-01' }), TODAY)).toBe('past-race')
     expect(regenRefusalReason(safe({ hasGeneratorInput: false }), TODAY)).toBe('no-generator-input')
     expect(regenRefusalReason(safe({ isAdmin: true }), TODAY)).toBe('is-admin')
+    // REBUILD-VOICE-LOSS-01: a regeneration deletes model copy.
+    expect(regenRefusalReason(safe({ hasAiCopy: true }), TODAY)).toBe('has-ai-copy')
   })
 
   it('7. a past race is reported before anything else — cheapest, most absolute fact', () => {

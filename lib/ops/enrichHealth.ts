@@ -28,9 +28,9 @@
 // happened; `meta.enrichment` is the thing the runner HAS.
 import type { Plan } from '@/types/plan'
 
-/** Enrichment states in which the model's copy actually reached the plan. Shared
- *  vocabulary with `notesProvenance.ts` — one definition, not two. */
-export const ENRICHED_STATES = ['applied', 'applied_partial'] as const
+import { ENRICHED_STATES, hasAiCopy } from '@/lib/plan/enrichmentState'
+// Re-exported: the digest SQL mirror and existing callers name them from here.
+export { ENRICHED_STATES, hasAiCopy }
 
 /** Free plans are never enriched (by design) and legacy plans predate the field.
  *  Neither is a failure, and counting them would deflate the rate. */
@@ -93,14 +93,6 @@ export function judgeEnrichHealth(rows: readonly EnrichStateRow[]): EnrichHealth
   }
 }
 
-/** True when the plan carries model-written copy, fully or in part. A rebuild that
- *  regenerates the rule plan deletes that copy, so every rebuild guard asks THIS,
- *  never `=== 'applied'` (REBUILD-VOICE-LOSS-01: three paid plans were rebuilt on
- *  2026-10-28 because the guard named one of the two states). */
-export function hasAiCopy(meta: Pick<Plan['meta'], 'enrichment'> | null | undefined): boolean {
-  return (ENRICHED_STATES as readonly string[]).includes(meta?.enrichment ?? '')
-}
-
 /** The state a plan with NO recorded enrichment is given when it cannot be legacy. */
 export const NOT_RECORDED = 'not_recorded'
 
@@ -119,7 +111,7 @@ export const NOT_RECORDED = 'not_recorded'
 export function enrichmentStateOf(plan: Pick<Plan, 'meta'> | null | undefined): string | null {
   const meta = plan?.meta
   if (meta?.enrichment != null) return meta.enrichment
-  if (!meta?.generator_input) return null
+  if (!meta?.generator_input || typeof meta.generator_input !== 'object') return null
   if (meta.tier === 'free' || (meta.plan_kind && meta.plan_kind !== 'race')) return null
   return NOT_RECORDED
 }

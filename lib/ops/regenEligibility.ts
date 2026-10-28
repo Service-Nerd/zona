@@ -43,6 +43,9 @@ export interface RegenCandidate {
    * (ADR-011), which includes Apple Health. **This is the signal that was missing.**
    */
   hasActivities: boolean
+  /** `hasAiCopy(meta)`: the plan carries model-written copy a regeneration deletes.
+   *  Required, so every rebuild script has to answer it (REBUILD-VOICE-LOSS-01). */
+  hasAiCopy: boolean
 }
 
 export type RegenRefusal =
@@ -53,6 +56,7 @@ export type RegenRefusal =
   | 'has-completions'
   | 'has-run-analysis'
   | 'has-activities'
+  | 'has-ai-copy'
 
 /**
  * `null` means eligible. Order is deliberate: the two CHEAPEST and most absolute
@@ -73,5 +77,6 @@ export function regenRefusalReason(c: RegenCandidate, today: string): RegenRefus
   // ⚠️ THE SIGNAL THAT WAS MISSING. A runner who syncs from Strava and never taps
   // "done" is an ACTIVE runner, and the old filter read them as dormant.
   if (c.hasActivities) return 'has-activities'
+  if (c.hasAiCopy) return 'has-ai-copy'
   return null
 }

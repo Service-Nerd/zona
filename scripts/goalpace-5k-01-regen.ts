@@ -24,7 +24,7 @@
  *
  * Run:  NODE_ENV=production npx tsx scripts/goalpace-5k-01-regen.ts --plan <id> [--apply]
  */
-import { hasAiCopy } from '../lib/ops/enrichHealth'
+import { hasAiCopy } from '../lib/plan/enrichmentState'
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
@@ -128,10 +128,10 @@ async function main() {
     const refusal = regenRefusalReason({
       planStart, raceDate, hasGeneratorInput: true, isAdmin: false,
       hasCompletions: completionWeeks.length > 0, hasRunAnalysis: analysisWeeks.length > 0, hasActivities: runsInBlock > 0,
+      hasAiCopy: hasAiCopy(meta),
     }, TODAY)
     if (refusal) throw new Error(`refused: ${refusal}`)
     if (overrideWeeks.length) throw new Error('refused: runner has moved sessions (session_overrides)')
-    if (hasAiCopy(meta)) throw new Error('refused: plan carries AI-written copy a rebuild would drop')
     candidate = fresh
   } else {
     // A week is open to change only if it has not begun.

@@ -73,17 +73,17 @@ describe('the digest Q5B SQL mirrors enrichHealth.ts', () => {
       .toEqual([...ENRICHED_STATES].sort())
   })
 
-  // `NOT_ELIGIBLE` is exported since REBUILD-VOICE-LOSS-01 added `skipped_plan_kind`; the
-  // comment explains it — so this arm pins the value the SQL excludes and the module
-  // test (`enrichHealth.test.ts`) pins the behaviour. Both must move together.
+  // `NOT_ELIGIBLE` is exported since REBUILD-VOICE-LOSS-01 added `skipped_plan_kind`, so
+  // this arm compares the SQL against it directly; `enrichHealth.test.ts` pins the
+  // behaviour. Both must move together.
   // REBUILD-VOICE-LOSS-01: `enrichmentStateOf` maps a non-legacy plan with no state to
   // `not_recorded`. Without the same mapping the SQL counts those runners as legacy.
   it('maps a plan with generator_input and no state to not_recorded, as the module does', () => {
     const sql = q5bSql()
     expect(sql).toContain(`'${NOT_RECORDED}'`)
-    expect(sql).toMatch(/generator_input'\s+is not null/)
+    expect(sql).toMatch(/jsonb_typeof\(p\.plan_json->'meta'->'generator_input'\)\s*=\s*'object'/)
     expect(sql).toMatch(/'tier','?'?\)\s*<>\s*'free'/)
-    expect(sql).toMatch(/'plan_kind','race'\)\s*=\s*'race'/)
+    expect(sql).toMatch(/nullif\(p\.plan_json->'meta'->>'plan_kind',''\),'race'\)\s*=\s*'race'/)
   })
 
   it('excludes exactly the ineligible state', () => {

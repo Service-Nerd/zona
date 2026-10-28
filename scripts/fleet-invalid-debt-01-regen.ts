@@ -22,6 +22,7 @@ import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import { validateReshapedPlan } from '../lib/plan/invariants'
 import type { Plan, GeneratorInput } from '../types/plan'
 import { regenRefusalReason } from '../lib/ops/regenEligibility'
+import { hasAiCopy } from '../lib/plan/enrichmentState'
 import { withProfileHr, type ProfileHr } from '../lib/plan/rebuildInput'
 
 const APPLY = process.argv.includes('--apply')
@@ -103,6 +104,7 @@ async function main() {
       hasCompletions: completed.has(user),
       hasRunAnalysis: analysed.has(user),
       hasActivities: active.has(user),
+      hasAiCopy: hasAiCopy(plan.meta),
     }, TODAY)
     if (refusal) { skip(refusal); continue }
 

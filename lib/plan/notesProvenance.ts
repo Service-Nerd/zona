@@ -26,14 +26,12 @@
 
 import type { Plan, Session, Week } from '@/types/plan'
 import { isTimeTrial } from './sessionRole'
-import { hasAiCopy } from '@/lib/ops/enrichHealth'
+import { hasAiCopy } from './enrichmentState'
 
-/** Enrichment states in which the enricher's output actually reached the plan.
- *  Everything else — 'skipped' (free tier), 'pending', every failure state, and
- *  a legacy plan with no field at all — means the copy on screen is the rule
- *  engine's. */
-// One definition: `hasAiCopy` (lib/ops/enrichHealth) over `ENRICHED_STATES`. This file
-// carried its own copy of the set until REBUILD-VOICE-LOSS-01.
+// Only `ENRICHED_STATES` (`./enrichmentState`) mean the enricher's output reached the
+// plan. Everything else ('skipped', 'pending', every failure state, a legacy plan with
+// no field) means the copy on screen is the rule engine's. This file carried its own
+// copy of that set until REBUILD-VOICE-LOSS-01.
 
 export function sessionNotesAreAiAuthored(
   session: Pick<Session, 'type' | 'role' | 'label' | 'coach_notes' | 'enrichment_reverted'>,

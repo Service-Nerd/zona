@@ -13,6 +13,7 @@
  * Requires .env.local (SUPABASE_SERVICE_ROLE_KEY, APNS_* for the push). Identifies
  * User A by the incident plan signature — no id committed.
  */
+import { hasAiCopy } from '../lib/plan/enrichmentState'
 import { createClient } from '@supabase/supabase-js'
 import fs from 'fs'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
@@ -105,6 +106,8 @@ const qualityNames = (plan: Plan): string[] => {
   line(`  body:  ${PUSH.body}`)
   line(`  data:  ${JSON.stringify(PUSH.data)}`)
 
+  // REBUILD-VOICE-LOSS-01: regenerating deletes model-written copy.
+  if (hasAiCopy(current.meta)) { line('\n⛔ Current plan carries AI-written copy a regeneration would drop — NOT applying.'); return }
   if (errs.length) { line('\n⛔ New plan has error-severity invariant violations — NOT applying. Fix first.'); return }
 
   if (!APPLY) {
