@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { ENRICHED_STATES } from './enrichHealth'
+import { ENRICHED_STATES, NOT_ELIGIBLE, NOT_RECORDED } from './enrichHealth'
 
 // OPS-DIGEST-ENRICH-WIRE-01 — THE DECLARED DUPLICATION, GIVEN A GATE.
 //
@@ -73,11 +73,21 @@ describe('the digest Q5B SQL mirrors enrichHealth.ts', () => {
       .toEqual([...ENRICHED_STATES].sort())
   })
 
-  // `NOT_ELIGIBLE` is private to the module on purpose — it is one value and the
+  // `NOT_ELIGIBLE` is exported since REBUILD-VOICE-LOSS-01 added `skipped_plan_kind`; the
   // comment explains it — so this arm pins the value the SQL excludes and the module
   // test (`enrichHealth.test.ts`) pins the behaviour. Both must move together.
+  // REBUILD-VOICE-LOSS-01: `enrichmentStateOf` maps a non-legacy plan with no state to
+  // `not_recorded`. Without the same mapping the SQL counts those runners as legacy.
+  it('maps a plan with generator_input and no state to not_recorded, as the module does', () => {
+    const sql = q5bSql()
+    expect(sql).toContain(`'${NOT_RECORDED}'`)
+    expect(sql).toMatch(/generator_input'\s+is not null/)
+    expect(sql).toMatch(/'tier','?'?\)\s*<>\s*'free'/)
+    expect(sql).toMatch(/'plan_kind','race'\)\s*=\s*'race'/)
+  })
+
   it('excludes exactly the ineligible state', () => {
-    expect(Array.from(statesComparedWithNotEqual(q5bSql()))).toEqual(['skipped'])
+    expect(Array.from(statesComparedWithNotEqual(q5bSql())).sort()).toEqual([...NOT_ELIGIBLE].sort())
   })
 
   // The window is the entire point of Q5B: Q5 is scoped to 7 days and a failed

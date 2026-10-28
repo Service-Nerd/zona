@@ -1147,6 +1147,10 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **27 Oct board-read follow-ups** (COACH-READ-1027-FOLLOWUPS-01) | 🔲 | M | Measure, then board. |
 | **A held plan can stop building undeclared** (S9-HELD-PEAK-CLASSIFY-01) | 🔲 | S | 1 sweep clone, recorded debt. |
 | **`weekly_km` not restated after every session change** (WEEKLY-KM-AFTER-CAP-01) | 🔲 | S | 17 cohort plans already stale; foundation budget stays. |
+| **`audit:plans` red since the MP change** (AUDIT-PLANS-MP-COST-01) | 🔲 | S | +1 NEVER-BUILDS undeclared; founder: re-baseline or board. |
+| **Live digest still runs the old enrichment query** (DIGEST-Q5B-LIVE-01) | 🔲 | S | Founder applies runbook Q5B. |
+| **Race week showing 0 km** (RACE-WEEK-ZERO-KM-01) | 🔲 | S | Measure surfaces first. |
+| **"Get you round" note on a time-goal plan** (ROUND-NOTE-TIME-GOAL-01) | 🔲 | S | Measure, then board. |
 | **Adjust's weekday time limit is inert for runners with per-day limits** (MODIFY-WEEKDAY-INERT-01) | 🔲 | S | Filed 2026-10-26. `applyEdits` keeps `day_budgets`, which win. Founder picks the resolution. |
 | **Base-building weeks have no duration, so weekday limits never apply** (BASEBUILD-DURATION-01) | 🔲 | S | Filed 2026-10-26. A benchmarked runner's pace is derivable; §122's condition is not met. |
 | **Link a run without opening the app, natively** (HK-NATIVE-BG-INGEST-01) | 🔲 | M (native + binary) | Filed 2026-10-25. Waits on HK-SYNC-TRIGGER-01's numbers. |

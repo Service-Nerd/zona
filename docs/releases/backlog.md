@@ -136,6 +136,36 @@ Measure the stale population first; then restate with the copy re-derivation the
 
 ---
 
+### 🔲 `AUDIT-PLANS-MP-COST-01` — `audit:plans` has been red since `8ff976b7` 👤 **FOUNDER** (re-baseline or not), then 🏃 **COACHING BOARD** if not
+
+Found 2026-10-28 building REBUILD-VOICE-LOSS-01. The MP-BLOCKS-ONE-BLOCK-01 change took 1 km off the marathon-pace
+session (7.5 → 6.5 km, the trailing jog removed), so marathon time-goal peak weeks are 1 km smaller. Measured by diffing
+`audit-plan-quality.ts`'s cohortGrid at `239a8f0b` and HEAD: **BINGE-WEEK 306 → 308** (two 4-day intermediate 20 km/week
+plans cross 60% at 61%) and **NEVER-BUILDS 1093 → 1094** (one experienced 70 km/week 5-day plan, peak 64 vs week 1 59,
+8%); ~20 already-flagged plans move 1 pp. It is the cost the founder accepted for `review:cohort` the same day, seen by a
+second instrument whose baseline was never re-baselined, so `npm run verify` (and `verify:ci`) has exited 1 since that
+commit. **The NEVER-BUILDS +1 was not in the declared cost.** Decide: re-baseline with `--write` and this reason, or send
+the one never-builds plan to the board. ⚠️ I reported "full suite passing" for that ship having run `vitest`, not `verify`.
+
+### 🔲 `DIGEST-Q5B-LIVE-01` — apply the amended enrichment query to the live digest routine 👤 **FOUNDER** (external change)
+
+REBUILD-VOICE-LOSS-01 amended `docs/runbooks/digest-enrichment-health.md` Q5B so the digest counts a rebuilt plan with no
+`enrichment` field as without voice, and stops counting staged plans. Verified against production: 12 without voice where
+the live digest reported 1. The live prompt lives at claude.ai and still runs the old query, so the digest under-counts
+until Step 1 + Step 4 of the runbook are re-applied.
+
+### 🔲 `RACE-WEEK-ZERO-KM-01` — a race week holding only the race reads "0 km" ⚙️ **NO BOARD** to measure; 🧭 **DESIGN BOARD** if the display changes
+
+Raised by the 28 Oct digest on claymanwaterman (3cc7c3a9): race on a Monday, so week 20 holds the race alone, and
+`weekly_km` excludes race km by convention, giving 0. Present in every archived version since 3 Oct, so not caused by the
+rebuild. Measure which surfaces render `weekly_km` for a race week before deciding anything.
+
+### 🔲 `ROUND-NOTE-TIME-GOAL-01` — "built to get you round, not to chase a time" on a time-goal plan 🏃 **COACHING BOARD** (an outcome claim), 👤 **FOUNDER** (words)
+
+Raised by the 28 Oct digest on 94z2pg4cr6 (a1a1b638, London 4:00, peak 52 km/week): `meta.volume_constraint_note` tells a
+runner who asked for 4:00 that the plan is not built for a time. Present before the rebuild (same text in the 28 Oct
+archive). Measure how many time-goal plans carry this note, then decide whether it is honest or contradicts the goal.
+
 ### 🔲 `MODIFY-WEEKDAY-INERT-01` — "Weekday time limit" in Adjust your plan does nothing for a runner with per-day limits ⚙️ **NO BOARD** for the defect; 👤 **FOUNDER** for which way it resolves
 
 Found 2026-10-26 by the code review of OVERRUN-NOTE-ALL-01. `applyEdits` spreads the edit over the stored input (`{ ...base, ...edits }`), so `day_budgets` survives an edit to `max_weekday_mins`, and both the engine (`applyWeekdayMinsCap`) and the note read the day's own budget first. A runner who set Mon 60 / Wed 45 / Fri 30 in the wizard and later raises the weekday limit to 60 gets the same plan back. **No other control edits per-day limits after onboarding.** Two honest resolutions: (a) a new weekday limit replaces the per-day ones; (b) Adjust shows the per-day limits and edits them. **Population not yet measured** (live plans with `day_budgets`). Until fixed, the overrun note cannot offer this control as a lever to those runners.

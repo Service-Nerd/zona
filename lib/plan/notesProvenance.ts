@@ -26,12 +26,14 @@
 
 import type { Plan, Session, Week } from '@/types/plan'
 import { isTimeTrial } from './sessionRole'
+import { hasAiCopy } from '@/lib/ops/enrichHealth'
 
 /** Enrichment states in which the enricher's output actually reached the plan.
  *  Everything else — 'skipped' (free tier), 'pending', every failure state, and
  *  a legacy plan with no field at all — means the copy on screen is the rule
  *  engine's. */
-const ENRICHED_STATES = new Set(['applied', 'applied_partial'])
+// One definition: `hasAiCopy` (lib/ops/enrichHealth) over `ENRICHED_STATES`. This file
+// carried its own copy of the set until REBUILD-VOICE-LOSS-01.
 
 export function sessionNotesAreAiAuthored(
   session: Pick<Session, 'type' | 'role' | 'label' | 'coach_notes' | 'enrichment_reverted'>,
@@ -42,7 +44,7 @@ export function sessionNotesAreAiAuthored(
   week?: Pick<Week, 'enrichment_reverted'> | null,
 ): boolean {
   if (!(session.coach_notes ?? []).filter(Boolean).length) return false
-  if (!meta || !ENRICHED_STATES.has(meta.enrichment ?? '')) return false
+  if (!hasAiCopy(meta)) return false
   // ENRICH-PARTIAL-01 reverts an offending week to rule copy and keeps the rest,
   // so 'applied_partial' is not a per-session guarantee.
   if (week?.enrichment_reverted) return false

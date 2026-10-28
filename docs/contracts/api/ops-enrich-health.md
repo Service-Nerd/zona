@@ -28,7 +28,7 @@ names runners is not public. `GET` delegates to `POST`.
   "healthy": false,
   "denominator": "plans.plan_json.meta.enrichment (NOT ops_events)",
   "verdict": {
-    "eligible": 18,          // excludes free-tier 'skipped' and legacy nulls
+    "eligible": 18,          // excludes 'skipped', 'skipped_plan_kind' and legacy nulls
     "withVoice": 16,         // 'applied' | 'applied_partial'
     "withoutVoice": 2,       // the number that matters
     "withoutVoicePct": 11,   // null when eligible === 0 — never 0%
@@ -72,6 +72,8 @@ only the second can be alerted on or remediated honestly.
 |---|---|
 `skipped` is **not** eligible | A free plan is never enriched by design; counting it deflates the rate |
 A legacy row (no field) is **not** eligible | Absent is not failed |
+`skipped_plan_kind` is **not** eligible | Staged and get-running plans are never enriched by design (REBUILD-VOICE-LOSS-01; it was the one runner the 28 Oct digest reported) |
+No field **with `meta.generator_input`** is `not_recorded`: eligible, **without voice** | 🔴 Such a plan cannot predate the field. A script rebuild writes no `enrichment`, so seven rebuilt paid plans read as legacy and the probe said 1 of 17 when 12 had no voice (REBUILD-VOICE-LOSS-01). Free and maintenance/base-build plans stay `null` |
 `applied_partial` **has** voice | **38 of 43** recorded failures were partial reverts; treating them as failures is how 43 harmed runners was first reported when it was 2 |
 A stuck `pending` **has no** voice | `ENRICH-SAVE-01` says `pending` is expected transiently and a defect if it persists — excluding it would hide exactly that case |
 **Any** runner without voice sets `alert` | Not a threshold, deliberately: at this scale a percentage is noise (one plan moves it 5pp) and a paying runner with no AI coaching is a fact, not a rate. Raise it with a measurement, never a guess |

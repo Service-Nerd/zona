@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — REBUILD-VOICE-LOSS-01 · The guard said "applied" and the plans said "applied_partial"
+**Shipped:** rebuild scripts now refuse any plan carrying AI copy, and the health check, the digest query and the restore script now see plans whose copy a rebuild deleted.
+**Dev learning:** the refusal compared `meta.enrichment === 'applied'`, one of the two enriched states, so three partly-enriched paid plans were rebuilt and lost their copy. Then the rebuilt plan carried no `enrichment` field, and every reader treated a missing field as "legacy": the probe, the digest SQL, and the restore script, which reads the same function, so it could not find the runners it exists to restore. The archive showed four more lost it the same way on 9–10 Oct. The discriminator was already in the plan: `generator_input` cannot exist on a plan older than the field.
+**Product/creator learning:** the ops digest found it, not me, and it still undercounted (it said 4 "never had voice"; the archive says they did). A paying runner losing their coaching voice is invisible from the runner's side by design (ADR-006), so the only defence is the count.
+**AI-building learning:** every dry run I showed the founder printed `enrichment applied_partial` on the three plans, and I read past it. The data was on screen; the check was not in my head. Also: the full `npm run verify` caught that this morning's engine ship had left `audit:plans` red, which I had missed by reporting `vitest` as "the full suite".
+**The honest bit:** I ran the script that did this, an hour after telling the founder the rebuild only touched sessions. The first time the cohort check went red on this build I suspected my change; it was this morning's.
+**Hook material:** the health check said 1 of 17 runners had no AI coaching; the real number was 12 of 28.
+**Postable?:** yes
+
 ## 2026-10-28 — LIVE-PLAN-REBUILD-RCA-01 · Twelve live plans brought onto the engine they were meant to have
 **Shipped:** the 11 runners' plans from the 26 Oct RCA, plus one more, regenerated on today's engine and applied by the founder; each one re-checked against production with nothing left to change.
 **Dev learning:** "applied" was confirmed by re-running the dry run, not by reading the apply log: the same script answering "0 session days changed" is the check that the write landed and matches the engine. The 12th plan showed 64 changed days for a two-session fix, because its stored max heart rate (167) differed from the profile (171), and every heart-rate target moved with it.

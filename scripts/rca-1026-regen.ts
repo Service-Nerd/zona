@@ -15,6 +15,7 @@
  * Run:  NODE_ENV=production npx tsx scripts/rca-1026-regen.ts --list
  *       NODE_ENV=production npx tsx scripts/rca-1026-regen.ts --plan <id> [--allow-admin] [--apply]
  */
+import { hasAiCopy } from '../lib/ops/enrichHealth'
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
@@ -142,7 +143,7 @@ async function one(row: { id: string; user_id: string; plan_json: unknown }, qui
   const composeToday = storedFoundation.length ? String(storedFoundation[0].date) : planStart
   const fresh = composePlanWithFoundation(generateRulePlan(input, tier, planStart, undefined, planStart), input, composeToday, 'add').plan
   const notStarted = planStart > TODAY && !completionWeeks.length && !analysisWeeks.length && !overrideWeeks.length
-    && runsInBlock === 0 && meta.enrichment !== 'applied'
+    && runsInBlock === 0 && !hasAiCopy(meta)
   const MODE: 'rebuild' | 'patch' = notStarted ? 'rebuild' : 'patch'
   log(`Mode        ${MODE}`)
   const sameCalendar = JSON.stringify(fresh.weeks.map(w => [w.n, w.date])) === JSON.stringify(plan.weeks.map(w => [w.n, w.date]))
@@ -162,7 +163,7 @@ async function one(row: { id: string; user_id: string; plan_json: unknown }, qui
     }, TODAY)
     if (refusal) throw new Error(`refused: ${refusal}`)
     if (overrideWeeks.length) throw new Error('refused: runner has moved sessions (session_overrides)')
-    if (meta.enrichment === 'applied') throw new Error('refused: plan carries AI-written copy a rebuild would drop')
+    if (hasAiCopy(meta)) throw new Error('refused: plan carries AI-written copy a rebuild would drop')
     candidate = fresh
   } else {
     // A week is open to change only if it has not begun.

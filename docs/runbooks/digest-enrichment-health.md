@@ -22,6 +22,11 @@ nothing; Step 4 is not optional.**
 **Model / permission / project** | `claude-opus-4-8` · `auto` · `claude_proj_011CZdCd9s2C2WubBSB15cgu` — **do not change** |
 **Edit** | `prompt` only. Two insertions, two heading words |
 
+⚠️ **AMENDED 2026-10-28 (REBUILD-VOICE-LOSS-01), NOT YET APPLIED TO THE LIVE ROUTINE.** The `Q5B` SQL below now
+mirrors `enrichmentStateOf`: a plan carrying `generator_input` with no `enrichment` field is `not_recorded`, eligible
+and without voice, instead of legacy. Until the live prompt's `Q5B` is replaced with this block (Steps 1 and 4), the
+digest under-counts: it read 1 of 17 on 28 Oct when 12 paid or trial plans had no voice.
+
 ## Why — the gap this closes
 
 🔴 **The digest already reads enrichment state (Q5), and its guidance already says the two
@@ -45,17 +50,22 @@ Q5B — enrichment health, FLEET-WIDE and UNWINDOWED (OPS-ENRICH-HEALTH-01):
 with s as (
   select p.user_id,
          to_char(p.created_at,'YYYY-MM-DD') as created_utc,
-         p.plan_json->'meta'->>'enrichment' as enrichment,
+         -- REBUILD-VOICE-LOSS-01: a plan with generator_input and no state is not legacy
+         coalesce(p.plan_json->'meta'->>'enrichment',
+                  case when p.plan_json->'meta'->'generator_input' is not null
+                        and coalesce(p.plan_json->'meta'->>'tier','') <> 'free'
+                        and coalesce(p.plan_json->'meta'->>'plan_kind','race') = 'race'
+                       then 'not_recorded' end) as enrichment,
          (select u.email from auth.users u where u.id = p.user_id) as email
   from plans p
 )
 select
-  count(*) filter (where enrichment is not null and enrichment <> 'skipped') as eligible,
+  count(*) filter (where enrichment is not null and enrichment <> 'skipped' and enrichment <> 'skipped_plan_kind') as eligible,
   count(*) filter (where enrichment in ('applied','applied_partial')) as with_voice,
-  count(*) filter (where enrichment is not null and enrichment <> 'skipped'
+  count(*) filter (where enrichment is not null and enrichment <> 'skipped' and enrichment <> 'skipped_plan_kind'
                     and enrichment not in ('applied','applied_partial')) as without_voice,
   coalesce(json_agg(json_build_object('email', email, 'created', created_utc, 'state', enrichment))
-           filter (where enrichment is not null and enrichment <> 'skipped'
+           filter (where enrichment is not null and enrichment <> 'skipped' and enrichment <> 'skipped_plan_kind'
                      and enrichment not in ('applied','applied_partial')), '[]'::json) as without_voice_rows
 from s;
 ```
