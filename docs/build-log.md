@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — INJURY-PEAK-JUMP-01 · The warning was written, and nothing ever read it
+**Shipped:** a runner whose plan has a week that jumps past the growth cap is now told which week, on the plan screen.
+**Dev learning:** the board asked why 52–85% of warned plans had no load note. The answer was worse: the rest had the note and **no screen read the field**, so the true number told was zero. The note-delivery test existed for exactly this and could not see it, because it checked its own hand-typed list of notes, the same list the renderer uses. It now reads every `*_note` from the Plan type, and found three more notes that reach nobody. Then the note, once visible, turned out to fire on 78% of plans against the checker's 20%: it was written to "over-declare, harmlessly", which was only harmless while invisible. It now reads the checker's verdict.
+**Product/creator learning:** a safety note that appears on four plans in five is wallpaper. The ruling's wording ("a plan WARNED must tell the runner") was the right spec because it named the checker, not the condition.
+**AI-building learning:** I had the measurement script that said "52% have no note" and nearly built a fix for suppression alone. One more grep, for who reads the field, changed the whole build.
+**The honest bit:** making it visible costs another honest note its slot on ~45% of those plans. That trade is the Design Board's, and I left the order that satisfies the coaching ruling rather than decide it.
+**Hook material:** 3,669 plans carried a safety warning. 0 runners had ever seen one.
+**Postable?:** yes
+
 ## 2026-10-28 — ENRICH-RESTORE-REPAIR-01 · The fix for the AI voice had its own missing guard
 **Shipped:** the voice-restore script now runs the same copy-repair ladder as the plan generator, and can repair the four plans its first run damaged.
 **Dev learning:** the generator's repair ladder (session, then week, then full revert, each re-validated) was inline in a 600-line route, so the restore script, written months later to do the same job, never knew it existed. It checked that no prescription field moved and that the schema was no worse, which are the wrong two questions for copy: copy can be schema-valid and still promise a time trial the week does not hold. One owner now, called by both, and a test that the ladder runs between every `enrich(` and the first write. The first version of that test grepped for the call and stayed green with the restore path's call removed, because the file had a second call in another mode.

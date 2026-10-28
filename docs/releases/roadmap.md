@@ -1150,7 +1150,8 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Rebuild scripts should stamp an enrichment state** (REBUILD-STAMP-ENRICHMENT-01) | 🔲 | S | Retires the reader-side inference. |
 | **Maintenance enrichment has no copy-repair step** (MAINT-ENRICH-VALIDATE-01) | 🔲 | S | Measure live maintenance plans first. |
 | **Longest run below what the runner already runs** (LONG-RUN-BELOW-LONGEST-01) | 🔲 | S | Board. |
-| **Achilles runner jumps 24% into peak, unannounced** (INJURY-PEAK-JUMP-01) | 🔲 | S | Board. |
+| **"Heavier week" against "Long run" for the note slots** (PLAN-NOTE-HEAVIER-WEEK-SLOT-01) | 🔲 | S | Design Board + founder words. |
+| **Three plan notes shown nowhere** (NOTE-SURFACE-INERT-01) | 🔲 | S | Measure, then place. |
 | **Two plans still carry the pre-23 Oct "Threshold now" note** (PLAN-STALE-GOALPACE-NOTE-01) | 🔲 | S | Founder; after the repair. |
 | **A `{{token}}` can reach confidence risks** (ENRICH-RISK-TOKEN-01) | 🔲 | S | Latent; 1 of 9 restored plans. |
 | **Race week showing 0 km** (RACE-WEEK-ZERO-KM-01) | 🔲 | S | Measure surfaces first. |

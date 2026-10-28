@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { planRationaleNotes, levelFitNote, PLAN_RATIONALE_MAX_NOTES, PLAN_RATIONALE_MAX_WORDS } from './planRationale'
 import type { GeneratorInput } from '@/types/plan'
 
@@ -145,7 +147,7 @@ import { generateRulePlan } from './ruleEngine'
 describe('PLAN-NOTE-DELIVERY-01 — a stamped note reaches the runner', () => {
   const FIELDS = ['volume_constraint_note', 'volume_shortfall_note', 'long_run_shortfall_note',
     'goal_below_easy_ceiling_note', 'short_opening_block_note', 'fitness_signal_note',
-    'hard_pref_note', 'terrain_effort_note', 'intensity_reentry_omission_note'] as const
+    'hard_pref_note', 'terrain_effort_note', 'intensity_reentry_omission_note', 'load_residual_note'] as const
   const DELIVERY_FLOOR = 1.70   // measured 1.88 at a 180-word budget, up from 1.01 at 70
   const STRIDE = 53
 
@@ -155,7 +157,7 @@ describe('PLAN-NOTE-DELIVERY-01 — a stamped note reaches the runner', () => {
     long_run_shortfall_note: 'Long run', goal_below_easy_ceiling_note: 'Your target',
     short_opening_block_note: 'Recovery week', fitness_signal_note: 'Your level',
     hard_pref_note: 'Hard sessions', terrain_effort_note: 'Off-road',
-    intensity_reentry_omission_note: 'Coming back',
+    intensity_reentry_omission_note: 'Coming back', load_residual_note: 'Heavier week',
   }
   const byType: Record<string, { stamped: number; rendered: number }> = {}
   let plans = 0, stamped = 0, rendered = 0
@@ -303,3 +305,44 @@ describe('PLAN-NOTE-LENGTH-01 — no single rationale note becomes a wall', () =
     }
   })
 })
+
+// INJURY-PEAK-JUMP-01 (2026-10-28) — THE POPULATION, FROM THE TYPE, NOT A LIST.
+// `PLAN-NOTE-DELIVERY-01` above checks the notes in ITS OWN `FIELDS`, which is the renderer's
+// list typed out again, so a note missing from both was invisible to it: `load_residual_note`
+// was stamped on hundreds of plans and shown on none. Every `*_note` field the Plan type declares
+// is now either rendered here, rendered on a named surface, or registered debt with an item.
+describe('NOTE-SURFACE — every declared plan note has a reader', () => {
+  const root = join(__dirname, '..', '..')
+  const declared = Array.from(new Set(Array.from(readFileSync(join(root, 'types/plan.ts'), 'utf8')
+    .matchAll(/^\s+([a-z_]+_note)\??:/gm)).map(m => m[1]!)))
+  const RATIONALE = readFileSync(join(root, 'lib/plan/planRationale.ts'), 'utf8')
+  /** Rendered outside the rationale list, on the named file. */
+  const OTHER_SURFACE: Record<string, string> = {
+    difficulty_note: 'app/dashboard/GeneratePlanScreen.tsx',
+    hr_assumption_note: 'components/dashboard/HRZonesSection.tsx',
+    uncovered_runway_note: 'components/shared/RunwayRevealCard.tsx',
+    weekday_overrun_note: 'components/dashboard/SessionPopupInner.tsx',
+  }
+  /** Stamped, read by nothing. Each is open work, not an exemption. */
+  const DEBT: Record<string, string> = {
+    frequency_constraint_note: 'NOTE-SURFACE-INERT-01',
+    peak_shortfall_note: 'NOTE-SURFACE-INERT-01',
+    returning_runner_note: 'NOTE-SURFACE-INERT-01',
+  }
+
+  it('the population is the type, and it is real', () => {
+    expect(declared.length).toBeGreaterThanOrEqual(15)
+    expect(declared).toContain('load_residual_note') // hollow-ok: `declared` is an array of exact field names, so toContain is element equality
+  })
+
+  it('every declared note is rendered, rendered elsewhere, or registered debt', () => {
+    const unread = declared.filter(k => !RATIONALE.includes(`meta.${k}`) && !OTHER_SURFACE[k] && !DEBT[k])
+    expect(unread, 'a plan note with no reader: wire it into planRationaleNotes, or register it').toEqual([])
+  })
+
+  it('each named surface still reads its note, and debt that has been wired is removed from the register', () => {
+    for (const [k, f] of Object.entries(OTHER_SURFACE)) expect(readFileSync(join(root, f), 'utf8'), `${k} in ${f}`).toContain(k)
+    for (const k of Object.keys(DEBT)) expect(RATIONALE.includes(`meta.${k}`), `${k} is rendered now; remove it from DEBT`).toBe(false)
+  })
+})
+

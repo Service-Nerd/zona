@@ -164,15 +164,24 @@ plan holds 24–30 km/week for 20 weeks and its longest run is **13.5 km**, 7.5 
 invariant compares the plan's peak long run with `longest_recent_run_km`. Her `volume_constraint_note` says *"the long run
 can only grow so much week to week, and it ran out of weeks"*, which is not the cause. Current engine (rebuilt 28 Oct).
 
-### 🔲 `INJURY-PEAK-JUMP-01` — an Achilles-history runner jumps 24% into peak, unannounced 🏃 **COACHING BOARD**
+### 🔲 `PLAN-NOTE-HEAVIER-WEEK-SLOT-01` — "Heavier week" against "Long run" for the plan-note slots 🧭 **DESIGN BOARD**, 👤 **FOUNDER** (words)
 
-**Coaching Board 2026-10-28: CORRECT, build it.** §90 Am.2's producer split stands; §34 requires the residual be stated.
-Warned plans with NO load note: 52% healthy, 62% Achilles, 85% knee (marathon cohort). Measure why first (slot competition
-with other plan notes is the likely cause), then a check that a warned plan carries a load note.
+From INJURY-PEAK-JUMP-01 (2026-10-28). The ramp warning now reaches the plan screen as a `Heavier week` note, ranked
+ahead of `Long run` so 100% of warned plans show it (the Coaching Board's ruling). Under the 180-word budget it pushes
+another note off on ~45% of the plans that carry it, mostly `Long run` (461), `Your level` (311), `Hard sessions` (293)
+and `Coming back` (254); 0 of the dropped long-run notes are restated by the maintenance note. Ranked after `Long run`
+instead, `Long run` survives and 82–85% of warned runners are told. The board's call: the order, the `HEAVIER WEEK`
+eyebrow (not yet in `ui-patterns.md` §18's label list), and whether the budget moves. The founder approves the
+shortened wording: *"Week {n} rises about {x}%, above the {cap}% weekly growth we normally allow. Your race sets the long
+run, so it cannot be cut to fit. Keep the easy days easy that week, and move the long run rather than shorten it if the
+week is not going well."* (injury variant: "above the {cap}% weekly ceiling your injury history sets").
 
-emilyjcgibbs (d4c4db1e, marathon 5:00, achilles): weeks 15 → 16 go 38 → 47 km (+24%), long run 206 min. Today's engine
-produces the same jump. `INV-PLAN-INJURY-CAP-DELIVERED` ×2 and `INV-PLAN-DELIVERED-RAMP` ×3 are **warn** by design (§34,
-ADR-022) and the plan carries no load note. Achilles is in `DELIVERED_CAP_INJURIES`.
+### 🔲 `NOTE-SURFACE-INERT-01` — three plan notes are stamped and shown nowhere ⚙️ **NO BOARD** to measure; 🧭 **DESIGN BOARD** to place
+
+Found building INJURY-PEAK-JUMP-01: `peak_shortfall_note` (§106/§40c), `frequency_constraint_note` and
+`returning_runner_note` have no reader in `app/`, `components/` or `planRationaleNotes`. Registered as debt in
+`planRationale.test.ts` (NOTE-SURFACE), which fails on a fourth. Measure how many plans carry each, then place them.
+
 
 ### 🔲 `PLAN-STALE-GOALPACE-NOTE-01` — two plans still tell a goal-paced rep "Threshold now" 👤 **FOUNDER** (live-plan regeneration)
 

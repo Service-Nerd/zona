@@ -94,7 +94,7 @@ the 210-min cap, conforming), **29.2%** with four injuries (none at the cap, med
 13.5 km peak, note blaming "ran out of weeks". **Prototype required** (hold the stated long run where the cap allows, easy
 volume yields, no week grows: Willy's binding condition); the wrong-cause note is a defect fix. Plans warned by the ramp or
 injury-cap check carry **no load note** in 52% (healthy), 62% (Achilles), 85% (knee) of cases; §90 Am.2's producer split
-stands, but §34 requires the residual be stated: **CORRECT, build it.** Sitting:
+stands, but §34 requires the residual be stated: **CORRECT, build it.** **Built 2026-10-28** (§90 Amendment 3): the note reads the checks' verdict and the plan screen shows it; 0 → 100% of warned plans told, 13,500 plans with no change outside the note. Sitting:
 `docs/decisions/coaching-2026-10-28-long-run-below-longest-and-injury-jump-sitting.md`.
 
 ## 2026-10-28 — AUDIT-PLANS-MP-COST-01 · the MP change's audit cost ACCEPTED · `audit:plans` re-baselined · CLOSED

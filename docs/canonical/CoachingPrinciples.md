@@ -7642,6 +7642,23 @@ Six sensible base weeks, then the build and peak phases become **a long run with
 
 **No invariant exists for this and one should.** §64 floors **rest** days; there is no converse anywhere in the constitution, so nothing checks that a week delivers the running days the runner declared.
 
+
+### §90 Amendment 3 / §34 — the accepted ramp residual is STATED to the runner *(Coaching Board 2026-10-28, INJURY-PEAK-JUMP-01)*
+
+**Principle.** When `INV-PLAN-DELIVERED-RAMP` or `INV-PLAN-INJURY-CAP-DELIVERED` warns, the plan carries
+`load_residual_note` and the plan screen shows it; when neither warns, it carries none. §90 Amendment 2's split (the
+producer cap stays knee/shin, the checker covers the load-bearing injuries) is unchanged.
+
+**Why.** §34 requires an accepted residual to be declared. Measured on 4,500 cohort inputs run healthy, with Achilles
+and with knee: the note was suppressed by the maintenance note on 331 / 626 / 508 of the 874 / 1,328 / 677 warned plans,
+and **the plan screen never read it at all**, so the runners told were **0 of all of them**. It also over-declared,
+stamped on 78% of healthy plans against the 20% the checks warn. It now reads the checks' own verdict at the engine's
+single exit, so it reaches 100% of warned plans and no others. Sessions are unchanged (13,500 plans, 0 differences
+outside the note).
+
+**Enforced by** `lib/plan/loadResidualNote.test.ts` (warned ⇒ stamped and shown; unwarned ⇒ absent), and the
+type-driven reader gate in `planRationale.test.ts` (every declared `*_note` has a reader or a registered item). No new
+numeric: the note keeps `MAX_WEEKLY_VOLUME_INCREASE_PCT` / `INJURY_WEEKLY_INCREASE_CAP_PCT`.
 ## 91. The on-ramp is counted in weeks the runner runs, not weeks in an array
 
 **Principle.** The all-easy on-ramp that must precede a runner's first quality
