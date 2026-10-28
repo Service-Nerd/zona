@@ -10,7 +10,7 @@ regression tests and code reviews along the way."*
 - SLT: `docs/decisions/slt-2026-10-28-strength-guided-tier.md` (PAID, inherited from the strength engine)
 
 **Screens and wording:** the canvas *Strength session redesign* (overview in parts; guided warm-up, part, rest, end; the
-wording sheet). **Nothing below is built until the founder approves the canvas and its wording.**
+wording sheet). **Founder approved the canvas and the wording, 2026-10-28.**
 
 ## The builds, in order
 
@@ -20,7 +20,7 @@ the records (`/ship`). The founder's own strength plan is regenerated after each
 
 | # | Item | What changes | Board tag | Depends on |
 |---|---|---|---|---|
-| 1 | `STRENGTH-BW-LOG-01` | A bar used as an anchor (inverted row) is a bodyweight lift: logs the feel only | ⚙️ defect | none |
+| 1 ✅ 2026-10-28 | `STRENGTH-BW-LOG-01` | A bar used as an anchor (inverted row) is a bodyweight lift: logs the feel only | ⚙️ defect | none |
 | 2 | `STRENGTH-AB-SESSIONS-01` | Two sessions of one kind in a week are an A and a B; no two training sessions in a week identical (34% today) | 🏃 ruled | none |
 | 3 | `STRENGTH-SUPERSET-MAINS-01` | A lower and an upper main lift pair, resting the longer rest; warm-up as rounds (2 at 45/60 min, 1 at 30) | 🏃 ruled | 2 |
 | 4 | `STRENGTH-REP-BLOCKS-01` | General focus cycles main reps by block (e.g. 10 → 8 → 6); running keeps heavy 5s; numbers set by measurement | 🏃 ruled | 2 |

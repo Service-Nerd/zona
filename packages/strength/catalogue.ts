@@ -22,7 +22,7 @@ function ex(
   id: string, name: string, pattern: Pattern, muscles: Muscle[], equipment: EquipmentTag[][],
   level: 1 | 2 | 3, opts: {
     uni?: boolean; impact?: 'none' | 'low' | 'high'; avoid?: InjuryTag[]; flex?: boolean
-    measure?: 'reps' | 'seconds' | 'contacts'; regress?: string; progress?: string; notMain?: boolean
+    measure?: 'reps' | 'seconds' | 'contacts'; regress?: string; progress?: string; notMain?: boolean; bw?: boolean
   }, cues: string[],
 ): Exercise {
   return {
@@ -35,6 +35,7 @@ function ex(
     ...(opts.regress ? { regress_to: opts.regress } : {}),
     ...(opts.progress ? { progress_to: opts.progress } : {}),
     ...(opts.notMain ? { not_main: true } : {}),
+    ...(opts.bw ? { bodyweight: true as const } : {}),
     media: { animation_id: id },
     cues,
   }
@@ -137,7 +138,7 @@ export const CATALOGUE: readonly Exercise[] = [
   ex('band_row', 'Banded row', 'upper_pull', ['back', 'biceps'], BAND, 1, { progress: 'single_arm_dumbbell_row' }, ['Anchor the band at chest height.', 'Elbows back, chest tall.']),
   ex('band_pull_apart', 'Band pull-apart', 'upper_pull', ['back', 'shoulders'], BAND, 1, {}, ['Arms straight.', 'Pull to the chest, slow back.']),
   ex('single_arm_dumbbell_row', 'Single-arm dumbbell row', 'upper_pull', ['back', 'biceps'], [['dumbbells', 'bench'], ['kettlebell', 'bench'], ['dumbbells']], 2, { uni: true, regress: 'band_row' }, ['Flat back.', 'Pull the elbow to the hip.']),
-  ex('inverted_row', 'Inverted row', 'upper_pull', ['back', 'biceps'], [['barbell', 'rack']], 2, { regress: 'table_row', progress: 'pull_up' }, ['Heels down, body straight.', 'Chest to the bar.']),
+  ex('inverted_row', 'Inverted row', 'upper_pull', ['back', 'biceps'], [['barbell', 'rack']], 2, { regress: 'table_row', progress: 'pull_up', bw: true }, ['Heels down, body straight.', 'Chest to the bar.']),
   ex('lat_pulldown', 'Lat pulldown', 'upper_pull', ['back', 'biceps'], [['cable'], ['machines']], 2, {}, ['Pull to the top of the chest.', 'No swinging.']),
   ex('pull_up', 'Pull-up (assisted if needed)', 'upper_pull', ['back', 'biceps'], [['pullup_bar']], 3, { regress: 'inverted_row', avoid: ['shoulder'] }, ['A band under the feet counts.', 'Chin over the bar, slow down.']),
 

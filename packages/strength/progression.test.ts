@@ -100,3 +100,20 @@ describe('the invariant can fail', () => {
   it('extra reps in a no-step week', () => expect(progressionViolations(h, LOWER, day(60), true, { kind: 'reps', load_kg: 40, extra_reps: 1 }).some(v => v.detail === 'extra reps in a no-step session')).toBe(true))
   it('two rises inside a week', () => expect(progressionViolations([log(0, 40, 'easy'), log(3, 42.5, 'easy')], LOWER, day(5), false, { kind: 'step', load_kg: 45, extra_reps: 0 }).some(v => v.detail.startsWith('two rises'))).toBe(true))
 })
+
+// STRENGTH-BW-LOG-01 (Design Board 2026-10-28): the founder logged 90 kg on an inverted row, because its kit
+// (a barbell in a rack, used as the bar) read as load. A bodyweight lift logs the feel only (S14).
+describe('STRENGTH-BW-LOG-01 — a bar that anchors the body is not a load', () => {
+  it('the inverted row and its bodyweight family take no weight; a barbell lift still does', () => {
+    expect(isLoadedLift('inverted_row')).toBe(false)
+    expect(isLoadedLift('table_row')).toBe(false)
+    expect(isLoadedLift('pull_up')).toBe(false)
+    expect(isLoadedLift('barbell_bench_press')).toBe(true)
+    expect(isLoadedLift('back_squat')).toBe(true)
+    // An old weighted log on it never turns into a weight suggestion.
+    const s = suggestLoad([{ exercise_id: 'inverted_row', date: '2026-10-26', load_kg: 90, feel: 'easy', counts: true } as never],
+      { exerciseId: 'inverted_row', today: '2026-11-04', noStep: false, injuries: [] })
+    expect(s.kind).toBe('bodyweight')
+    expect(s.load_kg).toBeNull()
+  })
+})

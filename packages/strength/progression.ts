@@ -37,7 +37,8 @@ const LOAD_KIT = new Set<EquipmentTag>(['dumbbells', 'kettlebell', 'barbell', 'm
 /** Every way of doing this lift needs load kit, so a weight is meaningful. */
 export function isLoadedLift(exerciseId: string): boolean {
   const ex = CATALOGUE_BY_ID.get(exerciseId)
-  return !!ex && ex.measure === 'reps' && ex.equipment.length > 0 && ex.equipment.every(opt => opt.some(t => LOAD_KIT.has(t)))
+  // STRENGTH-BW-LOG-01: kit that anchors the body (the inverted row's barbell) does not load it.
+  return !!ex && !ex.bodyweight && ex.measure === 'reps' && ex.equipment.length > 0 && ex.equipment.every(opt => opt.some(t => LOAD_KIT.has(t)))
 }
 
 /** A session that holds back by design (S5, S6, S13): no step, and its log does not count. */

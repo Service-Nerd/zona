@@ -104,6 +104,9 @@ export interface Exercise {
   /** A warm-up move that IS a training exercise in lighter form: left out of the warm-up
    *  when that exercise is in the session, so a session never says the same thing twice. */
   same_as?: string
+  /** The kit anchors the body rather than loading it (an inverted row hangs from a barbell in a rack): a
+   *  bodyweight lift, logged by feel only (S14). STRENGTH-BW-LOG-01. */
+  bodyweight?: true
   /** Never fills a MAIN slot (S9 Am.1): an isolation, ballistic or supramaximal-eccentric move
    *  is not where heavy load lives. Accessory slots only. */
   not_main?: boolean

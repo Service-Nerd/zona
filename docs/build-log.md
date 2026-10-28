@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — STRENGTH-BW-LOG-01 · 90 kg of inverted row
+**Shipped:** the inverted row stops asking for a weight; it is a bodyweight lift and logs how it felt.
+**Dev learning:** "loaded" was inferred from the kit list: any barbell, dumbbell, kettlebell, cable or machine meant load. The inverted row hangs from a barbell in a rack, so the inference said loaded. One explicit flag on the one affected entry (1 of 30 loaded-by-inference lifts), read by the single predicate both the screen and the log route already used.
+**Product/creator learning:** the founder logged his bodyweight-ish number because the app asked. Next session would have suggested 91 kg. A wrong question produces confident wrong data.
+**AI-building learning:** listing every lift the predicate calls loaded took one command and showed the blast radius was exactly one exercise; guessing would have flagged pull-ups and step-ups too.
+**The honest bit:** small, and it was in front of us since the strength catalogue review.
+**Hook material:** "Last time 90 kg. Try 91 kg." On a bodyweight row.
+**Postable?:** maybe
+
 ## 2026-10-28 — WIZARD-INJURY-FREE-01 · The gate was removed from the code and kept in the form
 **Shipped:** free runners are asked about injuries in the wizard, and their plans now get the injury protections every plan was meant to have.
 **Dev learning:** on 11 September the SLT ruled injury adaptation is never paid, and the fix deleted a feature gate that "was enforced nowhere" because the engine adapted on every plan. True: the engine did. The wizard never asked a free runner and never sent their answer, so the engine had nothing to adapt to. The ruling was applied to the consumer and not to the input. Found by an SLT review of a different question.
