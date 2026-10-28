@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — STRENGTH-REP-BLOCKS-01 · Ten reps at a six-rep weight
+**Shipped:** general-focus lifters now cycle their main lifts 10 → 8 → 6 reps by block; running focus keeps heavy fives. When the cycle goes round and a lift's reps rise, the suggested weight comes down.
+**Dev learning:** the rule change was one line, and the consequence was in a different module. The load suggestion had never needed to know reps, because reps had only ever gone down (technique 10 → 8). The cycle made them go up 904 times in the sample, and the suggestion would have offered the six-rep weight for ten.
+**Product/creator learning:** two readers changed their meaning without a line of their code changing: the Today coach line started announcing "heavier lifts" on every 10-rep block, and the suggestion line needed to say why a weight dropped after "about right". "Try 54 kg for 10." uses the sentence we already had.
+**AI-building learning:** a falsifying mutation stayed green: flat eight reps passed every test, because no test validated a general plan past its eight-rep block. The mutation found the hole; a 16-week test closed it.
+**The honest bit:** the reps a log was done at are read from the current plan, so a rebuild can misplace them. Filed for build 6, and strength stays admin-only until then.
+**Hook material:** "Ten reps at a six-rep weight is not a harder session. It is a failed one."
+**Postable?:** yes
+
 ## 2026-10-28 — STRENGTH-SUPERSET-MAINS-01 · The time came back as the accessories
 **Shipped:** a lower and an upper main lift are now done back to back, and the warm-up is two rounds of a shorter list at 45 and 60 minutes.
 **Dev learning:** after pairing, general 45-minute sessions had fewer main sets, which looked like a regression. Reading one session showed the opposite: before, the clock had dropped every accessory and core move but one; the saved seven minutes went to S10's fill order, accessories first, and the session now holds its whole template.

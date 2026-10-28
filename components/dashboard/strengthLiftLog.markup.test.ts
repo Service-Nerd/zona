@@ -95,9 +95,12 @@ describe('the words and units', () => {
       liftSuggestionLine({ kind: 'reps', load_kg: 20, extra_reps: 1, last }, 5, 'km'),
       liftSuggestionLine({ kind: 'hold_week', load_kg: 20, extra_reps: 0, last }, 5, 'km'),
       liftSuggestionLine({ kind: 'reduce', load_kg: 18, extra_reps: 0, last: { ...last, feel: 'hard' } }, 5, 'km'),
+      // S14 Am.1 — more reps this block: the lighter weight comes with the reps that explain it.
+      liftSuggestionLine({ kind: 'more_reps', load_kg: 18, extra_reps: 0, last }, 10, 'km'),
     ]
     expect(lines).toEqual(['New lift. Start light.', 'Last time 20 kg, about right. Try 22.5 kg.', 'Last time 20 kg, about right. Try 20 kg for 6.',
-      'Last time 20 kg, about right. Keep 20 kg this week.', 'Last time 20 kg, hard. Try 18 kg.'])
+      'Last time 20 kg, about right. Keep 20 kg this week.', 'Last time 20 kg, hard. Try 18 kg.',
+      'Last time 20 kg, about right. Try 18 kg for 10.'])
     for (const l of lines) expect(l).not.toMatch(/—|prevent|injur|PR|record/)
     expect(liftSuggestionLine({ kind: 'bodyweight', load_kg: null, extra_reps: 0, last: null }, 5, 'km')).toBeNull()
   })

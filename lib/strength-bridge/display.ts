@@ -183,5 +183,7 @@ export function liftSuggestionLine(s: LiftSuggestion | undefined, prescribedReps
   const load = formatWeight(s.load_kg, units)
   if (s.kind === 'hold_week') return `${last} Keep ${load} this week.`
   if (s.kind === 'reps' && prescribedReps != null) return `${last} Try ${load} for ${prescribedReps + s.extra_reps}.`
+  // S14 Am.1 — more reps this block: say the reps, so a lighter weight after "about right" reads as a reason.
+  if (s.kind === 'more_reps' && prescribedReps != null) return `${last} Try ${load} for ${prescribedReps}.`
   return `${last} Try ${load}.`
 }

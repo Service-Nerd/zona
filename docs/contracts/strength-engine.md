@@ -81,3 +81,10 @@ lift in `LOAD_STEP_MIN_DAYS`, counting a rise the runner made. An injury the lif
 `progressionViolations` → `S-PROGRESSION-BOUNDED`, re-derived (never calls the producer). Gate:
 `packages/strength/progression.test.ts` (clause cases + 4,000 seeded histories). `StrengthPlan.injury_tags` (new,
 additive) carries the merged run + profile tags generation used.
+
+**S14 Am.1 (STRENGTH-REP-BLOCKS-01, 2026-10-28), additive.** `LiftLog.reps?` (the reps the plan prescribed that lift on
+the log's date) and `ctx.reps?` / `ctx.rir?` (today's). When `ctx.reps` is above the last counting log's `reps`, the
+result is the new kind `more_reps` at the lower of that load and S14's own answer × Epley's ratio at reps-to-failure, rounded
+down to `LOAD_ROUND_KG` (never below it), no extra reps, in a no-step week too. Kinds now: `start · hold · step · reps ·
+reduce · more_reps · hold_week · bodyweight`; `liftSuggestionLine` renders it as "Try X for N.". Missing either value: unchanged. `liftSuggestionsFor` attaches `reps` to each log from the plan (logs
+store load and feel only). `progressionViolations(…, todayReps?)` adds "not lighter when the reps rose".

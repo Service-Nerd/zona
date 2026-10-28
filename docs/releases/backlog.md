@@ -216,10 +216,19 @@ Found building INJURY-PEAK-JUMP-01: `peak_shortfall_note` (§106/§40c), `freque
 ### 🔲 `STRENGTH-SESSION-REDESIGN-01` — the strength session, redesigned: six builds, all boards ruled 2026-10-28 🏃 **COACHING BOARD** + 🧭 **DESIGN BOARD** ruled; 👤 **FOUNDER** approves screens and words first
 
 Plan: `docs/plans/STRENGTH-SESSION-REDESIGN-01.md`. Canvas: *Strength session redesign*. In order: `STRENGTH-BW-LOG-01`
-(bodyweight lifts log feel only; the founder logged 90 kg on an inverted row), ✅ `STRENGTH-AB-SESSIONS-01` (shipped 2026-10-28: 10,178 of 14,870 multi-session weeks held a repeat, now 0), ✅ `STRENGTH-SUPERSET-MAINS-01` (shipped 2026-10-28: pairs save 7–8 min; the screen shows them from build 5, release stays admin until then), `STRENGTH-REP-BLOCKS-01`
-(general-focus rep cycle), `STRENGTH-SESSION-PARTS-01` (overview in parts, new wording, the no-legs line), and
+(bodyweight lifts log feel only; the founder logged 90 kg on an inverted row), ✅ `STRENGTH-AB-SESSIONS-01` (shipped 2026-10-28: 10,178 of 14,870 multi-session weeks held a repeat, now 0), ✅ `STRENGTH-SUPERSET-MAINS-01` (shipped 2026-10-28: pairs save 7–8 min; the screen shows them from build 5, release stays admin until then), ✅ `STRENGTH-REP-BLOCKS-01`
+(shipped 2026-10-28: 10 → 8 → 6; a rep rise cuts the load, `STRENGTH-LOG-REPS-01` filed), `STRENGTH-SESSION-PARTS-01` (overview in parts, new wording, the no-legs line), and
 `STRENGTH-GUIDED-SESSION-01` (start / end, one part per page, stepper, timers). S2 unchanged: loosening it was ruled
 INCORRECT (52% of chosen-day weeks have no heavy legs; P1/P2 put legs beside a hard run).
+
+### 🔲 `STRENGTH-LOG-REPS-01` — stamp the prescribed reps on each strength log, so a plan rebuild cannot change them 🏃 **COACHING BOARD** ruled (S14 Am.1); ⚙️ build with `STRENGTH-GUIDED-SESSION-01`
+
+Found by code review of `STRENGTH-REP-BLOCKS-01`, 2026-10-28. S14 Am.1 cuts the load when reps rise between blocks, and reads
+the reps a log was done at from the CURRENT plan by date (`liftSuggestionsFor`), because `strength_lift_logs` stores load and
+feel only. After a rebuild with a new start date, a log's date can sit in a different block or outside the plan: the reps
+come back wrong or missing, and the 6-rep weight is offered for 10. Fix: `POST /api/strength/log` writes the session's
+prescribed reps on the row (a column, with grants, MIGRATION-GRANTS-01), and the view prefers it. Build 6 adds a migration
+to strength completions anyway. **Blocks `STRENGTH_RELEASE` → 'paid'** with the screen work in build 5.
 
 ### 🔲 `ENRICH-RISK-TOKEN-01` — the enricher can leave a `{{token}}` in `confidence_risks`, which nothing fills ⚙️ **NO BOARD**
 

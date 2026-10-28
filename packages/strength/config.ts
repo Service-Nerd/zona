@@ -51,7 +51,8 @@ export const STRENGTH_CONFIG = {
   NOVICE_RIR: 3,
   /** Running-focused lower-body main lifts after the novice block: heavy. */
   HEAVY_REPS_RUNNING_LOWER: 5,
-  MAIN_REPS_GENERAL: 8,
+  /** S6 Am.2 (STRENGTH-REP-BLOCKS-01) — general focus: main-lift reps by block, after the technique block. */
+  MAIN_REP_CYCLE_GENERAL: [10, 8, 6] as readonly number[],
   MAIN_REPS_UPPER: 8,
   ACCESSORY_REPS: 10,
   MAIN_SETS: 3,

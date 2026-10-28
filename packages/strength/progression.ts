@@ -22,10 +22,12 @@ export interface LiftLog {
   feel: LiftFeel
   /** False when logged in a no-step session (decided when it was logged). */
   counts: boolean
+  /** The reps the plan prescribed for this lift on the log's date, when known (S14 Am.1). */
+  reps?: number
 }
 
 export interface LiftSuggestion {
-  kind: 'start' | 'hold' | 'step' | 'reps' | 'reduce' | 'hold_week' | 'bodyweight'
+  kind: 'start' | 'hold' | 'step' | 'reps' | 'reduce' | 'more_reps' | 'hold_week' | 'bodyweight'
   load_kg: number | null
   /** Reps above the prescription, while the step is too big for the load. */
   extra_reps: number
@@ -56,7 +58,7 @@ const daysBetween = (a: string, b: string) => Math.round((Date.parse(b + 'T00:00
 
 export function suggestLoad(
   history: readonly LiftLog[],
-  ctx: { exerciseId: string; today: string; noStep: boolean; injuries: readonly InjuryTag[] },
+  ctx: { exerciseId: string; today: string; noStep: boolean; injuries: readonly InjuryTag[]; reps?: number; rir?: number | null },
 ): LiftSuggestion {
   if (!isLoadedLift(ctx.exerciseId)) return { kind: 'bodyweight', load_kg: null, extra_reps: 0, last: null }
   const logs = history
@@ -91,6 +93,17 @@ export function suggestLoad(
     s = step > load * C.LOAD_STEP_MAX_PCT && s.extra_reps < C.REP_PROGRESSION_MAX
       ? { kind: 'reps', load_kg: load, extra_reps: s.extra_reps + 1, last: log }
       : { kind: 'step', load_kg: round(load + step), extra_reps: 0, last: log }
+  }
+  // S14 Am.1 (STRENGTH-REP-BLOCKS-01) — more reps than the last log was prescribed: the load comes down by Epley's
+  // ratio at reps-to-failure (target reps + RIR), rounded DOWN, with no extra reps carried. Never applied upward.
+  const lastReps = s.last?.reps
+  if (ctx.reps != null && lastReps != null && ctx.reps > lastReps && s.last?.load_kg != null) {
+    const rir = ctx.rir ?? 0
+    const ratio = (1 + (lastReps + rir) / 30) / (1 + (ctx.reps + rir) / 30)
+    // From the lower of the last load and S14's own answer, so a "hard twice" reduction is not undone.
+    const base = Math.min(s.last.load_kg, s.load_kg ?? s.last.load_kg)
+    const cut = Math.max(C.LOAD_ROUND_KG, Math.floor((base * ratio) / C.LOAD_ROUND_KG) * C.LOAD_ROUND_KG)
+    return { kind: 'more_reps', load_kg: cut, extra_reps: 0, last: s.last }
   }
   // Today holds back by design: keep the load, no extra reps (S14).
   if (ctx.noStep) return { kind: 'hold_week', load_kg: s.last!.load_kg, extra_reps: 0, last: s.last }

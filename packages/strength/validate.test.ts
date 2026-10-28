@@ -83,6 +83,8 @@ const CASES: Array<[string, (p: StrengthPlan) => void, StrengthProfile?]> = [
   ['S-MAIN-PAIR-REST', p => { const it = p.weeks[0].sessions.flatMap(s => s.blocks).filter(b => b.role === 'main').flatMap(b => b.items).find(i => i.superset)!; it.rest_s = 30 }, { ...PROFILE, focus: 'general' }],
   // S10 Am.5 — a warm-up twice the length of its rounds.
   ['S-WARMUP-ROUNDS', p => { const w = p.weeks[0].sessions[0].blocks[0]; w.items.push(...JSON.parse(JSON.stringify(w.items))) }],
+  // S6 Am.2 — a general main lift at a rep count its block does not hold (the pre-cycle engine's flat 8 in block 1).
+  ['S-REP-BLOCK', p => { const it = p.weeks[0].sessions.flatMap(s => s.blocks).filter(b => b.role === 'main').flatMap(b => b.items)[0]; it.reps = 8 }, { ...PROFILE, focus: 'general' }],
   ['S-AB-DISTINCT', p => { const [a, b] = p.weeks[0].sessions; b.blocks = JSON.parse(JSON.stringify(a.blocks)) }],
   ['S-MAIN-ELIGIBLE', p => { mainItem(heavy(p)).exercise_id = 'kettlebell_swing' }, { ...PROFILE, equipment: [...PROFILE.equipment, 'kettlebell'] }],
   ['S-BEFORE-START', p => { p.start_date = dateOf(1, 'mon') }],

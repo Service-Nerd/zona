@@ -64,7 +64,12 @@ export function prescribe(ex: Exercise, role: BlockRole, ctx: DoseContext): Pres
       return { ...base, sets: scaleSets(C.MAIN_SETS - 1, ctx, role), reps: C.NOVICE_REPS, rir: C.NOVICE_RIR, rest_s: C.REST_S.main }
     }
     const heavy = lower && ctx.profile.focus === 'running'
-    const reps = heavy ? C.HEAVY_REPS_RUNNING_LOWER : lower ? C.MAIN_REPS_GENERAL : C.MAIN_REPS_UPPER
+    // S6 Am.2 — general focus cycles its main lifts' reps by block, on the same block boundary as the exercise
+    // rotation (S9), so a new lift and a new target arrive together. Running keeps heavy 5s on its lower mains.
+    const cycle = C.MAIN_REP_CYCLE_GENERAL
+    const reps = heavy ? C.HEAVY_REPS_RUNNING_LOWER
+      : ctx.profile.focus === 'general' ? cycle[Math.floor(ctx.weekIndex / C.BLOCK_WEEKS) % cycle.length]
+      : C.MAIN_REPS_UPPER
     const rir = lower ? C.RIR_FLOOR_LOWER_HEAVY : C.RIR_MAIN
     return { ...base, sets: scaleSets(C.MAIN_SETS, ctx, role), reps, rir, rest_s: heavy ? C.REST_S.heavy : C.REST_S.main }
   }

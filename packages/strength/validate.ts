@@ -191,6 +191,14 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
         if ((role === 'main' || role === 'accessory') && it.reps != null && wi < C.NOVICE_BLOCK_WEEKS[p.experience] && it.reps < 8) {
           v.push({ code: 'S-NOVICE-REPS', week: w.n, day: where, detail: `${ex.id} ${it.reps} reps in the technique block` })
         }
+        // S6 Am.2 (STRENGTH-REP-BLOCKS-01) — past the technique block, a general main lift takes its block's reps from
+        // the cycle (blocks counted from the runner's strength start), and a running lower main stays heavy.
+        if (role === 'main' && it.reps != null && wi >= C.NOVICE_BLOCK_WEEKS[p.experience]) {
+          const lowerMain = PATTERN_REGION[ex.pattern] === 'lower'
+          const want = p.focus === 'general' ? C.MAIN_REP_CYCLE_GENERAL[Math.floor(wi / C.BLOCK_WEEKS) % C.MAIN_REP_CYCLE_GENERAL.length]
+            : lowerMain ? C.HEAVY_REPS_RUNNING_LOWER : null
+          if (want != null && it.reps !== want) v.push({ code: 'S-REP-BLOCK', week: w.n, day: where, detail: `${ex.id} ${it.reps} reps, block wants ${want}` })
+        }
         if (w.phase === 'peak' && role === 'main' && it.sets > C.MAIN_SETS - C.PEAK_MAIN_SET_REDUCTION) {
           v.push({ code: 'S-PEAK-SETS', week: w.n, day: where, detail: `${ex.id} ${it.sets} sets in a peak week` })
         }
@@ -287,9 +295,10 @@ export function recoveryEaseViolations(original: StrengthSession, eased: Strengt
  * "hard"; extra reps within REP_PROGRESSION_MAX; never up twice inside LOAD_STEP_MIN_DAYS.
  */
 export function progressionViolations(
-  history: readonly { date: string; exercise_id: string; load_kg: number | null; feel: string; counts: boolean }[],
+  history: readonly { date: string; exercise_id: string; load_kg: number | null; feel: string; counts: boolean; reps?: number }[],
   exerciseId: string, today: string, noStep: boolean,
   s: { kind: string; load_kg: number | null; extra_reps: number },
+  todayReps?: number,
 ): StrengthViolation[] {
   const v: StrengthViolation[] = []
   const at = (detail: string) => v.push({ code: 'S-PROGRESSION-BOUNDED', week: 0, day: today, detail })
@@ -305,6 +314,8 @@ export function progressionViolations(
   if (up && noStep) at('up in a no-step session')
   if (up && last.feel === 'hard') at('up after hard')
   if (noStep && s.extra_reps > 0) at('extra reps in a no-step session')
+  // S14 Am.1 — more reps than last time: the load comes down, below the last load, and carries no extra reps.
+  if (todayReps != null && last.reps != null && todayReps > last.reps && ((s.load_kg >= last.load_kg! && last.load_kg! > C.LOAD_ROUND_KG) || s.extra_reps > 0)) at('not lighter when the reps rose')
   // Never two rises inside the window: the current load, if it was itself a rise, must be old enough to step again.
   if (up) {
     let i = logs.length - 1

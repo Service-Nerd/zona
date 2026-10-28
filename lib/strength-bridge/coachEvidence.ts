@@ -19,13 +19,17 @@ export interface StrengthWeekEvidence {
 const mainReps = (w: StrengthWeek): number[] =>
   w.sessions.flatMap(s => s.blocks.filter(b => b.role === 'main').flatMap(b => b.items.map(i => i.reps)))
     .filter((r): r is number => typeof r === 'number')
+const mainRirs = (w: StrengthWeek): number[] =>
+  w.sessions.flatMap(s => s.blocks.filter(b => b.role === 'main').flatMap(b => b.items.map(i => i.rir)))
+    .filter((r): r is number => typeof r === 'number')
 
 const hasPlyo = (w: StrengthWeek) => w.sessions.some(s => s.blocks.some(b => b.role === 'plyo' && b.items.length > 0))
 
-/** A week is technique-first when every main lift it prescribes is at the technique reps. */
+/** A week is technique-first when every main lift it prescribes is at the technique reps AND the technique effort:
+ *  a general 10-rep block (S6 Am.2) has the reps but not the extra rep in reserve, and is not technique. */
 const isTechnique = (w: StrengthWeek) => {
   const r = mainReps(w)
-  return r.length > 0 && r.every(x => x >= STRENGTH_CONFIG.NOVICE_REPS)
+  return r.length > 0 && r.every(x => x >= STRENGTH_CONFIG.NOVICE_REPS) && mainRirs(w).every(x => x >= STRENGTH_CONFIG.NOVICE_RIR)
 }
 
 export function strengthWeekEvidence(

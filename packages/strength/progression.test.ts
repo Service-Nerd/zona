@@ -74,17 +74,20 @@ describe('S-PROGRESSION-BOUNDED over generated histories', () => {
     const bad: unknown[] = []
     for (let n = 0; n < 4000; n++) {
       const ex = pick(loaded)
+      const withReps = rnd() < 0.5
       const h: LiftLog[] = []
       let d = 0, load = pick([4, 6, 8, 10, 12, 16, 20, 24, 30, 40, 60])
       for (let k = Math.floor(rnd() * 8); k > 0; k--) {
         d += pick([2, 3, 4, 7, 7, 10])
         if (rnd() < 0.3) load = Math.max(2, load + pick([-2.5, -1, 1, 2, 2.5, 5]))
-        h.push({ date: day(d), exercise_id: ex, load_kg: load, feel: pick(['easy', 'right', 'hard'] as const), counts: rnd() > 0.15 })
+        // S14 Am.1 — half the histories carry the plan's reps (the general cycle's targets, or none, as before it).
+        h.push({ date: day(d), exercise_id: ex, load_kg: load, feel: pick(['easy', 'right', 'hard'] as const), counts: rnd() > 0.15, ...(withReps ? { reps: pick(C.MAIN_REP_CYCLE_GENERAL) } : {}) })
       }
       const noStep = rnd() < 0.2
       const injuries = rnd() < 0.3 ? [pick(['achilles', 'knee', 'hip', 'shoulder', 'hamstring'] as const)] : []
-      const s = suggestLoad(h, { exerciseId: ex, today: day(d + 3), noStep, injuries })
-      const v = progressionViolations(h, ex, day(d + 3), noStep, s)
+      const reps = withReps ? pick(C.MAIN_REP_CYCLE_GENERAL) : undefined
+      const s = suggestLoad(h, { exerciseId: ex, today: day(d + 3), noStep, injuries, reps, rir: 2 })
+      const v = progressionViolations(h, ex, day(d + 3), noStep, s, reps)
       if (v.length) bad.push({ ex, h, noStep, s, v })
     }
     expect(bad.slice(0, 3)).toEqual([])
@@ -133,3 +136,37 @@ describe('STRENGTH-BW-LOG-01 — one owner for "loaded"', () => {
   })
 })
 
+
+describe('S14 Am.1 (STRENGTH-REP-BLOCKS-01) — more reps than last time brings the load down', () => {
+  const at = (h: LiftLog[], reps: number, noStep = false) =>
+    suggestLoad(h, { exerciseId: LOWER, today: day(60), noStep, injuries: [], reps, rir: 2 })
+  const six = (n: number, load: number, feel: LiftFeel = 'right'): LiftLog => ({ ...log(n, load, feel), reps: 6 })
+  it('6 to 10 reps at RIR 2: Epley at reps-to-failure, about a tenth lighter, rounded down', () => {
+    // (1 + 8/30) / (1 + 12/30) = 0.905; 60 × 0.905 = 54.3 → 54
+    expect(at([six(0, 60)], 10)).toMatchObject({ kind: 'more_reps', load_kg: 54, extra_reps: 0 })
+  })
+  it('the cut holds in a no-step week too: a hold there would keep the 6-rep weight', () => {
+    expect(at([six(0, 60)], 10, true)).toMatchObject({ load_kg: 54 })
+  })
+  it('🔴 equal or fewer reps: S14 unchanged, and the formula never raises the load', () => {
+    const bare = ({ last: _, ...x }: ReturnType<typeof go>) => x
+    expect(bare(at([six(0, 60)], 6))).toEqual(bare(go([log(0, 60, 'right')])))
+    expect(bare(at([six(0, 60, 'easy')], 5))).toEqual(bare(go([log(0, 60, 'easy')])))
+  })
+  it('a log with no known reps (logged before the cycle) is read as S14 always read it', () => {
+    expect(at([log(0, 60, 'right')], 10)).toEqual(go([log(0, 60, 'right')]))
+  })
+  it('🔴 a "hard twice" reduction is kept: the cut starts from the reduced load (code review)', () => {
+    // 60 hard, 60 hard → S14 says 54; Epley on 54 → 48.5 (54 × 0.905 = 48.9, rounded down)
+    expect(at([six(0, 60, 'hard'), six(7, 60, 'hard')], 10).load_kg).toBe(48.5)
+  })
+  it('a light lift never rounds to nothing, and the check accepts the floor', () => {
+    expect(progressionViolations([{ ...log(0, 0.5, 'right'), reps: 6 }], LOWER, day(60), false, at([{ ...log(0, 0.5, 'right'), reps: 6 }], 10), 10)).toEqual([])
+    expect(at([{ ...log(0, 0.5, 'right'), reps: 6 }], 10).load_kg).toBe(C.LOAD_ROUND_KG)
+  })
+  it('🔴 the check: a carried load when the reps rose is a violation', () => {
+    const v = progressionViolations([six(0, 60)], LOWER, day(60), false, { kind: 'hold', load_kg: 60, extra_reps: 0 }, 10)
+    expect(v.some(x => x.detail === 'not lighter when the reps rose')).toBe(true)
+    expect(progressionViolations([six(0, 60)], LOWER, day(60), false, at([six(0, 60)], 10), 10)).toEqual([])
+  })
+})

@@ -71,6 +71,13 @@ describe('strengthWeekEvidence — the next step is the ENGINE\'s, read from its
     const plan = make('regular', 'general')
     expect(strengthWeekEvidence(plan, {}, plan.weeks[0].n)!.next).toBeNull()
   })
+  it('🔴 a general 10-rep block is not technique, first time round or on the wrap (S6 Am.2, code review)', () => {
+    // Its first block and the cycle's return to 10 both have the reps; neither has the technique effort.
+    const plan = make('regular', 'general')
+    for (const i of [0, STRENGTH_CONFIG.BLOCK_WEEKS * STRENGTH_CONFIG.MAIN_REP_CYCLE_GENERAL.length].filter(i => i < plan.weeks.length)) {
+      if (plan.weeks[i].sessions.length) expect(strengthWeekEvidence(plan, {}, plan.weeks[i].n)!.next, `week ${plan.weeks[i].n}`).toBeNull()
+    }
+  })
   it('🔴 once the jumps have started, the line goes quiet, even on a week without them', () => {
     const plan = make('regular')
     const at = firstPlyo(plan)

@@ -122,7 +122,7 @@ there. Placement now excludes the window outside race week.
 
 **Principle.** Technique first: for `NOVICE_BLOCK_WEEKS` (new 4, some 2, regular 0) main lifts are
 `NOVICE_REPS` (10) at `NOVICE_RIR` (3), one set under `MAIN_SETS`. After it, running-focused lower-body main lifts go
-heavy at `HEAVY_REPS_RUNNING_LOWER` (5); general lower at `MAIN_REPS_GENERAL` (8); upper at `MAIN_REPS_UPPER` (8);
+heavy at `HEAVY_REPS_RUNNING_LOWER` (5); general mains follow `MAIN_REP_CYCLE_GENERAL` (Amendment 2); running upper at `MAIN_REPS_UPPER` (8);
 accessories `ACCESSORY_REPS` (10). Sets: `MAIN_SETS` (3), `ACCESSORY_SETS` (2), `CORE_SETS` (2) of `CORE_SECONDS`
 (30) holds. Peak cuts `PEAK_MAIN_SET_REDUCTION` (1) main set. Taper drops to `MAINTENANCE_MAIN_SETS` (2) and
 `MAINTENANCE_ACCESSORY_SETS` (1). A run deload week cuts sets by `DELOAD_SET_FACTOR` (0.6) (§3). An exercise is kept
@@ -141,6 +141,20 @@ the heaviest bilateral load lives. Measured before: 13,300 of 46,908 leg session
 founder's own plan paired a Kickstand RDL with a Barbell RDL for four weeks). After: 0, with every running leg session
 still carrying unilateral work. **Check:** `S-LOWER-BALANCE`; `catalogue.test.ts` (every single-leg entry trains the
 quads).
+
+**Amendment 2 (2026-10-28, STRENGTH-REP-BLOCKS-01, Coaching Board).** General focus cycles its main lifts' reps by
+block: `MAIN_REP_CYCLE_GENERAL` (**10 → 8 → 6**, then round again), one target per block of `BLOCK_WEEKS`, counted
+from the runner's strength start on the same boundary as the exercise rotation (S9), so a new lift and a new target
+arrive together. The technique block is unchanged (`NOVICE_REPS` at `NOVICE_RIR`). Running focus keeps
+`HEAVY_REPS_RUNNING_LOWER` (5) on its lower mains and `MAIN_REPS_UPPER` (8) upper. The target is shown as the session's
+number, never a range. **No "toning" goal and no toning claim on any surface** (an outcome claim, Blagrove).
+**Why.** For a runner who lifts for general strength, varying the rep target across blocks at a kept RIR trains across
+the strength-hypertrophy range without making any one block a circuit **[C]**; heavy 5s stay where running economy is
+the aim (S6's evidence). Measured over the sweep sample: every running session byte-identical (25,507 of 25,507);
+general sessions in an 8-rep block unchanged, the 10- and 6-rep blocks changed (13,913 of 27,823); session clocks inside
+their budget in every block (29.4–29.5, 43.5–43.7, 56.0–57.3 min). A lift held across a block whose reps rise is handled
+by S14 Am.1. **Check:** `S-REP-BLOCK` (a general main at its block's reps; a running lower main at 5);
+`lib/marketing/noToningClaim.test.ts` (no toning copy in `app/`, `components/`, `lib/`, `packages/`).
 
 ## S7. Effort is reps in reserve
 
@@ -303,6 +317,18 @@ tissue ahead of load (Willy). Adding reps before a large relative jump protects 
 (Sims). Optional because the plan must never wait on a form (McMillan). Sitting:
 `docs/decisions/strength-progression-coaching-2026-10-18.md`. **Check:** `S-PROGRESSION-BOUNDED`
 (`progressionViolations`, swept over generated histories).
+
+**Amendment 1 (2026-10-28, STRENGTH-REP-BLOCKS-01, Coaching Board).** When today's prescribed reps are **above** the
+reps the plan prescribed on the date of the last counting log (S6 Am.2's cycle going round, 6 → 10), the suggested
+load is the lower of that log's load and S14's own answer × `(1 + (last reps + RIR)/30) / (1 + (today's reps + RIR)/30)`, Epley's ratio at reps-to-failure,
+rounded **down** to `LOAD_ROUND_KG` and never below it, with no extra reps carried; it applies in a no-step week too.
+Equal or falling reps: S14 unchanged. The ratio is never applied upward. Logs store load and feel, so the reps come from
+the plan at the log's date; a log the plan has no reps for reads as S14 always read it (⚠️ a rebuild can move a log's date into another block: `STRENGTH-LOG-REPS-01` stamps the reps on the log). The screen says the reps with the weight ("Try 54 kg for 10."). **Why.** Ten reps at a six-rep
+weight is a failed set, not a harder one (Blagrove); 6 to 10 at RIR 2 is about a tenth lighter. Rounding down puts any
+error on the light side; an estimated rise is the one error that injures (Willy, Hutchinson). Measured before the fix:
+904 carries with the reps rising in 429 of 819 sampled general plans. Blagrove's dissent (convert upward too on a fall)
+is recorded in the sitting: `docs/decisions/coaching-2026-10-28-rep-rise-load-sitting.md`. **Check:**
+`S-PROGRESSION-BOUNDED` ("not lighter when the reps rose").
 
 ## Honesty notes the plan carries
 

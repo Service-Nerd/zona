@@ -87,6 +87,13 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-28 — STRENGTH-REP-BLOCKS-01 found at build · a lift whose reps rise between blocks · P2 with Epley's ratio CORRECT WITH AMENDMENT
+
+The general rep cycle (C, this morning) lets a carried lift's reps rise 6 → 10; S14 was rep-blind and would offer the
+6-rep weight. Ruled: the load comes down by Epley's ratio at reps-to-failure, rounded down, never upward; falls
+unchanged. Blagrove's dissent (convert upward on a fall) recorded. StrengthPrinciples S14 Am.1; check
+`S-PROGRESSION-BOUNDED`. Sitting: `docs/decisions/coaching-2026-10-28-rep-rise-load-sitting.md`.
+
 ## 2026-10-28 — Strength session shape · A: S2 unchanged (P1/P2 INCORRECT), say it on the session · A2 A/B sessions CORRECT · C rep blocks CORRECT WITH AMENDMENT · D main pairs + warm-up rounds CORRECT WITH AMENDMENT
 
 From the founder's two sessions. Measured on 1,605 strength plans: 52.0% of chosen-day training weeks have no heavy-leg

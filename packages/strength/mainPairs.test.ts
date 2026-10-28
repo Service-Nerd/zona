@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { generateStrengthPlan } from './generate'
 import { estimateMinutes } from './session'
+import { validateStrengthPlan } from './validate'
 import { CATALOGUE_BY_ID, PATTERN_REGION } from './catalogue'
 import { STRENGTH_CONFIG as C } from './config'
 import type { Day, EquipmentTag, RunContext, RunRole, SessionMinutes, StrengthProfile } from './types'
@@ -72,6 +73,21 @@ describe('S10 Am.5 — the warm-up is rounds', () => {
           expect(warm.length).toBe(C.WARMUP_ITEMS_PER_ROUND[minutes] + ramp)
         }
       }
+    })
+  }
+})
+
+describe('S6 Am.2 (STRENGTH-REP-BLOCKS-01) — general mains cycle their reps by block; running lower mains stay heavy', () => {
+  for (const experience of ['regular', 'some', 'new'] as const) {
+    it(`${experience}: every block of a 16-week plan validates, and the general cycle shows each of its rep targets`, () => {
+      const c = ctx(16)
+      const general = generateStrengthPlan({ ...profile('general', 45), experience }, c)
+      expect(validateStrengthPlan(general, c)).toEqual([])
+      const novice = C.NOVICE_BLOCK_WEEKS[experience]
+      const seen = new Set(general.weeks.slice(novice).flatMap(w => w.sessions).flatMap(s => s.blocks.filter(b => b.role === 'main').flatMap(b => b.items.map(i => i.reps))))
+      for (const r of C.MAIN_REP_CYCLE_GENERAL) if (r !== C.NOVICE_REPS || novice < C.BLOCK_WEEKS) expect(seen.has(r), `${r} reps`).toBe(true)
+      const running = generateStrengthPlan({ ...profile('running', 45), experience }, c)
+      expect(validateStrengthPlan(running, c)).toEqual([])
     })
   }
 })
