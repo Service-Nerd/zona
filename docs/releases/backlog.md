@@ -27,13 +27,25 @@ already decided what it is.
 
 ---
 
-### 🔲 `S9-ONE-REP-01` — a "repeats" session with one rep, for the slowest runners 🏃 **COACHING BOARD** (dose vs the session's name)
+### 🔲 `S9-ONE-REP-01` — a "repeats" session with one rep, for the slowest runners 🏃 **COACHING BOARD: RULED 2026-10-28, build next**
 
 Found by the 27 Oct board read of the live dry runs. Since S9-QUALITY-MINUTES-01, rep growth stops at 35 minutes in total, and
 at a very slow pace one 1,600 m rep plus warm-up and cool-down fills it: "1600m repeats" with a single rep and the note "Rep
 three should look like rep one." **18 slow-grid sessions (`threshold_mile_repeats`), 0 before the change; live: a91d8fde
 week 13 (held from the dry-run apply).** `mp_blocks` single blocks are separate and pre-existing (160 → 40 slow, 163 → 79
-cohort). The board rules: a minimum rep count, a shorter rep for a slow runner, or a different row.
+cohort). **Ruled 2026-10-28 (C2, §19 Am.2):** below `REP_ROW_MIN_REPS` (2) the row's declared same-stimulus sibling is delivered
+(`threshold_mile_repeats` → `tempo_cruise`). Acceptance: 18 slow-grid sessions change, all to `tempo_cruise`; 0 cohort
+plans; 0 validator codes moved; `INV-PLAN-REPEATS-REPEAT` with `mp_blocks` as named debt; a91d8fde re-run as a dry run.
+Sitting: `docs/decisions/coaching-2026-10-28-one-rep-repeats-sitting.md`.
+
+---
+
+### 🔲 `MP-BLOCKS-ONE-BLOCK-01` — "Marathon-pace blocks" is one block for every runner measured 🏃 **COACHING BOARD**
+
+Found measuring S9-ONE-REP-01 (2026-10-28): `mp_blocks` (4 km at goal pace, 3 min jog, rep-scaled) sizes to ONE block in
+**170 of 170** cohort-sample sessions and 40 of 40 slow-grid sessions. Pre-existing, not from the 26 Oct changes. The board
+split: McMillan, one 4 km MP block is a legitimate session and the name is wrong; Seiler, MP work away from the long run
+should repeat to earn the slot. Registered debt in `INV-PLAN-REPEATS-REPEAT` until ruled.
 
 ---
 

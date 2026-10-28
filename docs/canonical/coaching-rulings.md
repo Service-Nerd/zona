@@ -87,6 +87,18 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-28 — S9-ONE-REP-01 · A (min 2 reps) INCORRECT · B (shorter rep) INCORRECT · C1 (drop from pool) not chosen · C2 (deliver the same-stimulus sibling) CORRECT WITH AMENDMENT · RULED, not built
+
+Since S9-QUALITY-MINUTES-01 a slow runner (threshold slower than ~9:22 /km) gets "1600m repeats" with ONE rep: 18
+slow-grid sessions, 0 of 881 in the cohort sample; live a91d8fde W13. **§19 Amendment 2:** a rep-scaled threshold row
+sized below `REP_ROW_MIN_REPS` (2) is not delivered as that row; its declared same-stimulus sibling is
+(`threshold_mile_repeats` → `tempo_cruise`, the equivalence §19 Am. ratified). Prototype: 18 sessions change, all to
+2 x 10 min at T (16.7 → 20 min of threshold, 37 → 43 min), 0 cohort plans, 0 validator codes moved. A breaches §85's
+30-minute band; B removes the split §19 Am. names as the row's reason to exist; C1 moved 156 sessions to CV work. New
+`INV-PLAN-REPEATS-REPEAT` over every rep-scaled row, `mp_blocks` named debt (one block for 170 of 170 measured;
+McMillan/Seiler disagree, filed `MP-BLOCKS-ONE-BLOCK-01`). Tasha's plan re-run as a dry run before applying. Sitting:
+`docs/decisions/coaching-2026-10-28-one-rep-repeats-sitting.md`.
+
 ## 2026-10-27 — S9-EASY-MINUTES-01 RE-SITTING · C VACATED (evidence was a rounding defect) · D (§82 only, 30 min) CORRECT WITH AMENDMENT · BUILT 2026-10-27 (foundation twin included; 0 day-count changes held)
 
 At build, the prototype behind C was found to round the floor DOWN, breaching its own floor; rounded up as worded, C
