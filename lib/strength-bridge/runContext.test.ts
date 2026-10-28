@@ -55,3 +55,22 @@ describe('the strength and run engines agree on §21’s impact list', () => {
     expect([...STRENGTH_CONFIG.PLYO_RESTRICTING_INJURIES].sort()).toEqual([...GENERATION_CONFIG.HILL_RESTRICTING_INJURIES].sort())
   })
 })
+
+// WIZARD-INJURY-FREE-01 code review (2026-10-28): the bridge matched injury tags EXACTLY, so two of the
+// wizard's own six answers ('Shin splints', 'Plantar fasciitis') never reached the strength engine.
+// Every option the wizard offers must map to a strength tag. The options are read from the wizard.
+describe('every wizard injury answer reaches the strength engine', () => {
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', 'app', 'dashboard', 'GeneratePlanScreen.tsx'), 'utf8') as string
+  const m = /const INJURIES\s*=\s*\[([^\]]+)\]/.exec(src)
+  const options = m ? Array.from(m[1]!.matchAll(/'([^']+)'/g)).map(x => x[1]!) : []
+
+  it('population: the wizard offers its injury answers', () => {
+    expect(options.length).toBeGreaterThanOrEqual(6)
+  })
+
+  it.each(options.map(o => [o]))('%s maps to a strength injury tag', (o) => {
+    const p = plan()
+    p.meta = { ...p.meta, injury_history: [o.toLowerCase()] }
+    expect(planToRunContext(p).injury_tags.length, o).toBeGreaterThan(0)
+  })
+})

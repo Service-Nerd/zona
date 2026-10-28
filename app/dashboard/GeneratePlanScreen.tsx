@@ -1,5 +1,6 @@
-// TIER-DIVERGENT — FREE:  8-step wizard (distance → race → goal → fitness → benchmark → schedule → constraints)
-//                  PAID:  11-step wizard adds hard-sessions → terrain → injuries
+// TIER-DIVERGENT — every runner: distance → race → goal → fitness → benchmark → schedule → constraints → injuries
+//                  PAID adds hard-sessions → terrain before injuries. Injuries is asked of every tier
+//                  (WIZARD-INJURY-FREE-01, restoring SLT 2026-09-11: injury adaptation is never paid).
 // One decision per screen. Slide transitions between steps.
 'use client'
 
@@ -730,7 +731,7 @@ export default function GeneratePlanScreen({
   // ── Step 10 — Terrain (paid) ──────────────────────────────────────────────
   const [terrain, setTerrain] = useState<'road' | 'trail' | 'mixed' | null>(null)
 
-  // ── Step 11 — Injuries (paid) ────────────────────────────────────────────
+  // ── Step 11 — Injuries (every tier, WIZARD-INJURY-FREE-01) ───────────────
   const [injuries, setInjuries] = useState<string[]>([])
   // STRENGTH-ENTRY-01 — null and 'no' both mean no strength.
   const [strengthChoice, setStrengthChoice] = useState<StrengthWizardChoice | null>(null)
@@ -2290,7 +2291,7 @@ export default function GeneratePlanScreen({
           </div>
         )
 
-      // ── Injuries (paid) ───────────────────────────────────────────────────
+      // ── Injuries (every tier) ─────────────────────────────────────────────
       case 'injuries':
         return (
           <div>

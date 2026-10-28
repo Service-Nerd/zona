@@ -94,7 +94,9 @@ Body: GeneratorInput
   preferred_long_run_day?: 'sat' | 'sun'  // R23 rebuild — soft constraint; default 'sun'
   treadmill_primarily?: boolean   // R23 rebuild — affects strides and hill-work plausibility
 
-  // Profile (paid/trial only)
+  // Profile. hard_session_relationship and terrain: sent by the wizard for paid/trial only.
+  // injury_history: sent for EVERY tier since 2026-10-28 (WIZARD-INJURY-FREE-01, restoring SLT
+  // 2026-09-11: injury adaptation is never paid). Do not add a server-side tier strip for it.
   hard_session_relationship?: 'avoid' | 'neutral' | 'love' | 'overdo'
   injury_history?: string[]       // FREE-FORM, matched by keyword — NOT a closed union.
                                   // The wizard sends its own labels: 'Achilles', 'Knee',

@@ -9,6 +9,7 @@
 // resolver `getSessionForDate` (ADR-016), WITH the runner's move/swap overrides,
 // so strength is placed around the week the runner will actually run.
 
+import { hasInjuryKeyword } from '@/lib/plan/injuryScope'
 import { createHash } from 'node:crypto'
 import type { Plan, Session, Week } from '@/types/plan'
 import type { SessionOverride } from '@/lib/plan/effectiveSessions'
@@ -68,9 +69,10 @@ export function planToRunContext(plan: Plan, overrides: ReadonlyArray<SessionOve
       days.push({ date: iso(d), day: dayKeyForDate(d), week_n: weeks[wi].n, role: runRoleOf(onDay[0]?.session), ...(runs >= 2 ? { runs } : {}) })
     }
   }
-  const injury_tags = Array.from(new Set(
-    (plan.meta.injury_history ?? []).map(t => t.toLowerCase().trim()).filter((t): t is InjuryTag => (INJURY_TAGS as readonly string[]).includes(t)),
-  ))
+  // WIZARD-INJURY-FREE-01 code review (2026-10-28): matched through the run engine's own matcher. An
+  // exact match dropped the wizard's own answers, 'shin splints' and 'plantar fasciitis' (the tags are
+  // 'shin' and 'plantar'), so the strength engine never adapted for them while the run engine did.
+  const injury_tags: InjuryTag[] = INJURY_TAGS.filter(tag => hasInjuryKeyword(plan.meta.injury_history, tag))
   const age = plan.meta.age
   return {
     version: 1,
