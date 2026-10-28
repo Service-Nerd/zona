@@ -87,6 +87,16 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-28 — LONG-RUN-BELOW-LONGEST-01 · engine change INSUFFICIENT EVIDENCE, note copy defect CORRECT · INJURY-PEAK-JUMP-01 · CORRECT (runner must be told)
+
+Marathon plans whose peak long run is shorter than the runner's stated longest run: **13.7%** healthy (133 of 308 held by
+the 210-min cap, conforming), **29.2%** with four injuries (none at the cap, median gap 9 km). graceemilyhill: 21 km now,
+13.5 km peak, note blaming "ran out of weeks". **Prototype required** (hold the stated long run where the cap allows, easy
+volume yields, no week grows: Willy's binding condition); the wrong-cause note is a defect fix. Plans warned by the ramp or
+injury-cap check carry **no load note** in 52% (healthy), 62% (Achilles), 85% (knee) of cases; §90 Am.2's producer split
+stands, but §34 requires the residual be stated: **CORRECT, build it.** Sitting:
+`docs/decisions/coaching-2026-10-28-long-run-below-longest-and-injury-jump-sitting.md`.
+
 ## 2026-10-28 — AUDIT-PLANS-MP-COST-01 · the MP change's audit cost ACCEPTED · `audit:plans` re-baselined · CLOSED
 
 `audit:plans` had been red since `8ff976b7`: `BINGE-WEEK` 306 → 308 (two plans at 61%) and `NEVER-BUILDS` 1093 → 1094.

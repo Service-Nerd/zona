@@ -154,12 +154,21 @@ the maintenance enricher writes session `coach_notes` and a weekly debrief only.
 
 ### 🔲 `LONG-RUN-BELOW-LONGEST-01` — a marathon plan whose longest run is shorter than the runner already runs 🏃 **COACHING BOARD**, then 👤 **FOUNDER** (note words)
 
+**Coaching Board 2026-10-28: engine change INSUFFICIENT EVIDENCE** (prototype: hold the stated long run where the 210-min
+cap allows, easy volume yields, no week grows; Willy's condition). **The wrong-cause note is a defect fix now.** Measured:
+13.7% of healthy marathon plans peak below the stated longest run (133 of 308 at the cap), 29.2% with four injuries (median
+gap 9 km, none at the cap).
+
 graceemilyhill (c848fd4c, London 4:45, 30 km/week, longest recent run **21 km**, knee/hip/back/shin history, 4 days): the
 plan holds 24–30 km/week for 20 weeks and its longest run is **13.5 km**, 7.5 km shorter than what she runs now. No
 invariant compares the plan's peak long run with `longest_recent_run_km`. Her `volume_constraint_note` says *"the long run
 can only grow so much week to week, and it ran out of weeks"*, which is not the cause. Current engine (rebuilt 28 Oct).
 
 ### 🔲 `INJURY-PEAK-JUMP-01` — an Achilles-history runner jumps 24% into peak, unannounced 🏃 **COACHING BOARD**
+
+**Coaching Board 2026-10-28: CORRECT, build it.** §90 Am.2's producer split stands; §34 requires the residual be stated.
+Warned plans with NO load note: 52% healthy, 62% Achilles, 85% knee (marathon cohort). Measure why first (slot competition
+with other plan notes is the likely cause), then a check that a warned plan carries a load note.
 
 emilyjcgibbs (d4c4db1e, marathon 5:00, achilles): weeks 15 → 16 go 38 → 47 km (+24%), long run 206 min. Today's engine
 produces the same jump. `INV-PLAN-INJURY-CAP-DELIVERED` ×2 and `INV-PLAN-DELIVERED-RAMP` ×3 are **warn** by design (§34,
