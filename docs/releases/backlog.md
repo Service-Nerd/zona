@@ -162,6 +162,8 @@ separately (Willy: plantar has a time-on-feet mechanism, lumbar pain mostly does
 
 ### 🔲 `WIZARD-PAID-INPUTS-TIER-01` — "overdo" changes every plan, and free runners are never asked 💼 **SLT** (tier), then 🏃 **COACHING BOARD** (what each answer prescribes)
 
+⏸️ **PARKED by the founder 2026-10-28** ("park point 2 in the backlog for now"): not to go to the SLT until he raises it.
+
 Measured 2026-10-28 building WIZARD-INJURY-FREE-01 (2,000 cohort inputs, each answer against no answer): the wizard asks
 `hard_session_relationship` and `terrain` of paid runners only, and drops them otherwise.
 | answer | sessions change | notes change |
