@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — STRENGTH-SUPERSET-MAINS-01 · The time came back as the accessories
+**Shipped:** a lower and an upper main lift are now done back to back, and the warm-up is two rounds of a shorter list at 45 and 60 minutes.
+**Dev learning:** after pairing, general 45-minute sessions had fewer main sets, which looked like a regression. Reading one session showed the opposite: before, the clock had dropped every accessory and core move but one; the saved seven minutes went to S10's fill order, accessories first, and the session now holds its whole template.
+**Product/creator learning:** only general-focus sessions pair at all. Running-focus sessions keep their upper work as accessories, so the founder's own question (super-setting) lands on one focus.
+**AI-building learning:** the review found that a recovery ease would leave half a pair behind, and that the new rest check would have refused every novice running pair if one ever existed. Neither was in code I had written for this build.
+**The honest bit:** the screen can't show a pair or a round yet. That's build 5, and strength stays admin-only until it ships.
+**Hook material:** "The upper lift is done while the legs recover. That is what the rest was for."
+**Postable?:** maybe
+
 ## 2026-10-28 — STRENGTH-AB-SESSIONS-01 · Two of the same session, most weeks
 **Shipped:** when a week holds two strength sessions of one kind, the second is a B with different exercises, so nothing repeats inside a week.
 **Dev learning:** the selector rotated exercises by block and nothing else, so every session of a kind in a week got the same answer. Adding a variant index that only ever moves the B kept every A byte-identical (32,810 of 32,810), which made the change provable rather than plausible. The two fallbacks came from two different failures: a tiny bodyweight pool where the third session rotated back to the first, and a short clock where swapping every slot for its per-side alternative ran a minute over.

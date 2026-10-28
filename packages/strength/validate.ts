@@ -120,6 +120,44 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
         v.push({ code: 'S-TIME-OVER', week: w.n, day: where, detail: 'mobility session too long' })
       }
 
+      // S10 Am.5 (STRENGTH-SUPERSET-MAINS-01) — a lower and an upper main lift go back to back: one lower and one
+      // upper per pair, same sets, resting at least the longer of the two rests the lifts carry alone (heavy running
+      // legs REST_S.heavy, otherwise REST_S.main). A session holding both and pairing neither is the rule not applied.
+      if (s.kind !== 'mobility') {
+        const mainItems = s.blocks.filter(b => b.role === 'main').flatMap(b => b.items)
+        const region = (id: string) => PATTERN_REGION[CATALOGUE_BY_ID.get(id)?.pattern ?? 'warmup']
+        // Heavy running legs rest longer outside the technique block (S6); inside it every main lift rests REST_S.main.
+        const technique = wi < C.NOVICE_BLOCK_WEEKS[p.experience]
+        const ownRest = (id: string) => (p.focus === 'running' && region(id) === 'lower' && !technique ? C.REST_S.heavy : C.REST_S.main)
+        const tags = Array.from(new Set(mainItems.map(i => i.superset).filter((t): t is string => !!t)))
+        for (const t of tags) {
+          const pair = s.blocks.flatMap(b => b.items.map(it => ({ it, role: b.role }))).filter(x => x.it.superset === t)
+          const regions = pair.map(x => region(x.it.exercise_id)).sort().join('+')
+          if (pair.length !== 2 || pair.some(x => x.role !== 'main') || regions !== 'lower+upper'
+            || pair[0].it.sets !== pair[1].it.sets || pair[0].it.rest_s !== pair[1].it.rest_s
+            || pair.some(x => x.it.rest_s < ownRest(x.it.exercise_id))) {
+            v.push({ code: 'S-MAIN-PAIR-REST', week: w.n, day: where, detail: pair.map(x => `${x.it.exercise_id} ${x.role} ${x.it.sets}x rest ${x.it.rest_s}`).join(' + ') })
+          }
+        }
+        const unpaired = mainItems.filter(i => !i.superset).map(i => region(i.exercise_id))
+        if (unpaired.includes('lower') && unpaired.includes('upper')) v.push({ code: 'S-MAIN-PAIR-REST', week: w.n, day: where, detail: 'a lower and an upper main lift left unpaired' })
+
+        // S10 Am.5 — the warm-up is WARMUP_ROUNDS rounds of at most WARMUP_ITEMS_PER_ROUND, plus at most one ramp set
+        // before heavy legs, and its content fits the minutes the clock reserves for it.
+        const minutes = p.session_minutes as keyof typeof C.WARMUP_ROUNDS
+        const rounds = C.WARMUP_ROUNDS[minutes], perRound = C.WARMUP_ITEMS_PER_ROUND[minutes]
+        const warm = s.blocks.find(b => b.role === 'warmup')?.items ?? []
+        const extra = rounds > 1 ? warm.filter(i => i.sets !== rounds) : []
+        const inRounds = warm.length - extra.length
+        // An accepted recovery ease drops the heavy legs but keeps the warm-up as written (S13), ramp set included.
+        const ramps = s.heavy_legs || s.eased_for ? 1 : 0
+        const seconds = warm.reduce((x, i) => x + i.sets * (i.reps != null ? i.reps * C.SECONDS_PER_REP : i.seconds ?? 0) * (i.per_side ? 2 : 1), 0)
+        if ((rounds > 1 ? inRounds > perRound || extra.length > ramps || extra.some(i => i.sets !== 1) : warm.length > perRound + ramps)
+          || seconds > C.WARMUP_MINUTES[minutes] * 60) {
+          v.push({ code: 'S-WARMUP-ROUNDS', week: w.n, day: where, detail: `${warm.map(i => `${i.exercise_id}x${i.sets}`).join(' ')} (${Math.round(seconds)} s)` })
+        }
+      }
+
       // S10 Am. — a warm-up never repeats a training exercise in lighter form.
       const trained = new Set(items.filter(x => x.role !== 'warmup').map(x => x.it.exercise_id))
       for (const { it, role, ex } of items) {

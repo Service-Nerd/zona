@@ -229,6 +229,26 @@ direction, catalogue review): a `some` lifter's first jump was bounding or a dro
 
 **Amendment 4 (2026-10-26, STRENGTH-FILL-01, Coaching Board).** The clock the runner chose is the clock they get. `FILL_TARGET` rises from 0.8 to **0.95**, and the fill step adds sets in `FILL_ORDER` (**accessory, core, then main**): a 4th main set comes only once accessory and core work is at its caps. Caps, rest and the short weeks (deload, taper, race week, the technique block, an accepted recovery ease) are unchanged. **Why.** The founder chose 60 minutes and got 48–56 (measured, all foci and levels); at 0.95 a 60-minute session runs 57–59. Spent main-first, the extra time went into a 4th set of every main lift, where strength has plateaued near 2–3 sets (S6) and a 4th heavy leg set adds to the §7 stress (S2); calf, hip and pulling work is where a runner is usually short (Blagrove, Willy). McMillan: an hour that delivers 51 minutes reads as the app ignoring you. **Check:** `S-TIME-FILL`, a training-week session under `FILL_FLOOR` (0.9) of its clock while an accessory or core set is still under its cap; and the fill-order arm in `validate.test.ts`.
 
+**Amendment 5 (2026-10-28, STRENGTH-SUPERSET-MAINS-01, Coaching Board).** A session holding both a lower and an upper
+main lift does them **back to back as a pair**: the i-th lower main with the i-th upper main, the same sets, and the
+pair rests the **longer** of the two rests the lifts carry alone (heavy running legs `REST_S`.heavy, otherwise
+`REST_S`.main). Never two lower lifts in a pair, and jumps keep their own block, so never a heavy lift with a
+plyometric. A pair trims and fills as one: a superset runs as many rounds as its longer half. The time saved goes to
+Amendment 4's fill order (accessory, core, then main). The **warm-up is `WARMUP_ROUNDS` rounds of
+`WARMUP_ITEMS_PER_ROUND`** (2 of 4 at 45 minutes, 2 of 5 at 60, one round of 4 at 30), plus the single ramp set before
+heavy legs, inside the `WARMUP_MINUTES` the clock already reserves. **Why.** The upper lift is done while the legs
+recover, which is what the rest was for, so no rest is lost to either lift; non-competing pairs are already how
+accessory and core work is run. The warm-up's content was 3.1, 3.7 and 4.2 minutes against 6, 8 and 10 reserved
+(measured, all foci): two rounds of a shorter list repeat the movements that matter instead of listing more of them
+once **[C]**. Measured: today only general-focus full-body sessions hold an upper main lift beside a lower one (2,372
+of 6,606 at 30 minutes, 1,433 of 6,973 at 60); running-focus sessions have no upper main, so none pair, and every
+pairable lift rests 90 s, so the longer-rest rule has nothing to choose between until a heavy lower lift is paired.
+A paired session saves 7.4, 7.1 and 8.1 minutes on average at 30, 45 and 60 minutes (3 to 12). General 45-minute sessions keep their whole template where the clock used to drop the accessories: mains average 7.1
+sets against 7.5, accessory and core 12.5 against 10.7. Warm-up content now 3.1 / 6.0 / 7.1 minutes. **Check:**
+`S-MAIN-PAIR-REST` (a pair is one lower and one upper main, same sets and rest, at least each lift's own rest; a lower
+and an upper main left unpaired) and `S-WARMUP-ROUNDS` (rounds and items per round, at most one ramp set, content
+inside the reserved minutes; an accepted recovery ease keeps its ramp set, and leaves no half of a pair behind).
+
 ## S11. Core in most sessions
 
 **Principle.** A week with two or more training sessions has at least two core exposures. Upper body is placed by

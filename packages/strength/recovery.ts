@@ -28,6 +28,10 @@ export function easeForRecovery(s: StrengthSession): StrengthSession {
         .map(it => LOADED_ROLES.has(b.role) ? { ...it, sets: Math.max(1, Math.min(it.sets, Math.round(it.sets * C.RECOVERY_SET_FACTOR))) } : it),
     }))
     .filter(b => b.items.length > 0)
+  // A superset whose other half was dropped is a single lift again (S10 Am.5: a pair is two lifts).
+  const tagCount = new Map<string, number>()
+  for (const it of blocks.flatMap(b => b.items)) if (it.superset) tagCount.set(it.superset, (tagCount.get(it.superset) ?? 0) + 1)
+  for (const b of blocks) b.items = b.items.map(({ superset, ...it }) => (superset && tagCount.get(superset)! > 1 ? { ...it, superset } : it))
   // The warm-up minutes are not in `blocks`' own estimate; keep the original's.
   const warmup = Math.max(0, s.estimated_minutes - estimateMinutes(s.blocks, 0))
   const heavy = blocks.some(b => LOADED_ROLES.has(b.role) && b.items.some(it => HEAVY_LEG_PATTERNS.includes(patternOf(it)!)))

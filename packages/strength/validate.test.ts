@@ -79,6 +79,10 @@ const CASES: Array<[string, (p: StrengthPlan) => void, StrengthProfile?]> = [
   ['S-CORE-DOSE', p => { for (const s of p.weeks[0].sessions) s.blocks = s.blocks.filter(b => b.role !== 'core') }],
   ['S-TOO-MANY', () => {}, { ...PROFILE, sessions_per_week: 1 }],
   // S1 Am.3 — the week's B session made a copy of its A (the pre-STRENGTH-AB-SESSIONS-01 engine, 68% of weeks).
+  // S10 Am.5 — a main pair rests less than its heavier half carries alone.
+  ['S-MAIN-PAIR-REST', p => { const it = p.weeks[0].sessions.flatMap(s => s.blocks).filter(b => b.role === 'main').flatMap(b => b.items).find(i => i.superset)!; it.rest_s = 30 }, { ...PROFILE, focus: 'general' }],
+  // S10 Am.5 — a warm-up twice the length of its rounds.
+  ['S-WARMUP-ROUNDS', p => { const w = p.weeks[0].sessions[0].blocks[0]; w.items.push(...JSON.parse(JSON.stringify(w.items))) }],
   ['S-AB-DISTINCT', p => { const [a, b] = p.weeks[0].sessions; b.blocks = JSON.parse(JSON.stringify(a.blocks)) }],
   ['S-MAIN-ELIGIBLE', p => { mainItem(heavy(p)).exercise_id = 'kettlebell_swing' }, { ...PROFILE, equipment: [...PROFILE.equipment, 'kettlebell'] }],
   ['S-BEFORE-START', p => { p.start_date = dateOf(1, 'mon') }],

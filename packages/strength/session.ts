@@ -128,6 +128,21 @@ export function buildMobilitySession(sel: SelectionContext): BuiltSession {
   return { kind: 'mobility', heavy_legs: false, blocks, estimated_minutes: estimateMinutes(blocks, 0), notes: [] }
 }
 
+type ChosenSlot = { slot: Slot; item: Prescription }
+
+/** S10 Am.5 — the session's main pairs: the i-th lower main lift with the i-th upper main lift, in slot order. */
+function mainPairs<T extends ChosenSlot>(c: T[]): [T, T][] {
+  const mains = c.filter(x => x.slot.role === 'main')
+  const lower = mains.filter(x => PATTERN_REGION[x.slot.pattern] === 'lower')
+  const upper = mains.filter(x => PATTERN_REGION[x.slot.pattern] === 'upper')
+  return lower.slice(0, upper.length).map((lo, i) => [lo, upper[i]])
+}
+
+function partnerOf<T extends ChosenSlot>(c: T[], x: T): T | undefined {
+  const pair = mainPairs(c).find(([a, b]) => a === x || b === x)
+  return pair && (pair[0] === x ? pair[1] : pair[0])
+}
+
 /** S1 Am.3 — which slots a B varies. All of them first; fewer when the full swap will not fit the clock. */
 export type VariantScope = 'all' | 'main' | 'support'
 
@@ -170,14 +185,14 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
   // weekend pick beside a Sunday long run, so it is the last accessory dropped (S-LEGS-EVERY-WEEK).
   const protectedLight = chosen.find(c => c.slot.light)?.slot ?? null
   const isProtected = (s: Slot) => s === protectedUpper || s === protectedLight
+  // S10 Am.5 — a shorter list done in rounds; the ramp set below stays a single set.
   const warmItems: Prescription[] = []
-  const warmCount = minutes === 30 ? 4 : minutes === 45 ? 5 : 6
   const inSession = new Set(chosen.map(c => c.item.exercise_id))
   for (const id of WARMUP_ORDER) {
-    if (warmItems.length >= warmCount) break
+    if (warmItems.length >= C.WARMUP_ITEMS_PER_ROUND[minutes]) break
     const e = CATALOGUE_BY_ID.get(id)!
     if (e.same_as && inSession.has(e.same_as)) continue
-    if (eligible(e, sel)) warmItems.push(prescribe(e, 'warmup', dose))
+    if (eligible(e, sel)) warmItems.push({ ...prescribe(e, 'warmup', dose), sets: C.WARMUP_ROUNDS[minutes] })
   }
   if (isHeavy(chosen)) {
     for (const id of POTENTIATE) {
@@ -189,13 +204,30 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
   const assemble = (c: Chosen[]): Block[] => {
     const order: BlockRole[] = ['plyo', 'main', 'accessory', 'core']
     const blocks: Block[] = [{ role: 'warmup', items: warmItems }]
+    let tag = 0
     for (const role of order) {
-      const items = c.filter(x => x.slot.role === role).map(x => ({ ...x.item }))
+      let items = c.filter(x => x.slot.role === role).map(x => ({ ...x.item }))
+      if (role === 'main') {
+        // S10 Am.5 — a lower main and an upper main go back to back, resting the longer of their two rests. Never two
+        // lower lifts, and jumps are their own block, so never a heavy lift with a plyometric.
+        const pairs = mainPairs(c)
+        if (pairs.length) {
+          const byId = new Map(items.map(i => [i.exercise_id, i]))
+          const ordered: Prescription[] = []
+          for (const [lo, up] of pairs) {
+            const a = byId.get(lo.item.exercise_id)!, b = byId.get(up.item.exercise_id)!
+            const t = String.fromCharCode(65 + tag++)
+            a.superset = t; b.superset = t
+            a.rest_s = b.rest_s = Math.max(a.rest_s, b.rest_s)
+            ordered.push(a, b)
+          }
+          items = [...ordered, ...items.filter(i => !ordered.includes(i))]
+        }
+      }
       if (items.length) blocks.push({ role, items })
     }
     // Pair accessory and core work into non-competing supersets.
     const pairable = blocks.filter(b => b.role === 'accessory' || b.role === 'core').flatMap(b => b.items)
-    let tag = 0
     for (let i = 0; i + 1 < pairable.length; i += 2) {
       const a = CATALOGUE_BY_ID.get(pairable[i].exercise_id)!, b = CATALOGUE_BY_ID.get(pairable[i + 1].exercise_id)!
       if (PATTERN_REGION[a.pattern] !== PATTERN_REGION[b.pattern]) {
@@ -219,13 +251,15 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
       .map((c, i) => ({ c, i }))
       .filter(({ c }) => c.slot.priority > 1 && c.slot.role !== 'plyo' && !isProtected(c.slot) && !(c.slot.role === 'core' && coreCount <= 1))
       .sort((a, b) => b.c.slot.priority - a.c.slot.priority || b.i - a.i)
-    const main = chosen.filter(c => c.slot.role === 'main' && c.item.sets > 2)
+    // A paired main counts only while its partner can also lose a set: a pair trims as one (S10 Am.5).
+    const main = chosen.filter(c => c.slot.role === 'main' && c.item.sets > 2 && (partnerOf(chosen, c)?.item.sets ?? 3) > 2)
     const plyo = chosen.findIndex(c => c.slot.role === 'plyo')
     const upper = chosen.find(c => isProtected(c.slot) && c.item.sets > 2)
     if (droppable.length) {
       chosen = chosen.filter((_, i) => i !== droppable[0].i)
     } else if (main.length) {
-      main[main.length - 1].item = { ...main[main.length - 1].item, sets: main[main.length - 1].item.sets - 1 }
+      // A paired main trims with its partner: a superset runs as many rounds as its longer half (S10 Am.5).
+      for (const c of [main[main.length - 1], partnerOf(chosen, main[main.length - 1])]) if (c) c.item = { ...c.item, sets: c.item.sets - 1 }
     } else if (upper) {
       upper.item = { ...upper.item, sets: upper.item.sets - 1 }
     } else if (chosen.some(c => c.slot === protectedUpper)) {
@@ -269,7 +303,12 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
       for (const role of C.FILL_ORDER as readonly BlockRole[]) {
         const c = chosen.find(x => x.slot.role === role && x.item.sets < (caps[role] ?? 0))
         if (!c) continue
-        const trial = chosen.map(x => (x === c ? { ...x, item: { ...x.item, sets: x.item.sets + 1 } } : x))
+        // A pair grows as one, or not at all: its halves keep the same sets (S10 Am.5). The first candidate per role, as
+        // before pairing, so a session with no pair fills exactly as it did.
+        const partner = partnerOf(chosen, c)
+        if (partner && partner.item.sets !== c.item.sets) continue
+        const grow = new Set([c, ...(partner ? [partner] : [])])
+        const trial = chosen.map(x => (grow.has(x) ? { ...x, item: { ...x.item, sets: x.item.sets + 1 } } : x))
         const t = estimateMinutes(assemble(trial), warmupMinutes)
         if (t > minutes) continue
         chosen = trial; blocks = assemble(chosen); est = t; grew = true

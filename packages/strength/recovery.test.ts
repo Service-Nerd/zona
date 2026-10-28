@@ -107,3 +107,19 @@ describe('the invariant can fail', () => {
     expect(recoveryEaseViolations(s, { ...s, eased_for: 'recovery' }).some(v => v.detail.startsWith('lower lift kept'))).toBe(true)
   })
 })
+
+describe('S10 Am.5 × S13 — an eased session leaves no half of a pair behind', () => {
+  it('heavy-legs general full body: the lower mains go, and the upper main they were paired with is a single lift again', () => {
+    const profile: StrengthProfile = { focus: 'general', session_minutes: 45, sessions_per_week: 2, equipment: ['dumbbells', 'bench', 'bands'], experience: 'regular' }
+    const plan = generateStrengthPlan(profile, ctx(OPEN, [...PHASES]))
+    const heavy = plan.weeks.flatMap(w => w.sessions).filter(s => s.heavy_legs && items(s, ['main']).some(i => i.superset))
+    expect(heavy.length).toBeGreaterThan(0)
+    for (const s of heavy) {
+      const eased = easeForRecovery(s)
+      const tags = items(eased, ['main', 'accessory', 'core']).map(i => i.superset).filter(Boolean)
+      for (const t of Array.from(new Set(tags))) expect(tags.filter(x => x === t)).toHaveLength(2)
+      expect(items(eased, ['main']).every(i => region(i.exercise_id) === 'upper')).toBe(true)
+    }
+  })
+})
+

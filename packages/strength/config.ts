@@ -103,6 +103,9 @@ export const STRENGTH_CONFIG = {
 
   // S10 — the session clock
   WARMUP_MINUTES: { 30: 6, 45: 8, 60: 10 } as Record<SessionMinutes, number>,
+  /** S10 Am.5 (STRENGTH-SUPERSET-MAINS-01) — the warm-up is rounds of a shorter list, inside WARMUP_MINUTES. */
+  WARMUP_ROUNDS: { 30: 1, 45: 2, 60: 2 } as Record<SessionMinutes, number>,
+  WARMUP_ITEMS_PER_ROUND: { 30: 4, 45: 4, 60: 5 } as Record<SessionMinutes, number>,
   REST_S: { heavy: 150, main: 90, accessory: 60, core: 30, plyo: 60, warmup: 0, mobility: 0 } as const,
   SECONDS_PER_REP: 3,
   SECONDS_PER_CONTACT: 1,
