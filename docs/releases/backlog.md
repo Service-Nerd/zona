@@ -178,7 +178,8 @@ ADR-022) and the plan carries no load note. Achilles is in `DELIVERED_CAP_INJURI
 
 ac566309 and d4c4db1e (built 10 Oct) fail `INV-PLAN-COACH-NOTES-MATCH-INTENT`; fixed in the engine 23 Oct
 (CRUISE-STEP-NOTE-GOALPACE-01), which reaches no existing plan. A patch dry run of d4c4db1e is clean (15 session days).
-⚠️ A patch replaces those sessions' AI notes with engine copy; do it after ENRICH-RESTORE-REPAIR-01.
+⚠️ A patch replaces those sessions' AI notes with engine copy. ENRICH-RESTORE-REPAIR-01 is applied (28 Oct), so this is
+unblocked; these two are now the only restored plans with an error violation.
 
 ### 🔲 `ENRICH-RISK-TOKEN-01` — the enricher can leave a `{{token}}` in `confidence_risks`, which nothing fills ⚙️ **NO BOARD**
 
