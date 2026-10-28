@@ -21,7 +21,7 @@ the records (`/ship`). The founder's own strength plan is regenerated after each
 | # | Item | What changes | Board tag | Depends on |
 |---|---|---|---|---|
 | 1 ✅ 2026-10-28 | `STRENGTH-BW-LOG-01` | A bar used as an anchor (inverted row) is a bodyweight lift: logs the feel only | ⚙️ defect | none |
-| 2 | `STRENGTH-AB-SESSIONS-01` | Two sessions of one kind in a week are an A and a B; no two training sessions in a week identical (34% today) | 🏃 ruled | none |
+| 2 ✅ 2026-10-28 | `STRENGTH-AB-SESSIONS-01` | Two sessions of one kind in a week are an A and a B; no two training sessions in a week identical (measured 10,178 of 14,870 multi-session weeks; now 0) | 🏃 ruled | none |
 | 3 | `STRENGTH-SUPERSET-MAINS-01` | A lower and an upper main lift pair, resting the longer rest; warm-up as rounds (2 at 45/60 min, 1 at 30) | 🏃 ruled | 2 |
 | 4 | `STRENGTH-REP-BLOCKS-01` | General focus cycles main reps by block (e.g. 10 → 8 → 6); running keeps heavy 5s; numbers set by measurement | 🏃 ruled | 2 |
 | 5 | `STRENGTH-SESSION-PARTS-01` | The overview in parts; rest and effort once per part; supersets linked; new wording; the no-legs line with the swap day | 🧭 ruled, 👤 words | 1, 3 |

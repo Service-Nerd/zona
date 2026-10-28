@@ -106,6 +106,11 @@ export function estimateMinutes(blocks: Block[], warmupMinutes: number): number 
   return Math.round(s / 60)
 }
 
+/** S1 Am.3 — what a session trains: its exercises outside the warm-up and cool-down, order ignored. */
+export function trainingSignature(blocks: Block[]): string {
+  return blocks.filter(b => b.role !== 'warmup' && b.role !== 'mobility').flatMap(b => b.items.map(i => i.exercise_id)).sort().join(',')
+}
+
 export interface BuiltSession {
   kind: SessionKind
   heavy_legs: boolean
@@ -123,7 +128,10 @@ export function buildMobilitySession(sel: SelectionContext): BuiltSession {
   return { kind: 'mobility', heavy_legs: false, blocks, estimated_minutes: estimateMinutes(blocks, 0), notes: [] }
 }
 
-export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: SelectionContext, dose: DoseContext, plyoAllowed: boolean, opts: { lightLower?: boolean } = {}): BuiltSession {
+/** S1 Am.3 — which slots a B varies. All of them first; fewer when the full swap will not fit the clock. */
+export type VariantScope = 'all' | 'main' | 'support'
+
+export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: SelectionContext, dose: DoseContext, plyoAllowed: boolean, opts: { lightLower?: boolean; variantScope?: VariantScope } = {}): BuiltSession {
   const minutes = sel.profile.session_minutes
   const warmupMinutes = C.WARMUP_MINUTES[minutes]
   const notes: StrengthNote[] = []
@@ -139,7 +147,9 @@ export function buildSession(kind: Exclude<SessionKind, 'mobility'>, sel: Select
     const lowerSlot = PATTERN_REGION[slot.pattern] === 'lower'
     // STRENGTH-KNEE-DOMINANT-01 — the single-leg slot carries the unilateral work; the hinge slot
     // is where the heaviest bilateral load lives (S6), so it does not prefer single-leg variants.
-    const ex = selectExercise(slot.pattern, { ...sel, preferUnilateral: sel.preferUnilateral && lowerSlot && slot.pattern !== 'hinge' }, used, slot.role === 'main')
+    const scope = opts.variantScope ?? 'all'
+    const varies = scope === 'all' || (scope === 'main') === (slot.role === 'main')
+    const ex = selectExercise(slot.pattern, { ...sel, variant: varies ? sel.variant : 0, preferUnilateral: sel.preferUnilateral && lowerSlot && slot.pattern !== 'hinge' }, used, slot.role === 'main')
     if (!ex) {
       if (slot.role === 'main') notes.push('pattern_unavailable')
       continue

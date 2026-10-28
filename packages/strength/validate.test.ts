@@ -78,6 +78,8 @@ const CASES: Array<[string, (p: StrengthPlan) => void, StrengthProfile?]> = [
   ['S-DELOAD-SETS', p => { mainItem(p.weeks[2].sessions.find(s => s.kind !== 'mobility')!).sets = 4 }],
   ['S-CORE-DOSE', p => { for (const s of p.weeks[0].sessions) s.blocks = s.blocks.filter(b => b.role !== 'core') }],
   ['S-TOO-MANY', () => {}, { ...PROFILE, sessions_per_week: 1 }],
+  // S1 Am.3 — the week's B session made a copy of its A (the pre-STRENGTH-AB-SESSIONS-01 engine, 68% of weeks).
+  ['S-AB-DISTINCT', p => { const [a, b] = p.weeks[0].sessions; b.blocks = JSON.parse(JSON.stringify(a.blocks)) }],
   ['S-MAIN-ELIGIBLE', p => { mainItem(heavy(p)).exercise_id = 'kettlebell_swing' }, { ...PROFILE, equipment: [...PROFILE.equipment, 'kettlebell'] }],
   ['S-BEFORE-START', p => { p.start_date = dateOf(1, 'mon') }],
   ['S-PLYO-START-LEVEL', p => { heavy(p, 1).blocks.push({ role: 'plyo', items: [{ exercise_id: 'drop_jump', sets: 3, contacts: 10, rir: null, rest_s: 60, per_side: false }] }) }],

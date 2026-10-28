@@ -6,7 +6,7 @@
 
 import { STRENGTH_CONFIG as C } from './config'
 import { heavyLegsLegal, placeWeek, splitFor, type Timeline } from './placement'
-import { buildMobilitySession, buildSession } from './session'
+import { buildMobilitySession, buildSession, trainingSignature, type BuiltSession, type VariantScope } from './session'
 import { CATALOGUE_BY_ID, LOAD_KIT } from './catalogue'
 import type {
   Day, EquipmentTag, InjuryTag, RunContext, RunDay, RunRole, RunWeek, StrengthNote, StrengthPlan, StrengthProfile, StrengthWeek,
@@ -77,9 +77,34 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
     const plyoMin = profile.experience === 'new' ? C.PLYO_MIN_WEEKS_NEW : C.PLYO_MIN_WEEKS
     const plyoAllowed = profile.focus === 'running' && weekIndex >= plyoMin
       && wk.phase !== 'taper' && wk.phase !== 'race_week' && !profile.bone_health_flag
+    const builtThisWeek: string[] = []
     const sessions = placed.map(p => {
       const d = run.days[p.index]
-      const built = p.kind === 'mobility' ? buildMobilitySession(sel) : buildSession(p.kind, sel, dose, plyoAllowed, { lightLower: !!p.lightLower })
+      let built: BuiltSession | undefined
+      if (p.kind === 'mobility') built = buildMobilitySession(sel)
+      else {
+        // S1 Am.3 (STRENGTH-AB-SESSIONS-01) — the second session of a kind in a week is a B, the third a C, in calendar
+        // order, varying every slot. Two ways that can fail, each with a fallback, tried in order until a session both
+        // differs from the week's others and fits the clock (S10):
+        //   · a small pool (bodyweight, injuries) rotates a C back to its A: count among sessions of the same shape
+        //     (with or without light legs), then the next rotations;
+        //   · the full swap stacks per-side lifts past a short clock: vary the main lifts only, then the rest only.
+        const earlier = placed.filter(q => q.kind === p.kind && q.index < p.index)
+        const byKind = earlier.length
+        const counts = Array.from(new Set([byKind, earlier.filter(q => !!q.lightLower === !!p.lightLower).length, byKind + 1, byKind + 2, byKind + 3]))
+        const build = (variant: number, variantScope: VariantScope) =>
+          buildSession(p.kind as Exclude<typeof p.kind, 'mobility'>, { ...sel, variant }, dose, plyoAllowed, { lightLower: !!p.lightLower, variantScope })
+        const tries = (['all', 'main', 'support'] as const).flatMap(scope => counts.filter(v => v > 0 || scope === 'all').map(v => [v, scope] as const))
+        let firstFresh: BuiltSession | undefined
+        for (const [v, scope] of tries) {
+          const b = build(v, scope)
+          if (builtThisWeek.includes(trainingSignature(b.blocks))) continue
+          firstFresh ??= b
+          if (b.estimated_minutes <= profile.session_minutes) { built = b; break }
+        }
+        built ??= firstFresh ?? build(counts[0], 'all')
+        builtThisWeek.push(trainingSignature(built.blocks))
+      }
       built.notes.forEach(n => notes.add(n))
       if (built.heavy_legs) prevHeavy = p.index
       return {

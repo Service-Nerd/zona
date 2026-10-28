@@ -21,6 +21,8 @@ export interface SelectionContext {
   preferUnilateral: boolean
   /** The strength week jumps were first PLACED (S8). Absent: they have not been yet, so this week would be the first. */
   plyoFirstWeek?: number
+  /** S1 Am.3 (STRENGTH-AB-SESSIONS-01) — 0 for the week's first session of a kind (A), 1 for the second (B), and so on. */
+  variant?: number
 }
 
 /** Target level from experience, climbing one rung per block, capped at 3. */
@@ -78,15 +80,29 @@ export function selectExercise(pattern: Pattern, ctx: SelectionContext, exclude:
   // Highest level at or below target; if nothing that low, the lowest available.
   const atOrBelow = pool.filter(e => e.level <= level)
   const bestLevel = atOrBelow.length ? Math.max(...atOrBelow.map(e => e.level)) : Math.min(...pool.map(e => e.level))
-  let candidates = pool.filter(e => e.level === bestLevel)
-  if (ctx.preferUnilateral) {
-    const uni = candidates.filter(e => e.unilateral)
-    if (uni.length) candidates = uni
+  const preferred = (list: Exercise[]): Exercise[] => {
+    let c = list
+    if (ctx.preferUnilateral) {
+      const uni = c.filter(e => e.unilateral)
+      if (uni.length) c = uni
+    }
+    // Prefer loaded options when the runner owns the kit: load is what moves economy (S6).
+    const loaded = c.filter(isLoaded)
+    if (loaded.length) c = loaded
+    return [...c].sort((a, b) => a.id.localeCompare(b.id))
   }
-  // Prefer loaded options when the runner owns the kit: load is what moves economy (S6).
-  const loaded = candidates.filter(isLoaded)
-  if (loaded.length) candidates = loaded
-  candidates = [...candidates].sort((a, b) => a.id.localeCompare(b.id))
+  const candidates = preferred(pool.filter(e => e.level === bestLevel))
   const block = Math.floor(ctx.weekIndex / C.BLOCK_WEEKS)
-  return candidates[block % candidates.length]
+  const first = block % candidates.length
+  const variant = ctx.variant ?? 0
+  if (variant === 0) return candidates[first]
+  // S1 Am.3 — a B session takes the next exercise in the same rotation, so A keeps today's answer and both hold
+  // for the block (S14 progresses each). Fewer candidates than sessions: the rest of the pool, ranked below.
+  // The A's preferences rank first (load over bodyweight, S6; single-leg where the slot prefers it), then the level,
+  // and never more than one level below the A, so a week's sessions stay at one difficulty.
+  const rank = (e: Exercise) => (isLoaded(e) ? 0 : 2) + (ctx.preferUnilateral && !e.unilateral ? 1 : 0)
+  const rest = pool.filter(e => !candidates.includes(e) && e.level <= bestLevel && e.level >= bestLevel - 1)
+    .sort((a, b) => rank(a) - rank(b) || b.level - a.level || a.id.localeCompare(b.id))
+  const order = [...candidates.slice(first), ...candidates.slice(0, first), ...rest]
+  return order[variant % order.length]
 }

@@ -216,8 +216,7 @@ Found building INJURY-PEAK-JUMP-01: `peak_shortfall_note` (§106/§40c), `freque
 ### 🔲 `STRENGTH-SESSION-REDESIGN-01` — the strength session, redesigned: six builds, all boards ruled 2026-10-28 🏃 **COACHING BOARD** + 🧭 **DESIGN BOARD** ruled; 👤 **FOUNDER** approves screens and words first
 
 Plan: `docs/plans/STRENGTH-SESSION-REDESIGN-01.md`. Canvas: *Strength session redesign*. In order: `STRENGTH-BW-LOG-01`
-(bodyweight lifts log feel only; the founder logged 90 kg on an inverted row), `STRENGTH-AB-SESSIONS-01` (34% of weeks hold
-two identical sessions), `STRENGTH-SUPERSET-MAINS-01` (lower + upper main pairs, warm-up rounds), `STRENGTH-REP-BLOCKS-01`
+(bodyweight lifts log feel only; the founder logged 90 kg on an inverted row), ✅ `STRENGTH-AB-SESSIONS-01` (shipped 2026-10-28: 10,178 of 14,870 multi-session weeks held a repeat, now 0), `STRENGTH-SUPERSET-MAINS-01` (lower + upper main pairs, warm-up rounds), `STRENGTH-REP-BLOCKS-01`
 (general-focus rep cycle), `STRENGTH-SESSION-PARTS-01` (overview in parts, new wording, the no-legs line), and
 `STRENGTH-GUIDED-SESSION-01` (start / end, one part per page, stepper, timers). S2 unchanged: loosening it was ruled
 INCORRECT (52% of chosen-day weeks have no heavy legs; P1/P2 put legs beside a hard run).

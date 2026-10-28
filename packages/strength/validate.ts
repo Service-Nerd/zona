@@ -173,6 +173,13 @@ export function validateStrengthPlan(plan: StrengthPlan, ctx: RunContext | null)
     }
     if (trainingSessions >= 2 && coreExposures < 2) v.push({ code: 'S-CORE-DOSE', week: w.n, detail: `${coreExposures} core exposures` })
     if (trainingSessions > p.sessions_per_week) v.push({ code: 'S-TOO-MANY', week: w.n, detail: `${trainingSessions} > ${p.sessions_per_week}` })
+    // S1 Am.3 (STRENGTH-AB-SESSIONS-01) — no two training sessions in a week train the same exercises. Written out
+    // here rather than calling session.ts's trainingSignature, so a producer that drifts cannot agree with itself.
+    const trainingWeek = w.sessions.filter(s => s.kind !== 'mobility')
+    const trains = trainingWeek.map(s => s.blocks.filter(b => b.role !== 'warmup' && b.role !== 'mobility').flatMap(b => b.items.map(i => i.exercise_id)).sort().join(' '))
+    trains.forEach((t, i) => {
+      if (trains.indexOf(t) < i) v.push({ code: 'S-AB-DISTINCT', week: w.n, day: trainingWeek[i].day, detail: 'the same session twice in one week' })
+    })
   })
   // S-PINNED-DAYS (S1 Am.2) — in an ordinary week every chosen day holds a session. Derived from the RunContext and
   // the runner's own days, never from placement's predicates. The exceptions are the safety ones: race day and the

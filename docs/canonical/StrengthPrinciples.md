@@ -37,6 +37,21 @@ run is allowed (S4's after-run gap). Without chosen days the engine picks, as be
 three allowed days for two sessions moved them between Mon/Wed and Mon/Tue; the fix is the question, not the
 placement. **Check:** `S-PINNED-DAYS` (no session off a chosen day; every chosen day filled in an ordinary week).
 
+**Amendment 3 (2026-10-28, STRENGTH-AB-SESSIONS-01, Coaching Board).** Two sessions of the same kind in one week are
+an **A and a B**: each slot takes a different exercise in the B (the next one in the same rotation), so each lift
+appears once a week and both are still held for `BLOCK_WEEKS`, which is what lets S14 progress them. The A is the
+session the engine built before this amendment, unchanged. A B never trades load away (S6): its main lift is loaded
+whenever the runner owns load, and never drops more than one level below the A. Two fallbacks, in order, until the
+session both differs and fits the clock (S10): a small pool (bodyweight, injuries, the technique block) can rotate a
+third session back to its A, so it counts among sessions of the same shape, then tries the next rotations; and a full
+swap can stack per-side lifts past a 30-minute clock, so the B then varies its main lifts only, then the rest only
+(the ruling's "or a different accessory"). **Why.** The same session twice in a week is one stimulus given twice: the founder's own weeks 3 and 4 held two
+identical upper sessions, and measured on the sweep sample **10,178 of 14,870 weeks** with two or more training
+sessions held a repeat. Variety across the week at matched volume costs nothing in strength (S1's evidence) and gives
+each region a second movement **[C]**. Measured after: **0** repeated weeks; A sessions **32,810 of 32,810**
+unchanged; a main lift kept to the next week inside a block **96.8%** (97.5% before); distinct main lifts per week
+**83.8%** of main slots (57.3% before). **Check:** `S-AB-DISTINCT`.
+
 ## S2. Heavy legs are a §7 stressor
 
 **Principle.** Heavy lower-body and plyometric work goes, in order of preference: **(a)** stacked on a quality-run

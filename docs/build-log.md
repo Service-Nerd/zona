@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — STRENGTH-AB-SESSIONS-01 · Two of the same session, most weeks
+**Shipped:** when a week holds two strength sessions of one kind, the second is a B with different exercises, so nothing repeats inside a week.
+**Dev learning:** the selector rotated exercises by block and nothing else, so every session of a kind in a week got the same answer. Adding a variant index that only ever moves the B kept every A byte-identical (32,810 of 32,810), which made the change provable rather than plausible. The two fallbacks came from two different failures: a tiny bodyweight pool where the third session rotated back to the first, and a short clock where swapping every slot for its per-side alternative ran a minute over.
+**Product/creator learning:** the founder had spotted it in his own weeks 3 and 4. Measured, it was 10,178 of 14,870 weeks, not the 34% we had written down; the denominator in the backlog was never reproduced.
+**AI-building learning:** the code review found the 31-minute B that my own tests could not see, because the test grid ran at 45 minutes only and never validated the plans. Adding the clock and the validator to the grid made it go red on the exact case.
+**The honest bit:** my first small-pool test passed with the fallback removed. It took finding the real case in the sweep to write a test that could fail.
+**Hook material:** "Variety at matched volume costs nothing in strength." The old engine gave most runners the same session twice a week.
+**Postable?:** yes
+
 ## 2026-10-28 — STRENGTH-BW-LOG-01 · 90 kg of inverted row
 **Shipped:** the inverted row stops asking for a weight; it is a bodyweight lift and logs how it felt.
 **Dev learning:** "loaded" was inferred from the kit list: any barbell, dumbbell, kettlebell, cable or machine meant load. The inverted row hangs from a barbell in a rack, so the inference said loaded. One explicit flag on the one affected entry (1 of 30 loaded-by-inference lifts), read by the single predicate both the screen and the log route already used.
