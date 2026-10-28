@@ -9,7 +9,7 @@
 //   No step in a no-step session (deload, taper, race week, recovery-eased); those logs do not count.
 
 import { STRENGTH_CONFIG as C } from './config'
-import { CATALOGUE_BY_ID, PATTERN_REGION } from './catalogue'
+import { CATALOGUE_BY_ID, PATTERN_REGION, isLoadedExercise } from './catalogue'
 import type { EquipmentTag, InjuryTag, RunPhase } from './types'
 
 export type LiftFeel = 'easy' | 'right' | 'hard'
@@ -33,12 +33,11 @@ export interface LiftSuggestion {
   last: LiftLog | null
 }
 
-const LOAD_KIT = new Set<EquipmentTag>(['dumbbells', 'kettlebell', 'barbell', 'machines', 'cable'])
 /** Every way of doing this lift needs load kit, so a weight is meaningful. */
 export function isLoadedLift(exerciseId: string): boolean {
   const ex = CATALOGUE_BY_ID.get(exerciseId)
-  // STRENGTH-BW-LOG-01: kit that anchors the body (the inverted row's barbell) does not load it.
-  return !!ex && !ex.bodyweight && ex.measure === 'reps' && ex.equipment.length > 0 && ex.equipment.every(opt => opt.some(t => LOAD_KIT.has(t)))
+  // STRENGTH-BW-LOG-01: through the one owner, so selection and logging cannot disagree.
+  return !!ex && ex.measure === 'reps' && isLoadedExercise(ex)
 }
 
 /** A session that holds back by design (S5, S6, S13): no step, and its log does not count. */

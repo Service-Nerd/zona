@@ -7,13 +7,12 @@
 import { STRENGTH_CONFIG as C } from './config'
 import { heavyLegsLegal, placeWeek, splitFor, type Timeline } from './placement'
 import { buildMobilitySession, buildSession } from './session'
-import { CATALOGUE_BY_ID } from './catalogue'
+import { CATALOGUE_BY_ID, LOAD_KIT } from './catalogue'
 import type {
   Day, EquipmentTag, InjuryTag, RunContext, RunDay, RunRole, RunWeek, StrengthNote, StrengthPlan, StrengthProfile, StrengthWeek,
 } from './types'
 
 const DAYS: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-const LOAD_TAGS: EquipmentTag[] = ['dumbbells', 'kettlebell', 'barbell', 'machines', 'cable']
 
 export interface GenerateOptions {
   /** Standalone only: ISO date of the first Monday. Required when `ctx` is null. */
@@ -54,7 +53,7 @@ export function generateStrengthPlan(profile: StrengthProfile, ctx: RunContext |
   const injuries = Array.from(new Set<InjuryTag>([...(run.injury_tags ?? []), ...(profile.injury_tags ?? [])]))
   const timeline: Timeline = { days: run.days, raceDate: run.race_date, unavailable: new Set(profile.unavailable_days ?? []) }
   const notes = new Set<StrengthNote>()
-  if (!profile.equipment.some(t => LOAD_TAGS.includes(t))) notes.add('bodyweight_ceiling')
+  if (!profile.equipment.some(t => LOAD_KIT.includes(t))) notes.add('bodyweight_ceiling')
   if (!standalone) notes.add('split_is_inference')
 
   const startDate = opts.startDate ?? run.days[0]?.date ?? opts.standaloneStart ?? ''

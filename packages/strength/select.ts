@@ -3,7 +3,7 @@
 // Deterministic: same profile + week → same exercise. Kept for a block of
 // `BLOCK_WEEKS` so loads can progress, then the next variant at that level.
 
-import { CATALOGUE } from './catalogue'
+import { CATALOGUE, isLoadedExercise } from './catalogue'
 import { STRENGTH_CONFIG as C } from './config'
 import type { EquipmentTag, Exercise, InjuryTag, Pattern, StrengthProfile } from './types'
 
@@ -45,12 +45,8 @@ export function plyoLevel(ctx: SelectionContext): 1 | 2 | 3 {
   return Math.min(3, 1 + Math.floor(since / (C.BLOCK_WEEKS * 2))) as 1 | 2 | 3
 }
 
-const LOAD_TAGS: readonly EquipmentTag[] = ['dumbbells', 'kettlebell', 'barbell', 'machines', 'cable']
-
-/** Uses external load in every way it can be done (bands do not count). */
-export function isLoaded(ex: Exercise): boolean {
-  return ex.equipment.every(o => o.some(t => LOAD_TAGS.includes(t)))
-}
+/** Uses external load in every way it can be done; owned by `isLoadedExercise` (STRENGTH-BW-LOG-01). */
+export const isLoaded = isLoadedExercise
 
 export function eligible(ex: Exercise, ctx: SelectionContext): boolean {
   if (!equipmentSatisfied(ex, ctx.profile.equipment)) return false

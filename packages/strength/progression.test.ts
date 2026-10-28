@@ -117,3 +117,19 @@ describe('STRENGTH-BW-LOG-01 — a bar that anchors the body is not a load', () 
     expect(s.load_kg).toBeNull()
   })
 })
+
+describe('STRENGTH-BW-LOG-01 — one owner for "loaded"', () => {
+  it('selection reads the same answer as logging, for every catalogue lift', async () => {
+    const { isLoaded } = await import('./select')
+    for (const ex of CATALOGUE) if (ex.measure === 'reps') expect(isLoaded(ex), ex.id).toBe(isLoadedLift(ex.id))
+  })
+  it('no second copy of the load-kit list exists in the engine', () => {
+    const { readFileSync, readdirSync } = require('node:fs') as typeof import('node:fs')
+    const { join } = require('node:path') as typeof import('node:path')
+    const dir = __dirname
+    const copies = readdirSync(dir).filter(f => f.endsWith('.ts') && !f.endsWith('.test.ts') && f !== 'catalogue.ts')
+      .filter(f => /\['dumbbells',\s*'kettlebell',\s*'barbell'/.test(readFileSync(join(dir, f), 'utf8')))
+    expect(copies).toEqual([])
+  })
+})
+

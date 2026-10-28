@@ -10,7 +10,7 @@ One loaded or bodyweight **main** lift, once per session: what the runner lifted
 { "date": "YYYY-MM-DD", "exercise_id": "goblet_squat", "load_kg": 22.5, "feel": "easy" | "right" | "hard" }
 ```
 
-`load_kg` is required (0 < kg ≤ 500) on a loaded lift (`isLoadedLift`) and must be `null` on a bodyweight lift. The
+`load_kg` is required (0 < kg ≤ 500) on a loaded lift (`isLoadedLift`, through the one owner `isLoadedExercise`: kit that anchors the body, e.g. the inverted row's bar, is not load) and is ignored on a bodyweight lift. The
 client converts lb to kg (`weightToKg`) before sending.
 
 ## Responses
@@ -20,7 +20,7 @@ client converts lb to kg (`weightToKg`) before sending.
 | 200 `{ date, exercise_id, load_kg, feel, counts }` | Upserted on `(user_id, session_date, exercise_id)` |
 | 401 / 404 | Not signed in / strength not released to this runner (`strengthGate`) |
 | 404 | The lift is not a MAIN lift of the session the runner's stored plan holds on that date |
-| 413 / 422 | Body over 512 bytes / bad date, feel or weight, a weight on a bodyweight lift, none on a loaded one |
+| 413 / 422 | Body over 512 bytes / bad date, feel or weight, none on a loaded one. A weight sent for a bodyweight lift is **dropped, not refused** (since 2026-10-28, STRENGTH-BW-LOG-01: a screen loaded before the inverted row became bodyweight still sends one) |
 | 500 | Read or write failed (`strength_save_failed`, `where: 'lift_log'`); never a silent success |
 
 ## Rules

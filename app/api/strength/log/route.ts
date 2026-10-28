@@ -31,9 +31,10 @@ export async function POST(req: NextRequest) {
 
   const loaded = isLoadedLift(exerciseId)
   const load = b?.load_kg
-  const loadKg = typeof load === 'number' && Number.isFinite(load) && load > 0 && load <= 500 ? Math.round(load * 100) / 100 : null
+  const loadKg = loaded && typeof load === 'number' && Number.isFinite(load) && load > 0 && load <= 500 ? Math.round(load * 100) / 100 : null
   if (loaded && loadKg == null) return NextResponse.json({ error: 'A weight is needed for this lift' }, { status: 422 })
-  if (!loaded && load != null) return NextResponse.json({ error: 'This lift takes no weight' }, { status: 422 })
+  // A weight sent for a bodyweight lift is dropped, not refused: a screen loaded before STRENGTH-BW-LOG-01 still shows
+  // the field, and refusing would lose the runner's feel log over a number we ignore anyway.
 
   const { data: stored, error: readErr } = await supabase
     .from('strength_plans').select('plan_json, recovery_eases').eq('user_id', user.id).maybeSingle()

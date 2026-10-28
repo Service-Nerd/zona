@@ -173,6 +173,16 @@ export const CATALOGUE: readonly Exercise[] = [
 
 export const CATALOGUE_BY_ID: ReadonlyMap<string, Exercise> = new Map(CATALOGUE.map(e => [e.id, e]))
 
+/** Kit that can carry external load (bands do not count). One list for the engine (STRENGTH-BW-LOG-01: there were three). */
+export const LOAD_KIT: readonly EquipmentTag[] = ['dumbbells', 'kettlebell', 'barbell', 'machines', 'cable']
+
+/** The ONE owner of "this exercise is loaded": every way of doing it uses load kit, and the kit loads the body rather than
+ *  anchoring it (the inverted row's barbell is the bar it hangs from). Selection (S6: a loaded lift beats a harder bodyweight
+ *  one), progression (S14) and the session screen all read this. */
+export function isLoadedExercise(ex: Exercise): boolean {
+  return !ex.bodyweight && ex.equipment.length > 0 && ex.equipment.every(o => o.some(t => LOAD_KIT.includes(t)))
+}
+
 export const PATTERN_REGION: Record<Pattern, 'lower' | 'upper' | 'core' | 'prep'> = {
   squat: 'lower', hinge: 'lower', single_leg: 'lower', calf: 'lower', hip_abduction: 'lower', plyometric: 'lower',
   upper_push: 'upper', upper_pull: 'upper',
