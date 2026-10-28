@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — LIVE-PLAN-REBUILD-RCA-01 · Twelve live plans brought onto the engine they were meant to have
+**Shipped:** the 11 runners' plans from the 26 Oct RCA, plus one more, regenerated on today's engine and applied by the founder; each one re-checked against production with nothing left to change.
+**Dev learning:** "applied" was confirmed by re-running the dry run, not by reading the apply log: the same script answering "0 session days changed" is the check that the write landed and matches the engine. The 12th plan showed 64 changed days for a two-session fix, because its stored max heart rate (167) differed from the profile (171), and every heart-rate target moved with it.
+**Product/creator learning:** an engine fix reaches nobody until the stored plans are rebuilt. Four of these runners are mid-plan, so their past weeks had to stay exactly as they were.
+**AI-building learning:** the handed-over command failed twice on the founder's machine (`npx: command not found`) because my shell loads nvm and his terminal did not, and `source nvm.sh` alone set no default version. A command that works in my shell is untested on his; the fix was an absolute PATH.
+**The honest bit:** two rounds of "command not found" before anything ran, and the first table I gave had to be rebuilt from fresh dry runs because I no longer had the per-plan detail.
+**Hook material:** 12 plans, 446 session days rewritten, 0 logged runs touched.
+**Postable?:** maybe
+
 ## 2026-10-28 — MP-BLOCKS-ONE-BLOCK-01 + TENK-SIM-ONE-REP-01 · A session called "blocks" that never had more than one
 **Shipped:** the marathon session is now called what it always was, a 4 km marathon-pace run; slow 10K runners get two race-pace reps in their race simulation, not one.
 **Dev learning:** I built a new shape predicate threaded through the rep sizer and the code review pointed at `fixedShapePlan`, an existing owner I had not found. Then it found the real cost of changing a catalogue row: six stored plans were re-judged against the new row and 12 sessions went to error overnight. A check must judge a session by the structure it was built with.
