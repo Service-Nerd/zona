@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — LONG-RUN-BELOW-LONGEST-01 · A rule nobody decided, applied in half the places it should have been
+**Shipped:** the two-hour long-run cap for a back or plantar fasciitis history is now written down, applied in every place a long run is sized, checked, and named to the runner whose long run it holds.
+**Dev learning:** tracing one runner's 13.5 km long run (she runs 21 now) by varying her inputs one at a time found it in a minute: knee alone 24 km, back alone 13.5. It was a literal `120` inside one of two callers of the engine's own time-cap owner, so the other caller (the long-run repeat path) let 1,562 of 4,500 back plans run past it. Moving it into the owner shortened those long runs by a few minutes, and broke a test whose job was to prove the repeat path still fires: in its fixture cohort, it had only ever fired to overrun this cap.
+**Product/creator learning:** the board kept 120 after seeing what raising it does: the long run grows and the week does not, so the long run swallows the week. The real fix needs a piece of information we never ask for: whether the injury is current.
+**AI-building learning:** my first diff said 126 healthy plans had changed. They had not: "plantar fasciitis" has a space and my awk split it into two columns. A measurement script with a column bug produces confident nonsense with no error.
+**The honest bit:** the "detect that the cap is what binds" check went through three versions: minutes from duration (her runs have no duration), minutes from distance (her peak-week run is partly at marathon pace so it is faster), then kilometres against the cap at easy pace.
+**Hook material:** knee history: 24 km longest run. Back history: 13.5 km. Same runner, same plan, one word in a list.
+**Postable?:** yes
+
 ## 2026-10-28 — INJURY-PEAK-JUMP-01 · The warning was written, and nothing ever read it
 **Shipped:** a runner whose plan has a week that jumps past the growth cap is now told which week, on the plan screen.
 **Dev learning:** the board asked why 52–85% of warned plans had no load note. The answer was worse: the rest had the note and **no screen read the field**, so the true number told was zero. The note-delivery test existed for exactly this and could not see it, because it checked its own hand-typed list of notes, the same list the renderer uses. It now reads every `*_note` from the Plan type, and found three more notes that reach nobody. Then the note, once visible, turned out to fire on 78% of plans against the checker's 20%: it was written to "over-declare, harmlessly", which was only harmless while invisible. It now reads the checker's verdict.

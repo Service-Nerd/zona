@@ -16,7 +16,7 @@ import {
 } from './length'
 import { qualityCeilingFor } from './qualityCeiling'
 import { waterFillEasyKm } from './easyDistribution'
-import { longRunTimeCapMins } from './longRunTimeCap'
+import { longRunTimeCapMins, injuryLongRunCap } from './longRunTimeCap'
 import { LR_SHORTFALL_UNREHEARSED_FUELLING, FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { runWalkApplies, runWalkPrescriptionApplies, runWalkPeakKm, applyRunWalk } from './runWalkPlan'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
@@ -2405,11 +2405,8 @@ function applyLongRunCap(distKm: number, paceMinPerKm: number, input: GeneratorI
   if (paceMinPerKm > 0 && result * paceMinPerKm > absCapMins) {
     result = absCapMins / paceMinPerKm
   }
-  // Injury-specific tighter cap: back + plantar fasciitis cap long run at 120 min.
-  if ((hasInjury(input, 'back') || hasInjury(input, 'plantar_fasciitis'))
-      && paceMinPerKm > 0 && result * paceMinPerKm > 120) {
-    result = 120 / paceMinPerKm
-  }
+  // The back / plantar fasciitis ceiling (§9 Am. 3) is applied by `longRunTimeCapMins` above; it
+  // was a literal 120 here until 2026-10-28.
   return result
 }
 
@@ -8217,7 +8214,19 @@ function buildRulePlanOnce(
             // numbers and gains the consequence: this runner arrives at the start
             // line never having run the distance the race asks for, and should be
             // told what that feels like rather than what ratio it breaches.
-            reasons.push(`Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}km, so the closing stretch will be new ground on the day. The long run can only grow so much week to week, and it ran out of weeks before it got there.`)
+            // LONG-RUN-BELOW-LONGEST-01 (Coaching Board 2026-10-28) — name the constraint that binds.
+            // "It ran out of weeks" was said to runners whose long run was held by §9 Am. 3's injury
+            // ceiling, with weeks to spare (graceemilyhill: 21 km now, held at 13.5 km by her back).
+            const injCap = injuryLongRunCap(input.injury_history)
+            // Compared in KM: the cap sizes the long run at easy pace (`applyLongRunCap`), and a
+            // peak-week marathon-pace long run of the same distance runs in fewer minutes (her 13.5 km
+            // takes 111 min, held by a 120-min cap). Within one rounding step counts as held.
+            const heldByInjury = injCap != null && pace.minPerKmEasy > 0
+              && actualPeakLrKm >= injCap.mins / pace.minPerKmEasy - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+            const why = heldByInjury
+              ? `Your ${injCap.keyword === 'back' ? 'back injury' : 'plantar fasciitis'} history keeps the long run to ${formatDuration(injCap.mins)}, so the plan stops it there.`
+              : 'The long run can only grow so much week to week, and it ran out of weeks before it got there.'
+            reasons.push(`Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}km, so the closing stretch will be new ground on the day. ${why}`)
           }
           // MAINT-LABEL-01 (2026-09-11, second pass) — two defects in one string.
           //

@@ -2344,6 +2344,14 @@ export const GENERATION_CONFIG = {
   // through frequency + total volume, not extended LRs.
   LONG_RUN_CAP_MINUTES_5K_FINISH: 70,
 
+  // CoachingPrinciples §9 Amendment 3 (Coaching Board 2026-10-28, LONG-RUN-BELOW-LONGEST-01) — a
+  // tighter long-run ceiling for these injury histories. Keyed by `injury_history` keyword (matched
+  // by `hasInjuryKeyword`). Was a literal 120 in `applyLongRunCap` since 2026-04-25, ratified AS IS:
+  // prototypes at 150/180/210 lengthened the long run but quadrupled §52 share warnings because the
+  // week does not grow with it. Value INSUFFICIENT EVIDENCE; reopens with back and plantar separate
+  // and injury recency (not collected).
+  LONG_RUN_CAP_MINUTES_BY_INJURY: { back: 120, plantar_fasciitis: 120 } as Readonly<Record<string, number>>,
+
   // §80 Amendment 1 (LR-SHORTFALL-CAUSE-01, Coaching Board 2026-09-18) — how
   // close to LONG_RUN_CAP_MINUTES counts as "the cap is what stopped us".
   //

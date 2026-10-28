@@ -1558,6 +1558,25 @@ alone: labelling them calls a clamp a planned recovery, and smoothing re-breaks 
 
 ---
 
+
+### §9 Amendment 3 — a back or plantar fasciitis history caps the long run at 120 minutes *(Coaching Board 2026-10-28, LONG-RUN-BELOW-LONGEST-01; ratified AS IS)*
+
+**Principle.** For a runner whose `injury_history` names back or plantar fasciitis, the long run is capped at
+`GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY` (120 min each), the tighter of that and §9's distance cap. One owner,
+`longRunTimeCapMins()`, applies it to every path that sizes a long run. When it is what holds the long run short of
+§24's floor, the plan's note says so by name.
+
+**Why it is ratified and not changed.** It had been a literal 120 in `applyLongRunCap` since 2026-04-25, explained by no
+principle, read by one of the owner's two callers (the V4 repeat path let **1,562 of 4,500** back-history plans run up
+to 128 min). On marathon plans it cuts the mean peak long run from **25.1 km** (the same runners healthy) to **15.7 km**.
+Prototypes at 150 / 180 / 210 min gave 19.1 / 22.4 / 25.1 km and **quadrupled** `INV-PLAN-LR-MAX-WEEKLY-PCT` warnings
+(578 → 2,451 → 2,927 → 3,483), because the week does not grow with the long run. Willy: plantar fasciitis has a
+time-on-feet mechanism, lumbar pain mostly does not, so the two should not share one rule; any change must not raise the
+long run's share of the week. **The value is INSUFFICIENT EVIDENCE.** Reopens on a prototype where the week grows with a
+raised long run, back and plantar separately, and on injury recency, which `injury_history` does not record (SLT).
+
+**Enforced by** `INV-PLAN-LONG-CAP-MINS`, which reads the injury ceiling from config itself rather than through the
+producer's owner. Tests: `lib/plan/injuryLongRunCap.test.ts`.
 ## 10. VDOT conservatism — protect users from themselves (selectively)
 
 **Principle.** Training paces derived from a benchmark are discounted by 3% by default for **easy** and **threshold** paces. Stale benchmarks (more than 6 months old) get a further 5% discount. **Interval (VO2max) paces use the raw benchmark VDOT** — no conservatism discount — because under-stimulating VO2max sessions undermines the adaptation they exist to produce.

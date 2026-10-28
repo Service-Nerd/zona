@@ -94,7 +94,7 @@ unratified since 2026-04-25, applied in one of three sizing paths. Marathon mean
 Prototypes: 150 / 180 / 210 min lengthen it to 19.1 / 22.4 / 25.1 km and quadruple `INV-PLAN-LR-MAX-WEEKLY-PCT` warnings
 (578 → 2,451+), because the week does not grow. **Ruling:** keep 120, move it to config + principle, one owner
 (`longRunTimeCapMins`), `INV-PLAN-LONG-CAP-MINS` checks it; the note names it (founder's words). Value reopens on a
-prototype where the week grows, back and plantar separately (Willy), and injury recency, escalated to the SLT. Sitting:
+prototype where the week grows, back and plantar separately (Willy), and injury recency, escalated to the SLT. **Built 2026-10-28:** config `LONG_RUN_CAP_MINUTES_BY_INJURY`, one owner `longRunTimeCapMins`, `INV-PLAN-LONG-CAP-MINS` arm, note names the cap; enforcing it trimmed long runs on 1,603 of 4,500 back and plantar plans (the V4 repeat path had let 1,562 run up to 128 min), 0 changes for healthy and knee. Sitting:
 `docs/decisions/coaching-2026-10-28-back-plantar-long-run-cap-sitting.md`.
 
 ## 2026-10-28 — LONG-RUN-BELOW-LONGEST-01 · engine change INSUFFICIENT EVIDENCE, note copy defect CORRECT · INJURY-PEAK-JUMP-01 · CORRECT (runner must be told)

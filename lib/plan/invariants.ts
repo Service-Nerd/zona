@@ -22,7 +22,7 @@ import { buildPaceFromVDOT, paceBandStr, bandCeiling } from './paceBands'
 import { qualityCeilingFor } from './qualityCeiling'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
-import { hasDeliveredCapInjury, hasVolumeCappedInjuryHistory } from './injuryScope'
+import { hasDeliveredCapInjury, hasVolumeCappedInjuryHistory, hasInjuryKeyword } from './injuryScope'
 import { assessBaseBuild } from './baseVolume'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
@@ -1012,7 +1012,11 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   const minDist = sessionFloorsFor(input.longest_recent_run_km)
   const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
   const distKey = raceDistanceKey(input.race_distance_km)
-  const longCapMins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
+  // §9 Am. 3 (2026-10-28) — the injury ceiling is read from config HERE, not through the producer's
+  // `longRunTimeCapMins`, so a producer that stops applying it is caught.
+  const injuryCaps = Object.entries(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY)
+    .filter(([k]) => hasInjuryKeyword(input.injury_history, k)).map(([, m]) => m)
+  const longCapMins = Math.min(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey], ...injuryCaps)
   // §79 (2026-09-02) — the quality-per-week ceiling is an INTENSITY rule, so it
   // must key off the intensity level. Two reasons this is not the structural one:
   //
@@ -2188,7 +2192,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         principle_ref: 'CoachingPrinciples §9',
         severity: 'error',
         week: w.n, day: long.day,
-        message: 'Long run duration exceeds absolute cap for race distance',
+        message: injuryCaps.length ? 'Long run duration exceeds the cap for this race distance and injury history' : 'Long run duration exceeds absolute cap for race distance',
         actual: long.session.duration_mins,
         expected: `≤ ${longCapMins}`,
       })

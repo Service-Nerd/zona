@@ -1149,7 +1149,9 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **`weekly_km` not restated after every session change** (WEEKLY-KM-AFTER-CAP-01) | 🔲 | S | 17 cohort plans already stale; foundation budget stays. |
 | **Rebuild scripts should stamp an enrichment state** (REBUILD-STAMP-ENRICHMENT-01) | 🔲 | S | Retires the reader-side inference. |
 | **Maintenance enrichment has no copy-repair step** (MAINT-ENRICH-VALIDATE-01) | 🔲 | S | Measure live maintenance plans first. |
-| **Longest run below what the runner already runs** (LONG-RUN-BELOW-LONGEST-01) | 🔲 | S | Cause: an unratified 120-min long-run cap for back/plantar history (marathon mean 25.1 → 15.7 km). Board. |
+| **Is 120 min the right long-run ceiling for a back/plantar history?** (LONG-RUN-CAP-INJURY-VALUE-01) | 🔲 | M | Ratified as is; reopens on a prototype + recency. |
+| **The wizard does not ask whether an injury is current** (INJURY-RECENCY-01) | 🔲 | S | SLT. |
+| **Note levers cannot lift an injury-capped long run** (NOTE-LEVER-INJURY-CAP-01) | 🔲 | S | Founder words. |
 | **Show the ramp warning on the week it is about** (PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01) | 🔲 | M | Design Board ruled the interim slot; placement next. |
 | **Three plan notes shown nowhere** (NOTE-SURFACE-INERT-01) | 🔲 | S | Measure, then place. |
 | **Two plans still carry the pre-23 Oct "Threshold now" note** (PLAN-STALE-GOALPACE-NOTE-01) | 🔲 | S | Founder; after the repair. |

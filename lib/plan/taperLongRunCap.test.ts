@@ -100,7 +100,13 @@ describe('LR-TAPER-BUMP-01 — V4 is phase-scoped', () => {
     let fired = 0
     const touched = new Set<string>()
     for (const cwk of [10, 20, 30, 45]) for (const days of [3, 4, 5]) {
-      const p = build({ current_weekly_km: cwk, days_available: days,
+      // LONG-RUN-BELOW-LONGEST-01 (§9 Am. 3, 2026-10-28): the injury long-run ceiling now reaches V4
+      // through `longRunTimeCapMins`. Measured at the commit before: in THIS cohort V4 fired only for
+      // plantar/back runners (12 + 12, none for knee or no injury), i.e. only to extend a long run past
+      // the 120-min ceiling, and it now correctly never fires here. Across the cohort grid V4 still fires
+      // on 1,500+ healthy and knee plans, unchanged. So the scope question is asked where V4 is live:
+      // a half marathon with no injury.
+      const p = build({ current_weekly_km: cwk, days_available: days, injury_history: [], race_distance_km: 21.1,
         days_cannot_train: days === 3 ? CONSTRAINED.days_cannot_train : [] } as Partial<GeneratorInput>)
       const weeks = v4Weeks(p)
       if (weeks.length) fired++

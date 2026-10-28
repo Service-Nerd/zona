@@ -13,6 +13,7 @@
 // direction, so it is recorded rather than "fixed" inside a build about foundation weeks.
 // Changing what the validator accepts is its own decision.
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
+import { hasInjuryKeyword } from './injuryScope'
 import type { GeneratorInput } from '@/types/plan'
 
 /**
@@ -23,12 +24,30 @@ import type { GeneratorInput } from '@/types/plan'
  * applies to a foundation week exactly as it applies to a build week — §57 excludes
  * foundation weeks from the periodisation ARC, never from §9's load ceiling.
  */
-export function longRunTimeCapMins(input: Pick<GeneratorInput, 'race_distance_km' | 'goal'>): number {
+export function longRunTimeCapMins(input: Pick<GeneratorInput, 'race_distance_km' | 'goal'> & { injury_history?: string[] | null }): number {
   const distKey = raceDistanceKey(input.race_distance_km)
-  const cap: number = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
+  let cap: number = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
   // CoachingPrinciples §40 — finish-goal 5K plans get a tighter cap.
   if (distKey === '5K' && input.goal === 'finish') {
-    return Math.min(cap, GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH)
+    cap = Math.min(cap, GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH)
   }
-  return cap
+  return Math.min(cap, injuryLongRunCapMins(input.injury_history) ?? Infinity)
+}
+
+/**
+ * §9 Amendment 3 (2026-10-28) — the tighter ceiling a back or plantar fasciitis history sets, or
+ * null. Lived as a literal in `applyLongRunCap` only, so the V4 long-run repeat path (the other
+ * caller of `longRunTimeCapMins`) could extend a long run past it.
+ */
+export function injuryLongRunCapMins(history: readonly string[] | null | undefined): number | null {
+  return injuryLongRunCap(history)?.mins ?? null
+}
+
+/** The binding injury ceiling and the history that sets it, for the runner-facing note. */
+export function injuryLongRunCap(history: readonly string[] | null | undefined): { mins: number; keyword: string } | null {
+  let best: { mins: number; keyword: string } | null = null
+  for (const [keyword, mins] of Object.entries(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY)) {
+    if (hasInjuryKeyword(history, keyword) && (!best || mins < best.mins)) best = { mins, keyword }
+  }
+  return best
 }

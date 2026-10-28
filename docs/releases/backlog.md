@@ -152,30 +152,26 @@ invariant, unlike the race-plan path (`repairEnrichedCopy`). Measure live mainte
 the maintenance enricher writes session `coach_notes` and a weekly debrief only.
 
 
-### 🔲 `LONG-RUN-BELOW-LONGEST-01` — a marathon plan whose longest run is shorter than the runner already runs 🏃 **COACHING BOARD**, then 👤 **FOUNDER** (note words)
+### 🔲 `LONG-RUN-CAP-INJURY-VALUE-01` — is 120 minutes the right long-run ceiling for a back or plantar history? 🏃 **COACHING BOARD**
 
-⚖️ **Coaching Board 2nd sitting 2026-10-28: cap RATIFIED AS IS (120), to be made doctrine (config + principle + one owner
-`longRunTimeCapMins` + `INV-PLAN-LONG-CAP-MINS` arm) and named in the runner's note; value INSUFFICIENT EVIDENCE; SLT
-question: collect injury recency. Build pending.**
+Ratified AS IS on 2026-10-28 (§9 Am. 3) with the value INSUFFICIENT EVIDENCE. Marathon mean peak long run 15.7 km with
+the history, 25.1 km without. **Reopens on:** a prototype in which the week grows with a raised long run (every raise
+measured so far quadrupled `INV-PLAN-LR-MAX-WEEKLY-PCT` warnings because it did not), back and plantar fasciitis treated
+separately (Willy: plantar has a time-on-feet mechanism, lumbar pain mostly does not), and injury recency
+(`INJURY-RECENCY-01`).
 
-🔴 **CAUSE FOUND 2026-10-28, and it changes the question.** graceemilyhill's long run is not held by "running out of
-weeks" or by the injury volume ceiling: **a back or plantar fasciitis history caps the long run at 120 minutes**
-(`applyLongRunCap` in `ruleEngine.ts`, a literal `120`, in no config and explained by no principle, so
-`configPrincipleSync` and the coaching guard have never seen it). Her inputs varied one at a time: knee alone → peak long
-run 24 km; hip alone 24 km; **back alone 13.5 km**. On marathon plans the cap cuts the mean peak long run from **25.1 km
-(the same runners healthy) to 15.7 km**, 29% of back/plantar plans peak at the cap. Half marathon: 25% of the effect
-(15.7 → 15.2 km). The board's prototype question is now: **is a 120-minute long-run cap right for a back or plantar history
-at marathon distance, and where does it belong** (config + principle). Her note's cause clause should name this cap.
+### 🔲 `INJURY-RECENCY-01` — the wizard does not ask whether an injury is current 💼 **SLT** (input and product), then 🏃 **COACHING BOARD**
 
-**Coaching Board 2026-10-28: engine change INSUFFICIENT EVIDENCE** (prototype: hold the stated long run where the 210-min
-cap allows, easy volume yields, no week grows; Willy's condition). **The wrong-cause note is a defect fix now.** Measured:
-13.7% of healthy marathon plans peak below the stated longest run (133 of 308 at the cap), 29.2% with four injuries (median
-gap 9 km, none at the cap).
+Escalated by the Coaching Board 2026-10-28. `injury_history` is a list with no date, so a back problem ten years ago
+holds every marathon long run at two hours for good, and §12 / §90 caps read the same way. Whether to collect recency
+(a date, or current / past) is a wizard and product decision.
 
-graceemilyhill (c848fd4c, London 4:45, 30 km/week, longest recent run **21 km**, knee/hip/back/shin history, 4 days): the
-plan holds 24–30 km/week for 20 weeks and its longest run is **13.5 km**, 7.5 km shorter than what she runs now. No
-invariant compares the plan's peak long run with `longest_recent_run_km`. Her `volume_constraint_note` says *"the long run
-can only grow so much week to week, and it ran out of weeks"*, which is not the cause. Current engine (rebuilt 28 Oct).
+### 🔲 `NOTE-LEVER-INJURY-CAP-01` — the maintenance note's levers cannot lift an injury-capped long run ⚙️ **NO BOARD** to measure; 👤 **FOUNDER** (words)
+
+Found 2026-10-28: graceemilyhill's note now names the cap ("Your back injury history keeps the long run to 2h"), then
+ends "If you want it to build instead: run 5 days a week instead of 4, or give your weekday runs more room". Those lift
+the weekly volume, not the long run, which the cap holds whatever she changes.
+
 
 ### 🔲 `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` — show the ramp warning on the week it is about 🧭 **DESIGN BOARD** (new placement), then build
 

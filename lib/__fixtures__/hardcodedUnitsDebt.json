@@ -167,7 +167,7 @@
   },
   {
    "file": "lib/plan/ruleEngine.ts",
-   "code": "reasons.push(`Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}km, so the closing stretch will be new ground on the day. The long run can only grow so much week to week, and it ran out of weeks before it got there.`)"
+   "code": "reasons.push(`Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}km, so the closing stretch will be new ground on the day. ${why}`)"
   },
   {
    "file": "lib/plan/ruleEngine.ts",
