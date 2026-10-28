@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — PLAN-STALE-GOALPACE-NOTE-01 · An engine fix reaches no existing plan
+**Shipped:** two runners whose plans were built before the 23 Oct fix stop being told "Threshold now" on a marathon-pace rep.
+**Dev learning:** the fix was five days old and correct; two live plans still carried the old note because generation is the only thing that reads the engine. The restore and repair work earlier the same day had to finish first, because a patch replaces those sessions' AI notes with engine copy.
+**Product/creator learning:** one runner's marathon-pace sessions now show Zone 4–5, because their goal is faster than their threshold. Honest, and a visible change to someone who had read Zone 3.
+**AI-building learning:** verification was the same dry run that planned it, read afterwards: "0 session days changed" is the proof the write matches the engine.
+**The honest bit:** nothing new learned beyond the rule already on file: an engine fix needs a remediation.
+**Hook material:** fixed on the 23rd, still wrong on two live plans on the 28th.
+**Postable?:** no
+
 ## 2026-10-28 — LONG-RUN-BELOW-LONGEST-01 · A rule nobody decided, applied in half the places it should have been
 **Shipped:** the two-hour long-run cap for a back or plantar fasciitis history is now written down, applied in every place a long run is sized, checked, and named to the runner whose long run it holds.
 **Dev learning:** tracing one runner's 13.5 km long run (she runs 21 now) by varying her inputs one at a time found it in a minute: knee alone 24 km, back alone 13.5. It was a literal `120` inside one of two callers of the engine's own time-cap owner, so the other caller (the long-run repeat path) let 1,562 of 4,500 back plans run past it. Moving it into the owner shortened those long runs by a few minutes, and broke a test whose job was to prove the repeat path still fires: in its fixture cohort, it had only ever fired to overrun this cap.

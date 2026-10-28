@@ -203,13 +203,6 @@ Found building INJURY-PEAK-JUMP-01: `peak_shortfall_note` (§106/§40c), `freque
 `planRationale.test.ts` (NOTE-SURFACE), which fails on a fourth. Measure how many plans carry each, then place them.
 
 
-### 🔲 `PLAN-STALE-GOALPACE-NOTE-01` — two plans still tell a goal-paced rep "Threshold now" 👤 **FOUNDER** (live-plan regeneration)
-
-ac566309 and d4c4db1e (built 10 Oct) fail `INV-PLAN-COACH-NOTES-MATCH-INTENT`; fixed in the engine 23 Oct
-(CRUISE-STEP-NOTE-GOALPACE-01), which reaches no existing plan. A patch dry run of d4c4db1e is clean (15 session days).
-⚠️ A patch replaces those sessions' AI notes with engine copy. ENRICH-RESTORE-REPAIR-01 is applied (28 Oct), so this is
-unblocked; these two are now the only restored plans with an error violation.
-
 ### 🔲 `ENRICH-RISK-TOKEN-01` — the enricher can leave a `{{token}}` in `confidence_risks`, which nothing fills ⚙️ **NO BOARD**
 
 Found validating the 28 Oct voice restore: 3cc7c3a9's third risk reads *"Zone 3 discipline ({{session_hr}}) is

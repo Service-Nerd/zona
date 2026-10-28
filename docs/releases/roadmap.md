@@ -1155,7 +1155,6 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Note levers cannot lift an injury-capped long run** (NOTE-LEVER-INJURY-CAP-01) | 🔲 | S | Founder words. |
 | **Show the ramp warning on the week it is about** (PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01) | 🔲 | M | Design Board ruled the interim slot; placement next. |
 | **Three plan notes shown nowhere** (NOTE-SURFACE-INERT-01) | 🔲 | S | Measure, then place. |
-| **Two plans still carry the pre-23 Oct "Threshold now" note** (PLAN-STALE-GOALPACE-NOTE-01) | 🔲 | S | Founder; after the repair. |
 | **A `{{token}}` can reach confidence risks** (ENRICH-RISK-TOKEN-01) | 🔲 | S | Latent; 1 of 9 restored plans. |
 | **Race week showing 0 km** (RACE-WEEK-ZERO-KM-01) | 🔲 | S | Measure surfaces first. |
 | **"Get you round" note on a time-goal plan** (ROUND-NOTE-TIME-GOAL-01) | 🔲 | S | Measure, then board. |
