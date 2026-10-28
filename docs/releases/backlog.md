@@ -160,14 +160,20 @@ measured so far quadrupled `INV-PLAN-LR-MAX-WEEKLY-PCT` warnings because it did 
 separately (Willy: plantar has a time-on-feet mechanism, lumbar pain mostly does not), and injury recency
 (`INJURY-RECENCY-01`).
 
-### 🔴 `WIZARD-INJURY-FREE-01` — free runners are never asked about injuries, so their plans get no injury protection ⚙️ **NO BOARD** (restores the SLT's 2026-09-11 ruling)
+### 🔲 `WIZARD-PAID-INPUTS-TIER-01` — "overdo" changes every plan, and free runners are never asked 💼 **SLT** (tier), then 🏃 **COACHING BOARD** (what each answer prescribes)
 
-Found by the SLT review of INJURY-RECENCY-01 (2026-10-28). `GeneratePlanScreen.tsx` pushes the `injuries` step only
-`if (hasPaidAccess)` and sends `injury_history` only `hasPaidAccess && injuries.length`. The SLT ruled on 2026-09-11 that
-injury adaptation is never paid and deleted `injury_adaptations_new` from `featureGates.ts`; the engine adapts on every
-plan, but is never told for a free runner or a lapsed trial rebuilding, so §12, §90 and §9 Am. 3 never apply to them.
-Fix: show the step and send the value for everyone. `hard_session_relationship` and `terrain` are gated the same way;
-measure what each changes in the plan before deciding their tier. Measure with `cohort:shape` and parity first.
+Measured 2026-10-28 building WIZARD-INJURY-FREE-01 (2,000 cohort inputs, each answer against no answer): the wizard asks
+`hard_session_relationship` and `terrain` of paid runners only, and drops them otherwise.
+| answer | sessions change | notes change |
+|---|---|---|
+| hard sessions: `overdo` | **100%** | 7% |
+| hard sessions: `avoid` | 47% | 100% |
+| hard sessions: `love` | 13% | 60% |
+| terrain: `trail` / `mixed` | **0%** | 100% |
+`overdo` is the runner the brand is built for (*"You're trying hard. That's the problem."*), and the restraint it buys is
+withheld from every free runner. Terrain changes only the effort-led note. Question for the SLT: which of these is safety
+(never paid) and which is richness.
+
 
 ### 🔲 `INJURY-RECENCY-01` — the wizard does not ask whether an injury is current 🏃 **COACHING BOARD** first, then 🧭 **DESIGN BOARD** (SLT 2026-10-28: don't build until an answer changes a prescription)
 

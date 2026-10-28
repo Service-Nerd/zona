@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — WIZARD-INJURY-FREE-01 · The gate was removed from the code and kept in the form
+**Shipped:** free runners are asked about injuries in the wizard, and their plans now get the injury protections every plan was meant to have.
+**Dev learning:** on 11 September the SLT ruled injury adaptation is never paid, and the fix deleted a feature gate that "was enforced nowhere" because the engine adapted on every plan. True: the engine did. The wizard never asked a free runner and never sent their answer, so the engine had nothing to adapt to. The ruling was applied to the consumer and not to the input. Found by an SLT review of a different question.
+**Product/creator learning:** the upsell card for free runners listed "injury history" as a reason to pay. That sentence was the whole defect, in our own words, on a screen.
+**AI-building learning:** measuring the two neighbouring paid-only answers before deciding anything showed "overdo" changes 100% of plans: the brand's core runner, withheld from the free tier. Filed, not decided, because that call is the SLT's.
+**The honest bit:** I have been in this wizard file all week and never noticed the gate.
+**Hook material:** "Add terrain, injury history, hard session preferences..." on the free tier's upgrade card, six weeks after we ruled injuries free.
+**Postable?:** yes
+
 ## 2026-10-28 — PLAN-STALE-GOALPACE-NOTE-01 · An engine fix reaches no existing plan
 **Shipped:** two runners whose plans were built before the 23 Oct fix stop being told "Threshold now" on a marathon-pace rep.
 **Dev learning:** the fix was five days old and correct; two live plans still carried the old note because generation is the only thing that reads the engine. The restore and repair work earlier the same day had to finish first, because a patch replaces those sessions' AI notes with engine copy.

@@ -5722,10 +5722,10 @@ callback lives under `app/`, which vitest does not collect.
 
 ### ⚠️ Anchor to the final CTA, not to a named step
 
-`buildSteps()` appends `hard-sessions`, `terrain` and `injuries` **only when
-`hasPaidAccess`**, so the wizard's last step is `injuries` for a trial or paid runner and
-a different step for a free one. **"End of wizard" is not one screen.** Anchoring to
-`isLastStep` is tier-independent; a step name is not.
+`buildSteps()` appends `hard-sessions` and `terrain` **only when `hasPaidAccess`**. Since
+WIZARD-INJURY-FREE-01 (2026-10-28, restoring SLT 2026-09-11) `injuries` is asked of every
+runner and is the last step for every tier. **Anchoring to `isLastStep` still holds**: a step
+name would move the control the next time the sequence changes.
 
 **Beneath the CTA, not beside it** — Silvanto: the screen before the plan arrives is the
 one place in this product where something is about to happen, and a prompt level with the

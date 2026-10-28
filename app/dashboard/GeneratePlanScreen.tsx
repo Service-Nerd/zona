@@ -300,7 +300,11 @@ export function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_t
   // cap because that is the second half of the same question, and splitting them would
   // put strength between two answers about the run week.
   if (offerStrength) steps.push('strength')
-  if (hasPaidAccess) steps.push('hard-sessions', 'terrain', 'injuries')
+  if (hasPaidAccess) steps.push('hard-sessions', 'terrain')
+  // WIZARD-INJURY-FREE-01 — asked of EVERY runner. Injury adaptation is never paid (SLT 2026-09-11,
+  // `featureGates.ts`); the engine adapted on every plan, but this step and the value it sends were
+  // gated on paid access, so a free runner's plan was never told and no injury rule reached it.
+  steps.push('injuries')
   return steps
 }
 
@@ -484,7 +488,7 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
         Unlock more personalisation
       </div>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: 'var(--space-4)' }}>
-        Add terrain, injury history, hard session preferences, and training style. Your plan adapts to you, not a template.
+        Add terrain, hard session preferences, and training style. Your plan adapts to you, not a template.
       </div>
       <Button variant="ghost" 
         onClick={onUpgrade} style={{ fontSize: '13px', fontWeight: 600, color: 'var(--warn-strong)', background: 'none', padding: 0 }}>
@@ -1105,7 +1109,7 @@ export default function GeneratePlanScreen({
       // chip; the engine sizes each day to its own budget when they are present.
       day_budgets:           week.dayBudgets,
       hard_session_relationship: hasPaidAccess ? (hardSessions ?? undefined) : undefined,
-      injury_history:            hasPaidAccess && injuries.length ? injuries.map(i => i.toLowerCase()) : undefined,
+      injury_history:            injuries.length ? injuries.map(i => i.toLowerCase()) : undefined,   // every tier (WIZARD-INJURY-FREE-01)
       terrain:                   hasPaidAccess ? (terrain ?? undefined) : undefined,
     }
 
@@ -1844,10 +1848,10 @@ export default function GeneratePlanScreen({
 
             ⚠️ ANCHORED TO `isLastStep`, NOT TO A NAMED STEP, and the board made that
             an amendment rather than leaving it to taste. `buildSteps()` appends
-            `hard-sessions`, `terrain` and `injuries` ONLY when `hasPaidAccess`, so the
-            last step is `injuries` for a trial or paid runner and a different step for a
-            free one. "End of wizard" is not one screen, and a step name would put this
-            somewhere different depending on tier.
+            `hard-sessions` and `terrain` ONLY when `hasPaidAccess`. Since WIZARD-INJURY-FREE-01
+            (2026-10-28) `injuries` is the last step for every tier, but the anchor stays
+            `isLastStep`: a step name would put this somewhere else the next time the
+            sequence changes.
 
             ⚠️ BENEATH the CTA, not beside it. Silvanto: the screen before the plan
             arrives is the one place in this product where something is about to happen,

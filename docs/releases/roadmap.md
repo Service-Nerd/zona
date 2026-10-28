@@ -1150,7 +1150,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Rebuild scripts should stamp an enrichment state** (REBUILD-STAMP-ENRICHMENT-01) | 🔲 | S | Retires the reader-side inference. |
 | **Maintenance enrichment has no copy-repair step** (MAINT-ENRICH-VALIDATE-01) | 🔲 | S | Measure live maintenance plans first. |
 | **Is 120 min the right long-run ceiling for a back/plantar history?** (LONG-RUN-CAP-INJURY-VALUE-01) | 🔲 | M | Ratified as is; reopens on a prototype + recency. |
-| **Free runners are never asked about injuries** (WIZARD-INJURY-FREE-01) | 🔴 | S | Defect against SLT 2026-09-11; fix next. |
+| **"Overdo" changes every plan and free runners are never asked** (WIZARD-PAID-INPUTS-TIER-01) | 🔲 | S | SLT, then Coaching Board. |
 | **The wizard does not ask whether an injury is current** (INJURY-RECENCY-01) | 🔲 | S | SLT: Coaching Board defines meaning first. |
 | **Note levers cannot lift an injury-capped long run** (NOTE-LEVER-INJURY-CAP-01) | 🔲 | S | Founder words. |
 | **Show the ramp warning on the week it is about** (PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01) | 🔲 | M | Design Board ruled the interim slot; placement next. |

@@ -67,10 +67,9 @@ describe('P-08(a) — the distance gate names both routes out of it', () => {
   })
 
   it('the control is anchored to the final CTA, not to a named step', () => {
-    // ⚠️ `buildSteps()` appends `hard-sessions`, `terrain` and `injuries` ONLY when
-    // `hasPaidAccess`, so the wizard's last step is `injuries` for a trial or paid runner
-    // and a DIFFERENT step for a free one. "End of wizard" is not one screen, and a step
-    // name would put the control somewhere different depending on tier.
+    // ⚠️ `buildSteps()` appends `hard-sessions` and `terrain` ONLY when `hasPaidAccess`;
+    // `injuries` is last for every tier since WIZARD-INJURY-FREE-01. A step name would
+    // still move the control the next time the sequence changes.
     const at = WIZ.indexOf(CONTROL)
     expect(at).toBeGreaterThan(-1)
     const before = WIZ.slice(Math.max(0, at - 600), at)

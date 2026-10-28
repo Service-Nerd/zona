@@ -43,11 +43,10 @@ export const REDEEM_CODE_PLACEMENTS = [
     // was offered it before entering anything.
     //
     // ⚠️ ANCHORED TO `isLastStep`, NOT TO A NAMED STEP, and that is the board's
-    // amendment rather than a preference. `buildSteps()` appends `hard-sessions`,
-    // `terrain` and `injuries` ONLY when `hasPaidAccess`, so the wizard's last step is
-    // `injuries` for a trial or paid runner and a different step for a free one.
-    // "End of wizard" is not one screen, and anchoring to a step name would put the
-    // control somewhere different depending on tier.
+    // amendment rather than a preference. `buildSteps()` appends `hard-sessions` and
+    // `terrain` ONLY when `hasPaidAccess`; `injuries` is last for every tier since
+    // WIZARD-INJURY-FREE-01 (2026-10-28). A step name would still move the control the
+    // next time the sequence changes.
     where: 'beneath the final CTA, the screen before the plan is generated',
   },
   {
