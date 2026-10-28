@@ -87,6 +87,20 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-28 — MP-BLOCKS-ONE-BLOCK-01 + TENK-SIM-ONE-REP-01 · M2 (continuous MP run) CORRECT WITH AMENDMENT · M1 INSUFFICIENT EVIDENCE · M3 INCORRECT · T1 (sibling) INCORRECT · T2 (two-rep floor, race-share cap) CORRECT WITH AMENDMENT · RULED, not built
+
+Measured in memory (no file touched) on 4,000 cohort + 1,200 slow inputs. **`mp_blocks`** is one 4 km block for 234 of
+234 cohort and 98 of 98 slow sessions (a naming defect, not a slow-runner one); live in 6 plans, five in the dry-run
+batch. **M2:** "Marathon-pace run", one continuous 4 km at MP, no trailing jog, MP work unchanged (47 → 44 min), no
+longer rep-scaled; debt entry removed. M1 (20–50 min band) doubles MP for 132 of 234 with no fitness evidence (Seiler's
+dose question filed `MP-WORK-DOSE-01`); M3 (2 km blocks) halves slow runners' MP and leaves them one block.
+**`tenk_race_simulation`** is one 2 km rep for 13 of 20 slow sessions (cohort always 2). T1 re-creates the 11 Sep
+repetition defect (+13 `INV-PLAN-RACE-SPECIFIC-VARIETY`). **T2:** a race-specific rep row below `REP_ROW_MIN_REPS` gets
+two reps while within `RACE_SPECIFIC_MAX_RACE_SHARE` (0.6) of the race, as a rep-count floor (a band cannot be scoped:
+any minimum that adds a slow runner's second rep adds a fast runner's third, 19 cohort sessions). **Willy binding:**
+`measure:fitness` and the 10K beginner/masters cohorts read at build; dry runs re-run before any is applied. Sitting:
+`docs/decisions/coaching-2026-10-28-mp-blocks-tenk-sim-sitting.md`.
+
 ## 2026-10-28 — S9-ONE-REP-01 second sitting (the sibling is build-only) · Cruise in peak as stand-in CORRECT WITH AMENDMENT · Continuous tempo in peak not chosen · BUILT 2026-10-28
 
 The build's code review found `tempo_cruise` is `phase_eligibility: ['build']` while all 18 swaps land in peak; the first
