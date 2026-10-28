@@ -156,6 +156,17 @@ export const MUTATIONS: Mutation[] = [
       }
     }
   } },
+  // §19 Am.2 (S9-ONE-REP-01, 2026-10-28) — a repeats session cut to one rep. Any rep-scaled session's labelled rep
+  // block will do; the check reads the delivered set, so this is the shape the sibling swap exists to prevent.
+  { name: 'cut a repeats session to one rep', apply: p => {
+    for (const s of sessionsOf(p)) {
+      // Not the rows the check exempts as registered debt, or this mutation wakes nothing on that plan.
+      if (['mp_blocks', 'tenk_race_simulation'].includes((s as unknown as { catalogue_id?: string }).catalogue_id ?? '')) continue
+      const blocks = (s as unknown as { derived_set?: { blocks?: Array<{ label?: string; repeat?: number }> } }).derived_set?.blocks
+      const rep = blocks?.find(b => b.label === 'reps' && (b.repeat ?? 1) >= 2)
+      if (rep) { rep.repeat = 1; return }
+    }
+  } },
   // §122 (FOUNDATION-BUDGET-01, 2026-10-03) — both arms of "foundation weeks are
   // weeks" need a shape the corpus does not otherwise build. The baseline would have
   // accepted `corpus` as the reason these two could not be woken, and that would have

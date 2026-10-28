@@ -27,25 +27,23 @@ already decided what it is.
 
 ---
 
-### 🔲 `S9-ONE-REP-01` — a "repeats" session with one rep, for the slowest runners 🏃 **COACHING BOARD: RULED 2026-10-28, build next**
-
-Found by the 27 Oct board read of the live dry runs. Since S9-QUALITY-MINUTES-01, rep growth stops at 35 minutes in total, and
-at a very slow pace one 1,600 m rep plus warm-up and cool-down fills it: "1600m repeats" with a single rep and the note "Rep
-three should look like rep one." **18 slow-grid sessions (`threshold_mile_repeats`), 0 before the change; live: a91d8fde
-week 13 (held from the dry-run apply).** `mp_blocks` single blocks are separate and pre-existing (160 → 40 slow, 163 → 79
-cohort). **Ruled 2026-10-28 (C2, §19 Am.2):** below `REP_ROW_MIN_REPS` (2) the row's declared same-stimulus sibling is delivered
-(`threshold_mile_repeats` → `tempo_cruise`). Acceptance: 18 slow-grid sessions change, all to `tempo_cruise`; 0 cohort
-plans; 0 validator codes moved; `INV-PLAN-REPEATS-REPEAT` with `mp_blocks` as named debt; a91d8fde re-run as a dry run.
-Sitting: `docs/decisions/coaching-2026-10-28-one-rep-repeats-sitting.md`.
-
----
-
 ### 🔲 `MP-BLOCKS-ONE-BLOCK-01` — "Marathon-pace blocks" is one block for every runner measured 🏃 **COACHING BOARD**
 
 Found measuring S9-ONE-REP-01 (2026-10-28): `mp_blocks` (4 km at goal pace, 3 min jog, rep-scaled) sizes to ONE block in
 **170 of 170** cohort-sample sessions and 40 of 40 slow-grid sessions. Pre-existing, not from the 26 Oct changes. The board
 split: McMillan, one 4 km MP block is a legitimate session and the name is wrong; Seiler, MP work away from the long run
 should repeat to earn the slot. Registered debt in `INV-PLAN-REPEATS-REPEAT` until ruled.
+
+---
+
+### 🔲 `TENK-SIM-ONE-REP-01` — "10K-pace race simulation" with one rep for slow 10K runners 🏃 **COACHING BOARD**
+
+Found by the property sweep while building S9-ONE-REP-01 (2026-10-28): `INV-PLAN-REPEATS-REPEAT` fires 19 times on the
+sweep's slow-goal clones (10K, beginner and experienced, ages 35–62): `tenk_race_simulation` (reps x 2000 m at goal pace /
+90 s) sizes to ONE rep. The slow grid never draws the row (rca1026Gates 2a lists it UNREACHED), so the board's count of 18
+could not see it. Exists at HEAD (parity identical); registered debt in the check. **Not measured:** whether it predates
+S9-QUALITY-MINUTES-01. The board picks: a ruled sibling (`tenk_pace_intervals`? the 11 Sep ruling calls them distinct), a
+shorter rep, or eligibility.
 
 ---
 
@@ -163,7 +161,7 @@ Measure the stale population first; then restate with the copy re-derivation the
 
 Was 9; the regeneration script's `--list` found 11 (Tasha's, the founder's Dorney plan, and 9 others). Every prerequisite
 has shipped (GOAL-PACE-REACHABLE-01, S9-QUALITY-MINUTES-01, GOAL-PACE-LR-CURRENT-01, RACE-DAY-PACE-WITHHELD-01,
-S9-RATIO-MINUTES-01). All 11 dry runs were re-run on `6b3028a1`: **11 validate clean, 0 refused**. **Board read 27 Oct: apply 10, hold a91d8fde for `S9-ONE-REP-01`**; the founder's own plan
+S9-RATIO-MINUTES-01). All 11 dry runs were re-run on `6b3028a1`: **11 validate clean, 0 refused**. **Board read 27 Oct: apply 10, hold a91d8fde for `S9-ONE-REP-01`** (built 28 Oct; a91d8fde dry run clean, W13 Wed now Cruise intervals 2 x 10 min); the founder's own plan
 needs `--allow-admin`. Applied by the founder with each plan's APPLY line (`scripts/rca-1026-regen.ts --plan <id>
 --apply`); future weeks only, completions and confirmed HR kept. Closes when the founder confirms all 11 are applied.
 

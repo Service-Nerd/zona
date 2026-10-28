@@ -1520,6 +1520,20 @@ function makeQualitySession(args: {
     substituteThresholdWithGoal,
   )
 
+  // §19 Amendment 2 (Coaching Board 2026-10-28, S9-ONE-REP-01) — a "repeats" session must repeat. For a slow runner a
+  // single rep can fill the dose band, and since the 35-minute floor nothing grows it to two. Where the row declares a
+  // same-stimulus sibling, that row is delivered in this slot, sized by its own structure. Decided here, the one sizer,
+  // so both quality slots and the V2 resize share it. Nothing above this line has a side effect, so re-entering is
+  // safe; the sibling names no sibling of its own (asserted in tests), so it cannot loop. `rowUsage` keeps the row the
+  // selector picked: measured, §53's variety checks do not move.
+  // Second sitting (2026-10-28): the sibling answers to the SELECTED row's phase eligibility (Cruise is build-only and
+  // lands in peak, by ruling), and must be at least as eligible on every other axis this bypasses; asserted in
+  // repeatsRepeat.test.ts.
+  if (catalogueRow?.one_rep_sibling && repPlan && repPlan.reps < GENERATION_CONFIG.REP_ROW_MIN_REPS) {
+    const sibling = V1_SESSION_CATALOGUE.find(r => r.id === catalogueRow.one_rep_sibling)
+    if (sibling) return makeQualitySession({ ...args, catalogueRow: sibling })
+  }
+
   // Coaching Board 2026-09-03 — progressive_tempo's continuous-shape sizing
   // (see progressiveTempoPlan). Null for every other row; mainMins feeds
   // effectiveDistKm below the same way repPlan.mainMins does, and thirdSecs
@@ -7745,6 +7759,14 @@ function buildRulePlanOnce(
         // No cueCtx: the §1/Q2 threshold cue was already placed (or not) during
         // construction. Re-running that decision here could duplicate it.
       })
+      // §19 Am.2 (S9-ONE-REP-01) — in its new week the sizer may deliver the row's sibling instead. Adopting only the
+      // dose would put the sibling's set under the original name ("1600m repeats" over 2 x 10 min), so a changed row is
+      // adopted whole. Latent with this swap (V2-SWAP-INERT-01: 0 fires measured).
+      if (resized.catalogue_id !== session.catalogue_id) {
+        for (const k of Object.keys(session)) delete (session as unknown as Record<string, unknown>)[k]
+        Object.assign(session, resized)
+        return
+      }
       session.duration_mins = resized.duration_mins
       session.distance_km   = resized.distance_km
       if (resized.derived_set) session.derived_set = resized.derived_set

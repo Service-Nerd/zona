@@ -70,6 +70,10 @@ export interface SessionCatalogueRow {
   // ineligible in a week carrying less than this many km. Used by threshold_ladder
   // to gate its ~24 min of threshold work on volume rather than a fitness label.
   min_weekly_km?:       number
+  /** §19 Amendment 2 (S9-ONE-REP-01) — the same-stimulus row delivered instead when this rep-scaled row would be sized
+   *  below `REP_ROW_MIN_REPS` reps. Read by `makeQualitySession`. Only a row the board has ruled the same adaptation
+   *  (§19 Am., CD-1-MILE-CRUISE-01) may be named here, and it must not name a sibling of its own. */
+  one_rep_sibling?:     string
   difficulty_tier:      number
   main_set_structure:   Record<string, unknown>
   /**
@@ -445,6 +449,8 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     distance_eligibility: ['10K', 'HM', 'MARATHON', '50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
     min_weekly_km: 40,
+    // §19 Am.2 (S9-ONE-REP-01): a runner whose one 1600 m rep fills the dose band gets Cruise intervals instead.
+    one_rep_sibling: 'tempo_cruise',
     main_set_structure: {
       version: 2,
       sizing: { scaling: 'reps' },

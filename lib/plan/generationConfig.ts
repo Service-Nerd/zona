@@ -1289,6 +1289,13 @@ export const GENERATION_CONFIG = {
   // breaches (progressive tempo at 39 min). `measure:fitness` identical at 35.
   QUALITY_FLOOR_MINS: 35,
 
+  // §19 Amendment 2 (Coaching Board 2026-10-28, S9-ONE-REP-01) — a rep-scaled row sized below this many reps is not
+  // delivered as that row: its declared same-stimulus sibling (`one_rep_sibling`) takes the slot. Since the 35-minute
+  // floor, a runner whose threshold is slower than ~9:22 /km got "1600m repeats" with ONE 17-minute rep and a note
+  // about rep three (18 slow-grid sessions, 0 cohort). Two is the smallest number that is a repeat; a two-rep minimum
+  // on the row itself was refused (35 min of threshold against §85's 30-minute band).
+  REP_ROW_MIN_REPS: 2,
+
   // §82 Amendment 2 (Coaching Board re-sitting 2026-10-27, S9-EASY-MINUTES-01) — on a weekday the runner limited, an
   // easy run §82 would hold at its km floor is held at the runner's limit, or this many minutes if the limit is shorter,
   // and never longer than the km floor. Only that path: construction's easy floor is unchanged. For a slow runner the

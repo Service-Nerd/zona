@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-28 — S9-ONE-REP-01 · "Rep three should look like rep one", on a session with one rep
+**Shipped:** the slowest runners no longer get "1600m repeats" with a single rep; they get Cruise intervals, 2 x 10 minutes, in that slot.
+**Dev learning:** yesterday's 35-minute floor was right and it made this reachable: the dose band always allowed one 17-minute mile rep, and the old 5 km floor had been the only thing growing it to two. The fix sits in the one sizer so every caller shares it; the code review then found the one caller (a latent swap pass) that copied only the dose back, which would have put Cruise's set under the mile's name.
+**Product/creator learning:** the 22 Oct ruling that the two sessions are the same adaptation was measured on runners whose mile takes 9 minutes. It never met one whose mile takes 17. A ruling is only as wide as the population it looked at.
+**AI-building learning:** the board's acceptance number (18 sessions) was exactly right for the grid I measured and wrong for the product: the property sweep found 19 more one-rep sessions on a different row, because my grid never draws it. And the review caught that the board never read the sibling's own phase tag, so it sat a second time rather than me deciding.
+**The honest bit:** three passes to get one session right: a board sitting, a build, a second sitting, and two new items filed on the way.
+**Hook material:** "Rep three should look like rep one." Printed on a session with one rep.
+**Postable?:** yes
+
 ## 2026-10-25 — SKIP-MAKEUP-DAY-01 · The check fired, logged, and the change was offered anyway
 **Shipped:** a skipped run's make-up now goes on a day you can train, not in the past, and is the actual run; a change that breaks the plan is never offered.
 **Dev learning:** the make-up was built as `{ type, label, detail }`: a session with no distance, time or pace, so it was "a run" to the type system and nothing to the runner. And it searched days after the skipped one, ignoring both today and the runner's blocked days. Underneath that, `reshape_invalid` was a production soft-degrade that logged and then wrote the pending row regardless. My own first fix crashed on a plan with no `meta`, which three existing tests caught. One mutation stayed green because its `sed` never matched: I nearly called the copy test proven.

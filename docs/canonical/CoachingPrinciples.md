@@ -2383,6 +2383,38 @@ names no unit the runner may not use, and existing plans keep their stamped labe
 
 **Known limitation (SC-08).** The invariant's easy-direction check is *label*-based, unlike the engine's, because the plan session carries no reference to the catalogue row that produced it — the reps and the category are re-joined at display time by matching the session's name. When SC-08 puts the row's identity on the session, re-key this check on the structural category. Until then, a hand-written or AI-rewritten label that avoids the four watched words can still evade it.
 
+### §19 Amendment 2 — a repeats session repeats; below two reps, the same-stimulus sibling is delivered *(Coaching Board 2026-10-28, S9-ONE-REP-01)*
+
+**Principle.** A rep-scaled row sized below `REP_ROW_MIN_REPS` (2) reps is not delivered as that row. Where the row
+declares a same-stimulus sibling (`one_rep_sibling`), the sibling is delivered in that slot, sized by its own
+structure. Today: `threshold_mile_repeats` → `tempo_cruise`, the equivalence the Amendment above ratified.
+
+**Why.** That Amendment's measurement ("a mile at T runs 7.6–9.8 min") held only the cohort grid. For a runner whose
+threshold is slower than ~9:22 /km one 1600 m rep fills the threshold band's 15-minute minimum, and since the
+35-minute floor (§9 Amendment) nothing grows it to two: "1600m repeats" with one 17-minute rep and the note "Rep three
+should look like rep one" (18 slow-grid sessions, 0 cohort; live a91d8fde week 13). One rep has no split, which is the
+row's stated reason to exist. **Refused:** a two-rep minimum on the row (33–35 min of threshold against §85's 30-minute
+band, Willy); a shorter rep (removes the anchor, McMillan); removing the row from the pool (moved 156 sessions through
+the rotation to CV work, Seiler).
+
+**Measured at build.** Slow grid: 18 sessions change, all to 2 x 10 min at T (16.7 → 20 min of threshold, 37 → 43 min);
+`verify:parity` 6,102 cases byte-identical; cohort unchanged. `rowUsage` keeps the row the selector picked; §53's
+variety checks do not move. **Not ruled:** `mp_blocks` is one 4 km block for every runner measured (170 of 170), and is
+registered debt in the check (`MP-BLOCKS-ONE-BLOCK-01`, McMillan and Seiler disagree). **Found by the sweep at build:** `tenk_race_simulation` sizes to one 2,000 m rep at goal pace for slow 10K runners (19 sweep sessions; the slow grid never draws the row), also registered debt (`TENK-SIM-ONE-REP-01`): it has no ruled sibling, and naming one is the board's.
+
+**Which eligibility the stand-in answers to** *(second sitting, 2026-10-28)*. `tempo_cruise` is build-only and every
+measured swap lands in peak. That tag is a rotation rule from §19's CD-1 ruling ("separated by fitness floor and
+phase"), not a statement that 2 x 10 min at threshold is wrong in peak, and the slot is the mile's, which is
+peak-eligible. So **the stand-in answers to the selected row's phase eligibility, not its own**. On every other axis
+the swap bypasses (tier, pace anchors, distance, fitness floor, hill and tissue-stress class, volume gate) **the sibling
+must be at least as eligible as its row**. **Refused:** delivering the peak-eligible `tempo_continuous` instead (same 18
+sessions, 0 validator codes; but 22 min continuous at goal pace for the slowest runners, a harder shape the selector did
+not pick; Seiler, Willy, Sims). McMillan's observation that HM peak may lack continuous goal-pace work in general is
+recorded, not ruled.
+
+**Config.** `GENERATION_CONFIG.REP_ROW_MIN_REPS = 2`; catalogue field `one_rep_sibling`. **Check.**
+`INV-PLAN-REPEATS-REPEAT` reads the DELIVERED derived set of every rep-scaled row; `lib/plan/repeatsRepeat.test.ts`.
+
 ---
 
 ## 20. VDOT surface — auditable, table-comparable

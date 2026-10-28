@@ -79,6 +79,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-CATALOGUE-LINK',
   'INV-PLAN-MAIN-SET-ORDERING',
   'INV-PLAN-VO2MAX-MAIN-SET-CAP',
+  'INV-PLAN-REPEATS-REPEAT',
   'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT',
   'INV-PLAN-VO2MAX-ONSET',
   'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
@@ -5676,6 +5677,45 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             actual: `${work.toFixed(0)} min work`,
             expected: `${floor}–${ceil} min (± ${tol} rounding)`,
           })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-REPEATS-REPEAT (CoachingPrinciples §19 Amendment 2, Coaching Board 2026-10-28, S9-ONE-REP-01) — a session
+  // from a rep-scaled catalogue row carries at least REP_ROW_MIN_REPS reps in the set the runner reads. Reads the
+  // DELIVERED derived set, never the producer's sizing, so a sizing path that skips the sibling swap is caught. The
+  // row's rep block is found by its own label. Every rep-scaled row is in scope, so a new row that can reach one rep
+  // fails here; REPEATS_ONE_REP_DEBT names the measured exception.
+  {
+    const REPEATS_ONE_REP_DEBT: Record<string, string> = {
+      mp_blocks: 'MP-BLOCKS-ONE-BLOCK-01: one 4 km block for every runner measured (170 of 170); board split, unruled',
+      tenk_race_simulation: 'TENK-SIM-ONE-REP-01: 1 x 2000 m at goal pace for slow 10K runners (19 sweep sessions); no ruled sibling',
+    }
+    const minReps = GENERATION_CONFIG.REP_ROW_MIN_REPS
+    for (const w of plan.weeks) {
+      for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+        if (!sn?.derived_set) continue
+        const row = catalogueRowFor(sn)
+        if (!row || REPEATS_ONE_REP_DEBT[row.id]) continue
+        const shape = row.main_set_structure as { version?: number; sizing?: { scaling?: string }; blocks?: { label?: string; repeat?: unknown }[] }
+        if (shape.version !== 2 || shape.sizing?.scaling !== 'reps') continue
+        const repLabels = new Set((shape.blocks ?? []).filter(b => typeof b.repeat === 'object' && b.repeat !== null).map(b => b.label))
+        const delivered = (sn.derived_set.blocks ?? []).filter(b => repLabels.has(b.label))
+        for (const b of delivered) {
+          // A missing count is INV-PLAN-DERIVED-SET's to report; reading it as one rep would misdescribe the cause.
+          if (typeof b.repeat !== 'number') continue
+          const reps = b.repeat
+          if (reps < minReps) {
+            violations.push({
+              code: 'INV-PLAN-REPEATS-REPEAT',
+              principle_ref: 'CoachingPrinciples §19 Amendment 2',
+              severity: 'error', week: w.n, day,
+              message: `"${sn.label}" is a repeats session with ${reps} rep; a rep-scaled row below ${minReps} reps is delivered as its same-stimulus sibling.`,
+              actual: `${reps} rep`,
+              expected: `>= ${minReps} reps`,
+            })
+          }
         }
       }
     }

@@ -87,7 +87,17 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
-## 2026-10-28 — S9-ONE-REP-01 · A (min 2 reps) INCORRECT · B (shorter rep) INCORRECT · C1 (drop from pool) not chosen · C2 (deliver the same-stimulus sibling) CORRECT WITH AMENDMENT · RULED, not built
+## 2026-10-28 — S9-ONE-REP-01 second sitting (the sibling is build-only) · Cruise in peak as stand-in CORRECT WITH AMENDMENT · Continuous tempo in peak not chosen · BUILT 2026-10-28
+
+The build's code review found `tempo_cruise` is `phase_eligibility: ['build']` while all 18 swaps land in peak; the first
+sitting never read the sibling's own eligibility. Cruise's phase tag is a rotation rule (§19 CD-1), and the slot is the
+mile's. **§19 Am.2 amended:** the stand-in answers to the selected row's phase eligibility; on every other bypassed axis
+(tier, anchors, distance, fitness floor, hill/tissue class, volume gate) the sibling must be at least as eligible as its
+row (test in `repeatsRepeat.test.ts`, falsified with `cv_intervals`). Continuous tempo in peak (prototyped: same 18
+sessions, 0 validator codes, 22 min continuous at goal pace) refused as a harder shape the selector did not pick.
+McMillan's HM-peak observation recorded, not ruled. Sitting: `docs/decisions/coaching-2026-10-28-one-rep-sibling-phase-sitting.md`.
+
+## 2026-10-28 — S9-ONE-REP-01 · A (min 2 reps) INCORRECT · B (shorter rep) INCORRECT · C1 (drop from pool) not chosen · C2 (deliver the same-stimulus sibling) CORRECT WITH AMENDMENT · BUILT 2026-10-28 (after the second sitting above)
 
 Since S9-QUALITY-MINUTES-01 a slow runner (threshold slower than ~9:22 /km) gets "1600m repeats" with ONE rep: 18
 slow-grid sessions, 0 of 881 in the cohort sample; live a91d8fde W13. **§19 Amendment 2:** a rep-scaled threshold row
