@@ -36,8 +36,10 @@ export interface EnrichRepair {
 }
 
 /**
- * `rule` must be the plan the enricher was given: same weeks, same sessions, rule copy.
- * It is where reverted copy comes from, and the full-revert result. The returned plan's
+ * `rule` is the RULE-COPY plan whose weeks match `enriched` (same weeks, same sessions): in the
+ * route that is `composedRule`, not the foundation-free `rulePlan` the enricher was handed, because
+ * rule copy for a foundation week exists only on the composed plan (ADR-020 Option A). It is where
+ * reverted copy comes from, and the full-revert result. The returned plan's
  * `meta.enrichment` is NOT stamped here; the caller owns the state it records.
  */
 export function repairEnrichedCopy(

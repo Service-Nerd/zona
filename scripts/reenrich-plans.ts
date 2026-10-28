@@ -183,14 +183,17 @@ async function main() {
     // `INV-PLAN-COPY-MATCHES-SESSIONS` (a week promising a time trial it did not hold). The
     // generator reverts offending sessions, then weeks, to rule copy and re-validates; so does
     // this now, against the stored plan, which IS the rule copy the enricher was given.
+    // Validate against the input the plan was built for: its stored answers plus `plan_start`,
+    // which `generator_input` does not always carry (the same construction as storedPlanRegen).
     const rule = JSON.parse(before) as Plan
-    const repair = repairEnrichedCopy(res.plan, rule, errorBaseline(validatePlan(rule, input as never)), input as never)
+    const vInput = { ...input, plan_start: (plan.meta as { plan_start?: string }).plan_start } as never
+    const repair = repairEnrichedCopy(res.plan, rule, errorBaseline(validatePlan(rule, vInput)), vInput)
     if (repair.outcome === 'full_revert') {
-      console.log(`   STILL FAILS: the copy breaks ${repair.introduced.map(v => v.code).join(', ')} and no partial revert clears it`)
+      console.log(`   STILL FAILS: the copy breaks ${repair.introduced.map(where).join(', ')} and no partial revert clears it`)
       continue
     }
     if (repair.outcome !== 'clean') {
-      console.log(`   repaired (${repair.outcome}): ${repair.introduced.map(v => `${v.code}@W${v.week}`).join(', ')}`)
+      console.log(`   repaired (${repair.outcome}): ${repair.introduced.map(where).join(', ')}`)
     }
     ;(res as { plan: Plan }).plan = repair.plan
     // `'applied'` is the route's value for a clean full merge, `'applied_partial'` for a repaired one.
@@ -261,17 +264,32 @@ async function main() {
 }
 type PlanRow = { user_id: unknown; updated_at?: unknown; plan_json: unknown }
 
+/** A violation's location for an operator: a week when it has one, else "plan-level". */
+function where(v: { code: string; week?: number }): string {
+  return v.week == null ? `${v.code} (plan-level)` : `${v.code}@W${v.week}`
+}
+
 /** ENRICH-RESTORE-REPAIR-01 — see `REPAIR_COPY`. One runner per run, by design. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the script's client is untyped (no generated DB types)
 async function repairCopy(db: any, rows: PlanRow[]) {
   if (!ONLY) { console.error('refusing: --repair-copy needs --only <user-prefix>'); process.exit(2) }
-  const row = rows.find(r => String(r.user_id).startsWith(ONLY))
-  const plan = row?.plan_json as Plan | undefined
-  if (!row || !plan) { console.log(`no plan for ${ONLY}`); return }
+  const matches = rows.filter(r => String(r.user_id).startsWith(ONLY))
+  if (matches.length !== 1) {
+    console.log(`refusing: --only ${ONLY} matches ${matches.length} plans; give a prefix that names exactly one runner`)
+    for (const m of matches.slice(0, 10)) console.log(`   ${String(m.user_id).slice(0, 12)}`)
+    return
+  }
+  const row = matches[0]
+  const original = JSON.stringify(row.plan_json)
+  // A private copy: the revert helpers return `{ ...enriched }`, sharing `meta`, so stamping the
+  // result's state used to change the plan being archived as the "prior" one.
+  const plan = JSON.parse(original) as Plan
   console.log(`── ${String(row.user_id).slice(0, 8)}  repair-copy`)
   if (!hasAiCopy(plan.meta)) { console.log('   SKIP: the plan carries no AI copy; nothing to repair'); return }
   if (!plan.meta.generator_input) { console.log('   SKIP: no meta.generator_input'); return }
-  const { data: settings } = await db.from('user_settings').select('max_hr, resting_hr, max_hr_source').eq('id', String(row.user_id)).maybeSingle()
+  if (!(plan.meta as { plan_start?: string }).plan_start) { console.log('   SKIP: no meta.plan_start; cannot rebuild the rule copy'); return }
+  const { data: settings, error: sErr } = await db.from('user_settings').select('max_hr, resting_hr, max_hr_source').eq('id', String(row.user_id)).maybeSingle()
+  if (sErr) { console.log(`   🔴 REFUSED: could not read the profile heart rate (${sErr.message})`); return }
   const { input, fresh } = regenerateFromStored(plan, settings as never)
   // The rule copy must belong to THE SAME SESSIONS. If today's engine builds anything different,
   // reverting to its copy would describe sessions the runner does not have.
@@ -287,17 +305,17 @@ async function repairCopy(db: any, rows: PlanRow[]) {
     console.log(`   🔴 REFUSED: no partial revert clears ${repair.introduced.map(v => v.code).join(', ')}; a full revert would delete the voice`)
     return
   }
-  const out = repair.plan
+  const out = JSON.parse(JSON.stringify(repair.plan)) as Plan
   out.meta.enrichment = 'applied_partial'
   const changed = diffPaths(plan as unknown as Json, out as unknown as Json)
   const illegal = changed.filter(p => !isCopyPath(p))
   if (illegal.length) { console.log(`   🔴 REFUSED: ${illegal.length} non-copy path(s) would change`); return }
   const left = validatePlan(out, input).filter(v => v.severity === 'error').map(v => v.code)
   console.log(`   ✅ ${repair.outcome}: reverts ${repair.outcome === 'partial_revert_session' ? `${repair.badSessions.size} session(s) [${Array.from(repair.badSessions).join(', ')}]` : `${repair.badWeeks.size} week(s) [${Array.from(repair.badWeeks).join(', ')}]`} to rule copy`)
-  console.log(`        fixes ${repair.introduced.map(v => `${v.code}@W${v.week}`).join(', ')} · ${changed.length} copy path(s) · errors after: ${left.length ? left.join(', ') : 'none'}`)
+  console.log(`        fixes ${repair.introduced.map(where).join(', ')} · ${changed.length} copy path(s) · errors after: ${left.length ? left.join(', ') : 'none'}`)
   if (!WRITE || !AUTHORISED) { console.log('\nDRY RUN — nothing was written.'); return }
   const arch = await db.from('plan_archive').insert({
-    user_id: String(row.user_id), plan_json: plan,
+    user_id: String(row.user_id), plan_json: JSON.parse(original),
     race_name: (plan.meta as { race_name?: string }).race_name ?? '', race_date: (plan.meta as { race_date?: string }).race_date ?? null,
   } as never)
   if (arch.error) { console.log(`   ARCHIVE FAILED, NOT writing: ${arch.error.message}`); return }

@@ -62,14 +62,18 @@ describe('repairEnrichedCopy (ENRICH-RESTORE-REPAIR-01)', () => {
       // Bounded, not grepped (the first cut matched the script's OTHER repair call and stayed
       // green with the restore path's removed): after `await enrich(`, the ladder must run
       // before the first write of the plan.
-      const at = s.indexOf('await enrich(')
-      expect(at, `${f}: enrich call`).toBeGreaterThan(0)
-      const writes = ['.update(', 'savePlanForUser(', 'plan_json: finalPlan', 'plan_json: res.plan']
-        .map(x => s.indexOf(x, at)).filter(k => k > 0)
-      const firstWrite = Math.min(...writes)
-      const repairAt = s.indexOf('repairEnrichedCopy(', at)
-      expect(repairAt, `${f}: repair after enrich`).toBeGreaterThan(at)
-      expect(repairAt, `${f}: repair before the first write`).toBeLessThan(firstWrite)
+      const calls = Array.from(s.matchAll(/await enrich\(/g)).map(m => m.index!)
+      expect(calls.length, `${f}: enrich calls`).toBeGreaterThan(0)
+      for (const at of calls) {
+        const writes = ['.update(', '.upsert(', 'savePlanForUser(', 'plan_json: finalPlan', 'plan_json: res.plan']
+          .map(x => s.indexOf(x, at)).filter(k => k > 0)
+        // No write found after the call is itself a failure: an empty list made the bound
+        // Infinity, and the gate passed while checking nothing.
+        expect(writes.length, `${f}: a write after the enrich call at ${at}`).toBeGreaterThan(0)
+        const repairAt = s.indexOf('repairEnrichedCopy(', at)
+        expect(repairAt, `${f}: repair after enrich`).toBeGreaterThan(at)
+        expect(repairAt, `${f}: repair before the first write`).toBeLessThan(Math.min(...writes))
+      }
     }
   })
 })

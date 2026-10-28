@@ -20,10 +20,10 @@ import { getUserTier } from '@/lib/trial'
 // boundary (ADR-003) — it answers 403, not 422, and a second consumer of a hosted
 // engine would not apply Zonna's price list. Collapsing those would drag the AI
 // layer and persistence inside the engine, which `ENGINE-PURITY-GATE-01` forbids.
-import { runEngine, validatePlan, evaluateCheckpoint, isBaseBuildPlan, type EngineOutcome } from '@/lib/plan/engine'
+import { runEngine, evaluateCheckpoint, isBaseBuildPlan, type EngineOutcome } from '@/lib/plan/engine'
 import { canGenerateDistance } from '@/lib/plan/canUseFeature'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
-import { errorBaseline, violationsIntroducedBy, statusForReason } from '@/lib/plan/enrichAttribution'
+import { errorBaseline, statusForReason } from '@/lib/plan/enrichAttribution'
 import { repairEnrichedCopy } from '@/lib/plan/enrichRepair'
 import { shouldServerPersist } from '@/lib/plan/enrichServerSave'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
@@ -444,8 +444,11 @@ export async function POST(req: NextRequest) {
         // produce most violation classes at all (EnrichedWeekSchema exposes only
         // label, theme and coach_notes; it cannot touch a single numeric).
         if (outcome.status === 'applied') {
-          const introduced = violationsIntroducedBy(baseline, validatePlan(finalPlan, input))
-          if (introduced.length > 0) {
+          // ENRICH-RESTORE-REPAIR-01 — one validation pass, inside the owner, rather than
+          // the route computing `introduced` and the owner computing it again.
+          const repair = repairEnrichedCopy(finalPlan, composedRule, baseline, input)
+          const introduced = repair.introduced
+          if (repair.outcome !== 'clean') {
             // ENRICH-PARTIAL-01 (2026-09-04) — revert the OFFENDING WEEKS, not
             // the whole plan.
             //
@@ -480,8 +483,7 @@ export async function POST(req: NextRequest) {
             // script runs the same repair. ADR-020 Option A: composedRule, not rulePlan,
             // because rule copy for a foundation week is only on the composed plan, and a
             // full revert to rulePlan used to drop the runner's foundation block.
-            const repair = repairEnrichedCopy(finalPlan, composedRule, baseline, input)
-            const repaired = repair.outcome !== 'full_revert'
+            const repaired = repair.outcome !== 'full_revert'   // 'clean' cannot reach here
             const repairedAtSessionLevel = repair.outcome === 'partial_revert_session'
             const { badSessions, badWeeks } = repair
             finalPlan = repair.plan
