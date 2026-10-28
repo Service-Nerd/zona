@@ -90,6 +90,7 @@ So Q5B counts the WHOLE fleet with no window, and it is the number to lead the e
 
 - `without_voice` is the one that matters: runners holding a plan with no AI copy at all. ANY of them is worth a line, and they stay reported until the state changes — that is the point of the query having no window.
 - `eligible` EXCLUDES free-tier `skipped` (never enriched by design) and legacy plans with no field. Counting either would deflate the figure.
+- `not_recorded` is a plan with NO enrichment field that is NOT legacy (it carries `generator_input`): a script rebuild deleted its AI copy and wrote no state. It is a runner WITHOUT voice; name it as such. `skipped_plan_kind` (staged and get-running plans) is never enriched by design and is excluded. (REBUILD-VOICE-LOSS-01, 28 Oct: the old query read 1 without voice when 12 were.)
 - `with_voice` counts `applied` AND `applied_partial` together. ⚠️ On 2026-10-02 a measurement that treated `applied_partial` as a failure reported "two thirds of plans failing" when the true answer was 2 runners of 18 eligible — 38 of 43 recorded failures were partial reverts. The guidance in Q5 above already said this; it was not read.
 - Quote it as `without_voice of eligible`, never as a bare percentage: at this fleet size one plan moves the rate by ~5pp.
 - `without_voice_rows` names them, so remediation has a target. `scripts/reenrich-plans.ts` in the repo restores the voice (dry-run by default) and needs Russ's authorisation to write.
