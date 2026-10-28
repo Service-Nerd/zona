@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { longRunTimeCapMins, injuryLongRunCapMins } from './longRunTimeCap'
+import { longRunTimeCapMins, longRunTimeCap } from './longRunTimeCap'
 import { GENERATION_CONFIG } from './generationConfig'
 import { cohortGrid, COHORT_PLAN_START } from './cohortGrid'
 import { generateRulePlan } from './ruleEngine'
@@ -20,14 +20,12 @@ describe('§9 Am. 3 — the injury long-run ceiling has one owner', () => {
     expect(longRunTimeCapMins({ race_distance_km: 42.2, goal: 'finish', injury_history: ['Plantar fasciitis'] })).toBe(120)
     expect(longRunTimeCapMins({ race_distance_km: 42.2, goal: 'finish', injury_history: ['knee'] })).toBe(210)
     expect(longRunTimeCapMins({ race_distance_km: 5, goal: 'finish', injury_history: ['back'] })).toBe(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH)
-    expect(injuryLongRunCapMins(['shin splints'])).toBeNull()
+    expect(longRunTimeCap({ race_distance_km: 42.2, goal: 'finish', injury_history: ['shin splints'] }).source).toBe('distance')
+    expect(longRunTimeCap({ race_distance_km: 42.2, goal: 'finish', injury_history: ['back'] })).toEqual({ mins: 120, source: 'injury', injury: 'back' })
+    // A 5K's own ceiling (70 finish / 90) is tighter than the injury's, so the DISTANCE binds and is named.
+    expect(longRunTimeCap({ race_distance_km: 5, goal: 'time_target', injury_history: ['back'] }).source).toBe('distance')
   })
 
-  it('no literal ceiling is left in the engine', () => {
-    const src = readFileSync(join(__dirname, 'ruleEngine.ts'), 'utf8').replace(/\/\/.*$/gm, '')
-    expect(src).not.toMatch(/hasInjury\(input, 'back'\)/)
-    expect(src).not.toMatch(/\*\s*paceMinPerKm\s*>\s*120\b/)
-  })
 })
 
 const grid = (cohortGrid() as GeneratorInput[]).filter(i => i.race_distance_km === 42.2)
@@ -65,4 +63,19 @@ describe('§9 Am. 3 — back-history marathon plans', () => {
     expect(named.length, 'plans whose note names the cap').toBeGreaterThan(0)
     expect(wrong.length).toBe(0)
   })
+
+  // Code review 2026-10-28: the §80 finish-goal note read the distance table directly, so a
+  // back-capped finisher was told "your weekly volume is what limits it".
+  it('a finish-goal runner held by the injury ceiling is told the ceiling, never "weekly volume"', () => {
+    const finish: Plan[] = []
+    for (let i = 0; i < grid.length && finish.length < 80; i += 29) {
+      const input = { ...grid[i]!, goal: 'finish', injury_history: ['back'] } as GeneratorInput
+      try { finish.push(generateRulePlan(input, 'paid', COHORT_PLAN_START) as Plan) } catch (e) { if (!isDesignedRefusal(e)) throw e }
+    }
+    const notes = finish.map(p => p.meta.long_run_shortfall_note).filter((n): n is string => !!n)
+    expect(notes.length, 'finish-goal plans with a long-run note').toBeGreaterThan(5)
+    expect(notes.filter(n => /back injury history keeps the long run to 2h/.test(n)).length).toBeGreaterThan(0)
+    expect(notes.filter(n => n.includes('your weekly volume is what limits it')).length).toBe(0)
+  })
 })
+

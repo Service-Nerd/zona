@@ -16,7 +16,7 @@ import {
 } from './length'
 import { qualityCeilingFor } from './qualityCeiling'
 import { waterFillEasyKm } from './easyDistribution'
-import { longRunTimeCapMins, injuryLongRunCap } from './longRunTimeCap'
+import { longRunTimeCapMins, longRunTimeCap, INJURY_CAP_LABEL } from './longRunTimeCap'
 import { LR_SHORTFALL_UNREHEARSED_FUELLING, FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { runWalkApplies, runWalkPrescriptionApplies, runWalkPeakKm, applyRunWalk } from './runWalkPlan'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
@@ -8217,14 +8217,11 @@ function buildRulePlanOnce(
             // LONG-RUN-BELOW-LONGEST-01 (Coaching Board 2026-10-28) — name the constraint that binds.
             // "It ran out of weeks" was said to runners whose long run was held by §9 Am. 3's injury
             // ceiling, with weeks to spare (graceemilyhill: 21 km now, held at 13.5 km by her back).
-            const injCap = injuryLongRunCap(input.injury_history)
-            // Compared in KM: the cap sizes the long run at easy pace (`applyLongRunCap`), and a
-            // peak-week marathon-pace long run of the same distance runs in fewer minutes (her 13.5 km
-            // takes 111 min, held by a 120-min cap). Within one rounding step counts as held.
-            const heldByInjury = injCap != null && pace.minPerKmEasy > 0
-              && actualPeakLrKm >= injCap.mins / pace.minPerKmEasy - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+            const cap = longRunTimeCap(input)
+            const heldByInjury = cap.source === 'injury' && pace.minPerKmEasy > 0
+              && actualPeakLrKm >= cap.mins / pace.minPerKmEasy - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
             const why = heldByInjury
-              ? `Your ${injCap.keyword === 'back' ? 'back injury' : 'plantar fasciitis'} history keeps the long run to ${formatDuration(injCap.mins)}, so the plan stops it there.`
+              ? `Your ${INJURY_CAP_LABEL[cap.injury!]} history keeps the long run to ${durationText(cap.mins)}, so the plan stops it there.`
               : 'The long run can only grow so much week to week, and it ran out of weeks before it got there.'
             reasons.push(`Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}km, so the closing stretch will be new ground on the day. ${why}`)
           }
@@ -8526,7 +8523,9 @@ function buildRulePlanOnce(
     // others are §45's week-on-week progression cap and §9's share-of-the-week
     // sizing. §40c requires the note to name the lever, so it now names whichever
     // one is actually binding.
-    const capMins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[dk]
+    // LONG-RUN-BELOW-LONGEST-01 — through the owner, so a back / plantar ceiling is seen here too.
+    const lrCap = longRunTimeCap(input)
+    const capMins = lrCap.mins
     // §80 Am.1 — the `+ 1` here was DEAD. `LONG_RUN_CAP_MINUTES` is applied on
     // the kilometre axis and the distance is then rounded, so a capped long run
     // lands 2–3 minutes UNDER its ceiling and can never satisfy `+1 >= cap`.
@@ -8569,7 +8568,9 @@ function buildRulePlanOnce(
     // semantics defect this repo keeps paying for.
     const injuryCapped = hasVolumeCappedInjury(input)
     const why = atTimeCap
-      ? 'and this is as far as we take it: the long-run ceiling for this distance is deliberate, not a gap in the plan'
+      ? (lrCap.source === 'injury'
+        ? `and this is as far as we take it: your ${INJURY_CAP_LABEL[lrCap.injury!]} history keeps the long run to ${durationText(lrCap.mins)}`
+        : 'and this is as far as we take it: the long-run ceiling for this distance is deliberate, not a gap in the plan')
       : injuryCapped
       ? 'and your injury history is what limits it: the cap on how fast weekly volume may rise holds the long run down with it, which is the trade we are making on purpose'
       : 'but your weekly volume is what limits it: the long run is sized as a share of the week, and this week cannot carry more'
@@ -8635,7 +8636,7 @@ function buildRulePlanOnce(
   // §40c requires the note to NAME THE LEVER, which is exactly why naming the
   // wrong one matters: a runner who reads "the long run is at its time cap"
   // learns nothing they can act on when it is not.
-  const longRunCapMinsForNote = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[raceDistanceKey(input.race_distance_km)]
+  const longRunCapMinsForNote = longRunTimeCapMins(input)   // owner: includes §9 Am. 3's injury ceiling
   // ⚠️ `planLrMinsDelivered`, NOT `peakLrMinsDelivered` — this is the maximum
   // across EVERY race-directed week, which is a different quantity from
   // `peakPhaseLrMins` 115 lines above. Both were called `peakLr*`.

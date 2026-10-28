@@ -1015,7 +1015,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // §9 Am. 3 (2026-10-28) — the injury ceiling is read from config HERE, not through the producer's
   // `longRunTimeCapMins`, so a producer that stops applying it is caught.
   const injuryCaps = Object.entries(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY)
-    .filter(([k]) => hasInjuryKeyword(input.injury_history, k)).map(([, m]) => m)
+    .filter(([k]) => hasInjuryKeyword(input.injury_history, k)).map(([, m]) => m as number)
   const longCapMins = Math.min(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey], ...injuryCaps)
   // §79 (2026-09-02) — the quality-per-week ceiling is an INTENSITY rule, so it
   // must key off the intensity level. Two reasons this is not the structural one:
@@ -2192,7 +2192,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         principle_ref: 'CoachingPrinciples §9',
         severity: 'error',
         week: w.n, day: long.day,
-        message: injuryCaps.length ? 'Long run duration exceeds the cap for this race distance and injury history' : 'Long run duration exceeds absolute cap for race distance',
+        message: longCapMins < GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey] && injuryCaps.includes(longCapMins) ? 'Long run duration exceeds the long-run ceiling for this injury history (§9 Am. 3)' : 'Long run duration exceeds absolute cap for race distance',
         actual: long.session.duration_mins,
         expected: `≤ ${longCapMins}`,
       })
@@ -9100,7 +9100,8 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // 90-minute cap. Absent distance means this check has nothing to say.
       const raceKm = plan.meta.race_distance_km
       const distKey = typeof raceKm === 'number' && raceKm > 0 ? raceDistanceKey(raceKm) : null
-      const capMins = distKey ? GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey] : 0
+      // §9 Am. 3 — the injury ceiling too, read from config here (independent of the producer).
+      const capMins = distKey ? Math.min(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey], ...injuryCaps) : 0
       // The delivered peak long run, read from the plan rather than recomputed
       // from the curve — the note describes what the runner actually got.
       //

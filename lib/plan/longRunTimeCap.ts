@@ -24,30 +24,43 @@ import type { GeneratorInput } from '@/types/plan'
  * applies to a foundation week exactly as it applies to a build week — §57 excludes
  * foundation weeks from the periodisation ARC, never from §9's load ceiling.
  */
-export function longRunTimeCapMins(input: Pick<GeneratorInput, 'race_distance_km' | 'goal'> & { injury_history?: string[] | null }): number {
-  const distKey = raceDistanceKey(input.race_distance_km)
-  let cap: number = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
-  // CoachingPrinciples §40 — finish-goal 5K plans get a tighter cap.
-  if (distKey === '5K' && input.goal === 'finish') {
-    cap = Math.min(cap, GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH)
-  }
-  return Math.min(cap, injuryLongRunCapMins(input.injury_history) ?? Infinity)
+export type InjuryCapKey = keyof typeof GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY
+
+/** How each injury ceiling's history is named to the runner. Keyed by the config, so a new key
+ *  does not compile until it has a name (it used to fall into "plantar fasciitis"). */
+export const INJURY_CAP_LABEL: Record<InjuryCapKey, string> = {
+  back: 'back injury',
+  plantar_fasciitis: 'plantar fasciitis',
+}
+
+export interface LongRunTimeCap {
+  mins: number
+  /** Which rule set the binding ceiling: the race distance (§9, §40) or an injury history (§9 Am. 3). */
+  source: 'distance' | 'injury'
+  injury?: InjuryCapKey
 }
 
 /**
- * §9 Amendment 3 (2026-10-28) — the tighter ceiling a back or plantar fasciitis history sets, or
- * null. Lived as a literal in `applyLongRunCap` only, so the V4 long-run repeat path (the other
- * caller of `longRunTimeCapMins`) could extend a long run past it.
+ * The maximum MINUTES a long run may occupy for this runner (§9), including §40's tighter ceiling
+ * for a finish-goal 5K and §9 Am. 3's ceiling for a back or plantar fasciitis history, and WHICH of
+ * them binds. Every reader of the ceiling, the sizing paths, the notes that explain a short long run,
+ * goes through here (LONG-RUN-BELOW-LONGEST-01: three notes read the distance table directly and
+ * blamed the wrong cause for an injury-capped runner).
  */
-export function injuryLongRunCapMins(history: readonly string[] | null | undefined): number | null {
-  return injuryLongRunCap(history)?.mins ?? null
+export function longRunTimeCap(input: Pick<GeneratorInput, 'race_distance_km' | 'goal'> & { injury_history?: string[] | null }): LongRunTimeCap {
+  const distKey = raceDistanceKey(input.race_distance_km)
+  let mins: number = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
+  if (distKey === '5K' && input.goal === 'finish') {
+    mins = Math.min(mins, GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH)
+  }
+  let out: LongRunTimeCap = { mins, source: 'distance' }
+  for (const key of Object.keys(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY) as InjuryCapKey[]) {
+    const m = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY[key]
+    if (hasInjuryKeyword(input.injury_history, key) && m < out.mins) out = { mins: m, source: 'injury', injury: key }
+  }
+  return out
 }
 
-/** The binding injury ceiling and the history that sets it, for the runner-facing note. */
-export function injuryLongRunCap(history: readonly string[] | null | undefined): { mins: number; keyword: string } | null {
-  let best: { mins: number; keyword: string } | null = null
-  for (const [keyword, mins] of Object.entries(GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_BY_INJURY)) {
-    if (hasInjuryKeyword(history, keyword) && (!best || mins < best.mins)) best = { mins, keyword }
-  }
-  return best
+export function longRunTimeCapMins(input: Pick<GeneratorInput, 'race_distance_km' | 'goal'> & { injury_history?: string[] | null }): number {
+  return longRunTimeCap(input).mins
 }
