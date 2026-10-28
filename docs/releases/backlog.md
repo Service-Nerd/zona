@@ -154,6 +154,10 @@ the maintenance enricher writes session `coach_notes` and a weekly debrief only.
 
 ### 🔲 `LONG-RUN-BELOW-LONGEST-01` — a marathon plan whose longest run is shorter than the runner already runs 🏃 **COACHING BOARD**, then 👤 **FOUNDER** (note words)
 
+⚖️ **Coaching Board 2nd sitting 2026-10-28: cap RATIFIED AS IS (120), to be made doctrine (config + principle + one owner
+`longRunTimeCapMins` + `INV-PLAN-LONG-CAP-MINS` arm) and named in the runner's note; value INSUFFICIENT EVIDENCE; SLT
+question: collect injury recency. Build pending.**
+
 🔴 **CAUSE FOUND 2026-10-28, and it changes the question.** graceemilyhill's long run is not held by "running out of
 weeks" or by the injury volume ceiling: **a back or plantar fasciitis history caps the long run at 120 minutes**
 (`applyLongRunCap` in `ruleEngine.ts`, a literal `120`, in no config and explained by no principle, so
@@ -173,17 +177,13 @@ plan holds 24–30 km/week for 20 weeks and its longest run is **13.5 km**, 7.5 
 invariant compares the plan's peak long run with `longest_recent_run_km`. Her `volume_constraint_note` says *"the long run
 can only grow so much week to week, and it ran out of weeks"*, which is not the cause. Current engine (rebuilt 28 Oct).
 
-### 🔲 `PLAN-NOTE-HEAVIER-WEEK-SLOT-01` — "Heavier week" against "Long run" for the plan-note slots 🧭 **DESIGN BOARD**, 👤 **FOUNDER** (words)
+### 🔲 `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` — show the ramp warning on the week it is about 🧭 **DESIGN BOARD** (new placement), then build
 
-From INJURY-PEAK-JUMP-01 (2026-10-28). The ramp warning now reaches the plan screen as a `Heavier week` note, ranked
-ahead of `Long run` so 100% of warned plans show it (the Coaching Board's ruling). Under the 180-word budget it pushes
-another note off on ~45% of the plans that carry it, mostly `Long run` (461), `Your level` (311), `Hard sessions` (293)
-and `Coming back` (254); 0 of the dropped long-run notes are restated by the maintenance note. Ranked after `Long run`
-instead, `Long run` survives and 82–85% of warned runners are told. The board's call: the order, the `HEAVIER WEEK`
-eyebrow (not yet in `ui-patterns.md` §18's label list), and whether the budget moves. The founder approves the
-shortened wording: *"Week {n} rises about {x}%, above the {cap}% weekly growth we normally allow. Your race sets the long
-run, so it cannot be cut to fit. Keep the easy days easy that week, and move the long run rather than shorten it if the
-week is not going well."* (injury variant: "above the {cap}% weekly ceiling your injury history sets").
+Design Board 2026-10-28 (§6ak): the `Heavier week` note ranks ahead of `Long run` in the plan-level stack as an interim,
+costing `Long run` on 469 of 844 plans that carry both. Its home is week N: the plan calendar row for that week and Today
+when that week is current (`meta.load_residual_week` already names it). When it ships, decide on a measurement whether the
+plan-level tile drops behind `Long run` or goes (Collins: goes; Sierra: a short mention stays).
+
 
 ### 🔲 `NOTE-SURFACE-INERT-01` — three plan notes are stamped and shown nowhere ⚙️ **NO BOARD** to measure; 🧭 **DESIGN BOARD** to place
 

@@ -87,6 +87,16 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-28 — LONG-RUN-BELOW-LONGEST-01 (2nd sitting) · the 120-min back/plantar long-run cap RATIFIED AS IS and made doctrine · value INSUFFICIENT EVIDENCE · runner told · SLT: injury recency
+
+The cause of graceemilyhill's 13.5 km long run: `applyLongRunCap`'s literal 120 minutes for any back or plantar history,
+unratified since 2026-04-25, applied in one of three sizing paths. Marathon mean peak long run 15.7 km (25.1 healthy).
+Prototypes: 150 / 180 / 210 min lengthen it to 19.1 / 22.4 / 25.1 km and quadruple `INV-PLAN-LR-MAX-WEEKLY-PCT` warnings
+(578 → 2,451+), because the week does not grow. **Ruling:** keep 120, move it to config + principle, one owner
+(`longRunTimeCapMins`), `INV-PLAN-LONG-CAP-MINS` checks it; the note names it (founder's words). Value reopens on a
+prototype where the week grows, back and plantar separately (Willy), and injury recency, escalated to the SLT. Sitting:
+`docs/decisions/coaching-2026-10-28-back-plantar-long-run-cap-sitting.md`.
+
 ## 2026-10-28 — LONG-RUN-BELOW-LONGEST-01 · engine change INSUFFICIENT EVIDENCE, note copy defect CORRECT · INJURY-PEAK-JUMP-01 · CORRECT (runner must be told)
 
 Marathon plans whose peak long run is shorter than the runner's stated longest run: **13.7%** healthy (133 of 308 held by

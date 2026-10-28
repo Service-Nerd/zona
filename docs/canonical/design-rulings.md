@@ -5603,3 +5603,15 @@ Chromium is what hid `DATE-FIELD-IOS-01` from me the same day. And **this is the
 board has answered "the CTAs look flat/dated". If it survives this fix too, the buttons are not
 the problem and we should stop treating them as though they are.**
 | **Staged-plan screens as rendered (NO-RUNNER-TURNED-AWAY-01)** | 🟢 **SHIP WITH AMENDMENT** (2026-10-25) | First render (local harness `/staged-preview`, 375px, real engine output, the real wizard walked to its preview). **S1** rail labels wrap to two lines before ellipsis (measured: "Walk-run start" 102px in 93, "Base building" 87 in 66; Collins: do not shorten amendment 10's names). **S2** a staged hero states weeks to the race, the checkpoint target and date (it said "12 weeks · 33km in total" over "Wk 1 of 26": two week counts on one scroll, the ruled defect class). **S3** the walk-run phase card has a line. **S4** the first-run card says "Walk-run", not "Easy". S2 labels and the S3 line approved by the founder 2026-10-25. Not seen on a device. Note: `docs/decisions/design-2026-10-25-staged-screens.md`. |
+
+## 6ak. PLAN-NOTE-HEAVIER-WEEK-SLOT-01 — the ramp warning ranks ahead of the long-run note, for now (2026-10-28)
+
+| Decision | Status | Why |
+|---|---|---|
+| **`Heavier week` ahead of `Long run`, budget 180 / cap 3 unchanged** | 🟢 **SHIP WITH AMENDMENT** | Coaching Board 2026-10-28 binds: a warned plan tells the runner. Ranked after `Long run` only 84% of warned runners see it. Cost accepted: `Long run` lost on 469 of 844 plans carrying both |
+| **Budget 220 (C) and 4 tiles / 240 words (D)** | 🔴 **DECLINED** | §6ae holds (Wroblewski); no new readability evidence. D keeps `Long run` 842/844 at 2.84 notes, 162 words per plan |
+| **The warning moves to week N (calendar row, Today)** | 🟡 **FILED** `PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01` | Silvanto: a week-level fact at the top of the plan is the horizon mistake. Collins would then drop the plan tile; Sierra would keep a short mention. Decided at that build |
+
+Pattern — `ui-patterns.md` §18 (label + rank) · Constants — none new · Check — `loadResidualNote.test.ts` "shown", falsified by
+un-wiring the render. Sitting: `docs/decisions/design-2026-10-28-heavier-week-slot-sitting.md`. ⚠️ Not seen on a device.
+

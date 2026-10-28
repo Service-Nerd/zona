@@ -2167,7 +2167,8 @@ The engine's honest, rule-engine explanation of **why the plan is shaped this wa
 - Placement: `PlanScreen`, below `PlanArc` and the AI `plan_intro`, above the this-week voice card — the plan-level orientation zone.
 - `SectionLabel` **"Why this plan"** (only when ≥1 note).
 - A vertical stack (8px gap) of `CoachNoteBlock` (§9), `variant="why"`, `aiGenerated={false}` → **no CoachByline, no rail** (provenance honesty: these are deterministic rule-engine output, not AI — contrast the `plan_intro` card directly above, which IS AI and carries a byline).
-- Each card's eyebrow is the note's **topic label** (MAINTENANCE / VOLUME / LONG RUN / YOUR LEVEL / HARD SESSIONS / OFF-ROAD / SHAPED FOR YOU).
+- Each card's eyebrow is the note's **topic label** (MAINTENANCE / VOLUME / HEAVIER WEEK / LONG RUN / YOUR LEVEL / HARD SESSIONS / OFF-ROAD / SHAPED FOR YOU).
+- **`HEAVIER WEEK` ranks ahead of `LONG RUN`** (Design Board 2026-10-28, PLAN-NOTE-HEAVIER-WEEK-SLOT-01): the Coaching Board ruled a plan the ramp checks warn must tell the runner, and ranked after `LONG RUN` only 84% would see it. The cost is measured and accepted: `LONG RUN` is dropped on 469 of the 844 plans carrying both. **Interim:** the note's home is week N (`PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01`); the budget (180 / 3) was not reopened.
 
 **Rules (SLT 2026-09-09, Wood's guardrail — surface once, honest, never a "personalised!" brag):**
 - **Single owner:** `lib/plan/planRationale.ts → planRationaleNotes(meta)` decides which notes, in what order, under what label — the UI renders from it, never greps meta itself.
