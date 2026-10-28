@@ -87,6 +87,14 @@ for beginners (ZONES-BEGINNER-BANDS-01's intent). **D2** amends §83: a goal-pac
 `INV-PLAN-CATALOGUE-ELIGIBLE`. **Hutchinson/McMillan disagreement on S2 recorded.** 🔴 Tension named: CB-BEGINNER-
 CATALOGUE-01 kept goal-pace BLOCKS off 5K/10K as too much, and accepted continuous goal pace. **Founder signed off S1–S4 as ruled, 2026-10-23**; both live plans (c8aef8f9, e49ea589) to be regenerated after the fix, each shown as a dry-run diff first. **c8aef8f9 regenerated 2026-10-23, clean; e49ea589 patched 2026-10-23 (future weeks only, HR from profile), clean.** Sitting: `docs/decisions/goalpace-5k-coaching-2026-10-23.md`.
 
+## 2026-10-28 — AUDIT-PLANS-MP-COST-01 · the MP change's audit cost ACCEPTED · `audit:plans` re-baselined · CLOSED
+
+`audit:plans` had been red since `8ff976b7`: `BINGE-WEEK` 306 → 308 (two plans at 61%) and `NEVER-BUILDS` 1093 → 1094.
+The one never-builds plan (marathon 4:15, 70 km/week, 5 days, age 52) is a declared **maintenance** profile whose peak
+fell 65 → 64 km against a 59 km week 1 (+10% → +8%), from the removed jog. **CORRECT: accept**; no artifact changes.
+McMillan points at the "built to get you round" note instead, filed as `ROUND-NOTE-TIME-GOAL-01`. Sitting:
+`docs/decisions/coaching-2026-10-28-audit-plans-mp-cost-sitting.md`.
+
 ## 2026-10-28 — MP-WORK-DOSE-01 · 6 km / 8 km / 2 x 4 km INCORRECT as prototyped · the underlying question INSUFFICIENT EVIDENCE · 4 km stands · CLOSED
 
 Seiler's question from the M2 sitting. Prototyped in memory (no file touched) on 1,140 cohort, 396 slow and 515
