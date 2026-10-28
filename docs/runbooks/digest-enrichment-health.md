@@ -22,10 +22,11 @@ nothing; Step 4 is not optional.**
 **Model / permission / project** | `claude-opus-4-8` · `auto` · `claude_proj_011CZdCd9s2C2WubBSB15cgu` — **do not change** |
 **Edit** | `prompt` only. Two insertions, two heading words |
 
-⚠️ **AMENDED 2026-10-28 (REBUILD-VOICE-LOSS-01), NOT YET APPLIED TO THE LIVE ROUTINE.** The `Q5B` SQL below now
-mirrors `enrichmentStateOf`: a plan carrying `generator_input` with no `enrichment` field is `not_recorded`, eligible
-and without voice, instead of legacy. Until the live prompt's `Q5B` is replaced with this block (Steps 1 and 4), the
-digest under-counts: it read 1 of 17 on 28 Oct when 12 paid or trial plans had no voice.
+✅ **AMENDED 2026-10-28 (REBUILD-VOICE-LOSS-01) and APPLIED the same day.** The `Q5B` SQL below mirrors
+`enrichmentStateOf`: a plan carrying `generator_input` with no `enrichment` field is `not_recorded`, eligible and
+without voice; `skipped_plan_kind` is excluded. Pasted by the founder at claude.ai and verified by `RemoteTrigger get`:
+the live prompt is **byte-identical** to the prepared file (42,986 chars, was 42,068); name, cron
+(`CRON_TZ=Europe/London 0 18 * * *`), model, permission mode and connectors unchanged.
 
 ## Why — the gap this closes
 
