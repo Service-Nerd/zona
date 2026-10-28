@@ -315,12 +315,15 @@ describe('NOTE-SURFACE — every declared plan note has a reader', () => {
   const root = join(__dirname, '..', '..')
   const declared = Array.from(new Set(Array.from(readFileSync(join(root, 'types/plan.ts'), 'utf8')
     .matchAll(/^\s+([a-z_]+_note)\??:/gm)).map(m => m[1]!)))
-  const RATIONALE = readFileSync(join(root, 'lib/plan/planRationale.ts'), 'utf8')
+  // Comments blanked and the name anchored, so a comment that MENTIONS a note cannot count as reading it.
+  const code = (f: string) => readFileSync(join(root, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+  const RATIONALE = code('lib/plan/planRationale.ts')
+  const reads = (src: string, k: string) => new RegExp(`\\b${k}\\b`).test(src)
   /** Rendered outside the rationale list, on the named file. */
   const OTHER_SURFACE: Record<string, string> = {
     difficulty_note: 'app/dashboard/GeneratePlanScreen.tsx',
-    hr_assumption_note: 'components/dashboard/HRZonesSection.tsx',
-    uncovered_runway_note: 'components/shared/RunwayRevealCard.tsx',
+    hr_assumption_note: 'components/dashboard/OrientationScreen.tsx',
+    uncovered_runway_note: 'app/dashboard/GeneratePlanScreen.tsx',
     weekday_overrun_note: 'components/dashboard/SessionPopupInner.tsx',
   }
   /** Stamped, read by nothing. Each is open work, not an exemption. */
@@ -336,13 +339,13 @@ describe('NOTE-SURFACE — every declared plan note has a reader', () => {
   })
 
   it('every declared note is rendered, rendered elsewhere, or registered debt', () => {
-    const unread = declared.filter(k => !RATIONALE.includes(`meta.${k}`) && !OTHER_SURFACE[k] && !DEBT[k])
+    const unread = declared.filter(k => !reads(RATIONALE, `meta\\.${k}`) && !OTHER_SURFACE[k] && !DEBT[k])
     expect(unread, 'a plan note with no reader: wire it into planRationaleNotes, or register it').toEqual([])
   })
 
   it('each named surface still reads its note, and debt that has been wired is removed from the register', () => {
-    for (const [k, f] of Object.entries(OTHER_SURFACE)) expect(readFileSync(join(root, f), 'utf8'), `${k} in ${f}`).toContain(k)
-    for (const k of Object.keys(DEBT)) expect(RATIONALE.includes(`meta.${k}`), `${k} is rendered now; remove it from DEBT`).toBe(false)
+    for (const [k, f] of Object.entries(OTHER_SURFACE)) expect(reads(code(f), k), `${k} in ${f}`).toBe(true)
+    for (const k of Object.keys(DEBT)) expect(reads(RATIONALE, `meta\\.${k}`), `${k} is rendered now; remove it from DEBT`).toBe(false)
   })
 })
 

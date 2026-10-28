@@ -308,6 +308,9 @@ export interface Violation {
   message: string
   actual: number | string
   expected: number | string
+  /** Structured numbers for a consumer that must not parse `message` (INJURY-PEAK-JUMP-01:
+   *  the load note is written from the ramp checks' own verdict). Set by the ramp checks only. */
+  ramp?: { rise_pct: number; cap_pct: number; scope: 'week' | 'non_long' }
 }
 
 const DAYS = ['mon','tue','wed','thu','fri','sat','sun'] as const
@@ -4417,6 +4420,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           principle_ref: 'CoachingPrinciples §90',
           severity: 'warn',
           week: w.n,
+          ramp: { rise_pct: risePct, cap_pct: capPct, scope: 'non_long' },
           message: `Week ${w.n}: an injury-history runner's TRIMABLE (non-long-run) delivered volume rose ${risePct.toFixed(0)}% from week ${prev.n} (${nonLongPrev.toFixed(0)}→${nonLongNow.toFixed(0)}km), above §2's injury cap of ${capPct}%. The long run is §52-exempt; the easy/quality volume is not — DELOAD-INVERSION-01 lever (b) should have trimmed it.`,
           actual: `+${risePct.toFixed(0)}% non-long-run`,
           expected: `<= ${capPct}% (§2's injury cap on the trimable portion)`,
@@ -4724,6 +4728,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             principle_ref: 'CoachingPrinciples §94 (§2), §100',
             severity: 'warn',
             week: w.n,
+            ramp: { rise_pct: totalRisePct, cap_pct: capPct, scope: 'week' },
             message: `Week ${w.n}: DELIVERED volume rose ${totalRisePct.toFixed(0)}% from week ${prev.n} (${deliveredKm(prev).toFixed(0)}→${deliveredKm(w).toFixed(0)}km; trimable ${prevTrimable.toFixed(0)}→${nowTrimable.toFixed(0)}km, +${risePct.toFixed(0)}%), above §2's ${capPct}% cap. The curve may be compliant while the placed sessions are not. ${driver}`,
             actual: `+${totalRisePct.toFixed(0)}% week, +${risePct.toFixed(0)}% non-long-run`,
             expected: `<= ${capPct}% (§2, measured at delivery)`,

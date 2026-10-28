@@ -12,6 +12,7 @@
 // case). Pure — no throw, no console.error; callers decide policy via
 // enforceViolations() (lib/plan/invariants.ts).
 
+import { reconcileLoadResidualNote } from './loadResidualNote'
 import { reconcileWeekdayOverrunNotes } from './weekdayOverrunNote'
 import {
   generateFoundationBlock, classifyGap, gapDays, plannedFoundationWeeks, type GapClass,
@@ -172,6 +173,9 @@ export function composePlanWithFoundation(
   // against whatever input this call was handed (the deferred route's comes from the request body).
   reconcileWeekdayOverrunNotes(assembled.weeks.filter(w => w.n <= 0), input)
   const violations = validatePlan(assembled, input)
+  // INJURY-PEAK-JUMP-01 — the plan the runner receives was just re-validated; its ramp note follows
+  // THIS verdict, not the one taken before the foundation weeks existed. `meta` was copied above.
+  reconcileLoadResidualNote(assembled, violations, input)
 
   return { plan: assembled, gapClass, violations }
 }

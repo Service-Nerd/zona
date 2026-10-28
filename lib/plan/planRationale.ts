@@ -154,8 +154,9 @@ export function planRationaleNotes(
   // INJURY-PEAK-JUMP-01 (Coaching Board 2026-10-28): §34 says an accepted residual is STATED.
   // `load_residual_note` was stamped on hundreds of plans a week-on-week ramp check warns, and
   // this list never read it, so no runner was ever told. Ranked with the constraints, ahead of
-  // the long-run note: it names the one week to be careful with.
-  if (meta.load_residual_note)      notes.push({ label: 'Heavier week',  text: meta.load_residual_note })
+  // the long-run note: it names the one week to be careful with. Only a note written from the checks'
+  // verdict (`load_residual_week` set) is shown; an older stored one over-declared.
+  if (meta.load_residual_note && meta.load_residual_week != null) notes.push({ label: 'Heavier week', text: meta.load_residual_note })
   if (meta.long_run_shortfall_note) notes.push({ label: 'Long run',      text: meta.long_run_shortfall_note })
   // §44 Am. 3 (PROGRESSION-GOAL-INVERTED-01) — ranked ABOVE `Your level`, which
   // is the same family of signal and fires on a different trigger (VDOT vs

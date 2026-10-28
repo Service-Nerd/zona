@@ -256,6 +256,12 @@ export interface PlanMeta {
   // Present only when the goal is past GOAL_PACE_MAX_STRETCH_PCT (5) beyond
   // current fitness: no goal-paced work is prescribed and the gap is named.
   goal_pace_withheld?: { gap_pct: number }
+  // INJURY-PEAK-JUMP-01 (2026-10-28) — the ramp residual, written at the engine's exit from the
+  // INV-PLAN-DELIVERED-RAMP / INV-PLAN-INJURY-CAP-DELIVERED verdict; present exactly when one fires.
+  load_residual_note?: string
+  // The week that check flagged. The plan screen shows the note only when this is set, so a note
+  // stored before 2026-10-28 (an over-declaring predicate) stays unshown.
+  load_residual_week?: number
 }
 
 > **Doc-drift note (2026-08-20).** `difficulty_band` / `difficulty_note` shipped

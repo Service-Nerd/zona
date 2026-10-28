@@ -33,6 +33,7 @@ const durationText = (mins: number): string => formatDuration(mins) ?? `${Math.r
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, resolveLevels, type FitnessLevel, type ResolvedLevels } from './fitnessAssessment'
 import { validatePlan, copyClaimsIntensity, enforceViolations, planQualityCounts } from './invariants'
+import { reconcileLoadResidualNote } from './loadResidualNote'
 import { hasInjuryKeyword, hasVolumeCappedInjuryHistory } from './injuryScope'
 import { assessBaseBuild, baseVolumeRefusal, runWalkInadequateRefusal, BaseVolumeError } from './baseVolume'
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
@@ -6724,16 +6725,10 @@ export function generateRulePlan(
     }
 
     const violations = validatePlan(plan, input)
-    // INJURY-PEAK-JUMP-01 (Coaching Board 2026-10-28) — THE NOTE READS THE CHECK'S VERDICT.
-    // `loadResidualNote` deliberately over-declares (any training week up more than the cap), and
-    // once it reached a screen that meant 78% of healthy plans, against the 20% the ramp checks
-    // actually warn; it pushed another note off ~28% of plans. The board ruled "a plan WARNED by
-    // either arm must tell the runner", so the stamp is kept exactly when one of them fires. Removing
-    // a note cannot create a violation, so the same verdict is then enforced.
-    if (plan.meta.load_residual_note && !violations.some(v =>
-      v.code === 'INV-PLAN-DELIVERED-RAMP' || v.code === 'INV-PLAN-INJURY-CAP-DELIVERED')) {
-      delete (plan.meta as { load_residual_note?: string }).load_residual_note
-    }
+    // INJURY-PEAK-JUMP-01 (Coaching Board 2026-10-28) — the ramp residual is written FROM the
+    // checks' verdict (lib/plan/loadResidualNote.ts). A note cannot create a violation, so the
+    // same verdict is then enforced.
+    reconcileLoadResidualNote(plan, violations, input)
     enforceViolations(violations)
     return plan
   }
@@ -9243,11 +9238,10 @@ function buildRulePlanOnce(
     // finish was never promised a volume, so nothing is being suppressed and
     // there is nothing to own up to.
     //
-    // It is also load-bearing: without the gate this fired on two golden FINISH
-    // plans and DEMOTED their `load_residual_note` (which yields to this one as
-    // the more specific), replacing a real "week 9 rises 38%, be careful with
-    // it" safety warning with a volume-target observation those runners did not
-    // need. A note that displaces a better note is a regression, not a fix.
+    // ⚠️ Until INJURY-PEAK-JUMP-01 (2026-10-28) this gate was also load-bearing for
+    // `load_residual_note`, which yielded to this note; it no longer yields to
+    // anything (it is written from the ramp checks' verdict at the engine's exit),
+    // so the reason above is the whole reason now.
     const belowTarget = input.goal === 'time_target'
       && targetGapPct >= GENERATION_CONFIG.VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT
     if (deliveredPeak <= 0 || (!belowStart && !belowTarget)) return null
@@ -9296,62 +9290,10 @@ function buildRulePlanOnce(
   // are" says nothing about the week that jumps.
   const peakShortfallNote: string | null = peakShortfall?.note ?? null
 
-  // §34 / ADR-022 — THE DELIVERED LOAD RESIDUAL, DECLARED.
-  //
-  // ADR-022 established that the load rules (§2/§3/§12) are enforced on the
-  // volume CURVE while the runner runs the PLACED SESSIONS, and that the two
-  // diverge upward because the §52-exempt long run is sized on its own
-  // race-anchored schedule and cannot be trimmed. The residual is real, ruled
-  // honest, and tracked by three `warn` invariants — INV-PLAN-INJURY-CAP-DELIVERED,
-  // INV-PLAN-DELIVERED-RAMP and INV-PLAN-BOUNCEBACK-BOUNDED.
-  //
-  // What it was NOT was declared. Measured: 244 + 225 + 138 plans carry one of
-  // those residuals and tell the runner nothing, which is the §34 obligation
-  // unmet — the same gap the peak-shortfall note above closes for §106.
-  //
-  // DELIBERATELY BROADER AND SIMPLER THAN THE INVARIANTS. The checkers carry
-  // careful exclusions (deloads, taper, bounceback, the trimable-portion test).
-  // Reproducing those here would be a second copy of three predicates, drifting
-  // (the fault this file has paid for repeatedly). Instead this asks the blunt
-  // question — did ANY training week rise faster than the applicable cap — so it
-  // OVER-declares rather than under-declares. Declaring a residual that the
-  // checker forgives is harmless; staying silent on one it catches is the defect.
-  const loadResidualNote: string | null = (() => {
-    // INJURY-PEAK-JUMP-01 (Coaching Board 2026-10-28): NO LONGER silenced by the maintenance note
-    // or the §106 peak shortfall. Neither says anything about a week that jumps, and they suppressed
-    // the declaration on 331 / 626 / 508 of the healthy / Achilles / knee marathon plans the ramp
-    // checks warn (of 874 / 1,328 / 677). A residual the engine accepts is stated (§34).
-    const capPct = hasVolumeCappedInjury(input)
-      ? GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT
-      : GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
-    const training = weeks.filter(w =>
-      w.n >= 1 && w.phase !== 'taper' && w.type !== 'race'
-      && !Object.values(w.sessions ?? {}).some(sn => sn?.type === 'race'))
-    let worstPct = 0, worstWeek = 0
-    for (let i = 1; i < training.length; i++) {
-      // GOALPACE-5K-01 (D6) — measured from the last NON-deload week. Against a deload the rise is the
-      // planned return, not a spike (`buildVolumeSequence` and V1 already exempt that bounceback);
-      // read from the deload, a 21 → 17 → 24 plan reported "rises about 41%" where the true rise is 14%.
-      let j = i - 1
-      while (j > 0 && training[j].type === 'deload') j--
-      const prev = training[j].weekly_km ?? 0
-      const cur = training[i].weekly_km ?? 0
-      if (prev <= 0 || cur <= prev) continue
-      const rise = (cur - prev) / prev * 100
-      if (rise > worstPct) { worstPct = rise; worstWeek = training[i].n }
-    }
-    if (worstWeek === 0 || worstPct <= capPct) return null
-    // INJURY-PEAK-JUMP-01 — shortened when it first reached a screen (it had never been shown, and
-    // the rationale length ratchet holds the mean note at 62 words). Consequence, cause, the lever.
-    const ceiling = hasVolumeCappedInjury(input)
-      ? `above the ${capPct}% weekly ceiling your injury history sets`
-      : `above the ${capPct}% weekly growth we normally allow`
-    // D6 — "your race sets the long run" is §24's floor, which exists only above 10K; for a 5K/10K plan the
-    // long run grew by ordinary progression, so the reason is not given there.
-    const reason = input.race_distance_km > 10 ? ' Your race sets the long run, so it cannot be cut to fit.' : ''
-    return `Week ${worstWeek} rises about ${Math.round(worstPct)}%, ${ceiling}.${reason} `
-      + 'Keep the easy days easy that week, and move the long run rather than shorten it if the week is not going well.'
-  })()
+  // §34 / ADR-022 — THE DELIVERED LOAD RESIDUAL, DECLARED. Since INJURY-PEAK-JUMP-01 (2026-10-28)
+  // it is written at the single exit from the ramp checks' own verdict (`reconcileLoadResidualNote`),
+  // not here: this predicate over-declared on 78% of plans, could name a week the checker never
+  // flagged, and could stay silent on a warned plan.
 
 
 
@@ -9866,7 +9808,6 @@ function buildRulePlanOnce(
               : `Week ${shortOpeningWeeks[0]} is an early recovery week. You recover every ${recoveryFreq} weeks, and where the plan's phases change fixes which weeks that can land on, so this one arrives before a full block. Take it as written: an easy week early costs you nothing.`,
         }
       : {}),
-    ...(loadResidualNote ? { load_residual_note: loadResidualNote } : {}),
     ...(volumeShortfallNote ? { volume_shortfall_note: volumeShortfallNote } : {}),
     ...(volumeShortfallPct != null ? { volume_shortfall_pct: Math.round(volumeShortfallPct * 10) / 10 } : {}),
     ...(frequencyConstraintNote ? { frequency_constraint_note: frequencyConstraintNote } : {}),

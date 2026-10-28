@@ -749,6 +749,10 @@ export interface PlanMeta {
    *  applicable weekly cap because the race-anchored long run cannot be trimmed.
    *  Names the week and what to do with it. */
   load_residual_note?: string
+  /** INJURY-PEAK-JUMP-01 — the week the ramp check flagged. Present only on notes written from the
+   *  checks' verdict (from 2026-10-28); the plan screen shows the note only when it is set, so an older
+   *  stored note, written by the predicate that over-declared, stays unshown as it always was. */
+  load_residual_week?: number
 
   fitness_intensity_level?: 'beginner' | 'intermediate' | 'experienced'
   /**
