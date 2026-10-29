@@ -1155,7 +1155,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Note levers cannot lift an injury-capped long run** (NOTE-LEVER-INJURY-CAP-01) | 🔲 | S | Founder words. |
 | **Show the ramp warning on the week it is about** (PLAN-NOTE-HEAVIER-WEEK-PLACEMENT-01) | 🔲 | M | Design Board ruled the interim slot; placement next. |
 | **Three plan notes shown nowhere** (NOTE-SURFACE-INERT-01) | 🔲 | S | Measure, then place. |
-| **The strength session, redesigned (six builds)** (STRENGTH-SESSION-REDESIGN-01) | 🔲 | L | Boards ruled 2026-10-28, canvas approved; builds 1–4 shipped 2026-10-28, 5–6 next. |
+| **The strength session, redesigned (six builds)** (STRENGTH-SESSION-REDESIGN-01) | 🔲 | L | Boards ruled 2026-10-28, canvas approved; builds 1–4 shipped 2026-10-28, build 5 (the overview in parts) 2026-10-29, 6 next. |
 | **Stamp the prescribed reps on each strength log** (STRENGTH-LOG-REPS-01) | 🔲 | S | Build with build 6; blocks strength release. |
 | **A `{{token}}` can reach confidence risks** (ENRICH-RISK-TOKEN-01) | 🔲 | S | Latent; 1 of 9 restored plans. |
 | **Race week showing 0 km** (RACE-WEEK-ZERO-KM-01) | 🔲 | S | Measure surfaces first. |

@@ -24,7 +24,7 @@ the records (`/ship`). The founder's own strength plan is regenerated after each
 | 2 ✅ 2026-10-28 | `STRENGTH-AB-SESSIONS-01` | Two sessions of one kind in a week are an A and a B; no two training sessions in a week identical (measured 10,178 of 14,870 multi-session weeks; now 0) | 🏃 ruled | none |
 | 3 ✅ 2026-10-28 | `STRENGTH-SUPERSET-MAINS-01` | A lower and an upper main lift pair, resting the longer rest; warm-up as rounds (2 at 45/60 min, 1 at 30) | 🏃 ruled | 2 |
 | 4 ✅ 2026-10-28 | `STRENGTH-REP-BLOCKS-01` | General focus cycles main reps by block (e.g. 10 → 8 → 6); running keeps heavy 5s; numbers set by measurement | 🏃 ruled | 2 |
-| 5 | `STRENGTH-SESSION-PARTS-01` | The overview in parts; rest and effort once per part; supersets linked; new wording; the no-legs line with the swap day | 🧭 ruled, 👤 words | 1, 3 |
+| 5 ✅ 2026-10-29 | `STRENGTH-SESSION-PARTS-01` | The overview in parts; rest and effort once per part; supersets linked; new wording; the no-legs line with the swap day | 🧭 ruled, 👤 words | 1, 3 |
 | 6 | `STRENGTH-GUIDED-SESSION-01` | Start session; one part per page; weight stepper; rest countdown; exercise timers; End session; session time stored | 🧭 ruled, 👤 words | 5 |
 
 ### What each build must prove
@@ -38,7 +38,9 @@ the records (`/ship`). The founder's own strength plan is regenerated after each
 4. **Rep blocks.** A config cycle, a principle amendment, a check that general mains follow the block's reps and running
    lower mains stay heavy; session clocks re-measured (higher reps cost time); no "toning" string anywhere.
 5. **Overview.** Markup arms: rest and effort once per part; superset rows linked; no effort line on timed items; "New
-   lifts this block" once; Start session present; the no-legs line on a converted session only. Website untouched (no
+   lifts this block" once; the no-legs line on a converted session only. ⚠️ **"Start session present" moved to build 6
+   (2026-10-29):** a primary button with no guided session behind it would do nothing, so build 5 keeps Mark complete ·
+   Skip and build 6 adds Start session and "Mark complete without starting" with the flow they open. Website untouched (no
    strength on marketing). Checked against `ui-patterns.md` and the run session screen.
 6. **Guided.** A state-machine test (rounds, rest countdown from `rest_s`, timed moves, back, end mid-way, resume the same
    day); a migration adding start and end time to `strength_completions` with grants (MIGRATION-GRANTS-01) and the
@@ -49,8 +51,7 @@ the records (`/ship`). The founder's own strength plan is regenerated after each
 
 Builds 3 and 4 change the engine before build 5 changes the screen. Until build 5, the session screen shows a warm-up
 in rounds as "2 × 8" on each row and does not link a main pair (it never rendered accessory supersets either). Strength
-is admin-only (`STRENGTH_RELEASE = 'admin'`), so only the founder sees it. **`STRENGTH_RELEASE` stays `'admin'` until
-build 5 ships, and until `STRENGTH-LOG-REPS-01` (build 4's rep-rise cut reads a log's reps from the current plan) is built with build 6.**
+is admin-only (`STRENGTH_RELEASE = 'admin'`), so only the founder sees it. **Build 5 shipped 2026-10-29: the screen now shows rounds and linked pairs.** `STRENGTH_RELEASE` stays `'admin'` until `STRENGTH-LOG-REPS-01` (build 4's rep-rise cut reads a log's reps from the current plan) is built with build 6.
 
 ## Not in this plan
 

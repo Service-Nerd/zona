@@ -44,7 +44,7 @@ export default function StrengthPreviewPage() {
   const run = useMemo(livePlan, [])
   const strength = useMemo(() => {
     return generateStrengthPlan(
-      { focus: 'running', session_minutes: 45, sessions_per_week: 3, equipment: ['dumbbells', 'bench', 'bands', 'box'], experience: 'some' },
+      { focus: 'general', session_minutes: 45, sessions_per_week: 3, equipment: ['dumbbells', 'bench', 'bands', 'box'], experience: 'some' },
       null, { standaloneStart: run.weeks[0].date },
     )
   }, [run])

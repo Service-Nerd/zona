@@ -77,6 +77,7 @@ import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner
 import { PLAN_CHANGE_SAVE_FAILED } from '@/lib/ui/planChangeCopy'
 import { RECENT_CHANGES_FILTER } from '@/lib/ui/easedMark'
 import { liftSuggestionsFor, logsOn } from '@/lib/strength-bridge/progressionView'
+import { hardRunBeside } from '@/lib/strength-bridge/hardRunBeside'
 import { calendarChangedWeeks } from '@/lib/plan/supersede'
 import { reportPlanSaveFailure } from '@/lib/ops/reportPlanSaveFailure'
 import ZoneRings, { ZoneRingsSkeleton } from '@/components/shared/ZoneRings'
@@ -3331,6 +3332,8 @@ export default function DashboardClient() {
               dayLabel={d ? formatDate(d, 'weekday-only') ?? '' : ''}
               weekN={activeStrength.week_n}
               deloadWeek={strength.plan?.weeks.find(w => w.n === activeStrength.week_n)?.phase === 'deload'}
+              // S3 Am.3 — the screen shows it only on a session that lost its heavy legs.
+              noLegs={plan && activeStrength.date ? { beside: hardRunBeside(plan.weeks, allOverrides, activeStrength.date), swap: strength.plan?.legs_day_suggestion ?? null } : undefined}
               status={activeStrength.date ? strength.completions[activeStrength.date] ?? null : null}
               canLog={!!activeStrength.date && activeStrength.date <= isoLocalDate(new Date())}
               lifts={strength.plan ? {

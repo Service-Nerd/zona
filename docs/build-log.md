@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-29 — STRENGTH-SESSION-PARTS-01 · A part is not a block
+**Shipped:** the strength session screen now reads in parts: each part says its rounds and rest once, a superset's two moves are linked with "then straight into", the effort is one tile ("2 in the tank"), and a session that lost its heavy legs says why and which day would fit them.
+**Dev learning:** the obvious cut, a part per block, was wrong for a quarter of the pairs. Measuring 53,330 sessions first showed 14,593 supersets join an accessory to a core move across two blocks, so the parts are built across blocks by tag. The same measurement found 1,580 pairs with unequal sets and 37% of sessions mixing effort levels, and each became a rule (rounds = the most sets, a differing row says "2 × 10", a part names its own effort). And an edit I bounded on the next heading quietly deleted three exported helpers; the type checker caught it, a backup restored it.
+**Product/creator learning:** the founder's approved line "your threshold run is the day next to it" is only true for one of S2's four reasons heavy legs get blocked (a hard run two days later, a long run the same day, the race cut-off are the others). The line now makes the claim only when it is true and otherwise says "No heavy legs today." without a reason. And the plan's swap day fixes one day, not both: in his own Mon + Wed plan both sessions lost their legs and the swap replaces Monday only.
+**AI-building learning:** two of my own checks were hollow before falsifying: the effort count derived its expected number from the same function it was testing, and a mutation script under zsh ran nothing at all because zsh does not split an unquoted variable into arguments. It printed no numbers, which looks a lot like "passed" if you are not reading. Rerun under bash: 13 mutations, all red.
+**The honest bit:** the plan said build 5 ships a Start session button. It would have been a primary button that opens nothing, so it moved to build 6 with the flow it opens. The code review also caught the swap day being offered on a day it does not fix.
+**Hook material:** one superset in four crosses a block. The layout everyone draws (one card per block) would have split them.
+**Postable?:** maybe
+
 ## 2026-10-28 — STRENGTH-REP-BLOCKS-01 · Ten reps at a six-rep weight
 **Shipped:** general-focus lifters now cycle their main lifts 10 → 8 → 6 reps by block; running focus keeps heavy fives. When the cycle goes round and a lift's reps rise, the suggested weight comes down.
 **Dev learning:** the rule change was one line, and the consequence was in a different module. The load suggestion had never needed to know reps, because reps had only ever gone down (technique 10 → 8). The cycle made them go up 904 times in the sample, and the suggestion would have offered the six-rep weight for ten.

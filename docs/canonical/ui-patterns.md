@@ -4508,8 +4508,9 @@ SessionScreen's anatomy, as its own screen (`components/dashboard/StrengthSessio
 `BackButton`, eyebrow *day · week*, compact title (**Full body · Lower body · Upper body · Mobility**: never
 "+ core", it is in nearly every session), the strength chip; the 2-up **Duration · Exercises** tiles; blocks in the
 `SessionSteps` section card (`StepSection`): warm-up and cool-down in `--moss`, training blocks in `--s-strength`.
-An exercise row is the step row's type: name 13/700, dose 15/800 tabular (*"3 × 5"*), support line 12/700
-(*each side · N reps in reserve · rest*). **Cues are one tap deep** (`aria-expanded`). **No media placeholder until
+An exercise row is the step row's type: name 14/600, dose 15/800 tabular. **Since STRENGTH-SESSION-PARTS-01 the row
+carries the exercise and its dose only** (*"10"*, *"10 each side"*, *"30 s"*); rounds, rest and effort belong to the part
+(below). **Cues are one tap deep** (`aria-expanded`). **No media placeholder until
 Phase 3.** **Phase 3 media** (`STRENGTH-MEDIA-01`, Design Board 2026-10-21, conditional on the supplier): only inside an
 opened row, above the cues; the closed row is unchanged and an exercise without media opens as today; full width, a
 named height cap keeping a main lift's log panel on screen at 375 × 667; still pose under reduced motion; loaded on
@@ -4525,9 +4526,24 @@ exercise in lighter form is left out when that exercise is in the session (`S-WA
 `SegmentedControl`, equipment `Chip` multi, experience `Chip`, bone flag `Switch`), the last two defaulted; injuries read-only from the run plan; honest notes
 once, as `FieldNote`s; one CTA.
 
-### Strength session in parts, and the guided session (STRENGTH-SESSION-PARTS-01, STRENGTH-GUIDED-SESSION-01, Design Board 2026-10-28) — RULED, NOT BUILT
+### Strength session in parts, and the guided session (STRENGTH-SESSION-PARTS-01, STRENGTH-GUIDED-SESSION-01, Design Board 2026-10-28) — OVERVIEW BUILT 2026-10-29; GUIDED RULED, NOT BUILT
 
-**Overview (amends the section above when built).** SessionScreen anatomy kept. Training work is grouped into **parts**:
+**As built (2026-10-29).** `lib/strength-bridge/sessionParts.ts` is the single owner of the cut, and build 6 reads it too.
+A superset part gathers **every item with its tag across blocks** (measured: 14,593 pairs cross a block, accessory with
+core). A part's rounds are the most sets any item carries; its rest is the longest of its rests, which is how
+`estimateMinutes` counts it. A row whose sets differ from the rounds says *"2 × 10"*. **Tiles: Duration · Parts · Effort**
+(*"2 in the tank"*, the most common reps-based RIR, ties to the harder). The effort tile takes its own width (`auto`) and
+holds its words on one line at 320 px. A part whose effort differs (37% of sessions mix RIRs) adds its own to its header
+(*"· 3 in the tank"*); timed parts carry none. Rest reads through `formatStepDuration` (*"rest 2:30 min"*, ADR-015), not
+the canvas's bare *"2:30"*. Part labels: *Superset · Main lift · Accessory · Core · Jumps*. The superset link is the
+`link` `Glyph` in the line's `--mute` (a glyph never takes a hue, ICON-RULE-01) plus *"then straight into"*. The no-legs line shows under the tiles on a session that
+**lost its heavy legs** (`lostItsHeavyLegs`, the engine's own light-leg mark). It names the hard run beside the day
+(`hardRunBeside`, read with the runner's moves) and the plan's `legs_day_suggestion`. ⚠️ **Start session and "Mark
+complete without starting" ship with build 6**: a primary button with no guided session behind it would do nothing.
+Until then the actions stay **Mark complete · Skip**. **Check:** `strengthScreens.markup.test.ts` § in parts,
+`sessionParts.test.ts`, `hardRunBeside.test.ts`.
+
+**Overview (the ruling).** SessionScreen anatomy kept. Training work is grouped into **parts**:
 *Warm-up · Part 1 … Part N · Cool-down*. A part is one lift or a **superset pair** shown as two rows joined by a link glyph
 and *"then straight into"*. The part header (eyebrow type, `--s-strength` rail; warm-up `--moss`) says once: rounds, rest
 after the round. Rows carry exercise and dose only (*"10"*, *"10 each side"*, *"30 s"*); main lifts keep the 10f

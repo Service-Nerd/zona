@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import StrengthSessionScreen, { LiftLogPanel } from '@/components/dashboard/StrengthSessionScreen'
 import { generateStrengthPlan, isLoadedLift, type LiftLog, type StrengthSession } from '@/packages/strength'
 import { liftSuggestionsFor, logsOn } from '@/lib/strength-bridge/progressionView'
-import { liftSuggestionLine } from '@/lib/strength-bridge/display'
+import { STRENGTH_NEW_LIFTS_LINE, liftSuggestionLine } from '@/lib/strength-bridge/display'
 import { formatWeight, weightToKg } from '@/lib/format'
 
 /**
@@ -27,14 +27,16 @@ function render(logs: LiftLog[], units: 'km' | 'mi' = 'km', canLog = true) {
 }
 
 describe('the suggestion line, before the set', () => {
-  it('a new lift says start light; after a log it says last time and what to try', () => {
-    expect(render([])).toContain('New lift. Start light.')
+  it('new lifts say start light ONCE, under the tiles (PARTS-01); after a log a row says last time and what to try', () => {
+    expect(render([])).toContain(STRENGTH_NEW_LIFTS_LINE)
+    expect(render([])).not.toContain('New lift. Start light.')
     const html = render([{ date: earlier(7), exercise_id: lift.exercise_id, load_kg: 40, feel: 'easy', counts: true }])
     expect(html).toContain('Last time 40 kg, easy.')
     expect(html).toMatch(/Try 4[12](\.5)? kg/)
   })
   it('🔴 a non-main row never carries a line, even when handed a suggestion for it', () => {
-    const every = Object.fromEntries(session.blocks.flatMap(b => b.items).map(i => [i.exercise_id, { kind: 'start' as const, load_kg: null, extra_reps: 0, last: null }]))
+    const last = { date: earlier(7), exercise_id: 'x', load_kg: 20, feel: 'right' as const, counts: true }
+    const every = Object.fromEntries(session.blocks.flatMap(b => b.items).map(i => [i.exercise_id, { kind: 'step' as const, load_kg: 22.5, extra_reps: 0, last }]))
     const html = renderToStaticMarkup(React.createElement(StrengthSessionScreen, {
       session, dayLabel: 'Today', weekN: 1, status: null, canLog: true, onBack: () => {}, onSetStatus: async () => true,
       lifts: { suggestions: every, today: {}, units: 'km', onLog: async () => true } }))
@@ -43,7 +45,8 @@ describe('the suggestion line, before the set', () => {
   })
   it('🔴 only main lifts carry it: the count of lines equals the session\'s loaded main lifts', () => {
     const mains = session.blocks.filter(b => b.role === 'main').flatMap(b => b.items).filter(i => isLoadedLift(i.exercise_id)).length
-    expect((render([]).match(/data-lift-suggestion/g) ?? []).length).toBe(mains)
+    const logs = session.blocks.filter(b => b.role === 'main').flatMap(b => b.items).map(i => ({ date: earlier(7), exercise_id: i.exercise_id, load_kg: 30, feel: 'right' as const, counts: true }))
+    expect((render(logs).match(/data-lift-suggestion/g) ?? []).length).toBe(mains)
   })
   it('🔴 lb when the runner runs in miles', () => {
     expect(render([{ date: earlier(7), exercise_id: lift.exercise_id, load_kg: 40, feel: 'right', counts: true }], 'mi')).toContain('Last time 88 lb, about right.')

@@ -4,9 +4,10 @@
 // ⚠️ Copy is the founder's. These are drafts in the brand voice; the RIR phrasing in
 // particular ("reps in reserve") was flagged for his call. Client-safe: no Node imports.
 
-import { CATALOGUE_BY_ID, PATTERN_REGION, type Experience, type Focus, type SessionMinutes, type BlockRole, type EquipmentTag, type Prescription, type SessionKind, type StrengthPlan, type StrengthSession } from '@/packages/strength'
+import { CATALOGUE_BY_ID, PATTERN_REGION, type Experience, type Focus, type SessionMinutes, type EquipmentTag, type Prescription, type SessionKind, type StrengthPlan, type StrengthSession } from '@/packages/strength'
 import { formatStepDuration, formatWeight } from '@/lib/format'
 import type { LiftFeel, LiftSuggestion } from '@/packages/strength'
+import { partEffort, type PartKind, type SessionPart } from './sessionParts'
 
 /** Titles drop "+ core": core is in nearly every session, and saying so on each is saying it four times (Collins). */
 export const STRENGTH_KIND_TITLE: Record<SessionKind, string> = {
@@ -28,17 +29,17 @@ export function strengthSessionTitle(s: Pick<StrengthSession, 'kind' | 'blocks'>
   if (s.kind === 'full_body' && !work.some(i => { const e = CATALOGUE_BY_ID.get(i.exercise_id); return !!e && PATTERN_REGION[e.pattern] === 'upper' })) {
     return STRENGTH_TITLE_BY_CONTENT.lowerOnly
   }
-  if (s.kind === 'upper_core' && work.some(i => i.light)) return STRENGTH_TITLE_BY_CONTENT.upperLightLegs
+  if (lostItsHeavyLegs(s)) return STRENGTH_TITLE_BY_CONTENT.upperLightLegs
   return STRENGTH_KIND_TITLE[s.kind]
 }
 
-export const STRENGTH_BLOCK_TITLE: Record<BlockRole, string> = {
-  warmup: 'Warm-up',
-  plyo: 'Jumps',
-  main: 'Main lifts',
-  accessory: 'Accessories',
-  core: 'Core',
-  mobility: 'Cool-down',
+/**
+ * A leg session the run week turned into an upper session with light leg work (S3 Am.2): the session that says so
+ * (S3 Am.3, Coaching Board 2026-10-28 A). The light-leg items are the engine's own mark of the conversion
+ * (`placement.ts` sets `lightLower` only on the upper days that replaced a leg day).
+ */
+export function lostItsHeavyLegs(s: Pick<StrengthSession, 'kind' | 'blocks'>): boolean {
+  return s.kind === 'upper_core' && s.blocks.some(b => (b.role === 'main' || b.role === 'accessory') && b.items.some(i => i.light))
 }
 
 /** The one line a stacked session carries, said once, on the row that needs it (S4). */
@@ -55,19 +56,68 @@ export function exerciseCues(id: string): string[] {
   return CATALOGUE_BY_ID.get(id)?.cues ?? []
 }
 
-/** "3 × 5" · "3 × 30 s" · "3 × 10 contacts" · warm-up "8" / "40 s". */
-export function doseLine(p: Prescription): string {
-  const amount = p.reps != null ? String(p.reps) : p.seconds != null ? `${p.seconds} s` : `${p.contacts ?? 0} contacts`
-  return p.sets > 1 ? `${p.sets} × ${amount}` : amount
+// ── STRENGTH-SESSION-PARTS-01 (Design Board 2026-10-28 E; wording approved by the founder 2026-10-28) ─────────────
+// Rounds, rest and effort are said once per part; a row says the exercise and its dose only.
+
+export const STRENGTH_PART_TITLE: Record<PartKind, string> = {
+  warmup: 'Warm-up', cooldown: 'Cool-down', superset: 'Superset', main: 'Main lift', accessory: 'Accessory', core: 'Core', plyo: 'Jumps',
 }
 
-/** The supporting line: effort, then rest, then side. Empty pieces are dropped. */
-export function effortLine(p: Prescription): string {
+/** "Part 1 · Superset" for a training part; the warm-up and cool-down are named, not numbered. */
+export function partTitle(p: SessionPart, n: number | null): string {
+  return n == null ? STRENGTH_PART_TITLE[p.kind] : `Part ${n} · ${STRENGTH_PART_TITLE[p.kind]}`
+}
+
+/** Plain words for an RIR, never "reps in reserve" (Sierra, 2026-10-28): "2 in the tank". */
+export function effortWords(low: number, high = low): string {
+  return `${low === high ? low : `${low}–${high}`} in the tank`
+}
+
+/** "3 rounds · rest 1:30 min", plus the part's own effort when it differs from the session's. Empty for a one-pass prep part. */
+export function partHeader(p: SessionPart, sessionRir: number | null): string {
+  const prep = p.kind === 'warmup' || p.kind === 'cooldown'
+  if (prep && p.rounds === 1 && p.rest_s === 0) return ''
+  const own = partEffort(p, sessionRir)
   return [
-    p.per_side ? 'each side' : null,
-    p.rir != null ? `${p.rir} reps in reserve` : null,
-    p.rest_s > 0 ? `rest ${formatStepDuration(p.rest_s)}` : null,
+    `${p.rounds} ${p.rounds === 1 ? 'round' : 'rounds'}`,
+    p.rest_s > 0 ? `rest ${formatStepDuration(p.rest_s)}` : 'no rest',
+    own ? effortWords(own[0], own[1]) : null,
   ].filter(Boolean).join(' · ')
+}
+
+/** A row's dose inside its part: "10", "10 each side", "30 s", "10 contacts"; "2 × 10" only when it differs from the rounds. */
+export function partDose(p: Pick<Prescription, 'sets' | 'reps' | 'seconds' | 'contacts' | 'per_side'>, rounds: number): string {
+  const amount = p.reps != null ? String(p.reps) : p.seconds != null ? `${p.seconds} s` : `${p.contacts ?? 0} contacts`
+  const dose = p.per_side ? `${amount} each side` : amount
+  return p.sets !== rounds ? `${p.sets} × ${dose}` : dose
+}
+
+/** Said once, under the tiles, when the session's lifts are new (instead of on every row). */
+export const STRENGTH_NEW_LIFTS_LINE = 'New lifts this block. Start light and build from there.'
+
+/** The link between a superset's rows. */
+export const STRENGTH_SUPERSET_LINK = 'then straight into'
+
+const DAY_NAME: Record<string, string> = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' }
+
+/** Both swap-day lines say "after the run" for the same runs: the swap day stacks behind them (S4). */
+const liftsAfterTheRun = (run: string | null): run is 'quality' | 'easy' => run === 'quality' || run === 'easy'
+
+/**
+ * S3 Am.3 (Coaching Board 2026-10-28 A; the founder's words) — on a session that lost its heavy legs: why, then the
+ * swap the plan already holds (`legs_day_suggestion`). The swap is named only on the day it would replace: another
+ * converted day in the same plan is not fixed by it. The run is named in the words the legs-day line already uses.
+ */
+export function noLegsLine(beside: 'quality' | 'long' | null, swap?: { day: string; run: string | null } | null): string {
+  const why = beside ? `No heavy legs today: your ${beside} run is the day next to it.` : 'No heavy legs today.'
+  if (!swap) return why
+  const day = DAY_NAME[swap.day] ?? swap.day
+  return `${why} ${liftsAfterTheRun(swap.run) ? `Lifting on ${day}, after the run, would fit legs in.` : `Lifting on ${day} would fit legs in.`}`
+}
+
+/** A main lift the runner has no usable log for: the rows that say "New lift. Start light." (`liftSuggestionLine`). */
+export function isNewLift(s: LiftSuggestion | undefined): boolean {
+  return !!s && s.kind !== 'bodyweight' && (s.kind === 'start' || !s.last || s.load_kg == null)
 }
 
 export function exerciseCount(s: StrengthSession): number {
@@ -116,8 +166,8 @@ export const STRENGTH_SETUP = {
   legsLimitedNote: (_focus: Focus): string => 'Your run week keeps heavy legs off these days, so they get lighter leg work.',
   /** STRENGTH-LEGS-DAY-01 (Design Board 2026-10-19; founder approved the shape): name the day, never move one. */
   legsDayLine: (s: { day: string; run: string | null }): string => {
-    const day = ({ mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' } as Record<string, string>)[s.day] ?? s.day
-    return s.run === 'quality' || s.run === 'easy'
+    const day = DAY_NAME[s.day] ?? s.day
+    return liftsAfterTheRun(s.run)
       ? `Lift on ${day} after your ${s.run} run and your legs get a proper session.`
       : `Lift on ${day} and your legs get a proper session.`
   },
@@ -178,7 +228,7 @@ export const LIFT_LOGGED = 'Logged'
 /** The row's line before the set: last time, then what to try. Null on a bodyweight lift. */
 export function liftSuggestionLine(s: LiftSuggestion | undefined, prescribedReps: number | undefined, units: 'km' | 'mi'): string | null {
   if (!s || s.kind === 'bodyweight') return null
-  if (s.kind === 'start' || !s.last || s.load_kg == null) return 'New lift. Start light.'
+  if (isNewLift(s) || !s.last || s.load_kg == null) return 'New lift. Start light.'
   const last = `Last time ${formatWeight(s.last.load_kg, units)}, ${FEEL_WORD[s.last.feel]}.`
   const load = formatWeight(s.load_kg, units)
   if (s.kind === 'hold_week') return `${last} Keep ${load} this week.`
