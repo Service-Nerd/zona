@@ -82,3 +82,4 @@
 20261018_strength_recovery_eases.sql
 20261018_strength_lift_logs.sql
 20261022_reported_distance.sql
+20261029_strength_session_times_and_reps.sql
