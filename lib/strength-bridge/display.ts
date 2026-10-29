@@ -59,6 +59,7 @@ export function exerciseCues(id: string): string[] {
 // ── STRENGTH-SESSION-PARTS-01 (Design Board 2026-10-28 E; wording approved by the founder 2026-10-28) ─────────────
 // Rounds, rest and effort are said once per part; a row says the exercise and its dose only.
 
+/** "Main lift", "Accessory", "Jumps" added at build to the sheet's "Superset" and "Core": founder approved 2026-10-29. */
 export const STRENGTH_PART_TITLE: Record<PartKind, string> = {
   warmup: 'Warm-up', cooldown: 'Cool-down', superset: 'Superset', main: 'Main lift', accessory: 'Accessory', core: 'Core', plyo: 'Jumps',
 }
@@ -115,7 +116,8 @@ export const STRENGTH_GUIDED_COPY = {
   bodyweight: 'bodyweight',
 }
 
-/** The guided page's one line under the round: how the part runs, then the effort (reps-based work only). */
+/** Founder approved 2026-10-29, including the single-lift form ("Then rest 2:30 min. Stop with 2 in the tank.").
+ *  The guided page's one line under the round: how the part runs, then the effort (reps-based work only). */
 export function guidedPartLine(p: SessionPart): string {
   const rirs = Array.from(new Set(p.items.filter(i => i.reps != null && i.rir != null).map(i => i.rir as number))).sort((a, b) => a - b)
   const effort = rirs.length ? `Stop with ${effortWords(rirs[0], rirs[rirs.length - 1])}.` : null
@@ -127,7 +129,7 @@ export function guidedPartLine(p: SessionPart): string {
   return [how, effort].filter(Boolean).join(' ')
 }
 
-/** The rest page's line: what comes next, by name. */
+/** The rest page's line: what comes next, by name. The new-part form ("Part 2 · Superset next: …", "Start part 2") founder approved 2026-10-29. */
 export function guidedNextLine(next: SessionPart, round: number, title: string): string {
   const names = next.items.map(i => exerciseName(i.exercise_id)).join(', then ')
   return round > 1 ? `Round ${round} of ${next.rounds} next: ${names}.` : `${title} next: ${names}.`
@@ -146,7 +148,7 @@ const liftsAfterTheRun = (run: string | null): run is 'quality' | 'easy' => run 
 
 /**
  * S3 Am.3 (Coaching Board 2026-10-28 A; the founder's words) — on a session that lost its heavy legs: why, then the
- * swap the plan already holds (`legs_day_suggestion`). The swap is named only on the day it would replace: another
+ * swap the plan already holds (`legs_day_suggestion`). Naming the run "quality run" / "long run": founder approved 2026-10-29. The swap is named only on the day it would replace: another
  * converted day in the same plan is not fixed by it. The run is named in the words the legs-day line already uses.
  */
 export function noLegsLine(beside: 'quality' | 'long' | null, swap?: { day: string; run: string | null } | null): string {
