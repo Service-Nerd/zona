@@ -181,7 +181,9 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Why is so much of it easy? I have a race to train for.',
-    a: 'Because that is what works, and because the alternative is what breaks people. Running easy on your easy days is what lets the one hard session a week actually be hard. Charity runners rarely miss the start line through lack of effort. They miss it through too much of it, too early.',
+    // Coaching Board 2026-10-23 (page 6): no per-week count of hard sessions the engine does not guarantee (21% of
+    // plans have weeks with two or none). Was "the one hard session a week"; founder approved the fix 2026-10-29.
+    a: 'Because that is what works, and because the alternative is what breaks people. Running easy on your easy days is what lets your hard sessions actually be hard. Charity runners rarely miss the start line through lack of effort. They miss it through too much of it, too early.',
   },
   {
     q: 'What if I miss a week? Work, illness, life.',

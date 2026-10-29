@@ -25,6 +25,22 @@ describe('page 6 — what it says about hard sessions matches the engine', () =>
   it('no per-week count the engine does not guarantee', () => {
     expect(text).not.toMatch(/one hard session a week|one or two hard/)
   })
+  it('🔴 nor anywhere else the runner reads it: the charity page and the FAQ owner said it until 2026-10-29', () => {
+    const roots = ['app', 'components', 'lib']
+    const hits: string[] = []
+    const walk = (dir: string) => {
+      for (const f of fs.readdirSync(dir)) {
+        const p = path.join(dir, f)
+        if (fs.statSync(p).isDirectory()) { if (f !== 'node_modules') walk(p); continue }
+        if (!/\.(ts|tsx)$/.test(f) || /\.test\./.test(f)) continue
+        // Strings only: a comment recording the old wording is history, not copy.
+        const strings = fs.readFileSync(p, 'utf8').split('\n').filter(l => !/^\s*(\/\/|\*)/.test(l))
+        if (strings.some(l => /one hard session a week/.test(l))) hits.push(p)
+      }
+    }
+    for (const r of roots) walk(path.join(__dirname, '../..', r))
+    expect(hits).toEqual([])
+  })
   it('the "harder work" advice carries the beginner qualifier (§110 Am.2, Willy binding)', () => {
     expect(text).toContain('If you are new to running, easy running alone will make you faster for a while')
     expect(text).toContain('If you have been running a while, keep one run a week properly hard')

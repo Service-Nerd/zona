@@ -77,7 +77,9 @@ export const FAQS: FaqEntry[] = [
   // ── The proposition itself ────────────────────────────────────────────────
   {
     q: 'Why is so much of my plan easy?',
-    a: 'Because that is what works, and because the alternative is what breaks people. Running easy on your easy days is what lets the one hard session a week actually be hard. Runners rarely miss the start line through lack of effort. They miss it through too much of it, too early.',
+    // Coaching Board 2026-10-23 (page 6): no per-week count of hard sessions the engine does not guarantee (21% of
+    // plans have weeks with two or none). Was "the one hard session a week"; founder approved the fix 2026-10-29.
+    a: 'Because that is what works, and because the alternative is what breaks people. Running easy on your easy days is what lets your hard sessions actually be hard. Runners rarely miss the start line through lack of effort. They miss it through too much of it, too early.',
     topic: 'product',
     scope: 'both',
     shouldBeObviousOn: 'Today (the session card states the zone, but never the reason)',

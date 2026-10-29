@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-29 — CHARITY-HARD-COUNT-01 · A ruling that reached one page
+**Shipped:** the charity page and the FAQ no longer say "the one hard session a week".
+**Dev learning:** page 6's ruling removed the claim from page 6, and its check read page 6 only. The same sentence sat on two other surfaces for six days. The check now scans every string in the app and site.
+**Product/creator learning:** a claim the board corrects is a claim, not a page; correcting it where it was noticed leaves it everywhere else.
+**AI-building learning:** found only because I was already reading the charity FAQ for another line.
+**The honest bit:** none.
+**Hook material:** one ruling, three surfaces, one fixed.
+**Postable?:** no
+
 ## 2026-10-29 — GTM-SEO-COMPARE-01 + CHARITY-PLAN-PREREQ-01 · Thirty minutes, and a week one of fifty kilometres
 **Shipped:** comparison page 7 (a first marathon around a full-time job), with three Coaching Board changes the founder approved, and the same false prerequisite fixed on the charity page and in the FAQ owner.
 **Dev learning:** the brief's "verified" list included "assumes you can run about 30 minutes without stopping", and the source was our own charity page. Generating the plan the site links showed week 1 at 50 km with a 14 km long run, written for 45 km a week. Every plan number on both pages is now read from the plan, so the copy cannot drift from it again. A gate that reads answers with a single-quote regex would have let the new template-literal answer out of its own population; widened.
