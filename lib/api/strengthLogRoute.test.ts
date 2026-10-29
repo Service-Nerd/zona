@@ -7,7 +7,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
  */
 const S = vi.hoisted(() => ({
   isAdmin: true, stored: { plan_json: null as unknown, recovery_eases: {} as Record<string, string> },
-  upserts: [] as Record<string, unknown>[], upsertError: null as null | { message: string },
+  upserts: [] as Record<string, unknown>[], upsertError: null as null | { message: string; code?: string },
+  missingReps: false,
 }))
 vi.mock('@/lib/supabase/getUserFromRequest', () => ({ getUserFromRequest: async () => ({ id: 'u1' }) }))
 vi.mock('@/lib/trial', () => ({ getUserTier: async () => 'paid' }))
@@ -19,7 +20,11 @@ vi.mock('@supabase/supabase-js', () => ({
       Object.assign(q, {
         select: () => q, eq: () => q,
         maybeSingle: async () => table === 'user_settings' ? { data: { is_admin: S.isAdmin }, error: null } : { data: S.stored, error: null },
-        upsert: async (row: Record<string, unknown>) => { S.upserts.push(row); return { error: S.upsertError } },
+        upsert: async (row: Record<string, unknown>) => {
+          S.upserts.push(row)
+          if (S.missingReps && 'reps' in row) return { error: { message: "Could not find the 'reps' column", code: 'PGRST204' } }
+          return { error: S.upsertError }
+        },
       })
       return q
     },
@@ -36,7 +41,7 @@ const post = async (body: unknown) => {
   const res = await POST(new Request('https://x/api/strength/log', { method: 'POST', body: JSON.stringify(body) }) as never)
   return { status: res.status, body: await res.json() }
 }
-beforeEach(() => { S.isAdmin = true; S.stored = { plan_json: plan, recovery_eases: {} }; S.upserts = []; S.upsertError = null })
+beforeEach(() => { S.isAdmin = true; S.stored = { plan_json: plan, recovery_eases: {} }; S.upserts = []; S.upsertError = null; S.missingReps = false })
 
 describe('POST /api/strength/log', () => {
   it('stores one row for the lift, counting it on a build week', async () => {
@@ -64,6 +69,30 @@ describe('POST /api/strength/log', () => {
     expect((await post({ date: withMain.date, exercise_id: loadedId, load_kg: 900, feel: 'right' })).status).toBe(422)
     expect((await post({ date: withMain.date, exercise_id: loadedId, load_kg: 20, feel: 'maybe' })).status).toBe(422)
     expect(S.upserts).toEqual([])
+  })
+  it('🔴 STRENGTH-LOG-REPS-01: the row carries the reps the stored plan prescribed that lift on that date, never the request\'s', async () => {
+    const prescribed = withMain.blocks.find(b => b.role === 'main')!.items.find(i => i.exercise_id === loadedId)!.reps
+    expect(prescribed).toBeGreaterThan(0)
+    const r = await post({ date: withMain.date, exercise_id: loadedId, load_kg: 22.5, feel: 'right', reps: 99 })
+    expect(S.upserts[0].reps).toBe(prescribed)
+    expect(r.body.reps).toBe(prescribed)
+  })
+  it('🔴 before the migration is applied, the log is still saved (without reps); any other failure is still a 500', async () => {
+    S.missingReps = true
+    const r = await post({ date: withMain.date, exercise_id: loadedId, load_kg: 22.5, feel: 'right' })
+    expect(r.status).toBe(200)
+    expect(S.upserts.length).toBe(2)
+    expect('reps' in S.upserts[1]).toBe(false)
+    S.missingReps = false; S.upserts = []; S.upsertError = { message: 'boom', code: '23505' }
+    expect((await post({ date: withMain.date, exercise_id: loadedId, load_kg: 22.5, feel: 'right' })).status).toBe(500)
+    expect(S.upserts.length).toBe(1)
+  })
+  it('🔴 a reps outside the column\'s range is stored as null, never a failed save', async () => {
+    const odd: StrengthPlan = { ...plan, weeks: plan.weeks.map(w => ({ ...w, sessions: w.sessions.map(s => s.date !== withMain.date ? s : { ...s, blocks: s.blocks.map(b => ({ ...b, items: b.items.map(i => i.exercise_id === loadedId ? { ...i, reps: 60 } : i) })) }) })) }
+    S.stored = { plan_json: odd, recovery_eases: {} }
+    const r = await post({ date: withMain.date, exercise_id: loadedId, load_kg: 22.5, feel: 'right' })
+    expect(r.status).toBe(200)
+    expect('reps' in S.upserts[0]).toBe(false)
   })
   it('🔴 non-admin → 404 while strength is admin-only; a failed write is a 500', async () => {
     S.isAdmin = false

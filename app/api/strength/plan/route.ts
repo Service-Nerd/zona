@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isMissingColumn } from '@/lib/supabase/missingColumn'
 import { SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { readPlanJson } from '@/lib/planRead'
@@ -69,11 +70,16 @@ async function recoveryEasesFor(supabase: Supabase, userId: string): Promise<Rec
 const LIFT_LOG_DAYS = 120
 async function liftLogsFor(supabase: Supabase, userId: string): Promise<unknown[]> {
   const since = new Date(Date.now() - LIFT_LOG_DAYS * 86_400_000).toISOString().slice(0, 10)
-  const { data, error } = await supabase.from('strength_lift_logs')
-    .select('session_date, exercise_id, load_kg, feel, counts').eq('user_id', userId).gte('session_date', since)
-    .order('session_date', { ascending: true })
-  return error ? [] : (data ?? []).map((r: { session_date: string; exercise_id: string; load_kg: number | string | null; feel: string; counts: boolean }) => ({
+  const read = (cols: string) => supabase.from('strength_lift_logs')
+    .select(cols).eq('user_id', userId).gte('session_date', since).order('session_date', { ascending: true })
+  let { data, error } = await read('session_date, exercise_id, load_kg, feel, counts, reps')
+  // STRENGTH-LOG-REPS-01 — before its migration is applied, `reps` does not exist: read the old columns rather than
+  // lose every log (the view then takes the reps from the plan, as it did).
+  if (error && isMissingColumn(error)) ({ data, error } = await read('session_date, exercise_id, load_kg, feel, counts'))
+  type Row = { session_date: string; exercise_id: string; load_kg: number | string | null; feel: string; counts: boolean; reps?: number | null }
+  return error ? [] : ((data ?? []) as unknown as Row[]).map(r => ({
     date: r.session_date, exercise_id: r.exercise_id, load_kg: r.load_kg == null ? null : Number(r.load_kg), feel: r.feel, counts: r.counts,
+    ...(r.reps != null ? { reps: r.reps } : {}),
   }))
 }
 

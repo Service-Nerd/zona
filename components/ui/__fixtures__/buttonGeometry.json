@@ -810,6 +810,86 @@
     "height": 47,
     "width": "auto"
   },
+  "components/dashboard/StrengthGuidedSession.tsx#Button1": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button2": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "auto"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button3": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button4": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button[lighter]5": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button[heavier]6": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button7": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button8": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button9": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button10": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
   "components/dashboard/StrengthSessionScreen.tsx#Button1": {
     "floor": 44,
     "padY": null,
@@ -827,6 +907,22 @@
     "width": "full"
   },
   "components/dashboard/StrengthSessionScreen.tsx#Button3": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/StrengthSessionScreen.tsx#Button4": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/StrengthSessionScreen.tsx#Button5": {
     "floor": 44,
     "padY": null,
     "font": null,

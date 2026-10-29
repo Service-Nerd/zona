@@ -25,7 +25,7 @@ the records (`/ship`). The founder's own strength plan is regenerated after each
 | 3 ✅ 2026-10-28 | `STRENGTH-SUPERSET-MAINS-01` | A lower and an upper main lift pair, resting the longer rest; warm-up as rounds (2 at 45/60 min, 1 at 30) | 🏃 ruled | 2 |
 | 4 ✅ 2026-10-28 | `STRENGTH-REP-BLOCKS-01` | General focus cycles main reps by block (e.g. 10 → 8 → 6); running keeps heavy 5s; numbers set by measurement | 🏃 ruled | 2 |
 | 5 ✅ 2026-10-29 | `STRENGTH-SESSION-PARTS-01` | The overview in parts; rest and effort once per part; supersets linked; new wording; the no-legs line with the swap day | 🧭 ruled, 👤 words | 1, 3 |
-| 6 | `STRENGTH-GUIDED-SESSION-01` | Start session; one part per page; weight stepper; rest countdown; exercise timers; End session; session time stored | 🧭 ruled, 👤 words | 5 |
+| 6 ✅ 2026-10-29 | `STRENGTH-GUIDED-SESSION-01` | Start session; one part per page; weight stepper; rest countdown; exercise timers; End session; session time stored | 🧭 ruled, 👤 words | 5 |
 
 ### What each build must prove
 

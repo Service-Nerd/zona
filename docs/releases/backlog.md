@@ -213,15 +213,15 @@ Found building INJURY-PEAK-JUMP-01: `peak_shortfall_note` (§106/§40c), `freque
 `planRationale.test.ts` (NOTE-SURFACE), which fails on a fourth. Measure how many plans carry each, then place them.
 
 
-### 🔲 `STRENGTH-SESSION-REDESIGN-01` — the strength session, redesigned: six builds, all boards ruled 2026-10-28 🏃 **COACHING BOARD** + 🧭 **DESIGN BOARD** ruled; 👤 **FOUNDER** approves screens and words first
+### ✅ `STRENGTH-SESSION-REDESIGN-01` — the strength session, redesigned: six builds, all boards ruled 2026-10-28, all six shipped by 2026-10-29 🏃 **COACHING BOARD** + 🧭 **DESIGN BOARD** ruled; 👤 **FOUNDER** approves screens and words first
 
 Plan: `docs/plans/STRENGTH-SESSION-REDESIGN-01.md`. Canvas: *Strength session redesign*. In order: `STRENGTH-BW-LOG-01`
 (bodyweight lifts log feel only; the founder logged 90 kg on an inverted row), ✅ `STRENGTH-AB-SESSIONS-01` (shipped 2026-10-28: 10,178 of 14,870 multi-session weeks held a repeat, now 0), ✅ `STRENGTH-SUPERSET-MAINS-01` (shipped 2026-10-28: pairs save 7–8 min; the screen shows them from build 5, release stays admin until then), ✅ `STRENGTH-REP-BLOCKS-01`
 (shipped 2026-10-28: 10 → 8 → 6; a rep rise cuts the load, `STRENGTH-LOG-REPS-01` filed), ✅ `STRENGTH-SESSION-PARTS-01` (shipped 2026-10-29: overview in parts, rounds and rest once per part, supersets linked, the effort a tile, the no-legs line with the swap day on the day it replaces; **Start session moved to build 6**), and
-`STRENGTH-GUIDED-SESSION-01` (start / end, one part per page, stepper, timers; carries the **Start session** and **Mark complete without starting** buttons; the ramp set's "1 × 8" under "2 rounds" is the founder's call there). S2 unchanged: loosening it was ruled
+✅ `STRENGTH-GUIDED-SESSION-01` (shipped 2026-10-29: Start session, one part per page, stepper, rest countdown, timers, End session, session times stored; the ramp set keeps "1 × 8", founder 2026-10-29). **Release is a separate decision**: `STRENGTH_RELEASE` is still `'admin'`. S2 unchanged: loosening it was ruled
 INCORRECT (52% of chosen-day weeks have no heavy legs; P1/P2 put legs beside a hard run).
 
-### 🔲 `STRENGTH-LOG-REPS-01` — stamp the prescribed reps on each strength log, so a plan rebuild cannot change them 🏃 **COACHING BOARD** ruled (S14 Am.1); ⚙️ build with `STRENGTH-GUIDED-SESSION-01`
+### ✅ `STRENGTH-LOG-REPS-01` — stamp the prescribed reps on each strength log, so a plan rebuild cannot change them (shipped 2026-10-29 with build 6; migration `20261029_strength_session_times_and_reps.sql` for the founder to apply) 🏃 **COACHING BOARD** ruled (S14 Am.1); ⚙️ build with `STRENGTH-GUIDED-SESSION-01`
 
 Found by code review of `STRENGTH-REP-BLOCKS-01`, 2026-10-28. S14 Am.1 cuts the load when reps rise between blocks, and reads
 the reps a log was done at from the CURRENT plan by date (`liftSuggestionsFor`), because `strength_lift_logs` stores load and

@@ -9,7 +9,7 @@ import { generateStrengthPlan, parseStrengthProfile } from '@/packages/strength'
  * read; a failed run-plan READ → 500 and NOTHING saved (never a standalone plan
  * placed blind to the runner's hard days); a validator failure → nothing saved.
  */
-const S = vi.hoisted(() => ({ liftLogs: [] as unknown[],
+const S = vi.hoisted(() => ({ liftLogs: [] as unknown[], missingReps: false, logSelects: [] as string[],
   user: { id: 'u1' } as { id: string } | null,
   isAdmin: true,
   tier: 'paid' as 'free' | 'trial' | 'paid',
@@ -37,9 +37,12 @@ vi.mock('@supabase/supabase-js', () => ({
       const q: Record<string, unknown> = {}
       const chain = () => q
       Object.assign(q, {
-        select: chain, eq: chain, gte: chain,
+        select: (cols?: string) => { q.cols = cols ?? ''; if (table === 'strength_lift_logs') S.logSelects.push(String(cols)); return q }, eq: chain, gte: chain,
         // STRENGTH-PROGRESSION-01 — the lift-log read ends in .order(); S.liftLogs is what the table holds.
-        order: async () => ({ data: table === 'strength_lift_logs' ? S.liftLogs : [], error: null }),
+        // STRENGTH-LOG-REPS-01 — S.missingReps plays the database before its migration: naming `reps` is an error.
+        order: async () => table === 'strength_lift_logs' && S.missingReps && /\breps\b/.test(String(q.cols))
+          ? { data: null, error: { code: '42703', message: 'column strength_lift_logs.reps does not exist' } }
+          : ({ data: table === 'strength_lift_logs' ? S.liftLogs : [], error: null }),
         is: async () => ({ data: [], error: null }),
         maybeSingle: async () => table === 'user_settings'
           ? { data: { is_admin: S.isAdmin }, error: null }
@@ -60,7 +63,7 @@ const post = async (body: unknown) => {
 
 beforeEach(() => {
   S.user = { id: 'u1' }; S.isAdmin = true; S.tier = 'paid'; S.planError = null; S.plan = null
-  S.upserts = []; S.events = []; S.stored = null; S.violate = false; S.deletes = []; S.liftLogs = []
+  S.upserts = []; S.events = []; S.stored = null; S.violate = false; S.deletes = []; S.liftLogs = []; S.missingReps = false; S.logSelects = []
 })
 
 describe('POST /api/strength/plan', () => {
@@ -207,5 +210,19 @@ describe('STRENGTH-PROGRESSION-01 — the plan carries the runner\'s lift logs',
     const { GET } = await import('@/app/api/strength/plan/route')
     const body = await (await GET(new Request('https://x/api/strength/plan') as never)).json()
     expect(body.lift_logs).toEqual([{ date: '2026-11-03', exercise_id: 'goblet_squat', load_kg: 20, feel: 'right', counts: true }])
+  })
+  it('🔴 STRENGTH-LOG-REPS-01: a stored reps comes back on the log; before the migration the logs still load', async () => {
+    const { generateStrengthPlan } = await import('@/packages/strength')
+    S.stored = { plan_json: generateStrengthPlan(PROFILE as never, null, { standaloneStart: '2026-11-02' }), profile_json: PROFILE, run_context_sig: 'x', generated_at: '2026-11-01' }
+    S.planError = 'boom'
+    S.liftLogs = [{ session_date: '2026-11-03', exercise_id: 'goblet_squat', load_kg: '20.00', feel: 'right', counts: true, reps: 6 }]
+    const { GET } = await import('@/app/api/strength/plan/route')
+    const withReps = await (await GET(new Request('https://x/api/strength/plan') as never)).json()
+    expect(withReps.lift_logs[0].reps).toBe(6)
+    S.missingReps = true; S.logSelects = []
+    const before = await (await GET(new Request('https://x/api/strength/plan') as never)).json()
+    expect(before.lift_logs.length).toBe(1)
+    expect(S.logSelects.length).toBe(2)
+    expect(S.logSelects[1]).not.toMatch(/reps/)
   })
 })

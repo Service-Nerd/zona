@@ -85,7 +85,8 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
   }, [])
 
   /** Optimistic; rolls back and resolves false when the server refuses. */
-  const setCompletion = useCallback(async (date: string, status: StrengthCompletion | null): Promise<boolean> => {
+  /** STRENGTH-GUIDED-SESSION-01 — a guided session sends its start and end with 'done'. */
+  const setCompletion = useCallback(async (date: string, status: StrengthCompletion | null, times?: { started_at: string; ended_at: string }): Promise<boolean> => {
     let before: StrengthCompletion | undefined
     setState(s => {
       before = s.completions[date]
@@ -95,7 +96,7 @@ export function useStrengthPlan(enabled: boolean, runPlanKey: unknown) {
     })
     try {
       const res = await authedFetch('/api/strength/completion', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, status }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, status, ...(times ?? {}) }),
       })
       if (res.ok) return true
     } catch { /* fall through to rollback */ }

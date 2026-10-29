@@ -7,6 +7,8 @@ import { useMemo, useState } from 'react'
 import { notFound } from 'next/navigation'
 import TodayScreen from '@/components/dashboard/TodayScreen'
 import StrengthSessionScreen from '@/components/dashboard/StrengthSessionScreen'
+import StrengthGuidedSession from '@/components/dashboard/StrengthGuidedSession'
+import { strengthSessionTitle } from '@/lib/strength-bridge/display'
 import StrengthSetupScreen from '@/components/dashboard/StrengthSetupScreen'
 import StrengthChangeConfirm from '@/components/dashboard/StrengthChangeConfirm'
 import PlanCalendar from '@/components/training/PlanCalendar'
@@ -26,7 +28,7 @@ import { strengthSubtitle } from '@/components/shared/meDoors'
 const plan = harnessPlanJson as unknown as Plan
 // TodayScreen's optional handlers are not needed for a look; fixture props only.
 const Today = TodayScreen as unknown as (p: Record<string, unknown>) => JSX.Element
-const CASES = ['today', 'session', 'plan', 'setup', 'rest', 'sheet', 'double-today', 'double-plan', 'recovery', 'strength-change'] as const
+const CASES = ['today', 'session', 'guided', 'plan', 'setup', 'rest', 'sheet', 'double-today', 'double-plan', 'recovery', 'strength-change'] as const
 
 /** Shift the harness plan so its current week contains today, as a live runner's would. */
 function livePlan(): Plan {
@@ -92,7 +94,14 @@ export default function StrengthPreviewPage() {
       )}
       {c === 'session' && todayS && (
         <StrengthSessionScreen session={todayS} dayLabel="Today" weekN={todayS.week_n} status={completions[todayS.date!] ?? null}
-          canLog onBack={() => setC('today')} onSetStatus={st => setStatus(todayS.date!, st)}
+          canLog onBack={() => setC('today')} onStart={() => setC('guided')} onSetStatus={st => setStatus(todayS.date!, st)}
+          lifts={{ suggestions: liftSuggestionsFor(strength, todayS, liftLogs, {}), today: logsOn(liftLogs, todayS.date), units: 'km',
+            onLog: async (id, kg, feel) => { setLiftLogs(x => [...x.filter(l => !(l.date === todayS.date && l.exercise_id === id)), { date: todayS.date!, exercise_id: id, load_kg: kg, feel, counts: true }]); return true } }} />
+      )}
+      {/* STRENGTH-GUIDED-SESSION-01 — the guided session over today's session; progress is kept in this browser. */}
+      {c === 'guided' && todayS && (
+        <StrengthGuidedSession session={todayS} title={strengthSessionTitle(todayS)} onExit={() => setC('session')}
+          onFinish={async () => { await setStatus(todayS.date!, 'done'); setC('session'); return true }}
           lifts={{ suggestions: liftSuggestionsFor(strength, todayS, liftLogs, {}), today: logsOn(liftLogs, todayS.date), units: 'km',
             onLog: async (id, kg, feel) => { setLiftLogs(x => [...x.filter(l => !(l.date === todayS.date && l.exercise_id === id)), { date: todayS.date!, exercise_id: id, load_kg: kg, feel, counts: true }]); return true } }} />
       )}

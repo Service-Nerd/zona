@@ -30,6 +30,8 @@ their own select and a failed read is `{}`, so the plan still loads before `2026
 is applied (applied 2026-10-18; the tolerance stays as a guard). POST returns `recovery_eases` too and applies them the same way. Written by
 `docs/contracts/api/strength-ease.md`.
 
+**Reps on a log (STRENGTH-LOG-REPS-01, 2026-10-29).** Each lift log also carries `reps` when the row has one; before `20261029_strength_session_times_and_reps.sql` is applied the read names `reps`, gets PGRST204 / 42703, and reads the old columns again, so the logs still load and the view takes the reps from the plan.
+
 **Lift logs (STRENGTH-PROGRESSION-01, 2026-10-18).** GET also returns `lift_logs: [{ date, exercise_id, load_kg,
 feel, counts }]`, the last 120 days oldest first, read on their own select; a failed read is `[]` (suggestions then
 say "start light"), so the plan loads before `20261018_strength_lift_logs.sql` is applied (applied 2026-10-18; the tolerance stays as a guard). Written by

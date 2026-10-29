@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-29 — STRENGTH-GUIDED-SESSION-01 + STRENGTH-LOG-REPS-01 · The end page with no way out
+**Shipped:** Start session now opens a guided strength session, one part per page: the round you are on, the moves, a weight stepper prefilled from the suggestion, the rest counting down by itself, timers on timed moves, End session always there; the session's start and end are stored, and each lift log now keeps the reps it was done at.
+**Dev learning:** the flow is a pure step model (steps, a reducer, a tally, resume) and the screen only owns the clock, which is the only reason it could be tested at all: the test runner has no DOM. Rest and timers are stored as END times, not counted down, so a phone that sleeps comes back to the right number. And the migration was written to be applied AFTER the code could survive without it: both routes read and write the old columns when the new ones are missing, and say so once.
+**Product/creator learning:** the review's best find was a trap I built: the route refused a session over four hours with a 422, the end page had no exit, and the tab bar is hidden on a full screen. A runner who left mid-session and came back after lunch would have been stuck on a page that could never save. The fix was to keep the "done" and drop the implausible times, because the runner cannot see a clock detail and should never lose a session over one.
+**AI-building learning:** two mutations stayed green and both were mine to explain: one guarded a path the fixed caller can no longer reach (dead code, deleted), and one used the `hidden` attribute, which leaves the label in the markup, so it never removed anything. A mutation that does not change behaviour is not a mutation. Rerun as a real deletion, it went red.
+**The honest bit:** none of this has run on a phone. Whether the screen stays awake in the iOS webview, whether timers survive backgrounding, how the keypad sits over the stepper: all unmeasured.
+**Hook material:** a 422 plus a hidden tab bar plus an end page with only "Done" = a screen you can never leave.
+**Postable?:** yes
+
 ## 2026-10-29 — STRENGTH-SESSION-PARTS-01 · A part is not a block
 **Shipped:** the strength session screen now reads in parts: each part says its rounds and rest once, a superset's two moves are linked with "then straight into", the effort is one tile ("2 in the tank"), and a session that lost its heavy legs says why and which day would fit them.
 **Dev learning:** the obvious cut, a part per block, was wrong for a quarter of the pairs. Measuring 53,330 sessions first showed 14,593 supersets join an accessory to a core move across two blocks, so the parts are built across blocks by tag. The same measurement found 1,580 pairs with unequal sets and 37% of sessions mixing effort levels, and each became a rule (rounds = the most sets, a differing row says "2 × 10", a part names its own effort). And an edit I bounded on the next heading quietly deleted three exported helpers; the type checker caught it, a backup restored it.

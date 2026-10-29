@@ -332,6 +332,7 @@ Hooks are versioned in `.claude/settings.json` (project behaviour, git-tracked) 
 
 ### sessionStorage Keys (canonical)
 - `zona_wizard_draft` — wizard form state persisted by `GeneratePlanScreen`. Written on every field change; restored on mount; cleared on `handleUsePlan` success. Client only.
+- `zona_strength_guided_<date>` (**localStorage**) — a guided strength session's progress for that day (`STRENGTH_GUIDED.storageKey`). Written on every step; resumed for the same date and session; cleared on Done. Losing it costs a restart, nothing else.
 
 ### Plan Archive
 - `plan_archive` Supabase table — previous plan stored before every `savePlanForUser` call. Migration: `20260424_plan_archive.sql`. No restore UI at v1 — data protection only.

@@ -187,19 +187,20 @@ import { useRunTrace } from '@/components/dashboard/useRunTrace'
 import { analysisSentence, isCeilingOnly } from '@/lib/coaching/zoneTrace'
 import TodayScreen from '@/components/dashboard/TodayScreen'
 import StrengthSessionScreen from '@/components/dashboard/StrengthSessionScreen'
+import StrengthGuidedSession from '@/components/dashboard/StrengthGuidedSession'
 import StrengthSetupScreen, { STRENGTH_PROFILE_DEFAULT } from '@/components/dashboard/StrengthSetupScreen'
 import StrengthChangeConfirm from '@/components/dashboard/StrengthChangeConfirm'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useStrengthPlan, useStrengthWeeklyNote } from '@/components/dashboard/useStrengthPlan'
 import { canUseStrength } from '@/lib/strength-bridge/release'
-import { STRENGTH_COACH, STRENGTH_REST_INVITE, STRENGTH_SETUP, STRENGTH_WIZARD_EQUIPMENT, isoLocalDate } from '@/lib/strength-bridge/display'
+import { STRENGTH_COACH, STRENGTH_REST_INVITE, STRENGTH_SETUP, STRENGTH_WIZARD_EQUIPMENT, isoLocalDate, strengthSessionTitle } from '@/lib/strength-bridge/display'
 import { strengthWeekEvidence, type StrengthWeekEvidence } from '@/lib/strength-bridge/coachEvidence'
 import { prefillChosenDays } from '@/lib/strength-bridge/chosenDays'
 import { STRENGTH_SCREEN_SUB, STRENGTH_TITLE, strengthSubtitle } from '@/components/shared/meDoors'
 import type { StrengthPlan, StrengthProfile, StrengthSession } from '@/packages/strength'
 import SessionPopupInner from '@/components/dashboard/SessionPopupInner'
 
-type Screen = 'zones' | 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration' | 'strength-session' | 'strength-setup'
+type Screen = 'zones' | 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration' | 'strength-session' | 'strength-setup' | 'strength-guided'
 
 
 
@@ -3334,6 +3335,8 @@ export default function DashboardClient() {
               deloadWeek={strength.plan?.weeks.find(w => w.n === activeStrength.week_n)?.phase === 'deload'}
               // S3 Am.3 — the screen shows it only on a session that lost its heavy legs.
               noLegs={plan && activeStrength.date ? { beside: hardRunBeside(plan.weeks, allOverrides, activeStrength.date), swap: strength.plan?.legs_day_suggestion ?? null } : undefined}
+              // STRENGTH-GUIDED-SESSION-01 — on the day only: a past session is marked, not done again.
+              onStart={activeStrength.date === isoLocalDate(new Date()) && activeStrength.kind !== 'mobility' ? () => setScreen('strength-guided') : undefined}
               status={activeStrength.date ? strength.completions[activeStrength.date] ?? null : null}
               canLog={!!activeStrength.date && activeStrength.date <= isoLocalDate(new Date())}
               lifts={strength.plan ? {
@@ -3349,6 +3352,24 @@ export default function DashboardClient() {
             />
           )
         })()}
+        {screen === 'strength-guided' && activeStrength && (
+          <StrengthGuidedSession
+            session={activeStrength}
+            title={strengthSessionTitle(activeStrength)}
+            lifts={strength.plan ? {
+              suggestions: liftSuggestionsFor(strength.plan, activeStrength, strength.liftLogs, strength.recoveryEases),
+              today: logsOn(strength.liftLogs, activeStrength.date),
+              units: preferredUnits,
+              onLog: (id: string, kg: number | null, feel: 'easy' | 'right' | 'hard') => activeStrength.date ? setStrengthLiftLog(activeStrength.date, id, kg, feel) : Promise.resolve(false),
+            } : undefined}
+            onExit={() => setScreen('strength-session')}
+            onFinish={async (times) => {
+              const ok = activeStrength.date ? await setStrengthCompletion(activeStrength.date, 'done', times) : false
+              if (ok) setScreen('strength-session')
+              return ok
+            }}
+          />
+        )}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} restingHR={restingHR} maxHR={effectiveMaxHR} preferredMetric={preferredMetric} driftContext={buildDriftContext(plan, runAnalysisMap, activePostRunData.weekN, activePostRunData.session?.key)} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
@@ -3573,6 +3594,8 @@ export default function DashboardClient() {
         // a full screen replaces the tab bar; a slide-up sheet keeps a MIRRORED
         // nav at the bottom. It has a back arrow, so it is the former.
         if (screen === 'redeem') return null
+        // STRENGTH-GUIDED-SESSION-01 — the guided session is a full screen too: End session and Back are its exits.
+        if (screen === 'strength-guided') return null
 
         // 🔴 THE GEOMETRY LIVES IN THE CLASS, AND IT DID NOT FOR ONE RELEASE.
         // `NAV-FLOAT-01` added `.nav-bar--floating` and left the flush bar's

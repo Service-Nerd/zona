@@ -31,7 +31,7 @@ import {
   STRENGTH_AFTER_RUN_LINE, STRENGTH_KIND_TITLE, strengthSessionTitle,
   exerciseCount, exerciseCues, exerciseName,
   LIFT_FEEL_LABEL, LIFT_LOGGED, LIFT_WEIGHT_LABEL, liftSuggestionLine,
-  STRENGTH_NEW_LIFTS_LINE, STRENGTH_SUPERSET_LINK, effortWords, isNewLift, lostItsHeavyLegs, noLegsLine, partDose, partHeader, partTitle,
+  STRENGTH_GUIDED_COPY, STRENGTH_NEW_LIFTS_LINE, STRENGTH_SUPERSET_LINK, effortWords, isNewLift, lostItsHeavyLegs, noLegsLine, partDose, partHeader, partTitle,
 } from '@/lib/strength-bridge/display'
 import { sessionEffort, sessionParts, trainingParts, type SessionPart } from '@/lib/strength-bridge/sessionParts'
 import { Glyph } from '@/components/shared/RowIcon'
@@ -179,11 +179,13 @@ export interface StrengthSessionScreenProps {
   onExerciseOpen?: (exerciseId: string) => void
   /** PHASE-ON-TODAY-01 — the strength week is a deload: say the short session is on purpose. */
   deloadWeek?: boolean
+  /** STRENGTH-GUIDED-SESSION-01 — open the guided session. Absent: not offered (another day, or already logged). */
+  onStart?: () => void
   /** S3 Am.3 — on a session that lost its heavy legs: the hard run beside it, and the plan's swap day. */
   noLegs?: { beside: 'quality' | 'long' | null; swap?: StrengthPlan['legs_day_suggestion'] | null }
 }
 
-export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus, note = null, lifts, onExerciseOpen, deloadWeek = false, noLegs }: StrengthSessionScreenProps) {
+export default function StrengthSessionScreen({ session, dayLabel, weekN, status, canLog, onBack, onSetStatus, note = null, lifts, onExerciseOpen, deloadWeek = false, noLegs, onStart }: StrengthSessionScreenProps) {
   // Once per exercise per visit: reopening a row to re-read a cue is not a second look-up.
   const opened = useRef(new Set<string>())
   const onOpen = onExerciseOpen && ((id: string) => { if (opened.current.has(id)) return; opened.current.add(id); onExerciseOpen(id) })
@@ -269,8 +271,17 @@ export default function StrengthSessionScreen({ session, dayLabel, weekN, status
               </div>
             ) : (
               <>
-                <Button variant="primary" fullWidth onClick={() => void set('done')} busy={busy}>Mark complete</Button>
-                <Button variant="secondary" fullWidth onClick={() => void set('skipped')} disabled={busy} style={{ marginTop: 'var(--space-2)' }}>Skip</Button>
+                {/* STRENGTH-GUIDED-SESSION-01 (Design Board F): one primary, Start session, on the day; marking it done
+                    without the guided flow stays one tap away. */}
+                {onStart ? (
+                  <>
+                    <Button variant="primary" fullWidth onClick={onStart} disabled={busy}>{STRENGTH_GUIDED_COPY.start}</Button>
+                    <Button variant="secondary" fullWidth onClick={() => void set('done')} busy={busy} style={{ marginTop: 'var(--space-2)' }}>{STRENGTH_GUIDED_COPY.markWithoutStarting}</Button>
+                  </>
+                ) : (
+                  <Button variant="primary" fullWidth onClick={() => void set('done')} busy={busy}>Mark complete</Button>
+                )}
+                <Button variant={onStart ? 'quiet' : 'secondary'} fullWidth onClick={() => void set('skipped')} disabled={busy} style={{ marginTop: 'var(--space-2)' }}>Skip</Button>
               </>
             )}
             {failed && <InlineError style={{ marginTop: 'var(--space-2)' }}>Couldn&apos;t save that. Try again.</InlineError>}

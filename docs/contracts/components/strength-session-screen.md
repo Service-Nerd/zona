@@ -20,6 +20,7 @@ interface StrengthSessionScreenProps {
   lifts?: { suggestions, today, units, onLog? }   // STRENGTH-PROGRESSION-01: per main lift; absent = no logging
   onExerciseOpen?: (exerciseId: string) => void   // STRENGTH-ROW-OPEN-01: first open of each row per visit; the demand measure
   deloadWeek?: boolean                           // PHASE-ON-TODAY-01: the strength week's phase is 'deload' → STRENGTH_DELOAD_LINE under the tiles
+  onStart?: () => void                            // STRENGTH-GUIDED-SESSION-01: open the guided session; passed on the day only (not for a mobility session)
   noLegs?: { beside: 'quality' | 'long' | null; swap?: legs_day_suggestion | null }  // S3 Am.3 (PARTS-01): hardRunBeside(run plan, overrides, date) + the plan's swap; shown only when lostItsHeavyLegs(session)
 }
 ```
@@ -54,3 +55,9 @@ button). Gate: `components/dashboard/strengthLiftLog.markup.test.ts`.
 **Strength session title (STRENGTH-SESSION-TITLE-01, 2026-10-19).** Any strength session's name comes from `strengthSessionTitle(session)` (`lib/strength-bridge/display.ts`), read from what it holds (*Lower body*, *Upper body and light legs*, else the kind title), never `STRENGTH_KIND_TITLE[kind]`. Gate: `lib/strength-bridge/sessionTitle.test.ts`.
 
 **Step numerals (A11Y-APP-TEXT-SWEEP-01, Design Board 6t-j, 2026-10-22).** Retired by STRENGTH-SESSION-PARTS-01: the part number now carries the order (*Part 2 · Superset*), so the row has no italic numeral.
+
+## Actions with a guided session (STRENGTH-GUIDED-SESSION-01, 2026-10-29)
+
+With `onStart`: **Start session** (the one primary), **Mark complete without starting** (secondary), **Skip** (quiet).
+Without it (another day, a mobility session): Mark complete (primary), Skip (secondary), as before. Gate:
+`components/dashboard/strengthGuided.markup.test.ts` § the overview starts it.

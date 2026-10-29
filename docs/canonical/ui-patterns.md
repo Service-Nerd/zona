@@ -4526,7 +4526,7 @@ exercise in lighter form is left out when that exercise is in the session (`S-WA
 `SegmentedControl`, equipment `Chip` multi, experience `Chip`, bone flag `Switch`), the last two defaulted; injuries read-only from the run plan; honest notes
 once, as `FieldNote`s; one CTA.
 
-### Strength session in parts, and the guided session (STRENGTH-SESSION-PARTS-01, STRENGTH-GUIDED-SESSION-01, Design Board 2026-10-28) — OVERVIEW BUILT 2026-10-29; GUIDED RULED, NOT BUILT
+### Strength session in parts, and the guided session (STRENGTH-SESSION-PARTS-01, STRENGTH-GUIDED-SESSION-01, Design Board 2026-10-28) — BOTH BUILT 2026-10-29
 
 **As built (2026-10-29).** `lib/strength-bridge/sessionParts.ts` is the single owner of the cut, and build 6 reads it too.
 A superset part gathers **every item with its tag across blocks** (measured: 14,593 pairs cross a block, accessory with
@@ -4538,9 +4538,21 @@ holds its words on one line at 320 px. A part whose effort differs (37% of sessi
 the canvas's bare *"2:30"*. Part labels: *Superset · Main lift · Accessory · Core · Jumps*. The superset link is the
 `link` `Glyph` in the line's `--mute` (a glyph never takes a hue, ICON-RULE-01) plus *"then straight into"*. The no-legs line shows under the tiles on a session that
 **lost its heavy legs** (`lostItsHeavyLegs`, the engine's own light-leg mark). It names the hard run beside the day
-(`hardRunBeside`, read with the runner's moves) and the plan's `legs_day_suggestion`. ⚠️ **Start session and "Mark
-complete without starting" ship with build 6**: a primary button with no guided session behind it would do nothing.
-Until then the actions stay **Mark complete · Skip**. **Check:** `strengthScreens.markup.test.ts` § in parts,
+(`hardRunBeside`, read with the runner's moves) and the plan's `legs_day_suggestion`. **Actions (build 6):** on the day,
+**Start session** (primary) · **Mark complete without starting** (secondary) · **Skip** (quiet); on another day or a
+mobility session, **Mark complete · Skip** as before.
+
+**Guided, as built (2026-10-29).** `StrengthGuidedSession.tsx` over `lib/strength-bridge/guidedSession.ts`'s pure step
+model. A full screen (no nav, as `redeem`). Top: **End session** (ghost) left, elapsed clock right, the progress strip
+(one 4 px segment per part, `--s-strength`). Work page: the part eyebrow, *"Round N of M"* 26/800, one line
+(`guidedPartLine`: *"Both moves back to back, then rest 2:30 min. Stop with 2 in the tank."*), the moves in one card
+(name 15/600, one round's dose 17/800, the 10f suggestion line, the stepper, a *"Start 40 s"* timer as a `soft`
+compact button). A move with fewer sets than the rounds leaves the later rounds. Rest page: *"Part N · Rest"*, the
+countdown 56/800, *"Round 3 of 3 next: …"*, **+30 s** · **Skip rest**. Bottom bar, pinned: **Back** (secondary) and
+the primary (*"Round 2 done, rest"* / *"Start round 3"* / *"Start part 2"*). End page: minutes 26/800, *"N parts, M
+rounds. How did the main lifts feel?"*, a `LiftLogPanel` per main lift, the optional note, **Done**. Rest and timers
+are end times. Progress kept on this device for the day. The lb stepper moves by the kg step, so its numbers land
+unevenly (*88 → 94 lb*): flagged, not ruled. **Check:** `strengthScreens.markup.test.ts` § in parts,
 `sessionParts.test.ts`, `hardRunBeside.test.ts`.
 
 **Overview (the ruling).** SessionScreen anatomy kept. Training work is grouped into **parts**:

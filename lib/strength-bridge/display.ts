@@ -92,6 +92,47 @@ export function partDose(p: Pick<Prescription, 'sets' | 'reps' | 'seconds' | 'co
   return p.sets !== rounds ? `${p.sets} × ${dose}` : dose
 }
 
+// ── STRENGTH-GUIDED-SESSION-01 (Design Board 2026-10-28 F; the founder's wording sheet) ─────────────────────────
+
+export const STRENGTH_GUIDED_COPY = {
+  start: 'Start session',
+  markWithoutStarting: 'Mark complete without starting',
+  end: 'End session',
+  back: 'Back',
+  extendRest: '+30 s',
+  skipRest: 'Skip rest',
+  done: 'Done',
+  logNote: 'Optional. Next session suggests a weight from these.',
+  feelAsk: 'How did the main lifts feel?',
+  /** The step in the runner's own unit ("2.5 kg", "6 lb"). */
+  stepperHint: (step: string) => `Steps of ${step} · tap the number to type`,
+  timer: (seconds: number) => `Start ${seconds} s`,
+  rounds: (n: number, of: number) => `Round ${n} of ${of}`,
+  roundDone: (n: number, restNext: boolean) => (restNext ? `Round ${n} done, rest` : `Round ${n} done`),
+  startNext: (next: { round: number; part: number | null }) => (next.round > 1 || next.part == null ? `Start round ${next.round}` : `Start part ${next.part}`),
+  minutes: (n: number) => `${n} ${n === 1 ? 'minute' : 'minutes'}`,
+  tally: (parts: number, rounds: number) => `${parts} ${parts === 1 ? 'part' : 'parts'}, ${rounds} ${rounds === 1 ? 'round' : 'rounds'}.`,
+  bodyweight: 'bodyweight',
+}
+
+/** The guided page's one line under the round: how the part runs, then the effort (reps-based work only). */
+export function guidedPartLine(p: SessionPart): string {
+  const rirs = Array.from(new Set(p.items.filter(i => i.reps != null && i.rir != null).map(i => i.rir as number))).sort((a, b) => a - b)
+  const effort = rirs.length ? `Stop with ${effortWords(rirs[0], rirs[rirs.length - 1])}.` : null
+  const rest = p.rest_s > 0 ? formatStepDuration(p.rest_s) : null
+  const how = p.kind === 'superset'
+    ? (rest ? `Both moves back to back, then rest ${rest}.` : 'Both moves back to back.')
+    : p.items.length > 1 ? (rest ? `Straight through, then rest ${rest}.` : 'Straight through, no rest between moves.')
+    : rest ? `Then rest ${rest}.` : null
+  return [how, effort].filter(Boolean).join(' ')
+}
+
+/** The rest page's line: what comes next, by name. */
+export function guidedNextLine(next: SessionPart, round: number, title: string): string {
+  const names = next.items.map(i => exerciseName(i.exercise_id)).join(', then ')
+  return round > 1 ? `Round ${round} of ${next.rounds} next: ${names}.` : `${title} next: ${names}.`
+}
+
 /** Said once, under the tiles, when the session's lifts are new (instead of on every row). */
 export const STRENGTH_NEW_LIFTS_LINE = 'New lifts this block. Start light and build from there.'
 
