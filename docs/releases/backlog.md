@@ -228,8 +228,8 @@ plan, 2 completions, 2 lift logs, and nothing has run on a phone. Release, in or
 guided sessions, against a written checklist; (2) migration `20261029_strength_session_times_and_reps` verified (3
 columns); (3) `STRENGTH-ENTRY-01` item 6 (the `/pricing` row replacing the "Not built" omission, the Upgrade line, locked
 rows for free runners); (4) the lapsed-trial state, designed then built. Then flip `STRENGTH_RELEASE` to `'paid'`
-(`lib/strength-bridge/release.ts`). 👤 Open: whether the Make-A-Wish cohort (Apple offer codes, so paid) gets strength
-mid-plan by side effect. Replaces the 2026-10-16 date condition.
+(`lib/strength-bridge/release.ts`). 👤 Whether the Make-A-Wish cohort (Apple offer codes, so paid) gets strength:
+**the founder decides at switch-on** (2026-10-29), not before. Replaces the 2026-10-16 date condition.
 
 ### ✅ `STRENGTH-LOG-REPS-01` — stamp the prescribed reps on each strength log, so a plan rebuild cannot change them (shipped 2026-10-29 with build 6; migration `20261029_strength_session_times_and_reps.sql` for the founder to apply) 🏃 **COACHING BOARD** ruled (S14 Am.1); ⚙️ build with `STRENGTH-GUIDED-SESSION-01`
 
