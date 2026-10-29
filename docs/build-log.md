@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-29 — GTM-SEO-COMPARE-01 + CHARITY-PLAN-PREREQ-01 · Thirty minutes, and a week one of fifty kilometres
+**Shipped:** comparison page 7 (a first marathon around a full-time job), with three Coaching Board changes the founder approved, and the same false prerequisite fixed on the charity page and in the FAQ owner.
+**Dev learning:** the brief's "verified" list included "assumes you can run about 30 minutes without stopping", and the source was our own charity page. Generating the plan the site links showed week 1 at 50 km with a 14 km long run, written for 45 km a week. Every plan number on both pages is now read from the plan, so the copy cannot drift from it again. A gate that reads answers with a single-quote regex would have let the new template-literal answer out of its own population; widened.
+**Product/creator learning:** the most dangerous sentence on the page was the reassuring one. "You can start if you can run 30 minutes" sounds kind and points a first-timer at a load jump the engine itself would never prescribe them. The page's own day rule and strength line also contradicted our rules (an easy run the day before the long run, heavy legs on all three rest days).
+**AI-building learning:** a research brief that lists claims as "verified" can launder a claim from our own site back into new copy. The check that caught it was generating the actual plan, not re-reading the brief.
+**The honest bit:** the founder asked for the copy unedited; three sentences changed, with his approval. The charity page carried the false line live for weeks.
+**Hook material:** "Assumes you can run 30 minutes." Week one: 50 km.
+**Postable?:** yes
+
 ## 2026-10-29 — STRENGTH-SESSION-TOP-01 · The coach note said it twice, and the gate never saw the file
 **Shipped:** the strength session's weekly Kit note moved from under the tiles to the bottom of the session, and its prompt is told not to repeat why heavy legs are off, because the screen already says it.
 **Dev learning:** the founder's screenshot was the measurement: at 3.216 px per point, 242 pt of prose sat between the tiles and the first move, and Part 1 started behind the nav pill. The app already had the rule (CLAUDE.md § Session Card Layout: coach notes at the bottom); the strength screen just had not followed it. Separately, two gates had failed on build 6's new screen for an hour, because both list files with `git ls-files` and the file was not staged when verify ran.

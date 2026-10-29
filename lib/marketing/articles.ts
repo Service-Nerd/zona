@@ -38,6 +38,7 @@
 
 import { BRAND, PRICING } from '@/lib/brand'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+import { planShape, planStartPoint } from './planFacts'
 import { articleJsonLd } from '@/lib/marketing/articleJsonLd'
 import { formatDate } from '@/lib/format'
 
@@ -361,6 +362,10 @@ const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'sev
 // Coaching Board 2026-10-23 (page 6): the most quality sessions any plan puts in one week, read from §8's own ceiling so
 // the copy cannot state a number the engine does not hold. A per-week count typed into an article is how page 6 first
 // said "one hard session a week" while 11% of plans had weeks with two.
+/** Page 7's plan numbers, read from the published marathon plan (Coaching Board 2026-10-29). */
+const MARATHON = planShape('marathon-16-week')
+const MARATHON_START = planStartPoint('marathon-16-week')
+
 export const MAX_HARD_SESSIONS_PER_WEEK = Math.max(...Object.values(GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX))
 
 const p = (...spans: ArticleSpan[]): ArticleBlock => ({ kind: 'p', spans })
@@ -835,6 +840,73 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
         `.`,
       ),
       p(`My recommendation: slow your easy runs down by feel for a month and see what happens. Try an app only if you find you cannot hold yourself back.`),
+    ],
+  },
+  // ── COMPARISON 7 ───────────────────────────────────────────────────────
+  // Founder's final copy, 2026-10-29, with three changes the Coaching Board ruled (CORRECT WITH AMENDMENT) and the
+  // founder approved the same day: the plan's real start point replaces "assumes about 30 minutes without stopping"
+  // (week 1 is ~50 km with a 14 km long run; Willy binding), the §7 spacing rule replaces "keep the two easy runs apart
+  // from the long run", and heavy legs go on Thursday after the run (S2). Every plan number is read from the generated
+  // plan (`planShape`, `planStartPoint`), never typed. Sitting: docs/decisions/coaching-2026-10-29-page7-claims.md.
+  // Held by page7Claims.test.ts.
+  {
+    kind: 'comparison',
+    slug: 'marathon-training-plan-full-time-job',
+    metaTitle: `First marathon training plan around a full-time job`,
+    metaDescription:
+      `How to train for a first marathon on four runs a week around full-time work: what to cut first, a realistic weekly shape, and a note for charity runners.`,
+    ogTitle: `First marathon training plan around a full-time job`,
+    ogDescription:
+      `How to train for a first marathon on four runs a week around full-time work: what to cut first, a realistic weekly shape, and a note for charity runners.`,
+    h1: `Marathon training plan for a first-timer with a full-time job`,
+    lastUpdated: '29 October 2026',
+    lastUpdatedISO: '2026-10-29',
+    publishedISO: '2026-10-29',
+    signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
+    appStoreLinkText: `Get ${BRAND.name} on the App Store`,
+    hubSummary: `Four runs a week around a full-time job: what to cut first, and a weekly shape you can hold.`,
+    body: [
+      p(`You can train for a first marathon on four runs a week around a full-time job, and for most people the limit is time and recovery, not fitness. The shape is one long run, one harder session and two easy runs, with the long run protected above everything else. I have not run a marathon yet. My first is London in April 2027, so this is how I am approaching it and why, not a record of having done it.`),
+
+      h2('The real constraint'),
+      p(`A marathon build asks for about four months of consistency. Fitness is rarely what stops people. A late meeting, a bad night, a child off school, and one run gets skipped, then the next. A plan that needs six good days a week has no slack for any of that.`),
+      p(`Four runs is a number most working weeks can hold. It also leaves three days for your legs to recover from the long run.`),
+      p(`I looked for a safe rate of weekly increase and found the evidence thinner than the advice. A 2018 systematic review by Damsted and colleagues in the International Journal of Sports Physical Therapy found very limited evidence that sudden changes in training load raise injury risk in amateur and novice runners. It found no difference between average weekly increases of 10% and 24%. That is not a licence to jump. It means nobody can hand you a number, including me.`),
+      p(`What I do know comes from July. I ran 100km and walked the last 40, because my quads failed on the descents. It was not my lungs. Adding distance on top of a weakness you have not dealt with repeats the failure at a bigger scale, and first-timers do the same thing with volume.`),
+
+      h2('What to cut first when the week collapses'),
+      p(`Cut the second easy run first. Shorten it or drop it, and nothing much is lost.`),
+      p(`Next, turn the harder session into an easy run. Hard running on a tired week mostly buys you a lost weekend.`),
+      p(`The long run is the session I would protect. If the week gives you less time, shorten it instead of skipping it. A missed run is gone, so do not stack it onto the next day to make up for it.`),
+
+      h2('A realistic weekly shape'),
+      p(`Tuesday is an easy run. Thursday is the harder session, or an easy run in weeks where the plan has none. Saturday is a short easy run, and Sunday is the long run. Monday, Wednesday and Friday are off. If you lift, do the heavy leg work on Thursday after the harder run. Swap the days to suit your week, but keep the harder session at least two days away from the long run.`),
+      p(
+        `Easy means you can speak in full sentences. Most people run it too fast, and I wrote up how to check yours in `,
+        { text: `why your easy runs aren't easy`, href: '/why-your-easy-runs-arent-easy' },
+        `.`,
+      ),
+      p(`In the ${MARATHON.weeks}-week plan on this site, the first five weeks have no hard sessions beyond strides and one 5K time trial. That is deliberate. Early weeks are for getting the long run and the easy runs in without breaking anything.`),
+      p(`That plan runs ${NUMBER_WORDS[MARATHON.runsPerWeek]} days a week and peaks at ${MARATHON.peakKm}km, which is more than the four-day shape above. If your week cannot hold ${NUMBER_WORDS[MARATHON.runsPerWeek]}, drop the second easy run, not the long run. I would rather you finished on four than quit on ${NUMBER_WORDS[MARATHON.runsPerWeek]}.`),
+
+      h2('If you have a charity place'),
+      p(`A charity place usually comes with a race date and a fundraising target, and you get little say in either. That pressure pushes people to add to the plan instead of trusting it.`),
+      p(`I could not find a figure for how many charity runners stop training. The nearest I found is a Dutch study of 774 novices after a six-week beginners programme. Within 26 weeks, 29.5% had stopped running, and injury was the most common reason. They were beginners, not marathon runners, so read it as a warning about novices and injury, not a number for your event.`),
+      p(`The ${MARATHON.weeks}-week plan on this site starts at about ${MARATHON.week1Km}km in week one, with a ${MARATHON.week1LongKm}km long run. It is written for someone already running about ${MARATHON_START.weeklyKm}km a week with a ${MARATHON_START.longRunKm}km long run behind them. If that is not you yet, build up first, before week one. If your race is 24 or 25 April 2027, the London dates, count back ${MARATHON.weeks} weeks and see how much time that leaves you.`),
+
+      h2(`Where ${BRAND.name} fits`),
+      p(`${BRAND.name} is a running app for people who tend to train too hard. It is iOS only, there is no Garmin workout export, and I am the only developer.`),
+      p(
+        `The `,
+        { text: `${MARATHON.weeks}-week marathon plan`, href: '/plans/marathon-16-week' },
+        ` is on the site and you can read all of it before deciding anything. Full access is ${PRICING.monthly.display} a month or ${PRICING.annual.display} a year, with a two-week trial.`,
+      ),
+      p(
+        `You do not need an app to follow a plan. A printed plan and the talk test will do. If you want a person rather than software, I wrote about when `,
+        { text: 'a coach is worth paying for', href: '/do-i-need-a-running-coach' },
+        `.`,
+      ),
+      p(`My recommendation: pick four days you can hold, protect the long run, keep the easy runs easy, and start from what you can run today.`),
     ],
   },
   // ── GUIDE 1 ────────────────────────────────────────────────────────────

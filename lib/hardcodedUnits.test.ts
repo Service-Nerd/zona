@@ -73,6 +73,13 @@ const BASELINE: ReadonlyArray<{ file: string; snippet: string; reason: string }>
       'preference to honour. The sample plan is authored in km deliberately.',
   },
   {
+    file: 'app/charity-runners/page.tsx',
+    snippet: '${START.k5.weeklyKm}km',
+    reason:
+      'NO VIEWER — the same reason as PlanPage: a public marketing page about the published plans, which are ' +
+      'authored in km (CHARITY-PLAN-PREREQ-01, Coaching Board 2026-10-29).',
+  },
+  {
     file: 'components/strava/StravaPanel.tsx',
     snippet: '${raceDistanceKm}km',
     reason:

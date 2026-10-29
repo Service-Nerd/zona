@@ -221,7 +221,7 @@ Plan: `docs/plans/STRENGTH-SESSION-REDESIGN-01.md`. Canvas: *Strength session re
 ✅ `STRENGTH-GUIDED-SESSION-01` (shipped 2026-10-29: Start session, one part per page, stepper, rest countdown, timers, End session, session times stored; the ramp set keeps "1 × 8", founder 2026-10-29). **Release is a separate decision**: `STRENGTH_RELEASE` is still `'admin'`. S2 unchanged: loosening it was ruled
 INCORRECT (52% of chosen-day weeks have no heavy legs; P1/P2 put legs beside a hard run).
 
-### 🔲 `CHARITY-PLAN-PREREQ-01` — `/charity-runners` says every plan assumes 30 minutes of running; the marathon and half plans assume far more 🏃 **COACHING BOARD** ruled (2026-10-29, page 7 sitting) → 👤 **FOUNDER** (words)
+### ✅ `CHARITY-PLAN-PREREQ-01` (shipped 2026-10-29, founder approved) — `/charity-runners` says every plan assumes 30 minutes of running; the marathon and half plans assume far more 🏃 **COACHING BOARD** ruled (2026-10-29, page 7 sitting) → 👤 **FOUNDER** (words)
 
 The FAQ answer (*"The plans assume you can already run about 30 minutes without stopping"*, `app/charity-runners/page.tsx`)
 links the four published plans. Measured: `marathon-16-week` is generated for 45 km/week and a 20 km long run and opens

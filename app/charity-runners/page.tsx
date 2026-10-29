@@ -44,6 +44,7 @@
 // place with them. Every "no code?" path leads to the free plans or the normal
 // two-week trial, never to a request form.
 
+import { getPlan, planStartPoint } from '@/lib/marketing/plans'
 import type { Metadata } from 'next'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import { Section } from '@/components/marketing/Section'
@@ -73,6 +74,15 @@ export const metadata: Metadata = pageMetadata({
   type: 'article',
   ogImageTitle: 'Free coaching for charity runners',
 })
+
+/** CHARITY-PLAN-PREREQ-01 — what each free plan is written for, read from the plan, never typed. */
+const START = {
+  k5: planStartPoint('5k-12-week'),
+  k10: planStartPoint('10k-12-week'),
+  half: planStartPoint('half-marathon-12-week'),
+  full: planStartPoint('marathon-16-week'),
+  fullWeeks: getPlan('marathon-16-week')!.weeks,
+}
 
 /** The four free plans, by distance. Ultra is deliberately absent: 50K and 100K
  *  have no free static plan, and the page says so rather than linking somewhere
@@ -163,7 +173,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'I have never raced this distance. Is this for me?',
-    a: 'Yes, with one caveat worth saying out loud. The plans assume you can already run about 30 minutes without stopping. If you cannot yet, spend a few weeks building to that first and then start. Beginning a structured block from zero is the most reliable way to get injured before race day.',
+    // 🔴 CHARITY-PLAN-PREREQ-01 (Coaching Board 2026-10-29, Willy binding; founder approved): this said every plan
+    // assumes "about 30 minutes without stopping". The marathon plan is written for ~45 km a week and a 20 km long
+    // run and opens near 50 km, so a first-timer at 30 minutes would take the jump §2/§45/§117 Am.5 exist to prevent.
+    // Each start point is now read from the plan's own input (`planStartPoint`).
+    a: `Yes, with one caveat worth saying out loud. Each plan starts from a level, and it is not zero: the 5K plan is written for someone running about ${START.k5.weeklyKm}km a week, the 10K plan about ${START.k10.weeklyKm}km, the half marathon plan about ${START.half.weeklyKm}km with a ${START.half.longRunKm}km long run, and the ${START.fullWeeks}-week marathon plan about ${START.full.weeklyKm}km with a ${START.full.longRunKm}km long run. If you are not there yet, spend a few weeks building to it first and then start. Beginning a structured block from well below its starting point is the most reliable way to get injured before race day.`,
   },
   {
     q: 'Why is so much of it easy? I have a race to train for.',

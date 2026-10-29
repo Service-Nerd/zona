@@ -31,7 +31,9 @@ function answers(): string[] {
   // Array.from, not spread: this repo's tsconfig names no `target` (CLAUDE.md
   // § TypeScript). No `s` flag either, so `.` cannot cross a line: one answer, one
   // source line, which is how the file is written.
-  return Array.from(src.matchAll(/^    a: '(.*)',$/gm)).map(m => m[1])
+  // A template literal counts too (CHARITY-PLAN-PREREQ-01 interpolates the plans' start points): reading only
+  // single quotes let that answer leave the population this test guards.
+  return Array.from(src.matchAll(/^    a: (['`])(.*)\1,$/gm)).map(m => m[2])
 }
 
 /**

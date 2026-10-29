@@ -28,6 +28,7 @@
 // never motivational. ⚠️ NO EM DASHES — these strings are read by the runner in-app, so
 // `noEmDashApp.test.ts` governs them, and the marketing surface is in `noEmDash.test.ts`.
 
+import { getPlan, planStartPoint } from '@/lib/marketing/plans'
 import { BRAND } from '@/lib/brand'
 import { PRICING } from '@/lib/brand'
 
@@ -63,6 +64,15 @@ export interface FaqEntry {
   topic: 'product' | 'using' | 'account'
 }
 
+/** CHARITY-PLAN-PREREQ-01 — what each free plan is written for, read from the plan (same reads as /charity-runners). */
+const START = {
+  k5: planStartPoint('5k-12-week'),
+  k10: planStartPoint('10k-12-week'),
+  half: planStartPoint('half-marathon-12-week'),
+  full: planStartPoint('marathon-16-week'),
+  fullWeeks: getPlan('marathon-16-week')!.weeks,
+}
+
 export const FAQS: FaqEntry[] = [
   // ── The proposition itself ────────────────────────────────────────────────
   {
@@ -91,7 +101,11 @@ export const FAQS: FaqEntry[] = [
   },
   {
     q: 'I have never raced this distance. Is this for me?',
-    a: 'Yes, with one caveat worth saying out loud. The plans assume you can already run about 30 minutes without stopping. If you cannot yet, spend a few weeks building to that first and then start. Beginning a structured block from zero is the most reliable way to get injured before race day.',
+    // CHARITY-PLAN-PREREQ-01 (Coaching Board 2026-10-29, Willy binding): was "the plans assume about 30 minutes
+    // without stopping", false for the marathon (45 km/week, 20 km long run) and half plans. Read from the plans, and
+    // reproduced verbatim from /charity-runners (the cleared surface). In km on both: the published plans are written
+    // in km, whatever the reader's units.
+    a: `Yes, with one caveat worth saying out loud. Each plan starts from a level, and it is not zero: the 5K plan is written for someone running about ${START.k5.weeklyKm}km a week, the 10K plan about ${START.k10.weeklyKm}km, the half marathon plan about ${START.half.weeklyKm}km with a ${START.half.longRunKm}km long run, and the ${START.fullWeeks}-week marathon plan about ${START.full.weeklyKm}km with a ${START.full.longRunKm}km long run. If you are not there yet, spend a few weeks building to it first and then start. Beginning a structured block from well below its starting point is the most reliable way to get injured before race day.`,
     topic: 'product',
     scope: 'both',
     shouldBeObviousOn: 'Generate Plan (the wizard asks your level and never says what the floor is)',

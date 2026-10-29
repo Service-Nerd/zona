@@ -193,6 +193,14 @@ export function getPlan(slug: string): MarketingPlan | undefined {
   return MARKETING_PLANS.find(p => p.slug === slug)
 }
 
+/** CHARITY-PLAN-PREREQ-01 (Coaching Board 2026-10-29) — the level a published plan is written for: its own generation input. Cheap, no engine call. */
+export function planStartPoint(slug: string): { weeklyKm: number; longRunKm: number } {
+  const plan = getPlan(slug)
+  if (!plan) throw new Error(`no published plan ${slug}`)
+  const input = plan.input('2027-01-01') as { current_weekly_km: number; longest_recent_run_km: number }
+  return { weeklyKm: input.current_weekly_km, longRunKm: input.longest_recent_run_km }
+}
+
 /** Card/link title: goal plans lead with the goal, distance plans with distance + length. */
 export function planCardTitle(p: MarketingPlan): string {
   return (p.group ?? 'distance') === 'goal'
