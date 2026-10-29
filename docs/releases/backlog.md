@@ -221,6 +221,15 @@ Plan: `docs/plans/STRENGTH-SESSION-REDESIGN-01.md`. Canvas: *Strength session re
 ✅ `STRENGTH-GUIDED-SESSION-01` (shipped 2026-10-29: Start session, one part per page, stepper, rest countdown, timers, End session, session times stored; the ramp set keeps "1 × 8", founder 2026-10-29). **Release is a separate decision**: `STRENGTH_RELEASE` is still `'admin'`. S2 unchanged: loosening it was ruled
 INCORRECT (52% of chosen-day weeks have no heavy legs; P1/P2 put legs beside a hard run).
 
+### 🔲 `CHARITY-PLAN-PREREQ-01` — `/charity-runners` says every plan assumes 30 minutes of running; the marathon and half plans assume far more 🏃 **COACHING BOARD** ruled (2026-10-29, page 7 sitting) → 👤 **FOUNDER** (words)
+
+The FAQ answer (*"The plans assume you can already run about 30 minutes without stopping"*, `app/charity-runners/page.tsx`)
+links the four published plans. Measured: `marathon-16-week` is generated for 45 km/week and a 20 km long run and opens
+at 50 km with a 14 km long run; `half-marathon-12-week` for 35 km/week and a 14 km long run. A charity first-timer who
+can run 30 minutes and starts the marathon page's week 1 takes the acute jump §2/§45/§117 Am.5 exist to prevent
+(Willy). Fix: state each plan's start point from its own input, interpolated, and gate it. Sitting:
+`docs/decisions/coaching-2026-10-29-page7-claims.md`.
+
 ### 🔲 `STRENGTH-RELEASE-01` — open strength to paid and trial runners, behind four conditions 💼 **SLT** ruled 2026-10-29 → 🧭 **DESIGN BOARD** (lapsed trial, locked rows) → 🏃 **COACHING BOARD** (pricing words) → 👤 **FOUNDER** (phone check, charity cohort)
 
 Sitting: `docs/decisions/slt-2026-10-29-strength-release.md`. All six redesign builds shipped; production has 1 strength

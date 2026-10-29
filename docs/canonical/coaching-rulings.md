@@ -27,6 +27,16 @@ memory.
 
 
 
+## 2026-10-29 — GTM-SEO-COMPARE-01 page 7 · CORRECT WITH AMENDMENT. A first marathon around a full-time job
+
+W-03 sitting on the founder's final copy. The page's *"assumes about 30 minutes without stopping"* is false for the plan
+it points at (week 1 is 50 km with a 14 km long run, generated for 45 km/week and a 20 km long run): **Willy, binding**,
+replace with the plan's own start point, interpolated. *"Keep the two easy runs apart from the long run"* → the §7 rule
+(harder session at least two days from the long run). *"Off, or strength"* on Mon/Wed/Fri breaks S2 for heavy legs on
+all three → heavy legs on Thursday after the run (Blagrove). Damsted, the novice study and the cut order stand. Not
+built: founder approves the words. Filed `CHARITY-PLAN-PREREQ-01` (the same false line, live on `/charity-runners`).
+Sitting: `docs/decisions/coaching-2026-10-29-page7-claims.md`.
+
 ## 2026-10-17 — SESSION-SLOTS-01 (doubles) · CORRECT WITH AMENDMENT · BUILT (engine side; no runner can reach it until the move UI)
 
 A same-day double is allowed only when the runner moves a run, and **both runs are easy or recovery**. Never the long
