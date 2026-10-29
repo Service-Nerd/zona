@@ -20,6 +20,12 @@ describe('the strength note prompt', () => {
     expect(p).toContain('Do NOT tell them to add, cut or change')
     expect(p).toContain('Never use an em dash')
   })
+  it('🔴 STRENGTH-SESSION-TOP-01: the note is told the screen already says why legs are off, and not to repeat it', () => {
+    const p = buildStrengthWeeklyNotePrompt(input)
+    expect(p).toContain('already tells the runner why heavy legs are off')
+    expect(p).toContain('do NOT say that again')
+    expect(p).not.toMatch(/you may say legs were kept/)
+  })
 })
 
 describe('parseStrengthNote — the guard after the model', () => {

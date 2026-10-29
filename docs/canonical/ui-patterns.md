@@ -4516,8 +4516,11 @@ opened row, above the cues; the closed row is unchanged and an exercise without 
 named height cap keeping a main lift's log panel on screen at 375 × 667; still pose under reduced motion; loaded on
 open; any highlight recoloured to `--s-strength` or removed. Ruled, not built. Actions at the end of content (7a): **Mark complete**, **Skip**; once logged, a status badge and **Undo**.
 Done or skipped only: no RPE, no per-set logging, until something reads them. **The weekly note**
-(`STRENGTH-NOTE-01`) sits under the tiles as a `CoachNoteBlock aiGenerated`, here only (not Today, not Plan); absent,
-loading or failed renders nothing. A warm-up item that is a training
+(`STRENGTH-NOTE-01`) is a `CoachNoteBlock aiGenerated`, here only (not Today, not Plan); absent, loading or failed renders
+nothing. **Since STRENGTH-SESSION-TOP-01 (2026-10-29) it sits at the bottom, after the parts and before the actions**,
+where the run session puts its coach note (CLAUDE.md § Session Card Layout): under the tiles it took the screen with
+the session's own lines (242 pt, Part 1 behind the nav) and repeated the no-legs line. Its prompt is told the screen
+already says why legs are off. A warm-up item that is a training
 exercise in lighter form is left out when that exercise is in the session (`S-WARMUP-REPEAT`).
 **Check:** `strengthScreens.markup.test.ts`.
 

@@ -16,7 +16,7 @@ interface StrengthSessionScreenProps {
   canLog: boolean                   // the day itself or after it, as on a run
   onBack: () => void                // back to Today or Plan, whichever opened it
   onSetStatus: (status: StrengthCompletion | null) => Promise<boolean>  // null = undo; false → inline error
-  note?: string | null              // STRENGTH-NOTE-01: this week's AI note; null renders nothing
+  note?: string | null              // STRENGTH-NOTE-01: this week's AI note; null renders nothing. Rendered at the BOTTOM, after the parts and before the actions (STRENGTH-SESSION-TOP-01, 2026-10-29)
   lifts?: { suggestions, today, units, onLog? }   // STRENGTH-PROGRESSION-01: per main lift; absent = no logging
   onExerciseOpen?: (exerciseId: string) => void   // STRENGTH-ROW-OPEN-01: first open of each row per visit; the demand measure
   deloadWeek?: boolean                           // PHASE-ON-TODAY-01: the strength week's phase is 'deload' → STRENGTH_DELOAD_LINE under the tiles

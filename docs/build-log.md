@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-29 — STRENGTH-SESSION-TOP-01 · The coach note said it twice, and the gate never saw the file
+**Shipped:** the strength session's weekly Kit note moved from under the tiles to the bottom of the session, and its prompt is told not to repeat why heavy legs are off, because the screen already says it.
+**Dev learning:** the founder's screenshot was the measurement: at 3.216 px per point, 242 pt of prose sat between the tiles and the first move, and Part 1 started behind the nav pill. The app already had the rule (CLAUDE.md § Session Card Layout: coach notes at the bottom); the strength screen just had not followed it. Separately, two gates had failed on build 6's new screen for an hour, because both list files with `git ls-files` and the file was not staged when verify ran.
+**Product/creator learning:** the duplicate was built in, not a model slip: the prompt was told the legs were limited and allowed to say so, while the same build added a plain line saying it on the screen. Two producers of the same sentence, neither aware of the other.
+**AI-building learning:** I reported build 6's verify as green. It was green over a file list that did not contain the file. This repo already had a memory titled "stage before you verify"; I did not follow it. The second gate it missed then found a real bug: the guided session's bottom bar carried a class that pins to the top.
+**The honest bit:** the founder's current week's note is cached and will keep its old wording until next week.
+**Hook material:** 242 points of reading before the first lift, on a screen you hold between sets.
+**Postable?:** maybe
+
 ## 2026-10-29 — STRENGTH-GUIDED-SESSION-01 + STRENGTH-LOG-REPS-01 · The end page with no way out
 **Shipped:** Start session now opens a guided strength session, one part per page: the round you are on, the moves, a weight stepper prefilled from the suggestion, the rest counting down by itself, timers on timed moves, End session always there; the session's start and end are stored, and each lift log now keeps the reps it was done at.
 **Dev learning:** the flow is a pure step model (steps, a reducer, a tally, resume) and the screen only owns the clock, which is the only reason it could be tested at all: the test runner has no DOM. Rest and timers are stored as END times, not counted down, so a phone that sleeps comes back to the right number. And the migration was written to be applied AFTER the code could survive without it: both routes read and write the old columns when the new ones are missing, and say so once.

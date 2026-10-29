@@ -173,6 +173,16 @@ describe('StrengthSessionScreen — the weekly note (STRENGTH-NOTE-01)', () => {
     expect(html.split('Legs on Tuesday, after the intervals.').length - 1).toBe(1)
     expect(html).toMatch(/Kit/)
   })
+  it('🔴 STRENGTH-SESSION-TOP-01: the note sits at the bottom, after the last part and before the actions', async () => {
+    const html = await screen({ note: 'Legs on Tuesday, after the intervals.' })
+    const at = html.indexOf('data-strength-note')
+    const lastPart = sessionParts(session)[sessionParts(session).length - 1]
+    const lastMove = exerciseName(lastPart.items[lastPart.items.length - 1].exercise_id).replace(/'/g, '&#x27;')
+    expect(at).toBeGreaterThan(html.lastIndexOf(lastMove))
+    expect(at).toBeLessThan(html.indexOf('Mark complete'))
+    // Nothing but the tiles' facts and the session lines sits between the tiles and the work.
+    expect(html.indexOf('data-strength-note')).toBeGreaterThan(html.indexOf('Warm-up'))
+  })
   it('🔴 no note renders nothing: no placeholder, no byline', async () => {
     expect(await screen({ note: null })).not.toMatch(/Kit/)
   })

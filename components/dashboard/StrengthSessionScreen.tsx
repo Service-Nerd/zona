@@ -251,16 +251,18 @@ export default function StrengthSessionScreen({ session, dayLabel, weekN, status
           </p>
         )}
 
-        {/* STRENGTH-NOTE-01 — the week's note, said once, here (Design Board: not on Today, which
-            already shows the session, nor on Plan, whose coach card is the run's). */}
-        {note && (
-          <div style={{ marginTop: 'var(--space-3)' }}>
-            <CoachNoteBlock aiGenerated>{note}</CoachNoteBlock>
-          </div>
-        )}
 
         {parts.map((p, i) => <PartCard key={`${p.kind}-${i}`} part={p} n={training.includes(p) ? training.indexOf(p) + 1 : null} sessionRir={effort} mobilitySession={mobility} onOpen={onOpen} newSaidOnce={newLifts}
           logging={lifts ? id => ({ suggestion: lifts.suggestions[id], today: lifts.today[id], units: lifts.units, onLog: canLog ? lifts.onLog : undefined }) : undefined} />)}
+
+        {/* STRENGTH-NOTE-01 — the week's note, said once, here (not Today, not Plan). STRENGTH-SESSION-TOP-01
+            (Design Board 2026-10-29): at the BOTTOM, after the work and before the actions, as the run session puts its
+            coach note (§ Session Card Layout). Above the work it pushed Part 1 behind the nav. */}
+        {note && (
+          <div data-strength-note style={{ marginTop: 'var(--space-4)' }}>
+            <CoachNoteBlock aiGenerated>{note}</CoachNoteBlock>
+          </div>
+        )}
 
         {canLog && (
           <div style={{ marginTop: 'var(--space-5)' }}>

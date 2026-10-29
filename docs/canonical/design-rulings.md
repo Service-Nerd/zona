@@ -226,6 +226,15 @@ header band breaks *Type accent, not flood*): colour goes into the trace and sil
 2 px top rule. **Collins lost**, challenge recorded. Declined: medals, route art, the carousel. Treadmill toggle routed to
 the Coaching Board. Not built. Sitting: `docs/decisions/session-screens-runna-2026-10-21.md`.
 
+## 2026-10-29 — STRENGTH-SESSION-TOP-01 · SHIP WITH AMENDMENT. The weekly note goes to the bottom of the session
+
+From the founder's screenshot: **242 pt of prose (30% of the screen) between the tiles and the work, Part 1 behind the
+nav**, and the Kit note repeating the no-legs line by construction. The weekly note moves **below the parts, above the
+actions** (§ Session Card Layout: why / coach notes at the bottom). **Amends STRENGTH-NOTE-01's placement.** The two
+session lines stay under the tiles. The note's prompt is told the screen already says why legs are off, and must not
+repeat it. **Collins lost** on removing the note from the session. Sitting:
+`docs/decisions/design-2026-10-29-strength-session-top.md`.
+
 ## 2026-10-28 — STRENGTH-SESSION-PARTS-01 + STRENGTH-GUIDED-SESSION-01 · SHIP WITH AMENDMENT. The overview in parts; a guided session, one part per page
 
 From the founder's own *Full body* session (three screenshots): the same two support lines on every main-lift row, the

@@ -43,7 +43,7 @@ export function buildStrengthWeeklyNotePrompt(i: StrengthWeeklyNoteInput): strin
 Hard rules for this note:
 - Describe the week: where the sessions sit and what kind they are. Do NOT tell them to add, cut or change any session.
 - Make NO claim about what strength does for running, speed, economy, injury or finishing. Never say "prevent", "injury", "bulletproof", "faster", "economy" or "stronger runner".
-- If heavy legs are limited by the run week, you may say legs were kept to the safe days. Never suggest adding them back.
+- Never suggest adding heavy legs back. The session screen already tells the runner why heavy legs are off and which day would fit them, so do NOT say that again: say something else about the week (Design Board STRENGTH-SESSION-TOP-01, 2026-10-29).
 
 The week:
 ${facts.map(f => `- ${f}`).join('\n')}
