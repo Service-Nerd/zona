@@ -1157,6 +1157,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Three plan notes shown nowhere** (NOTE-SURFACE-INERT-01) | 🔲 | S | Measure, then place. |
 | **The strength session, redesigned (six builds)** (STRENGTH-SESSION-REDESIGN-01) | ✅ | L | Boards ruled 2026-10-28, canvas approved; builds 1–4 shipped 2026-10-28, builds 5–6 (overview in parts, guided session) 2026-10-29. Release still admin-only: a separate decision. |
 | **Stamp the prescribed reps on each strength log** (STRENGTH-LOG-REPS-01) | ✅ | S | Shipped 2026-10-29 with build 6; migration for the founder to apply. |
+| **Open strength to paid and trial runners** (STRENGTH-RELEASE-01) | 🔲 | S | SLT 2026-10-29: four conditions (phone check, migration, item 6, lapsed-trial state), then the flip. |
 | **A `{{token}}` can reach confidence risks** (ENRICH-RISK-TOKEN-01) | 🔲 | S | Latent; 1 of 9 restored plans. |
 | **Race week showing 0 km** (RACE-WEEK-ZERO-KM-01) | 🔲 | S | Measure surfaces first. |
 | **"Get you round" note on a time-goal plan** (ROUND-NOTE-TIME-GOAL-01) | 🔲 | S | Measure, then board. |

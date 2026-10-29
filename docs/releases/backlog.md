@@ -221,6 +221,16 @@ Plan: `docs/plans/STRENGTH-SESSION-REDESIGN-01.md`. Canvas: *Strength session re
 ✅ `STRENGTH-GUIDED-SESSION-01` (shipped 2026-10-29: Start session, one part per page, stepper, rest countdown, timers, End session, session times stored; the ramp set keeps "1 × 8", founder 2026-10-29). **Release is a separate decision**: `STRENGTH_RELEASE` is still `'admin'`. S2 unchanged: loosening it was ruled
 INCORRECT (52% of chosen-day weeks have no heavy legs; P1/P2 put legs beside a hard run).
 
+### 🔲 `STRENGTH-RELEASE-01` — open strength to paid and trial runners, behind four conditions 💼 **SLT** ruled 2026-10-29 → 🧭 **DESIGN BOARD** (lapsed trial, locked rows) → 🏃 **COACHING BOARD** (pricing words) → 👤 **FOUNDER** (phone check, charity cohort)
+
+Sitting: `docs/decisions/slt-2026-10-29-strength-release.md`. All six redesign builds shipped; production has 1 strength
+plan, 2 completions, 2 lift logs, and nothing has run on a phone. Release, in order: (1) the founder's phone check, two
+guided sessions, against a written checklist; (2) migration `20261029_strength_session_times_and_reps` verified (3
+columns); (3) `STRENGTH-ENTRY-01` item 6 (the `/pricing` row replacing the "Not built" omission, the Upgrade line, locked
+rows for free runners); (4) the lapsed-trial state, designed then built. Then flip `STRENGTH_RELEASE` to `'paid'`
+(`lib/strength-bridge/release.ts`). 👤 Open: whether the Make-A-Wish cohort (Apple offer codes, so paid) gets strength
+mid-plan by side effect. Replaces the 2026-10-16 date condition.
+
 ### ✅ `STRENGTH-LOG-REPS-01` — stamp the prescribed reps on each strength log, so a plan rebuild cannot change them (shipped 2026-10-29 with build 6; migration `20261029_strength_session_times_and_reps.sql` for the founder to apply) 🏃 **COACHING BOARD** ruled (S14 Am.1); ⚙️ build with `STRENGTH-GUIDED-SESSION-01`
 
 Found by code review of `STRENGTH-REP-BLOCKS-01`, 2026-10-28. S14 Am.1 cuts the load when reps rise between blocks, and reads
