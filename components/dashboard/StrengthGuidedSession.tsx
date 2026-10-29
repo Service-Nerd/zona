@@ -27,6 +27,7 @@ import {
 import { isLoadedLift, type StrengthSession } from '@/packages/strength'
 import { LiftLogPanel, type LiftLogging } from './StrengthSessionScreen'
 import { PLAN_CHANGE_SAVE_FAILED } from '@/lib/ui/planChangeCopy'
+import { Z_LAYERS } from '@/lib/ui/zLayers'
 
 const FONT = 'var(--font-ui)'
 const ACCENT = 'var(--s-strength)'
@@ -117,7 +118,9 @@ export default function StrengthGuidedSession({ session, title, lifts, onExit, o
 
   return (
     <div data-guided style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column', fontFamily: FONT }}>
-      <div className="pinned-chrome" style={{ padding: 'var(--space-3) 16px var(--space-2)', background: 'var(--bg)' }}>
+      {/* The top band: End session, the clock, the progress strip. Its own band, not PinnedBackHeader: ruling F puts
+          Back at the bottom and End session here, so there is no back arrow to pin (declared in screenHeaderPinned). */}
+      <div className="pinned-chrome" style={{ padding: 'var(--space-3) 16px var(--space-2)', zIndex: Z_LAYERS.screenHeader }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Button variant="ghost" size="compact" onClick={() => go({ type: 'end' })}>{COPY.end}</Button>
           <span data-guided-elapsed style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums' }}>
@@ -137,7 +140,8 @@ export default function StrengthGuidedSession({ session, title, lifts, onExit, o
       </div>
 
       {/* Back and the next step at the bottom, where a thumb reaches (Wroblewski). */}
-      <div className="pinned-chrome" style={{ position: 'sticky', bottom: 0, display: 'flex', gap: 'var(--space-2)', padding: 'var(--space-3) 16px calc(var(--space-3) + env(safe-area-inset-bottom))', background: 'var(--bg)', borderTop: '1px solid var(--line)' }}>
+      {/* Sticky at the BOTTOM: not `.pinned-chrome`, whose `top: 0` pins to the top (found by screenHeaderPinned). */}
+      <div style={{ position: 'sticky', bottom: 0, zIndex: Z_LAYERS.screenHeader, display: 'flex', gap: 'var(--space-2)', padding: 'var(--space-3) 16px calc(var(--space-3) + env(safe-area-inset-bottom))', background: 'var(--bg)', borderTop: '1px solid var(--line)' }}>
         <Button variant="secondary" onClick={() => go({ type: 'back' })}>{COPY.back}</Button>
         <div style={{ flex: 1 }}>
           <Button variant="primary" fullWidth onClick={() => go(step.kind === 'rest' ? { type: 'skipRest' } : { type: 'next' })}>
@@ -296,7 +300,7 @@ function EndPage({ state, steps, parts, title, lifts, onFinish, onDone, onExit }
               units: lifts.units, onLog: lifts.onLog,
             }
             return (
-              <div key={item.exercise_id} data-guided-log style={{ borderTop: i === 0 ? undefined : '1px solid var(--line)', paddingTop: '12px' }}>
+              <div key={item.exercise_id} data-guided-log style={{ borderTop: i === 0 ? undefined : '1px solid var(--line)', paddingTop: 'var(--space-3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 13px var(--space-2)', fontSize: '15px' }}>
                   <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{exerciseName(item.exercise_id)}</span>
                   {!isLoadedLift(item.exercise_id) && <span style={{ fontSize: '14px', color: 'var(--ink-2)' }}>{COPY.bodyweight}</span>}

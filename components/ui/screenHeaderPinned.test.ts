@@ -119,6 +119,9 @@ describe('BACK-ARROW-TITLE-COLLIDE-01 — pushed screens pin their header', () =
       'app/dashboard/GeneratePlanScreen.tsx',   // wizard step group
       'components/dashboard/MeScreen.tsx',      // DeleteAccountScreen group
       'components/dashboard/SupportScreen.tsx',
+      // STRENGTH-GUIDED-SESSION-01 (Design Board 2026-10-28 F): no back arrow by ruling (Back at the bottom, End session
+      // at the top), so the owner, which always draws one, cannot build this band.
+      'components/dashboard/StrengthGuidedSession.tsx',
     ]
     const extra = builders.filter(f => !ALLOWED.includes(f))
     expect(extra, 'a new hand-rolled pinned band — use PinnedBackHeader:\n' + extra.join('\n'))
