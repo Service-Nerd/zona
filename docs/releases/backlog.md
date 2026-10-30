@@ -244,6 +244,8 @@ never one run as a verdict.
 
 ### 🔲 `COACH-READ-AUTO-01` — the main Coach card asks the runner to press "Generate report" 💼 **SLT** (cost) → build · P1
 
+**SLT 2026-10-30: BUILD, PAID, now (before items 5–7)** (`docs/decisions/coach-read-auto-slt-2026-10-30.md`). ~$0.004 a read, ~2 cents per runner per month. (1) Coach requests the week's read on open if none exists (no `force`, one per runner per week); (2) 🔴 **the Sunday cron requests a fresh read (`force`)**, or once Coach has made a Monday read, Sunday pushes that thinner headline (Wood's condition); (3) the button stays as it is until the mockup.
+
 The Design Board overturned the manual action (2026-10-30). If the week's read is missing or stale when Coach opens, it
 is generated (one model call per runner per week at most); refresh stays secondary. SLT on the cost.
 

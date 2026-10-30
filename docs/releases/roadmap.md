@@ -1161,7 +1161,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Charity page: state each plan's real start point** (CHARITY-PLAN-PREREQ-01) | ✅ | S | Coaching Board 2026-10-29: "30 minutes" is false for the marathon and half plans. Founder words. |
 | **Sunday weekly report has not run in 90 days** (WEEKLY-REPORT-CRON-AUTH-01) | ✅ | S | Cron auth reads `x-cron-secret`, Vercel sends Bearer. Coach review 2026-10-30 |
 | **Zone rings read what you ran** (COACH-RINGS-SOURCE-01) | ✅ | S | 4 runners → ~11; 259/317 runs already carry a zone split |
-| **Coach read arrives without "Generate report"** (COACH-READ-AUTO-01) | 🔲 P1 | S | SLT on cost |
+| **Coach read arrives without "Generate report"** (COACH-READ-AUTO-01) | 🔲 P1, SLT: build now | S | ~2 cents/runner/month; Sunday cron must request a fresh read |
 | **Coach code hygiene** (COACH-CODE-HYGIENE-01) | 🔄 non-visual done; copy changes await mockup | S | Unseen model call per load; "Needs Strava" teaser; stale screen doc |
 | **Zone discipline headline + weekly bars** (COACH-DISCIPLINE-HEADLINE-01) | 🔲 P1 | M | Our unique metric, biggest moment on Coach; after items 1–2 |
 | **Earned sentences on Coach** (COACH-SEEN-MOMENTS-01) | 🔲 P2 | M | Coaching thresholds, then Design placement |
