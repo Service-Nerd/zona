@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — COACH-DISCIPLINE-HEADLINE-01 · The number nobody else can show, finally at the top
+**Shipped:** the Coach zone rings open with "79% easy" (the share of this week's running in Zones 1–2) and eight weeks of it as bars.
+**Dev learning:** the mutation harness found two week-edge cases my tests never touched (a run at exactly Monday 00:00, a Sunday at a week's end) and one equivalent mutant in pre-existing code, recorded with its proof instead of a test that cannot fail. The type and spacing gates had already taught me to stay on the scale.
+**Product/creator learning:** the measure the whole brand is about sat behind a tap in a sheet. The boards' line held: the number is described, never graded, because a week with a proper session in it reads lower and that is not failure.
+**AI-building learning:** building from an approved mockup with the real components meant the shipped card and the mockup could be compared side by side at 375px; they matched.
+**The honest bit:** not seen on a device. It shows for a runner with two heart-rate runs this week; most of the 17 non-admin Coach users get there in a normal week, but nobody has looked at it with their own data yet.
+**Hook material:** our one unique metric was a percentage inside a sheet you had to tap to find. Now it is the biggest number on the screen.
+**Postable?:** yes
+
 ## 2026-10-30 — COACH-TREND-PENDING-01 · A dash for "not yet" and a dash for "nothing moved"
 **Shipped:** the trend card shows "4 of 6" while it collects runs, and "142 → 141 bpm, steady" when there is enough data and no real change.
 **Dev learning:** the "4 of 6" had to count the exact runs the series counts, so the cohort filter came out of `buildHrTrendSeries` into one helper both use, instead of a second copy that would drift. The route's own contract claimed sub-noise trends return null; the code never did, and that gap is precisely what made the steady state possible. The type and spacing gates caught 13px and 6px in my first draft.
