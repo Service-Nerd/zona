@@ -55,6 +55,9 @@ type LiveProps = ChromeProps & {
   pctByZone: ZoneSlice
   /** Meta shown top-right — e.g. "across 3 runs" */
   meta?: string
+  /** COACH-DISCIPLINE-HEADLINE-01: the parent card owns the heading (the easy-share headline), so the rings must not
+   *  say "This week in zones" a second time. Defaults false: the homepage and every other caller are unchanged. */
+  headless?: boolean
 }
 
 type PendingProps = ChromeProps & {
@@ -450,8 +453,8 @@ export default function ZoneRings(props: Props) {
   const { pctByZone, meta } = props
   return (
     <Shell chromeless={props.chromeless}>
-      <Eyebrow label={label} meta={meta} />
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
+      {!props.headless && <Eyebrow label={label} meta={meta} />}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: props.headless ? 'var(--space-5)' : undefined }}>
         <svg
           width={SIZE}
           height={SIZE}

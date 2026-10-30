@@ -12084,3 +12084,21 @@ across logged runners.
 streak, and the sheet's copy carrying no injury or safe-zone claim) and `lib/ui/loadRatioContext.test.ts` (under-normal
 is not amber unless named). Not a `validatePlan()` invariant: it governs what the runner is told about their runs, not a
 plan. **The trim trigger is unchanged.**
+
+## 130. The easy share describes a week; it never grades one *(Coaching Board 2026-10-30, COACH-DISCIPLINE-HEADLINE-01)*
+
+**Principle.** Coach may show the share of a week's running, by distance, in Zones 1–2, across every run carrying a zone
+split (the rings' own figure, COACH-RINGS-SOURCE-01), and the same share for each of the previous weeks as a record. It is
+**described, never graded**: no colour verdict, no target, no good/bad word. It shows only when at least
+`COACH_EASY_SHARE_MIN_RUNS` (2) runs that week carry a split; otherwise the rings stand alone, and a past week below the
+minimum is an empty slot, never a zero.
+
+**Why.** It is the one measure that is entirely this product's subject (did easy stay easy) and no competitor shows it;
+until today it sat inside a sheet behind a tap. 📊 Seiler: time below the first threshold is what intensity-distribution
+research measures, but it is a description, not §1's compliance, which counts sessions. 🎯 McMillan: a week with a proper
+session in it reads lower and must not look like failure, so there is no target line. ⚕️ Sims: wrist HR lags on short
+reps and flatters the share; fine across a week, wrong for one run, hence the minimum.
+
+**Config.** `lib/coaching/constants.ts → COACH_EASY_SHARE_MIN_RUNS`. **Enforced by** `components/shared/easyShare.markup.test.ts`
+(the minimum, no colour verdict, empty slots for thin weeks, the same rows as the rings). Not a `validatePlan()` invariant:
+it governs what the runner is told about their runs, not a plan.

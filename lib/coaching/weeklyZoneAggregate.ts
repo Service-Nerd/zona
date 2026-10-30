@@ -112,16 +112,54 @@ export function zoneTimeSplit(rows: ZoneSplitRow[]): { split: ZoneSlice | null; 
  * Weight: the run's distance (`runDistance`), the same quantity `actual_load_km` records, with `weightOf`'s fallback.
  */
 export function weekZoneSplitRows(
-  rows: readonly (ActivityLogRow & { hr_pct_z1?: number | null; hr_pct_z2?: number | null; hr_pct_z3?: number | null; hr_pct_z4_5?: number | null })[],
+  rows: readonly ZoneActivityRow[],
   week: { date?: string } | null | undefined,
 ): ZoneSplitRow[] {
   if (!week?.date) return []
   return dedupeRuns(rows.filter(isRun) as ActivityLogRow[])
-    .map(r => r as (typeof rows)[number])
+    .map(r => r as ZoneActivityRow)
     .filter(r => isInsidePlanWeek(week, r.start_date))
-    .filter(r => r.hr_pct_z1 != null || r.hr_pct_z2 != null || r.hr_pct_z3 != null || r.hr_pct_z4_5 != null)
-    .map(r => ({
-      z1: Number(r.hr_pct_z1 ?? 0), z2: Number(r.hr_pct_z2 ?? 0), z3: Number(r.hr_pct_z3 ?? 0), z45: Number(r.hr_pct_z4_5 ?? 0),
-      weight: weightOf(runDistance(r)?.km ?? null),
-    }))
+    .filter(hasZoneSplit)
+    .map(toZoneRow)
+}
+
+type ZoneActivityRow = ActivityLogRow & { hr_pct_z1?: number | null; hr_pct_z2?: number | null; hr_pct_z3?: number | null; hr_pct_z4_5?: number | null }
+
+const hasZoneSplit = (r: ZoneActivityRow) => r.hr_pct_z1 != null || r.hr_pct_z2 != null || r.hr_pct_z3 != null || r.hr_pct_z4_5 != null
+const toZoneRow = (r: ZoneActivityRow): ZoneSplitRow => ({
+  z1: Number(r.hr_pct_z1 ?? 0), z2: Number(r.hr_pct_z2 ?? 0), z3: Number(r.hr_pct_z3 ?? 0), z45: Number(r.hr_pct_z4_5 ?? 0),
+  weight: weightOf(runDistance(r)?.km ?? null),
+})
+
+/** COACH-DISCIPLINE-HEADLINE-01: the share of a week's running in Zones 1–2, rounded. */
+export function easyShare(split: ZoneSlice): number {
+  return Math.round(split.z1 + split.z2)
+}
+
+/**
+ * COACH-DISCIPLINE-HEADLINE-01 (Design + Coaching Boards, founder-approved mockup, 2026-10-30): the easy share for each
+ * of the last `count` plan-aligned weeks, oldest first, this week last. A week with fewer than `minRuns` runs carrying a
+ * split is `null` (Seiler: never one run as a verdict) and draws as an empty slot. Leading nulls are dropped, so the
+ * record starts at the first week with data. Same rows, dedupe and weighting as the rings (`weekZoneSplitRows`).
+ */
+export function weeklyEasyShares(
+  rows: readonly ZoneActivityRow[],
+  week: { date?: string } | null | undefined,
+  count: number,
+  minRuns: number,
+): (number | null)[] {
+  if (!week?.date) return []
+  const start = new Date(`${String(week.date).slice(0, 10)}T00:00:00`)
+  if (Number.isNaN(start.getTime())) return []
+  const runs = dedupeRuns(rows.filter(isRun) as ActivityLogRow[]).map(r => r as ZoneActivityRow).filter(hasZoneSplit)
+  const out: (number | null)[] = []
+  for (let k = count - 1; k >= 0; k--) {
+    const from = new Date(start); from.setDate(from.getDate() - 7 * k)
+    const to = new Date(from); to.setDate(to.getDate() + 7)
+    const inWeek = runs.filter(r => { const d = new Date(r.start_date); return d >= from && d < to }).map(toZoneRow)
+    const split = inWeek.length >= minRuns ? zoneTimeSplit(inWeek).split : null
+    out.push(split ? easyShare(split) : null)
+  }
+  while (out.length && out[0] === null) out.shift()
+  return out
 }

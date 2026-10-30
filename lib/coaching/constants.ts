@@ -178,6 +178,11 @@ export const LOAD_PICTURE_MIN_PRIOR_WEEKS = 3
 // energy availability).
 export const LOAD_PICTURE_LOW_WEEKS_TO_NAME = 2
 
+// COACH-DISCIPLINE-HEADLINE-01 / §130 (Coaching Board 2026-10-30): the Coach easy-share headline, and each weekly bar,
+// need at least this many runs carrying a zone split that week. Seiler: never one run as a verdict; wrist HR on a single
+// short session can flatter or punish the share.
+export const COACH_EASY_SHARE_MIN_RUNS = 2
+
 /**
  * COACH-BEHIND-DAY-TWO-01 / §65 Amendment — the minimum number of outstanding
  * sessions before the Coach screen's verdict becomes a JUDGEMENT.

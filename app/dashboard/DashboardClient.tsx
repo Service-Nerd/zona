@@ -63,7 +63,7 @@ import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
 import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
-import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO, LOAD_PICTURE_MIN_PRIOR_WEEKS, BEHIND_VERDICT_MIN_SESSIONS, TREND_SERIES } from '@/lib/coaching/constants'
+import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO, LOAD_PICTURE_MIN_PRIOR_WEEKS, BEHIND_VERDICT_MIN_SESSIONS, TREND_SERIES, COACH_EASY_SHARE_MIN_RUNS } from '@/lib/coaching/constants'
 import { zoneVerdict, zoneVerdictColour, zoneVerdictLabel } from '@/lib/coaching/zoneVerdict'
 import { driftContextFor } from '@/lib/coaching/loadCalc'
 import { compareLoad } from '@/lib/coaching/loadComparison'
@@ -131,7 +131,8 @@ import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, daysUntilRace, formatRaceCountdown } from '@/lib/format'
 import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearSessionMetricOverride } from '@/lib/sessionMetricOverrides'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
-import { zoneDiscipline, zoneTimeSplit, weightOf, weekZoneSplitRows } from '@/lib/coaching/weeklyZoneAggregate'
+import { zoneDiscipline, zoneTimeSplit, weightOf, weekZoneSplitRows, weeklyEasyShares, easyShare } from '@/lib/coaching/weeklyZoneAggregate'
+import { EasyShareHeader, EasyShareBars, EASY_SHARE_BARS } from '@/components/shared/EasyShare'
 import { trendSentence } from '@/lib/coaching/trendSentence'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession, renderPlanProse, planProseContext } from '@/lib/plan/renderGuidance'
@@ -1115,7 +1116,8 @@ export default function DashboardClient() {
   useEffect(() => {
     if (!userId || !plan) return
     let cancelled = false
-    const since = new Date(Date.now() - LOAD_PICTURE_LOOKBACK_DAYS * 86_400_000).toISOString()
+    // The longer of the load picture's lookback and the easy-share record's (COACH-DISCIPLINE-HEADLINE-01).
+    const since = new Date(Date.now() - Math.max(LOAD_PICTURE_LOOKBACK_DAYS, (EASY_SHARE_BARS + 1) * 7) * 86_400_000).toISOString()
     supabase.from('strava_activities')
       .select('start_date, distance_m, reported_distance_m, activity_type, sport_type, strava_activity_id, apple_health_uuid, manual_uuid, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5')
       .eq('user_id', userId)
@@ -3190,6 +3192,8 @@ export default function DashboardClient() {
               // Kit's sentence and the arc the rings draw can never disagree.
               const zoneTimePctByZone = zoneTimeSplit(zoneHistogramRows).split
               const zoneHistogramHits = zoneHistogramRows.length
+              // COACH-DISCIPLINE-HEADLINE-01: the same rows, week by week, for the record under the rings.
+              const easyShareWeeks = weeklyEasyShares(recentActivity ?? [], currentWeek as any, EASY_SHARE_BARS, COACH_EASY_SHARE_MIN_RUNS)
 
               // ANALYSIS-SUPERSEDE-PATTERN-01 (Coaching Board, 2026-10-07) — the
               // detector now READS ACROSS A RACE BOUNDARY, and its logic lives in
@@ -3255,6 +3259,7 @@ export default function DashboardClient() {
                   zoneDisciplinePercent={zoneDisciplinePercent}
                   zoneTimePctByZone={zoneTimePctByZone}
                   zoneHistogramHits={zoneHistogramHits}
+                  easyShareWeeks={easyShareWeeks}
                   liveSessionsCompleted={liveSessionsCompleted}
                   liveSessionsPlanned={liveSessionsPlanned}
                   liveSessionsDueToDate={liveSessionsDueToDate}
@@ -5225,7 +5230,7 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
 
 
 
-function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, liveSessionsDueToDate, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, onConnect, restingHR, maxHR, healthkitConnectedAt, strengthWeek = null }: {
+function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWeeks = [], stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, liveSessionsDueToDate, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, onConnect, restingHR, maxHR, healthkitConnectedAt, strengthWeek = null }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   /** LOAD-SOURCE-TOTAL-01: total distance over the runner's own weeks (`computeLoadPicture`). Null = no verdict. */
   loadPicture?: LoadPicture | null
@@ -5236,6 +5241,8 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoadin
   zoneDisciplinePercent?: number | null
   zoneTimePctByZone?: { z1: number; z2: number; z3: number; z45: number } | null
   zoneHistogramHits?: number
+  /** COACH-DISCIPLINE-HEADLINE-01: easy share per week, oldest first, this week last (`weeklyEasyShares`). */
+  easyShareWeeks?: (number | null)[]
   liveSessionsCompleted?: number
   liveSessionsPlanned?: number
   /** Sessions whose calendar day is strictly past — "due by end of yesterday".
@@ -5965,11 +5972,21 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoadin
                 type="button"
                 onClick={() => setZoneDisciplineSheetOpen(true)}
                 aria-label="What counts as in-zone. Opens an explanation." style={{ width: '100%', padding: 0, textAlign: 'inherit', background: 'none', font: 'inherit' }}>
-                <ZoneRings
-                  chromeless
-                  pctByZone={zoneTimePctByZone}
-                  meta={`across ${zoneHistogramHits} ${zoneHistogramHits === 1 ? 'run' : 'runs'}`}
-                />
+                {(zoneHistogramHits ?? 0) >= COACH_EASY_SHARE_MIN_RUNS ? (
+                  // COACH-DISCIPLINE-HEADLINE-01: the rings' own headline, then the rings, then the weekly record.
+                  // Below the minimum runs the rings stand alone (Coaching Board: never one run as a verdict).
+                  <>
+                    <EasyShareHeader share={easyShare(zoneTimePctByZone)} runs={zoneHistogramHits ?? 0} />
+                    <ZoneRings chromeless headless pctByZone={zoneTimePctByZone} />
+                    <EasyShareBars weeks={easyShareWeeks} />
+                  </>
+                ) : (
+                  <ZoneRings
+                    chromeless
+                    pctByZone={zoneTimePctByZone}
+                    meta={`across ${zoneHistogramHits} ${zoneHistogramHits === 1 ? 'run' : 'runs'}`}
+                  />
+                )}
               </Button>
             )
           }

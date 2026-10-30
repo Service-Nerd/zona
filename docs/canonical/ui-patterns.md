@@ -4331,6 +4331,26 @@ words appears in the component.
 `3/5` means something without a tap — which is exactly Sierra's test. **One tile changing
 and one not is a distinction, and the gate asserts it so nobody "makes them consistent".**
 
+### ✅ The easy share — the rings' headline and weekly record (`COACH-DISCIPLINE-HEADLINE-01`, built 2026-10-30)
+
+`components/shared/EasyShare.tsx`. On Coach, above the rings when at least `COACH_EASY_SHARE_MIN_RUNS` runs this week
+carry a zone split (§130); below that the rings stand alone with their own eyebrow.
+
+```
+  THIS WEEK IN ZONES                    ACROSS 4 RUNS   ← one heading (rings render `headless`)
+  79%  easy                                             ← 56/800 --ink · 17/600 --moss-strong
+  of this week's running sat in Zones 1–2.              ← Body 14/400 --ink-2
+        ( rings )                                       ← ZoneRings, headless
+  ▆ ▅ ▇ ▆ ▄ ▇ ▅ █                                       ← up to EASY_SHARE_BARS (8) weeks, this week solid
+  7 weeks ago                          This week        ← 12/400 --mute
+```
+
+| | |
+|---|---|
+| **The number** | Ink, never a colour verdict, no target, no good/bad word (§130, Coaching Board). A quality-heavy week reads lower and that is not failure |
+| **The bars** | A record (the `LoadShape` history pattern): no line, no projection, no number per bar, no peak emphasis. Always 8 slots, filled from the right; a thin week is an empty slot, never a zero |
+| **Pattern 32** | AMENDED, not reversed: the killed tile restated the rings from outside them; this is the rings' own figure, inside their card, labelled as theirs |
+
 ### 🔲 RULED, NOT BUILT — the history row (`RUNKED-LOAD-VIEW-01`, Design Board 2026-10-30)
 
 ⚠️ **The bars do not exist yet.** The SLT (2026-10-30) ordered them AFTER `LOAD-SOURCE-TOTAL-01`, which shipped the source, the minimum history and the colours above; the bars wait until a majority of Coach openers with 3+ weeks of runs see a real verdict.

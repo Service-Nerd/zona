@@ -17,6 +17,7 @@ import { buildRaceProgressArc } from '@/lib/coaching/raceProgressArc'
 import { RaceProgressArcRow } from '@/components/shared/RaceProgressArcRow'
 import { RACE_PROJECTIONS_COPY } from '@/components/shared/raceProjectionsCopy'
 import ZoneRings from '@/components/shared/ZoneRings'
+import { EasyShareHeader, EasyShareBars } from '@/components/shared/EasyShare'
 import TrendCard from '@/components/shared/TrendCard'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
@@ -197,6 +198,23 @@ export default function CoachPreviewPage() {
             Pending (paid, not enough data) — tap for the sheet
           </div>
           <TrendCard state="pending" />
+        </div>
+        {/* COACH-DISCIPLINE-HEADLINE-01 (2026-10-30): the rings' headline and weekly record, as Coach renders them. */}
+        <div>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>Easy share: 8 weeks, one thin week</div>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '20px' }}>
+            <EasyShareHeader share={79} runs={4} />
+            <ZoneRings chromeless headless pctByZone={{ z1: 18, z2: 61, z3: 16, z45: 5 }} />
+            <EasyShareBars weeks={[72, 68, null, 77, 64, 83, 70, 79]} />
+          </div>
+        </div>
+        <div>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>Easy share: third week of a plan</div>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '20px' }}>
+            <EasyShareHeader share={64} runs={3} />
+            <ZoneRings chromeless headless pctByZone={{ z1: 10, z2: 54, z3: 26, z45: 10 }} />
+            <EasyShareBars weeks={[81, 70, 64]} />
+          </div>
         </div>
         {/* COACH-TREND-PENDING-01 (2026-10-30): the two waiting states the founder approved from the mockups. */}
         <div>
