@@ -243,7 +243,9 @@ are never shown, so the boards rule on the one fitness screen plus Runked's guid
 sees about 4–5% of logged distance** (78.5–92.5 km of 1,777 km in 56 days; 24 runners ran, 3–5 had a matched run).
 **Coaching Board 2026-10-30: CORRECT WITH AMENDMENT** (`coaching-rulings.md`): measure total distance, not the
 linked-only trim ratio; no verdict without 3 of 4 prior weeks; describe, never predict; no fitness or fatigue label;
-a planned easy week below normal is not a warning; trajectory allowed. **Next: the Design Board, then the SLT.**
+a planned easy week below normal is not a warning; trajectory allowed. **Design Board 2026-10-30: SHIP WITH AMENDMENT**
+(`design-rulings.md`): extend `LoadShape` with up to 8 weekly bars of total km, no line or score; under normal is neutral
+unless planned (moss) or two unplanned weeks (amber). **Next: the SLT (tier and reach), then `/build`.**
 
 ### ✅ `LOAD-SHAPE-NO-HISTORY-01` (shipped 2026-10-30, `7a1a85e1`) — a runner with no history is told they are "right on your normal" ⚙️ **NO BOARD** (defect fix; Coaching Board 2026-10-30 clause 2 is the intent)
 

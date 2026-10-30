@@ -85,6 +85,13 @@ planned easy week below normal is not a warning; a trajectory over the block is 
 has no principle section, and 2 of 5 reports showed the no-history default as "right on your normal"
 (`LOAD-SHAPE-NO-HISTORY-01`).
 
+## Step 4, Design Board (2026-10-30): SHIP WITH AMENDMENT
+
+Full sitting in `docs/canonical/design-rulings.md`. Extend `LoadShape` with up to 8 weekly bars of total distance behind
+the normal band: no line, no projection, no score, no fitness or fatigue label; planned easy weeks labelled as planned.
+Colour: above normal amber; under normal in a planned easy week moss; under normal otherwise neutral, not amber; two or
+more unplanned low weeks amber. Collins lost the planned "ghost bar". UX-PROGRESS-01 distinguished, not reversed.
+
 ## Next (step 4, in order)
 
 🏃 Coaching Board: what the picture measures (linked vs total km, km vs a stress score, the disputed ratio) and why

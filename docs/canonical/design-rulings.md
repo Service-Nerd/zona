@@ -5635,3 +5635,72 @@ the problem and we should stop treating them as though they are.**
 Pattern — `ui-patterns.md` §18 (label + rank) · Constants — none new · Check — `loadResidualNote.test.ts` "shown", falsified by
 un-wiring the render. Sitting: `docs/decisions/design-2026-10-28-heavier-week-slot-sitting.md`. ⚠️ Not seen on a device.
 
+
+## 🧭 RULED 2026-10-30 — `RUNKED-LOAD-VIEW-01`: **SHIP WITH AMENDMENT.** Bars of the weeks you ran, not two lines about fitness
+
+**Input:** the founder's Runked screenshots (*"I like things like this"*), and the Coaching Board's ruling the same day
+(`coaching-rulings.md`): total distance against the runner's own weeks, no verdict without 3 of 4 prior weeks, describe
+never predict, no fitness or fatigue label, a planned easy week below normal is not a warning, a trajectory is allowed.
+Evidence: `docs/decisions/runked-load-view-gate-2026-10-30.md`, `docs/investigations/runked-load-view/` (ours rendered
+at phone width; ⚠️ that capture predates `LOAD-VERDICT-RED-01`, so it still shows red at 1.35× and 1.60×).
+**Tier:** PAID (Coach). **Nothing seen on a device.**
+
+**Settled-ground scan.** **A5** (SHAPE, never SCORE): binding, extended not reversed. **UX-PROGRESS-01** (a projection
+graph / trajectory curve, KILLED): touched, and **not reversed**. The kill is on a *forward* curve, *"a promise the app
+cannot keep"*; bars of weeks already run are a record, not a promise. Recorded as a distinction so the next sitting does
+not read it as a reopening. **PlanArc** (SLT 2026-09-21, Wood, binding): shape never completion, no cumulative total, no
+peak celebration, the dips are the message: adopted for the history row. **6t-g** (a hue is never small text; hue stays
+on marks): binds the verdict colour. **W-11 / "wow as ornament"**: binds. Token layer: `--warn`/`--warn-strong`,
+`--moss-soft`, `--moss-strong`, `--ink-2`, `--mute` all exist; nothing new.
+
+🧭 **Zhuo (chair):** *"Runked's screen is two decisions bundled: show my weeks over time, and tell me what they mean. The
+second is a fitness model we do not have and the Coaching Board has just said we may not claim. The first we can do
+honestly. Success, stated now: without a tap, a runner can say whether this week is more or less than usual, and whether
+the plan meant it."*
+
+✋ **Silvanto:** *"Now before over time. The verdict stays first, the band under it, the weeks under that, smaller. Bars,
+not lines: a line between two weekly totals draws days that do not exist. And the six-colour scale is a palette added to
+encode a number we refuse to show; that would be a regression."* (Not a veto: nothing proposed adds it.)
+
+🎓 **Sierra:** *"This is the first thing on Coach that can teach. Six weeks of bars show a runner what their normal looks
+like, and the dips we planned show them that less is part of the plan. Runked's line only teaches that up is good."*
+
+📱 **Wroblewski:** *"Up to eight bars at 375 px, no tap targets, no tooltips, nothing to scrub. Fewer than three weeks of
+history: no bars and no verdict, the same empty state the tile already has. Do not invent an interaction for a glance."*
+
+🎪 **Collins:** *"Our moment is the thing their app cannot draw: a down-week labelled 'on purpose'. A streak product cannot
+show a dip as success. Put the planned bar behind the actual one so the runner sees both."*
+
+⚡ **Recorded disagreement:** Collins wants the planned week as a ghost bar behind each actual bar; Silvanto holds that is
+two encodings in a 375 px strip, density, not disclosure. **Chair: actual bars only, a planned easy week marked by its
+label, not a second bar. Collins lost**; reopen with a device test showing a runner cannot tell planned dips from missed
+weeks.
+
+**The colour question** (open since `LOAD-VERDICT-RED-01`). Coaching owns the meaning, design the encoding:
+- **Above normal** (≥ `LOAD_RATIO.watch`): amber, unchanged.
+- **Under normal in a planned deload, taper or recovery week:** moss, with words that say it was planned.
+- **Under normal otherwise, one week:** **neutral, `--ink-2` words and a `--mute` marker. Not amber.** It is an
+  observation, not a warning.
+- **Two or more consecutive unplanned weeks well below normal:** amber, per the Coaching Board's clause 5.
+- **Right on normal:** moss, unchanged.
+
+⛔ **Veto check:** none exercised. Nothing proposed adds a token, a hue or a type size.
+
+### ⚖️ SHIP WITH AMENDMENT
+
+1. **Extend `LoadShape`, not a new screen or component**: the verdict, the band, then a row of up to 8 weekly bars of
+   total distance, the normal band drawn behind them, this week highlighted.
+2. **No line, no smoothing, no forward projection, no number per bar, no score, no fitness or fatigue label.**
+3. **Planned easy weeks are labelled as planned**; no emphasis on the tallest week (PlanArc's rule).
+4. **The colour scheme above**; text follows 6t-g (`hueText`).
+5. **Below 3 of 4 prior weeks: the existing empty state, no bars.**
+
+📦 **Artifacts (land with the build, one commit):** `ui-patterns.md` § LoadShape amended (history row, colour by plan
+context) · constant: the bar count (8) beside `LOAD_PICTURE_MIN_PRIOR_WEEKS` · checks: a markup test that the row draws
+no line or path and no per-bar number, a test that unplanned one-week-under is not `--warn`, each falsified.
+
+↗️ **Routing:** SLT next, on tier and reach. Coach is paid and weekly reports reach 2 runners; total distance would reach
+the 24 who log runs.
+
+⚠️ **What this does not settle:** whether a runner reads eight bars faster than a decoded ratio has not been observed, and
+nothing has been seen on a device. The Runked set is marketing frames, not the app.
