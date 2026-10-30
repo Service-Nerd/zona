@@ -27,6 +27,25 @@ memory.
 
 
 
+## 2026-10-30 — Coach mockups, two meaning questions · CORRECT WITH AMENDMENT (founder approved the direction the same day)
+
+**1. The headline "79% easy" (`COACH-DISCIPLINE-HEADLINE-01`).** It is the share of this week's running, by distance, in
+Zones 1–2, across every run with heart rate.
+📊 Seiler: *"Time below the first threshold is exactly what the intensity-distribution literature measures. It is a
+description, not §1's compliance, which counts sessions."* 🎯 McMillan: *"A week with a proper session in it will read
+lower, and that must not look like failure."* ⚕️ Sims: wrist HR lags on short reps and flatters the easy share; fine
+over a week, wrong for one run.
+**Amendments:** (a) **described, never graded**: the number is in ink, with no colour verdict, no target and no "good"/
+"bad" word; (b) it shows only with at least `COACH_EASY_SHARE_MIN_RUNS` (2) runs carrying a split this week, else the
+rings stand alone (Seiler: never one run as a verdict); (c) the weekly bars are the same share per week, a record; a
+planned lighter or quality-heavy week is not marked as worse.
+
+**2. The trend card's "steady" state (`COACH-TREND-PENDING-01`).** When the series exists (6 runs, 2 per month, 2 months)
+but heart rate moved less than `TREND_SERIES.MIN_HR_DELTA_BPM` (4), the card may show earlier → now and say it is within
+the noise. 🏃 Hutchinson: *"Showing a number and saying plainly that it is not yet a change is more honest than a dash,
+and it teaches what noise is."* **Amendments:** no up/down word, no colour on the arrow, the word is "steady"; the pace
+caveat the live card carries applies here too; the 4 bpm floor is unchanged.
+
 ## 2026-10-30 — Coach screen review (joint with the Design Board) · CORRECT WITH AMENDMENT. What Coach may say about the runner's progress
 
 Full sitting: `docs/decisions/coach-review-2026-10-30.md`.
