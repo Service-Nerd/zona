@@ -245,7 +245,19 @@ sees about 4–5% of logged distance** (78.5–92.5 km of 1,777 km in 56 days; 2
 linked-only trim ratio; no verdict without 3 of 4 prior weeks; describe, never predict; no fitness or fatigue label;
 a planned easy week below normal is not a warning; trajectory allowed. **Design Board 2026-10-30: SHIP WITH AMENDMENT**
 (`design-rulings.md`): extend `LoadShape` with up to 8 weekly bars of total km, no line or score; under normal is neutral
-unless planned (moss) or two unplanned weeks (amber). **Next: the SLT (tier and reach), then `/build`.**
+unless planned (moss) or two unplanned weeks (amber). **SLT 2026-10-30: PAID, build in two steps** (`docs/decisions/runked-load-view-slt-2026-10-30.md`). 18 people opened
+Coach 235 times in 56 days and **2** ever saw a load value. Step 1 is `LOAD-SOURCE-TOTAL-01` (below). **The bars (this
+item) wait until a majority of Coach openers with 3+ weeks of runs see a real verdict in production.**
+
+### 🔲 `LOAD-SOURCE-TOTAL-01` — the Coach load tile reads what the runner actually ran 🏃 **COACHING BOARD** (ruled) → 🧭 **DESIGN BOARD** (ruled) → 💼 **SLT** (ruled): **build next**
+
+PAID (Coach). The tile reads total weekly distance from the activity log (`weeklyActualLoad.totalKm`) instead of
+`weekly_reports` (5 reports, 2 runners in 56 days); no verdict below 3 of 4 prior weeks
+(`LOAD_PICTURE_MIN_PRIOR_WEEKS`, new); the Design Board's colours (under normal neutral unless planned, moss when planned,
+amber after two unplanned low weeks); the Coaching Board's missing `LOAD_RATIO` principle lands with it (the coaching
+guard will fire, the ruling is `coaching-rulings.md` 2026-10-30). **Untouched:** the trim trigger (linked km) and the
+weekly report's stored ratio. ⚠️ The tile and the report will then show different figures for one week, by design.
+**Acceptance:** a majority of Coach openers with 3+ weeks of runs see a verdict, measured in production.
 
 ### ✅ `LOAD-SHAPE-NO-HISTORY-01` (shipped 2026-10-30, `7a1a85e1`) — a runner with no history is told they are "right on your normal" ⚙️ **NO BOARD** (defect fix; Coaching Board 2026-10-30 clause 2 is the intent)
 

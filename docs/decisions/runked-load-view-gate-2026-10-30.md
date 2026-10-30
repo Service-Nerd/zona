@@ -92,6 +92,12 @@ the normal band: no line, no projection, no score, no fitness or fatigue label; 
 Colour: above normal amber; under normal in a planned easy week moss; under normal otherwise neutral, not amber; two or
 more unplanned low weeks amber. Collins lost the planned "ghost bar". UX-PROGRESS-01 distinguished, not reversed.
 
+## Step 4, SLT (2026-10-30): PAID, two steps
+
+`runked-load-view-slt-2026-10-30.md`. Coach was opened 235 times by 18 people in 56 days; 2 ever saw a load value. Step 1
+`LOAD-SOURCE-TOTAL-01` (total km source, 3-of-4 rule, colours) builds next; the bars wait until the verdict reaches most
+Coach openers. Sutherland's free-tier dissent recorded.
+
 ## Next (step 4, in order)
 
 🏃 Coaching Board: what the picture measures (linked vs total km, km vs a stress score, the disputed ratio) and why
