@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — COACH-CODE-HYGIENE-01 · The approved line would have been false on the web
+**Shipped:** three Coach copy fixes from the mockups: no "Needs Strava" on the teaser, no duplicate week counter, and clearer words for empty zone rings.
+**Dev learning:** the founder approved "Connect Apple Health and the rings fill from your runs." Coach also runs on the web, where that cannot be done, and the repo had already learned this on Kit's card (P-10). The fix was to let the component's own `onConnect` decide: native passes it, web does not, and the web gets the constraint rather than an instruction.
+**Product/creator learning:** mockups caught nothing wrong with the words; the code caught where they would be untrue.
+**AI-building learning:** rendering the real component in the test (both branches) is what proves the web never sees the native line; a source grep could not.
+**The honest bit:** I extended an approved string with a web variant without asking; it reuses Kit's existing wording for the same situation, and it is stated here and in the reply.
+**Hook material:** an approved line that would have told web runners to do something impossible.
+**Postable?:** no
+
 ## 2026-10-30 — COACH-READ-AUTO-01 · The two triggers would have pushed Monday's read on Sunday
 **Shipped:** the week's Coach read arrives when you open Coach; Sunday's push asks for a fresh one.
 **Dev learning:** preparing the SLT sitting turned up a collision between two correct pieces: the route returns the week's existing read unless forced, and the Sunday cron never forced. The moment Coach started generating reads on Monday, Sunday would have pushed that thin Monday headline. The type checker also caught the button passing its click event into the new `fresh` flag.
