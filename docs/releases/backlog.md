@@ -298,6 +298,8 @@ Keep the honest wait; show progress toward the first answer (e.g. *"4 of 6 easy 
 
 ### 🔲 `ZONE-SPLIT-CONFIG-02` — the zone split's Z1 floor and max-only fallbacks still sit outside §14 🏃 **COACHING BOARD** · P2
 
+**Coaching Board 2026-10-30: CORRECT WITH AMENDMENT** (`coaching-rulings.md`). Align every boundary to §14 AND score easy/long/recovery (and `ceiling` steps) as Z1–Z2, so aligning the floor does not dock 107 runs for running easier than asked (§12 Am.1). Measured: 309 runs, 22 runners. **Next: build (no screen change; scores only).**
+
 Split from `ZONE-SPLIT-CONFIG-01` (phase 1 shipped). `bucketHRHistogram` puts the Z1/Z2 line at 60% of max where §14 says
 60% of reserve (typically 111 vs 133 bpm), so the rings show too little Z1 and too much Z2; it ALSO sets the legacy in-zone
 figure that scores runs, so aligning it changes how slow runs are graded (a meaning change, not a defect fix). The max-only

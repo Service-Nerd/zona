@@ -27,6 +27,50 @@ memory.
 
 
 
+## 2026-10-30 — ZONE-SPLIT-CONFIG-02 · CORRECT WITH AMENDMENT. The split takes §14's boundaries, and time at or below the easy cap is never scored as a miss
+
+**Trigger:** soft (`lib/strava.ts → bucketHRHistogram`, `lib/coaching/prescribedZoneFigures.ts`): changes what a run SCORES.
+**Proposed:** move the Z1/Z2 line from 60% of max to §14's 60% of heart-rate reserve.
+
+**Measured first (production, read-only, 120 days, 309 runs with a bpm histogram, 22 runners):**
+
+| Change | Effect |
+|---|---|
+| Z1/Z2 line, 60% max → 60% HRR | median **112 → 133 bpm**. On an easy run scored Z2-only, in-zone falls median **5.1** pts, p75 14.3, p90 29.6; **107 runs lose ≥10, 45 lose ≥25** |
+| Z3 top, 86% max → 80% HRR (§14, resting HR known) | median 0; **30 runs move ≥10 pts** between Z3 and Z4-5, both directions |
+| Easy/long/recovery scored as Z1+Z2 (at or below the cap) | gain median 0.9, p75 4.5, p90 12.5; 37 runs gain ≥10 |
+| Max-only fallbacks 76% / 86% → §14's 80% / 87% | reaches **0** runners today (all 22 have resting HR) |
+
+**Conflict scan.** §14 (the boundaries; the split was off-config). **§12 Amendment 1 (binding): *"Time spent below Z2
+breaks no principle"*** — the drift detector was ruled INCORRECT for flagging too-easy runs, but the SCORE kept doing it:
+an easy run's Z1 time counts as below floor, and aligning the floor alone would make that worse for 107 runs. §123 and
+its Sims condition (below-band time must not score as indiscipline where the session prescribes it). §108 (HR discipline
+is half the composite; distance is a separate axis). §130 (easy share is Z1+Z2: unaffected).
+
+🏃 **Hutchinson:** *"Aligning the display is a defect fix. Doing only that would dock 107 runs for running easier than
+asked, which §12 already said is not a breach. Both or neither."*
+📊 **Seiler:** *"Z1 and Z2 are the same domain, below the first threshold. Scoring them apart on an easy day is splitting
+a hair the physiology does not split."*
+🎯 **McMillan (dissent, recorded):** *"A long run spent entirely in Z1 is usually a walk. Scoring it full discipline hides
+an under-dose."* Answered, not dismissed: dose is §108's DISTANCE axis, and discipline asks only *did you stay under the
+cap*. He would change his mind on evidence of all-Z1 long runs scoring well while short; none was looked for.
+🩹 **Willy (binding):** `hr_above_ceiling_pct` and the overload signal `limiter.ts` reads depend on the ceiling only and
+must not move. No injury vector in scoring easy as easy.
+⚕️ **Sims:** *"Telling a runner who is already running gently that they missed is the pressure that produces
+over-reaching. This closes the hole §12 left open."*
+
+**Ruling: CORRECT WITH AMENDMENT.**
+1. Every split boundary comes from `GENERATION_CONFIG.ZONES` (Karvonen with resting HR, %max without): the Z1/Z2 line at
+   Z2's lower bound, the easy ceiling at Z2's upper, the Z3 top at Z3's upper. No numbers in `lib/strava.ts`.
+2. **An easy, long or recovery prescription, and a `ceiling` step, prescribe Z1 AND Z2** (at or below the cap). For
+   those sessions nothing counts as below floor.
+3. Willy's condition: above-ceiling figures unchanged. New runs only; stored analyses are not rescored (a runner's HR
+   edit recomputes through `recalibrate-hr`, as now).
+
+**Artifacts:** §14 Amendment + §123 Amendment (principle); `GENERATION_CONFIG.ZONES` (existing numbers, no new
+constant); tests on `bucketHRHistogram` and `prescribedZoneFigures` (not a `validatePlan()` invariant: it scores runs,
+not plans). **Not built yet.**
+
 ## 2026-10-30 — COACH-SEEN-MOMENTS-01 thresholds · CORRECT WITH AMENDMENT. Moments are measured against the runner's own weeks
 
 **Measured first (production, read-only, 120–200 days, weeks with ≥2 runs carrying a zone split):** 105 runner-weeks, 22
