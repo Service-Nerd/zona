@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — LOAD-SHAPE-NO-HISTORY-01 · A default read as a measurement
+**Shipped:** a runner with no recent weeks no longer sees "right on your normal" on Coach; they see "Not enough runs yet".
+**Dev learning:** `acuteChronicRatio` returned 1 for "no history" because its first caller was a trim trigger, where 1 correctly means "do nothing". A second caller stored it and a third displayed it, and 1 there means "exactly normal". One number, two meanings, decided by who reads it. The fix split it: `acuteChronicRatioOrNull` is the owner, and the trigger's `?? 1` now says out loud that it is a default.
+**Product/creator learning:** the tile already had a designed empty state ("Not enough runs yet"); it just never got a null to show it. The honest copy existed and the data never reached it.
+**AI-building learning:** I reported two facts to the founder before checking them. One was wrong (we already draw reps as bars), and one was a stale count measured the wrong way. He asked me to validate first, and the validation is what turned up this bug: 2 of the 5 real reports were the default.
+**The honest bit:** this was found while re-measuring my own claim for a board sitting, not by any check. Five reports in 56 days is also the real story: the tile barely reaches anyone.
+**Hook material:** 2 of 5 weekly reports told a runner in week 1 they were "right on your normal". They had no normal.
+**Postable?:** maybe
+
 ## 2026-10-30 — LOAD-VERDICT-RED-01 · The screenshot found the red
 **Shipped:** the Coach "This week's load" verdict is amber above the runner's normal instead of red.
 **Dev learning:** the defect was invisible until the verdict was rendered at five ratios side by side for the Runked comparison. `loadRatioContext` was a private function inside a 6,000-line component, so no test could reach it; moving it to its own owner is what made the colour testable.
