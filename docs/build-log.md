@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — LOAD-SOURCE-TOTAL-01 · Eighteen people opened the screen; two saw the answer
+**Shipped:** the Coach "This week's load" tile counts every run you logged, not just the few matched to a session, and stops treating a lighter week as a warning.
+**Dev learning:** the obvious data source was wrong twice. The tile read the weekly report's ratio, which is the trim trigger's (linked runs only, ~5% of distance). The next obvious source, the dashboard's own `stravaRuns`, leaves manual logs out. The right read was a third one, straight from the activity log. And plan weeks were the wrong windows: a week still in progress reads "under your normal" every Monday, so the picture uses rolling 7-day windows instead.
+**Product/creator learning:** the defect was reach, not looks. The founder's screenshot was a pretty chart, and the gate turned it into "the tile most people open says nothing to almost all of them". The SLT built the boring half first on purpose.
+**AI-building learning:** the mutation harness found two boundaries my own five hand mutations missed (exactly 1.3 and exactly 0.8). I chose mutations I expected to fail; the harness chose the ones I had not thought of. And my sheet-copy guard first matched my own code comment quoting the old copy.
+**The honest bit:** not seen in a browser or on a phone: the tile lives inside the auth-gated Coach screen and no preview page renders it. Verified through the pure owner, the verdict, a composed test and the wiring.
+**Hook material:** 235 Coach opens by 18 people in eight weeks; 2 of them ever saw their load.
+**Postable?:** yes
+
 ## 2026-10-30 — LOAD-SHAPE-NO-HISTORY-01 · A default read as a measurement
 **Shipped:** a runner with no recent weeks no longer sees "right on your normal" on Coach; they see "Not enough runs yet".
 **Dev learning:** `acuteChronicRatio` returned 1 for "no history" because its first caller was a trim trigger, where 1 correctly means "do nothing". A second caller stored it and a third displayed it, and 1 there means "exactly normal". One number, two meanings, decided by who reads it. The fix split it: `acuteChronicRatioOrNull` is the owner, and the trigger's `?? 1` now says out loud that it is a default.
