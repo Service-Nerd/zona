@@ -26,8 +26,12 @@ const WINDOW_DAYS = 7
 /** The chronic window the ratio averages over (`acuteChronicRatioOrNull` reads up to four). */
 const PRIOR_WINDOWS = 4
 
+/** RUNKED-LOAD-VIEW-01: how many 7-day windows the history row draws (Design Board 2026-10-30, "up to 8"). */
+export const LOAD_HISTORY_WEEKS = 8
+const WINDOWS = Math.max(PRIOR_WINDOWS + LOAD_PICTURE_LOW_WEEKS_TO_NAME, LOAD_HISTORY_WEEKS)
+
 /** How far back a caller must read for `computeLoadPicture` to answer every question it asks. */
-export const LOAD_PICTURE_LOOKBACK_DAYS = WINDOW_DAYS * (PRIOR_WINDOWS + LOAD_PICTURE_LOW_WEEKS_TO_NAME)
+export const LOAD_PICTURE_LOOKBACK_DAYS = WINDOW_DAYS * WINDOWS
 
 export interface LoadPicture {
   /** Last 7 days over the mean of the four 7-day windows before; null below `LOAD_PICTURE_MIN_PRIOR_WEEKS`. */
@@ -36,6 +40,12 @@ export interface LoadPicture {
   plannedEasy: boolean
   /** Consecutive windows, ending now, under the runner's normal outside a planned lighter week. */
   lowWeeksRunning: number
+  /** RUNKED-LOAD-VIEW-01: the same 7-day windows the ratio reads, oldest first, this window last, up to
+   *  `LOAD_HISTORY_WEEKS`. Total distance (every source, §129), never the linked-only trim ratio. Leading windows
+   *  before the runner's first run are dropped, so a new runner's record starts where their running does. */
+  history: { km: number; plannedEasy: boolean }[]
+  /** The ratio's denominator: mean km of the four windows before this one. Null exactly when `ratio` is. */
+  normalKm: number | null
 }
 
 /** A week the plan made lighter on purpose (clause 5). */
@@ -60,7 +70,7 @@ export function computeLoadPicture(
   now: Date,
 ): LoadPicture {
   const end = now.getTime()
-  const windows = Array.from({ length: PRIOR_WINDOWS + LOAD_PICTURE_LOW_WEEKS_TO_NAME }, () => 0)
+  const windows = Array.from({ length: WINDOWS }, () => 0)
   for (const row of dedupeRuns(rows.filter(isRun))) {
     const t = new Date(row.start_date).getTime()
     if (!(t < end)) continue
@@ -82,5 +92,14 @@ export function computeLoadPicture(
     lowWeeksRunning++
   }
 
-  return { ratio: ratioAt(0), plannedEasy: plannedLighterOn(plan, now), lowWeeksRunning }
+  const ratio = ratioAt(0)
+  const recent = windows.slice(0, LOAD_HISTORY_WEEKS)
+  let first = recent.length - 1
+  while (first > 0 && recent[first] === 0) first--
+  const history = recent.slice(0, first + 1)
+    .map((km, k) => ({ km, plannedEasy: plannedLighterOn(plan, new Date(end - k * WINDOW_DAYS * DAY_MS)) }))
+    .reverse()
+  const normalKm = ratio === null ? null : windows.slice(1, 1 + PRIOR_WINDOWS).reduce((a, b) => a + b, 0) / PRIOR_WINDOWS
+
+  return { ratio, plannedEasy: plannedLighterOn(plan, now), lowWeeksRunning, history, normalKm }
 }

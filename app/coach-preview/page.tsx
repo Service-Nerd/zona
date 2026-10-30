@@ -19,6 +19,7 @@ import { RACE_PROJECTIONS_COPY } from '@/components/shared/raceProjectionsCopy'
 import ZoneRings from '@/components/shared/ZoneRings'
 import { EasyShareHeader, EasyShareBars } from '@/components/shared/EasyShare'
 import TrendCard from '@/components/shared/TrendCard'
+import LoadHistory from '@/components/shared/LoadHistory'
 import { easiestWeekSpan, easyCostSentence } from '@/lib/coaching/moments'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
@@ -215,6 +216,13 @@ export default function CoachPreviewPage() {
             <EasyShareHeader share={64} runs={3} />
             <ZoneRings chromeless headless pctByZone={{ z1: 10, z2: 54, z3: 26, z45: 10 }} />
             <EasyShareBars weeks={[81, 70, 64]} />
+          </div>
+        </div>
+        {/* RUNKED-LOAD-VIEW-01 (2026-10-30): the load tile's history row, as Coach renders it. */}
+        <div>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>Load: eight weeks, one planned easy</div>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
+            <LoadHistory history={[24, 27, 29, 18, 28, 31, 30, 38].map((km, i) => ({ km, plannedEasy: i === 3 }))} normalKm={29.75} thisWeekColor="var(--warn)" />
           </div>
         </div>
         {/* COACH-SEEN-MOMENTS-01 (2026-10-30): the two earned lines, fed through the real rules. */}

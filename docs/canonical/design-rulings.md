@@ -5734,3 +5734,9 @@ per non-admin runner per week, before and after items 1–3.
 |---|---|---|
 | **Refresh / Generate report on the read card** | 🔴 **REMOVED** (founder, Option A from the mockup; completes `COACH-READ-AUTO-01`'s overturn) | The read writes itself when the week has none and updates itself once a run starts after it was written (`lib/coaching/coachRead.ts`, route caps a rewrite at once a day). Option B (a quiet "Add Wednesday's run" line) was not chosen. A failed update keeps the read shown; only a missing read shows an error, and the next open retries. Mechanical check: `lib/coaching/coachReadAuto.test.ts` (falsified) |
 
+## 2026-10-30 — RUNKED-LOAD-VIEW-01 built · bars, not a line
+
+| Change | Ruling | Detail |
+|---|---|---|
+| **Load history row on Coach** | ✅ **BUILT** (Design Board ruling of 2026-10-30; SLT condition measured: 5 of 6) | Founder approved the mockup and asked bars or spline: **bars**, because the data is eight separate totals and a curve invents values between them and smooths the planned dip (also the board's "no line, no smoothing"). Load tile full width; **Sessions becomes a row** (a layout change the ruling did not draw, approved in the mockup). Check: `components/shared/loadHistory.markup.test.ts` (falsified: verdict colour on every bar, marker removed) |
+

@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — RUNKED-LOAD-VIEW-01 · Bars, because a curve would invent weeks
+**Shipped:** the Coach load tile now shows eight weeks of total distance under its verdict, with the runner's normal as a band and planned easy weeks marked.
+**Dev learning:** the bars read the exact 7-day windows the verdict already computes, so this week's bar over the normal band IS the ratio on the track above; there is no second calculation to drift. My first marker test passed with the marker deleted, because the legend also contains the ▲; counting both is what made it bite.
+**Product/creator learning:** the founder asked bars or a spline. Eight separate totals are bars: a smooth line draws values between weeks that never happened and turns a planned easy week into what looks like a slump. Runked uses a line because it plots a modelled daily score; we plot what you ran.
+**AI-building learning:** the SLT made this conditional on a measurement, and the measurement took one read-only query (5 of 6). Gating a build on a number, then actually taking the number, is cheap.
+**The honest bit:** removing the Sessions tile's 28px numeral paid down one unit of type-scale debt, and four design gates flagged my first markup (a hand-typed 8px, a size that looked like a screen title, an off-scale weight).
+**Hook material:** "Is bars or a spline graph the best?" Bars. A spline would have drawn a slump in a week the plan made easy on purpose.
+**Postable?:** yes
+
 ## 2026-10-30 — COACH-READ-BUTTON-01 · Deleting a button is a copy change too
 **Shipped:** Kit's weekly read has no Refresh or Generate button; it writes itself and updates after a new run.
 **Dev learning:** removing the button left two empty states telling runners to "Generate a report", pointing at a control that no longer existed. A removal needs the same consumer check as an addition: grep the words, not just the component. The button-geometry register caught the removal and needed a declared re-baseline (200 -> 199).

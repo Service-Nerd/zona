@@ -4372,9 +4372,15 @@ card's last line (the numbers above are the proof).
 | **Earned, not given** | The caller decides from `lib/coaching/moments.ts`; an ordinary week draws nothing, never a placeholder |
 | **Never** | A badge, a streak, a longest-run or pace record, an emphasised bar |
 
-### 🔲 RULED, NOT BUILT — the history row (`RUNKED-LOAD-VIEW-01`, Design Board 2026-10-30)
+### ✅ The history row (`RUNKED-LOAD-VIEW-01`, Design Board 2026-10-30, built 2026-10-30)
 
-⚠️ **The bars do not exist yet.** The SLT (2026-10-30) ordered them AFTER `LOAD-SOURCE-TOTAL-01`, which shipped the source, the minimum history and the colours above; the bars wait until a majority of Coach openers with 3+ weeks of runs see a real verdict.
+`components/shared/LoadHistory.tsx`, under the load verdict on Coach. Built once the SLT's condition was measured and met
+(5 of 6 Coach openers with 3+ weeks of runs saw a verdict). **The founder chose bars over a smooth line**: a line draws
+values between weeks that never happened and smooths a planned dip into a slump. The load tile goes **full width** to hold
+it, and **Sessions becomes one row** below (17/800 count, 12/600 status). Bars: the verdict's own 7-day windows
+(`computeLoadPicture.history`), up to `LOAD_HISTORY_WEEKS` (8), filled from the right, leading pre-running weeks dropped;
+the normal band is `normalKm × LOAD_RATIO.under…watch` on `--bg-soft`; only this week takes `lrc.markerColor`, past weeks
+`--ink-2` at 0.25; ▲ under a planned lighter week plus a key. Hidden with no verdict and in race week.
 
 ```
   above your recent normal                         ← verdict first (now)

@@ -1,7 +1,7 @@
 // LOAD-SOURCE-TOTAL-01 — the Coach load picture reads what the runner actually ran (Coaching Board 2026-10-30, §129).
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { computeLoadPicture, isPlannedLighterWeek, LOAD_PICTURE_LOOKBACK_DAYS } from './loadPicture'
+import { computeLoadPicture, isPlannedLighterWeek, LOAD_PICTURE_LOOKBACK_DAYS, LOAD_HISTORY_WEEKS } from './loadPicture'
 import { LOAD_RATIO, LOAD_PICTURE_MIN_PRIOR_WEEKS } from './constants'
 import { loadRatioContext } from '@/lib/ui/loadRatioContext'
 import type { ActivityLogRow } from './weeklyActualLoad'
@@ -95,8 +95,8 @@ describe('LOAD-SOURCE-TOTAL-01 computeLoadPicture', () => {
     expect(computeLoadPicture(weeks(5, 10, 20, 20, 20, 20), plan({ badge: 'deload' }), NOW).lowWeeksRunning).toBe(0)
   })
 
-  it('the lookback reaches every window the streak reads', () => {
-    expect(LOAD_PICTURE_LOOKBACK_DAYS).toBe(42)
+  it('the lookback reaches every window the streak and the history read', () => {
+    expect(LOAD_PICTURE_LOOKBACK_DAYS).toBe(7 * Math.max(6, LOAD_HISTORY_WEEKS))
   })
 })
 
@@ -154,5 +154,28 @@ describe('LOAD-SOURCE-TOTAL-01 wiring', () => {
       .split('\n').filter(l => !l.trim().startsWith('//')).join('\n')
     expect(sheet).not.toMatch(/safe build zone|where injuries happen|how fitness actually builds/i)
     expect(sheet).toMatch(/does not predict injury/)
+  })
+})
+
+describe('RUNKED-LOAD-VIEW-01 history — the same windows the verdict reads', () => {
+  it('oldest first, this window last, up to 8; the ratio is this bar over the normal', () => {
+    const p = computeLoadPicture(weeks(40, 20, 30, 30, 20, 10, 25, 22, 99), null, NOW)
+    expect(p.history.map(w => w.km)).toEqual([22, 25, 10, 20, 30, 30, 20, 40])
+    expect(p.normalKm).toBe(25)
+    expect(p.ratio).toBeCloseTo(40 / 25, 5)
+  })
+  it('🔴 leading weeks before the first run are dropped, not drawn as zeros; a gap after it stays a zero', () => {
+    const p = computeLoadPicture(weeks(30, 20, 0, 25, 30), null, NOW)
+    expect(p.history.map(w => w.km)).toEqual([30, 25, 0, 20, 30])
+  })
+  it('no verdict, no normal', () => {
+    const p = computeLoadPicture(weeks(30, 20), null, NOW)
+    expect(p.ratio).toBeNull()
+    expect(p.normalKm).toBeNull()
+  })
+  it('a planned lighter week is flagged on its own window', () => {
+    const p = computeLoadPicture(weeks(10, 30, 30, 30, 30), plan({ phase: 'taper' }), NOW)
+    expect(p.history[p.history.length - 1].plannedEasy).toBe(true)
+    expect(p.history[0].plannedEasy).toBe(false)
   })
 })

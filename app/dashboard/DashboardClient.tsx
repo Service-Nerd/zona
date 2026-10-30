@@ -116,6 +116,7 @@ import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import PreRunBandCard from '@/components/shared/PreRunBandCard'
 import { loadRatioContext } from '@/lib/ui/loadRatioContext'
 import { computeLoadPicture, LOAD_PICTURE_LOOKBACK_DAYS, type LoadPicture } from '@/lib/coaching/loadPicture'
+import LoadHistory from '@/components/shared/LoadHistory'
 import LoadShape from '@/components/shared/LoadShape'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { NotificationBell } from '@/components/shared/NotificationBell'
@@ -6075,7 +6076,9 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
 
             Numbers still follow the read: the read is the hero, these are the
             evidence, and there are two pieces of it now instead of four. */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
+        {/* RUNKED-LOAD-VIEW-01 (founder-approved mockup 2026-10-30): the load tile goes full width to hold the history
+            row; Sessions becomes one row beneath it. */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-2)' }}>
           {([
             {
               // ── A5 — SHAPE, NEVER SCORE (Design Board, app review) ────────
@@ -6098,6 +6101,11 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
                 : loadRatio !== null ? `${loadRatio.toFixed(2)}\u00d7 your recent average` : 'Log a few runs',
               subColor: 'var(--mute)',
               onTap: () => setLoadSheetOpen(true),
+              // Eight weeks of total distance, the same windows as the verdict. Only with a verdict (below 3 of 4 prior
+              // weeks the empty state stands), and not in race week, where a spike is the point.
+              history: !isRaceWeek && loadRatio !== null && loadPicture?.normalKm != null
+                ? <LoadHistory history={loadPicture.history} normalKm={loadPicture.normalKm} thisWeekColor={lrc.markerColor} units={preferredUnits} />
+                : null,
             },
             {
               label: 'Sessions',
@@ -6107,38 +6115,44 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
               sub: sc.label,
               subColor: sc.color,
               onTap: undefined,
+              history: null,
             },
           ] as const).map((m) => {
+            if (!m.shape) {
+              // Sessions as one row: the count means something without a tap, so it keeps its number.
+              return (
+                <div key={m.label} className="card-data" style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 'var(--space-3)' }}>
+                  <span className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)' }}>{m.label}</span>
+                  <span style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)' }}>
+                    <span className="num-data" style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 800, color: m.valueColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.2px', lineHeight: 1 }}>{m.value}</span>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: hueText(m.subColor) }}>{m.sub}</span>
+                  </span>
+                </div>
+              )
+            }
             const inner = (
               <>
                 <div className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   {m.label}
-                  {m.onTap && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss-strong)' }}>ⓘ</span>}
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss-strong)' }}>ⓘ</span>
                 </div>
-                {/* A5 — a tile whose value is a VERDICT is set in words, not in
-                    the 28px tabular-numeral treatment, which exists for digits
-                    and would wrap a phrase. `num-data` follows the number. */}
-                <div
-                  className={m.shape ? undefined : 'num-data'}
-                  style={m.shape
-                    ? { fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: hueText(m.valueColor), letterSpacing: '-0.2px', lineHeight: 1.25 }
-                    : { fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: m.valueColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1, marginBottom: 'var(--space-2)' }}
-                >
+                {/* A5 — a tile whose value is a VERDICT is set in words, not in the 28px tabular-numeral treatment,
+                    which exists for digits and would wrap a phrase. The digits-only tile is the Sessions row above. */}
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: hueText(m.valueColor), letterSpacing: '-0.2px', lineHeight: 1.25 }}>
                   {m.value}
                 </div>
                 {m.shape}
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 500, color: hueText(m.subColor), lineHeight: 1.3, marginTop: m.shape ? '8px' : 0 }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 500, color: hueText(m.subColor), lineHeight: 1.3, marginTop: 'var(--space-2)' }}>
                   {m.sub}
                 </div>
+                {m.history}
               </>
             )
             const cardStyle = { background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px' }
-            return m.onTap ? (
+            return (
               <button key={m.label} onClick={m.onTap} className="card-data" style={{ ...cardStyle, textAlign: 'left', cursor: 'pointer', width: '100%' }}>
                 {inner}
               </button>
-            ) : (
-              <div key={m.label} className="card-data" style={cardStyle}>{inner}</div>
             )
           })}
         </div>
