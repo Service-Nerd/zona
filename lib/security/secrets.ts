@@ -20,3 +20,16 @@ export function secretMatches(
   const b = Buffer.from(expected)
   return a.length === b.length && timingSafeEqual(a, b)
 }
+
+/**
+ * WEEKLY-REPORT-CRON-AUTH-01 — the shared secret a scheduled caller presented, from either header.
+ *
+ * Vercel cron sends `Authorization: Bearer <CRON_SECRET>`; the GitHub Actions workflows send the same, and manual
+ * calls have used `x-cron-secret`. Eleven routes wrote this out by hand and one, `push/send-weekly-report`, the only
+ * route Vercel's own cron calls, read `x-cron-secret` alone: every Sunday call was refused, and for at least 90 days
+ * no weekly report was generated and no weekly push sent. Pass the result to `secretMatches`.
+ */
+export function cronSecretFrom(req: { headers: { get(name: string): string | null } }): string | null {
+  const bearer = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || null
+  return bearer ?? req.headers.get('x-cron-secret')
+}

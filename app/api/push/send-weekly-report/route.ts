@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { secretMatches } from '@/lib/security/secrets'
+import { secretMatches, cronSecretFrom } from '@/lib/security/secrets'
+import { getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
 import { BRAND } from '@/lib/brand'
 import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
@@ -11,7 +12,8 @@ import { recordNotification, pruneReadNotifications } from '@/lib/notifications'
 // Generates weekly reports for all active paid/trial users with push subscriptions,
 // then sends push notifications via the right channel for each platform.
 //
-// Protected by CRON_SECRET header — must match env var.
+// Protected by CRON_SECRET, read by `cronSecretFrom` (Bearer, as Vercel cron sends it, or x-cron-secret).
+// WEEKLY-REPORT-CRON-AUTH-01: this route read x-cron-secret alone, so Vercel's call was refused every Sunday.
 
 // Vercel cron always sends GET — see send-daily for the same shim.
 export async function GET(req: NextRequest) { return POST(req) }
@@ -21,8 +23,7 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-  const secret = req.headers.get('x-cron-secret')
-  if (!secretMatches(secret, process.env.CRON_SECRET)) {
+  if (!secretMatches(cronSecretFrom(req), process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -38,10 +39,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ sent: 0 })
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  // The one owner of the server→server base (GTM-SITE-01); a hand-built VERCEL_URL fallback was this route's copy.
+  const baseUrl = getInternalBaseUrl()
 
   let sent = 0
+  // A report the route declined (no plan, no runs, an error) used to vanish into `continue`. Counted, so a Sunday
+  // that produces nothing says so in the log instead of looking like a quiet week.
+  let declined = 0
   const errors: string[] = []
   // This route iterates per-subscription, so a multi-device user appears more
   // than once. The inbox row is per-user — guard so we record it only once.
@@ -58,7 +62,7 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      if (!reportRes.ok) continue
+      if (!reportRes.ok) { declined++; continue }
       const { report } = await reportRes.json()
       if (!report?.headline) continue
 
@@ -100,6 +104,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  console.log(`[push/send-weekly-report] sent=${sent}, errors=${errors.length}`)
-  return NextResponse.json({ sent, errors: errors.slice(0, 5) })
+  console.log(`[push/send-weekly-report] sent=${sent}, declined=${declined}, errors=${errors.length}`)
+  return NextResponse.json({ sent, declined, errors: errors.slice(0, 5) })
 }
