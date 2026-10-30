@@ -1,4 +1,6 @@
 import { readPlanJson } from '@/lib/plan'
+import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+import { resolveMaxHr } from '@/lib/plan/maxHrGuard'
 import type { StravaActivity } from '@/types/plan'
 
 const CLIENT_ID     = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID!
@@ -164,16 +166,25 @@ export function bucketHRSamples(hrData: number[], zones: HRZones): HRStreamSumma
  *  user_settings keeps the bucketing in lockstep with what the UI shows. */
 export async function getUserHRZones(supabase: any, userId: string): Promise<HRZones> {
   const [settingsRes, planRes] = await Promise.all([
-    supabase.from('user_settings').select('resting_hr, max_hr').eq('id', userId).single(),
+    supabase.from('user_settings').select('resting_hr, max_hr, max_hr_source, birth_year, date_of_birth').eq('id', userId).single(),
     readPlanJson(supabase, userId),
   ])
   const restingHR = settingsRes.data?.resting_hr ?? null
   // PLANS-SINGLE-NOT-MAYBE-01 — optional here (max HR fallback); a failure is now logged.
   if (planRes.error) console.error('[strava] plan read failed:', planRes.error)
-  const maxHR     = settingsRes.data?.max_hr     ?? planRes.plan?.meta?.max_hr ?? null
+  const rawMax    = settingsRes.data?.max_hr     ?? planRes.plan?.meta?.max_hr ?? null
+  // ZONE-SPLIT-CONFIG-01 (2026-10-30): the SAME guarded max the plan's zones use (§50, `resolveMaxHr`), never the raw
+  // input. Measured: 2 of 22 runners with zone splits had a device-observed max below their age estimate (175 vs 187),
+  // so their runs were bucketed on a Z2 ceiling ~8 bpm below the one their plan prescribes, and their easy share read
+  // low. Without an age the guard cannot apply and the raw max stands, as before.
+  const age = ageFromSettings(settingsRes.data, planRes.plan?.meta?.age)
+  const maxHR = rawMax != null && age != null
+    ? resolveMaxHr(rawMax, age, settingsRes.data?.max_hr_source ?? undefined).effectiveMax
+    : rawMax
   if (restingHR && maxHR) {
     return {
-      zone2Ceiling: Math.round(restingHR + 0.70 * (maxHR - restingHR)),
+      // §14: the top of Zone 2 from GENERATION_CONFIG, not a typed 0.70.
+      zone2Ceiling: Math.round(restingHR + (GENERATION_CONFIG.ZONES.Z2.karvonen_pct[1] / 100) * (maxHR - restingHR)),
       maxHR,
     }
   }
@@ -181,6 +192,20 @@ export async function getUserHRZones(supabase: any, userId: string): Promise<HRZ
     zone2Ceiling: planRes.plan?.meta?.zone2_ceiling ?? null,
     maxHR,
   }
+}
+
+/** Age in whole years: `birth_year` first (the source of truth since its migration), then `date_of_birth`, then the plan. */
+function ageFromSettings(
+  row: { birth_year?: number | null; date_of_birth?: string | null } | null | undefined,
+  planAge: number | null | undefined,
+): number | null {
+  const year = new Date().getUTCFullYear()
+  if (typeof row?.birth_year === 'number') return year - row.birth_year
+  if (row?.date_of_birth) {
+    const dob = new Date(row.date_of_birth)
+    if (!Number.isNaN(dob.getTime())) return year - dob.getUTCFullYear()
+  }
+  return typeof planAge === 'number' && planAge > 0 ? planAge : null
 }
 
 /** Fetches Strava HR stream and computes zone breakdown against the user's plan zones. */
