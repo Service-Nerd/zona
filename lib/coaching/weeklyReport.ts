@@ -1,4 +1,4 @@
-import { acuteChronicRatio, zoneDisciplineScore, shadowLoadPct } from './loadCalc'
+import { acuteChronicRatioOrNull, zoneDisciplineScore, shadowLoadPct } from './loadCalc'
 import { EF_DECLINE_THRESHOLD_PCT } from './constants'
 import type { CoachingFlag } from './coachingFlag'
 
@@ -130,7 +130,8 @@ export interface WeeklyReportData {
   sessionsPlanned:     number
   totalKmActual:       number
   totalKmPlanned:      number
-  acuteChronicRatio:   number
+  /** NULL when there is no normal yet (LOAD-SHAPE-NO-HISTORY-01): the tile then says so, never "right on your normal". */
+  acuteChronicRatio:   number | null
   zoneDisciplineScore: number | null   // null when no Strava-analysed HR data
   avgRpe:              number | null   // not computed here — passed in from session_completions
   dominantFlag:        CoachingFlag
@@ -145,7 +146,7 @@ export function computeWeeklyReportData(input: WeeklyReportInput): WeeklyReportD
   //   shadow ← TOTAL. Clause 1: "actual load" is a measurement of what happened,
   //            and excluding real running makes it wrong.
   const totalKm = input.linkedKm + input.offPlanKm
-  const ratio   = acuteChronicRatio(input.linkedKm, input.priorWeeksKm)
+  const ratio   = acuteChronicRatioOrNull(input.linkedKm, input.priorWeeksKm)
   const zdScore = zoneDisciplineScore(input.hrInZoneData)
   const shadow  = shadowLoadPct(totalKm, input.plannedKm)
   const dominant = dominantFlag(input.sessionFlagCounts)
@@ -159,7 +160,8 @@ export function computeWeeklyReportData(input: WeeklyReportInput): WeeklyReportD
     zoneDisciplineScore: zdScore,
     avgRpe:              null,
     dominantFlag:        dominant,
-    primaryInsight:      selectPrimaryInsight(ratio, zdScore, shadow, input.efTrendPct, input.sessionsCompleted, input.sessionsPlannedToDate),
+    // No history is no spike: 1 keeps the insight exactly as it chose before.
+    primaryInsight:      selectPrimaryInsight(ratio ?? 1, zdScore, shadow, input.efTrendPct, input.sessionsCompleted, input.sessionsPlannedToDate),
   }
 }
 

@@ -11,16 +11,32 @@ export interface WeekLoad {
   sessionScores:   { sessionType: string; hrInZonePct: number | null }[]
 }
 
-/** Acute:chronic load ratio — this week vs 4-week rolling average. */
-export function acuteChronicRatio(
+/**
+ * Acute:chronic load ratio — this week vs 4-week rolling average, or NULL when there is no
+ * normal to compare against (no prior weeks, or prior weeks that sum to nothing).
+ *
+ * LOAD-SHAPE-NO-HISTORY-01 (Coaching Board 2026-10-30, clause 2: "no normal, no verdict").
+ * The display and the report read THIS: a week-1 runner used to get 1.00, which the Coach
+ * tile renders as "right on your normal" — 2 of 5 production reports in 56 days.
+ */
+export function acuteChronicRatioOrNull(
   thisWeekKm: number,
   priorWeeks: number[],   // up to 4 weeks of actual km, most-recent first
-): number {
+): number | null {
   const window = priorWeeks.slice(0, 4)
-  if (!window.length) return 1
+  if (!window.length) return null
   const avg = window.reduce((s, v) => s + v, 0) / window.length
-  if (avg === 0) return 1
+  if (avg === 0) return null
   return thisWeekKm / avg
+}
+
+/**
+ * The same ratio for the TRIM TRIGGER (`planAdjustment`), where no history means "no trim":
+ * 1 sits below `LOAD_RATIO.watch` by construction. Never display this one — its 1 is a
+ * default, not a measurement.
+ */
+export function acuteChronicRatio(thisWeekKm: number, priorWeeks: number[]): number {
+  return acuteChronicRatioOrNull(thisWeekKm, priorWeeks) ?? 1
 }
 
 export type LoadRatioFlag = 'ok' | 'watch' | 'flag'

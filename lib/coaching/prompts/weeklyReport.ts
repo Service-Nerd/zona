@@ -223,7 +223,7 @@ Week: ${weekN} of ${plan.weeks.length}
 This week's data:
 - ${sessionLine}
 - ${volumeLine}${remainingLine}${missedLine}
-- Load ratio (vs 4-week avg): ${data.acuteChronicRatio.toFixed(2)}x
+- Load ratio (vs 4-week avg): ${data.acuteChronicRatio !== null ? `${data.acuteChronicRatio.toFixed(2)}x` : 'no recent weeks to compare against yet; say nothing about load relative to normal'}
 - Zone discipline score: ${data.zoneDisciplineScore !== null ? `${data.zoneDisciplineScore}/100 (70+ = healthy; below 65 = zone drift concern)` : 'no signal (no Strava-analysed sessions yet)'}
 ${data.avgRpe !== null ? `- Avg RPE: ${data.avgRpe.toFixed(1)}\n` : ''}- Dominant coaching flag: ${data.dominantFlag}
 - Primary insight: ${data.primaryInsight}${previousReportBlock}${spotlightBlock}
