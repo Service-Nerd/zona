@@ -237,8 +237,9 @@ picture measures and what it may claim (Gabbett's 1.5 "danger zone" is disputed)
 (Coach is paid).
 **Gate progress (2026-10-30): steps 1–3 done**, `docs/decisions/runked-load-view-gate-2026-10-30.md` (our screens in
 `docs/investigations/runked-load-view/`). Provisional step 3: **extends `LoadShape` with time** (a trajectory), not a new
-screen. ⚠️ **Reach: 5 weekly reports for 2 runners in 56 days**, so `LoadShape` has had a value for two people. Waiting on
-the founder's other Runked screens (Fatigue, Training Balance, Load Ratio, the full band scale), then the Coaching Board.
+screen. ⚠️ **Reach: 5 weekly reports for 2 runners in 56 days**, so `LoadShape` has had a value for two people. Step 2
+closed on Runked's eight App Store screenshots, which are all the founder has: Fatigue, Training Balance and Load Ratio
+are never shown, so the boards rule on the one fitness screen plus Runked's guide. **Next: the Coaching Board (step 4).**
 
 ### ✅ `LOAD-VERDICT-RED-01` (shipped 2026-10-30) — the Coach load verdict turns red above 1.3× ⚙️ **NO BOARD** (defect fix restoring a documented rule)
 

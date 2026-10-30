@@ -1,7 +1,7 @@
 # RUNKED-LOAD-VIEW-01: the gate, steps 1–3 (2026-10-30)
 
 Plan: `docs/plans/COMPETITOR-RUNKED-01.md`. Founder: *"yes"* to starting the gate. **No board has sat yet; nothing is
-built.** Step 2 still needs Runked's other screens (below).
+built.** Steps 1–3 are done; step 2 closed on the eight App Store screenshots, which are all there is (below).
 
 ## Step 1: our own surfaces that do any part of this job (counted from the code)
 
@@ -28,9 +28,19 @@ built.** Step 2 still needs Runked's other screens (below).
 - `ours-plan-zoneweekblock.png`: every `ZoneWeekBlock` sentence.
 - Not captured: the Today readiness card (its preview needs a click; to add).
 
-**Runked:** one screenshot so far (Fitness 58 ▲10, Fatigue 36 ▲9, the dual-line chart, the coloured scale, "Solid").
-**Needed from the founder:** their Fatigue view, Training Balance, Load Ratio, the scale's full list of bands, and the
-screen a runner lands on from Today, so the comparison is screen for screen.
+**Runked:** their eight App Store screenshots, which are all the founder has (2026-10-30: *"these are the only screen
+shots i have"*). Saved as `runked-appstore-1-5.webp` and `runked-appstore-6-8.png`. **Step 2 closes on these.**
+
+| What the set shows for this item | What it does not show |
+|---|---|
+| One screen, *"train hard. rest smart."*: Fitness 58 ▲10 and Fatigue 36 ▲9 as two lines over ~6 weeks, a shaded "Solid" band behind them, a **six-colour** scale (grey, blue, green, yellow, orange, purple) with a marker, the number **58** and the word **Solid**, then band descriptions starting *"Starting: below 20. Early stage fitness. Consistency matters most here."* and a second cut off at *"Buildi…"* | Fatigue on its own, Training Balance, Load Ratio, the other band names and cut-offs, and how a runner reaches the screen. Their guide (`runked.com/guides/training-load-fitness-fatigue`) is the only source for those, and it gives windows, not a formula |
+
+⚠️ **These are marketing images, not the app.** Each is a chosen frame with a headline over it. The boards rule on what
+the screen claims to show, not on how it behaves.
+
+**Seen in the same set, outside this item (crossover noted, nothing filed):** a session screen drawing each rep as a bar
+(we draw rep structure from `derived_set`); an Apple Watch workout (we have none); a plan week list (ours is Plan's week
+strip); "Runner DNA", a six-axis radar; ranks, trophies, streaks and chests (out of scope by the plan).
 
 ## Step 3: adapt, improve or new (provisional, for the boards)
 
