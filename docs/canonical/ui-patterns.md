@@ -4303,7 +4303,7 @@ The form-control migration (2026-05-30) moved Login, Benchmark, and the Me-scree
 | | |
 |---|---|
 | **Band** | `LOAD_RATIO.under … LOAD_RATIO.watch` — **the same constants the coaching layer flags on.** A band drawn at numbers the engine does not use is a picture of nothing |
-| **Marker** | Coloured by `loadRatioContext`, the single owner of the verdict, so the marker and the words above it cannot disagree |
+| **Marker** | Coloured by `loadRatioContext` (`lib/ui/loadRatioContext.ts`), the single owner of the verdict, so the marker and the words above it cannot disagree. **Amber above the normal, never red** (LOAD-VERDICT-RED-01: no red in the training UI) |
 | **No ratio** | **No marker.** An empty track reads as "nothing measured yet"; a marker parked at 1.0 would read as "you are exactly normal", which is a claim we cannot make from no data |
 | **Domain** | 0.5–1.7, clamped. A presentation choice, not a coaching threshold — it exists so the band sits centrally and an extreme week lands on the track rather than off the end |
 

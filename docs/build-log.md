@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — LOAD-VERDICT-RED-01 · The screenshot found the red
+**Shipped:** the Coach "This week's load" verdict is amber above the runner's normal instead of red.
+**Dev learning:** the defect was invisible until the verdict was rendered at five ratios side by side for the Runked comparison. `loadRatioContext` was a private function inside a 6,000-line component, so no test could reach it; moving it to its own owner is what made the colour testable.
+**Product/creator learning:** the comparison gate paid for itself before any board sat: capturing our own screens found a rule we were breaking.
+**AI-building learning:** a test that read the function's TEXT out of the dashboard source went red on the move, as it should; the fix was to point it at the new owner, not to delete it.
+**The honest bit:** two runners have ever seen this tile.
+**Hook material:** "above your recent normal", in red, for months.
+**Postable?:** no
+
 ## 2026-10-29 — CHARITY-HARD-COUNT-01 · A ruling that reached one page
 **Shipped:** the charity page and the FAQ no longer say "the one hard session a week".
 **Dev learning:** page 6's ruling removed the claim from page 6, and its check read page 6 only. The same sentence sat on two other surfaces for six days. The check now scans every string in the app and site.

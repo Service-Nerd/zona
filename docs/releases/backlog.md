@@ -240,7 +240,7 @@ picture measures and what it may claim (Gabbett's 1.5 "danger zone" is disputed)
 screen. ⚠️ **Reach: 5 weekly reports for 2 runners in 56 days**, so `LoadShape` has had a value for two people. Waiting on
 the founder's other Runked screens (Fatigue, Training Balance, Load Ratio, the full band scale), then the Coaching Board.
 
-### 🔲 `LOAD-VERDICT-RED-01` — the Coach load verdict turns red above 1.3× ⚙️ **NO BOARD** (defect fix restoring a documented rule)
+### ✅ `LOAD-VERDICT-RED-01` (shipped 2026-10-30) — the Coach load verdict turns red above 1.3× ⚙️ **NO BOARD** (defect fix restoring a documented rule)
 
 `loadRatioContext` (private to `DashboardClient`) colours *"above your recent normal"* `var(--danger)` at
 `LOAD_RATIO.watch` and above, and `LoadShape` draws its marker in the same red: against *"No red in the training UI —

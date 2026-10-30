@@ -38,7 +38,7 @@ const SOURCES = [...files('components'), ...files('app')].map(f => [f, readFileS
 // Each surviving site named, with why it is not small text.
 const LITERAL_OK: Record<string, { count: number; why: string }> = {
   'app/dashboard/BenchmarkUpdateScreen.tsx': { count: 1, why: '28px figure (large)' },
-  'app/dashboard/DashboardClient.tsx': { count: 2, why: 'status VALUES in data objects, rendered through hueText' },
+  'app/dashboard/DashboardClient.tsx': { count: 1, why: 'a status VALUE in a data object, rendered through hueText (was 2: LOAD-VERDICT-RED-01 moved the load verdict out to lib/ui/loadRatioContext.ts)' },
   'components/ErrorBoundary.tsx': { count: 1, why: '32px display text (large)' },
   'components/dashboard/PlanAdjustmentsScreen.tsx': { count: 1, why: 'a chevron icon' },
   'components/dashboard/SessionPopupInner.tsx': { count: 1, why: 'a → glyph inside a button' },

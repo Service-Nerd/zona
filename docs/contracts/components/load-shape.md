@@ -32,7 +32,7 @@ normal, with the ratio demoted to evidence underneath. **Demoted, not deleted.**
 |---|---|
 | Band edges | `LOAD_RATIO.under` / `LOAD_RATIO.watch` — **the constants the coaching layer actually flags on.** A band drawn at numbers the engine does not use is a picture of nothing |
 | `ratio: null` | Renders the **empty track with no marker**. Never a marker at a default position |
-| `color` | Comes from `loadRatioContext`, so the marker and the words above it can never disagree |
+| `color` | Comes from `loadRatioContext` (`lib/ui/loadRatioContext.ts`), so the marker and the words above it can never disagree. Never `--danger`: above the normal is amber (LOAD-VERDICT-RED-01) |
 
 ⚠️ **`LOAD_RATIO.under` was a bare `0.8` inside a display function** — governing what the runner is
 told, and invisible to every config check this repo owns. Naming it was a no-behaviour-delta

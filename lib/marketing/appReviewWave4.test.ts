@@ -55,8 +55,11 @@ describe('A5 — Coach speaks in shape, never score', () => {
   it('the lower edge is a NAMED constant, not a literal in a display function', () => {
     // It was a bare 0.8 inside `loadRatioContext`, invisible to every config
     // check this repo owns, while governing what the runner is told.
-    const i = SHELL.indexOf('function loadRatioContext')
-    const fn = SHELL.slice(i, i + 600)
+    // LOAD-VERDICT-RED-01: the function moved out of DashboardClient to its own owner.
+    const OWNER = strip(read('lib/ui/loadRatioContext.ts'))
+    const i = OWNER.indexOf('function loadRatioContext')
+    expect(i).toBeGreaterThanOrEqual(0)
+    const fn = OWNER.slice(i, i + 600)
     expect(fn).toContain('LOAD_RATIO.watch')
     expect(fn).toContain('LOAD_RATIO.under')
     expect(fn).not.toMatch(/ratio\s*<\s*0\.8/)

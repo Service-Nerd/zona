@@ -114,6 +114,7 @@ import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import PreRunBandCard from '@/components/shared/PreRunBandCard'
+import { loadRatioContext } from '@/lib/ui/loadRatioContext'
 import LoadShape from '@/components/shared/LoadShape'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { NotificationBell } from '@/components/shared/NotificationBell'
@@ -5408,16 +5409,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   // ── Score body copy ──────────────────────────────────────────────────────
 
   // ── Load ratio context ──────────────────────────────────────────────────
-  // UX-COACH-01 polish (2026-09-13) — plain language, not telemetry. The number
-  // is the same; the verdict reads as Kit, not a readout ("overloading" →
-  // "above your recent normal"). Colour still carries the severity. Single
-  // owner: both the tile sub-line and the load-ratio sheet use this label.
-  function loadRatioContext(ratio: number | null): { label: string; color: string } {
-    if (ratio === null) return { label: '—', color: 'var(--mute)' }
-    if (ratio >= LOAD_RATIO.watch) return { label: 'above your recent normal', color: 'var(--danger)' }
-    if (ratio < LOAD_RATIO.under) return { label: 'under your recent normal', color: 'var(--warn)' }
-    return { label: 'right on your normal', color: 'var(--moss-strong)' }
-  }
+  // LOAD-VERDICT-RED-01 — the verdict's words and colour live in `lib/ui/loadRatioContext.ts`.
 
   // ── Sessions context ────────────────────────────────────────────────────
   // CoachingPrinciples §65 — today is in flight. The headline number stays
