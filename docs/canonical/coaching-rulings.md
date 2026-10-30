@@ -27,6 +27,36 @@ memory.
 
 
 
+## 2026-10-30 — GTM-SEO-COMPARE-01 page 8 · CORRECT WITH AMENDMENT. What is zone 2 running
+
+**Input:** the founder's page 8 draft (*"What is zone 2 running, and why most people get it wrong"*), copy marked final.
+A physiology claim on a marketing surface is this board's (W-03). **Three sentences cannot ship as written; the rest is
+correct and well hedged.**
+
+1. 🔴 **The central example compares two formulas at the SAME percentages, and nobody uses them that way.** The draft
+   takes 60–70% of max (113–132) against 60–70% of reserve (132–146) and concludes the formulas *"disagree by more than
+   the width of the zone"*. The conventional zone 2 bands differ BECAUSE the bases differ, and Zonna's own are
+   `GENERATION_CONFIG.ZONES.Z2`: **60–70% of reserve, 70–80% of max** (§14, `zone-rules.md`). With the founder's 188 /
+   48 that is **132–150 against 132–146: they nearly agree.** 🏃 Hutchinson: *"an experienced runner will check that
+   arithmetic, and the page's headline claim falls with it. The true point is stronger: the formulas agree when fed
+   numbers you have measured, and most runners have measured neither."* The disagreement that is real comes from an
+   ESTIMATED maximum and from 180 minus age, both of which the draft already covers.
+2. 🔴 **"{BRAND} is built around easy running, with one hard session a week"** is the sentence this board removed from
+   page 6 on 2026-10-23 (untrue for 21% of plans) and from the charity page and FAQ on 2026-10-29. `page6Claims.test.ts`
+   scans the whole site and would fail. Use page 6's ruled wording: no week has more than `MAX_HARD_SESSIONS_PER_WEEK`.
+3. 🔴 **"Keep one run a week properly hard"**, unqualified, is the advice §110 Am.2 withholds from beginners (Willy,
+   binding, page 6). It takes page 6's two sentences: new runners get faster on easy running alone for a while; the
+   hard run is for runners who have been at it a while.
+
+✅ **Correct as written:** Attia's ~2 mmol/L definition (attributed, not asserted); the talk test with Foster's
+co-authorship and both limiting studies stated; Maffetone's adjustments as his; "not a pace", "not a single heart rate";
+zone 2 not being the whole of training. 📊 Seiler: 2 mmol/L sits near the first threshold, which is what Zonna's zone 2
+ceiling approximates; the page correctly does not map it onto a zone number.
+
+**Not this board's:** publishing the founder's own heart rate (his call), Page 3 linking to page 8, the meta description.
+**Enforced by:** `page6Claims.test.ts` (the whole-site hard-session scan) and a page 8 arm for the zone bands, read from
+`GENERATION_CONFIG.ZONES.Z2` so the page cannot drift from the engine.
+
 ## 2026-10-30 — RUNKED-LOAD-VIEW-01 (gate step 4) · CORRECT WITH AMENDMENT. What a load picture may measure and claim
 
 **Question:** before the Design Board draws anything, what may a load picture on Coach measure and claim? Evidence:
