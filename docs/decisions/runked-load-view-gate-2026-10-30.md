@@ -38,9 +38,27 @@ shots i have"*). Saved as `runked-appstore-1-5.webp` and `runked-appstore-6-8.pn
 ⚠️ **These are marketing images, not the app.** Each is a chosen frame with a headline over it. The boards rule on what
 the screen claims to show, not on how it behaves.
 
-**Seen in the same set, outside this item (crossover noted, nothing filed):** a session screen drawing each rep as a bar
-(we draw rep structure from `derived_set`); an Apple Watch workout (we have none); a plan week list (ours is Plan's week
-strip); "Runner DNA", a six-axis radar; ranks, trophies, streaks and chests (out of scope by the plan).
+**Seen in the same set, outside this item (crossover noted, nothing filed; each checked against the code):**
+
+| Theirs | Ours, verified 2026-10-30 |
+|---|---|
+| A session screen drawing each rep as a bar | ✅ **We already do this.** `SessionSilhouette` (`SESSION-PRERUN-DETAIL-01`, shipped 2026-10-22, FREE) draws every step as a bar, width by minutes and height by zone, under *Session structure* on Session Detail. ⚠️ **I first wrote "we show rep structure, just not as bars". That was wrong, and the founder caught it** |
+| An Apple Watch workout | None: `ios/App` has no watch target and no `WorkoutKit`/`HKWorkoutSession` code |
+| A plan week list | Plan's week strip and session rows |
+| "Runner DNA", a six-axis radar | No equivalent |
+| Ranks, trophies, streaks, chests | Out of scope by the plan |
+
+**Reach and linkage, re-measured in production 2026-10-30 (read-only, last 56 days):**
+
+| | Figure |
+|---|---|
+| Runs logged | **334 runs, 1,777 km, 24 runners** |
+| Runs matched to a session (`run_analysis`, live) | **8 runs, 78.5 km, 3 runners** by an activity join; 21 analyses, 92.5 km, 5 runners counted from `run_analysis` itself (3 carry no activity id, so the join cannot see them) |
+| Share of distance the ratio can see | **about 4–5%** |
+| Weekly reports with a ratio | **5, for 2 runners** |
+
+⚠️ **This replaces "5 of 239", a figure from 6 October counted against session completions, not the `run_analysis`
+match the ratio actually reads (`weeklyActualLoad.linkedKm`).** Same conclusion, measured the right way.
 
 ## Step 3: adapt, improve or new (provisional, for the boards)
 
@@ -57,6 +75,15 @@ against a band, theirs is weeks of fitness and fatigue as lines. The improvement
    `var(--danger)`, red, against *"No red in the training UI"* (`ux-principles.md`). Filed as `LOAD-VERDICT-RED-01`
    (a defect fix restoring a documented rule; no board). `loadRatioContext` is also private to `DashboardClient`, so
    no other surface can reuse the verdict.
+
+## Step 4, Coaching Board (2026-10-30): CORRECT WITH AMENDMENT
+
+Full sitting in `docs/canonical/coaching-rulings.md`. In one line each: measure **total** distance against the runner's
+own recent weeks (the trim ratio stays linked-only and is never shown as "your load"); **no verdict without 3 of 4 prior
+weeks**; describe, never predict (no injury risk, no Gabbett 1.5); no fitness score or "fatigue" from kilometres; a
+planned easy week below normal is not a warning; a trajectory over the block is allowed. Found on the way: `LOAD_RATIO`
+has no principle section, and 2 of 5 reports showed the no-history default as "right on your normal"
+(`LOAD-SHAPE-NO-HISTORY-01`).
 
 ## Next (step 4, in order)
 

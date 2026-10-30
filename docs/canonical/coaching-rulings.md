@@ -27,6 +27,82 @@ memory.
 
 
 
+## 2026-10-30 — RUNKED-LOAD-VIEW-01 (gate step 4) · CORRECT WITH AMENDMENT. What a load picture may measure and claim
+
+**Question:** before the Design Board draws anything, what may a load picture on Coach measure and claim? Evidence:
+`docs/decisions/runked-load-view-gate-2026-10-30.md` (Runked's fitness/fatigue screen, our surfaces, production reach).
+**No code changes at this sitting.** The artifacts land with the build, in one commit.
+
+**Conflict scan.** §2 Am.4 (clause 1: actual load includes off-plan running; clause 2: off-plan never reaches the
+acute:chronic ratio), §2 Am.5 (shadow load, the three fifteens), §59 (readiness), §128 (reported distance is volume),
+§108/§124 (efficiency is the fitness signal, and noisy). 🔴 **Finding: `LOAD_RATIO` (watch 1.3, flag 1.4, under 0.8) has
+NO principle section.** It is cited in passing by §2 Am.4, Am.5 and §69, and explained nowhere; it lives in
+`lib/coaching/constants.ts`, outside `GENERATION_CONFIG`'s principle sync, which is the `peakKmByLevel` class.
+
+**Measured before ruling (production, read-only, 56 days):** 334 runs / 1,777 km / 24 runners logged; matched runs
+(`run_analysis`, which the ratio reads) 78.5–92.5 km, **about 4–5%**. Weekly reports: 5, for 2 runners; **2 of the 5 read
+exactly 1.00 in week 1**, which is `acuteChronicRatio`'s no-history default, and the Coach tile renders 1.00 as *"right
+on your normal"*.
+
+🏃 **Hutchinson (chair):** *"The ratio we show is the trigger's ratio. It was built to decide whether to trim a week, so
+it counts only the runs we matched, and that is about one kilometre in twenty. As a picture of what the runner did it is
+not a weak measure, it is a different measure with the same name. And the ACWR itself is the most argued-over number in
+load science: the coupled rolling version shares its numerator with its denominator, and Gabbett's 1.5 'danger zone' has
+not survived re-analysis. We may describe a week against the runner's own recent weeks. We may not predict an injury,
+and we must not print a sentence about someone's normal when we have no normal."*
+
+📊 **Seiler:** *"Runked's 'fitness' line is a weighted volume line wearing a physiological name. We count kilometres, not
+stress, and a kilometre of strides is not a kilometre of shuffle. If we say 'load', say what we count. Do not call it
+fitness; our fitness evidence is HR at the same effort (`TrendCard`), and that is a separate, slower signal."*
+
+🎯 **McMillan:** *"Below normal is usually the plan working: a deload, a taper, a cutback after a race. If the picture
+calls that a warning, runners learn to ignore it in the weeks that matter. And the trim stays on linked runs; clause 2
+stands, a runner's own extra run must not shrink next week."*
+
+🩹 **Willy:** *"Total volume is the honest input for tissue: the body does not know which runs we matched. Above the
+runner's normal is worth saying plainly. One week low is not a finding. Two or more weeks well below normal outside a
+planned easy week is, because that is what an injury the runner has not told us about looks like."*
+
+⚕️ **Sims:** *"Same as Willy, and it is also what low energy availability looks like: volume falling, then the runner
+pushing to make it up. Do not reward a rising line. A line that only goes up is the picture Runked's streaks already
+draw."*
+
+💪 **Blagrove:** no objection from this seat; strength is not counted in kilometres and the picture must not imply it is.
+
+### ⚖️ Ruling: CORRECT WITH AMENDMENT
+
+1. **Measure total actual distance**, linked plus off-plan plus runner-reported (§2 Am.4 clause 1, §128), against the
+   runner's own recent weeks. **The trimming ratio stays linked-only (clause 2) and is never shown as "your load".** Two
+   figures, two jobs, named apart.
+2. **No normal, no verdict.** Below a minimum of prior weeks with running, show no comparison at all. **3 of 4 prior
+   weeks** (McMillan would accept 2; recorded). A ratio defaulted to 1.00 must never render as *"right on your normal"*.
+3. **Describe, never predict.** No injury risk, no "danger zone", no "sweet spot", no "optimal", no Gabbett 1.5, on any
+   surface including marketing and AI prompts.
+4. **No fitness score and no "fatigue" label from kilometres.** "Load" and "your recent normal" only. Fitness claims stay
+   with `TrendCard`; recovery claims stay with §59 readiness.
+5. **Plan context is part of the meaning.** A planned deload, taper or recovery week below normal says so and is not a
+   warning. One week below normal outside those is neutral. **Two or more consecutive weeks well below normal outside a
+   planned easy week may be named** (Willy, Sims).
+6. **Above normal** keeps `LOAD_RATIO.watch` as the descriptive edge, with no stronger claim. **A trajectory over the
+   block is allowed:** it is a description of weeks, not a model of fitness.
+
+⚡ **Recorded disagreement:** McMillan holds 2 prior weeks is enough history for a returning runner; Willy and Hutchinson
+hold 3, because two weeks can both be a holiday. Settled by measuring how often weeks 2 and 3 differ by more than the
+watch band across logged runners. **How the picture is coloured and drawn is the Design Board's** (the seam rule); this
+board rules only that clause 5's below-normal is not a warning by default, which bears on `LOAD-VERDICT-RED-01`'s amber
+for "under".
+
+📦 **Artifacts (land with the build, one commit):** new § "The load picture" plus the missing `LOAD_RATIO` principle ·
+`LOAD_PICTURE_MIN_PRIOR_WEEKS = 3` in `lib/coaching/constants.ts` · not a plan invariant (it is a display claim): a test
+that the picture reads total km and returns no verdict below the minimum, plus a copy guard on the banned predictive words,
+each falsified.
+
+↗️ **SLT:** tier and reach. Total distance needs no `run_analysis`, so the picture could reach the **24** runners who
+logged runs, not the **2** with weekly reports; why reports are rare is a reach question, not a coaching one.
+
+**Filed from this sitting:** `LOAD-SHAPE-NO-HISTORY-01` (the 1.00 default shown as "right on your normal"; ⚙️ NO BOARD,
+the ruling's clause 2 is the documented intent).
+
 ## 2026-10-29 — GTM-SEO-COMPARE-01 page 7 · CORRECT WITH AMENDMENT. A first marathon around a full-time job
 
 W-03 sitting on the founder's final copy. The page's *"assumes about 30 minutes without stopping"* is false for the plan

@@ -239,7 +239,19 @@ picture measures and what it may claim (Gabbett's 1.5 "danger zone" is disputed)
 `docs/investigations/runked-load-view/`). Provisional step 3: **extends `LoadShape` with time** (a trajectory), not a new
 screen. ⚠️ **Reach: 5 weekly reports for 2 runners in 56 days**, so `LoadShape` has had a value for two people. Step 2
 closed on Runked's eight App Store screenshots, which are all the founder has: Fatigue, Training Balance and Load Ratio
-are never shown, so the boards rule on the one fitness screen plus Runked's guide. **Next: the Coaching Board (step 4).**
+are never shown, so the boards rule on the one fitness screen plus Runked's guide. **Re-measured 2026-10-30: the ratio
+sees about 4–5% of logged distance** (78.5–92.5 km of 1,777 km in 56 days; 24 runners ran, 3–5 had a matched run).
+**Coaching Board 2026-10-30: CORRECT WITH AMENDMENT** (`coaching-rulings.md`): measure total distance, not the
+linked-only trim ratio; no verdict without 3 of 4 prior weeks; describe, never predict; no fitness or fatigue label;
+a planned easy week below normal is not a warning; trajectory allowed. **Next: the Design Board, then the SLT.**
+
+### 🔲 `LOAD-SHAPE-NO-HISTORY-01` — a runner with no history is told they are "right on your normal" ⚙️ **NO BOARD** (defect fix; Coaching Board 2026-10-30 clause 2 is the intent)
+
+`acuteChronicRatio` (`lib/coaching/loadCalc.ts`) returns **1** when there are no prior weeks or their average is 0, and
+the Coach tile (`loadRatioContext`) renders 1.00 as *"right on your normal"* in moss. **Measured 2026-10-30: 2 of the 5
+weekly reports in 56 days read exactly 1.00, both week 1.** Fix: the display path gets `null` (no verdict) without
+enough history. ⚠️ **List every caller first:** `planAdjustment.ts` (the trim trigger, where 1 means "no trim" and is
+harmless) and the weekly-report AI prompt (`prompts/weeklyReport.ts`, which prints `1.00x`) read the same function.
 
 ### ✅ `LOAD-VERDICT-RED-01` (shipped 2026-10-30) — the Coach load verdict turns red above 1.3× ⚙️ **NO BOARD** (defect fix restoring a documented rule)
 
