@@ -26,6 +26,9 @@
 // absent — a run with no recorded distance still counts, as one kilometre's worth
 // of evidence rather than none. That fallback is deliberate and was identical at
 // all three sites; it is preserved here rather than "tidied" into a skip.
+import { dedupeRuns, isRun, isInsidePlanWeek, type ActivityLogRow } from './weeklyActualLoad'
+import { runDistance } from '@/lib/health/runDistance'
+
 /**
  * A week's time split across the four zone buckets, as percentages.
  *
@@ -92,4 +95,33 @@ export function zoneTimeSplit(rows: ZoneSplitRow[]): { split: ZoneSlice | null; 
   const z1 = at('z1'), z2 = at('z2'), z3 = at('z3'), z45 = at('z45')
   if (z1 == null || z2 == null || z3 == null || z45 == null) return { split: null, hits: rows.length }
   return { split: { z1, z2, z3, z45 }, hits: rows.length }
+}
+
+/**
+ * COACH-RINGS-SOURCE-01 (Coaching Board, Coach review 2026-10-30) — the rings' rows: EVERY run in this plan week that
+ * carries a zone split, from the activity log, not only runs matched to a session.
+ *
+ * The rings read `run_analysis.hr_pct_z*`, which exists only for matched runs: 4 of the 17 non-admin runners who open
+ * Coach had any, while 259 of 317 Apple Health runs in the same 56 days already carried the split on the activity row
+ * (`analyse-run` copies it from there, so a matched run reads the same numbers either way). Same principle as §129: what
+ * the runner ran, not what was matched. Seiler: over the week, never one run as a verdict.
+ *
+ * ⚠️ The ZONE DISCIPLINE share (did a prescribed session hold ITS zone) is a different question and still reads matched
+ * runs: an unmatched run has no prescribed zone to hold. The rings describe the week; discipline grades the plan.
+ *
+ * Weight: the run's distance (`runDistance`), the same quantity `actual_load_km` records, with `weightOf`'s fallback.
+ */
+export function weekZoneSplitRows(
+  rows: readonly (ActivityLogRow & { hr_pct_z1?: number | null; hr_pct_z2?: number | null; hr_pct_z3?: number | null; hr_pct_z4_5?: number | null })[],
+  week: { date?: string } | null | undefined,
+): ZoneSplitRow[] {
+  if (!week?.date) return []
+  return dedupeRuns(rows.filter(isRun) as ActivityLogRow[])
+    .map(r => r as (typeof rows)[number])
+    .filter(r => isInsidePlanWeek(week, r.start_date))
+    .filter(r => r.hr_pct_z1 != null || r.hr_pct_z2 != null || r.hr_pct_z3 != null || r.hr_pct_z4_5 != null)
+    .map(r => ({
+      z1: Number(r.hr_pct_z1 ?? 0), z2: Number(r.hr_pct_z2 ?? 0), z3: Number(r.hr_pct_z3 ?? 0), z45: Number(r.hr_pct_z4_5 ?? 0),
+      weight: weightOf(runDistance(r)?.km ?? null),
+    }))
 }

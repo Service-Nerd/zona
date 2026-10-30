@@ -120,18 +120,17 @@ The user opens Coach to hear from Kit. This is the AI intelligence layer: a synt
 
 | Belongs here | Does not belong here |
 |---|---|
-| Kit's weekly read (AI) — headline, body, action line | The week-by-week session schedule (that's Plan) |
-| Zone discipline score + what it means | Week Notes / plan framing copy (that's Plan) |
-| Load ratio + underloaded / overloaded signal | The week-by-week session schedule (that's Plan) |
-| Sessions completed / planned count | Session-level detail (that's Session Detail) |
-| Weeks left to race | Profile or settings |
-| Zone rings — this week's zone distribution | |
-| Aerobic / easy-run trend (ONE card, UX-COACH-01) | |
-| Race readiness (conditional, race window only) | |
-| Phase summary (conditional, phase transition only) | |
-| Zone drift alert (conditional, rule-engine) | |
-| Discipline ledger — weeks within the lines | |
-| Race projections — the arc (was · now · goal), §109 (moved here 2026-09-12, UX-COACH-01) | |
+| Kit's weekly read (AI) — headline, body, action line; race readiness, phase summary and zone drift folded in when they fire | The week-by-week session schedule (that's Plan) |
+| Zone rings — this week's zone distribution, from every run with heart rate (COACH-RINGS-SOURCE-01) | Week Notes / plan framing copy (that's Plan) |
+| Race projections — the arc (was · now · goal), §109 (moved here 2026-09-12, UX-COACH-01) | Session-level detail (that's Session Detail) |
+| This week's load — the verdict and `LoadShape`, from every run (LOAD-SOURCE-TOTAL-01) | Profile or settings |
+| Sessions completed / planned count | The discipline ledger (that's Me, LEDGER-PLACEMENT-01; the Coach copy was removed 2026-10-05) |
+| Strength this week (conditional, when the plan has strength) | A zone discipline TILE: it restated the rings (Pattern 32). The share belongs to the rings as their headline (COACH-DISCIPLINE-HEADLINE-01, ruled, not built) |
+| Aerobic / easy-run trend (ONE card, UX-COACH-01) | A 2×2 stats grid (UX-COACH-01: two tiles, not four) |
+
+> **Corrected 2026-10-30 (COACH-CODE-HYGIENE-01).** This table still listed the zone discipline tile, the discipline
+> ledger and "weeks left to race" as Coach blocks, all removed by earlier rulings, so it described a screen that no
+> longer existed. Order above is the screen's order today; the zone discipline share is reached from the rings' sheet.
 
 **Kit appears once, as a coherent voice.** Multiple disconnected Kit cards are a layout failure — consolidate.
 

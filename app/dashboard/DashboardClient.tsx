@@ -131,7 +131,7 @@ import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, daysUntilRace, formatRaceCountdown } from '@/lib/format'
 import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearSessionMetricOverride } from '@/lib/sessionMetricOverrides'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
-import { zoneDiscipline, zoneTimeSplit, weightOf } from '@/lib/coaching/weeklyZoneAggregate'
+import { zoneDiscipline, zoneTimeSplit, weightOf, weekZoneSplitRows } from '@/lib/coaching/weeklyZoneAggregate'
 import { trendSentence } from '@/lib/coaching/trendSentence'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession, renderPlanProse, planProseContext } from '@/lib/plan/renderGuidance'
@@ -1109,18 +1109,22 @@ export default function DashboardClient() {
   // Re-read when the run list changes, so a run ingested on open moves the picture. A failed read leaves `null`,
   // which renders "Not enough runs yet": the empty state, never a guessed verdict.
   const [loadPicture, setLoadPicture] = useState<LoadPicture | null>(null)
+  // COACH-RINGS-SOURCE-01: the same read feeds the zone rings (every run with a zone split this plan week).
+  // Null until the read returns, so the rings hold their skeleton instead of flashing an empty state.
+  const [recentActivity, setRecentActivity] = useState<any[] | null>(null)
   useEffect(() => {
     if (!userId || !plan) return
     let cancelled = false
     const since = new Date(Date.now() - LOAD_PICTURE_LOOKBACK_DAYS * 86_400_000).toISOString()
     supabase.from('strava_activities')
-      .select('start_date, distance_m, reported_distance_m, activity_type, sport_type, strava_activity_id, apple_health_uuid, manual_uuid')
+      .select('start_date, distance_m, reported_distance_m, activity_type, sport_type, strava_activity_id, apple_health_uuid, manual_uuid, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5')
       .eq('user_id', userId)
       .gte('start_date', since)
       .then(({ data, error }: { data: any[] | null; error: unknown }) => {
         if (cancelled) return
-        if (error) { console.error('[coach] load picture read failed', error); setLoadPicture(null); return }
+        if (error) { console.error('[coach] load picture read failed', error); setLoadPicture(null); setRecentActivity([]); return }
         setLoadPicture(computeLoadPicture(data ?? [], plan, new Date()))
+        setRecentActivity(data ?? [])
       })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3174,24 +3178,14 @@ export default function DashboardClient() {
               ).pct
 
               // Per-zone weekly aggregates for the Coach ZoneRings (Pattern 22).
-              // Same load-km weighting as zoneDisciplinePercent — the two
-              // numbers describe the same week from different angles, so they
-              // must never disagree about which session weighed what.
-              const zoneHistogramRows = wSessions
-                .filter((s: any) => comps[s.key]?.status === 'complete')
-                .map((s: any) => {
-                  const a = runAnalysisMap?.[wn]?.[s.key]
-                  if (!a) return null
-                  if (a.hr_pct_z1 == null && a.hr_pct_z2 == null && a.hr_pct_z3 == null && a.hr_pct_z4_5 == null) return null
-                  return {
-                    z1:     Number(a.hr_pct_z1   ?? 0),
-                    z2:     Number(a.hr_pct_z2   ?? 0),
-                    z3:     Number(a.hr_pct_z3   ?? 0),
-                    z45:    Number(a.hr_pct_z4_5 ?? 0),
-                    weight: (a.actual_load_km as number | null) ?? 1,
-                  }
-                })
-                .filter((v: any): v is { z1: number; z2: number; z3: number; z45: number; weight: number } => v !== null)
+              // COACH-RINGS-SOURCE-01 (Coaching Board 2026-10-30): EVERY run this
+              // plan week with a zone split, from the activity log, not only runs
+              // matched to a session (4 of 17 Coach openers had any; 259 of 317
+              // runs carried the split). Weighted by distance, the quantity
+              // `actual_load_km` records. ⚠️ zoneDisciplinePercent above still
+              // reads matched runs on purpose: it grades a PRESCRIBED zone, which
+              // an unmatched run does not have. The rings describe the week.
+              const zoneHistogramRows = weekZoneSplitRows(recentActivity ?? [], currentWeek as any)
               // Per-zone split — same owner, same weighting, so the number in
               // Kit's sentence and the arc the rings draw can never disagree.
               const zoneTimePctByZone = zoneTimeSplit(zoneHistogramRows).split
@@ -3275,7 +3269,7 @@ export default function DashboardClient() {
                   benchmarkRecalDismissedAt={benchmarkRecalDismissedAt}
                   onDismissRecal={dismissBenchmarkRecal}
                   onOpenBenchmark={() => setScreen('benchmark')}
-                  runAnalysisReady={runAnalysisReady}
+                  runAnalysisReady={runAnalysisReady && recentActivity !== null}
                   // 🔴 §5b.3 — TWO callers, not one. `onConnect` is used by the Coach
                   // empty-state CTA ("Connect a source") AND by `ZoneRings`. Both used to
                   // land on the Me INDEX, where the connection rows were. They are behind
@@ -5299,21 +5293,7 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoadin
   // Falls back to the most recent report score if no live data is available.
   const currentScore: number | null =
     zoneDisciplinePercent ?? (reportIsCurrent ? (weeklyReport.zone_discipline_score ?? null) : null)
-  // If the cached report is from last week, surface it as a reference point
-  const lastWeekScore: number | null =
-    weeklyReport?.week_n === weekKey - 1 ? (weeklyReport.zone_discipline_score ?? null) : null
-
-  // Tracked km from Strava runs this week
-  const trackedKm: number | null = (() => {
-    if (!runs?.length) return null
-    const weekStart = parseLocalDate((currentWeek as any).date)
-    const weekEnd = new Date(weekStart)
-    weekEnd.setDate(weekEnd.getDate() + 7)
-    const total = runs
-      .filter(r => { const d = new Date(r.start_date); return d >= weekStart && d < weekEnd })
-      .reduce((sum, r) => sum + (r.distance ?? 0) / 1000, 0)
-    return total > 0 ? parseFloat(total.toFixed(1)) : null
-  })()
+  // COACH-CODE-HYGIENE-01: `lastWeekScore` and `trackedKm` were computed here and rendered nowhere.
 
   // Metrics derived from report or defaults
   // LOAD-SOURCE-TOTAL-01: NOT `weeklyReport.acute_chronic_ratio`. That is the trim trigger's linked-only ratio, which
@@ -5532,7 +5512,8 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoadin
           session_type:  'easy',
           distance_km:   String(anchorKm),
           window_months: '6',
-          include_gloss: 'true',
+          // COACH-CODE-HYGIENE-01: no `include_gloss`. Coach renders this card `glossless` (CO-ONE: one Kit voice),
+          // so the gloss was a model call on every Coach load that no runner ever saw.
         })
         const res = await authedFetch(`/api/coaching/trend?${params}`)
         if (!res.ok) { setEasyTrendData({ state: 'pending' }); return }
