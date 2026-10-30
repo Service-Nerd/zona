@@ -235,6 +235,18 @@ activities are linked** (`LOG-OFFPLAN-03`), so a fitness/fatigue picture today w
 fresher than they are. **Default: improve `LoadShape`, after `LOG-OFFPLAN-03`.** Coaching Board first on what the
 picture measures and what it may claim (Gabbett's 1.5 "danger zone" is disputed); Design Board against A5; SLT on tier
 (Coach is paid).
+**Gate progress (2026-10-30): steps 1–3 done**, `docs/decisions/runked-load-view-gate-2026-10-30.md` (our screens in
+`docs/investigations/runked-load-view/`). Provisional step 3: **extends `LoadShape` with time** (a trajectory), not a new
+screen. ⚠️ **Reach: 5 weekly reports for 2 runners in 56 days**, so `LoadShape` has had a value for two people. Waiting on
+the founder's other Runked screens (Fatigue, Training Balance, Load Ratio, the full band scale), then the Coaching Board.
+
+### 🔲 `LOAD-VERDICT-RED-01` — the Coach load verdict turns red above 1.3× ⚙️ **NO BOARD** (defect fix restoring a documented rule)
+
+`loadRatioContext` (private to `DashboardClient`) colours *"above your recent normal"* `var(--danger)` at
+`LOAD_RATIO.watch` and above, and `LoadShape` draws its marker in the same red: against *"No red in the training UI —
+amber for warnings"* (`ux-principles.md`, CLAUDE.md). Seen in `docs/investigations/runked-load-view/ours-coach-load-and-ledger.png`.
+Fix: the amber warning shade through `hueText` for the words, and move `loadRatioContext` to a shared owner so the verdict
+can be reused. Reaches 2 runners today (see `RUNKED-LOAD-VIEW-01`), so small but real; do it before or with that item.
 
 ### 🔲 `RUNKED-COMPARE-PAGE-01` — a comparison page answering the gamified running apps 🏃 **COACHING BOARD** (claims) → 👤 **FOUNDER** (copy; naming a competitor)
 

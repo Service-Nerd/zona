@@ -1160,6 +1160,7 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Open strength to paid and trial runners** (STRENGTH-RELEASE-01) | 🔲 | S | SLT 2026-10-29: four conditions (phone check, migration, item 6, lapsed-trial state), then the flip. |
 | **Charity page: state each plan's real start point** (CHARITY-PLAN-PREREQ-01) | ✅ | S | Coaching Board 2026-10-29: "30 minutes" is false for the marathon and half plans. Founder words. |
 | **A readable load picture, improving LoadShape** (RUNKED-LOAD-VIEW-01) | 🔲 | M | From Runked's fitness/fatigue screen. Plan gate: crossover + screenshots + Coaching → Design (A5 "shape, never score") → SLT. After LOG-OFFPLAN-03. |
+| **Coach load verdict is red above 1.3×** (LOAD-VERDICT-RED-01) | 🔲 | S | Defect: no red in the training UI. Amber via `hueText`; share `loadRatioContext`. |
 | **Comparison page answering gamified apps** (RUNKED-COMPARE-PAGE-01) | 🔲 | S | Coaching (claims) → founder. One catalogue entry. |
 | **Easy-running guide series** (RUNKED-GUIDES-01) | 🔲 | M | Extend guide 1 and page 6, no repeats. Coaching → founder. |
 | **"Effort, not pace" in our voice** (RUNKED-EFFORT-MESSAGE-01) | 🔲 | S | Founder's words, inside existing copy. |
