@@ -273,7 +273,7 @@ beating the previous best by ≥10 points with ≥3 prior weeks (fires 5 of 59 e
 time the easy trend crosses its floor downward with pace confirming. **Next: a mockup for placement (founder rule), then
 the Design Board, then build.**
 
-### 🔲 `ZONE-SPLIT-CONFIG-01` — the zone split every Coach number reads uses boundaries outside the engine's zone config 🏃 **COACHING BOARD** · P1
+### ✅ `ZONE-SPLIT-CONFIG-01` (shipped 2026-10-30, `c26806f5`) — the zone split every Coach number reads uses boundaries outside the engine's zone config 🏃 **COACHING BOARD** · P1
 
 **Phase 1 shipped 2026-10-30 (`c26806f5`):** the guarded max (§50) and the config Z2 ceiling. Measured first: the easy share
 only depends on the ceiling, which already matched the config's 70% of reserve; the raw max moved it for **2 of 22**
@@ -293,6 +293,14 @@ measured noise floor, a lighter week named without judgement. Never a badge, med
 ### ✅ `COACH-TREND-PENDING-01` (shipped 2026-10-30) — the trend card says "— → —" for months 🧭 **DESIGN BOARD** · P2
 
 Keep the honest wait; show progress toward the first answer (e.g. *"4 of 6 easy runs collected"*) instead of an empty arrow.
+
+### 🔲 `ZONE-SPLIT-CONFIG-02` — the zone split's Z1 floor and max-only fallbacks still sit outside §14 🏃 **COACHING BOARD** · P2
+
+Split from `ZONE-SPLIT-CONFIG-01` (phase 1 shipped). `bucketHRHistogram` puts the Z1/Z2 line at 60% of max where §14 says
+60% of reserve (typically 111 vs 133 bpm), so the rings show too little Z1 and too much Z2; it ALSO sets the legacy in-zone
+figure that scores runs, so aligning it changes how slow runs are graded (a meaning change, not a defect fix). The max-only
+fallbacks are 76% (ceiling) and 86% (Z3 top) against §14's 80% and 87%. The easy share is unaffected (it is everything at or
+below the ceiling). Measure the scoring shift before the board sits.
 
 ### 🔲 `RUNKED-LOAD-VIEW-01` — a readable picture of whether this week is building you or wearing you down 🏃 **COACHING BOARD** → 🧭 **DESIGN BOARD** → 💼 **SLT**
 
