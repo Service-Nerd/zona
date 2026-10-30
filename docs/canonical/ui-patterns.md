@@ -4303,7 +4303,8 @@ The form-control migration (2026-05-30) moved Login, Benchmark, and the Me-scree
 | | |
 |---|---|
 | **Band** | `LOAD_RATIO.under … LOAD_RATIO.watch` — **the same constants the coaching layer flags on.** A band drawn at numbers the engine does not use is a picture of nothing |
-| **Marker** | Coloured by `loadRatioContext` (`lib/ui/loadRatioContext.ts`), the single owner of the verdict, so the marker and the words above it cannot disagree. **Amber above the normal, never red** (LOAD-VERDICT-RED-01: no red in the training UI) |
+| **Marker** | Coloured by `loadRatioContext` (`lib/ui/loadRatioContext.ts`), the single owner of the verdict: `color` for the words, `markerColor` for this mark, so they agree in meaning while 6t-g keeps hue on marks and ink on words. **Amber above the normal, never red** (LOAD-VERDICT-RED-01). **Under normal is not a warning by default** (LOAD-SOURCE-TOTAL-01): moss *"lighter, as planned"* in a planned lighter week, neutral (`--ink-2` words, `--mute` mark) for one unplanned week, amber only after `LOAD_PICTURE_LOW_WEEKS_TO_NAME` unplanned weeks in a row |
+| **Source** | `computeLoadPicture` (`lib/coaching/loadPicture.ts`): every run in the activity log over rolling 7-day windows, **not** the weekly report's linked-only trim ratio (§129). No verdict below `LOAD_PICTURE_MIN_PRIOR_WEEKS` of 4 prior weeks with running |
 | **No ratio** | **No marker.** An empty track reads as "nothing measured yet"; a marker parked at 1.0 would read as "you are exactly normal", which is a claim we cannot make from no data |
 | **Domain** | 0.5–1.7, clamped. A presentation choice, not a coaching threshold — it exists so the band sits centrally and an extreme week lands on the track rather than off the end |
 
@@ -4325,7 +4326,7 @@ and one not is a distinction, and the gate asserts it so nobody "makes them cons
 
 ### 🔲 RULED, NOT BUILT — the history row (`RUNKED-LOAD-VIEW-01`, Design Board 2026-10-30)
 
-⚠️ **The component above does not do this yet.** It lands with the build, after the SLT sits.
+⚠️ **The bars do not exist yet.** The SLT (2026-10-30) ordered them AFTER `LOAD-SOURCE-TOTAL-01`, which shipped the source, the minimum history and the colours above; the bars wait until a majority of Coach openers with 3+ weeks of runs see a real verdict.
 
 ```
   above your recent normal                         ← verdict first (now)

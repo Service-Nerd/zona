@@ -12048,3 +12048,39 @@ can be 5–10% out, so a typed pace must never tell anyone how fit they are.
 **No numeric.** **Enforced by** `lib/health/reportDistance.test.ts`: the fitness estimators (`aerobicEstimate`,
 `race-times`, `wizard-benchmark-estimate`, `runHistory`) must not read the reported column, and the load model must.
 Not a `validatePlan()` invariant: it governs run data, not a plan.
+
+## 129. The load picture describes the runner's own weeks; it never predicts *(Coaching Board 2026-10-30, RUNKED-LOAD-VIEW-01 / LOAD-SOURCE-TOTAL-01)*
+
+**Principle.** The Coach load picture compares the distance the runner **actually ran** in the last seven days (every
+run in the activity log, linked, off-plan and runner-reported, §2 Am.4 clause 1, §128) with their weekly average over
+the four seven-day windows before. It says nothing until `LOAD_PICTURE_MIN_PRIOR_WEEKS` (3) of those four held running.
+It describes and never predicts: no injury risk, no "danger zone", no "safe zone", no fitness score, no "fatigue" label.
+A week under normal that the plan made lighter (deload, taper, holiday, post-race restoration) is the plan working, not a
+warning; one unplanned week under normal is an observation; `LOAD_PICTURE_LOW_WEEKS_TO_NAME` (2) unplanned weeks in a
+row may be named.
+
+**Why.** The Coach tile showed the trim trigger's ratio, which counts only runs matched to a session (§2 Am.4 clause 2)
+and existed only where a weekly report did. Measured 2026-10-30: matched runs were about 4–5% of logged distance, and 18
+people opened Coach 235 times in 56 days while **2** ever saw a value. Two of the five reports read exactly 1.00 in week
+1, the no-history default, shown as "right on your normal". As a picture of what the runner did, that was not a weak
+measure; it was a different measure with the same name (Hutchinson). Rolling windows, not plan weeks, because a plan week
+in progress would read "under your normal" every Monday; and the prior windows are not clipped to the plan, because
+running before the plan began is the runner's normal.
+
+**`LOAD_RATIO`, explained here because it never was.** `under` (0.8) and `watch` (1.3) bound the runner's normal: a
+week within ±20–30% of the recent average is ordinary variation for a recreational runner, and the band is wide on
+purpose so a normal week reads as normal. `watch` is also where the trim trigger acts (§2 Am.4, ADR-012), and `flag`
+(1.4) is where that trim asks before applying. These are **description bands, not risk thresholds**: the acute:chronic
+ratio's predictive claims (Gabbett 2016's 1.5 "danger zone") have not survived re-analysis, and the coupled rolling form
+shares its numerator with its denominator. The picture may say "above your recent normal"; it may not say why that is
+dangerous.
+
+**Recorded disagreement.** McMillan would accept 2 prior weeks for a returning runner; Willy and Hutchinson hold 3,
+because two weeks can both be a holiday. Settled by measuring how often weeks 2 and 3 differ by more than the watch band
+across logged runners.
+
+**Config.** `lib/coaching/constants.ts → LOAD_PICTURE_MIN_PRIOR_WEEKS`, `LOAD_PICTURE_LOW_WEEKS_TO_NAME`, `LOAD_RATIO`.
+**Enforced by** `lib/coaching/loadPicture.test.ts` (source, minimum history, every source counts, planned weeks, the
+streak, and the sheet's copy carrying no injury or safe-zone claim) and `lib/ui/loadRatioContext.test.ts` (under-normal
+is not amber unless named). Not a `validatePlan()` invariant: it governs what the runner is told about their runs, not a
+plan. **The trim trigger is unchanged.**

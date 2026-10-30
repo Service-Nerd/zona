@@ -61,6 +61,8 @@ const SUBJECTS: Record<string, string[]> = {
   'lib/planDateWindow.test.ts':                     ['lib/plan.ts'],
   // §126 — the doubles rule and its independent check, plus the owner that applies it.
   'lib/plan/doubles.test.ts':                       ['lib/plan/doubles.ts', 'lib/plan/effectiveSessions.ts'],
+  // §129 — the load picture and the verdict it feeds (LOAD-SOURCE-TOTAL-01).
+  'lib/coaching/loadPicture.test.ts':               ['lib/coaching/loadPicture.ts', 'lib/ui/loadRatioContext.ts'],
 }
 
 // Tests with NO mutable subject, recorded rather than silently absent.

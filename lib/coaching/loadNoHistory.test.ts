@@ -37,7 +37,7 @@ describe('LOAD-SHAPE-NO-HISTORY-01', () => {
   it('a week-1 report stores no ratio, and the tile says nothing about "normal"', () => {
     const data = computeWeeklyReportData(input([]))
     expect(data.acuteChronicRatio).toBeNull()
-    expect(loadRatioContext(data.acuteChronicRatio).label).not.toMatch(/normal/)
+    expect(loadRatioContext(data.acuteChronicRatio, { plannedEasy: false, lowWeeksRunning: 0 }).label).not.toMatch(/normal/)
   })
 
   it('the primary insight chooses exactly as before when there is no history', () => {

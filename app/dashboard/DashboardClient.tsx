@@ -63,7 +63,7 @@ import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
 import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
-import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO, BEHIND_VERDICT_MIN_SESSIONS } from '@/lib/coaching/constants'
+import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO, LOAD_PICTURE_MIN_PRIOR_WEEKS, BEHIND_VERDICT_MIN_SESSIONS } from '@/lib/coaching/constants'
 import { zoneVerdict, zoneVerdictColour, zoneVerdictLabel } from '@/lib/coaching/zoneVerdict'
 import { driftContextFor } from '@/lib/coaching/loadCalc'
 import { compareLoad } from '@/lib/coaching/loadComparison'
@@ -115,6 +115,7 @@ import CoachByline from '@/components/shared/CoachByline'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import PreRunBandCard from '@/components/shared/PreRunBandCard'
 import { loadRatioContext } from '@/lib/ui/loadRatioContext'
+import { computeLoadPicture, LOAD_PICTURE_LOOKBACK_DAYS, type LoadPicture } from '@/lib/coaching/loadPicture'
 import LoadShape from '@/components/shared/LoadShape'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { NotificationBell } from '@/components/shared/NotificationBell'
@@ -1101,6 +1102,29 @@ export default function DashboardClient() {
     if (screen === 'coach') trackEvent(supabase, userId, 'coach_open')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, userId])
+
+  // LOAD-SOURCE-TOTAL-01: the Coach load picture reads every run in the activity log (all sources, ADR-011), not
+  // the weekly report's linked-only trim ratio, which 2 of 18 Coach openers ever had. `stravaRuns` cannot serve: it
+  // carries Apple Health and Strava rows for the matcher and leaves MANUAL logs out, the very runs this counts.
+  // Re-read when the run list changes, so a run ingested on open moves the picture. A failed read leaves `null`,
+  // which renders "Not enough runs yet": the empty state, never a guessed verdict.
+  const [loadPicture, setLoadPicture] = useState<LoadPicture | null>(null)
+  useEffect(() => {
+    if (!userId || !plan) return
+    let cancelled = false
+    const since = new Date(Date.now() - LOAD_PICTURE_LOOKBACK_DAYS * 86_400_000).toISOString()
+    supabase.from('strava_activities')
+      .select('start_date, distance_m, reported_distance_m, activity_type, sport_type, strava_activity_id, apple_health_uuid, manual_uuid')
+      .eq('user_id', userId)
+      .gte('start_date', since)
+      .then(({ data, error }: { data: any[] | null; error: unknown }) => {
+        if (cancelled) return
+        if (error) { console.error('[coach] load picture read failed', error); setLoadPicture(null); return }
+        setLoadPicture(computeLoadPicture(data ?? [], plan, new Date()))
+      })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, plan, stravaRuns?.length])
 
   // Deep-link target for push notifications. Captured on mount; applied by a
   // separate effect once `plan` has loaded (we need the plan to resolve the
@@ -3229,6 +3253,7 @@ export default function DashboardClient() {
               return (
                 <CoachScreen
                   plan={plan} currentWeek={currentWeek} runs={stravaRuns}
+                  loadPicture={loadPicture}
                   stravaLoading={stravaLoading} stravaConnected={stravaConnected}
                   stravaTokenFailed={stravaTokenFailed} firstName={firstName}
                   weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport}
@@ -5206,8 +5231,10 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
 
 
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, liveSessionsDueToDate, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, onConnect, restingHR, maxHR, healthkitConnectedAt, strengthWeek = null }: {
+function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, liveSessionsDueToDate, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, onConnect, restingHR, maxHR, healthkitConnectedAt, strengthWeek = null }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
+  /** LOAD-SOURCE-TOTAL-01: total distance over the runner's own weeks (`computeLoadPicture`). Null = no verdict. */
+  loadPicture?: LoadPicture | null
   stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string
   weeklyReport?: any | null; onReportGenerated?: (report: any) => void
@@ -5289,7 +5316,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   })()
 
   // Metrics derived from report or defaults
-  const loadRatio: number | null       = reportIsCurrent ? (weeklyReport?.acute_chronic_ratio ?? null) : null
+  // LOAD-SOURCE-TOTAL-01: NOT `weeklyReport.acute_chronic_ratio`. That is the trim trigger's linked-only ratio, which
+  // stays on the report; the tile shows what the runner actually ran, so the two can differ for one week, by design.
+  const loadRatio: number | null       = loadPicture?.ratio ?? null
   // Sessions count: prefer live values from completions state. The cached
   // weekly_reports row snapshots count at generation time and the route's
   // once-per-day cache cap blocks force-refresh, so the cached value goes
@@ -5448,7 +5477,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
   // ── Weeks to race context ───────────────────────────────────────────────
 
-  const lrc  = loadRatioContext(loadRatio)
+  const lrc  = loadRatioContext(loadRatio, { plannedEasy: loadPicture?.plannedEasy ?? false, lowWeeksRunning: loadPicture?.lowWeeksRunning ?? 0 })
   const sc   = sessionsContext(sessionsCompleted, sessionsPlanned, liveSessionsDueToDate ?? null)
 
   const [loadSheetOpen, setLoadSheetOpen] = useState(false)
@@ -6033,7 +6062,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               label: 'This week\u2019s load',
               value: isRaceWeek ? 'Race week' : loadRatio !== null ? lrc.label : 'Not enough runs yet',
               valueColor: isRaceWeek ? 'var(--ink)' : loadRatio !== null ? lrc.color : 'var(--mute)',
-              shape: <LoadShape ratio={loadRatio} color={isRaceWeek ? 'var(--ink-2)' : lrc.color} />,
+              shape: <LoadShape ratio={loadRatio} color={isRaceWeek ? 'var(--ink-2)' : lrc.markerColor} />,
               sub: isRaceWeek
                 ? 'A spike is the point'
                 : loadRatio !== null ? `${loadRatio.toFixed(2)}\u00d7 your recent average` : 'Log a few runs',
@@ -6125,9 +6154,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
               <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                 {[
-                  'Compares this week\'s training load to your rolling average over the past four weeks. A ratio of 1.0 means you\'re doing exactly what your body is used to.',
-                  'Under 0.8: you\'re doing less than normal, which is fine for recovery weeks. Between 0.8 and 1.3 is the safe build zone. Above 1.3 means this week is harder than your recent baseline.',
-                  'Big spikes in load are where injuries happen and where performance dips. Consistent load, week over week, is how fitness actually builds.',
+                  // LOAD-SOURCE-TOTAL-01 (Coaching Board 2026-10-30, §129): describe, never predict. The old copy called
+                  // 0.8 to 1.3 "the safe build zone" and said spikes "are where injuries happen": both claims the ratio
+                  // cannot support. The band edges are read from LOAD_RATIO, never typed.
+                  'Compares the distance you ran in the last seven days with your weekly average over the four weeks before. Every run counts, planned or not.',
+                  `Under ${LOAD_RATIO.under}: a lighter week than usual. If your plan made it lighter, that is the point. ${LOAD_RATIO.under} to ${LOAD_RATIO.watch} is your normal. Above ${LOAD_RATIO.watch} is more than you usually run.`,
+                  `It describes your weeks. It does not predict injury. It needs ${LOAD_PICTURE_MIN_PRIOR_WEEKS} of the last four weeks with runs before it says anything.`,
                 ].map((text, i) => (
                   <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>{text}</div>
                 ))}

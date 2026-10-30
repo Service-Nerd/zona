@@ -101,7 +101,7 @@ export function activityKey(r: {
   return null
 }
 
-const isRun = (r: ActivityLogRow) => r.activity_type === 'Run' || r.sport_type === 'Run'
+export const isRun = (r: ActivityLogRow) => r.activity_type === 'Run' || r.sport_type === 'Run'
 
 /**
  * Collapse rows that describe the SAME physical run, keeping the longest.
@@ -190,7 +190,7 @@ export function bucketLoadByPlanWeek(
 }
 
 /** Is this date inside the week's own 7-day window? Guards the fallback above. */
-function isInsidePlanWeek(week: { date?: string }, isoDate: string): boolean {
+export function isInsidePlanWeek(week: { date?: string }, isoDate: string): boolean {
   if (!week?.date) return false
   const start = new Date(`${String(week.date).slice(0, 10)}T00:00:00`)
   if (Number.isNaN(start.getTime())) return false

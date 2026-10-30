@@ -12,7 +12,7 @@ screen's load visualisation. Any change to props must update this document in th
 ```typescript
 type Props = {
   ratio: number | null   // acute:chronic. NULL renders the empty track, never a marker
-  color: string          // the verdict colour from loadRatioContext — the single owner
+  color: string          // the MARKER colour: loadRatioContext(...).markerColor, the single owner
   label?: string         // the accessible description; falls back to a generated sentence
 }
 ```
@@ -32,7 +32,8 @@ normal, with the ratio demoted to evidence underneath. **Demoted, not deleted.**
 |---|---|
 | Band edges | `LOAD_RATIO.under` / `LOAD_RATIO.watch` — **the constants the coaching layer actually flags on.** A band drawn at numbers the engine does not use is a picture of nothing |
 | `ratio: null` | Renders the **empty track with no marker**. Never a marker at a default position |
-| `color` | Comes from `loadRatioContext` (`lib/ui/loadRatioContext.ts`), so the marker and the words above it can never disagree. Never `--danger`: above the normal is amber (LOAD-VERDICT-RED-01) |
+| `color` | `loadRatioContext(ratio, ctx).markerColor` (`lib/ui/loadRatioContext.ts`). The words above take `.color`; the two are separate because a neutral week has `--ink-2` words and a `--mute` mark (6t-g, LOAD-SOURCE-TOTAL-01). Never `--danger`: above the normal is amber (LOAD-VERDICT-RED-01) |
+| `ratio` source | `computeLoadPicture(...).ratio` (`lib/coaching/loadPicture.ts`): total distance over rolling weeks, null below the minimum history. **Not** `weekly_reports.acute_chronic_ratio` (LOAD-SOURCE-TOTAL-01) |
 
 ⚠️ **`LOAD_RATIO.under` was a bare `0.8` inside a display function** — governing what the runner is
 told, and invisible to every config check this repo owns. Naming it was a no-behaviour-delta

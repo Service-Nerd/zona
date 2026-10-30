@@ -168,6 +168,16 @@ export const LOAD_RATIO = {
   under: 0.8,
 } as const
 
+// LOAD-SOURCE-TOTAL-01 / §129 (Coaching Board 2026-10-30) — the Coach load picture.
+// "No normal, no verdict": the picture says nothing until at least this many of the
+// four prior weeks had running. Two weeks can both be a holiday (Willy, Hutchinson);
+// McMillan would accept 2 for a returning runner, recorded in the ruling.
+export const LOAD_PICTURE_MIN_PRIOR_WEEKS = 3
+// Clause 5: one week under the runner's normal is an observation. This many in a row,
+// outside a planned lighter week, may be named (Willy: an untold injury; Sims: low
+// energy availability).
+export const LOAD_PICTURE_LOW_WEEKS_TO_NAME = 2
+
 /**
  * COACH-BEHIND-DAY-TWO-01 / §65 Amendment — the minimum number of outstanding
  * sessions before the Coach screen's verdict becomes a JUDGEMENT.
