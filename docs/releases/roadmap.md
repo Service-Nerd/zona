@@ -1159,6 +1159,11 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Stamp the prescribed reps on each strength log** (STRENGTH-LOG-REPS-01) | ✅ | S | Shipped 2026-10-29 with build 6; migration for the founder to apply. |
 | **Open strength to paid and trial runners** (STRENGTH-RELEASE-01) | 🔲 | S | SLT 2026-10-29: four conditions (phone check, migration, item 6, lapsed-trial state), then the flip. |
 | **Charity page: state each plan's real start point** (CHARITY-PLAN-PREREQ-01) | ✅ | S | Coaching Board 2026-10-29: "30 minutes" is false for the marathon and half plans. Founder words. |
+| **A readable load picture, improving LoadShape** (RUNKED-LOAD-VIEW-01) | 🔲 | M | From Runked's fitness/fatigue screen. Plan gate: crossover + screenshots + Coaching → Design (A5 "shape, never score") → SLT. After LOG-OFFPLAN-03. |
+| **Comparison page answering gamified apps** (RUNKED-COMPARE-PAGE-01) | 🔲 | S | Coaching (claims) → founder. One catalogue entry. |
+| **Easy-running guide series** (RUNKED-GUIDES-01) | 🔲 | M | Extend guide 1 and page 6, no repeats. Coaching → founder. |
+| **"Effort, not pace" in our voice** (RUNKED-EFFORT-MESSAGE-01) | 🔲 | S | Founder's words, inside existing copy. |
+| **What direct Garmin sync would add** (RUNKED-GARMIN-01) | 🔲 | S | SLT, after measuring what HealthKit already brings. |
 | **A `{{token}}` can reach confidence risks** (ENRICH-RISK-TOKEN-01) | 🔲 | S | Latent; 1 of 9 restored plans. |
 | **Race week showing 0 km** (RACE-WEEK-ZERO-KM-01) | 🔲 | S | Measure surfaces first. |
 | **"Get you round" note on a time-goal plan** (ROUND-NOTE-TIME-GOAL-01) | 🔲 | S | Measure, then board. |

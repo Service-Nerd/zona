@@ -221,6 +221,49 @@ Plan: `docs/plans/STRENGTH-SESSION-REDESIGN-01.md`. Canvas: *Strength session re
 ✅ `STRENGTH-GUIDED-SESSION-01` (shipped 2026-10-29: Start session, one part per page, stepper, rest countdown, timers, End session, session times stored; the ramp set keeps "1 × 8", founder 2026-10-29). **Release is a separate decision**: `STRENGTH_RELEASE` is still `'admin'`. S2 unchanged: loosening it was ruled
 INCORRECT (52% of chosen-day weeks have no heavy legs; P1/P2 put legs beside a hard run).
 
+### 🔲 `RUNKED-LOAD-VIEW-01` — a readable picture of whether this week is building you or wearing you down 🏃 **COACHING BOARD** → 🧭 **DESIGN BOARD** → 💼 **SLT**
+
+From the founder's Runked screenshot (fitness vs fatigue, *"58 · Solid"*): *"I like things like this and we need more
+(where it adds value)."* Plan: `docs/plans/COMPETITOR-RUNKED-01.md` (**the gate applies: no build before steps 1–4**).
+Analysis: `docs/investigations/competitor-runked-2026-10-30.md`.
+**Crossover found 2026-10-30 (re-measure before planning):** `LoadShape` already shows this week's load against the
+runner's recent normal on Coach, and the Design Board ruled it **"SHAPE, never SCORE"** (A5, 2026-09-22): a Runked-style
+number is settled ground to reverse, not a gap. `acuteChronicRatio` (`lib/coaching/loadCalc.ts`) is **km over a 4-week
+average**, not a stress score; `LOAD_RATIO` holds its bands. `TrendCard` (HR on long runs), `ZoneWeekBlock` (zone
+compliance, Plan) and `LedgerCard` (Me) each show a slice of progress. ⚠️ **Load only sees linked runs: 5 of 239
+activities are linked** (`LOG-OFFPLAN-03`), so a fitness/fatigue picture today would tell an off-plan runner they are
+fresher than they are. **Default: improve `LoadShape`, after `LOG-OFFPLAN-03`.** Coaching Board first on what the
+picture measures and what it may claim (Gabbett's 1.5 "danger zone" is disputed); Design Board against A5; SLT on tier
+(Coach is paid).
+
+### 🔲 `RUNKED-COMPARE-PAGE-01` — a comparison page answering the gamified running apps 🏃 **COACHING BOARD** (claims) → 👤 **FOUNDER** (copy; naming a competitor)
+
+Runked's game rewards more running (streaks, chests, leagues); our argument is that an app built on streaks cannot tell
+you to rest. **Crossover:** the comparison series (7 live, page 8 pending), `ArticlePage`, `COMPETITOR_FACTS` (every
+competitor price owned and dated), the price and page-claims gates. **Default: one catalogue entry + shim**; whether it
+is page 8 or a ninth is the founder's call. Runked's facts (price, no free tier, iPhone only) enter `COMPETITOR_FACTS`
+with a verification date. Plan gate applies.
+
+### 🔲 `RUNKED-GUIDES-01` — easy-running guides on the searches Runked owns 🏃 **COACHING BOARD** (each claim cites a principle) → 👤 **FOUNDER** (reads)
+
+Runked has 66 guides; we have 1 guide and 7 comparison pages. Their topics on our ground: zone 2, 80/20, signs of
+overtraining, how slow a recovery run should be. **Crossover:** guide 1 (`/guides/should-easy-runs-feel-this-slow`) and
+page 6 (`/why-your-easy-runs-arent-easy`) already cover zone 2, the talk test and HR-zone limits. **Default: extend and
+interlink; no new guide repeats page 6.** Guides carry `principleRefs` (SLT 2026-09-21). Plan gate applies.
+
+### 🔲 `RUNKED-EFFORT-MESSAGE-01` — "effort, not pace" said in our voice 👤 **FOUNDER**
+
+Runked scores *"effort relative to your own fitness"*. Our version: an easy run does not need to be fast, it needs to be
+easy. **Crossover:** the locked taglines (`lib/brand.ts`) and `brand.md` voice. **Default: a line inside existing copy,
+never a new tagline** (taglines are locked). Founder's words. Plan gate applies.
+
+### 🔲 `RUNKED-GARMIN-01` — what direct Garmin sync would add 💼 **SLT**
+
+Runked advertises Garmin sync. **Crossover:** Garmin runs already reach us through Apple Health (107 stored rows written
+by Garmin Connect, named `Run (Connect)`); ADR-011 makes HealthKit the record. **Default: measure first** what a direct
+Garmin API would add over HealthKit (workout export, HR streams, non-iPhone users) before anyone sizes it. Plan gate
+applies.
+
 ### ✅ `CHARITY-PLAN-PREREQ-01` (shipped 2026-10-29, founder approved) — `/charity-runners` says every plan assumes 30 minutes of running; the marathon and half plans assume far more 🏃 **COACHING BOARD** ruled (2026-10-29, page 7 sitting) → 👤 **FOUNDER** (words)
 
 The FAQ answer (*"The plans assume you can already run about 30 minutes without stopping"*, `app/charity-runners/page.tsx`)
