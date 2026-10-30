@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — WEEKLY-REPORT-CRON-AUTH-01 + COACH-RINGS-SOURCE-01 · "It feels flat" was mostly "it is empty"
+**Shipped:** the Sunday weekly report runs again, and the Coach zone rings fill from every run with heart rate.
+**Dev learning:** the weekly cron had refused every call for at least 90 days because it read `x-cron-secret` while Vercel sends `Authorization: Bearer`. Eleven routes handled it by hand; the one Vercel itself calls was the copy that missed. The contract even wrote both facts on adjacent lines. My first theory (deployment protection on the internal URL) was tested and wrong, which is what made me look at the other end of the call.
+**Product/creator learning:** the founder said Coach felt flat. Measured, for most runners five of seven blocks were an empty state: the main card waiting on a report that never came, rings reading 4 people's data while the same numbers sat on 259 runs. Fill it first; judge the design on a screen with data in it.
+**AI-building learning:** three parallel readers (the code, the rulings, the competitor research) gave the boards evidence instead of memory, and the production queries turned a design complaint into two defects.
+**The honest bit:** the 403 itself was never seen, because Vercel Hobby keeps logs for hours. The proof is next Sunday at 18:00 UTC.
+**Hook material:** a scheduled job refused every call for 90 days because it checked the wrong header. Zero reports, zero pushes, no error anyone saw.
+**Postable?:** yes
+
 ## 2026-10-30 — GTM-SEO-COMPARE-01 page 8 · The example disproved the sentence it was there to prove
 **Shipped:** page 8, "What is zone 2 running, and why most people get it wrong", the last of the eight comparison pages, with links back from pages 3 and 6.
 **Dev learning:** the brief said "the architecture is established, do not inspect the repo" and named `lib/marketing/comparisons.ts`, which does not exist. A brief written from memory carries a stale path as confidently as a right one. Two existing checks also met their first second-tenant: page 6's guard counted a phrase across the whole file and broke the moment page 8 legitimately used the same ruled wording, so it now reads only page 6's entry.
