@@ -11,11 +11,15 @@ Coaching Board §130, 2026-10-30 · **Item:** `COACH-DISCIPLINE-HEADLINE-01`
 ## Prop Interface
 
 ```typescript
-EasyShareHeader: {
+type EasyShareHeaderProps = {
   share: number   // easyShare(split): round(z1 + z2) of this week's distance-weighted zone split
-  runs: number    // runs carrying a split this week; the caller renders this only when ≥ COACH_EASY_SHARE_MIN_RUNS
+  runs: number    // runs carrying a split this week; the caller renders this only when >= COACH_EASY_SHARE_MIN_RUNS
 }
-EasyShareBars: {
+```
+
+```typescript
+// EasyShareBars (same file; the gate reads the first export above)
+type EasyShareBarsProps = {
   weeks: (number | null)[]   // weeklyEasyShares(...): oldest first, this week last; null = too few runs that week
 }
 export const EASY_SHARE_BARS = 8
