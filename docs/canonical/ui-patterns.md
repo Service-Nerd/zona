@@ -2307,9 +2307,9 @@ The Coach screen carries **exactly one Kit voice** — a single authored read at
 | **no-source** | no Strava token AND no Apple Health connection | "Nothing to coach from yet." | "Connect Apple Health or Strava so I can see your runs. I keep quiet until I have something honest to say." | "Connect a source →" → Profile |
 | **no-runs** | source connected but `runs.length === 0` | "Waiting on your first run." | "Go log a session — even an easy one. Once I see a run with heart rate, I can say something useful." | none (action is real-world) |
 | **no-hr** | runs exist but RHR or MaxHR missing | "One more thing." | "Set your resting and max heart rate. Without those, the zone targets are guesses." | "Set heart rate →" → Benchmark |
-| **last-week** | weekly report exists for previous week | "Last week's report is below." | "Generate a report to see how this week is tracking." | "Generate report" |
+| **last-week** | weekly report exists for previous week | "Last week's report is below." | "This week’s read appears here on its own." | none (`COACH-READ-BUTTON-01`: the read writes and updates itself) |
 
-The CTA button replaces the "Generate report" button when present — no generating from no data. Auto-resolves as data lands (the read re-evaluates on every render against the current user state).
+**There is no "Generate report" or "Refresh" button** (`COACH-READ-BUTTON-01`, founder Option A, 2026-10-30): the read writes itself when the week has none and updates itself once a run lands after it (`coachReadAction`, at most once a day). The CTA slot holds only the pre-data next step — no generating from no data. Auto-resolves as data lands (the read re-evaluates on every render against the current user state).
 
 **Evidence below — unvoiced, fixed order:**
 1. ZoneRings (Pattern 22) — unchanged

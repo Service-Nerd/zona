@@ -134,6 +134,7 @@ import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneStri
 import { zoneDiscipline, zoneTimeSplit, weightOf, weekZoneSplitRows, weeklyEasyShares, easyShare } from '@/lib/coaching/weeklyZoneAggregate'
 import { EasyShareHeader, EasyShareBars, EASY_SHARE_BARS } from '@/components/shared/EasyShare'
 import { easiestWeekSpan, easyCostSentence } from '@/lib/coaching/moments'
+import { coachReadAction } from '@/lib/coaching/coachRead'
 import { trendSentence } from '@/lib/coaching/trendSentence'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession, renderPlanProse, planProseContext } from '@/lib/plan/renderGuidance'
@@ -5286,7 +5287,6 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
   const isNative = useIsNative()
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState<string | null>(null)
-  const [refreshBlocked, setRefreshBlocked] = useState(false)
 
   const weekNum    = getCurrentWeekIndex(plan.weeks) + 1
   const totalWeeks = plan.weeks.length
@@ -5410,29 +5410,34 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
   // leaves the existing empty state (ADR-006). The Sunday cron asks for a FRESH read, so Sunday is never this one.
   const autoReadTried = useRef(false)
   useEffect(() => {
-    if (autoReadTried.current || reportIsCurrent || loading) return
-    if (!(stravaConnected || healthkitConnectedAt) || !runs?.length || !restingHR || !maxHR) return
+    if (autoReadTried.current || loading) return
+    // COACH-READ-BUTTON-01 (Option A): no button. Write the week's read if there is none; rewrite it once a run has
+    // landed since it was written (the route caps that at once a day, and a blocked rewrite keeps the read shown).
+    const action = coachReadAction({
+      ready: !!(stravaConnected || healthkitConnectedAt) && !!runs?.length && !!restingHR && !!maxHR,
+      reportIsCurrent,
+      generatedAt: weeklyReport?.generated_at,
+      runStarts: (runs ?? []).map((r: any) => r?.start_date),
+    })
+    if (action === 'none') return
     autoReadTried.current = true
-    void generateReport(false)
+    void generateReport(action === 'update')
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reportIsCurrent, runs?.length, stravaConnected, healthkitConnectedAt, restingHR, maxHR])
+  }, [reportIsCurrent, weeklyReport?.generated_at, runs?.length, stravaConnected, healthkitConnectedAt, restingHR, maxHR])
 
-  /** `fresh`: the runner's Refresh, which regenerates (capped once a day by the route). */
+  /** `fresh`: rewrite this week's read because a run has landed since (capped once a day by the route). */
   async function generateReport(fresh = true) {
     setLoading(true)
     setError(null)
-    setRefreshBlocked(false)
     try {
       const res  = await authedFetch(fresh ? '/api/weekly-report?force=true' : '/api/weekly-report', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
-      if (data.refresh_blocked) {
-        setRefreshBlocked(true)
-      } else {
-        onReportGenerated?.(data.report)
-      }
+      // A rewrite already made today comes back `refresh_blocked` with the read unchanged: keep showing it.
+      if (!data.refresh_blocked) onReportGenerated?.(data.report)
     } catch {
-      setError('Could not generate report. Check your connection.')
+      // A failed UPDATE keeps the read already shown; only a missing read says so (no button: the next open retries).
+      if (!fresh) setError('Couldn’t write this week’s read. It will try again next time you open Coach.')
     } finally {
       setLoading(false)
     }
@@ -5761,7 +5766,7 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
 
     if (weeklyReport && !reportIsCurrent) {
       emptyHeadline = "Last week's report is below."
-      emptyBody     = 'Generate a report to see how this week is tracking.'
+      emptyBody     = 'This week’s read appears here on its own.'   // COACH-READ-BUTTON-01: there is no button to press
     } else if (!hasAnySource) {
       // ── P-10 / GAP-04 (2026-09-20) — THE WEB RUNNER HAD NO ROUTE ─────────
       //
@@ -5800,7 +5805,7 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
       emptyCta      = onOpenBenchmark ? { label: 'Set heart rate', onClick: onOpenBenchmark } : null
     } else {
       emptyHeadline = 'Nothing to read yet.'
-      emptyBody     = 'Generate a report to see how this week is tracking.'
+      emptyBody     = 'This week’s read appears here on its own.'   // COACH-READ-BUTTON-01: there is no button to press
     }
 
     return {
@@ -5914,31 +5919,20 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
             </div>
           )}
 
-          <div style={{ marginTop: 'var(--space-4)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-            {refreshBlocked && (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', display: 'block', width: '100%', marginBottom: '4px' }}>
-                Already refreshed today.
-              </span>
-            )}
-            {consolidatedRead.cta ? (
-              // X-FIRSTRUN: pre-data primary action takes over the button slot.
-              // No "Generate report" until there's data to generate from — the
-              // empty state teaches the one next action that unblocks coaching.
-              <Button variant="primary"
-                onClick={consolidatedRead.cta.onClick}>
-                {consolidatedRead.cta.label} →
-              </Button>
-            ) : (
-              <Button variant="soft"
-                onClick={() => void generateReport(true)} busy={loading || refreshBlocked}>
-                {loading && <AIMark size={10} color="var(--moss)" working />}
-                {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
-              </Button>
-            )}
-            {reportIsCurrent && weeklyReport?.zone_discipline_score != null && (
-              <ShareWeekButton weekN={weeklyReport.week_n} />
-            )}
-          </div>
+          {/* COACH-READ-BUTTON-01: no Refresh / Generate button. The pre-data next step keeps the slot. */}
+          {(consolidatedRead.cta || (reportIsCurrent && weeklyReport?.zone_discipline_score != null)) && (
+            <div style={{ marginTop: 'var(--space-4)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+              {consolidatedRead.cta && (
+                <Button variant="primary"
+                  onClick={consolidatedRead.cta.onClick}>
+                  {consolidatedRead.cta.label} →
+                </Button>
+              )}
+              {reportIsCurrent && weeklyReport?.zone_discipline_score != null && (
+                <ShareWeekButton weekN={weeklyReport.week_n} />
+              )}
+            </div>
+          )}
 
           {/* ── THE WEEK, PICTURED — one card with the read, not a second one.
               UX-COACH-01 (boards 2026-09-12), corrected 2026-09-12 after the

@@ -5728,3 +5728,9 @@ per non-admin runner per week, before and after items 1–3.
 |---|---|---|
 | **Earned line on Coach** (`EarnedLine`) | ✅ **SHIP WITH AMENDMENT** | Founder approved the mockup. One sentence on its evidence: under the easy-share headline, and as the live trend card's last line. Ink 15/600, one 6px `--moss` dot, no motion, no AIMark. **Amendment:** the window is the DRAWN record so "in N weeks" is countable on screen (measured: fires 4 of 59 weeks either way). 🎪 Collins lost on cutting the numbers from the trend sentence. Note: `docs/decisions/coach-moments-placement-2026-10-30.md` |
 
+## 2026-10-30 — COACH-READ-BUTTON-01 · Option A: no button on Kit's weekly read
+
+| Change | Ruling | Detail |
+|---|---|---|
+| **Refresh / Generate report on the read card** | 🔴 **REMOVED** (founder, Option A from the mockup; completes `COACH-READ-AUTO-01`'s overturn) | The read writes itself when the week has none and updates itself once a run starts after it was written (`lib/coaching/coachRead.ts`, route caps a rewrite at once a day). Option B (a quiet "Add Wednesday's run" line) was not chosen. A failed update keeps the read shown; only a missing read shows an error, and the next open retries. Mechanical check: `lib/coaching/coachReadAuto.test.ts` (falsified) |
+

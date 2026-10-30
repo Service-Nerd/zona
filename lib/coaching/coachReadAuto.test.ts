@@ -1,27 +1,43 @@
-// COACH-READ-AUTO-01 — the week's read arrives on opening Coach, without a tap (SLT 2026-10-30).
+// COACH-READ-AUTO-01 + COACH-READ-BUTTON-01 — Kit's weekly read writes and updates itself; there is no button
+// (SLT 2026-10-30; founder chose Option A from the mockup the same day).
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { coachReadAction } from './coachRead'
 
-const shell = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
-const i = shell.indexOf('const autoReadTried = useRef(false)')
-const effect = shell.slice(i, shell.indexOf('async function generateReport', i))
+const base = { ready: true, reportIsCurrent: true, generatedAt: '2026-10-28T08:00:00Z', runStarts: ['2026-10-27T07:00:00Z'] }
 
-describe('COACH-READ-AUTO-01', () => {
-  it('exists, inside Coach', () => {
-    expect(i).toBeGreaterThan(shell.indexOf('function CoachScreen('))
+describe('coachReadAction', () => {
+  it('🔴 never for a runner whose honest state is an empty one', () => {
+    expect(coachReadAction({ ...base, ready: false, reportIsCurrent: false })).toBe('none')
   })
-  it('asks only when this week has no read, once per mount', () => {
-    expect(effect).toMatch(/if \(autoReadTried\.current \|\| reportIsCurrent \|\| loading\) return/)
-    expect(effect).toMatch(/autoReadTried\.current = true/)
+  it('writes the read when this week has none', () => {
+    expect(coachReadAction({ ...base, reportIsCurrent: false })).toBe('write')
   })
-  it('🔴 never for a runner whose honest state is an empty one: same gate as the card (source, runs, heart rate)', () => {
-    expect(effect).toMatch(/if \(!\(stravaConnected \|\| healthkitConnectedAt\) \|\| !runs\?\.length \|\| !restingHR \|\| !maxHR\) return/)
+  it('🔴 updates it once a run has started after it was written', () => {
+    expect(coachReadAction({ ...base, runStarts: ['2026-10-27T07:00:00Z', '2026-10-29T07:00:00Z'] })).toBe('update')
   })
-  it('uses the cached path (no force), so at most one model call per runner per week', () => {
-    expect(effect).toContain('void generateReport(false)')
+  it('leaves a current read alone when nothing has happened since', () => {
+    expect(coachReadAction(base)).toBe('none')
+    expect(coachReadAction({ ...base, runStarts: ['2026-10-28T08:00:00Z'] })).toBe('none')
+  })
+  it('a read with no timestamp is not rewritten blindly', () => {
+    expect(coachReadAction({ ...base, generatedAt: null, runStarts: ['2026-10-29T07:00:00Z'] })).toBe('none')
+  })
+})
+
+describe('Coach wiring', () => {
+  const shell = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+  const coach = shell.slice(shell.indexOf('function CoachScreen('))
+  it('the effect asks the owner and maps update → force, write → cached', () => {
+    expect(coach).toContain('const action = coachReadAction({')
+    expect(coach).toContain("void generateReport(action === 'update')")
     expect(shell).toContain("fresh ? '/api/weekly-report?force=true' : '/api/weekly-report'")
   })
-  it('the Refresh button still regenerates', () => {
-    expect(shell).toContain('onClick={() => void generateReport(true)}')
+  it('🔴 no Refresh or Generate report button on the card', () => {
+    expect(coach).not.toMatch(/'Refresh'|'Generate report'|Generate a report|Already refreshed today/)
+    expect(coach).not.toContain('onClick={() => void generateReport(')
+  })
+  it('a failed update keeps the read; only a missing read shows the error', () => {
+    expect(coach).toContain("if (!fresh) setError(")
   })
 })

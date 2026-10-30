@@ -232,6 +232,9 @@ describe('button geometry', () => {
   // them. **A register rising because its population got honest is the only rise allowed**,
   // the same reason `microLabel`'s went 35 -> 47. Both clear the 44 floor (47 and 45), so the
   // floor arm is unmoved.
+  // ⚠️ RE-BASELINED 2026-10-30 (`COACH-READ-BUTTON-01`), delta PROVEN on the multiset: **200 -> 199, ONE box
+  // REMOVED, nothing added** — `{floor 44, height 47, auto}`, the soft Refresh / Generate report button on Kit's read,
+  // deleted by the founder's Option A. The five per-key changes are the index shift after it.
   it('🔴 geometry matches the committed baseline', () => {
     // A MOVE IS NOT AUTOMATICALLY WRONG — it is automatically something to
     // DECLARE. Re-baseline with `npm run button:geometry -- --write` and say in
