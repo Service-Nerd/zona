@@ -4323,6 +4323,27 @@ words appears in the component.
 `3/5` means something without a tap — which is exactly Sierra's test. **One tile changing
 and one not is a distinction, and the gate asserts it so nobody "makes them consistent".**
 
+### 🔲 RULED, NOT BUILT — the history row (`RUNKED-LOAD-VIEW-01`, Design Board 2026-10-30)
+
+⚠️ **The component above does not do this yet.** It lands with the build, after the SLT sits.
+
+```
+  above your recent normal                         ← verdict first (now)
+  track │      ████████████████    ┃      │        ← this week against your normal
+        ▁ ▃ ▅ ▂ ▅ ▆ ▄ █                            ← up to 8 weeks of TOTAL km, normal band behind
+                ▲ planned easy week, labelled
+```
+
+| | |
+|---|---|
+| **What a bar is** | One week's **total** distance (linked + off-plan + reported; Coaching Board 2026-10-30), never the linked-only trim ratio |
+| **Never** | A line, smoothing, a forward projection, a number per bar, a score, a "fitness" or "fatigue" label, emphasis on the tallest week (PlanArc's rule) |
+| **Planned easy week** | Labelled as planned, not drawn twice. **Collins lost** the planned ghost bar |
+| **Colour** | Above normal amber · under normal in a planned easy week moss · under normal otherwise **neutral** (`--ink-2` words, `--mute` marker), not amber · two or more unplanned low weeks amber · on normal moss. Text by `hueText` (6t-g) |
+| **Too little history** | Fewer than 3 of 4 prior weeks: the existing empty state, no bars |
+
+**Not UX-PROGRESS-01 reopened:** that kill is on a *forward* curve, a promise. Bars of weeks already run are a record.
+
 ---
 
 ## Icons — when one earns its place (ICON-RULE-01, Design Board 2026-09-22)
