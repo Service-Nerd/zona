@@ -1164,7 +1164,8 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Coach read arrives without "Generate report"** (COACH-READ-AUTO-01) | ✅ | S | ~2 cents/runner/month; Sunday cron must request a fresh read |
 | **Coach code hygiene** (COACH-CODE-HYGIENE-01) | ✅ | S | Unseen model call per load; "Needs Strava" teaser; stale screen doc |
 | **Zone discipline headline + weekly bars** (COACH-DISCIPLINE-HEADLINE-01) | ✅ | M | Our unique metric, biggest moment on Coach; after items 1–2 |
-| **Earned sentences on Coach** (COACH-SEEN-MOMENTS-01) | 🔲 P2 | M | Coaching thresholds, then Design placement |
+| **Earned sentences on Coach** (COACH-SEEN-MOMENTS-01) | 🔲 P2, thresholds ruled | M | "Easiest week in eight weeks" (+10 pts); mockup next |
+| **Zone split boundaries outside the zone config** (ZONE-SPLIT-CONFIG-01) | 🔲 P1 | S | Hardcoded 0.60/0.76/0.86/0.70 and raw max HR in `bucketHRHistogram` |
 | **Trend card pending progress** (COACH-TREND-PENDING-01) | ✅ | S | "4 of 6 easy runs collected" instead of "— → —" |
 | **Coach load tile reads what you actually ran** (LOAD-SOURCE-TOTAL-01) | ✅ | S | Step 1 of the Runked load view, all three bodies ruled 2026-10-30: total km source, no verdict below 3 of 4 weeks, neutral under-normal. 18 Coach openers, 2 ever saw a value |
 | **A readable load picture, improving LoadShape** (RUNKED-LOAD-VIEW-01) | 🔲 | M | From Runked's fitness/fatigue screen. Plan gate: crossover + screenshots + Coaching → Design (A5 "shape, never score") → SLT. After LOG-OFFPLAN-03. |

@@ -267,6 +267,19 @@ no projection). Needs the three design artifacts at build.
 
 ### 🔲 `COACH-SEEN-MOMENTS-01` — one earned sentence when the runner's own evidence crosses a line 🏃 **COACHING BOARD** (thresholds) → 🧭 **DESIGN BOARD** (placement) · P2
 
+**Coaching Board 2026-10-30: thresholds ruled** (`coaching-rulings.md`). Measured: median weekly easy share is **32%**, so an
+absolute bar fires for ~nobody. Two moments, against the runner's own weeks: (1) *"Your easiest week in eight weeks"*,
+beating the previous best by ≥10 points with ≥3 prior weeks (fires 5 of 59 eligible weeks, 4 of 13 runners); (2) the first
+time the easy trend crosses its floor downward with pace confirming. **Next: a mockup for placement (founder rule), then
+the Design Board, then build.**
+
+### 🔲 `ZONE-SPLIT-CONFIG-01` — the zone split every Coach number reads uses boundaries outside the engine's zone config 🏃 **COACHING BOARD** · P1
+
+`bucketHRHistogram` (`lib/strava.ts`): Z1 below 60% of max (config §14: 65–70% max / 50–60% HRR), Z3 up to 86% of max
+(config 87%), a 76% fallback ceiling, the Z2 ceiling's 0.70 typed inline, and the raw `max_hr` rather than §50's guarded
+max. A config-singularity breach on the numbers the new Coach headline shows every runner. Measure the effect on the
+32% median before changing anything; recomputing stored splits is `recalibrate-hr`'s job.
+
 Restraint and durability only: discipline held over weeks, the longest run that stayed easy, easy HR cost falling past the
 measured noise floor, a lighter week named without judgement. Never a badge, medal, streak or a pace record on an easy run
 (Willy, binding). Rule-based, so no AIMark. Thresholds ruled before build.

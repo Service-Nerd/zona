@@ -27,6 +27,35 @@ memory.
 
 
 
+## 2026-10-30 — COACH-SEEN-MOMENTS-01 thresholds · CORRECT WITH AMENDMENT. Moments are measured against the runner's own weeks
+
+**Measured first (production, read-only, 120–200 days, weeks with ≥2 runs carrying a zone split):** 105 runner-weeks, 22
+runners. **Median weekly easy share 32%** (p25 19, p75 51, p90 72); only **6 of 105** weeks reached 80%. All 22 have resting
+and max HR set; their runs average **149 bpm against a Z2 ceiling of ~146**, so the low share is mostly real: the runners
+sit just above easy, the problem this product exists for.
+
+🏃 **Hutchinson:** *"So the draft moment, 'four weeks running your easy runs stayed easy', at any absolute bar would almost
+never fire. A moment nobody earns is decoration. It has to be measured against the runner's own weeks."*
+
+**Ruled moments:**
+1. **"Your easiest week in eight weeks."** This week's easy share beats the best of the previous up-to-8 weeks by at least
+   `COACH_MOMENT_EASIEST_MARGIN_PTS` (10), with at least `COACH_MOMENT_MIN_PRIOR_WEEKS` (3) prior weeks with data. Measured:
+   **5 of 59 eligible weeks, 4 of 13 runners** (at 5 points: 6 weeks, 5 runners; at 15: 2 and 2).
+2. **The first time the easy trend crosses its floor in the good direction** (the existing `TREND_SERIES.MIN_HR_DELTA_BPM`,
+   pace confirming): *"Easy is costing you less: 146 → 141 bpm since August."* No new number.
+
+**Not ruled, and why:** a "longest run" moment (🩹 Willy: it rewards chasing distance; the long run is prescribed, not
+earned); any streak (permanent kill); any absolute easy-share bar (fires for ~nobody, measured).
+⚡ **Recorded disagreement:** ⚕️ Sims would take 5 points (wrist HR noise is smaller across a week than across a run);
+Hutchinson and Seiler hold 10 so the moment survives a noisy week. Settled by how often a 10-point jump reverses the
+following week.
+**Placement is the Design Board's** (with a mockup first, founder rule). Rule-based, so no AIMark.
+
+🔴 **Filed from this sitting: `ZONE-SPLIT-CONFIG-01`.** The split every Coach number now reads (`bucketHRHistogram`,
+`lib/strava.ts`) uses hardcoded boundaries outside `GENERATION_CONFIG.ZONES` (§14): Z1 below 60% of max (config: 65–70% max
+/ 50–60% HRR), Z3 up to 86% of max (config 87%), a 76% fallback ceiling, and the raw max HR rather than §50's guarded one
+(the BASEBUILD-ZONE-CEILING-01 class). Probably small, but it decides the headline every runner now sees.
+
 ## 2026-10-30 — Coach mockups, two meaning questions · CORRECT WITH AMENDMENT (founder approved the direction the same day)
 
 **1. The headline "79% easy" (`COACH-DISCIPLINE-HEADLINE-01`).** It is the share of this week's running, by distance, in
