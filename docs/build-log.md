@@ -5,6 +5,24 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — COACH-READ-BUTTON-01 · Deleting a button is a copy change too
+**Shipped:** Kit's weekly read has no Refresh or Generate button; it writes itself and updates after a new run.
+**Dev learning:** removing the button left two empty states telling runners to "Generate a report", pointing at a control that no longer existed. A removal needs the same consumer check as an addition: grep the words, not just the component. The button-geometry register caught the removal and needed a declared re-baseline (200 -> 199).
+**Product/creator learning:** the button spent a model call to rewrite a read that was usually current. The only moment a rewrite is worth anything is after a run, so that is now the only trigger.
+**AI-building learning:** pulling the decision into one pure function (write / update / none) made it testable by behaviour instead of by grepping the screen's source.
+**The honest bit:** I nearly shipped the empty-state lie; the test now bans the phrase.
+**Hook material:** "Generate a report" survived the deletion of the only button that could do it.
+**Postable?:** maybe
+
+## 2026-10-30 — ZONE-SPLIT-CONFIG-02 · Fixing the boundary alone would have docked 107 runs for running too gently
+**Shipped:** the run zone split uses the plan's own zone boundaries, and an easy run is scored as a cap: anything at or below it counts as on-plan.
+**Dev learning:** my first Zone 3 test used numbers where the old formula (86% of max) and the new one (80% of reserve) both gave 161 bpm, so it stayed green when I put the bug back. Test values must sit where the formulas disagree.
+**Product/creator learning:** the "defect fix" on its own was a coaching regression: moving the Zone 1 line up would have scored 107 of 309 real runs 10+ points lower for running easier than asked. The board's existing rule (below the cap is never a breach) had only reached the drift detector, never the score.
+**AI-building learning:** measuring before the board sat turned a boundary question into a scoring question; the numbers made the second half of the ruling obvious.
+**The honest bit:** one coach's dissent stands (an all-Zone-1 long run is often a walk); distance scoring is the answer, not proof.
+**Hook material:** 107 runs would have been marked down for being too easy, by a bug fix.
+**Postable?:** yes
+
 ## 2026-10-30 — COACH-SEEN-MOMENTS-01 · A moment nobody earns is decoration
 **Shipped:** two sentences on Coach that appear only in the week they are earned: "Your easiest week in eight weeks." and "Easy is costing you less: 146 → 141 bpm since August."
 **Dev learning:** "the first time the trend crosses" sounds like it needs stored state. It does not: build the same series without the last 7 days of runs and ask whether that one qualified. Stateless, testable, and it costs one extra in-memory pass on data already fetched. The mutation harness also caught a guard my tests never exercised (equal endpoints with a trend flag set), which one extra case killed.
