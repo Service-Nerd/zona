@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — COACH-READ-AUTO-01 · The two triggers would have pushed Monday's read on Sunday
+**Shipped:** the week's Coach read arrives when you open Coach; Sunday's push asks for a fresh one.
+**Dev learning:** preparing the SLT sitting turned up a collision between two correct pieces: the route returns the week's existing read unless forced, and the Sunday cron never forced. The moment Coach started generating reads on Monday, Sunday would have pushed that thin Monday headline. The type checker also caught the button passing its click event into the new `fresh` flag.
+**Product/creator learning:** at two cents a runner a month, the manual "Generate report" button was the product making the runner do its job.
+**AI-building learning:** gating the auto-call on exactly the card's own empty-state conditions means no model call is ever spent on a runner who would only get "set your heart rate".
+**The honest bit:** not seen on a device. The proof is a runner opening Coach mid-week and finding a read, and Sunday's push carrying this week's headline.
+**Hook material:** the coaching people paid for sat behind a button labelled "Generate report".
+**Postable?:** maybe
+
 ## 2026-10-30 — WEEKLY-REPORT-CRON-AUTH-01 + COACH-RINGS-SOURCE-01 · "It feels flat" was mostly "it is empty"
 **Shipped:** the Sunday weekly report runs again, and the Coach zone rings fill from every run with heart rate.
 **Dev learning:** the weekly cron had refused every call for at least 90 days because it read `x-cron-secret` while Vercel sends `Authorization: Bearer`. Eleven routes handled it by hand; the one Vercel itself calls was the copy that missed. The contract even wrote both facts on adjacent lines. My first theory (deployment protection on the internal URL) was tested and wrong, which is what made me look at the other end of the call.
