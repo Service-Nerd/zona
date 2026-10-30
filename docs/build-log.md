@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — COACH-TREND-PENDING-01 · A dash for "not yet" and a dash for "nothing moved"
+**Shipped:** the trend card shows "4 of 6" while it collects runs, and "142 → 141 bpm, steady" when there is enough data and no real change.
+**Dev learning:** the "4 of 6" had to count the exact runs the series counts, so the cohort filter came out of `buildHrTrendSeries` into one helper both use, instead of a second copy that would drift. The route's own contract claimed sub-noise trends return null; the code never did, and that gap is precisely what made the steady state possible. The type and spacing gates caught 13px and 6px in my first draft.
+**Product/creator learning:** a card that waits months behind dashes reads as broken. Saying how close it is, and saying "steady" with the numbers, teaches what noise is and still makes no claim.
+**AI-building learning:** the Coaching Board's "steady" ruling had a corollary nobody wrote down: steady heart rate at a faster pace is progress. The card now says the pace change out loud rather than hiding it behind "not calling it yet".
+**The honest bit:** not seen on a device; checked in the preview harness at 375px.
+**Hook material:** for months the card said "— → —" to runners with plenty of data, because their heart rate had not moved 4 beats.
+**Postable?:** maybe
+
 ## 2026-10-30 — COACH-CODE-HYGIENE-01 · The approved line would have been false on the web
 **Shipped:** three Coach copy fixes from the mockups: no "Needs Strava" on the teaser, no duplicate week counter, and clearer words for empty zone rings.
 **Dev learning:** the founder approved "Connect Apple Health and the rings fill from your runs." Coach also runs on the web, where that cannot be done, and the repo had already learned this on Kit's card (P-10). The fix was to let the component's own `onConnect` decide: native passes it, web does not, and the web gets the constraint rather than an instruction.
