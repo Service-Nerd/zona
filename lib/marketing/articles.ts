@@ -368,6 +368,24 @@ const MARATHON_START = planStartPoint('marathon-16-week')
 
 export const MAX_HARD_SESSIONS_PER_WEEK = Math.max(...Object.values(GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX))
 
+/**
+ * Page 8's worked example (Coaching Board 2026-10-30): the founder's own heart rate, published with his approval, run
+ * through the zone 2 bands the ENGINE uses (`GENERATION_CONFIG.ZONES.Z2`, §14). The draft applied one band to both
+ * bases and concluded the formulas disagree; with the real bands they land close, and the page says so. Read from
+ * config so the page cannot drift from what Zonna prescribes. Held by page8Claims.test.ts.
+ */
+export const ZONE2_EXAMPLE = (() => {
+  const max = 188, rest = 48
+  const { maxhr_pct, karvonen_pct } = GENERATION_CONFIG.ZONES.Z2
+  const ofMax = (pct: number) => Math.round(max * pct / 100)
+  const ofReserve = (pct: number) => Math.round((max - rest) * pct / 100 + rest)
+  return {
+    max, rest, maxPct: maxhr_pct, reservePct: karvonen_pct,
+    byMax: [ofMax(maxhr_pct[0]), ofMax(maxhr_pct[1])] as const,
+    byReserve: [ofReserve(karvonen_pct[0]), ofReserve(karvonen_pct[1])] as const,
+  }
+})()
+
 const p = (...spans: ArticleSpan[]): ArticleBlock => ({ kind: 'p', spans })
 const h2 = (text: string): ArticleBlock => ({ kind: 'h2', text })
 const table = (caption: string, head: string[], rows: string[][]): ArticleBlock =>
@@ -530,8 +548,8 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       `Most beginner runners run every session too hard. Here's why that stalls progress, what to do without an app, and which one actually helps.`,
     h1: `Best running app for beginners who go too hard`,
     // Revised 2026-10-22: one backlink to page 6 added; nothing else changed.
-    lastUpdated: '22 October 2026',
-    lastUpdatedISO: '2026-10-22',
+    lastUpdated: '30 October 2026',
+    lastUpdatedISO: '2026-10-30',
     publishedISO: '2026-09-24',
     // §1 (intensity distribution, counted in SESSIONS per CD-19), §12 (the easy
     // ceiling — "a ceiling, not a band"), §30/INV-PLAN-EFFORT-OR-PACE (effort is
@@ -578,6 +596,11 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       p(
         `If you want the detail on zones, the talk test and where heart rate misleads you, I wrote it up in `,
         { text: `why your easy runs aren't easy, and what it costs you`, href: '/why-your-easy-runs-arent-easy' },
+        `.`,
+      ),
+      p(
+        `For what zone 2 actually means and how the heart rate formulas compare, see `,
+        { text: 'what is zone 2 running, and why most people get it wrong', href: '/what-is-zone-2-running' },
         `.`,
       ),
 
@@ -778,8 +801,8 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
     ogDescription:
       `Why most runners' easy runs are too fast, how to check yours with the talk test, and where heart rate zones mislead you.`,
     h1: `Why your easy runs aren't easy, and what it costs you`,
-    lastUpdated: '22 October 2026',
-    lastUpdatedISO: '2026-10-22',
+    lastUpdated: '30 October 2026',
+    lastUpdatedISO: '2026-10-30',
     publishedISO: '2026-10-22',
     signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
     appStoreLinkText: `Get ${BRAND.name} on the App Store`,
@@ -817,6 +840,11 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       h2('What zone 2 is not'),
       p(`Some of what gets posted online makes zone 2 sound like the whole of training. It is not. Easy running is the base, and you still need harder work to get faster. If you are new to running, easy running alone will make you faster for a while, and a ${BRAND.name} plan for a beginner aiming to finish gives you no hard sessions at all. A ${BRAND.name} plan never has more than ${NUMBER_WORDS[MAX_HARD_SESSIONS_PER_WEEK]} hard sessions in a week, usually one, and makes the rest easy.`),
       p(`Heart rate zones are also not a verdict on your effort. They are an estimate, and you are the one running.`),
+      p(
+        `If you want the definition and how the common formulas compare, I wrote it up in `,
+        { text: 'what is zone 2 running, and why most people get it wrong', href: '/what-is-zone-2-running' },
+        `.`,
+      ),
 
       h2('What it cost me'),
       p(`My 10km best is 48:30, set in autumn 2024, and it has not moved in two years. For much of that time most of my runs sat in the moderate band, and my aerobic base got stronger while the hard sessions that would have used it were not hard enough.`),
@@ -907,6 +935,82 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
         `.`,
       ),
       p(`My recommendation: pick four days you can hold, protect the long run, keep the easy runs easy, and start from what you can run today.`),
+    ],
+  },
+  // ── COMPARISON 8 ───────────────────────────────────────────────────────
+  // Founder's final copy, 2026-10-30, with the Coaching Board's three amendments he approved the same day: the formula
+  // example uses the engine's own zone 2 bands (ZONE2_EXAMPLE), the hard-session count is page 6's ruled wording, and the
+  // "one hard run a week" advice carries §110 Am.2's beginner qualifier. Sitting: coaching-rulings.md 2026-10-30.
+  // Held by page8Claims.test.ts.
+  {
+    kind: 'comparison',
+    slug: 'what-is-zone-2-running',
+    metaTitle: `What is zone 2 running, and why most people get it wrong`,
+    metaDescription:
+      `What zone 2 running means, why heart rate formulas disagree with each other, and how to find your easy effort with the talk test.`,
+    ogTitle: `What is zone 2 running, and why most people get it wrong`,
+    ogDescription:
+      `What zone 2 running means, why heart rate formulas disagree with each other, and how to find your easy effort with the talk test.`,
+    h1: `What is zone 2 running, and why most people get it wrong`,
+    lastUpdated: '30 October 2026',
+    lastUpdatedISO: '2026-10-30',
+    publishedISO: '2026-10-30',
+    signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
+    appStoreLinkText: `Get ${BRAND.name} on the App Store`,
+    hubSummary: `What zone 2 actually means, why heart rate formulas only agree on numbers you have measured, and the free test I trust instead.`,
+    body: [
+      p(`Zone 2 is the easy aerobic effort you can hold for a long time while still talking in full sentences. In the lab it is defined by blood lactate, which you cannot see on a run, so runners fall back on heart rate formulas or the talk test. The formulas only agree when you give them numbers most runners have never measured. I trust the talk test over any of them, and I explain why below. I spent two years running my easy runs too fast, and my 10km best stayed at 48:30 the whole time.`),
+
+      h2('The definition'),
+      p(`One widely quoted definition comes from Peter Attia: the highest effort you can sustain while your blood lactate stays below about 2 millimoles per litre. He calls it an all day pace.`),
+      p(`That is a physiological line, not a heart rate or a pace. Measuring it means finger-prick blood samples at stages of rising effort. Everything else you will read, including every number on this page, is an estimate of where that line sits.`),
+      p(
+        `The word also means different things depending on who is using it. Sports science papers usually use three zones and ${BRAND.name} uses five, so zone 2 is not one fixed effort. I sorted out the numbering in `,
+        { text: `why your easy runs aren't easy, and what it costs you`, href: '/why-your-easy-runs-arent-easy' },
+        `.`,
+      ),
+
+      h2('Why the formulas disagree'),
+      p(`Most watches let you set zones from a percentage of maximum heart rate, a percentage of heart rate reserve, or a percentage of lactate threshold heart rate. Garmin's manual lists all three. They are different calculations, so the same runner gets different zones.`),
+      p(`Here is mine. My maximum is around ${ZONE2_EXAMPLE.max} and my resting rate is ${ZONE2_EXAMPLE.rest}. The bands ${BRAND.name} uses for zone 2 are ${ZONE2_EXAMPLE.maxPct[0]} to ${ZONE2_EXAMPLE.maxPct[1]} percent of maximum, or ${ZONE2_EXAMPLE.reservePct[0]} to ${ZONE2_EXAMPLE.reservePct[1]} percent of heart rate reserve, which is maximum minus resting.`),
+      p(`As a percentage of maximum, that is ${ZONE2_EXAMPLE.byMax[0]} to ${ZONE2_EXAMPLE.byMax[1]} beats per minute. As a percentage of reserve, it is ${ZONE2_EXAMPLE.byReserve[0]} to ${ZONE2_EXAMPLE.byReserve[1]}. They land close because both start from the same maximum. If that maximum is a guess, both are wrong together.`),
+      p(`Then there is 180 minus your age, from Phil Maffetone. It gives you a single ceiling, ignores your resting and maximum heart rate, and comes with its own adjustments: subtract 10 or 5 for illness, injury or stalled progress, and add 5 after two years of consistent training.`),
+      p(
+        `Anchoring zones to lactate threshold heart rate is closer to the physiology, but it needs a test too. Most of the rest start from a maximum you may never have measured, and I covered how far off the age formulas can be, and how heart rate drifts in heat, on `,
+        { text: 'the easy runs page', href: '/why-your-easy-runs-arent-easy' },
+        `.`,
+      ),
+
+      h2('The talk test, and why I lean on it'),
+      p(`The talk test has research behind it. Work led by Carl Foster at the University of Wisconsin-La Crosse found that speech is comfortable below your first threshold, gets uncertain at it, and fails at the second. A 2022 review in Sports Medicine concluded that the test appears to be a valid measure of both.`),
+      p(`Foster is an author of that review as well, so it is not an independent check. The research has limits too. In the original work, one study found some people could still talk at workloads where they were expected not to. Another found it took two to four minutes to lose comfortable speech just above threshold.`),
+      p(`So do not judge it from the first minute. Say a few full sentences out loud a few minutes in, and again near the end of the run.`),
+      p(`It follows effort rather than a number, so it still works on a hot day.`),
+
+      h2('What zone 2 is not'),
+      p(`It is not a pace. The same effort is slower on hills, in heat, or when you are tired.`),
+      p(`It is not a single heart rate you can look up. Without a test, any figure is a starting guess.`),
+      p(`It is not the whole of training. Easy running is the base and you still need harder work to get faster. Some of what gets posted online treats zone 2 as the entire answer, and I think that is overstated.`),
+
+      h2('How I would use it'),
+      p(`Set the effort by feel first. Run at a pace where you can talk in full sentences. It will probably be slower than you want.`),
+      p(`Then use your watch to learn, not to give orders. Note your heart rate on a few flat easy runs at that effort, and treat the range you see as your own instead of a formula. That is my method, not something from a study.`),
+      p(`When heart rate and effort disagree, go with effort, especially in heat and late in a long run.`),
+      p(
+        `If you are new to running, easy running alone will make you faster for a while. If you have been running a while, keep one run a week properly hard. Either way, give the change a month before you judge it. My guide to `,
+        { text: 'how slow easy runs should feel', href: '/guides/should-easy-runs-feel-this-slow' },
+        ` has the numbers I use.`,
+      ),
+
+      h2(`Where ${BRAND.name} fits`),
+      p(`${BRAND.name} is built around easy running. Most sessions in a plan are easy, and no week has more than ${NUMBER_WORDS[MAX_HARD_SESSIONS_PER_WEEK]} hard ones. It is iOS only, there is no Garmin workout export, and I am the only developer.`),
+      p(`The free tier has the 5K, 10K and half marathon plans in full, with no end date. Paid access is ${PRICING.monthly.display} a month or ${PRICING.annual.display} a year, with a two-week trial.`),
+      p(
+        `You do not need an app to find zone 2. The talk test and a watch you are willing to ignore will do. If you are choosing an app, I compared the options in the `,
+        { text: 'best running app for beginners who go too hard', href: '/best-running-app-for-beginners' },
+        `.`,
+      ),
+      p(`My recommendation: set your easy effort by the talk test, check it against your heart rate over a few runs, and treat any formula as a starting guess.`),
     ],
   },
   // ── GUIDE 1 ────────────────────────────────────────────────────────────

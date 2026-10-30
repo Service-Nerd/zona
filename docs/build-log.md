@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — GTM-SEO-COMPARE-01 page 8 · The example disproved the sentence it was there to prove
+**Shipped:** page 8, "What is zone 2 running, and why most people get it wrong", the last of the eight comparison pages, with links back from pages 3 and 6.
+**Dev learning:** the brief said "the architecture is established, do not inspect the repo" and named `lib/marketing/comparisons.ts`, which does not exist. A brief written from memory carries a stale path as confidently as a right one. Two existing checks also met their first second-tenant: page 6's guard counted a phrase across the whole file and broke the moment page 8 legitimately used the same ruled wording, so it now reads only page 6's entry.
+**Product/creator learning:** the page's central example applied 60 to 70 percent to both max heart rate and heart rate reserve and concluded the formulas disagree. With the bands the engine actually uses (70 to 80 of max, 60 to 70 of reserve) the founder's own numbers give 132 to 150 and 132 to 146: they nearly agree. The honest version is the stronger argument: the formulas only agree on numbers you have measured.
+**AI-building learning:** the draft arrived researched and verified, with a "could not verify" list. What it could not catch was an internal inconsistency against our own config. Reading the page against `GENERATION_CONFIG.ZONES.Z2` took one grep; the arithmetic took one line of node.
+**The honest bit:** "one hard session a week" came back a third time, in the founder's own draft, three days after it was removed from the charity page. The site-wide guard would have failed the build; better that it was caught at the reading.
+**Hook material:** same runner, same zone, two formulas: 132 to 150 and 132 to 146. The page originally said they barely touch.
+**Postable?:** yes
+
 ## 2026-10-30 — LOAD-SOURCE-TOTAL-01 · Eighteen people opened the screen; two saw the answer
 **Shipped:** the Coach "This week's load" tile counts every run you logged, not just the few matched to a session, and stops treating a lighter week as a warning.
 **Dev learning:** the obvious data source was wrong twice. The tile read the weekly report's ratio, which is the trim trigger's (linked runs only, ~5% of distance). The next obvious source, the dashboard's own `stravaRuns`, leaves manual logs out. The right read was a third one, straight from the activity log. And plan weeks were the wrong windows: a week still in progress reads "under your normal" every Monday, so the picture uses rolling 7-day windows instead.

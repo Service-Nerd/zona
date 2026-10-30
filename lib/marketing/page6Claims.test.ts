@@ -18,7 +18,11 @@ describe('page 6 — what it says about hard sessions matches the engine', () =>
     expect(text).toContain(`no week has more than ${WORDS[MAX_HARD_SESSIONS_PER_WEEK]} hard ones`)
   })
   it('the source interpolates the ceiling rather than typing it', () => {
-    const src = fs.readFileSync(path.join(__dirname, 'articles.ts'), 'utf8')
+    // Bounded to page 6's own entry: page 8 (2026-10-30) carries the same ruled wording, so a file-wide count of 1 broke.
+    const file = fs.readFileSync(path.join(__dirname, 'articles.ts'), 'utf8')
+    const at = file.indexOf("slug: 'why-your-easy-runs-arent-easy'")
+    const src = file.slice(at, file.indexOf('// ── COMPARISON 7', at))
+    expect(at).toBeGreaterThan(0)
     expect(src.match(/never has more than \$\{NUMBER_WORDS\[MAX_HARD_SESSIONS_PER_WEEK\]\}/g)?.length).toBe(1)
     expect(src.match(/no week has more than \$\{NUMBER_WORDS\[MAX_HARD_SESSIONS_PER_WEEK\]\}/g)?.length).toBe(1)
   })
