@@ -17,7 +17,8 @@
  *                    trend is live and hrIsTrending. Haiku call. Default false.
  *
  * Returns:
- *   { trend: TrendSeries, gloss?: string }  — live trend (gloss only when requested + signal present)
+ *   { trend: TrendSeries, readiness, easyCostMoment, gloss?: string }  — live trend (gloss only when requested + signal present);
+ *                                            easyCostMoment: true only in the week the easy HR first fell past the floor
  *   { trend: null }                          — not enough data to claim a trend
  */
 
@@ -29,6 +30,7 @@ import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildHrTrendSeries, trendReadiness, fetchRunHistory } from '@/lib/coaching/runHistory'
 import { COHORT_SIMILARITY, TREND_SERIES } from '@/lib/coaching/constants'
+import { easyCostFellThisWeek } from '@/lib/coaching/moments'
 import { buildAerobicTrendPrompt } from '@/lib/coaching/prompts/aerobicTrend'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
@@ -76,6 +78,11 @@ export async function GET(req: NextRequest) {
   const trend = buildHrTrendSeries(history, { sessionType, distanceKm }, windowMonths)
   // COACH-TREND-PENDING-01: how close the runner is, from the same cohort, so a waiting card can say "4 of 6".
   const readiness = trendReadiness(history, { distanceKm }, windowMonths)
+  // COACH-SEEN-MOMENTS-01 (§131): the easy-cost moment is shown only in the week it is first earned. No stored state:
+  // the same series built without the last 7 days of runs must NOT have qualified.
+  const weekAgoCutoff = new Date(Date.now() - 7 * 86_400_000)
+  const trendWeekAgo = buildHrTrendSeries(history.filter(r => r.startDate < weekAgoCutoff), { sessionType, distanceKm }, windowMonths)
+  const easyCostMoment = easyCostFellThisWeek(trend, trendWeekAgo)
 
   // ── AI gloss — optional, only when signal is present ────────────────────
   // Haiku call: ~500ms, ≤2 sentences. Silently skipped when:
@@ -116,5 +123,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ trend, readiness, ...(gloss ? { gloss } : {}) })
+  return NextResponse.json({ trend, readiness, easyCostMoment, ...(gloss ? { gloss } : {}) })
 }

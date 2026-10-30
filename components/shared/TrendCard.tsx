@@ -18,6 +18,7 @@ import { TrendSparkline } from './TrendSparkline'
 import { buildTrendSparkline, type SparkBucket } from '@/lib/coaching/trendSparkline'
 import { paceContext } from '@/lib/coaching/trendSentence'
 import { TREND_PACE_CONFOUND_SEC_PER_KM } from '@/lib/coaching/constants'
+import EarnedLine from '@/components/shared/EarnedLine'
 import { formatPace } from '@/lib/format'
 import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
@@ -57,6 +58,9 @@ interface TrendCardLive {
    *  trend reads as raw evidence with no second Kit voice. Trend interpretation
    *  folds into the one Kit read at the top of Coach instead. */
   glossless?: boolean
+  /** COACH-SEEN-MOMENTS-01 (§131): the earned sentence, set by the caller only in the week it is earned. Drawn as the
+   *  card's last line (Design Board 2026-10-30). Absent, and the card is exactly what it was. */
+  moment?: string
   onUpgrade?: never
 }
 /** Every non-live state also needs to know WHICH trend it is. Before
@@ -451,7 +455,7 @@ export default function TrendCard(props: TrendCardProps) {
 
   // ── Live ──────────────────────────────────────────────────────────────────
   // Props confirmed as TrendCardLive here.
-  const { earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss, label, sessionLabel, glossless, series, earlierPace, nowPace, preferredUnits } = props
+  const { earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss, label, sessionLabel, glossless, series, earlierPace, nowPace, preferredUnits, moment } = props
   const eyebrow    = label        ?? TREND_CARD_DEFAULTS.label
   const runNoun    = sessionLabel ?? TREND_CARD_DEFAULTS.sessionLabel
   const spark      = buildTrendSparkline(series)
@@ -540,6 +544,13 @@ export default function TrendCard(props: TrendCardProps) {
               improving={spark.delta < 0 && paceCtx !== 'confounds'}
               runNoun={runNoun}
             />
+          </div>
+        )}
+
+        {/* COACH-SEEN-MOMENTS-01: the earned line, the card's conclusion. Ink, one moss dot, no motion. */}
+        {moment && (
+          <div style={{ marginBottom: glossless ? 0 : 'var(--space-4)' }}>
+            <EarnedLine text={moment} />
           </div>
         )}
 

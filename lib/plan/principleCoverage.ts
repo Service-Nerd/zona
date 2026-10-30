@@ -287,6 +287,7 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 128, by: 'test', ref: 'lib/health/reportDistance.test.ts' },  // A runner-reported distance counts as volume, never as fitness
   { n: 129, by: 'test', ref: 'lib/coaching/loadPicture.test.ts' },  // The load picture describes the runner's own weeks; it never predicts
   { n: 130, by: 'test', ref: 'components/shared/easyShare.markup.test.ts' },  // The easy share describes a week; it never grades one
+  { n: 131, by: 'test', ref: 'lib/coaching/moments.test.ts' },  // A moment is earned against the runner's own weeks, and said once
   // 🔴 ADDED 2026-10-09, AND IT SHOULD HAVE BEEN HERE SINCE 2026-09-22.
   // §121 is written `## §121 — ...` while every older section is `## N. ...`,
   // and `principlesInDoc()` matched only the second form — so the gate whose

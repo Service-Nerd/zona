@@ -4351,6 +4351,27 @@ carry a zone split (§130); below that the rings stand alone with their own eyeb
 | **The bars** | A record (the `LoadShape` history pattern): no line, no projection, no number per bar, no peak emphasis. Always 8 slots, filled from the right; a thin week is an empty slot, never a zero |
 | **Pattern 32** | AMENDED, not reversed: the killed tile restated the rings from outside them; this is the rings' own figure, inside their card, labelled as theirs |
 
+### ✅ Earned line — one sentence, on its evidence (`COACH-SEEN-MOMENTS-01`, Design Board 2026-10-30)
+
+`components/shared/EarnedLine.tsx`. A rule-based sentence shown only in the week it is earned (§131), placed directly on
+the evidence that proves it. Two uses: under the easy-share headline (the bars below are the proof) and as the live trend
+card's last line (the numbers above are the proof).
+
+```
+  79%  easy
+  of this week's running sat in Zones 1–2.
+  • Your easiest week in eight weeks.            ← EARNED_DOT_PX (6) --moss dot · Body 15/600 --ink
+        ( rings )
+  ▃ ▃ ▁ ▄ ▂ ▅ ▄ █                                 ← the record that proves it; "eight" = the weeks drawn
+```
+
+| | |
+|---|---|
+| **Colour** | The sentence is ink (6t-g: a hue is never small text). The dot is the only moss |
+| **Motion** | None. No AIMark (rule-based copy, never model output) |
+| **Earned, not given** | The caller decides from `lib/coaching/moments.ts`; an ordinary week draws nothing, never a placeholder |
+| **Never** | A badge, a streak, a longest-run or pace record, an emphasised bar |
+
 ### 🔲 RULED, NOT BUILT — the history row (`RUNKED-LOAD-VIEW-01`, Design Board 2026-10-30)
 
 ⚠️ **The bars do not exist yet.** The SLT (2026-10-30) ordered them AFTER `LOAD-SOURCE-TOTAL-01`, which shipped the source, the minimum history and the colours above; the bars wait until a majority of Coach openers with 3+ weeks of runs see a real verdict.

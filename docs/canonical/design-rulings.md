@@ -5721,3 +5721,10 @@ the 17 non-admin runners who open Coach, **five of seven blocks are an empty sta
 
 ⚠️ **Not established:** nobody has seen Coach on a device, filled or empty. The test of the whole review is Coach opens
 per non-admin runner per week, before and after items 1–3.
+
+## 2026-10-30 — COACH-SEEN-MOMENTS-01 placement · SHIP WITH AMENDMENT
+
+| Change | Ruling | Detail |
+|---|---|---|
+| **Earned line on Coach** (`EarnedLine`) | ✅ **SHIP WITH AMENDMENT** | Founder approved the mockup. One sentence on its evidence: under the easy-share headline, and as the live trend card's last line. Ink 15/600, one 6px `--moss` dot, no motion, no AIMark. **Amendment:** the window is the DRAWN record so "in N weeks" is countable on screen (measured: fires 4 of 59 weeks either way). 🎪 Collins lost on cutting the numbers from the trend sentence. Note: `docs/decisions/coach-moments-placement-2026-10-30.md` |
+

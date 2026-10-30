@@ -11,12 +11,15 @@
 // the start of a record rather than three wide blocks.
 
 import { MICRO_LABELS } from '@/components/shared/microLabels'
+import EarnedLine from '@/components/shared/EarnedLine'
+import { easiestWeekSentence } from '@/lib/coaching/moments'
 
 /** How many weeks the record shows (Design Board, "up to 8"). */
 export const EASY_SHARE_BARS = 8
 const BAR_HEIGHT_PX = 64
 
-export function EasyShareHeader({ share, runs }: { share: number; runs: number }) {
+/** `easiestSpan`: weeks drawn when this week is the easiest of them (`easiestWeekSpan`, §131); the line shows only then. */
+export function EasyShareHeader({ share, runs, easiestSpan }: { share: number; runs: number; easiestSpan?: number | null }) {
   return (
     <div data-easy-share>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -32,6 +35,11 @@ export function EasyShareHeader({ share, runs }: { share: number; runs: number }
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.5, marginTop: 'var(--space-2)' }}>
         of this week&apos;s running sat in Zones 1–2.
       </div>
+      {easiestSpan != null && (
+        <div style={{ marginTop: 'var(--space-3)' }}>
+          <EarnedLine text={easiestWeekSentence(easiestSpan)} />
+        </div>
+      )}
     </div>
   )
 }

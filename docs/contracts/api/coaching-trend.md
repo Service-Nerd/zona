@@ -31,9 +31,15 @@ Multi-month trend backend (AI-DEPTH-03). Returns a series of same-effort runs ov
     "hrIsTrending": true,
     "paceIsTrending": true
   },
-  "readiness": { "runs": 7, "needRuns": 6, "months": 2, "needMonths": 2 }
+  "readiness": { "runs": 7, "needRuns": 6, "months": 2, "needMonths": 2 },
+  "easyCostMoment": false
 }
 ```
+
+`easyCostMoment` (COACH-SEEN-MOMENTS-01, §131, 2026-10-30) is always present: `true` only when the series shows the
+heart rate fallen past `MIN_HR_DELTA_BPM` with pace confirming (`paceContext === 'confirms'`) AND the same series built
+without the last 7 days of runs did not (`easyCostFellThisWeek`, `lib/coaching/moments.ts`). No stored state, so it is
+true for the week the drop first crosses the floor and can return if the trend falls back and crosses again.
 
 `readiness` (COACH-TREND-PENDING-01, 2026-10-30) is always present: how close the runner is to a series, counted by
 `trendReadiness` from the SAME cohort as the series (`trendCohort` in `lib/coaching/runHistory.ts`), so a card's "4 of 6"
@@ -42,7 +48,7 @@ can never count different runs from the series it waits for.
 ## Response — 200 (no trend)
 
 ```json
-{ "trend": null, "readiness": { "runs": 4, "needRuns": 6, "months": 1, "needMonths": 2 } }
+{ "trend": null, "readiness": { "runs": 4, "needRuns": 6, "months": 1, "needMonths": 2 }, "easyCostMoment": false }
 ```
 
 `null` is returned when threshold gates aren't met:

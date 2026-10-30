@@ -183,6 +183,13 @@ export const LOAD_PICTURE_LOW_WEEKS_TO_NAME = 2
 // short session can flatter or punish the share.
 export const COACH_EASY_SHARE_MIN_RUNS = 2
 
+// COACH-SEEN-MOMENTS-01 / §131 (Coaching Board 2026-10-30): "Your easiest week in N weeks" is earned only when this week's
+// easy share beats every other week in the drawn record by at least this many points, with at least this many earlier
+// weeks holding data. Measured against the runner's own weeks because an absolute bar fires for almost nobody (median
+// weekly share 32%). Hutchinson and Seiler hold 10 so the line survives a noisy week; Sims would take 5 (recorded).
+export const COACH_MOMENT_EASIEST_MARGIN_PTS = 10
+export const COACH_MOMENT_MIN_PRIOR_WEEKS = 3
+
 /**
  * COACH-BEHIND-DAY-TWO-01 / §65 Amendment — the minimum number of outstanding
  * sessions before the Coach screen's verdict becomes a JUDGEMENT.

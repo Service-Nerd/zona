@@ -90,7 +90,7 @@ describe('Coach wiring', () => {
   const shell = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
   it(`the headline appears only with at least ${COACH_EASY_SHARE_MIN_RUNS} runs; below it the rings stand alone`, () => {
     expect(shell).toContain('(zoneHistogramHits ?? 0) >= COACH_EASY_SHARE_MIN_RUNS ? (')
-    expect(shell).toContain('<EasyShareHeader share={easyShare(zoneTimePctByZone)} runs={zoneHistogramHits ?? 0} />')
+    expect(shell).toContain('<EasyShareHeader share={easyShare(zoneTimePctByZone)} runs={zoneHistogramHits ?? 0} easiestSpan=')
     expect(shell).toContain('<ZoneRings chromeless headless pctByZone={zoneTimePctByZone} />')
   })
   it('the record reads the same activity rows as the rings, far enough back for 8 weeks', () => {

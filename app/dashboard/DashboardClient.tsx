@@ -133,6 +133,7 @@ import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearS
 import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
 import { zoneDiscipline, zoneTimeSplit, weightOf, weekZoneSplitRows, weeklyEasyShares, easyShare } from '@/lib/coaching/weeklyZoneAggregate'
 import { EasyShareHeader, EasyShareBars, EASY_SHARE_BARS } from '@/components/shared/EasyShare'
+import { easiestWeekSpan, easyCostSentence } from '@/lib/coaching/moments'
 import { trendSentence } from '@/lib/coaching/trendSentence'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession, renderPlanProse, planProseContext } from '@/lib/plan/renderGuidance'
@@ -5511,6 +5512,8 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
     // buckets[0] and buckets[last] and throw the middle away, so the card
     // could state the change and never show its shape.
     series: SparkBucket[]
+    // COACH-SEEN-MOMENTS-01 (§131): set only in the week the easy-run HR first fell past the floor, pace confirming.
+    moment?: string
   } | { state: 'pending'; progress?: { runs: number; needRuns: number } }
     | { state: 'steady'; earlierHr: number; nowHr: number; sinceMonth: string; cohortSize: number; earlierPace: number | null; nowPace: number | null }
     | null>(null)
@@ -5571,8 +5574,11 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
         if (first.avgHr == null || last.avgHr == null) {
           setEasyTrendData({ state: 'pending' }); return
         }
+        const [my, mm] = String(first.monthKey).split('-').map(Number)
+        const momentSince = new Date(Date.UTC(my, mm - 1, 1)).toLocaleString('en-GB', { month: 'long', timeZone: 'UTC' })
         setEasyTrendData({
           state:        'live',
+          moment:       data.easyCostMoment === true ? easyCostSentence(first.avgHr, last.avgHr, momentSince) : undefined,
           earlierMonth: first.shortLabel,
           earlierHr:    first.avgHr,
           nowHr:        last.avgHr,
@@ -5976,7 +5982,7 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
                   // COACH-DISCIPLINE-HEADLINE-01: the rings' own headline, then the rings, then the weekly record.
                   // Below the minimum runs the rings stand alone (Coaching Board: never one run as a verdict).
                   <>
-                    <EasyShareHeader share={easyShare(zoneTimePctByZone)} runs={zoneHistogramHits ?? 0} />
+                    <EasyShareHeader share={easyShare(zoneTimePctByZone)} runs={zoneHistogramHits ?? 0} easiestSpan={easiestWeekSpan(easyShareWeeks.slice(-EASY_SHARE_BARS))} />
                     <ZoneRings chromeless headless pctByZone={zoneTimePctByZone} />
                     <EasyShareBars weeks={easyShareWeeks} />
                   </>
@@ -6283,6 +6289,7 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
               earlierPace={easyTrendData.earlierPace}
               nowPace={easyTrendData.nowPace}
               preferredUnits={preferredUnits}
+              moment={easyTrendData.moment}
               glossless
             />
           : easyTrendData?.state === 'steady'

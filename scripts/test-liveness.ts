@@ -63,6 +63,7 @@ const SUBJECTS: Record<string, string[]> = {
   'lib/plan/doubles.test.ts':                       ['lib/plan/doubles.ts', 'lib/plan/effectiveSessions.ts'],
   // §129 — the load picture and the verdict it feeds (LOAD-SOURCE-TOTAL-01).
   'lib/coaching/loadPicture.test.ts':               ['lib/coaching/loadPicture.ts', 'lib/ui/loadRatioContext.ts'],
+  'lib/coaching/moments.test.ts':                  ['lib/coaching/moments.ts'],
   // §130 — the easy share's weekly record (the headline's colour rule is a markup assertion, falsified by hand).
   'components/shared/easyShare.markup.test.ts':     ['lib/coaching/weeklyZoneAggregate.ts'],
 }

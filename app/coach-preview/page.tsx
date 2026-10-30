@@ -19,6 +19,7 @@ import { RACE_PROJECTIONS_COPY } from '@/components/shared/raceProjectionsCopy'
 import ZoneRings from '@/components/shared/ZoneRings'
 import { EasyShareHeader, EasyShareBars } from '@/components/shared/EasyShare'
 import TrendCard from '@/components/shared/TrendCard'
+import { easiestWeekSpan, easyCostSentence } from '@/lib/coaching/moments'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 
@@ -215,6 +216,19 @@ export default function CoachPreviewPage() {
             <ZoneRings chromeless headless pctByZone={{ z1: 10, z2: 54, z3: 26, z45: 10 }} />
             <EasyShareBars weeks={[81, 70, 64]} />
           </div>
+        </div>
+        {/* COACH-SEEN-MOMENTS-01 (2026-10-30): the two earned lines, fed through the real rules. */}
+        <div>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>Moment: easiest week in eight</div>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '20px' }}>
+            <EasyShareHeader share={79} runs={4} easiestSpan={easiestWeekSpan([40, 35, null, 48, 30, 52, 44, 79])} />
+            <ZoneRings chromeless headless pctByZone={{ z1: 18, z2: 61, z3: 16, z45: 5 }} />
+            <EasyShareBars weeks={[40, 35, null, 48, 30, 52, 44, 79]} />
+          </div>
+        </div>
+        <div>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>Moment: easy is costing less</div>
+          <TrendCard state="live" label="Easy run trend" sessionLabel="easy run" earlierMonth="Aug" earlierHr={146} nowHr={141} cohortSize={11} windowMonths={6} earlierPace={372} nowPace={368} glossless moment={easyCostSentence(146, 141, 'August')} />
         </div>
         {/* COACH-TREND-PENDING-01 (2026-10-30): the two waiting states the founder approved from the mockups. */}
         <div>

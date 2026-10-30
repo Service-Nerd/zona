@@ -12102,3 +12102,21 @@ reps and flatters the share; fine across a week, wrong for one run, hence the mi
 **Config.** `lib/coaching/constants.ts → COACH_EASY_SHARE_MIN_RUNS`. **Enforced by** `components/shared/easyShare.markup.test.ts`
 (the minimum, no colour verdict, empty slots for thin weeks, the same rows as the rings). Not a `validatePlan()` invariant:
 it governs what the runner is told about their runs, not a plan.
+
+## 131. A moment is earned against the runner's own weeks, and said once *(Coaching Board 2026-10-30, COACH-SEEN-MOMENTS-01)*
+
+**Principle.** Coach may say one earned sentence when the runner's own evidence crosses a line, in the week it crosses and
+beside the evidence: (1) *"Your easiest week in N weeks"* when this week's easy share (§130) beats every other week in the
+drawn record by at least `COACH_MOMENT_EASIEST_MARGIN_PTS` (10), with at least `COACH_MOMENT_MIN_PRIOR_WEEKS` (3) earlier
+weeks holding data; N is the weeks drawn. (2) *"Easy is costing you less"* in the week the easy-run heart rate first falls
+past the trend noise floor (`TREND_SERIES.MIN_HR_DELTA_BPM`) with pace confirming (`paceContext`). Never a badge, streak,
+longest-run or pace record on an easy run.
+
+**Why.** 🏃 Hutchinson: an absolute bar fires for almost nobody (median weekly share 32%, measured), and a moment nobody
+earns is decoration. 🩹 Willy: a longest-run moment rewards chasing distance. Measured at build: moment 1 fires in **4 of 59**
+eligible runner-weeks (4 runners), identical whether the window is the drawn record or 8 earlier weeks. ⚡ Sims would take 5
+points; Hutchinson and Seiler hold 10 so the line survives a noisy week (recorded).
+
+**Config.** `lib/coaching/constants.ts → COACH_MOMENT_EASIEST_MARGIN_PTS`, `COACH_MOMENT_MIN_PRIOR_WEEKS`; rules in
+`lib/coaching/moments.ts`. **Enforced by** `lib/coaching/moments.test.ts` and `components/shared/earnedLine.markup.test.ts`.
+Not a `validatePlan()` invariant: it governs what the runner is told about their runs, not a plan.

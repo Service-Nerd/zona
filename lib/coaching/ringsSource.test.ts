@@ -74,6 +74,8 @@ describe('COACH-CODE-HYGIENE-01 (non-visual part)', () => {
     const params = shell.slice(i, shell.indexOf('})', i))
     expect(params).not.toMatch(/include_gloss:\s*'true'/)
     // …because the card on Coach is glossless. If that ever changes, the gloss must be asked for again.
-    expect(shell).toMatch(/preferredUnits=\{preferredUnits\}\s*\n\s*glossless/)
+    // Bounded to the live TrendCard element (COACH-SEEN-MOMENTS-01 added a prop inside it).
+    const live = shell.slice(shell.indexOf('<TrendCard\n              state="live"'))
+    expect(live.slice(0, live.indexOf('/>'))).toMatch(/\n\s*glossless\s*$/)
   })
 })

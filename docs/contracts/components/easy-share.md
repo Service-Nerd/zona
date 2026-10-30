@@ -14,6 +14,7 @@ Coaching Board §130, 2026-10-30 · **Item:** `COACH-DISCIPLINE-HEADLINE-01`
 type EasyShareHeaderProps = {
   share: number   // easyShare(split): round(z1 + z2) of this week's distance-weighted zone split
   runs: number    // runs carrying a split this week; the caller renders this only when >= COACH_EASY_SHARE_MIN_RUNS
+  easiestSpan?: number | null  // COACH-SEEN-MOMENTS-01: weeks drawn when this week is the easiest of them (easiestWeekSpan, §131); null/absent = no line
 }
 ```
 
