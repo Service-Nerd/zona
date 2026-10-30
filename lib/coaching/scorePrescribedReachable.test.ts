@@ -132,10 +132,10 @@ describe('INV-SCORE-PRESCRIBED-REACHABLE', () => {
     expect(prescribedZoneFigures(hist, progressive!, NO_LEGACY).hrInZonePct).toBeCloseTo(100, 1)
   })
 
-  it('an easy run is untouched — one band, and still 100 when held', () => {
+  it('an easy run prescribes the cap (Z1–Z2), and still scores 100 when held', () => {
     const easy = allSessions().find(s => s.type === 'easy')!
     const zones = prescribedZonesFor(easy)!
-    expect(Array.from(zones)).toEqual(['z2'])
+    expect(Array.from(zones).sort()).toEqual(['z1', 'z2'])
     expect(prescribedZoneFigures({ z1: 0, z2: 100, z3: 0, z4_5: 0 }, easy, NO_LEGACY).hrInZonePct)
       .toBeCloseTo(100, 1)
   })

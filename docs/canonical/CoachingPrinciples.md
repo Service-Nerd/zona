@@ -2113,6 +2113,14 @@ sessions per plan that legitimately carry no target, and **those nine have not b
 explained**. Widening it without explaining them would be inventing an exemption to make a
 check pass. Filed: `ZONE-LABEL-RACE-SCOPE-01`.
 
+### Amendment — the run zone split takes these boundaries too (ZONE-SPLIT-CONFIG-02, Coaching Board 2026-10-30)
+
+**Principle.** The split of a run's heart rate into Z1 / Z2 / Z3 / Z4–5 (`bucketHRHistogram`, `lib/strava.ts`) uses this
+section's boundaries from `GENERATION_CONFIG.ZONES`, Karvonen with a resting HR and %max without, never numbers of its own.
+**Why.** Measured on 309 production runs: the split drew Z1/Z2 at 60% of max (median 112 bpm) against this section's 60% of
+reserve (133), and the Z3 top at 86% of max against 80% of reserve. The same runner had two zone systems.
+**Enforced by** `lib/strava.hrZones.test.ts` (boundary values chosen so the old and new formulas differ; falsified).
+
 ## 15. Tier semantics — Option A: granted-at-trial, retained-in-free
 
 **Principle.** What a user gets during their 14-day trial is theirs to keep within the free tier — *for the plan they generated*. Ongoing intelligent features (new plan generation, dynamic reshaping, AI coach notes on new sessions, Strava-derived intelligence) become paid-only at downgrade.
@@ -11731,6 +11739,17 @@ reverted this principle on every row it touched.
 its own `main_set_structure` prescribes, must be able to reach a passing HR-discipline
 score. **It goes red on `progressive_tempo` under the pre-§123 rule**, which is how it was
 falsified.
+
+### Amendment 1 — an easy prescription is a CAP, so time below it is in prescription (ZONE-SPLIT-CONFIG-02, Coaching Board 2026-10-30)
+
+**Principle.** An easy, long, recovery or plain run, and any `pace_mode: 'ceiling'` step, prescribes Z1 **and** Z2. For
+those, nothing scores as below floor. §12 Amendment 1 ruled that time below the easy cap breaks no principle and took it
+out of the drift detector; this takes it out of the score.
+**Why.** Aligning the Z1 line to §14 alone would have cut the in-zone share of easy runs by median 5.1 points, and by 10
+or more on **107 of 309** measured runs: docking runners for running easier than asked. 🎯 McMillan dissents (an all-Z1
+long run is usually a walk); answered by §108's distance axis, which carries dose. 🩹 Willy (binding): above-ceiling
+figures are unchanged. New runs only; stored analyses are not rescored.
+**Enforced by** `lib/coaching/prescribedZoneFigures.test.ts` and `scorePrescribedReachable.test.ts` (falsified).
 
 ## 124. A reshape must be rare, and driven by a signal that is not noise
 

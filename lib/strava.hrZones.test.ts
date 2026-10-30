@@ -41,3 +41,31 @@ describe('getUserHRZones', () => {
     expect((await getUserHRZones(supabase, 'u')).zone2Ceiling).toBe(ceiling(60, 190))
   })
 })
+
+// ZONE-SPLIT-CONFIG-02 — every split boundary is §14's, from GENERATION_CONFIG.ZONES (Coaching Board 2026-10-30).
+import { bucketHRHistogram } from './strava'
+describe('bucketHRHistogram boundaries', () => {
+  const Z = GENERATION_CONFIG.ZONES
+  const at = (bpm: number, zones: any) => bucketHRHistogram({ [bpm]: 1 }, zones)!.histogram
+  it('🔴 with resting HR: the Z1/Z2 line and the Z3 top are Karvonen', () => {
+    const rest = 60, max = 190, hrr = max - rest   // chosen so 86% of max (163) and 80% of HRR (164) differ
+    const floor = Math.round(rest + Z.Z2.karvonen_pct[0] / 100 * hrr)      // 138
+    const z3Top = Math.round(rest + Z.Z3.karvonen_pct[1] / 100 * hrr)      // 164
+    const zones = { zone2Ceiling: ceiling(rest, max), maxHR: max, restingHR: rest }
+    expect(at(floor - 1, zones).pctZ1).toBe(100)
+    expect(at(floor, zones).pctZ2).toBe(100)
+    expect(at(z3Top, zones).pctZ3).toBe(100)
+    expect(at(z3Top + 1, zones).pctZ4_5).toBe(100)
+  })
+  it('without resting HR: %max from the same config, ceiling included', () => {
+    const max = 190, zones = { zone2Ceiling: null, maxHR: max, restingHR: null }
+    expect(at(Math.round(max * Z.Z2.maxhr_pct[0] / 100) - 1, zones).pctZ1).toBe(100)
+    expect(at(Math.round(max * Z.Z2.maxhr_pct[1] / 100), zones).pctZ2).toBe(100)
+    expect(at(Math.round(max * Z.Z2.maxhr_pct[1] / 100) + 1, zones).pctZ3).toBe(100)
+    expect(at(Math.round(max * Z.Z3.maxhr_pct[1] / 100) + 1, zones).pctZ4_5).toBe(100)
+  })
+  it('getUserHRZones carries the resting HR through', async () => {
+    settings.mockReturnValue({ resting_hr: 55, max_hr: 190, max_hr_source: 'user_confirmed', birth_year: year - 30 })
+    expect((await getUserHRZones(supabase, 'u')).restingHR).toBe(55)
+  })
+})

@@ -79,14 +79,15 @@ describe('prescribedZonesFor — the structure, not the type', () => {
   it('🔴 a progressive tempo prescribes THREE bands, where its type names one', () => {
     const zones = prescribedZonesFor(PROGRESSIVE_TEMPO)!
     // CLAUDE.md § TypeScript: a Set spread fails this tsconfig target. Array.from.
-    expect(Array.from(zones).sort()).toEqual(['z2', 'z3'])
+    expect(Array.from(zones).sort()).toEqual(['z1', 'z2', 'z3'])
     // Z3 from the type and the transition step; Z2 from BOTH the transition range and
     // the `ceiling` opening step. The opening third is in prescription, not below it.
+    // ZONE-SPLIT-CONFIG-02: a `ceiling` step is a cap, so Z1 is in prescription too.
     expect(zones.has('z2')).toBe(true)
   })
 
-  it('an easy run is unchanged — one band, from its type', () => {
-    expect(Array.from(prescribedZonesFor(EASY_RUN)!)).toEqual(['z2'])
+  it('🔴 an easy run is a CAP: Z1 and Z2 are both in prescription (ZONE-SPLIT-CONFIG-02, §12 Am.1)', () => {
+    expect(Array.from(prescribedZonesFor(EASY_RUN)!).sort()).toEqual(['z1', 'z2'])
   })
 
   it('a `ceiling` step alone adds the easy band — Sims and McMillan reduce to this line', () => {
@@ -136,10 +137,9 @@ describe('prescribedZoneFigures — the founder’s real run', () => {
   // running the session as its own catalogue row prescribes it.
   it('BEFORE the fix the numbers were thirds; AFTER, the opening third counts', () => {
     const f = prescribedZoneFigures(FOUNDERS_HISTOGRAM, PROGRESSIVE_TEMPO, LEGACY)
-    // z2 + z3 are both prescribed, so in-zone is 25.81 + 32.26.
-    expect(f.hrInZonePct).toBeCloseTo(58.07, 2)
-    // z1 is still below every prescribed band.
-    expect(f.hrBelowFloorPct).toBeCloseTo(3.23, 2)
+    // z1 + z2 + z3 are prescribed (the `ceiling` opening is a cap), so in-zone is 3.23 + 25.81 + 32.26.
+    expect(f.hrInZonePct).toBeCloseTo(61.3, 2)
+    expect(f.hrBelowFloorPct).toBeCloseTo(0, 2)
     // And the threshold finish overshooting into Z4-5 IS still above prescription.
     expect(f.hrAboveCeilingPct).toBeCloseTo(38.71, 2)
     // The three still account for the whole run.
@@ -161,14 +161,18 @@ describe('prescribedZoneFigures — the founder’s real run', () => {
   })
 })
 
-describe('an easy run is not changed by any of this', () => {
-  it('scores exactly as before: in = z2, above = z3 + z4_5, below = z1', () => {
+describe('an easy run: at or below the cap is in prescription (ZONE-SPLIT-CONFIG-02)', () => {
+  it('in = z1 + z2, above = z3 + z4_5, below = nothing', () => {
     const hist = { z1: 0.14, z2: 93.03, z3: 6.4, z4_5: 0.43 }
     const f = prescribedZoneFigures(hist, EASY_RUN, LEGACY)
-    // Measured from a real production row (2026-09-29): in 93.03, above 6.83, below 0.14.
-    expect(f.hrInZonePct).toBeCloseTo(93.03, 2)
+    // A real production row (2026-09-29): in was 93.03 with 0.14 below; the 0.14 now counts as in.
+    expect(f.hrInZonePct).toBeCloseTo(93.17, 2)
     expect(f.hrAboveCeilingPct).toBeCloseTo(6.83, 2)
-    expect(f.hrBelowFloorPct).toBeCloseTo(0.14, 2)
+    expect(f.hrBelowFloorPct).toBeCloseTo(0, 2)
+  })
+  it('🔴 a run held gently under the cap is not docked', () => {
+    const f = prescribedZoneFigures({ z1: 70, z2: 30, z3: 0, z4_5: 0 }, EASY_RUN, LEGACY)
+    expect(f.hrInZonePct).toBeCloseTo(100, 1)
   })
 })
 

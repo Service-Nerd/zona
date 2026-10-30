@@ -57,11 +57,24 @@ export interface ZoneHistogram {
 }
 
 export interface HRZones {
-  /** Top of Zone 2 (per plan). If null, falls back to 76% of maxHR. */
+  /** Top of Zone 2 (per plan). If null, falls back to §14's %max ceiling. */
   zone2Ceiling: number | null
-  /** Max HR (per plan). Used to derive the Z2 floor (60%) and the Z3/Z4-5 boundaries.
+  /** Max HR (guarded, §50). Used to derive the Z2 floor and the Z3/Z4-5 boundary.
    *  When null, the only band we can resolve is Z2 (no floor, no upper bands). */
   maxHR:        number | null
+  /** Resting HR. With it every boundary is Karvonen (§14); without it, %max. */
+  restingHR?:   number | null
+}
+
+/**
+ * ZONE-SPLIT-CONFIG-02 (Coaching Board 2026-10-30): the split's boundaries are §14's, from `GENERATION_CONFIG.ZONES`,
+ * never typed here. Karvonen with a resting HR, %max without. Measured before the change: the Z1/Z2 line was 60% of max
+ * (median 112 bpm) against §14's 60% of reserve (133), and the Z3 top 86% of max against 80% of reserve.
+ */
+function zoneBoundary(zones: HRZones, zone: 'Z2' | 'Z3', end: 0 | 1): number | null {
+  const z = GENERATION_CONFIG.ZONES[zone]
+  if (zones.maxHR && zones.restingHR) return Math.round(zones.restingHR + (z.karvonen_pct[end] / 100) * (zones.maxHR - zones.restingHR))
+  return zones.maxHR ? Math.round(zones.maxHR * (z.maxhr_pct[end] / 100)) : null
 }
 
 /**
@@ -112,8 +125,8 @@ export function bucketHRHistogram(hist: BpmHistogram | null | undefined, zones: 
     .filter(([bpm, n]) => bpm > 0 && n > 0)
   if (!entries.length) return null
 
-  const ceiling = zones.zone2Ceiling ?? (zones.maxHR ? Math.round(zones.maxHR * 0.76) : null)
-  const floor   = zones.maxHR ? Math.round(zones.maxHR * 0.60) : null
+  const ceiling = zones.zone2Ceiling ?? zoneBoundary(zones, 'Z2', 1)
+  const floor   = zoneBoundary(zones, 'Z2', 0)
   if (!ceiling) return null
 
   const countWhere = (pred: (bpm: number) => boolean): number =>
@@ -128,7 +141,7 @@ export function bucketHRHistogram(hist: BpmHistogram | null | undefined, zones: 
 
   // Full histogram. When maxHR is unknown we can't split the "above ceiling"
   // bucket between Z3 and Z4-5 — lump it under Z4-5 so the sum stays at 100.
-  const z3Boundary    = zones.maxHR ? Math.round(zones.maxHR * 0.86) : null
+  const z3Boundary    = zoneBoundary(zones, 'Z3', 1)
   let pctZ1Count = belowCount
   let pctZ2Count = inZoneCount
   let pctZ3Count = 0
@@ -186,6 +199,7 @@ export async function getUserHRZones(supabase: any, userId: string): Promise<HRZ
       // §14: the top of Zone 2 from GENERATION_CONFIG, not a typed 0.70.
       zone2Ceiling: Math.round(restingHR + (GENERATION_CONFIG.ZONES.Z2.karvonen_pct[1] / 100) * (maxHR - restingHR)),
       maxHR,
+      restingHR,
     }
   }
   return {

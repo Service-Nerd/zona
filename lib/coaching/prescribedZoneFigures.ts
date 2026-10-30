@@ -99,6 +99,9 @@ export interface ZoneHistogram {
  * Returns null when the session prescribes no zone at all (rest / strength / cross) —
  * those are scored on other axes and must not be given a zone by default.
  */
+/** Session types whose prescription is the easy CAP (`zoneForSessionType` gives them Z2). */
+const EASY_CAP_TYPES = new Set(['easy', 'long', 'recovery', 'run'])
+
 export function prescribedZonesFor(session: unknown): Set<ZoneKey> | null {
   const s = session as { type?: string; derived_set?: unknown; zone?: string } | null
   if (!s) return null
@@ -108,6 +111,10 @@ export function prescribedZonesFor(session: unknown): Set<ZoneKey> | null {
 
   const zones = new Set<ZoneKey>()
   for (const k of zoneKeysFromLabel(byType.zone)) zones.add(k)
+  // ZONE-SPLIT-CONFIG-02 (Coaching Board 2026-10-30, §12 Am.1 extended to the score): an easy-family prescription is a
+  // CAP, so time at or below it is in prescription. Before this, Z1 on an easy run scored as below floor, and aligning
+  // the Z1 line to §14 would have docked 107 measured runs for running easier than asked.
+  if (EASY_CAP_TYPES.has(s.type ?? '')) zones.add('z1')
 
   // 🔴 THE SESSION'S OWN `zone` LABEL, WHICH THE FIRST DRAFT OF THIS FILE IGNORED.
   // Caught by its own Z1 arm: I read the TYPE's zone and the STEP zones and skipped the
@@ -127,7 +134,7 @@ export function prescribedZonesFor(session: unknown): Set<ZoneKey> | null {
     // A "no faster than" step is the easy/jog step. It is PRESCRIBED to sit low, so
     // time spent there is compliance, not indiscipline. This single line is what
     // Sims' condition and McMillan's objection both reduce to.
-    if (step.pace_mode === 'ceiling') zones.add('z2')
+    if (step.pace_mode === 'ceiling') { zones.add('z1'); zones.add('z2') }   // "no faster than": at or below the cap
   }
 
   return zones.size ? zones : null
