@@ -5395,12 +5395,27 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoadin
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // fire once on mount — conditions are stable for the lifetime of this screen
 
-  async function generateReport() {
+  // COACH-READ-AUTO-01 (Design Board overturned the manual action; SLT 2026-10-30, ~$0.004 a read): the week's read
+  // arrives without a tap. Same gate as the card's own empty states, so a runner whose honest state is "connect a
+  // source", "waiting on your first run" or "set heart rate" never triggers a model call. No `force`: the route returns
+  // this week's read if one exists, so this costs at most one call per runner per week. One attempt per mount; a failure
+  // leaves the existing empty state (ADR-006). The Sunday cron asks for a FRESH read, so Sunday is never this one.
+  const autoReadTried = useRef(false)
+  useEffect(() => {
+    if (autoReadTried.current || reportIsCurrent || loading) return
+    if (!(stravaConnected || healthkitConnectedAt) || !runs?.length || !restingHR || !maxHR) return
+    autoReadTried.current = true
+    void generateReport(false)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reportIsCurrent, runs?.length, stravaConnected, healthkitConnectedAt, restingHR, maxHR])
+
+  /** `fresh`: the runner's Refresh, which regenerates (capped once a day by the route). */
+  async function generateReport(fresh = true) {
     setLoading(true)
     setError(null)
     setRefreshBlocked(false)
     try {
-      const res  = await authedFetch('/api/weekly-report?force=true', { method: 'POST' })
+      const res  = await authedFetch(fresh ? '/api/weekly-report?force=true' : '/api/weekly-report', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
       if (data.refresh_blocked) {
@@ -5885,7 +5900,7 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoadin
               </Button>
             ) : (
               <Button variant="soft"
-                onClick={generateReport} busy={loading || refreshBlocked}>
+                onClick={() => void generateReport(true)} busy={loading || refreshBlocked}>
                 {loading && <AIMark size={10} color="var(--moss)" working />}
                 {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
               </Button>

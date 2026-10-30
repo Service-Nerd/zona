@@ -53,7 +53,9 @@ export async function POST(req: NextRequest) {
 
   for (const sub of subscriptions) {
     try {
-      const reportRes = await fetch(`${baseUrl}/api/weekly-report`, {
+      // COACH-READ-AUTO-01 (SLT 2026-10-30, Wood's condition): FRESH. Without `force` the route returns the week's
+      // existing read, so a runner who opened Coach on Monday would be pushed Monday's thinner headline on Sunday.
+      const reportRes = await fetch(`${baseUrl}/api/weekly-report?force=true`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

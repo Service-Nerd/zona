@@ -31,7 +31,7 @@ plan, no runs, an error): counted so a Sunday that produces nothing is visible. 
 ## Notes
 
 - Fetches all rows from `push_subscriptions`.
-- For each subscriber, calls `/api/weekly-report` internally at `getInternalBaseUrl()` (service key + `x-user-id` header) to generate or fetch the week's report.
+- For each subscriber, calls `/api/weekly-report?force=true` internally at `getInternalBaseUrl()` (service key + `x-user-id` header) to generate a FRESH read of the week. **`force` since COACH-READ-AUTO-01 (2026-10-30):** Coach now generates a read when a runner opens it mid-week, and without `force` the route would return that earlier, thinner read and Sunday would push its headline (SLT, Wood's condition).
 - Sends Web Push notification via `lib/webpush.sendWebPush()`. Title from `BRAND.push.weeklyReport`.
 - Stale subscriptions returning 410 Gone are deleted automatically.
 - Errors per-user are caught and counted separately — one failure does not abort the batch.

@@ -46,6 +46,19 @@ describe('🔴 push/send-weekly-report accepts Vercel cron', () => {
     expect(res.status).toBe(200)
     expect(from).toHaveBeenCalledWith('push_subscriptions')
   })
+  it('COACH-READ-AUTO-01: asks for a FRESH read, so Sunday never pushes an earlier, thinner one', async () => {
+    from.mockReturnValue({ select: () => Promise.resolve({ data: [{ user_id: 'u1', endpoint: 'e', p256dh: 'p', auth: 'a', platform: 'web' }], error: null }) })
+    const urls: string[] = []
+    const realFetch = globalThis.fetch
+    globalThis.fetch = (async (u: any) => { urls.push(String(u)); return new Response('{}', { status: 500 }) }) as any
+    try {
+      const res = await call({ authorization: 'Bearer s3cret' })
+      expect(res.status).toBe(200)
+      expect(urls).toHaveLength(1)
+      expect(urls[0]).toMatch(/\/api\/weekly-report\?force=true$/)
+      expect((await res.json()).declined).toBe(1)
+    } finally { globalThis.fetch = realFetch }
+  })
   it('a wrong secret is refused before anything is read', async () => {
     const res = await call({ authorization: 'Bearer nope' })
     expect(res.status).toBe(403)
