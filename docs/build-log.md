@@ -5,6 +5,14 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — COACH-SEEN-MOMENTS-01 · A moment nobody earns is decoration
+**Shipped:** two sentences on Coach that appear only in the week they are earned: "Your easiest week in eight weeks." and "Easy is costing you less: 146 → 141 bpm since August."
+**Dev learning:** "the first time the trend crosses" sounds like it needs stored state. It does not: build the same series without the last 7 days of runs and ask whether that one qualified. Stateless, testable, and it costs one extra in-memory pass on data already fetched. The mutation harness also caught a guard my tests never exercised (equal endpoints with a trend flag set), which one extra case killed.
+**Product/creator learning:** the brief said "make runners feel seen". The honest version is narrow: measured against their own weeks, it fires for 4 of 59 eligible runner-weeks. Rare is the point. An absolute bar would have fired for nobody, because the median week is 32% easy.
+**AI-building learning:** the Design Board's best move was making the window equal to what is drawn on screen, so "eight weeks" can be counted. I re-measured before claiming it changed nothing: 4 of 59 either way. Without that, a board amendment would have quietly moved a Coaching Board threshold.
+**The honest bit:** a wiring test failed because it asserted two props sat on adjacent lines; adding one prop between them broke it. Third time this repo has paid for an unbounded source assertion.
+**Hook material:** "Your easiest week in eight weeks." fires in 4 of 59 weeks. That rarity is the feature.
+**Postable?:** yes
 ## 2026-10-30 — ZONE-SPLIT-CONFIG-01 · The headline was honest; two runners' ceilings were not
 **Shipped:** run zone splits now use the plan's guarded max heart rate and the configured Zone 2 ceiling.
 **Dev learning:** before changing hardcoded boundaries I worked out which of them could move the new "% easy" headline. Only one could: the easy share is everything at or below the Z2 ceiling, so the 60% floor only shuffles time between Z1 and Z2. The ceiling already equalled the config's 70% of reserve; what differed was which max HR fed it. The plan's zones ran through §50's guard; the run split read the raw value.
