@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-30 — ZONE-SPLIT-CONFIG-01 · The headline was honest; two runners' ceilings were not
+**Shipped:** run zone splits now use the plan's guarded max heart rate and the configured Zone 2 ceiling.
+**Dev learning:** before changing hardcoded boundaries I worked out which of them could move the new "% easy" headline. Only one could: the easy share is everything at or below the Z2 ceiling, so the 60% floor only shuffles time between Z1 and Z2. The ceiling already equalled the config's 70% of reserve; what differed was which max HR fed it. The plan's zones ran through §50's guard; the run split read the raw value.
+**Product/creator learning:** the 32% median easy share is real (runners average 149 bpm against a ~146 ceiling), which is the brand's thesis in their own data. The fix moves two runners, not the picture.
+**AI-building learning:** splitting "restore documented intent" from "change what a run is scored as" kept this a defect fix; the Z1 floor also drives the in-zone score, so it goes to the Coaching Board with its numbers.
+**The honest bit:** the two runners' stored splits stay wrong until recomputed; this fixes new runs.
+**Hook material:** the plan told two runners their easy ceiling was 147; their runs were being judged against 139.
+**Postable?:** no
+
 ## 2026-10-30 — COACH-DISCIPLINE-HEADLINE-01 · The number nobody else can show, finally at the top
 **Shipped:** the Coach zone rings open with "79% easy" (the share of this week's running in Zones 1–2) and eight weeks of it as bars.
 **Dev learning:** the mutation harness found two week-edge cases my tests never touched (a run at exactly Monday 00:00, a Sunday at a week's end) and one equivalent mutant in pre-existing code, recorded with its proof instead of a test that cannot fail. The type and spacing gates had already taught me to stay on the scale.
