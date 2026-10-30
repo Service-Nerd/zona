@@ -221,6 +221,56 @@ Plan: `docs/plans/STRENGTH-SESSION-REDESIGN-01.md`. Canvas: *Strength session re
 ✅ `STRENGTH-GUIDED-SESSION-01` (shipped 2026-10-29: Start session, one part per page, stepper, rest countdown, timers, End session, session times stored; the ramp set keeps "1 × 8", founder 2026-10-29). **Release is a separate decision**: `STRENGTH_RELEASE` is still `'admin'`. S2 unchanged: loosening it was ruled
 INCORRECT (52% of chosen-day weeks have no heavy legs; P1/P2 put legs beside a hard run).
 
+### 🧭 Coach screen review (2026-10-30) — seven items, in this order. Sitting: `docs/decisions/coach-review-2026-10-30.md`
+
+Founder: *"It feels flat."* Measured: for most of the 17 non-admin runners who open Coach, five of seven blocks are an
+empty state. **Items 1–4 fill the screen; 5–7 make it sing, judged on a screen with data in it.** Test of the whole set:
+Coach opens per non-admin runner per week, before and after 1–3.
+
+### 🔲 `WEEKLY-REPORT-CRON-AUTH-01` — the Sunday weekly report has not run in 90 days ⚙️ **NO BOARD** (defect) · **P0**
+
+`app/api/push/send-weekly-report/route.ts` checks `x-cron-secret` only; Vercel cron sends `Authorization: Bearer`, so
+every Sunday call is refused. `send-daily` reads both and says why (`:125`): the remedy reached one twin. Measured: 0
+Sunday reports and 0 `weekly_report` notifications in 90 days, 24 runners with push on. Fix: read the Bearer header the
+way `send-daily` does (ideally one shared owner for cron auth), and use `getInternalBaseUrl()` instead of the hand-built
+`VERCEL_URL` fallback here and in `strava/link-activity` (two more copies). ⚠️ The 403 is read from code, not observed in
+logs (Hobby retention); verify on the next Sunday run.
+
+### 🔲 `COACH-RINGS-SOURCE-01` — the zone rings read 4 runners' data while 259 of 317 runs carry a zone split 🏃 **COACHING BOARD** (ruled 2026-10-30) · P0
+
+`ZoneRings` reads `run_analysis.hr_pct_z*` (matched runs only). `strava_activities.hr_pct_z*` already holds the split for
+259 of 317 Apple Health runs. Read the activity log, weighted as now, same principle as §129. Seiler: over the week,
+never one run as a verdict.
+
+### 🔲 `COACH-READ-AUTO-01` — the main Coach card asks the runner to press "Generate report" 💼 **SLT** (cost) → build · P1
+
+The Design Board overturned the manual action (2026-10-30). If the week's read is missing or stale when Coach opens, it
+is generated (one model call per runner per week at most); refresh stays secondary. SLT on the cost.
+
+### 🔲 `COACH-CODE-HYGIENE-01` — small Coach defects found in the review ⚙️ **NO BOARD** · P1
+
+(a) the trend fetch sends `include_gloss=true` on every Coach load and the card is glossless: a model call nobody sees;
+(b) the free teaser says the zone score *"Needs Strava"* (false, ADR-011; the Strava app is inactive); (c) dead props
+`zoneDriftDismissedAt`/`onDismissZoneDrift`, dead values `lastWeekScore`/`trackedKm`; (d) the week counter shown twice;
+(e) ZoneRings' `not-linked` copy reads like `no-data`; (f) `screen-architecture.md` still lists the zone discipline
+tile, the 2×2 grid and the ledger, all removed.
+
+### 🔲 `COACH-DISCIPLINE-HEADLINE-01` — our one unique metric gets the biggest moment on Coach 🧭 **DESIGN BOARD** (ruled 2026-10-30) · P1, after 1–2
+
+The rings get their own headline: the share of easy running that stayed easy this week, large, as the rings' title (Pattern
+32 amended, not reversed), plus up to 8 weekly bars of that share (the record pattern ruled for `LoadShape` today: no line,
+no projection). Needs the three design artifacts at build.
+
+### 🔲 `COACH-SEEN-MOMENTS-01` — one earned sentence when the runner's own evidence crosses a line 🏃 **COACHING BOARD** (thresholds) → 🧭 **DESIGN BOARD** (placement) · P2
+
+Restraint and durability only: discipline held over weeks, the longest run that stayed easy, easy HR cost falling past the
+measured noise floor, a lighter week named without judgement. Never a badge, medal, streak or a pace record on an easy run
+(Willy, binding). Rule-based, so no AIMark. Thresholds ruled before build.
+
+### 🔲 `COACH-TREND-PENDING-01` — the trend card says "— → —" for months 🧭 **DESIGN BOARD** · P2
+
+Keep the honest wait; show progress toward the first answer (e.g. *"4 of 6 easy runs collected"*) instead of an empty arrow.
+
 ### 🔲 `RUNKED-LOAD-VIEW-01` — a readable picture of whether this week is building you or wearing you down 🏃 **COACHING BOARD** → 🧭 **DESIGN BOARD** → 💼 **SLT**
 
 From the founder's Runked screenshot (fitness vs fatigue, *"58 · Solid"*): *"I like things like this and we need more

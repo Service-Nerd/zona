@@ -27,6 +27,19 @@ memory.
 
 
 
+## 2026-10-30 — Coach screen review (joint with the Design Board) · CORRECT WITH AMENDMENT. What Coach may say about the runner's progress
+
+Full sitting: `docs/decisions/coach-review-2026-10-30.md`.
+1. **The zone rings read what the runner ran** (`COACH-RINGS-SOURCE-01`): the activity log's zone split, not only runs
+   matched to a session, the same principle as §129 for load. 📊 Seiler: weekly and over weeks, never one run as a verdict.
+2. **The zone discipline share may be a headline** (`COACH-DISCIPLINE-HEADLINE-01`): a measured share, not a §108
+   composite.
+3. **Earned sentences, not rewards** (`COACH-SEEN-MOMENTS-01`): allowed for restraint and durability (discipline held over
+   weeks, the longest run that stayed easy, easy heart rate cost falling past the measured noise floor, a lighter week
+   named without judgement). 🩹 Willy, binding: **never a pace record on an easy run.** Thresholds to be set by this board
+   before build.
+4. No predictions, no fitness/fatigue labels, no composite score: unchanged.
+
 ## 2026-10-30 — GTM-SEO-COMPARE-01 page 8 · CORRECT WITH AMENDMENT. What is zone 2 running
 
 **Input:** the founder's page 8 draft (*"What is zone 2 running, and why most people get it wrong"*), copy marked final.

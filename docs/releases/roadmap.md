@@ -1159,6 +1159,13 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Stamp the prescribed reps on each strength log** (STRENGTH-LOG-REPS-01) | ✅ | S | Shipped 2026-10-29 with build 6; migration for the founder to apply. |
 | **Open strength to paid and trial runners** (STRENGTH-RELEASE-01) | 🔲 | S | SLT 2026-10-29: four conditions (phone check, migration, item 6, lapsed-trial state), then the flip. |
 | **Charity page: state each plan's real start point** (CHARITY-PLAN-PREREQ-01) | ✅ | S | Coaching Board 2026-10-29: "30 minutes" is false for the marathon and half plans. Founder words. |
+| **Sunday weekly report has not run in 90 days** (WEEKLY-REPORT-CRON-AUTH-01) | 🔲 P0 | S | Cron auth reads `x-cron-secret`, Vercel sends Bearer. Coach review 2026-10-30 |
+| **Zone rings read what you ran** (COACH-RINGS-SOURCE-01) | 🔲 P0 | S | 4 runners → ~11; 259/317 runs already carry a zone split |
+| **Coach read arrives without "Generate report"** (COACH-READ-AUTO-01) | 🔲 P1 | S | SLT on cost |
+| **Coach code hygiene** (COACH-CODE-HYGIENE-01) | 🔲 P1 | S | Unseen model call per load; "Needs Strava" teaser; stale screen doc |
+| **Zone discipline headline + weekly bars** (COACH-DISCIPLINE-HEADLINE-01) | 🔲 P1 | M | Our unique metric, biggest moment on Coach; after items 1–2 |
+| **Earned sentences on Coach** (COACH-SEEN-MOMENTS-01) | 🔲 P2 | M | Coaching thresholds, then Design placement |
+| **Trend card pending progress** (COACH-TREND-PENDING-01) | 🔲 P2 | S | "4 of 6 easy runs collected" instead of "— → —" |
 | **Coach load tile reads what you actually ran** (LOAD-SOURCE-TOTAL-01) | ✅ | S | Step 1 of the Runked load view, all three bodies ruled 2026-10-30: total km source, no verdict below 3 of 4 weeks, neutral under-normal. 18 Coach openers, 2 ever saw a value |
 | **A readable load picture, improving LoadShape** (RUNKED-LOAD-VIEW-01) | 🔲 | M | From Runked's fitness/fatigue screen. Plan gate: crossover + screenshots + Coaching → Design (A5 "shape, never score") → SLT. After LOG-OFFPLAN-03. |
 | **Coach load verdict is red above 1.3×** (LOAD-VERDICT-RED-01) | ✅ | S | Defect: no red in the training UI. Amber via `hueText`; share `loadRatioContext`. |

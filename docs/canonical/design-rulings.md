@@ -5704,3 +5704,20 @@ the 24 who log runs.
 
 ⚠️ **What this does not settle:** whether a runner reads eight bars faster than a decoded ratio has not been observed, and
 nothing has been seen on a device. The Runked set is marketing frames, not the app.
+
+## 🧭 RULED 2026-10-30 — Coach screen review (joint with the Coaching Board): **fill it, then make it sing**
+
+Full sitting: `docs/decisions/coach-review-2026-10-30.md`. The founder: *"It feels flat."* The measurement: for most of
+the 17 non-admin runners who open Coach, **five of seven blocks are an empty state** (the Sunday report has not run in
+90 days; the rings read 4 runners' data while 259 of 317 runs carry a zone split).
+
+| Decision | Status | Why |
+|---|---|---|
+| **Pattern 32 "no tile that restates a chart"** | 🔁 **AMENDED, not reversed** (`COACH-DISCIPLINE-HEADLINE-01`) | The killed tile restated the rings. The rings now get **their own headline**: the share of easy running that stayed easy, as the rings' title, plus up to 8 weekly bars of it. Collins argued; Silvanto agreed on condition it is the rings' figure, labelled as such |
+| **"Generate report" as the main card's action** | 🔴 **OVERTURNED** (`COACH-READ-AUTO-01`, SLT on cost) | Coaching the runner paid for must arrive without a chore. Manual refresh stays secondary |
+| **Celebration forbidden** | 🔁 **NARROWED** (`COACH-SEEN-MOMENTS-01`) | Still no badges, medals, confetti, streaks. An earned, specific SENTENCE with its evidence is allowed; thresholds are the Coaching Board's |
+| **TrendCard pending "— → —"** | 🔁 **AMENDED** (`COACH-TREND-PENDING-01`) | The wait stays; the pending state shows progress toward the first answer |
+| CO-ONE, UX-COACH-01's four blocks, A5, §108, UX-PROGRESS-01, ZoneRings as trademark | ✅ **Stand** | The measured problem is content, not structure |
+
+⚠️ **Not established:** nobody has seen Coach on a device, filled or empty. The test of the whole review is Coach opens
+per non-admin runner per week, before and after items 1–3.
