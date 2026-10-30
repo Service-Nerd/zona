@@ -232,7 +232,8 @@ export default function CoachTeaser({ plan, firstName, onUpgrade }: {
               See your zone discipline score
             </div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-              Zone score and weekly coaching. Needs Strava.
+              {/* COACH-CODE-HYGIENE-01: said "Needs Strava", false (ADR-011; the Strava app is inactive). Founder-approved 2026-10-30. */}
+              Zone score and weekly coaching, from your watch&apos;s heart rate.
             </div>
           </div>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss-strong)', whiteSpace: 'nowrap', flexShrink: 0 }}>

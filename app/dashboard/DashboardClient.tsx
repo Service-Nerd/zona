@@ -5827,9 +5827,7 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoadin
               // owns its own empty state now.
               <CoachByline empty color="moss" role="This week" />
             )}
-            <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
-              W{weekNum}/{totalWeeks}
-            </span>
+            {/* COACH-CODE-HYGIENE-01 (founder-approved 2026-10-30): no week counter here; the screen header already says it. */}
           </div>
 
           {stravaTokenFailed && !stravaLoading && (
@@ -5982,7 +5980,7 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoadin
               // producer. `healthkitConnectedAt` was already a prop on this
               // screen and says exactly what the reason needs to know.
               reason={(healthkitConnectedAt || stravaConnected) ? 'no-data' : 'not-linked'}
-              onConnect={onConnect}
+              onConnect={isNative ? onConnect : undefined}
             />
           )
         })()}

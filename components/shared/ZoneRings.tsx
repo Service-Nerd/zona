@@ -394,8 +394,13 @@ export default function ZoneRings(props: Props) {
             textAlign: 'center',
           }}
         >
+          {/* COACH-CODE-HYGIENE-01 (founder-approved 2026-10-30): "Run with HR this week" read like the no-data case
+              while its button said "Allow health access". The connect line only where connecting is possible (the
+              caller passes `onConnect` on native); a web runner gets the honest constraint, as Kit's card does (P-10). */}
           {linkable
-            ? 'Run with HR this week. The rings fill in on their own.'
+            ? (props.onConnect
+              ? 'Connect Apple Health and the rings fill from your runs.'
+              : 'Your runs come from Apple Health, on the iOS app. The rings fill from them.')
             : 'Nothing for the rings yet. A run with HR is all this needs.'}
         </div>
         {linkable && props.onConnect && (
