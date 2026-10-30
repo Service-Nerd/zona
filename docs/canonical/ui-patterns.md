@@ -3632,8 +3632,15 @@ LIVE:
 │ ▌ than it was.                               │
 └─────────────────────────────────────────────┘
 
-PENDING (< MIN_BUCKETS data):
-  muted —/— metrics, hand-authored pending copy, tap to open explanation sheet.
+PENDING (no series yet):
+  with `progress` (COACH-TREND-PENDING-01, 2026-10-30): "4 of 6" at 44px/800 --ink, a strip of `needRuns` segments
+  (--moss filled, --bg-soft empty), and the founder-approved sentence. Without `progress` (a failed readiness read):
+  muted —/— metrics, as before, never "0 of 6". Tap opens the explanation sheet.
+
+STEADY (series exists, |HR change| < MIN_HR_DELTA_BPM) — COACH-TREND-PENDING-01, Coaching Board 2026-10-30:
+  "142 → 141 bpm" at 44px/800 --ink, arrow and unit --mute. "Steady since August, across 9 easy runs. A change under
+  4 bpm is noise, so I am not calling it yet." No colour, no up/down word. A pace change ≥ TREND_PACE_CONFOUND_SEC_PER_KM
+  is stated plainly ("You were running X, now Y."): steady HR at a faster pace is progress and must not be hidden.
 
 LOCKED (free tier):
   --bg-soft, muted —/—, "The receipt for your easy days.", moss CTA "Unlock trend →"

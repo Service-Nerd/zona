@@ -198,6 +198,15 @@ export default function CoachPreviewPage() {
           </div>
           <TrendCard state="pending" />
         </div>
+        {/* COACH-TREND-PENDING-01 (2026-10-30): the two waiting states the founder approved from the mockups. */}
+        <div>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>Collecting: 4 of 6</div>
+          <TrendCard state="pending" label="Easy run trend" sessionLabel="easy run" progress={{ runs: 4, needRuns: 6 }} />
+        </div>
+        <div>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>Steady: below the 4 bpm floor, pace moved</div>
+          <TrendCard state="steady" label="Easy run trend" sessionLabel="easy run" earlierHr={142} nowHr={141} sinceMonth="August" cohortSize={9} noiseFloorBpm={4} earlierPace={400} nowPace={372} />
+        </div>
         {TREND_CASES.map(({ title, note, props }) => (
           <div key={title}>
             <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>

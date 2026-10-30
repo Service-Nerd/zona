@@ -63,7 +63,7 @@ import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
 import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
-import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO, LOAD_PICTURE_MIN_PRIOR_WEEKS, BEHIND_VERDICT_MIN_SESSIONS } from '@/lib/coaching/constants'
+import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO, LOAD_PICTURE_MIN_PRIOR_WEEKS, BEHIND_VERDICT_MIN_SESSIONS, TREND_SERIES } from '@/lib/coaching/constants'
 import { zoneVerdict, zoneVerdictColour, zoneVerdictLabel } from '@/lib/coaching/zoneVerdict'
 import { driftContextFor } from '@/lib/coaching/loadCalc'
 import { compareLoad } from '@/lib/coaching/loadComparison'
@@ -5504,7 +5504,9 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoadin
     // buckets[0] and buckets[last] and throw the middle away, so the card
     // could state the change and never show its shape.
     series: SparkBucket[]
-  } | { state: 'pending' } | null>(null)
+  } | { state: 'pending'; progress?: { runs: number; needRuns: number } }
+    | { state: 'steady'; earlierHr: number; nowHr: number; sinceMonth: string; cohortSize: number; earlierPace: number | null; nowPace: number | null }
+    | null>(null)
   const [easyTrendLoading, setEasyTrendLoading] = useState(true)
   useEffect(() => {
     async function fetchEasyTrend() {
@@ -5534,10 +5536,27 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoadin
         if (!res.ok) { setEasyTrendData({ state: 'pending' }); return }
         const data = await res.json()
         const trend = data.trend
-        if (!trend?.hrIsTrending) { setEasyTrendData({ state: 'pending' }); return }
+        // COACH-TREND-PENDING-01: no series yet → progress toward it (same cohort as the series, `trendReadiness`).
+        if (!trend) {
+          const r = data.readiness
+          setEasyTrendData(r ? { state: 'pending', progress: { runs: r.runs, needRuns: r.needRuns } } : { state: 'pending' })
+          return
+        }
         const first = trend.buckets[0]
         const last  = trend.buckets[trend.buckets.length - 1]
         const cohortSize = trend.buckets.reduce((s: number, b: any) => s + b.cohortSize, 0)
+        // COACH-TREND-PENDING-01 (Coaching Board 2026-10-30): a series that moved less than the noise floor is
+        // "steady", shown as numbers, not as dashes.
+        if (!trend.hrIsTrending) {
+          if (first.avgHr == null || last.avgHr == null) { setEasyTrendData({ state: 'pending' }); return }
+          const [y, m] = String(first.monthKey).split('-').map(Number)
+          setEasyTrendData({
+            state: 'steady', earlierHr: first.avgHr, nowHr: last.avgHr, cohortSize,
+            sinceMonth: new Date(Date.UTC(y, m - 1, 1)).toLocaleString('en-GB', { month: 'long', timeZone: 'UTC' }),
+            earlierPace: first.avgPaceSecPerKm ?? null, nowPace: last.avgPaceSecPerKm ?? null,
+          })
+          return
+        }
         // `?? 0` here was the `distance_km ?? 0` family: a bucket with no
         // usable HR would have rendered as "0 (Apr avg) → 146 (now)" and Kit
         // would have narrated a 146-bpm collapse in aerobic fitness. A missing
@@ -6249,7 +6268,9 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, stravaLoadin
               preferredUnits={preferredUnits}
               glossless
             />
-          : <TrendCard state="pending" {...EASY_TREND_LABELS} />
+          : easyTrendData?.state === 'steady'
+          ? <TrendCard {...EASY_TREND_LABELS} {...easyTrendData} noiseFloorBpm={TREND_SERIES.MIN_HR_DELTA_BPM} preferredUnits={preferredUnits} />
+          : <TrendCard state="pending" {...EASY_TREND_LABELS} progress={easyTrendData?.state === 'pending' ? easyTrendData.progress : undefined} />
         }
 
       </div>

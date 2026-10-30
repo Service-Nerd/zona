@@ -222,6 +222,42 @@ export interface TrendSeries {
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 /**
+ * The runs a trend is built from: within ±`COHORT_SIMILARITY.DISTANCE_TOLERANCE_PCT` of the anchor distance, inside the
+ * window, bucketed by calendar month. ONE owner, read by `buildHrTrendSeries` and `trendReadiness`, so the card's
+ * "4 of 6" can never count a different set of runs from the series it is waiting for (COACH-TREND-PENDING-01).
+ */
+function trendCohort(history: RunRecord[], anchor: { distanceKm: number }, windowMonths: number) {
+  const tol = COHORT_SIMILARITY.DISTANCE_TOLERANCE_PCT / 100
+  const lo = anchor.distanceKm * (1 - tol)
+  const hi = anchor.distanceKm * (1 + tol)
+  const cutoff = new Date()
+  cutoff.setMonth(cutoff.getMonth() - windowMonths)
+  const matching = history.filter(r => r.distanceKm >= lo && r.distanceKm <= hi && r.startDate >= cutoff)
+  const bucketMap = new Map<string, RunRecord[]>()
+  for (const r of matching) {
+    const key = `${r.startDate.getUTCFullYear()}-${String(r.startDate.getUTCMonth() + 1).padStart(2, '0')}`
+    if (!bucketMap.has(key)) bucketMap.set(key, [])
+    bucketMap.get(key)!.push(r)
+  }
+  return { matching, bucketMap }
+}
+
+/** How close a runner is to a trend: matching runs toward `MIN_TOTAL_RUNS`, and months holding `MIN_RUNS_PER_BUCKET`. */
+export interface TrendReadiness { runs: number; needRuns: number; months: number; needMonths: number }
+
+export function trendReadiness(
+  history: RunRecord[],
+  anchor: { distanceKm: number },
+  windowMonths: number = TREND_SERIES.DEFAULT_WINDOW_MONTHS,
+): TrendReadiness {
+  const base = { needRuns: TREND_SERIES.MIN_TOTAL_RUNS, needMonths: TREND_SERIES.MIN_BUCKETS }
+  if (!history.length || anchor.distanceKm <= 0) return { runs: 0, months: 0, ...base }
+  const { matching, bucketMap } = trendCohort(history, anchor, windowMonths)
+  const months = Array.from(bucketMap.values()).filter(r => r.length >= TREND_SERIES.MIN_RUNS_PER_BUCKET).length
+  return { runs: matching.length, months, ...base }
+}
+
+/**
  * Build a trend series from a runner's history, anchored to a specific
  * session type + distance. Returns null when there isn't enough data to
  * make a non-noisy claim (threshold-gated).
@@ -236,29 +272,8 @@ export function buildHrTrendSeries(
 ): TrendSeries | null {
   if (!history.length || anchor.distanceKm <= 0) return null
 
-  const tol = COHORT_SIMILARITY.DISTANCE_TOLERANCE_PCT / 100
-  const lo = anchor.distanceKm * (1 - tol)
-  const hi = anchor.distanceKm * (1 + tol)
-
-  const cutoff = new Date()
-  cutoff.setMonth(cutoff.getMonth() - windowMonths)
-
-  const matching = history.filter(r =>
-    r.distanceKm >= lo &&
-    r.distanceKm <= hi &&
-    r.startDate >= cutoff,
-  )
+  const { matching, bucketMap } = trendCohort(history, anchor, windowMonths)
   if (matching.length < TREND_SERIES.MIN_TOTAL_RUNS) return null
-
-  // Bucket by year-month
-  const bucketMap = new Map<string, RunRecord[]>()
-  for (const r of matching) {
-    const y = r.startDate.getUTCFullYear()
-    const m = r.startDate.getUTCMonth()
-    const key = `${y}-${String(m + 1).padStart(2, '0')}`
-    if (!bucketMap.has(key)) bucketMap.set(key, [])
-    bucketMap.get(key)!.push(r)
-  }
 
   const sortedKeys = Array.from(bucketMap.keys()).sort()
   const buckets: TrendBucket[] = []

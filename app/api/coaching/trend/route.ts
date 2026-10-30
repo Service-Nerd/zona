@@ -27,7 +27,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { buildHrTrendSeries, fetchRunHistory } from '@/lib/coaching/runHistory'
+import { buildHrTrendSeries, trendReadiness, fetchRunHistory } from '@/lib/coaching/runHistory'
 import { COHORT_SIMILARITY, TREND_SERIES } from '@/lib/coaching/constants'
 import { buildAerobicTrendPrompt } from '@/lib/coaching/prompts/aerobicTrend'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
@@ -74,6 +74,8 @@ export async function GET(req: NextRequest) {
   )
 
   const trend = buildHrTrendSeries(history, { sessionType, distanceKm }, windowMonths)
+  // COACH-TREND-PENDING-01: how close the runner is, from the same cohort, so a waiting card can say "4 of 6".
+  const readiness = trendReadiness(history, { distanceKm }, windowMonths)
 
   // ── AI gloss — optional, only when signal is present ────────────────────
   // Haiku call: ~500ms, ≤2 sentences. Silently skipped when:
@@ -114,5 +116,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ trend, ...(gloss ? { gloss } : {}) })
+  return NextResponse.json({ trend, readiness, ...(gloss ? { gloss } : {}) })
 }

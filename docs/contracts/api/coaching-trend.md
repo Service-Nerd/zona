@@ -30,21 +30,29 @@ Multi-month trend backend (AI-DEPTH-03). Returns a series of same-effort runs ov
     "paceDeltaSec": -5,
     "hrIsTrending": true,
     "paceIsTrending": true
-  }
+  },
+  "readiness": { "runs": 7, "needRuns": 6, "months": 2, "needMonths": 2 }
 }
 ```
+
+`readiness` (COACH-TREND-PENDING-01, 2026-10-30) is always present: how close the runner is to a series, counted by
+`trendReadiness` from the SAME cohort as the series (`trendCohort` in `lib/coaching/runHistory.ts`), so a card's "4 of 6"
+can never count different runs from the series it waits for.
 
 ## Response — 200 (no trend)
 
 ```json
-{ "trend": null }
+{ "trend": null, "readiness": { "runs": 4, "needRuns": 6, "months": 1, "needMonths": 2 } }
 ```
 
 `null` is returned when threshold gates aren't met:
 
 - Fewer than `TREND_SERIES.MIN_TOTAL_RUNS` matching runs in the window
 - Fewer than `TREND_SERIES.MIN_BUCKETS` months with at least `MIN_RUNS_PER_BUCKET` runs each
-- All deltas below `MIN_HR_DELTA_BPM` AND `MIN_PACE_DELTA_SEC` (caller should not cite a trend that's noise)
+
+⚠️ **Corrected 2026-10-30.** This list used to include *"all deltas below `MIN_HR_DELTA_BPM` AND `MIN_PACE_DELTA_SEC`"*.
+The code never did that: a series that clears the run and month gates is returned with `hrIsTrending: false`, and the
+caller decides. Coach renders it as the **steady** state (numbers, "steady", the noise floor stated).
 
 ## Error responses
 

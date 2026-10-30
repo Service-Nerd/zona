@@ -17,13 +17,14 @@ import Sheet from './Sheet'
 import { TrendSparkline } from './TrendSparkline'
 import { buildTrendSparkline, type SparkBucket } from '@/lib/coaching/trendSparkline'
 import { paceContext } from '@/lib/coaching/trendSentence'
+import { TREND_PACE_CONFOUND_SEC_PER_KM } from '@/lib/coaching/constants'
 import { formatPace } from '@/lib/format'
 import Button from '@/components/ui/Button'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type TrendCardState = 'live' | 'pending' | 'locked' | 'skeleton'
+export type TrendCardState = 'live' | 'pending' | 'steady' | 'locked' | 'skeleton'
 
 interface TrendCardLive {
   state: 'live'
@@ -63,7 +64,23 @@ interface TrendCardLive {
  *  runs' instead, so once the long-run card was retired a runner looking at
  *  the EASY RUN TREND card saw the wrong session type in three places. */
 interface TrendCardLabels   { label?: string; sessionLabel?: string }
-interface TrendCardPending  extends TrendCardLabels { state: 'pending';  onUpgrade?: never }
+interface TrendCardPending  extends TrendCardLabels {
+  state: 'pending';  onUpgrade?: never
+  /** COACH-TREND-PENDING-01: how close the series is (`trendReadiness`). Absent, the card keeps its dashes. */
+  progress?: { runs: number; needRuns: number }
+}
+/** COACH-TREND-PENDING-01 (Coaching Board 2026-10-30): the series exists but heart rate moved less than the noise
+ *  floor. Shown as numbers with the word "steady": no colour, no up/down word, the floor unchanged. */
+interface TrendCardSteady   extends TrendCardLabels {
+  state: 'steady'; onUpgrade?: never
+  earlierHr: number; nowHr: number
+  /** Full month name of the earliest bucket, e.g. 'August'. */
+  sinceMonth: string
+  cohortSize: number
+  noiseFloorBpm: number
+  earlierPace?: number | null; nowPace?: number | null
+  preferredUnits?: 'km' | 'mi'
+}
 interface TrendCardLocked   extends TrendCardLabels { state: 'locked';   onUpgrade?: () => void }
 interface TrendCardSkeleton extends TrendCardLabels { state: 'skeleton'; onUpgrade?: never }
 
@@ -73,8 +90,11 @@ export const TREND_CARD_DEFAULTS = { label: 'Aerobic trend', sessionLabel: 'long
 export type TrendCardProps =
   | TrendCardLive
   | TrendCardPending
+  | TrendCardSteady
   | TrendCardLocked
   | TrendCardSkeleton
+
+const capitalise = (w: string) => w.charAt(0).toUpperCase() + w.slice(1)
 
 // ── Count-up hook ─────────────────────────────────────────────────────────────
 
@@ -344,20 +364,42 @@ export default function TrendCard(props: TrendCardProps) {
             </span>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>ⓘ</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800, color: 'var(--mute)', opacity: 0.5, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>—</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: 'var(--space-2)' }}>earlier</div>
-            </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '20px', color: 'var(--mute)', opacity: 0.4 }}>→</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800, color: 'var(--mute)', opacity: 0.5, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>—</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: 'var(--space-2)' }}>now</div>
-            </div>
-          </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.5 }}>
-            The trend lands after a few months of same-effort runs. Compounds quietly.
-          </div>
+          {props.progress ? (
+            // COACH-TREND-PENDING-01 (founder-approved mockup, 2026-10-30): progress toward the first answer.
+            <>
+              <div data-trend-progress style={{ fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1, letterSpacing: '-1px' }}>
+                {Math.min(props.progress.runs, props.progress.needRuns)}{' '}
+                <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--mute)', letterSpacing: 0 }}>of {props.progress.needRuns}</span>
+              </div>
+              <div aria-hidden style={{ display: 'flex', gap: 'var(--space-1)', margin: 'var(--space-3) 0 var(--space-3)' }}>
+                {Array.from({ length: props.progress.needRuns }, (_, i) => (
+                  <div key={i} style={{ flex: 1, height: '6px', borderRadius: '3px', background: i < props.progress!.runs ? 'var(--moss)' : 'var(--bg-soft)' }} />
+                ))}
+              </div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+                {(props.sessionLabel ?? 'easy run') === 'easy run'
+                  ? 'Easy runs at your usual distance, two a month for two months. Then I can tell you whether easy is costing you less heart rate.'
+                  : `${capitalise(props.sessionLabel!)}s at your usual distance, two a month for two months. Then I can tell you whether they are costing you less heart rate.`}
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800, color: 'var(--mute)', opacity: 0.5, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>—</div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: 'var(--space-2)' }}>earlier</div>
+                </div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '20px', color: 'var(--mute)', opacity: 0.4 }}>→</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800, color: 'var(--mute)', opacity: 0.5, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>—</div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: 'var(--space-2)' }}>now</div>
+                </div>
+              </div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+                The trend lands after a few months of same-effort runs. Compounds quietly.
+              </div>
+            </>
+          )}
         </div>
         {sheetOpen && (
           <ExplanationSheet
@@ -368,6 +410,42 @@ export default function TrendCard(props: TrendCardProps) {
           />
         )}
       </>
+    )
+  }
+
+  // ── Steady (series exists, change below the noise floor) ─────────────────
+  // COACH-TREND-PENDING-01, Coaching Board 2026-10-30: numbers and the word "steady"; no colour, no up/down word.
+  // The pace line states a pace change plainly: steady heart rate at a faster pace IS progress, and the card must not
+  // hide it behind "not calling it yet".
+  if (props.state === 'steady') {
+    const units = props.preferredUnits ?? 'km'
+    const from = formatPace(props.earlierPace ?? null, units)
+    const to   = formatPace(props.nowPace ?? null, units)
+    const paceMoved = props.earlierPace != null && props.nowPace != null
+      && paceContext({ earlierHr: props.earlierHr, nowHr: props.nowHr, earlierMonth: props.sinceMonth, earlierPace: props.earlierPace, nowPace: props.nowPace }) !== 'unknown'
+      && Math.abs(props.nowPace - props.earlierPace) >= TREND_PACE_CONFOUND_SEC_PER_KM
+    const noun = props.sessionLabel ?? TREND_CARD_DEFAULTS.sessionLabel
+    return (
+      <div data-trend-steady style={{
+        background: 'var(--card)', border: '1px solid var(--line)',
+        borderRadius: 'var(--radius-lg)', padding: '20px', boxShadow: 'var(--shadow-card)',
+      }}>
+        <div style={{ marginBottom: 'var(--space-4)' }}>
+          <span style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)' }}>
+            {props.label ?? TREND_CARD_DEFAULTS.label}
+          </span>
+        </div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1, letterSpacing: '-1px' }}>
+          {Math.round(props.earlierHr)}{' '}
+          <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--mute)', letterSpacing: 0 }}>→</span>{' '}
+          {Math.round(props.nowHr)}
+          <span style={{ fontSize: '17px', fontWeight: 600, color: 'var(--mute)', marginLeft: 'var(--space-1)', letterSpacing: 0 }}>bpm</span>
+        </div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.5, marginTop: 'var(--space-3)' }}>
+          Steady since {props.sinceMonth}, across {props.cohortSize} {noun}s. A change under {props.noiseFloorBpm} bpm is noise, so I am not calling it yet.
+          {paceMoved && from && to ? ` You were running ${from}, now ${to}.` : ''}
+        </div>
+      </div>
     )
   }
 
