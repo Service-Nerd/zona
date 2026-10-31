@@ -100,7 +100,9 @@ const BASELINE: Record<string, number> = {
   // and 5 + 7 = 12. THIRD conserved redistribution in three phases. Across the whole
   // extraction the hub went 21 → 5 and not one override was created or removed.
   // 5 -> 10 (reader fix). The hub's remaining five were all arrow-handler sites.
-  'app/dashboard/DashboardClient.tsx': 10,
+  'app/dashboard/DashboardClient.tsx': 9,
+  // ZONE-RINGS-HEADING-01 (2026-10-31): the rings' tap wrapper MOVED here from DashboardClient (10 → 9), not a new override.
+  'components/shared/RingsTapArea.tsx': 1,
   // 4 -> 12 (reader fix). THE LARGEST SINGLE BLIND SPOT: two thirds of this file's
   // overrides were invisible, every one of them behind an inline arrow handler.
   'components/dashboard/SessionPopupInner.tsx': 12,

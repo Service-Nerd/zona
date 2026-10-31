@@ -172,6 +172,7 @@ import Button from '@/components/ui/Button'
 import Switch from '@/components/ui/Switch'
 import NavTab from '@/components/ui/NavTab'
 import IconButton from '@/components/ui/IconButton'
+import RingsTapArea from '@/components/shared/RingsTapArea'
 import LockedCoachingPreview from '@/components/dashboard/LockedCoachingPreview'
 import PendingAnalysisCard from '@/components/dashboard/PendingAnalysisCard'
 import ConnectRunsBanner from '@/components/dashboard/ConnectRunsBanner'
@@ -5969,10 +5970,7 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
               // directly under the sentence that claims it, so the sheet moves
               // to what it explains. ZoneRings itself is untouched — the
               // marketing homepage renders it bare and must stay inert.
-              <Button variant="ghost" 
-                type="button"
-                onClick={() => setZoneDisciplineSheetOpen(true)}
-                aria-label="What counts as in-zone. Opens an explanation." style={{ width: '100%', padding: 0, textAlign: 'inherit', background: 'none', font: 'inherit' }}>
+              <RingsTapArea onOpen={() => setZoneDisciplineSheetOpen(true)}>
                 {(zoneHistogramHits ?? 0) >= COACH_EASY_SHARE_MIN_RUNS ? (
                   // COACH-DISCIPLINE-HEADLINE-01: the rings' own headline, then the rings, then the weekly record.
                   // Below the minimum runs the rings stand alone (Coaching Board: never one run as a verdict).
@@ -5988,7 +5986,7 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
                     meta={`across ${zoneHistogramHits} ${zoneHistogramHits === 1 ? 'run' : 'runs'}`}
                   />
                 )}
-              </Button>
+              </RingsTapArea>
             )
           }
           // Genuine loading — the analysis fetch hasn't returned on first paint.
