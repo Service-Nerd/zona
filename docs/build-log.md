@@ -10,7 +10,7 @@ it specific, no polish. The content system adds the voice.
 **Dev learning:** two components had the same busy/status/timeout logic; one owner now holds it and the callers say only what is shared. The status line is an always-mounted live region, because one inserted with its text is not reliably announced. The button-geometry register needed a declared re-baseline: 200 -> 198 controls, the two Share buttons gone, the rest renumbered.
 **Product/creator learning:** the founder's screenshot showed Share as the biggest thing on Coach, a full-width moss fill under the coaching. Sharing is the app being talked about, not the runner getting better; it should be the quietest control in its region.
 **AI-building learning:** the first HTML mockup did not render on the founder's device; an image did. A mockup the reviewer cannot see is not a mockup.
-**The honest bit:** my previous docs commit added the pattern section without naming its check, which broke `uiPatternsEnforcement` after I had run the suite, and I pushed it. Fixed here. The icon has not been seen on a device.
+**The honest bit:** my previous docs commit added the pattern section without naming its check, which broke `uiPatternsEnforcement` after I had run the suite, and I pushed it. Fixed here. Seen on the founder's phone the same day: the icon looks right and the native share sheet opens with the card.
 **Hook material:** "The biggest button on our coaching screen was Share."
 **Postable?:** maybe
 
