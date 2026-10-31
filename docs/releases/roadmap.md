@@ -1140,6 +1140,8 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | ~~**A quality session counts at 5 km or 35 minutes**~~ (S9-QUALITY-MINUTES-01) | ✅ | S | **SHIPPED 2026-10-27.** Slow-goal debts 113/73/122/1 → 0; 221 of 5,925 sampled served plans change (beginner continuous tempo 38 → 36 min). |
 | **Three paths the 35-minute floor does not reach** (S9-QUALITY-FLOOR-REACH-01) | 🔲 | S | Filed 2026-10-27 by code review; each changes unmeasured served plans. |
 | ~~**A weekday-held easy run lasts the runner's limit, at least 30 min**~~ (S9-EASY-MINUTES-01) | ✅ | M | **SHIPPED 2026-10-27**, §82 Am. 2. |
+| **Weekly Share has never worked: 4 presses, 4 errors** (SHARE-WEEK-CARD-SOURCE-01) | 🔲 | S | Defect: card and button read different sources. `/zona-debug` first. |
+| **Share becomes an icon, secondary** (SHARE-ICON-01) | 🔲 | S | Design Board ruled 2026-10-31; founder approval of mockups pending. |
 | **Race-pace note on non-race-pace sessions** (PEAK-RACEPACE-NOTE-01) | 🔲 | S | Defect, §33. |
 | **Ultra rows priced as threshold** (ULTRA-ROWS-PRICED-AS-QUALITY-01) | 🔲 | S | Defect, measure ultras first. |
 | **Plan note quotes the weekday cap, not the day** (STRUCTURAL-NOTE-DAY-BUDGET-01) | 🔲 | S | Defect. |

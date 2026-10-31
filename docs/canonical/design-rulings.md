@@ -5740,3 +5740,13 @@ per non-admin runner per week, before and after items 1–3.
 |---|---|---|
 | **Load history row on Coach** | ✅ **BUILT** (Design Board ruling of 2026-10-30; SLT condition measured: 5 of 6) | Founder approved the mockup and asked bars or spline: **bars**, because the data is eight separate totals and a curve invents values between them and smooths the planned dip (also the board's "no line, no smoothing"). Load tile full width; **Sessions becomes a row** (a layout change the ruling did not draw, approved in the mockup). Check: `components/shared/loadHistory.markup.test.ts` (falsified: verdict colour on every bar, marker removed) |
 
+
+## 2026-10-31 — SHARE-ICON-01 · SHIP WITH AMENDMENT (awaiting founder approval of mockups). Share is an icon, in the circle, under the thing it shares
+Founder: *"A share shouldn't dominate the screen and should be secondary."* Population counted: **4 share actions** (Coach
+weekly read: full-width primary; session detail, post-run, log sheet: soft pill) + 1 upgrade row that shares nothing (unchanged).
+**Amendment:** `IconButton shape="circle"`, not `bare` (Silvanto, Wroblewski: a lone glyph under a card is not a dense row).
+iOS share glyph qualifies under **ICON-RULE-01 MEANING**, beside the bell. One owner; status moves to a 12px `--mute` line,
+`aria-live`. 📐 **`share_week_pressed` 4 times all time, 4 of 4 `error`, 0 successes**: the card route scores from `run_analysis`
+while the button is gated on `weekly_reports` (`SHARE-WEEK-CARD-SOURCE-01`, fixed first or in the same build). Placement
+top-right of the card was raised and **not taken**: one rule on all four surfaces, and SAVE-IMG-01 forbids inside the card.
+Sitting: `docs/decisions/share-icon-2026-10-31.md`.

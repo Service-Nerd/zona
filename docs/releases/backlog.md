@@ -27,6 +27,21 @@ already decided what it is.
 
 ---
 
+### 🔲 `SHARE-WEEK-CARD-SOURCE-01` — the weekly Share has never worked: 4 presses, 4 errors ⚙️ **NO BOARD** (defect, documented intent)
+
+📐 Production `analytics_events`, all time: `share_week_pressed` ×4, one account, `share_week_result` = `error` on all four, 0
+successes. The Coach button is gated on `weekly_reports.zone_discipline_score` (live row, score 10), but
+`/api/og/weekly-zone-card` scores the week from `run_analysis`, which held **zero** `week_2_*` rows for that account, so it 404s
+and the runner reads *"Need 2+ logged runs with HR data this week."*, untrue of a week the screen just scored. Two sources for one
+number. Run `/zona-debug` first: which source is right, how many runners are in this state, and whether the button should hide
+when the card cannot render. Blocks `SHARE-ICON-01`'s Coach surface (ruled to land first or together).
+
+### 🔲 `SHARE-ICON-01` — Share becomes an icon, secondary, on all four surfaces 🧭 **DESIGN BOARD** (ruled 2026-10-31, SHIP WITH AMENDMENT; founder approval of mockups pending)
+
+Ruling: `docs/decisions/share-icon-2026-10-31.md`. iOS share glyph in `IconButton shape="circle"`, right-aligned under the
+object shared, one owner replacing `ShareWeekButton` + `SaveImageButton`'s button, status line beside the icon, upgrade row
+unchanged. Check: no `Button` labelled Share in `app/`/`components/`. Order: after or with `SHARE-WEEK-CARD-SOURCE-01`.
+
 ### 🔲 `PEAK-RACEPACE-NOTE-01` — "Race-pace work. Target: {goal}" on sessions not run at race pace ⚙️ **NO BOARD** (§33/§41, documented intent)
 
 `ruleEngine.ts` ~1843 appends it in peak to any catalogue session whose voice note lacks the word "pace", so a CV session at
