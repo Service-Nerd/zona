@@ -6379,7 +6379,7 @@ never adds height in the common state; each phase checks its screen's must-not-l
 
 ---
 
-## Share control — an icon, secondary (`SHARE-ICON-01`, Design Board 2026-10-31, ruled, not built)
+## Share control — an icon, secondary (`SHARE-ICON-01`, Design Board 2026-10-31)
 
 Every share action is the **iOS share glyph** (box with an up arrow, the bell's 1.6 line family) in an
 **`IconButton shape="circle"`**: 44px, `--bg-soft`, the hairline, `ariaLabel` *"Share this week"* / *"Share this run"*.
@@ -6392,8 +6392,12 @@ weekly read, session detail, post-run, the log sheet. Qualifies under ICON-RULE-
   the icon disabled and dimmed; no spinner.
 - **The free "Share your week" row is not a share control** (it opens Upgrade) and keeps no glyph.
 
-Check (at build): no `Button` labelled Share in `app/` or `components/`; every share site renders the one owner.
-Sitting: `docs/decisions/share-icon-2026-10-31.md`. **Awaiting founder approval of the mockups.**
+**Owner:** `components/shared/ShareControl.tsx`. Callers (`SaveImageButton`, Coach's `ShareWeekButton`) pass only
+WHAT is shared; the owner holds the glyph, the circle, busy and the status words.
+
+Held by `components/shared/shareControl.markup.test.ts`: no `<Button>` labelled Share in `app/` or `components/`, both
+call sites render the owner, the owner is a named 44px circle with a polite live region. Falsified by restoring the
+soft "Share" pill. Sitting: `docs/decisions/share-icon-2026-10-31.md`; mockups approved by the founder 2026-10-31.
 
 ## Staged race plan — base building, a checkpoint, then the race (NO-RUNNER-TURNED-AWAY-01)
 

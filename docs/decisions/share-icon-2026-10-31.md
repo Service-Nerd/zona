@@ -94,7 +94,7 @@ and an icon at the edge is a better invitation than a pill.
 
 None. Silvanto declined: no documented palette or type rule is regressed.
 
-## Ruling — SHIP WITH AMENDMENT (subject to founder approval of the mockups)
+## Ruling — SHIP WITH AMENDMENT (mockups approved by the founder 2026-10-31; built the same day)
 
 1. Every share action is the **iOS share glyph** (box with an up arrow, the bell's 1.6 line
    family) in an **`IconButton shape="circle"`**, 44px, `ariaLabel` *"Share this week"* /

@@ -5,6 +5,15 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-31 — SHARE-ICON-01 · The loudest button on Coach was Share
+**Shipped:** every share in the app is now a small round share icon under the thing it shares, with any status in a quiet line beside it.
+**Dev learning:** two components had the same busy/status/timeout logic; one owner now holds it and the callers say only what is shared. The status line is an always-mounted live region, because one inserted with its text is not reliably announced. The button-geometry register needed a declared re-baseline: 200 -> 198 controls, the two Share buttons gone, the rest renumbered.
+**Product/creator learning:** the founder's screenshot showed Share as the biggest thing on Coach, a full-width moss fill under the coaching. Sharing is the app being talked about, not the runner getting better; it should be the quietest control in its region.
+**AI-building learning:** the first HTML mockup did not render on the founder's device; an image did. A mockup the reviewer cannot see is not a mockup.
+**The honest bit:** my previous docs commit added the pattern section without naming its check, which broke `uiPatternsEnforcement` after I had run the suite, and I pushed it. Fixed here. The icon has not been seen on a device.
+**Hook material:** "The biggest button on our coaching screen was Share."
+**Postable?:** maybe
+
 ## 2026-10-31 — SHARE-WEEK-CARD-SOURCE-01 · The Share button had never worked, for anyone
 **Shipped:** the weekly Share card now finds the week's runs; before, it 404'd for every runner since May.
 **Dev learning:** `session_day` holds `tue`; the card searched for `week_2_%`. The identical defect was found in `adjustmentEngine.ts` on 15 Oct, and its guard read only that file, so two more copies (this card, the race-week debrief) survived. The new gate walks `app/`, `lib/` and `components/`.

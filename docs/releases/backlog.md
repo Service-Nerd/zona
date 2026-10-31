@@ -34,12 +34,6 @@ superseded `weekly_reports` rows (one account) was regenerated on 2026-10-25, a 
 clearing `superseded_at`. The live plan's week-1 read therefore sits on a row every live-only reader skips. Measure first: how the
 upsert chose the superseded row, and whether it can recur for another runner. `/zona-debug` before any fix.
 
-### 🔲 `SHARE-ICON-01` — Share becomes an icon, secondary, on all four surfaces 🧭 **DESIGN BOARD** (ruled 2026-10-31, SHIP WITH AMENDMENT; founder approval of mockups pending)
-
-Ruling: `docs/decisions/share-icon-2026-10-31.md`. iOS share glyph in `IconButton shape="circle"`, right-aligned under the
-object shared, one owner replacing `ShareWeekButton` + `SaveImageButton`'s button, status line beside the icon, upgrade row
-unchanged. Check: no `Button` labelled Share in `app/`/`components/`. `SHARE-WEEK-CARD-SOURCE-01` shipped 2026-10-31, so the Coach surface is unblocked.
-
 ### 🔲 `PEAK-RACEPACE-NOTE-01` — "Race-pace work. Target: {goal}" on sessions not run at race pace ⚙️ **NO BOARD** (§33/§41, documented intent)
 
 `ruleEngine.ts` ~1843 appends it in peak to any catalogue session whose voice note lacks the word "pace", so a CV session at

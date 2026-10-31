@@ -19,6 +19,7 @@ import { RACE_PROJECTIONS_COPY } from '@/components/shared/raceProjectionsCopy'
 import ZoneRings from '@/components/shared/ZoneRings'
 import RingsTapArea from '@/components/shared/RingsTapArea'
 import { EasyShareHeader, EasyShareBars } from '@/components/shared/EasyShare'
+import ShareControl from '@/components/shared/ShareControl'
 import TrendCard from '@/components/shared/TrendCard'
 import LoadHistory from '@/components/shared/LoadHistory'
 import { easiestWeekSpan, easyCostSentence } from '@/lib/coaching/moments'
@@ -201,6 +202,19 @@ export default function CoachPreviewPage() {
             Pending (paid, not enough data) — tap for the sheet
           </div>
           <TrendCard state="pending" />
+        </div>
+        {/* SHARE-ICON-01 (2026-10-31): the share icon under Kit's read. Tap it to see the status line. */}
+        <div data-harness="share-icon">
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>Share: icon under the read (tap shows a failure)</div>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '20px' }}>
+            <p style={{ margin: 0, fontSize: 'var(--fs-body)', color: 'var(--ink-2)' }}>Easy stayed easy this week. Keep Thursday honest.</p>
+            <div style={{ marginTop: 'var(--space-3)' }}>
+              <ShareControl ariaLabel="Share this week" share={async onStatus => {
+                await new Promise(r => setTimeout(r, 400))
+                onStatus({ kind: 'error', message: '' })
+              }} />
+            </div>
+          </div>
         </div>
         {/* COACH-DISCIPLINE-HEADLINE-01 (2026-10-30): the rings' headline and weekly record, as Coach renders them. */}
         <div>

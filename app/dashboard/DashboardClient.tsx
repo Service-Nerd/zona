@@ -190,6 +190,7 @@ import ManualRunModal from '@/components/dashboard/ManualRunModal'
 import MeScreen from '@/components/dashboard/MeScreen'
 import { getDeviceToken } from '@/components/dashboard/pushDevice'
 import SaveImageButton from '@/components/dashboard/SaveImageButton'
+import ShareControl from '@/components/shared/ShareControl'
 import { useRunTrace } from '@/components/dashboard/useRunTrace'
 import { analysisSentence, isCeilingOnly } from '@/lib/coaching/zoneTrace'
 import TodayScreen from '@/components/dashboard/TodayScreen'
@@ -5179,54 +5180,27 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
 
 
 
-// SHARE-01 — "Share this week" button rendered alongside the weekly report
-// card. Coordinates fetch + native/web share via `shareWeeklyZoneCard`.
+// SHARE-01 — the weekly zone card share. SHARE-ICON-01: the control is the shared icon
+// owner; this says WHAT is shared and records the press and its outcome.
 function ShareWeekButton({ weekN }: { weekN: number }) {
-  const [busy, setBusy]   = useState(false)
-  const [status, setStatus] = useState<string | null>(null)
-  // Clear status messages after a short delay so the button label settles back.
-  useEffect(() => {
-    if (!status) return
-    const t = setTimeout(() => setStatus(null), 2200)
-    return () => clearTimeout(t)
-  }, [status])
-
-  async function onShare() {
-    if (busy) return
-    setBusy(true)
-    setStatus(null)
-    // OPS-ARTIFACT-REACH-01 — measured before this shipped: only TWO users can
-    // see this button at all, and nothing recorded whether it had ever been
-    // pressed. Fired BEFORE the platform sheet, so a sheet that never opens is
-    // still visible as an attempt with no result.
-    const sb = createClient()
-    const uid = await currentUserId(sb)
-    trackEvent(sb, uid, 'share_week_pressed', { week_n: weekN })
-    try {
+  return (
+    <ShareControl ariaLabel="Share this week" share={async onStatus => {
+      // OPS-ARTIFACT-REACH-01 — fired BEFORE the platform sheet, so a sheet that never
+      // opens is still visible as an attempt with no result.
+      const sb = createClient()
+      const uid = await currentUserId(sb)
+      trackEvent(sb, uid, 'share_week_pressed', { week_n: weekN })
       const { shareWeeklyZoneCard } = await import('@/lib/share/shareWeeklyZoneCard')
       await shareWeeklyZoneCard({
         weekN,
         onStatus: (s) => {
-          if (s.kind === 'downloaded')  setStatus('Downloaded')
-          else if (s.kind === 'cancelled') setStatus(null)
-          else if (s.kind === 'success')   setStatus(null)
-          else if (s.kind === 'error')     setStatus(s.message || 'Share failed')
+          onStatus(s)
           // `cancelled` is NOT a failure and must stay separable: a dismissed
           // share sheet and a broken share lead to opposite conclusions.
           trackEvent(sb, uid, 'share_week_result', { outcome: s.kind, week_n: weekN })
         },
       })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Button variant="primary" fullWidth
-      onClick={onShare}
-      disabled={busy}>
-      {status ?? (busy ? 'Preparing…' : 'Share')}
-    </Button>
+    }} />
   )
 }
 
@@ -5922,17 +5896,18 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
           )}
 
           {/* COACH-READ-BUTTON-01: no Refresh / Generate button. The pre-data next step keeps the slot. */}
-          {(consolidatedRead.cta || (reportIsCurrent && weeklyReport?.zone_discipline_score != null)) && (
+          {consolidatedRead.cta && (
             <div style={{ marginTop: 'var(--space-4)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-              {consolidatedRead.cta && (
-                <Button variant="primary"
-                  onClick={consolidatedRead.cta.onClick}>
-                  {consolidatedRead.cta.label} →
-                </Button>
-              )}
-              {reportIsCurrent && weeklyReport?.zone_discipline_score != null && (
-                <ShareWeekButton weekN={weeklyReport.week_n} />
-              )}
+              <Button variant="primary"
+                onClick={consolidatedRead.cta.onClick}>
+                {consolidatedRead.cta.label} →
+              </Button>
+            </div>
+          )}
+          {/* SHARE-ICON-01 — right-aligned under the read, the quietest control in its region. */}
+          {reportIsCurrent && weeklyReport?.zone_discipline_score != null && (
+            <div style={{ marginTop: 'var(--space-3)' }}>
+              <ShareWeekButton weekN={weeklyReport.week_n} />
             </div>
           )}
 

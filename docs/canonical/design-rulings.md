@@ -5741,7 +5741,7 @@ per non-admin runner per week, before and after items 1–3.
 | **Load history row on Coach** | ✅ **BUILT** (Design Board ruling of 2026-10-30; SLT condition measured: 5 of 6) | Founder approved the mockup and asked bars or spline: **bars**, because the data is eight separate totals and a curve invents values between them and smooths the planned dip (also the board's "no line, no smoothing"). Load tile full width; **Sessions becomes a row** (a layout change the ruling did not draw, approved in the mockup). Check: `components/shared/loadHistory.markup.test.ts` (falsified: verdict colour on every bar, marker removed) |
 
 
-## 2026-10-31 — SHARE-ICON-01 · SHIP WITH AMENDMENT (awaiting founder approval of mockups). Share is an icon, in the circle, under the thing it shares
+## 2026-10-31 — SHARE-ICON-01 · SHIP WITH AMENDMENT (mockups approved by the founder 2026-10-31; built). Share is an icon, in the circle, under the thing it shares
 Founder: *"A share shouldn't dominate the screen and should be secondary."* Population counted: **4 share actions** (Coach
 weekly read: full-width primary; session detail, post-run, log sheet: soft pill) + 1 upgrade row that shares nothing (unchanged).
 **Amendment:** `IconButton shape="circle"`, not `bare` (Silvanto, Wroblewski: a lone glyph under a card is not a dense row).
