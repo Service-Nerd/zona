@@ -7,6 +7,13 @@ and strength in one treatment.
 
 ## Props
 
+```ts
+interface Props {
+  runs: WeekRuns | null
+  strength: StrengthWeekEvidence | null
+}
+```
+
 | Prop | Type | Meaning |
 |---|---|---|
 | `runs` | `{ done: number; planned: number; verdict: { label: string; color: string } } \| null` | Run sessions done / planned this week, and the `sessionsContext` verdict (§65). `null` hides the runs fact |
