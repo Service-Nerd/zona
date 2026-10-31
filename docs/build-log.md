@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-31 — COACH-KIT-CAUGHT-01 · The free screen stopped selling things that do not exist
+
+**Shipped:** a free runner's Coach screen now lists what the app actually noticed in their last two weeks ("27 Oct, 9.5km: 43% of it in Zone 3…"), with one line on what Pro adds, and the same card sits on the Upgrade screen.
+**Dev learning:** every receipt reuses the owner that already says the same thing elsewhere: the load receipt fires on `loadRatioContext`'s amber, not on a re-typed 1.3, so the receipt and the load card cannot disagree. Falsifying that one by swapping in `ratio >= 1.3` turned the test red on the "under your normal again" case, which a copied threshold would have missed. Removing the old teaser paid down four ratchets at once (type scale, 18px, 13px, inline overrides), and each one failed until its baseline was lowered: the gates do not let paid-off debt go unrecorded.
+**Product/creator learning:** the old free screen sold a "zone discipline score" and a "Load ratio" tile that paid Coach had already removed, and showed most runners an "Example, not your data" card. The honest version uses the runner's own week. The boards changed two things the founder had drawn: from one receipt rather than two (7 of 11 free runners, not 4) and never on a trial date.
+**AI-building learning:** I hardcoded "Kit" three times in new copy while writing a component whose whole point is the brand voice; the repo rule (BRAND.coachName) caught it only because I reread the diff. And a broad `git add` staged 137 scratch scripts that I caught before committing.
+**The honest bit:** the frontend-design skill was not loaded for the previous card (every run, by zone); the founder asked, and it is loaded for this one. Nothing here has been seen on a device, and the Upgrade-screen placement has not been seen rendered at all.
+**Hook material:** 4 of 11 free runners saw a card labelled "Example — not your data". Now 7 of 11 see something Kit actually caught.
+**Postable?:** maybe
+
 ## 2026-10-31 — IAP-PURCHASE-FAILED-01 · Four failed purchases, and none of them were failures
 
 **Shipped:** an iPhone runner who closes Apple's payment sheet is no longer told "Something went wrong", and a real purchase failure now records which step broke and the store's error code.
