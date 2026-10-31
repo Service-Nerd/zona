@@ -5,6 +5,33 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-31 — SHARE-WEEK-CARD-SOURCE-01 · The Share button had never worked, for anyone
+**Shipped:** the weekly Share card now finds the week's runs; before, it 404'd for every runner since May.
+**Dev learning:** `session_day` holds `tue`; the card searched for `week_2_%`. The identical defect was found in `adjustmentEngine.ts` on 15 Oct, and its guard read only that file, so two more copies (this card, the race-week debrief) survived. The new gate walks `app/`, `lib/` and `components/`.
+**Product/creator learning:** the founder asked for Share to become an icon. Counting presses before styling it found 4 presses, 4 errors, 0 successes. Making a broken button quieter would have hidden it.
+**AI-building learning:** the analytics event `share_week_result` was added a month ago precisely to answer "has this ever worked?", and nobody had read it. An instrument nobody reads is a comment.
+**The honest bit:** the tenure caption on the same card was also always blank: an admin API call on a user-scoped client. Two silent failures stacked in one route.
+**Hook material:** "4 presses. 4 errors. 0 shares. The button was the biggest thing on the screen."
+**Postable?:** yes
+
+## 2026-10-31 — KIT-READ-EMDASH-01 · The em dash was ours, not the model's
+**Shipped:** 30 runner-facing sentences in `lib/coaching` lost their em dashes, and the guard now covers that folder.
+**Dev learning:** the dash in Kit's read came from `trendSentence.ts`, a template we wrote. The guard covered `components/`, `app/dashboard/` and `lib/ui/`; the copy lived one folder over.
+**Product/creator learning:** "Kit's reading it — how did it feel?" was in a push notification. The rule is about sentences the runner reads, wherever they are built.
+**AI-building learning:** the instinct was to blame the model, whose prompt forbids em dashes. Grepping the exact sentence found our own code in ten seconds.
+**The honest bit:** two tests asserted the old wording; one asserted lowercase "how did it feel?" mid-sentence.
+**Hook material:** "We told the AI never to use an em dash. Then we put one in the sentence we hand it."
+**Postable?:** maybe
+
+## 2026-10-31 — ZONE-RINGS-HEADING-01 · ZONESACROSS
+**Shipped:** the Coach rings' heading and run count sit apart again, and the 2+ run layout stacks.
+**Dev learning:** a `<Button>` is an inline-flex row; a chromeless child inside it shrinks to content, and `space-between` with no spare width is no space at all.
+**Product/creator learning:** the preview harness rendered the rings bare, so the page built to catch layout defects could not see this one. The wrapper is now one component the harness uses too.
+**AI-building learning:** measured in a browser before and after: 206/206 touching, 156/256 apart.
+**The honest bit:** yesterday's 2+ run headline sat in the same broken row. Not measured how many runners saw it that way.
+**Hook material:** "THIS WEEK IN ZONESACROSS 1 RUN"
+**Postable?:** no
+
 ## 2026-10-30 — RUNKED-LOAD-VIEW-01 · Bars, because a curve would invent weeks
 **Shipped:** the Coach load tile now shows eight weeks of total distance under its verdict, with the runner's normal as a band and planned easy weeks marked.
 **Dev learning:** the bars read the exact 7-day windows the verdict already computes, so this week's bar over the normal band IS the ratio on the track above; there is no second calculation to drift. My first marker test passed with the marker deleted, because the legend also contains the ▲; counting both is what made it bite.

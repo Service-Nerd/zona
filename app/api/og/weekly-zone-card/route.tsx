@@ -130,7 +130,10 @@ export async function GET(req: NextRequest) {
     .select('hr_in_zone_pct, actual_load_km, session_day')
     .eq('user_id', user.id)
     .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
-    .like('session_day', `week_${weekN}_%`)
+    // SHARE-WEEK-CARD-SOURCE-01: by `week_n`, as every other reader does. This used to be
+    // `.like('session_day', 'week_N_%')`, a format `session_day` has never had (0 of 165 rows):
+    // it holds the bare day, `tue`. So the card 404'd for every runner, every week, since 2026-05-24.
+    .eq('week_n', weekN)
 
   const scored = (analysisRows ?? [])
     .filter((r: any) => r.hr_in_zone_pct != null)
@@ -144,9 +147,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'No HR-analysed runs this week' }, { status: 404 })
   }
 
-  // auth.users.created_at — service-role read so RLS doesn't get in the way.
-  const { data: authUser } = await service.auth.admin.getUserById(user.id)
-  const createdAt = authUser?.user?.created_at ?? null
+  // SHARE-WEEK-CARD-SOURCE-01: `service` is user-scoped (anon key + the runner's JWT), so the admin
+  // API it used to call here was refused and the tenure caption was always empty. `getUser()` already
+  // returned the account, with `created_at`.
+  const createdAt = user.created_at ?? null
   const now       = new Date()
   const tenure    = tenureCaption(createdAt, now)
 

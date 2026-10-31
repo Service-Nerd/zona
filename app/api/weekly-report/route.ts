@@ -321,7 +321,7 @@ export async function POST(req: NextRequest) {
     d => (week.sessions[d as keyof typeof week.sessions] as any)?.type === 'race'
   ) ?? null
   const raceAnalysis = raceDayKey
-    ? analyses.find((a: any) => a.session_day === `week_${weekN}_${raceDayKey}`)
+    ? analyses.find((a: any) => a.session_day === raceDayKey)   // SHARE-WEEK-CARD-SOURCE-01 twin: `session_day` is the bare day; the query is already week-scoped
     : null
   const raceCompleted = !!raceDayKey && (
     completedDays.has(raceDayKey) || !!raceAnalysis

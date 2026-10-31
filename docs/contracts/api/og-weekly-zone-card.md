@@ -3,7 +3,7 @@
 **Method:** GET
 **Auth:** Supabase session cookie (`getUserFromRequest`). Returns 401 otherwise.
 **Tier:** Paid/trial only. Free users get 403 — the Coach tab renders an upsell card instead of calling this route.
-**Runtime:** `nodejs` (not `edge`). The route reads `auth.users.created_at` via the service-role client; the auth admin API is not safe in the edge runtime.
+**Runtime:** `nodejs` (not `edge`). The tenure caption reads `created_at` from the user `getUser()` returns. ⚠️ Until 2026-10-31 it called the auth admin API on a USER-scoped client (SEC-08), was refused, and the caption was always empty (`SHARE-WEEK-CARD-SOURCE-01`).
 
 ## Query params
 
@@ -16,7 +16,8 @@
 - **200 — `image/png`**, 1080 × 1920 (Instagram story aspect). Rendered via `next/og` `ImageResponse`.
 - **401** — no authenticated user.
 - **403** — `getUserTier()` returned `free`.
-- **404** — no generated `weekly_reports` row, or the row has `zone_discipline_score = null`. The Coach tab gates the Share button on `zone_discipline_score != null` to avoid hitting this.
+- **404** — no generated live `weekly_reports` row, or no `run_analysis` row for that `week_n` carries `hr_in_zone_pct`. The Coach tab gates the Share button on `zone_discipline_score != null`.
+- 🔴 **The week is selected on `run_analysis.week_n`.** `session_day` is the bare day (`tue`); until 2026-10-31 this route matched `session_day LIKE 'week_N_%'`, a format no row has ever had, and 404'd for every runner (`SHARE-WEEK-CARD-SOURCE-01`, gated by `lib/coaching/sessionDayShape.test.ts`).
 
 ## Source data
 
