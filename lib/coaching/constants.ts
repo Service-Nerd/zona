@@ -206,6 +206,9 @@ export const COACH_RECEIPT_EASY_MIN_PCT = 80
 // a run) and show at most three, so the list reads at a glance and can never become a report.
 export const COACH_RECEIPT_WINDOW_DAYS = 14
 export const COACH_RECEIPT_MAX = 3
+// A Zone-3 receipt also names the run's Zones 4–5 share when it reaches this, so a run that spiked hard is not described
+// as merely grey (Hutchinson); below it the Z4–5 slice is noise from a hill or a finish (§133).
+export const COACH_RECEIPT_NAME_Z45_MIN_PCT = 10
 
 /**
  * COACH-BEHIND-DAY-TWO-01 / §65 Amendment — the minimum number of outstanding

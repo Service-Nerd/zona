@@ -2959,7 +2959,7 @@ export default function DashboardClient() {
 
   // COACH-EFFORT-PICTURE-01 / COACH-KIT-CAUGHT-01 — computed once, for every tier: the every-run record (§132) and the
   // receipts (§133). Pro Coach, free Coach and the Upgrade screen all read these, so the three can never disagree.
-  // Plain computation, not a hook: this sits above early returns (the hooks-order crash).
+  // Plain computation, not a hook, so its place relative to the early returns above cannot change the hook order.
   const plannedTypes = plannedTypeByActivity(Object.values(allCompletions).flatMap(d => Object.values(d)), plan as any)
   const effortRuns = effortRecord(recentActivity ?? [], currentWeek as any, EASY_SHARE_BARS, plannedTypes)
   const receipts: KitReceipt[] | null = recentActivity === null ? null : kitReceipts({

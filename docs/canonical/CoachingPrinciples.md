@@ -12159,7 +12159,7 @@ describes runs, not a plan.
 ## 133. A receipt states what the runner's own run measured, and good news is a share, never a record *(Coaching Board 2026-10-31, COACH-KIT-CAUGHT-01)*
 
 **Principle.** "What Kit caught" may list, from the last `COACH_RECEIPT_WINDOW_DAYS` (14) days and at most
-`COACH_RECEIPT_MAX` (3): the latest run mostly in Zone 3 (§132, never a `split` or `planned` run); the week, when the load
+`COACH_RECEIPT_MAX` (3): the latest run mostly in Zone 3 (§132, never a `split` or `planned` run), naming its Zones 4–5 share too when that reaches `COACH_RECEIPT_NAME_Z45_MIN_PCT` (10); the week, when the load
 verdict is amber (`loadRatioContext`); the longest `easy` run when at least `COACH_RECEIPT_EASY_MIN_PCT` (80) of it sat
 in Zones 1–2, stated as its date, distance and measured share; and the earned "easiest week" line (§131). Each receipt
 carries its number. With none, the list is not drawn and nothing is padded.

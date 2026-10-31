@@ -19,7 +19,7 @@ describe('loadRatioContext', () => {
     }
   })
   it('above the normal is amber; inside it is moss; no ratio is muted', () => {
-    expect(loadRatioContext(LOAD_RATIO.watch, PLAIN)).toEqual({ label: 'above your recent normal', color: 'var(--warn)', markerColor: 'var(--warn)' })
+    expect(loadRatioContext(LOAD_RATIO.watch, PLAIN)).toEqual({ label: 'above your recent normal', color: 'var(--warn)', markerColor: 'var(--warn)', tone: 'warn' })
     expect(loadRatioContext(1, PLAIN).label).toBe('right on your normal')
     expect(loadRatioContext(1, PLAIN).color).toBe('var(--moss-strong)')
     expect(loadRatioContext(null, PLAIN).color).toBe('var(--mute)')
@@ -48,5 +48,14 @@ describe('loadRatioContext', () => {
     expect(shell).toContain("from '@/lib/ui/loadRatioContext'")
     expect(shell).not.toMatch(/function loadRatioContext\s*\(/)
     expect(shell).not.toMatch(/above your recent normal/)
+  })
+
+  it('tone carries the meaning a caller may read (COACH-KIT-CAUGHT-01: never compare colour strings)', () => {
+    expect(loadRatioContext(LOAD_RATIO.watch, PLAIN).tone).toBe('warn')
+    expect(loadRatioContext(1.0, PLAIN).tone).toBe('held')
+    expect(loadRatioContext(LOAD_RATIO.under - 0.1, { plannedEasy: true, lowWeeksRunning: 0 }).tone).toBe('held')
+    expect(loadRatioContext(LOAD_RATIO.under - 0.1, { plannedEasy: false, lowWeeksRunning: 0 }).tone).toBe('neutral')
+    expect(loadRatioContext(LOAD_RATIO.under - 0.1, { plannedEasy: false, lowWeeksRunning: 9 }).tone).toBe('warn')
+    expect(loadRatioContext(null, PLAIN).tone).toBe('none')
   })
 })

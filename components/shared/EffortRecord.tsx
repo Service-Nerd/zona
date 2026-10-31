@@ -46,7 +46,7 @@ export default function EffortRecord({ runs, weeks }: { runs: EffortRun[]; weeks
       </div>
       <div
         role="img"
-        aria-label={`${runs.length} runs, oldest first: ${runs.map(r => `${r.kind === 'grey' ? 'mostly Zone 3' : r.kind}`).join(', ')}`}
+        aria-label={`${runs.length} runs since ${formatDate(runs[0].date)}: ${grey} mostly in Zone 3, ${runs.filter(r => r.kind === 'easy').length} mostly easy, ${runs.length - grey - runs.filter(r => r.kind === 'easy').length} harder or planned`}
         style={{ display: 'flex', gap: '3px', marginTop: 'var(--space-4)' }}
       >
         {runs.map((r, i) => (

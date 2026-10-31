@@ -15,20 +15,21 @@
 
 import { LOAD_RATIO, LOAD_PICTURE_LOW_WEEKS_TO_NAME } from '@/lib/coaching/constants'
 
-export interface LoadVerdict { label: string; color: string; markerColor: string }
+/** `tone` is the MEANING (COACH-KIT-CAUGHT-01): read it, never compare `color` strings, which 6t-g may re-point. */
+export interface LoadVerdict { label: string; color: string; markerColor: string; tone: 'none' | 'held' | 'neutral' | 'warn' }
 
 /** What the plan says about this week. Required, so a caller cannot forget it and fall back to "a warning". */
 export interface LoadVerdictContext { plannedEasy: boolean; lowWeeksRunning: number }
 
 export function loadRatioContext(ratio: number | null, ctx: LoadVerdictContext): LoadVerdict {
-  if (ratio === null) return { label: '—', color: 'var(--mute)', markerColor: 'var(--mute)' }
-  if (ratio >= LOAD_RATIO.watch) return { label: 'above your recent normal', color: 'var(--warn)', markerColor: 'var(--warn)' }
+  if (ratio === null) return { label: '—', color: 'var(--mute)', markerColor: 'var(--mute)', tone: 'none' }
+  if (ratio >= LOAD_RATIO.watch) return { label: 'above your recent normal', color: 'var(--warn)', markerColor: 'var(--warn)', tone: 'warn' }
   if (ratio < LOAD_RATIO.under) {
-    if (ctx.plannedEasy) return { label: 'lighter, as planned', color: 'var(--moss-strong)', markerColor: 'var(--moss)' }
+    if (ctx.plannedEasy) return { label: 'lighter, as planned', color: 'var(--moss-strong)', markerColor: 'var(--moss)', tone: 'held' }
     if (ctx.lowWeeksRunning >= LOAD_PICTURE_LOW_WEEKS_TO_NAME) {
-      return { label: 'under your normal again', color: 'var(--warn)', markerColor: 'var(--warn)' }
+      return { label: 'under your normal again', color: 'var(--warn)', markerColor: 'var(--warn)', tone: 'warn' }
     }
-    return { label: 'under your recent normal', color: 'var(--ink-2)', markerColor: 'var(--mute)' }
+    return { label: 'under your recent normal', color: 'var(--ink-2)', markerColor: 'var(--mute)', tone: 'neutral' }
   }
-  return { label: 'right on your normal', color: 'var(--moss-strong)', markerColor: 'var(--moss-strong)' }
+  return { label: 'right on your normal', color: 'var(--moss-strong)', markerColor: 'var(--moss-strong)', tone: 'held' }
 }

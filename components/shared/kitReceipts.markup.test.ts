@@ -37,8 +37,10 @@ describe('free Coach (CoachTeaser)', () => {
     expect(h).not.toContain('data-kit-nothing-yet')
     expect((h.match(/data-kit-receipts/g) ?? []).length).toBe(1)
   })
-  it('🔴 a paid runner who lands here sees no buy button', () => {
-    expect(text(teaser({ receipts: R, showUpgrade: false }))).not.toContain('Get ')
+  it('🔴 a paid runner who lands here sees no buy button and is not told Pro is something else', () => {
+    const t = text(teaser({ receipts: R, showUpgrade: false }))
+    expect(t).not.toContain('Get ')
+    expect(t).not.toContain('That part is Pro')
   })
   it('loading shows a skeleton, never a guess', () => {
     const h = teaser({ receipts: null })

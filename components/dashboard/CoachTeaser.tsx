@@ -1,12 +1,7 @@
 'use client'
 
-// DASHBOARD-SCREEN-EXTRACT-02 — lifted verbatim out of `DashboardClient.tsx`.
-//
-// It was a module-level function in a 14k-line file, so it closed over nothing and this
-// move changes no behaviour. What it changes is REACH: nothing could import it, so it
-// could not be rendered by a harness or a mounting test.
-//
-// ⚠️ The body is UNCHANGED. Edit it in a separate commit so the move stays a move.
+// DASHBOARD-SCREEN-EXTRACT-02 — lifted out of `DashboardClient.tsx` so a harness could render it.
+// COACH-KIT-CAUGHT-01 (2026-10-31) rewrote its body: see the TIER-DIVERGENT note below.
 
 import CoachByline from '@/components/shared/CoachByline'
 import EffortRecord from '@/components/shared/EffortRecord'
@@ -16,6 +11,8 @@ import Button from '@/components/ui/Button'
 import ScreenHeader from '@/components/ui/ScreenHeader'
 import { BRAND, PRICING } from '@/lib/brand'
 import type { KitReceipt } from '@/lib/coaching/kitReceipts'
+import { COACH_RECEIPT_WINDOW_DAYS } from '@/lib/coaching/constants'
+import { EASY_SHARE_BARS } from '@/components/shared/EasyShare'
 import type { EffortRun } from '@/lib/coaching/runEffort'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
@@ -49,8 +46,8 @@ export default function CoachTeaser({ plan, firstName, onUpgrade, receipts = [],
   const weekNum    = getCurrentWeekIndex(plan.weeks) + 1
   const totalWeeks = plan.weeks.length
 
-  // KIT-TASTE-01 — pull-on-view fetch of this week's free insight. Failure or
-  // any non-insight state falls back to the existing locked layout below.
+  // KIT-TASTE-01 — pull-on-view fetch of this week's free insight. Fetched even when receipts exist, because the
+  // route's risk gate (a safety warning) is decided before any model call; a model reading is cached weekly.
   const [insight, setInsight] = useState<FreeInsightState>({ kind: 'loading' })
   useEffect(() => {
     let cancelled = false
@@ -104,14 +101,16 @@ export default function CoachTeaser({ plan, firstName, onUpgrade, receipts = [],
           </div>
         )}
         {receipts && receipts.length > 0 && (
-          <KitReceipts receipts={receipts} meta="last 2 weeks">
-            <p style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--ink-2)', lineHeight: 1.45, margin: 0 }}>
-              {BRAND.coachName}&apos;s weekly read turns this into one thing to do next. That part is Pro.
-            </p>
+          <KitReceipts receipts={receipts} meta={`last ${COACH_RECEIPT_WINDOW_DAYS / 7} weeks`}>
             {showUpgrade && (
-              <Button variant="primary" onClick={onUpgrade} style={{ width: '100%', marginTop: 'var(--space-3)' }}>
-                Get {BRAND.coachName} · {PRICING.monthly.perWeekDisplay}
-              </Button>
+              <>
+                <p style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--ink-2)', lineHeight: 1.45, margin: 0 }}>
+                  {BRAND.coachName}&apos;s weekly read turns this into one thing to do next. That part is Pro.
+                </p>
+                <Button variant="primary" onClick={onUpgrade} style={{ width: '100%', marginTop: 'var(--space-3)' }}>
+                  Get {BRAND.coachName} · {PRICING.monthly.perWeekDisplay}
+                </Button>
+              </>
             )}
           </KitReceipts>
         )}
@@ -158,18 +157,20 @@ export default function CoachTeaser({ plan, firstName, onUpgrade, receipts = [],
           </div>
         )}
 
-        {insight.kind !== 'loading' && insight.kind !== 'insight' && (
+        {insight.kind !== 'loading' && insight.kind !== 'insight' && insight.kind !== 'risk_gated' && (
           <div data-kit-nothing-yet style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px' }}>
             <div style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)' }}>What {BRAND.coachName} caught</div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.2px', marginTop: 'var(--space-2)' }}>Nothing yet.</div>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--ink-2)', lineHeight: 1.45, margin: 'var(--space-1) 0 0' }}>
-              A run with heart rate is all {BRAND.coachName} needs to start noticing.
+              {effortRuns.length > 0
+                ? `Nothing stood out in the last ${COACH_RECEIPT_WINDOW_DAYS / 7} weeks.`
+                : `A run with heart rate is all ${BRAND.coachName} needs to start noticing.`}
             </p>
           </div>
         )}
           </>
         )}
-        <EffortRecord runs={effortRuns} weeks={8} />
+        <EffortRecord runs={effortRuns} weeks={EASY_SHARE_BARS} />
       </div>
     </div>
   )

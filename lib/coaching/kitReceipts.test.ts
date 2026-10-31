@@ -16,7 +16,7 @@ const base = (o: Partial<KitReceiptInputs> = {}): KitReceiptInputs => ({
 describe('kitReceipts', () => {
   it("reproduces the approved mockup from the founder's own runs, misses first", () => {
     expect(kitReceipts(base())).toEqual([
-      { tone: 'drifted', lead: '27 Oct, 9.5km:', text: '43% of it in Zone 3 and 43% in Zones 4–5. Your easy ceiling is 145.' },
+      { tone: 'drifted', lead: '27 Oct, 9.5km:', text: '43% of it in Zone 3 and 43% in Zones 4–5. Your easy ceiling is 145 bpm.' },
       { tone: 'drifted', lead: 'This week:', text: '1.65× your recent normal.' },
       { tone: 'held', lead: '23 Oct, 6km:', text: '100% of it in Zones 1–2.' },
     ])

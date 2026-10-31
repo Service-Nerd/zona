@@ -18,7 +18,7 @@ import { easiestWeekSentence } from './moments'
 import { runEffortKind } from './runEffort'
 import { dedupeRuns, isRun, type ActivityLogRow } from './weeklyActualLoad'
 import { hasZoneSplit, type ZoneActivityRow } from './weeklyZoneAggregate'
-import { COACH_RECEIPT_EASY_MIN_PCT, COACH_RECEIPT_MAX, COACH_RECEIPT_WINDOW_DAYS } from './constants'
+import { COACH_RECEIPT_EASY_MIN_PCT, COACH_RECEIPT_MAX, COACH_RECEIPT_NAME_Z45_MIN_PCT, COACH_RECEIPT_WINDOW_DAYS } from './constants'
 
 /** `held` draws moss, `drifted` amber (P-01's pair). */
 export interface KitReceipt { tone: 'held' | 'drifted'; lead: string; text: string }
@@ -61,14 +61,14 @@ export function kitReceipts(i: KitReceiptInputs): KitReceipt[] {
     out.push({
       tone: 'drifted',
       lead: lead(grey),
-      text: `${pct(Number(grey.hr_pct_z3 ?? 0))} of it in Zone 3${z45 >= 10 ? ` and ${pct(z45)} in Zones 4–5` : ''}.`
-        + (i.ceiling ? ` Your easy ceiling is ${i.ceiling}.` : ''),
+      text: `${pct(Number(grey.hr_pct_z3 ?? 0))} of it in Zone 3${z45 >= COACH_RECEIPT_NAME_Z45_MIN_PCT ? ` and ${pct(z45)} in Zones 4–5` : ''}.`
+        + (i.ceiling ? ` Your easy ceiling is ${i.ceiling} bpm.` : ''),
     })
   }
 
   if (i.load?.ratio != null) {
     const v = loadRatioContext(i.load.ratio, { plannedEasy: i.load.plannedEasy, lowWeeksRunning: i.load.lowWeeksRunning })
-    if (v.color === 'var(--warn)') out.push({ tone: 'drifted', lead: 'This week:', text: `${i.load.ratio.toFixed(2)}× your recent normal.` })
+    if (v.tone === 'warn') out.push({ tone: 'drifted', lead: 'This week:', text: `${i.load.ratio.toFixed(2)}× your recent normal.` })
   }
 
   const easy = runs
