@@ -5776,3 +5776,10 @@ top, a `--s-quality` dot under each run mostly in Zone 3, this week ringed. Opti
 the dates. Card sits after "This week", before the easy run trend (5 cards, the sitting's limit held). Pattern:
 `ui-patterns.md` § Every run, by zone. Check: `components/shared/effortRecord.markup.test.ts` (falsified twice). Paid
 Coach only for now; the free half (picture on the free screen) lands with `COACH-KIT-CAUGHT-01`.
+
+## 🧭 2026-10-31 — `COACH-KIT-CAUGHT-01`: three questions · **SHIP (ruled, not built)**
+
+Receipt dots use P-01's pair (moss held, amber drifted or a week off normal), ≤3, no taps. **On the Upgrade screen** the
+same card sits under the headline, above the feature list, for trialling and trial-ended runners (*"In your trial, Kit
+caught"*). **CO-ONE on free Coach:** receipts and the free weekly insight never render together; the SLT made the insight
+the fallback (no receipt, RPE logged). Sitting: `docs/decisions/kit-caught-questions-2026-10-31.md`.

@@ -252,9 +252,16 @@ grey; an unlinked run carries no intent claim. Owner `lib/coaching/runEffort.ts`
 Shows at ≥`COACH_EFFORT_MIN_RUNS` (6) runs with a split in 8 weeks: 17 of 21 runners today. Sittings:
 `docs/decisions/coach-ideas-2026-10-31.md`, `coaching-rulings.md` 2026-10-31.
 
+### 🔲 `IAP-PURCHASE-FAILED-01` — every iOS purchase attempt in 56 days failed ⚙️ **NO BOARD** (defect) · **P0** · `/zona-debug` first
+
+Measured 2026-10-31 (`analytics_events`): **4 `upgrade_purchase_attempt`, 4 `upgrade_purchase_result` = `failed`**, from 2
+runners, neither an admin (one trial-ended runner tried 3 times in 3 minutes on 5 Oct; another on 27 Oct). `failed` is
+not a cancellation (`purchaseOutcome` separates them). The result event carries **no error detail**, so the cause cannot
+be read from the data: recording the error (stage, RevenueCat code) is part of the fix. Not investigated further.
+
 ### 🔲 `COACH-KIT-CAUGHT-01` — what Kit caught: receipts in place of the stale free teaser (idea 6) 💼 **SLT** (ruled 2026-10-31: BUILD, AMENDED) → 🧭 **DESIGN BOARD** · FREE surface, PRO content · after `COACH-EFFORT-PICTURE-01`
 
-Replaces `CoachTeaser` (which sells tiles paid Coach no longer has). **SLT amendments:** evidence-triggered, never dated
+Replaces `CoachTeaser` (which sells tiles paid Coach no longer has). **Questions answered 2026-10-31** (`kit-caught-questions-2026-10-31.md`): from ONE receipt (SLT), a good-news receipt allowed (Coaching Board, §133 at build), P-01 dots and the Upgrade-screen placement (Design Board), the free insight only as the no-receipt fallback (SLT, CO-ONE). Mockup: `kit-caught-mockups.png`. **Earlier SLT amendments:** evidence-triggered, never dated
 (the mockup's "day 12" broke "upgrade prompts are triggered by behaviour, never by a calendar date"); at least two
 receipts from what the app computed, each with its number, else an honest line; no countdown; price from
 `BRAND.PRICING`; the effort picture stays free beside it. Note: `docs/decisions/coach-kit-caught-slt-2026-10-31.md`.

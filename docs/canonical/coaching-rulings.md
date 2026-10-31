@@ -27,6 +27,14 @@ memory.
 
 
 
+## 2026-10-31 — COACH-KIT-CAUGHT-01 good-news receipt · CORRECT WITH AMENDMENT. A receipt may say a run stayed easy, with its share, never "all" and never "longest"
+
+A free or trialling runner's receipts may include the longest `easy`-kind run (§132) in the window when at least 80% of it
+sat in Zones 1–2, stated as date, distance and measured share. One per list. Willy: never a distance record (§131).
+Seiler: the share, not "all of it". Measured: 1 of 11 free and 3 of 9 Pro runners. **Artifacts at build:** §133,
+`COACH_RECEIPT_EASY_MIN_PCT` (80), its test. Not a `validatePlan()` invariant: it describes runs. Sitting:
+`docs/decisions/kit-caught-questions-2026-10-31.md`. **RULED, not built.**
+
 ## 2026-10-31 — COACH-EFFORT-PICTURE-01 · CORRECT WITH AMENDMENT. Every run is placed by its time in zone, and a run is never accused of an intent we cannot see
 
 **Input:** idea 1 of the Design Board's Coach ideas sitting (`docs/decisions/coach-ideas-2026-10-31.md`): one dot per run on
