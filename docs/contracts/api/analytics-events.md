@@ -122,12 +122,15 @@ has observed."*
 |---|---|
 | `upgrade_view` | `{ reason, platform }` |
 | `upgrade_purchase_attempt` | `{ annual, platform, reason }` |
-| `upgrade_purchase_result` | `{ outcome, annual, platform }` + `stage` on a checkout failure |
+| `upgrade_purchase_result` | `{ outcome, annual, platform, source }`; native results also carry `stage` (`configure` \| `offerings` \| `package` \| `purchase`); `failed` and `already_entitled` add `error_code`, `error_message` (≤160 chars); web keeps `stage: 'checkout_no_url'` |
 
 - `reason` is `upgradeFraming()`'s variant — `gain` \| `trial-ended` \| `grant-ended` —
   **reused, not re-derived**, so the funnel records the same story the screen tells.
 - `platform` is `ios` \| `web`.
-- `outcome` is `success` \| `redirected` \| `cancelled` \| `failed`.
+- `outcome` is `success` \| `redirected` \| `cancelled` \| `failed` \| `already_entitled` (the store threw but the runner
+  already holds an active entitlement, e.g. a redeemed offer code; shown the success screen).
+- 🔴 **`cancelled` is read from RevenueCat's `code` (`"1"`), not `userCancelled`** (IAP-PURCHASE-FAILED-01): on iOS the
+  bridge delivers only `message`, `errorMessage` and `code`. Every result before 2026-10-31 recorded a cancel as `failed`.
 
 ⚠️ **`redirected` is not a sale.** On web the purchase completes on Stripe's domain and only
 the webhook observes the result, so recording the handoff as `success` would overstate

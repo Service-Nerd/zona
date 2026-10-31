@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { isUserCancelled, purchaseOutcome } from './analytics'
+import { isUserCancelled, purchaseOutcome, purchaseErrorDetail, hasActiveEntitlement } from './analytics'
+import { readFileSync } from 'node:fs'
 
 // OPS-FUNNEL-01. The reason this is tested at all: `cancelled` and `failed` lead to
 // OPPOSITE conclusions about whether the purchase path works, and the rule deciding
@@ -120,5 +121,56 @@ describe('attribution suppression — never throws, fails toward showing the row
     stubStorage('absent')
     expect(() => attributionAnswered()).not.toThrow()
     expect(attributionAnswered()).toBe(false)
+  })
+})
+
+// 🔴 IAP-PURCHASE-FAILED-01 (2026-10-31). The fixtures above use RevenueCat's DOCUMENTED shape. This is the shape that
+// actually reaches JavaScript on iOS: the plugin rejects with `call.reject(message, "\(code)", nsError)` and Capacitor's
+// bridge copies `message`, `errorMessage` and `code` onto a `cap.Exception`. No `userCancelled`. Every cancellation in
+// production (4 of 4 attempts, 56 days) was recorded as `failed` because the tests only ever saw the documented shape.
+const bridged = (code: string, message: string) => Object.assign(new Error(message), { errorMessage: message, code })
+
+describe('the error as the iOS bridge delivers it', () => {
+  it('🔴 a cancel arrives as code "1" with no userCancelled, and is a cancellation', () => {
+    const err = bridged('1', 'Purchase was cancelled.')
+    expect((err as any).userCancelled).toBeUndefined()
+    expect(isUserCancelled(err)).toBe(true)
+    expect(purchaseOutcome(err)).toBe('cancelled')
+  })
+
+  it('a real failure stays a failure and carries its code and message', () => {
+    const err = bridged('23', 'None of the products registered in the RevenueCat dashboard could be fetched from App Store Connect.')
+    expect(purchaseOutcome(err)).toBe('failed')
+    expect(purchaseErrorDetail(err)).toEqual({ error_code: '23', error_message: expect.stringContaining('None of the products') })
+    expect(purchaseErrorDetail(new Error('x'.repeat(500))).error_message).toHaveLength(160)
+    expect(purchaseErrorDetail(null)).toEqual({ error_code: null, error_message: null })
+  })
+
+  it('a numeric code is read the same as a string', () => {
+    expect(isUserCancelled({ code: 1 })).toBe(true)
+    expect(isUserCancelled({ code: 6 })).toBe(false)
+  })
+})
+
+describe('hasActiveEntitlement', () => {
+  it('is true only with an active entitlement', () => {
+    expect(hasActiveEntitlement({ entitlements: { active: { premium: {} } } })).toBe(true)
+    expect(hasActiveEntitlement({ entitlements: { active: {} } })).toBe(false)
+    expect(hasActiveEntitlement(null)).toBe(false)
+  })
+})
+
+describe('🔴 UpgradeScreen records why a purchase failed, and never tells a canceller it broke', () => {
+  const src = readFileSync('app/dashboard/UpgradeScreen.tsx', 'utf8')
+  const handler = src.slice(src.indexOf('async function handleSubscribe'), src.indexOf('async function handleRestore'))
+  it('each step names its stage before it runs', () => {
+    for (const st of ["stage = 'offerings'", "stage = 'package'", "stage = 'purchase'"]) expect(handler).toContain(st)
+  })
+  it('a failed result carries the stage and the error detail', () => {
+    expect(handler).toMatch(/outcome: 'failed',[^}]*stage,[^}]*\.\.\.purchaseErrorDetail\(err\)/)
+  })
+  it('a cancellation returns before the error message is set', () => {
+    const cancel = handler.slice(handler.indexOf('if (isUserCancelled(err))'))
+    expect(cancel.indexOf('return')).toBeLessThan(cancel.indexOf("setError('Something went wrong"))
   })
 })

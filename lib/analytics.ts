@@ -118,7 +118,18 @@ export function trackEvent(
  * exists to prevent rather than create. `success` is reserved for a StoreKit
  * purchase that actually resolved.
  */
-export type PurchaseOutcome = 'success' | 'redirected' | 'cancelled' | 'failed'
+export type PurchaseOutcome = 'success' | 'redirected' | 'cancelled' | 'failed' | 'already_entitled'
+
+/** Which step of the native purchase threw (IAP-PURCHASE-FAILED-01): a failure with no stage cannot be diagnosed. */
+export type PurchaseStage = 'configure' | 'offerings' | 'package' | 'purchase'
+
+/**
+ * RevenueCat's `PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR`, as it reaches JavaScript on iOS: the plugin rejects with
+ * `call.reject(message, "\(code)", nsError)` (`PluginHelperExtensions.swift`), so the code arrives as a STRING and
+ * nothing else from its error container does. A literal rather than the plugin's enum so this module never imports
+ * the native SDK into the web bundle.
+ */
+export const RC_PURCHASE_CANCELLED_CODE = '1'
 
 /**
  * Did the USER dismiss the store sheet, rather than the purchase failing?
@@ -137,7 +148,26 @@ export type PurchaseOutcome = 'success' | 'redirected' | 'cancelled' | 'failed'
  * and hide a real failure as a shrug.
  */
 export function isUserCancelled(err: unknown): boolean {
-  return (err as { userCancelled?: unknown } | null | undefined)?.userCancelled === true
+  const e = err as { userCancelled?: unknown; code?: unknown } | null | undefined
+  // 🔴 IAP-PURCHASE-FAILED-01 (2026-10-31): `userCancelled` is in RevenueCat's TypeScript type and NEVER reaches us on
+  // iOS. Capacitor's bridge copies only `message`, `errorMessage` and `code` onto the error, so every cancellation was
+  // recorded as `failed` and the runner who changed their mind was told "Something went wrong". The CODE is what
+  // arrives. `userCancelled === true` is kept for any path that does send it.
+  return e?.userCancelled === true || (e?.code != null && String(e.code) === RC_PURCHASE_CANCELLED_CODE)
+}
+
+/** The error's code and message, for a `failed` result. Bounded, because a message is the store's text, not ours. */
+export function purchaseErrorDetail(err: unknown): { error_code: string | null; error_message: string | null } {
+  const e = err as { code?: unknown; message?: unknown } | null | undefined
+  const code = e?.code != null ? String(e.code).slice(0, 40) : null
+  const message = typeof e?.message === 'string' && e.message ? e.message.slice(0, 160) : null
+  return { error_code: code, error_message: message }
+}
+
+/** Does a RevenueCat `CustomerInfo` hold any active entitlement? (A failed purchase by a runner who already has one.) */
+export function hasActiveEntitlement(customerInfo: unknown): boolean {
+  const active = (customerInfo as { entitlements?: { active?: Record<string, unknown> } } | null | undefined)?.entitlements?.active
+  return !!active && Object.keys(active).length > 0
 }
 
 /** The outcome to record for a thrown purchase error. */

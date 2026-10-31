@@ -17,7 +17,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { trackEvent, purchaseOutcome, isUserCancelled, currentUserId, type UpgradeSource } from '@/lib/analytics'
+import { trackEvent, isUserCancelled, purchaseErrorDetail, hasActiveEntitlement, currentUserId, type UpgradeSource, type PurchaseStage } from '@/lib/analytics'
 import { BRAND, PRICING } from '@/lib/brand'
 import { TRIAL_DAYS } from '@/lib/trial'
 import { upgradeFraming, isLossFraming } from '@/lib/subscriptions/upgradeFraming'
@@ -119,6 +119,8 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
     const { supabase, userId } = await funnelIds()
     if (userId) setFunnelUserId(userId)
     trackEvent(supabase, userId, 'upgrade_purchase_attempt', { annual, platform, reason: framing , source })
+    // IAP-PURCHASE-FAILED-01: which step threw, recorded with the error so a failure can be told from a cancel.
+    let stage: PurchaseStage = 'configure'
     try {
       if (Capacitor.isNativePlatform()) {
         // iOS native — RevenueCat StoreKit 2 purchase sheet.
@@ -142,14 +144,17 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
           if (user?.id) await Purchases.logIn({ appUserID: user.id })
         } catch {}
 
+        stage = 'offerings'
         const offerings = await Purchases.getOfferings()
         const offering = offerings.current
         if (!offering) throw new Error('No offering available.')
 
         // Use RevenueCat's typed accessors — cleaner than searching availablePackages.
+        stage = 'package'
         const pkg = annual ? offering.annual : offering.monthly
         if (!pkg) throw new Error(`${annual ? 'Annual' : 'Monthly'} package not found.`)
 
+        stage = 'purchase'
         await Purchases.purchasePackage({ aPackage: pkg })
         // Webhook fires async and updates subscriptions table.
         // Show success state here — tier refreshes on next dashboard load.
@@ -179,9 +184,26 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
       // same: "they opened the sheet and changed their mind" is a different fact
       // from "it broke", and a funnel that cannot tell them apart sends someone
       // hunting a defect that does not exist.
+      if (isUserCancelled(err)) {
+        trackEvent(supabase, userId, 'upgrade_purchase_result', { outcome: 'cancelled', annual, platform, source, stage })
+        return
+      }
+      // A runner who already holds the entitlement (a redeemed offer code, an earlier purchase) is in, whatever the
+      // store said about buying it again: measured 2026-10-27, a runner tapped Subscribe 2 s after an offer code landed.
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { Purchases } = await import('@revenuecat/purchases-capacitor')
+          const { customerInfo } = await Purchases.getCustomerInfo()
+          if (hasActiveEntitlement(customerInfo)) {
+            trackEvent(supabase, userId, 'upgrade_purchase_result',
+              { outcome: 'already_entitled', annual, platform, source, stage, ...purchaseErrorDetail(err) })
+            setSuccess(true)
+            return
+          }
+        } catch {}
+      }
       trackEvent(supabase, userId, 'upgrade_purchase_result',
-        { outcome: purchaseOutcome(err), annual, platform, source })
-      if (isUserCancelled(err)) return
+        { outcome: 'failed', annual, platform, source, stage, ...purchaseErrorDetail(err) })
       // eslint-disable-next-line no-console
       console.error('[upgrade] purchase failed', err)
       setError('Something went wrong. Please try again.')
