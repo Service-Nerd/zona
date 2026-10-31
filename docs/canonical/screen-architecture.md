@@ -116,7 +116,7 @@ is what made the race read twice.
 ### Coach
 **Job: Kit's synthesis — what your training data means and what to do next.**
 
-The user opens Coach to hear from Kit. This is the AI intelligence layer: a synthesised read on how training is going, what the patterns show, and one clear forward action. It is retrospective + forward-looking. It is paid-only.
+The user opens Coach to hear from Kit. This is the AI intelligence layer: a synthesised read on how training is going, what the patterns show, and one clear forward action. It is retrospective + forward-looking. It is paid-only. **Free runners** see the same screen's free state (`CoachTeaser`, COACH-KIT-CAUGHT-01): what Kit caught from their own last two weeks, then every run by zone; Kit's read itself is Pro.
 
 | Belongs here | Does not belong here |
 |---|---|

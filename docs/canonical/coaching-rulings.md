@@ -33,7 +33,7 @@ A free or trialling runner's receipts may include the longest `easy`-kind run (�
 sat in Zones 1–2, stated as date, distance and measured share. One per list. Willy: never a distance record (§131).
 Seiler: the share, not "all of it". Measured: 1 of 11 free and 3 of 9 Pro runners. **Artifacts at build:** §133,
 `COACH_RECEIPT_EASY_MIN_PCT` (80), its test. Not a `validatePlan()` invariant: it describes runs. Sitting:
-`docs/decisions/kit-caught-questions-2026-10-31.md`. **RULED, not built.**
+`docs/decisions/kit-caught-questions-2026-10-31.md`. **Built 2026-10-31** (§133, `kitReceipts.ts`).
 
 ## 2026-10-31 — COACH-EFFORT-PICTURE-01 · CORRECT WITH AMENDMENT. Every run is placed by its time in zone, and a run is never accused of an intent we cannot see
 

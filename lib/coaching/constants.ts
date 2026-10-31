@@ -198,6 +198,15 @@ export const COACH_EFFORT_SPLIT_MIN_PCT = 25
 // with HR runs qualify, measured). Hutchinson: fewer and one odd run is a third of the picture.
 export const COACH_EFFORT_MIN_RUNS = 6
 
+// COACH-KIT-CAUGHT-01 / §133 (Coaching Board 2026-10-31): a good-news receipt names the longest `easy` run (§132) in the
+// window only when at least this share of it sat in Zones 1–2. Seiler: state the share, never "all of it"; Willy: never
+// a distance record. Measured: fires for 1 of 11 free and 3 of 9 Pro runners.
+export const COACH_RECEIPT_EASY_MIN_PCT = 80
+// The receipts read the last two weeks (SLT/Design Board 2026-10-31: recent enough to be news, long enough to hold
+// a run) and show at most three, so the list reads at a glance and can never become a report.
+export const COACH_RECEIPT_WINDOW_DAYS = 14
+export const COACH_RECEIPT_MAX = 3
+
 /**
  * COACH-BEHIND-DAY-TWO-01 / §65 Amendment — the minimum number of outstanding
  * sessions before the Coach screen's verdict becomes a JUDGEMENT.

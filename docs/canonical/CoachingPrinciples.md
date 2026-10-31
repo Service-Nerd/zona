@@ -12156,3 +12156,19 @@ HR 105 of 256 runs read grey, 21 of them interval-shaped; by time in zone, 69. T
 `lib/coaching/runEffort.ts`. **Enforced by** `lib/coaching/runEffort.test.ts`. Not a `validatePlan()` invariant: it
 describes runs, not a plan.
 
+## 133. A receipt states what the runner's own run measured, and good news is a share, never a record *(Coaching Board 2026-10-31, COACH-KIT-CAUGHT-01)*
+
+**Principle.** "What Kit caught" may list, from the last `COACH_RECEIPT_WINDOW_DAYS` (14) days and at most
+`COACH_RECEIPT_MAX` (3): the latest run mostly in Zone 3 (§132, never a `split` or `planned` run); the week, when the load
+verdict is amber (`loadRatioContext`); the longest `easy` run when at least `COACH_RECEIPT_EASY_MIN_PCT` (80) of it sat
+in Zones 1–2, stated as its date, distance and measured share; and the earned "easiest week" line (§131). Each receipt
+carries its number. With none, the list is not drawn and nothing is padded.
+
+**Why.** ⚕️ Sims: noticing only the misses is a report card. 🩹 Willy: never a distance record, so the good-news receipt
+names the run's share, not that it was long. 📊 Seiler: wrist HR is never "all" of anything; state the share. Measured:
+the good-news receipt fires for 1 of 11 free and 3 of 9 Pro runners; at least one receipt for 7 of 11 free runners.
+
+**Config.** `lib/coaching/constants.ts → COACH_RECEIPT_EASY_MIN_PCT`, `COACH_RECEIPT_WINDOW_DAYS`, `COACH_RECEIPT_MAX`;
+owner `lib/coaching/kitReceipts.ts`. **Enforced by** `lib/coaching/kitReceipts.test.ts`. Not a `validatePlan()`
+invariant: it describes runs, not a plan.
+

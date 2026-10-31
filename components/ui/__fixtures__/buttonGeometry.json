@@ -441,18 +441,10 @@
   },
   "components/dashboard/CoachTeaser.tsx#Button1": {
     "floor": 44,
-    "padY": 14,
+    "padY": null,
     "font": null,
-    "radius": "10px",
-    "height": 45,
-    "width": "100%"
-  },
-  "components/dashboard/CoachTeaser.tsx#Button2": {
-    "floor": 44,
-    "padY": 14,
-    "font": null,
-    "radius": "10px",
-    "height": 45,
+    "radius": null,
+    "height": 47,
     "width": "100%"
   },
   "components/dashboard/HRZonesSection.tsx#Button1": {

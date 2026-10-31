@@ -10,7 +10,9 @@ describe('COACH-CODE-HYGIENE-01 copy fixes', () => {
     const src = readFileSync('components/dashboard/CoachTeaser.tsx', 'utf8')
     const strings = src.split('\n').filter(l => !/^\s*(\/\/|\{\/\*|\*)/.test(l)).join('\n')
     expect(strings).not.toMatch(/Needs Strava/)
-    expect(strings).toContain("Zone score and weekly coaching, from your watch&apos;s heart rate.")
+    // The corrected line itself went with the stale teaser (COACH-KIT-CAUGHT-01, 2026-10-31); the guard that matters is
+    // the absence above: free Coach makes no Strava claim.
+    expect(strings).not.toMatch(/Strava/)
   })
   it('rings, nothing connected, native: the connect line and its button', () => {
     const html = renderToStaticMarkup(React.createElement(ZoneRings, { state: 'empty', reason: 'not-linked', onConnect: () => {} }))

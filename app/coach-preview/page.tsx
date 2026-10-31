@@ -24,6 +24,8 @@ import TrendCard from '@/components/shared/TrendCard'
 import LoadHistory from '@/components/shared/LoadHistory'
 import WeekFacts from '@/components/shared/WeekFacts'
 import EffortRecord from '@/components/shared/EffortRecord'
+import CoachTeaser from '@/components/dashboard/CoachTeaser'
+import { kitReceipts } from '@/lib/coaching/kitReceipts'
 import { runEffortKind } from '@/lib/coaching/runEffort'
 import { easiestWeekSpan, easyCostSentence } from '@/lib/coaching/moments'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
@@ -257,6 +259,22 @@ export default function CoachPreviewPage() {
               <WeekFacts runs={{ done: 2, planned: 3, verdict: { label: 'on track', color: 'var(--moss-strong)' } }} strength={{ done: 2, planned: 2, next: { kind: 'heavier', week: 4 } }} />
             </div>
           </div>
+        </div>
+        {/* COACH-KIT-CAUGHT-01 (2026-10-31): free Coach, the founder's last two weeks through the real receipt rules. */}
+        <div data-harness="kit-caught">
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>Free Coach: what Kit caught</div>
+          <CoachTeaser
+            plan={{ weeks: [{ n: 2, date: '2026-10-26', sessions: {} }], meta: {} } as any}
+            firstName="Sam" onUpgrade={() => {}}
+            receipts={kitReceipts({
+              rows: [
+                { start_date: '2026-10-23T07:00:00Z', distance_m: 6000, activity_type: 'Run', sport_type: 'Run', strava_activity_id: null, apple_health_uuid: 'a', hr_pct_z1: 22.73, hr_pct_z2: 77.27, hr_pct_z3: 0, hr_pct_z4_5: 0 },
+                { start_date: '2026-10-27T07:00:00Z', distance_m: 9500, activity_type: 'Run', sport_type: 'Run', strava_activity_id: null, apple_health_uuid: 'b', hr_pct_z1: 3.33, hr_pct_z2: 10, hr_pct_z3: 43.33, hr_pct_z4_5: 43.33 },
+              ] as any,
+              now: new Date('2026-10-31T19:00:00Z'), units: 'km', ceiling: 145,
+              load: { ratio: 1.65, plannedEasy: false, lowWeeksRunning: 0 }, easiestSpan: null,
+            })}
+          />
         </div>
         {/* COACH-EFFORT-PICTURE-01 (2026-10-31): every run by zone, the founder's 16 runs since 6 Sept through the real rules. */}
         <div data-harness="effort-record">

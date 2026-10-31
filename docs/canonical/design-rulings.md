@@ -5782,4 +5782,4 @@ Coach only for now; the free half (picture on the free screen) lands with `COACH
 Receipt dots use P-01's pair (moss held, amber drifted or a week off normal), ≤3, no taps. **On the Upgrade screen** the
 same card sits under the headline, above the feature list, for trialling and trial-ended runners (*"In your trial, Kit
 caught"*). **CO-ONE on free Coach:** receipts and the free weekly insight never render together; the SLT made the insight
-the fallback (no receipt, RPE logged). Sitting: `docs/decisions/kit-caught-questions-2026-10-31.md`.
+the fallback (no receipt, RPE logged). Sitting: `docs/decisions/kit-caught-questions-2026-10-31.md`. **BUILT 2026-10-31:** `KitReceipts.tsx`, pattern `ui-patterns.md` § What Kit caught, check `kitReceipts.markup.test.ts`.

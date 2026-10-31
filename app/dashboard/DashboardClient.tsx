@@ -137,6 +137,7 @@ import { zoneDiscipline, zoneTimeSplit, weightOf, weekZoneSplitRows, weeklyEasyS
 import { EasyShareHeader, EasyShareBars, EASY_SHARE_BARS } from '@/components/shared/EasyShare'
 import EffortRecord from '@/components/shared/EffortRecord'
 import { effortRecord, plannedTypeByActivity, type EffortRun } from '@/lib/coaching/runEffort'
+import { kitReceipts, type KitReceipt } from '@/lib/coaching/kitReceipts'
 import { easiestWeekSpan, easyCostSentence } from '@/lib/coaching/moments'
 import { coachReadAction } from '@/lib/coaching/coachRead'
 import { trendSentence } from '@/lib/coaching/trendSentence'
@@ -2956,6 +2957,17 @@ export default function DashboardClient() {
 
   const currentWeek = getCurrentWeek(plan?.weeks ?? [])
 
+  // COACH-EFFORT-PICTURE-01 / COACH-KIT-CAUGHT-01 — computed once, for every tier: the every-run record (§132) and the
+  // receipts (§133). Pro Coach, free Coach and the Upgrade screen all read these, so the three can never disagree.
+  // Plain computation, not a hook: this sits above early returns (the hooks-order crash).
+  const plannedTypes = plannedTypeByActivity(Object.values(allCompletions).flatMap(d => Object.values(d)), plan as any)
+  const effortRuns = effortRecord(recentActivity ?? [], currentWeek as any, EASY_SHARE_BARS, plannedTypes)
+  const receipts: KitReceipt[] | null = recentActivity === null ? null : kitReceipts({
+    rows: recentActivity, now: new Date(), units: preferredUnits, ceiling: effectiveZone2Ceiling, load: loadPicture,
+    easiestSpan: easiestWeekSpan(weeklyEasyShares(recentActivity, currentWeek as any, EASY_SHARE_BARS, COACH_EASY_SHARE_MIN_RUNS)),
+    plannedTypes,
+  })
+
   // PTR-01 — pull-to-refresh handler. One more trigger into the existing
   // resume-path refreshes: force a HealthKit ingest (native) so a just-finished
   // run lands now, then re-fetch runs, completions, analysis, and the unread
@@ -3148,7 +3160,7 @@ export default function DashboardClient() {
               // function, not inferred. Coach is the only screen that does this:
               // Today and Plan both take `plan` and guard internally, which is
               // why this presents as a Coach-only crash.
-              if (!currentWeek) return <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => openUpgrade('coach_teaser_empty')} />
+              if (!currentWeek) return <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => openUpgrade('coach_teaser_empty')} receipts={receipts} effortRuns={effortRuns} showUpgrade={false} />
               const wn = (currentWeek as any)?.n ?? (getCurrentWeekIndex(plan.weeks) + 1)
               const comps = allCompletions[wn] ?? {}
               const wSessions = Object.entries((currentWeek as any).sessions ?? {})
@@ -3202,8 +3214,6 @@ export default function DashboardClient() {
               const zoneHistogramHits = zoneHistogramRows.length
               // COACH-DISCIPLINE-HEADLINE-01: the same rows, week by week, for the record under the rings.
               const easyShareWeeks = weeklyEasyShares(recentActivity ?? [], currentWeek as any, EASY_SHARE_BARS, COACH_EASY_SHARE_MIN_RUNS)
-              // COACH-EFFORT-PICTURE-01 (§132): every run in the same 8 weeks, by where its time went; a linked hard session is `planned`.
-              const effortRuns = effortRecord(recentActivity ?? [], currentWeek as any, EASY_SHARE_BARS, plannedTypeByActivity(Object.values(allCompletions).flatMap(d => Object.values(d)), plan as any))
 
               // ANALYSIS-SUPERSEDE-PATTERN-01 (Coaching Board, 2026-10-07) — the
               // detector now READS ACROSS A RACE BOUNDARY, and its logic lives in
@@ -3297,7 +3307,7 @@ export default function DashboardClient() {
                 />
               )
             })()
-          : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => openUpgrade('coach_teaser')} />
+          : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => openUpgrade('coach_teaser')} receipts={receipts} effortRuns={effortRuns} />
         )}
         {/* Strava screen: defense-in-depth gate on isAdmin at the render boundary.
             No UI path opens it for non-admins, but the render gate prevents a future commit
@@ -3430,7 +3440,7 @@ export default function DashboardClient() {
           // failures, and the doors on Me and Plan stay open to try again.
           strengthOffer={strength.status === 'none'}
           onStrengthChosen={(choice) => { void saveStrength({ ...STRENGTH_PROFILE_DEFAULT, equipment: STRENGTH_WIZARD_EQUIPMENT[choice] }) }} />}
-        {screen === 'upgrade'  && <UpgradeScreen source={upgradeSource} trialExpired={trialExpired} grantExpired={hadCharityGrant && !hasPaidAccess} onRecheckEntitlement={runEntitlementRecheck} onBack={() => {
+        {screen === 'upgrade'  && <UpgradeScreen source={upgradeSource} receipts={receipts} inTrial={!hasPaidAccess ? false : (trialDaysLeft ?? 0) > 0} trialExpired={trialExpired} grantExpired={hadCharityGrant && !hasPaidAccess} onRecheckEntitlement={runEntitlementRecheck} onBack={() => {
           // Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')
           setScreen(hasWizardDraft ? 'generate' : 'today')

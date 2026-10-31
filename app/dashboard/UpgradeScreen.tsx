@@ -19,6 +19,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { trackEvent, isUserCancelled, purchaseErrorDetail, hasActiveEntitlement, currentUserId, type UpgradeSource, type PurchaseStage } from '@/lib/analytics'
 import { BRAND, PRICING } from '@/lib/brand'
+import KitReceipts from '@/components/shared/KitReceipts'
+import type { KitReceipt } from '@/lib/coaching/kitReceipts'
 import { TRIAL_DAYS } from '@/lib/trial'
 import { upgradeFraming, isLossFraming } from '@/lib/subscriptions/upgradeFraming'
 import { authedFetch } from '@/lib/supabase/authedFetch'
@@ -50,7 +52,7 @@ const LOSSES = [
   { name: 'The plan stops moving',           detail: "Miss a week, you're on your own." },
 ]
 
-export default function UpgradeScreen({ onBack, trialExpired = false, grantExpired = false, onRecheckEntitlement, source = null }: {
+export default function UpgradeScreen({ onBack, trialExpired = false, grantExpired = false, onRecheckEntitlement, source = null, receipts = null, inTrial = false }: {
   /** OPS-FUNNEL-02 — which door sent them here. Null only if a caller forgets,
    *  which `upgradeSourceCoverage.test.ts` exists to prevent. */
   source?: UpgradeSource | null
@@ -64,6 +66,10 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
    *  renders anywhere it is mounted without the door. */
   /** CHARITY-CODE-CONTROL-01 — re-checks entitlement after Apple's sheet closes. */
   onRecheckEntitlement?: AfterSheet
+  /** COACH-KIT-CAUGHT-01 — the runner's own receipts (`kitReceipts`), above what Pro includes. Null or empty: nothing. */
+  receipts?: KitReceipt[] | null
+  /** In a running trial: the receipts are titled "In your trial, …". */
+  inTrial?: boolean
 }) {
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState<string | null>(null)
@@ -315,6 +321,14 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         }}>
           {sub}
         </p>
+
+        {/* COACH-KIT-CAUGHT-01 (Design Board 2026-10-31): what Kit already caught for THIS runner, above what Pro
+            includes. Reached only by tapping upgrade, never a dated prompt (SLT). */}
+        {receipts && receipts.length > 0 && (
+          <div style={{ marginTop: 'var(--space-5)' }}>
+            <KitReceipts receipts={receipts} title={inTrial || framing === 'trial-ended' ? `In your trial, ${BRAND.coachName} caught` : undefined} />
+          </div>
+        )}
 
         <div style={{ height: '1px', background: 'var(--border-col)', margin: '24px 0' }} />
 

@@ -125,7 +125,7 @@ const BASELINE: Record<string, number> = {
   // 2 -> 4 (reader fix). The two new ones are ghosts restating `background: none`.
   'components/dashboard/MeScreen.tsx': 4,
   'components/dashboard/AppleHealthConnectionRow.tsx': 0,
-  'components/dashboard/CoachTeaser.tsx': 2,
+  'components/dashboard/CoachTeaser.tsx': 0,  // 2 → 0 COACH-KIT-CAUGHT-01: both upsell buttons went with the stale teaser (2026-10-31)
   'components/dashboard/HRZonesSection.tsx': 1,
   'components/dashboard/ManualRunModal.tsx': 2,
   // CHARITY-CODE-CONTROL-01 (2026-09-28): 4 -> 3. The step-one redeem door was deleted

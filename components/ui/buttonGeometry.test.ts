@@ -235,6 +235,9 @@ describe('button geometry', () => {
   // ⚠️ RE-BASELINED 2026-10-30 (`COACH-READ-BUTTON-01`), delta PROVEN on the multiset: **200 -> 199, ONE box
   // REMOVED, nothing added** — `{floor 44, height 47, auto}`, the soft Refresh / Generate report button on Kit's read,
   // deleted by the founder's Option A. The five per-key changes are the index shift after it.
+  // ⚠️ RE-BASELINED 2026-10-31 (`COACH-KIT-CAUGHT-01`), delta PROVEN on the diff: CoachTeaser's two 45px upsell buttons
+  // (`{floor 44, padY 14, radius 10px, height 45, 100%}` ×2) REMOVED with the stale teaser, ONE standard primary
+  // (`{floor 44, height 47, 100%}`, "Get Kit") ADDED. Net −1; both clear the 44 floor.
   it('🔴 geometry matches the committed baseline', () => {
     // A MOVE IS NOT AUTOMATICALLY WRONG — it is automatically something to
     // DECLARE. Re-baseline with `npm run button:geometry -- --write` and say in

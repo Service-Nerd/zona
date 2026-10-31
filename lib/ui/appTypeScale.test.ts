@@ -86,7 +86,7 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // the founder-note pull-line went 18px -> 20px after the board refused 18 as a level
     // (17 -> 18 is 1.059x). The other sites of the same headline species converged on
     // 2026-10-24 (TYPE-18PX-CONVERGE-01); see the 18px arm below for what is left and why.
-    const UNDECLARED_USES_BASELINE = 201  // 202 → 201 RUNKED-LOAD-VIEW-01: the Coach Sessions tile's 28px numeral went when Sessions became a 17px row (2026-10-30); 209 → 202 TYPE-18PX-CONVERGE-01: seven 18px headline/title sites converged (2026-10-24); 210 → 209 measured STAGED: ME-HISTORY-ERROR-DEADEND-01 moved Plan history's 13px error line onto EmptyState
+    const UNDECLARED_USES_BASELINE = 196  // 201 → 196 measured STAGED: COACH-KIT-CAUGHT-01 retired the stale free teaser (locked report, two upsell buttons, locked race list, example card), 2026-10-31; 202 → 201 RUNKED-LOAD-VIEW-01: the Coach Sessions tile's 28px numeral went when Sessions became a 17px row (2026-10-30); 209 → 202 TYPE-18PX-CONVERGE-01: seven 18px headline/title sites converged (2026-10-24); 210 → 209 measured STAGED: ME-HISTORY-ERROR-DEADEND-01 moved Plan history's 13px error line onto EmptyState
     let n = 0
     for (const [size, count] of Array.from(sizes())) if (!DECLARED.has(size)) n += count
     expect(n,
@@ -117,7 +117,7 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // title onto its siblings' 20/700). ⚠️ StravaPanel:232 stays: the item listed it, but it is a STAT VALUE in a
     // metric grid, not a headline, on an admin-only screen. The 12 left: 5 IconButton glyphs, that stat value, and
     // six odd uses (arrows, dashes, an RPE number, a duration, a wizard heading).
-    const EIGHTEEN_BASELINE = 12
+    const EIGHTEEN_BASELINE = 10  // 12 → 10 COACH-KIT-CAUGHT-01: the teaser's locked-stat dashes and locked race times (both 18px) went with it
     const n = sizes().get('18') ?? 0
     expect(n,
       n > EIGHTEEN_BASELINE
@@ -158,7 +158,7 @@ describe('TYPESCALE-APP-GATE-01 — the app type scale is a closed set', () => {
     // ⚠️ The arm is kept, inverted, rather than deleted: an accusation that was
     // answered still needs a ratchet, or 13px simply grows back.
     // 169 (2026-10-05) -> 137 (2026-10-14). 12px is now the most-used size.
-    const THIRTEEN_BASELINE = 134  // 135 → 134 measured STAGED: Plan history's 13px error line became EmptyState (ME-HISTORY-ERROR-DEADEND-01)
+    const THIRTEEN_BASELINE = 131  // 134 → 131 measured STAGED: COACH-KIT-CAUGHT-01 retired three 13px teaser lines; 135 → 134 measured STAGED: Plan history's 13px error line became EmptyState (ME-HISTORY-ERROR-DEADEND-01)
     const n = sizes().get('13') ?? 0
     expect(n,
       n > THIRTEEN_BASELINE

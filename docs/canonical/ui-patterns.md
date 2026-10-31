@@ -4402,6 +4402,33 @@ picked **option A (date order)** over B (grouped by kind) from `docs/decisions/c
 Held by `components/shared/effortRecord.markup.test.ts` and `lib/coaching/runEffort.test.ts`. Falsified: a dot on split and
 planned runs, and counting split runs, each turn the count arm red.
 
+### ✅ What Kit caught — the runner's own receipts (`COACH-KIT-CAUGHT-01`, boards 2026-10-31, built)
+
+`components/shared/KitReceipts.tsx`, fed by `lib/coaching/kitReceipts.ts` (§133). One card, two homes: **free Coach** and
+the **Upgrade screen** (under the headline, above the feature list; titled *"In your trial, Kit caught"* for a trialling or
+trial-ended runner). Founder-approved mockup `docs/decisions/kit-caught-mockups.png`.
+
+```
+  WHAT KIT CAUGHT                         LAST 2 WEEKS   ← two eyebrows
+  • 27 Oct, 9.5km: 43% of it in Zone 3 …                 ← 7px mark: --warn drifted / --moss held (P-01); lead 700 --ink,
+  • This week: 1.65× your recent normal.                    text --fs-body --ink-2. ≤3 rows, no taps
+  • 23 Oct, 6km: 100% of it in Zones 1–2.
+  ───────────────────────────────                        ← optional footer (free Coach only)
+  Kit's weekly read turns this into one thing to do next. That part is Pro.
+  [ Get Kit · £1.84 / week ]                             ← primary Button; hidden for a paid runner
+```
+
+| | |
+|---|---|
+| **Receipts** | Only from owners that already say the same thing: §132 kinds, `loadRatioContext` (amber only), §133, §131. Each carries its number |
+| **Zero** | The card is not drawn. Free Coach then shows Kit's free weekly insight if there is one (SLT: fallback, never beside receipts, CO-ONE), else *"Nothing yet. A run with heart rate is all Kit needs to start noticing."* |
+| **Always** | The risk warning (rule-engine safety) shows whatever else does. No AIMark: nothing here is the model |
+| **Free Coach order** | risk warning · receipts (or fallback) · every run, by zone (free). The locked report, the two upsell buttons and the locked race list are gone |
+
+Held by `components/shared/kitReceipts.markup.test.ts` and `lib/coaching/kitReceipts.test.ts`. Falsified: the load receipt
+read from the ratio instead of the verdict, a linked tempo counted, and the buy button shown to a paid runner each turn an
+arm red; mutation harness 9 of 9 killed.
+
 ### ✅ Earned line — one sentence, on its evidence (`COACH-SEEN-MOMENTS-01`, Design Board 2026-10-30)
 
 `components/shared/EarnedLine.tsx`. A rule-based sentence shown only in the week it is earned (§131), placed directly on

@@ -66,6 +66,8 @@ const SUBJECTS: Record<string, string[]> = {
   'lib/coaching/moments.test.ts':                  ['lib/coaching/moments.ts'],
   // §132 — what kind of run was this (time in zone; split and planned are never grey).
   'lib/coaching/runEffort.test.ts':                ['lib/coaching/runEffort.ts'],
+  // §133 — what Kit caught (each receipt from the owner that already says it).
+  'lib/coaching/kitReceipts.test.ts':              ['lib/coaching/kitReceipts.ts'],
   // §130 — the easy share's weekly record (the headline's colour rule is a markup assertion, falsified by hand).
   'components/shared/easyShare.markup.test.ts':     ['lib/coaching/weeklyZoneAggregate.ts'],
 }
