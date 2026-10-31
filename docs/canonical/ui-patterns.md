@@ -4397,7 +4397,7 @@ picked **option A (date order)** over B (grouped by kind) from `docs/decisions/c
 | **What counts** | Only `grey` runs (§132: Zone 3 the largest share). A `split` (interval-shaped) run and a run that completed a planned hard session are drawn but never dotted or counted |
 | **Claims** | None about intent. The picture names no pattern; Kit's read may (Pro). The footer teaches the line instead of accusing |
 | **Shows** | At ≥`COACH_EFFORT_MIN_RUNS` (6) runs with a split; otherwise nothing (empty means calm). No tap, no sheet |
-| **Dense** | At most `EFFORT_RECORD_MAX_COLUMNS` (32) most recent runs, eyebrow *"last 32 runs"*: a column never narrower than its dot (Design Board 2026-10-31) |
+| **Dense** | At most `EFFORT_RECORD_MAX_COLUMNS` (32) most recent runs, eyebrow *"last 32 runs"*: a column never narrower than its dot (`COACH-SIGNOFF-01`, Design Board 2026-10-31) |
 | **Order** | Coach: read + rings · this week · **every run, by zone** · easy run trend · race times |
 
 Held by `components/shared/effortRecord.markup.test.ts` and `lib/coaching/runEffort.test.ts`. Falsified: a dot on split and

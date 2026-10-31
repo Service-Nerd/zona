@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-31 — COACH-SIGNOFF-01 · An independent read found seven things I had signed off myself
+
+**Shipped:** the Design Board signed off the whole Coach screen (Pro and free) and the trial Upgrade screen as built, after a full-screen render from the real components and an independent audit.
+**Dev learning:** a headless Chrome capture draws no animation frames, so a rAF count-up read 0 → 0, then 24 → 27 under throttled timers. The fix belonged in the dev page (a frame clock that jumps a second per frame), not the component, which `CLAUDE.md` already exempts for exactly this.
+**Product/creator learning:** the free screen told a Pro runner "That part is Pro", and told a runner with 16 heart-rate runs that a run with heart rate was all Kit needed. Both were copy that was true for the case I drew and false for its neighbours.
+**AI-building learning:** a separate agent with no access to my reasoning found 7 rule breaks in work I had already reported as compliant, including a load receipt that decided by comparing CSS colour strings. Asking for the read not anchored on mine was the useful move.
+**The honest bit:** I had said the build followed the patterns; it mostly did, and "mostly" was seven findings.
+**Hook material:** 0 must-fix, 7 should-fix, on a build I had called done.
+**Postable?:** maybe
+
 ## 2026-10-31 — COACH-KIT-CAUGHT-01 · The free screen stopped selling things that do not exist
 
 **Shipped:** a free runner's Coach screen now lists what the app actually noticed in their last two weeks ("27 Oct, 9.5km: 43% of it in Zone 3…"), with one line on what Pro adds, and the same card sits on the Upgrade screen.
