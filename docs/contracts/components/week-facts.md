@@ -1,4 +1,6 @@
-# WeekFacts — `components/shared/WeekFacts.tsx`
+# WeekFacts
+
+**Component:** `components/shared/WeekFacts.tsx`
 
 `COACH-WEEK-FACTS-01` (Design Board 2026-10-31, option C). The foot of Coach's "This week" load card: this week's runs
 and strength in one treatment.
