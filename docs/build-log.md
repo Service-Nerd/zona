@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-31 — COACH-EFFORT-PICTURE-01 · The average heart rate of an interval session is a number the body never ran at
+
+**Shipped:** Coach now draws every run of the last eight weeks as a column of where its time went, and counts the runs that sat mostly in Zone 3: "6 of your 16 runs spent most of their time in Zone 3."
+**Dev learning:** the first mockup placed each run by its average heart rate. Measured across 21 runners and 256 runs, that called 105 runs "grey", 21 of them interval sessions whose average lands in Zone 3 while almost none of the run did. Time in zone called 69. And the engine prescribes Zone 3 for tempo, so a linked tempo has to be `planned`, never grey; only 1 of the 69 was linked at all. The mutation harness then found three mutants my own tests missed (both 25% boundaries and an all-NaN input), which I would have called covered.
+**Product/creator learning:** the founder asked for "wow" and "feel understood". The honest version of the brand's whole idea, the grey middle, is a picture of the runner's own runs. It had to lose a claim to stay honest: it says where the time went, not what the run was meant to be.
+**AI-building learning:** I drew the mockup with real production numbers before the coaching question was asked, and the drawing looked convincing. The board question ("is average HR even valid?") was the one that mattered, and only a population measurement answered it. Also: the full suite, run for this item, showed a gate I had left red on main earlier the same day after pushing on a type check alone.
+**The honest bit:** two lines in the first mockup ("week 3 drops back on purpose", "pulled week 3 back to protect you") were invented and caught before sending. And a contract gate (`week-facts.md`) was red on main for hours because I pushed on targeted tests.
+**Hook material:** 21 of 105 runs an average-HR chart would call "lazy grey running" were interval sessions done exactly right.
+**Postable?:** yes
+
 ## 2026-10-31 — COACH-WEEK-FACTS-01 · Two numbers, one week
 
 **Shipped:** on Coach, runs and strength stopped being two separate cards. They are now one line at the foot of the "This week" card, under the load bars: "2 of 3 runs on track · 2 of 2 strength". Race times moved to the bottom of the screen.
