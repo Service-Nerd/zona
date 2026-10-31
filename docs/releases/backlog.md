@@ -243,6 +243,27 @@ way `send-daily` does (ideally one shared owner for cron auth), and use `getInte
 `VERCEL_URL` fallback here and in `strava/link-activity` (two more copies). ⚠️ The 403 is read from code, not observed in
 logs (Hobby retention); verify on the next Sunday run.
 
+### 🔲 `COACH-EFFORT-PICTURE-01` — every run, by where its time went (idea 1 of the Coach ideas sitting) 🏃 **COACHING BOARD** (ruled 2026-10-31, §132) → 🧭 **DESIGN BOARD** (layout A or B, founder picks) · FREE picture, PRO read
+
+**Ruled 2026-10-31, CORRECT WITH AMENDMENT:** place runs by time in zone, never by average heart rate (21 of 105 "grey" by
+average were interval sessions); interval-shaped runs are `split`, a linked hard-effort session is `planned`, neither is
+grey; an unlinked run carries no intent claim. Owner `lib/coaching/runEffort.ts` and §132 **shipped first** (non-visual).
+**Next:** founder picks A (date order) or B (grouped) from `docs/decisions/coach-effort-amended.png`, then build the card.
+Shows at ≥`COACH_EFFORT_MIN_RUNS` (6) runs with a split in 8 weeks: 17 of 21 runners today. Sittings:
+`docs/decisions/coach-ideas-2026-10-31.md`, `coaching-rulings.md` 2026-10-31.
+
+### 🔲 `COACH-KIT-CAUGHT-01` — what Kit caught: receipts in place of the stale free teaser (idea 6) 💼 **SLT** (ruled 2026-10-31: BUILD, AMENDED) → 🧭 **DESIGN BOARD** · FREE surface, PRO content · after `COACH-EFFORT-PICTURE-01`
+
+Replaces `CoachTeaser` (which sells tiles paid Coach no longer has). **SLT amendments:** evidence-triggered, never dated
+(the mockup's "day 12" broke "upgrade prompts are triggered by behaviour, never by a calendar date"); at least two
+receipts from what the app computed, each with its number, else an honest line; no countdown; price from
+`BRAND.PRICING`; the effort picture stays free beside it. Note: `docs/decisions/coach-kit-caught-slt-2026-10-31.md`.
+
+### 🔲 Coach ideas 2–5 (same sitting) — 🧭 **DESIGN BOARD** first, then as tagged in `coach-ideas-2026-10-31.md`
+
+Same run then and now (🏃 match tolerance) · Kit noticed + three preset questions (💼 cost; board split) · the Sunday
+reveal (🧭 motion) · race estimate as a record (🏃 §109, ⚙️ estimate history storage). Not yet routed.
+
 ### ✅ `COACH-RINGS-SOURCE-01` (shipped 2026-10-30, `06d40165`) — the zone rings read 4 runners' data while 259 of 317 runs carry a zone split 🏃 **COACHING BOARD** (ruled 2026-10-30) · P0
 
 `ZoneRings` reads `run_analysis.hr_pct_z*` (matched runs only). `strava_activities.hr_pct_z*` already holds the split for

@@ -12139,3 +12139,20 @@ points; Hutchinson and Seiler hold 10 so the line survives a noisy week (recorde
 **Config.** `lib/coaching/constants.ts → COACH_MOMENT_EASIEST_MARGIN_PTS`, `COACH_MOMENT_MIN_PRIOR_WEEKS`; rules in
 `lib/coaching/moments.ts`. **Enforced by** `lib/coaching/moments.test.ts` and `components/shared/earnedLine.markup.test.ts`.
 Not a `validatePlan()` invariant: it governs what the runner is told about their runs, not a plan.
+
+## 132. A run is placed by where its time went, and never accused of an intent we cannot see *(Coaching Board 2026-10-31, COACH-EFFORT-PICTURE-01)*
+
+**Principle.** Coach may show every recent run by its time in zone and count the runs that spent most of their time in
+Zone 3. A run is `split` when at least `COACH_EFFORT_SPLIT_MIN_PCT` (25) of it sat in Zones 1–2 AND at least 25 in Zones
+4–5, and `planned` when it completed a hard-effort plan session; neither is ever counted as grey. An unlinked run carries
+no claim about what it was meant to be: Zone 3 is the grey zone *on easy days*, and a tempo belongs there. The picture
+shows only with at least 6 runs carrying a split (`COACH_EFFORT_MIN_RUNS`, added with the card that reads it).
+
+**Why.** 📊 Seiler: the average heart rate of an interval session is a number the body never ran at. Measured: by average
+HR 105 of 256 runs read grey, 21 of them interval-shaped; by time in zone, 69. The engine prescribes Zone 3 for tempo
+(`zoneForSessionType`), and only 1 of the 69 was linked to a session, so intent is unknown for the rest (McMillan).
+
+**Config.** `lib/coaching/constants.ts → COACH_EFFORT_SPLIT_MIN_PCT` (`COACH_EFFORT_MIN_RUNS` lands with the card); owner
+`lib/coaching/runEffort.ts`. **Enforced by** `lib/coaching/runEffort.test.ts`. Not a `validatePlan()` invariant: it
+describes runs, not a plan.
+

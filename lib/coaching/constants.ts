@@ -190,6 +190,11 @@ export const COACH_EASY_SHARE_MIN_RUNS = 2
 export const COACH_MOMENT_EASIEST_MARGIN_PTS = 10
 export const COACH_MOMENT_MIN_PRIOR_WEEKS = 3
 
+// COACH-EFFORT-PICTURE-01 / §132 (Coaching Board 2026-10-31): a run with at least this share of its time in Zones 1–2
+// AND at least this share in Zones 4–5 is interval-shaped ("split"), never counted as grey. Measured: 31 of 256 runs.
+// Seiler: an interval session's Zone 3 time is the ramp between reps, not the grey middle.
+export const COACH_EFFORT_SPLIT_MIN_PCT = 25
+
 /**
  * COACH-BEHIND-DAY-TWO-01 / §65 Amendment — the minimum number of outstanding
  * sessions before the Coach screen's verdict becomes a JUDGEMENT.

@@ -27,6 +27,42 @@ memory.
 
 
 
+## 2026-10-31 — COACH-EFFORT-PICTURE-01 · CORRECT WITH AMENDMENT. Every run is placed by its time in zone, and a run is never accused of an intent we cannot see
+
+**Input:** idea 1 of the Design Board's Coach ideas sitting (`docs/decisions/coach-ideas-2026-10-31.md`): one dot per run on
+a heart-rate axis, headline *"6 of your 16 runs landed in the grey zone."* The board asked: where do the grey zone's edges
+sit, and what may the picture claim?
+
+**Measured first (production, read-only, 56 days, runs carrying a zone split):** 21 runners, 256 runs. Placed by
+**average HR**, 105 runs read "grey"; **21 of those were interval-shaped** (≥25% easy AND ≥25% Zone 4–5 inside one run).
+By **time in zone** (Zone 3 the largest share), 69. The two methods disagree on **52 of 256** runs. Only **1 of the 69**
+Zone-3 runs is linked to a plan session, so intent is unknown for the rest. **The engine prescribes Zone 3** for tempo
+and quality (`zoneForSessionType`). 17 of 21 runners have ≥6 such runs.
+
+**Conflict scan:** §14 (zone edges: the ceiling is Z2's top, Z3's top is the grey band's edge; no new boundary) · §12
+(easy capped at Z2 top) · §130 (describe, never grade) · §108 (no composite: a count of measured runs is not one) · §1
+(counts sessions; this picture is a description, not §1 compliance) · §131 (moments) · zone-model translation: Zonna Z3 is
+the grey zone, consistent.
+
+📊 **Seiler:** *"Average heart rate of an interval session is a number the body never ran at. Place runs by where the
+time went."* 🏃 **Hutchinson:** *"Twenty percent of the 'grey' runs were the opposite of grey. The average is wrong for
+exactly the runners doing it right."* 🎯 **McMillan:** *"A tempo lives in Zone 3 on purpose. Say Zone 3 is the grey zone on
+EASY days, and never call a run lazy-hard when you don't know it was meant to be easy."* ⚕️ **Sims:** *"Wrist HR lags on
+short reps; that is one more reason the split rule must exist."* 🩹 **Willy:** no objection; the picture prescribes nothing.
+
+**Ruling: CORRECT WITH AMENDMENT.**
+1. **By time in zone, never by average heart rate.** One owner, `lib/coaching/runEffort.ts → runEffortKind`.
+2. **Interval-shaped runs are `split`**, never grey: ≥`COACH_EFFORT_SPLIT_MIN_PCT` (25) easy and ≥25 in Zones 4–5.
+3. **A run linked to a hard-effort plan session is `planned`**, never grey (the engine prescribed Zone 3).
+4. **No intent claim on an unlinked run.** Copy says a run *"spent most of its time in Zone 3"*, and the legend says Zone 3
+   is the grey zone *on easy days*. Kit's read (Pro, model) may name a pattern; the picture may not.
+5. Shown only with ≥`COACH_EFFORT_MIN_RUNS` (6) runs carrying a split in the window.
+
+**Artifacts:** §132 (principle); `COACH_EFFORT_SPLIT_MIN_PCT` (`lib/coaching/constants.ts`; `COACH_EFFORT_MIN_RUNS` lands with the card that reads it);
+`lib/coaching/runEffort.test.ts` (falsified: removing the planned rule turns the tempo case red). Not a `validatePlan()`
+invariant: it describes runs, not a plan. **Design consequence:** a dot placed by average HR cannot show a split run
+honestly, so the Design Board redraws the picture (amended mockup to the founder before build).
+
 ## 2026-10-30 — ZONE-SPLIT-CONFIG-02 · CORRECT WITH AMENDMENT. The split takes §14's boundaries, and time at or below the easy cap is never scored as a miss
 
 **Trigger:** soft (`lib/strava.ts → bucketHRHistogram`, `lib/coaching/prescribedZoneFigures.ts`): changes what a run SCORES.
