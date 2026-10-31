@@ -5,7 +5,7 @@ these two more consistent or on the same line? Are they positioned in the right 
 just numbers. What do they show? Are they in the right place? What does it mean to the runner?"*
 
 **Trigger:** soft, qualifies (a runner would notice). **Tier:** PAID (Coach). **Mockups:**
-`coach-week-mockups.png`, sent to the founder 2026-10-31. Nothing built.
+`coach-week-mockups.png`, sent to the founder 2026-10-31. Founder picked C; built the same day (`ae851d4b`), pushed 2026-10-31.
 
 ## What the two cards show (read from the code)
 
@@ -47,6 +47,6 @@ A or B; **requires "runs" not "sessions"**.
 **C** = B (runs and strength as one line at the foot of the load card, renamed "This week") + race times moved below
 the trend. Unanimous on renaming Sessions to **runs**. A is the safe fallback.
 
-**Not settled:** whether the load card's eyebrow "This week's load" becomes "This week" (copy); whether strength gets a
-verdict word; the strength progression line's place in B (proposed: after the strength count, same line, wraps).
-Nobody has seen any option on a device. Order change C is the founder's call before build.
+**Settled at build:** the eyebrow became "This week"; strength's next step is a quiet line beneath the facts, not on
+the same line. **Still not settled:** whether strength gets a verdict word (built without one). **Not yet seen on a
+device:** checked at 375px in `/coach-preview` only.
