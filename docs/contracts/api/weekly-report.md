@@ -149,3 +149,9 @@ the one whose `auth.uid()` is NULL on native.
 The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
 `.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
 of 94 Supabase warnings in a day. **A database error now answers `500 { error: 'Could not load your plan' }`.** It used to be indistinguishable from "no plan" and answered as if the runner had none.
+
+## Race-week debrief — race analysis lookup (SHARE-WEEK-CARD-SOURCE-01, 2026-10-31)
+
+The race day's `run_analysis` row is found by `session_day === raceDayKey` (the bare day, `sat`), inside a query already
+scoped by `week_n`. It used to look for `week_N_<day>`, a format `session_day` has never had, so `zoneDirection` was always
+`null` and the debrief never knew which way the race was paced. Gate: `lib/coaching/sessionDayShape.test.ts`.

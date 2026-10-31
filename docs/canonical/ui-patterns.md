@@ -6379,6 +6379,22 @@ never adds height in the common state; each phase checks its screen's must-not-l
 
 ---
 
+## Share control — an icon, secondary (`SHARE-ICON-01`, Design Board 2026-10-31, ruled, not built)
+
+Every share action is the **iOS share glyph** (box with an up arrow, the bell's 1.6 line family) in an
+**`IconButton shape="circle"`**: 44px, `--bg-soft`, the hairline, `ariaLabel` *"Share this week"* / *"Share this run"*.
+It sits **right-aligned directly under the object it shares, outside it** (SAVE-IMG-01), on all four surfaces: Coach's
+weekly read, session detail, post-run, the log sheet. Qualifies under ICON-RULE-01 by **meaning**, beside the bell.
+
+- **Never a filled or text button.** The Coach share was a 52px full-width primary, the loudest control on the screen.
+- **`circle`, not `bare`:** a lone glyph under a card is not a dense row (Silvanto, Wroblewski).
+- **Status** moves off the label to a 12px `--mute` line beside the icon, `aria-live="polite"`, two seconds. Busy is
+  the icon disabled and dimmed; no spinner.
+- **The free "Share your week" row is not a share control** (it opens Upgrade) and keeps no glyph.
+
+Check (at build): no `Button` labelled Share in `app/` or `components/`; every share site renders the one owner.
+Sitting: `docs/decisions/share-icon-2026-10-31.md`. **Awaiting founder approval of the mockups.**
+
 ## Staged race plan — base building, a checkpoint, then the race (NO-RUNNER-TURNED-AWAY-01)
 
 *(Design Board 2026-10-24, SHIP WITH AMENDMENT (10). 🔲 **Ruled, not built**: the components below are the ones the
