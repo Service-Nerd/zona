@@ -259,6 +259,25 @@ runners, neither an admin (one trial-ended runner tried 3 times in 3 minutes on 
 not a cancellation (`purchaseOutcome` separates them). The result event carries **no error detail**, so the cause cannot
 be read from the data: recording the error (stage, RevenueCat code) is part of the fix. Not investigated further.
 
+**RCA 2026-10-31 (`/zona-debug`):**
+1. 🔴 **Every iOS cancellation is recorded as `failed`, and the runner is told "Something went wrong."** `isUserCancelled`
+   (`lib/analytics.ts:139`) reads `err.userCancelled === true`. The RevenueCat Capacitor plugin rejects with
+   `call.reject(message, "\(code)", nsError)` and passes no data (`PluginHelperExtensions.swift:20`), and Capacitor's
+   bridge copies only `message`, `errorMessage`, `code` (+ data) onto the error (`native-bridge.js:953`). So a cancel
+   arrives as `{ code: "1" }` (`PURCHASE_CANCELLED_ERROR`) with no `userCancelled`. Class: **a typed field the bridge
+   never delivers** (RevenueCat's TS `PurchasesError` documents `userCancelled`; the iOS path never sends it). Survived
+   because `analytics.test.ts` uses the documented shape, not the bridged one.
+2. **The failure records no code or message**, so a real failure and a cancel look identical in the data.
+3. **Runner 2 (27 Oct) is not a lost sale:** an Apple offer code landed a comped annual subscription at 15:57:30; they
+   tapped Subscribe 2 s later on a year they already owned. Access is fine.
+4. **Runner 1 (5 Oct, 3 attempts, 11 s / 3 s / 7 s):** RevenueCat holds no purchase and no subscription for them (v1 API,
+   read-only); still active in the app (last seen 30 Oct). Cancel or real failure **cannot be told apart** (2).
+5. The live offering is correct (`default`: `$rc_monthly` → `zonna_premium_monthly`, `$rc_annual` →
+   `zonna_premium_annual`). Whether Apple serves those products on a device (Paid Apps Agreement active, products
+   cleared for sale) is not visible from here.
+6. **No paid in-app purchase has ever succeeded in production:** all 23 `subscriptions` rows are comped offer codes,
+   and `upgrade_purchase_result` has never recorded `success`. The purchase path is unproven end to end since launch.
+
 ### 🔲 `COACH-KIT-CAUGHT-01` — what Kit caught: receipts in place of the stale free teaser (idea 6) 💼 **SLT** (ruled 2026-10-31: BUILD, AMENDED) → 🧭 **DESIGN BOARD** · FREE surface, PRO content · after `COACH-EFFORT-PICTURE-01`
 
 Replaces `CoachTeaser` (which sells tiles paid Coach no longer has). **Questions answered 2026-10-31** (`kit-caught-questions-2026-10-31.md`): from ONE receipt (SLT), a good-news receipt allowed (Coaching Board, §133 at build), P-01 dots and the Upgrade-screen placement (Design Board), the free insight only as the no-receipt fallback (SLT, CO-ONE). Mockup: `kit-caught-mockups.png`. **Earlier SLT amendments:** evidence-triggered, never dated
