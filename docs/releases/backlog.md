@@ -243,12 +243,12 @@ way `send-daily` does (ideally one shared owner for cron auth), and use `getInte
 `VERCEL_URL` fallback here and in `strava/link-activity` (two more copies). ⚠️ The 403 is read from code, not observed in
 logs (Hobby retention); verify on the next Sunday run.
 
-### 🔲 `COACH-EFFORT-PICTURE-01` — every run, by where its time went (idea 1 of the Coach ideas sitting) 🏃 **COACHING BOARD** (ruled 2026-10-31, §132) → 🧭 **DESIGN BOARD** (layout A or B, founder picks) · FREE picture, PRO read
+### ✅ `COACH-EFFORT-PICTURE-01` (shipped 2026-10-31, option A) — every run, by where its time went (idea 1 of the Coach ideas sitting) 🏃 **COACHING BOARD** (ruled 2026-10-31, §132) → 🧭 **DESIGN BOARD** (layout A or B, founder picks) · FREE picture, PRO read
 
 **Ruled 2026-10-31, CORRECT WITH AMENDMENT:** place runs by time in zone, never by average heart rate (21 of 105 "grey" by
 average were interval sessions); interval-shaped runs are `split`, a linked hard-effort session is `planned`, neither is
 grey; an unlinked run carries no intent claim. Owner `lib/coaching/runEffort.ts` and §132 **shipped first** (non-visual).
-**Next:** founder picks A (date order) or B (grouped) from `docs/decisions/coach-effort-amended.png`, then build the card.
+**Shipped 2026-10-31:** founder picked A (date order); `components/shared/EffortRecord.tsx` on paid Coach after "This week". The free half lands with `COACH-KIT-CAUGHT-01`.
 Shows at ≥`COACH_EFFORT_MIN_RUNS` (6) runs with a split in 8 weeks: 17 of 21 runners today. Sittings:
 `docs/decisions/coach-ideas-2026-10-31.md`, `coaching-rulings.md` 2026-10-31.
 

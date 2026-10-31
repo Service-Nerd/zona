@@ -4375,6 +4375,33 @@ Held by `components/shared/weekFacts.markup.test.ts` (one count style for both h
 outside the button, race times after the trend). Falsified: the old layout restored turns three arms red; one count's
 style changed turns the treatment arm red.
 
+### ✅ Every run, by zone — the runner's record of where their time went (`COACH-EFFORT-PICTURE-01`, Design Board 2026-10-31, built)
+
+`components/shared/EffortRecord.tsx`. One column per run over the same 8 plan weeks as the easy-share record, oldest
+left, this week right, each filled bottom to top with its time in Z1, Z2, Z3 and Z4–5 (the rings' colours). Founder
+picked **option A (date order)** over B (grouped by kind) from `docs/decisions/coach-effort-amended.png`.
+
+```
+  EVERY RUN, BY ZONE                       16 RUNS · 8 WEEKS   ← two eyebrows
+  6 of your 16 runs spent most of their time in Zone 3.          ← 17/700 --ink: a count, never a verdict hue
+  ▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮                                             ← columns, 96px, gap 3px, this week's ringed in --ink
+  •  •  •    •      •  •                                         ← a --s-quality dot under each run counted (§132 grey)
+  6 Sept                                    This week
+  ■ Z1  ■ Z2 easy  ■ Z3  ■ Z4–5
+  ───────────────────────────────
+  Zone 3 is the grey zone on easy days. A tempo belongs there; an easy run doesn't.
+```
+
+| | |
+|---|---|
+| **What counts** | Only `grey` runs (§132: Zone 3 the largest share). A `split` (interval-shaped) run and a run that completed a planned hard session are drawn but never dotted or counted |
+| **Claims** | None about intent. The picture names no pattern; Kit's read may (Pro). The footer teaches the line instead of accusing |
+| **Shows** | At ≥`COACH_EFFORT_MIN_RUNS` (6) runs with a split; otherwise nothing (empty means calm). No tap, no sheet |
+| **Order** | Coach: read + rings · this week · **every run, by zone** · easy run trend · race times |
+
+Held by `components/shared/effortRecord.markup.test.ts` and `lib/coaching/runEffort.test.ts`. Falsified: a dot on split and
+planned runs, and counting split runs, each turn the count arm red.
+
 ### ✅ Earned line — one sentence, on its evidence (`COACH-SEEN-MOMENTS-01`, Design Board 2026-10-30)
 
 `components/shared/EarnedLine.tsx`. A rule-based sentence shown only in the week it is earned (§131), placed directly on

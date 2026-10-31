@@ -135,6 +135,8 @@ import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearS
 import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
 import { zoneDiscipline, zoneTimeSplit, weightOf, weekZoneSplitRows, weeklyEasyShares, easyShare } from '@/lib/coaching/weeklyZoneAggregate'
 import { EasyShareHeader, EasyShareBars, EASY_SHARE_BARS } from '@/components/shared/EasyShare'
+import EffortRecord from '@/components/shared/EffortRecord'
+import { effortRecord, plannedTypeByActivity, type EffortRun } from '@/lib/coaching/runEffort'
 import { easiestWeekSpan, easyCostSentence } from '@/lib/coaching/moments'
 import { coachReadAction } from '@/lib/coaching/coachRead'
 import { trendSentence } from '@/lib/coaching/trendSentence'
@@ -3200,6 +3202,8 @@ export default function DashboardClient() {
               const zoneHistogramHits = zoneHistogramRows.length
               // COACH-DISCIPLINE-HEADLINE-01: the same rows, week by week, for the record under the rings.
               const easyShareWeeks = weeklyEasyShares(recentActivity ?? [], currentWeek as any, EASY_SHARE_BARS, COACH_EASY_SHARE_MIN_RUNS)
+              // COACH-EFFORT-PICTURE-01 (§132): every run in the same 8 weeks, by where its time went; a linked hard session is `planned`.
+              const effortRuns = effortRecord(recentActivity ?? [], currentWeek as any, EASY_SHARE_BARS, plannedTypeByActivity(Object.values(allCompletions).flatMap(d => Object.values(d)), plan as any))
 
               // ANALYSIS-SUPERSEDE-PATTERN-01 (Coaching Board, 2026-10-07) — the
               // detector now READS ACROSS A RACE BOUNDARY, and its logic lives in
@@ -3266,6 +3270,7 @@ export default function DashboardClient() {
                   zoneTimePctByZone={zoneTimePctByZone}
                   zoneHistogramHits={zoneHistogramHits}
                   easyShareWeeks={easyShareWeeks}
+                  effortRuns={effortRuns}
                   liveSessionsCompleted={liveSessionsCompleted}
                   liveSessionsPlanned={liveSessionsPlanned}
                   liveSessionsDueToDate={liveSessionsDueToDate}
@@ -5209,7 +5214,7 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
 
 
 
-function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWeeks = [], stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, liveSessionsDueToDate, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, onConnect, restingHR, maxHR, healthkitConnectedAt, strengthWeek = null }: {
+function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWeeks = [], effortRuns = [], stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, liveSessionsDueToDate, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, onConnect, restingHR, maxHR, healthkitConnectedAt, strengthWeek = null }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   /** LOAD-SOURCE-TOTAL-01: total distance over the runner's own weeks (`computeLoadPicture`). Null = no verdict. */
   loadPicture?: LoadPicture | null
@@ -5222,6 +5227,8 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
   zoneHistogramHits?: number
   /** COACH-DISCIPLINE-HEADLINE-01: easy share per week, oldest first, this week last (`weeklyEasyShares`). */
   easyShareWeeks?: (number | null)[]
+  /** COACH-EFFORT-PICTURE-01: every run in the record's weeks, oldest first (`effortRecord`, §132). */
+  effortRuns?: EffortRun[]
   liveSessionsCompleted?: number
   liveSessionsPlanned?: number
   /** Sessions whose calendar day is strictly past — "due by end of yesterday".
@@ -6147,6 +6154,9 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
             request in the orchestrated load, the prop and the prop type): Me's card uses
             `useDisciplineLedger`, so the prefetch had NO consumer left. Leaving it is the
             `SMOKE-PLUMBING-01` shape — dead props and a live SELECT nobody reads. */}
+
+        {/* COACH-EFFORT-PICTURE-01 (founder picked option A, 2026-10-31): after this week, before the long view. */}
+        <EffortRecord runs={effortRuns} weeks={EASY_SHARE_BARS} />
 
         {/* ── AEROBIC TREND — the physiological answer to "am I getting
             fitter?". ONE card, founder's call 2026-09-12.

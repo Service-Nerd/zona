@@ -23,6 +23,8 @@ import ShareControl from '@/components/shared/ShareControl'
 import TrendCard from '@/components/shared/TrendCard'
 import LoadHistory from '@/components/shared/LoadHistory'
 import WeekFacts from '@/components/shared/WeekFacts'
+import EffortRecord from '@/components/shared/EffortRecord'
+import { runEffortKind } from '@/lib/coaching/runEffort'
 import { easiestWeekSpan, easyCostSentence } from '@/lib/coaching/moments'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
@@ -255,6 +257,19 @@ export default function CoachPreviewPage() {
               <WeekFacts runs={{ done: 2, planned: 3, verdict: { label: 'on track', color: 'var(--moss-strong)' } }} strength={{ done: 2, planned: 2, next: { kind: 'heavier', week: 4 } }} />
             </div>
           </div>
+        </div>
+        {/* COACH-EFFORT-PICTURE-01 (2026-10-31): every run by zone, the founder's 16 runs since 6 Sept through the real rules. */}
+        <div data-harness="effort-record">
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>Every run, by zone (option A)</div>
+          <EffortRecord weeks={8} runs={([
+            ['2026-09-06', 0, 37.5, 62.5, 0], ['2026-09-08', 0, 60, 30, 10], ['2026-09-11', 3.33, 20, 40, 36.67], ['2026-09-13', 2.17, 82.61, 15.22, 0],
+            ['2026-09-15', 4.76, 9.52, 42.86, 42.86], ['2026-09-19', 12.5, 87.5, 0, 0], ['2026-09-20', 2.22, 53.33, 35.56, 8.89], ['2026-09-30', 3.45, 37.93, 58.62, 0],
+            ['2026-10-01', 14.29, 85.71, 0, 0], ['2026-10-06', 3.23, 25.81, 32.26, 38.71], ['2026-10-08', 10, 90, 0, 0], ['2026-10-09', 3.03, 24.24, 51.52, 21.21],
+            ['2026-10-13', 0, 14.81, 40.74, 44.44], ['2026-10-15', 14.29, 85.71, 0, 0], ['2026-10-23', 22.73, 77.27, 0, 0], ['2026-10-27', 3.33, 10, 43.33, 43.33],
+          ] as const).map(([date, z1, z2, z3, z45]) => ({
+            date, z1, z2, z3, z45, thisWeek: date >= '2026-10-26',
+            kind: runEffortKind({ hr_pct_z1: z1, hr_pct_z2: z2, hr_pct_z3: z3, hr_pct_z4_5: z45 }),
+          }))} />
         </div>
         {/* COACH-SEEN-MOMENTS-01 (2026-10-30): the two earned lines, fed through the real rules. */}
         <div>

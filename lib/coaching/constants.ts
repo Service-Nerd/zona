@@ -194,6 +194,9 @@ export const COACH_MOMENT_MIN_PRIOR_WEEKS = 3
 // AND at least this share in Zones 4–5 is interval-shaped ("split"), never counted as grey. Measured: 31 of 256 runs.
 // Seiler: an interval session's Zone 3 time is the ramp between reps, not the grey middle.
 export const COACH_EFFORT_SPLIT_MIN_PCT = 25
+// The every-run picture shows only with at least this many runs carrying a zone split in its window (17 of 21 runners
+// with HR runs qualify, measured). Hutchinson: fewer and one odd run is a third of the picture.
+export const COACH_EFFORT_MIN_RUNS = 6
 
 /**
  * COACH-BEHIND-DAY-TWO-01 / §65 Amendment — the minimum number of outstanding

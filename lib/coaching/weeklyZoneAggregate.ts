@@ -123,9 +123,9 @@ export function weekZoneSplitRows(
     .map(toZoneRow)
 }
 
-type ZoneActivityRow = ActivityLogRow & { hr_pct_z1?: number | null; hr_pct_z2?: number | null; hr_pct_z3?: number | null; hr_pct_z4_5?: number | null }
+export type ZoneActivityRow = ActivityLogRow & { hr_pct_z1?: number | null; hr_pct_z2?: number | null; hr_pct_z3?: number | null; hr_pct_z4_5?: number | null }
 
-const hasZoneSplit = (r: ZoneActivityRow) => r.hr_pct_z1 != null || r.hr_pct_z2 != null || r.hr_pct_z3 != null || r.hr_pct_z4_5 != null
+export const hasZoneSplit = (r: ZoneActivityRow) => r.hr_pct_z1 != null || r.hr_pct_z2 != null || r.hr_pct_z3 != null || r.hr_pct_z4_5 != null
 const toZoneRow = (r: ZoneActivityRow): ZoneSplitRow => ({
   z1: Number(r.hr_pct_z1 ?? 0), z2: Number(r.hr_pct_z2 ?? 0), z3: Number(r.hr_pct_z3 ?? 0), z45: Number(r.hr_pct_z4_5 ?? 0),
   weight: weightOf(runDistance(r)?.km ?? null),

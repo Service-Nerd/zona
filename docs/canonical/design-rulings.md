@@ -5767,3 +5767,12 @@ his production data: **every run by effort** (the grey middle as a dot plot, pic
 **what Kit caught** (trial/free receipts, replaces the stale teaser). Recommended order 1 → 6 → 2 → 4 → 3 → 5. Split:
 Wroblewski against the questions shipping first, Collins for. Settled ground priced, none reversed. Found: his long
 runs since 11 Oct carry no HR, hiding the easy-share headline. Sitting and mockups: `docs/decisions/coach-ideas-2026-10-31.md`.
+
+## 🧭 2026-10-31 — `COACH-EFFORT-PICTURE-01`: every run, by zone · **SHIP, option A (founder-picked) · BUILT 2026-10-31**
+
+Idea 1 of the ideas sitting, redrawn after the Coaching Board (§132) ruled that a dot placed by average heart rate
+misplaces interval sessions (21 of 105 "grey" runs, measured). One column per run over 8 weeks, time in zone bottom to
+top, a `--s-quality` dot under each run mostly in Zone 3, this week ringed. Option B (grouped by kind) not taken: it loses
+the dates. Card sits after "This week", before the easy run trend (5 cards, the sitting's limit held). Pattern:
+`ui-patterns.md` § Every run, by zone. Check: `components/shared/effortRecord.markup.test.ts` (falsified twice). Paid
+Coach only for now; the free half (picture on the free screen) lands with `COACH-KIT-CAUGHT-01`.

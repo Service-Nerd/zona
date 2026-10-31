@@ -12,6 +12,8 @@
 
 import { isHardEffortType } from '@/lib/plan/sessionRole'
 import { COACH_EFFORT_SPLIT_MIN_PCT } from './constants'
+import { dedupeRuns, isRun, type ActivityLogRow } from './weeklyActualLoad'
+import { hasZoneSplit, type ZoneActivityRow } from './weeklyZoneAggregate'
 
 export type RunEffortKind = 'easy' | 'grey' | 'hard' | 'split' | 'planned' | 'unknown'
 
@@ -37,4 +39,54 @@ export function runEffortKind(row: RunEffortRow, plannedType: string | null = nu
   if (easy >= grey && easy >= hard) return 'easy'
   if (grey >= hard) return 'grey'
   return 'hard'
+}
+
+/** One run in the every-run record: its zone split and what kind of run it was. */
+export interface EffortRun { date: string; z1: number; z2: number; z3: number; z45: number; kind: RunEffortKind; thisWeek: boolean }
+
+/** A linked activity's plan session type, from the completion that names it (`week_n` + `session_day`). */
+export function plannedTypeByActivity(
+  completions: ReadonlyArray<{ week_n: number; session_day: string; strava_activity_id?: number | string | null; apple_health_uuid?: string | null }> | null | undefined,
+  plan: { weeks?: ReadonlyArray<{ n: number; sessions?: Record<string, { type?: string } | undefined> }> } | null | undefined,
+): Map<string, string> {
+  const out = new Map<string, string>()
+  for (const c of completions ?? []) {
+    const type = plan?.weeks?.find(w => w.n === c.week_n)?.sessions?.[c.session_day]?.type
+    if (!type) continue
+    if (c.strava_activity_id != null) out.set(`s:${c.strava_activity_id}`, type)
+    if (c.apple_health_uuid) out.set(`a:${c.apple_health_uuid}`, type)
+  }
+  return out
+}
+
+/**
+ * Every run carrying a zone split in the last `weeks` plan-aligned weeks (this week last), oldest first. Same run
+ * filter and dedupe as the rings (`weekZoneSplitRows`), so the two never count different runs.
+ */
+export function effortRecord(
+  rows: readonly ZoneActivityRow[],
+  week: { date?: string } | null | undefined,
+  weeks: number,
+  plannedTypes: ReadonlyMap<string, string> = new Map(),
+): EffortRun[] {
+  if (!week?.date) return []
+  const thisStart = new Date(`${String(week.date).slice(0, 10)}T00:00:00`)
+  if (Number.isNaN(thisStart.getTime())) return []
+  const from = new Date(thisStart); from.setDate(from.getDate() - 7 * (weeks - 1))
+  const to = new Date(thisStart); to.setDate(to.getDate() + 7)
+  return dedupeRuns(rows.filter(isRun) as ActivityLogRow[])
+    .map(r => r as ZoneActivityRow)
+    .filter(hasZoneSplit)
+    .filter(r => { const d = new Date(r.start_date); return d >= from && d < to })
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))
+    .map(r => {
+      const planned = plannedTypes.get(`s:${r.strava_activity_id}`) ?? (r.apple_health_uuid ? plannedTypes.get(`a:${r.apple_health_uuid}`) : undefined) ?? null
+      return {
+        date: r.start_date,
+        z1: Number(r.hr_pct_z1 ?? 0), z2: Number(r.hr_pct_z2 ?? 0), z3: Number(r.hr_pct_z3 ?? 0), z45: Number(r.hr_pct_z4_5 ?? 0),
+        kind: runEffortKind(r, planned),
+        thisWeek: new Date(r.start_date) >= thisStart,
+      }
+    })
+    .filter(r => r.kind !== 'unknown')
 }

@@ -125,12 +125,18 @@ The user opens Coach to hear from Kit. This is the AI intelligence layer: a synt
 | Race projections — the arc (was · now · goal), §109 (moved here 2026-09-12, UX-COACH-01; **last on the screen** since COACH-WEEK-FACTS-01) | Session-level detail (that's Session Detail) |
 | This week's load — the verdict and `LoadShape`, from every run (LOAD-SOURCE-TOTAL-01) | Profile or settings |
 | This week's runs and strength, as the foot of the "This week" load card (COACH-WEEK-FACTS-01): `2 of 3 runs` · `2 of 2 strength` | The discipline ledger (that's Me, LEDGER-PLACEMENT-01; the Coach copy was removed 2026-10-05) |
-| (Strength's count is conditional, when the plan has strength) | A zone discipline TILE: it restated the rings (Pattern 32). The share belongs to the rings as their headline (COACH-DISCIPLINE-HEADLINE-01, ruled, not built) |
+| (Strength's count is conditional, when the plan has strength) | A zone discipline TILE: it restated the rings (Pattern 32). The share belongs to the rings as their headline (COACH-DISCIPLINE-HEADLINE-01, built: shows at 2+ runs with a split) |
+| Every run, by zone: each run's time in zone over 8 weeks, runs mostly in Zone 3 counted (COACH-EFFORT-PICTURE-01, §132) | A pace record or a score per run (§108, §132) |
 | Aerobic / easy-run trend (ONE card, UX-COACH-01) | A 2×2 stats grid (UX-COACH-01: two tiles, not four) |
 
 > **Corrected 2026-10-30 (COACH-CODE-HYGIENE-01).** This table still listed the zone discipline tile, the discipline
 > ledger and "weeks left to race" as Coach blocks, all removed by earlier rulings, so it described a screen that no
 > longer existed. Order above is the screen's order today; the zone discipline share is reached from the rings' sheet.
+>
+> **Screen order, 2026-10-31 (COACH-EFFORT-PICTURE-01), read from the code:** Kit's read with the rings inside it · This
+> week (load, runs, strength) · every run, by zone · easy run trend · race projections. The table above is grouped by
+> topic, not by order. ⚠️ The rings' sheet shows the PRESCRIBED-zone discipline share (matched runs), a different number
+> from the rings' easy share; both are called zone discipline in places.
 
 **Kit appears once, as a coherent voice.** Multiple disconnected Kit cards are a layout failure — consolidate.
 
