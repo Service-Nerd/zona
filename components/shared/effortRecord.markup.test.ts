@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
-import EffortRecord, { effortHeadline } from './EffortRecord'
+import EffortRecord, { effortHeadline, EFFORT_RECORD_MAX_COLUMNS } from './EffortRecord'
 import { COACH_EFFORT_MIN_RUNS } from '@/lib/coaching/constants'
 import type { EffortRun } from '@/lib/coaching/runEffort'
 
@@ -28,6 +28,15 @@ describe('EffortRecord', () => {
     const t = text(html(Array.from({ length: 6 }, () => run('grey'))))
     expect(t).toContain('Zone 3 is the grey zone on easy days. A tempo belongs there')
     expect(t).not.toMatch(/should have been|too hard|lazy/i)
+  })
+
+  it('🔴 a dense record draws the most recent runs, at most the cap, and says so (Design Board 2026-10-31)', () => {
+    const many = Array.from({ length: 40 }, (_, i) => run(i === 39 ? 'grey' : 'easy', i === 39))
+    const h = html(many)
+    expect((h.match(/data-run="/g) ?? []).length).toBe(EFFORT_RECORD_MAX_COLUMNS)
+    expect(text(h)).toContain(`last ${EFFORT_RECORD_MAX_COLUMNS} runs`)
+    expect(text(h)).toContain(`1 of your ${EFFORT_RECORD_MAX_COLUMNS} runs spent most of its time in Zone 3.`)
+    expect(h).toContain('data-this-week="true"')
   })
 
   it('headline grammar', () => {

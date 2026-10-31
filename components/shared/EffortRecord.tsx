@@ -15,6 +15,9 @@ import { COACH_EFFORT_MIN_RUNS } from '@/lib/coaching/constants'
 import type { EffortRun } from '@/lib/coaching/runEffort'
 
 const COLUMN_HEIGHT_PX = 96
+/** Design Board 2026-10-31: at 375pt a card holds this many columns before a column is narrower than its 6px dot
+ *  ((309 − 31 × 3) / 32 = 6.75px). Beyond it the most recent runs are drawn and the eyebrow says so. */
+export const EFFORT_RECORD_MAX_COLUMNS = 32
 // Bottom to top, the rings' zone colours (ZoneRings `ZONE_COLORS`).
 const LAYERS: { key: 'z1' | 'z2' | 'z3' | 'z45'; fill: string; label: string }[] = [
   { key: 'z1', fill: 'var(--s-recov)', label: 'Z1' },
@@ -30,8 +33,10 @@ export function effortHeadline(grey: number, total: number): string {
     : `${grey} of your ${total} runs spent most of their time in Zone 3.`
 }
 
-export default function EffortRecord({ runs, weeks }: { runs: EffortRun[]; weeks: number }) {
-  if (runs.length < COACH_EFFORT_MIN_RUNS) return null
+export default function EffortRecord({ runs: all, weeks }: { runs: EffortRun[]; weeks: number }) {
+  if (all.length < COACH_EFFORT_MIN_RUNS) return null
+  const capped = all.length > EFFORT_RECORD_MAX_COLUMNS
+  const runs = capped ? all.slice(-EFFORT_RECORD_MAX_COLUMNS) : all
   const grey = runs.filter(r => r.kind === 'grey').length
   const last = runs[runs.length - 1]
   const caption = { fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-caption)', color: 'var(--mute)' } as const
@@ -39,7 +44,7 @@ export default function EffortRecord({ runs, weeks }: { runs: EffortRun[]; weeks
     <div data-effort-record className="card-data" style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)' }}>Every run, by zone</span>
-        <span style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)' }}>{runs.length} runs · {weeks} weeks</span>
+        <span style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)' }}>{capped ? `last ${runs.length} runs` : `${runs.length} runs · ${weeks} weeks`}</span>
       </div>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.2px', lineHeight: 1.25, marginTop: 'var(--space-2)' }}>
         {effortHeadline(grey, runs.length)}

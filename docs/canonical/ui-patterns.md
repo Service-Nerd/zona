@@ -4397,6 +4397,7 @@ picked **option A (date order)** over B (grouped by kind) from `docs/decisions/c
 | **What counts** | Only `grey` runs (§132: Zone 3 the largest share). A `split` (interval-shaped) run and a run that completed a planned hard session are drawn but never dotted or counted |
 | **Claims** | None about intent. The picture names no pattern; Kit's read may (Pro). The footer teaches the line instead of accusing |
 | **Shows** | At ≥`COACH_EFFORT_MIN_RUNS` (6) runs with a split; otherwise nothing (empty means calm). No tap, no sheet |
+| **Dense** | At most `EFFORT_RECORD_MAX_COLUMNS` (32) most recent runs, eyebrow *"last 32 runs"*: a column never narrower than its dot (Design Board 2026-10-31) |
 | **Order** | Coach: read + rings · this week · **every run, by zone** · easy run trend · race times |
 
 Held by `components/shared/effortRecord.markup.test.ts` and `lib/coaching/runEffort.test.ts`. Falsified: a dot on split and
@@ -4405,8 +4406,8 @@ planned runs, and counting split runs, each turn the count arm red.
 ### ✅ What Kit caught — the runner's own receipts (`COACH-KIT-CAUGHT-01`, boards 2026-10-31, built)
 
 `components/shared/KitReceipts.tsx`, fed by `lib/coaching/kitReceipts.ts` (§133). One card, two homes: **free Coach** and
-the **Upgrade screen** (under the headline, above the feature list; titled *"In your trial, Kit caught"* for a trialling or
-trial-ended runner). Founder-approved mockup `docs/decisions/kit-caught-mockups.png`.
+the **Upgrade screen** (under the headline, above the feature list; titled *"In your trial, Kit caught"* only while a trial
+runs; trial-ended and grant-ended read *"What Kit caught · last 2 weeks"*, Design Board 2026-10-31). Founder-approved mockup `docs/decisions/kit-caught-mockups.png`.
 
 ```
   WHAT KIT CAUGHT                         LAST 2 WEEKS   ← two eyebrows

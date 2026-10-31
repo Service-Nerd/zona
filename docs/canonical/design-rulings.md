@@ -5783,3 +5783,13 @@ Receipt dots use P-01's pair (moss held, amber drifted or a week off normal), �
 same card sits under the headline, above the feature list, for trialling and trial-ended runners (*"In your trial, Kit
 caught"*). **CO-ONE on free Coach:** receipts and the free weekly insight never render together; the SLT made the insight
 the fallback (no receipt, RPE logged). Sitting: `docs/decisions/kit-caught-questions-2026-10-31.md`. **BUILT 2026-10-31:** `KitReceipts.tsx`, pattern `ui-patterns.md` § What Kit caught, check `kitReceipts.markup.test.ts`.
+
+## 🧭 2026-10-31 — `COACH-SIGNOFF-01`: Coach (Pro, free) and the trial Upgrade screen as built · **SHIP, two amendments built**
+
+Full-screen render at 375px from real components and the founder's data; independent audit 0 must-fix (5 of 7 should-fix
+fixed in `4ff6e039`). **Amendments:** the effort record draws at most `EFFORT_RECORD_MAX_COLUMNS` (32) most recent runs
+and says "last 32 runs" (columns stay wider than the dot; densest runner today 24); "In your trial, Kit caught" only while
+a trial runs. **Collins lost, recorded:** effort record under Kit's read; order holds until Coach opens are measured.
+Filed: `A11Y-REDUCED-MOTION-01`, `TYPESCALE-DECIMAL-GATE-01`. Check: `effortRecord.markup.test.ts` (cap, falsified),
+`kitReceipts.markup.test.ts`. Sitting: `docs/decisions/coach-signoff-2026-10-31.md`.
+

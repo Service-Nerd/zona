@@ -20,6 +20,7 @@ import { Capacitor } from '@capacitor/core'
 import { trackEvent, isUserCancelled, purchaseErrorDetail, hasActiveEntitlement, currentUserId, type UpgradeSource, type PurchaseStage } from '@/lib/analytics'
 import { BRAND, PRICING } from '@/lib/brand'
 import KitReceipts from '@/components/shared/KitReceipts'
+import { COACH_RECEIPT_WINDOW_DAYS } from '@/lib/coaching/constants'
 import type { KitReceipt } from '@/lib/coaching/kitReceipts'
 import { TRIAL_DAYS } from '@/lib/trial'
 import { upgradeFraming, isLossFraming } from '@/lib/subscriptions/upgradeFraming'
@@ -326,7 +327,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
             includes. Reached only by tapping upgrade, never a dated prompt (SLT). */}
         {receipts && receipts.length > 0 && (
           <div style={{ marginTop: 'var(--space-5)' }}>
-            <KitReceipts receipts={receipts} title={inTrial || framing === 'trial-ended' ? `In your trial, ${BRAND.coachName} caught` : undefined} />
+            <KitReceipts receipts={receipts} meta={`last ${COACH_RECEIPT_WINDOW_DAYS / 7} weeks`} title={inTrial ? `In your trial, ${BRAND.coachName} caught` : undefined} />
           </div>
         )}
 

@@ -151,7 +151,7 @@ export default function CoachTeaser({ plan, firstName, onUpgrade, receipts = [],
             <p className="section-headline" style={{ margin: '0 0 8px' }}>
               {insight.headline}
             </p>
-            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13.5px', color: 'var(--ink-2)', lineHeight: 1.55, margin: 0 }}>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--ink-2)', lineHeight: 1.55, margin: 0 }}>
               {insight.body}
             </p>
           </div>

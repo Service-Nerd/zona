@@ -56,6 +56,10 @@ describe('free Coach (CoachTeaser)', () => {
 
 describe('🔴 Upgrade screen: receipts sit above what Pro includes', () => {
   const src = readFileSync('app/dashboard/UpgradeScreen.tsx', 'utf8')
+  it('"In your trial" only while a trial runs; an ended trial reads the true window', () => {
+    expect(src).toMatch(/title=\{inTrial \? `In your trial/)
+    expect(src).not.toMatch(/framing === 'trial-ended' \? `In your trial/)
+  })
   it('order', () => {
     const r = src.indexOf('<KitReceipts')
     expect(r).toBeGreaterThan(src.indexOf('{headline}'))
