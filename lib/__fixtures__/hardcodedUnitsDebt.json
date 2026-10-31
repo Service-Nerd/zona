@@ -7,15 +7,15 @@
  "entries": [
   {
    "file": "lib/coaching/limiter.ts",
-   "code": "reasoning:  `long run cut ${formatDistance(shortfall, inputs.units, { exact: true }) ?? `${shortfall.toFixed(1)}km`} short with RPE ${inputs.rpe} — fueling or pacing in the back half`,"
+   "code": "reasoning:  `long run cut ${formatDistance(shortfall, inputs.units, { exact: true }) ?? `${shortfall.toFixed(1)}km`} short with RPE ${inputs.rpe}: fueling or pacing in the back half`,"
   },
   {
    "file": "lib/coaching/planAdjustment.ts",
-   "code": "coach_notes: [`Trimmed to ${reduced}km — long runs have been finishing short. Build back to full distance when ready.`] as [string],"
+   "code": "coach_notes: [`Trimmed to ${reduced}km. Long runs have been finishing short. Build back to full distance when ready.`] as [string],"
   },
   {
    "file": "lib/coaching/planAdjustment.ts",
-   "code": "coach_notes: [`Trimmed to ${formatDuration(reducedMins) ?? `${reducedMins} min`} — long runs have been finishing short. Build back to full time when ready.`] as [string],"
+   "code": "coach_notes: [`Trimmed to ${formatDuration(reducedMins) ?? `${reducedMins} min`}. Long runs have been finishing short. Build back to full time when ready.`] as [string],"
   },
   {
    "file": "lib/plan/baseVolume.ts",

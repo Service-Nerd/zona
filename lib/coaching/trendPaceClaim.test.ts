@@ -77,9 +77,9 @@ describe('trendSentence — the claim is withheld, not the sentence', () => {
 
   it('BACK-COMPAT — with no pace, behaviour is exactly what it was', () => {
     expect(trendSentence({ ...base, earlierHr: 152, nowHr: 144 }))
-      .toBe('Easy is easier than it was — 152 down to 144 since Apr.')
+      .toBe('Easy is easier than it was: 152 down to 144 since Apr.')
     expect(trendSentence({ ...base, earlierHr: 144, nowHr: 152 }))
-      .toBe('Easy is costing you more than it did — 144 up to 152 since Apr. That is common mid-build, and worth watching if it holds.')
+      .toBe('Easy is costing you more than it did: 144 up to 152 since Apr. That is common mid-build, and worth watching if it holds.')
   })
 
   it('never says "at the same pace" — the cohort does not control for it', () => {

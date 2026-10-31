@@ -101,9 +101,9 @@ export function achievementLine(race: FinishedRace): string {
   const ft = formatSeconds(finishSec)
   if (goalSec != null) {
     const delta = goalSec - finishSec
-    if (Math.abs(delta) < 30) return `You ran ${ft} — right on your goal.`
-    if (delta > 0)            return `You ran ${ft} — ${formatSeconds(delta)} inside your goal.`
-    return `You ran ${ft} — ${formatSeconds(-delta)} over. It happens.`
+    if (Math.abs(delta) < 30) return `You ran ${ft}, right on your goal.`
+    if (delta > 0)            return `You ran ${ft}, ${formatSeconds(delta)} inside your goal.`
+    return `You ran ${ft}, ${formatSeconds(-delta)} over. It happens.`
   }
   return `You ran ${ft}. In the book.`
 }

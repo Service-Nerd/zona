@@ -32,7 +32,14 @@ const EM = '—'
 // "The checker's population excludes the cases at risk", caused by a refactor that was
 // otherwise correct. Added clean: all 5 arms stayed green, so there was no debt to
 // declare, and the next sentence that lands in a `lib/ui` owner is covered on the way in.
-const SURFACES = ['components', 'app/dashboard', 'lib/ui']
+// 🔴 `lib/coaching` ADDED 2026-10-31 (KIT-READ-EMDASH-01). The founder's screenshot of Kit's weekly read
+// showed *"Easy HR is up since May — 138 to 154 — but you were running faster too."* The model did not write
+// it: `trendSentence.ts` did, and so did 29 more runner-facing sentences in this folder (adjustment notes,
+// post-run lines, week voice, zone explanations, race-result lines). Same class as `lib/ui` on 2026-10-07:
+// the copy lived in an owner module this guard could not see.
+const SURFACES = ['components', 'app/dashboard', 'lib/ui', 'lib/coaching']
+/** Model INPUT, never rendered. Its exemplars are guarded separately by `exemplarHygiene.test.ts`. */
+const SKIP_DIRS = ['lib/coaching/prompts']
 
 /** Not a sentence the runner reads, so out of scope by the founder's own words.
  *  Each entry names WHY, because an exemption without a reason becomes a place
@@ -106,6 +113,7 @@ function files(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {
     if (e === 'node_modules' || e === '.next' || e.startsWith('.')) continue
     const p = join(dir, e)
+    if (SKIP_DIRS.some(d => p === join(process.cwd(), d))) continue
     if (statSync(p).isDirectory()) files(p, out)
     else if (/\.tsx?$/.test(p) && !/\.test\.tsx?$/.test(p)) out.push(p)
   }

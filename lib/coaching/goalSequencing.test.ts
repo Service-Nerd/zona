@@ -61,9 +61,9 @@ describe('CA-03 — goal sequencing', () => {
 
   it('achievement line reads finish vs goal', () => {
     expect(achievementLine({ distanceKm: 42.2, finishTime: '2:04:00', targetTime: '2:10:00', outcome: 'pb' }))
-      .toBe('You ran 2:04:00 — 6:00 inside your goal.')
+      .toBe('You ran 2:04:00, 6:00 inside your goal.')
     expect(achievementLine({ distanceKm: 10, finishTime: '48:00', targetTime: '46:00', outcome: 'off_target' }))
-      .toBe('You ran 48:00 — 2:00 over. It happens.')
+      .toBe('You ran 48:00, 2:00 over. It happens.')
     expect(achievementLine({ distanceKm: 5, outcome: 'dnf' }))
       .toBe('You toed the line for the 5K. That counts.')
   })

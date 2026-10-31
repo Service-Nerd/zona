@@ -167,16 +167,16 @@ export function buildLinkPushCopy(
   // Controlled-zone day with a ceiling we can compare against.
   if (type && CONTROLLED_ZONE_TYPES.has(type) && hasHr && ceiling != null) {
     return avgHr <= ceiling
-      ? { title: 'Held the zone on that one.', body: 'Numbers look good — how did it feel?' }
-      : { title: 'Bit warm, that one.',        body: 'Numbers say one thing — how did it feel?' }
+      ? { title: 'Held the zone on that one.', body: 'Numbers look good. How did it feel?' }
+      : { title: 'Bit warm, that one.',        body: 'Numbers say one thing. How did it feel?' }
   }
 
   // Hard session — credit the effort, leave the HR read for inside.
   if (isHardEffortType(type)) {
-    return { title: "That's the hard one done.", body: "Kit's reading it — how did it feel?" }
+    return { title: "That's the hard one done.", body: "Kit's reading it. How did it feel?" }
   }
 
   // No HR, no parseable target, strength/cross/race/rest: neutral recognition,
   // the read is on its way.
-  return { title: "That one's in.", body: "Kit's reading it — how did it feel?" }
+  return { title: "That one's in.", body: "Kit's reading it. How did it feel?" }
 }

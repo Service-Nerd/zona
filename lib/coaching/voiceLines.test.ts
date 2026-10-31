@@ -16,7 +16,7 @@ describe('buildLinkPushCopy', () => {
   it('praises control when avg HR is at/under the ceiling on a controlled-zone day', () => {
     const copy = buildLinkPushCopy(easy('< 145 bpm'), 138)
     expect(copy.title).toBe('Held the zone on that one.')
-    expect(copy.body).toContain('how did it feel?')
+    expect(copy.body).toMatch(/how did it feel\?/i)
   })
 
   it('treats avg HR exactly on the ceiling as held', () => {
@@ -26,7 +26,7 @@ describe('buildLinkPushCopy', () => {
   it('nudges (never praises) when avg HR runs over the ceiling', () => {
     const copy = buildLinkPushCopy(easy('< 145 bpm'), 158)
     expect(copy.title).toBe('Bit warm, that one.')
-    expect(copy.body).toContain('how did it feel?')
+    expect(copy.body).toMatch(/how did it feel\?/i)
   })
 
   it('uses the range upper bound as the ceiling', () => {
@@ -38,7 +38,7 @@ describe('buildLinkPushCopy', () => {
   it('credits effort on hard days without an HR verdict', () => {
     const copy = buildLinkPushCopy(tempo, 171)
     expect(copy.title).toBe("That's the hard one done.")
-    expect(copy.body).toContain('how did it feel?')
+    expect(copy.body).toMatch(/how did it feel\?/i)
   })
 
   it('falls back to neutral recognition when avg HR is missing', () => {
@@ -62,7 +62,7 @@ describe('buildLinkPushCopy', () => {
       buildLinkPushCopy(tempo, 170),
       buildLinkPushCopy(easy(null), 140),
     ]) {
-      expect(copy.body).toContain('how did it feel?')
+      expect(copy.body).toMatch(/how did it feel\?/i)
     }
   })
 })

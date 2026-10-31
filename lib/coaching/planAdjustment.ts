@@ -486,7 +486,7 @@ function buildEFDeclineAdjustment(input: AdjustmentCheckInput, efTrend: number):
   if (input.currentPhase === 'peak') {
     const sessionsAfter = sessions.map(s => {
       if (isQualitySession(s)) {
-        return { ...s, coach_notes: [`EF trending down ${Math.abs(Math.round(efTrend))}%. Stay disciplined — peak phase.`] as [string] }
+        return { ...s, coach_notes: [`EF trending down ${Math.abs(Math.round(efTrend))}%. Stay disciplined: peak phase.`] as [string] }
       }
       return { ...s }
     })
@@ -503,7 +503,7 @@ function buildEFDeclineAdjustment(input: AdjustmentCheckInput, efTrend: number):
 
   const sessionsAfter = sessions.map(s => {
     if (isQualitySession(s)) {
-      return { ...s, type: 'easy' as const, coach_notes: ['Swapped to easy — aerobic efficiency trending down.'] as [string] }
+      return { ...s, type: 'easy' as const, coach_notes: ['Swapped to easy: aerobic efficiency trending down.'] as [string] }
     }
     return { ...s }
   })
@@ -526,14 +526,14 @@ function buildFatigueAdjustment(input: AdjustmentCheckInput, consecutiveCount: n
       return {
         ...s,
         type: 'easy' as const,
-        coach_notes: [`Swapped to easy — ${consecutiveCount} consecutive heavy sessions. Let the adaptation catch up.`] as [string],
+        coach_notes: [`Swapped to easy: ${consecutiveCount} consecutive heavy sessions. Let the adaptation catch up.`] as [string],
       }
     }
     if (isLongRun(s) && s.distance_km) {
       return {
         ...s,
         distance_km: Math.round(s.distance_km * FATIGUE_SOFTENING_LONG_RUN_PCT * 10) / 10,
-        coach_notes: ['Shortened — fatigue accumulating. Same aerobic stimulus, less load.'] as [string],
+        coach_notes: ['Shortened: fatigue accumulating. Same aerobic stimulus, less load.'] as [string],
       }
     }
     return { ...s }
@@ -561,7 +561,7 @@ function buildRpeDisconnectAdjustment(input: AdjustmentCheckInput, rpe: number, 
     if (s.type === 'easy' || isLongRun(s)) {
       return {
         ...s,
-        coach_notes: [`RPE ${rpe} on ${sessionType} run. Keep HR in Zone 2 — if it felt hard, it was too hard.`] as [string],
+        coach_notes: [`RPE ${rpe} on ${sessionType} run. Keep HR in Zone 2. If it felt hard, it was too hard.`] as [string],
       }
     }
     return { ...s }
@@ -694,8 +694,8 @@ function buildSkipAdjustment(
     const makeUpSession: Session = {
       ...skippedRest,
       label: `Make-up ${sessionType} run`,
-      detail: 'Rescheduled from earlier this week. Keep the effort easy — this is a catch-up, not extra load.',
-      coach_notes: ['Make-up session. Same effort as the original — no extra load.'] as [string],
+      detail: 'Rescheduled from earlier this week. Keep the effort easy. This is a catch-up, not extra load.',
+      coach_notes: ['Make-up session. Same effort as the original, no extra load.'] as [string],
     }
     // RESHAPE-FIX-WAVE1 (Defect 2): previously `[...sessionsAfter, makeUpSession]`
     // appended the make-up at array index 7. The apply loop in
@@ -724,7 +724,7 @@ function buildSkipAdjustment(
       if (isQualitySession(s)) {
         return {
           ...s,
-          coach_notes: ['Injury concern flagged. Keep effort controlled — no pushing through discomfort.'] as [string],
+          coach_notes: ['Injury concern flagged. Keep effort controlled. No pushing through discomfort.'] as [string],
         }
       }
       // Easy/long sessions: 15% volume reduction
@@ -732,7 +732,7 @@ function buildSkipAdjustment(
         return {
           ...s,
           distance_km: Math.round(s.distance_km * SKIP_INJURY_VOLUME_REDUCTION * 10) / 10,
-          coach_notes: ['Reduced — injury concern. If pain persists, skip and rest.'] as [string],
+          coach_notes: ['Reduced: injury concern. If pain persists, skip and rest.'] as [string],
         }
       }
       return { ...s }
@@ -818,7 +818,7 @@ function buildReorderAdjustment(
   if (lostRestDayViolation)  issues.push('no rest day this week')
   if (qualityLongViolation)  issues.push('quality too close to the long run')
   const summary = issues.length
-    ? `${moveLabel} ${cap(issues.join(' + '))} — review carefully.`
+    ? `${moveLabel} ${cap(issues.join(' + '))} : review carefully.`
     : `${moveLabel} Hard/easy alternation preserved.`
 
   return {
@@ -964,7 +964,7 @@ function buildLongRunShortfallAdjustment(input: AdjustmentCheckInput): ProposedA
       return {
         ...s,
         distance_km: reduced,
-        coach_notes: [`Trimmed to ${reduced}km — long runs have been finishing short. Build back to full distance when ready.`] as [string],
+        coach_notes: [`Trimmed to ${reduced}km. Long runs have been finishing short. Build back to full distance when ready.`] as [string],
       }
     }
     if (s.duration_mins) {
@@ -979,7 +979,7 @@ function buildLongRunShortfallAdjustment(input: AdjustmentCheckInput): ProposedA
         // ADR-015 locks `1h 36`, never `96 min`. Its distance twin above needs
         // no change: `coach_notes` are converted at the READ (UNITS-PROSE-01),
         // and a duration carries no unit preference to honour.
-        coach_notes: [`Trimmed to ${formatDuration(reducedMins) ?? `${reducedMins} min`} — long runs have been finishing short. Build back to full time when ready.`] as [string],
+        coach_notes: [`Trimmed to ${formatDuration(reducedMins) ?? `${reducedMins} min`}. Long runs have been finishing short. Build back to full time when ready.`] as [string],
       }
     }
     return { ...s }

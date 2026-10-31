@@ -194,7 +194,7 @@ export function inferLimiter(inputs: LimiterInputs): LimiterHypothesis | null {
     return {
       category:   'aerobic',
       confidence: 'medium',
-      reasoning:  `HR drifted +${hrDrift}bpm and pace faded ${paceFade}s/km — both signals together (engine and legs failing in step)`,
+      reasoning:  `HR drifted +${hrDrift}bpm and pace faded ${paceFade}s/km, both signals together (engine and legs failing in step)`,
     }
   }
 
@@ -238,7 +238,7 @@ export function inferLimiter(inputs: LimiterInputs): LimiterHypothesis | null {
     return {
       category:   'fueling',
       confidence: 'low',
-      reasoning:  `long run cut ${formatDistance(shortfall, inputs.units, { exact: true }) ?? `${shortfall.toFixed(1)}km`} short with RPE ${inputs.rpe} — fueling or pacing in the back half`,
+      reasoning:  `long run cut ${formatDistance(shortfall, inputs.units, { exact: true }) ?? `${shortfall.toFixed(1)}km`} short with RPE ${inputs.rpe}: fueling or pacing in the back half`,
     }
   }
 
@@ -250,7 +250,7 @@ export function inferLimiter(inputs: LimiterInputs): LimiterHypothesis | null {
     return {
       category:   'fatigue_tag',
       confidence: 'low',
-      reasoning:  `runner logged "${inputs.fatigueTag}" afterwards — body is signalling cost`,
+      reasoning:  `runner logged "${inputs.fatigueTag}" afterwards; body is signalling cost`,
     }
   }
 

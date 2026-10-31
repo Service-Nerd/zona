@@ -18,7 +18,7 @@ const say = (earlierHr: number, nowHr: number) =>
 
 describe('trendSentence — improvement', () => {
   it('reads as easier when the heart rate fell', () => {
-    expect(say(152, 147)).toBe('Easy is easier than it was — 152 down to 147 since Jun.')
+    expect(say(152, 147)).toBe('Easy is easier than it was: 152 down to 147 since Jun.')
   })
 
   it('treats a flat trend as the better news, not as a cost', () => {

@@ -41,7 +41,7 @@ export function buildWeekVoiceContext(currentWeek: Week, plan: Plan): WeekVoiceC
 }
 
 export function getWeekVoiceHeadline(ctx: WeekVoiceContext): string {
-  if (ctx.phase === 'foundation') return "Foundation week. Easy only — build the base."
+  if (ctx.phase === 'foundation') return "Foundation week. Easy only: build the base."
   if (ctx.phase === 'taper') return "Taper week. Back off and trust the work."
   if (ctx.phase === 'peak')  return "Peak week. You're sharp. Don't add more."
   if (ctx.hasQuality && ctx.hasLong) return "Quality and long run this week. Hard stuff first, long stuff rested."
@@ -53,13 +53,13 @@ export function getWeekVoiceHeadline(ctx: WeekVoiceContext): string {
 export function getWeekVoiceItems(ctx: WeekVoiceContext, max = 3): string[] {
   const items: string[] = []
   if (ctx.hasQuality && ctx.hasLong) {
-    items.push("Do the quality session before fatigue builds — earlier in the week is better.")
+    items.push("Do the quality session before fatigue builds. Earlier in the week is better.")
     items.push("The long run should be Zone 2 only. No heroics.")
   } else if (ctx.hasQuality) {
-    items.push("Run the quality session when fresh — not back-to-back with another hard day.")
+    items.push("Run the quality session when fresh, not back-to-back with another hard day.")
     items.push("Everything else this week is recovery. Treat it that way.")
   } else if (ctx.hasLong) {
-    items.push("Keep the pace honest throughout — if HR climbs, walk.")
+    items.push("Keep the pace honest throughout. If HR climbs, walk.")
     items.push("Fuel and hydrate from the start, not when you're already behind.")
   }
   if (ctx.phase === 'base') items.push("Base phase: volume over intensity. The fitness accrues slowly. That's fine.")

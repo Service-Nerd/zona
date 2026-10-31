@@ -34,7 +34,7 @@ export const ZONE_COPY: Record<ZoneKey | 'Z1' | 'Z5', ZoneCopy> = {
     name: 'Aerobic base',
     what: 'Easy aerobic running. Most of your plan lives here.',
     feel: 'Embarrassingly slow. If you can hold a conversation, you\'re in. If you\'re huffing, slow down.',
-    why: 'This is where the fitness actually builds. Run it too hard and you train the wrong system — that\'s grey-zone running, and it\'s why most amateurs stall.',
+    why: 'This is where the fitness actually builds. Run it too hard and you train the wrong system. That\'s grey-zone running, and it\'s why most amateurs stall.',
   },
   'Z3': {
     label: 'Zone 3',
@@ -48,7 +48,7 @@ export const ZONE_COPY: Record<ZoneKey | 'Z1' | 'Z5', ZoneCopy> = {
     name: 'Hard',
     what: 'Genuinely hard. Intervals, hill reps, fast finishes.',
     feel: 'You can\'t talk. You\'re counting down to the rest.',
-    why: 'The top end of your fitness. Has to actually hurt to count — half-effort intervals are wasted intervals.',
+    why: 'The top end of your fitness. Has to actually hurt to count; half-effort intervals are wasted intervals.',
   },
   'Z5': {
     label: 'Zone 5',

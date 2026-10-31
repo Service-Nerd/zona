@@ -116,15 +116,15 @@ export function trendSentence(input: TrendReadInput): string {
   // point — this is the sentence a product that sells restraint should own.
   if (paceContext(input) === 'confounds') {
     return hrFell
-      ? `Easy HR is down since ${earlierMonth} — ${earlierHr} to ${nowHr} — but you were running slower too. `
+      ? `Easy HR is down since ${earlierMonth}, ${earlierHr} to ${nowHr}, but you were running slower too. `
         + `That is easier running rather than fitter running, which is fine if it was the plan.`
-      : `Easy HR is up since ${earlierMonth} — ${earlierHr} to ${nowHr} — but you were running faster too. `
+      : `Easy HR is up since ${earlierMonth}, ${earlierHr} to ${nowHr}, but you were running faster too. `
         + `The cost bought something.`
   }
 
   if (hrFell) {
-    return `${v.subject} ${v.easier} — ${earlierHr} down to ${nowHr} since ${earlierMonth}.`
+    return `${v.subject} ${v.easier}: ${earlierHr} down to ${nowHr} since ${earlierMonth}.`
   }
-  return `${v.subject} ${v.costing} — ${earlierHr} up to ${nowHr} since ${earlierMonth}. `
+  return `${v.subject} ${v.costing}: ${earlierHr} up to ${nowHr} since ${earlierMonth}. `
        + `That is common mid-build, and worth watching if it holds.`
 }

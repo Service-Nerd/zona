@@ -59,7 +59,7 @@ export function buildRaceNarrativeBlock(result: RaceResult | null | undefined): 
   if (result.fueling_outcome)  lines.push(`- Fueling: "${result.fueling_outcome}"`)
   if (!lines.length) return ''
   return `
-The runner's own account of the race — this is what actually happened out there. It OUTRANKS any device signal: reflect it, never contradict it, and never tell them to do something they already did.
+The runner's own account of the race. This is what actually happened out there. It OUTRANKS any device signal: reflect it, never contradict it, and never tell them to do something they already did.
 ${lines.join('\n')}
 `
 }
