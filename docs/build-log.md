@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-31 — IAP-PURCHASE-FAILED-01 · Four failed purchases, and none of them were failures
+
+**Shipped:** an iPhone runner who closes Apple's payment sheet is no longer told "Something went wrong", and a real purchase failure now records which step broke and the store's error code.
+**Dev learning:** RevenueCat's TypeScript error type has `userCancelled`. On iOS the plugin calls `call.reject(message, code, nsError)` and Capacitor's bridge copies only `message`, `errorMessage` and `code` onto the error, so that field never exists on the device. A cancel arrives as `{ code: "1" }`. The test passed because its fixture was written from the `.d.ts`. Write fixtures from the native `reject` call.
+**Product/creator learning:** "4 of 4 purchases failed" read as a dead payment path. It was one runner browsing the sheet three times and one runner tapping Subscribe two seconds after an offer code had already given them a year. The bigger fact underneath: no paid in-app purchase has ever succeeded in production; all 23 subscriptions are offer codes.
+**AI-building learning:** the first read was "purchases are broken". Reading the plugin's Swift and Capacitor's bridge source settled it in minutes; the database and RevenueCat's API then sorted the four rows into two different stories. Also: my full-suite run before an earlier commit was green only because a type-scale gate lists files with `git ls-files` and could not see an unstaged component.
+**The honest bit:** this was live for five and a half months, and the funnel instrumentation written to catch exactly this ("a funnel that cannot tell them apart sends someone hunting a defect that does not exist") had the bug in its own predicate.
+**Hook material:** 4 of 4 iPhone purchases "failed". 0 of them were failures.
+**Postable?:** yes
+
 ## 2026-10-31 — COACH-EFFORT-PICTURE-01 · The average heart rate of an interval session is a number the body never ran at
 
 **Shipped:** Coach now draws every run of the last eight weeks as a column of where its time went, and counts the runs that sat mostly in Zone 3: "6 of your 16 runs spent most of their time in Zone 3."
