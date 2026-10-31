@@ -5758,3 +5758,12 @@ recommends **C**: runs and strength as one line at the foot of the load card (re
 moved below the easy run trend (*now before over time*, Silvanto; re-orders UX-COACH-01, priced not reversed). A is the
 fallback (one "Done this week" card, side by side). **Unanimous: "Sessions" becomes "runs".** A5's kept number stands
 in every option. Sitting and mockups: `docs/decisions/coach-week-facts-2026-10-31.md`. **Built:** `components/shared/WeekFacts.tsx`; check `weekFacts.markup.test.ts`; pattern `ui-patterns.md` § This week's facts.
+
+## 🧭 2026-10-31 — `COACH-IDEAS-01`: ideas sitting, competitors re-read · **IDEAS + MOCKUPS, nothing ruled for build**
+
+Founder asked for ideas that make a runner want Pro, feel understood, see progress or why not, and wow. Six drawn with
+his production data: **every run by effort** (the grey middle as a dot plot, picture FREE), **same run then and now**,
+**Kit noticed + three preset questions**, **the Sunday reveal**, **race estimate as a record** (past only, §109),
+**what Kit caught** (trial/free receipts, replaces the stale teaser). Recommended order 1 → 6 → 2 → 4 → 3 → 5. Split:
+Wroblewski against the questions shipping first, Collins for. Settled ground priced, none reversed. Found: his long
+runs since 11 Oct carry no HR, hiding the easy-share headline. Sitting and mockups: `docs/decisions/coach-ideas-2026-10-31.md`.
