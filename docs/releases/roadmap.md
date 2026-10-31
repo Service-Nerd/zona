@@ -1166,6 +1166,8 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | **Sunday weekly report has not run in 90 days** (WEEKLY-REPORT-CRON-AUTH-01) | ✅ | S | Cron auth reads `x-cron-secret`, Vercel sends Bearer. Coach review 2026-10-30 |
 | **Zone rings read what you ran** (COACH-RINGS-SOURCE-01) | ✅ | S | 4 runners → ~11; 259/317 runs already carry a zone split |
 | **Coach read arrives without "Generate report"** (COACH-READ-AUTO-01) | ✅ | S | ~2 cents/runner/month; Sunday cron must request a fresh read |
+| **Every run, by zone on Coach** (COACH-EFFORT-PICTURE-01) | ✅ | S | §132: time in zone, splits and planned tempos never counted. Option A |
+| **What Kit caught: receipts replace the stale free teaser** (COACH-KIT-CAUGHT-01) | 🔲 | M | SLT 10-31: build, evidence-triggered never dated; Design Board layout at build |
 | **Coach code hygiene** (COACH-CODE-HYGIENE-01) | ✅ | S | Unseen model call per load; "Needs Strava" teaser; stale screen doc |
 | **Zone discipline headline + weekly bars** (COACH-DISCIPLINE-HEADLINE-01) | ✅ | M | Our unique metric, biggest moment on Coach; after items 1–2 |
 | **Earned sentences on Coach** (COACH-SEEN-MOMENTS-01) | ✅ | M | Shipped 2026-10-30 `e0dbb71a`: easiest week in N weeks + easy costing less, each on its evidence |
