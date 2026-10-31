@@ -119,6 +119,7 @@ import { computeLoadPicture, LOAD_PICTURE_LOOKBACK_DAYS, type LoadPicture } from
 import LoadHistory from '@/components/shared/LoadHistory'
 import LoadShape from '@/components/shared/LoadShape'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
+import WeekFacts from '@/components/shared/WeekFacts'
 import { NotificationBell } from '@/components/shared/NotificationBell'
 import { NotificationRow, type NotificationItem } from '@/components/shared/NotificationRow'
 import TrendCard from '@/components/shared/TrendCard'
@@ -201,7 +202,7 @@ import StrengthChangeConfirm from '@/components/dashboard/StrengthChangeConfirm'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useStrengthPlan, useStrengthWeeklyNote } from '@/components/dashboard/useStrengthPlan'
 import { canUseStrength } from '@/lib/strength-bridge/release'
-import { STRENGTH_COACH, STRENGTH_REST_INVITE, STRENGTH_SETUP, STRENGTH_WIZARD_EQUIPMENT, isoLocalDate, strengthSessionTitle } from '@/lib/strength-bridge/display'
+import { STRENGTH_REST_INVITE, STRENGTH_SETUP, STRENGTH_WIZARD_EQUIPMENT, isoLocalDate, strengthSessionTitle } from '@/lib/strength-bridge/display'
 import { strengthWeekEvidence, type StrengthWeekEvidence } from '@/lib/strength-bridge/coachEvidence'
 import { prefillChosenDays } from '@/lib/strength-bridge/chosenDays'
 import { STRENGTH_SCREEN_SUB, STRENGTH_TITLE, strengthSubtitle } from '@/components/shared/meDoors'
@@ -5996,46 +5997,6 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
         })()}
         </div>
 
-        {/* ── THE ARC — where I was · where I am · the goal I chose ─────
-            UX-COACH-01, both boards 2026-09-12. §109: this surface may REMEMBER
-            and COMPARE; it may not predict. `baselineSeconds` is the plan-start
-            estimate, `currentSeconds` is measured fitness with its confidence,
-            and the goal is the runner's OWN `target_time`. No projected
-            race-day finish, no rising line toward a date — §44.1's
-            fabricated-precision doctrine.
-
-            ⚠️ THIS COMMENT WAS A LIE FOR SIX HOURS. The first cut of
-            UX-COACH-01 moved the card to this screen and wrote this block, and
-            changed NOTHING inside the component: it went on rendering one
-            number and a delta chip, `baselineSeconds` arrived in the payload
-            and was drawn by nothing, and `meta.target_time` was never read by
-            the route at all. The founder found it by looking at the live screen.
-            Built for real 2026-09-12 — `lib/coaching/raceProgressArc.ts`
-            (pure, unit-tested), `components/shared/RaceProgressArcRow.tsx`
-            (renderable without auth at `/coach-preview`, which is the whole
-            reason the gap survived review: nobody could SEE it).
-
-            ⚠️ THIS IS THE COMPONENT'S OWN DOCUMENTED HOME. Its header has read
-            "Coach screen (variant='status') — canonical home" since it was
-            written, while it rendered inside a sheet on PlanScreen. Sutherland,
-            on the founder's "where I was, I am, and what the potential is":
-            it was filed next to a list of appointments.
-
-            🔴 AND IT WAKES R32. The recalibration nudge renders only on
-            `variant="status"`, and Plan passed `onDismissRecal={undefined}` +
-            `benchmarkRecalDismissedAt={undefined}`, so it has been DORMANT
-            EVERYWHERE. The working handlers were already plumbed to this screen
-            (`onDismissRecal={dismissBenchmarkRecal}`) and destructured here
-            unused — dead props waiting for the card that was documented to
-            live beside them. ── */}
-        <RaceTimesCard
-          variant="status"
-          stravaConnected={stravaConnected}
-          benchmarkRecalDismissedAt={benchmarkRecalDismissedAt}
-          onOpenBenchmark={onOpenBenchmark}
-          onDismissRecal={onDismissRecal}
-        />
-
         {/* ── SUPPORTING FACTS — UX-COACH-01 (boards 2026-09-12) ───────
             Was a 2×2 grid of four tiles. Now two, and both earn their place:
 
@@ -6050,67 +6011,42 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
             Numbers still follow the read: the read is the hero, these are the
             evidence, and there are two pieces of it now instead of four. */}
         {/* RUNKED-LOAD-VIEW-01 (founder-approved mockup 2026-10-30): the load tile goes full width to hold the history
-            row; Sessions becomes one row beneath it. */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-2)' }}>
-          {([
-            {
-              // ── A5 — SHAPE, NEVER SCORE (Design Board, app review) ────────
-              // This read `1.15x` at 28px/800 with its meaning demoted to an
-              // 11px sub-line and the explanation behind a tap. Sierra: *a
-              // number that has to be tapped to mean anything has taught nobody
-              // anything.* The VERDICT is the hero now, the shape shows where
-              // the week sits against the runner's normal, and the ratio is
-              // evidence underneath rather than the headline.
-              //
-              // ⚠️ The Sessions tile beside it deliberately KEEPS its number:
-              // "3/5" means something without a tap, which is exactly the test.
-              // One tile changing and one not is a distinction, not a drift.
-              label: 'This week\u2019s load',
-              value: isRaceWeek ? 'Race week' : loadRatio !== null ? lrc.label : 'Not enough runs yet',
-              valueColor: isRaceWeek ? 'var(--ink)' : loadRatio !== null ? lrc.color : 'var(--mute)',
-              shape: <LoadShape ratio={loadRatio} color={isRaceWeek ? 'var(--ink-2)' : lrc.markerColor} />,
-              sub: isRaceWeek
-                ? 'A spike is the point'
-                : loadRatio !== null ? `${loadRatio.toFixed(2)}\u00d7 your recent average` : 'Log a few runs',
-              subColor: 'var(--mute)',
-              onTap: () => setLoadSheetOpen(true),
-              // Eight weeks of total distance, the same windows as the verdict. Only with a verdict (below 3 of 4 prior
-              // weeks the empty state stands), and not in race week, where a spike is the point.
-              history: !isRaceWeek && loadRatio !== null && loadPicture?.normalKm != null
-                ? <LoadHistory history={loadPicture.history} normalKm={loadPicture.normalKm} thisWeekColor={lrc.markerColor} units={preferredUnits} />
-                : null,
-            },
-            {
-              label: 'Sessions',
-              value: sessionsCompleted !== null && sessionsPlanned !== null ? `${sessionsCompleted}/${sessionsPlanned}` : '\u2014',
-              valueColor: 'var(--ink)',
-              shape: null,
-              sub: sc.label,
-              subColor: sc.color,
-              onTap: undefined,
-              history: null,
-            },
-          ] as const).map((m) => {
-            if (!m.shape) {
-              // Sessions as one row: the count means something without a tap, so it keeps its number.
-              return (
-                <div key={m.label} className="card-data" style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 'var(--space-3)' }}>
-                  <span className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)' }}>{m.label}</span>
-                  <span style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)' }}>
-                    <span className="num-data" style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 800, color: m.valueColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.2px', lineHeight: 1 }}>{m.value}</span>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: hueText(m.subColor) }}>{m.sub}</span>
-                  </span>
-                </div>
-              )
-            }
-            const inner = (
-              <>
+            row. COACH-WEEK-FACTS-01 (Design Board 2026-10-31, option C, founder-approved): it is "This week", and runs
+            and strength are its foot (`WeekFacts`), not two more cards in two layouts. A5 holds: the run count keeps its
+            number, and the load verdict leads in words. */}
+        {(() => {
+          // ── A5 — SHAPE, NEVER SCORE (Design Board, app review) ────────
+          // This read `1.15x` at 28px/800 with its meaning demoted to an
+          // 11px sub-line and the explanation behind a tap. Sierra: *a
+          // number that has to be tapped to mean anything has taught nobody
+          // anything.* The VERDICT is the hero now, the shape shows where
+          // the week sits against the runner's normal, and the ratio is
+          // evidence underneath rather than the headline.
+          const m = {
+            label: 'This week',
+            value: isRaceWeek ? 'Race week' : loadRatio !== null ? lrc.label : 'Not enough runs yet',
+            valueColor: isRaceWeek ? 'var(--ink)' : loadRatio !== null ? lrc.color : 'var(--mute)',
+            shape: <LoadShape ratio={loadRatio} color={isRaceWeek ? 'var(--ink-2)' : lrc.markerColor} />,
+            sub: isRaceWeek
+              ? 'A spike is the point'
+              : loadRatio !== null ? `${loadRatio.toFixed(2)}\u00d7 your recent average` : 'Log a few runs',
+            subColor: 'var(--mute)',
+            // Eight weeks of total distance, the same windows as the verdict. Only with a verdict (below 3 of 4 prior
+            // weeks the empty state stands), and not in race week, where a spike is the point.
+            history: !isRaceWeek && loadRatio !== null && loadPicture?.normalKm != null
+              ? <LoadHistory history={loadPicture.history} normalKm={loadPicture.normalKm} thisWeekColor={lrc.markerColor} units={preferredUnits} />
+              : null,
+          }
+          // The load part stays the button that opens the load sheet; the facts sit outside it, so tapping a count
+          // never opens an explanation of something else.
+          return (
+            <div className="card-data" style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px' }}>
+              <button onClick={() => setLoadSheetOpen(true)} style={{ display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer', background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'inherit' }}>
                 <div className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   {m.label}
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss-strong)' }}>ⓘ</span>
                 </div>
-                {/* A5 — a tile whose value is a VERDICT is set in words, not in the 28px tabular-numeral treatment,
-                    which exists for digits and would wrap a phrase. The digits-only tile is the Sessions row above. */}
+                {/* A5 — a VERDICT is set in words, not in the tabular-numeral treatment, which exists for digits. */}
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: hueText(m.valueColor), letterSpacing: '-0.2px', lineHeight: 1.25 }}>
                   {m.value}
                 </div>
@@ -6119,36 +6055,14 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
                   {m.sub}
                 </div>
                 {m.history}
-              </>
-            )
-            const cardStyle = { background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px' }
-            return (
-              <button key={m.label} onClick={m.onTap} className="card-data" style={{ ...cardStyle, textAlign: 'left', cursor: 'pointer', width: '100%' }}>
-                {inner}
               </button>
-            )
-          })}
-        </div>
-
-        {/* STRENGTH-ENTRY-01 — strength as evidence, beside the run stats and in their
-            treatment (Sierra: what makes the runner better at the habit, not a vanity number).
-            One count and the plan's own next step. No streak, no badge, no load chart: nothing
-            logs load yet, and a chart of planned numbers would show the plan, not the runner. */}
-        {strengthWeek && (
-          <div className="card-data" style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', marginTop: 'var(--space-2)' }}>
-            <div className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: 'var(--space-2)' }}>
-              {STRENGTH_COACH.label}
+              <WeekFacts
+                runs={sessionsCompleted !== null && sessionsPlanned !== null ? { done: sessionsCompleted, planned: sessionsPlanned, verdict: sc } : null}
+                strength={strengthWeek ?? null}
+              />
             </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.2px', lineHeight: 1.25 }}>
-              {STRENGTH_COACH.count(strengthWeek.done, strengthWeek.planned)}
-            </div>
-            {strengthWeek.next && (
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 400, color: 'var(--mute)', lineHeight: 1.3, marginTop: 'var(--space-2)' }}>
-                {strengthWeek.next.kind === 'heavier' ? STRENGTH_COACH.heavier(strengthWeek.next.week) : STRENGTH_COACH.jumps(strengthWeek.next.week)}
-              </div>
-            )}
-          </div>
-        )}
+          )
+        })()}
 
         {/* ── LOAD RATIO SHEET ────────────────────────────────────────── */}
         {loadSheetOpen && (
@@ -6277,6 +6191,48 @@ function CoachScreen({ plan, currentWeek, runs, loadPicture = null, easyShareWee
           ? <TrendCard {...EASY_TREND_LABELS} {...easyTrendData} noiseFloorBpm={TREND_SERIES.MIN_HR_DELTA_BPM} preferredUnits={preferredUnits} />
           : <TrendCard state="pending" {...EASY_TREND_LABELS} progress={easyTrendData?.state === 'pending' ? easyTrendData.progress : undefined} />
         }
+
+        {/* ── THE ARC — where I was · where I am · the goal I chose ─────
+            COACH-WEEK-FACTS-01 (Design Board 2026-10-31, option C): LAST on the screen. It is the months ahead,
+            and it sat between Kit's read and this week's facts, so the screen read now, later, now, later.
+            UX-COACH-01, both boards 2026-09-12. §109: this surface may REMEMBER
+            and COMPARE; it may not predict. `baselineSeconds` is the plan-start
+            estimate, `currentSeconds` is measured fitness with its confidence,
+            and the goal is the runner's OWN `target_time`. No projected
+            race-day finish, no rising line toward a date — §44.1's
+            fabricated-precision doctrine.
+
+            ⚠️ THIS COMMENT WAS A LIE FOR SIX HOURS. The first cut of
+            UX-COACH-01 moved the card to this screen and wrote this block, and
+            changed NOTHING inside the component: it went on rendering one
+            number and a delta chip, `baselineSeconds` arrived in the payload
+            and was drawn by nothing, and `meta.target_time` was never read by
+            the route at all. The founder found it by looking at the live screen.
+            Built for real 2026-09-12 — `lib/coaching/raceProgressArc.ts`
+            (pure, unit-tested), `components/shared/RaceProgressArcRow.tsx`
+            (renderable without auth at `/coach-preview`, which is the whole
+            reason the gap survived review: nobody could SEE it).
+
+            ⚠️ THIS IS THE COMPONENT'S OWN DOCUMENTED HOME. Its header has read
+            "Coach screen (variant='status') — canonical home" since it was
+            written, while it rendered inside a sheet on PlanScreen. Sutherland,
+            on the founder's "where I was, I am, and what the potential is":
+            it was filed next to a list of appointments.
+
+            🔴 AND IT WAKES R32. The recalibration nudge renders only on
+            `variant="status"`, and Plan passed `onDismissRecal={undefined}` +
+            `benchmarkRecalDismissedAt={undefined}`, so it has been DORMANT
+            EVERYWHERE. The working handlers were already plumbed to this screen
+            (`onDismissRecal={dismissBenchmarkRecal}`) and destructured here
+            unused — dead props waiting for the card that was documented to
+            live beside them. ── */}
+        <RaceTimesCard
+          variant="status"
+          stravaConnected={stravaConnected}
+          benchmarkRecalDismissedAt={benchmarkRecalDismissedAt}
+          onOpenBenchmark={onOpenBenchmark}
+          onDismissRecal={onDismissRecal}
+        />
 
       </div>
     </div>

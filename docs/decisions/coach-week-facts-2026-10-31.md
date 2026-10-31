@@ -42,7 +42,7 @@ A or B; **requires "runs" not "sessions"**.
 
 🎪 **Collins:** *"A is two cards wearing one coat. B removes one. The quiet here was safe, not right."* Backs B, and C's order.
 
-## Recommendation (pending the founder's pick)
+## Recommendation — founder picked C, 2026-10-31 · built the same day
 
 **C** = B (runs and strength as one line at the foot of the load card, renamed "This week") + race times moved below
 the trend. Unanimous on renaming Sessions to **runs**. A is the safe fallback.

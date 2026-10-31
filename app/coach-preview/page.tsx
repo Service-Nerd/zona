@@ -22,6 +22,7 @@ import { EasyShareHeader, EasyShareBars } from '@/components/shared/EasyShare'
 import ShareControl from '@/components/shared/ShareControl'
 import TrendCard from '@/components/shared/TrendCard'
 import LoadHistory from '@/components/shared/LoadHistory'
+import WeekFacts from '@/components/shared/WeekFacts'
 import { easiestWeekSpan, easyCostSentence } from '@/lib/coaching/moments'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
@@ -249,6 +250,10 @@ export default function CoachPreviewPage() {
           <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--mute)', marginBottom: '8px' }}>Load: eight weeks, one planned easy</div>
           <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
             <LoadHistory history={[24, 27, 29, 18, 28, 31, 30, 38].map((km, i) => ({ km, plannedEasy: i === 3 }))} normalKm={29.75} thisWeekColor="var(--warn)" />
+            {/* COACH-WEEK-FACTS-01 (2026-10-31): the card's foot, as Coach renders it. */}
+            <div data-harness="week-facts">
+              <WeekFacts runs={{ done: 2, planned: 3, verdict: { label: 'on track', color: 'var(--moss-strong)' } }} strength={{ done: 2, planned: 2, next: { kind: 'heavier', week: 4 } }} />
+            </div>
           </div>
         </div>
         {/* COACH-SEEN-MOMENTS-01 (2026-10-30): the two earned lines, fed through the real rules. */}

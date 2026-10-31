@@ -4327,8 +4327,8 @@ own progress. **The limit is the whole point** — a shape answers the question;
 gridlines, tick labels and legends pose it. `appReviewWave4.test.ts` fails if any of those
 words appears in the component.
 
-⚠️ **Not every number becomes a shape.** The Sessions tile beside it keeps `3/5`, because
-`3/5` means something without a tap — which is exactly Sierra's test. **One tile changing
+⚠️ **Not every number becomes a shape.** The run count keeps its number (`2 of 3 runs`, since
+`COACH-WEEK-FACTS-01` the foot of the same card), because it means something without a tap — which is exactly Sierra's test. **One tile changing
 and one not is a distinction, and the gate asserts it so nobody "makes them consistent".**
 
 ### ✅ The easy share — the rings' headline and weekly record (`COACH-DISCIPLINE-HEADLINE-01`, built 2026-10-30)
@@ -4350,6 +4350,30 @@ carry a zone split (§130); below that the rings stand alone with their own eyeb
 | **The number** | Ink, never a colour verdict, no target, no good/bad word (§130, Coaching Board). A quality-heavy week reads lower and that is not failure |
 | **The bars** | A record (the `LoadShape` history pattern): no line, no projection, no number per bar, no peak emphasis. Always 8 slots, filled from the right; a thin week is an empty slot, never a zero |
 | **Pattern 32** | AMENDED, not reversed: the killed tile restated the rings from outside them; this is the rings' own figure, inside their card, labelled as theirs |
+
+### ✅ This week's facts — runs and strength as the load card's foot (`COACH-WEEK-FACTS-01`, Design Board 2026-10-31, built)
+
+`components/shared/WeekFacts.tsx`. Runs and strength were two cards with two layouts, two number formats (`2/3`, `2 of 2`),
+one verdict between them, and **"Sessions" counted runs only**. They are this week's facts, so they are the foot of the
+load card, renamed **"This week"**, under a hairline, in one treatment. Founder approved option C from the mockups.
+
+```
+  THIS WEEK ⓘ                                       ← the load part is the button that opens the load sheet
+  More than usual · bars …
+  ───────────────────────────────                   ← --line hairline
+  2 of 3 runs on track     2 of 2 strength          ← count 800 --ink · noun --ink-2 · verdict --fs-caption/600 hueText
+  Heavier lifts from week 4.                        ← strength's next step, --fs-caption --mute, only when there is one
+```
+
+| | |
+|---|---|
+| **Words** | *runs*, never *sessions* (`run` when one is planned). Strength has no verdict word (none was ruled) |
+| **Tap** | The facts sit **outside** the load-sheet button: tapping a count never opens an explanation of something else |
+| **Order** | Coach is now read + rings · **this week** · easy run trend · **race times last** (*now before over time*, Silvanto; re-orders UX-COACH-01, priced not reversed) |
+
+Held by `components/shared/weekFacts.markup.test.ts` (one count style for both halves, "runs" not "sessions", facts
+outside the button, race times after the trend). Falsified: the old layout restored turns three arms red; one count's
+style changed turns the treatment arm red.
 
 ### ✅ Earned line — one sentence, on its evidence (`COACH-SEEN-MOMENTS-01`, Design Board 2026-10-30)
 
@@ -4377,7 +4401,7 @@ card's last line (the numbers above are the proof).
 `components/shared/LoadHistory.tsx`, under the load verdict on Coach. Built once the SLT's condition was measured and met
 (5 of 6 Coach openers with 3+ weeks of runs saw a verdict). **The founder chose bars over a smooth line**: a line draws
 values between weeks that never happened and smooths a planned dip into a slump. The load tile goes **full width** to hold
-it, and **Sessions becomes one row** below (17/800 count, 12/600 status). Bars: the verdict's own 7-day windows
+it, and **Sessions becomes one row** below (17/800 count, 12/600 status; superseded 2026-10-31 by the card's foot, `COACH-WEEK-FACTS-01`). Bars: the verdict's own 7-day windows
 (`computeLoadPicture.history`), up to `LOAD_HISTORY_WEEKS` (8), filled from the right, leading pre-running weeks dropped;
 the normal band is `normalKm × LOAD_RATIO.under…watch` on `--bg-soft`; only this week takes `lrc.markerColor`, past weeks
 `--ink-2` at 0.25; ▲ under a planned lighter week plus a key. Hidden with no verdict and in race week.

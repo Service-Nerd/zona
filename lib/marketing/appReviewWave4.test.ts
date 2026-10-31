@@ -19,7 +19,7 @@ describe('A5 — Coach speaks in shape, never score', () => {
   it('🔴 the load tile leads with the VERDICT, not the ratio', () => {
     // It rendered `${loadRatio.toFixed(2)}x` at 28px/800 as the hero, with the
     // meaning demoted to an 11px sub-line and the explanation behind a tap.
-    const i = SHELL.indexOf("label: 'This week\\u2019s load'")
+    const i = SHELL.indexOf("label: 'This week',")
     expect(i, 'the load tile').toBeGreaterThan(-1)
     const tile = SHELL.slice(i, i + 900)
     expect(tile).toContain('lrc.label')
@@ -33,14 +33,16 @@ describe('A5 — Coach speaks in shape, never score', () => {
     expect(SHELL).toContain('<LoadShape ratio={loadRatio}')
   })
 
-  it('the Sessions tile deliberately KEEPS its number', () => {
+  it('the run count deliberately KEEPS its number', () => {
     // "3/5" means something without a tap, which is exactly Sierra's test. One
-    // tile changing and one not is a distinction, not a drift — assert it so
-    // nobody "makes them consistent" later.
-    const i = SHELL.indexOf("label: 'Sessions'")
-    const tile = SHELL.slice(i, i + 400)
-    expect(tile).toMatch(/value:[\s\S]*sessionsCompleted/)
-    expect(tile).toContain('shape: null')
+    // fact changing and one not is a distinction, not a drift — assert it so
+    // nobody "makes them consistent" later. Since COACH-WEEK-FACTS-01 (2026-10-31)
+    // the count is the foot of the "This week" card, still a number, never a shape.
+    const i = SHELL.indexOf('<WeekFacts')
+    expect(i, 'the week facts').toBeGreaterThan(-1)
+    const facts = SHELL.slice(i, i + 300)
+    expect(facts).toMatch(/done: sessionsCompleted, planned: sessionsPlanned/)
+    expect(facts).not.toContain('Shape')
   })
 
   it('the shape reads the SAME constants the coaching layer flags on', () => {

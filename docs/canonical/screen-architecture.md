@@ -122,10 +122,10 @@ The user opens Coach to hear from Kit. This is the AI intelligence layer: a synt
 |---|---|
 | Kit's weekly read (AI) — headline, body, action line; race readiness, phase summary and zone drift folded in when they fire | The week-by-week session schedule (that's Plan) |
 | Zone rings — this week's zone distribution, from every run with heart rate (COACH-RINGS-SOURCE-01) | Week Notes / plan framing copy (that's Plan) |
-| Race projections — the arc (was · now · goal), §109 (moved here 2026-09-12, UX-COACH-01) | Session-level detail (that's Session Detail) |
+| Race projections — the arc (was · now · goal), §109 (moved here 2026-09-12, UX-COACH-01; **last on the screen** since COACH-WEEK-FACTS-01) | Session-level detail (that's Session Detail) |
 | This week's load — the verdict and `LoadShape`, from every run (LOAD-SOURCE-TOTAL-01) | Profile or settings |
-| Sessions completed / planned count | The discipline ledger (that's Me, LEDGER-PLACEMENT-01; the Coach copy was removed 2026-10-05) |
-| Strength this week (conditional, when the plan has strength) | A zone discipline TILE: it restated the rings (Pattern 32). The share belongs to the rings as their headline (COACH-DISCIPLINE-HEADLINE-01, ruled, not built) |
+| This week's runs and strength, as the foot of the "This week" load card (COACH-WEEK-FACTS-01): `2 of 3 runs` · `2 of 2 strength` | The discipline ledger (that's Me, LEDGER-PLACEMENT-01; the Coach copy was removed 2026-10-05) |
+| (Strength's count is conditional, when the plan has strength) | A zone discipline TILE: it restated the rings (Pattern 32). The share belongs to the rings as their headline (COACH-DISCIPLINE-HEADLINE-01, ruled, not built) |
 | Aerobic / easy-run trend (ONE card, UX-COACH-01) | A 2×2 stats grid (UX-COACH-01: two tiles, not four) |
 
 > **Corrected 2026-10-30 (COACH-CODE-HYGIENE-01).** This table still listed the zone discipline tile, the discipline

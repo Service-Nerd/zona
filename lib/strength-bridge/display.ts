@@ -257,6 +257,8 @@ export const STRENGTH_REST_INVITE = {
 export const STRENGTH_COACH = {
   label: 'Strength',
   count: (done: number, planned: number) => `${done} of ${planned} this week`,
+  /** COACH-WEEK-FACTS-01 — the noun after the count on the load card's foot ("2 of 2 strength"). */
+  noun: 'strength',
   heavier: (week: number) => `Heavier lifts from week ${week}.`,
   jumps: (week: number) => `Jumps join in week ${week}.`,
 }

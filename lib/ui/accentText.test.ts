@@ -51,7 +51,6 @@ const LITERAL_OK: Record<string, { count: number; why: string }> = {
 }
 const COMPUTED_OK: Record<string, { count: number; why: string }> = {
   'app/api/og/session-complete-card/route.tsx': { count: 1, why: 'share image (next/og), resolved hex; not app text' },
-  'app/dashboard/DashboardClient.tsx': { count: 1, why: "the 28px metric value (large); the 15px one goes through hueText" },
   'app/dashboard/GeneratePlanScreen.tsx': { count: 1, why: '28px confidence score (large)' },
   'components/marketing/HeroTrace.tsx': { count: 3, why: 'ternaries over --warn-strong / --moss-strong / ink (already text shades)' },
   'components/marketing/PhoneShell.tsx': { count: 1, why: '--moss-strong or --mute (already text shades)' },

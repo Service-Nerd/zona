@@ -5751,10 +5751,10 @@ while the button is gated on `weekly_reports` (`SHARE-WEEK-CARD-SOURCE-01`, fixe
 top-right of the card was raised and **not taken**: one rule on all four surfaces, and SAVE-IMG-01 forbids inside the card.
 Sitting: `docs/decisions/share-icon-2026-10-31.md`.
 
-## 🧭 2026-10-31 — `COACH-WEEK-FACTS-01`: Sessions and Strength · **RECOMMENDED C, awaiting the founder's pick** · NOT BUILT
+## 🧭 2026-10-31 — `COACH-WEEK-FACTS-01`: Sessions and Strength · **C, founder-approved · BUILT 2026-10-31**
 
 Two bare-number cards, two layouts, two formats, one verdict between them, and **"Sessions" counts runs only**. Board
 recommends **C**: runs and strength as one line at the foot of the load card (renamed "This week"), and race times
 moved below the easy run trend (*now before over time*, Silvanto; re-orders UX-COACH-01, priced not reversed). A is the
 fallback (one "Done this week" card, side by side). **Unanimous: "Sessions" becomes "runs".** A5's kept number stands
-in every option. Sitting and mockups: `docs/decisions/coach-week-facts-2026-10-31.md`.
+in every option. Sitting and mockups: `docs/decisions/coach-week-facts-2026-10-31.md`. **Built:** `components/shared/WeekFacts.tsx`; check `weekFacts.markup.test.ts`; pattern `ui-patterns.md` § This week's facts.
