@@ -73,7 +73,7 @@ export default function EffortRecord({ runs, weeks }: { runs: EffortRun[]; weeks
         ))}
       </div>
       <div aria-hidden="true" style={{ height: '1px', background: 'var(--line)', margin: 'var(--space-4) 0 var(--space-3)' }} />
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-sm)', color: 'var(--ink-2)', lineHeight: 1.45 }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--ink-2)', lineHeight: 1.45 }}>
         Zone 3 is the grey zone on easy days. A tempo belongs there; an easy run doesn&apos;t.
       </div>
     </div>
