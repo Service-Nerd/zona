@@ -5,6 +5,14 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-10-31 — COACH-WEEK-FACTS-01 · Two numbers, one week
+
+**Shipped:** on Coach, runs and strength stopped being two separate cards. They are now one line at the foot of the "This week" card, under the load bars: "2 of 3 runs on track · 2 of 2 strength". Race times moved to the bottom of the screen.
+**Dev learning:** the facts sit outside the load card's button, so tapping a count never opens the load explanation. A test asserts that by bounding the button's own markup, not the file.
+**Product/creator learning:** the founder asked "what do these numbers mean?" and the honest answer was "not much, on their own". Next to the week's load they say whether a big week came with the work done. And "Sessions" had quietly become the wrong word the day strength arrived.
+**AI-building learning:** removing the old row paid off an exception in a colour register, which then failed because a register may only shrink when told it has. Good failure.
+**The honest bit:** checked at 375px in the preview page, not on a device.
+
 ## 2026-10-31 — SHARE-ICON-01 · The loudest button on Coach was Share
 **Shipped:** every share in the app is now a small round share icon under the thing it shares, with any status in a quiet line beside it.
 **Dev learning:** two components had the same busy/status/timeout logic; one owner now holds it and the callers say only what is shared. The status line is an always-mounted live region, because one inserted with its text is not reliably announced. The button-geometry register needed a declared re-baseline: 200 -> 198 controls, the two Share buttons gone, the rest renumbered.
