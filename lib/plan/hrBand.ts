@@ -40,6 +40,7 @@
 // this module exists to stop.
 
 import { catalogueRowFor } from './catalogueLink'
+import { zoneStringFromZoneKeys, zonesFromZoneString } from '@/lib/coaching/zoneRules'
 import { isShakeout } from './sessionRole'
 import { isV2Structure, StructureV2Schema } from './sessionStructureV2'
 import type { SessionCatalogueRow } from './sessionCatalogueData'
@@ -89,7 +90,26 @@ export function hrBandFor(session: BandableSession | null | undefined): HrBand {
     // exact move that downgraded a live VO2max session, so they return null and
     // keep whatever the generator gave them.
     if (!row) return null
-    if (row.category === 'vo2max' || isEffortGovernedRow(row)) return 'intervals'
+    if (row.category === 'vo2max') return 'intervals'
+    // 🔴 §40b AMENDMENT 4 (Coaching Board 2026-11-02). This read
+    // `|| isEffortGovernedRow(row)` and sent EVERY effort-governed row to the interval
+    // band — which is right for `hill_reps` (declares `['Z4','Z5']`, rpe 8) and wrong for
+    // `vert_hike_repeats` (declares `['Z2']`, rpe 6, power hiking). Read the row's own
+    // declaration, like the generator now does, rather than the fact that it is
+    // effort-governed: those are different questions and the second is not evidence for
+    // the first.
+    //
+    // ⚠️ THIS IS THE PAIR, AND THIS MODULE IS THE REASON TO LOOK FOR ONE. Its header is
+    // forty lines about a classifier that disagreed with the producer and rewrote a live
+    // runner's VO2max session. Fixing the generator alone would have left the same
+    // disagreement here, pointing the other way, with `applyHrToPlan` as the writer.
+    if (isEffortGovernedRow(row)) {
+      const declared = zonesFromZoneString(zoneStringFromZoneKeys(row.intensity_zones))
+      // Z4/Z5 work is the interval band. Anything else has no `computeZones` band that
+      // describes it, so `null` — leave it alone. Guessing is what this module exists to
+      // stop, and an effort-governed session's prescription is its RPE, not a band.
+      return declared.some(z => z >= 4) ? 'intervals' : null
+    }
     // §83 Amendment (GOALPACE-5K-01) — goal-paced work takes the band its PACE sits in, which the generator
     // decided and wrote as the zone; the row's category no longer decides it. Read here from the generator's
     // two stamps, so an HR recalculation cannot put a 5K goal-pace session back on the threshold band.

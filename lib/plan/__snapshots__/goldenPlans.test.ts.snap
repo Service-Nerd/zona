@@ -3245,7 +3245,6 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "detail": null,
           "distance_km": 9,
           "duration_mins": 54,
-          "hr_target": "159–185 bpm",
           "id": "w11-wed",
           "label": "Hill reps — 90s",
           "primary_metric": "distance",

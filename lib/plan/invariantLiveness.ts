@@ -142,6 +142,25 @@ export const MUTATIONS: Mutation[] = [
   // AI enricher both rewrite the label, neither can rewrite the row identity), so
   // this asserts the identity onto a paced quality session and lets the pace
   // arithmetic fall outside §85's 0-3% window.
+  // §40b Am.4 (ULTRA-ROWS-PRICED-AS-QUALITY-01, 2026-11-02) — an effort-governed session
+  // repainted with the interval band. This IS the defect: `vert_hike_repeats` declares
+  // ['Z2'] at rpe 6 and was delivered as Zone 4–5 with an interval HR range.
+  //
+  // ⚠️ STAMPED, not searched for. The liveness corpora contain no ultra plan at all
+  // (`cohortGrid` and `targetedGrid` have no 50K/100K), so a mutation that looked for an
+  // existing `vert_hike_repeats` session would be inert — which is the "population
+  // excludes the cases at risk" class, and it is the reason this invariant's own first
+  // measurement undercounted. Stamping the identity reaches the arm from any corpus.
+  { name: 'repaint an effort-governed session with the interval band', apply: p => {
+    for (const s of sessionsOf(p)) {
+      const sn = s as unknown as Record<string, unknown>
+      if (sn.type !== 'quality') continue
+      sn.catalogue_id = 'vert_hike_repeats'
+      sn.zone = 'Zone 4–5'
+      sn.hr_target = '158–184 bpm'
+      return
+    }
+  } },
   { name: 'stamp over-under identity on an EASY-paced session', apply: p => {
     // Stamped on an EASY session deliberately. A quality session's pace can
     // legitimately sit inside §85's 0-3%-faster-than-T window, so stamping one

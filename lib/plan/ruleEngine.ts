@@ -1691,7 +1691,8 @@ function makeQualitySession(args: {
   let minPerKm: number
   let paceTarget: string
   let zone: string
-  let hrTarget: string
+  // §40b Am.4 — `undefined` where an effort-governed session carries no band at all.
+  let hrTarget: string | undefined
 
   if (useGoalPace && goalCenterMins != null) {
     // Override label only when the override is the source of goal-pace.
@@ -1786,8 +1787,30 @@ function makeQualitySession(args: {
     // and recovery. It is NOT surfaced as a target — see paceTarget below.
     minPerKm = pace.minPerKmEasy
     paceTarget = ''
-    zone = zones.intervalsZone
-    hrTarget = zones.intervalsHR
+    // 🔴 §40b AMENDMENT 4 (Coaching Board 2026-11-02, ULTRA-ROWS-PRICED-AS-QUALITY-01).
+    //
+    // These two lines used to read `zones.intervalsZone` / `zones.intervalsHR`, and that
+    // is the FOURTH surface Amendment 1 did not enumerate. It excluded effort-governed
+    // rows from §22 across "the label, the `pace_target` and the `derived_set`" — three
+    // surfaces — and the zone and HR were set from the interval band regardless.
+    //
+    // §40b's own body names the result as its counter-example: *"A zone alone does not
+    // satisfy it — 'Zone 4–5' describes a physiological band, not an instruction a runner
+    // can execute on a hill."* Measured on 18 time-targeted ultra plans: `vert_hike_repeats`
+    // — power hiking, `rpe: 6`, steps "hands on quads, short steps, tall chest" and "walk
+    // back down", row declaring `['Z2']` — was delivered as **Zone 4–5 with an interval HR
+    // band**, in peak, two days before the long run. Willy and Blagrove, binding: chasing
+    // that band means running the climb, which is a different exercise.
+    //
+    // The zone is READ from the row (§107's `zoneStringFromZoneKeys`), never authored
+    // beside it — `hill_reps` declares `['Z4','Z5']` and is unchanged by construction,
+    // which is the whole reason this is derived rather than special-cased.
+    zone = zoneStringFromZoneKeys(catalogueRow?.intensity_zones) ?? zones.intervalsZone
+    // ⚠️ OMITTED, NOT EMPTY, and the difference is load-bearing. `hrBandFor` treats a
+    // non-string `hr_target` as "this session never had a band and must not acquire one",
+    // so `''` would let `applyHrToPlan` put the interval band straight back on the next
+    // HR recalculation. The RPE is the instruction (§40b).
+    hrTarget = undefined
   } else if (isVo2max) {
     label = catalogueRow?.name ?? fallbackLabel
     minPerKm = pace.minPerKmInterval
@@ -2041,7 +2064,10 @@ function makeQualitySession(args: {
       ? Math.round(durationForMainSet(structuredMainMins))
       : dur(rounded, minPerKm),
     primary_metric: metric,
-    zone, hr_target: hrTarget,
+    zone,
+    // §40b Am.4 — an effort-governed session carries NO HR band. Omitted, not empty:
+    // `hrBandFor` reads a non-string as "never had one" and leaves it alone.
+    ...(hrTarget ? { hr_target: hrTarget } : {}),
     // SC-09 — an effort-governed session carries NO pace target. The absence is
     // the prescription, not a missing value.
     ...(paceTarget ? { pace_target: paceTarget } : {}),

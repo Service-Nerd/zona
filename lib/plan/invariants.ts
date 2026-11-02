@@ -28,6 +28,8 @@ import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { requiredPaceAnchors } from './sessionCatalogueData'
 import { catalogueRowFor } from './catalogueLink'
+import { isEffortGovernedRow } from './hrBand'
+import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 import { isLongRun, isShakeout, isTimeTrial, classifyStimulus, isVo2maxSession, isStructuredSession, isQualitySession, isHardEffort } from './sessionRole'
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord } from './sessionStructureV2'
@@ -71,6 +73,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
   'INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED',
   'INV-PLAN-EFFORT-OR-PACE',
+  'INV-PLAN-EFFORT-GOVERNED-NO-INVENTED-BAND',
   'INV-PLAN-EASY-PACE-PRESENT',
   'INV-PLAN-LABEL-MATCHES-STRUCTURE',
   'INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED',
@@ -5314,6 +5317,59 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           message: `Quality session "${sn.label}" prescribes neither a pace target nor an effort target. A session with no pace is legitimate (hill reps are governed by gradient), but it must then say how hard by RPE — otherwise a LOST pace is indistinguishable from a deliberate absence.`,
           actual: 'neither pace_target nor rpe_target',
           expected: 'a pace target, or an effort (RPE) target',
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-EFFORT-GOVERNED-NO-INVENTED-BAND (CoachingPrinciples §40b Amendment 4 —
+  // Coaching Board 2026-11-02, ULTRA-ROWS-PRICED-AS-QUALITY-01)
+  //
+  // An effort-governed session carries the zone its catalogue row DECLARES and no HR
+  // range at all. §40b Amendment 1 excluded these rows from §22 across three surfaces —
+  // the label, the `pace_target` and the `derived_set` — and the zone and HR were set
+  // from the interval band regardless, which is the fourth surface nobody enumerated.
+  //
+  // §40b's body names the exact result as its own counter-example: *"A zone alone does
+  // not satisfy it — 'Zone 4–5' describes a physiological band, not an instruction a
+  // runner can execute on a hill."* Measured on 18 time-targeted ultra plans:
+  // `vert_hike_repeats` — power hiking, rpe 6, row declaring ['Z2'] — shipped as
+  // **Zone 4–5 with an interval HR band**, in peak, two days before the long run.
+  //
+  // 🔴 WHY `INV-PLAN-EFFORT-OR-PACE` CANNOT CATCH THIS, and the reason it is a second
+  // invariant rather than a widening: that check asks for a pace OR an RPE, and the RPE
+  // is present. It passes on every one of these sessions. The defect is not an absence,
+  // it is an INVENTED PRESENCE — the class §40b exists to forbid.
+  //
+  // ⚠️ READS THE ROW, NOT THE CATEGORY. `hill_reps` is effort-governed AND vo2max and
+  // declares ['Z4','Z5']: it keeps the interval zone and is untouched. Keying on
+  // "effort-governed ⇒ no band" would have been wrong for half the population of two.
+  for (const w of plan.weeks) {
+    for (const [day, sn] of Object.entries(w.sessions ?? {})) {
+      if (!sn) continue
+      const row = catalogueRowFor(sn)
+      if (!row || !isEffortGovernedRow(row)) continue
+      const declared = zoneStringFromZoneKeys(row.intensity_zones)
+      if (declared && sn.zone !== declared) {
+        violations.push({
+          code: 'INV-PLAN-EFFORT-GOVERNED-NO-INVENTED-BAND',
+          principle_ref: 'CoachingPrinciples §40b Am. 4',
+          severity: 'error',
+          week: w.n, day,
+          message: `Effort-governed session "${sn.label}" displays zone "${sn.zone}" while its catalogue row ${row.id} declares ${JSON.stringify(row.intensity_zones)} ("${declared}"). The terrain sets the intensity; a band the runner cannot act on is the number §40b forbids.`,
+          actual: `zone "${sn.zone}"`,
+          expected: `zone "${declared}", read from the row`,
+        })
+      }
+      if (typeof sn.hr_target === 'string' && sn.hr_target.trim().length > 0) {
+        violations.push({
+          code: 'INV-PLAN-EFFORT-GOVERNED-NO-INVENTED-BAND',
+          principle_ref: 'CoachingPrinciples §40b Am. 4',
+          severity: 'error',
+          week: w.n, day,
+          message: `Effort-governed session "${sn.label}" prescribes hr_target "${sn.hr_target}". An effort-governed session's prescription is its RPE: the terrain sets the intensity, and a band invites the runner to chase a number HR cannot even reach inside a rep (Willy, Blagrove — binding).`,
+          actual: `hr_target "${sn.hr_target}"`,
+          expected: 'no hr_target',
         })
       }
     }

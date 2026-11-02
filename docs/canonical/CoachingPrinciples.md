@@ -3849,6 +3849,26 @@ Incidence scales with volume per available day: **4%** at ≤8 km/day, **53%** a
 
 ---
 
+### Amendment 4 — the exclusion covers the DISPLAYED ZONE and HR, and an effort-governed session carries no band (Coaching Board 2026-11-02, ULTRA-ROWS-PRICED-AS-QUALITY-01, unanimous)
+
+**Principle.** Amendment 1's exclusion covers **four** surfaces, not three: the label, the `pace_target`, the `derived_set`, **and the displayed zone and HR target**. An effort-governed session takes the zone its catalogue row declares in `intensity_zones` and carries **no HR range at all** — the RPE is the prescription.
+
+**Why.** Amendment 1 enumerated three surfaces and the engine set the fourth from the interval band regardless, so §40b's body ended up describing the engine's own output as its counter-example: *"A zone alone does not satisfy it — 'Zone 4–5' describes a physiological band, not an instruction a runner can execute on a hill."* Measured on 18 time-targeted ultra plans: `vert_hike_repeats` — power hiking, `rpe: 6`, row declaring `['Z2']`, steps *"hands on quads, short steps, tall chest"* and *"walk back down"* — was delivered as **Zone 4–5 with `158–184 bpm`**, in peak, on a Friday two days before the long run. Willy and Blagrove, binding: chasing that band means running the climb, which is a different exercise with a different tissue load and loses the skill the session exists to teach. **An enumeration of surfaces is a list, and a list is where this kind of fix goes to die** — the same shape as the remedy-applied-to-one-twin class.
+
+**The HR half binds on every effort-governed row, not only the hike, and the number is declared.** HR lags effort by longer than a 45-second rep lasts, so a range is unreachable inside the prescription on `hill_reps` too. **Measured: 1,757 `hill_reps` sessions across the 5K/10K cohort grid previously carried `158–184 bpm` and now carry none**; their zone is unchanged at `Zone 4–5`, read from the row's own `['Z4','Z5']`, and their RPE 8 is untouched. ⚠️ **This reaches 5K and 10K plans, which the originating item never mentioned** — stated here rather than discovered later.
+
+**The zone is READ, never authored beside the row.** §107's `zoneStringFromZoneKeys` already existed for exactly this and `intensity_zones` was registered decorative config; this gives it a second consumer. Deriving rather than special-casing is what keeps `hill_reps` correct by construction: it declares `['Z4','Z5']` and is unchanged, and keying on "effort-governed ⇒ no band" would have been wrong for half a population of two.
+
+**Config.** No numeric. A surface-exclusion rule, and the zone comes from the row — consistent with §40b's own "no numeric of its own".
+
+**Invariant.** `INV-PLAN-EFFORT-GOVERNED-NO-INVENTED-BAND`, two arms (the zone matches the row's declaration; no `hr_target`). ⚠️ **`INV-PLAN-EFFORT-OR-PACE` cannot catch this and widening it would not have helped**: it asks for a pace **or** an RPE, the RPE is present, and it passes on every one of these sessions. The defect is not an absence but an **invented presence**.
+
+**The pair was fixed with it.** `hrBandFor` (`lib/plan/hrBand.ts`) mapped every effort-governed row to the interval band, so `applyHrToPlan` would have written the band straight back on the next HR recalculation. It now reads the row's declaration too. That module's header is forty lines about a classifier disagreeing with its producer and rewriting a live runner's session; fixing the generator alone would have recreated it pointing the other way. ⚠️ **`hr_target` is OMITTED, not empty** — `hrBandFor` reads a non-string as "never had a band, do not give it one", and `''` is a string.
+
+🔻 **Adjacent, NOT fixed here, and filed.** `getSessionHRDisplay` derives its band from `session.type`, which collapses every quality session to Z3, so a screen can still render a type-derived HR number on an effort-governed session regardless of what the plan says. That is the §84 display family, not this ruling, and it is pre-existing and wider than these two rows: `EFFORT-GOVERNED-HR-DISPLAY-01`.
+
+**What this does not settle.** Which row an ultra's midweek quality slot may carry — delivering `back_to_back_long` as a 78-minute Zone 3 tempo midweek — is **not ruled here**. §24e's ULTRA-FUEL-NOTE-01 paragraph already ruled on 2026-09-13 that it is a prescription question belonging to `SIG-ULTRA-UNBUILT-01`, whose build is SLT-gated on ultra acquisition. This amendment makes the hike honest; it does not make the slot right.
+
 ## 40c. A suppressed target is stated, never absorbed
 
 *Added 2026-08-20 — Coaching Board (VOL-SHORTFALL-01), unanimous.*
