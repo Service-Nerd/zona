@@ -144,21 +144,65 @@ describe('CHECK-DB-LIVE-KEY-ARM-01 — the population is derived', () => {
   })
 })
 
-describe('CHECK-DB-LIVE-KEY-ARM-01 — every live key keeps its predicate', () => {
-  for (const table of MUST_KEEP_PREDICATE) {
-    it(`${table}_live_key is partial on superseded_at IS NULL, and user+week keyed`, () => {
-      const idx = new RegExp(
-        `create unique index(?: if not exists)?\\s+${table}_live_key\\s+on\\s+(?:public\\.)?${table}\\s*\\(([^)]*)\\)\\s*where\\s+superseded_at is null`,
-        'i',
-      )
-      const m = SQL.match(idx)
-      expect(m, `${table}_live_key missing its "where superseded_at is null" predicate — without it the index is a PLAIN unique and every week-keyed write collides with the tombstone again`).toBeTruthy()
-      expect(m![1], `${table}_live_key is not keyed on week_n`).toContain('week_n')
-      expect(m![1], `${table}_live_key is not user-scoped`).toContain('user_id')
-    })
+/**
+ * Every unique INDEX the migrations declare, in apply order, with later drops applied.
+ *
+ * 🔴 WHY NOT `%_live_key`. The first cut of this file matched on that NAME, and within the
+ * hour `20261104_live_week_keys_survivors.sql` created `run_analysis_manual_live_uniq` — a
+ * week_n-keyed unique index that the check was structurally blind to, because it is not
+ * called `_live_key`. A check keyed on a NAME guards the names it knows; the property is
+ * "week_n-keyed and unique", so that is what this reads. Same class as the three
+ * `label.includes('pace')` instances and `isVo2max`-by-category: anchor on the property.
+ *
+ * ⚠️ DROPS ARE APPLIED. `run_analysis_manual_uniq` was created by an earlier migration and
+ * dropped by a later one; scanning without replaying the drops would flag it forever, which
+ * is a check that is wrong about the present in order to be thorough about the past.
+ */
+function declaredUniqueIndexes(): Map<string, { table: string; cols: string; predicate: string | null }> {
+  const live = new Map<string, { table: string; cols: string; predicate: string | null }>()
+  const files = readdirSync(MIGRATIONS_DIR).filter(f => f.endsWith('.sql')).sort()
+  const create = /create\s+unique\s+index\s+(?:if not exists\s+)?([a-z0-9_]+)\s+on\s+(?:public\.)?([a-z0-9_]+)\s*\(([^)]*)\)([^;]*)/gi
+  const drop   = /drop\s+index\s+(?:if exists\s+)?(?:public\.)?([a-z0-9_]+)/gi
+  for (const f of files) {
+    const sql = readFileSync(join(MIGRATIONS_DIR, f), 'utf8').toLowerCase()
+    for (const m of Array.from(sql.matchAll(create))) {
+      const where = /where\s+([\s\S]*)$/i.exec(m[4] ?? '')
+      live.set(m[1], { table: m[2], cols: m[3].replace(/\s+/g, ''), predicate: where ? where[1].trim() : null })
+    }
+    for (const m of Array.from(sql.matchAll(drop))) live.delete(m[1])
+  }
+  return live
+}
 
+/** Week_n-keyed unique indexes on a table that carries `superseded_at`. Derived, not named. */
+// Array.from, not a spread — CLAUDE.md § TypeScript: this tsconfig's target cannot iterate
+// a Map or a matchAll result directly. The rule was already written down; I ignored it and
+// tsc caught it, which is the one place a house convention is cheap to enforce.
+const WEEK_KEYED_UNIQUE_INDEXES = Array.from(declaredUniqueIndexes())
+  .filter(([, v]) => v.cols.split(',').includes('week_n'))
+  .filter(([, v]) => (WEEK_KEYED_TABLES as readonly string[]).includes(v.table))
+
+describe('CHECK-DB-LIVE-KEY-ARM-01 — every week_n-keyed unique index is live-scoped', () => {
+  it('finds them by their COLUMNS, not by a name convention', () => {
+    // 6 as of 2026-11-02: the five %_live_key indexes plus run_analysis_manual_live_uniq.
+    // An index added under any name lands here the moment its columns include week_n.
+    expect(WEEK_KEYED_UNIQUE_INDEXES.length).toBeGreaterThanOrEqual(6)
+    // And the one that proves the name coupling is gone.
+    expect(WEEK_KEYED_UNIQUE_INDEXES.map(([n]) => n)).toContain('run_analysis_manual_live_uniq')
+  })
+
+  for (const [name, v] of WEEK_KEYED_UNIQUE_INDEXES) {
+    it(`${name} is partial on superseded_at IS NULL`, () => {
+      expect(
+        v.predicate && /superseded_at\s+is\s+null/i.test(v.predicate),
+        `${name} on ${v.table}(${v.cols}) has predicate ${v.predicate ?? 'NONE'} — a week_n-keyed unique that is not live-scoped means a new plan's row cannot insert beside its superseded history`,
+      ).toBeTruthy()
+    })
+  }
+
+  for (const table of REQUIRE_LIVE_KEY) {
     it(`${table} has shed any plain unique constraint on week_n`, () => {
-      if (!declaresPlainWeekUnique(table)) return   // never had one (see the note above)
+      if (!declaresPlainWeekUnique(table)) return
       expect(dropsPlainWeekUnique(table), `${table} still declares a plain UNIQUE on week_n and no migration drops it — the partial index alone does not help while the key is still occupied`).toBe(true)
     })
   }

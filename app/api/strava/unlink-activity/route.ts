@@ -64,6 +64,10 @@ export async function POST(req: NextRequest) {
   const { error: analysisErr } = await supabase
     .from('run_analysis')
     .delete()
+    // WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01 — unlinking a session on the LIVE plan must not
+    // delete the archived plan's analysis for the same (week, day). `week_n` restarts at 1
+    // on a new plan, so without this the unlink reached back into superseded history.
+    .is('superseded_at', null)
     .eq('user_id', user.id)
     .eq('week_n', week_n)
     .eq('session_day', session_day)

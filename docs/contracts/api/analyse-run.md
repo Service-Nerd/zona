@@ -91,7 +91,11 @@ of live reads; it was told *"two sentences"* and returned 76 words.
 
 ## Sibling route — POST `/api/analyse-run/manual`
 
-Coaching row for a session completed without a linked device activity. Writes `run_analysis` with `source='manual'` (DELETE+INSERT idempotent per session — partial unique index `run_analysis_manual_uniq`).
+Coaching row for a session completed without a linked device activity. Writes `run_analysis` with `source='manual'` (DELETE+INSERT idempotent per session — partial unique index **`run_analysis_manual_live_uniq`**).
+
+🔴 **RENAMED AND RE-SCOPED 2026-11-02 (WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01).** It was `run_analysis_manual_uniq`, partial on `source = 'manual'` ALONE. `week_n` is a within-plan coordinate (ADR-013), so that key collided across plans: a new plan's week-1 manual entry hit the previous plan's row. The index is now partial on **`source = 'manual' AND superseded_at IS NULL`** (`20261104`), and the DELETE above carries `.is('superseded_at', null)`.
+
+⚠️ **The two changes are one change.** The collision never surfaced precisely because the DELETE was unfiltered — it removed the superseded row, which is what freed the key for the INSERT. So the delete was destroying the archived plan's analysis AND hiding the constraint. Filtering it alone would have turned silent data loss into a 23505 on this route (which fails loudly: 500 "Failed to write manual analysis").
 
 **Body:** `{ week_n, session_day, session_type, rpe?, fatigue_tag?, distance_km?, duration_s?, avg_hr? }`. Requires at least one of: `rpe`, `fatigue_tag`, or (`distance_km` + `duration_s`).
 

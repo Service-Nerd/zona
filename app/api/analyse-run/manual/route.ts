@@ -162,6 +162,12 @@ export async function POST(req: NextRequest) {
   await serviceSupabase
     .from('run_analysis')
     .delete()
+    // 🔴 WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01 — "idempotent replace" was replacing the
+    // SUPERSEDED plan's manual analysis as well, and that is what kept
+    // `run_analysis_manual_uniq` (partial on `source` alone, so week-keyed across plans)
+    // from ever firing. 20261104 makes that index doubly partial; this makes the delete
+    // mean what its comment says.
+    .is('superseded_at', null)
     .eq('user_id', user.id)
     .eq('week_n', week_n)
     .eq('session_day', session_day)

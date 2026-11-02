@@ -211,3 +211,58 @@ describe('no week-keyed table is written with a blind upsert', () => {
     expect(offenders).toEqual([])
   })
 })
+
+// ── Deletes ─────────────────────────────────────────────────────────────────────────────
+describe('a DELETE on a week-keyed table is scoped to the live plan', () => {
+  /**
+   * WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01 — the same asymmetry as the upsert, one operation over.
+   *
+   * Every read filters `superseded_at IS NULL`. A delete keyed on `(user_id, week_n, …)` that
+   * does NOT is reaching into the archived plan: `week_n` restarts at 1 on a new plan
+   * (ADR-013), so "remove this session's row" removes the previous plan's as well. **A delete
+   * is the one operation superseding cannot undo.**
+   *
+   * FIVE sites had it, and the item that prompted this named ONE. Two of them were
+   * load-bearing in the worst way — the unfiltered delete freed a key that a surviving plain
+   * unique still occupied, so it was simultaneously destroying history AND hiding the
+   * constraint that would otherwise have failed the insert four lines later. Fixing the delete
+   * alone would have turned a silent data loss into a 23505.
+   *
+   * ⚠️ The sixth was `clearSessionMetricOverride`, fixed hours earlier the same day with no
+   * idea the shape was this common. **This arm is what makes the sweep stick** — grepping for
+   * the shape found five; only a derived check keeps the sixth from arriving.
+   */
+  it("every delete chain on a week-keyed table carries .is('superseded_at', null)", () => {
+    const offenders: string[] = []
+    for (const dir of ['app', 'lib', 'components']) {
+      for (const file of sourceFiles(join(process.cwd(), dir))) {
+        const stripped = stripComments(readFileSync(file, 'utf8'))
+        const lines = stripped.split('\n')
+        for (const table of WEEK_KEYED_TABLES) {
+          const marker = `from('${table}')`
+          lines.forEach((line, i) => {
+            if (!line.includes(marker)) return
+            // ⚠️ WALK THE CHAIN BY LINE, do not take a byte window. `stripComments` pads
+            // comment text with spaces to keep line numbers honest, so a documented fix
+            // sitting between `.delete()` and `.is(...)` eats a fixed-size window whole —
+            // which is exactly what the first cut of this arm did: it reported all three
+            // sites that had just been FIXED. A chain is the run of lines beginning with
+            // `.`, blank (or blanked-comment) lines skipped.
+            const chain: string[] = [line]
+            for (let j = i + 1; j < lines.length; j++) {
+              const t = lines[j].trim()
+              if (t === '') continue                 // blank, or a comment blanked above
+              if (!t.startsWith('.')) break          // the chain has ended
+              chain.push(t)
+            }
+            const text = chain.join(' ')
+            if (!/\.delete\(\)/.test(text)) return
+            if (/\.is\(\s*'superseded_at'\s*,\s*null\s*\)/.test(text)) return
+            offenders.push(`${file.replace(process.cwd() + '/', '')}:${i + 1} → ${table}`)
+          })
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+})

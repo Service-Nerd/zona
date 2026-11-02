@@ -180,7 +180,13 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
     // SESSION-SLOTS-01 — the writes are CHECKED now (N-015): they were fire-and-forget, so a failed
     // insert left the screen showing a move the store never held. On failure the screen reverts.
     const del = await supabase.from('session_overrides')
-      .delete().eq('user_id', user.id).eq('week_n', weekN)
+      // 🔴 WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01 — the live filter was MISSING, so this delete
+      // removed the ARCHIVED plan's overrides too (`week_n` is a within-plan coordinate,
+      // ADR-013). It also hid a real constraint: production carries
+      // `session_overrides_user_id_week_n_original_day_key`, which 20261018 believed was only
+      // a convention, and the unfiltered delete is what freed the key for the insert below.
+      // Dropped in 20261104 — this filter and that migration are one change.
+      .delete().is('superseded_at', null).eq('user_id', user.id).eq('week_n', weekN)
       .in('original_day', removedOriginalDays)
     if (del.error) { onOverrideChange(before); setMoveError(MOVE_FAILED); return }
     if (newDay !== originalDay) {
@@ -230,7 +236,9 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
 
     // SESSION-SLOTS-01 — checked, as handleMove's are (they were fire-and-forget).
     const del = await supabase.from('session_overrides')
-      .delete().eq('user_id', user.id).eq('week_n', weekN)
+      // WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01 — the Swap twin of handleMove's delete, same fix.
+      // Two sites, found by grepping the shape rather than the symptom.
+      .delete().is('superseded_at', null).eq('user_id', user.id).eq('week_n', weekN)
       .in('original_day', [sourceOriginal, targetOriginal])
     if (del.error) { onOverrideChange(before); setMoveError(MOVE_FAILED); return }
 

@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-02 — WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01 · The unfiltered delete was the only reason the bug looked harmless
+
+**Shipped:** the last two week_n-keyed unique constraints are scoped to the live plan, and five deletes stopped reaching into archived plans.
+**Dev learning:** two of the five deletes were load-bearing in the worst possible way. `session_overrides` carries a plain unique constraint that a migration three weeks ago believed was "only a CONVENTION". It never fired — because the delete four lines above the insert had no `superseded_at IS NULL` filter, so it removed the superseded row and freed the key. The delete was simultaneously destroying the archived plan's data AND hiding the constraint that would otherwise have failed the insert. **Fix the delete on its own — the obvious, correct-looking fix — and you convert silent data loss into a 23505 for any runner with history.** Same structure on `analyse-run/manual`, whose comment literally says "idempotent replace" while replacing a row from a plan the runner finished months ago.
+**Product/creator learning:** the item I filed named one delete site. Grepping for the shape found five, and the fifth was a fix I had made myself four hours earlier without realising the pattern was general. The register is only as good as the sweep behind it.
+**AI-building learning:** three of my own checks were hollow today and each failed differently. The delete gate's first cut reported the exact three sites it had just fixed — `stripComments` pads comment text with spaces to preserve line numbers, so the explanatory comments I'd added ate the fixed-size byte window whole. Then the gate I shipped an hour earlier turned out blind to the index this change created, because it matched on the name `%_live_key` and the new index is `run_analysis_manual_live_uniq`. And `tsc` caught three `matchAll`/`Map` spreads that need `Array.from` — a rule already written in CLAUDE.md under § TypeScript. **A check keyed on a name guards the names it knows.**
+**The honest bit:** I reported "723 files / 7,045 tests" as verification of a change the suite had never seen. I'd chained `tsc && verify`, tsc failed, verify never ran, and I quoted the previous run's numbers. Caught it only by reading the exit code — which was 2, not 0, and nothing else in the output said so.
+**Hook material:** the unfiltered delete was the only reason a three-week-old constraint bug looked harmless. Fixing the delete first would have broken the app.
+**Postable?:** yes
+
 ## 2026-11-02 — CHECK-DB-LIVE-KEY-ARM-01 · The check found a defect before it was wired up
 
 **Shipped:** a repo-side gate (in `npm run verify`) asserting the five `%_live_key` partial indexes exist with their predicate, plus a live arm in `check:db` that fails soft until its RPC lands.

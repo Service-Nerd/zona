@@ -106,36 +106,39 @@ carries Supabase secrets; the ops crons curl a deployed route) → `CHECK-DB-LIV
 
 ---
 
-### 🔲 `WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01` — two week_n-keyed uniques in production are NOT live-scoped ⚙️ **NO BOARD** (defect, PLAN-WEEK-COLLISION-01 intent)
+### ✅ `WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01` — SHIPPED AND IN EFFECT 2026-11-02 ⚙️ **NO BOARD** (defect, PLAN-WEEK-COLLISION-01 intent)
 
-📐 **Found 2026-11-02 by the query written to verify CHECK-DB-LIVE-KEY-ARM-01's own RPC** — i.e. by the new
-check, on its first run, before it was even wired up. Both **latent, 0 colliding keys today**, which is how
-COMPLETION-TOMBSTONE-01 was described too: a landmine, not an outage.
+📐 **Found by `week_key_uniqueness()` on its FIRST run** — the query written to prove CHECK-DB-LIVE-KEY-ARM-01's
+own RPC, before the arm calling it was wired up. Two week_n-keyed uniques were not live-scoped:
+`session_overrides_user_id_week_n_original_day_key` (plain constraint, no predicate) and
+`run_analysis_manual_uniq` (partial on `source='manual'` only). Both latent: 0 colliding keys, 9 live / 13
+superseded overrides, 87 / 13 manual analyses.
 
-| key | state | why it matters |
-|---|---|---|
-| `session_overrides_user_id_week_n_original_day_key` | **plain unique CONSTRAINT, no predicate** | sits beside `session_overrides_live_key`; 9 live / 13 superseded rows |
-| `run_analysis_manual_uniq` | partial on **`source = 'manual'`**, not on `superseded_at` | 87 live / 13 superseded manual analyses |
+🔴 **AND THE ITEM NAMED ONE DELETE SITE. THERE WERE FIVE.** Every delete on a week-keyed table was unfiltered,
+so each reached into the archived plan: `PlanCalendar` Move (`:182`) and Swap (`:232`), `analyse-run/manual`,
+`strava/unlink-activity`, and `clearSessionMetricOverride` — fixed hours earlier the same day with no idea the
+shape was this common. **In two of them the unfiltered delete was load-bearing:** it freed a key the surviving
+plain unique still occupied, so it was destroying history AND hiding the constraint that would otherwise have
+failed the insert four lines later. **Fixing either half alone turns silent data loss into a 23505**, which is
+why they shipped together.
 
-🔴 **`session_overrides` IS A TRAP, AND THE TRAP IS SET FOR WHOEVER FIXES THE OBVIOUS BUG.**
-`20261018_session_overrides_slot.sql` added the partial index on the stated premise that uniqueness "has been
-a CONVENTION, kept by the client deleting before it inserts". **Production has had a real constraint all
-along.** It does not bite today only because `PlanCalendar.tsx:182` deletes **without** a
-`superseded_at IS NULL` filter — so it destroys the archived plan's overrides, and that is what frees the key
-for the insert four lines later. Add the live filter (the correct fix, and the same one shipped today for
-`clearSessionMetricOverride`) and the insert starts failing 23505 for any runner with superseded overrides.
-**Both halves together or neither:** drop the constraint AND filter the delete.
+✅ **`20261104_live_week_keys_survivors.sql` applied by the founder BEFORE the code shipped** — the safer
+order, so there was no window in which a filtered delete met a surviving constraint. Verified via the ratified
+instrument: `npm run check:db` → **✓ 6 week_n-keyed unique(s), every one partial on `superseded_at IS NULL`,
+exit 0**, matching the prediction written into the migration file. `run_analysis_manual_live_uniq` replaces the
+old index, doubly partial (`source = 'manual' and superseded_at is null`), inside one transaction. Ledger updated.
 
-`run_analysis`: a manual analysis is keyed `(user_id, week_n, session_day)` where `source='manual'`, so a new
-plan's week-1 manual entry collides with the previous plan's. `analyse-run` upserts on the activity uuid, not
-this index, so the collision surfaces as a failed insert rather than a tombstone write.
+**Gate:** a new arm in `liveRowWrite.test.ts` — every delete chain on a `WEEK_KEYED_TABLES` table must carry
+`.is('superseded_at', null)`, population derived, falsified on three separate sites including this morning's.
+⚠️ Its first cut reported all three sites that had just been FIXED: `stripComments` pads with spaces to keep
+line numbers, so the explanatory comments ate a fixed-size byte window. It walks the chain by line now.
 
-⚠️ **The repo-side test is GREEN on `session_overrides`** — no migration declares that constraint, so there
-is nothing in the repo to find. That is the limitation `liveKeyCoverage.test.ts`'s header states, demonstrated
-on the day it was written rather than imagined.
-
-**Needs:** a migration dropping the `session_overrides` constraint, a decision on `run_analysis_manual_uniq`
-(drop, or make it partial on both conditions), and the `PlanCalendar` delete filtered in the same change.
+🔻 **And it closed a hole this item itself opened.** `20261104` names its index `run_analysis_manual_live_uniq`,
+not `%_live_key` — so `liveKeyCoverage.test.ts`, shipped an hour earlier, was **structurally blind to it**.
+Arm A now finds week_n-keyed uniques by their COLUMNS, replaying `drop index` in migration order, and is
+falsified both by removing the new index's predicate and by adding one under a name the old check never knew.
+**A check keyed on a name guards the names it knows** — the same class as the three `label.includes('pace')`
+instances fixed today.
 
 ---
 
@@ -9466,7 +9469,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-02 (last ship `e3bd6a41` CHECK-DB-LIVE-KEY-ARM-01; 722 test files / 7,031 tests; **pushed and LIVE 2026-11-02, `b7393345`, Vercel READY; `20261102_live_week_keys.sql` APPLIED and verified — 5 live-key indexes vs 2, 0 plain uniques vs 3**).** ✅ **`20261102_live_week_keys.sql` APPLIED (founder) and VERIFIED from here — 5 `%_live_key` indexes vs 2, 0 plain uniques on the three converted tables vs 3. Ledger updated, `check:db` clean.** 🔻 **Nothing in the repo can re-check those keys: `CHECK-DB-LIVE-KEY-ARM-01` filed.** 🔻 **Open, founder (unchanged):** sandbox purchase test (`docs/runbooks/iap-sandbox-purchase-test.md`), paste digest Q9B (`docs/runbooks/digest-prompt-q9b-2026-10-31.txt`), Coach on a device. **Today, 3 ships + 1 close:** `c679936e` WEEKLY-REPORT-SUPERSEDED-WRITE-01 — `writeLiveRow` is the one owner of a live-plan write across `weekly_reports`, `session_reflections` and `session_metric_overrides`; measured 1 ghost write, 16 + 8 + 13 superseded rows, and `session_reflections` had **0 live rows**, so its next write was the loss. COMPLETION-TOMBSTONE-01 fixed the fourth table of that family on 09-23 and left these three. `55c17200` PEAK-RACEPACE-NOTE-01 — a note that was wrong **14 of 14** times and structurally suppressed on **9 of 9** of the rows it was written for; 26 more instances on time-targeted ultras the cohort grid cannot reach. `23751aea` §40b Am.4 (Coaching Board, unanimous) — an effort-governed session carries the zone its row declares and no HR band; `vert_hike_repeats` was shipping as Zone 4–5 / 158–184 bpm on a power hike. ✅ `ONRAMP-W8-SPACING-01` **CLOSED as a FALSE PREMISE** — 4 runs across 7 open days cannot avoid one consecutive pair, and `INV-PLAN-ONRAMP-SPACED` already agrees (0 violations). 🔻 **Filed today:** `ULTRA-VOICE-REPURPOSED-01` (a "Back-to-back long" label and "Sunday is meant to feel heavy" on a 78-minute Friday tempo — found by the board's read of the sample packet, not by any harness), `EFFORT-GOVERNED-HR-DISPLAY-01`. **Still open, filed:** `A11Y-REDUCED-MOTION-01`, `TYPESCALE-DECIMAL-GATE-01`, the ultra slot question (`SIG-ULTRA-UNBUILT-01`, SLT-gated), Coach ideas 2–5. ⚠️ **Declared:** 1,757 `hill_reps` sessions in the 5K/10K cohort grid lost their HR range; `verify:parity` 542 of 6,102 changed; `review:coaching` **identical on all seven steps** before and after — and it did not DETECT either defect. **Then `e3bd6a41` CHECK-DB-LIVE-KEY-ARM-01** — the five `%_live_key` partial indexes are gated now (`liveKeyCoverage.test.ts`, 13 arms, in `verify`) plus a fail-soft live arm in `check:db`. 🔴 **The query written to prove its RPC found TWO live survivors on its first run** (`WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01`): `session_overrides` carries a plain unique beside its partial one — a trap, because its insert only works today thanks to an unfiltered delete that destroys archived overrides, so fixing that delete detonates a 23505 — and `run_analysis_manual_uniq` is partial on `source='manual'`, not on `superseded_at`. Both latent, 0 colliding keys measured. ✅ **`20261103_live_key_rpc.sql` APPLIED — the live arm is ARMED and its verdict matched the prediction exactly: 2 findings, 5 live-scoped, exit 1.** 🔴 **So `check:db` exits 1 now, correctly** — fix the survivors or the gate decays into noise. ⚠️ **`check:db` is still in NO workflow** — `CHECK-DB-LIVE-KEY-CRON-01`. Founder's long runs since 11 Oct carry no HR (not investigated, his call).**
+**State at END of 2026-11-02 (last ship `e3bd6a41` CHECK-DB-LIVE-KEY-ARM-01; 722 test files / 7,031 tests; **pushed and LIVE 2026-11-02, `b7393345`, Vercel READY; `20261102_live_week_keys.sql` APPLIED and verified — 5 live-key indexes vs 2, 0 plain uniques vs 3**).** ✅ **`20261102_live_week_keys.sql` APPLIED (founder) and VERIFIED from here — 5 `%_live_key` indexes vs 2, 0 plain uniques on the three converted tables vs 3. Ledger updated, `check:db` clean.** 🔻 **Nothing in the repo can re-check those keys: `CHECK-DB-LIVE-KEY-ARM-01` filed.** 🔻 **Open, founder (unchanged):** sandbox purchase test (`docs/runbooks/iap-sandbox-purchase-test.md`), paste digest Q9B (`docs/runbooks/digest-prompt-q9b-2026-10-31.txt`), Coach on a device. **Today, 3 ships + 1 close:** `c679936e` WEEKLY-REPORT-SUPERSEDED-WRITE-01 — `writeLiveRow` is the one owner of a live-plan write across `weekly_reports`, `session_reflections` and `session_metric_overrides`; measured 1 ghost write, 16 + 8 + 13 superseded rows, and `session_reflections` had **0 live rows**, so its next write was the loss. COMPLETION-TOMBSTONE-01 fixed the fourth table of that family on 09-23 and left these three. `55c17200` PEAK-RACEPACE-NOTE-01 — a note that was wrong **14 of 14** times and structurally suppressed on **9 of 9** of the rows it was written for; 26 more instances on time-targeted ultras the cohort grid cannot reach. `23751aea` §40b Am.4 (Coaching Board, unanimous) — an effort-governed session carries the zone its row declares and no HR band; `vert_hike_repeats` was shipping as Zone 4–5 / 158–184 bpm on a power hike. ✅ `ONRAMP-W8-SPACING-01` **CLOSED as a FALSE PREMISE** — 4 runs across 7 open days cannot avoid one consecutive pair, and `INV-PLAN-ONRAMP-SPACED` already agrees (0 violations). 🔻 **Filed today:** `ULTRA-VOICE-REPURPOSED-01` (a "Back-to-back long" label and "Sunday is meant to feel heavy" on a 78-minute Friday tempo — found by the board's read of the sample packet, not by any harness), `EFFORT-GOVERNED-HR-DISPLAY-01`. **Still open, filed:** `A11Y-REDUCED-MOTION-01`, `TYPESCALE-DECIMAL-GATE-01`, the ultra slot question (`SIG-ULTRA-UNBUILT-01`, SLT-gated), Coach ideas 2–5. ⚠️ **Declared:** 1,757 `hill_reps` sessions in the 5K/10K cohort grid lost their HR range; `verify:parity` 542 of 6,102 changed; `review:coaching` **identical on all seven steps** before and after — and it did not DETECT either defect. **Then `e3bd6a41` CHECK-DB-LIVE-KEY-ARM-01** — the five `%_live_key` partial indexes are gated now (`liveKeyCoverage.test.ts`, 13 arms, in `verify`) plus a fail-soft live arm in `check:db`. 🔴 **The query written to prove its RPC found TWO live survivors on its first run** (`WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01`): `session_overrides` carries a plain unique beside its partial one — a trap, because its insert only works today thanks to an unfiltered delete that destroys archived overrides, so fixing that delete detonates a 23505 — and `run_analysis_manual_uniq` is partial on `source='manual'`, not on `superseded_at`. Both latent, 0 colliding keys measured. ✅ **ALL THREE OF TODAY'S MIGRATIONS APPLIED AND VERIFIED** (`20261102` live keys, `20261103` the RPC, `20261104` the survivors — ledger updated). `check:db` is **GREEN: 6 week_n-keyed uniques, every one partial on `superseded_at IS NULL`, exit 0**, matching the prediction written into `20261104` before it ran. **`WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01` shipped:** the item named ONE delete site and there were **FIVE** (`PlanCalendar` Move + Swap, `analyse-run/manual`, `strava/unlink-activity`, and this morning's `clearSessionMetricOverride`). 🔴 **In two of them the unfiltered delete was LOAD-BEARING** — it freed a key a surviving plain unique still occupied, so it destroyed archived data AND hid the constraint; fixing either half alone turns silent data loss into a 23505. The migration was applied BEFORE the code, so there was no window. ⚠️ **`check:db` is still in NO workflow** — `CHECK-DB-LIVE-KEY-CRON-01`. Founder's long runs since 11 Oct carry no HR (not investigated, his call).**
 
 ⚠️ **`2916575a` (this morning's docs commit) was CANCELED by Vercel, not deployed** — superseded by today's push while queued, which is normal. Production served `a593f70a` from 10-31 until `b7393345`. Docs-only, so nothing functional was missing, but the 10-31 state block's "LIVE" was true of `a593f70a` and not of the commit that asserted it. **A push is not a deploy, and a CANCELED build is not a failure you get told about.**
 
