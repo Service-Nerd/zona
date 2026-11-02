@@ -1144,12 +1144,15 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | ~~**A quality session counts at 5 km or 35 minutes**~~ (S9-QUALITY-MINUTES-01) | ✅ | S | **SHIPPED 2026-10-27.** Slow-goal debts 113/73/122/1 → 0; 221 of 5,925 sampled served plans change (beginner continuous tempo 38 → 36 min). |
 | **Three paths the 35-minute floor does not reach** (S9-QUALITY-FLOOR-REACH-01) | 🔲 | S | Filed 2026-10-27 by code review; each changes unmeasured served plans. |
 | ~~**A weekday-held easy run lasts the runner's limit, at least 30 min**~~ (S9-EASY-MINUTES-01) | ✅ | M | **SHIPPED 2026-10-27**, §82 Am. 2. |
-| **A weekly report written onto an old plan's row** (WEEKLY-REPORT-SUPERSEDED-WRITE-01) | 🔲 | S | Defect, 1 account. Measure first. |
+| **A weekly report written onto an old plan's row** (WEEKLY-REPORT-SUPERSEDED-WRITE-01) | ✅ | S | Shipped 2026-11-02: `writeLiveRow` owns the live-plan write across THREE tables (the item named one). 🔴 **Inert until `20261102_live_week_keys.sql` is run in the SQL editor — founder action.** |
 | **Share becomes an icon, secondary** (SHARE-ICON-01) | ✅ | S | Shipped 2026-10-31: one `ShareControl` owner, circle icon on all four surfaces; mockups approved. |
-| **Race-pace note on non-race-pace sessions** (PEAK-RACEPACE-NOTE-01) | 🔲 | S | Defect, §33. |
-| **Ultra rows priced as threshold** (ULTRA-ROWS-PRICED-AS-QUALITY-01) | 🔲 | S | Defect, measure ultras first. |
+| **Race-pace note on non-race-pace sessions** (PEAK-RACEPACE-NOTE-01) | ✅ | S | Shipped 2026-11-02: deleted, not re-keyed. 14 of 14 instances wrong, and structurally suppressed on 9 of 9 rows it was written for. |
+| **Ultra rows priced as threshold** (ULTRA-ROWS-PRICED-AS-QUALITY-01) | ✅ | S | Ruled + part-shipped 2026-11-02 (§40b Am.4: the power hike reads Zone 2, no HR band). **Not ⚙️ NO BOARD as filed.** The slot question moved to `SIG-ULTRA-UNBUILT-01`. |
+| **What an ultra's midweek quality slot should carry** (SIG-ULTRA-UNBUILT-01) | 🔲 | M | 💼 SLT gate check first — gated on ultra acquisition since 2026-09-10. Ultras get mis-priced Z3 sessions meanwhile. |
+| **An ultra row delivered as a tempo keeps the wrong voice** (ULTRA-VOICE-REPURPOSED-01) | 🔲 | S | 🏃 Decide WITH SIG-ULTRA-UNBUILT-01; §33 rules it, but the fix is the note and the label. |
+| **Screen can show a type-derived HR band on an effort-governed session** (EFFORT-GOVERNED-HR-DISPLAY-01) | 🔲 | S | 🧭 §84 family, pre-existing and wider than two rows. P3. |
 | **Plan note quotes the weekday cap, not the day** (STRUCTURAL-NOTE-DAY-BUDGET-01) | 🔲 | S | Defect. |
-| **Staged plan week 8 back to back** (ONRAMP-W8-SPACING-01) | 🔲 | S | Defect, R1. |
+| **Staged plan week 8 back to back** (ONRAMP-W8-SPACING-01) | ✅ | S | **CLOSED 2026-11-02, FALSE PREMISE.** 4 runs across 7 open days cannot avoid one consecutive pair; `INV-PLAN-ONRAMP-SPACED` already agrees (0 violations). No code change. |
 | **27 Oct board-read follow-ups** (COACH-READ-1027-FOLLOWUPS-01) | 🔲 | M | Measure, then board. |
 | **A held plan can stop building undeclared** (S9-HELD-PEAK-CLASSIFY-01) | 🔲 | S | 1 sweep clone, recorded debt. |
 | **`weekly_km` not restated after every session change** (WEEKLY-KM-AFTER-CAP-01) | 🔲 | S | 17 cohort plans already stale; foundation budget stays. |

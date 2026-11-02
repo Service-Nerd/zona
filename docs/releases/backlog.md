@@ -27,7 +27,7 @@ already decided what it is.
 
 ---
 
-### 🔻 `WEEKLY-REPORT-SUPERSEDED-WRITE-01` — SHIPPED 2026-11-02, **ONE STEP LEFT: RUN THE MIGRATION** 👤 **FOUNDER**
+### ✅ `WEEKLY-REPORT-SUPERSEDED-WRITE-01` — SHIPPED 2026-11-02 · **the code is inert until a migration is run** 👤 **FOUNDER ACTION**
 
 Code shipped and in the feature registry. **`supabase/migrations/20261102_live_week_keys.sql` must be run in the Supabase SQL
 editor** — three partial unique indexes on `superseded_at IS NULL`, three plain UNIQUE constraints dropped. DDL cannot run from
@@ -42,7 +42,7 @@ superseding exists to prevent.
 
 ---
 
-### 🔲 `ULTRA-ROWS-PRICED-AS-QUALITY-01` — the ultra rows reach the runner only through the quality slot 🏃 **COACHING BOARD** → 💼 **SLT** (ruled 2026-11-02; the open half is `SIG-ULTRA-UNBUILT-01`'s)
+### ✅ `ULTRA-ROWS-PRICED-AS-QUALITY-01` — RULED + PART-SHIPPED 2026-11-02 🏃 **COACHING BOARD** (the open half moved to `SIG-ULTRA-UNBUILT-01`, below)
 
 🔴 **RE-TAGGED FROM ⚙️ NO BOARD, AND THE ITEM UNDERSTATED IT.** It named two rows; **all three are wrong, and one is a safety
 item.** Measured on E6 (50K, 22wk) and 18 time-targeted ultra plans:
@@ -71,6 +71,30 @@ is too short to rehearse the fuelling it exists for (`CAT-ULTRA-FUELLING-01`, Si
 
 ⚡ **Recorded disagreement (unresolved):** McMillan would rather the slot were empty than mis-priced; Seiler will not call a
 removed session neutral without the delivered quality-share measured against `INTENSITY_DISTRIBUTION['50K']` first.
+
+---
+
+### 🔲 `SIG-ULTRA-UNBUILT-01` — what an ultra's midweek quality slot should carry 💼 **SLT** (gate check) → 🏃 **COACHING BOARD**
+
+Ruled **2026-09-13** (§24e, ULTRA-FUEL-NOTE-01's adjacent-finding paragraph) and re-confirmed
+**2026-11-02**: this is a prescription question, not a defect fix. **Build is SLT-gated on ultra
+acquisition.** Carried here from `ULTRA-ROWS-PRICED-AS-QUALITY-01`, which shipped the honesty half.
+
+**What the engine does while this waits** — `ultra_race_sim`, `back_to_back_long` and `time_on_feet`
+are selectable ONLY through the midweek quality slot (`isLongRunSession` matches `long_run_with_segment`
+alone), where they are priced as threshold work. Measured 2026-11-02 on E6 (50K):
+`back_to_back_long` delivered as **78 min at Zone 3, 4:45–5:20 /km, on a Friday**, with none of
+Willy's three guards from the 2026-09-10 sitting attached (counts as the week's peak long-run
+stimulus; never adjacent to a deload; **both days stay Z2**). `ultra_race_sim` at 78 min is too
+short to rehearse the fuelling it exists for (`CAT-ULTRA-FUELLING-01`).
+
+⚠️ **Excluding them from the fallback is NOT the cheap fix** — it makes all three dead weight,
+the trap SC-05 and CAT-ULTRA-THIN-01 both name. Either answer changes what an ultra runner is
+prescribed.
+
+⚡ **Recorded disagreement:** McMillan would rather the slot were empty than mis-priced; Seiler
+will not call a removed session neutral without the delivered quality-session share measured
+against `INTENSITY_DISTRIBUTION['50K']`. That measurement is the first step whenever this opens.
 
 ---
 
