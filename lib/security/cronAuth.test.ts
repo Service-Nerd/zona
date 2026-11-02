@@ -75,7 +75,20 @@ describe('every cron-secret route also accepts Bearer (the twin class)', () => {
     else if (f === 'route.ts') routes.push(p)
   })
   walk(api)
-  const cronRoutes = routes.filter(p => fs.readFileSync(p, 'utf8').includes('x-cron-secret'))
+  // 🔴 THE POPULATION WAS KEYED ON A HEADER STRING, AND THAT EXCLUDED THE ROUTES USING THE
+  // OWNER THIS FILE EXISTS FOR (2026-11-02, CHECK-DB-LIVE-KEY-CRON-01). It filtered on
+  // `includes('x-cron-secret')`, so a route reading its secret through `cronSecretFrom` —
+  // the shared helper introduced BY this incident — never appeared in the set. Adopting the
+  // abstraction made a route exempt from the check about the abstraction.
+  //
+  // Keyed on CRON_SECRET now: the env var IS what makes a route scheduled, where the header
+  // name is one of two ways to carry it. Same correction as `liveKeyCoverage.test.ts` moving
+  // off `%_live_key` names onto the index's columns, and the three `label.includes('pace')`
+  // instances: anchor on the property, never on a spelling.
+  const cronRoutes = routes.filter(p => {
+    const src = fs.readFileSync(p, 'utf8')
+    return src.includes('CRON_SECRET') || src.includes('x-cron-secret')
+  })
 
   it('the population is real', () => {
     expect(cronRoutes.length).toBeGreaterThanOrEqual(10)

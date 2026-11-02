@@ -1,0 +1,66 @@
+# CHECK-DB-LIVE-KEY-CRON-01 — daily live-key integrity probe.
+#
+# The five `%_live_key` partial unique indexes are the write side of PLAN-WEEK-COLLISION-01.
+# Drop one, or rebuild it without `WHERE superseded_at IS NULL`, and every week-keyed write
+# silently lands on a tombstone again: the write succeeds, every read excludes the row, and
+# nothing errors. That was invisible for weeks twice (COMPLETION-TOMBSTONE-01,
+# WEEKLY-REPORT-SUPERSEDED-WRITE-01).
+#
+# WHY A CRON AND NOT A TEST. `liveKeyCoverage.test.ts` gates the MIGRATIONS inside
+# `npm run verify`, and it cannot see production — demonstrated the day it was written, when
+# `session_overrides` turned out to carry a plain unique that no migration declares and the
+# test passed on it. `npm run check:db` DOES read production, and it is referenced by nothing
+# but its own package.json line: not verify, not verify:ci, none of these workflows. A check
+# that runs when somebody types it is what this family keeps proving does not hold.
+#
+# Why GitHub Actions instead of vercel.json: same rationale as
+# ops-cron-strava-webhook-health.yml and ops-cron-onboarding-integrity.yml.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions) — both already set for
+# the four existing ops crons, so this needs nothing new:
+#   CRON_SECRET — same value as the Vercel env var.
+#   VERCEL_URL  — production URL, no trailing slash (e.g. https://www.zonna.run).
+
+name: ops-cron-live-key-integrity
+
+on:
+  schedule:
+    # 08:20 UTC daily — clear of reshape-integrity (07:30), plan-audit (07:45), the email cron
+    # (08:00), onboarding-integrity (08:05) and strava-webhook-health (08:10).
+    - cron: '20 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  fire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/ops/live-key-integrity
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_URL:  ${{ secrets.VERCEL_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ] || [ -z "$VERCEL_URL" ]; then
+            echo "::error::CRON_SECRET and VERCEL_URL secrets must be set."
+            exit 1
+          fi
+          # --fsS without -f on the 503: the probe returns 503 when it CANNOT observe health,
+          # and that is a finding to surface rather than a curl failure to hide. Capture the
+          # status and the body, then decide.
+          HTTP=$(curl -sS --max-time 60 -o /tmp/lki.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$VERCEL_URL/api/ops/live-key-integrity")
+          cat /tmp/lki.json; echo
+          if [ "$HTTP" = "503" ]; then
+            echo "::error::live-key-integrity could NOT OBSERVE health — week_key_uniqueness() is missing. Remedy: apply supabase/migrations/20261103_live_key_rpc.sql. (ops_events kind=live_key_probe_unavailable)"
+            exit 1
+          fi
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::live-key-integrity returned HTTP $HTTP"
+            exit 1
+          fi
+          if grep -q '"healthy":false' /tmp/lki.json; then
+            echo "::error::A week_n-keyed unique is NOT scoped to the live plan — a new plan's write will land on a superseded row. See ops_events (kind=live_key_not_live_scoped) and run: npm run check:db"
+            exit 1
+          fi

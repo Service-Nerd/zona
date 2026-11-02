@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-02 — CHECK-DB-LIVE-KEY-CRON-01 · Using the shared helper made the route invisible to the check about the shared helper
+
+**Shipped:** the live-key schema check now runs itself daily, instead of when somebody types `npm run check:db`.
+**Dev learning:** `cronAuth.test.ts` has a population arm asserting every cron-secret route accepts the `Authorization: Bearer` header. It built that population by grepping each route for the literal string `x-cron-secret`. My new route reads its secret through `cronSecretFrom` — the shared helper that exists *because* of the incident that test was written for (a route read only one of the two headers and refused every Vercel cron call for 90 days). So adopting the abstraction made the route exempt from the check about the abstraction, and every future route using the helper would have been too. It keys on `CRON_SECRET` now: 13 routes, up from 10.
+**Product/creator learning:** the probe returns 503 with `healthy: null` when its RPC is missing, never `healthy: true`. A monitor that reports health it could not observe is worse than no monitor — it manufactures confidence, and you only find out when the thing it was watching has already failed. The existing strava-webhook probe had already written that rule down; I reused the sentence as well as the pattern.
+**AI-building learning:** I wrote in my own analysis block that the route would "join that population arm for free". It would not have. I only found out because I checked whether the population actually *contained* my route rather than trusting that the suite went green — the arm passed either way, which is the whole problem with a green tick. That is the fourth instance today of the same lesson: a check keyed on a spelling guards the spellings it knows. The other three were `%_live_key` as an index name, `label.includes('pace')`, and a catalogue category standing in for a stamped stimulus.
+**The honest bit:** I nearly shipped this and told the founder the auth was covered by an existing gate. The sentence was already written in the analysis block, which is exactly the document that is supposed to prevent that kind of claim.
+**Hook material:** the route used the shared helper, and the shared helper is what made it invisible to the test written about the shared helper.
+**Postable?:** yes
+
 ## 2026-11-02 — WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01 · The unfiltered delete was the only reason the bug looked harmless
 
 **Shipped:** the last two week_n-keyed unique constraints are scoped to the live plan, and five deletes stopped reaching into archived plans.

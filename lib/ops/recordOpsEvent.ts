@@ -55,6 +55,21 @@ export type OpsEventKind =
   // for; what fails is the cache. Recording it is the point: the predecessor defect was
   // silent for weeks, and the measurement that found it was a hand-written probe.
   | 'weekly_report_write_failed'
+  // CHECK-DB-LIVE-KEY-CRON-01 (2026-11-02) — the daily schema probe,
+  // `/api/ops/live-key-integrity`.
+  //
+  // `live_key_not_live_scoped`: a week_n-keyed unique on a table carrying `superseded_at`
+  // has no `WHERE superseded_at IS NULL`. That key is occupied by the previous plan's row
+  // (week_n restarts at 1, ADR-013), so a new plan's write lands on the tombstone or fails
+  // — invisible for weeks twice already. Deduped on the SET of offending index names over
+  // 20 hours, so a persistent finding does not spam while a NEW one still reports.
+  //
+  // `live_key_probe_unavailable`: the `week_key_uniqueness()` RPC is missing, so health
+  // could not be observed. ⚠️ RECORDED AND 503, NOT a silent pass — a probe that reports
+  // healthy because it could not look manufactures confidence, which is worse than having
+  // no probe. Same precedent as `strava-webhook-health`.
+  | 'live_key_not_live_scoped'
+  | 'live_key_probe_unavailable'
 
   // REFUSAL-TELEMETRY-01 (2026-09-19) — every DESIGNED refusal, with the inputs
   // that caused it.

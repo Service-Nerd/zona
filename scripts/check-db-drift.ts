@@ -51,6 +51,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { RLS_POLICIES, ALL_OPS, type PolicyOp } from '../lib/supabase/rlsPolicyManifest'
 import { WEEK_KEYED_TABLES } from '../lib/plan/supersede'
+import { auditWeekKeyUniqueness, type WeekKeyRow } from '../lib/supabase/liveKeyAudit'
 import { USER_DATA_SURFACES, NON_USER_TABLES, DERIVED_VIEWS } from '../lib/supabase/userDataSurfaces'
 
 loadEnvConfig(process.cwd())
@@ -367,27 +368,25 @@ async function checkLiveKeyUniqueness(url: string, serviceKey: string): Promise<
     return
   }
 
-  type Row = { table_name: string; index_name: string; kind: string; columns: string; predicate: string | null }
-  const rows = (data ?? []) as Row[]
-  const supersededTables = new Set<string>(WEEK_KEYED_TABLES as readonly string[])
+  // CHECK-DB-LIVE-KEY-CRON-01 — the classification is `lib/supabase/liveKeyAudit.ts`'s, not a
+  // copy here. `/api/ops/live-key-integrity` asks the identical question on a schedule, and two
+  // hand-written answers to one question is the DELOAD-OWNER-01 / TIER-OWNER-01 shape.
+  const audit = auditWeekKeyUniqueness((data ?? []) as WeekKeyRow[])
 
-  const inScope = rows.filter(r => supersededTables.has(r.table_name))
-  const live    = inScope.filter(r => /superseded_at is null/i.test(r.predicate ?? ''))
-  const bad     = inScope.filter(r => !/superseded_at is null/i.test(r.predicate ?? ''))
-
-  for (const r of bad) {
+  for (const r of audit.findings) {
     console.log(`✗ ${r.table_name}.${r.index_name} (${r.kind}) on (${r.columns})`)
     console.log(`    predicate: ${r.predicate ?? 'NONE'} — not scoped to the live plan.`)
     console.log(`    A new plan restarts week_n at 1, so this key is occupied by the previous`)
     console.log(`    plan's row: the insert fails, or an upsert lands on the tombstone.`)
   }
-  if (bad.length) {
-    console.log(`\n✗ ${bad.length} week_n-keyed unique(s) are not live-scoped, against ${live.length} that are.`)
+  if (audit.findings.length) {
+    console.log(`\n✗ ${audit.findings.length} week_n-keyed unique(s) are not live-scoped, against ${audit.liveScoped.length} that are.`)
     process.exitCode = 1
     return
   }
-  console.log(`✓ ${live.length} week_n-keyed unique(s), every one partial on superseded_at IS NULL.`)
+  console.log(`✓ ${audit.liveScoped.length} week_n-keyed unique(s), every one partial on superseded_at IS NULL.`)
 }
+
 
 async function checkUserPurgeCoverage(url: string, serviceKey: string): Promise<void> {
   console.log('\n── account-deletion coverage (DB-USER-PURGE-01) ──')

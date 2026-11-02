@@ -142,14 +142,35 @@ instances fixed today.
 
 ---
 
-### 🔲 `CHECK-DB-LIVE-KEY-CRON-01` — the live key check runs only when someone types it ⚙️ **NO BOARD** (tooling) · P3
+### ✅ `CHECK-DB-LIVE-KEY-CRON-01` — SHIPPED 2026-11-02 · the live key check now runs itself ⚙️ **NO BOARD** (tooling)
 
-`check:db` is in no workflow and `verify.yml`/`nightly-test-liveness.yml` carry no Supabase secrets, so the
-live arm cannot simply be added to CI. The ratified pattern here is an `/api/ops/...` route plus a cron that
-curls it with `CRON_SECRET` — how `plan-audit`, `reshape-integrity`, `strava-webhook-health` and
-`onboarding-integrity` all run. Filed separately because it is a new public surface + a contract + a
-workflow, not a tooling tweak. ⚠️ Until it exists, the live arm is a check that depends on remembering,
-which is what this family keeps proving does not hold.
+`/api/ops/live-key-integrity` + `.github/workflows/ops-cron-live-key-integrity.yml` (08:20 UTC, clear of the
+five existing crons). The ratified pattern for a DB-dependent scheduled check here — an ops route curled with
+`CRON_SECRET` — not a `vercel.json` cron, for the reason `ops-cron-strava-webhook-health.yml` states. Needs no
+new secrets: `CRON_SECRET` and `VERCEL_URL` are already set.
+
+**Single owner, two callers.** The classification moved to `lib/supabase/liveKeyAudit.ts`; `check-db-drift.ts`
+now calls it rather than carrying a copy, because two hand-written answers to one question is the
+`DELOAD-OWNER-01` / `TIER-OWNER-01` shape. ✅ **The extraction was proven INERT** — `check:db`'s output is
+byte-identical before and after, which is the only check that matters for a relocation (§5b: a move makes
+correct code wrong without touching it).
+
+**It refuses rather than reassuring.** A missing RPC returns **503 with `healthy: null`**, never `true`, and
+records `live_key_probe_unavailable`. A probe reporting health it could not observe manufactures confidence,
+which is worse than no probe (`strava-webhook-health`'s own stated precedent). The workflow fails the run on
+`healthy:false`, on the 503, and on any non-200 — silence is not success.
+
+🔴 **AND IT FOUND A HOLE IN AN EXISTING GATE, in the funniest possible place.** `cronAuth.test.ts`'s
+population arm — *"every cron-secret route also accepts Bearer"* — filtered routes on the literal string
+`x-cron-secret`. This route reads its secret through `cronSecretFrom`, **the shared owner that exists because
+of that very incident** (`WEEKLY-REPORT-CRON-AUTH-01`: 0 weekly reports in 90 days). So **adopting the
+abstraction made a route exempt from the check about the abstraction.** ⚠️ **I asserted in my own analysis
+block that the route would "join that population for free" — it would not have.** The population keys on
+`CRON_SECRET` now: 13 routes, this one included, falsified by making this route auth-blind and watching the
+arm name it.
+
+Same correction as `liveKeyCoverage.test.ts` moving off `%_live_key` names onto the index's columns, and the
+three `label.includes('pace')` instances fixed earlier today: **anchor on the property, never on a spelling.**
 
 ---
 
