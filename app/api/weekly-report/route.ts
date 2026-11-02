@@ -21,6 +21,8 @@ import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
+import { writeLiveRow } from '@/lib/supabase/liveRowWrite'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 
 // POST /api/weekly-report
 // Auth-gated (paid/trial). Computes this week's coaching report.
@@ -467,9 +469,32 @@ export async function POST(req: NextRequest) {
     rule_engine_version:  COACHING_RULE_ENGINE_VERSION,
   }
 
-  await serviceSupabase
-    .from('weekly_reports')
-    .upsert(reportRow, { onConflict: 'user_id,week_n' })
+  // 🔴 WEEKLY-REPORT-SUPERSEDED-WRITE-01 — this was
+  // `.upsert(reportRow, { onConflict: 'user_id,week_n' })`, and that key is not
+  // plan-scoped. `week_n` is a WITHIN-PLAN coordinate (ADR-013), so a new plan restarts
+  // at 1 and the upsert found the PREVIOUS plan's week-1 row, updated it in place and
+  // inherited its `superseded_at`. The read above filters live rows, so the report then
+  // existed nowhere the runner could see it AND the archived plan's report was gone.
+  // Measured on one account: week 1 superseded 2026-10-18, rewritten 2026-10-25.
+  //
+  // `writeLiveRow` targets the live row by primary key, which cannot reach a tombstone.
+  const written = await writeLiveRow(
+    serviceSupabase,
+    'weekly_reports',
+    { user_id: userId, week_n: weekN },
+    reportRow,
+  )
+  if (!written.ok) {
+    // ⚠️ REPORTED, NOT SWALLOWED. A tombstone collision means the live partial index is
+    // absent, and the only alternative to failing here is writing the superseded row —
+    // which is the defect. The runner still receives the report in this response; what
+    // is lost is the cache, so the next read regenerates rather than showing them
+    // somebody else's week.
+    console.error('[weekly-report] live write failed', written.reason, written.message)
+    await recordOpsEvent('weekly_report_write_failed', {
+      reason: written.reason, message: written.message, week_n: weekN,
+    }, userId)
+  }
 
   return NextResponse.json({ report: reportRow, cached: false })
 }

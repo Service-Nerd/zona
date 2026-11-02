@@ -199,3 +199,20 @@ scoped to one directory.
 The `plans` row is read through `readPlanJson` (`lib/planRead.ts`), the one owner of that query. It uses
 `.maybeSingle()`, so a runner with **no plan is `null` with no error**, not the PostgREST 406 that made up 89
 of 94 Supabase warnings in a day. **A database error now answers `500 { error: 'Could not load your plan' }`.** It used to be indistinguishable from "no plan" and answered as if the runner had none.
+
+## The WRITE side — WEEKLY-REPORT-SUPERSEDED-WRITE-01 (2026-11-02)
+
+`persistReflection` upserted `session_reflections` with
+`onConflict: 'user_id,week_n,session_day'` against a plain UNIQUE on the same columns —
+COMPLETION-TOMBSTONE-01's twin, and the read-side scoping above could not see it. A new plan
+restarts `week.n` at 1, so the upsert updated the previous plan's row in place and inherited
+its `superseded_at`, which every read then filtered out.
+
+**Measured in production before the fix: 8 superseded rows and ZERO live ones** — so the next
+reflection written on a re-used `(week_n, session_day)` was the one that would have been lost.
+
+It now writes through `lib/supabase/liveRowWrite.ts → writeLiveRow`, against the partial index
+`session_reflections_live_key` (`20261102_live_week_keys.sql`). The function's signature changed
+from a structural `{ from: … upsert … }` shape to `SupabaseClient`, which is why its three call
+sites no longer pass `service as never`. Persist failure is still logged and never thrown — the
+runner already has their words on screen.

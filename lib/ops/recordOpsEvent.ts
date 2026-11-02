@@ -41,6 +41,20 @@ export type OpsEventKind =
   // would refuse real runners for DRIFT rather than for defects — the schema is
   // not the constitution, `validatePlan` is. This records and moves on.
   | 'plan_schema_drift'
+  // WEEKLY-REPORT-SUPERSEDED-WRITE-01 (2026-11-02) — a live week-keyed write could not
+  // be made, and the ONLY alternative was writing a superseded row.
+  //
+  // WHY: `weekly_reports` was upserted on `(user_id, week_n)`, which is not plan-scoped
+  // (ADR-013), so a new plan's week-1 report updated the PREVIOUS plan's week-1 row in
+  // place and inherited its tombstone. Invisible to every reader, and it destroyed the
+  // archived plan's report at the same time. `writeLiveRow` now targets the live row's
+  // primary key instead, and reports when there is no live row to target because the
+  // partial index is absent (the migration has not been applied).
+  //
+  // ⚠️ IT NEVER BLOCKS THE RESPONSE. The runner still receives the report they asked
+  // for; what fails is the cache. Recording it is the point: the predecessor defect was
+  // silent for weeks, and the measurement that found it was a hand-written probe.
+  | 'weekly_report_write_failed'
 
   // REFUSAL-TELEMETRY-01 (2026-09-19) — every DESIGNED refusal, with the inputs
   // that caused it.

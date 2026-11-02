@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { SessionMetric, SessionMetricOverrides } from '@/lib/format'
+import { writeLiveRow } from './supabase/liveRowWrite'
 
 // Data layer for per-session distance⇄duration overrides (ADR-015).
 //
@@ -39,12 +40,19 @@ export async function setSessionMetricOverride(
   sessionKey: string,
   metric: SessionMetric,
 ): Promise<void> {
-  await supabase
-    .from('session_metric_overrides')
-    .upsert(
-      { user_id: userId, week_n: weekN, session_key: sessionKey, metric, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id,week_n,session_key' },
-    )
+  // 🔴 WEEKLY-REPORT-SUPERSEDED-WRITE-01 — was
+  // `.upsert(…, { onConflict: 'user_id,week_n,session_key' })`, COMPLETION-TOMBSTONE-01's
+  // twin. `week_n` is a WITHIN-PLAN coordinate (ADR-013): a new plan restarts at 1, the
+  // upsert updated the PREVIOUS plan's row in place and inherited its `superseded_at`,
+  // and `loadSessionMetricOverrides` twelve lines above filters exactly those rows out.
+  // The runner's toggle appeared to save and was gone on the next read. 13 superseded
+  // rows in production on 2026-11-02.
+  await writeLiveRow(
+    supabase,
+    'session_metric_overrides',
+    { user_id: userId, week_n: weekN, session_key: sessionKey },
+    { user_id: userId, week_n: weekN, session_key: sessionKey, metric, updated_at: new Date().toISOString() },
+  )
 }
 
 /** Remove a per-session override (revert to plan default / global preference). */
@@ -57,6 +65,11 @@ export async function clearSessionMetricOverride(
   await supabase
     .from('session_metric_overrides')
     .delete()
+    // 🔴 WEEKLY-REPORT-SUPERSEDED-WRITE-01, third arm. Without this filter the delete
+    // also removed the runner's SUPERSEDED rows for the same (week, session_key) — their
+    // previous plan's history — while the loader twelve lines above reads live rows only.
+    // A delete is the one operation superseding cannot undo.
+    .is('superseded_at', null)
     .eq('user_id', userId)
     .eq('week_n', weekN)
     .eq('session_key', sessionKey)
@@ -101,12 +114,19 @@ export async function backfillAndLoadSessionMetricOverrides(
   }
 
   if (legacy.length > 0) {
-    await supabase
-      .from('session_metric_overrides')
-      .upsert(
-        legacy.map(l => ({ user_id: userId, ...l })),
-        { onConflict: 'user_id,week_n,session_key' },
+    // 🔴 WEEKLY-REPORT-SUPERSEDED-WRITE-01 — one write per row rather than a batch
+    // upsert on `(user_id, week_n, session_key)`. The batch form inherited the previous
+    // plan's tombstone on every key that collided, which on a one-time backfill means
+    // the runner's legacy toggles land where nothing reads them. Sequential is fine: this
+    // runs ONCE per device and `legacy` is the handful of keys in their localStorage.
+    for (const l of legacy) {
+      await writeLiveRow(
+        supabase,
+        'session_metric_overrides',
+        { user_id: userId, week_n: l.week_n, session_key: l.session_key },
+        { user_id: userId, ...l },
       )
+    }
   }
 
   // Mark migrated regardless — a user with no legacy keys is trivially "done".

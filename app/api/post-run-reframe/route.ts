@@ -56,7 +56,10 @@ import { resolveRunnerName } from '@/lib/coaching/nameToken'
  * SUCCESS state (`reframe_text` set). No migration: the columns already carry it.
  */
 async function persistReflection(
-  service: { from: (t: string) => { upsert: (v: Record<string, unknown>, o: { onConflict: string }) => Promise<{ error: unknown }> } },
+  // Was a structural `{ from: … upsert … }` shape, which is why all three call sites
+  // pass `service as never`. The write is `writeLiveRow`'s now, so the real client type
+  // is what this takes.
+  service: SupabaseClient,
   row: {
     userId: string
     weekN: number
@@ -68,9 +71,18 @@ async function persistReflection(
     silencedReason?: string | null
   },
 ): Promise<void> {
-  const { error } = await service
-    .from('session_reflections')
-    .upsert({
+  // 🔴 WEEKLY-REPORT-SUPERSEDED-WRITE-01 — this was
+  // `.upsert(…, { onConflict: 'user_id,week_n,session_day' })`, COMPLETION-TOMBSTONE-01's
+  // twin. `week_n` is a WITHIN-PLAN coordinate (ADR-013), so a new plan restarts at 1 and
+  // the upsert updated the PREVIOUS plan's row in place, inheriting its `superseded_at`
+  // while every reader filters it out. Measured 2026-11-02: this table holds 8 superseded
+  // rows and ZERO live ones, so the next reflection on a re-used (week, day) was the one
+  // that would have been lost.
+  const written = await writeLiveRow(
+    service,
+    'session_reflections',
+    { user_id: row.userId, week_n: row.weekN, session_day: row.sessionDay },
+    {
       user_id:                 row.userId,
       week_n:                  row.weekN,
       session_day:             row.sessionDay,
@@ -84,13 +96,16 @@ async function persistReflection(
       ...(row.silencedReason != null ? { reframe_silenced_reason: row.silencedReason } : {}),
       reframe_generated_at:    new Date().toISOString(),
       updated_at:              new Date().toISOString(),
-    }, { onConflict: 'user_id,week_n,session_day' })
+    },
+  )
   // Persist failure is logged, never thrown: the runner already has their words
   // on screen and a 500 here would lose them a second time.
-  if (error) console.warn('[post-run-reframe] persist failed', error)
+  if (!written.ok) console.warn('[post-run-reframe] persist failed', written.reason, written.message)
 }
 import { sessionHRBand } from '@/lib/coaching/zoneRules'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
+import { writeLiveRow } from '@/lib/supabase/liveRowWrite'
 import {
   fetchRunHistory,
   findSimilarRuns,
@@ -446,7 +461,7 @@ export async function POST(req: NextRequest) {
   if (riskOutcome.silenced) {
     // Persist a silenced row — the runner's note is sacred even when we
     // don't reframe. The warning message is what the UI shows.
-    await persistReflection(service as never, {
+    await persistReflection(service, {
       userId, weekN, sessionDay, userNote, dataTier,
       reframeText: null, silenced: true, silencedReason: riskOutcome.reason,
     })
@@ -560,7 +575,7 @@ const { units: displayUnits } = await getUserDisplayPrefs(service, userId)  // U
   // billed for. In that third case the model replied, we paid, we binned it, and
   // we also binned the runner's reflection.
   if (!reframeText) {
-    await persistReflection(service as never, {
+    await persistReflection(service, {
       userId, weekN, sessionDay, userNote, dataTier,
       reframeText: null, silenced: false,
     })
@@ -568,7 +583,7 @@ const { units: displayUnits } = await getUserDisplayPrefs(service, userId)  // U
   }
 
   // Persist
-  await persistReflection(service as never, {
+  await persistReflection(service, {
     userId, weekN, sessionDay, userNote, dataTier,
     reframeText, silenced: false,
   })

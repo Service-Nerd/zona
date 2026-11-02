@@ -74,6 +74,35 @@ caller believe none exists and the follow-up insert would violate the constraint
 
 Enforced by `lib/plan/supersedeCoverage.test.ts`.
 
+## The WRITE side — WEEKLY-REPORT-SUPERSEDED-WRITE-01 (2026-11-02)
+
+🔴 **The section above documented the reads and the write was still colliding.** This route
+upserted `weekly_reports` with `onConflict: 'user_id,week_n'` against a plain
+`UNIQUE (user_id, week_n)` — not plan-scoped. A new plan restarts `week.n` at 1, so the
+upsert found the PREVIOUS plan's week-1 row, updated it in place and inherited its
+`superseded_at`. The write succeeded, every read above excluded it, nothing errored.
+
+**Measured in production before the fix:** 30 rows, 14 live, 16 superseded, **1 ghost write**
+— one runner's week 1, superseded 2026-10-18 and rewritten 2026-10-25. Both halves were lost:
+the live report did not exist, and the archived plan's week-1 narrative was overwritten.
+
+The write now goes through `lib/supabase/liveRowWrite.ts → writeLiveRow`, which reads the
+LIVE row's primary key and UPDATEs by `id` (unreachable for a tombstone) or INSERTs. The
+partial index `weekly_reports_live_key` (`20261102_live_week_keys.sql`) makes "at most one
+LIVE row per (user, week)" the constraint, so a new plan inserts beside its history.
+
+**No request or response shape changes.** The runner still receives the report in the POST
+response even if the write fails; what is lost is the cache. A failure records
+`weekly_report_write_failed` via `recordOpsEvent` — never swallowed, because the only
+alternative to failing is writing the superseded row, which is the defect.
+
+⚠️ `onConflict` is unavailable for this: PostgREST emits `ON CONFLICT (cols) DO UPDATE` with
+no predicate and Postgres will not match that to a PARTIAL index.
+
+Enforced by `lib/supabase/liveRowWrite.test.ts` — behavioural arms plus a population arm that
+reads the source and fails on any new blind upsert of a `WEEK_KEYED_TABLES` table.
+
+
 ## The Anthropic call — OPS-AI-OWNER-01 (2026-09-20)
 
 This route no longer calls Anthropic directly. It goes through
