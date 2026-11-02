@@ -41,3 +41,8 @@ coaching-review/*/foundation-composed-plans.md
 zonna-plans-export.*
 supabase/.temp/
 .backups/
+
+# Scratch probes written during investigation — never part of a commit.
+# 155 of these were swept into a commit by a broad `git add -A scripts/` on 2026-11-02,
+# and the build-log records the same near-miss on 2026-10-31. Ignored so it cannot recur.
+scripts/.tmp/

@@ -200,6 +200,7 @@ async function probeFallback(url: string, key: string) {
   console.log('  NOTE: partial check only — policy SHAPES were not compared.')
 
   await checkWeekKeyedCoverage(url, key)
+  await checkLiveKeyUniqueness(url, key)
   await checkUserPurgeCoverage(url, key)
 
   // Never override a table-existence failure recorded earlier.
@@ -330,6 +331,64 @@ async function checkWeekKeyedCoverage(url: string, serviceKey: string): Promise<
  * that nobody declared fails the run, and a declared table that the live schema
  * no longer has fails it too.
  */
+/**
+ * CHECK-DB-LIVE-KEY-ARM-01 — is every week_n-keyed uniqueness scoped to the LIVE plan?
+ *
+ * The arm above proves each week-keyed table CARRIES `superseded_at`. It says nothing about
+ * the keys, and the keys are the mechanism: a unique on `(user_id, week_n, …)` with no
+ * `WHERE superseded_at IS NULL` means a new plan's row cannot insert beside its superseded
+ * history, so the write lands on the tombstone, every read excludes it, and nothing errors.
+ * That is COMPLETION-TOMBSTONE-01 and WEEKLY-REPORT-SUPERSEDED-WRITE-01, weeks invisible each.
+ *
+ * ⚠️ `lib/supabase/liveKeyCoverage.test.ts` gates the MIGRATIONS and runs in `npm run verify`.
+ * It cannot see production — an index dropped in the dashboard leaves it green — which is this
+ * arm's entire job. **It was not a hypothetical:** the first run of this query found
+ * `session_overrides_user_id_week_n_original_day_key` live in production, a plain unique
+ * alongside the partial one, on a table whose repo migrations declare no such constraint. The
+ * repo-side test was green on it.
+ *
+ * SCOPE IS DERIVED: only tables carrying `superseded_at` are in it, because a table without
+ * the column cannot have the predicate. `plan_weekly_notes` therefore falls out on its own
+ * (its pkey is `(user_id, week_n)`, and `savePlanForUser` deletes every row on every save —
+ * the stronger mechanism the arm above already prints).
+ */
+async function checkLiveKeyUniqueness(url: string, serviceKey: string): Promise<void> {
+  console.log('\n── week_n uniqueness scoped to the live plan (CHECK-DB-LIVE-KEY-ARM-01) ──')
+  const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
+
+  const { data, error } = await admin.rpc('week_key_uniqueness')
+  if (error) {
+    // FAIL SOFT, LOUDLY. The RPC ships in 20261103_live_key_rpc.sql and needs the SQL editor.
+    // Silence here would read as "the keys are fine", which is the failure mode this whole
+    // family is about, so say exactly what is unchecked.
+    console.log(`· week_key_uniqueness() unavailable: ${error.message}`)
+    console.log('  NOT CHECKED: whether production\'s week_n-keyed uniques are partial on superseded_at.')
+    console.log('  Apply supabase/migrations/20261103_live_key_rpc.sql to turn this arm on.')
+    return
+  }
+
+  type Row = { table_name: string; index_name: string; kind: string; columns: string; predicate: string | null }
+  const rows = (data ?? []) as Row[]
+  const supersededTables = new Set<string>(WEEK_KEYED_TABLES as readonly string[])
+
+  const inScope = rows.filter(r => supersededTables.has(r.table_name))
+  const live    = inScope.filter(r => /superseded_at is null/i.test(r.predicate ?? ''))
+  const bad     = inScope.filter(r => !/superseded_at is null/i.test(r.predicate ?? ''))
+
+  for (const r of bad) {
+    console.log(`✗ ${r.table_name}.${r.index_name} (${r.kind}) on (${r.columns})`)
+    console.log(`    predicate: ${r.predicate ?? 'NONE'} — not scoped to the live plan.`)
+    console.log(`    A new plan restarts week_n at 1, so this key is occupied by the previous`)
+    console.log(`    plan's row: the insert fails, or an upsert lands on the tombstone.`)
+  }
+  if (bad.length) {
+    console.log(`\n✗ ${bad.length} week_n-keyed unique(s) are not live-scoped, against ${live.length} that are.`)
+    process.exitCode = 1
+    return
+  }
+  console.log(`✓ ${live.length} week_n-keyed unique(s), every one partial on superseded_at IS NULL.`)
+}
+
 async function checkUserPurgeCoverage(url: string, serviceKey: string): Promise<void> {
   console.log('\n── account-deletion coverage (DB-USER-PURGE-01) ──')
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } })

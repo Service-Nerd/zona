@@ -79,26 +79,69 @@ removed session neutral without the delivered quality-share measured against `IN
 
 ---
 
-### 🔲 `CHECK-DB-LIVE-KEY-ARM-01` — five partial indexes are load-bearing and no repo check can see them ⚙️ **NO BOARD** (tooling)
+### 🔻 `CHECK-DB-LIVE-KEY-ARM-01` — SHIPPED 2026-11-02 · the live arm needs one migration ⚙️ **NO BOARD** (tooling)
 
-📐 Found 2026-11-02 while verifying `20261102_live_week_keys.sql`. **`scripts/check-db-drift.ts` cannot read indexes or
-constraints at all** — it prints *"No SQL RPC available; falling back to a per-table probe"*, because there is no `exec_sql`
-RPC, so it checks tables, policies, `week_n` coverage and FK delete rules and **nothing about keys**.
+**Shipped:** `lib/supabase/liveKeyCoverage.test.ts` (13 arms, gated by `npm run verify`) and a live arm in
+`scripts/check-db-drift.ts` that fails soft, loudly, until its RPC exists.
 
-**What that leaves unguarded:** the five `%_live_key` partial unique indexes
-(`session_completions`, `session_overrides`, `weekly_reports`, `session_reflections`, `session_metric_overrides`) are the
-entire mechanism behind PLAN-WEEK-COLLISION-01's write side. Drop or rebuild one without the
-`WHERE superseded_at IS NULL` predicate and every week-keyed write silently goes back to landing on tombstones — the exact
-defect COMPLETION-TOMBSTONE-01 and WEEKLY-REPORT-SUPERSEDED-WRITE-01 each took weeks to notice, **and nothing in the repo
-would say a word.**
+🔻 **FOUNDER, to turn the live arm on:** run `supabase/migrations/20261103_live_key_rpc.sql`
+(`week_key_uniqueness()`, read-only, `service_role` only, same shape as `user_fk_delete_rules`). **Its SQL was
+proven against production before being written to the file** — run as a plain query through the Supabase MCP,
+it returned the 8 real rows the arm classifies. Verification query is in the file.
 
-⚠️ **This is the class this repo keeps recording**: a rule that holds only while someone remembers is not a rule. The
-migration is verified TODAY because I ran the query by hand through the Supabase MCP; there is no check that will run it again.
+⚠️ **The item's own suggested route was wrong and is recorded as such:** it said to use the Supabase MCP.
+`check:db` is a `tsx` script with no MCP, `.env.local` has PostgREST credentials only, there is no DSN and
+`pg` is not a dependency — so the script cannot read `pg_indexes` without an RPC. The MCP works only while an
+agent is driving, which is the opposite of a check.
 
-**The route exists now:** the Supabase MCP's `execute_sql` reads `pg_indexes` and `pg_constraint` fine. Either add an arm that
-goes through it, or add a tiny read-only `schema_unique_keys()` RPC (same pattern as the existing `schema_columns_named` and
-`user_fk_delete_rules`) and have `check:db` assert **5 live keys present with the predicate, and 0 plain uniques on the three
-converted tables**. Falsify by dropping the predicate on one.
+🔴 **AND `check:db` IS ITSELF A CHECK NOBODY RUNS.** It is referenced by nothing but its own `package.json`
+line — not `verify`, not `verify:ci`, none of the ten workflows. The repo-side test is in `verify` precisely
+so this item does not inherit that. Making the LIVE arm automatic needs an ops route + cron (no workflow
+carries Supabase secrets; the ops crons curl a deployed route) → `CHECK-DB-LIVE-KEY-CRON-01`.
+
+---
+
+### 🔲 `WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01` — two week_n-keyed uniques in production are NOT live-scoped ⚙️ **NO BOARD** (defect, PLAN-WEEK-COLLISION-01 intent)
+
+📐 **Found 2026-11-02 by the query written to verify CHECK-DB-LIVE-KEY-ARM-01's own RPC** — i.e. by the new
+check, on its first run, before it was even wired up. Both **latent, 0 colliding keys today**, which is how
+COMPLETION-TOMBSTONE-01 was described too: a landmine, not an outage.
+
+| key | state | why it matters |
+|---|---|---|
+| `session_overrides_user_id_week_n_original_day_key` | **plain unique CONSTRAINT, no predicate** | sits beside `session_overrides_live_key`; 9 live / 13 superseded rows |
+| `run_analysis_manual_uniq` | partial on **`source = 'manual'`**, not on `superseded_at` | 87 live / 13 superseded manual analyses |
+
+🔴 **`session_overrides` IS A TRAP, AND THE TRAP IS SET FOR WHOEVER FIXES THE OBVIOUS BUG.**
+`20261018_session_overrides_slot.sql` added the partial index on the stated premise that uniqueness "has been
+a CONVENTION, kept by the client deleting before it inserts". **Production has had a real constraint all
+along.** It does not bite today only because `PlanCalendar.tsx:182` deletes **without** a
+`superseded_at IS NULL` filter — so it destroys the archived plan's overrides, and that is what frees the key
+for the insert four lines later. Add the live filter (the correct fix, and the same one shipped today for
+`clearSessionMetricOverride`) and the insert starts failing 23505 for any runner with superseded overrides.
+**Both halves together or neither:** drop the constraint AND filter the delete.
+
+`run_analysis`: a manual analysis is keyed `(user_id, week_n, session_day)` where `source='manual'`, so a new
+plan's week-1 manual entry collides with the previous plan's. `analyse-run` upserts on the activity uuid, not
+this index, so the collision surfaces as a failed insert rather than a tombstone write.
+
+⚠️ **The repo-side test is GREEN on `session_overrides`** — no migration declares that constraint, so there
+is nothing in the repo to find. That is the limitation `liveKeyCoverage.test.ts`'s header states, demonstrated
+on the day it was written rather than imagined.
+
+**Needs:** a migration dropping the `session_overrides` constraint, a decision on `run_analysis_manual_uniq`
+(drop, or make it partial on both conditions), and the `PlanCalendar` delete filtered in the same change.
+
+---
+
+### 🔲 `CHECK-DB-LIVE-KEY-CRON-01` — the live key check runs only when someone types it ⚙️ **NO BOARD** (tooling) · P3
+
+`check:db` is in no workflow and `verify.yml`/`nightly-test-liveness.yml` carry no Supabase secrets, so the
+live arm cannot simply be added to CI. The ratified pattern here is an `/api/ops/...` route plus a cron that
+curls it with `CRON_SECRET` — how `plan-audit`, `reshape-integrity`, `strava-webhook-health` and
+`onboarding-integrity` all run. Filed separately because it is a new public surface + a contract + a
+workflow, not a tooling tweak. ⚠️ Until it exists, the live arm is a check that depends on remembering,
+which is what this family keeps proving does not hold.
 
 ---
 
