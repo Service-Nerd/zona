@@ -27,14 +27,19 @@ already decided what it is.
 
 ---
 
-### ✅ `WEEKLY-REPORT-SUPERSEDED-WRITE-01` — SHIPPED 2026-11-02 · **the code is inert until a migration is run** 👤 **FOUNDER ACTION**
+### ✅ `WEEKLY-REPORT-SUPERSEDED-WRITE-01` — SHIPPED AND IN EFFECT 2026-11-02 (migration applied and independently verified)
 
-Code shipped and in the feature registry. **`supabase/migrations/20261102_live_week_keys.sql` must be run in the Supabase SQL
-editor** — three partial unique indexes on `superseded_at IS NULL`, three plain UNIQUE constraints dropped. DDL cannot run from
-the repo (PostgREST cannot, the CLI is not linked). Until then the write fails loudly for exactly the runners who previously got
-silent corruption and records `weekly_report_write_failed`; it self-heals the moment the migration lands. The file carries its own
-verification query: **5 `%_live_key` indexes vs 2 before, and 0 unique constraints on those three tables vs 3**. Then append the
-basename to `.claude/state/applied-migrations.txt` or every session will warn.
+Code shipped, migration **applied by the founder 2026-11-02 and verified from here, both halves**:
+
+- `pg_indexes` — **5 `%_live_key` indexes, was 2.** The three new ones carry the right predicate and columns:
+  `weekly_reports_live_key (user_id, week_n) WHERE superseded_at IS NULL`, and the same shape on
+  `session_reflections (…, session_day)` and `session_metric_overrides (…, session_key)`.
+- `pg_constraint` — **0 unique constraints on those three tables, was 3.**
+
+Those two facts together are a proof, not an inference: with no table-level unique on `(user_id, week_n)`
+and a partial unique covering live rows only, a new plan's row **cannot** conflict with a superseded one.
+No write probe was needed or made. `npm run check:db` clean afterwards (28 tables, 7 week-keyed tables
+covered, 29 user-scoped delete rules matching). Ledger updated.
 
 🔻 **The damaged row is NOT repaired, by decision (founder, 2026-11-02):** user `1afc17e4`'s week 1 regenerates after the
 migration; the May plan's original week-1 narrative is gone and will not be reconstructed, because falsifying the archive is what
@@ -71,6 +76,29 @@ is too short to rehearse the fuelling it exists for (`CAT-ULTRA-FUELLING-01`, Si
 
 ⚡ **Recorded disagreement (unresolved):** McMillan would rather the slot were empty than mis-priced; Seiler will not call a
 removed session neutral without the delivered quality-share measured against `INTENSITY_DISTRIBUTION['50K']` first.
+
+---
+
+### 🔲 `CHECK-DB-LIVE-KEY-ARM-01` — five partial indexes are load-bearing and no repo check can see them ⚙️ **NO BOARD** (tooling)
+
+📐 Found 2026-11-02 while verifying `20261102_live_week_keys.sql`. **`scripts/check-db-drift.ts` cannot read indexes or
+constraints at all** — it prints *"No SQL RPC available; falling back to a per-table probe"*, because there is no `exec_sql`
+RPC, so it checks tables, policies, `week_n` coverage and FK delete rules and **nothing about keys**.
+
+**What that leaves unguarded:** the five `%_live_key` partial unique indexes
+(`session_completions`, `session_overrides`, `weekly_reports`, `session_reflections`, `session_metric_overrides`) are the
+entire mechanism behind PLAN-WEEK-COLLISION-01's write side. Drop or rebuild one without the
+`WHERE superseded_at IS NULL` predicate and every week-keyed write silently goes back to landing on tombstones — the exact
+defect COMPLETION-TOMBSTONE-01 and WEEKLY-REPORT-SUPERSEDED-WRITE-01 each took weeks to notice, **and nothing in the repo
+would say a word.**
+
+⚠️ **This is the class this repo keeps recording**: a rule that holds only while someone remembers is not a rule. The
+migration is verified TODAY because I ran the query by hand through the Supabase MCP; there is no check that will run it again.
+
+**The route exists now:** the Supabase MCP's `execute_sql` reads `pg_indexes` and `pg_constraint` fine. Either add an arm that
+goes through it, or add a tiny read-only `schema_unique_keys()` RPC (same pattern as the existing `schema_columns_named` and
+`user_fk_delete_rules`) and have `check:db` assert **5 live keys present with the predicate, and 0 plain uniques on the three
+converted tables**. Falsify by dropping the predicate on one.
 
 ---
 
@@ -9390,7 +9418,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-02 (last ship `23751aea` ULTRA-ROWS-PRICED-AS-QUALITY-01 part / §40b Am.4; 722 test files / 7,031 tests; **pushed and LIVE 2026-11-02, `b7393345`, Vercel READY** — but **one migration is UNAPPLIED, so the WEEKLY-REPORT fix is deployed and INERT**).** 🔴 **BLOCKING, FOUNDER:** run `supabase/migrations/20261102_live_week_keys.sql` in the SQL editor (3 partial live indexes added, 3 plain UNIQUE constraints dropped; verification query in the file answers **5 vs 2** and **0 vs 3**), then append its basename to `.claude/state/applied-migrations.txt`. 🔻 **Open, founder (unchanged):** sandbox purchase test (`docs/runbooks/iap-sandbox-purchase-test.md`), paste digest Q9B (`docs/runbooks/digest-prompt-q9b-2026-10-31.txt`), Coach on a device. **Today, 3 ships + 1 close:** `c679936e` WEEKLY-REPORT-SUPERSEDED-WRITE-01 — `writeLiveRow` is the one owner of a live-plan write across `weekly_reports`, `session_reflections` and `session_metric_overrides`; measured 1 ghost write, 16 + 8 + 13 superseded rows, and `session_reflections` had **0 live rows**, so its next write was the loss. COMPLETION-TOMBSTONE-01 fixed the fourth table of that family on 09-23 and left these three. `55c17200` PEAK-RACEPACE-NOTE-01 — a note that was wrong **14 of 14** times and structurally suppressed on **9 of 9** of the rows it was written for; 26 more instances on time-targeted ultras the cohort grid cannot reach. `23751aea` §40b Am.4 (Coaching Board, unanimous) — an effort-governed session carries the zone its row declares and no HR band; `vert_hike_repeats` was shipping as Zone 4–5 / 158–184 bpm on a power hike. ✅ `ONRAMP-W8-SPACING-01` **CLOSED as a FALSE PREMISE** — 4 runs across 7 open days cannot avoid one consecutive pair, and `INV-PLAN-ONRAMP-SPACED` already agrees (0 violations). 🔻 **Filed today:** `ULTRA-VOICE-REPURPOSED-01` (a "Back-to-back long" label and "Sunday is meant to feel heavy" on a 78-minute Friday tempo — found by the board's read of the sample packet, not by any harness), `EFFORT-GOVERNED-HR-DISPLAY-01`. **Still open, filed:** `A11Y-REDUCED-MOTION-01`, `TYPESCALE-DECIMAL-GATE-01`, the ultra slot question (`SIG-ULTRA-UNBUILT-01`, SLT-gated), Coach ideas 2–5. ⚠️ **Declared:** 1,757 `hill_reps` sessions in the 5K/10K cohort grid lost their HR range; `verify:parity` 542 of 6,102 changed; `review:coaching` **identical on all seven steps** before and after — and it did not DETECT either defect. Founder's long runs since 11 Oct carry no HR (not investigated, his call).**
+**State at END of 2026-11-02 (last ship `23751aea` ULTRA-ROWS-PRICED-AS-QUALITY-01 part / §40b Am.4; 722 test files / 7,031 tests; **pushed and LIVE 2026-11-02, `b7393345`, Vercel READY; `20261102_live_week_keys.sql` APPLIED and verified — 5 live-key indexes vs 2, 0 plain uniques vs 3**).** ✅ **`20261102_live_week_keys.sql` APPLIED (founder) and VERIFIED from here — 5 `%_live_key` indexes vs 2, 0 plain uniques on the three converted tables vs 3. Ledger updated, `check:db` clean.** 🔻 **Nothing in the repo can re-check those keys: `CHECK-DB-LIVE-KEY-ARM-01` filed.** 🔻 **Open, founder (unchanged):** sandbox purchase test (`docs/runbooks/iap-sandbox-purchase-test.md`), paste digest Q9B (`docs/runbooks/digest-prompt-q9b-2026-10-31.txt`), Coach on a device. **Today, 3 ships + 1 close:** `c679936e` WEEKLY-REPORT-SUPERSEDED-WRITE-01 — `writeLiveRow` is the one owner of a live-plan write across `weekly_reports`, `session_reflections` and `session_metric_overrides`; measured 1 ghost write, 16 + 8 + 13 superseded rows, and `session_reflections` had **0 live rows**, so its next write was the loss. COMPLETION-TOMBSTONE-01 fixed the fourth table of that family on 09-23 and left these three. `55c17200` PEAK-RACEPACE-NOTE-01 — a note that was wrong **14 of 14** times and structurally suppressed on **9 of 9** of the rows it was written for; 26 more instances on time-targeted ultras the cohort grid cannot reach. `23751aea` §40b Am.4 (Coaching Board, unanimous) — an effort-governed session carries the zone its row declares and no HR band; `vert_hike_repeats` was shipping as Zone 4–5 / 158–184 bpm on a power hike. ✅ `ONRAMP-W8-SPACING-01` **CLOSED as a FALSE PREMISE** — 4 runs across 7 open days cannot avoid one consecutive pair, and `INV-PLAN-ONRAMP-SPACED` already agrees (0 violations). 🔻 **Filed today:** `ULTRA-VOICE-REPURPOSED-01` (a "Back-to-back long" label and "Sunday is meant to feel heavy" on a 78-minute Friday tempo — found by the board's read of the sample packet, not by any harness), `EFFORT-GOVERNED-HR-DISPLAY-01`. **Still open, filed:** `A11Y-REDUCED-MOTION-01`, `TYPESCALE-DECIMAL-GATE-01`, the ultra slot question (`SIG-ULTRA-UNBUILT-01`, SLT-gated), Coach ideas 2–5. ⚠️ **Declared:** 1,757 `hill_reps` sessions in the 5K/10K cohort grid lost their HR range; `verify:parity` 542 of 6,102 changed; `review:coaching` **identical on all seven steps** before and after — and it did not DETECT either defect. Founder's long runs since 11 Oct carry no HR (not investigated, his call).**
 
 ⚠️ **`2916575a` (this morning's docs commit) was CANCELED by Vercel, not deployed** — superseded by today's push while queued, which is normal. Production served `a593f70a` from 10-31 until `b7393345`. Docs-only, so nothing functional was missing, but the 10-31 state block's "LIVE" was true of `a593f70a` and not of the commit that asserted it. **A push is not a deploy, and a CANCELED build is not a failure you get told about.**
 
