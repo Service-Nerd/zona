@@ -174,6 +174,80 @@ three `label.includes('pace')` instances fixed earlier today: **anchor on the pr
 
 ---
 
+### 🔲 `REDEEM-SCREEN-UNREACHABLE-01` — the charity-code mechanism is live code behind a door nobody can open 💼 **SLT** (retire or re-wire) → ⚙️ **NO BOARD** to execute
+
+📐 **Found 2026-11-02**, when the founder asked to comp a runner and corrected the answer: *"the only code input
+is through Apple code redeem."* He was right, and the code says so.
+
+**`RedeemCodeScreen` is unreachable.** Three references to `'redeem'` exist in the entire codebase — the
+`Screen` type union, the render branch (`DashboardClient:3537`) and a nav-hiding branch (`:3642`). **Nothing
+sets `screen` to `'redeem'`.** So `/api/charity/redeem` has no live caller and no runner can enter a code.
+
+⚠️ **The comment above the state says there are three doors.** `DashboardClient:728`: *"Where to return when the
+redeem screen closes. There are **three doors** into…"* — all three are gone, and `redeemReturnTo` is still
+maintained. It was true when it was written.
+
+**Measured surface, all of it reachable only from a dead entry point:**
+
+| | lines |
+|---|---|
+| `lib/charity/` | 10 files, 855 |
+| `RedeemCodeScreen.tsx` | 242 |
+| `app/api/charity/redeem` | 163 |
+| `scripts/mint-charity-codes.ts` + `check-charity-code.ts` | 190 |
+
+Plus `resolveTier`'s `reason: 'grant'` branch, 4 `hadCharityGrant`/`charityGrantEndsAt` state references in
+`DashboardClient`, and **153 files** mentioning charity/grant at all (mostly tests).
+
+🔴 **AND IT SERVES ZERO REAL RUNNERS.** Measured: 4 codes, 1 claimed — **by a `@test.com` account**, TEST batch,
+grant to 2026-12-22. Both unclaimed usable codes are TEST; the one "Goodwill — defect remediation" code sits in a
+batch **revoked 2026-10-07**, so the route would 409 it. ⚠️ **The same conversation first claimed the live grant
+"still serves a real runner" — it does not. Check the claimant, not the count.**
+
+**What this actually is: a SUPERSEDED mechanism left live.** Make-A-Wish was comped with **Apple offer codes**
+(all 23 live subs are offer codes, `active`, period ends 2027-09-28 → 2027-10-27). The charity-code path was
+built, overtaken in practice, and never retired — so it reads as maintained infrastructure.
+
+**The SLT question, not a defect fix:** retire it (screen, route, scripts, grant branch, tables — but
+`CHARITY-CLAIM-RELEASE-01` and `GTM-CHARITY-07` are ratified rulings about `claimed_at` semantics and would go
+with it), or re-wire one door and keep it as the in-product comp path (`COMP-NO-IN-PRODUCT-PATH-01`, below).
+**Do not half-do it:** deleting the screen while leaving `resolveTier`'s grant branch turns an unreachable
+consumer into an invisible one.
+
+⚠️ **`resolveTier`'s grant branch must NOT be removed on the strength of "zero real claimants".** One grant is
+live to 2026-12-22, and the branch is what stops a lapsed grant being told "14 days done" (`TIER-OWNER-01`).
+
+---
+
+### 🔲 `COMP-NO-IN-PRODUCT-PATH-01` — there is no way to give a runner paid access without App Store Connect and the runner's own action 💼 **SLT**
+
+📐 **Found 2026-11-02 from a live request** — a runner whose trial had lapsed needed paid access, and there is
+no path the founder can execute alone.
+
+**The only working route:** App Store Connect → Offer Codes → generate → send to the runner → **the runner
+redeems in the App Store** → the RevenueCat webhook writes `subscriptions`. It works (23 subs prove it) and
+gives a genuine year-long subscription, but it needs a third party and the runner's co-operation, and it cannot
+be done at all for someone who has stopped responding.
+
+**The alternatives, and why each is wrong today:**
+
+- `charity_codes` — the entry point is unreachable (`REDEEM-SCREEN-UNREACHABLE-01`), and the only usable codes
+  sit in a batch named **TEST**.
+- A hand-written `subscriptions` row — RevenueCat is that table's real producer, so it can be overwritten, and
+  it would misreport revenue. `apply_subscription_event`'s guard is ordering-only.
+- The admin flag — `resolveTier` returns `{ tier: 'paid', reason: 'admin' }`, which would also hand a runner
+  admin powers. Not that.
+
+⚠️ **A product decision, not a bug.** Options: re-wire the redeem door and mint real (non-TEST) batches for
+goodwill; add a founder-only grant action; or accept the App Store round trip and write it into a runbook so the
+answer exists next time. **What is not acceptable is the current state, where the question has no documented
+answer** and the first attempt reached for a mechanism that cannot work.
+
+🔻 **Note for whoever picks this up:** a comp restores access; it does not restore the coaching a runner did not
+get while lapsed. The live case had been on free for a month before anyone noticed.
+
+---
+
 ### 🔲 `SIG-ULTRA-UNBUILT-01` — what an ultra's midweek quality slot should carry 💼 **SLT** (gate check) → 🏃 **COACHING BOARD**
 
 Ruled **2026-09-13** (§24e, ULTRA-FUEL-NOTE-01's adjacent-finding paragraph) and re-confirmed
