@@ -180,6 +180,25 @@ are WRONG. They now spread `MICRO_LABELS.eyebrow`, and a new arm forbids a canon
 
 `PlanCalendar` writes session overrides directly to Supabase. Two flows:
 
+> 🔴 **BOTH FLOWS DELETE WITH `.is('superseded_at', null)` — ADDED 2026-11-02
+> (`WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01`), AND IT IS LOAD-BEARING TWICE OVER.**
+>
+> `week_n` is a within-plan coordinate (ADR-013): it restarts at 1 on a new plan. Without the
+> filter, "delete the overrides for week 3" also deleted the **archived** plan's week-3
+> overrides. A delete is the one operation superseding cannot undo.
+>
+> ⚠️ **And the missing filter was hiding a constraint.** Production carries
+> `session_overrides_user_id_week_n_original_day_key`, a plain unique that
+> `20261018_session_overrides_slot.sql` believed was "only a CONVENTION, kept by the client
+> deleting before it inserts". The unfiltered delete removed the superseded row, which is what
+> freed the key for the INSERT immediately below. So **adding this filter on its own would have
+> started failing the insert with 23505** for any runner with history — the constraint is
+> dropped in `20261104`, and that migration and these two filters are one change.
+>
+> Enforced by the delete arm of `lib/supabase/liveRowWrite.test.ts`, whose population is derived
+> from `WEEK_KEYED_TABLES` rather than listed, and which goes red on either flow losing its filter.
+
+
 > 🔴 **SUPABASE IS DYNAMICALLY IMPORTED, ON FIRST MOVE OR SWAP (2026-09-21).** `createClient` and
 > `authedFetch` are loaded inside the handlers via `await import(...)`, not at module scope. Both
 > handlers are already async and already make network round-trips, so it costs them nothing.
