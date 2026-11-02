@@ -1880,9 +1880,24 @@ function makeQualitySession(args: {
     notes.push('Threshold work — the pace you could hold for about an hour. Not a race.')
   } else if (catalogueRow?.coach_voice_notes) {
     notes.push(catalogueRow.coach_voice_notes)
-    if (phase === 'peak' && goalPace && !pace.goalWithheld && !catalogueRow.coach_voice_notes.toLowerCase().includes('pace')) {
-      notes.push(`Race-pace work. Target: ${goalPace}. Controlled — not all-out.`)
-    }
+    // 🔴 PEAK-RACEPACE-NOTE-01 — a peak race-pace note USED TO BE APPENDED HERE, gated on
+    // `!coach_voice_notes.toLowerCase().includes('pace')`. It is deleted, not re-keyed, because
+    // measurement showed it was wrong in BOTH directions and redundant in the third:
+    //
+    //   · WRONG WHERE IT FIRED: 14 of 14 across 1,070 cohort-grid plans landed on a `threshold`
+    //     row — 100%. `cv_intervals` prescribes 4:39–4:51 /km in its own header and the note said
+    //     "Target: 5:12 /km": a 20–40 s/km contradiction on the same card, in the SLOWER direction.
+    //   · UNREACHABLE WHERE INTENDED: all 9 `race_specific` rows name "pace" in their own voice, so
+    //     the word test suppressed the note on every row it was written for. Structurally, always.
+    //   · REDUNDANT WHERE IT WOULD HAVE BEEN RIGHT: of 849 peak race_specific sessions, 452 already
+    //     carry §22's synthesised "{Distance}-pace work. Target …" and the other 397 carry a
+    //     catalogue voice that states it in words ("Final third at HM goal pace").
+    //
+    // A WORD IN THE COPY IS NOT THE PRESCRIPTION. This is the third recorded instance of the
+    // `label.includes('pace')` class — INV-PLAN-RACE-SPECIFIC-EXPOSURE was moved off it, and its
+    // own sibling thirty lines away kept it until a real trial user's plan shipped wrong. §33 is
+    // satisfied by the two branches above, which synthesise a voice that matches the prescription.
+    // Gate: `peakNotePaceClaim.test.ts` — no coach note may state a pace the session does not run.
   }
 
   // §1/Q2 — first genuine threshold session of the plan gets the controlled-effort
