@@ -1,0 +1,373 @@
+You are producing Russ's daily Zonna ops digest. Fresh session, no memory — everything you need is here. Zonna is a running-coaching app; its database is Supabase project "Zonna Run", project_id: wkppmpsvqkaxbekdgzdm. Use the Supabase MCP tools (execute_sql). If the Supabase MCP tools are NOT available in this session, stop and reply plainly: "Supabase MCP not reachable in scheduled run — digest could not be generated," and nothing else.
+
+STEP 1 — Run the queries below (execute_sql, project_id wkppmpsvqkaxbekdgzdm). Q2B is conditional; every other query runs every time.
+
+Q1 — event feed + funnel:
+select
+  (select count(*) from auth.users) as total_users,
+  (select count(*) from user_settings where has_onboarded) as onboarded_users,
+  (select count(*) from auth.users where created_at >= now()-interval '24 hours') as signups_24h,
+  (select count(*) from auth.users where created_at >= now()-interval '7 days') as signups_7d,
+  (select count(*) from subscriptions where created_at >= now()-interval '24 hours') as new_subs_24h,
+  (select count(*) from subscriptions where updated_at >= now()-interval '24 hours' and created_at < now()-interval '24 hours') as changed_subs_24h,
+  (select json_object_agg(status, c) from (select status, count(*) c from subscriptions group by status) s) as sub_status,
+  (select count(*) from session_completions where created_at >= now()-interval '24 hours') as sessions_24h,
+  (select count(*) from session_completions where created_at >= now()-interval '7 days') as sessions_7d,
+  (select count(*) from plans where created_at >= now()-interval '24 hours') as new_plans_24h,
+  (select count(*) from plans where updated_at >= now()-interval '24 hours' and updated_at > created_at) as updated_plans_24h,
+  (select count(*) from plan_adjustments where created_at >= now()-interval '24 hours') as adjustments_24h,
+  (select count(*) from post_race_reshapes where created_at >= now()-interval '24 hours') as reshapes_24h;
+
+Q2 — active-user tiers (behaviour, not sign-in):
+with sig as (
+  select user_id, max(ts) as last_seen from (
+    select user_id, created_at ts from session_completions
+    union all select user_id, created_at from strava_activities
+    union all select user_id, created_at from session_reflections
+    union all select id, last_today_open_at from user_settings where last_today_open_at is not null
+  ) x group by user_id),
+trial as (
+  select us.id as user_id
+  from user_settings us
+  where us.trial_started_at > now() - interval '14 days'
+    and coalesce(us.is_admin, false) = false
+    and not exists (
+      select 1 from subscriptions s
+      where s.user_id = us.id
+        and s.status in ('trialing','active')
+        and s.current_period_end > now())
+    and not exists (
+      select 1 from charity_codes cc
+      where cc.claimed_by = us.id
+        and cc.expires_at > now()))
+select
+  (select count(*) from sig where last_seen >= now()-interval '7 days') as active_7d,
+  (select count(*) from sig where last_seen >= now()-interval '30 days') as active_30d,
+  (select count(*) from user_settings us where exists(select 1 from session_completions c where c.user_id=us.id and c.created_at>=now()-interval '7 days') and us.last_today_open_at>=now()-interval '7 days') as engaged_7d,
+  (select count(*) from trial) as trialing_total,
+  (select count(*) from trial t where coalesce((select max(last_seen) from sig where sig.user_id=t.user_id),'epoch') < now()-interval '3 days') as at_risk_trialing;
+
+Q2B — the whole trial cohort, worst first. RUN THIS ONLY IF Q2's at_risk_trialing > 0:
+with sig as (
+  select user_id, max(ts) as last_seen from (
+    select user_id, created_at ts from session_completions
+    union all select user_id, created_at from strava_activities
+    union all select user_id, created_at from session_reflections
+    union all select id, last_today_open_at from user_settings where last_today_open_at is not null
+  ) x group by user_id)
+select us.id, us.trial_started_at::date as trial_start,
+  date_part('day', now() - us.trial_started_at)::int as trial_day,
+  (select max(last_seen) from sig where sig.user_id=us.id)::date as last_seen,
+  coalesce(date_part('day', now() - (select max(last_seen) from sig where sig.user_id=us.id))::int, -1) as days_quiet
+from user_settings us
+where us.trial_started_at > now() - interval '14 days'
+  and coalesce(us.is_admin, false) = false
+  and not exists (select 1 from subscriptions s where s.user_id=us.id and s.status in ('trialing','active') and s.current_period_end > now())
+  and not exists (select 1 from charity_codes cc where cc.claimed_by=us.id and cc.expires_at > now())
+order by days_quiet desc;
+
+Q3 — plans created OR updated in the last 24h (these are what you review):
+select p.id, p.user_id, p.created_at, p.updated_at,
+  p.plan_json->'meta' as meta,
+  jsonb_array_length(p.plan_json->'weeks') as week_count,
+  (select jsonb_agg(w->'phase') from jsonb_array_elements(p.plan_json->'weeks') w) as week_phases
+from plans p
+where p.created_at >= now()-interval '24 hours' or p.updated_at >= now()-interval '24 hours'
+order by p.updated_at desc;
+
+Q4 — engine health: constitutional findings (last 24h):
+select to_char(created_at,'YYYY-MM-DD HH24:MI') as when_utc,
+       kind,
+       coalesce(detail->>'source','-')  as source,
+       coalesce(detail->>'codes','-')   as codes,
+       coalesce(detail->>'reason','-')  as reason,
+       coalesce(detail->>'outcome','-') as outcome,
+       coalesce(detail->>'reverted_weeks','-') as reverted_weeks,
+       coalesce(detail->>'pre_existing','-')   as pre_existing,
+       coalesce(detail->>'messages','-')       as messages,
+       coalesce(detail->>'foundation_week_violations','-') as foundation_hits,
+       coalesce(detail->>'verdicts','-')     as verdicts,
+       coalesce(detail->>'verdict_note','-') as verdict_note
+from ops_events
+where created_at >= now() - interval '24 hours'
+  and coalesce(detail->>'source','') <> 'plan-audit-summary'
+order by created_at desc;
+
+Q4B — engine health: did the plan audit RUN, and how old is the newest breaching plan?
+select to_char(created_at,'YYYY-MM-DD HH24:MI') as when_utc,
+       detail->>'checked' as checked,
+       detail->>'invalid' as invalid,
+       detail->>'skipped' as skipped,
+       detail->>'newest_invalid_plan_age_days' as newest_invalid_age_days,
+       detail->>'invalid_by_plan_age' as invalid_by_age,
+       detail->>'newest_invalid_modified_age_days' as newest_modified_age_days,
+       detail->>'modified_recently_but_older' as modified_recently_but_older,
+       detail->'repairable' as repairable,
+       detail->'codes_new_since_last_run' as codes_new
+from ops_events
+where created_at >= now() - interval '48 hours'
+  and detail->>'source' = 'plan-audit-summary'
+order by created_at desc
+limit 6;
+
+Q5 — engine health: AI enrichment, ONE ROW PER PLAN (last 7 days, newest first):
+select p.id,
+       to_char(p.created_at,'YYYY-MM-DD HH24:MI') as created_utc,
+       coalesce(p.plan_json->'meta'->>'enrichment','(absent)') as enrichment,
+       jsonb_array_length(coalesce(p.plan_json->'weeks','[]'::jsonb)) as week_count,
+       (select u.email from auth.users u where u.id = p.user_id) as email
+from plans p
+where p.created_at >= now() - interval '7 days'
+order by p.created_at desc;
+
+Q5B — enrichment health, FLEET-WIDE and UNWINDOWED (OPS-ENRICH-HEALTH-01):
+with s as (
+  select p.user_id,
+         to_char(p.created_at,'YYYY-MM-DD') as created_utc,
+         -- REBUILD-VOICE-LOSS-01: a plan with generator_input and no state is not legacy
+         coalesce(p.plan_json->'meta'->>'enrichment',
+                  case when jsonb_typeof(p.plan_json->'meta'->'generator_input') = 'object'
+                        and coalesce(p.plan_json->'meta'->>'tier','') <> 'free'
+                        and coalesce(nullif(p.plan_json->'meta'->>'plan_kind',''),'race') = 'race'
+                       then 'not_recorded' end) as enrichment,
+         (select u.email from auth.users u where u.id = p.user_id) as email
+  from plans p
+)
+select
+  count(*) filter (where enrichment is not null and enrichment <> 'skipped' and enrichment <> 'skipped_plan_kind') as eligible,
+  count(*) filter (where enrichment in ('applied','applied_partial')) as with_voice,
+  count(*) filter (where enrichment is not null and enrichment <> 'skipped' and enrichment <> 'skipped_plan_kind'
+                    and enrichment not in ('applied','applied_partial')) as without_voice,
+  coalesce(json_agg(json_build_object('email', email, 'created', created_utc, 'state', enrichment))
+           filter (where enrichment is not null and enrichment <> 'skipped' and enrichment <> 'skipped_plan_kind'
+                     and enrichment not in ('applied','applied_partial')), '[]'::json) as without_voice_rows
+from s;
+
+
+Q6 — data integrity: completion writes that landed on a SUPERSEDED row (COMPLETION-TOMBSTONE-01):
+select
+  (select count(*) from session_completions
+     where superseded_at is not null and updated_at > superseded_at) as ghost_writes,
+  (select count(distinct user_id) from session_completions
+     where superseded_at is not null and updated_at > superseded_at) as ghost_users,
+  (select json_agg(json_build_object(
+            'email',  (select u.email from auth.users u where u.id = sc.user_id),
+            'week_n', sc.week_n, 'day', sc.session_day, 'status', sc.status,
+            'written_utc', to_char(sc.updated_at,'YYYY-MM-DD HH24:MI')))
+     from session_completions sc
+     where sc.superseded_at is not null and sc.updated_at > sc.superseded_at) as rows;
+
+Q7 — refusals that actually reached a runner (the Coaching Board is waiting on this):
+select to_char(e.created_at,'YYYY-MM-DD HH24:MI')        as at_utc,
+       e.detail->>'rule'                                 as rule,
+       e.detail->>'reason'                               as reason,
+       e.detail->>'race_distance_km'                     as distance_km,
+       e.detail->>'current_weekly_km'                    as weekly_km,
+       e.detail->>'longest_recent_run_km'                as longest_km,
+       e.detail->>'effective_start_km'                   as effective_start_km,
+       e.detail->>'fitness_level_declared'               as level_declared,
+       e.detail->>'fitness_level_assessed'               as level_assessed,
+       e.detail->>'fitness_level_structural'             as level_structural,
+       e.detail->>'fitness_level_intensity'              as level_intensity,
+       e.detail->>'training_age'                         as training_age,
+       e.detail->>'goal'                                 as goal,
+       e.detail->>'weeks_to_race'                        as weeks_to_race,
+       e.detail->>'days_available'                       as days_available,
+       not jsonb_exists(e.detail,'fitness_level_declared') as pre_instrumentation,
+       (select u.email from auth.users u where u.id = e.user_id) as email
+from ops_events e
+where e.kind = 'plan_refused_by_design'
+order by e.created_at desc
+limit 20;
+
+Q8 — orphan rows: user-scoped data whose owner no longer exists (DB-USER-PURGE-01):
+with t(tbl,col) as (values
+ ('analytics_events','user_id'),('daily_coach_notes','user_id'),('free_insights','user_id'),
+ ('health_daily_samples','user_id'),('notifications','user_id'),('phase_summaries','user_id'),
+ ('plan_adjustments','user_id'),('plan_archive','user_id'),('plan_weekly_notes','user_id'),
+ ('plans','user_id'),('post_race_reshapes','user_id'),('push_subscriptions','user_id'),
+ ('race_readiness_notes','user_id'),('run_analysis','user_id'),('session_completions','user_id'),
+ ('session_metric_overrides','user_id'),('session_overrides','user_id'),('session_reflections','user_id'),
+ ('strava_activities','user_id'),('subscriptions','user_id'),('weekly_reports','user_id'),
+ ('user_settings','id'))
+select coalesce(json_agg(json_build_object('table',tbl,'orphans',n)
+         order by n desc) filter (where n > 0), '[]'::json) as offenders,
+       coalesce(sum(n),0) as orphan_rows_total
+from (
+  select tbl, (xpath('/row/c/text()', query_to_xml(
+    format('select count(*) as c from public.%I x where x.%I is not null and not exists (select 1 from auth.users u where u.id = x.%I)', tbl, col, col),
+    false, true, '')))[1]::text::int as n
+  from t
+) s;
+
+Q9 — money-critical: a runner PAID and the entitlement did not land (OPS-SUBS-ALERT-01, last 7 days):
+select to_char(e.created_at,'YYYY-MM-DD HH24:MI') as at_utc,
+       e.kind,
+       e.detail->>'provider'   as provider,
+       e.detail->>'event_type' as event_type,
+       e.detail->>'status'     as status,
+       e.detail->>'missing'    as missing_field,
+       e.detail->>'environment' as environment,
+       left(coalesce(e.detail->>'message',''), 200) as message,
+       coalesce((select u.email from auth.users u where u.id = e.user_id),
+                '(UNATTRIBUTABLE - no user_id)') as email
+from ops_events e
+where e.kind in ('stripe_event_unusable','revenuecat_event_unusable',
+                 'stripe_event_write_failed','revenuecat_event_write_failed',
+                 'stripe_event_unhandled','revenuecat_event_unhandled')
+  and e.created_at >= now() - interval '7 days'
+order by e.created_at desc;
+
+Q9B — purchase attempts that did not complete (IAP-PURCHASE-FAILED-01, last 7 days):
+select to_char(a.created_at,'YYYY-MM-DD HH24:MI') as at_utc,
+       a.props->>'outcome'       as outcome,
+       a.props->>'stage'         as stage,
+       a.props->>'error_code'    as error_code,
+       left(coalesce(a.props->>'error_message',''), 160) as error_message,
+       a.props->>'annual'        as annual,
+       a.props->>'platform'      as platform,
+       coalesce((select u.email from auth.users u where u.id = a.user_id), '(no user)') as email
+from analytics_events a
+where a.event = 'upgrade_purchase_result'
+  and a.props->>'outcome' in ('failed','already_entitled','success')
+  and a.created_at >= now() - interval '7 days'
+order by a.created_at desc;
+
+STEP 2 — For EACH plan row from Q3, write a short review (2–4 sentences + up to 3 bullet recommendations). Judge it against Russ's coaching philosophy: aerobic efficiency and learning to run easy; Zone-2 discipline in base; sensible progressive overload (watch peak-vs-week-1 ratio); appropriate phase structure (base→build→peak→taper) and taper; volume that matches the athlete's training age and stated goal; nothing that contradicts the user's goal (finish vs time). The plan_json.meta already contains the generator's own reasoning (fitness_signal_note, volume_constraint_note, etc.) — build on it, flag genuine concerns, give a one-word verdict (Sound / Watch / Concern). If Q3 returns no rows, state "No new or reshaped plans in the last 24h."
+
+STEP 2B — Zonna engine health. Report on Q4, Q4B, Q5 and Q5B. Keep it short — if both are clean, one line for the whole section is right.
+
+Q4 (constitutional findings): no rows is the normal, GOOD result — say "no new findings" in one line and move on. The per-plan probe only writes when a plan's status CHANGES, so silence here means nothing changed. Whether the audit RAN is now a separate question, answered by Q4B — do not read Q4's silence as proof it ran. If there are rows, list them and say plainly what each means:
+- plan_rule_invalid with source: plan-audit — a runner's saved plan changed constitutional status. READ `verdicts` BEFORE CALLING ANYTHING A REGRESSION. It is the single most important field in this query and it answers the question the code list cannot:
+    * "rule_newer_than_plan" — the engine does NOT produce this today. The plan predates the rule that now judges it. This is NOT a defect and must NOT be written up as one; report it as "an older plan meeting a newer rule" and put it in the remediation queue, not the alert.
+    * "engine_regression" — today's engine reproduces the violation from the same inputs. THIS is the real thing. Escalate it, name the code.
+    * "undecidable" — the plan could not be regenerated into a comparable shape, so no verdict exists. Treat as actionable. "We could not tell" is not "fine", and `verdict_note` says why.
+  If `verdicts` is '-' the plan has no stored generator_input and could not be classified — say so rather than assuming either answer.
+  WHY THIS FIELD EXISTS, so it is not skipped: on 2026-10-03 this digest reported two constitutional findings and a full day went to proving NEITHER was a defect. One was a checker missing an exemption the Coaching Board had ratified (§82); the other was an invariant enforcing a proxy instead of the rule it owned (§121). A code set changes both when the engine regresses and when we ship a new invariant that judges old plans, and those demand opposite responses. New codes alone CANNOT tell them apart. `verdicts` can. An empty codes array = a plan that was invalid is now clean (good news, report it as such).
+- plan_rule_invalid with no source — a freshly generated plan breached an invariant at creation.
+- plan_enrich_failed — a trial/paid user got a plan without AI coaching. Quote the reason.
+- reshape_invalid — a plan reshape produced an invalid plan.
+- plan_integrity_mismatch — an auto-applied adjustment never saved.
+- Any foundation_hits above 0 — call it out SEPARATELY. Those are the pre-plan warm-up weeks, historically the least-guarded part of the engine.
+
+Q4B (plan audit heartbeat + fleet age): this row is written on EVERY audit run, including clean ones, so it is the one place that proves the backstop actually ran. Two things to say, and no more than two lines:
+
+- NO Q4B ROW AT ALL is the finding. It means the audit did not run in the last 24h, and Q4's silence above then means nothing. Say so plainly — a backstop nobody can see firing is one nobody trusts.
+
+⚠️ TWO AGE FIELDS, TWO DIFFERENT QUESTIONS (PLAN-AUDIT-AGE-SOURCE-01, fixed 2026-10-05). Until that fix the age was computed from the row's LAST-WRITE time while being named for the plan's age, so on 2026-10-04 twenty-three plans landed in the "0-1d" bucket and NINE had been generated 63 to 166 days earlier — rewritten by two remediation scripts, not regenerated. The 2026-10-05 digest correctly spotted the inconsistency and wrongly concluded the audit was miscomputing. It was not; the metric was reading the wrong clock.
+- `newest_invalid_age_days` and `invalid_by_age` now measure CREATION. This is the escalation signal: 0-1d here means the engine really did generate a breaching plan in the last day.
+- `newest_modified_age_days` measures the LAST WRITE. 0-1d here means something TOUCHED a breaching plan — a reshape, a maintenance-block append, or a remediation script. A real hazard, but a different one, and NOT evidence the engine is producing bad plans.
+- `modified_recently_but_older` counts the divergence directly: breaching plans written within a day but generated earlier. A non-zero value alongside a clean creation age means somebody ran a remediation or a reshape — say so in one line and do NOT escalate it.
+
+- If there is a row: report `checked` / `invalid`, then judge on `newest_invalid_age_days`, NOT on the raw `invalid` count. The count is mostly history: plans generated under older engine rules stay on the fleet and keep being counted, so it drifts upward forever and is not a signal. The age is. If the newest breaching plan is weeks old, the fleet is carrying history and nothing is wrong NOW — one line, move on. If it is 0 or 1 days old, the CURRENT engine has recently produced a bad plan; that is the escalation, and it should name the age. Use `invalid_by_age` buckets (0-1d / 2-7d / 8-30d / 31d+) to show the shape if anything sits in the first two buckets.
+- `newest_invalid_age_days` of null with invalid 0 is a fully clean fleet. One line: "plan audit ran, fleet clean."
+
+🔴 `repairable` IS THE ONE FIELD IN THIS ROW THAT IS AN INSTRUCTION RATHER THAN A STATUS, AND IT OUTRANKS THE AGE REASONING ABOVE.
+- It is PRESENT only when live plans carry damage that has a KNOWN REMEDY, and ABSENT when there is nothing to do. Absence is the clean signal: never write "repairable: 0" or "no repairable damage" — say nothing at all, exactly as you say nothing when Q6 is clean.
+- When it IS present, LEAD the engine-health section with it, ahead of the age bullets. Give three things and no more: how many `plans`, the commonest code from `by_code`, and `command` quoted VERBATIM on its own line so Russ can paste it. The command is a DRY RUN — it prints a per-plan before/after diff and writes nothing until `--apply` is added, and every write archives the prior plan first. Say that in half a sentence so he knows it is safe to run, and do NOT soften the ask into "you may wish to".
+- WHY THIS FIELD EXISTS, so it is not skipped: on 2026-10-03 a recalibration defect damaged THREE live runners' plans — work steps left priced at a fitness they no longer had, one of them ~25 s/km too fast with a knee history. Q4's alert-on-transition rule fired once that morning and then correctly went quiet, because nothing CHANGED after that, and THE DAMAGE SAT FOR SIX DAYS while this digest said nothing. It surfaced only because Russ read an unrelated line in this report and asked a question about it. A transition tells you something HAPPENED; `repairable` tells you something is STILL TRUE and can be fixed today.
+- It is SELF-CLEARING — one command makes it disappear — so if it is present two mornings running, say so plainly: "unchanged since yesterday, the command has not been run." A standing field nobody acts on should start saying that out loud rather than repeating itself quietly.
+- ⚠️ DO NOT AGE THIS AGAINST THE RUNNING BUILD. Like Q9, and for the same reason: the engine defect that caused the damage is already fixed, and the damaged plans are still damaged. "Predates the current build" retires a finding everywhere else in this digest and must not retire this one.
+- ⚠️ IT IS NOT THE SAME THING AS THE ERROR-SEVERITY QUEUE described under KNOWN BASELINE below. That queue is 30 violations on 7 plans, all `rule_newer_than_plan`, which the live-plan policy deliberately leaves alone — do not list those. `repairable` counts only codes that have a remedy, which is why it is actionable and they are not.
+
+KNOWN BASELINE — AND MIND WHICH NUMBER YOU ARE COMPARING.
+
+🔴 CORRECTED 2026-10-05. The previous version of this block gave the floor as "≈7 plans / 30 codes". That was measured a DIFFERENT WAY from Q4B's `invalid`, the two were never comparable, and the 2026-10-05 digest flagged a non-existent anomaly off the mismatch. The two measures:
+- Q4B's `invalid` counts PLANS with ANY code from three probes (invariants at any severity, plus SCHEMA: and HR- codes). Historically 10-16 every single day, roughly HALF of `checked`: 10 of 21 (Oct 1) · 11 of 23 (Oct 2) · 16 of 29 (Oct 3) · 15 of 30 (Oct 4). **15 of 30 is NORMAL.**
+- The separate figure of 30 violations across 7 plans counts only ERROR-severity invariant violations on plans that have a stored `generator_input`. That is the remediation queue (`STORED-PLAN-DEBT-QUEUE-01`), NOT Q4B's number.
+
+🔴 CORRECTED 2026-10-27 — DO NOT JUDGE `invalid` AGAINST A FIXED BAND. The band above is history, not a baseline: the count rises every time a new invariant judges old plans (2026-10-23's invariants took it 16 -> 29 with no defect, and the 2026-10-26 digest reported that as a finding). Judge it by CHANGE:
+- Compare today's `invalid` and `checked` with the PREVIOUS audit row in Q4B (it now returns 48 hours). Report both numbers and the change in one line. **Do NOT compare it against 7.**
+- `codes_new` (the audit's own `codes_new_since_last_run`) present on today's row IS the finding: name each code. A rise in `invalid` with no `codes_new` is more plans hitting known codes: say so plainly, one line.
+- If there is no previous row, say the comparison is unavailable today rather than guessing.
+- EITHER cleared code reappearing is also the finding. Name it. Cleared 2026-10-03/04 and must not return: INV-PLAN-FOUNDATION-WEEKDAY-HAS-DURATION (30 -> 0) and INV-PLAN-RACE-NOT-VOLUME (12 plans -> 0).
+- The error-severity queue is 30 violations on 7 plans, all `rule_newer_than_plan` — 13 INV-PLAN-HEADER-PACE-MATCHES-WORK, 3 COPY-MATCHES-SESSIONS, 3 STRIDES-PRESENT, nine other codes at 1-2 each. They sit in MAIN-PLAN weeks, so clearing them means regenerating a live plan and rewriting a runner's training mid-block; the live-plan policy forbids that and they are expected to stay. **Do NOT list them as defects.** Reporting them every day trains Russ to skip the whole section.
+
+⚠️ YOU NOW RUN AFTER THE AUDIT, SO THE HEARTBEAT SHOULD BE TODAY'S — AND CHECK THAT IT IS. Until 2026-10-05 this digest ran 07:00 Europe/London (06:00 UTC) while the audit is scheduled 07:45 UTC, so it had NEVER been able to read the same day's run; the row was 17-24 hours old and the registry wrongly described it as "~45 min old" for three weeks (OPS-AUDIT-DIGEST-ORDER-01). The digest was moved to 18:00 Europe/London (17:00 UTC), which clears the audit's OBSERVED window: it is scheduled 07:45 UTC but GitHub Actions has in practice been starting it 12:30-16:00 UTC, so 17:00 leaves about an hour of margin after the latest run seen.
+- ALWAYS REPORT THE HEARTBEAT'S TIMESTAMP, never "this morning's" or "today's" without checking. Subtract it from now and say the age in hours.
+- If it is UNDER ~6 hours old, that is the expected state: the audit ran today and you are reading it. One line.
+- If it is 17-24 hours old, the audit was LATE again and slipped past 17:00 UTC. That is worth one line, because it means today's engine state is unmeasured and anything you report from Q4/Q4B describes yesterday. Not an escalation; a caveat on everything else in the section.
+- If there is no row inside 24h at all, that is the finding, as described above.
+
+⚠️ THE AUDIT CANNOT SEE EVERY PLAN, AND THE GAP IS NOT AGE. 8 of 30 stored plans carry no
+`generator_input`, so they cannot be validated OR classified at all — they are absent from both
+Q4 and the `invalid` count, and a defect in one would be invisible here. Seven pre-date the field.
+The eighth does not: it is a `plan_kind: base_build` on-ramp plan from 2026-10-02, and that producer
+never writes the field, so the blindness is PERMANENT for that plan type rather than historical.
+Tracked as BASEBUILD-AUDIT-BLIND-01. If `checked` is materially below the total plan count, that gap
+is the reason — say so rather than reporting the fleet as fully audited.
+
+Q5 (enrichment health): the healthy values are applied, applied_partial and skipped.
+- skipped — correct for free-tier plans.
+- applied — a paid/trial plan that got full AI coaching.
+- applied_partial — ENRICH-PARTIAL-01 (shipped 2026-09-04). The plan kept AI copy on every week EXCEPT the few whose copy breached an invariant, which fell back to engine copy. This is the SUCCESS path of a deliberate degrade, not a failure. Report it with its scale, using Q4's reverted_weeks against Q5's week_count — "2 of 14 weeks reverted" is a minor note; do not write it up as a plan that "got partial coaching" or as the AI tier being down.
+- failed / failed_* — a paid user silently got a rule-engine-only plan. This is the one that is genuinely a revenue-tier defect.
+- pending on a plan more than ~10 minutes old — the follow-up enrichment write never landed.
+- "(absent)" — an older plan from before enrichment tracking existed. Note in passing, not a fault.
+
+Q5B (enrichment health, FLEET-WIDE): Q5 above is windowed to 7 days, and THAT IS THE GAP THIS CLOSES. A failed enrichment is permanent — the runner holds that voiceless plan for the whole 16+ week block — but a 7-day window stops mentioning them after a week. On 2026-10-02 one affected runner was six days old: visible that morning, invisible the next. This repo has recorded a date-scoped list quietly taking its coverage with it three times.
+
+So Q5B counts the WHOLE fleet with no window, and it is the number to lead the enrichment line with:
+
+- `without_voice` is the one that matters: runners holding a plan with no AI copy at all. ANY of them is worth a line, and they stay reported until the state changes — that is the point of the query having no window.
+- `eligible` EXCLUDES free-tier `skipped` (never enriched by design) and legacy plans with no field. Counting either would deflate the figure.
+- `not_recorded` is a plan with NO enrichment field that is NOT legacy (it carries `generator_input`): a script rebuild deleted its AI copy and wrote no state. It is a runner WITHOUT voice; name it as such. `skipped_plan_kind` (staged and get-running plans) is never enriched by design and is excluded. (REBUILD-VOICE-LOSS-01, 28 Oct: the old query read 1 without voice when 12 were.)
+- `with_voice` counts `applied` AND `applied_partial` together. ⚠️ On 2026-10-02 a measurement that treated `applied_partial` as a failure reported "two thirds of plans failing" when the true answer was 2 runners of 18 eligible — 38 of 43 recorded failures were partial reverts. The guidance in Q5 above already said this; it was not read.
+- Quote it as `without_voice of eligible`, never as a bare percentage: at this fleet size one plan moves the rate by ~5pp.
+- `without_voice_rows` names them, so remediation has a target. `scripts/reenrich-plans.ts` in the repo restores the voice (dry-run by default) and needs Russ's authorisation to write.
+
+⚠️ THE JUDGEMENT RULES ABOVE ARE MIRRORED FROM `lib/ops/enrichHealth.ts`, which is their owner and is unit-tested. The duplication is deliberate and declared: the canonical reader is `GET /api/ops/enrich-health`, and this routine cannot call it because that endpoint requires `CRON_SECRET`, which a cloud routine has no way to hold. If the rules there change, change this SQL in the same breath — they have already drifted once in this codebase when a producer kept its own copy of a predicate (84 plans).
+
+BEFORE ESCALATING ANYTHING FROM Q4 OR Q5 — three checks, plus one that outranks them.
+
+0. THE VIOLATION MAY BE A DEFECT IN THE CHECKER, NOT IN THE PLAN. An invariant firing means the plan and the rule disagree; it does NOT say which of the two is wrong. Measured twice on 2026-10-03: a validator was missing a ratified exemption, and an invariant was enforcing a symptom rather than the mechanism it owned. Both plans were correct. So describe a finding as "plan X and rule Y disagree" and let `verdicts` decide the direction — never as "the plan is broken" before that is established. A digest that reports an already-fixed problem in the present tense trains Russ to ignore it, which is worse than not sending it at all.
+
+1. AGE IT AGAINST THE RUNNING BUILD. Fetch the most recent PRODUCTION deployment time for the Vercel project "zona" via the Vercel connector (list_deployments). Any event older than that deployment describes code that is no longer running. Say so in those words — "predates the current build, deployed <time>" — and never describe it in the present tense ("is broken", "is down", "is failing"). If the Vercel connector is unavailable, say the age could not be established and report raw timestamps without a verdict.
+
+2. STATE THE DENOMINATOR. Always give the sample size: "N plans generated in this window". With 0 or 1 plans no rate is meaningful — never write "3 of 3" or "across the board" off a handful of rows. If zero plans have been generated since the latest production deploy, the correct finding is "the current build is UNVERIFIED — no plan has exercised it yet", which is a different and far more useful statement than "enrichment is broken".
+
+3. WHOSE PLAN IS IT. Q5 returns the account email. A plan on an obvious test account (test*@*, *@test.com) is not a customer-impacting incident — label it as a test-account plan and rank it below anything touching a real user.
+
+Different codes are different defects: never merge unlike failures into one trend line. List them separately with their own dates and their own status against the current build. And do not recommend changing an invariant because enrichment tripped it — the invariants are the constitution, and copy that contradicts a session's prescription is the defect the check exists to catch.
+
+STEP 2C — Data integrity (Q6, Q7, Q8, Q9). FOUR PROBES, AND ZERO IS THE GOOD ANSWER FOR THREE OF THEM. If all four are clean, one line: "Data integrity: clean (no ghost writes, no refusals, no orphans, no failed subscription writes)." Do not pad it.
+
+Q6 (ghost writes) — 0 is normal and GOOD. A non-zero count is CUSTOMER-VISIBLE and outranks almost everything else in this digest: it means a runner completed or skipped a session, the write SUCCEEDED, and every read filters it out, so their ring never fills and they think the app is broken. It is silent by construction — nothing errors, nothing else logs it.
+- Root cause, fixed 2026-09-23 (COMPLETION-TOMBSTONE-01): the completion key (user_id, week_n, session_day) is not plan-scoped, week_n restarts at 1 on a new plan, so the write landed on the PREVIOUS plan's row and inherited its superseded_at tombstone.
+- STILL AGE IT against the running build, exactly as for Q4/Q5. A row written before that deploy describes code no longer running. Say "predates the current build" and give the fix date.
+- If a row is written AFTER the current build, that is a REGRESSION of a fixed defect. Lead the digest with it and name the affected email, week and day from the 'rows' array.
+
+Q7 (refusals that reached a runner) — rows here are NOT a defect. A designed refusal is the engine correctly declining to build a plan it cannot build safely, and the runner is offered a get-running plan instead. REPORT IT ANYWAY, because this is the evidence the Coaching Board is explicitly waiting on.
+- The open question (S117-LEVEL-GATE-01): do refused marathoners under 20 km/week arrive carrying a level ABOVE 'beginner'? If they do, the eligibility gate is turning away runners the engine could serve. If they arrive as 'beginner', the gate is already catching them. Read `level_declared` (what the runner said) against `level_assessed` (what the engine judged) — 🔴 a refusal where those two DISAGREE is the interesting one, and that pair is the whole point of the instrumentation.
+- 🔴 `pre_instrumentation = true` MEANS THE LEVEL FIELDS DID NOT EXIST WHEN THAT ROW WAS WRITTEN, NOT THAT THE ENGINE FAILS TO RECORD THEM. The five `fitness_level_*` keys landed 2026-10-09 19:12 (`693bbe9f`); every refusal before that carries none, and the key the digest used to read (`fitness_level`) was never written by anything at all. ⚠️ So on a pre-instrumentation row say *"level not captured at the time"* and **NEVER** conclude that the field is missing, that the fix is outstanding, or that waiting will not answer the question — waiting IS what answers it, at the next refusal. Say how many of the rows are pre-instrumentation and how many are not.
+- `training_age` IS recorded on every row including the old ones, so quote it even when the level is absent: it is a weaker proxy, it is not the answer to S117, and the board decides whether it is enough.
+- So for each row, state plainly: distance, weekly_km, longest_km, level_declared/level_assessed (or "pre-instrumentation"), training_age, goal, weeks_to_race. Do not interpret or recommend — the board rules on this, not the digest. One line per refusal.
+- Zero rows is worth one line: "no runner was refused in this window", because the absence is itself the answer the board is waiting for.
+
+Q8 (orphans) — must be 0, permanently. Every user-scoped table has carried an ON DELETE CASCADE to auth.users since 2026-09-23 (DB-USER-PURGE-01), so a non-zero count means a foreign key is MISSING, not that a deletion was untidy. Name the offending tables from the 'offenders' array and say that the cascade has broken. Do not suggest deleting the rows — the missing constraint is the finding.
+
+Q9B (purchase attempts) — report every row; zero rows is one line. A `success` is a real in-app sale: say so first, it had never happened before 2026-10-31. A `failed` row is a runner who tried to pay and could not: give at_utc, email, stage and error_code/error_message, and say that RevenueCat code 23 or an `offerings` stage points at App Store Connect (agreements, product status), not the code. `already_entitled` is a runner who already had access (usually a redeemed offer code) and is not a lost sale. Cancellations are deliberately not selected. Rows before 2026-10-31 recorded every cancel as `failed` with no code; do not count those as failures.
+
+Q9 (a runner paid and did not get access) — 0 is normal and GOOD; one line when clean. ANY ROW OUTRANKS EVERYTHING ELSE IN THIS DIGEST, including Q6. These kinds fire only when a purchase completed and the entitlement never landed in `subscriptions`, and `resolveTier` reads that table for every tier decision — so the runner is still meeting the paywall they have already bought their way past.
+
+- 🔴 DO NOT AGE THIS AGAINST THE RUNNING BUILD, and this is the one place in the digest where that rule is switched OFF. Everywhere else "predates the current build" correctly retires a finding. A LOST SALE IS STILL LOST AFTER THE CODE IS FIXED: the missing row is still missing and the runner is still locked out. Report every row in the window regardless of deploy time, and say what must be repaired, not merely when the bug was fixed.
+- 🔴 FIRST, SET THE PRE-SIGNUP REDEMPTIONS ASIDE. A row whose `missing_field` is `app_user_id_not_a_user` is NOT a lost sale and must NOT lead the digest. It is the designed charity journey: the runner redeems an offer code by email, THEN installs, THEN creates an account, so at redemption there is no Zonna account and RevenueCat sends an anonymous `$RCAnonymousID:`. The route answers 200 on purpose (CHARITY-OFFER-CODE-01) because there is nothing to retry: the transaction re-arrives correctly keyed the moment `logIn` aliases it, and `/api/subscriptions/reconcile` closes it even if that never comes. The offer is also created with auto-renew OFF so no charity runner is charged mid-taper, and that makes RevenueCat emit a CANCELLATION about two minutes after EVERY redemption — a second row each. So COUNT them and give them their own neutral line ("N pre-signup offer-code redemptions — expected on the redeem-then-install journey"), then say whether a `subscriptions` row now exists for those runners. Escalate ONLY if it does not. A 500-runner campaign produces roughly a thousand of these; reporting them as lost sales would make this section permanently red and therefore unread.
+- CHECK `environment` BEFORE JUDGING ANYTHING. `sandbox` is Russ or a tester on a sandbox Apple ID, never a customer: label it test traffic and rank it below every `production` row. A row with NO environment value was written before 2026-09-30, when the field was added — say the world could not be established rather than assuming production.
+- SEVERITY ORDER for whatever remains, worst first: `stripe_event_unusable`, then `revenuecat_event_unusable` carrying any OTHER `missing_field`, then `*_write_failed`. A Stripe `_unusable` was rejected with a 400 and Stripe retries a 400 only briefly, so it may have had no second chance. A `_write_failed` returned 500, which the provider retries properly — if the entitlement is now present, that one self-healed; say so.
+- `(UNATTRIBUTABLE - no user_id)` is WORSE than a named email, not better. It is a payment we cannot even trace to an account. Lead with those and say plainly that the account cannot be identified from this row — it must be found in the Stripe or RevenueCat dashboard.
+- For each row give: at_utc, kind, provider, email (or UNATTRIBUTABLE), and `missing_field` or `message`. Then the remedy: for `_unusable`, find that subscription in the provider dashboard and repair the `subscriptions` row by hand; for `_write_failed`, check whether the row exists now and only escalate if it is still absent.
+- ⚠️ RUSS CANNOT FIND THIS BY USING THE APP. His own `subscriptions` row is hand-seeded and `is_admin` resolves him `paid` whatever either webhook does, so this query is the only place a paid-but-unentitled runner becomes visible. Never soften it to "worth a look".
+
+⚠️ **An `*_unhandled` row is NEUTRAL, never red.** It means the provider sent an event type
+we deliberately do not map — `CANCELLATION` is the common one and means auto-renew off, not
+access ended. Render these as a single counted line inside Data integrity
+("N provider events arrived that we deliberately do not act on"), exactly like pre-signup
+redemptions. **Never let one of these promote Data integrity to red**, and never describe
+one as a lost sale. They exist in the query so that "no rows" can never again be read as
+"no events".
+
+STEP 3 — Definitions to use in the digest: Active(7d) = any of {session completed, run synced, reflection written, Today opened} in 7 days. Engaged(7d) = completed a session AND opened Today in 7 days. At-risk = on the reverse trial (trial started within the last 14 days, not admin, no active paid subscription and no active charity grant) with no activity in 3+ days (the conversion leak). Always surface at-risk and the trial funnel prominently. WHEN at_risk_trialing > 0, RUN Q2B AND RENDER THE ROWS (trial_day, last_seen, days_quiet) — a count says there is a leak and does not say where, and this is the only place the leak becomes actionable. 🔴 Q2B RETURNS THE WHOLE TRIAL COHORT, NOT THE AT-RISK SUBSET: a row is at risk if days_quiet >= 3 OR days_quiet = -1, and the number of those rows MUST EQUAL at_risk_trialing. ⚠️ -1 IS A SENTINEL, NOT A NUMBER — it means no activity signal of any kind and it FAILS a >= 3 test, so testing only >= 3 silently drops the worst case. Render the at-risk rows under the at-risk heading and put any remaining cohort rows in a clearly separate list labelled as context, never under the at-risk heading. If the two numbers disagree, say so and trust at_risk_trialing. days_quiet = -1 means NO activity signal at all, which is the worst case and not a missing value; rank those first. ⚠️ This is an OBSERVATION list, never an outreach list: Russ's standing instruction is zero contact with runners without his sign-off, so never draft a message or suggest emailing them.
+
+STEP 4 — Build a self-contained HTML dashboard (single file, inline CSS, no external assets) and deliver it with SendUserFile (display: render). Use the Zonna palette: navy #0B132B background, off-white #F7F9FB text, teal #5BC0BE primary/positive, amber #F2C14E warnings, muted #3A506B; headings in Space Grotesk, body in Inter. Sections: KPI row (total users, active 7d, engaged 7d, at-risk trials, paying), "Since yesterday (24h)" feed, "Last 7 days", subscription funnel, active-user tiers with definitions, an "Engine health" section (Q4 findings + Q4B audit heartbeat + Q5 enrichment breakdown; when all are clean render a single green all-clear line, and use the amber warning colour for any failed_*, pending, foundation_hits, new constitutional codes, a MISSING Q4B row, or a newest_invalid_age_days of 0-1 days. ⚠️ A PRESENT `repairable` field is AMBER AND GOES FIRST within Engine health, with the `command` rendered in a monospace block Russ can copy — it is the only thing in this section he can act on in one step), a "Data integrity" section (Q6/Q7/Q8/Q9 — a single green all-clear line when all four are clean; amber for any refusal row; RED and at the TOP of the dashboard for any ghost write, orphan, or Q9 row that is NOT a pre-signup redemption. A genuine Q9 row outranks every other red: it means a runner has PAID and is still locked out, so put it first and name the email or UNATTRIBUTABLE. Pre-signup redemptions (`missing_field` = `app_user_id_not_a_user`) and `environment: sandbox` rows are NOT red — render them as a neutral counted line inside Data integrity), and the plan review(s). Put a footer noting it contains real user data — do not screenshot into public/marketing unredacted.
+
+STEP 5 — Also post a concise written digest in the reply (not just the file). Data integrity (STEP 2C) appears in BOTH the HTML dashboard and this written digest: a probe whose result nobody reads is the same as not running it. Cover the headline movement in the last 24h, active/engaged/at-risk numbers, the trial-funnel state, engine health (one line if clean; if not clean, lead with it), data integrity (one line if clean), and each plan review verdict. Lead with anything that needs Russ's attention. Keep it tight and directive — Russ prefers a verdict over a menu. Metric units only (km, kg, °C).
