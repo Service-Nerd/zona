@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-02 — CHECK-DB-LIVE-KEY-ARM-01 · The check found a defect before it was wired up
+
+**Shipped:** a repo-side gate (in `npm run verify`) asserting the five `%_live_key` partial indexes exist with their predicate, plus a live arm in `check:db` that fails soft until its RPC lands.
+**Dev learning:** I wrote the RPC's SQL, then ran it as a plain query against production to prove it worked before handing it over — and it immediately returned `session_overrides_user_id_week_n_original_day_key`: a plain unique constraint, no predicate, sitting beside the partial one. The migration that added the partial index said uniqueness there "has been a CONVENTION, kept by the client deleting before it inserts". Production has had a real constraint the whole time. It does not bite today only because the delete four lines up its call site has no `superseded_at IS NULL` filter, so it destroys the archived plan's overrides and that is what frees the key. Add the live filter — the correct fix, which I shipped for the sibling function the same morning — and the insert starts failing 23505. **The obvious bug fix is the thing that would detonate it.**
+**Product/creator learning:** the item I was implementing told me to use the Supabase MCP for this. `check:db` is a tsx script with no MCP, and `.env.local` has PostgREST credentials only. An item is a snapshot of what its author understood, including when its author was me five hours earlier.
+**AI-building learning:** my first version of the test was hollow in a way I have now recorded four times: `create table[\s\S]*?<table>[\s\S]*?unique(...week_n...)` run over the *concatenated* migrations matched a `create table` in one file and a `unique` in another, pulling two exempt tables in as required. Concatenating sources recreates the unbounded-region bug even when you know about it. Then I committed 155 scratch files with a broad `git add -A scripts/` — the build-log entry from two days ago records catching that exact near-miss. Caught it this time only because the commit output printed the filenames. `.gitignore` now handles it instead of me.
+**The honest bit:** the gate I shipped is GREEN on the defect the gate's own RPC query found, and that is correct rather than embarrassing — the repo-side arm reads migrations and no migration declares that constraint. But it means the arm I could ship without anyone's help is not the arm that catches the thing I was worried about, and I had to say so in the item rather than let "13 arms passing" imply coverage it does not have.
+**Hook material:** wrote a query to prove a check worked; the query found a live defect in a table I had already declared safe earlier the same day.
+**Postable?:** yes
+
 ## 2026-11-02 — ULTRA-ROWS-PRICED-AS-QUALITY-01 · The principle quoted the engine's own output as its counter-example
 
 **Shipped:** §40b Amendment 4 — a power-hiking session now reads "Zone 2, RPE 6" instead of "Zone 4–5, 158–184 bpm", and an effort-governed session carries no HR range at all.
