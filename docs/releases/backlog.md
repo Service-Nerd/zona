@@ -899,34 +899,77 @@ before) and `effortGovernedPlan` (hills, no pace to price a km floor). Each is n
 until its entry is removed, and a sixth builder that skips it fails at once.
 ---
 
-### 🔲 `S9-HELD-PEAK-CLASSIFY-01` — a plan held to its weekday limit can stop building and not be declared maintenance ⚙️ **NO BOARD** (defect: §23's declaration, documented intent)
+### ✅ `S9-HELD-PEAK-CLASSIFY-01` — **SHIPPED 2026-11-03.** §23 is re-asked on the weeks the runner actually gets ⚙️ **NO BOARD** (defect fix restoring documented intent)
 
-Found building S9-EASY-MINUTES-01. The final cap pass now restates a week whose easy run it holds below 4 km, and one sweep
-clone (10K, 7 days, 40 km/week, 30-min weekdays) then peaks at 108% of week 1, under §23's 110%, without the maintenance
-declaration. The classification (`planIsMaintenance` / `volume_profile`) is decided from the volume curve before that pass
-and read the stale, higher total. Recorded as sweep debt `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`. Fix: re-run the
-peak-over-base classification on delivered `weekly_km` after the last pass that moves volume; measure how many plans flip.
+**Founder instruction, 2026-11-03: *"Fix it"*** — in place of carrying the gate debt declared hours earlier.
 
-🔑 **QUANTIFIED 2026-11-03 by `COHORT-GRID-UNSET-LEVEL-01`: 0 -> 3 of 960 on the real slow-goal grid.** It was
-invisible there because the grid forced `fitness_level: 'intermediate'`, which held those runners on an intermediate
-STRUCTURAL band production does not give them; on the production shape their VDOT reads beginner and structure follows
-it down. All three are 5K, 20 km/week, declared intermediate — peak 13 km against week 1's 12 km. The sweep's
-`INV-PLAN-PEAK-OVER-BASE@slow-goal: 1` and these three are the same defect, and
-`repeatsRepeat.test.ts` now asserts the count is **exactly 3** so the debt cannot grow silently.
+🔴 **THE ITEM'S OWN RCA NAMED THE WRONG CLASSIFIER, AND RE-READING THE CODE IS WHAT FOUND IT.** The item said *"the
+classification (`planIsMaintenance` / `volume_profile`) is decided from the volume curve"*. `planIsMaintenance`
+(`ruleEngine.ts:7369`) does read the curve — and it only drives week LABELS. The one that sets `meta.volume_profile`
+already read delivered `weeks[].weekly_km`; it was simply **asked ~2,000 lines too early**. Two later passes move
+volume: §90 Am.1's quality yield (which calls `applyWeekdayMinsCap` and then recomputes `w.weekly_km`) and §82 Am.2's
+final cap pass. Verified as the last one: nothing between it and `return plan` touches `weekly_km`, `distance_km` or
+`duration_mins`.
 
-🔴 **AND IT TURNED `review:coaching`'s SLOW STEP RED, WHICH `npm run verify` COULD NOT SEE.** That step is
-`measure-goal-gap.ts --gate` and it is **not in `verify:ci`** — only the CI coaching-review trigger runs it — so a
-fully green `verify` (730 files / 7,159 tests, `audit:plans` no regression, `check:slow` clean) sat beside a red
-ratified instrument. The gate failed on the 3 `INV-PLAN-PEAK-OVER-BASE` violations above, because it had
-**no debt register at all**: `if (errorViolations) fail`.
+**This is `LOPSIDED-ORDER-01`'s class exactly** — §52's detection was moved BELOW the same yield pass for the same
+reason, and its comment sits three hundred lines away saying so.
 
-⚠️ **It now carries one, and this is a WEAKENING of a ratified gate, stated as such.** `KNOWN_ERROR_DEBT` declares
-`INV-PLAN-PEAK-OVER-BASE: 3` against `S9-HELD-PEAK-CLASSIFY-01`, and the count is **EXACT, not a ceiling**: a rise
-fails (the defect spread), a fall fails (the register must be updated by the commit that fixes it), an unregistered
-code fails, and a registered code that stops firing fails. Falsified all four ways. The property sweep already carried
-the same defect on the same population as `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`, so **the two registers now agree
-where before only one of them could see it** — but the step's headline no longer reads *"0 errors"*, it reads the
-declared debt, and that is the honest version.
+🔴 **AND THE FILED FIX WAS DANGEROUS AS WRITTEN. MEASURING IT IS THE WHOLE VALUE OF THIS BUILD.** The item said *"re-run
+the peak-over-base classification on delivered `weekly_km`"*. As a **recompute** that is a serious regression:
+`volume_profile` is composed from **six** triggers (§23, §52's day count, a structural peak inversion, §52's lopsided
+week, §81's long-run overrun, §82's easy-floor overrun) and §23 is one of them. **Measured: 3,544 of 17,200 sampled
+plans pass §23's ratio on their delivered weeks while being maintenance for one of the other five** — 440 of 880
+slow-goal, 2,336 of 13,248 `cohortGrid`, 768 of 3,072 `targetedGrid`. Recomputing declares every one a `build` and
+**discards its runner-facing `volume_constraint_note`.**
+
+✅ **So the re-check is ONE-WAY** — it only ever ADDS maintenance. Sound in principle as well as by measurement: §23
+states a MINIMUM (*"peak ≥ ratio × W1, or maintenance"*), so adding the declaration can only make a plan compliant,
+and removing one cannot be justified by this rule at all. The note comes from the classifier's **own ratified copy**
+recomputed on the final weeks, so no new runner-facing string enters.
+
+**The defect, measured:** 3 of 880 slow-goal plans, **0 of 13,248 `cohortGrid`, 0 of 3,072 `targetedGrid`.** All three
+are the same cell — 5K, 20 km/week, a 7:30 marathon benchmark, 3 days, a 30-minute weekday cap, declared intermediate:
+peak 13 km against week 1's 12 km, **108% under §23's 110%**. The fourth row of that cell (gap 0) is a clean `build`
+and stays one, so the fix is narrow.
+
+**It changes a DECLARATION, not a prescription.** `verify:parity` IDENTICAL, 6,102 cases byte-for-byte. The producer's
+only other reader of `volume_profile` is `maintenanceKnownHere`, which gates §90 Am.1's yield pass and reads the
+**first** call — untouched deliberately, because changing that one WOULD change prescription. The other reader is
+`refreshWeekCopyIfStale`, which rewrites week copy on the reshape path. ⚠️ **And parity's grid cannot contain the
+affected shape** (a 5K with a marathon benchmark and a weekday cap is not in it), so IDENTICAL proves *"no level-set
+parity case moved"* and nothing stronger — `PARITY-GRID-UNSET-LEVEL-01` again.
+
+✅ **The flip silences EXACTLY ONE code, checked rather than assumed.** Before: 2 violations per plan
+(`error:INV-PLAN-PEAK-OVER-BASE` + `warn:INV-PLAN-PEAK-NOT-BELOW-START`). After: 1 — the unrelated warn **survives on
+both sides**, so declaring maintenance did not absorb it.
+
+✅ **The debt register emptied itself, by its own last arm.** `measure-goal-gap.ts`'s `KNOWN_ERROR_DEBT` carried
+`INV-PLAN-PEAK-OVER-BASE: 3` for about an hour; the fix made the gate **FAIL** with *"declared debt but no longer fires
+— remove it (the register only shrinks)"*. That is the arm whose whole job is to force a register to be updated by the
+commit that fixes its entry, and it did it unprompted. The slow step reads *"0 error violations"* again.
+
+**Gate:** `lib/plan/peakOverBaseLateReclass.test.ts` — 8 arms, the cell selected FROM the grid rather than hand-built.
+Falsified three ways: revert the re-check (**4 arms red**), make it two-way (the ONE-WAY arm red), push the audit line
+onto the local array instead of `meta` (2 arms red).
+
+🔴 **THREE DEFECTS IN MY OWN WORK, EACH FOUND BY A MUTATION RATHER THAN BY READING:**
+1. **The audit line would have vanished on every affected plan.** `meta` is assembled ~80 lines before this pass with
+   `...(ruleAdjustments.length > 0 ? { rule_adjustments } : {})`, so pushing onto the local array lands nowhere when no
+   earlier rule fired — and **all three plans have exactly ONE adjustment**, so they are precisely that case.
+2. **My test VANISHED instead of going red.** `generateRulePlan` throws under `NODE_ENV=test` and these plans are built
+   at module scope, so both falsifying mutations produced **"no tests"** rather than a failure.
+   `deliveredRampTail.test.ts` records this exact lesson in its own comment and I did not apply it until a mutation
+   showed me. Throws are now collected into a named arm.
+3. **My ONE-WAY arm selected the wrong population and stayed GREEN under the two-way mutation.** It took all 440
+   maintenance-while-passing plans, but 400 of those are HM and marathon where §23 can still return maintenance on its
+   own other grounds, so a recompute never touched them. The population actually at risk is **5K and 10K**, where
+   §46's volume floor and §24's long-run floor are both structurally zero: **40 of 960**, and 32 of those share one
+   signature, so a stride over the 480 5K/10K rows finds 4 of 40 and looks thorough. Selected by signature instead.
+
+⚠️ **What this does not prove.** Nothing about `WEEKLY-KM-AFTER-CAP-01`, which is the sibling and is still open: the
+stated `weekly_km` can be stale after the cap pass for reasons other than a held easy run, and restating it moved 17
+cohort plans and broke week copy when it was last tried. This fix does not depend on that number being restated — it
+re-reads the weeks as they are.
 
 ---
 

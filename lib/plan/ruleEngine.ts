@@ -8108,7 +8108,23 @@ function buildRulePlanOnce(
 
   // §23 result — runs only on plans long enough for overload to be a coherent
   // requirement. Returns { volume_profile, volume_constraint_note? }.
-  const peakOverloadResult: { volume_profile: 'build' | 'maintenance'; volume_constraint_note?: string } | null =
+  // ── S9-HELD-PEAK-CLASSIFY-01 (2026-11-03) — A FUNCTION, SO IT CAN BE ASKED TWICE ──
+  //
+  // It was an IIFE evaluated once, HERE. Two later passes move volume: §90 Am.1's
+  // injury/intensity quality yield (which calls `applyWeekdayMinsCap` and then
+  // recomputes `w.weekly_km`) and §82 Am.2's final cap pass. So a plan that read as a
+  // build here could stop building afterwards and keep the `build` declaration —
+  // `INV-PLAN-PEAK-OVER-BASE` then fires on the shrunken week while the producer has
+  // already committed. **Measured: 3 of 880 slow-goal plans** (5K, 20 km/week, declared
+  // intermediate: peak 13 km against week 1's 12 km, 108% under §23's 110%), 0 of 13,248
+  // cohortGrid and 0 of 3,072 targetedGrid.
+  //
+  // This is `LOPSIDED-ORDER-01`'s class exactly — §52's detection was moved BELOW the
+  // same yield pass for the same reason, and its comment is three hundred lines down.
+  //
+  // It closes over `weeks`, which the passes mutate IN PLACE, so a second call reads the
+  // delivered weeks with no plumbing. It is pure: it reads and returns, nothing else.
+  const classifyPeakOverload = (): { volume_profile: 'build' | 'maintenance'; volume_constraint_note?: string } | null =>
     totalWeeks >= GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS
       ? (() => {
           const w1 = weeks[0]?.weekly_km ?? 0
@@ -8363,6 +8379,8 @@ function buildRulePlanOnce(
           }
         })()
       : null
+
+  const peakOverloadResult = classifyPeakOverload()
 
   // §52 (low-day extension) — structural maintenance trigger. Three triggers:
   //   1. days_available <= 2: any 2-day plan. The §9 ratio (long ≥ 1.25× easy)
@@ -10128,6 +10146,56 @@ function buildRulePlanOnce(
     w.label = weekLabel(content)
     w.theme = weekTheme(content)
   })
+
+  // ── S9-HELD-PEAK-CLASSIFY-01 — §23 RE-ASKED ON THE WEEKS THE RUNNER ACTUALLY GETS ──
+  //
+  // The pass above is the LAST thing that moves volume (verified: nothing between it and
+  // `return plan` touches `weekly_km`, `distance_km` or `duration_mins`). §23 was decided
+  // ~2,000 lines earlier, before it and before §90 Am.1's yield pass, so a plan that
+  // stopped building in between kept its `build` declaration and `INV-PLAN-PEAK-OVER-BASE`
+  // fired on it. Same reading, same copy, same thresholds — just asked at the end.
+  //
+  // 🔴 ONE-WAY, AND THIS IS THE WHOLE DESIGN. The filed item said *"re-run the
+  // peak-over-base classification on delivered `weekly_km`"*, and implementing that as a
+  // RECOMPUTE would have been a serious regression: `volume_profile` is composed from SIX
+  // triggers (§23, §52's day count, a structural peak inversion, §52's lopsided week, §81's
+  // long-run overrun, §82's easy-floor overrun), and §23 is only one of them. **Measured
+  // 2026-11-03: 3,544 of 17,200 sampled plans pass §23's ratio on their delivered weeks
+  // while being maintenance for one of the other five** — 440 of 880 slow-goal, 2,336 of
+  // 13,248 cohortGrid, 768 of 3,072 targetedGrid. Recomputing would have declared every
+  // one of them a `build` and **thrown away its runner-facing
+  // `volume_constraint_note`.** So this only ever ADDS maintenance.
+  //
+  // ⚠️ It is also sound in principle, not just by measurement: §23 states a MINIMUM
+  // ("peak >= ratio x W1, or maintenance"), so adding the declaration can only make a
+  // plan compliant. Removing one cannot be justified by this rule at all.
+  //
+  // The note comes from the classifier's own ratified copy, computed from the final
+  // weeks — no new runner-facing string enters here.
+  const lateOverload = classifyPeakOverload()
+  if (lateOverload?.volume_profile === 'maintenance' && meta.volume_profile !== 'maintenance') {
+    meta.volume_profile = 'maintenance'
+    if (!meta.volume_constraint_note && lateOverload.volume_constraint_note) {
+      meta.volume_constraint_note = lateOverload.volume_constraint_note
+    }
+    // ⚠️ PUSHED ONTO `meta.rule_adjustments`, NOT ONTO `ruleAdjustments`, AND THE
+    // DIFFERENCE IS A SILENT OMISSION. `meta` is assembled ~80 lines above with
+    // `...(ruleAdjustments.length > 0 ? { rule_adjustments: ruleAdjustments } : {})`, so
+    // the key is present only when some EARLIER rule had already fired. Pushing onto the
+    // local array would land on the same object in that case and **vanish** when this is
+    // the only adjustment the plan has — which is precisely the plan that needs the
+    // audit line. So the key is created if it is absent.
+    const adjustment = {
+      rule: '§23 — peak-over-base re-read after the last pass that moves volume',
+      violation: 'A later pass (§90 Am.1’s quality yield or §82 Am.2’s weekday cap) shortened a week '
+        + 'after the plan had been classified, leaving it declared as a build while its delivered peak '
+        + 'no longer clears §23’s ratio over week 1.',
+      resolution: 'Declared maintenance, with §23’s own constraint note recomputed from the delivered weeks.',
+      weeks_affected: [] as number[],
+    }
+    if (meta.rule_adjustments) meta.rule_adjustments.push(adjustment)
+    else meta.rule_adjustments = [adjustment]
+  }
 
   const plan: Plan = {
     meta,

@@ -66,18 +66,19 @@ describe('slow-goal grid: no repeats session with one rep', () => {
   // violating row made the whole FILE fail to collect — "no tests", which reads very
   // differently in CI from a gate going red (the same lesson `deliveredRampTail` records).
   //
-  // Three rows now violate, and they are a KNOWN FILED DEFECT, not fallout from this
-  // change: `S9-HELD-PEAK-CLASSIFY-01` — the maintenance classification is decided from
-  // the volume curve BEFORE the final weekday-cap pass and reads the stale, higher total,
-  // so a plan that stops building is not declared maintenance. Measured on the slow grid
-  // 0 -> 3 of 960 (all 5K, 20 km/week, declared intermediate, assessed beginner-structural
-  // / intermediate-intensity: peak 13 km is 108% of week 1's 12 km, under §23's 110%).
-  // It was invisible here because the grid forced `fitness_level: 'intermediate'`, which
-  // held those runners on an intermediate STRUCTURAL band production does not give them.
-  // The sweep already carries the same defect as `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`.
+  // ✅ ZERO ROWS VIOLATE NOW, AND THE COUNT IS ASSERTED SO IT STAYS THAT WAY.
   //
-  // Counted and asserted below so the debt cannot grow silently — the SWEEP-BASELINE-01
-  // pattern, not a try/catch that hides it.
+  // For about an hour on 2026-11-03 three did: de-blinding `slowGoalGrid`
+  // (`COHORT-GRID-UNSET-LEVEL-01`) surfaced `S9-HELD-PEAK-CLASSIFY-01`, where §23's
+  // classification was decided ~2,000 lines before the end of generation while two later
+  // passes still moved volume. 5K, 20 km/week, declared intermediate: peak 13 km against
+  // week 1's 12 km, 108% under §23's 110%. Fixed by re-asking §23 after the last pass that
+  // moves volume, ONE-WAY (`peakOverBaseLateReclass.test.ts`).
+  //
+  // The assertion stays at 0 rather than being deleted: this loop runs at module level and
+  // `generateRulePlan` THROWS under NODE_ENV=test, so without the collection below a single
+  // violating row makes the whole FILE report "no tests" instead of going red — which is a
+  // very different thing to read in CI.
   const violating: string[] = []
   for (const c of slowGoalGrid(planStart, benchmarkDate)) {
     const { gap, ...input } = c
@@ -94,9 +95,8 @@ describe('slow-goal grid: no repeats session with one rep', () => {
     if (o.kind !== 'refusal') plans.push({ plan: o.plan as Plan, input: input as unknown as GeneratorInput })
   }
 
-  it('the only rows that fail to generate are S9-HELD-PEAK-CLASSIFY-01\'s, and there are still 3', () => {
-    expect(violating.length, `rows throwing an error-severity violation:\n${violating.join('\n')}`).toBe(3)
-    for (const v of violating) expect(v).toContain('INV-PLAN-PEAK-OVER-BASE')
+  it('🔴 no slow-goal row throws an error-severity violation', () => {
+    expect(violating.length, `rows throwing an error-severity violation:\n${violating.join('\n')}`).toBe(0)
   })
 
   it('🔴 INV-PLAN-REPEATS-REPEAT is silent on every served plan', () => {

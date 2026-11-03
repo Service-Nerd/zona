@@ -123,13 +123,13 @@ if (process.argv.includes('--gate')) {
   // it), which is `rca1026Gates`'s "the list only shrinks" arm in numeric form. The
   // property sweep carries the same defect on the same population as
   // `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`, so the two registers now agree.
-  const KNOWN_ERROR_DEBT: Record<string, number> = {
-    // S9-HELD-PEAK-CLASSIFY-01 — the maintenance classification is decided from the
-    // volume curve BEFORE the final weekday-cap pass and reads the stale, higher total,
-    // so a plan that stops building is not declared maintenance. 5K, 20 km/week, declared
-    // intermediate: peak 13 km is 108% of week 1's 12 km, under §23's 110%.
-    'INV-PLAN-PEAK-OVER-BASE': 3,
-  }
+  // ✅ EMPTY AGAIN, AND THE REGISTER'S LAST ARM IS WHAT EMPTIED IT. `S9-HELD-PEAK-CLASSIFY-01`
+  // was declared here as `INV-PLAN-PEAK-OVER-BASE: 3` for about an hour on 2026-11-03;
+  // fixing it made the gate FAIL with *"declared debt but no longer fires — remove it (the
+  // register only shrinks)"*, which is exactly the arm that forces a register to be updated
+  // by the commit that fixes its entry. Kept empty rather than deleted: the structure is
+  // the thing, and the next entry should have to be written down.
+  const KNOWN_ERROR_DEBT: Record<string, number> = {}
   for (const [code, n] of Array.from(errorCodes)) {
     const debt = KNOWN_ERROR_DEBT[code]
     if (debt === undefined) { fails.push(`${n} error violations: ${code} (UNREGISTERED — file it or fix it)`); continue }
