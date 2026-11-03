@@ -277,6 +277,34 @@ falsification-tested.
 3. Add the check to `validatePlan()` with a `code`, `principle_ref`, and severity.
 4. Add the row to the table above.
 5. Run the matrix and the property sweep. Address any violations the new check surfaces.
+6. 🔴 **`npm run audit:stored` — BEFORE AND AFTER. Compare `ADJUSTABLE`.**
+
+   Steps 1–5, `verify:parity`, `measure:fitness` and `review:coaching` all measure plans the
+   engine **generates**. None of them can see the plans runners **already have**, and a new
+   invariant applies to those the instant it ships.
+
+   ⚠️ **This step exists because it was missed.** `INV-PLAN-EFFORT-GOVERNED-NO-INVENTED-BAND`
+   shipped 2026-11-02 with the full suite green, parity declared, fitness and coaching review
+   unmoved, liveness woken and three falsifications. It fired on **3 of 39 stored plans** and
+   was the **only** error on **2**. Because `validateReshapedPlan` returns *every* error in a
+   plan, one error anywhere makes `/api/adjust-plan` refuse — so **adjustable plans went
+   21 → 19 and two runners silently lost plan adjustment**, discovered the next morning from
+   the daily digest. Re-measured after the fact: 21 before, 19 after. The command shows that.
+
+   ⚠️ **`/api/ops/plan-audit` is not a substitute.** It asks the same question daily by cron
+   and is what found this — a day late. It validates stored plans against the **DEPLOYED**
+   invariants; pre-ship you need the **LOCAL** ones.
+
+   ⚠️ **It is a report, not a ratchet, and that is deliberate.** `cohort:shape` and
+   `measure:fitness` commit a baseline because their population is a fixed grid. This
+   population is production and changes when any runner generates a plan, so a committed
+   baseline would go stale on its own and cry wolf — which this repo records as equivalent to
+   having no gate.
+7. **Does it fire on a stored plan? Then write the remediation in the same commit** — the
+   second half of the founder's standing instruction (2026-10-03), not a follow-up item.
+   `scripts/remediate-effort-governed-band.ts` is the shape: dry run by default, archives the
+   prior plan, re-validates, refuses if it introduces a new code or moves any copy, and the
+   pure patch carries its own falsified test.
 
 **The three artifacts move together.** A coaching change is not complete until the
 principle (`CoachingPrinciples.md`), the numeric (`GENERATION_CONFIG`), and the
