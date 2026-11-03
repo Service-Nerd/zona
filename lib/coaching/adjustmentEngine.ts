@@ -77,7 +77,8 @@ import { computeSessionDiff } from './diff/sessionDiff'
 import { validateSummaryAgainstDiff } from './diff/validateAiSummary'
 import { isLongRun, isQualitySession } from '@/lib/plan/sessionRole'
 import { orderedWeekSessions } from '@/lib/plan/weekSessions'
-import { validateReshapedPlan, type Violation } from '@/lib/plan/invariants'
+import { type Violation } from '@/lib/plan/invariants'
+import { validateStoredPlan } from '@/lib/plan/validateStoredPlan'
 import { refreshWeekCopyIfStale } from '@/lib/plan/ruleEngine'
 import type { Plan, Session } from '@/types/plan'
 
@@ -225,7 +226,27 @@ export function runAdjustmentEngine(req: AdjustmentRequest): AdjustmentOutcome {
   const updatedPlan = applyAdjustmentToPlan(
     plan, weekN, proposed.sessionsAfter, proposed.trigger?.type, nowIso,
   )
-  const reshapeErrors = validateReshapedPlan(updatedPlan, weekN).filter(v => v.severity === 'error')
+  // 🔴 RESHAPE-VALIDATOR-KIND-01 (2026-11-03) — DISPATCH BY PLAN KIND, and this is the
+  // SECOND HALF OF A FIX THAT WAS ONLY EVER APPLIED TO ONE TWIN.
+  //
+  // This line called `validateReshapedPlan` directly. `validateStoredPlan` exists for
+  // exactly that mistake and says so in its own header: it is the single owner of "which
+  // constitution applies to this plan's KIND", written on 2026-10-09 because the daily audit
+  // was running the race validator over every stored plan — 101 phantom violations on the 2
+  // base-build plans then in the fleet. **The daily audit was converted. The adjust path,
+  // which is the one a runner actually waits on, was not.**
+  //
+  // Measured 2026-11-03 against production: 3 stored plans are `plan_kind: 'base_build'`.
+  // This path reported 59 / 21 / 41 errors on them; the dispatching owner reports 0 for all
+  // three — `validatePlan` skips every `base_build` WEEK and then runs the whole-plan race
+  // rules anyway, so it asks a plan with no start line whether it has annotated its prep
+  // time. All 3 runners were refused on every adjustment for 121 violations that are not
+  // theirs, and §116's real constitution was never applied to their reshape at all.
+  //
+  // The strictness is unchanged for a race plan: `validateStoredPlan` returns
+  // `validateReshapedPlan(plan, weekN)` for that kind, same arguments, same two skipped
+  // race-week codes. Only the question asked of a NON-race plan changes.
+  const reshapeErrors = validateStoredPlan(updatedPlan, weekN).filter(v => v.severity === 'error')
 
   return {
     kind: 'adjustment',

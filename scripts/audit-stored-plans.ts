@@ -28,7 +28,7 @@
 // Read-only. Needs `.env.local`:
 //   npx tsx --env-file=.env.local scripts/audit-stored-plans.ts
 import { createClient } from '@supabase/supabase-js'
-import { validateReshapedPlan } from '../lib/plan/invariants'
+import { validateStoredPlan } from '../lib/plan/validateStoredPlan'
 import type { Plan } from '../types/plan'
 
 const main = async () => {
@@ -53,11 +53,19 @@ const main = async () => {
     considered++
     let errs
     try {
-      // ⚠️ `validateReshapedPlan`, NOT `validatePlan`: it is what `/api/adjust-plan` actually
-      // calls, so it is what decides whether this runner can have their plan adjusted. Asking
-      // a different question from the one the product asks is how a check reads green while
-      // the runner is stuck.
-      errs = validateReshapedPlan(plan).filter(v => v.severity === 'error')
+      // ⚠️ `validateStoredPlan`, because it is what `/api/adjust-plan` actually calls, so it is
+      // what decides whether this runner can have their plan adjusted. Asking a different
+      // question from the one the product asks is how a check reads green while the runner is
+      // stuck.
+      //
+      // 🔴 IT WAS `validateReshapedPlan` UNTIL 2026-11-03, AND THAT WAS CORRECT UNTIL THE
+      // MOMENT IT WASN'T. The comment above was the right instinct pointed at the wrong
+      // function: `RESHAPE-VALIDATOR-KIND-01` moved the route onto the kind-dispatching
+      // owner, so this line had to move in the same commit or this script would have gone on
+      // measuring a question production no longer asks — reporting the 3 base-build plans as
+      // refused on 121 phantom errors after the route had stopped refusing them. **A check
+      // that names the caller it mirrors must move WITH that caller.**
+      errs = validateStoredPlan(plan).filter(v => v.severity === 'error')
     } catch (e) {
       threw++
       console.log(`! ${String(r.user_id).slice(0, 8)}: validation THREW — ${(e as Error).message.slice(0, 80)}`)

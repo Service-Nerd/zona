@@ -98,9 +98,17 @@ function maintenanceErrors(plan: Plan): Violation[] | null {
 }
 
 /**
- * For the DAILY AUDIT, which reads rows out of the database. Race plans get
+ * For the DAILY AUDIT **and for the ADJUST PATH** — every caller that holds a plan
+ * already stored and must ask whether it is still valid. Race plans get
  * `validateReshapedPlan` — it prefers the persisted input and tolerates a
  * legacy plan whose race week has already passed.
+ *
+ * ⚠️ IT SAID "DAILY AUDIT" ALONE UNTIL 2026-11-03, AND THE NARROW NAMING IS PART OF WHY
+ * THE OTHER CALLER WAS MISSED (`RESHAPE-VALIDATOR-KIND-01`). `/api/adjust-plan` went on
+ * calling `validateReshapedPlan` directly for a month, so the 3 base-build plans in
+ * production were refused on every adjustment for 121 phantom violations while this
+ * function returned 0 for the same plans. A single owner that documents only one of its
+ * consumers reads like a special case rather than a policy.
  */
 export function validateStoredPlan(plan: Plan, reshapedWeekN?: number): Violation[] {
   if (isBaseBuildPlan(plan)) return baseBuildErrors(plan)

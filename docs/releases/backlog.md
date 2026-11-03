@@ -205,6 +205,57 @@ not restore the capability.
 
 ---
 
+### 🔲 `RESHAPE-VALIDATOR-KIND-01` — the adjust path judges a base-build plan by the race constitution ⚙️ **NO BOARD** (restores documented intent)
+
+📐 **Found 2026-11-03** while measuring `RESHAPE-SCOPE-TO-CHANGE-01`. **It is the second half of a fix that was
+only applied to one twin.**
+
+`lib/plan/validateStoredPlan.ts` exists for exactly this defect and says so in its own header: it is *"THE
+SINGLE OWNER of 'validate a plan we have already stored', and the only thing it decides is WHICH CONSTITUTION
+applies to this plan's KIND."* It was written on 2026-10-09 because the daily audit ran `validateReshapedPlan`
+over every stored plan without asking what kind it was, producing **101 phantom violations** on the 2
+base-build plans then in the fleet.
+
+**`/api/adjust-plan` still does the unconverted thing.** `lib/coaching/adjustmentEngine.ts` calls
+`validateReshapedPlan` directly, so a base-build plan is asked whether it has annotated its prep time.
+
+**Measured 2026-11-03, production:** 3 stored plans are `plan_kind: 'base_build'` (37 of 598 stored weeks).
+The adjust path reports **59 / 21 / 41 errors**; the dispatching owner reports **0** for all three. So all 3
+runners are refused on every adjustment for 121 phantom violations, and `§116`'s real constitution
+(`validateBaseBuildBlock`) is never applied to their reshape at all.
+
+⚠️ **It is a PREREQUISITE for `RESHAPE-SCOPE-TO-CHANGE-01`, not a parallel item.** Introduced-only blocking
+would make those 3 adjustable while still judging them by the wrong constitution, so a base-build reshape would
+pass with §116 never consulted. Today they are refused, which is wrong but safe. **Dispatch first, then scope.**
+
+⚠️ **`scripts/audit-stored-plans.ts` must move in the same commit.** It calls `validateReshapedPlan`
+deliberately, *"NOT `validatePlan`: it is what `/api/adjust-plan` actually calls"* — so the moment the route
+dispatches, the audit measures a question production no longer asks.
+
+---
+
+### 🔲 `STORED-PLAN-DEBT-REPAIR-01` — the tolerated pre-existing breaches are debt, and nothing repairs them ⚙️ **NO BOARD** to measure; 🏃 **COACHING BOARD** for any repair that rewrites prescription
+
+📐 **Filed by the Coaching Board, 2026-11-03**, explicitly out of scope of `RESHAPE-SCOPE-TO-CHANGE-01`:
+*"tolerating a breach is not fixing it, and §93's precedent is that the debt is named and tracked rather than
+closed by the ruling that declared it."*
+
+After introduced-only blocking ships, **17 stored plans carry error-severity violations that no longer refuse
+an adjustment.** Census by plans affected: `INV-PLAN-DIFFICULTY-ANNOTATED` 10, `INV-PLAN-COMPRESSION-SPLIT` 10,
+`INV-PLAN-COMPRESSION-CLASSIFICATION` 9, `INV-PLAN-EASY-PACE-PRESENT` 7, `INV-PLAN-RACE-NOTE-SCALES` 6,
+`INV-PLAN-RECALIBRATION-HAS-SESSION` 6, then a tail of 25 more codes.
+
+🩹 **Willy's seat is the reason this is filed rather than noted.** The tolerated set includes load rules —
+`INV-PLAN-LR-MAX-WEEKLY-PCT` on 3 plans, `INV-PLAN-ONRAMP-FLOOR` on 4, `INV-PLAN-WEEK-1-2-LONG-CAP` on 2.
+Those breaches exist today in plans people are running; refusing the adjustment never fixed them.
+
+⚠️ **Most of this list is copy and annotation debt, not load debt**, and the two want different remedies. Count
+each family before proposing one. ⚠️ **Live-plan policy applies** — a fix to the engine reaches no existing
+plan, so any repair is a remediation script with an archive, like
+`scripts/remediate-effort-governed-band.ts`.
+
+---
+
 ### 🔲 `REORDER-BLOCKED-DAY-01` — the reorder screen offers days the runner said they cannot train 🧭 **DESIGN BOARD**
 
 📐 **Found 2026-11-03, and it was a new subscriber's first action.** He redeemed an offer code and one minute
