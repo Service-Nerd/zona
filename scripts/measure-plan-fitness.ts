@@ -95,7 +95,15 @@ export function measure() {
           plan_start: COHORT_PLAN_START, race_distance_km: dist,
           race_date: new Date(Date.parse(COHORT_PLAN_START) + 18 * 7 * 864e5).toISOString().slice(0, 10),
           goal: 'finish', resting_hr: 52, max_hr: 180, current_weekly_km: 30,
-          longest_recent_run_km: 14, fitness_level: 'intermediate',
+          longest_recent_run_km: 14,
+          // COHORT-GRID-UNSET-LEVEL-01 — the wizard's field. BEHAVIOUR-NEUTRAL by
+          // construction: 30 km/week with a 14 km longest run and no benchmark
+          // assesses as intermediate, so the declaration matches the assessment and
+          // §79 has nothing to bind. Swapped regardless — this cohort is the one
+          // `measure:fitness` constructs BY HAND precisely because it is the worst
+          // case, and the worst case should not be the one shape in the script that
+          // is not production-shaped.
+          user_declared_level: 'intermediate',
           recent_quality_training: 'occasional', hard_session_relationship: 'neutral',
           training_age: '2-5yr', days_available: 4, days_cannot_train: [],
           injury_history: [...injury_history],

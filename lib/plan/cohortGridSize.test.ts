@@ -8,6 +8,8 @@
 
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { derivedLevelsFor } from './ruleEngine'
+import type { GeneratorInput } from '@/types/plan'
 import { cohortGrid } from './cohortGrid'
 
 describe('cohortGrid — the stated size is the real size', () => {
@@ -30,10 +32,23 @@ describe('cohortGrid — the stated size is the real size', () => {
   })
 
   it('ADR-021’s early-onset cell is REACHABLE — the thing GRID-EARLY-ONSET-01 said it was not', () => {
-    // experienced + recent_quality_training 'regular' + a 12-week runway (5K/10K).
+    // experienced INTENSITY + intermediate-or-better STRUCTURE (§89/ADR-021 needs
+    // both) + recent_quality_training 'regular' + a 12-week runway (5K/10K).
+    //
+    // ▲ COHORT-GRID-UNSET-LEVEL-01 — this read `g.fitness_level === 'experienced'`,
+    // which the grid set on every row and the wizard never sends. On the production
+    // shape a declaration binds structure DOWNWARD ONLY, so an 'experienced'
+    // declaration at 20 km/week leaves structure at beginner and §89's gate CLOSED.
+    //
+    // 🔑 That is a correction, not a loss, and it is worth the number: the cell was
+    // over-reported by about 45%. `earlyQualityOnsetPct` moves 7.7% -> 4.2% on this
+    // grid because 6,912 rows were being granted early onset at a structural band
+    // production does not give them. Still reachable — which is all this arm claims.
     const cell = grid.filter(i => {
       const g = i as unknown as Record<string, unknown>
-      return g.fitness_level === 'experienced'
+      const lv = derivedLevelsFor(i as unknown as GeneratorInput)
+      return lv.intensity === 'experienced'
+        && lv.structural !== 'beginner'
         && g.recent_quality_training === 'regular'
         && (g.race_distance_km === 5 || g.race_distance_km === 10)
     })

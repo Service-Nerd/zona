@@ -4,6 +4,7 @@ import { generateRulePlan } from './ruleEngine'
 import { GENERATION_CONFIG } from './generationConfig'
 import { isHillStrideWeek, neuromuscularNote } from './neuromuscular'
 import { resolveLevels } from './fitnessAssessment'
+import { derivedLevelsFor } from './ruleEngine'
 import { validatePlan } from './invariants'
 import type { GeneratorInput } from '@/types/plan'
 
@@ -39,7 +40,17 @@ const notesOf = (plan: any): string[] =>
     Object.values(w.sessions).flatMap((s: any) => (s?.coach_notes ?? []) as string[]))
 
 describe('§28 Am.1 — beginners get hill strides', () => {
-  const beginners = sample(i => i.fitness_level === 'beginner', 12)
+  // ▲ COHORT-GRID-UNSET-LEVEL-01 (2026-11-03) — the predicate RESOLVES the level.
+  // It read `i.fitness_level`, which `cohortGrid` set on every row and which the
+  // wizard never sends; the grid now varies the level on `user_declared_level`, so
+  // the old predicate selected NOTHING and the "non-beginners" twin selected
+  // EVERYTHING (`undefined !== 'beginner'`) — that arm went red on a real beginner.
+  //
+  // ⚠️ `derivedLevelsFor`, not `resolveLevels`: it composes `vdotFor` first, which
+  // is what the engine does. Half this grid carries a benchmark, and the VDOT moves
+  // the structural read on thousands of rows.
+  const structuralOf = (i: GeneratorInput) => derivedLevelsFor(i).structural
+  const beginners = sample(i => structuralOf(i) === 'beginner', 12)
 
   it('the sample is real', () => expect(beginners.length).toBeGreaterThan(5))
 
@@ -91,9 +102,9 @@ describe('§28 Am.1 — beginners get hill strides', () => {
   it('🔴 non-beginners are UNCHANGED — they already get real hills', () => {
     // Intermediate and experienced reach hills through the catalogue (43.7% /
     // 40.5%). A second, weaker hill stimulus is not something any seat asked for.
-    for (const input of sample(i => i.fitness_level !== 'beginner', 8)) {
+    for (const input of sample(i => structuralOf(i) !== 'beginner', 8)) {
       const plan = generateRulePlan(input, 'trial', COHORT_PLAN_START, undefined, COHORT_PLAN_START)
-      expect(notesOf(plan).some(n => HILL.test(n)), `${input.fitness_level}`).toBe(false)
+      expect(notesOf(plan).some(n => HILL.test(n)), `${structuralOf(input)}`).toBe(false)
     }
   })
 

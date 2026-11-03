@@ -163,12 +163,130 @@ restatement 2026-11-03): 5K **100%**, 10K **100%**, HM **97.7%**, 50K **100%**, 
 the only distance under the floor, by 5.6pp.** Before `RUNWALK-ASSESSED-LEVEL-01` the same instrument on the same
 corpus read **79.2%**.
 
-⚠️ **Two sibling corpora are still blind the same way and are filed, not fixed:** `cohortGrid`
-(`PARITY-GRID-UNSET-LEVEL-01`'s twin, feeding `cohort:shape`) and `scripts/verify-parity.ts`, whose 6,102 cases all
-carry the field — so parity returns IDENTICAL for any change to a level-gated rule and did exactly that for
+⚠️ **Two sibling corpora were still blind the same way.** 🔑 **`cohortGrid` WAS FIXED LATER THE SAME DAY — see the
+section below; this paragraph is kept as written because the stale half is the point.** `scripts/verify-parity.ts`
+remains level-set, its 6,102 cases all carrying the field — so parity returns IDENTICAL for any change to a level-gated rule and did exactly that for
 `RUNWALK-ASSESSED-LEVEL-01`. **Enumerated 2026-11-03: five rules read `input.fitness_level` raw, three of them dead
 in production** (§117 Am.5 — fixed; §117's peak — `RUNWALK-ASSESSED-LEVEL-01-PEAK`; §28 Am.1's hill strides and
 `INV-PLAN-BEGINNER-NEUROMUSCULAR` — `STRIDE-ASSESSED-LEVEL-01`).
+
+### 🔴 2026-11-03 (later the same day) — the other five corpora, and the engine builds runners better than every instrument said
+
+`COHORT-GRID-UNSET-LEVEL-01`. The item named two grids and three gates. **It was five corpora, feeding all seven steps
+of this protocol** — `cohortGrid` (41,472/41,472 rows), `targetedGrid` (6,144/6,144), `slowGoalGrid` (960/960), charity
+persona M6, the liveness §116 fixture, and `measure-plan-fitness.ts`'s **hand-built injury × masters cohort**, which is
+not a grid, lives in a script, and was the sixth blind harness nobody had enumerated. Exempt with measured reasons:
+the property sweep (`undefined` first-class since 2026-09-02, so 1/4 of cases are production-shaped) and the
+`r23-phase7` matrix (6 of its 17 archetypes take the assessment path and carry explicit `derived_structural` /
+`derived_intensity` assertions).
+
+⚠️ **NOTHING IN THE ENGINE CHANGED. `verify:parity` is IDENTICAL on all 6,102 cases.** Per
+`ZERO-REJECTION-SERVED-01` every number below is a **correction, never an improvement** — and unlike the envelope
+above, the corrections mostly run the *reassuring* way, which is its own hazard.
+
+**What the forced field was doing, measured with `derivedLevelsFor` (the vdot-aware owner) before and after:**
+
+| | structural moves | intensity moves | experienced STRUCTURE | §79's two-band cell |
+|---|---|---|---|---|
+| `cohortGrid` | **19,008 of 41,472 (45.8%)** | **0** | 13,824 → **1,728** | 0 → **19,008** |
+| `targetedGrid` | **4,608 of 6,144 (75.0%)** | 1,536 (25.0%) | — | 0 → 1,536 |
+| `slowGoalGrid` | 480 of 960 (50.0%) | 0 | — | 0 → 480 |
+
+§79 Am.3's **over-claim** shape (declared above the assessed structural band) goes **0 → 19,008** on `cohortGrid`
+and 3,072 → 1,536 on `targetedGrid`; **credible caution** (declared below it) goes 0 → 8,640 and **0 → 1,536** —
+§79's downward arm had no coverage in `targetedGrid` at all, because a forced beginner floor makes a 'beginner'
+declaration a no-op.
+
+⚠️ **The effect is almost entirely STRUCTURAL, which is why no check reading the quality ceiling could see it.** §79
+exists because the two signals can disagree; with the field forced, `structural === intensity` on every row of
+`cohortGrid` and `slowGoalGrid`, so the disagreement was unreachable by `cohort:shape`, `measure:fitness`,
+`invariant:liveness`, `audit:plans` and the strength sweep.
+
+🔴 **THREE OF THE FIGURES IN THIS TABLE WERE WRONG IN MY FIRST WRITE-UP, AND A CODE REVIEW CAUGHT ALL THREE.**
+`cohortGrid` read **25.0%** instead of 45.8% because I called `resolveLevels` without a VDOT, where half the grid
+carries a benchmark; `targetedGrid` read **50.0%**, which is its over-claim count rather than its structural-move
+count; and *"intensity moved on 0 rows, everywhere"* was false for `targetedGrid`. **All three ran in the direction
+of a smaller blast radius** — the direction a dropped stage always errs in.
+
+⚠️ **So: use `derivedLevelsFor`, never `resolveLevels`, for "what level is this plan built at".** It is the owner that
+composes `vdotFor` first and it is what the engine calls; `resolveLevels`'s `vdot` parameter is optional, so omitting
+it compiles and returns a plausible answer. The same trap was live in `invariantLiveness.ts`'s by-shape key in this
+very commit — wrong on 13,824 rows, collapsing 71 real shapes to 45, with the woken count unchanged either way, so it
+was **latent**: a sample quietly smaller than it looks is that file's own most-repeated failure.
+
+🔑 **`measure:fitness` — the figures the §2 Amendment's binding condition was about:**
+
+| cohort | median net build | never builds | marathon peak LR (% of race) |
+|---|---|---|---|
+| healthy standard | 28.6% → **39.4%** | 13.1% → **9.5%** | 61.6 → 66.4 |
+| healthy masters | 17.9% → 17.9% | 19.1% → **14.2%** | 62.8 → 61.6 |
+| INJURY standard | 36.4% → **50.0%** | 0% → 0% | 61.6 → 61.6 |
+
+**The "eighteen weeks that end on the volume you started" figure was overstated by about a third.** The mechanism: a
+forced structural band sets a peak the §2 ramp cannot reach, so the plan reads volume-constrained and flat. Matched to
+the runner, the ramp gets there. `cohort:shape` agrees — `constrainedByInputsPct` **20.6% → 14.1%**,
+`volumeConstrainedPct` 23.8% → 20.7%, `meanDeliveredPeakKm` 40.14 → 37.24, `maintenancePct` 57.4% → 55.9%,
+`difficultyComfortablePct` 20.5% → 24.4% — and **104 more runners get a plan at all**, refusals 1,832 → 1,728.
+
+⚠️ **§89's early quality onset was over-reported by about 45%:** `earlyQualityOnsetPct` **7.7% → 4.2%**. ADR-021 needs
+intermediate-or-better STRUCTURE as well as experienced intensity, and 6,912 rows were being granted it on a band the
+product does not assign.
+
+🔴 **AND THE ONE THAT RUNS THE OTHER WAY — §94 Am.4's delivered-ramp tail, which is 🩹 Willy's standing condition
+(*"watch the tail, not the rate"*). Same instrument, same 1,800-input corpus:**
+
+| segment | firings | p90 | p99 | max |
+|---|---|---|---|---|
+| healthy standard | 147 → 137 | 39 → 36 | 58 → **75** | 58 → **75** |
+| healthy masters | 168 → 146 | 37 → **43** | 52 → **88** | 79 → **88** |
+| **injury** | 51 → 48 | **18 → 42** | **18 → 42** | **18 → 42** |
+
+**The rate fell on every segment and the tail rose on every segment.** Fewer plans breach §2 at delivery; the breaches
+that remain are far bigger. ADR-022's recorded claim that its three levers bind on the injured was measured with
+**every injured row in `targetedGrid` forced to a beginner structural band**, and the levers are structural. Raised
+with the measurement and filed for the board as `INJURY-TAIL-PRODUCTION-SHAPE-01`. Seiler's question re-asked, as the
+file requires: the top is `88 88 75 75 69 58 …` — two pairs then a 6-point step, a recurring week shape rather than a
+clamp, and `verify:parity` proves no engine value moved at all.
+
+✅ **`audit:plans` 2,982 → 2,873 total findings**, and the single `WORSE THAN BASELINE` line is the known one:
+`cohortGrid` NEVER-BUILDS **1,094 → 1,009**, WEEK1-LEAP **24 → 0**, BINGE-SEVERE-75 19 → 11, `targetedGrid`
+NEVER-BUILDS 63 → 32 — against `cohortGrid` **LONG-RUN-SHORT 20 → 56 (+36)**, the same cause and direction as the
+envelope's marathon `LONG-RUN-SHORT` 5.9% → 6.9%. A lower structural band caps the peak long run, so more marathon
+plans fall short of §24's 75%-of-race norm. Re-baselined with that reason.
+
+🔴 **AND THE RE-BASELINE FOLDED IN TWO NUMBERS THAT ARE NOT MINE — declared here because a ratchet that only fails on
+WORSE hides every improvement until someone re-writes it.** `BEGINNER MARATHON` **LONG-RUN-SHORT 1,764 → 839** and
+charity personas **2 → 1** both sit in cohorts that set **neither** level field (`beginnerMarathonGrid` sets no level
+at all), so this change cannot have caused them: they are today's two earlier ships, almost certainly
+`RUNWALK-ASSESSED-LEVEL-01` (`510ceace`), whose whole measured effect was `LONG-RUN-SHORT` 11.5% → 6.9% on exactly
+beginner finish-goal marathoners. **Those commits should have re-baselined `audit:plans` and did not**, so the gate
+stayed green on a 925-finding improvement for two ships. Found by code review, not by the gate.
+
+✅ **Two registers moved the right way, and one did not move:** `rca1026Gates`'s goal-anchored debt **shrinks 2 → 1**
+(`tenk_race_simulation` is reached 30 times now — it selects for the beginner structural band the forced field
+overrode), `LR-PEAK-NOT-LONGEST-01`'s monitor goes **15 → 42 of 600** (doctrine still silent), and
+`invariant:liveness` is **unchanged at 161/164 woken with the same 3 unproven and the same reasons** — because the
+by-shape key was moved onto the RESOLVED levels in the same commit. Left alone it would have become a constant and
+silently folded three level families into one representative, which is the §107 / PEAK-LR-EARNED-TIER / OVERDO-BRAKE
+failure a fourth time.
+
+🔴 **One live defect, quantified rather than re-filed:** 3 of 960 slow-goal rows produce an error-severity
+`INV-PLAN-PEAK-OVER-BASE` (5K, 20 km/week, declared intermediate, assessed beginner-structural — peak 13 km is 108% of
+week 1's 12 km, under §23's 110%, not declared maintenance). That is `S9-HELD-PEAK-CLASSIFY-01`, which the sweep
+already carried as `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`.
+
+⚠️ **What this does not prove.** Nothing about `verify:parity`'s grid, still level-set on all 6,102 cases — so
+IDENTICAL there proved *"I changed no generation code"* and says nothing about level-gated behaviour. Nothing about
+`r23-phase7`'s 11 level-set archetypes. And **neither grid can build a runner the engine ASSESSES as a beginner on
+intensity**: `cohortGrid`'s volumes are 20/35/50/70 against `beginner_max_weekly_km: 20` and its longest runs 8/14/20/28
+against `beginner_max_long_km: 8`, both strictly-less-than — **0 of 47,616 rows**, where the forced field manufactured
+13,824 (`GRID-NO-ASSESSED-BEGINNER-01`).
+
+**Held by `lib/plan/corpusProductionShape.test.ts`**, whose completeness arm is **derived, never listed**: it walks the
+import closure of every script behind the eight coaching gates, resolved from `package.json` and from
+`review-coaching.ts`'s own step table, so it moves when they move (96 modules today).
+
+---
 
 ---
 

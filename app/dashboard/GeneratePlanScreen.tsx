@@ -675,8 +675,14 @@ export default function GeneratePlanScreen({
   // based, uninjured runner (the engine gates it).
   const [recentQuality,  setRecentQuality]  = useState<RecentQuality | null>(null)
   // §79 — the runner's self-selected level. null = accept the engine's
-  // recommendation (which keeps the Phase-1 structural/intensity split); a value
-  // is a deliberate override that sets input.fitness_level.
+  // recommendation (which keeps the Phase-1 structural/intensity split).
+  // ⚠️ THIS COMMENT SAID "a value is a deliberate override that sets
+  // input.fitness_level" until 2026-11-03, and the send site 390 lines below says
+  // the opposite IN CAPITALS: the level goes on `user_declared_level`, accepted or
+  // overridden, and never on `fitness_level` (which would bind peak km). Five
+  // engine rules were built to the version of that sentence that names the
+  // unsettable field (RUNWALK/STRIDE-ASSESSED-LEVEL-01), so the stale half of a
+  // two-place description is not cosmetic.
   const [fitnessLevel,   setFitnessLevel]   = useState<FitnessLevel | null>(null)
 
   // ── Step 6 — Benchmark ───────────────────────────────────────────────────

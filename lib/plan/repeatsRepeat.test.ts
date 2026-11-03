@@ -59,11 +59,45 @@ describe('slow-goal grid: no repeats session with one rep', () => {
   const { planStart, benchmarkDate } = slowGoalDates()
   const today = new Date(Date.parse(`${planStart}T00:00:00Z`) - 7 * 864e5).toISOString().slice(0, 10)
   const plans: { plan: Plan; input: GeneratorInput }[] = []
+  // 🔴 COHORT-GRID-UNSET-LEVEL-01 (2026-11-03) — THE THROW IS COLLECTED, NOT SWALLOWED.
+  //
+  // `runEngine` surfaces a refusal as a value but lets an error-severity invariant
+  // violation THROW under NODE_ENV=test, and this loop ran at module level, so a single
+  // violating row made the whole FILE fail to collect — "no tests", which reads very
+  // differently in CI from a gate going red (the same lesson `deliveredRampTail` records).
+  //
+  // Three rows now violate, and they are a KNOWN FILED DEFECT, not fallout from this
+  // change: `S9-HELD-PEAK-CLASSIFY-01` — the maintenance classification is decided from
+  // the volume curve BEFORE the final weekday-cap pass and reads the stale, higher total,
+  // so a plan that stops building is not declared maintenance. Measured on the slow grid
+  // 0 -> 3 of 960 (all 5K, 20 km/week, declared intermediate, assessed beginner-structural
+  // / intermediate-intensity: peak 13 km is 108% of week 1's 12 km, under §23's 110%).
+  // It was invisible here because the grid forced `fitness_level: 'intermediate'`, which
+  // held those runners on an intermediate STRUCTURAL band production does not give them.
+  // The sweep already carries the same defect as `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`.
+  //
+  // Counted and asserted below so the debt cannot grow silently — the SWEEP-BASELINE-01
+  // pattern, not a try/catch that hides it.
+  const violating: string[] = []
   for (const c of slowGoalGrid(planStart, benchmarkDate)) {
     const { gap, ...input } = c
-    const o = runEngine({ input: input as unknown as GeneratorInput, tier: 'paid', displayUnits: 'km', planStart, today })
+    void gap
+    let o: ReturnType<typeof runEngine>
+    try {
+      o = runEngine({ input: input as unknown as GeneratorInput, tier: 'paid', displayUnits: 'km', planStart, today })
+    } catch (e) {
+      const msg = String((e as Error).message)
+      const codes = msg.match(/\[ERROR\] ([A-Z0-9-]+)/g) ?? ['(unparsed)']
+      violating.push(`${input.race_distance_km}k ${input.user_declared_level}: ${codes.join(',')}`)
+      continue
+    }
     if (o.kind !== 'refusal') plans.push({ plan: o.plan as Plan, input: input as unknown as GeneratorInput })
   }
+
+  it('the only rows that fail to generate are S9-HELD-PEAK-CLASSIFY-01\'s, and there are still 3', () => {
+    expect(violating.length, `rows throwing an error-severity violation:\n${violating.join('\n')}`).toBe(3)
+    for (const v of violating) expect(v).toContain('INV-PLAN-PEAK-OVER-BASE')
+  })
 
   it('🔴 INV-PLAN-REPEATS-REPEAT is silent on every served plan', () => {
     const hits = plans.flatMap(p => validatePlan(p.plan, p.input).filter(v => v.code === 'INV-PLAN-REPEATS-REPEAT'))
@@ -72,7 +106,10 @@ describe('slow-goal grid: no repeats session with one rep', () => {
   it('the slowest runners get Cruise intervals in that slot, at two reps', () => {
     // HM, intermediate, a 7:30 marathon benchmark: the 18 measured sessions (week 11 Wednesday, peak).
     const slow = plans.filter(p => p.input.race_distance_km === 21.1
-      && (p.input as { benchmark?: { time?: string } }).benchmark?.time === '7:30:00' && p.input.fitness_level === 'intermediate')
+      && (p.input as { benchmark?: { time?: string } }).benchmark?.time === '7:30:00'
+      // ▲ COHORT-GRID-UNSET-LEVEL-01 — the slow grid varies the level on the field the
+      // wizard sends; `fitness_level` is undefined on every row now.
+      && p.input.user_declared_level === 'intermediate')
     const sessions = slow.map(p => p.plan.weeks.find(w => w.n === 11)?.sessions.wed).filter(Boolean) as Session[]
     const cruise = sessions.filter(s => s.catalogue_id === 'tempo_cruise')
     expect(cruise.length).toBe(18)

@@ -1,5 +1,5 @@
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
-import { generateRulePlan } from '@/lib/plan/ruleEngine'
+import { generateRulePlan, derivedLevelsFor } from '@/lib/plan/ruleEngine'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import { validatePlan, validateMaintenanceBlock, INVARIANT_CODES, type Violation } from '@/lib/plan/invariants'
 import { validateBaseBuildBlock, validateStagedRace } from '@/lib/plan/baseBuildValidate'
@@ -1023,7 +1023,33 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
   // the sampling as if it were the engine.
   const byShape = cohortGrid().filter(i => {
     const r = i as unknown as { race_distance_km?: number; longest_recent_run_km?: number }
-    const k = `${(i as {race_distance_km?: number}).race_distance_km}|${(i as {fitness_level?: string}).fitness_level}|${(i as {goal?: string}).goal}`
+    // COHORT-GRID-UNSET-LEVEL-01 (2026-11-03) — the level component is the RESOLVED
+    // pair, not the raw input field, and leaving it alone would have silently
+    // collapsed this key.
+    //
+    // The grid now varies the level on `user_declared_level`, so
+    // `i.fitness_level` is `undefined` on all 41,472 rows: the component the key
+    // used would have become a CONSTANT, folding three level families into one
+    // representative and de-proving every level-gated invariant the bulk reaches.
+    // That is the `§107 / PEAK-LR-EARNED-TIER / OVERDO-BRAKE` failure a fourth
+    // time — the shape key must contain the field the rule is gated on.
+    //
+    // It carries BOTH levels because §79 keeps them apart: structure gates volume
+    // and long-run caps, intensity gates the quality ceiling, and the grid now
+    // produces 10,368 rows where they DIFFER (intermediate structure, experienced
+    // intensity) — a family that did not exist before and which one component
+    // cannot distinguish.
+    // 🔴 `derivedLevelsFor`, NOT `resolveLevels` — and my first cut of this line was the
+    // exact trap `corpusProductionShape.test.ts` warns about, three files away (code
+    // review, 2026-11-03). `resolveLevels`'s `vdot` is optional, so omitting it compiles
+    // and returns a plausible level; `derivedLevelsFor` composes `vdotFor` first, which
+    // is what the engine builds the plan with. **Half this grid carries a benchmark**, so
+    // the VDOT-less read is wrong on 13,824 of 41,472 rows and cannot express
+    // `beginner/intermediate` or `beginner/experienced` at all — it collapsed 71 real
+    // shapes to 45. The woken count was unchanged either way, so it was latent: a sample
+    // quietly smaller than it looks is this file's own most-repeated failure.
+    const lv = derivedLevelsFor(i)
+    const k = `${(i as {race_distance_km?: number}).race_distance_km}|${lv.structural}/${lv.intensity}|${(i as {goal?: string}).goal}`
       + `|${(r.longest_recent_run_km ?? 0) >= (r.race_distance_km ?? 0) * 0.85 ? 'deep' : 'shallow'}`
       // Extended 2026-10-06 with a SECOND longest-run bit, and it is the FOURTH
       // time the sample has been the bug rather than the rules. The 0.85 bit
@@ -1039,11 +1065,12 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
       // to move when the rule moves, and a second copy of the threshold here is
       // how this key would silently stop distinguishing the thing it was added
       // for — the same fault as `INJURY-GUARD-PREDICATE-01`.
-      // ▲ RUNWALK-ASSESSED-LEVEL-01 — the gate takes the RESOLVED structural level.
-      // `cohortGrid` rows all carry `fitness_level`, which wins inside `resolveLevels`
-      // outright, so this key is unchanged by the fix — and that identity is the
-      // point: it is why a mutation woke the rule here while production never did.
-      + `|${runWalkPrescriptionApplies(i, resolveLevels(i).structural) ? 'unready' : 'ready'}`
+      // ▲ RUNWALK-ASSESSED-LEVEL-01 — the gate takes the RESOLVED structural level,
+      // from the one `resolveLevels` call above rather than a second one.
+      // ⚠️ THIS COMMENT USED TO SAY "this key is unchanged by the fix", which was true
+      // of that fix and is the reason COHORT-GRID-UNSET-LEVEL-01 had to touch it: the
+      // identity held only while the grid forced `fitness_level`.
+      + `|${runWalkPrescriptionApplies(i, lv.structural) ? 'unready' : 'ready'}`
     if (seen.has(k)) return false
     seen.add(k)
     return true
@@ -1204,7 +1231,9 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
   {
     const input = {
       race_distance_km: 42.195, race_date: '2027-04-25', days_available: 4,
-      goal: 'finish', fitness_level: 'beginner', current_weekly_km: 8,
+      // COHORT-GRID-UNSET-LEVEL-01 — no `fitness_level`; 8 km/week with a 3 km
+      // longest run assesses beginner anyway, so this is behaviour-neutral.
+      goal: 'finish', current_weekly_km: 8,
       longest_recent_run_km: 3, age: 32, injuries: [], recent_quality_training: 'none',
       training_age: '<6mo',
     } as unknown as GeneratorInput

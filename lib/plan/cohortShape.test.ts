@@ -168,8 +168,14 @@ describe('GRID-COVERAGE — an axis that is never varied cannot verify anything'
   // Deliberately excluded fields are LISTED WITH REASONS rather than silently
   // absent, the SWEEP-BASELINE-01 debt-register pattern: the list is the thing a
   // reviewer reads, and adding to it is a decision someone has to write down.
+  //
+  // ▲ COHORT-GRID-UNSET-LEVEL-01 (2026-11-03) — the level axis is
+  // `user_declared_level`, not `fitness_level`. The grid used to set the latter on
+  // all 41,472 rows; it is the API's structural override, no production caller
+  // sends it, and it made `structural === intensity` everywhere. This list is the
+  // thing a reviewer reads, so the field it names has to be the one a runner sends.
   const VARIED_REQUIRED = [
-    'race_distance_km', 'current_weekly_km', 'fitness_level', 'days_available',
+    'race_distance_km', 'current_weekly_km', 'user_declared_level', 'days_available',
     'max_weekday_mins', 'goal', 'training_age', 'benchmark', 'age',
     'recent_quality_training',
   ] as const

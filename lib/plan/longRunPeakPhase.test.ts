@@ -95,7 +95,25 @@ const measured: Measured = (() => {
  * rise. Lower it in the commit that improves it; raise it only with a declared
  * reason, exactly as `cohort:shape` and `measure:fitness` require.
  */
-const INVERTED_BASELINE = 15
+/**
+ * 🔴 RAISED 15 -> 42 by COHORT-GRID-UNSET-LEVEL-01 (2026-11-03), with the reason the
+ * header above demands. **THE ENGINE DID NOT CHANGE** — `verify:parity` is IDENTICAL on
+ * all 6,102 cases. The corpus did: `cohortGrid` forced `fitness_level`, the API
+ * structural override no production caller sends, so every figure this file has ever
+ * produced described a runner shape the product cannot build. **42 of 600 (7.0%) against
+ * 15 of 600 (2.5%), still every one of them in the BUILD phase.**
+ *
+ * WHY THE PRODUCTION SHAPE INVERTS MORE: a declaration binds structure DOWNWARD ONLY
+ * (§79), so 19,008 of 41,472 rows now sit on a LOWER structural band than the grid used
+ * to force — experienced structure 13,824 -> 1,728. A lower band caps the peak phase's
+ * long run while the build phase's is set by the runner's own longest recent run, which
+ * is unchanged. The inversion is the gap between those two, and it widens.
+ *
+ * ⚠️ DOCTRINE IS STILL SILENT on whether this is wrong (`LR-PEAK-NOT-LONGEST-01`, open),
+ * so this is a watch, not a breach — but the number the open item carries is now 2.8x
+ * what it was, on the population that actually exists, and the item says so.
+ */
+const INVERTED_BASELINE = 42
 
 describe('LR-PEAK-NOT-LONGEST-01 — the peak phase vs the plan\'s longest run, watched', () => {
   it('the population is real — a gate over nothing is not a gate', () => {

@@ -11,7 +11,7 @@
     },
     "INJURY  standard": {
       "n": 3003,
-      "medianBuildPct": 36.4,
+      "medianBuildPct": 50,
       "neverBuildsPct": 0,
       "medianMarathonLrPctOfRace": 61.6,
       "grids": {
@@ -22,20 +22,20 @@
     "healthy masters ": {
       "n": 6712,
       "medianBuildPct": 17.9,
-      "neverBuildsPct": 19.1,
-      "medianMarathonLrPctOfRace": 62.8,
+      "neverBuildsPct": 14.2,
+      "medianMarathonLrPctOfRace": 61.6,
       "grids": {
         "cohort": 6709,
         "constructed": 3
       }
     },
     "healthy standard": {
-      "n": 9673,
-      "medianBuildPct": 28.6,
-      "neverBuildsPct": 13.1,
-      "medianMarathonLrPctOfRace": 61.6,
+      "n": 9710,
+      "medianBuildPct": 39.4,
+      "neverBuildsPct": 9.5,
+      "medianMarathonLrPctOfRace": 66.4,
       "grids": {
-        "cohort": 6670,
+        "cohort": 6707,
         "targeted": 3000,
         "constructed": 3
       }

@@ -195,7 +195,12 @@ export const PLAN_PERSONAS: CharityPersona[] = [
     expectRefusal: true,
     input: { race_distance_km: 42.2, goal: 'finish', current_weekly_km: 4,
       longest_recent_run_km: 2, days_available: 4, age: 34,
-      fitness_level: 'beginner', training_age: '6-18mo',
+      // COHORT-GRID-UNSET-LEVEL-01 — no `fitness_level` here. It was the only
+      // persona in this corpus carrying the API structural override, and this one
+      // is BEHAVIOUR-NEUTRAL (4 km/week with a 2 km longest run assesses beginner
+      // either way). Removed anyway, so the next sweep of "which corpus is still
+      // level-set" has nothing to find in this file.
+      training_age: '6-18mo',
       recent_quality_training: 'none', hard_session_relationship: 'neutral',
       injury_history: [], max_hr: 186,
       acknowledged_days_warning: true, acknowledged_prep_warning: true } as never,

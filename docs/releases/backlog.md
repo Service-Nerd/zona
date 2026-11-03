@@ -338,34 +338,155 @@ field; §21's injury bar removed; the invariant's gate back to the raw field), e
 ⚠️ **What this does not prove:** nothing about `cohortGrid`, which `beginnerHills.test.ts`'s original arms sample
 and which is still level-set — the **sixth** blind harness for this rule (`COHORT-GRID-UNSET-LEVEL-01`).
 
-### 🔴 `COHORT-GRID-UNSET-LEVEL-01` — `cohortGrid` still sets `fitness_level`, so the three gates CLAUDE.md names for an engine change are blind *(filed 2026-11-03)* ⚙️ **NO BOARD** — 🏃 **BOARD-MANDATED PREREQUISITE**
+### ✅ `COHORT-GRID-UNSET-LEVEL-01` — **SHIPPED 2026-11-03.** Every coaching measurement corpus now carries the shape the wizard posts ⚙️ **NO BOARD** — 🏃 the board's binding condition is DISCHARGED
 
-🔴 **Found by code review of today's two ships, and it is the sharpest of the three findings.**
-`RUNWALK-ASSESSED-LEVEL-01` (`510ceace`) changed what the engine prescribes to 768 distinct runner profiles and
-**moved not one committed baseline** — `envelopeBaseline.json` was byte-identical at that commit, and no
-`cohortShapeBaseline`, `planFitnessBaseline` or liveness fixture changed. Because `cohortGrid.ts:180/275` and
-`targetedGrid` set `fitness_level` on every row, **`cohort:shape`, `measure:fitness` and `invariant:liveness` could
-not see it.** Only the envelope was corrected, one commit later, so that single re-baseline entangles two effects.
+🔴 **The item named two grids and three gates. It was FIVE corpora feeding ALL SEVEN steps of `review:coaching`.**
+Re-measured before planning against it, per the re-measure rule: `cohortGrid` 41,472 of 41,472 rows, `targetedGrid`
+6,144 of 6,144, `slowGoalGrid` 960 of 960, charity persona M6, the liveness §116 fixture, and
+`measure-plan-fitness.ts`'s **hand-built injury × masters cohort** — which is not a grid, lives in a script, and was
+the sixth blind harness nobody had enumerated. Exempt with measured reasons: the property sweep (`undefined` is
+first-class, 1/4 of cases production-shaped) and the `r23-phase7` matrix (6 of 17 archetypes are assessment-path with
+explicit `derived_*` assertions).
 
-**CLAUDE.md names those three as the gates for an engine change** — *"did my change reshape WHO GETS WHAT KIND OF
-PLAN?"*, *"does this plan actually BUILD the runner?"*, *"can each rule still be made to FAIL?"* All three answer
-for a population the wizard cannot post. `measure:fitness`'s headline figures (healthy masters never-builds 19.1%,
-healthy standard 13.1%) describe that same fiction.
+**THE ENGINE DID NOT CHANGE: `verify:parity` IDENTICAL, 6,102 cases byte-for-byte.** Only the corpora moved.
 
-⚠️ **AND IT CARRIED NO ITEM AND NO GATE UNTIL NOW.** I named it in prose in three documents today and filed
-items for the envelope and the parity grid while leaving the one that feeds three gates unfiled. **A gap named in
-prose is not a gap filed.**
+🔑 **What the forced field was hiding, measured with `derivedLevelsFor` before and after:**
 
-🏃 **BINDING CONDITION (Coaching Board 2026-11-03, Willy + chair):** this must be de-blinded **before any
-week-1 dose change is proposed**, because §2 Amendment's ratified evidence (*"47/47 hazardous steps flag, 0/28
-benign"*) was counted on it, and **no future ruling may cite `measure:fitness` figures until it is fixed.** See
-`WEEK1-HAZARD-UNREACHABLE-01`.
+| | structural moves | intensity moves | experienced STRUCTURE | §79's two-band cell (structural ≠ intensity) |
+|---|---|---|---|---|
+| `cohortGrid` | **19,008 of 41,472 (45.8%)** | **0** | 13,824 → **1,728** | 0 → **19,008** |
+| `targetedGrid` | **4,608 of 6,144 (75.0%)** | 1,536 (25.0%) | — | 0 → 1,536 |
+| `slowGoalGrid` | 480 of 960 (50.0%) | 0 | — | 0 → 480 |
 
-**Scope:** vary the level through `user_declared_level` as `useCaseEnvelope` now does, or add the absent level as a
-first-class value. Either re-baselines `cohortShapeBaseline.json`, `planFitnessBaseline.json`,
-`cohortReviewBaseline.json` and the liveness baseline, so it needs a declared reason per the re-baselining rule —
-and it will likely reveal more dead level-gated rules, which is the point. Pair with
-`PARITY-GRID-UNSET-LEVEL-01`; same root, different grid.
+⚠️ **Intensity moved on 0 rows in `cohortGrid` and `slowGoalGrid`**, and on 1,536 of `targetedGrid` (the rows that
+declare nothing, whose intensity the forced field pinned to beginner). The effect is almost entirely structural, which
+is why it was invisible to every check reading the quality ceiling. §79's two-signal DISAGREEMENT — the entire reason
+§79 exists — was unreachable by `cohort:shape`, `measure:fitness`, `invariant:liveness`, `audit:plans` and the
+strength sweep. §79 Am.3's over-claim shape goes **0 → 19,008** on `cohortGrid` and credible caution 0 → 8,640.
+
+⚠️ **THREE OF THESE FIGURES WERE WRONG IN MY FIRST WRITE-UP AND A CODE REVIEW CAUGHT THEM.** `cohortGrid` read 25.0%
+(not 45.8%) because I called `resolveLevels` without a VDOT where half the grid carries a benchmark — **use
+`derivedLevelsFor`**, the owner the engine itself calls. `targetedGrid` read 50.0% (the over-claim count, not the
+structural-move count) and *"intensity moved on 0 rows, everywhere"* was false for it. All three errors ran in the
+direction of a smaller blast radius.
+
+🔑 **AND THE ENGINE BUILDS RUNNERS BETTER THAN EVERY INSTRUMENT HAS BEEN SAYING.** `measure:fitness`, same corpus:
+
+| cohort | median net build | **never builds** |
+|---|---|---|
+| healthy standard | 28.6% → **39.4%** | 13.1% → **9.5%** |
+| healthy masters | 17.9% → 17.9% | 19.1% → **14.2%** |
+| INJURY standard | 36.4% → **50.0%** | 0% → 0% |
+
+**The "eighteen weeks that end on the volume you started" figure was overstated by a third.** A forced structural band
+sets a peak the ramp cannot reach, so plans read volume-constrained and flat; matched to the runner, the ramp gets
+there. `cohort:shape` agrees: `constrainedByInputsPct` **20.6% → 14.1%**, `volumeConstrainedPct` 23.8% → 20.7%,
+`meanDeliveredPeakKm` 40.14 → 37.24, `maintenancePct` 57.4% → 55.9%, `earlyQualityOnsetPct` **7.7% → 4.2%**, `difficultyComfortablePct` 20.5% → 24.4%. **And 104 more runners get a plan at all** — refusals 1,832 → 1,728 of 41,472.
+
+⚠️ **§89's early onset was over-reported by about 45%**, which is the one to keep: ADR-021 needs intermediate-or-better STRUCTURE as well as experienced intensity, and 6,912 rows were being granted it on a band production does not give them. `cohortGridSize.test.ts`'s reachability arm now resolves both levels instead of reading the raw field.
+
+🔴 **BUT THE INJURY TAIL TRIPLED, AND IT IS WILLY'S STANDING CONDITION.** §94 Am.4's delivered-ramp tail, trimable arm,
+same instrument and corpus size: **injury p90 18 → 42, p99 18 → 42, max 18 → 42**; healthy standard p99 58 → 75;
+masters max 79 → 88. **The RATE fell on every segment (366 → 331 firings) and the TAIL rose on every segment** — fewer
+plans breach §2 at delivery, and the breaches that remain are far bigger. ADR-022's recorded claim that its three
+levers bind on the injured was measured on a corpus where **every injured row was forced to a beginner structural
+band**, and the levers are structural. Filed as `INJURY-TAIL-PRODUCTION-SHAPE-01` 🏃 and the baseline was raised with
+the full measurement, not to go green.
+
+✅ **Two registers moved the right way.** `rca1026Gates`'s goal-anchored debt **shrinks 2 → 1** (`tenk_race_simulation`
+is reached 30 times now — it selects for the beginner structural band the forced field overrode).
+✅ **`audit:plans` 2,982 → 2,873 total findings, and the ONE metric that got worse is the known one.**
+`cohortGrid` NEVER-BUILDS **1,094 → 1,009**, WEEK1-LEAP **24 → 0**, BINGE-SEVERE-75 19 → 11, `targetedGrid`
+NEVER-BUILDS 63 → 32 — and `cohortGrid` **LONG-RUN-SHORT 20 → 56 (+36)**, the only `WORSE THAN BASELINE` line.
+Same cause and same direction as the envelope's marathon `LONG-RUN-SHORT` 5.9% → 6.9%: a lower structural band caps
+the peak long run, so more marathon plans fall short of §24's 75%-of-race norm. **It is the top contributor to the
+marathon's remaining 15.6%**, now measured on the population that exists. Re-baselined with that reason.
+
+🔴 **AND THE RE-BASELINE FOLDED IN TWO NUMBERS THAT ARE NOT MINE — declared here because a ratchet that only fails on
+WORSE hides every improvement until someone re-writes it.** `BEGINNER MARATHON` **LONG-RUN-SHORT 1,764 → 839** and
+charity personas **2 → 1** both sit in cohorts that set **neither** level field (`beginnerMarathonGrid` sets no level
+at all), so this change cannot have caused them: they are today's two earlier ships, almost certainly
+`RUNWALK-ASSESSED-LEVEL-01` (`510ceace`), whose whole measured effect was `LONG-RUN-SHORT` 11.5% → 6.9% on exactly
+beginner finish-goal marathoners. **Those commits should have re-baselined `audit:plans` and did not**, so the gate
+stayed green on a 925-finding improvement for two ships. Found by code review, not by the gate.
+
+`invariant:liveness` is **unchanged at 161/164 woken, same 3 unproven, same reasons** — the shape key was moved onto
+the resolved levels in the same commit, which is what stopped the sample collapsing.
+
+🔴 **And it surfaced one live defect, already filed and now quantified.** 3 of 960 slow-goal rows produce an
+error-severity `INV-PLAN-PEAK-OVER-BASE` (5K, 20 km/week, declared intermediate, assessed beginner-structural: peak
+13 km is 108% of week 1's 12 km, under §23's 110%, not declared maintenance). That is `S9-HELD-PEAK-CLASSIFY-01`, which
+the sweep already carried as `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`. **Register reconciled, not re-filed.**
+
+**Gate:** `lib/plan/corpusProductionShape.test.ts` — 10 arms, three kinds, and each kind earns its place:
+**(1)** behavioural, every row of all five corpora; **(2)** a **derived** completeness arm that walks the import closure
+of every script behind the eight coaching gates (resolved from `package.json` and `review-coaching.ts`'s own step
+table, so it moves when they move — 96 modules) and fails on any unexempted `fitness_level` write, with 3 exemptions
+each naming its reason; **(3)** positive arms, because (1) and (2) are both satisfied by DELETING the level axis.
+**Falsified 7 ways, each on the arm it should be**: the field restored in each of the five corpora (and **M5 —
+`measure-plan-fitness`'s script cohort — fires arm 2 ALONE**, which is the arm earning its keep); the axis deleted
+entirely (arm 3 alone); and the closure collapsed (the vacuity guard).
+
+⚠️ **What this does not prove.** Nothing about `verify:parity`'s own grid — all 6,102 cases still carry the field, so
+IDENTICAL here proves the engine untouched and says nothing about level-gated behaviour
+(`PARITY-GRID-UNSET-LEVEL-01`, open). Nothing about `r23-phase7`'s 11 level-set archetypes. And **neither grid can
+build a runner whose ASSESSED intensity is beginner** — `cohortGrid`'s volumes are 20/35/50/70 against
+`beginner_max_weekly_km: 20` and its longest runs 8/14/20/28 against `beginner_max_long_km: 8`, both strictly-less-than,
+so it sits exactly one unit above the band on both axes: 0 of 41,472 rows. The forced field manufactured 13,824 of
+them. Filed as `GRID-NO-ASSESSED-BEGINNER-01`.
+
+---
+
+### 🔴 `INJURY-TAIL-PRODUCTION-SHAPE-01` — the injured delivered-ramp tail is 42%, not 18%, and ADR-022's lever claim was measured on a forced structural band *(filed 2026-11-03)* 🏃 **COACHING BOARD** (Willy's standing condition)
+
+Found by `COHORT-GRID-UNSET-LEVEL-01`. 🩹 Willy's condition on withdrawing `ADR022-V1-DELIVERED-RISE-01` was
+*"watch the tail, not the rate"*. On the production shape, same instrument, same 1,800-input corpus:
+
+| segment | firings | p90 | p99 | max |
+|---|---|---|---|---|
+| healthy standard | 147 → 137 | 39 → 36 | 58 → **75** | 58 → **75** |
+| healthy masters | 168 → 146 | 37 → **43** | 52 → **88** | 79 → **88** |
+| **injury** | 51 → 48 | **18 → 42** | **18 → 42** | **18 → 42** |
+
+**The rate and the tail moved in opposite directions on every segment.** `verify:parity` is IDENTICAL, so the engine
+did not change: `targetedGrid` forced `fitness_level: 'beginner'` on all 6,144 rows, 4,608 of them injured, and
+ADR-022's three levers (deload re-anchored to the post-cap prior week, the injury peak week yielding its 2nd quality,
+easy runs trimming while §52's long run never does) are **structural**. At 30 km/week with a 12 km longest run the
+assessment is INTERMEDIATE, so the levers bind differently.
+
+⚠️ **`deliveredRampTail.test.ts`'s own prose still reads *"Injury maxes at 18% against healthy-standard 105%…
+ADR-022's three levers bind on the injured"*** — raised to 42 with the measurement in the baseline comment, but the
+sentence above it is the sitting's headline and it is now in question. **The board needs to see this before the next
+load ruling.** Not a refusal threshold: §2 Am.2 freezes the predicate until outcome data exists and §94 Am.3 records
+that *"any non-zero tolerance is an invented number"*.
+
+---
+
+### 🔲 `GRID-NO-ASSESSED-BEGINNER-01` — neither measurement grid can build a runner the engine ASSESSES as a beginner on intensity *(filed 2026-11-03)* ⚙️ **NO BOARD**
+
+Found by `COHORT-GRID-UNSET-LEVEL-01`, measured with `derivedLevelsFor` over both grids:
+
+| grid | `assessedStructural` / `assessedIntensity`, before any declaration |
+|---|---|
+| `cohortGrid` (41,472) | intermediate/intermediate 15,552 · beginner/intermediate 15,552 · experienced/experienced 5,184 · beginner/experienced 5,184 |
+| `targetedGrid` (6,144) | intermediate/intermediate **6,144** |
+
+**`assessedIntensity === 'beginner'` on 0 of 47,616 rows.** `FITNESS_VOLUME_THRESHOLDS` is
+`beginner_max_weekly_km: 20` / `beginner_max_long_km: 8`, both strictly-less-than, and the grid's volumes are
+20/35/50/70 with longest runs 8/14/20/28 — **exactly one unit above the band on both axes.** The forced `fitness_level`
+manufactured 13,824 such rows, which is why nobody noticed.
+
+**What that makes unreachable by assessment:** `QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0`, §110 Am.2's conditional
+ceiling, §79's returning-runner intensity lift, and any upward declaration that actually LIFTS intensity (the
+charity over-claim case — `targetedGrid.test.ts`'s UPWARD arm now constructs its own base and says so). Reached today
+only by a DECLARATION, by the three charity `*d` personas, by the envelope, and by the sweep.
+
+**Fix:** add a volume below 20 to `cohortGrid`'s `VOLUMES` (or a longest-run value below 8). Either widens an
+exhaustive 41,472-row grid by a third and **re-baselines `cohortShapeBaseline`, `planFitnessBaseline` and the liveness
+baseline**, so it needs a declared reason — and `targetedGrid` is already 39% of the whole suite's test time
+(`CI-SLOW-DRIFT-01`), so the cost belongs in the decision.
+
+---
 
 ### 🔲 `PARITY-GRID-UNSET-LEVEL-01` — the parity grid sets `fitness_level` on all 6,102 cases, so it is blind to the production shape of every level-gated rule *(filed 2026-11-03)* ⚙️ **NO BOARD**
 
@@ -381,6 +502,20 @@ item and not a line in the fix. ⚠️ Worth doing with a sweep of which other r
 raw; `RUNWALK-ASSESSED-LEVEL-01` found two and §79's quality ceiling was a third, so the population is at
 least three and has never been enumerated.
 
+🔑 **EXERCISED AGAIN 2026-11-03 by `COHORT-GRID-UNSET-LEVEL-01`, and this time IDENTICAL was the RIGHT answer** — that
+change touched five corpora and no engine code, so byte-for-byte identity on 6,102 cases is exactly the proof it
+needed. **Both halves are worth keeping straight:** parity generates from its own grid, so it proves *"I changed no
+generation code"*, and it still cannot see *"this rule behaves differently on the shape a runner posts"*. Quoting the
+first as the second is this item.
+
+✅ **AND THE ENUMERATION THIS ITEM ASKS FOR IS DONE** (2026-11-03, grep over `lib/plan`, `lib/coaching`, `app/api`).
+**Three live reads of raw `input.fitness_level` remain, and all three are correct:**
+`fitnessAssessment.ts:200-201` (the owner's own API-override rung, which is what the field IS),
+`engine.ts:426` (`fitness_level_api_override` on designed-refusal telemetry — it records whether the override was
+used, so reading it raw is the point), and `runWalkPlan.ts:182` (§117's peak gate, **held raw deliberately** with the
+whole finding in the comment, pending `RUNWALK-ASSESSED-LEVEL-01-PEAK`). The two dead ones found on 2026-11-03 were
+fixed (§117 Am.5's prescription gate, §28 Am.1's hill strides + `INV-PLAN-BEGINNER-NEUROMUSCULAR`).
+`invariants.ts:1056` reads it as the **third** rung of a ladder behind `plan.meta`, which is correct for a checker.
 
 ### ✅ `ENVELOPE-UNSET-LEVEL-01` — **SHIPPED 2026-11-03.** The quality instrument now measures the population the wizard posts ⚙️ **NO BOARD** (corpus); 👤 **FOUNDER** approved the floor restatement
 
@@ -771,6 +906,13 @@ clone (10K, 7 days, 40 km/week, 30-min weekdays) then peaks at 108% of week 1, u
 declaration. The classification (`planIsMaintenance` / `volume_profile`) is decided from the volume curve before that pass
 and read the stale, higher total. Recorded as sweep debt `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`. Fix: re-run the
 peak-over-base classification on delivered `weekly_km` after the last pass that moves volume; measure how many plans flip.
+
+🔑 **QUANTIFIED 2026-11-03 by `COHORT-GRID-UNSET-LEVEL-01`: 0 -> 3 of 960 on the real slow-goal grid.** It was
+invisible there because the grid forced `fitness_level: 'intermediate'`, which held those runners on an intermediate
+STRUCTURAL band production does not give them; on the production shape their VDOT reads beginner and structure follows
+it down. All three are 5K, 20 km/week, declared intermediate — peak 13 km against week 1's 12 km. The sweep's
+`INV-PLAN-PEAK-OVER-BASE@slow-goal: 1` and these three are the same defect, and
+`repeatsRepeat.test.ts` now asserts the count is **exactly 3** so the debt cannot grow silently.
 
 ---
 
@@ -1536,6 +1678,14 @@ The note now opens *"Your longest run **in the peak weeks** tops out at X"*. §8
 ---
 
 ### ✅ `LR-PEAK-NOT-LONGEST-01` — **SHIPPED 2026-10-10 AS A MONITOR ONLY. The 10.8% was a tie-break artefact and the defect has ZERO cases** 🏃 **COACHING BOARD** *(founder signed off, then re-approved the reduced scope when the number was corrected)*
+
+🔴 **THE MONITOR'S NUMBER IS 2.8x WHAT IT WAS, ON THE POPULATION THAT ACTUALLY EXISTS** (2026-11-03,
+`COHORT-GRID-UNSET-LEVEL-01`): **15 of 600 (2.5%) -> 42 of 600 (7.0%)**, still every one in the BUILD phase, and
+`verify:parity` IDENTICAL so **the engine did not change** — `cohortGrid` forced `fitness_level`. A declaration binds
+structure downward only, so 19,008 rows now sit on a lower structural band (experienced structure 13,824 -> 1,728);
+that caps the PEAK phase's long run while the BUILD phase's is set by the runner's own longest recent run, which is
+unchanged. The inversion is the gap between the two, and it widens. Doctrine is still silent (this stays a `warn`
+monitor), but the figure the ruling was reduced against was measured on a shape the product cannot build.
 
 🔴 **I GOT SIGN-OFF ON A NUMBER THAT WAS WRONG AND HAD TO GO BACK FOR IT.** The board and the founder both ruled on **309 of 2,872 (10.8%)**, measured by keeping the **first** maximum met — and base weeks come first, so every plan whose long run **never grows** (10km, 10km, 10km, 10km) counted as an inversion. **A flat long run is not a backwards one.** Strictly: **0 of 2,294 (0.0%)**; ties **312**. Same flaw already recorded for `INV-PLAN-PEAK-IN-PEAK-PHASE`, a lesson I cited the same day.
 

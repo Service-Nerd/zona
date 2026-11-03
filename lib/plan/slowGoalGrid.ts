@@ -51,23 +51,37 @@ export const SLOW_DISTANCES = [
 
 export type SlowGoalCase = {
   race_distance_km: number; race_date: string; goal: 'time_target'; target_time: string; benchmark: { type: string; distance_km: number; time: string; benchmark_date: string }
-  fitness_level: 'beginner' | 'intermediate'; days_available: number; current_weekly_km: number; longest_recent_run_km: number
+  user_declared_level: 'beginner' | 'intermediate'; days_available: number; current_weekly_km: number; longest_recent_run_km: number
   max_weekday_mins?: number; age: number; training_age: '1-2yr'; recent_quality_training: 'occasional'; injury_history: []
   acknowledged_prep_warning: true; gap: number
 }
 
 /** Every case, deterministic: 5 benchmarks × 4 distances × 4 gaps × 2 levels × 3 day counts × 2 weekday budgets. */
+/**
+ * COHORT-GRID-UNSET-LEVEL-01 (2026-11-03) — the level axis is `user_declared_level`.
+ * It was `fitness_level`, which is the API's STRUCTURAL override and which no
+ * production caller sends; the wizard posts `user_declared_level` on every
+ * generation (§79, `GeneratePlanScreen.tsx`).
+ *
+ * 🔴 IT MATTERS MOST ON *THIS* GRID, because these runners' two §79 signals
+ * DISAGREE BY CONSTRUCTION. Every case carries a slow benchmark, so VDOT reads
+ * beginner while 20 km/week reads intermediate — and §79 then takes the LOWER
+ * for structure. `fitness_level` overrode both, so the 'intermediate' half of this
+ * grid was measured at an intermediate structural band that production never
+ * gives them. The grid exists to catch defects on slow runners with an ambitious
+ * goal (RCA-1026); it was catching them on a runner shape the product cannot build.
+ */
 /** `benchmarkDate` must be in the past and inside the engine's benchmark-age window, so callers derive it from today
  *  (`slowGoalDates`) rather than pinning one: a pinned date expires, which is PINNED-CLOCK-01's class. */
 export function slowGoalGrid(planStart: string, benchmarkDate: string): SlowGoalCase[] {
   const raceIn = (w: number) => new Date(Date.parse(`${planStart}T00:00:00Z`) + (w * 7 - 1) * 864e5).toISOString().slice(0, 10)
   const out: SlowGoalCase[] = []
   for (const b of SLOW_BENCHMARKS) for (const d of SLOW_DISTANCES) for (const gap of GOAL_GAPS)
-    for (const fitness_level of ['beginner', 'intermediate'] as const) for (const days_available of [3, 4, 5]) for (const mwm of [undefined, 30]) {
-      const current_weekly_km = fitness_level === 'beginner' ? 10 : 20
+    for (const user_declared_level of ['beginner', 'intermediate'] as const) for (const days_available of [3, 4, 5]) for (const mwm of [undefined, 30]) {
+      const current_weekly_km = user_declared_level === 'beginner' ? 10 : 20
       out.push({
         race_distance_km: d.km, race_date: raceIn(d.weeks), goal: 'time_target', target_time: targetForGap(b, d.km, gap),
-        benchmark: { ...b, benchmark_date: benchmarkDate }, fitness_level, days_available, current_weekly_km,
+        benchmark: { ...b, benchmark_date: benchmarkDate }, user_declared_level, days_available, current_weekly_km,
         longest_recent_run_km: Math.max(3, Math.round(current_weekly_km / 2.5)), ...(mwm ? { max_weekday_mins: mwm } : {}),
         age: 38, training_age: '1-2yr', recent_quality_training: 'occasional', injury_history: [], acknowledged_prep_warning: true, gap,
       })

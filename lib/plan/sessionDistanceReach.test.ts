@@ -30,7 +30,14 @@ const plans = (() => {
       // at 12 km/week is classified beginner, which is what governs catalogue
       // eligibility and the duration anchor. Capture both.
       out.push({
-        level: (input as GeneratorInput).fitness_level as string,
+        // ▲ COHORT-GRID-UNSET-LEVEL-01 (2026-11-03) — the DECLARED level comes off
+        // `user_declared_level`. It read `fitness_level`, which this grid set on every
+        // row and the wizard never sends; once the grid stopped setting it, `level`
+        // was `undefined` on every plan and both arms below measured an EMPTY band
+        // ("expected NaN to be greater than 0.9"). The comment just above already
+        // described the production case correctly — "a runner declaring `experienced`
+        // at 12 km/week is classified beginner" — against a corpus that had none.
+        level: (input as GeneratorInput).user_declared_level as string,
         engineLevel: String(p.meta?.fitness_intensity_level ?? p.meta?.fitness_level ?? ''),
         sessions,
       })

@@ -65,7 +65,12 @@ describe('gate 2a — every goal-anchored session row is reached, so "none past 
   /** Rows the slow grid never generates, so goalPaceReach.test.ts's past-the-line assertion proves nothing for them. */
   const UNREACHED: Record<string, string> = {
     beginner_goal_pace_reps: 'GRID-GOAL-INSIDE-LINE-01: no slow-grid case selects it (5K/10K beginner reps)',
-    tenk_race_simulation: 'GRID-GOAL-INSIDE-LINE-01: no slow-grid case selects it',
+    // ✓ `tenk_race_simulation` REMOVED 2026-11-03 (COHORT-GRID-UNSET-LEVEL-01) — the
+    // grid reaches it 30 times now. It was unreached because the grid forced
+    // `fitness_level`, which overrode the §79 assessment and put every 'intermediate'
+    // slow runner on an intermediate STRUCTURAL band; on the production shape their
+    // VDOT reads beginner and structure follows it down, which is the band this row
+    // selects for. The register shrinks 2 -> 1 on the arm below, as it is meant to.
   }
 
   it('the family is non-empty and derived (seven rows as of 2026-10-27)', () => expect(ROWS.length).toBe(7))

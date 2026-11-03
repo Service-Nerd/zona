@@ -5,6 +5,30 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-03 — COHORT-GRID-UNSET-LEVEL-01 · I de-blinded the instruments and the engine turned out to be better than they said
+**Shipped:** Every coaching measurement corpus now builds the runner shape the wizard actually posts, instead of filling in an API field no production caller sets. Five corpora, all seven steps of the measurement protocol.
+
+**Dev learning:** `verify:parity` came back IDENTICAL on all 6,102 cases, and for once that was exactly the evidence I needed — I had changed five input builders and no engine code, so byte-for-byte identity *is* the proof. The same run would have been worthless as evidence that a level-gated rule behaves correctly, because parity's own grid is level-set too. Same command, same green tick, two completely different meanings depending on what you are claiming. I wrote both halves down in the item so I stop having to re-derive which one applies.
+
+The other one: my first measurement of the effect said 25.0% of rows change structural level. The real figure is 45.8%. I had called `resolveLevels` without a VDOT, and half the grid carries a benchmark. There is an owner, `derivedLevelsFor`, that composes `vdotFor` first and is what the engine actually uses. I reached past the owner for the primitive and got a number that was wrong in the reassuring direction.
+
+**Product/creator learning:** The headline is that **the engine builds runners better than every instrument has been saying.** Never-builds — the "eighteen weeks that end on the volume you started" metric — goes 13.1% to 9.5% on healthy standard and 19.1% to 14.2% on masters. Median net build 28.6% to 39.4%. 104 more runners get a plan at all. The mechanism is almost funny: forcing a runner onto a higher structural band sets a peak the ramp can't reach, so the plan reads flat and volume-constrained. Give them the band they'd really get and the ramp arrives.
+
+And then the one that runs the other way, which is the one that matters. §94's delivered-ramp tail on the **injury** segment goes 18% to 42%. Willy's standing condition on that rule is *"watch the tail, not the rate"* — and the rate fell on every segment while the tail rose on every segment. ADR-022 says its three levers bind on injured runners. Every injured row in the grid had been forced to a beginner structural band, and the levers are structural. So the claim was measured on a runner the product doesn't build. Filed for the board rather than quietly re-baselined.
+
+**AI-building learning:** The gate I built has three kinds of arm, and the mutation testing is what told me which ones earn their place. Arm 1 checks every row of the five corpora. Arm 2 walks the import closure of every script behind the eight coaching gates and fails on any unexempted write of the field. Arm 3 asserts the positive property — that §79's two-band cell is actually reached. I restored the field in each of the five corpora in turn, and the fifth one — a hand-built cohort inside `measure-plan-fitness.ts`, not a grid at all — **fired arm 2 alone.** Arm 1 structurally could not see it. Then I deleted the level axis entirely, which satisfies arms 1 and 2 perfectly and fires arm 3 alone. Seven mutations, each landing on exactly one arm. Without running them I'd have had three arms and no idea which were decorative.
+
+**The honest bit:** The item I picked up named two grids and three gates. It was five corpora and all seven steps, and the sixth blind harness was a loop inside a measurement script that no grep for "grid" would ever find. I wrote that item myself, this morning, hours earlier. A snapshot of the code taken by me today was already understating its own subject by half.
+
+I also broke 27 tests across 12 files doing this, and the temptation on each one is identical: put the field back in the fixture and move on. Four of them turned out to be real — a debt register that could now shrink, a monitor whose number nearly tripled, a reachability arm that had been over-reporting §89's early onset by 45%, and an arm asserting an upward declaration lifts quality on a corpus where no runner is assessed as a beginner in the first place.
+
+**Hook material:** 19,008 of 41,472 grid rows changed which structural band they're built at — and **zero** changed intensity. Every check this project owns reads the intensity ceiling.
+
+**Correction, same day:** code review caught three of my numbers. I had written 25.0% where it is 45.8%, because I called `resolveLevels` without a VDOT and half the grid carries a benchmark. The owner the engine actually calls is `derivedLevelsFor`, which composes `vdotFor` first. All three wrong numbers understated the blast radius, which is the direction a dropped stage always errs in.
+
+**Postable?:** yes
+
+---
 ## 2026-11-03 — STRIDE-ASSESSED-LEVEL-01 · one ruling shipped, one vacated two hours after I wrote it
 **Shipped:** §28's hill strides reach a real beginner at last, and the invariant that watches them is on duty. §117's peak reduction was ruled correct, then vacated the same day when a regression test found seven runners it would turn away.
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { cohortGrid, COHORT_PLAN_START } from './cohortGrid'
-import { generateRulePlan } from './ruleEngine'
+import { derivedLevelsFor, generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { FITNESS_RANK } from './fitnessAssessment'
@@ -65,7 +65,10 @@ describe('§104 Am. — variety alternatives must be eligible for THIS runner', 
 
   it('FALSIFICATION — a genuine single-row repeat on 10K intermediate DOES fire', () => {
     const g = cohortGrid().find(x => x.race_distance_km === 10
-      && x.goal === 'time_target' && x.fitness_level === 'intermediate')
+      // ▲ COHORT-GRID-UNSET-LEVEL-01 — the grid declares the level; `fitness_level` is
+      // the API override it no longer sets. Resolved, because a declaration binds
+      // structure downward only, so the declared value is not always the band.
+      && x.goal === 'time_target' && derivedLevelsFor(x).intensity === 'intermediate')
     expect(g, 'need a 10K intermediate time-target row').toBeTruthy()
     const plan = generateRulePlan(g!, 'paid', COHORT_PLAN_START, undefined, COHORT_PLAN_START)
     // Forge a peak that fills two slots with the SAME eligible race-specific row.

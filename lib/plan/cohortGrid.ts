@@ -177,7 +177,36 @@ export function cohortGrid(): GeneratorInput[] {
                 max_hr: 184,                    // Tanaka at 35, pinned
                 current_weekly_km: cwk,
                 longest_recent_run_km: Math.max(3, Math.round(cwk * 0.4)),
-                fitness_level: level,
+                // COHORT-GRID-UNSET-LEVEL-01 (2026-11-03) — `user_declared_level`, NOT
+                // `fitness_level`. The wizard sends the runner's level on the former,
+                // WHETHER ACCEPTED OR OVERRIDDEN, and never on the latter, which is the
+                // API's structural override and binds peak km (§79,
+                // `GeneratePlanScreen.tsx`). No production caller sets it.
+                //
+                // 🔴 WHAT THE FORCED FIELD COST, MEASURED ON THIS GRID WITH
+                // `derivedLevelsFor`. `fitness_level` wins outright inside `resolveLevels`,
+                // so every row had `structural === intensity === level`. Swapping it moves
+                // the STRUCTURAL level on **19,008 of 41,472 rows (45.8%)** and the
+                // intensity level on **0**: experienced-STRUCTURE goes 13,824 -> **1,728**,
+                // because a declaration binds structure DOWNWARD ONLY. The grid was
+                // claiming 33.3% experienced structure where the wizard's shape delivers
+                // **4.2%**.
+                //
+                // ⚠️ THESE FIGURES READ 25.0% AND 8.3% UNTIL A CODE REVIEW CAUGHT IT:
+                // measured with `resolveLevels(i)` and no VDOT, where half this grid
+                // carries a benchmark. Use `derivedLevelsFor` — it composes `vdotFor`
+                // first, which is what the engine builds the plan with.
+                //
+                // ⚠️ AND IT GAINS CELLS IT COULD NOT BUILD: 19,008 rows where structural
+                // and intensity DIFFER (6,912 beginner/intermediate, 6,912
+                // beginner/experienced, 5,184 intermediate/experienced) — §79's two-signal
+                // split, the entire reason §79 exists, previously unreachable by
+                // `cohort:shape`, `measure:fitness`, `invariant:liveness`, `audit:plans`
+                // and the strength sweep. §79 Am.3's over-claim shape (declared above the
+                // assessed structural band) goes **0 -> 19,008** and the credible-caution
+                // shape **0 -> 8,640**. Three board rulings on 2026-11-03 were ratified on
+                // the old shape (§117 Am.5, §117's peak gate, §2 Amendment's week-1 hazard).
+                user_declared_level: level,
                 recent_quality_training: recentQuality,
                 hard_session_relationship: 'neutral',
                 injury_history: [],
@@ -272,7 +301,20 @@ export function targetedGrid(): GeneratorInput[] {
                 race_distance_km: d.km, race_date: raceDateIn(d.weeks, 'sun'),
                 goal: 'finish', resting_hr: 55, max_hr: 184,
                 current_weekly_km: 30, longest_recent_run_km: 12,
-                fitness_level: 'beginner',
+                // COHORT-GRID-UNSET-LEVEL-01 — `fitness_level: 'beginner'` WAS HERE, and
+                // it made this grid's own `user_declared_level` axis INERT ON STRUCTURE.
+                // The forced field floored structure at beginner, and a declaration binds
+                // structure downward only, so all three non-undefined values resolved to
+                // the same structural level as `undefined`: 6,144 of 6,144 rows beginner.
+                // The axis was added by GRID-COVERAGE-02 Phase 2 to reach exactly that
+                // path. 30 km/week with a 12 km longest run assesses as INTERMEDIATE, so
+                // removing it moves **4,608 of 6,144 rows (75.0%)** on structure and
+                // **1,536 (25.0%)** on intensity — the rows that declare nothing, whose
+                // intensity was pinned to beginner by the forced field — and the grid
+                // finally holds both structural bands. §79's directions invert with it:
+                // over-claim 3,072 -> 1,536, credible caution **0 -> 1,536**.
+                // ⚠️ This comment said "3,072 (50.0%)" until a code review caught it; that
+                // is the over-claim count, not the structural-move count.
                 recent_quality_training: 'occasional',
                 hard_session_relationship: hsr,
                 training_age: '6-18mo',

@@ -59,7 +59,8 @@ describe('the slow-goal grid meets §9 without breaking the dose', () => {
 
 describe('the check accepts either form, and only those', () => {
   const c = built.find(x => (x.input as any).benchmark.time === '0:40:00' && x.input.race_distance_km === 10
-    && x.input.fitness_level === 'intermediate')!
+    // ▲ COHORT-GRID-UNSET-LEVEL-01 — the slow grid's level axis is `user_declared_level`.
+    && x.input.user_declared_level === 'intermediate')!
   // A week with exactly ONE quality session, so the edited session is the primary and held to 5 km (with two, the
   // edited one could become "secondary" and pass at 4 km without the minutes rule).
   const withQuality = (km: number, mins: number): Plan => {

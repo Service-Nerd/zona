@@ -158,13 +158,38 @@ const TRIMABLE_BASELINE: Record<Segment, { p99: number; max: number }> = {
   // week AFTER the step-back carries the rise (one HM runner at 20 km/week, 3 days: +58% non-long-run in W13). Weekly
   // volume is unchanged against the commit before §120 Am. 2; the absorbing session is an easy run, a pattern that
   // already existed in 235 of 1,377 time-target plans before today (filed: EASY-RUN-ABSORBS-QUALITY-01). Max unchanged.
-  healthy_standard: { p99: 58, max: 61 },
+  // 🔴 COHORT-GRID-UNSET-LEVEL-01 (2026-11-03) — RAISED ON ALL THREE SEGMENTS, and this
+  // is the entry to read before any other. THE ENGINE DID NOT CHANGE: `verify:parity`
+  // is IDENTICAL on all 6,102 cases. THE CORPUS DID. Both grids forced
+  // `fitness_level`, the API structural override no production caller sends, so every
+  // measurement ever taken on this file was taken on a runner shape the product cannot
+  // build. Measured before and after with this same instrument and corpus size
+  // (1,800 inputs, 1,750 -> 1,752 generated):
+  //
+  //   healthy_standard  147 -> 137 firings   p90 39 -> 36   p99 58 -> 75   max 58 -> 75
+  //   healthy_masters   168 -> 146 firings   p90 37 -> 43   p99 52 -> 88   max 79 -> 88
+  //   injury             51 ->  48 firings   p90 18 -> 42   p99 18 -> 42   max 18 -> 42
+  //
+  // 🩹 WILLY'S CONDITION IS "WATCH THE TAIL, NOT THE RATE", AND THE TWO MOVED IN
+  // OPPOSITE DIRECTIONS. Total firings fall 366 -> 331 (-9.6%) on every segment, so
+  // FEWER plans breach §2 at delivery — and the breaches that remain are far bigger.
+  // The injury segment's p90 more than DOUBLES.
+  //
+  // 🔴 AND IT PUTS ADR-022'S PREMISE IN QUESTION, WHICH IS WHY THIS IS FILED AND NOT
+  // JUST RE-BASELINED. The paragraph above still reads "Injury maxes at 18% against
+  // healthy-standard 105%... ADR-022's three levers bind on the injured". Every
+  // injured row in `targetedGrid` was forced to a BEGINNER structural band, and the
+  // three levers are structural. On the production shape (30 km/week, 12 km longest,
+  // assessed INTERMEDIATE) the injury tail is 42%, not 18%. Filed for the Coaching
+  // Board as `INJURY-TAIL-PRODUCTION-SHAPE-01`. Raised here so the gate ratchets from
+  // the real population instead of staying green on a fiction.
+  healthy_standard: { p99: 75, max: 75 },
   // GOALPACE-5K-01 (2026-10-23), raised 59 → 78 with the measurement, not to go green: on a goal-paced week a
   // 5K intermediate's continuous tempo (6 km) becomes a rep row sized by the existing threshold work band
   // (`tempo_cruise_short`, 8 km), in the same week a fourth run day is added. 2 of 1,200 masters plans
   // (cohort k=482, 770), W8, +78% non-long-run; the beginners' tail FELL (59 → 52). Reported to the founder.
-  healthy_masters:  { p99: 78,  max: 79 },
-  injury:           { p99: 18,  max: 18 },
+  healthy_masters:  { p99: 88,  max: 88 },
+  injury:           { p99: 42,  max: 42 },
 }
 
 describe('§94 Am.4 — the delivered-ramp TAIL is measured, segmented, and may not grow', () => {
@@ -258,7 +283,15 @@ describe('§94 Am.4 — the delivered-ramp TAIL is measured, segmented, and may 
     // Seiler's question answered again: nothing in the engine clamps at 79 (no constant, no cap reaches it), and the 79
     // is one masters week, 18 points clear of the next, so it is a corpus property, not a ceiling. Held at the old
     // maximum so a NEW top cannot slip in under this reasoning.
-    expect(top, 'a new maximum: re-check Seiler\'s question before raising anything').toBeLessThanOrEqual(79)
+    // 🔴 COHORT-GRID-UNSET-LEVEL-01 — 79 -> 88, AND SEILER'S QUESTION RE-ASKED, because
+    // raising this line without re-asking it is the whole thing the comment above warns
+    // against. The top is now `88 88 75 75 69 58 58 58 55 54 54 50`: TWO PAIRS, then a
+    // 6-point step. A pair is the same week shape recurring across rows that differ only
+    // on axes irrelevant to that week — the reasoning the header already records — and
+    // nothing in the engine clamps at 88 (no constant or cap reaches it; `verify:parity`
+    // is IDENTICAL, so no engine value moved at all). It is a corpus property, and the
+    // corpus is now the production one. Still never a ceiling.
+    expect(top, 'a new maximum: re-check Seiler\'s question before raising anything').toBeLessThanOrEqual(88)
     const dupes = all.filter(v => v >= top - 1).length
     expect(dupes, 'the top is one week; if it repeats again, say why').toBeGreaterThanOrEqual(1)
     // eslint-disable-next-line no-console
