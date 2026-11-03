@@ -14,9 +14,21 @@ const mk = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
 } as unknown as GeneratorInput)
 
 const ON = () => {}   // §117 is live; the flag was deleted, not defaulted.
+
+/**
+ * 🔴 THESE ARMS RUN ON A SHAPE THE PRODUCT CANNOT BUILD, AND THAT IS RECORDED RATHER
+ * THAN FIXED. The fixture sets `fitness_level`, which the wizard never sends, so
+ * `runWalkApplies` returns false for every real runner and §117's peak reduction has
+ * never applied. Resolving the gate was ruled CORRECT on 2026-11-03 and **vacated the
+ * same day**: per-case measurement found 7 runners (marathon, 15 km/week, age 48–58)
+ * flipping SERVED → REFUSED, which the aggregate evidence could not show. See
+ * `RUNWALK-ASSESSED-LEVEL-01-PEAK` and the comment in `runWalkPlan.ts`.
+ */
+const applies = (i: GeneratorInput, peak: number, weeks?: number) =>
+  runWalkApplies(i, peak, weeks)
 describe('§117 — it is LIVE and it admits the runner §111 refused', () => {
   it('admits a 10 km/week beginner finish-goal marathoner', () => {
-    expect(runWalkApplies(mk({ current_weekly_km: 10 }), 52)).toBe(true)
+    expect(applies(mk({ current_weekly_km: 10 }), 52)).toBe(true)
     expect(() => generateRulePlan(mk({ current_weekly_km: 10 }), 'paid', '2026-10-05')).not.toThrow()
   })
 
@@ -38,16 +50,16 @@ describe('§117 — who it applies to', () => {
   })
 
   it('finish goal only — a time goal says finishing is not the point', () => {
-    expect(runWalkApplies(mk({ goal: 'time_target' } as never), 52)).toBe(false)
+    expect(applies(mk({ goal: 'time_target' } as never), 52)).toBe(false)
   })
 
   it('beginner only', () => {
-    expect(runWalkApplies(mk({ fitness_level: 'intermediate' }), 65)).toBe(false)
+    expect(applies(mk({ fitness_level: 'intermediate' }), 65)).toBe(false)
   })
 
   it('only when the STANDARD peak would refuse them — not as a general downgrade', () => {
     // 30 km/week clears the standard door (52/4 = 13) comfortably.
-    expect(runWalkApplies(mk({ current_weekly_km: 30 }), 52)).toBe(false)
+    expect(applies(mk({ current_weekly_km: 30 }), 52)).toBe(false)
   })
 })
 

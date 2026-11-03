@@ -9338,7 +9338,20 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // change ever attaches one to a quality session, that construction argument
   // silently stops being true and a beginner acquires quality through a door
   // nobody is watching. This is that watch.
-  if (input.fitness_level === 'beginner') {
+  // ▲ §28 Am.4 (Coaching Board 2026-11-03, `STRIDE-ASSESSED-LEVEL-01`) — THE WATCH IS
+  // ON DUTY NOW. This gated on `input.fitness_level`, which the wizard never sends, so
+  // the whole block self-skipped on every real plan: measured, the gate opened on 366
+  // of 1,044 level-set cases and **0** production-shaped ones, and on 0 of 39 live
+  // plans against 23 live beginners. The comment above calls this "that watch"; it had
+  // never been on duty.
+  //
+  // ⚠️ `structuralFitness` CARRIES THE LEGACY ZEROED-FIELD GUARD and that is load
+  // bearing here, not incidental. `fitnessFromVolume(0, 0)` is `beginner`, and
+  // `validateReshapedPlan` reconstructs a pre-PV2-A plan with both volume fields at 0.
+  // §117's gate escapes that by a separate `longest <= 0` early-return; this block has
+  // no such arm, so without the guard it would fire on every legacy meta-less plan.
+  // Found by code review before this wiring landed (`structuralLevelForCheck`).
+  if (structuralFitness === 'beginner') {
     const neuro = (s: Session | undefined): boolean =>
       !!s?.coach_notes?.some(n => typeof n === 'string' && /strides/i.test(n))
     const buildWeeks = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.phase !== 'taper')

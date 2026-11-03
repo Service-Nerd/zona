@@ -86,7 +86,10 @@ for (let i = 0; i < grid.length; i += STRIDE) {
       // the race being the point, not a session mis-sized, and it would have been
       // carried to the board as the worst case. A time trial is excluded on the
       // same ground (§78 ratifies that its parts differ in KIND by design).
-      if (s.type === 'rest' || s.type === 'strength' || s.type === 'cross') return
+      // ▲ `'cross-train'`, not `'cross'` (code review 2026-11-03) — the THIRD copy of this
+      // mistake, and the only one outside tests. `'cross'` matches no session type, so
+      // every cross-train session was counted in a distribution **carried to the board**.
+      if (s.type === 'rest' || s.type === 'strength' || s.type === 'cross-train') return
       if (s.type === 'race' || /race|time trial|\bTT\b/i.test(String(s.label ?? ''))) { races++; return }
       const km = kms[j]
       if (km <= 0) return

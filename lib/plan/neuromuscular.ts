@@ -134,10 +134,36 @@ export function hasHillRestrictingInjury(injuryHistory: readonly string[] | unde
  */
 export function isHillStrideWeek(
   weekN: number, fitnessLevel: string | undefined, injuryHistory?: readonly string[],
-  onPostLongRunDay = false,
+  onPostLongRunDay = false, inIntensityReentryWindow = false,
 ): boolean {
   if (fitnessLevel !== 'beginner') return false
   if (hasHillRestrictingInjury(injuryHistory)) return false
+  // 🔴 §79's INTENSITY RE-ENTRY WINDOW — THE THIRD COLLAPSE ARM (§28 Am.4 re-sitting,
+  // Coaching Board 2026-11-03, found by code review AFTER the first ruling).
+  //
+  // §79 withholds the highest tissue-stress quality from a returning runner because
+  // *"cardiovascular readiness returns weeks ahead of musculoskeletal readiness — a
+  // returning runner FEELS ready for intervals and hills before the tissue is."* It
+  // names hills. Am.1's approval of hill strides as *"protective, not risky"* was given
+  // for *"a novice ramping volume for eighteen weeks"* — a different cohort from a
+  // returner at 5 km/week with the engine of someone fitter and the tendons of someone
+  // who has been off.
+  //
+  // ⚠️ MEASURED BEFORE THE RE-SITTING: once Am.4 made the gate live, **116 of 4,395
+  // production-shaped plans** placed a hill stride inside the window (20.6% of the 563
+  // that gain hills). Previously 0, because the gate was dead.
+  //
+  // 🔴 AND `INV-PLAN-RETURNING-INTENSITY-REENTRY` CANNOT SEE IT. It detects the
+  // withhold structurally by **catalogue category** (`vo2max`), and a coach note on an
+  // easy run has no catalogue row and no category. The guard watches a door this hazard
+  // does not come through — recorded as a known limitation, not fixed here.
+  //
+  // The remedy is this section's own, used twice already: Am.2 collapses to flat for a
+  // hill-restricted runner, Am.3 collapses to flat on the post-long-run day. **Third
+  // collapse of identical shape — flat strides, never nothing.** The runner keeps the
+  // neuromuscular stimulus and loses only the eccentric load, which is the trade §79
+  // exists to make.
+  if (inIntensityReentryWindow) return false
   // 🔴 §28 Am.3, WILLY'S BOUND — never hills on the day after the long run.
   //
   // §28 Am.1's case for hill strides is that they are ECCENTRIC-HEAVY ("it
@@ -154,9 +180,9 @@ export function isHillStrideWeek(
 
 export function neuromuscularNote(
   weekN: number, fitnessLevel: string | undefined, injuryHistory?: readonly string[],
-  onPostLongRunDay = false,
+  onPostLongRunDay = false, inIntensityReentryWindow = false,
 ): string {
-  return isHillStrideWeek(weekN, fitnessLevel, injuryHistory, onPostLongRunDay)
+  return isHillStrideWeek(weekN, fitnessLevel, injuryHistory, onPostLongRunDay, inIntensityReentryWindow)
     ? '6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.'
     : '4×20s strides at 5K effort, full recovery between.'
 }
@@ -182,10 +208,10 @@ export function neuromuscularNote(
  */
 export function neuromuscularLabel(
   baseLabel: string, weekN: number, fitnessLevel: string | undefined, injuryHistory?: readonly string[],
-  onPostLongRunDay = false,
+  onPostLongRunDay = false, inIntensityReentryWindow = false,
 ): string {
   if (/\+ (strides|hill strides)/.test(baseLabel)) return baseLabel   // idempotent
-  const kind = isHillStrideWeek(weekN, fitnessLevel, injuryHistory, onPostLongRunDay) ? 'hill strides' : 'strides'
+  const kind = isHillStrideWeek(weekN, fitnessLevel, injuryHistory, onPostLongRunDay, inIntensityReentryWindow) ? 'hill strides' : 'strides'
   // Insert before the zone suffix so the existing "— Zone N" convention holds.
   const m = baseLabel.match(/^(.*?)(\s+—\s+Zone\s+.*)$/)
   return m ? `${m[1]} + ${kind}${m[2]}` : `${baseLabel} + ${kind}`

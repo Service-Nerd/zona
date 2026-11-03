@@ -154,14 +154,31 @@ export function runWalkApplies(input: GeneratorInput, standardPeakKm: number, pl
   // §117 is for the runner who CANNOT be prepared to run it. A time goal is an
   // explicit statement that finishing is not the point.
   if (input.goal !== 'finish') return false
-  // ⚠️ RAW, AND HELD RAW ON PURPOSE — see `runWalkPrescriptionApplies` above.
-  // `input.fitness_level` is undefined for every runner the wizard produces, so
-  // this arm returns false in production and §117's PEAK REDUCTION has never
-  // applied to a real plan. Resolving it here lowers peak volume for the beginner
-  // finish cohort at scale: Coaching Board, with 🩹 Willy's binding "no peak may
-  // fall" re-measured on inputs that do NOT carry the level. Do not "tidy" this
-  // into agreement with the gate above; that ships an unratified peak change.
-  // Backlog: `RUNWALK-ASSESSED-LEVEL-01`, peak half.
+  // 🔴 HELD RAW. THE 2026-11-03 RULING WAS VACATED THE SAME DAY, BY REGRESSION.
+  //
+  // `RUNWALK-ASSESSED-LEVEL-01-PEAK`: this reads `input.fitness_level`, which the
+  // wizard never sends, so §117's PEAK REDUCTION — the mechanism the section is about —
+  // has never applied to a real plan (`finish_goal_run_walk` truthy on 0 of 39 live
+  // plans). The board ruled CORRECT on evidence showing 88 plans reached, 0 below
+  // §117 Am.2's 17 km bound, and refusals falling 10.54% → 9.72% weighted.
+  //
+  // ⚠️ EVERY ONE OF THOSE NUMBERS WAS AN AGGREGATE, AND AN AGGREGATE CANNOT SEE A
+  // RUNNER FLIP. Measured per case over 4,831 envelope inputs: **7 runners go SERVED →
+  // REFUSED** (0.068% weighted) against 7 going the other way. The 7 lost share one
+  // signature — **marathon, 15 km/week, 3–5 days, age 48–58**, several with achilles
+  // history. They resolve to structural beginner, fall below §117's door, take the 34 km
+  // peak, and their peak long run lands UNDER Am.2's 17 km bound, so
+  // `runWalkInadequateRefusal` turns a plan they get today into a refusal.
+  //
+  // 🔴 THE "0 ERRORS" WAS TRUE AND MEANT THE OPPOSITE OF WHAT IT LOOKED LIKE:
+  // `INV-PLAN-RUNWALK-ADEQUATE` raised none because the engine REFUSES rather than
+  // emitting an inadequate plan. A clean invariant count on generated plans says
+  // nothing about the runners who stopped being generated.
+  //
+  // ⚠️ THE RUNWAY GATE BELOW IS THE NEAR MISS. It asks whether §2's ramp can reach
+  // §117's WEEKLY peak; it never asks whether the LONG RUN reaches Am.2's 17 km. Those
+  // are different questions and that gap is the proposal the re-sitting must rule on.
+  // Do not resolve this gate without it. See `RUNWALK-ASSESSED-LEVEL-01-PEAK`.
   if (input.fitness_level !== 'beginner') return false
 
   // The trigger is §111's own arithmetic: would the standard peak refuse them?

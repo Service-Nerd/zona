@@ -259,14 +259,14 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "wed": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
           ],
           "detail": null,
           "distance_km": 11.5,
           "duration_mins": 90,
           "hr_target": "< 146 bpm",
           "id": "w3-wed",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:11–8:32 /km",
           "primary_metric": "distance",
           "rpe_target": 4,
@@ -370,14 +370,14 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "wed": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
           ],
           "detail": null,
           "distance_km": 11.5,
           "duration_mins": 90,
           "hr_target": "< 146 bpm",
           "id": "w5-wed",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:11–8:32 /km",
           "primary_metric": "distance",
           "rpe_target": 4,
@@ -483,14 +483,14 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       "sessions": {
         "mon": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
           ],
           "detail": null,
           "distance_km": 13.5,
           "duration_mins": 106,
           "hr_target": "< 146 bpm",
           "id": "w7-mon",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:11–8:32 /km",
           "primary_metric": "distance",
           "rpe_target": 4,
@@ -632,14 +632,14 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       "sessions": {
         "mon": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
           ],
           "detail": null,
           "distance_km": 13.5,
           "duration_mins": 106,
           "hr_target": "< 146 bpm",
           "id": "w9-mon",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:11–8:32 /km",
           "primary_metric": "distance",
           "rpe_target": 4,
@@ -883,14 +883,14 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       "sessions": {
         "mon": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
           ],
           "detail": null,
           "distance_km": 13.5,
           "duration_mins": 106,
           "hr_target": "< 146 bpm",
           "id": "w11-mon",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:11–8:32 /km",
           "primary_metric": "distance",
           "rpe_target": 4,
@@ -1170,14 +1170,14 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       "sessions": {
         "mon": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
           ],
           "detail": null,
           "distance_km": 13,
           "duration_mins": 102,
           "hr_target": "< 146 bpm",
           "id": "w13-mon",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:11–8:32 /km",
           "primary_metric": "distance",
           "rpe_target": 4,
@@ -1345,14 +1345,14 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       "sessions": {
         "mon": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
           ],
           "detail": null,
           "distance_km": 9,
           "duration_mins": 71,
           "hr_target": "< 146 bpm",
           "id": "w15-mon",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:11–8:32 /km",
           "primary_metric": "distance",
           "rpe_target": 4,
@@ -1703,13 +1703,13 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
         },
         "wed": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
           ],
           "detail": null,
           "duration_mins": 32,
           "hr_target": "< 150 bpm",
           "id": "w3-wed",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:30–9:00 /km",
           "primary_metric": "duration",
           "rpe_target": 4,
@@ -1805,14 +1805,14 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
         },
         "wed": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
             "HR zones in this plan are estimated from age. Run the first session by feel (RPE 4 = conversational, easy). If your HR sits consistently above or below target at that effort, flag it for zone recalibration.",
           ],
           "detail": null,
           "duration_mins": 32,
           "hr_target": "< 150 bpm",
           "id": "w5-wed",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:30–9:00 /km",
           "primary_metric": "duration",
           "rpe_target": 4,
@@ -1910,13 +1910,13 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
         },
         "wed": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
           ],
           "detail": null,
           "duration_mins": 44,
           "hr_target": "< 150 bpm",
           "id": "w7-wed",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:30–9:00 /km",
           "primary_metric": "duration",
           "rpe_target": 4,
@@ -2017,14 +2017,14 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
         },
         "wed": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
             "HR zones in this plan are estimated from age. Run the first session by feel (RPE 4 = conversational, easy). If your HR sits consistently above or below target at that effort, flag it for zone recalibration.",
           ],
           "detail": null,
           "duration_mins": 44,
           "hr_target": "< 150 bpm",
           "id": "w9-wed",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:30–9:00 /km",
           "primary_metric": "duration",
           "rpe_target": 4,
@@ -2126,7 +2126,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
         },
         "wed": {
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between.",
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.",
             "HR zones in this plan are estimated from age. Run the first session by feel (RPE 4 = conversational, easy). If your HR sits consistently above or below target at that effort, flag it for zone recalibration.",
             "Two week taper. Long enough for adaptation to consolidate without losing sharpness. Volume drops. Trust the work.",
           ],
@@ -2134,7 +2134,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
           "duration_mins": 36,
           "hr_target": "< 150 bpm",
           "id": "w11-wed",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "pace_target": "7:30–9:00 /km",
           "primary_metric": "duration",
           "rpe_target": 4,

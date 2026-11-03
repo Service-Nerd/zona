@@ -692,6 +692,38 @@ plans with any positive week-1 step before it was set),
 `LONG_RUN_PROGRESSION_CAP_ABS_KM` reused rather than a second constant for the
 same idea.
 
+🔴 **AMENDMENT RECORDED 2026-11-03 (Coaching Board, `WEEK1-HAZARD-UNREACHABLE-01`,
+CORRECT WITH AMENDMENT — THE DOSE STANDS): ARM 2 IS NOW INERT ON THE PRODUCTION
+CORPUS, EXACTLY AS ARM 3 ALREADY WAS.**
+
+Re-measured across **4,379 plans in the shape the wizard posts, all six distances, no
+narrowing**: the hazardous population arm 2 describes — a step ≥ 10 km that is **also**
+> 1.25× — is **0, everywhere.** The largest week-1 step the engine produces is **6 km**
+(marathon and 50K), and the only ≥ 10 km step is the **benign** 90 → 100 km case at
+100K, which arm 2 correctly declines to flag.
+
+⚠️ **THE 47/47 AND 0/28 ABOVE WERE COUNTED ON A CORPUS THAT SET `fitness_level`**, a
+field the wizard never sends. Forcing structure to the band handed a 10 km/week
+"experienced" runner an experienced PEAK and therefore a week-1 leap **the product
+cannot produce** (§79: a declaration binds structure DOWNWARD only). §2 Am.2's
+3,880-plan figure rests on the same corpus.
+
+🩹 **Willy:** *"That is not an argument for lowering the floor; it is an argument that
+§2's ramp is holding. An arm that describes the hazard and waits is doing its job. What
+I will not accept is moving a threshold until it fires: that is fitting the rule to the
+corpus."* 🏃 **Hutchinson came prepared to argue the dose should move to where the
+engine operates and withdrew it on that point.**
+
+🏃 **BINDING CONDITION (Willy + chair).** `cohortGrid` and `scripts/verify-parity.ts`
+must be de-blinded **before any week-1 dose change is proposed**, because they are the
+evidence base — and **no ruling may cite `measure:fitness` figures until then**, since
+it reads `cohortGrid`. Filed as `COHORT-GRID-UNSET-LEVEL-01` and
+`PARITY-GRID-UNSET-LEVEL-01`.
+
+⚠️ **No numeric moved and no invariant was added**, which is this amendment's own
+ruling restated: it governs whether we judge a plan defective, not whether the plan is
+constitutional.
+
 **Enforced by** `planQuality`'s `WEEK1-LEAP` predicate and the per-distance
 floors in `useCaseEnvelope.test.ts`. **Not a `validatePlan` invariant, and that
 is deliberate:** this governs whether we judge a plan defective, not whether the
@@ -3249,10 +3281,19 @@ carries lower impact per unit of stimulus than flat fast running because the
 ground comes up to meet you. For a novice ramping volume for eighteen weeks that
 is protective, not risky."*
 
-**Principle.** For a runner at `fitness_level: 'beginner'`, every
-`BEGINNER_HILL_STRIDE_EVERY_N_WEEKS`-th stride run **becomes** a short hill
-stride run. Strides and hill strides are one family, governed by one onset
+**Principle.** For a runner whose §79 **resolved structural level** is `beginner`,
+every `BEGINNER_HILL_STRIDE_EVERY_N_WEEKS`-th stride run **becomes** a short hill
+stride run.
+
+Strides and hill strides are one family, governed by one onset
 (`STRIDES_FIRST_WEEK`) and one placement rule.
+
+> ▲ **AMENDED 2026-11-03 (Am. 4).** The first sentence read *"at `fitness_level:
+> 'beginner'`"*, naming a field the wizard never sends, and the engine was built to the
+> sentence. See §28 Amendment 4 — **the doctrine caused the defect.** ⚠️ The note was
+> first spliced mid-sentence here, so markdown lazy continuation rendered the binding
+> *"one family, one onset"* rule as part of a note about what the principle USED to say
+> (found by code review).
 
 ⚠️ **IT ALTERNATES, IT DOES NOT ADD.** The board authorised hills *"dosed like
 §28's strides"*. A hill run placed ALONGSIDE the weekly stride run would double
@@ -3281,6 +3322,100 @@ prescription. Legislating it would have shipped a no-op.
 **Config.** `GENERATION_CONFIG.BEGINNER_HILL_STRIDE_EVERY_N_WEEKS = 2`, onset
 shared with `STRIDES_FIRST_WEEK`.
 **Enforced by** `INV-PLAN-BEGINNER-NEUROMUSCULAR`.
+
+### §28 Amendment 4 — the beginner gate reads the RESOLVED level, because the wizard cannot send the field this section named (Coaching Board 2026-11-03, STRIDE-ASSESSED-LEVEL-01)
+
+**The gap, measured.** Hill-stride plans: **86 of 1,044** on the level-set corpus,
+**0 of 1,060** in the shape the wizard posts, and **0 of 39 live plans against 23
+live beginners**. `isHillStrideWeek` opens `if (fitnessLevel !== 'beginner')` and the
+engine passed `input.fitness_level` straight in. `GeneratePlanScreen` sends the
+runner's level on `user_declared_level` and **never** on `fitness_level` (§79 — that
+field is the API's structural declaration and would bind peak km). So Am.1's hill arm
+was false for every runner the product can build and the alternation collapsed
+permanently to its flat arm.
+
+🔴 **AND THE SAME FIELD GATED THE INVARIANT THAT WATCHES IT.**
+`INV-PLAN-BEGINNER-NEUROMUSCULAR` wrapped its whole body in
+`if (input.fitness_level === 'beginner')`. Its own comment states why it exists: *"if a
+future change ever attaches one to a quality session, that construction argument
+silently stops being true and a beginner acquires quality through a door nobody is
+watching. **This is that watch.**"* The gate opened on **366** level-set cases and
+**0** production-shaped ones. **The watch had never been on duty.**
+
+⚠️ **THE DOCTRINE CAUSED THIS, WHICH IS WHY THE PRINCIPLE TEXT IS AMENDED AND NOT ONLY
+THE CODE.** Am.1's principle sentence named `fitness_level` explicitly. Fixing the gate
+and leaving the sentence would have left the next implementer correct to reintroduce it.
+
+**Principle.** The gate is §79's **resolved structural level**, not the API override
+field. Structural and not intensity: hills are eccentric, tendon-loading work, and
+§79 gives tissue the conservative read.
+
+⚠️ **NOTHING ELSE MOVES, AND THAT WAS MEASURED RATHER THAN ARGUED.** 133 plans gain
+hill strides; **0** of them are hill-restricted (§21/Am.2's guard reads
+`injury_history`, a field the wizard DOES send, so it was never blind); **0** gain an
+error violation; and total coach objections across the corpus are **269 → 269**. The
+dose, the alternation, §110's `QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0` and §1's
+distribution are all untouched — `session.type` stays `'easy'`, which is Am.1's whole
+safety argument.
+
+🩹 **Willy:** *"What I need to know is who is now in the room, and you have answered
+it. The §21 gate reads a field the runner actually fills in, so it was never blind.
+Keep the alternation."* He noted for the record that the structural read puts **572 of
+1,060** in the beginner cohort where the forced field put 366 — a larger population
+than Am.1 contemplated, accepted because the gate is tissue-conservative by
+construction.
+
+⚕️ **Sims, and this is the reason the delay cost something.** Short eccentric hill work
+is **osteogenic**, and the cohort it was withheld from — low-volume beginners,
+disproportionately women, and in the charity intake disproportionately peri- and
+post-menopausal — is the group whose bone density gains most from impact loading that
+easy aerobic volume does not provide.
+
+⚠️ **§28 PROPER WAS NEVER AFFECTED.** Flat strides reach 100% of plans in both shapes,
+mean 10.1 runs. No runner was ever without neuromuscular stimulus; what was missing is
+the hill arm.
+
+🔴 **RE-SAT THE SAME DAY: A THIRD COLLAPSE ARM, BECAUSE THE CONFLICT SCAN MISSED §79's
+RE-ENTRY WINDOW.** The scan named §21, Am.3, §110, §1 and §79's structural/intensity axis. It
+did not name **§79's progressive intensity re-entry**, which withholds the highest
+tissue-stress quality from a returning runner because *"cardiovascular readiness returns
+weeks ahead of musculoskeletal readiness — a returning runner FEELS ready for intervals
+and hills before the tissue is."* **It names hills.**
+
+🩹 **Willy, at the re-sitting:** *"This one is mine and the scan should have caught it. I
+approved hill strides as protective — for a NOVICE ramping volume for eighteen weeks. A
+returner at five kilometres a week has the aerobic engine of someone fitter and the
+tendons of someone who has been off, which is the whole reason the window is open."*
+
+**Measured when Am.4 first went live: 116 of 4,395** production-shaped plans placed a hill
+stride inside the window (20.6% of the 563 gaining hills). Previously 0, because the gate
+was dead. **With the arm: 0.**
+
+**Principle (Am.4 as amended).** While §79's intensity re-entry window is open, the stride
+run stays **FLAT**. This is the third collapse of identical shape — Am.2 collapses for a
+hill-restricted runner, Am.3 on the post-long-run day — and like both it collapses to flat,
+**never to nothing**. Measured over 1,892 beginner plans: 97 lose the hill arm (5.1%) and
+**0 lose their neuromuscular note.**
+
+⚠️ **`INV-PLAN-RETURNING-INTENSITY-REENTRY` CANNOT ENFORCE THIS, and that is recorded
+rather than hidden.** It detects the withhold structurally by **catalogue category**
+(`vo2max`), and a hill stride is a coach note on an easy run — no catalogue row, no
+category. The guard watches a door this hazard does not come through. Held instead by
+`beginnerHills.test.ts` § Am.4's re-entry arm, falsified by removing the collapse and by
+collapsing to nothing. **An unenforceable half is a known risk, not an oversight.**
+
+**Owner.** `isHillStrideWeek`'s `inIntensityReentryWindow` parameter, fed from §79's
+existing per-week `excludeHighTissueStress` — **reused, never re-derived**, which was the
+re-sitting's condition.
+
+**Config.** Unchanged — `BEGINNER_HILL_STRIDE_EVERY_N_WEEKS = 2`, onset
+`STRIDES_FIRST_WEEK`.
+**Enforced by** `INV-PLAN-BEGINNER-NEUROMUSCULAR`, now reading the resolved level
+through `fitnessAssessment.ts → structuralLevelForCheck`, which carries the legacy
+zeroed-field guard (`fitnessFromVolume(0, 0)` is `beginner`, and
+`validateReshapedPlan` reconstructs pre-PV2-A plans with both volume fields at 0 —
+without the guard the watch would fire on every one of them).
+**Gated by** `beginnerHills.test.ts` § Am.4 PRODUCTION SHAPE, falsified three ways.
 
 ### §28 Amendment 3 — when there is no midweek easy run, the strides move; hills do not (Coaching Board 2026-09-24, S28-WEEKEND-CARRIER-01)
 
@@ -10960,11 +11095,43 @@ reports 85.0% / 94.4% with the field set, which is a separate defect (`ENVELOPE-
 and is why `review:coaching` said *"no measured rate moved"* on this change. 🩹 Willy's condition is untouched — `finish_goal_run_walk`
 stays unset and ARM 2 still holds.
 
-⚠️ **§117 PROPER — THE PEAK REDUCTION — IS STILL DEAD, DELIBERATELY.** `runWalkApplies` has the
-identical raw read. Resolving it lowers peak volume for the beginner finish cohort at scale, which
-is a **Coaching Board** question, and Willy's *"no peak may fall"* evidence was itself taken on
-inputs that carried the level, so it says nothing about the production population. Open as
-`RUNWALK-ASSESSED-LEVEL-01`, peak half. **Do not reconcile the two gates without that sitting.**
+🔴 **§117 PROPER — THE PEAK REDUCTION — IS STILL DEAD, AND THE RULING TO RESOLVE IT WAS **VACATED**
+ON THE DAY IT WAS MADE** (`RUNWALK-ASSESSED-LEVEL-01-PEAK`, Coaching Board 2026-11-03, CORRECT then
+**INSUFFICIENT EVIDENCE** at a re-sitting the same day).
+
+`runWalkApplies` reads `input.fitness_level`, which the wizard never sends, so the mechanism §117 is
+actually about has never applied: `finish_goal_run_walk` truthy on **0 of 39 live plans**.
+
+🩹 **THE CONFLICT SCAN DID SETTLE ONE THING, AND IT STANDS.** Willy's *"no peak may fall"* was
+attached to **this amendment** — the readiness route — not to §117 proper, whose whole mechanism IS the
+reduction (ratified in §117 and Am.1 at 34 km). Resolving the gate would restore ratified doctrine, not
+override a condition.
+
+🔴 **WHAT VACATED IT: EVERY FIGURE IN THE SUBMISSION WAS AN AGGREGATE, AND AN AGGREGATE CANNOT SEE A
+RUNNER FLIP.** The board approved on *88 plans reached, 0 below Am.2's 17 km bound,
+`INV-PLAN-RUNWALK-ADEQUATE` 0 errors, refusals 10.54% → 9.72% weighted*. Measured **per case** over
+4,831 envelope inputs: **7 runners go SERVED → REFUSED** (0.068% weighted) against 7 going the other
+way. The seven lost share one signature — **marathon, 15 km/week, 3–5 days, age 48–58**, several with
+achilles history. They resolve to structural beginner, fall below §117's door, take the 34 km peak, and
+their peak long run lands under Am.2's bound, so `runWalkInadequateRefusal` replaces a plan they get
+today with a refusal.
+
+⚠️ **"0 ADEQUACY ERRORS" MEANT THE OPPOSITE OF WHAT IT LOOKED LIKE.** The invariant raised none
+because the engine **refuses** rather than emitting an inadequate plan. **A clean invariant count over
+generated plans is silent about the runners who stopped being generated.** 🏃 Hutchinson, at the
+re-sitting: *"Two hours ago I wrote that a ruling made without the fitness numbers is a ruling made on
+how a plan is classified. This one was made on how plans are counted, and I signed it."*
+
+🩹 Willy withdrew approval: *"Masters runners with a tendon history, currently handed a plan, now told
+to come back later. Seven is not a rounding error when they are these seven."*
+
+✅ **WHAT WOULD MAKE IT CORRECT — and the near miss is in the gate already.** `runWalkApplies`'s runway
+check asks whether §2's ramp can reach §117's **weekly** peak; it never asks whether the **long run**
+reaches Am.2's 17 km. Extend it to decline rather than apply-and-refuse, and those seven keep their
+standard plan. That is a new gate definition and needs its own sitting.
+
+⚠️ **STANDING CONDITION ON ANY RE-SUBMISSION:** report **served → refused and refused → served as
+counts of named cohorts.** An aggregate refusal rate is no longer accepted as evidence on this item.
 
 ### §117 Amendment 2 — the `LONG-RUN-SHORT` exemption is BOUNDED (Coaching Board 2026-09-20, chair-mandated at S116-FLOOR-VS-TARGET-01)
 

@@ -278,68 +278,65 @@ absent prescription until their owner rebuilds.
 
 ---
 
-### 🔴 `RUNWALK-ASSESSED-LEVEL-01-PEAK` — §117's PEAK REDUCTION has never applied to a real plan either *(filed 2026-11-03)* 🏃 **COACHING BOARD**
+### 🔴 `RUNWALK-ASSESSED-LEVEL-01-PEAK` — **RULED CORRECT 2026-11-03 AND VACATED THE SAME DAY. NOT SHIPPED.** 🏃 **COACHING BOARD**
 
-`runWalkApplies` carries the identical raw read and is **held raw deliberately**, with a comment saying so, so
-nobody tidies the two gates into agreement and ships an unratified peak change. Switching it on lowers peak
-volume for the beginner finish cohort, which is what the board must rule on.
+§117's peak reduction — the mechanism the section is about — has never applied to a real plan:
+`finish_goal_run_walk` truthy on **0 of 39 live plans** and 0 of 10,752 marathon envelope cases, because
+`runWalkApplies` reads `input.fitness_level`.
 
-**The evidence is measured and it is smaller than it reads.** Probed by resolving the gate, on the full
-marathon envelope (10,752 cases, the shape the wizard posts):
+🩹 **The conflict scan settled one thing and it stands:** Willy's *"no peak may fall"* bound **Am.5**, the
+readiness route — not §117 proper, whose mechanism IS the reduction, ratified at 34 km. Resolving the gate
+restores ratified doctrine.
 
-| | production today | peak half resolved |
-|---|---|---|
-| `finish_goal_run_walk` | **0** | **88** (0.82%, weighted 1.51%) |
-| refusals, weighted | 10.54% | **9.72%** (−0.82pp) |
-| `run_walk` offered at the checkpoint | **0 of 436** staged marathoners | 6 of 435 (1.4%) |
+🔴 **WHAT VACATED IT: EVERY FIGURE IN THE SUBMISSION WAS AN AGGREGATE.** Approved on *88 plans reached, 0 below
+Am.2's 17 km bound, `INV-PLAN-RUNWALK-ADEQUATE` 0 errors, refusals 10.54% → 9.72% weighted.* Measured **per case**
+over 4,831 inputs: **7 runners go SERVED → REFUSED** (0.068% weighted) against 7 the other way. The 7 lost share
+one signature — **marathon, 15 km/week, 3–5 days, age 48–58**, several with achilles history. **A net wash in the
+aggregate; seven masters runners with a tendon history in the particular.**
 
-⚠️ **In the RATIFIED (level-set) shape the flag reaches only 24 of 10,752 (0.22%)**, so §117's peak lever is
-already small in today's engine — `NO-RUNNER-TURNED-AWAY-01`'s staging machinery has taken over most of the
-refusal cases it was built for. **Re-measure before treating this as urgent.**
+⚠️ **The reassuring number was the misleading one.** `INV-PLAN-RUNWALK-ADEQUATE` raised 0 errors **because the
+engine refuses rather than emitting an inadequate plan.** A clean invariant count over generated plans is silent
+about the runners who stopped being generated. **It was a regression test that caught this, not a measurement** —
+`taperLongRunCap.test.ts` named the refusal verbatim.
 
-🩹 **Willy's "no peak may fall" must be re-measured, not inherited.** His condition was taken on inputs that
-carried the level, so it says nothing about the 88. The narrow question for the sitting: do those 88 plans'
-reduced peaks still clear §117 Am.2's **17 km** adequacy bound and `INV-PLAN-RUNWALK-ADEQUATE`? Both harnesses
-exist. ⚠️ A consequence worth naming: the checkpoint's **run-walk option** is gated on `finish_goal_run_walk`
-(`stagedRacePlan.ts:392`), so it is unreachable in production until this ships — the *"§117 built a run-walk
-plan for 0 of 231"* note in `stagedRacePlan.test.ts` recorded that as a corpus fact, and the cause was this.
+✅ **THE FIX IS IDENTIFIED AND THE NEAR MISS IS ALREADY IN THE GATE.** `runWalkApplies`'s runway check asks whether
+§2's ramp can reach §117's **weekly** peak; it never asks whether the **long run** reaches Am.2's 17 km. Extend it
+to **decline rather than apply-and-refuse**, and those seven keep their standard plan. New gate definition → its
+own sitting.
 
----
+⚠️ **STANDING CONDITION ON RE-SUBMISSION:** served→refused and refused→served as **counts of named cohorts**.
+**An aggregate refusal rate is no longer accepted as evidence on this item.** The gate is held raw with the whole
+finding in the comment so nobody resolves it without reading this.
 
-### 🔴 `STRIDE-ASSESSED-LEVEL-01` — §28 Am.1's hill strides have never been prescribed, and the watch for them has never run *(filed 2026-11-03)* 🏃 **COACHING BOARD** for the prescription; ⚙️ **NO BOARD** for the invariant's gate
+### ✅ `STRIDE-ASSESSED-LEVEL-01` — **SHIPPED 2026-11-03.** §28 Am.1's hill strides reach a real beginner 🏃 **COACHING BOARD** — CORRECT WITH AMENDMENT
 
-🔴 **Third instance of `RUNWALK-ASSESSED-LEVEL-01`'s mechanism, found by enumerating the raw reads.**
-`isHillStrideWeek` opens with `if (fitnessLevel !== 'beginner') return false`, and `ruleEngine.ts:3964/3971` passes
-`input.fitness_level` **raw** into `neuromuscularNote` / `neuromuscularLabel`. The wizard never sends that field, so
-the beginner arm is false for every real runner and the alternation collapses permanently to flat strides.
+🔴 **Hill strides had never been prescribed to anyone.** `isHillStrideWeek` opens
+`if (fitnessLevel !== 'beginner')` and `ruleEngine` passed `input.fitness_level` raw; the wizard sends the level on
+`user_declared_level` and **never** on that field (§79). Measured: hill-stride plans **86 of 1,044 level-set → 0 of
+1,060 production-shaped**, and **0 of 39 live plans against 23 live beginners.**
 
-**And the same field gates the invariant that watches it.** `invariants.ts:9325` —
-`if (input.fitness_level === 'beginner')` — wraps the whole of `INV-PLAN-BEGINNER-NEUROMUSCULAR`, whose own comment
-says why it exists: *"If a future change ever attaches one to a quality session, that construction argument silently
-stops being true and a beginner acquires quality through a door nobody is watching. **This is that watch.**"*
-**The watch has never been on duty for a real plan.**
+🔴 **And the same field gated the invariant that watches it.** `INV-PLAN-BEGINNER-NEUROMUSCULAR`, whose own comment
+calls it *"that watch"*, opened on **366 → 0**. It had never been on duty.
 
-**Measured 2026-11-03** (envelope, stride-29, both shapes; and the live table):
+⚠️ **THE PRINCIPLE TEXT WAS AMENDED, NOT JUST THE CODE** (§28 Am.4). Am.1's own sentence read *"For a runner at
+`fitness_level: 'beginner'`"* — **the doctrine named the unsettable field and the engine was built to the
+sentence.** I filed this as a defect fix; the conflict scan corrected that to an amendment.
 
-| | plans | structurally beginner | plans with HILL strides | invariant's gate opens on |
-|---|---|---|---|---|
-| ratified corpus (`fitness_level` set) | 1,044 | 366 | **86** | 366 |
-| production shape (field absent) | 1,060 | 332 | **0** | **0** |
-| **39 live plans** | 39 | **23** (`meta.fitness_level`) | **0** | 0 |
+**Measured, and nothing else moved:** 133 plans gain hill strides, **0** hill-restricted (§21/Am.2's guard reads
+`injury_history`, a wizard field, so it was never blind), **0** gain an error violation, total coach objections
+**269 → 269**. The golden snapshots moved by exactly **24 lines, all of them the stride note and label** — P0 is a
+byte-exact reproduction of a real runner's inputs, so that archetype gains hills.
 
-✅ **§28 proper is unaffected** — flat strides are placed on 100% of plans in both shapes (1,044 / 1,060), so the
-runner has never been without neuromuscular stimulus. What is missing is the HILL arm, and the watch.
+⚕️ **Sims recorded what the delay cost:** eccentric hill work is **osteogenic**, and it was withheld from
+low-volume beginners — disproportionately women, and in the charity intake disproportionately peri- and
+post-menopausal — the group with the most bone to gain. 🩹 Willy kept the dose and the alternation, and noted the
+structural read puts **572 of 1,060** in the cohort where the forced field put 366.
 
-🩹 **The safety bounds are live and reachable, which is why this is smaller than §117's peak half.** The §21 injury
-gate reads `injury_history` and the Am.3 bound reads the carrier day — both wizard-supplied, both working. So the
-board's question is narrow: the ruling authorised hills for beginners *"dosed like §28's strides"*, and switching the
-gate on gives eccentric-heavy work to the 332-of-1,060 structural-beginner cohort who have never had it. **Confirm
-`INV-PLAN-INJURY-NO-HILLS` stays clean across the 86 and re-measure the bounds on the production shape** — Willy's
-original evidence, like his §117 condition, was taken on inputs that carried the level.
+**Gate:** `beginnerHills.test.ts` § Am.4 PRODUCTION SHAPE — 7 arms, falsified 3 ways (note/label back to the raw
+field; §21's injury bar removed; the invariant's gate back to the raw field), each red on its own arm.
 
-⚠️ **Fix the gate, not the call site.** `isHillStrideWeek` takes `fitnessLevel: string | undefined` from two callers
-and `weekHasNeuromuscular` is shared with the invariant; the resolution belongs where §117's now is — the caller
-passes `levels.structural`, the checker resolves meta-first. Same shape, same owner (`resolveLevels`).
+⚠️ **What this does not prove:** nothing about `cohortGrid`, which `beginnerHills.test.ts`'s original arms sample
+and which is still level-set — the **sixth** blind harness for this rule (`COHORT-GRID-UNSET-LEVEL-01`).
 
 ### 🔴 `COHORT-GRID-UNSET-LEVEL-01` — `cohortGrid` still sets `fitness_level`, so the three gates CLAUDE.md names for an engine change are blind *(filed 2026-11-03)* ⚙️ **NO BOARD** — 🏃 **BOARD-MANDATED PREREQUISITE**
 
@@ -438,7 +435,9 @@ returning nothing). That re-baselines the envelope, `cohort:shape` and `measure:
 a declared reason, per the re-baselining rule. Pair with `PARITY-GRID-UNSET-LEVEL-01` — same root, different grid —
 and with an enumeration of every rule reading `input.fitness_level` raw.
 
-### 🔴 `WEEK1-HAZARD-UNREACHABLE-01` — Willy's binding week-1 condition was ratified against a hazard the product cannot build *(filed 2026-11-03)* 🏃 **COACHING BOARD**
+### ✅ `WEEK1-HAZARD-UNREACHABLE-01` — **RULED 2026-11-03: THE DOSE STANDS.** 🏃 **COACHING BOARD** — CORRECT WITH AMENDMENT
+
+🏃 **Ruled, no code.** §2 Amendment gains a dated note recording arm 2 as inert on the production corpus, exactly as arm 3 already was. 🩹 Willy: *"not an argument for lowering the floor; it is an argument that §2's ramp is holding… what I will not accept is moving a threshold until it fires."* 🏃 Hutchinson came prepared to argue the dose should move and **withdrew it**. **Binding condition: `COHORT-GRID-UNSET-LEVEL-01` and `PARITY-GRID-UNSET-LEVEL-01` must be fixed before any week-1 dose change, and no ruling may cite `measure:fitness` until then.**
 
 🔑 **Measured 2026-11-03, production shape, 4,379 plans, all six distances, no narrowing: the hazardous
 population — a week-1 step of ≥ 10 km that is ALSO > 1.25× — is 0, everywhere.** The largest week-1 step the engine

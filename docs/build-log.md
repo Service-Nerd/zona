@@ -5,6 +5,22 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-03 — board sitting · one ruling shipped, one vacated two hours after I wrote it
+**Shipped:** §28's hill strides reach a real beginner at last, and the invariant that watches them is on duty. §117's peak reduction was ruled correct, then vacated the same day when a regression test found seven runners it would turn away.
+
+**Dev learning:** The conflict scan earned its mandatory status twice in one sitting. First it found that §28 Amendment 1's **principle sentence** reads *"for a runner at `fitness_level: 'beginner'`"* — the doctrine named the field the wizard cannot send, so the engine was built correctly to a wrong instruction. I had filed it as a defect fix; it is an amendment. Second, it found that Willy's *"no peak may fall"* condition bound a different amendment than the one I had attributed it to, which turned item 2 from "override a condition" into "restore ratified doctrine".
+
+**Product/creator learning:** Sims said the thing nobody else had. Short eccentric hill work is **osteogenic**, and the cohort we had been withholding it from — low-volume beginners, in the charity intake disproportionately peri- and post-menopausal women — is the group with the most bone to gain. Twenty-three live beginners, none of them getting it. That reframed a tidy mechanical fix as something that cost real people something real.
+
+**AI-building learning:** I gave the board three aggregate figures for item 2 — 88 plans reached, 0 below the adequacy bound, refusals down 0.82pp — and it approved. **Not one of them can see a runner flip.** Measured per case, 7 runners go from served to refused and 7 the other way: a wash in the aggregate, and in the particular, seven masters runners aged 48–58 with achilles history who get a plan today and "come back when you've built your base" tomorrow. The figure that reassured me was the misleading one: zero adequacy errors, **because the engine refuses rather than emitting an inadequate plan.** A clean invariant count over generated plans is silent about the runners who stopped being generated.
+
+**The honest bit:** a regression test found it, not me. `taperLongRunCap.test.ts` failed with the refusal message spelled out, after my own measurement had said the change was net positive. I had run the full suite three times today and called the measurement the evidence; the suite was the evidence. And the day's score is not flattering: of the three things I was asked to keep doing — build procedure, code review, regression testing — I had skipped code review entirely until asked, and it found three real defects in code I had already pushed, including one that my very next change would have made live.
+
+**Hook material:** I asked a board to approve a change on three numbers, all of them true, all of them averages. Then a test told me seven runners would be turned away — fifty-eight years old, fifteen kilometres a week, achilles history. The ruling lasted two hours. **"Net positive" and "nobody loses" are different claims, and only one of them was measured.**
+
+**Postable?:** yes — the vacated ruling is the story, not the shipped one.
+
+---
 ## 2026-11-03 — ENVELOPE-UNSET-LEVEL-01 · our quality score described runners our own app cannot create
 **Shipped:** the weighted population every coaching number is measured on now sends the runner's level on the field the wizard actually posts. Both baselines re-written, the per-distance floor restated honestly, and three dead rules enumerated behind it.
 

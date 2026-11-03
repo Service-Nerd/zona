@@ -3961,14 +3961,21 @@ function buildWeekSessions(
       // as a STRUCTURAL fact from the shared predicate, never inferred from the
       // note or label afterwards (D-17).
       const postLR = isDayAfterLongRun(carrier, longDay)
-      const note = neuromuscularNote(weekN, input.fitness_level, input.injury_history, postLR)
+      // ▲ §28 Am.1 Am.4 (Coaching Board 2026-11-03, `STRIDE-ASSESSED-LEVEL-01`) — the
+      // RESOLVED structural level. This read `input.fitness_level`, which the wizard
+      // never sends, so the hill arm was false for every real runner: hill strides on
+      // 0 of 39 live plans against 23 live beginners. Structural, not intensity — §79,
+      // because hills are tendon loading and tissue takes the conservative read.
+      // `excludeHighTissueStress` is §79's EXISTING per-week owner of "this week is inside
+      // the re-entry window" — reused, never re-derived (the §28 Am.4 re-sitting's condition).
+      const note = neuromuscularNote(weekN, fitness, input.injury_history, postLR, excludeHighTissueStress)
       const e0 = s.coach_notes?.[0]
       const e1 = s.coach_notes?.[1]
       s.coach_notes = e0 && e1 ? [e0, e1, note] : e0 ? [e0, note] : [note]
       // STRIDE-VISIBILITY-01 (SLT) — the label names what the session contains.
       // Derived HERE, where "strides were placed" is a structural fact, never
       // re-parsed from the string afterwards (D-17).
-      if (s.label) s.label = neuromuscularLabel(s.label, weekN, input.fitness_level, input.injury_history, postLR)
+      if (s.label) s.label = neuromuscularLabel(s.label, weekN, fitness, input.injury_history, postLR, excludeHighTissueStress)
     }
   }
 

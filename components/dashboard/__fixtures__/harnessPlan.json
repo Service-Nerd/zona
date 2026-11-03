@@ -246,7 +246,7 @@
         "wed": {
           "id": "w3-wed",
           "type": "easy",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "detail": null,
           "distance_km": 11.5,
           "duration_mins": 92,
@@ -256,7 +256,7 @@
           "pace_target": "7:18–8:40 /km",
           "rpe_target": 4,
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between."
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
           ]
         },
         "mon": {
@@ -357,7 +357,7 @@
         "wed": {
           "id": "w5-wed",
           "type": "easy",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "detail": null,
           "distance_km": 11.5,
           "duration_mins": 92,
@@ -367,7 +367,7 @@
           "pace_target": "7:18–8:40 /km",
           "rpe_target": 4,
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between."
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
           ]
         },
         "mon": {
@@ -548,7 +548,7 @@
         "mon": {
           "id": "w7-mon",
           "type": "easy",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "detail": null,
           "distance_km": 13,
           "duration_mins": 104,
@@ -558,7 +558,7 @@
           "pace_target": "7:18–8:40 /km",
           "rpe_target": 4,
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between."
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
           ]
         }
       },
@@ -706,7 +706,7 @@
         "mon": {
           "id": "w9-mon",
           "type": "easy",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "detail": null,
           "distance_km": 13,
           "duration_mins": 104,
@@ -716,7 +716,7 @@
           "pace_target": "7:18–8:40 /km",
           "rpe_target": 4,
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between."
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
           ]
         }
       },
@@ -904,7 +904,7 @@
         "mon": {
           "id": "w11-mon",
           "type": "easy",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "detail": null,
           "distance_km": 13,
           "duration_mins": 104,
@@ -914,7 +914,7 @@
           "pace_target": "7:18–8:40 /km",
           "rpe_target": 4,
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between."
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
           ]
         }
       },
@@ -1083,7 +1083,7 @@
         "mon": {
           "id": "w13-mon",
           "type": "easy",
-          "label": "Easy run + strides — Zone 2",
+          "label": "Easy run + hill strides — Zone 2",
           "detail": null,
           "distance_km": 9,
           "duration_mins": 72,
@@ -1093,7 +1093,7 @@
           "pace_target": "7:18–8:40 /km",
           "rpe_target": 4,
           "coach_notes": [
-            "4×20s strides at 5K effort, full recovery between."
+            "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
           ]
         }
       },
