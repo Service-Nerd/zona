@@ -5,6 +5,30 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-03 — RESHAPE-VALIDATOR-KIND-01 + RESHAPE-SCOPE-TO-CHANGE-01 · the reshape was being blamed for defects it did not cause
+**Shipped:** `/api/adjust-plan` now refuses only on violations the reshape INTRODUCED, and validates through the owner that dispatches on plan kind. 18 of 39 live plans were refused on every adjustment; of the 15 that remain, a simulated reorder across every one introduces a blocking violation on exactly 1.
+
+**Dev learning:** The identity of a "violation" was the whole problem, and I got it wrong first. My first fingerprint was `code | week | day | severity | actual | expected | message` and it reported 3 of 18 plans still refused. I nearly wrote that number down. Two of the three were artefacts of my own key: a reorder MOVES sessions, so a breach attached to a session travels with it — the same `INV-PLAN-CATALOGUE-LINK` on "Cruise intervals" moving wed→sat, byte-identical message, new day, counted as a brand new breach. Drop `day` and it's correctly pre-existing. The third was real: `INV-PLAN-QUALITY-LONG-SPACING`, absent from that week before the swap, created by putting quality one day from the long run. **The reason I found out is that I dumped the actual before/after pairs instead of trusting the count.** Three lines of output decided the design.
+
+Second thing: `message` ended up in the identity, which means editing an invariant's own prose makes that breach look introduced for the next reshape of every plan carrying it. That's a real limitation. It's bounded and I wrote it into the registry rather than letting someone find it.
+
+**Product/creator learning:** The defect had a shape I keep underrating. Four `reshape_invalid` events in all of production history, 21 adjustments ever, across **two** runners. By traffic it's nothing. But the first runner to redeem a code and reach for the feature got refused — for seven defects that predate him — and was told his plan looked good. A latent defect that fires on a new subscriber's first action is not a low-priority defect, and the traffic number is exactly the argument that would have deferred it.
+
+The board's framing was better than mine. I had this as "runners can't adjust their plans". Willy inverted it: the refusal wasn't protecting anyone, it was blocking the only mechanism that *reduces* load. The reshape triggers are protective — trim 15%, absorb a skip — so a safety gate was disabling the safety response on precisely the cohort already over the line. Same facts, and now it's obvious which way it goes.
+
+**AI-building learning:** Four separate gates stopped me on the way in and every one was right. §130 was already taken — I'd read the end of CoachingPrinciples.md, seen §129, and assumed the file was in numeric order. It isn't; the highest is 133. `principleCoverage` then demanded a manifest entry, and `test-liveness` refused to accept "I falsified it by hand" and made me register the classifier as a mutation SUBJECT. The fourth was my own gate from the commit an hour earlier: it pinned the literal `validateStoredPlan(updatedPlan, weekN)`, and the second commit introduced a local helper so both plans go through the same validator — strictly better code, red test. **A check keyed on a spelling guards the spellings it knows.**
+
+Then the one that actually stung. Fixing that arm, I added `expect(body).toMatch(/weekN/)` to prove the call was still week-scoped. Falsified it by dropping the scope — still green, because `applyAdjustmentToPlan(plan, weekN, …)` names `weekN` three lines away. I'd written an assertion that the identifier exists somewhere in the function, which was never in doubt. **The arm I added to make a gate honest was itself hollow, and only mutation said so.** That is the third hollow check of my own I've caught by falsifying rather than by reading.
+
+**The honest bit:** I published 15/3 in my own analysis block and had to correct it to 17/1 before the board sat, because the number came from the fingerprint I'd already decided to reject. Then I did a version of the same thing again: the measurement script kept its own local copy of the fingerprint and its own call to `validateReshapedPlan`, so after shipping it was measuring my draft, not the product — it said 36/3 where the shipped owner says 14/1, and I had already typed 36/3 into the ruling register. **Two numbers, one session, both wrong because the instrument was a copy of the thing under test.** Re-pointing the script at `classifyReshapeViolations` and `validateStoredPlan` took two minutes; noticing was the whole job.
+
+And a third-order one: `audit:stored`'s headline said "REFUSED on every adjustment". That was exactly true when I wrote it yesterday and overstates by an order of magnitude as of today, because carrying a violation is no longer the same as being refused. A label that was true on the day it was written, in a script whose entire purpose is to be trusted.
+
+**Hook material:** My own fingerprint was wrong two times out of three, and I only found out because I printed the actual before/after pairs instead of the count — same message, same week, different day: a breach riding along with the session someone moved. Also: four gates caught me in one hour, and the fifth was a test I wrote to fix the fourth, which could never have failed.
+
+**Postable?:** yes — the "my instrument was a copy of the thing under test" thread is the strongest one, and it happened twice in the same session.
+
+---
 ## 2026-11-03 — EFFORT-GOVERNED-REMEDIATION-01 + PLAN-CHECK-REFUSED-01 · I tested everything except the plans people already had
 
 **Shipped:** the two live plans I froze yesterday are unfrozen, a refusal stops being displayed as "Plan looks good.", and `npm run audit:stored` asks the question that was missing.

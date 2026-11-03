@@ -174,66 +174,6 @@ three `label.includes('pace')` instances fixed earlier today: **anchor on the pr
 
 ---
 
-### 🔲 `RESHAPE-SCOPE-TO-CHANGE-01` — a plan with any historical defect can never be adjusted again ⚙️ **NO BOARD** to measure; 🏃 **COACHING BOARD** if the scoping rule changes what gets blessed
-
-📐 **Found 2026-11-03** while answering why a new subscriber's reorder was refused. It was not his move: his
-adjustments were already dead.
-
-`validateReshapedPlan` returns **every** error-severity violation in the plan. Only two codes are scoped to the
-week being changed (`INV-PLAN-COPY-MATCHES-SESSIONS`, `INV-PLAN-LONG-IS-LONGEST-MINS`) plus a
-`RESHAPE_SKIP_INVARIANTS` set. `/api/adjust-plan` then refuses on any error. **So one historical defect
-anywhere freezes adjustment permanently.**
-
-**Measured (`npm run audit:stored`):** **18 of 39 live plans — 46% of runners — are refused on every
-adjustment.** ⚠️ First measured at **20 / 51%**; two of those were plans §40b Am.4 had frozen and were
-remediated on 2026-11-03, so the standing figure is 18. The 51% is kept here because it is what the
-investigation found, and because the difference is the part that was mine. Dominant cause `INV-PLAN-EASY-PACE-PRESENT` at 201 occurrences across plans, long-standing. 18 of
-the 20 predate 2026-11-02.
-
-⚠️ **Only 4 `reshape_invalid` events exist in all of production history** (2026-11-02, 10-25, two in August), so
-this is a landmine rather than a live outage — most runners never try to adjust. It does not make it less wrong.
-
-🔴 **THE HARD PART, and why this is not a one-line fix.** Scoping the check to the touched week would let a
-reshape through on a plan that is already broken elsewhere — a reshape must not be *blessed* because the plan
-was already invalid. The honest shapes are: (a) refuse only on violations the reshape INTRODUCED (diff before
-and after, which is what the digest already does by hand), or (b) scope to the touched week AND surface the
-pre-existing ones separately so they get fixed rather than silently tolerated. (a) is closer to the question
-the runner is asking.
-
-🔻 **Related, already shipped:** `PLAN-CHECK-REFUSED-01` made the refusal honest. That stops the lie; it does
-not restore the capability.
-
----
-
-### 🔲 `RESHAPE-VALIDATOR-KIND-01` — the adjust path judges a base-build plan by the race constitution ⚙️ **NO BOARD** (restores documented intent)
-
-📐 **Found 2026-11-03** while measuring `RESHAPE-SCOPE-TO-CHANGE-01`. **It is the second half of a fix that was
-only applied to one twin.**
-
-`lib/plan/validateStoredPlan.ts` exists for exactly this defect and says so in its own header: it is *"THE
-SINGLE OWNER of 'validate a plan we have already stored', and the only thing it decides is WHICH CONSTITUTION
-applies to this plan's KIND."* It was written on 2026-10-09 because the daily audit ran `validateReshapedPlan`
-over every stored plan without asking what kind it was, producing **101 phantom violations** on the 2
-base-build plans then in the fleet.
-
-**`/api/adjust-plan` still does the unconverted thing.** `lib/coaching/adjustmentEngine.ts` calls
-`validateReshapedPlan` directly, so a base-build plan is asked whether it has annotated its prep time.
-
-**Measured 2026-11-03, production:** 3 stored plans are `plan_kind: 'base_build'` (37 of 598 stored weeks).
-The adjust path reports **59 / 21 / 41 errors**; the dispatching owner reports **0** for all three. So all 3
-runners are refused on every adjustment for 121 phantom violations, and `§116`'s real constitution
-(`validateBaseBuildBlock`) is never applied to their reshape at all.
-
-⚠️ **It is a PREREQUISITE for `RESHAPE-SCOPE-TO-CHANGE-01`, not a parallel item.** Introduced-only blocking
-would make those 3 adjustable while still judging them by the wrong constitution, so a base-build reshape would
-pass with §116 never consulted. Today they are refused, which is wrong but safe. **Dispatch first, then scope.**
-
-⚠️ **`scripts/audit-stored-plans.ts` must move in the same commit.** It calls `validateReshapedPlan`
-deliberately, *"NOT `validatePlan`: it is what `/api/adjust-plan` actually calls"* — so the moment the route
-dispatches, the audit measures a question production no longer asks.
-
----
-
 ### 🔲 `STORED-PLAN-DEBT-REPAIR-01` — the tolerated pre-existing breaches are debt, and nothing repairs them ⚙️ **NO BOARD** to measure; 🏃 **COACHING BOARD** for any repair that rewrites prescription
 
 📐 **Filed by the Coaching Board, 2026-11-03**, explicitly out of scope of `RESHAPE-SCOPE-TO-CHANGE-01`:
@@ -9669,7 +9609,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-03 (last ship `9f79c905` PLAN-CHECK-REFUSED-01; 726 test files / 7,069 tests; pushed).** 🔴 **A NEW SUBSCRIBER'S FIRST ACTION FAILED, and the digest found a regression of mine.** Duncan redeemed an offer code at 16:56 (active, 1 year, `is_comped`); one minute later his reorder was refused. ✅ **`PLAN-CHECK-REFUSED-01`:** `/api/adjust-plan` returned the SAME body when it found nothing and when it REFUSED, so `ReshapeScreen` rendered a **green tick over "Plan looks good."** for **18 of 39 live plans (46%)** and stamped "Last checked" as a check that ran. ⚠️ Found at 20 / 51%; 2 of those were mine and are remediated — **verified: adjustable 19 → 21, archives hold the old values.** A silent failure wearing a green tick is a false claim. ✅ **`EFFORT-GOVERNED-REMEDIATION-01`:** §40b Am.4 (shipped 11-02, verified entirely on GENERATED plans) froze **2 live plans** — adjustable **21 → 19**. ✅ **Remediation APPLIED by the founder 2026-11-03 08:46 and verified independently of the script:** `audit:stored` adjustable **19 → 21**, `hr_target` absent from all three `hill_reps` sessions in the DB, zones unchanged at Zone 4–5, and 3 `plan_archive` rows still holding the old bands (146–170 / 168–187 / 156–179 bpm), so the rollback is real. ✅ **The gate: `npm run audit:stored`**, steps 6–7 of `plan-invariants.md`, proven against the regression. 🔻 **Filed, not fixed:** `RESHAPE-SCOPE-TO-CHANGE-01` (the real defect behind the 46% — all 18 predate 11-02, mostly `INV-PLAN-EASY-PACE-PRESENT` at 201) and `REORDER-BLOCKED-DAY-01` (`PlanCalendar` has no notion of blocked days). ⚠️ **`PLAN_CHECK_REFUSED`'s wording awaits the founder** (brand.md owns voice). 🔻 **Open, founder (unchanged):** sandbox purchase test, digest Q9B, Coach on a device.**
+**State at END of 2026-11-03 (last ship `367336ca` RESHAPE-SCOPE-TO-CHANGE-01; 728 test files / 7,087 tests; `verify` EXIT 0, `verify:parity` IDENTICAL on 6,102 cases, `review:coaching` all steps pass at 94.4% envelope).** 🔴 **THE RESHAPE WAS BEING BLAMED FOR DEFECTS IT DID NOT CAUSE, and a remedy from 10-09 had only ever been applied to one twin.** ✅ **`RESHAPE-VALIDATOR-KIND-01`:** `/api/adjust-plan` called `validateReshapedPlan` directly while `validateStoredPlan` — written for exactly this defect, and documenting itself as the single owner of *"which constitution applies to this plan's KIND"* — sat beside it. The daily audit was converted; the path a runner waits on was not. **3 base-build plans carried 121 phantom errors against the owner's 0**, so all 3 runners were refused on every adjustment and §116's real constitution never ran on their reshape. Clean 21 → 24 of 39. ✅ **`RESHAPE-SCOPE-TO-CHANGE-01` / §134, Coaching Board CORRECT WITH AMENDMENT, unanimous:** the route refuses only on violations the reshape **INTRODUCED**. It refused on every error anywhere in the plan — **18 of 39 live plans, 46%** — so a runner was refused permission to move Thursday's run because week 11 carries a four-month-old copy defect in a month they have not reached. 🩹 **Willy's inversion carried it:** the refusal reduced nobody's load, it blocked the only mechanism that reduces it. Of the 15 plans still carrying violations, a simulated reorder on every one introduces a blocking violation on **1**. 🔴 **MY OWN INSTRUMENT WAS A COPY OF THE THING UNDER TEST, TWICE:** I published 15/3 from the fingerprint I had already rejected, then 36/3 from a measurement script holding its own copy of it — through the shipped owner both are 14/1. 🔴 **FOUR GATES CAUGHT ME AND ALL FOUR WERE RIGHT** (§130 taken — the file is not in numeric order; `principleCoverage` manifest; `test-liveness` SUBJECT; my own arm pinning a SPELLING), **and the arm I added to fix the fourth was hollow** — `/weekN/` over a body where `applyAdjustmentToPlan` names it too. 🔻 **Filed, not fixed:** `STORED-PLAN-DEBT-REPAIR-01` — 17 plans carry tolerated violations incl. load rules; the board put repair explicitly out of scope. 🔻 **Open, founder (unchanged):** `PLAN_CHECK_REFUSED` wording, sandbox purchase test, digest Q9B, Coach on a device.**
 
 **Prior — state at END of 2026-11-02 (last ship `58c7af98` CHECK-DB-LIVE-KEY-CRON-01; 722 test files / 7,031 tests; **pushed and LIVE 2026-11-02, `b7393345`, Vercel READY; `20261102_live_week_keys.sql` APPLIED and verified — 5 live-key indexes vs 2, 0 plain uniques vs 3**).** ✅ **`20261102_live_week_keys.sql` APPLIED (founder) and VERIFIED from here — 5 `%_live_key` indexes vs 2, 0 plain uniques on the three converted tables vs 3. Ledger updated, `check:db` clean.** 🔻 **Nothing in the repo can re-check those keys: `CHECK-DB-LIVE-KEY-ARM-01` filed.** 🔻 **Open, founder (unchanged):** sandbox purchase test (`docs/runbooks/iap-sandbox-purchase-test.md`), paste digest Q9B (`docs/runbooks/digest-prompt-q9b-2026-10-31.txt`), Coach on a device. **Today, 3 ships + 1 close:** `c679936e` WEEKLY-REPORT-SUPERSEDED-WRITE-01 — `writeLiveRow` is the one owner of a live-plan write across `weekly_reports`, `session_reflections` and `session_metric_overrides`; measured 1 ghost write, 16 + 8 + 13 superseded rows, and `session_reflections` had **0 live rows**, so its next write was the loss. COMPLETION-TOMBSTONE-01 fixed the fourth table of that family on 09-23 and left these three. `55c17200` PEAK-RACEPACE-NOTE-01 — a note that was wrong **14 of 14** times and structurally suppressed on **9 of 9** of the rows it was written for; 26 more instances on time-targeted ultras the cohort grid cannot reach. `23751aea` §40b Am.4 (Coaching Board, unanimous) — an effort-governed session carries the zone its row declares and no HR band; `vert_hike_repeats` was shipping as Zone 4–5 / 158–184 bpm on a power hike. ✅ `ONRAMP-W8-SPACING-01` **CLOSED as a FALSE PREMISE** — 4 runs across 7 open days cannot avoid one consecutive pair, and `INV-PLAN-ONRAMP-SPACED` already agrees (0 violations). 🔻 **Filed today:** `ULTRA-VOICE-REPURPOSED-01` (a "Back-to-back long" label and "Sunday is meant to feel heavy" on a 78-minute Friday tempo — found by the board's read of the sample packet, not by any harness), `EFFORT-GOVERNED-HR-DISPLAY-01`. **Still open, filed:** `A11Y-REDUCED-MOTION-01`, `TYPESCALE-DECIMAL-GATE-01`, the ultra slot question (`SIG-ULTRA-UNBUILT-01`, SLT-gated), Coach ideas 2–5. ⚠️ **Declared:** 1,757 `hill_reps` sessions in the 5K/10K cohort grid lost their HR range; `verify:parity` 542 of 6,102 changed; `review:coaching` **identical on all seven steps** before and after — and it did not DETECT either defect. **Then `e3bd6a41` CHECK-DB-LIVE-KEY-ARM-01** — the five `%_live_key` partial indexes are gated now (`liveKeyCoverage.test.ts`, 13 arms, in `verify`) plus a fail-soft live arm in `check:db`. 🔴 **The query written to prove its RPC found TWO live survivors on its first run** (`WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01`): `session_overrides` carries a plain unique beside its partial one — a trap, because its insert only works today thanks to an unfiltered delete that destroys archived overrides, so fixing that delete detonates a 23505 — and `run_analysis_manual_uniq` is partial on `source='manual'`, not on `superseded_at`. Both latent, 0 colliding keys measured. ✅ **ALL THREE OF TODAY'S MIGRATIONS APPLIED AND VERIFIED** (`20261102` live keys, `20261103` the RPC, `20261104` the survivors — ledger updated). `check:db` is **GREEN: 6 week_n-keyed uniques, every one partial on `superseded_at IS NULL`, exit 0**, matching the prediction written into `20261104` before it ran. **`WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01` shipped:** the item named ONE delete site and there were **FIVE** (`PlanCalendar` Move + Swap, `analyse-run/manual`, `strava/unlink-activity`, and this morning's `clearSessionMetricOverride`). 🔴 **In two of them the unfiltered delete was LOAD-BEARING** — it freed a key a surviving plain unique still occupied, so it destroyed archived data AND hid the constraint; fixing either half alone turns silent data loss into a 23505. The migration was applied BEFORE the code, so there was no window. ✅ **`CHECK-DB-LIVE-KEY-CRON-01` SHIPPED** — `/api/ops/live-key-integrity` + a daily cron at 08:20 runs the live-key check now; it returns **503 / `healthy: null`** rather than reassuring when it cannot observe. 🔴 **And it found a hole in `cronAuth.test.ts`:** that arm's population grepped for the literal `x-cron-secret`, so a route using the shared `cronSecretFrom` owner — created BY the very incident that test guards — was exempt from it. **I had asserted in my analysis block that the route would join that population for free; it would not have.** Keyed on `CRON_SECRET` now: 13 routes, falsified. **Fourth instance today of one lesson: a check keyed on a spelling guards the spellings it knows.** Founder's long runs since 11 Oct carry no HR (not investigated, his call).**
 
