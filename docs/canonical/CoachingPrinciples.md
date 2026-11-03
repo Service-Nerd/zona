@@ -12192,3 +12192,117 @@ the good-news receipt fires for 1 of 11 free and 3 of 9 Pro runners; at least on
 owner `lib/coaching/kitReceipts.ts`. **Enforced by** `lib/coaching/kitReceipts.test.ts`. Not a `validatePlan()`
 invariant: it describes runs, not a plan.
 
+
+---
+
+## 134. A reshape answers for what it changed *(Coaching Board 2026-11-03, RESHAPE-SCOPE-TO-CHANGE-01 — CORRECT WITH AMENDMENT)*
+
+**Principle.** An adjustment is refused only on error-severity violations **this reshape
+introduced** — a breach whose exact identity was not in the plan before, or a breach the
+plan now carries more of. Breaches the plan already carried, unchanged, do not refuse the
+adjustment. They are **recorded every time**, with their codes and weeks, and repaired
+separately.
+
+**Why.** `/api/adjust-plan` refused on every error-severity violation anywhere in the plan,
+so **one historical defect froze a runner's adjustments permanently.** Measured against
+production on 2026-11-03: **18 of 39 live plans, 46% of runners** — and 15 of 39, 38%, once
+`RESHAPE-VALIDATOR-KIND-01` had removed the three base-build plans being judged by the race
+constitution entirely. The dominant causes are long-standing copy and annotation defects:
+`INV-PLAN-DIFFICULTY-ANNOTATED` and `INV-PLAN-COMPRESSION-SPLIT` on 10 plans each. **A
+runner was refused permission to move Thursday's run because week 11 carries a four-month-old
+copy defect in a month they have not reached.**
+
+**This generalises an argument the validator already made twice, in writing.**
+`validateReshapedPlan` scopes `INV-PLAN-COPY-MATCHES-SESSIONS` and
+`INV-PLAN-LONG-IS-LONGEST-MINS` to the touched week and gives the same reason for both: *"a
+pre-existing generation defect, not this reshape's responsibility."* §93 and §94 rule the
+same way at the level of doctrine — a pre-existing breach is **declared debt, not an
+exemption**, recorded rather than attributed to the change that revealed it, and 🩹 Willy's
+own NOISE-GATE-01 standard holds that a check firing at 20.1% is noise. This one fired at
+46%, and it did not warn, it refused.
+
+🩹 **The safety argument is INVERTED, which is why this is correct rather than merely kind.**
+The refusal was not reducing anyone's load; it was blocking the only mechanism that reduces
+it. The reshape triggers are overwhelmingly protective — acute:chronic high trims 15%, zone
+drift flags a ceiling, a skip gets absorbed — so refusing on a pre-existing load breach
+disabled the safety response on precisely the cohort already over the line. The breach is
+unchanged either way; the only variable was whether the runner could get the trim.
+
+⚠️ **NOT A WEEK SCOPE, AND THAT WAS THE TEMPTING WRONG ANSWER.** Scoping the check to the
+touched week would *bless* a reshape on a plan broken elsewhere. The question asked is
+narrower and more honest — what did the reshape CHANGE — so a breach a reshape creates is
+refused wherever in the plan it lands.
+
+### The identity, and it was settled by measurement rather than taste
+
+A violation is identified by `code`, `week`, `severity`, `actual`, `expected` and `message`,
+compared as a **multiset**. **`day` is deliberately excluded.**
+
+🔴 **The first cut included `day` and was wrong twice out of three times.** It reported 3 of
+18 plans still refused. Two were artefacts of its own key — the **same** breach travelling
+with its session, byte-identical message, new day: *"Cruise intervals"* wed → sat carrying
+`INV-PLAN-CATALOGUE-LINK`, and *"Long run - Zone 2"* sun → mon carrying
+`INV-PLAN-EASY-PACE-PRESENT`. **A reorder moves sessions; a breach that rides along is not a
+new breach.** The third was genuine — `INV-PLAN-QUALITY-LONG-SPACING`, absent from that week
+before the swap — and is still refused. 📊 Seiler, on the record: *"You did not reason about
+which identity to use; you ran both and read the three disagreements. That is the distinction
+between a check and an opinion."*
+
+🩹 **Amendment — Willy's first binding condition: `actual` and `expected` stay IN the
+fingerprint.** A pre-existing long-run breach that goes from 55% of the week to 80% has a
+different identity and is therefore introduced. His words: *"Do not simplify it later to
+code-and-week; it would read tidier and it would bless a worsening."* No numeric parsing and
+no judgement about direction is required — the number is in the identity.
+
+⚠️ **Dropping `day` does not weaken §18, and that was measured, not assumed.** Across every
+stored plan declaring blocked days, a non-rest session moved onto one is still refused in
+**29 of 29** plans where `INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` fires, because that violation
+carries the day in `actual`. The 3 remaining are base-build plans where the invariant does
+not fire at all, before or after. **This is the case a new subscriber hit on his first action
+on 2026-11-02.**
+
+🩹 **Amendment — Willy's second binding condition: the tolerated set is recorded, every
+time.** Not a counter — the codes and the weeks, to `ops_events` as
+`reshape_preexisting_tolerated`, a separate kind from `reshape_invalid` so the refusal rate
+stays readable. *"If 17 plans are carrying load breaches we have decided not to refuse on, I
+want to be able to list them tomorrow morning."* **A debt nobody can enumerate is an
+exemption wearing a better word.**
+
+### What this does not decide
+
+**Whether the tolerated breaches should be repaired.** Explicitly out of scope of the ruling:
+tolerating a breach is not fixing it, and §93's precedent is that the debt is named and
+tracked rather than closed by the ruling that declared it. Measured: **17 stored plans**
+carry violations that no longer refuse, including load rules —
+`INV-PLAN-LR-MAX-WEEKLY-PCT` on 3, `INV-PLAN-ONRAMP-FLOOR` on 4,
+`INV-PLAN-WEEK-1-2-LONG-CAP` on 2. Tracked as `STORED-PLAN-DEBT-REPAIR-01`.
+
+⚠️ **The denominator is honest and cuts both ways.** 🏃 Hutchinson required it on the record:
+all-time production holds **4** `reshape_invalid` events and **21** adjustments across **2
+distinct runners**, so nobody should dress this as rescuing 46% of the fleet from a live
+outage. The reason to ship it is the one the incident demonstrated: *"A latent defect that
+fires on a new subscriber's first action is not a low-priority defect."* ⚠️ **§124's recorded
+figure of 18 adjustments and 3 reversions is stale and is reconciled here: 21 rows, 4
+reverted.**
+
+⚕️ **Sims, adjacent and recorded rather than ruled:** the reshape triggers are the only route
+by which this product responds to a runner saying *"I am wrecked"* — the skip-with-reason and
+fatigue paths. For 46% of runners that route was closed, and the population most likely to
+use it is the one carrying unexplained fatigue.
+
+**Config.** `lib/coaching/reshapeIntroduced.ts → RESHAPE_BLOCKING_FINGERPRINT_FIELDS`, with
+`classifyReshapeViolations` as the single owner of the split.
+
+**Measured after shipping,** with a simulated reorder on every stored plan still carrying
+violations: **14 of 15 proceed, 1 genuinely introduces a breach**
+(`INV-PLAN-QUALITY-LONG-SPACING`). ⚠️ **A number measured with your own draft instrument is
+not a measurement.** The first figures taken here were 36 / 3, computed with the first
+fingerprint rather than `classifyReshapeViolations`; re-run through the shipped owner they
+are 14 / 1.
+
+**Enforced by** `lib/coaching/reshapeIntroduced.test.ts` (12 arms, every case a real
+production pair) and `lib/coaching/adjustmentOutcomeHandled.test.ts`. ⚠️ **NOT a
+`validatePlan()` invariant, and §34's registry is deliberately untouched** — no new
+`INV-PLAN-*` code is emitted. This governs the SCOPE of enforcement, not a property of a
+plan, so a `Plan => Violation[]` cannot express it and a registry row would be a false
+declaration.

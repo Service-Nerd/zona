@@ -68,6 +68,10 @@ const SUBJECTS: Record<string, string[]> = {
   'lib/coaching/runEffort.test.ts':                ['lib/coaching/runEffort.ts'],
   // §133 — what Kit caught (each receipt from the owner that already says it).
   'lib/coaching/kitReceipts.test.ts':              ['lib/coaching/kitReceipts.ts'],
+  // §134 — did this reshape INTRODUCE the violation, or was it already there? The harness
+  // mutates the classifier, which is the whole of the rule: there is no plan property to
+  // check, which is why §134 carries no `validatePlan()` invariant.
+  'lib/coaching/reshapeIntroduced.test.ts':         ['lib/coaching/reshapeIntroduced.ts'],
   // §130 — the easy share's weekly record (the headline's colour rule is a markup assertion, falsified by hand).
   'components/shared/easyShare.markup.test.ts':     ['lib/coaching/weeklyZoneAggregate.ts'],
 }

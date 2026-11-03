@@ -156,14 +156,44 @@ describe('ADJUST-ENGINE-ENTRY-01 — every engine outcome has a route branch', (
     })
     expect(out.kind).toBe('adjustment')
     if (out.kind !== 'adjustment') return
-    expect(Array.isArray(out.reshapeErrors)).toBe(true)
+    expect(Array.isArray(out.blockingErrors)).toBe(true)
+    expect(Array.isArray(out.toleratedErrors)).toBe(true)
     // This toy fixture is a 2-week block, so it legitimately breaches several
     // principles. The arm is about WHERE the violations arrive, not how many.
-    expect(out.reshapeErrors.length, 'a 2-week fixture should breach something').toBeGreaterThan(0)
-    expect(out.reshapeErrors.every(v => v.severity === 'error'),
+    //
+    // 🔴 UPDATED, NOT LOOSENED (RESHAPE-SCOPE-TO-CHANGE-01, 2026-11-03). This asserted
+    // `reshapeErrors.length > 0`, and §134 split that field in two: the fixture's breaches
+    // are PRE-EXISTING — the 2-week block is invalid before any reshape touches it — so
+    // they now arrive on `toleratedErrors` and `blockingErrors` is legitimately empty. The
+    // old arm was not wrong, it was INCOMPLETE: it proved the violations arrive on the
+    // outcome and said nothing about which of them the reshape is answerable for. The
+    // UNION is what it was really asserting, and the arm below is what it could not say.
+    const all = [...out.blockingErrors, ...out.toleratedErrors]
+    expect(all.length, 'a 2-week fixture should breach something').toBeGreaterThan(0)
+    expect(all.every(v => v.severity === 'error'),
       'only error-severity violations belong on the outcome; warns are the board\'s').toBe(true)
     // And the route still owns the throw.
     expect(stripComments(ROUTE)).toContain('reshape produced invalid plan:')
+  })
+
+  it('§134 — a reorder does not answer for the fixture\'s PRE-EXISTING breaches', () => {
+    // The half the arm above could not state, and the whole point of
+    // RESHAPE-SCOPE-TO-CHANGE-01: this 2-week block is invalid BEFORE anything moves, so a
+    // day swap must not be refused for it. Production, 2026-11-03: 15 of 39 live plans
+    // (38%) were refused on every adjustment for exactly this reason.
+    const out = runAdjustmentEngine({
+      ...base(), reorderSignal: { fromDay: 'thu', toDay: 'fri' },
+    })
+    expect(out.kind).toBe('adjustment')
+    if (out.kind !== 'adjustment') return
+
+    expect(out.toleratedErrors.length,
+      'the fixture no longer breaches anything before the reshape, so this arm proves nothing ' +
+      'and needs re-deriving rather than keeping',
+    ).toBeGreaterThan(0)
+    expect(out.blockingErrors.map(v => v.code),
+      'a plain day swap is being blamed for breaches it did not author — §134',
+    ).toEqual([])
   })
 
   it('§69 / ADR-012 — `isManual` forces confirmation on a LOW-magnitude change', () => {

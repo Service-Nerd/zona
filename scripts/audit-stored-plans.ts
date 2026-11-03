@@ -87,15 +87,27 @@ const main = async () => {
 
   console.log(`\n══ STORED PLANS, against the code in this working tree ══\n`)
   console.log(`plans considered                    ${considered}`)
-  console.log(`ADJUSTABLE (0 errors)               ${adjustable}`)
-  console.log(`REFUSED on every adjustment         ${refused}${refused ? `   (${Math.round(refused / considered * 100)}% of runners)` : ''}`)
+  console.log(`CLEAN (0 error-severity violations) ${adjustable}`)
+  console.log(`CARRYING error-severity violations  ${refused}${refused ? `   (${Math.round(refused / considered * 100)}% of runners)` : ''}`)
+  // 🔴 THIS LINE SAID "REFUSED on every adjustment" AND IT WAS TRUE UNTIL §134 SHIPPED.
+  // `/api/adjust-plan` used to refuse on every error anywhere in the plan, so a count of
+  // plans-with-errors WAS a count of frozen runners. Since RESHAPE-SCOPE-TO-CHANGE-01 it
+  // refuses only on what a reshape INTRODUCED, so these plans carry debt without being
+  // frozen — measured on a simulated reorder across all of them, 14 of 15 proceed and 1
+  // genuinely introduces a breach. **Keeping the old label would have made this script
+  // overstate by an order of magnitude while reading exactly as authoritative as before.**
+  if (refused > 0) {
+    console.log(`\n    §134: carrying a violation is NOT the same as being refused. An adjustment is`)
+    console.log(`    refused only on what the reshape INTRODUCES, so most of these can still be`)
+    console.log(`    adjusted. The debt itself is STORED-PLAN-DEBT-REPAIR-01.`)
+  }
   if (threw) console.log(`validation threw                    ${threw}   <-- investigate, these are not counted`)
 
   if (census.size) {
     console.log(`\nplans affected, by code (a plan can appear more than once):`)
     for (const [c, n] of Array.from(census).sort((a, b) => b[1] - a[1])) {
       const sole = soleCause.get(c) ?? 0
-      console.log(`  ${String(n).padStart(3)} plan(s)  ${c}${sole ? `   <-- SOLE cause on ${sole}: these plans are frozen by this code alone` : ''}`)
+      console.log(`  ${String(n).padStart(3)} plan(s)  ${c}${sole ? `   <-- SOLE cause on ${sole}: this code is the whole of their debt` : ''}`)
     }
   }
 

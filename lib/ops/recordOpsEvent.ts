@@ -130,6 +130,14 @@ export type OpsEventKind =
   | 'plan_save_failed_client'
   | 'plan_integrity_mismatch'   // an auto_applied adjustment never landed in plan_json (probe)
   | 'reshape_invalid'           // a reshaped plan failed a constitutional invariant; since 2026-10-25 it is not offered
+  // RESHAPE-SCOPE-TO-CHANGE-01 (2026-11-03) — a reshape PROCEEDED over error-severity violations the plan
+  // already carried. §134 refuses only on what a reshape INTRODUCED, so these no longer block; this is the
+  // Coaching Board's binding condition that they stay VISIBLE. 🩹 Willy: "If 17 plans are carrying load
+  // breaches we have decided not to refuse on, I want to be able to list them tomorrow morning." Kept separate
+  // from `reshape_invalid` deliberately — that one means we REFUSED, this one means we went ahead, and
+  // conflating them would make the refusal rate unreadable. `detail`: `{ route, week_n, trigger, violations }`.
+  // Repair is tracked as `STORED-PLAN-DEBT-REPAIR-01`; §93's "declared debt, not an exemption".
+  | 'reshape_preexisting_tolerated'
   // ACCOUNT-DELETED-TRACE-01 (2026-10-25) — an account was deleted. Recorded with NO user id, AFTER deleteUser, so it
   // survives; without it the ops digest read a deleted runner's anonymised rows (ops_events SET NULL) as "never signed
   // up". `detail`: `{ account_age_days }`. No PII.

@@ -79,6 +79,7 @@ import { isLongRun, isQualitySession } from '@/lib/plan/sessionRole'
 import { orderedWeekSessions } from '@/lib/plan/weekSessions'
 import { type Violation } from '@/lib/plan/invariants'
 import { validateStoredPlan } from '@/lib/plan/validateStoredPlan'
+import { classifyReshapeViolations } from './reshapeIntroduced'
 import { refreshWeekCopyIfStale } from '@/lib/plan/ruleEngine'
 import type { Plan, Session } from '@/types/plan'
 
@@ -153,13 +154,29 @@ export type AdjustmentOutcome =
        *  two producers of one decision. */
       updatedPlan: Plan
       /**
-       * Error-severity violations only, from `validateReshapedPlan`.
+       * Error-severity violations THIS RESHAPE IS ANSWERABLE FOR — introduced, or now more
+       * numerous than before (§134, `classifyReshapeViolations`). The caller refuses on
+       * this and nothing else.
+       *
+       * 🔴 IT WAS `reshapeErrors` AND IT MEANT EVERY ERROR IN THE PLAN. That is the defect
+       * `RESHAPE-SCOPE-TO-CHANGE-01` fixed, and the field is RENAMED rather than quietly
+       * redefined: a name that outlives its meaning is how a comment comes to be true only
+       * on the day it was written.
        *
        * ⚠️ RETURNED, NEVER ACTED ON. The caller throws in dev/test and records
        * `reshape_invalid` in production, and keeping that here would change the
        * error text a refactor is supposed to leave alone.
        */
-      reshapeErrors: Violation[]
+      blockingErrors: Violation[]
+      /**
+       * Breaches the plan already carried, unchanged, which this reshape proceeds over.
+       *
+       * 🩹 The Coaching Board made recording these a BINDING CONDITION of the ruling
+       * (2026-11-03). Tolerating a breach is not fixing it — §93's "declared debt, not an
+       * exemption". The caller records them to `ops_events`; repair is
+       * `STORED-PLAN-DEBT-REPAIR-01`.
+       */
+      toleratedErrors: Violation[]
       /** Stamped on the caller's row. The engine's own version, so the caller
        *  does not import `constants` to find it. */
       ruleEngineVersion: string
@@ -246,7 +263,22 @@ export function runAdjustmentEngine(req: AdjustmentRequest): AdjustmentOutcome {
   // The strictness is unchanged for a race plan: `validateStoredPlan` returns
   // `validateReshapedPlan(plan, weekN)` for that kind, same arguments, same two skipped
   // race-week codes. Only the question asked of a NON-race plan changes.
-  const reshapeErrors = validateStoredPlan(updatedPlan, weekN).filter(v => v.severity === 'error')
+  // 🔴 RESHAPE-SCOPE-TO-CHANGE-01 / §134 — VALIDATE BOTH PLANS AND DIFF THEM.
+  //
+  // This used to validate the AFTER plan alone and refuse on anything it found, so one
+  // historical defect anywhere froze a runner's adjustments permanently: 18 of 39 live
+  // plans, 46% of runners (15 / 38% once `RESHAPE-VALIDATOR-KIND-01` had removed the three
+  // judged by the wrong constitution). The reshape was being blamed for defects it neither
+  // caused nor could fix.
+  //
+  // ⚠️ THE SAME VALIDATOR AND THE SAME WEEK SCOPE ON BOTH SIDES, or the diff is between two
+  // different questions. `plan` is the stored plan and `updatedPlan` is the prospective
+  // one, so the only differences are the ones this reshape authored — including the ones
+  // `recordQualityDowngrade` and `refreshWeekCopyIfStale` author on its behalf, which is
+  // correct: they are part of the reshape.
+  const errs = (p: Plan) => validateStoredPlan(p, weekN).filter(v => v.severity === 'error')
+  const { blocking: blockingErrors, preexisting: toleratedErrors } =
+    classifyReshapeViolations(errs(plan), errs(updatedPlan))
 
   return {
     kind: 'adjustment',
@@ -255,7 +287,8 @@ export function runAdjustmentEngine(req: AdjustmentRequest): AdjustmentOutcome {
     requiresConfirmation,
     status,
     updatedPlan,
-    reshapeErrors,
+    blockingErrors,
+    toleratedErrors,
     ruleEngineVersion: COACHING_RULE_ENGINE_VERSION,
   }
 }

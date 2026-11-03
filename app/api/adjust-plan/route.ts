@@ -259,7 +259,7 @@ export async function POST(req: NextRequest) {
   // `AdjustmentOutcome` kind fails to have these fields, so `tsc` flags it here.
   // That guard is real and incidental, so `adjustmentOutcomeHandled.test.ts`
   // asserts the property directly as well.
-  const { proposed, status, requiresConfirmation, updatedPlan, reshapeErrors, ruleEngineVersion } = outcome
+  const { proposed, status, requiresConfirmation, updatedPlan, blockingErrors, toleratedErrors, ruleEngineVersion } = outcome
 
   // AI explanation — silent fallback to rule-based summary
   let explanationText: string = proposed.summary
@@ -332,17 +332,43 @@ export async function POST(req: NextRequest) {
   // flow, mirroring `generateRulePlan`'s posture. Both stay here, verbatim,
   // because the message and the ops event are observable and a refactor must not
   // quietly reword either (ADJUST-ENGINE-ENTRY-01).
-  if (reshapeErrors.length > 0) {
+  // 🩹 RESHAPE-SCOPE-TO-CHANGE-01 / §134 — THE BOARD'S SECOND BINDING CONDITION.
+  //
+  // §134 refuses only on what a reshape INTRODUCED, so breaches the plan already carried no
+  // longer block. That is correct and it is NOT the same as deciding they are fine:
+  // measured on 2026-11-03, 17 stored plans carry error-severity violations that will now
+  // be tolerated, and the set includes load rules — `INV-PLAN-LR-MAX-WEEKLY-PCT` on 3,
+  // `INV-PLAN-ONRAMP-FLOOR` on 4, `INV-PLAN-WEEK-1-2-LONG-CAP` on 2.
+  //
+  // 🩹 Willy's condition, verbatim: *"If 17 plans are carrying load breaches we have decided
+  // not to refuse on, I want to be able to list them tomorrow morning."* Not a counter —
+  // the codes and the weeks. §93's doctrine is that a pre-existing defect is DECLARED DEBT,
+  // NOT AN EXEMPTION, and a debt nobody can enumerate is an exemption wearing a better word.
+  //
+  // ⚠️ RECORDED BEFORE THE REFUSAL CHECK, deliberately: a reshape can both introduce a
+  // breach AND sit on pre-existing ones, and the refusal path returns early. Recording
+  // second would have made the tolerated set invisible on exactly the plans carrying most
+  // of it. Repair is tracked as `STORED-PLAN-DEBT-REPAIR-01`.
+  if (toleratedErrors.length > 0) {
+    await recordOpsEvent(
+      'reshape_preexisting_tolerated',
+      { route: 'adjust-plan', week_n: weekN, trigger: proposed.trigger.type,
+        violations: toleratedErrors.map(v => ({ code: v.code, week: v.week, message: v.message })) },
+      user.id,
+    )
+  }
+
+  if (blockingErrors.length > 0) {
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-      throw new Error(`reshape produced invalid plan: ${reshapeErrors.map(v => v.code).join(', ')}`)
+      throw new Error(`reshape produced invalid plan: ${blockingErrors.map(v => v.code).join(', ')}`)
     }
     await recordOpsEvent(
       'reshape_invalid',
       { route: 'adjust-plan', week_n: weekN, trigger: proposed.trigger.type,
-        violations: reshapeErrors.map(v => ({ code: v.code, week: v.week, message: v.message })) },
+        violations: blockingErrors.map(v => ({ code: v.code, week: v.week, message: v.message })) },
       user.id,
     )
-    console.error('[adjust-plan] reshape validation failed', reshapeErrors)
+    console.error('[adjust-plan] reshape validation failed', blockingErrors)
     // 🔴 SKIP-MAKEUP-DAY-01: a change that breaks the plan's rules is NEVER offered. It used to be written as a pending
     // adjustment anyway, so the runner could confirm it and `savePlanForUser` (which logs, never refuses, in
     // production) would have saved it. The runner's own action (the skip) is already recorded; the plan stays as it is.

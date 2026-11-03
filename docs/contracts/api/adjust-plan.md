@@ -57,12 +57,12 @@ green tick over **"Plan looks good."** and *"No adjustment signals in your recen
 Keep going."*, and `onChecked(false)` stamped "Last checked …" as a check that ran. So a
 refusal was shown to the runner as reassurance.
 
-**Measured:** `validateReshapedPlan` returns *every* error-severity violation in the plan (only
-two codes are week-scoped), so one historical defect anywhere refuses every adjustment —
-**18 of 39 live plans (46%)** — 20 / 51% when first measured, before the 2 plans §40b Am.4 had
-frozen were remediated on 2026-11-03. Those runners were told their plan looks good by a check
-that declined to run. ⚠️ Only 4 `reshape_invalid` events exist in all of production history, so it is a
-landmine rather than a daily outage.
+**Measured at the time:** the validator returned *every* error-severity violation in the plan,
+so one historical defect anywhere refused every adjustment — **18 of 39 live plans (46%)** —
+20 / 51% when first measured, before the 2 plans §40b Am.4 had frozen were remediated on
+2026-11-03. Those runners were told their plan looks good by a check that declined to run.
+⚠️ Only 4 `reshape_invalid` events exist in all of production history, so it is a landmine
+rather than a daily outage.
 
 - **`adjustment: null` is retained deliberately.** `refused` is additive, so no existing caller
   changes behaviour; the only consumer that reads it is `ReshapeScreen`.
@@ -72,9 +72,35 @@ landmine rather than a daily outage.
 - The `reshape_invalid` ops event is unchanged. It was already correct, and it is what the
   daily digest used to find this.
 
-🔻 **The underlying defect is NOT fixed:** `validateReshapedPlan` is not scoped to the change,
-so a plan carrying any historical defect is permanently unadjustable. 18 of those 20 predate
-2026-11-02, mostly `INV-PLAN-EASY-PACE-PRESENT` (201 occurrences).
+### ✅ `refused` now means the RESHAPE broke something, not the plan (§134, 2026-11-03)
+
+Two changes shipped the same day, in this order, and the order matters.
+
+1. **`RESHAPE-VALIDATOR-KIND-01`** — the route validates through `validateStoredPlan`, which
+   dispatches on `meta.plan_kind`. It called `validateReshapedPlan` directly, so the 3
+   base-build plans in production were asked whether they had annotated their prep time: 59 /
+   21 / 41 errors against the dispatching owner's **0**. Clean plans 21 → 24.
+2. **`RESHAPE-SCOPE-TO-CHANGE-01` / §134** — the route refuses only on violations the reshape
+   **INTRODUCED**: `classifyReshapeViolations(before, after)`, identified by
+   `code | week | severity | actual | expected | message` as a **multiset**, `day` excluded.
+   Of the 15 plans still carrying violations, a simulated reorder on every one introduces a
+   blocking violation on **1**.
+
+**So `refused: 'plan_invalid'` is now a much narrower and more accurate claim.** The response
+shape is unchanged and `ReshapeScreen` needs no change.
+
+- **A new ops kind, `reshape_preexisting_tolerated`**, is recorded whenever a reshape proceeds
+  over violations the plan already carried — codes and weeks, not a counter. It is the
+  Coaching Board's binding condition (🩹 Willy) and is kept **separate** from
+  `reshape_invalid` so the refusal rate stays readable. Recorded **before** the refusal
+  check, which returns early.
+- **`actual` and `expected` are in the identity deliberately**, so a pre-existing breach whose
+  number worsens still refuses.
+- **§18 holds:** a session moved onto a blocked day still refuses in 29 of 29 plans where
+  `INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` fires, because the day is in `actual`.
+
+🔻 **Still open:** the tolerated breaches themselves are debt and nothing repairs them —
+`STORED-PLAN-DEBT-REPAIR-01`. Tolerating a breach is not fixing it.
 
 ## Response — 200 (opt-out)
 

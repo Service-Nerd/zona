@@ -119,14 +119,30 @@ describe('RESHAPE-VALIDATOR-KIND-01 — the adjust path dispatches by plan kind'
   })
 
   // ── SOURCE: the producer actually calls the owner ──
+  //
+  // 🔴 THIS ARM PINNED A SPELLING AND BROKE ON A CORRECT CHANGE, WITHIN THE HOUR. It
+  // required the literal `validateStoredPlan(updatedPlan, weekN)`. §134 then introduced a
+  // local `errs` helper so BOTH plans go through the same validator at the same week scope
+  // — strictly better, and the arm went red on it. **Assert the EFFECT: the dispatching
+  // owner is what this function validates through, and the race validator is not called
+  // here at all.** A check keyed on a spelling guards the spellings it knows.
   it('runAdjustmentEngine validates through validateStoredPlan, not validateReshapedPlan', () => {
     const body = bodyAfter(SRC('lib/coaching/adjustmentEngine.ts'),
       'export function runAdjustmentEngine(')
 
-    expect(body, 'the adjust path calls the race validator directly again — RESHAPE-VALIDATOR-KIND-01')
-      .toMatch(/validateStoredPlan\(updatedPlan,\s*weekN\)/)
+    expect(body, 'the adjust path no longer validates through the kind-dispatching owner — RESHAPE-VALIDATOR-KIND-01')
+      .toMatch(/validateStoredPlan\(/)
     expect(body, 'the adjust path is back on validateReshapedPlan, which cannot see a plan kind')
       .not.toMatch(/validateReshapedPlan\(/)
+    // And the call is SCOPED, which is what makes the §134 diff comparable.
+    //
+    // ⚠️ THE FIRST VERSION OF THIS LINE WAS HOLLOW AND FALSIFYING IT SAID SO. It asserted
+    // `/weekN/` against the whole body — and `weekN` appears in `applyAdjustmentToPlan`
+    // too, so dropping the scope from the VALIDATOR call left it green. It asserted that
+    // the identifier exists somewhere, which was never in doubt. Match the call's second
+    // argument instead.
+    expect(body, 'the validator is called unscoped, so the two sides of the §134 diff ask different questions')
+      .toMatch(/validateStoredPlan\([^)]*,[^)]*\)/)
   })
 
   // ── THE TWIN. A check that mirrors a caller must move WITH that caller ──

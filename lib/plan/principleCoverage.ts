@@ -289,7 +289,12 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 130, by: 'test', ref: 'components/shared/easyShare.markup.test.ts' },  // The easy share describes a week; it never grades one
   { n: 131, by: 'test', ref: 'lib/coaching/moments.test.ts' },  // A moment is earned against the runner's own weeks, and said once
   { n: 132, by: 'test', ref: 'lib/coaching/runEffort.test.ts' },
-  { n: 133, by: 'test', ref: 'lib/coaching/kitReceipts.test.ts' },  // A receipt states what the runner's own run measured  // A run is placed by where its time went, and never accused of an intent we cannot see
+  { n: 133, by: 'test', ref: 'lib/coaching/kitReceipts.test.ts' },
+  // §134 governs the SCOPE of enforcement, not a property of a plan, so a
+  // `Plan => Violation[]` cannot express it and a `validatePlan()` invariant would be a
+  // false declaration (§34's registry is deliberately untouched). The check is on the
+  // classifier: 12 arms, 7 mutations all red.
+  { n: 134, by: 'test', ref: 'lib/coaching/reshapeIntroduced.test.ts' },  // A reshape answers for what it changed  // A receipt states what the runner's own run measured  // A run is placed by where its time went, and never accused of an intent we cannot see
   // 🔴 ADDED 2026-10-09, AND IT SHOULD HAVE BEEN HERE SINCE 2026-09-22.
   // §121 is written `## §121 — ...` while every older section is `## N. ...`,
   // and `principlesInDoc()` matched only the second form — so the gate whose
