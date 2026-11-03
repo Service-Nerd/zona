@@ -45,6 +45,36 @@ All fields optional. Signals determine which trigger fires.
 { "adjustment": null, "message": "No adjustment needed" }
 ```
 
+## Response — 200 (REFUSED: the reshape would break the plan's rules)
+
+```json
+{ "adjustment": null, "refused": "plan_invalid", "message": "No adjustment needed" }
+```
+
+🔴 **`refused` exists because these two responses used to be IDENTICAL** (PLAN-CHECK-REFUSED-01,
+2026-11-03). `ReshapeScreen` reads `adjustment: null` as `status: 'clean'`, which renders a
+green tick over **"Plan looks good."** and *"No adjustment signals in your recent sessions.
+Keep going."*, and `onChecked(false)` stamped "Last checked …" as a check that ran. So a
+refusal was shown to the runner as reassurance.
+
+**Measured:** `validateReshapedPlan` returns *every* error-severity violation in the plan (only
+two codes are week-scoped), so one historical defect anywhere refuses every adjustment —
+**20 of 39 live plans**. Those runners were told their plan looks good by a check that declined
+to run. ⚠️ Only 4 `reshape_invalid` events exist in all of production history, so it is a
+landmine rather than a daily outage.
+
+- **`adjustment: null` is retained deliberately.** `refused` is additive, so no existing caller
+  changes behaviour; the only consumer that reads it is `ReshapeScreen`.
+- **The client must branch on `refused` BEFORE `adjustment`**, and must **not** call
+  `onChecked` — the check did not run, so nothing may claim it did. Pinned by
+  `lib/plan/planCheckRefused.test.ts`.
+- The `reshape_invalid` ops event is unchanged. It was already correct, and it is what the
+  daily digest used to find this.
+
+🔻 **The underlying defect is NOT fixed:** `validateReshapedPlan` is not scoped to the change,
+so a plan carrying any historical defect is permanently unadjustable. 18 of those 20 predate
+2026-11-02, mostly `INV-PLAN-EASY-PACE-PRESENT` (201 occurrences).
+
 ## Response — 200 (opt-out)
 
 ```json
