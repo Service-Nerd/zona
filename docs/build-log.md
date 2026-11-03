@@ -5,7 +5,7 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
-## 2026-11-03 — board sitting · one ruling shipped, one vacated two hours after I wrote it
+## 2026-11-03 — STRIDE-ASSESSED-LEVEL-01 · one ruling shipped, one vacated two hours after I wrote it
 **Shipped:** §28's hill strides reach a real beginner at last, and the invariant that watches them is on duty. §117's peak reduction was ruled correct, then vacated the same day when a regression test found seven runners it would turn away.
 
 **Dev learning:** The conflict scan earned its mandatory status twice in one sitting. First it found that §28 Amendment 1's **principle sentence** reads *"for a runner at `fitness_level: 'beginner'`"* — the doctrine named the field the wizard cannot send, so the engine was built correctly to a wrong instruction. I had filed it as a defect fix; it is an amendment. Second, it found that Willy's *"no peak may fall"* condition bound a different amendment than the one I had attributed it to, which turned item 2 from "override a condition" into "restore ratified doctrine".
