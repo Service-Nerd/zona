@@ -54,7 +54,11 @@
 //   npx tsx --env-file=.env.local scripts/remediate-effort-governed-band.ts            # dry run, all
 //   npx tsx --env-file=.env.local scripts/remediate-effort-governed-band.ts --apply    # write
 import { createClient } from '@supabase/supabase-js'
-import { validateReshapedPlan } from '../lib/plan/invariants'
+// RESHAPE-VALIDATOR-KIND-01 (2026-11-03) — the kind-dispatching owner, because this script
+// validates plans it read out of `plans` and a base-build plan judged by the race
+// constitution reports ~50 phantom errors. Identical to `validateReshapedPlan` on a race
+// plan; the difference is §116's own validator running on the plans it describes.
+import { validateStoredPlan } from '../lib/plan/validateStoredPlan'
 import { isEffortGovernedRow } from '../lib/plan/hrBand'
 import { catalogueRowFor } from '../lib/plan/catalogueLink'
 import { zoneStringFromZoneKeys } from '../lib/coaching/zoneRules'
@@ -120,7 +124,7 @@ const main = async () => {
     if (!plan?.weeks?.length) continue
 
     let before
-    try { before = validateReshapedPlan(plan).filter(v => v.severity === 'error') } catch { continue }
+    try { before = validateStoredPlan(plan).filter(v => v.severity === 'error') } catch { continue }
     if (!before.some(v => v.code === CODE)) continue
     candidates++
 
@@ -128,7 +132,7 @@ const main = async () => {
     const tag = String(r.user_id).slice(0, 8)
     if (!touched.length) { console.log(`· ${tag}: fires but nothing to patch — INVESTIGATE, do not write`); refused++; continue }
 
-    const after = validateReshapedPlan(next).filter(v => v.severity === 'error')
+    const after = validateStoredPlan(next).filter(v => v.severity === 'error')
     const newCodes = after.map(v => v.code).filter(c => !before.map(b => b.code).includes(c))
     const moved = copyMoved(plan, next)
 

@@ -72,6 +72,9 @@ const SUBJECTS: Record<string, string[]> = {
   // mutates the classifier, which is the whole of the rule: there is no plan property to
   // check, which is why §134 carries no `validatePlan()` invariant.
   'lib/coaching/reshapeIntroduced.test.ts':         ['lib/coaching/reshapeIntroduced.ts'],
+  // STORED-PLAN-DEBT-REPAIR-01 — where a stored plan's debt sits in time, which is the
+  // axis that took the actionable set from 15 plans to 6.
+  'lib/plan/storedPlanDebt.test.ts':               ['lib/plan/storedPlanDebt.ts'],
   // §130 — the easy share's weekly record (the headline's colour rule is a markup assertion, falsified by hand).
   'components/shared/easyShare.markup.test.ts':     ['lib/coaching/weeklyZoneAggregate.ts'],
 }

@@ -18,7 +18,11 @@
 import { hasAiCopy } from '../lib/plan/enrichmentState'
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
-import { validateReshapedPlan } from '../lib/plan/invariants'
+// RESHAPE-VALIDATOR-KIND-01 (2026-11-03) — the kind-dispatching owner, because this script
+// validates plans it read out of `plans` and a base-build plan judged by the race
+// constitution reports ~50 phantom errors. Identical to `validateReshapedPlan` on a race
+// plan; the difference is §116's own validator running on the plans it describes.
+import { validateStoredPlan } from '../lib/plan/validateStoredPlan'
 import { regenRefusalReason } from '../lib/ops/regenEligibility'
 import { regenerateFromStored } from '../lib/plan/storedPlanRegen'
 import type { Plan, GeneratorInput, Session } from '../types/plan'
@@ -43,7 +47,7 @@ const env = Object.fromEntries(
 const sb = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
 
 const errCodes = (p: Plan) =>
-  Array.from(new Set(validateReshapedPlan(p).filter(v => v.severity === 'error').map(v => v.code))).sort()
+  Array.from(new Set(validateStoredPlan(p).filter(v => v.severity === 'error').map(v => v.code))).sort()
 
 // Postgres stores plan_json as jsonb, which reorders object keys, so a stored session and
 // a freshly generated identical one stringify differently. Compare in a canonical key order.
@@ -197,10 +201,10 @@ async function one(row: { id: string; user_id: string; plan_json: unknown }, qui
   log(`Checks      before: ${before.length ? before.join(', ') : 'clean'}`)
   log(`            after:  ${after.length ? after.join(', ') : 'clean'}`)
   log(`Calendar    ${plan.weeks.length} → ${candidate.weeks.length} weeks, same dates: ${sameCalendar ? 'yes' : 'NO (allowed)'}`)
-  if (after.length && process.env.GP_DEBUG) for (const v of validateReshapedPlan(candidate).filter(v => v.severity === "error")) log("   ", v.code, "W" + v.week, String(v.message).slice(0, 400))
+  if (after.length && process.env.GP_DEBUG) for (const v of validateStoredPlan(candidate).filter(v => v.severity === "error")) log("   ", v.code, "W" + v.week, String(v.message).slice(0, 400))
   // The only errors allowed through are ones that live ENTIRELY in weeks the founder chose to keep (--keep-weeks): those
   // weeks are left as they were, defects included, by decision. Anything else, or anything plan-wide, still refuses.
-  const afterErrs = validateReshapedPlan(candidate).filter(v => v.severity === 'error')
+  const afterErrs = validateStoredPlan(candidate).filter(v => v.severity === 'error')
   const outsideKept = afterErrs.filter(v => !KEEP_WEEKS.includes(Number(v.week)))
   if (outsideKept.length) throw new Error('refused: result does not validate clean')
   if (afterErrs.length) log(`Carried     ${afterErrs.length} error(s) in kept weeks only: ${afterErrs.map(v => `${v.code} W${v.week}`).join(', ')}`)

@@ -174,25 +174,155 @@ three `label.includes('pace')` instances fixed earlier today: **anchor on the pr
 
 ---
 
-### 🔲 `STORED-PLAN-DEBT-REPAIR-01` — the tolerated pre-existing breaches are debt, and nothing repairs them ⚙️ **NO BOARD** to measure; 🏃 **COACHING BOARD** for any repair that rewrites prescription
+### ✅ `STORED-PLAN-DEBT-REPAIR-01` — MEASURED AND RULED: NO REPAIR, 2026-11-03 ⚙️ **NO BOARD**
 
-📐 **Filed by the Coaching Board, 2026-11-03**, explicitly out of scope of `RESHAPE-SCOPE-TO-CHANGE-01`:
-*"tolerating a breach is not fixing it, and §93's precedent is that the debt is named and tracked rather than
-closed by the ruling that declared it."*
+**Moved to `feature-registry.md`.** The deliverable is the measurement and the ruling: the repair itself is
+refused, by the founder's live-plan policy and by `regenRefusalReason`, on every plan it could reach.
 
-After introduced-only blocking ships, **17 stored plans carry error-severity violations that no longer refuse
-an adjustment.** Census by plans affected: `INV-PLAN-DIFFICULTY-ANNOTATED` 10, `INV-PLAN-COMPRESSION-SPLIT` 10,
-`INV-PLAN-COMPRESSION-CLASSIFICATION` 9, `INV-PLAN-EASY-PACE-PRESENT` 7, `INV-PLAN-RACE-NOTE-SCALES` 6,
-`INV-PLAN-RECALIBRATION-HAS-SESSION` 6, then a tail of 25 more codes.
+🔴 **THE ITEM'S OWN FIGURES WERE COMPUTED WITH THE VALIDATOR §134 HAD JUST REPLACED.** It said 17 plans,
+`DIFFICULTY-ANNOTATED` 10, `COMPRESSION-SPLIT` 10, `EASY-PACE-PRESENT` 7, `ONRAMP-FLOOR` 4,
+`LR-MAX-WEEKLY-PCT` 3. Through `validateStoredPlan` it is **15 / 7 / 7 / 4 / 1 / 1**, and the joint-top code
+(`COPY-MATCHES-SESSIONS`, 7) was not in the census at all. Re-running under `validateReshapedPlan` reproduces
+18 / 10 / 10 / 7 / 4 / 3 exactly — **so the item was filed from the pre-dispatch instrument, hours after the
+dispatch shipped.** Fourth instance in one day of measuring with a copy of the thing under test.
 
-🩹 **Willy's seat is the reason this is filed rather than noted.** The tolerated set includes load rules —
-`INV-PLAN-LR-MAX-WEEKLY-PCT` on 3 plans, `INV-PLAN-ONRAMP-FLOOR` on 4, `INV-PLAN-WEEK-1-2-LONG-CAP` on 2.
-Those breaches exist today in plans people are running; refusing the adjustment never fixed them.
+🔑 **THE AXIS NOBODY HAD MEASURED IS TIME.** Willy's reason for filing was *"those breaches exist today in
+plans people are running."* A breach in week 2 of a plan that started in June is not something a runner is
+about to run — they ran it, and no rewrite reaches backwards.
 
-⚠️ **Most of this list is copy and annotation debt, not load debt**, and the two want different remedies. Count
-each family before proposing one. ⚠️ **Live-plan policy applies** — a fix to the engine reaches no existing
-plan, so any repair is a remediation script with an archive, like
-`scripts/remediate-effort-governed-band.ts`.
+| | |
+|---|---|
+| **9 of 15** carry debt ONLY in elapsed weeks or at plan level | nothing to repair |
+| **6 of 15** carry a breach in a week still ahead | 34 violations ahead, **154 elapsed**, 36 plan-level |
+| the load rules Willy named | `WEEK-1-2-LONG-CAP` ×2 and `LR-MAX-WEEKLY-PCT`/`ONRAMP-FLOOR` ×1 are **all elapsed or on a past-race plan**; the one load breach still ahead is `LONG-CAP-MINS` on 1 plan, weeks 14 and 17 of a block starting 2026-12-07 |
+| **7 of 15** cannot be regenerated at all | no `generator_input` or no `plan_start`; all 7 past-race |
+
+✅ **AND THE REMEDY IS ALREADY SHIPPED, OPT-IN, ON ALL SIX.** `regenRefusalReason` refuses a silent rewrite of
+every one (3 `has-ai-copy`, 2 `plan-already-started`, 1 `has-activities`) — and `canModifyPlan` is **true on all
+six**, so each runner can rebuild their own plan from the Plan screen today. 3 of the 6 regenerate to **0**
+errors; the other 3 to exactly **1**. **A remediation script would be doing by hand, against the live-plan
+policy, what the product already offers the runner.** What `FLEET-INVALID-DEBT-02` adds over Modify plan is
+proactively ASKING, which is a prompting decision (🧭 Design Board), not an engine one.
+
+✅ **Gate shipped:** `lib/plan/storedPlanDebt.ts` positions a stored violation as `ahead` / `elapsed` /
+`plan-level`, and `npm run audit:stored` now prints both axes plus the rewrite verdict. 9 arms, **4 mutations
+red** — one of them found by the harness, not by reading. Registered as a mutation subject.
+
+⚠️ **What this does not prove:** nothing about whether a breach DESERVES repair. That is
+`FLEET-TRIGGER-SEVERITY-01`'s prescription-vs-declaration split, designed 2026-09-20 and deliberately not
+built. `ahead` is a position, not a severity.
+
+🔴 **The two codes that survive regeneration are LIVE DEFECTS, not stored debt** — filed as
+`RUNWALK-ASSESSED-LEVEL-01` and `WIZARD-CONTRADICTORY-VOLUME-01` below.
+
+---
+
+### 🔴 `RUNWALK-ASSESSED-LEVEL-01` — §117's RUN-WALK MECHANISM HAS NEVER FIRED FOR A SINGLE RUNNER 🏃 **COACHING BOARD** for the peak half; ⚙️ **NO BOARD** for the instruction half
+
+📐 **Found 2026-11-03 while measuring `STORED-PLAN-DEBT-REPAIR-01`.** Two stored marathon plans retain
+`INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY` after regeneration by today's engine, so it is not stored debt.
+Tracing it found the cause and it is not those two plans.
+
+**`runWalkPrescriptionApplies` and `runWalkApplies` both read `input.fitness_level` raw:**
+
+```ts
+if (input.fitness_level !== 'beginner') return false   // runWalkPlan.ts:84 and :110
+```
+
+🔴 **AND THE WIZARD NEVER SETS THAT FIELD, BY DESIGN.** `GeneratePlanScreen`, in its own words:
+*"§79 — send the runner's level on `user_declared_level`, WHETHER ACCEPTED OR OVERRIDDEN, and **never on
+`fitness_level`** (which is the API's structural declaration and would set peak km)."* So `input.fitness_level`
+is `undefined` for every runner the app can produce, both gates `return false`, and §117 is dead.
+
+**Measured against production, all 39 stored plans:**
+
+| | |
+|---|---|
+| `generator_input.fitness_level` set | **0 of 39** |
+| `meta.run_walk_prescribed` truthy | **0 of 39** |
+| `meta.finish_goal_run_walk` truthy | **0 of 39** |
+| sessions carrying `run_walk_strategy`, every week of every plan | **0** |
+| §117 Am.5 would apply on the RESOLVED level | **2** |
+
+**The consequence, on the charity cohort's exact archetype:** a beginner finish-goal marathoner whose longest
+recent run is **5 km** is told to run 42.2 km with no run-walk prescription. §117 Am.5's own invariant message
+is *"They are going to walk; a plan that does not say so is lying."* Feed the same input with
+`fitness_level: 'beginner'` present and `run_walk_prescribed` becomes `true` — measured on both plans.
+
+🔴 **AND §117 Am.5's OWN RATIFIED EFFECT IS UNREACHABLE.** `plan-invariants.md`'s row for this invariant
+records the ruling's measurement as settled fact: *"**292 plans gained the prescription** (256 at 15 km/wk, 36
+at 8)"*, marathon fit-for-purpose **89.4% → 91.8%**, `LONG-RUN-SHORT` 7% → 4.8%. That was measured on 33,792
+GRID cases, every one of which carries `fitness_level`. **In production the same change gained 0 plans**, and
+the registry has read as a delivered improvement ever since.
+
+⚠️ **WHY EVERY HARNESS IS GREEN, AND IT IS NOT THAT THE GRID ALWAYS SETS THE LEVEL** — §79 fixed that in
+2026-09-02 and the sweep now treats `undefined` as a first-class value. **The invariant is structurally
+unreachable in the sweep either way**, because the sweep validates only through `generateRulePlan`'s own
+`validatePlan(plan, input)` with the SAME raw input the engine used:
+
+| the swept input | the engine's gate | the invariant's gate | result |
+|---|---|---|---|
+| `fitness_level: 'beginner'` | applies — prescribes | satisfied | clean, correctly |
+| `fitness_level: undefined` | **false — prescribes nothing** | **false — skips** | clean, vacuously |
+
+A checker sharing the producer's own blind field cannot catch the producer. It surfaces ONLY on the
+stored-plan path, where `validateReshapedPlan` merges the derived level from `meta` — which is why it appears
+in §134's tolerated set and nowhere else in the project.
+
+⚠️ **AND `invariant:liveness` CALLS IT PROVEN.** The code is not in the liveness baseline, so a mutation does
+wake it — on a `cohortGrid` plan, where `fitness_level` IS set. **The rule is provably alive on a population
+production cannot produce.**
+
+🔴 **THIS REPO ALREADY LEARNED THIS, TWO FILES OVER, AND NEVER APPLIED IT HERE.** `invariants.ts` says in
+writing: *"`input.fitness_level` is undefined for every runner who accepted the wizard's recommendation, so
+this check previously self-skipped on the entire accept path — i.e. the ceiling was unenforced for most real
+users."* §79's quality ceiling was fixed by resolving meta-first; `runWalkPlan.ts` has the identical read and
+was left. **A remedy applied to one twin** — the same class as `RESHAPE-VALIDATOR-KIND-01`, same day.
+
+**Two halves, two governance answers, and they must not be shipped as one:**
+1. ⚙️ **The INSTRUCTION** (`runWalkPrescriptionApplies` → §117 Am.5) restores documented intent and
+   deliberately does **not** touch the peak — Am.5's ruling evidence is a 33,792-case before/after in which
+   peak week moved 0 times. Exempt, state it and proceed.
+2. 🏃 **The PEAK** (`runWalkApplies` → §117 proper) lowers peak volume for the beginner finish cohort.
+   Switching it on changes what the engine prescribes at scale. **Coaching Board, with Willy's binding "no
+   peak may fall" condition re-measured** — his original measurement was taken on inputs that carried the
+   level, so it says nothing about the population that reaches this gate in production.
+
+⚠️ **The resolution owner already exists:** `fitnessAssessment.ts` — `input.fitness_level ?? assessed.structural`.
+The gates must ask it, not the raw field. A third copy of the ladder is how this defect happened.
+
+---
+
+### 🔲 `WIZARD-CONTRADICTORY-VOLUME-01` — the wizard accepts a longest run bigger than the weekly total ⚙️ **NO BOARD**
+
+📐 **Found 2026-11-03, same measurement.** `INV-INPUT-LONGEST-LE-WEEKLY` (§18/§10) survives regeneration on
+**2 stored plans** — *"Self-reported longest run 20km exceeds stated weekly volume 10km — a single run cannot
+exceed the week's total"* and a 6 km / 5 km pair. The engine cannot fix it: it is the runner's own answers.
+
+**The invariant exists and fires; the wizard that collects the two numbers never compares them.** So the only
+thing the check achieves today is to make the plan permanently invalid, which §134 now correctly tolerates.
+The fix belongs at the input: reconcile the pair in the wizard (the step that asks the second number knows
+the first), not in the validator. ⚠️ **`GATE-EVERY-EXIT-FROM-A-STEP` applies** — and the honest handling is
+probably to accept the larger number as the weekly floor rather than to block, since a runner who ran 20 km
+last week did run 20 km that week.
+
+---
+
+### ⚠️ `STORED-PLAN-VALIDATOR-INPUT-01` — ten repair scripts validate stored plans with a hand-built input ⚙️ **NO BOARD**
+
+📐 **Measured 2026-11-03.** 16 scripts read the `plans` table and validate what they read. Five called
+`validateReshapedPlan` and were moved onto `validateStoredPlan` in this commit, with a derived gate in
+`storedPlanDebt.test.ts` so the sixth cannot appear. **Ten more call `validatePlan(plan, input)` directly**
+with an input they assemble themselves — `backfill-plan-hr`, `recal-live-repair`, `repair-plan-zone-strings`,
+`recompose-foundation`, `reenrich-plans`, `backfill-plan-strides`, `gen-fix-01-stage2-regenerate`,
+`recalibration-header-drift`, `_tmp-catch`, and `audit`-adjacent helpers.
+
+That bypasses **both** things `validateStoredPlan` and `validateReshapedPlan` own: the §116 kind dispatch, and
+the meta-first level merge whose absence is `RUNWALK-ASSESSED-LEVEL-01`. ⚠️ **It mostly fails SAFE** — every
+one of them compares before against after, so a phantom appears on both sides and cancels. The exposure is any
+absolute *"is this clean"* judgement, and `fleet-invalid-debt-01-regen.ts` makes one. **Not urgent; not
+nothing.** Fixing it is mechanical once someone decides whether `validateStoredPlan` should take an optional
+input override.
 
 ---
 

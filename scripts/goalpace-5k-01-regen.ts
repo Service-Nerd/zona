@@ -29,7 +29,11 @@ import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
-import { validateReshapedPlan } from '../lib/plan/invariants'
+// RESHAPE-VALIDATOR-KIND-01 (2026-11-03) — the kind-dispatching owner, because this script
+// validates plans it read out of `plans` and a base-build plan judged by the race
+// constitution reports ~50 phantom errors. Identical to `validateReshapedPlan` on a race
+// plan; the difference is §116's own validator running on the plans it describes.
+import { validateStoredPlan } from '../lib/plan/validateStoredPlan'
 import { regenRefusalReason } from '../lib/ops/regenEligibility'
 import { withProfileHr } from '../lib/plan/rebuildInput'
 import type { Plan, GeneratorInput, Session } from '../types/plan'
@@ -49,7 +53,7 @@ const env = Object.fromEntries(
 const sb = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
 
 const errCodes = (p: Plan) =>
-  Array.from(new Set(validateReshapedPlan(p).filter(v => v.severity === 'error').map(v => v.code))).sort()
+  Array.from(new Set(validateStoredPlan(p).filter(v => v.severity === 'error').map(v => v.code))).sort()
 
 // Postgres stores plan_json as jsonb, which reorders object keys, so a stored session and
 // a freshly generated identical one stringify differently. Compare in a canonical key order.
@@ -167,7 +171,7 @@ async function main() {
   console.log(`Checks      before: ${before.length ? before.join(', ') : 'clean'}`)
   console.log(`            after:  ${after.length ? after.join(', ') : 'clean'}`)
   console.log(`Calendar    ${plan.weeks.length} → ${candidate.weeks.length} weeks, same dates: yes`)
-  if (after.length && process.env.GP_DEBUG) for (const v of validateReshapedPlan(candidate).filter(v => v.severity === "error")) console.log("   ", v.code, "W" + v.week, String(v.message).slice(0, 400))
+  if (after.length && process.env.GP_DEBUG) for (const v of validateStoredPlan(candidate).filter(v => v.severity === "error")) console.log("   ", v.code, "W" + v.week, String(v.message).slice(0, 400))
   if (after.length) throw new Error('refused: result does not validate clean')
 
   console.log(`\nChanged sessions (before → after):`)

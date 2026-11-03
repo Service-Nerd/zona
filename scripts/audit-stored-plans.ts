@@ -29,6 +29,9 @@
 //   npx tsx --env-file=.env.local scripts/audit-stored-plans.ts
 import { createClient } from '@supabase/supabase-js'
 import { validateStoredPlan } from '../lib/plan/validateStoredPlan'
+import { positionStoredPlanDebt } from '../lib/plan/storedPlanDebt'
+import { regenRefusalReason } from '../lib/ops/regenEligibility'
+import { hasAiCopy } from '../lib/plan/enrichmentState'
 import type { Plan } from '../types/plan'
 
 const main = async () => {
@@ -38,14 +41,38 @@ const main = async () => {
     process.exit(2)
   }
   const sb = createClient(url, key, { auth: { persistSession: false } })
-  const { data, error } = await sb.from('plans').select('user_id, plan_json')
+  // STORED-PLAN-DEBT-REPAIR-01 — the second question. "15 plans carry debt" was being read
+  // as "15 plans to repair", and neither half of that is a count of anything actionable:
+  // a breach in an elapsed week cannot be reached, and a rewrite of a live plan is refused
+  // by `regenRefusalReason` — the owner written after this script's own sibling rewrote a
+  // real runner's block in week 8 of 14 (REGEN-LIVE-PLAN-GUARD-01). Both asked here, so the
+  // answer is one command rather than an afternoon of throwaway scripts.
+  const [{ data, error }, comp, ana, act, settings] = await Promise.all([
+    sb.from('plans').select('user_id, plan_json'),
+    sb.from('session_completions').select('user_id'),
+    sb.from('run_analysis').select('user_id'),
+    sb.from('strava_activities').select('user_id'),
+    sb.from('user_settings').select('id, is_admin'),
+  ])
   if (error) { console.error('read failed:', error.message); process.exit(1) }
+  const ids = (r: { data: { user_id: string }[] | null }) => new Set((r.data ?? []).map(x => x.user_id))
+  const completions = ids(comp as never), analyses = ids(ana as never), activities = ids(act as never)
+  const admins = new Set(((settings.data ?? []) as { id: string; is_admin: boolean | null }[])
+    .filter(r => r.is_admin).map(r => r.id))
+  const TODAY = new Date(); TODAY.setHours(0, 0, 0, 0)
+  const todayISO = TODAY.toISOString().slice(0, 10)
 
   const rows = (data ?? []) as { user_id: string; plan_json: Plan }[]
   let considered = 0, adjustable = 0, refused = 0, threw = 0
   const census = new Map<string, number>()
   const plansByCode = new Map<string, Set<string>>()
   const soleCause = new Map<string, number>()
+  // The actionable picture: plans carrying a breach in a week still AHEAD of the runner,
+  // and whether a silent rewrite of that plan is permitted at all.
+  let aheadPlans = 0, elapsedOnlyPlans = 0
+  let aheadV = 0, elapsedV = 0, planLevelV = 0
+  const aheadByCode = new Map<string, Set<string>>()
+  const refusalTally = new Map<string, number>()
 
   for (const r of rows) {
     const plan = r.plan_json
@@ -73,6 +100,32 @@ const main = async () => {
     }
     if (!errs.length) { adjustable++; continue }
     refused++
+
+    // WHERE the debt sits. A violation in week 2 of a plan that started in June is not
+    // something the runner is about to run — they already ran it, and no rewrite reaches
+    // backwards. Measured 2026-11-03: 9 of the 15 plans carrying debt carry it ONLY in
+    // elapsed weeks or at plan level.
+    const pos = positionStoredPlanDebt(plan, errs, TODAY)
+    aheadV += pos.ahead.length; elapsedV += pos.elapsed.length; planLevelV += pos.planLevel.length
+    if (pos.ahead.length) {
+      aheadPlans++
+      for (const c of Array.from(new Set(pos.ahead.map(v => v.code)))) {
+        if (!aheadByCode.has(c)) aheadByCode.set(c, new Set())
+        aheadByCode.get(c)!.add(String(r.user_id).slice(0, 8))
+      }
+      // And WHETHER a rewrite is permitted. Asked only for the plans where a repair could
+      // reach something, because that is the only place the answer changes a decision.
+      const m = plan.meta as unknown as Record<string, unknown>
+      const reason = regenRefusalReason({
+        planStart: m.plan_start as string, raceDate: m.race_date as string,
+        hasGeneratorInput: !!m.generator_input, isAdmin: admins.has(r.user_id),
+        hasCompletions: completions.has(r.user_id), hasRunAnalysis: analyses.has(r.user_id),
+        hasActivities: activities.has(r.user_id), hasAiCopy: hasAiCopy(plan.meta),
+      }, todayISO) ?? 'ELIGIBLE'
+      refusalTally.set(reason, (refusalTally.get(reason) ?? 0) + 1)
+    } else {
+      elapsedOnlyPlans++
+    }
     const codes = new Set(errs.map(v => v.code))
     for (const c of Array.from(codes)) {
       census.set(c, (census.get(c) ?? 0) + 1)
@@ -103,6 +156,27 @@ const main = async () => {
   }
   if (threw) console.log(`validation threw                    ${threw}   <-- investigate, these are not counted`)
 
+  if (refused > 0) {
+    console.log(`\n── WHERE THE DEBT SITS, which is the only axis a repair can act on ──`)
+    console.log(`plans with a breach in a week still AHEAD  ${aheadPlans}`)
+    console.log(`plans whose debt is ALL elapsed/plan-level ${elapsedOnlyPlans}   <-- nothing to repair: they ran it`)
+    console.log(`violations  ahead ${aheadV} · elapsed ${elapsedV} · plan-level ${planLevelV}`)
+    if (aheadByCode.size) {
+      console.log(`\ncodes breached in a week the runner has NOT reached (plans affected):`)
+      for (const [c, set] of Array.from(aheadByCode).sort((a, b) => b[1].size - a[1].size)) {
+        console.log(`  ${String(set.size).padStart(3)} plan(s)  ${c}`)
+      }
+    }
+    if (refusalTally.size) {
+      console.log(`\nmay those plans be silently REWRITTEN? (regenRefusalReason, REGEN-LIVE-PLAN-GUARD-01)`)
+      for (const [reason, n] of Array.from(refusalTally).sort((a, b) => b[1] - a[1])) {
+        console.log(`  ${String(n).padStart(3)}  ${reason}${reason === 'ELIGIBLE' ? '' : '   <-- refused'}`)
+      }
+      console.log(`    An ELIGIBLE plan is one \`fleet-invalid-debt-01-regen.ts --apply\` would rebuild.`)
+      console.log(`    Everything else is FLEET-INVALID-DEBT-02 — opt-in refresh, never a silent rewrite.`)
+    }
+  }
+
   if (census.size) {
     console.log(`\nplans affected, by code (a plan can appear more than once):`)
     for (const [c, n] of Array.from(census).sort((a, b) => b[1] - a[1])) {
@@ -117,6 +191,10 @@ const main = async () => {
   console.log(`      rules SHOULD refuse; the question is whether YOUR change caused it.`)
   console.log(`    · It is not a gate. Run it before AND after, and compare the two numbers yourself.`)
   console.log(`    · A SOLE-cause line is the loud case: those plans had zero errors until that code.`)
+  console.log(`    · Nothing about whether a breach DESERVES repair. The prescription-vs-declaration`)
+  console.log(`      split is FLEET-TRIGGER-SEVERITY-01, designed and deliberately not built.`)
+  console.log(`    · AHEAD is a position, not a severity: a missing stride note and a long run over`)
+  console.log(`      its injury ceiling both land there.`)
   // Deliberately exit 0 even with refusals: a non-zero exit would read as "this change is bad",
   // and a pre-existing refusal is not this change's fault. The comparison is the signal.
 }

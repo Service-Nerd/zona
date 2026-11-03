@@ -17,7 +17,11 @@
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import { applyHrToPlan } from '../lib/plan/zones'
-import { validateReshapedPlan } from '../lib/plan/invariants'
+// RESHAPE-VALIDATOR-KIND-01 (2026-11-03) — the kind-dispatching owner, because this script
+// validates plans it read out of `plans` and a base-build plan judged by the race
+// constitution reports ~50 phantom errors. Identical to `validateReshapedPlan` on a race
+// plan; the difference is §116's own validator running on the plans it describes.
+import { validateStoredPlan } from '../lib/plan/validateStoredPlan'
 import type { Plan } from '../types/plan'
 
 const APPLY = process.argv.includes('--apply')
@@ -30,7 +34,7 @@ const env = Object.fromEntries(
 )
 const sb = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
 const errCodes = (p: Plan) =>
-  Array.from(new Set(validateReshapedPlan(p).filter(v => v.severity === 'error').map(v => v.code))).sort()
+  Array.from(new Set(validateStoredPlan(p).filter(v => v.severity === 'error').map(v => v.code))).sort()
 
 async function main() {
   if (APPLY && !ONLY) throw new Error('--apply needs --only <plan-id-prefix>: this rewrites a runner\'s zones, one plan at a time')

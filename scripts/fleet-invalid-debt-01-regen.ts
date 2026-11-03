@@ -19,7 +19,11 @@ import { createClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
-import { validateReshapedPlan } from '../lib/plan/invariants'
+// RESHAPE-VALIDATOR-KIND-01 (2026-11-03) — the kind-dispatching owner, because this script
+// validates plans it read out of `plans` and a base-build plan judged by the race
+// constitution reports ~50 phantom errors. Identical to `validateReshapedPlan` on a race
+// plan; the difference is §116's own validator running on the plans it describes.
+import { validateStoredPlan } from '../lib/plan/validateStoredPlan'
 import type { Plan, GeneratorInput } from '../types/plan'
 import { regenRefusalReason } from '../lib/ops/regenEligibility'
 import { hasAiCopy } from '../lib/plan/enrichmentState'
@@ -43,7 +47,7 @@ const env = Object.fromEntries(
 const sb = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
 
 const errCodes = (p: Plan) =>
-  Array.from(new Set(validateReshapedPlan(p).filter(v => v.severity === 'error').map(v => v.code))).sort()
+  Array.from(new Set(validateStoredPlan(p).filter(v => v.severity === 'error').map(v => v.code))).sort()
 
 async function usersWithData(table: string): Promise<Set<string>> {
   const { data } = await sb.from(table).select('user_id')
