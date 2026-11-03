@@ -558,7 +558,7 @@ describe('SKIP-MAKEUP-DAY-01 — the route never offers a change that breaks the
     // This arm used to pin the exact string `{ adjustment: null, message: 'No adjustment
     // needed' }`, which is the SAME body the route returns when the engine genuinely found
     // nothing to change. `ReshapeScreen` reads `adjustment: null` as `clean` and renders a
-    // green tick over "Plan looks good." — so for the 20 of 39 live plans that carry a
+    // green tick over "Plan looks good." — so for the 18 of 39 live plans that carry a
     // pre-existing error, a refusal was displayed as reassurance.
     //
     // ⚠️ THE OLD ASSERTION WAS NOT WRONG, IT WAS INCOMPLETE. It proved the change was not

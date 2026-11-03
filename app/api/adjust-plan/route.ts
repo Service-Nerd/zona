@@ -354,7 +354,8 @@ export async function POST(req: NextRequest) {
     // `onChecked(false)` stamped "Last checked …" as a check that ran and found nothing.
     //
     // `validateReshapedPlan` returns EVERY error in the plan, not only new ones or the touched week, so one
-    // historical defect anywhere refuses every adjustment forever: measured at 20 of 39 live plans. Those
+    // historical defect anywhere refuses every adjustment forever: 18 of 39 live plans (46%), measured at
+    // 20 / 51% before the 2 plans §40b Am.4 had frozen were remediated on 2026-11-03. Those
     // runners were being told their plan looks good by a check that declined to run.
     //
     // ⚠️ `adjustment: null` IS KEPT so no existing caller changes behaviour; `refused` is additive and the

@@ -59,8 +59,9 @@ refusal was shown to the runner as reassurance.
 
 **Measured:** `validateReshapedPlan` returns *every* error-severity violation in the plan (only
 two codes are week-scoped), so one historical defect anywhere refuses every adjustment —
-**20 of 39 live plans**. Those runners were told their plan looks good by a check that declined
-to run. ⚠️ Only 4 `reshape_invalid` events exist in all of production history, so it is a
+**18 of 39 live plans (46%)** — 20 / 51% when first measured, before the 2 plans §40b Am.4 had
+frozen were remediated on 2026-11-03. Those runners were told their plan looks good by a check
+that declined to run. ⚠️ Only 4 `reshape_invalid` events exist in all of production history, so it is a
 landmine rather than a daily outage.
 
 - **`adjustment: null` is retained deliberately.** `refused` is additive, so no existing caller

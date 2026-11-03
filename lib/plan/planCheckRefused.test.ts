@@ -9,8 +9,8 @@
  * `onChecked(false)` stamps "Last checked …" as a check that ran and found nothing.
  *
  * Measured 2026-11-03: `validateReshapedPlan` returns EVERY error-severity violation in the
- * plan, so one historical defect anywhere refuses every adjustment forever — **20 of 39 live
- * plans**. Those runners were being told their plan looks good by a check that declined to run.
+ * plan, so one historical defect anywhere refuses every adjustment forever — **18 of 39 live
+ * plans (46%)**, measured at 20 / 51% before the 2 plans §40b Am.4 had frozen were remediated. Those runners were being told their plan looks good by a check that declined to run.
  *
  * ⚠️ WHY THIS IS A SOURCE TEST AND NOT A RENDER TEST, stated rather than skipped.
  * `vitest.config.ts` is `environment: 'node'` with no jsdom, so no test in this repo can

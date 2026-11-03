@@ -14,7 +14,8 @@ export const PLAN_CHANGE_SAVE_FAILED = 'Could not save that change. Try again.'
 //
 // Measured 2026-11-03: `validateReshapedPlan` returns EVERY error-severity violation in the
 // plan (only two codes are week-scoped), so one historical defect anywhere makes every
-// adjustment refuse — **20 of 39 live plans**. Those runners are told their plan looks good,
+// adjustment refuse — **18 of 39 live plans (46%)**, measured at 20 / 51% before the 2 plans
+// §40b Am.4 had frozen were remediated. Those runners are told their plan looks good,
 // by a check that declined to run, and `onChecked(false)` stamps "Last checked …" as a
 // successful check that found nothing.
 //
