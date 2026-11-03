@@ -10932,6 +10932,40 @@ held by `runWalkPrescribeReadiness.test.ts` **ARM 2** — the readiness route mu
 predicate into `isRunWalk`, which turns ARM 2 red. **An unenforceable half is a known risk, not an
 oversight.**
 
+🔴 **CORRECTION, 2026-11-03 — THIS AMENDMENT PRESCRIBED NOTHING FOR FOUR WEEKS, AND THE RULING
+IS UNCHANGED** (`RUNWALK-ASSESSED-LEVEL-01`; defect fix restoring documented intent, no board).
+The owner above read `input.fitness_level` raw. The wizard sends the runner's level on
+`user_declared_level` and **never** on `fitness_level` (§79 — that field is the API's structural
+declaration and would set peak km), so the predicate returned false for every runner the product
+can build. **Measured across all 39 live plans: `run_walk_prescribed` 0, a walk interval on any
+session of any week 0.** The 292-plan effect recorded above is real of `useCaseEnvelope`, which
+sets the field on all 33,792 cases; production gained none.
+
+⚠️ **AND THE REASON NOTHING CAUGHT IT IS WORTH MORE THAN THE FIX.** The property sweep validates
+through `validatePlan(plan, input)` with the same raw input the engine used, so an absent level
+made the engine prescribe nothing **and** the invariant skip — clean, *vacuously*. A checker that
+shares the producer's blind field cannot catch the producer. `invariant:liveness` separately called
+the rule **proven**, because a mutation wakes it on a `cohortGrid` plan, where the field is set:
+provably alive on a population production cannot produce. **Five corpora set it** —
+`useCaseEnvelope`, `cohortGrid`, `slowGoalGrid`, the liveness fixture, and charity persona M6 — and
+so did every fixture in this amendment's own test file.
+
+**The gate now takes §79's resolved STRUCTURAL level** (`resolveLevels(input).structural`, meta
+first on the stored-plan path), which is the tissue axis readiness-to-run belongs on. Re-measured on
+the envelope in the shape the wizard posts: **768 distinct runner profiles satisfy the predicate,
+of which 0 previously received it**, and on the ratified instrument with the field omitted the **marathon
+fit-for-purpose rate reads 79.2% before and 84.4% after** (+5.2pp against this amendment's claimed
++2.4pp), `LONG-RUN-SHORT` 11.5% → 6.9%, whole product 93.1% → 94.6%. ⚠️ The instrument itself
+reports 85.0% / 94.4% with the field set, which is a separate defect (`ENVELOPE-UNSET-LEVEL-01`)
+and is why `review:coaching` said *"no measured rate moved"* on this change. 🩹 Willy's condition is untouched — `finish_goal_run_walk`
+stays unset and ARM 2 still holds.
+
+⚠️ **§117 PROPER — THE PEAK REDUCTION — IS STILL DEAD, DELIBERATELY.** `runWalkApplies` has the
+identical raw read. Resolving it lowers peak volume for the beginner finish cohort at scale, which
+is a **Coaching Board** question, and Willy's *"no peak may fall"* evidence was itself taken on
+inputs that carried the level, so it says nothing about the production population. Open as
+`RUNWALK-ASSESSED-LEVEL-01`, peak half. **Do not reconcile the two gates without that sitting.**
+
 ### §117 Amendment 2 — the `LONG-RUN-SHORT` exemption is BOUNDED (Coaching Board 2026-09-20, chair-mandated at S116-FLOOR-VS-TARGET-01)
 
 **Principle.** A finish-goal run-walk plan whose peak long run falls below

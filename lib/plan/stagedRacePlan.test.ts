@@ -126,17 +126,48 @@ describe('the checkpoint gates on what was RUN, through §111 itself', () => {
 
 // ── the third sitting: the checkpoint asks with what the runner RAN (C1–C3) ──────────────────────────────────────────
 describe('C4 — no clean target: the checkpoint offers a choice, never a block we know is not clean', () => {
-  // A real envelope case: finish goal, 8 km/week, 6 days, 20 weeks. No target leaves a clean race block.
+  // A real envelope case: finish goal, 8 km/week, 6 days, 20 weeks.
   const NOFIT = input({ race_date: '2027-03-22', goal: 'finish', days_available: 6, current_weekly_km: 8,
     longest_recent_run_km: 4, training_age: '6-18mo', age: 28, recent_quality_training: 'occasional' })
-  it('is still staged, at §111\'s door, and says no target was found', () => {
+
+  // 🔴 THIS FIXTURE MOVED OFF C4 ON 2026-11-03, AND IT IS THE CLEAREST THING
+  // `RUNWALK-ASSESSED-LEVEL-01` FOUND. §117 Am.5's prescription gate read
+  // `input.fitness_level`, which the wizard never sends — so for NOFIT (and every
+  // real runner) it returned false, `LONG-RUN-SHORT` stayed an objection, no target
+  // was ever clean, and this runner was told to find a later race. With the gate
+  // reading §79's resolved STRUCTURAL level the prescription fires, §117 Am.2's
+  // bounded exemption applies (peak long run ≥ 17 km, Willy's figure), and a target
+  // IS found at 12 km/week.
+  //
+  // ⚠️ THE TWO REGISTERS WERE EACH WRONG IN THE OPPOSITE DIRECTION, WHICH IS WHY
+  // NEITHER COULD SEE THE OTHER. This file is PRODUCTION-SHAPED (`user_declared_level`,
+  // no `fitness_level`), so these two arms were the only place in 7,132 tests that
+  // encoded the defect's consequence — as the specification. `useCaseEnvelope`, which
+  // the board's 68.7%/66.8%/28.3% staged figures came from, sets `fitness_level` on
+  // all 33,792 cases, so it reported the CORRECT outcome for a population production
+  // cannot produce. Measured on the envelope in the wizard's shape, same 436 staged
+  // marathoners: a clean target found for **7.3% before, 15.6% after** (weighted
+  // 21.9% → 35.9%).
+  it('a runner who USED to have no clean target now finds one — §117 Am.5 arriving', () => {
     const s = stagedRaceOf(generateStagedRacePlan(NOFIT, '2026-11-02', 9)!)!
-    expect(s).toMatchObject({ door_km: 9, min_base_km: 9, target_found: false })
+    expect(s).toMatchObject({ min_base_km: 9, target_found: true })
+    // The door rises to the found target; it is never below §111's own figure.
+    expect(s.door_km).toBe(12)
+    expect(s.door_km).toBeGreaterThanOrEqual(s.min_base_km)
+  })
+
+  // C4 IS STILL REACHABLE, AND SAYING SO WITH A FIXTURE IS THE POINT: measured over
+  // the same 436 staged marathoners, 84.4% still find no clean target. A board-ruled
+  // branch whose only test moved off it is a branch with no test.
+  const C4 = input({ race_date: '2027-03-01', days_available: 6, current_weekly_km: 6, longest_recent_run_km: 3 })
+  it('is still staged, at §111\'s door, and says no target was found', () => {
+    const s = stagedRaceOf(generateStagedRacePlan(C4, '2026-11-02', 10)!)!
+    expect(s).toMatchObject({ door_km: 10, min_base_km: 10, target_found: false, reaches_door: true })
   })
   it('a staged plan whose target was not found answers checkpoint_choose even at the door', () => {
-    const plan = generateStagedRacePlan(NOFIT, '2026-11-02', 9)!
+    const plan = generateStagedRacePlan(C4, '2026-11-02', 10)!
     const at = new Map(plan.weeks.map(w => [w.n, load(stagedRaceOf(plan)!.door_km + 2, 6)]))
-    const out = evaluateCheckpoint(NOFIT, plan, at, 'km')
+    const out = evaluateCheckpoint(C4, plan, at, 'km')
     expect(out.ok).toBe(false)
     // Never "more base building": the target does not exist to build toward (C4).
     if (!out.ok) {
@@ -150,9 +181,19 @@ describe('C4 — no clean target: the checkpoint offers a choice, never a block 
   })
 })
 
-// ⚠️ C4's "Two ways" heading has NO reachable case on the measured grid (2026-10-25): at each no-fit runner's real
-// checkpoint §117 built a run-walk plan for 0 of 231, so they are offered a later race alone. Filed for the Phase E
-// board round as NO-RUNNER-CHECKPOINT-NOFIT-01; the branch is kept because the board ruled it, not because it fires.
+// ⚠️ C4's "Two ways" heading had NO reachable case when this was written (2026-10-25): at each no-fit runner's real
+// checkpoint §117 built a run-walk plan for 0 of 231, so they were offered a later race alone. Filed for the Phase E
+// board round as NO-RUNNER-CHECKPOINT-NOFIT-01 (withdrawn E5); the branch was kept because the board ruled it.
+//
+// ▲ RE-MEASURED 2026-11-03 (`RUNWALK-ASSESSED-LEVEL-01`), on the envelope in the shape the wizard posts, 436 staged
+// marathoners: the heading IS reachable — the HALF is offered to 52.3% of them, so `half` + `later_race` is two ways,
+// and the `C4` fixture above lands on exactly that. E1's same-date half shipped the day this comment was written.
+//
+// 🔴 THE RUN-WALK OPTION IS STILL OFFERED TO 0 OF 436, AND THE CAUSE IS NOT A SHORTAGE OF QUALIFYING RUNNERS.
+// Line ~392 gates it on `finish_goal_run_walk`, i.e. on `runWalkApplies` — the PEAK half, which reads
+// `input.fitness_level` raw and so returns false for every runner the product builds. Probed by resolving that gate
+// too: the option reaches 6 of 435 (1.4%) and the flag 88 of 10,752 marathon cases (0.82%, weighted 1.51%), with
+// refusals 10.54% → 9.72% weighted. Not shipped — Coaching Board, `RUNWALK-ASSESSED-LEVEL-01` peak half.
 
 describe('C1 — §29 does not discount OBSERVED volume', () => {
   const returner = input({ current_weekly_km: 12, longest_recent_run_km: 6, training_age: '2-5yr' })

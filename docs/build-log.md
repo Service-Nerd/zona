@@ -5,6 +5,22 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-03 — RUNWALK-ASSESSED-LEVEL-01 · seven green checks said a feature worked; it had never run once
+**Shipped:** §117 Amendment 5's run-walk prescription now reads the level the engine resolves instead of a wizard field that does not exist, so a beginner being sent to a marathon off a 5 km longest run is finally told how to walk it. Peak half deliberately left dead, routed to the Coaching Board with the measurement it needs.
+
+**Dev learning:** One line: `if (input.fitness_level !== 'beginner') return false`. The wizard sends the runner's level on `user_declared_level` and never on `fitness_level`, by design — the second field sets peak km, and the comment in the wizard says so in as many words. So the gate was false for every runner the product can build, and the amendment prescribed nothing for four weeks. **The repo had already learned this exact lesson two files over**: `invariants.ts` carries a written note that `input.fitness_level` *"is undefined for every runner who accepted the wizard's recommendation, so this check previously self-skipped on the entire accept path"*. §79's quality ceiling was fixed. This identical read was left. A remedy applied to one twin — second time in two days.
+
+**Product/creator learning:** The amendment's registry row records *"292 plans gained the prescription"* and a marathon score moving 89.4% → 91.8%. True of the 33,792-case grid it was measured on. In production it gained zero, and the row has read as a delivered improvement ever since. **A doc that records a measured effect without recording what population it was measured on is a doc that will mislead you later** — and the person it misled was me, writing the follow-up item.
+
+**AI-building learning:** The real find isn't the one-liner, it's why nothing caught it. The property sweep validates a plan through `validatePlan(plan, input)` with the same raw input the engine used — so an absent level made the engine prescribe nothing AND the invariant skip. Clean. Vacuously. **A checker sharing the producer's blind field cannot catch the producer.** Then `invariant:liveness` separately reported the rule as *proven*, because a mutation does wake it — on a `cohortGrid` plan, where the field is set. Provably alive on a population production cannot produce. Five corpora set that field, including the one the amendment was ratified on. I kept reaching for "which check should have caught this" and the answer was that they all ran, all passed, and all asked the wrong question.
+
+**The honest bit:** The sharpest moment was the two failing tests. `stagedRacePlan.test.ts` is the one file in this area that IS production-shaped, and its two C4 arms were the only place in 7,132 tests where the defect was visible — **as the specification**: *"says no target was found"*. The blind harnesses reported the correct outcome and the sighted test asserted the broken one, and because they disagreed in opposite directions neither could ever surface the other. I nearly "fixed" the test to keep it green. And `verify:parity` came back IDENTICAL on 6,102 cases, which means nothing: every one of them carries the field. Second time that grid has reassured me about a change it structurally cannot see.
+
+**Hook material:** 0 of 39. That's how many live plans carried the run-walk prescription that a registry row said 292 plans had gained. And the number that made it land: run our own quality instrument on the shape the app actually posts and the marathon score reads **79.2%**, not the 85.0% we have been reporting. The fix takes it to 84.4%. **We were measuring a population our own wizard cannot produce** — and the gap was widest on the distance we care about most.
+
+**Postable?:** yes — "seven green checks, one dead feature" is the post, and the vacuous-clean mechanism is the part nobody writes about.
+
+---
 ## 2026-11-03 — STORED-PLAN-DEBT-REPAIR-01 · the debt was a third the size, and measuring it found a mechanism that has never run
 **Shipped:** the two axes that decide whether stored-plan debt is actionable — where it sits in the runner's life, and whether a rewrite is permitted — as part of `npm run audit:stored`, plus a ruling of NO REPAIR. Five committed repair scripts moved onto the kind-dispatching validator. Two live defects filed.
 

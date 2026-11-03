@@ -1,4 +1,5 @@
 import type { GeneratorInput, Session } from '@/types/plan'
+import type { FitnessLevel } from './fitnessAssessment'
 import { GENERATION_CONFIG } from './generationConfig'
 import { formatSecs, type DerivedSet, type DerivedStep } from './resolveMainSet'
 import { effectiveStartKm } from './startVolume'
@@ -71,17 +72,63 @@ export function runWalkDistanceApplies(distanceKm: number): boolean {
  * 2 km and then fails LONG-RUN-SHORT 75% of the time (n=256), while the 8 km/week
  * cohort falls below the door, gets run-walk, and fails only 36%.
  *
- * Shares `runWalkDistanceApplies`, `goal === 'finish'` and `fitness_level ===
- * 'beginner'` with `runWalkApplies` deliberately: the board's ruling left those
- * three exclusions untouched and did NOT extend to time-target or intermediate
- * runners, both of which carry their own stated reasons.
+ * Shares `runWalkDistanceApplies` and `goal === 'finish'` with `runWalkApplies`
+ * deliberately: the board's ruling left those exclusions untouched and did NOT
+ * extend to time-target runners, which carries its own stated reason.
+ *
+ * ▲ RUNWALK-ASSESSED-LEVEL-01 (2026-11-03) — THE LEVEL IS PASSED IN, RESOLVED,
+ * AND THIS GATE NO LONGER READS `input.fitness_level`. It did, and the field is
+ * `undefined` for every runner the app can produce: `GeneratePlanScreen` sends the
+ * runner's level on `user_declared_level` and *never* on `fitness_level` (§79 —
+ * that one is the API's structural declaration and would set peak km), and
+ * `/api/generate-plan` never names it. So both arms returned false and §117 Am.5
+ * prescribed nothing: measured over all 39 stored plans, `run_walk_prescribed`
+ * truthy **0**, `run_walk_strategy` on any session of any week **0**, against the
+ * amendment's own recorded effect of *"292 plans gained the prescription"*.
+ *
+ * 🔴 AND EVERY HARNESS WAS GREEN, BECAUSE THE CHECKER SHARED THE PRODUCER'S BLIND
+ * FIELD. The sweep validates through `validatePlan(plan, input)` with the same raw
+ * input the engine used, so `fitness_level: undefined` made the engine prescribe
+ * nothing AND the invariant skip — clean, vacuously. `invariant:liveness` called
+ * the rule proven because a mutation wakes it on a `cohortGrid` plan, where the
+ * field IS set. Five corpora set it (`useCaseEnvelope` — the 33,792 cases that
+ * measured this very amendment — `cohortGrid`, `slowGoalGrid`, the liveness
+ * fixture, charity persona M6), so the rule was provably alive on a population
+ * production cannot produce.
+ *
+ * ⚠️ THE REMEDY ALREADY EXISTED TWO FILES OVER AND WAS APPLIED TO ONE TWIN.
+ * `invariants.ts` says in writing that `input.fitness_level` *"is undefined for
+ * every runner who accepted the wizard's recommendation, so this check previously
+ * self-skipped on the entire accept path"* — §79's quality ceiling was fixed by
+ * resolving meta-first and this identical read was left.
+ *
+ * ⚠️ `runWalkApplies` BELOW STILL READS THE RAW FIELD, DELIBERATELY, AND THAT IS
+ * NOT AN INCONSISTENCY TO TIDY. It is the PEAK half: switching it on lowers peak
+ * volume for the beginner finish cohort at scale, which is a Coaching Board
+ * question, and 🩹 Willy's binding "no peak may fall" condition was measured on
+ * inputs that carried the level. Until that sitting, the instruction carries and
+ * the peak does not move — which is exactly Am.4's separation. Backlog:
+ * `RUNWALK-ASSESSED-LEVEL-01`, peak half.
+ *
+ * `structuralLevel` is §79's STRUCTURAL read (volume, peak km, caps), never the
+ * intensity one: readiness to run the distance is a tissue question. It is passed
+ * in rather than resolved here for the reason `standardPeakKm` is — so the
+ * producer and this gate cannot disagree — and it is REQUIRED, with no default,
+ * because the dangerous answer is "no prescription" and the compiler should make
+ * each caller state it. §117's own doctrine is that the shape is DERIVED, NEVER
+ * ASKED, so a runner who declares `intermediate` while reading beginner on volume
+ * still gets the instruction: `USER_DECLARED_LEVEL_BINDS_STRUCTURE_DOWNWARD_ONLY`
+ * keeps structure at beginner, and the cohort this exists to serve is precisely
+ * the one that will not tick the box.
  */
-export function runWalkPrescriptionApplies(input: GeneratorInput): boolean {
+export function runWalkPrescriptionApplies(
+  input: GeneratorInput, structuralLevel: FitnessLevel | undefined,
+): boolean {
   // R5 (2026-10-25): after a walk-run start the instruction carries, whatever the distance. Instruction only, never peak.
   if (input.after_walk_run_start === true) return true
   if (!runWalkDistanceApplies(input.race_distance_km)) return false
   if (input.goal !== 'finish') return false
-  if (input.fitness_level !== 'beginner') return false
+  if (structuralLevel !== 'beginner') return false
   const longest = input.longest_recent_run_km
   if (typeof longest !== 'number' || longest <= 0) return false
   const bar = input.race_distance_km
@@ -107,6 +154,14 @@ export function runWalkApplies(input: GeneratorInput, standardPeakKm: number, pl
   // §117 is for the runner who CANNOT be prepared to run it. A time goal is an
   // explicit statement that finishing is not the point.
   if (input.goal !== 'finish') return false
+  // ⚠️ RAW, AND HELD RAW ON PURPOSE — see `runWalkPrescriptionApplies` above.
+  // `input.fitness_level` is undefined for every runner the wizard produces, so
+  // this arm returns false in production and §117's PEAK REDUCTION has never
+  // applied to a real plan. Resolving it here lowers peak volume for the beginner
+  // finish cohort at scale: Coaching Board, with 🩹 Willy's binding "no peak may
+  // fall" re-measured on inputs that do NOT carry the level. Do not "tidy" this
+  // into agreement with the gate above; that ships an unratified peak change.
+  // Backlog: `RUNWALK-ASSESSED-LEVEL-01`, peak half.
   if (input.fitness_level !== 'beginner') return false
 
   // The trigger is §111's own arithmetic: would the standard peak refuse them?

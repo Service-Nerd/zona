@@ -9,6 +9,7 @@ import { generateGetRunningPlan } from '@/lib/plan/getRunningPlan'
 import { generateMaintenanceBlock } from '@/lib/plan/maintenance'
 import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
 import { runWalkPrescriptionApplies } from './runWalkPlan'
+import { resolveLevels } from './fitnessAssessment'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import type { GeneratorInput, Plan, Session, Week } from '@/types/plan'
@@ -1038,7 +1039,11 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
       // to move when the rule moves, and a second copy of the threshold here is
       // how this key would silently stop distinguishing the thing it was added
       // for — the same fault as `INJURY-GUARD-PREDICATE-01`.
-      + `|${runWalkPrescriptionApplies(i) ? 'unready' : 'ready'}`
+      // ▲ RUNWALK-ASSESSED-LEVEL-01 — the gate takes the RESOLVED structural level.
+      // `cohortGrid` rows all carry `fitness_level`, which wins inside `resolveLevels`
+      // outright, so this key is unchanged by the fix — and that identity is the
+      // point: it is why a mutation woke the rule here while production never did.
+      + `|${runWalkPrescriptionApplies(i, resolveLevels(i).structural) ? 'unready' : 'ready'}`
     if (seen.has(k)) return false
     seen.add(k)
     return true

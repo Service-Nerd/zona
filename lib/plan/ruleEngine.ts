@@ -7080,7 +7080,10 @@ function buildRulePlanOnce(
   // SHORT, and a lower peak would make it shorter. Measured over 33,792 envelope
   // cases, peak week moved 0 times. Gated by `runWalkPrescribeReadiness.test.ts`
   // ARM 2, which goes red if this predicate is wired into `isRunWalk` instead.
-  const runWalkPrescribed = runWalkEligible || runWalkPrescriptionApplies(input)
+  // ▲ RUNWALK-ASSESSED-LEVEL-01 — `fitness` is this plan's RESOLVED structural
+  // level (`levels.structural`), passed in because the gate used to read
+  // `input.fitness_level`, which the wizard never sends. See `runWalkPlan.ts`.
+  const runWalkPrescribed = runWalkEligible || runWalkPrescriptionApplies(input, fitness)
 
   const declaredUpward = declaredLevel !== undefined
     && FITNESS_RANK[declaredLevel] > FITNESS_RANK[assessedStructural]

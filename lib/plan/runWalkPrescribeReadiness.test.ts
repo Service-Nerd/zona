@@ -10,10 +10,22 @@
  * ⚠️ ARM 3 IS THE `PRESCRIBED-FIELD-REACH-01` LESSON. `run_walk_prescribed` was
  * stamped in plan JSON and read by nothing for months while its invariant stayed
  * green. A meta flag is not a prescription; the walk interval on the session is.
+ *
+ * 🔴 AND THIS FILE WAS THE SIXTH BLIND HARNESS (RUNWALK-ASSESSED-LEVEL-01,
+ * 2026-11-03). Every fixture below set `fitness_level: 'beginner'` — a field the
+ * wizard never sends — so every arm passed against a population production cannot
+ * produce, while the prescription fired for **0 of 39** live plans. The arms now
+ * resolve the level through `resolveLevels`, the owner the engine uses, and
+ * § PRODUCTION SHAPE at the foot of the file omits the field entirely.
+ *
+ * ⚠️ DO NOT PASS A LITERAL `'beginner'` TO THE GATE IN THIS FILE. That is the
+ * defect, re-expressed as a test: it asserts the gate works on inputs the product
+ * does not build. `levelOf` resolves it the way the engine does.
  */
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { runWalkPrescriptionApplies } from './runWalkPlan'
+import { resolveLevels } from './fitnessAssessment'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG as G } from './generationConfig'
 import type { GeneratorInput } from '@/types/plan'
@@ -37,6 +49,15 @@ function marathonBeginner(longestKm: number, weeklyKm: number): GeneratorInput {
   } as unknown as GeneratorInput
 }
 
+/** §79's structural level, resolved exactly as `generateRulePlan` resolves it. */
+const levelOf = (i: GeneratorInput) => resolveLevels(i).structural
+
+/** The shape the wizard actually posts: no `fitness_level`, level on the declaration. */
+function asWizardSends(i: GeneratorInput, declared?: 'beginner' | 'intermediate' | 'experienced'): GeneratorInput {
+  const { fitness_level: _dropped, ...rest } = i as GeneratorInput & { fitness_level?: unknown }
+  return { ...rest, ...(declared ? { user_declared_level: declared } : {}) } as GeneratorInput
+}
+
 function planOf(input: GeneratorInput) {
   // 'paid' is what `envelopeMeasure` passes, so this test and the benchmark
   // measure the same thing. A missing tier is not a neutral default.
@@ -54,9 +75,9 @@ describe('§117 Am.5 — run-walk prescribed on readiness to run', () => {
   const READY = marathonBeginner(15, 35)
 
   it('the predicate separates the measured cohorts', () => {
-    expect(runWalkPrescriptionApplies(UNREADY)).toBe(true)
+    expect(runWalkPrescriptionApplies(UNREADY, levelOf(UNREADY))).toBe(true)
     // 15 km = 35.5% of the race, above the bar.
-    expect(runWalkPrescriptionApplies(READY)).toBe(false)
+    expect(runWalkPrescriptionApplies(READY, levelOf(READY))).toBe(false)
     // The bar itself, stated so a config change has to come through here.
     expect(G.RUNWALK_PRESCRIBE_LONGEST_RUN_PCT_OF_RACE).toBe(25)
   })
@@ -64,24 +85,27 @@ describe('§117 Am.5 — run-walk prescribed on readiness to run', () => {
   it('a runner who is ready is NOT given the prescription by this route', () => {
     // Guards the direction that would be invisible: over-prescribing walk
     // breaks to a runner who does not need them.
-    expect(runWalkPrescriptionApplies(marathonBeginner(11, 25))).toBe(false)
-    expect(runWalkPrescriptionApplies(marathonBeginner(20, 50))).toBe(false)
+    for (const i of [marathonBeginner(11, 25), marathonBeginner(20, 50)]) {
+      expect(runWalkPrescriptionApplies(i, levelOf(i))).toBe(false)
+    }
   })
 
   it('only beginners with a finish goal at marathon+ reach it', () => {
     const notBeginner = { ...UNREADY, fitness_level: 'intermediate' } as GeneratorInput
     const notFinish = { ...UNREADY, goal: 'time_target', target_time: '4:15:00' } as unknown as GeneratorInput
     const halfMarathon = { ...UNREADY, race_distance_km: 21.1 } as GeneratorInput
-    expect(runWalkPrescriptionApplies(notBeginner)).toBe(false)
-    expect(runWalkPrescriptionApplies(notFinish)).toBe(false)
-    expect(runWalkPrescriptionApplies(halfMarathon)).toBe(false)
+    expect(runWalkPrescriptionApplies(notBeginner, levelOf(notBeginner))).toBe(false)
+    expect(runWalkPrescriptionApplies(notFinish, levelOf(notFinish))).toBe(false)
+    expect(runWalkPrescriptionApplies(halfMarathon, levelOf(halfMarathon))).toBe(false)
   })
 
   it('a missing or zero longest run does not reach it', () => {
     // §18's INV-INPUT-LONGEST-LE-WEEKLY means a stated longest is trustworthy;
     // an ABSENT one is not evidence of anything, and must not buy a prescription.
-    expect(runWalkPrescriptionApplies({ ...UNREADY, longest_recent_run_km: undefined } as unknown as GeneratorInput)).toBe(false)
-    expect(runWalkPrescriptionApplies({ ...UNREADY, longest_recent_run_km: 0 } as unknown as GeneratorInput)).toBe(false)
+    for (const longest of [undefined, 0]) {
+      const i = { ...UNREADY, longest_recent_run_km: longest } as unknown as GeneratorInput
+      expect(runWalkPrescriptionApplies(i, levelOf(i))).toBe(false)
+    }
   })
 
   it('the unready runner GETS the prescription, and the plan validates', () => {
@@ -120,5 +144,88 @@ describe('§117 Am.5 — run-walk prescribed on readiness to run', () => {
     delete p.meta.run_walk_prescribed
     const codes = validatePlan(p as never, UNREADY).map(v => v.code)
     expect(codes).toContain('INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY')
+  })
+})
+
+/**
+ * RUNWALK-ASSESSED-LEVEL-01 — the shape the PRODUCT builds.
+ *
+ * 🔴 EVERY ARM ABOVE SET `fitness_level`, AND THE WIZARD NEVER DOES. These arms
+ * omit it, which is the only population that has ever reached this gate in
+ * production, and all four were RED before the fix: the engine prescribed
+ * nothing, the invariant skipped, and the suite was green.
+ *
+ * ⚠️ ARM "identity" is the durable one. It does not assert a value — it asserts
+ * that the gate gives the SAME answer whether or not the field is present. That is
+ * the property the defect broke, and it stays true if the thresholds move.
+ */
+describe('§117 Am.5 — PRODUCTION SHAPE: no fitness_level, level on the declaration', () => {
+  const UNREADY = marathonBeginner(7, 15)
+  const READY   = marathonBeginner(15, 35)
+
+  it('the level resolves to beginner from volume alone — the premise of the rest', () => {
+    // 15 km/wk is below FITNESS_VOLUME_THRESHOLDS.beginner_max_weekly_km (20).
+    expect(levelOf(asWizardSends(UNREADY))).toBe('beginner')
+    // Stated so a threshold change cannot quietly empty this whole describe block.
+    expect(levelOf(asWizardSends(READY))).not.toBe('beginner')
+  })
+
+  it('an unready beginner GETS the prescription with no fitness_level present', () => {
+    const i = asWizardSends(UNREADY)
+    expect((i as { fitness_level?: unknown }).fitness_level).toBeUndefined()
+    expect(runWalkPrescriptionApplies(i, levelOf(i))).toBe(true)
+  })
+
+  it('identity — the gate does not care whether the field is present', () => {
+    for (const base of [UNREADY, READY, marathonBeginner(11, 25)]) {
+      const withField = base
+      const without   = asWizardSends(base)
+      expect(runWalkPrescriptionApplies(without, levelOf(without)))
+        .toBe(runWalkPrescriptionApplies(withField, levelOf(withField)))
+    }
+  })
+
+  it('§117 is DERIVED, NEVER ASKED — declaring intermediate does not opt out', () => {
+    // §79: USER_DECLARED_LEVEL_BINDS_STRUCTURE_DOWNWARD_ONLY, so a runner who
+    // reads beginner on volume keeps a beginner STRUCTURE whatever they declare.
+    // That is the cohort this exists to serve: they will not tick the box.
+    const up = asWizardSends(UNREADY, 'intermediate')
+    expect(levelOf(up)).toBe('beginner')
+    expect(runWalkPrescriptionApplies(up, levelOf(up))).toBe(true)
+    // Declaring DOWNWARD binds structure, and a beginner is already the floor.
+    const down = asWizardSends(READY, 'beginner')
+    expect(runWalkPrescriptionApplies(down, levelOf(down))).toBe(false)
+  })
+
+  it('end to end — the plan prescribes, the sessions carry it, and the peak does not move', () => {
+    const i = asWizardSends(UNREADY)
+    const p = planOf(i)
+    expect(p.meta.run_walk_prescribed).toBe(true)
+    // 🩹 Willy: no peak may fall. The readiness route must not set the flag that
+    // swaps `standardLevelPeakKm` for `runWalkPeakKm()`.
+    expect(p.meta.finish_goal_run_walk).toBeUndefined()
+    // The interval reaches the SESSIONS, not just the meta (PRESCRIBED-FIELD-REACH-01).
+    let running = 0, withInterval = 0
+    for (const w of p.weeks) {
+      for (const s of Object.values(w.sessions ?? {})) {
+        const sess = s as { type?: string; run_walk_strategy?: unknown }
+        if (!sess || sess.type === 'rest' || sess.type === 'strength' || sess.type === 'cross') continue
+        running++
+        if (sess.run_walk_strategy) withInterval++
+      }
+    }
+    expect(running).toBeGreaterThan(20)
+    expect(withInterval).toBe(running)
+    expect(validatePlan(p as never, i).filter(v => v.severity === 'error')).toEqual([])
+  })
+
+  it('the invariant fires on a production-shaped plan whose stamp is missing', () => {
+    // The arm that was structurally unreachable: with no `fitness_level`, the
+    // checker resolved `undefined` and skipped, so this could not fire at all.
+    const i = asWizardSends(UNREADY)
+    const p = planOf(i)
+    delete p.meta.run_walk_prescribed
+    expect(validatePlan(p as never, i).map(v => v.code))
+      .toContain('INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY')
   })
 })

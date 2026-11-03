@@ -217,81 +217,135 @@ built. `ahead` is a position, not a severity.
 
 ---
 
-### 🔴 `RUNWALK-ASSESSED-LEVEL-01` — §117's RUN-WALK MECHANISM HAS NEVER FIRED FOR A SINGLE RUNNER 🏃 **COACHING BOARD** for the peak half; ⚙️ **NO BOARD** for the instruction half
+### ✅ `RUNWALK-ASSESSED-LEVEL-01` — **INSTRUCTION HALF SHIPPED 2026-11-03.** §117 Am.5 prescribed nothing for four weeks ⚙️ **NO BOARD** (defect fix restoring documented intent)
 
-📐 **Found 2026-11-03 while measuring `STORED-PLAN-DEBT-REPAIR-01`.** Two stored marathon plans retain
-`INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY` after regeneration by today's engine, so it is not stored debt.
-Tracing it found the cause and it is not those two plans.
+🔴 **The gate read a field the wizard never sends.** `runWalkPrescriptionApplies` tested
+`input.fitness_level !== 'beginner'`; `GeneratePlanScreen` sends the runner's level on
+`user_declared_level` and **never** on `fitness_level` (§79 — that field is the API's structural declaration
+and would set peak km), and `/api/generate-plan` never names it. So the predicate was false for every runner
+the product can build. **Measured across all 39 live plans: `run_walk_prescribed` 0, a walk interval on any
+session of any week 0.**
 
-**`runWalkPrescriptionApplies` and `runWalkApplies` both read `input.fitness_level` raw:**
+**Shipped:** the gate takes §79's resolved **STRUCTURAL** level — readiness to run the distance is a tissue
+question — passed in by the producer (`levels.structural`), resolved meta-first by the checker
+(`plan.meta.fitness_level ?? resolveLevels(input).structural`), and **required with no default**, so the
+compiler enumerates every caller. 🩹 Willy's "no peak may fall" is untouched: `finish_goal_run_walk` stays
+unset and ARM 2 still holds.
 
-```ts
-if (input.fitness_level !== 'beginner') return false   // runWalkPlan.ts:84 and :110
-```
+**Effect, measured on `useCaseEnvelope` in the shape the wizard posts** (the same instrument whose 33,792
+cases the amendment was ratified on): **768 distinct runner profiles** satisfy the predicate, **0 of which
+previously received it**; marathon `run_walk_prescribed` **424 → 768 of 10,752**. Three named charity personas
+change — **M1** (first-timer marathon, 15 km/wk, 8 km longest), **M1d** (the same runner *declaring
+experienced* — §117 is derived, never asked, so the declaration does not opt them out), and **E1**
+(never-run beginner, 5 km longest). On the staged path, same 436 staged marathoners, a clean race-block
+target found for **7.3% → 15.6%** (weighted **21.9% → 35.9%**).
 
-🔴 **AND THE WIZARD NEVER SETS THAT FIELD, BY DESIGN.** `GeneratePlanScreen`, in its own words:
-*"§79 — send the runner's level on `user_declared_level`, WHETHER ACCEPTED OR OVERRIDDEN, and **never on
-`fitness_level`** (which is the API's structural declaration and would set peak km)."* So `input.fitness_level`
-is `undefined` for every runner the app can produce, both gates `return false`, and §117 is dead.
+**🔴 THE DELIVERED EFFECT, ON THE RATIFIED INSTRUMENT WITH THE FIELD OMITTED** (`measureEnvelope`, its own stride-29 default). This is the measurement that matters, because it is the only one taken on the population the wizard posts:
 
-**Measured against production, all 39 stored plans:**
+| | whole product | marathon | `LONG-RUN-SHORT` | staged clean |
+|---|---|---|---|---|
+| gate as it was | **93.1%** | **79.2%** | 11.5% | 1.5% |
+| gate fixed | **94.6%** | **84.4%** | 6.9% | 3.2% |
+| level-set control (what we have been reporting) | 94.4% | 85.0% | 5.9% | 5.0% |
 
-| | |
-|---|---|
-| `generator_input.fitness_level` set | **0 of 39** |
-| `meta.run_walk_prescribed` truthy | **0 of 39** |
-| `meta.finish_goal_run_walk` truthy | **0 of 39** |
-| sessions carrying `run_walk_strategy`, every week of every plan | **0** |
-| §117 Am.5 would apply on the RESOLVED level | **2** |
+**Marathon +5.2pp, whole product +1.5pp**, against the amendment's claimed +2.4pp — the production deficit was larger than the ruling measured, and the fix closes most of the gap between what we MEASURE (85.0%) and what we SHIP (was 79.2%, now 84.4%). ⚠️ **Marathon remains below the founder's 90% per-distance floor either way**, and `review:coaching` reported *"no measured rate moved"* on this change for the same reason: filed as `ENVELOPE-UNSET-LEVEL-01`.
 
-**The consequence, on the charity cohort's exact archetype:** a beginner finish-goal marathoner whose longest
-recent run is **5 km** is told to run 42.2 km with no run-walk prescription. §117 Am.5's own invariant message
-is *"They are going to walk; a plan that does not say so is lying."* Feed the same input with
-`fitness_level: 'beginner'` present and `run_walk_prescribed` becomes `true` — measured on both plans.
+🔴 **SEVEN GREEN CHECKS — the sweep, `invariant:liveness`, `cohort:shape`, `measure:fitness`, `review:coaching`, `verify:parity` and the amendment's own test file — AND THE TWO REGISTERS WERE EACH WRONG IN THE OPPOSITE DIRECTION, WHICH IS WHY NEITHER COULD SEE THE OTHER.**
+The property sweep validates through `validatePlan(plan, input)` with the same raw input the engine used, so
+an absent level made the engine prescribe nothing **and** the invariant skip: clean, *vacuously*. A checker
+sharing the producer's blind field cannot catch the producer. `invariant:liveness` separately called the rule
+**proven**, because a mutation wakes it on a `cohortGrid` plan, where the field IS set. **Five corpora set
+it** — `useCaseEnvelope`, `cohortGrid`, `slowGoalGrid`, the liveness fixture and charity persona M6 — and so
+did every fixture in the amendment's own test file. Meanwhile `stagedRacePlan.test.ts`, which IS
+production-shaped, had the only two arms in 7,132 tests that saw the consequence — **and asserted it as the
+specification** ("no target was found"). The blind harnesses reported the correct outcome; the sighted test
+reported the defect as correct.
 
-🔴 **AND §117 Am.5's OWN RATIFIED EFFECT IS UNREACHABLE.** `plan-invariants.md`'s row for this invariant
-records the ruling's measurement as settled fact: *"**292 plans gained the prescription** (256 at 15 km/wk, 36
-at 8)"*, marathon fit-for-purpose **89.4% → 91.8%**, `LONG-RUN-SHORT` 7% → 4.8%. That was measured on 33,792
-GRID cases, every one of which carries `fitness_level`. **In production the same change gained 0 plans**, and
-the registry has read as a delivered improvement ever since.
+⚠️ **`verify:parity` CANNOT SEE THIS CHANGE AND CAME BACK IDENTICAL.** All 6,102 cases carry
+`fitness_level` (`scripts/verify-parity.ts:64`). That is a true statement about levelled plans and no
+evidence at all about the production shape — the `FOUNDATION-LONG-RUNWAY-01` class. Filed as
+`PARITY-GRID-UNSET-LEVEL-01`.
 
-⚠️ **WHY EVERY HARNESS IS GREEN, AND IT IS NOT THAT THE GRID ALWAYS SETS THE LEVEL** — §79 fixed that in
-2026-09-02 and the sweep now treats `undefined` as a first-class value. **The invariant is structurally
-unreachable in the sweep either way**, because the sweep validates only through `generateRulePlan`'s own
-`validatePlan(plan, input)` with the SAME raw input the engine used:
+**Gate:** `runWalkPrescribeReadiness.test.ts` § PRODUCTION SHAPE — six arms with no `fitness_level`, all red
+before the fix, including an **identity** arm (the gate must give the same answer with and without the field)
+that survives a threshold change. Falsified three ways: the raw read (5 red), the checker dropping its meta
+rung (1 red), and wiring the predicate into `isRunWalk` (ARM 2 red, Willy's condition).
 
-| the swept input | the engine's gate | the invariant's gate | result |
-|---|---|---|---|
-| `fitness_level: 'beginner'` | applies — prescribes | satisfied | clean, correctly |
-| `fitness_level: undefined` | **false — prescribes nothing** | **false — skips** | clean, vacuously |
-
-A checker sharing the producer's own blind field cannot catch the producer. It surfaces ONLY on the
-stored-plan path, where `validateReshapedPlan` merges the derived level from `meta` — which is why it appears
-in §134's tolerated set and nowhere else in the project.
-
-⚠️ **AND `invariant:liveness` CALLS IT PROVEN.** The code is not in the liveness baseline, so a mutation does
-wake it — on a `cohortGrid` plan, where `fitness_level` IS set. **The rule is provably alive on a population
-production cannot produce.**
-
-🔴 **THIS REPO ALREADY LEARNED THIS, TWO FILES OVER, AND NEVER APPLIED IT HERE.** `invariants.ts` says in
-writing: *"`input.fitness_level` is undefined for every runner who accepted the wizard's recommendation, so
-this check previously self-skipped on the entire accept path — i.e. the ceiling was unenforced for most real
-users."* §79's quality ceiling was fixed by resolving meta-first; `runWalkPlan.ts` has the identical read and
-was left. **A remedy applied to one twin** — the same class as `RESHAPE-VALIDATOR-KIND-01`, same day.
-
-**Two halves, two governance answers, and they must not be shipped as one:**
-1. ⚙️ **The INSTRUCTION** (`runWalkPrescriptionApplies` → §117 Am.5) restores documented intent and
-   deliberately does **not** touch the peak — Am.5's ruling evidence is a 33,792-case before/after in which
-   peak week moved 0 times. Exempt, state it and proceed.
-2. 🏃 **The PEAK** (`runWalkApplies` → §117 proper) lowers peak volume for the beginner finish cohort.
-   Switching it on changes what the engine prescribes at scale. **Coaching Board, with Willy's binding "no
-   peak may fall" condition re-measured** — his original measurement was taken on inputs that carried the
-   level, so it says nothing about the population that reaches this gate in production.
-
-⚠️ **The resolution owner already exists:** `fitnessAssessment.ts` — `input.fitness_level ?? assessed.structural`.
-The gates must ask it, not the raw field. A third copy of the ladder is how this defect happened.
+⚠️ **What this does not prove.** Nothing about the PEAK half below. Nothing about any other level-gated rule
+reading the raw field — not swept, since `verify:parity` and four corpora cannot see that shape. And no live
+plan is changed: engine fixes reach **new plans only** (founder policy), so the 39 stored plans keep their
+absent prescription until their owner rebuilds.
 
 ---
+
+### 🔴 `RUNWALK-ASSESSED-LEVEL-01-PEAK` — §117's PEAK REDUCTION has never applied to a real plan either *(filed 2026-11-03)* 🏃 **COACHING BOARD**
+
+`runWalkApplies` carries the identical raw read and is **held raw deliberately**, with a comment saying so, so
+nobody tidies the two gates into agreement and ships an unratified peak change. Switching it on lowers peak
+volume for the beginner finish cohort, which is what the board must rule on.
+
+**The evidence is measured and it is smaller than it reads.** Probed by resolving the gate, on the full
+marathon envelope (10,752 cases, the shape the wizard posts):
+
+| | production today | peak half resolved |
+|---|---|---|
+| `finish_goal_run_walk` | **0** | **88** (0.82%, weighted 1.51%) |
+| refusals, weighted | 10.54% | **9.72%** (−0.82pp) |
+| `run_walk` offered at the checkpoint | **0 of 436** staged marathoners | 6 of 435 (1.4%) |
+
+⚠️ **In the RATIFIED (level-set) shape the flag reaches only 24 of 10,752 (0.22%)**, so §117's peak lever is
+already small in today's engine — `NO-RUNNER-TURNED-AWAY-01`'s staging machinery has taken over most of the
+refusal cases it was built for. **Re-measure before treating this as urgent.**
+
+🩹 **Willy's "no peak may fall" must be re-measured, not inherited.** His condition was taken on inputs that
+carried the level, so it says nothing about the 88. The narrow question for the sitting: do those 88 plans'
+reduced peaks still clear §117 Am.2's **17 km** adequacy bound and `INV-PLAN-RUNWALK-ADEQUATE`? Both harnesses
+exist. ⚠️ A consequence worth naming: the checkpoint's **run-walk option** is gated on `finish_goal_run_walk`
+(`stagedRacePlan.ts:392`), so it is unreachable in production until this ships — the *"§117 built a run-walk
+plan for 0 of 231"* note in `stagedRacePlan.test.ts` recorded that as a corpus fact, and the cause was this.
+
+---
+
+### 🔲 `PARITY-GRID-UNSET-LEVEL-01` — the parity grid sets `fitness_level` on all 6,102 cases, so it is blind to the production shape of every level-gated rule *(filed 2026-11-03)* ⚙️ **NO BOARD**
+
+`scripts/verify-parity.ts:64` — `LEVELS = ['beginner', 'intermediate', 'experienced']`, and every one of the
+four grids iterates it. The wizard sends `user_declared_level` and never `fitness_level`, so **no parity case
+has ever had the shape a real plan has**, and parity returns IDENTICAL for any change to a rule gated on the
+resolved level. It did exactly that for `RUNWALK-ASSESSED-LEVEL-01`, a change that alters thousands of plans.
+
+CLAUDE.md already records the class — *"IDENTICAL is not the same as VERIFIED... check the grid actually
+varies the thing you changed"* (`FOUNDATION-LONG-RUNWAY-01`) — and this is its second instance. Adding
+`undefined` to `LEVELS` widens the grid by a third and **re-baselines parity**, which is why it is its own
+item and not a line in the fix. ⚠️ Worth doing with a sweep of which other rules read `input.fitness_level`
+raw; `RUNWALK-ASSESSED-LEVEL-01` found two and §79's quality ceiling was a third, so the population is at
+least three and has never been enumerated.
+
+
+### 🔴 `ENVELOPE-UNSET-LEVEL-01` — the fit-for-purpose figure the 90% floor is judged against is measured on a population the wizard cannot post *(filed 2026-11-03)* ⚙️ **NO BOARD** to fix the corpus; 🏃 **COACHING BOARD** if a floor is restated against the new number
+
+`measureEnvelope` reads `distanceEnvelope`, and `useCaseEnvelope.ts:284` sets `fitness_level: l.value` on every one
+of the 33,792 cases. The wizard sends `user_declared_level` and **never** `fitness_level`, and the two produce
+different plans: a declaration binds structure DOWNWARD only (§79), so a 15 km/week runner declaring `intermediate`
+is scored by the instrument as an intermediate plan and built by the engine as a beginner one.
+
+**Measured 2026-11-03, same instrument, same stride, field omitted:**
+
+| | whole product | marathon | staged clean |
+|---|---|---|---|
+| as reported (level set) | 94.4% | **85.0%** | 5.0% |
+| as shipped, before `RUNWALK-ASSESSED-LEVEL-01` | 93.1% | **79.2%** | 1.5% |
+| as shipped, after it | 94.6% | 84.4% | 3.2% |
+
+⚠️ **The whole-product gap is small (1.3pp) and the marathon gap was 5.8pp** — so this is not a claim that the
+headline number is wrong, it is a claim that the per-distance figure the founder's floor is set against was 5.8
+points optimistic for the distance that matters most. And it is why `review:coaching` reported *"no measured rate
+moved"* on a change worth +5.2pp to real marathoners: **the protocol's own § WHAT NONE OF THESE CAN SEE says the
+population is synthetic; it does not say it is a population the product cannot build.**
+
+**Fix:** vary the absent level as a first-class value, as the property sweep already does (`pick(fitnessSets)`
+returning nothing). That re-baselines the envelope, `cohort:shape` and `measure:fitness`, so it is its own item with
+a declared reason, per the re-baselining rule. Pair with `PARITY-GRID-UNSET-LEVEL-01` — same root, different grid —
+and with an enumeration of every rule reading `input.fitness_level` raw.
 
 ### 🔲 `WIZARD-CONTRADICTORY-VOLUME-01` — the wizard accepts a longest run bigger than the weekly total ⚙️ **NO BOARD**
 

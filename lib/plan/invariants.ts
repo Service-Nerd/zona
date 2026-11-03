@@ -39,7 +39,7 @@ import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { calendarWeeksBetween } from '@/lib/dates'
 import { parseDateLocal, formatDate, getDistanceConfig, planWeekCap } from './length'
-import { FITNESS_RANK } from './fitnessAssessment'
+import { FITNESS_RANK, resolveLevels } from './fitnessAssessment'
 import { parsePaceMidpoint } from './paceParse'
 import { racePaceMinPerKm } from './aerobicEstimate'
 import { hasGoalGapSentence, quotesGoalPace } from './goalPaceReach'
@@ -1054,6 +1054,26 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // being preferred above it.
   const fitness = plan.meta.fitness_intensity_level ?? input.fitness_intensity_level
     ?? input.fitness_level ?? plan.meta.fitness_level
+  // ▲ RUNWALK-ASSESSED-LEVEL-01 (2026-11-03) — the STRUCTURAL twin of the ladder
+  // above, resolved HERE beside it rather than at its one consumer, because the
+  // reason the two must be read differently is the reason §79 keeps them apart.
+  //
+  // Structure answers "what can this runner absorb" (volume, peak km, long-run
+  // caps); intensity answers "how hard may it be". §117's readiness-to-run gate is
+  // a tissue question, so it takes this one.
+  //
+  // 🔴 AND THE SAME HOLE THE LADDER ABOVE WAS BUILT TO CLOSE WAS STILL OPEN ONE
+  // FIELD OVER. `input.fitness_level` is undefined for every runner who accepted
+  // the wizard's recommendation, so `INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY`
+  // self-skipped on the entire accept path — and so did the engine's own gate, so
+  // the sweep was clean VACUOUSLY and nothing could see it. Meta first (it is the
+  // level the plan was BUILT at, post-declaration), then the owner, which honours
+  // `input.fitness_level` itself before falling back to the assessment.
+  //
+  // ⚠️ An input with no volume reads `intermediate` out of `fitnessFromVolume`, so
+  // a reconstructed input missing `current_weekly_km` cannot FALSE-fire a
+  // beginner-gated rule. The safe direction, deliberately.
+  const structuralFitness = plan.meta.fitness_level ?? resolveLevels(input).structural
   // §110 Am.2 — the ceiling is CONDITIONAL now (a beginner who set a time
   // target gets 1, not 0), so it comes from the shared owner rather than a
   // lookup repeated here. `buildWeekSessions` reads the same function: a
@@ -7687,7 +7707,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // which PEAK WEEK moved 0 times. An unenforceable half is a known risk, not an
   // oversight.
   {
-    const unready = runWalkPrescriptionApplies(input)
+    const unready = runWalkPrescriptionApplies(input, structuralFitness)
     if (unready && !plan.meta.run_walk_prescribed) {
       violations.push({
         code: 'INV-PLAN-RUNWALK-PRESCRIBED-WHEN-UNREADY',
