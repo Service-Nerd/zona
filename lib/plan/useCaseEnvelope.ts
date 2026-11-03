@@ -281,7 +281,40 @@ export function distanceEnvelope(distanceKm: number, planStart = ENVELOPE_PLAN_S
         athlete_name: 'Envelope', age: a.value, race_name: 'Target race',
         primary_metric: 'distance', race_distance_km: distanceKm,
         race_date: race.toISOString().slice(0, 10), plan_start: planStart,
-        goal: g.value, fitness_level: l.value, training_age,
+        // ▲ ENVELOPE-UNSET-LEVEL-01 (2026-11-03) — THE LEVEL GOES ON THE FIELD THE
+        // WIZARD USES. It was `fitness_level: l.value`, and **no production path sets
+        // that field**: `GeneratePlanScreen` sends `user_declared_level: fitnessLevel ??
+        // levelRec.level` and `/api/generate-plan` never names `fitness_level` (§79 —
+        // it is the API's structural declaration and would bind peak km). So every one
+        // of these 33,792 cases carried a field a real request cannot carry, and the
+        // engine resolved a DIFFERENT structural level for the identical runner: a
+        // declaration binds structure DOWNWARD only, so a 15 km/week runner declaring
+        // `experienced` was scored here as an experienced plan and built by the engine
+        // as a beginner one.
+        //
+        // 🔴 WHAT IT COST. The marathon fit-for-purpose rate — the figure the founder's
+        // 90% per-distance floor is judged against — read **85.0%** here while the
+        // product shipped **79.2%**; whole product 94.4% against 93.1%. And it hid
+        // `RUNWALK-ASSESSED-LEVEL-01` completely: §117 Am.5 was RATIFIED on 33,792 of
+        // these cases, recorded as *"292 plans gained the prescription"*, and prescribed
+        // nothing to anybody for four weeks. `STRIDE-ASSESSED-LEVEL-01` is the same
+        // mechanism one field over. **A corpus is only as honest as its optional
+        // fields, and a corpus written from the type fills them all in.**
+        //
+        // ⚠️ ONE BAND, NOT AN EXTRA `undefined` ONE, AND THAT IS MEASURED NOT ASSUMED.
+        // The item proposed varying the absent level. Live, `fitness_level` is absent on
+        // all 39 plans while `user_declared_level` is SET on 31 of the 32 carrying an
+        // input (23 equal to the engine's recommendation, 6 overridden up, 2 down). And
+        // the accept path is PROVABLY identical to no declaration: `declaredLevel`
+        // defaults to `assessed.intensity`, which is `>= assessed.structural` by
+        // construction in `assessFitness`, so `declaredIsDownward` is false, structure
+        // stays assessed and intensity equals it. So an `undefined` band would add a
+        // third more cases and change no outcome.
+        //
+        // `levelBandsFor`'s weights are unchanged and now read as "what share of runners
+        // at this volume DECLARE this level", which is what they always described.
+        // `training_age` still derives from the band — it is a real wizard field.
+        goal: g.value, user_declared_level: l.value, training_age,
         resting_hr: 55, max_hr: 185,
         current_weekly_km: v.value,
         longest_recent_run_km: Math.round(Math.min(v.value * 0.45, distanceKm * 0.75)),

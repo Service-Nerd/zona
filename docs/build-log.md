@@ -5,6 +5,22 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-03 — ENVELOPE-UNSET-LEVEL-01 · our quality score described runners our own app cannot create
+**Shipped:** the weighted population every coaching number is measured on now sends the runner's level on the field the wizard actually posts. Both baselines re-written, the per-distance floor restated honestly, and three dead rules enumerated behind it.
+
+**Dev learning:** `useCaseEnvelope` set `fitness_level` on all 33,792 cases. Nothing in the product sets that field — the wizard sends `user_declared_level`, and the two are **not** interchangeable: a declaration binds structure downward only, so a 10 km/week runner labelled `experienced` was scored with an experienced peak and is built with a beginner one. One line in a fixture builder, and it had been wrong since the corpus was written. The fix was choosing between "add an `undefined` band" and "use the real field" — I measured the live table and the real field won: `user_declared_level` is set on 31 of 32 stored inputs, and the accept path is provably identical to no declaration anyway.
+
+**Product/creator learning:** The marathon score the founder's 90% floor is judged against read **85.0%** while we shipped **79.2%** (and 84.4% after this morning's fix). Whole product 94.4% vs 93.1%. **The instrument was optimistic exactly where it mattered most** — one distance under the floor, and it's the one the charity cohort runs. The honest per-distance picture is now written down: 5K/10K/50K/100K 100%, HM 97.7%, marathon 84.4%.
+
+**AI-building learning:** The best thing I did was refuse to make two failing tests pass. Both were reachability arms — one carrying "WILLY'S BINDING CONDITION" — written so they'd go red rather than pass vacuously if their population ever vanished. They went red. **The population had vanished because it never existed in the product.** Measured: the hazardous week-1 step Willy's condition was ratified against (≥ 10 km AND > 1.25×) occurs **0 times in 4,379 production-shaped plans**; the worst the engine does is 6 km. So I moved the condition onto the predicate it's actually about and recorded the empty population as a finding for the board. Editing the assertion would have taken four minutes and buried the most important thing I found all day.
+
+**The honest bit:** I reported numbers an hour earlier from a probe that stripped `fitness_level` and left `user_declared_level` unset — closer to production, still not production. It built 332 beginner plans where the real shape builds 572. The figures survived to a tenth, which is luck, not method. And the enumeration I'd flagged as "half an hour" found a third dead rule: §28 Am.1's hill strides, **0 of 39 live plans against 23 live beginners**, with the invariant that watches them gated on the same absent field. Its own comment calls it "that watch". It has never been on duty.
+
+**Hook material:** Three rulings, all ratified on measurements from a corpus that filled in a field our app never sends. §117's 292 plans: 0. §28's hill strides: 0. Willy's 75 weekly jumps: 0 of 4,379. **The corpus was written from the type, and a type fills in every optional field. The product's real shape lives in the ones it leaves out.**
+
+**Postable?:** yes — this is the strongest one in a while, because the villain is a test fixture and the victim is three board decisions.
+
+---
 ## 2026-11-03 — RUNWALK-ASSESSED-LEVEL-01 · seven green checks said a feature worked; it had never run once
 **Shipped:** §117 Amendment 5's run-walk prescription now reads the level the engine resolves instead of a wizard field that does not exist, so a beginner being sent to a marathon off a 5 km longest run is finally told how to walk it. Peak half deliberately left dead, routed to the Coaching Board with the measurement it needs.
 

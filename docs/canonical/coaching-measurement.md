@@ -118,6 +118,60 @@ staged plan a fail). `stagedPct`, `stagedCleanPct` and `stagedObjections` are re
 The race block is built by `checkpointRaceInput` (the same owner the checkpoint uses) at the plan's own target (C3) with the ramp's longest session, marked observed (C1, C2). **Shipped behaviour is the default** (`onRampEnabled()`, ON since 2026-10-25, and the envelope baseline was re-written to it that day); `--staging` is now redundant and still
 refuses `--write`. **What a staged runner gets at the checkpoint** (race block / more base building / the half / a later race, at 100/90/75% compliance) is `scripts/checkpoint-outcomes.ts`, and four typical runners week by week is `scripts/staged-plan-walkthrough.ts`. ⚠️ **The pass-at-the-door assumption is the best case and is printed beside the number.**
 
+### 🔴 2026-11-03 — the population was one the wizard cannot post, and the numbers below are the corrected ones
+
+`ENVELOPE-UNSET-LEVEL-01`. Every case in `useCaseEnvelope` carried `fitness_level`. **No production path sets that
+field** — `GeneratePlanScreen` sends `user_declared_level: fitnessLevel ?? levelRec.level` and
+`/api/generate-plan` never names `fitness_level` (§79: it is the API's structural declaration and would bind peak
+km). The two are not interchangeable: a declaration binds structure **downward only**, so a 10 km/week runner
+labelled `experienced` was scored here with an experienced PEAK and is built by the engine with a beginner one.
+
+**The level now goes on `user_declared_level`.** Same bands, same weights, same case count. An `undefined` band was
+considered and rejected on measurement: live, `fitness_level` is absent on all 39 plans while
+`user_declared_level` is set on 31 of the 32 carrying an input (23 equal to the recommendation, 6 overridden up, 2
+down), and the accept path is provably identical to no declaration (`declaredLevel` defaults to
+`assessed.intensity`, which is `>= assessed.structural` by construction, so structure stays assessed).
+
+⚠️ **EVERY NUMBER THAT MOVED, MOVED BY DEFINITION. NOTHING IN THE ENGINE CHANGED.** Per
+`ZERO-REJECTION-SERVED-01` that makes all of this a **correction, never an improvement.** One cause explains all of
+it: the corpus now contains **572 structurally-beginner plans of 1,060 against 366**, because a downward declaration
+binds structure down where a forced `fitness_level` could not.
+
+| | was (level forced) | now (wizard's field) | why |
+|---|---|---|---|
+| WHOLE PRODUCT `fitPct` | 94.4% | **94.7%** | more beginner-structure plans, which carry fewer objections |
+| marathon `fitPct` | 85.0% | **84.4%** | the instrument was 0.6pp optimistic even after `RUNWALK-ASSESSED-LEVEL-01` |
+| half marathon `fitPct` | 96.2% | **97.7%** | its `WEEK1-LEAP` goes 25% → **0** on the 10 km/wk band |
+| marathon `WEEK1-LEAP` | 4.4% | 3.0% | same cause |
+| marathon `LONG-RUN-SHORT` | 5.9% | 6.9% | more beginners reach §117, so more land in the watched bucket and more remain short |
+| marathon `LONG-RUN-SHORT-RUNWALK` (watched) | 2.8% | 4.6% | ditto |
+| marathon `stagedPct` / `stagedCleanPct` | 11.8% / 5.0% | 9.2% / 3.2% | lower structure moves §111's door, so fewer runners stage |
+| `DAYS-SHORT-SILENCED` (watched) 5K / 10K / HM | 49.8 / 28.8 / 20.4% | 53.5 / 36.9 / 21.5% | more beginner structure, more silencing |
+
+🔴 **`WEEK1-LEAP` WAS PARTLY AN ARTEFACT OF THIS CORPUS, and three test files exist about it.** Forcing structure
+to the band gave a 10 km/week "experienced" runner an experienced peak and therefore a week-1 leap against a 10 km
+base — **a leap the product cannot produce.** HM 10 km/wk clean goes **58.1% → 83.2%** on that alone, and marathon
+25 km/wk loses it entirely. It is still real at 17.2% on marathon 15 km/wk, so the phenomenon stands; its RATE did
+not.
+
+⚠️ **`BINGE-WEEK` IS NEW AND SMALL AND WAS INVISIBLE, NOT ABSENT** — 0.1–1.4% per marathon band, a single session
+over §52's 60% cap in the delivered week (the ADR-022 curve-vs-delivered class). Filed as
+`BINGE-WEEK-DELIVERED-01`.
+
+🔑 **The per-distance picture, against the founder's 90% floor, measured honestly** (founder approved the
+restatement 2026-11-03): 5K **100%**, 10K **100%**, HM **97.7%**, 50K **100%**, 100K **100%**, **marathon 84.4% —
+the only distance under the floor, by 5.6pp.** Before `RUNWALK-ASSESSED-LEVEL-01` the same instrument on the same
+corpus read **79.2%**.
+
+⚠️ **Two sibling corpora are still blind the same way and are filed, not fixed:** `cohortGrid`
+(`PARITY-GRID-UNSET-LEVEL-01`'s twin, feeding `cohort:shape`) and `scripts/verify-parity.ts`, whose 6,102 cases all
+carry the field — so parity returns IDENTICAL for any change to a level-gated rule and did exactly that for
+`RUNWALK-ASSESSED-LEVEL-01`. **Enumerated 2026-11-03: five rules read `input.fitness_level` raw, three of them dead
+in production** (§117 Am.5 — fixed; §117's peak — `RUNWALK-ASSESSED-LEVEL-01-PEAK`; §28 Am.1's hill strides and
+`INV-PLAN-BEGINNER-NEUROMUSCULAR` — `STRIDE-ASSESSED-LEVEL-01`).
+
+---
+
 ## 4. 🔴 What none of these can see
 
 **Printed at the end of every run, deliberately.** A scorecard that shows only

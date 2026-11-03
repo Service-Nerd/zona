@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
-import { auditPlanQuality } from './planQuality'
+import { auditPlanQuality, week1Leap } from './planQuality'
 import { isDesignedRefusal } from './designedRefusal'
 import { GENERATION_CONFIG as G } from './generationConfig'
 import { distanceEnvelope, DISTANCE_BANDS } from './useCaseEnvelope'
-import type { GeneratorInput } from '@/types/plan'
+import type { GeneratorInput, Week } from '@/types/plan'
 // TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
 import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
@@ -36,38 +36,83 @@ const mk = (o: Record<string, unknown>) => ({
 }) as unknown as GeneratorInput
 
 describe('WEEK1-FLOOR-SHORT-DIST-01', () => {
-  it("1. WILLY'S BINDING CONDITION — a big step FOR THE RUNNER still flags", () => {
+  // 🔴 RESTRUCTURED 2026-11-03 (`ENVELOPE-UNSET-LEVEL-01`), AND THE REASON IS THE FINDING.
+  //
+  // This arm used to sweep `distanceEnvelope` for the hazardous population and assert
+  // `hazard > 0` so that "a stride that sampled the claim away would go red rather than
+  // pass vacuously". It went red — working exactly as designed — the moment the corpus
+  // stopped setting `fitness_level`, a field no production path sets.
+  //
+  // 🔑 MEASURED, production shape, 4,379 plans across all six distances, no narrowing:
+  // the hazardous population (step >= 10 km AND ratio > 1.25) is **0, everywhere**. The
+  // largest week-1 step the engine produces is **6 km** (marathon and 50K), and the only
+  // >= 10 km step is the BENIGN 90 -> 100 km case at 100K. The hazard existed in the old
+  // corpus because forcing `fitness_level` upward gave a 10 km/week runner an
+  // experienced PEAK, hence a big week 1 — and a declaration cannot raise structure in
+  // production (§79, downward only). **So Willy's condition was ratified against a
+  // hazard the product cannot build.** The condition is sound; its evidence was not.
+  // Filed as `WEEK1-HAZARD-UNREACHABLE-01`.
+  //
+  // ⚠️ SO THE PREDICATE IS TESTED DIRECTLY AND THE POPULATION IS RECORDED, which is this
+  // repo's own liveness pattern: a rule nothing wakes is UNPROVEN, not proven dead, and
+  // lands in a register with a reason. `week1Leap` is already the single owner
+  // (extracted for NO-RUNNER-TURNED-AWAY-01 C3), so the condition can be exercised on
+  // constructed weeks instead of hoping a corpus emits the case. **Do not restore an
+  // envelope sweep here without re-measuring the 0 above.**
+  it("1. WILLY'S BINDING CONDITION — a big step FOR THE RUNNER still flags (on the predicate)", () => {
     // ⚠️ THIS CONDITION WAS MIS-ENCODED FIRST TIME AND THE MISTAKE MATTERED.
     // Willy said "the 15 km weekly jumps must stay visible". Encoded literally
     // as ">= 10 km absolute", it also swept up a runner declaring 90 km/week
     // handed 100 — a 1.11x step, ten kilometres across six runs — and dropped
     // 100K fit-for-purpose 95.8% -> 88.5% on that alone. He named a step that
     // is big FOR THE RUNNER, not a big number. Both halves are asserted.
-    let hazard = 0, hazardFlagged = 0, benign = 0, benignFlagged = 0
-    // Only the distances where BOTH populations live, measured: the hazardous
-    // >=10 km steps are HM (50) and marathon (12), and the benign 90 -> 100 km
-    // case is 100K. Sweeping all six re-proved the same thing at twice the
-    // duration budget. The `hazard > 0` assertion below keeps this honest — if
-    // the narrowing ever samples the claim away, the test goes red.
-    for (const d of DISTANCE_BANDS.filter(b => [21.1, 42.2, 100].includes(b.value))) {
-      // Stride widened 31 -> 109 -> 211 as the duration gate flagged it twice. Both
-      // populations stay reachable and the assertions below prove it: the test
-      // fails if `hazard` is zero, so a stride that sampled the claim away
-      // would go red rather than pass vacuously.
-      for (const c of distanceEnvelope(d.value).filter((_, i) => i % 211 === 0)) {
-        let plan
-        try { plan = generateRulePlan(c.input, 'paid', PINNED_PLAN_START_0921) }
-        catch (e) { if (isDesignedRefusal(e)) continue; throw e }
-        const declared = (c.input as unknown as { current_weekly_km: number }).current_weekly_km
-        const w1 = plan.weeks.find(w => w.n === 1)?.weekly_km ?? 0
-        const step = w1 - declared, ratio = w1 / Math.max(declared, 0.1)
-        const flagged = auditPlanQuality(plan, c.input).some(o => o.code === 'WEEK1-LEAP')
-        if (step >= 10 && ratio > 1.25) { hazard++; if (flagged) hazardFlagged++ }
-        else if (step >= 10) { benign++; if (flagged) benignFlagged++ }
+    //
+    // The numbers are substituted from config, not written out, so moving either
+    // constant comes through this test.
+    expect(G.WEEK1_ABSOLUTE_STEP_MAX_KM).toBe(10)
+    expect(G.WEEK1_ABSOLUTE_STEP_MIN_RATIO).toBe(1.15)
+
+    /** Week 1 with `runs` equal sessions summing to `km`, and no other week. */
+    const weeksOf = (km: number, runs: number): Week[] => ([{
+      n: 1, type: 'load', phase: 'base', weekly_km: km,
+      sessions: Object.fromEntries(Array.from({ length: runs }, (_, i) =>
+        [['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][i], { type: 'easy', distance_km: km / runs }])),
+    }] as unknown as Week[])
+
+    // HAZARDOUS: 20 km declared, handed 35 — a 15 km step at 1.75x. Willy's case.
+    const hazardIn = mk({ race_distance_km: 42.2, race_date: '2027-04-18', current_weekly_km: 20,
+      longest_recent_run_km: 10, days_available: 5, training_age: '2-5yr' })
+    expect(week1Leap(weeksOf(35, 5), hazardIn, 35)).toContain('adds 15.0km')
+
+    // BENIGN: 90 km declared, handed 100 — the same 10 km across six runs, 1.11x.
+    const benignIn = mk({ race_distance_km: 100, race_date: '2027-06-20', current_weekly_km: 90,
+      longest_recent_run_km: 35, days_available: 6, training_age: '5yr+' })
+    expect(week1Leap(weeksOf(100, 6), benignIn, 100)).toBeNull()
+
+    // THE BOUNDARY, both sides: at a 20 km base, 1.15x is 23 and the floor is 10,
+    // so the absolute arm needs 30 and the ratio arm is what catches 23.
+    expect(week1Leap(weeksOf(30, 5), hazardIn, 30)).toContain('adds 10.0km')
+    expect(week1Leap(weeksOf(29, 5), hazardIn, 29)).not.toContain('adds')
+  })
+
+  it("1b. the BENIGN half holds on the real population — a 90 -> 100 km step is not a leap", () => {
+    // The half the envelope CAN still prove: measured, 2 benign >= 10 km steps at 100K
+    // in the production shape and neither is flagged. The hazardous half is 0 and is
+    // asserted on the predicate above instead.
+    let benign = 0, benignFlagged = 0
+    for (const c of distanceEnvelope(100).filter((_, i) => i % 211 === 0)) {
+      let plan
+      try { plan = generateRulePlan(c.input, 'paid', PINNED_PLAN_START_0921) }
+      catch (e) { if (isDesignedRefusal(e)) continue; throw e }
+      const declared = (c.input as unknown as { current_weekly_km: number }).current_weekly_km
+      const w1 = plan.weeks.find(w => w.n === 1)?.weekly_km ?? 0
+      const step = w1 - declared, ratio = w1 / Math.max(declared, 0.1)
+      if (step >= 10 && ratio <= 1.25) {
+        benign++
+        if (auditPlanQuality(plan, c.input).some(o => o.code === 'WEEK1-LEAP')) benignFlagged++
       }
     }
-    expect(hazard, 'the hazardous population must be reachable at all').toBeGreaterThan(0)
-    expect(hazardFlagged, 'every big-for-the-runner step must stay visible').toBe(hazard)
+    expect(benign, 'the benign population must stay reachable').toBeGreaterThan(0)
     expect(benignFlagged, 'a 90 -> 100 km step is not a week-1 leap').toBe(0)
   })
 

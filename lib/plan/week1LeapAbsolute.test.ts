@@ -61,10 +61,19 @@ describe('WEEK1-LEAP-ABS-01', () => {
 
   it('3. the residual is NOT suppressed — large leaps still exist and are still counted', () => {
     let flagged = 0, biggest = 0
-    // HM only, and a wide stride: the >10 km leaps measured 50 at HM against
-    // 12 at marathon and 0 at 5K/10K, so sweeping four distances cost 1.7 s of
-    // the duration budget to re-prove what one distance shows.
-    for (const d of [21.1]) {
+    // ▲ RETARGETED HM -> MARATHON 2026-11-03 (`ENVELOPE-UNSET-LEVEL-01`), AND THE OLD
+    // REASON WAS A CORPUS ARTEFACT. It read: "the >10 km leaps measured 50 at HM against
+    // 12 at marathon and 0 at 5K/10K, so sweeping four distances cost 1.7 s to re-prove
+    // what one distance shows." Those shares came from a corpus that set `fitness_level`
+    // on every case — a field no production path sets — which handed low-volume runners
+    // an experienced PEAK and therefore a week-1 leap they cannot be given in production
+    // (§79: a declaration binds structure DOWNWARD only).
+    //
+    // 🔑 Re-measured in the shape the wizard posts, 4,379 plans, all six distances:
+    // HM `WEEK1-LEAP` is **0**, and the residual lives at MARATHON — 46 of 1,084, biggest
+    // leap-vs-start **9.5 km**. At this arm's own stride that is 2 of 50, which is what
+    // the assertions below now read. Sweeping HM here asserted nothing.
+    for (const d of [42.2]) {
       for (const c of distanceEnvelope(d).filter((_, i) => i % 149 === 0)) {
         let plan
         try { plan = generateRulePlan(c.input, 'paid', PINNED_PLAN_START_0921) }

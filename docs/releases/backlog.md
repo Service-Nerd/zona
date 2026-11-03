@@ -245,7 +245,7 @@ target found for **7.3% → 15.6%** (weighted **21.9% → 35.9%**).
 | | whole product | marathon | `LONG-RUN-SHORT` | staged clean |
 |---|---|---|---|---|
 | gate as it was | **93.1%** | **79.2%** | 11.5% | 1.5% |
-| gate fixed | **94.6%** | **84.4%** | 6.9% | 3.2% |
+| gate fixed | **94.7%** | **84.4%** | 6.9% | 3.2% |
 | level-set control (what we have been reporting) | 94.4% | 85.0% | 5.9% | 5.0% |
 
 **Marathon +5.2pp, whole product +1.5pp**, against the amendment's claimed +2.4pp — the production deficit was larger than the ruling measured, and the fix closes most of the gap between what we MEASURE (85.0%) and what we SHIP (was 79.2%, now 84.4%). ⚠️ **Marathon remains below the founder's 90% per-distance floor either way**, and `review:coaching` reported *"no measured rate moved"* on this change for the same reason: filed as `ENVELOPE-UNSET-LEVEL-01`.
@@ -306,6 +306,41 @@ plan for 0 of 231"* note in `stagedRacePlan.test.ts` recorded that as a corpus f
 
 ---
 
+### 🔴 `STRIDE-ASSESSED-LEVEL-01` — §28 Am.1's hill strides have never been prescribed, and the watch for them has never run *(filed 2026-11-03)* 🏃 **COACHING BOARD** for the prescription; ⚙️ **NO BOARD** for the invariant's gate
+
+🔴 **Third instance of `RUNWALK-ASSESSED-LEVEL-01`'s mechanism, found by enumerating the raw reads.**
+`isHillStrideWeek` opens with `if (fitnessLevel !== 'beginner') return false`, and `ruleEngine.ts:3964/3971` passes
+`input.fitness_level` **raw** into `neuromuscularNote` / `neuromuscularLabel`. The wizard never sends that field, so
+the beginner arm is false for every real runner and the alternation collapses permanently to flat strides.
+
+**And the same field gates the invariant that watches it.** `invariants.ts:9325` —
+`if (input.fitness_level === 'beginner')` — wraps the whole of `INV-PLAN-BEGINNER-NEUROMUSCULAR`, whose own comment
+says why it exists: *"If a future change ever attaches one to a quality session, that construction argument silently
+stops being true and a beginner acquires quality through a door nobody is watching. **This is that watch.**"*
+**The watch has never been on duty for a real plan.**
+
+**Measured 2026-11-03** (envelope, stride-29, both shapes; and the live table):
+
+| | plans | structurally beginner | plans with HILL strides | invariant's gate opens on |
+|---|---|---|---|---|
+| ratified corpus (`fitness_level` set) | 1,044 | 366 | **86** | 366 |
+| production shape (field absent) | 1,060 | 332 | **0** | **0** |
+| **39 live plans** | 39 | **23** (`meta.fitness_level`) | **0** | 0 |
+
+✅ **§28 proper is unaffected** — flat strides are placed on 100% of plans in both shapes (1,044 / 1,060), so the
+runner has never been without neuromuscular stimulus. What is missing is the HILL arm, and the watch.
+
+🩹 **The safety bounds are live and reachable, which is why this is smaller than §117's peak half.** The §21 injury
+gate reads `injury_history` and the Am.3 bound reads the carrier day — both wizard-supplied, both working. So the
+board's question is narrow: the ruling authorised hills for beginners *"dosed like §28's strides"*, and switching the
+gate on gives eccentric-heavy work to the 332-of-1,060 structural-beginner cohort who have never had it. **Confirm
+`INV-PLAN-INJURY-NO-HILLS` stays clean across the 86 and re-measure the bounds on the production shape** — Willy's
+original evidence, like his §117 condition, was taken on inputs that carried the level.
+
+⚠️ **Fix the gate, not the call site.** `isHillStrideWeek` takes `fitnessLevel: string | undefined` from two callers
+and `weekHasNeuromuscular` is shared with the invariant; the resolution belongs where §117's now is — the caller
+passes `levels.structural`, the checker resolves meta-first. Same shape, same owner (`resolveLevels`).
+
 ### 🔲 `PARITY-GRID-UNSET-LEVEL-01` — the parity grid sets `fitness_level` on all 6,102 cases, so it is blind to the production shape of every level-gated rule *(filed 2026-11-03)* ⚙️ **NO BOARD**
 
 `scripts/verify-parity.ts:64` — `LEVELS = ['beginner', 'intermediate', 'experienced']`, and every one of the
@@ -321,7 +356,34 @@ raw; `RUNWALK-ASSESSED-LEVEL-01` found two and §79's quality ceiling was a thir
 least three and has never been enumerated.
 
 
-### 🔴 `ENVELOPE-UNSET-LEVEL-01` — the fit-for-purpose figure the 90% floor is judged against is measured on a population the wizard cannot post *(filed 2026-11-03)* ⚙️ **NO BOARD** to fix the corpus; 🏃 **COACHING BOARD** if a floor is restated against the new number
+### ✅ `ENVELOPE-UNSET-LEVEL-01` — **SHIPPED 2026-11-03.** The quality instrument now measures the population the wizard posts ⚙️ **NO BOARD** (corpus); 👤 **FOUNDER** approved the floor restatement
+
+✅ **SHIPPED.** `useCaseEnvelope` sends the level on `user_declared_level`, the field `GeneratePlanScreen` actually
+uses. Same bands, same weights, same 33,792 cases. An `undefined` band was considered and **rejected on
+measurement**: live, `fitness_level` is absent on all 39 plans while `user_declared_level` is set on 31 of the 32
+carrying an input (23 = the recommendation, 6 up, 2 down), and the accept path is provably identical to no
+declaration (`declaredLevel` defaults to `assessed.intensity`, `>= assessed.structural` by construction, so
+`declaredIsDownward` is false and structure stays assessed).
+
+⚠️ **EVERY NUMBER THAT MOVED, MOVED BY DEFINITION — a CORRECTION, never an improvement** (`ZERO-REJECTION-SERVED-01`).
+One cause: the corpus now holds **572 structurally-beginner plans of 1,060 against 366**. Full table in
+`docs/canonical/coaching-measurement.md` § 2026-11-03. Both baselines re-written with `--write` and the reason
+declared: `envelopeBaseline.json`, `cohortReviewBaseline.json`.
+
+🔑 **The per-distance picture against the founder's 90% floor, honestly:** 5K 100%, 10K 100%, HM **97.7%**, 50K
+100%, 100K 100%, **marathon 84.4% — the only distance under the floor, by 5.6pp** (and 79.2% before
+`RUNWALK-ASSESSED-LEVEL-01` this morning). Whole product **94.7%** against a reported 94.4%.
+
+🔴 **`WEEK1-LEAP` WAS PARTLY THIS CORPUS'S OWN ARTEFACT, and three test files exist about it.** Forcing structure
+to the band handed a 10 km/week "experienced" runner an experienced peak, hence a week-1 leap against a 10 km base
+— **a leap the product cannot produce**. HM 10 km/wk clean **58.1% → 83.2%** on that alone; marathon 25 km/wk loses
+it entirely. Still real at 17.2% on marathon 15 km/wk, so the phenomenon stands and its rate did not.
+
+⚠️ **What this does not prove.** Nothing about `cohortGrid` or the parity grid, both still blind the same way and
+both filed. Nothing about the other two dead rules the enumeration found. And the envelope's population weights are
+still assumptions with written reasons, not observations — `review:coaching` § *what none of these can see* already
+says so, and the honest addition is that **it is now at least a population the product can build.**
+
 
 `measureEnvelope` reads `distanceEnvelope`, and `useCaseEnvelope.ts:284` sets `fitness_level: l.value` on every one
 of the 33,792 cases. The wizard sends `user_declared_level` and **never** `fitness_level`, and the two produce
@@ -334,7 +396,7 @@ is scored by the instrument as an intermediate plan and built by the engine as a
 |---|---|---|---|
 | as reported (level set) | 94.4% | **85.0%** | 5.0% |
 | as shipped, before `RUNWALK-ASSESSED-LEVEL-01` | 93.1% | **79.2%** | 1.5% |
-| as shipped, after it | 94.6% | 84.4% | 3.2% |
+| as shipped, after it | 94.7% | 84.4% | 3.2% |
 
 ⚠️ **The whole-product gap is small (1.3pp) and the marathon gap was 5.8pp** — so this is not a claim that the
 headline number is wrong, it is a claim that the per-distance figure the founder's floor is set against was 5.8
@@ -346,6 +408,50 @@ population is synthetic; it does not say it is a population the product cannot b
 returning nothing). That re-baselines the envelope, `cohort:shape` and `measure:fitness`, so it is its own item with
 a declared reason, per the re-baselining rule. Pair with `PARITY-GRID-UNSET-LEVEL-01` — same root, different grid —
 and with an enumeration of every rule reading `input.fitness_level` raw.
+
+### 🔴 `WEEK1-HAZARD-UNREACHABLE-01` — Willy's binding week-1 condition was ratified against a hazard the product cannot build *(filed 2026-11-03)* 🏃 **COACHING BOARD**
+
+🔑 **Measured 2026-11-03, production shape, 4,379 plans, all six distances, no narrowing: the hazardous
+population — a week-1 step of ≥ 10 km that is ALSO > 1.25× — is 0, everywhere.** The largest week-1 step the engine
+produces is **6 km** (marathon and 50K), and the only ≥ 10 km step is the **benign** 90 → 100 km case at 100K.
+
+**Why it looked otherwise.** `useCaseEnvelope` set `fitness_level` on all 33,792 cases, which forced a 10 km/week
+runner to an experienced STRUCTURE and therefore an experienced peak and a big week 1. In production a declaration
+binds structure **downward only** (§79), so that runner gets a beginner peak. The sitting's own evidence — *"the
+ratio arm alone caught only 47 of 75 weekly jumps ≥ 10 km, because at 40 km/week a +10 km step is just 1.25×"* —
+counted jumps from that corpus.
+
+⚠️ **THE CONDITION IS SOUND AND IS NOT BEING QUESTIONED.** *"A step big FOR THE RUNNER, not a big number"* is
+right, and the predicate honours it: falsified 2026-11-03 by disabling the absolute arm (red) and by dropping the
+ratio floor to the mis-encoding Willy rejected, which turns the benign 90 → 100 km arm red on the real population.
+What is unverified is the DOSE — 10 km and 1.15× were chosen against those 75 jumps, and no runner the product can
+build reaches them.
+
+**The board's question:** on a population whose worst week-1 step is 6 km, is a 10 km floor the right line, or does
+Willy want it where the engine actually operates? ⚠️ **This is the third ruling today found to rest on
+level-forced evidence** — §117 Am.5's 292 plans, §117's peak condition, and now this. **Re-measure the dose before
+moving it; do not move it to make an arm fire.**
+
+✅ **The tests are honest in the meantime** (`week1LeapDenominator.test.ts`): Willy's condition is now asserted on
+`week1Leap` directly — the single owner — with the config values substituted, and the benign half still runs on the
+envelope where it remains reachable (2 cases at 100K, 0 flagged). `week1LeapAbsolute.test.ts`'s residual arm moved
+HM → marathon for the same reason: HM `WEEK1-LEAP` is now **0** and the residual lives at marathon (46 of 1,084,
+biggest 9.5 km). **Neither arm was edited to go green on a claim it had stopped proving.**
+
+### 🔲 `BINGE-WEEK-DELIVERED-01` — a single session over §52's 60% cap in the DELIVERED week, newly visible *(filed 2026-11-03)* ⚙️ **NO BOARD** to measure; 🏃 **COACHING BOARD** only if a cap moves
+
+Appeared the moment `ENVELOPE-UNSET-LEVEL-01` made the corpus production-shaped: **`BINGE-WEEK` at 0.1–1.4% per
+marathon band and 0.9% at 25 km/wk**, where it previously registered nowhere. `planQuality.ts:189` — the worst
+single session exceeds `LONG_RUN_MAX_PCT_OF_WEEKLY` (60%) in a non-deload week.
+
+**It was invisible, not absent.** The old corpus forced structure to the band, so it under-produced the low-volume
+beginner weeks where one long run dominates. This is the **ADR-022 curve-vs-delivered class**: the load rules are
+enforced on the internal curve while the runner sees `sumWeeklyKm(placed sessions)`.
+
+⚠️ **Measure before proposing anything.** §52's invariant exempts deload weeks and `planQuality` matches it, so a
+1.4% band rate may be a handful of weeks at 61%, which is noise, or a few at 75%+, which is not — `BINGE-SEVERE-75`
+is a separate code and did not appear. **Get the distribution of `worstShare` first**; the fix is only a coaching
+question if the cap itself has to move.
 
 ### 🔲 `WIZARD-CONTRADICTORY-VOLUME-01` — the wizard accepts a longest run bigger than the weekly total ⚙️ **NO BOARD**
 
@@ -9793,7 +9899,7 @@ fails every morning for a reason nobody needs to read is a test everybody learns
 the next real failure in that file arrives pre-ignored. This repo has already recorded that a
 guard which cries wolf gets disabled, which is the same as having no guard.
 
-**State at END of 2026-11-03 (last ship `510ceace` RUNWALK-ASSESSED-LEVEL-01; 729 test files / 7,133 tests; `verify` EXIT 0, sweep 17,420 plans no NEW violations, `review:coaching` all steps pass at 94.4% envelope, `verify:parity` IDENTICAL on 6,102 cases — **and structurally unable to see today's change**).** 🔴 **THE RESHAPE WAS BEING BLAMED FOR DEFECTS IT DID NOT CAUSE, and a remedy from 10-09 had only ever been applied to one twin.** ✅ **`RESHAPE-VALIDATOR-KIND-01`:** `/api/adjust-plan` called `validateReshapedPlan` while `validateStoredPlan` — written for exactly this defect — sat beside it. **3 base-build plans carried 121 phantom errors against the owner's 0.** Clean 21 → 24 of 39. ✅ **`RESHAPE-SCOPE-TO-CHANGE-01` / §134, Coaching Board CORRECT WITH AMENDMENT, unanimous:** refuse only on violations the reshape **INTRODUCED**. It refused on every error anywhere — 18 of 39 live plans, 46%. 🔩 Willy's inversion: the refusal reduced nobody's load, it blocked the only mechanism that reduces it. ✅ **`STORED-PLAN-DEBT-REPAIR-01`: MEASURED AND RULED NO REPAIR.** The item's own census was computed with the validator §134 had replaced hours earlier — 15 plans, not 17. 🔑 **The deciding axis is TIME: 9 of 15 carry debt ONLY in elapsed weeks or at plan level** (34 ahead against 154 elapsed), all 6 actionable plans are refused a silent rewrite, and `canModifyPlan` is true on all 6 — the repair already exists opt-in. ✅ **`RUNWALK-ASSESSED-LEVEL-01`, INSTRUCTION HALF SHIPPED: §117 Am.5 PRESCRIBED NOTHING FOR FOUR WEEKS.** `runWalkPrescriptionApplies` tested `input.fitness_level` and **the wizard never sends that field, by design** (§79 — it would bind peak km). **All 39 live plans: `run_walk_prescribed` 0, a walk interval on any session 0**, against `plan-invariants.md`'s recorded *"292 plans gained the prescription"*. Two beginner finish-goal marathoners with 5 km and 6 km longest runs hold a 42.2 km race session with no interval. The gate now takes §79's resolved **structural** level, required with no default. 🩹 Willy's "no peak may fall" untouched. 🔑 **DELIVERED EFFECT, on the ratified instrument with the field omitted — the only population the wizard can post: whole product 93.1% → 94.6%, MARATHON 79.2% → 84.4%** (+5.2pp against the amendment's claimed +2.4pp), `LONG-RUN-SHORT` 11.5% → 6.9%, staged clean 1.5% → 3.2%; 768 distinct runner profiles gain the prescription and 0 had it. ⚠️ **SEVEN GREEN CHECKS COULD NOT SEE IT AND THE TWO REGISTERS WERE EACH WRONG THE OPPOSITE WAY.** The sweep validates with the engine's own raw input, so producer and checker were blind to the same field — clean *vacuously*; `invariant:liveness` called the rule **proven** on `cohortGrid` plans that carry it; five corpora set it; `review:coaching` said *"no measured rate moved"*. Meanwhile `stagedRacePlan.test.ts` IS production-shaped and its two C4 arms — the only ones of 7,133 tests that saw the consequence — **asserted the defect as the specification**. 🔻 **Open, filed today:** `RUNWALK-ASSESSED-LEVEL-01-PEAK` (🏃 board; probed at 88 of 10,752 and refusals −0.82pp weighted — **smaller than it reads**, 24 of 10,752 in the level-set shape), `ENVELOPE-UNSET-LEVEL-01` (**the 90%-floor instrument reported marathon 85.0% while we shipped 79.2%**), `PARITY-GRID-UNSET-LEVEL-01`, `WIZARD-CONTRADICTORY-VOLUME-01`, `STORED-PLAN-VALIDATOR-INPUT-01`. 🔻 **Open, founder (unchanged):** `PLAN_CHECK_REFUSED` wording, sandbox purchase test, digest Q9B, Coach on a device.**
+**State at END of 2026-11-03 (last ship `510ceace` RUNWALK-ASSESSED-LEVEL-01; 729 test files / 7,133 tests; `verify` EXIT 0, sweep 17,420 plans no NEW violations, `review:coaching` all steps pass at 94.4% envelope, `verify:parity` IDENTICAL on 6,102 cases — **and structurally unable to see today's change**).** 🔴 **THE RESHAPE WAS BEING BLAMED FOR DEFECTS IT DID NOT CAUSE, and a remedy from 10-09 had only ever been applied to one twin.** ✅ **`RESHAPE-VALIDATOR-KIND-01`:** `/api/adjust-plan` called `validateReshapedPlan` while `validateStoredPlan` — written for exactly this defect — sat beside it. **3 base-build plans carried 121 phantom errors against the owner's 0.** Clean 21 → 24 of 39. ✅ **`RESHAPE-SCOPE-TO-CHANGE-01` / §134, Coaching Board CORRECT WITH AMENDMENT, unanimous:** refuse only on violations the reshape **INTRODUCED**. It refused on every error anywhere — 18 of 39 live plans, 46%. 🔩 Willy's inversion: the refusal reduced nobody's load, it blocked the only mechanism that reduces it. ✅ **`STORED-PLAN-DEBT-REPAIR-01`: MEASURED AND RULED NO REPAIR.** The item's own census was computed with the validator §134 had replaced hours earlier — 15 plans, not 17. 🔑 **The deciding axis is TIME: 9 of 15 carry debt ONLY in elapsed weeks or at plan level** (34 ahead against 154 elapsed), all 6 actionable plans are refused a silent rewrite, and `canModifyPlan` is true on all 6 — the repair already exists opt-in. ✅ **`RUNWALK-ASSESSED-LEVEL-01`, INSTRUCTION HALF SHIPPED: §117 Am.5 PRESCRIBED NOTHING FOR FOUR WEEKS.** `runWalkPrescriptionApplies` tested `input.fitness_level` and **the wizard never sends that field, by design** (§79 — it would bind peak km). **All 39 live plans: `run_walk_prescribed` 0, a walk interval on any session 0**, against `plan-invariants.md`'s recorded *"292 plans gained the prescription"*. Two beginner finish-goal marathoners with 5 km and 6 km longest runs hold a 42.2 km race session with no interval. The gate now takes §79's resolved **structural** level, required with no default. 🩹 Willy's "no peak may fall" untouched. 🔑 **DELIVERED EFFECT, on the ratified instrument with the field omitted — the only population the wizard can post: whole product 93.1% → 94.7%, MARATHON 79.2% → 84.4%** (+5.2pp against the amendment's claimed +2.4pp), `LONG-RUN-SHORT` 11.5% → 6.9%, staged clean 1.5% → 3.2%; 768 distinct runner profiles gain the prescription and 0 had it. ⚠️ **SEVEN GREEN CHECKS COULD NOT SEE IT AND THE TWO REGISTERS WERE EACH WRONG THE OPPOSITE WAY.** The sweep validates with the engine's own raw input, so producer and checker were blind to the same field — clean *vacuously*; `invariant:liveness` called the rule **proven** on `cohortGrid` plans that carry it; five corpora set it; `review:coaching` said *"no measured rate moved"*. Meanwhile `stagedRacePlan.test.ts` IS production-shaped and its two C4 arms — the only ones of 7,133 tests that saw the consequence — **asserted the defect as the specification**. 🔻 **Open, filed today:** `RUNWALK-ASSESSED-LEVEL-01-PEAK` (🏃 board; probed at 88 of 10,752 and refusals −0.82pp weighted — **smaller than it reads**, 24 of 10,752 in the level-set shape), `ENVELOPE-UNSET-LEVEL-01` (**the 90%-floor instrument reported marathon 85.0% while we shipped 79.2%**), `PARITY-GRID-UNSET-LEVEL-01`, `WIZARD-CONTRADICTORY-VOLUME-01`, `STORED-PLAN-VALIDATOR-INPUT-01`. 🔻 **Open, founder (unchanged):** `PLAN_CHECK_REFUSED` wording, sandbox purchase test, digest Q9B, Coach on a device.**
 
 **Prior — state at END of 2026-11-02 (last ship `58c7af98` CHECK-DB-LIVE-KEY-CRON-01; 722 test files / 7,031 tests; **pushed and LIVE 2026-11-02, `b7393345`, Vercel READY; `20261102_live_week_keys.sql` APPLIED and verified — 5 live-key indexes vs 2, 0 plain uniques vs 3**).** ✅ **`20261102_live_week_keys.sql` APPLIED (founder) and VERIFIED from here — 5 `%_live_key` indexes vs 2, 0 plain uniques on the three converted tables vs 3. Ledger updated, `check:db` clean.** 🔻 **Nothing in the repo can re-check those keys: `CHECK-DB-LIVE-KEY-ARM-01` filed.** 🔻 **Open, founder (unchanged):** sandbox purchase test (`docs/runbooks/iap-sandbox-purchase-test.md`), paste digest Q9B (`docs/runbooks/digest-prompt-q9b-2026-10-31.txt`), Coach on a device. **Today, 3 ships + 1 close:** `c679936e` WEEKLY-REPORT-SUPERSEDED-WRITE-01 — `writeLiveRow` is the one owner of a live-plan write across `weekly_reports`, `session_reflections` and `session_metric_overrides`; measured 1 ghost write, 16 + 8 + 13 superseded rows, and `session_reflections` had **0 live rows**, so its next write was the loss. COMPLETION-TOMBSTONE-01 fixed the fourth table of that family on 09-23 and left these three. `55c17200` PEAK-RACEPACE-NOTE-01 — a note that was wrong **14 of 14** times and structurally suppressed on **9 of 9** of the rows it was written for; 26 more instances on time-targeted ultras the cohort grid cannot reach. `23751aea` §40b Am.4 (Coaching Board, unanimous) — an effort-governed session carries the zone its row declares and no HR band; `vert_hike_repeats` was shipping as Zone 4–5 / 158–184 bpm on a power hike. ✅ `ONRAMP-W8-SPACING-01` **CLOSED as a FALSE PREMISE** — 4 runs across 7 open days cannot avoid one consecutive pair, and `INV-PLAN-ONRAMP-SPACED` already agrees (0 violations). 🔻 **Filed today:** `ULTRA-VOICE-REPURPOSED-01` (a "Back-to-back long" label and "Sunday is meant to feel heavy" on a 78-minute Friday tempo — found by the board's read of the sample packet, not by any harness), `EFFORT-GOVERNED-HR-DISPLAY-01`. **Still open, filed:** `A11Y-REDUCED-MOTION-01`, `TYPESCALE-DECIMAL-GATE-01`, the ultra slot question (`SIG-ULTRA-UNBUILT-01`, SLT-gated), Coach ideas 2–5. ⚠️ **Declared:** 1,757 `hill_reps` sessions in the 5K/10K cohort grid lost their HR range; `verify:parity` 542 of 6,102 changed; `review:coaching` **identical on all seven steps** before and after — and it did not DETECT either defect. **Then `e3bd6a41` CHECK-DB-LIVE-KEY-ARM-01** — the five `%_live_key` partial indexes are gated now (`liveKeyCoverage.test.ts`, 13 arms, in `verify`) plus a fail-soft live arm in `check:db`. 🔴 **The query written to prove its RPC found TWO live survivors on its first run** (`WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01`): `session_overrides` carries a plain unique beside its partial one — a trap, because its insert only works today thanks to an unfiltered delete that destroys archived overrides, so fixing that delete detonates a 23505 — and `run_analysis_manual_uniq` is partial on `source='manual'`, not on `superseded_at`. Both latent, 0 colliding keys measured. ✅ **ALL THREE OF TODAY'S MIGRATIONS APPLIED AND VERIFIED** (`20261102` live keys, `20261103` the RPC, `20261104` the survivors — ledger updated). `check:db` is **GREEN: 6 week_n-keyed uniques, every one partial on `superseded_at IS NULL`, exit 0**, matching the prediction written into `20261104` before it ran. **`WEEK-KEY-PLAIN-UNIQUE-SURVIVORS-01` shipped:** the item named ONE delete site and there were **FIVE** (`PlanCalendar` Move + Swap, `analyse-run/manual`, `strava/unlink-activity`, and this morning's `clearSessionMetricOverride`). 🔴 **In two of them the unfiltered delete was LOAD-BEARING** — it freed a key a surviving plain unique still occupied, so it destroyed archived data AND hid the constraint; fixing either half alone turns silent data loss into a 23505. The migration was applied BEFORE the code, so there was no window. ✅ **`CHECK-DB-LIVE-KEY-CRON-01` SHIPPED** — `/api/ops/live-key-integrity` + a daily cron at 08:20 runs the live-key check now; it returns **503 / `healthy: null`** rather than reassuring when it cannot observe. 🔴 **And it found a hole in `cronAuth.test.ts`:** that arm's population grepped for the literal `x-cron-secret`, so a route using the shared `cronSecretFrom` owner — created BY the very incident that test guards — was exempt from it. **I had asserted in my analysis block that the route would join that population for free; it would not have.** Keyed on `CRON_SECRET` now: 13 routes, falsified. **Fourth instance today of one lesson: a check keyed on a spelling guards the spellings it knows.** Founder's long runs since 11 Oct carry no HR (not investigated, his call).**
 

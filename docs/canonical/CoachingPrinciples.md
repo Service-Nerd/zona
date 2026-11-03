@@ -10955,7 +10955,7 @@ first on the stored-plan path), which is the tissue axis readiness-to-run belong
 the envelope in the shape the wizard posts: **768 distinct runner profiles satisfy the predicate,
 of which 0 previously received it**, and on the ratified instrument with the field omitted the **marathon
 fit-for-purpose rate reads 79.2% before and 84.4% after** (+5.2pp against this amendment's claimed
-+2.4pp), `LONG-RUN-SHORT` 11.5% → 6.9%, whole product 93.1% → 94.6%. ⚠️ The instrument itself
++2.4pp), `LONG-RUN-SHORT` 11.5% → 6.9%, whole product 93.1% → 94.7%. ⚠️ The instrument itself
 reports 85.0% / 94.4% with the field set, which is a separate defect (`ENVELOPE-UNSET-LEVEL-01`)
 and is why `review:coaching` said *"no measured rate moved"* on this change. 🩹 Willy's condition is untouched — `finish_goal_run_walk`
 stays unset and ARM 2 still holds.
