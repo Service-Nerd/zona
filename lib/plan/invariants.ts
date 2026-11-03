@@ -39,7 +39,7 @@ import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { calendarWeeksBetween } from '@/lib/dates'
 import { parseDateLocal, formatDate, getDistanceConfig, planWeekCap } from './length'
-import { FITNESS_RANK, resolveLevels } from './fitnessAssessment'
+import { FITNESS_RANK, structuralLevelForCheck } from './fitnessAssessment'
 import { parsePaceMidpoint } from './paceParse'
 import { racePaceMinPerKm } from './aerobicEstimate'
 import { hasGoalGapSentence, quotesGoalPace } from './goalPaceReach'
@@ -1070,10 +1070,26 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // level the plan was BUILT at, post-declaration), then the owner, which honours
   // `input.fitness_level` itself before falling back to the assessment.
   //
-  // ⚠️ An input with no volume reads `intermediate` out of `fitnessFromVolume`, so
-  // a reconstructed input missing `current_weekly_km` cannot FALSE-fire a
-  // beginner-gated rule. The safe direction, deliberately.
-  const structuralFitness = plan.meta.fitness_level ?? resolveLevels(input).structural
+  // 🔴 THE LEGACY ZEROED-FIELD CONVENTION IS HONOURED EXPLICITLY, AND MY FIRST
+  // VERSION OF THIS COMMENT HAD THE DIRECTION BACKWARDS (code review, 2026-11-03).
+  //
+  // It claimed an input with no volume reads `intermediate` and therefore could not
+  // false-fire a beginner-gated rule. That is true of `undefined` and FALSE of `0`:
+  // `fitnessFromVolume(0, 0)` returns **beginner** (the arm is `weeklyKm < 20`), and
+  // the legacy branch of this very file builds exactly that — `current_weekly_km: 0`,
+  // `longest_recent_run_km: 0`, under the stated convention that *"the three zeroed
+  // fields self-skip their dependent invariants"*.
+  //
+  // ⚠️ §117's gate survived that only by ACCIDENT — `runWalkPrescriptionApplies`
+  // separately early-returns on `longest <= 0`. Incidental protection is not
+  // protection: `INV-PLAN-BEGINNER-NEUROMUSCULAR` has no such guard, so wiring it to
+  // this resolution would have fired it on every legacy meta-less plan. So the
+  // convention is enforced HERE, once, where the level is resolved, rather than left
+  // to each consumer to rediscover.
+  //
+  // `plan.meta.fitness_level` still wins, so no engine-produced plan is affected —
+  // this bites only on a reconstruction with no volume signal at all.
+  const structuralFitness = structuralLevelForCheck(plan.meta.fitness_level, input)
   // §110 Am.2 — the ceiling is CONDITIONAL now (a beginner who set a time
   // target gets 1, not 0), so it comes from the shared owner rather than a
   // lookup repeated here. `buildWeekSessions` reads the same function: a

@@ -130,7 +130,12 @@ describe('§117 Am.5 — run-walk prescribed on readiness to run', () => {
     for (const w of p.weeks) {
       for (const s of Object.values(w.sessions ?? {})) {
         const sess = s as { type?: string; run_walk_strategy?: unknown }
-        if (!sess || sess.type === 'rest' || sess.type === 'strength' || sess.type === 'cross') continue
+        // ▲ `'cross-train'`, not `'cross'` (code review, 2026-11-03). The schema type is
+        // `'cross-train'`, which is what `applyRunWalk` and INV-PLAN-RUNWALK-PRESCRIBED both
+        // skip; `'cross'` is a DISPLAY key in `TodayScreen`. The old spelling matched nothing,
+        // so the day a run-walk plan carried a cross-train session this arm failed on a
+        // correct plan. Copied forward into the new arm before it was caught.
+        if (!sess || sess.type === 'rest' || sess.type === 'strength' || sess.type === 'cross-train') continue
         running++
         if (sess.run_walk_strategy) withInterval++
       }
@@ -209,7 +214,12 @@ describe('§117 Am.5 — PRODUCTION SHAPE: no fitness_level, level on the declar
     for (const w of p.weeks) {
       for (const s of Object.values(w.sessions ?? {})) {
         const sess = s as { type?: string; run_walk_strategy?: unknown }
-        if (!sess || sess.type === 'rest' || sess.type === 'strength' || sess.type === 'cross') continue
+        // ▲ `'cross-train'`, not `'cross'` (code review, 2026-11-03). The schema type is
+        // `'cross-train'`, which is what `applyRunWalk` and INV-PLAN-RUNWALK-PRESCRIBED both
+        // skip; `'cross'` is a DISPLAY key in `TodayScreen`. The old spelling matched nothing,
+        // so the day a run-walk plan carried a cross-train session this arm failed on a
+        // correct plan. Copied forward into the new arm before it was caught.
+        if (!sess || sess.type === 'rest' || sess.type === 'strength' || sess.type === 'cross-train') continue
         running++
         if (sess.run_walk_strategy) withInterval++
       }

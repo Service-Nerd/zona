@@ -222,3 +222,40 @@ export function resolveLevels(
     assessment: assessed, trainingAgeIsExperienced,
   }
 }
+
+/**
+ * THE SINGLE OWNER of "what STRUCTURAL level should a CHECKER judge this plan at".
+ *
+ * Extracted 2026-11-03 from an inline expression in `validatePlan`, because it grew a
+ * second consumer (§117 Am.5's prescription gate and §28 Am.1's hill-stride watch) and
+ * because the inline version could not be asserted on: a test could only observe it
+ * through an invariant that passes on its own merits, which is an allow-by-default arm
+ * and proves nothing. Found by mutation — two mutations of the guard below left the
+ * downstream arm green.
+ *
+ * 🔴 THE LEGACY ZEROED-FIELD CONVENTION IS THE WHOLE REASON THIS IS NOT A ONE-LINER.
+ * `validateReshapedPlan` reconstructs a pre-PV2-A plan's input with
+ * `current_weekly_km: 0` and `longest_recent_run_km: 0`, under its own stated rule that
+ * *"the three zeroed fields self-skip their dependent invariants"*. But
+ * `fitnessFromVolume(0, 0)` returns **beginner** — the arm is `weeklyKm < 20` — so a
+ * naive resolution makes every legacy meta-less plan a beginner and fires every
+ * beginner-gated rule on it. §117's gate escaped only because it separately
+ * early-returns on `longest <= 0`; §28's watch has no such guard.
+ *
+ * So: no volume signal at all → `undefined`, and a beginner-gated checker self-skips,
+ * which is the convention the reconstruction already documents.
+ *
+ * ⚠️ `metaLevel` WINS, and that is not a detail. `plan.meta.fitness_level` is the level
+ * the plan was actually BUILT at, post-declaration; it is present on every
+ * engine-produced plan, so this guard bites only on a reconstruction.
+ */
+export function structuralLevelForCheck(
+  metaLevel: FitnessLevel | undefined,
+  input: Parameters<typeof resolveLevels>[0],
+  vdot?: number,
+): FitnessLevel | undefined {
+  if (metaLevel) return metaLevel
+  const hasVolumeSignal = (input.current_weekly_km ?? 0) > 0
+    || (input.longest_recent_run_km ?? 0) > 0
+  return hasVolumeSignal ? resolveLevels(input, vdot).structural : undefined
+}

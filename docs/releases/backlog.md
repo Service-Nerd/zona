@@ -341,6 +341,35 @@ original evidence, like his §117 condition, was taken on inputs that carried th
 and `weekHasNeuromuscular` is shared with the invariant; the resolution belongs where §117's now is — the caller
 passes `levels.structural`, the checker resolves meta-first. Same shape, same owner (`resolveLevels`).
 
+### 🔴 `COHORT-GRID-UNSET-LEVEL-01` — `cohortGrid` still sets `fitness_level`, so the three gates CLAUDE.md names for an engine change are blind *(filed 2026-11-03)* ⚙️ **NO BOARD** — 🏃 **BOARD-MANDATED PREREQUISITE**
+
+🔴 **Found by code review of today's two ships, and it is the sharpest of the three findings.**
+`RUNWALK-ASSESSED-LEVEL-01` (`510ceace`) changed what the engine prescribes to 768 distinct runner profiles and
+**moved not one committed baseline** — `envelopeBaseline.json` was byte-identical at that commit, and no
+`cohortShapeBaseline`, `planFitnessBaseline` or liveness fixture changed. Because `cohortGrid.ts:180/275` and
+`targetedGrid` set `fitness_level` on every row, **`cohort:shape`, `measure:fitness` and `invariant:liveness` could
+not see it.** Only the envelope was corrected, one commit later, so that single re-baseline entangles two effects.
+
+**CLAUDE.md names those three as the gates for an engine change** — *"did my change reshape WHO GETS WHAT KIND OF
+PLAN?"*, *"does this plan actually BUILD the runner?"*, *"can each rule still be made to FAIL?"* All three answer
+for a population the wizard cannot post. `measure:fitness`'s headline figures (healthy masters never-builds 19.1%,
+healthy standard 13.1%) describe that same fiction.
+
+⚠️ **AND IT CARRIED NO ITEM AND NO GATE UNTIL NOW.** I named it in prose in three documents today and filed
+items for the envelope and the parity grid while leaving the one that feeds three gates unfiled. **A gap named in
+prose is not a gap filed.**
+
+🏃 **BINDING CONDITION (Coaching Board 2026-11-03, Willy + chair):** this must be de-blinded **before any
+week-1 dose change is proposed**, because §2 Amendment's ratified evidence (*"47/47 hazardous steps flag, 0/28
+benign"*) was counted on it, and **no future ruling may cite `measure:fitness` figures until it is fixed.** See
+`WEEK1-HAZARD-UNREACHABLE-01`.
+
+**Scope:** vary the level through `user_declared_level` as `useCaseEnvelope` now does, or add the absent level as a
+first-class value. Either re-baselines `cohortShapeBaseline.json`, `planFitnessBaseline.json`,
+`cohortReviewBaseline.json` and the liveness baseline, so it needs a declared reason per the re-baselining rule —
+and it will likely reveal more dead level-gated rules, which is the point. Pair with
+`PARITY-GRID-UNSET-LEVEL-01`; same root, different grid.
+
 ### 🔲 `PARITY-GRID-UNSET-LEVEL-01` — the parity grid sets `fitness_level` on all 6,102 cases, so it is blind to the production shape of every level-gated rule *(filed 2026-11-03)* ⚙️ **NO BOARD**
 
 `scripts/verify-parity.ts:64` — `LEVELS = ['beginner', 'intermediate', 'experienced']`, and every one of the
