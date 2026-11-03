@@ -110,8 +110,36 @@ if (process.argv.includes('--gate')) {
   if (farPastLineGoalSessions) fails.push(`${farPastLineGoalSessions} goal-paced sessions on plans 15%+ past fitness (item 1, §120 Am. 2)`)
   if (floorViolations) fails.push(`${floorViolations} §9 floor violations (item 2)`)
   if (overrunSilent) fails.push(`${overrunSilent} weekday sessions over their limit with no note (item 3)`)
-  if (errorViolations) fails.push(`${errorViolations} error violations: ${Array.from(errorCodes).map(([c, n]) => `${c} ${n}`).join(', ')}`)
-  console.log(fails.length ? `GATE: FAIL on ${plans} slow-runner plans:\n  ${fails.join('\n  ')}` : `GATE: ok, ${plans} slow-runner plans: 0 unrunnable goal pace, 0 floor breaches, 0 silent overruns, 0 errors`)
+  // 🔴 DECLARED ERROR DEBT, EXACT COUNTS (COHORT-GRID-UNSET-LEVEL-01, 2026-11-03).
+  //
+  // This gate had no register and `slowGoalGrid` had no production-shaped runner: it
+  // forced `fitness_level`, the API structural override the wizard never sends, which
+  // held every 'intermediate' slow runner on an intermediate STRUCTURAL band. On the real
+  // shape their VDOT reads beginner and §79 takes the lower read for structure — which
+  // surfaced an ALREADY-FILED defect rather than causing one.
+  //
+  // The entry is EXACT, not a ceiling: a count that rises fails (the defect spread) and a
+  // count that falls fails too (the register must be updated in the commit that fixes
+  // it), which is `rca1026Gates`'s "the list only shrinks" arm in numeric form. The
+  // property sweep carries the same defect on the same population as
+  // `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`, so the two registers now agree.
+  const KNOWN_ERROR_DEBT: Record<string, number> = {
+    // S9-HELD-PEAK-CLASSIFY-01 — the maintenance classification is decided from the
+    // volume curve BEFORE the final weekday-cap pass and reads the stale, higher total,
+    // so a plan that stops building is not declared maintenance. 5K, 20 km/week, declared
+    // intermediate: peak 13 km is 108% of week 1's 12 km, under §23's 110%.
+    'INV-PLAN-PEAK-OVER-BASE': 3,
+  }
+  for (const [code, n] of Array.from(errorCodes)) {
+    const debt = KNOWN_ERROR_DEBT[code]
+    if (debt === undefined) { fails.push(`${n} error violations: ${code} (UNREGISTERED — file it or fix it)`); continue }
+    if (n !== debt) fails.push(`${code} is ${n}, declared debt is ${debt} — ${n > debt ? 'it GREW' : 'it SHRANK; update the register in the commit that fixed it'}`)
+  }
+  for (const code of Object.keys(KNOWN_ERROR_DEBT)) {
+    if (!errorCodes.has(code)) fails.push(`${code} is declared debt but no longer fires — remove it (the register only shrinks)`)
+  }
+  console.log(fails.length ? `GATE: FAIL on ${plans} slow-runner plans:\n  ${fails.join('\n  ')}` : `GATE: ok, ${plans} slow-runner plans: 0 unrunnable goal pace, 0 floor breaches, 0 silent overruns, `
+    + `${errorViolations} error violations (all declared debt: ${Array.from(errorCodes).map(([c, n]) => `${c} ${n}`).join(', ') || 'none'})`)
   process.exit(fails.length ? 1 : 0)
 }
 

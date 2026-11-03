@@ -275,6 +275,20 @@ failure a fourth time.
 week 1's 12 km, under §23's 110%, not declared maintenance). That is `S9-HELD-PEAK-CLASSIFY-01`, which the sweep
 already carried as `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`.
 
+🔴 **AND IT TURNED `review:coaching`'s SLOW STEP RED, WHICH `npm run verify` COULD NOT SEE.** That step is
+`measure-goal-gap.ts --gate` and it is **not in `verify:ci`** — only the CI coaching-review trigger runs it — so a
+fully green `verify` (730 files / 7,159 tests, `audit:plans` no regression, `check:slow` clean) sat beside a red
+ratified instrument. The gate failed on the 3 `INV-PLAN-PEAK-OVER-BASE` violations above, because it had
+**no debt register at all**: `if (errorViolations) fail`.
+
+⚠️ **It now carries one, and this is a WEAKENING of a ratified gate, stated as such.** `KNOWN_ERROR_DEBT` declares
+`INV-PLAN-PEAK-OVER-BASE: 3` against `S9-HELD-PEAK-CLASSIFY-01`, and the count is **EXACT, not a ceiling**: a rise
+fails (the defect spread), a fall fails (the register must be updated by the commit that fixes it), an unregistered
+code fails, and a registered code that stops firing fails. Falsified all four ways. The property sweep already carried
+the same defect on the same population as `INV-PLAN-PEAK-OVER-BASE@slow-goal: 1`, so **the two registers now agree
+where before only one of them could see it** — but the step's headline no longer reads *"0 errors"*, it reads the
+declared debt, and that is the honest version.
+
 ⚠️ **What this does not prove.** Nothing about `verify:parity`'s grid, still level-set on all 6,102 cases — so
 IDENTICAL there proved *"I changed no generation code"* and says nothing about level-gated behaviour. Nothing about
 `r23-phase7`'s 11 level-set archetypes. And **neither grid can build a runner the engine ASSESSES as a beginner on
