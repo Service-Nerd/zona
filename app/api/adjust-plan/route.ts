@@ -346,7 +346,21 @@ export async function POST(req: NextRequest) {
     // 🔴 SKIP-MAKEUP-DAY-01: a change that breaks the plan's rules is NEVER offered. It used to be written as a pending
     // adjustment anyway, so the runner could confirm it and `savePlanForUser` (which logs, never refuses, in
     // production) would have saved it. The runner's own action (the skip) is already recorded; the plan stays as it is.
-    return NextResponse.json({ adjustment: null, message: 'No adjustment needed' })
+    //
+    // 🔴 PLAN-CHECK-REFUSED-01 (2026-11-03) — `refused` IS THE WHOLE FIX, and the shape it replaces mattered.
+    // This returned `{ adjustment: null, message: 'No adjustment needed' }`, which is the SAME body the
+    // engine returns when it genuinely found nothing. `ReshapeScreen` reads `adjustment: null` as `clean`
+    // and renders a green tick over "Plan looks good." So a refusal was displayed as reassurance, and
+    // `onChecked(false)` stamped "Last checked …" as a check that ran and found nothing.
+    //
+    // `validateReshapedPlan` returns EVERY error in the plan, not only new ones or the touched week, so one
+    // historical defect anywhere refuses every adjustment forever: measured at 20 of 39 live plans. Those
+    // runners were being told their plan looks good by a check that declined to run.
+    //
+    // ⚠️ `adjustment: null` IS KEPT so no existing caller changes behaviour; `refused` is additive and the
+    // only client that reads it is `ReshapeScreen`. The ops event above is unchanged — it was already
+    // correct, and it is what the daily digest used to find this.
+    return NextResponse.json({ adjustment: null, refused: 'plan_invalid', message: 'No adjustment needed' })
   }
 
   const adjustmentRow = {

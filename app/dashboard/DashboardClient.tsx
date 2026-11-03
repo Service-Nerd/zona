@@ -74,7 +74,7 @@ import { Wordmark } from '@/components/ui/Wordmark'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import { planRationaleNotes } from '@/lib/plan/planRationale'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
-import { PLAN_CHANGE_SAVE_FAILED } from '@/lib/ui/planChangeCopy'
+import { PLAN_CHANGE_SAVE_FAILED, PLAN_CHECK_REFUSED } from '@/lib/ui/planChangeCopy'
 import { RECENT_CHANGES_FILTER } from '@/lib/ui/easedMark'
 import { liftSuggestionsFor, logsOn } from '@/lib/strength-bridge/progressionView'
 import { hardRunBeside } from '@/lib/strength-bridge/hardRunBeside'
@@ -4551,6 +4551,12 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Something went wrong.'); setStatus('error'); return }
       if (data.skipped) { setError('Dynamic adjustments are turned off in your settings.'); setStatus('error'); return }
+      // 🔴 PLAN-CHECK-REFUSED-01 — BEFORE the `adjustment` branch, and `onChecked` is NOT called.
+      // A refusal used to fall through to `clean`, which renders a green tick over "Plan looks
+      // good.", and `onChecked(false)` then stamped "Last checked …" as a check that ran. The
+      // check did not run. Reuses the existing `error` status deliberately: no new pattern, so
+      // no Design Board trigger — the panel and Back button already exist for this status.
+      if (data.refused) { setError(PLAN_CHECK_REFUSED); setStatus('error'); return }
       if (data.adjustment) { setAdjustment(data.adjustment); setStatus('found'); onChecked?.(true) }
       else { setStatus('clean'); onChecked?.(false) }
     } catch { setError('Could not reach the server. Check your connection.'); setStatus('error') }

@@ -548,6 +548,22 @@ describe('SKIP-MAKEUP-DAY-01 — the route never offers a change that breaks the
     const at = src.indexOf("'reshape_invalid',")
     expect(at).toBeGreaterThan(-1)
     const after = src.slice(at, src.indexOf('const adjustmentRow', at))
-    expect(after).toContain("return NextResponse.json({ adjustment: null, message: 'No adjustment needed' })")
+    // SKIP-MAKEUP-DAY-01's property: no adjustment is OFFERED. Pinned on the field, not the
+    // whole literal — the literal changed under PLAN-CHECK-REFUSED-01 and this arm caught it,
+    // which is the suite doing its job.
+    expect(after).toMatch(/return NextResponse\.json\(\{[^)]*adjustment:\s*null/)
+
+    // 🔴 PLAN-CHECK-REFUSED-01 (2026-11-03) — AND THE REFUSAL MUST SAY SO.
+    //
+    // This arm used to pin the exact string `{ adjustment: null, message: 'No adjustment
+    // needed' }`, which is the SAME body the route returns when the engine genuinely found
+    // nothing to change. `ReshapeScreen` reads `adjustment: null` as `clean` and renders a
+    // green tick over "Plan looks good." — so for the 20 of 39 live plans that carry a
+    // pre-existing error, a refusal was displayed as reassurance.
+    //
+    // ⚠️ THE OLD ASSERTION WAS NOT WRONG, IT WAS INCOMPLETE. It proved the change was not
+    // offered and said nothing about what the runner is told, so the honest-refusal half
+    // could not fail it. Both halves are pinned now.
+    expect(after).toMatch(/refused:/)
   })
 })
