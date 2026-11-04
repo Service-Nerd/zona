@@ -8,8 +8,9 @@ import { FieldReadback } from '@/components/shared/FieldText'
 import { runPlanReadback, strengthPlanReadback } from '@/lib/ui/planChangeReadback'
 import { PlanLoadFailed } from '@/components/dashboard/PlanLoadFailed'
 import { BootStalled } from '@/components/dashboard/BootStalled'
-import { BOOT_STALL_MS, stalledGate, type BootStallGate } from '@/lib/ui/bootWatchdog'
+import { BOOT_STALL_MS, BOOT_QUERY_TIMEOUT_MS, stalledGate, bootErrKind, type BootStallGate, type BootStage } from '@/lib/ui/bootWatchdog'
 import { reportBootStall } from '@/lib/ops/reportBootStall'
+import { withTimeout } from '@/lib/async/withTimeout'
 import { calendarDaysBetween } from '@/lib/dates'
 import { TAP_TARGET_MIN_PX } from '@/components/ui/tapTarget'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
@@ -305,6 +306,22 @@ export default function DashboardClient() {
   const [authResolved, setAuthResolved] = useState(false)
   const [bootStall, setBootStall] = useState<BootStallGate | null>(null)
   const bootAccessTokenRef = useRef<string | null>(null)
+  /** BOOT-STALL-DIAGNOSE-01 — when this mount's boot began, so `elapsed_ms` is a MEASUREMENT. It used to be
+   *  handed the constant `BOOT_STALL_MS`, which is why 109 of 125 production rows read exactly 12000. */
+  const bootStartedAtRef = useRef(Date.now())
+  /** BOOT-STALL-DIAGNOSE-01 — did the document go hidden at any point during this boot? On iOS the webview is
+   *  suspended when backgrounded, which kills the in-flight boot fetch and makes the watchdog fire on resume.
+   *  Without this a backgrounded launch is indistinguishable from a genuine hang. Seeded from the CURRENT
+   *  state because a launch straight into the background is hidden before this component ever mounts. */
+  const bootEverHiddenRef = useRef(typeof document !== 'undefined' && document.visibilityState === 'hidden')
+  /** WHICH boot await is in flight. The watchdog reads it, so a stall is attributable WITHOUT the bound
+   *  having to beat the watchdog in a race it cannot win (the bound is per-await, the watchdog absolute). */
+  const bootStageRef = useRef<BootStage | null>(null)
+  /** 🔴 ONE ROW PER BOOT FAILURE. Measured 2026-11-04: 10 of the 16 production `error` rows had a `settings`
+   *  row from the same runner within 3 seconds — the error path reported, the boot stayed un-ready, and the
+   *  watchdog reported the same failure again at 12s. That inflated the very counts this telemetry exists to
+   *  make trustworthy, and spent two of a 10/hour per-IP budget on one event. First reporter wins. */
+  const bootReportedRef = useRef(false)
   /** Set beside every setAppReady(true): a throw AFTER the app opened (Strava, readiness) is not a boot failure. */
   const appReleasedRef = useRef(false)
   const bootGatesRef = useRef({ authResolved: false, appReady: false, runAnalysisReady: false, stravaGateOpen: false })
@@ -1340,13 +1357,26 @@ export default function DashboardClient() {
   // BOOT-HANG-01 — the watchdog. Reads the gates through a ref written on every render, so the timer sees the
   // CURRENT state rather than the mount-time closure. Fires once; a boot that completes later still renders.
   useEffect(() => {
+    // BOOT-STALL-DIAGNOSE-01 — latch "the document went hidden during boot". `hidden` on the report is this
+    // latch, not the state at fire time: an app backgrounded mid-launch and then reopened is VISIBLE when the
+    // timer finally runs, so reading `visibilityState` at that moment would call every one of those a hang.
+    const onHide = () => { if (document.visibilityState === 'hidden') bootEverHiddenRef.current = true }
+    document.addEventListener('visibilitychange', onHide)
     const t = setTimeout(() => {
       const gate = stalledGate(bootGatesRef.current)
       if (!gate) return
       setBootStall(prev => prev ?? gate)
-      void reportBootStall(gate, BOOT_STALL_MS, bootAccessTokenRef.current)
+      if (bootReportedRef.current) return
+      bootReportedRef.current = true
+      void reportBootStall({
+        gate,
+        elapsedMs: Date.now() - bootStartedAtRef.current,
+        hidden: bootEverHiddenRef.current,
+        stage: bootStageRef.current,
+        accessToken: bootAccessTokenRef.current,
+      })
     }, BOOT_STALL_MS)
-    return () => clearTimeout(t)
+    return () => { document.removeEventListener('visibilitychange', onHide); clearTimeout(t) }
   }, [])
 
   // Resolve a week_n + session_day deep link to a session object and route to
@@ -1577,18 +1607,40 @@ export default function DashboardClient() {
         console.error('[dashboard] boot failed:', err)
         if (appReleasedRef.current) return   // the app already opened; this was post-boot work, which stays silent
         setBootStall(prev => prev ?? 'error')
-        void reportBootStall('error', 0, bootAccessTokenRef.current)
+        if (bootReportedRef.current) return
+        bootReportedRef.current = true
+        // BOOT-STALL-DIAGNOSE-01 — the 16 production `error` rows said nothing about their cause, and carried
+        // elapsed 0 rather than how long the boot had been running when it died. Both are facts now.
+        void reportBootStall({
+          gate: 'error',
+          elapsedMs: Date.now() - bootStartedAtRef.current,
+          hidden: bootEverHiddenRef.current,
+          errKind: bootErrKind(err),
+          stage: bootStageRef.current,
+          accessToken: bootAccessTokenRef.current,
+        })
       }
     }
     async function fetchSettingsOnce() {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        // BOOT-STALL-DIAGNOSE-01 — BOUNDED. This await and the `Promise.all` below had no timeout, no
+        // AbortController and no Promise.race, so a supabase-js fetch that never settled left `appReady`
+        // false permanently — the mechanism behind 105 `gate: 'settings'` rows. `Promise.all` is decided by
+        // its SLOWEST member, so one hanging query of the seven hung the whole launch.
+        //
+        // ⚠️ The bound does not cancel the request; it stops the boot waiting on it, which turns an
+        // unattributable `settings` stall into an `error` row naming `timeout`. The remedy was already
+        // written for exactly this class in `GeneratePlanScreen` ("any of those three awaits could hang with
+        // no timeout, stranding the user on a grey skeleton forever") and never carried across to here.
+        bootStageRef.current = 'auth'
+        const { data: { user } } = await withTimeout(supabase.auth.getUser(), BOOT_QUERY_TIMEOUT_MS, 'auth')
         // BOOT-HANG-01 — this was a bare `return`: a session that would not verify left the loading screen up.
         if (!user) { router.replace('/auth/login'); return }
         setUserId(user.id)
 
         // Fetch overrides + user settings + completions in parallel
-        const [settingsRes, overridesRes, completionsRes, subRes, charityGrantRes, guidanceRes, pendingReshapeRes] = await Promise.all([
+        bootStageRef.current = 'settings'
+        const [settingsRes, overridesRes, completionsRes, subRes, charityGrantRes, guidanceRes, pendingReshapeRes] = await withTimeout(Promise.all([
           supabase.from('user_settings').select('strava_refresh_token, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, max_hr_source, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at').eq('id', user.id).single(),
           supabase.from('session_overrides').select(SESSION_OVERRIDE_COLUMNS).eq('user_id', user.id).is('superseded_at', null),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, skip_reason, avg_hr, coaching_flag').eq('user_id', user.id).is('superseded_at', null),
@@ -1609,7 +1661,7 @@ export default function DashboardClient() {
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle(),
-        ])
+        ]), BOOT_QUERY_TIMEOUT_MS, 'settings')
 
         // Build session_type → guidance map. Within each type, the first row
         // wins — ordering above puts highest-phase non-null first, null last,
@@ -1638,10 +1690,11 @@ export default function DashboardClient() {
         // Load plan — plans table first, auto-migrate from gist_url / plan_json on first load
         let loadedPlan: Plan
         try {
-          loadedPlan = await fetchPlanForUser(user.id, supabase, {
+          bootStageRef.current = 'plan'
+          loadedPlan = await withTimeout(fetchPlanForUser(user.id, supabase, {
             gistUrl: data?.gist_url,
             legacyPlanJson: data?.plan_json as Plan | null,
-          })
+          }), BOOT_QUERY_TIMEOUT_MS, 'plan')
         } catch (err) {
           // PLANS-SINGLE-NOT-MAYBE-01 — a failed READ used to resolve to EMPTY_PLAN, so a
           // runner with a plan landed in the wizard (and the loader could save an old
@@ -1650,6 +1703,13 @@ export default function DashboardClient() {
           if (err instanceof PlanReadError) {
             console.error('[dashboard] plan read failed:', err.message)
             setPlanLoadFailed(true)
+            // 🔴 PLANS-SINGLE-NOT-MAYBE-01's screen was UNREACHABLE without this line (found by review,
+            // 2026-11-04). This path released `appReady` and returned, but `bootReady` is
+            // `appReady && runAnalysisReady && stravaGateOpen`, and nothing on this path ever set
+            // `runAnalysisReady` — so the `if (!bootReady)` splash won, `<PlanLoadFailed>` below it was
+            // never reached, and the runner got the wordmark and then Try again. The item exists precisely
+            // so a failed plan READ is not mistaken for something else; it was being mistaken for a stall.
+            setRunAnalysisReady(true)
             { appReleasedRef.current = true; setAppReady(true) }
             return
           }
@@ -1907,9 +1967,10 @@ export default function DashboardClient() {
             // when baseline exists but no adjustment fired (the fresh/steady half of
             // the SLT TD-READY spec). Cooked path stays driven by `plan_adjustments`.
             try {
-              const readinessRes = await authedFetch(`/api/pre-session-readiness?date=${isoLocalDate(new Date())}`)
+              bootStageRef.current = 'readiness'
+              const readinessRes = await withTimeout(authedFetch(`/api/pre-session-readiness?date=${isoLocalDate(new Date())}`), BOOT_QUERY_TIMEOUT_MS, 'readiness')
               if (readinessRes.ok) {
-                const json = await readinessRes.json().catch(() => null)
+                const json = await withTimeout(readinessRes.json(), BOOT_QUERY_TIMEOUT_MS, 'readiness').catch(() => null)
                 if (json) setReadinessData(json)
               }
             } catch {}
@@ -1917,7 +1978,8 @@ export default function DashboardClient() {
             // RESHAPE-FIX-WAVE3-PHASE2 — silent auto-applied changes from the last
             // 14 days for the Me-screen audit surface. Read-only; capped at 10.
             const recentChangesCutoff = new Date(Date.now() - 14 * 86_400_000).toISOString()
-            const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes, recentChangesRes] = await Promise.all([
+            bootStageRef.current = 'analysis'
+            const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes, recentChangesRes] = await withTimeout(Promise.all([
               supabase.from('run_analysis').select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id).is('superseded_at', null),
               supabase.from('weekly_reports').select('*').eq('user_id', user.id).is('superseded_at', null).order('week_n', { ascending: false }).limit(1).maybeSingle(),
               supabase.from('plan_adjustments').select('*').eq('user_id', user.id).is('superseded_at', null).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
@@ -1938,7 +2000,7 @@ export default function DashboardClient() {
                 .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
                 .gte('created_at', recentChangesCutoff)
                 .order('created_at', { ascending: false }).limit(10),
-            ])
+            ]), BOOT_QUERY_TIMEOUT_MS, 'analysis')
             if (analysisRes.data) {
               const map: Record<number, Record<string, any>> = {}
               analysisRes.data.forEach((r: any) => {
@@ -1975,9 +2037,10 @@ export default function DashboardClient() {
             !(loadedPlan.meta as any).taper_recalibrated_at
           ) {
             try {
-              const recalRes = await authedFetch('/api/recalibrate-taper', { method: 'POST' })
+              bootStageRef.current = 'taper'
+              const recalRes = await withTimeout(authedFetch('/api/recalibrate-taper', { method: 'POST' }), BOOT_QUERY_TIMEOUT_MS, 'taper')
               if (recalRes.ok) {
-                const recalJson = await recalRes.json().catch(() => null)
+                const recalJson = await withTimeout(recalRes.json(), BOOT_QUERY_TIMEOUT_MS, 'taper').catch(() => null)
                 if (recalJson?.recalibrated && recalJson.plan) {
                   setPlan(recalJson.plan)
                 }

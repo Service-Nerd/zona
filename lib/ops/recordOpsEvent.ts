@@ -143,7 +143,18 @@ export type OpsEventKind =
   // up". `detail`: `{ account_age_days }`. No PII.
   | 'account_deleted'
   // BOOT-HANG-01 (2026-10-25) — the dashboard's loading screen held for BOOT_STALL_MS, or the boot threw. Posted by the
-  // client to /api/ops/boot-report, attributed only when a valid bearer came with it. `detail`: `{ gate, elapsed_ms, native }`.
+  // client to /api/ops/boot-report, attributed only when a valid bearer came with it.
+  // `detail`: `{ gate, elapsed_ms, native, hidden }` (+ `err_kind`, `stage` where they apply).
+  //
+  // 🔴 ROWS BEFORE 2026-11-04 CANNOT BE AVERAGED. `elapsed_ms` was handed the CONSTANT `BOOT_STALL_MS`, so
+  // 109 of the first 125 read exactly 12000 and the field measured nothing; and with no `hidden` flag a
+  // backgrounded iOS launch (the webview is suspended, the boot fetch dies, the timer fires on resume) is
+  // the same row as a genuine hang. BOOT-STALL-DIAGNOSE-01 made both into facts. Only `auth`, `settings`
+  // Measured distribution of the first 125 rows (`BOOT_GATE_DISTRIBUTION_2026_11_04`): 105 settings,
+  // 16 error, 4 auth, 0 run_analysis, 0 strava. ⚠️ A ZERO IS AN OBSERVATION, NOT A PROOF — an earlier
+  // draft called those two "unreachable" and `run_analysis` turned out reachable via a PlanReadError bug.
+  // ⚠️ And 10 of those 16 error rows are DOUBLE-COUNTED with a settings row from the same runner seconds
+  // apart: both reporters fired for one failure until they were latched on 2026-11-04.
   | 'boot_stalled'
   | 'plan_enrich_failed'        // AI enrichment silently fell back to rule-engine output (GEN-FIX-02)
   | 'plan_rule_invalid'         // a GENERATED rule plan violated its own constitution (ENRICH-ATTRIB-01)

@@ -5,6 +5,7 @@
 'use client'
 
 import { InlineError } from '@/components/shared/InlineError'
+import { withTimeoutFallback } from '@/lib/async/withTimeout'
 import { ACK_FIELD, ACK_LABEL, warnKindOf, type WarnKind } from '@/lib/plan/warnAcknowledgement'
 import { stagedDisplay, stagedRaceOf } from '@/lib/plan/stagedRacePlan'
 import StagedRaceBlockCard from '@/components/shared/StagedRaceBlockCard'
@@ -840,9 +841,9 @@ export default function GeneratePlanScreen({
     const capMs = 6000
     const capId = setTimeout(() => { if (!cancelled) setBenchEstimateStatus('done') }, capMs)
 
-    const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
-      Promise.race([p, new Promise<T>(r => setTimeout(() => r(fallback), ms))])
-
+    // BOOT-STALL-DIAGNOSE-01 — this was a local copy. The reasoning in the comment above was correct and was
+    // never carried across to `DashboardClient`'s boot, which had no bound at all; two copies of a bound is a
+    // missing owner. Now `lib/async/withTimeout.ts`, shared with the boot.
     ;(async () => {
       try {
         const { Capacitor } = await import('@capacitor/core')
@@ -852,14 +853,14 @@ export default function GeneratePlanScreen({
         if (rhr == null || mhr == null) {
           try {
             const { fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
-            const snap = await withTimeout(fetchAppleHealthHRSnapshot(), 3500, null)
+            const snap = await withTimeoutFallback(fetchAppleHealthHRSnapshot(), 3500, null)
             rhr = rhr ?? snap?.restingHR ?? null
             mhr = mhr ?? snap?.maxHR ?? null
           } catch { /* HR unavailable → route answers no_hr → manual */ }
         }
         if (!cancelled) setBenchEstimateStatus('loading')
         const supabase = createClient()
-        const { data: { session } } = await withTimeout(
+        const { data: { session } } = await withTimeoutFallback(
           supabase.auth.getSession(), 3500, { data: { session: null } } as any,
         )
         const qs = new URLSearchParams({ raceDistanceKm: String(distanceKm) })
