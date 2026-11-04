@@ -5,6 +5,16 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-04 — STRENGTH-GUIDED-DEVICE-01 · the first time it ran on a phone, and four things were wrong
+**Shipped:** sticky actions, rest rendered inside the round instead of on its own page, and a contents sheet you can jump from — the three Design Board rulings off the founder's own gym session.
+**Dev learning:** **rest was a STEP, and that was the whole bug.** `guidedSteps()` emitted `{kind:'rest'}` as a sibling of `{kind:'work'}`, so resting took the runner off the lift they were doing and onto a page holding a number. Making it a state on the round needed one more field than I thought: without `restedStep`, "not rested yet" and "rest skipped" are both `restEndsAt == null`, so `skipRest` then `next` **restarts the same rest for ever**. My own test caught that before it shipped.
+**Product/creator learning:** the finding nobody asked for was the best one. The founder reported four things; Collins' seat raised a fifth — **nine parts is a taxonomy the engine does not make** — and chasing it killed the carries merge the Coaching Board had just approved, because **there is no `carry` pattern**: `suitcase_carry` is `anti_rotation`, `farmer_carry` is `lateral_core`. A board can rule something correct that the data model cannot express.
+**AI-building learning:** **six ratchets fired on my first cut, all of them right, for one reason — I hand-rolled a sheet when `components/shared/Sheet.tsx` exists.** That is step 3 of this repo's own build procedure, *find the existing function first*, and I skipped it. Rebuilding on the real component cleared four gates at once. Then code review found **two data defects in the end page**: a forward `jump` reported **6 parts / 13 rounds for a runner who finished nothing**. The tally inferred "done" as *everything before where I am*, which `jump` and rest-in-place each break.
+**The honest bit:** the tally tests could not see either defect, **because they set `step` by hand instead of driving `next`** — a test that constructs the state the reducer would have produced encodes the assumption under test. And one of my mutations stayed green: I added a state version and never tested it, so the guarantee was hollow until I wrote the arm. Third time today that absence got rendered as a fact, too — `Math.max(1, at)` turned a 0 sentinel into **"1 of 4" on the cool-down**.
+**Hook material:** "The app told a runner who had done nothing that he'd finished 13 rounds. The tally was counting everything before where he stood."
+**Postable?:** yes
+
+---
 ## 2026-11-04 — RUN-ANALYSIS-SELECT-01 · the card said "no distance data" about a run whose distance was two lines above it
 **Shipped:** one shared column list for every `run_analysis` read that feeds the score card, and the four load fields are now CONVERTED rather than cast.
 **Dev learning:** the function read twelve fields, the query fetched nine, and the three it missed were the only inputs the comparison had — so it returned `axis: 'none'` and the card printed a sentence that was false but plausible. **A wrong number invites arithmetic; a wrong sentence invites nothing.** `analysis: any` is why no compiler saw it.
