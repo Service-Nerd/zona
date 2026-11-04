@@ -50,7 +50,7 @@ import ExternalLink from '@/components/shared/ExternalLink'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, PlanReadError, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate, readPlanJson } from '@/lib/plan'
 import { resolveEffectiveDay, SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
-import { RUN_ANALYSIS_CARD_COLUMNS, numericField, type RunAnalysisCardRow } from '@/lib/coaching/runAnalysisColumns'
+import { RUN_ANALYSIS_CARD_COLUMNS, type RunAnalysisCardRow } from '@/lib/coaching/runAnalysisColumns'
 import { sessionDisplayLabel } from '@/lib/plan/catalogueLink'
 import { easyPaceAsCeiling, splitPaceQualifier } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
@@ -6500,7 +6500,11 @@ function buildScoreExplanations(
   /** POSTRUN-METRIC-PREF-01 — ADR-015's distance/duration preference. Defaults to
    *  `distance`, which is the behaviour every caller had before it existed. */
   preferredMetric: 'distance' | 'duration' = 'distance',
-): { label: string; value: number | undefined; line: string }[] {
+): { label: string; value: number | null | undefined; line: string }[] {
+  // ⚠️ `null` IS IN THIS TYPE DELIBERATELY. The breakdown renders on
+  // `value !== undefined` (:6950), so null keeps the row and shows its "No X data."
+  // line while undefined removes it. Narrowing this to `number | undefined` is what
+  // pushed an earlier cut into mapping null → undefined and hiding 19% of rows.
   // HR
   const inZone = analysis.hr_in_zone_pct as number | null | undefined
   const above  = analysis.hr_above_ceiling_pct as number | null | undefined
@@ -6531,14 +6535,13 @@ function buildScoreExplanations(
   // step is running — so a completed 60-minute long run with walk breaks covers
   // less ground than the pace band implies, and reporting that as "short" would
   // name a failure the runner did not have.
-  // RUN-ANALYSIS-SELECT-01 — CONVERTED, not cast. These are `numeric` columns, so a live
-  // row carries "7.00" and `formatDistance`'s `Number.isFinite` guard rejects a string:
-  // the line would read "Planned null, ran null." The previous `as number` was a cast,
-  // which changes nothing at runtime and was wrong on `actual_load_km` all along.
-  const planned     = numericField(analysis.planned_load_km)
-  const actual      = numericField(analysis.actual_load_km)
-  const plannedMins = numericField(analysis.planned_load_mins)
-  const actualMins  = numericField(analysis.actual_load_mins)
+  // RUN-ANALYSIS-SELECT-01 — these arrive as NUMBERS from supabase-js; the fix here was
+  // the column list, nothing else. (An earlier cut of this change converted them, on a
+  // false premise about PostgREST quoting numerics — see `runAnalysisColumns.ts`.)
+  const planned     = analysis.planned_load_km
+  const actual      = analysis.actual_load_km
+  const plannedMins = analysis.planned_load_mins
+  const actualMins  = analysis.actual_load_mins
 
   // POSTRUN-METRIC-PREF-01 (ADR-015 / INV-PREF-001 restoration) — the runner's
   // distance/duration preference reaches this line.
@@ -6605,10 +6608,9 @@ function buildScoreExplanations(
   } else if (paceTarget) {
     paceLine = `Target ${paceTarget}.`
   } else if (analysis.pace_score != null) {
-    const ps = Number(analysis.pace_score)
-    if (ps >= 80)      paceLine = 'On target.'
-    else if (ps >= 60) paceLine = 'Slightly off target.'
-    else               paceLine = 'Off target.'
+    if (analysis.pace_score >= 80)      paceLine = 'On target.'
+    else if (analysis.pace_score >= 60) paceLine = 'Slightly off target.'
+    else                                paceLine = 'Off target.'
   } else {
     paceLine = 'No pace data.'
   }
@@ -6624,17 +6626,17 @@ function buildScoreExplanations(
     efLine = `${Math.abs(trend).toFixed(1)}% below your baseline.`
   }
 
-  // The four scores are `integer` columns, so they arrive as numbers. Narrowed here
-  // rather than widening `RunAnalysisCardRow`, which exists to say which fields must be
-  // FETCHED — the thing that was wrong — and should not become `any` to save a cast.
-  const score = (v: number | string | null | undefined): number | undefined =>
-    typeof v === 'number' ? v : v == null ? undefined : Number(v)
-
+  // 🔴 `null`, NOT `undefined`. The breakdown renders on `value !== undefined`, so a
+  // NULL score must stay null to keep its row and show its "No X data." line. An earlier
+  // cut of this change ran these through a helper that mapped null → undefined, which
+  // HID the row — measured at **19 of 100 live rows** carrying at least one null score.
+  // That is the same silent-display class this whole change exists to fix, introduced by
+  // the fix. Found by code review, not by me.
   return [
-    { label: 'HR',         value: score(analysis.hr_discipline_score), line: hrLine },
-    { label: 'Distance',   value: score(analysis.distance_score),      line: distLine },
-    { label: 'Pace',       value: score(analysis.pace_score),          line: paceLine },
-    { label: 'Efficiency', value: score(analysis.ef_score),            line: efLine },
+    { label: 'HR',         value: analysis.hr_discipline_score, line: hrLine },
+    { label: 'Distance',   value: analysis.distance_score,      line: distLine },
+    { label: 'Pace',       value: analysis.pace_score,          line: paceLine },
+    { label: 'Efficiency', value: analysis.ef_score,            line: efLine },
   ]
 }
 

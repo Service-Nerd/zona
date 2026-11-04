@@ -1,7 +1,7 @@
 # Incident — "No distance data." about a run whose distance was in the same table
 
 **Date found:** 2026-11-04 · **Live since:** the column list dates to 2026-05-24 · **Triage:** Systemic
-**Fix commit:** see `RUN-ANALYSIS-SELECT-01` · **Catalogue class:** checker reads a different source from the producer
+**Fix commit:** see `RUN-ANALYSIS-SELECT-01` · **Catalogue class:** checker reads a different source from the producer (twice — see the correction below)
 
 ---
 
@@ -78,17 +78,7 @@ that gets switched off, which this repo records as equivalent to having no check
 `SESSION_OVERRIDE_COLUMNS` already set for the same reason (a seventh hand-typed copy forgot `new_slot`).
 All three selects use it; `analysis: any` became `RunAnalysisCardRow`.
 
-🔴 **AND THE FIX ALMOST SHIPPED A WORSE BUG.** `planned_load_km` and its siblings are `numeric`, so
-PostgREST returns them **quoted** — the live rows read `"7.00"`. `compareLoad` coerces happily (`"6.71" -
-"7.00"` is -0.29) so every comparison and every unit test passes on strings, but `formatDistance` guards
-with `Number.isFinite`, and `Number.isFinite("6.71")` is **false**. The card would have read
-**"Planned null, ran null."** — worse than what it replaced. `numericField()` converts rather than casts.
-`actual_load_km` was in the SELECT all along and was already read `as number`; it had been a string the
-whole time, and nothing noticed because `axis` never reached `'distance'`. **A cast is not a conversion.**
-
-⚠️ And `numericField`'s own first cut returned **0** for `''`, because `Number('')` is `0` — absence
-written as a measured value, the same class as `distance_km ?? 0` and `body.hidden === true` earlier the
-same day. Caught by its own test.
+🔴 **AND THAT CLAIM WAS FALSE — CORRECTED BY CODE REVIEW THE SAME DAY.** supabase-js returns these columns as **numbers** (`{ planned_load_km: 7, actual_load_km: 6.71, ef_trend_pct: 5.2 }`, verified against the live row). The quoted `"7.00"` I measured came from the Supabase **MCP `execute_sql` tool**, which serialises numerics as strings — **not the transport the app uses.** I measured with the wrong instrument and wrote the result into five documents as fact. The codebase's own evidence contradicted it: `ef_trend_pct` is `NUMERIC(6,2)`, read `as number`, with `.toFixed(1)` called on it — which would throw on a string, on a line the screenshot shows rendering. The conversion helper is removed. 🔴 **The premise also cost a REAL regression:** the row type it forced (`number | string`) pushed the four scores through a helper that mapped `null → undefined`, and the breakdown renders on `value !== undefined` — so a null score **lost its whole row** instead of showing "No X data.", measured at **19 of 100 live rows**. The same silent-display class the change exists to fix, introduced by the fix. Reverted; four mutations red.
 
 ## Regression defence
 

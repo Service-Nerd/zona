@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { RUN_ANALYSIS_CARD_FIELDS, RUN_ANALYSIS_CARD_COLUMNS, numericField } from './runAnalysisColumns'
+import { RUN_ANALYSIS_CARD_FIELDS, RUN_ANALYSIS_CARD_COLUMNS } from './runAnalysisColumns'
 import { compareLoad } from './loadComparison'
-import { formatDistance } from '@/lib/format'
 import { TABLE_COLUMNS } from '@/lib/contracts/tableColumns'
 
 /**
@@ -17,12 +16,41 @@ import { TABLE_COLUMNS } from '@/lib/contracts/tableColumns'
 const CLIENT = join(process.cwd(), 'app/dashboard/DashboardClient.tsx')
 const src = readFileSync(CLIENT, 'utf8')
 
-/** The body of `buildScoreExplanations`, bounded on its own signature. */
-function cardBody(): string {
-  const i = src.indexOf('function buildScoreExplanations(')
-  expect(i, 'buildScoreExplanations not found — this gate is pointed at nothing').toBeGreaterThan(-1)
-  const j = src.indexOf('\n}', i)
+/**
+ * EVERY consumer of the row, not just one.
+ *
+ * ⚠️ The first cut parsed `buildScoreExplanations` alone, and `RunFeedbackCard` reads
+ * seven more `analysis.*` fields directly in its own body — all fetched today, so no live
+ * defect, but a new unfetched read there would have passed this gate green. Found by code
+ * review. The list is a CONSTANT so adding a third consumer is a deliberate act.
+ */
+const CONSUMERS = ['function buildScoreExplanations(', 'export function RunFeedbackCard('] as const
+
+/**
+ * Brace-matched, NOT bounded on the next `\n}`.
+ *
+ * ⚠️ The `\n}` boundary captured **214 characters and zero fields** for
+ * `RunFeedbackCard`, because a React component's props destructure closes with `}` at
+ * column 0 long before the function does. So the "widened" gate was decorative, and a
+ * mutation dropping `verdict` — a field ONLY that component reads — stayed green.
+ * Caught by falsifying it, not by writing it.
+ */
+function bodyOf(sig: string): string {
+  const i = src.indexOf(sig)
+  expect(i, `${sig} not found — this gate is pointed at nothing`).toBeGreaterThan(-1)
+  // A brace ALONE on its line closes the function. Two narrower boundaries failed first:
+  //   `\n}`  — also matches `}: {` ending a React props destructure, which truncated
+  //          RunFeedbackCard to 214 chars and ZERO fields;
+  //   brace-matching from the first `{` — latches onto the inline RETURN TYPE literal
+  //          `{ label: string; … }[]`, truncating buildScoreExplanations instead.
+  // The length floor in the arms below is what catches the next variant of this.
+  const j = src.indexOf('\n}\n', i)
+  expect(j, `${sig} has no closing brace on its own line`).toBeGreaterThan(i)
   return src.slice(i, j)
+}
+
+function cardBody(): string {
+  return CONSUMERS.map(bodyOf).join('\n')
 }
 
 /** Every `analysis.<field>` the card reads, minus anything inside a comment. */
@@ -44,6 +72,14 @@ describe('RUN-ANALYSIS-SELECT-01 — the card cannot read a field the query neve
   it('every field the card reads is in the shared column list', () => {
     const reads = fieldsTheCardReads()
     expect(reads.length, 'parsed no fields — the extractor has stopped matching').toBeGreaterThan(8)
+    // 🔴 THE FLOOR THAT WOULD HAVE CAUGHT THE DEAD EXTRACTOR. `verdict` is read ONLY by
+    // `RunFeedbackCard`; if its body is truncated again, this is the arm that notices,
+    // and it is the one a green mutation exposed as missing.
+    expect(reads, 'RunFeedbackCard contributed nothing — its body is not being parsed')
+      .toContain('verdict')
+    for (const sig of CONSUMERS) {
+      expect(bodyOf(sig).length, `${sig} body looks truncated`).toBeGreaterThan(900)
+    }
     const fetched = new Set<string>(RUN_ANALYSIS_CARD_FIELDS)
     expect(reads.filter(f => !fetched.has(f))).toEqual([])
   })
@@ -120,37 +156,34 @@ describe('RUN-ANALYSIS-SELECT-01 — Duncan, week 7 Tuesday, from the live rows'
 })
 
 /**
- * 🔴 THE HALF THAT WOULD HAVE SHIPPED A WORSE BUG. `planned_load_km` and its siblings are
- * `numeric`, so PostgREST returns them QUOTED — the live rows read `"7.00"`. `compareLoad`
- * coerces happily on `-` and `>`, so every arm above passes on strings; `formatDistance`
- * does not, and the card would have read "Planned null, ran null."
+ * 🔴 THE REGRESSION THE FIX ITSELF INTRODUCED, pinned.
+ *
+ * The breakdown renders each row on `value !== undefined`. An earlier cut of this change
+ * ran the four scores through a helper that mapped `null → undefined`, which REMOVED the
+ * row instead of showing its "No X data." line — measured at **19 of 100 live rows**
+ * carrying at least one null score (hr 19, distance/pace/ef 13 each). Same silent-display
+ * class the change exists to fix, introduced by the fix, caught by code review.
  */
-describe('RUN-ANALYSIS-SELECT-01 — the row arrives as strings', () => {
-  it('formatDistance REJECTS the raw string — this is the trap, pinned', () => {
-    expect(formatDistance('6.71' as unknown as number, 'km', { exact: true })).toBeNull()
-  })
-
-  it('numericField converts it, so the card can format it', () => {
-    expect(numericField('6.71')).toBe(6.71)
-    expect(formatDistance(numericField('6.71')!, 'km', { exact: true })).toBe('6.7km')
-    expect(formatDistance(numericField('6.71')!, 'mi', { exact: true })).toBe('4.2mi')  // the screenshot
-  })
-
-  it('compareLoad agrees on strings and numbers — which is WHY the trap is invisible', () => {
-    const asStrings  = { plannedKm: '7.00', actualKm: '6.71', plannedMins: '43', actualMins: '42.92' }
-    const asNumbers  = { plannedKm: 7, actualKm: 6.71, plannedMins: 43, actualMins: 42.92 }
-    expect(compareLoad(asStrings as never, 'distance')).toEqual(compareLoad(asNumbers, 'distance'))
-  })
-
-  it('absence and nonsense become null, never 0 — a stored 0 means UNMEASURED', () => {
-    for (const v of [null, undefined, '', 'n/a', NaN]) expect(numericField(v as never)).toBeNull()
-    expect(numericField(0)).toBe(0)   // a real measured zero still passes through
-  })
-
-  it('the card converts rather than casts', () => {
+describe('RUN-ANALYSIS-SELECT-01 — a null score keeps its row', () => {
+  it('the card returns null for a null score, never undefined', () => {
     const body = cardBody()
-    expect(body).toMatch(/numericField\(analysis\.planned_load_km\)/)
-    expect(body).toMatch(/numericField\(analysis\.actual_load_km\)/)
-    expect(body).not.toMatch(/analysis\.(planned|actual)_load_(km|mins) as number/)
+    // The four scores are returned straight off the row. Any wrapper here must be
+    // checked against the render gate below before it is reintroduced.
+    for (const f of ['hr_discipline_score', 'distance_score', 'pace_score', 'ef_score']) {
+      // ⚠️ ANCHORED ON THE COMMA. The first cut matched `value: analysis.<f>` unanchored,
+      // which is a PREFIX of `value: analysis.<f> ?? undefined` — so re-introducing the
+      // exact regression kept it green. Substring bias, in the arm written to catch it.
+      expect(body, `${f} must reach the row un-wrapped`).toMatch(new RegExp(`value:\\s+analysis\\.${f},`))
+    }
+  })
+
+  it('the declared return type admits null, which is what keeps the row', () => {
+    expect(src).toMatch(/value: number \| null \| undefined; line: string/)
+  })
+
+  it('the render gate is still the one that makes null meaningful', () => {
+    // If this gate ever becomes a truthiness check, a 0 score vanishes too and the
+    // arms above stop meaning anything.
+    expect(src).toContain('value !== undefined')
   })
 })

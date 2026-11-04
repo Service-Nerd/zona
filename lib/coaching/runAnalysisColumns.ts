@@ -48,41 +48,27 @@ export const RUN_ANALYSIS_CARD_FIELDS = [...IDENTITY, ...CARD, ...ZONES] as cons
 /** The string handed to `.select()`. Never retype this list at a call site. */
 export const RUN_ANALYSIS_CARD_COLUMNS = RUN_ANALYSIS_CARD_FIELDS.join(', ')
 
-/**
- * The shape `buildScoreExplanations` requires. Numeric columns arrive from
- * PostgREST as strings or numbers depending on type, so these stay loose on
- * value and strict on PRESENCE — presence is what was wrong.
- */
-export type RunAnalysisCardRow = {
-  [K in typeof RUN_ANALYSIS_CARD_FIELDS[number]]?: number | string | null
-}
+/** Text columns. Everything else on this row is numeric. */
+const TEXT_FIELDS = ['session_day', 'source', 'verdict', 'feedback_text'] as const
 
 /**
- * 🔴 POSTGREST RETURNS `numeric` COLUMNS AS STRINGS, AND THE CARD'S FORMATTERS REJECT THEM.
+ * The shape the card requires.
  *
- * `planned_load_km` and its three siblings are `numeric`, so a live row arrives as
- * `{ planned_load_km: "7.00" }` — quoted. `formatDistance` guards with
- * `Number.isFinite(km)`, and `Number.isFinite("6.71")` is **false** (it does not coerce),
- * so the formatter returns `null` and the card would read **"Planned null, ran null."**
+ * ⚠️ **VALUES ARE NUMBERS, AND I RECORDED THE OPPOSITE.** An earlier cut of this module
+ * asserted that PostgREST returns `numeric` columns quoted, added a `numericField()`
+ * converter, and wrote the claim into the incident doc and build log as measured fact.
+ * It is FALSE. A live `supabase-js` read returns `{ planned_load_km: 7, actual_load_km:
+ * 6.71, ef_trend_pct: 5.2 }` — unquoted, `typeof === 'number'`.
  *
- * That is WORSE than the "No distance data." it replaces, and it would have shipped:
- * `compareLoad`'s own arithmetic coerces happily (`"6.71" - "7.00"` is -0.29), so every
- * comparison and every unit test passes on strings. Only the formatter notices.
+ * 🔑 **The mistake was the INSTRUMENT.** The quoted `"7.00"` I saw came from the Supabase
+ * MCP `execute_sql` tool, which serialises numerics as strings. That is not the transport
+ * the app uses. The codebase's own evidence said so all along: `ef_trend_pct` is
+ * `NUMERIC(6,2)`, is read `as number`, and has `.toFixed(1)` called on it — which would
+ * throw on a string, on a line the screenshot shows rendering fine.
  *
- * ⚠️ `actual_load_km` was in the SELECT all along and was already read as `as number`.
- * It was a string the whole time; nothing caught it because `axis` never reached
- * `'distance'`. A cast is not a conversion.
- *
- * Lives here, with the column list, because this module owns what the row LOOKS like.
+ * **Measure with the client the producer actually calls.**
  */
-export function numericField(v: number | string | null | undefined): number | null {
-  if (v == null) return null
-  if (typeof v === 'number') return Number.isFinite(v) ? v : null
-  // ⚠️ `Number('')` and `Number('  ')` are BOTH 0, and a finite 0 would pass straight
-  // through as "this run covered no ground". That is `distance_km ?? 0` (SESSION-KM-01/02)
-  // and `body.hidden === true` (BOOT-STALL-HIDDEN-ABSENT-01) in a third costume: an
-  // absent value written as a measured one. Caught by this module's own test.
-  if (v.trim() === '') return null
-  const n = Number(v)
-  return Number.isFinite(n) ? n : null
+export type RunAnalysisCardRow = {
+  [K in typeof RUN_ANALYSIS_CARD_FIELDS[number]]?:
+    K extends typeof TEXT_FIELDS[number] ? string | null : number | null
 }
