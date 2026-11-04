@@ -5,6 +5,22 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-04 — BOOT-STALL-HIDDEN-ABSENT-01 · the telemetry I fixed this morning lied to me this afternoon, on the one row that mattered
+
+**Shipped:** `/api/ops/boot-report` stops writing `false` for a boolean the client never sent. `native` and `hidden` are three-state now — key absent, `null`, or a measured boolean.
+
+**Dev learning:** `body.x === true` is not a boolean coercion, it is a question with the answer thrown away. It asks *"did the client say true?"* and then stores the result as though it had asked *"what did the client say?"* — so `undefined` and `false` become the same byte. I had written that expression twice, one line apart, directly below an `elapsed_ms` branch whose own comment says *"nonsense becomes `null`, never `0`"*. The correct pattern was in the same function, three lines up, and I did not apply it to the two fields beside it.
+
+**Product/creator learning:** This morning I shipped a fix whose entire point was that `elapsed_ms` had been a constant pretending to be a measurement. Four hours later its replacement field had the same disease in a different shape. The defect class is not "a constant" — it is **a value that exists where a measurement should be**, and `false` is a value. Of the three rows that arrived after the deploy, two were honest and useful (a 36-minute backgrounded webview, which is exactly the thing the flag was built to separate from a hang) and the third was the only possible real hang — unreadable, because the field invented an answer for it.
+
+**AI-building learning:** The code review caught two of mine, and one of them was **this item's own defect, in my own documentation**. I had written a cutoff of *"~12:50 UTC"* into a contract so a human could tell the ambiguous rows apart — a guessed clock time standing in for a measurement, in the ship whose whole subject is that. I also documented `native` as symmetric with `hidden` without checking: `native` has been written on every row since 2026-10-25, so it has no key-absent state at all. Both were confident, plausible, and wrong, and both were in prose rather than code — which is the half that no test reaches. The third finding was a register I had not reconciled: `recordOpsEvent.ts` is the file you read *before writing the SQL*, and it still described the two-state shape, so `detail->>'hidden' = 'false'` would have miscounted in exactly the direction that hides the problem.
+
+**The honest bit:** The fix is nine lines. Finding it took one query, and I only ran that query because I had just claimed in a status report that the `hidden` arm was *"only provable in production"* — so I went and looked, and the first thing production said was that my new field could not be trusted either. If I had written the status line and moved on, that `hidden: false` would have gone into a count as a real hang. The thing I was proudest of this morning was the thing that was wrong by lunchtime.
+
+**Hook material:** 130 rows. `native: true` on 130 of 130 — the fabricated `false` had **never once been written** in ten days, so I fixed a defect that had never fired, because it was the same expression one line up. Meanwhile `hidden` had exactly **one** `false`, and that one row was the only candidate hang in the data.
+
+**Postable?:** yes — "I shipped a fix for a constant pretending to be a measurement, and four hours later my own replacement did the same thing" is the whole post, and the 130-of-130 number is the hook.
+
 ## 2026-11-04 — BOOT-STALL-DIAGNOSE-01 · 125 stalls that could not say why, and the fix was already written one screen away
 **Shipped:** the boot's six awaits are bounded by one owner, and a stall now reports a measured elapsed, whether the app was backgrounded, which await timed out and why.
 
