@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   //
   // Columns are written only when EMPTY: the runner's own Profile edit always wins, and a blank-out
   // is never re-filled behind them. One statement, so the heartbeat costs no extra round trip.
-  const { data: current } = await supabase
+  const { data: current, error: readErr } = await supabase
     .from('user_settings')
     .select('first_name, last_name, email')
     .eq('id', user.id)
@@ -48,7 +48,15 @@ export async function POST(req: NextRequest) {
 
   const patch: Record<string, string> = { last_today_open_at: new Date().toISOString() }
 
-  if (!current?.first_name && !current?.last_name) {
+  // ⚠️ A FAILED READ IS NOT AN EMPTY COLUMN, and conflating them is the very class this
+  // change exists to fix. `current` is null both when the runner has no name stored and
+  // when the SELECT errored — and on the second reading, back-filling would OVERWRITE a
+  // name they typed in Profile with whatever the identity provider holds. The heartbeat
+  // itself is unaffected and still runs; only the back-fill stands down.
+  const canBackfill = !readErr
+  if (readErr) console.error('[me/today-heartbeat] profile read failed, back-fill skipped', readErr.message)
+
+  if (canBackfill && !current?.first_name && !current?.last_name) {
     const meta = (user.user_metadata ?? {}) as Record<string, unknown>
     const full = String(meta.full_name || meta.name || '').trim()
     if (full) {
@@ -58,7 +66,7 @@ export async function POST(req: NextRequest) {
       patch.updated_at = new Date().toISOString()
     }
   }
-  if (!current?.email) {
+  if (canBackfill && !current?.email) {
     const email = String(user.email || (user.user_metadata as Record<string, unknown> | null)?.email || '').trim()
     if (email) { patch.email = email; patch.updated_at = new Date().toISOString() }
   }

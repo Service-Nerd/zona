@@ -3010,6 +3010,28 @@ the two.
 founder's; it supersedes two rows and creates two indexes, and the index creation FAILS if the two rows are
 not superseded first, so the file must be run whole and in order.
 
+### 🔲 `USER-SETTINGS-UNREAD-WRITE-01` — **11 more writes to `user_settings` read nobody's error** ⚙️ **NO BOARD** *(defect class)*
+
+*(filed 2026-11-04, from the code review of `PROFILE-NAME-WRITE-01`.)*
+
+🔴 **Found by widening a check from a SPELLING to an EFFECT.** The sweep arm first tested
+`/\bvoid\s+supabase/` — one way of saying *"nobody reads the result"*. Review found two more written
+`await supabase.from('user_settings').upsert(...)` inside a `try {} catch {}`: same effect, different
+spelling, invisible to the arm written to find exactly that class. Re-scoped to **every write to the
+table**, it found **11 further sites** beyond the five fixed in that ship.
+
+⚠️ **Deliberately NOT fixed in the same wave.** Each needs its own answer to *"what should the runner
+see when this fails?"* — some are optimistic toggles that must revert, some are dismissals where a lost
+write is harmless, some are onboarding writes where it is not. Changing 11 call sites without that
+answer is fixing them without understanding them, which `/build` forbids.
+
+🔻 **Held as declared debt at 11 in `lib/supabase/profileBackfill.test.ts`** — a COUNT, not a line
+list, because a line list re-keys itself whenever a line is inserted above it (`buttonGeometry`'s
+`file:line` baseline silently stopped looking). **The number may only fall.** ⚠️ A declared reason is
+not a scheduled fix: this entry is dated so its age is visible.
+
+---
+
 ### ✅ `PROFILE-NAME-WRITE-01` — the back-fill writes, and says so when it does not ⚙️ **NO BOARD** *(defect)*
 
 **Of 46 users whose auth metadata carries a `full_name`, 44 had an empty `user_settings.first_name`. Only 3

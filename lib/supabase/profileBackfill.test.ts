@@ -29,23 +29,47 @@ function stripComments(src: string): string {
 }
 
 describe('PROFILE-NAME-WRITE-01', () => {
-  // FIX THE PAIR, NOT THE INSTANCE. The first run of this arm found THREE more
-  // `void`-swallowed writes to the same table — trial_started_at, timezone and
-  // orientation_seen — none of which were part of the reported bug. The arm is
-  // deliberately scoped to the TABLE, not to the name columns, so it keeps finding them.
-  it('no fire-and-forget write to user_settings survives in the dashboard client', () => {
+  // 🔴 MATCH THE EFFECT, NOT THE SPELLING.
+  //
+  // The first cut of this arm tested `/\bvoid\s+supabase/`, which is ONE spelling of
+  // "nobody reads the result". Code review found two more writes to this same table —
+  // `onDynamicAdjustmentsChange` and `onDailyPushEnabledChange` — written
+  // `await supabase.from('user_settings').upsert(...)` inside a `try {} catch {}`. Same
+  // effect, different spelling, invisible to the arm written to find exactly that.
+  //
+  // So the population is every WRITE to the table, and the test is whether the statement
+  // does anything with `{ error }`. It is scoped to the TABLE rather than to the name
+  // columns on purpose: the first version of this arm found three defects that were not
+  // part of the bug it was written for, and only because of that scope.
+  it('every write to user_settings reads its own error', () => {
     const src = stripComments(fs.readFileSync(CLIENT, 'utf8'))
     const lines = src.split('\n')
-    const swallowed: string[] = []
+    const offenders: string[] = []
     lines.forEach((l, i) => {
-      if (!/\bvoid\s+supabase/.test(l) || !/user_settings/.test(l)) return
-      // Statement-scoped, not line-scoped: the error handler is chained on the
-      // following line. A line-only test reported these as unfixed after they were
-      // fixed — the bounded region is the STATEMENT, never the line.
+      if (!/\.from\(['"]user_settings['"]\)/.test(l)) return
+      if (!/\.(upsert|update|insert|delete)\(/.test(l)) return
+      // Statement-scoped, never line-scoped: a chained `.then` sits on the NEXT line, and
+      // a line-only test reported the three fixed writes as unfixed. Bound the region.
       const stmt = lines.slice(i, i + 3).join('\n')
-      if (!/\.then\(\(\{\s*error\s*\}\)/.test(stmt)) swallowed.push(`${i + 1}: ${l.trim()}`)
+      const reads = /\{\s*error(\s*:[^}]*)?\s*\}\s*=/.test(stmt)       // const { error } = await …
+        || /\.then\(\(\{\s*error\s*\}\)/.test(stmt)                   // ….then(({ error }) => …
+      if (!reads) offenders.push(`${i + 1}: ${l.trim().slice(0, 120)}`)
     })
-    expect(swallowed).toEqual([])
+
+    // 🔻 DECLARED DEBT, NOT A PASS — the SWEEP-BASELINE-01 pattern.
+    //
+    // Scoping this arm to the EFFECT rather than to `void` found 11 further writes to
+    // this table whose `{ error }` nothing reads. They are NOT part of the reported bug
+    // and none has been analysed: each needs its own answer to "what should the runner
+    // see when this fails?", and changing 11 call sites without that answer is fixing
+    // them without understanding them. Filed as `USER-SETTINGS-UNREAD-WRITE-01`.
+    //
+    // ⚠️ A declared reason is not a fixed problem. This number may only FALL. It is a
+    // COUNT and not a list of line numbers on purpose — a list re-keys itself every time
+    // a line is inserted above it, which this repo has already paid for once
+    // (`buttonGeometry`'s `file:line` baseline silently stopped looking).
+    const BASELINE = 11
+    expect(offenders.length, `\n${offenders.join('\n')}\n`).toBeLessThanOrEqual(BASELINE)
   })
 
   it('the server route back-fills the name and READS the error of its own write', () => {
@@ -62,8 +86,11 @@ describe('PROFILE-NAME-WRITE-01', () => {
 
   it('it only fills EMPTY columns — a runner’s own Profile edit is never overwritten', () => {
     const src = fs.readFileSync(ROUTE, 'utf8')
-    expect(src).toMatch(/if \(!current\?\.first_name && !current\?\.last_name\)/)
-    expect(src).toMatch(/if \(!current\?\.email\)/)
+    expect(src).toMatch(/if \(canBackfill && !current\?\.first_name && !current\?\.last_name\)/)
+    expect(src).toMatch(/if \(canBackfill && !current\?\.email\)/)
+    // A failed READ must not read as an empty column, or the back-fill overwrites a
+    // name the runner typed. Same discarded-`{ error }` class the route exists to fix.
+    expect(src).toMatch(/const \{ data: current, error: readErr \}/)
   })
 })
 

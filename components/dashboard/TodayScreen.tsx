@@ -6,7 +6,7 @@
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
 import { weekIdentity, DELOAD_WEEK_NOTE, DELOAD_WEEK_NOTE_WITH_STRENGTH } from '@/lib/coaching/weekVoice'
-import { DAY_KEYS, resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
+import { resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
 import { sessionDisplayLabel } from '@/lib/plan/catalogueLink'
 import { missingRpeNudges as missingRpeNudgesOf } from '@/lib/plan/rpeNudges'
 import { SLOT_LABEL, doubleAdvice } from '@/lib/plan/doubles'

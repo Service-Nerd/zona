@@ -243,6 +243,18 @@ export async function autoMatchAndAnalyse(
  * `completionRow` must include user_id, week_n, session_day and exactly one of
  * strava_activity_id / apple_health_uuid.
  */
+/**
+ * COMPLETION-ACTIVITY-DUPE-01 — "this run is already linked to another session".
+ *
+ * Matched on the INDEX NAME, not on the message text: `session_completions_live_key`
+ * (the week/day key) is a different situation with a different answer, and a substring
+ * test for "duplicate key" cannot tell them apart.
+ */
+function isActivityAlreadyLinked(err: { code?: string; message?: string; details?: string } | null): boolean {
+  if (!err || err.code !== '23505') return false
+  return /session_completions_live_(hk_uuid|strava_id)_key/.test(`${err.message ?? ''} ${err.details ?? ''}`)
+}
+
 export async function claimAutoLink(
   supabase: any,
   completionRow: Record<string, unknown>,
@@ -264,6 +276,21 @@ export async function claimAutoLink(
     // caller, so a hard failure and a benign race are the same value. The event is
     // the difference between a silent two-week outage and a question someone can
     // ask of `ops_events`.
+    // COMPLETION-ACTIVITY-DUPE-01 (2026-11-04) — ONE OF THESE IS NOT A FAILURE.
+    //
+    // The RPC's `ON CONFLICT (user_id, week_n, session_day) DO NOTHING` absorbs a
+    // collision on the LIVE-KEY index and returns false. It cannot absorb a violation
+    // of a DIFFERENT index, and the activity-uniqueness indexes added by migration
+    // 20261104 are different indexes. So a re-ingest of an activity already linked to
+    // ANOTHER day — the ordinary case that migration exists to prevent — now raises
+    // 23505 here, and without this arm it would fire `completion_claim_failed` on
+    // every one of them. That event exists precisely to separate a hard outage from a
+    // benign race (COMPLETION-CLAIM-UUID-01); drowning it is how it stops being read.
+    //
+    // The run is already recorded against a session. 'exists' is the honest answer and
+    // the caller's behaviour is already correct for it: do not analyse, do not push.
+    if (isActivityAlreadyLinked(claimRes.error)) return 'exists'
+
     console.warn('[auto-analyse] claimAutoLink claim failed', claimRes.error.message)
     // Imported lazily, like every other dependency in this module: `recordOpsEvent`
     // builds a SERVICE-ROLE client, and `clientBundleBoundary.test.ts` exists
@@ -310,6 +337,24 @@ export async function claimAutoLink(
       // it reports 'attached' while the runner sees nothing.
       .is('superseded_at', null)
       .select('week_n')
+    // The same indexes bind here: this `.update()` writes the activity id onto a row,
+    // and the id may already sit on another live row. `upd.error` was never read, so
+    // a violation fell through `upd.data == null` and returned 'exists' with no log
+    // and no event at all — the discarded-`{ error }` class this wave is about.
+    if (upd.error) {
+      if (!isActivityAlreadyLinked(upd.error)) {
+        console.warn('[auto-analyse] claimAutoLink attach failed', upd.error.message)
+        const { recordOpsEvent } = await import('@/lib/ops/recordOpsEvent')
+        await recordOpsEvent('completion_claim_failed', {
+          week_n:      completionRow.week_n ?? null,
+          session_day: completionRow.session_day ?? null,
+          source:      completionRow.strava_activity_id != null ? 'strava' : 'apple_health',
+          stage:       'attach',
+          message:     String(upd.error.message ?? '').slice(0, 500),
+        }, (completionRow.user_id as string) ?? null)
+      }
+      return 'exists'
+    }
     const attached = Array.isArray(upd.data) ? upd.data.length > 0 : upd.data != null
     return attached ? 'attached' : 'exists'
   }
