@@ -2958,6 +2958,59 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
+## ✅ SHIPPED 2026-11-04 — `RUN-ANALYSIS-SELECT-01`: the card read 12 fields, the query fetched 9
+
+⚙️ **NO BOARD** — defect fix restoring documented intent (§66 Am.1); changes no prescription.
+
+**Input:** a second production screenshot from the same runner. Header reads `Apple Health · 4.2mi`;
+the Kit card eleven lines below reads **`DISTANCE · No distance data.`**
+
+**The data was never missing.** `strava_activities.distance_m 6710.09` · `session_completions
+.strava_activity_km 6.7` · and the analysis row itself held `planned_load_km 7.00`, `actual_load_km 6.71`,
+`planned_load_mins 43`, `actual_load_mins 42.92`, `distance_score 100`, `total_score 85` — the 85 matches
+the screenshot, so it is the right row.
+
+`buildScoreExplanations` reads **twelve** fields; the SELECT fetched **nine**. The three omitted are the
+**only** inputs `compareLoad` has, so `axis` resolved to `'none'` on every row and the `else` branch
+printed the string. 📐 **Measured on all 100 live rows, 6 users: 87 comparable in the TABLE, 0 on the
+SCREEN.** The line had never rendered for anyone — and neither had **`"Short."`**, from the same call, so
+no runner who fell short has ever been told so on this card.
+
+⚠️ **AND A MEASUREMENT HAD ALREADY LOOKED STRAIGHT AT IT.** `POSTRUN-METRIC-PREF-01` fixed this same
+line on 2026-10-08, correctly and with tests, recording *"measured on all 83 live `run_analysis` rows …
+81 are km-comparable … so the duration branch was reachable on ZERO live rows."* **That measurement read
+the TABLE; the screen reads the SELECT.** It concluded one branch was unreachable when **both** were.
+
+🔴 **THE FIX ALMOST SHIPPED SOMETHING WORSE.** These are `numeric` columns, so PostgREST returns them
+**quoted** (`"7.00"`). `compareLoad` coerces happily on `-` and `>`, so every arm passed on strings — but
+`formatDistance` guards with `Number.isFinite`, which is **false** for a string, and the card would have
+read **"Planned null, ran null."** `numericField()` converts rather than casts. ⚠️ `actual_load_km` was in
+the SELECT all along and read `as number`: it had been a string the whole time and nothing noticed,
+because `axis` never reached `'distance'`. **A cast is not a conversion.**
+
+**Fix:** `RUN_ANALYSIS_CARD_COLUMNS` — the `SESSION_OVERRIDE_COLUMNS` pattern, which exists because a
+seventh hand-typed copy forgot `new_slot`. All three card selects use it; the post-run poll at `:7088` had
+been missing **six** fields, so the card was most degraded immediately after a run. `analysis: any` became
+`RunAnalysisCardRow`.
+
+**Gate:** `runAnalysisCardColumns.test.ts`, 12 arms, **both sides derived from source** — the fields the
+function reads parsed from its body, the fields each select fetches parsed from the select. 3 mutations,
+all red. ⚠️ **Three arms of mine were wrong first:** one flagged the unrelated ceiling-history query; the
+corrected discriminator then matched **zero** selects and passed by looking at nothing (the vacuity floor
+caught it); and `numericField` returned **0** for `''`.
+
+✅ **SWEEP — nothing else is impacted, and the population was derived, not listed.** (1) Does any select
+name a column that does not exist? Every `.from(T).select()` under `app/ lib/ components/` against
+`tableColumns.ts` → **0**. (2) Does any file READ a column its own select omitted? 34 candidates,
+**1 real — this one**; the other 33 are `created_at` on insert payloads, a second query in the same file,
+derived fields (`withSessionType`), and `plan.meta.race_distance_km`, with the five real-domain ones
+checked by hand. ⚠️ **Pass 2 did NOT become a gate**: 33:1 false positives is a check that gets switched
+off, which this repo records as equivalent to having none.
+
+Incident: `docs/incidents/2026-11-04-run-analysis-select.md`.
+
+---
+
 ## ✅ SHIPPED 2026-11-04 — one runner's screenshot, four defects (`NUDGE-EFFECTIVE-DAY-01` + 3)
 
 **Input:** a production screenshot from a real runner, plus his own report: *"I changed a Tuesday run

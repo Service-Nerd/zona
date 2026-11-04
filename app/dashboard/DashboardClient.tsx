@@ -50,6 +50,7 @@ import ExternalLink from '@/components/shared/ExternalLink'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, PlanReadError, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate, readPlanJson } from '@/lib/plan'
 import { resolveEffectiveDay, SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
+import { RUN_ANALYSIS_CARD_COLUMNS, numericField, type RunAnalysisCardRow } from '@/lib/coaching/runAnalysisColumns'
 import { sessionDisplayLabel } from '@/lib/plan/catalogueLink'
 import { easyPaceAsCeiling, splitPaceQualifier } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
@@ -1988,7 +1989,7 @@ export default function DashboardClient() {
             const recentChangesCutoff = new Date(Date.now() - 14 * 86_400_000).toISOString()
             bootStageRef.current = 'analysis'
             const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes, recentChangesRes] = await withTimeout(Promise.all([
-              supabase.from('run_analysis').select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id).is('superseded_at', null),
+              supabase.from('run_analysis').select(RUN_ANALYSIS_CARD_COLUMNS).eq('user_id', user.id).is('superseded_at', null),
               supabase.from('weekly_reports').select('*').eq('user_id', user.id).is('superseded_at', null).order('week_n', { ascending: false }).limit(1).maybeSingle(),
               supabase.from('plan_adjustments').select('*').eq('user_id', user.id).is('superseded_at', null).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
               // NOTIF-01 — unread notification count for the Today-screen bell dot.
@@ -2226,7 +2227,7 @@ export default function DashboardClient() {
       if (!user) return
       const { data } = await supabase
         .from('run_analysis')
-        .select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5')
+        .select(RUN_ANALYSIS_CARD_COLUMNS)
         .eq('user_id', user.id)
         .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       if (data) {
@@ -6489,7 +6490,10 @@ function GaveUpCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
 
 /** One-line explanation per sub-score, derived from analysis row data. */
 function buildScoreExplanations(
-  analysis: any,
+  // RUN-ANALYSIS-SELECT-01 — was `any`, which is why no compiler saw that three of the
+  // fields read below were never fetched. The gate that actually holds it is
+  // `runAnalysisCardColumns.test.ts`; this just stops the shape being invisible.
+  analysis: RunAnalysisCardRow,
   paceTarget: string | null,
   actualAvgSpeedMs: number | null,
   units: 'km' | 'mi' = 'km',
@@ -6527,10 +6531,14 @@ function buildScoreExplanations(
   // step is running — so a completed 60-minute long run with walk breaks covers
   // less ground than the pace band implies, and reporting that as "short" would
   // name a failure the runner did not have.
-  const planned = analysis.planned_load_km as number | null | undefined
-  const actual  = analysis.actual_load_km  as number | null | undefined
-  const plannedMins = analysis.planned_load_mins as number | null | undefined
-  const actualMins  = analysis.actual_load_mins  as number | null | undefined
+  // RUN-ANALYSIS-SELECT-01 — CONVERTED, not cast. These are `numeric` columns, so a live
+  // row carries "7.00" and `formatDistance`'s `Number.isFinite` guard rejects a string:
+  // the line would read "Planned null, ran null." The previous `as number` was a cast,
+  // which changes nothing at runtime and was wrong on `actual_load_km` all along.
+  const planned     = numericField(analysis.planned_load_km)
+  const actual      = numericField(analysis.actual_load_km)
+  const plannedMins = numericField(analysis.planned_load_mins)
+  const actualMins  = numericField(analysis.actual_load_mins)
 
   // POSTRUN-METRIC-PREF-01 (ADR-015 / INV-PREF-001 restoration) — the runner's
   // distance/duration preference reaches this line.
@@ -6597,9 +6605,10 @@ function buildScoreExplanations(
   } else if (paceTarget) {
     paceLine = `Target ${paceTarget}.`
   } else if (analysis.pace_score != null) {
-    if (analysis.pace_score >= 80)      paceLine = 'On target.'
-    else if (analysis.pace_score >= 60) paceLine = 'Slightly off target.'
-    else                                paceLine = 'Off target.'
+    const ps = Number(analysis.pace_score)
+    if (ps >= 80)      paceLine = 'On target.'
+    else if (ps >= 60) paceLine = 'Slightly off target.'
+    else               paceLine = 'Off target.'
   } else {
     paceLine = 'No pace data.'
   }
@@ -6615,11 +6624,17 @@ function buildScoreExplanations(
     efLine = `${Math.abs(trend).toFixed(1)}% below your baseline.`
   }
 
+  // The four scores are `integer` columns, so they arrive as numbers. Narrowed here
+  // rather than widening `RunAnalysisCardRow`, which exists to say which fields must be
+  // FETCHED — the thing that was wrong — and should not become `any` to save a cast.
+  const score = (v: number | string | null | undefined): number | undefined =>
+    typeof v === 'number' ? v : v == null ? undefined : Number(v)
+
   return [
-    { label: 'HR',         value: analysis.hr_discipline_score, line: hrLine },
-    { label: 'Distance',   value: analysis.distance_score,      line: distLine },
-    { label: 'Pace',       value: analysis.pace_score,          line: paceLine },
-    { label: 'Efficiency', value: analysis.ef_score,            line: efLine },
+    { label: 'HR',         value: score(analysis.hr_discipline_score), line: hrLine },
+    { label: 'Distance',   value: score(analysis.distance_score),      line: distLine },
+    { label: 'Pace',       value: score(analysis.pace_score),          line: paceLine },
+    { label: 'Efficiency', value: score(analysis.ef_score),            line: efLine },
   ]
 }
 
@@ -7086,7 +7101,7 @@ export function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved
         if (!user) return
         const { data } = await supabase
           .from('run_analysis')
-          .select('session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score')
+          .select(RUN_ANALYSIS_CARD_COLUMNS)
           .eq('user_id', user.id)
           .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
           .eq('session_day', sessionDay)
