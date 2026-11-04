@@ -6508,3 +6508,48 @@ line quotes where the ramp actually reaches (it said "about 8 km" beside "peak 9
 **Held by** `INV-PLAN-STAGED-NO-RACE-BLOCK` for the engine half (built 2026-10-24: a staged plan carries no race-block
 week and ends at its checkpoint). The screen checks named in the ruling land with the screens.
 
+---
+
+## Guided strength session — the device rules *(STRENGTH-GUIDED-DEVICE-01, Design Board 2026-11-04)*
+
+Three corrections from the **first time this ran on a phone**. Each is a pattern, not a one-off.
+
+### A primary action is STICKY when the page above it has no fixed length
+
+The strength session screen lists one card per part. The founder's own session had **nine**, so
+`Start session` sat below nine cards and the week's note and **he scrolled past without seeing it**.
+
+> **The rule: when the content above a primary action is a list whose length the runner's data
+> decides, the action pins.** Not "when it is long" — length is not knowable at design time, which
+> is the whole failure. `position: sticky; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px))`,
+> because the tab bar owns the last 60px.
+
+⚠️ **A header tick was asked for and NOT taken.** It puts an uncancellable state change beside the
+back arrow (Wroblewski), and it fixes nine cards rather than any number of them.
+⚠️ `STICKY-SCROLLER-01` applies: no ancestor between the bar and the root may gain `overflow`.
+
+### Rest is a STATE, never a page
+
+Resting used to be its own `GuidedStep` and therefore its own screen, so the runner left the lift
+they were doing to look at a number and came back. **Silvanto: *"rest is not a step; it is the state
+between two steps."*** The countdown is now a band inside the round's page; the part heading, the
+prescription and the weight stepper stay on screen throughout.
+
+The clock shrank from 56px to 38px in the move, deliberately: alone on a page it was the only thing
+there; in place it must not out-shout the prescription above it.
+
+### A sequence the runner cannot always follow needs a contents view
+
+A gym is a **contended-resource environment and the first build modelled it as a queue** — no way to
+see what was coming or to move between parts without ending the session. The contents control sits in
+the top band and says where the runner is (`4 of 8`); it opens a **slide-up sheet**, never a modal
+(CLAUDE.md § UI Principles: a modal is for a destructive confirmation), with its nav mirrored to the
+bottom. Rows are real `<button>`s — a div with `onClick` is skipped by Tab, and a sheet that cannot be
+reached by keyboard is a sheet that cannot be left.
+
+**Jump lands on a part's FIRST round**: the runner is choosing a machine, not a set. An out-of-range
+jump is **ignored, never clamped** — a stale index from a rebuilt session must not land somewhere
+plausible, the same reasoning as `resumeGuided` refusing a step the session no longer has.
+
+**Checks:** `components/dashboard/strengthGuided.markup.test.ts` (4 arms, 4 mutations red) ·
+`lib/strength-bridge/guidedSession.test.ts` (19 arms, 3 mutations red).

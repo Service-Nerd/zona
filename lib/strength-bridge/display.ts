@@ -97,8 +97,17 @@ export function partDose(p: Pick<Prescription, 'sets' | 'reps' | 'seconds' | 'co
 
 export const STRENGTH_GUIDED_COPY = {
   start: 'Start session',
-  markWithoutStarting: 'Mark complete without starting',
+  // STRENGTH-GUIDED-DEVICE-01 (Design Board 2026-11-04) — was "Mark complete without
+  // starting", which is a sentence, not a button label (Wroblewski). The founder scrolled
+  // past it on his own phone.
+  markWithoutStarting: 'Log it as done',
   end: 'End session',
+  // STRENGTH-GUIDED-DEVICE-01 (Design Board 2026-11-04) — the contents sheet.
+  contentsLabel: 'Session contents',
+  contentsHint: "Take what's free. Tap any part to go there.",
+  contentsClose: 'Close',
+  /** The control in the top band: where the runner is, out of the training parts. */
+  contentsAt: (at: number, total: number) => `${Math.max(1, at)} of ${total}`,
   back: 'Back',
   extendRest: '+30 s',
   skipRest: 'Skip rest',

@@ -2958,6 +2958,51 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
+## 🔲 PARKED 2026-11-04 — two strength engine items from the device review
+
+### 🔴 `STRENGTH-PAIR-STRIDE-01` — the superset pairing strands most of what S10 says it should pair 🏃 **COACHING BOARD** (re-sat, INSUFFICIENT EVIDENCE)
+
+**The defect is certain.** `packages/strength/session.ts` walks accessory+core items in FIXED ADJACENT PAIRS
+(`i += 2`) and pairs only when `PATTERN_REGION` differs, so a same-region neighbour **strands BOTH items** and the
+second never gets a chance to pair with the third. Measured on the sweep grid, 557,163 sessions: **78.2% of
+accessory+core items unpaired, in 98.9% of sessions, and 60.2% of those had a non-competing partner available.**
+
+**The fix works:** unpaired 78.2% → 32.9%, recoverable **60.2% → 0.0%**, mean training parts **5.99 → 4.93**, and
+8–9 part sessions disappear entirely — which is most of what the founder saw on his phone.
+
+🔴 **IT IS HELD BECAUSE WILLY'S BINDING CONDITION FIRED.** The dose **fell**: sets/session **15.397 → 14.813
+(−3.8%)**, core sets **4.579 → 4.229 (−7.6%)**, items 6.788 → 6.711. Jumps 2.6% and upper work 85.6% unchanged.
+
+⚠️ **ATTRIBUTED, BUT NOT EXPLAINED — and three hypotheses of mine died getting that far.** Instrumenting the
+fill loop answers the board's question: **the fill stops earlier.** Grows 1,200,729 → 974,209; rejections
+*"would not fit"* **16,704 → 86,069, a factor of 5.2.** What is NOT established is why a paired session sits
+closer to the clock when a pair is arithmetically ~60 s cheaper than the same two items apart.
+
+> 🔴 **The dead hypotheses are recorded so nobody re-runs them.** (1) *`max(sets)` drags the core item to the
+> accessory's round count* — trialled a remainder-solo costing; it recovers **0.125 of the 0.584 sets lost, about a
+> fifth**. (2) *the fill's `partner.item.sets !== c.item.sets` guard freezes mixed pairs* — instrumented: it fires
+> **0 times**, because `ACCESSORY_SETS` is **2**, not 3. I had read 3 out of S6's prose.
+
+**Next step:** trace ONE session through `estimateMinutes` before and after pairing, rather than another sweep.
+Scripts on disk: `strength-pairing-measure.ts`, `strength-dose-delta.ts`, `strength-repeat-measure.ts`.
+
+### 🔲 `STRENGTH-CARRY-PATTERN-01` — Blagrove's carries merge names a thing the data model does not have 🏃 **COACHING BOARD**
+
+The board ruled *"two carries back to back is ONE part, a merge not a superset"*. **There is no `carry` pattern.**
+`Pattern` is `squat | hinge | single_leg | calf | hip_abduction | plyometric | upper_push | upper_pull |
+anti_rotation | anti_extension | lateral_core | mobility | warmup`, and `suitcase_carry` is **`anti_rotation`**
+while `farmer_carry` is **`lateral_core`**.
+
+So the merge can only be written by matching exercise ids or names — **the label-based classification class this
+repo has paid for under D-17 and `INV-CLASS`.** The honest build is a `carry` pattern in the catalogue, which is a
+**coaching-guard doctrine file** (`packages/strength/catalogue.ts`), so it is the board's, not a UI build's.
+
+⚠️ **It is the SAME symptom as the item above:** with the pairing stride fixed, those two carries would pair
+automatically, because `anti_rotation` and `lateral_core` are different regions. Settle the pairing first and the
+merge may be unnecessary — which is why both are parked together.
+
+---
+
 ## ✅ SHIPPED 2026-11-04 — `RUN-ANALYSIS-SELECT-01`: the card read 12 fields, the query fetched 9
 
 ⚙️ **NO BOARD** — defect fix restoring documented intent (§66 Am.1); changes no prescription.

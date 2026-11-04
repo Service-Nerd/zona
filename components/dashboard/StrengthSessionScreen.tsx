@@ -264,8 +264,25 @@ export default function StrengthSessionScreen({ session, dayLabel, weekN, status
           </div>
         )}
 
+        {/* STRENGTH-GUIDED-DEVICE-01 (Design Board 2026-11-04) — THE ACTIONS ARE STICKY.
+            Measured on the founder's own phone: this session has 9 parts, so Start session sat
+            below nine cards and the week's note, and he scrolled past without seeing it. He asked
+            for a tick in the header; Wroblewski's objection stands — that puts an uncancellable
+            state change beside the back arrow — so the bar pins instead, which fixes it for ANY
+            part count rather than for nine.
+            ⚠️ `bottom: var(--nav-h)` because the tab bar owns the last 60px. STICKY-SCROLLER-01:
+            this pins to the page, so no ancestor between here and the root may gain `overflow`. */}
         {canLog && (
-          <div style={{ marginTop: 'var(--space-5)' }}>
+          <div data-strength-actions style={{
+            position: 'sticky',
+            bottom: 'calc(var(--nav-h) + env(safe-area-inset-bottom, 0px))',
+            marginTop: 'var(--space-5)',
+            marginInline: '-16px',
+            padding: '12px 16px calc(14px + env(safe-area-inset-bottom, 0px))',
+            background: 'var(--bg)',
+            borderTop: '1px solid var(--line)',
+            zIndex: 2,
+          }}>
             {status ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
                 <StatusBadge label={status === 'done' ? 'Done' : 'Skipped'} tone={status === 'done' ? 'held' : 'none'} />

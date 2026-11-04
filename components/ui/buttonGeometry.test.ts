@@ -238,6 +238,11 @@ describe('button geometry', () => {
   // ⚠️ RE-BASELINED 2026-10-31 (`COACH-KIT-CAUGHT-01`), delta PROVEN on the diff: CoachTeaser's two 45px upsell buttons
   // (`{floor 44, padY 14, radius 10px, height 45, 100%}` ×2) REMOVED with the stale teaser, ONE standard primary
   // (`{floor 44, height 47, 100%}`, "Get Kit") ADDED. Net −1; both clear the 44 floor.
+  // ⚠️ RE-BASELINED 2026-11-04 (`STRENGTH-GUIDED-DEVICE-01`), delta PROVEN on the multiset: the guided
+  // session's rest controls were `size="compact"` (`{floor 44, height 44, auto}` ×2) and are now the default
+  // size, full width (`{floor 44, height 47, full}` ×2) — net 0, two boxes swapped. **The reason is another
+  // gate:** `buttonSizeScope` (CTA-COMPACT-SCOPE-01) says compact is for ROWS, not stacks, and rest moved from
+  // its own page (a row of two) into a band inside the part, where the two controls stack. Both still clear 44.
   it('🔴 geometry matches the committed baseline', () => {
     // A MOVE IS NOT AUTOMATICALLY WRONG — it is automatically something to
     // DECLARE. Re-baseline with `npm run button:geometry -- --write` and say in

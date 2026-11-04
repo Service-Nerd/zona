@@ -22,51 +22,66 @@ const run = (s: GuidedState | null, ...actions: Parameters<typeof guidedReduce>[
 describe('guidedSteps', () => {
   it('one work page per round of every part, in order; rest after each round from the part\'s own rest_s', () => {
     expect(steps.filter(s => s.kind === 'work').length).toBe(parts.reduce((n, p) => n + p.rounds, 0))
+    // STRENGTH-GUIDED-DEVICE-01 — the rest a round carries is now ON the work step.
     steps.forEach((st, i) => {
-      if (st.kind !== 'rest') return
-      expect(st.rest_s).toBe(parts[st.part].rest_s)
-      expect(steps[i - 1]).toMatchObject({ kind: 'work', part: st.part, round: st.round })
+      if (st.restAfter_s === 0) return
+      expect(st.restAfter_s).toBe(parts[st.part].rest_s)
+      expect(steps[i + 1]).toBeDefined()   // something follows, or there would be no rest
     })
     const order = steps.filter(s => s.kind === 'work').map(s => `${s.part}.${s.round}`)
     expect(order).toEqual(parts.flatMap((p, i) => Array.from({ length: p.rounds }, (_, r) => `${i}.${r + 1}`)))
   })
+  // STRENGTH-GUIDED-DEVICE-01 — rest is no longer a STEP, so this is now asserted on
+  // `restAfter_s`. The two substantive claims are unchanged: the warm-up runs straight
+  // through, and nothing rests after the last round.
   it('🔴 no rest inside the warm-up ("straight through"), and none after the session\'s last round', () => {
     expect(parts[0].kind).toBe('warmup')
-    expect(steps.some(s => s.kind === 'rest' && s.part === 0)).toBe(false)
-    expect(steps[steps.length - 1].kind).toBe('work')
-    expect(steps.filter(s => s.kind === 'rest').length).toBeGreaterThan(0)
+    expect(steps.filter(s => s.part === 0).every(s => s.restAfter_s === 0)).toBe(true)
+    expect(steps[steps.length - 1].restAfter_s).toBe(0)
+    expect(steps.filter(s => s.restAfter_s > 0).length).toBeGreaterThan(0)
+    // And there is no rest step left to find.
+    expect(steps.every(s => s.kind === 'work')).toBe(true)
   })
 })
 
 describe('guidedReduce', () => {
   const s0 = startGuided(session, T0, {})
-  const firstRest = steps.findIndex(s => s.kind === 'rest')
-  it('🔴 "done" on a round before a rest starts the countdown at that part\'s rest, by end time', () => {
-    const s = { ...s0, step: firstRest - 1 }
-    const r = guidedReduce(s, steps, { type: 'next' }, T0)!
-    const rest = steps[firstRest] as { rest_s: number }
+  // The first round that HAS a rest after it — the page the runner rests on.
+  const firstRest = steps.findIndex(s => s.restAfter_s > 0)
+  it('🔴 "done" on a round starts the countdown at that part\'s rest, ON THE SAME PAGE', () => {
+    const r = guidedReduce({ ...s0, step: firstRest }, steps, { type: 'next' }, T0)!
+    // 🔴 THE RULING, PINNED: the step does NOT move. The runner stays on the lift they
+    // are doing and the rest runs inside it.
     expect(r.step).toBe(firstRest)
-    expect(r.restEndsAt).toBe(T0 + rest.rest_s * 1000)
-    expect(secondsLeft(r.restEndsAt, T0 + 10_000)).toBe(rest.rest_s - 10)
+    expect(r.restEndsAt).toBe(T0 + steps[firstRest].restAfter_s * 1000)
+    expect(secondsLeft(r.restEndsAt, T0 + 10_000)).toBe(steps[firstRest].restAfter_s - 10)
     expect(secondsLeft(r.restEndsAt, T0 + 10 * 60_000)).toBe(0)
+    // A second `next`, once resting, is what advances.
+    expect(guidedReduce(r, steps, { type: 'next' }, T0)!.step).toBe(firstRest + 1)
   })
-  it('+30 s extends the rest, and skip rest goes straight to the next round', () => {
-    const r = guidedReduce({ ...s0, step: firstRest - 1 }, steps, { type: 'next' }, T0)!
+  it('+30 s extends the rest; skip rest ENDS the countdown and does not advance', () => {
+    const r = guidedReduce({ ...s0, step: firstRest }, steps, { type: 'next' }, T0)!
     expect(guidedReduce(r, steps, { type: 'extendRest' }, T0)!.restEndsAt).toBe(r.restEndsAt! + STRENGTH_GUIDED.REST_EXTEND_S * 1000)
+    // ⚠️ BEHAVIOUR CHANGE, ruled 2026-11-04. Skip used to jump to the next round. With rest
+    // in place, Skip rest and Start round N are two controls on one page: skip stops the
+    // clock, the runner is back on the work page, and `next` moves them on.
     const skipped = guidedReduce(r, steps, { type: 'skipRest' }, T0)!
-    expect(skipped.step).toBe(firstRest + 1)
+    expect(skipped.step).toBe(firstRest)
     expect(skipped.restEndsAt).toBeNull()
+    expect(guidedReduce(skipped, steps, { type: 'next' }, T0)!.step).toBe(firstRest + 1)
   })
   it('🔴 +30 s after the rest has run out counts from now, not from the old end', () => {
-    const r = guidedReduce({ ...s0, step: firstRest - 1 }, steps, { type: 'next' }, T0)!
+    const r = guidedReduce({ ...s0, step: firstRest }, steps, { type: 'next' }, T0)!
     const late = T0 + 600_000
     expect(guidedReduce(r, steps, { type: 'extendRest' }, late)!.restEndsAt).toBe(late + STRENGTH_GUIDED.REST_EXTEND_S * 1000)
   })
-  it('back steps over a rest to the round before it; back on the first page leaves (null)', () => {
-    const atRest = { ...s0, step: firstRest, restEndsAt: T0 + 1 }
+  it('back goes to the previous round and clears any rest; back on the first page leaves (null)', () => {
     const after = guidedReduce({ ...s0, step: firstRest + 1 }, steps, { type: 'back' }, T0)!
-    expect(after.step).toBe(firstRest - 1)
-    expect(guidedReduce(atRest, steps, { type: 'back' }, T0)!.step).toBe(firstRest - 1)
+    expect(after.step).toBe(firstRest)
+    expect(after.restEndsAt).toBeNull()
+    // Going back while resting abandons the rest: back is to redo or check a round.
+    const resting = { ...s0, step: firstRest, restEndsAt: T0 + 1 }
+    expect(guidedReduce(resting, steps, { type: 'back' }, T0)!.step).toBe(firstRest - 1)
     expect(guidedReduce(s0, steps, { type: 'back' }, T0)).toBeNull()
   })
   it('🔴 done on the last round ends the session and counts it; End session ends it anywhere, without the round in hand', () => {
@@ -124,5 +139,62 @@ describe('the tally and resume', () => {
   it('the stepper moves by the engine\'s own load step: lower 2.5 kg, upper 1 kg', () => {
     const mains = session.blocks.find(b => b.role === 'main')!.items.map(i => STRENGTH_GUIDED.stepKg(i.exercise_id))
     expect(new Set(mains)).toEqual(new Set([2.5, 1]))
+  })
+})
+
+/**
+ * STRENGTH-GUIDED-DEVICE-01 (Design Board 2026-11-04) — the gym does not hand you the
+ * machines in our order. Founder, from a real session: "I can't always get access to
+ * machines in the order you prescribe, so you can't move forward and back or see what
+ * they are without quitting."
+ */
+describe('STRENGTH-GUIDED-DEVICE-01 — jump, and the rest that is not a step', () => {
+  const s0 = startGuided(session, T0, {})
+  const firstRest = steps.findIndex(s => s.restAfter_s > 0)
+
+  it('jumps forward and back to any round, clearing the rest', () => {
+    const far = steps.length - 1
+    expect(guidedReduce(s0, steps, { type: 'jump', step: far }, T0)!.step).toBe(far)
+    const back = guidedReduce({ ...s0, step: far }, steps, { type: 'jump', step: 1 }, T0)!
+    expect(back.step).toBe(1)
+    expect(back.restEndsAt).toBeNull()
+    expect(back.restedStep).toBeNull()
+  })
+
+  it('an out-of-range jump is IGNORED, never clamped', () => {
+    // A stale index from a rebuilt session must not land somewhere plausible — the same
+    // reasoning as `resumeGuided` refusing a step the session no longer has.
+    for (const step of [-1, steps.length, steps.length + 50]) {
+      expect(guidedReduce(s0, steps, { type: 'jump', step }, T0)!.step).toBe(s0.step)
+    }
+  })
+
+  it('🔴 skip rest then done ADVANCES — it does not restart the rest', () => {
+    // The loop this pins: both "not rested yet" and "rest skipped" have restEndsAt null,
+    // so without `restedStep` the runner is handed the same rest for ever.
+    const resting = guidedReduce({ ...s0, step: firstRest }, steps, { type: 'next' }, T0)!
+    const skipped = guidedReduce(resting, steps, { type: 'skipRest' }, T0)!
+    expect(guidedReduce(skipped, steps, { type: 'next' }, T0)!.step).toBe(firstRest + 1)
+  })
+
+  it('🔴 letting the rest run out then done also advances', () => {
+    const resting = guidedReduce({ ...s0, step: firstRest }, steps, { type: 'next' }, T0)!
+    const late = T0 + 600_000
+    expect(secondsLeft(resting.restEndsAt, late)).toBe(0)
+    expect(guidedReduce(resting, steps, { type: 'next' }, late)!.step).toBe(firstRest + 1)
+  })
+
+  it('every round is reachable by next alone, and the count did not change', () => {
+    // The step list lost its rest entries, so this is the arm that would catch a round
+    // going missing with them.
+    let s = s0, seen = 0
+    for (let i = 0; i < steps.length * 3 && s.step < steps.length; i++) {
+      const r = guidedReduce(s, steps, { type: 'next' }, T0)
+      if (!r) break
+      if (r.step !== s.step) seen++
+      s = r
+    }
+    expect(seen).toBe(steps.length)
+    expect(steps.length).toBe(parts.reduce((a, p) => a + p.rounds, 0))
   })
 })

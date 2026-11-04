@@ -21,9 +21,33 @@ interface StrengthGuidedSessionProps {
 
 ## Behaviour
 
-- The flow is `lib/strength-bridge/guidedSession.ts` (`guidedSteps`, `guidedReduce`): one work page per round of each
-  part from `sessionParts`, a rest page after each round from the part's own `rest_s`, none inside a no-rest part
-  and none after the session's last round. Rest and timers are END times (`secondsLeft`), right after the phone sleeps.
+- The flow is `lib/strength-bridge/guidedSession.ts` (`guidedSteps`, `guidedReduce`): **one page per round of each
+  part** from `sessionParts`. Rest and timers are END times (`secondsLeft`), right after the phone sleeps.
+
+### Rest is a STATE, not a step (STRENGTH-GUIDED-DEVICE-01, Design Board 2026-11-04)
+
+`GuidedStep` was `{kind:'work'} | {kind:'rest'}`. It is now **only** `{ kind: 'work'; part; round; restAfter_s }` —
+the rest that follows a round lives ON that round, and renders as a band inside its page. The runner never leaves the
+lift they are doing. `restAfter_s` is 0 on the session's last round and throughout a no-rest part (the warm-up),
+exactly as the old `!last` guard was.
+
+| action | effect |
+|---|---|
+| `next` while **not** resting, round has rest | **stays on the step**, starts the countdown, marks `restedStep` |
+| `next` while resting, or after skip | advances; past the last round it ends the session |
+| `skipRest` | **ends the countdown and does NOT advance** — Skip rest and Start round N are two controls on one page |
+| `back` | previous round, clears any rest; from the first page returns `null` (the caller leaves) |
+| `jump` | ⭐ **new** — any round, forward or back. **Out of range is IGNORED, never clamped** |
+
+🔴 **`restedStep` is load-bearing.** Without it, "not rested yet" and "rest skipped" are both `restEndsAt == null`,
+so `skipRest` then `next` restarts the same rest — an infinite loop for the runner. Caught by the round-trip arm in
+`guidedSession.test.ts` before it shipped.
+
+### Contents sheet
+
+A control in the top band says where the runner is (`contentsAt`, e.g. `4 of 8`) and opens a slide-up **sheet** at
+`Z_LAYERS.sheet` — never a modal (CLAUDE.md § UI Principles). One row per part, landing on that part's **first
+round**: the runner is choosing a machine, not a set. Rows are real `<button>`s so Tab reaches them.
 - A move with fewer sets than its part's rounds is shown only in the rounds it is done in.
 - Weight stepper on each loaded main lift: prefilled from today's log, else the suggestion; ± `STRENGTH_GUIDED.stepKg`
   (the engine's `LOAD_STEP_KG_LOWER` / `_UPPER`); tapping the number opens the keypad.

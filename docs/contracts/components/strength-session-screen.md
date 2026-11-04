@@ -36,7 +36,7 @@ interface StrengthSessionScreenProps {
   only when opened**. A superset's rows are joined by the `link` glyph and *"then straight into"*. Under the tiles:
   `STRENGTH_NEW_LIFTS_LINE` once when **every** loaded main lift is new (else the new rows say it), and the no-legs
   line (`noLegsLine`) on a session that lost its heavy legs; the swap day only on the day it replaces.
-- **No zone, pace, RPE or media placeholder.** Actions at the end of content: Mark complete (primary), Skip
+- **No zone, pace, RPE or media placeholder.** Actions in a STICKY bar at the foot of the screen (see below): Mark complete (primary), Skip
   (secondary); once logged a `StatusBadge` and Undo. A failed save shows `InlineError`.
 - Every string from `lib/strength-bridge/display.ts`. Check: `components/dashboard/strengthScreens.markup.test.ts`.
 
@@ -58,6 +58,19 @@ button). Gate: `components/dashboard/strengthLiftLog.markup.test.ts`.
 
 ## Actions with a guided session (STRENGTH-GUIDED-SESSION-01, 2026-10-29)
 
-With `onStart`: **Start session** (the one primary), **Mark complete without starting** (secondary), **Skip** (quiet).
-Without it (another day, a mobility session): Mark complete (primary), Skip (secondary), as before. Gate:
+With `onStart`: **Start session** (the one primary), **Log it as done** (secondary), **Skip** (quiet).
+Without it (another day, a mobility session): Mark complete (primary), Skip (secondary), as before.
+
+### The action bar is STICKY (STRENGTH-GUIDED-DEVICE-01, Design Board 2026-11-04)
+
+`data-strength-actions` carries `position: sticky; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px))`.
+
+**Why:** this screen renders one card per part, so the length above the actions is the runner's data, not a design
+decision. The founder's own session had **nine** parts; `Start session` sat below all nine plus the week's note and
+**he scrolled past without seeing it**. A sticky bar fixes it for any part count.
+
+⚠️ **A header tick was asked for and NOT taken** — it puts an uncancellable state change beside the back arrow, and
+it would have fixed nine cards rather than N. ⚠️ `bottom` is `var(--nav-h)`, not 0, because the tab bar owns the last
+60px. ⚠️ `STICKY-SCROLLER-01`: no ancestor between the bar and the root may gain `overflow`, or it silently pins to
+that instead. The note keeps its place ABOVE the bar, so `STRENGTH-SESSION-TOP-01` is unchanged. Gate:
 `components/dashboard/strengthGuided.markup.test.ts` § the overview starts it.

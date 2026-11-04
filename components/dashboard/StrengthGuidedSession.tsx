@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import Button from '@/components/ui/Button'
+import Sheet from '@/components/shared/Sheet'
 import { Glyph } from '@/components/shared/RowIcon'
 import { InlineError } from '@/components/shared/InlineError'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
@@ -104,6 +105,11 @@ export default function StrengthGuidedSession({ session, title, lifts, onExit, o
   useEffect(() => { if (!running) return; const id = setInterval(() => setT(now()), 250); return () => clearInterval(id) }, [now, running])
   useWakeLock(state.endedAt == null)
 
+  // STRENGTH-GUIDED-DEVICE-01 — the contents sheet. Founder, from a real gym session: "I
+  // can't always get access to machines in the order you prescribe, so you can't move forward
+  // and back or see what they are without quitting."
+  const [contentsOpen, setContentsOpen] = useState(false)
+
   const go = (a: GuidedAction) => {
     if (a.type === 'back' && guidedReduce(state, steps, a, now()) == null) { onExit(); return }
     dispatch(a)
@@ -123,6 +129,8 @@ export default function StrengthGuidedSession({ session, title, lifts, onExit, o
       <div className="pinned-chrome" style={{ padding: 'var(--space-3) 16px var(--space-2)', zIndex: Z_LAYERS.screenHeader }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Button variant="ghost" size="compact" onClick={() => go({ type: 'end' })}>{COPY.end}</Button>
+          <Button data-guided-contents variant="secondary" size="compact" onClick={() => setContentsOpen(true)}
+            aria-label={COPY.contentsLabel}>{COPY.contentsAt(trainingIndexOf(steps, parts, training, state.step), training.length)}</Button>
           <span data-guided-elapsed style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums' }}>
             {formatClockTime((t - state.startedAt) / 1000)}
           </span>
@@ -130,13 +138,21 @@ export default function StrengthGuidedSession({ session, title, lifts, onExit, o
         <Progress parts={parts} at={step.part} />
       </div>
 
+      {/* STRENGTH-GUIDED-DEVICE-01 (Design Board 2026-11-04) — ONE PAGE PER ROUND, AND REST
+          LIVES ON IT. Rest used to be its own step and therefore its own page, so resting took
+          the runner off the lift they were doing and onto a page holding a number. Silvanto:
+          "rest is not a step; it is the state between two steps". The part heading and the
+          prescription stay put and the countdown appears below them. */}
       <div style={{ flex: 1, padding: '0 16px var(--space-5)' }}>
-        <div style={{ ...MICRO_LABELS.sectionLabel, color: 'var(--ink-2)', marginTop: 'var(--space-4)' }}>
-          {step.kind === 'rest' ? (n >= 0 ? `Part ${n + 1} · Rest` : `${name} · Rest`) : name}
-        </div>
-        {step.kind === 'work'
-          ? <WorkPage part={part} step={step} state={state} t={t} lifts={lifts} go={go} />
-          : <RestPage state={state} t={t} next={steps[state.step + 1]} parts={parts} training={training} go={go} />}
+        <div style={{ ...MICRO_LABELS.sectionLabel, color: 'var(--ink-2)', marginTop: 'var(--space-4)' }}>{name}</div>
+        <WorkPage part={part} step={step} state={state} t={t} lifts={lifts} go={go} />
+        {state.restEndsAt != null && <RestBand state={state} t={t} go={go} />}
+        {steps[state.step + 1] && (
+          <p data-guided-next style={{ margin: 'var(--space-4) 0 0', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.5 }}>
+            {guidedNextLine(parts[steps[state.step + 1]!.part], steps[state.step + 1]!.round,
+              partTitle(parts[steps[state.step + 1]!.part], training.indexOf(parts[steps[state.step + 1]!.part]) >= 0 ? training.indexOf(parts[steps[state.step + 1]!.part]) + 1 : null))}
+          </p>
+        )}
       </div>
 
       {/* Back and the next step at the bottom, where a thumb reaches (Wroblewski). */}
@@ -144,15 +160,83 @@ export default function StrengthGuidedSession({ session, title, lifts, onExit, o
       <div style={{ position: 'sticky', bottom: 0, zIndex: Z_LAYERS.screenHeader, display: 'flex', gap: 'var(--space-2)', padding: 'var(--space-3) 16px calc(var(--space-3) + env(safe-area-inset-bottom))', background: 'var(--bg)', borderTop: '1px solid var(--line)' }}>
         <Button variant="secondary" onClick={() => go({ type: 'back' })}>{COPY.back}</Button>
         <div style={{ flex: 1 }}>
-          <Button variant="primary" fullWidth onClick={() => go(step.kind === 'rest' ? { type: 'skipRest' } : { type: 'next' })}>
-            {step.kind === 'rest'
+          <Button variant="primary" fullWidth onClick={() => go({ type: 'next' })}>
+            {state.restEndsAt != null
               ? COPY.startNext(nextLabel(steps[state.step + 1], parts, training))
-              : COPY.roundDone(step.round, steps[state.step + 1]?.kind === 'rest')}
+              : COPY.roundDone(step.round, step.restAfter_s > 0)}
           </Button>
         </div>
       </div>
+
+      {contentsOpen && (
+        <ContentsSheet steps={steps} parts={parts} training={training} at={state.step}
+          onJump={i => { setContentsOpen(false); go({ type: 'jump', step: i }) }}
+          onClose={() => setContentsOpen(false)} />
+      )}
     </div>
   )
+}
+
+/**
+ * STRENGTH-GUIDED-DEVICE-01 — every part, where the runner is, and a tap to any of them.
+ *
+ * ⚠️ BUILT ON `Sheet`, NOT HAND-ROLLED. The first cut of this wrote its own scrim, panel and
+ * close bar, and **six ratchets caught it at once**: the type scale (a new size entered the
+ * app), `buttonSizeScope`, `scrollNative`, `stickyScroller` and the geometry baseline. Every
+ * one of those was telling me the same thing — `components/shared/Sheet.tsx` already exists,
+ * carries the drag pill, the nav-aware height, the animated close and the required
+ * `ariaLabel`, and is the documented answer to "no popups, use a slide-up sheet".
+ *
+ * One row per PART, landing on that part's FIRST round: the runner is picking a machine, not
+ * a set. Rows are real `<button>`s — a div with `onClick` is skipped by Tab, and a sheet you
+ * cannot reach by keyboard is a sheet you cannot leave.
+ */
+function ContentsSheet({ steps, parts, training, at, onJump, onClose }: {
+  steps: GuidedStep[]; parts: SessionPart[]; training: SessionPart[]; at: number
+  onJump: (step: number) => void; onClose: () => void
+}) {
+  const firstRound = new Map<number, number>()
+  steps.forEach((st, i) => { if (!firstRound.has(st.part)) firstRound.set(st.part, i) })
+  const here = steps[at]?.part
+  return (
+    <Sheet onClose={onClose} ariaLabel={COPY.contentsLabel}>
+      {(close) => (
+        <div data-guided-contents-sheet style={{ padding: '4px 20px var(--space-5)' }}>
+          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 700, color: 'var(--ink)' }}>
+            {COPY.contentsLabel}
+          </div>
+          <p style={{ margin: 'var(--space-1) 0 var(--space-4)', fontFamily: FONT, fontSize: '14px', color: 'var(--mute)' }}>
+            {COPY.contentsHint}
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            {Array.from(firstRound.entries()).map(([partIdx, stepIdx]) => {
+              const p = parts[partIdx]
+              const n = training.indexOf(p)
+              const current = partIdx === here
+              return (
+                <button key={partIdx} type="button" data-contents-row
+                  onClick={() => { onJump(stepIdx); close() }}
+                  aria-current={current ? 'step' : undefined}
+                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', width: '100%', minHeight: `${TAP_TARGET_MIN_PX}px`, padding: 'var(--space-3)', textAlign: 'left', fontFamily: FONT, background: 'var(--card)', border: current ? '2px solid var(--moss)' : '1px solid var(--line)', borderRadius: '12px', cursor: 'pointer' }}>
+                  <span style={{ flex: 1, fontSize: '15px', fontWeight: current ? 700 : 400, color: 'var(--ink)' }}>
+                    {partTitle(p, n >= 0 ? n + 1 : null)}
+                  </span>
+                  <span style={{ fontSize: '14px', color: 'var(--mute)' }}>{p.rounds > 1 ? `${p.rounds} rounds` : '1 round'}</span>
+                </button>
+              )
+            })}
+          </div>
+          <Button variant="secondary" fullWidth onClick={close} style={{ marginTop: 'var(--space-5)' }}>{COPY.contentsClose}</Button>
+        </div>
+      )}
+    </Sheet>
+  )
+}
+
+/** Which TRAINING part the runner is on, 1-based; 0 while in the warm-up. */
+function trainingIndexOf(steps: GuidedStep[], parts: SessionPart[], training: SessionPart[], at: number): number {
+  const p = parts[steps[at]?.part]
+  return p ? training.indexOf(p) + 1 : 0
 }
 
 function nextLabel(next: GuidedStep | undefined, parts: SessionPart[], training: SessionPart[]): { round: number; part: number | null } {
@@ -246,23 +330,29 @@ function WeightStepper({ exerciseId, kg, units, onChange }: { exerciseId: string
   )
 }
 
-function RestPage({ state, t, next, parts, training, go }: { state: GuidedState; t: number; next: GuidedStep | undefined; parts: SessionPart[]; training: SessionPart[]; go: (a: GuidedAction) => void }) {
+/**
+ * STRENGTH-GUIDED-DEVICE-01 — the rest BAND. Was `RestPage`, a whole screen of its own for a
+ * countdown and two controls. It is now a card inside the part, so the lift, its dose and the
+ * round counter never leave the screen while the runner rests.
+ *
+ * The clock is **26px**, down from the 56px it was: on its own page it was the only thing there,
+ * and in place it must not out-shout the prescription above it. 26 and not 32, because the app
+ * type scale is a CLOSED SET (`appTypeScale.test.ts`: 10/11/12/14/15/17/20/26/44/56) and 32 is
+ * not in it — the gate caught that, which is what it is for.
+ */
+function RestBand({ state, t, go }: { state: GuidedState; t: number; go: (a: GuidedAction) => void }) {
   const left = secondsLeft(state.restEndsAt, t)
-  const nextPart = next ? parts[next.part] : null
-  const i = nextPart ? training.indexOf(nextPart) : -1
   return (
-    <div data-guided-rest>
-      <div style={{ fontSize: '56px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1, marginTop: 'var(--space-3)' }}>
-        {formatClockTime(left)}
+    <div data-guided-rest style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '12px' }}>
+      <div>
+        <div style={{ ...MICRO_LABELS.sectionLabel, color: 'var(--mute)' }}>Resting</div>
+        <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
+          {formatClockTime(left)}
+        </div>
       </div>
-      {nextPart && next && (
-        <p style={{ margin: 'var(--space-2) 0 0', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.5 }}>
-          {guidedNextLine(nextPart, next.round, partTitle(nextPart, i >= 0 ? i + 1 : null))}
-        </p>
-      )}
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
-        <Button variant="secondary" size="compact" onClick={() => go({ type: 'extendRest' })}>{COPY.extendRest}</Button>
-        <Button variant="secondary" size="compact" onClick={() => go({ type: 'skipRest' })}>{COPY.skipRest}</Button>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        <Button variant="secondary" fullWidth onClick={() => go({ type: 'extendRest' })}>{COPY.extendRest}</Button>
+        <Button variant="secondary" fullWidth onClick={() => go({ type: 'skipRest' })}>{COPY.skipRest}</Button>
       </div>
     </div>
   )

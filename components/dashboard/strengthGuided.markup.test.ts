@@ -65,12 +65,13 @@ describe('the guided session', () => {
     expect(count(html, 'data-superset-link')).toBe(p.items.length - 1)
     expect(count(html, 'data-weight-stepper')).toBe(p.items.filter(i => isLoadedLift(i.exercise_id)).length)
     expect(html).toContain('42.5')
-    expect(html).toContain(COPY.roundDone(steps[at].round, steps[at + 1]?.kind === 'rest'))
+    expect(html).toContain(COPY.roundDone(steps[at].round, steps[at].restAfter_s > 0))
     for (const i of p.items) expect(html).toContain(exerciseName(i.exercise_id).replace(/'/g, '&#x27;'))
   })
-  it('🔴 a rest page counts down from the part\'s own rest and names what comes next', async () => {
-    const at = stepOf(i => steps[i].kind === 'rest')
-    const rest = steps[at] as { rest_s: number }
+  // STRENGTH-GUIDED-DEVICE-01 — rest is a BAND inside the round's page now, not a page.
+  it('🔴 the rest band counts down from the part\'s own rest and names what comes next', async () => {
+    const at = stepOf(i => steps[i].restAfter_s > 0)
+    const rest = { rest_s: steps[at].restAfter_s }
     const html = await page({ step: at, restEndsAt: T0 + 5 * 60_000 + rest.rest_s * 1000 })
     expect(html).toContain('data-guided-rest')
     expect(html).toContain(`>${formatClockTime(rest.rest_s)}<`)
@@ -142,5 +143,43 @@ describe('the overview starts it', () => {
     const src = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
     expect(src).toMatch(/if \(screen === 'strength-guided'\) return null/)
     expect(src).toMatch(/onStart=\{activeStrength\.date === isoLocalDate\(new Date\(\)\)/)
+  })
+})
+
+/**
+ * STRENGTH-GUIDED-DEVICE-01 (Design Board 2026-11-04) — the three device findings.
+ * Every one of these came off the founder's own phone, the first time this ran on one.
+ */
+describe('STRENGTH-GUIDED-DEVICE-01 — the guided session on a device', () => {
+  const firstRest = steps.findIndex(s => s.restAfter_s > 0)
+
+  it('🔴 the rest band renders INSIDE the round, not instead of it', async () => {
+    const html = await page({ step: firstRest, restEndsAt: T0 + 5 * 60_000 + steps[firstRest].restAfter_s * 1000 })
+    expect(html).toContain('data-guided-rest')
+    // THE RULING: the lift, its dose and the weight stepper are still on the page. On the old
+    // model this page replaced them with a number.
+    expect(html).toContain('data-weight-stepper')
+    const p = parts[steps[firstRest].part]
+    for (const i of p.items) expect(html).toContain(exerciseName(i.exercise_id).replace(/'/g, '&#x27;'))
+  })
+
+  it('the contents control says where you are, and the sheet is shut until asked', async () => {
+    const html = await page({ step: firstRest })
+    expect(html).toContain('data-guided-contents')
+    expect(html).not.toContain('data-guided-contents-sheet')   // a sheet is opened, never pre-rendered open
+  })
+
+  it('🔴 the actions on the session screen are STICKY, not buried under the parts', async () => {
+    // The founder scrolled past Start session because it sat below nine part cards.
+    const src = readFileSync('components/dashboard/StrengthSessionScreen.tsx', 'utf8')
+    const block = src.slice(src.indexOf('data-strength-actions'), src.indexOf('data-strength-actions') + 400)
+    expect(block).toMatch(/position:\s*'sticky'/)
+    // Above the tab bar, which owns the last 60px — not pinned to 0 and painted under it.
+    expect(block).toContain('var(--nav-h)')
+  })
+
+  it('the label is a button label, not a sentence', async () => {
+    expect(COPY.markWithoutStarting).toBe('Log it as done')
+    expect(COPY.markWithoutStarting.split(' ').length).toBeLessThanOrEqual(5)
   })
 })

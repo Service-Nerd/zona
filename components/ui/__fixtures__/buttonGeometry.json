@@ -783,7 +783,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 47,
+    "height": 44,
     "width": "auto"
   },
   "components/dashboard/StrengthGuidedSession.tsx#Button3": {
@@ -792,17 +792,25 @@
     "font": null,
     "radius": null,
     "height": 47,
-    "width": "full"
+    "width": "auto"
   },
   "components/dashboard/StrengthGuidedSession.tsx#Button4": {
     "floor": 44,
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 44,
-    "width": "auto"
+    "height": 47,
+    "width": "full"
   },
-  "components/dashboard/StrengthGuidedSession.tsx#Button[lighter]5": {
+  "components/dashboard/StrengthGuidedSession.tsx#Button5": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button6": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -810,7 +818,7 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/StrengthGuidedSession.tsx#Button[heavier]6": {
+  "components/dashboard/StrengthGuidedSession.tsx#Button[lighter]7": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -818,15 +826,7 @@
     "height": 44,
     "width": "auto"
   },
-  "components/dashboard/StrengthGuidedSession.tsx#Button7": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "components/dashboard/StrengthGuidedSession.tsx#Button8": {
+  "components/dashboard/StrengthGuidedSession.tsx#Button[heavier]8": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -843,6 +843,22 @@
     "width": "full"
   },
   "components/dashboard/StrengthGuidedSession.tsx#Button10": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button11": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/StrengthGuidedSession.tsx#Button12": {
     "floor": 44,
     "padY": null,
     "font": null,

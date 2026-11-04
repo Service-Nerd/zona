@@ -226,6 +226,24 @@ header band breaks *Type accent, not flood*): colour goes into the trace and sil
 2 px top rule. **Collins lost**, challenge recorded. Declined: medals, route art, the carousel. Treadmill toggle routed to
 the Coaching Board. Not built. Sitting: `docs/decisions/session-screens-runna-2026-10-21.md`.
 
+## 2026-11-04 — STRENGTH-GUIDED-DEVICE-01 · SHIP WITH AMENDMENT ×3, INSUFFICIENT EVIDENCE ×1. The first device run of the guided session
+
+Four findings off the founder's own phone. **(1) Actions buried** below nine part cards: a **sticky
+action bar**, NOT the header tick he asked for — a tick puts an uncancellable state change beside the
+back arrow (Wroblewski), and the bar fixes any part count rather than nine. `Mark complete without
+starting` → **`Log it as done`** (a sentence is not a button label). **(2) Rest owned a screen**: it is
+now a band inside the round, an owner change in `guidedSteps()` where `{kind:'rest'}` was a sibling of
+`{kind:'work'}` (Silvanto: *"rest is not a step, it is the state between two steps"*). **(3) No way to
+move or see ahead**: a contents sheet with jump-to-part; **a gym is a contended-resource environment
+and we modelled it as a queue** (Sierra). **(4) 2–4 exercises per screen: INSUFFICIENT EVIDENCE** —
+settle the part count first, since the parked pairing fix drops mean parts 5.99 → 4.93 and may remove
+the problem. **Collins lost on sequencing** (he wanted the part count first; both ship, in order) and
+**raised the finding nobody asked for**: nine parts is a taxonomy the engine does not make — routed to
+the Coaching Board, which ruled the carries merge CORRECT and it is **filed, not built**
+(`STRENGTH-CARRY-PATTERN-01`: there is no `carry` pattern, so the merge can only be written as a label
+match). Mockups approved by the founder before build. Pattern: `ui-patterns.md` § Guided strength
+session. Sitting: `docs/decisions/design-2026-11-04-strength-guided-device.md`.
+
 ## 2026-10-29 — STRENGTH-SESSION-TOP-01 · SHIP WITH AMENDMENT. The weekly note goes to the bottom of the session
 
 From the founder's screenshot: **242 pt of prose (30% of the screen) between the tiles and the work, Part 1 behind the
