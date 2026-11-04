@@ -50,6 +50,7 @@ import ExternalLink from '@/components/shared/ExternalLink'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, PlanReadError, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate, readPlanJson } from '@/lib/plan'
 import { resolveEffectiveDay, SESSION_OVERRIDE_COLUMNS } from '@/lib/plan/effectiveSessions'
+import { sessionDisplayLabel } from '@/lib/plan/catalogueLink'
 import { easyPaceAsCeiling, splitPaceQualifier } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { resolveMaxHr } from '@/lib/plan/maxHrGuard'
@@ -938,7 +939,7 @@ export default function DashboardClient() {
           type:       s.type as string,
           day:        DAY_FULL[day] ?? day,
           distanceKm: s.distance_km ?? null,
-          label:      s.label ?? null,
+          label:      sessionDisplayLabel(s) || null,  // SESSION-LABEL-STALE-01
         }
       }
     }
@@ -1816,6 +1817,12 @@ export default function DashboardClient() {
         if (data?.last_name) setLastName(data.last_name)
         if (data?.email) setProfileEmail(data.email)
 
+        // PROFILE-NAME-WRITE-01 — DISPLAY ONLY. The PERSIST half of this moved to
+        // `POST /api/me/today-heartbeat`, which is authed, server-side and cannot be
+        // skipped by an early return above this line or declined by RLS on native.
+        // Both writes here were `void ...upsert(...)`: the `{ error }` was discarded,
+        // so they could fail on every load in silence, and measurably did — 44 of 46
+        // users with a name in auth metadata had none in `user_settings`.
         if (!data?.first_name && !data?.last_name) {
           const fullName = (user.user_metadata?.full_name || user.user_metadata?.name || '') as string
           if (fullName) {
@@ -1824,15 +1831,11 @@ export default function DashboardClient() {
             const ln = parts.slice(1).join(' ') || ''
             if (fn) setFirstName(fn)
             if (ln) setLastName(ln)
-            void supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, updated_at: new Date().toISOString() })
           }
         }
         if (!data?.email) {
           const authEmail = user.email || (user.user_metadata?.email as string) || ''
-          if (authEmail) {
-            setProfileEmail(authEmail)
-            void supabase.from('user_settings').upsert({ id: user.id, email: authEmail, updated_at: new Date().toISOString() })
-          }
+          if (authEmail) setProfileEmail(authEmail)
         }
 
 
@@ -1840,7 +1843,11 @@ export default function DashboardClient() {
         let trialStartedAt: string | null = data?.trial_started_at ?? null
         if (!trialStartedAt) {
           trialStartedAt = new Date().toISOString()
+          // PROFILE-NAME-WRITE-01 sweep — still non-blocking, no longer SILENT. Three writes on
+          // this table were `void`-swallowed; this one starts the trial, so a failure that says
+          // nothing is the worst of them.
           void supabase.from('user_settings').upsert({ id: user.id, trial_started_at: trialStartedAt, updated_at: new Date().toISOString() })
+            .then(({ error }) => { if (error) console.error('[trial_started_at] write failed', error.message) })
         }
 
         // Paid access — resolved by `resolveTier`, the SAME pure function
@@ -1919,6 +1926,7 @@ export default function DashboardClient() {
           const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
           if (tz && tz !== 'UTC') {
             void supabase.from('user_settings').update({ timezone: tz }).eq('id', user.id)
+              .then(({ error }) => { if (error) console.error('[timezone] write failed', error.message) })
           }
         }
 
@@ -2955,6 +2963,7 @@ export default function DashboardClient() {
           try {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) void supabase.from('user_settings').upsert({ id: user.id, orientation_seen: true, updated_at: new Date().toISOString() })
+              .then(({ error }) => { if (error) console.error('[orientation_seen] write failed', error.message) })
           } catch {}
         }}
       />
@@ -4329,7 +4338,7 @@ function MissedSessionSheet({
           Missed session
         </p>
         <p style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>
-          {session.label ?? 'Session'} — {dayLabel}
+          {sessionDisplayLabel(session) || 'Session'} — {dayLabel}
         </p>
         <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginBottom: 24 }}>
           Looks like {dayLabel}&apos;s session wasn&apos;t logged. What happened?

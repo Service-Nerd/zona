@@ -77,5 +77,16 @@ export async function upsertCompletion(
   }
 
   const { error } = await supabase.rpc('upsert_session_completion', { p: payload })
-  return { error: error ? new Error(error.message) : null }
+  if (!error) return { error: null }
+
+  // COMPLETION-ACTIVITY-DUPE-01 — one run satisfies one session. The live partial
+  // unique indexes (migration 20261104) make a second link a 23505, which arrives
+  // here as Postgres's own text. Translated once, at the owner, so a caller can say
+  // something true to the runner instead of showing a constraint name.
+  const dupe = error.code === '23505'
+    && /live_hk_uuid_key|live_strava_id_key/.test(`${error.message} ${error.details ?? ''}`)
+  if (dupe) {
+    return { error: new Error('That run is already linked to another session.') }
+  }
+  return { error: new Error(error.message) }
 }

@@ -40,3 +40,47 @@ export function catalogueRowFor(
   if (!session.label) return null
   return catalogue.find(r => r.name === session.label) ?? null
 }
+
+/**
+ * SESSION-LABEL-STALE-01 (2026-11-04) — the display name for a session, when the
+ * stored `label` has gone generic.
+ *
+ * ── WHY ────────────────────────────────────────────────────────────────────
+ * Measured on production: one live plan of 40 carries `label: "Quality"` on six
+ * catalogue-stamped quality sessions. The runner's next run was a threshold
+ * pyramid — `catalogue_id: 'threshold_pyramid'`, whose row is named "Pyramid" —
+ * and Today's next-run card said **"Quality"**, the bare type word.
+ *
+ * NO CURRENT CODE PATH WRITES THAT LABEL. `fallbackLabel` is 'Tempo run' /
+ * 'Cruise intervals' / 'Tempo run — short', and every catalogue branch uses
+ * `catalogueRow.name`. It is a STORED plan from an older engine, which is the
+ * "a fix to the engine reaches no existing plan" class: regenerating is not an
+ * option (it would rewrite a runner's live block), so the repair belongs at
+ * display, where the stamp is already authoritative.
+ *
+ * ── WHY IT IS NARROW, DELIBERATELY ─────────────────────────────────────────
+ * It replaces a label ONLY when that label is the session's own TYPE restated —
+ * "Quality" / "Quality session" / "Easy run" for `type: 'quality' | 'easy'` —
+ * and never otherwise. `'Easy run — Zone 2'`, `'Tempo run'` and every catalogue
+ * name the engine writes today are left exactly alone. A wider "looks generic"
+ * test would silently re-title thousands of correct sessions, which is a bigger
+ * change than the defect it fixes.
+ *
+ * Returns the stored label unchanged when there is no catalogue row to fall back
+ * to — a generic label is still better than an empty one.
+ */
+export function sessionDisplayLabel(
+  session: (LinkableSession & { type?: string | null }) | null | undefined,
+  catalogue: SessionCatalogueRow[] = V1_SESSION_CATALOGUE,
+): string {
+  const label = (session?.label ?? '').trim()
+  const row = catalogueRowFor(session, catalogue)
+  if (!row) return label
+
+  const type = String(session?.type ?? '').trim().toLowerCase()
+  if (!type) return label || row.name
+
+  const l = label.toLowerCase()
+  const restatesType = l === '' || l === type || l === `${type} session` || l === `${type} run`
+  return restatesType ? row.name : label
+}

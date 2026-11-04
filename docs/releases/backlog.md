@@ -2958,6 +2958,83 @@ ungate one of three triggers · drop the weekly-report gate). ⚠️ Source-shap
 such: the route needs auth, a tier lookup and a service-role client, none of which stand up under
 `environment: 'node'`.
 
+## ✅ SHIPPED 2026-11-04 — one runner's screenshot, four defects (`NUDGE-EFFECTIVE-DAY-01` + 3)
+
+**Input:** a production screenshot from a real runner, plus his own report: *"I changed a Tuesday run
+to a Monday, ran it, and the card still says tell Kit how Tuesday's run felt."* Everything below was
+measured against the live database before any code was read.
+
+### ✅ `NUDGE-EFFECTIVE-DAY-01` — the reflect prompt names the day the runner RAN ⚙️ **NO BOARD** *(defect)*
+
+`session_overrides` week 7 `tue → mon`; `session_completions` week 7 `session_day 'tue'`, 6.7 km,
+HealthKit uuid, `rpe` null at the time of the screenshot (the 4 was written **2026-11-04 18:05**, a day
+later — so the prompt was RIGHT to fire and only its label was wrong). Completions are keyed by
+`original_day`, which is correct and is **not** the day the runner ran; the nudge named the day by
+**array position** and never consulted the overrides, while the week strip **60 lines below it in the
+same file** calls `resolveEffectiveDay` and dotted the Monday correctly.
+
+⚠️ **The label was the visible half and the smaller one.** `sessionDate` was the SCHEDULED date too, so
+`sessionDate > now` **suppressed the prompt entirely** until the original day arrived: a run moved
+earlier could not be rated on the evening it was run, and `sat → mon` stayed hidden for five days. The
+7-day window and the "most recent first" sort read the same wrong date.
+
+Resolution extracted to `lib/plan/rpeNudges.ts` — **not tidiness: nothing inside a `useMemo` is reachable
+by a test here** (`vitest.config.ts` is `environment: 'node'`), which is why this shipped under a green
+suite. `rpeNudges.test.ts`, 8 arms; **4 go red** when the old behaviour is restored.
+
+### ✅ `SESSION-LABEL-STALE-01` — a stored label that only restates the type yields to the catalogue row ⚙️ **NO BOARD** *(display)*
+
+His next run was `catalogue_id: 'threshold_pyramid'` — catalogue name **"Pyramid"** — carrying
+`label: "Quality"`, and Today rendered the stored label. **No current engine path writes it**, so this is
+the *"a fix to the engine reaches no existing plan"* class; regenerating would rewrite a live block, so the
+repair is at display where ADR-018's stamp is already authoritative. Measured on **all 40 live plans: 6
+sessions, 1 plan.** New owner `sessionDisplayLabel()`, 7 render sites. ⚠️ **Narrow on purpose** — it fires only
+when the label restates the session's own TYPE; a wider "looks generic" rule would silently re-title
+thousands of correct sessions.
+
+🔻 **Residual, filed:** `PLAN-UNSTAMPED-QUALITY-01` — **19 quality sessions across live plans carry no
+`catalogue_id` at all**, so `sessionDisplayLabel` cannot help them and ADR-018's rep-structure join falls to
+the legacy label match. Not measured further. ⚙️ **NO BOARD** to measure.
+
+### ✅ `COMPLETION-ACTIVITY-DUPE-01` — one run satisfies one session ⚙️ **NO BOARD** *(data integrity)*
+
+On 156 live completions across the 8 runners with any linked activity: **2 activities each linked to 2
+sessions**, both on this runner (`w2 tue+wed`, `w6 fri+sat`). Volume, the acute:chronic ratio and every
+"load from the last few sessions" judgement count those runs twice, and **no screen shows a contradiction**.
+Partial unique indexes on `(user_id, apple_health_uuid)` and `(user_id, strava_activity_id)` WHERE live —
+a constraint, not a promise in application code. The surviving row per pair is the one whose day **matches
+the activity's own `start_date`**, derived per pair: "keep the earliest" would have been wrong for one of
+the two.
+
+🔴 **MIGRATION `20261104_completion_activity_unique.sql` IS WRITTEN AND NOT APPLIED.** Production DDL is the
+founder's; it supersedes two rows and creates two indexes, and the index creation FAILS if the two rows are
+not superseded first, so the file must be run whole and in order.
+
+### ✅ `PROFILE-NAME-WRITE-01` — the back-fill writes, and says so when it does not ⚙️ **NO BOARD** *(defect)*
+
+**Of 46 users whose auth metadata carries a `full_name`, 44 had an empty `user_settings.first_name`. Only 3
+rows of 52 have ever held one, and those look hand-typed in Profile.** The back-fill was
+`void supabase.from('user_settings').upsert(...)` — the `{ error }` discarded, so it could fail on every load
+in silence. **Invisible to the runner**, because the name is also set in React state: the greeting reads
+*"Good evening, Duncan"* off metadata while the table it is meant to fill stays null. What breaks is every
+**server** surface, which can only read the table — daily push, trial emails, coach prompts.
+
+Moved into `POST /api/me/today-heartbeat`: authed, server-side, rides the Bearer token (**the cookie client's
+`auth.uid()` is NULL on native**), and fills only EMPTY columns so a runner's own Profile edit always wins.
+
+⚠️ **The sweep arm then found THREE more of the identical swallow on the same table** — `trial_started_at`,
+`timezone`, `orientation_seen` — none of them part of the report, all now surfacing their error. The arm is
+scoped to the TABLE rather than to the two name columns, which is the only reason it found them.
+
+> ⚠️ **Two of my own checks were wrong before they were right, both recorded classes.** The first grepped whole
+> files and fired on **this module's own comment quoting the old code** (`HOOK-RGBA-COMMENTS-01` again — a
+> colour inside a comment is prose). The second was line-scoped and reported the three writes as unfixed
+> *after* they were fixed, because the error handler chains onto the next line: **bound the region on the
+> statement, never the line.** And `lib/hollowTestShapes.test.ts` caught a bare `toContain('first_name')` of
+> mine — the repo's own gate finding the hollow shape in the test written to close a silent bug.
+
+---
+
 ## ✅ SHIPPED 2026-10-10 — ops digest triage (3 of 3 built; 3 residuals filed below)
 
 Both from the 2026-10-10 digest, both with a full `/zona-debug` RCA behind them. 🔴 **Three

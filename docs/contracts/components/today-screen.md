@@ -64,6 +64,8 @@ interface TodayScreenProps {
   runAnalysisReady?: boolean
   onOpenCoach?: () => void
   onOpenPostRun?: (data: PostRunData) => void
+  // NUDGE-EFFECTIVE-DAY-01 — see § "The missing-RPE nudge" below: `session.key` is the
+  // ORIGINAL day (the completion key) and `session.day` is the day the runner RAN it.
   unreadNotifications?: number
   onOpenNotifications?: () => void
   showRacePrompt?: boolean
@@ -214,3 +216,32 @@ local map. `data-week-identity` carries the kind (`race` | `deload` | `taper` | 
 `data-week-mark="deload"` to the hairline (`--s-recov`) and inks the label. In a deload week the rule coach note is
 `DELOAD_WEEK_NOTE_WITH_STRENGTH` when `strength.sessionsByDate` has a date inside the current week, else
 `DELOAD_WEEK_NOTE`. The coach card stays paid/trial (`hasPaidAccess`), so a free runner sees the name and the mark only.
+
+---
+
+## The missing-RPE nudge (`NUDGE-EFFECTIVE-DAY-01`, 2026-11-04)
+
+Resolution is **not** in this component. It lives in `lib/plan/rpeNudges.ts → missingRpeNudges()`, a pure
+function, because `vitest.config.ts` is `environment: 'node'` and nothing inside a `useMemo` here is
+reachable by a test — which is why the defect below shipped under a green suite.
+
+**Two different days, and conflating them is the bug.**
+
+| Field | Which day | Used for |
+|---|---|---|
+| `dayKey` | the **original** (planned) day | the `session_completions` key, and `session.key` passed to `onOpenPostRun` so PostRunScreen writes back to the right row |
+| `dayName` | the **effective** day, after the runner's moves | display only — *"Tell Kit how Monday's 4.2mi felt"* |
+| `sessionDate` | the **effective** day's date | the 7-day window, the `> now` guard, and the most-recent-first sort |
+
+Completions are keyed by `original_day` (`effectiveSessions.ts`) — correct, and **not** the day the runner
+ran. The old code named the day by array position over the raw plan keys and never consulted the
+overrides, so a session moved `tue → mon` and completed on the Monday was announced as *"Tuesday's"*,
+while the week strip in the same component resolved it correctly.
+
+⚠️ **`sessionDate` was the scheduled date too, and that half was worse than the label.** The
+`sessionDate > now` guard **suppressed the prompt entirely** until the planned day came round: a run moved
+earlier could not be rated on the evening it was run, and `sat → mon` stayed hidden for five days.
+
+**Unchanged guards** — a fix here must not widen what prompts: `status === 'complete'`, `rpe == null`, a
+linked activity (`strava_activity_id` or `apple_health_uuid`), inside `NUDGE_WINDOW_DAYS` (7), capped at
+`NUDGE_MAX` (3), paid only.

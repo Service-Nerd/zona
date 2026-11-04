@@ -18,6 +18,7 @@ import { BRAND } from '@/lib/brand'
 import { daysUntilRace, formatDate, formatRaceCountdown } from '@/lib/format'
 import { parseLocalDate } from '@/lib/plan'
 import { getSessionColor, getSessionLabel } from '@/lib/session-types'
+import { sessionDisplayLabel } from '@/lib/plan/catalogueLink'
 import { onHue } from '@/lib/ui/hueText'
 import type { Plan } from '@/types/plan'
 
@@ -48,7 +49,7 @@ export default function OrientationScreen({ plan, firstName, zone2Ceiling, resti
           // `?? ''` — the owner returns null on an unparseable date where a
           // bare toLocaleDateString rendered the string "Invalid Date".
           day: formatDate(d, 'weekday-long') ?? '',
-          label: s.label || getSessionLabel(s),
+          label: sessionDisplayLabel(s) || getSessionLabel(s),  // SESSION-LABEL-STALE-01
           type: s.type,
         }
         break

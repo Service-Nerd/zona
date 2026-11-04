@@ -6,7 +6,9 @@
 // ⚠️ Bodies UNCHANGED. Edit in a separate commit so the move stays a move.
 
 import { weekIdentity, DELOAD_WEEK_NOTE, DELOAD_WEEK_NOTE_WITH_STRENGTH } from '@/lib/coaching/weekVoice'
-import { resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
+import { DAY_KEYS, resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
+import { sessionDisplayLabel } from '@/lib/plan/catalogueLink'
+import { missingRpeNudges as missingRpeNudgesOf } from '@/lib/plan/rpeNudges'
 import { SLOT_LABEL, doubleAdvice } from '@/lib/plan/doubles'
 import { isEasedForRecovery } from '@/lib/ui/easedMark'
 import { readingLine, runLine, strengthLine, overrideLabel, EASE_LABEL, type ReadingDetail, type ReadingFlags } from '@/lib/ui/recoveryCardCopy'
@@ -801,46 +803,17 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
   // webhook (strava_activity_id set, status='complete') but missing RPE in the
   // last 7 days. Tap → PostRunScreen with the analysis pre-loaded. Capped at
   // 3 to avoid burying Today.
-  const missingRpeNudges = useMemo(() => {
-    if (!plan?.weeks?.length) return []
-    const now    = new Date()
-    const cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-    const days   = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-    const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-    type Nudge = {
-      session: any; weekN: number; dayKey: string
-      dayName: string; distKm: number | null
-      stravaActivityId: number | null; stravaActivityName: string | null
-      sessionDate: Date
-    }
-    const result: Nudge[] = []
-    for (const week of plan.weeks) {
-      const weekStart = parseLocalDate((week as any).date)
-      days.forEach((dayKey, idx) => {
-        const completion = allCompletions[week.n]?.[dayKey]
-        if (!completion) return
-        if (completion.status !== 'complete') return
-        if (completion.rpe != null) return
-        if (!completion.strava_activity_id && !completion.apple_health_uuid) return
-        const sessionDate = computeSessionDate(weekStart, dayKey)
-        if (sessionDate < cutoff || sessionDate > now) return
-        const session = (week.sessions as Record<string, any> | undefined)?.[dayKey]
-        if (!session) return
-        result.push({
-          session,
-          weekN:               week.n,
-          dayKey,
-          dayName:             dayNames[idx],
-          distKm:              completion.strava_activity_km ?? null,
-          stravaActivityId:    completion.strava_activity_id ?? null,
-          stravaActivityName:  completion.strava_activity_name ?? null,
-          sessionDate,
-        })
-      })
-    }
-    // Most recent first, max 3
-    return result.sort((a, b) => b.sessionDate.getTime() - a.sessionDate.getTime()).slice(0, 3)
-  }, [plan, allCompletions])
+  // NUDGE-EFFECTIVE-DAY-01 — resolution lives in `lib/plan/rpeNudges.ts`, a pure owner, because
+  // nothing here is reachable by a test (`vitest.config.ts` is `environment: 'node'`) and this
+  // defect shipped to a real runner under a green suite for exactly that reason.
+  const missingRpeNudges = useMemo(() => missingRpeNudgesOf({
+    weeks:             plan?.weeks as any,
+    completionsByWeek: allCompletions as any,
+    overrides:         allOverrides,
+    now:               new Date(),
+    weekStartOf:       w => parseLocalDate((w as any).date),
+    dateOf:            computeSessionDate,
+  }), [plan, allCompletions, allOverrides])
 
   // Derive this week's overrides from shared prop — no fetch needed
   // SESSION-SLOTS-01 — the rows themselves, not an original→new map: a map has nowhere to keep
@@ -911,7 +884,9 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
       key: originalDay,
       displayKey: key,
       day: DOW_FULL[key],
-      title: s?.label ?? '',
+      // SESSION-LABEL-STALE-01 — a stored label that merely restates the type
+      // ("Quality") yields to the catalogue row's own name ("Pyramid").
+      title: sessionDisplayLabel(s),
       detail: s?.detail ?? '',
       type: s?.type ?? 'rest',
       date: displayDate,
@@ -920,7 +895,7 @@ export default function TodayScreen({ plan, weekIndex, daysToRace, raceName, pre
       distance: s?.distance_km ?? parsed.distance,
       duration: s?.duration_mins != null ? fmtDurationMins(s.duration_mins) : parsed.duration,
       // Canonical fields preserved for SessionPopupInner / composer
-      label: s?.label ?? undefined,
+      label: sessionDisplayLabel(s) || undefined,
       role: s?.role ?? undefined,
       catalogue_id: s?.catalogue_id ?? undefined,
       derived_set: s?.derived_set ?? undefined,

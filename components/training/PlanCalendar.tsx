@@ -20,6 +20,7 @@ import { isEasedForRecovery } from '@/lib/ui/easedMark'
 import { SLOT_LABEL, moveChoices } from '@/lib/plan/doubles'
 import { InlineError } from '@/components/shared/InlineError'
 import { resolveEffectiveDay } from '@/lib/plan/effectiveSessions'
+import { sessionDisplayLabel } from '@/lib/plan/catalogueLink'
 
 /** STRENGTH-APP-01 (C) — strength on the Plan week. Optional: the marketing phone still passes none. */
 export interface PlanStrength {
@@ -741,7 +742,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
               onSessionTap({
                 key: s.originalDay ?? key,
                 day: DOW_FULL[key],
-                title: s.label ?? '',
+                title: sessionDisplayLabel(s),  // SESSION-LABEL-STALE-01
                 detail: s.detail ?? '',
                 type: s.type,
                 date: displayDate,
@@ -750,7 +751,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
                 completion,
                 isPast: isPast && !isToday,
                 isFuture,
-                label:          s.label,
+                label:          sessionDisplayLabel(s) || s.label,
                 catalogue_id:   s.catalogue_id,
                 derived_set:    s.derived_set,
                 zone:           s.zone,
@@ -966,7 +967,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                 color: isMoving || isSwapTarget ? 'var(--moss-strong)' : isSkipped ? 'var(--mute)' : isComplete ? 'var(--mute)' : isFuture ? 'var(--ink-2)' : 'var(--ink)',
                 struck: isSkipped,
               })}>
-                {session.label ?? ''}
+                {sessionDisplayLabel(session)}
                 {isMoving && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>moving...</span>}
                 {isSwapTarget && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>{swapHint}</span>}
               </div>
