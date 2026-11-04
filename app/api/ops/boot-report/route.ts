@@ -47,11 +47,30 @@ export async function POST(req: NextRequest) {
   const errKind = BOOT_ERR_KINDS.includes(body.err_kind as BootErrKind) ? (body.err_kind as BootErrKind) : null
   const stage = BOOT_STAGES.includes(body.stage as BootStage) ? (body.stage as BootStage) : null
 
+  // BOOT-STALL-HIDDEN-ABSENT-01 (2026-11-04) — NULL, NOT FALSE, FOR A FIELD THE CLIENT DID NOT SEND.
+  //
+  // Both of these read `body.x === true`, which answers "did the client say true?" and then writes the answer
+  // as though it were "the client said false". Absence and a measured `false` became the same row. Measured the
+  // same day this shipped: the first post-deploy row with `hidden: false` ALSO carried no `stage`, which is
+  // exactly the shape a client still running the pre-fix bundle produces — so the one row that mattered was
+  // indistinguishable from a stale cache, and `hidden` is the field this telemetry was fixed to gain.
+  //
+  // This is the same defect class as the `elapsed_ms` constant it sits beside: a value standing in for a
+  // measurement that was never taken. The convention is already here, one line up — nonsense becomes `null`,
+  // never `0`. ⚠️ `null` rather than dropping the key, because a dropped key is what the OLD route wrote, so
+  // omitting it would move the ambiguity one layer out instead of removing it. Three states, all readable:
+  // key absent = the pre-2026-11-04 route · `null` = this route, client sent nothing · `true`/`false` = a fact.
+  //
+  // `err_kind` and `stage` keep their drop-when-invalid convention deliberately: absence there means NOT
+  // APPLICABLE (no error, no stage set), where absence here means the reporter did not answer a question it is
+  // always asked. Different meanings, so different shapes.
+  const boolOrNull = (v: unknown) => typeof v === 'boolean' ? v : null
+
   await recordOpsEvent('boot_stalled', {
     gate,
     elapsed_ms: elapsed,
-    native: body.native === true,
-    hidden: body.hidden === true,
+    native: boolOrNull(body.native),
+    hidden: boolOrNull(body.hidden),
     ...(errKind ? { err_kind: errKind } : {}),
     ...(stage ? { stage } : {}),
   }, user?.id ?? null)

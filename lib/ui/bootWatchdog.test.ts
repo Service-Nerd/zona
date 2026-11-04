@@ -94,7 +94,9 @@ beforeEach(() => { R.events = []; R.allow = true; R.user = null })
 describe('POST /api/ops/boot-report', () => {
   it('🔴 records without a session, because a stalled auth is one of the things it reports', async () => {
     expect(await post({ gate: 'auth', elapsed_ms: 12000, native: true })).toBe(200)
-    expect(R.events).toEqual([['boot_stalled', { gate: 'auth', elapsed_ms: 12000, native: true, hidden: false }, null]])
+    // `hidden: null`, not `false` — this body never mentions it. BOOT-STALL-HIDDEN-ABSENT-01; the arm asserted
+    // `false` here until 2026-11-04, which is the defect written down as an expectation.
+    expect(R.events).toEqual([['boot_stalled', { gate: 'auth', elapsed_ms: 12000, native: true, hidden: null }, null]])
   })
   it('attributes the row when a valid bearer came with it', async () => {
     R.user = { id: 'u1' }
@@ -309,6 +311,70 @@ describe('POST /api/ops/boot-report — the new facts, and the enum-only propert
       await post({ gate: 'auth', elapsed_ms: bad })
       expect((R.events[0][1] as { elapsed_ms: number | null }).elapsed_ms, String(bad)).toBeNull()
     }
+  })
+})
+
+
+// ── BOOT-STALL-HIDDEN-ABSENT-01 (2026-11-04) ────────────────────────────────────────────────────────────
+// The route wrote `hidden: body.hidden === true` and `native: body.native === true`, so a client that never
+// sent the field produced the same row as one that measured `false`. Found the day BOOT-STALL-DIAGNOSE-01
+// shipped: of the three post-deploy rows, two carried `hidden: true` + a `stage` (backgrounded launches, which
+// is what the flag was added to prove) and the third carried `hidden: false` and NO `stage` — the exact shape
+// of a client still on the pre-fix bundle. The one row that might have been a real hang was unreadable.
+//
+// ⚠️ A FABRICATED `false` IS THE SAME CLASS AS THE `elapsed_ms` CONSTANT THIS TELEMETRY WAS FIXED TO REMOVE:
+// a value standing in for a measurement nobody took. These arms hold all three states apart.
+
+describe('BOOT-STALL-HIDDEN-ABSENT-01 — absence is null, never a fabricated boolean', () => {
+  const detail = () => R.events[0][1] as { hidden: boolean | null; native: boolean | null }
+
+  it('🔴 a body that never mentions hidden records null, not false', async () => {
+    await post({ gate: 'settings', elapsed_ms: 4321, native: true })
+    expect(detail().hidden).toBeNull()
+  })
+
+  it('🔴 and the same for native, because it is the identical expression one line up', async () => {
+    await post({ gate: 'settings', elapsed_ms: 4321, hidden: true })
+    expect(detail().native).toBeNull()
+  })
+
+  it('a measured false is still recorded as false', async () => {
+    await post({ gate: 'settings', elapsed_ms: 4321, native: false, hidden: false })
+    expect(detail()).toMatchObject({ hidden: false, native: false })
+  })
+
+  it('🔴 THE DISCRIMINATION ITSELF: a sent false and an absent field are different rows', async () => {
+    await post({ gate: 'settings', elapsed_ms: 1, native: true, hidden: false })
+    const sent = detail().hidden
+    R.events = []
+    await post({ gate: 'settings', elapsed_ms: 1, native: true })
+    const absent = detail().hidden
+    expect(sent).toBe(false)
+    expect(absent).toBeNull()
+    expect(sent).not.toBe(absent)
+  })
+
+  it('🔴 a non-boolean is null too — the client is untrusted, same reason elapsed_ms is clamped', async () => {
+    for (const junk of ['yes', 'false', 1, 0, null, {}, []]) {
+      R.events = []
+      await post({ gate: 'auth', elapsed_ms: 1, hidden: junk, native: junk })
+      expect(detail().hidden, `hidden: ${JSON.stringify(junk)}`).toBeNull()
+      expect(detail().native, `native: ${JSON.stringify(junk)}`).toBeNull()
+    }
+  })
+
+  it('🔴 the key is PRESENT and null, never dropped — a dropped key is what the old route wrote', async () => {
+    await post({ gate: 'auth', elapsed_ms: 1 })
+    // Omitting it would make this row identical to a pre-2026-11-04 row and move the ambiguity one layer out
+    // instead of removing it. Three readable states: no key = the old route · null = client silent · bool = fact.
+    expect(R.events[0][1]).toHaveProperty('hidden')
+    expect(R.events[0][1]).toHaveProperty('native')
+  })
+
+  it('err_kind and stage keep the DROP convention, because absence there means not-applicable', async () => {
+    await post({ gate: 'settings', elapsed_ms: 1, native: true, hidden: false })
+    expect(R.events[0][1]).not.toHaveProperty('err_kind')
+    expect(R.events[0][1]).not.toHaveProperty('stage')
   })
 })
 

@@ -149,7 +149,18 @@ export type OpsEventKind =
   // 🔴 ROWS BEFORE 2026-11-04 CANNOT BE AVERAGED. `elapsed_ms` was handed the CONSTANT `BOOT_STALL_MS`, so
   // 109 of the first 125 read exactly 12000 and the field measured nothing; and with no `hidden` flag a
   // backgrounded iOS launch (the webview is suspended, the boot fetch dies, the timer fires on resume) is
-  // the same row as a genuine hang. BOOT-STALL-DIAGNOSE-01 made both into facts. Only `auth`, `settings`
+  // the same row as a genuine hang. BOOT-STALL-DIAGNOSE-01 made both into facts.
+  //
+  // 🔴 AND `native`/`hidden` ARE THREE-STATE, SO DO NOT WRITE `detail->>'hidden' = 'false'`
+  // (BOOT-STALL-HIDDEN-ABSENT-01, 2026-11-04). Both were stored as `body.x === true`, which turns "the client
+  // said nothing" into "the client said false". Now: KEY ABSENT = the pre-2026-11-04 route (`hidden` only —
+  // `native` has been written on every row since 2026-10-25) · `null` = this route, the client sent nothing or
+  // a non-boolean · `true`/`false` = measured. Measured over all 130 rows at the time of the fix: `native` is
+  // `true` on 130 of 130, so its fabricated `false` has NEVER been written; `hidden` is 126 key-absent, 3 true
+  // and 1 false, and THAT ONE `false` is the row the defect made unreadable — it also carries no `stage`, which
+  // is the shape of a client still on the pre-fix bundle. A `hidden: false` written by the deploy of `04bbb30f`
+  // and before this fix is UNKNOWN, not false; after it, `null` says so in the row itself.
+  //
   // Measured distribution of the first 125 rows (`BOOT_GATE_DISTRIBUTION_2026_11_04`): 105 settings,
   // 16 error, 4 auth, 0 run_analysis, 0 strava. ⚠️ A ZERO IS AN OBSERVATION, NOT A PROOF — an earlier
   // draft called those two "unreachable" and `run_analysis` turned out reachable via a PlanReadError bug.
