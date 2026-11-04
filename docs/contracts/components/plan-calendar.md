@@ -275,3 +275,22 @@ to `isComplete && completion?.strava_activity_name &&` fails that arm.
 **Strength session title (STRENGTH-SESSION-TITLE-01, 2026-10-19).** Any strength session's name comes from `strengthSessionTitle(session)` (`lib/strength-bridge/display.ts`), read from what it holds (*Lower body*, *Upper body and light legs*, else the kind title), never `STRENGTH_KIND_TITLE[kind]`. Gate: `lib/strength-bridge/sessionTitle.test.ts`.
 
 - **Text colour (ACCENT-TEXT-CONTRAST-01, Design Board 6t-g, 2026-10-22):** small text in this component never takes a session hue or `--moss`: moss text uses `--moss-strong`, session-hue text `--ink-2`; the hue stays on marks (rails, dots, tints, glyphs). Held by `lib/ui/accentText.test.ts`.
+
+**Session name (SESSION-LABEL-STALE-01, 2026-11-04).** Every session title and label this component
+emits — the `title` and `label` on the `onSessionTap` payload, and the name rendered in the row — goes
+through `sessionDisplayLabel(session)` (`lib/plan/catalogueLink.ts`), never `session.label` directly.
+
+A STORED plan can carry a label that merely restates the session's type. Measured across all 40 live
+plans on 2026-11-04: one plan, six sessions, `label: "Quality"` on rows stamped
+`catalogue_id: 'threshold_pyramid'` whose catalogue name is **"Pyramid"**. No current engine path writes
+that label — `fallbackLabel` is *Tempo run* / *Cruise intervals* / *Tempo run — short* and the catalogue
+branch uses `catalogueRow.name` — so it is an older engine's output in a live block, and regenerating to
+repair it would rewrite the runner's plan. The stamp is already authoritative (ADR-018), so the repair is
+at display.
+
+⚠️ **It is narrow by construction and must stay so.** It substitutes the catalogue row's name only when
+the stored label restates the session's own TYPE (`"Quality"`, `"Quality session"`, `"easy run"`, empty).
+`'Easy run — Zone 2'`, `'Tempo run'` and every catalogue name are left exactly alone. A wider
+"looks generic" test would silently re-title thousands of correct sessions, which is a bigger change than
+the defect. Gate: `lib/plan/sessionDisplayLabel.test.ts`, whose bounding arms assert the non-replacement
+cases and that no catalogue row is itself named after a bare type word.
