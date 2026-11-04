@@ -242,11 +242,29 @@ product does not assign.
 | **injury** | 51 → 48 | **18 → 42** | **18 → 42** | **18 → 42** |
 
 **The rate fell on every segment and the tail rose on every segment.** Fewer plans breach §2 at delivery; the breaches
-that remain are far bigger. ADR-022's recorded claim that its three levers bind on the injured was measured with
-**every injured row in `targetedGrid` forced to a beginner structural band**, and the levers are structural. Raised
-with the measurement and filed for the board as `INJURY-TAIL-PRODUCTION-SHAPE-01`. Seiler's question re-asked, as the
-file requires: the top is `88 88 75 75 69 58 …` — two pairs then a 6-point step, a recurring week shape rather than a
-clamp, and `verify:parity` proves no engine value moved at all.
+that remain are far bigger. Seiler's question re-asked, as the file requires: the top is `88 88 75 75 69 58 …` — two
+pairs then a 6-point step, a recurring week shape rather than a clamp, and `verify:parity` proves no engine value
+moved at all. Raised with the measurement and filed for the board as `INJURY-TAIL-PRODUCTION-SHAPE-01`.
+
+> 🔴 **AMENDED 2026-11-04 — THE `injury` ROW ABOVE IS TWO COHORTS, AND THE REASON GIVEN HERE FOR IT WAS WRONG.**
+> This block said ADR-022's lever claim *"was measured with every injured row forced to a beginner structural band, and
+> the levers are structural"* — i.e. that the corpus defect was what put the levers in question. **§94 Amendment 5
+> vacated that.** ADR-022's three levers and §12's producer cap are **knee/shin by name** (`hasVolumeCappedInjuryHistory`),
+> while `segmentOf` here calls **any** injury history `injury` and `TARGETED_INJURIES` is `Knee | Shin splints | Achilles`.
+> Decomposed: **knee 0 firings / 202 plans, shin 0 / 199, achilles 48 / 199** — and on the full `targetedGrid` achilles
+> population, **400 / 1,536 = 26.0%**. **Every firing in this row, before and after the corpus fix, came from the third of
+> the segment the levers do not reach.** So the levers were never tested here, the earlier 18% was all-achilles too, and
+> the honest result is **stronger** than the sentence it replaces: where the levers apply, the check does not fire at all.
+>
+> ⚠️ **The protocol lesson, which is why it is recorded in THIS file and not only in the principle.** A segment is
+> evidence about a rule only if the segment is built from the rule's own scope predicate. A label wider than the scope
+> still produces a number, a percentile and a confident causal sentence. **When reading any segmented row here, check the
+> segment against the predicate of the rule you are about to attribute it to** — and where a check reports a QUANTITY,
+> ask which component of it the remedy is permitted to change: **44.0% of achilles firings are a quality session arriving
+> while easy volume is flat or falling**, which ADR-022's own lever order forbids trimming. Mechanism is §89/ADR-021's
+> onset, not §94. Sitting: `docs/decisions/coaching-2026-11-04-injury-tail-production-shape-sitting.md`. Successor
+> filings: `ACHILLES-QUALITY-ONSET-01` 🏃, `GRID-NO-MENOPAUSAL-TENDON-01` ⚕️. Instrument now decomposes both ways
+> (`lib/plan/deliveredRampTail.test.ts`, 13 arms).
 
 ✅ **`audit:plans` 2,982 → 2,873 total findings**, and the single `WORSE THAN BASELINE` line is the known one:
 `cohortGrid` NEVER-BUILDS **1,094 → 1,009**, WEEK1-LEAP **24 → 0**, BINGE-SEVERE-75 19 → 11, `targetedGrid`

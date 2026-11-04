@@ -7467,6 +7467,14 @@ controls on live screens with nothing ever run on a device is the impression-not
 this board records.** They stay in the geometry register, which is exact-equality both ways, so
 none can grow and none can be quietly "fixed" without the register moving.
 
+⚠️ **PREMISE MOVED 2026-11-04, AND THE RULING IS UNCHANGED UNTIL THE BOARD SAYS OTHERWISE.** The
+phrase *“nothing ever run on a device”* above was true when written and is now false — **the app has
+been on real iPhones since 2026-10-25** (130 `boot_stalled` rows, `native: true` on 130/130, 15 of 52
+users). ⚠️ **That does not supply the missing evidence**: installs and crash telemetry are not a
+thumb on a 37px chip, and the trap named above is exactly the one you fall into by treating “real
+phones exist” as “we have measured reach”. Recorded here only so whoever picks this item up
+re-derives the premise instead of inheriting it (🧭 **DESIGN BOARD** to re-rule if it matters).
+
 ✅ **PART 2 SHIPPED 2026-10-02 — the floor's SCOPE is written down once, and the two 43s got
 opposite answers.** 🔴 *"Is it 44 or 40?"* **rejected on measurement: nothing in the population sits
 at 40** (heights `{18,24,27,29,30×3,32×2,36,37×2,38,39,41×2,43×2}`), so 40 clears 4 of 18 and

@@ -93,13 +93,29 @@ semantic pair — and any change lands in the app *and* the website.
 
 ## 5. 🔴 The constraint that will shape the whole sitting
 
-**Nothing has ever run on a device.** Not the redesigned homepage, not the Plan arc, not the three
-real screens in the marketing phone.
+> 🔴 **CORRECTED 2026-11-04 — THIS SECTION SAID “NOTHING HAS EVER RUN ON A DEVICE” AND THAT IS FALSE.**
+> **The app has been on real iPhones since 2026-10-25.** Measured from `ops_events` on 2026-11-04:
+> **130 `boot_stalled` rows with `native: true` on 130 of 130, from 15 of 52 users.** The claim below was
+> true when it was written and nobody came back to it. ⚠️ **The correction does NOT unblock the two seats**
+> — see the restatement that follows: real installs are not a design pass, and what we have is error
+> telemetry, not anybody looking at a screen. The gap is narrower and differently shaped, not closed.
+> **A context doc asserting an absence is the easiest kind of doc to be wrong in, because nothing checks it.**
 
-**Two seats are structurally blocked by this:** Silvanto on craft and legibility, Wroblewski on
-one-handed phone use. They can rule on structure and measurement; they cannot honestly rule on
-*feel*. The website sitting worked because the founder supplied a device pass — **the app sitting
-needs one too, and the app cannot be emulated in a browser at all.**
+**No DESIGN pass has ever been run on a device.** Not the redesigned homepage, not the Plan arc, not
+the three real screens in the marketing phone. Real runners have the app on real phones — that is
+install evidence and crash evidence, and it is not the same thing as somebody looking at a screen and
+reporting what it is like.
+
+**Two seats remain structurally blocked:** Silvanto on craft and legibility, Wroblewski on one-handed
+phone use. They can rule on structure and measurement; they cannot honestly rule on *feel*, and
+`boot_stalled` rows tell them nothing about either. The website sitting worked because the founder
+supplied a device pass — **the app sitting needs one too, and the app cannot be emulated in a browser
+at all.**
+
+⚠️ **What the device telemetry DOES give the board, which it did not have before:** the app reaches real
+phones and boots on them, and the failures it does produce are observable. A seat may now ask *“what is
+breaking for the 15?”* as a real question with real rows behind it. That is a different and smaller
+claim than *“we know what it looks like”*.
 
 ---
 

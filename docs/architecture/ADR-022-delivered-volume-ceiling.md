@@ -51,6 +51,29 @@ These are one class: **delivered ≠ curve**. The rule was honoured and still wr
 - These residuals are the delivered≠curve class in its last mile. Closing them means reconciling **long-run placement** itself, which is a separate §52 question with its own ruling — deliberately out of scope here.
 - Consequently the three enforcing invariants are all `warn`, not `error` (see below).
 
+### Measured on its own cohort — 2026-11-04 (§94 Amendment 5)
+
+✅ **The three levers above have now been measured on the cohort they are scoped to, and they drive §2 delivered-ramp
+breaches to zero: 0 firings across 401 plans (knee 0/202, shin 0/199).** That is the strongest result this decision
+has produced, and it had never been measured before, because the instrument that reported on “injury”
+(`lib/plan/deliveredRampTail.test.ts`) segmented on *any* injury history while these levers and §12's cap are
+**knee/shin by name** (`hasVolumeCappedInjuryHistory`). The segment's entire tail was **achilles** — 48 of 199 plans
+there, 400 of 1,536 on the full grid — a cohort that by §94 Am.2's deliberate 2026-09-25 ruling receives the tighter
+**check** and none of the **levers**. §94 Amendment 4's claim that a low injured tail was “an artefact of lever count”
+was therefore vacated; see `docs/decisions/coaching-2026-11-04-injury-tail-production-shape-sitting.md`.
+
+⚠️ **This does NOT close the residual stated above, and the two must not be conflated.** The residual is the easy-floor
+and §52 long-run divergence measured by `injuryCapCompounds.test.ts` against the §12 cap; the 0-of-401 result is a
+different instrument measuring §2's week-on-week delivered ramp. The invariants stay `warn` for the reasons already
+given. ⚠️ **Nor is it outcome evidence.** Willy's own words at the sitting: engine evidence that the lever set works
+completely is not evidence that it reduces injuries — that remains `DELIVERED-TAIL-LEVERS-01`, blocked by §2 Am.2.
+
+⚠️ **Open against this decision:** **44.0% of achilles firings are a quality session arriving while easy volume is flat
+or falling** — load the lever order here explicitly forbids trimming (*“easy runs trim, the §52 long run never does, and
+a quality session is never touched”*). Worst case traced: easy running **12 → 8 km to fund a 9 km CV-interval session**
+at base→build. The mechanism is §89/ADR-021's quality onset, not this ADR; filed `ACHILLES-QUALITY-ONSET-01` 🏃 with
+Willy's binding condition that the stimulus is not removed to fix it.
+
 ## Artifacts
 
 | Layer | Artifact |

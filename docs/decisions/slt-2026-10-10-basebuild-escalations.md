@@ -116,3 +116,5 @@ wrong would **archive the runner's block while announcing it.** Also touches CA-
 `nextGoalGateOpen`, which currently assumes "not maintenance" means "race".
 
 **Nothing has ever run on a device.**
+
+> ⚠️ **Footnote added 2026-11-04 — true on 2026-10-10, false now.** The app has been on real iPhones since **2026-10-25**: 130 `boot_stalled` rows, `native: true` on 130/130, 15 of 52 users. The sentence above stands as the record of what was said at this sitting; it must not be carried forward as a current fact. Current position: `docs/canonical/board-context-app-review.md` §5 — **no DESIGN pass has run on a device**, which is a narrower claim than this one.
