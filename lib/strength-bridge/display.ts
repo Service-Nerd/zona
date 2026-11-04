@@ -106,8 +106,12 @@ export const STRENGTH_GUIDED_COPY = {
   contentsLabel: 'Session contents',
   contentsHint: "Take what's free. Tap any part to go there.",
   contentsClose: 'Close',
-  /** The control in the top band: where the runner is, out of the training parts. */
-  contentsAt: (at: number, total: number) => `${Math.max(1, at)} of ${total}`,
+  /**
+   * The control in the top band: where the runner is, out of the training parts.
+   * `null` on the warm-up and cool-down — those are not part N, and saying "1 of 6"
+   * there is a plausible wrong answer rather than an honest absence.
+   */
+  contentsAt: (at: number | null, total: number) => (at == null ? `${total} parts` : `${at} of ${total}`),
   back: 'Back',
   extendRest: '+30 s',
   skipRest: 'Skip rest',

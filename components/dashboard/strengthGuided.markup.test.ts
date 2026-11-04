@@ -183,3 +183,38 @@ describe('STRENGTH-GUIDED-DEVICE-01 — the guided session on a device', () => {
     expect(COPY.markWithoutStarting.split(' ').length).toBeLessThanOrEqual(5)
   })
 })
+
+/** Code review on `1414e559` found four of these. Every arm below is one of them, pinned. */
+describe('STRENGTH-GUIDED-DEVICE-01 — the review findings', () => {
+  const firstRest = steps.findIndex(s => s.restAfter_s > 0)
+
+  it('🔴 after Skip rest the button does NOT promise a rest that will not happen', async () => {
+    // restedStep set + no countdown running = the rest is served. The label read
+    // `restAfter_s > 0` alone and said "Round N done, rest" again while the tap advanced.
+    const html = await page({ step: firstRest, restedStep: firstRest, restEndsAt: null })
+    expect(html).toContain(COPY.roundDone(steps[firstRest].round, false))
+    expect(html).not.toContain(COPY.roundDone(steps[firstRest].round, true))
+  })
+
+  it('🔴 the contents control does not claim a part number on the warm-up or cool-down', async () => {
+    const training = parts.filter(p => p.kind !== 'warmup' && p.kind !== 'cooldown')
+    const warmup = steps.findIndex(s => parts[s.part].kind === 'warmup')
+    if (warmup >= 0) {
+      const html = await page({ step: warmup })
+      // "1 of N" on the warm-up is identical to part 1 — a plausible wrong answer.
+      expect(html).toContain(COPY.contentsAt(null, training.length))
+      expect(html).not.toContain(`>1 of ${training.length}<`)
+    }
+    const onPart1 = steps.findIndex(s => parts[s.part] === training[0])
+    expect((await page({ step: onPart1 }))).toContain(COPY.contentsAt(1, training.length))
+  })
+
+  it('the sheet is closed by ONE path, so its exit animation runs', async () => {
+    const src = readFileSync('components/dashboard/StrengthGuidedSession.tsx', 'utf8')
+    const wire = src.slice(src.indexOf('<ContentsSheet'), src.indexOf('<ContentsSheet') + 320)
+    // onJump must not also flip the open flag: the unmount would win and the row would
+    // vanish instantly while the Close button animates.
+    expect(wire).not.toMatch(/onJump=\{[^}]*setContentsOpen/)
+    expect(wire).toMatch(/onClose=\{\(\) => setContentsOpen\(false\)\}/)
+  })
+})

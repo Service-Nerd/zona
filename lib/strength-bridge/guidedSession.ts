@@ -57,6 +57,16 @@ export function guidedSteps(parts: SessionPart[]): GuidedStep[] {
 }
 
 export interface GuidedState {
+  /**
+   * 🔴 THE STEP MODEL'S VERSION, and it exists because `sessionSignature` CANNOT see it.
+   *
+   * STRENGTH-GUIDED-DEVICE-01 removed rest steps: the same session went from 29 steps to
+   * 16, so a stored `step: 12` means a different round before and after the deploy. The
+   * signature guards the session's BLOCKS, which did not move, so a mid-session resume
+   * across the deploy would have landed on the wrong round. Bump this whenever
+   * `guidedSteps` changes what an index means.
+   */
+  v: number
   date: string
   /** Which session this progress belongs to: a rebuilt plan with different lifts starts again. */
   signature: string
@@ -77,6 +87,18 @@ export interface GuidedState {
   weights: Record<string, number>
   /** A timed move's countdown, keyed `${step}:${exerciseId}`. */
   timers: Record<string, number>
+  /**
+   * The step indices the runner actually FINISHED, in the order they finished them.
+   *
+   * 🔴 The tally used to infer this as `i < step` — "everything before where I am is done".
+   * `jump` and rest-in-place both break that, and code review measured both:
+   *   · jump to the last part then End reported **6 parts / 13 rounds** for a runner who
+   *     finished NOTHING, and a forward jump is the designed path ("take what's free");
+   *   · while resting, the finished round sits AT `step`, so End during a rest reported
+   *     **0 parts / 0 rounds** after a round the runner had just done.
+   * A round is done when the runner says so, which is the only thing worth counting.
+   */
+  doneSteps: number[]
   /** Set when the runner ends the session (the end page). */
   endedAt: number | null
 }
@@ -86,8 +108,10 @@ export function sessionSignature(s: Pick<StrengthSession, 'blocks'>): string {
   return s.blocks.flatMap(b => b.items.map(i => `${b.role}:${i.exercise_id}:${i.sets}:${i.rest_s}:${i.superset ?? ''}`)).join('|')
 }
 
+export const GUIDED_STATE_VERSION = 2
+
 export function startGuided(session: StrengthSession, now: number, weights: Record<string, number>): GuidedState {
-  return { date: session.date ?? '', signature: sessionSignature(session), startedAt: now, step: 0, restEndsAt: null, restedStep: null, weights, timers: {}, endedAt: null }
+  return { v: GUIDED_STATE_VERSION, date: session.date ?? '', signature: sessionSignature(session), startedAt: now, step: 0, restEndsAt: null, restedStep: null, doneSteps: [], weights, timers: {}, endedAt: null }
 }
 
 /**
@@ -99,11 +123,12 @@ export function resumeGuided(raw: string | null, session: StrengthSession, stepC
   if (!raw) return null
   try {
     const s = JSON.parse(raw) as GuidedState
+    if (s.v !== GUIDED_STATE_VERSION) return null   // a different step model: the index means something else
     if (s.date !== session.date || s.signature !== sessionSignature(session)) return null
     if (typeof s.startedAt !== 'number' || typeof s.step !== 'number' || s.step < 0) return null
     // Past the last step only once finished; anything else is progress for steps that no longer exist.
     if (s.step > stepCount || (s.step === stepCount && s.endedAt == null)) return null
-    return { ...s, weights: s.weights ?? {}, timers: s.timers ?? {}, restEndsAt: s.restEndsAt ?? null, restedStep: s.restedStep ?? null, endedAt: s.endedAt ?? null }
+    return { ...s, weights: s.weights ?? {}, timers: s.timers ?? {}, restEndsAt: s.restEndsAt ?? null, restedStep: s.restedStep ?? null, doneSteps: Array.isArray(s.doneSteps) ? s.doneSteps : [], endedAt: s.endedAt ?? null }
   } catch { return null }
 }
 
@@ -127,10 +152,14 @@ export function guidedReduce(s: GuidedState, steps: GuidedStep[], a: GuidedActio
     // session: the step moves PAST the end, so every finished round sits before `step`.
     case 'next': {
       const here = steps[s.step]
+      // The tap IS the runner saying the round is done, whether a rest follows it or not.
+      const done = s.doneSteps.includes(s.step) ? s.doneSteps : [...s.doneSteps, s.step]
       if (here && here.restAfter_s > 0 && s.restedStep !== s.step) {
-        return { ...s, restEndsAt: now + here.restAfter_s * 1000, restedStep: s.step }
+        return { ...s, doneSteps: done, restEndsAt: now + here.restAfter_s * 1000, restedStep: s.step }
       }
-      return s.step + 1 >= steps.length ? { ...s, step: steps.length, restEndsAt: null, endedAt: now } : at(s.step + 1)
+      return s.step + 1 >= steps.length
+        ? { ...s, doneSteps: done, step: steps.length, restEndsAt: null, endedAt: now }
+        : { ...at(s.step + 1), doneSteps: done }
     }
     // Skip ends the countdown; it does NOT advance. The runner is back on the work page, ready.
     case 'skipRest': return s.restEndsAt == null ? s : { ...s, restEndsAt: null }   // `restedStep` stays set: the rest is served
@@ -159,7 +188,7 @@ export function secondsLeft(endsAt: number | null, now: number): number {
 export function guidedTally(s: GuidedState, steps: GuidedStep[], parts: SessionPart[]): { minutes: number; parts: number; rounds: number } {
   const training = (i: number) => parts[i].kind !== 'warmup' && parts[i].kind !== 'cooldown'
   // Rounds before the current step are done; a round in progress when End session is tapped is not.
-  const done = steps.filter((st, i) => st.kind === 'work' && training(st.part) && i < s.step)
+  const done = s.doneSteps.filter(i => steps[i] && training(steps[i].part)).map(i => steps[i])
   const end = s.endedAt ?? s.startedAt
   return { minutes: Math.max(1, Math.round((end - s.startedAt) / 60_000)), parts: new Set(done.map(d => d.part)).size, rounds: done.length }
 }

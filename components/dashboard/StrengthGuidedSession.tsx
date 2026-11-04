@@ -163,14 +163,14 @@ export default function StrengthGuidedSession({ session, title, lifts, onExit, o
           <Button variant="primary" fullWidth onClick={() => go({ type: 'next' })}>
             {state.restEndsAt != null
               ? COPY.startNext(nextLabel(steps[state.step + 1], parts, training))
-              : COPY.roundDone(step.round, step.restAfter_s > 0)}
+              : COPY.roundDone(step.round, step.restAfter_s > 0 && state.restedStep !== state.step)}
           </Button>
         </div>
       </div>
 
       {contentsOpen && (
         <ContentsSheet steps={steps} parts={parts} training={training} at={state.step}
-          onJump={i => { setContentsOpen(false); go({ type: 'jump', step: i }) }}
+          onJump={i => go({ type: 'jump', step: i })}
           onClose={() => setContentsOpen(false)} />
       )}
     </div>
@@ -233,10 +233,19 @@ function ContentsSheet({ steps, parts, training, at, onJump, onClose }: {
   )
 }
 
-/** Which TRAINING part the runner is on, 1-based; 0 while in the warm-up. */
-function trainingIndexOf(steps: GuidedStep[], parts: SessionPart[], training: SessionPart[], at: number): number {
+/**
+ * Which TRAINING part the runner is on, 1-based, or **null** on the warm-up and cool-down.
+ *
+ * 🔴 It returned 0 for "not a training part" and the label did `Math.max(1, at)`, which turned
+ * the sentinel into a PLAUSIBLE WRONG VALUE: the cool-down read "1 of 4" and the warm-up read
+ * "1 of 6", identical to part 1. Measured by code review: **1,574 of 5,760 generated sessions
+ * carry a cool-down.** Absence gets its own answer rather than being rounded into a fact.
+ */
+function trainingIndexOf(steps: GuidedStep[], parts: SessionPart[], training: SessionPart[], at: number): number | null {
   const p = parts[steps[at]?.part]
-  return p ? training.indexOf(p) + 1 : 0
+  if (!p) return null
+  const i = training.indexOf(p)
+  return i >= 0 ? i + 1 : null
 }
 
 function nextLabel(next: GuidedStep | undefined, parts: SessionPart[], training: SessionPart[]): { round: number; part: number | null } {

@@ -101,18 +101,79 @@ describe('guidedReduce', () => {
 })
 
 describe('the tally and resume', () => {
+  /**
+   * 🔴 THESE TWO ARMS SET `step` BY HAND, AND THAT IS WHY THEY COULD NOT SEE THE DEFECT.
+   *
+   * Code review measured two real tally faults this file was blind to — a forward `jump`
+   * reporting 13 finished rounds for a runner who finished none, and End-during-a-rest
+   * reporting 0 for a round just completed. Both are invisible to a test that CONSTRUCTS
+   * the state the reducer would have produced, because the construction encodes the
+   * assumption under test. They are driven through `next` now.
+   */
+  const drive = (taps: number, now = T0) => {
+    let s = startGuided(session, T0, {})
+    for (let i = 0; i < taps; i++) { const r = guidedReduce(s, steps, { type: 'next' }, now); if (!r) break; s = r }
+    return s
+  }
+
   it('🔴 ending mid-way counts only the training rounds finished, not the warm-up, not the round in progress', () => {
-    const firstTraining = steps.findIndex(s => s.kind === 'work' && parts[s.part].kind !== 'warmup')
-    const s = { ...startGuided(session, T0, {}), step: firstTraining + 1, endedAt: T0 + 20 * 60_000 }
+    // Taps through the whole warm-up, then ONE training round (a second tap when it rests).
+    const firstTraining = steps.findIndex(s => parts[s.part].kind !== 'warmup')
+    const warmupTaps = steps.slice(0, firstTraining).reduce((n, st) => n + (st.restAfter_s > 0 ? 2 : 1), 0)
+    const oneRound = steps[firstTraining].restAfter_s > 0 ? 2 : 1
+    const s = { ...drive(warmupTaps + oneRound), endedAt: T0 + 20 * 60_000 }
     const t = guidedTally(s, steps, parts)
     expect(t.minutes).toBe(20)
-    expect(t.rounds).toBe(steps.slice(0, firstTraining + 1).filter(x => x.kind === 'work' && parts[x.part].kind !== 'warmup').length)
+    expect(t.rounds).toBe(1)
     expect(t.parts).toBe(1)
   })
+
   it('the whole session: every training round and part', () => {
-    const s = guidedReduce({ ...startGuided(session, T0, {}), step: steps.length - 1 }, steps, { type: 'next' }, T0 + 50 * 60_000)!
+    // Tap until it ends — two taps on any round that rests, which is the real journey.
+    let s = startGuided(session, T0, {})
+    for (let i = 0; i < steps.length * 3 && s.endedAt == null; i++) {
+      const r = guidedReduce(s, steps, { type: 'next' }, T0 + 50 * 60_000)
+      if (!r) break
+      s = r
+    }
     const training = parts.filter(p => p.kind !== 'warmup' && p.kind !== 'cooldown')
     expect(guidedTally(s, steps, parts)).toEqual({ minutes: 50, parts: training.length, rounds: training.reduce((n, p) => n + p.rounds, 0) })
+  })
+
+  it('🔴 a stored state from the PREVIOUS step model is not resumed', () => {
+    // STRENGTH-GUIDED-DEVICE-01 removed rest steps: the same session went 29 steps → 16, so
+    // a stored `step: 12` means a different round either side of the deploy. `sessionSignature`
+    // guards the session's BLOCKS, which did not move, so it cannot see this — which is why
+    // `v` exists. ⚠️ This arm was MISSING on the first cut: a mutation that deleted the version
+    // check stayed GREEN, so the guarantee was hollow until here.
+    const good = { ...startGuided(session, T0, {}), step: 4 }
+    expect(resumeGuided(JSON.stringify(good), session, steps.length)).toMatchObject({ step: 4 })
+    for (const v of [undefined, 1, 0, '2']) {
+      expect(resumeGuided(JSON.stringify({ ...good, v }), session, steps.length),
+        `v=${String(v)} must not resume`).toBeNull()
+    }
+  })
+
+  it('🔴 a forward JUMP does not count what was skipped', () => {
+    // Measured by code review on the engine fixture: jump-to-last then End reported
+    // 6 parts / 13 rounds for a runner who finished nothing. Forward jumps are the
+    // DESIGNED path ("take what's free"), so this is the common case, not an edge.
+    const jumped = guidedReduce(startGuided(session, T0, {}), steps, { type: 'jump', step: steps.length - 1 }, T0)!
+    const ended = guidedReduce(jumped, steps, { type: 'end' }, T0 + 9 * 60_000)!
+    expect(guidedTally(ended, steps, parts)).toMatchObject({ parts: 0, rounds: 0 })
+  })
+
+  it('🔴 a round finished then ended DURING its rest still counts', () => {
+    // The round sits AT `step` while resting, so an `i < step` tally loses it: End during
+    // the rest reported 0 parts / 0 rounds for a round the runner had just done.
+    const firstTraining = steps.findIndex(s => parts[s.part].kind !== 'warmup' && s.restAfter_s > 0)
+    let s = startGuided(session, T0, {})
+    s = { ...s, step: firstTraining }
+    s = guidedReduce(s, steps, { type: 'next' }, T0)!        // done — now resting, step unchanged
+    expect(s.restEndsAt).not.toBeNull()
+    expect(s.step).toBe(firstTraining)
+    const ended = guidedReduce(s, steps, { type: 'end' }, T0 + 9 * 60_000)!
+    expect(guidedTally(ended, steps, parts).rounds).toBe(1)
   })
   it('🔴 resumes the same day\'s progress for the same session (an ended one to its end page); another day or session starts fresh', () => {
     const s = { ...startGuided(session, T0, { a: 20 }), step: 4 }
