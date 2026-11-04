@@ -8422,6 +8422,56 @@ firing.
 
 **Mechanical check.** Not a new invariant — `INV-PLAN-DELIVERED-RAMP` already carries both magnitudes. `deliveredRampTail.test.ts` baselines them per segment and fails when the tail **grows**, with a population arm per segment (an empty segment passes every percentile arm, and that is the defect that bit this measurement twice in one day). ⚠️ **It reports only: not one generated plan changes, so no prescription moved and `verify:parity` is identical by construction.**
 
+### §94 Amendment 5 — the lever-count attribution is VACATED; the injury segment is two cohorts and only one has levers *(Coaching Board 2026-11-04, `INJURY-TAIL-PRODUCTION-SHAPE-01`)*
+
+**Ruling: the Amendment 4 attribution is INCORRECT and is vacated** (chair's veto, no seat dissenting). The magnitude baseline, the segmentation and the refusal to set a threshold all **stand unchanged**. What is withdrawn is one causal sentence.
+
+**What Amendment 4 said.** 🔴 *"The healthy tail is worse than the injured tail, and it is an artefact of LEVER COUNT rather than a tolerance judgement — ADR-022 gave injury-history runners three levers."*
+
+**Why it is wrong.** The `injury` segment is `injuriesOf(input).length > 0`, and `TARGETED_INJURIES` is `Knee | Shin splints | Achilles`. **ADR-022's three levers and §12's producer cap are scoped to knee/shin BY NAME** (`hasVolumeCappedInjuryHistory`); achilles sits in the CHECKER's wider cohort by Amendment 2's own ruling (2026-09-25) and receives none of the levers. Measured 2026-11-04 on the same instrument and corpus:
+
+| cohort | ADR-022 levers | firings / plans | rate |
+|---|---|---|---|
+| knee | **BIND** | 0 / 202 | **0.0%** |
+| shin splints | **BIND** | 0 / 199 | **0.0%** |
+| achilles | none | 48 / 199 | **24.1%** |
+
+Full achilles population of `targetedGrid` (1,536 rows, so the sample is not flattering it): **400 / 1,536 = 26.0%**.
+
+🔴 **So a claim about lever count was read off a population in which the levers govern nobody who fires.** The 18% figure of 2026-10-10 was all-achilles too; the corpus fix did not expose a lever failure, it revealed that the segment had never tested the levers at all. Same class as `RUNWALK-ASSESSED-LEVEL-01-PEAK` — ruled correct on an aggregate, vacated on the cases.
+
+✅ **WHAT REPLACES IT IS STRONGER THAN WHAT IT REPLACES.** Where ADR-022's levers apply, the delivered ramp **does not fire at all**: 0 of 401 plans. 🚹 Willy, on the record: *"that is not 'the levers bind' — that is the levers working completely, and it is the best reason yet to want the experiment I filed."* It materially strengthens `DELIVERED-TAIL-LEVERS-01` (extend the three levers to the healthy), which remains **blocked on outcome data exactly as §2 Amendment 2 requires** — engine evidence is not outcome evidence and is not offered as it.
+
+**Principle (the operative change).** The delivered-ramp magnitude is segmented by cohort **and, within the injury cohort, by whether ADR-022's lever set governs the runner**. A firing is additionally attributed to **what rose**: the quality session, the easy running, or both.
+
+🔴 **WHY THE DRIVER ATTRIBUTION IS NOW DOCTRINE, AND NOT BOOKKEEPING.** The governed arm is the **non-long-run** portion, which contains the quality session — and ADR-022's ratified lever order is *"easy runs trim, the §52 long run never does, **and a quality session is never touched**"*. Decomposed over all 400 achilles firings:
+
+| driver | share | |
+|---|---|---|
+| **quality arrived, easy flat or DOWN** | **44.0%** | ADR-022 **forbids** trimming this |
+| easy rose, quality flat | 24.0% | the lever set's own target |
+| both rose | 32.0% | partly actionable |
+
+🚹 **Willy: *"a governed arm that is 44% composed of load my lever set may not touch is reporting a problem nobody may act on."*** That is his own noise standard from §1 (*"a check firing too widely is not a safety mechanism — it is noise, and noise gets suppressed"*), and it is the **logical form of the condition Amendment 2 named as reopening it**: *"evidence that the extra ~9pp are dominated by rises the engine may not trim, which would make them unactionable."* Amendment 2 expected long-run-led rises; the culprit is quality onset.
+
+🔴 **THE MECHANISM IS §89/ADR-021, NOT §94.** The worst case in the whole achilles population — HM, 30 km/week, 12 km longest, age 40, assessed intermediate/experienced — fires **+42% non-long-run in W6**, the base→build transition, and the week decomposes as: **easy running falls 12 → 8 km to fund a 9 km CV-interval session.** Nothing ramped; the week re-composed. 🎯 McMillan: *"we shrank the easy running to afford the quality. That is backwards for an achilles."* ⚕️ Sims: *"for a runner with slower tendon adaptation that is the worst available trade — remove the low-stress loading that builds tolerance, add the high-stress loading that tests it, in the same week."*
+
+📊 **Seiler's standing question, re-asked and re-answered.** The injury maximum is **32 firings at +42% from exactly TWO distinct input cells**, differing only on `weeks_at_current_volume` — an axis that cannot touch week 6 — all in W6. One week shape counted thirty-two times. Nine distinct values across 400 firings. **A corpus property, not a clamp, and never a ceiling.**
+
+⚠️ **NO THRESHOLD, AGAIN, AND NOTHING HERE WEAKENS THAT.** §2 Amendment 2 (*"outcome evidence, not another corpus measurement"*) and Amendment 3 (*"any non-zero tolerance is an invented number"*) both bind, and **everything in this sitting is a corpus measurement.** 🏃 Hutchinson refused a magnitude threshold outright.
+
+**NOT RULED, and filed:** ramping the quality **onset** for tendon histories with easy volume **held** — `ACHILLES-QUALITY-ONSET-01` 🏃, **INSUFFICIENT EVIDENCE**. Three seats want it; it changes what the engine prescribes and the sitting had no `measure:fitness` numbers for it. *What would settle it:* `npm run measure:fitness` on the achilles cohort before and after a prototype that holds easy volume across base→build and introduces the first quality session at a reduced dose — with 🚹 **Willy's binding condition that the quality session is never trimmed to achieve it** (*"removing the stimulus is not load management, it is withholding training"*), and §1 CD-19 re-checked, since shrinking or moving a quality session moves the plan-wide session count.
+
+💪 **Blagrove (scoped, adjacent).** If the engine may not remove the interval session loading the tendon, the strength answer is that **tendon tolerance is built by loading** — heavy slow resistance for calf/achilles is the best-evidenced intervention named at this sitting, and `STRENGTH-ENGINE-01` exists. ⚠️ **He repeats his standing limit: his own 2024 meta-analysis found unsupervised runner programmes did not reduce injury, and no surface may claim they do.** Tolerating a prescribed session is a different claim from preventing injury; only the first is supportable.
+
+⚕️ **Recorded gap, NOT ruled here because it is not this item's.** Sims: the cell she cares most about — **post-menopausal × achilles history** — is in neither grid; `cohortGrid` varies no injury and `targetedGrid` is age 40. The segmentation splits age and injury and never crosses them, and the worst cell above is age **40, below `MASTERS_AGE_THRESHOLD` of 45**, so it is a tendon case invisible to the masters segment. Filed as `GRID-NO-MENOPAUSAL-TENDON-01` ⚕️.
+
+**Recorded disagreement.** 🚹 Willy wants the governed arm decomposed so it stops reporting untrimmable load; ⚕️ Sims wants it left whole and the **prescription** changed, on the grounds that an unactionable warning is still a true statement about the runner's week and hiding it serves the engine rather than the runner. *What settles it:* whether a decomposed arm still fires on the cases Sims names — it does; both drivers are reported and neither is suppressed, which is why both seats accepted the artifact.
+
+**Config.** **None, and that is the ruling** — unchanged from Amendment 4. The lever-scope and driver baselines are fixtures in `lib/plan/deliveredRampTail.test.ts`, deliberately **in their own object** rather than as extra fields on `TRIMABLE_BASELINE`, which a gate holds to exactly three segments and two fields on the stated grounds that *"a fourth field is how a threshold sneaks in"*.
+
+**Mechanical check.** No new invariant; `INV-PLAN-DELIVERED-RAMP` is unchanged in logic and severity (`warn`, §34). `deliveredRampTail.test.ts` gains six arms: a vacuity arm (the corpus holds both cohorts), **the lever-scoped firing count held at EXACT zero**, the tail belonging wholly to the unscoped cohort, a vacuity floor on the unactionable drivers, the unactionable share ratcheted, and every firing resolving to a named driver. ⚠️ **One of those arms was hollow and a mutation caught it:** forcing every driver to `'easy'` left all twelve arms green, because a one-sided ratchet reads 0% as a triumph. The vacuity floor exists because of that. ⚠️ **It reports only: no prescription moved** — the ruling changes a sentence and an instrument, not a plan.
+
 ### Amendment 1 — the trimable arm is retired; §2's claim is the WHOLE week
 
 *(Coaching Board, 2026-09-17 — RAMP-GUARD-FAILS-OPEN-01. CORRECT WITH AMENDMENT.

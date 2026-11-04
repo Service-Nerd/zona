@@ -32,6 +32,30 @@ memory.
 
 
 
+## 2026-11-04 — INJURY-TAIL-PRODUCTION-SHAPE-01 · §94 Am.4's lever-count attribution VACATED · the injury segment is two cohorts · ACHILLES-QUALITY-ONSET-01 filed
+
+The item asked whether ADR-022's lever claim survives the production shape. **Measured before the sitting: it was never
+tested.** `segmentOf` calls any history `injury`; ADR-022's three levers and §12's producer cap are knee/shin **by name**.
+**Knee 0 firings / 202 plans, shin 0 / 199, achilles 48 / 199** (full population 400 / 1,536 = 26.0%) — so the whole
+injury tail is the cohort with no levers, and the 18% of 2026-10-10 was all-achilles too. **A claim about lever count read
+off a population where the levers govern nobody who fires.** Same class as `RUNWALK-ASSESSED-LEVEL-01-PEAK`: ruled correct
+on an aggregate, vacated on the cases. ✅ **What replaces it is stronger — where the levers apply, the ramp does not fire
+at all (0 of 401)**, which strengthens 🩹 `DELIVERED-TAIL-LEVERS-01` without being the outcome data §2 Am.2 requires.
+🔴 **Driver decomposition, now doctrine:** the governed arm is non-long-run, which contains the quality session ADR-022
+forbids touching — **44.0% of achilles firings are quality arriving while easy volume is flat or FALLING**, 32.0% both,
+only 24.0% the lever set's own target. 🩹 Willy: *"a governed arm 44% composed of load my lever set may not touch is
+reporting a problem nobody may act on"* — his noise standard, and the **logical form of the condition Am.2 named as
+reopening it**. 🔴 **The mechanism is §89/ADR-021, not §94:** the worst case (+42%, W6, HM, 30 km/wk, longest 12, age 40)
+is the base→build transition with **easy running cut 12 → 8 km to fund a 9 km CV-interval session.** 🎯 McMillan: *"we
+shrank the easy running to afford the quality. That is backwards for an achilles."* 📊 Seiler's question re-answered: the
+max is **32 firings from 2 distinct input cells**, all W6 — corpus density, never a ceiling. ⚠️ **No threshold, refused
+again** (§2 Am.2, §94 Am.3). **Ruling: Am.4's attribution INCORRECT and vacated; the segmented gate CORRECT; the onset
+prototype INSUFFICIENT EVIDENCE** (`ACHILLES-QUALITY-ONSET-01` 🏃, needs `measure:fitness`, Willy's condition binding that
+the quality session is never trimmed). ⚕️ Sims's cell — **post-menopausal × achilles** — is in neither grid: filed
+`GRID-NO-MENOPAUSAL-TENDON-01`. ⚠️ **One of my six new arms was HOLLOW and a mutation caught it:** forcing every driver to
+`'easy'` left all twelve green, because a one-sided ratchet reads 0% as a triumph; a vacuity floor exists because of that.
+**No prescription moved.** Sitting: `docs/decisions/coaching-2026-11-04-injury-tail-production-shape-sitting.md`.
+
 ## 2026-10-31 — COACH-KIT-CAUGHT-01 good-news receipt · CORRECT WITH AMENDMENT. A receipt may say a run stayed easy, with its share, never "all" and never "longest"
 
 A free or trialling runner's receipts may include the longest `easy`-kind run (§132) in the window when at least 80% of it

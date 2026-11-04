@@ -437,30 +437,57 @@ them. Filed as `GRID-NO-ASSESSED-BEGINNER-01`.
 
 ---
 
-### 🔴 `INJURY-TAIL-PRODUCTION-SHAPE-01` — the injured delivered-ramp tail is 42%, not 18%, and ADR-022's lever claim was measured on a forced structural band *(filed 2026-11-03)* 🏃 **COACHING BOARD** (Willy's standing condition)
+### ✅ `INJURY-TAIL-PRODUCTION-SHAPE-01` — RULED 2026-11-04: §94 Am.4's lever-count attribution VACATED; the premise was backwards *(filed 2026-11-03, closed 2026-11-04)* 🏃 **COACHING BOARD**
 
-Found by `COHORT-GRID-UNSET-LEVEL-01`. 🩹 Willy's condition on withdrawing `ADR022-V1-DELIVERED-RISE-01` was
-*"watch the tail, not the rate"*. On the production shape, same instrument, same 1,800-input corpus:
+**Coaching Board 2026-11-04 — Am.4's attribution INCORRECT and vacated; the segmented gate CORRECT; the onset
+prototype INSUFFICIENT EVIDENCE.** Sitting: `docs/decisions/coaching-2026-11-04-injury-tail-production-shape-sitting.md`.
 
-| segment | firings | p90 | p99 | max |
-|---|---|---|---|---|
-| healthy standard | 147 → 137 | 39 → 36 | 58 → **75** | 58 → **75** |
-| healthy masters | 168 → 146 | 37 → **43** | 52 → **88** | 79 → **88** |
-| **injury** | 51 → 48 | **18 → 42** | **18 → 42** | **18 → 42** |
+🔴 **The item asked whether ADR-022's lever claim survives the production shape. It was never tested.**
+`segmentOf` calls any history `injury`; the levers and §12's producer cap are knee/shin **by name**.
+**Knee 0 firings / 202 plans, shin 0 / 199, achilles 48 / 199** (full population 400 / 1,536 = 26.0%) — the whole
+injury tail is the cohort with no levers, and the 18% of 2026-10-10 was all-achilles too.
+✅ **Where the levers apply the ramp does not fire at all (0 of 401)**, which strengthens `DELIVERED-TAIL-LEVERS-01`
+without being the outcome data §2 Am.2 requires. 🔴 **44.0% of achilles firings are a quality session arriving
+while easy volume is flat or FALLING** — load ADR-022 forbids trimming — so the mechanism is **§89/ADR-021's onset,
+not §94**: the worst case cuts easy running **12 → 8 km to fund a 9 km CV-interval session** in W6.
+⚠️ **No threshold, refused again.** No prescription moved.
 
-**The rate and the tail moved in opposite directions on every segment.** `verify:parity` is IDENTICAL, so the engine
-did not change: `targetedGrid` forced `fitness_level: 'beginner'` on all 6,144 rows, 4,608 of them injured, and
-ADR-022's three levers (deload re-anchored to the post-cap prior week, the injury peak week yielding its 2nd quality,
-easy runs trimming while §52's long run never does) are **structural**. At 30 km/week with a 12 km longest run the
-assessment is INTERMEDIATE, so the levers bind differently.
-
-⚠️ **`deliveredRampTail.test.ts`'s own prose still reads *"Injury maxes at 18% against healthy-standard 105%…
-ADR-022's three levers bind on the injured"*** — raised to 42 with the measurement in the baseline comment, but the
-sentence above it is the sitting's headline and it is now in question. **The board needs to see this before the next
-load ruling.** Not a refusal threshold: §2 Am.2 freezes the predicate until outcome data exists and §94 Am.3 records
-that *"any non-zero tolerance is an invented number"*.
+Successors: `ACHILLES-QUALITY-ONSET-01` 🏃, `GRID-NO-MENOPAUSAL-TENDON-01` ⚕️.
 
 ---
+
+### 🔴 `ACHILLES-QUALITY-ONSET-01` — ramp the quality ONSET for tendon histories, with easy volume HELD *(filed 2026-11-04)* 🏃 **COACHING BOARD** (INSUFFICIENT EVIDENCE — needs `measure:fitness`)
+
+From the sitting above. Three seats want it; it changes what the engine prescribes and the sitting had no fitness
+numbers, so it was **not ruled**.
+
+The base→build transition hands a previously-injured achilles its first quality session **and pays for it out of
+the easy running**: measured worst case HM / 30 km-wk / longest 12 / age 40, **easy 12 → 8 km while a 9 km CV-interval
+session arrives**, +42% non-long-run in W6. 🎯 McMillan: *"we shrank the easy running to afford the quality. That
+is backwards for an achilles."* ⚕️ Sims: *"remove the low-stress loading that builds tolerance, add the high-stress
+loading that tests it, in the same week."*
+
+**Prototype:** hold easy volume across base→build; introduce the first quality session at a reduced dose.
+🚹 **Willy's condition is BINDING: the quality session is never trimmed to achieve it** — *"removing the stimulus
+is not load management, it is withholding training."*
+**What settles it:** `npm run measure:fitness` on the achilles cohort before and after, plus §1 CD-19 re-checked
+(shrinking or moving a quality session moves the plan-wide session count).
+⚠️ **Not a threshold and must not become one** — §2 Am.2 and §94 Am.3 both bind.
+
+---
+
+### 🔲 `GRID-NO-MENOPAUSAL-TENDON-01` — post-menopausal × achilles history is in NEITHER measurement grid *(filed 2026-11-04)* ⚕️ **COACHING BOARD** (Sims, recorded at the §94 Am.5 sitting)
+
+`cohortGrid` varies no injury at all (0 of 41,472 rows); `targetedGrid` carries the injuries but is **age 40**. The
+delivered-ramp segmentation splits age and injury and **never crosses them**, so the cell Sims says she cares most
+about cannot be reached — and the worst achilles case measured is `age=40`, **below `MASTERS_AGE_THRESHOLD` of 45**,
+making it a tendon case invisible to the masters segment as well.
+
+⚕️ Tendon and fascia stiffness are oestrogen-sensitive and adaptation is slower peri- and post-menopause, so this is
+the cohort with the strongest tissue argument and no corpus reaches it. Same class as `COHORT-GRID-UNSET-LEVEL-01`
+and as `measure-plan-fitness.ts`'s hand-built injury × masters cohort, which exists for exactly this reason.
+
+**Scope:** a corpus change only — no prescription, no new principle. Ruling deferred until a grid can build the cell.
 
 ### 🔲 `GRID-NO-ASSESSED-BEGINNER-01` — neither measurement grid can build a runner the engine ASSESSES as a beginner on intensity *(filed 2026-11-03)* ⚙️ **NO BOARD**
 
