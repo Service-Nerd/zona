@@ -1391,14 +1391,27 @@ Filed 2026-10-25. The only remaining route to *link without opening the app*: `H
 
 ---
 
-### 🔲 `NATIVE-CONFIG-DRIFT-01` — the iOS app's bundled config is behind `capacitor.config.ts` ⚙️ **NO BOARD**
+### ✅ `NATIVE-CONFIG-DRIFT-01` — **FIXED IN THE REPO 2026-11-05 (`15b1b948`), PENDING A BINARY**
 
-Found 2026-10-25 while debugging BOOT-HANG-01. `ios/App/App/capacitor.config.json` (what the binary actually reads)
-has **no `www.zonna.run` in `allowNavigation`** and no `PushNotifications.presentationOptions`, both present in
-`capacitor.config.ts`. The first is the ONBOARD-EXIT-01 fix (sign-out opening Safari); the second is foreground push
-banners. **Not measured:** whether the TestFlight binary was built from a later, uncommitted sync, which would make this
-the committed copy only. **Fix:** `npm run sync:ios` (never raw `npx cap sync ios`), commit, and a new binary
-(founder: native change, needs a build). Worth a gate: compare the two configs in CI.
+Found 2026-10-25 while debugging BOOT-HANG-01: `ios/App/App/capacitor.config.json` (what the binary actually reads) had
+**no `www.zonna.run` in `allowNavigation`** (the ONBOARD-EXIT-01 fix, sign-out opening Safari) and no
+`PushNotifications.presentationOptions` (foreground push banners), both present in `capacitor.config.ts`.
+
+🔴 **I RE-DISCOVERED THIS ON 2026-11-05 AND FILED IT AGAIN AS A NEW ITEM** (`CAP-SYNC-NODE-FATAL-01`), without finding
+this entry — the recorded *"REUSE applies to your own filed items"* failure, three times now. The second pass did add
+three things this one did not have, which is the only reason it was not pure waste: **the CAUSE** (`@capacitor/cli@8`
+needs Node ≥22, the default shell Node is v20, so `npm run sync:ios` exits fatal and the command that maintains the
+file silently never runs), **two more missing entries** (`FilesystemPlugin` + `SharePlugin`, so the native share path
+could not register), and the gate.
+
+⚠️ **TWO PREMISES IN THE ORIGINAL ITEM WERE WRONG, AND BOTH POINTED AWAY FROM THE FIX.** *"commit"* is impossible —
+the file is gitignored (`ios/.gitignore:12`) because it is generated, so there is nothing to commit and **git cannot
+answer any question about it; mtime is the only evidence** (measured: last written **2026-08-06**). And *"compare the
+two configs in CI"* cannot work for the same reason: the file does not exist in a fresh checkout. The gate had to go
+where the file ships — the **first Xcode build phase on the App target** (`CAP-CONFIG-DRIFT-GATE-01`).
+
+🔻 **Still open in the only sense that matters: it is not on anyone's phone.** Regenerated, verified, three arms green —
+and the binary is unchanged until the next Xcode build. See § Native release batching below.
 
 ---
 
@@ -19784,7 +19797,24 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 4. **ASC ↔ binary parity:** any App Store Connect product/config change must match the binary in the *same* submission (e.g. MON-TRIAL-01 intro-trial removal) or it's a §3.1.2 rejection vector.
 5. `APNS_PRODUCTION=1` in Vercel (already set — App Store/TestFlight builds register production APNs tokens; sandbox tokens are rejected by the prod server and vice-versa).
 
-**Current native release (in flight, 2026-08):** background run-analysis push regression fix + duplicate-push dedup + relights the home-screen widget (`SharedStorePlugin`) — both were disabled by the same `cap sync` plugin-drop. Carries the new `com.apple.developer.healthkit.background-delivery` entitlement. **Do MON-TRIAL-01 (ASC config) at this submission** (W2).
+**🔴 NEXT NATIVE RELEASE — READY NOW, measured 2026-11-05. Nothing is pending code; it is pending a build.**
+
+The 2026-08 release described here previously ("background run-analysis push regression fix + duplicate-push dedup + relights the widget, carrying the new `com.apple.developer.healthkit.background-delivery` entitlement") **shipped**: native boot telemetry starts **2026-10-25** and there are **15 distinct native users** and **25 users with iOS APNs tokens** (30 subscriptions). That paragraph sat here for three months describing a release that had already gone out.
+
+⚠️ **EVERY ONE OF THOSE 25 PEOPLE IS RUNNING A BINARY BUILT FROM A CONFIG LAST WRITTEN 2026-08-06**, because `npm run sync:ios` was fatal on the default Node from then until 2026-11-05 (`CAP-SYNC-NODE-FATAL-01`). So three fixes that are in the repo have never been on anyone's phone:
+
+| Waiting for the binary | What it costs today | Landed in the repo |
+|---|---|---|
+| `www.zonna.run` in `server.allowNavigation` | **Sign-out throws the runner into Safari, still signed in** (ONBOARD-EXIT-01) | `capacitor.config.ts` **2026-09-18** (`68c8dd7b`); generated config 2026-11-05 |
+| `PushNotifications.presentationOptions` | **iOS suppresses the banner while the app is open** — which is exactly when the run-analysis push fires, because the runner opened the app to sync. Invisible to all 25. | same |
+| `FilesystemPlugin` + `SharePlugin` in `packageClassList` | The native share cannot register, so `shareSessionCompleteCard` falls through to the slow web `navigator.share` path | 2026-11-05 (`15b1b948`) |
+| The verify build phase itself | Nothing — it starts guarding on the next build | 2026-11-05 (`15b1b948`), fixed `043f6df5` |
+
+**Measured: that is the WHOLE native backlog.** Every tracked native surface and its last change — `capacitor.config.ts` 2026-09-18 · `App.entitlements` + `AppRelease.entitlements` + `HealthObserverPlugin.swift` 2026-08-06 · `Info.plist` 2026-06-09 · `AppDelegate.swift` 2026-05-26 · `SharedStorePlugin.{swift,m}` 2026-05-23/24 · `ZonnaWidget.swift` 2026-05-23. Nothing else is newer than the shipped binary. ✅ **Checklist item 2 verified now:** both entitlement files are in parity, differing only in `aps-environment` (development vs production), which is correct.
+
+🔻 **Needs a version bump before upload:** `MARKETING_VERSION 1.9.1`, `CURRENT_PROJECT_VERSION 15`. App Store Connect rejects a duplicate build number.
+
+🔻 **Nothing in the backlog is ready to ride along.** Checked all 119 open items against a native-surface filter; the four batchable candidates in the table below are all still gated — **Universal Links** is the nearest and is NOT shovel-ready (no `public/.well-known/apple-app-site-association`, and no `com.apple.developer.associated-domains` in either entitlement file; the portal capability has been enabled since 2026-05-08). **POST-RUN-REFRAME-02** still waits on the Whisper vendor call, **POST-RUN-03** needs a new extension target, **CA-02** warrants its own release. **Do not hold this build for any of them** — it carries three live fixes that reach nobody until it ships.
 
 **Batchable native items — group so each doesn't burn its own review cycle:**
 
