@@ -236,8 +236,14 @@ describe('marketing section surfaces', () => {
     // the component away would NOT have turned it red. That is the exact
     // `toContain('<PlanCalendar')` / `<PlanCalendarX` trap this repo has
     // already recorded, reproduced here while writing the guard against it.
-    expect(home, 'ZoneRings has been dropped from the homepage — see the register')
-      .toMatch(/<ZoneRings[\s/>]/)
+    // 🔴 AMENDED 2026-11-05 — `SITE-EFFORT-RECORD-01`, founder overrule. The
+    // trio's third still is now `EffortRecord`; ZoneRings moved to the device
+    // above it and `realComponents.test.ts` asserts it is still there. This arm
+    // was written to stop the TRIO being deleted wholesale, which is still what
+    // it does — it just no longer names the component that happens to be third.
+    expect(home, 'the ProductStill trio has lost its third still — the register '
+      + 'retains all three as "literally one third of the public face"')
+      .toMatch(/<EffortRecord[\s/>]/)
 
     // 3. The two refusal sections are ONE section.
     //

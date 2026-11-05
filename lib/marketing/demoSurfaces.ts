@@ -132,6 +132,63 @@ export const DEMO_ZONE_WEEK = {
  *
  * Voice check: specific, unflattering, one instruction. Not motivational.
  */
+/**
+ * `SITE-EFFORT-RECORD-01` (Design Board 2026-11-05, founder overrule on the
+ * ZoneRings row) — six weeks of this runner's actual effort, one column a run.
+ *
+ * THE SAME RUNNER AS EVERYTHING ELSE IN THIS FILE, which is the rule its header
+ * already states: the 16-week marathon block of `DEMO_BLOCK`, now in week 6, and
+ * the last four runs are the week `DEMO_ZONE_WEEK` summarises (z1 8, z2 71,
+ * z3 9, z45 12 across 4 runs). Change one and change all three.
+ *
+ * ⚠️ THE TWO DRIFTED DAYS IN `DEMO_COACH_NOTE` ARE NOT GREY COLUMNS, and that
+ * distinction is the product's. The note says Tuesday *"drifted 8 bpm above
+ * your Zone 2 ceiling"* — a run that drifts for part of itself still spends
+ * MOST of its time in Zone 2, so `runEffortKind` calls it `easy` and it draws
+ * with a visible Z3 slice rather than as a grey column. Making them grey would
+ * put this week's Z3 share far above the 9% the rings report. **Two surfaces
+ * describing one week have to agree arithmetically, not just in tone.**
+ *
+ * ⚠️ AN ILLUSTRATION, exactly like `DEMO_ZONE_WEEK` and `DEMO_RACE_ARC`: a
+ * plausible six weeks, not a measurement of anyone. We have roughly three users
+ * and there is no honest aggregate to draw. The PRESCRIPTION on this page is
+ * real and generated; the EXECUTION is drawn, and `SameWeekTwice` already says
+ * so on the surface.
+ *
+ * The arc is the one the brand exists for: a runner whose early weeks sat in
+ * the grey middle and whose recent weeks hold the zone. Four of 22 are grey,
+ * and all four are in the first three weeks.
+ */
+export const DEMO_EFFORT_RUNS = [
+  // Weeks 1-3: the grey middle. Four runs mostly in Z3.
+  { date: '2026-03-02', z1: 4,  z2: 38, z3: 52, z45: 6,  kind: 'grey'   as const, thisWeek: false },
+  { date: '2026-03-04', z1: 6,  z2: 61, z3: 28, z45: 5,  kind: 'easy'   as const, thisWeek: false },
+  { date: '2026-03-07', z1: 3,  z2: 41, z3: 49, z45: 7,  kind: 'grey'   as const, thisWeek: false },
+  { date: '2026-03-08', z1: 9,  z2: 66, z3: 21, z45: 4,  kind: 'easy'   as const, thisWeek: false },
+  { date: '2026-03-10', z1: 5,  z2: 44, z3: 46, z45: 5,  kind: 'grey'   as const, thisWeek: false },
+  { date: '2026-03-12', z1: 7,  z2: 58, z3: 29, z45: 6,  kind: 'easy'   as const, thisWeek: false },
+  { date: '2026-03-14', z1: 4,  z2: 22, z3: 31, z45: 43, kind: 'hard'   as const, thisWeek: false },
+  { date: '2026-03-15', z1: 11, z2: 64, z3: 20, z45: 5,  kind: 'easy'   as const, thisWeek: false },
+  { date: '2026-03-17', z1: 5,  z2: 43, z3: 47, z45: 5,  kind: 'grey'   as const, thisWeek: false },
+  { date: '2026-03-19', z1: 8,  z2: 69, z3: 18, z45: 5,  kind: 'easy'   as const, thisWeek: false },
+  { date: '2026-03-21', z1: 6,  z2: 26, z3: 24, z45: 44, kind: 'hard'   as const, thisWeek: false },
+  { date: '2026-03-22', z1: 10, z2: 72, z3: 14, z45: 4,  kind: 'easy'   as const, thisWeek: false },
+  // Weeks 4-5: it starts to hold.
+  { date: '2026-03-24', z1: 9,  z2: 78, z3: 10, z45: 3,  kind: 'easy'   as const, thisWeek: false },
+  { date: '2026-03-26', z1: 7,  z2: 81, z3: 9,  z45: 3,  kind: 'easy'   as const, thisWeek: false },
+  { date: '2026-03-28', z1: 5,  z2: 29, z3: 21, z45: 45, kind: 'hard'   as const, thisWeek: false },
+  { date: '2026-03-29', z1: 12, z2: 79, z3: 7,  z45: 2,  kind: 'easy'   as const, thisWeek: false },
+  { date: '2026-03-31', z1: 8,  z2: 84, z3: 6,  z45: 2,  kind: 'easy'   as const, thisWeek: false },
+  { date: '2026-04-02', z1: 9,  z2: 82, z3: 7,  z45: 2,  kind: 'easy'   as const, thisWeek: false },
+  // Week 6 — the four runs `DEMO_ZONE_WEEK` reports, and the two
+  // `DEMO_COACH_NOTE` says drifted (Tuesday and Wednesday: a visible Z3 slice,
+  // still mostly Z2, so still `easy`).
+  { date: '2026-04-07', z1: 7,  z2: 72, z3: 17, z45: 4,  kind: 'easy'   as const, thisWeek: true },
+  { date: '2026-04-08', z1: 6,  z2: 74, z3: 16, z45: 4,  kind: 'easy'   as const, thisWeek: true },
+  { date: '2026-04-11', z1: 5,  z2: 54, z3: 2,  z45: 39, kind: 'hard'   as const, thisWeek: true },
+  { date: '2026-04-12', z1: 14, z2: 84, z3: 1,  z45: 1,  kind: 'easy'   as const, thisWeek: true },
+]
+
 export const DEMO_COACH_NOTE = {
   timestamp: 'Sunday',
   observation:

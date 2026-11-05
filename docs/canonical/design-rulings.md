@@ -5966,3 +5966,60 @@ homepage mocks it was written for drifted in their CONTENT, while `MainSet` took
 ⚠️ **What this does not settle:** whether the exemplar should be a *different* session (a tempo rather than the first
 v2 row), whether the band belongs before or after the table — both ruled on one render each, with no analytics
 (`SITE-SCROLL-DEPTH-01` still blocked) — and the em-dash question itself, which is the Coaching Board's.
+
+
+## 👤 2026-11-05 — `SITE-ENGINE-EMDASH-01` + `SITE-EFFORT-RECORD-01` · **FOUNDER RULINGS, both built**
+
+Two questions were put to the founder because neither was the board's to answer. He ruled on both in one line: *"Yes build 1 and 2."*
+
+### 1. `SITE-ENGINE-EMDASH-01` — a step note is a SENTENCE
+
+His own rule (2026-09-22) is *"no em dash in text or spoken word. In descriptions for sessions it's ok. I just don't want it in sentences."* Putting the app's real session structure on `/plans` made engine copy public and raised the question of which side a step note falls on. **Ruled: a sentence.**
+
+🔴 **THE FIX WAS SIX TIMES BIGGER THAN THE PAGE THAT EXPOSED IT, and measuring it the lazy way would have hidden that.** The marketing gate saw **8**; the question is what a RUNNER sees, so the population was taken by GENERATING all nine published plans and walking every rendered string: **48 distinct runner-facing strings carry an em dash.** Same discipline CLAUDE.md records for its own 544-vs-48 count. The split:
+
+| | | |
+|---|---|---|
+| **27 sentences** | coach notes (16), step notes (9), the fitness-signal note, a rule-adjustment resolution | ✅ **fixed** |
+| **12 labels** | `Easy run — Zone 2`, `Build — raising the ceiling` | 🔻 **kept** |
+| **6 plan captions** | `Standard plan — 5km, 12 weeks` | 🔻 **kept** |
+| **3 bare placeholders** | `—` | 🔻 **kept, exempt by CLAUDE.md in terms** |
+
+⚠️ **A LABEL IS NOT MERELY "NOT A SENTENCE", IT IS LOAD-BEARING.** ADR-018 keeps a legacy fallback matching a catalogue row's `name` against `session.label`, so renaming one can silently break the join that tells a session which row it came from. `noEmDash.test.ts`'s own header had already declared engine labels out of scope, in those words, for that reason.
+
+⚠️ **SUBSTITUTION, NOT REWRITING.** His rule names the replacements (*"a colon, comma, semicolon or full stop"*), so his words were not touched. **94 of 99 changed golden-snapshot lines are punctuation-only**; the 5 that are not are two declared re-wordings where a bare colon would have produced two colons in one sentence.
+
+🔴 **AND A CATALOGUE EDIT REACHES NEW PLANS ONLY.** A step note is stamped into `plan_json` at generation. `SUPERSEDED_NOTES` gained **14 entries** so the new wording repairs plans that already exist — the third time this shape has come up, and that file's own header records getting it wrong twice before. ⚠️ **The pairs were DERIVED by diffing every `note:` literal against its version at HEAD**, not typed, so a stored sentence cannot be mapped to something it never said.
+
+🔴 **THE STRUCTURAL FINDING: `lib/plan` WAS IN NEITHER COPY GATE.** `noEmDash` reads marketing files; `noEmDashApp` read `components`, `app/dashboard`, `lib/ui`, `lib/coaching`. **The plan engine — which writes every label, coach note and step note a runner reads — was in neither**, and it only surfaced because a marketing page started rendering engine copy. `lib/plan` is in scope now, with 14 dev-facing files exempted BY NAME and reason (invariant messages, AI prompt text, measurement corpora, and `supersededNotes.ts`, whose KEYS are the old copy by construction), plus an arm that fails if an exemption is stale or its reason is too thin to argue with.
+
+⚠️ **One limitation found and named rather than exempted around.** The literal matcher is a regex, so across a template boundary it can pair one literal's closing backtick with the next one's opening backtick and blame a line reading `: null` for a dash that is real and lives further down. The first instinct was to exempt the mangled text — **which would have exempted whatever real sentence was hiding behind it.** Fixed by reporting the line of the EM DASH and testing the sentence around it; the `§` exemption then clears a rule reference and nothing else.
+
+### 2. `SITE-EFFORT-RECORD-01` — 🔴 FOUNDER OVERRULE OF A REVERSED ROW
+
+The board's amendment spends the ProductStill trio's third still on `EffortRecord`. **`Dropping ZoneRings` is a 🔴 REVERSED row** — *"one of three components on the marketing homepage's ProductStill trio: literally one third of the public face"* — and the settled-ground scan has already caught one attempt to spend that slot. **Overruled by the founder, recorded here as an overrule, not deleted because a test went red.**
+
+⚠️ **ZONERINGS IS NOT DROPPED FROM THE SITE**, which is what makes this a swap of EVIDENCE rather than the deletion the row forbids: it still renders in `TabbedPhone`'s Coach tab, in the device directly above the trio, and `realComponents.test.ts` now asserts exactly that so "retained" stays mechanically true instead of becoming a claim in a comment.
+
+⚠️ **THE PILLAR'S BODY MOVED WITH THE STILL, and that is the ruling rather than a tidy-up.** Its old sentence (*"no noise, no dashboards, nothing competing"*) was proved by four rings. Eight weeks of per-run data does not prove *"nothing you don't need"* by being smaller; it proves it by being ONE picture where every other app puts a dashboard. **Leaving the old words under the new still would have been a claim its own evidence contradicts — the three-card proof band's error in a new coat.**
+
+✅ **Also deleted: the standalone race-arc card in `CoachStill`.** ✋ Silvanto: *"not stale, absent — it should be deleted, not updated."* `RaceProgressArcRow` moved INSIDE `RaceTimesCard` in the app, so the website was drawing a card that exists nowhere in the product, with a hand-typed eyebrow and race name.
+
+📐 `DEMO_EFFORT_RUNS` is 22 runs over the six weeks ending at `DEMO_BLOCK.weekN`, and **its last four reconcile exactly to `DEMO_ZONE_WEEK` (8/71/9/12)** — checked arithmetically, not by eye. ⚠️ **The two days `DEMO_COACH_NOTE` says drifted are NOT grey columns**: a run that drifts for part of itself still spends most of its time in Zone 2, so it draws with a visible Z3 slice. Making them grey would put the week's Z3 share far above the 9% the rings report. **Two surfaces describing one week have to agree arithmetically, not just in tone.**
+
+**Checks, each falsified with the mutation verified present:** an em dash returning to a step note (the widened `lib/plan` gate) · ZoneRings leaving the site entirely · the trio losing its third still. Rendered at 375: 22 columns, 4 grey, 4 ringed as this week, no overflow.
+
+### What the copy change actually touched — four downstream consumers, found by the suite not by me
+
+⚠️ **A PUNCTUATION EDIT HAD FOUR CONSUMERS AND I PREDICTED NONE OF THEM.** The full suite found them:
+
+| Consumer | Why it broke |
+|---|---|
+| `goldenPlans.test.ts.snap` | 7 committed plan snapshots. Regenerated; **94 of 99 changed lines are punctuation-only** and the other 5 are the two declared re-wordings |
+| `docClaims.test.ts` | `CoachingPrinciples.md` quotes engine copy **verbatim** under an `**Engine copy:**` marker. One quote had drifted from the code the moment I edited it. Re-quoted to the shipped string |
+| `hardcodedUnits.test.ts` | `UNITS-PROSE-01`'s debt register is keyed on the EXACT generated string; 6 of its 55 entries stopped matching. ⚠️ **Re-quoted, NOT re-added** — that register is closed to new entries by design, and the fix keeps it pointed at the same 55 sites with `count` unchanged |
+| `harnessPlan.json` | A committed fixture of real engine output |
+
+🔴 **AND THE FIXTURE REGENERATION MOVED `vdot_training_anchor` 30.2 → 29.9, WHICH IS NOT PUNCTUATION.** It would have been easy to accept as collateral. Isolated instead: stashed the copy change, regenerated from HEAD's engine, and got **29.9 there too** — the fixture was `last_updated: 2026-10-08` and a month of engine work had shipped since. **My change did not move it; a stale fixture did.** Checked rather than assumed, because the alternative was shipping an engine delta inside a copy commit.
+
+⚠️ **What this does not settle:** whether the HR trend, load history, week facts or Share belong on the site (`TrendCard` and `ShareControl` are `'use client'` and nobody has run the bundle number); and the 12 labels and 6 captions still carry em dashes by decision, not by oversight.

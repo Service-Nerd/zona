@@ -225,29 +225,18 @@ function CoachStill({ block }: { block: DemoBlockView }) {
         <ZoneRings pctByZone={DEMO_ZONE_WEEK.pct} meta={DEMO_ZONE_WEEK.meta} chromeless />
       </div>
 
-      {/* THE ARC — where I was, where I am, the goal I chose. The block the
-          real CoachScreen renders directly under the read, and the reason the
-          still stops looking like a screen that ran out: without it a quarter
-          of the device was empty warm slate, which reads as "that is all there
-          is" rather than as a crop. Real component, real copy constant, real
-          `buildRaceProgressArc`; only the three times are illustrative. */}
-      {arc && (
-        <div style={{ padding: '12px 12px 0' }}>
-          <div style={{
-            background: 'var(--card)', borderRadius: 16,
-            border: '0.5px solid var(--line)', padding: '14px 14px 16px',
-          }}>
-            <div style={{
-              fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--mute)',
-              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4,
-            }}>{ARC_COPY.raceEyebrow}</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-2)', marginBottom: 14 }}>
-              {DEMO_RACE_ARC.raceName}
-            </div>
-            <RaceProgressArcRow arc={arc} copy={ARC_COPY} />
-          </div>
-        </div>
-      )}
+      {/* 🔴 THE STANDALONE RACE-ARC CARD WAS DELETED HERE (SITE-EFFORT-RECORD-01,
+          Design Board 2026-11-05). It is not stale content: it is a card that
+          exists on the WEBSITE and nowhere in the product. `RaceProgressArcRow`
+          moved INSIDE `RaceTimesCard` in the app, so the marketing still was
+          drawing it as its own card with a hand-typed eyebrow and race name.
+          ✋ Silvanto: *"not stale, absent — it should be deleted, not updated."*
+
+          ⚠️ The still is SHORTER as a result, and the original reason for
+          adding the arc ("without it a quarter of the device is empty warm
+          slate, which reads as 'that is all there is' rather than as a crop")
+          is a real observation about a real crop. It is now answered by the
+          Coach tab ending on the rings rather than by inventing a card. */}
     </>
   )
 }

@@ -60,25 +60,24 @@ before planning against any number below (an item is a snapshot of the code on t
 - 🧭 **DESIGN BOARD — RULED SHIP** `PRICING-FREE-GATE-02` — **an arm in the direction the free tier rots in.** Every
   `FREE_ALWAYS` gate must reach `FREE_FEATURES` or carry a stated omission. **No new copy on the page in this
   wave** (Sierra's condition).
-- 🧭 **DESIGN BOARD — RULED SHIP WITH AMENDMENT** `SITE-EFFORT-RECORD-01` — **the marketing Coach still is
-  2026-10-02's.** Put `EffortRecord` on the site, server-rendered from `demoSurfaces`, inside `ProductStill`, in
-  the mechanism band, **replacing the "Your zones, on Coach" still rather than joining it** (one block, chosen).
-  **Delete the standalone race-arc card from `CoachStill`** — that arc now lives inside `RaceTimesCard`, so the
-  website carries a card that exists nowhere in the product. `TrendCard`, `ShareControl`, `LoadHistory`,
-  `WeekFacts` explicitly **not** this wave.
+- ✅ **SHIPPED 2026-11-05** `SITE-EFFORT-RECORD-01` — **`EffortRecord` is the homepage trio's third still**, on a
+  🔴 **FOUNDER OVERRULE** of the REVERSED `Dropping ZoneRings` row. ⚠️ **ZoneRings is not dropped from the site** —
+  it still renders in `TabbedPhone`'s Coach tab, and `realComponents.test.ts` asserts that, so "retained" stays
+  mechanically true. The pillar's BODY moved with the still: its old words ("no noise, no dashboards") were proved by
+  four rings and would have been contradicted by eight weeks of per-run data. ✅ The standalone race-arc card in
+  `CoachStill` was DELETED, not updated: that arc moved inside `RaceTimesCard` in the app, so the site was drawing a
+  card the product does not have. 🔻 Still absent from the site and NOT this wave: `TrendCard`, `ShareControl`,
+  `LoadHistory`, `WeekFacts` — the first two are `'use client'` and nobody has run the bundle number.
 
-- 🏃 **COACHING BOARD** `SITE-ENGINE-EMDASH-01` — **engine-authored copy now reaches a public marketing page, and it
-  carries 8 em dashes.** `SITE-SESSION-STEPS-01` mounted the app's real `SessionSteps` on `/plans/[slug]`, so session
-  labels and step notes from the catalogue are now rendered on the website. `noEmDash.test.ts` reads file source and
-  is blind to them by construction; its own header records the app/site boundary as a deliberate decision, taken when
-  engine copy stayed inside the app. **2 are labels** (`"Hill reps — 90s"`, the case that header already declares out
-  of scope) and **6 are step notes** — sentences a runner reads, e.g. *"Deliberately short — clearance, not
-  recovery."* The founder's 2026-09-22 ruling is *"no em dash in text or spoken word; in descriptions for sessions
-  it's ok; I just don't want it in sentences"*, so **whether a step note is a sentence or a description is the
-  question**, and it is coaching doctrine plus a founder call, not a build decision. Held at today's count by
-  `lib/marketing/engineCopyOnSite.test.ts` (a ninth fails the build). ⚠️ **A declared reason is not a fixed problem** —
-  entered the register 2026-11-05.
-
+- ✅ **SHIPPED 2026-11-05** `SITE-ENGINE-EMDASH-01` — **founder ruled a step note is a SENTENCE.** The fix was six
+  times wider than the page that exposed it: measured by GENERATING all nine published plans, **48 runner-facing
+  strings carry an em dash**, of which **27 are sentences** (fixed), 12 labels and 6 captions (kept: a label is also
+  load-bearing, ADR-018 joins a catalogue row to a session BY LABEL) and 3 bare placeholders. 🔴 **`lib/plan` was in
+  NEITHER copy gate** — `noEmDash` reads marketing, `noEmDashApp` read `components`/`app/dashboard`/`lib/ui`/
+  `lib/coaching`, and the plan ENGINE writes every label and note a runner reads. In scope now, 14 dev-facing files
+  exempted by name with reasons. 🔴 **`SUPERSEDED_NOTES` gained 14 entries** so the new wording reaches plans that
+  already exist — a catalogue edit reaches new plans only, and that file's header records getting it wrong twice
+  before.
 - 🧭 **DESIGN BOARD** `SITE-FREE-COLUMN-COPY-01` — **six free gates have no row on `/pricing` and the board forbade
   adding rows this wave.** `GRANTED_AT_TRIAL_RETAINED_IN_FREE` holds six things a free account KEEPS — the generated
   plan, VDOT pace zones, Karvonen HR zones, the coach notes already on the plan, catalogue-sourced sessions, and the

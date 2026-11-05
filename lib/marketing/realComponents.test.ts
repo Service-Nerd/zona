@@ -35,10 +35,26 @@ function decode(s: string): string {
 describe('the homepage renders real app components', () => {
   const page = read('app/page.tsx')
 
+  // 🔴 ZONERINGS LEFT THIS LIST 2026-11-05 — `SITE-EFFORT-RECORD-01`, Design
+  // Board, on a FOUNDER OVERRULE of a row the register had REVERSED. The
+  // homepage trio's third still is now `EffortRecord`.
+  //
+  // ⚠️ THE ROW IT OVERRULES IS NOT DEAD AND MUST NOT BE READ AS DEAD.
+  // *"Dropping ZoneRings — REVERSED, retained. One of three components on the
+  // marketing homepage's ProductStill trio: literally one third of the public
+  // face."* That row has already caught one attempt to spend this slot. It is
+  // overruled HERE, for this slot, by the founder, and recorded as an overrule
+  // in `design-rulings.md` — not quietly deleted because a test went red.
+  //
+  // ⚠️ AND ZONERINGS IS STILL ON THE SITE, which is why this is a swap of
+  // EVIDENCE rather than the deletion the row forbids: it renders in
+  // `TabbedPhone`'s Coach tab, in the device directly above the trio. The arm
+  // below asserts exactly that, so "retained on the marketing site" stays
+  // mechanically true rather than becoming a claim in a comment.
   it.each([
     ['SessionCard', '@/components/shared/SessionCard'],
     ['CoachNoteBlock', '@/components/shared/CoachNoteBlock'],
-    ['ZoneRings', '@/components/shared/ZoneRings'],
+    ['EffortRecord', '@/components/shared/EffortRecord'],
   ])('imports the real %s', (name, from) => {
     expect(
       page.includes(from),
@@ -48,6 +64,17 @@ describe('the homepage renders real app components', () => {
 
     // An import that nothing mounts is the same as no import.
     expect(page, `${name} is imported but never rendered`).toMatch(new RegExp(`<${name}[\\s/>]`))
+  })
+
+  it('ZoneRings is still on the marketing site, in the device', () => {
+    // The register retains ZoneRings as a third of the public face. The founder
+    // overruled WHERE it sits, not WHETHER it ships. If this goes red, the
+    // component really has been dropped from the site and the row is breached.
+    const phone = read('components/marketing/TabbedPhone.tsx')
+    expect(phone, 'ZoneRings has left the marketing site entirely — that is the '
+      + 'REVERSED row in design-rulings.md, not the 2026-11-05 overrule, which '
+      + 'moved it out of the trio and kept it in the device.')
+      .toMatch(/<ZoneRings[\s/>]/)
   })
 
   it('has no hand-drawn imitation of an app surface', () => {

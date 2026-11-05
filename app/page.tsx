@@ -72,7 +72,9 @@ import { Wordmark } from '@/components/ui/Wordmark'
 import SessionCard from '@/components/shared/SessionCard'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import ZoneRings from '@/components/shared/ZoneRings'
-import { DEMO_WEEK, DEMO_ZONE_WEEK, DEMO_COACH_NOTE } from '@/lib/marketing/demoSurfaces'
+import EffortRecord from '@/components/shared/EffortRecord'
+import { DEMO_WEEK, DEMO_ZONE_WEEK,
+  DEMO_EFFORT_RUNS, DEMO_COACH_NOTE } from '@/lib/marketing/demoSurfaces'
 
 export const dynamic = 'force-dynamic'  // auth check must run per-request
 
@@ -607,13 +609,46 @@ export default async function Home() {
 
           <Pillar
             title="Nothing you don't need"
-            body="One job per screen. The plan shows up, you run, the plan adjusts. No noise, no dashboards, nothing competing for the run itself."
+            body="One job per screen. No dashboards, no seventeen charts: six weeks of running is one picture, and the grey ones are marked."
           >
-            {/* The anti-dashboard, which is why it proves THIS claim and not
-                one of the other two. A whole week of running is four rings and
-                four numbers, and the rings are the brand mark itself. */}
-            <ProductStill caption="Your zones, on Coach">
-              <ZoneRings pctByZone={DEMO_ZONE_WEEK.pct} meta={DEMO_ZONE_WEEK.meta} />
+            {/* ── SITE-EFFORT-RECORD-01 — Design Board 2026-11-05, FOUNDER
+                OVERRULE on a row the register had REVERSED ───────────────────
+
+                This still was `ZoneRings`, and `Dropping ZoneRings` is a 🔴
+                REVERSED row retaining it as *"one of three components on the
+                marketing homepage's ProductStill trio: literally one third of
+                the public face"* — a row the settled-ground scan has already
+                caught someone trying to spend once. The board's amendment
+                spends it anyway and the founder confirmed; recorded in
+                `design-rulings.md` as an overrule, not slipped in.
+
+                ⚠️ ZONERINGS IS NOT DROPPED FROM THE SITE. It still renders in
+                the device above, on `TabbedPhone`'s Coach tab, which is what
+                makes this a swap of EVIDENCE rather than a deletion of the
+                component the register protects.
+
+                ⚠️ THE PILLAR'S BODY MOVED WITH IT, and that is the point rather
+                than a tidy-up. Its old sentence ("no noise, no dashboards,
+                nothing competing") was proved by four rings and four numbers.
+                Eight weeks of per-run data does NOT prove "nothing you don't
+                need" by being smaller — it proves it by being ONE picture where
+                every other app would put a dashboard. Leaving the old words
+                under the new still would have been a claim its own evidence
+                contradicts, which is the three-card proof band's error in a new
+                coat.
+
+                Why this one, of everything missing from the site: it is the
+                only artefact we own that shows a runner their OWN grey-zone
+                habit over a block rather than telling them about it, and an app
+                whose proposition is encouragement structurally cannot print
+                it. Collins' test, met by construction. */}
+            <ProductStill caption="Every run, by zone, on Coach">
+              {/*  labels the span the columns cover: DEMO_EFFORT_RUNS is the
+                  six weeks ending at DEMO_BLOCK.weekN, which is week 6 of 16. */}
+              {/* `weeks` labels the span the columns cover. `DEMO_EFFORT_RUNS`
+                  is the six weeks ending at `DEMO_BLOCK.weekN` (week 6 of 16),
+                  and `demoSurfaces` makes that coherence its standing rule. */}
+              <EffortRecord runs={DEMO_EFFORT_RUNS} weeks={6} />
             </ProductStill>
           </Pillar>
         </div>

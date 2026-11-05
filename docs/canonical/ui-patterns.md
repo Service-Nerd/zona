@@ -663,6 +663,8 @@ Guarded by `lib/a11yContrast.test.ts` § A11Y-MOCKUP-CONTRAST-01, falsified four
 
 ## Real app components on marketing pages — `ProductStill` (GTM-SITE-02, 2026-09-11)
 
+> ⚠️ **AMENDED 2026-11-05 — `SITE-EFFORT-RECORD-01`.** The trio's third still is `EffortRecord`, not `ZoneRings`, on a **founder overrule** of the REVERSED `Dropping ZoneRings` row. ZoneRings is **retained on the site** in `TabbedPhone`'s Coach tab and `realComponents.test.ts` asserts it. ⚠️ **A still carries a CLAIM, so changing the still changes the words above it:** the pillar's body moved from *"no noise, no dashboards"* (proved by four rings) to one picture where every other app puts a dashboard. Leaving the old words under the new evidence is the three-card proof band's error in a new coat.
+
 **The rule: a marketing page renders the REAL component. It does not draw a picture of one.**
 
 The homepage used to hand-write CSS imitations of app surfaces (`MockSessionCard`, `MockReflectCard`, `MockCoachNoteCard`) beside text cards describing the product. They drifted, exactly as `PhoneFrame`'s wordmark did: the coach mock painted its rail `--moss` while the real `CoachNoteBlock` uses `--warn`, so the site showed a coach note in the colour that does not mean "coach".
@@ -2892,6 +2894,8 @@ Reference: `components/shared/ZoneBar.tsx`. Single source of truth.
 ---
 
 ### 21b. Session steps
+
+> ⚠️ **AMENDED 2026-11-05 — `SITE-ENGINE-EMDASH-01`: A STEP NOTE IS A SENTENCE, so it carries no em dash.** Founder ruling. The substitution set is his: a colon, comma, semicolon or full stop. ⚠️ **A session LABEL is not** — `Easy run — Zone 2` keeps its dash, and not only because it is not prose: ADR-018's legacy fallback matches a catalogue row's `name` against `session.label`, so renaming one can silently break the join that tells a session which row it came from. Gates: `noEmDashApp.test.ts` (now covering `lib/plan`, which was in neither copy gate) and `engineCopyOnSite.test.ts` for the marketing surface.
 
 > ⚠️ **AMENDED 2026-11-05 — `SITE-SESSION-STEPS-01`: THIS PATTERN IS THE WEBSITE'S TOO, AND IT RENDERS ONCE THERE.** `/plans/[slug]` mounts the real `SessionSteps` for **one exemplar session**, in a band titled *"What a session looks like"*, placed before the week-by-week table. The week table keeps a compact row treatment. **The quantity is the ruling**, measured: under every quality session the page went from 15.7 to **26.0 phone screens**, with a 629px structure card hanging off a 44px day row. One exemplar costs **+1.0 screen**. Progressive disclosure, not density.
 >
