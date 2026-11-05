@@ -9,6 +9,17 @@
 | `'manual'` | Upserts a hand-logged run (`manual_uuid`) | `adaptManualRun` |
 | `'report_distance'` | **UNMEASURED-DISTANCE-01.** Fills in a distance the device did not record | Below |
 
+### Request headers
+
+| Header | Required | Meaning |
+|---|---|---|
+| `Authorization: Bearer <jwt>` | yes | Any authenticated user. The ROW lands for everyone; the ANALYSIS is tier-gated below (`HK-FREE-INGEST-LINE-01`) |
+| `X-Ingest-Path: native` | no | **HK-NATIVE-BG-INGEST-01.** Set only by `HealthObserverPlugin`'s native ingest. Changes **no behaviour** — it is read solely to record a `health_native_ingest` ops event, so the native path is distinguishable from the web sweep (which `health_sync_swept` already measures end to end). ⚠️ Absent or any other value means the web path and records nothing extra, so the two measurements cannot double-count. |
+
+> ⚠️ **THERE ARE TWO PRODUCERS OF THE HealthKit REQUEST BODY** since 2026-11-05: `lib/health/clientSync.ts` (full payload, with HR) and `HealthObserverPlugin.shellPayload` in **Swift** (shell only, no HR — HR is deferred to `retryPendingHrRows`, per `HK-HR-LOCKED-DROPS-RUN-01`). The compiler sees neither side of that seam; `lib/health/nativeIngestContract.test.ts` compares the Swift source against the `HealthKitWorkoutPayload` interface in both directions. **Changing that interface means changing the Swift.**
+>
+> 🔑 Two producers are safe only because this route **upserts on `(user_id, apple_health_uuid)`**: the native shell row and the web path's later full-HR row converge on one row. Do not change that `onConflict`.
+
 ## `source: 'report_distance'`
 
 ```typescript

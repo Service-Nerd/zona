@@ -1,6 +1,7 @@
 import Foundation
 import Capacitor
 import HealthKit
+import UIKit
 
 // HR-SYNC-03 — HKObserverQuery background delivery plugin.
 //
@@ -24,6 +25,39 @@ import HealthKit
 //   foreground / warm-bg: callback fires → notifyListeners → JS → syncOnAppOpen ✅
 //   fully killed by iOS:  callback fires → notifyListeners is a no-op (no JS
 //                         runtime yet) → data picked up on next cold-start open.
+//
+// ─── HK-NATIVE-BG-INGEST-01 (2026-11-05) — the native ingest path ───────────
+//
+// 🔴 notifyListeners REACHING JS IS NOT THE SAME AS THE POST COMPLETING, and
+// that gap is the whole defect. Measured over 6,090 hidden `observer_*`
+// sweeps: the wake fires, JS runs, 1,462 workouts post — and **331 are lost,
+// 316 of them to `no-response: Load failed`**, which is WebKit's error when
+// iOS suspends a backgrounded WKWebView mid-`fetch`. Median time-to-link was
+// **2 h 15 m**, with only 22% of runs linked inside a quarter of an hour.
+//
+// So on a WORKOUT wake this plugin now also posts the run ITSELF, from native
+// code, which iOS does not suspend the same way. Three deliberate limits:
+//
+//   1. **Shell payload only — no heart rate.** `HK-HR-LOCKED-DROPS-RUN-01`
+//      already ratified the principle ("the run is the record, HR is an
+//      enrichment, posting without HR is a DEFERRAL to machinery built for
+//      it"), and `retryPendingHrRows` + `decideLateArrival` own HR landing
+//      later. This also avoids re-implementing the per-workout HR sample cap
+//      in Swift, which would be a second producer of a shared numeric.
+//   2. **No token refresh.** Supabase ROTATES refresh tokens on use, so a
+//      native refresher racing the webview's own would cause random
+//      sign-outs — a worse regression than the bug. An expired credential is
+//      a silent no-op here; the next app-open still handles the run.
+//   3. **Idempotent by the server, not by us.** `/api/health/ingest` upserts
+//      on `(user_id, apple_health_uuid)`, so this row and the web path's
+//      later full-HR row CONVERGE instead of duplicating. That upsert is the
+//      single reason two producers are safe; do not remove it.
+//
+// ⚠️ The HKObserverQuery completionHandler is still acknowledged immediately
+// (see `defer` below) while the POST runs under a UIApplication background
+// task. A process death mid-POST therefore loses THAT delivery rather than
+// re-triggering it — recoverable, because the watermark only advances on a
+// 2xx and the web sweep re-finds anything missed.
 //
 // Idempotency: register() is a no-op if called more than once per app session.
 // The _registered flag prevents duplicate HKObserverQuery registrations, which
@@ -73,7 +107,10 @@ public class HealthObserverPlugin: CAPPlugin {
         let hrTypes:       [HKObjectType] = [hrType]
         let recoveryTypes: [HKObjectType] = [rhrType, hrvType, sleepType]
 
-        observe(workoutType, event: "workoutDataArrived")
+        // HK-NATIVE-BG-INGEST-01 — only the WORKOUT observer runs the native
+        // ingest. HR and recovery wakes create no activity row, so giving them
+        // an ingest attempt would be requests with nothing to send.
+        observe(workoutType, event: "workoutDataArrived", nativeIngest: true)
         for type in hrTypes {
             observe(type, event: "hrDataArrived")
         }
@@ -86,7 +123,7 @@ public class HealthObserverPlugin: CAPPlugin {
 
     // ─── Private ────────────────────────────────────────────────────────────
 
-    private func observe(_ objectType: HKObjectType, event: String) {
+    private func observe(_ objectType: HKObjectType, event: String, nativeIngest: Bool = false) {
         guard let sampleType = objectType as? HKSampleType else { return }
 
         // enableBackgroundDelivery registers with iOS to wake (or resume) this
@@ -105,8 +142,194 @@ public class HealthObserverPlugin: CAPPlugin {
             defer { completionHandler() }
             guard let self = self, error == nil else { return }
             self.notifyListeners(event, data: [:])
+            // notifyListeners is a no-op with no JS runtime, and even with one
+            // the webview may be suspended mid-POST — which is the measured
+            // failure. The native attempt is additive, never a replacement.
+            if nativeIngest { self.attemptNativeIngest() }
         }
 
         healthStore.execute(query)
+    }
+
+    // ─── HK-NATIVE-BG-INGEST-01 — native ingest ─────────────────────────────
+
+    /// Keychain key written by `lib/health/nativeCredential.ts`.
+    private static let credentialKey = "zonna_native_credential"
+    /// App-Group key holding the end date of the newest workout we posted.
+    private static let watermarkKey  = "zonna_native_last_ingest_at"
+    private static let appGroupId    = "group.app.zonna.ios"
+    /// Never look back further than this, so a long-dormant install does not
+    /// post a month of history from a background wake.
+    private static let maxLookbackSeconds: TimeInterval = 24 * 60 * 60
+    /// Bounded so one wake cannot fan out into dozens of requests.
+    private static let maxWorkoutsPerWake = 5
+    /// Clock-skew margin: treat a credential expiring within this as expired.
+    private static let expiryMarginSeconds: TimeInterval = 60
+
+    /// Guards against two wakes ingesting concurrently (HR and workout
+    /// observers can fire together).
+    private let ingestGate = NSLock()
+    private var ingestInFlight = false
+
+    private struct NativeCredential: Decodable {
+        let base_url: String
+        let access_token: String
+        /// Unix seconds, straight from the Supabase session.
+        let expires_at: Double
+    }
+
+    /// Fire-and-forget. Every exit is silent by design: this is a background
+    /// best-effort path and the web sweep remains the backstop.
+    private func attemptNativeIngest() {
+        ingestGate.lock()
+        if ingestInFlight { ingestGate.unlock(); return }
+        ingestInFlight = true
+        ingestGate.unlock()
+
+        let release = { [weak self] in
+            guard let self = self else { return }
+            self.ingestGate.lock()
+            self.ingestInFlight = false
+            self.ingestGate.unlock()
+        }
+
+        guard let raw = ZonnaKeychain.get(Self.credentialKey),
+              let data = raw.data(using: .utf8),
+              let cred = try? JSONDecoder().decode(NativeCredential.self, from: data) else {
+            release(); return
+        }
+        // No refresh, on purpose (see header note 2).
+        guard cred.expires_at - Self.expiryMarginSeconds > Date().timeIntervalSince1970 else {
+            release(); return
+        }
+        guard let base = URL(string: cred.base_url),
+              let endpoint = URL(string: "/api/health/ingest", relativeTo: base) else {
+            release(); return
+        }
+
+        // A background task assertion is what buys the time to finish the POST.
+        // Without it this path is suspended exactly like the webview it replaces.
+        var bgTask: UIBackgroundTaskIdentifier = .invalid
+        bgTask = UIApplication.shared.beginBackgroundTask(withName: "zonna.native-ingest") {
+            // Expiry handler — iOS reclaiming the assertion.
+            if bgTask != .invalid { UIApplication.shared.endBackgroundTask(bgTask) }
+            bgTask = .invalid
+        }
+
+        Task { [weak self] in
+            defer {
+                release()
+                if bgTask != .invalid {
+                    UIApplication.shared.endBackgroundTask(bgTask)
+                    bgTask = .invalid
+                }
+            }
+            guard let self = self else { return }
+            let since = self.ingestWatermark()
+            let runs  = (try? await self.recentRunningWorkouts(since: since)) ?? []
+            guard !runs.isEmpty else { return }
+
+            var newestPosted: Date?
+            for workout in runs {
+                guard let body = Self.shellPayload(for: workout) else { continue }
+                let ok = await Self.post(body, to: endpoint, token: cred.access_token)
+                if ok {
+                    if newestPosted == nil || workout.endDate > newestPosted! {
+                        newestPosted = workout.endDate
+                    }
+                } else {
+                    // Stop on first failure so the watermark cannot skip a run
+                    // that never landed.
+                    break
+                }
+            }
+            if let newest = newestPosted { self.setIngestWatermark(newest) }
+        }
+    }
+
+    // ─── watermark ──────────────────────────────────────────────────────────
+
+    private func ingestWatermark() -> Date {
+        let floorDate = Date().addingTimeInterval(-Self.maxLookbackSeconds)
+        guard let defaults = UserDefaults(suiteName: Self.appGroupId) else { return floorDate }
+        let stored = defaults.double(forKey: Self.watermarkKey)
+        guard stored > 0 else { return floorDate }
+        return max(Date(timeIntervalSince1970: stored), floorDate)
+    }
+
+    private func setIngestWatermark(_ date: Date) {
+        UserDefaults(suiteName: Self.appGroupId)?
+            .set(date.timeIntervalSince1970, forKey: Self.watermarkKey)
+    }
+
+    // ─── HealthKit read ─────────────────────────────────────────────────────
+
+    /// Running workouts that ENDED after `since`, newest first.
+    ///
+    /// `.running` only, matching the web sweep's `workoutType: 'running'` —
+    /// two producers must not disagree about what counts as a run.
+    private func recentRunningWorkouts(since: Date) async throws -> [HKWorkout] {
+        try await withCheckedThrowingContinuation { continuation in
+            let isRun = HKQuery.predicateForWorkouts(with: .running)
+            let ended = HKQuery.predicateForSamples(withStart: since, end: nil, options: .strictEndDate)
+            let query = HKSampleQuery(
+                sampleType: HKObjectType.workoutType(),
+                predicate: NSCompoundPredicate(andPredicateWithSubpredicates: [isRun, ended]),
+                limit: Self.maxWorkoutsPerWake,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+            ) { _, samples, error in
+                if let error = error { continuation.resume(throwing: error); return }
+                continuation.resume(returning: (samples as? [HKWorkout]) ?? [])
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    // ─── payload ────────────────────────────────────────────────────────────
+
+    /// The SHELL only. Field names and types are the `HealthKitWorkoutPayload`
+    /// contract in `lib/health/adapter.ts` — if that interface changes, this
+    /// must change with it. `lib/health/nativeIngestContract.test.ts` asserts
+    /// the two still agree.
+    private static func shellPayload(for workout: HKWorkout) -> Data? {
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime]
+        let meters = workout.totalDistance?.doubleValue(for: .meter()) ?? 0
+        // The server rejects a zero/absent distance (422), so skip rather than
+        // burn a request and record a failure for a workout we cannot describe.
+        guard meters > 0 else { return nil }
+        let payload: [String: Any] = [
+            "uuid":                workout.uuid.uuidString,
+            "startDate":           iso.string(from: workout.startDate),
+            "endDate":             iso.string(from: workout.endDate),
+            "totalDistanceMeters": meters,
+            "durationSeconds":     workout.duration,
+            "workoutType":         "running",
+            "sourceName":          workout.sourceRevision.source.name,
+        ]
+        return try? JSONSerialization.data(withJSONObject: payload)
+    }
+
+    // ─── POST ───────────────────────────────────────────────────────────────
+
+    /// `X-Ingest-Path: native` is read by the route purely so this path is
+    /// visible in `ops_events`. Telemetry lives server-side on purpose — a
+    /// native ops POST would be a second thing that can fail silently, which
+    /// is the defect class this feature exists to fix.
+    private static func post(_ body: Data, to url: URL, token: String) async -> Bool {
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.httpBody = body
+        req.timeoutInterval = 25
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("native", forHTTPHeaderField: "X-Ingest-Path")
+        do {
+            let (_, response) = try await URLSession.shared.data(for: req)
+            guard let http = response as? HTTPURLResponse else { return false }
+            return (200...299).contains(http.statusCode)
+        } catch {
+            return false
+        }
     }
 }

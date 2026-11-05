@@ -102,7 +102,6 @@ import { useSheetFootActive, useSheetFootNav, registerNavNode } from '@/lib/ui/s
 import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
-import { clearWidgetState } from '@/lib/native/sharedStore'
 import { SKIP_REASONS, FATIGUE_TAGS, isFatigueTag } from '@/lib/coaching/completionVocab'
 import { useSignOut } from '@/lib/auth/signOut'
 import SignOutLink from '@/components/shared/SignOutLink'

@@ -99,8 +99,44 @@ describe('sign-out has one owner', () => {
     }
   })
 
-  it('the owner clears widget state BEFORE ending the session', () => {
-    const src = readFileSync(join(process.cwd(), 'lib/auth/signOut.ts'), 'utf8')
-    expect(src.indexOf('clearWidgetState')).toBeLessThan(src.indexOf('auth.signOut'))
+  // 🔴 THIS ARM WENT HOLLOW THE MOMENT THE FUNCTION WAS RENAMED, AND IT WENT
+  // HOLLOW GREEN. It read `indexOf('clearWidgetState') < indexOf('auth.signOut')`,
+  // and `indexOf` returns **-1** when the string is absent — so after
+  // HK-NATIVE-BG-INGEST-01 renamed the call to `clearNativeState`, the
+  // comparison became `-1 < 61`, which is true. The assertion would have gone
+  // on passing while asserting nothing at all. **Presence is now asserted
+  // before order**, which is the shape every index-ordering check needs.
+  //
+  // ⚠️ AND IT COVERS BOTH PATHS. There are two ways an account leaves this
+  // device — the owner, and the Me screen's account DELETION (a declared
+  // exemption above) — and the widget clear had to be added to each by hand.
+  // The Keychain credential is the second thing to clear; left to memory it
+  // would have gone into one of them. "The remedy applied to one twin" is a
+  // class this repo has recorded eight times.
+  it('EVERY path that ends an account clears native state, and clears it FIRST', () => {
+    // ⚠️ COMMENTS STRIPPED FIRST, and the first cut of this arm did not — it
+    // failed on the owner because the long JSDoc about `_signOut` in auth-js
+    // NAMES `auth.signOut` 2,400 characters before the real call. A position
+    // check over raw file text is a check over prose. The `window.location`
+    // arm below already strips them; this reuses the same rule.
+    const code = (src: string) => src
+      .split('\n')
+      .filter(l => !l.trim().startsWith('*') && !l.trim().startsWith('//') && !l.trim().startsWith('/*'))
+      .join('\n')
+    for (const rel of ['lib/auth/signOut.ts', 'components/dashboard/MeScreen.tsx']) {
+      const src   = code(readFileSync(join(process.cwd(), rel), 'utf8'))
+      const clear = src.indexOf('clearNativeState(')
+      const out   = src.search(/\bauth\s*\.\s*signOut\s*\(/)
+      expect(clear, `${rel} never calls clearNativeState()`).toBeGreaterThan(-1)
+      expect(out,   `${rel} no longer signs out — update this arm`).toBeGreaterThan(-1)
+      expect(clear, `${rel} ends the session before clearing native state`).toBeLessThan(out)
+    }
+  })
+
+  // The server route is the one sign-out that must NOT clear native state:
+  // it has no browser session, no App Group and no Keychain to reach.
+  it('the server route is excluded by name, not by accident', () => {
+    const src = readFileSync(join(process.cwd(), 'app/auth/signout/route.ts'), 'utf8')
+    expect(src).not.toContain('clearNativeState')
   })
 })

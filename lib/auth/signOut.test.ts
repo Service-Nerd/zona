@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // await in the wrong place, or a throw that skipped the navigation would all
 // have passed everything shipped so far.
 
-const clearWidgetState = vi.fn()
+const clearNativeState = vi.fn()
 /** The navigation is injected, so a test can see it happen without a DOM. */
 const nav = vi.fn()
 const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -17,7 +17,10 @@ const signOut = vi.fn()
 const calls: string[] = []
 
 vi.mock('@/lib/native/sharedStore', () => ({
-  clearWidgetState: (...a: unknown[]) => { calls.push('clearWidgetState'); return clearWidgetState(...a) },
+  // HK-NATIVE-BG-INGEST-01 — the owner now clears the Keychain credential as
+  // well as the widget store, through one function so a third thing to clear
+  // cannot be added to one path and forgotten on the other.
+  clearNativeState: (...a: unknown[]) => { calls.push('clearNativeState'); return clearNativeState(...a) },
 }))
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({ auth: { signOut: (...a: unknown[]) => { calls.push('signOut'); return signOut(...a) } } }),
@@ -32,16 +35,16 @@ function stubWindow() { (globalThis as any).window = {} }
 describe('signOutAndReturnToLogin', () => {
   beforeEach(() => {
     calls.length = 0
-    clearWidgetState.mockReset().mockResolvedValue(undefined)
+    clearNativeState.mockReset().mockResolvedValue(undefined)
     signOut.mockReset().mockResolvedValue({ error: null })
     warn.mockReset()
     nav.mockReset()
   })
 
-  it('clears the widget store BEFORE ending the session', async () => {
+  it('clears native state BEFORE ending the session', async () => {
     stubWindow()
     await signOutAndReturnToLogin(nav)
-    expect(calls).toEqual(['clearWidgetState', 'signOut'])
+    expect(calls).toEqual(['clearNativeState', 'signOut'])
   })
 
   it('lands on the login page', async () => {
@@ -62,12 +65,12 @@ describe('signOutAndReturnToLogin', () => {
 
   it('navigates even when the widget clear REJECTS', async () => {
     stubWindow()
-    // clearWidgetState swallows its own errors today, so this can only happen
+    // clearNativeState swallows its own errors today, so this can only happen
     // if that changes. It must not become a way to trap the user.
-    clearWidgetState.mockRejectedValue(new Error('app group missing'))
+    clearNativeState.mockRejectedValue(new Error('app group missing'))
     await expect(signOutAndReturnToLogin(nav)).rejects.toThrow('app group missing')
     expect(nav).toHaveBeenCalledTimes(1)
-    expect(calls).toEqual(['clearWidgetState'])
+    expect(calls).toEqual(['clearNativeState'])
   })
 
   it('awaits the session teardown before navigating (a hard load kills pending work)', async () => {
@@ -117,7 +120,7 @@ describe('signOut FAILED but resolved — the case supabase-js leaves signed in'
 
   beforeEach(() => {
     calls.length = 0
-    clearWidgetState.mockReset().mockResolvedValue(undefined)
+    clearNativeState.mockReset().mockResolvedValue(undefined)
     warn.mockReset()
     nav.mockReset()
   })

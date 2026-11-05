@@ -5,6 +5,22 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-05 — HK-NATIVE-BG-INGEST-01 · the POST was being killed, not the wake
+**Shipped:** a finished run now posts itself from native Swift during the HealthKit background wake, instead of relying on a webview iOS has already suspended. Phase 1: no token refresh.
+
+**Dev learning:** the filed item said the background wake never fires. It fires 6,090 times and ingests 1,462 runs. The actual defect was one line further on — `no-response: Load failed`, 316 of 331 losses, which is WebKit's error when iOS suspends a backgrounded WKWebView mid-`fetch`. Measuring before designing changed what got built, twice: it moved the fix from "make the observer work" to "move the POST out of the webview", and then the token-freshness query (median 68.7 min since the app was last active when a run ends) told me a no-refresh design covers a minority — 21 of 60 runs. I assumed that minority was the same runs that already link fast. It isn't: 13 of the 39 slow runs would have a live token. One query turned "this is pointless" into "this is a third of the problem for almost no risk".
+
+**Product/creator learning:** shell-only was not a compromise I invented, it was a decision already on the record. `HK-HR-LOCKED-DROPS-RUN-01` had ratified it in October — the run is the record, heart rate is an enrichment, posting without HR defers to machinery built for exactly that. Reading the adjacent ruling first meant the design needed no new doctrine and no board.
+
+**AI-building learning:** the constraint produced the best thing in the commit. There is no Xcode on this machine, so I was about to hand over unverified Swift — and then found that HealthKit and Security are both in the Command Line Tools macOS SDK. Only Capacitor and UIKit are missing. Sixty lines of stubs later, `npm run typecheck:ios` typechecks both local plugins, and it caught a real error the moment I falsified it. **I had assumed "no Xcode" meant "no Swift verification" and never tested the assumption.**
+
+**The honest bit:** three of my own checks were wrong on the first cut and none of them were caught by reading. Renaming `clearWidgetState` to `clearNativeState` turned an existing assertion hollow *green* — it compared `indexOf(...) < indexOf(...)`, and `indexOf` returns -1 when absent, so `-1 < 61` passed while asserting nothing. My replacement arm then failed on a correct file because it matched `auth.signOut` inside a 2,400-character doc comment. And the repo's own `hollowTestShapes.test.ts` rejected my `toContain('kSecAttrAccessibleAfterFirstUnlock')` because it also passes against `...UnlockX`. Three for three, in the same hour I was writing about not trusting green ticks.
+
+**Hook material:** the bug report said the background sync never fires. The database said it fired 6,090 times and lost 331 runs to a single error string. And a rename I made for tidiness turned a passing test into one that asserted nothing — `-1 < 61` is true.
+
+**Postable?:** yes. "`indexOf` returns -1, so my rename made a green test hollow" is the sharpest 60 seconds in it.
+
+---
 ## 2026-11-05 — NATIVE-BATCH-01 · I answered "what needs a build?" from a doc instead of from the sweep
 **Shipped:** a re-measured native release batch — what the next Xcode build carries, every native surface dated from git, and the gate on the HealthKit background-ingest item discharged with production numbers.
 

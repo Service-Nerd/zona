@@ -44,7 +44,7 @@ import { PUSH_OFF_KEY } from '@/components/dashboard/dashboardHelpers'
 import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
 import { SectionLabel } from '@/components/shared/SectionLabel'
 import { authedFetch } from '@/lib/supabase/authedFetch'
-import { clearWidgetState } from '@/lib/native/sharedStore'
+import { clearNativeState } from '@/lib/native/sharedStore'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/format'
 import { getCurrentWeekIndex, readPlanJson } from '@/lib/plan'
@@ -496,7 +496,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
         return
       }
       const supabase = createClient()
-      await clearWidgetState()
+      await clearNativeState()
       await supabase.auth.signOut()
       router.replace('/auth/login')
     } catch {

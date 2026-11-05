@@ -318,6 +318,23 @@ export async function POST(req: NextRequest) {
     ).catch(err => console.error('[health-ingest] auto-analyse failed', err))
   )
 
+  // HK-NATIVE-BG-INGEST-01 — telemetry for the native path, SERVER-SIDE.
+  //
+  // ⚠️ Deliberately not a native ops POST: that would be a second request that
+  // can be lost to the same process suspension this feature exists to route
+  // around, and telemetry blind to its own failure is worse than none.
+  //
+  // ⚠️ Recorded only when the header says `native`. The web sweep is already
+  // measured end-to-end by `health_sync_swept`, so this adds zero rows for it
+  // and the two measurements cannot double-count.
+  if (req.headers.get('X-Ingest-Path') === 'native') {
+    await recordOpsEvent('health_native_ingest', {
+      uuid:        payload.uuid,
+      first_insert: isFirstInsert,
+      hr_present:  row.avg_hr != null,
+    }, userId)
+  }
+
   return NextResponse.json({ status: 'ok', activity_id: row.apple_health_uuid })
 }
 

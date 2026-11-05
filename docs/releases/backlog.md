@@ -1385,7 +1385,7 @@ Found 2026-10-26 in OVERRUN-NOTE-ALL-01's fixture. `generateBaseBuildOnRamp` cal
 
 ---
 
-### 🔲 `HK-NATIVE-BG-INGEST-01` — ingest a run from native code when iOS wakes the app ⚙️ **NO BOARD** (💼 **SLT** if it needs prioritising against launch work)
+### ✅ `HK-NATIVE-BG-INGEST-01` — ingest a run from native code when iOS wakes the app ⚙️ **NO BOARD** — **PHASE 1 SHIPPED 2026-11-05, pending a binary. Phase 2 is `HK-NATIVE-BG-INGEST-02` below.**
 
 Filed 2026-10-25. The only remaining route to *link without opening the app*: `HealthObserverPlugin` would read the new workout and POST `/api/health/ingest` itself, with a token held natively, instead of handing off to a web page that is not loaded during a background wake. A user force-quit still blocks it (iOS rule). New binary.
 
@@ -1412,7 +1412,26 @@ So the 331 lost sweeps do get re-found — nothing is permanently lost — but *
 
 ---
 
-#### 📐 SPEC — approved for build? *(written 2026-11-05, pending founder sign-off)*
+#### ✅ PHASE 1 BUILT 2026-11-05 — code complete, PENDING A BINARY
+
+Founder approved the spec as written (*"phase 1 only, keychain is fine, go"*). Built exactly to it. **Runbook for the Xcode half: `docs/runbooks/native-health-ingest-build.md`.**
+
+**What landed:** `ZonnaKeychain` + `setSecure`/`getSecure`/`removeSecure` on `SharedStorePlugin` · native ingest on the WORKOUT observer in `HealthObserverPlugin` (credential read → `HKSampleQuery` for `.running` → shell payload → `POST /api/health/ingest` with `X-Ingest-Path: native`, under a `UIApplication` background task) · `lib/health/nativeCredential.ts` as the single owner of the blob · published from `CapacitorBoot` on mount and every non-`SIGNED_OUT` auth change · `clearNativeState()` clears widget state **and** the credential, wired into **both** account-ending paths · the route records `health_native_ingest` for the native path only.
+
+🔑 **A NEW GATE CAME OUT OF THE CONSTRAINT: `npm run typecheck:ios`.** There is no Xcode on the machine this app is written on, so Swift was previously unverified until someone opened the project. HealthKit and Security **are** in the Command Line Tools macOS SDK — only `Capacitor` and `UIKit` are missing, and both are now stubbed (`scripts/ios-swiftcheck/Stubs.swift`), so both local plugins typecheck locally. ⚠️ **Population is a PROPERTY, not a list** — every file declaring `: CAPPlugin` — and `AppDelegate.swift` is excluded **by name with its reason** (dense real UIKit; the first cut included it and produced 17 errors from stubs rather than code, which trains you to ignore the check). ⚠️ **What it does not prove:** nothing is checked against Capacitor's or UIKit's REAL API, iOS-only availability is invisible, and it is not a link, a build or a run. In `verify:ci`; skips loudly where there is no `swiftc`.
+
+**Three of my own checks were wrong on the first cut, and each was caught mechanically rather than by reading:**
+- 🔴 **Renaming `clearWidgetState` → `clearNativeState` turned an existing assertion HOLLOW GREEN.** `signOutOwner.test.ts` read `indexOf('clearWidgetState') < indexOf('auth.signOut')`, and **`indexOf` returns −1 when absent**, so `-1 < 61` passed while asserting nothing. **Presence is now asserted before order** — the shape every index-ordering check needs.
+- 🔴 **My replacement arm then matched PROSE**: the owner's JSDoc names `auth.signOut` 2,400 characters before the real call, so the position check failed on a correct file. Comments are stripped now — *bound the region, never grep the file*, in the check I had just written.
+- 🔴 **`hollowTestShapes.test.ts` caught my `toContain('kSecAttrAccessibleAfterFirstUnlock')`**, which also passes against `…UnlockX`. Word-anchored.
+
+**Also found and fixed in passing:** `DashboardClient.tsx` imported `clearWidgetState` and never called it — the only other mention was a comment. Dead import, inside this change's own surface, removed.
+
+**Counts from the code:** 739 test files / **7,296 tests**, 0 failed (from 737 / 7,280). `tsc` 0, eslint 0, `test:cap-config` 16/16, `typecheck:ios` OK.
+
+🔻 **WHAT THIS DOES NOT PROVE, and it is the whole residual risk: nothing here has been compiled by Xcode or run on a device.** The typecheck gate is a stub-backed proxy. Step 2 of the runbook is the first real compile, and the `health_native_ingest` ops event is the only thing that will distinguish *working* from *inert*. ⚠️ **Zero rows is also the CORRECT result if no run finished within an hour of the app last being open** — Phase 1 has no token refresh by design, and 21 of 60 measured runs would have had a live token. **Judge it over a week, not one run.**
+
+#### 📐 SPEC — as approved *(written 2026-11-05)*
 
 **Role:** senior app developer. **Constraint stated up front: there is no Xcode on the Mac mini** (`xcodebuild` unavailable, no `/Applications/Xcode*.app`), so **every line of Swift below is UNCOMPILED until the MacBook opens the project.** That constraint drives three design choices marked ⚙️ below, each of which exists to shrink the amount of unverifiable Swift and to remove every manual Xcode step.
 
@@ -1491,6 +1510,18 @@ So the 331 lost sweeps do get re-found — nothing is permanently lost — but *
 Within a week of the build: `X-Ingest-Path: native` appears in ops events, and median time-to-link for runs whose token was live falls from hours to minutes. **Re-run the time-to-link query** (recorded above) and compare against the 2h 15m baseline.
 
 🔻 **PHASE 2, a separate decision, not in this build:** the remaining 26 of 39 slow runs need a credential that survives an expired access token. Two options — share the refresh token (**cheap and dangerous**, rotation → sign-out loops) or mint a scoped ingest-only device token (new table + route + revocation). **Do not pick this under build pressure.**
+
+---
+
+### 🔲 `HK-NATIVE-BG-INGEST-02` — the native ingest needs a credential that outlives an access token *(P2, filed 2026-11-05)* ⚙️ **NO BOARD** (💼 **SLT** on build cost)
+
+Phase 1 posts a run from native code only while the published Supabase **access token** is still valid, and it deliberately does not refresh. **Measured before building Phase 1:** median **68.7 min** since the app was last active at the moment a run ends, so of the 39 runs that currently link slowly, **13 would have a live token and 26 would not.** Phase 1 is therefore a third of the problem by design.
+
+**Two options, and the cheap one is wrong.** Sharing the **refresh** token is a few lines and would cause random sign-outs — Supabase rotates refresh tokens on use, so a native refresher and supabase-js would invalidate each other. That is held off mechanically today: `nativeIngestContract.test.ts` fails if any native file mentions a refresh token. The sound option is a **scoped, ingest-only device token**: new table, mint route, revocation on sign-out and on account deletion, and a server-side check that it can do nothing but ingest.
+
+🔻 **Do not start this on numbers from Phase 1's design work.** Re-measure first: `health_native_ingest` rows will say what share Phase 1 actually captured, and `verify still open` below is the gate. **If Phase 1 captured most of the delay, this item may not be worth its surface.**
+
+- **Verify still open:** `grep -rn "refresh" ios/App/App/*.swift` → no hit = **still open** (Phase 2 unbuilt).
 
 
 ---

@@ -17,15 +17,17 @@
 import { useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { clearWidgetState } from '@/lib/native/sharedStore'
+import { clearNativeState } from '@/lib/native/sharedStore'
 
 /**
  * End the session and return to the login screen.
  *
- * Order matters. The App-Group store is cleared BEFORE the session goes: the
- * iOS widget reads race countdown and today's session from it, and a stale
- * write outlives the account that made it. `clearWidgetState` swallows its own
- * errors and no-ops on web, so it cannot block the sign-out.
+ * Order matters. Native state is cleared BEFORE the session goes. The iOS
+ * widget reads race countdown and today's session from the App Group, and the
+ * native HealthKit ingest reads an access token from the Keychain
+ * (HK-NATIVE-BG-INGEST-01) — both outlive the account that wrote them.
+ * `clearNativeState` swallows its own errors and no-ops on web, so it cannot
+ * block the sign-out.
  *
  * 🔴 NAVIGATION MUST BE A CLIENT-SIDE ROUTE CHANGE, NOT `window.location`.
  * On iOS this is the difference between staying in the app and being thrown
@@ -55,7 +57,7 @@ import { clearWidgetState } from '@/lib/native/sharedStore'
  */
 export async function signOutAndReturnToLogin(navigate: () => void): Promise<void> {
   try {
-    await clearWidgetState()
+    await clearNativeState()
     const { error } = await createClient().auth.signOut()
     if (error) forgetLocalSession(error)
   } finally {

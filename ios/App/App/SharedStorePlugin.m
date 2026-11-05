@@ -7,7 +7,11 @@
 #import <Capacitor/Capacitor.h>
 
 CAP_PLUGIN(SharedStorePlugin, "SharedStore",
-    CAP_PLUGIN_METHOD(set,    CAPPluginReturnPromise);
-    CAP_PLUGIN_METHOD(get,    CAPPluginReturnPromise);
-    CAP_PLUGIN_METHOD(remove, CAPPluginReturnPromise);
+    CAP_PLUGIN_METHOD(set,          CAPPluginReturnPromise);
+    CAP_PLUGIN_METHOD(get,          CAPPluginReturnPromise);
+    CAP_PLUGIN_METHOD(remove,       CAPPluginReturnPromise);
+    // HK-NATIVE-BG-INGEST-01 — Keychain-backed, for the native ingest credential.
+    CAP_PLUGIN_METHOD(setSecure,    CAPPluginReturnPromise);
+    CAP_PLUGIN_METHOD(getSecure,    CAPPluginReturnPromise);
+    CAP_PLUGIN_METHOD(removeSecure, CAPPluginReturnPromise);
 )

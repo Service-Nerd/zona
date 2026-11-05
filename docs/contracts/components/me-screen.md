@@ -7,6 +7,8 @@ directions**, so an undocumented prop and a fictional one both fail the build.
 
 **Component:** `components/dashboard/MeScreen.tsx`
 
+> ⚠️ **2026-11-05 (`HK-NATIVE-BG-INGEST-01`) — the component changed and this inventory did NOT, deliberately.** The account-deletion handler now calls `clearNativeState()` instead of `clearWidgetState()`, so it clears the Keychain ingest credential as well as the widget store. That is an internal call, not a prop, so there is nothing here to change — and `componentContracts.test.ts` compares props both directions, so an actual prop change could not have slipped through silently. Recorded because the doc audit flags a changed component against an untouched contract, and "no change needed" has to be a stated answer rather than an absent one.
+
 > 🔴 **THIS CONTRACT COULD NOT EXIST UNTIL MeScreen BECAME A MODULE, AND THEN NOBODY CAME
 > BACK.** `ME-SCREEN-CONTRACT-01` was filed on 2026-09-28 stating the blocker in terms of
 > architecture: *"`MeScreen` is a function inside `DashboardClient.tsx`, so

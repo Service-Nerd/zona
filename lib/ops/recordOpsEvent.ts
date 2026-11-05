@@ -385,6 +385,9 @@ export type OpsEventKind =
   // could not see either — `postWorkout` returns false and the caller counts a
   // failure without ever learning why.
   | 'health_ingest_failed'
+  // HK-NATIVE-BG-INGEST-01 — recorded ONLY for the native path. The web sweep
+  // is already measured by `health_sync_swept`, so this adds no rows for it.
+  | 'health_native_ingest'
   // HK-INGEST-REASON-01 (2026-10-08) — the ingest route REJECTED a payload before doing
   // any work, naming the field that was missing or zero.
   //

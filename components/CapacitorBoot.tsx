@@ -70,6 +70,30 @@ export default function CapacitorBoot() {
       }
     })()
 
+    // HK-NATIVE-BG-INGEST-01: publish the credential the native ingest reads.
+    //
+    // Must run on EVERY auth change, not only at mount: supabase-js rotates the
+    // access token on its own schedule, and a credential native always rejects
+    // as expired is indistinguishable from no credential at all — the feature
+    // would look wired and do nothing. SIGNED_OUT is deliberately skipped:
+    // `clearNativeState()` in lib/auth/signOut.ts owns the clear, and a publish
+    // on that event would race it.
+    let removeCredentialListener: (() => void) | undefined
+    void (async () => {
+      try {
+        const { publishNativeCredential } = await import('@/lib/health/nativeCredential')
+        await publishNativeCredential()
+        const { data } = createClient().auth.onAuthStateChange((event) => {
+          if (event === 'SIGNED_OUT') return
+          void publishNativeCredential()
+        })
+        removeCredentialListener = () => data.subscription.unsubscribe()
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[capacitor-boot] native credential publish skipped', err instanceof Error ? err.message : err)
+      }
+    })()
+
     // HR-SYNC-03: register HKObserverQuery background delivery so iOS notifies
     // the app when Apple Watch syncs new HR / recovery data — covers the
     // warm-background case where the user hasn't re-opened the app yet.
@@ -247,7 +271,7 @@ export default function CapacitorBoot() {
       }
     })()
 
-    return () => { removeUrlListener?.(); removePushListener?.(); removePushReceivedListener?.(); removeAppStateListener?.() }
+    return () => { removeUrlListener?.(); removePushListener?.(); removePushReceivedListener?.(); removeAppStateListener?.(); removeCredentialListener?.() }
   }, [router])
 
   return null
