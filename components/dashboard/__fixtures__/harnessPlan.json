@@ -12,7 +12,7 @@
     "max_hr": 178,
     "zone2_ceiling": 146,
     "version": "2.0",
-    "last_updated": "2026-10-08",
+    "last_updated": "2026-11-05",
     "notes": "Standard plan — 21.1km, 14 weeks",
     "primary_metric": "distance",
     "fitness_level": "beginner",
@@ -27,13 +27,13 @@
       2
     ],
     "fitness_intensity_level": "intermediate",
-    "fitness_signal_note": "Your race benchmark and your training volume point to different levels (beginner on benchmark, intermediate on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.",
+    "fitness_signal_note": "Your race benchmark and your training volume point to different levels (beginner on benchmark, intermediate on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard. Building volume is where injuries come from, holding back intensity is where progress is lost.",
     "foundation_weeks_planned": 0,
     "goal": "finish",
     "days_available": 3,
     "hard_session_relationship": "love",
     "terrain": "mixed",
-    "generated_at": "2026-10-08T10:36:31.400Z",
+    "generated_at": "2026-11-05T21:09:21.090Z",
     "generator_version": "2.0",
     "generator_input": {
       "age": 43,
@@ -72,8 +72,8 @@
     "hard_pref_note": "You said you like hard sessions. The plan earns longer peak runs and more intensity as your training history deepens — not before your legs have proven they will take it.",
     "age": 43,
     "vdot": 32.1,
-    "vdot_training_anchor": 30.2,
-    "vdot_discount_applied_pct": 6,
+    "vdot_training_anchor": 29.9,
+    "vdot_discount_applied_pct": 7,
     "recalibration_weeks": [
       4,
       8
@@ -131,11 +131,11 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 12.5,
-          "duration_mins": 100,
+          "duration_mins": 101,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run"
         },
@@ -149,7 +149,7 @@
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4
         },
         "mon": {
@@ -162,7 +162,7 @@
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4
         }
       },
@@ -183,11 +183,11 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 13,
-          "duration_mins": 104,
+          "duration_mins": 105,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run"
         },
@@ -201,7 +201,7 @@
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4
         },
         "mon": {
@@ -214,11 +214,11 @@
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4
         }
       },
-      "long_run_hrs": 1.7,
+      "long_run_hrs": 1.8,
       "weekly_km": 33
     },
     {
@@ -235,11 +235,11 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 14.5,
-          "duration_mins": 116,
+          "duration_mins": 117,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run"
         },
@@ -249,11 +249,11 @@
           "label": "Easy run + hill strides — Zone 2",
           "detail": null,
           "distance_km": 11.5,
-          "duration_mins": 92,
+          "duration_mins": 93,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "coach_notes": [
             "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
@@ -265,22 +265,22 @@
           "label": "Easy run — Zone 2",
           "detail": null,
           "distance_km": 11.5,
-          "duration_mins": 92,
+          "duration_mins": 93,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4
         }
       },
-      "long_run_hrs": 1.9,
+      "long_run_hrs": 2,
       "weekly_km": 38
     },
     {
       "n": 4,
       "date": "2026-09-07",
       "label": "Base — recovery + benchmark",
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "phase": "base",
       "badge": "deload",
@@ -295,7 +295,7 @@
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run"
         },
@@ -312,7 +312,7 @@
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest."
+            "A parkrun counts. So does a solo effort, just make it honest."
           ]
         },
         "mon": {
@@ -325,7 +325,7 @@
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4
         }
       },
@@ -346,11 +346,11 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 14.5,
-          "duration_mins": 116,
+          "duration_mins": 117,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run"
         },
@@ -360,11 +360,11 @@
           "label": "Easy run + hill strides — Zone 2",
           "detail": null,
           "distance_km": 11.5,
-          "duration_mins": 92,
+          "duration_mins": 93,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "coach_notes": [
             "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
@@ -376,15 +376,15 @@
           "label": "Easy run — Zone 2",
           "detail": null,
           "distance_km": 11.5,
-          "duration_mins": 92,
+          "duration_mins": 93,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4
         }
       },
-      "long_run_hrs": 1.9,
+      "long_run_hrs": 2,
       "weekly_km": 38
     },
     {
@@ -401,15 +401,15 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 16.5,
-          "duration_mins": 132,
+          "duration_mins": 133,
           "primary_metric": "duration",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run",
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace."
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace."
           ],
           "duration_anchored": true
         },
@@ -424,11 +424,11 @@
           "primary_metric": "distance",
           "zone": "Zone 3",
           "hr_target": "146–157 bpm",
-          "pace_target": "6:22–6:40 /km",
+          "pace_target": "6:26–6:44 /km",
           "rpe_target": 7,
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
-            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone."
+            "Controlled effort: if you can’t say a short sentence, you’ve drifted into the grey zone."
           ],
           "catalogue_id": "tempo_continuous",
           "derived_set": {
@@ -442,7 +442,7 @@
                     "role": "work",
                     "modality": "run",
                     "length": "18 min",
-                    "pace": "6:22–6:40 /km",
+                    "pace": "6:26–6:44 /km",
                     "pace_mode": "target",
                     "advance": "auto",
                     "note": "Sustainable. Same pace at the end as at the start."
@@ -458,11 +458,11 @@
           "label": "Easy run + strides — Zone 2",
           "detail": null,
           "distance_km": 13,
-          "duration_mins": 104,
+          "duration_mins": 105,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "coach_notes": [
             "4×20s strides at 5K effort, full recovery between."
@@ -486,15 +486,15 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 16.5,
-          "duration_mins": 132,
+          "duration_mins": 133,
           "primary_metric": "duration",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run",
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace."
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace."
           ],
           "duration_anchored": true
         },
@@ -509,7 +509,7 @@
           "primary_metric": "distance",
           "zone": "Zone 3",
           "hr_target": "146–157 bpm",
-          "pace_target": "6:24–6:39 /km",
+          "pace_target": "6:27–6:43 /km",
           "rpe_target": 7,
           "coach_notes": [
             "Rep three is the test. Not rep one."
@@ -526,16 +526,16 @@
                     "role": "work",
                     "modality": "run",
                     "length": "10 min",
-                    "pace": "6:22–6:40 /km",
+                    "pace": "6:26–6:44 /km",
                     "pace_mode": "target",
                     "advance": "auto",
-                    "note": "Threshold effort — comfortably hard, not a race pace."
+                    "note": "Threshold effort: comfortably hard, not a race pace."
                   },
                   {
                     "role": "recovery",
                     "modality": "jog",
                     "length": "2 min",
-                    "pace": "7:18–8:40 /km",
+                    "pace": "7:21–8:44 /km",
                     "pace_mode": "ceiling",
                     "advance": "auto",
                     "note": "Two minutes jog. Full recovery before the next rep."
@@ -551,11 +551,11 @@
           "label": "Easy run + hill strides — Zone 2",
           "detail": null,
           "distance_km": 13,
-          "duration_mins": 104,
+          "duration_mins": 105,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "coach_notes": [
             "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
@@ -569,7 +569,7 @@
       "n": 8,
       "date": "2026-10-05",
       "label": "Build — recovery + benchmark",
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "phase": "build",
       "badge": "deload",
@@ -580,11 +580,11 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 10.5,
-          "duration_mins": 84,
+          "duration_mins": 85,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run"
         },
@@ -601,7 +601,7 @@
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest."
+            "A parkrun counts. So does a solo effort, just make it honest."
           ]
         },
         "mon": {
@@ -614,7 +614,7 @@
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4
         }
       },
@@ -635,15 +635,15 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 16.5,
-          "duration_mins": 132,
+          "duration_mins": 133,
           "primary_metric": "duration",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run",
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace."
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace."
           ],
           "duration_anchored": true
         },
@@ -658,7 +658,7 @@
           "primary_metric": "distance",
           "zone": "Zone 3",
           "hr_target": "146–157 bpm",
-          "pace_target": "6:22–6:40 /km",
+          "pace_target": "6:26–6:44 /km",
           "rpe_target": 7,
           "coach_notes": [
             "Hold back early. Finish honest."
@@ -675,7 +675,7 @@
                     "role": "work",
                     "modality": "run",
                     "length": "8 min",
-                    "pace": "7:18–8:40 /km",
+                    "pace": "7:21–8:44 /km",
                     "pace_mode": "ceiling",
                     "advance": "auto",
                     "note": "Hold back. This is the part that makes the last third honest."
@@ -684,7 +684,7 @@
                     "role": "work",
                     "modality": "run",
                     "length": "8 min",
-                    "pace": "7:18 → 6:22 /km",
+                    "pace": "7:21 → 6:26 /km",
                     "zone": "Z2-Z3",
                     "advance": "auto",
                     "note": "Let it rise. Don’t chase it."
@@ -693,7 +693,7 @@
                     "role": "work",
                     "modality": "run",
                     "length": "8 min",
-                    "pace": "6:22–6:40 /km",
+                    "pace": "6:26–6:44 /km",
                     "pace_mode": "target",
                     "advance": "auto",
                     "note": "Threshold now. It should feel harder than the same pace would feel fresh."
@@ -709,11 +709,11 @@
           "label": "Easy run + hill strides — Zone 2",
           "detail": null,
           "distance_km": 13,
-          "duration_mins": 104,
+          "duration_mins": 105,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "coach_notes": [
             "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
@@ -738,15 +738,15 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 16.5,
-          "duration_mins": 132,
+          "duration_mins": 133,
           "primary_metric": "duration",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run",
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
             "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it."
           ],
           "duration_anchored": true
@@ -762,7 +762,7 @@
           "primary_metric": "distance",
           "zone": "Zone 3",
           "hr_target": "146–157 bpm",
-          "pace_target": "6:16–6:31 /km",
+          "pace_target": "6:19–6:34 /km",
           "rpe_target": 7,
           "coach_notes": [
             "The under is not the rest. That is the whole point of it."
@@ -779,25 +779,25 @@
                     "role": "work",
                     "modality": "run",
                     "length": "3 min",
-                    "pace": "6:09–6:22 /km",
+                    "pace": "6:12–6:26 /km",
                     "pace_mode": "target",
                     "advance": "auto",
-                    "note": "The over — a notch past comfortably hard. A gear change, not a surge."
+                    "note": "The over, a notch past comfortably hard. A gear change, not a surge."
                   },
                   {
                     "role": "work",
                     "modality": "run",
                     "length": "3 min",
-                    "pace": "6:22–6:40 /km",
+                    "pace": "6:26–6:44 /km",
                     "pace_mode": "target",
                     "advance": "auto",
-                    "note": "The under — back to comfortably hard, without stopping. This half is the session."
+                    "note": "The under, back to comfortably hard, without stopping. This half is the session."
                   },
                   {
                     "role": "recovery",
                     "modality": "jog",
                     "length": "2 min",
-                    "pace": "7:18–8:40 /km",
+                    "pace": "7:21–8:44 /km",
                     "pace_mode": "ceiling",
                     "advance": "auto",
                     "note": "Two minutes easy before the next block."
@@ -813,11 +813,11 @@
           "label": "Easy run + strides — Zone 2",
           "detail": null,
           "distance_km": 13,
-          "duration_mins": 104,
+          "duration_mins": 105,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "coach_notes": [
             "4×20s strides at 5K effort, full recovery between."
@@ -841,15 +841,15 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 16.5,
-          "duration_mins": 132,
+          "duration_mins": 133,
           "primary_metric": "duration",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run",
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
             "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it."
           ],
           "duration_anchored": true
@@ -865,7 +865,7 @@
           "primary_metric": "distance",
           "zone": "Zone 3",
           "hr_target": "146–157 bpm",
-          "pace_target": "6:24–6:39 /km",
+          "pace_target": "6:27–6:43 /km",
           "rpe_target": 7,
           "coach_notes": [
             "No hiding in this one. Same pace on the last rep or the block has not worked."
@@ -882,7 +882,7 @@
                     "role": "work",
                     "modality": "run",
                     "length": "1600 m",
-                    "pace": "6:22–6:40 /km",
+                    "pace": "6:26–6:44 /km",
                     "pace_mode": "target",
                     "advance": "auto",
                     "note": "Threshold, held. Rep three should look like rep one."
@@ -891,10 +891,10 @@
                     "role": "recovery",
                     "modality": "jog",
                     "length": "1:30",
-                    "pace": "7:18–8:40 /km",
+                    "pace": "7:21–8:44 /km",
                     "pace_mode": "ceiling",
                     "advance": "auto",
-                    "note": "90 seconds. Deliberately short — clearance, not recovery."
+                    "note": "90 seconds. Deliberately short: clearance, not recovery."
                   }
                 ]
               }
@@ -907,11 +907,11 @@
           "label": "Easy run + hill strides — Zone 2",
           "detail": null,
           "distance_km": 13,
-          "duration_mins": 104,
+          "duration_mins": 105,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "coach_notes": [
             "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
@@ -935,11 +935,11 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 14.5,
-          "duration_mins": 116,
+          "duration_mins": 117,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run"
         },
@@ -954,7 +954,7 @@
           "primary_metric": "distance",
           "zone": "Zone 3",
           "hr_target": "146–157 bpm",
-          "pace_target": "6:22–6:40 /km",
+          "pace_target": "6:26–6:44 /km",
           "rpe_target": 7,
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start."
@@ -971,7 +971,7 @@
                     "role": "work",
                     "modality": "run",
                     "length": "17 min",
-                    "pace": "6:22–6:40 /km",
+                    "pace": "6:26–6:44 /km",
                     "pace_mode": "target",
                     "advance": "auto",
                     "note": "Sustainable. Same pace at the end as at the start."
@@ -987,11 +987,11 @@
           "label": "Easy run + strides — Zone 2",
           "detail": null,
           "distance_km": 11.5,
-          "duration_mins": 92,
+          "duration_mins": 93,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "coach_notes": [
             "4×20s strides at 5K effort, full recovery between.",
@@ -999,7 +999,7 @@
           ]
         }
       },
-      "long_run_hrs": 1.9,
+      "long_run_hrs": 2,
       "weekly_km": 31
     },
     {
@@ -1016,11 +1016,11 @@
           "label": "Long run — Zone 2",
           "detail": null,
           "distance_km": 11.5,
-          "duration_mins": 92,
+          "duration_mins": 93,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "role": "long_run"
         },
@@ -1035,7 +1035,7 @@
           "primary_metric": "distance",
           "zone": "Zone 3",
           "hr_target": "146–157 bpm",
-          "pace_target": "6:22–6:40 /km",
+          "pace_target": "6:26–6:44 /km",
           "rpe_target": 7,
           "coach_notes": [
             "Hold back early. Finish honest."
@@ -1052,7 +1052,7 @@
                     "role": "work",
                     "modality": "run",
                     "length": "6:40",
-                    "pace": "7:18–8:40 /km",
+                    "pace": "7:21–8:44 /km",
                     "pace_mode": "ceiling",
                     "advance": "auto",
                     "note": "Hold back. This is the part that makes the last third honest."
@@ -1061,7 +1061,7 @@
                     "role": "work",
                     "modality": "run",
                     "length": "6:40",
-                    "pace": "7:18 → 6:22 /km",
+                    "pace": "7:21 → 6:26 /km",
                     "zone": "Z2-Z3",
                     "advance": "auto",
                     "note": "Let it rise. Don’t chase it."
@@ -1070,7 +1070,7 @@
                     "role": "work",
                     "modality": "run",
                     "length": "6:40",
-                    "pace": "6:22–6:40 /km",
+                    "pace": "6:26–6:44 /km",
                     "pace_mode": "target",
                     "advance": "auto",
                     "note": "Threshold now. It should feel harder than the same pace would feel fresh."
@@ -1090,14 +1090,14 @@
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 146 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 4,
           "coach_notes": [
             "6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully."
           ]
         }
       },
-      "long_run_hrs": 1.5,
+      "long_run_hrs": 1.6,
       "weekly_km": 26
     },
     {
@@ -1131,7 +1131,7 @@
           "primary_metric": "distance",
           "zone": "Zone 1",
           "hr_target": "< 136 bpm",
-          "pace_target": "7:18–8:40 /km",
+          "pace_target": "7:21–8:44 /km",
           "rpe_target": 2,
           "coach_notes": [
             "Short and relaxed. Wake the legs, nothing more.",

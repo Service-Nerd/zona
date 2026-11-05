@@ -202,7 +202,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   },
   {
     id: 'tempo_cruise', name: 'Cruise intervals', category: 'threshold',
-    purpose: 'Threshold work in repeats. Same effort on rep 3 as rep 1 — that is the test.',
+    purpose: 'Threshold work in repeats. Same effort on rep 3 as rep 1: that is the test.',
     phase_eligibility: ['build'],
     distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 3,
@@ -220,7 +220,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
         steps: [
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 600 },
             target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
-            note: 'Threshold effort — comfortably hard, not a race pace.',
+            note: 'Threshold effort: comfortably hard, not a race pace.',
             goal_pace_note: 'Goal pace. Even splits, and the last rep no faster than the first.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 120 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
@@ -269,7 +269,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
         steps: [
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 300 },
             target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
-            note: 'Threshold effort — comfortably hard, not a race pace.',
+            note: 'Threshold effort: comfortably hard, not a race pace.',
             goal_pace_note: 'Goal pace. Even splits, and the last rep no faster than the first.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
@@ -376,7 +376,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
               target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto' },
             { role: 'work', modality: 'run', length: { kind: 'duration', secs: 480 },
               target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
-              note: 'The long rung. If the pace is going, it goes here — hold the effort, let the pace be what it is.' },
+              note: 'The long rung. If the pace is going, it goes here: hold the effort, let the pace be what it is.' },
             { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
               target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto' },
             { role: 'work', modality: 'run', length: { kind: 'duration', secs: 300 },
@@ -393,7 +393,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     typical_duration_min: 45,
     typical_duration_max: 60,
     is_free_tier: true,
-    coach_voice_notes: 'Up and back down. The 8-minute rung is the honest one — everything before it should feel like restraint.',
+    coach_voice_notes: 'Up and back down. The 8-minute rung is the honest one; everything before it should feel like restraint.',
   },
   // ── CB-CAT-01 (2026-09-04) — the intensive threshold end ─────────────────
   //
@@ -422,10 +422,10 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
         steps: [
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 180 },
             target: { kind: 'pace', anchor: 'CV', mode: 'target' }, advance: 'auto',
-            note: 'The over — a notch past comfortably hard. A gear change, not a surge.' },
+            note: 'The over, a notch past comfortably hard. A gear change, not a surge.' },
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 180 },
             target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
-            note: 'The under — back to comfortably hard, without stopping. This half is the session.' },
+            note: 'The under, back to comfortably hard, without stopping. This half is the session.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 120 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
             note: 'Two minutes easy before the next block.' },
@@ -467,7 +467,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
             goal_pace_note: 'Goal pace, held. Rep three should look like rep one.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
-            note: '90 seconds. Deliberately short — clearance, not recovery.' },
+            note: '90 seconds. Deliberately short: clearance, not recovery.' },
         ],
       }],
     },
@@ -520,7 +520,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
         label: 'pyramid',
         steps: [
           { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'r1' },
-            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto', note: 'Rung one. Settle in — this is the pace you finish on.' },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto', note: 'Rung one. Settle in: this is the pace you finish on.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'parameter', param: 'h1' },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto', note: 'Half the rung. Every time.' },
           { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'r2' },
@@ -572,7 +572,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
         steps: [
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 180 },
             target: { kind: 'pace', anchor: 'I', mode: 'target' }, advance: 'auto',
-            note: 'Three minutes at VO2max effort — about as hard as you could hold for ten minutes. Even splits; don\'t blow rep one.' },
+            note: 'Three minutes at VO2max effort: about as hard as you could hold for ten minutes. Even splits; don\'t blow rep one.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 120 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
             note: 'Full jog recovery. Let it come back before the next one.' },
@@ -679,10 +679,10 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
         steps: [
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 30 },
             target: { kind: 'pace', anchor: 'I', mode: 'target' }, advance: 'auto',
-            note: 'Thirty seconds at VO2max effort — hard, but repeatable. Quick, not a sprint: you do this many times.' },
+            note: 'Thirty seconds at VO2max effort: hard, but repeatable. Quick, not a sprint: you do this many times.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 30 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
-            note: 'Thirty seconds easy. Keep moving — the short float is the session.' },
+            note: 'Thirty seconds easy. Keep moving: the short float is the session.' },
         ],
       }],
     },
@@ -692,7 +692,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   },
   {
     id: 'intervals_rolling', name: 'Rolling reps', category: 'vo2max',
-    purpose: 'Fast, then float — never stopping. Time at the top of the effort adds up across the whole set.',
+    purpose: 'Fast, then float, never stopping. Time at the top of the effort adds up across the whole set.',
     phase_eligibility: ['build', 'peak'],
     // 10K ONLY — same §22 race-specific-ratio reason as intervals_30_30 above.
     distance_eligibility: ['10K'],
@@ -713,7 +713,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
             note: 'Three hundred metres hard. Smooth and fast, not a lunge.' },
           { role: 'recovery', modality: 'run', length: { kind: 'distance', m: 300 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
-            note: 'Three hundred metres easy — but keep running. The float is not a rest.' },
+            note: 'Three hundred metres easy, but keep running. The float is not a rest.' },
         ],
       }],
     },
@@ -736,7 +736,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     // INV-PLAN-LABEL-MATCHES-PACE; the honest name is CV, and §85 shields the CV
     // anchor from §22's goal-pace override so "CV" never silently becomes goal pace.
     id: 'cv_intervals', name: 'CV intervals', category: 'threshold',
-    purpose: 'Repeats at critical velocity — the pace just above your threshold. Raises the ceiling your threshold sits under.',
+    purpose: 'Repeats at critical velocity: the pace just above your threshold. Raises the ceiling your threshold sits under.',
     phase_eligibility: ['build', 'peak'],
     distance_eligibility: ['5K', '10K', 'HM', 'MARATHON'],
     // Intermediate, like over-unders — a threshold-family session, not a VO2 one.
@@ -753,10 +753,10 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
           // (McMillan) and squarely in the standard CV/cruise-interval range.
           { role: 'work', modality: 'run', length: { kind: 'duration', secs: 240 },
             target: { kind: 'pace', anchor: 'CV', mode: 'target' }, advance: 'auto',
-            note: 'Four minutes at critical velocity — a notch past comfortably hard, and controlled. Not flat out.' },
+            note: 'Four minutes at critical velocity: a notch past comfortably hard, and controlled. Not flat out.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
-            note: 'Ninety seconds easy. Short — the point is to keep the ceiling pressure on.' },
+            note: 'Ninety seconds easy. Short: the point is to keep the ceiling pressure on.' },
         ],
       }],
     },
@@ -888,7 +888,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     typical_duration_min: 35,
     typical_duration_max: 50,
     is_free_tier: true,
-    coach_voice_notes: 'No track, no measured loop, no pace to chase. The gradient does the work — you just have to keep the effort honest and come back down slowly.',
+    coach_voice_notes: 'No track, no measured loop, no pace to chase. The gradient does the work; you just have to keep the effort honest and come back down slowly.',
   },
   {
     id: 'beginner_goal_pace_blocks', name: 'Goal-pace blocks', category: 'race_specific',
@@ -1270,7 +1270,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
             note: 'Goal pace. The second kilometre of each rep is the one that counts.' },
           { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
             target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
-            note: 'Ninety seconds. Deliberately short — you start the next rep unrecovered.' },
+            note: 'Ninety seconds. Deliberately short: you start the next rep unrecovered.' },
         ],
       }],
     },
@@ -1347,7 +1347,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
               length: { kind: 'parameter', param: 'climb_secs' },
               target: { kind: 'effort', rpe: 6 },
               advance: 'auto',
-              note: 'Hands on quads, short steps, tall chest. Hiking, not trudging — you should be able to eat while you do it.',
+              note: 'Hands on quads, short steps, tall chest. Hiking, not trudging: you should be able to eat while you do it.',
             },
             {
               role: 'recovery', modality: 'walk', terrain: 'downhill',
@@ -1364,11 +1364,11 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     typical_duration_min: 50,
     typical_duration_max: 90,
     is_free_tier: false,
-    coach_voice_notes: 'Everyone runs the flats. The race is decided by who is still moving well on the climbs at hour ten — and that is a skill you practise, not one you discover on the day.',
+    coach_voice_notes: 'Everyone runs the flats. The race is decided by who is still moving well on the climbs at hour ten, and that is a skill you practise, not one you discover on the day.',
   },
   {
     id: 'ultra_race_sim', name: 'Ultra race simulation', category: 'ultra_specific',
-    purpose: 'Practice the race. Fuelling, pacing, kit — all rehearsed in the conditions you will run.',
+    purpose: 'Practice the race. Fuelling, pacing, kit: all rehearsed in the conditions you will run.',
     phase_eligibility: ['peak'],
     distance_eligibility: ['50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
@@ -1379,7 +1379,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   },
   {
     id: 'back_to_back_long', name: 'Back-to-back long', category: 'ultra_specific',
-    purpose: 'Train cumulative fatigue. Sunday is meant to feel heavy — that is the adaptation.',
+    purpose: 'Train cumulative fatigue. Sunday is meant to feel heavy: that is the adaptation.',
     phase_eligibility: ['build', 'peak'],
     distance_eligibility: ['50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,

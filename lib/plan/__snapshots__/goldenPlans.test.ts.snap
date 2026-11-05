@@ -20,7 +20,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
     "difficulty_band": "comfortable",
     "fitness_intensity_level": "intermediate",
     "fitness_level": "beginner",
-    "fitness_signal_note": "Your race benchmark and your training volume point to different levels (beginner on benchmark, intermediate on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.",
+    "fitness_signal_note": "Your race benchmark and your training volume point to different levels (beginner on benchmark, intermediate on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard. Building volume is where injuries come from, holding back intensity is where progress is lost.",
     "foundation_weeks_planned": 0,
     "generator_input": {
       "age": 43,
@@ -317,7 +317,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest.",
+            "A parkrun counts. So does a solo effort, just make it honest.",
           ],
           "detail": null,
           "distance_km": 5,
@@ -330,7 +330,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 23,
     },
@@ -414,7 +414,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "sat": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 17,
@@ -434,7 +434,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
-            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
+            "Controlled effort: if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "derived_set": {
             "blocks": [
@@ -499,7 +499,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "sat": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 17,
@@ -530,7 +530,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
                     "advance": "auto",
                     "length": "10 min",
                     "modality": "run",
-                    "note": "Threshold effort — comfortably hard, not a race pace.",
+                    "note": "Threshold effort: comfortably hard, not a race pace.",
                     "pace": "6:16–6:34 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -606,7 +606,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest.",
+            "A parkrun counts. So does a solo effort, just make it honest.",
           ],
           "detail": null,
           "distance_km": 5,
@@ -619,7 +619,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 24,
     },
@@ -648,7 +648,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "sat": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 17,
@@ -750,7 +750,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "sat": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 17,
@@ -769,7 +769,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         "wed": {
           "catalogue_id": "threshold_ladder",
           "coach_notes": [
-            "Up and back down. The 8-minute rung is the honest one — everything before it should feel like restraint.",
+            "Up and back down. The 8-minute rung is the honest one; everything before it should feel like restraint.",
           ],
           "derived_set": {
             "blocks": [
@@ -813,7 +813,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
                     "advance": "auto",
                     "length": "8 min",
                     "modality": "run",
-                    "note": "The long rung. If the pace is going, it goes here — hold the effort, let the pace be what it is.",
+                    "note": "The long rung. If the pace is going, it goes here: hold the effort, let the pace be what it is.",
                     "pace": "6:16–6:34 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -899,7 +899,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "sat": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
             "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,
@@ -940,7 +940,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
                     "advance": "auto",
                     "length": "1:30",
                     "modality": "jog",
-                    "note": "90 seconds. Deliberately short — clearance, not recovery.",
+                    "note": "90 seconds. Deliberately short: clearance, not recovery.",
                     "pace": "7:11–8:32 /km",
                     "pace_mode": "ceiling",
                     "role": "recovery",
@@ -993,7 +993,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "sat": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
             "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,
@@ -1025,7 +1025,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
                     "advance": "auto",
                     "length": "2 min",
                     "modality": "run",
-                    "note": "Rung one. Settle in — this is the pace you finish on.",
+                    "note": "Rung one. Settle in: this is the pace you finish on.",
                     "pace": "6:16–6:34 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -1186,7 +1186,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "sat": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
             "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,
@@ -1218,7 +1218,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
                     "advance": "auto",
                     "length": "4 min",
                     "modality": "run",
-                    "note": "Four minutes at critical velocity — a notch past comfortably hard, and controlled. Not flat out.",
+                    "note": "Four minutes at critical velocity: a notch past comfortably hard, and controlled. Not flat out.",
                     "pace": "6:03–6:16 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -1227,7 +1227,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
                     "advance": "auto",
                     "length": "1:30",
                     "modality": "jog",
-                    "note": "Ninety seconds easy. Short — the point is to keep the ceiling pressure on.",
+                    "note": "Ninety seconds easy. Short: the point is to keep the ceiling pressure on.",
                     "pace": "7:11–8:32 /km",
                     "pace_mode": "ceiling",
                     "role": "recovery",
@@ -2001,7 +2001,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
         "sun": {
           "coach_notes": [
             "Zone 2 throughout. Conversational for the first 90%.",
-            "Negative-split finish — last 10% (≈0.7 km): go by feel, slightly faster than your easy pace. No pace target — proprioception, not pace.",
+            "Negative-split finish over the last 10% (≈0.7 km): go by feel, slightly faster than your easy pace. No pace target; proprioception, not pace.",
           ],
           "detail": null,
           "duration_mins": 56,
@@ -2058,7 +2058,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
         "sun": {
           "coach_notes": [
             "Zone 2 throughout. Conversational for the first 90%.",
-            "Negative-split finish — last 10% (≈0.8 km): go by feel, slightly faster than your easy pace. No pace target — proprioception, not pace.",
+            "Negative-split finish over the last 10% (≈0.8 km): go by feel, slightly faster than your easy pace. No pace target; proprioception, not pace.",
           ],
           "detail": null,
           "duration_mins": 64,
@@ -2563,7 +2563,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest.",
+            "A parkrun counts. So does a solo effort, just make it honest.",
           ],
           "detail": null,
           "distance_km": 5,
@@ -2576,7 +2576,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 28,
     },
@@ -2686,7 +2686,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         },
         "sun": {
           "coach_notes": [
-            "Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming.",
+            "Zone 2 ceiling: if HR starts climbing, back off to a walk for 30 seconds before resuming.",
           ],
           "detail": null,
           "distance_km": 14.5,
@@ -2705,7 +2705,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "catalogue_id": "threshold_mile_repeats",
           "coach_notes": [
             "No hiding in this one. Same pace on the last rep or the block has not worked.",
-            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
+            "Controlled effort: if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "derived_set": {
             "blocks": [
@@ -2726,7 +2726,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
                     "advance": "auto",
                     "length": "1:30",
                     "modality": "jog",
-                    "note": "90 seconds. Deliberately short — clearance, not recovery.",
+                    "note": "90 seconds. Deliberately short: clearance, not recovery.",
                     "pace": "5:23–6:27 /km",
                     "pace_mode": "ceiling",
                     "role": "recovery",
@@ -2792,7 +2792,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         },
         "sun": {
           "coach_notes": [
-            "Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming.",
+            "Zone 2 ceiling: if HR starts climbing, back off to a walk for 30 seconds before resuming.",
           ],
           "detail": null,
           "distance_km": 14.5,
@@ -2911,7 +2911,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest.",
+            "A parkrun counts. So does a solo effort, just make it honest.",
           ],
           "detail": null,
           "distance_km": 5,
@@ -2924,7 +2924,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 30,
     },
@@ -2966,7 +2966,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         },
         "sun": {
           "coach_notes": [
-            "Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming.",
+            "Zone 2 ceiling: if HR starts climbing, back off to a walk for 30 seconds before resuming.",
           ],
           "detail": null,
           "distance_km": 14.5,
@@ -2984,7 +2984,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         "wed": {
           "catalogue_id": "tempo_continuous",
           "coach_notes": [
-            "10K-pace work. Target 4:30 /km. Controlled, even splits — exit each rep wanting more.",
+            "10K-pace work. Target 4:30 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -3062,7 +3062,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         },
         "sun": {
           "coach_notes": [
-            "Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming.",
+            "Zone 2 ceiling: if HR starts climbing, back off to a walk for 30 seconds before resuming.",
           ],
           "detail": null,
           "distance_km": 14,
@@ -3080,7 +3080,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         "wed": {
           "catalogue_id": "tempo_cruise",
           "coach_notes": [
-            "10K-pace work. Target 4:30 /km. Controlled, even splits — exit each rep wanting more.",
+            "10K-pace work. Target 4:30 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -3187,7 +3187,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         "wed": {
           "catalogue_id": "hill_reps",
           "coach_notes": [
-            "No track, no measured loop, no pace to chase. The gradient does the work — you just have to keep the effort honest and come back down slowly.",
+            "No track, no measured loop, no pace to chase. The gradient does the work; you just have to keep the effort honest and come back down slowly.",
           ],
           "derived_set": {
             "blocks": [
@@ -3297,7 +3297,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         "sun": {
           "coach_notes": [
             "Easy for the first 50%. Let the aerobic base work.",
-            "Middle 20% (≈2.9 km) at marathon pace: 4:57–5:16 /km. Controlled — not a tempo session.",
+            "Middle 20% (≈2.9 km) at marathon pace: 4:57–5:16 /km. Controlled, not a tempo session.",
             "Final 30% (≈4.4 km) at HM pace: 4:43–5:00 /km. This is the work. Exit feeling like you had more.",
           ],
           "detail": null,
@@ -3317,7 +3317,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         "wed": {
           "catalogue_id": "tenk_pace_intervals",
           "coach_notes": [
-            "10K-pace work. Target 4:30 /km. Controlled, even splits — exit each rep wanting more.",
+            "10K-pace work. Target 4:30 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -3420,7 +3420,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         "wed": {
           "catalogue_id": "tenk_pace_intervals",
           "coach_notes": [
-            "10K-pace work. Target 4:30 /km. Controlled, even splits — exit each rep wanting more.",
+            "10K-pace work. Target 4:30 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -3881,7 +3881,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest.",
+            "A parkrun counts. So does a solo effort, just make it honest.",
           ],
           "detail": null,
           "distance_km": 5,
@@ -3894,7 +3894,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 32,
     },
@@ -4020,7 +4020,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "catalogue_id": "threshold_pyramid",
           "coach_notes": [
             "The top rung is not the hard one. The one on the way back down is.",
-            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
+            "Controlled effort: if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "derived_set": {
             "blocks": [
@@ -4032,7 +4032,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
                     "advance": "auto",
                     "length": "1 min",
                     "modality": "run",
-                    "note": "Rung one. Settle in — this is the pace you finish on.",
+                    "note": "Rung one. Settle in: this is the pace you finish on.",
                     "pace": "4:58–5:12 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -4233,7 +4233,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
                     "advance": "auto",
                     "length": "4 min",
                     "modality": "run",
-                    "note": "Four minutes at critical velocity — a notch past comfortably hard, and controlled. Not flat out.",
+                    "note": "Four minutes at critical velocity: a notch past comfortably hard, and controlled. Not flat out.",
                     "pace": "4:47–4:58 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -4242,7 +4242,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
                     "advance": "auto",
                     "length": "1:30",
                     "modality": "jog",
-                    "note": "Ninety seconds easy. Short — the point is to keep the ceiling pressure on.",
+                    "note": "Ninety seconds easy. Short: the point is to keep the ceiling pressure on.",
                     "pace": "5:42–6:49 /km",
                     "pace_mode": "ceiling",
                     "role": "recovery",
@@ -4322,7 +4322,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest.",
+            "A parkrun counts. So does a solo effort, just make it honest.",
           ],
           "detail": null,
           "distance_km": 5,
@@ -4335,7 +4335,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 32,
     },
@@ -4392,7 +4392,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
         "wed": {
           "catalogue_id": "tempo_cruise",
           "coach_notes": [
-            "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
+            "HM-pace work. Target 4:59 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -4500,7 +4500,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
         "wed": {
           "catalogue_id": "progressive_tempo",
           "coach_notes": [
-            "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
+            "HM-pace work. Target 4:59 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -4618,7 +4618,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
         "wed": {
           "catalogue_id": "hm_pace_intervals",
           "coach_notes": [
-            "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
+            "HM-pace work. Target 4:59 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -4706,7 +4706,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
         },
         "sun": {
           "coach_notes": [
-            "Step-back week. Easy aerobic — let the legs absorb last week's peak before the next push.",
+            "Step-back week. Easy aerobic: let the legs absorb last week's peak before the next push.",
           ],
           "detail": null,
           "distance_km": 15,
@@ -4724,7 +4724,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
         "wed": {
           "catalogue_id": "hm_pace_intervals",
           "coach_notes": [
-            "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
+            "HM-pace work. Target 4:59 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -4832,7 +4832,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
         "wed": {
           "catalogue_id": "hm_pace_intervals",
           "coach_notes": [
-            "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
+            "HM-pace work. Target 4:59 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -5028,7 +5028,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
         "wed": {
           "catalogue_id": "goal_pace_sharpener",
           "coach_notes": [
-            "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
+            "HM-pace work. Target 4:59 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -5162,7 +5162,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
     "difficulty_note": "Very demanding on 15 weeks — below the 16-week mark for this race. It can be run; the timeline is the constraint, not your effort.",
     "fitness_intensity_level": "experienced",
     "fitness_level": "intermediate",
-    "fitness_signal_note": "Your race benchmark and your training volume point to different levels (intermediate on benchmark, experienced on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.",
+    "fitness_signal_note": "Your race benchmark and your training volume point to different levels (intermediate on benchmark, experienced on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard. Building volume is where injuries come from, holding back intensity is where progress is lost.",
     "foundation_weeks_planned": 0,
     "generator_input": {
       "acknowledged_prep_warning": true,
@@ -5568,7 +5568,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest.",
+            "A parkrun counts. So does a solo effort, just make it honest.",
           ],
           "detail": null,
           "distance_km": 5,
@@ -5581,7 +5581,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 43,
     },
@@ -5733,7 +5733,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "catalogue_id": "threshold_pyramid",
           "coach_notes": [
             "The top rung is not the hard one. The one on the way back down is.",
-            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
+            "Controlled effort: if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "derived_set": {
             "blocks": [
@@ -5745,7 +5745,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
                     "advance": "auto",
                     "length": "2 min",
                     "modality": "run",
-                    "note": "Rung one. Settle in — this is the pace you finish on.",
+                    "note": "Rung one. Settle in: this is the pace you finish on.",
                     "pace": "4:23–4:36 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -5959,7 +5959,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
                     "advance": "auto",
                     "length": "4 min",
                     "modality": "run",
-                    "note": "Four minutes at critical velocity — a notch past comfortably hard, and controlled. Not flat out.",
+                    "note": "Four minutes at critical velocity: a notch past comfortably hard, and controlled. Not flat out.",
                     "pace": "4:14–4:23 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -5968,7 +5968,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
                     "advance": "auto",
                     "length": "1:30",
                     "modality": "jog",
-                    "note": "Ninety seconds easy. Short — the point is to keep the ceiling pressure on.",
+                    "note": "Ninety seconds easy. Short: the point is to keep the ceiling pressure on.",
                     "pace": "5:02–6:02 /km",
                     "pace_mode": "ceiling",
                     "role": "recovery",
@@ -6061,7 +6061,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest.",
+            "A parkrun counts. So does a solo effort, just make it honest.",
           ],
           "detail": null,
           "distance_km": 5,
@@ -6074,7 +6074,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 45,
     },
@@ -6144,7 +6144,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "catalogue_id": "tempo_cruise",
           "coach_notes": [
-            "Marathon-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
+            "Marathon-pace work. Target 4:37 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -6265,7 +6265,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "catalogue_id": "progressive_tempo",
           "coach_notes": [
-            "Marathon-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
+            "Marathon-pace work. Target 4:37 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -6395,7 +6395,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "catalogue_id": "mp_blocks",
           "coach_notes": [
-            "Marathon-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
+            "Marathon-pace work. Target 4:37 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -6508,7 +6508,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "catalogue_id": "mp_blocks",
           "coach_notes": [
-            "Marathon-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
+            "Marathon-pace work. Target 4:37 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -6723,7 +6723,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "catalogue_id": "goal_pace_sharpener",
           "coach_notes": [
-            "Marathon-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
+            "Marathon-pace work. Target 4:37 /km. Controlled, even splits: exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -7354,7 +7354,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 9.5,
@@ -7374,7 +7374,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
           "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
-            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
+            "Controlled effort: if you can’t say a short sentence, you’ve drifted into the grey zone.",
             "HR zones in this plan are estimated from age. Run the first session by feel (RPE 4 = conversational, easy). If your HR sits consistently above or below target at that effort, flag it for zone recalibration.",
           ],
           "derived_set": {
@@ -7440,7 +7440,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 12,
@@ -7471,7 +7471,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
                     "advance": "auto",
                     "length": "10 min",
                     "modality": "run",
-                    "note": "Threshold effort — comfortably hard, not a race pace.",
+                    "note": "Threshold effort: comfortably hard, not a race pace.",
                     "pace": "5:30–6:00 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -7586,7 +7586,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 11,
@@ -7688,7 +7688,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 14.5,
@@ -7707,7 +7707,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         "wed": {
           "catalogue_id": "threshold_ladder",
           "coach_notes": [
-            "Up and back down. The 8-minute rung is the honest one — everything before it should feel like restraint.",
+            "Up and back down. The 8-minute rung is the honest one; everything before it should feel like restraint.",
           ],
           "derived_set": {
             "blocks": [
@@ -7751,7 +7751,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
                     "advance": "auto",
                     "length": "8 min",
                     "modality": "run",
-                    "note": "The long rung. If the pace is going, it goes here — hold the effort, let the pace be what it is.",
+                    "note": "The long rung. If the pace is going, it goes here: hold the effort, let the pace be what it is.",
                     "pace": "5:30–6:00 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -7837,7 +7837,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 14.5,
@@ -7878,7 +7878,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
                     "advance": "auto",
                     "length": "1:30",
                     "modality": "jog",
-                    "note": "90 seconds. Deliberately short — clearance, not recovery.",
+                    "note": "90 seconds. Deliberately short: clearance, not recovery.",
                     "pace": "6:30–7:30 /km",
                     "pace_mode": "ceiling",
                     "role": "recovery",
@@ -7931,7 +7931,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 15.5,
@@ -7962,7 +7962,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
                     "advance": "auto",
                     "length": "2 min",
                     "modality": "run",
-                    "note": "Rung one. Settle in — this is the pace you finish on.",
+                    "note": "Rung one. Settle in: this is the pace you finish on.",
                     "pace": "5:30–6:00 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -8123,7 +8123,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 17,
@@ -8154,7 +8154,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
                     "advance": "auto",
                     "length": "4 min",
                     "modality": "run",
-                    "note": "Four minutes at critical velocity — a notch past comfortably hard, and controlled. Not flat out.",
+                    "note": "Four minutes at critical velocity: a notch past comfortably hard, and controlled. Not flat out.",
                     "pace": "5:21–5:34 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -8163,7 +8163,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
                     "advance": "auto",
                     "length": "1:30",
                     "modality": "jog",
-                    "note": "Ninety seconds easy. Short — the point is to keep the ceiling pressure on.",
+                    "note": "Ninety seconds easy. Short: the point is to keep the ceiling pressure on.",
                     "pace": "6:30–7:30 /km",
                     "pace_mode": "ceiling",
                     "role": "recovery",
@@ -8439,7 +8439,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
     "difficulty_band": "comfortable",
     "fitness_intensity_level": "experienced",
     "fitness_level": "intermediate",
-    "fitness_signal_note": "Your race benchmark and your training volume point to different levels (intermediate on benchmark, experienced on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.",
+    "fitness_signal_note": "Your race benchmark and your training volume point to different levels (intermediate on benchmark, experienced on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard. Building volume is where injuries come from, holding back intensity is where progress is lost.",
     "foundation_weeks_planned": 0,
     "generator_input": {
       "age": 29,
@@ -8830,7 +8830,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest.",
+            "A parkrun counts. So does a solo effort, just make it honest.",
           ],
           "detail": null,
           "distance_km": 5,
@@ -8843,7 +8843,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 43,
     },
@@ -8963,7 +8963,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 20,
@@ -8999,7 +8999,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "catalogue_id": "threshold_pyramid",
           "coach_notes": [
             "The top rung is not the hard one. The one on the way back down is.",
-            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
+            "Controlled effort: if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "derived_set": {
             "blocks": [
@@ -9011,7 +9011,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
                     "advance": "auto",
                     "length": "2 min",
                     "modality": "run",
-                    "note": "Rung one. Settle in — this is the pace you finish on.",
+                    "note": "Rung one. Settle in: this is the pace you finish on.",
                     "pace": "4:30–4:43 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -9182,7 +9182,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 22,
@@ -9229,7 +9229,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
                     "advance": "auto",
                     "length": "4 min",
                     "modality": "run",
-                    "note": "Four minutes at critical velocity — a notch past comfortably hard, and controlled. Not flat out.",
+                    "note": "Four minutes at critical velocity: a notch past comfortably hard, and controlled. Not flat out.",
                     "pace": "4:21–4:30 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -9238,7 +9238,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
                     "advance": "auto",
                     "length": "1:30",
                     "modality": "jog",
-                    "note": "Ninety seconds easy. Short — the point is to keep the ceiling pressure on.",
+                    "note": "Ninety seconds easy. Short: the point is to keep the ceiling pressure on.",
                     "pace": "5:11–6:12 /km",
                     "pace_mode": "ceiling",
                     "role": "recovery",
@@ -9331,7 +9331,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
             "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-            "A parkrun counts. So does a solo effort — just make it honest.",
+            "A parkrun counts. So does a solo effort, just make it honest.",
           ],
           "detail": null,
           "distance_km": 5,
@@ -9344,7 +9344,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "theme": "Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 44,
     },
@@ -9383,7 +9383,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 21.5,
@@ -9430,7 +9430,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
                     "advance": "auto",
                     "length": "10 min",
                     "modality": "run",
-                    "note": "Threshold effort — comfortably hard, not a race pace.",
+                    "note": "Threshold effort: comfortably hard, not a race pace.",
                     "pace": "4:30–4:43 /km",
                     "pace_mode": "target",
                     "role": "work",
@@ -9502,7 +9502,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
           ],
           "detail": null,
           "distance_km": 26.5,
@@ -9631,7 +9631,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
             "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,
@@ -9688,7 +9688,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
                     "advance": "auto",
                     "length": "1:30",
                     "modality": "jog",
-                    "note": "90 seconds. Deliberately short — clearance, not recovery.",
+                    "note": "90 seconds. Deliberately short: clearance, not recovery.",
                     "pace": "5:11–6:12 /km",
                     "pace_mode": "ceiling",
                     "role": "recovery",
@@ -9751,7 +9751,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         },
         "sun": {
           "coach_notes": [
-            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
             "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,

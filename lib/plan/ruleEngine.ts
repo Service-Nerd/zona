@@ -747,7 +747,7 @@ function qualitySession(
  * dietary data and individualised nutrition advice is out of scope). Names the
  * rehearsal, not the quantity.
  */
-const CONTROLLED_THRESHOLD_CUE = 'Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.'
+const CONTROLLED_THRESHOLD_CUE = 'Controlled effort: if you can’t say a short sentence, you’ve drifted into the grey zone.'
 
 
 // Coaching Board 2026-09-03 — resolve a v2 pace anchor to a numeric min/km for
@@ -1890,7 +1890,7 @@ function makeQualitySession(args: {
     // Don't carry the catalogue's voice through (it belongs to whichever
     // category the selector fell back to — usually aerobic for 10K plans
     // where no 10K-eligible threshold row exists).
-    notes.push(`${distLabel ? raceDistanceDisplayName(distLabel) : 'Goal'}-pace work. Target ${goalPace}. Controlled, even splits — exit each rep wanting more.`)
+    notes.push(`${distLabel ? raceDistanceDisplayName(distLabel) : 'Goal'}-pace work. Target ${goalPace}. Controlled, even splits: exit each rep wanting more.`)
   } else if (isVo2max && catalogueRow?.coach_voice_notes) {
     // VO2max sessions keep their catalogue voice (the catalogue's vo2max
     // entries — Three minutes is long, Heroic openers ruin it — are correct).
@@ -1900,7 +1900,7 @@ function makeQualitySession(args: {
     // work happens here.") describes a Zone 2 run and is false on a session
     // prescribed at T-pace. Replace it rather than carry it through, and say
     // what the session actually is.
-    notes.push('Threshold work — the pace you could hold for about an hour. Not a race.')
+    notes.push('Threshold work: the pace you could hold for about an hour. Not a race.')
   } else if (catalogueRow?.coach_voice_notes) {
     notes.push(catalogueRow.coach_voice_notes)
     // 🔴 PEAK-RACEPACE-NOTE-01 — a peak race-pace note USED TO BE APPENDED HERE, gated on
@@ -2258,7 +2258,7 @@ function shakeoutSession(
   const label = slot === 0 ? 'Easy shakeout' : 'Pre-race shakeout'
   const note = slot === 0
     ? 'Short and relaxed. Wake the legs, nothing more.'
-    : 'The last one before race day. Short on purpose — if it feels too easy, that is the point.'
+    : 'The last one before race day. Short on purpose: if it feels too easy, that is the point.'
   const session = easySession(weekN, day, km, 'distance', zones, pace, label, 2, [note])
   session.zone = 'Zone 1'
   session.hr_target = zones.shakeoutHR
@@ -2345,7 +2345,7 @@ function applyRecalibrationTimeTrial(
     // keeps ADR-014's prompted-and-confirmed model honest: the rewrite is never
     // silent. The tile stays the single owner of what the option costs.
     "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
-    'A parkrun counts. So does a solo effort — just make it honest.',
+    'A parkrun counts. So does a solo effort, just make it honest.',
   ]
   return day
 }
@@ -2486,7 +2486,7 @@ function fiveKTenKPeakLongRunSession(
   const easyPct  = Math.round((1 - midPct - finalPct) * 100)
   const coach_notes: [string, string?, string?] = [
     `Easy for the first ${easyPct}%. Let the aerobic base work.`,
-    `Middle ${Math.round(midPct * 100)}% (≈${midKm} km) at marathon pace: ${mpStr}. Controlled — not a tempo session.`,
+    `Middle ${Math.round(midPct * 100)}% (≈${midKm} km) at marathon pace: ${mpStr}. Controlled, not a tempo session.`,
     `Final ${Math.round(finalPct * 100)}% (≈${finalKm} km) at HM pace: ${hmStr}. This is the work. Exit feeling like you had more.`,
   ]
   const rounded = roundDistance(distKm)
@@ -2520,7 +2520,7 @@ function finishGoalPeakLongRunSession(
   const easyPct   = Math.round((1 - finalPct) * 100)
   const coach_notes: [string, string?, string?] = [
     `Zone 2 throughout. Conversational for the first ${easyPct}%.`,
-    `Negative-split finish — last ${Math.round(finalPct * 100)}% (≈${finalKm} km): go by feel, slightly faster than your easy pace. No pace target — proprioception, not pace.`,
+    `Negative-split finish over the last ${Math.round(finalPct * 100)}% (≈${finalKm} km): go by feel, slightly faster than your easy pace. No pace target; proprioception, not pace.`,
   ]
   const rounded = roundDistance(distKm)
   return {
@@ -3489,7 +3489,7 @@ function buildWeekSessions(
         (is5K10K && input.goal === 'time_target' && phase === 'build') || overdoCue)
       if (z2CueApplies) {
         const s = sessions[longDay]!
-        const ceilingNote = 'Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming.'
+        const ceilingNote = 'Zone 2 ceiling: if HR starts climbing, back off to a walk for 30 seconds before resuming.'
         const existing = s.coach_notes
         s.coach_notes = existing
           ? [existing[0], ceilingNote, existing[1]] as [string, string?, string?]
@@ -3509,7 +3509,7 @@ function buildWeekSessions(
   if (isFinishGoalPeakLongRun && sessions[longDay]) {
     appendCoachNote(
       sessions[longDay]!,
-      'Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.',
+      'Time on feet is the point; walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.',
     )
     // §80 (HR-MAX-01 part 3) — this session's prescription IS time on feet, so it
     // stays duration-anchored whatever the runner's metric preference. A distance
@@ -4221,7 +4221,7 @@ function weekTheme(c: WeekContent): string {
   if (c.isRaceWeek) return 'The work is done. Arrive rested.'
   if (c.isDeload) {
     return c.hasBenchmark
-      ? 'Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.'
+      ? 'Deload week. One hard effort in the middle: log the result and your zones refresh for the next block.'
       : 'Adaptation happens in recovery. This week counts.'
   }
   switch (c.phase) {
@@ -4765,7 +4765,7 @@ function applyPeakLongRunAlternation(
     // BUILD: the first peak week can be the step-back, ahead of the peak (a permitted §47 pattern).
     const prevWeek = weeks[weeks.indexOf(w) - 1]
     lr.session.coach_notes = prevWeek?.phase === 'peak'
-      ? ['Step-back week. Easy aerobic — let the legs absorb last week\'s peak before the next push.']
+      ? ['Step-back week. Easy aerobic: let the legs absorb last week\'s peak before the next push.']
       : ['Step-back week. Easy aerobic, so the legs arrive fresh for next week\'s peak.']
     delete (lr.session as any).lr_segment_pace
     // §47's own contract, one field late: "drop race-pace catalogue
@@ -5854,7 +5854,7 @@ function applyV2Vo2MaxOnsetTiming(
     adjustments.push({
       rule:           'V2-vo2max-onset-unreachable',
       violation:      `First VO2max session is in week ${fromWeek.n}; the adaptation window needs it by week ${deadlineWeekN}.`,
-      resolution:     `Plan is ${weeks.length} weeks — too short to contain a ${GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS}-week VO2max adaptation window, because week ${deadlineWeekN} falls in the base phase (build starts week ${buildStartWeekN}) where no quality session exists. The VO2max sessions are kept for their other value; expect them to sharpen rather than to build a new ceiling. A ${weeks.length + (buildStartWeekN - deadlineWeekN)}-week plan would fit the full window.`,
+      resolution:     `Plan is ${weeks.length} weeks: too short to contain a ${GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS}-week VO2max adaptation window, because week ${deadlineWeekN} falls in the base phase (build starts week ${buildStartWeekN}) where no quality session exists. The VO2max sessions are kept for their other value; expect them to sharpen rather than to build a new ceiling. A ${weeks.length + (buildStartWeekN - deadlineWeekN)}-week plan would fit the full window.`,
       weeks_affected: [fromWeek.n],
     })
     return
@@ -6304,7 +6304,7 @@ function applyV7TaperRationale(
   if (taperWeeks <= 1) {
     rationale = 'More would risk arriving flat.'
   } else if (raceDistanceKm > 50) {
-    rationale = 'Your aerobic base is what carries you — arriving rested matters more than last-minute fitness.'
+    rationale = 'Your aerobic base is what carries you; arriving rested matters more than last-minute fitness.'
   } else {
     rationale = 'Long enough for adaptation to consolidate without losing sharpness.'
   }
@@ -7982,7 +7982,7 @@ function buildRulePlanOnce(
         ruleAdjustments.push({
           rule: 'V8-second-quality-min-days',
           violation: `Peak weeks intend two quality sessions for an experienced runner, but the week has ${trainingDays} training days.`,
-          resolution: `Second quality session withheld (needs ${minDays}). At ${trainingDays} days, a long run plus two quality sessions leaves too little room for easy running — the week would lose volume from the easy run, which is the part that makes the hard work survivable (CoachingPrinciples §8, §9).`,
+          resolution: `Second quality session withheld (needs ${minDays}). At ${trainingDays} days, a long run plus two quality sessions leaves too little room for easy running: the week would lose volume from the easy run, which is the part that makes the hard work survivable (CoachingPrinciples §8, §9).`,
           weeks_affected: affected,
         })
       }
@@ -8038,7 +8038,7 @@ function buildRulePlanOnce(
     // Threshold-bucket alternative labels + matching coach voices.
     const THRESHOLD_ALTS: { label: string; voice: string }[] = [
       { label: 'Continuous tempo', voice: 'Sustained sub-threshold work. Builds the ceiling.' },
-      { label: 'Cruise intervals', voice: 'Threshold work in repeats. Same effort on rep 3 as rep 1 — that is the test.' },
+      { label: 'Cruise intervals', voice: 'Threshold work in repeats. Same effort on rep 3 as rep 1: that is the test.' },
       { label: 'Progressive tempo', voice: 'Start at aerobic, finish at threshold. Discipline at the start, honesty at the end.' },
     ]
 
@@ -8148,7 +8148,7 @@ function buildRulePlanOnce(
               && fitness === 'beginner' && distKm > 43) {
             return {
               volume_profile: 'maintenance' as const,
-              volume_constraint_note: `An injury history plus a beginner's current volume can't safely build to a ${distKey} — the plan protects your current fitness rather than pushing volume into injured tissue. Aim to finish, not to a time; a healthy return to higher mileage comes first.`,
+              volume_constraint_note: `An injury history plus a beginner's current volume can't safely build to a ${distKey}, so the plan protects your current fitness rather than pushing volume into injured tissue. Aim to finish, not to a time; a healthy return to higher mileage comes first.`,
             }
           }
 
@@ -8541,7 +8541,7 @@ function buildRulePlanOnce(
     // draft included "a 44km week you run beats a 65km week you abandon" —
     // true, but it is encouragement, and the brand rule is that we state the
     // fact and let the runner draw the conclusion.
-    return `Your weekday limit of ${durationText(input.max_weekday_mins)} is shaping this plan — peak week reaches ${Math.round(peakActual)}km where it would otherwise have gone to ${Math.round(peakIntent)}km, about ${Math.round(lostPct)}% less. Only the volume moves; the sessions and their balance don't. If you want it back, ${lever} is the lever.`
+    return `Your weekday limit of ${durationText(input.max_weekday_mins)} is shaping this plan: peak week reaches ${Math.round(peakActual)}km where it would otherwise have gone to ${Math.round(peakIntent)}km, about ${Math.round(lostPct)}% less. Only the volume moves; the sessions and their balance don't. If you want it back, ${lever} is the lever.`
   })()
 
   // §80 — if LONG_RUN_CAP_MINUTES stopped the peak long run reaching the
@@ -8857,7 +8857,7 @@ function buildRulePlanOnce(
     : null
 
   const longRunOverrunNote: string | null = longRunOverrun
-    ? `This plan is built to get you round on the time you have — your long run does not fit it. You've kept both weekend days clear of training and capped weekdays at ${durationText(longRunOverrun.cap)}, but by week ${longRunOverrun.n} the long run this race needs is about ${durationText(longRunOverrun.mins)}. It stays in the plan at full length, because a long run cut to ${durationText(longRunOverrun.cap)} stops being a long run. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
+    ? `This plan is built to get you round on the time you have, and your long run does not fit it. You've kept both weekend days clear of training and capped weekdays at ${durationText(longRunOverrun.cap)}, but by week ${longRunOverrun.n} the long run this race needs is about ${durationText(longRunOverrun.mins)}. It stays in the plan at full length, because a long run cut to ${durationText(longRunOverrun.cap)} stops being a long run. What it can't do is build toward the race on those terms. The lever is one longer session a week: a weekend morning, or a single weekday you can give more time to.`
     : null
 
   // §82 — easy-run floor protection recurring across weeks. One week is
@@ -8877,7 +8877,7 @@ function buildRulePlanOnce(
     // "You've capped weekdays at undefined minutes". Measured across 16,080
     // no-cap plans in both grids: 0 occurrences, so this is latent rather than
     // live — but a note whose premise may be false should not assert it.
-    ? `This plan is shaped by the time you have — your easy runs don't fit it on ${floorProtectedWeekCount} of this plan's weeks.${input.max_weekday_mins != null ? ` You've capped weekdays at ${durationText(input.max_weekday_mins)}, and at that limit some` : ' Some'} easy runs would shrink to a distance too short to train anything, so they stay a few minutes over${input.max_weekday_mins != null ? ' your cap' : ' the budget those days allow'} instead. The lever is day count — fewer, fuller sessions fit your time better than more, thinner ones.`
+    ? `This plan is shaped by the time you have, and your easy runs don't fit it on ${floorProtectedWeekCount} of this plan's weeks.${input.max_weekday_mins != null ? ` You've capped weekdays at ${durationText(input.max_weekday_mins)}, and at that limit some` : ' Some'} easy runs would shrink to a distance too short to train anything, so they stay a few minutes over${input.max_weekday_mins != null ? ' your cap' : ' the budget those days allow'} instead. The lever is day count: fewer, fuller sessions fit your time better than more, thinner ones.`
     : null
 
   // ── §90 Amendment 1 — WHEN THE INJURY TRIM REMOVES EASY RUNS, QUALITY YIELDS ──
@@ -9760,7 +9760,7 @@ function buildRulePlanOnce(
       // (returning runner, no benchmark) must not claim a benchmark disagreement.
       fitness_signal_note: assessed.intensityLiftedForReturn
         ? `Your current volume reads like a beginner's, but your training history says you're not one — you're a runner coming back, not starting out. So the plan keeps the mileage cautious while it rebuilds, but gives you real quality work rather than a true beginner's easy-only plan. Hard sessions ease in over the first few weeks (your fitness returns faster than your tendons and bones do), and recovery and fuelling matter more coming back than they did at your peak.`
-        : `Your race benchmark and your training volume point to different levels (${fitnessFromVdot(vdot ?? 0)} on benchmark, ${fitnessFromVolume(input.current_weekly_km, input.longest_recent_run_km)} on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.`,
+        : `Your race benchmark and your training volume point to different levels (${fitnessFromVdot(vdot ?? 0)} on benchmark, ${fitnessFromVolume(input.current_weekly_km, input.longest_recent_run_km)} on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard. Building volume is where injuries come from, holding back intensity is where progress is lost.`,
     } : {}),
     // §79 (2026-08-31) — progressive intensity re-entry surfaced for honesty + the
     // INV-PLAN-RETURNING-INTENSITY-REENTRY invariant.

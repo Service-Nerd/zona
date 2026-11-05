@@ -150,6 +150,6 @@ export function estimateBenchmarkFromRuns(args: {
     confidence: confident ? 'moderate' : 'low',
     label: confident
       ? 'Estimated from your recent runs'
-      : `From ${runCount} recent run${runCount > 1 ? 's' : ''} — rough, but a start`,
+      : `From ${runCount} recent run${runCount > 1 ? 's' : ''}: rough, but a start`,
   }
 }

@@ -22,30 +22,22 @@
 // COMFORTABLE DIRECTION. A scratch script said SIX; this gate said EIGHT on its
 // first run, because the script collected hits in a `Set` (so the same note
 // appearing in two different plans counted once) and never looked at
-// `session.label`. **A Set deduplicates the thing you are counting.** Both
-// errors under-reported. Nine published plans, nine rendered exemplars, EIGHT
-// em dashes across six plans:
+// `session.label`. **A Set deduplicates the thing you are counting.**
 //
-//   LABELS (2) — the engine-label case `noEmDash.test.ts` already declared out
-//   of scope in those words ("Easy run — Zone 2"):
+// ✅ SIX OF THE EIGHT ARE GONE (2026-11-05). The founder ruled that a step note
+// is a SENTENCE, so the em dash goes, and the fix ran far wider than this page:
+// **48 runner-facing strings across the nine published plans, of which 27 were
+// sentences.** See `SITE-ENGINE-EMDASH-01`. What is left is the two LABELS:
+//
 //     10k-12-week            w5  "Hill reps — 90s"
 //     sub-50-10k-plan        w5  "Hill reps — 90s"
 //
-//   STEP NOTES (6) — sentences a runner reads:
-//     half-marathon-12-week  w5  "Deliberately short — clearance, not recovery."
-//     marathon-16-week       w6  "Rung one. Settle in — this is the pace you finish on."
-//     sub-2-hour-half...     w6  "Rung one. Settle in — this is the pace you finish on."
-//     sub-45-10k-plan        w5  "...at VO2max effort — about as hard as you could hold..."
-//     sub-4-hour-marathon    w7  "...critical velocity — a notch past comfortably hard..."
-//     sub-4-hour-marathon    w7  "Ninety seconds easy. Short — the point is to keep..."
-//
-// 🔻 THE EIGHT ARE REGISTERED DEBT, NOT A PASS, and they are NOT MINE TO FIX.
-// They live in the session catalogue, which is coaching doctrine behind
-// `.claude/hooks/coaching-guard.py`. The founder's ruling (2026-09-22) is
-// "sentences the runner reads or hears, no em dash; session descriptions,
-// allowed" — and whether a STEP NOTE is a sentence or a description is a
-// coaching-and-founder question, not a build decision. Filed as
-// `SITE-ENGINE-EMDASH-01`, routed 🏃 Coaching Board.
+// 🔻 THE REMAINING TWO ARE LABELS, AND THEY STAY.
+// A label is not a sentence, and this one is LOAD-BEARING besides: ADR-018
+// keeps a legacy fallback that matches a catalogue row's `name` against
+// `session.label`, so renaming a label can silently break the join that tells a
+// session which row it came from. `noEmDash.test.ts`'s own header had already
+// declared engine labels out of scope, in those words, for that reason.
 //
 // ⚠️ A DECLARED REASON IS NOT A FIXED PROBLEM. These entered the register on
 // 2026-11-05. What this gate does is stop the number growing: a NINTH em dash
@@ -101,7 +93,7 @@ function renderedExemplars(): { slug: string; weekN: number; text: string }[] {
 
 /** Known em dashes in engine copy that the plan pages render today. Coaching
  *  doctrine owns the strings; this file owns only the count. */
-const BASELINE_EM_DASHES = 8
+const BASELINE_EM_DASHES = 2
 
 describe('engine copy on a marketing page — SITE-SESSION-STEPS-01', () => {
   const exemplars = renderedExemplars()

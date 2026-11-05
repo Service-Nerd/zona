@@ -121,7 +121,7 @@ export function levelFitNote(meta: Plan['meta']): string | null {
  */
 export function onsetYieldNote(meta: Plan['meta']): string | null {
   if (!meta.onset_yield) return null
-  return 'Quality starts later here than your training history alone would allow — across the whole plan, more hard sessions would tip too much of it out of easy.'
+  return 'Quality starts later here than your training history alone would allow: across the whole plan, more hard sessions would tip too much of it out of easy.'
 }
 
 /**

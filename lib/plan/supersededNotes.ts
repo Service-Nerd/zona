@@ -26,21 +26,61 @@
  * runner mid-block.
  */
 export const SUPERSEDED_NOTES: Readonly<Record<string, string>> = {
+  // 🔴 SITE-ENGINE-EMDASH-01 (founder ruling, 2026-11-05) — a step note is a
+  // SENTENCE, so the em dash goes. **These 14 entries exist because the
+  // catalogue edit reaches NEW plans only**: a step note is stamped into
+  // `plan_json` at generation, and this file is the only thing that reaches a
+  // runner mid-block. Third time this shape has come up, and the header above
+  // already records getting it wrong twice.
+  //
+  // ⚠️ DERIVED FROM THE REAL BEFORE/AFTER, not typed: the pairs were read by
+  // diffing every `note:` literal in `sessionCatalogueData.ts` against its
+  // version at HEAD, so a sentence cannot be mapped to something it never said.
+  // The old side is exactly what production stamped; only the mark changes.
+  'Threshold effort — comfortably hard, not a race pace.':
+    'Threshold effort: comfortably hard, not a race pace.',
+  'The long rung. If the pace is going, it goes here — hold the effort, let the pace be what it is.':
+    'The long rung. If the pace is going, it goes here: hold the effort, let the pace be what it is.',
+  'The over — a notch past comfortably hard. A gear change, not a surge.':
+    'The over, a notch past comfortably hard. A gear change, not a surge.',
+  'The under — back to comfortably hard, without stopping. This half is the session.':
+    'The under, back to comfortably hard, without stopping. This half is the session.',
+  '90 seconds. Deliberately short — clearance, not recovery.':
+    '90 seconds. Deliberately short: clearance, not recovery.',
+  'Rung one. Settle in — this is the pace you finish on.':
+    'Rung one. Settle in: this is the pace you finish on.',
+  'Three minutes at VO2max effort — about as hard as you could hold for ten minutes. Even splits; don\'t blow rep one.':
+    'Three minutes at VO2max effort: about as hard as you could hold for ten minutes. Even splits; don\'t blow rep one.',
+  'Thirty seconds at VO2max effort — hard, but repeatable. Quick, not a sprint: you do this many times.':
+    'Thirty seconds at VO2max effort: hard, but repeatable. Quick, not a sprint: you do this many times.',
+  'Thirty seconds easy. Keep moving — the short float is the session.':
+    'Thirty seconds easy. Keep moving: the short float is the session.',
+  'Three hundred metres easy — but keep running. The float is not a rest.':
+    'Three hundred metres easy, but keep running. The float is not a rest.',
+  'Four minutes at critical velocity — a notch past comfortably hard, and controlled. Not flat out.':
+    'Four minutes at critical velocity: a notch past comfortably hard, and controlled. Not flat out.',
+  'Ninety seconds easy. Short — the point is to keep the ceiling pressure on.':
+    'Ninety seconds easy. Short: the point is to keep the ceiling pressure on.',
+  'Ninety seconds. Deliberately short — you start the next rep unrecovered.':
+    'Ninety seconds. Deliberately short: you start the next rep unrecovered.',
+  'Hands on quads, short steps, tall chest. Hiking, not trudging — you should be able to eat while you do it.':
+    'Hands on quads, short steps, tall chest. Hiking, not trudging: you should be able to eat while you do it.',
+
   // STEP-NOTE-SELF-CONTAINED-01 — referenced a session the runner may never have run.
   'Threshold now. Same effort as rep three of a cruise set.':
     'Threshold now. It should feel harder than the same pace would feel fresh.',
   // COPY-TERM-HANDLE-01 — glossed one coaching term with another.
   'Four minutes at critical velocity — just past threshold, controlled. Not a VO2max rep.':
-    'Four minutes at critical velocity — a notch past comfortably hard, and controlled. Not flat out.',
+    'Four minutes at critical velocity: a notch past comfortably hard, and controlled. Not flat out.',
   'The over — just past threshold. A gear change, not a surge.':
-    'The over — a notch past comfortably hard. A gear change, not a surge.',
+    'The over, a notch past comfortably hard. A gear change, not a surge.',
   'The under — back to threshold without stopping. This half is the session.':
-    'The under — back to comfortably hard, without stopping. This half is the session.',
+    'The under, back to comfortably hard, without stopping. This half is the session.',
   // COPY-TERM-HANDLE-01 — named a lab measurement with no handle on the effort.
   'Three minutes at VO2max effort. Even splits — don’t blow rep one.':
-    'Three minutes at VO2max effort — about as hard as you could hold for ten minutes. Even splits; don’t blow rep one.',
+    'Three minutes at VO2max effort: about as hard as you could hold for ten minutes. Even splits; don’t blow rep one.',
   'Thirty seconds at VO2max effort. Quick, not a sprint — you do this many times.':
-    'Thirty seconds at VO2max effort — hard, but repeatable. Quick, not a sprint: you do this many times.',
+    'Thirty seconds at VO2max effort: hard, but repeatable. Quick, not a sprint: you do this many times.',
 }
 
 /**

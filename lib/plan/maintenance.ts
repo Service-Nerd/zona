@@ -254,7 +254,7 @@ function buildEasySession(distKm: number, coachNote: string, label = 'Easy run')
   return {
     type: 'easy',
     label,
-    detail: `${distKm.toFixed(1)}km easy — Zone 2 throughout. Conversational pace.`,
+    detail: `${distKm.toFixed(1)}km easy. Zone 2 throughout. Conversational pace.`,
     distance_km: distKm,
     zone: 'Zone 2',
     coach_notes: [coachNote],

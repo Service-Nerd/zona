@@ -390,7 +390,7 @@ function buildFoundationSessions(
       // shipped `distance_km: 6.6` under the text "6.7km easy" — the card and
       // its own sentence disagreeing on the first screen a new runner sees.
       // Same class as §40b/§78: the runner plans against the number.
-      detail: `${floor1dp(longRunFinalKm).toFixed(1)}km easy — Zone 2 throughout. No exceptions.`,
+      detail: `${floor1dp(longRunFinalKm).toFixed(1)}km easy. Zone 2 throughout. No exceptions.`,
       distance_km: floor1dp(longRunFinalKm),
       // §122 Am.1 — measurable, and deliberately uncapped. See the block comment above.
       ...(paceOk ? { duration_mins: Math.round(floor1dp(longRunFinalKm) * (easyPaceMinPerKm as number)) } : {}),
@@ -473,7 +473,7 @@ function buildFoundationSessions(
       type: 'easy',
       label: 'Easy run',
       // FOUND-ROUND-01 — see the long run above. Built from the shipped value.
-      detail: `${km.toFixed(1)}km easy — Zone 2. Conversational pace.`,
+      detail: `${km.toFixed(1)}km easy. Zone 2. Conversational pace.`,
       distance_km: km,
       // §122 — a foundation session carries a DURATION. Without one it is invisible to
       // every rule that guards on time, which is the root cause this fixes.

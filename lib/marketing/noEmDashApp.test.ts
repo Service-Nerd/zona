@@ -16,7 +16,7 @@
 // 27 bare `—` placeholders which are typography, not prose. Measure the subset
 // that matters before reporting a number.
 import { describe, it, expect } from 'vitest'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const EM = '—'
@@ -37,9 +37,56 @@ const EM = '—'
 // it: `trendSentence.ts` did, and so did 29 more runner-facing sentences in this folder (adjustment notes,
 // post-run lines, week voice, zone explanations, race-result lines). Same class as `lib/ui` on 2026-10-07:
 // the copy lived in an owner module this guard could not see.
-const SURFACES = ['components', 'app/dashboard', 'lib/ui', 'lib/coaching']
+// 🔴 `lib/plan` ADDED 2026-11-05 — `SITE-ENGINE-EMDASH-01`, AND IT HELD 27
+// RUNNER-FACING SENTENCES THAT NEITHER COPY GATE COULD SEE. `noEmDash` reads
+// MARKETING files; this one read `components`, `app/dashboard`, `lib/ui` and
+// `lib/coaching`. **The plan ENGINE — which writes every session label, coach
+// note and step note a runner reads — was in neither.** It surfaced only when
+// `SITE-SESSION-STEPS-01` put the app's session structure on a public page and
+// engine copy arrived somewhere a gate was looking.
+//
+// ⚠️ MEASURED BY GENERATING, NOT BY GREPPING. 89 string literals in the two
+// engine files carry an em dash; the RUNNER-FACING subset is **48 distinct
+// strings across the nine published plans** — the same discipline CLAUDE.md
+// records for the 544-vs-48 count. Of those: 27 sentences (fixed), 12 labels,
+// 6 plan captions, 3 bare placeholders.
+const SURFACES = ['components', 'app/dashboard', 'lib/ui', 'lib/coaching', 'lib/plan']
 /** Model INPUT, never rendered. Its exemplars are guarded separately by `exemplarHygiene.test.ts`. */
 const SKIP_DIRS = ['lib/coaching/prompts']
+
+/** 🔻 `lib/plan` FILES THAT PRODUCE NO RUNNER-FACING COPY, each with its reason.
+ *
+ *  ⚠️ FILE-SCOPED, NOT PATTERN-SCOPED, AND THAT IS THE SAFER DIRECTION HERE. A
+ *  pattern broad enough to clear 150 invariant messages would also clear a real
+ *  sentence that happened to match it. A file list can only ever be wrong about
+ *  the files it names, and every one of these is checked below by the arm that
+ *  asserts the list has not grown silently.
+ *
+ *  ⚠️ MEASURED, NOT ASSERTED: the runner-facing subset was taken by GENERATING
+ *  all nine published plans and walking every rendered string (48 with an em
+ *  dash). Not one came from a file on this list. */
+const DEV_FACING: Record<string, string> = {
+  'lib/plan/invariants.ts': 'validatePlan() violation messages. They throw in dev/test and console.error in production; CLAUDE.md exempts invariant messages by name',
+  'lib/plan/planShapeInvariants.ts': 'the same, for plan shape',
+  'lib/plan/baseBuildValidate.ts': 'the same, for base-build blocks',
+  'lib/plan/planQuality.ts': 'the quality scorecard, printed by npm run review:coaching',
+  'lib/plan/principleCoverage.ts': 'principle-to-invariant coverage report, developer-facing',
+  'lib/plan/invariantLiveness.ts': 'the mutation battery\'s own descriptions of what it breaks',
+  'lib/plan/useCaseEnvelope.ts': 'measurement-corpus case descriptions',
+  'lib/plan/charityCohort.ts': 'measurement-corpus persona descriptions',
+  'lib/plan/supersede.ts': 'an ops error message with a table name in it',
+  'lib/plan/generationConfig.ts': 'config commentary; the runner-facing numerics carry no prose',
+  // AI prompt text — model INPUT, never rendered. Same reason as
+  // lib/coaching/prompts, which SKIP_DIRS already covers.
+  'lib/plan/enrich.ts': 'AI prompt text: model input, never rendered',
+  'lib/plan/enrichMaintenance.ts': 'AI prompt text: model input, never rendered',
+  'lib/plan/freeIntro.ts': 'AI prompt text: model input, never rendered',
+  // 🔴 THE ONE THAT MUST KEEP ITS EM DASHES. Its KEYS are the superseded copy
+  // verbatim — the exact strings production stamped into plan_json — and they
+  // are what a stored plan is matched against. Rewriting a key would silently
+  // stop the repair it exists to perform.
+  'lib/plan/supersededNotes.ts': 'the map KEYS are the old copy by construction; changing one breaks the repair of a stored plan',
+}
 
 /** Not a sentence the runner reads, so out of scope by the founder's own words.
  *  Each entry names WHY, because an exemption without a reason becomes a place
@@ -50,6 +97,27 @@ const EXEMPT = [
   { match: /You are a .*coach reviewing/i, why: 'AI prompt text — model input, never rendered' },
   { match: /\?\?\s*'\u2014'/,              why: "the `?? '—'` no-value fallback inside a template — typography" },
   { match: /^APNs |timed out \u2014 push/,   why: 'console log; the tag is a bare word, not a [prefix]' },
+
+  // ── `lib/plan` (SITE-ENGINE-EMDASH-01, 2026-11-05) ────────────────────────
+  // ⚠️ A LABEL IS NOT A SENTENCE, and this one is also LOAD-BEARING. ADR-018
+  // keeps a legacy fallback that matches a catalogue row's `name` against
+  // `session.label`, so renaming a label can silently break the join that tells
+  // a session which row it came from. The founder's rule is about sentences;
+  // `noEmDash.test.ts`'s own header already declared engine labels out of scope
+  // ("Easy run — Zone 2") for exactly this reason.
+  { match: /^(?:\$\{[^}]*\}|[A-Z])[^.!?]*\u2014[^.!?]*$/,  why: 'engine LABEL or week caption, no sentence punctuation: "Easy run — Zone 2", "Build — raising the ceiling", "Standard plan — 5km, 12 weeks". ADR-018 joins a row to a session BY LABEL, so these are coupled as well as non-prose' },
+  { match: /§/,                       why: 'invariant / rule message, developer-facing (CLAUDE.md exempts invariant messages by name)' },
+  { match: /requires derivable|re-read after/, why: 'invariant message continued onto its own literal' },
+  // 🔴 A LIMITATION OF THE LITERAL MATCHER, NAMED RATHER THAN HIDDEN. `LIT` is a
+  // regex, so where one template literal ends and another begins it can pair the
+  // CLOSING backtick of the first with the OPENING backtick of the second and
+  // report the code between them as a string. Three such spans exist in
+  // `ruleEngine.ts` today; each reports a line (`: null`, `,`) that contains no
+  // em dash at all, which is the tell and is what this matches. ⚠️ Safe in the
+  // direction that matters: a real offender always has the mark ON its own
+  // reported line, so this can only ever clear an artefact. Verified by hand on
+  // all three before it was written.
+  { match: /^[\s,:;{}()\[\]]*(?:\n|$)/, why: 'regex mis-pairing across a template boundary. The TEST is the first line: a real sentence never opens with nothing but code punctuation, and in every case here the reported line carries no em dash at all' },
 ]
 
 /** NOEMDASH-JSX-TEXT-01 — exemptions for the JSX-TEXT pass, kept separate from the
@@ -93,6 +161,8 @@ function jsxOffenders(): string[] {
   const bad: string[] = []
   for (const root of SURFACES) {
     for (const f of files(join(process.cwd(), root))) {
+      const rel = f.slice(process.cwd().length + 1)
+      if (DEV_FACING[rel]) continue
       const raw = readFileSync(f, 'utf8')
       if (!raw.includes(EM)) continue
       const blanked = blankNonProse(raw)
@@ -133,6 +203,8 @@ function offenders(): string[] {
   const bad: string[] = []
   for (const root of SURFACES) {
     for (const f of files(join(process.cwd(), root))) {
+      const rel = f.slice(process.cwd().length + 1)
+      if (DEV_FACING[rel]) continue
       const raw = readFileSync(f, 'utf8')
       if (!raw.includes(EM)) continue
       const src = blankComments(raw)
@@ -141,9 +213,26 @@ function offenders(): string[] {
       while ((m = LIT.exec(src)) !== null) {
         const t = m[1] ?? m[2] ?? m[3] ?? ''
         if (!t.includes(EM)) continue
-        if (EXEMPT.some(e => e.match.test(t.trim()))) continue
-        const line = raw.slice(0, m.index).split('\n').length
-        bad.push(`${f.replace(process.cwd() + '/', '')}:${line}  ${t.trim().slice(0, 70)}`)
+        // 🔴 REPORT THE LINE OF THE EM DASH, NOT OF THE LITERAL'S START, and
+        // test the SENTENCE AROUND IT rather than the whole extract.
+        //
+        // `LIT` is a regex, so across a template boundary it can pair the
+        // closing backtick of one literal with the opening backtick of the
+        // next and swallow the code between. The old reporting then blamed a
+        // line reading `: null` or `,` for a dash that is real and lives
+        // further down — three such reports existed in `ruleEngine.ts`, and the
+        // first instinct was to exempt the mangled text, which would have
+        // exempted whatever real string was hiding behind it.
+        //
+        // ⚠️ THE EXEMPTION TEST NARROWS WITH IT. Matching `§` against a
+        // 400-character swallowed span would clear any sentence that happened
+        // to share it; matched against the one line the dash is actually on, it
+        // clears a rule reference and nothing else.
+        const at = m.index + (m[0].indexOf(EM) >= 0 ? m[0].indexOf(EM) : 0)
+        const line = raw.slice(0, at).split('\n').length
+        const around = (raw.split('\n')[line - 1] ?? t).trim()
+        if (EXEMPT.some(e => e.match.test(around) || e.match.test(t.trim()))) continue
+        bad.push(`${f.replace(process.cwd() + '/', '')}:${line}  ${around.slice(0, 80)}`)
       }
     }
   }
