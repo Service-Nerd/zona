@@ -1412,6 +1412,89 @@ So the 331 lost sweeps do get re-found — nothing is permanently lost — but *
 
 ---
 
+#### 📐 SPEC — approved for build? *(written 2026-11-05, pending founder sign-off)*
+
+**Role:** senior app developer. **Constraint stated up front: there is no Xcode on the Mac mini** (`xcodebuild` unavailable, no `/Applications/Xcode*.app`), so **every line of Swift below is UNCOMPILED until the MacBook opens the project.** That constraint drives three design choices marked ⚙️ below, each of which exists to shrink the amount of unverifiable Swift and to remove every manual Xcode step.
+
+##### The measurements that shaped it
+
+| Question | Answer | Consequence |
+|---|---|---|
+| Does the background wake fire at all? | **Yes** — 6,090 hidden `observer_*` sweeps, 1,462 workouts posted, 21 users | Don't rebuild the observer. It works. |
+| Why do runs arrive late then? | **`no-response: Load failed`, 316 of 331 losses** — iOS suspending the webview mid-`fetch` | Move the POST out of the webview. |
+| How late, per run? | median **2h 15m**; **22%** within 15 min; **33%** over 6 h | Worth fixing. |
+| How fresh would a stored access token be when a run ends? | median **68.7 min** since the app was last active; **21 of 60** inside a 1 h JWT | A no-refresh design covers a minority. |
+| …but is that the same minority that already works? | **No.** Of the 39 currently-slow runs, **13 would have a live token** and 26 would not | ⚠️ **A no-refresh design fixes a third of the problem for almost no risk.** I assumed the overlap was total and it is not; checking changed the plan. |
+
+##### Design
+
+**Phase 1 — opportunistic native ingest. No token refresh, no new server surface.**
+
+1. **One credential blob, written by the web layer, read by native.** `{ base_url, access_token, expires_at, user_id }`.
+   - Written on `CapacitorBoot` mount and on every `supabase.auth.onAuthStateChange`, so it tracks supabase-js's own rotation. Cleared on sign-out.
+   - ⚙️ **`base_url` is in the blob so native does ZERO config derivation** — no second source of the server URL, and local dev against a Mac IP keeps working.
+2. **Stored in the Keychain, not App-Group `UserDefaults`.** New `SharedStore.setSecure` / `getSecure` / `removeSecure` methods, `kSecAttrAccessibleAfterFirstUnlock` — ⚠️ **not `WhenUnlocked`, which would fail on exactly the locked-phone background wake this feature exists for.**
+3. **Native ingest on the WORKOUT observer only** (not HR, not recovery — they do not create rows):
+   - Read the blob. If absent, or `expires_at - 60 s` has passed, **return silently**. The existing cold-start path still handles it. **No refresh attempt.**
+   - `HKSampleQuery` for running workouts ending after `lastNativeIngestAt` (App Group), newest first, **cap 5**.
+   - Build the **shell payload only**: `uuid`, `startDate`, `endDate`, `totalDistanceMeters`, `durationSeconds`, `workoutType`, `sourceName`. ⚙️ **No HR.**
+   - `POST {base_url}/api/health/ingest`, `Authorization: Bearer …`, header **`X-Ingest-Path: native`**.
+   - On 2xx advance `lastNativeIngestAt`.
+4. **Telemetry is server-side, so it cannot be lost with the process.** The route reads `X-Ingest-Path` and puts it on the ops event it already records. ⚠️ **No payload-contract change and no native telemetry path** — a native ops POST would be a second thing that can fail silently, which is the defect class we are fixing.
+
+##### Why shell-only is safe, and why that is the whole risk argument
+
+`/api/health/ingest` **already** fires `autoMatchAndAnalyse` on an HR-less insert (verified at `route.ts:296`, `average_heartrate: row.avg_hr ?? undefined`), and `retryPendingHrRows` + `decideLateArrival` (`PENDING_HR_WINDOW_HOURS = 24`) already own HR landing afterwards. The web path posts HR-less shells today whenever the Watch has not synced. **So this introduces no new downstream state — the same row arrives by the same route, earlier.** It also removes the need to duplicate the per-workout HR-sample cap in Swift, which would have been a second producer of a shared numeric.
+
+##### Up and downstream, each named
+
+- **Upstream:** HealthKit authorisation (already granted), `enableBackgroundDelivery` (already registered). **Unchanged.**
+- **Downstream:** `upsert onConflict: 'user_id,apple_health_uuid'` → `consolidateIncomingHealthKitRow` → `decideLateArrival` → `autoMatchAndAnalyse` → link-time push. 🔑 **The upsert is what makes two producers safe**: a native row and a later web row for the same workout converge on one row rather than duplicating.
+- **Tier:** untouched. `canAnalyse` still gates the coaching; the row still lands for everyone (`HK-FREE-INGEST-LINE-01`).
+- **Web sync path:** **no behaviour change.** It keeps posting the full payload including HR; it will simply find some rows already present, which the upsert already handles.
+- **Widget / `SharedStorePlugin` existing methods:** untouched, additive only.
+- **`packageClassList`:** ⚙️ **no change** — new *methods* on two existing plugin classes, no new class.
+
+##### What I deliberately do NOT build, and why
+
+| Not doing | Reason |
+|---|---|
+| Refresh-token handling in Swift | **Supabase rotates refresh tokens on use.** Two consumers of one refresh token causes random sign-outs — a regression worse than the bug. This is the Phase 2 decision, and the cheap version of it is the wrong version. |
+| HR samples in the native payload | The 24 h retry path already owns HR; including it would duplicate the sample cap. |
+| A new `.swift` file | ⚙️ The App target has **explicit** membership (no `fileSystemSynchronizedGroups`), so a new file needs a manual Xcode add, and forgetting it fails **silently** — the same class as the `packageClassList` bug. **All new Swift goes into the two existing files.** |
+| A native ops-event POST | A second silent-failure path. Server-side header instead. |
+| Touching the observer registration | It works: 6,090 sweeps say so. |
+
+##### Risks → mitigation
+
+| Risk | Mitigation |
+|---|---|
+| **The Swift does not compile** (cannot be checked here) | Smallest possible surface, in existing files, no new target membership, no new class. A precise Xcode checklist ships as a runbook. **This is the main residual risk and it is honest.** |
+| A token in the Keychain is a new credential surface | Access token only (short-lived), never the refresh token; `AfterFirstUnlock`; cleared on sign-out. |
+| Native and web post the same workout | Already idempotent via the upsert. Test asserts convergence. |
+| Clock skew makes `expires_at` wrong | 60 s margin, and the failure mode is a 401 → no-op, not a bad write. |
+| Phase 1 under-delivers | **Measured in advance: 13 of 39 slow runs.** `X-Ingest-Path` makes the real rate queryable within days. |
+
+##### Files
+
+`ios/App/App/SharedStorePlugin.swift` + `.m` (3 Keychain methods) · `ios/App/App/HealthObserverPlugin.swift` + `.m` (native ingest on the workout observer) · `lib/health/nativeCredential.ts` (new, single owner of the blob) · `components/CapacitorBoot.tsx` (publish on mount + auth change) · `app/api/health/ingest/route.ts` (read one header for telemetry) · `docs/runbooks/native-health-ingest-build.md` (the Xcode steps) · tests.
+
+##### Tests + falsification
+
+- `nativeCredential.test.ts` — blob shape, expiry margin, cleared on sign-out; falsified by removing the margin.
+- `ingestPath.test.ts` — the route records `native` vs `web`; falsified by dropping the header read.
+- Convergence test — native shell row then full web row for one uuid ends as **one** row with HR; falsified by changing `onConflict`.
+- ⚠️ **No test can cover the Swift.** `vitest.config.ts` is `environment: 'node'` and there is no Swift test target. **Stated, not papered over** — the Xcode checklist is the verification, run by the founder.
+
+##### Acceptance
+
+Within a week of the build: `X-Ingest-Path: native` appears in ops events, and median time-to-link for runs whose token was live falls from hours to minutes. **Re-run the time-to-link query** (recorded above) and compare against the 2h 15m baseline.
+
+🔻 **PHASE 2, a separate decision, not in this build:** the remaining 26 of 39 slow runs need a credential that survives an expired access token. Two options — share the refresh token (**cheap and dangerous**, rotation → sign-out loops) or mint a scoped ingest-only device token (new table + route + revocation). **Do not pick this under build pressure.**
+
+
+---
+
 ### ✅ `NATIVE-CONFIG-DRIFT-01` — **FIXED IN THE REPO 2026-11-05 (`15b1b948`), PENDING A BINARY**
 
 Found 2026-10-25 while debugging BOOT-HANG-01: `ios/App/App/capacitor.config.json` (what the binary actually reads) had
