@@ -5901,3 +5901,68 @@ two of them were found, and is also why finding 4 could not be ruled at all. �
 were desktop-only, and every measurement this board had taken was at 375px"*) applies here with more force, because
 **this sitting took no viewport measurement whatsoever.** It does not settle whether the HR trend belongs on the site,
 whether the effort record belongs in the hero, or whether six product-framing components should be four.
+
+
+## 🧭 2026-11-05 — `SITE-SESSION-STEPS-01` **RE-SAT ON RENDERED EVIDENCE · SHIP WITH AMENDMENT (one exemplar)**
+
+🔴 **THE RULING WAS MADE HOURS EARLIER BY A SITTING THAT HAD RENDERED NOTHING, AND IT SAID SO.** It named the right
+component and the wrong quantity. Built exactly as ruled — `SessionSteps` under every quality session — then measured
+on `/plans/sub-4-hour-marathon-plan`, 13 quality sessions:
+
+| | before | as ruled | |
+|---|---|---|---|
+| **Desktop 1440** | 11.9 screens | **19.9** | +67% |
+| **Phone 375** | 15.7 screens | **26.0** | +66% |
+| One structure block, phone | 144px | **629px** | 4.4× |
+| The day row it hangs off | 44px | 44px | — |
+
+✋ **Silvanto: a session's structure card came out 14× the row it belongs to** — *"a sub-element of a row is four times
+the week card containing it. That is not a hierarchy, it is an inversion. And it is density, not disclosure: the
+reader did not ask for this session, they were scrolling past it to reach week 12. The structure deserves a moment;
+thirteen moments is no moment."*
+
+🎓 **Sierra withdrew her own prescription and kept her reason:** *"the transfer happens on the FIRST one. A reader who
+studies one session structure has the skill; the twelfth teaches nothing and costs ten screens. I was arguing for the
+artefact and I let it be specified as 'everywhere'."* 📱 **Wroblewski:** 26 phone screens for a document whose job is
+*read the whole plan* — *"the thing I came for is interrupted by the thing I didn't."* 🎪 **Collins, on the record:**
+*"this is what happens when a ruling is made with nothing rendered, and I was in the room that made it."*
+
+**AMENDMENT: one exemplar.** `SessionSteps` renders **once**, in its own band titled *"What a session looks like"*,
+placed **between "Why so much easy?" and the week table** — teach the reading, then hand over the plan. The week table
+keeps the compact `MainSet` rows. **Measured after: 16.7 phone screens (+1.0, against +10.3).** Ground is `page`, not
+the white spotlight: W-08 spends that once per page and `SessionSteps` brings its own white cards, so a band around
+them is card-in-card.
+
+⚠️ **The exemplar is chosen deterministically** (a plan page is statically generated): the first quality session with a
+resolved v2 set. 🔴 **My first comment claimed that is always the first quality session a reader meets — MEASURED
+ACROSS ALL NINE PLANS, IT IS TRUE FOR 5.** In the other four the first is the **5K time trial**, which has no v2 set
+because it has no reps: one continuous maximal effort (`SESSION-COLOUR-TT-01`). Skipping it is correct, not a
+coincidence — a structure card for a session with no structure teaches nothing.
+
+🔴 **AND THE BUILD OPENED A HOLE IN AN EXISTING GATE, SO IT SHIPS WITH A NEW ONE.** `noEmDash.test.ts` reads FILE
+SOURCE over a list of marketing surfaces, so it governs strings a person typed into a page. Mounting a real app
+component puts **engine-authored copy on a marketing page**, which lives in no marketing file and which that gate is
+blind to **by construction**. Its own header records the boundary as a decision — *"the APP is out of scope … engine
+session labels and coach notes still use em dashes … a separate decision"* — a decision taken while engine copy stayed
+inside the app. ⚠️ **I measured SIX and the new gate said EIGHT on its first run:** my scratch script collected hits in
+a `Set`, so one note appearing in two plans counted once, and it never read `session.label`. **A Set deduplicates the
+thing you are counting**, and both errors under-reported. The eight split **2 labels** (`"Hill reps — 90s"`, the
+engine-label case already declared out of scope) and **6 step notes** (sentences a runner reads). 🔻 **Registered, not
+fixed, and not mine to fix** — the session catalogue is coaching doctrine, and whether a step note is a *sentence* or a
+*session description* is the founder's own 2026-09-22 distinction. Filed `SITE-ENGINE-EMDASH-01`, routed 🏃 **Coaching
+Board**. The gate stops the number growing: a ninth fails the build.
+
+📦 **Artifacts.** Pattern: `ui-patterns.md` § Session steps, amended. Constant: `exemplarSession()` +
+`BASELINE_EM_DASHES`. Checks: `realComponents.test.ts` **widened past the homepage for the first time** (3 new arms,
+falsified by dropping the import, by re-mounting 13, and by starting a second phase drawing) and
+`engineCopyOnSite.test.ts` (3 arms, falsified by adding a ninth em dash, by REMOVING one — a debt register that only
+catches growth rots silently — and by emptying the corpus).
+
+⚠️ **`realComponents.test.ts` had governed `app/page.tsx` AND NOTHING ELSE**, which is how the plan pages kept a
+September session design under 47 green marketing gates. ⚠️ **And it would not have caught this even if it had:** the
+homepage mocks it was written for drifted in their CONTENT, while `MainSet` took its grammar from the real
+`stepParts()` so its WORDS could not drift — **only its SHAPE did, and no check in this repo looks at shape.**
+
+⚠️ **What this does not settle:** whether the exemplar should be a *different* session (a tempo rather than the first
+v2 row), whether the band belongs before or after the table — both ruled on one render each, with no analytics
+(`SITE-SCROLL-DEPTH-01` still blocked) — and the em-dash question itself, which is the Coaching Board's.

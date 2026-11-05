@@ -61,6 +61,63 @@ describe('the homepage renders real app components', () => {
   })
 })
 
+/**
+ * SITE-SESSION-STEPS-01 (Design Board, 2026-11-05) — the PLAN PAGES too.
+ *
+ * 🔴 THIS GATE GOVERNED THE HOMEPAGE AND NOTHING ELSE, and that is how the plan
+ * pages kept a 2026-09 session structure under 47 green marketing gates. The
+ * file above opens `const page = read('app/page.tsx')` and every arm reads
+ * `page`. The hand-drawn imitation it was written to stop — `MockSessionCard`
+ * and friends — had an exact analogue on `/plans/[slug]`: a local `MainSet`
+ * that drew its own step rows while `components/shared/SessionSteps` existed.
+ *
+ * ⚠️ IT WAS NOT THE SAME DEFECT, AND THE DIFFERENCE IS WHY NOBODY SAW IT. The
+ * homepage mocks drifted in their CONTENT (the coach mock painted its rail
+ * `--moss` where the real block uses `--warn`). `MainSet` took its grammar from
+ * the real `stepParts()`, so its WORDS could not drift — only its SHAPE did,
+ * and no check in this repo looks at shape. **A component that cannot drift in
+ * content can still drift in form.**
+ *
+ * ⚠️ THE INLINE `MainSet` IS DELIBERATELY STILL THERE and is not a violation.
+ * The board amended this ruling on rendered evidence: mounting the full
+ * structure under all 13 quality sessions took the page from 15.7 to 26.0
+ * phone screens. One exemplar in its own band, compact rows in the week table
+ * — progressive disclosure, which is two JOBS, not two definitions of one.
+ */
+describe('the plan pages render the real session structure', () => {
+  const planPage = read('components/marketing/PlanPage.tsx')
+
+  it('imports and mounts the real SessionSteps', () => {
+    expect(
+      planPage.includes("@/components/shared/SessionSteps"),
+      'PlanPage no longer imports the real SessionSteps. A local re-drawing of '
+      + 'the session structure is the drift this item removed.',
+    ).toBe(true)
+    expect(planPage, 'SessionSteps is imported but never rendered').toMatch(/<SessionSteps[\s/>]/)
+  })
+
+  it('shows the structure EXACTLY ONCE, which is the board amendment', () => {
+    // ⚠️ ASSERTS THE COUNT, NOT THE PRESENCE. "SessionSteps is on the page" is
+    // true of the version the board rejected on measurement (13 of them, +10.3
+    // phone screens). The amendment is a QUANTITY, so the check is a quantity.
+    expect(planPage.split('<SessionSteps').length - 1,
+      'SessionSteps must be mounted once. The board ruled one exemplar after '
+      + 'measuring 13 of them at 26.0 phone screens against 15.7.').toBe(1)
+    expect(planPage.split('<SessionStructureBlock').length - 1,
+      'the exemplar wrapper should have exactly one call site plus its definition').toBe(1)
+  })
+
+  it('does not re-draw a step row beside the component that owns it', () => {
+    // `MainSet` may keep its compact rows. What it may not do is grow a second
+    // per-phase card stack: that would be two answers to one question again.
+    const phases = /Warm-?up|Cool-?down/gi
+    const inPlanPage = (planPage.match(phases) ?? []).length
+    expect(inPlanPage,
+      'PlanPage names the session phases itself. Those headers belong to '
+      + 'SessionSteps; naming them here is the start of a second drawing.').toBe(0)
+  })
+})
+
 describe('the two stills of the same session agree', () => {
   it('the device shot and the homepage card show the same run', () => {
     const frame = decode(read('components/marketing/PhoneFrame.tsx'))

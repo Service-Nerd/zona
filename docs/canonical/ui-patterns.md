@@ -2893,6 +2893,12 @@ Reference: `components/shared/ZoneBar.tsx`. Single source of truth.
 
 ### 21b. Session steps
 
+> ⚠️ **AMENDED 2026-11-05 — `SITE-SESSION-STEPS-01`: THIS PATTERN IS THE WEBSITE'S TOO, AND IT RENDERS ONCE THERE.** `/plans/[slug]` mounts the real `SessionSteps` for **one exemplar session**, in a band titled *"What a session looks like"*, placed before the week-by-week table. The week table keeps a compact row treatment. **The quantity is the ruling**, measured: under every quality session the page went from 15.7 to **26.0 phone screens**, with a 629px structure card hanging off a 44px day row. One exemplar costs **+1.0 screen**. Progressive disclosure, not density.
+>
+> ⚠️ **Two jobs, not two definitions.** The compact row and the full structure answer different questions (*what is this session* / *how do I read a session*), which is why the website keeps both and why `realComponents.test.ts` asserts the full one appears **exactly once** rather than merely appearing.
+>
+> ⚠️ **Engine copy on a public page is a new surface for the copy rules.** `noEmDash.test.ts` reads file source and cannot see a string that comes from the session catalogue. `engineCopyOnSite.test.ts` guards that boundary with a registered baseline (8 today: 2 labels, 6 step notes) so the count cannot grow; the strings themselves are coaching doctrine (`SITE-ENGINE-EMDASH-01`).
+
 The session-detail structure block. Rebuilt 2026-09-04 (SESSION-STRUCTURE-REDESIGN) from a dense run-on sentence — *"4 × (5 min at 4:25–4:35 /km + 1:30 at no faster than 5:53–7:02 /km jog)"* — into scannable, per-phase cards you can read mid-run. Runna-informed (chunked cards, numbered steps, plain-language cues) but on Zonna terms: zones over pace-only targets, block totals, Warm Slate restraint.
 
 ```

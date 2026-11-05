@@ -63,6 +63,18 @@ before planning against any number below (an item is a snapshot of the code on t
   website carries a card that exists nowhere in the product. `TrendCard`, `ShareControl`, `LoadHistory`,
   `WeekFacts` explicitly **not** this wave.
 
+- 🏃 **COACHING BOARD** `SITE-ENGINE-EMDASH-01` — **engine-authored copy now reaches a public marketing page, and it
+  carries 8 em dashes.** `SITE-SESSION-STEPS-01` mounted the app's real `SessionSteps` on `/plans/[slug]`, so session
+  labels and step notes from the catalogue are now rendered on the website. `noEmDash.test.ts` reads file source and
+  is blind to them by construction; its own header records the app/site boundary as a deliberate decision, taken when
+  engine copy stayed inside the app. **2 are labels** (`"Hill reps — 90s"`, the case that header already declares out
+  of scope) and **6 are step notes** — sentences a runner reads, e.g. *"Deliberately short — clearance, not
+  recovery."* The founder's 2026-09-22 ruling is *"no em dash in text or spoken word; in descriptions for sessions
+  it's ok; I just don't want it in sentences"*, so **whether a step note is a sentence or a description is the
+  question**, and it is coaching doctrine plus a founder call, not a build decision. Held at today's count by
+  `lib/marketing/engineCopyOnSite.test.ts` (a ninth fails the build). ⚠️ **A declared reason is not a fixed problem** —
+  entered the register 2026-11-05.
+
 **Found while BUILDING the sitting's items, filed not swept:**
 
 - 🧭 **DESIGN BOARD** `SITE-BAND-RHYTHM-01` — **16 band vertical rhythms are hand-typed where W-07's token family

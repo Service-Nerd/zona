@@ -13,7 +13,13 @@ import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
-import { stepParts } from '@/lib/plan/resolveMainSet'
+import SessionSteps from '@/components/shared/SessionSteps'
+import { stepParts, type DerivedSet } from '@/lib/plan/resolveMainSet'
+import { composeSession } from '@/lib/plan/sessionComposer'
+import { catalogueRowFor } from '@/lib/plan/catalogueLink'
+import { displayDerivedSet } from '@/lib/plan/runWalkPlan'
+import { displayZonesForSession } from '@/components/dashboard/dashboardHelpers'
+import { getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { type MarketingPlan, planAnchor, faqsFor, getPlan, planCardTitle } from '@/lib/marketing/plans'
 import { PHASE_LABEL, phaseNote } from '@/lib/marketing/planNotes'
 import type { Session, Week } from '@/types/plan'
@@ -26,6 +32,24 @@ const DAY_LABEL: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', 
 
 const isQualitySession = (s: Session) => isHardEffort(s)
 
+/**
+ * The hard session, as something a runner can actually follow.
+ *
+ * Previously this rendered `describeDerivedSet()` — one flat sentence — and
+ * only when `derived_set` existed. Two problems, both measured across the nine
+ * live pages (73 quality sessions):
+ *
+ *  1. A 13-step pyramid came out as 433 unbroken characters. Nobody reads that
+ *     standing in a kitchen deciding whether to go out. Steps are now rows.
+ *  2. 11 of 73 (15%) rendered NOTHING, because a 5K time trial has no
+ *     catalogue row and so no derived set. Every one of those 11 already
+ *     carried `coach_notes` — including "Warm up easy for 10 minutes, then
+ *     5 km as hard as you can hold" — which this page simply never read.
+ *     100% of quality sessions carry coach_notes; none were being shown.
+ *
+ * Grammar is NOT re-derived here — `stepParts()` in resolveMainSet.ts stays the
+ * single owner of "jog" / "uphill" / "no faster than". This picks the layout.
+ */
 /**
  * The hard session, as something a runner can actually follow.
  *
@@ -106,6 +130,106 @@ function MainSet({ s }: { s: Session }) {
   )
 }
 
+/**
+ * SITE-SESSION-STEPS-01 (Design Board, 2026-11-05) — the plan pages show the
+ * session structure the APP shows, because it is the same component.
+ *
+ * 🔴 WHAT WAS HERE. A local `MainSet`: one `--bg-soft` inset, a 2px rail, and
+ * rows of action-then-target. It took its grammar from the real `stepParts()`,
+ * so the WORDS could not drift — and the SHAPE already had. The app moved to
+ * per-phase cards with numbered steps on a connector line, a silhouette, a zone
+ * range and block totals (SESSION-STRUCTURE-REDESIGN, then
+ * SESSION-STEP-LEGIBILITY-01 and SESSION-STEP-SLOTS-01). This page kept the
+ * September drawing.
+ *
+ * 🎓 Sierra's reason, which is the whole ruling: *"nine complete plans, free, no
+ * signup, and the structure a reader meets is one grey inset with
+ * action-then-target rows. The app teaches a runner to READ a session. That is
+ * perceptual expertise we have built and are not transferring, on the surface
+ * we give away."*
+ *
+ * ⚠️ `realComponents.test.ts` governed the HOMEPAGE only, which is why this
+ * drifted under 47 green marketing gates. It covers this file now.
+ *
+ * ⚠️ NO CLIENT COST. `SessionSteps` and everything it composes are server
+ * components with zero hooks, and a plan page is a `revalidate` server page. The
+ * `onInfo` prop is deliberately omitted: it opens the zone sheet in the app, and
+ * a static page has no sheet to open. The component already treats it as
+ * optional, so the ⓘ simply does not render.
+ */
+function SessionStructureBlock({ s }: { s: Session }) {
+  const structure = composeSession({ session: s, catalogueRow: catalogueRowFor(s) })
+  if (!structure) return null
+  const dz = displayZonesForSession(s)
+  return (
+    <div style={{ marginTop: 'var(--space-3)' }}>
+      <SessionSteps
+        structure={structure}
+        derivedSet={(displayDerivedSet(s, structure) as DerivedSet | null) ?? null}
+        sessionType={s.type}
+        displayZones={dz?.zones ?? []}
+        zoneRangeLabel={dz?.rangeLabel ?? structure.main.zone}
+        /* The session's own anchor, not a reader preference: this page has no
+           signed-in runner. A beginner plan is duration-anchored and a
+           distance-anchored session carries km (SESSION-KM-01). */
+        metric={s.distance_km != null ? 'distance' : 'duration'}
+        preferredUnits="km"
+        sessionDistanceKm={s.distance_km ?? null}
+        catalogueId={(s as { catalogue_id?: string }).catalogue_id}
+        silhouetteColour={getSessionColor(s)}
+      />
+    </div>
+  )
+}
+
+
+/**
+ * The ONE session whose full structure the page shows.
+ *
+ * 🧭 SITE-SESSION-STEPS-01, amended on rendered evidence (Design Board,
+ * re-sat 2026-11-05). The first ruling said "mount `SessionSteps` on
+ * /plans/[slug]" and the sitting that made it had rendered nothing. Built as
+ * ruled and measured on `/plans/sub-4-hour-marathon-plan`:
+ *
+ *   desktop 1440 ..... 11.9 screens -> 19.9   (+67%)
+ *   phone 375 ........ 15.7 screens -> 26.0   (+66%)
+ *   one structure block, phone ......... 629px
+ *   the day row it hangs off ............ 44px
+ *
+ * A session's structure card came out **14x the row it belongs to** and nearly
+ * a full phone screen, thirteen times over, inside a document whose job is
+ * "read the whole plan". 🎓 Sierra, withdrawing her own prescription: *"the
+ * transfer happens on the FIRST one. A reader who studies one session structure
+ * has the skill; the twelfth teaches nothing and costs ten screens."*
+ * ✋ Silvanto: *"the structure deserves a moment; thirteen moments is no moment."*
+ *
+ * So: once, in its own band, before the week table — teach the reading, then
+ * hand over the plan. The week table keeps `MainSet`, the compact treatment.
+ *
+ * ⚠️ DETERMINISTIC, because a plan page is statically generated and must not
+ * differ between builds: the FIRST quality session carrying a resolved v2 set
+ * (ADR-019).
+ *
+ * ⚠️ MEASURED ACROSS ALL NINE PUBLISHED PLANS RATHER THAN ASSUMED, because the
+ * first version of this comment claimed the exemplar is always the first
+ * quality session a reader meets and that is TRUE FOR 5 OF 9. In the other four
+ * the first quality session is the **5K time trial**, which has no v2 set
+ * because it has no reps to show — one continuous maximal effort
+ * (SESSION-COLOUR-TT-01). Skipping it is the right behaviour and not a
+ * coincidence: a structure card for a session with no structure teaches
+ * nothing. Returns null when a plan has no v2 session at all, and the band does
+ * not render.
+ */
+function exemplarSession(weeks: Week[]): { s: Session; weekN: number } | null {
+  for (const w of weeks) {
+    for (const d of DAY_ORDER) {
+      const s = w.sessions[d]
+      if (s && isQualitySession(s) && s.derived_set) return { s, weekN: w.n }
+    }
+  }
+  return null
+}
+
 function accentFor(s: Session): string {
   const label = (s.label ?? '').toLowerCase()
   if (s.role === 'long_run' || label.includes('long run')) return 'var(--s-long)'
@@ -142,6 +266,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
     if (last && last.key === k) last.weeks.push(w)
     else groups.push({ key: k, weeks: [w] })
   }
+
+  const exemplar = exemplarSession(weeks)
 
   const ld = [
     {
@@ -224,6 +350,29 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
           </p>
         </div>
       </Section>
+
+      {/* ── What a session looks like ───────────────────────────────────
+           SITE-SESSION-STEPS-01. One session, in full, in the app's own
+           component — then the plan. A reader who studies this can read every
+           row in the table below; a reader who meets the table first has to
+           learn the notation from a one-line summary.
+
+           `surface="page"`, deliberately: W-08 gives this site three grounds,
+           the white spotlight is spent once per page, and `SessionSteps`
+           already brings its own white cards. A band around them would be
+           card-in-card. */}
+      {exemplar && (
+        <Section width="read" rhythm="none"
+          innerStyle={{ padding: 'var(--space-5) 24px var(--space-2)' }}>
+          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px', letterSpacing: '-0.01em' }}>
+            What a session looks like
+          </h2>
+          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--mute)', margin: '0 0 var(--space-4)' }}>
+            {exemplar.s.label ?? getSessionLabel(exemplar.s.type)}, week {exemplar.weekN}. Every quality session in the plan is laid out this way in the app.
+          </p>
+          <SessionStructureBlock s={exemplar.s} />
+        </Section>
+      )}
 
       {/* ── The plan, week by week ──────────────────────────────────────── */}
       <Section width="read" rhythm="none"
