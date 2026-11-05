@@ -1,5 +1,10 @@
 # Contract — HrTrace and TabbedPhone
 
+> ⚠️ **2026-11-05 (`SITE-SPACE-GATE-02`) — the component changed, this contract did not, and that is correct.**
+> The change was the spacing sweep: hand-typed px values (including React's unitless form) replaced by `--space-*`
+> tokens. **No prop was added, removed or retyped.** Recorded rather than left as an audit flag, because
+> `audit-docs.sh` compares mtimes and cannot tell a token swap from an interface change.
+
 **Authority**: Prop interfaces and rendering contracts for the two shared components added by the
 v3 design handoff. Any change to props must update this document in the same commit.
 
