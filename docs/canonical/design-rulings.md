@@ -6023,3 +6023,20 @@ The board's amendment spends the ProductStill trio's third still on `EffortRecor
 🔴 **AND THE FIXTURE REGENERATION MOVED `vdot_training_anchor` 30.2 → 29.9, WHICH IS NOT PUNCTUATION.** It would have been easy to accept as collateral. Isolated instead: stashed the copy change, regenerated from HEAD's engine, and got **29.9 there too** — the fixture was `last_updated: 2026-10-08` and a month of engine work had shipped since. **My change did not move it; a stale fixture did.** Checked rather than assumed, because the alternative was shipping an engine delta inside a copy commit.
 
 ⚠️ **What this does not settle:** whether the HR trend, load history, week facts or Share belong on the site (`TrendCard` and `ShareControl` are `'use client'` and nobody has run the bundle number); and the 12 labels and 6 captions still carry em dashes by decision, not by oversight.
+
+
+## 🔴 2026-11-05 — `SITE-HERO-STILL-A1-01`: the main screenshot was advertising a control the board deleted · **DEFECT, fixed**
+
+**Founder, in six words: *"Main screen shot on web page is not current."*** He was right, and it was worse than stale.
+
+The homepage device drew **`‹ WEEK 6 OF 16 ›` with two working chevrons** — the week navigator ruling **A1** (sitting three, `APP-REVIEW-W3`, **2026-09-22**) removed from Today: *"Today is ONE DAY; Plan owns weeks."* That ruling went further than deleting the control, and said why: *"`weekIndex` / `onWeekChange` are gone from the props rather than defaulted: **a prop nobody passes is how the drift comes back**."* It came back on the website instead. **45 days on the main screenshot**, which is the first product image a visitor sees.
+
+⚠️ **NO GATE COULD HAVE CAUGHT IT, AND THE REASON IS STRUCTURAL.** `realComponents.test.ts` exists to stop the site hand-drawing an app surface — and it **exempts `PhoneFrame` by name**, because that file draws a simulated iPhone and cannot mount the real screen inside a frame it is also drawing. **So the one surface permitted to hand-copy the app is the one surface with nothing checking the copy.** Every other still on the site is the real component and cannot drift; this one can only drift.
+
+⚠️ **AND THE COMMENT JUSTIFYING THE HAND-COPY IS HOW IT SURVIVED.** It read *"the real one is a client component with swipe handlers, so its markup is reproduced by hand here."* **True when written.** A1 removed the swipe handlers and the header, so the sentence explaining the copy had quietly become the explanation for copying something that no longer exists. **A stale justification reads exactly like a live one** — the same shape as `brand.md`'s phantom exception and the four-months-stale lens note.
+
+**Fixed:** header and both chevrons deleted; the seven day cells stay, because the real strip keeps them as *"this week's shape, context for today's session, not navigation away from it."*
+
+📦 **Check:** `lib/marketing/heroStillCurrency.test.ts`, 4 arms, **falsified four ways** — re-adding the week header (the exact reported defect), re-adding a chevron path, the still LOSING the day strip (stale by subtraction, not only by addition), and a hand-typed countdown returning in place of `formatRaceCountdown` (S5's finding, which caught this same file mirroring a format by hand).
+
+⚠️ **WHAT THE CHECK CANNOT DO, stated so it is not over-trusted: it cannot prove the still MATCHES the app.** No check can, for a drawing. It is a **ratchet on known rulings** — controls the board has explicitly removed may not reappear, and named parts of the screen may not silently vanish. Verified by eye against the live `TodayScreen` this once: phase + week line, countdown, wordmark and bell, greeting, 56px metric, Kit's note, day cells, the hold-the-zone line, the session card and the CTA all match. Conditional states the app can show (`TdReadyHero`, `PendingAdjustmentBanner`, `ConnectRunsBanner`, two-session days, strength dots) are absent by design: a still shows one state.

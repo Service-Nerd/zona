@@ -191,25 +191,28 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
             (CLAUDE.md). Static: the real one is a client component with
             swipe handlers, so its markup is reproduced by hand here. */}
         <div style={{ marginTop: 'var(--space-4)', borderBottom: '0.5px solid var(--line)', paddingBottom: 'var(--space-2)' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '0 16px 8px',
-          }}>
-            <span style={{ color: 'var(--mute)', lineHeight: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-            <span style={{
-              fontSize: '11px', fontWeight: 600, color: 'var(--mute)',
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-            }}>Week {weekN} of {totalWeeks}</span>
-            <span style={{ color: 'var(--ink-2)', lineHeight: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path d="M7 4L13 10L7 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-          </div>
+          {/* 🔴 THE WEEK NAVIGATION WAS DELETED HERE 2026-11-05, AND IT HAD BEEN
+              ADVERTISING A CONTROL THE DESIGN BOARD REMOVED FROM THE APP ON
+              2026-09-22. Reported by the founder: *"main screen shot on web
+              page is not current."*
+
+              This row hand-drew `‹ WEEK 6 OF 16 ›` with two chevrons. Ruling
+              **A1** (sitting three, `APP-REVIEW-W3`) took exactly that off
+              Today — *"Today is ONE DAY; Plan owns weeks"* — and the real
+              `DateStrip` lost `weekIndex` / `onWeekChange` from its props
+              rather than defaulting them, precisely so the drift could not come
+              back. It came back on the website instead, and sat there 45 days.
+
+              ⚠️ THE COMMENT ABOVE WAS TRUE WHEN IT WAS WRITTEN AND IS THE
+              REASON THIS SURVIVED: *"the real one is a client component with
+              swipe handlers, so its markup is reproduced by hand here."* The
+              real one no longer has swipe handlers OR a week header, so the
+              sentence justifying the hand-copy had quietly become the
+              justification for a hand-copy of something that no longer exists.
+
+              The seven day cells stay — the real strip keeps them, as "this
+              week's shape, context for today's session, not navigation away
+              from it". */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0 8px', gap: '2px' }}>
             {DAYS.map((d, i) => (
               <div key={i} style={{
