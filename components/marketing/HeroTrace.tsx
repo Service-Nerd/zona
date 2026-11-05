@@ -82,7 +82,7 @@ export function HeroTrace() {
         borderRadius: 'var(--radius-lg)',
         boxShadow: 'var(--shadow-card)',
         padding: 'clamp(var(--space-4), 2.2vw, var(--space-6))',
-        display: 'flex', flexDirection: 'column', gap: 20,
+        display: 'flex', flexDirection: 'column', gap: 'var(--space-5)',
       }}>
         {/* Header */}
         <div style={{
@@ -134,7 +134,7 @@ export function HeroTrace() {
                 width: 3, borderRadius: 2, flexShrink: 0,
                 background: s.tone === 'warn' ? 'var(--warn-strong)' : 'var(--moss-strong)',
               }} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <span style={{
                   fontSize: 'var(--fs-micro)', fontWeight: 700, letterSpacing: '0.14em',
                   textTransform: 'uppercase',

@@ -162,7 +162,7 @@ export function HrTrace({
 
       {ticks && (
         <div style={{
-          display: 'flex', justifyContent: 'space-between', marginTop: 10,
+          display: 'flex', justifyContent: 'space-between', marginTop: 'var(--space-3)',
           fontSize: 'var(--fs-micro)', fontWeight: 700, letterSpacing: '0.08em',
           textTransform: 'uppercase', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums',
         }}>

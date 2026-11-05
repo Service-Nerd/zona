@@ -93,7 +93,7 @@ export function SiteFooter() {
     <footer
       style={{
         borderTop: '1px solid var(--line)',
-        marginTop: 36,
+        marginTop: 'var(--space-6)',
         background: 'var(--bg)',
       }}
     >
@@ -119,7 +119,7 @@ export function SiteFooter() {
               }}>
                 {g.heading}
               </h3>
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 9 }}>
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 'var(--space-2)' }}>
                 {g.links.map(l => (
                   <li key={l.href}>
                     <Link href={l.href} style={{ fontSize: 'var(--fs-body)', color: 'var(--ink-2)', textDecoration: 'none' }}>
@@ -152,7 +152,7 @@ export function SiteFooter() {
 
         <p style={{
           fontSize: 'var(--fs-caption)', color: 'var(--mute)',
-          margin: 'var(--space-6) 0 0', paddingTop: 20, borderTop: '1px solid var(--line)',
+          margin: 'var(--space-6) 0 0', paddingTop: 'var(--space-5)', borderTop: '1px solid var(--line)',
         }}>
           © {new Date().getFullYear()} {BRAND.name}
         </p>

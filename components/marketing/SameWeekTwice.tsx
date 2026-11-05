@@ -76,19 +76,19 @@ export function SameWeekTwice() {
     <div style={{
       background: 'var(--card)', border: '1px solid var(--line)',
       borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
-      padding: 'var(--space-5) var(--space-5) var(--space-4)', display: 'flex', flexDirection: 'column', gap: 14,
+      padding: 'var(--space-5) var(--space-5) var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)',
     }}>
       <div>
         <div style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--ink)' }}>{title}</div>
         <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 3 }}>{note}</div>
       </div>
 
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 9 }}>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 'var(--space-2)' }}>
         {sessions.map((x, i) => {
           const above = pcts[i]
           const drifted = classifyRun(above) === 'drifted'
           return (
-            <li key={x.day} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 'var(--fs-sm)' }}>
+            <li key={x.day} style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'baseline', fontSize: 'var(--fs-sm)' }}>
               <span style={{ width: 30, flexShrink: 0, color: 'var(--mute)', fontWeight: 600 }}>{DAY_LABEL[x.day]}</span>
               <span
                 aria-hidden
@@ -164,13 +164,13 @@ export function SameWeekTwice() {
         }}>
           <div style={{
             fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--mute)',
-            textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10,
+            textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
           }}>
             What the plan asks for
           </div>
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8 }}>
             {sessions.map(x => (
-              <li key={x.day} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 'var(--fs-sm)', flexWrap: 'wrap' }}>
+              <li key={x.day} style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'baseline', fontSize: 'var(--fs-sm)', flexWrap: 'wrap' }}>
                 <span style={{ width: 30, flexShrink: 0, color: 'var(--mute)', fontWeight: 600 }}>{DAY_LABEL[x.day]}</span>
                 <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{x.s.label}</span>
                 <span style={{ color: 'var(--mute)' }}>

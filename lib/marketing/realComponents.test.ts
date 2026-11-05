@@ -105,13 +105,38 @@ describe('the plan pages render the real session structure', () => {
       + 'measuring 13 of them at 26.0 phone screens against 15.7.').toBe(1)
     expect(planPage.split('<SessionStructureBlock').length - 1,
       'the exemplar wrapper should have exactly one call site plus its definition').toBe(1)
+
+    // 🔴 A SOURCE COUNT IS NOT A RENDER COUNT, and code review caught that the
+    // rejected version PASSES this if written as one JSX site inside the
+    // day-row loop. One occurrence rendered 13 times is the thing the board
+    // measured at 26.0 phone screens. So: the call site must be OUTSIDE the
+    // per-session map. Bound the region rather than grepping the file — the
+    // week table is everything after the "week by week" heading.
+    const tableStart = planPage.indexOf('The plan, week by week')
+    expect(tableStart, 'the week-table heading has moved — re-anchor').toBeGreaterThan(-1)
+    const mount = planPage.indexOf('<SessionStructureBlock')
+    expect(mount, 'the exemplar is not mounted').toBeGreaterThan(-1)
+    expect(mount,
+      'the exemplar is mounted INSIDE the week table, so it renders once per '
+      + 'quality session rather than once per page. That is the version the '
+      + 'board rejected on measurement (15.7 -> 26.0 phone screens).')
+      .toBeLessThan(tableStart)
   })
 
   it('does not re-draw a step row beside the component that owns it', () => {
     // `MainSet` may keep its compact rows. What it may not do is grow a second
     // per-phase card stack: that would be two answers to one question again.
+    // ⚠️ COMMENTS STRIPPED. `read()` does not strip them, so this arm ran over
+    // prose and passed today only because the single mention is "Warm up" with
+    // a space. Any future comment naming a phase would have failed the build on
+    // correct code — the trap `typeScale`, `spacingScale` and the pre-commit
+    // hook each hit, now four times in this repo.
+    const code = planPage
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+      .split('\n').filter(l => !l.trim().startsWith('//')).join('\n')
     const phases = /Warm-?up|Cool-?down/gi
-    const inPlanPage = (planPage.match(phases) ?? []).length
+    const inPlanPage = (code.match(phases) ?? []).length
     expect(inPlanPage,
       'PlanPage names the session phases itself. Those headers belong to '
       + 'SessionSteps; naming them here is the start of a second drawing.').toBe(0)

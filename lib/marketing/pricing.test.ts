@@ -79,8 +79,17 @@ describe('pricing page vs the gates it describes', () => {
   it('does not leave a free gate off the page', () => {
     const listed = new Set(FREE_FEATURES.map(f => f.gate).filter(Boolean))
     const omitted = new Set(OMITTED_FROM_PRICING.map(o => o.gate))
-    const missing = (FEATURE_GATES.FREE_ALWAYS as readonly string[])
-      .filter(g => !listed.has(g as never) && !omitted.has(g as never))
+    // 🔴 BOTH FREE FAMILIES, AND THE FIRST CUT HAD ONLY ONE — found by code
+    // review on the commit that added this arm. `FREE_ALWAYS` is what a free
+    // account can always do; `GRANTED_AT_TRIAL_RETAINED_IN_FREE` is what it
+    // KEEPS after the trial, which is free too — arm 3 of this same file has
+    // counted both as free since it was written. An arm written to stop the
+    // free column rotting that reads half the free gates is the population
+    // error it was built to catch.
+    const missing = [
+      ...FEATURE_GATES.FREE_ALWAYS as readonly string[],
+      ...FEATURE_GATES.GRANTED_AT_TRIAL_RETAINED_IN_FREE as readonly string[],
+    ].filter(g => !listed.has(g as never) && !omitted.has(g as never))
 
     expect(
       missing,

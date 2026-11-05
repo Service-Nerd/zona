@@ -75,6 +75,16 @@ before planning against any number below (an item is a snapshot of the code on t
   `lib/marketing/engineCopyOnSite.test.ts` (a ninth fails the build). ⚠️ **A declared reason is not a fixed problem** —
   entered the register 2026-11-05.
 
+- 🧭 **DESIGN BOARD** `SITE-FREE-COLUMN-COPY-01` — **six free gates have no row on `/pricing` and the board forbade
+  adding rows this wave.** `GRANTED_AT_TRIAL_RETAINED_IN_FREE` holds six things a free account KEEPS — the generated
+  plan, VDOT pace zones, Karvonen HR zones, the coach notes already on the plan, catalogue-sourced sessions, and the
+  injury adaptations applied at creation — and the free column names none of them. Registered in
+  `OMITTED_FROM_PRICING` with a reason each, 2026-11-05, because 🎓 Sierra's condition on `PRICING-FREE-GATE-02` was
+  explicit: *a longer list is the killed list-of-eight; nobody's running improves.* ⚠️ **One of the six is a trap in
+  row form:** `ai_coach_notes_existing` means a free user keeps the notes already on their plan and gets no NEW ones,
+  which a four-word bullet cannot say. The question for the board is which of the six (if any) a reader choosing
+  between tiers actually needs named.
+
 **Found while BUILDING the sitting's items, filed not swept:**
 
 - 🧭 **DESIGN BOARD** `SITE-BAND-RHYTHM-01` — **16 band vertical rhythms are hand-typed where W-07's token family

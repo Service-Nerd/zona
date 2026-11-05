@@ -118,7 +118,7 @@ export function SiteHeader({ current = null }: { current?: SiteSection }) {
           <Wordmark size="sm" />
         </Link>
 
-        <div className="site-nav" style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+        <div className="site-nav" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
           {NAV.map(item => {
             const active = current === item.section
             return (

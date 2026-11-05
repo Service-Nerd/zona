@@ -90,7 +90,7 @@ export function ArticleHub({
         {youngNote && (
           <p style={{
             fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--mute)',
-            margin: '0 0 var(--space-4)', paddingLeft: 14, borderLeft: '2px solid var(--line)',
+            margin: '0 0 var(--space-4)', paddingLeft: 'var(--space-4)', borderLeft: '2px solid var(--line)',
             maxWidth: 560,
           }}>
             {youngNote}
@@ -103,7 +103,7 @@ export function ArticleHub({
             exactly the "reads as abandoned" objection the hub gate exists
             for. */}
         {groups && groups.length > 1 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 30 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
             {groups.map(g => (
               <div key={g.id}>
                 <h2 style={{
@@ -120,7 +120,7 @@ export function ArticleHub({
                     <div>
                       <div style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead-lg)', fontWeight: 800, color: 'var(--ink)' }}>{a.metaTitle}</div>
                       <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 3, maxWidth: 520 }}>{a.hubSummary}</div>
-                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--mute)', marginTop: 6 }}>
+                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--mute)', marginTop: 'var(--space-2)' }}>
                         Updated <time dateTime={a.lastUpdatedISO}>{a.lastUpdated}</time>
                       </div>
                     </div>
@@ -140,7 +140,7 @@ export function ArticleHub({
                 <div>
                   <div style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead-lg)', fontWeight: 800, color: 'var(--ink)' }}>{a.metaTitle}</div>
                   <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 3, maxWidth: 520 }}>{a.hubSummary}</div>
-                  <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--mute)', marginTop: 6 }}>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--mute)', marginTop: 'var(--space-2)' }}>
                     Updated <time dateTime={a.lastUpdatedISO}>{a.lastUpdated}</time>
                   </div>
                 </div>
@@ -180,7 +180,7 @@ export function ArticleHub({
 
       <Section width="read" rhythm="none"
         innerStyle={{ padding: '28px 24px 8px' }}>
-        <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18 }}>
+        <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 'var(--space-4)' }}>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
             Every plan {BRAND.name} publishes is free to read before you pay anyone for anything.
           </p>

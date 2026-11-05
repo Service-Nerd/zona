@@ -50,24 +50,6 @@ const isQualitySession = (s: Session) => isHardEffort(s)
  * Grammar is NOT re-derived here — `stepParts()` in resolveMainSet.ts stays the
  * single owner of "jog" / "uphill" / "no faster than". This picks the layout.
  */
-/**
- * The hard session, as something a runner can actually follow.
- *
- * Previously this rendered `describeDerivedSet()` — one flat sentence — and
- * only when `derived_set` existed. Two problems, both measured across the nine
- * live pages (73 quality sessions):
- *
- *  1. A 13-step pyramid came out as 433 unbroken characters. Nobody reads that
- *     standing in a kitchen deciding whether to go out. Steps are now rows.
- *  2. 11 of 73 (15%) rendered NOTHING, because a 5K time trial has no
- *     catalogue row and so no derived set. Every one of those 11 already
- *     carried `coach_notes` — including "Warm up easy for 10 minutes, then
- *     5 km as hard as you can hold" — which this page simply never read.
- *     100% of quality sessions carry coach_notes; none were being shown.
- *
- * Grammar is NOT re-derived here — `stepParts()` in resolveMainSet.ts stays the
- * single owner of "jog" / "uphill" / "no faster than". This picks the layout.
- */
 function MainSet({ s }: { s: Session }) {
   const set = s.derived_set
   const howTo = s.coach_notes?.[0]
@@ -75,13 +57,13 @@ function MainSet({ s }: { s: Session }) {
 
   return (
     <div style={{
-      marginTop: 7, padding: 'var(--space-3) var(--space-3)', background: 'var(--bg-soft)',
+      marginTop: 8, padding: 'var(--space-3) var(--space-3)', background: 'var(--bg-soft)',
       borderRadius: 8, borderLeft: '2px solid var(--s-quality)',
     }}>
       {set && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {set.blocks.map((b, bi) => (
-            <div key={bi} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+            <div key={bi} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               {b.repeat > 1 && (
                 <span style={{
                   flexShrink: 0, fontSize: 'var(--fs-caption)', fontWeight: 800, paddingTop: 1,
@@ -123,7 +105,7 @@ function MainSet({ s }: { s: Session }) {
       {howTo && (
         <div style={{
           fontSize: 'var(--fs-caption)', lineHeight: 1.5, color: 'var(--mute)',
-          ...(set ? { marginTop: 9, paddingTop: 9, borderTop: '1px solid var(--line)' } : {}),
+          ...(set ? { marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--line)' } : {}),
         }}>{howTo}</div>
       )}
     </div>
@@ -157,6 +139,15 @@ function MainSet({ s }: { s: Session }) {
  * a static page has no sheet to open. The component already treats it as
  * optional, so the ⓘ simply does not render.
  */
+/** Can the band render anything? The heading is gated on the EXEMPLAR and the
+ *  content on `composeSession`, which are two different questions — code review
+ *  caught that a null structure would leave a heading and a subtitle standing
+ *  over nothing. Latent today (all nine plans compose), and an empty state that
+ *  cannot occur still has to be the right empty state. */
+function canComposeStructure(s: Session): boolean {
+  return composeSession({ session: s, catalogueRow: catalogueRowFor(s) }) != null
+}
+
 function SessionStructureBlock({ s }: { s: Session }) {
   const structure = composeSession({ session: s, catalogueRow: catalogueRowFor(s) })
   if (!structure) return null
@@ -267,7 +258,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
     else groups.push({ key: k, weeks: [w] })
   }
 
-  const exemplar = exemplarSession(weeks)
+  const exemplarPick = exemplarSession(weeks)
+  const exemplar = exemplarPick && canComposeStructure(exemplarPick.s) ? exemplarPick : null
 
   const ld = [
     {
@@ -386,7 +378,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
           // a block containing the §78 time trial.
           const meta = { label: PHASE_LABEL[g.key] ?? g.key, note: phaseNote(g.key, g.weeks) }
           return (
-            <div key={gi} style={{ marginBottom: 28 }}>
+            <div key={gi} style={{ marginBottom: 32 }}>
               <div style={{ marginBottom: 12 }}>
                 <h3 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-caption)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: 0 }}>{meta.label}</h3>
                 {meta.note && <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.5, color: 'var(--ink-2)', margin: '4px 0 0' }}>{meta.note}</p>}
@@ -453,7 +445,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
       {/* ── The honesty section ─────────────────────────────────────────── */}
       <Section width="read" rhythm="none"
         innerStyle={{ padding: '20px 24px 8px' }}>
-        <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18, margin: '8px 0' }}>
+        <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 16, margin: '8px 0' }}>
           <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 12px', letterSpacing: '-0.01em' }}>This is the flat version.</h2>
           <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 12px', maxWidth: 620 }}>
             This plan doesn&rsquo;t know you. It doesn&rsquo;t know your Tuesday got busy, what your

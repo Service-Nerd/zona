@@ -104,8 +104,32 @@ const SURFACES = [...PAGES, ...COMPONENTS].filter(f => !MOCKUPS.includes(f))
 const SPACING_PROP =
   /(padding|margin|gap|rowGap|columnGap)(Top|Bottom|Left|Right|Block|Inline)?:\s*'([^']*)'/g
 
+/** 🔴 THE UNITLESS FORM, AND IT IS THE SAME HOLE ONE LAYER IN. The widening
+ *  above caught the shorthand and still read only QUOTED values, so React's
+ *  bare-number form — `gap: 20`, `paddingLeft: 18`, which React renders as px —
+ *  stayed invisible. **26 off-scale values >5px across the gate's own surfaces**,
+ *  found by code review on the commit that closed the first hole. Same lesson,
+ *  same day: the population, not the rule. */
+const SPACING_PROP_BARE =
+  /(padding|margin|gap|rowGap|columnGap)(Top|Bottom|Left|Right|Block|Inline)?:\s*(\d+)\s*[,}]/g
+
 /** The ruled element scale. `--sect-y*` is a different family (see the header). */
 const SCALE = [4, 8, 12, 16, 24, 32, 48]
+
+/** Is this value this gate's business on this file? */
+function governed(file: string, v: number): boolean {
+  if (v <= 5) return false                                   // line-box artefact
+  if (SCALE.includes(v)) return false                        // already on the scale
+  if (ALLOWED[String(v)]) return false                       // declared debt
+  if (ALLOWED_IN_FILE[file]?.[String(v)]) return false       // another system owns it
+  return true
+}
+
+/** The bare-value twin of `isBandRhythm`. */
+function isBandRhythmBare(src: string, m: RegExpMatchArray): boolean {
+  const before = src.slice(Math.max(0, (m.index ?? 0) - 260), m.index ?? 0)
+  return /innerStyle=\{\{[^}]*$/.test(before) && m[1] === 'padding'
+}
 
 /** A band's vertical rhythm, which W-07 owns, not this scale: `padding` on a
  *  Section's `innerStyle` whose horizontal value is the 24px page gutter. */
@@ -127,6 +151,23 @@ const ALLOWED: Record<string, string> = {
   '80': '/support, /privacy, /terms page padding; 32px from --space-7',
 }
 
+/** Values exempt on ONE named file, because they belong to another system.
+ *
+ *  🔴 `WaitlistForm`'s 14px was SWEPT TO 16 BY THIS GATE AND CODE REVIEW CAUGHT
+ *  IT. The input's padding exists to match `btn--regular`'s 48px height, and the
+ *  arithmetic is written in the comment beside it: `14+18+14+2 = 48`. At
+ *  `--space-4` it becomes 52 and re-opens `WEBSITE-BUTTON-UNIFY-01`. **A value
+ *  that exists to match another component's geometry does not belong to the
+ *  spacing scale**, the same way a band's vertical rhythm belongs to `--sect-y`.
+ *  ⚠️ File-scoped on purpose: the bare-value `ALLOWED` above exempts a number on
+ *  EVERY surface, which is wider than any of its reasons. */
+const ALLOWED_IN_FILE: Record<string, Record<string, string>> = {
+  'components/marketing/WaitlistForm.tsx': {
+    '14': 'input padding is load-bearing against btn--regular 48px (WEBSITE-BUTTON-UNIFY-01): 14+18+14+2 = 48',
+  },
+}
+
+
 describe('spacing scale — SITE-WAVE-4', () => {
   it('the tokens exist and are the ruled scale', () => {
     const css = fs.readFileSync(path.join(ROOT, 'app/globals.css'), 'utf8')
@@ -145,11 +186,16 @@ describe('spacing scale — SITE-WAVE-4', () => {
         if (isBandRhythm(text, m)) continue        // W-07's family, not this one
         for (const px of m[3].match(/\d+px/g) ?? []) {
           const v = Number(px.replace('px', ''))
-          if (v <= 5) continue                     // line-box artefact, exempt
-          if (SCALE.includes(v)) continue          // already on the scale
-          if (ALLOWED[String(v)]) continue         // declared debt
+          if (!governed(f, v)) continue
           offenders.push(`${f}: ${m[1]}${m[2] ?? ''}: '${m[3]}' — ${v}px is off the scale, use a --space-* token`)
         }
+      }
+      // The unitless form React renders as px.
+      for (const m of Array.from(text.matchAll(SPACING_PROP_BARE))) {
+        if (isBandRhythmBare(text, m)) continue
+        const v = Number(m[3])
+        if (!governed(f, v)) continue
+        offenders.push(`${f}: ${m[1]}${m[2] ?? ''}: ${v} — ${v}px is off the scale, use a --space-* token`)
       }
     }
     expect(offenders, `hand-typed spacing:\n  ${offenders.join('\n  ')}`).toEqual([])

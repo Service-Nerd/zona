@@ -252,7 +252,7 @@ export default async function Home() {
             already being read on a phone asks the visitor to photograph their
             own screen. It only ever worked from desktop, and the desktop
             visitor is the one least likely to install right now. */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 'var(--space-5)' }}>
           <AppStoreBadge />
         </div>
 

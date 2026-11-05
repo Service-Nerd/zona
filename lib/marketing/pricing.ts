@@ -188,4 +188,39 @@ export const OMITTED_FROM_PRICING: { gate: GatedFeature; why: string }[] = [
     gate: 'strength_sessions_tailored',
     why: 'Not built. featureGates marks it "when shipped", and advertising an unbuilt feature on a pricing page is the overclaim this project keeps catching.',
   },
+
+  // 🔴 THE SIX RETAINED-FROM-TRIAL GRANTS, registered 2026-11-05 by
+  // PRICING-FREE-GATE-02 and found by code review on the arm that added it.
+  // They are genuinely free — a free account KEEPS them — and none has a row.
+  //
+  // ⚠️ REGISTERED, NOT WRITTEN, and the reason is a ruling rather than my
+  // judgement: the Design Board shipped PRICING-FREE-GATE-02 as a GATE with
+  // Sierra's explicit condition that the page gains NO NEW ROWS this wave
+  // ("a longer list is the killed list-of-eight; nobody's running improves").
+  // So the check is honest about the hole and the copy decision is the
+  // board's: SITE-FREE-COLUMN-COPY-01.
+  {
+    gate: 'personalised_plan',
+    why: 'Retained-from-trial grant, not a free capability a reader chooses between. "The whole plan, every week" states the promise once; whether this needs its own row is a copy decision the Design Board reserved (SITE-FREE-COLUMN-COPY-01, 2026-11-05).',
+  },
+  {
+    gate: 'vdot_pace_zones',
+    why: 'Retained-from-trial grant. The pace bands a trial user keeps. Naming it separately from the plan it belongs to is a copy decision the Design Board reserved (SITE-FREE-COLUMN-COPY-01, 2026-11-05).',
+  },
+  {
+    gate: 'hr_karvonen_zones',
+    why: 'Retained-from-trial grant. The HR zones a trial user keeps, and the hardware caveat already sits beside the HR claim elsewhere on the site. Copy decision reserved (SITE-FREE-COLUMN-COPY-01, 2026-11-05).',
+  },
+  {
+    gate: 'ai_coach_notes_existing',
+    why: 'Retained-from-trial grant, and the one most likely to MISLEAD as a row: a free user keeps the notes already on their plan and gets no NEW ones, which a pricing bullet cannot say in four words. Copy decision reserved (SITE-FREE-COLUMN-COPY-01, 2026-11-05).',
+  },
+  {
+    gate: 'session_catalogue_full',
+    why: 'Retained-from-trial grant describing the sessions already on the kept plan. Internal vocabulary, not a reader-facing benefit. Copy decision reserved (SITE-FREE-COLUMN-COPY-01, 2026-11-05).',
+  },
+  {
+    gate: 'injury_adaptations_initial',
+    why: 'Retained-from-trial grant. The SLT ruled 2026-09-11 that injury adaptation is never paid, and WIZARD-INJURY-FREE-01 built it; how that is said on the pricing page is a copy decision the Design Board reserved (SITE-FREE-COLUMN-COPY-01, 2026-11-05).',
+  },
 ]

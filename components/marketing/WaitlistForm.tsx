@@ -95,7 +95,15 @@ export function WaitlistForm() {
           // side-by-side flex row. The button now carries the design system and
           // this input is a one-off, so the one-off moves. 13+18+13+2 = 46;
           // 14+18+14+2 = 48.
-          padding: 'var(--space-4) var(--space-4)',
+          // 🔴 NOT SWEPT TO A TOKEN — SITE-SPACE-GATE-02, 2026-11-05, caught in
+          // code review. The sweep took this 14 -> `--space-4` (16px), which
+          // makes the input 16+18+16+2 = **52px against the button's 48**, and
+          // the arithmetic in the comment directly above says 14. **A value
+          // that exists to match ANOTHER component's geometry does not belong
+          // to the spacing scale**, exactly as a band's vertical rhythm belongs
+          // to `--sect-y` and not to `--space-*`. Registered in
+          // `spacingScale.test.ts` by file, with this reason.
+          padding: '14px 14px',
           fontSize: 'var(--fs-body-lg)',
           fontFamily: 'var(--font-ui)',
           color: 'var(--ink)',

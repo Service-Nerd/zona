@@ -48,7 +48,7 @@
 // `SITE-ENGINE-EMDASH-01`, routed 🏃 Coaching Board.
 //
 // ⚠️ A DECLARED REASON IS NOT A FIXED PROBLEM. These entered the register on
-// 2026-11-05. What this gate does is stop the number growing: a SEVENTH em dash
+// 2026-11-05. What this gate does is stop the number growing: a NINTH em dash
 // reaching a marketing page fails the build.
 
 import { describe, it, expect } from 'vitest'
@@ -117,7 +117,7 @@ describe('engine copy on a marketing page — SITE-SESSION-STEPS-01', () => {
 
   it('no NEW em dash reaches a marketing page through the engine', () => {
     const hits = exemplars.flatMap(e =>
-      Array.from(e.text.matchAll(new RegExp(`[^"]{0,50}${EM_DASH}[^"]{0,50}`, 'g')))
+      Array.from(e.text.matchAll(new RegExp(`[^"${EM_DASH}]{0,50}${EM_DASH}[^"${EM_DASH}]{0,50}`, 'g')))
         .map(m => `  ${e.slug} w${e.weekN}: ${m[0]}`))
 
     expect(

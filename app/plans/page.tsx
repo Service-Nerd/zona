@@ -90,7 +90,7 @@ export default function PlansHubPage() {
 
       <Section width="read" rhythm="none"
         innerStyle={{ padding: '28px 24px 8px' }}>
-        <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18 }}>
+        <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 'var(--space-4)' }}>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
             Every plan here is the flat version. The app takes the same plan and adapts it:
             your real heart-rate zones, your week, your race, and moves the sessions when life
