@@ -238,7 +238,7 @@ export default async function Home() {
 
         <p style={{
           fontSize: 'var(--fs-lead-lg)', lineHeight: 1.55, color: 'var(--ink-2)',
-          maxWidth: '540px', margin: '0 0 28px',
+          maxWidth: '540px', margin: '0 0 var(--space-6)',
         }}>
           You&apos;re trying hard. That&apos;s the problem. Most amateur runners go medium-hard on
           everything, never truly recover, never truly push, and wonder why they don&apos;t improve.
@@ -367,7 +367,7 @@ export default async function Home() {
         <div className="fact-row" style={{
           display: 'flex', flexWrap: 'wrap',
           alignItems: 'baseline',
-          gap: '10px 22px',
+          gap: 'var(--space-3) var(--space-5)',
           fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-2)',
           letterSpacing: '0.01em',
         }}>
@@ -573,7 +573,7 @@ export default async function Home() {
           // sweeping widths for this change. Same guard as the hero above and
           // the pricing page.
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-          gap: '18px 24px',
+          gap: 'var(--space-4) var(--space-5)',
           // SITE-BEAT-01. The trio is the second beat of the MERGED mechanism
           // section, so it sat at exactly 0px under the "→ Generates" card.
           marginTop: 'var(--beat-y)',
@@ -701,7 +701,7 @@ export default async function Home() {
           <ol style={{
             listStyle: 'none', margin: 0, padding: 0,
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
-            gap: '28px 32px', counterReset: 'step',
+            gap: 'var(--space-6) var(--space-6)', counterReset: 'step',
           }}>
             {[
               {
@@ -739,7 +739,7 @@ export default async function Home() {
                 <div style={{ minWidth: 0 }}>
                   <h3 style={{
                     fontSize: 'var(--fs-lead)', fontWeight: 600, color: 'var(--ink)',
-                    margin: '0 0 6px', lineHeight: 1.35,
+                    margin: '0 0 var(--space-2)', lineHeight: 1.35,
                   }}>
                     {step.h}
                   </h3>
@@ -822,7 +822,7 @@ export default async function Home() {
             'No fire emojis. Ever.',
           ].map((item) => (
             <div key={item} style={{
-              padding: '18px 20px',
+              padding: 'var(--space-4) var(--space-5)',
               borderTop: '1px solid var(--line)',
               borderLeft: '1px solid var(--line)',
               fontSize: 'var(--fs-body-lg)', lineHeight: 1.4, color: 'var(--ink-2)',
@@ -846,7 +846,7 @@ export default async function Home() {
             fontFamily: 'var(--font-brand)',
             fontSize: 'var(--fs-h3)',
             fontWeight: 600, lineHeight: 1.2,
-            color: 'var(--ink)', margin: '0 0 28px',
+            color: 'var(--ink)', margin: '0 0 var(--space-6)',
           }}>
             Probably not for you if&hellip;
           </h3>
@@ -911,7 +911,7 @@ export default async function Home() {
             <details key={q} style={{ borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}>
               <summary style={{
                 listStyle: 'none', cursor: 'pointer',
-                padding: '18px 20px',
+                padding: 'var(--space-4) var(--space-5)',
                 fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead)', fontWeight: 600,
                 color: 'var(--ink)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-4)',
@@ -920,7 +920,7 @@ export default async function Home() {
                 <span aria-hidden style={{ color: 'var(--mute)', fontWeight: 400, flexShrink: 0 }}>+</span>
               </summary>
               <p style={{
-                margin: 0, padding: '0 20px 18px',
+                margin: 0, padding: '0 var(--space-5) var(--space-4)',
                 fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', maxWidth: '620px',
               }}>
                 {a}
@@ -959,7 +959,7 @@ export default async function Home() {
         </SectionTitle>
 
         <ul style={{
-          listStyle: 'none', margin: '0 0 28px', padding: 0,
+          listStyle: 'none', margin: '0 0 var(--space-6)', padding: 0,
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
           gap: 'var(--space-3)',
         }}>
@@ -968,7 +968,7 @@ export default async function Home() {
               display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start',
               background: 'var(--card)', border: '1px solid var(--line)',
               borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
-              padding: '16px 18px',
+              padding: 'var(--space-4) var(--space-4)',
             }}>
               {/* Left accent bar — the same visual language as a session card,
                   by design rather than coincidence (ui-patterns.md §1). */}
@@ -1056,14 +1056,14 @@ export default async function Home() {
             fontWeight: 500, lineHeight: 1.15, letterSpacing: '-0.015em',
             color: 'var(--on-ground)',
             fontStyle: 'italic',
-            margin: '0 0 28px',
+            margin: '0 0 var(--space-6)',
           }}>
             &ldquo;{BRAND.brandStatement}&rdquo;
           </p>
 
           <p style={{
             fontSize: 'var(--fs-lead-lg)', lineHeight: 1.6, color: 'var(--on-ground-2)',
-            maxWidth: '520px', margin: '0 auto 36px',
+            maxWidth: '520px', margin: '0 auto var(--space-6)',
           }}>
             Every week, {BRAND.coachName} tells you one true thing about how you actually
             ran, then shows the numbers behind it. Same effort, lower heart rate.
@@ -1190,7 +1190,7 @@ function SectionTitle({ children, accent, sub, weight = 'lead' }: {
       {sub && (
         <p style={{
           fontSize: 'var(--fs-lead)', lineHeight: 1.55, color: 'var(--ink-2)',
-          maxWidth: '600px', margin: '14px 0 0',
+          maxWidth: '600px', margin: 'var(--space-4) 0 0',
         }}>
           {sub}
         </p>
@@ -1303,7 +1303,7 @@ function AnswersCard() {
       border: '1px solid var(--line)',
       borderRadius: 'var(--radius-lg, 12px)',
       boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
-      padding: '20px',
+      padding: 'var(--space-5)',
       display: 'flex', flexDirection: 'column',
     }}>
       <div style={{
@@ -1331,7 +1331,7 @@ function AnswersCard() {
           </div>
         ))}
       </div>
-      <p style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.45, color: 'var(--mute)', margin: '14px 0 0' }}>
+      <p style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.45, color: 'var(--mute)', margin: 'var(--space-4) 0 0' }}>
         Plus injury history, terrain, your weekday time cap and a recent race result if you have one.
       </p>
     </div>

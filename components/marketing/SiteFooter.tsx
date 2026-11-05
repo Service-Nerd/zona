@@ -105,7 +105,7 @@ export function SiteFooter() {
           // with the standard 24px gutter rather than forcing a horizontal
           // scroll, which is how the header once broke the whole document.
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
-          gap: '28px 24px',
+          gap: 'var(--space-6) var(--space-5)',
           alignItems: 'start',
         }}>
           {GROUPS.map(g => (
@@ -152,7 +152,7 @@ export function SiteFooter() {
 
         <p style={{
           fontSize: 'var(--fs-caption)', color: 'var(--mute)',
-          margin: '36px 0 0', paddingTop: 20, borderTop: '1px solid var(--line)',
+          margin: 'var(--space-6) 0 0', paddingTop: 20, borderTop: '1px solid var(--line)',
         }}>
           © {new Date().getFullYear()} {BRAND.name}
         </p>

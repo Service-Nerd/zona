@@ -134,7 +134,7 @@ export default function AboutPage() {
         {FOUNDER_STORY.paragraphs.map((para, i) => <P key={i}>{para}</P>)}
 
         {/* Thesis. 3px moss rail, the same vocabulary the in-app note uses. */}
-        <div style={{ position: 'relative', padding: '6px 0 6px 20px', margin: '28px 0' }}>
+        <div style={{ position: 'relative', padding: 'var(--space-2) 0 var(--space-2) var(--space-5)', margin: 'var(--space-6) 0' }}>
           <span aria-hidden style={{
             position: 'absolute', left: 0, top: '4px', bottom: '4px',
             width: '3px', borderRadius: '2px', background: 'var(--moss-strong)',
@@ -198,7 +198,7 @@ export default function AboutPage() {
       {/* ── Close ───────────────────────────────────────────────────────── */}
       <Section width="read" rhythm="none"
         innerStyle={{ padding: 'var(--sect-y) 24px var(--sect-y)' }}>
-        <div style={{ height: '1px', background: 'var(--line)', margin: '0 0 20px' }} />
+        <div style={{ height: '1px', background: 'var(--line)', margin: '0 0 var(--space-5)' }} />
         <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink)', marginBottom: '4px' }}>
           {BRAND.founder.name} &middot; Founder
         </div>
@@ -213,7 +213,7 @@ export default function AboutPage() {
           russ@zonna.run
         </a>
 
-        <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '20px 0 0' }}>
+        <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 'var(--space-5) 0 0' }}>
           Running on a charity place?{' '}
           <Link href="/charity-runners" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>
             Start here &rarr;

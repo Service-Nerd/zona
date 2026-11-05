@@ -29,7 +29,7 @@ const BODY_STYLE = {
   fontSize: 'var(--fs-lead-lg)',
   lineHeight: 1.65,
   color: 'var(--ink-2)',
-  margin: '0 0 20px',
+  margin: '0 0 var(--space-5)',
   maxWidth: 640,
 } as const
 
@@ -82,7 +82,7 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
       {/* GTM-SITE-01 — the plan spokes carried a breadcrumb and the comparison
           articles did not, so a reader arriving from search had no sense of
           where the page sat. Same markup and same type scale as PlanPage. */}
-      <nav aria-label="Breadcrumb" style={{ maxWidth: 'var(--measure-page)', margin: '0 auto', padding: '20px 24px 0' }}>
+      <nav aria-label="Breadcrumb" style={{ maxWidth: 'var(--measure-page)', margin: '0 auto', padding: 'var(--space-5) var(--space-5) 0' }}>
         <ol style={{ display: 'flex', gap: 8, listStyle: 'none', padding: 0, margin: 0, fontSize: 'var(--fs-sm)', color: 'var(--mute)', flexWrap: 'wrap' }}>
           <li><Link href="/" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Home</Link></li>
           <li aria-hidden>›</li>
@@ -113,7 +113,7 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
           {article.h1}
         </h1>
 
-        <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', margin: '0 0 28px' }}>
+        <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', margin: '0 0 var(--space-6)' }}>
           Last updated: <time dateTime={article.lastUpdatedISO}>{article.lastUpdated}</time>
         </p>
 
@@ -127,7 +127,7 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
           return <p key={i} style={BODY_STYLE}>{renderSpans(block.spans)}</p>
         })}
 
-        <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.6, color: 'var(--mute)', margin: '32px 0 20px', maxWidth: 640 }}>
+        <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.6, color: 'var(--mute)', margin: 'var(--space-6) 0 var(--space-5)', maxWidth: 640 }}>
           {article.signature}
         </p>
 
@@ -151,7 +151,7 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
  *  scrolls inside its own container rather than making the page body scroll. */
 function ArticleTable({ block }: { block: Extract<ArticleBlock, { kind: 'table' }> }) {
   const cell = {
-    padding: '10px 12px',
+    padding: 'var(--space-3) var(--space-3)',
     borderBottom: '1px solid var(--line)',
     fontSize: 'var(--fs-body)',
     lineHeight: 1.45,

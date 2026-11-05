@@ -74,14 +74,14 @@ export function HeroTrace() {
       background: 'var(--bg-soft)',
       border: '1px solid var(--line)',
       borderRadius: 'var(--radius-xl)',
-      padding: 'clamp(16px, 2.5vw, 36px)',
+      padding: 'clamp(var(--space-4), 2.5vw, var(--space-6))',
     }}>
       <div style={{
         background: 'var(--card)',
         border: '1px solid var(--line)',
         borderRadius: 'var(--radius-lg)',
         boxShadow: 'var(--shadow-card)',
-        padding: 'clamp(18px, 2.2vw, 28px)',
+        padding: 'clamp(var(--space-4), 2.2vw, var(--space-6))',
         display: 'flex', flexDirection: 'column', gap: 20,
       }}>
         {/* Header */}

@@ -51,7 +51,7 @@ function MainSet({ s }: { s: Session }) {
 
   return (
     <div style={{
-      marginTop: 7, padding: '10px 12px', background: 'var(--bg-soft)',
+      marginTop: 7, padding: 'var(--space-3) var(--space-3)', background: 'var(--bg-soft)',
       borderRadius: 8, borderLeft: '2px solid var(--s-quality)',
     }}>
       {set && (
@@ -190,10 +190,10 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
         <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 16px' }}>
           You&rsquo;re trying hard. That&rsquo;s the problem.
         </p>
-        <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 18px' }}>
+        <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 var(--space-4)' }}>
           {plan.h1}
         </h1>
-        <p style={{ fontSize: 'var(--fs-lead-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 22px', maxWidth: 600 }}>{plan.heroSub}</p>
+        <p style={{ fontSize: 'var(--fs-lead-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 var(--space-5)', maxWidth: 600 }}>{plan.heroSub}</p>
 
         <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', marginTop: 4 }}>
           {[
@@ -208,14 +208,14 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
           ))}
         </div>
 
-        <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '22px 0 0', maxWidth: 620 }}>{plan.whoFor}</p>
+        <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: 'var(--space-5) 0 0', maxWidth: 620 }}>{plan.whoFor}</p>
       </Section>
 
       {/* ── The zone idea (differentiator, on the page) ─────────────────── */}
       <Section width="read" rhythm="none"
         innerStyle={{ padding: '32px 24px' }}>
-        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 16, padding: '24px 22px' }}>
-          <h2 style={{ fontSize: 'var(--fs-lead-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 10px' }}>Why so much easy?</h2>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 16, padding: 'var(--space-5) var(--space-5)' }}>
+          <h2 style={{ fontSize: 'var(--fs-lead-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 var(--space-3)' }}>Why so much easy?</h2>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
             You can&rsquo;t outrun your easy days. Run easy when it&rsquo;s easy so you can run hard
             when it&rsquo;s hard. Going medium-hard on everything, the grey middle, is
@@ -229,7 +229,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
       <Section width="read" rhythm="none"
         innerStyle={{ padding: '4px 24px 8px' }}>
         <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px', letterSpacing: '-0.01em' }}>The plan, week by week</h2>
-        <p style={{ fontSize: 'var(--fs-body)', color: 'var(--mute)', margin: '0 0 20px' }}>Free. Take it exactly as it is.</p>
+        <p style={{ fontSize: 'var(--fs-body)', color: 'var(--mute)', margin: '0 0 var(--space-5)' }}>Free. Take it exactly as it is.</p>
 
         {groups.map((g, gi) => {
           // MKT-PLAN-PHASE-NOTE-01 — derived from the weeks below it, never a
@@ -250,7 +250,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
                   .map(d => ({ d: d as string, s: w.sessions[d] }))
                   .filter(x => x.s != null) as { d: string; s: Session }[]
                 return (
-                  <div key={w.n} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '16px 18px', marginBottom: 12 }}>
+                  <div key={w.n} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 'var(--space-4) var(--space-4)', marginBottom: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
                       <div>
                         <span style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead)', fontWeight: 800, color: 'var(--ink)' }}>Week {w.n}</span>
@@ -283,7 +283,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
                               <span style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink)' }}>{s.label}</span>
-                              {s.zone && <span style={{ fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--ink-2)', background: 'var(--bg-soft)', padding: '2px 7px', borderRadius: 999, letterSpacing: '0.02em' }}>{s.zone}</span>}
+                              {s.zone && <span style={{ fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--ink-2)', background: 'var(--bg-soft)', padding: '2px var(--space-2)', borderRadius: 999, letterSpacing: '0.02em' }}>{s.zone}</span>}
                             </div>
                             <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 2 }}>
                               {[s.distance_km ? `${s.distance_km} km` : null, s.duration_mins ? `${s.duration_mins} min` : null, s.pace_target || null].filter(Boolean).join('  ·  ')}
@@ -327,9 +327,9 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
           in the repo, unused, for the next pre-launch surface. */}
       <Section width="read" rhythm="none"
         innerStyle={{ padding: '28px 24px 8px' }}>
-        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 16, padding: '26px 22px' }}>
-          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>The plan above is yours. No catch.</h2>
-          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 18px', maxWidth: 520 }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 16, padding: 'var(--space-5) var(--space-5)' }}>
+          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 var(--space-2)' }}>The plan above is yours. No catch.</h2>
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 var(--space-4)', maxWidth: 520 }}>
             This one is fixed. The app builds the same plan around your zones, your week and your
             race date, and two weeks of it costs nothing.
           </p>
@@ -346,8 +346,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
         <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 16px', letterSpacing: '-0.01em' }}>Questions</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {faqs.map((f, i) => (
-            <div key={i} style={{ padding: '14px 0', borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}>
-              <h3 style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 6px' }}>{f.q}</h3>
+            <div key={i} style={{ padding: 'var(--space-4) 0', borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}>
+              <h3 style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 var(--space-2)' }}>{f.q}</h3>
               <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--ink-2)', margin: 0, maxWidth: 640 }}>{f.a}</p>
             </div>
           ))}
@@ -358,11 +358,11 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
       {related.length > 0 && (
         <Section width="read" rhythm="none"
           innerStyle={{ padding: '28px 24px 8px' }}>
-          <h2 style={{ fontSize: 'var(--fs-lead-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 14px' }}>Other free plans</h2>
+          <h2 style={{ fontSize: 'var(--fs-lead-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 var(--space-4)' }}>Other free plans</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {related.map(r => (
               <Link key={r.slug} href={`/plans/${r.slug}`} style={{ textDecoration: 'none' }}>
-                <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: 'var(--space-4) var(--space-4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--ink)' }}>{planCardTitle(r)}</span>
                   <span style={{ fontSize: 'var(--fs-body-lg)', color: 'var(--moss-strong)' }} aria-hidden>→</span>
                 </div>

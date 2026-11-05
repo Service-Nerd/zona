@@ -63,6 +63,25 @@ before planning against any number below (an item is a snapshot of the code on t
   website carries a card that exists nowhere in the product. `TrendCard`, `ShareControl`, `LoadHistory`,
   `WeekFacts` explicitly **not** this wave.
 
+**Found while BUILDING the sitting's items, filed not swept:**
+
+- 🧭 **DESIGN BOARD** `SITE-BAND-RHYTHM-01` — **16 band vertical rhythms are hand-typed where W-07's token family
+  exists.** The `padding` on a `Section`'s `innerStyle` whose horizontal value is the 24px page gutter is a BAND's
+  vertical rhythm, owned by `--sect-y` / `--sect-y-hero` / `--sect-y-close`, not by `--space-*`. `/pricing`,
+  `/about` and `/charity-runners` use the tokens; `app/page.tsx`, `/plans`, `ArticleHub` and `PlanPage` type the
+  numbers (28px ×8, 56, 64, 112, 18 ×2, 20). ⚠️ **Deliberately NOT swept by `SITE-SPACE-GATE-02`**, which exempts
+  them by name: pushing a 112px band onto the element scale is a 64px change and the wrong family besides. **A gate
+  that quietly reassigns a value to another family is worse than one that cannot see it.**
+- ⚙️ **NO BOARD** `SITE-SPACE-OVERLIMIT-01` — **8 spacing values whose nearest-token shift exceeds the board's 4px
+  limit**, so the sweep left them and the gate registers them with reasons: `/support`, `/privacy`, `/terms` page
+  padding (80 ×3, 64 ×3), `SiteFooter` 40, `charity-runners` 56. Per `SITE-WAVE-4` these return to the board rather
+  than being swept. ⚠️ **A declared reason is not a fixed problem** — these entered the register 2026-11-05.
+- 🧭 **DESIGN BOARD** `SITE-SUBMEASURE-SPRAWL-01` — sub-column widths on the marketing site run 520 / 540 / 560 /
+  600 / 620 / 640 / 720, hand-typed. ⚠️ **Not a defect against any ruling** (the register: *"720px for prose stays,
+  the measure was never the defect"*), which is why `SITE-MEASURE-THIRD-02` left them alone — sweeping them is a
+  new ruling, not the execution of an old one. The question for the board is whether a second, smaller reading
+  measure should be a token at all.
+
 **Filed by the sitting, not built:**
 
 - 🏃 **COACHING BOARD first, then 🧭** `SITE-STAGED-PLAN-01` — `NO-RUNNER-TURNED-AWAY-01` has been live since

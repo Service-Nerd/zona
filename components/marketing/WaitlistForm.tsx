@@ -44,7 +44,7 @@ export function WaitlistForm() {
         style={{
           maxWidth: '420px',
           margin: '0 auto',
-          padding: '14px 18px',
+          padding: 'var(--space-4) var(--space-4)',
           background: 'var(--card)',
           border: '1px solid var(--line)',
           borderLeft: '3px solid var(--moss)',
@@ -95,7 +95,7 @@ export function WaitlistForm() {
           // side-by-side flex row. The button now carries the design system and
           // this input is a one-off, so the one-off moves. 13+18+13+2 = 46;
           // 14+18+14+2 = 48.
-          padding: '14px 16px',
+          padding: 'var(--space-4) var(--space-4)',
           fontSize: 'var(--fs-body-lg)',
           fontFamily: 'var(--font-ui)',
           color: 'var(--ink)',

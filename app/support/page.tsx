@@ -72,7 +72,7 @@ export default function SupportPage() {
             background: 'var(--card-bg)',
             border: '0.5px solid var(--border-col)',
             borderRadius: '12px',
-            padding: '20px',
+            padding: 'var(--space-5)',
             marginTop: '16px',
           }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-sm)', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>{BRAND.name} Support</div>
@@ -114,7 +114,7 @@ export default function SupportPage() {
                 <summary style={{
                   listStyle: 'none', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: '12px', padding: '15px 18px', minHeight: '44px', boxSizing: 'border-box',
+                  gap: '12px', padding: 'var(--space-4) var(--space-4)', minHeight: '44px', boxSizing: 'border-box',
                   fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', fontWeight: 500,
                   color: 'var(--text-primary)', lineHeight: 1.4,
                 }}>
@@ -129,7 +129,7 @@ export default function SupportPage() {
                   }}>+</span>
                 </summary>
                 <div style={{
-                  padding: '0 18px 16px',
+                  padding: '0 var(--space-4) var(--space-4)',
                   fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)',
                   color: 'var(--text-secondary)', lineHeight: 1.7,
                 }}>
@@ -191,7 +191,7 @@ function DocSection({ title, children }: { title: string; children: React.ReactN
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        marginBottom: '20px',
+        marginBottom: 'var(--space-5)',
         paddingBottom: '12px',
         borderBottom: '0.5px solid var(--border-col)',
       }}>
@@ -221,8 +221,8 @@ function SubHead({ children }: { children: React.ReactNode }) {
       color: 'var(--text-primary)',
       letterSpacing: '0.06em',
       textTransform: 'uppercase',
-      marginBottom: '6px',
-      marginTop: '20px',
+      marginBottom: 'var(--space-2)',
+      marginTop: 'var(--space-5)',
     }}>
       {children}
     </div>
@@ -236,7 +236,7 @@ function P({ children }: { children: React.ReactNode }) {
       fontSize: 'var(--fs-body)',
       color: 'var(--text-secondary)',
       lineHeight: 1.75,
-      margin: '0 0 14px',
+      margin: '0 0 var(--space-4)',
     }}>
       {children}
     </p>

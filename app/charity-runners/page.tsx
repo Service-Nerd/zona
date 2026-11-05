@@ -114,7 +114,7 @@ function H2({ children }: { children: React.ReactNode }) {
 
 function P({ children }: { children: React.ReactNode }) {
   return (
-    <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 14px' }}>
+    <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 var(--space-4)' }}>
       {children}
     </p>
   )
@@ -241,11 +241,11 @@ export default function CharityRunnersPage() {
         <h1 style={{
           fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)',
           fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1,
-          margin: '0 0 18px', color: 'var(--ink)',
+          margin: '0 0 var(--space-4)', color: 'var(--ink)',
         }}>
           You got the place. Your charity may have covered the coaching.
         </h1>
-        <p style={{ fontSize: 'var(--fs-lead-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 26px' }}>
+        <p style={{ fontSize: 'var(--fs-lead-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 var(--space-5)' }}>
           Some charities give their runners a code for the full {BRAND.name} app, free for
           the whole training block. If yours did, it takes about a minute to use. If it
           did not, everything below still applies and the plans are free to read anyway.
@@ -335,7 +335,7 @@ export default function CharityRunnersPage() {
               display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start',
               background: 'var(--card)', border: '1px solid var(--line)',
               borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
-              padding: '18px 20px',
+              padding: 'var(--space-4) var(--space-5)',
             }}>
               <span style={{
                 flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%',
@@ -353,7 +353,7 @@ export default function CharityRunnersPage() {
 
         <p style={{
           fontSize: 'var(--fs-body)', lineHeight: 1.6, color: 'var(--mute)',
-          margin: '16px 0 0', borderLeft: '2px solid var(--line-strong)', paddingLeft: '14px',
+          margin: '16px 0 0', borderLeft: '2px solid var(--line-strong)', paddingLeft: 'var(--space-4)',
         }}>
           Already installed the app? Open Me and tap “Have a code?”. That opens the same
           Apple screen, and you type the code in there. Codes come from your charity, not from
@@ -393,7 +393,7 @@ export default function CharityRunnersPage() {
               ['A plan that moves when life does',
                'Miss a week and it reshapes around what you did, instead of leaving you to catch up on a week that has gone.'],
             ].map(([title, body]) => (
-              <div key={title} style={{ display: 'flex', gap: 'var(--space-4)', padding: '14px 0' }}>
+              <div key={title} style={{ display: 'flex', gap: 'var(--space-4)', padding: 'var(--space-4) 0' }}>
                 <span aria-hidden style={{
                   width: '3px', alignSelf: 'stretch', borderRadius: '2px',
                   background: 'var(--moss-strong)', flexShrink: 0,
@@ -413,7 +413,7 @@ export default function CharityRunnersPage() {
         innerStyle={{ padding: 'var(--sect-y) 24px 0' }}>
         <Eyebrow>No code?</Eyebrow>
         <H2>Then start with a free plan.</H2>
-        <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 22px' }}>
+        <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 var(--space-5)' }}>
           Every plan below is the real thing the engine builds, laid out week by week and
           free to read in full. No email, no signup. And every new account gets two weeks
           of the full app regardless, so you can see what the coaching adds.
@@ -434,7 +434,7 @@ export default function CharityRunnersPage() {
               minHeight: TAP_TARGET_MIN_PX, boxSizing: 'border-box',
               textDecoration: 'none',
               background: 'var(--card)', border: '1px solid var(--line)',
-              borderRadius: '100px', padding: '10px 18px',
+              borderRadius: '100px', padding: 'var(--space-3) var(--space-4)',
             }}>
               <span style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 700, color: 'var(--ink)' }}>{d.label}</span>
               <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--mute)' }}>{d.weeks}</span>
@@ -456,12 +456,12 @@ export default function CharityRunnersPage() {
           {FAQS.map((f, i) => (
             <details key={f.q} style={{ borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}>
               <summary style={{
-                listStyle: 'none', cursor: 'pointer', padding: '17px 20px',
+                listStyle: 'none', cursor: 'pointer', padding: 'var(--space-4) var(--space-5)',
                 fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-body-lg)', fontWeight: 600,
                 color: 'var(--ink)',
               }}>{f.q}</summary>
               <div style={{
-                padding: '0 20px 17px', fontSize: 'var(--fs-body-lg)', lineHeight: 1.6,
+                padding: '0 var(--space-5) var(--space-4)', fontSize: 'var(--fs-body-lg)', lineHeight: 1.6,
                 color: 'var(--ink-2)',
               }}>{f.a}</div>
             </details>
@@ -475,12 +475,12 @@ export default function CharityRunnersPage() {
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
-          padding: '28px 24px',
+          padding: 'var(--space-6) var(--space-5)',
         }}>
-          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 10px', letterSpacing: '-0.01em' }}>
+          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 var(--space-3)', letterSpacing: '-0.01em' }}>
             Get to the start line in one piece.
           </h2>
-          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 18px' }}>
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 var(--space-4)' }}>
             That is the job, and it is a harder one than going fast. Tap your
             charity’s link, redeem the code, and let it tell you to slow down.
           </p>

@@ -107,7 +107,7 @@ export function SiteHeader({ current = null }: { current?: SiteSection }) {
         style={{
           maxWidth: SITE_WIDTH,
           margin: '0 auto',
-          padding: '14px 24px',
+          padding: 'var(--space-4) var(--space-5)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',

@@ -444,13 +444,27 @@ describe('marketing section surfaces', () => {
     // tests in a row now written against a version of the file the helper does
     // not hand back.
     //
-    // `gap: '18px 24px'` is the trio grid's own declaration and appears exactly
-    // once in the file, so the 200 characters before it are the grid's opening
-    // and whatever wraps it. `--measure-page` appears many times overall; a
-    // file-wide grep would pass on any of them.
+    // The trio grid's own `gap` declaration appears exactly once in the file, so
+    // the 260 characters before it are the grid's opening and whatever wraps it.
+    // `--measure-page` appears many times overall; a file-wide grep would pass
+    // on any of them.
+    //
+    // 🔴 RE-ANCHORED 2026-11-05 (`SITE-SPACE-GATE-02`), AND THIS IS THE SECOND
+    // TIME THIS ANCHOR HAS BROKEN. It was `gap: '18px 24px'`; the spacing sweep
+    // tokenised that declaration and this test went red with "the anchor has
+    // moved" — which is the arm below doing its job, and the reason the sweep
+    // did not ship a silently vacuous structural check. **An anchor on a VALUE
+    // is fragile against any sweep of that value's family.** Left as a value
+    // anchor because the alternative (an anchor on the component names inside
+    // the grid) is what the first cut tried and it anchored on a COMMENT, which
+    // `src()` strips. The uniqueness assertion below is what makes the fragility
+    // safe: a broken anchor fails loudly instead of matching another grid.
     const home = src(HOME)
-    const grid = home.indexOf("gap: '18px 24px'")
+    const ANCHOR = "gap: 'var(--space-4) var(--space-5)'"
+    const grid = home.indexOf(ANCHOR)
     expect(grid, 'the trio grid declaration has moved — re-anchor this test').toBeGreaterThan(-1)
+    expect(home.split(ANCHOR).length - 1, `${ANCHOR} is no longer unique in ${HOME}; `
+      + 'this arm could now be measuring a different grid').toBe(1)
     expect(home.slice(Math.max(0, grid - 260), grid),
       'the trio must sit inside the page column, or it renders full-bleed')
       .toContain('var(--measure-page)')

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
+import { comparisonArticles, articlePath } from './articles'
 
 /**
  * SITE-TYPE-01 — the marketing site has a type scale, and only the scale.
@@ -44,11 +45,21 @@ const MOCKUPS = [
   'components/marketing/TabbedPhone.tsx',
 ]
 
+// ⚠️ THE SHIM PAGES ARE DERIVED, NOT LISTED — SITE-TYPESCALE-POP-01, 2026-11-05.
+// This list hand-named TWO of the EIGHT comparison and guide shims
+// (`coopah-vs-runna`, `runna-alternatives`) and had done since the third
+// shipped. It was harmless — every shim is ~22 lines and carries zero
+// `fontSize` — and that is the point: it was harmless until one of them held a
+// size, and nothing would have said so. `noEmDash.test.ts` already derives
+// these same slugs from the catalogue, for the recorded reason that pages 1 and
+// 2 were listed by hand and page 3 went unlisted for two months. Two gates over
+// one set of pages, one deriving and one remembering, is the hand-listed
+// population CLAUDE.md names.
 const SURFACES = [
   'app/page.tsx', 'app/plans', 'app/pricing', 'app/about', 'app/guides',
-  'app/comparisons', 'app/coopah-vs-runna', 'app/runna-alternatives',
-  'app/charity-runners', 'app/support', 'app/privacy', 'app/terms',
+  'app/comparisons', 'app/charity-runners', 'app/support', 'app/privacy', 'app/terms',
   'components/marketing',
+  ...comparisonArticles().map(a => `app${articlePath(a)}`),
 ]
 
 function walk(p: string): string[] {

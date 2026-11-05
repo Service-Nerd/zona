@@ -100,7 +100,7 @@ export default function PrivacyPage() {
         </DocSection>
 
         <DocSection title="How we use your data">
-          <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
+          <ul style={{ margin: '0 0 16px', padding: '0 0 0 var(--space-5)' }}>
             {[
               'To generate and display your personalised training plan',
               `To provide session-level coaching feedback (effort flags, ${BRAND.name} voice responses)`,
@@ -113,7 +113,7 @@ export default function PrivacyPage() {
                 fontSize: 'var(--fs-body)',
                 color: 'var(--text-secondary)',
                 lineHeight: 1.7,
-                marginBottom: '6px',
+                marginBottom: 'var(--space-2)',
               }}>{item}</li>
             ))}
           </ul>
@@ -148,7 +148,7 @@ export default function PrivacyPage() {
 
         <DocSection title="Your rights (GDPR)">
           <P>If you are based in the UK or European Economic Area, you have the following rights under GDPR:</P>
-          <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
+          <ul style={{ margin: '0 0 16px', padding: '0 0 0 var(--space-5)' }}>
             {[
               'Right of access: request a copy of all data we hold about you',
               'Right to rectification: correct inaccurate or incomplete data',
@@ -162,7 +162,7 @@ export default function PrivacyPage() {
                 fontSize: 'var(--fs-body)',
                 color: 'var(--text-secondary)',
                 lineHeight: 1.7,
-                marginBottom: '6px',
+                marginBottom: 'var(--space-2)',
               }}>{item}</li>
             ))}
           </ul>
@@ -171,7 +171,7 @@ export default function PrivacyPage() {
 
         <DocSection title="Your rights (CCPA)">
           <P>If you are a California resident, you have rights under the California Consumer Privacy Act (CCPA):</P>
-          <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
+          <ul style={{ margin: '0 0 16px', padding: '0 0 0 var(--space-5)' }}>
             {[
               'Right to know what personal information we collect and how it is used',
               'Right to delete personal information we have collected',
@@ -183,7 +183,7 @@ export default function PrivacyPage() {
                 fontSize: 'var(--fs-body)',
                 color: 'var(--text-secondary)',
                 lineHeight: 1.7,
-                marginBottom: '6px',
+                marginBottom: 'var(--space-2)',
               }}>{item}</li>
             ))}
           </ul>
@@ -215,7 +215,7 @@ export default function PrivacyPage() {
             background: 'var(--card-bg)',
             border: '0.5px solid var(--border-col)',
             borderRadius: '12px',
-            padding: '20px',
+            padding: 'var(--space-5)',
             marginTop: '16px',
           }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-sm)', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>{BRAND.name}</div>
@@ -264,7 +264,7 @@ function DocSection({ title, children }: { title: string; children: React.ReactN
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        marginBottom: '20px',
+        marginBottom: 'var(--space-5)',
         paddingBottom: '12px',
         borderBottom: '0.5px solid var(--border-col)',
       }}>
@@ -294,8 +294,8 @@ function SubHead({ children }: { children: React.ReactNode }) {
       color: 'var(--text-primary)',
       letterSpacing: '0.06em',
       textTransform: 'uppercase',
-      marginBottom: '6px',
-      marginTop: '20px',
+      marginBottom: 'var(--space-2)',
+      marginTop: 'var(--space-5)',
     }}>
       {children}
     </div>
@@ -309,7 +309,7 @@ function P({ children }: { children: React.ReactNode }) {
       fontSize: 'var(--fs-body)',
       color: 'var(--text-secondary)',
       lineHeight: 1.75,
-      margin: '0 0 14px',
+      margin: '0 0 var(--space-4)',
     }}>
       {children}
     </p>

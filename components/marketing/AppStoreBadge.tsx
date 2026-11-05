@@ -24,7 +24,7 @@ export function AppStoreBadge() {
         display: 'inline-flex',
         alignItems: 'center',
         gap: 'var(--space-2)',
-        padding: '10px 18px',
+        padding: 'var(--space-3) var(--space-4)',
         background: 'var(--ink)',
         color: 'white',
         borderRadius: 'var(--radius-md, 8px)',

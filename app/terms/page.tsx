@@ -122,7 +122,7 @@ export default function TermsPage() {
 
         <DocSection title="Acceptable use">
           <P>You agree not to:</P>
-          <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
+          <ul style={{ margin: '0 0 16px', padding: '0 0 0 var(--space-5)' }}>
             {[
               'Use the service for anything illegal or to harm others',
               'Attempt to access another user’s account or data',
@@ -137,7 +137,7 @@ export default function TermsPage() {
                 fontSize: 'var(--fs-body)',
                 color: 'var(--text-secondary)',
                 lineHeight: 1.7,
-                marginBottom: '6px',
+                marginBottom: 'var(--space-2)',
               }}>{item}</li>
             ))}
           </ul>
@@ -196,7 +196,7 @@ export default function TermsPage() {
             background: 'var(--card-bg)',
             border: '0.5px solid var(--border-col)',
             borderRadius: '12px',
-            padding: '20px',
+            padding: 'var(--space-5)',
             marginTop: '16px',
           }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-sm)', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>{BRAND.name}</div>
@@ -245,7 +245,7 @@ function DocSection({ title, children }: { title: string; children: React.ReactN
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        marginBottom: '20px',
+        marginBottom: 'var(--space-5)',
         paddingBottom: '12px',
         borderBottom: '0.5px solid var(--border-col)',
       }}>
@@ -275,8 +275,8 @@ function SubHead({ children }: { children: React.ReactNode }) {
       color: 'var(--text-primary)',
       letterSpacing: '0.06em',
       textTransform: 'uppercase',
-      marginBottom: '6px',
-      marginTop: '20px',
+      marginBottom: 'var(--space-2)',
+      marginTop: 'var(--space-5)',
     }}>
       {children}
     </div>
@@ -290,7 +290,7 @@ function P({ children }: { children: React.ReactNode }) {
       fontSize: 'var(--fs-body)',
       color: 'var(--text-secondary)',
       lineHeight: 1.75,
-      margin: '0 0 14px',
+      margin: '0 0 var(--space-4)',
     }}>
       {children}
     </p>

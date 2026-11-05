@@ -76,7 +76,7 @@ export function SameWeekTwice() {
     <div style={{
       background: 'var(--card)', border: '1px solid var(--line)',
       borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
-      padding: '20px 20px 18px', display: 'flex', flexDirection: 'column', gap: 14,
+      padding: 'var(--space-5) var(--space-5) var(--space-4)', display: 'flex', flexDirection: 'column', gap: 14,
     }}>
       <div>
         <div style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--ink)' }}>{title}</div>
@@ -148,7 +148,7 @@ export function SameWeekTwice() {
           One week, run two ways.<br />
           <span style={{ color: 'var(--moss-strong)' }}>The app can tell.</span>
         </h2>
-        <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: '620px', margin: '14px 0 0' }}>
+        <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: '620px', margin: 'var(--space-4) 0 0' }}>
           These four sessions are week {SOURCE_WEEK} of{' '}
           <Link href={`/plans/${SOURCE_SLUG}`} style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>
             my free 12-week half marathon plan
@@ -160,7 +160,7 @@ export function SameWeekTwice() {
         {/* The prescription, once, because it is the same week both times. */}
         <div style={{
           background: 'var(--bg-soft)', border: '1px solid var(--line)',
-          borderRadius: 'var(--radius-lg)', padding: '16px 18px', margin: '28px 0 16px',
+          borderRadius: 'var(--radius-lg)', padding: 'var(--space-4) var(--space-4)', margin: 'var(--space-6) 0 var(--space-4)',
         }}>
           <div style={{
             fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--mute)',
@@ -202,7 +202,7 @@ export function SameWeekTwice() {
             approved (Fried), so it needs a link that is genuinely useful
             rather than a directory entry. A reader who has just seen a week
             drift above its ceiling is the exact reader with this question. */}
-        <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '20px 0 0', maxWidth: '620px' }}>
+        <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 'var(--space-5) 0 0', maxWidth: '620px' }}>
           Wondering whether your easy runs are supposed to feel this slow?{' '}
           <Link href="/guides/should-easy-runs-feel-this-slow" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>
             That is the whole question, and it has an answer &rarr;
@@ -227,7 +227,7 @@ export function SameWeekTwice() {
           <AppStoreBadge />
         </div>
 
-        <p style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.5, color: 'var(--mute)', margin: '14px 0 0', maxWidth: '620px' }}>
+        <p style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.5, color: 'var(--mute)', margin: 'var(--space-4) 0 0', maxWidth: '620px' }}>
           The sessions and their ceilings come from the plan itself. The two sets of heart-rate
           readings are an illustration of two ways to run the week, not a measurement of anyone.
         </p>

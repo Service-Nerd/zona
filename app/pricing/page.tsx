@@ -64,7 +64,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
  *  tells a first-timer nothing. */
 function Feature({ f, accent }: { f: TierFeature; accent: string }) {
   return (
-    <div style={{ display: 'flex', gap: 'var(--space-3)', padding: '13px 0' }}>
+    <div style={{ display: 'flex', gap: 'var(--space-3)', padding: 'var(--space-3) 0' }}>
       <span aria-hidden style={{
         width: '3px', alignSelf: 'stretch', borderRadius: '2px',
         background: accent, flexShrink: 0,
@@ -111,7 +111,7 @@ export default function PricingPage() {
         <h1 style={{
           fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)',
           fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1,
-          margin: '0 0 18px', color: 'var(--ink)',
+          margin: '0 0 var(--space-4)', color: 'var(--ink)',
         }}>
           Two weeks of everything. Then you decide.
         </h1>
@@ -142,7 +142,7 @@ export default function PricingPage() {
           <div style={{
             background: 'var(--card)', border: '1px solid var(--line)',
             borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
-            padding: '24px 22px',
+            padding: 'var(--space-5) var(--space-5)',
           }}>
             <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
               Free
@@ -166,7 +166,7 @@ export default function PricingPage() {
             background: 'var(--card)', border: '1px solid var(--line)',
             borderTop: '3px solid var(--moss)',
             borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
-            padding: '24px 22px',
+            padding: 'var(--space-5) var(--space-5)',
           }}>
             <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--moss-strong)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
               Full access
@@ -197,9 +197,9 @@ export default function PricingPage() {
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderLeft: '3px solid var(--warn)',
-          borderRadius: 'var(--radius-lg)', padding: '22px 20px',
+          borderRadius: 'var(--radius-lg)', padding: 'var(--space-5) var(--space-5)',
         }}>
-          <h2 style={{ fontSize: 'var(--fs-lead-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 10px' }}>
+          <h2 style={{ fontSize: 'var(--fs-lead-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 var(--space-3)' }}>
             What happens on day fifteen
           </h2>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 12px' }}>
@@ -233,12 +233,12 @@ export default function PricingPage() {
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
-          padding: '26px 22px',
+          padding: 'var(--space-5) var(--space-5)',
         }}>
-          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 10px', letterSpacing: '-0.01em' }}>
+          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 var(--space-3)', letterSpacing: '-0.01em' }}>
             Start with the two weeks.
           </h2>
-          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 18px' }}>
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 var(--space-4)' }}>
             Build a plan, run a fortnight of it, and see whether being told to slow down
             is what you were missing.
           </p>

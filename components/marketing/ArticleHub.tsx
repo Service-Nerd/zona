@@ -74,10 +74,10 @@ export function ArticleHub({
           ⚠️ FOR WAVE 1B: the rhythm below is preserved, not endorsed. */}
       <Section width="read" rhythm="none"
         innerStyle={{ padding: '28px 24px 8px' }}>
-        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 14px' }}>
+        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 var(--space-4)' }}>
           {hub.eyebrow}
         </p>
-        <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 18px' }}>
+        <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 var(--space-4)' }}>
           {hub.h1}
         </h1>
         <p style={{ fontSize: 'var(--fs-lead-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 8px', maxWidth: 620 }}>
@@ -90,7 +90,7 @@ export function ArticleHub({
         {youngNote && (
           <p style={{
             fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--mute)',
-            margin: '0 0 18px', paddingLeft: 14, borderLeft: '2px solid var(--line)',
+            margin: '0 0 var(--space-4)', paddingLeft: 14, borderLeft: '2px solid var(--line)',
             maxWidth: 560,
           }}>
             {youngNote}
@@ -116,7 +116,7 @@ export function ArticleHub({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {g.articles.map(a => (
                 <Link key={a.slug} href={articlePath(a)} style={{ textDecoration: 'none' }}>
-                  <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+                  <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 'var(--space-4) var(--space-5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
                     <div>
                       <div style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead-lg)', fontWeight: 800, color: 'var(--ink)' }}>{a.metaTitle}</div>
                       <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 3, maxWidth: 520 }}>{a.hubSummary}</div>
@@ -136,7 +136,7 @@ export function ArticleHub({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {articles.map(a => (
             <Link key={a.slug} href={articlePath(a)} style={{ textDecoration: 'none' }}>
-              <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 'var(--space-4) var(--space-5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
                 <div>
                   <div style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead-lg)', fontWeight: 800, color: 'var(--ink)' }}>{a.metaTitle}</div>
                   <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 3, maxWidth: 520 }}>{a.hubSummary}</div>
@@ -165,12 +165,12 @@ export function ArticleHub({
         innerStyle={{ padding: '28px 24px 8px' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
-          borderRadius: 'var(--radius-lg)', padding: '26px 22px',
+          borderRadius: 'var(--radius-lg)', padding: 'var(--space-5) var(--space-5)',
         }}>
-          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>
+          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 var(--space-2)' }}>
             The answers are free. So is the plan.
           </h2>
-          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 18px', maxWidth: 520 }}>
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 var(--space-4)', maxWidth: 520 }}>
             {BRAND.name} builds the week around your zones, your days and your race date,
             and holds you to it. Two weeks of it costs nothing.
           </p>
@@ -187,11 +187,11 @@ export function ArticleHub({
           {/* HUB-LINKS-STACK-01 (founder, 2026-10-16) — each link on its OWN line. "See the plans →"
               used to trail the sentence inline and wrap wherever the line ran out, directly above
               "Read the guides →" on its own line: two links, two treatments, in one block. */}
-          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '10px 0 0', maxWidth: 620 }}>
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 'var(--space-3) 0 0', maxWidth: 620 }}>
             <Link href="/plans" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>See the plans &rarr;</Link>
           </p>
           {siblingHub && (
-            <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '10px 0 0', maxWidth: 620 }}>
+            <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 'var(--space-3) 0 0', maxWidth: 620 }}>
               <Link href={siblingHub.href} style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>
                 {siblingHub.label} &rarr;
               </Link>
