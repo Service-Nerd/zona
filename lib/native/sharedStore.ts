@@ -82,16 +82,6 @@ export async function writeSecure(key: string, value: string): Promise<boolean> 
   }
 }
 
-export async function readSecure(key: string): Promise<string | null> {
-  if (!Capacitor.isNativePlatform()) return null
-  try {
-    const { value } = await native.getSecure({ key })
-    return value
-  } catch {
-    return null
-  }
-}
-
 export async function removeSecure(key: string): Promise<void> {
   if (!Capacitor.isNativePlatform()) return
   try {
@@ -116,7 +106,23 @@ export async function removeSecure(key: string): Promise<void> {
 export async function clearNativeState(): Promise<void> {
   await clearWidgetState()
   await removeSecure(NATIVE_CREDENTIAL_KEY)
+  // 🔴 THE WATERMARK TOO, AND LEAVING IT OUT WAS A REAL BUG. It is the end
+  // date of the newest run the NATIVE path posted, held in the App Group. It
+  // is not personal data, but it survives sign-out — so a second account on
+  // the same phone would have every run older than the previous account's
+  // last run silently skipped by the native path. A function whose comment
+  // says "EVERY piece of native state" has to mean it.
+  await removeAppGroup(NATIVE_WATERMARK_KEY)
 }
 
 /** Keychain account name. Must match `HealthObserverPlugin.credentialKey`. */
 export const NATIVE_CREDENTIAL_KEY = 'zonna_native_credential'
+/** App-Group key. Must match `HealthObserverPlugin.watermarkKey`. */
+export const NATIVE_WATERMARK_KEY  = 'zonna_native_last_ingest_at'
+
+async function removeAppGroup(key: string): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return
+  try {
+    await native.remove({ key })
+  } catch { /* silent */ }
+}

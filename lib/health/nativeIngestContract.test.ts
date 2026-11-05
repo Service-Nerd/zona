@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { NATIVE_CREDENTIAL_KEY } from '@/lib/native/sharedStore'
+import { NATIVE_CREDENTIAL_KEY, NATIVE_WATERMARK_KEY } from '@/lib/native/sharedStore'
 
 // HK-NATIVE-BG-INGEST-01 — the cross-language seam.
 //
@@ -85,6 +85,34 @@ describe('native ingest ↔ HealthKitWorkoutPayload', () => {
   it('both sides agree on the Keychain key', () => {
     expect(SWIFT).toContain(`credentialKey = "${NATIVE_CREDENTIAL_KEY}"`)
     expect(NATIVE_CREDENTIAL_KEY).toBe('zonna_native_credential')
+  })
+
+  // The watermark is written by Swift and CLEARED by TypeScript on sign-out.
+  // A spelling drift would leave the old account's watermark in place and
+  // silently suppress a new account's recent runs on the native path only.
+  it('both sides agree on the App-Group watermark key', () => {
+    expect(SWIFT).toContain(`watermarkKey  = "${NATIVE_WATERMARK_KEY}"`)
+    expect(NATIVE_WATERMARK_KEY).toBe('zonna_native_last_ingest_at')
+  })
+
+  // 🔴 LOAD-BEARING, AND IT WAS WRONG ON THE FIRST CUT. The caller advances
+  // the watermark through CONTIGUOUS successes, which is only safe if runs
+  // arrive oldest-first. Sorted newest-first, one failure after one success
+  // stranded the older run below the watermark forever.
+  it('the workout query is sorted ASCENDING, which the watermark depends on', () => {
+    expect(SWIFT).toMatch(/HKSampleSortIdentifierEndDate,\s*ascending:\s*true/)
+    expect(SWIFT).not.toMatch(/HKSampleSortIdentifierEndDate,\s*ascending:\s*false/)
+  })
+
+  // Distance is OPTIONAL on the route and duration is REQUIRED
+  // (HK-ZERO-DISTANCE-RUN-01). A distance guard here would re-exclude indoor
+  // and treadmill runs on the native path only — invisibly, because the web
+  // sweep still posts them.
+  it('the Swift does not gate on distance', () => {
+    const body = SWIFT.split('static func shellPayload')[1]?.split('\n    }')[0] ?? ''
+    expect(body.length).toBeGreaterThan(50)
+    expect(body).toMatch(/guard workout\.duration > 0/)
+    expect(body).not.toMatch(/guard meters > 0/)
   })
 
   // The header the Swift sets must be the header the route reads, or the

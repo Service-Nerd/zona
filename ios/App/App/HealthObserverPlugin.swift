@@ -209,41 +209,39 @@ public class HealthObserverPlugin: CAPPlugin {
 
         // A background task assertion is what buys the time to finish the POST.
         // Without it this path is suspended exactly like the webview it replaces.
-        var bgTask: UIBackgroundTaskIdentifier = .invalid
-        bgTask = UIApplication.shared.beginBackgroundTask(withName: "zonna.native-ingest") {
-            // Expiry handler — iOS reclaiming the assertion.
-            if bgTask != .invalid { UIApplication.shared.endBackgroundTask(bgTask) }
-            bgTask = .invalid
-        }
+        //
+        // ⚠️ HELD IN A LOCKED HOLDER, NOT A CAPTURED `var`. The expiration
+        // handler and the Task's `defer` both end it, from different threads;
+        // a plain captured variable allows a double `endBackgroundTask` (and
+        // is an error once this target moves to the Swift 6 language mode).
+        let assertion = BackgroundAssertion(name: "zonna.native-ingest")
 
         Task { [weak self] in
             defer {
                 release()
-                if bgTask != .invalid {
-                    UIApplication.shared.endBackgroundTask(bgTask)
-                    bgTask = .invalid
-                }
+                assertion.end()
             }
             guard let self = self else { return }
             let since = self.ingestWatermark()
             let runs  = (try? await self.recentRunningWorkouts(since: since)) ?? []
             guard !runs.isEmpty else { return }
 
-            var newestPosted: Date?
+            // 🔴 OLDEST FIRST, AND THE WATERMARK ONLY EVER REACHES THE LAST
+            // CONTIGUOUS SUCCESS. The first cut sorted NEWEST first and broke
+            // on failure, which silently stranded runs: newest posts, the
+            // older one fails, the watermark lands on the newest end date and
+            // the failed run is now BELOW it — never offered again by this
+            // path. Same for `maxWorkoutsPerWake` truncation. Ascending plus
+            // a contiguous watermark is also exactly what the web sweep does
+            // ("post oldest first so partial failures still advance lastSync"),
+            // so the two producers agree about partial progress too.
+            var confirmedThrough: Date?
             for workout in runs {
                 guard let body = Self.shellPayload(for: workout) else { continue }
-                let ok = await Self.post(body, to: endpoint, token: cred.access_token)
-                if ok {
-                    if newestPosted == nil || workout.endDate > newestPosted! {
-                        newestPosted = workout.endDate
-                    }
-                } else {
-                    // Stop on first failure so the watermark cannot skip a run
-                    // that never landed.
-                    break
-                }
+                guard await Self.post(body, to: endpoint, token: cred.access_token) else { break }
+                confirmedThrough = workout.endDate
             }
-            if let newest = newestPosted { self.setIngestWatermark(newest) }
+            if let through = confirmedThrough { self.setIngestWatermark(through) }
         }
     }
 
@@ -264,7 +262,11 @@ public class HealthObserverPlugin: CAPPlugin {
 
     // ─── HealthKit read ─────────────────────────────────────────────────────
 
-    /// Running workouts that ENDED after `since`, newest first.
+    /// Running workouts that ENDED after `since`, OLDEST FIRST.
+    ///
+    /// Ascending is load-bearing, not cosmetic: the caller advances the
+    /// watermark through contiguous successes, which is only safe if the runs
+    /// arrive in time order.
     ///
     /// `.running` only, matching the web sweep's `workoutType: 'running'` —
     /// two producers must not disagree about what counts as a run.
@@ -276,7 +278,7 @@ public class HealthObserverPlugin: CAPPlugin {
                 sampleType: HKObjectType.workoutType(),
                 predicate: NSCompoundPredicate(andPredicateWithSubpredicates: [isRun, ended]),
                 limit: Self.maxWorkoutsPerWake,
-                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: true)]
             ) { _, samples, error in
                 if let error = error { continuation.resume(throwing: error); return }
                 continuation.resume(returning: (samples as? [HKWorkout]) ?? [])
@@ -295,9 +297,16 @@ public class HealthObserverPlugin: CAPPlugin {
         let iso = ISO8601DateFormatter()
         iso.formatOptions = [.withInternetDateTime]
         let meters = workout.totalDistance?.doubleValue(for: .meter()) ?? 0
-        // The server rejects a zero/absent distance (422), so skip rather than
-        // burn a request and record a failure for a workout we cannot describe.
-        guard meters > 0 else { return nil }
+        // 🔴 DO NOT GUARD ON DISTANCE. The first cut skipped `meters == 0`
+        // "because the server 422s it" — a STALE PREMISE I wrote: that
+        // rejection was removed by HK-ZERO-DISTANCE-RUN-01 (2026-10-08) after
+        // a real 32-minute Garmin treadmill run was refused on every single
+        // sweep, forever. Distance is OPTIONAL on that route and DURATION is
+        // required ("a run must be measurable on at least one axis, and time
+        // on feet is the one HealthKit always has"). Guarding here would have
+        // re-excluded the exact indoor cohort that ruling rescued, on the new
+        // fast path only — invisibly, because the web sweep still posts them.
+        guard workout.duration > 0 else { return nil }
         let payload: [String: Any] = [
             "uuid":                workout.uuid.uuidString,
             "startDate":           iso.string(from: workout.startDate),
@@ -331,5 +340,28 @@ public class HealthObserverPlugin: CAPPlugin {
         } catch {
             return false
         }
+    }
+}
+
+/// HK-NATIVE-BG-INGEST-01 — a `UIBackgroundTaskIdentifier` that cannot be
+/// ended twice. Both the expiration handler and the completing Task want to
+/// end it, from different threads.
+private final class BackgroundAssertion {
+    private let lock = NSLock()
+    private var id: UIBackgroundTaskIdentifier = .invalid
+
+    init(name: String) {
+        let started = UIApplication.shared.beginBackgroundTask(withName: name) { [weak self] in
+            self?.end()
+        }
+        lock.lock(); id = started; lock.unlock()
+    }
+
+    func end() {
+        lock.lock()
+        let taken = id
+        id = .invalid
+        lock.unlock()
+        if taken != .invalid { UIApplication.shared.endBackgroundTask(taken) }
     }
 }

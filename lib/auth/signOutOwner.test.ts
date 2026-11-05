@@ -28,6 +28,13 @@ const ALLOWED: Record<string, string> = {
     'to show the error rather than navigating away.',
 }
 
+/**
+ * Sign-outs with no browser session, App Group or Keychain to clear, so
+ * `clearNativeState` would be wrong there rather than missing. Named, because
+ * the alternative is a check that quietly skips whatever it cannot explain.
+ */
+const SERVER_ONLY = new Set(['app/auth/signout/route.ts'])
+
 function walk(dir: string): string[] {
   const out: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -123,7 +130,15 @@ describe('sign-out has one owner', () => {
       .split('\n')
       .filter(l => !l.trim().startsWith('*') && !l.trim().startsWith('//') && !l.trim().startsWith('/*'))
       .join('\n')
-    for (const rel of ['lib/auth/signOut.ts', 'components/dashboard/MeScreen.tsx']) {
+    // ⚠️ DERIVED FROM `ALLOWED`, NOT A HARDCODED PAIR. The first cut listed the
+    // two files by hand — in the very file whose reason for existing is that a
+    // THIRD sign-out appeared months later and nobody updated the list. Any
+    // future exemption is now covered the moment it is added above.
+    const browserPaths = Object.keys(ALLOWED)
+      .map(k => k.split('#')[0])
+      .filter(rel => !SERVER_ONLY.has(rel))
+    expect(browserPaths.length).toBeGreaterThanOrEqual(2)
+    for (const rel of browserPaths) {
       const src   = code(readFileSync(join(process.cwd(), rel), 'utf8'))
       const clear = src.indexOf('clearNativeState(')
       const out   = src.search(/\bauth\s*\.\s*signOut\s*\(/)
@@ -136,7 +151,14 @@ describe('sign-out has one owner', () => {
   // The server route is the one sign-out that must NOT clear native state:
   // it has no browser session, no App Group and no Keychain to reach.
   it('the server route is excluded by name, not by accident', () => {
-    const src = readFileSync(join(process.cwd(), 'app/auth/signout/route.ts'), 'utf8')
-    expect(src).not.toContain('clearNativeState')
+    for (const rel of Array.from(SERVER_ONLY)) {
+      const src = readFileSync(join(process.cwd(), rel), 'utf8')
+      expect(src, `${rel} should have no native state to clear`).not.toContain('clearNativeState')
+    }
+    // A SERVER_ONLY entry that is no longer exempted at all is a stale
+    // exclusion, which is the same hole as a stale ALLOWED entry.
+    for (const rel of Array.from(SERVER_ONLY)) {
+      expect(Object.keys(ALLOWED).some(k => k.split('#')[0] === rel), `${rel} is not in ALLOWED`).toBe(true)
+    }
   })
 })

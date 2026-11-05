@@ -45,6 +45,20 @@ export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // HK-NATIVE-BG-INGEST-01 — which producer is this?
+  //
+  // ⚠️ READ ONCE, AT THE TOP, AND RECORDED AT EVERY EXIT. The first cut put
+  // the event on the full-success tail only, so `deduped`, `ignored`, 422 and
+  // 500 recorded nothing — and this event is the ONLY instrument that
+  // separates "the native path works" from "the native path never fires".
+  // An instrument that is silent on four of five outcomes cannot answer that:
+  // zero rows would have been indistinguishable from the feature being dead.
+  const isNativeIngest = req.headers.get('X-Ingest-Path') === 'native'
+  const noteNative = async (result: string, detail: Record<string, unknown> = {}) => {
+    if (!isNativeIngest) return
+    await recordOpsEvent('health_native_ingest', { result, ...detail }, user.id)
+  }
+
   let body: unknown
   try {
     body = await req.json()
@@ -144,9 +158,11 @@ export async function POST(req: NextRequest) {
       has_start:        payload.startDate != null,
       source_name:      payload.sourceName ?? null,
     }, user.id)
+    await noteNative('rejected_422', { missing: missing.join(',') })
     return NextResponse.json({ error: `missing or zero: ${missing.join(', ')}` }, { status: 422 })
   }
   if (payload.workoutType !== 'running') {
+    await noteNative('ignored_non_run', { workout_type: payload.workoutType ?? null })
     return NextResponse.json({ status: 'ignored', reason: 'non-run workout' })
   }
 
@@ -185,6 +201,7 @@ export async function POST(req: NextRequest) {
           dedup.withinFreshWindow === false))
       }
     }
+    await noteNative('deduped', { uuid: payload.uuid })
     return NextResponse.json({ status: 'deduped', canonical_id: dedup.canonicalId })
   }
 
@@ -209,10 +226,18 @@ export async function POST(req: NextRequest) {
   // On resync, preserve whatever was set originally (Supabase upsert doesn't
   // expose a per-column UPDATE filter, so we set the field explicitly to its
   // existing value to make the preservation intent explicit).
+  // 🔴 HK-NATIVE-BG-INGEST-01 — A NATIVE SHELL INSERT MUST NOT ANSWER THIS
+  // QUESTION. The column means "did HR exist when we first queried it"
+  // (HR-SYNC-01 instrumentation). The native fast path deliberately does not
+  // read HR at all, so for those rows the honest value is **null (unknown)**,
+  // not `false`. Writing `false` would have recorded "HealthKit had no HR" for
+  // every natively-ingested run — absence written as a value, and it would
+  // have quietly poisoned the one column that measures how often Apple Watch
+  // HR is late, right as the native path became the FIRST insert for most runs.
   const rowToWrite = {
     ...row,
     hr_present_at_first_query: isFirstInsert
-      ? (row.avg_hr != null)
+      ? (isNativeIngest ? null : row.avg_hr != null)
       : existingAct!.hr_present_at_first_query ?? null,
   }
 
@@ -244,6 +269,7 @@ export async function POST(req: NextRequest) {
       message: error.message.slice(0, 500),
       uuid:    payload.uuid,
     }, userId)
+    await noteNative('persist_failed', { uuid: payload.uuid })
     return NextResponse.json({ error: 'Persist failed' }, { status: 500 })
   }
 
@@ -318,22 +344,16 @@ export async function POST(req: NextRequest) {
     ).catch(err => console.error('[health-ingest] auto-analyse failed', err))
   )
 
-  // HK-NATIVE-BG-INGEST-01 — telemetry for the native path, SERVER-SIDE.
-  //
-  // ⚠️ Deliberately not a native ops POST: that would be a second request that
-  // can be lost to the same process suspension this feature exists to route
-  // around, and telemetry blind to its own failure is worse than none.
-  //
-  // ⚠️ Recorded only when the header says `native`. The web sweep is already
-  // measured end-to-end by `health_sync_swept`, so this adds zero rows for it
-  // and the two measurements cannot double-count.
-  if (req.headers.get('X-Ingest-Path') === 'native') {
-    await recordOpsEvent('health_native_ingest', {
-      uuid:        payload.uuid,
-      first_insert: isFirstInsert,
-      hr_present:  row.avg_hr != null,
-    }, userId)
-  }
+  // Telemetry is SERVER-SIDE on purpose: a native ops POST would be a second
+  // request that can be lost to the same process suspension this feature
+  // routes around, and telemetry blind to its own failure is worse than none.
+  // Recorded only for the native path — the web sweep is already measured end
+  // to end by `health_sync_swept`, so the two cannot double-count.
+  await noteNative('ok', {
+    uuid:         payload.uuid,
+    first_insert: isFirstInsert,
+    hr_present:   row.avg_hr != null,
+  })
 
   return NextResponse.json({ status: 'ok', activity_id: row.apple_health_uuid })
 }

@@ -79,14 +79,19 @@ export default function CapacitorBoot() {
     // `clearNativeState()` in lib/auth/signOut.ts owns the clear, and a publish
     // on that event would race it.
     let removeCredentialListener: (() => void) | undefined
+    // Set by the cleanup. The subscription is created after two awaits, so an
+    // unmount can land first — without this the listener outlives the effect.
+    let credentialCancelled = false
     void (async () => {
       try {
         const { publishNativeCredential } = await import('@/lib/health/nativeCredential')
         await publishNativeCredential()
+        if (credentialCancelled) return
         const { data } = createClient().auth.onAuthStateChange((event) => {
           if (event === 'SIGNED_OUT') return
           void publishNativeCredential()
         })
+        if (credentialCancelled) { data.subscription.unsubscribe(); return }
         removeCredentialListener = () => data.subscription.unsubscribe()
       } catch (err) {
         // eslint-disable-next-line no-console
@@ -271,7 +276,7 @@ export default function CapacitorBoot() {
       }
     })()
 
-    return () => { removeUrlListener?.(); removePushListener?.(); removePushReceivedListener?.(); removeAppStateListener?.(); removeCredentialListener?.() }
+    return () => { removeUrlListener?.(); removePushListener?.(); removePushReceivedListener?.(); removeAppStateListener?.(); credentialCancelled = true; removeCredentialListener?.() }
   }, [router])
 
   return null
