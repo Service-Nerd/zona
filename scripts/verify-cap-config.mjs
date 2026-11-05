@@ -63,6 +63,26 @@ const CONFIG_PATH = process.env.CAP_CONFIG_PATH
 const failures = []
 const notes = []
 
+// 🔴 THE CLI'S `loadConfig()` READS `process.cwd()`, SO THIS SCRIPT USED TO
+// PASS OR FAIL DEPENDING ON WHERE IT WAS RUN FROM. Xcode runs a build phase
+// with cwd = the .xcodeproj's directory (ios/App), which holds no
+// capacitor.config.ts and no package.json, so `loadExtConfig` returned `{}`
+// — and an EMPTY config is not an error to it. Measured from ios/App: arm 2
+// reported all 7 top-level keys as "PRESENT in the generated file but not in
+// capacitor.config.ts", and arm 3 computed "0 installed npm plugin(s)" and
+// flagged all ten real classes as UNEXPECTED. The build phase would have
+// blocked every iOS build with a confident "stale or hand-edited" verdict and
+// a fix instruction that could not work.
+//
+// ⚠️ It is fixed HERE rather than in the shell wrapper, because the wrapper is
+// one caller of four and the next one will not remember either. Fixing the
+// caller would have fixed the caller.
+//
+// ⚠️ AND THE SILENT HALF IS THE DANGEROUS HALF: an absent config read as "the
+// config declares nothing" is absence written as a value. The guard below
+// refuses outright rather than reporting it as drift.
+process.chdir(ROOT)
+
 // ── read the generated file ─────────────────────────────────────────────────
 let config
 try {
@@ -93,13 +113,14 @@ if (missingLocal.length) {
 let cli = null
 let cliError = null
 try {
-  const [{ loadConfig }, { getPlugins }, { getIOSPlugins }, iosPlugin] = await Promise.all([
+  const [{ loadConfig }, { getPlugins }, { getIOSPlugins }, iosPlugin, { getCordovaPlugins }] = await Promise.all([
     import('@capacitor/cli/dist/config.js'),
     import('@capacitor/cli/dist/plugin.js'),
     import('@capacitor/cli/dist/ios/common.js'),
     import('@capacitor/cli/dist/util/iosplugin.js'),
+    import('@capacitor/cli/dist/cordova.js'),
   ])
-  cli = { loadConfig, getPlugins, getIOSPlugins, ...iosPlugin }
+  cli = { loadConfig, getPlugins, getIOSPlugins, getCordovaPlugins, ...iosPlugin }
 } catch (err) {
   cliError = err
 }
@@ -122,6 +143,25 @@ if (!cli) {
     ])
   }
 
+  if (resolved && resolved.app?.rootDir !== ROOT) {
+    failures.push([
+      'ARMS 2 and 3 — UNVERIFIED. The Capacitor CLI resolved a different project root.',
+      `  expected ${ROOT}`,
+      `  resolved ${resolved.app?.rootDir ?? '(none)'}`,
+      '  An empty or foreign config would be compared as DRIFT, which is absence written as a value.',
+      '  Refusing instead. This is the ios/App cwd defect; it should be impossible now.',
+    ])
+    resolved = null
+  }
+
+  if (resolved && !resolved.app?.extConfig?.appId) {
+    failures.push([
+      'ARMS 2 and 3 — UNVERIFIED. capacitor.config.ts loaded but carries no appId.',
+      '  That is what an unreadable or empty ext-config looks like, not what drift looks like.',
+    ])
+    resolved = null
+  }
+
   if (resolved) {
     // ── arm 2: field-for-field parity with capacitor.config.ts ────────────
     // `cap copy` writes app.extConfig verbatim and then stamps
@@ -129,7 +169,13 @@ if (!cli) {
     // one key. Compared in BOTH directions: a key the CLI started emitting is
     // as interesting as one that went missing.
     const { packageClassList: _ignored, ...onDisk } = config
-    const diffs = deepDiff(resolved.app.extConfig, onDisk, '')
+    // `cap copy` deletes ios.buildOptions / android.buildOptions before
+    // writing the JSON (cli/dist/tasks/copy.js), because they carry signing
+    // config for `cap build` and have no business in the app bundle. Comparing
+    // extConfig verbatim would fail a CORRECTLY synced file the moment anyone
+    // declares them. Mirror the producer rather than the source.
+    const expectedFields = stripBuildOptions(resolved.app.extConfig)
+    const diffs = deepDiff(expectedFields, onDisk, '')
     if (diffs.length) {
       failures.push([
         `ARM 2 — ${diffs.length} field(s) differ from capacitor.config.ts:`,
@@ -145,6 +191,11 @@ if (!cli) {
       const iosPlugins = await cli.getIOSPlugins(await cli.getPlugins(resolved, 'ios'))
       const npmClasses = await cli.findPluginClasses(await cli.getPluginFiles(iosPlugins))
       const expected = new Set([...npmClasses, ...LOCAL_IOS_PLUGINS])
+      // The producer appends CDVPlugin whenever ANY Cordova plugin is
+      // installed (generateIOSPackageJSON). None are today; without this, the
+      // day one arrives a freshly synced config fails as UNEXPECTED.
+      const cordova = await cli.getCordovaPlugins(resolved, 'ios')
+      if (cordova.length > 0) expected.add('CDVPlugin')
       const actual = new Set(list)
       const missing = [...expected].filter(c => !actual.has(c))
       const unexpected = [...actual].filter(c => !expected.has(c))
@@ -218,6 +269,18 @@ function deepDiff(expected, actual, path) {
     return out
   }
   if (expected !== actual) out.push(`${path}: expected ${j(expected)}, found ${j(actual)}`)
+  return out
+}
+
+// Mirrors cap copy's own deletion. Does not mutate the CLI's object.
+function stripBuildOptions(ext) {
+  const out = { ...ext }
+  for (const platform of ['ios', 'android']) {
+    if (out[platform] && typeof out[platform] === 'object' && 'buildOptions' in out[platform]) {
+      const { buildOptions: _dropped, ...rest } = out[platform]
+      out[platform] = rest
+    }
+  }
   return out
 }
 

@@ -50,7 +50,7 @@ mutate() {
     const c = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'))
     $expr
     fs.writeFileSync(process.argv[2], JSON.stringify(c, null, '\t') + '\n')
-  " "$REAL" "$out" || { echo "  !! could not build fixture $name"; return 1; }
+  " "$REAL" "$out" || { echo "  !! could not build fixture $name" >&2; return 1; }
   echo "$out"
 }
 
@@ -121,6 +121,35 @@ expect "a key present on disk and not in the .ts (reverse direction)" \
   "$(mutate extra-key "c.android = { path: 'android' }")" 1 "not in capacitor.config.ts"
 expect "allowNavigation reordered — a verbatim copy would not be" \
   "$(mutate reorder "c.server.allowNavigation = c.server.allowNavigation.slice().reverse()")" 1 "server.allowNavigation"
+
+echo
+echo "must PASS — from the directory Xcode actually runs in:"
+# 🔴 THE REVIEW FOUND THIS AND THE ORIGINAL VERIFICATION MISSED IT. The CLI's
+# loadConfig() reads process.cwd(); Xcode runs a build phase with cwd =
+# ios/App, which has no capacitor.config.ts, so it returned {} and arms 2 and 3
+# reported every real field and every real class as drift. A build phase that
+# blocks every build is worse than no build phase.
+cwd_out="$(cd "$ROOT/ios/App" && node "$SCRIPT" 2>&1)"
+cwd_rc=$?
+if [ "$cwd_rc" -eq 0 ]; then
+  echo "  ✓ cwd = ios/App (the Xcode build-phase cwd)"
+  pass=$((pass + 1))
+else
+  echo "  ✗ cwd = ios/App (the Xcode build-phase cwd) — exit $cwd_rc, expected 0"
+  echo "$cwd_out" | sed 's/^/      /'
+  fail=$((fail + 1))
+fi
+
+wrap_out="$(cd "$ROOT/ios/App" && env -i HOME="$HOME" PATH="/usr/bin:/bin" SRCROOT="$PWD" sh "$ROOT/scripts/xcode-verify-cap-config.sh" 2>&1)"
+wrap_rc=$?
+if [ "$wrap_rc" -eq 0 ]; then
+  echo "  ✓ the Xcode wrapper, stripped environment, cwd = ios/App"
+  pass=$((pass + 1))
+else
+  echo "  ✗ the Xcode wrapper, stripped environment, cwd = ios/App — exit $wrap_rc, expected 0"
+  echo "$wrap_out" | sed 's/^/      /'
+  fail=$((fail + 1))
+fi
 
 echo
 echo "must FAIL — unreadable:"

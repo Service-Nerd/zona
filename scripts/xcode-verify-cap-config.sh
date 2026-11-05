@@ -20,6 +20,16 @@ set -u
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 
+# Xcode runs build phases with cwd = the .xcodeproj's directory. The node
+# script makes itself cwd-independent (it chdirs to the repo root, and refuses
+# outright if the CLI resolves a different project root), so this is belt and
+# braces rather than the fix — but a build phase is exactly the place to not
+# rely on the other end having got it right.
+cd "$REPO" || {
+  echo "error: [verify-cap-config] cannot cd to $REPO"
+  exit 1
+}
+
 find_node() {
   # 1. $NODE_BINARY — the convention Capacitor and React Native build phases use
   if [ -n "${NODE_BINARY:-}" ] && [ -x "$NODE_BINARY" ]; then
