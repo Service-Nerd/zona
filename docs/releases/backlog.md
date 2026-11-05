@@ -1400,7 +1400,13 @@ Filed 2026-10-25. The only remaining route to *link without opening the app*: `H
 
 **So the native rewrite addresses the dominant cause directly**: a native `URLSession` POST is not subject to webview suspension. That is a stronger argument than the one the item was filed on.
 
-⚠️ **TWO THINGS THIS DOES NOT MEASURE, both by construction.** (a) **The force-quit case is invisible here** — no JS runtime means no `health_sync_swept` row at all, so these numbers say nothing about a killed app and cannot be made to. (b) **Whether the 331 losses are PERMANENT or merely DELAYED** — sweeps recur constantly (6,090 of them), so the same workout is probably re-found and eventually posted. Before sizing this, measure *time-to-link* per workout, not loss-per-sweep: if the 18.5% all land on the next wake, this is a latency defect and the native build buys minutes, not runs. **That is the number to get next, and it is a query, not a build.**
+⚠️ **TWO THINGS THIS DOES NOT MEASURE, both by construction.** (a) **The force-quit case is invisible here** — no JS runtime means no `health_sync_swept` row at all, so these numbers say nothing about a killed app and cannot be made to. (b) **Whether the 331 losses are PERMANENT or merely DELAYED** — sweeps recur constantly (6,090 of them), so the same workout is probably re-found and eventually posted. Before sizing this, measure *time-to-link* per workout, not loss-per-sweep: if the 18.5% all land on the next wake, this is a latency defect and the native build buys minutes, not runs. ✅ **GOT IT, 2026-11-05 — DELAY, NOT LOSS, AND THE DELAY IS THE DEFECT.** Time-to-link per workout, from run END to row insert, `source='apple_health'`, since 2026-10-25, **excluding backfill** (only runs that started after the user's own first ingest — the raw figure was contaminated: p90 9.8 days, max 26 days, which is history being imported, not latency):
+
+| workouts | users | median | ≤15 min | ≤1 hr | >6 hrs | p90 |
+|---|---|---|---|---|---|---|
+| 60 | 13 | **2h 15m** | **22%** | 35% | **33%** | 4.1 days |
+
+So the 331 lost sweeps do get re-found — nothing is permanently lost — but **only 22% of runs are linked within a quarter of an hour, and a third take more than six hours.** For the question the runner is actually asking (*did my run land?*) a six-hour delay is a failure. **The native build buys hours, not minutes: build it.** ⚠️ The p90 of four days is real, not contamination — a run does not link until the app comes back, which is the same defect seen from the other end.
 
 🔻 **Cannot ride the 2026-11-05 config build** — this is unwritten native Swift, not a ready change. It is the strongest candidate for the *next* binary after it.
 
