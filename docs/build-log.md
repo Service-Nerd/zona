@@ -5,6 +5,22 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-11-05 — NATIVE-BATCH-01 · I answered "what needs a build?" from a doc instead of from the sweep
+**Shipped:** a re-measured native release batch — what the next Xcode build carries, every native surface dated from git, and the gate on the HealthKit background-ingest item discharged with production numbers.
+
+**Dev learning:** `ops_events.health_sync_swept` says the background HealthKit wake **does** fire and **does** ingest: 6,090 hidden `observer_*` sweeps, 21 users, 1,462 workouts posted. The filed item's premise was that it never fires. What is actually wrong is reliability, and it is one cause rather than a spread: `no-response: Load failed`, 316 of 331 losses, which is WebKit's error when iOS suspends a backgrounded WKWebView mid-`fetch`. That makes the native-`URLSession` rewrite a better idea than the argument it was filed on. Two things the data cannot say, both structurally: a force-quit leaves no row at all, because there is no JS runtime to write one; and loss-per-sweep cannot tell permanent loss from delay, when 6,090 sweeps keep re-finding the same workout. The right denominator is time-to-link per workout.
+
+**Product/creator learning:** `STRAVA-APP-INACTIVE-01` was closed in September with "we are not using Strava", which quietly made HealthKit the only auto-link route there is. A decision to drop a provider also promotes whatever is left to load-bearing, and nothing re-reads the items that depended on it.
+
+**AI-building learning:** I ran a correct sweep and then wrote the conclusion from a different source. The filter surfaced `HK-NATIVE-BG-INGEST-01` with the words "New binary" in it; the summary listed four candidates taken from `NATIVE-BATCH-01`'s own table, which was written before that item existed. **I had the measurement and used the doc.** The repo already has a name for this — a checker that shares the producer's list is blind to that list — and I applied it to prose without noticing. The founder's correction was one sentence and it was right both times today.
+
+**The honest bit:** I also guessed a jsonb key. I queried `detail->>'inserted'` and got 0 across every row, which reads exactly like "the background path has never ingested anything" — the precise opposite of the truth, and a conclusion I would have reported. `jsonb_object_keys` took ten seconds and gave the real names. A zero from a key that does not exist is indistinguishable from a measured zero.
+
+**Hook material:** the item said the background sync never fires. The database said it fired 6,090 times and ingested 1,462 runs. Both halves of my first answer to "what needs a build?" were wrong: the count (four, actually five) and the reason it mattered.
+
+**Postable?:** yes — "a zero from a key that does not exist looks exactly like a measured zero" is the sharpest line, and the build-vs-doc population error is the better story.
+
+---
 ## 2026-11-05 — CAP-SYNC-NODE-FATAL-01 + CAP-CONFIG-DRIFT-GATE-01 · the command that keeps a file correct had not run since August
 **Shipped:** `.nvmrc` plus a preflight so `npm run sync:ios` refuses to start on a Node the Capacitor CLI rejects, and three real arms on the gate that is supposed to notice when the generated iOS config is wrong.
 
