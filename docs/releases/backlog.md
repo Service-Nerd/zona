@@ -27,6 +27,62 @@ already decided what it is.
 
 ---
 
+### 🧭 `SITE-CURRENCY-REVIEW-01` follow-ons — Design Board 2026-11-05
+
+Register row: `docs/canonical/design-rulings.md` (2026-11-05). Sitting:
+`docs/decisions/site-currency-review-2026-11-05.md`. Four SHIP, one DON'T SHIP, one INSUFFICIENT EVIDENCE.
+
+⚠️ **Nothing in that sitting was rendered** — no browser, no viewport, no device, no bundle number. Re-measure
+before planning against any number below (an item is a snapshot of the code on the day it was written).
+
+- ⚙️ **NO BOARD** `SITE-MEASURE-THIRD-02` — **760 survives in seven files after the ruling retired it.**
+  `SECTION_MAX = 760` in `/about`, `/charity-runners`, `/plans`, `/pricing`, `ArticlePage`, `ArticleHub`,
+  `PlanPage`; only `app/page.tsx` was converted. `--measure-read` is 720px, so the site has two reading measures
+  by page. Execute the existing ruling; no new decision.
+- ⚙️ **NO BOARD** `SITE-SPACE-GATE-02` — **the spacing gate governs one live declaration of 274.** Widen the regex
+  to the `padding:` / `margin:` shorthand and left/right properties, widen the surface list to every marketing page
+  (`/support`, `/privacy`, `/terms`, `/guides`, `/comparisons` are outside it today), then sweep what it can then
+  see. The board's 4px shift limit is intact; anything needing more than 4px returns to the board rather than being
+  swept silently.
+- ⚙️ **NO BOARD** `SITE-TYPESCALE-POP-01` — `typeScale.test.ts`'s SURFACES hand-lists **2 of the 8** comparison and
+  guide shim pages. Harmless today (the shims carry zero `fontSize`) and it is the same hand-listed population
+  CLAUDE.md names; `noEmDash` already derives those slugs from the catalogue.
+- 🧭 **DESIGN BOARD — RULED SHIP** `SITE-SESSION-STEPS-01` — **plan pages draw a 2026-09 session structure.**
+  `PlanPage`'s local `MainSet` is one `--bg-soft` inset, a 2px rail and action-then-target rows; the app owner is
+  `components/shared/SessionSteps.tsx` (per-phase cards, numbered steps on a connector, silhouette, zone range,
+  run/walk icons, block totals). Content cannot drift (grammar comes from the real `stepParts()`); presentation
+  already has. `realComponents.test.ts` pins the homepage only. Zero client cost: the plan pages are `revalidate`
+  server pages.
+- 🧭 **DESIGN BOARD — RULED SHIP** `PRICING-FREE-GATE-02` — **an arm in the direction the free tier rots in.** Every
+  `FREE_ALWAYS` gate must reach `FREE_FEATURES` or carry a stated omission. **No new copy on the page in this
+  wave** (Sierra's condition).
+- 🧭 **DESIGN BOARD — RULED SHIP WITH AMENDMENT** `SITE-EFFORT-RECORD-01` — **the marketing Coach still is
+  2026-10-02's.** Put `EffortRecord` on the site, server-rendered from `demoSurfaces`, inside `ProductStill`, in
+  the mechanism band, **replacing the "Your zones, on Coach" still rather than joining it** (one block, chosen).
+  **Delete the standalone race-arc card from `CoachStill`** — that arc now lives inside `RaceTimesCard`, so the
+  website carries a card that exists nowhere in the product. `TrendCard`, `ShareControl`, `LoadHistory`,
+  `WeekFacts` explicitly **not** this wave.
+
+**Filed by the sitting, not built:**
+
+- 🏃 **COACHING BOARD first, then 🧭** `SITE-STAGED-PLAN-01` — `NO-RUNNER-TURNED-AWAY-01` has been live since
+  2026-10-25 and appears nowhere on the site. 🔴 **DON'T SHIP as a sentence about our own generosity** — that is
+  the W-03 commitments block, killed. The surviving form is the staged plan **rendered on `/plans`** for a
+  from-nothing runner, engine-printed. Routes to the Coaching Board first: it is a claim about what the engine will
+  build for an untrained runner (W-03 precedent).
+- 🧭 **DESIGN BOARD** `SITE-FRAME-TAXONOMY-01` — Collins, filed after losing placement: **six ways to frame a
+  product visual on one site** (`ProductStill`, `PhoneShell`, `TabbedPhone`, `PhoneFrame`, `HeroTrace`, `HrTrace`).
+  Taxonomy question, not this sitting's.
+- 🧭 **DESIGN BOARD, blocked** — whether `TrendCard` belongs on the site at all. Two blockers, both named:
+  Sierra's transfer objection (*"138 to 154 teaches no skill"*) is unresolved, and it is `'use client'` with 8
+  hooks, so **nobody may decide it without a bundle number** (`clientBundleBoundary.test.ts` exists because this
+  page silently went 110 kB → 251 kB twice).
+- ⚠️ **Recurring, not fixable here** — placement on the marketing page cannot be ruled on evidence while
+  `SITE-SCROLL-DEPTH-01` stays blocked on there being no site analytics at all (INSUFFICIENT EVIDENCE since
+  2026-09-28, re-affirmed 2026-10-05). Collins lost placement to that gap twice now.
+
+---
+
 ### ✅ `WEEKLY-REPORT-SUPERSEDED-WRITE-01` — SHIPPED AND IN EFFECT 2026-11-02 (migration applied and independently verified)
 
 Code shipped, migration **applied by the founder 2026-11-02 and verified from here, both halves**:

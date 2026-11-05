@@ -5811,3 +5811,93 @@ a trial runs. **Collins lost, recorded:** effort record under Kit's read; order 
 Filed: `A11Y-REDUCED-MOTION-01`, `TYPESCALE-DECIMAL-GATE-01`. Check: `effortRecord.markup.test.ts` (cap, falsified),
 `kitReceipts.markup.test.ts`. Sitting: `docs/decisions/coach-signoff-2026-10-31.md`.
 
+
+## 🧭 2026-11-05 — `SITE-CURRENCY-REVIEW-01`: is the website current with the product? · **8 findings, 4 SHIP, 1 DON'T SHIP, 1 INSUFFICIENT EVIDENCE**
+
+Founder: *"full review of all pages... are they up to date with current styling and feature narrative and screens"*, strength
+excluded, *"take to design board to see if we can better show them off"*. Sitting:
+`docs/decisions/site-currency-review-2026-11-05.md`.
+
+🔴 **TWO OF THE EIGHT FINDINGS WERE FOUND BY FALSIFYING A GREEN CHECK, AND BOTH CHECKS WERE THIS BOARD'S OWN.**
+`SITE-WAVE-4` shipped the spacing sweep with a gate whose regex reads only single-value
+`marginTop|marginBottom|gap|rowGap|columnGap|paddingTop|paddingBottom` — so `padding: '18px 20px'` and
+`margin: '0 0 18px'`, the form spacing is actually written in, are invisible to it. Measured: **18 declarations it can
+see (17 of them ≤5px and therefore exempt, 1 the `ALLOWED` 56px) against 256 it cannot, carrying 187 off-scale values
+>5px** against the ruled scale 4/8/12/16/24/32/48, led by `18px ×37` and `20px ×36`; 70 of the invisible declarations
+sit on files outside its surface list entirely (`/support`, `/privacy`, `/terms`, `/guides`, `/comparisons`).
+**The gate governs ONE live declaration.** Falsified: `padding: '19px 21px'` on a pricing card, all three arms green.
+✋ **Silvanto DECLINED HIS OWN VETO and named the distinction:** `SITE-TYPE-01` found 170 hand-typed sizes and *gated*
+them; `SITE-WAVE-4` found 19 real spacing decisions, swept them, and shipped a hollow instrument. **The rule is right;
+the check is empty. That is not a palette or type regression, so it is not a veto** — his veto remains untested.
+Second falsification: deleting the whole `plan_difficulty_band` row from `FREE_FEATURES` leaves both pricing gates
+green, because `pricing.test.ts` has four arms in the paid direction and one that stops us OVERclaiming free, and
+**none in the direction the free tier actually rots in.**
+
+🔴 **`SITE-MEASURE-THIRD-01` WAS RETIRED AND NEVER EXECUTED.** 760 survives as `SECTION_MAX = 760` in **seven files**
+(`/about`, `/charity-runners`, `/plans`, `/pricing`, `ArticlePage`, `ArticleHub`, `PlanPage`); only `app/page.tsx` was
+converted. `--measure-read` is 720px, so the site has **two reading measures depending on which page you are on**, and
+✋ Silvanto: *"40px on a 1440 viewport is the 1.02× H1:H2 step again — nobody will ever see it, the page will just never
+quite settle."* A retired number that nobody deleted is a ruling that did not happen.
+
+⚠️ **THE SCAN DECIDED THREE OF THE EIGHT BEFORE A SEAT SPOKE, and it decided them against the proposal.** *"Website: a
+list of the eight things we look for"* is **DON'T SHIP, PERMANENT** and *"may not return as a list with better
+wording"*; the three-card proof band is DEAD ON MEASUREMENT and *"cannot return as 'we just need better numbers'"*; the
+W-03 commitments block is killed because *"a block of promises is the weakest instrument against an evidence
+question"*. **Findings 7 and 8 arrived as a longer free-tier list and a sentence about our own generosity, which is
+that artefact twice.** The discriminating rule is also already on the record, from the same sitting that killed the
+list: *"a competitor can write 'we adapt your plan' this afternoon; what they cannot do is run their own engine on the
+page and print the sentence it produces."* **Engine, not diagram.** So 7 ships as a GATE with no new copy, and 8 is
+refused as filed and re-filed as the staged plan rendering on `/plans`, which needs the Coaching Board (W-03).
+
+⚠️ **One phantom conflict checked and REJECTED.** `SITE-WAVE-3` (KILLED on the founder's device verdict) kills *the
+site adopting the app's session-colour language*. It does not kill *a product component that carries its own colours
+inside a frame* — `ZoneRings` and `SessionCard` already render at full session colour inside `ProductStill`, shipped,
+under this same register. `EffortRecord` is a component, not a language.
+
+| Finding | Ruling |
+|---|---|
+| **1. `SITE-MEASURE-THIRD-02` — 760 in seven files** | ⚙️ **NO BOARD, defect.** Execute the ruling that already exists |
+| **2. `SITE-SPACE-GATE-02` — the hollow spacing gate** | ⚙️ **NO BOARD, hollow check.** Widen the regex to the shorthand and the surface list to every marketing page; sweep what it then sees; the board's 4px limit is intact and anything needing more returns here |
+| **3. `SITE-TYPESCALE-POP-01` — 2 of 8 shim pages hand-listed** | ⚙️ **NO BOARD.** Derive the slugs from the catalogue, as `noEmDash` already does. Harmless today (the shims carry zero `fontSize`); it is the same hand-listed population |
+| **4. Three of eight screens shown** | 🟡 **INSUFFICIENT EVIDENCE, and the wrong frame.** More screens is not the goal and no analytics exist to rank them (`SITE-SCROLL-DEPTH-01`, blocked since 2026-09-28). Subsumed by 5 and 6 |
+| **5. `SITE-EFFORT-RECORD-01` — the Coach still is 2026-10-02's** | 🟢 **SHIP WITH AMENDMENT.** `EffortRecord` only, server-rendered from `demoSurfaces`, inside `ProductStill`, in the mechanism band — **it REPLACES the "Your zones, on Coach" still rather than joining it.** ✋ *"The Coach screen's documented failure was seven blocks and no subject; porting five more onto a page with eighteen sections reproduces it where attention is scarcest. One block, chosen, given room."* **Also DELETE the standalone race-arc card from `CoachStill`** — in the app that arc now lives inside `RaceTimesCard`, so the website has a card that exists nowhere in the product. `TrendCard`, `ShareControl`, `LoadHistory`, `WeekFacts`: **not this wave** |
+| **6. `SITE-SESSION-STEPS-01` — plan pages draw a 2026-09 session** | 🟢 **SHIP.** 🎓 Sierra: *"nine complete plans, free, no signup, and the structure a reader meets is one grey inset with action-then-target rows. The app teaches a runner to READ a session. That is perceptual expertise we have built and are not transferring, on the surface we give away."* Mount the real `SessionSteps`, retire the local `MainSet` |
+| **7. `PRICING-FREE-GATE-02` — the free column rots silently** | 🟢 **SHIP AS A GATE, NOT AS COPY.** An arm in the other direction. **The page gains no rows in this wave** (Sierra) |
+| **8. `NO-RUNNER-TURNED-AWAY` on the site** | 🔴 **DON'T SHIP AS FILED** — it is the commitments block. 🟡 Re-filed as `SITE-STAGED-PLAN-01`: render the staged plan on `/plans` for a from-nothing runner, engine-printed. **Routes to the Coaching Board first** (W-03: a claim about what the engine will build) |
+
+📐 **The cost split was the decision, and it is measured, not judged.** `EffortRecord`, `LoadHistory`, `LoadShape`,
+`WeekFacts`, `SessionSteps`, `SessionSilhouette` are **server components with zero hooks** — they mount on a
+server-rendered marketing page directly, which is the mechanism `demoSurfaces.ts` exists for, and `EffortRecord`'s
+whole prop surface is `{ runs, weeks }` with its own `effortHeadline()` exported. **`TrendCard` is `'use client'` with
+8 hooks and `ShareControl` with 4**, and `clientBundleBoundary.test.ts` exists because this repo paid **110 kB → 251
+kB twice**, silently, for exactly that kind of edge on exactly this page. 📱 Wroblewski: *"anything client-side here is
+INSUFFICIENT EVIDENCE until somebody runs the bundle number, not a judgement call."* ⚠️ **And the cheap fix and the
+valuable fix turned out to be the same fix**, which almost never happens: the plan pages are `revalidate` server
+pages, so finding 6 costs nothing in the client bundle.
+
+**⚡ Recorded disagreements, three, none synthesised.**
+🎓 **Sierra vs 🎪 Collins on the HR trend** — *"138 to 154 is a thing we noticed; it teaches no skill"* against *"a
+measured change in a named person is the hardest evidence we own."* **Unresolved**; the client-boundary measurement
+blocks it regardless. Moves Sierra: evidence a reader changes behaviour from a trend sentence. Moves Collins: an
+expensive bundle number.
+🎪 **Collins LOST on placement, recorded.** He argued the effort record belongs in the hero, not *"behind two taps and
+a device bezel"* — *"the thing a competitor cannot copy is in the third position inside a mockup inside a tab."* The
+chair held the mechanism band on the same ground he lost it on the app ten days ago: no placement data exists. ⚠️
+**Here the blocker is permanent until `SITE-SCROLL-DEPTH-01` unblocks, so this will recur.** He accepted it and filed
+the taxonomy observation instead: **six ways to frame a product visual on one site** (`ProductStill`, `PhoneShell`,
+`TabbedPhone`, `PhoneFrame`, `HeroTrace`, `HrTrace`) → `SITE-FRAME-TAXONOMY-01`.
+🎓 **Sierra vs the room on 7 and 8** — she holds that *any* version of these is the killed list. The chair accepted it
+for both as filed. **Her objection to a future "free tier, now with more rows" stands and is NOT discharged.**
+
+✅ **Stated so it is not re-fixed:** `/plans` runs the real `generateRulePlan` at build time and takes step grammar
+from the real `stepParts()`; the homepage adaptive block runs the real `checkAdjustmentTriggers`; the coach note is
+found by its producer and not by a word; the Strava copy is already honest and minimal (*"Strava is optional. Apple
+Health is enough."*), which matters because the Strava application is currently **Inactive**; nine plans is read off
+`plans.ts` and is correct; every page is reachable from the header or the footer.
+
+⚠️ **WHAT THIS SITTING DOES NOT SETTLE, AND THE LIMIT IS LARGER THAN USUAL: NOTHING WAS RENDERED.** No browser, no
+viewport, no device, no Lighthouse, no bundle number. Every finding is from source and from the gates — which is how
+two of them were found, and is also why finding 4 could not be ruled at all. 📱 Wroblewski's own recorded miss (*"both
+were desktop-only, and every measurement this board had taken was at 375px"*) applies here with more force, because
+**this sitting took no viewport measurement whatsoever.** It does not settle whether the HR trend belongs on the site,
+whether the effort record belongs in the hero, or whether six product-framing components should be four.
