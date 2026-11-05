@@ -1,5 +1,11 @@
 # Contract — SiteFooter
 
+> ⚠️ **2026-11-05 (`SITE-SPACE-GATE-02`) — the component changed, this contract did not, and that is correct.**
+> The change was the spacing sweep: hand-typed px values replaced by `--space-*` tokens. **No prop was added,
+> removed or retyped, and no value a caller passes behaves differently.** Recorded here rather than left as an audit
+> flag, because `audit-docs.sh` compares file mtimes and cannot tell a token swap from an interface change — and an
+> unexplained STALE row is how a real one stops being noticed.
+
 **Authority**: This document defines the marketing site's single footer. Any change to its
 props must update this document in the same commit — `lib/contracts/componentContracts.test.ts`
 compares the two prop-for-prop, both directions.
