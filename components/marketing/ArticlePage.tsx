@@ -21,7 +21,6 @@ import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { articlePath, guidesArePublished, marketingArticleJsonLd, COMPARISON_HUB, GUIDE_HUB, type MarketingArticle, type ArticleSpan, type ArticleBlock } from '@/lib/marketing/articles'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
-const SECTION_MAX = 760
 
 /** Inline text links only. No button or CTA styling in this content type. */
 const LINK_STYLE = { color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'underline' } as const
@@ -83,7 +82,7 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
       {/* GTM-SITE-01 — the plan spokes carried a breadcrumb and the comparison
           articles did not, so a reader arriving from search had no sense of
           where the page sat. Same markup and same type scale as PlanPage. */}
-      <nav aria-label="Breadcrumb" style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '20px 24px 0' }}>
+      <nav aria-label="Breadcrumb" style={{ maxWidth: 'var(--measure-page)', margin: '0 auto', padding: '20px 24px 0' }}>
         <ol style={{ display: 'flex', gap: 8, listStyle: 'none', padding: 0, margin: 0, fontSize: 'var(--fs-sm)', color: 'var(--mute)', flexWrap: 'wrap' }}>
           <li><Link href="/" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Home</Link></li>
           <li aria-hidden>›</li>
@@ -103,7 +102,13 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
         </ol>
       </nav>
 
-      <article style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '16px 24px 8px' }}>
+      <article style={{ maxWidth: 'var(--measure-page)', margin: '0 auto', padding: '16px 24px 8px' }}>
+      {/* SITE-MEASURE-THIRD-02 — NESTED, NOT NARROWED. The outer element owns
+          the page frame so the prose starts where the header and every other
+          band start; the inner element owns the reading width. A centred
+          `--measure-read` box inside the frame is the defect the homepage
+          ruling fixed: it moves the left edge instead of narrowing the box. */}
+      <div style={{ maxWidth: 'var(--measure-read)' }}>
         <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 12px' }}>
           {article.h1}
         </h1>
@@ -129,6 +134,7 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
         <p style={{ fontSize: 'var(--fs-body-lg)', margin: '0 0 8px' }}>
           <a href={BRAND.appStore.url} style={LINK_STYLE}>{article.appStoreLinkText}</a>
         </p>
+        </div>
       </article>
 
       <SiteFooter />

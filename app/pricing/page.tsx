@@ -37,7 +37,6 @@ import { FREE_FEATURES, PAID_FEATURES, type TierFeature } from '@/lib/marketing/
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const PAGE_URL = `${APP_URL}/pricing`
-const SECTION_MAX = 760
 
 export const revalidate = 86400
 
@@ -106,8 +105,8 @@ export default function PricingPage() {
           The point is not tidiness — it is that `surface=` now EXISTS on this
           page, so wave 1b can spend a ground here. It could not before.
           ⚠️ FOR WAVE 1B: the rhythm below is preserved, not endorsed. */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y-hero) 24px 0' }}>
         <Eyebrow>Pricing</Eyebrow>
         <h1 style={{
           fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)',
@@ -124,8 +123,8 @@ export default function PricingPage() {
       </Section>
 
       {/* ── The two tiers ───────────────────────────────────────────────── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y) 24px 0' }}>
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))',
           gap: 'var(--space-4)',
@@ -193,8 +192,8 @@ export default function PricingPage() {
       </Section>
 
       {/* ── The honest bit about what "free" means after the trial ──────── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y) 24px 0' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderLeft: '3px solid var(--warn)',
@@ -217,8 +216,8 @@ export default function PricingPage() {
       </Section>
 
       {/* ── Charity runners. The page that makes the code make sense. ───── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y) 24px 0' }}>
         <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
           Running on a charity place? Some charities cover the full app for their
           runners.{' '}
@@ -229,8 +228,8 @@ export default function PricingPage() {
       </Section>
 
       {/* ── Close ───────────────────────────────────────────────────────── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y) 24px var(--sect-y)' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',

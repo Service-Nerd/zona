@@ -33,7 +33,6 @@ import { SiteFooter } from '@/components/marketing/SiteFooter'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const PAGE_URL = `${APP_URL}/about`
-const SECTION_MAX = 760
 
 /**
  * Set when a photograph exists. Until then the page renders without a frame
@@ -96,11 +95,12 @@ export default function AboutPage() {
           + rhythm="none" hand the inner div exactly the maxWidth, margin and
           padding the raw element had. The win is that `surface=` now EXISTS on
           this page, so wave 1b can spend a ground here.
-          ⚠️ FOR WAVE 1B — SITE-MEASURE-THIRD-01: SECTION_MAX is 760, a THIRD
-          measure beside --measure-page 1100 and --measure-read 720. Preserved,
-          not endorsed. */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
+          ✅ SITE-MEASURE-THIRD-02 (2026-11-05) — DISCHARGED. The third measure
+          is gone: `width="read"` nests `--measure-read` inside the page frame,
+          so the prose narrows without the left edge moving. The old
+          hand-rolled box was a CENTRED 760, which did both. */}
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y-hero) 24px 0' }}>
         <div style={{
           fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
           textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
@@ -164,10 +164,10 @@ export default function AboutPage() {
           `app/page.tsx`. Now the page ground, with the hairlines kept: they
           were doing the separating work, not the tint. If this section ever
           needs emphasis it gets an inset CARD, never a band. */}
-      <Section width="full" rhythm="none"
+      <Section width="read" rhythm="none"
         style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', marginTop: 'var(--space-7)' }}
         innerStyle={{ padding: '56px 24px' }}>
-        <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
+        <div>
           <div style={{
             fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
             textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
@@ -196,8 +196,8 @@ export default function AboutPage() {
       </Section>
 
       {/* ── Close ───────────────────────────────────────────────────────── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y) 24px var(--sect-y)' }}>
         <div style={{ height: '1px', background: 'var(--line)', margin: '0 0 20px' }} />
         <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink)', marginBottom: '4px' }}>
           {BRAND.founder.name} &middot; Founder

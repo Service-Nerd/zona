@@ -19,7 +19,6 @@ import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { articlePath, type MarketingArticle } from '@/lib/marketing/articles'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
-const SECTION_MAX = 760
 
 export interface HubCopy {
   slug: string
@@ -73,8 +72,8 @@ export function ArticleHub({
           The point is not tidiness — it is that `surface=` now EXISTS on this
           page, so wave 1b can spend a ground here. It could not before.
           ⚠️ FOR WAVE 1B: the rhythm below is preserved, not endorsed. */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '28px 24px 8px' }}>
         <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 14px' }}>
           {hub.eyebrow}
         </p>
@@ -86,8 +85,8 @@ export function ArticleHub({
         </p>
       </Section>
 
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '16px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '16px 24px 8px' }}>
         {youngNote && (
           <p style={{
             fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--mute)',
@@ -162,8 +161,8 @@ export function ArticleHub({
       
           Reuses the established in-body CTA card (PlanPage:326) rather than
           inventing a hub variant. */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '28px 24px 8px' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)', padding: '26px 22px',
@@ -179,8 +178,8 @@ export function ArticleHub({
         </div>
       </Section>
 
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '28px 24px 8px' }}>
         <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18 }}>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
             Every plan {BRAND.name} publishes is free to read before you pay anyone for anything.

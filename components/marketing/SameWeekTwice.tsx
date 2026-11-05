@@ -143,7 +143,7 @@ export function SameWeekTwice() {
         </div>
         <h2 style={{
           fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h2)',
-          fontWeight: 600, lineHeight: 1.2, color: 'var(--ink)', margin: 0, maxWidth: '720px',
+          fontWeight: 600, lineHeight: 1.2, color: 'var(--ink)', margin: 0, maxWidth: 'var(--measure-read)',
         }}>
           One week, run two ways.<br />
           <span style={{ color: 'var(--moss-strong)' }}>The app can tell.</span>

@@ -1177,7 +1177,7 @@ function SectionTitle({ children, accent, sub, weight = 'lead' }: {
         fontSize: quiet ? 'var(--fs-h3)' : 'var(--fs-h2)',
         fontWeight: 600, lineHeight: 1.2,
         color: 'var(--ink)', margin: 0,
-        maxWidth: '720px',
+        maxWidth: 'var(--measure-read)',
       }}>
         {children}
         {accent && (

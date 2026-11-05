@@ -326,6 +326,14 @@ Guarded by `lib/marketing/appReviewWave1.test.ts`, all four falsified.
 
 **A narrower measure narrows the box. It does not move it.** `--measure-read` is nested inside the page frame and left-aligned to it; only the right edge moves.
 
+> ⚠️ **AMENDED 2026-11-05 — `SITE-MEASURE-THIRD-02`. THE RULE ABOVE WAS SHIPPED ON ONE FILE OF EIGHT.** It is recorded 🟢 SHIPPED and it was true only of `app/page.tsx`. Every other marketing surface hand-rolled `maxWidth: SECTION_MAX, margin: '0 auto'` with `const SECTION_MAX = 760` — **the retired third measure AND the centring, in one declaration, at 34 call sites across seven files** (`/about`, `/charity-runners`, `/plans`, `/pricing`, `ArticlePage`, `ArticleHub`, `PlanPage`, and therefore every article and every plan page). `SiteHeader` and `SiteFooter` are `SITE_WIDTH = 1100` centred, so the chrome's content edge and the page's differed by roughly 170px on everything except the homepage.
+>
+> **The mechanism is the fix: use `Section width="read"`.** It nests — outer box at `--measure-page` and centred, inner box at `--measure-read` and *not* centred. A page that reaches for `width="full"` plus its own `innerStyle` maxWidth is re-implementing that and will get it wrong in the same direction.
+>
+> **The one ratified exception is the dark close**, which is centred on purpose (W-09) and declares itself with `textAlign: 'center'`. A box centred for centred text is the exception; a box centred while its text is left-aligned is the defect.
+>
+> Gate: `lib/marketing/contentMeasure.test.ts` — the population is derived (the article catalogue, a glob over `components/marketing`), four arms falsified independently. 🔴 **The centring arm found the dark close on its first run**, which is why the exception is encoded rather than the layout "corrected": an unrecognised ruled exception is how a correct page gets broken by a check.
+
 🔴 **The sentence above was the rule and the page was breaking it.** Found by the founder on desktop: *"those are using the full span of the page, and then everything after that has gone really centralised, it's a bit of a mess."* Measured at 1440px, the content's left edge top to bottom:
 
 ```

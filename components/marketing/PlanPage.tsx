@@ -20,7 +20,6 @@ import type { Session, Week } from '@/types/plan'
 import { weekVolumeLabel } from '@/lib/plan/weekVolume'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
-const SECTION_MAX = 760
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 const DAY_LABEL: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' }
@@ -167,7 +166,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
       <SiteHeader current="plans" />
 
       {/* ── Breadcrumbs ─────────────────────────────────────────────────── */}
-      <nav aria-label="Breadcrumb" style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '0 24px' }}>
+      <nav aria-label="Breadcrumb" style={{ maxWidth: 'var(--measure-page)', margin: '0 auto', padding: '0 24px' }}>
         <ol style={{ display: 'flex', gap: 8, listStyle: 'none', padding: 0, margin: 0, fontSize: 'var(--fs-sm)', color: 'var(--mute)', flexWrap: 'wrap' }}>
           <li><Link href="/" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Home</Link></li>
           <li aria-hidden>›</li>
@@ -186,8 +185,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
           The win is that `surface=` now EXISTS on this page, so wave 1b can
           spend a ground here. It could not before.
           FOR WAVE 1B: the rhythm below is preserved, not endorsed. */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '24px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '24px 24px 8px' }}>
         <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 16px' }}>
           You&rsquo;re trying hard. That&rsquo;s the problem.
         </p>
@@ -213,8 +212,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
       </Section>
 
       {/* ── The zone idea (differentiator, on the page) ─────────────────── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '32px 24px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '32px 24px' }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 16, padding: '24px 22px' }}>
           <h2 style={{ fontSize: 'var(--fs-lead-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 10px' }}>Why so much easy?</h2>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
@@ -227,8 +226,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
       </Section>
 
       {/* ── The plan, week by week ──────────────────────────────────────── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '4px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '4px 24px 8px' }}>
         <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px', letterSpacing: '-0.01em' }}>The plan, week by week</h2>
         <p style={{ fontSize: 'var(--fs-body)', color: 'var(--mute)', margin: '0 0 20px' }}>Free. Take it exactly as it is.</p>
 
@@ -303,8 +302,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
       </Section>
 
       {/* ── The honesty section ─────────────────────────────────────────── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '20px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '20px 24px 8px' }}>
         <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18, margin: '8px 0' }}>
           <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 12px', letterSpacing: '-0.01em' }}>This is the flat version.</h2>
           <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 12px', maxWidth: 620 }}>
@@ -326,8 +325,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
           something that already exists, and put a form between them and a
           download. The badge is the action now; the waitlist component stays
           in the repo, unused, for the next pre-launch surface. */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '28px 24px 8px' }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 16, padding: '26px 22px' }}>
           <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>The plan above is yours. No catch.</h2>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 18px', maxWidth: 520 }}>
@@ -342,8 +341,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
       </Section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '28px 24px 8px' }}>
         <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 16px', letterSpacing: '-0.01em' }}>Questions</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {faqs.map((f, i) => (
@@ -357,8 +356,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
 
       {/* ── Related plans (internal links) ──────────────────────────────── */}
       {related.length > 0 && (
-        <Section width="full" rhythm="none"
-          innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+        <Section width="read" rhythm="none"
+          innerStyle={{ padding: '28px 24px 8px' }}>
           <h2 style={{ fontSize: 'var(--fs-lead-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 14px' }}>Other free plans</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {related.map(r => (

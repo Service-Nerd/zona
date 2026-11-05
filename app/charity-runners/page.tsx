@@ -61,7 +61,6 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const PAGE_URL = `${APP_URL}/charity-runners`
 
 /** The site's content column. Matches PlanPage, ComparisonPage and /plans. */
-const SECTION_MAX = 760
 
 export const revalidate = 86400
 
@@ -236,8 +235,8 @@ export default function CharityRunnersPage() {
           The win is that `surface=` now EXISTS on this page, so wave 1b can
           spend a ground here. It could not before.
           FOR WAVE 1B: the rhythm below is preserved, not endorsed. */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y-hero) 24px 0' }}>
         <Eyebrow>For charity runners</Eyebrow>
         <h1 style={{
           fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)',
@@ -297,10 +296,10 @@ export default function CharityRunnersPage() {
           (page, page, band, page, band, page…) on the page a charity partner
           is sent to. The hairlines stay: they were doing the separating work,
           not the tint. */}
-      <Section width="full" rhythm="none"
+      <Section width="read" rhythm="none"
         style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}
         innerStyle={{ padding: '64px 24px' }}>
-        <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
+        <div>
           <Eyebrow>The thing nobody tells you</Eyebrow>
           <H2>The risk is not that you are too slow. It is that you try too hard.</H2>
           <P>
@@ -321,8 +320,8 @@ export default function CharityRunnersPage() {
 
       {/* ── How to use the code. The founder's note: nothing on this page
             told a runner that codes existed or what to do with one. ───── */}
-      <Section id="code" width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0', scrollMarginTop: '80px' }}>
+      <Section id="code" width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y) 24px 0', scrollMarginTop: '80px' }}>
         <Eyebrow>If you have a code</Eyebrow>
         <H2>Three steps, about a minute.</H2>
 
@@ -377,10 +376,10 @@ export default function CharityRunnersPage() {
           (page, page, band, page, band, page…) on the page a charity partner
           is sent to. The hairlines stay: they were doing the separating work,
           not the tint. */}
-      <Section width="full" rhythm="none"
+      <Section width="read" rhythm="none"
         style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', marginTop: '56px' }}
         innerStyle={{ padding: '64px 24px' }}>
-        <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
+        <div>
           <Eyebrow>What you get</Eyebrow>
           <H2>The same app everyone else pays for.</H2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: 'var(--space-5)' }}>
@@ -410,8 +409,8 @@ export default function CharityRunnersPage() {
       </Section>
 
       {/* ── No code. The honest fallback, deliberately AFTER the offer. ── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y) 24px 0' }}>
         <Eyebrow>No code?</Eyebrow>
         <H2>Then start with a free plan.</H2>
         <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 22px' }}>
@@ -445,8 +444,8 @@ export default function CharityRunnersPage() {
       </Section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y) 24px 0' }}>
         <Eyebrow>Questions</Eyebrow>
         <H2>The ones charity runners actually ask.</H2>
         <div style={{
@@ -471,8 +470,8 @@ export default function CharityRunnersPage() {
       </Section>
 
       {/* ── Close ───────────────────────────────────────────────────────── */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: 'var(--sect-y) 24px var(--sect-y)' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',

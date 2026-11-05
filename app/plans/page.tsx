@@ -11,7 +11,6 @@ import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { MARKETING_PLANS, planCardTitle } from '@/lib/marketing/plans'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
-const SECTION_MAX = 760
 
 export const revalidate = 86400
 
@@ -48,8 +47,8 @@ export default function PlansHubPage() {
           The point is not tidiness — it is that `surface=` now EXISTS on this
           page, so wave 1b can spend a ground here. It could not before.
           ⚠️ FOR WAVE 1B: the rhythm below is preserved, not endorsed. */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '28px 24px 8px' }}>
         <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 14px' }}>
           Free training plans
         </p>
@@ -69,8 +68,8 @@ export default function PlansHubPage() {
         const items = MARKETING_PLANS.filter(p => (p.group ?? 'distance') === group.key)
         if (items.length === 0) return null
         return (
-          <Section key={group.key} width="full" rhythm="none"
-            innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '16px 24px 8px' }}>
+          <Section key={group.key} width="read" rhythm="none"
+            innerStyle={{ padding: '16px 24px 8px' }}>
             <h2 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-caption)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 12px' }}>{group.label}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {items.map(p => (
@@ -89,8 +88,8 @@ export default function PlansHubPage() {
         )
       })}
 
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '28px 24px 8px' }}>
         <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18 }}>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
             Every plan here is the flat version. The app takes the same plan and adapts it:
@@ -104,8 +103,8 @@ export default function PlansHubPage() {
           SEO orphan. It is deliberately NOT in the site nav: that stays two
           items by SLT ruling, and this is a referral landing page rather than a
           content section people browse to. */}
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '18px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '18px 24px 8px' }}>
         <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
           Running on a charity place? The risk is not the distance, it is getting hurt
           before race day.{' '}
@@ -115,8 +114,8 @@ export default function PlansHubPage() {
         </p>
       </Section>
 
-      <Section width="full" rhythm="none"
-        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '18px 24px 8px' }}>
+      <Section width="read" rhythm="none"
+        innerStyle={{ padding: '18px 24px 8px' }}>
         <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
           Weighing up apps rather than plans? The comparisons are honest about where {BRAND.name} is
           the wrong answer.{' '}
