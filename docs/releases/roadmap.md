@@ -372,11 +372,20 @@ engine's real base-build block for someone who has never run. Both boards sat. �
 2026-10-25 and the site never said so. 🏃 **New for the Coaching Board: `STAGED-HM-DOOR-01`** — a never-run runner is
 staged into a marathon and **refused a half**, at every runway from 12 to 30 weeks.
 
-**OPEN.** `SITE-EFFORT-RECORD-01` — ⏸️ **blocked**: the board's amendment spends the trio's zones still on the effort
-record, and `Dropping ZoneRings` is a 🔴 REVERSED row retaining it as *"one third of the public face"*. Needs a
-founder call or a third sitting. · `SITE-STAGED-PLAN-01` and `SITE-ENGINE-EMDASH-01` → 🏃 Coaching Board first. ·
-`SITE-BAND-RHYTHM-01`, `SITE-SPACE-OVERLIMIT-01`, `SITE-SUBMEASURE-SPRAWL-01`, `SITE-FRAME-TAXONOMY-01` → 🧭.
+**OPEN (re-measured 2026-11-06).** 🏃 `STAGED-HM-DOOR-01` — Coaching Board, and the only one of these about a
+runner rather than the site. · 🧭 `SITE-FREE-COLUMN-COPY-01` — six free gates registered in `OMITTED_FROM_PRICING`
+with a reason each; the question is which (if any) a reader choosing between tiers needs named, against 🎓 Sierra's
+condition that a longer list is the killed list-of-eight. · 🧭 `SITE-BAND-RHYTHM-01`, `SITE-SPACE-OVERLIMIT-01`,
+`SITE-SUBMEASURE-SPRAWL-01`, `SITE-FRAME-TAXONOMY-01`. · 🧭 **blocked** — whether `TrendCard` belongs on the site
+at all: Sierra's transfer objection is unresolved and nobody may decide it without a bundle number.
 Detail in `backlog.md`.
+
+⚠️ **This paragraph said `SITE-EFFORT-RECORD-01` was blocked, and `SITE-STAGED-PLAN-01` / `SITE-ENGINE-EMDASH-01`
+were awaiting a board, for a day after all three shipped** — and `SITE-FREE-COLUMN-COPY-01` was in `backlog.md`
+with no roadmap line at all. Found 2026-11-06 by `audit-docs.sh` once its open-item arms could read the
+**board-tag bullet**, the shape this wave filed its items in (`BACKLOG-BULLET-BLIND-01`). The *records* were
+correct throughout — registry row, build-log entry and ruling row for every one — which is the recorded pattern:
+what rots is the prose nobody mechanically checks.
 
 
 **State at 2026-09-22, last ship `b111873`.** Wave 1 shipped; the rest is sequenced behind a

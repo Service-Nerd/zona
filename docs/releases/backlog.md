@@ -39,27 +39,31 @@ Register row: `docs/canonical/design-rulings.md` (2026-11-05). Sitting:
 ⚠️ **Nothing in that sitting was rendered** — no browser, no viewport, no device, no bundle number. Re-measure
 before planning against any number below (an item is a snapshot of the code on the day it was written).
 
-- ⚙️ **NO BOARD** `SITE-MEASURE-THIRD-02` — **760 survives in seven files after the ruling retired it.**
-  `SECTION_MAX = 760` in `/about`, `/charity-runners`, `/plans`, `/pricing`, `ArticlePage`, `ArticleHub`,
-  `PlanPage`; only `app/page.tsx` was converted. `--measure-read` is 720px, so the site has two reading measures
-  by page. Execute the existing ruling; no new decision.
-- ⚙️ **NO BOARD** `SITE-SPACE-GATE-02` — **the spacing gate governs one live declaration of 274.** Widen the regex
-  to the `padding:` / `margin:` shorthand and left/right properties, widen the surface list to every marketing page
-  (`/support`, `/privacy`, `/terms`, `/guides`, `/comparisons` are outside it today), then sweep what it can then
-  see. The board's 4px shift limit is intact; anything needing more than 4px returns to the board rather than being
-  swept silently.
-- ⚙️ **NO BOARD** `SITE-TYPESCALE-POP-01` — `typeScale.test.ts`'s SURFACES hand-lists **2 of the 8** comparison and
-  guide shim pages. Harmless today (the shims carry zero `fontSize`) and it is the same hand-listed population
-  CLAUDE.md names; `noEmDash` already derives those slugs from the catalogue.
-- 🧭 **DESIGN BOARD — RULED SHIP** `SITE-SESSION-STEPS-01` — **plan pages draw a 2026-09 session structure.**
-  `PlanPage`'s local `MainSet` is one `--bg-soft` inset, a 2px rail and action-then-target rows; the app owner is
-  `components/shared/SessionSteps.tsx` (per-phase cards, numbered steps on a connector, silhouette, zone range,
-  run/walk icons, block totals). Content cannot drift (grammar comes from the real `stepParts()`); presentation
-  already has. `realComponents.test.ts` pins the homepage only. Zero client cost: the plan pages are `revalidate`
-  server pages.
-- 🧭 **DESIGN BOARD — RULED SHIP** `PRICING-FREE-GATE-02` — **an arm in the direction the free tier rots in.** Every
-  `FREE_ALWAYS` gate must reach `FREE_FEATURES` or carry a stated omission. **No new copy on the page in this
-  wave** (Sierra's condition).
+- ✅ **SHIPPED 2026-11-05** `SITE-MEASURE-THIRD-02` — **the retired 760px measure is gone, and so is the
+  centred box it was drawing.** `SECTION_MAX = 760` survived the 2026-10-01 retirement in seven files, and all 34
+  call sites also wrote `margin: '0 auto'`, so the chrome and the content disagreed on every page but the homepage.
+  Measured on a real render at 1440: `/pricing` content edge 362 → 192, header 192. Held by
+  `lib/marketing/contentMeasure.test.ts`, 5 arms, population derived, falsified four ways.
+- ✅ **SHIPPED 2026-11-05** `SITE-SPACE-GATE-02` — **the spacing gate could read 18 declarations of 274; it
+  reads them all now.** Swept 138 values in 17 files inside the board's 4px shift limit. ⚠️ **Two families are
+  exempt BY NAME and filed rather than swept**, because a gate that quietly reassigns a value to another family is
+  worse than one that cannot see it: `SITE-BAND-RHYTHM-01` (16 band rhythms, W-07's `--sect-y`) and
+  `SITE-SPACE-OVERLIMIT-01` (8 values whose nearest-token shift exceeds 4px).
+- ✅ **SHIPPED 2026-11-05** `SITE-TYPESCALE-POP-01` — `typeScale.test.ts`'s comparison and guide shim slugs are
+  derived from the catalogue, as `noEmDash` already derived them. 🔴 **It shipped INSIDE
+  `SITE-SPACE-GATE-02`'s commit (`8d98f06a`) and carried no feature-registry row of its own until 2026-11-06** —
+  the `PUSH-UNITS-01` class: an item closed incidentally by a ship that never names it in a commit scope, so
+  `ship-record-check.py` had nothing to look for. The gate below now reads this bullet shape.
+- ✅ **SHIPPED 2026-11-05** `SITE-SESSION-STEPS-01` — **the plan pages draw `SessionSteps`, the app's own
+  owner**, and the board **RE-SAT ON RENDERED EVIDENCE the same day**: built as ruled (under every quality session)
+  it measured **15.7 → 26.0 phone screens**, a 629px structure card on a 44px day row, 13 times. Amended to **one
+  exemplar** in its own band before the week table — 16.7 screens, +1.0 against +10.3. 🎓 Sierra withdrew her
+  own prescription: *"the transfer happens on the FIRST one."* The build opened a hole in `noEmDash.test.ts` that
+  `engineCopyOnSite.test.ts` now covers, and routed 🏃 `SITE-ENGINE-EMDASH-01`.
+- ✅ **SHIPPED 2026-11-05** `PRICING-FREE-GATE-02` — every `FREE_ALWAYS` gate must reach `FREE_FEATURES` or
+  carry a stated omission. **Falsified by deleting a whole `FREE_FEATURES` row: both pricing gates stayed green**,
+  so the free column could have shrunk to nothing under a green suite. ⚠️ **Its limit is written into the test**
+  — it sees free GATES, and several free features are not gates at all, so no check can ask about those.
 - ✅ **SHIPPED 2026-11-05** `SITE-EFFORT-RECORD-01` — **`EffortRecord` is the homepage trio's third still**, on a
   🔴 **FOUNDER OVERRULE** of the REVERSED `Dropping ZoneRings` row. ⚠️ **ZoneRings is not dropped from the site** —
   it still renders in `TabbedPhone`'s Coach tab, and `realComponents.test.ts` asserts that, so "retained" stays

@@ -65,6 +65,17 @@ const esc = (s: string) => s.replace(/-/g, '\\-')
  * included — the 2026-09-18 index table is inside a `>` block), or a heading.
  * A bare mention in a sentence is deliberately NOT a definition.
  *
+ * 🔴 AND THE BOARD-TAG BULLET IS A FOURTH SHAPE THIS COULD NOT SEE EITHER
+ * (`BACKLOG-BULLET-BLIND-01`, 2026-11-06). The `SITE-CURRENCY-FOLLOWONS-01` wave
+ * filed eleven items as plain list bullets led by the filing rule's board tag —
+ * `- ⚙️ **NO BOARD** \`ID\` — …`. The bolded arm wants `**` immediately before
+ * the id and here the `**` wraps the TAG; the heading arm wants hashes. So a
+ * promise pointing at any of those eleven would have read as dangling, and
+ * `audit-docs.sh`'s three open-item arms were blind to the identical shape on the
+ * same day, for the same reason: **both registers key on a STATUS and a board tag
+ * is not one.** Found while fixing the shell arms; fixed here in the same commit,
+ * because the thing that costs this repo most is a remedy applied to one twin.
+ *
  * ⚠️ THE HEADING ARM WAS BLIND TO THE BACKLOG'S OWN DOMINANT CONVENTION.
  * It required the id to follow the hashes immediately, and **measured
  * 2026-09-22 it matched 15 headings while missing 50** — because the filing
@@ -77,7 +88,10 @@ const definitionSite = (id: string) => new RegExp(
   `\\*\\*~*\`?${esc(id)}\\b`
   + `|~~\\*\\*\`?${esc(id)}\\b`
   + `|^>?\\s*\\|\\s*[^|]{0,12}?\`?${esc(id)}\`?[~\\s]*\\|`
-  + `|^#{2,4} +[^|\\n]{0,8}?[~\`]*${esc(id)}\\b`,
+  + `|^#{2,4} +[^|\\n]{0,8}?[~\`]*${esc(id)}\\b`
+  // The board-tag bullet: `- <tag> **<BOARD>** \`ID\` — …`. Bounded, so a
+  // sentence that merely mentions an id after some bold text cannot qualify.
+  + `|^- +[^|\\n]{0,4}?\\*\\*[A-Z —-]{2,34}\\*\\* +\`?${esc(id)}\\b`,
   'm',
 )
 
@@ -98,6 +112,28 @@ describe('XREF-DANGLE-01 — promised backlog entries exist', () => {
     // the test would pass vacuously and prove nothing — this repo has shipped a
     // regression comparison that ran on two EMPTY files and reported success.
     expect(promises.length).toBeGreaterThan(0)
+  })
+
+  it('recognises all four filing shapes, including the board-tag bullet', () => {
+    // ⚠️ FIXTURES, NOT THE LIVE FILE. Every other arm here measures what the
+    // backlog currently holds, and a live measurement cannot prove a pattern:
+    // the board-tag shape went unseen by BOTH registers precisely because no
+    // promise happened to point at one of the eleven items written in it. A
+    // fixture arm is independent of that luck and cannot rot as items close.
+    const SHAPES: Array<[string, string]> = [
+      ['bolded', '> \u{1F532} **`FIXTURE-AA-01`** — the quoted-bullet filing. *(P2, filed 2026-11-06)*'],
+      ['table cell', '| `FIXTURE-BB-01` | open | a row in the LATER table |'],
+      ['heading', '### \u{1F3C3} `FIXTURE-CC-01` — the heading filing.'],
+      ['board-tag bullet', '- \u{2699}\u{FE0F} **NO BOARD** `FIXTURE-DD-01` — the filing-rule bullet.'],
+    ]
+    for (const [shape, line] of SHAPES) {
+      const id = line.match(/FIXTURE-[A-Z]+-01/)![0]
+      expect(definitionSite(id).test(line), `the ${shape} shape is not recognised as a filing`).toBe(true)
+    }
+    // And the negative: a bare mention in a sentence is NOT a filing, which is
+    // the whole reason this check is worth anything.
+    expect(definitionSite('FIXTURE-EE-01').test('see `FIXTURE-EE-01` for the measured figure'),
+      'a bare cross-reference must not count as a definition').toBe(false)
   })
 
   it('every promised id has a definition site in the backlog or roadmap', () => {

@@ -23,6 +23,35 @@ SINCE="${1:-$(date +%Y-%m-%d)}"
 fail=0
 say() { printf '%s\n' "$*"; }
 
+# ── THE THIRD ITEM SHAPE: A BOARD-TAG BULLET (BACKLOG-BULLET-BLIND-01) ──────
+#
+# 🔴 EVERY OPEN-ITEM EXTRACTOR IN THIS FILE KEYS ON A STATUS EMOJI, AND THE
+# FILING RULE INTRODUCED A SECOND KIND OF MARKER THAT IS NOT ONE. Since
+# 2026-09-22 every item entering the backlog carries a BOARD TAG — 🏃 / 🧭 /
+# 💼 / 👤 / ⚙️ — and the `SITE-CURRENCY-FOLLOWONS-01` wave filed its items as
+# plain list bullets led by that tag rather than as quoted bullets or headings.
+# Measured 2026-11-06: **11 items in this shape, FIVE of them already shipped
+# with feature-registry rows**, and all three backlog arms below printed `ok`
+# over them, because a tag is not a status and nothing here was looking for one.
+#
+# ⚠️ THE COMMENT CHAIN ON THOSE ARMS RECORDS SEVEN ROUNDS OF THIS — 🔻 missing,
+# 🔴 argued twice, `####` vs `###`, the emoji-optional heading, the unmarked
+# heading. Each round added a marker to a list of markers. **This round is not
+# another marker: it is a shape whose marker set is the FILING RULE's, and the
+# rule is the document's own convention, not a list this script maintains.**
+#
+# ✅ is deliberately NOT in the set: it is how this shape says CLOSED, and it is
+# the discriminator. That is why this arm does not grep the line's prose for
+# "shipped" — a prose grep fires on an open item whose body happens to mention a
+# ship, which is most of them.
+BOARD_TAG_BULLET='^- (🏃|🧭|💼|👤|⚙️) \*\*[^*]+\*\* `?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`?[ —–-]'
+# Group 2, never "every id on the matched text" — the mistake this script
+# records making on the registry extractor, where a qualifier's id read as a row
+# of its own (`| SITE-WAVE-4 (SITE-SPACE-01) — …`).
+board_tag_bullet_ids() {
+  sed -nE 's/^- (🏃|🧭|💼|👤|⚙️) \*\*[^*]+\*\* `?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`?[ —–-].*/\2/p' "$1"
+}
+
 # ── The ship-record window: a MARKER, not a calendar date ───────────────────
 #
 # ⚠️ THIS CHECK READ "ALL CLEAN" WHILE CHECKING NOTHING, and that is why the
@@ -171,6 +200,51 @@ fi
 #
 # An ID absent from backlog.md is NOT a gap — filed-and-shipped-same-day items
 # never reach the bench, and demanding a row for them would cry wolf.
+# ── ITEM-SHAPE SELF-TEST (BACKLOG-BULLET-BLIND-01) ───────────────────
+#
+# ⚠️ EVERY OTHER ARM HERE MEASURES THE LIVE FILE, AND A LIVE COUNT CANNOT PROVE A
+# PATTERN. The recorded failures in this script are all one shape: a pattern that
+# matched nothing, over a population that happened to be empty or that nobody had
+# counted, reporting `ok`. A floor on the live count is no answer either — it
+# empties on its own as the items close, which is the `BACKLOG-STALE-ALLTIME-01`
+# mistake pointing the other way.
+#
+# So this runs the extractor against FIXTURES, both directions. It is independent
+# of what the backlog currently holds, so it cannot rot, and narrowing the pattern
+# turns it red whatever the file says.
+#
+# ⚠️ IT COVERS THE BOARD-TAG BULLET ONLY. The quoted-bullet and heading shapes are
+# still written inline in two blocks below, twice each, with different marker sets —
+# so they have no self-test and a second copy of their patterns here would be the
+# flaw this repo records as "the test asserted its own copy". Factoring those four
+# extractors into functions is the prerequisite and is NOT done.
+say "── item-shape self-test (board-tag bullet) ──"
+_fx="$(mktemp)"
+cat > "$_fx" <<'FIXTURE'
+- ⚙️ **NO BOARD** `SELFTEST-A-01` — a tooling item.
+- 🧭 **DESIGN BOARD — RULED SHIP** `SELFTEST-B-01` — a tag may carry a qualifier.
+- 🏃 **COACHING BOARD** `SELFTEST-C-01` — prescription.
+- 💼 **SLT** `SELFTEST-D-01` — the price.
+- 👤 **FOUNDER** `SELFTEST-E-01` — the words.
+- ✅ **SHIPPED 2026-11-05** `SELFTEST-CLOSED-01` — closed, and ✅ is the discriminator.
+- `some_table` — narrative prose naming `SELFTEST-PROSE-01` mid-sentence.
+> 🔲 **`SELFTEST-QUOTED-01`** — another shape's business. *(P2, filed 2026-11-06)*
+### 🔻 `SELFTEST-HEADING-01` — another shape's business.
+FIXTURE
+_want='SELFTEST-A-01 SELFTEST-B-01 SELFTEST-C-01 SELFTEST-D-01 SELFTEST-E-01'
+_got="$(board_tag_bullet_ids "$_fx" | sort | tr '\n' ' ' | sed -E 's/ $//')"
+_wantsorted="$(printf '%s\n' $_want | sort | tr '\n' ' ' | sed -E 's/ $//')"
+if [ "$_got" != "$_wantsorted" ]; then
+  say "  THE BOARD-TAG BULLET EXTRACTOR IS WRONG."
+  say "            want: $_wantsorted"
+  say "            got:  $_got"
+  say "            Five tags must match, ✅ and the other two shapes must not."
+  fail=1
+else
+  say "  ok (5 tags matched, 4 non-items rejected)"
+fi
+rm -f "$_fx"
+
 say "── backlog status: shipped items still marked open ──"
 bfail=0
 for id in $ids; do
@@ -217,6 +291,11 @@ for id in $ids; do
   # disambiguating on this arm. The bullet arm above keeps it.
   if grep -qE "^#{3,4} (🔻|🔲|🔴|🔵|⏸️|🟠|🧭|⚖️) \`${id}\`[ —]" docs/releases/backlog.md; then
     say "  STILL OPEN $id (shipped today, backlog HEADING says otherwise)"; bfail=1; fail=1
+  fi
+  # 🔴 AND THE BOARD-TAG BULLET, THE THIRD SHAPE — see the note at the top of
+  # this file. A tag is not a status, so neither arm above could see it.
+  if board_tag_bullet_ids docs/releases/backlog.md | grep -qxF "$id"; then
+    say "  STILL OPEN $id (shipped today, backlog BOARD-TAG BULLET says otherwise)"; bfail=1; fail=1
   fi
 done
 [ "$bfail" = "0" ] && say "  ok"
@@ -337,6 +416,9 @@ sed -nE 's/^\| *`?([A-Z][A-Z0-9]*(-[A-Z0-9]+)+)`? *(\([^)]*\) *)?[—/|].*/\1/p'
     | grep -viE 'for the record|SHIPPED|CLOSED|RESOLVED|WITHDRAWN|SUPERSEDED|DEAD|PARKED' \
     | grep -oE '`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' | head -1000 \
     | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
+  # The board-tag bullet (BACKLOG-BULLET-BLIND-01). FIVE shipped items sat open
+  # in this shape while this arm printed ok.
+  board_tag_bullet_ids docs/releases/backlog.md
 } | sort -u > /tmp/_open
 # ⚠️ DECLARED EXEMPTIONS — an ID that is legitimately BOTH shipped and open, each with its
 # reason. Added 2026-09-29, when widening `_reg` to the registry's second row format
@@ -466,6 +548,12 @@ grep -vF 'State at' docs/releases/roadmap.md > /tmp/_rmplan
     | grep -oE '\*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
   grep -oE '^#{2,4} ([^ ]+ )?`[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
     | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
+  # ⚠️ SIXTH TIME, AND IT IS THE SAME SHAPE THE SHIPPED-BUT-OPEN ARM COULD NOT
+  # SEE. Both arms read the same document and each maintained its own idea of
+  # what an item looks like, which is why one blind spot lands in two places at
+  # once. Widening this found one real gap on the day: `SITE-FREE-COLUMN-COPY-01`
+  # was filed in `backlog.md` with no roadmap line at all.
+  board_tag_bullet_ids docs/releases/backlog.md
 } | sort -u > /tmp/_openids
 while IFS= read -r id; do
   [ -z "$id" ] && continue
