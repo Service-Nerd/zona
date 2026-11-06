@@ -86,3 +86,4 @@
 20261102_live_week_keys.sql
 20261103_live_key_rpc.sql
 20261104_live_week_keys_survivors.sql
+20261104_completion_activity_unique.sql
