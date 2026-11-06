@@ -44,7 +44,13 @@ say() { printf '%s\n' "$*"; }
 # the discriminator. That is why this arm does not grep the line's prose for
 # "shipped" — a prose grep fires on an open item whose body happens to mention a
 # ship, which is most of them.
-BOARD_TAG_BULLET='^- (🏃|🧭|💼|👤|⚙️) \*\*[^*]+\*\* `?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`?[ —–-]'
+# 🔴 THIS BLOCK ONCE ALSO DEFINED A `BOARD_TAG_BULLET` CONSTANT, DOCUMENTED AS
+# *the* pattern and referenced NOWHERE — a second copy of the function's regex
+# that could be widened with no effect while the self-test stayed green. Code
+# review found it before the push. The function below is the single owner; the
+# `itemXref.test.ts` cross-check reads the tag set out of ITS body, not a
+# constant. Duplication in the thing built to fix a duplication, in one commit.
+#
 # Group 2, never "every id on the matched text" — the mistake this script
 # records making on the registry extractor, where a qualifier's id read as a row
 # of its own (`| SITE-WAVE-4 (SITE-SPACE-01) — …`).
@@ -183,23 +189,6 @@ else
   say "  $debt, unchanged"
 fi
 
-# ── BACKLOG STATUS vs what actually shipped ─────────────────────────────────
-#
-# Added 2026-09-20 because this script reported ALL CLEAN while FOUR items
-# shipped that same day still carried an open marker in backlog.md:
-# ENRICH-PII-MINIMISE-01, P-01, P-03, REFRAME-NOTE-LOSS-01.
-#
-# The ship-records check above proves an ID gained a registry row and a
-# build-log entry. It says nothing about the BENCH — and the bench is the
-# document a human reads to decide what to work on next, so a shipped item
-# still marked open is the one staleness that actually misleads someone.
-#
-# This is the script's own stated weakness a second time: "an audit is only
-# ever as wide as its list." The contracts check was added for exactly this
-# reason on 2026-09-18, and backlog STATUS was still not on the list.
-#
-# An ID absent from backlog.md is NOT a gap — filed-and-shipped-same-day items
-# never reach the bench, and demanding a row for them would cry wolf.
 # ── ITEM-SHAPE SELF-TEST (BACKLOG-BULLET-BLIND-01) ───────────────────
 #
 # ⚠️ EVERY OTHER ARM HERE MEASURES THE LIVE FILE, AND A LIVE COUNT CANNOT PROVE A
@@ -232,19 +221,50 @@ cat > "$_fx" <<'FIXTURE'
 ### 🔻 `SELFTEST-HEADING-01` — another shape's business.
 FIXTURE
 _want='SELFTEST-A-01 SELFTEST-B-01 SELFTEST-C-01 SELFTEST-D-01 SELFTEST-E-01'
-_got="$(board_tag_bullet_ids "$_fx" | sort | tr '\n' ' ' | sed -E 's/ $//')"
+# 🔴 THE FIXTURE MUST EXIST BEFORE ITS EMPTINESS MEANS ANYTHING. There is no
+# `set -e` here, so a failed `mktemp` or an unwritten heredoc yields an empty
+# `_got`, which the comparison below reports as "THE EXTRACTOR IS WRONG" —
+# absence written as a value, inside the gate built to catch that. Code review
+# found it. 9 fixture lines: 5 that must match, 4 that must not.
+_fxn=$(wc -l < "$_fx" 2>/dev/null | tr -d ' ')
+if [ "${_fxn:-0}" != "9" ]; then
+  say "  THE SELF-TEST FIXTURE DID NOT MATERIALISE (${_fxn:-0} lines, want 9) — the"
+  say "            extractor was NOT exercised. This is a harness failure, not a"
+  say "            finding about the pattern."
+  fail=1
+  rm -f "$_fx"
+  _fx=''
+fi
+_got="$(board_tag_bullet_ids "$_fx" 2>/dev/null | sort | tr '\n' ' ' | sed -E 's/ $//')"
 _wantsorted="$(printf '%s\n' $_want | sort | tr '\n' ' ' | sed -E 's/ $//')"
-if [ "$_got" != "$_wantsorted" ]; then
+if [ -n "$_fx" ] && [ "$_got" != "$_wantsorted" ]; then
   say "  THE BOARD-TAG BULLET EXTRACTOR IS WRONG."
   say "            want: $_wantsorted"
   say "            got:  $_got"
   say "            Five tags must match, ✅ and the other two shapes must not."
   fail=1
-else
+elif [ -n "$_fx" ]; then
   say "  ok (5 tags matched, 4 non-items rejected)"
 fi
-rm -f "$_fx"
+[ -n "$_fx" ] && rm -f "$_fx"
 
+# ── BACKLOG STATUS vs what actually shipped ─────────────────────────────────
+#
+# Added 2026-09-20 because this script reported ALL CLEAN while FOUR items
+# shipped that same day still carried an open marker in backlog.md:
+# ENRICH-PII-MINIMISE-01, P-01, P-03, REFRAME-NOTE-LOSS-01.
+#
+# The ship-records check above proves an ID gained a registry row and a
+# build-log entry. It says nothing about the BENCH — and the bench is the
+# document a human reads to decide what to work on next, so a shipped item
+# still marked open is the one staleness that actually misleads someone.
+#
+# This is the script's own stated weakness a second time: "an audit is only
+# ever as wide as its list." The contracts check was added for exactly this
+# reason on 2026-09-18, and backlog STATUS was still not on the list.
+#
+# An ID absent from backlog.md is NOT a gap — filed-and-shipped-same-day items
+# never reach the bench, and demanding a row for them would cry wolf.
 say "── backlog status: shipped items still marked open ──"
 bfail=0
 for id in $ids; do
