@@ -291,6 +291,25 @@ export function validateStagedDoorRatio(plan: Plan): Violation[] {
   // and on audit, not per request, and the alternative is reading a stamp the producer wrote, which is the
   // `deloadCadence` flaw.
   let race: Plan | null = null
+  // 🔴 A BROAD CATCH, ARGUED, AND I TRIED THE NARROW ONE FIRST AND MEASURED IT WRONG.
+  //
+  // Two rules collide here. **A validator must not throw** — every other arm in this file is a pure read, and this
+  // is the only one that regenerates, so it is the only one that can fail; code review found it taking
+  // `validateStoredPlan` down on a stored plan whose `generator_input` was missing a field, reaching
+  // `adjustmentEngine` and `/api/ops/plan-audit` unguarded. **And a silent swallow must have a visible failure**
+  // (`/ship`'s pre-ship gate, bought by four months of silent AI fallback).
+  //
+  // I first narrowed the catch to §55's input errors, reasoning that a genuine fault should propagate. Measured:
+  // `generator_input.injury_history = 7` propagates a **TypeError**, so the narrow version still throws out of a
+  // validator on corrupt stored data — it traded one rule for the other instead of satisfying both.
+  //
+  // ✅ SO THE CATCH IS BROAD AND **`invariantLiveness` IS THE VISIBILITY**. This module is pure by
+  // `ENGINE-PURITY-GATE-01` and cannot record an ops event, but the liveness harness mutates a staged half's door
+  // down to the on-ramp floor and asserts this code wakes — on every `npm run verify`. **If the swallow ever became
+  // universal the mutation would stop waking it and `invariantLiveness.test.ts` would fail the build**, which is a
+  // mechanical signal on a sustained failure and is exactly what the gate asks for. The honest answer to "I could
+  // not build the block" is no violation: the ratio is unknown, never a pass dressed as a check, and
+  // `INV-PLAN-BASE-BUILD-RATIO` still backstops §111's own distances.
   try { race = raceBlockVerdict(raceInput, d.raceBlockStart).race } catch { return [] }
   if (!race) return []
   const { ratio, cap, minBaseKm } = baseBuildRatioOf(race, raceInput)

@@ -237,12 +237,24 @@ describe('§116 Am. 11 (2) — the door lands the block inside §111\'s ratio', 
     // the only one that can fail, and the honest answer to "I could not build the block" is no violation.
     const out = engine(runner(HM, 30))
     const plan = JSON.parse(JSON.stringify((out as { plan: Plan }).plan)) as Plan
-    const gi = (plan.meta as unknown as { generator_input?: Record<string, unknown> }).generator_input
-    expect(gi, 'the staged plan carries no generator_input, so this arm cannot test anything').toBeTruthy()
-    delete gi!.age
-    expect(() => validateStagedRace(plan), 'a validator that throws takes its caller down with it').not.toThrow()
-    // ⚠️ AND IT MUST NOT QUIETLY PASS EITHER — no violation is the right answer, and the ratio is simply unknown.
-    expect(validateStagedRace(plan).filter(v => v.code === 'INV-PLAN-STAGED-DOOR-RATIO')).toEqual([])
+    expect((plan.meta as unknown as { generator_input?: unknown }).generator_input,
+      'the staged plan carries no generator_input, so this arm cannot test anything').toBeTruthy()
+    // ⚠️ THREE CORRUPTIONS, NOT ONE, AND THE THIRD IS WHY THE CATCH IS BROAD. I first narrowed it to §55's input
+    // errors so a genuine fault would propagate, then measured that `injury_history = 7` propagates a **TypeError** —
+    // so the narrow version still threw out of a validator on corrupt stored data. The visibility the pre-ship gate
+    // asks for is supplied by `invariantLiveness` instead: its mutation wakes this code on every `npm run verify`,
+    // so a swallow that became universal would fail the build.
+    for (const [what, corrupt] of [
+      ['a missing §55 field', (g: Record<string, unknown>) => { delete g.age }],
+      ['a junk race_date', (g: Record<string, unknown>) => { g.race_date = 'not-a-date' }],
+      ['a non-array injury_history', (g: Record<string, unknown>) => { g.injury_history = 7 }],
+    ] as Array<[string, (g: Record<string, unknown>) => void]>) {
+      const p = JSON.parse(JSON.stringify(plan)) as Plan
+      corrupt((p.meta as unknown as { generator_input: Record<string, unknown> }).generator_input)
+      expect(() => validateStagedRace(p), `${what}: a validator that throws takes its caller down with it`).not.toThrow()
+      // ⚠️ AND IT MUST NOT QUIETLY PASS EITHER — no violation is the right answer; the ratio is simply unknown.
+      expect(validateStagedRace(p).filter(v => v.code === 'INV-PLAN-STAGED-DOOR-RATIO'), what).toEqual([])
+    }
   })
 
   it('the ratio condition is a NO-OP where §111 governs, by predicate and not by luck', () => {
