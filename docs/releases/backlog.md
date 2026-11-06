@@ -1486,7 +1486,7 @@ rows for free runners); (4) the lapsed-trial state, designed then built. Then fl
 (`lib/strength-bridge/release.ts`). 👤 Whether the Make-A-Wish cohort (Apple offer codes, so paid) gets strength:
 **the founder decides at switch-on** (2026-10-29), not before. Replaces the 2026-10-16 date condition.
 
-### ✅ `STRENGTH-LOG-REPS-01` — stamp the prescribed reps on each strength log, so a plan rebuild cannot change them (shipped 2026-10-29 with build 6; migration `20261029_strength_session_times_and_reps.sql` for the founder to apply) 🏃 **COACHING BOARD** ruled (S14 Am.1); ⚙️ build with `STRENGTH-GUIDED-SESSION-01`
+### ✅ `STRENGTH-LOG-REPS-01` — stamp the prescribed reps on each strength log, so a plan rebuild cannot change them (shipped 2026-10-29 with build 6; migration `20261029_strength_session_times_and_reps.sql` applied, verified in the ledger 2026-11-06) 🏃 **COACHING BOARD** ruled (S14 Am.1); ⚙️ build with `STRENGTH-GUIDED-SESSION-01`
 
 Found by code review of `STRENGTH-REP-BLOCKS-01`, 2026-10-28. S14 Am.1 cuts the load when reps rise between blocks, and reads
 the reps a log was done at from the CURRENT plan by date (`liftSuggestionsFor`), because `strength_lift_logs` stores load and
@@ -3419,9 +3419,13 @@ a constraint, not a promise in application code. The surviving row per pair is t
 the activity's own `start_date`**, derived per pair: "keep the earliest" would have been wrong for one of
 the two.
 
-🔴 **MIGRATION `20261104_completion_activity_unique.sql` IS WRITTEN AND NOT APPLIED.** Production DDL is the
-founder's; it supersedes two rows and creates two indexes, and the index creation FAILS if the two rows are
-not superseded first, so the file must be run whole and in order.
+✅ **MIGRATION `20261104_completion_activity_unique.sql` IS APPLIED** (verified against production
+2026-11-06, ledger `41b7423d`): both partial unique indexes present in `pg_indexes`; the `w6 fri` and
+`w2 wed` rows superseded and their kept `w6 sat` / `w2 tue` twins still live, so the supersede hit the
+correct side of each pair; **0** live duplicate `(user, activity)` groups, so STEP 2 would not raise.
+⚠️ **What that does not prove:** the indexes could in principle have been created by hand rather than by
+this file. The four data checks are the migration's own signature, which is the strongest evidence short
+of a Postgres log.
 
 ### 🔲 `USER-SETTINGS-UNREAD-WRITE-01` — **11 more writes to `user_settings` read nobody's error** ⚙️ **NO BOARD** *(defect class)*
 
@@ -4219,7 +4223,7 @@ lopsided). Fix: no main-set growth in peak (accessories and core may still fill)
 runner who sets strength up in week 8 of a 16-week plan gets **no technique block** (heavy 5-rep work from session
 one, even as a `new` lifter) and **jumps are already open**. S6/S8's intent is technique first for the LIFTER, which
 starts when strength starts. ⚠️ **The new entry points make this the common path**: the rest-card line and the modify
-sheet are both mid-plan doors. **Not live:** strength is admin-only and its migrations are unapplied. **Needs:**
+sheet are both mid-plan doors. **Not live:** strength is still admin-only. Its migrations ARE applied (every file in `supabase/migrations/` is in the ledger, verified 2026-11-06); this line said otherwise until then. **Needs:**
 `/zona-debug` RCA first (the fix needs a strength start date the engine does not have today).
 **Tags:** ⚙️ NO BOARD (restores S6/S8 intent) unless the fix changes the block lengths → 🏃 COACHING BOARD (Blagrove).
 
@@ -11986,7 +11990,7 @@ contract lacks (both directions), and the snake_case union returning to `injury_
 routes with no contract at all) is untouched, and the other 41 documented contracts have
 not been checked for the same class — the pattern now exists for whoever sequences that.
 
-### ✅ `OPS-TRIAL-CONV-01` — **APPLIED AND VERIFIED 2026-09-25.** `converted_real` 0, eligible 28.
+### ✅ `OPS-TRIAL-CONV-01` — **APPLIED AND VERIFIED 2026-09-25.** `converted_real` 0, eligible 28. **Re-read 2026-11-06: `converted_real` 0, eligible 48** (53 rows) — the view is live, nobody has subscribed, and the denominator has grown 28 → 48.
 
 Live today: denominator **31**, numerator **1**, and that 1 is `russell.j.shear@gmail.com`
 (`is_admin`, hand-seeded `stripe` row, 2026-04-27, period end 2027-04-27). The view reports
