@@ -129,6 +129,58 @@ describe('SITE-STAGED-PLAN-01 — a staged page publishes a block, not a race', 
       .toMatch(/checkpointWeek/)
   })
 
+  it('is filed once on the hub, and never by distance', () => {
+    // 🔴 CODE REVIEW FOUND IT RENDERED TWICE. `group` is optional with a
+    // `?? 'distance'` default, so the staged entry matched "By distance" as well
+    // as its own lead card — appearing a second time as "Base building · 16-week
+    // plan" beside Sub-4 marathon, which is both the filing 🧭 Zhuo ruled against
+    // and a week count §116 Am.10 forbids here. **An optional field with a default
+    // cannot express "none of these groups"**, so the hub must exclude staged
+    // entries explicitly.
+    const hub = code(readFileSync(join(ROOT, 'app/plans/page.tsx'), 'utf8'))
+    const grouped = hub.match(/MARKETING_PLANS\.filter\(p => [^)]*group[^)]*\)/)
+    expect(grouped, 'the hub no longer groups MARKETING_PLANS by `group`').not.toBeNull()
+    expect(grouped![0], 'the grouped lists must exclude staged plans').toContain('!p.staged')
+  })
+
+  it('reports an absent staged-race field as absent, not as zero', () => {
+    // 🔴 `checkpoint_week ?? 0` WROTE ABSENCE AS A VALUE, which made the page's own
+    // `?? weeks.length` fallback unreachable and would have rendered *"Week 0 is
+    // not a finish line"* — a sentence about a week that does not exist, reading as
+    // deliberate. The repo has paid for this seam before (`x === true` fabricating
+    // a false; a null from a field that does not exist).
+    const { plan } = generateMarketingPlan(staged[0])
+    const stripped = { ...plan, meta: { ...(plan.meta as object), staged_race: { door_km: 12 } } } as unknown as typeof plan
+    const sr = stagedRaceOfPlan(stripped)
+    expect(sr, 'a staged_race with any field present must still resolve').not.toBeNull()
+    expect(sr!.checkpointWeek, 'an absent checkpoint_week must be null, never 0').toBeNull()
+    expect(sr!.raceWeeks).toBeNull()
+    expect(sr!.doorKm).toBe(12)
+  })
+
+  it('the lighter-week count is counted from the table, not typed', () => {
+    // 🔴 IT READ "Two of these weeks are lighter" — a typed claim about a
+    // GENERATED plan, correct today (weeks 11 and 15) with nothing holding it. The
+    // deload cadence is config; the sentence was not.
+    const src = code(readFileSync(join(ROOT, SOURCE), 'utf8'))
+    expect(src, 'a spelled-out count of generated weeks is a claim with no producer')
+      .not.toMatch(/(One|Two|Three|Four) of these weeks/)
+    expect(src, 'the count must be derived').toMatch(/lighterWeeks/)
+
+    // And the derivation must agree with the rows the reader compares.
+    const { plan } = generateMarketingPlan(staged[0])
+    const first = plan.weeks.findIndex(w => sessionsOf(w).some(s => s.distance_km != null))
+    const measured = plan.weeks.slice(first)
+    const maxKm = (w: Week) => {
+      const km = sessionsOf(w).map(s => s.distance_km).filter((n): n is number => n != null)
+      return km.length ? Math.max(...km) : null
+    }
+    const lighter = measured.filter((w, i) =>
+      i > 0 && maxKm(w) != null && maxKm(measured[i - 1]) != null && maxKm(w)! < maxKm(measured[i - 1])!).length
+    expect(lighter, 'no measured week is lighter than the one before — the sentence has nothing to describe')
+      .toBeGreaterThan(0)
+  })
+
   it('does not render the engine\'s race bookkeeping', () => {
     // `raceWeeks` is how far the race sits past the checkpoint. It is the engine's
     // own arithmetic about a race the page may not mention, so rendering it is the

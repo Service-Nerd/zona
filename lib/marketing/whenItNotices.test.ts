@@ -16,7 +16,7 @@
 // conventional home rather than a dodge.
 import { zoneDriftNoteOf } from '@/lib/coaching/planAdjustment'
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { MARKETING_PLANS, planAnchor } from '@/lib/marketing/plans'
@@ -200,9 +200,16 @@ describe('🧭 the section honours the page’s documented rules', () => {
     expect(page.indexOf('<WhenItNotices />')).toBeGreaterThan(page.indexOf('<SameWeekTwice />'))
   })
 
-  it('and it is in the marketing em-dash guard’s SURFACES list', () => {
-    // CLAUDE.md, by name: "add any new marketing page to that test's SURFACES list".
-    expect(readFileSync(join(process.cwd(), 'lib/marketing/noEmDash.test.ts'), 'utf8'))
-      .toContain('components/marketing/WhenItNotices.tsx')
+  it('and the marketing em-dash guard covers it', () => {
+    // ⚠️ THIS USED TO ASSERT THE PATH APPEARED IN THE GUARD'S SOURCE TEXT — i.e.
+    // the SPELLING of a hand-maintained list, not the population. The guard now
+    // globs `components/marketing/*.tsx`, which covers this file and five others
+    // the list had missed, and the old arm went red on an improvement. **A check
+    // on how a list is written cannot survive the list becoming derived.**
+    const em = readFileSync(join(process.cwd(), 'lib/marketing/noEmDash.test.ts'), 'utf8')
+    expect(em, 'the guard no longer globs the marketing components')
+      .toMatch(/readdirSync\(join\(ROOT, 'components\/marketing'\)\)/)
+    expect(readdirSync(join(process.cwd(), 'components/marketing')))
+      .toContain('WhenItNotices.tsx')
   })
 })

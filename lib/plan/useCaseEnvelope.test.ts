@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest'
-import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { isDesignedRefusal } from './designedRefusal'
 import { sessionKmSelfPaced } from './sessionDistance'

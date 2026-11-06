@@ -102,7 +102,14 @@ export default function PlansHubPage() {
         { key: 'distance', label: 'By distance' },
         { key: 'goal', label: 'By goal time' },
       ] as const).map(group => {
-        const items = MARKETING_PLANS.filter(p => (p.group ?? 'distance') === group.key)
+        // 🔴 `!p.staged` IS LOAD-BEARING, AND IT WAS MISSING. `group` is optional
+        // with a `?? 'distance'` default, so the staged entry fell into "By
+        // distance" AS WELL AS the lead card above — rendered twice, the second
+        // time as "Base building · 16-week plan" beside Sub-4 marathon. That is
+        // the exact filing 🧭 Zhuo ruled against, plus a week count §116 Am.10
+        // forbids on this page. **An optional field with a default cannot encode
+        // "none of these groups".**
+        const items = MARKETING_PLANS.filter(p => !p.staged && (p.group ?? 'distance') === group.key)
         if (items.length === 0) return null
         return (
           <Section key={group.key} width="read" rhythm="none"

@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { generateMarketingPlan } from './marketingPlan'
-import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import type { Session } from '@/types/plan'
 import { MARKETING_PLANS, planAnchor } from './plans'
 

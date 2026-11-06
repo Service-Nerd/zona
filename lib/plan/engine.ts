@@ -196,7 +196,14 @@ function carryWalkRun(i: GeneratorInput, after: boolean): GeneratorInput {
  * that shrank into §44's warn band since signup shows the warning and its acknowledge step (MODIFY-WARN-ACK-01).
  */
 /** ONRAMP-SPACING-01 — the spacing rules apply to a plan its producer stamped as built under them. */
-function spacingOpts(plan: Plan, input: GeneratorInput) {
+/** The two arguments `validateBaseBuildBlock` needs, derived from a built plan and
+ *  its input. **EXPORTED because it was COPIED.** `lib/marketing/marketingPlan.ts`
+ *  hand-wrote these two lines to validate a published staged page and spelled the
+ *  blocked-days field `days_cannot_run` — which does not exist on `GeneratorInput`.
+ *  A cast silenced tsc, so `blocked` was permanently `[]` and a staged entry with
+ *  blocked days would have reported false INV-PLAN-ONRAMP-SPACED violations. One
+ *  owner, so the next caller cannot invent a third spelling. */
+export function spacingOpts(plan: Plan, input: GeneratorInput) {
   return { spaced: (plan.meta as unknown as Record<string, unknown>).onramp_spaced === true, blocked: input.days_cannot_train ?? [] }
 }
 

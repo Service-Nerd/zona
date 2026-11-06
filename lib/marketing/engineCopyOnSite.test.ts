@@ -46,7 +46,6 @@
 import { describe, it, expect } from 'vitest'
 import { generateMarketingPlan } from './marketingPlan'
 import { MARKETING_PLANS, planAnchor } from './plans'
-import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { isHardEffort } from '@/lib/plan/sessionRole'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'

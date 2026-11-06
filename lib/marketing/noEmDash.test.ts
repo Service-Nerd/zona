@@ -20,14 +20,27 @@
 // always reads better anyway, which is the point of the rule.
 
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { comparisonArticles, articlePath } from './articles'
 
 const ROOT = join(__dirname, '..', '..')
 
 /** Public marketing surfaces. Add a file here when a new one ships. */
+/** 🔴 EVERY `components/marketing/*.tsx`, GLOBBED — NEVER LISTED. Eleven of the
+ *  seventeen were listed by hand and six were not, including `StagedPlanPage.tsx`
+ *  (the tenth plan page, shipped 2026-11-06) and `TabbedPhone.tsx`, which carries
+ *  device-still copy. **This is the same miss the comparison shims below already
+ *  record, in a second directory**: a list maintained by remembering is not a
+ *  population. All six were clean when globbed, which is the point — the gap was
+ *  in what the check could SEE, not in what had shipped. */
+const MARKETING_COMPONENTS = readdirSync(join(ROOT, 'components/marketing'))
+  .filter(f => f.endsWith('.tsx') && !f.endsWith('.test.tsx'))
+  .map(f => `components/marketing/${f}`)
+  .sort()
+
 const SURFACES = [
+  ...MARKETING_COMPONENTS,
   'app/layout.tsx',
   'app/page.tsx',
   'app/plans/page.tsx',
@@ -46,17 +59,6 @@ const SURFACES = [
   // single owner shared with the in-app note. Listed here so the rule keeps
   // being enforced on the strings rather than on the page that used to hold them.
   'lib/marketing/founderStory.ts',
-  'components/marketing/AppStoreBadge.tsx',
-  'components/marketing/ArticleHub.tsx',
-  'components/marketing/SameWeekTwice.tsx',
-  'components/marketing/WhenItNotices.tsx',
-  'components/marketing/ArticlePage.tsx',
-  'components/marketing/PhoneFrame.tsx',
-  'components/marketing/ProductStill.tsx',
-  'components/marketing/PlanPage.tsx',
-  'components/marketing/SiteFooter.tsx',
-  'components/marketing/SiteHeader.tsx',
-  'components/marketing/WaitlistForm.tsx',
   'lib/marketing/articles.ts',
   'lib/marketing/demoSurfaces.ts',
   'lib/marketing/planNotes.ts',
@@ -104,6 +106,16 @@ function renderableLines(src: string): { line: number; text: string }[] {
 }
 
 describe('marketing copy contains no em dashes', () => {
+  it('the component population is globbed and non-empty', () => {
+    // Guards the guard. A glob that returns nothing makes every arm below vacuous
+    // — and a silently empty population is this repo's most-recorded failure.
+    expect(MARKETING_COMPONENTS.length).toBeGreaterThan(10)
+    for (const must of ['PlanPage', 'StagedPlanPage', 'TabbedPhone', 'PhoneFrame']) {
+      expect(MARKETING_COMPONENTS, `${must}.tsx is not in the globbed population`)
+        .toContain(`components/marketing/${must}.tsx`)
+    }
+  })
+
   for (const rel of SURFACES) {
     it(rel, () => {
       const src = readFileSync(join(ROOT, rel), 'utf8')

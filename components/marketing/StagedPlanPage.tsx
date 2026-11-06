@@ -36,7 +36,7 @@ import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 import { BRAND } from '@/lib/brand'
 import { generateMarketingPlan, stagedRaceOfPlan } from '@/lib/marketing/marketingPlan'
 import { getPlan, type MarketingPlan } from '@/lib/marketing/plans'
-import { formatDuration } from '@/lib/format'
+import { formatDistance, formatDuration } from '@/lib/format'
 import type { Session, Week } from '@/types/plan'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
@@ -65,6 +65,19 @@ function splitAtFirstMeasuredWeek(weeks: Week[]): { minutes: Week[]; measured: W
   return { minutes: weeks.slice(0, i), measured: weeks.slice(i) }
 }
 
+/** The figure `WeekRows` renders for a measured week, as a number. Shares the
+ *  `Math.max` the row uses so the prose cannot describe a different table. */
+function weekMaxKm(w: Week | undefined): number | null {
+  if (!w) return null
+  const km = sessionsOf(w).map(sx => sx.distance_km).filter((n): n is number => n != null)
+  return km.length ? Math.max(...km) : null
+}
+
+/** Small counts read as words in a sentence; anything larger reads as a numeral. */
+function countWord(n: number): string {
+  return ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'][n] ?? String(n)
+}
+
 function sessionsOf(w: Week): Session[] {
   return DAY_ORDER.map(d => w.sessions[d]).filter(Boolean) as Session[]
 }
@@ -77,7 +90,11 @@ function weekFigure(w: Week, measured: boolean): string {
     return mins.length ? (formatDuration(Math.max(...mins)) ?? '') : ''
   }
   const km = ss.map(s => s.distance_km).filter((n): n is number => n != null)
-  return km.length ? `${Math.max(...km).toFixed(1)} km` : ''
+  // ⚠️ `lib/format.ts` OWNS EVERY UNIT GLYPH (ADR-015, PREF-SWEEP-01). A welded
+  // `${n.toFixed(1)} km` here was caught by `hardcodedUnits.test.ts` AFTER the
+  // commit was pushed: my own full-suite run predated this line. `exact` keeps the
+  // one decimal the progression needs (2 → 4.2), which plain rounding would flatten.
+  return km.length ? (formatDistance(Math.max(...km), 'km', { exact: true }) ?? '') : ''
 }
 
 function WeekRows({ weeks, measured }: { weeks: Week[]; measured: boolean }) {
@@ -124,7 +141,20 @@ export function StagedPlanPage({ plan }: { plan: MarketingPlan }) {
   const firstSession = sessionsOf(weeks[0] ?? ({ sessions: {} } as unknown as Week))[0]
   const firstInstruction = firstSession?.detail ?? null
 
-  const sessionsPerWeek = Array.from(new Set(weeks.map(w => sessionsOf(w).length)))
+  // ⚠️ SORTED, because a `Set` preserves INSERTION order: a plan that went 3 → 2
+  // rendered "3 to 2 runs a week". It is 3 every week today; the stat row is
+  // derived precisely so it survives the day that changes.
+  const sessionsPerWeek = Array.from(new Set(weeks.map(w => sessionsOf(w).length))).sort((a, b) => a - b)
+  const runsPerWeek = sessionsPerWeek.length === 1
+    ? `${sessionsPerWeek[0]}`
+    : `${sessionsPerWeek[0]} to ${sessionsPerWeek[sessionsPerWeek.length - 1]}`
+  // 🔴 COUNTED, NOT TYPED. This read "Two of these weeks are lighter" — a claim
+  // about a GENERATED plan, correct today (weeks 11 and 15) and with nothing
+  // holding it. The engine's deload cadence is config; the sentence was not. It
+  // counts what the READER compares: a row whose figure is below the row above.
+  const lighterWeeks = measured.filter((w, i) =>
+    i > 0 && weekMaxKm(w) != null && weekMaxKm(measured[i - 1]) != null
+      && weekMaxKm(w)! < weekMaxKm(measured[i - 1])!).length
   const firstDuration = firstSession?.duration_mins
   const zone = firstSession?.zone
 
@@ -178,7 +208,7 @@ export function StagedPlanPage({ plan }: { plan: MarketingPlan }) {
           display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3) var(--space-5)',
           fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-2)',
         }}>
-          <span>{sessionsPerWeek.join(' to ')} runs a week</span>
+          <span>{runsPerWeek} runs a week</span>
           {firstDuration != null && <span>{formatDuration(firstDuration)} to start</span>}
           {zone && <span>Every one in {zone}</span>}
         </div>
@@ -225,8 +255,9 @@ export function StagedPlanPage({ plan }: { plan: MarketingPlan }) {
             Then the kilometres start
           </h2>
           <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.6, color: 'var(--mute)', margin: '0 0 var(--space-4)' }}>
-            Week {measured[0]?.n} is the first week you cover measured ground. Two of these weeks are lighter than
-            the one before on purpose: the easy weeks are where the work lands.
+            Week {measured[0]?.n} is the first week you cover measured ground.
+            {lighterWeeks > 0 && ` ${countWord(lighterWeeks)} of these weeks ${lighterWeeks === 1 ? 'is' : 'are'} lighter than the one before on purpose:`}
+            {lighterWeeks > 0 ? ' the easy weeks are where the work lands.' : ' The easy weeks are where the work lands.'}
           </p>
           <WeekRows weeks={measured} measured />
         </Section>

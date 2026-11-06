@@ -7,7 +7,6 @@
 
 import { getPlan, planAnchor } from './plans'
 import { generateMarketingPlan } from './marketingPlan'
-import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import type { Session } from '@/types/plan'

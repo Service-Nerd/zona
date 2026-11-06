@@ -19,6 +19,7 @@ import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { MARKETING_PLANS } from './plans'
+import { DEMO_BLOCK } from './demoSurfaces'
 
 const ROOT = process.cwd()
 const SKIP = new Set(['node_modules', '.next', '.git', 'dist', 'coverage', '.claude'])
@@ -60,12 +61,40 @@ const SAFE: Record<string, { why: string; proof: RegExp }> = {
 
 /** Files that generate from a SPECIFIC, named, non-staged slug. They cannot meet
  *  a staged plan, and routing them through the owner would be churn for no
- *  safety. ⚠️ The arm below checks each one's slug is still non-staged, so the
- *  exemption cannot rot the day someone repoints a constant. */
-const FIXED_SLUG: Record<string, string> = {
-  'lib/marketing/demoPlanScreen.ts': 'reads DEMO_BLOCK.slug — the device still’s own block',
-  'components/marketing/SameWeekTwice.tsx': 'reads its own SOURCE_SLUG constant',
-  'components/marketing/WhenItNotices.tsx': 'reads its own SOURCE_SLUG constant',
+ *  safety.
+ *
+ *  🔴 EACH ENTRY NAMES THE SLUG IT RESOLVES TO, AND THE ARM BELOW CHECKS BOTH
+ *  HALVES — because the first version checked neither usefully. It scraped
+ *  kebab-case string literals out of the file and asserted none was staged, which
+ *  is **vacuous for `demoPlanScreen.ts`: that file holds no slug literal at all**
+ *  (it reads `DEMO_BLOCK.slug` from `demoSurfaces.ts`), so `hits` was always
+ *  empty and the arm passed on an empty population. The exemption that most
+ *  needed checking was the one the check could not see.
+ *
+ *  So an entry declares `expr` — how the file names its slug, which must still be
+ *  present — and `slug`, the value that expression resolves to, which must still
+ *  be a real, non-staged entry in `MARKETING_PLANS`. */
+const FIXED_SLUG: Record<string, { why: string; resolve: (src: string) => string | null }> = {
+  'lib/marketing/demoPlanScreen.ts': {
+    why: 'reads DEMO_BLOCK.slug — the device still’s own block',
+    resolve: src => (/DEMO_BLOCK\.slug/.test(src) ? DEMO_BLOCK.slug : null),
+  },
+  'components/marketing/SameWeekTwice.tsx': {
+    why: 'reads its own SOURCE_SLUG constant',
+    resolve: sourceSlugConst,
+  },
+  'components/marketing/WhenItNotices.tsx': {
+    why: 'reads its own SOURCE_SLUG constant',
+    resolve: sourceSlugConst,
+  },
+}
+
+/** ⚠️ DERIVED FROM THE FILE, NEVER TYPED HERE. Writing the slug into this table
+ *  would be a second copy of it: I typed `marathon-16-week` for `WhenItNotices`
+ *  on the first pass and the real constant is `half-marathon-12-week`. A table
+ *  that restates what the file says is a table that can disagree with it. */
+function sourceSlugConst(src: string): string | null {
+  return src.match(/const SOURCE_SLUG = '([^']+)'/)?.[1] ?? null
 }
 
 describe('SITE-STAGED-PLAN-01 — published plans generate through one owner', () => {
@@ -80,14 +109,19 @@ describe('SITE-STAGED-PLAN-01 — published plans generate through one owner', (
     expect(files.some(f => f.startsWith('components/marketing/'))).toBe(true)
   })
 
-  it('nothing iterates MARKETING_PLANS and calls generateRulePlan', () => {
+  it('nothing reaches the published list and calls generateRulePlan', () => {
+    // 🔴 THE POPULATION WAS `MARKETING_PLANS` AS A LITERAL, AND CODE REVIEW
+    // FALSIFIED IT: a file doing `getPlan('5k-12-week')` + `generateRulePlan` never
+    // types that name, so it escaped — and that is the exact shape this item just
+    // removed from `planFacts.ts` and `page7Claims.test.ts`. **The list is reached
+    // through its MODULE, not through one of its exports**, so the signal is the
+    // import. Anything importing the published-plans module and calling the
+    // generator is generating a published plan, whichever accessor it uses.
+    const IMPORTS_PLANS = /from\s+'(?:@\/lib\/marketing\/plans|\.{1,2}\/(?:lib\/marketing\/)?plans)'/
     const offenders = files.filter(f => {
       if (FIXED_SLUG[f] || SAFE[f]) return false
       const src = code(readFileSync(join(ROOT, f), 'utf8'))
-      if (!src.includes('MARKETING_PLANS') || !src.includes('generateRulePlan(')) return false
-      // A `.find(...)` on a literal slug is the fixed-slug shape and is handled
-      // above by name; anything else is iterating the published list.
-      return true
+      return IMPORTS_PLANS.test(src) && src.includes('generateRulePlan(')
     })
     expect(
       offenders,
@@ -105,16 +139,19 @@ describe('SITE-STAGED-PLAN-01 — published plans generate through one owner', (
     }
   })
 
-  it('every fixed-slug exemption still points at a non-staged plan', () => {
-    // ⚠️ An exemption that stops being true is worse than no exemption. These
-    // files are safe only because their slug is a race plan.
-    const stagedSlugs = new Set(MARKETING_PLANS.filter(p => p.staged).map(p => p.slug))
-    expect(stagedSlugs.size).toBeGreaterThan(0)
-    for (const [f, why] of Object.entries(FIXED_SLUG)) {
+  it('every fixed-slug exemption still names its slug, and that slug is a race plan', () => {
+    // ⚠️ An exemption that stops being true is worse than no exemption, and one
+    // whose check runs on an empty population is worse again — it reads green.
+    for (const [f, { why, resolve }] of Object.entries(FIXED_SLUG)) {
       const src = code(readFileSync(join(ROOT, f), 'utf8'))
-      const slugs = Array.from(src.matchAll(/'([a-z0-9]+(?:-[a-z0-9]+)+)'/g)).map(m => m[1])
-      const hits = slugs.filter(s => stagedSlugs.has(s))
-      expect(hits, `${f} (${why}) now names a STAGED slug: ${hits.join(', ')}`).toEqual([])
+      const slug = resolve(src)
+      expect(slug,
+        `${f} is exempt because it ${why}, and no longer names its slug that way`).not.toBeNull()
+      const entry = MARKETING_PLANS.find(p => p.slug === slug)
+      expect(entry, `${f} resolves to slug "${slug}", which is not a published plan`).toBeDefined()
+      expect(entry?.staged,
+        `${f} (${why}) now resolves to the STAGED plan "${slug}" — `
+        + '`generateRulePlan` throws for it. Route this file through `generateMarketingPlan`').toBeFalsy()
     }
   })
 })

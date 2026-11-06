@@ -22,7 +22,7 @@
 // inputs happen to trip a stageable door would have crashed the BUILD under the
 // old call. Through the owner it stages, exactly as it would for a real runner.
 
-import { runEngine } from '@/lib/plan/engine'
+import { runEngine, spacingOpts } from '@/lib/plan/engine'
 import { planAnchor, type MarketingPlan } from './plans'
 import type { Plan } from '@/types/plan'
 import type { GeneratorInput } from '@/types/plan'
@@ -74,11 +74,22 @@ export function generateMarketingPlan(mp: MarketingPlan): MarketingPlanResult {
  * rendering it is the claim the amendment forbids.
  */
 export interface StagedRace {
-  doorKm: number
-  checkpointWeek: number
+  doorKm: number | null
+  checkpointWeek: number | null
   /** Present for the engine's use. Not for the page. */
-  raceWeeks: number
+  raceWeeks: number | null
   targetFound: boolean
+}
+
+/** 🔴 ABSENCE IS NOT A VALUE, AND `?? 0` WROTE IT AS ONE. These fields used to
+ *  coerce a missing `checkpoint_week` to `0`, which made the page's own
+ *  `?? weeks.length` fallback unreachable and would have rendered *"Week 0 is not
+ *  a finish line"* — a sentence about a week that does not exist, reading as
+ *  deliberate. A field the engine did not write comes back `null` so a caller has
+ *  to decide what to do about it. */
+const num = (v: unknown): number | null => {
+  const n = Number(v)
+  return v == null || !Number.isFinite(n) ? null : n
 }
 
 export function stagedRaceOfPlan(plan: Plan): StagedRace | null {
@@ -87,9 +98,9 @@ export function stagedRaceOfPlan(plan: Plan): StagedRace | null {
     | undefined
   if (!sr) return null
   return {
-    doorKm: Number(sr.door_km ?? 0),
-    checkpointWeek: Number(sr.checkpoint_week ?? 0),
-    raceWeeks: Number(sr.race_weeks ?? 0),
+    doorKm: num(sr.door_km),
+    checkpointWeek: num(sr.checkpoint_week),
+    raceWeeks: num(sr.race_weeks),
     targetFound: sr.target_found === true,
   }
 }
@@ -120,15 +131,12 @@ export function validateMarketingPlan(
 ): Violation[] {
   if (res.kind === 'plan') return validatePlan(res.plan, input)
 
-  const meta = res.plan.meta as unknown as Record<string, unknown>
-  const startKm = Number(meta.base_build_start_km ?? 0)
-  // The same two arguments `engine.ts` builds via its private `spacingOpts`.
-  const opts = {
-    spaced: meta.onramp_spaced === true,
-    blocked: (input as GeneratorInput & { days_cannot_run?: string[] }).days_cannot_run ?? [],
-  }
+  const startKm = Number((res.plan.meta as unknown as Record<string, unknown>).base_build_start_km ?? 0)
+  // 🔴 `spacingOpts` IS THE ENGINE'S OWN, AND THIS USED TO BE A COPY OF IT. The
+  // copy read `days_cannot_run`; the field is `days_cannot_train`, a cast silenced
+  // tsc, and `blocked` was permanently empty. Call the owner.
   return [
-    ...validateBaseBuildBlock(res.plan.weeks, startKm, opts as never),
+    ...validateBaseBuildBlock(res.plan.weeks, startKm, spacingOpts(res.plan, input)),
     ...validateStagedRace(res.plan),
   ]
 }

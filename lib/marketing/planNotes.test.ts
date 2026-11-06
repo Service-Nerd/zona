@@ -1,6 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { generateMarketingPlan, validateMarketingPlan } from './marketingPlan'
-import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan } from '@/lib/plan/invariants'
 import type { Week } from '@/types/plan'
 import { MARKETING_PLANS, planAnchor, faqsFor } from './plans'

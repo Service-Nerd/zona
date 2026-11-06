@@ -13,7 +13,6 @@ import { BRAND } from '@/lib/brand'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
-import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import SessionSteps from '@/components/shared/SessionSteps'
 import { stepParts, type DerivedSet } from '@/lib/plan/resolveMainSet'
 import { composeSession } from '@/lib/plan/sessionComposer'
@@ -243,8 +242,10 @@ function accentFor(s: Session): string {
 const phaseKey = (w: Week): string => w.phase ?? 'base'
 
 export function PlanPage({ plan }: { plan: MarketingPlan }) {
-  const { planStart, raceDate } = planAnchor(plan.dayOffset)
-  const generated = generateMarketingPlan(plan).plan
+  // ⚠️ `planAnchor` is called INSIDE `generateMarketingPlan`, which returns both
+  // dates. Keeping the call here left two unread locals and a second caller of the
+  // anchor: a dead derivation beside a live one reads as the live one.
+  const { plan: generated, planStart, raceDate } = generateMarketingPlan(plan)
   const weeks = generated.weeks.filter(w => w.n >= 1)
   const faqs = faqsFor(plan)
   const planUrl = `${APP_URL}/plans/${plan.slug}`
